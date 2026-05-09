@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "a3bf609fda45",
+  "session_id": "570fe6bc-c8f6-4837-bf17-66d08325a0f7",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T20:22:06.825193Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "1615fe71a86f",
+  "checkpoint_transcript_start": 173,
+  "transcript_lines_at_start": 173,
+  "token_usage": {
+    "input_tokens": 4,
+    "cache_creation_tokens": 2713,
+    "cache_read_tokens": 216001,
+    "output_tokens": 2109,
+    "api_call_count": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 56,
+      "user_lines_removed": 3,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/collab/MilestoneDialog.tsx": 1,
+        "packages/web/src/collab/ShareModal.tsx": 6,
+        "packages/web/src/useFocusTrap.ts": 42,
+        "packages/web/src/workspace/ManageLinksDialog.tsx": 7
+      },
+      "user_removed_per_file": {
+        "packages/web/src/collab/ShareModal.tsx": 1,
+        "packages/web/src/workspace/ManageLinksDialog.tsx": 2
+      }
+    }
+  ]
+}
