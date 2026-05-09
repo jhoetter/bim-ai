@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
 from bim_ai.elements import (
     BalusterPattern,
@@ -1628,12 +1628,15 @@ class SplitWallAtCmd(BaseModel):
 
 
 class AlignElementToReferenceCmd(BaseModel):
-    """EDT-04 — translate a target wall so its near endpoint snaps to the
-    reference point along the closer principal axis."""
+    """EDT-04 — translate a target element (wall, column, placed_asset) so its
+    near endpoint/position snaps to the reference point along the closer axis."""
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["alignElementToReference"] = "alignElementToReference"
-    target_wall_id: str = Field(alias="targetWallId")
+    target_element_id: str = Field(
+        validation_alias=AliasChoices("targetElementId", "targetWallId"),
+        serialization_alias="targetElementId",
+    )
     reference_mm: Vec2Mm = Field(alias="referenceMm")
 
 

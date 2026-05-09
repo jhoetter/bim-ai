@@ -3399,36 +3399,43 @@ def apply_inplace(
             del els[cmd.wall_id]
 
         case AlignElementToReferenceCmd():
-            target = els.get(cmd.target_wall_id)
-            if not isinstance(target, WallElem):
-                raise ValueError("alignElementToReference.targetWallId must reference a wall")
+            target = els.get(cmd.target_element_id)
+            if target is None:
+                raise ValueError(f"alignElementToReference: element {cmd.target_element_id!r} not found")
             ref = cmd.reference_mm
-            d_start = (target.start.x_mm - ref.x_mm) ** 2 + (target.start.y_mm - ref.y_mm) ** 2
-            d_end = (target.end.x_mm - ref.x_mm) ** 2 + (target.end.y_mm - ref.y_mm) ** 2
-            wall_dx = abs(target.end.x_mm - target.start.x_mm)
-            wall_dy = abs(target.end.y_mm - target.start.y_mm)
-            axis: Literal["x", "y"] = "y" if wall_dx >= wall_dy else "x"
-            if d_start <= d_end:
-                # Move start endpoint onto reference along the chosen axis;
-                # the other endpoint follows by the same delta.
-                if axis == "x":
-                    dx = ref.x_mm - target.start.x_mm
-                    new_start = Vec2Mm(xMm=ref.x_mm, yMm=target.start.y_mm)
-                    new_end = Vec2Mm(xMm=target.end.x_mm + dx, yMm=target.end.y_mm)
+            if isinstance(target, WallElem):
+                d_start = (target.start.x_mm - ref.x_mm) ** 2 + (target.start.y_mm - ref.y_mm) ** 2
+                d_end = (target.end.x_mm - ref.x_mm) ** 2 + (target.end.y_mm - ref.y_mm) ** 2
+                wall_dx = abs(target.end.x_mm - target.start.x_mm)
+                wall_dy = abs(target.end.y_mm - target.start.y_mm)
+                align_axis: Literal["x", "y"] = "y" if wall_dx >= wall_dy else "x"
+                if d_start <= d_end:
+                    if align_axis == "x":
+                        dx = ref.x_mm - target.start.x_mm
+                        new_start = Vec2Mm(xMm=ref.x_mm, yMm=target.start.y_mm)
+                        new_end = Vec2Mm(xMm=target.end.x_mm + dx, yMm=target.end.y_mm)
+                    else:
+                        dy = ref.y_mm - target.start.y_mm
+                        new_start = Vec2Mm(xMm=target.start.x_mm, yMm=ref.y_mm)
+                        new_end = Vec2Mm(xMm=target.end.x_mm, yMm=target.end.y_mm + dy)
                 else:
-                    dy = ref.y_mm - target.start.y_mm
-                    new_start = Vec2Mm(xMm=target.start.x_mm, yMm=ref.y_mm)
-                    new_end = Vec2Mm(xMm=target.end.x_mm, yMm=target.end.y_mm + dy)
+                    if align_axis == "x":
+                        dx = ref.x_mm - target.end.x_mm
+                        new_start = Vec2Mm(xMm=target.start.x_mm + dx, yMm=target.start.y_mm)
+                        new_end = Vec2Mm(xMm=ref.x_mm, yMm=target.end.y_mm)
+                    else:
+                        dy = ref.y_mm - target.end.y_mm
+                        new_start = Vec2Mm(xMm=target.start.x_mm, yMm=target.start.y_mm + dy)
+                        new_end = Vec2Mm(xMm=target.end.x_mm, yMm=ref.y_mm)
+                els[cmd.target_element_id] = target.model_copy(update={"start": new_start, "end": new_end})
+            elif isinstance(target, (ColumnElem, PlacedAssetElem)):
+                pos = target.position_mm
+                dx_abs = abs(ref.x_mm - pos.x_mm)
+                dy_abs = abs(ref.y_mm - pos.y_mm)
+                new_pos = Vec2Mm(xMm=ref.x_mm, yMm=pos.y_mm) if dx_abs <= dy_abs else Vec2Mm(xMm=pos.x_mm, yMm=ref.y_mm)
+                els[cmd.target_element_id] = target.model_copy(update={"position_mm": new_pos})
             else:
-                if axis == "x":
-                    dx = ref.x_mm - target.end.x_mm
-                    new_start = Vec2Mm(xMm=target.start.x_mm + dx, yMm=target.start.y_mm)
-                    new_end = Vec2Mm(xMm=ref.x_mm, yMm=target.end.y_mm)
-                else:
-                    dy = ref.y_mm - target.end.y_mm
-                    new_start = Vec2Mm(xMm=target.start.x_mm, yMm=target.start.y_mm + dy)
-                    new_end = Vec2Mm(xMm=target.end.x_mm, yMm=ref.y_mm)
-            els[cmd.target_wall_id] = target.model_copy(update={"start": new_start, "end": new_end})
+                raise ValueError(f"alignElementToReference: unsupported element kind {target.kind!r}")
 
         case TrimElementToReferenceCmd():
             ref = els.get(cmd.reference_wall_id)

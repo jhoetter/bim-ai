@@ -2771,18 +2771,31 @@ export function PlanCanvas({
         // F-121: sync reference point into React state so the SVG overlay re-renders.
         setAlignReferenceMm(nextState.referenceMm);
         if (effect.commitAlign) {
-          // Pick the nearest wall to the *target* click; align it to the
-          // reference point that was first picked.
-          const targetHit = nearestWallAt(
+          const tMm = effect.commitAlign.targetMm;
+          const wallHit = nearestWallAt(
             elementsById,
             displayLevelId || undefined,
-            effect.commitAlign.targetMm.xMm,
-            effect.commitAlign.targetMm.yMm,
+            tMm.xMm,
+            tMm.yMm,
           );
-          if (targetHit && targetHit.distMm < 900) {
+          let targetId: string | undefined;
+          let bestDist = wallHit && wallHit.distMm < 900 ? wallHit.distMm : Infinity;
+          if (wallHit && wallHit.distMm < 900) targetId = wallHit.wall.id;
+          for (const el of Object.values(elementsById)) {
+            if (el.kind !== 'column' && el.kind !== 'placed_asset') continue;
+            if (displayLevelId && (el as { levelId?: string }).levelId !== displayLevelId) continue;
+            const pos = (el as { positionMm?: { xMm: number; yMm: number } }).positionMm;
+            if (!pos) continue;
+            const dist = Math.hypot(pos.xMm - tMm.xMm, pos.yMm - tMm.yMm);
+            if (dist < bestDist) {
+              bestDist = dist;
+              targetId = el.id;
+            }
+          }
+          if (targetId) {
             onSemanticCommand({
               type: 'alignElementToReference',
-              targetWallId: targetHit.wall.id,
+              targetElementId: targetId,
               referenceMm: effect.commitAlign.referenceMm,
             });
           }
