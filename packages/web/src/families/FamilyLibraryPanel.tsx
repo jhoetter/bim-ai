@@ -537,7 +537,7 @@ export function FamilyLibraryPanel({
             onChange={(e) => setNeedle(e.target.value)}
             placeholder="Search families…"
             aria-label="Search families"
-            className="w-full rounded border border-border bg-background px-2 py-1 text-sm text-foreground outline-none focus:border-accent"
+            className="w-full rounded border border-border bg-background px-2 py-1 text-sm text-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent/40"
           />
         </div>
         <div

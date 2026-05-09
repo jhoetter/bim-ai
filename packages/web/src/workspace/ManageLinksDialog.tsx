@@ -183,6 +183,7 @@ export function ManageLinksDialog({
   return (
     <div
       role="dialog"
+      aria-modal="true"
       aria-label="Manage Links"
       data-testid="manage-links-dialog"
       style={{

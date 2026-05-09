@@ -142,6 +142,7 @@ export function SunOverlay({
             </label>
             <input
               type="number"
+              aria-label="Latitude (degrees)"
               min={-90}
               max={90}
               step={0.01}
@@ -167,6 +168,7 @@ export function SunOverlay({
             </label>
             <input
               type="number"
+              aria-label="Longitude (degrees)"
               min={-180}
               max={180}
               step={0.01}
@@ -192,6 +194,7 @@ export function SunOverlay({
             </label>
             <input
               type="date"
+              aria-label="Sun date"
               value={values.dateIso}
               onChange={(e) => onChange({ dateIso: e.target.value })}
               onBlur={(e) => onCommit({ dateIso: e.target.value })}

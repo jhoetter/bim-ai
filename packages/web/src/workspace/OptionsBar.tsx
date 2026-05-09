@@ -1,4 +1,4 @@
-import { type JSX, useState } from 'react';
+import { type JSX, useEffect, useState } from 'react';
 import type { Element } from '@bim-ai/core';
 import { useBimStore } from '../state/store';
 import { applyCommand } from '../lib/api';
@@ -55,6 +55,15 @@ export function OptionsBar(): JSX.Element | null {
   const applyAreaRules = useBimStore((s) => s.applyAreaRules);
   const setApplyAreaRules = useBimStore((s) => s.setApplyAreaRules);
   const [showComputations, setShowComputations] = useState(false);
+
+  useEffect(() => {
+    if (!showComputations) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowComputations(false);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [showComputations]);
 
   if (planTool === 'wall') {
     return (
