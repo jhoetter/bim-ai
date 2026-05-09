@@ -22,7 +22,7 @@ Source segment: `05:30:54 – 05:33:32`
 **Screenshot:**
 ![Isolate Category](file:///Users/jhoetter/Desktop/Revit%20Specs/0778_05-31-49.png)
 
-**bim-ai status:** ✅ Available — `TemporaryVisibilityChip.tsx` implements isolate mode; `setTemporaryVisibility({ mode: 'isolate', categories: [...] })` in the store hides all categories except the selected ones. Chip shows which categories are isolated and provides one-click reset.
+**bim-ai status:** 🟡 Partial — `TemporaryVisibilityChip.tsx` and the `setTemporaryVisibility` store action support isolate mode (rendering only selected categories) with a one-click reset chip. Missing: no UI trigger exists to activate isolate — the chip is not mounted in the application, and no right-click menu item or sunglasses button calls `setTemporaryVisibility` (the function is only exercised in unit tests).
 
 ---
 

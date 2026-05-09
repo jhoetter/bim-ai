@@ -163,4 +163,4 @@ For layered walls this distinction matters significantly — the core can sit 50
 **Screenshot:**
 ![Temporary Hide Isolate](file:///Users/jhoetter/Desktop/Revit%20Specs/0370_01-50-13.png)
 
-**bim-ai status:** ✅ Available — `TemporaryVisibilityChip.tsx` implements the VIE-04 status-bar chip with isolate and hide modes; the store exposes `setTemporaryVisibility` / `clearTemporaryVisibility`. The chip renders "Isolate: <categories>" or "Hide: <categories>" and resets on click (equivalent to Revit's "Reset Temporary Hide/Isolate").
+**bim-ai status:** 🟡 Partial — `TemporaryVisibilityChip.tsx` implements the VIE-04 status-bar reset chip: when a temporary override is active it shows "Isolate: <categories>" or "Hide: <categories>" and clicking it clears the override via `clearTemporaryVisibility`. The store exposes `setTemporaryVisibility` / `clearTemporaryVisibility`. Missing: the chip is not mounted anywhere in the application; there is no sunglasses icon, right-click menu item, or keyboard shortcut that calls `setTemporaryVisibility` to activate an isolate or hide override (the function is only exercised in unit tests).

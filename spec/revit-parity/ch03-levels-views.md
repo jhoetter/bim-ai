@@ -99,4 +99,4 @@ Source segment: `00:55:00 – 01:02:00`
 **Screenshot:**
 ![Elevation Markers](file:///Users/jhoetter/Desktop/Revit%20Specs/0122_00-12-17.png)
 
-**bim-ai status:** 🟡 Partial — `ProjectBrowser.tsx` now shows `section_cut` and `elevation_view` rows with inline rename support (double-click → input, blur/Enter commits via `updateElementProperty { key: 'name' }`). Missing: auto-generation of four-way elevation markers from a plan view, double-click-from-plan-tag navigation to the corresponding elevation tab.
+**bim-ai status:** 🟡 Partial — `ProjectBrowser.tsx` now shows `section_cut` and `elevation_view` rows with inline rename support (double-click → input, blur/Enter commits via `updateElementProperty { key: 'name' }`). Elevation markers are rendered as triangular symbols in the plan canvas (`symbology.ts` / `elevationViewPlanThree`). Double-clicking an elevation marker in the plan canvas fires `activateElevationView(id)` and opens the corresponding elevation tab (`PlanCanvas.tsx` `onDblClick` handler). Missing: auto-generation of four cardinal (N/S/E/W) elevation markers when a project is created.

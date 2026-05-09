@@ -60,7 +60,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-011 | Visual Style selector (Wireframe/Shaded/etc.)        | UI & Nav       | 🟡            | Plan detail level + plan style selectors; 3D has no Visual Style dropdown                                            |
 | F-012 | Visibility / Graphic Overrides (VV)                  | UI & Nav       | 🟡            | VVDialog has model/annotation/filters/links tabs; 13 model + 8 annotation categories; missing full 120-category set  |
 | F-013 | Autodesk Account & License UI                        | UI & Nav       | ❌            | N/A (different SaaS model)                                                                                           |
-| F-014 | Reveal Hidden Elements mode                          | UI & Nav       | ❌            |                                                                                                                      |
+| F-014 | Reveal Hidden Elements mode                          | UI & Nav       | 🟡            | 💡 toggle in plan canvas footer + magenta chip; missing per-element highlight and right-click Unhide                 |
 | F-015 | Link CAD (DWG/DXF) — live reference                 | CAD            | 🟡            | DXF import backend implemented; frontend file-picker stubbed; no live reload                                         |
 | F-016 | Import CAD (embedded)                                | CAD            | 🟡            | Same backend as F-015; linked vs. embedded distinction not present; frontend stubbed                                  |
 | F-017 | CAD Link Options (Colors/Layers/Units/Positioning)   | CAD            | ❌            | No layer/color/positioning filter UI                                                                                 |
@@ -79,7 +79,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-030 | Rename Views                                         | Levels & Views | ✅            | ProjectBrowser inline rename for plan views via double-click; commits via updateElementProperty                      |
 | F-031 | Delete Views                                         | Levels & Views | ✅            | ProjectBrowser delete buttons for plan views, section cuts, and elevation views; guarded by confirm()                |
 | F-032 | Project Browser view organization by Discipline      | Levels & Views | 🟡            | Discipline-header grouping when views have explicit arch/struct/mep tags; missing full Revit hierarchy               |
-| F-033 | Auto-generated elevation markers (N/S/E/W)           | Levels & Views | 🟡            | ProjectBrowser shows elevation_view rows with rename/delete; auto-generation of 4 cardinal markers missing           |
+| F-033 | Auto-generated elevation markers (N/S/E/W)           | Levels & Views | 🟡            | elevation_view markers rendered in plan canvas; double-click opens elevation tab; auto-generation of 4 cardinal markers missing |
 | F-034 | Wall Tool (draw by click)                            | Walls          | ✅            | Full interactive draw mode: click-to-place, real-time preview, snap, chain, flip, type/height/location-line options  |
 | F-035 | Wall Types / Type Selector                           | Walls          | ✅            | OptionsBar "Type:" dropdown lists all wall_type elements; selection stored in useBimStore.activeWallTypeId           |
 | F-036 | Edit Wall Assembly (layer structure)                 | Walls          | 🟡            | MaterialLayerStackWorkbench supports multi-layer wall/floor/roof types; missing layer wrapping behavior UI           |
@@ -93,7 +93,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-044 | Spacebar flip wall orientation                       | Walls          | ✅            | PlanCanvas handles Space during wall draw; toggles wallFlipRef; resets after commit                                  |
 | F-045 | Measure Between Two References                       | Walls          | ✅            | measure tool (hotkey ME); two-click distance readout chip; no permanent element                                      |
 | F-046 | Wall Type renaming                                   | Walls          | ✅            | WorkspaceLeftRail F2 rename overlay for wall_type/floor_type/roof_type; commits via updateElementProperty            |
-| F-047 | Temporary Hide / Isolate (sunglasses)                | Walls          | ✅            | TemporaryVisibilityChip with isolate/hide modes and reset; store-backed                                              |
+| F-047 | Temporary Hide / Isolate (sunglasses)                | Walls          | 🟡            | Store + reset chip exist but chip is not mounted and no sunglasses trigger activates the override                    |
 | F-048 | Family Editor workspace                              | Family Editor  | ❌            | No in-app parametric family editor                                                                                   |
 | F-049 | Family templates (.rft files)                        | Family Editor  | ❌            |                                                                                                                      |
 | F-050 | Reference Planes                                     | Family Editor  | ❌            |                                                                                                                      |
@@ -147,7 +147,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-098 | Area Plan (Gross Building) view type                 | Rooms & Areas | ❌            |                                                                                                                      |
 | F-099 | Discipline property for views                        | Rooms & Areas | 🟡            | plan views have discipline field editable in InspectorPlanViewEditor; missing full Revit sub-discipline tree         |
 | F-100 | Filter tool (multi-select type filter)               | Troubleshoot   | ❌            |                                                                                                                      |
-| F-101 | Isolate Category                                     | Troubleshoot   | ✅            | TemporaryVisibilityChip isolate mode via setTemporaryVisibility store action                                         |
+| F-101 | Isolate Category                                     | Troubleshoot   | 🟡            | setTemporaryVisibility store action + chip exist; no UI trigger (chip not mounted, no sunglasses button)             |
 | F-102 | Hide Category (permanent, view-specific)             | Troubleshoot   | 🟡            | VVDialog permanent per-view category hide + TemporaryVisibilityChip hide mode; no right-click shortcut or Reveal Hidden mode |
 | F-103 | Move tool (MV) — two-point with snap                 | Troubleshoot   | 🟡            | Wall grip drag + Δx/Δy inspector input; missing two-point on-canvas Move for non-wall elements                      |
 | F-104 | Tab key for chain-selection                          | Troubleshoot   | 🟡            | snapTabCycle.ts (EDT-05) cycles snap candidates via Tab; wall-loop chain-selection missing                           |
@@ -178,9 +178,9 @@ _Last audited: 2026-05-09 against codebase at commit `docs/parity-tracker-audit`
 
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
-| ✅ Fully available     | 25      | 21%        |
-| 🟡 Partially available | 30      | 25%        |
-| ❌ Not available       | 65      | 54%        |
+| ✅ Fully available     | 23      | 19%        |
+| 🟡 Partially available | 33      | 28%        |
+| ❌ Not available       | 64      | 53%        |
 | **Total**              | **120** | **100%**   |
 
 ---
@@ -194,6 +194,6 @@ Based on the frequency and centrality of features in the course. WP cross-refs p
 3. **Project Browser + view management** (F-003, F-027–F-033) — every workflow step involves switching views; without this, navigation overhead is enormous. _`CHR-V3-07` (Project Browser refresh, status: `next`) directly addresses this._
 4. **Rooms** (F-091–F-092) — backend logic exists (`room_derivation.py`); front-end interactive placement is the missing piece. _**No WP yet.**_
 5. **Levels UX** (F-025–F-026) — data model exists (`datum_levels.py`); needs level head display in elevation views and interactive rename. _**No WP yet.**_
-6. **Temporary Hide/Isolate** (F-047, F-101–F-102) — F-047 and F-101 are now ✅ (TemporaryVisibilityChip). F-102 is 🟡 — permanent view-specific hide and Reveal Hidden mode remain missing.
+6. **Temporary Hide/Isolate** (F-047, F-101–F-102) — F-047 and F-101 are 🟡: store + reset chip exist but no sunglasses button or menu calls `setTemporaryVisibility`, and the chip is not mounted in the app. F-102 is 🟡 — permanent view-specific hide via VVDialog is available. F-014 (Reveal Hidden) is now 🟡 — 💡 toggle + magenta chip in plan canvas; per-element magenta overlay and right-click Unhide remain missing.
 7. **Family Editor** (F-048–F-062) — major architectural feature gap. v3's approach is a catalog model (`family_catalog_format.py`) rather than an in-app parametric editor. _Out of scope for v3; long-term vision item._
 8. **Floor Edit Boundary** (F-107) — common daily operation; sketch-mode edit of slab outlines. _`EDT-V3-13` (sketch-element grips, status: `next`) is the closest WP; full boundary re-sketch is a follow-on._
