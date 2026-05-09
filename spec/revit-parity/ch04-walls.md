@@ -11,7 +11,7 @@ Source segment: `01:02:00 – 01:13:55`
 **Screenshot:**
 ![Wall Tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0307_01-03-21.png)
 
-**bim-ai status:** 🟡 Partial — bim-ai supports wall placement via the engine and API, but the interactive draw-by-click workflow with real-time snapping and preview is limited.
+**bim-ai status:** ✅ Done — `PlanCanvas.tsx` has a full interactive wall draw mode: click start → click end commits the wall, real-time preview line, snap to wall endpoints / midpoints / intersections / grid, chain mode (Shift+click), Space to flip, Tab to cycle through location lines, height in OptionsBar, type selector in OptionsBar. Same single-segment workflow as Revit's WA shortcut.
 
 ---
 
@@ -141,7 +141,7 @@ For layered walls this distinction matters significantly — the core can sit 50
 **Screenshot:**
 ![Measure tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0346_01-10-08.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** ✅ Done — a `measure` plan tool (hotkey `ME`) is available in the tool palette. Two-click workflow: first click sets an anchor point, second click computes the distance between the two snapped points and displays a readout chip at the bottom of the canvas (format: `X.XXX m (N mm)`). No permanent element is created. Click × to dismiss or start a new measurement.
 
 ---
 

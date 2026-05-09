@@ -25,7 +25,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Properties Palette](file:///Users/jhoetter/Desktop/Revit%20Specs/0133_00-14-50.png)
 
-**bim-ai status:** 🟡 Partial — bim-ai shows basic element properties in an inspector panel but lacks the full parameter model, type/instance separation, and "Edit Type" access.
+**bim-ai status:** 🟡 Partial — Right-rail inspector shows element properties with editable fields (name, offsets, type, phase, dimension inputs). When no element is selected, the active plan view's full `InspectorPlanViewEditor` is shown in the right rail (name, presentation, room labels, opening tags, underlay level, view range, crop bounds, view template). Missing: type/instance parameter separation, "Edit Type" button, and automatic tab context switch when an element type is selected.
 
 ---
 
