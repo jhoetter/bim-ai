@@ -22,7 +22,7 @@ Source segment: `05:30:54 – 05:33:32`
 **Screenshot:**
 ![Isolate Category](file:///Users/jhoetter/Desktop/Revit%20Specs/0778_05-31-49.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** ✅ Available — `TemporaryVisibilityChip.tsx` implements isolate mode; `setTemporaryVisibility({ mode: 'isolate', categories: [...] })` in the store hides all categories except the selected ones. Chip shows which categories are isolated and provides one-click reset.
 
 ---
 
@@ -33,7 +33,7 @@ Source segment: `05:30:54 – 05:33:32`
 **Screenshot:**
 ![Hide Category](file:///Users/jhoetter/Desktop/Revit%20Specs/0762_05-30-26.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — `TemporaryVisibilityChip.tsx` supports a hide mode (`mode: 'hide'`) that hides the given categories temporarily. Missing: permanent view-specific hide that persists between sessions (Revit's "Hide in View" → "Category"); Reveal Hidden Elements mode to undo it.
 
 ---
 
@@ -56,7 +56,7 @@ Source segment: `05:30:54 – 05:33:32`
 ![Tab selection](file:///Users/jhoetter/Desktop/Revit%20Specs/0776_05-31-38.png)
 *(Tab+Ctrl multi-select scenario — slab-specific Tab chain frames start beyond 0841)*
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — `snapTabCycle.ts` (EDT-05) implements Tab-key cycling through snap candidates (endpoint → intersection → perpendicular → extension → parallel → tangent → workplane → grid → raw). Missing: the Revit chain-selection behavior where Tab highlights the next connected element in a wall loop for bulk selection.
 
 ---
 
@@ -68,7 +68,7 @@ Source segment: `05:30:54 – 05:33:32`
 ![Split Element](file:///Users/jhoetter/Desktop/Revit%20Specs/0821_05-36-11.png)
 *(Line trimming in area boundary sketch — Split Element-specific frame starts beyond 0841)*
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — the `split` tool is registered in `toolRegistry.ts` as a modify tool (`MODIFY_TOOL_IDS`). Missing: confirmed canvas interaction wiring and backend split command; end-to-end UX not verified beyond registration.
 
 ---
 
@@ -79,4 +79,4 @@ Source segment: `05:30:54 – 05:33:32`
 **Screenshot:**
 ![Dimension for verification](file:///Users/jhoetter/Desktop/Revit%20Specs/0782_05-32-05.png)
 
-**bim-ai status:** ❌ Not available — bim-ai has no interactive dimension tool.
+**bim-ai status:** 🟡 Partial — the `dimension` tool is registered in `toolRegistry.ts` and used in the model for verification (annotation category visible in VVDialog). Missing: interactive click-to-place aligned dimension equivalent to Revit's DI shortcut with permanent placement.

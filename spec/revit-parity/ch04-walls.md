@@ -33,7 +33,7 @@ Source segment: `01:02:00 – 01:13:55`
 **Screenshot:**
 ![Edit Wall Assembly](file:///Users/jhoetter/Desktop/Revit%20Specs/0326_01-06-13.png)
 
-**bim-ai status:** ❌ Not available — bim-ai walls are single-layer with a thickness parameter only.
+**bim-ai status:** 🟡 Partial — `MaterialLayerStackWorkbench.tsx` supports multi-layer editing for `wall_type`, `floor_type`, and `roof_type` elements (material, thickness, function per layer). Missing: rich Edit Assembly dialog UX with wrapping behavior and layer reordering equivalent to Revit's modal.
 
 ---
 
@@ -52,7 +52,7 @@ For layered walls this distinction matters significantly — the core can sit 50
 **Screenshot:**
 ![Wall Location Line](file:///Users/jhoetter/Desktop/Revit%20Specs/0315_01-04-44.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** ✅ Available — `OptionsBar.tsx` renders a "Location line" dropdown with all six options (Wall Centerline, Core Centerline, Finish Face: Exterior, Finish Face: Interior, Core Face: Exterior, Core Face: Interior) whenever the wall tool is active.
 
 ---
 
@@ -97,7 +97,7 @@ For layered walls this distinction matters significantly — the core can sit 50
 **Screenshot:**
 ![Chain mode](file:///Users/jhoetter/Desktop/Revit%20Specs/0362_01-13-28.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** ✅ Available — `toolGrammar.ts` declares `TOOL_CAPABILITIES.wall.chainable = true`; `OptionsBar.tsx` shows the Chain checkbox when the wall tool is active; `PlanCanvas.tsx` maintains a `chainAnchor` that automatically seeds the next segment's start point.
 
 ---
 
@@ -163,4 +163,4 @@ For layered walls this distinction matters significantly — the core can sit 50
 **Screenshot:**
 ![Temporary Hide Isolate](file:///Users/jhoetter/Desktop/Revit%20Specs/0370_01-50-13.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** ✅ Available — `TemporaryVisibilityChip.tsx` implements the VIE-04 status-bar chip with isolate and hide modes; the store exposes `setTemporaryVisibility` / `clearTemporaryVisibility`. The chip renders "Isolate: <categories>" or "Hide: <categories>" and resets on click (equivalent to Revit's "Reset Temporary Hide/Isolate").

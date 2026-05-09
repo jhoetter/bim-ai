@@ -11,7 +11,7 @@ Source segment: `05:30:00 – 05:39:46`
 **Screenshot:**
 ![Room tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0751_05-30-00.png)
 
-**bim-ai status:** 🟡 Partial — bim-ai has `room_derivation.py` and a room derivation engine, but the interactive Room tool (click to place in bounded area) is not exposed in the frontend.
+**bim-ai status:** 🟡 Partial — the `room` tool is registered in `toolRegistry.ts` and `PlanCanvas.tsx` has click-to-place logic (vertex accumulation via `planTool === 'room'`). The backend derivation engine (`room_derivation.py`) calculates area and perimeter. Missing: automatic snap-to-enclosed-boundary like Revit (Revit places by single click inside a closed loop; bim-ai requires explicit vertex input); room tag/label display in the plan view.
 
 ---
 
@@ -22,7 +22,7 @@ Source segment: `05:30:00 – 05:39:46`
 **Screenshot:**
 ![Room Separation Lines](file:///Users/jhoetter/Desktop/Revit%20Specs/0761_05-30-22.png)
 
-**bim-ai status:** 🟡 Partial — `plan_aa_room_separation.py` exists in the backend but no interactive room separation line drawing in the frontend.
+**bim-ai status:** 🟡 Partial — `RoomSeparationAuthoringWorkbench.tsx` provides a form-based authoring UI for room separation lines (start/end coordinate inputs, level selector, name). Missing: interactive click-to-draw in the plan canvas equivalent to Revit's line-drawing tool; VG visibility toggle for the annotation category.
 
 ---
 

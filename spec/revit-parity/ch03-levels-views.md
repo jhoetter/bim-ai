@@ -99,4 +99,4 @@ Source segment: `00:55:00 – 01:02:00`
 **Screenshot:**
 ![Elevation Markers](file:///Users/jhoetter/Desktop/Revit%20Specs/0122_00-12-17.png)
 
-**bim-ai status:** ❌ Not available — bim-ai has no elevation view generation from plan context.
+**bim-ai status:** 🟡 Partial — the `elevation` tool is registered in `toolRegistry.ts` and `ProjectBrowser.tsx` has a dedicated Elevations group (`elevation_view` elements). Missing: auto-generation of four cardinal markers on project creation; double-click-from-plan-tag to open elevation view tab.

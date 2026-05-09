@@ -12,7 +12,7 @@ Source segment: `05:34:19 – 06:41:32` (+ `08:35:57 – 09:57:57` for final 3D 
 ![Floor Edit Boundary](file:///Users/jhoetter/Desktop/Revit%20Specs/0580_03-45-40.png)
 *(Nearest available screenshot — floor/masking sketch mode context; floor-specific export frames start beyond 0841)*
 
-**bim-ai status:** 🟡 Partial — bim-ai can model floors as planar elements, but the interactive "Edit Boundary" sketch workflow with pick lines, trim/extend, and finish mode is not implemented.
+**bim-ai status:** 🟡 Partial — the `floor-sketch` tool is registered in `toolRegistry.ts`. bim-ai can model floors as planar elements. Missing: full interactive "Edit Boundary" sketch mode with pick lines, trim/extend, finish-mode green checkmark equivalent to Revit's sketch editor.
 
 ---
 

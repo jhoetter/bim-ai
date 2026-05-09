@@ -114,4 +114,4 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Manage Links](file:///Users/jhoetter/Desktop/Revit%20Specs/0146_00-17-16.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` lists all `link_model` rows with per-row controls for delete, alignment mode (origin-to-origin / project base point / shared coords), visibility mode (host view / linked view), and revision pinning with drift badge + "Update" button. Missing: IFC/PDF/image link types, file-path change workflow.

@@ -48,16 +48,16 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 
 | ID | Feature | Chapter | bim-ai Status | Notes |
 |----|---------|---------|---------------|-------|
-| F-003 | Project Browser | UI & Nav | ❌ | No hierarchical view/sheet browser |
+| F-003 | Project Browser | UI & Nav | 🟡 | Plan views, 3D/section/elevation/sheet/schedule groups exist; no families/groups/legends subtree, no per-view rename/delete |
 | F-004 | Properties Palette (context-sensitive) | UI & Nav | 🟡 | Basic inspector exists; no full param model |
 | F-005 | Ribbon Interface (tabbed toolbar) | UI & Nav | ❌ | Different UI paradigm |
 | F-006 | Quick Access Toolbar | UI & Nav | ❌ | |
 | F-007 | Multi-tab view workspace | UI & Nav | ❌ | Single canvas |
-| F-008 | Dark Mode | UI & Nav | ❌ | |
+| F-008 | Dark Mode | UI & Nav | ✅ | Full toggle with URL hash + localStorage + prefers-color-scheme cascade |
 | F-009 | Language settings | UI & Nav | ❌ | |
 | F-010 | View Scale selector | UI & Nav | ❌ | No annotation-driven scales |
 | F-011 | Visual Style selector (Wireframe/Shaded/etc.) | UI & Nav | 🟡 | Some render modes exist; not per-view-type |
-| F-012 | Visibility / Graphic Overrides (VV) | UI & Nav | ❌ | No per-view category override system |
+| F-012 | Visibility / Graphic Overrides (VV) | UI & Nav | 🟡 | VVDialog has model/annotation/filters/links tabs; 13 model + 7 annotation categories; missing full 120-category Revit set |
 | F-013 | Autodesk Account & License UI | UI & Nav | ❌ | N/A (different SaaS model) |
 | F-014 | Reveal Hidden Elements mode | UI & Nav | ❌ | |
 | F-015 | Link CAD (DWG/DXF) — live reference | CAD | 🟡 | DXF import only, no live link/reload |
@@ -69,7 +69,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-021 | Align CAD with Project Base Point | CAD | ❌ | |
 | F-022 | Project Base Point & Survey Point | CAD | ❌ | |
 | F-023 | Work Plane assignment for linked elements | CAD | ❌ | |
-| F-024 | Manage Links dialog | CAD | ❌ | |
+| F-024 | Manage Links dialog | CAD | 🟡 | ManageLinksDialog lists link_model rows with delete/alignment/visibility/pin controls; missing IFC/PDF/image types |
 | F-025 | Levels (datum planes) | Levels & Views | 🟡 | Data model exists; level head/symbol UX missing |
 | F-026 | Rename Levels | Levels & Views | ❌ | No interactive rename UI |
 | F-027 | Create Floor Plan Views from levels | Levels & Views | ❌ | |
@@ -78,27 +78,27 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-030 | Rename Views | Levels & Views | ❌ | |
 | F-031 | Delete Views | Levels & Views | ❌ | |
 | F-032 | Project Browser view organization by Discipline | Levels & Views | ❌ | |
-| F-033 | Auto-generated elevation markers (N/S/E/W) | Levels & Views | ❌ | |
+| F-033 | Auto-generated elevation markers (N/S/E/W) | Levels & Views | 🟡 | elevation tool registered; ProjectBrowser has Elevations group; auto-generation of 4 cardinal markers missing |
 | F-034 | Wall Tool (draw by click) | Walls | 🟡 | Backend supports walls; interactive draw UX limited |
 | F-035 | Wall Types / Type Selector | Walls | 🟡 | Type data exists; no rich type-selector UI library |
-| F-036 | Edit Wall Assembly (layer structure) | Walls | ❌ | Single-layer only |
-| F-037 | Wall Location Line (Centerline/Core/Finish Face) | Walls | ❌ | |
+| F-036 | Edit Wall Assembly (layer structure) | Walls | 🟡 | MaterialLayerStackWorkbench supports multi-layer wall/floor/roof types; missing layer wrapping behavior UI |
+| F-037 | Wall Location Line (Centerline/Core/Finish Face) | Walls | ✅ | OptionsBar has all 6 location-line options for the wall tool |
 | F-038 | Wall Height / Top Constraint (level-linked) | Walls | 🟡 | Height data exists; no Options Bar control |
 | F-039 | Wall Top Offset / Bottom Offset | Walls | ❌ | |
 | F-040 | Wall Join Status (Allow/Disallow) | Walls | 🟡 | Join logic in engine; no user-facing toggle |
-| F-041 | Chain drawing mode | Walls | ❌ | |
+| F-041 | Chain drawing mode | Walls | ✅ | TOOL_CAPABILITIES.wall.chainable=true; OptionsBar Chain checkbox; PlanCanvas chainAnchor logic |
 | F-042 | Offset drawing mode | Walls | ❌ | |
 | F-043 | Radius (curved corner) drawing mode | Walls | ❌ | |
 | F-044 | Spacebar flip wall orientation | Walls | ❌ | |
 | F-045 | Measure Between Two References | Walls | ❌ | |
 | F-046 | Wall Type renaming | Walls | ❌ | |
-| F-047 | Temporary Hide / Isolate (sunglasses) | Walls | ❌ | |
+| F-047 | Temporary Hide / Isolate (sunglasses) | Walls | ✅ | TemporaryVisibilityChip with isolate/hide modes and reset; store-backed |
 | F-048 | Family Editor workspace | Family Editor | ❌ | No in-app parametric family editor |
 | F-049 | Family templates (.rft files) | Family Editor | ❌ | |
 | F-050 | Reference Planes | Family Editor | ❌ | |
 | F-051 | Extrusion tool | Family Editor | ❌ | |
 | F-052 | Pick Lines with Lock (sketch mode) | Family Editor | ❌ | |
-| F-053 | Trim / Extend to Corner (TR) | Family Editor | ❌ | |
+| F-053 | Trim / Extend to Corner (TR) | Family Editor | 🟡 | trim tool registered as MODIFY_TOOL_IDS; full canvas interaction not confirmed |
 | F-054 | Aligned Dimension (DI) + Create Parameter | Family Editor | ❌ | |
 | F-055 | Type vs. Instance Parameters | Family Editor | ❌ | |
 | F-056 | Family Types dialog | Family Editor | ❌ | |
@@ -113,9 +113,9 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-065 | Family Category and Parameters dialog | Nested Fam. | ❌ | |
 | F-066 | View Range in Family Editor | Nested Fam. | ❌ | |
 | F-067 | Detail Component (2D annotation component) | Nested Fam. | ❌ | |
-| F-068 | Align Tool (AL) + Lock | Nested Fam. | ❌ | |
+| F-068 | Align Tool (AL) + Lock | Nested Fam. | 🟡 | align tool registered as MODIFY_TOOL_IDS; full canvas interaction not confirmed |
 | F-069 | Associate Family Parameter (Visible) | Nested Fam. | ❌ | |
-| F-070 | Mirror – Draw Axis (DM) | Nested Fam. | ❌ | |
+| F-070 | Mirror – Draw Axis (DM) | Nested Fam. | 🟡 | mirror tool registered as MODIFY_TOOL_IDS; full canvas interaction not confirmed |
 | F-071 | Symbolic Lines | Nested Fam. | ❌ | |
 | F-072 | Opening (Projection) / Hidden Lines (Cut) subcategories | Nested Fam. | ❌ | |
 | F-073 | Preview Visibility toggle (Family Editor) | Nested Fam. | ❌ | |
@@ -136,8 +136,8 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-088 | Dimension text repositioning | Furn. Library | ❌ | |
 | F-089 | Array parameters (Array_Length_Width) | Furn. Library | ❌ | |
 | F-090 | File Save Options (Max backups) | Furn. Library | ❌ | N/A (DB model) |
-| F-091 | Room Tool | Rooms & Areas | 🟡 | room_derivation in backend; no interactive place |
-| F-092 | Room Separation Lines | Rooms & Areas | 🟡 | plan_aa_room_separation in backend; no draw UX |
+| F-091 | Room Tool | Rooms & Areas | 🟡 | tool registered; PlanCanvas has click-to-place vertex logic; missing auto-snap-to-boundary UX |
+| F-092 | Room Separation Lines | Rooms & Areas | 🟡 | RoomSeparationAuthoringWorkbench exists with form-based authoring; missing interactive canvas draw |
 | F-093 | Room Interior Fill visibility (VG) | Rooms & Areas | ❌ | |
 | F-094 | Area Boundary Lines | Rooms & Areas | ❌ | |
 | F-095 | Area Tool | Rooms & Areas | ❌ | |
@@ -146,13 +146,13 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-098 | Area Plan (Gross Building) view type | Rooms & Areas | ❌ | |
 | F-099 | Discipline property for views | Rooms & Areas | ❌ | |
 | F-100 | Filter tool (multi-select type filter) | Troubleshoot | ❌ | |
-| F-101 | Isolate Category | Troubleshoot | ❌ | |
-| F-102 | Hide Category (permanent, view-specific) | Troubleshoot | ❌ | |
+| F-101 | Isolate Category | Troubleshoot | ✅ | TemporaryVisibilityChip isolate mode via setTemporaryVisibility store action |
+| F-102 | Hide Category (permanent, view-specific) | Troubleshoot | 🟡 | TemporaryVisibilityChip hide mode exists; permanent view-specific persistence and Reveal Hidden mode missing |
 | F-103 | Move tool (MV) — two-point with snap | Troubleshoot | 🟡 | Drag exists; no typed two-point Move |
-| F-104 | Tab key for chain-selection | Troubleshoot | ❌ | |
-| F-105 | Split Element (SL) | Troubleshoot | ❌ | |
-| F-106 | Aligned Dimension for cross-checking accuracy | Troubleshoot | ❌ | |
-| F-107 | Floor Tool & Edit Boundary | Floors | 🟡 | Floor elements exist; no Edit Boundary sketch UX |
+| F-104 | Tab key for chain-selection | Troubleshoot | 🟡 | snapTabCycle.ts (EDT-05) cycles snap candidates via Tab; wall-loop chain-selection missing |
+| F-105 | Split Element (SL) | Troubleshoot | 🟡 | split tool registered as MODIFY_TOOL_IDS; full canvas interaction not confirmed |
+| F-106 | Aligned Dimension for cross-checking accuracy | Troubleshoot | 🟡 | dimension tool registered; annotation category in VVDialog; interactive DI placement not confirmed |
+| F-107 | Floor Tool & Edit Boundary | Floors | 🟡 | floor-sketch tool registered; floors exist; full Edit Boundary sketch mode missing |
 | F-108 | Floor type selection | Floors | 🟡 | Type data in engine; no UI type-selector |
 | F-109 | Parapet walls (Unconnected Height) | Floors | 🟡 | Walls support arbitrary height; no parapet UX |
 | F-110 | Wall Top Offset (negative, sub-slab) | Floors | ❌ | |
@@ -173,11 +173,13 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 
 ## Summary Statistics
 
+_Last audited: 2026-05-09 against codebase at commit `docs/parity-tracker-audit`._
+
 | Status | Count | % of total |
 |--------|-------|-----------|
-| ✅ Fully available | 0 | 0% |
-| 🟡 Partially available | 23 | 19% |
-| ❌ Not available | 97 | 81% |
+| ✅ Fully available | 5 | 4% |
+| 🟡 Partially available | 30 | 25% |
+| ❌ Not available | 85 | 71% |
 | **Total** | **120** | **100%** |
 
 ---
@@ -191,6 +193,6 @@ Based on the frequency and centrality of features in the course. WP cross-refs p
 3. **Project Browser + view management** (F-003, F-027–F-033) — every workflow step involves switching views; without this, navigation overhead is enormous. _`CHR-V3-07` (Project Browser refresh, status: `next`) directly addresses this._
 4. **Rooms** (F-091–F-092) — backend logic exists (`room_derivation.py`); front-end interactive placement is the missing piece. _**No WP yet.**_
 5. **Levels UX** (F-025–F-026) — data model exists (`datum_levels.py`); needs level head display in elevation views and interactive rename. _**No WP yet.**_
-6. **Temporary Hide/Isolate** (F-047, F-101–F-102) — used in almost every chapter for selective display. _**No WP yet.**_
+6. **Temporary Hide/Isolate** (F-047, F-101–F-102) — F-047 and F-101 are now ✅ (TemporaryVisibilityChip). F-102 is 🟡 — permanent view-specific hide and Reveal Hidden mode remain missing.
 7. **Family Editor** (F-048–F-062) — major architectural feature gap. v3's approach is a catalog model (`family_catalog_format.py`) rather than an in-app parametric editor. _Out of scope for v3; long-term vision item._
 8. **Floor Edit Boundary** (F-107) — common daily operation; sketch-mode edit of slab outlines. _`EDT-V3-13` (sketch-element grips, status: `next`) is the closest WP; full boundary re-sketch is a follow-on._

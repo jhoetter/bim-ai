@@ -14,7 +14,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Project Browser](file:///Users/jhoetter/Desktop/Revit%20Specs/0124_00-12-38.png)
 
-**bim-ai status:** ❌ Not available — bim-ai has no equivalent hierarchical view/sheet browser.
+**bim-ai status:** 🟡 Partial — `ProjectBrowser.tsx` lists plan views (grouped by view template / discipline), 3D orbit viewpoints, plan viewpoints, section cuts, elevation views, schedules, sheets, view templates, sites, and link_model rows. Missing: families subtree, groups, legends, per-view rename/delete, sorting by subdiscipline/phase.
 
 ---
 
@@ -69,7 +69,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Dark Mode](file:///Users/jhoetter/Desktop/Revit%20Specs/0168_00-23-46.png)
 
-**bim-ai status:** ❌ Not available — bim-ai has no theming option.
+**bim-ai status:** ✅ Available — `theme.ts` implements a full light/dark toggle with priority cascade: URL hash → localStorage → `prefers-color-scheme`. `TopBar.tsx` exposes the toggle button; theme persists across sessions.
 
 ---
 
@@ -113,7 +113,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![VG Overrides](file:///Users/jhoetter/Desktop/Revit%20Specs/0163_00-22-39.png)
 
-**bim-ai status:** ❌ Not available — bim-ai has no per-view category visibility / graphic override system.
+**bim-ai status:** 🟡 Partial — `VVDialog.tsx` has model/annotation/filters/links tabs with per-category visibility, color, line weight, and pattern overrides. Covers 13 model categories and 7 annotation categories. Missing: full Revit catalogue of ~120 categories, halftone/transparency, and projection vs. cut pattern split.
 
 ---
 
