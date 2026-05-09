@@ -982,6 +982,7 @@ export function InspectorPlanViewEditor({
           data-testid="inspector-plan-view-subtype"
         >
           <option value="floor_plan">Floor Plan</option>
+          <option value="area_plan">Area Plan</option>
           <option value="lighting_plan">Lighting Plan</option>
           <option value="power_plan">Power Plan</option>
           <option value="coordination_plan">Coordination Plan</option>

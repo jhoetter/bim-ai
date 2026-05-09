@@ -92,7 +92,7 @@ This determines where area boundary lines snap relative to wall layers, affectin
 **Screenshot:**
 ![Area Plan view type](file:///Users/jhoetter/Desktop/Revit%20Specs/0837_05-38-35.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — Area Plan views are now a distinct `planViewSubtype: 'area_plan'` on `plan_view` elements. They appear in a dedicated "Area Plans" section in the Project Browser (separate from "Floor Plans"), and the discipline inspector dropdown includes "Area Plan" as a type option. Missing: automatic Area Plan creation from Architecture → Room & Area → Area Plan workflow; the area-boundary tool is not auto-restricted to area plan views; no separate area-scheme (Gross Building / Net / Rentable) grouping within the Area Plans section.
 
 ---
 

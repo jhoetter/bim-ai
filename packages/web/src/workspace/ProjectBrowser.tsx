@@ -106,8 +106,12 @@ export function ProjectBrowser(props: {
     const sorted = Object.values(props.elementsById)
       .filter((e): e is Extract<Element, { kind: 'plan_view' }> => e.kind === 'plan_view')
       .sort((a, b) => a.name.localeCompare(b.name));
+    // F-098: only bucket non-area-plan views for the Floor Plans section template grouping
+    const floorOnly = sorted.filter(
+      (pv) => !pv.planViewSubtype || pv.planViewSubtype !== 'area_plan',
+    );
     const buckets = new Map<string, Extract<Element, { kind: 'plan_view' }>[]>();
-    for (const pv of sorted) {
+    for (const pv of floorOnly) {
       const k = pv.viewTemplateId ?? 'none';
       const arr = buckets.get(k) ?? [];
       arr.push(pv);
@@ -117,6 +121,15 @@ export function ProjectBrowser(props: {
     return { planViewsSorted: sorted, planViewBuckets: buckets, bucketKeys: keys };
   }, [props.elementsById]);
 
+  /** F-098: split plan views into regular floor plans and area plans. */
+  const { floorPlanViews, areaPlans } = useMemo(() => {
+    const floor = planViewsSorted.filter(
+      (pv) => !pv.planViewSubtype || pv.planViewSubtype !== 'area_plan',
+    );
+    const area = planViewsSorted.filter((pv) => pv.planViewSubtype === 'area_plan');
+    return { floorPlanViews: floor, areaPlans: area };
+  }, [planViewsSorted]);
+
   /** F-032: group plan views by discipline for Project Browser section headers. */
   const planViewDiscBuckets = useMemo(() => {
     const buckets: Record<string, Extract<Element, { kind: 'plan_view' }>[]> = {
@@ -124,15 +137,15 @@ export function ProjectBrowser(props: {
       struct: [],
       mep: [],
     };
-    for (const pv of planViewsSorted) {
+    for (const pv of floorPlanViews) {
       const disc = (pv.discipline as string | undefined) ?? 'arch';
       const key = disc in buckets ? disc : 'arch';
       buckets[key].push(pv);
     }
     return buckets;
-  }, [planViewsSorted]);
+  }, [floorPlanViews]);
 
-  const hasDisciplineGrouping = planViewsSorted.some(
+  const hasDisciplineGrouping = floorPlanViews.some(
     (pv) => pv.discipline && pv.discipline !== 'arch',
   );
 
@@ -360,7 +373,7 @@ export function ProjectBrowser(props: {
   return (
     <div className="space-y-2 text-[11px]">
       <div className="font-semibold text-muted">Project browser</div>
-      {planViewsSorted.length ? (
+      {floorPlanViews.length ? (
         <div className="space-y-1">
           <div className="text-[10px] uppercase tracking-wide text-muted">Floor plans</div>
           <div className="space-y-0.5">
@@ -592,6 +605,119 @@ export function ProjectBrowser(props: {
           </div>
         </div>
       ) : null}
+
+      {/* F-098: dedicated Area Plans section */}
+      <div className="space-y-1" data-testid="project-browser-area-plans-group">
+        <div className="flex items-center gap-1">
+          <div className="flex-1 text-[10px] uppercase tracking-wide text-muted">
+            Area Plans {areaPlans.length > 0 ? `(${areaPlans.length})` : ''}
+          </div>
+          <button
+            type="button"
+            className="text-[9px] text-muted hover:text-foreground"
+            data-testid="area-plan-new"
+            title="Create new Area Plan view"
+            onClick={async () => {
+              if (!modelId) return;
+              const name = window.prompt('Area Plan name:');
+              if (!name?.trim()) return;
+              const newId = `ap-${Date.now().toString(36)}`;
+              await applyCommand(modelId, {
+                type: 'upsertPlanView',
+                id: newId,
+                name: name.trim(),
+                levelId: '',
+                planPresentation: 'default',
+                discipline: 'architecture',
+                planViewSubtype: 'area_plan',
+              });
+            }}
+          >
+            +
+          </button>
+        </div>
+        {areaPlans.length === 0 ? (
+          <p className="pl-2 text-[10px] text-muted">
+            No area plan views yet — click + to create one.
+          </p>
+        ) : (
+          <ul className="space-y-0.5">
+            {areaPlans.map((pv) => (
+              <li key={pv.id} className="flex flex-col gap-0.5">
+                {renamingId === pv.id ? (
+                  <input
+                    autoFocus
+                    type="text"
+                    data-testid={`plan-view-rename-input-${pv.id}`}
+                    value={renameDraft}
+                    className="rounded border border-border bg-background px-1 py-0.5 text-xs"
+                    onChange={(e) => setRenameDraft(e.currentTarget.value)}
+                    onBlur={() => void commitRename(pv.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        void commitRename(pv.id);
+                      }
+                      if (e.key === 'Escape') {
+                        e.preventDefault();
+                        cancelRename();
+                      }
+                    }}
+                  />
+                ) : (
+                  <Btn
+                    type="button"
+                    variant="quiet"
+                    className="w-full px-2 py-0.5 text-left text-[10px]"
+                    title={planViewTooltip(pv, props.elementsById)}
+                    onClick={() => activatePlanView(pv.id)}
+                    onDoubleClick={() => {
+                      setRenamingId(pv.id);
+                      setRenameDraft(pv.name);
+                    }}
+                  >
+                    area_plan · {pv.name}
+                  </Btn>
+                )}
+                <div
+                  className="pl-2 font-mono text-[9px] leading-tight text-muted"
+                  data-bim-plan-view-evidence={pv.id}
+                >
+                  {planLevelEvidenceToken(props.elementsById, pv.levelId)} ·{' '}
+                  {planViewProjectBrowserEvidenceLine(props.elementsById, pv.id)}
+                </div>
+                {props.onUpsertSemantic ? (
+                  <button
+                    type="button"
+                    className="pl-2 text-left text-[9px] text-muted underline"
+                    title="Creates a duplicated area plan view with the same pinned settings"
+                    onClick={() => dupPlanView(pv)}
+                  >
+                    Duplicate…
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  data-testid={`plan-view-delete-${pv.id}`}
+                  title="Delete this area plan view"
+                  className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`Delete area plan "${pv.name}"?`)) {
+                      void applyCommand(modelId!, {
+                        type: 'deleteElement',
+                        elementId: pv.id,
+                      });
+                    }
+                  }}
+                >
+                  Delete…
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       <div className="space-y-1">
           <div className="flex items-center gap-1">

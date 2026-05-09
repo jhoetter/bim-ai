@@ -1059,6 +1059,7 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
         typeof raw.planViewSubtype === 'string' && raw.planViewSubtype
           ? (raw.planViewSubtype as
               | 'floor_plan'
+              | 'area_plan'
               | 'lighting_plan'
               | 'power_plan'
               | 'coordination_plan')
