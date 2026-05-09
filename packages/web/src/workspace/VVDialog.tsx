@@ -184,6 +184,7 @@ function CategoryRow({
       ? String(Math.round(draft.cut.lineWeightFactor))
       : 'By Category';
   const cutPattern = draft.cut?.linePattern ?? 'Solid';
+  const projHalftone = draft.projection?.halftone ?? false;
 
   return (
     <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
@@ -291,6 +292,22 @@ function CategoryRow({
             </option>
           ))}
         </select>
+      </td>
+      <td style={{ padding: '4px 8px', textAlign: 'center' }}>
+        <input
+          type="checkbox"
+          checked={projHalftone}
+          aria-label={`${CATEGORY_LABELS[categoryKey] ?? categoryKey} halftone`}
+          title="Render this category at 50% opacity (halftone)"
+          onChange={(e) => {
+            const ht = e.target.checked;
+            onChange({
+              ...draft,
+              projection: { ...draft.projection, halftone: ht },
+              cut: { ...draft.cut, halftone: ht },
+            });
+          }}
+        />
       </td>
     </tr>
   );
@@ -624,6 +641,7 @@ export function VVDialog({
                   >
                     Cut
                   </th>
+                  <th style={{ padding: '6px 8px', fontSize: 11, fontWeight: 600 }} />
                 </tr>
                 <tr style={{ background: 'var(--color-background)' }}>
                   <th style={{ padding: '4px 8px' }} />
@@ -652,6 +670,7 @@ export function VVDialog({
                   </th>
                   <th style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>Weight</th>
                   <th style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>Pattern</th>
+                  <th style={{ padding: '4px 8px', fontSize: 11, fontWeight: 500 }}>Halftone</th>
                 </tr>
               </thead>
               <tbody>
