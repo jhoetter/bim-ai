@@ -28,11 +28,10 @@ import { SourceViewChip } from './SourceViewChip';
 export const WORKSPACE_MODES = [
   { id: 'plan', label: 'Plan', hotkey: '1' },
   { id: '3d', label: '3D', hotkey: '2' },
-  { id: 'plan-3d', label: 'Plan + 3D', hotkey: '3' },
-  { id: 'section', label: 'Section', hotkey: '4' },
-  { id: 'sheet', label: 'Sheet', hotkey: '5' },
-  { id: 'schedule', label: 'Schedule', hotkey: '6' },
-  { id: 'agent', label: 'Agent', hotkey: '7' },
+  { id: 'section', label: 'Section', hotkey: '3' },
+  { id: 'sheet', label: 'Sheet', hotkey: '4' },
+  { id: 'schedule', label: 'Schedule', hotkey: '5' },
+  { id: 'agent', label: 'Agent', hotkey: '6' },
 ] as const;
 
 export type WorkspaceMode = (typeof WORKSPACE_MODES)[number]['id'];

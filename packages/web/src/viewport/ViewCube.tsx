@@ -58,14 +58,14 @@ interface FaceDef {
 }
 
 const FACES: FaceDef[] = [
-  { id: 'FRONT', label: 'FRONT', transform: `rotateY(0deg) translateZ(${HALF}px)`, shade: 0.04 },
-  { id: 'BACK', label: 'BACK', transform: `rotateY(180deg) translateZ(${HALF}px)`, shade: 0.12 },
-  { id: 'RIGHT', label: 'RIGHT', transform: `rotateY(90deg) translateZ(${HALF}px)`, shade: 0.08 },
-  { id: 'LEFT', label: 'LEFT', transform: `rotateY(-90deg) translateZ(${HALF}px)`, shade: 0.08 },
-  { id: 'TOP', label: 'TOP', transform: `rotateX(90deg) translateZ(${HALF}px)`, shade: 0.0 },
+  { id: 'FRONT', label: 'F', transform: `rotateY(0deg) translateZ(${HALF}px)`, shade: 0.04 },
+  { id: 'BACK', label: 'B', transform: `rotateY(180deg) translateZ(${HALF}px)`, shade: 0.12 },
+  { id: 'RIGHT', label: 'R', transform: `rotateY(90deg) translateZ(${HALF}px)`, shade: 0.08 },
+  { id: 'LEFT', label: 'L', transform: `rotateY(-90deg) translateZ(${HALF}px)`, shade: 0.08 },
+  { id: 'TOP', label: 'T', transform: `rotateX(90deg) translateZ(${HALF}px)`, shade: 0.0 },
   {
     id: 'BOTTOM',
-    label: 'BTM',
+    label: 'Bt',
     transform: `rotateX(-90deg) translateZ(${HALF}px)`,
     shade: 0.22,
   },
@@ -236,8 +236,8 @@ function CubeFace({ face, onClick }: { face: FaceDef; onClick: () => void }): JS
     background: bgColor,
     border: '1px solid var(--color-border)',
     color: 'var(--color-foreground)',
-    fontSize: 7,
-    fontWeight: 600,
+    fontSize: 8,
+    fontWeight: 500,
     letterSpacing: '0.1em',
     display: 'flex',
     alignItems: 'center',
