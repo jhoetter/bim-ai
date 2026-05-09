@@ -854,13 +854,35 @@ export function InspectorPropertiesFor(
       );
     }
     case 'masking_region': {
+      const { onPropertyChange: mrPropChange } = options ?? {};
       const hostView = elementsById[el.hostViewId];
       const viewName = hostView && 'name' in hostView ? String(hostView.name) : el.hostViewId;
+      const fillColor = el.fillColor ?? '#ffffff';
       return (
         <div className="space-y-1 text-[11px]">
           <FieldRow label="Host View" value={viewName} />
           <FieldRow label="Boundary Vertices" value={String(el.boundaryMm.length)} />
-          <FieldRow label="Fill Color" value={el.fillColor ?? '#ffffff'} />
+          {/* KRN-10 / F-077: editable fill color */}
+          <div className="flex items-center justify-between gap-4 border-b border-border py-1.5 last:border-b-0">
+            <span className="text-xs text-muted">Fill Color</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={fillColor}
+                data-testid="inspector-masking-fillcolor"
+                onChange={(e) => mrPropChange?.('fillColor', e.target.value)}
+                className="h-6 w-10 cursor-pointer rounded border border-border bg-transparent p-0"
+              />
+              <span className="font-mono text-[10px] text-muted">{fillColor}</span>
+            </div>
+          </div>
+          {/* F-077: Edit Boundary — re-enter masking-region sketch tool */}
+          <div className="pt-1">
+            <p className="text-[10px] text-muted">
+              To redraw the boundary: delete this region and use the Masking Region tool to draw a
+              new one.
+            </p>
+          </div>
         </div>
       );
     }
