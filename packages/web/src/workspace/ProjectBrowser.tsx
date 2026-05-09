@@ -946,9 +946,62 @@ export function ProjectBrowser(props: {
         </div>
       ) : null}
 
-      {elevationViews.length ? (
+      {elevationViews.length || props.onUpsertSemantic ? (
         <div className="space-y-1" data-bim-elevations-group="1">
-          <div className="text-[10px] uppercase tracking-wide text-muted">Elevations</div>
+          <div className="flex items-center gap-1">
+            <div className="flex-1 text-[10px] uppercase tracking-wide text-muted">
+              Elevations {elevationViews.length > 0 ? `(${elevationViews.length})` : ''}
+            </div>
+            {props.onUpsertSemantic ? (
+              <>
+                <button
+                  type="button"
+                  className="text-[9px] text-muted hover:text-foreground"
+                  data-testid="elevation-view-new"
+                  title="Create new elevation view"
+                  onClick={() => {
+                    const name = window.prompt('Elevation name:') ?? '';
+                    if (!name.trim()) return;
+                    props.onUpsertSemantic!({
+                      type: 'createElevationView',
+                      name: name.trim(),
+                      direction: 'north',
+                    });
+                  }}
+                >
+                  +
+                </button>
+                <button
+                  type="button"
+                  className="text-[9px] text-muted hover:text-foreground"
+                  data-testid="elevation-view-generate-cardinal"
+                  title="Generate 4 cardinal elevation views"
+                  onClick={() => {
+                    const dirs = [
+                      { name: 'North Elevation', direction: 'north' },
+                      { name: 'South Elevation', direction: 'south' },
+                      { name: 'East Elevation', direction: 'east' },
+                      { name: 'West Elevation', direction: 'west' },
+                    ] as const;
+                    for (const d of dirs) {
+                      props.onUpsertSemantic!({
+                        type: 'createElevationView',
+                        name: d.name,
+                        direction: d.direction,
+                      });
+                    }
+                  }}
+                >
+                  N/S/E/W
+                </button>
+              </>
+            ) : null}
+          </div>
+          {elevationViews.length === 0 ? (
+            <p className="pl-2 text-[10px] text-muted">
+              No elevation views yet — click N/S/E/W to generate all four cardinal views.
+            </p>
+          ) : null}
           <ul className="space-y-0.5">
             {elevationViews.map((ev) => (
               <li key={ev.id} className="flex flex-col gap-0.5">
