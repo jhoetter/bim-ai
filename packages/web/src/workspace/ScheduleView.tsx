@@ -79,7 +79,7 @@ export function ScheduleView({ modelId, scheduleId, onHighlightElement }: Schedu
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-      <div style={{ padding: 'var(--space-2)', borderBottom: '1px solid var(--border-subtle)' }}>
+      <div style={{ padding: 'var(--space-2)', borderBottom: '1px solid var(--color-border)' }}>
         <input
           type="text"
           placeholder="Filter…"
@@ -89,8 +89,8 @@ export function ScheduleView({ modelId, scheduleId, onHighlightElement }: Schedu
             width: '100%',
             padding: 'var(--space-1) var(--space-2)',
             background: 'var(--surface-2)',
-            color: 'var(--text-primary)',
-            border: '1px solid var(--border-subtle)',
+            color: 'var(--color-foreground)',
+            border: '1px solid var(--color-border)',
             borderRadius: 'var(--radius-sm)',
             fontSize: 'var(--text-sm)',
           }}
@@ -115,8 +115,8 @@ export function ScheduleView({ modelId, scheduleId, onHighlightElement }: Schedu
                     padding: 'var(--space-1) var(--space-2)',
                     textAlign: 'left',
                     cursor: 'pointer',
-                    borderBottom: '2px solid var(--border-subtle)',
-                    color: 'var(--text-secondary)',
+                    borderBottom: '2px solid var(--color-border)',
+                    color: 'var(--color-muted)',
                     fontWeight: 600,
                     whiteSpace: 'nowrap',
                   }}
@@ -133,7 +133,7 @@ export function ScheduleView({ modelId, scheduleId, onHighlightElement }: Schedu
                 key={row.elementId}
                 onMouseEnter={() => onHighlightElement?.(row.elementId)}
                 onMouseLeave={() => onHighlightElement?.(null)}
-                style={{ borderBottom: '1px solid var(--border-subtle)' }}
+                style={{ borderBottom: '1px solid var(--color-border)' }}
               >
                 {columns.map((col) => (
                   <td
@@ -141,7 +141,7 @@ export function ScheduleView({ modelId, scheduleId, onHighlightElement }: Schedu
                     onClick={() => startEdit(row.elementId, col, row.fields[col])}
                     style={{
                       padding: 'var(--space-1) var(--space-2)',
-                      color: 'var(--text-primary)',
+                      color: 'var(--color-foreground)',
                       cursor: 'text',
                       minWidth: 80,
                     }}
@@ -159,7 +159,7 @@ export function ScheduleView({ modelId, scheduleId, onHighlightElement }: Schedu
                         style={{
                           width: '100%',
                           background: 'var(--surface-2)',
-                          color: 'var(--text-primary)',
+                          color: 'var(--color-foreground)',
                           border: '1px solid var(--border-accent)',
                           padding: '2px var(--space-1)',
                           fontSize: 'var(--text-sm)',
@@ -179,7 +179,7 @@ export function ScheduleView({ modelId, scheduleId, onHighlightElement }: Schedu
             style={{
               padding: 'var(--space-4)',
               textAlign: 'center',
-              color: 'var(--text-tertiary)',
+              color: 'var(--color-muted)',
             }}
           >
             No rows

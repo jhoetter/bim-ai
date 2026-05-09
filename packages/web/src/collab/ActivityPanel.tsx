@@ -17,10 +17,10 @@ const KIND_VERB: Record<ActivityRow['kind'], string> = {
 };
 
 function kindColor(kind: ActivityRow['kind']): string {
-  if (kind === 'commit') return 'var(--disc-ochre)';
-  if (kind === 'comment_created' || kind === 'comment_resolved') return 'var(--disc-sage)';
-  if (kind === 'markup_created' || kind === 'markup_resolved') return 'var(--disc-taupe)';
-  return 'var(--text-secondary)';
+  if (kind === 'commit') return 'var(--disc-struct)';
+  if (kind === 'comment_created' || kind === 'comment_resolved') return 'var(--disc-arch)';
+  if (kind === 'markup_created' || kind === 'markup_resolved') return 'var(--disc-mep)';
+  return 'var(--color-muted)';
 }
 
 function initials(authorId: string): string {
@@ -74,29 +74,29 @@ function ActivityRowItem({ row, onRestore }: RowItemProps) {
           width: 24,
           height: 24,
           borderRadius: '50%',
-          background: 'var(--surface-secondary)',
+          background: 'var(--color-surface-strong)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           fontSize: 'var(--text-3xs)',
           fontWeight: 600,
           flexShrink: 0,
-          color: 'var(--text-primary)',
+          color: 'var(--color-foreground)',
         }}
       >
         {initials(row.authorId)}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{row.authorId}</span>{' '}
+        <span style={{ fontWeight: 500, color: 'var(--color-foreground)' }}>{row.authorId}</span>{' '}
         <span style={{ color: kindColor(row.kind) }}>{KIND_VERB[row.kind]}</span>
         {row.kind === 'commit' && row.payload.commandCount != null && (
-          <span style={{ color: 'var(--text-secondary)' }}>
+          <span style={{ color: 'var(--color-muted)' }}>
             {' '}
             ({row.payload.commandCount as number} cmd
             {(row.payload.commandCount as number) !== 1 ? 's' : ''})
           </span>
         )}
-        <span style={{ color: 'var(--text-tertiary)', marginLeft: 6 }}>{relativeTime(row.ts)}</span>
+        <span style={{ color: 'var(--color-muted)', marginLeft: 6 }}>{relativeTime(row.ts)}</span>
       </div>
       {hovered && row.parentSnapshotId != null && (
         <button
@@ -106,7 +106,7 @@ function ActivityRowItem({ row, onRestore }: RowItemProps) {
             borderRadius: 4,
             border: '1px solid var(--color-border)',
             background: 'var(--color-surface)',
-            color: 'var(--text-primary)',
+            color: 'var(--color-foreground)',
             fontSize: 'var(--text-3xs)',
             cursor: 'pointer',
             flexShrink: 0,
@@ -169,7 +169,7 @@ export function ActivityPanel({ modelId, selfId = null, onRestored }: ActivityPa
           display: 'flex',
           gap: 4,
           padding: '6px 8px',
-          borderBottom: '1px solid var(--border-subtle)',
+          borderBottom: '1px solid var(--color-border)',
           flexShrink: 0,
         }}
       >
@@ -181,8 +181,9 @@ export function ActivityPanel({ modelId, selfId = null, onRestored }: ActivityPa
               padding: '2px 8px',
               borderRadius: 12,
               border: 'none',
-              background: filter === key ? 'var(--surface-active)' : 'var(--surface-secondary)',
-              color: filter === key ? 'var(--text-primary)' : 'var(--text-secondary)',
+              background:
+                filter === key ? 'var(--color-accent-soft)' : 'var(--color-surface-strong)',
+              color: filter === key ? 'var(--color-foreground)' : 'var(--color-muted)',
               fontSize: 'var(--text-2xs)',
               fontWeight: filter === key ? 600 : 400,
               cursor: 'pointer',
@@ -197,7 +198,7 @@ export function ActivityPanel({ modelId, selfId = null, onRestored }: ActivityPa
           <div
             style={{
               padding: 12,
-              color: 'var(--text-tertiary)',
+              color: 'var(--color-muted)',
               fontSize: 'var(--text-2xs)',
               textAlign: 'center',
             }}
@@ -216,10 +217,10 @@ export function ActivityPanel({ modelId, selfId = null, onRestored }: ActivityPa
               style={{
                 width: '100%',
                 padding: '4px 0',
-                border: '1px solid var(--border-subtle)',
+                border: '1px solid var(--color-border)',
                 borderRadius: 4,
                 background: 'transparent',
-                color: 'var(--text-secondary)',
+                color: 'var(--color-muted)',
                 fontSize: 'var(--text-2xs)',
                 cursor: loading ? 'default' : 'pointer',
               }}
@@ -232,7 +233,7 @@ export function ActivityPanel({ modelId, selfId = null, onRestored }: ActivityPa
           <div
             style={{
               padding: 12,
-              color: 'var(--text-tertiary)',
+              color: 'var(--color-muted)',
               fontSize: 'var(--text-2xs)',
               textAlign: 'center',
             }}

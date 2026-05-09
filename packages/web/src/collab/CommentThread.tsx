@@ -55,8 +55,8 @@ export function CommentThread({ comments, onReply, onResolve, onClose }: Comment
     >
       {comments.map((c) => (
         <div key={c.id} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{c.authorId}</span>
-          <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>{c.body}</span>
+          <span style={{ fontSize: 11, color: 'var(--color-muted)' }}>{c.authorId}</span>
+          <span style={{ fontSize: 13, color: 'var(--color-foreground)' }}>{c.body}</span>
         </div>
       ))}
       <textarea
@@ -73,7 +73,7 @@ export function CommentThread({ comments, onReply, onResolve, onClose }: Comment
           padding: '6px 8px',
           fontSize: 13,
           background: 'var(--surface-input)',
-          color: 'var(--text-primary)',
+          color: 'var(--color-foreground)',
           outline: 'none',
         }}
       />

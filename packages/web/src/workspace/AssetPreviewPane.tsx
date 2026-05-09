@@ -24,7 +24,7 @@ function ParamField({
           alignItems: 'center',
           gap: 8,
           fontSize: 'var(--text-xs)',
-          color: 'var(--text-primary)',
+          color: 'var(--color-foreground)',
         }}
       >
         <input
@@ -39,7 +39,7 @@ function ParamField({
   if (param.kind === 'mm') {
     return (
       <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-muted)' }}>
           {param.key} (mm)
         </span>
         <input
@@ -48,9 +48,9 @@ function ParamField({
           onChange={(e) => onChange(Number(e.target.value))}
           style={{
             background: 'var(--surface-input)',
-            border: '1px solid var(--border-subtle)',
+            border: '1px solid var(--color-border)',
             borderRadius: 3,
-            color: 'var(--text-primary)',
+            color: 'var(--color-foreground)',
             fontSize: 'var(--text-xs)',
             padding: '2px 6px',
             width: '100%',
@@ -63,17 +63,15 @@ function ParamField({
     const opts = Array.isArray(param.constraints) ? (param.constraints as string[]) : [];
     return (
       <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-          {param.key}
-        </span>
+        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-muted)' }}>{param.key}</span>
         <select
           value={value as string}
           onChange={(e) => onChange(e.target.value)}
           style={{
             background: 'var(--surface-input)',
-            border: '1px solid var(--border-subtle)',
+            border: '1px solid var(--color-border)',
             borderRadius: 3,
-            color: 'var(--text-primary)',
+            color: 'var(--color-foreground)',
             fontSize: 'var(--text-xs)',
             padding: '2px 6px',
           }}
@@ -90,18 +88,16 @@ function ParamField({
   // material or fallback — text input
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-        {param.key}
-      </span>
+      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-muted)' }}>{param.key}</span>
       <input
         type="text"
         value={String(value)}
         onChange={(e) => onChange(e.target.value)}
         style={{
           background: 'var(--surface-input)',
-          border: '1px solid var(--border-subtle)',
+          border: '1px solid var(--color-border)',
           borderRadius: 3,
-          color: 'var(--text-primary)',
+          color: 'var(--color-foreground)',
           fontSize: 'var(--text-xs)',
           padding: '2px 6px',
           width: '100%',
@@ -134,7 +130,7 @@ export function AssetPreviewPane({ entry, onPlace }: AssetPreviewPaneProps): Rea
       <div
         style={{
           padding: 16,
-          color: 'var(--text-secondary)',
+          color: 'var(--color-muted)',
           fontSize: 'var(--text-xs)',
           textAlign: 'center',
         }}
@@ -156,10 +152,12 @@ export function AssetPreviewPane({ entry, onPlace }: AssetPreviewPaneProps): Rea
         flex: 1,
       }}
     >
-      <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)', fontWeight: 500 }}>
+      <div
+        style={{ fontSize: 'var(--text-sm)', color: 'var(--color-foreground)', fontWeight: 500 }}
+      >
         {entry.name}
       </div>
-      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-muted)' }}>
         {entry.category}
         {entry.description ? ` — ${entry.description}` : ''}
       </div>
@@ -170,7 +168,7 @@ export function AssetPreviewPane({ entry, onPlace }: AssetPreviewPaneProps): Rea
               key={tag}
               style={{
                 fontSize: 'var(--text-xs)',
-                color: 'var(--text-secondary)',
+                color: 'var(--color-muted)',
                 background: 'var(--surface-subtle)',
                 borderRadius: 2,
                 padding: '1px 4px',
@@ -186,7 +184,7 @@ export function AssetPreviewPane({ entry, onPlace }: AssetPreviewPaneProps): Rea
           <div
             style={{
               fontSize: 'var(--text-xs)',
-              color: 'var(--text-secondary)',
+              color: 'var(--color-muted)',
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
             }}

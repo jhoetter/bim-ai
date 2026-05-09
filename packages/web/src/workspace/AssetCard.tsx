@@ -133,10 +133,10 @@ export function AssetCard({ entry, selected, onSelect, onPlace }: AssetCardProps
         padding: 8,
         borderRadius: 4,
         cursor: 'grab',
-        background: selected ? 'var(--surface-active)' : 'var(--surface-panel)',
-        border: selected ? '1px solid var(--color-accent)' : '1px solid var(--border-subtle)',
+        background: selected ? 'var(--color-accent-soft)' : 'var(--surface-panel)',
+        border: selected ? '1px solid var(--color-accent)' : '1px solid var(--color-border)',
         fontSize: 'var(--text-xs)',
-        color: 'var(--text-primary)',
+        color: 'var(--color-foreground)',
         userSelect: 'none',
       }}
       onClick={() => onSelect(entry)}

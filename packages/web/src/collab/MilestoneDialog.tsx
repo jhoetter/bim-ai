@@ -102,12 +102,14 @@ export function MilestoneDialog({
           gap: 12,
         }}
       >
-        <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
+        <div
+          style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--color-foreground)' }}
+        >
           Save milestone
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <label
-            style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontWeight: 500 }}
+            style={{ fontSize: 'var(--text-xs)', color: 'var(--color-muted)', fontWeight: 500 }}
           >
             Name this milestone
           </label>
@@ -123,8 +125,8 @@ export function MilestoneDialog({
               padding: '6px 10px',
               borderRadius: 4,
               border: '1px solid var(--color-border)',
-              background: 'var(--surface-secondary)',
-              color: 'var(--text-primary)',
+              background: 'var(--color-surface-strong)',
+              color: 'var(--color-foreground)',
               fontSize: 'var(--text-sm)',
               outline: 'none',
             }}
@@ -132,7 +134,7 @@ export function MilestoneDialog({
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <label
-            style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontWeight: 500 }}
+            style={{ fontSize: 'var(--text-xs)', color: 'var(--color-muted)', fontWeight: 500 }}
           >
             Description (optional)
           </label>
@@ -144,8 +146,8 @@ export function MilestoneDialog({
               padding: '6px 10px',
               borderRadius: 4,
               border: '1px solid var(--color-border)',
-              background: 'var(--surface-secondary)',
-              color: 'var(--text-primary)',
+              background: 'var(--color-surface-strong)',
+              color: 'var(--color-foreground)',
               fontSize: 'var(--text-sm)',
               outline: 'none',
               resize: 'vertical',
@@ -160,7 +162,7 @@ export function MilestoneDialog({
               borderRadius: 4,
               border: '1px solid var(--color-border)',
               background: 'transparent',
-              color: 'var(--text-secondary)',
+              color: 'var(--color-muted)',
               fontSize: 'var(--text-xs)',
               cursor: 'pointer',
             }}
@@ -174,8 +176,8 @@ export function MilestoneDialog({
               padding: '6px 14px',
               borderRadius: 4,
               border: 'none',
-              background: 'var(--surface-active)',
-              color: 'var(--text-primary)',
+              background: 'var(--color-accent-soft)',
+              color: 'var(--color-foreground)',
               fontSize: 'var(--text-xs)',
               fontWeight: 600,
               cursor: !name.trim() || submitting ? 'default' : 'pointer',

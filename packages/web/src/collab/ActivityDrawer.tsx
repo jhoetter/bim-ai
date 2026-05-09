@@ -18,10 +18,10 @@ const KIND_VERB: Record<ActivityRow['kind'], string> = {
 };
 
 function kindColor(kind: ActivityRow['kind']): string {
-  if (kind === 'commit') return 'var(--disc-ochre)';
-  if (kind === 'comment_created' || kind === 'comment_resolved') return 'var(--disc-sage)';
-  if (kind === 'markup_created' || kind === 'markup_resolved') return 'var(--disc-taupe)';
-  return 'var(--text-secondary)';
+  if (kind === 'commit') return 'var(--disc-struct)';
+  if (kind === 'comment_created' || kind === 'comment_resolved') return 'var(--disc-arch)';
+  if (kind === 'markup_created' || kind === 'markup_resolved') return 'var(--disc-mep)';
+  return 'var(--color-muted)';
 }
 
 function initials(authorId: string): string {
@@ -67,7 +67,7 @@ function DrawerRow({ row, travelled, onTimeTravel, onHoverChange }: DrawerRowPro
         padding: '6px 12px',
         cursor: 'pointer',
         fontSize: 'var(--text-sm)',
-        background: travelled ? 'var(--surface-active)' : 'transparent',
+        background: travelled ? 'var(--color-accent-soft)' : 'transparent',
         borderLeft: travelled ? '2px solid var(--color-accent)' : '2px solid transparent',
       }}
       onMouseEnter={() => onHoverChange(row)}
@@ -82,30 +82,30 @@ function DrawerRow({ row, travelled, onTimeTravel, onHoverChange }: DrawerRowPro
           width: 24,
           height: 24,
           borderRadius: '50%',
-          background: 'var(--surface-secondary)',
+          background: 'var(--color-surface-strong)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           fontSize: 'var(--text-2xs)',
           fontWeight: 600,
           flexShrink: 0,
-          color: 'var(--text-primary)',
+          color: 'var(--color-foreground)',
           marginTop: 2,
         }}
       >
         {initials(row.authorId)}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{row.authorId}</span>{' '}
+        <span style={{ fontWeight: 500, color: 'var(--color-foreground)' }}>{row.authorId}</span>{' '}
         <span style={{ color: kindColor(row.kind) }}>{KIND_VERB[row.kind]}</span>
         {row.kind === 'commit' && row.payload.commandCount != null && (
-          <span style={{ color: 'var(--text-secondary)' }}>
+          <span style={{ color: 'var(--color-muted)' }}>
             {' '}
             ({row.payload.commandCount as number} cmd
             {(row.payload.commandCount as number) !== 1 ? 's' : ''})
           </span>
         )}
-        <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>
+        <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-muted)', marginTop: 2 }}>
           {relativeTime(row.ts)}
         </div>
       </div>
@@ -234,7 +234,7 @@ export function ActivityDrawer({
           width: 380,
           height: 'calc(100vh - var(--shell-statusbar-height, 32px))',
           background: 'var(--color-surface)',
-          borderLeft: '1px solid var(--border-subtle)',
+          borderLeft: '1px solid var(--color-border)',
           transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
           transition: 'transform 200ms var(--ease-paper)',
           zIndex: 50,
@@ -250,7 +250,7 @@ export function ActivityDrawer({
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '8px 12px',
-            borderBottom: '1px solid var(--border-subtle)',
+            borderBottom: '1px solid var(--color-border)',
             flexShrink: 0,
           }}
         >
@@ -258,7 +258,7 @@ export function ActivityDrawer({
             style={{
               fontWeight: 600,
               fontSize: 'var(--text-sm)',
-              color: 'var(--text-primary)',
+              color: 'var(--color-foreground)',
             }}
           >
             Activity
@@ -272,7 +272,7 @@ export function ActivityDrawer({
               borderRadius: 4,
               border: 'none',
               background: 'transparent',
-              color: 'var(--text-secondary)',
+              color: 'var(--color-muted)',
               cursor: 'pointer',
               fontSize: 'var(--text-sm)',
             }}
@@ -290,12 +290,12 @@ export function ActivityDrawer({
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '6px 12px',
-              background: 'var(--surface-active)',
-              borderBottom: '1px solid var(--border-subtle)',
+              background: 'var(--color-accent-soft)',
+              borderBottom: '1px solid var(--color-border)',
               flexShrink: 0,
             }}
           >
-            <span style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-primary)' }}>
+            <span style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-foreground)' }}>
               Viewing version {travelledRow.id.slice(0, 8)}
             </span>
             <div style={{ display: 'flex', gap: 6 }}>
@@ -307,7 +307,7 @@ export function ActivityDrawer({
                   borderRadius: 4,
                   border: '1px solid var(--color-border)',
                   background: 'var(--color-surface)',
-                  color: 'var(--text-secondary)',
+                  color: 'var(--color-muted)',
                   fontSize: 'var(--text-2xs)',
                   cursor: 'pointer',
                 }}
@@ -323,8 +323,8 @@ export function ActivityDrawer({
                   padding: '2px 8px',
                   borderRadius: 4,
                   border: '1px solid var(--color-border)',
-                  background: 'var(--surface-active)',
-                  color: 'var(--text-primary)',
+                  background: 'var(--color-accent-soft)',
+                  color: 'var(--color-foreground)',
                   fontSize: 'var(--text-2xs)',
                   cursor: restoring ? 'default' : 'pointer',
                   fontWeight: 600,
@@ -342,7 +342,7 @@ export function ActivityDrawer({
             display: 'flex',
             gap: 4,
             padding: '6px 12px',
-            borderBottom: '1px solid var(--border-subtle)',
+            borderBottom: '1px solid var(--color-border)',
             flexShrink: 0,
           }}
         >
@@ -356,8 +356,9 @@ export function ActivityDrawer({
                 padding: '2px 8px',
                 borderRadius: 12,
                 border: 'none',
-                background: filter === key ? 'var(--surface-active)' : 'var(--surface-secondary)',
-                color: filter === key ? 'var(--text-primary)' : 'var(--text-secondary)',
+                background:
+                  filter === key ? 'var(--color-accent-soft)' : 'var(--color-surface-strong)',
+                color: filter === key ? 'var(--color-foreground)' : 'var(--color-muted)',
                 fontSize: 'var(--text-2xs)',
                 fontWeight: filter === key ? 600 : 400,
                 cursor: 'pointer',
@@ -374,7 +375,7 @@ export function ActivityDrawer({
             <div
               style={{
                 padding: 16,
-                color: 'var(--text-tertiary)',
+                color: 'var(--color-muted)',
                 fontSize: 'var(--text-2xs)',
                 textAlign: 'center',
               }}
@@ -398,7 +399,7 @@ export function ActivityDrawer({
         <div
           style={{
             padding: '8px 12px',
-            borderTop: '1px solid var(--border-subtle)',
+            borderTop: '1px solid var(--color-border)',
             flexShrink: 0,
           }}
         >
@@ -409,7 +410,7 @@ export function ActivityDrawer({
             style={{
               background: 'transparent',
               border: 'none',
-              color: 'var(--text-secondary)',
+              color: 'var(--color-muted)',
               fontSize: 'var(--text-2xs)',
               cursor: 'pointer',
               padding: 0,

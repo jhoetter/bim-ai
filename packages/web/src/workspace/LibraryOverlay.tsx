@@ -138,7 +138,7 @@ export function LibraryOverlay({
           display: 'flex',
           flexDirection: 'row',
           background: 'var(--surface-panel)',
-          borderRight: '1px solid var(--border-subtle)',
+          borderRight: '1px solid var(--color-border)',
           transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
           transition: 'transform 200ms ease',
           zIndex: 50,
@@ -150,7 +150,7 @@ export function LibraryOverlay({
           data-testid="library-left-rail"
           style={{
             width: 128,
-            borderRight: '1px solid var(--border-subtle)',
+            borderRight: '1px solid var(--color-border)',
             display: 'flex',
             flexDirection: 'column',
             overflowY: 'auto',
@@ -160,7 +160,7 @@ export function LibraryOverlay({
           <div
             style={{
               fontSize: 'var(--text-xs)',
-              color: 'var(--text-secondary)',
+              color: 'var(--color-muted)',
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
               padding: '0 12px 8px',
@@ -179,8 +179,8 @@ export function LibraryOverlay({
                 textAlign: 'left',
                 padding: '5px 12px',
                 fontSize: 'var(--text-xs)',
-                color: category === key ? 'var(--color-accent)' : 'var(--text-primary)',
-                background: category === key ? 'var(--surface-active)' : 'transparent',
+                color: category === key ? 'var(--color-accent)' : 'var(--color-foreground)',
+                background: category === key ? 'var(--color-accent-soft)' : 'transparent',
                 border: 'none',
                 cursor: 'pointer',
                 borderLeft:
@@ -194,7 +194,7 @@ export function LibraryOverlay({
           <div
             style={{
               fontSize: 'var(--text-xs)',
-              color: 'var(--text-secondary)',
+              color: 'var(--color-muted)',
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
               padding: '16px 12px 8px',
@@ -213,8 +213,8 @@ export function LibraryOverlay({
                 textAlign: 'left',
                 padding: '5px 12px',
                 fontSize: 'var(--text-xs)',
-                color: discipline === key ? 'var(--color-accent)' : 'var(--text-primary)',
-                background: discipline === key ? 'var(--surface-active)' : 'transparent',
+                color: discipline === key ? 'var(--color-accent)' : 'var(--color-foreground)',
+                background: discipline === key ? 'var(--color-accent-soft)' : 'transparent',
                 border: 'none',
                 cursor: 'pointer',
                 borderLeft:
@@ -229,7 +229,7 @@ export function LibraryOverlay({
           <div
             style={{
               fontSize: 'var(--text-xs)',
-              color: 'var(--text-secondary)',
+              color: 'var(--color-muted)',
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
               padding: '16px 12px 8px',
@@ -245,7 +245,7 @@ export function LibraryOverlay({
               style={{
                 padding: '5px 12px',
                 fontSize: 'var(--text-xs)',
-                color: 'var(--text-primary)',
+                color: 'var(--color-foreground)',
               }}
             >
               Built-in
@@ -270,7 +270,7 @@ export function LibraryOverlay({
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '10px 12px',
-              borderBottom: '1px solid var(--border-subtle)',
+              borderBottom: '1px solid var(--color-border)',
               flexShrink: 0,
             }}
           >
@@ -278,7 +278,7 @@ export function LibraryOverlay({
               style={{
                 fontSize: 'var(--text-sm)',
                 fontWeight: 500,
-                color: 'var(--text-primary)',
+                color: 'var(--color-foreground)',
               }}
             >
               Library
@@ -291,7 +291,7 @@ export function LibraryOverlay({
               style={{
                 background: 'none',
                 border: 'none',
-                color: 'var(--text-secondary)',
+                color: 'var(--color-muted)',
                 cursor: 'pointer',
                 lineHeight: 1,
                 padding: 4,
@@ -313,9 +313,9 @@ export function LibraryOverlay({
               style={{
                 width: '100%',
                 background: 'var(--surface-input)',
-                border: '1px solid var(--border-subtle)',
+                border: '1px solid var(--color-border)',
                 borderRadius: 4,
-                color: 'var(--text-primary)',
+                color: 'var(--color-foreground)',
                 fontSize: 'var(--text-xs)',
                 padding: '5px 8px',
                 outline: 'none',
@@ -342,7 +342,7 @@ export function LibraryOverlay({
                 style={{
                   gridColumn: '1 / -1',
                   textAlign: 'center',
-                  color: 'var(--text-secondary)',
+                  color: 'var(--color-muted)',
                   fontSize: 'var(--text-xs)',
                   padding: 24,
                 }}
@@ -368,7 +368,7 @@ export function LibraryOverlay({
           data-testid="library-preview-pane"
           style={{
             width: 160,
-            borderLeft: '1px solid var(--border-subtle)',
+            borderLeft: '1px solid var(--color-border)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
