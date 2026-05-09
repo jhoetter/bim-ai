@@ -160,6 +160,16 @@ export function InspectorDisciplineDropdown({
   );
 }
 
+/** Look up a human-readable name for an element ID, falling back to the raw ID. */
+function resolveElName(id: string | null | undefined, eb: Record<string, Element>): string {
+  if (!id) return '—';
+  const e = eb[id];
+  if (!e) return id;
+  return 'name' in e && typeof (e as { name?: unknown }).name === 'string'
+    ? ((e as { name: string }).name ?? id)
+    : id;
+}
+
 export function InspectorPropertiesFor(
   el: Element,
   t: TFunction,
@@ -212,7 +222,7 @@ export function InspectorPropertiesFor(
               data-testid="inspector-wall-top-offset"
             />
           </div>
-          <FieldRow label={f('level')} value={el.levelId} mono />
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
 
           <div className="flex items-center gap-2 py-0.5">
             <span className="text-xs text-muted w-28 shrink-0">{f('roofAttachment')}</span>
@@ -308,7 +318,7 @@ export function InspectorPropertiesFor(
         <div>
           <FieldRow label={f('family')} value={el.familyTypeId ?? 'Generic 900 × 2100'} mono />
           <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
-          <FieldRow label={f('wall')} value={el.wallId} mono />
+          <FieldRow label={f('wall')} value={resolveElName(el.wallId, elementsById)} />
           <FieldRow label={f('alongT')} value={el.alongT.toFixed(3)} mono />
         </div>
       );
@@ -319,7 +329,7 @@ export function InspectorPropertiesFor(
           <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
           <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
           <FieldRow label={f('sillHeight')} value={fmtMm(el.sillHeightMm)} />
-          <FieldRow label={f('wall')} value={el.wallId} mono />
+          <FieldRow label={f('wall')} value={resolveElName(el.wallId, elementsById)} />
         </div>
       );
     case 'floor': {
@@ -330,7 +340,7 @@ export function InspectorPropertiesFor(
           <FieldRow label={f('thickness')} value={fmtMm(el.thicknessMm)} />
           <FieldRow label={f('structureThickness')} value={fmtMm(el.structureThicknessMm)} />
           <FieldRow label={f('finishThickness')} value={fmtMm(el.finishThicknessMm)} />
-          <FieldRow label={f('level')} value={el.levelId} mono />
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
           <FieldRow label={f('boundaryPoints')} value={String(el.boundaryMm.length)} />
 
           <div className="flex items-center gap-2 py-0.5">
@@ -409,7 +419,7 @@ export function InspectorPropertiesFor(
       const { onPropertyChange: colPropChange } = options ?? {};
       return (
         <div className="flex flex-col gap-2">
-          <FieldRow label={f('level')} value={el.levelId} mono />
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
           <FieldRow label={f('width')} value={fmtMm(el.bMm)} />
           <FieldRow label={f('depth')} value={fmtMm(el.hMm)} />
           <div className="flex items-center gap-2 py-0.5">
@@ -433,7 +443,7 @@ export function InspectorPropertiesFor(
     case 'beam': {
       return (
         <div className="flex flex-col gap-2">
-          <FieldRow label={f('level')} value={el.levelId} mono />
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
           <FieldRow
             label="Start"
             value={`${fmtMm(el.startMm.xMm)} · ${fmtMm(el.startMm.yMm)}`}
@@ -452,7 +462,7 @@ export function InspectorPropertiesFor(
           <FieldRow label={f('department')} value={el.department ?? '—'} />
           <FieldRow label={f('function')} value={el.functionLabel ?? '—'} />
           <FieldRow label={f('finishSet')} value={el.finishSet ?? '—'} />
-          <FieldRow label={f('level')} value={el.levelId} mono />
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
           <FieldRow label={f('outlinePoints')} value={String(el.outlineMm.length)} />
           {el.upperLimitLevelId ? (
             <FieldRow label={f('upperLimit')} value={el.upperLimitLevelId} mono />
@@ -480,7 +490,7 @@ export function InspectorPropertiesFor(
       return (
         <div className="flex flex-col gap-2">
           <FieldRow label={f('name')} value={el.name} />
-          <FieldRow label={f('level')} value={el.levelId} mono />
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
           <FieldRow
             label="Rule Set"
             value={el.ruleSet === 'gross' ? 'Gross' : el.ruleSet === 'net' ? 'Net' : 'No Rules'}
@@ -499,25 +509,15 @@ export function InspectorPropertiesFor(
       const distMm = Math.hypot(el.bMm.xMm - el.aMm.xMm, el.bMm.yMm - el.aMm.yMm);
       return (
         <div className="flex flex-col gap-2">
-          <FieldRow label={f('level')} value={el.levelId} mono />
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
           <FieldRow
             label="Measured"
             value={`${(distMm / 1000).toFixed(3)} m (${Math.round(distMm)} mm)`}
             mono
           />
-          <FieldRow
-            label="Point A"
-            value={`${fmtMm(el.aMm.xMm)} · ${fmtMm(el.aMm.yMm)}`}
-            mono
-          />
-          <FieldRow
-            label="Point B"
-            value={`${fmtMm(el.bMm.xMm)} · ${fmtMm(el.bMm.yMm)}`}
-            mono
-          />
-          {el.autoGenerated ? (
-            <FieldRow label="Auto-generated" value="Yes" />
-          ) : null}
+          <FieldRow label="Point A" value={`${fmtMm(el.aMm.xMm)} · ${fmtMm(el.aMm.yMm)}`} mono />
+          <FieldRow label="Point B" value={`${fmtMm(el.bMm.xMm)} · ${fmtMm(el.bMm.yMm)}`} mono />
+          {el.autoGenerated ? <FieldRow label="Auto-generated" value="Yes" /> : null}
         </div>
       );
     }
@@ -606,7 +606,7 @@ export function InspectorPropertiesFor(
     case 'plan_view':
       return (
         <div>
-          <FieldRow label={f('level')} value={el.levelId} mono />
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
           <FieldRow label={f('presentation')} value={el.planPresentation ?? 'default'} />
           {el.viewTemplateId ? (
             <FieldRow label={f('template')} value={el.viewTemplateId} mono />
@@ -1394,7 +1394,7 @@ export function InspectorDoorEditor({
         />
       )}
       <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
-      <FieldRow label={f('wall')} value={el.wallId} mono />
+      <FieldRow label={f('wall')} value={resolveElName(el.wallId, elementsById)} />
       <FieldRow label={f('alongT')} value={el.alongT.toFixed(3)} mono />
       {onDisciplineChange ? (
         <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
@@ -1480,7 +1480,7 @@ export function InspectorWindowEditor({
       <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
       <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
       <FieldRow label={f('sillHeight')} value={fmtMm(el.sillHeightMm)} />
-      <FieldRow label={f('wall')} value={el.wallId} mono />
+      <FieldRow label={f('wall')} value={resolveElName(el.wallId, elementsById)} />
       {onDisciplineChange ? (
         <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
       ) : null}
@@ -1602,6 +1602,46 @@ export function InspectorViewTemplateEditor({
           <option value="existing">Existing</option>
           <option value="demolition">Demolition</option>
           <option value="new">New</option>
+        </select>
+      </label>
+    </div>
+  );
+}
+
+/** Editable inspector for project_settings elements (F-096 partial). */
+export function InspectorProjectSettingsEditor({
+  el,
+  onPersistProperty,
+}: {
+  el: Extract<Element, { kind: 'project_settings' }>;
+  onPersistProperty: (key: string, value: string) => void;
+}): JSX.Element {
+  return (
+    <div className="space-y-2 text-[11px]">
+      <label className={LABEL_CLS}>
+        <span>Volume Computed At</span>
+        <select
+          className={INPUT_CLS}
+          value={el.volumeComputedAt ?? 'finish_faces'}
+          onChange={(e) => onPersistProperty('volumeComputedAt', e.target.value)}
+          data-testid="inspector-volume-computed-at"
+        >
+          <option value="finish_faces">Finish Faces</option>
+          <option value="core_faces">Core Faces</option>
+        </select>
+      </label>
+      <label className={LABEL_CLS}>
+        <span>Room Area Computation</span>
+        <select
+          className={INPUT_CLS}
+          value={el.roomAreaComputationBasis ?? 'wall_finish'}
+          onChange={(e) => onPersistProperty('roomAreaComputationBasis', e.target.value)}
+          data-testid="inspector-room-area-computation"
+        >
+          <option value="wall_finish">At Wall Finish</option>
+          <option value="wall_centerline">At Wall Centerline</option>
+          <option value="wall_core_layer">At Wall Core Layer</option>
+          <option value="wall_core_center">At Wall Core Center</option>
         </select>
       </label>
     </div>
