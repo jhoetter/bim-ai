@@ -2458,11 +2458,73 @@ class UpdateKitComponentCmd(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["update_kit_component"] = "update_kit_component"
-    id: str  # kit instance id
+    id: str
     component_index: int = Field(alias="componentIndex")
     width_mm: float | None = Field(default=None, alias="widthMm")
     door_style: str | None = Field(default=None, alias="doorStyle")
     material_id: str | None = Field(default=None, alias="materialId")
+
+
+# ---------------------------------------------------------------------------
+# IMP-V3-01 — Image-as-underlay commands
+# ---------------------------------------------------------------------------
+
+_ALLOWED_IMAGE_PREFIXES = (
+    "data:image/png",
+    "data:image/jpeg",
+    "data:application/pdf",
+)
+
+_MAX_SRC_BYTES = 50 * 1024 * 1024  # 50 MB
+
+
+class ImportImageUnderlayCmd(BaseModel):
+    """IMP-V3-01 — import a raster or PDF file as a plan-canvas underlay."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["import_image_underlay"] = "import_image_underlay"
+    id: str | None = None
+    src: str
+    rect_mm: dict = Field(alias="rectMm")
+    rotation_deg: float = Field(0.0, alias="rotationDeg")
+    opacity: float = 0.4
+    locked_scale: bool = Field(False, alias="lockedScale")
+
+
+class MoveImageUnderlayCmd(BaseModel):
+    """IMP-V3-01 — reposition an image underlay (preserves width/height)."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["move_image_underlay"] = "move_image_underlay"
+    id: str
+    rect_mm: dict = Field(alias="rectMm")
+
+
+class ScaleImageUnderlayCmd(BaseModel):
+    """IMP-V3-01 — resize an image underlay's width/height."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["scale_image_underlay"] = "scale_image_underlay"
+    id: str
+    width_mm: float = Field(alias="widthMm")
+    height_mm: float = Field(alias="heightMm")
+
+
+class RotateImageUnderlayCmd(BaseModel):
+    """IMP-V3-01 — rotate an image underlay."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["rotate_image_underlay"] = "rotate_image_underlay"
+    id: str
+    rotation_deg: float = Field(alias="rotationDeg")
+
+
+class DeleteImageUnderlayCmd(BaseModel):
+    """IMP-V3-01 — remove an image underlay from the model."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["delete_image_underlay"] = "delete_image_underlay"
+    id: str
 
 
 Command = Annotated[
@@ -2654,6 +2716,11 @@ Command = Annotated[
     | DrawDetailRegionCmd
     | UpdateDetailRegionCmd
     | PlaceKitCmd
-    | UpdateKitComponentCmd,
+    | UpdateKitComponentCmd
+    | ImportImageUnderlayCmd
+    | MoveImageUnderlayCmd
+    | ScaleImageUnderlayCmd
+    | RotateImageUnderlayCmd
+    | DeleteImageUnderlayCmd,
     Field(discriminator="type"),
 ]

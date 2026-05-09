@@ -209,6 +209,13 @@ from bim_ai.commands import (
     CreateScheduleViewCmd,
     DrawDetailRegionCmd,
     UpdateDetailRegionCmd,
+    ImportImageUnderlayCmd,
+    MoveImageUnderlayCmd,
+    ScaleImageUnderlayCmd,
+    RotateImageUnderlayCmd,
+    DeleteImageUnderlayCmd,
+    _ALLOWED_IMAGE_PREFIXES,
+    _MAX_SRC_BYTES,
 )
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.datum_levels import (
@@ -337,6 +344,7 @@ from bim_ai.elements import (
     DecalElem,
     PropertyDefinitionElem,
     HatchPatternDefElem,
+    ImageUnderlayElem,
 )
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
@@ -5539,6 +5547,82 @@ def apply_inplace(
             if cmd.phase_demolished is not None:
                 patch["phase_demolished"] = cmd.phase_demolished
             els[cmd.id] = existing.model_copy(update=patch)
+
+        # -----------------------------------------------------------------------
+        # IMP-V3-01 — Image-as-underlay import + manipulation
+        # -----------------------------------------------------------------------
+
+        case ImportImageUnderlayCmd():
+            eid = cmd.id or new_id()
+            if eid in els:
+                raise ValueError(f"ImportImageUnderlay: duplicate element id '{eid}'")
+            # Validate format — src must be an allowed data URI prefix
+            if not any(cmd.src.startswith(prefix) for prefix in _ALLOWED_IMAGE_PREFIXES):
+                raise ValueError(
+                    "ImportImageUnderlay: src must be a data URI starting with "
+                    "data:image/png, data:image/jpeg, or data:application/pdf"
+                )
+            # Validate size — data URI is base64; raw size ≈ len * 3/4
+            if len(cmd.src.encode()) > _MAX_SRC_BYTES:
+                raise ValueError(
+                    "ImportImageUnderlay: src exceeds maximum allowed size of 50 MB"
+                )
+            els[eid] = ImageUnderlayElem(
+                kind="image_underlay",
+                id=eid,
+                src=cmd.src,
+                rectMm=cmd.rect_mm,
+                rotationDeg=cmd.rotation_deg,
+                opacity=cmd.opacity,
+                lockedScale=cmd.locked_scale,
+            )
+
+        case MoveImageUnderlayCmd():
+            underlay = els.get(cmd.id)
+            if not isinstance(underlay, ImageUnderlayElem):
+                raise ValueError(
+                    f"MoveImageUnderlay: element '{cmd.id}' is not an image_underlay"
+                )
+            # Preserve width/height from existing rect, update position only
+            existing_rect = underlay.rect_mm
+            new_rect = {
+                "xMm": cmd.rect_mm.get("xMm", existing_rect.get("xMm", 0)),
+                "yMm": cmd.rect_mm.get("yMm", existing_rect.get("yMm", 0)),
+                "widthMm": existing_rect.get("widthMm", cmd.rect_mm.get("widthMm", 0)),
+                "heightMm": existing_rect.get("heightMm", cmd.rect_mm.get("heightMm", 0)),
+            }
+            els[cmd.id] = underlay.model_copy(update={"rect_mm": new_rect})
+
+        case ScaleImageUnderlayCmd():
+            underlay = els.get(cmd.id)
+            if not isinstance(underlay, ImageUnderlayElem):
+                raise ValueError(
+                    f"ScaleImageUnderlay: element '{cmd.id}' is not an image_underlay"
+                )
+            existing_rect = underlay.rect_mm
+            new_rect = {
+                "xMm": existing_rect.get("xMm", 0),
+                "yMm": existing_rect.get("yMm", 0),
+                "widthMm": cmd.width_mm,
+                "heightMm": cmd.height_mm,
+            }
+            els[cmd.id] = underlay.model_copy(update={"rect_mm": new_rect})
+
+        case RotateImageUnderlayCmd():
+            underlay = els.get(cmd.id)
+            if not isinstance(underlay, ImageUnderlayElem):
+                raise ValueError(
+                    f"RotateImageUnderlay: element '{cmd.id}' is not an image_underlay"
+                )
+            els[cmd.id] = underlay.model_copy(update={"rotation_deg": cmd.rotation_deg})
+
+        case DeleteImageUnderlayCmd():
+            underlay = els.get(cmd.id)
+            if not isinstance(underlay, ImageUnderlayElem):
+                raise ValueError(
+                    f"DeleteImageUnderlay: element '{cmd.id}' is not an image_underlay"
+                )
+            del els[cmd.id]
 
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect

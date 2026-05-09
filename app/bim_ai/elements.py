@@ -2450,6 +2450,24 @@ class DecalElem(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# IMP-V3-01 — Image-as-underlay element
+# ---------------------------------------------------------------------------
+
+
+class ImageUnderlayElem(BaseModel):
+    """IMP-V3-01 — raster/PDF underlay pinned to the plan canvas."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["image_underlay"] = "image_underlay"
+    id: str
+    src: str
+    rect_mm: dict = Field(alias="rectMm")  # {xMm, yMm, widthMm, heightMm}
+    rotation_deg: float = Field(0.0, alias="rotationDeg")
+    opacity: float = 0.4
+    locked_scale: bool = Field(False, alias="lockedScale")
+
+
+# ---------------------------------------------------------------------------
 # OSM-V3-01 — Neighborhood massing import
 # ---------------------------------------------------------------------------
 
@@ -2568,6 +2586,7 @@ Element = Annotated[
     | MaterialElem
     | DecalElem
     | PropertyDefinitionElem
+    | ImageUnderlayElem
     | NeighborhoodMassElem
     | NeighborhoodImportSessionElem,
     Field(discriminator="kind"),
