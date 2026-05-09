@@ -1,0 +1,39 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "c4254dc0adbd",
+  "session_id": "570fe6bc-c8f6-4837-bf17-66d08325a0f7",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T20:17:49.575494Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/plan/DetailRegionTool.tsx",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/workspace/MaterialLayerStackWorkbench.tsx",
+    "packages/web/src/workspace/RoomSeparationAuthoringWorkbench.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "9df54c4a116b",
+  "checkpoint_transcript_start": 126,
+  "transcript_lines_at_start": 126,
+  "token_usage": {
+    "input_tokens": 5,
+    "cache_creation_tokens": 6656,
+    "cache_read_tokens": 303379,
+    "output_tokens": 1325,
+    "api_call_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T20:17:49.56182Z",
+    "agent_lines": 107,
+    "agent_removed": 18,
+    "human_added": 4,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 111,
+    "total_lines_changed": 133,
+    "agent_percentage": 93.98496240601504,
+    "metric_version": 2
+  }
+}

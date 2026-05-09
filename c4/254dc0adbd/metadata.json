@@ -5,8 +5,10 @@
   "branch": "main",
   "checkpoints_count": 1,
   "files_touched": [
+    "packages/web/src/plan/DetailRegionTool.tsx",
     "packages/web/src/plan/PlanCanvas.tsx",
-    "packages/web/src/workspace/MaterialLayerStackWorkbench.tsx"
+    "packages/web/src/workspace/MaterialLayerStackWorkbench.tsx",
+    "packages/web/src/workspace/RoomSeparationAuthoringWorkbench.tsx"
   ],
   "sessions": [
     {
@@ -20,13 +22,19 @@
       "transcript": "/c4/254dc0adbd/1/full.jsonl",
       "content_hash": "/c4/254dc0adbd/1/content_hash.txt",
       "prompt": "/c4/254dc0adbd/1/prompt.txt"
+    },
+    {
+      "metadata": "/c4/254dc0adbd/2/metadata.json",
+      "transcript": "/c4/254dc0adbd/2/full.jsonl",
+      "content_hash": "/c4/254dc0adbd/2/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 8468,
-    "cache_creation_tokens": 4857961,
-    "cache_read_tokens": 349703405,
-    "output_tokens": 1465191,
-    "api_call_count": 3517
+    "input_tokens": 8473,
+    "cache_creation_tokens": 4864617,
+    "cache_read_tokens": 350006784,
+    "output_tokens": 1466516,
+    "api_call_count": 3520
   }
 }
