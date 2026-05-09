@@ -13,6 +13,7 @@ import {
   patchCommentResolved,
   undoModel,
   redoModel,
+  uploadDxfFile,
 } from '../lib/api';
 import { syncLastLevelElevationPropagationFromApplyResponse } from './levelDatumPropagationSync';
 import { planToolsForPerspective } from './planToolsByPerspective';
@@ -1068,13 +1069,20 @@ export function Workspace(): JSX.Element {
           setManageLinksOpen(true);
         }}
         onLinkDxf={(file) => {
-          // FED-04: same shell-level placement as onLinkIfc — the workspace
-          // doesn't know the host model id, so we surface the selection and
-          // route the actual POST through the model-aware caller (which
-          // hands the file to /api/models/<hostId>/import-dxf and then
-          // refreshes the active level so the underlay paints).
-          console.warn('link-dxf selected', { name: file.name, size: file.size });
-          setManageLinksOpen(true);
+          if (!modelId || !activeLevelId) {
+            setManageLinksOpen(true);
+            return;
+          }
+          void (async () => {
+            try {
+              await uploadDxfFile(modelId, file, activeLevelId);
+              // Refresh will happen via WebSocket broadcast
+              setManageLinksOpen(true);
+            } catch (err) {
+              console.error('DXF upload failed:', err);
+              setManageLinksOpen(true);
+            }
+          })();
         }}
       />
       <ManageLinksDialog open={manageLinksOpen} onClose={() => setManageLinksOpen(false)} />

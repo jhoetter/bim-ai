@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 
 logger = logging.getLogger(__name__)
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 from sqlalchemy import desc, select
@@ -1281,6 +1281,114 @@ async def import_dxf(
         "linkedElementId": link_element_id,
         "lineworkCount": len(linework),
     }
+
+
+@api_router.post("/models/{host_id}/upload-dxf-file")
+async def upload_dxf_file(
+    host_id: UUID,
+    file: UploadFile,
+    levelId: str = Form(...),
+    name: str = Form(default=""),
+    session: AsyncSession = Depends(get_session),
+    hub: Hub = Depends(get_hub),
+) -> dict[str, Any]:
+    """FED-04b: upload a DXF file directly from the browser and materialise it as link_dxf.
+
+    Accepts multipart/form-data with:
+      - file: binary DXF file
+      - levelId: ID of the host level
+      - name: optional display name (defaults to filename without extension)
+    """
+    import os
+    import tempfile
+    from pathlib import Path as _Path
+
+    from bim_ai.dxf_import import parse_dxf_to_linework
+
+    host_row = await load_model_row(session, host_id)
+    if host_row is None:
+        raise HTTPException(status_code=404, detail="Host model not found")
+
+    # Validate level exists
+    host_doc = Document.model_validate(host_row.document)
+    if levelId not in host_doc.elements or not isinstance(
+        host_doc.elements[levelId], LevelElem
+    ):
+        raise HTTPException(
+            status_code=400, detail="levelId must reference an existing Level"
+        )
+
+    # Use filename without extension as name if not provided
+    display_name = name.strip() or _Path(file.filename or "DXF Underlay").stem
+
+    # Save to temp file, parse, clean up
+    content = await file.read()
+    with tempfile.NamedTemporaryFile(suffix=".dxf", delete=False) as tmp:
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    try:
+        linework = parse_dxf_to_linework(_Path(tmp_path))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"DXF parse failed: {exc}") from exc
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+
+    create_cmd = {
+        "type": "createLinkDxf",
+        "name": display_name,
+        "levelId": levelId,
+        "originMm": {"xMm": 0.0, "yMm": 0.0},
+        "rotationDeg": 0.0,
+        "scaleFactor": 1.0,
+        "linework": linework,
+    }
+    try:
+        ok, new_doc, _cmds, viols, code = try_commit_bundle(host_doc, [create_cmd])
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    if not ok or new_doc is None:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "reason": code,
+                "violations": [v.model_dump(by_alias=True) for v in viols],
+            },
+        )
+
+    new_link_dxf_ids = [
+        eid
+        for eid in set(new_doc.elements.keys()) - set(host_doc.elements.keys())
+        if getattr(new_doc.elements[eid], "kind", None) == "link_dxf"
+    ]
+    if len(new_link_dxf_ids) != 1:
+        raise HTTPException(
+            status_code=500,
+            detail="Internal: createLinkDxf did not produce exactly one new link_dxf element",
+        )
+    link_element_id = new_link_dxf_ids[0]
+
+    host_row.document = document_to_wire(new_doc)  # type: ignore[assignment]
+    host_row.revision = new_doc.revision
+    await session.commit()
+
+    try:
+        await hub.publish(
+            host_id,
+            {
+                "type": "delta",
+                "modelId": str(host_id),
+                "revision": new_doc.revision,
+            },
+        )
+    except Exception:
+        pass
+
+    return {"linkDxfId": link_element_id, "name": display_name}
 
 
 # ---------------------------------------------------------------------------

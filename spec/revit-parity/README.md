@@ -52,7 +52,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-003 | Project Browser                                      | UI & Nav       | 🟡            | Plan views, 3D/section/elevation/sheet/schedule groups exist; no families/groups/legends subtree                     |
 | F-004 | Properties Palette (context-sensitive)               | UI & Nav       | 🟡            | Right-rail inspector with editable fields; missing type/instance separation and Edit Type button                     |
 | F-005 | Ribbon Interface (tabbed toolbar)                    | UI & Nav       | ❌            | Different UI paradigm                                                                                                |
-| F-006 | Quick Access Toolbar                                 | UI & Nav       | 🟡            | Undo (`topbar-undo`) and Redo (`topbar-redo`) buttons wired to undoModel/redoModel; 3D View button in TopBar. Missing: Section shortcut, Thin Lines toggle, Dimension shortcut, Tag shortcut, user-customisable pin/unpin |
+| F-006 | Quick Access Toolbar                                 | UI & Nav       | 🟡            | Undo (`topbar-undo`) and Redo (`topbar-redo`) quick-access buttons wired to undoModel/redoModel; 3D View button in TopBar. Missing: Section shortcut, Thin Lines toggle, Aligned Dimension shortcut, Tag by Category shortcut, user-customisable pin/unpin |
 | F-007 | Multi-tab view workspace                             | UI & Nav       | ✅            | TabBar + tabsModel (plan/3d/section/sheet/schedule/agent); Close Inactive Views added to tab bar                    |
 | F-008 | Dark Mode                                            | UI & Nav       | ✅            | Full toggle with URL hash + localStorage + prefers-color-scheme cascade                                              |
 | F-009 | Language settings                                    | UI & Nav       | ✅            | EN/DE toggle via language selector in TopBar; localStorage persistence                                              |
@@ -71,7 +71,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-022 | Project Base Point & Survey Point                    | CAD            | 🟡            | First-class elements in core; 3D markers rendered; plan canvas now also renders 2D cross-in-circle (PBP) and triangle (SP) markers gated by site_origin VG category                 |
 | F-023 | Work Plane assignment for linked elements            | CAD            | 🟡            | `link_dxf` `levelId` field controls which level (work plane) the underlay is associated with; current level shown in inspector (`case 'link_dxf':`); changeable via ManageLinksDialog DXF Links section. Missing: level-dropdown in inspector (read-only display); Revit-style "Set Work Plane" dialog |
 | F-024 | Manage Links dialog                                  | CAD            | 🟡            | ManageLinksDialog lists link_model rows (delete/alignment/visibility/pin) AND link_dxf underlays (opacity + color mode); missing IFC/PDF/image types, unload/reload controls, file-path change |
-| F-025 | Levels (datum planes)                                | Levels & Views | 🟡            | LevelStack inline create/rename; SectionViewportSvg renders blue dashed datum lines with circle head + "Name \| ±X.XXX m" label (Revit-style level heads in section views). Missing: elevation datum line across the plan canvas |
+| F-025 | Levels (datum planes)                                | Levels & Views | 🟡            | LevelStack inline create/rename; SectionViewportSvg renders blue dashed datum lines with circle head + "Name \| ±X.XXX m" label; StatusBar shows elevation value for current level. Missing: elevation datum line across the plan canvas |
 | F-026 | Rename Levels                                        | Levels & Views | ✅            | LevelStack inline rename via double-click; commits via updateElementProperty                                         |
 | F-027 | Create Floor Plan Views from levels                  | Levels & Views | ✅            | LevelStack "+" per level fires upsertPlanView; newly created views appear in Project Browser                         |
 | F-028 | Floor Plan View Types (Arch/Lighting/Power/etc.)     | Levels & Views | 🟡            | planViewSubtype field (floor_plan/lighting_plan/power_plan/coordination_plan) in plan_view; "View Type" dropdown in InspectorPlanViewEditor; missing default view template association and type-specific Project Browser grouping |
@@ -126,7 +126,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-077 | Masking Region                                       | Param. Furn.  | 🟡            | maskingRegionRender.ts (KRN-10) renders masking_region elements as white-fill polygons; masking-region tool (hotkey MR) now uses full SketchCanvas polygon authoring (auto-close, Pick Walls); missing per-region fill color and Edit Boundary re-entry |
 | F-078 | Yes/No parameter for conditional visibility          | Param. Furn.  | ❌            |                                                                                                                      |
 | F-079 | Symbolic Lines for 2D furniture                      | Param. Furn.  | ❌            |                                                                                                                      |
-| F-080 | Snap Intersection (SI) shortcut                      | Param. Furn.  | ❌            |                                                                                                                      |
+| F-080 | Snap Intersection (SI) shortcut                      | Param. Furn.  | 🟡            | One-shot snap override shortcuts during drawing: SI (Intersection), SE (Endpoint), SM (Midpoint), SP (Perpendicular), SX (Extension). Two-letter key sequence activates override for next pick only, then resets; shown as amber status chip. Missing: SN/SC/SW overrides, right-click context-menu override |
 | F-081 | Multiple Types per family (New Type button)          | Param. Furn.  | ❌            |                                                                                                                      |
 | F-082 | Extrusion from elevation (height parameters)         | Param. Furn.  | ❌            |                                                                                                                      |
 | F-083 | Leg geometry: circle extrusion + Leg_Radius param    | Param. Furn.  | ❌            |                                                                                                                      |
@@ -134,7 +134,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-085 | Detail Level control (Coarse=2D / Medium+Fine=3D)    | Param. Furn.  | ❌            |                                                                                                                      |
 | F-086 | Backrest Depth parameter                             | Param. Furn.  | ❌            |                                                                                                                      |
 | F-087 | Project Furniture Library (warehouse .rvt)           | Furn. Library | ❌            | family_catalog_format exists but no warehouse UX                                                                     |
-| F-088 | Dimension text repositioning                         | Furn. Library | ❌            |                                                                                                                      |
+| F-088 | Dimension text repositioning                         | Furn. Library | 🟡            | `textOffsetMm` field on dimension elements; text label offset via inspector inputs (X/Y + Reset) or drag-able circular canvas grip. Missing: grip does not snap to dimension-line axis; double-click-to-reset not implemented |
 | F-089 | Array parameters (Array_Length_Width)                | Furn. Library | ❌            |                                                                                                                      |
 | F-090 | File Save Options (Max backups)                      | Furn. Library | ❌            | N/A (DB model)                                                                                                       |
 | F-091 | Room Tool                                            | Rooms & Areas | 🟡            | tool registered; PlanCanvas click-to-place vertex logic; room labels via plan view inspector; missing auto-snap-to-boundary |
@@ -150,7 +150,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-101 | Isolate Category                                     | Troubleshoot   | 🟡            | 👓 Isolate + 👁 Hide buttons in PlanCanvas (category-level); TemporaryVisibilityChip in Workspace resets; missing per-element isolate/hide and unified sunglasses pop-up menu |
 | F-102 | Hide Category (permanent, view-specific)             | Troubleshoot   | 🟡            | VVDialog permanent per-view category hide + TemporaryVisibilityChip hide mode; no right-click shortcut or Reveal Hidden mode |
 | F-103 | Move tool (MV) — two-point with snap                 | Troubleshoot   | 🟡            | Wall grip drag + Δx/Δy inspector input; `placed_asset` elements support Δx/Δy inspector move (moveAssetDelta); `column` elements support Δx/Δy inspector move (moveColumnDelta). Missing: two-point on-canvas Move command with typed distance for floor/room/door/window elements |
-| F-104 | Tab key for chain-selection                          | Troubleshoot   | 🟡            | snapTabCycle.ts (EDT-05) cycles snap candidates via Tab; wall-loop chain-selection missing                           |
+| F-104 | Tab key for chain-selection                          | Troubleshoot   | 🟡            | Tab cycles snap candidates (EDT-05) and advances wall selection to next endpoint-connected wall in select mode (round-robin). Missing: bulk multi-select of an entire wall loop in one Tab sequence |
 | F-105 | Split Element (SL)                                   | Troubleshoot   | ✅            | PlanCanvas split tool; splitWallAt fires on click within 900 mm of wall; SplitWallAtCmd persists                    |
 | F-106 | Aligned Dimension for cross-checking accuracy        | Troubleshoot   | ✅            | dimension tool two-click placement; createDimension persists; rendered by planElementMeshBuilders + symbology        |
 | F-107 | Floor Tool & Edit Boundary                           | Floors         | ✅            | floor-sketch tool (Shift+F) with full SketchCanvas, wall-snap, auto-close, Finish/Cancel; backend creates floor      |
@@ -167,20 +167,20 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-118 | Parametric kitchen slab family                       | Furn. Place   | ❌            |                                                                                                                      |
 | F-119 | Parametric bathroom layout family                    | Furn. Place   | ❌            |                                                                                                                      |
 | F-120 | Parametric bed family (2D)                           | Furn. Place   | ❌            |                                                                                                                      |
-| F-121 | Align tool (AL) for furniture-to-wall                | Furn. Place   | 🟡            | Two-click workflow: first click = reference point, second click snaps nearest wall (≤900 mm) via `alignElementToReference`; backend translates wall along dominant axis. Missing: arbitrary face alignment, Lock constraint, alignment-line preview, non-wall elements |
+| F-121 | Align tool (AL) for furniture-to-wall                | Furn. Place   | 🟡            | Two-click workflow: first click = reference point (shows dashed crosshair SVG + coordinate label), second click snaps nearest wall (≤900 mm) via `alignElementToReference`. Missing: arbitrary face alignment, Lock constraint, non-wall elements |
 | F-122 | Rotate tool (about user-defined center)              | Furn. Place   | 🟡            | Column elements: drag-handle grip (`columnGripProvider.ts` — "Drag to rotate column") fires `updateElementProperty { key: 'rotationDeg' }`; "Rotation (°)" input (`data-testid="inspector-column-rotation"`, step 15°) in inspector. Missing: general-purpose Rotate-about-point for non-column elements; angular snap; numeric dialog |
 
 ---
 
 ## Summary Statistics
 
-_Last audited: 2026-05-09 against codebase at commit `docs/parity-tracker-audit`._
+_Last audited: 2026-05-09 against codebase at commit `docs/tracker-sync-wave-10`._
 
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
 | ✅ Fully available     | 27      | 23%        |
-| 🟡 Partially available | 43      | 36%        |
-| ❌ Not available       | 50      | 42%        |
+| 🟡 Partially available | 45      | 37%        |
+| ❌ Not available       | 48      | 40%        |
 | **Total**              | **120** | **100%**   |
 
 ---

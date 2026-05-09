@@ -399,6 +399,13 @@ export function WorkspaceRightRail({
                       }
                     />
                   </>
+                ) : el.kind === 'project_base_point' || el.kind === 'survey_point' ? (
+                  <CoordinatePointInspector
+                    el={
+                      el as Extract<Element, { kind: 'project_base_point' | 'survey_point' }>
+                    }
+                    onSemanticCommand={onSemanticCommand}
+                  />
                 ) : el.kind === 'placed_asset' ? (
                   <PlacedAssetInspector
                     el={el as Extract<Element, { kind: 'placed_asset' }>}
@@ -781,6 +788,87 @@ function ColumnInspector({
           >
             Apply
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** F-022: Coordinate properties inspector for Project Base Point and Survey Point. */
+function CoordinatePointInspector({
+  el,
+  onSemanticCommand,
+}: {
+  el: Extract<Element, { kind: 'project_base_point' | 'survey_point' }>;
+  onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
+}): JSX.Element {
+  const label = el.kind === 'project_base_point' ? 'Project Base Point' : 'Survey Point';
+  const elevationMm =
+    el.kind === 'survey_point' ? el.sharedElevationMm : 0;
+
+  function commitPosition(xMm: number, yMm: number) {
+    void onSemanticCommand({
+      type: 'updateElementProperty',
+      elementId: el.id,
+      key: 'positionMm',
+      value: { xMm, yMm, zMm: el.positionMm.zMm },
+    });
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="text-[11px] font-semibold text-foreground">{label}</div>
+      <div className="space-y-1 text-xs text-muted">
+        <div className="flex items-center gap-1">
+          <span className="font-medium w-20">X (E/W):</span>
+          <input
+            type="number"
+            step={100}
+            defaultValue={el.positionMm.xMm}
+            className="w-24 rounded border border-border bg-surface px-1 py-0.5 text-xs text-foreground"
+            data-testid="inspector-coord-x"
+            onBlur={(e) => {
+              commitPosition(Number(e.target.value), el.positionMm.yMm);
+            }}
+          />
+          <span>mm</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="font-medium w-20">Y (N/S):</span>
+          <input
+            type="number"
+            step={100}
+            defaultValue={el.positionMm.yMm}
+            className="w-24 rounded border border-border bg-surface px-1 py-0.5 text-xs text-foreground"
+            data-testid="inspector-coord-y"
+            onBlur={(e) => {
+              commitPosition(el.positionMm.xMm, Number(e.target.value));
+            }}
+          />
+          <span>mm</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="font-medium w-20">Elevation:</span>
+          <input
+            type="number"
+            value={elevationMm}
+            readOnly
+            className="w-24 rounded border border-border bg-surface px-1 py-0.5 text-xs text-foreground opacity-60 cursor-not-allowed"
+            data-testid="inspector-coord-elevation"
+          />
+          <span>mm</span>
+        </div>
+      </div>
+      <div className="border-t border-border pt-2 space-y-1">
+        <div
+          className="text-[10px] font-semibold uppercase text-muted"
+          style={{ letterSpacing: '0.08em', opacity: 0.7 }}
+        >
+          Shared Coordinates
+        </div>
+        <div className="text-xs text-muted">{label}</div>
+        <div className="text-[10px] text-muted opacity-60">
+          Used as origin reference for linked models
         </div>
       </div>
     </div>

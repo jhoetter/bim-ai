@@ -11,7 +11,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Link CAD dialog](file:///Users/jhoetter/Desktop/Revit%20Specs/0207_00-29-53.png)
 
-**bim-ai status:** 🟡 Partial — backend is fully implemented: `app/bim_ai/dxf_import.py` parses DXF geometry via `ezdxf`, `build_link_dxf_payload` wraps it into a `link_dxf` engine command, and `POST /api/models/{host_id}/import-dxf` materialises the element. The resulting `link_dxf` element renders as a desaturated grey underlay on the plan canvas with origin/rotation/scale support. The frontend file-picker in ProjectMenu is currently **disabled** (button is stubbed with a "on the roadmap" tooltip that redirects users to Link Model instead). No live reload on source-file change.
+**bim-ai status:** 🟡 Partial — backend is fully implemented: `app/bim_ai/dxf_import.py` parses DXF geometry via `ezdxf`, `build_link_dxf_payload` wraps it into a `link_dxf` engine command, and `POST /api/models/{host_id}/import-dxf` materialises the element (server-side path) plus the new `POST /api/models/{host_id}/upload-dxf-file` multipart endpoint for browser uploads. The resulting `link_dxf` element renders as a desaturated grey underlay on the plan canvas with origin/rotation/scale support. Frontend file-picker is now enabled (Insert → Link DXF…) and wired to `POST /api/models/{id}/upload-dxf-file`; the underlay appears immediately after selection via WebSocket broadcast. No live reload on source-file change.
 
 ---
 
@@ -22,7 +22,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Import vs Link](file:///Users/jhoetter/Desktop/Revit%20Specs/0206_00-29-37.png)
 
-**bim-ai status:** 🟡 Partial — same backend as F-015 (`import-dxf` API). bim-ai uses a single `link_dxf` element kind that behaves like a link (the parsed linework is stored in the element, not as a separate file reference), so the linked vs. embedded distinction does not exist today. Frontend file-picker is also disabled (same stub as F-015).
+**bim-ai status:** 🟡 Partial — same backend as F-015 (`upload-dxf-file` API). bim-ai uses a single `link_dxf` element kind that behaves like a link (the parsed linework is stored in the element, not as a separate file reference), so the linked vs. embedded distinction does not exist today. Frontend file-picker is now enabled (Insert → Link DXF…) and wired to `POST /api/models/{id}/upload-dxf-file`; the underlay appears immediately after selection via WebSocket broadcast.
 
 ---
 
@@ -92,7 +92,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Project Base Point](file:///Users/jhoetter/Desktop/Revit%20Specs/0134_00-15-08.png)
 
-**bim-ai status:** 🟡 Partial — `project_base_point` and `survey_point` are first-class element kinds in `@bim-ai/core`. The 3D viewport renders them as visual markers (blue circled cross for PBP, green triangle for Survey Point) via `originMarkers.ts`. Plan canvas now also renders 2D cross-in-circle (PBP, blue) and triangle (Survey Point, green) markers at `positionMm`, gated by the VG → Site/Origin `site_origin` category. Missing: interactive "Clip"/"Unclip" toggle; dedicated coordinate properties inspector.
+**bim-ai status:** 🟡 Partial — `project_base_point` and `survey_point` are first-class element kinds in `@bim-ai/core`. The 3D viewport renders them as visual markers (blue circled cross for PBP, green triangle for Survey Point) via `originMarkers.ts`. Plan canvas now also renders 2D cross-in-circle (PBP, blue) and triangle (Survey Point, green) markers at `positionMm`, gated by the VG → Site/Origin `site_origin` category. The right-rail inspector now shows editable N/S / E/W coordinate fields (X/Y inputs with mm precision, blur-to-commit via `updateElementProperty`) plus a read-only Elevation field when the Project Base Point or Survey Point is selected. Missing: interactive "Clip"/"Unclip" toggle.
 
 ---
 

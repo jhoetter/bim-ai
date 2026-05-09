@@ -266,3 +266,21 @@ export async function fetchBuildingPresets(): Promise<string[]> {
   const j = await fetchJson<{ presets?: Record<string, unknown> }>('/api/building-presets');
   return Object.keys(j.presets ?? {}).sort((a, b) => a.localeCompare(b));
 }
+
+/** FED-04b: upload a DXF file from the browser via multipart form. */
+export async function uploadDxfFile(
+  modelId: string,
+  file: File,
+  levelId: string,
+): Promise<{ linkDxfId: string; name: string }> {
+  const form = new FormData();
+  form.append('file', file, file.name);
+  form.append('levelId', levelId);
+  form.append('name', file.name.replace(/\.dxf$/i, ''));
+  const res = await fetch(`/api/models/${encodeURIComponent(modelId)}/upload-dxf-file`, {
+    method: 'POST',
+    body: form,
+  });
+  if (!res.ok) throw new Error(`DXF upload failed: ${res.status}`);
+  return res.json() as Promise<{ linkDxfId: string; name: string }>;
+}
