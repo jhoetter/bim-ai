@@ -5,7 +5,11 @@
   "branch": "feat/parity-readme-sync",
   "checkpoints_count": 2,
   "files_touched": [
-    "packages/web/src/plan/PlanCanvas.tsx"
+    "app/bim_ai/sketch_session.py",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/SketchCanvas.tsx",
+    "packages/web/src/plan/sketchApi.ts",
+    "spec/revit-parity/ch07-parametric-furniture.md"
   ],
   "sessions": [
     {
@@ -19,6 +23,12 @@
       "transcript": "/10/037d2fa724/1/full.jsonl",
       "content_hash": "/10/037d2fa724/1/content_hash.txt",
       "prompt": "/10/037d2fa724/1/prompt.txt"
+    },
+    {
+      "metadata": "/10/037d2fa724/2/metadata.json",
+      "transcript": "/10/037d2fa724/2/full.jsonl",
+      "content_hash": "/10/037d2fa724/2/content_hash.txt",
+      "prompt": "/10/037d2fa724/2/prompt.txt"
     }
   ],
   "token_usage": {
