@@ -3,11 +3,27 @@
   "checkpoint_id": "e8b99fdcca2b",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "packages/web/src/collab/ActivityPanel.tsx",
+    "packages/web/src/collab/MilestoneDialog.tsx",
+    "packages/web/src/collab/ShareModal.tsx",
+    "packages/web/src/collab/SharePresentationModal.tsx",
+    "packages/web/src/familyEditor/FamilyEditorWorkbench.tsx",
+    "packages/web/src/familyEditor/LoadedFamiliesSidebar.tsx",
+    "packages/web/src/jobs/JobsPanel.tsx",
+    "packages/web/src/plan/CalloutMarker.tsx",
+    "packages/web/src/plan/NewSheetDialog.tsx",
+    "packages/web/src/plan/PhaseDropdown.tsx",
+    "packages/web/src/plan/SheetCanvas.tsx",
+    "packages/web/src/plan/SheetReviewSurface.tsx",
+    "packages/web/src/plan/SnapSettingsToolbar.tsx",
+    "packages/web/src/workspace/InspectorContent.tsx",
     "packages/web/src/workspace/OptionsBar.tsx",
-    "packages/web/src/workspace/ProjectBrowser.tsx"
+    "packages/web/src/workspace/ProjectBrowser.tsx",
+    "packages/web/src/workspace/ScheduleView.tsx",
+    "packages/web/src/workspace/ViewTemplateEditPanel.tsx",
+    "packages/web/src/workspace/WallContextMenu.test.tsx"
   ],
   "sessions": [
     {
@@ -21,13 +37,19 @@
       "transcript": "/e8/b99fdcca2b/1/full.jsonl",
       "content_hash": "/e8/b99fdcca2b/1/content_hash.txt",
       "prompt": "/e8/b99fdcca2b/1/prompt.txt"
+    },
+    {
+      "metadata": "/e8/b99fdcca2b/2/metadata.json",
+      "transcript": "/e8/b99fdcca2b/2/full.jsonl",
+      "content_hash": "/e8/b99fdcca2b/2/content_hash.txt",
+      "prompt": "/e8/b99fdcca2b/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 8137,
-    "cache_creation_tokens": 4880562,
-    "cache_read_tokens": 285056139,
-    "output_tokens": 1533690,
-    "api_call_count": 2895
+    "input_tokens": 9911,
+    "cache_creation_tokens": 6194745,
+    "cache_read_tokens": 371712532,
+    "output_tokens": 2008712,
+    "api_call_count": 3800
   }
 }

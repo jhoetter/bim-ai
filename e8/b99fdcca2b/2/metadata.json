@@ -1,0 +1,52 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "e8b99fdcca2b",
+  "session_id": "50a3d153-f462-4f27-b73c-9ec39b274eb6",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T18:44:40.227864Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/collab/ActivityPanel.tsx",
+    "packages/web/src/collab/MilestoneDialog.tsx",
+    "packages/web/src/collab/ShareModal.tsx",
+    "packages/web/src/collab/SharePresentationModal.tsx",
+    "packages/web/src/familyEditor/FamilyEditorWorkbench.tsx",
+    "packages/web/src/familyEditor/LoadedFamiliesSidebar.tsx",
+    "packages/web/src/jobs/JobsPanel.tsx",
+    "packages/web/src/plan/CalloutMarker.tsx",
+    "packages/web/src/plan/NewSheetDialog.tsx",
+    "packages/web/src/plan/PhaseDropdown.tsx",
+    "packages/web/src/plan/SheetCanvas.tsx",
+    "packages/web/src/plan/SheetReviewSurface.tsx",
+    "packages/web/src/plan/SnapSettingsToolbar.tsx",
+    "packages/web/src/workspace/InspectorContent.tsx",
+    "packages/web/src/workspace/OptionsBar.tsx",
+    "packages/web/src/workspace/ProjectBrowser.tsx",
+    "packages/web/src/workspace/ScheduleView.tsx",
+    "packages/web/src/workspace/ViewTemplateEditPanel.tsx",
+    "packages/web/src/workspace/WallContextMenu.test.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "af6ddb0886a6",
+  "token_usage": {
+    "input_tokens": 1774,
+    "cache_creation_tokens": 1314183,
+    "cache_read_tokens": 86656393,
+    "output_tokens": 475022,
+    "api_call_count": 905
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T18:44:40.124543Z",
+    "agent_lines": 68,
+    "agent_removed": 48,
+    "human_added": 7,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 75,
+    "total_lines_changed": 147,
+    "agent_percentage": 78.91156462585033,
+    "metric_version": 2
+  }
+}
