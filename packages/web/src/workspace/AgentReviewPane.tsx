@@ -326,6 +326,7 @@ export function AgentReviewPane() {
       <div className="rounded border border-border bg-background/40 p-2">
         <div className="font-semibold text-muted">Command bundle (JSON)</div>
         <textarea
+          aria-label="Command bundle (JSON)"
           className="mt-2 w-full rounded border border-border bg-background p-2 font-mono text-[10px]"
           rows={6}
           spellCheck={false}

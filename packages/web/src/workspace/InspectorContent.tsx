@@ -144,6 +144,7 @@ export function InspectorDisciplineDropdown({
         {t('inspector.fields.discipline', 'Discipline')}
       </span>
       <select
+        aria-label={t('inspector.fields.discipline', 'Discipline')}
         className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
         value={value ?? ''}
         onChange={(e) => {
@@ -1307,7 +1308,8 @@ export function InspectorPlanViewEditor({
           </label>
           <div className={LABEL_CLS}>
             <span>View Template</span>
-            <button type="button"
+            <button
+              type="button"
               data-testid="inspector-save-as-template"
               onClick={() =>
                 onPersistProperty(

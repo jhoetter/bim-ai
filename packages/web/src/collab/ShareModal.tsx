@@ -280,6 +280,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
               }}
             />
             <select
+              aria-label="Invite role"
               value={inviteRole}
               onChange={(e) => setInviteRole(e.target.value as Role)}
               style={{

@@ -148,6 +148,7 @@ export function MaterialLayerStackWorkbench({
                   <td className="p-1.5 font-mono">{row.index}</td>
                   <td className="p-1.5">
                     <select
+                      aria-label={`Role for layer ${row.index}`}
                       className="max-w-[6.5rem] rounded border border-border bg-background px-1 py-0.5 font-mono text-[10px]"
                       value={row.function}
                       onChange={(e) =>
@@ -165,6 +166,7 @@ export function MaterialLayerStackWorkbench({
                   </td>
                   <td className="p-1">
                     <input
+                      aria-label={`Material key for layer ${row.index}`}
                       className="w-full min-w-[5rem] rounded border border-border bg-background px-1 py-0.5 font-mono text-[10px]"
                       value={row.materialKey}
                       onChange={(e) => updateDraft(row.index, { materialKey: e.target.value })}
@@ -177,6 +179,7 @@ export function MaterialLayerStackWorkbench({
                   <td className="p-1.5 text-right">
                     <input
                       type="number"
+                      aria-label={`Thickness (mm) for layer ${row.index}`}
                       min={0.001}
                       step={0.1}
                       className="w-16 rounded border border-border bg-background px-1 py-0.5 text-right font-mono text-[10px]"
