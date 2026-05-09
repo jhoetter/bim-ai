@@ -4,20 +4,29 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/plan/MarkupToolbar.tsx",
+    "packages/web/src/viewport/SunOverlay.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/33/6982362dc0/0/metadata.json",
       "transcript": "/33/6982362dc0/0/full.jsonl",
       "content_hash": "/33/6982362dc0/0/content_hash.txt",
       "prompt": "/33/6982362dc0/0/prompt.txt"
+    },
+    {
+      "metadata": "/33/6982362dc0/1/metadata.json",
+      "transcript": "/33/6982362dc0/1/full.jsonl",
+      "content_hash": "/33/6982362dc0/1/content_hash.txt",
+      "prompt": "/33/6982362dc0/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 570,
-    "cache_creation_tokens": 586854,
-    "cache_read_tokens": 23484883,
-    "output_tokens": 259769,
-    "api_call_count": 237
+    "input_tokens": 584,
+    "cache_creation_tokens": 591754,
+    "cache_read_tokens": 25620164,
+    "output_tokens": 262379,
+    "api_call_count": 251
   }
 }
