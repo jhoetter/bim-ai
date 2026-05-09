@@ -18,6 +18,7 @@
   --color-border: hsl(220 13% 90%);
   --color-border-strong: hsl(220 13% 80%);
   --color-muted-foreground: hsl(220 10% 44%);
+  --color-muted: hsl(220 10% 44%);        /* alias for --color-muted-foreground */
   --color-accent: hsl(214 88% 50%);
   --color-accent-foreground: hsl(0 0% 100%);
   --color-accent-soft: color-mix(in srgb, hsl(214 88% 50%) 12%, hsl(0 0% 100%));
@@ -26,6 +27,12 @@
   --color-danger: hsl(0 72% 50%);
   --color-info: hsl(213 86% 56%);
   --color-ring: color-mix(in srgb, hsl(214 88% 50%) 38%, transparent);
+  /* Semantic aliases used by collab/annotation components */
+  --color-surface-warning: color-mix(in srgb, hsl(38 92% 50%) 12%, hsl(0 0% 100%));
+  --color-text-warning: hsl(30 80% 35%);
+  --color-annotation: hsl(18 75% 42%);  /* warm red-ochre — callout markers, redline annotation */
+  --color-surface-hover: hsl(220 16% 94%);
+  --text-on-accent: hsl(0 0% 100%);     /* alias for --color-accent-foreground */
 
   /* §9.4 Spacing (4 px base) */
   --space-0: 0;

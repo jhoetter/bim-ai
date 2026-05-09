@@ -15,6 +15,7 @@
   --color-border: hsl(220 10% 22%);
   --color-border-strong: hsl(220 10% 30%);
   --color-muted-foreground: hsl(220 10% 62%);
+  --color-muted: hsl(220 10% 62%);
   --color-accent: hsl(213 95% 62%);
   --color-accent-foreground: hsl(220 18% 14%);
   --color-accent-soft: color-mix(in srgb, hsl(213 95% 62%) 18%, hsl(220 14% 10%));
@@ -23,6 +24,12 @@
   --color-danger: hsl(0 80% 62%);
   --color-info: hsl(213 92% 66%);
   --color-ring: color-mix(in srgb, hsl(213 95% 62%) 38%, transparent);
+  /* Semantic aliases — dark overrides */
+  --color-surface-warning: color-mix(in srgb, hsl(40 90% 60%) 15%, hsl(220 14% 10%));
+  --color-text-warning: hsl(40 90% 72%);
+  --color-annotation: hsl(20 70% 65%);
+  --color-surface-hover: hsl(220 12% 18%);
+  --text-on-accent: hsl(220 18% 14%);
 
   /* Dark mode flattens shadows: §9.7 — replaces shadow with a 1 px border outline. */
   --elev-0: none;
