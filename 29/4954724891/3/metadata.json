@@ -1,0 +1,92 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "294954724891",
+  "session_id": "965188de-05c1-45fb-bdf6-79ca31696284",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T18:43:39.188165Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/icons/src/icon.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "3be3100473af",
+  "checkpoint_transcript_start": 156,
+  "transcript_lines_at_start": 156,
+  "token_usage": {
+    "input_tokens": 5,
+    "cache_creation_tokens": 83178,
+    "cache_read_tokens": 199786,
+    "output_tokens": 946,
+    "api_call_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T18:43:39.175339Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 2,
+    "total_committed": 0,
+    "total_lines_changed": 4,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 554,
+      "user_lines_removed": 50,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/icons/src/hifi.tsx": 334,
+        "packages/icons/src/icon.tsx": 44,
+        "packages/icons/src/index.ts": 15,
+        "packages/web/src/collab/ActivityPanel.tsx": 5,
+        "packages/web/src/collab/MilestoneDialog.tsx": 6,
+        "packages/web/src/collab/ShareModal.tsx": 5,
+        "packages/web/src/collab/SharePresentationModal.tsx": 3,
+        "packages/web/src/design-systems/IconGallery.tsx": 93,
+        "packages/web/src/familyEditor/FamilyEditorWorkbench.tsx": 18,
+        "packages/web/src/familyEditor/LoadedFamiliesSidebar.tsx": 2,
+        "packages/web/src/jobs/JobsPanel.tsx": 2,
+        "packages/web/src/plan/CalloutMarker.tsx": 1,
+        "packages/web/src/plan/NewSheetDialog.tsx": 1,
+        "packages/web/src/plan/PhaseDropdown.tsx": 1,
+        "packages/web/src/plan/SheetCanvas.tsx": 3,
+        "packages/web/src/plan/SheetReviewSurface.tsx": 3,
+        "packages/web/src/plan/SnapSettingsToolbar.tsx": 12,
+        "packages/web/src/workspace/InspectorContent.tsx": 1,
+        "packages/web/src/workspace/OptionsBar.tsx": 1,
+        "packages/web/src/workspace/ProjectBrowser.tsx": 1,
+        "packages/web/src/workspace/ScheduleView.tsx": 1,
+        "packages/web/src/workspace/ViewTemplateEditPanel.tsx": 1,
+        "packages/web/src/workspace/WallContextMenu.test.tsx": 1
+      },
+      "user_removed_per_file": {
+        "packages/icons/src/index.ts": 1,
+        "packages/web/src/collab/ActivityPanel.tsx": 1,
+        "packages/web/src/collab/ShareModal.tsx": 5,
+        "packages/web/src/collab/SharePresentationModal.tsx": 3,
+        "packages/web/src/design-systems/IconGallery.tsx": 1,
+        "packages/web/src/familyEditor/FamilyEditorWorkbench.tsx": 18,
+        "packages/web/src/familyEditor/LoadedFamiliesSidebar.tsx": 2,
+        "packages/web/src/jobs/JobsPanel.tsx": 2,
+        "packages/web/src/plan/CalloutMarker.tsx": 1,
+        "packages/web/src/plan/NewSheetDialog.tsx": 1,
+        "packages/web/src/plan/PhaseDropdown.tsx": 1,
+        "packages/web/src/plan/SheetCanvas.tsx": 3,
+        "packages/web/src/plan/SheetReviewSurface.tsx": 3,
+        "packages/web/src/plan/SnapSettingsToolbar.tsx": 2,
+        "packages/web/src/workspace/InspectorContent.tsx": 1,
+        "packages/web/src/workspace/OptionsBar.tsx": 1,
+        "packages/web/src/workspace/ProjectBrowser.tsx": 1,
+        "packages/web/src/workspace/ScheduleView.tsx": 1,
+        "packages/web/src/workspace/ViewTemplateEditPanel.tsx": 1,
+        "packages/web/src/workspace/WallContextMenu.test.tsx": 1
+      }
+    }
+  ]
+}
