@@ -4,20 +4,28 @@
   "strategy": "manual-commit",
   "branch": "feat/parity-readme-sync",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/workspace/workspaceUtils.ts"
+  ],
   "sessions": [
     {
       "metadata": "/21/c0413ad22b/0/metadata.json",
       "transcript": "/21/c0413ad22b/0/full.jsonl",
       "content_hash": "/21/c0413ad22b/0/content_hash.txt",
       "prompt": "/21/c0413ad22b/0/prompt.txt"
+    },
+    {
+      "metadata": "/21/c0413ad22b/1/metadata.json",
+      "transcript": "/21/c0413ad22b/1/full.jsonl",
+      "content_hash": "/21/c0413ad22b/1/content_hash.txt",
+      "prompt": "/21/c0413ad22b/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 6794,
-    "cache_creation_tokens": 3794289,
-    "cache_read_tokens": 201237064,
-    "output_tokens": 1082415,
-    "api_call_count": 2072
+    "input_tokens": 6801,
+    "cache_creation_tokens": 3799444,
+    "cache_read_tokens": 201946792,
+    "output_tokens": 1087732,
+    "api_call_count": 2079
   }
 }
