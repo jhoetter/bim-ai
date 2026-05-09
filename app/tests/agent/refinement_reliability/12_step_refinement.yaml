@@ -1,0 +1,161 @@
+# TST-V3-01 Refinement Reliability Fixture
+# This fixture is the canonical reliability target for bim-ai's kernel.
+# CI runs the deterministic harness (no AI) on every PR touching:
+#   app/bim_ai/cmd/, app/bim_ai/tkn/, app/bim_ai/vg/, app/bim_ai/api/
+# When an AI-integration follow-up lands (post-v3), this same fixture
+# becomes the agent reliability test (agent passes if it solves the
+# 12-step task using only API-V3-01 calls within the property bounds).
+
+# 12-step refinement reliability fixture
+# Each step: a command bundle + expected invariants
+schema_version: "tst-v3.0"
+model_id: "test-model-refinement"
+steps:
+  - step: 1
+    description: "Create base wall"
+    bundle:
+      commands:
+        - type: create_wall
+          id: wall-1
+          startMm: {xMm: 0, yMm: 0}
+          endMm: {xMm: 5000, yMm: 0}
+          heightMm: 2800
+          wallTypeId: wt-default
+    invariants:
+      element_count_gte: 1
+      element_kinds_include: ["wall"]
+
+  - step: 2
+    description: "Add door"
+    bundle:
+      commands:
+        - type: create_door
+          id: door-1
+          wallId: wall-1
+          tMm: 1000
+          widthMm: 900
+          heightMm: 2100
+    invariants:
+      element_count_gte: 2
+      element_kinds_include: ["door"]
+
+  - step: 3
+    description: "Add second wall"
+    bundle:
+      commands:
+        - type: create_wall
+          id: wall-2
+          startMm: {xMm: 5000, yMm: 0}
+          endMm: {xMm: 5000, yMm: 4000}
+          heightMm: 2800
+          wallTypeId: wt-default
+    invariants:
+      element_count_gte: 3
+
+  - step: 4
+    description: "Add floor"
+    bundle:
+      commands:
+        - type: create_floor
+          id: floor-1
+          boundaryMm:
+            - {xMm: 0, yMm: 0}
+            - {xMm: 5000, yMm: 0}
+            - {xMm: 5000, yMm: 4000}
+            - {xMm: 0, yMm: 4000}
+          floorTypeId: ft-default
+          levelId: level-0
+    invariants:
+      element_kinds_include: ["floor"]
+
+  - step: 5
+    description: "Add level"
+    bundle:
+      commands:
+        - type: create_level
+          id: level-1
+          name: "Level 2"
+          elevationMm: 3000
+    invariants:
+      element_kinds_include: ["level"]
+
+  - step: 6
+    description: "Update wall height"
+    bundle:
+      commands:
+        - type: update_wall
+          id: wall-1
+          heightMm: 3000
+    invariants:
+      element_kinds_include: ["wall"]
+
+  - step: 7
+    description: "Add window"
+    bundle:
+      commands:
+        - type: create_window
+          id: window-1
+          wallId: wall-2
+          tMm: 1500
+          widthMm: 1200
+          heightMm: 1000
+          sillHeightMm: 900
+    invariants:
+      element_kinds_include: ["window"]
+
+  - step: 8
+    description: "Add room"
+    bundle:
+      commands:
+        - type: create_room
+          id: room-1
+          name: "Living Room"
+          levelId: level-0
+          boundaryMm:
+            - {xMm: 100, yMm: 100}
+            - {xMm: 4900, yMm: 100}
+            - {xMm: 4900, yMm: 3900}
+            - {xMm: 100, yMm: 3900}
+    invariants:
+      element_kinds_include: ["room"]
+
+  - step: 9
+    description: "Create design option"
+    bundle:
+      commands:
+        - type: create_design_option
+          id: opt-1
+          name: "Option A"
+    invariants:
+      element_count_gte: 8
+
+  - step: 10
+    description: "Add assumption log entry"
+    bundle:
+      commands:
+        - type: log_assumption
+          assumption: "Door width matches typical residential standard"
+          confidence: 0.9
+          source: "agent"
+    invariants:
+      assumption_log_count_gte: 1
+
+  - step: 11
+    description: "Add grid line"
+    bundle:
+      commands:
+        - type: create_grid_line
+          id: grid-1
+          name: "A"
+          startMm: {xMm: 0, yMm: -500}
+          endMm: {xMm: 0, yMm: 4500}
+    invariants:
+      element_kinds_include: ["grid_line"]
+
+  - step: 12
+    description: "Final: tokenise round-trip"
+    bundle:
+      commands: []  # no-op — just verify state is stable
+    invariants:
+      element_count_gte: 9
+      no_divergence: true
