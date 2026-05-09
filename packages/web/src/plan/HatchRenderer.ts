@@ -11,6 +11,23 @@
 
 import type { HatchPatternDef } from '@bim-ai/core';
 
+/**
+ * Built-in hatch pattern definitions that are always available regardless
+ * of what hatch_pattern_def elements exist in the model. These serve as
+ * defaults for categories that need a hatch but the model has no explicit def.
+ */
+const BUILT_IN_HATCH_DEFS: Record<string, HatchPatternDef> = {
+  herringbone: {
+    kind: 'hatch_pattern_def',
+    id: 'herringbone',
+    name: 'Herringbone',
+    patternKind: 'crosshatch',
+    paperMmRepeat: 8,
+    rotationDeg: 45,
+    strokeWidthMm: 0.12,
+  },
+};
+
 const SCREEN_DPI = 96;
 const MM_PER_INCH = 25.4;
 const BASE_PIXELS_PER_MM = SCREEN_DPI / MM_PER_INCH;
@@ -25,7 +42,7 @@ const BASE_PIXELS_PER_MM = SCREEN_DPI / MM_PER_INCH;
  */
 const CATEGORY_DEFAULT_HATCH: Partial<Record<string, string>> = {
   wall: 'brick',
-  floor: 'concrete',
+  floor: 'herringbone',   // was: 'concrete'
   roof: 'tile',
   stair: 'concrete',
   slab_edge: 'concrete',
@@ -159,8 +176,9 @@ export function buildHatchDefsForView(
   strokeColour = 'var(--draft-cut)',
 ): Map<string, string> {
   const result = new Map<string, string>();
+  const allHatches = { ...BUILT_IN_HATCH_DEFS, ...hatchesById };
   for (const id of usedHatchIds) {
-    const hatch = hatchesById[id];
+    const hatch = allHatches[id];
     if (!hatch) continue;
     const screenRepeat = computeHatchScreenRepeat(
       hatch.paperMmRepeat,

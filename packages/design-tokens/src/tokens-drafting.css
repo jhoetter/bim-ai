@@ -55,15 +55,16 @@
   --draft-selection: var(--color-accent);
   --draft-hover: #79b1f1;
   --draft-snap: #f59e0b;
+  --draft-anno: #b5451b;         /* warm red-ochre for dims, sections, tags */
 
   /* §9.3 Color — element categories (3D + plan fill), light */
-  --cat-wall: #b0aa9e;     /* warm plaster */
-  --cat-floor: #c2b6a3;
+  --cat-wall: #1c1917;     /* near-black — architectural drafting convention */
+  --cat-floor: #e8e2d8;    /* very light warm — subtle floor fill behind hatch */
   --cat-roof: #6b4f3e;     /* dark clay */
-  --cat-door: #957155;
-  --cat-window: #9bbbe0;
-  --cat-stair: #54585f;
-  --cat-railing: #706b64;  /* warm grey */
+  --cat-door: #2d2a27;     /* near-black, slightly warmer */
+  --cat-window: #8ab4c8;
+  --cat-stair: #2a2825;    /* near-black */
+  --cat-railing: #3a3632;  /* very dark warm */
   --cat-room: #c9dfd2;
   --cat-site: #cbd1bd;
   --cat-section: #d93d3d;
@@ -162,8 +163,8 @@
   /* §9.2 Color — drafting (canvas only), dark. Hex literals (see light
    * note above). */
   --draft-paper: #1a1d24;
-  --draft-grid-major: #383d47;
-  --draft-grid-minor: #292d35;
+  --draft-grid-major: hsl(25 6% 16%);
+  --draft-grid-minor: hsl(25 5% 12%);
   --draft-construction-blue: #4ea2f7;
   --draft-witness: #8aa8c9;
   --draft-cut: #e6e8ee;
@@ -172,15 +173,16 @@
   --draft-selection: var(--color-accent);
   --draft-hover: #2c4a78;
   --draft-snap: #f3b03d;
+  --draft-anno: #e8703a;         /* warm orange for dims on dark paper */
 
   /* §9.3 Color — element categories, dark */
-  --cat-wall: #a09a92;     /* warm plaster grey */
-  --cat-floor: #6b5f4f;
+  --cat-wall: #d8d2ca;     /* warm light — walls read bright on dark paper */
+  --cat-floor: #2e2a26;    /* dark warm — subtle fill on dark paper */
   --cat-roof: #7a5c4a;     /* clay slate */
-  --cat-door: #b48a64;
-  --cat-window: #5482b3;
-  --cat-stair: #adafb5;
-  --cat-railing: #5a5650;  /* warm dark grey */
+  --cat-door: #c8c0b8;     /* warm light */
+  --cat-window: #6a94ab;
+  --cat-stair: #b8b4ae;    /* warm light gray */
+  --cat-railing: #9a948e;  /* medium warm */
   --cat-room: #2e4439;
   --cat-site: #353d2e;
   --cat-section: #f15252;
