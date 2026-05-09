@@ -359,6 +359,11 @@ export function PlanCanvas({
     wall: Extract<Element, { kind: 'wall' }>;
     position: { x: number; y: number };
   } | null>(null);
+  // F-014: state for the right-click "Unhide in View" menu shown in reveal hidden mode.
+  const [unhideContextMenu, setUnhideContextMenu] = useState<{
+    elementKind: string;
+    position: { x: number; y: number };
+  } | null>(null);
   const [geomEpoch, bumpGeom] = useState(0);
   const [measureReadout, setMeasureReadout] = useState<{ distMm: number } | null>(null);
   const [roomColorLegend, setRoomColorLegend] = useState<
@@ -429,6 +434,7 @@ export function PlanCanvas({
   // F-014 — reveal hidden elements mode (lightbulb toggle).
   const revealHiddenMode = useBimStore((s) => s.revealHiddenMode);
   const setRevealHiddenMode = useBimStore((s) => s.setRevealHiddenMode);
+  const setCategoryOverride = useBimStore((s) => s.setCategoryOverride);
   // VIE-04 — temporary visibility (isolate/hide) trigger.
   const setTemporaryVisibility = useBimStore((s) => s.setTemporaryVisibility);
   const clearTemporaryVisibility = useBimStore((s) => s.clearTemporaryVisibility);
@@ -3159,12 +3165,28 @@ export function PlanCanvas({
       );
       if (!h) {
         setWallContextMenu(null);
+        setUnhideContextMenu(null);
         return;
       }
       const id = (h.object.userData as { bimPickId: string }).bimPickId;
       const el = elementsById[id];
-      if (!el || el.kind !== 'wall') {
+      if (!el) {
         setWallContextMenu(null);
+        setUnhideContextMenu(null);
+        return;
+      }
+
+      // F-014: in reveal hidden mode, right-click on a hidden element → Unhide in View menu.
+      if (revealHiddenMode && display.hiddenSemanticKinds.has(el.kind)) {
+        ev.preventDefault();
+        setUnhideContextMenu({ elementKind: el.kind, position: { x: ev.clientX, y: ev.clientY } });
+        setWallContextMenu(null);
+        return;
+      }
+
+      if (el.kind !== 'wall') {
+        setWallContextMenu(null);
+        setUnhideContextMenu(null);
         return;
       }
       ev.preventDefault();
@@ -3310,6 +3332,14 @@ export function PlanCanvas({
     if (planTool !== 'component') setPendingComponentRotationDeg(0);
   }, [planTool]);
 
+  // F-014 — close the Unhide in View context menu on any outside mousedown.
+  useEffect(() => {
+    if (!unhideContextMenu) return;
+    const close = () => setUnhideContextMenu(null);
+    window.addEventListener('mousedown', close);
+    return () => window.removeEventListener('mousedown', close);
+  }, [unhideContextMenu]);
+
   // EDT-01 — grip pointer-down: capture starting world position so
   // onMove can compute a stable delta.
   const handleGripPointerDown = useCallback(
@@ -3396,6 +3426,30 @@ export function PlanCanvas({
           onCommand={handleWallContextMenuCommand}
           onClose={() => setWallContextMenu(null)}
         />
+      )}
+      {/* F-014: Unhide in View context menu — shown when right-clicking a hidden element in reveal hidden mode */}
+      {unhideContextMenu && (
+        <div
+          data-testid="unhide-context-menu"
+          className="pointer-events-auto absolute z-50 flex flex-col overflow-hidden rounded border border-border bg-surface shadow-md"
+          style={{ left: unhideContextMenu.position.x, top: unhideContextMenu.position.y }}
+        >
+          <button
+            type="button"
+            className="px-3 py-1.5 text-left text-xs hover:bg-surface-1"
+            data-testid="unhide-context-category"
+            onClick={() => {
+              if (activePlanViewId) {
+                setCategoryOverride(activePlanViewId, unhideContextMenu.elementKind, {
+                  visible: true,
+                });
+              }
+              setUnhideContextMenu(null);
+            }}
+          >
+            Unhide in View: {unhideContextMenu.elementKind}
+          </button>
+        </div>
       )}
       <div className="pointer-events-none absolute right-3 bottom-14 z-10 rounded border border-border bg-surface/80 px-2 py-1 font-mono text-[10px] text-muted backdrop-blur">
         {hudMm
