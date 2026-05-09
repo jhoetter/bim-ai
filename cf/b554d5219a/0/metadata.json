@@ -1,0 +1,20 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "cfb554d5219a",
+  "session_id": "484b3fc4-cdb5-4d63-973e-ff931c99ea77",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T17:26:50.318055Z",
+  "branch": "feat/parity-readme-sync",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "d8f97dda8e66",
+  "token_usage": {
+    "input_tokens": 6703,
+    "cache_creation_tokens": 3746090,
+    "cache_read_tokens": 189016578,
+    "output_tokens": 1063286,
+    "api_call_count": 1983
+  }
+}
