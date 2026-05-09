@@ -196,7 +196,7 @@ export function resolveLighting(): LightingSpec {
       groundColor: '#c8c0b0',
     },
     ssao: {
-      kernelRadius: 0.25,
+      kernelRadius: 0.12,
       minDistance: 0.001,
       maxDistance: 0.12,
     },

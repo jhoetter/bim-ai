@@ -462,7 +462,7 @@ export function Viewport({
     composer.addPass(renderPass);
     renderPassRef.current = renderPass;
     const ssao = new SSAOPass(scene, camera, host.clientWidth || 1, host.clientHeight || 1);
-    ssao.kernelRadius = Math.min(paint.lighting.ssao.kernelRadius, 0.18);
+    ssao.kernelRadius = paint.lighting.ssao.kernelRadius;
     ssao.minDistance = paint.lighting.ssao.minDistance;
     ssao.maxDistance = paint.lighting.ssao.maxDistance;
     ssao.output = SSAOPass.OUTPUT.Default;
