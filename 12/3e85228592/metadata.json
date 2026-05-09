@@ -4,20 +4,28 @@
   "strategy": "manual-commit",
   "branch": "feat/parity-shift-mmb",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/viewport/cameraRig.ts"
+  ],
   "sessions": [
     {
       "metadata": "/12/3e85228592/0/metadata.json",
       "transcript": "/12/3e85228592/0/full.jsonl",
       "content_hash": "/12/3e85228592/0/content_hash.txt",
       "prompt": "/12/3e85228592/0/prompt.txt"
+    },
+    {
+      "metadata": "/12/3e85228592/1/metadata.json",
+      "transcript": "/12/3e85228592/1/full.jsonl",
+      "content_hash": "/12/3e85228592/1/content_hash.txt",
+      "prompt": "/12/3e85228592/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 6272,
-    "cache_creation_tokens": 3335159,
-    "cache_read_tokens": 147118102,
-    "output_tokens": 952344,
-    "api_call_count": 1570
+    "input_tokens": 6280,
+    "cache_creation_tokens": 3344950,
+    "cache_read_tokens": 148329392,
+    "output_tokens": 957613,
+    "api_call_count": 1578
   }
 }
