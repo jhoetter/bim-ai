@@ -1,0 +1,2041 @@
+now python:
+Run uv run ruff check bim_ai tests
+  uv run ruff check bim_ai tests
+  shell: /usr/bin/bash -e {0}
+  env:
+    pythonLocation: /opt/hostedtoolcache/Python/3.12.13/x64
+    PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib/pkgconfig
+    Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+    Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+    Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+    LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib
+I001 [*] Import block is un-sorted or un-formatted
+  --> bim_ai/area_calculation.py:16:1
+   |
+14 |   """
+15 |
+16 | / from __future__ import annotations
+17 | |
+18 | | from collections.abc import Iterable
+19 | |
+20 | | from bim_ai.elements import AreaElem, Element, ProjectSettingsElem, SlabOpeningElem, Vec2Mm, WallElem
+   | |_____________________________________________________________________________________________________^
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> bim_ai/assets.py:11:1
+   |
+ 9 |   """
+10 |
+11 | / from __future__ import annotations
+12 | |
+13 | | import re
+14 | | from typing import Any
+15 | |
+16 | | from bim_ai.elements import AssetLibraryEntryElem
+   | |_________________________________________________^
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> bim_ai/commands.py:1:1
+   |
+ 1 | / from __future__ import annotations
+ 2 | |
+ 3 | | from typing import Annotated, Any, Literal
+ 4 | |
+ 5 | | from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
+ 6 | |
+ 7 | | from bim_ai.elements import (
+ 8 | |     BalusterPattern,
+ 9 | |     CameraMm,
+10 | |     ClipRect,
+11 | |     ConstraintRefRow,
+12 | |     ConstraintRule,
+13 | |     CurtainPanelOverride,
+14 | |     DisciplineTag,
+15 | |     LensMode,
+16 | |     DormerPositionOnRoof,
+17 | |     DormerRoofKind,
+18 | |     DxfLineworkPrim,
+19 | |     EvidenceRef,
+20 | |     HandrailSupport,
+21 | |     PhaseFilter,
+22 | |     PlanCategoryGraphicRow,
+23 | |     PlanTagBadgeStyle,
+24 | |     PlanTagTarget,
+25 | |     RoomColorSchemeRow,
+26 | |     SiteContextObjectRow,
+27 | |     StairLanding,
+28 | |     StairRun,
+29 | |     StairTreadLine,
+30 | |     SweepPathPoint,
+31 | |     SweepProfilePlane,
+32 | |     SweepProfilePoint,
+33 | |     Text3dFontFamily,
+34 | |     Vec2Mm,
+35 | |     Vec3Mm,
+36 | |     WallRecessZone,
+37 | |     WallTypeLayer,
+38 | | )
+39 | | from bim_ai.roof_geometry import RoofGeometryMode
+   | |_________________________________________________^
+   |
+help: Organize imports
+
+F401 [*] `bim_ai.elements.DisciplineTag` imported but unused
+  --> bim_ai/commands.py:14:5
+   |
+12 |     ConstraintRule,
+13 |     CurtainPanelOverride,
+14 |     DisciplineTag,
+   |     ^^^^^^^^^^^^^
+15 |     LensMode,
+16 |     DormerPositionOnRoof,
+   |
+help: Remove unused import: `bim_ai.elements.DisciplineTag`
+
+F811 Redefinition of unused `SetToolPrefCmd` from line 2330
+    --> bim_ai/commands.py:2350:7
+     |
+2350 | class SetToolPrefCmd(BaseModel):
+     |       ^^^^^^^^^^^^^^ `SetToolPrefCmd` redefined here
+2351 |     """CHR-V3-08: Store a sticky tool-modifier preference for the session.
+     |
+    ::: bim_ai/commands.py:2330:7
+     |
+2330 | class SetToolPrefCmd(BaseModel):
+     |       -------------- previous definition of `SetToolPrefCmd` here
+2331 |     """CHR-V3-08: Store a sticky tool-modifier preference for the session.
+     |
+help: Remove definition: `SetToolPrefCmd`
+
+F811 Redefinition of unused `HeightSample` from line 2214
+    --> bim_ai/elements.py:2218:7
+     |
+2218 | class HeightSample(BaseModel):
+     |       ^^^^^^^^^^^^ `HeightSample` redefined here
+2219 |     """TOP-V3-01 — single (x, y, z) terrain sample point."""
+     |
+    ::: bim_ai/elements.py:2214:7
+     |
+2214 | class HeightSample(BaseModel):
+     |       ------------ previous definition of `HeightSample` here
+2215 |     """A single surveyed elevation sample (sparse parametrisation)."""
+     |
+help: Remove definition: `HeightSample`
+
+UP045 [*] Use `X | None` for type annotations
+    --> bim_ai/elements.py:2524:14
+     |
+2522 |     position_mm: dict = Field(alias="positionMm")  # {xMm, yMm}
+2523 |     size_mm: dict = Field(alias="sizeMm")  # {widthMm, heightMm}
+2524 |     caption: Optional[str] = None
+     |              ^^^^^^^^^^^^^
+2525 |     brand_template_id: Optional[str] = Field(None, alias="brandTemplateId")
+2526 |     sort_order: int = Field(0, alias="sortOrder")
+     |
+help: Convert to `X | None`
+
+UP045 [*] Use `X | None` for type annotations
+    --> bim_ai/elements.py:2525:24
+     |
+2523 |     size_mm: dict = Field(alias="sizeMm")  # {widthMm, heightMm}
+2524 |     caption: Optional[str] = None
+2525 |     brand_template_id: Optional[str] = Field(None, alias="brandTemplateId")
+     |                        ^^^^^^^^^^^^^
+2526 |     sort_order: int = Field(0, alias="sortOrder")
+     |
+help: Convert to `X | None`
+
+UP045 [*] Use `X | None` for type annotations
+    --> bim_ai/elements.py:2537:19
+     |
+2535 |     base_view_id: str = Field(alias="baseViewId")
+2536 |     name: str
+2537 |     camera_state: Optional[dict] = Field(None, alias="cameraState")
+     |                   ^^^^^^^^^^^^^^
+2538 |     visibility_overrides: Optional[dict] = Field(None, alias="visibilityOverrides")
+2539 |     detail_level: Optional[str] = Field(None, alias="detailLevel")
+     |
+help: Convert to `X | None`
+
+UP045 [*] Use `X | None` for type annotations
+    --> bim_ai/elements.py:2538:27
+     |
+2536 |     name: str
+2537 |     camera_state: Optional[dict] = Field(None, alias="cameraState")
+2538 |     visibility_overrides: Optional[dict] = Field(None, alias="visibilityOverrides")
+     |                           ^^^^^^^^^^^^^^
+2539 |     detail_level: Optional[str] = Field(None, alias="detailLevel")
+2540 |     thumbnail_data_uri: Optional[str] = Field(None, alias="thumbnailDataUri")
+     |
+help: Convert to `X | None`
+
+UP045 [*] Use `X | None` for type annotations
+    --> bim_ai/elements.py:2539:19
+     |
+2537 |     camera_state: Optional[dict] = Field(None, alias="cameraState")
+2538 |     visibility_overrides: Optional[dict] = Field(None, alias="visibilityOverrides")
+2539 |     detail_level: Optional[str] = Field(None, alias="detailLevel")
+     |                   ^^^^^^^^^^^^^
+2540 |     thumbnail_data_uri: Optional[str] = Field(None, alias="thumbnailDataUri")
+     |
+help: Convert to `X | None`
+
+UP045 [*] Use `X | None` for type annotations
+    --> bim_ai/elements.py:2540:25
+     |
+2538 |     visibility_overrides: Optional[dict] = Field(None, alias="visibilityOverrides")
+2539 |     detail_level: Optional[str] = Field(None, alias="detailLevel")
+2540 |     thumbnail_data_uri: Optional[str] = Field(None, alias="thumbnailDataUri")
+     |                         ^^^^^^^^^^^^^
+     |
+help: Convert to `X | None`
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> bim_ai/engine.py:1:1
+    |
+  1 | / from __future__ import annotations
+  2 | |
+  3 | | import hashlib
+  4 | | import json
+  5 | | import math
+  6 | | import uuid
+  7 | | from collections import Counter
+  8 | | from datetime import datetime, timezone
+  9 | | from typing import Any, Literal, NamedTuple, cast
+ 10 | |
+ 11 | | from pydantic import TypeAdapter
+ 12 | |
+ 13 | | from bim_ai.clash_engine import run_clash_test
+ 14 | | from bim_ai.commands import (
+ 15 | |     AlignElementToReferenceCmd,
+ 16 | |     ApplyPlanViewTemplateCmd,
+ 17 | |     AssignOpeningFamilyCmd,
+ 18 | |     AssignWallDatumConstraintsCmd,
+ 19 | |     AttachWallTopToRoofCmd,
+ 20 | |     BumpMonitoredRevisionsCmd,
+ 21 | |     ClearAutoGeneratedAnnotationsCmd,
+ 22 | |     Command,
+ 23 | |     CreateAgentAssumptionCmd,
+ 24 | |     CreateAgentDeviationCmd,
+ 25 | |     CreateAreaCmd,
+ 26 | |     CreateBalconyCmd,
+ 27 | |     CreateBcfTopicCmd,
+ 28 | |     CreateBeamCmd,
+ 29 | |     CreateCalloutCmd,
+ 30 | |     CreateCeilingCmd,
+ 31 | |     CreateColumnCmd,
+ 32 | |     CreateConstraintCmd,
+ 33 | |     CreateDetailLineCmd,
+ 34 | |     CreateDetailRegionCmd,
+ 35 | |     CreateDimensionCmd,
+ 36 | |     CreateDormerCmd,
+ 37 | |     CreateEdgeProfileRunCmd,
+ 38 | |     CreateElevationViewCmd,
+ 39 | |     CreateFloorCmd,
+ 40 | |     CreateGridLineCmd,
+ 41 | |     CreateIssueFromViolationCmd,
+ 42 | |     CreateJoinGeometryCmd,
+ 43 | |     CreateLevelCmd,
+ 44 | |     CreateLinkDxfCmd,
+ 45 | |     CreateLinkModelCmd,
+ 46 | |     CreateMaskingRegionCmd,
+ 47 | |     CreateMassCmd,
+ 48 | |     CreatePhaseCmd,
+ 49 | |     CreatePlanRegionCmd,
+ 50 | |     CreateProjectBasePointCmd,
+ 51 | |     CreatePropertyLineCmd,
+ 52 | |     CreateRailingCmd,
+ 53 | |     CreateReferencePlaneCmd,
+ 54 | |     CreateRoofCmd,
+ 55 | |     CreateRoofJoinCmd,
+ 56 | |     CreateRoofOpeningCmd,
+ 57 | |     CreateRoomOutlineCmd,
+ 58 | |     CreateRoomPolyCmd,
+ 59 | |     CreateRoomRectangleCmd,
+ 60 | |     PlaceRoomAtPointCmd,
+ 61 | |     CreateRoomSeparationCmd,
+ 62 | |     CreateSectionCutCmd,
+ 63 | |     CreateSlabOpeningCmd,
+ 64 | |     CreateSoffitCmd,
+ 65 | |     CreateStairCmd,
+ 66 | |     UpdateStairTreadsCmd,
+ 67 | |     CreateSunSettingsCmd,
+ 68 | |     CreateSurveyPointCmd,
+ 69 | |     CreateSweepCmd,
+ 70 | |     CreateText3dCmd,
+ 71 | |     CreateTextNoteCmd,
+ 72 | |     CreateVoidCutCmd,
+ 73 | |     CreateWallChainCmd,
+ 74 | |     CreateWallCmd,
+ 75 | |     CreateWallOpeningCmd,
+ 76 | |     CreateWallTypeCmd,
+ 77 | |     DeleteAreaCmd,
+ 78 | |     DeleteElementCmd,
+ 79 | |     DeleteElementsCmd,
+ 80 | |     DeleteLinkModelCmd,
+ 81 | |     DeleteMaskingRegionCmd,
+ 82 | |     DeletePhaseCmd,
+ 83 | |     DeletePlanRegionCmd,
+ 84 | |     DeletePropertyLineCmd,
+ 85 | |     DeleteReferencePlaneCmd,
+ 86 | |     ExtendFloorInsulationCmd,
+ 87 | |     InsertDoorOnWallCmd,
+ 88 | |     InsertWindowOnWallCmd,
+ 89 | |     MaterializeMassToWallsCmd,
+ 90 | |     MirrorElementsCmd,
+ 91 | |     MoveBeamEndpointsCmd,
+ 92 | |     MoveElementCmd,
+ 93 | |     MoveGridLineEndpointsCmd,
+ 94 | |     MoveLevelElevationCmd,
+ 95 | |     MoveProjectBasePointCmd,
+ 96 | |     MoveSurveyPointCmd,
+ 97 | |     MoveWallDeltaCmd,
+ 98 | |     MoveWallEndpointsCmd,
+ 99 | |     PinElementCmd,
+100 | |     PlaceTagCmd,
+101 | |     ReconcileMonitoredElementCmd,
+102 | |     RenamePhaseCmd,
+103 | |     ReorderPhaseCmd,
+104 | |     RestoreElementCmd,
+105 | |     RotateProjectBasePointCmd,
+106 | |     RunClashTestCmd,
+107 | |     SaveViewpointCmd,
+108 | |     SetCurtainPanelOverrideCmd,
+109 | |     SetEdgeProfileRunModeCmd,
+110 | |     SetElementDisciplineCmd,
+111 | |     SetElementPhaseCmd,
+112 | |     SetRailingBalusterPatternCmd,
+113 | |     SetRailingHandrailSupportsCmd,
+114 | |     SetStairSubKindCmd,
+115 | |     SetViewPhaseCmd,
+116 | |     SetViewPhaseFilterCmd,
+117 | |     SetViewLensCmd,
+118 | |     SetWallJoinDisallowCmd,
+119 | |     SetWallJoinVariantCmd,
+120 | |     SetWallLeanTaperCmd,
+121 | |     SetWallRecessZonesCmd,
+122 | |     SetWallStackCmd,
+123 | |     SplitWallAtCmd,
+124 | |     TrimElementToReferenceCmd,
+125 | |     TrimExtendToCornerCmd,
+126 | |     UnpinElementCmd,
+127 | |     UpdateAreaCmd,
+128 | |     UpdateElementPropertyCmd,
+129 | |     UpdateLinkDxfCmd,
+130 | |     UpdateLinkModelCmd,
+131 | |     UpdateMaskingRegionCmd,
+132 | |     UpdateOpeningCleanroomCmd,
+133 | |     UpdatePlanRegionCmd,
+134 | |     UpdatePlanViewCropCmd,
+135 | |     UpdatePlanViewRangeCmd,
+136 | |     UpdatePropertyLineCmd,
+137 | |     UpdateReferencePlaneCmd,
+138 | |     UpdateSunSettingsCmd,
+139 | |     UpdateWallOpeningCmd,
+140 | |     UpsertClashTestCmd,
+141 | |     UpsertFamilyTypeCmd,
+142 | |     UpsertFloorTypeCmd,
+143 | |     UpsertPlanTagStyleCmd,
+144 | |     UpsertPlanViewCmd,
+145 | |     UpsertPlanViewTemplateCmd,
+146 | |     UpsertProjectSettingsCmd,
+147 | |     UpsertRoofTypeCmd,
+148 | |     UpsertRoomColorSchemeCmd,
+149 | |     UpsertRoomVolumeCmd,
+150 | |     UpsertScheduleCmd,
+151 | |     UpsertScheduleFiltersCmd,
+152 | |     UpsertSelectionSetCmd,
+153 | |     UpsertSheetCmd,
+154 | |     UpsertSheetViewportsCmd,
+155 | |     UpsertSiteCmd,
+156 | |     UpsertTagDefinitionCmd,
+157 | |     UpsertValidationRuleCmd,
+158 | |     UpsertViewTemplateCmd,
+159 | |     UpsertWallTypeCmd,
+160 | |     CreateSunSettingsCmd,
+161 | |     UpdateSunSettingsCmd,
+162 | |     SetRailingBalusterPatternCmd,
+163 | |     SetRailingHandrailSupportsCmd,
+164 | |     SetStairSubKindCmd,
+165 | |     SetWallStackCmd,
+166 | |     SetWallLeanTaperCmd,
+167 | |     WallStackComponentCmd,
+168 | |     CreateOptionSetCmd,
+169 | |     AddOptionCmd,
+170 | |     RemoveOptionCmd,
+171 | |     SetPrimaryOptionCmd,
+172 | |     AssignElementToOptionCmd,
+173 | |     SetViewOptionLockCmd,
+174 | |     CreateSheetCmd,
+175 | |     PlaceViewOnSheetCmd,
+176 | |     MoveViewOnSheetCmd,
+177 | |     RemoveViewFromSheetCmd,
+178 | |     SetSheetTitleblockCmd,
+179 | |     UpdateSheetMetadataCmd,
+180 | |     CreateWindowLegendViewCmd,
+181 | |     AddViewBreakCmd,
+182 | |     CreateDraftingViewCmd,
+183 | |     CreateViewCalloutCmd,
+184 | |     HideElementInViewCmd,
+185 | |     RemoveViewBreakCmd,
+186 | |     SetElementOverrideCmd,
+187 | |     UnhideElementInViewCmd,
+188 | |     CreateViewTemplateCmd,
+189 | |     UpdateViewTemplateCmd,
+190 | |     ApplyViewTemplateCmd,
+191 | |     UnbindViewTemplateCmd,
+192 | |     DeleteViewTemplateCmd,
+193 | |     CreateToposolidCmd,
+194 | |     UpdateToposolidCmd,
+195 | |     DeleteToposolidCmd,
+196 | |     CreateToposolidSubdivisionCmd,
+197 | |     UpdateToposolidSubdivisionCmd,
+198 | |     DeleteToposolidSubdivisionCmd,
+199 | |     CreateGradedRegionCmd,
+200 | |     UpdateGradedRegionCmd,
+201 | |     DeleteGradedRegionCmd,
+202 | |     IndexAssetCmd,
+203 | |     PlaceAssetCmd,
+204 | |     MoveAssetDeltaCmd,
+205 | |     MoveColumnDeltaCmd,
+206 | |     MoveElementsDeltaCmd,
+207 | |     RotateElementsCmd,
+208 | |     PlaceKitCmd,
+209 | |     UpdateKitComponentCmd,
+210 | |     SetToolPrefCmd,
+211 | |     UpdateMaterialPbrCmd,
+212 | |     CreateDecalCmd,
+213 | |     TraceImageCmd,
+214 | |     UpdateWallCmd,
+215 | |     UpdateDoorCmd,
+216 | |     UpdateWindowCmd,
+217 | |     UpdateColumnCmd,
+218 | |     CreatePropertyDefinitionCmd,
+219 | |     SetElementPropCmd,
+220 | |     CreateScheduleViewCmd,
+221 | |     DrawDetailRegionCmd,
+222 | |     UpdateDetailRegionCmd,
+223 | |     ImportImageUnderlayCmd,
+224 | |     MoveImageUnderlayCmd,
+225 | |     ScaleImageUnderlayCmd,
+226 | |     RotateImageUnderlayCmd,
+227 | |     DeleteImageUnderlayCmd,
+228 | |     _ALLOWED_IMAGE_PREFIXES,
+229 | |     _MAX_SRC_BYTES,
+230 | |     CreateConceptSeedCmd,
+231 | |     CommitConceptSeedCmd,
+232 | |     ConsumeConceptSeedCmd,
+233 | |     CreatePresentationCanvasCmd,
+234 | |     UpdatePresentationCanvasCmd,
+235 | |     CreateFrameCmd,
+236 | |     UpdateFrameCmd,
+237 | |     DeleteFrameCmd,
+238 | |     ReorderFrameCmd,
+239 | |     CreateSavedViewCmd,
+240 | |     UpdateSavedViewCmd,
+241 | |     DeleteSavedViewCmd,
+242 | |     CreateBrandTemplateCmd,
+243 | |     UpdateBrandTemplateCmd,
+244 | |     DeleteBrandTemplateCmd,
+245 | |     ReorderViewCmd,
+246 | | )
+247 | | from bim_ai.constraints import Violation, evaluate
+248 | | from bim_ai.datum_levels import (
+249 | |     expected_level_elevation_from_parent,
+250 | |     propagate_dependent_level_elevations,
+251 | | )
+252 | | from bim_ai.document import Document
+253 | | from bim_ai.elements import (
+254 | |     DEFAULT_DISCIPLINE_BY_KIND,
+255 | |     INTERNAL_ORIGIN_ID,
+256 | |     SUN_SETTINGS_ID,
+257 | |     AgentAssumptionElem,
+258 | |     AgentDeviationElem,
+259 | |     AreaElem,
+260 | |     BalconyElem,
+261 | |     BalusterPattern,
+262 | |     BcfElem,
+263 | |     BeamElem,
+264 | |     CalloutElem,
+265 | |     CeilingElem,
+266 | |     ClashResultSpec,
+267 | |     ClashTestElem,
+268 | |     ColumnElem,
+269 | |     ConstraintElem,
+270 | |     ConstraintRefRow,
+271 | |     DetailLineElem,
+272 | |     DetailRegionElem,
+273 | |     DEFAULT_DISCIPLINE_BY_KIND,
+274 | |     DimensionElem,
+275 | |     DisciplineTag,
+276 | |     LensMode,
+277 | |     DoorElem,
+278 | |     DormerElem,
+279 | |     EdgeProfileRunElem,
+280 | |     Element,
+281 | |     ElevationViewElem,
+282 | |     FamilyCatalogSource,
+283 | |     FamilyTypeElem,
+284 | |     FloorElem,
+285 | |     FloorTypeElem,
+286 | |     GridLineElem,
+287 | |     HandrailSupport,
+288 | |     HatchPatternDefElem,
+289 | |     InternalOriginElem,
+290 | |     IssueElem,
+291 | |     JoinGeometryElem,
+292 | |     LevelElem,
+293 | |     LinkDxfElem,
+294 | |     LinkModelElem,
+295 | |     MaskingRegionElem,
+296 | |     MassElem,
+297 | |     PhaseElem,
+298 | |     PhaseFilter,
+299 | |     PlacedTagElem,
+300 | |     PlanCategoryGraphicRow,
+301 | |     PlanDetailLevelPlan,
+302 | |     PlanRegionElem,
+303 | |     PlanTagStyleElem,
+304 | |     PlanViewElem,
+305 | |     ProjectBasePointElem,
+306 | |     ProjectSettingsElem,
+307 | |     PropertyLineElem,
+308 | |     RailingElem,
+309 | |     ReferencePlaneElem,
+310 | |     RoofElem,
+311 | |     RoofJoinElem,
+312 | |     RoofOpeningElem,
+313 | |     RoofTypeElem,
+314 | |     RoomColorSchemeElem,
+315 | |     RoomColorSchemeRow,
+316 | |     RoomElem,
+317 | |     RoomSeparationElem,
+318 | |     ScheduleElem,
+319 | |     SectionCutElem,
+320 | |     SelectionSetElem,
+321 | |     SelectionSetRuleSpec,
+322 | |     SheetElem,
+323 | |     SheetMetadata,
+324 | |     TitleblockTypeElem,
+325 | |     ViewPlacement,
+326 | |     SheetXY,
+327 | |     WindowLegendViewElem,
+328 | |     DEFAULT_TITLEBLOCK_TYPE,
+329 | |     SiteContextObjectRow,
+330 | |     SiteElem,
+331 | |     SlabOpeningElem,
+332 | |     SoffitElem,
+333 | |     StairElem,
+334 | |     StairLanding,
+335 | |     StairRun,
+336 | |     StairTreadLine,
+337 | |     SunSettingsElem,
+338 | |     SunSettingsTimeOfDay,
+339 | |     SurveyPointElem,
+340 | |     SweepElem,
+341 | |     TagDefinitionElem,
+342 | |     Text3dElem,
+343 | |     TextNoteElem,
+344 | |     ValidationRuleElem,
+345 | |     Vec2Mm,
+346 | |     ElementOverrideSpec,
+347 | |     ViewBreakSpec,
+348 | |     ViewElem,
+349 | |     ViewpointElem,
+350 | |     ViewTemplateElem,
+351 | |     ToposolidElem,
+352 | |     ToposolidSubdivisionElem,
+353 | |     GradedRegionElem,
+354 | |     VoidCutElem,
+355 | |     WallBasisLine,
+356 | |     WallEdgeFixed,
+357 | |     WallEdgeSpan,
+358 | |     WallEdgeSpec,
+359 | |     WallElem,
+360 | |     WallOpeningElem,
+361 | |     WallStack,
+362 | |     WallStackComponent,
+363 | |     WallTypeElem,
+364 | |     WindowElem,
+365 | |     AssetLibraryEntryElem,
+366 | |     AssetParamEntry,
+367 | |     PlacedAssetElem,
+368 | |     FamilyKitInstanceElem,
+369 | |     KitComponent,
+370 | |     MaterialElem,
+371 | |     DecalElem,
+372 | |     PropertyDefinitionElem,
+373 | |     HatchPatternDefElem,
+374 | |     ImageUnderlayElem,
+375 | |     ConceptSeedElem,
+376 | |     FrameElem,
+377 | |     SavedViewElem,
+378 | |     PresentationCanvasElem,
+379 | |     BrandTemplateElem,
+380 | | )
+381 | | from bim_ai.export_ifc import (
+382 | |     AUTHORITATIVE_REPLAY_KIND_V0,
+383 | |     KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION,
+384 | | )
+385 | | from bim_ai.link_expansion import SourceDocProvider
+386 | | from bim_ai.material_catalog import resolve_material
+387 | | from bim_ai.monitored import (
+388 | |     bump_monitored_revisions,
+389 | |     reconcile_monitored_element,
+390 | | )
+391 | | from bim_ai.plan_category_graphics import (
+392 | |     normalize_plan_category_graphics_rows,
+393 | |     parse_plan_category_graphics_property_json,
+394 | | )
+395 | | from bim_ai.roof_geometry import (
+396 | |     RoofGeometryMode,
+397 | |     assert_valid_gable_pitched_rectangle_footprint_mm,
+398 | |     assert_valid_hip_footprint_mm,
+399 | |     assert_valid_l_shape_footprint_mm,
+400 | |     edge_profile_run_path_mm,
+401 | |     outer_rect_extent,
+402 | | )
+    | |_^
+403 |
+404 |   _AUTHORITATIVE_REPLAY_V0_TYPES: frozenset[str] = frozenset(
+    |
+help: Organize imports
+
+F811 [*] Redefinition of unused `CreateSunSettingsCmd` from line 67
+   --> bim_ai/engine.py:160:5
+    |
+158 |     UpsertViewTemplateCmd,
+159 |     UpsertWallTypeCmd,
+160 |     CreateSunSettingsCmd,
+    |     ^^^^^^^^^^^^^^^^^^^^ `CreateSunSettingsCmd` redefined here
+161 |     UpdateSunSettingsCmd,
+162 |     SetRailingBalusterPatternCmd,
+    |
+   ::: bim_ai/engine.py:67:5
+    |
+ 65 |     CreateStairCmd,
+ 66 |     UpdateStairTreadsCmd,
+ 67 |     CreateSunSettingsCmd,
+    |     -------------------- previous definition of `CreateSunSettingsCmd` here
+ 68 |     CreateSurveyPointCmd,
+ 69 |     CreateSweepCmd,
+    |
+help: Remove definition: `CreateSunSettingsCmd`
+
+F811 [*] Redefinition of unused `UpdateSunSettingsCmd` from line 138
+   --> bim_ai/engine.py:161:5
+    |
+159 |     UpsertWallTypeCmd,
+160 |     CreateSunSettingsCmd,
+161 |     UpdateSunSettingsCmd,
+    |     ^^^^^^^^^^^^^^^^^^^^ `UpdateSunSettingsCmd` redefined here
+162 |     SetRailingBalusterPatternCmd,
+163 |     SetRailingHandrailSupportsCmd,
+    |
+   ::: bim_ai/engine.py:138:5
+    |
+136 |     UpdatePropertyLineCmd,
+137 |     UpdateReferencePlaneCmd,
+138 |     UpdateSunSettingsCmd,
+    |     -------------------- previous definition of `UpdateSunSettingsCmd` here
+139 |     UpdateWallOpeningCmd,
+140 |     UpsertClashTestCmd,
+    |
+help: Remove definition: `UpdateSunSettingsCmd`
+
+F811 [*] Redefinition of unused `SetRailingBalusterPatternCmd` from line 112
+   --> bim_ai/engine.py:162:5
+    |
+160 |     CreateSunSettingsCmd,
+161 |     UpdateSunSettingsCmd,
+162 |     SetRailingBalusterPatternCmd,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `SetRailingBalusterPatternCmd` redefined here
+163 |     SetRailingHandrailSupportsCmd,
+164 |     SetStairSubKindCmd,
+    |
+   ::: bim_ai/engine.py:112:5
+    |
+110 |     SetElementDisciplineCmd,
+111 |     SetElementPhaseCmd,
+112 |     SetRailingBalusterPatternCmd,
+    |     ---------------------------- previous definition of `SetRailingBalusterPatternCmd` here
+113 |     SetRailingHandrailSupportsCmd,
+114 |     SetStairSubKindCmd,
+    |
+help: Remove definition: `SetRailingBalusterPatternCmd`
+
+F811 [*] Redefinition of unused `SetRailingHandrailSupportsCmd` from line 113
+   --> bim_ai/engine.py:163:5
+    |
+161 |     UpdateSunSettingsCmd,
+162 |     SetRailingBalusterPatternCmd,
+163 |     SetRailingHandrailSupportsCmd,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `SetRailingHandrailSupportsCmd` redefined here
+164 |     SetStairSubKindCmd,
+165 |     SetWallStackCmd,
+    |
+   ::: bim_ai/engine.py:113:5
+    |
+111 |     SetElementPhaseCmd,
+112 |     SetRailingBalusterPatternCmd,
+113 |     SetRailingHandrailSupportsCmd,
+    |     ----------------------------- previous definition of `SetRailingHandrailSupportsCmd` here
+114 |     SetStairSubKindCmd,
+115 |     SetViewPhaseCmd,
+    |
+help: Remove definition: `SetRailingHandrailSupportsCmd`
+
+F811 [*] Redefinition of unused `SetStairSubKindCmd` from line 114
+   --> bim_ai/engine.py:164:5
+    |
+162 |     SetRailingBalusterPatternCmd,
+163 |     SetRailingHandrailSupportsCmd,
+164 |     SetStairSubKindCmd,
+    |     ^^^^^^^^^^^^^^^^^^ `SetStairSubKindCmd` redefined here
+165 |     SetWallStackCmd,
+166 |     SetWallLeanTaperCmd,
+    |
+   ::: bim_ai/engine.py:114:5
+    |
+112 |     SetRailingBalusterPatternCmd,
+113 |     SetRailingHandrailSupportsCmd,
+114 |     SetStairSubKindCmd,
+    |     ------------------ previous definition of `SetStairSubKindCmd` here
+115 |     SetViewPhaseCmd,
+116 |     SetViewPhaseFilterCmd,
+    |
+help: Remove definition: `SetStairSubKindCmd`
+
+F811 [*] Redefinition of unused `SetWallStackCmd` from line 122
+   --> bim_ai/engine.py:165:5
+    |
+163 |     SetRailingHandrailSupportsCmd,
+164 |     SetStairSubKindCmd,
+165 |     SetWallStackCmd,
+    |     ^^^^^^^^^^^^^^^ `SetWallStackCmd` redefined here
+166 |     SetWallLeanTaperCmd,
+167 |     WallStackComponentCmd,
+    |
+   ::: bim_ai/engine.py:122:5
+    |
+120 |     SetWallLeanTaperCmd,
+121 |     SetWallRecessZonesCmd,
+122 |     SetWallStackCmd,
+    |     --------------- previous definition of `SetWallStackCmd` here
+123 |     SplitWallAtCmd,
+124 |     TrimElementToReferenceCmd,
+    |
+help: Remove definition: `SetWallStackCmd`
+
+F811 [*] Redefinition of unused `SetWallLeanTaperCmd` from line 120
+   --> bim_ai/engine.py:166:5
+    |
+164 |     SetStairSubKindCmd,
+165 |     SetWallStackCmd,
+166 |     SetWallLeanTaperCmd,
+    |     ^^^^^^^^^^^^^^^^^^^ `SetWallLeanTaperCmd` redefined here
+167 |     WallStackComponentCmd,
+168 |     CreateOptionSetCmd,
+    |
+   ::: bim_ai/engine.py:120:5
+    |
+118 |     SetWallJoinDisallowCmd,
+119 |     SetWallJoinVariantCmd,
+120 |     SetWallLeanTaperCmd,
+    |     ------------------- previous definition of `SetWallLeanTaperCmd` here
+121 |     SetWallRecessZonesCmd,
+122 |     SetWallStackCmd,
+    |
+help: Remove definition: `SetWallLeanTaperCmd`
+
+F401 [*] `bim_ai.commands.WallStackComponentCmd` imported but unused
+   --> bim_ai/engine.py:167:5
+    |
+165 |     SetWallStackCmd,
+166 |     SetWallLeanTaperCmd,
+167 |     WallStackComponentCmd,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+168 |     CreateOptionSetCmd,
+169 |     AddOptionCmd,
+    |
+help: Remove unused import
+
+F401 [*] `bim_ai.commands.SetElementPropCmd` imported but unused
+   --> bim_ai/engine.py:219:5
+    |
+217 |     UpdateColumnCmd,
+218 |     CreatePropertyDefinitionCmd,
+219 |     SetElementPropCmd,
+    |     ^^^^^^^^^^^^^^^^^
+220 |     CreateScheduleViewCmd,
+221 |     DrawDetailRegionCmd,
+    |
+help: Remove unused import
+
+F401 [*] `bim_ai.commands.CreateScheduleViewCmd` imported but unused
+   --> bim_ai/engine.py:220:5
+    |
+218 |     CreatePropertyDefinitionCmd,
+219 |     SetElementPropCmd,
+220 |     CreateScheduleViewCmd,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+221 |     DrawDetailRegionCmd,
+222 |     UpdateDetailRegionCmd,
+    |
+help: Remove unused import
+
+F811 [*] Redefinition of unused `DEFAULT_DISCIPLINE_BY_KIND` from line 254
+   --> bim_ai/engine.py:273:5
+    |
+271 |     DetailLineElem,
+272 |     DetailRegionElem,
+273 |     DEFAULT_DISCIPLINE_BY_KIND,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^ `DEFAULT_DISCIPLINE_BY_KIND` redefined here
+274 |     DimensionElem,
+275 |     DisciplineTag,
+    |
+   ::: bim_ai/engine.py:254:5
+    |
+252 | from bim_ai.document import Document
+253 | from bim_ai.elements import (
+254 |     DEFAULT_DISCIPLINE_BY_KIND,
+    |     -------------------------- previous definition of `DEFAULT_DISCIPLINE_BY_KIND` here
+255 |     INTERNAL_ORIGIN_ID,
+256 |     SUN_SETTINGS_ID,
+    |
+help: Remove definition: `DEFAULT_DISCIPLINE_BY_KIND`
+
+F401 [*] `bim_ai.elements.DisciplineTag` imported but unused
+   --> bim_ai/engine.py:275:5
+    |
+273 |     DEFAULT_DISCIPLINE_BY_KIND,
+274 |     DimensionElem,
+275 |     DisciplineTag,
+    |     ^^^^^^^^^^^^^
+276 |     LensMode,
+277 |     DoorElem,
+    |
+help: Remove unused import
+
+F401 [*] `bim_ai.elements.LensMode` imported but unused
+   --> bim_ai/engine.py:276:5
+    |
+274 |     DimensionElem,
+275 |     DisciplineTag,
+276 |     LensMode,
+    |     ^^^^^^^^
+277 |     DoorElem,
+278 |     DormerElem,
+    |
+help: Remove unused import
+
+F401 [*] `bim_ai.elements.TitleblockTypeElem` imported but unused
+   --> bim_ai/engine.py:324:5
+    |
+322 |     SheetElem,
+323 |     SheetMetadata,
+324 |     TitleblockTypeElem,
+    |     ^^^^^^^^^^^^^^^^^^
+325 |     ViewPlacement,
+326 |     SheetXY,
+    |
+help: Remove unused import
+
+F811 [*] Redefinition of unused `HatchPatternDefElem` from line 288
+   --> bim_ai/engine.py:373:5
+    |
+371 |     DecalElem,
+372 |     PropertyDefinitionElem,
+373 |     HatchPatternDefElem,
+    |     ^^^^^^^^^^^^^^^^^^^ `HatchPatternDefElem` redefined here
+374 |     ImageUnderlayElem,
+375 |     ConceptSeedElem,
+    |
+   ::: bim_ai/engine.py:288:5
+    |
+286 |     GridLineElem,
+287 |     HandrailSupport,
+288 |     HatchPatternDefElem,
+    |     ------------------- previous definition of `HatchPatternDefElem` here
+289 |     InternalOriginElem,
+290 |     IssueElem,
+    |
+help: Remove definition: `HatchPatternDefElem`
+
+F541 [*] f-string without any placeholders
+    --> bim_ai/engine.py:3548:21
+     |
+3546 |             if not isinstance(wall, WallElem):
+3547 |                 raise ValueError(
+3548 |                     f"setWallJoinDisallow.wallId must reference a Wall"
+     |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+3549 |                 )
+3550 |             update_field = (
+     |
+help: Remove extraneous `f` prefix
+
+F541 [*] f-string without any placeholders
+    --> bim_ai/engine.py:4984:34
+     |
+4982 |             view = els.get(cmd.view_id)
+4983 |             if view is None or not hasattr(view, "option_locks"):
+4984 |                 raise ValueError(f"viewId must reference a plan_view or viewpoint element")
+     |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+4985 |             locks = dict(getattr(view, "option_locks") or {})
+4986 |             if cmd.option_id is None:
+     |
+help: Remove extraneous `f` prefix
+
+B009 [*] Do not call `getattr` with a constant attribute value. It is not any safer than normal property access.
+    --> bim_ai/engine.py:4985:26
+     |
+4983 |             if view is None or not hasattr(view, "option_locks"):
+4984 |                 raise ValueError(f"viewId must reference a plan_view or viewpoint element")
+4985 |             locks = dict(getattr(view, "option_locks") or {})
+     |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+4986 |             if cmd.option_id is None:
+4987 |                 locks.pop(cmd.option_set_id, None)
+     |
+help: Replace `getattr` with attribute access
+
+I001 [*] Import block is un-sorted or un-formatted
+    --> bim_ai/engine.py:5282:13
+     |
+5280 |                     "createToposolid: supply heightSamples or heightmapGridMm, not both"
+5281 |                 )
+5282 |             from bim_ai.elements import HeightSample, HeightmapGrid, Vec2Mm as _Vec2Mm
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5283 |
+5284 |             boundary = [_Vec2Mm(**pt) for pt in cmd.boundary_mm]
+     |
+help: Organize imports
+
+UP017 [*] Use `datetime.UTC` alias
+    --> bim_ai/engine.py:5950:49
+     |
+5948 |             patch_cs: dict = {
+5949 |                 "status": "committed",
+5950 |                 "committed_at": datetime.now(tz=timezone.utc).isoformat(),
+     |                                                 ^^^^^^^^^^^^
+5951 |             }
+5952 |             if cmd.envelope_tokens is not None:
+     |
+help: Convert to `datetime.UTC` alias
+
+UP037 [*] Remove quotes from type annotation
+    --> bim_ai/engine.py:6200:35
+     |
+6200 | def resolve_visible_elements(doc: "Document", option_locks: dict[str, str]) -> list[str]:
+     |                                   ^^^^^^^^^^
+6201 |     visible = []
+6202 |     for eid, elem in doc.elements.items():
+     |
+help: Remove quotes
+
+UP045 [*] Use `X | None` for type annotations
+  --> bim_ai/exp/render_export.py:16:20
+   |
+14 |     schema_version: str = "exp-v3.0"
+15 |     format: ExportFormat = "metadata-only"
+16 |     primary_asset: Optional[dict] = None  # {kind, pathInArchive}
+   |                    ^^^^^^^^^^^^^^
+17 |     metadata: dict = field(
+18 |         default_factory=lambda: {
+   |
+help: Convert to `X | None`
+
+UP045 [*] Use `X | None` for type annotations
+  --> bim_ai/exp/render_export.py:44:14
+   |
+42 |     model_state: dict,
+43 |     fmt: ExportFormat,
+44 |     view_id: Optional[str] = None,
+   |              ^^^^^^^^^^^^^
+45 | ) -> RenderExportBundle:
+46 |     elements = model_state.get("elements", [])
+   |
+help: Convert to `X | None`
+
+F401 [*] `os` imported but unused
+  --> bim_ai/img/pipeline.py:20:8
+   |
+19 | import hashlib
+20 | import os
+   |        ^^
+21 | import tempfile
+22 | from pathlib import Path
+   |
+help: Remove unused import: `os`
+
+F401 [*] `bim_ai.skb.edge_detection.edge_density` imported but unused
+  --> bim_ai/img/pipeline.py:25:53
+   |
+24 | from bim_ai.img.types import Advisory, ImageMetadata, RoomRegion, StructuredLayout
+25 | from bim_ai.skb.edge_detection import detect_edges, edge_density
+   |                                                     ^^^^^^^^^^^^
+26 |
+27 | _FALLBACK_SCALE_MM_PER_PX = 1.0
+   |
+help: Remove unused import: `bim_ai.skb.edge_detection.edge_density`
+
+F841 Local variable `edge_result` is assigned to but never used
+  --> bim_ai/img/pipeline.py:76:5
+   |
+74 |     edges_path = tmp_dir / f"edges_{img_hash}.png"
+75 |
+76 |     edge_result = detect_edges(
+   |     ^^^^^^^^^^^
+77 |         str(in_path),
+78 |         str(edges_path),
+   |
+help: Remove assignment to unused variable `edge_result`
+
+UP037 [*] Remove quotes from type annotation
+   --> bim_ai/img/pipeline.py:161:13
+    |
+159 |     image_path: Path,
+160 |     rooms: list[RoomRegion],
+161 |     cv_img: "Any | None",  # type: ignore[name-defined]
+    |             ^^^^^^^^^^^^
+162 | ) -> list[RoomRegion]:
+163 |     """Call SKB-07 colour sampler on each room polygon to populate detectedTypeKey.
+    |
+help: Remove quotes
+
+F821 Undefined name `Any`
+   --> bim_ai/img/pipeline.py:161:14
+    |
+159 |     image_path: Path,
+160 |     rooms: list[RoomRegion],
+161 |     cv_img: "Any | None",  # type: ignore[name-defined]
+    |              ^^^
+162 | ) -> list[RoomRegion]:
+163 |     """Call SKB-07 colour sampler on each room polygon to populate detectedTypeKey.
+    |
+
+B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+    --> bim_ai/routes_api.py:1858:9
+     |
+1856 |         model_uuid = UUID(link_record.model_id)
+1857 |     except ValueError:
+1858 |         raise HTTPException(status_code=404, detail="Model not found")
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1859 |
+1860 |     row = await load_model_row(session, model_uuid)
+     |
+
+F401 [*] `typing.Any` imported but unused
+ --> bim_ai/site/osm_import.py:5:20
+  |
+4 | import math
+5 | from typing import Any
+  |                    ^^^
+6 |
+7 | import httpx  # already in deps; use sync client
+  |
+help: Remove unused import: `typing.Any`
+
+F401 [*] `bim_ai.elements.HeightSample` imported but unused
+ --> bim_ai/site/toposolid.py:4:29
+  |
+2 | from __future__ import annotations
+3 |
+4 | from bim_ai.elements import HeightSample, ToposolidElem
+  |                             ^^^^^^^^^^^^
+  |
+help: Remove unused import: `bim_ai.elements.HeightSample`
+
+UP037 [*] Remove quotes from type annotation
+   --> bim_ai/skb/calibrator.py:141:39
+    |
+141 | def calibrate_from_edges(edges_image: "Any") -> float:  # type: ignore[name-defined]
+    |                                       ^^^^^
+142 |     """Estimate mm-per-pixel scale from an edge-detection output.
+    |
+help: Remove quotes
+
+F821 Undefined name `Any`
+   --> bim_ai/skb/calibrator.py:141:40
+    |
+141 | def calibrate_from_edges(edges_image: "Any") -> float:  # type: ignore[name-defined]
+    |                                        ^^^
+142 |     """Estimate mm-per-pixel scale from an edge-detection output.
+    |
+
+F401 [*] `os` imported but unused
+   --> bim_ai/skb/calibrator.py:153:12
+    |
+151 |     Falls back to 1.0 if no usable contour is found.
+152 |     """
+153 |     import os
+    |            ^^
+154 |
+155 |     arr = None
+    |
+help: Remove unused import: `os`
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> bim_ai/skb/calibrator.py:172:21
+    |
+170 |               except ImportError:
+171 |                   try:
+172 | /                     from PIL import Image as _Image  # type: ignore[import-not-found]
+173 | |
+174 | |                     import numpy as np
+    | |______________________________________^
+175 |
+176 |                       arr = np.asarray(_Image.open(path_str).convert("L"), dtype=np.uint8)
+    |
+help: Organize imports
+
+F841 Local variable `rows` is assigned to but never used
+   --> bim_ai/skb/calibrator.py:213:9
+    |
+211 |         import numpy as np  # type: ignore[import-not-found]
+212 |
+213 |         rows = np.any(arr > 0, axis=1)
+    |         ^^^^
+214 |         cols = np.any(arr > 0, axis=0)
+215 |         if cols.any():
+    |
+help: Remove assignment to unused variable `rows`
+
+UP037 [*] Remove quotes from type annotation
+   --> bim_ai/skb/colour_sampler.py:180:12
+    |
+179 | def sample(
+180 |     image: "Any",  # type: ignore[name-defined]
+    |            ^^^^^
+181 |     polygon_pts: list[tuple[int, int]],
+182 | ) -> str | None:
+    |
+help: Remove quotes
+
+F821 Undefined name `Any`
+   --> bim_ai/skb/colour_sampler.py:180:13
+    |
+179 | def sample(
+180 |     image: "Any",  # type: ignore[name-defined]
+    |             ^^^
+181 |     polygon_pts: list[tuple[int, int]],
+182 | ) -> str | None:
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> bim_ai/tables.py:1:1
+  |
+1 | / import uuid
+2 | | from datetime import datetime
+3 | |
+4 | | from sqlalchemy import BigInteger, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+5 | | from sqlalchemy.dialects.postgresql import JSONB
+6 | | from sqlalchemy.dialects.postgresql import UUID as PGUUID
+7 | | from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+  | |_______________________________________________________________________________^
+  |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/agent/refinement_reliability/test_refinement_reliability.py:3:1
+   |
+ 1 |   """TST-V3-01 — 12-step deterministic refinement reliability harness."""
+ 2 |
+ 3 | / from __future__ import annotations
+ 4 | |
+ 5 | | import json
+ 6 | | import yaml
+ 7 | | import pytest
+ 8 | | from pathlib import Path
+   | |________________________^
+ 9 |
+10 |   FIXTURE_PATH = Path(__file__).parent / "12_step_refinement.yaml"
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/api/test_edt_v3_09.py:12:1
+   |
+10 |   """
+11 |
+12 | / from __future__ import annotations
+13 | |
+14 | | import pytest
+15 | |
+16 | | from bim_ai.commands import CreateStairCmd, UpdateStairTreadsCmd
+17 | | from bim_ai.document import Document
+18 | | from bim_ai.elements import LevelElem, StairElem, StairTreadLine, Vec2Mm
+19 | | from bim_ai.engine import apply_inplace
+20 | | from bim_ai.stair.autobalance import auto_distribute_treads, rebalance_treads
+   | |_____________________________________________________________________________^
+   |
+help: Organize imports
+
+F401 [*] `bim_ai.exp.render_export.RenderExportBundle` imported but unused
+  --> tests/api/test_exp_v3_01.py:30:38
+   |
+28 | from bim_ai.document import Document
+29 | from bim_ai.engine import ensure_internal_origin
+30 | from bim_ai.exp.render_export import RenderExportBundle, build_export_bundle
+   |                                      ^^^^^^^^^^^^^^^^^^
+31 |
+32 | MODEL_ID = str(uuid.uuid4())
+   |
+help: Remove unused import: `bim_ai.exp.render_export.RenderExportBundle`
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_imp_v3_01.py:172:5
+    |
+170 |   def test_import_png_underlay_creates_element() -> None:
+171 |       """Import PNG underlay → element in state with correct rect/opacity."""
+172 | /     from bim_ai.commands import ImportImageUnderlayCmd
+173 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+174 |
+175 |       doc = _make_fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_imp_v3_01.py:200:5
+    |
+198 |   def test_import_jpeg_underlay_accepted() -> None:
+199 |       """Import JPEG underlay → accepted."""
+200 | /     from bim_ai.commands import ImportImageUnderlayCmd
+201 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+202 |
+203 |       doc = _make_fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_imp_v3_01.py:221:5
+    |
+219 |   def test_import_pdf_underlay_accepted() -> None:
+220 |       """Import PDF underlay → accepted."""
+221 | /     from bim_ai.commands import ImportImageUnderlayCmd
+222 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+223 |
+224 |       doc = _make_fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_imp_v3_01.py:242:5
+    |
+240 |   def test_import_invalid_format_raises() -> None:
+241 |       """Import with invalid format (SVG) → ValueError."""
+242 | /     from bim_ai.commands import ImportImageUnderlayCmd
+243 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+244 |
+245 |       doc = _make_fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_imp_v3_01.py:261:5
+    |
+259 |   def test_import_src_too_large_raises() -> None:
+260 |       """Import with src > 50 MB → ValueError."""
+261 | /     from bim_ai.commands import ImportImageUnderlayCmd
+262 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+263 |
+264 |       doc = _make_fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_imp_v3_01.py:283:5
+    |
+281 |   def test_move_underlay_updates_position_preserves_size() -> None:
+282 |       """Move underlay → rect_mm position updated, width/height preserved."""
+283 | /     from bim_ai.commands import ImportImageUnderlayCmd, MoveImageUnderlayCmd
+284 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+285 |
+286 |       doc = _make_fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_imp_v3_01.py:319:5
+    |
+317 |   def test_scale_underlay_updates_dimensions() -> None:
+318 |       """Scale underlay → width/height updated."""
+319 | /     from bim_ai.commands import ImportImageUnderlayCmd, ScaleImageUnderlayCmd
+320 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+321 |
+322 |       doc = _make_fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_imp_v3_01.py:356:5
+    |
+354 |   def test_rotate_underlay_updates_rotation() -> None:
+355 |       """Rotate underlay → rotation_deg updated."""
+356 | /     from bim_ai.commands import ImportImageUnderlayCmd, RotateImageUnderlayCmd
+357 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+358 |
+359 |       doc = _make_fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_imp_v3_01.py:388:5
+    |
+386 |   def test_delete_underlay_removes_element() -> None:
+387 |       """Delete underlay → removed from state."""
+388 | /     from bim_ai.commands import DeleteImageUnderlayCmd, ImportImageUnderlayCmd
+389 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+390 |
+391 |       doc = _make_fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_imp_v3_01.py:414:5
+    |
+412 |   def test_default_opacity_is_0_4() -> None:
+413 |       """Default opacity = 0.4."""
+414 | /     from bim_ai.commands import ImportImageUnderlayCmd
+415 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+416 |
+417 |       doc = _make_fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_imp_v3_01.py:436:5
+    |
+434 |   def test_default_rotation_is_0() -> None:
+435 |       """Default rotation = 0.0."""
+436 | /     from bim_ai.commands import ImportImageUnderlayCmd
+437 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+438 |
+439 |       doc = _make_fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_imp_v3_01.py:461:5
+    |
+459 |       TypeScript type so the frontend can consume the snapshot payload.
+460 |       """
+461 | /     from bim_ai.commands import ImportImageUnderlayCmd
+462 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+463 |
+464 |       doc = _make_fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_mat_v3_01.py:149:5
+    |
+147 |       doc = Document(revision=1, elements={})  # type: ignore[arg-type]
+148 |       ensure_internal_origin(doc)
+149 | /     from bim_ai.commands import CreateLevelCmd, CreateWallCmd
+150 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+151 |
+152 |       apply_inplace(doc, TypeAdapter(CreateLevelCmd).validate_python(_CREATE_LEVEL))
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_mat_v3_01.py:163:5
+    |
+162 |   def test_update_material_pbr_patches_map_ids() -> None:
+163 | /     from bim_ai.commands import UpdateMaterialPbrCmd
+164 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+165 |
+166 |       doc = Document(revision=1, elements={})  # type: ignore[arg-type]
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_mat_v3_01.py:191:5
+    |
+190 |   def test_update_material_pbr_raises_for_unknown_id() -> None:
+191 | /     from bim_ai.commands import UpdateMaterialPbrCmd
+192 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+193 |
+194 |       doc = Document(revision=1, elements={})  # type: ignore[arg-type]
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_mat_v3_01.py:205:5
+    |
+204 |   def test_create_decal_stores_elem() -> None:
+205 | /     from bim_ai.commands import CreateDecalCmd
+206 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+207 |
+208 |       doc = _make_doc_with_level_and_wall()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_mat_v3_01.py:233:5
+    |
+232 |   def test_create_decal_raises_for_missing_parent() -> None:
+233 | /     from bim_ai.commands import CreateDecalCmd
+234 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+235 |
+236 |       doc = Document(revision=1, elements={})  # type: ignore[arg-type]
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/api/test_milestones_route.py:38:9
+   |
+36 |       @app.post("/api/models/{model_id}/milestones")
+37 |       async def create_milestone(model_id: str, body: CreateMilestoneBody) -> Any:
+38 | /         from fastapi import HTTPException
+39 | |         from uuid import uuid4
+   | |______________________________^
+40 |
+41 |           if model_id not in _models:
+   |
+help: Organize imports
+
+F401 [*] `uuid` imported but unused
+  --> tests/api/test_osm_v3_01.py:19:8
+   |
+18 | import math
+19 | import uuid
+   |        ^^^^
+20 | from typing import Any
+21 | from unittest.mock import patch
+   |
+help: Remove unused import: `uuid`
+
+F401 [*] `typing.Any` imported but unused
+  --> tests/api/test_osm_v3_01.py:20:20
+   |
+18 | import math
+19 | import uuid
+20 | from typing import Any
+   |                    ^^^
+21 | from unittest.mock import patch
+   |
+help: Remove unused import: `typing.Any`
+
+F401 [*] `unittest.mock.patch` imported but unused
+  --> tests/api/test_osm_v3_01.py:21:27
+   |
+19 | import uuid
+20 | from typing import Any
+21 | from unittest.mock import patch
+   |                           ^^^^^
+22 |
+23 | import pytest
+   |
+help: Remove unused import: `unittest.mock.patch`
+
+F401 [*] `fastapi.FastAPI` imported but unused
+  --> tests/api/test_osm_v3_01.py:24:21
+   |
+23 | import pytest
+24 | from fastapi import FastAPI
+   |                     ^^^^^^^
+25 | from fastapi.testclient import TestClient
+   |
+help: Remove unused import: `fastapi.FastAPI`
+
+F401 [*] `fastapi.testclient.TestClient` imported but unused
+  --> tests/api/test_osm_v3_01.py:25:32
+   |
+23 | import pytest
+24 | from fastapi import FastAPI
+25 | from fastapi.testclient import TestClient
+   |                                ^^^^^^^^^^
+26 |
+27 | from bim_ai.site.osm_import import (
+   |
+help: Remove unused import: `fastapi.testclient.TestClient`
+
+F401 [*] `bim_ai.exp.pptx_export.Slide` imported but unused
+  --> tests/api/test_out_v3_02.py:32:48
+   |
+30 | from bim_ai.elements import FrameElem, PresentationCanvasElem, SavedViewElem
+31 | from bim_ai.engine import ensure_internal_origin
+32 | from bim_ai.exp.pptx_export import PptxBundle, Slide, build_pptx_bundle
+   |                                                ^^^^^
+33 |
+34 | MODEL_ID = str(uuid.uuid4())
+   |
+help: Remove unused import: `bim_ai.exp.pptx_export.Slide`
+
+F841 Local variable `model_id` is assigned to but never used
+   --> tests/api/test_out_v3_03.py:492:5
+    |
+490 | def test_logo_mark_svg_uri_stored_and_returned(client: TestClient) -> None:
+491 |     svg_uri = "data:image/svg+xml;base64,REDACTED"
+492 |     model_id = str(uuid.uuid4())
+    |     ^^^^^^^^
+493 |
+494 |     # Build a fresh app so we don't collide with MODULE_ID fixture
+    |
+help: Remove assignment to unused variable `model_id`
+
+F401 [*] `bim_ai.elements.PropertyDefinitionElem` imported but unused
+  --> tests/api/test_sch_v3_01.py:16:29
+   |
+14 | from bim_ai.cmd.types import CommandBundle
+15 | from bim_ai.document import Document
+16 | from bim_ai.elements import PropertyDefinitionElem, ScheduleElem
+   |                             ^^^^^^^^^^^^^^^^^^^^^^
+17 | from bim_ai.engine import ensure_internal_origin
+   |
+help: Remove unused import: `bim_ai.elements.PropertyDefinitionElem`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/api/test_top_v3_02.py:16:1
+   |
+14 |   """
+15 |
+16 | / from __future__ import annotations
+17 | |
+18 | | import math
+19 | | import uuid
+20 | |
+21 | | import pytest
+22 | |
+23 | | from bim_ai.commands import (
+24 | |     CreateToposolidCmd,
+25 | |     CreateToposolidSubdivisionCmd,
+26 | |     DeleteToposolidSubdivisionCmd,
+27 | |     UpdateToposolidSubdivisionCmd,
+28 | | )
+29 | | from bim_ai.document import Document
+30 | | from bim_ai.elements import AgentDeviationElem, ToposolidElem, ToposolidSubdivisionElem
+31 | | from bim_ai.engine import apply_inplace
+   | |_______________________________________^
+   |
+help: Organize imports
+
+F401 [*] `math` imported but unused
+  --> tests/api/test_top_v3_02.py:18:8
+   |
+16 | from __future__ import annotations
+17 |
+18 | import math
+   |        ^^^^
+19 | import uuid
+   |
+help: Remove unused import: `math`
+
+F401 [*] `bim_ai.elements.ToposolidElem` imported but unused
+  --> tests/api/test_top_v3_02.py:30:49
+   |
+28 | )
+29 | from bim_ai.document import Document
+30 | from bim_ai.elements import AgentDeviationElem, ToposolidElem, ToposolidSubdivisionElem
+   |                                                 ^^^^^^^^^^^^^
+31 | from bim_ai.engine import apply_inplace
+   |
+help: Remove unused import: `bim_ai.elements.ToposolidElem`
+
+B905 `zip()` without an explicit `strict=` parameter
+   --> tests/api/test_top_v3_02.py:353:21
+    |
+351 |     sids = [str(uuid.uuid4()) for _ in range(4)]
+352 |     categories = ["paving", "lawn", "road", "planting"]
+353 |     for sid, cat in zip(sids, categories):
+    |                     ^^^^^^^^^^^^^^^^^^^^^
+354 |         apply_inplace(
+355 |             doc,
+    |
+help: Add explicit value for parameter `strict=`
+
+B905 `zip()` without an explicit `strict=` parameter
+   --> tests/api/test_top_v3_02.py:365:21
+    |
+363 |         )
+364 |
+365 |     for sid, cat in zip(sids, categories):
+    |                     ^^^^^^^^^^^^^^^^^^^^^
+366 |         elem = doc.elements[sid]
+367 |         assert isinstance(elem, ToposolidSubdivisionElem)
+    |
+help: Add explicit value for parameter `strict=`
+
+F401 [*] `bim_ai.elements.ToposolidElem` imported but unused
+  --> tests/api/test_top_v3_04.py:30:47
+   |
+28 | from bim_ai.cmd.types import CommandBundle
+29 | from bim_ai.document import Document
+30 | from bim_ai.elements import GradedRegionElem, ToposolidElem, WallElem
+   |                                               ^^^^^^^^^^^^^
+31 | from bim_ai.engine import apply_inplace, ensure_internal_origin
+   |
+help: Remove unused import: `bim_ai.elements.ToposolidElem`
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_top_v3_04.py:173:5
+    |
+171 |       doc = Document(revision=1, elements={})  # type: ignore[arg-type]
+172 |       ensure_internal_origin(doc)
+173 | /     from bim_ai.commands import CreateToposolidCmd
+174 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+175 |
+176 |       apply_inplace(
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_top_v3_04.py:197:5
+    |
+195 |       doc = Document(revision=1, elements={})  # type: ignore[arg-type]
+196 |       ensure_internal_origin(doc)
+197 | /     from bim_ai.commands import CreateLevelCmd, CreateToposolidCmd
+198 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+199 |
+200 |       apply_inplace(doc, TypeAdapter(CreateLevelCmd).validate_python(_CREATE_LEVEL))
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_top_v3_04.py:211:5
+    |
+210 |   def test_create_site_wall_with_site_host_id() -> None:
+211 | /     from bim_ai.commands import CreateWallCmd
+212 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+213 |
+214 |       doc = _fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_top_v3_04.py:237:5
+    |
+236 |   def test_create_site_wall_nonexistent_site_host_id() -> None:
+237 | /     from bim_ai.commands import CreateWallCmd
+238 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+239 |
+240 |       doc = _fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_top_v3_04.py:261:5
+    |
+260 |   def test_create_graded_region_flat_mode() -> None:
+261 | /     from bim_ai.commands import CreateGradedRegionCmd
+262 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+263 |
+264 |       doc = _fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_top_v3_04.py:290:5
+    |
+289 |   def test_create_graded_region_slope_mode() -> None:
+290 | /     from bim_ai.commands import CreateGradedRegionCmd
+291 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+292 |
+293 |       doc = _fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_top_v3_04.py:320:5
+    |
+319 |   def test_create_graded_region_flat_missing_target_z() -> None:
+320 | /     from bim_ai.commands import CreateGradedRegionCmd
+321 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+322 |
+323 |       doc = _fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_top_v3_04.py:344:5
+    |
+343 |   def test_create_graded_region_slope_missing_axis() -> None:
+344 | /     from bim_ai.commands import CreateGradedRegionCmd
+345 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+346 |
+347 |       doc = _fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_top_v3_04.py:368:5
+    |
+367 |   def test_update_graded_region() -> None:
+368 | /     from bim_ai.commands import CreateGradedRegionCmd, UpdateGradedRegionCmd
+369 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+370 |
+371 |       doc = _fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_top_v3_04.py:403:5
+    |
+402 |   def test_delete_graded_region() -> None:
+403 | /     from bim_ai.commands import CreateGradedRegionCmd, DeleteGradedRegionCmd
+404 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+405 |
+406 |       doc = _fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_top_v3_04.py:433:5
+    |
+432 |   def test_create_wall_without_site_host_id_is_normal() -> None:
+433 | /     from bim_ai.commands import CreateWallCmd
+434 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+435 |
+436 |       doc = _fresh_doc()
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/api/test_top_v3_04.py:536:5
+    |
+535 |   def test_delete_nonexistent_graded_region() -> None:
+536 | /     from bim_ai.commands import DeleteGradedRegionCmd
+537 | |     from pydantic import TypeAdapter
+    | |____________________________________^
+538 |
+539 |       doc = _fresh_doc()
+    |
+help: Organize imports
+
+F401 [*] `bim_ai.commands.IndexAssetCmd` imported but unused
+ --> tests/test_ast_v3_01.py:7:29
+  |
+6 | from bim_ai.assets import render_schematic_thumbnail_svg, search_assets
+7 | from bim_ai.commands import IndexAssetCmd, PlaceAssetCmd
+  |                             ^^^^^^^^^^^^^
+8 | from bim_ai.document import Document
+9 | from bim_ai.elements import AssetLibraryEntryElem, PlacedAssetElem
+  |
+help: Remove unused import
+
+F401 [*] `bim_ai.commands.PlaceAssetCmd` imported but unused
+ --> tests/test_ast_v3_01.py:7:44
+  |
+6 | from bim_ai.assets import render_schematic_thumbnail_svg, search_assets
+7 | from bim_ai.commands import IndexAssetCmd, PlaceAssetCmd
+  |                                            ^^^^^^^^^^^^^
+8 | from bim_ai.document import Document
+9 | from bim_ai.elements import AssetLibraryEntryElem, PlacedAssetElem
+  |
+help: Remove unused import
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/test_detail_level_rendering.py:8:1
+   |
+ 6 |   """
+ 7 |
+ 8 | / from __future__ import annotations
+ 9 | |
+10 | | import pytest
+11 | |
+12 | | from bim_ai.elements import ColumnElem, DoorElem, StairElem, Vec2Mm, WindowElem
+13 | | from bim_ai.engine import (
+14 | |     planDoorMesh,
+15 | |     planFamilyInstanceMesh,
+16 | |     planStairMesh,
+17 | |     planWindowMesh,
+18 | | )
+   | |_^
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/test_img_v3_01.py:12:1
+   |
+10 |   """
+11 |
+12 | / from __future__ import annotations
+13 | |
+14 | | import base64
+15 | | import json
+16 | | import struct
+17 | | import zlib
+18 | | from pathlib import Path
+19 | |
+20 | | import pytest
+   | |_____________^
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/test_img_v3_01.py:154:13
+    |
+153 |           with patch.dict(sys.modules, {"pytesseract": None}):
+154 | /             from bim_ai.img import ocr as ocr_mod
+155 | |             import importlib
+    | |____________________________^
+156 |
+157 |               importlib.reload(ocr_mod)
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/test_img_v3_01.py:172:13
+    |
+171 |           with patch.dict(sys.modules, {"pytesseract": None}):
+172 | /             from bim_ai.img import ocr as ocr_mod
+173 | |             import importlib
+    | |____________________________^
+174 |
+175 |               importlib.reload(ocr_mod)
+    |
+help: Organize imports
+
+F401 [*] `pytest` imported but unused
+ --> tests/test_opt_agent_scratch.py:7:8
+  |
+5 | import re
+6 |
+7 | import pytest
+  |        ^^^^^^
+8 |
+9 | from bim_ai.cmd.apply_bundle import apply_bundle
+  |
+help: Remove unused import: `pytest`
+
+F401 [*] `bim_ai.permissions.VERB_ALLOWLIST` imported but unused
+  --> tests/test_permissions.py:22:32
+   |
+20 | from bim_ai.document import Document
+21 | from bim_ai.engine import ensure_internal_origin
+22 | from bim_ai.permissions import VERB_ALLOWLIST, authorize_command
+   |                                ^^^^^^^^^^^^^^
+23 |
+24 | MODEL_ID = str(uuid.uuid4())
+   |
+help: Remove unused import: `bim_ai.permissions.VERB_ALLOWLIST`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/test_sht_v3_01.py:2:1
+   |
+ 1 |   """SHT-V3-01: Sheet + titleblock + cartouche + window-legend tests."""
+ 2 | / from __future__ import annotations
+ 3 | |
+ 4 | | import pytest
+ 5 | |
+ 6 | | from bim_ai.commands import (
+ 7 | |     CreateSheetCmd,
+ 8 | |     CreateWindowLegendViewCmd,
+ 9 | |     MoveViewOnSheetCmd,
+10 | |     PlaceViewOnSheetCmd,
+11 | |     RemoveViewFromSheetCmd,
+12 | |     SetSheetTitleblockCmd,
+13 | |     UpdateSheetMetadataCmd,
+14 | | )
+15 | | from bim_ai.document import Document
+16 | | from bim_ai.elements import (
+17 | |     DEFAULT_TITLEBLOCK_TYPE,
+18 | |     SheetElem,
+19 | |     TitleblockTypeElem,
+20 | |     WindowElem,
+21 | |     WindowLegendViewElem,
+22 | |     Vec2Mm,
+23 | | )
+24 | | from bim_ai.engine import apply_inplace
+25 | | from bim_ai.sheets import resolve_window_legend
+   | |_______________________________________________^
+   |
+help: Organize imports
+
+F401 [*] `pytest` imported but unused
+ --> tests/test_sht_v3_01.py:4:8
+  |
+2 | from __future__ import annotations
+3 |
+4 | import pytest
+  |        ^^^^^^
+5 |
+6 | from bim_ai.commands import (
+  |
+help: Remove unused import: `pytest`
+
+F401 [*] `bim_ai.commands.CreateSheetCmd` imported but unused
+ --> tests/test_sht_v3_01.py:7:5
+  |
+6 | from bim_ai.commands import (
+7 |     CreateSheetCmd,
+  |     ^^^^^^^^^^^^^^
+8 |     CreateWindowLegendViewCmd,
+9 |     MoveViewOnSheetCmd,
+  |
+help: Remove unused import
+
+F401 [*] `bim_ai.commands.CreateWindowLegendViewCmd` imported but unused
+  --> tests/test_sht_v3_01.py:8:5
+   |
+ 6 | from bim_ai.commands import (
+ 7 |     CreateSheetCmd,
+ 8 |     CreateWindowLegendViewCmd,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+ 9 |     MoveViewOnSheetCmd,
+10 |     PlaceViewOnSheetCmd,
+   |
+help: Remove unused import
+
+F401 [*] `bim_ai.commands.MoveViewOnSheetCmd` imported but unused
+  --> tests/test_sht_v3_01.py:9:5
+   |
+ 7 |     CreateSheetCmd,
+ 8 |     CreateWindowLegendViewCmd,
+ 9 |     MoveViewOnSheetCmd,
+   |     ^^^^^^^^^^^^^^^^^^
+10 |     PlaceViewOnSheetCmd,
+11 |     RemoveViewFromSheetCmd,
+   |
+help: Remove unused import
+
+F401 [*] `bim_ai.commands.PlaceViewOnSheetCmd` imported but unused
+  --> tests/test_sht_v3_01.py:10:5
+   |
+ 8 |     CreateWindowLegendViewCmd,
+ 9 |     MoveViewOnSheetCmd,
+10 |     PlaceViewOnSheetCmd,
+   |     ^^^^^^^^^^^^^^^^^^^
+11 |     RemoveViewFromSheetCmd,
+12 |     SetSheetTitleblockCmd,
+   |
+help: Remove unused import
+
+F401 [*] `bim_ai.commands.RemoveViewFromSheetCmd` imported but unused
+  --> tests/test_sht_v3_01.py:11:5
+   |
+ 9 |     MoveViewOnSheetCmd,
+10 |     PlaceViewOnSheetCmd,
+11 |     RemoveViewFromSheetCmd,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+12 |     SetSheetTitleblockCmd,
+13 |     UpdateSheetMetadataCmd,
+   |
+help: Remove unused import
+
+F401 [*] `bim_ai.commands.SetSheetTitleblockCmd` imported but unused
+  --> tests/test_sht_v3_01.py:12:5
+   |
+10 |     PlaceViewOnSheetCmd,
+11 |     RemoveViewFromSheetCmd,
+12 |     SetSheetTitleblockCmd,
+   |     ^^^^^^^^^^^^^^^^^^^^^
+13 |     UpdateSheetMetadataCmd,
+14 | )
+   |
+help: Remove unused import
+
+F401 [*] `bim_ai.commands.UpdateSheetMetadataCmd` imported but unused
+  --> tests/test_sht_v3_01.py:13:5
+   |
+11 |     RemoveViewFromSheetCmd,
+12 |     SetSheetTitleblockCmd,
+13 |     UpdateSheetMetadataCmd,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+14 | )
+15 | from bim_ai.document import Document
+   |
+help: Remove unused import
+
+F401 [*] `bim_ai.elements.DEFAULT_TITLEBLOCK_TYPE` imported but unused
+  --> tests/test_sht_v3_01.py:17:5
+   |
+15 | from bim_ai.document import Document
+16 | from bim_ai.elements import (
+17 |     DEFAULT_TITLEBLOCK_TYPE,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+18 |     SheetElem,
+19 |     TitleblockTypeElem,
+   |
+help: Remove unused import
+
+F401 [*] `bim_ai.elements.Vec2Mm` imported but unused
+  --> tests/test_sht_v3_01.py:22:5
+   |
+20 |     WindowElem,
+21 |     WindowLegendViewElem,
+22 |     Vec2Mm,
+   |     ^^^^^^
+23 | )
+24 | from bim_ai.engine import apply_inplace
+   |
+help: Remove unused import
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/test_sht_v3_01.py:33:5
+   |
+32 |   def _apply(doc: Document, cmd_dict: dict) -> Document:
+33 | /     from pydantic import TypeAdapter
+34 | |     from bim_ai.commands import Command
+   | |_______________________________________^
+35 |
+  ta: TypeAdapter[Command] = TypeAdapter(Command)
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/test_top_v3_01.py:2:1
+   |
+ 1 |   """TOP-V3-01 — Toposolid primitive tests."""
+ 2 | / from __future__ import annotations
+ 3 | |
+ 4 | | import pytest
+ 5 | |
+ 6 | | from bim_ai.constraints import evaluate
+ 7 | | from bim_ai.document import Document
+ 8 | | from bim_ai.elements import (
+ 9 | |     FloorElem,
+10 | |     HeightSample,
+11 | |     HeightmapGrid,
+12 | |     LevelElem,
+13 | |     SlabOpeningElem,
+14 | |     ToposolidElem,
+15 | |     Vec2Mm,
+16 | | )
+17 | | from bim_ai.engine import try_commit
+18 | | from bim_ai.opening_cut_primitives import subtract_axis_aligned_rect_hole_mm
+19 | | from bim_ai.site.toposolid import (
+20 | |     contour_polylines,
+21 | |     samples_from_toposolid,
+22 | |     underside_elevation_mm,
+23 | | )
+   | |_^
+   |
+help: Organize imports
+
+Found 120 errors.
+[*] 109 fixable with the `--fix` option (5 hidden fixes can be enabled with the `--unsafe-fixes` option).
+Error: Process completed with exit code 1.
