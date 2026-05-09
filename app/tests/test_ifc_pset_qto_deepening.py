@@ -4,10 +4,14 @@ from __future__ import annotations
 
 import math
 
-import ifcopenshell
-import ifcopenshell.api.pset
-import ifcopenshell.api.root
 import pytest
+
+try:
+    import ifcopenshell
+    import ifcopenshell.api.pset
+    import ifcopenshell.api.root
+except ImportError:
+    pass
 
 from bim_ai.document import Document
 from bim_ai.elements import (

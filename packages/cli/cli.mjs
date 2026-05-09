@@ -1806,6 +1806,9 @@ async function main() {
         return;
       }
       console.error(`Unknown asset subcommand: ${sub ?? '(none)'}. Use index | place.`);
+      process.exit(1);
+    }
+
     if (cmd === 'tool-pref') {
       if (!modelId) usage();
       const sub = argv[1];
