@@ -866,6 +866,31 @@ export function Workspace(): JSX.Element {
     [elementsById, toolRegistry, t],
   );
 
+  const paletteViews = useMemo(() => {
+    const KIND_PREFIX: Partial<Record<Element['kind'], string>> = {
+      plan_view: 'Plan',
+      viewpoint: '3D',
+      section_cut: 'Section',
+      sheet: 'Sheet',
+      schedule: 'Schedule',
+    };
+    return (Object.values(elementsById) as Element[])
+      .filter((el) => el.kind in KIND_PREFIX)
+      .map((el) => ({
+        id: el.id,
+        label: `${KIND_PREFIX[el.kind]}: ${(el as { name?: string }).name ?? el.id}`,
+        keywords: el.kind.replace('_', ' '),
+      }));
+  }, [elementsById]);
+
+  const openElementById = useCallback(
+    (id: string) => {
+      const el = (elementsById as Record<string, Element>)[id];
+      if (el) openTabFromElement(el);
+    },
+    [elementsById, openTabFromElement],
+  );
+
   const handlePalettePick = useCallback(
     (cand: CommandCandidate) => {
       setRecentCommandIds((prev) => [cand.id, ...prev.filter((id) => id !== cand.id)].slice(0, 5));
@@ -992,6 +1017,8 @@ export function Workspace(): JSX.Element {
         context={{
           selectedElementIds: selectedId ? [selectedId] : [],
           activeViewId: null,
+          views: paletteViews,
+          openElement: openElementById,
         }}
       />
       <FamilyLibraryPanel

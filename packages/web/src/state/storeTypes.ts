@@ -59,6 +59,7 @@ export type PlanTool =
   | 'detail-region'
   | 'toposolid_subdivision'
   | 'measure'
+  | 'mirror'
   | 'component';
 
 export type PresencePeers = Record<
@@ -253,7 +254,9 @@ export type StoreState = {
   setScheduleBudgetHydration: (v: { tab: string; rowCount: number } | null) => void;
   toggleViewerCategoryHidden: (semanticKind: string) => void;
   /** F-011: switch between shaded, wireframe, consistent-colors, and hidden-line render modes. */
-  setViewerRenderStyle: (style: 'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line') => void;
+  setViewerRenderStyle: (
+    style: 'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line',
+  ) => void;
   /** F-113: set 3D viewport background colour. */
   setViewerBackground: (bg: 'white' | 'light_grey' | 'dark') => void;
   /** F-113: set 3D viewport edge display mode. */

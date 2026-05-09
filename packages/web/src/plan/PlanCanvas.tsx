@@ -125,6 +125,7 @@ import {
   activeComponentAssetId,
   mirrorCopyEnabled,
   pendingComponentRotationDeg,
+  setPendingComponentRotationDeg,
 } from '../workspace/OptionsBar';
 
 function readPlanToken(name: string, fallback: string): string {
@@ -2931,7 +2932,7 @@ export function PlanCanvas({
       // F-115 — Spacebar rotates pending component placement by 90°.
       if (ev.key === ' ' && planTool === 'component') {
         ev.preventDefault();
-        pendingComponentRotationDeg = (pendingComponentRotationDeg + 90) % 360;
+        setPendingComponentRotationDeg((pendingComponentRotationDeg + 90) % 360);
         return;
       }
       // EDT-01 — grip drag handles its own keys: Esc cancels, digits
@@ -3340,7 +3341,7 @@ export function PlanCanvas({
 
   // F-115 — reset pending component rotation when leaving the component tool.
   useEffect(() => {
-    if (planTool !== 'component') pendingComponentRotationDeg = 0;
+    if (planTool !== 'component') setPendingComponentRotationDeg(0);
   }, [planTool]);
 
   // EDT-01 — grip pointer-down: capture starting world position so

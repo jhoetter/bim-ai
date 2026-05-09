@@ -15,6 +15,10 @@ export type PaletteEntry = {
 export type PaletteContext = {
   selectedElementIds: string[];
   activeViewId: string | null;
+  /** Callback to open a model element (plan view, sheet, schedule, etc.) as a tab. */
+  openElement?: (id: string) => void;
+  /** Dynamic navigable views/sheets/schedules to surface in the palette. */
+  views?: Array<{ id: string; label: string; keywords: string }>;
 };
 
 const _registry: PaletteEntry[] = [];
@@ -39,11 +43,21 @@ export function queryPalette(
 ): PaletteEntry[] {
   const available = _registry.filter((e) => !e.isAvailable || e.isAvailable(context));
 
+  const viewEntries: PaletteEntry[] = (context.views ?? []).map((v) => ({
+    id: `view.${v.id}`,
+    label: v.label,
+    keywords: [v.keywords],
+    category: 'navigate' as const,
+    invoke: (ctx) => ctx.openElement?.(v.id),
+  }));
+
+  const all = [...available, ...viewEntries];
+
   if (!input.trim()) {
-    return [...available].sort((a, b) => (recency[b.id] ?? 0) - (recency[a.id] ?? 0));
+    return [...all].sort((a, b) => (recency[b.id] ?? 0) - (recency[a.id] ?? 0));
   }
 
-  const targets = available.map((e) => ({
+  const targets = all.map((e) => ({
     entry: e,
     searchable: [e.label, ...(e.keywords ?? [])].join(' '),
   }));

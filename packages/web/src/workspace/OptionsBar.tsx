@@ -34,6 +34,9 @@ export let activeComponentAssetId: string | null = null;
  * Reset to 0 when the tool changes away from 'component'.
  */
 export let pendingComponentRotationDeg = 0;
+export function setPendingComponentRotationDeg(v: number): void {
+  pendingComponentRotationDeg = v;
+}
 
 export function OptionsBar(): JSX.Element | null {
   const planTool = useBimStore((s) => s.planTool);
