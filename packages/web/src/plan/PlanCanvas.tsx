@@ -1090,7 +1090,7 @@ export function PlanCanvas({
       if ((ch.userData as { areaElement?: unknown }).areaElement) grp.remove(ch);
     }
     const areaLevelId = displayLevelId || activeLevelResolvedId;
-    if (areaLevelId) {
+    if (areaLevelId && !display.hiddenSemanticKinds.has('area_boundary')) {
       const areaPrims = extractAreaPrimitives(elementsById, areaLevelId);
       for (const a of areaPrims) {
         if (a.boundaryMm.length >= 3) {
