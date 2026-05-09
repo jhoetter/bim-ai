@@ -3,7 +3,7 @@
   "checkpoint_id": "a35ce22a49d4",
   "strategy": "manual-commit",
   "branch": "feat/v3-plan-rayon",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "packages/design-tokens/src/tokens-drafting.css",
     "packages/web/src/plan/HatchRenderer.ts",
@@ -15,13 +15,19 @@
       "transcript": "/a3/5ce22a49d4/0/full.jsonl",
       "content_hash": "/a3/5ce22a49d4/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/a3/5ce22a49d4/1/metadata.json",
+      "transcript": "/a3/5ce22a49d4/1/full.jsonl",
+      "content_hash": "/a3/5ce22a49d4/1/content_hash.txt",
+      "prompt": "/a3/5ce22a49d4/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 0,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 0,
-    "output_tokens": 0,
-    "api_call_count": 0
+    "input_tokens": 248,
+    "cache_creation_tokens": 140344,
+    "cache_read_tokens": 13288401,
+    "output_tokens": 63209,
+    "api_call_count": 152
   }
 }
