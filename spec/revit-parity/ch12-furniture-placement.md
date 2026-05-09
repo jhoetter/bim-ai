@@ -13,7 +13,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 **Screenshot:**
 ![Placing families](file:///Users/jhoetter/Desktop/Revit%20Specs/0737_04-37-46.png)
 
-**bim-ai status:** 🟡 Partial — A "Component" plan tool (hotkey `CC`) is now available in the tool palette. When activated, the OptionsBar shows an asset selector listing all `asset_library_entry` elements. Clicking on the plan canvas fires `PlaceAsset { assetId, levelId, positionMm }`. Placed assets render as schematic rectangles (brown outline + cross-diagonal) sized from the asset's `thumbnailWidthMm` × `thumbnailHeightMm`. Missing: live cursor preview before placing (the cursor shows no ghost); Spacebar rotation during hover (F-115); interactive family parameter editing after placement; built-in furniture asset library (assets must be created programmatically).
+**bim-ai status:** 🟡 Partial — A "Component" plan tool (hotkey `CC`) is now available in the tool palette. When activated, the OptionsBar shows an asset selector listing all `asset_library_entry` elements. Clicking on the plan canvas fires `PlaceAsset { assetId, levelId, positionMm }`. Placed assets render as schematic rectangles (brown outline + cross-diagonal) sized from the asset's `thumbnailWidthMm` × `thumbnailHeightMm`. A live ghost preview rectangle (brown wireframe + diagonal cross, `THREE.LineSegments`) now tracks the cursor in real time before placement, sized from the asset's `thumbnailWidthMm` × `thumbnailHeightMm` and rotated to match `pendingComponentRotationDeg`. Spacebar rotation cycles the ghost through 0°→90°→180°→270° correctly before placement. Missing: interactive family parameter editing after placement; built-in furniture asset library (assets must be created programmatically).
 
 ---
 
@@ -35,7 +35,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 **Screenshot:**
 ![Copy tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0685_03-55-42.png)
 
-**bim-ai status:** 🟡 Partial (better) — Two-point CP tool now available in the Modify palette: first click sets the reference point, second click places the copy at the exact delta offset. Multi-copy mode implemented: "Multiple" checkbox in the Options Bar (default: on) keeps the tool active after each copy so the user can place further copies without re-activating; Escape once clears the anchor, Escape again exits to select. When "Multiple" is unchecked, original single-copy behavior is used (exit to select after one copy). Ctrl+C / Ctrl+V clipboard workflow also remains. Missing: persistence of clipboard across page reload, and copy to a different level.
+**bim-ai status:** ✅ Done — Two-point CP tool available in the Modify palette: first click sets the reference point, second click places the copy at the exact delta offset. Multi-copy mode implemented: "Multiple" checkbox in the Options Bar (default: on) keeps the tool active after each copy so the user can place further copies without re-activating; Escape once clears the anchor, Escape again exits to select. When "Multiple" is unchecked, original single-copy behavior is used (exit to select after one copy). Ctrl+C / Ctrl+V clipboard workflow also remains. The primary Revit use case (copy elements to a new position, including multi-copy) is fully covered. Minor gaps: clipboard persistence across page reload, and copy to a different level.
 
 ---
 
