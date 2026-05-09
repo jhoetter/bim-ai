@@ -16,6 +16,45 @@ const MM_PER_INCH = 25.4;
 const BASE_PIXELS_PER_MM = SCREEN_DPI / MM_PER_INCH;
 
 /**
+ * Category-based fallback hatch pattern IDs for elements that have no explicit
+ * material hatch assignment. Keys are element `kind` strings (as used in plan
+ * element iteration). Values are `HatchPatternDef` ids from the core registry.
+ *
+ * railing, door, and window are intentionally excluded — small profiles do not
+ * need a hatch fill.
+ */
+const CATEGORY_DEFAULT_HATCH: Partial<Record<string, string>> = {
+  wall: 'brick',
+  floor: 'concrete',
+  roof: 'tile',
+  stair: 'concrete',
+  slab_edge: 'concrete',
+};
+
+/**
+ * Resolve the hatch pattern id for a given element.
+ *
+ * Resolution order:
+ *  1. Explicit `hatchPatternId` from the element's material — returned as-is.
+ *  2. Category fallback from `CATEGORY_DEFAULT_HATCH` — applied when the
+ *     element has no material hatch but belongs to a standard category.
+ *  3. `null` — no hatch rendered (small profiles, unknown categories, etc.).
+ *
+ * @param hatchPatternId - explicit pattern id from the material (may be null/undefined)
+ * @param category       - element category/kind string (e.g. 'wall', 'floor')
+ */
+export function resolveHatchPatternId(
+  hatchPatternId: string | null | undefined,
+  category?: string,
+): string | null {
+  if (hatchPatternId) return hatchPatternId;
+  if (category && CATEGORY_DEFAULT_HATCH[category]) {
+    return CATEGORY_DEFAULT_HATCH[category]!;
+  }
+  return null;
+}
+
+/**
  * Compute the screen repeat distance (px) for a hatch pattern at the given
  * plot scale and viewport zoom.
  *
