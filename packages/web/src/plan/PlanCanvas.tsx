@@ -3233,7 +3233,7 @@ export function PlanCanvas({
   );
 
   return (
-    <div data-testid="plan-canvas" className="relative h-full w-full overflow-hidden bg-background">
+    <div data-testid="plan-canvas" className="relative h-full w-full overflow-hidden bg-canvas-paper">
       {wallContextMenu && (
         <WallContextMenu
           wall={wallContextMenu.wall}

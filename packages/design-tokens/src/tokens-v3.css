@@ -42,6 +42,9 @@
   /* Overlay + modal shadow — used by SharePresentationModal and other dialogs */
   --color-overlay: rgba(0, 0, 0, 0.4);
   --shadow-modal: rgba(0, 0, 0, 0.24);
+
+  /* VIS-V3-08 — plan/section/elevation canvas background (paper-white) */
+  --color-canvas-paper: hsl(40 20% 96%);
 }
 
 :root[data-theme='dark'],
@@ -76,4 +79,7 @@
   /* Discipline tints are Layer A — same in light and dark.
    * The -soft variants use color-mix(transparent) so they adapt to surface
    * backgrounds automatically; no dark override needed. */
+
+  /* VIS-V3-08 — paper canvas appears slightly warm off-white even in dark mode */
+  --color-canvas-paper: hsl(40 16% 92%);
 }
