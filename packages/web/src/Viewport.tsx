@@ -381,7 +381,7 @@ export function Viewport({
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setClearColor(readColorToken('--color-background', '#ffffff'), 1);
+    renderer.setClearColor(readColorToken('--draft-paper', '#fdfcf9'), 1);
     rendererRef.current = renderer;
     host.appendChild(renderer.domElement);
 
@@ -424,14 +424,22 @@ export function Viewport({
     scene.environment = envMap;
     envMapRef.current = envMap;
 
-    scene.add(
-      new THREE.GridHelper(
-        160,
-        32,
-        readToken('--draft-grid-major', '#223042'),
-        readToken('--draft-grid-minor', '#1a2738'),
-      ),
+    const grid = new THREE.GridHelper(
+      80,
+      32,
+      readToken('--draft-grid-major', '#223042'),
+      readToken('--draft-grid-minor', '#1a2738'),
     );
+    if (Array.isArray(grid.material)) {
+      grid.material.forEach((m) => {
+        m.opacity = 0.25;
+        m.transparent = true;
+      });
+    } else {
+      grid.material.opacity = 0.25;
+      grid.material.transparent = true;
+    }
+    scene.add(grid);
 
     const root = new THREE.Group();
 
@@ -452,7 +460,7 @@ export function Viewport({
     composer.addPass(renderPass);
     renderPassRef.current = renderPass;
     const ssao = new SSAOPass(scene, camera, host.clientWidth || 1, host.clientHeight || 1);
-    ssao.kernelRadius = paint.lighting.ssao.kernelRadius;
+    ssao.kernelRadius = Math.min(paint.lighting.ssao.kernelRadius, 0.18);
     ssao.minDistance = paint.lighting.ssao.minDistance;
     ssao.maxDistance = paint.lighting.ssao.maxDistance;
     ssao.output = SSAOPass.OUTPUT.Default;
