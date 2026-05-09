@@ -193,9 +193,10 @@ function ConflictSlot({
                 setExpanded(false);
                 onClear?.();
               }}
+              title={t('statusbar.conflict.dismissAriaLabel')}
               className="rounded-sm px-1 py-0.5 text-muted hover:bg-surface-strong"
             >
-              ✕
+              <Icons.close size={ICON_SIZE.chrome} aria-hidden="true" />
             </button>
           </div>
           <p className="mt-1 text-foreground">{queue.inspectionReadout}</p>

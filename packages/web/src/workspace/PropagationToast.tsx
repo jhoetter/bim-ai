@@ -1,5 +1,6 @@
 import { useEffect, type ReactElement } from 'react';
 import type { ViewTemplatePropagation } from '@bim-ai/core';
+import { Icons, ICON_SIZE } from '@bim-ai/ui';
 
 type PropagationToastProps = {
   propagation: ViewTemplatePropagation;
@@ -56,10 +57,11 @@ export function PropagationToast({
       <button
         type="button"
         aria-label="Dismiss"
+        title="Dismiss"
         className="ml-1 opacity-50 hover:opacity-100"
         onClick={onDismiss}
       >
-        ✕
+        <Icons.close size={ICON_SIZE.chrome} aria-hidden="true" />
       </button>
     </div>
   );

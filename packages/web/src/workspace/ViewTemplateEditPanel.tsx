@@ -1,5 +1,6 @@
 import { useState, type ReactElement } from 'react';
 import type { Element } from '@bim-ai/core';
+import { Icons, ICON_SIZE } from '@bim-ai/ui';
 
 type ViewTemplateEditPanelProps = {
   template: Extract<Element, { kind: 'view_template' }>;
@@ -61,10 +62,11 @@ export function ViewTemplateEditPanel({
         <button
           type="button"
           aria-label="Close"
+          title="Close"
           className="text-muted hover:text-foreground"
           onClick={onClose}
         >
-          ✕
+          <Icons.close size={ICON_SIZE.chrome} aria-hidden="true" />
         </button>
       </div>
 

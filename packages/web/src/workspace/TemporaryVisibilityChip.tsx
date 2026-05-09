@@ -1,5 +1,7 @@
 import type { JSX } from 'react';
 
+import { Icons, ICON_SIZE } from '@bim-ai/ui';
+
 import { useBimStore } from '../state/store';
 
 /**
@@ -20,13 +22,10 @@ export function TemporaryVisibilityChip(): JSX.Element | null {
       title="Reset Temporary Visibility (HR)"
       className="inline-flex items-center gap-1 rounded border border-amber-500 bg-amber-100 px-2 py-0.5 text-[11px] text-amber-900 hover:bg-amber-200"
     >
-      <span aria-hidden>👁</span>
       <span>
         {label}: {cats}
       </span>
-      <span aria-hidden className="text-[10px] opacity-70">
-        ✕
-      </span>
+      <Icons.close size={ICON_SIZE.chrome} aria-hidden="true" className="opacity-70" />
     </button>
   );
 }
