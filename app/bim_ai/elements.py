@@ -2354,6 +2354,37 @@ class DecalElem(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# OSM-V3-01 — Neighborhood massing import
+# ---------------------------------------------------------------------------
+
+
+class NeighborhoodMassElem(BaseModel):
+    """OSM-V3-01 — read-only building footprint imported from OpenStreetMap."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["neighborhood_mass"] = "neighborhood_mass"
+    id: str
+    osm_id: str | None = Field(None, alias="osmId")
+    footprint_mm: list[dict] = Field(alias="footprintMm")  # [{xMm, yMm}]
+    height_mm: float = Field(alias="heightMm")
+    base_elevation_mm: float = Field(0.0, alias="baseElevationMm")
+    source: Literal["osm", "manual"] = "osm"
+    is_read_only: bool = Field(True, alias="isReadOnly")
+
+
+class NeighborhoodImportSessionElem(BaseModel):
+    """OSM-V3-01 — records the bounding box + timestamp of an OSM neighborhood import."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["neighborhood_import_session"] = "neighborhood_import_session"
+    id: str
+    bbox: dict  # {minLat, minLon, maxLat, maxLon}
+    fetch_timestamp: str = Field(alias="fetchTimestamp")  # ISO 8601
+    osm_etag: str | None = Field(None, alias="osmEtag")
+    radius_m: float = Field(200.0, alias="radiusM")
+
+
+# ---------------------------------------------------------------------------
 # SCH-V3-01 — Custom property definition element
 # ---------------------------------------------------------------------------
 
@@ -2447,7 +2478,9 @@ Element = Annotated[
     | HatchPatternDefElem
     | MaterialElem
     | DecalElem
-    | PropertyDefinitionElem,
+    | PropertyDefinitionElem
+    | NeighborhoodMassElem
+    | NeighborhoodImportSessionElem,
     Field(discriminator="kind"),
 ]
 

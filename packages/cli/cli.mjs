@@ -1790,6 +1790,37 @@ async function main() {
       process.exit(1);
     }
 
+    if (cmd === 'import-neighborhood') {
+      // OSM-V3-01: fetch OSM buildings and upsert into a model as neighborhood_mass elements
+      const rest = argv.slice(1);
+      let lat, lon, radiusM = 200, targetModelId;
+      for (let i = 0; i < rest.length; i++) {
+        const a = rest[i];
+        if (a === '--lat' && rest[i + 1]) lat = parseFloat(rest[++i]);
+        else if (a === '--lon' && rest[i + 1]) lon = parseFloat(rest[++i]);
+        else if (a === '--radius-m' && rest[i + 1]) radiusM = parseFloat(rest[++i]);
+        else if (a === '--model-id' && rest[i + 1]) targetModelId = rest[++i];
+      }
+      if (lat == null || lon == null) {
+        console.error(
+          'Usage: bim-ai import-neighborhood --lat <lat> --lon <lon> [--radius-m 200] --model-id <id>',
+        );
+        process.exit(1);
+      }
+      const resolvedModelId = targetModelId ?? modelId;
+      if (!resolvedModelId) {
+        console.error('Provide --model-id <id> or set BIM_AI_MODEL_ID.');
+        process.exit(1);
+      }
+      const result = await fetchJson(
+        'POST',
+        `${base}/api/v3/models/${encodeURIComponent(resolvedModelId)}/neighborhood-import`,
+        { lat, lon, radiusM },
+      );
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
     if (cmd === 'compare') {
       // VG-V3-01: render-and-compare two snapshots
       const [pathA, pathB, ...rest] = argv.slice(1);

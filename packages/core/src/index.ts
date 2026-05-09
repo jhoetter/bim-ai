@@ -45,6 +45,30 @@ export type HatchPatternDef = {
   svgSource?: string | null;
 };
 
+// ---------------------------------------------------------------------------
+// OSM-V3-01 — Neighborhood massing types
+// ---------------------------------------------------------------------------
+
+export type NeighborhoodMassElem = {
+  kind: 'neighborhood_mass';
+  id: string;
+  osmId?: string;
+  footprintMm: { xMm: number; yMm: number }[];
+  heightMm: number;
+  baseElevationMm: number;
+  source: 'osm' | 'manual';
+  isReadOnly: true;
+};
+
+export type NeighborhoodImportSessionElem = {
+  kind: 'neighborhood_import_session';
+  id: string;
+  bbox: { minLat: number; minLon: number; maxLat: number; maxLon: number };
+  fetchTimestamp: string;
+  osmEtag?: string;
+  radiusM: number;
+};
+
 export type ElemKind =
   | 'toposolid'
   | 'project_settings'
@@ -133,7 +157,9 @@ export type ElemKind =
   | 'material'
   | 'decal'
   | 'hatch_pattern_def'
-  | 'property_definition';
+  | 'property_definition'
+  | 'neighborhood_mass'
+  | 'neighborhood_import_session';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -1725,7 +1751,9 @@ export type Element =
   | HatchPatternDef
   | PropertyDefinitionElem
   | MaterialElem
-  | DecalElem;
+  | DecalElem
+  | NeighborhoodMassElem
+  | NeighborhoodImportSessionElem;
 
 export type Violation = {
   ruleId: string;

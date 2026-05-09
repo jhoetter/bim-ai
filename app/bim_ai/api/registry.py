@@ -1093,3 +1093,55 @@ register(
         agentSafetyNotes="Safe to call any number of times. Same inputs → byte-identical output.",
     )
 )
+
+# ---------------------------------------------------------------------------
+# OSM-V3-01 — neighborhood massing import
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="import-neighborhood",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ImportNeighborhoodInput",
+            "type": "object",
+            "required": ["lat", "lon"],
+            "properties": {
+                "lat": {"type": "number", "description": "Origin latitude (WGS-84)"},
+                "lon": {"type": "number", "description": "Origin longitude (WGS-84)"},
+                "radiusM": {
+                    "type": "number",
+                    "default": 200.0,
+                    "description": "Search radius in metres around the origin.",
+                },
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ImportNeighborhoodOutput",
+            "type": "object",
+            "required": ["imported", "masses"],
+            "properties": {
+                "imported": {"type": "integer"},
+                "masses": {"type": "array", "items": {"type": "object"}},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Import succeeded"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+            "error": ExitCode(code=1, meaning="Overpass API error or parse failure"),
+        },
+        cliExample="bim-ai import-neighborhood --lat 48.137 --lon 11.575 --radius-m 200 --model-id m-1",
+        restEndpoint=RestEndpoint(
+            method="POST", path="/api/v3/models/{modelId}/neighborhood-import"
+        ),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes=(
+            "Replaces all existing OSM neighborhood_mass elements. "
+            "Re-import with the same bbox is idempotent. "
+            "Does NOT mutate authored walls, floors, or roofs."
+        ),
+    )
+)

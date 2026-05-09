@@ -2765,3 +2765,55 @@ async def get_sheet_pixel_map(
                     }
 
     return {"map": pixel_map}
+
+
+# ---------------------------------------------------------------------------
+# OSM-V3-01 — Neighborhood massing import
+# ---------------------------------------------------------------------------
+
+
+@api_router.post("/v3/models/{model_id}/neighborhood-import")
+async def import_neighborhood(
+    model_id: UUID,
+    body: dict,
+    session: AsyncSession = Depends(get_session),
+    user_id: str = Query(default="local-dev", alias="userId"),
+) -> dict[str, Any]:
+    """OSM-V3-01: fetch OSM buildings within radius_m of lat/lon and upsert into the model.
+
+    Existing neighborhood_mass elements with matching osmId are replaced so that
+    re-importing the same bounding box is idempotent (no duplicates).
+    """
+    lat = float(body.get("lat", 0.0))
+    lon = float(body.get("lon", 0.0))
+    radius_m = float(body.get("radiusM", 200.0))
+
+    from bim_ai.site.osm_import import fetch_buildings, elements_to_masses
+
+    elements = fetch_buildings(lat, lon, radius_m)
+    masses = elements_to_masses(elements, lat, lon)
+
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    doc = Document.model_validate(row.document)
+
+    # Remove existing osm neighborhood_mass elements so re-import is idempotent.
+    existing_osm_ids = {
+        elem_id
+        for elem_id, elem in doc.elements.items()
+        if getattr(elem, "kind", None) == "neighborhood_mass"
+        and getattr(elem, "source", None) == "osm"
+    }
+    for elem_id in existing_osm_ids:
+        del doc.elements[elem_id]
+
+    # Upsert new masses.
+    for mass in masses:
+        doc.elements[mass["id"]] = mass  # type: ignore[assignment]
+
+    row.document = doc.model_dump(by_alias=True)
+    await session.commit()
+
+    return {"imported": len(masses), "masses": masses}
