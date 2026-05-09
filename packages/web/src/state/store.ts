@@ -1987,6 +1987,12 @@ export const useBimStore = create<StoreState>((set, get) => {
         return { userId, userDisplayName: userDisplayName, peerId };
       }),
 
+    // OSM-V3-02: neighborhood mass layer visible by default.
+    showNeighborhoodMasses: true,
+
+    toggleNeighborhoodMasses: () =>
+      set((s) => ({ showNeighborhoodMasses: !s.showNeighborhoodMasses })),
+
     vvDialogOpen: false,
 
     openVVDialog: () => set({ vvDialogOpen: true }),

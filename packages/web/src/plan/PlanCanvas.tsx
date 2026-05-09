@@ -97,6 +97,7 @@ import {
 import { extractDetailComponentPrimitives } from './detailComponentsRender';
 import { extractMaskingRegionPrimitives } from './maskingRegionRender';
 import { extractAreaPrimitives } from './areaRender';
+import { extractNeighborhoodMassPrimitives } from './neighborhoodMassRender';
 import {
   DXF_UNDERLAY_OPACITY,
   DXF_UNDERLAY_STROKE,
@@ -401,6 +402,8 @@ export function PlanCanvas({
   const activateElevationView = useBimStore((s) => s.activateElevationView);
   const activatePlanView = useBimStore((s) => s.activatePlanView);
   const setPlanTool = useBimStore((s) => s.setPlanTool);
+  // OSM-V3-02 — neighborhood mass layer toggle.
+  const showNeighborhoodMasses = useBimStore((s) => s.showNeighborhoodMasses);
   // EDT-V3-05 — loop mode: re-arm chained tools after each segment commit.
   const loopMode = useToolPrefs((s) => s.loopMode);
 
@@ -751,6 +754,57 @@ export function PlanCanvas({
     const plotScale = worldHalfMm / 500;
     draftingRef.current = draftingPaintFor(plotScale);
     lastPlotScaleRef.current = plotScale;
+
+    // OSM-V3-02 — render neighborhood_mass polygons at the LOWEST z-order so
+    // they appear behind all authored BIM geometry. Clear stale meshes first.
+    for (let i = grp.children.length - 1; i >= 0; i--) {
+      const ch = grp.children[i]!;
+      if ((ch.userData as { neighborhoodMass?: unknown }).neighborhoodMass) grp.remove(ch);
+    }
+    {
+      // Determine the current view kind from the active plan view element.
+      const activePv = activePlanViewId ? elementsById[activePlanViewId] : null;
+      const rawViewKind =
+        activePv && 'subKind' in activePv ? (activePv.subKind as string | undefined) : undefined;
+      const viewKind = rawViewKind ?? 'site_plan';
+
+      const massPrims = extractNeighborhoodMassPrimitives(elementsById, {
+        viewKind,
+        showNeighborhoodMasses,
+      });
+
+      const massColor = readPlanToken('--neighborhood-mass-color', '#a8a39c');
+
+      for (const m of massPrims) {
+        if (m.footprintMm.length < 3) continue;
+        const shape = new THREE.Shape();
+        shape.moveTo(m.footprintMm[0]!.xMm / 1000, m.footprintMm[0]!.yMm / 1000);
+        for (let i = 1; i < m.footprintMm.length; i++) {
+          shape.lineTo(m.footprintMm[i]!.xMm / 1000, m.footprintMm[i]!.yMm / 1000);
+        }
+        shape.closePath();
+        const geom = new THREE.ShapeGeometry(shape);
+        // Rotate from XY (ShapeGeometry default) to XZ plan slice.
+        geom.rotateX(-Math.PI / 2);
+        // Sit BELOW the grid (SLICE_Y) and all other plan meshes (lowest z-order).
+        geom.translate(0, SLICE_Y - 0.002, 0);
+        const fill = new THREE.Mesh(
+          geom,
+          new THREE.MeshBasicMaterial({
+            color: massColor,
+            transparent: true,
+            opacity: m.fillAlpha,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+          }),
+        );
+        fill.userData.neighborhoodMass = true;
+        fill.userData.bimPickId = m.id;
+        // renderOrder -1 ensures Three.js sorts these behind renderOrder 0 meshes.
+        fill.renderOrder = -1;
+        grp.add(fill);
+      }
+    }
 
     const wirePrimitives = modelId ? planProjectionPrimitives : null;
     rebuildPlanMeshes(grp, elementsById, {
@@ -1303,6 +1357,7 @@ export function PlanCanvas({
     selectedId,
     activeCropState,
     activePlanViewId,
+    showNeighborhoodMasses,
   ]);
 
   useEffect(() => {
