@@ -1093,3 +1093,74 @@ register(
         agentSafetyNotes="Safe to call any number of times. Same inputs → byte-identical output.",
     )
 )
+
+# ---------------------------------------------------------------------------
+# IMP-V3-01 — Image-as-underlay import
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="import-image-underlay",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ImportImageUnderlayInput",
+            "type": "object",
+            "required": ["id", "src", "rectMm"],
+            "properties": {
+                "id": {"type": "string", "description": "Element id for the new underlay."},
+                "src": {
+                    "type": "string",
+                    "description": (
+                        "Base64 data URI: data:image/png, data:image/jpeg, or "
+                        "data:application/pdf. Maximum 50 MB."
+                    ),
+                },
+                "rectMm": {
+                    "type": "object",
+                    "required": ["xMm", "yMm", "widthMm", "heightMm"],
+                    "properties": {
+                        "xMm": {"type": "number"},
+                        "yMm": {"type": "number"},
+                        "widthMm": {"type": "number"},
+                        "heightMm": {"type": "number"},
+                    },
+                },
+                "rotationDeg": {"type": "number", "default": 0.0},
+                "opacity": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.4},
+                "lockedScale": {"type": "boolean", "default": False},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ImportImageUnderlayOutput",
+            "type": "object",
+            "properties": {
+                "applied": {"type": "boolean"},
+                "newRevision": {"type": "integer"},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Underlay imported and element created"),
+            "invalid_format": ExitCode(
+                code=1,
+                meaning="src is not a supported data URI (PNG, JPEG or PDF only)",
+            ),
+            "src_too_large": ExitCode(code=2, meaning="src exceeds 50 MB limit"),
+            "duplicate_id": ExitCode(code=3, meaning="Element id already exists in model"),
+            "error": ExitCode(code=1, meaning="Unexpected error"),
+        },
+        cliExample="bim-ai apply-bundle bundle.json  # bundle contains import_image_underlay",
+        restEndpoint=RestEndpoint(method="POST", path="/api/v3/models/{modelId}/bundles"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes=(
+            "IMP-V3-01: src must be a data URI with prefix data:image/png, "
+            "data:image/jpeg, or data:application/pdf. "
+            "Maximum base64-encoded payload size is 50 MB. "
+            "Use move_image_underlay / scale_image_underlay / rotate_image_underlay "
+            "to adjust the underlay after import. "
+            "delete_image_underlay removes the element entirely."
+        ),
+    )
+)

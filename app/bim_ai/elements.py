@@ -2354,17 +2354,26 @@ class DecalElem(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# SCH-V3-01 — Custom property definition element
+# IMP-V3-01 — Image-as-underlay element
 # ---------------------------------------------------------------------------
 
 
-class PropertyDefinitionElem(BaseModel):
-    """SCH-V3-01 — project-scoped custom property definition."""
+class ImageUnderlayElem(BaseModel):
+    """IMP-V3-01 — raster/PDF underlay pinned to the plan canvas.
 
-    enum_values: list[str] | None = Field(default=None, alias="enumValues")
-    default_value: Any | None = Field(default=None, alias="defaultValue")
-    applies_to: list[str] = Field(alias="appliesTo")
-    show_in_schedule: bool = Field(default=True, alias="showInSchedule")
+    ``src`` holds a data URI (``data:image/png;base64,…``,
+    ``data:image/jpeg;base64,…`` or ``data:application/pdf;base64,…``).
+    ``rect_mm`` positions and sizes the underlay in plan-mm coordinates.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["image_underlay"] = "image_underlay"
+    id: str
+    src: str  # base64 data URI or asset URL
+    rect_mm: dict = Field(alias="rectMm")  # {xMm, yMm, widthMm, heightMm}
+    rotation_deg: float = Field(0.0, alias="rotationDeg")
+    opacity: float = 0.4  # 0..1
+    locked_scale: bool = Field(False, alias="lockedScale")
 
 
 Element = Annotated[
@@ -2447,7 +2456,8 @@ Element = Annotated[
     | HatchPatternDefElem
     | MaterialElem
     | DecalElem
-    | PropertyDefinitionElem,
+    | PropertyDefinitionElem
+    | ImageUnderlayElem,
     Field(discriminator="kind"),
 ]
 

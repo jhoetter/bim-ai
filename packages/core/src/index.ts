@@ -133,7 +133,8 @@ export type ElemKind =
   | 'material'
   | 'decal'
   | 'hatch_pattern_def'
-  | 'property_definition';
+  | 'property_definition'
+  | 'image_underlay';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -1725,7 +1726,8 @@ export type Element =
   | HatchPatternDef
   | PropertyDefinitionElem
   | MaterialElem
-  | DecalElem;
+  | DecalElem
+  | ImageUnderlayElem;
 
 export type Violation = {
   ruleId: string;
@@ -2398,6 +2400,51 @@ export type HelperDimensionDescriptor = {
 
 /** Convenience alias — the full BimElem union (same as Element). */
 export type BimElem = Element;
+
+// ---------------------------------------------------------------------------
+// IMP-V3-01 — Image-as-underlay element + commands
+// ---------------------------------------------------------------------------
+
+export type ImageUnderlayElem = {
+  kind: 'image_underlay';
+  id: string;
+  src: string;
+  rectMm: { xMm: number; yMm: number; widthMm: number; heightMm: number };
+  rotationDeg: number;
+  opacity: number;
+  lockedScale: boolean;
+};
+
+export type ImportImageUnderlayCmd = {
+  type: 'import_image_underlay';
+  id: string;
+  src: string;
+  rectMm: { xMm: number; yMm: number; widthMm: number; heightMm: number };
+  rotationDeg?: number;
+  opacity?: number;
+  lockedScale?: boolean;
+};
+
+export type MoveImageUnderlayCmd = {
+  type: 'move_image_underlay';
+  id: string;
+  rectMm: { xMm: number; yMm: number; widthMm: number; heightMm: number };
+};
+
+export type ScaleImageUnderlayCmd = {
+  type: 'scale_image_underlay';
+  id: string;
+  widthMm: number;
+  heightMm: number;
+};
+
+export type RotateImageUnderlayCmd = {
+  type: 'rotate_image_underlay';
+  id: string;
+  rotationDeg: number;
+};
+
+export type DeleteImageUnderlayCmd = { type: 'delete_image_underlay'; id: string };
 
 // ---------------------------------------------------------------------------
 // VG-V3-01 — Render-and-compare result type
