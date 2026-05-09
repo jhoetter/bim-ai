@@ -1254,6 +1254,7 @@ export function Workspace(): JSX.Element {
               allowedToolIds={allowedToolIds}
             />
             <CanvasMount
+              key={activeTab?.id ?? 'no-tab'}
               mode={(activeTab?.kind as WorkspaceMode | undefined) ?? mode}
               viewerMode={viewerMode}
               activeLevelId={
