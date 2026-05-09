@@ -1066,6 +1066,30 @@ async function main() {
       process.exit(1);
     }
 
+    if (cmd === 'catalog') {
+      const subCmd = argv[1];
+      if (subCmd === 'query') {
+        const rest = argv.slice(2);
+        const params = new URLSearchParams();
+        const pick = (flag) => rest.find(a => a.startsWith(`--${flag}=`))?.split('=')[1];
+        if (pick('kind')) params.set('kind', pick('kind'));
+        if (pick('max-width')) params.set('maxWidthMm', pick('max-width'));
+        if (pick('min-width')) params.set('minWidthMm', pick('min-width'));
+        if (pick('tag')) params.set('tag', pick('tag'));
+        if (pick('style')) params.set('style', pick('style'));
+        if (pick('page')) params.set('page', pick('page'));
+        if (pick('page-size')) params.set('pageSize', pick('page-size'));
+        const result = await fetchJson('GET', `${base}/api/v3/catalog?${params}`);
+        const fmt = pick('output') ?? 'json';
+        if (fmt === 'json') console.log(JSON.stringify(result, null, 2));
+        else result.items.forEach(i => console.log(`${i.id}\t${i.kind}\t${i.widthMm ?? ''}`));
+        return;
+      } else {
+        console.error('Usage: bim-ai catalog query [--kind <kind>] [--max-width <mm>] [--tag <name>] [--style <key>] [--output json|table]');
+        process.exit(1);
+      }
+    }
+
     if (!modelId && cmd !== 'schema' && cmd !== 'presets' && cmd !== 'plan-house' && cmd !== 'bootstrap' && cmd !== 'init-model' && cmd !== 'publish')
       usage();
 

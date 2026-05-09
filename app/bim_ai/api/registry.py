@@ -1093,3 +1093,44 @@ register(
         agentSafetyNotes="Safe to call any number of times. Same inputs → byte-identical output.",
     )
 )
+
+# ---------------------------------------------------------------------------
+# CTL-V3-01 — Catalog query
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="catalog-query",
+        category="query",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "kind": {"type": "string", "description": "Element kind to filter (e.g. 'door', 'window', 'sofa')"},
+                "maxWidthMm": {"type": "number"},
+                "minWidthMm": {"type": "number"},
+                "tag": {"type": "string"},
+                "style": {"type": "string"},
+                "page": {"type": "integer", "default": 0},
+                "pageSize": {"type": "integer", "default": 50},
+            },
+        },
+        outputSchema={
+            "type": "object",
+            "properties": {
+                "schemaVersion": {"type": "string"},
+                "items": {"type": "array"},
+                "total": {"type": "integer"},
+                "page": {"type": "integer"},
+                "pageSize": {"type": "integer"},
+            },
+        },
+        exitCodes={"ok": ExitCode(code=0, meaning="Query successful")},
+        cliExample="bim-ai catalog query --kind door --max-width 900 --output json",
+        restEndpoint=RestEndpoint(method="GET", path="/api/v3/catalog"),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Safe to call any number of times. Deterministic — same query → identical result. "
+            "Use to discover catalog keys before emitting bundles."
+        ),
+    )
+)

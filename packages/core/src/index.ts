@@ -2413,3 +2413,25 @@ export type CompareResult = {
   postPngPath: string;
   diffPngPath: string;
 };
+
+// ---------------------------------------------------------------------------
+// CTL-V3-01 — Catalog query types
+// ---------------------------------------------------------------------------
+
+export type CatalogQuery = {
+  kind?: string;
+  maxWidthMm?: number;
+  minWidthMm?: number;
+  tag?: string;
+  style?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export type CatalogQueryResult = {
+  schemaVersion: 'ctl-v3.0';
+  items: Record<string, unknown>[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
