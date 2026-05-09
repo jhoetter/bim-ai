@@ -95,7 +95,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 ![Align tool furniture](file:///Users/jhoetter/Desktop/Revit%20Specs/0465_02-49-25.png)
 *(Align tool used in window family editor — furniture-align-specific frames start beyond 0841)*
 
-**bim-ai status:** ❌ Not available — bim-ai has no interactive two-click align + optional lock.
+**bim-ai status:** 🟡 Partial — The Align tool (hotkey `AL`) provides a two-click interactive workflow: first click sets the reference point, second click picks the nearest wall (within 900 mm) and fires `alignElementToReference { targetWallId, referenceMm }`. The backend translates the wall along its dominant axis (X or Y) so its nearest endpoint coincides with the reference point. Missing: alignment to arbitrary element faces (only wall nearest-endpoint alignment is supported); the optional "Lock" constraint after alignment; visual feedback (alignment line preview before second click); alignment of non-wall elements (floors, columns, etc.).
 
 ---
 

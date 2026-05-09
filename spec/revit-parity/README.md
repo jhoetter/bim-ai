@@ -167,7 +167,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-118 | Parametric kitchen slab family                       | Furn. Place   | ❌            |                                                                                                                      |
 | F-119 | Parametric bathroom layout family                    | Furn. Place   | ❌            |                                                                                                                      |
 | F-120 | Parametric bed family (2D)                           | Furn. Place   | ❌            |                                                                                                                      |
-| F-121 | Align tool (AL) for furniture-to-wall                | Furn. Place   | ❌            |                                                                                                                      |
+| F-121 | Align tool (AL) for furniture-to-wall                | Furn. Place   | 🟡            | Two-click workflow: first click = reference point, second click snaps nearest wall (≤900 mm) via `alignElementToReference`; backend translates wall along dominant axis. Missing: arbitrary face alignment, Lock constraint, alignment-line preview, non-wall elements |
 | F-122 | Rotate tool (about user-defined center)              | Furn. Place   | 🟡            | Column elements: drag-handle grip (`columnGripProvider.ts` — "Drag to rotate column") fires `updateElementProperty { key: 'rotationDeg' }`; "Rotation (°)" input (`data-testid="inspector-column-rotation"`, step 15°) in inspector. Missing: general-purpose Rotate-about-point for non-column elements; angular snap; numeric dialog |
 
 ---
@@ -179,8 +179,8 @@ _Last audited: 2026-05-09 against codebase at commit `docs/parity-tracker-audit`
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
 | ✅ Fully available     | 23      | 19%        |
-| 🟡 Partially available | 41      | 34%        |
-| ❌ Not available       | 56      | 47%        |
+| 🟡 Partially available | 42      | 35%        |
+| ❌ Not available       | 55      | 46%        |
 | **Total**              | **120** | **100%**   |
 
 ---
