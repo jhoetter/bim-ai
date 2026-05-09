@@ -103,7 +103,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Work Plane assignment](file:///Users/jhoetter/Desktop/Revit%20Specs/0801_05-33-52.png)
 
-**bim-ai status:** 🟡 Partial — The `link_dxf` element's `levelId` field controls which level the DXF underlay is associated with (its "work plane"). The right-rail inspector now shows "Level" for selected DXF underlay elements in the `case 'link_dxf':` inspector block, exposing the current work plane. The level can be changed in `ManageLinksDialog` via the DXF Links section. Missing: a full level-dropdown editor directly in the inspector (currently read-only), and the Revit-style "Set Work Plane" dialog that allows selecting a named reference plane as the work plane instead of a level.
+**bim-ai status:** 🟡 Partial — The `link_dxf` element's `levelId` field controls which level the DXF underlay is associated with (its "work plane"). The right-rail inspector shows the current level for selected DXF underlay elements. `ManageLinksDialog` lists each DXF underlay with its level association. Missing: interactive level-dropdown editor in the inspector (currently read-only display); the Revit-style "Set Work Plane" dialog that allows selecting a named reference plane as an alternative to a level.
 
 ---
 
@@ -114,4 +114,4 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Manage Links](file:///Users/jhoetter/Desktop/Revit%20Specs/0146_00-17-16.png)
 
-**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` lists all `link_model` rows with per-row controls for delete, alignment mode (origin-to-origin / project base point / shared coords), visibility mode (host view / linked view), and revision pinning with drift badge + "Update" button. Missing: `link_dxf` / IFC / PDF / image link types are not listed (ManageLinksDialog only queries `link_model` elements); no file-path change workflow.
+**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` lists all `link_model` rows (delete, alignment mode, visibility mode, revision pinning with drift badge + Update button) AND all `link_dxf` underlays (opacity slider 0–100%, color mode toggle Black & White / Custom hex). Missing: IFC / PDF / image link types; no file-path change workflow; Revit's unload/reload per-link controls (bim-ai shows delete only).
