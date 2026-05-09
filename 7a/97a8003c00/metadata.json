@@ -4,7 +4,9 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 2,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/workspace/agentBriefAcceptanceReadout.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/7a/97a8003c00/0/metadata.json",
@@ -23,6 +25,12 @@
       "transcript": "/7a/97a8003c00/2/full.jsonl",
       "content_hash": "/7a/97a8003c00/2/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/7a/97a8003c00/3/metadata.json",
+      "transcript": "/7a/97a8003c00/3/full.jsonl",
+      "content_hash": "/7a/97a8003c00/3/content_hash.txt",
+      "prompt": "/7a/97a8003c00/3/prompt.txt"
     }
   ],
   "token_usage": {
