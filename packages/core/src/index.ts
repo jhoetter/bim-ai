@@ -231,6 +231,14 @@ export type StairTreadLine = {
   fromMm: XY;
   toMm: XY;
   riserHeightMm?: number | null;
+  manualOverride?: boolean;
+};
+
+/** EDT-V3-09: update tread lines on a by_sketch stair (drag-to-rebalance). */
+export type UpdateStairTreadsCmd = {
+  type: 'update_stair_treads';
+  id: string;
+  treadLines: StairTreadLine[];
 };
 
 /** KRN-V3-02: one component in a stacked wall. */

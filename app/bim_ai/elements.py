@@ -703,6 +703,7 @@ class StairTreadLine(BaseModel):
     from_mm: Vec2Mm = Field(alias="fromMm")
     to_mm: Vec2Mm = Field(alias="toMm")
     riser_height_mm: float | None = Field(default=None, alias="riserHeightMm")
+    manual_override: bool = Field(default=False, alias="manualOverride")
 
 
 class StairRun(BaseModel):
@@ -1929,7 +1930,9 @@ class PropertyDefinitionElem(BaseModel):
     id: str
     key: str
     label: str
-    prop_kind: Literal["mm", "m2", "currency", "enum", "string", "bool", "date"] = Field(alias="propKind")
+    prop_kind: Literal["mm", "m2", "currency", "enum", "string", "bool", "date"] = Field(
+        alias="propKind"
+    )
     enum_values: list[str] | None = Field(default=None, alias="enumValues")
     default_value: Any | None = Field(default=None, alias="defaultValue")
     applies_to: list[str] = Field(alias="appliesTo")
@@ -2094,7 +2097,6 @@ class MassElem(BaseModel):
     discipline: DisciplineTag | None = Field(default=None)
 
 
-
 class PresentationLinkElem(BaseModel):
     """OUT-V3-01 — live presentation URL token persisted as a document element."""
 
@@ -2110,6 +2112,7 @@ class PresentationLinkElem(BaseModel):
     expires_at: int | None = Field(default=None, alias="expiresAt")
     created_at: int = Field(alias="createdAt")
     revoked_at: int | None = Field(default=None, alias="revokedAt")
+
 
 class VoidCutElem(BaseModel):
     """SKT-01 — subtractive-boolean marker against a host element.
@@ -2190,6 +2193,8 @@ class WindowLegendViewElem(BaseModel):
 
 class HeightSample(BaseModel):
     """A single surveyed elevation sample (sparse parametrisation)."""
+
+
 class HeightSample(BaseModel):
     """TOP-V3-01 — single (x, y, z) terrain sample point."""
 
@@ -2201,6 +2206,7 @@ class HeightSample(BaseModel):
 
 class HeightmapGrid(BaseModel):
     """Regular-grid DEM raster (dense parametrisation)."""
+
     """TOP-V3-01 — regular-grid heightmap representation."""
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
@@ -2217,6 +2223,7 @@ class ToposolidElem(BaseModel):
     (regular DEM raster) drives the surface.  Both empty / None means a flat
     starter at ``base_elevation_mm``.
     """
+
     values: list[float]
 
 
@@ -2237,6 +2244,8 @@ class ToposolidElem(BaseModel):
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
     discipline: str | None = None
+
+
 # AST-V3-01 — Asset library entry + placed asset instance
 # ---------------------------------------------------------------------------
 
@@ -2353,20 +2362,6 @@ class DecalElem(BaseModel):
     opacity: float = 1.0
 
 
-# ---------------------------------------------------------------------------
-# SCH-V3-01 — Custom property definition element
-# ---------------------------------------------------------------------------
-
-
-class PropertyDefinitionElem(BaseModel):
-    """SCH-V3-01 — project-scoped custom property definition."""
-
-    enum_values: list[str] | None = Field(default=None, alias="enumValues")
-    default_value: Any | None = Field(default=None, alias="defaultValue")
-    applies_to: list[str] = Field(alias="appliesTo")
-    show_in_schedule: bool = Field(default=True, alias="showInSchedule")
-
-
 Element = Annotated[
     ProjectSettingsElem
     | RoomColorSchemeElem
@@ -2450,4 +2445,3 @@ Element = Annotated[
     | PropertyDefinitionElem,
     Field(discriminator="kind"),
 ]
-
