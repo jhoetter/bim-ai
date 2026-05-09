@@ -1,6 +1,14 @@
 import type { TFunction } from 'i18next';
 
 import type { Element } from '@bim-ai/core';
+import {
+  FamilyIcon,
+  LevelIcon,
+  PlanViewIcon,
+  ScheduleViewIcon,
+  SheetIcon,
+  WallLayerIcon,
+} from '@bim-ai/ui';
 
 import type { CommandCandidate } from '../cmd/commandPaletteSources';
 import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
@@ -109,6 +117,7 @@ export function buildBrowserSections(elementsById: Record<string, Element>): Lef
     {
       id: 'project',
       label: 'Project',
+      icon: LevelIcon,
       rows: [
         {
           id: 'levels',
@@ -120,6 +129,7 @@ export function buildBrowserSections(elementsById: Record<string, Element>): Lef
     {
       id: 'views',
       label: 'Views',
+      icon: PlanViewIcon,
       rows: [
         {
           id: 'plans',
@@ -141,16 +151,19 @@ export function buildBrowserSections(elementsById: Record<string, Element>): Lef
     {
       id: 'sheets',
       label: 'Sheets',
+      icon: SheetIcon,
       rows: sheets.map((s) => ({ id: s.id, label: s.name })),
     },
     {
       id: 'schedules',
       label: 'Schedules',
+      icon: ScheduleViewIcon,
       rows: schedules.map((s) => ({ id: s.id, label: s.name })),
     },
     {
       id: 'types',
       label: 'Types',
+      icon: WallLayerIcon,
       rows: [
         {
           id: 'wall-types',
@@ -187,6 +200,7 @@ export function buildBrowserSections(elementsById: Record<string, Element>): Lef
     {
       id: 'families',
       label: 'Families',
+      icon: FamilyIcon,
       rows: (['door', 'window', 'stair', 'railing'] as const)
         .map((disc) => {
           const discLabel = (
