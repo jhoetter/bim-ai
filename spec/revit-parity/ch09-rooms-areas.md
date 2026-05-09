@@ -81,7 +81,7 @@ This determines where area boundary lines snap relative to wall layers, affectin
 **Screenshot:**
 ![Apply Area Rules](file:///Users/jhoetter/Desktop/Revit%20Specs/0818_05-35-51.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — An "Apply Area Rules" checkbox (`data-testid="options-bar-apply-area-rules"`) appears in the OptionsBar when the `area-boundary` tool is active, storing the value in `useBimStore.applyAreaRules` (default `true`). Missing: the backend area derivation engine does not yet consume this flag to snap boundary lines to wall faces; the toggle is UI-only at this point.
 
 ---
 

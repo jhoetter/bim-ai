@@ -44,7 +44,7 @@ Source segment: `00:55:00 – 01:02:00`
 **Screenshot:**
 ![Floor Plan View Types](file:///Users/jhoetter/Desktop/Revit%20Specs/0275_00-59-52.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — A `planViewSubtype` field has been added to `plan_view` elements (`floor_plan | lighting_plan | power_plan | coordination_plan`), exposed as a "View Type" dropdown in `InspectorPlanViewEditor` (`data-testid="inspector-plan-view-subtype"`). Missing: automatic default view template association per type, type-specific Project Browser grouping, and the Edit Type dialog for view type properties.
 
 ---
 

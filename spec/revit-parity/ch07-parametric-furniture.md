@@ -35,7 +35,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Masking Region](file:///Users/jhoetter/Desktop/Revit%20Specs/0580_03-45-40.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — `maskingRegionRender.ts` (KRN-10) implements masking region rendering: `masking_region` elements scoped to a host plan view are extracted and rendered as white-fill opaque polygons above element linework. The plan canvas tool `planTool === 'masking-region'` (hotkey MR) supports two-click rectangular masking region placement. The VV dialog includes "Masking Regions" as a toggleable annotation category. Missing: arbitrary polygon boundary drawing (currently rectangle-only as a fallback; full sketch mode via SKT-01 is planned); no per-region fill color control in the inspector; no equivalent to Revit's "Edit Boundary" re-entry for placed regions.
 
 ---
 

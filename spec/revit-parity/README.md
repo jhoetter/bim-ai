@@ -74,7 +74,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-025 | Levels (datum planes)                                | Levels & Views | 🟡            | LevelStack with inline create and rename; missing level head symbols in elevation/section views                       |
 | F-026 | Rename Levels                                        | Levels & Views | ✅            | LevelStack inline rename via double-click; commits via updateElementProperty                                         |
 | F-027 | Create Floor Plan Views from levels                  | Levels & Views | ✅            | LevelStack "+" per level fires upsertPlanView; newly created views appear in Project Browser                         |
-| F-028 | Floor Plan View Types (Arch/Lighting/Power/etc.)     | Levels & Views | ❌            |                                                                                                                      |
+| F-028 | Floor Plan View Types (Arch/Lighting/Power/etc.)     | Levels & Views | 🟡            | planViewSubtype field (floor_plan/lighting_plan/power_plan/coordination_plan) in plan_view; "View Type" dropdown in InspectorPlanViewEditor; missing default view template association and type-specific Project Browser grouping |
 | F-029 | View Templates                                       | Levels & Views | 🟡            | view_template elements in ProjectBrowser; create/duplicate/delete/apply; missing save-current-as-template            |
 | F-030 | Rename Views                                         | Levels & Views | ✅            | ProjectBrowser inline rename for plan views via double-click; commits via updateElementProperty                      |
 | F-031 | Delete Views                                         | Levels & Views | ✅            | ProjectBrowser delete buttons for plan views, section cuts, and elevation views; guarded by confirm()                |
@@ -123,7 +123,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-074 | Instance parameters for per-placement overrides      | Nested Fam.   | ❌            |                                                                                                                      |
 | F-075 | Family from furniture template (Metric Furniture.rft)| Param. Furn.  | ❌            |                                                                                                                      |
 | F-076 | EQ (Equal) constraint on dimensions                  | Param. Furn.  | ❌            |                                                                                                                      |
-| F-077 | Masking Region                                       | Param. Furn.  | ❌            |                                                                                                                      |
+| F-077 | Masking Region                                       | Param. Furn.  | 🟡            | maskingRegionRender.ts (KRN-10) renders masking_region elements as white-fill polygons; plan canvas masking-region tool (hotkey MR) for two-click rectangular placement; "Masking Regions" in VV annotation tab; missing arbitrary polygon boundary and per-region fill color |
 | F-078 | Yes/No parameter for conditional visibility          | Param. Furn.  | ❌            |                                                                                                                      |
 | F-079 | Symbolic Lines for 2D furniture                      | Param. Furn.  | ❌            |                                                                                                                      |
 | F-080 | Snap Intersection (SI) shortcut                      | Param. Furn.  | ❌            |                                                                                                                      |
@@ -143,7 +143,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-094 | Area Boundary Lines                                  | Rooms & Areas | 🟡            | area-boundary sketch tool (hotkey AR); area_boundary in VVDialog; missing auto-snap to wall faces                   |
 | F-095 | Area Tool                                            | Rooms & Areas | 🟡            | area-boundary sketch tool stores area elements; right-rail shows computed area/rule set; missing auto-close snap     |
 | F-096 | Area and Volume Computations dialog                  | Rooms & Areas | ❌            |                                                                                                                      |
-| F-097 | Apply Area Rules toggle                              | Rooms & Areas | ❌            |                                                                                                                      |
+| F-097 | Apply Area Rules toggle                              | Rooms & Areas | 🟡            | "Apply Area Rules" checkbox (data-testid="options-bar-apply-area-rules") in OptionsBar when area-boundary tool is active; stored in useBimStore.applyAreaRules; missing backend consumption to snap boundary lines to wall faces |
 | F-098 | Area Plan (Gross Building) view type                 | Rooms & Areas | ❌            |                                                                                                                      |
 | F-099 | Discipline property for views                        | Rooms & Areas | 🟡            | plan views have discipline field editable in InspectorPlanViewEditor; missing full Revit sub-discipline tree         |
 | F-100 | Filter tool (multi-select type filter)               | Troubleshoot   | ❌            |                                                                                                                      |
@@ -179,8 +179,8 @@ _Last audited: 2026-05-09 against codebase at commit `docs/parity-tracker-audit`
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
 | ✅ Fully available     | 23      | 19%        |
-| 🟡 Partially available | 33      | 28%        |
-| ❌ Not available       | 64      | 53%        |
+| 🟡 Partially available | 36      | 30%        |
+| ❌ Not available       | 61      | 51%        |
 | **Total**              | **120** | **100%**   |
 
 ---
