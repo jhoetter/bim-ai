@@ -52,7 +52,8 @@ export type ToolId =
   | 'column'
   | 'beam'
   | 'ceiling'
-  | 'toposolid_subdivision';
+  | 'toposolid_subdivision'
+  | 'measure';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
 export const MODIFY_TOOL_IDS = new Set<ToolId>(['align', 'split', 'trim', 'mirror', 'wall-join']);
@@ -187,6 +188,14 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       shortcut: 'DI',
       modes: ['plan', 'plan-3d', 'section'],
       tooltip: t('tools.dimension.tooltip'),
+    },
+    measure: {
+      id: 'measure',
+      label: 'Measure',
+      icon: 'measure',
+      hotkey: 'ME',
+      modes: ['plan', 'plan-3d'],
+      tooltip: 'Measure distance between two points',
     },
     section: {
       id: 'section',
@@ -360,6 +369,7 @@ const PALETTE_ORDER: ToolId[] = [
   'room',
   'room-separation-sketch',
   'dimension',
+  'measure',
   'section',
   'elevation',
   'reference-plane',

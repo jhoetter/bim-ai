@@ -163,6 +163,7 @@ type Draft =
   | { kind: 'room'; verts: Array<{ xMm: number; yMm: number }> }
   | { kind: 'grid'; sx: number; sy: number }
   | { kind: 'dim'; ax: number; ay: number }
+  | { kind: 'measure'; ax: number; ay: number }
   | { kind: 'room_rect'; sx: number; sy: number }
   | { kind: 'reference-plane'; sx: number; sy: number }
   | { kind: 'property-line'; sx: number; sy: number }
@@ -349,6 +350,7 @@ export function PlanCanvas({
     position: { x: number; y: number };
   } | null>(null);
   const [geomEpoch, bumpGeom] = useState(0);
+  const [measureReadout, setMeasureReadout] = useState<{ distMm: number } | null>(null);
   const [roomColorLegend, setRoomColorLegend] = useState<
     Array<{
       label: string;
@@ -1722,6 +1724,7 @@ export function PlanCanvas({
         (planTool === 'wall' && d?.kind === 'wall') ||
         (planTool === 'grid' && d?.kind === 'grid') ||
         (planTool === 'dimension' && d?.kind === 'dim') ||
+        (planTool === 'measure' && d?.kind === 'measure') ||
         (planTool === 'room' && d?.kind === 'room' && d.verts.length)
       ) {
         const pv =
@@ -1733,7 +1736,9 @@ export function PlanCanvas({
                 ? new THREE.Vector3(d.sx / 1000, SLICE_Y, d.sy / 1000)
                 : planTool === 'dimension' && d?.kind === 'dim'
                   ? new THREE.Vector3(d.ax / 1000, SLICE_Y, d.ay / 1000)
-                  : p;
+                  : planTool === 'measure' && d?.kind === 'measure'
+                    ? new THREE.Vector3(d.ax / 1000, SLICE_Y, d.ay / 1000)
+                    : p;
         redrawSeg(pv, p);
       }
       // TOP-V3-03: dashed polygon preview while sketching a subdivision region.
@@ -2199,6 +2204,24 @@ export function PlanCanvas({
           end: { xMm: sp.xMm, yMm: sp.yMm },
         });
         draftRef.current = undefined;
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      if (planTool === 'measure') {
+        const d = draftRef.current;
+        if (!d || d.kind !== 'measure') {
+          draftRef.current = { kind: 'measure', ax: sp.xMm, ay: sp.yMm };
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        const distMm = Math.hypot(sp.xMm - d.ax, sp.yMm - d.ay);
+        setMeasureReadout({ distMm });
+        draftRef.current = undefined;
+        if (previewRef.current) {
+          grp.remove(previewRef.current);
+          previewRef.current.geometry.dispose();
+          previewRef.current = null;
+        }
         bumpGeom((x) => x + 1);
         return;
       }
@@ -3218,6 +3241,10 @@ export function PlanCanvas({
     lastSnapLinesRef.current = snapLines;
   }, [snapLines]);
 
+  useEffect(() => {
+    if (planTool !== 'measure') setMeasureReadout(null);
+  }, [planTool]);
+
   // EDT-01 — grip pointer-down: capture starting world position so
   // onMove can compute a stable delta.
   const handleGripPointerDown = useCallback(
@@ -3415,6 +3442,33 @@ export function PlanCanvas({
             />
             <span>Crop Region Visible</span>
           </label>
+        </div>
+      ) : null}
+      {/* Measure readout chip — shown after a two-click distance measurement */}
+      {measureReadout && planTool === 'measure' ? (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 48,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            pointerEvents: 'auto',
+            zIndex: 20,
+          }}
+          className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
+          data-testid="measure-readout"
+        >
+          <span className="font-mono">
+            {(measureReadout.distMm / 1000).toFixed(3)} m &nbsp;
+            ({Math.round(measureReadout.distMm)} mm)
+          </span>
+          <button
+            type="button"
+            className="text-muted hover:text-foreground"
+            onClick={() => setMeasureReadout(null)}
+          >
+            ×
+          </button>
         </div>
       ) : null}
       {/* Zoom control — scale bar + preset menu */}

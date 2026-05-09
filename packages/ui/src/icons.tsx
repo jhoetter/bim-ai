@@ -22,6 +22,7 @@ import {
   MousePointer2,
   Layers,
   Redo2,
+  Ruler,
   Scissors,
   Search,
   SquareDashed,
@@ -111,6 +112,7 @@ export const Icons: Record<string, LucideLikeIcon> = {
 
   // Modify tools
   align: AlignCenterHorizontal,
+  measure: Ruler,
   split: Scissors,
   trim: GitMerge,
   'wall-join': GitMerge,
@@ -206,6 +208,7 @@ export const Icons: Record<string, LucideLikeIcon> = {
 export const IconLabels: Record<keyof typeof Icons, string> = {
   select: 'Select',
   align: 'Align',
+  measure: 'Measure',
   split: 'Split element',
   trim: 'Trim / Extend',
   'wall-join': 'Wall Join',

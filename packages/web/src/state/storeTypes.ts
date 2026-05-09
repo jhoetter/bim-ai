@@ -57,7 +57,8 @@ export type PlanTool =
   | 'beam'
   | 'ceiling'
   | 'detail-region'
-  | 'toposolid_subdivision';
+  | 'toposolid_subdivision'
+  | 'measure';
 
 export type PresencePeers = Record<
   string,
