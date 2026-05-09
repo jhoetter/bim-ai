@@ -1,6 +1,7 @@
-import type { JSX } from 'react';
+import { type JSX, useState } from 'react';
 import type { Element } from '@bim-ai/core';
 import { useBimStore } from '../state/store';
+import { applyCommand } from '../lib/api';
 import { WALL_LOCATION_LINE_ORDER, type WallLocationLine } from '../tools/toolGrammar';
 
 const LOCATION_LINE_LABELS: Record<WallLocationLine, string> = {
@@ -53,6 +54,7 @@ export function OptionsBar(): JSX.Element | null {
   const setActiveFloorTypeId = useBimStore((s) => s.setActiveFloorTypeId);
   const applyAreaRules = useBimStore((s) => s.applyAreaRules);
   const setApplyAreaRules = useBimStore((s) => s.setApplyAreaRules);
+  const [showComputations, setShowComputations] = useState(false);
 
   if (planTool === 'wall') {
     return (
@@ -146,6 +148,29 @@ export function OptionsBar(): JSX.Element | null {
   }
 
   if (planTool === 'area-boundary') {
+    const projectSettings = Object.values(elementsById).find(
+      (e): e is Extract<Element, { kind: 'project_settings' }> => e.kind === 'project_settings',
+    );
+
+    const dispatchProjectSettingProperty = async (key: string, value: string): Promise<void> => {
+      if (!projectSettings) return;
+      const { modelId, userId, hydrateFromSnapshot } = useBimStore.getState();
+      if (!modelId) return;
+      const r = await applyCommand(
+        modelId,
+        { type: 'updateElementProperty', elementId: projectSettings.id, key, value },
+        { userId },
+      );
+      if (r.revision !== undefined) {
+        hydrateFromSnapshot({
+          modelId,
+          revision: r.revision,
+          elements: r.elements ?? {},
+          violations: [],
+        });
+      }
+    };
+
     return (
       <div data-testid="options-bar" className={BAR_CLASS}>
         <label className="flex items-center gap-1 text-[11px]">
@@ -158,6 +183,53 @@ export function OptionsBar(): JSX.Element | null {
           />
           <span>Apply Area Rules</span>
         </label>
+        <div className="relative">
+          <button
+            type="button"
+            data-testid="options-bar-area-computations"
+            onClick={() => setShowComputations((v) => !v)}
+            className="rounded border border-border bg-surface px-2 py-0.5 text-[11px] hover:bg-surface-1"
+          >
+            ⚙ Computations…
+          </button>
+          {showComputations && projectSettings && (
+            <div
+              className="absolute top-full left-0 z-50 mt-1 flex flex-col gap-2 rounded border border-border bg-surface p-2 shadow-md"
+              data-testid="area-computations-dialog"
+            >
+              <label className="flex flex-col gap-0.5 text-[11px]">
+                <span className="text-muted">Volume Computed At</span>
+                <select
+                  className="rounded border border-border bg-surface px-1 py-0.5 text-[11px]"
+                  value={projectSettings.volumeComputedAt ?? 'finish_faces'}
+                  data-testid="area-computations-volume"
+                  onChange={(e) =>
+                    void dispatchProjectSettingProperty('volumeComputedAt', e.target.value)
+                  }
+                >
+                  <option value="finish_faces">Finish Faces</option>
+                  <option value="core_faces">Core Faces</option>
+                </select>
+              </label>
+              <label className="flex flex-col gap-0.5 text-[11px]">
+                <span className="text-muted">Room Area Computation</span>
+                <select
+                  className="rounded border border-border bg-surface px-1 py-0.5 text-[11px]"
+                  value={projectSettings.roomAreaComputationBasis ?? 'wall_finish'}
+                  data-testid="area-computations-basis"
+                  onChange={(e) =>
+                    void dispatchProjectSettingProperty('roomAreaComputationBasis', e.target.value)
+                  }
+                >
+                  <option value="wall_finish">At Wall Finish</option>
+                  <option value="wall_centerline">At Wall Centerline</option>
+                  <option value="wall_core_layer">At Wall Core Layer</option>
+                  <option value="wall_core_center">At Wall Core Center</option>
+                </select>
+              </label>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
