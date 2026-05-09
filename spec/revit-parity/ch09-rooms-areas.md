@@ -11,7 +11,7 @@ Source segment: `05:30:00 – 05:39:46`
 **Screenshot:**
 ![Room tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0751_05-30-00.png)
 
-**bim-ai status:** 🟡 Partial — the `room` tool is registered in `toolRegistry.ts` and `PlanCanvas.tsx` has click-to-place logic (vertex accumulation via `planTool === 'room'`). The backend derivation engine (`room_derivation.py`) calculates area and perimeter. Missing: automatic snap-to-enclosed-boundary like Revit (Revit places by single click inside a closed loop; bim-ai requires explicit vertex input); room tag/label display in the plan view.
+**bim-ai status:** 🟡 Partial — the `room` tool is registered in `toolRegistry.ts` and `PlanCanvas.tsx` has click-to-place logic (vertex accumulation via `planTool === 'room'`). The backend derivation engine (`room_derivation.py`) calculates area and perimeter. Room label display in the plan view is now available via the plan view inspector's "Room Labels" checkbox (fires `planShowRoomLabels`; `symbology.ts` renders name + area sprites when enabled). Missing: automatic snap-to-enclosed-boundary like Revit (Revit places by single click inside a closed loop; bim-ai requires explicit vertex input).
 
 ---
 

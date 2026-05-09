@@ -797,6 +797,26 @@ export function InspectorPlanViewEditor({
       </label>
 
       <label className={LABEL_CLS}>
+        <span>Room Labels</span>
+        <input
+          type="checkbox"
+          checked={el.planShowRoomLabels ?? false}
+          onChange={(e) => onPersistProperty('planShowRoomLabels', String(e.target.checked))}
+          data-testid="inspector-plan-show-room-labels"
+        />
+      </label>
+
+      <label className={LABEL_CLS}>
+        <span>Opening Tags</span>
+        <input
+          type="checkbox"
+          checked={el.planShowOpeningTags ?? false}
+          onChange={(e) => onPersistProperty('planShowOpeningTags', String(e.target.checked))}
+          data-testid="inspector-plan-show-opening-tags"
+        />
+      </label>
+
+      <label className={LABEL_CLS}>
         {pv('underlayLevel')}
         <select
           className={INPUT_CLS}
