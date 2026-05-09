@@ -22,7 +22,7 @@ const PARAPET_H = 200; // East terrace parapet height above first-floor slab
 const WALL_T = 250; // Standard exterior wall thickness
 
 // Loggia (recessed upper front, spec §1 "wrapper shell creates deeply recessed frontal plane")
-const LOGGIA_SETBACK = 1500; // mm setback — spec §1 brief value
+const LOGGIA_SETBACK = 1000; // mm setback — spec §1 brief value
 
 // Plinth (Material D — spec §4 "extends exactly 0.5 units beyond building footprint")
 const PLINTH_EXT = 500; // mm extension on all sides
@@ -749,7 +749,7 @@ export function buildOneFamilyHomeCommands() {
       name: 'Main isometric (SSW — south facade + west gable, spec §5 front-left)',
       mode: 'orbit_3d',
       camera: {
-        position: { xMm: -3000, yMm: -9000, zMm: 11000 },
+        position: { xMm: -3000, yMm: -9000, zMm: 7500 },
         target: { xMm: 3500, yMm: 4000, zMm: 3500 },
         up: { xMm: 0, yMm: 0, zMm: 1 },
       },
@@ -782,7 +782,7 @@ export function buildOneFamilyHomeCommands() {
       name: 'Rear axonometric (NE)',
       mode: 'orbit_3d',
       camera: {
-        position: { xMm: 12000, yMm: 14000, zMm: 11000 },
+        position: { xMm: 12000, yMm: 14000, zMm: 8000 },
         target: { xMm: 3500, yMm: 4000, zMm: 4250 },
         up: { xMm: 0, yMm: 0, zMm: 1 },
       },
