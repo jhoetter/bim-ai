@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "e8b82dc21f1b",
+  "strategy": "manual-commit",
+  "branch": "feat/parity-readme-sync",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/state/storeTypes.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/e8/b82dc21f1b/0/metadata.json",
+      "transcript": "/e8/b82dc21f1b/0/full.jsonl",
+      "content_hash": "/e8/b82dc21f1b/0/content_hash.txt",
+      "prompt": "/e8/b82dc21f1b/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 6528,
+    "cache_creation_tokens": 3634087,
+    "cache_read_tokens": 174048644,
+    "output_tokens": 1026504,
+    "api_call_count": 1814
+  }
+}
