@@ -91,7 +91,7 @@ export function getPlanPalette(): PlanPalette {
     roomBoundary: readToken('--cat-room', '#a855f7'),
     roomLabel: readToken('--color-foreground', '#0f172a'),
     dimLine: readToken('--draft-anno', '#b5451b'),
-    dimWitness: readToken('--draft-anno', '#b5451b'),
+    dimWitness: readToken('--draft-witness', '#5a7da3'),
     dimAlt: readToken('--color-warning', '#facc15'),
     tagBg: readToken('--draft-anno', '#b5451b'),
     tagText: readToken('--draft-paper', '#fdfcf9'),
