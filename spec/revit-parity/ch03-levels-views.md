@@ -55,7 +55,7 @@ Source segment: `00:55:00 – 01:02:00`
 **Screenshot:**
 ![View Template dropdown](file:///Users/jhoetter/Desktop/Revit%20Specs/0279_01-00-19.png)
 
-**bim-ai status:** 🟡 Partial — View Templates are stored as `view_template` elements and listed in `ProjectBrowser.tsx`. Users can create new templates (+ New button → `CreateViewTemplate` command), duplicate, delete, edit properties via the right-rail inspector (`InspectorViewTemplateEditor`), and apply a template to any plan view via the "Apply ▾" dropdown. Missing: saving the current view's settings as a template ("Duplicate View Type"), and the full Revit Edit-Type dialog with category visibility / detail level locked by the template.
+**bim-ai status:** 🟡 Partial — View Templates are stored as `view_template` elements and listed in `ProjectBrowser.tsx`. Users can create new templates (+ New button → `CreateViewTemplate` command), duplicate, delete, edit properties via the right-rail inspector (`InspectorViewTemplateEditor`), and apply a template to any plan view via the "Apply ▾" dropdown. Plan views also expose a Phase Filter dropdown (All / Existing / Demolition / New Construction) directly in `InspectorPlanViewEditor` (`data-testid="inspector-plan-phase-filter"`), persisted via `updateElementProperty { key: 'phaseFilter' }`. Missing: saving the current view's settings as a template ("Duplicate View Type"), and the full Revit Edit-Type dialog with category visibility / detail level locked by the template.
 
 ---
 
