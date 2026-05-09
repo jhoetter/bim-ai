@@ -442,17 +442,36 @@ export function ProjectBrowser(props: {
         </div>
       ) : null}
 
-      {viewTemplates.length ? (
-        <div className="space-y-1">
-          <button
-            type="button"
-            className="flex w-full items-center gap-1 text-[10px] uppercase tracking-wide text-muted hover:text-foreground"
-            onClick={() => setVtCollapsed((v) => !v)}
-          >
-            <span>{vtCollapsed ? '▸' : '▾'}</span>
-            View Templates ({viewTemplates.length})
-          </button>
-          {!vtCollapsed && (
+      <div className="space-y-1">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              className="flex flex-1 items-center gap-1 text-[10px] uppercase tracking-wide text-muted hover:text-foreground"
+              onClick={() => setVtCollapsed((v) => !v)}
+            >
+              <span>{vtCollapsed ? '▸' : '▾'}</span>
+              View Templates ({viewTemplates.length})
+            </button>
+            <button
+              type="button"
+              className="text-[9px] text-muted hover:text-foreground"
+              data-testid="view-template-new"
+              title="Create new view template"
+              onClick={async () => {
+                if (!modelId) return;
+                const name = window.prompt('View Template name:');
+                if (!name?.trim()) return;
+                const newId = `vt-${Date.now().toString(36)}`;
+                await vtStore.createTemplate(modelId, newId, name.trim());
+              }}
+            >
+              + New
+            </button>
+          </div>
+          {!vtCollapsed && viewTemplates.length === 0 && (
+            <p className="pl-2 text-[10px] text-muted">No templates yet — click + New to create one.</p>
+          )}
+          {!vtCollapsed && viewTemplates.length > 0 && (
             <ul className="space-y-0.5">
               {viewTemplates.map((vt) => {
                 const planViews = Object.values(props.elementsById).filter(
@@ -539,7 +558,6 @@ export function ProjectBrowser(props: {
             </ul>
           )}
         </div>
-      ) : null}
 
       {lastPropagation && (
         <PropagationToast
