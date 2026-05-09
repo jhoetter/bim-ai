@@ -610,18 +610,34 @@ export function ProjectBrowser(props: {
                     }}
                   />
                 ) : (
-                  <button
-                    type="button"
-                    className="w-full px-2 py-0.5 text-left text-[10px] underline decoration-muted underline-offset-2"
-                    title={sectionCutBrowserTooltipTitle(props.elementsById, sc)}
-                    onClick={() => useBimStore.getState().select(sc.id)}
-                    onDoubleClick={() => {
-                      setRenamingId(sc.id);
-                      setRenameDraft(sc.name);
-                    }}
-                  >
-                    <span className="text-muted">section_cut ·</span> {sc.name}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className="w-full px-2 py-0.5 text-left text-[10px] underline decoration-muted underline-offset-2"
+                      title={sectionCutBrowserTooltipTitle(props.elementsById, sc)}
+                      onClick={() => useBimStore.getState().select(sc.id)}
+                      onDoubleClick={() => {
+                        setRenamingId(sc.id);
+                        setRenameDraft(sc.name);
+                      }}
+                    >
+                      <span className="text-muted">section_cut ·</span> {sc.name}
+                    </button>
+                    <button
+                      type="button"
+                      data-testid={`section-cut-delete-${sc.id}`}
+                      title="Delete this section cut"
+                      className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Delete section "${sc.name}"?`)) {
+                          void applyCommand(modelId!, { type: 'deleteElement', elementId: sc.id });
+                        }
+                      }}
+                    >
+                      Delete…
+                    </button>
+                  </>
                 )}
                 <div
                   className="pl-2 font-mono text-[9px] leading-tight text-muted"
@@ -662,17 +678,33 @@ export function ProjectBrowser(props: {
                     }}
                   />
                 ) : (
-                  <button
-                    type="button"
-                    className="w-full px-2 py-0.5 text-left text-[10px] underline decoration-muted underline-offset-2"
-                    onClick={() => useBimStore.getState().select(ev.id)}
-                    onDoubleClick={() => {
-                      setRenamingId(ev.id);
-                      setRenameDraft(ev.name);
-                    }}
-                  >
-                    <span className="text-muted">elevation_view ·</span> {ev.name}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className="w-full px-2 py-0.5 text-left text-[10px] underline decoration-muted underline-offset-2"
+                      onClick={() => useBimStore.getState().select(ev.id)}
+                      onDoubleClick={() => {
+                        setRenamingId(ev.id);
+                        setRenameDraft(ev.name);
+                      }}
+                    >
+                      <span className="text-muted">elevation_view ·</span> {ev.name}
+                    </button>
+                    <button
+                      type="button"
+                      data-testid={`elevation-view-delete-${ev.id}`}
+                      title="Delete this elevation view"
+                      className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Delete elevation "${ev.name}"?`)) {
+                          void applyCommand(modelId!, { type: 'deleteElement', elementId: ev.id });
+                        }
+                      }}
+                    >
+                      Delete…
+                    </button>
+                  </>
                 )}
                 <div className="pl-2 font-mono text-[9px] leading-tight text-muted">
                   direction · {ev.direction}
