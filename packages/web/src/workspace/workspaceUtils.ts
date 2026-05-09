@@ -13,6 +13,7 @@ import {
 import type { CommandCandidate } from '../cmd/commandPaletteSources';
 import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
 import type { UxComment } from '../state/store';
+import type { PlanTool } from '../state/storeTypes';
 import type { ToolId } from '../tools/toolRegistry';
 import type { LeftRailSection } from './LeftRail';
 
@@ -58,54 +59,14 @@ export const KNOWN_PLAN_TOOLS = new Set<ToolId>([
   'component',
 ]);
 
-export type LegacyPlanTool =
-  | 'select'
-  | 'wall'
-  | 'floor'
-  | 'floor-sketch'
-  | 'roof-sketch'
-  | 'room-separation-sketch'
-  | 'door'
-  | 'window'
-  | 'room'
-  | 'room_rectangle'
-  | 'grid'
-  | 'dimension'
-  | 'elevation'
-  | 'reference-plane'
-  | 'property-line'
-  | 'area-boundary'
-  | 'masking-region'
-  | 'plan-region'
-  | 'align'
-  | 'split'
-  | 'trim'
-  | 'trim-extend'
-  | 'wall-join'
-  | 'wall-opening'
-  | 'shaft'
-  | 'column'
-  | 'beam'
-  | 'ceiling'
-  | 'detail-region'
-  | 'measure'
-  | 'mirror'
-  | 'copy'
-  | 'component'
-  | 'toposolid_subdivision'
-  | 'move'
-  | 'rotate'
-  | 'section';
-
-export function toolIdToLegacy(tool: ToolId): LegacyPlanTool | null {
-  if (KNOWN_PLAN_TOOLS.has(tool)) return tool as LegacyPlanTool;
+export function validatePlanTool(tool: ToolId): PlanTool | null {
+  if (KNOWN_PLAN_TOOLS.has(tool)) return tool as PlanTool;
   return null;
 }
 
-export function legacyToToolId(legacy: LegacyPlanTool): ToolId {
-  if (legacy === 'room_rectangle') return 'room';
-  if (legacy === 'grid') return 'grid';
-  return legacy as ToolId;
+export function planToolToToolId(tool: PlanTool): ToolId {
+  if (tool === 'room_rectangle') return 'room';
+  return tool as ToolId;
 }
 
 export function buildBrowserSections(elementsById: Record<string, Element>): LeftRailSection[] {

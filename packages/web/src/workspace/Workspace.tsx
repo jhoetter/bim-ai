@@ -96,9 +96,9 @@ import { WorkspaceRightRail } from './WorkspaceRightRail';
 import { useWorkspaceSnapshot } from './useWorkspaceSnapshot';
 import {
   buildBrowserSections,
-  legacyToToolId,
   mapComments,
-  toolIdToLegacy,
+  planToolToToolId,
+  validatePlanTool,
 } from './workspaceUtils';
 import { useToolPrefs } from '../tools/toolPrefsStore';
 import { useOfflineStore } from '../offlineStore';
@@ -676,10 +676,10 @@ export function Workspace(): JSX.Element {
         pendingChordTimerRef.current = null;
         const chordTool = tools.find((t) => t.shortcut === chord);
         if (chordTool) {
-          const legacy = toolIdToLegacy(chordTool.id);
-          if (legacy) {
+          const tool = validatePlanTool(chordTool.id);
+          if (tool) {
             event.preventDefault();
-            setPlanTool(legacy);
+            setPlanTool(tool);
           }
         }
         return;
@@ -697,17 +697,17 @@ export function Workspace(): JSX.Element {
         pendingChordTimerRef.current = setTimeout(() => {
           pendingChordRef.current = null;
           pendingChordTimerRef.current = null;
-          const legacy = toolIdToLegacy(hotkeyTool.id);
-          if (legacy) setPlanTool(legacy);
+          const tool = validatePlanTool(hotkeyTool.id);
+          if (tool) setPlanTool(tool);
         }, 400);
         return;
       }
 
       if (hotkeyTool) {
-        const legacy = toolIdToLegacy(hotkeyTool.id);
-        if (legacy) {
+        const tool = validatePlanTool(hotkeyTool.id);
+        if (tool) {
           event.preventDefault();
-          setPlanTool(legacy);
+          setPlanTool(tool);
         }
         return;
       }
@@ -812,17 +812,17 @@ export function Workspace(): JSX.Element {
 
   const handleToolSelect = useCallback(
     (id: ToolId): void => {
-      const legacy = toolIdToLegacy(id);
-      if (legacy) setPlanTool(legacy);
+      const tool = validatePlanTool(id);
+      if (tool) setPlanTool(tool);
     },
     [setPlanTool],
   );
 
   // Reset to 'select' when the current tool isn't valid for the active perspective
-  const visibleLegacyTools = useMemo(() => planToolsForPerspective(perspectiveId), [perspectiveId]);
+  const visibleTools = useMemo(() => planToolsForPerspective(perspectiveId), [perspectiveId]);
   useEffect(() => {
-    if (!visibleLegacyTools.includes(planTool)) setPlanTool('select');
-  }, [planTool, setPlanTool, visibleLegacyTools]);
+    if (!visibleTools.includes(planTool)) setPlanTool('select');
+  }, [planTool, setPlanTool, visibleTools]);
 
   // Derive the ToolId allowlist from the perspective-filtered legacy tool list.
   // 'room_rectangle' maps to 'room' and 'grid' maps to 'select' in the palette;
@@ -830,13 +830,13 @@ export function Workspace(): JSX.Element {
   const allowedToolIds = useMemo<ReadonlySet<ToolId>>(
     () =>
       new Set(
-        visibleLegacyTools.map((t): ToolId => {
+        visibleTools.map((t): ToolId => {
           if (t === 'room_rectangle') return 'room';
           if (t === 'grid') return 'select';
           return t as ToolId;
         }),
       ),
-    [visibleLegacyTools],
+    [visibleTools],
   );
 
   const openMilestoneDialog = useCallback(() => setMilestoneDialogOpen(true), []);
@@ -1201,7 +1201,7 @@ export function Workspace(): JSX.Element {
             {showCanvasHint && !showEmptyState ? <EmptyStateHint /> : null}
             <FloatingPalette
               mode={mode}
-              activeTool={legacyToToolId(planTool)}
+              activeTool={planToolToToolId(planTool)}
               onToolSelect={handleToolSelect}
               disabledContext={toolDisabledContext}
               allowedToolIds={allowedToolIds}
@@ -1250,7 +1250,7 @@ export function Workspace(): JSX.Element {
             toolLabel={
               loopMode && (planTool === 'wall' || planTool === 'beam')
                 ? 'Loop mode on — L to toggle, Esc to exit'
-                : (toolRegistry[legacyToToolId(planTool)]?.label ?? null)
+                : (toolRegistry[planToolToToolId(planTool)]?.label ?? null)
             }
             gridOn={true}
             cursorMm={cursorMm}
