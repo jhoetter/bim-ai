@@ -26,6 +26,298 @@ export {
   FloorHifi,
 } from './hifi';
 
+// Architectural hifi
+export {
+  RailingHifi,
+  CurtainWallHifi,
+  CeilingHifi,
+  OpeningHifi,
+  RampHifi,
+  PartitionHifi,
+  TagHifi,
+  DimensionHifi,
+  MassHifi,
+} from './hifi-architectural';
+
+// MEP hifi
+export {
+  DuctRectHifi,
+  DuctRoundHifi,
+  PipeHifi,
+  CableTrayHifi,
+  MechanicalEquipmentHifi,
+  PlumbingFixtureHifi,
+  LightingFixtureHifi,
+  MepSpaceHifi,
+} from './hifi-mep';
+
+// Structural hifi
+export {
+  FoundationHifi,
+  StripFootingHifi,
+  TrussHifi,
+  BraceHifi,
+  RebarHifi,
+  StructuralConnectionHifi,
+} from './hifi-structural';
+
+// Views hifi
+export {
+  PlanViewHifi,
+  SectionViewHifi,
+  ElevationViewHifi,
+  SheetHifi,
+  ScheduleViewHifi,
+  CalloutHifi,
+  GridLineHifi,
+  LevelHifi,
+} from './hifi-views';
+
+// Organization hifi
+export {
+  FamilyHifi,
+  FamilyTypeHifi,
+  GroupHifi,
+  LinkedModelHifi,
+  MaterialHifi,
+  PhaseHifi,
+  IssueHifi,
+  ClashHifi,
+} from './hifi-organization';
+
+// Site & annotation hifi
+export {
+  TopoHifi,
+  PropertyLineHifi,
+  NorthArrowHifi,
+  RevisionCloudHifi,
+  ScaleBarHifi,
+  AreaLabelHifi,
+  KeynoteHifi,
+  SpotElevationHifi,
+} from './hifi-site-annotation';
+
+// Misc hifi — views & org additions
+export {
+  OrbitViewHifi,
+  ViewpointHifi,
+  SectionBoxHifi,
+  DetailLineHifi,
+  AssemblyHifi,
+  WallLayerHifi,
+  ValidationRuleHifi,
+  DeviationHifi,
+} from './hifi-misc-a';
+
+// Misc hifi — MEP & architectural additions
+export {
+  ConduitHifi,
+  ElectricalPanelHifi,
+  FireSprinklerHifi,
+  DiffuserHifi,
+  ShaftOpeningHifi,
+  CurtainPanelHifi,
+  MullionHifi,
+  SkyLightHifi,
+} from './hifi-misc-b';
+
+// Misc hifi — site & annotation additions
+export {
+  ParkingSpaceHifi,
+  PlantingHifi,
+  RoadHifi,
+  RetainingWallHifi,
+  BreakLineHifi,
+  CentreLineHifi,
+  MatchLineHifi,
+  SlopeArrowHifi,
+} from './hifi-misc-c';
+
+// Workflow hifi
+export {
+  WorksetHifi,
+  DesignOptionHifi,
+  RevisionHifi,
+  RFIHifi,
+  SubmittalHifi,
+  PointCloudHifi,
+  DigitalTwinHifi,
+  SyncHifi,
+  TransmittalHifi,
+  IFCHifi,
+  LODHifi,
+  QuantityTakeoffHifi,
+  EnergyModelHifi,
+  ScopeBoxHifi,
+} from './hifi-workflow';
+
+// Edit geometry operations hifi
+export {
+  MirrorHifi,
+  ArrayLinearHifi,
+  ArrayRadialHifi,
+  AlignHifi,
+  SplitHifi,
+  TrimExtendHifi,
+  VoidHifi,
+  PinHifi,
+  UnpinHifi,
+} from './hifi-edit-ops';
+
+// Edit basic / modify operations hifi
+export {
+  MoveHifi,
+  CopyHifi,
+  RotateHifi,
+  ScaleHifi,
+  OffsetHifi,
+  DeleteHifi,
+  JoinGeometryHifi,
+  UnjoinGeometryHifi,
+  SwitchJoinOrderHifi,
+  WallJoinsHifi,
+  PaintMaterialHifi,
+  MeasureBetweenHifi,
+  MeasureAlongHifi,
+  UngroupHifi,
+} from './hifi-edit-basic';
+
+// Collaboration hifi
+export {
+  ReloadLatestHifi,
+  EditingRequestHifi,
+  CopyMonitorHifi,
+  CoordinationReviewHifi,
+  PurgeUnusedHifi,
+  TransferProjectStandardsHifi,
+  ProjectInfoHifi,
+  ProjectParametersHifi,
+  SharedParametersHifi,
+  ObjectStylesHifi,
+} from './hifi-collaboration';
+
+// Architectural extended hifi (first half)
+export {
+  WallSweepHifi,
+  WallRevealHifi,
+  ComponentHifi,
+  RoofExtrusionHifi,
+  RoofSoffitHifi,
+  FasciaHifi,
+  GutterHifi,
+  CurtainSystemHifi,
+  CurtainGridHifi,
+} from './hifi-arch-ext-a';
+
+// Architectural extended hifi (second half)
+export {
+  VerticalOpeningHifi,
+  DormerOpeningHifi,
+  FaceOpeningHifi,
+  RoomSeparatorHifi,
+  AreaBoundaryHifi,
+  ReferencePlaneHifi,
+  WorkPlaneHifi,
+  ModelLineHifi,
+  ModelTextHifi,
+  StairPathHifi,
+} from './hifi-arch-ext-b';
+
+// Structural extended hifi
+export {
+  BeamSystemHifi,
+  FoundationSlabHifi,
+  SlabEdgeHifi,
+  AreaReinforcementHifi,
+  PathReinforcementHifi,
+  FabricSheetHifi,
+  ShearStudHifi,
+  AnchorHifi,
+  BoltHifi,
+  WeldHifi,
+  AnalyticalNodeHifi,
+  StructuralLoadHifi,
+  BoundaryConditionHifi,
+} from './hifi-structural-ext';
+
+// MEP extended hifi (first half)
+export {
+  FlexDuctHifi,
+  DuctFittingHifi,
+  DuctAccessoryHifi,
+  DuctInsulationHifi,
+  DuctLiningHifi,
+  FlexPipeHifi,
+  PipeFittingHifi,
+  PipeAccessoryHifi,
+  PipeInsulationHifi,
+  CableTrayFittingHifi,
+  ConduitFittingHifi,
+  ElectricalWireHifi,
+} from './hifi-mep-ext-a';
+
+// MEP extended hifi (second half)
+export {
+  SwitchSystemHifi,
+  LightingSwitchHifi,
+  CommunicationDeviceHifi,
+  FireAlarmDeviceHifi,
+  DataDeviceHifi,
+  NurseCallHifi,
+  SecurityDeviceHifi,
+  HVACZoneHifi,
+  PanelScheduleHifi,
+  DuctSystemHifi,
+  PipingSystemHifi,
+  ValveHifi,
+} from './hifi-mep-ext-b';
+
+// Views extended hifi
+export {
+  ReflectedCeilingPlanHifi,
+  StructuralPlanHifi,
+  AreaPlanHifi,
+  DetailViewHifi,
+  DraftingViewHifi,
+  WalkthroughHifi,
+  LegendHifi,
+  SheetListHifi,
+  NoteBlockHifi,
+  ViewListHifi,
+  PanelScheduleViewHifi,
+  GraphicalColumnScheduleHifi,
+  ViewReferenceHifi,
+} from './hifi-views-ext';
+
+// Annotation extended hifi (first half)
+export {
+  AngularDimensionHifi,
+  RadialDimensionHifi,
+  ArcLengthDimensionHifi,
+  OrdinalDimensionHifi,
+  SpotCoordinateHifi,
+  ElevationTagHifi,
+  FilledRegionHifi,
+  MaskingRegionHifi,
+  DetailComponentHifi,
+  RepeatingDetailHifi,
+  InsulationAnnotationHifi,
+} from './hifi-annotation-ext-a';
+
+// Annotation extended hifi (second half)
+export {
+  TextAnnotationHifi,
+  MultiCategoryTagHifi,
+  MaterialTagHifi,
+  RoomTagHifi,
+  SpaceTagHifi,
+  AreaTagHifi,
+  StairTagHifi,
+  SymbolHifi,
+  StairPathAnnotationHifi,
+  ReferencePointHifi,
+} from './hifi-annotation-ext-b';
+
 // Phase 1 — drawing tools
 export {
   WallIcon,
