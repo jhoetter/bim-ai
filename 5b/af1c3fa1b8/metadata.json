@@ -3,7 +3,7 @@
   "checkpoint_id": "5baf1c3fa1b8",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "packages/web/src/viewport/wallFaceRadialMenu.tsx"
   ],
@@ -19,13 +19,19 @@
       "transcript": "/5b/af1c3fa1b8/1/full.jsonl",
       "content_hash": "/5b/af1c3fa1b8/1/content_hash.txt",
       "prompt": "/5b/af1c3fa1b8/1/prompt.txt"
+    },
+    {
+      "metadata": "/5b/af1c3fa1b8/2/metadata.json",
+      "transcript": "/5b/af1c3fa1b8/2/full.jsonl",
+      "content_hash": "/5b/af1c3fa1b8/2/content_hash.txt",
+      "prompt": "/5b/af1c3fa1b8/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 11441,
-    "cache_creation_tokens": 6031476,
-    "cache_read_tokens": 399535678,
-    "output_tokens": 1905525,
-    "api_call_count": 4033
+    "input_tokens": 11805,
+    "cache_creation_tokens": 6420432,
+    "cache_read_tokens": 405923366,
+    "output_tokens": 2208595,
+    "api_call_count": 4110
   }
 }
