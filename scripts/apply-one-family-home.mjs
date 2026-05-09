@@ -44,9 +44,19 @@ async function fetchJson(url, opts) {
 async function main() {
   const snapUrl = `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`;
   const snap = await fetchJson(snapUrl);
-  const ids = Object.keys(snap.elements ?? {});
+  const elements = snap.elements ?? {};
+  // hatch_pattern_def elements are system-managed and cannot be deleted via deleteElements
+  const deletableKinds = new Set([
+    'wall', 'floor', 'roof', 'window', 'door', 'room', 'level', 'stair',
+    'railing', 'balcony', 'mass', 'sweep', 'slab_opening', 'section_cut',
+    'sheet', 'schedule', 'plan_view', 'viewpoint', 'project_base_point',
+    'sun_settings', 'internal_origin',
+  ]);
+  const ids = Object.entries(elements)
+    .filter(([, el]) => deletableKinds.has(el.kind))
+    .map(([id]) => id);
   if (!ids.length) {
-    console.error('Snapshot has no elements — unexpected');
+    console.error('Snapshot has no deletable elements — unexpected');
     process.exit(1);
   }
 
