@@ -33,7 +33,7 @@ Source segment: `05:30:54 – 05:33:32`
 **Screenshot:**
 ![Hide Category](file:///Users/jhoetter/Desktop/Revit%20Specs/0762_05-30-26.png)
 
-**bim-ai status:** 🟡 Partial — `TemporaryVisibilityChip.tsx` supports a hide mode (`mode: 'hide'`) that hides the given categories temporarily. Missing: permanent view-specific hide that persists between sessions (Revit's "Hide in View" → "Category"); Reveal Hidden Elements mode to undo it.
+**bim-ai status:** 🟡 Partial — `VVDialog.tsx` provides permanent per-view category visibility overrides stored in `plan_view.categoriesHidden`, which persist between sessions — covering the core of Revit's "Hide in View → Category" behavior. `TemporaryVisibilityChip.tsx` additionally supports a temporary hide mode (`mode: 'hide'`) for in-session use. Remaining gap vs Revit: no dedicated "Hide in View" right-click shortcut on selected elements; no "Reveal Hidden Elements" lightbulb mode that shows hidden categories in magenta for selective unhiding.
 
 ---
 
