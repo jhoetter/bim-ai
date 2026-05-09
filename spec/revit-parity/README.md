@@ -53,14 +53,14 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-004 | Properties Palette (context-sensitive)               | UI & Nav       | 🟡            | Right-rail inspector with editable fields; missing type/instance separation and Edit Type button                     |
 | F-005 | Ribbon Interface (tabbed toolbar)                    | UI & Nav       | ❌            | Different UI paradigm                                                                                                |
 | F-006 | Quick Access Toolbar                                 | UI & Nav       | ❌            |                                                                                                                      |
-| F-007 | Multi-tab view workspace                             | UI & Nav       | 🟡            | TabBar + tabsModel (plan/3d/section/sheet/schedule/agent); missing Close Inactive Views                              |
+| F-007 | Multi-tab view workspace                             | UI & Nav       | ✅            | TabBar + tabsModel (plan/3d/section/sheet/schedule/agent); Close Inactive Views added to tab bar                    |
 | F-008 | Dark Mode                                            | UI & Nav       | ✅            | Full toggle with URL hash + localStorage + prefers-color-scheme cascade                                              |
-| F-009 | Language settings                                    | UI & Nav       | 🟡            | EN/DE toggle via command palette (localStorage); no settings dialog or language indicator                            |
+| F-009 | Language settings                                    | UI & Nav       | ✅            | EN/DE toggle via language selector in TopBar; localStorage persistence                                              |
 | F-010 | View Scale selector                                  | UI & Nav       | ✅            | Live 1:N scale bar + preset menu; missing annotation-driven plot scale lock                                          |
 | F-011 | Visual Style selector (Wireframe/Shaded/etc.)        | UI & Nav       | 🟡            | Plan detail level + plan style selectors; 3D has no Visual Style dropdown                                            |
 | F-012 | Visibility / Graphic Overrides (VV)                  | UI & Nav       | 🟡            | VVDialog has model/annotation/filters/links tabs; 13 model + 8 annotation categories; missing full 120-category set  |
 | F-013 | Autodesk Account & License UI                        | UI & Nav       | ❌            | N/A (different SaaS model)                                                                                           |
-| F-014 | Reveal Hidden Elements mode                          | UI & Nav       | 🟡            | 💡 toggle in plan canvas footer + magenta chip; missing per-element highlight and right-click Unhide                 |
+| F-014 | Reveal Hidden Elements mode                          | UI & Nav       | ✅            | 💡 toggle in plan canvas footer + magenta chip + magenta per-element overlay; missing right-click Unhide             |
 | F-015 | Link CAD (DWG/DXF) — live reference                 | CAD            | 🟡            | DXF import backend implemented; frontend file-picker stubbed; no live reload                                         |
 | F-016 | Import CAD (embedded)                                | CAD            | 🟡            | Same backend as F-015; linked vs. embedded distinction not present; frontend stubbed                                  |
 | F-017 | CAD Link Options (Colors/Layers/Units/Positioning)   | CAD            | 🟡            | ManageLinksDialog DXF Links section: per-link opacity slider (0–100%) and color mode toggle (B&W / Custom hex); missing layer visibility filtering, "Preserve original colors", and unit/positioning controls at import time |
@@ -116,7 +116,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-067 | Detail Component (2D annotation component)           | Nested Fam.   | ❌            |                                                                                                                      |
 | F-068 | Align Tool (AL) + Lock                               | Nested Fam.   | ❌            | No interactive align + lock in family editor context                                                                 |
 | F-069 | Associate Family Parameter (Visible)                 | Nested Fam.   | ❌            |                                                                                                                      |
-| F-070 | Mirror – Draw Axis (DM)                              | Nested Fam.   | ❌            |                                                                                                                      |
+| F-070 | Mirror – Draw Axis (DM)                              | Nested Fam.   | 🟡            | Mirror tool two-click interaction implemented for project elements; missing family-editor context and pick-axis mode  |
 | F-071 | Symbolic Lines                                       | Nested Fam.   | ❌            |                                                                                                                      |
 | F-072 | Opening (Projection) / Hidden Lines (Cut) subcats   | Nested Fam.   | ❌            |                                                                                                                      |
 | F-073 | Preview Visibility toggle (Family Editor)            | Nested Fam.   | ❌            |                                                                                                                      |
@@ -144,7 +144,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-095 | Area Tool                                            | Rooms & Areas | 🟡            | area-boundary sketch tool stores area elements; right-rail shows computed area/rule set; missing auto-close snap     |
 | F-096 | Area and Volume Computations dialog                  | Rooms & Areas | 🟡            | "Volume Computed At" and "Room Area Computation Basis" fields on `project_settings` element; editable in right-rail inspector. Missing: dedicated modal dialog; backend derivation engine does not yet consume these settings |
 | F-097 | Apply Area Rules toggle                              | Rooms & Areas | 🟡            | "Apply Area Rules" checkbox (data-testid="options-bar-apply-area-rules") in OptionsBar when area-boundary tool is active; stored in useBimStore.applyAreaRules; missing backend consumption to snap boundary lines to wall faces |
-| F-098 | Area Plan (Gross Building) view type                 | Rooms & Areas | ❌            |                                                                                                                      |
+| F-098 | Area Plan (Gross Building) view type                 | Rooms & Areas | 🟡            | Area Plan view subtype added to Project Browser; missing area scheme association and gross/rentable distinction       |
 | F-099 | Discipline property for views                        | Rooms & Areas | 🟡            | plan views have discipline field editable in InspectorPlanViewEditor; missing full Revit sub-discipline tree         |
 | F-100 | Filter tool (multi-select type filter)               | Troubleshoot   | ❌            |                                                                                                                      |
 | F-101 | Isolate Category                                     | Troubleshoot   | 🟡            | 👓 Isolate button in PlanCanvas fires setTemporaryVisibility; chip in Workspace resets it; missing per-element isolate |
@@ -178,9 +178,9 @@ _Last audited: 2026-05-09 against codebase at commit `docs/parity-tracker-audit`
 
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
-| ✅ Fully available     | 23      | 19%        |
-| 🟡 Partially available | 42      | 35%        |
-| ❌ Not available       | 55      | 46%        |
+| ✅ Fully available     | 26      | 22%        |
+| 🟡 Partially available | 41      | 34%        |
+| ❌ Not available       | 53      | 44%        |
 | **Total**              | **120** | **100%**   |
 
 ---
@@ -194,6 +194,6 @@ Based on the frequency and centrality of features in the course. WP cross-refs p
 3. **Project Browser + view management** (F-003, F-027–F-033) — every workflow step involves switching views; without this, navigation overhead is enormous. _`CHR-V3-07` (Project Browser refresh, status: `next`) directly addresses this._
 4. **Rooms** (F-091–F-092) — backend logic exists (`room_derivation.py`); front-end interactive placement is the missing piece. _**No WP yet.**_
 5. **Levels UX** (F-025–F-026) — data model exists (`datum_levels.py`); needs level head display in elevation views and interactive rename. _**No WP yet.**_
-6. **Temporary Hide/Isolate** (F-047, F-101–F-102) — F-047 and F-101 are 🟡: a "👓 Isolate" button in PlanCanvas activates isolate mode for the selected element's category, and `TemporaryVisibilityChip` in Workspace resets it. Missing: Hide Category/Element modes (only Isolate Category is wired). F-102 is 🟡 — permanent view-specific hide via VVDialog is available. F-014 (Reveal Hidden) is now 🟡 — 💡 toggle + magenta chip in plan canvas; per-element magenta overlay and right-click Unhide remain missing.
+6. **Temporary Hide/Isolate** (F-047, F-101–F-102) — F-047 and F-101 are 🟡: a "👓 Isolate" button in PlanCanvas activates isolate mode for the selected element's category, and `TemporaryVisibilityChip` in Workspace resets it. Missing: Hide Category/Element modes (only Isolate Category is wired). F-102 is 🟡 — permanent view-specific hide via VVDialog is available. F-014 (Reveal Hidden) is now ✅ — 💡 toggle + magenta chip + magenta per-element overlay in plan canvas; right-click Unhide remains missing.
 7. **Family Editor** (F-048–F-062) — major architectural feature gap. v3's approach is a catalog model (`family_catalog_format.py`) rather than an in-app parametric editor. _Out of scope for v3; long-term vision item._
 8. **Floor Edit Boundary** (F-107) — common daily operation; sketch-mode edit of slab outlines. _`EDT-V3-13` (sketch-element grips, status: `next`) is the closest WP; full boundary re-sketch is a follow-on._
