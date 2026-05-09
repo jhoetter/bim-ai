@@ -1,0 +1,5 @@
+[Image #3] getting better and better, but still substantial gaps; please continue improving and figuring out what gaps there are, how we can close them; i want that really it IS the house from the @spec/target-house-seed.md ( @spec/target-house-seed-vis.png ), so we need to close any gap. and i still think there is something substantially wrong with the roof or the height or such; please look into that. do a deep analysis, and potentially dispatch multiple subagents to improve etc
+
+---
+
+are you 100% sure that it is perfect? are all element definitely rendered?
