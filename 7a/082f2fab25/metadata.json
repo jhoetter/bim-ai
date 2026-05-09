@@ -2,22 +2,30 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "7a082f2fab25",
   "strategy": "manual-commit",
-  "branch": "feat/parity-spacebar-flip",
+  "branch": "feat/parity-type-rename",
   "checkpoints_count": 0,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/plan/PlanCanvas.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/7a/082f2fab25/0/metadata.json",
       "transcript": "/7a/082f2fab25/0/full.jsonl",
       "content_hash": "/7a/082f2fab25/0/content_hash.txt",
       "prompt": "/7a/082f2fab25/0/prompt.txt"
+    },
+    {
+      "metadata": "/7a/082f2fab25/1/metadata.json",
+      "transcript": "/7a/082f2fab25/1/full.jsonl",
+      "content_hash": "/7a/082f2fab25/1/content_hash.txt",
+      "prompt": "/7a/082f2fab25/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 7,
-    "cache_creation_tokens": 3990,
-    "cache_read_tokens": 683826,
-    "output_tokens": 1676,
-    "api_call_count": 7
+    "input_tokens": 10,
+    "cache_creation_tokens": 12024,
+    "cache_read_tokens": 872811,
+    "output_tokens": 7122,
+    "api_call_count": 10
   }
 }
