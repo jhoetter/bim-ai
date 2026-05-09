@@ -522,7 +522,11 @@ export function doorGroupThree(
       emissiveIntensity: openingFocus ? 0.35 : 0,
       color: (() => {
         const p = getPlanPalette();
-        return door.id === selectedId ? p.doorSelected : p.doorFill;
+        // Use draft-paper (white) for the door opening so it reads as a white
+        // gap in the black wall — standard architectural plan convention.
+        return door.id === selectedId
+          ? p.doorSelected
+          : readToken('--draft-paper', '#fdfcf9');
       })(),
     }),
   );
@@ -594,10 +598,13 @@ export function planWindowMesh(
 
       color: (() => {
         const p = getPlanPalette();
-        if (openingFocus) {
-          return win.id === selectedId ? p.windowSelected : p.windowFill;
+        if (win.id === selectedId) {
+          return openingFocus ? p.windowSelected : p.windowSelectedBackline;
         }
-        return win.id === selectedId ? p.windowSelectedBackline : p.windowFillBackline;
+        // Use draft-paper (white) for the wall-cut fill so windows read as
+        // white openings in the black wall; the --cat-window glass centerline
+        // is drawn on top in the sill line below.
+        return readToken('--draft-paper', '#fdfcf9');
       })(),
     }),
   );
@@ -784,7 +791,8 @@ export function stairPlanThree(
     new THREE.Line(
       new THREE.BufferGeometry().setFromPoints(outline),
       new THREE.LineBasicMaterial({
-        color: getPlanPalette().dimAlt,
+        // Stair outline uses the cut line color (near-black), not warning yellow.
+        color: readToken('--draft-cut', '#1d2330'),
         transparent: true,
         opacity: 0.92,
       }),
@@ -813,7 +821,8 @@ export function stairPlanThree(
         new THREE.Line(
           new THREE.BufferGeometry().setFromPoints([p1, p2]),
           new THREE.LineBasicMaterial({
-            color: getPlanPalette().hairline,
+            // Tread risers use the stair cut token (near-black), not hairline grey.
+            color: readToken('--plan-stair', '#2a2825'),
             transparent: true,
             opacity: 0.55,
           }),
@@ -837,9 +846,10 @@ export function stairPlanThree(
           new THREE.Line(
             new THREE.BufferGeometry().setFromPoints([c1, c2]),
             new THREE.LineBasicMaterial({
-              color: getPlanPalette().hairlineStrong,
+              // Tread nosing lines use the stair cut token, slightly dimmer than risers.
+              color: readToken('--plan-stair', '#2a2825'),
               transparent: true,
-              opacity: 0.45,
+              opacity: 0.38,
             }),
           ),
         );
