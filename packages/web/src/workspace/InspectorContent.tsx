@@ -1135,20 +1135,53 @@ export function InspectorPlanViewEditor({
         <div className="font-semibold text-muted">{pv('viewRange')}</div>
         {(
           [
-            { key: 'viewRangeBottomMm', label: pv('rangeBottom'), val: el.viewRangeBottomMm },
-            { key: 'viewRangeTopMm', label: pv('rangeTop'), val: el.viewRangeTopMm },
-            { key: 'cutPlaneOffsetMm', label: pv('cutPlaneOffset'), val: el.cutPlaneOffsetMm },
-          ] as { key: string; label: string; val: number | null | undefined }[]
-        ).map(({ key, label, val }) => (
+            {
+              key: 'viewRangeBottomMm',
+              label: pv('rangeBottom'),
+              val: el.viewRangeBottomMm,
+              defaultVal: -500,
+              testid: 'inspector-plan-view-range-bottom',
+              ariaLabel: 'View range bottom in mm',
+            },
+            {
+              key: 'viewRangeTopMm',
+              label: pv('rangeTop'),
+              val: el.viewRangeTopMm,
+              defaultVal: 2000,
+              testid: 'inspector-plan-view-range-top',
+              ariaLabel: 'View range top in mm',
+            },
+            {
+              key: 'cutPlaneOffsetMm',
+              label: pv('cutPlaneOffset'),
+              val: el.cutPlaneOffsetMm,
+              defaultVal: 1200,
+              testid: 'inspector-plan-view-cut-plane',
+              ariaLabel: 'Cut plane offset in mm',
+            },
+          ] as {
+            key: string;
+            label: string;
+            val: number | null | undefined;
+            defaultVal: number;
+            testid: string;
+            ariaLabel: string;
+          }[]
+        ).map(({ key, label, val, defaultVal, testid, ariaLabel }) => (
           <label key={key} className={LABEL_CLS}>
             {label}
             <input
+              type="number"
               className={INPUT_CLS}
-              defaultValue={val == null ? '' : String(val)}
+              defaultValue={val ?? defaultVal}
               key={`${key}-${el.id}-${val ?? 'null'}-${revision}`}
-              placeholder={pv('emptyClearsPlaceholder')}
-              inputMode="decimal"
-              onBlur={(e) => onPersistProperty(key, e.target.value.trim())}
+              step={100}
+              onBlur={(e) => {
+                const v = e.target.value.trim();
+                if (v !== '') onPersistProperty(key, v);
+              }}
+              data-testid={testid}
+              aria-label={ariaLabel}
             />
           </label>
         ))}
