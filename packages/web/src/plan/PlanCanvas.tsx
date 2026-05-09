@@ -274,6 +274,7 @@ export function PlanCanvas({
   const rootRef = useRef<THREE.Group | null>(null);
   const previewRef = useRef<THREE.Line | null>(null);
   const marqueeLineRef = useRef<THREE.Line | null>(null);
+  const componentGhostRef = useRef<THREE.Group | null>(null);
   const dragRef = useRef({ dragging: false, lastXmm: 0, lastZmm: 0, camX: 0, camZ: 0 });
   const skipClickRef = useRef(false);
   const camRef = useRef({
@@ -1670,6 +1671,28 @@ export function PlanCanvas({
       grp.add(line);
     };
 
+    const buildComponentGhost = (widthMm: number, heightMm: number, rotDeg: number): THREE.Group => {
+      const g = new THREE.Group();
+      const hw = widthMm / 2000;
+      const hd = heightMm / 2000;
+      const pts = [
+        -hw, SLICE_Y, -hd,   hw, SLICE_Y, -hd,
+         hw, SLICE_Y, -hd,   hw, SLICE_Y,  hd,
+         hw, SLICE_Y,  hd,  -hw, SLICE_Y,  hd,
+        -hw, SLICE_Y,  hd,  -hw, SLICE_Y, -hd,
+        // diagonal cross
+        -hw, SLICE_Y, -hd,   hw, SLICE_Y,  hd,
+         hw, SLICE_Y, -hd,  -hw, SLICE_Y,  hd,
+      ];
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+      const mat = new THREE.LineBasicMaterial({ color: 0x8b7355, opacity: 0.6, transparent: true });
+      const mesh = new THREE.LineSegments(geo, mat);
+      g.add(mesh);
+      g.rotation.y = (rotDeg * Math.PI) / 180;
+      return g;
+    };
+
     const onMove = (ev: PointerEvent) => {
       // EDT-01 — grip drag takes priority over every other interaction.
       if (gripDragRef.current) {
@@ -1945,6 +1968,36 @@ export function PlanCanvas({
         line.computeLineDistances();
         previewRef.current = line;
         grp.add(previewRef.current);
+      }
+      // F-115 — live ghost preview for the component placement tool.
+      if (planTool === 'component') {
+        const assetId = activeComponentAssetId;
+        const entry = assetId
+          ? (() => {
+              for (const el of Object.values(elementsById)) {
+                if (el.kind === 'asset_library_entry' && el.id === assetId) {
+                  return el as { thumbnailWidthMm?: number; thumbnailHeightMm?: number };
+                }
+              }
+              return undefined;
+            })()
+          : undefined;
+        const w = entry?.thumbnailWidthMm ?? 1000;
+        const h = entry?.thumbnailHeightMm ?? 600;
+        const rr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
+        if (rr) {
+          if (componentGhostRef.current) {
+            grp.remove(componentGhostRef.current);
+            componentGhostRef.current = null;
+          }
+          const ghost = buildComponentGhost(w, h, pendingComponentRotationDeg);
+          ghost.position.set(rr.xMm / 1000, 0, rr.yMm / 1000);
+          grp.add(ghost);
+          componentGhostRef.current = ghost;
+        }
+      } else if (componentGhostRef.current) {
+        grp.remove(componentGhostRef.current);
+        componentGhostRef.current = null;
       }
     };
 
@@ -2808,6 +2861,11 @@ export function PlanCanvas({
             rotationDeg: pendingComponentRotationDeg,
           });
           bumpGeom((x) => x + 1);
+        }
+        // Clear ghost after placement so it does not linger if the cursor leaves the canvas.
+        if (componentGhostRef.current) {
+          grp.remove(componentGhostRef.current);
+          componentGhostRef.current = null;
         }
         return;
       }
@@ -3780,6 +3838,10 @@ export function PlanCanvas({
         snapIndicatorRef.current.geometry.dispose();
         snapIndicatorRef.current = null;
       }
+      if (componentGhostRef.current) {
+        grp.remove(componentGhostRef.current);
+        componentGhostRef.current = null;
+      }
     };
   }, [
     anchors,
@@ -3811,9 +3873,17 @@ export function PlanCanvas({
     if (planTool !== 'measure') setMeasureReadout(null);
   }, [planTool]);
 
-  // F-115 — reset pending component rotation when leaving the component tool.
+  // F-115 — reset pending component rotation when leaving the component tool;
+  // also remove any lingering ghost preview from the scene.
   useEffect(() => {
-    if (planTool !== 'component') setPendingComponentRotationDeg(0);
+    if (planTool !== 'component') {
+      setPendingComponentRotationDeg(0);
+      const grp = rootRef.current;
+      if (grp && componentGhostRef.current) {
+        grp.remove(componentGhostRef.current);
+        componentGhostRef.current = null;
+      }
+    }
   }, [planTool]);
 
   // F-014 — close the Unhide in View context menu on any outside mousedown.
