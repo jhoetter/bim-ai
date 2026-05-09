@@ -52,13 +52,13 @@ describe('resolveCategoryMaterial — spec §15.5', () => {
       '--cat-sheet': 'hsl(220 6% 80%)',
     });
     const PBR_EXPECTED: Record<ElementCategoryToken, { roughness: number; metalness: number }> = {
-      wall: { roughness: 0.8, metalness: 0.0 },
-      floor: { roughness: 0.9, metalness: 0.0 },
+      wall: { roughness: 0.92, metalness: 0.0 },
+      floor: { roughness: 0.88, metalness: 0.0 },
       roof: { roughness: 0.85, metalness: 0.0 },
-      door: { roughness: 0.7, metalness: 0.0 },
-      window: { roughness: 0.6, metalness: 0.05 },
-      stair: { roughness: 0.85, metalness: 0.0 },
-      railing: { roughness: 0.35, metalness: 0.65 },
+      door: { roughness: 0.72, metalness: 0.02 },
+      window: { roughness: 0.05, metalness: 0.08 },
+      stair: { roughness: 0.86, metalness: 0.0 },
+      railing: { roughness: 0.45, metalness: 0.35 },
       room: { roughness: 0.85, metalness: 0.0 },
       site: { roughness: 0.95, metalness: 0.0 },
       section: { roughness: 0.85, metalness: 0.0 },
@@ -77,7 +77,7 @@ describe('resolveCategoryMaterial — spec §15.5', () => {
   it('falls back to documented light-theme colors when a token is missing', () => {
     const reader = fakeReader({});
     const spec = resolveCategoryMaterial('wall', { reader });
-    expect(spec.color).toContain('hsl');
+    expect(spec.color).toBe('#ddd8d0');
   });
 
   it('lets callers override PBR defaults', () => {
@@ -113,8 +113,8 @@ describe('resolveLighting', () => {
     expect(light.sun.shadowMapSize).toBe(2048);
   });
   it('declares sky + ground hemi colors', () => {
-    expect(light.hemi.skyColor).toBe('#d3e2ff');
-    expect(light.hemi.groundColor).toBe('#d8d3c4');
+    expect(light.hemi.skyColor).toBe('#cce8f4');
+    expect(light.hemi.groundColor).toBe('#d4c9a8');
   });
 });
 

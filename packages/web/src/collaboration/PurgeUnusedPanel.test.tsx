@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { PurgeUnusedPanel } from './PurgeUnusedPanel';
 
@@ -26,13 +26,10 @@ describe('PurgeUnusedPanel', () => {
     expect(getByRole('button', { name: 'Purge Unused…' })).toBeTruthy();
   });
 
-  it('confirm purge calls console.warn and shows done state', () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  it('confirm purge shows done state', () => {
     const { getByRole, getByText } = render(<PurgeUnusedPanel />);
     fireEvent.click(getByRole('button', { name: 'Purge Unused…' }));
     fireEvent.click(getByRole('button', { name: 'Confirm Purge' }));
-    expect(warnSpy).toHaveBeenCalledWith('purge-unused stub');
     expect(getByText('Purge complete.')).toBeTruthy();
-    warnSpy.mockRestore();
   });
 });

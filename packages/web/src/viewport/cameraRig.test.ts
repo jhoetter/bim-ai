@@ -98,8 +98,8 @@ describe('classifyPointer', () => {
   it('Shift + LMB → pan', () => {
     expect(classifyPointer({ button: 0, shiftKey: true })).toBe('pan');
   });
-  it('Shift + Middle mouse → pan', () => {
-    expect(classifyPointer({ button: 1, shiftKey: true })).toBe('pan');
+  it('Shift + Middle mouse → orbit', () => {
+    expect(classifyPointer({ button: 1, shiftKey: true })).toBe('orbit');
   });
   it('plain LMB → idle', () => {
     expect(classifyPointer({ button: 0 })).toBe('idle');

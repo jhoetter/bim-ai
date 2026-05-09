@@ -34,11 +34,11 @@ describe('StatusBar — spec §17', () => {
     expect(getByText('Drawing wall')).toBeTruthy();
     // Snap chips now render single-character glyphs (E = endpoint, G = grid)
     expect(getByTitle('Endpoint snap (on)')).toBeTruthy();
-    expect(getByText('ON')).toBeTruthy();
+    expect(getByTitle('Grid (F7)').getAttribute('aria-checked')).toBe('true');
     expect(getByLabelText('Cursor coordinates').textContent).toContain('X 12.500 m');
     expect(getByLabelText('Cursor coordinates').textContent).toContain('Y 8.000 m');
     expect(getByText('saved')).toBeTruthy();
-    expect(getByText('connected')).toBeTruthy();
+    expect(getByTitle('Connection: connected')).toBeTruthy();
   });
 
   it('opens level popover and emits onLevelChange', () => {
@@ -96,15 +96,16 @@ describe('StatusBar — spec §17', () => {
 
   it('grid switch reflects state and emits onGridToggle', () => {
     const onGridToggle = vi.fn();
-    const { getByText } = renderWithI18n(
+    const { getByTitle } = renderWithI18n(
       <StatusBar
         level={{ id: 'lvl-ground', label: 'Ground' }}
         gridOn={false}
         onGridToggle={onGridToggle}
       />,
     );
-    expect(getByText('OFF')).toBeTruthy();
-    fireEvent.click(getByText('OFF').parentElement!);
+    const gridSwitch = getByTitle('Grid (F7)');
+    expect(gridSwitch.getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(gridSwitch);
     expect(onGridToggle).toHaveBeenCalled();
   });
 

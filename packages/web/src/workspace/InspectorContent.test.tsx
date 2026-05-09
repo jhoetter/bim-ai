@@ -62,9 +62,13 @@ describe('InspectorPropertiesFor — spec §13', () => {
   });
 
   it('renders stair risers/treads', () => {
-    const { getByText } = render(InspectorPropertiesFor(stair, t));
-    expect(getByText('176 mm')).toBeTruthy();
-    expect(getByText('280 mm')).toBeTruthy();
+    const { getByLabelText } = render(InspectorPropertiesFor(stair, t));
+    expect((getByLabelText('Stair riser height in millimetres') as HTMLInputElement).value).toBe(
+      '176',
+    );
+    expect((getByLabelText('Stair tread depth in millimetres') as HTMLInputElement).value).toBe(
+      '280',
+    );
   });
 });
 

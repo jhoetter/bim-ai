@@ -87,7 +87,7 @@ export function TabBar({
   useEffect(() => {
     if (!activeId || !tabBarRef.current) return;
     const activeEl = tabBarRef.current.querySelector<HTMLElement>(`[data-tab-id="${activeId}"]`);
-    if (activeEl) {
+    if (activeEl && typeof activeEl.scrollIntoView === 'function') {
       activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
     }
   }, [activeId]);

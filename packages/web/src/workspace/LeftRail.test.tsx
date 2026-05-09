@@ -110,7 +110,9 @@ describe('LeftRail — spec §12', () => {
 describe('LeftRailCollapsed — icon strip', () => {
   it('renders one button per section with aria-label', () => {
     const { getAllByRole } = render(<LeftRailCollapsed sections={sections} />);
-    const buttons = getAllByRole('button');
+    const buttons = getAllByRole('button').filter((button) =>
+      sections.some((section) => section.label === button.getAttribute('aria-label')),
+    );
     expect(buttons).toHaveLength(2);
     expect(buttons[0].getAttribute('aria-label')).toBe('Project');
     expect(buttons[1].getAttribute('aria-label')).toBe('Views');

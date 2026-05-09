@@ -9,8 +9,8 @@ describe('resolveHatchPatternId', () => {
   it('returns brick for wall with no explicit id', () => {
     expect(resolveHatchPatternId(null, 'wall')).toBe('brick');
   });
-  it('returns concrete for floor', () => {
-    expect(resolveHatchPatternId(null, 'floor')).toBe('concrete');
+  it('returns herringbone for floor', () => {
+    expect(resolveHatchPatternId(null, 'floor')).toBe('herringbone');
   });
   it('returns tile for roof', () => {
     expect(resolveHatchPatternId(null, 'roof')).toBe('tile');

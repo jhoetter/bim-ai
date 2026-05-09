@@ -358,7 +358,9 @@ function Row({
   useEffect(() => {
     if (isFocused) {
       ref.current?.focus({ preventScroll: true });
-      ref.current?.scrollIntoView({ block: 'nearest' });
+      if (typeof ref.current?.scrollIntoView === 'function') {
+        ref.current.scrollIntoView({ block: 'nearest' });
+      }
     }
   }, [isFocused]);
 

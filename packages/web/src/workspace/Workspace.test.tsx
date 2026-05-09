@@ -26,7 +26,7 @@ import { Workspace } from './Workspace';
 
 beforeEach(() => {
   // Suppress the OnboardingTour dialog so aria-modal doesn't hide canvas content.
-  localStorage.setItem('bim.onboarding-completed', JSON.stringify({ completed: true }));
+  localStorage.setItem('bim.onboarding-completed', 'true');
 });
 
 afterEach(() => {
@@ -39,7 +39,7 @@ describe('<Workspace /> — smoke', () => {
     const { getByTestId, getByRole, queryByTestId } = renderWithProviders(<Workspace />);
     expect(getByTestId('app-shell')).toBeTruthy();
     expect(getByTestId('topbar')).toBeTruthy();
-    expect(getByRole('tree', { name: 'Project browser' })).toBeTruthy();
+    expect(getByRole('complementary', { name: 'Project browser' })).toBeTruthy();
     // CHR-V3-06: Inspector is absent from DOM when nothing is selected.
     expect(queryByTestId('inspector')).toBeNull();
     expect(getByTestId('status-bar')).toBeTruthy();

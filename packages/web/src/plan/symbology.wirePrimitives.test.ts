@@ -39,6 +39,14 @@ function countAnnotationOverlaySprites(root: THREE.Object3D): number {
   return n;
 }
 
+function hasMeshNode(root: THREE.Object3D): boolean {
+  let found = false;
+  root.traverse((o) => {
+    if ('isMesh' in o && (o as THREE.Mesh).isMesh) found = true;
+  });
+  return found;
+}
+
 describe('PlanCanvas server wire primitives path (WP-C03)', () => {
   it('builds at least one mesh from planProjectionPrimitives_v1 walls', () => {
     const wall: Extract<Element, { kind: 'wall' }> = {
@@ -86,7 +94,7 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
       },
     );
 
-    expect(grp.children.some((c) => 'isMesh' in c && (c as THREE.Mesh).isMesh)).toBe(true);
+    expect(hasMeshNode(grp)).toBe(true);
   });
 
   it('exposes bimAiRoofGeometrySupportToken on roof outline group userData when server sends roofGeometrySupportToken', () => {
