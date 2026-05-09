@@ -11,7 +11,7 @@
  * fits (status bar slot, header, etc.) and the component handles its
  * own state.
  */
-import { useEffect, useState, type JSX } from 'react';
+import { useCallback, useEffect, useState, type JSX } from 'react';
 import { readClipboardSync } from './clipboardStore';
 import type { ClipboardPayload } from './payload';
 
@@ -29,13 +29,24 @@ export function RecentClipboardTray(): JSX.Element | null {
     return () => window.removeEventListener('bim-ai:clipboard-copy', onCopy as EventListener);
   }, []);
 
+  const closePreview = useCallback(() => setPreviewOpen(false), []);
+
+  useEffect(() => {
+    if (!previewOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closePreview();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [previewOpen, closePreview]);
+
   if (!payload) return null;
 
   const elementCount = payload.elements.length;
   const familyCount = payload.familyDefinitions.length;
 
   function dispatchSyntheticPaste() {
-    setPreviewOpen(false);
+    closePreview();
     const ev = new KeyboardEvent('keydown', {
       key: 'v',
       code: 'KeyV',
@@ -46,10 +57,10 @@ export function RecentClipboardTray(): JSX.Element | null {
   }
 
   return (
-    <div className="text-xs flex items-center gap-1" data-testid="recent-clipboard-tray">
+    <div className="flex items-center gap-1 text-xs" data-testid="recent-clipboard-tray">
       <button
         type="button"
-        className="px-2 py-0.5 rounded border"
+        className="rounded border px-2 py-0.5"
         aria-label="Recent clipboard"
         onClick={() => setPreviewOpen(true)}
       >
@@ -58,39 +69,40 @@ export function RecentClipboardTray(): JSX.Element | null {
       {previewOpen && (
         <div
           role="dialog"
+          aria-modal="true"
           aria-label="Recent clipboard preview"
-          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-          onClick={() => setPreviewOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={closePreview}
         >
           <div
-            className="bg-white p-4 rounded shadow max-w-md w-full"
+            className="w-full max-w-md rounded border border-border bg-surface p-4 shadow-elev-2"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="font-semibold mb-2">Recent clipboard</h3>
-            <dl className="text-sm grid grid-cols-2 gap-1">
-              <dt>Source project</dt>
+            <h3 className="mb-2 font-semibold text-foreground">Recent clipboard</h3>
+            <dl className="grid grid-cols-2 gap-1 text-sm">
+              <dt className="text-muted">Source project</dt>
               <dd>{payload.sourceProjectId}</dd>
-              <dt>Source model</dt>
+              <dt className="text-muted">Source model</dt>
               <dd>{payload.sourceModelId}</dd>
-              <dt>Elements</dt>
+              <dt className="text-muted">Elements</dt>
               <dd>{elementCount}</dd>
-              <dt>Families</dt>
+              <dt className="text-muted">Families</dt>
               <dd>{familyCount}</dd>
-              <dt>Captured</dt>
+              <dt className="text-muted">Captured</dt>
               <dd>{payload.timestamp}</dd>
             </dl>
-            <div className="flex justify-end gap-2 mt-3">
+            <div className="mt-3 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setPreviewOpen(false)}
-                className="px-3 py-1 rounded border"
+                onClick={closePreview}
+                className="rounded border border-border px-3 py-1 text-sm hover:bg-surface-strong"
               >
                 Close
               </button>
               <button
                 type="button"
                 onClick={dispatchSyntheticPaste}
-                className="px-3 py-1 rounded bg-primary text-white"
+                className="rounded bg-accent px-3 py-1 text-sm text-accent-foreground hover:opacity-90"
               >
                 Paste this
               </button>

@@ -204,6 +204,8 @@ export function TabBar({
           type="button"
           onClick={() => setPopoverOpen((v) => !v)}
           aria-label={t('workspace.openNewView')}
+          aria-expanded={popoverOpen}
+          aria-haspopup="menu"
           data-testid="tab-add-button"
           className="flex h-6 w-6 items-center justify-center rounded text-muted hover:bg-surface-strong hover:text-foreground"
           style={{ fontSize: 16, lineHeight: 1 }}
