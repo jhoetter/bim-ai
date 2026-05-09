@@ -3,6 +3,9 @@
  *
  * Reads the active plan tool from the bim store, resolves the per-tool
  * descriptor list, and wires toggle / cycle state via the toolPrefs slice.
+ *
+ * EDT-V3-05: the `loop` modifier id is wired to `toolPrefs.loopMode` so the
+ * modifier-bar chip and the L-key handler share a single source of truth.
  */
 
 import type { JSX } from 'react';
@@ -22,10 +25,15 @@ export function ToolModifierBar(): JSX.Element | null {
   const setToggle = useToolPrefs((s) => s.setToggle);
   const getCycle = useToolPrefs((s) => s.getCycle);
   const advanceCycle = useToolPrefs((s) => s.advanceCycle);
+  // EDT-V3-05: loop modifier is backed by the dedicated loopMode field.
+  const loopMode = useToolPrefs((s) => s.loopMode);
+  const setLoopMode = useToolPrefs((s) => s.setLoopMode);
 
   if (!planTool || descriptors.length === 0) return null;
 
   function handleGetToggle(modifierId: string): boolean {
+    // EDT-V3-05: the loop chip reads from the dedicated loopMode field.
+    if (modifierId === 'loop') return loopMode;
     const desc = descriptors.find((d) => d.id === modifierId) as
       | ToggleModifierDescriptor
       | undefined;
@@ -33,6 +41,11 @@ export function ToolModifierBar(): JSX.Element | null {
   }
 
   function handleToggle(modifierId: string, value: boolean): void {
+    // EDT-V3-05: the loop chip writes to the dedicated loopMode field.
+    if (modifierId === 'loop') {
+      setLoopMode(value);
+      return;
+    }
     setToggle(planTool!, modifierId, value);
   }
 

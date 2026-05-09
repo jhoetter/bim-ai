@@ -116,6 +116,7 @@ import { SketchCanvas, type MmToScreen, type PointerToMm } from './SketchCanvas'
 import { getFamilyById as getBuiltInFamilyById } from '../families/familyCatalog';
 import type { FamilyDefinition } from '../families/types';
 import { copyElementsToClipboard, pasteFromOSClipboard } from '../clipboard/copyPaste';
+import { useToolPrefs } from '../tools/toolPrefsStore';
 
 function readPlanToken(name: string, fallback: string): string {
   const v = liveTokenReader().read(name);
@@ -400,6 +401,8 @@ export function PlanCanvas({
   const activateElevationView = useBimStore((s) => s.activateElevationView);
   const activatePlanView = useBimStore((s) => s.activatePlanView);
   const setPlanTool = useBimStore((s) => s.setPlanTool);
+  // EDT-V3-05 — loop mode: re-arm chained tools after each segment commit.
+  const loopMode = useToolPrefs((s) => s.loopMode);
 
   const display = useMemo(
     () =>
@@ -2008,7 +2011,10 @@ export function PlanCanvas({
           start: { xMm: d.sx, yMm: d.sy },
           end: { xMm: sp.xMm, yMm: sp.yMm },
         });
-        draftRef.current = undefined;
+        // EDT-V3-05: re-arm from endpoint when loop mode is on.
+        draftRef.current = useToolPrefs.getState().loopMode
+          ? { kind: 'wall', sx: sp.xMm, sy: sp.yMm }
+          : undefined;
         bumpGeom((x) => x + 1);
         return;
       }
@@ -2507,6 +2513,10 @@ export function PlanCanvas({
             startMm: effect.commitBeam.startMm,
             endMm: effect.commitBeam.endMm,
           });
+          // EDT-V3-05: re-arm from endpoint when loop mode is on.
+          if (useToolPrefs.getState().loopMode) {
+            beamStateRef.current = { phase: 'first-point', startMm: effect.commitBeam.endMm };
+          }
         }
         bumpGeom((x) => x + 1);
         return;
@@ -2714,6 +2724,8 @@ export function PlanCanvas({
       }
       if (ev.key === 'Escape') {
         draftRef.current = undefined;
+        // EDT-V3-05: Esc exits loop mode as well as cancelling the in-flight segment.
+        useToolPrefs.getState().setLoopMode(false);
         if (planTool === 'align') {
           const { state } = reduceAlign(alignStateRef.current, { kind: 'cancel' });
           alignStateRef.current = state;
@@ -2741,6 +2753,18 @@ export function PlanCanvas({
         clearMarqueeLine();
         marqueeRef.current = { active: false, sx: 0, sy: 0, ex: 0, ey: 0, direction: null };
         bumpGeom((x) => x + 1);
+      }
+      // EDT-V3-05: L key toggles loop mode while a chained drawing tool is active.
+      // L outside a chained tool is a no-op (does not interfere with other bindings).
+      if (
+        (ev.key === 'l' || ev.key === 'L') &&
+        (planTool === 'wall' || planTool === 'beam') &&
+        !ev.metaKey &&
+        !ev.ctrlKey &&
+        !ev.altKey
+      ) {
+        ev.preventDefault();
+        useToolPrefs.getState().setLoopMode(!useToolPrefs.getState().loopMode);
       }
       if (planTool === 'wall-join' && wallJoinStateRef.current.phase === 'selected') {
         if (ev.key === 'n' || ev.key === 'N') {
@@ -3263,6 +3287,41 @@ export function PlanCanvas({
         candidates={snapGlyphState.candidates}
         activeIndex={snapGlyphState.activeIndex}
       />
+      {/* EDT-V3-05 — LOOP cursor chip: shown when loop mode is active and a chained
+          drawing tool (Wall or Beam) is in use. Follows the cursor. */}
+      {loopMode && (planTool === 'wall' || planTool === 'beam') && hudMm
+        ? (() => {
+            const pos = worldToScreen(hudMm);
+            return (
+              <div
+                data-testid="loop-mode-cursor-chip"
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  left: pos.pxX + 14,
+                  top: pos.pxY - 20,
+                  pointerEvents: 'none',
+                  zIndex: 20,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0 5px',
+                  height: 18,
+                  borderRadius: 3,
+                  fontSize: 'var(--text-2xs, 10px)',
+                  lineHeight: 'var(--text-2xs-line, 14px)',
+                  background: 'var(--color-surface-2, var(--color-surface-strong))',
+                  border: '1px solid var(--color-accent)',
+                  color: 'var(--color-accent-foreground, var(--color-foreground))',
+                  fontFamily: 'var(--font-mono, monospace)',
+                  fontWeight: 600,
+                }}
+              >
+                LOOP
+              </div>
+            );
+          })()
+        : null}
       {/* EDT-05 — per-snap-type toggle UI, lower-right corner. */}
       <div className="pointer-events-auto absolute right-3 bottom-3 z-10">
         <SnapSettingsToolbar value={snapSettings} onChange={setSnapSettings} />

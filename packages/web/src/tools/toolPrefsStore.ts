@@ -7,6 +7,9 @@
  *
  * Tool switching restores the last-used modifier state for that tool;
  * state does not persist across page reloads (session-level).
+ *
+ * EDT-V3-05: `loopMode` is a session-level boolean that arms chained drawing
+ * tools (Wall, Beam) to auto-restart after each completed segment.
  */
 
 import { create } from 'zustand';
@@ -14,6 +17,8 @@ import { create } from 'zustand';
 export interface ToolPrefsState {
   toggles: Record<string, Record<string, boolean>>;
   cycles: Record<string, Record<string, string>>;
+  /** EDT-V3-05: when true, chained tools re-arm after each segment commit. */
+  loopMode: boolean;
   setToggle: (toolId: string, modifierId: string, value: boolean) => void;
   setCycle: (toolId: string, modifierId: string, value: string) => void;
   getToggle: (toolId: string, modifierId: string, defaultOn: boolean) => boolean;
@@ -24,11 +29,14 @@ export interface ToolPrefsState {
     values: readonly string[],
     defaultValue: string,
   ) => string;
+  /** EDT-V3-05: set loop mode on/off. */
+  setLoopMode: (v: boolean) => void;
 }
 
 export const useToolPrefs = create<ToolPrefsState>((set, get) => ({
   toggles: {},
   cycles: {},
+  loopMode: false,
 
   setToggle(toolId, modifierId, value) {
     set((state) => ({
@@ -62,5 +70,9 @@ export const useToolPrefs = create<ToolPrefsState>((set, get) => ({
     const next = values[(idx + 1) % values.length] ?? defaultValue;
     get().setCycle(toolId, modifierId, next);
     return next;
+  },
+
+  setLoopMode(v) {
+    set({ loopMode: v });
   },
 }));

@@ -98,6 +98,7 @@ import {
   mapComments,
   toolIdToLegacy,
 } from './workspaceUtils';
+import { useToolPrefs } from '../tools/toolPrefsStore';
 
 /**
  * Workspace — composition root for the §11–§17 chrome.
@@ -134,6 +135,8 @@ export function Workspace(): JSX.Element {
   const setViewerMode = useBimStore((s) => s.setViewerMode);
   const planTool = useBimStore((s) => s.planTool);
   const setPlanTool = useBimStore((s) => s.setPlanTool);
+  // EDT-V3-05: loop mode state for status bar message.
+  const loopMode = useToolPrefs((s) => s.loopMode);
   const selectedId = useBimStore((s) => s.selectedId);
   const select = useBimStore((s) => s.select);
   const activeLevelId = useBimStore((s) => s.activeLevelId);
@@ -1088,7 +1091,11 @@ export function Workspace(): JSX.Element {
             level={activeLevel}
             levels={levels}
             onLevelChange={setActiveLevelId}
-            toolLabel={toolRegistry[legacyToToolId(planTool)]?.label ?? null}
+            toolLabel={
+              loopMode && (planTool === 'wall' || planTool === 'beam')
+                ? 'Loop mode on — L to toggle, Esc to exit'
+                : (toolRegistry[legacyToToolId(planTool)]?.label ?? null)
+            }
             gridOn={true}
             cursorMm={cursorMm}
             undoDepth={undoDepth}
