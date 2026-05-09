@@ -57,14 +57,21 @@
   --draft-snap: #f59e0b;
   --draft-anno: #b5451b;         /* warm red-ochre for dims, sections, tags */
 
-  /* §9.3 Color — element categories (3D + plan fill), light */
-  --cat-wall: #1c1917;     /* near-black — architectural drafting convention */
-  --cat-floor: #e8e2d8;    /* very light warm — subtle floor fill behind hatch */
+  /* §9.3 Color — element categories (3D fill), light */
+  --cat-wall: #ddd8d0;     /* warm light plaster — 3D surface color */
+  --cat-floor: #cfc9be;    /* warm stone — 3D floor surface */
   --cat-roof: #6b4f3e;     /* dark clay */
-  --cat-door: #2d2a27;     /* near-black, slightly warmer */
+  --cat-door: #b8a898;     /* warm taupe — 3D door face */
   --cat-window: #8ab4c8;
-  --cat-stair: #2a2825;    /* near-black */
-  --cat-railing: #3a3632;  /* very dark warm */
+  --cat-stair: #c4bdb4;    /* warm grey — 3D stair */
+  --cat-railing: #a89e96;  /* medium warm — 3D railing */
+
+  /* §9.3b Color — plan-view cut fill (2D only), light */
+  --plan-wall: #1c1917;    /* near-black — architectural section cut convention */
+  --plan-floor: #e8e2d8;   /* very light warm — floor fill behind hatch */
+  --plan-door: #2d2a27;    /* near-black door cut */
+  --plan-stair: #2a2825;   /* near-black stair cut */
+  --plan-railing: #3a3632; /* very dark warm railing */
   --cat-room: #c9dfd2;
   --cat-site: #cbd1bd;
   --cat-section: #d93d3d;
@@ -175,14 +182,21 @@
   --draft-snap: #f3b03d;
   --draft-anno: #e8703a;         /* warm orange for dims on dark paper */
 
-  /* §9.3 Color — element categories, dark */
-  --cat-wall: #d8d2ca;     /* warm light — walls read bright on dark paper */
-  --cat-floor: #2e2a26;    /* dark warm — subtle fill on dark paper */
+  /* §9.3 Color — element categories (3D fill), dark */
+  --cat-wall: #6a6460;     /* mid warm grey — 3D surface on dark */
+  --cat-floor: #4a4540;    /* dark warm — 3D floor surface */
   --cat-roof: #7a5c4a;     /* clay slate */
-  --cat-door: #c8c0b8;     /* warm light */
+  --cat-door: #7a7068;     /* warm grey — 3D door face */
   --cat-window: #6a94ab;
-  --cat-stair: #b8b4ae;    /* warm light gray */
-  --cat-railing: #9a948e;  /* medium warm */
+  --cat-stair: #5e5a56;    /* warm grey — 3D stair */
+  --cat-railing: #4e4a46;  /* dark warm — 3D railing */
+
+  /* §9.3b Color — plan-view cut fill (2D only), dark */
+  --plan-wall: #d8d2ca;    /* warm light — walls read bright on dark paper */
+  --plan-floor: #2e2a26;   /* dark warm — floor fill on dark paper */
+  --plan-door: #c8c0b8;    /* warm light door cut */
+  --plan-stair: #b8b4ae;   /* warm light stair cut */
+  --plan-railing: #9a948e; /* medium warm railing */
   --cat-room: #2e4439;
   --cat-site: #353d2e;
   --cat-section: #f15252;

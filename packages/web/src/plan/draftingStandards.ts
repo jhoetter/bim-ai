@@ -40,7 +40,12 @@ export type CategoryColorTokenName =
   | '--cat-room'
   | '--cat-site'
   | '--cat-section'
-  | '--cat-sheet';
+  | '--cat-sheet'
+  | '--plan-wall'
+  | '--plan-floor'
+  | '--plan-door'
+  | '--plan-stair'
+  | '--plan-railing';
 
 /** Canonical line-weight px values at 1:50 plot scale. Mirrors §9.10. */
 export const LINE_WEIGHT_PX_AT_1_50: Record<LineWeightTokenName, number> = {
@@ -171,7 +176,7 @@ export const HATCH_SPECS: Record<HatchKind, HatchSpec> = {
     widthMm: 0.5,
     spacingMm: 1,
     angleDeg: 45,
-    color: '--cat-wall',
+    color: '--plan-wall',
     visibleAtScaleAtMost: 200,
   },
   'floor.timber': {
@@ -179,7 +184,7 @@ export const HATCH_SPECS: Record<HatchKind, HatchSpec> = {
     widthMm: 0.5,
     spacingMm: 0.7,
     angleDeg: 0,
-    color: '--cat-floor',
+    color: '--plan-floor',
     visibleAtScaleAtMost: 200,
   },
   'site.lawn': {

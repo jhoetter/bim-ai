@@ -106,6 +106,11 @@ const categories = [
   '--cat-site',
   '--cat-section',
   '--cat-sheet',
+  '--plan-wall',
+  '--plan-floor',
+  '--plan-door',
+  '--plan-stair',
+  '--plan-railing',
 ];
 
 const lineWeights = [

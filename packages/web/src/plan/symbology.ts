@@ -74,9 +74,9 @@ export function readToken(name: string, fallback: string): string {
 
 export function getPlanPalette(): PlanPalette {
   return {
-    wallFill: readToken('--cat-wall', '#94a3b8'),
+    wallFill: readToken('--plan-wall', '#1c1917'),
     wallSelected: readToken('--color-accent', '#fb923c'),
-    doorFill: readToken('--cat-door', '#67e8f9'),
+    doorFill: readToken('--plan-door', '#2d2a27'),
     doorSelected: readToken('--color-accent', '#fde047'),
     doorSwing: readToken('--draft-construction-blue', '#0ea5e9'),
     doorSwingFocus: readToken('--draft-hover', '#bae6fd'),
@@ -86,7 +86,7 @@ export function getPlanPalette(): PlanPalette {
     windowFillBackline: readToken('--cat-window', '#a78bfa'),
     windowGlass: readToken('--cat-window', '#7c3aed'),
     windowGlassFocus: readToken('--draft-hover', '#f5d0fe'),
-    floorOutline: readToken('--cat-floor', '#22c55e'),
+    floorOutline: readToken('--plan-floor', '#e8e2d8'),
     roofOutline: readToken('--cat-roof', '#f97316'),
     roomBoundary: readToken('--cat-room', '#a855f7'),
     roomLabel: readToken('--color-foreground', '#0f172a'),
