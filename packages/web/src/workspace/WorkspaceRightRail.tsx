@@ -57,6 +57,7 @@ export function WorkspaceRightRail({
   const activityEvents = useBimStore((s) => s.activityEvents);
   const setPlanTool = useBimStore((s) => s.setPlanTool);
   const planProjectionPrimitives = useBimStore((s) => s.planProjectionPrimitives);
+  const activePlanViewId = useBimStore((s) => s.activePlanViewId);
 
   const el = selectedId ? (elementsById[selectedId] as Element | undefined) : undefined;
   const show3dLayers = mode === '3d' || (mode as string) === 'plan-3d';
@@ -144,6 +145,34 @@ export function WorkspaceRightRail({
             Scene
           </div>
           <SunInspectorPanel />
+          {activePlanViewId && elementsById[activePlanViewId]?.kind === 'plan_view' ? (
+            <div className="mt-3 border-t border-border pt-3">
+              <div
+                className="mb-2 text-[10px] font-semibold uppercase text-muted"
+                style={{ letterSpacing: '0.08em', opacity: 0.7 }}
+              >
+                Active View
+              </div>
+              <InspectorPlanViewEditor
+                el={elementsById[activePlanViewId] as Extract<Element, { kind: 'plan_view' }>}
+                elementsById={elementsById}
+                revision={revision}
+                onPersistProperty={(key, value) => {
+                  if (key === '__applyTemplate__') {
+                    const p = JSON.parse(value) as { planViewId: string; templateId: string };
+                    void onSemanticCommand({ type: 'applyPlanViewTemplate', ...p });
+                  } else {
+                    void onSemanticCommand({
+                      type: 'updateElementProperty',
+                      elementId: activePlanViewId,
+                      key,
+                      value,
+                    });
+                  }
+                }}
+              />
+            </div>
+          ) : null}
         </div>
       ) : null}
       {/* CHR-V3-06: key={selectedId} remounts (and re-animates) Inspector on each selection */}
@@ -282,6 +311,31 @@ export function WorkspaceRightRail({
                   }
                   onDisciplineChange={handleDisciplineChange}
                 />
+              ) : el.kind === 'wall' ? (
+                <>
+                  {InspectorPropertiesFor(el, t, {
+                    elementsById,
+                    onPropertyChange: (property, value) =>
+                      void onSemanticCommand({
+                        type: 'updateElementProperty',
+                        elementId: el.id,
+                        key: property,
+                        value,
+                      }),
+                    onDisciplineChange: handleDisciplineChange,
+                  })}
+                  <WallMoveSection
+                    wallId={el.id}
+                    onMove={(dx, dy) =>
+                      void onSemanticCommand({
+                        type: 'moveWallDelta',
+                        wallId: el.id,
+                        dxMm: dx,
+                        dyMm: dy,
+                      })
+                    }
+                  />
+                </>
               ) : (
                 InspectorPropertiesFor(el, t, {
                   elementsById,
@@ -409,6 +463,63 @@ export function WorkspaceRightRail({
           </ul>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function WallMoveSection({
+  wallId,
+  onMove,
+}: {
+  wallId: string;
+  onMove: (dxMm: number, dyMm: number) => void;
+}): JSX.Element {
+  const dxRef = useRef<HTMLInputElement | null>(null);
+  const dyRef = useRef<HTMLInputElement | null>(null);
+  return (
+    <div className="mt-3 border-t border-border pt-2 space-y-1">
+      <div className="text-[10px] font-semibold uppercase text-muted" style={{ letterSpacing: '0.08em', opacity: 0.7 }}>
+        Move (mm)
+      </div>
+      <div className="flex items-center gap-2">
+        <label className="flex items-center gap-1 text-xs text-muted">
+          Δx
+          <input
+            ref={dxRef}
+            type="number"
+            step={50}
+            defaultValue={0}
+            className="w-20 rounded border border-border bg-surface px-1 py-0.5 text-xs text-foreground"
+            data-testid="inspector-wall-move-dx"
+          />
+        </label>
+        <label className="flex items-center gap-1 text-xs text-muted">
+          Δy
+          <input
+            ref={dyRef}
+            type="number"
+            step={50}
+            defaultValue={0}
+            className="w-20 rounded border border-border bg-surface px-1 py-0.5 text-xs text-foreground"
+            data-testid="inspector-wall-move-dy"
+          />
+        </label>
+        <button
+          type="button"
+          className="rounded border border-border bg-surface px-2 py-0.5 text-xs hover:bg-surface-strong"
+          data-testid="inspector-wall-move-apply"
+          onClick={() => {
+            const dx = Number(dxRef.current?.value ?? 0);
+            const dy = Number(dyRef.current?.value ?? 0);
+            if (dx === 0 && dy === 0) return;
+            onMove(dx, dy);
+            if (dxRef.current) dxRef.current.value = '0';
+            if (dyRef.current) dyRef.current.value = '0';
+          }}
+        >
+          Apply
+        </button>
+      </div>
     </div>
   );
 }
