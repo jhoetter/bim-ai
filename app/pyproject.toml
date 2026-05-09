@@ -61,6 +61,7 @@ ignore = ["E501"]
 "bim_ai/routes_activity.py" = ["B008"]
 "bim_ai/routes_sketch.py" = ["B008"]
 "tests/api/test_jobs_routes.py" = ["B008"]
+"bim_ai/vg/compare.py" = ["B905"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

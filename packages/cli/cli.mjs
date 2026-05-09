@@ -832,6 +832,8 @@ Commands:
                                       KRN-V3-06: update cut-plane or name of an existing plan region.
   plan-region delete <id>             KRN-V3-06: delete a plan region.
   watch                               WebSocket watcher (continuous live commits — no Synchronize step required)
+  compare <a.json> <b.json> [--metric=ssim|mse|pixel-diff] [--threshold=<float>] [--region=<name>]
+                                      VG-V3-01: render-and-compare two snapshots; exit 1 if threshold not met
   api list-tools [--output json]      API-V3-01: list all registered tool descriptors
   api inspect <name> [--output json]  API-V3-01: print one ToolDescriptor
   api version                         API-V3-01: print { schemaVersion, buildRef }
@@ -1786,6 +1788,33 @@ async function main() {
       }
       console.error(`Unknown tool-pref subcommand: ${sub ?? '(none)'}. Use set.`);
       process.exit(1);
+    }
+
+    if (cmd === 'compare') {
+      // VG-V3-01: render-and-compare two snapshots
+      const [pathA, pathB, ...rest] = argv.slice(1);
+      if (!pathA || !pathB) {
+        console.error(
+          'Usage: bim-ai compare <snapshot-a.json> <snapshot-b.json> [--metric=ssim|mse|pixel-diff] [--threshold=0.7] [--region=<name>]',
+        );
+        process.exit(1);
+      }
+      const { readFileSync } = await import('fs');
+      const snapshotA = JSON.parse(readFileSync(pathA, 'utf8'));
+      const snapshotB = JSON.parse(readFileSync(pathB, 'utf8'));
+      const metricArg = rest.find((a) => a.startsWith('--metric='))?.split('=')[1] ?? 'ssim';
+      const thresholdArg = rest.find((a) => a.startsWith('--threshold='))?.split('=')[1];
+      const regionArg = rest.find((a) => a.startsWith('--region='))?.split('=')[1];
+      const result = await fetchJson('POST', `${base}/api/v3/compare`, {
+        snapshotA,
+        snapshotB,
+        metric: metricArg,
+        threshold: thresholdArg ? parseFloat(thresholdArg) : undefined,
+        region: regionArg,
+      });
+      console.log(JSON.stringify(result, null, 2));
+      if (result.thresholdPassed === false) process.exit(1);
+      return;
     }
 
     usage();

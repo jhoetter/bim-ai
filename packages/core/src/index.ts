@@ -124,6 +124,7 @@ export type ElemKind =
   | 'roof_join'
   | 'asset_library_entry'
   | 'placed_asset'
+  | 'family_kit_instance'
   | 'brace'
   | 'foundation'
   | 'duct'
@@ -2397,3 +2398,18 @@ export type HelperDimensionDescriptor = {
 
 /** Convenience alias — the full BimElem union (same as Element). */
 export type BimElem = Element;
+
+// ---------------------------------------------------------------------------
+// VG-V3-01 — Render-and-compare result type
+// ---------------------------------------------------------------------------
+
+export type CompareResult = {
+  schemaVersion: 'vg-v3.0';
+  metric: 'ssim' | 'mse' | 'pixel-diff';
+  score: number;
+  thresholdPassed?: boolean;
+  perRegionScores: Record<string, number>;
+  prePngPath: string;
+  postPngPath: string;
+  diffPngPath: string;
+};
