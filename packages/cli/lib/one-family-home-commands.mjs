@@ -345,8 +345,8 @@ export function buildOneFamilyHomeCommands() {
       eaveHeightLeftMm: EAVE_L,
       eaveHeightRightMm: EAVE_R,
       slopeDeg: SLOPE_DEG,
-      overhangMm: 0,
-      materialKey: 'metal_standing_seam_dark_grey',
+      overhangMm: 600,
+      materialKey: 'white_render',
     },
 
     // Attach all UF south segments and side walls to the gable.
@@ -372,13 +372,13 @@ export function buildOneFamilyHomeCommands() {
     //   Material A (white render):  roof ✓ | UF side walls (E/N/W) | floor slabs ✓
     //   Material B (cladding_warm_wood): all GF walls + chimney face — single material per spec §4
     //   Parapet walls → white_render (part of the upper "wrapper shell")
-    { type: 'updateElementProperty', elementId: 'hf-w-gf-s', key: 'materialKey', value: 'cladding_warm_wood' },
-    { type: 'updateElementProperty', elementId: 'hf-w-gf-e', key: 'materialKey', value: 'cladding_warm_wood' },
-    { type: 'updateElementProperty', elementId: 'hf-w-gf-n', key: 'materialKey', value: 'cladding_warm_wood' },
-    { type: 'updateElementProperty', elementId: 'hf-w-gf-w', key: 'materialKey', value: 'cladding_warm_wood' },
-    // UF south split walls: loggia back surfaces → white_render; chimney face → cladding_warm_wood.
+    { type: 'updateElementProperty', elementId: 'hf-w-gf-s', key: 'materialKey', value: 'white_cladding' },
+    { type: 'updateElementProperty', elementId: 'hf-w-gf-e', key: 'materialKey', value: 'white_cladding' },
+    { type: 'updateElementProperty', elementId: 'hf-w-gf-n', key: 'materialKey', value: 'white_cladding' },
+    { type: 'updateElementProperty', elementId: 'hf-w-gf-w', key: 'materialKey', value: 'white_cladding' },
+    // UF south split walls: loggia back surfaces → white_render; chimney face → white_cladding (Material B).
     { type: 'updateElementProperty', elementId: 'hf-w-uf-s-l', key: 'materialKey', value: 'white_render' },
-    { type: 'updateElementProperty', elementId: 'hf-w-uf-s-c', key: 'materialKey', value: 'cladding_warm_wood' },
+    { type: 'updateElementProperty', elementId: 'hf-w-uf-s-c', key: 'materialKey', value: 'white_cladding' },
     { type: 'updateElementProperty', elementId: 'hf-w-uf-s-r', key: 'materialKey', value: 'white_render' },
     // UF side walls = white render (Material A — the "wrapper shell").
     { type: 'updateElementProperty', elementId: 'hf-w-uf-e', key: 'materialKey', value: 'white_render' },
@@ -677,7 +677,7 @@ export function buildOneFamilyHomeCommands() {
       end: { xMm: CHIMNEY_X0, yMm: 0 },
       thicknessMm: WALL_T,
       heightMm: 5500,
-      materialKey: 'cladding_warm_wood',
+      materialKey: 'white_cladding',
     },
     {
       type: 'createWall',
@@ -688,7 +688,7 @@ export function buildOneFamilyHomeCommands() {
       end: { xMm: CHIMNEY_X1, yMm: LOGGIA_SETBACK },
       thicknessMm: WALL_T,
       heightMm: 5500,
-      materialKey: 'cladding_warm_wood',
+      materialKey: 'white_cladding',
     },
     {
       type: 'createWall',
@@ -699,7 +699,7 @@ export function buildOneFamilyHomeCommands() {
       end: { xMm: CHIMNEY_X1, yMm: LOGGIA_SETBACK },
       thicknessMm: WALL_T,
       heightMm: 5500,
-      materialKey: 'cladding_warm_wood',
+      materialKey: 'white_cladding',
     },
     // Attach chimney return walls and back wall to the gable roof so their tops
     // are trimmed flush with the gable profile (closes the open corner gaps).
@@ -749,8 +749,8 @@ export function buildOneFamilyHomeCommands() {
       name: 'Main isometric (SSW — south facade + west gable, spec §5 front-left)',
       mode: 'orbit_3d',
       camera: {
-        position: { xMm: -3000, yMm: -9000, zMm: 7500 },
-        target: { xMm: 3500, yMm: 4000, zMm: 3500 },
+        position: { xMm: -4000, yMm: -8000, zMm: 10000 },
+        target: { xMm: 3500, yMm: 4000, zMm: 1500 },
         up: { xMm: 0, yMm: 0, zMm: 1 },
       },
     },
