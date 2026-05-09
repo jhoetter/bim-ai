@@ -1,0 +1,1 @@
+[Image #1] in the seedhouse, there seem to be elements that are neither doors, nor walls etc (you can see i turned off all 3d elements, but still see them). why?
