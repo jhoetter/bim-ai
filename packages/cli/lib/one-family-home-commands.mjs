@@ -2,23 +2,50 @@
 
 /*
  * Canonical seed: the demo "one-family home" project.
+ * Rebuilt from scratch per spec/target-house-seed.md (v3 boolean-subtraction massing)
+ * and claude-skills/sketch-to-bim/SKILL.md. Visual ground truth:
+ * spec/target-house-vis-colored.png + spec/target-house-seed-vis.png.
  *
- * Authored phase-by-phase per `claude-skills/sketch-to-bim/SKILL.md`.
- * The structured brief lives at `nightshift/seed-target-house/brief.md`;
- * dimensional assumptions at `nightshift/seed-target-house/assumptions.md`.
+ * Brief at nightshift/seed-target-house/brief.md.
  *
  * Coordinate convention (plan):
- *   +xMm = east, +yMm = north (south facade is at y=0)
+ *   +xMm = east, +yMm = north (south facade is at y=0, viewed from SSW)
+ *   Heights use zMm (engine z = render Y).
  */
 
-// ── Dimensional constants (from brief.md) ────────────────────────────
-const GF_W = 7000; // ground-floor E-W width
-const D = 8000; // depth, N-S, common to all volumes
-const UF_W = 5000; // upper-floor E-W width (west-aligned)
-const F2F = 3000; // ground → first floor height
-const UPPER_WALL_H = 4500; // top of EAST eave (high side); placeholder roof sits here in Phase 2
-const PARAPET_H = 200; // east deck low parapet
-const WALL_T = 250; // standard exterior wall thickness
+// ── Dimensional constants ─────────────────────────────────────────────
+const GF_W = 7500; // Ground floor E-W width; EXT_W = GF_W−UF_W = 2500 = 1/3 GF_W (spec §1)
+const D = 8000; // Building depth N-S, shared by all volumes
+const UF_W = 5000; // Upper floor E-W width (west-aligned; east extension = GF_W−UF_W)
+const F2F = 3000; // Ground → first floor height
+const PARAPET_H = 200; // East terrace parapet height above first-floor slab
+const WALL_T = 250; // Standard exterior wall thickness
+
+// Loggia (recessed upper front, spec §1 "wrapper shell creates deeply recessed frontal plane")
+const LOGGIA_SETBACK = 1500; // mm setback — spec §1 brief value
+
+// Plinth (Material D — spec §4 "extends exactly 0.5 units beyond building footprint")
+const PLINTH_EXT = 500; // mm extension on all sides
+
+// Roof — near-symmetric gable per visual ground truth (target-house-vis-colored.png).
+// Slope sanity: eaveLeft + leftRun·tan(slopeDeg) > eaveRight
+//   1500 + 3000·tan(30°) = 1500 + 1732 = 3232 > 2300 ✓
+const EAVE_L = 1500; // West eave height above UF level (F2F+1500 = z=4500 abs)
+const EAVE_R = 2300; // East eave height above UF level (F2F+2300 = z=5300 abs)
+const RIDGE_OFF = 500; // Ridge offset east of UF centre (2500+500 = x=3000 from west edge)
+const SLOPE_DEG = 30; // Gable pitch in degrees
+
+// Derived: ridge position and absolute height (used in sweep path)
+const RIDGE_X = UF_W / 2 + RIDGE_OFF; // = 3000 — ridge x from west UF edge = leftRun
+const RIDGE_H_ABS =
+  F2F + EAVE_L + Math.round(RIDGE_X * Math.tan((SLOPE_DEG * Math.PI) / 180));
+// = 3000 + 1500 + round(3000 × 0.5774) = 3000 + 1500 + 1732 = 6232
+
+// Chimney-like center protrusion (spec §3 "protruding vertical chimney-like volume
+// clad in vertical siding"). Spans the middle third of the UF south loggia.
+const CHIMNEY_X0 = 1500; // West edge within UF footprint
+const CHIMNEY_X1 = 3000; // East edge
+const CHIMNEY_H = 3000; // Height above UF level (below ridge at 3232 mm)
 
 /**
  * @returns {BimCommand[]}
@@ -36,9 +63,11 @@ export function buildOneFamilyHomeCommands() {
     { type: 'createLevel', id: 'hf-lvl-upper', name: 'First Floor', elevationMm: F2F },
 
     // === PHASE 1: MASSING ===
-    // Three volumetric blocks defining the asymmetric two-stack composition.
-    // Material keys are pre-applied so the colour silhouette also reads at
-    // the Phase 1 checkpoint.
+    // Three massing volumes define the asymmetric two-stack composition:
+    //   GF (7500×8000) — wider base, board-and-batten cladding
+    //   UF (5000×8000, west-aligned) — upper shell, white render
+    //   East parapet block (2500×8000, 200 mm) — low parapet for roof terrace
+    // East extension = exactly 1/3 of GF_W per spec §1.
     {
       type: 'createMass',
       id: 'hf-mass-gf',
@@ -64,13 +93,13 @@ export function buildOneFamilyHomeCommands() {
         { xMm: UF_W, yMm: D },
         { xMm: 0, yMm: D },
       ],
-      heightMm: UPPER_WALL_H,
+      heightMm: EAVE_R + 1000,
       materialKey: 'white_render',
     },
     {
       type: 'createMass',
       id: 'hf-mass-parapet',
-      name: 'East deck parapet block',
+      name: 'East terrace parapet block',
       levelId: 'hf-lvl-upper',
       footprintMm: [
         { xMm: UF_W, yMm: 0 },
@@ -79,23 +108,18 @@ export function buildOneFamilyHomeCommands() {
         { xMm: UF_W, yMm: D },
       ],
       heightMm: PARAPET_H,
-      materialKey: 'cladding_beige_grey',
+      materialKey: 'white_render',
     },
 
     // === PHASE 2: SKELETON ===
-    // Replace the Phase 1 mass placeholders with the load-bearing structural
-    // primitives: perimeter walls, floor slabs, and a flat-roof placeholder
-    // (Phase 3 promotes it to asymmetric_gable + applies materials).
-    //
-    // We delete the masses rather than calling materializeMassToWalls because
-    // the GF mass would emit a roof at z=3000 that overlaps the upper-floor
-    // and east-deck floors at the same elevation — three coplanar slabs
-    // z-fight in the renderer. Manual authoring keeps the skeleton clean.
+    // Delete phase-1 masses; author load-bearing walls, floor slabs, flat-roof placeholder.
+    // Manual authoring avoids coplanar-slab z-fighting that materializeMassToWalls
+    // would produce at the UF / east-terrace boundary.
     { type: 'deleteElement', elementId: 'hf-mass-gf' },
     { type: 'deleteElement', elementId: 'hf-mass-uf' },
     { type: 'deleteElement', elementId: 'hf-mass-parapet' },
 
-    // Ground-floor perimeter walls (height = F2F, ccw from SW)
+    // Ground-floor perimeter walls (CCW from SW corner, height = F2F).
     {
       type: 'createWall',
       id: 'hf-w-gf-s',
@@ -137,9 +161,9 @@ export function buildOneFamilyHomeCommands() {
       heightMm: F2F,
     },
 
-    // Upper-floor perimeter walls (5000×8000, west-aligned). heightMm =
-    // UPPER_WALL_H (top of east eave) — the asymmetric gable roof in
-    // Phase 3 will crop the west wall down via attachWallTopToRoof.
+    // Upper-floor perimeter walls (5000×8000, west-aligned).
+    // heightMm oversized at 5500 so attachWallTopToRoof can trim them
+    // correctly along the asymmetric gable slopes in Phase 3.
     {
       type: 'createWall',
       id: 'hf-w-uf-s',
@@ -148,7 +172,7 @@ export function buildOneFamilyHomeCommands() {
       start: { xMm: 0, yMm: 0 },
       end: { xMm: UF_W, yMm: 0 },
       thicknessMm: WALL_T,
-      heightMm: UPPER_WALL_H,
+      heightMm: 5500,
     },
     {
       type: 'createWall',
@@ -158,7 +182,7 @@ export function buildOneFamilyHomeCommands() {
       start: { xMm: UF_W, yMm: 0 },
       end: { xMm: UF_W, yMm: D },
       thicknessMm: WALL_T,
-      heightMm: UPPER_WALL_H,
+      heightMm: 5500,
     },
     {
       type: 'createWall',
@@ -168,7 +192,7 @@ export function buildOneFamilyHomeCommands() {
       start: { xMm: UF_W, yMm: D },
       end: { xMm: 0, yMm: D },
       thicknessMm: WALL_T,
-      heightMm: UPPER_WALL_H,
+      heightMm: 5500,
     },
     {
       type: 'createWall',
@@ -178,15 +202,15 @@ export function buildOneFamilyHomeCommands() {
       start: { xMm: 0, yMm: D },
       end: { xMm: 0, yMm: 0 },
       thicknessMm: WALL_T,
-      heightMm: UPPER_WALL_H,
+      heightMm: 5500,
     },
 
-    // East deck parapet walls (south / east / north — west edge butts up
-    // against UF east wall, no parapet needed there).
+    // East terrace parapet walls — south / east / north
+    // (west edge abuts the UF east wall; no parapet needed there).
     {
       type: 'createWall',
       id: 'hf-w-pa-s',
-      name: 'Deck parapet south',
+      name: 'Terrace parapet south',
       levelId: 'hf-lvl-upper',
       start: { xMm: UF_W, yMm: 0 },
       end: { xMm: GF_W, yMm: 0 },
@@ -196,7 +220,7 @@ export function buildOneFamilyHomeCommands() {
     {
       type: 'createWall',
       id: 'hf-w-pa-e',
-      name: 'Deck parapet east',
+      name: 'Terrace parapet east',
       levelId: 'hf-lvl-upper',
       start: { xMm: GF_W, yMm: 0 },
       end: { xMm: GF_W, yMm: D },
@@ -206,7 +230,7 @@ export function buildOneFamilyHomeCommands() {
     {
       type: 'createWall',
       id: 'hf-w-pa-n',
-      name: 'Deck parapet north',
+      name: 'Terrace parapet north',
       levelId: 'hf-lvl-upper',
       start: { xMm: GF_W, yMm: D },
       end: { xMm: UF_W, yMm: D },
@@ -215,22 +239,25 @@ export function buildOneFamilyHomeCommands() {
     },
 
     // Floor slabs.
+    // GF slab extends PLINTH_EXT mm beyond the footprint on all sides to create
+    // the low white plinth base (Material D, spec §4).
     {
       type: 'createFloor',
       id: 'hf-flr-ground',
-      name: 'Ground floor slab',
+      name: 'Ground floor slab + plinth',
       levelId: 'hf-lvl-ground',
       boundaryMm: [
-        { xMm: 0, yMm: 0 },
-        { xMm: GF_W, yMm: 0 },
-        { xMm: GF_W, yMm: D },
-        { xMm: 0, yMm: D },
+        { xMm: -PLINTH_EXT, yMm: -PLINTH_EXT },
+        { xMm: GF_W + PLINTH_EXT, yMm: -PLINTH_EXT },
+        { xMm: GF_W + PLINTH_EXT, yMm: D + PLINTH_EXT },
+        { xMm: -PLINTH_EXT, yMm: D + PLINTH_EXT },
       ],
+      materialKey: 'white_render',
     },
     {
       type: 'createFloor',
       id: 'hf-flr-upper',
-      name: 'Upper floor slab (west)',
+      name: 'First floor slab (west)',
       levelId: 'hf-lvl-upper',
       boundaryMm: [
         { xMm: 0, yMm: 0 },
@@ -238,6 +265,7 @@ export function buildOneFamilyHomeCommands() {
         { xMm: UF_W, yMm: D },
         { xMm: 0, yMm: D },
       ],
+      materialKey: 'white_render',
     },
     {
       type: 'createFloor',
@@ -250,14 +278,14 @@ export function buildOneFamilyHomeCommands() {
         { xMm: GF_W, yMm: D },
         { xMm: UF_W, yMm: D },
       ],
+      materialKey: 'white_render',
     },
 
-    // Placeholder flat upper roof. Phase 3 mutates this in place to
-    // `asymmetric_gable` with the dramatic ridge offset + eave heights.
+    // Flat roof placeholder — Phase 3 deletes and recreates as asymmetric_gable.
     {
       type: 'createRoof',
       id: 'hf-roof-main',
-      name: 'Upper-volume roof',
+      name: 'Upper-volume roof (flat placeholder)',
       referenceLevelId: 'hf-lvl-upper',
       footprintMm: [
         { xMm: 0, yMm: 0 },
@@ -267,23 +295,13 @@ export function buildOneFamilyHomeCommands() {
       ],
       roofGeometryMode: 'flat',
       slopeDeg: 0,
-      eaveHeightLeftMm: UPPER_WALL_H,
-      eaveHeightRightMm: UPPER_WALL_H,
       overhangMm: 0,
     },
 
     // === PHASE 3: ENVELOPE ===
-    // Promote the placeholder flat upper-volume roof to the dramatic
-    // asymmetric_gable per brief: ridge 1800mm east of UF center, west
-    // eave 1200mm above UF level, east eave 4500mm above UF level,
-    // slope 45° (ridge lands 5500mm above UF = z=8500 absolute, well
-    // above the east eave at z=7500 — avoids the seed-fidelity flat-
-    // roof failure where ridge sat below the east eave).
-    //
-    // The engine's updateElementProperty for roofs only supports a
-    // narrow key subset (roofTypeId | roofGeometryMode | name) and
-    // roofGeometryMode is restricted to mass_box | gable_pitched_rectangle,
-    // so we delete + recreate rather than mutate in place.
+    // Promote the flat placeholder to the calibrated asymmetric gable.
+    // updateElementProperty for roofs is restricted to name/roofTypeId/roofGeometryMode
+    // subset, so we delete + recreate rather than mutate in place.
     { type: 'deleteElement', elementId: 'hf-roof-main' },
     {
       type: 'createRoof',
@@ -297,168 +315,67 @@ export function buildOneFamilyHomeCommands() {
         { xMm: 0, yMm: D },
       ],
       roofGeometryMode: 'asymmetric_gable',
-      // Near-symmetric gable per spec/target-house-seed-vis.png — the
-      // line sketch shows a clean balanced pentagon, not the dramatic
-      // shed-vs-gable asymmetry the earlier text emphasised. Apex sits
-      // slightly east of centre (offset 500 of halfSpan 2500 = 60% east),
-      // both eaves at modest heights, both pitches at similar ~30°
-      // angles. UF 5000 wide × ~3231 tall to ridge → 1.55:1
-      // wider-than-tall (squat, sketch-like).
-      // Slope sanity: ridge = 1500 + 3000·tan(30°) = 1500 + 1731 = 3231
-      // above level → 931mm above east eave (2300), east pitch ≈
-      // atan(931/2000) = 25° (similar to west pitch 30°).
-      ridgeOffsetTransverseMm: 500,
-      eaveHeightLeftMm: 1500,
-      eaveHeightRightMm: 2300,
-      slopeDeg: 30,
+      // Near-symmetric per visual ground truth; ridge slightly east of centre.
+      // Slope sanity: 1500 + 3000·tan(30°) = 3232 > 2300 (east eave) ✓
+      ridgeOffsetTransverseMm: RIDGE_OFF,
+      eaveHeightLeftMm: EAVE_L,
+      eaveHeightRightMm: EAVE_R,
+      slopeDeg: SLOPE_DEG,
       overhangMm: 0,
       materialKey: 'metal_standing_seam_dark_grey',
     },
 
-    // Bump UF wall heights so the south + north gable-end walls cover
-    // the ridge peak (5500 mm above UF level). With heightMm=4500 the
-    // walls would have a 1000mm gap at the peak; 6000 leaves margin.
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-w-uf-s',
-      key: 'heightMm',
-      value: 6000,
-    },
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-w-uf-n',
-      key: 'heightMm',
-      value: 6000,
-    },
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-w-uf-e',
-      key: 'heightMm',
-      value: 6000,
-    },
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-w-uf-w',
-      key: 'heightMm',
-      value: 6000,
-    },
-
-    // Attach all 4 UF walls to the asymmetric gable so their tops
-    // crop along the slope (KRN-11 attachWallTopToRoof).
+    // Attach all 4 UF walls to the gable so their tops crop along the slopes.
     { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-s', roofId: 'hf-roof-main' },
     { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-e', roofId: 'hf-roof-main' },
     { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-n', roofId: 'hf-roof-main' },
     { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-w', roofId: 'hf-roof-main' },
 
-    // North gable-end rendering fix: makeSlopedWallMesh samples only 2 wall
-    // endpoints, producing a flat diagonal top instead of the correct
-    // triangular crown. A minimal recessZone forces makeRecessedWallMesh
-    // which samples 25 points, correctly resolving the ridge peak.
+    // Dense-mesh fix for UF north gable-end wall: a minimal recessZone forces
+    // makeRecessedWallMesh (25-sample path) over makeSlopedWallMesh (2-sample),
+    // correctly producing the triangular gable crown at the peak.
     {
       type: 'setWallRecessZones',
       wallId: 'hf-w-uf-n',
-      recessZones: [
-        { alongTStart: 0.0, alongTEnd: 1.0, setbackMm: 50, floorContinues: false },
-      ],
+      recessZones: [{ alongTStart: 0.0, alongTEnd: 1.0, setbackMm: 50, floorContinues: false }],
     },
 
-    // Apply primary materials. The UF south wall takes `cladding_warm_wood`
-    // because Phase 4 adds a recess zone whose back wall renders with the
-    // wall's primary materialKey; the surrounding non-recessed end caps
-    // auto-render as white_render via the makeRecessedWallMesh capMat
-    // override (architectural pattern: white frame around a wood-clad
-    // recess).
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-w-gf-s',
-      key: 'materialKey',
-      value: 'cladding_beige_grey',
-    },
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-w-gf-e',
-      key: 'materialKey',
-      value: 'cladding_beige_grey',
-    },
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-w-gf-n',
-      key: 'materialKey',
-      value: 'cladding_beige_grey',
-    },
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-w-gf-w',
-      key: 'materialKey',
-      value: 'cladding_beige_grey',
-    },
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-w-uf-s',
-      key: 'materialKey',
-      value: 'cladding_warm_wood',
-    },
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-w-uf-e',
-      key: 'materialKey',
-      value: 'white_render',
-    },
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-w-uf-n',
-      key: 'materialKey',
-      value: 'cladding_warm_wood',
-    },
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-w-uf-w',
-      key: 'materialKey',
-      value: 'cladding_warm_wood',
-    },
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-w-pa-s',
-      key: 'materialKey',
-      value: 'cladding_beige_grey',
-    },
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-w-pa-e',
-      key: 'materialKey',
-      value: 'cladding_beige_grey',
-    },
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-w-pa-n',
-      key: 'materialKey',
-      value: 'cladding_beige_grey',
-    },
+    // Apply materials — spec §4:
+    //   Material A (white render):  roof ✓ | UF side walls (E/N/W) | floor slabs ✓
+    //   Material B (cladding):      all GF walls | UF south loggia back wall + chimney
+    //   Parapet walls → white_render (part of the upper "wrapper shell")
+    { type: 'updateElementProperty', elementId: 'hf-w-gf-s', key: 'materialKey', value: 'cladding_beige_grey' },
+    { type: 'updateElementProperty', elementId: 'hf-w-gf-e', key: 'materialKey', value: 'cladding_beige_grey' },
+    { type: 'updateElementProperty', elementId: 'hf-w-gf-n', key: 'materialKey', value: 'cladding_beige_grey' },
+    { type: 'updateElementProperty', elementId: 'hf-w-gf-w', key: 'materialKey', value: 'cladding_beige_grey' },
+    // UF south primary materialKey renders on the loggia recess back surfaces (Phase 4).
+    { type: 'updateElementProperty', elementId: 'hf-w-uf-s', key: 'materialKey', value: 'cladding_warm_wood' },
+    // UF side walls = white render (Material A — the "wrapper shell").
+    { type: 'updateElementProperty', elementId: 'hf-w-uf-e', key: 'materialKey', value: 'white_render' },
+    { type: 'updateElementProperty', elementId: 'hf-w-uf-n', key: 'materialKey', value: 'white_render' },
+    { type: 'updateElementProperty', elementId: 'hf-w-uf-w', key: 'materialKey', value: 'white_render' },
+    // Parapet walls = white render (part of the upper shell).
+    { type: 'updateElementProperty', elementId: 'hf-w-pa-s', key: 'materialKey', value: 'white_render' },
+    { type: 'updateElementProperty', elementId: 'hf-w-pa-e', key: 'materialKey', value: 'white_render' },
+    { type: 'updateElementProperty', elementId: 'hf-w-pa-n', key: 'materialKey', value: 'white_render' },
 
-    // Picture-frame outline (KRN-15 sweep) along the south-face gable
-    // pentagon — signature design element from the line sketch.
-    // Path matches the new near-symmetric proportions:
-    //   SW (0, 3000) → SE (5000, 3000) → E-eave (5000, 5300) →
-    //   ridge (3000, 6231) → W-eave (0, 4500) → SW (close).
-    // Profile 350×600 mm (uMm: ±175, vMm: ±300) reads as a chunky band.
+    // Picture-frame sweep (KRN-15) — white gable pentagon outline on south face.
+    // Path traces the asymmetric gable polygon (5 vertices, closed):
+    //   SW → SE (eave line at F2F) → E-eave → Ridge → W-eave → close.
+    // Ridge x = RIDGE_X = 3000, Ridge z = RIDGE_H_ABS = 6232 (derived above).
     {
       type: 'createSweep',
       id: 'hf-sw-frame',
-      name: 'Picture-frame outline',
+      name: 'Picture-frame gable outline',
       levelId: 'hf-lvl-ground',
       pathMm: [
-        { xMm: 0, yMm: 0, zMm: 3000 },
-        { xMm: 5000, yMm: 0, zMm: 3000 },
-        { xMm: 5000, yMm: 0, zMm: 5300 },
-        { xMm: 3000, yMm: 0, zMm: 6231 },
-        { xMm: 0, yMm: 0, zMm: 4500 },
-        { xMm: 0, yMm: 0, zMm: 3000 },
+        { xMm: 0, yMm: 0, zMm: F2F },
+        { xMm: UF_W, yMm: 0, zMm: F2F },
+        { xMm: UF_W, yMm: 0, zMm: F2F + EAVE_R },
+        { xMm: RIDGE_X, yMm: 0, zMm: RIDGE_H_ABS },
+        { xMm: 0, yMm: 0, zMm: F2F + EAVE_L },
+        { xMm: 0, yMm: 0, zMm: F2F },
       ],
-      // Profile 350×200 mm — keeps the frame readable as a band but
-      // narrows the inner-pentagon offset so its slope edges don't
-      // visibly slice through the wood interior. The line sketch's
-      // frame reads as a chunky line, not a wide band — 200mm matches
-      // that visual weight.
       profileMm: [
         { uMm: -175, vMm: -100 },
         { uMm: 175, vMm: -100 },
@@ -470,15 +387,16 @@ export function buildOneFamilyHomeCommands() {
     },
 
     // === PHASE 4: OPENINGS ===
-    // Ground-floor south facade: 2 portrait windows on the western
-    // (cladding_beige_grey) half + 1 front door right-of-center + 1
-    // small vertical window on the east extension.
+    // Ground-floor south facade — spec §3:
+    //   Two identical portrait windows (left half of facade).
+    //   Window 2 aligns with the stair so at least 8 treads are visible (spec §3).
+    //   Recessed door at the far right (alongT=0.88 → x≈6600 of 7500).
     {
       type: 'insertWindowOnWall',
       id: 'hf-win-gf-s-1',
       name: 'GF south window (left)',
       wallId: 'hf-w-gf-s',
-      alongT: 0.1,
+      alongT: 0.15,
       widthMm: 700,
       heightMm: 1800,
       sillHeightMm: 200,
@@ -486,9 +404,9 @@ export function buildOneFamilyHomeCommands() {
     {
       type: 'insertWindowOnWall',
       id: 'hf-win-gf-s-2',
-      name: 'GF south window (centre-left)',
+      name: 'GF south window (right of pair — stair visible through)',
       wallId: 'hf-w-gf-s',
-      alongT: 0.22,
+      alongT: 0.37,
       widthMm: 700,
       heightMm: 1800,
       sillHeightMm: 200,
@@ -496,82 +414,35 @@ export function buildOneFamilyHomeCommands() {
     {
       type: 'insertDoorOnWall',
       id: 'hf-door-front',
-      name: 'Front door',
+      name: 'Front door (far right, recessed)',
       wallId: 'hf-w-gf-s',
-      alongT: 0.55,
+      alongT: 0.88,
       widthMm: 900,
     },
-    {
-      type: 'insertWindowOnWall',
-      id: 'hf-win-gf-s-3',
-      name: 'GF south window (east extension)',
-      wallId: 'hf-w-gf-s',
-      alongT: 0.85,
-      widthMm: 600,
-      heightMm: 1200,
-      sillHeightMm: 1000,
-    },
 
-    // Loggia recess on the upper-floor south wall (KRN-16). The recess
-    // covers the FULL wall width (alongT 0..1) so the wood-clad back
-    // wall fills the entire pentagon interior, matching the line
-    // sketch's design (no white end-cap strips inside the pentagon —
-    // the chunky picture frame is the only white element). The wall's
-    // primary materialKey (cladding_warm_wood — set in Phase 3)
-    // renders on the recess back surface.
+    // Loggia recess — full-width recessZone on UF south wall (spec §1 "approx 1 m deep").
+    // The cladding_warm_wood materialKey (set Phase 3) renders on both setback back surfaces.
+    // The chimney mass (Phase 6) sits inside the centre zone (x=1500..3000) and its south
+    // face (at y=0) is visible as the "protruding chimney-like volume" (spec §3).
     {
       type: 'setWallRecessZones',
       wallId: 'hf-w-uf-s',
       recessZones: [
-        {
-          alongTStart: 0.0,
-          alongTEnd: 1.0,
-          setbackMm: 1500,
-          floorContinues: true,
-        },
+        { alongTStart: 0.0, alongTEnd: 1.0, setbackMm: LOGGIA_SETBACK, floorContinues: true },
       ],
     },
 
-    // Loggia openings — hosted on the south wall in the recess range.
-    // The renderer (recessOffsetForOpening) places them against the
-    // recessed (cladding_warm_wood) back surface.
-    //
-    // Right side: large floor-to-ceiling sliding door (spec §1.4
-    // "large rectangular window/sliding door on the right").
-    {
-      type: 'insertDoorOnWall',
-      id: 'hf-door-loggia',
-      name: 'Loggia sliding door',
-      wallId: 'hf-w-uf-s',
-      alongT: 0.7,
-      widthMm: 1800,
-    },
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-door-loggia',
-      key: 'operationType',
-      value: 'sliding_double',
-    },
-
-    // Left side: trapezoidal window whose top edge follows the long,
-    // low west pitch of the asymmetric_gable (spec §1.4 "smaller
-    // trapezoidal window on the left whose top edge slopes to follow
-    // the long, low angle of the roof pitch"). KRN-12 outlineKind +
-    // attachedRoofId pair lets the renderer compute the slope-following
-    // top edge from the host roof's geometry.
+    // Left loggia zone — trapezoidal window whose top edge follows the west gable pitch.
+    // alongT=0.15 → x=750 mm, centre of the left zone (x=0..1500).
     {
       type: 'insertWindowOnWall',
       id: 'hf-win-loggia-trap',
-      name: 'Loggia trapezoidal window',
+      name: 'Loggia left — trapezoidal slope-following window',
       wallId: 'hf-w-uf-s',
-      // alongT 0.22 + width 1800 keeps the window inside the wall
-      // (right edge at alongT=0.40 of 5000 = x=2000 < 5000 ✓; left
-      // edge at alongT=0.04 ≥ 0 ✓). Width 1800 + height 2200 makes
-      // the trapezoidal slope-following top read clearly at iso-zoom.
-      alongT: 0.22,
-      widthMm: 1800,
-      heightMm: 2200,
-      sillHeightMm: 200,
+      alongT: 0.15,
+      widthMm: 900,
+      heightMm: 1400,
+      sillHeightMm: 300,
     },
     {
       type: 'updateElementProperty',
@@ -586,13 +457,70 @@ export function buildOneFamilyHomeCommands() {
       value: 'hf-roof-main',
     },
 
+    // Right loggia zone — double-height sliding-glass curtain wall (spec §3
+    // "double-height curtain wall of glass divided by a central horizontal mullion").
+    // alongT=0.80 → x=4000 mm, centre of right zone (x=3000..5000).
+    {
+      type: 'insertDoorOnWall',
+      id: 'hf-door-loggia',
+      name: 'Loggia right — sliding glass curtain wall',
+      wallId: 'hf-w-uf-s',
+      alongT: 0.8,
+      widthMm: 1800,
+    },
+    {
+      type: 'updateElementProperty',
+      elementId: 'hf-door-loggia',
+      key: 'operationType',
+      value: 'sliding_double',
+    },
+
     // === PHASE 5: INTERIOR ===
-    // Open-plan ground floor (1 living/kitchen room). Upper floor is
-    // partitioned into 3 rooms (2 bedrooms + bath) plus the loggia
-    // (recess) and east deck (terrace).
-    //
-    // Partitions on UF — 1 mid-depth E-W partition + 1 N-S partition
-    // in the north half divide the upper into the 3 rooms above.
+    // Main stair — straight N-S run, GF → UF.
+    // Start close to the GF south wall so treads face south and are visible
+    // through GF south window 2 (at x≈2775, spec §3 "at least 8 visible treads").
+    // 17 risers × 176 mm = 2992 mm ≈ F2F. Run 3520 mm (16 treads × 220 mm).
+    {
+      type: 'createStair',
+      id: 'hf-stair-main',
+      name: 'Main stair',
+      baseLevelId: 'hf-lvl-ground',
+      topLevelId: 'hf-lvl-upper',
+      runStartMm: { xMm: 2700, yMm: 500 },
+      runEndMm: { xMm: 2700, yMm: 4020 },
+      widthMm: 900,
+      riserMm: 176,
+      treadMm: 220,
+    },
+
+    // Stair-shaft slab opening in the first-floor slab.
+    {
+      type: 'createSlabOpening',
+      id: 'hf-slab-stair',
+      name: 'Stair shaft opening',
+      hostFloorId: 'hf-flr-upper',
+      boundaryMm: [
+        { xMm: 2250, yMm: 500 },
+        { xMm: 3150, yMm: 500 },
+        { xMm: 3150, yMm: 4020 },
+        { xMm: 2250, yMm: 4020 },
+      ],
+      isShaft: true,
+    },
+
+    // Stair railing (west side of stair run).
+    {
+      type: 'createRailing',
+      id: 'hf-rail-stair',
+      name: 'Stair railing',
+      hostedStairId: 'hf-stair-main',
+      pathMm: [
+        { xMm: 2250, yMm: 500 },
+        { xMm: 2250, yMm: 4020 },
+      ],
+    },
+
+    // UF partition walls — E-W mid-depth + N-S back partition.
     {
       type: 'createWall',
       id: 'hf-w-uf-ptn-mid',
@@ -606,7 +534,7 @@ export function buildOneFamilyHomeCommands() {
     {
       type: 'createWall',
       id: 'hf-w-uf-ptn-back',
-      name: 'UF back partition (N-S, north half)',
+      name: 'UF back partition (N-S)',
       levelId: 'hf-lvl-upper',
       start: { xMm: 2500, yMm: 4000 },
       end: { xMm: 2500, yMm: D },
@@ -614,47 +542,21 @@ export function buildOneFamilyHomeCommands() {
       heightMm: 2700,
     },
 
-    // Stair: straight, ground → upper. Run 3500 mm (y=3000..6500) wide
-    // 1000 mm at x=4000. Riser 175 mm × 17 = 2975 mm rise (close to
-    // the 3000 mm F2F).
+    // Sliding glass doors on UF east wall → east roof terrace (spec §2
+    // "recessed vertical glass wall... reveals a hidden upper-level terrace").
     {
-      type: 'createStair',
-      id: 'hf-stair-main',
-      name: 'Main stair',
-      baseLevelId: 'hf-lvl-ground',
-      topLevelId: 'hf-lvl-upper',
-      runStartMm: { xMm: 4000, yMm: 3000 },
-      runEndMm: { xMm: 4000, yMm: 6500 },
-      widthMm: 1000,
-      riserMm: 175,
-      treadMm: 220,
+      type: 'insertDoorOnWall',
+      id: 'hf-door-terrace',
+      name: 'Terrace sliding doors (UF east → terrace)',
+      wallId: 'hf-w-uf-e',
+      alongT: 0.35,
+      widthMm: 2400,
     },
-
-    // Slab opening on the upper-floor floor for the stair shaft.
     {
-      type: 'createSlabOpening',
-      id: 'hf-slab-stair',
-      name: 'Stair shaft opening',
-      hostFloorId: 'hf-flr-upper',
-      boundaryMm: [
-        { xMm: 3500, yMm: 3000 },
-        { xMm: 4500, yMm: 3000 },
-        { xMm: 4500, yMm: 6500 },
-        { xMm: 3500, yMm: 6500 },
-      ],
-      isShaft: true,
-    },
-
-    // Stair railing along the open (west) side of the stair.
-    {
-      type: 'createRailing',
-      id: 'hf-rail-stair',
-      name: 'Stair railing',
-      hostedStairId: 'hf-stair-main',
-      pathMm: [
-        { xMm: 3500, yMm: 3000 },
-        { xMm: 3500, yMm: 6500 },
-      ],
+      type: 'updateElementProperty',
+      elementId: 'hf-door-terrace',
+      key: 'operationType',
+      value: 'sliding_double',
     },
 
     // Rooms.
@@ -665,8 +567,8 @@ export function buildOneFamilyHomeCommands() {
       levelId: 'hf-lvl-ground',
       outlineMm: [
         { xMm: 200, yMm: 200 },
-        { xMm: 6800, yMm: 200 },
-        { xMm: 6800, yMm: 7800 },
+        { xMm: 7300, yMm: 200 },
+        { xMm: 7300, yMm: 7800 },
         { xMm: 200, yMm: 7800 },
       ],
       programmeCode: 'living',
@@ -726,14 +628,32 @@ export function buildOneFamilyHomeCommands() {
         { xMm: UF_W + 200, yMm: D - 200 },
       ],
       programmeCode: 'terrace',
-      targetAreaM2: 16,
+      targetAreaM2: 20,
     },
 
     // === PHASE 6: DETAIL ===
-    // Loggia balcony — slight projection from the original south facade
-    // plane with a frameless glass balustrade. Spec §1.4: "projects very
-    // slightly forward. Features a wood floor deck and a frameless
-    // transparent glass balustrade. No solid posts visible."
+    // Chimney-like centre protrusion (spec §3).
+    // A mass occupying x=CHIMNEY_X0..CHIMNEY_X1, y=0..LOGGIA_SETBACK at UF level.
+    // Its south face (at y=0) is flush with the main facade line; flanked by the
+    // left (trapezoidal window) and right (curtain wall) loggia bays.
+    {
+      type: 'createMass',
+      id: 'hf-mass-chimney',
+      name: 'Chimney-like centre protrusion',
+      levelId: 'hf-lvl-upper',
+      footprintMm: [
+        { xMm: CHIMNEY_X0, yMm: 0 },
+        { xMm: CHIMNEY_X1, yMm: 0 },
+        { xMm: CHIMNEY_X1, yMm: LOGGIA_SETBACK },
+        { xMm: CHIMNEY_X0, yMm: LOGGIA_SETBACK },
+      ],
+      heightMm: CHIMNEY_H,
+      materialKey: 'cladding_warm_wood',
+    },
+
+    // Loggia balcony slab + balustrade (spec §3 "three thin, continuous black
+    // horizontal cables/rails fixed to the inner edge of the white shell").
+    // Projects 700 mm south of the main facade plane at elevation F2F.
     {
       type: 'createBalcony',
       id: 'hf-balcony-loggia',
@@ -742,42 +662,11 @@ export function buildOneFamilyHomeCommands() {
       elevationMm: F2F,
       projectionMm: 700,
       slabThicknessMm: 150,
-      balustradeHeightMm: 1200,
-    },
-
-    // No dormer cut. The earlier KRN-14 createDormer call carved a
-    // visible CSG hole through the main gable roof that the line
-    // sketch does NOT show — spec/target-house-seed.md was updated
-    // to retire the "massive rectangular dormer cut-out" wording.
-    // The deck connection is provided by sliding glass doors hosted
-    // on the upper-east wall (`hf-door-dormer` below); no roof
-    // modification is needed.
-
-    // Sliding glass doors hosted on the upper-east wall (alongT 0.31,
-    // width 2400) that open from the upper-floor interior onto the
-    // east roof terrace.
-    {
-      type: 'insertDoorOnWall',
-      id: 'hf-door-dormer',
-      name: 'Dormer-deck sliding doors',
-      wallId: 'hf-w-uf-e',
-      alongT: 0.31,
-      widthMm: 2400,
-    },
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-door-dormer',
-      key: 'operationType',
-      value: 'sliding_double',
+      balustradeHeightMm: 1100,
     },
 
     // === PHASE 7: DOCUMENTATION ===
-    // Camera presets matching the colour-study panels (SKB-16 ids).
-    // Hand-computed positions (the SKB archetype builder's
-    // azimuth-formula maps to a convention that doesn't match our
-    // brief's south-facade-at-y=0 layout).
-    //
-    // Building bbox: x ∈ [0, 7000], y ∈ [0, 8000], z ∈ [0, ~8500].
+    // Four camera presets matching the panels in target-house-vis-colored.png.
     {
       type: 'saveViewpoint',
       id: 'vp-main-iso',
@@ -802,12 +691,10 @@ export function buildOneFamilyHomeCommands() {
     },
     {
       type: 'saveViewpoint',
-      id: 'vp-side-elev-east',
+      id: 'vp-side-elev-west',
       name: 'Side elevation (WSW)',
       mode: 'orbit_3d',
       camera: {
-        // WSW oblique — shows west face (low eave z=4500), depth going north,
-        // and GF base extending east. Complements the SSW main iso.
         position: { xMm: -14000, yMm: -1000, zMm: 5000 },
         target: { xMm: 2500, yMm: 5000, zMm: 2500 },
         up: { xMm: 0, yMm: 0, zMm: 1 },
@@ -825,34 +712,21 @@ export function buildOneFamilyHomeCommands() {
       },
     },
 
-    // Plan views for both levels.
-    {
-      type: 'upsertPlanView',
-      id: 'hf-pv-ground',
-      name: 'GF plan',
-      levelId: 'hf-lvl-ground',
-    },
-    {
-      type: 'upsertPlanView',
-      id: 'hf-pv-upper',
-      name: 'First-floor plan',
-      levelId: 'hf-lvl-upper',
-    },
+    // Plan views.
+    { type: 'upsertPlanView', id: 'hf-pv-ground', name: 'GF plan', levelId: 'hf-lvl-ground' },
+    { type: 'upsertPlanView', id: 'hf-pv-upper', name: 'First-floor plan', levelId: 'hf-lvl-upper' },
 
-    // Section cut through the upper-volume at y=2000 (just inside the
-    // loggia recess back wall) — exposes the asymmetric_gable + recess
-    // + balcony in section. Cut line is the visible section line on
-    // plan; viewing direction follows the line's normal.
+    // Section cut through loggia at y=2000 — reveals gable + recess + balcony.
     {
       type: 'createSectionCut',
       id: 'hf-sec-loggia',
-      name: 'South-facade section through loggia',
+      name: 'South facade section through loggia',
       lineStartMm: { xMm: 0, yMm: 2000 },
       lineEndMm: { xMm: GF_W, yMm: 2000 },
-      cropDepthMm: 8500,
+      cropDepthMm: 9000,
     },
 
-    // Sheet + schedules for documentation completeness.
+    // Sheet + schedules.
     {
       type: 'upsertSheet',
       id: 'hf-sheet-ga01',
@@ -861,23 +735,13 @@ export function buildOneFamilyHomeCommands() {
       paperWidthMm: 594,
       paperHeightMm: 420,
     },
-    {
-      type: 'upsertSchedule',
-      id: 'hf-sch-rooms',
-      name: 'Room schedule',
-      sheetId: 'hf-sheet-ga01',
-    },
+    { type: 'upsertSchedule', id: 'hf-sch-rooms', name: 'Room schedule', sheetId: 'hf-sheet-ga01' },
     {
       type: 'upsertSchedule',
       id: 'hf-sch-windows',
       name: 'Window schedule',
       sheetId: 'hf-sheet-ga01',
     },
-    {
-      type: 'upsertSchedule',
-      id: 'hf-sch-doors',
-      name: 'Door schedule',
-      sheetId: 'hf-sheet-ga01',
-    },
+    { type: 'upsertSchedule', id: 'hf-sch-doors', name: 'Door schedule', sheetId: 'hf-sheet-ga01' },
   ];
 }
