@@ -26,6 +26,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.error) {
       return (
         <div
+          role="alert"
           style={{
             display: 'flex',
             flexDirection: 'column',
@@ -42,7 +43,7 @@ export class ErrorBoundary extends Component<Props, State> {
           </p>
           <p
             style={{
-              fontFamily: 'monospace',
+              fontFamily: 'var(--font-mono)',
               fontSize: '0.75rem',
               maxWidth: 480,
               textAlign: 'center',

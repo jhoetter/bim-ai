@@ -80,6 +80,7 @@ export function EmptyStateOverlay({
             type="button"
             onClick={onCta}
             disabled={ctaPending}
+            aria-busy={ctaPending}
             data-testid="canvas-empty-cta"
             className="rounded-md bg-accent px-4 py-1.5 text-sm font-medium text-accent-foreground shadow-elev-1 hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
           >
