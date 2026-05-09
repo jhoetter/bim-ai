@@ -155,7 +155,16 @@ export function ScheduleView({ modelId, scheduleId, onHighlightElement }: Schedu
                 {columns.map((col) => (
                   <td
                     key={col}
+                    tabIndex={
+                      editingCell?.rowId === row.elementId && editingCell.col === col ? -1 : 0
+                    }
                     onClick={() => startEdit(row.elementId, col, row.fields[col])}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === 'F2') {
+                        e.preventDefault();
+                        startEdit(row.elementId, col, row.fields[col]);
+                      }
+                    }}
                     style={{
                       padding: 'var(--space-1) var(--space-2)',
                       color: 'var(--color-foreground)',
@@ -166,6 +175,7 @@ export function ScheduleView({ modelId, scheduleId, onHighlightElement }: Schedu
                     {editingCell?.rowId === row.elementId && editingCell.col === col ? (
                       <input
                         autoFocus
+                        aria-label={`Edit ${col}`}
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
                         onBlur={() => commitEdit(row.elementId, col)}
