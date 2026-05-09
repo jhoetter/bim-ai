@@ -79,6 +79,11 @@ export function planWallMesh(
 
   mesh.userData.bimPickId = wall.id;
 
+  const hatch =
+    wall.id === selectedId
+      ? null
+      : buildWallCutHatch(len, thick, sx, sz, nx, nz, angle, perpX, perpZ);
+
   // FL-08 + VIE-01: when the wall has a wall_type, overlay layer boundary
   // lines — but gate by detail level (coarse drops them entirely so the wall
   // reads as a single solid bar; medium shows just the core boundaries; fine
@@ -90,6 +95,7 @@ export function planWallMesh(
       group.userData.bimPickId = wall.id;
       group.add(mesh);
       group.add(lines);
+      if (hatch) group.add(hatch);
       return group;
     }
   }
@@ -102,11 +108,108 @@ export function planWallMesh(
       group.userData.bimPickId = wall.id;
       group.add(mesh);
       group.add(fills);
+      if (hatch) group.add(hatch);
       return group;
     }
   }
 
+  if (hatch) {
+    const group = new THREE.Group();
+    group.userData.bimPickId = wall.id;
+    group.add(mesh);
+    group.add(hatch);
+    return group;
+  }
   return mesh;
+}
+
+/**
+ * Generates diagonal 45° hatch lines inside the wall cut body for the plan
+ * view — standard architectural section-cut (poché) convention.
+ *
+ * Works entirely in local wall space (X along wall axis, Z across thickness)
+ * before the caller applies the world-space rotation.  Lines follow z = x + c
+ * (slope +1) at evenly-spaced c values.
+ */
+function buildWallCutHatch(
+  len: number,
+  thick: number,
+  sx: number,
+  sz: number,
+  nx: number,
+  nz: number,
+  angle: number,
+  perpX: number,
+  perpZ: number,
+): THREE.LineSegments | null {
+  // Skip walls that are too thin to be worth hatching.
+  if (thick < 0.04) return null;
+
+  const halfLen = len / 2;
+  const halfThick = thick / 2;
+  const spacing = Math.max(0.02, thick / 3);
+
+  const cMin = -halfLen - halfThick;
+  const cMax = halfLen + halfThick;
+
+  const positions: number[] = [];
+
+  for (let c = cMin; c <= cMax + 1e-9; c += spacing) {
+    // Candidate intersection points of the line z = x + c with the rectangle.
+    const candidates: { x: number; z: number }[] = [];
+
+    // Left edge x = -halfLen
+    const zLeft = -halfLen + c;
+    if (zLeft >= -halfThick && zLeft <= halfThick) {
+      candidates.push({ x: -halfLen, z: zLeft });
+    }
+
+    // Right edge x = halfLen
+    const zRight = halfLen + c;
+    if (zRight >= -halfThick && zRight <= halfThick) {
+      candidates.push({ x: halfLen, z: zRight });
+    }
+
+    // Bottom edge z = -halfThick (strict interior to avoid duplicate corners)
+    const xBot = -halfThick - c;
+    if (xBot > -halfLen && xBot < halfLen) {
+      candidates.push({ x: xBot, z: -halfThick });
+    }
+
+    // Top edge z = halfThick (strict interior)
+    const xTop = halfThick - c;
+    if (xTop > -halfLen && xTop < halfLen) {
+      candidates.push({ x: xTop, z: halfThick });
+    }
+
+    if (candidates.length < 2) continue;
+
+    // Sort by x and take the two extreme points as the segment endpoints.
+    candidates.sort((a, b) => a.x - b.x);
+    const p0 = candidates[0]!;
+    const p1 = candidates[candidates.length - 1]!;
+
+    positions.push(p0.x, 0, p0.z, p1.x, 0, p1.z);
+  }
+
+  if (positions.length === 0) return null;
+
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+
+  const hatchColor = readToken('--draft-paper', '#fdfcf9');
+  const mat = new THREE.LineBasicMaterial({
+    color: new THREE.Color(hatchColor),
+    transparent: true,
+    opacity: 0.22,
+  });
+
+  const lines = new THREE.LineSegments(geom, mat);
+  lines.position.set(sx + (nx * len) / 2 + perpX, PLAN_Y + 0.0001, sz + (nz * len) / 2 + perpZ);
+  lines.rotation.y = -angle;
+  // Intentionally no bimPickId — hatch is purely visual, picking goes via the
+  // group's userData.bimPickId set by the caller.
+  return lines;
 }
 
 /**
