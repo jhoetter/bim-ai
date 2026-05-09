@@ -1646,15 +1646,68 @@ export function Viewport({
     prevElementsByIdRef.current = curr;
   }, [elementsById, viewerCategoryHidden, viewerPhaseFilter, lensMode, theme, text3dRebuildTick]);
 
-  // ── F-011: wireframe / shaded toggle ─────────────────────────────────────
+  // ── F-011: visual style (shaded / wireframe / consistent-colors / hidden-line) ──
   useEffect(() => {
     const cache = bimPickMapRef.current;
-    const isWireframe = viewerRenderStyle === 'wireframe';
     for (const [, obj] of cache) {
       obj.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          child.material.wireframe = isWireframe;
-          child.material.needsUpdate = true;
+        if (!(child instanceof THREE.Mesh)) return;
+
+        if (viewerRenderStyle === 'wireframe') {
+          // Restore original if we previously swapped it, then enable wireframe.
+          if (child.userData.originalMaterial) {
+            child.material = child.userData.originalMaterial as THREE.Material;
+            delete child.userData.originalMaterial;
+          }
+          if (child.material instanceof THREE.MeshStandardMaterial) {
+            child.material.wireframe = true;
+            child.material.needsUpdate = true;
+          }
+        } else if (viewerRenderStyle === 'consistent-colors') {
+          // Replace with MeshBasicMaterial (flat, no lighting).
+          // Handles direct switch from hidden-line (already a MeshBasicMaterial).
+          const origStd =
+            (child.userData.originalMaterial as THREE.MeshStandardMaterial | undefined) ??
+            (child.material instanceof THREE.MeshStandardMaterial ? child.material : null);
+          if (origStd) {
+            if (!child.userData.originalMaterial) {
+              child.userData.originalMaterial = origStd;
+            }
+            child.material = new THREE.MeshBasicMaterial({
+              color: origStd.color.clone(),
+              map: origStd.map,
+              side: origStd.side,
+              transparent: origStd.transparent,
+              opacity: origStd.opacity,
+            });
+            child.material.needsUpdate = true;
+          }
+        } else if (viewerRenderStyle === 'hidden-line') {
+          // White opaque surfaces — back-faces occluded, no lighting.
+          // Handles direct switch from consistent-colors (already a MeshBasicMaterial).
+          const origStd2 =
+            (child.userData.originalMaterial as THREE.MeshStandardMaterial | undefined) ??
+            (child.material instanceof THREE.MeshStandardMaterial ? child.material : null);
+          if (origStd2) {
+            if (!child.userData.originalMaterial) {
+              child.userData.originalMaterial = origStd2;
+            }
+            child.material = new THREE.MeshBasicMaterial({
+              color: new THREE.Color(1, 1, 1),
+              side: THREE.FrontSide,
+            });
+            child.material.needsUpdate = true;
+          }
+        } else {
+          // 'shaded': restore original MeshStandardMaterial and disable wireframe.
+          if (child.userData.originalMaterial) {
+            child.material = child.userData.originalMaterial as THREE.Material;
+            delete child.userData.originalMaterial;
+          }
+          if (child.material instanceof THREE.MeshStandardMaterial) {
+            child.material.wireframe = false;
+            child.material.needsUpdate = true;
+          }
         }
       });
     }
@@ -2122,12 +2175,20 @@ export function Viewport({
                   onChange={(e) =>
                     useBimStore
                       .getState()
-                      .setViewerRenderStyle(e.target.value as 'shaded' | 'wireframe')
+                      .setViewerRenderStyle(
+                        e.target.value as
+                          | 'shaded'
+                          | 'wireframe'
+                          | 'consistent-colors'
+                          | 'hidden-line',
+                      )
                   }
                   className="rounded border border-border bg-surface px-1 py-0.5 text-foreground"
                 >
                   <option value="shaded">Shaded</option>
+                  <option value="consistent-colors">Consistent Colors</option>
                   <option value="wireframe">Wireframe</option>
+                  <option value="hidden-line">Hidden Line</option>
                 </select>
               </label>
 
@@ -2166,23 +2227,36 @@ export function Viewport({
         </div>
         <button
           type="button"
-          onClick={() =>
-            useBimStore
-              .getState()
-              .setViewerRenderStyle(viewerRenderStyle === 'wireframe' ? 'shaded' : 'wireframe')
-          }
-          aria-pressed={viewerRenderStyle === 'wireframe'}
-          data-active={viewerRenderStyle === 'wireframe' ? 'true' : 'false'}
+          onClick={() => {
+            const cycle: Record<
+              'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line',
+              'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line'
+            > = {
+              shaded: 'wireframe',
+              wireframe: 'consistent-colors',
+              'consistent-colors': 'shaded',
+              'hidden-line': 'shaded',
+            };
+            useBimStore.getState().setViewerRenderStyle(cycle[viewerRenderStyle]);
+          }}
+          aria-pressed={viewerRenderStyle !== 'shaded'}
+          data-active={viewerRenderStyle !== 'shaded' ? 'true' : 'false'}
           data-testid="viewport-wireframe-toggle"
           className={[
             'rounded-md border border-border px-2 py-1 text-xs',
-            viewerRenderStyle === 'wireframe'
+            viewerRenderStyle !== 'shaded'
               ? 'bg-accent text-accent-foreground'
               : 'bg-surface text-foreground',
           ].join(' ')}
-          title="Toggle wireframe / shaded view"
+          title="Cycle visual style: Shaded → Wireframe → Consistent Colors"
         >
-          {viewerRenderStyle === 'wireframe' ? 'Wireframe' : 'Shaded'}
+          {viewerRenderStyle === 'shaded'
+            ? 'Shaded'
+            : viewerRenderStyle === 'wireframe'
+              ? 'Wireframe'
+              : viewerRenderStyle === 'consistent-colors'
+                ? 'Consistent Colors'
+                : 'Hidden Line'}
         </button>
         {sectionBoxActive && sectionBoxRef.current ? (
           <span

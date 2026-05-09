@@ -164,8 +164,8 @@ export type StoreState = {
   viewerClipFloorElevMm: number | null;
   /** When true for a semantic kind (`wall`, `roof`, …), that category is hidden in 3D. */
   viewerCategoryHidden: Record<string, boolean>;
-  /** F-011: current 3D render style — shaded (default) or wireframe. */
-  viewerRenderStyle: 'shaded' | 'wireframe';
+  /** F-011: current 3D render style — shaded (default), wireframe, consistent-colors, or hidden-line. */
+  viewerRenderStyle: 'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line';
   /** F-113: 3D viewport background colour. */
   viewerBackground: 'white' | 'light_grey' | 'dark';
   /** F-113: edge display in the 3D viewport. */
@@ -251,8 +251,8 @@ export type StoreState = {
   setPlanRoomSchemeWireReadout: (readout: PlanRoomSchemeWireReadout | null) => void;
   setScheduleBudgetHydration: (v: { tab: string; rowCount: number } | null) => void;
   toggleViewerCategoryHidden: (semanticKind: string) => void;
-  /** F-011: switch between shaded and wireframe render modes. */
-  setViewerRenderStyle: (style: 'shaded' | 'wireframe') => void;
+  /** F-011: switch between shaded, wireframe, consistent-colors, and hidden-line render modes. */
+  setViewerRenderStyle: (style: 'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line') => void;
   /** F-113: set 3D viewport background colour. */
   setViewerBackground: (bg: 'white' | 'light_grey' | 'dark') => void;
   /** F-113: set 3D viewport edge display mode. */
