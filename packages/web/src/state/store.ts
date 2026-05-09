@@ -1562,6 +1562,10 @@ export const useBimStore = create<StoreState>((set, get) => {
 
     floorBoundaryOffsetMm: 0,
 
+    wallDrawOffsetMm: 0,
+
+    wallDrawHeightMm: 2800,
+
     orthoSnapHold: false,
     userId: (() => {
       try {
@@ -1802,6 +1806,10 @@ export const useBimStore = create<StoreState>((set, get) => {
     setWallLocationLine: (wallLocationLine) => set({ wallLocationLine }),
 
     setFloorBoundaryOffsetMm: (floorBoundaryOffsetMm) => set({ floorBoundaryOffsetMm }),
+
+    setWallDrawOffsetMm: (wallDrawOffsetMm) => set({ wallDrawOffsetMm }),
+
+    setWallDrawHeightMm: (wallDrawHeightMm) => set({ wallDrawHeightMm }),
 
     setOrthoSnapHold: (v) => set({ orthoSnapHold: v }),
 
