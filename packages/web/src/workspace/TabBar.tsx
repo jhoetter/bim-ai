@@ -217,6 +217,23 @@ export function TabBar({
             role="menu"
             data-testid="tab-add-popover"
             className="absolute left-0 top-full z-30 mt-1 flex min-w-[180px] flex-col rounded-md border border-border bg-surface shadow-elev-2"
+            ref={(el) => el?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()}
+            onKeyDown={(e) => {
+              const items = Array.from(
+                e.currentTarget.querySelectorAll<HTMLElement>('[role="menuitem"]'),
+              );
+              const idx = items.indexOf(document.activeElement as HTMLElement);
+              if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                items[(idx + 1) % items.length]?.focus();
+              } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                items[(idx - 1 + items.length) % items.length]?.focus();
+              } else if (e.key === 'Escape') {
+                e.preventDefault();
+                setPopoverOpen(false);
+              }
+            }}
           >
             {ADDABLE_KINDS.map((kind) => {
               const Icon = TAB_KIND_ICON[kind];
