@@ -525,6 +525,7 @@ export function NumericField({
     if (error) setError(false);
   };
 
+  const errorId = `nf-err-${label.replace(/\s+/g, '-').toLowerCase()}`;
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-1">
       <label className="text-xs text-muted">{label}</label>
@@ -540,6 +541,7 @@ export function NumericField({
           value={draft}
           aria-label={ariaLabel ?? label}
           aria-invalid={error}
+          aria-describedby={error ? errorId : undefined}
           step={step}
           onChange={handleChange}
           onBlur={() => commit(draft)}
@@ -554,6 +556,11 @@ export function NumericField({
           {unit}
         </button>
       </div>
+      {error ? (
+        <span id={errorId} role="alert" className="text-[10px] text-danger">
+          {t('inspector.invalidExpression')}
+        </span>
+      ) : null}
     </form>
   );
 }

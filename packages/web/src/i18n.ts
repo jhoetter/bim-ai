@@ -285,6 +285,7 @@ i18n.init({
             heading: 'View template (replayable defaults)',
           },
           cycleUnits: 'Cycle units (current: {{unit}})',
+          invalidExpression: 'Invalid expression',
         },
         statusbar: {
           levelTitle: 'Active level — PageUp/PageDown to cycle',
@@ -1089,6 +1090,7 @@ i18n.init({
             heading: 'Ansichtsvorlage (wiederholbare Standards)',
           },
           cycleUnits: 'Einheit wechseln (aktuell: {{unit}})',
+          invalidExpression: 'Ungültiger Ausdruck',
         },
         statusbar: {
           levelTitle: 'Aktive Ebene — PageUp/PageDown zum Wechseln',
