@@ -28,6 +28,7 @@ import {
   initialCeilingState,
   reduceCeiling,
   type CeilingState,
+  type WallLocationLine,
 } from '../tools/toolGrammar';
 import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
@@ -2096,11 +2097,15 @@ export function PlanCanvas({
           bumpGeom((x) => x + 1);
           return;
         }
+        const wallLocationLine = useToolPrefs
+          .getState()
+          .getCycle('wall', 'location-line', 'wall-centerline') as WallLocationLine;
         onSemanticCommand({
           type: 'createWall',
           levelId: lvlId,
           start: { xMm: d.sx, yMm: d.sy },
           end: { xMm: sp.xMm, yMm: sp.yMm },
+          locationLine: wallLocationLine,
         });
         // EDT-V3-05: re-arm from endpoint when loop mode is on.
         draftRef.current = useToolPrefs.getState().loopMode
