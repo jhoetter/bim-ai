@@ -44,7 +44,7 @@ Source segment: `05:30:00 – 05:39:46`
 **Screenshot:**
 ![Area Boundary Lines](file:///Users/jhoetter/Desktop/Revit%20Specs/0808_05-34-41.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — the `area-boundary` plan tool (hotkey `AR`) creates rectangular area elements via `createArea { boundaryMm, ruleSet: 'gross' }`. Areas are rendered in the plan canvas. Missing: proper "Area Boundary Line" as a separate annotation element (distinct from the area placement), arbitrary polygon boundary drawing, and Area Plan view type.
 
 ---
 

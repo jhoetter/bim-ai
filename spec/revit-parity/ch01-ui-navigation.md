@@ -80,7 +80,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Language Settings](file:///Users/jhoetter/Desktop/Revit%20Specs/0175_00-24-47.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — bim-ai has full i18n support with English and German translations (`packages/web/src/i18n.ts`). Language persists via `localStorage` and is togglable via the command palette (`settings.language.toggle`). Missing: a visible language selector in Settings UI (not command palette), and additional language options beyond en/de.
 
 ---
 
@@ -102,7 +102,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Visual Style](file:///Users/jhoetter/Desktop/Revit%20Specs/0332_01-07-40.png)
 
-**bim-ai status:** 🟡 Partial — bim-ai's 3D viewport has some render modes but they are not per-view-type and lack the same catalogue (no Ray Trace, no Consistent Colors).
+**bim-ai status:** 🟡 Partial — for plan views: `PlanDetailLevelToolbar` (coarse/medium/fine) is shown in the canvas footer, and a plan style selector (default/opening_focus/room_scheme) is available in the TopBar. For 3D views: bim-ai renders solid geometry with basic lighting but has no Visual Style dropdown equivalent to Revit's wireframe/hidden-line/shaded/consistent-colors/realistic/ray-trace catalogue.
 
 ---
 
