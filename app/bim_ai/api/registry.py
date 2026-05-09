@@ -1607,3 +1607,127 @@ register(
         agentSafetyNotes="Safe read-only query. T9 polls this endpoint to discover seeds ready for ingestion.",
     )
 )
+
+# ---------------------------------------------------------------------------
+# OUT-V3-02 — Presentation canvas, frames, saved views
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="create-frame",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CreateFrameInput",
+            "type": "object",
+            "required": ["id", "presentationCanvasId", "viewId", "positionMm", "sizeMm"],
+            "properties": {
+                "id": {"type": "string", "description": "Unique frame element ID."},
+                "presentationCanvasId": {
+                    "type": "string",
+                    "description": "ID of the parent PresentationCanvasElem.",
+                },
+                "viewId": {
+                    "type": "string",
+                    "description": "ID of the view (plan_view, section_cut, etc.) to crop.",
+                },
+                "positionMm": {
+                    "type": "object",
+                    "required": ["xMm", "yMm"],
+                    "properties": {
+                        "xMm": {"type": "number"},
+                        "yMm": {"type": "number"},
+                    },
+                },
+                "sizeMm": {
+                    "type": "object",
+                    "required": ["widthMm", "heightMm"],
+                    "properties": {
+                        "widthMm": {"type": "number"},
+                        "heightMm": {"type": "number"},
+                    },
+                },
+                "caption": {"type": "string", "description": "Optional slide caption."},
+                "brandTemplateId": {"type": "string"},
+                "sortOrder": {"type": "integer", "default": 0},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "type": "object",
+            "properties": {
+                "accepted": {"type": "boolean"},
+                "revision": {"type": "integer"},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Frame created"),
+            "duplicate_id": ExitCode(code=1, meaning="Frame ID already exists"),
+            "canvas_not_found": ExitCode(code=1, meaning="presentationCanvasId not found"),
+        },
+        cliExample='bim-ai create-frame --id frame-01 --presentationCanvasId canvas-01 --viewId plan-gf --positionMm \'{"xMm":0,"yMm":0}\' --sizeMm \'{"widthMm":210,"heightMm":148}\'',
+        restEndpoint=RestEndpoint(method="POST", path="/api/v3/models/{modelId}/bundles"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes="Requires a valid presentationCanvasId; canvas must exist before adding frames.",
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="export-presentation",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ExportPresentationInput",
+            "type": "object",
+            "required": ["modelId", "canvasId"],
+            "properties": {
+                "modelId": {"type": "string"},
+                "canvasId": {"type": "string"},
+                "format": {
+                    "type": "string",
+                    "enum": ["pptx-bundle"],
+                    "default": "pptx-bundle",
+                    "description": "Only 'pptx-bundle' (structured JSON) is supported in v3.",
+                },
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "PptxBundle",
+            "type": "object",
+            "required": ["schemaVersion", "title", "slides"],
+            "properties": {
+                "schemaVersion": {"type": "string"},
+                "title": {"type": "string"},
+                "slides": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["viewId", "positionMm", "sizeMm", "sortOrder"],
+                        "properties": {
+                            "viewId": {"type": "string"},
+                            "caption": {"type": ["string", "null"]},
+                            "positionMm": {"type": "object"},
+                            "sizeMm": {"type": "object"},
+                            "sortOrder": {"type": "integer"},
+                        },
+                    },
+                },
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Bundle returned"),
+            "not_found": ExitCode(code=1, meaning="Canvas not found"),
+            "bad_format": ExitCode(code=1, meaning="Unsupported format parameter"),
+        },
+        cliExample="bim-ai export-presentation --modelId <uuid> --canvasId canvas-01 --format pptx-bundle",
+        restEndpoint=RestEndpoint(
+            method="GET",
+            path="/api/v3/models/{modelId}/presentation-canvases/{canvasId}/export",
+        ),
+        sideEffects="none",
+        agentSafetyNotes="Read-only export; safe to call at any time. Returns JSON bundle, not a binary .pptx file.",
+    )
+)

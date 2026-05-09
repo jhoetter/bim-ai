@@ -220,6 +220,15 @@ from bim_ai.commands import (
     CreateConceptSeedCmd,
     CommitConceptSeedCmd,
     ConsumeConceptSeedCmd,
+    CreatePresentationCanvasCmd,
+    UpdatePresentationCanvasCmd,
+    CreateFrameCmd,
+    UpdateFrameCmd,
+    DeleteFrameCmd,
+    ReorderFrameCmd,
+    CreateSavedViewCmd,
+    UpdateSavedViewCmd,
+    DeleteSavedViewCmd,
 )
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.datum_levels import (
@@ -350,6 +359,9 @@ from bim_ai.elements import (
     HatchPatternDefElem,
     ImageUnderlayElem,
     ConceptSeedElem,
+    FrameElem,
+    SavedViewElem,
+    PresentationCanvasElem,
 )
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
@@ -5678,6 +5690,132 @@ def apply_inplace(
                     "(must be 'committed')"
                 )
             els[cmd.id] = existing.model_copy(update={"status": "consumed"})
+
+        # ------------------------------------------------------------------ #
+        # OUT-V3-02 — Presentation canvas, frames, saved views                #
+        # ------------------------------------------------------------------ #
+
+        case CreatePresentationCanvasCmd():
+            if cmd.id in els:
+                raise ValueError(f"duplicate element id '{cmd.id}'")
+            els[cmd.id] = PresentationCanvasElem(
+                id=cmd.id,
+                name=cmd.name,
+            )
+
+        case UpdatePresentationCanvasCmd():
+            canvas = els.get(cmd.id)
+            if not isinstance(canvas, PresentationCanvasElem):
+                raise ValueError(
+                    f"update_presentation_canvas: element '{cmd.id}' is not a presentation_canvas"
+                )
+            patch = {}
+            if cmd.name is not None:
+                patch["name"] = cmd.name
+            els[cmd.id] = canvas.model_copy(update=patch)
+
+        case CreateFrameCmd():
+            if cmd.id in els:
+                raise ValueError(f"duplicate element id '{cmd.id}'")
+            canvas = els.get(cmd.presentation_canvas_id)
+            if not isinstance(canvas, PresentationCanvasElem):
+                raise ValueError(
+                    f"create_frame: presentationCanvasId '{cmd.presentation_canvas_id}' "
+                    "does not reference a presentation_canvas element"
+                )
+            els[cmd.id] = FrameElem(
+                id=cmd.id,
+                presentationCanvasId=cmd.presentation_canvas_id,
+                viewId=cmd.view_id,
+                positionMm=cmd.position_mm,
+                sizeMm=cmd.size_mm,
+                caption=cmd.caption,
+                brandTemplateId=cmd.brand_template_id,
+                sortOrder=cmd.sort_order,
+            )
+            # Keep canvas.frame_ids in sync
+            new_frame_ids = list(canvas.frame_ids) + [cmd.id]
+            els[cmd.presentation_canvas_id] = canvas.model_copy(
+                update={"frame_ids": new_frame_ids}
+            )
+
+        case UpdateFrameCmd():
+            frame = els.get(cmd.id)
+            if not isinstance(frame, FrameElem):
+                raise ValueError(f"update_frame: element '{cmd.id}' is not a frame")
+            patch = {}
+            if cmd.caption is not None:
+                patch["caption"] = cmd.caption
+            if cmd.position_mm is not None:
+                patch["position_mm"] = cmd.position_mm
+            if cmd.size_mm is not None:
+                patch["size_mm"] = cmd.size_mm
+            if cmd.sort_order is not None:
+                patch["sort_order"] = cmd.sort_order
+            els[cmd.id] = frame.model_copy(update=patch)
+
+        case DeleteFrameCmd():
+            frame = els.get(cmd.id)
+            if not isinstance(frame, FrameElem):
+                raise ValueError(f"delete_frame: element '{cmd.id}' is not a frame")
+            canvas = els.get(frame.presentation_canvas_id)
+            if isinstance(canvas, PresentationCanvasElem):
+                new_frame_ids = [fid for fid in canvas.frame_ids if fid != cmd.id]
+                els[frame.presentation_canvas_id] = canvas.model_copy(
+                    update={"frame_ids": new_frame_ids}
+                )
+            del els[cmd.id]
+
+        case ReorderFrameCmd():
+            frame = els.get(cmd.id)
+            if not isinstance(frame, FrameElem):
+                raise ValueError(f"reorder_frame: element '{cmd.id}' is not a frame")
+            els[cmd.id] = frame.model_copy(update={"sort_order": cmd.new_sort_order})
+            canvas_id = frame.presentation_canvas_id
+            canvas_frames = [
+                (eid, e)
+                for eid, e in els.items()
+                if isinstance(e, FrameElem) and e.presentation_canvas_id == canvas_id
+            ]
+            canvas_frames.sort(key=lambda kv: kv[1].sort_order)
+            for idx, (fid, f) in enumerate(canvas_frames):
+                if f.sort_order != idx:
+                    els[fid] = f.model_copy(update={"sort_order": idx})
+
+        case CreateSavedViewCmd():
+            if cmd.id in els:
+                raise ValueError(f"duplicate element id '{cmd.id}'")
+            els[cmd.id] = SavedViewElem(
+                id=cmd.id,
+                baseViewId=cmd.base_view_id,
+                name=cmd.name,
+                cameraState=cmd.camera_state,
+                visibilityOverrides=cmd.visibility_overrides,
+                detailLevel=cmd.detail_level,
+            )
+
+        case UpdateSavedViewCmd():
+            sv = els.get(cmd.id)
+            if not isinstance(sv, SavedViewElem):
+                raise ValueError(f"update_saved_view: element '{cmd.id}' is not a saved_view")
+            patch = {}
+            if cmd.name is not None:
+                patch["name"] = cmd.name
+            if cmd.camera_state is not None:
+                patch["camera_state"] = cmd.camera_state
+            if cmd.visibility_overrides is not None:
+                patch["visibility_overrides"] = cmd.visibility_overrides
+            if cmd.detail_level is not None:
+                patch["detail_level"] = cmd.detail_level
+            if cmd.thumbnail_data_uri is not None:
+                patch["thumbnail_data_uri"] = cmd.thumbnail_data_uri
+            els[cmd.id] = sv.model_copy(update=patch)
+
+        case DeleteSavedViewCmd():
+            sv = els.get(cmd.id)
+            if not isinstance(sv, SavedViewElem):
+                raise ValueError(f"delete_saved_view: element '{cmd.id}' is not a saved_view")
+            del els[cmd.id]
 
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect
