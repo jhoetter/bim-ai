@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "d3110509d1dd",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "spec/v3-build-state.md",
+    "spec/v3-prompts/wp-078.md",
+    "spec/v3-prompts/wp-079.md",
+    "spec/v3-prompts/wp-080.md",
+    "spec/v3-prompts/wp-081.md",
+    "spec/v3-prompts/wp-082.md",
+    "spec/v3-prompts/wp-083.md",
+    "spec/v3-prompts/wp-084.md",
+    "spec/v3-prompts/wp-085.md",
+    "spec/v3-prompts/wp-086.md",
+    "spec/v3-prompts/wp-087.md",
+    "spec/workpackage-tracker-v3.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/d3/110509d1dd/0/metadata.json",
+      "transcript": "/d3/110509d1dd/0/full.jsonl",
+      "content_hash": "/d3/110509d1dd/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  }
+}
