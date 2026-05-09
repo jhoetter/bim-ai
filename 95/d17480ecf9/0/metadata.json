@@ -1,0 +1,76 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "95d17480ecf9",
+  "session_id": "019e0eef-c732-71d3-8cf8-0a746d418797",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T22:53:46.998678Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "Makefile"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.3-codex",
+  "turn_id": "30013291d239",
+  "token_usage": {
+    "input_tokens": 34288,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 111104,
+    "output_tokens": 1345,
+    "api_call_count": 10
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T22:53:46.992062Z",
+    "agent_lines": 1,
+    "agent_removed": 1,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 1,
+    "total_lines_changed": 2,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 25,
+      "user_lines_removed": 21,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/__tests__/offlineQueue.test.ts": 1,
+        "packages/web/src/plan/ImageTraceDropZone.tsx": 1,
+        "packages/web/src/plan/PlanCanvas.tsx": 2,
+        "packages/web/src/state/storeTypes.ts": 4,
+        "packages/web/src/workspace/ProjectBrowser.test.tsx": 13,
+        "packages/web/src/workspace/workspaceUtils.ts": 4
+      },
+      "user_removed_per_file": {
+        "packages/web/src/__tests__/offlineQueue.test.ts": 1,
+        "packages/web/src/plan/ImageTraceDropZone.tsx": 1,
+        "packages/web/src/plan/PlanCanvas.tsx": 1,
+        "packages/web/src/state/storeTypes.ts": 1,
+        "packages/web/src/workspace/ProjectBrowser.test.tsx": 16,
+        "packages/web/src/workspace/workspaceUtils.ts": 1
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 26,
+      "agent_lines_removed": 22
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 26,
+      "agent_lines_removed": 22
+    }
+  ]
+}
