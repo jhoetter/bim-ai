@@ -1,0 +1,62 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "024d466b26c7",
+  "session_id": "de2a9807-92ab-4a30-be89-eb17ebfee03d",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T14:03:57.67662Z",
+  "branch": "feat/v3-plan-rayon",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/state/modeController.ts",
+    "packages/web/src/viewport/ViewCube.tsx",
+    "packages/web/src/workspace/CanvasMount.tsx",
+    "packages/web/src/workspace/TopBar.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/WorkspaceRightRail.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "b5782b1ddbcc",
+  "token_usage": {
+    "input_tokens": 3,
+    "cache_creation_tokens": 9176,
+    "cache_read_tokens": 11891,
+    "output_tokens": 1957,
+    "api_call_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T14:03:57.672743Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 8,
+    "human_removed": 40,
+    "total_committed": 0,
+    "total_lines_changed": 48,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 16,
+      "user_lines_removed": 40,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/state/modeController.ts": 5,
+        "packages/web/src/workspace/CanvasMount.tsx": 1,
+        "packages/web/src/workspace/TopBar.tsx": 4,
+        "packages/web/src/workspace/Workspace.tsx": 2,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 4
+      },
+      "user_removed_per_file": {
+        "packages/web/src/state/modeController.ts": 6,
+        "packages/web/src/workspace/CanvasMount.tsx": 1,
+        "packages/web/src/workspace/TopBar.tsx": 5,
+        "packages/web/src/workspace/Workspace.tsx": 24,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 4
+      }
+    }
+  ]
+}
