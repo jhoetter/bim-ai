@@ -101,9 +101,11 @@ export function buildBrowserSections(elementsById: Record<string, Element>): Lef
   const levels = all
     .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
     .sort((a, b) => a.elevationMm - b.elevationMm);
-  const planViews = all.filter(
+  const allPlanViews = all.filter(
     (e): e is Extract<Element, { kind: 'plan_view' }> => e.kind === 'plan_view',
   );
+  const planViews = allPlanViews.filter((p) => p.planViewSubtype !== 'area_plan');
+  const areaPlans = allPlanViews.filter((p) => p.planViewSubtype === 'area_plan');
   const viewpoints = all.filter(
     (e): e is Extract<Element, { kind: 'viewpoint' }> => e.kind === 'viewpoint',
   );
@@ -147,6 +149,15 @@ export function buildBrowserSections(elementsById: Record<string, Element>): Lef
           label: 'Sections',
           children: sections.map((s) => ({ id: s.id, label: s.name })),
         },
+        ...(areaPlans.length > 0
+          ? [
+              {
+                id: 'area-plans',
+                label: 'Area Plans',
+                children: areaPlans.map((p) => ({ id: p.id, label: p.name })),
+              },
+            ]
+          : []),
       ],
     },
     {
