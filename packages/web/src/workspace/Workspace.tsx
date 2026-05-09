@@ -1230,6 +1230,7 @@ export function Workspace(): JSX.Element {
               modelId={modelId ?? undefined}
               wsOn={wsOn}
               onPersistViewpointField={persistViewpointField}
+              lensMode={lensMode}
             />
           </div>
         }
