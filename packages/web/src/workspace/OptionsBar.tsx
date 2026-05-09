@@ -21,6 +21,12 @@ const BAR_CLASS = 'flex items-center gap-4 border-b border-border bg-surface py-
  */
 export let mirrorCopyEnabled = true;
 
+/**
+ * Module-level selected asset ID for the component placement tool.
+ * Exported so PlanCanvas can read it on click without a Zustand store change.
+ */
+export let activeComponentAssetId: string | null = null;
+
 export function OptionsBar(): JSX.Element | null {
   const planTool = useBimStore((s) => s.planTool);
   const elementsById = useBimStore((s) => s.elementsById);
@@ -161,6 +167,37 @@ export function OptionsBar(): JSX.Element | null {
           <span>Copy</span>
         </label>
         <span className="text-muted opacity-60">Click to set axis start, click again to mirror</span>
+      </div>
+    );
+  }
+
+  if (planTool === 'component') {
+    const assetLibraryEntries = Object.values(elementsById).filter(
+      (e): e is Extract<Element, { kind: 'asset_library_entry' }> =>
+        e.kind === 'asset_library_entry',
+    );
+    return (
+      <div data-testid="options-bar" className={BAR_CLASS}>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Asset:</span>
+          <select
+            data-testid="options-bar-component-asset"
+            defaultValue=""
+            onChange={(e) => {
+              activeComponentAssetId = e.target.value || null;
+            }}
+            className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Component asset"
+          >
+            <option value="">— select asset —</option>
+            {assetLibraryEntries.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <span className="text-muted opacity-60">Click on canvas to place</span>
       </div>
     );
   }

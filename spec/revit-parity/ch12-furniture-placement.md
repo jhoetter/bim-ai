@@ -13,7 +13,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 **Screenshot:**
 ![Placing families](file:///Users/jhoetter/Desktop/Revit%20Specs/0737_04-37-46.png)
 
-**bim-ai status:** ❌ Not available — bim-ai has no interactive component placement tool with live preview and snap.
+**bim-ai status:** 🟡 Partial — A "Component" plan tool (hotkey `CC`) is now available in the tool palette. When activated, the OptionsBar shows an asset selector listing all `asset_library_entry` elements. Clicking on the plan canvas fires `PlaceAsset { assetId, levelId, positionMm }`. Placed assets render as schematic rectangles (brown outline + cross-diagonal) sized from the asset's `thumbnailWidthMm` × `thumbnailHeightMm`. Missing: live cursor preview before placing (the cursor shows no ghost); Spacebar rotation during hover (F-115); interactive family parameter editing after placement; built-in furniture asset library (assets must be created programmatically).
 
 ---
 
@@ -24,7 +24,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 **Screenshot:**
 ![Spacebar rotation](file:///Users/jhoetter/Desktop/Revit%20Specs/0575_03-45-10.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** ❌ Not available — the Component tool does not yet support Spacebar rotation of the preview before placing. The rotationDeg is always 0 on first placement.
 
 ---
 

@@ -121,7 +121,7 @@ import { copyElementsToClipboard, pasteFromOSClipboard } from '../clipboard/copy
 import { useToolPrefs } from '../tools/toolPrefsStore';
 import { SubdivisionPalette } from '../workspace/SubdivisionPalette';
 import type { SubdivisionCategory } from '../workspace/SubdivisionPalette';
-import { mirrorCopyEnabled } from '../workspace/OptionsBar';
+import { activeComponentAssetId, mirrorCopyEnabled } from '../workspace/OptionsBar';
 
 function readPlanToken(name: string, fallback: string): string {
   const v = liveTokenReader().read(name);
@@ -2518,6 +2518,19 @@ export function PlanCanvas({
           });
         }
         bumpGeom((x) => x + 1);
+        return;
+      }
+      if (planTool === 'component') {
+        const assetId = activeComponentAssetId;
+        if (assetId && lvlId) {
+          onSemanticCommand({
+            type: 'PlaceAsset',
+            assetId,
+            levelId: lvlId,
+            positionMm: sp,
+          });
+          bumpGeom((x) => x + 1);
+        }
         return;
       }
       if (planTool === 'split') {

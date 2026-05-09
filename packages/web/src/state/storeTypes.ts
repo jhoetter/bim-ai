@@ -58,7 +58,8 @@ export type PlanTool =
   | 'ceiling'
   | 'detail-region'
   | 'toposolid_subdivision'
-  | 'measure';
+  | 'measure'
+  | 'component';
 
 export type PresencePeers = Record<
   string,

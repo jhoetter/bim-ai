@@ -53,6 +53,7 @@ export const KNOWN_PLAN_TOOLS = new Set<ToolId>([
   'plan-region',
   'toposolid_subdivision',
   'grid',
+  'component',
 ]);
 
 export type LegacyPlanTool =
@@ -85,7 +86,8 @@ export type LegacyPlanTool =
   | 'ceiling'
   | 'detail-region'
   | 'measure'
-  | 'toposolid_subdivision';
+  | 'toposolid_subdivision'
+  | 'component';
 
 export function toolIdToLegacy(tool: ToolId): LegacyPlanTool | null {
   if (KNOWN_PLAN_TOOLS.has(tool)) return tool as LegacyPlanTool;

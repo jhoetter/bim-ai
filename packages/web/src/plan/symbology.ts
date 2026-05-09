@@ -1226,6 +1226,74 @@ export function rebuildPlanMeshes(
     tintNewChildren(before, 'room');
   }
 
+  // F-114: placed_asset schematic plan symbols (rectangle outline + cross diagonal).
+  {
+    type PlacedAssetElement = Extract<Element, { kind: 'placed_asset' }>;
+    type AssetLibraryEntryElement = Extract<Element, { kind: 'asset_library_entry' }>;
+
+    const assetEntries: Record<string, AssetLibraryEntryElement> = {};
+    for (const e of Object.values(elementsById)) {
+      if (e.kind === 'asset_library_entry') {
+        assetEntries[e.id] = e as AssetLibraryEntryElement;
+      }
+    }
+
+    const placedAssets = Object.values(elementsById).filter(
+      (e): e is PlacedAssetElement =>
+        e.kind === 'placed_asset' && (!level || e.levelId === level),
+    );
+
+    for (const asset of placedAssets) {
+      const entry = assetEntries[asset.assetId];
+      const wM = (entry?.thumbnailWidthMm ?? 1000) / 1000;
+      const dM = (entry?.thumbnailHeightMm ?? 600) / 1000;
+      const cx = asset.positionMm.xMm / 1000;
+      const cz = asset.positionMm.yMm / 1000;
+      const rotRad = ((asset.rotationDeg ?? 0) * Math.PI) / 180;
+      const hw = wM / 2;
+      const hd = dM / 2;
+      const cosR = Math.cos(rotRad);
+      const sinR = Math.sin(rotRad);
+      const Y = PLAN_Y + 0.005;
+
+      const corners = [
+        { x: -hw, z: -hd },
+        { x: hw, z: -hd },
+        { x: hw, z: hd },
+        { x: -hw, z: hd },
+      ];
+
+      const worldCorners = corners.map(
+        (c) =>
+          new THREE.Vector3(
+            cx + c.x * cosR - c.z * sinR,
+            Y,
+            cz + c.x * sinR + c.z * cosR,
+          ),
+      );
+
+      // Closed rectangle outline
+      const outlinePts = [...worldCorners, worldCorners[0]!];
+      const outlineGeom = new THREE.BufferGeometry().setFromPoints(outlinePts);
+      const outlineLine = new THREE.Line(
+        outlineGeom,
+        new THREE.LineBasicMaterial({ color: '#8B4513', linewidth: 1.5 }),
+      );
+      outlineLine.userData.bimPickId = asset.id;
+      holder.add(outlineLine);
+
+      // Cross diagonal (corner 0 → corner 2)
+      const diagPts = [worldCorners[0]!, worldCorners[2]!];
+      const diagGeom = new THREE.BufferGeometry().setFromPoints(diagPts);
+      const diagLine = new THREE.Line(
+        diagGeom,
+        new THREE.LineBasicMaterial({ color: '#8B4513', linewidth: 1 }),
+      );
+      diagLine.userData.bimPickId = asset.id;
+      holder.add(diagLine);
+    }
+  }
+
   // CAN-V3-01: floor/roof outlines are projection geometry — suppress when projMajor is null (1:500+).
   const suppressProjectionFallback = opts.lineWeights != null && opts.lineWeights.projMajor == null;
 
