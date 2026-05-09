@@ -372,7 +372,7 @@ export function StairBySketchCanvas(props: StairBySketchCanvasProps): JSX.Elemen
             top: 52,
             left: '50%',
             transform: 'translateX(-50%)',
-            background: advisoryOk ? 'var(--color-success)' : 'var(--color-destructive)',
+            background: advisoryOk ? 'var(--color-success)' : 'var(--color-danger)',
             borderRadius: 'var(--radius-sm)',
             padding: '3px 10px',
             fontSize: 'var(--text-sm)',

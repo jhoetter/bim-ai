@@ -185,7 +185,7 @@ export function SharePresentationModal({ modelId, open, onClose, pages = [] }: P
           <div
             role="alert"
             style={{
-              color: 'var(--color-destructive)',
+              color: 'var(--color-danger)',
               marginBottom: 12,
               fontSize: 'var(--text-sm)',
             }}
@@ -377,7 +377,7 @@ export function SharePresentationModal({ modelId, open, onClose, pages = [] }: P
                   aria-busy={loading}
                   style={{
                     fontSize: 'var(--text-sm)',
-                    color: 'var(--color-destructive)',
+                    color: 'var(--color-danger)',
                     border: 'none',
                     background: 'none',
                     cursor: 'pointer',
