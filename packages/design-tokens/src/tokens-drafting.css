@@ -67,6 +67,77 @@
   --phase-new: #1a1a1a;
 }
 
+/* ---------------------------------------------------------------------------
+ * MAT-V3-02: --mat-* material token family
+ * Layer A structural tokens — brand-swap safe.
+ * 16 architectural materials: timber / brick / concrete / stone / metal
+ * plus wall-assembly utility materials (frame-insulation, stud, membrane,
+ * plasterboard, plaster, masonry-block, air).
+ * Light tokens in :root; dark variants follow identical names with -dark suffix.
+ * Hex literals required: Three.js Color.set() must parse every value.
+ * --------------------------------------------------------------------------- */
+:root {
+  /* Timber */
+  --mat-timber-oak: #a87b4a;
+  --mat-timber-oak-dark: #c2935b;
+  --mat-timber-walnut: #6a4525;
+  --mat-timber-walnut-dark: #8a5e38;
+  --mat-timber-pine: #d4a86a;
+  --mat-timber-pine-dark: #e0b97f;
+  --mat-timber-cedar: #7c5b3b; /* migrated from wallTypeCatalog timber_cladding */
+  --mat-timber-cedar-dark: #9a7551;
+  --mat-timber-frame-insulation: #d6b675; /* migrated from wallTypeCatalog timber_frame_insulation */
+  --mat-timber-frame-insulation-dark: #e0c589;
+  --mat-timber-stud: #cf9b56; /* migrated from wallTypeCatalog timber_stud */
+  --mat-timber-stud-dark: #dcb070;
+
+  /* Brick */
+  --mat-brick-red: #a45a3f; /* migrated from wallTypeCatalog masonry_brick */
+  --mat-brick-red-dark: #b8704f;
+  --mat-brick-buff: #c4a06a;
+  --mat-brick-buff-dark: #d4b27d;
+  --mat-brick-grey: #8a8680;
+  --mat-brick-grey-dark: #9e9a94;
+  --mat-brick-handmade: #b06040;
+  --mat-brick-handmade-dark: #c47455;
+
+  /* Concrete */
+  --mat-concrete-smooth: #b8b6b0;
+  --mat-concrete-smooth-dark: #8a8884;
+  --mat-concrete-rough: #a0a09a;
+  --mat-concrete-rough-dark: #8e8e88;
+
+  /* Stone */
+  --mat-stone-limestone: #d4cebf;
+  --mat-stone-limestone-dark: #c0baaa;
+  --mat-stone-marble: #e8e4dc;
+  --mat-stone-marble-dark: #d4d0c8;
+  --mat-stone-slate: #58626a;
+  --mat-stone-slate-dark: #6f7882;
+
+  /* Metal */
+  --mat-metal-steel: #8a8e92;
+  --mat-metal-steel-dark: #a0a4a8;
+  --mat-metal-copper: #b07040;
+  --mat-metal-copper-dark: #c48454;
+  --mat-metal-zinc: #606870;
+  --mat-metal-zinc-dark: #747e88;
+
+  /* Wall-assembly utility materials (migrated from wallTypeCatalog) */
+  --mat-membrane-vcl: #b9c0c8; /* migrated from wallTypeCatalog vcl_membrane */
+  --mat-membrane-vcl-dark: #8a9098;
+  --mat-masonry-block: #bcb6a8; /* migrated from wallTypeCatalog masonry_block */
+  --mat-masonry-block-dark: #9a9488;
+  --mat-plasterboard: #ece8de; /* migrated from wallTypeCatalog plasterboard */
+  --mat-plasterboard-dark: #d4d0c6;
+  --mat-plaster: #efe9d8; /* migrated from wallTypeCatalog plaster */
+  --mat-plaster-dark: #d8d2c2;
+  --mat-air: #ffffff; /* migrated from wallTypeCatalog air */
+  --mat-air-dark: #1a1d24;
+  --mat-unknown: #cccccc; /* generic fallback for unmapped material keys */
+  --mat-unknown-dark: #888888;
+}
+
 :root[data-theme='dark'],
 :root.dark {
   /* §9.2 Color — drafting (canvas only), dark. Hex literals (see light
