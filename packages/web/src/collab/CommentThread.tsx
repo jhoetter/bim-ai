@@ -66,6 +66,7 @@ export function CommentThread({ comments, onReply, onResolve, onClose }: Comment
         onKeyDown={handleKeyDown}
         placeholder="Reply… (Enter to send, Cmd+Enter to resolve, Esc to close)"
         rows={2}
+        className="focus:ring-1 focus:ring-accent/40"
         style={{
           resize: 'none',
           border: '1px solid var(--color-border)',

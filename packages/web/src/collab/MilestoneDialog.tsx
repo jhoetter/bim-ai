@@ -123,6 +123,7 @@ export function MilestoneDialog({
             onKeyDown={(e) => {
               if (e.key === 'Enter') void handleSubmit();
             }}
+            className="focus:ring-1 focus:ring-accent/40"
             style={{
               padding: '6px 10px',
               borderRadius: 4,
@@ -146,6 +147,7 @@ export function MilestoneDialog({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
+            className="focus:ring-1 focus:ring-accent/40"
             style={{
               padding: '6px 10px',
               borderRadius: 4,

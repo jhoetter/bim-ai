@@ -307,9 +307,11 @@ export function LibraryOverlay({
               ref={searchRef}
               type="search"
               placeholder="Search assets…"
+              aria-label="Search assets"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               data-testid="library-search-input"
+              className="focus:ring-1 focus:ring-accent/40"
               style={{
                 width: '100%',
                 background: 'var(--color-surface-strong)',

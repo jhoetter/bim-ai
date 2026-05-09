@@ -147,6 +147,7 @@ export function CommandPalette({
         onKeyDown={handleKeyDown}
       >
         <div
+          className="focus-within:ring-1 focus-within:ring-accent/40 focus-within:ring-inset"
           style={{
             display: 'flex',
             alignItems: 'center',
