@@ -22,7 +22,7 @@ Source segment: `05:30:54 – 05:33:32`
 **Screenshot:**
 ![Isolate Category](file:///Users/jhoetter/Desktop/Revit%20Specs/0778_05-31-49.png)
 
-**bim-ai status:** 🟡 Partial — `TemporaryVisibilityChip.tsx` and the `setTemporaryVisibility` store action support isolate mode (rendering only selected categories) with a one-click reset chip. Missing: no UI trigger exists to activate isolate — the chip is not mounted in the application, and no right-click menu item or sunglasses button calls `setTemporaryVisibility` (the function is only exercised in unit tests).
+**bim-ai status:** 🟡 Partial — `TemporaryVisibilityChip.tsx` is mounted in `Workspace.tsx` and renders the active isolate/hide label with one-click reset. `PlanCanvas.tsx` provides a "👓 Isolate" button (`data-testid="temp-visibility-toggle"`) that fires `setTemporaryVisibility({ mode: 'isolate', categories: [selectedElement.kind] })` when an element is selected — matching the "Isolate Category" intent. Missing: Revit's per-element isolate (only the whole category is isolated), and no "Hide Category" mode from the button.
 
 ---
 
