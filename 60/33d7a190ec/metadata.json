@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "6033d7a190ec",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "spec/rayon-design-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/60/33d7a190ec/0/metadata.json",
+      "transcript": "/60/33d7a190ec/0/full.jsonl",
+      "content_hash": "/60/33d7a190ec/0/content_hash.txt",
+      "prompt": "/60/33d7a190ec/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 5995,
+    "cache_creation_tokens": 3067815,
+    "cache_read_tokens": 124637768,
+    "output_tokens": 834774,
+    "api_call_count": 1311
+  }
+}
