@@ -10,7 +10,21 @@
  * Props: size, strokeWidth, absoluteStrokeWidth, plus any SVG attribute.
  */
 
-export type { BimIcon, BimIconProps } from './icon';
+export type { BimIcon, BimIconProps, BimIconHifiProps } from './icon';
+
+// High-fidelity 48×48 icons
+export {
+  WallHifi,
+  DoorHifi,
+  WindowHifi,
+  StairHifi,
+  ColumnHifi,
+  BeamHifi,
+  RoofHifi,
+  RoomHifi,
+  SectionHifi,
+  FloorHifi,
+} from './hifi';
 
 // Phase 1 — drawing tools
 export {

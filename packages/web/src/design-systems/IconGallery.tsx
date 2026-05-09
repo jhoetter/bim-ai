@@ -1,5 +1,18 @@
 import { useState, useMemo, useCallback } from 'react';
-import type { BimIcon } from '@bim-ai/icons';
+import type { ComponentType } from 'react';
+import type { BimIcon, BimIconHifiProps } from '@bim-ai/icons';
+import {
+  WallHifi,
+  DoorHifi,
+  WindowHifi,
+  StairHifi,
+  ColumnHifi,
+  BeamHifi,
+  RoofHifi,
+  RoomHifi,
+  SectionHifi,
+  FloorHifi,
+} from '@bim-ai/icons';
 import {
   WallIcon,
   DoorIcon,
@@ -227,6 +240,21 @@ import {
   SharedParametersIcon,
   ObjectStylesIcon,
 } from '@bim-ai/icons';
+
+type HiFiEntry = { name: string; export: string; Icon: ComponentType<BimIconHifiProps> };
+
+const HIFI_ICONS: HiFiEntry[] = [
+  { name: 'Wall', export: 'WallHifi', Icon: WallHifi },
+  { name: 'Door', export: 'DoorHifi', Icon: DoorHifi },
+  { name: 'Window', export: 'WindowHifi', Icon: WindowHifi },
+  { name: 'Stair', export: 'StairHifi', Icon: StairHifi },
+  { name: 'Column', export: 'ColumnHifi', Icon: ColumnHifi },
+  { name: 'Beam', export: 'BeamHifi', Icon: BeamHifi },
+  { name: 'Roof', export: 'RoofHifi', Icon: RoofHifi },
+  { name: 'Room', export: 'RoomHifi', Icon: RoomHifi },
+  { name: 'Section', export: 'SectionHifi', Icon: SectionHifi },
+  { name: 'Floor slab', export: 'FloorHifi', Icon: FloorHifi },
+];
 
 type IconEntry = { name: string; export: string; Icon: BimIcon };
 type Section = { label: string; icons: IconEntry[] };
@@ -525,6 +553,43 @@ const SECTIONS: Section[] = [
 
 const ALL_ICONS = SECTIONS.flatMap((s) => s.icons);
 
+function HiFiCard({ entry }: { entry: HiFiEntry }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleClick = useCallback(() => {
+    const text = `import { ${entry.export} } from '@bim-ai/icons'`;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1400);
+    });
+  }, [entry.export]);
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      title={`Click to copy import for ${entry.export}`}
+      className="group relative flex flex-col items-center gap-3 rounded-xl border border-border bg-surface p-5 text-center transition-all hover:border-accent hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+    >
+      {copied && (
+        <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-accent text-xs font-medium text-accent-foreground">
+          Copied!
+        </span>
+      )}
+      <div className="flex h-14 w-14 items-center justify-center">
+        <entry.Icon
+          size={48}
+          className="text-foreground transition-colors group-hover:text-accent"
+        />
+      </div>
+      <span className="text-[11px] text-muted-foreground">{entry.name}</span>
+      <span className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-foreground px-1.5 py-0.5 font-mono text-[10px] text-background opacity-0 transition-opacity group-hover:opacity-100">
+        {entry.export}
+      </span>
+    </button>
+  );
+}
+
 const SIZES = [16, 18, 20, 24, 32] as const;
 type Size = (typeof SIZES)[number];
 
@@ -552,6 +617,7 @@ function IconCard({
 
   return (
     <button
+      type="button"
       onClick={handleClick}
       title={`Click to copy import for ${entry.export}`}
       className="group relative flex flex-col items-center gap-2 rounded-lg border border-border bg-surface p-4 text-center transition-all hover:border-accent hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
@@ -614,6 +680,7 @@ export function IconGallery() {
                 <div className="flex rounded-md border border-border">
                   {SIZES.map((s, i) => (
                     <button
+                      type="button"
                       key={s}
                       onClick={() => setSize(s)}
                       className={[
@@ -638,6 +705,7 @@ export function IconGallery() {
                 <div className="flex rounded-md border border-border">
                   {STROKE_WIDTHS.map((sw, i) => (
                     <button
+                      type="button"
                       key={sw}
                       onClick={() => setStrokeWidth(sw)}
                       className={[
@@ -662,6 +730,30 @@ export function IconGallery() {
       </div>
 
       <div className="mx-auto max-w-5xl px-6 py-8">
+        {/* High-fidelity section — always visible */}
+        <section className="mb-12">
+          <div className="mb-4 flex items-center gap-3">
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              High-fidelity 48×48
+            </h2>
+            <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-medium text-accent">
+              new
+            </span>
+            <span className="text-[11px] text-muted-foreground/60">{HIFI_ICONS.length}</span>
+          </div>
+          <p className="mb-4 text-[11px] text-muted-foreground">
+            Designed for empty states, library tiles, and mode splash areas. Material hatching,
+            fills, and architectural detail that would be lost at 16–20px.
+          </p>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-3">
+            {HIFI_ICONS.map((entry) => (
+              <HiFiCard key={entry.export} entry={entry} />
+            ))}
+          </div>
+        </section>
+
+        <hr className="mb-10 border-border" />
+
         {filtered !== null ? (
           <div>
             <p className="mb-4 text-[11px] text-muted-foreground">
