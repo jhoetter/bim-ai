@@ -162,6 +162,20 @@ export function WorkspaceRightRail({
                   if (key === '__applyTemplate__') {
                     const p = JSON.parse(value) as { planViewId: string; templateId: string };
                     void onSemanticCommand({ type: 'applyPlanViewTemplate', ...p });
+                  } else if (key === '__saveAsTemplate__') {
+                    const p = JSON.parse(value) as {
+                      name: string;
+                      detailLevel: string | null;
+                      phaseFilter: string | null;
+                    };
+                    const templateId = `tmpl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+                    void onSemanticCommand({
+                      type: 'CreateViewTemplate',
+                      templateId,
+                      name: p.name,
+                      detailLevel: p.detailLevel ?? undefined,
+                      phaseFilter: p.phaseFilter ?? undefined,
+                    });
                   } else {
                     void onSemanticCommand({
                       type: 'updateElementProperty',
@@ -203,6 +217,20 @@ export function WorkspaceRightRail({
                           templateId: string;
                         };
                         void onSemanticCommand({ type: 'applyPlanViewTemplate', ...p });
+                      } else if (key === '__saveAsTemplate__') {
+                        const p = JSON.parse(value) as {
+                          name: string;
+                          detailLevel: string | null;
+                          phaseFilter: string | null;
+                        };
+                        const templateId = `tmpl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+                        void onSemanticCommand({
+                          type: 'CreateViewTemplate',
+                          templateId,
+                          name: p.name,
+                          detailLevel: p.detailLevel ?? undefined,
+                          phaseFilter: p.phaseFilter ?? undefined,
+                        });
                       } else {
                         void onSemanticCommand({
                           type: 'updateElementProperty',

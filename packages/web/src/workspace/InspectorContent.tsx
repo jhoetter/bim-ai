@@ -1101,6 +1101,26 @@ export function InspectorPlanViewEditor({
               ))}
             </select>
           </label>
+          <div className={LABEL_CLS}>
+            <span>View Template</span>
+            <button
+              data-testid="inspector-save-as-template"
+              onClick={() =>
+                onPersistProperty(
+                  '__saveAsTemplate__',
+                  JSON.stringify({
+                    name: `Copy of ${el.name}`,
+                    detailLevel: el.planDetailLevel ?? null,
+                    phaseFilter: (el as Record<string, unknown>).phaseFilter as string ?? null,
+                  }),
+                )
+              }
+              style={{ fontSize: 11, padding: '2px 6px', cursor: 'pointer' }}
+              title="Create a new view template from this view's current settings"
+            >
+              Save as Template…
+            </button>
+          </div>
           <label className={LABEL_CLS}>
             {pv('applyTemplate')}
             <select
