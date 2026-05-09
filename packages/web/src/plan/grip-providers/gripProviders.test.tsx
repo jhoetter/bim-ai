@@ -254,9 +254,9 @@ describe('EDT-01 — dimensionGripProvider', () => {
     offsetMm: { xMm: 0, yMm: 500 },
   };
 
-  it('emits anchor + offset grips', () => {
+  it('emits anchor + offset + text grips', () => {
     const grips = dimensionGripProvider.grips(dim, {});
-    expect(grips.map((g) => g.id)).toEqual(['dim-1:anchor', 'dim-1:offset']);
+    expect(grips.map((g) => g.id)).toEqual(['dim-1:anchor', 'dim-1:offset', 'dim-1:text']);
   });
 
   it('offset grip drag projects onto the unit normal', () => {

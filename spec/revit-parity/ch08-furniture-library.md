@@ -22,7 +22,7 @@ Source segment: `04:35:00 – 04:38:48`
 **Screenshot:**
 ![Dimension text reposition](file:///Users/jhoetter/Desktop/Revit%20Specs/0699_04-35-13.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — Dimension elements now support a `textOffsetMm` field: the text label position can be offset from the default midpoint via the inspector ("Text offset X/Y" inputs + Reset) or by dragging the circular text-label grip handle on the canvas when a dimension is selected. The measurement value is rendered as a sprite label at the offset position. Missing: on-canvas drag handle does not snap to the dimension-line axis; double-click-to-reset is not implemented.
 
 ---
 

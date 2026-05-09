@@ -93,6 +93,45 @@ export const dimensionGripProvider: ElementGripProvider<Dimension> = {
       }),
     };
 
-    return [anchorGrip, offsetGrip];
+    // F-088 — text-label drag grip. Positioned at the current text label
+    // centre (midpoint of aMm→bMm + offsetMm + textOffsetMm). Free axis so
+    // the user can shift the label in any direction.
+    const textMidXMm = (dim.aMm.xMm + dim.bMm.xMm) / 2 + dim.offsetMm.xMm;
+    const textMidYMm = (dim.aMm.yMm + dim.bMm.yMm) / 2 + dim.offsetMm.yMm;
+    const currentTextOffsetX = dim.textOffsetMm?.xMm ?? 0;
+    const currentTextOffsetY = dim.textOffsetMm?.yMm ?? 0;
+    const textGrip: GripDescriptor = {
+      id: `${dim.id}:text`,
+      positionMm: {
+        xMm: textMidXMm + currentTextOffsetX,
+        yMm: textMidYMm + currentTextOffsetY,
+      },
+      shape: 'circle',
+      axis: 'free',
+      hint: 'Drag to reposition dimension text label',
+      onDrag: () => ({ kind: 'unknown', id: dim.id }),
+      onCommit: (delta): GripCommand => ({
+        type: 'updateElementProperty',
+        elementId: dim.id,
+        key: 'textOffsetMm',
+        value: JSON.stringify({
+          xMm: currentTextOffsetX + delta.xMm,
+          yMm: currentTextOffsetY + delta.yMm,
+        }),
+      }),
+      onNumericOverride: (): GripCommand => ({
+        // Numeric override not meaningful for a free-axis text grip;
+        // return a no-op unknown command so the drag still cancels cleanly.
+        type: 'updateElementProperty',
+        elementId: dim.id,
+        key: 'textOffsetMm',
+        value: JSON.stringify({
+          xMm: currentTextOffsetX,
+          yMm: currentTextOffsetY,
+        }),
+      }),
+    };
+
+    return [anchorGrip, offsetGrip, textGrip];
   },
 };

@@ -1000,6 +1000,10 @@ export type Element =
       aMm: XY;
       bMm: XY;
       offsetMm: XY;
+      /** F-088 — optional text-label offset from the default midpoint position.
+       *  When set, the dimension measurement label is shifted by this vector
+       *  relative to the midpoint of (aMm → bMm) + offsetMm. */
+      textOffsetMm?: { xMm: number; yMm: number } | null;
       refElementIdA?: string | null;
       refElementIdB?: string | null;
       tagDefinitionId?: string | null;
@@ -1325,7 +1329,12 @@ export type Element =
       /** DSC-V3-02: per-view discipline lens; 'show_all' = foreground for all elements. */
       defaultLens?: ViewLensMode;
       /** F-028: view subtype for tracking and Project Browser display. */
-      planViewSubtype?: 'floor_plan' | 'area_plan' | 'lighting_plan' | 'power_plan' | 'coordination_plan';
+      planViewSubtype?:
+        | 'floor_plan'
+        | 'area_plan'
+        | 'lighting_plan'
+        | 'power_plan'
+        | 'coordination_plan';
     }
   | {
       kind: 'view_template';

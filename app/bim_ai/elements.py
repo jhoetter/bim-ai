@@ -522,6 +522,7 @@ class DimensionElem(BaseModel):
     a_mm: Vec2Mm = Field(alias="aMm")
     b_mm: Vec2Mm = Field(alias="bMm")
     offset_mm: Vec2Mm = Field(alias="offsetMm")
+    text_offset_mm: Vec2Mm | None = Field(default=None, alias="textOffsetMm")
     ref_element_id_a: str | None = Field(default=None, alias="refElementIdA")
     ref_element_id_b: str | None = Field(default=None, alias="refElementIdB")
     tag_definition_id: str | None = Field(default=None, alias="tagDefinitionId")

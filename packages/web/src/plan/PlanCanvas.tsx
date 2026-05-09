@@ -577,6 +577,12 @@ export function PlanCanvas({
     const el = elementsById[selectedId];
     return el && el.kind === 'wall' ? el : undefined;
   }, [selectedId, elementsById]);
+  // F-088 — selected dimension (enables grip layer + text-label drag handle).
+  const selectedDimension = useMemo(() => {
+    if (!selectedId) return undefined;
+    const el = elementsById[selectedId];
+    return el && el.kind === 'dimension' ? el : undefined;
+  }, [selectedId, elementsById]);
   const selectedElement = useMemo(
     () => (selectedId ? elementsById[selectedId] : undefined),
     [selectedId, elementsById],
@@ -4018,8 +4024,9 @@ export function PlanCanvas({
         />
       )}
       {/* EDT-01 — grip layer (raycast above element pick so grips win
-          on hover). Renders the live draft preview during drag. */}
-      {selectedWall && (
+          on hover). Renders the live draft preview during drag.
+          F-088: also shown for selected dimensions (text + offset grips). */}
+      {(selectedWall ?? selectedDimension) && (
         <GripLayer
           grips={gripDescriptors}
           worldToScreen={worldToScreen}

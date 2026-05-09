@@ -1269,7 +1269,7 @@ export function gridLineThree(g: Extract<Element, { kind: 'grid_line' }>): THREE
   return grp;
 }
 
-export function dimensionsThree(d: Extract<Element, { kind: 'dimension' }>): THREE.LineSegments {
+export function dimensionsThree(d: Extract<Element, { kind: 'dimension' }>): THREE.Group {
   const a = new THREE.Vector3(ux(d.aMm.xMm), PLAN_Y + 0.002, uz(d.aMm.yMm));
 
   const b = new THREE.Vector3(ux(d.bMm.xMm), PLAN_Y + 0.002, uz(d.bMm.yMm));
@@ -1302,8 +1302,26 @@ export function dimensionsThree(d: Extract<Element, { kind: 'dimension' }>): THR
   );
 
   ls.userData.dimensionSpanMm = dimSpanMm;
+  ls.userData.bimPickId = d.id;
 
-  return ls;
+  // F-088 — text label sprite at midpoint of the dimension line, shifted by
+  // textOffsetMm when set.
+  const midXMm = (d.aMm.xMm + d.bMm.xMm) / 2 + d.offsetMm.xMm;
+  const midYMm = (d.aMm.yMm + d.bMm.yMm) / 2 + d.offsetMm.yMm;
+  const textXMm = midXMm + (d.textOffsetMm?.xMm ?? 0);
+  const textYMm = midYMm + (d.textOffsetMm?.yMm ?? 0);
+
+  const labelText =
+    dimSpanMm >= 1000 ? `${(dimSpanMm / 1000).toFixed(2)} m` : `${Math.round(dimSpanMm)} mm`;
+
+  const sprite = planAnnotationLabelSprite(ux(textXMm), uz(textYMm), labelText, d.id);
+  sprite.userData.dimensionTextLabel = true;
+
+  const grp = new THREE.Group();
+  grp.userData.bimPickId = d.id;
+  grp.add(ls, sprite);
+
+  return grp;
 }
 
 const REFERENCE_PLANE_PLAN_COLOR = 0x9ca3af;
