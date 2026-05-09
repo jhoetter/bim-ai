@@ -2140,6 +2140,41 @@ async def v3_trace_image(
     return result
 
 
+# ---------------------------------------------------------------------------
+# VG-V3-01 — Render-and-compare
+# ---------------------------------------------------------------------------
+
+
+@api_router.post("/v3/compare")
+async def compare_snapshots_endpoint(body: dict) -> dict:
+    """VG-V3-01 — Deterministic visual diff between two model snapshots.
+
+    Accepts JSON body with snapshotA, snapshotB, and optional metric / threshold / region.
+    Returns a CompareResult. Same inputs → byte-identical output.
+    """
+    snap_a = body.get("snapshotA")
+    snap_b = body.get("snapshotB")
+    if snap_a is None or snap_b is None:
+        raise HTTPException(status_code=422, detail="snapshotA and snapshotB are required")
+    metric = body.get("metric", "ssim")
+    if metric not in ("ssim", "mse", "pixel-diff"):
+        raise HTTPException(
+            status_code=422,
+            detail="metric must be one of: ssim, mse, pixel-diff",
+        )
+    threshold = body.get("threshold")
+    region = body.get("region")
+    from bim_ai.vg.compare import compare_snapshots
+
+    return compare_snapshots(
+        snap_a,
+        snap_b,
+        metric=metric,
+        threshold=float(threshold) if threshold is not None else None,
+        region=region,
+    )
+
+
 @api_router.get("/v3/tools")
 async def v3_list_tools() -> dict[str, Any]:
     catalog = get_catalog()

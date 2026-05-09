@@ -991,6 +991,12 @@ register(
         inputSchema={
             "$schema": "http://json-schema.org/draft-07/schema#",
             "title": "CreateScheduleViewInput",
+            "type": "object",
+            "required": ["id", "name", "category"],
+            "properties": {
+                "id": {"type": "string"},
+                "name": {"type": "string"},
+                "category": {"type": "string"},
                 "columns": {"type": "array", "items": {"type": "object"}},
                 "filterExpr": {"type": "string"},
                 "sortKey": {"type": "string"},
@@ -1023,5 +1029,67 @@ register(
         inputSchema={
             "$schema": "http://json-schema.org/draft-07/schema#",
             "title": "SetElementPropInput",
+            "type": "object",
+            "required": ["elementId", "key", "value"],
+            "properties": {
+                "elementId": {"type": "string"},
+                "key": {"type": "string"},
+                "value": {},
+            },
+        },
+        outputSchema={"type": "object"},
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Custom property set on element"),
+            "not_found": ExitCode(code=1, meaning="elementId not found in document"),
+            "error": ExitCode(code=1, meaning="Unexpected error"),
+        },
+        cliExample="bim-ai apply-bundle bundle.json  # bundle contains set_element_prop command",
+        restEndpoint=RestEndpoint(method="POST", path="/api/v3/models/{modelId}/bundles"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes="Merges into element.props dict. Element must exist; unknown elementId raises 400.",
+    )
+)
+
+# ---------------------------------------------------------------------------
+# VG-V3-01 — Visual comparison tool
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="compare-snapshots",
+        category="query",
+        inputSchema={
+            "type": "object",
+            "required": ["snapshotA", "snapshotB"],
+            "properties": {
+                "snapshotA": {"type": "object", "description": "First model snapshot"},
+                "snapshotB": {"type": "object", "description": "Second model snapshot"},
+                "metric": {
+                    "type": "string",
+                    "enum": ["ssim", "mse", "pixel-diff"],
+                    "default": "ssim",
+                },
+                "threshold": {"type": "number", "description": "Pass/fail threshold"},
+                "region": {"type": "string", "description": "Named region mask"},
+            },
+        },
+        outputSchema={
+            "type": "object",
+            "properties": {
+                "schemaVersion": {"type": "string"},
+                "metric": {"type": "string"},
+                "score": {"type": "number"},
+                "thresholdPassed": {"type": "boolean"},
+                "perRegionScores": {"type": "object"},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Comparison complete; score returned"),
+            "threshold_fail": ExitCode(code=1, meaning="Score below threshold"),
+        },
+        cliExample="bim-ai compare pre.json post.json --metric ssim --threshold 0.7",
+        restEndpoint=RestEndpoint(method="POST", path="/api/v3/compare"),
+        sideEffects="none",
+        agentSafetyNotes="Safe to call any number of times. Same inputs → byte-identical output.",
     )
 )
