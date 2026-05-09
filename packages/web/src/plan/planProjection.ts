@@ -32,7 +32,8 @@ export type PlanSemanticKind =
   | 'property_line'
   | 'masking_region'
   | 'detail_line'
-  | 'text_note';
+  | 'text_note'
+  | 'placed_asset';
 
 /** Map schedule / authoring labels to semantic drawing kinds consumed by symbology. */
 
@@ -86,6 +87,8 @@ export function canonHiddenCategory(cat: string): PlanSemanticKind | undefined {
     section_mark: 'section_cut',
     elevations: 'elevation_view',
     elevation_view: 'elevation_view',
+    elevation_mark: 'elevation_view',
+    'elevation marks': 'elevation_view',
     'area boundaries': 'area_boundary',
     'area boundary': 'area_boundary',
     area_boundary: 'area_boundary',
@@ -104,6 +107,12 @@ export function canonHiddenCategory(cat: string): PlanSemanticKind | undefined {
     'text notes': 'text_note',
     'text note': 'text_note',
     text_note: 'text_note',
+    'placed assets': 'placed_asset',
+    'placed asset': 'placed_asset',
+    placed_asset: 'placed_asset',
+    furniture: 'placed_asset',
+    furnishings: 'placed_asset',
+    'generic models': 'placed_asset',
   };
 
   return table[raw] ?? undefined;
@@ -162,6 +171,18 @@ export function resolvePlanViewDisplay(
     const tmpl = elementsById[tmplId];
     if (tmpl && tmpl.kind === 'view_template') {
       mergeHiddenFromLabels(tmpl.hiddenCategories ?? [], hidden);
+    }
+  }
+
+  // Merge per-category visibility overrides set via the VV dialog (categoryOverrides.visible=false).
+  const overrides = (el.categoryOverrides ?? {}) as Record<
+    string,
+    { visible?: boolean } | undefined
+  >;
+  for (const [catKey, ovr] of Object.entries(overrides)) {
+    if (ovr?.visible === false) {
+      const k = canonHiddenCategory(catKey);
+      if (k) hidden.add(k);
     }
   }
 

@@ -1228,6 +1228,7 @@ export function rebuildPlanMeshes(
 
   // F-114: placed_asset schematic plan symbols (rectangle outline + cross diagonal).
   {
+    const before = holder.children.length;
     type PlacedAssetElement = Extract<Element, { kind: 'placed_asset' }>;
     type AssetLibraryEntryElement = Extract<Element, { kind: 'asset_library_entry' }>;
 
@@ -1243,6 +1244,7 @@ export function rebuildPlanMeshes(
     );
 
     for (const asset of placedAssets) {
+      if (kindHidden('placed_asset')) continue;
       const entry = assetEntries[asset.assetId];
       const wM = (entry?.thumbnailWidthMm ?? 1000) / 1000;
       const dM = (entry?.thumbnailHeightMm ?? 600) / 1000;
@@ -1286,6 +1288,7 @@ export function rebuildPlanMeshes(
       diagLine.userData.bimPickId = asset.id;
       holder.add(diagLine);
     }
+    tintNewChildren(before, 'placed_asset');
   }
 
   // CAN-V3-01: floor/roof outlines are projection geometry — suppress when projMajor is null (1:500+).

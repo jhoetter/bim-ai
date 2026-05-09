@@ -31,21 +31,24 @@ describe('VVDialog', () => {
     mockSetCategoryOverride.mockClear();
   });
 
-  it('renders with 12 model category rows when open', () => {
+  it('renders with 15 model category rows when open', () => {
     render(<VVDialog open={true} onClose={() => {}} />);
-    // 12 model categories
+    // 15 model categories
     expect(screen.getByText('Walls')).toBeDefined();
     expect(screen.getByText('Floors')).toBeDefined();
     expect(screen.getByText('Roofs')).toBeDefined();
-    expect(screen.getByText('Doors')).toBeDefined();
-    expect(screen.getByText('Windows')).toBeDefined();
+    expect(screen.getByText('Ceilings')).toBeDefined();
+    expect(screen.getByText('Columns')).toBeDefined();
+    expect(screen.getByText('Structural Framing')).toBeDefined();
     expect(screen.getByText('Stairs')).toBeDefined();
     expect(screen.getByText('Railings')).toBeDefined();
+    expect(screen.getByText('Doors')).toBeDefined();
+    expect(screen.getByText('Windows')).toBeDefined();
     expect(screen.getByText('Rooms')).toBeDefined();
-    expect(screen.getByText('Columns')).toBeDefined();
-    expect(screen.getByText('Beams')).toBeDefined();
-    expect(screen.getByText('Ceilings')).toBeDefined();
+    expect(screen.getByText('Furniture / Generic Models')).toBeDefined();
+    expect(screen.getByText('Property Lines')).toBeDefined();
     expect(screen.getByText('Site')).toBeDefined();
+    expect(screen.getByText('Site / Origin')).toBeDefined();
   });
 
   it('does not render when closed', () => {
