@@ -68,7 +68,10 @@ ignore = ["E501"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-addopts = "--cov=bim_ai --cov-report=term-missing --cov-fail-under=65"
+addopts = "--cov=bim_ai --cov-report=term-missing --cov-fail-under=65 -m 'not integration'"
+markers = [
+    "integration: live-server tests requiring a running API; excluded from standard CI",
+]
 
 [tool.coverage.run]
 source = ["bim_ai"]
