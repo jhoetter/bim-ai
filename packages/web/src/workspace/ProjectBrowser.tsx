@@ -99,6 +99,8 @@ export function ProjectBrowser(props: {
   const dismissPropagation = useViewTemplateStore((s) => s.dismissPropagation);
   const vtStore = useViewTemplateStore();
   const [vtCollapsed, setVtCollapsed] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = useState('');
 
   const { planViewsSorted, planViewBuckets, bucketKeys } = useMemo(() => {
     const sorted = Object.values(props.elementsById)
@@ -276,6 +278,29 @@ export function ProjectBrowser(props: {
     props.onUpsertSemantic?.(cmd);
   };
 
+  const commitRename = async (viewId: string) => {
+    if (renamingId !== viewId) return;
+    const trimmed = renameDraft.trim();
+    const current = props.elementsById[viewId];
+    const currentName =
+      current && 'name' in current ? String((current as { name?: string }).name ?? '') : '';
+    if (trimmed && trimmed !== currentName && modelId) {
+      await applyCommand(modelId, {
+        type: 'updateElementProperty',
+        elementId: viewId,
+        key: 'name',
+        value: trimmed,
+      });
+    }
+    setRenamingId(null);
+    setRenameDraft('');
+  };
+
+  const cancelRename = () => {
+    setRenamingId(null);
+    setRenameDraft('');
+  };
+
   const applyViewpointQuick = (vp: Extract<Element, { kind: 'viewpoint' }>) => {
     if (vp.mode === 'orbit_3d') {
       setViewerMode('orbit_3d');
@@ -317,15 +342,41 @@ export function ProjectBrowser(props: {
                 <ul className="space-y-0.5">
                   {(planViewBuckets.get(tid) ?? []).map((pv) => (
                     <li key={pv.id} className="flex flex-col gap-0.5">
-                      <Btn
-                        type="button"
-                        variant="quiet"
-                        className="w-full px-2 py-0.5 text-left text-[10px]"
-                        title={planViewTooltip(pv, props.elementsById)}
-                        onClick={() => activatePlanView(pv.id)}
-                      >
-                        plan_view · {pv.name}
-                      </Btn>
+                      {renamingId === pv.id ? (
+                        <input
+                          autoFocus
+                          type="text"
+                          data-testid={`plan-view-rename-input-${pv.id}`}
+                          value={renameDraft}
+                          className="rounded border border-border bg-background px-1 py-0.5 text-xs"
+                          onChange={(e) => setRenameDraft(e.currentTarget.value)}
+                          onBlur={() => void commitRename(pv.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              void commitRename(pv.id);
+                            }
+                            if (e.key === 'Escape') {
+                              e.preventDefault();
+                              cancelRename();
+                            }
+                          }}
+                        />
+                      ) : (
+                        <Btn
+                          type="button"
+                          variant="quiet"
+                          className="w-full px-2 py-0.5 text-left text-[10px]"
+                          title={planViewTooltip(pv, props.elementsById)}
+                          onClick={() => activatePlanView(pv.id)}
+                          onDoubleClick={() => {
+                            setRenamingId(pv.id);
+                            setRenameDraft(pv.name);
+                          }}
+                        >
+                          plan_view · {pv.name}
+                        </Btn>
+                      )}
                       <div
                         className="pl-2 font-mono text-[9px] leading-tight text-muted"
                         data-bim-plan-view-evidence={pv.id}
@@ -877,9 +928,7 @@ function disciplineLabel(el: Element): string | null {
 }
 
 /** Group rows by discipline label (or single unlabelled group if none present). */
-function groupByDiscipline<T extends Element>(
-  rows: T[],
-): { label: string | null; rows: T[] }[] {
+function groupByDiscipline<T extends Element>(rows: T[]): { label: string | null; rows: T[] }[] {
   const hasAnyDisc = rows.some((r) => disciplineLabel(r) !== null);
   if (!hasAnyDisc) return [{ label: null, rows }];
   const map = new Map<string, T[]>();
@@ -923,12 +972,12 @@ export function ProjectBrowserV3({
 
     const views = elements.filter(
       (e): e is Extract<Element, { kind: 'viewpoint' | 'saved_view' }> =>
-        (e.kind === 'viewpoint' || e.kind === 'saved_view') && matches((e as { name?: string }).name ?? e.id),
+        (e.kind === 'viewpoint' || e.kind === 'saved_view') &&
+        matches((e as { name?: string }).name ?? e.id),
     );
 
     const schedules = elements.filter(
-      (e): e is Extract<Element, { kind: 'schedule' }> =>
-        e.kind === 'schedule' && matches(e.name),
+      (e): e is Extract<Element, { kind: 'schedule' }> => e.kind === 'schedule' && matches(e.name),
     );
 
     const links = elements.filter(
@@ -1004,9 +1053,7 @@ export function ProjectBrowserV3({
   };
 
   const railStyle: React.CSSProperties = {
-    width: collapsed
-      ? 'var(--rail-width-collapsed, 36px)'
-      : 'var(--rail-width-expanded, 240px)',
+    width: collapsed ? 'var(--rail-width-collapsed, 36px)' : 'var(--rail-width-expanded, 240px)',
     overflow: 'hidden',
     display: 'flex',
     flexDirection: 'column',
@@ -1014,13 +1061,7 @@ export function ProjectBrowserV3({
   };
 
   if (collapsed) {
-    return (
-      <div
-        style={railStyle}
-        data-collapsed="true"
-        aria-label="Project browser (collapsed)"
-      />
-    );
+    return <div style={railStyle} data-collapsed="true" aria-label="Project browser (collapsed)" />;
   }
 
   const viewGroups = groupByDiscipline(viewRows);
@@ -1028,7 +1069,12 @@ export function ProjectBrowserV3({
   return (
     <div style={railStyle} aria-label="Project browser">
       {/* Search */}
-      <div style={{ padding: 'var(--space-2) var(--space-3)', borderBottom: 'var(--border-px, 1px) solid var(--color-border)' }}>
+      <div
+        style={{
+          padding: 'var(--space-2) var(--space-3)',
+          borderBottom: 'var(--border-px, 1px) solid var(--color-border)',
+        }}
+      >
         <input
           type="search"
           placeholder="Search project…"
@@ -1112,9 +1158,7 @@ export function ProjectBrowserV3({
                               padding: 'var(--space-0-5) var(--space-3)',
                               fontSize: 'var(--text-sm, 12.5px)',
                               color: 'var(--color-foreground)',
-                              background: isActive
-                                ? 'var(--color-accent-soft)'
-                                : 'transparent',
+                              background: isActive ? 'var(--color-accent-soft)' : 'transparent',
                               border: 'none',
                               cursor: 'pointer',
                             }}
@@ -1220,7 +1264,10 @@ export function ProjectBrowserV3({
           </PbGroup>
         ) : null}
 
-        {viewRows.length === 0 && scheduleRows.length === 0 && linkRows.length === 0 && phaseRows.length === 0 ? (
+        {viewRows.length === 0 &&
+        scheduleRows.length === 0 &&
+        linkRows.length === 0 &&
+        phaseRows.length === 0 ? (
           <div
             style={{
               padding: 'var(--space-3)',
