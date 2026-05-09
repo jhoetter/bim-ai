@@ -2727,3 +2727,31 @@ async def get_sheet_pixel_map(
                     }
 
     return {"map": pixel_map}
+
+
+# ---------------------------------------------------------------------------
+# CTL-V3-01 — Catalog query endpoint
+# ---------------------------------------------------------------------------
+
+
+@api_router.get("/v3/catalog")
+async def catalog_query_endpoint(
+    kind: str | None = None,
+    maxWidthMm: float | None = None,
+    minWidthMm: float | None = None,
+    tag: str | None = None,
+    style: str | None = None,
+    page: int = 0,
+    pageSize: int = 50,
+) -> dict:
+    from bim_ai.catalog.query import query_catalog
+
+    return query_catalog(
+        kind=kind,
+        max_width_mm=maxWidthMm,
+        min_width_mm=minWidthMm,
+        tag=tag,
+        style=style,
+        page=page,
+        page_size=pageSize,
+    )
