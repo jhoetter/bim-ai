@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "fa094ea0346e",
+  "strategy": "manual-commit",
+  "branch": "feat/parity-tracker-batch13",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/fa/094ea0346e/0/metadata.json",
+      "transcript": "/fa/094ea0346e/0/full.jsonl",
+      "content_hash": "/fa/094ea0346e/0/content_hash.txt",
+      "prompt": "/fa/094ea0346e/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 6316,
+    "cache_creation_tokens": 3481195,
+    "cache_read_tokens": 152858124,
+    "output_tokens": 970156,
+    "api_call_count": 1612
+  }
+}
