@@ -121,17 +121,16 @@ export function TabBar({
               setDragOverIdx(null);
             }}
             className={[
-              'group flex items-center gap-1.5 rounded-t-md border border-b-0 px-3 py-1.5 text-xs font-medium transition-colors',
+              'group flex items-center gap-1.5 rounded-t-md border border-b-0 px-3 py-1.5 text-[12px] font-medium transition-colors',
               isActive
-                ? 'border-border bg-background text-foreground shadow-sm'
-                : 'border-transparent text-muted hover:bg-background/60 hover:text-foreground',
+                ? 'border-border/60 bg-background text-foreground'
+                : 'border-transparent text-muted/70 hover:bg-background/40 hover:text-foreground',
               isDragOver ? 'ring-2 ring-accent ring-offset-0' : '',
             ].join(' ')}
             style={
               isActive
                 ? {
-                    boxShadow:
-                      'inset 0 -2px 0 0 var(--color-accent), 0 -1px 3px 0 rgba(0,0,0,0.04)',
+                    boxShadow: 'inset 0 -2px 0 0 var(--color-accent)',
                   }
                 : undefined
             }

@@ -1,4 +1,6 @@
 import { type CSSProperties, type JSX, useEffect, useRef, useState } from 'react';
+import { Check } from 'lucide-react';
+import { Icons } from '@bim-ai/ui';
 import { WORKSPACES, type WorkspaceDescriptor, type WorkspaceId } from './workspaces';
 
 export interface WorkspaceSwitcherProps {
@@ -38,14 +40,14 @@ export function WorkspaceSwitcher({
     display: 'flex',
     alignItems: 'center',
     gap: 6,
-    padding: '0 8px',
+    padding: '0 10px',
     height: 'calc(var(--shell-topbar-height) - 16px)',
-    borderLeft: `4px solid ${activeWorkspace.discToken}`,
+    borderLeft: `3px solid ${activeWorkspace.discToken}`,
     borderTop: 'none',
     borderRight: 'none',
     borderBottom: 'none',
     borderRadius: 'var(--radius-md)',
-    backgroundColor: 'var(--color-surface)',
+    backgroundColor: 'var(--color-surface-strong)',
     fontSize: 'var(--text-sm)',
     lineHeight: 'var(--text-sm-line)',
     fontWeight: 500,
@@ -83,12 +85,11 @@ export function WorkspaceSwitcher({
         style={chipStyle}
       >
         <span>{activeWorkspace.label}</span>
-        <span
+        <Icons.disclosureOpen
+          size={12}
           aria-hidden="true"
-          style={{ color: 'var(--color-muted-foreground)', fontSize: 'var(--text-sm)' }}
-        >
-          ▾
-        </span>
+          style={{ color: 'var(--color-muted-foreground)', flexShrink: 0 }}
+        />
       </button>
       {isOpen && (
         <ul role="listbox" style={menuStyle}>
@@ -190,12 +191,11 @@ function WorkspaceRow({
       />
       <span style={{ flex: 1 }}>{workspace.label}</span>
       {isActive && (
-        <span
+        <Check
+          size={12}
           aria-hidden="true"
-          style={{ color: 'var(--color-foreground)', fontSize: 'var(--text-sm)' }}
-        >
-          ✓
-        </span>
+          style={{ color: 'var(--color-accent)', flexShrink: 0 }}
+        />
       )}
     </li>
   );

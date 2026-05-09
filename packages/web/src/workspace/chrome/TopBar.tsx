@@ -78,7 +78,7 @@ export function TopBarV3({
       data-testid="topbar-v3"
       role="banner"
       style={topBarStyle}
-      className="flex w-full items-center gap-1"
+      className="flex w-full items-center gap-2 px-2"
     >
       {/* Hamburger toggle */}
       {onHamburgerClick ? (
@@ -110,15 +110,19 @@ export function TopBarV3({
         aria-label="bim-ai home"
         tabIndex={0}
         style={{
-          width: 40,
-          height: 40,
+          width: 32,
+          height: 32,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
-          color: 'var(--brand-accent)',
+          background: 'var(--brand-accent)',
+          borderRadius: 'var(--radius-md)',
+          color: 'var(--color-surface)',
           fontWeight: 700,
-          fontSize: 'var(--text-sm)',
+          fontSize: 'var(--text-xs)',
+          letterSpacing: '0.04em',
+          userSelect: 'none',
         }}
       >
         BA
@@ -144,10 +148,10 @@ export function TopBarV3({
           background: 'none',
           border: 'none',
           cursor: 'pointer',
-          fontSize: 'var(--text-base)',
-          lineHeight: 'var(--text-base-line)',
+          fontSize: 'var(--text-sm)',
+          lineHeight: 'var(--text-sm-line)',
           borderRadius: 'var(--radius-md)',
-          fontWeight: 600,
+          fontWeight: 500,
           color: 'var(--color-foreground)',
         }}
       >

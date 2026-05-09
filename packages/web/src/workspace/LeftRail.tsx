@@ -252,7 +252,7 @@ export function LeftRailCollapsed({ sections }: { sections: LeftRailSection[] })
             type="button"
             aria-label={s.label}
             title={s.label}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground hover:bg-surface-strong"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface-strong hover:text-foreground"
           >
             <Icon size={ICON_SIZE.toolPalette} aria-hidden="true" />
           </button>
@@ -271,7 +271,7 @@ function SearchField({
 }): JSX.Element {
   const { t } = useTranslation();
   return (
-    <label className="flex items-center gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-sm focus-within:ring-2 focus-within:ring-offset-0">
+    <label className="flex items-center gap-2 rounded-md border border-transparent bg-surface-strong px-2 py-1.5 text-sm focus-within:border-border focus-within:ring-1 focus-within:ring-border focus-within:ring-offset-0">
       <Icons.search size={ICON_SIZE.chrome} className="text-muted" aria-hidden="true" />
       <input
         type="search"
@@ -295,8 +295,8 @@ function SectionBlock({
   return (
     <div className="mb-2">
       <div
-        className="flex items-center gap-1.5 px-5 py-1 text-xs uppercase text-muted"
-        style={{ letterSpacing: 'var(--text-eyebrow-tracking)' }}
+        className="flex items-center gap-1.5 px-4 pb-0.5 pt-3 text-[10px] font-semibold uppercase text-muted"
+        style={{ letterSpacing: '0.08em', opacity: 0.7 }}
       >
         {section.icon ? <section.icon size={12} aria-hidden="true" /> : null}
         <span>{section.label}</span>
@@ -367,8 +367,10 @@ function Row({
         data-active={isActive ? 'true' : 'false'}
         style={indentStyle}
         className={[
-          'flex h-7 w-full items-center gap-1.5 pr-3 text-sm',
-          isActive ? 'bg-accent-soft text-foreground' : 'text-foreground hover:bg-surface-strong',
+          'flex h-7 w-full items-center gap-1.5 pr-3 text-[13px] transition-colors',
+          isActive
+            ? 'bg-accent-soft font-medium text-foreground'
+            : 'text-foreground/80 hover:bg-surface-strong hover:text-foreground',
         ].join(' ')}
       >
         <span className="inline-flex w-4 items-center justify-center">
