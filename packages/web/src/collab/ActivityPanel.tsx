@@ -62,7 +62,7 @@ function ActivityRowItem({ row, onRestore }: RowItemProps) {
         gap: 8,
         padding: '4px 8px',
         borderRadius: 4,
-        background: hovered ? 'var(--surface-hover)' : 'transparent',
+        background: hovered ? 'var(--color-surface-hover)' : 'transparent',
         cursor: 'default',
         fontSize: 'var(--text-2xs)',
       }}
@@ -78,7 +78,7 @@ function ActivityRowItem({ row, onRestore }: RowItemProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 'var(--text-3xs)',
+          fontSize: 'var(--text-2xs)',
           fontWeight: 600,
           flexShrink: 0,
           color: 'var(--color-foreground)',
@@ -107,7 +107,7 @@ function ActivityRowItem({ row, onRestore }: RowItemProps) {
             border: '1px solid var(--color-border)',
             background: 'var(--color-surface)',
             color: 'var(--color-foreground)',
-            fontSize: 'var(--text-3xs)',
+            fontSize: 'var(--text-2xs)',
             cursor: 'pointer',
             flexShrink: 0,
           }}

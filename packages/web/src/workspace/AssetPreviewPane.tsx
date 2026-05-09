@@ -47,7 +47,7 @@ function ParamField({
           value={value as number}
           onChange={(e) => onChange(Number(e.target.value))}
           style={{
-            background: 'var(--surface-input)',
+            background: 'var(--color-surface-strong)',
             border: '1px solid var(--color-border)',
             borderRadius: 3,
             color: 'var(--color-foreground)',
@@ -68,7 +68,7 @@ function ParamField({
           value={value as string}
           onChange={(e) => onChange(e.target.value)}
           style={{
-            background: 'var(--surface-input)',
+            background: 'var(--color-surface-strong)',
             border: '1px solid var(--color-border)',
             borderRadius: 3,
             color: 'var(--color-foreground)',
@@ -94,7 +94,7 @@ function ParamField({
         value={String(value)}
         onChange={(e) => onChange(e.target.value)}
         style={{
-          background: 'var(--surface-input)',
+          background: 'var(--color-surface-strong)',
           border: '1px solid var(--color-border)',
           borderRadius: 3,
           color: 'var(--color-foreground)',
@@ -169,7 +169,7 @@ export function AssetPreviewPane({ entry, onPlace }: AssetPreviewPaneProps): Rea
               style={{
                 fontSize: 'var(--text-xs)',
                 color: 'var(--color-muted)',
-                background: 'var(--surface-subtle)',
+                background: 'var(--color-surface-muted)',
                 borderRadius: 2,
                 padding: '1px 4px',
               }}

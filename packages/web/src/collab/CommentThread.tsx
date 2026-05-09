@@ -42,7 +42,7 @@ export function CommentThread({ comments, onReply, onResolve, onClose }: Comment
       role="dialog"
       aria-label="Comment thread"
       style={{
-        background: 'var(--surface-overlay)',
+        background: 'var(--color-overlay)',
         border: '1px solid var(--color-border)',
         borderRadius: 8,
         padding: 12,
@@ -72,7 +72,7 @@ export function CommentThread({ comments, onReply, onResolve, onClose }: Comment
           borderRadius: 4,
           padding: '6px 8px',
           fontSize: 13,
-          background: 'var(--surface-input)',
+          background: 'var(--color-surface-strong)',
           color: 'var(--color-foreground)',
           outline: 'none',
         }}

@@ -60,7 +60,7 @@ function SchematicThumbnail({ entry }: { entry: AssetLibraryEntry }): ReactEleme
           y={mid - 2}
           width={w - 8}
           height={4}
-          fill="var(--surface-canvas)"
+          fill="var(--color-canvas-paper)"
           stroke="var(--draft-cut)"
           strokeWidth={0.5}
         />
@@ -133,7 +133,7 @@ export function AssetCard({ entry, selected, onSelect, onPlace }: AssetCardProps
         padding: 8,
         borderRadius: 4,
         cursor: 'grab',
-        background: selected ? 'var(--color-accent-soft)' : 'var(--surface-panel)',
+        background: selected ? 'var(--color-accent-soft)' : 'var(--color-surface-strong)',
         border: selected ? '1px solid var(--color-accent)' : '1px solid var(--color-border)',
         fontSize: 'var(--text-xs)',
         color: 'var(--color-foreground)',
@@ -164,7 +164,7 @@ export function AssetCard({ entry, selected, onSelect, onPlace }: AssetCardProps
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'var(--surface-canvas)',
+          background: 'var(--color-canvas-paper)',
           borderRadius: 2,
         }}
       >

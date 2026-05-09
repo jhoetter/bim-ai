@@ -30,6 +30,7 @@
   --color-drift: #9b6f1b;
 
   /* Canvas overlay typography — legitimises the 10 px label regime */
+  --text-3xs: 9px;
   --text-2xs: 10px;
   --text-2xs-line: 14px;
 

@@ -160,7 +160,7 @@ export function ScheduleView({ modelId, scheduleId, onHighlightElement }: Schedu
                           width: '100%',
                           background: 'var(--surface-2)',
                           color: 'var(--color-foreground)',
-                          border: '1px solid var(--border-accent)',
+                          border: '1px solid var(--color-accent)',
                           padding: '2px var(--space-1)',
                           fontSize: 'var(--text-sm)',
                         }}

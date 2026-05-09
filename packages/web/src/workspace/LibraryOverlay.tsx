@@ -115,7 +115,7 @@ export function LibraryOverlay({
         style={{
           position: 'fixed',
           inset: 0,
-          background: 'var(--surface-canvas)',
+          background: 'var(--color-canvas-paper)',
           opacity: isOpen ? 0.15 : 0,
           pointerEvents: 'none',
           transition: 'opacity 180ms ease',
@@ -137,7 +137,7 @@ export function LibraryOverlay({
           width: 540,
           display: 'flex',
           flexDirection: 'row',
-          background: 'var(--surface-panel)',
+          background: 'var(--color-surface-strong)',
           borderRight: '1px solid var(--color-border)',
           transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
           transition: 'transform 200ms ease',
@@ -312,7 +312,7 @@ export function LibraryOverlay({
               data-testid="library-search-input"
               style={{
                 width: '100%',
-                background: 'var(--surface-input)',
+                background: 'var(--color-surface-strong)',
                 border: '1px solid var(--color-border)',
                 borderRadius: 4,
                 color: 'var(--color-foreground)',
