@@ -289,6 +289,11 @@ export type StoreState = {
   /** OSM-V3-02: toggle neighborhood mass layer visibility. */
   toggleNeighborhoodMasses: () => void;
 
+  /** F-006: QAT Thin Lines toggle — when true, all line weights are overridden to 1 px. */
+  thinLinesEnabled: boolean;
+  /** F-006: toggle the thin-lines override. */
+  toggleThinLines: () => void;
+
   vvDialogOpen: boolean;
   openVVDialog: () => void;
   closeVVDialog: () => void;

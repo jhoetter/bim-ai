@@ -485,6 +485,8 @@ export function PlanCanvas({
   const setPlanTool = useBimStore((s) => s.setPlanTool);
   // OSM-V3-02 — neighborhood mass layer toggle.
   const showNeighborhoodMasses = useBimStore((s) => s.showNeighborhoodMasses);
+  // F-006 — QAT Thin Lines toggle: overrides all line weights to 1 px when true.
+  const thinLinesEnabled = useBimStore((s) => s.thinLinesEnabled);
   // F-014 — reveal hidden elements mode (lightbulb toggle).
   const revealHiddenMode = useBimStore((s) => s.revealHiddenMode);
   const setRevealHiddenMode = useBimStore((s) => s.setRevealHiddenMode);
@@ -947,7 +949,17 @@ export function PlanCanvas({
       planAnnotationHints: mergedAnnotationHints,
       planTagFontScales,
       plotScale,
-      lineWeights: draftingRef.current.lineWeights,
+      lineWeights: thinLinesEnabled
+        ? {
+            cutMajor: 1,
+            cutMinor: 1,
+            projMajor: 1,
+            projMinor: 1,
+            witness: 1,
+            gridMajor: draftingRef.current.lineWeights.gridMajor !== null ? 1 : null,
+            gridMinor: draftingRef.current.lineWeights.gridMinor !== null ? 1 : null,
+          }
+        : draftingRef.current.lineWeights,
     });
 
     // F-102: in reveal mode, tint individually-hidden elements magenta so users can
@@ -1542,6 +1554,7 @@ export function PlanCanvas({
     activeCropState,
     activePlanViewId,
     showNeighborhoodMasses,
+    thinLinesEnabled,
     lensMode,
   ]);
 

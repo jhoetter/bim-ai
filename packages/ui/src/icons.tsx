@@ -19,6 +19,7 @@ import {
   Link2,
   Magnet,
   Menu,
+  Minus,
   Moon,
   MousePointer2,
   Move,
@@ -183,6 +184,9 @@ export const Icons: Record<string, LucideLikeIcon> = {
   undo: Undo2,
   redo: Redo2,
 
+  // F-006: QAT buttons — lucide (generic)
+  thinLines: Minus,
+
   // Theme — lucide (generic)
   themeLight: Sun,
   themeDark: Moon,
@@ -269,6 +273,7 @@ export const IconLabels: Record<keyof typeof Icons, string> = {
   viewCubeReset: 'Reset view',
   undo: 'Undo',
   redo: 'Redo',
+  thinLines: 'Thin Lines',
   themeLight: 'Light theme',
   themeDark: 'Dark theme',
   commandPalette: 'Command palette',
