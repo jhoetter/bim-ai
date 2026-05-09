@@ -183,6 +183,7 @@ export function SharePresentationModal({ modelId, open, onClose, pages = [] }: P
 
         {error && (
           <div
+            role="alert"
             style={{
               color: 'var(--color-destructive)',
               marginBottom: 12,

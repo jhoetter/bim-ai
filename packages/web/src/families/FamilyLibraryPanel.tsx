@@ -317,7 +317,11 @@ function ExternalCatalogsTab({
 
   if (error) {
     return (
-      <div data-testid="external-catalogs-error" className="px-3 py-6 text-sm text-rose-300">
+      <div
+        role="alert"
+        data-testid="external-catalogs-error"
+        className="px-3 py-6 text-sm text-rose-300"
+      >
         {error}
       </div>
     );

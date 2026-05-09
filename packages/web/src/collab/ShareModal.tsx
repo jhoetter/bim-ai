@@ -216,7 +216,10 @@ export function ShareModal({ modelId, open, onClose }: Props) {
         </div>
 
         {error && (
-          <div style={{ color: 'var(--color-danger)', marginBottom: 12, fontSize: 13 }}>
+          <div
+            role="alert"
+            style={{ color: 'var(--color-danger)', marginBottom: 12, fontSize: 13 }}
+          >
             {error}
           </div>
         )}

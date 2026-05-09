@@ -543,7 +543,7 @@ export function ManageLinksDialog({
                 Add Link
               </button>
               {error ? (
-                <span className="text-xs text-error" data-testid="manage-links-error">
+                <span role="alert" className="text-xs text-error" data-testid="manage-links-error">
                   {error}
                 </span>
               ) : null}
