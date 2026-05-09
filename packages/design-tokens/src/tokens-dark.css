@@ -30,6 +30,10 @@
   --color-annotation: hsl(20 70% 65%);
   --color-surface-hover: hsl(220 12% 18%);
   --text-on-accent: hsl(220 18% 14%);
+  /* Surface tiers (dark) — already set in tokens-v3.css for v3 theme; needed here for default dark */
+  --color-surface-1: hsl(220 12% 12%);
+  --color-surface-2: hsl(220 12% 15%);
+  --space-0-5: 1px;
 
   /* Dark mode flattens shadows: §9.7 — replaces shadow with a 1 px border outline. */
   --elev-0: none;
