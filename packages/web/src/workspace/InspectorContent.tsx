@@ -563,10 +563,26 @@ export function InspectorPropertiesFor(
           ) : null}
         </div>
       );
-    case 'level':
+    case 'level': {
+      const { onPropertyChange: lvlPropChange } = options ?? {};
       return (
-        <div>
-          <FieldRow label={f('elevation')} value={fmtMm(el.elevationMm)} />
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Elevation (mm)</span>
+            <input
+              type="number"
+              className="w-24 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.elevationMm}
+              key={`${el.id}-elev`}
+              step={100}
+              aria-label="Level elevation in millimetres"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v)) lvlPropChange?.('elevationMm', v);
+              }}
+              data-testid="inspector-level-elevation"
+            />
+          </div>
           <FieldRow label={f('datumKind')} value={el.datumKind ?? '—'} mono />
           <FieldRow label={f('workset')} value={el.worksetId ?? '—'} mono />
           <MonitorSourceRows
@@ -577,6 +593,7 @@ export function InspectorPropertiesFor(
           />
         </div>
       );
+    }
     case 'area':
       return (
         <div className="flex flex-col gap-2">
@@ -778,10 +795,16 @@ export function InspectorPropertiesFor(
           <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
           <FieldRow label={f('presentation')} value={el.planPresentation ?? 'default'} />
           {el.viewTemplateId ? (
-            <FieldRow label={f('template')} value={el.viewTemplateId} mono />
+            <FieldRow
+              label={f('template')}
+              value={resolveElName(el.viewTemplateId, elementsById)}
+            />
           ) : null}
           {el.underlayLevelId ? (
-            <FieldRow label={f('underlay')} value={el.underlayLevelId} mono />
+            <FieldRow
+              label={f('underlay')}
+              value={resolveElName(el.underlayLevelId, elementsById)}
+            />
           ) : null}
         </div>
       );
