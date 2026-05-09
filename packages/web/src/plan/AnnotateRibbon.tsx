@@ -1,4 +1,5 @@
 /* eslint-disable bim-ai/no-hex-in-chrome -- pre-v3 hex literals; remove when this file is migrated in B4 Phase 2 */
+import { useRef, useState } from 'react';
 import type { Element, XY } from '@bim-ai/core';
 import type { JSX } from 'react';
 
@@ -49,6 +50,9 @@ export function AnnotateRibbon({
   onSemanticCommand,
 }: AnnotateRibbonProps): JSX.Element {
   const ctx = { planViewId, levelId, cropMinMm, cropMaxMm } as const;
+  const [textNoteInput, setTextNoteInput] = useState(false);
+  const [textNoteDraft, setTextNoteDraft] = useState('');
+  const textNoteRef = useRef<HTMLInputElement>(null);
 
   const handleAutoDim = (axis: 'x' | 'y') => {
     onSemanticCommand(clearAutoAnnotationsCommand(planViewId, 'dimensions'));
@@ -110,9 +114,13 @@ export function AnnotateRibbon({
     });
   };
 
-  const placeTextNote = () => {
-    const text = window.prompt('Text note', 'Note');
-    if (!text) return;
+  const commitTextNote = () => {
+    const text = textNoteDraft.trim();
+    if (!text) {
+      setTextNoteInput(false);
+      setTextNoteDraft('');
+      return;
+    }
     const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
     onSemanticCommand({
       type: 'createTextNote',
@@ -122,6 +130,8 @@ export function AnnotateRibbon({
       fontSizeMm: 200,
       anchor: 'tl',
     });
+    setTextNoteInput(false);
+    setTextNoteDraft('');
   };
 
   return (
@@ -203,15 +213,57 @@ export function AnnotateRibbon({
       >
         Masking Region
       </button>
-      <button
-        type="button"
-        data-testid="plan-annotate-text-note"
-        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
-        onClick={placeTextNote}
-        title="Place a text note at the view centre."
-      >
-        Text Note
-      </button>
+      {textNoteInput ? (
+        <div className="flex flex-col gap-1">
+          <input
+            ref={textNoteRef}
+            autoFocus
+            type="text"
+            aria-label="Text note content"
+            value={textNoteDraft}
+            onChange={(e) => setTextNoteDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commitTextNote();
+              if (e.key === 'Escape') {
+                setTextNoteInput(false);
+                setTextNoteDraft('');
+              }
+            }}
+            className="rounded border border-border bg-background px-2 py-0.5 text-[10px] text-foreground"
+            placeholder="Note text…"
+          />
+          <div className="flex gap-1">
+            <button
+              type="button"
+              data-testid="plan-annotate-text-note-commit"
+              className="flex-1 rounded border border-border px-2 py-0.5 text-left text-[10px] hover:bg-accent/20 hover:text-foreground"
+              onClick={commitTextNote}
+            >
+              Place
+            </button>
+            <button
+              type="button"
+              className="rounded border border-border px-2 py-0.5 text-[10px] text-muted hover:bg-accent/20"
+              onClick={() => {
+                setTextNoteInput(false);
+                setTextNoteDraft('');
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          data-testid="plan-annotate-text-note"
+          className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+          onClick={() => setTextNoteInput(true)}
+          title="Place a text note at the view centre."
+        >
+          Text Note
+        </button>
+      )}
     </div>
   );
 }

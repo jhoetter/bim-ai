@@ -115,6 +115,7 @@ export function HelperDimChip({ descriptor, planToScreen, onDispatch }: HelperDi
           <input
             ref={inputRef}
             type="number"
+            aria-label={`Edit ${descriptor.label} in mm`}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
