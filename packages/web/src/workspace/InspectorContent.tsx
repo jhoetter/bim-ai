@@ -501,6 +501,7 @@ export function InspectorPropertiesFor(
       );
     }
     case 'beam': {
+      const { onPropertyChange: beamPropChange } = options ?? {};
       return (
         <div className="flex flex-col gap-2">
           <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
@@ -510,8 +511,38 @@ export function InspectorPropertiesFor(
             mono
           />
           <FieldRow label="End" value={`${fmtMm(el.endMm.xMm)} · ${fmtMm(el.endMm.yMm)}`} mono />
-          <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
-          <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Height (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.heightMm}
+              key={`${el.id}-height`}
+              step={50}
+              aria-label="Beam height in millimetres"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v) && v > 0) beamPropChange?.('heightMm', v);
+              }}
+              data-testid="inspector-beam-height"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Width (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.widthMm}
+              key={`${el.id}-width`}
+              step={50}
+              aria-label="Beam width in millimetres"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v) && v > 0) beamPropChange?.('widthMm', v);
+              }}
+              data-testid="inspector-beam-width"
+            />
+          </div>
         </div>
       );
     }
@@ -581,31 +612,71 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
-    case 'railing':
+    case 'railing': {
+      const { onPropertyChange: railPropChange } = options ?? {};
       return (
         <div className="flex flex-col gap-2">
           <FieldRow label={f('name')} value={el.name} />
           {el.hostedStairId ? (
-            <FieldRow label="Hosted Stair" value={el.hostedStairId} mono />
+            <FieldRow label="Hosted Stair" value={resolveElName(el.hostedStairId, elementsById)} />
           ) : null}
-          {el.guardHeightMm !== undefined ? (
-            <FieldRow label="Guard Height" value={fmtMm(el.guardHeightMm)} />
-          ) : null}
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Guard Height (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.guardHeightMm ?? 1100}
+              key={`${el.id}-guard`}
+              step={50}
+              aria-label="Railing guard height in millimetres"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v) && v > 0) railPropChange?.('guardHeightMm', v);
+              }}
+              data-testid="inspector-railing-guard-height"
+            />
+          </div>
           <FieldRow label="Path Vertices" value={String(el.pathMm.length)} mono />
         </div>
       );
+    }
     case 'ceiling': {
-      const levels = Object.values(elementsById).filter(
-        (e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level',
-      );
-      const levelNames: Record<string, string> = Object.fromEntries(
-        levels.map((lv) => [lv.id, lv.name]),
-      );
+      const { onPropertyChange: ceilPropChange } = options ?? {};
       return (
         <div className="flex flex-col gap-2">
-          <FieldRow label={f('level')} value={levelNames[el.levelId] ?? el.levelId} mono />
-          <FieldRow label="Height Offset" value={`${el.heightOffsetMm ?? 0} mm`} />
-          <FieldRow label="Thickness" value={`${el.thicknessMm ?? 50} mm`} />
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Height Offset (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.heightOffsetMm ?? 0}
+              key={`${el.id}-hoffset`}
+              step={100}
+              aria-label="Ceiling height offset in millimetres"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v)) ceilPropChange?.('heightOffsetMm', v);
+              }}
+              data-testid="inspector-ceiling-height-offset"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Thickness (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.thicknessMm ?? 50}
+              key={`${el.id}-thickness`}
+              step={10}
+              aria-label="Ceiling thickness in millimetres"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v) && v > 0) ceilPropChange?.('thicknessMm', v);
+              }}
+              data-testid="inspector-ceiling-thickness"
+            />
+          </div>
           <FieldRow label="Boundary Vertices" value={String(el.boundaryMm?.length ?? 0)} mono />
         </div>
       );
