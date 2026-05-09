@@ -3479,6 +3479,266 @@ The following items are explicitly **not** v3 build scope:
 
 ---
 
+<!-- BEGIN T10 -->
+### T10 — Visual Finesse
+
+**Why it matters.** All 77 feature WPs in T1–T9 landed with the kernel, chrome, and canvas tooling correct — but the visual register is not yet coherent. Three compound problems prevent the B4 "feels architectural" felt outcome from landing in practice: (1) the v3 design system is gated behind `VITE_DESIGN_SYSTEM=v3` and is not the default; (2) the dark chrome background remains cold blue-grey even when v3 is active, because `tokens-v3.css` only patches the accent; (3) the 3D viewport's hemisphere light uses a cold steel-blue sky that bleeds into every material via the env map. Beyond these regressions, six UX patterns still signal "CAD software": the sun settings float as an absolute-positioned overlay on the canvas; the left rail is expanded by default (canvas ≈ 60 % of window); hatch patterns exist (CAN-V3-02) but are not the default plan rendering mode; the status bar speaks in engineering short-codes; modals still escape the right-rail inspector in some property paths; and the icon toolbar still uses text labels where icons + tooltips would suffice. T10 is the dedicated finesse pass that closes B4 and turns the visual register from "CAD with warm accent" to "architectural drafting software."
+
+**Closest competitor (visual reference).** Rayon — minimal chrome, white paper canvas, style-first drawing, context-sensitive panels. bim-ai does not become Rayon (Rayon is 2D-only; bim-ai has Revit-grade 3D kernel depth). T10 takes Rayon's chrome discipline and applies it to a tool Rayon cannot match.
+
+**Positioning sentence.** "You open a plan and it looks like a drawing — warm chrome, paper canvas, hatches at the right density, dimension labels at 10 px — not a CAD terminal."
+
+**10/10 UX target moments.**
+
+1. **Warm chrome on first launch.** Plain `pnpm dev` with no env vars — accent is ochre, topbar is warm near-black, no cobalt blue anywhere.
+2. **3D model reads as architecture.** Seed house in 3D: walls warm plaster grey, roof clay slate, sky env coherently warm — no vivid pink-coral roof or cold shadow bleed.
+3. **Plan view as drawing.** 1:50 plan on a paper-white canvas: brick hatches on cut walls, cut walls visibly heavier than projection lines, dimension labels in tabular nums.
+4. **Canvas maximised by default.** Open a model — left rail is collapsed to 36 px, right panel hidden until selection. Canvas fills the window.
+5. **Sun control in the inspector.** No `☀ Sun` floating button on the canvas — sun settings live in the right-rail scene section with an SVG arc dial.
+
+**WP summary table.**
+
+| ID | Item | Effort | State | Depends on |
+| -- | ---- | ------ | ----- | ---------- |
+| VIS-V3-01 | Token activation + warm dark chrome | S | open | — |
+| VIS-V3-02 | Inter font loading | XS | open | — |
+| VIS-V3-03 | 3D hemi light + category colour recalibration | S | open | — |
+| VIS-V3-04 | Sun panel redesign (right-rail inspector) | M | open | CHR-V3-09 (WP-061, merged) |
+| VIS-V3-05 | Hatch patterns as default plan rendering | S | open | CAN-V3-02 (WP-051, merged) |
+| VIS-V3-06 | Canvas-maximising layout | S | open | CHR-V3-07 (WP-075, merged) |
+| VIS-V3-07 | Status bar language polish | S | open | — |
+| VIS-V3-08 | Light / paper mode for 2D views | M | open | VIS-V3-01 |
+| VIS-V3-09 | Right-rail inspector as default property surface | S | open | CHR-V3-09 (WP-061, merged) |
+| VIS-V3-10 | Icon set review pass | S | open | — |
+
+---
+
+#### VIS-V3-01 — Token activation + warm dark chrome
+
+**Status.** `open`.
+
+**Scope.** Two changes: (1) make `VITE_DESIGN_SYSTEM=v3` the default so every developer, CI, and demo environment loads the warm ochre token system without setting an env var; (2) extend the dark-mode override block in `tokens-v3.css` to replace the cold blue-grey chrome backgrounds with warm equivalents. The v3 token system currently patches only the accent — `--color-background`, `--color-surface-*`, and `--color-border` all remain the `tokens-dark.css` cold values. Warm them here so accent + chrome read as a coherent architectural palette.
+
+**Data model.** No schema change.
+
+**Engine.** `packages/web/vite.config.ts`: change both fallback strings from `'default'` to `'v3'` (the inline literal on line 17 and the `return 'default'` on line 25 of `resolveDesignSystemId`). `packages/design-tokens/src/tokens-v3.css`: add warm background/surface/border tokens inside the `:root[data-theme='dark'], :root.dark` block. Target values: `--color-background: hsl(25 8% 9%)` (warm near-black), `--color-surface-1: hsl(25 6% 12%)`, `--color-surface-2: hsl(25 5% 15%)`, `--color-surface-3: hsl(25 5% 18%)`, `--color-border: hsl(25 8% 22%)`, `--color-border-strong: hsl(25 8% 28%)`. Also update the `--color-accent-soft` mix target inside the dark block from the cold `hsl(220 14% 10%)` to `hsl(25 8% 9%)` so the soft accent blends correctly.
+
+**UI.** After this WP, the default `pnpm dev` session shows: warm ochre accent, warm near-black topbar and left rail, warm-dark surface cards. No component changes.
+
+**Acceptance.** `pnpm dev` (no env vars) loads v3 tokens. `VITE_DESIGN_SYSTEM=default` falls back to default tokens — existing behaviour preserved when explicitly overridden. `pnpm test brand-swap` stays green (only Layer-C tokens resolve differently when `--brand-accent` is overridden). Visual: screenshot of topbar shows warm near-black, not cold blue-grey.
+
+**Effort.** S — 2 days. Pure token + config change.
+
+**Cross-theme references.** B4 (this closes the Phase 1 activation gap); VIS-V3-08 (paper mode builds on the warm dark base); `pnpm test brand-swap` is the CI gate.
+
+_Source: B4 Phase 1 retroactive fix. `VITE_DESIGN_SYSTEM=v3` was intended as a temporary gate; all 77 feature WPs are done and the gate must open permanently. WP-078._
+
+---
+
+#### VIS-V3-02 — Inter font loading
+
+**Status.** `open`.
+
+**Scope.** `--font-sans: 'Inter', ui-sans-serif, ...` is declared in `tokens-default.css` but Inter is never loaded — no `@import`, no `@font-face`, no self-hosted copy. The browser falls back to `system-ui` (San Francisco / Segoe). Inter's tabular-number variant is specifically valuable for BIM: coordinate readouts, dimension labels, property values all benefit from fixed-width numeral spacing. Add the import in `brand-layer.css` so it loads for every design system (not just v3).
+
+**Data model.** No change.
+
+**Engine.** Add `@import url('https://fonts.bunny.net/css?family=inter:400,500,600&display=swap');` as the first line of `packages/design-tokens/src/brand-layer.css`. Use Bunny Fonts (GDPR-compliant, EU CDN) rather than Google Fonts. Include weights 400 (body), 500 (medium label), 600 (heading) only — no 700/800 (brand headline is handled by `--brand-typeface` override, not by this layer).
+
+**UI.** No visual component changes. Font renders differently once loaded: tighter tracking, consistent numeral widths in coordinate displays and dimension chips.
+
+**Acceptance.** DevTools Network tab shows a successful Bunny Fonts request for Inter. `document.fonts.check('500 14px Inter')` returns `true` in console. No TypeScript error.
+
+**Effort.** XS — half a day.
+
+**Cross-theme references.** B4 (`--font-sans` is a Layer-B token; brand typeface override via `--brand-typeface` in Layer C is unaffected).
+
+_Source: B4 Phase 1 gap — font token defined but never loaded. WP-079._
+
+---
+
+#### VIS-V3-03 — 3D hemi light + category colour recalibration
+
+**Status.** `open`.
+
+**Scope.** Two calibration changes that together remove the "vivid coral roof + cold shadow bleed" artifact: (1) change the hemisphere light sky colour from cold steel-blue `#d3e2ff` to warm stone `#e0d8cc` and ground colour from `#d8d3c4` to `#c8c0b0` in `packages/web/src/viewport/materials.ts`; (2) recalibrate `--cat-roof`, `--cat-wall`, and `--cat-railing` in `packages/design-tokens/src/tokens-drafting.css` for the warm-sky world; (3) reduce `envMapIntensity` from `1.0` to `0.65` in `packages/web/src/Viewport.tsx` for non-CSG materials so the sky env map influences materials at a grounded level rather than bleaching them.
+
+**Data model.** No change.
+
+**Engine.** `materials.ts` `resolveLighting()`: `hemi.skyColor: '#e0d8cc'`, `hemi.groundColor: '#c8c0b0'`. `Viewport.tsx` line with `envMapIntensity: csgIsWhite ? 0.08 : 1.0` → `csgIsWhite ? 0.08 : 0.65`. `tokens-drafting.css` dark-mode block: `--cat-roof: #7a5c4a` (clay slate, was `#944f4f` vivid terracotta), `--cat-wall: #a09a92` (warm plaster grey, was `#7a7d83` cold grey), `--cat-railing: #5a5650` (warm dark grey, was `#43464d` cold). Light-mode block: `--cat-roof: #6b4f3e` (dark clay, was `#7a4949`), `--cat-wall: #b0aa9e` (warm plaster, was `#969aa1`).
+
+**UI.** No component changes. The 3D viewport visual changes: roof reads as architectural clay/slate instead of hot pink, walls read as warm plaster, shadow zones are warm rather than blue-tinted.
+
+**Acceptance.** Visual comparison of the seed house before/after using `bim-ai compare` (VG-V3-01): roof hue moves from pink-red toward brown-grey, no blue shadow tinting. `materials.test.ts` (existing) still passes — the fallback colors are unchanged, only the CSS tokens and lighting spec.
+
+**Effort.** S — 2 days. Three targeted numeric changes + visual iteration.
+
+**Cross-theme references.** B4 (3D viewport quality); VIS-V3-01 (warm dark chrome must land first so the combined effect is visible).
+
+_Source: §3 rendering-quality notes + B4 felt outcome "3D viewport sun + line + AO retuning (CAN-V3-04)." This WP is a focused subset of CAN-V3-04 covering the most impactful calibration changes. WP-080._
+
+---
+
+#### VIS-V3-04 — Sun panel redesign (right-rail inspector)
+
+**Status.** `open`.
+
+**Scope.** Replace the floating absolute-positioned `SunOverlay` (currently rendered at `top: var(--space-3); right: var(--space-3)` inside the 3D canvas) with a compact sun-arc widget in the right-rail inspector's "Scene" section. The canvas surface should be free of floating panels. Replace the lat/lon/date/time numeric inputs with: (a) an SVG semicircle arc widget where the user drags a dot to set azimuth + elevation; (b) a date/season selector (three presets: summer solstice, equinox, winter solstice + a date picker in an advanced section); (c) lat/lon retained as an advanced-section collapse. The raw numeric inputs are preserved but hidden behind "Advanced."
+
+**Data model.** No change. `SunOverlayValues` type (`packages/web/src/viewport/SunOverlay.tsx`) stays unchanged — only the rendering surface changes.
+
+**Engine.** Remove `<SunOverlay>` render from `Viewport.tsx` (approx. line 1990). Lift `sunOverlayValues` state + `handleSunChange` / `handleSunCommit` handlers out of `Viewport.tsx` into the parent workspace surface (Workspace.tsx or AppShell context). Create `packages/web/src/workspace/SunInspectorPanel.tsx`: a right-rail section (collapsible, default expanded) containing the SVG arc widget + simplified controls. The SVG arc widget: 120 × 60 px half-circle representing the sky hemisphere; a draggable `<circle>` dot whose horizontal position maps to azimuth (0–360°) and vertical position maps to elevation (0–90°). Drag commits via `onCommit`. The `SunInspectorPanel` receives `values`, `azimuthDeg`, `elevationDeg`, `onChange`, `onCommit` as props — same contract as the old `SunOverlay`.
+
+**UI.** The `☀ Sun` button disappears from the canvas surface. The right rail "Scene" section (when no element is selected) shows the sun arc widget + a one-line readout (`"Summer solstice, 14:30 — 145°, 35° elevation"`). Lat/lon inputs and date picker are in a collapsible "Advanced" subsection (closed by default). Full `pointer-events` on the inspector widget; no `pointer-events: none` wrapper needed.
+
+**Acceptance.** Drag the sun dot in the inspector → 3D shadow moves live. No sun controls on the canvas surface (no `position: absolute` sun element in the viewport DOM). Inspector "Scene" section visible when no element is selected. TypeScript: no `any`, no hex literals. Existing `SunOverlayValues` type unchanged.
+
+**Effort.** M — 1.5 weeks. State lift + SVG widget + inspector wiring.
+
+**Cross-theme references.** CHR-V3-09 right-rail inspector (WP-061, merged); SUN-V3-01 (WP-007, merged — sun data model unchanged).
+
+_Source: UX gap identified in T10 visual analysis — floating sun panel is the most "engineering-feel" element on the canvas surface. WP-081._
+
+---
+
+#### VIS-V3-05 — Hatch patterns as default plan rendering
+
+**Status.** `open`.
+
+**Scope.** CAN-V3-02 (WP-051) shipped the `HatchRenderer`, `HatchPatternDef`, and `HatchPicker` — hatches exist and are correct. The problem: `hatchPatternId` is `null` on newly created elements because no default is assigned at creation time. The plan canvas therefore renders solid-fill rectangles for walls and floors instead of the brick/concrete/stone hatches that the spec calls for. This WP makes the standard hatch patterns default-on: walls default to `'brick'`, floors to `'concrete'`, roofs to `'tile'`, stairs to `'concrete'`. Users can override via the material picker (HatchPicker); the default is just set.
+
+**Data model.** In `packages/core/src/index.ts`, add an optional `defaultHatchPatternId?: string` field to the material library entry type (or set the default in the kernel element-creation logic in Python). The simpler approach: in `HatchRenderer.ts`, fall back from `materialsById[materialKey]?.hatchPatternId` to a category-based default map when the material has no explicit hatch set. Add `CATEGORY_DEFAULT_HATCH: Record<string, string>` mapping `'wall' → 'brick'`, `'floor' → 'concrete'`, `'roof' → 'tile'`, `'stair' → 'concrete'`.
+
+**Engine.** Frontend-only. In `packages/web/src/plan/HatchRenderer.ts`, extend the `resolveHatchPatternId` helper to accept an optional `category` argument and fall back to `CATEGORY_DEFAULT_HATCH[category]` when `hatchPatternId` is null. Call sites in `HatchRenderer` must pass the element category alongside the material key.
+
+**UI.** Newly placed walls immediately show brick hatch in plan view. Existing models without explicit hatch assignments gain the category default on re-render. The HatchPicker remains accessible for override.
+
+**Acceptance.** Place a wall in plan view at 1:50 — brick hatch renders without any explicit material assignment. Place a floor slab — concrete hatch renders. Existing unit tests in `HatchRenderer` pass. A test covering the fallback path: `resolveHatchPatternId(null, 'wall')` returns `'brick'`.
+
+**Effort.** S — 2 days. Fallback map + call-site wiring.
+
+**Cross-theme references.** CAN-V3-02 (WP-051, the hatch renderer this WP extends); B4 (plan canvas quality — the single biggest visible improvement for plan views); VIS-V3-08 (paper mode makes the hatch even more visible against white canvas).
+
+_Source: B4 felt outcome — "brick hatches at 45° at the right paper-mm density" — was never activated by default. WP-082._
+
+---
+
+#### VIS-V3-06 — Canvas-maximising layout
+
+**Status.** `open`.
+
+**Scope.** Change the default AppShell layout so the canvas fills the window instead of sharing space with always-open rails. Specifically: (1) default left rail to collapsed (`defaultLeftCollapsed = true` at the composition site); (2) default right rail to hidden when no element is selected — the right rail should appear only on selection and hide on deselection; (3) ensure `[` / `]` keyboard shortcuts still toggle rails manually. No change to the AppShell component itself — the change is in the values passed at the composition site in `Workspace.tsx` (or wherever AppShell is composed with actual content).
+
+**Data model.** No schema change. Track `hasSelection: boolean` in a zustand slice (or read from the existing element selection store) to drive `defaultRightCollapsed`.
+
+**Engine.** Locate the `<AppShell>` composition call in `packages/web/src/workspace/Workspace.tsx`. Change `defaultLeftCollapsed={false}` to `defaultLeftCollapsed={true}`. Wire `rightCollapsed` prop to `!hasSelection` where `hasSelection` is derived from the existing selection store. On first selection, the right panel slides in with `--ease-paper` (200 ms); on deselection, it slides out. Do not change `AppShell.tsx` internals — only the composition site.
+
+**UI.** On model open: canvas fills 95 % of the window, only the 36 px icon strip on the left is visible. Click a wall → right inspector slides in from the right. Deselect → right inspector slides out. Press `[` → left rail expands to 240 px. The gain: canvas area goes from ~60 % to ~85 % of window at default state.
+
+**Acceptance.** Open a model — `data-left-collapsed="true"` is set on the AppShell grid element. `data-right-collapsed="true"` is set until an element is selected. Select a wall — `data-right-collapsed="false"`. Deselect — `data-right-collapsed="true"`. `[` hotkey toggles left rail. Existing AppShell tests pass.
+
+**Effort.** S — 2 days. Composition-site prop change + selection-driven right rail.
+
+**Cross-theme references.** CHR-V3-07 project browser (WP-075, merged — defines the collapsed rail content); CHR-V3-09 right-rail inspector (WP-061, merged — this WP drives it by selection state).
+
+_Source: Rayon UX reference — minimal chrome, canvas-dominant layout. A1/A3/A9 antidote. WP-083._
+
+---
+
+#### VIS-V3-07 — Status bar language polish
+
+**Status.** `open`.
+
+**Scope.** The status bar currently says `Tool: Wall` (engineering label), shows snap modes as text abbreviations, and uses internal shorthand in its readouts. Replace with architectural natural-language copy: active drawing tool shows the action verb ("Drawing wall", "Placing door", "Annotating"); snap-mode cluster uses icon glyphs instead of text chips; coordinate readout shows metres to 3 decimal places (not raw mm integers). Also remove the "Tool:" prefix label — just the action phrase is enough.
+
+**Data model.** No change.
+
+**Engine.** `packages/web/src/workspace/StatusBar.tsx`: in `ToolCluster`, remove the `{t('statusbar.toolLabel')}` prefix and change the verb pattern so e.g. `toolLabel = 'Wall'` → displays `"Drawing wall"` (lowercase action). Add a `verbPrefix` map in StatusBar: `{ wall: 'Drawing', door: 'Placing', window: 'Placing', floor: 'Sketching', stair: 'Sketching', dimension: 'Annotating', column: 'Placing', section: 'Placing' }` — apply `verbPrefix[toolId] ?? 'Using'`. In `SnapCluster`, replace text chips with `Icons.*` from `@bim-ai/icons` (use `EndpointIcon`, `MidpointIcon`, `IntersectionIcon`, etc. if present; otherwise use the generic snap glyph). Coordinate readout: format `xMm / 1000` with `toFixed(3)` + ` m` suffix, not raw mm. Remove the `xMm` / `yMm` shorthand labels.
+
+**UI.** Status bar reads: `Drawing wall  ⊕ ○ ◇  x 12.345 m  y 8.200 m  Level: Ground Floor`. More compact, more readable, less engineering.
+
+**Acceptance.** Wall tool active → status bar shows "Drawing wall" (no "Tool:" prefix). Dimension tool → "Annotating". Snap chips show glyphs, not "ENE" abbreviations. Coordinate shows "12.345 m", not "12345". Existing StatusBar tests pass or are updated to match new copy.
+
+**Effort.** S — 2 days.
+
+**Cross-theme references.** CHR-V3-03 status bar (WP-023, merged — this WP polishes its copy, not its structure); D3 (density-conscious).
+
+_Source: T10 visual analysis — status bar "Tool: Wall" is an engineering-register tell. WP-084._
+
+---
+
+#### VIS-V3-08 — Light / paper mode for 2D views
+
+**Status.** `open`.
+
+**Scope.** When the active view is a plan, section, or elevation, switch the canvas background to a warm off-white (`--color-canvas-paper`) that reads as drawing paper. The 3D perspective viewport stays in dark mode. The plan canvas currently renders on the same `--color-background` dark surface as the 3D viewport; architectural drawings live on white. Add the `--color-canvas-paper` token to `tokens-v3.css` (light: `hsl(40 20% 96%)`, dark: `hsl(40 16% 92%)`) and apply it to the plan-view canvas wrapper when the active view type is `'plan'`, `'section'`, `'elevation'`, or `'drafting_view'`.
+
+**Data model.** No schema change. Read active view type from existing model state.
+
+**Engine.** Add `--color-canvas-paper: hsl(40 20% 96%)` (light) and dark override `--color-canvas-paper: hsl(40 16% 92%)` to `packages/design-tokens/src/tokens-v3.css`. In the plan canvas wrapper component (find `<SketchCanvas>` or equivalent in `packages/web/src/plan/`), add a `data-view-type` attribute and a CSS rule: `[data-view-type='plan'] { background: var(--color-canvas-paper); }`. Also apply to section and elevation canvas wrappers. The canvas SVG/WebGL clear color should match: in the plan renderer, set the background fill to `var(--color-canvas-paper)` rather than the dark background token.
+
+**UI.** Switch from a 3D view to a plan view — the canvas background shifts from warm near-black to warm off-white. Walls draw in near-black with brick hatches (VIS-V3-05), dimensions in tabular nums, grid lines in `--draft-grid`. The visual is: paper drawing on a dark-chrome desk. No dark/light mode toggle needed from the user — it's view-type automatic.
+
+**Acceptance.** Active plan view → canvas background is `hsl(40 20% 96%)` (light-mode off-white) or `hsl(40 16% 92%)` (dark-mode paper). Active 3D view → canvas background is `--color-background` (warm near-black). Toggle between plan and 3D view — background switches within one frame. No hex literals in new code.
+
+**Effort.** M — 1.5 weeks. Token + canvas wrapper wiring for plan/section/elevation/drafting view types.
+
+**Cross-theme references.** VIS-V3-01 (warm dark chrome must land first); VIS-V3-05 (hatches visible against white canvas); CAN-V3-01 (line-weight hierarchy reads better on white); B4 felt outcome "plan at 1:50 looks like a drawing."
+
+_Source: Rayon's white paper canvas — the most architecturally immediate visual register difference. WP-085._
+
+---
+
+#### VIS-V3-09 — Right-rail inspector as default property surface
+
+**Status.** `open`.
+
+**Scope.** Audit `packages/web/src/workspace/` for any remaining modal or floating dialog property editors and route them to the right-rail inspector (CHR-V3-09, merged WP-061). Common suspects: room colour scheme editor, view template edit, material assignment for elements, level/phase property dialogs. Each should become an inspector section that slides in when the relevant element or view is selected — not a modal (A4 antidote).
+
+**Data model.** No change.
+
+**Engine.** For each modal found: (1) move the form fields into a right-rail inspector section (a collapsible `<InspectorSection>` panel); (2) remove the `<dialog>` / `<Modal>` wrapper; (3) connect the section's visibility to the selection store — section is visible when the relevant element type is selected. At minimum, audit and route: `RoomColorSchemePanel.tsx`, `ViewTemplateEditPanel.tsx`, any material-picker dialogs not yet in the inspector. If an existing panel is already a right-rail section, confirm it and note it in the final report.
+
+**UI.** No new components. Modal overlays disappear; the same form appears inline in the right-rail inspector. D1 (direct manipulation) + A4 (dialog-for-everything antidote).
+
+**Acceptance.** Select a room → room colour scheme appears in right-rail inspector, no modal. Select a view → view template controls appear in right-rail inspector. No `<dialog role="dialog">` or `<Modal>` wrapper for any property editors on elements or views. TypeScript: no `any`, no new hex literals.
+
+**Effort.** S — 3 days (audit + refactor of 2–4 panels).
+
+**Cross-theme references.** CHR-V3-09 right-rail inspector (WP-061, merged); A4 / A9 antidote.
+
+_Source: T10 visual analysis — residual modal property editors break the "context not configuration" pillar D8. WP-086._
+
+---
+
+#### VIS-V3-10 — Icon set review pass
+
+**Status.** `open`.
+
+**Scope.** Audit all toolbar components for buttons that show text labels instead of (or alongside) an icon. The icon set in `packages/icons/src/` is complete and architecturally correct — but several toolbar buttons still use text labels or text+icon combos that add visual weight. Replace text-only and text+icon combos with icon-only + tooltip pattern (text visible at ≥ 240 px panel widths per A5 rule). Also audit for any inline SVG or emoji used in place of a proper icon (e.g. the `☀` emoji in the old `SunOverlay` button — already removed by VIS-V3-04, but similar cases may exist).
+
+**Data model.** No change.
+
+**Engine.** Audit `PlanToolbar.tsx`, `Toolbar3d.tsx`, `TopBar.tsx`, `StatusBar.tsx`, and any secondary toolbars. For each button: (1) if it has a matching icon in `@bim-ai/icons`, replace text label with icon + `title` tooltip; (2) keep text visible when panel width ≥ 240 px (`A5` rule — use the existing `--text-sm` label pattern at wide rail widths); (3) remove emoji or ASCII stand-ins (☀, ✓, ×, …) and replace with proper icon glyphs. Do not add new icons to the icon set in this WP — use only what exists. If a semantic icon is genuinely missing, note it in the final report as a follow-up.
+
+**UI.** Toolbars look visually lighter. The left icon strip (collapsed rail) becomes a compact, recognisable icon set. Tooltips confirm intent for icon-only buttons.
+
+**Acceptance.** No bare emoji in toolbar buttons. No `<button>Text label</button>` without an icon in any toolbar component (at standard width). `title` attribute present on all icon-only buttons. TypeScript: no new hex literals.
+
+**Effort.** S — 2 days.
+
+**Cross-theme references.** D3 (density-conscious); A3 (ribbon antidote); VIS-V3-06 (collapsed rail relies on icon quality).
+
+_Source: T10 visual analysis — "the icon set is architecturally correct but text labels still dilute it." WP-087._
+
+---
+
+**Theme takeaway.** T10 is a focused 10-WP finesse pass. The first three WPs (VIS-V3-01, 02, 03) are the "instant impact" shortcut: warm chrome default + Inter font + warm lighting. Together they take the app from "CAD with ochre button" to "architectural software" in a day of work. The remaining seven WPs add depth: paper-mode plan canvas, canvas-maximising layout, sun arc widget, hatch defaults, status bar copy, inspector audit, and icon pass. Run VIS-V3-01 through 03 first, do a visual check, then dispatch the rest in parallel.
+
+<!-- END T10 -->
+
+---
+
 ## §7 Code Quality — parallel architectural-debt track
 
 The five open items from `spec/code-quality-tracker.md` ride alongside theme work as a parallel track. v3 cannot ignore them — each one compounds with v3's surface area.

@@ -1,6 +1,6 @@
 # v3 Build State
 
-Last updated: 2026-05-09 (wave-9B: all 6 WPs merged ✅; 77/77 WPs done — all feature work complete; wave-9C (CQ) remaining)
+Last updated: 2026-05-09 (wave-9B: all 6 WPs merged ✅; 77/77 feature WPs done; wave-10 VIS dispatched — 10 WPs open; wave-9C (CQ) queued after VIS)
 Active heavy workers: 0 / 8
 
 ## Merged so far
@@ -146,7 +146,30 @@ All 6 WPs conflict-resolved and merged into main by orchestrator (2026-05-09).
 | WP-076 | COL-V3-04 presence avatars | 2026-05-09 | da276ea7 |
 | WP-077 | COL-V3-06 offline-tolerant authoring | 2026-05-09 | b11932e6 |
 
-## Wave-9C (sequential, quiet window — after all WPs merged)
+## Wave-10 (VIS — Visual Finesse, T10)
+
+10 WPs targeting B4 "feels architectural" felt outcome. Prompt files: spec/v3-prompts/wp-078..087.md
+
+Recommended dispatch order:
+- Phase A (instant impact, 1–2 days each, no deps): WP-078 (VIS-V3-01), WP-079 (VIS-V3-02), WP-080 (VIS-V3-03) — run in parallel, merge before dispatching phase B
+- Phase B (parallel after phase A): WP-081 (VIS-V3-04), WP-082 (VIS-V3-05), WP-083 (VIS-V3-06), WP-084 (VIS-V3-07), WP-087 (VIS-V3-10)
+- Phase C (after WP-078 merged): WP-085 (VIS-V3-08)
+- Phase D (anytime, audit WP): WP-086 (VIS-V3-09)
+
+| WP-ID | WP | Status |
+| ----- | -- | ------ |
+| WP-078 | VIS-V3-01 Token activation + warm dark chrome | open |
+| WP-079 | VIS-V3-02 Inter font loading | open |
+| WP-080 | VIS-V3-03 3D hemi light + category colour recalibration | open |
+| WP-081 | VIS-V3-04 Sun panel redesign | open |
+| WP-082 | VIS-V3-05 Hatch patterns as default plan rendering | open |
+| WP-083 | VIS-V3-06 Canvas-maximising layout | open |
+| WP-084 | VIS-V3-07 Status bar language polish | open |
+| WP-085 | VIS-V3-08 Light/paper mode for 2D views | open |
+| WP-086 | VIS-V3-09 Right-rail inspector as default property surface | open |
+| WP-087 | VIS-V3-10 Icon set review pass | open |
+
+## Wave-9C (sequential, quiet window — after all feature WPs merged)
 
 - CQ-04 — Python god-file split (engine.py, constraints.py, export_ifc.py) — 3 sub-PRs
 - CQ-03 — workspace/ reorg (137-file junk drawer) — last, dedicated quiet week
