@@ -15,6 +15,12 @@
       "transcript": "/07/fdf88490a5/0/full.jsonl",
       "content_hash": "/07/fdf88490a5/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/07/fdf88490a5/1/metadata.json",
+      "transcript": "/07/fdf88490a5/1/full.jsonl",
+      "content_hash": "/07/fdf88490a5/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
