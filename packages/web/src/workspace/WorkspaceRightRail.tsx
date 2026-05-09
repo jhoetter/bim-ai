@@ -137,7 +137,10 @@ export function WorkspaceRightRail({
       {/* VIS-V3-04: Scene section — visible when no element is selected */}
       {!selectedId ? (
         <div className="border-b border-border p-3">
-          <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">
+          <div
+            className="mb-2 text-[10px] font-semibold uppercase text-muted"
+            style={{ letterSpacing: '0.08em', opacity: 0.7 }}
+          >
             Scene
           </div>
           <SunInspectorPanel />
@@ -373,7 +376,10 @@ export function WorkspaceRightRail({
         />
       </div>
       <div className="border-t border-border p-3">
-        <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">
+        <div
+          className="mb-2 text-[10px] font-semibold uppercase text-muted"
+          style={{ letterSpacing: '0.08em', opacity: 0.7 }}
+        >
           {t('advisor.heading')}
         </div>
         <AdvisorPanel
@@ -388,7 +394,10 @@ export function WorkspaceRightRail({
       </div>
       {activityEvents.length > 0 ? (
         <div className="border-t border-border p-3">
-          <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted">
+          <div
+            className="mb-2 text-[10px] font-semibold uppercase text-muted"
+            style={{ letterSpacing: '0.08em', opacity: 0.7 }}
+          >
             {t('activity.heading')}
           </div>
           <ul className="space-y-1 text-[11px] text-muted">

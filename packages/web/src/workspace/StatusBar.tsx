@@ -144,7 +144,7 @@ export function StatusBar({
       data-testid="status-bar"
       role="contentinfo"
       style={statusStyle}
-      className="relative flex w-full items-center gap-3 border-t border-border bg-surface px-4 text-xs"
+      className="relative flex w-full items-center gap-2 border-t border-border bg-surface px-4 text-[11px] text-muted"
     >
       <LevelCluster level={level} levels={levels} onLevelChange={onLevelChange} />
       <Divider />
@@ -382,9 +382,8 @@ function SnapCluster({
   const { t } = useTranslation();
   return (
     <div className="flex items-center gap-1" title={t('statusbar.snapTitle')}>
-      <Icons.snap size={ICON_SIZE.chrome} aria-hidden="true" className="text-muted" />
-      <span>{t('statusbar.snapLabel')}</span>
-      <div role="group" aria-label={t('statusbar.snapModes')} className="flex items-center gap-1">
+      <Icons.snap size={ICON_SIZE.chrome} aria-hidden="true" className="text-muted opacity-60" />
+      <div role="group" aria-label={t('statusbar.snapModes')} className="flex items-center gap-0.5">
         {snapModes.length === 0 ? (
           <span className="text-muted">{t('statusbar.snapOff')}</span>
         ) : (
@@ -429,11 +428,12 @@ function GridCluster({
       aria-checked={gridOn}
       onClick={onGridToggle}
       title={t('statusbar.gridTitle')}
-      className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 hover:bg-surface-strong"
+      className={[
+        'flex items-center gap-1 rounded-sm px-1.5 py-0.5 hover:bg-surface-strong',
+        gridOn ? '' : 'opacity-40',
+      ].join(' ')}
     >
       <Icons.grid size={ICON_SIZE.chrome} aria-hidden="true" />
-      {t('statusbar.gridLabel')}{' '}
-      <span className="font-medium">{gridOn ? t('statusbar.gridOn') : t('statusbar.gridOff')}</span>
     </button>
   );
 }
@@ -502,8 +502,7 @@ function WsCluster({ state }: { state: StatusWsState }): JSX.Element {
       className="flex items-center gap-1"
     >
       <Icons.online size={ICON_SIZE.chrome} aria-hidden="true" style={{ color }} />
-      <span>{t('statusbar.wsLabel')}</span>
-      <span style={{ color }}>{label}</span>
+      {state !== 'connected' ? <span style={{ color }}>{label}</span> : null}
     </div>
   );
 }

@@ -42,34 +42,58 @@ export function EmptyStateHint() {
         zIndex: 4,
       }}
     >
-      <p
+      <div
         style={{
-          fontFamily: 'var(--font-sans)',
-          fontSize: 'var(--text-display, var(--text-xl))',
-          color: 'var(--color-muted-foreground)',
-          textAlign: 'center',
-          userSelect: 'none',
-          margin: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 'var(--space-2)',
         }}
       >
-        Select an element, or press{' '}
-        <kbd
+        <p
           style={{
-            display: 'inline-block',
-            fontFamily: 'var(--font-mono)',
-            fontSize: 'var(--text-xs)',
-            background: 'var(--color-surface-2, var(--color-surface-strong))',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-sm)',
-            padding: '1px 5px',
-            lineHeight: 1.5,
-            verticalAlign: 'baseline',
+            fontFamily: 'var(--font-sans)',
+            fontSize: 'var(--text-xl)',
+            fontWeight: 500,
+            color: 'var(--color-muted-foreground)',
+            textAlign: 'center',
+            userSelect: 'none',
+            margin: 0,
+            letterSpacing: '-0.01em',
           }}
         >
-          W
-        </kbd>{' '}
-        to draw a wall.
-      </p>
+          Start designing
+        </p>
+        <p
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: 'var(--text-sm)',
+            color: 'var(--color-muted-foreground)',
+            opacity: 0.6,
+            textAlign: 'center',
+            userSelect: 'none',
+            margin: 0,
+          }}
+        >
+          Ask the AI assistant, or press{' '}
+          <kbd
+            style={{
+              display: 'inline-block',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 'var(--text-xs)',
+              background: 'var(--color-surface-2, var(--color-surface-strong))',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '1px 5px',
+              lineHeight: 1.5,
+              verticalAlign: 'baseline',
+            }}
+          >
+            W
+          </kbd>{' '}
+          to draw a wall
+        </p>
+      </div>
     </div>
   );
 }

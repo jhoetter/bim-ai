@@ -190,10 +190,10 @@ export function Inspector({
                 onClick={() => setActiveTab(td.id)}
                 data-active={active ? 'true' : 'false'}
                 className={[
-                  'px-3 py-2 text-sm transition-colors',
+                  'px-3 py-2 text-[12px] transition-colors',
                   active
-                    ? 'border-b-2 border-accent text-foreground'
-                    : 'border-b-2 border-transparent text-muted hover:text-foreground',
+                    ? 'border-b-2 border-accent font-medium text-foreground'
+                    : 'border-b-2 border-transparent text-muted/70 hover:text-foreground',
                 ].join(' ')}
               >
                 {td.label}
@@ -262,12 +262,14 @@ function InspectorHeader({
   const Icon = selection.icon;
   return (
     <div className="flex items-start gap-3 border-b border-border px-3 py-3">
-      <div className="flex h-9 w-9 items-center justify-center rounded-md bg-surface-strong">
-        {Icon ? <Icon size={ICON_SIZE.toolPalette} aria-hidden="true" /> : null}
-      </div>
-      <div className="flex flex-1 flex-col">
-        <div className="text-sm font-medium text-foreground">{selection.label}</div>
-        <div className="font-mono text-xs text-muted">id · {selection.id}</div>
+      {Icon ? (
+        <div className="mt-0.5 flex h-7 w-7 items-center justify-center rounded bg-surface-strong text-muted">
+          <Icon size={ICON_SIZE.chrome} aria-hidden="true" />
+        </div>
+      ) : null}
+      <div className="flex flex-1 flex-col gap-0.5">
+        <div className="text-[13px] font-medium leading-snug text-foreground">{selection.label}</div>
+        <div className="font-mono text-[10px] text-muted opacity-60">{selection.id}</div>
       </div>
       <button
         type="button"
