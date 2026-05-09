@@ -4,20 +4,28 @@
   "strategy": "manual-commit",
   "branch": "merge-ch02-tracker",
   "checkpoints_count": 0,
-  "files_touched": null,
+  "files_touched": [
+    "spec/revit-parity/ch02-cad-linking.md"
+  ],
   "sessions": [
     {
       "metadata": "/9d/85c3a53937/0/metadata.json",
       "transcript": "/9d/85c3a53937/0/full.jsonl",
       "content_hash": "/9d/85c3a53937/0/content_hash.txt",
       "prompt": "/9d/85c3a53937/0/prompt.txt"
+    },
+    {
+      "metadata": "/9d/85c3a53937/1/metadata.json",
+      "transcript": "/9d/85c3a53937/1/full.jsonl",
+      "content_hash": "/9d/85c3a53937/1/content_hash.txt",
+      "prompt": "/9d/85c3a53937/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 7,
-    "cache_creation_tokens": 10820,
-    "cache_read_tokens": 401663,
-    "output_tokens": 2557,
-    "api_call_count": 7
+    "input_tokens": 15,
+    "cache_creation_tokens": 13842,
+    "cache_read_tokens": 1371968,
+    "output_tokens": 3530,
+    "api_call_count": 13
   }
 }

@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "9d85c3a53937",
+  "session_id": "484b3fc4-cdb5-4d63-973e-ff931c99ea77",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-09T16:46:25.649856Z",
+  "branch": "merge-ch02-tracker",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "spec/revit-parity/ch02-cad-linking.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "d8f97dda8e66",
+  "checkpoint_transcript_start": 6746,
+  "transcript_lines_at_start": 6746,
+  "token_usage": {
+    "input_tokens": 8,
+    "cache_creation_tokens": 3022,
+    "cache_read_tokens": 970305,
+    "output_tokens": 973,
+    "api_call_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-09T16:46:25.357852Z",
+    "agent_lines": 0,
+    "agent_removed": 1,
+    "human_added": 0,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 1,
+    "total_lines_changed": 2,
+    "agent_percentage": 50,
+    "metric_version": 2
+  }
+}
