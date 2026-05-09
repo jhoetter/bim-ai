@@ -1192,3 +1192,44 @@ register(
         sideEffects="mutates-kernel",
     )
 )
+
+# ---------------------------------------------------------------------------
+# AST-V3-04 — Parametric kitchen kit
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="place-kitchen-kit",
+        category="mutation",
+        inputSchema={
+            "type": "object",
+            "required": ["id", "hostWallId", "startMm", "endMm"],
+            "properties": {
+                "id": {"type": "string"},
+                "kitId": {
+                    "type": "string",
+                    "enum": ["kitchen_modular"],
+                    "default": "kitchen_modular",
+                },
+                "hostWallId": {"type": "string"},
+                "startMm": {"type": "number"},
+                "endMm": {"type": "number"},
+                "components": {"type": "array", "items": {"type": "object"}},
+                "countertopDepthMm": {"type": "number", "default": 600},
+                "countertopMaterialId": {"type": "string"},
+            },
+        },
+        outputSchema={"type": "object", "properties": {"id": {"type": "string"}}},
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Kitchen kit placed"),
+            "not_found": ExitCode(code=1, meaning="hostWallId not found"),
+        },
+        cliExample="bim-ai place-kitchen-kit --id kit-1 --hostWallId wall-1 --startMm 0 --endMm 4200",
+        restEndpoint=RestEndpoint(method="POST", path="/api/v3/models/{modelId}/bundles"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes=(
+            "Places a FamilyKitInstanceElem. Call catalog-query with kind=door/window first "
+            "to resolve materialId. startMm/endMm are along-wall positions in mm."
+        ),
+    )
+)

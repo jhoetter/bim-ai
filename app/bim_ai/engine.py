@@ -188,6 +188,8 @@ from bim_ai.commands import (
     DeleteToposolidCmd,
     IndexAssetCmd,
     PlaceAssetCmd,
+    PlaceKitCmd,
+    UpdateKitComponentCmd,
     SetToolPrefCmd,
     UpdateMaterialPbrCmd,
     CreateDecalCmd,
@@ -321,6 +323,8 @@ from bim_ai.elements import (
     AssetLibraryEntryElem,
     AssetParamEntry,
     PlacedAssetElem,
+    FamilyKitInstanceElem,
+    KitComponent,
     MaterialElem,
     DecalElem,
     PropertyDefinitionElem,
@@ -5177,6 +5181,45 @@ def apply_inplace(
                 paramValues=cmd.param_values,
                 hostElementId=cmd.host_element_id,
             )
+
+        # -----------------------------------------------------------------
+        # AST-V3-04 — Parametric kitchen kit
+        # -----------------------------------------------------------------
+
+        case PlaceKitCmd():
+            wall = els.get(cmd.host_wall_id)
+            if wall is None or wall.kind != "wall":
+                raise ValueError(f"place_kit: hostWallId '{cmd.host_wall_id}' is not a wall")
+            kit = FamilyKitInstanceElem(
+                id=cmd.id,
+                kitId=cmd.kit_id,
+                hostWallId=cmd.host_wall_id,
+                startMm=cmd.start_mm,
+                endMm=cmd.end_mm,
+                components=[KitComponent(**c) for c in cmd.components],
+                countertopDepthMm=cmd.countertop_depth_mm,
+                countertopThicknessMm=cmd.countertop_thickness_mm,
+                countertopMaterialId=cmd.countertop_material_id,
+            )
+            els[cmd.id] = kit
+
+        case UpdateKitComponentCmd():
+            kit = els.get(cmd.id)
+            if kit is None or kit.kind != "family_kit_instance":
+                raise ValueError(f"update_kit_component: '{cmd.id}' is not a family_kit_instance")
+            if cmd.component_index >= len(kit.components):
+                raise ValueError(f"update_kit_component: index {cmd.component_index} out of range")
+            comps = list(kit.components)
+            patch: dict = {}
+            if cmd.width_mm is not None:
+                patch["width_mm"] = cmd.width_mm
+            if cmd.door_style is not None:
+                patch["door_style"] = cmd.door_style
+            if cmd.material_id is not None:
+                patch["material_id"] = cmd.material_id
+            comps[cmd.component_index] = comps[cmd.component_index].model_copy(update=patch)
+            els[cmd.id] = kit.model_copy(update={"components": comps})
+
         case UpdateMaterialPbrCmd():
             mat = els.get(cmd.id)
             if mat is None:

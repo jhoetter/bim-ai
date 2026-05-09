@@ -2345,6 +2345,39 @@ class UpdateDetailRegionCmd(BaseModel):
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
 
 
+# ---------------------------------------------------------------------------
+# AST-V3-04 — Parametric kitchen kit commands
+# ---------------------------------------------------------------------------
+
+
+class PlaceKitCmd(BaseModel):
+    """AST-V3-04 — place a parametric kitchen kit on a wall."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["place_kit"] = "place_kit"
+    id: str
+    kit_id: Literal["kitchen_modular"] = Field(alias="kitId", default="kitchen_modular")
+    host_wall_id: str = Field(alias="hostWallId")
+    start_mm: float = Field(alias="startMm")
+    end_mm: float = Field(alias="endMm")
+    components: list[dict] = Field(default_factory=list)
+    countertop_depth_mm: float = Field(default=600.0, alias="countertopDepthMm")
+    countertop_thickness_mm: float = Field(default=40.0, alias="countertopThicknessMm")
+    countertop_material_id: str | None = Field(default=None, alias="countertopMaterialId")
+
+
+class UpdateKitComponentCmd(BaseModel):
+    """AST-V3-04 — patch a single component in a placed kitchen kit."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["update_kit_component"] = "update_kit_component"
+    id: str  # kit instance id
+    component_index: int = Field(alias="componentIndex")
+    width_mm: float | None = Field(default=None, alias="widthMm")
+    door_style: str | None = Field(default=None, alias="doorStyle")
+    material_id: str | None = Field(default=None, alias="materialId")
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -2526,6 +2559,8 @@ Command = Annotated[
     | SetElementPropCmd
     | CreateScheduleViewCmd
     | DrawDetailRegionCmd
-    | UpdateDetailRegionCmd,
+    | UpdateDetailRegionCmd
+    | PlaceKitCmd
+    | UpdateKitComponentCmd,
     Field(discriminator="type"),
 ]

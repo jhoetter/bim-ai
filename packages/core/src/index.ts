@@ -1730,6 +1730,7 @@ export type Element =
   | ToposolidElem
   | AssetLibraryEntryElem
   | PlacedAssetElem
+  | FamilyKitInstanceElem
   | HatchPatternDef
   | PropertyDefinitionElem
   | MaterialElem
@@ -2248,6 +2249,55 @@ export type PlacedAssetElem = {
   rotationDeg?: number;
   paramValues?: Record<string, unknown>;
   hostElementId?: string;
+};
+
+
+// ---------------------------------------------------------------------------
+// AST-V3-04 — Parametric kitchen kit
+// ---------------------------------------------------------------------------
+
+export type KitComponent = {
+  componentKind: 'base' | 'upper' | 'oven_housing' | 'sink' | 'pantry' | 'countertop' | 'end_panel' | 'dishwasher' | 'fridge';
+  widthMm?: number | null;
+  heightMm?: number | null;
+  depthMm?: number | null;
+  doorStyle?: string | null;
+  materialId?: string | null;
+  hardwareFamilyId?: string | null;
+};
+
+export type FamilyKitInstanceElem = {
+  kind: 'family_kit_instance';
+  id: string;
+  kitId: 'kitchen_modular';
+  hostWallId: string;
+  startMm: number;
+  endMm: number;
+  components: KitComponent[];
+  countertopDepthMm: number;
+  countertopThicknessMm: number;
+  countertopMaterialId?: string | null;
+  toeKickHeightMm: number;
+  upperBaseClearanceMm: number;
+};
+
+export type PlaceKitCmd = {
+  type: 'place_kit';
+  id: string;
+  kitId: 'kitchen_modular';
+  hostWallId: string;
+  startMm: number;
+  endMm: number;
+  components: KitComponent[];
+};
+
+export type UpdateKitComponentCmd = {
+  type: 'update_kit_component';
+  id: string;
+  componentIndex: number;
+  widthMm?: number | null;
+  doorStyle?: string | null;
+  materialId?: string | null;
 };
 
 // ---------------------------------------------------------------------------

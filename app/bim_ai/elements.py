@@ -2304,6 +2304,54 @@ class PlacedAssetElem(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# AST-V3-04 — Parametric kitchen kit
+# ---------------------------------------------------------------------------
+
+
+class KitComponent(BaseModel):
+    """AST-V3-04 — one component in a kitchen kit chain."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    component_kind: Literal[
+        "base",
+        "upper",
+        "oven_housing",
+        "sink",
+        "pantry",
+        "countertop",
+        "end_panel",
+        "dishwasher",
+        "fridge",
+    ] = Field(alias="componentKind")
+    width_mm: float | None = Field(default=None, alias="widthMm")  # None = auto-fill
+    height_mm: float | None = Field(default=None, alias="heightMm")
+    depth_mm: float | None = Field(default=None, alias="depthMm")
+    door_style: str | None = Field(default=None, alias="doorStyle")  # shaker|flat|beaded|glazed
+    material_id: str | None = Field(default=None, alias="materialId")
+    hardware_family_id: str | None = Field(default=None, alias="hardwareFamilyId")
+
+
+class FamilyKitInstanceElem(BaseModel):
+    """AST-V3-04 — a placed parametric kitchen kit snap-chain on a wall."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["family_kit_instance"] = "family_kit_instance"
+    id: str
+    kit_id: Literal["kitchen_modular"] = Field(alias="kitId")
+    host_wall_id: str = Field(alias="hostWallId")
+    start_mm: float = Field(alias="startMm")
+    end_mm: float = Field(alias="endMm")
+    components: list[KitComponent] = Field(default_factory=list)
+    countertop_depth_mm: float = Field(default=600.0, alias="countertopDepthMm")
+    countertop_thickness_mm: float = Field(default=40.0, alias="countertopThicknessMm")
+    countertop_material_id: str | None = Field(default=None, alias="countertopMaterialId")
+    toe_kick_height_mm: float = Field(default=100.0, alias="toeKickHeightMm")
+    upper_base_clearance_mm: float = Field(default=460.0, alias="upperBaseClearanceMm")
+    phase_created: str | None = Field(default=None, alias="phaseCreated")
+    phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+
+
+# ---------------------------------------------------------------------------
 # CAN-V3-02 — Hatch pattern definitions
 # ---------------------------------------------------------------------------
 
@@ -2439,6 +2487,7 @@ Element = Annotated[
     | ToposolidElem
     | AssetLibraryEntryElem
     | PlacedAssetElem
+    | FamilyKitInstanceElem
     | HatchPatternDefElem
     | MaterialElem
     | DecalElem
