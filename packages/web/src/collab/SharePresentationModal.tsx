@@ -157,7 +157,7 @@ export function SharePresentationModal({ modelId, open, onClose, pages = [] }: P
           <strong style={{ fontSize: 16, color: 'var(--color-foreground)' }}>
             Share live presentation
           </strong>
-          <button
+          <button type="button"
             onClick={onClose}
             aria-label="Close share presentation modal"
             style={{
@@ -301,7 +301,7 @@ export function SharePresentationModal({ modelId, open, onClose, pages = [] }: P
           </label>
         </section>
 
-        <button
+        <button type="button"
           onClick={handleCopyLink}
           disabled={loading}
           style={{
@@ -357,7 +357,7 @@ export function SharePresentationModal({ modelId, open, onClose, pages = [] }: P
                     {p.openCount} view{p.openCount !== 1 ? 's' : ''}
                   </span>
                 </div>
-                <button
+                <button type="button"
                   onClick={() => handleRevoke(p.id)}
                   disabled={loading}
                   style={{

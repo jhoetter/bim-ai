@@ -125,23 +125,6 @@ registerCommand({
 
 // Additional tools
 registerCommand({
-  id: 'tool.stair',
-  label: 'Place Stair',
-  shortcut: 'ST',
-  keywords: ['stair', 'steps', 'riser'],
-  category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('stair'),
-});
-
-registerCommand({
-  id: 'tool.railing',
-  label: 'Place Railing',
-  keywords: ['railing', 'balustrade', 'guard'],
-  category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('railing'),
-});
-
-registerCommand({
   id: 'tool.column',
   label: 'Place Column',
   keywords: ['column', 'post', 'structural'],
@@ -167,10 +150,10 @@ registerCommand({
 
 registerCommand({
   id: 'tool.roof',
-  label: 'Place Roof',
-  keywords: ['roof', 'roofing'],
+  label: 'Sketch Roof',
+  keywords: ['roof', 'roofing', 'sketch'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('roof'),
+  invoke: () => useBimStore.getState().setPlanTool('roof-sketch'),
 });
 
 registerCommand({
@@ -190,11 +173,11 @@ registerCommand({
 });
 
 registerCommand({
-  id: 'tool.section',
-  label: 'Place Section Cut',
-  keywords: ['section', 'cut', 'callout'],
+  id: 'tool.elevation',
+  label: 'Place Elevation / Section Marker',
+  keywords: ['elevation', 'section', 'cut', 'marker'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('section'),
+  invoke: () => useBimStore.getState().setPlanTool('elevation'),
 });
 
 registerCommand({

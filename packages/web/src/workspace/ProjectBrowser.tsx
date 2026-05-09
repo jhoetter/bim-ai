@@ -769,7 +769,7 @@ export function ProjectBrowser(props: {
                       <summary className="cursor-pointer list-none text-[9px] text-muted hover:text-foreground">
                         Apply ▾
                       </summary>
-                      <ul className="absolute right-0 z-50 min-w-[140px] rounded border bg-[var(--color-surface-1)] py-1 shadow-md">
+                      <ul className="absolute right-0 z-50 min-w-[140px] rounded border bg-[var(--color-surface-strong)] py-1 shadow-md">
                         {planViews.map((pv) => (
                           <li key={pv.id}>
                             <button

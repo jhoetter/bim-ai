@@ -1307,7 +1307,7 @@ export function InspectorPlanViewEditor({
           </label>
           <div className={LABEL_CLS}>
             <span>View Template</span>
-            <button
+            <button type="button"
               data-testid="inspector-save-as-template"
               onClick={() =>
                 onPersistProperty(

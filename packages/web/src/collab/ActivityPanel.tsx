@@ -63,7 +63,7 @@ function ActivityRowItem({ row, onRestore }: RowItemProps) {
         gap: 8,
         padding: '4px 8px',
         borderRadius: 4,
-        background: hovered ? 'var(--color-surface-hover)' : 'transparent',
+        background: hovered ? 'var(--color-surface-strong)' : 'transparent',
         cursor: 'default',
         fontSize: 'var(--text-2xs)',
       }}
@@ -101,6 +101,7 @@ function ActivityRowItem({ row, onRestore }: RowItemProps) {
       </div>
       {hovered && row.parentSnapshotId != null && (
         <button
+          type="button"
           onClick={() => onRestore(row)}
           style={{
             padding: '2px 8px',
@@ -176,7 +177,9 @@ export function ActivityPanel({ modelId, selfId = null, onRestored }: ActivityPa
       >
         {filters.map(({ key, label }) => (
           <button
+            type="button"
             key={key}
+            aria-pressed={filter === key}
             onClick={() => setFilter(key)}
             style={{
               padding: '2px 8px',
@@ -213,6 +216,7 @@ export function ActivityPanel({ modelId, selfId = null, onRestored }: ActivityPa
         {visible.length >= 50 && oldest && (
           <div style={{ padding: '4px 8px' }}>
             <button
+              type="button"
               onClick={() => void fetchMore(modelId, oldest.ts)}
               disabled={loading}
               style={{

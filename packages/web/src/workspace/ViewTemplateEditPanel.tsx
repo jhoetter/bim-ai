@@ -54,7 +54,7 @@ export function ViewTemplateEditPanel({
 
   return (
     <div
-      className="absolute inset-y-0 right-0 z-40 flex w-80 flex-col border-l bg-[var(--color-surface-1)] shadow-xl"
+      className="absolute inset-y-0 right-0 z-40 flex w-80 flex-col border-l bg-[var(--color-surface-strong)] shadow-xl"
       data-testid="view-template-edit-panel"
     >
       <div className="flex items-center justify-between border-b px-4 py-3">

@@ -134,7 +134,7 @@ function JobRow({
           )}
           <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-1)' }}>
             {(job.status === 'done' || job.status === 'errored' || job.status === 'cancelled') && (
-              <button
+              <button type="button"
                 style={{ fontSize: 'var(--text-xs)', cursor: 'pointer' }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -145,7 +145,7 @@ function JobRow({
               </button>
             )}
             {(job.status === 'queued' || job.status === 'running') && (
-              <button
+              <button type="button"
                 style={{
                   fontSize: 'var(--text-xs)',
                   cursor: 'pointer',

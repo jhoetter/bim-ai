@@ -188,7 +188,7 @@ export function OptionsBar(): JSX.Element | null {
             type="button"
             data-testid="options-bar-area-computations"
             onClick={() => setShowComputations((v) => !v)}
-            className="rounded border border-border bg-surface px-2 py-0.5 text-[11px] hover:bg-surface-1"
+            className="rounded border border-border bg-surface px-2 py-0.5 text-[11px] hover:bg-surface-strong"
           >
             ⚙ Computations…
           </button>

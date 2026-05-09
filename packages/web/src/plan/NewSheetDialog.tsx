@@ -49,7 +49,7 @@ export function NewSheetDialog({ onClose, onSubmit }: NewSheetDialogProps): Reac
     >
       <div
         style={{
-          background: 'var(--color-surface-1)',
+          background: 'var(--color-surface-strong)',
           border: '1px solid var(--color-border)',
           borderRadius: 8,
           padding: 24,

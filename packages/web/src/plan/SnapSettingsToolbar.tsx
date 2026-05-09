@@ -4,7 +4,7 @@
  * Compact dropdown rendered next to the plan canvas zoom button. Shows
  * a checkbox per snap kind and persists changes via `saveSnapSettings`.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   DEFAULT_SNAP_SETTINGS,
@@ -32,6 +32,7 @@ export interface SnapSettingsToolbarProps {
 
 export function SnapSettingsToolbar({ value, onChange }: SnapSettingsToolbarProps) {
   const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const enabledCount = ROWS.filter((r) => value[r.key]).length;
 
   const toggle = useCallback(
@@ -48,8 +49,17 @@ export function SnapSettingsToolbar({ value, onChange }: SnapSettingsToolbarProp
     saveSnapSettings({ ...DEFAULT_SNAP_SETTINGS });
   }, [onChange]);
 
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (e: PointerEvent) => {
+      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [open]);
+
   return (
-    <div data-testid="snap-settings-toolbar" className="relative">
+    <div ref={containerRef} data-testid="snap-settings-toolbar" className="relative">
       {open && (
         <div className="absolute bottom-9 left-0 z-20 flex flex-col overflow-hidden rounded border border-border bg-surface/95 shadow-md backdrop-blur">
           {ROWS.map((row) => (

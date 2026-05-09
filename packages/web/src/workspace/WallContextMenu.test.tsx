@@ -92,7 +92,7 @@ describe('ANN-02 — WallContextMenu', () => {
     const onClose = vi.fn();
     render(
       <div>
-        <button data-testid="outside">outside</button>
+        <button type="button" data-testid="outside">outside</button>
         <WallContextMenu
           wall={wallEW}
           position={{ x: 100, y: 100 }}

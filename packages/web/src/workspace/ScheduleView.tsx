@@ -111,7 +111,7 @@ export function ScheduleView({ modelId, scheduleId, onHighlightElement }: Schedu
               style={{
                 position: 'sticky',
                 top: 0,
-                background: 'var(--color-surface-1)',
+                background: 'var(--color-surface-strong)',
                 zIndex: 1,
               }}
             >

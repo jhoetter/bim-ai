@@ -414,7 +414,7 @@ export function FamilyEditorWorkbench(): JSX.Element {
     <div className="p-4 space-y-6">
       <div className="flex gap-2">
         {templates.map(({ value, label }) => (
-          <button
+          <button type="button"
             key={value}
             className={
               template === value
@@ -426,7 +426,7 @@ export function FamilyEditorWorkbench(): JSX.Element {
             {label}
           </button>
         ))}
-        <button
+        <button type="button"
           className="px-3 py-1 rounded border ml-auto"
           onClick={startSweep}
           disabled={sweepDraft !== null}
@@ -434,7 +434,7 @@ export function FamilyEditorWorkbench(): JSX.Element {
         >
           {t('familyEditor.sweepToggle')}
         </button>
-        <button
+        <button type="button"
           className="px-3 py-1 rounded border"
           onClick={startArray}
           disabled={arrayDraft !== null}
@@ -442,7 +442,7 @@ export function FamilyEditorWorkbench(): JSX.Element {
         >
           {t('familyEditor.arrayToggle')}
         </button>
-        <button
+        <button type="button"
           className={
             flexMode ? 'bg-warning text-white px-3 py-1 rounded' : 'px-3 py-1 rounded border'
           }
@@ -490,7 +490,7 @@ export function FamilyEditorWorkbench(): JSX.Element {
             <ul className="space-y-1 text-sm" data-testid="nested-instances-list">
               {nestedInstances.map((inst, i) => (
                 <li key={i}>
-                  <button
+                  <button type="button"
                     onClick={() => setSelectedNestedIndex(i)}
                     className={
                       selectedNestedIndex === i ? 'underline font-semibold' : 'underline text-left'
@@ -553,7 +553,7 @@ export function FamilyEditorWorkbench(): JSX.Element {
                   : 'familyEditor.sweepStepProfile',
               )}
             </span>
-            <button onClick={cancelSweep} className="ml-auto text-sm underline">
+            <button type="button" onClick={cancelSweep} className="ml-auto text-sm underline">
               {t('familyEditor.sweepCancel')}
             </button>
           </div>
@@ -581,7 +581,7 @@ export function FamilyEditorWorkbench(): JSX.Element {
           <ul className="text-sm">
             {sweeps.map((s, i) => (
               <li key={i} data-testid={`sweep-${i}`}>
-                <button
+                <button type="button"
                   className={
                     selectedSweepIndex === i ? 'underline font-semibold' : 'underline text-left'
                   }
@@ -633,8 +633,8 @@ export function FamilyEditorWorkbench(): JSX.Element {
           ))}
         </ul>
         <div className="flex gap-2">
-          <button onClick={() => addRefPlane(false)}>{t('familyEditor.addHorizontal')}</button>
-          <button onClick={() => addRefPlane(true)}>{t('familyEditor.addVertical')}</button>
+          <button type="button" onClick={() => addRefPlane(false)}>{t('familyEditor.addHorizontal')}</button>
+          <button type="button" onClick={() => addRefPlane(true)}>{t('familyEditor.addVertical')}</button>
         </div>
       </section>
 
@@ -713,7 +713,7 @@ export function FamilyEditorWorkbench(): JSX.Element {
             })}
           </tbody>
         </table>
-        <button onClick={addParam}>{t('familyEditor.addParameter')}</button>
+        <button type="button" onClick={addParam}>{t('familyEditor.addParameter')}</button>
       </section>
 
       {flexMode && (
@@ -723,7 +723,7 @@ export function FamilyEditorWorkbench(): JSX.Element {
         >
           <div className="flex items-center gap-2">
             <h2 className="font-semibold">{t('familyEditor.flexHeading')}</h2>
-            <button onClick={resetFlexValues} className="ml-auto text-sm underline">
+            <button type="button" onClick={resetFlexValues} className="ml-auto text-sm underline">
               {t('familyEditor.flexReset')}
             </button>
           </div>
@@ -756,7 +756,7 @@ export function FamilyEditorWorkbench(): JSX.Element {
         </section>
       )}
 
-      <button
+      <button type="button"
         onClick={() =>
           console.warn('load-into-project stub', { template, refPlanes, params, resolved, sweeps })
         }
@@ -930,7 +930,7 @@ function ArrayDraftPanel({
     >
       <div className="flex items-center gap-2">
         <h2 className="font-semibold">{t('familyEditor.arrayHeading')}</h2>
-        <button onClick={onCancel} className="ml-auto text-sm underline">
+        <button type="button" onClick={onCancel} className="ml-auto text-sm underline">
           {t('familyEditor.arrayCancel')}
         </button>
       </div>
@@ -1054,7 +1054,7 @@ function ArrayDraftPanel({
           onChange={(e) => onUpdate({ axisEnd: { ...draft.axisEnd, zMm: Number(e.target.value) } })}
         />
       </fieldset>
-      <button
+      <button type="button"
         onClick={onFinish}
         disabled={finishDisabled}
         className="bg-primary text-white px-3 py-1 rounded text-sm disabled:opacity-50"
@@ -1113,7 +1113,7 @@ function SweepPathSketch({ t, lines, onAppendLine, onAdvance }: PathSketchProps)
           value={draft.ey}
           onChange={(e) => setDraft({ ...draft, ey: Number(e.target.value) })}
         />
-        <button
+        <button type="button"
           onClick={() =>
             onAppendLine({
               startMm: { xMm: draft.sx, yMm: draft.sy },
@@ -1124,7 +1124,7 @@ function SweepPathSketch({ t, lines, onAppendLine, onAdvance }: PathSketchProps)
           {t('familyEditor.sweepAddLine')}
         </button>
       </div>
-      <button
+      <button type="button"
         onClick={onAdvance}
         disabled={lines.length === 0}
         className="bg-primary text-white px-3 py-1 rounded text-sm disabled:opacity-50"
@@ -1177,7 +1177,7 @@ function SweepProfileSketch({ t, lines, onAppendLine, onFinish }: ProfileSketchP
           value={draft.ey}
           onChange={(e) => setDraft({ ...draft, ey: Number(e.target.value) })}
         />
-        <button
+        <button type="button"
           onClick={() =>
             onAppendLine({
               startMm: { xMm: draft.sx, yMm: draft.sy },
@@ -1188,7 +1188,7 @@ function SweepProfileSketch({ t, lines, onAppendLine, onFinish }: ProfileSketchP
           {t('familyEditor.sweepAddLine')}
         </button>
       </div>
-      <button
+      <button type="button"
         onClick={onFinish}
         disabled={lines.length < 3}
         className="bg-primary text-white px-3 py-1 rounded text-sm disabled:opacity-50"

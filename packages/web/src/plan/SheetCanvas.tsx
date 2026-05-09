@@ -141,7 +141,7 @@ export function SheetCanvas({
       width={svgW}
       height={svgH}
       viewBox={`0 0 ${svgW} ${svgH}`}
-      style={{ display: 'block', background: 'var(--color-surface-1)' }}
+      style={{ display: 'block', background: 'var(--color-surface-strong)' }}
     >
       {/* Sheet border */}
       <rect
@@ -149,7 +149,7 @@ export function SheetCanvas({
         y={0}
         width={svgW}
         height={svgH}
-        fill="var(--color-surface-1)"
+        fill="var(--color-surface-strong)"
         stroke="var(--draft-lw-cut-major)"
         strokeWidth={1}
       />
@@ -228,7 +228,7 @@ export function SheetCanvas({
         y={toSvgY(cartoucheY)}
         width={toSvgX(CARTOUCHE_W_MM)}
         height={toSvgY(CARTOUCHE_H_MM)}
-        fill="var(--color-surface-1)"
+        fill="var(--color-surface-strong)"
         stroke="var(--draft-lw-cut-major)"
         strokeWidth={1}
       />

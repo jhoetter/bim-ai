@@ -253,7 +253,7 @@ export function SheetReviewSurface({
     <div
       data-testid="sheet-review-surface"
       className="relative flex h-full w-full flex-col"
-      style={{ background: 'var(--color-surface-1)' }}
+      style={{ background: 'var(--color-surface-strong)' }}
     >
       <div
         className="relative flex-1 overflow-hidden"
@@ -290,7 +290,7 @@ export function SheetReviewSurface({
               height: 16,
               borderRadius: '50%',
               background: 'var(--draft-comment-pin)',
-              border: '2px solid var(--color-surface-1)',
+              border: '2px solid var(--color-surface-strong)',
               pointerEvents: 'none',
             }}
           />
@@ -386,7 +386,7 @@ function CommentPinOverlay({
         height: 16,
         borderRadius: '50%',
         background: resolved ? 'var(--color-muted)' : 'var(--draft-comment-pin)',
-        border: active ? '2px solid var(--color-accent)' : '2px solid var(--color-surface-1)',
+        border: active ? '2px solid var(--color-accent)' : '2px solid var(--color-surface-strong)',
         cursor: 'pointer',
         opacity: resolved ? 0.4 : 1,
         padding: 0,

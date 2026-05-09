@@ -50,7 +50,7 @@ export function LoadedFamiliesSidebar({
       className="border rounded p-3 space-y-2"
       aria-label={t('familyEditor.loadedFamiliesAriaLabel')}
     >
-      <button
+      <button type="button"
         className="flex items-center gap-2 font-semibold w-full text-left"
         onClick={() => setOpen((p) => !p)}
         aria-expanded={open}
@@ -98,7 +98,7 @@ export function LoadedFamiliesSidebar({
                   >
                     {t('familyEditor.loadedFamilyUsageCount', { count })}
                   </span>
-                  <button
+                  <button type="button"
                     className="text-xs underline"
                     onClick={() => onAddInstance(fam.id)}
                     aria-label={t('familyEditor.loadedFamilyAdd', { name: fam.name })}

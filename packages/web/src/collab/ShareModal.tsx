@@ -171,7 +171,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
           <strong style={{ fontSize: 16 }}>Share model</strong>
-          <button
+          <button type="button"
             onClick={onClose}
             aria-label="Close share modal"
             style={{ border: 'none', background: 'none', cursor: 'pointer' }}
@@ -182,7 +182,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
           {(['members', 'invite', 'public-link'] as Tab[]).map((t) => (
-            <button
+            <button type="button"
               key={t}
               onClick={() => setTab(t)}
               style={{
@@ -233,7 +233,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
                   <span style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>
                     {ROLE_LABELS[a.role as Role] ?? a.role}
                   </span>
-                  <button
+                  <button type="button"
                     onClick={() => handleRevokeRole(a.id)}
                     style={{
                       fontSize: 11,
@@ -283,7 +283,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
                 </option>
               ))}
             </select>
-            <button
+            <button type="button"
               onClick={handleInvite}
               disabled={loading || !inviteEmail.trim()}
               style={{
@@ -417,7 +417,7 @@ export function ShareModal({ modelId, open, onClose }: Props) {
                     }}
                   />
                 </label>
-                <button
+                <button type="button"
                   onClick={handleCreatePublicLink}
                   disabled={loading}
                   style={{

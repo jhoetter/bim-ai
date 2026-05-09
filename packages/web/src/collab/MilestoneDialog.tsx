@@ -109,11 +109,13 @@ export function MilestoneDialog({
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <label
+            htmlFor="milestone-name"
             style={{ fontSize: 'var(--text-xs)', color: 'var(--color-muted)', fontWeight: 500 }}
           >
             Name this milestone
           </label>
           <input
+            id="milestone-name"
             ref={nameRef}
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -134,11 +136,13 @@ export function MilestoneDialog({
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <label
+            htmlFor="milestone-description"
             style={{ fontSize: 'var(--text-xs)', color: 'var(--color-muted)', fontWeight: 500 }}
           >
             Description (optional)
           </label>
           <textarea
+            id="milestone-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
@@ -156,6 +160,7 @@ export function MilestoneDialog({
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
           <button
+            type="button"
             onClick={onClose}
             style={{
               padding: '6px 14px',
@@ -170,6 +175,7 @@ export function MilestoneDialog({
             Cancel
           </button>
           <button
+            type="button"
             onClick={() => void handleSubmit()}
             disabled={!name.trim() || submitting}
             style={{

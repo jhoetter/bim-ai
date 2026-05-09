@@ -55,7 +55,7 @@ export function CalloutMarker({
         cx={circleX}
         cy={circleY}
         r={CIRCLE_RADIUS}
-        fill="var(--color-surface-1)"
+        fill="var(--color-surface-strong)"
         stroke="var(--color-annotation)"
         strokeWidth={1}
       />
