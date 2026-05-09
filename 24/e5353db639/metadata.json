@@ -3,8 +3,10 @@
   "checkpoint_id": "24e5353db639",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
-  "files_touched": null,
+  "checkpoints_count": 2,
+  "files_touched": [
+    "spec/revit-parity/README.md"
+  ],
   "sessions": [
     {
       "metadata": "/24/e5353db639/0/metadata.json",
@@ -17,13 +19,19 @@
       "transcript": "/24/e5353db639/1/full.jsonl",
       "content_hash": "/24/e5353db639/1/content_hash.txt",
       "prompt": "/24/e5353db639/1/prompt.txt"
+    },
+    {
+      "metadata": "/24/e5353db639/2/metadata.json",
+      "transcript": "/24/e5353db639/2/full.jsonl",
+      "content_hash": "/24/e5353db639/2/content_hash.txt",
+      "prompt": "/24/e5353db639/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 568,
-    "cache_creation_tokens": 575179,
-    "cache_read_tokens": 23846862,
-    "output_tokens": 259870,
-    "api_call_count": 237
+    "input_tokens": 2295,
+    "cache_creation_tokens": 1823152,
+    "cache_read_tokens": 108056192,
+    "output_tokens": 714381,
+    "api_call_count": 1099
   }
 }
