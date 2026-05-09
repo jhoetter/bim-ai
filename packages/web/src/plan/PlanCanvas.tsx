@@ -262,6 +262,7 @@ export function PlanCanvas({
     half: initialCamera?.halfMm !== undefined ? initialCamera.halfMm / 1000 : 22,
   });
   const draftRef = useRef<Draft | undefined>(undefined);
+  const wallFlipRef = useRef(false);
   // PLN-02 — active crop-region drag (handle id + pointer/bounds at drag start).
   const cropDragRef = useRef<
     | {
@@ -680,6 +681,7 @@ export function PlanCanvas({
 
   useEffect(() => {
     draftRef.current = undefined;
+    wallFlipRef.current = false;
     alignStateRef.current = initialAlignState();
     splitStateRef.current = initialSplitState();
     trimStateRef.current = initialTrimState();
@@ -2136,11 +2138,13 @@ export function PlanCanvas({
             endY += py;
           }
         }
+        const flipped = wallFlipRef.current;
+        wallFlipRef.current = false;
         onSemanticCommand({
           type: 'createWall',
           levelId: lvlId,
-          start: { xMm: startX, yMm: startY },
-          end: { xMm: endX, yMm: endY },
+          start: { xMm: flipped ? endX : startX, yMm: flipped ? endY : startY },
+          end: { xMm: flipped ? startX : endX, yMm: flipped ? startY : endY },
           locationLine: wallLocationLine,
           heightMm: wallDrawHeightMm,
         });
@@ -2988,7 +2992,13 @@ export function PlanCanvas({
       }
       if (ev.code === 'Space') {
         ev.preventDefault();
-        spaceDownRef.current = true;
+        const d = draftRef.current;
+        if (planTool === 'wall' && d?.kind === 'wall') {
+          wallFlipRef.current = !wallFlipRef.current;
+          bumpGeom((x) => x + 1);
+        } else {
+          spaceDownRef.current = true;
+        }
       }
       // FAM-10 — Cmd/Ctrl + C/V copy-paste handlers.
       if ((ev.metaKey || ev.ctrlKey) && (ev.key === 'c' || ev.key === 'C')) {
