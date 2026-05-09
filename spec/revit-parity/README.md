@@ -52,9 +52,9 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-004 | Properties Palette (context-sensitive) | UI & Nav | 🟡 | Basic inspector exists; no full param model |
 | F-005 | Ribbon Interface (tabbed toolbar) | UI & Nav | ❌ | Different UI paradigm |
 | F-006 | Quick Access Toolbar | UI & Nav | ❌ | |
-| F-007 | Multi-tab view workspace | UI & Nav | ❌ | Single canvas |
+| F-007 | Multi-tab view workspace | UI & Nav | 🟡 | TabBar + tabsModel (plan/3d/section/sheet/schedule/agent); missing Close Inactive Views |
 | F-008 | Dark Mode | UI & Nav | ✅ | Full toggle with URL hash + localStorage + prefers-color-scheme cascade |
-| F-009 | Language settings | UI & Nav | ❌ | |
+| F-009 | Language settings | UI & Nav | 🟡 | EN/DE toggle via command palette (localStorage); no settings dialog or language indicator |
 | F-010 | View Scale selector | UI & Nav | ❌ | No annotation-driven scales |
 | F-011 | Visual Style selector (Wireframe/Shaded/etc.) | UI & Nav | 🟡 | Some render modes exist; not per-view-type |
 | F-012 | Visibility / Graphic Overrides (VV) | UI & Nav | 🟡 | VVDialog has model/annotation/filters/links tabs; 13 model + 7 annotation categories; missing full 120-category Revit set |
