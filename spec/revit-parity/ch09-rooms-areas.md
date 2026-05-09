@@ -55,7 +55,7 @@ Source segment: `05:30:00 – 05:39:46`
 **Screenshot:**
 ![Area tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0831_05-37-44.png)
 
-**bim-ai status:** 🟡 Partial — the `area-boundary` sketch tool (hotkey AR) draws area boundary polylines stored as `area` elements. The right-rail inspector shows computed area (m²), rule set (gross/net/no_rules), level, and boundary vertex count. Missing: auto-snap to closed boundary loop like Revit, VG per-view area visibility toggle, and Area and Volume Computations dialog (F-096).
+**bim-ai status:** 🟡 Partial — the `area-boundary` sketch tool (hotkey AR) draws area boundary polylines stored as `area` elements. The right-rail inspector shows computed area (m²), rule set (gross/net/no_rules), level, and boundary vertex count. Area and Volume Computations settings are now partially available (see F-096). Missing: auto-snap to closed boundary loop like Revit, VG per-view area visibility toggle.
 
 ---
 
