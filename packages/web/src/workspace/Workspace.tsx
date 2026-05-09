@@ -101,6 +101,8 @@ import {
 } from './workspaceUtils';
 import { useToolPrefs } from '../tools/toolPrefsStore';
 import { useOfflineStore } from '../offlineStore';
+import { ParticipantStrip } from './ParticipantStrip';
+import { usePresenceStore } from '../presenceStore';
 
 /**
  * Workspace — composition root for the §11–§17 chrome.
@@ -164,6 +166,54 @@ export function Workspace(): JSX.Element {
   // COL-V3-06 — offline-tolerant authoring: network status + pending queue count
   const isOnline = useOfflineStore((s) => s.isOnline);
   const pendingCommandCount = useOfflineStore((s) => s.pendingCommandCount);
+
+  // COL-V3-04 — presence strip
+  const presenceParticipants = usePresenceStore((s) => s.participants);
+  const presenceLocalUserId = usePresenceStore((s) => s.localUserId);
+  const presenceSetParticipants = usePresenceStore((s) => s.setParticipants);
+  const presenceSetLocalUserId = usePresenceStore((s) => s.setLocalUserId);
+
+  // Seed 3 mock participants in dev so the strip is visible without a live WS.
+  useEffect(() => {
+    if (import.meta.env.DEV && presenceParticipants.length === 0) {
+      const devUserId = userId ?? 'dev-local';
+      presenceSetLocalUserId(devUserId);
+      presenceSetParticipants([
+        {
+          userId: devUserId,
+          displayName: userDisplayName ?? 'You',
+          initials: (userDisplayName ?? 'You').slice(0, 2).toUpperCase(),
+          color: 'var(--collab-color-1)',
+          isOnline: true,
+          lastSeenAt: new Date().toISOString(),
+          role: 'editor',
+          sessionStartedAt: Date.now(),
+        },
+        {
+          userId: 'dev-peer-1',
+          displayName: 'Alice Schmidt',
+          initials: 'AS',
+          color: 'var(--collab-color-2)',
+          isOnline: true,
+          lastSeenAt: new Date().toISOString(),
+          role: 'editor',
+          sessionStartedAt: Date.now(),
+        },
+        {
+          userId: 'dev-peer-2',
+          displayName: 'Bob Chen',
+          initials: 'BC',
+          color: 'var(--collab-color-3)',
+          isOnline: false,
+          lastSeenAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+          role: 'viewer',
+          sessionStartedAt: Date.now(),
+        },
+      ]);
+    }
+    // Only seed once on mount — omit deps intentionally.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // AST-V3-01 — library overlay (Alt+2)
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -1052,6 +1102,13 @@ export function Workspace(): JSX.Element {
                   ) : null}
                 </div>
               ) : null}
+              {/* COL-V3-04: participant strip — top-right of header */}
+              <div className="absolute right-4 top-2 z-10">
+                <ParticipantStrip
+                  participants={presenceParticipants}
+                  localUserId={presenceLocalUserId ?? userId ?? ''}
+                />
+              </div>
             </div>
             <TabBar
               tabs={tabsState.tabs}

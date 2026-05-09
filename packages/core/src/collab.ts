@@ -12,6 +12,20 @@ export type Participant = {
   role: ParticipantRole;
   color: string;
   sessionStartedAt: number;
+  /** COL-V3-04: presence display fields (optional — populated by presence layer). */
+  displayName?: string;
+  /** COL-V3-04: max 2-char initials derived from displayName. */
+  initials?: string;
+  /** COL-V3-04: whether the participant is currently online. */
+  isOnline?: boolean;
+  /** COL-V3-04: ISO 8601 timestamp of last known activity. */
+  lastSeenAt?: string;
+};
+
+/** COL-V3-04 — presence state for the participant strip. */
+export type CollabPresenceState = {
+  participants: Participant[];
+  localUserId: string;
 };
 
 export type CollabSession = {
