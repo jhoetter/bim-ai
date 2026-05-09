@@ -405,6 +405,46 @@ export function InspectorPropertiesFor(
           ) : null}
         </div>
       );
+    case 'column': {
+      const { onPropertyChange: colPropChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label={f('level')} value={el.levelId} mono />
+          <FieldRow label={f('width')} value={fmtMm(el.bMm)} />
+          <FieldRow label={f('depth')} value={fmtMm(el.hMm)} />
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Height (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.heightMm}
+              key={`${el.id}-height`}
+              step={100}
+              onBlur={(e) => colPropChange?.('heightMm', Number(e.currentTarget.value))}
+              data-testid="inspector-column-height"
+            />
+          </div>
+          {el.rotationDeg != null && (
+            <FieldRow label="Rotation" value={`${el.rotationDeg.toFixed(1)}°`} />
+          )}
+        </div>
+      );
+    }
+    case 'beam': {
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label={f('level')} value={el.levelId} mono />
+          <FieldRow
+            label="Start"
+            value={`${fmtMm(el.startMm.xMm)} · ${fmtMm(el.startMm.yMm)}`}
+            mono
+          />
+          <FieldRow label="End" value={`${fmtMm(el.endMm.xMm)} · ${fmtMm(el.endMm.yMm)}`} mono />
+          <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
+          <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
+        </div>
+      );
+    }
     case 'room':
       return (
         <div>
