@@ -3,7 +3,7 @@
   "checkpoint_id": "02acead5b13f",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "packages/web/src/collab/ShareModal.tsx"
   ],
@@ -19,13 +19,19 @@
       "transcript": "/02/acead5b13f/1/full.jsonl",
       "content_hash": "/02/acead5b13f/1/content_hash.txt",
       "prompt": "/02/acead5b13f/1/prompt.txt"
+    },
+    {
+      "metadata": "/02/acead5b13f/2/metadata.json",
+      "transcript": "/02/acead5b13f/2/full.jsonl",
+      "content_hash": "/02/acead5b13f/2/content_hash.txt",
+      "prompt": "/02/acead5b13f/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 7665,
-    "cache_creation_tokens": 4357342,
-    "cache_read_tokens": 270659648,
-    "output_tokens": 1283798,
-    "api_call_count": 2752
+    "input_tokens": 7980,
+    "cache_creation_tokens": 4598465,
+    "cache_read_tokens": 275142327,
+    "output_tokens": 1439469,
+    "api_call_count": 2804
   }
 }
