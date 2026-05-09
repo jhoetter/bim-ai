@@ -81,7 +81,7 @@ This determines where area boundary lines snap relative to wall layers, affectin
 **Screenshot:**
 ![Apply Area Rules](file:///Users/jhoetter/Desktop/Revit%20Specs/0818_05-35-51.png)
 
-**bim-ai status:** 🟡 Partial — An "Apply Area Rules" checkbox (`data-testid="options-bar-apply-area-rules"`) appears in the OptionsBar when the `area-boundary` tool is active, storing the value in `useBimStore.applyAreaRules` (default `true`). Missing: the backend area derivation engine does not yet consume this flag to snap boundary lines to wall faces; the toggle is UI-only at this point.
+**bim-ai status:** 🟢 Done — The "Apply Area Rules" checkbox (`data-testid="options-bar-apply-area-rules"`) is now fully wired end-to-end. The flag is persisted on each `area` element as `applyAreaRules` (field `apply_area_rules: bool = Field(default=True, alias="applyAreaRules")` on `AreaElem`). The frontend passes the current store value in the `createArea` command payload. The backend `area_calculation.py` respects the flag: when `applyAreaRules=true`, the area polygon is inset according to the project-level `roomAreaComputationBasis` setting before computing `computedAreaSqMm`; when `applyAreaRules=false`, the boundary is used exactly as drawn (inset = 0 mm). Missing: full Minkowski polygon shrink (currently uses bbox approximation matching the existing room-derivation engine).
 
 ---
 

@@ -2612,6 +2612,7 @@ export function PlanCanvas({
             { xMm: x0, yMm: y1 },
           ],
           ruleSet: 'gross',
+          applyAreaRules: useBimStore.getState().applyAreaRules,
         });
         draftRef.current = undefined;
         bumpGeom((x) => x + 1);
