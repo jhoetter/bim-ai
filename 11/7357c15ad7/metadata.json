@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "117357c15ad7",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/plan/planElementMeshBuilders.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/11/7357c15ad7/0/metadata.json",
+      "transcript": "/11/7357c15ad7/0/full.jsonl",
+      "content_hash": "/11/7357c15ad7/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 15,
+    "cache_creation_tokens": 70120,
+    "cache_read_tokens": 1758187,
+    "output_tokens": 35608,
+    "api_call_count": 15
+  }
+}
