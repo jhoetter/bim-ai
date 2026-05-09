@@ -179,11 +179,13 @@ export function InspectorPropertiesFor(
     onPropertyChange?: (property: string, value: unknown) => void;
     onMonitorReconcile?: (elementId: string, mode: 'accept_source' | 'keep_host') => void;
     onDisciplineChange?: (discipline: DisciplineTag | null) => void;
+    onEditType?: (typeId: string) => void;
   },
 ): JSX.Element {
   const elementsById = options?.elementsById ?? {};
   const onMonitorReconcile = options?.onMonitorReconcile;
   const onDisciplineChange = options?.onDisciplineChange;
+  const onEditType = options?.onEditType;
   const f = (key: string) => t(`inspector.fields.${key}`);
   switch (el.kind) {
     case 'wall': {
@@ -306,6 +308,16 @@ export function InspectorPropertiesFor(
                   </option>
                 ))}
             </select>
+            {el.wallTypeId && onEditType ? (
+              <button
+                type="button"
+                data-testid="inspector-edit-type"
+                className="shrink-0 rounded border border-border px-2 py-0.5 text-xs text-muted hover:text-foreground"
+                onClick={() => onEditType(el.wallTypeId!)}
+              >
+                Edit Type
+              </button>
+            ) : null}
           </div>
           <FieldRow label={f('workset')} value={el.worksetId ?? '—'} mono />
           {onDisciplineChange ? (
@@ -362,6 +374,16 @@ export function InspectorPropertiesFor(
                   </option>
                 ))}
             </select>
+            {el.floorTypeId && onEditType ? (
+              <button
+                type="button"
+                data-testid="inspector-edit-type"
+                className="shrink-0 rounded border border-border px-2 py-0.5 text-xs text-muted hover:text-foreground"
+                onClick={() => onEditType(el.floorTypeId!)}
+              >
+                Edit Type
+              </button>
+            ) : null}
           </div>
           <FieldRow label={f('workset')} value={el.worksetId ?? '—'} mono />
           {onDisciplineChange ? (
@@ -399,6 +421,16 @@ export function InspectorPropertiesFor(
                   </option>
                 ))}
             </select>
+            {el.roofTypeId && onEditType ? (
+              <button
+                type="button"
+                data-testid="inspector-edit-type"
+                className="shrink-0 rounded border border-border px-2 py-0.5 text-xs text-muted hover:text-foreground"
+                onClick={() => onEditType(el.roofTypeId!)}
+              >
+                Edit Type
+              </button>
+            ) : null}
           </div>
           {onDisciplineChange ? (
             <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />

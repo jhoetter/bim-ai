@@ -51,6 +51,7 @@ export function WorkspaceRightRail({
 }): JSX.Element {
   const { t } = useTranslation();
   const selectedId = useBimStore((s) => s.selectedId);
+  const select = useBimStore((s) => s.select);
   const elementsById = useBimStore((s) => s.elementsById);
   const revision = useBimStore((s) => s.revision);
   const activeLevelId = useBimStore((s) => s.activeLevelId);
@@ -375,6 +376,7 @@ export function WorkspaceRightRail({
                           value,
                         }),
                       onDisciplineChange: handleDisciplineChange,
+                      onEditType: (typeId) => select(typeId),
                     })}
                     <WallJoinDisallowSection
                       wall={el}
@@ -427,6 +429,7 @@ export function WorkspaceRightRail({
                         value,
                       }),
                     onDisciplineChange: handleDisciplineChange,
+                    onEditType: (typeId) => select(typeId),
                   })
                 )}
                 {onNavigateToElement && NAVIGABLE_KINDS.has(el.kind) && (
