@@ -12,11 +12,14 @@ export function FloatingPalette({
   activeTool,
   onToolSelect,
   disabledContext,
+  allowedToolIds,
 }: {
   mode: WorkspaceMode;
   activeTool: ToolId;
   onToolSelect: (id: ToolId) => void;
   disabledContext: ToolDisabledContext;
+  /** When provided, only these tool ids are shown in the palette. */
+  allowedToolIds?: ReadonlySet<ToolId>;
 }): JSX.Element | null {
   if (mode === 'sheet' || mode === 'schedule' || mode === 'agent') return null;
   return (
@@ -34,6 +37,7 @@ export function FloatingPalette({
         activeTool={activeTool}
         onToolSelect={onToolSelect}
         disabledContext={disabledContext}
+        allowedToolIds={allowedToolIds}
       />
     </div>
   );

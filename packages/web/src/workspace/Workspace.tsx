@@ -831,6 +831,21 @@ export function Workspace(): JSX.Element {
     if (!visibleLegacyTools.includes(planTool)) setPlanTool('select');
   }, [planTool, setPlanTool, visibleLegacyTools]);
 
+  // Derive the ToolId allowlist from the perspective-filtered legacy tool list.
+  // 'room_rectangle' maps to 'room' and 'grid' maps to 'select' in the palette;
+  // all other PlanTool values are identical to their ToolId counterpart.
+  const allowedToolIds = useMemo<ReadonlySet<ToolId>>(
+    () =>
+      new Set(
+        visibleLegacyTools.map((t): ToolId => {
+          if (t === 'room_rectangle') return 'room';
+          if (t === 'grid') return 'select';
+          return t as ToolId;
+        }),
+      ),
+    [visibleLegacyTools],
+  );
+
   const openMilestoneDialog = useCallback(() => setMilestoneDialogOpen(true), []);
 
   useEffect(() => {
@@ -1199,6 +1214,7 @@ export function Workspace(): JSX.Element {
               activeTool={legacyToToolId(planTool)}
               onToolSelect={handleToolSelect}
               disabledContext={toolDisabledContext}
+              allowedToolIds={allowedToolIds}
             />
             <CanvasMount
               mode={(activeTab?.kind as WorkspaceMode | undefined) ?? mode}
