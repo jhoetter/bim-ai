@@ -91,7 +91,6 @@ import { applyDormerCutsToRoofGeom } from './viewport/dormerRoofCut';
 import { registerDormerCutFn } from './viewport/meshBuilders';
 import { WallContextMenu, type WallContextMenuCommand } from './workspace/WallContextMenu';
 import { gripsFor, type Grip3dDescriptor } from './viewport/grip3d';
-import type { SunOverlayValues } from './viewport/SunOverlay';
 import { computeSunPositionNoaa } from './viewport/sunPositionNoaa';
 import { useSunStore } from './sunStore';
 import {
@@ -332,22 +331,6 @@ export function Viewport({
       sun.position.copy(sunPositionFromAzEl(azimuthDeg, elevationDeg));
     }
   }, [sunOverlayValues]);
-
-  const handleSunCommit = useCallback(
-    (patch: Partial<SunOverlayValues>) => {
-      const next = { ...useSunStore.getState().values, ...patch };
-      useSunStore.getState().setValues(patch);
-      onSemanticCommand?.({
-        type: 'updateSunSettings',
-        latitudeDeg: next.latitudeDeg,
-        longitudeDeg: next.longitudeDeg,
-        dateIso: next.dateIso,
-        timeOfDay: { hours: next.hours, minutes: next.minutes },
-        daylightSavingStrategy: next.daylightSavingStrategy,
-      });
-    },
-    [onSemanticCommand],
-  );
 
   const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
   const viewerPhaseFilter = useBimStore((s) => s.viewerPhaseFilter);

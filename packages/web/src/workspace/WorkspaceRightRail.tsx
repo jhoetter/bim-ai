@@ -390,7 +390,6 @@ export function WorkspaceRightRail({
                       }
                     />
                     <WallMoveSection
-                      wallId={el.id}
                       onMove={(dx, dy) =>
                         void onSemanticCommand({
                           type: 'moveWallDelta',
@@ -943,10 +942,8 @@ function WallJoinDisallowSection({
 }
 
 function WallMoveSection({
-  wallId,
   onMove,
 }: {
-  wallId: string;
   onMove: (dxMm: number, dyMm: number) => void;
 }): JSX.Element {
   const dxRef = useRef<HTMLInputElement | null>(null);

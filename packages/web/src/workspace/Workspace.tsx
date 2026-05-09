@@ -79,7 +79,6 @@ import { TemporaryVisibilityChip } from './TemporaryVisibilityChip';
 import { CheatsheetModal } from '../cmd/CheatsheetModal';
 import { CommandPalette } from '../cmdPalette/CommandPalette';
 import '../cmdPalette/defaultCommands';
-import { type CommandCandidate } from '../cmd/commandPaletteSources';
 import {
   FamilyLibraryPanel,
   type ExternalCatalogPlacement,
@@ -97,7 +96,6 @@ import { WorkspaceRightRail } from './WorkspaceRightRail';
 import { useWorkspaceSnapshot } from './useWorkspaceSnapshot';
 import {
   buildBrowserSections,
-  buildPaletteCandidates,
   legacyToToolId,
   mapComments,
   toolIdToLegacy,
@@ -134,7 +132,7 @@ const PLAN_STYLE_OPTIONS = [
 ];
 
 export function Workspace(): JSX.Element {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const toolRegistry = useMemo(() => getToolRegistry(t), [t]);
   const elementsById = useBimStore((s) => s.elementsById);
   const hydrateFromSnapshot = useBimStore((s) => s.hydrateFromSnapshot);
@@ -145,7 +143,6 @@ export function Workspace(): JSX.Element {
   // EDT-V3-05: loop mode state for status bar message.
   const loopMode = useToolPrefs((s) => s.loopMode);
   const selectedId = useBimStore((s) => s.selectedId);
-  const select = useBimStore((s) => s.select);
   const activeLevelId = useBimStore((s) => s.activeLevelId);
   const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
   const planHudMm = useBimStore((s) => s.planHudMm);
@@ -233,7 +230,6 @@ export function Workspace(): JSX.Element {
     typeId: string;
   } | null>(null);
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
-  const [recentCommandIds, setRecentCommandIds] = useState<string[]>([]);
   const [tourOpen, setTourOpen] = useState<boolean>(() => !readOnboardingProgress().completed);
   const { insertSeedHouse, seedLoading, seedError, setSeedError, wsOn, codePresetIds } =
     useWorkspaceSnapshot();
@@ -861,11 +857,6 @@ export function Workspace(): JSX.Element {
     setTheme(next as Theme);
   }, []);
 
-  const paletteCandidates = useMemo<CommandCandidate[]>(
-    () => buildPaletteCandidates(elementsById, toolRegistry, t),
-    [elementsById, toolRegistry, t],
-  );
-
   const paletteViews = useMemo(() => {
     const KIND_PREFIX: Partial<Record<Element['kind'], string>> = {
       plan_view: 'Plan',
@@ -889,44 +880,6 @@ export function Workspace(): JSX.Element {
       if (el) openTabFromElement(el);
     },
     [elementsById, openTabFromElement],
-  );
-
-  const handlePalettePick = useCallback(
-    (cand: CommandCandidate) => {
-      setRecentCommandIds((prev) => [cand.id, ...prev.filter((id) => id !== cand.id)].slice(0, 5));
-      if (cand.id === 'tool.browse-families') {
-        setFamilyLibraryOpen(true);
-        return;
-      }
-      if (cand.kind === 'tool') {
-        const toolId = cand.id.replace(/^tool\./, '') as ToolId;
-        const legacy = toolIdToLegacy(toolId);
-        if (legacy) setPlanTool(legacy);
-        return;
-      }
-      if (cand.kind === 'element') {
-        select(cand.id);
-        return;
-      }
-      if (cand.id === 'settings.theme.light' || cand.id === 'settings.theme.dark') {
-        const next = cand.id.endsWith('dark') ? 'dark' : 'light';
-        if (getCurrentTheme() !== next) {
-          toggleTheme();
-          setTheme(next as Theme);
-        }
-        return;
-      }
-      if (cand.id === 'settings.language.toggle') {
-        const next = i18n.language === 'de' ? 'en' : 'de';
-        void i18n.changeLanguage(next);
-        localStorage.setItem('bim-ai:lang', next);
-        return;
-      }
-      if (cand.kind === 'view') {
-        select(cand.id);
-      }
-    },
-    [i18n, select, setPlanTool],
   );
 
   const handlePlaceFamilyType = useCallback(

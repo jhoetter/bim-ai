@@ -1,4 +1,3 @@
-/* eslint-disable bim-ai/no-hex-in-chrome -- pre-v3 hex literals; remove when this file is migrated in B4 Phase 2 */
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import type { JSX, DragEvent } from 'react';
 import type { DisciplineTag, Element } from '@bim-ai/core';

@@ -10,7 +10,7 @@
  * No hex literals — all colours via CSS token variables.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 
 import type { Advisory, StructuredLayout } from '@bim-ai/core';
 
@@ -48,6 +48,37 @@ export function ImageTraceDropZone({
   }, []);
 
   useEffect(() => () => stopPolling(), [stopPolling]);
+
+  const startPolling = useCallback(
+    (jobId: string, imageUrl: string) => {
+      const poll = async () => {
+        try {
+          const res = await fetch(`${BASE}/api/jobs/${encodeURIComponent(jobId)}`);
+          if (!res.ok) return;
+          const job = await res.json();
+          if (job.status === 'done') {
+            stopPolling();
+            const layout = job.outputs?.layout as StructuredLayout | undefined;
+            if (layout) {
+              setState({ phase: 'done', layout, imageUrl });
+              onLayout?.(layout);
+            } else {
+              setState({ phase: 'error', message: 'Job completed but no layout in outputs' });
+            }
+          } else if (job.status === 'errored') {
+            stopPolling();
+            setState({ phase: 'error', message: job.errorMessage ?? 'Job errored' });
+          } else {
+            pollRef.current = setTimeout(poll, POLL_INTERVAL_MS);
+          }
+        } catch {
+          pollRef.current = setTimeout(poll, POLL_INTERVAL_MS);
+        }
+      };
+      pollRef.current = setTimeout(poll, POLL_INTERVAL_MS);
+    },
+    [onLayout, stopPolling],
+  );
 
   const postTrace = useCallback(
     async (file: File) => {
@@ -105,34 +136,6 @@ export function ImageTraceDropZone({
     },
     [archetypeHint, onLayout, startPolling],
   );
-
-  function startPolling(jobId: string, imageUrl: string) {
-    const poll = async () => {
-      try {
-        const res = await fetch(`${BASE}/api/jobs/${encodeURIComponent(jobId)}`);
-        if (!res.ok) return;
-        const job = await res.json();
-        if (job.status === 'done') {
-          stopPolling();
-          const layout = job.outputs?.layout as StructuredLayout | undefined;
-          if (layout) {
-            setState({ phase: 'done', layout, imageUrl });
-            onLayout?.(layout);
-          } else {
-            setState({ phase: 'error', message: 'Job completed but no layout in outputs' });
-          }
-        } else if (job.status === 'errored') {
-          stopPolling();
-          setState({ phase: 'error', message: job.errorMessage ?? 'Job errored' });
-        } else {
-          pollRef.current = setTimeout(poll, POLL_INTERVAL_MS);
-        }
-      } catch {
-        pollRef.current = setTimeout(poll, POLL_INTERVAL_MS);
-      }
-    };
-    pollRef.current = setTimeout(poll, POLL_INTERVAL_MS);
-  }
 
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {

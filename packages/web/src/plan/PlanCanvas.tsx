@@ -89,6 +89,7 @@ import {
   resolvePlanGraphicHints,
   resolvePlanTagStyleLane,
   resolvePlanViewDisplay,
+  type PlanSemanticKind,
 } from './planProjection';
 import { rebuildPlanMeshes } from './symbology';
 import { AnnotateRibbon } from './AnnotateRibbon';
@@ -1556,6 +1557,7 @@ export function PlanCanvas({
     mergedAnnotationHints,
     planTagFontScales,
     display.presentation,
+    display.hiddenElementIds,
     display.hiddenSemanticKinds,
     displayLevelId,
     elementsById,
@@ -1565,6 +1567,8 @@ export function PlanCanvas({
     planProjectionPrimitives,
     modelId,
     planTool,
+    activeLevelResolvedId,
+    revealHiddenMode,
     selectedId,
     activeCropState,
     activePlanViewId,
@@ -3768,7 +3772,7 @@ export function PlanCanvas({
         setWallJoinCtxMenu(null);
         return;
       }
-      if (revealHiddenMode && display.hiddenSemanticKinds.has(el.kind)) {
+      if (revealHiddenMode && display.hiddenSemanticKinds.has(el.kind as PlanSemanticKind)) {
         ev.preventDefault();
         setUnhideContextMenu({ elementKind: el.kind, position: { x: ev.clientX, y: ev.clientY } });
         setWallContextMenu(null);
@@ -3873,7 +3877,6 @@ export function PlanCanvas({
       if (planTool === 'toposolid_subdivision' && el.kind === 'toposolid') {
         const d = draftRef.current;
         if (d && d.kind === 'toposolid-subdivision' && d.verts.length >= 3) {
-          const draft = useToolPrefs.getState().subdivisionDraft;
           onSemanticCommand({
             type: 'create_toposolid_subdivision',
             id: crypto.randomUUID(),
@@ -3947,6 +3950,13 @@ export function PlanCanvas({
     snapSettings,
     worldToScreen,
     activeCropState,
+    activePlanViewId,
+    display.hiddenElementIds,
+    display.hiddenSemanticKinds,
+    revealHiddenMode,
+    selectedId,
+    selectedIds,
+    setPlanTool,
   ]);
 
   // EDT-05 — keep the snap-line ref in sync with the active level so

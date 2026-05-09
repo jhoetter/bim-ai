@@ -785,41 +785,6 @@ function TopBarRight({
   );
 }
 
-function TopBarSelect({
-  value,
-  onChange,
-  options,
-  label,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  options: TopBarSelectOption[];
-  label: string;
-}): JSX.Element {
-  return (
-    <div className="relative flex items-center">
-      <select
-        aria-label={label}
-        title={label}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-7 cursor-pointer appearance-none rounded-md border border-border bg-surface pl-2.5 pr-6 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-surface-strong focus:outline-none focus:ring-1 focus:ring-accent"
-      >
-        {options.map((o) => (
-          <option key={o.id} value={o.id}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-      <Icons.disclosureOpen
-        size={11}
-        className="pointer-events-none absolute right-1.5 text-muted"
-        aria-hidden="true"
-      />
-    </div>
-  );
-}
-
 interface IconButtonProps {
   Icon: LucideLikeIcon;
   label: string;

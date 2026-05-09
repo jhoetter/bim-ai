@@ -2,10 +2,6 @@ import type { ReactElement } from 'react';
 
 import type { Element, Sheet, TitleblockType } from '@bim-ai/core';
 
-// A1 landscape physical dimensions in mm
-const A1_W_MM = 841;
-const A1_H_MM = 594;
-
 // Cartouche dimensions (bottom-right, per A1 convention)
 const CARTOUCHE_W_MM = 148;
 const CARTOUCHE_H_MM = 50;

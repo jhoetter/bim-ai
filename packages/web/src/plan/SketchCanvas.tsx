@@ -186,7 +186,7 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
     }
   }, [session, onCancelled]);
 
-  const issues: SketchValidationIssue[] = validation?.issues ?? [];
+  const issues = useMemo<SketchValidationIssue[]>(() => validation?.issues ?? [], [validation]);
 
   // SKT-03: Tab cycles through issues, zooming the canvas to the first
   // affected line. We expose only the index here; the parent canvas does the
@@ -335,7 +335,7 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
     } finally {
       setBusy(false);
     }
-  }, [session, busy, onFinished, floorTypeId]);
+  }, [session, busy, onFinished, floorTypeId, extraOptions]);
 
   const handleAutoClose = useCallback(async () => {
     if (!session || busy) return;

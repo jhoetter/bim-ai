@@ -488,7 +488,6 @@ type PairedEntry = {
 
 type Section = { label: string; icons: PairedEntry[] };
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 function p(
   name: string,
   regularExport: string,
@@ -498,7 +497,6 @@ function p(
 ): PairedEntry {
   return { name, regularExport, Regular, hifiExport, Hifi };
 }
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 const SECTIONS: Section[] = [
   {

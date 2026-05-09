@@ -92,7 +92,10 @@ export type LegacyPlanTool =
   | 'mirror'
   | 'copy'
   | 'component'
-  | 'toposolid_subdivision';
+  | 'toposolid_subdivision'
+  | 'move'
+  | 'rotate'
+  | 'section';
 
 export function toolIdToLegacy(tool: ToolId): LegacyPlanTool | null {
   if (KNOWN_PLAN_TOOLS.has(tool)) return tool as LegacyPlanTool;

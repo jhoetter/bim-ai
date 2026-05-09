@@ -22,9 +22,9 @@ const viewpointEl: Element = {
   id: 'vp-01',
   name: '3D Overview',
   camera: {
-    position: { x: 0, y: 0, z: 10000 },
-    target: { x: 0, y: 0, z: 0 },
-    up: { x: 0, y: 1, z: 0 },
+    position: { xMm: 0, yMm: 0, zMm: 10000 },
+    target: { xMm: 0, yMm: 0, zMm: 0 },
+    up: { xMm: 0, yMm: 1, zMm: 0 },
   },
   mode: 'orbit_3d',
 };
@@ -44,17 +44,14 @@ const scheduleEl: Element = {
   columns: [{ fieldKey: 'name', label: 'Name' }],
 };
 
-const imageUnderlayEl: Element = {
+const _imageUnderlayEl: Element = {
   kind: 'image_underlay',
   id: 'img-01',
-  name: 'Site Survey.png',
-  dataUri: 'data:image/png;base64,AA==',
-  xMm: 0,
-  yMm: 0,
-  widthMm: 1000,
-  heightMm: 1000,
-  rotation: 0,
+  src: 'data:image/png;base64,AA==',
+  rectMm: { xMm: 0, yMm: 0, widthMm: 1000, heightMm: 1000 },
+  rotationDeg: 0,
   opacity: 1,
+  lockedScale: false,
 };
 
 function makeDefaultProps(elements: Element[] = [viewpointEl, savedViewEl, scheduleEl]) {
@@ -162,9 +159,9 @@ describe('ProjectBrowserV3 — CHR-V3-07', () => {
       id: 'vp-a',
       name: 'Alpha',
       camera: {
-        position: { x: 0, y: 0, z: 0 },
-        target: { x: 0, y: 0, z: 0 },
-        up: { x: 0, y: 1, z: 0 },
+        position: { xMm: 0, yMm: 0, zMm: 0 },
+        target: { xMm: 0, yMm: 0, zMm: 0 },
+        up: { xMm: 0, yMm: 1, zMm: 0 },
       },
       mode: 'orbit_3d',
     };
@@ -173,9 +170,9 @@ describe('ProjectBrowserV3 — CHR-V3-07', () => {
       id: 'vp-b',
       name: 'Beta',
       camera: {
-        position: { x: 0, y: 0, z: 0 },
-        target: { x: 0, y: 0, z: 0 },
-        up: { x: 0, y: 1, z: 0 },
+        position: { xMm: 0, yMm: 0, zMm: 0 },
+        target: { xMm: 0, yMm: 0, zMm: 0 },
+        up: { xMm: 0, yMm: 1, zMm: 0 },
       },
       mode: 'orbit_3d',
     };

@@ -122,7 +122,7 @@ function buildPanelsForOperationType(
   slidingTrackSide: 'wall_face' | 'in_pocket',
 ): { panels: THREE.Object3D[]; frameVisible: boolean } {
   const { leafWidth, leafHeight, depth, frameSect, panelThick } = dims;
-  const { frameMat, panelMat } = mats;
+  const { panelMat } = mats;
   const halfW = leafWidth / 2;
   const halfH = leafHeight / 2;
 

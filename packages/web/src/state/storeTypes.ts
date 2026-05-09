@@ -62,7 +62,10 @@ export type PlanTool =
   | 'measure'
   | 'mirror'
   | 'copy'
-  | 'component';
+  | 'component'
+  | 'move'
+  | 'rotate'
+  | 'section';
 
 export type PresencePeers = Record<
   string,

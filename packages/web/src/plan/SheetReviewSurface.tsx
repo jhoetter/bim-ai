@@ -217,7 +217,7 @@ export function SheetReviewSurface({
       setComments((prev) => [...prev, created]);
       setPendingPin(null);
     },
-    [pendingPin, resolveSourceBinding, sheetId, modelId],
+    [pendingPin, resolveSourceBinding, sheetId, modelId, userId],
   );
 
   const handleResolve = useCallback(

@@ -142,7 +142,7 @@ describe('commandQueue', () => {
     await drainQueue(applyBundle);
 
     expect(applyBundle).toHaveBeenCalledTimes(3);
-    const calledModelIds = applyBundle.mock.calls.map(([id]: [string]) => id).sort();
+    const calledModelIds = applyBundle.mock.calls.map((args) => args[0] as string).sort();
     expect(calledModelIds).toEqual(['model-x', 'model-y', 'model-z']);
   });
 
