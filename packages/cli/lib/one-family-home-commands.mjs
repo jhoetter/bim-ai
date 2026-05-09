@@ -720,11 +720,11 @@ export function buildOneFamilyHomeCommands() {
     {
       type: 'saveViewpoint',
       id: 'vp-main-iso',
-      name: 'Main isometric (SSE — south facade + east terrace)',
+      name: 'Main isometric (SSW — south facade + west gable, spec §5 front-left)',
       mode: 'orbit_3d',
       camera: {
-        position: { xMm: 10000, yMm: -7000, zMm: 10000 },
-        target: { xMm: 4000, yMm: 3000, zMm: 3500 },
+        position: { xMm: -3000, yMm: -9000, zMm: 11000 },
+        target: { xMm: 3500, yMm: 4000, zMm: 3500 },
         up: { xMm: 0, yMm: 0, zMm: 1 },
       },
     },
@@ -758,6 +758,17 @@ export function buildOneFamilyHomeCommands() {
       camera: {
         position: { xMm: 12000, yMm: 14000, zMm: 11000 },
         target: { xMm: 3500, yMm: 4000, zMm: 4250 },
+        up: { xMm: 0, yMm: 0, zMm: 1 },
+      },
+    },
+    {
+      type: 'saveViewpoint',
+      id: 'vp-terrace-se',
+      name: 'East terrace (SE corner)',
+      mode: 'orbit_3d',
+      camera: {
+        position: { xMm: 13000, yMm: -2000, zMm: 8000 },
+        target: { xMm: 6000, yMm: 4000, zMm: 3000 },
         up: { xMm: 0, yMm: 0, zMm: 1 },
       },
     },
