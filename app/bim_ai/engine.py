@@ -185,6 +185,9 @@ from bim_ai.commands import (
     CreateToposolidCmd,
     UpdateToposolidCmd,
     DeleteToposolidCmd,
+    CreateToposolidSubdivisionCmd,
+    UpdateToposolidSubdivisionCmd,
+    DeleteToposolidSubdivisionCmd,
     IndexAssetCmd,
     PlaceAssetCmd,
     SetToolPrefCmd,
@@ -306,6 +309,7 @@ from bim_ai.elements import (
     ViewpointElem,
     ViewTemplateElem,
     ToposolidElem,
+    ToposolidSubdivisionElem,
     VoidCutElem,
     WallBasisLine,
     WallEdgeFixed,
@@ -5074,6 +5078,96 @@ def apply_inplace(
                     related_element_ids=[cmd.toposolid_id, *hosted_floors],
                 )
             del els[cmd.toposolid_id]
+
+        # -----------------------------------------------------------------
+        # TOP-V3-02 — Toposolid subdivision commands
+        # -----------------------------------------------------------------
+
+        case CreateToposolidSubdivisionCmd():
+            sid = cmd.id
+            if sid in els:
+                raise ValueError(
+                    f"create_toposolid_subdivision: element '{sid}' already exists"
+                )
+            host = els.get(cmd.host_toposolid_id)
+            if not isinstance(host, ToposolidElem):
+                raise ValueError(
+                    f"create_toposolid_subdivision: host toposolid '{cmd.host_toposolid_id}'"
+                    " does not exist"
+                )
+            if len(cmd.boundary_mm) < 3:
+                raise ValueError(
+                    "create_toposolid_subdivision.boundaryMm requires at least 3 points"
+                )
+            # Warn (not 400) if the subdivision boundary falls outside the host boundary.
+            # The engine clips silently and logs an assumption instead of blocking.
+            host_xs = [pt.get("xMm", pt.get("x_mm", 0)) for pt in host.boundary_mm
+                       if isinstance(pt, dict)]
+            host_ys = [pt.get("yMm", pt.get("y_mm", 0)) for pt in host.boundary_mm
+                       if isinstance(pt, dict)]
+            if not host_xs:
+                # Pydantic Vec2Mm objects
+                host_xs = [getattr(pt, "x_mm", 0) for pt in host.boundary_mm]
+                host_ys = [getattr(pt, "y_mm", 0) for pt in host.boundary_mm]
+            host_min_x = min(host_xs) if host_xs else 0
+            host_max_x = max(host_xs) if host_xs else 0
+            host_min_y = min(host_ys) if host_ys else 0
+            host_max_y = max(host_ys) if host_ys else 0
+            sub_xs = [pt.get("xMm", 0) for pt in cmd.boundary_mm]
+            sub_ys = [pt.get("yMm", 0) for pt in cmd.boundary_mm]
+            outside = (
+                min(sub_xs) < host_min_x - 1
+                or max(sub_xs) > host_max_x + 1
+                or min(sub_ys) < host_min_y - 1
+                or max(sub_ys) > host_max_y + 1
+            )
+            if outside:
+                dev_id = new_id()
+                els[dev_id] = AgentDeviationElem(
+                    kind="agent_deviation",
+                    id=dev_id,
+                    statement=(
+                        f"Subdivision '{sid}' boundary extends outside host toposolid "
+                        f"'{cmd.host_toposolid_id}'. Engine accepted but clipped to host boundary."
+                    ),
+                    severity="warning",
+                    related_element_ids=[sid, cmd.host_toposolid_id],
+                )
+            els[sid] = ToposolidSubdivisionElem(
+                kind="toposolid_subdivision",
+                id=sid,
+                name=cmd.name,
+                hostToposolidId=cmd.host_toposolid_id,
+                boundaryMm=cmd.boundary_mm,
+                finishCategory=cmd.finish_category,
+                materialKey=cmd.material_key,
+            )
+
+        case UpdateToposolidSubdivisionCmd():
+            existing = els.get(cmd.id)
+            if not isinstance(existing, ToposolidSubdivisionElem):
+                raise ValueError(
+                    f"update_toposolid_subdivision: no subdivision element with id '{cmd.id}'"
+                )
+            patch: dict[str, object] = {}
+            if cmd.name is not None:
+                patch["name"] = cmd.name
+            if cmd.boundary_mm is not None:
+                patch["boundary_mm"] = cmd.boundary_mm
+            if cmd.finish_category is not None:
+                patch["finish_category"] = cmd.finish_category
+            if cmd.material_key is not None:
+                patch["material_key"] = cmd.material_key
+            els[cmd.id] = existing.model_copy(update=patch)
+
+        case DeleteToposolidSubdivisionCmd():
+            existing = els.get(cmd.id)
+            if not isinstance(existing, ToposolidSubdivisionElem):
+                raise ValueError(
+                    f"delete_toposolid_subdivision: no subdivision element with id '{cmd.id}'"
+                )
+            del els[cmd.id]
+
         # -----------------------------------------------------------------
         # AST-V3-01 — Asset library commands
         # -----------------------------------------------------------------

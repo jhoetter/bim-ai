@@ -2211,16 +2211,6 @@ class HeightmapGrid(BaseModel):
 
 
 class ToposolidElem(BaseModel):
-    """TOP-V3-01 — terrain solid with closed XY boundary and height data.
-
-    Either ``height_samples`` (sparse surveyor points) or ``heightmap_grid_mm``
-    (regular DEM raster) drives the surface.  Both empty / None means a flat
-    starter at ``base_elevation_mm``.
-    """
-    values: list[float]
-
-
-class ToposolidElem(BaseModel):
     """TOP-V3-01 terrain solid primitive."""
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
@@ -2237,6 +2227,32 @@ class ToposolidElem(BaseModel):
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
     discipline: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# TOP-V3-02 — Toposolid subdivision (surface finish region)
+# ---------------------------------------------------------------------------
+
+ToposolidFinishCategory = Literal["paving", "lawn", "road", "planting", "other"]
+
+
+class ToposolidSubdivisionElem(BaseModel):
+    """TOP-V3-02 — a named surface-finish region on a host toposolid.
+
+    A closed XY polygon (``boundary_mm``) within the host toposolid's footprint
+    that receives a distinct finish material (paving, lawn, road, planting, other).
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["toposolid_subdivision"] = "toposolid_subdivision"
+    id: str
+    name: str | None = None
+    host_toposolid_id: str = Field(alias="hostToposolidId")
+    boundary_mm: list[dict] = Field(alias="boundaryMm")  # [{xMm, yMm}] closed polygon
+    finish_category: ToposolidFinishCategory = Field(alias="finishCategory")
+    material_key: str = Field(alias="materialKey")
+
+
 # AST-V3-01 — Asset library entry + placed asset instance
 # ---------------------------------------------------------------------------
 
@@ -2353,19 +2369,9 @@ class DecalElem(BaseModel):
     opacity: float = 1.0
 
 
-# ---------------------------------------------------------------------------
-# SCH-V3-01 — Custom property definition element
-# ---------------------------------------------------------------------------
 
-
-class PropertyDefinitionElem(BaseModel):
-    """SCH-V3-01 — project-scoped custom property definition."""
-
-    enum_values: list[str] | None = Field(default=None, alias="enumValues")
-    default_value: Any | None = Field(default=None, alias="defaultValue")
-    applies_to: list[str] = Field(alias="appliesTo")
-    show_in_schedule: bool = Field(default=True, alias="showInSchedule")
-
+# NOTE: PropertyDefinitionElem is defined earlier in this file (SCH-V3-01).
+# The duplicate stub that was here has been removed to fix the discriminated-union breakage.
 
 Element = Annotated[
     ProjectSettingsElem
@@ -2442,6 +2448,7 @@ Element = Annotated[
     | WindowLegendViewElem
     | ViewElem
     | ToposolidElem
+    | ToposolidSubdivisionElem
     | AssetLibraryEntryElem
     | PlacedAssetElem
     | HatchPatternDefElem
