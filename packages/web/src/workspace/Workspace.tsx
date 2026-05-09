@@ -36,7 +36,6 @@ import {
   type ToolDisabledContext,
   type ToolId,
 } from '../tools/toolRegistry';
-import { TabBar } from './TabBar';
 import {
   EMPTY_TABS,
   activateOrOpenKind,
@@ -1108,91 +1107,41 @@ export function Workspace(): JSX.Element {
         onLeftCollapsedChange={setLeftRailCollapsed}
         rightCollapsed={!hasSelection}
         topBar={
-          <div className="flex w-full flex-col">
-            <div className="flex w-full items-center">
-              <TopBar
-                mode={mode}
-                onModeChange={handleModeChange}
-                projectName="BIM AI seed"
-                projectNameRef={projectNameRef}
-                onProjectNameClick={() => setProjectMenuOpen((v) => !v)}
-                onHamburgerClick={() => setLeftRailCollapsed((v) => !v)}
-                theme={theme}
-                onThemeToggle={handleThemeToggle}
-                onCommandPalette={() => setPaletteOpen(true)}
-                onSettings={() => setCheatsheetOpen(true)}
-                collaboratorsCount={Object.keys(presencePeers).length || undefined}
-                onCollaboratorsClick={() => setCommentsOpen((v) => !v)}
-                peers={Object.values(presencePeers)}
-                avatarInitials={userDisplayName ? userDisplayName.slice(0, 2).toUpperCase() : 'BA'}
-                perspectiveOptions={PERSPECTIVE_OPTIONS}
-                perspectiveValue={perspectiveId}
-                onPerspectiveChange={(v) => setPerspectiveId(v as PerspectiveId)}
-                planStyleOptions={PLAN_STYLE_OPTIONS}
-                planStyleValue={planPresentationPreset}
-                onPlanStyleChange={(v) =>
-                  setPlanPresentationPreset(v as 'default' | 'opening_focus' | 'room_scheme')
-                }
-                hasPages={sheetPages.length > 0}
-                onSharePresentation={() => setSharePresentationOpen(true)}
-                onOpen3dView={() => {
-                  setTabsState((s) => openTab(s, { kind: '3d', label: '3D View' }));
-                }}
-                onUndo={() => void handleUndoRedo(true)}
-                onRedo={() => void handleUndoRedo(false)}
-                canUndo={undoDepth > 0}
-              />
-              {/* COL-V3-06 — offline indicator */}
-              {!isOnline ? (
-                <div
-                  data-testid="offline-indicator"
-                  style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 8 }}
-                >
-                  <span
-                    aria-label={
-                      pendingCommandCount > 0
-                        ? `Offline — ${pendingCommandCount} edit${pendingCommandCount === 1 ? '' : 's'} will sync on reconnect`
-                        : 'Offline — edits will sync on reconnect'
-                    }
-                    title={
-                      pendingCommandCount > 0
-                        ? `Offline — ${pendingCommandCount} edit${pendingCommandCount === 1 ? '' : 's'} will sync on reconnect`
-                        : 'Offline — edits will sync on reconnect'
-                    }
-                    style={{
-                      display: 'inline-block',
-                      width: 2,
-                      height: 2,
-                      borderRadius: '50%',
-                      background: 'var(--color-warning)',
-                    }}
-                  />
-                  {pendingCommandCount > 0 ? (
-                    <span
-                      data-testid="offline-pending-badge"
-                      style={{
-                        fontSize: 'var(--text-3xs)',
-                        fontWeight: 700,
-                        color: 'var(--color-warning)',
-                      }}
-                    >
-                      {pendingCommandCount}
-                    </span>
-                  ) : null}
-                </div>
-              ) : null}
-              {/* COL-V3-04: participant strip — top-right of header */}
-              <div className="absolute right-4 top-2 z-10">
-                <ParticipantStrip
-                  participants={presenceParticipants}
-                  localUserId={presenceLocalUserId ?? userId ?? ''}
-                />
-              </div>
-            </div>
-            <TabBar
+          <div className="relative flex w-full items-center">
+            <TopBar
+              mode={mode}
+              onModeChange={handleModeChange}
+              projectName="BIM AI seed"
+              projectNameRef={projectNameRef}
+              onProjectNameClick={() => setProjectMenuOpen((v) => !v)}
+              onHamburgerClick={() => setLeftRailCollapsed((v) => !v)}
+              theme={theme}
+              onThemeToggle={handleThemeToggle}
+              onCommandPalette={() => setPaletteOpen(true)}
+              onSettings={() => setCheatsheetOpen(true)}
+              collaboratorsCount={Object.keys(presencePeers).length || undefined}
+              onCollaboratorsClick={() => setCommentsOpen((v) => !v)}
+              peers={Object.values(presencePeers)}
+              avatarInitials={userDisplayName ? userDisplayName.slice(0, 2).toUpperCase() : 'BA'}
+              perspectiveOptions={PERSPECTIVE_OPTIONS}
+              perspectiveValue={perspectiveId}
+              onPerspectiveChange={(v) => setPerspectiveId(v as PerspectiveId)}
+              planStyleOptions={PLAN_STYLE_OPTIONS}
+              planStyleValue={planPresentationPreset}
+              onPlanStyleChange={(v) =>
+                setPlanPresentationPreset(v as 'default' | 'opening_focus' | 'room_scheme')
+              }
+              hasPages={sheetPages.length > 0}
+              onSharePresentation={() => setSharePresentationOpen(true)}
+              onOpen3dView={() => {
+                setTabsState((s) => openTab(s, { kind: '3d', label: '3D View' }));
+              }}
+              onUndo={() => void handleUndoRedo(true)}
+              onRedo={() => void handleUndoRedo(false)}
+              canUndo={undoDepth > 0}
               tabs={tabsState.tabs}
-              activeId={tabsState.activeId}
-              onActivate={(id) => {
+              activeTabId={tabsState.activeId}
+              onTabActivate={(id) => {
                 handleTabActivate(id);
                 const t = tabsState.tabs.find((x) => x.id === id);
                 if (t) {
@@ -1201,10 +1150,10 @@ export function Workspace(): JSX.Element {
                   setMode(t.kind as WorkspaceMode);
                 }
               }}
-              onClose={handleTabClose}
-              onCloseInactive={() => setTabsState((s) => closeInactiveTabs(s))}
-              onReorder={(from, to) => setTabsState((s) => reorderTab(s, from, to))}
-              onAdd={(kind) => {
+              onTabClose={handleTabClose}
+              onCloseInactiveTabs={() => setTabsState((s) => closeInactiveTabs(s))}
+              onTabReorder={(from, to) => setTabsState((s) => reorderTab(s, from, to))}
+              onTabAdd={(kind) => {
                 const fallback = defaultTabFallbackForKind(kind, elementsById, activeLevelId);
                 if (!fallback) return;
                 setTabsState((s) => activateOrOpenKind(s, kind, fallback));
@@ -1213,6 +1162,52 @@ export function Workspace(): JSX.Element {
                 else if (kind === '3d') setViewerMode('orbit_3d');
               }}
             />
+            {/* COL-V3-06 — offline indicator */}
+            {!isOnline ? (
+              <div
+                data-testid="offline-indicator"
+                style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 8 }}
+              >
+                <span
+                  aria-label={
+                    pendingCommandCount > 0
+                      ? `Offline — ${pendingCommandCount} edit${pendingCommandCount === 1 ? '' : 's'} will sync on reconnect`
+                      : 'Offline — edits will sync on reconnect'
+                  }
+                  title={
+                    pendingCommandCount > 0
+                      ? `Offline — ${pendingCommandCount} edit${pendingCommandCount === 1 ? '' : 's'} will sync on reconnect`
+                      : 'Offline — edits will sync on reconnect'
+                  }
+                  style={{
+                    display: 'inline-block',
+                    width: 2,
+                    height: 2,
+                    borderRadius: '50%',
+                    background: 'var(--color-warning)',
+                  }}
+                />
+                {pendingCommandCount > 0 ? (
+                  <span
+                    data-testid="offline-pending-badge"
+                    style={{
+                      fontSize: 'var(--text-3xs)',
+                      fontWeight: 700,
+                      color: 'var(--color-warning)',
+                    }}
+                  >
+                    {pendingCommandCount}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+            {/* COL-V3-04: participant strip — top-right of header */}
+            <div className="absolute right-4 top-2 z-10">
+              <ParticipantStrip
+                participants={presenceParticipants}
+                localUserId={presenceLocalUserId ?? userId ?? ''}
+              />
+            </div>
           </div>
         }
         leftRail={

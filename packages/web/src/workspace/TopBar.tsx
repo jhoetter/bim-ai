@@ -5,12 +5,15 @@ import {
   type KeyboardEvent,
   type MouseEvent,
   useCallback,
+  useEffect,
   useId,
   useRef,
+  useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icons, IconLabels, ICON_SIZE, type LucideLikeIcon } from '@bim-ai/ui';
 import { SourceViewChip } from './SourceViewChip';
+import { type ViewTab, type TabKind } from './tabsModel';
 
 /**
  * TopBar — spec §11.
@@ -85,6 +88,14 @@ export interface TopBarProps {
   onRedo?: () => void;
   /** F-006: true when there is at least one undo step available. */
   canUndo?: boolean;
+  // Tab list (replaces mode pills when provided)
+  tabs?: ViewTab[];
+  activeTabId?: string | null;
+  onTabActivate?: (id: string) => void;
+  onTabClose?: (id: string) => void;
+  onTabAdd?: (kind: TabKind) => void;
+  onTabReorder?: (fromIdx: number, toIdx: number) => void;
+  onCloseInactiveTabs?: () => void;
 }
 
 export function TopBar({
@@ -117,6 +128,13 @@ export function TopBar({
   onUndo,
   onRedo,
   canUndo,
+  tabs,
+  activeTabId,
+  onTabActivate,
+  onTabClose,
+  onTabAdd,
+  onTabReorder,
+  onCloseInactiveTabs,
 }: TopBarProps): JSX.Element {
   const tablistId = useId();
   // SourceViewChip is only relevant when in a sheet-type view and both IDs are known.
@@ -137,7 +155,19 @@ export function TopBar({
         onRedo={onRedo}
         canUndo={canUndo}
       />
-      <TopBarModePills tablistId={tablistId} mode={mode} onModeChange={onModeChange} />
+      {tabs !== undefined ? (
+        <TopBarTabs
+          tabs={tabs}
+          activeId={activeTabId ?? null}
+          onActivate={onTabActivate}
+          onClose={onTabClose}
+          onAdd={onTabAdd}
+          onReorder={onTabReorder}
+          onCloseInactive={onCloseInactiveTabs}
+        />
+      ) : (
+        <TopBarModePills tablistId={tablistId} mode={mode} onModeChange={onModeChange} />
+      )}
       <TopBarRight
         theme={theme}
         onThemeToggle={onThemeToggle}
@@ -313,6 +343,234 @@ function TopBarModePills({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+const TAB_KIND_ICON: Record<TabKind, LucideLikeIcon> = {
+  plan: Icons.floor!,
+  '3d': Icons.family!,
+  'plan-3d': Icons.floor!,
+  section: Icons.section!,
+  sheet: Icons.sheet!,
+  schedule: Icons.schedule!,
+  agent: Icons.agent!,
+};
+
+const ADDABLE_KINDS: TabKind[] = ['plan', '3d', 'plan-3d', 'section', 'sheet', 'schedule', 'agent'];
+
+function TopBarTabs({
+  tabs,
+  activeId,
+  onActivate,
+  onClose,
+  onAdd,
+  onReorder,
+  onCloseInactive,
+}: {
+  tabs: ViewTab[];
+  activeId: string | null;
+  onActivate?: (id: string) => void;
+  onClose?: (id: string) => void;
+  onAdd?: (kind: TabKind) => void;
+  onReorder?: (from: number, to: number) => void;
+  onCloseInactive?: () => void;
+}): JSX.Element {
+  const { t } = useTranslation();
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [dragSrc, setDragSrc] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  // Horizontal mousewheel scroll
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onWheel = (ev: WheelEvent): void => {
+      if (Math.abs(ev.deltaX) > Math.abs(ev.deltaY)) return;
+      ev.preventDefault();
+      el.scrollLeft += ev.deltaY;
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
+  // Click outside closes popover
+  useEffect(() => {
+    if (!popoverOpen) return;
+    const onDoc = (e: globalThis.MouseEvent): void => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setPopoverOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [popoverOpen]);
+
+  return (
+    <div
+      ref={scrollRef}
+      role="tablist"
+      aria-label={t('workspace.openViews')}
+      data-testid="view-tabs"
+      className="flex flex-1 items-center gap-0.5 overflow-x-auto px-2"
+    >
+      {tabs.length === 0 ? (
+        <span className="px-2 text-xs text-muted">{t('workspace.noViewsOpen')}</span>
+      ) : null}
+      {tabs.map((tab, idx) => {
+        const Icon = TAB_KIND_ICON[tab.kind] ?? Icons.floor!;
+        const isActive = tab.id === activeId;
+        const isDragOver = dragOverIdx === idx && dragSrc !== null && dragSrc !== idx;
+        const truncated = tab.label.length > 18 ? tab.label.slice(0, 17) + '…' : tab.label;
+        return (
+          <div
+            key={tab.id}
+            role="tab"
+            aria-selected={isActive}
+            data-tab-id={tab.id}
+            data-active={isActive ? 'true' : 'false'}
+            draggable={Boolean(onReorder)}
+            onDragStart={(e) => {
+              if (!onReorder) return;
+              setDragSrc(idx);
+              e.dataTransfer.effectAllowed = 'move';
+            }}
+            onDragOver={(e) => {
+              if (!onReorder || dragSrc === null) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'move';
+              if (dragOverIdx !== idx) setDragOverIdx(idx);
+            }}
+            onDragLeave={() => {
+              if (dragOverIdx === idx) setDragOverIdx(null);
+            }}
+            onDrop={(e) => {
+              if (!onReorder || dragSrc === null) return;
+              e.preventDefault();
+              if (dragSrc !== idx) onReorder(dragSrc, idx);
+              setDragSrc(null);
+              setDragOverIdx(null);
+            }}
+            onDragEnd={() => {
+              setDragSrc(null);
+              setDragOverIdx(null);
+            }}
+            className={[
+              'group flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium transition-colors cursor-pointer flex-shrink-0',
+              isActive
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted hover:bg-surface hover:text-foreground',
+              isDragOver ? 'ring-2 ring-accent' : '',
+            ].join(' ')}
+            style={isActive ? { boxShadow: 'inset 0 -2px 0 0 var(--color-accent)' } : undefined}
+          >
+            <button
+              type="button"
+              onClick={() => onActivate?.(tab.id)}
+              aria-label={`${tab.kind}: ${tab.label}`}
+              className="flex items-center gap-1.5"
+              data-testid={`tab-activate-${tab.id}`}
+            >
+              <Icon
+                size={12}
+                aria-hidden="true"
+                className={isActive ? 'text-accent' : 'text-muted'}
+              />
+              <span className="whitespace-nowrap">{truncated}</span>
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose?.(tab.id);
+              }}
+              aria-label={`Close ${tab.label}`}
+              data-testid={`tab-close-${tab.id}`}
+              className={[
+                'rounded p-0.5 hover:bg-surface-strong',
+                isActive
+                  ? 'opacity-50 hover:opacity-100'
+                  : 'opacity-0 group-hover:opacity-50 group-hover:hover:opacity-100',
+              ].join(' ')}
+            >
+              <Icons.close size={10} aria-hidden="true" />
+            </button>
+          </div>
+        );
+      })}
+      <div className="relative ml-0.5 flex-shrink-0" ref={popoverRef}>
+        <button
+          type="button"
+          onClick={() => setPopoverOpen((v) => !v)}
+          aria-label={t('workspace.openNewView')}
+          aria-expanded={popoverOpen}
+          aria-haspopup="menu"
+          data-testid="tab-add-button"
+          className="flex h-6 w-6 items-center justify-center rounded text-muted hover:bg-surface-strong hover:text-foreground"
+          style={{ fontSize: 16, lineHeight: 1 }}
+        >
+          +
+        </button>
+        {popoverOpen ? (
+          <div
+            role="menu"
+            data-testid="tab-add-popover"
+            className="absolute left-0 top-full z-30 mt-1 flex min-w-[180px] flex-col rounded-md border border-border bg-surface shadow-elev-2"
+            ref={(el) => el?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()}
+            onKeyDown={(e) => {
+              const items = Array.from(
+                e.currentTarget.querySelectorAll<HTMLElement>('[role="menuitem"]'),
+              );
+              const idx = items.indexOf(document.activeElement as HTMLElement);
+              if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                items[(idx + 1) % items.length]?.focus();
+              } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                items[(idx - 1 + items.length) % items.length]?.focus();
+              } else if (e.key === 'Escape') {
+                e.preventDefault();
+                setPopoverOpen(false);
+              }
+            }}
+          >
+            {ADDABLE_KINDS.map((kind) => {
+              const Icon = TAB_KIND_ICON[kind];
+              return (
+                <button
+                  key={kind}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setPopoverOpen(false);
+                    onAdd?.(kind);
+                  }}
+                  className="flex items-center gap-2 px-3 py-1.5 text-left text-xs text-foreground hover:bg-surface-strong"
+                  data-testid={`tab-add-${kind}`}
+                >
+                  <Icon size={ICON_SIZE.chrome} aria-hidden="true" />
+                  <span>+ {t(`workspace.tabs.${kind}`)}</span>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
+      {onCloseInactive && tabs.length > 1 ? (
+        <button
+          type="button"
+          data-testid="close-inactive-tabs"
+          title="Close Inactive Views"
+          onClick={onCloseInactive}
+          className="ml-1 flex flex-shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-muted hover:bg-surface-strong hover:text-foreground"
+          style={{ fontSize: 11, whiteSpace: 'nowrap' }}
+        >
+          <Icons.close size={10} aria-hidden="true" />
+          <span>Close Inactive</span>
+        </button>
+      ) : null}
     </div>
   );
 }
