@@ -54,18 +54,18 @@ From the videos:
 
 | Item | Rayon | bim-ai | Priority |
 |------|-------|--------|----------|
-| Wall fill (plan) | Black solid | Near-black (#1c1917) via --plan-wall | DONE |
-| Floor fill | Chevron/texture at ~50-70% opacity | Herringbone hatch at ~16% opacity | HIGH |
-| Room fills | Rich texture fills per room | Outline only, no fill | HIGH |
-| Annotation color | Company red | Warm red-ochre (--draft-anno) | DONE |
-| Dim line quality | Clean thin lines, red text | Implemented in planElementMeshBuilders | MEDIUM |
-| Hatch density | Dense, visible at 1:100 | Too sparse — needs density tuning | HIGH |
-| Floor hatch opacity | 50-70% | 16% (PLAN_FLOOR_FILL_OPACITY_BASE) | HIGH |
-| Wall hatch inside cut | Brick/concrete hatching inside wall body | Not implemented | MEDIUM |
-| North point | Standard block always shown | Not implemented | MEDIUM |
-| Scale bar | Standard block always shown | Not implemented | MEDIUM |
-| Zone area labels | Auto-calculated m² per room | Partial (room labels) | MEDIUM |
-| Grid visibility | Near-invisible, just guides | Too prominent in some themes | MEDIUM |
+| Wall fill (plan) | Black solid | ✅ #1c1917 via --plan-wall (token split) | DONE |
+| Floor fill | Chevron/texture at ~50-70% opacity | ✅ Herringbone hatch at 42% opacity | DONE |
+| Room fills | Rich texture fills per room | ✅ Sage green at 26% opacity | DONE |
+| Annotation color | Company red | ✅ Warm red-ochre (--draft-anno) | DONE |
+| Dim line quality | Clean thin lines, red text | ✅ dimLine color fixed; witness → --draft-witness | DONE |
+| Hatch density | Dense, visible at 1:100 | ✅ paperMmRepeat 8→5, strokeWidth 0.12→0.18 | DONE |
+| Floor hatch opacity | 50-70% | ✅ 42% (up from 16%) | DONE |
+| Wall hatch inside cut | Brick/concrete hatching inside wall body | Not implemented | BACKLOG |
+| North point | Standard block always shown | Not implemented | BACKLOG |
+| Scale bar | Standard block always shown | Not implemented | BACKLOG |
+| Zone area labels | Auto-calculated m² per room | Partial (room labels in `planAnnotationLabelSprite`) | BACKLOG |
+| Grid visibility | Near-invisible, just guides | ✅ #e4e6e8 / #f0f1f2 (near-invisible) | DONE |
 
 ### Chrome / UI Quality
 
