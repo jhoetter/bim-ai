@@ -3,7 +3,7 @@
   "checkpoint_id": "b7735959ae8c",
   "strategy": "manual-commit",
   "branch": "codex/code-quality-workpackages-20260510",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "packages/web/src/workspace/Workspace.tsx",
     "packages/web/src/workspace/workspaceUtils.ts"
@@ -14,13 +14,19 @@
       "transcript": "/b7/735959ae8c/0/full.jsonl",
       "content_hash": "/b7/735959ae8c/0/content_hash.txt",
       "prompt": "/b7/735959ae8c/0/prompt.txt"
+    },
+    {
+      "metadata": "/b7/735959ae8c/1/metadata.json",
+      "transcript": "/b7/735959ae8c/1/full.jsonl",
+      "content_hash": "/b7/735959ae8c/1/content_hash.txt",
+      "prompt": "/b7/735959ae8c/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 90532,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 521088,
-    "output_tokens": 4461,
-    "api_call_count": 15
+    "input_tokens": 90847,
+    "cache_creation_tokens": 347272,
+    "cache_read_tokens": 17506211,
+    "output_tokens": 80007,
+    "api_call_count": 193
   }
 }
