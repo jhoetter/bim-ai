@@ -3131,8 +3131,10 @@ export function PlanCanvas({
         }));
         return;
       }
-      // F-080 — Revit-style one-shot snap override shortcuts (SI / SE / SM / SP / SX).
+      // F-080 — Revit-style one-shot snap override shortcuts (SI / SE / SM / SP / SX / SW).
       // Two-letter sequence: press S, then within 500 ms press the second letter.
+      // SN (nearest) and SC (center) are intentionally omitted — the snap engine has no
+      // corresponding SnapKind for those Revit overrides.
       if (!ev.metaKey && !ev.ctrlKey && !ev.altKey) {
         const now = Date.now();
         const last = lastKeyRef.current;
@@ -3144,6 +3146,7 @@ export function PlanCanvas({
             { key: 'm', kind: 'midpoint', label: 'Midpoint' },
             { key: 'p', kind: 'perpendicular', label: 'Perpendicular' },
             { key: 'x', kind: 'extension', label: 'Extension' },
+            { key: 'w', kind: 'workplane', label: 'Work Plane' },
           ];
           const match = SNAP_OVERRIDE_MAP.find((o) => o.key === ev.key.toLowerCase());
           if (match) {
@@ -4075,8 +4078,25 @@ export function PlanCanvas({
           data-testid="snap-override-chip"
         >
           <span>
-            Snap: {snapOverrideDisplay.charAt(0).toUpperCase() + snapOverrideDisplay.slice(1)} (next
-            pick only)
+            {(() => {
+              const SNAP_SHORTCODE: Partial<Record<ToggleableSnapKind, string>> = {
+                intersection: 'SI',
+                endpoint: 'SE',
+                midpoint: 'SM',
+                perpendicular: 'SP',
+                extension: 'SX',
+                workplane: 'SW',
+                parallel: 'SA',
+                tangent: 'ST',
+                grid: 'SG',
+              };
+              const code = SNAP_SHORTCODE[snapOverrideDisplay];
+              const label =
+                snapOverrideDisplay === 'workplane'
+                  ? 'Work Plane'
+                  : snapOverrideDisplay.charAt(0).toUpperCase() + snapOverrideDisplay.slice(1);
+              return `Snap: ${label}${code ? ` [${code}]` : ''} (next pick only)`;
+            })()}
           </span>
           <button
             type="button"

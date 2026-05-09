@@ -68,7 +68,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Snap Intersection](file:///Users/jhoetter/Desktop/Revit%20Specs/0516_03-41-46.png)
 
-**bim-ai status:** 🟡 Partial — One-shot snap override shortcuts available during drawing: SI (Intersection), SE (Endpoint), SM (Midpoint), SP (Perpendicular), SX (Extension). Two-letter key sequence (e.g., press S then I within 500 ms) activates the override for the next pick only, then resets. The override is shown as an amber status chip with a × cancel button. The `SnapSettingsToolbar` also provides permanent per-type toggles. Missing: full Revit snap override set (SN/nearest, SC/center, SW/workplane), snap override via right-click context menu.
+**bim-ai status:** ✅ Done — One-shot snap override shortcuts available during drawing: SI (Intersection), SE (Endpoint), SM (Midpoint), SP (Perpendicular), SX (Extension), SW (Work Plane). Two-letter key sequence (e.g., press S then I within 500 ms) activates the override for the next pick only, then resets. The override is shown as an amber status chip displaying the kind name and shortcode (e.g. "Snap: Intersection [SI] (next pick only)") with a × cancel button. The `SnapSettingsToolbar` also provides permanent per-type toggles. Note: SN (nearest) and SC (center/arc-center) are not implemented — the snap engine has no corresponding SnapKind for those Revit overrides; SR (reference) and right-click context-menu override are also absent but are lower-priority for plan drawing.
 
 ---
 
