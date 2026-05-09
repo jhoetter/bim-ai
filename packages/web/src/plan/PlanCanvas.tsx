@@ -3299,17 +3299,23 @@ export function PlanCanvas({
       // FAM-10 — Cmd/Ctrl + C/V copy-paste handlers.
       if ((ev.metaKey || ev.ctrlKey) && (ev.key === 'c' || ev.key === 'C')) {
         const st = useBimStore.getState();
-        const sel = st.selectedId;
-        if (!sel) return;
-        const el = st.elementsById[sel];
-        if (!el) return;
+        // F-100: copy the full multi-select set (selectedIds ∪ selectedId).
+        const allCopyIds = [st.selectedId, ...st.selectedIds].filter(
+          (id): id is string => typeof id === 'string',
+        );
+        // Deduplicate in case selectedId is already in selectedIds.
+        const uniqueCopyIds = [...new Set(allCopyIds)];
+        const elementsToCopy = uniqueCopyIds
+          .map((id) => st.elementsById[id])
+          .filter((el): el is Element => el != null);
+        if (elementsToCopy.length === 0) return;
         const localUserFamilies = st.userFamilies ?? {};
         const resolveFamilyById = (id: string): FamilyDefinition | undefined =>
           localUserFamilies[id] ?? getBuiltInFamilyById(id);
         const payload = copyElementsToClipboard({
           sourceProjectId: st.modelId ?? 'unknown-project',
           sourceModelId: st.modelId ?? 'unknown-model',
-          elements: [el],
+          elements: elementsToCopy,
           resolveFamilyById,
         });
         if (typeof window !== 'undefined') {
@@ -3343,6 +3349,26 @@ export function PlanCanvas({
             window.dispatchEvent(new CustomEvent('bim-ai:clipboard-paste', { detail: result }));
           }
         });
+      }
+      // F-100 — Delete / Backspace deletes the full multi-select set.
+      if (ev.key === 'Delete' || ev.key === 'Backspace') {
+        // Skip if a grip drag or numeric override input is in progress.
+        if (gripDragRef.current) return;
+        if (ev.key === 'Backspace' && numericInputRef.current) return;
+        const st = useBimStore.getState();
+        // Build the union of primary selection and multi-select set.
+        const allDeleteIds = [st.selectedId, ...st.selectedIds].filter(
+          (id): id is string => typeof id === 'string',
+        );
+        const idsToDelete = [...new Set(allDeleteIds)];
+        if (idsToDelete.length === 0) return;
+        if (idsToDelete.length === 1) {
+          void onSemanticCommand({ type: 'deleteElement', elementId: idsToDelete[0] });
+        } else {
+          void onSemanticCommand({ type: 'deleteElements', elementIds: idsToDelete });
+        }
+        selectEl(undefined);
+        useBimStore.getState().clearSelectedIds();
       }
     };
     const onKeyUp = (ev: KeyboardEvent) => {
