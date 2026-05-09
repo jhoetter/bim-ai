@@ -1,0 +1,5 @@
+look into the icons we have; i think they currently are 24 x 24, does it make sense to also have versions of 48 x 48 or similar? more detailed ones? where should we use them?
+
+---
+
+i would love to have versions of the icons that are more high-fidelity, please look into that. create the first 10 versions of icons that are high-fidelity for 48x48 and show them in localhost:2000/icons
