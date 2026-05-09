@@ -422,6 +422,9 @@ export function PlanCanvas({
   // F-014 — reveal hidden elements mode (lightbulb toggle).
   const revealHiddenMode = useBimStore((s) => s.revealHiddenMode);
   const setRevealHiddenMode = useBimStore((s) => s.setRevealHiddenMode);
+  // VIE-04 — temporary visibility (isolate/hide) trigger.
+  const setTemporaryVisibility = useBimStore((s) => s.setTemporaryVisibility);
+  const clearTemporaryVisibility = useBimStore((s) => s.clearTemporaryVisibility);
   // EDT-V3-05 — loop mode: re-arm chained tools after each segment commit.
   const loopMode = useToolPrefs((s) => s.loopMode);
   // TOP-V3-03 — active finish category for the subdivision palette.
@@ -3695,6 +3698,44 @@ export function PlanCanvas({
             );
           })()
         : null}
+      {/* VIE-04 — Temporary visibility (isolate) trigger, lower-right corner above reveal-hidden. */}
+      {selectedId ? (
+        <div className="pointer-events-auto absolute right-3 z-10" style={{ bottom: 68 }}>
+          <button
+            type="button"
+            title={
+              temporaryVisibility
+                ? 'Reset Temporary Visibility'
+                : 'Isolate selected element category'
+            }
+            data-testid="temp-visibility-toggle"
+            onClick={() => {
+              if (temporaryVisibility) {
+                clearTemporaryVisibility();
+              } else {
+                const el = elementsByIdRaw[selectedId];
+                const categories = el ? [el.kind] : [];
+                setTemporaryVisibility({
+                  viewId: activePlanViewId ?? 'default',
+                  mode: 'isolate',
+                  categories,
+                });
+              }
+            }}
+            style={{
+              padding: '2px 8px',
+              fontSize: 10,
+              background: temporaryVisibility ? '#f59e0b' : 'var(--color-surface)',
+              color: temporaryVisibility ? '#fff' : 'var(--color-muted)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 4,
+              cursor: 'pointer',
+            }}
+          >
+            {temporaryVisibility ? '👓 Reset' : '👓 Isolate'}
+          </button>
+        </div>
+      ) : null}
       {/* F-014 — Reveal Hidden toggle button, lower-right corner above snap toolbar. */}
       <div className="pointer-events-auto absolute right-3 bottom-10 z-10">
         <button

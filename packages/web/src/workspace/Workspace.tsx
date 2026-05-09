@@ -74,6 +74,7 @@ import { useActivityDrawerStore } from '../collab/activityDrawerStore';
 import { LibraryOverlay } from './LibraryOverlay';
 import { useActivityStore } from '../collab/activityStore';
 import { StatusBar } from './StatusBar';
+import { TemporaryVisibilityChip } from './TemporaryVisibilityChip';
 import { CheatsheetModal } from '../cmd/CheatsheetModal';
 import { CommandPalette } from '../cmdPalette/CommandPalette';
 import '../cmdPalette/defaultCommands';
@@ -1237,6 +1238,10 @@ export function Workspace(): JSX.Element {
               onPersistViewpointField={persistViewpointField}
               lensMode={lensMode}
             />
+            {/* VIE-04 — temporary visibility chip overlay, above the status bar */}
+            <div className="pointer-events-auto absolute bottom-10 left-3 z-10">
+              <TemporaryVisibilityChip />
+            </div>
           </div>
         }
         rightRail={
