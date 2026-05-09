@@ -8,6 +8,7 @@ import {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
+import { OptionsBar } from './OptionsBar';
 import { ToolModifierBar } from './ToolModifierBar';
 
 /**
@@ -141,6 +142,7 @@ export function AppShell({
       </div>
       <div style={{ gridArea: 'optionsbar' }}>
         <ToolModifierBar />
+        <OptionsBar />
       </div>
       <aside
         aria-label={t('workspace.projectBrowser')}
