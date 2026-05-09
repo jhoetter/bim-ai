@@ -1144,7 +1144,7 @@ export function rebuildPlanMeshes(
   const hidden = opts.hiddenSemanticKinds;
   const revealed = opts.revealHiddenKinds;
   // F-014: in reveal mode, nothing is actually hidden (show all elements)
-  const kindHidden = (k: string) => Boolean(hidden?.has(k)) && !Boolean(revealed?.has(k));
+  const kindHidden = (k: string) => (hidden?.has(k) ?? false) && !(revealed?.has(k) ?? false);
   const kindRevealMagenta = (k: string) => Boolean(revealed?.has(k));
 
   /** Tint all mesh/line children of obj to magenta at 55% opacity. */

@@ -91,8 +91,6 @@ export function ProjectMenu({
     };
   }, [open, onOpenChange, anchorRef]);
 
-  if (!open || !pos) return null;
-
   // Auto-focus first enabled menu item on open.
   useEffect(() => {
     if (!pos) return;
@@ -101,6 +99,8 @@ export function ProjectMenu({
     );
     first?.focus();
   }, [pos]);
+
+  if (!open || !pos) return null;
 
   return (
     <div

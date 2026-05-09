@@ -289,9 +289,9 @@ function ConflictSlot({
 function fmtElevation(elevationMm: number | undefined): string | null {
   if (elevationMm == null) return null;
   const m = elevationMm / 1000;
-  if (elevationMm === 0) return `±0.000 m`;
-  if (elevationMm > 0) return `+${m.toFixed(3)} m`;
-  return `−${Math.abs(m).toFixed(3)} m`;
+  if (elevationMm === 0) return `±0.000 m`;
+  if (elevationMm > 0) return `+${m.toFixed(3)} m`;
+  return `−${Math.abs(m).toFixed(3)} m`;
 }
 
 function LevelCluster({

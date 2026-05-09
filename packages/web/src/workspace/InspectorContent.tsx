@@ -857,6 +857,7 @@ export function InspectorPropertiesFor(
       const { onPropertyChange: mrPropChange } = options ?? {};
       const hostView = elementsById[el.hostViewId];
       const viewName = hostView && 'name' in hostView ? String(hostView.name) : el.hostViewId;
+      // eslint-disable-next-line bim-ai/no-hex-in-chrome -- fallback when element has no color
       const fillColor = el.fillColor ?? '#ffffff';
       return (
         <div className="space-y-1 text-[11px]">

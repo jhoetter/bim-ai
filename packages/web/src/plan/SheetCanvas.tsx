@@ -101,6 +101,11 @@ export function SheetCanvas({ elementsById, preferredSheetId }: SheetCanvasProps
 
   if (!sheet) {
     // No sheet element at all — render minimal placeholder
+    /* eslint-disable bim-ai/no-hex-in-chrome -- placeholder SVG uses neutral greys without tokens */
+    const phStroke = '#ccc';
+    const phTextPrimary = '#aaa';
+    const phTextSecondary = '#bbb';
+    /* eslint-enable bim-ai/no-hex-in-chrome */
     return (
       <svg
         width={svgW}
@@ -108,13 +113,21 @@ export function SheetCanvas({ elementsById, preferredSheetId }: SheetCanvasProps
         viewBox={`0 0 ${svgW} ${svgH}`}
         style={{ display: 'block', background: 'white' }}
       >
-        <rect x={0} y={0} width={svgW} height={svgH} fill="white" stroke="#ccc" strokeWidth={1} />
+        <rect
+          x={0}
+          y={0}
+          width={svgW}
+          height={svgH}
+          fill="white"
+          stroke={phStroke}
+          strokeWidth={1}
+        />
         <text
           x={svgW / 2}
           y={svgH / 2 - 8}
           textAnchor="middle"
           dominantBaseline="middle"
-          style={{ fontSize: 11, fill: '#aaa' }}
+          style={{ fontSize: 11, fill: phTextPrimary }}
         >
           No sheet found
         </text>
@@ -123,7 +136,7 @@ export function SheetCanvas({ elementsById, preferredSheetId }: SheetCanvasProps
           y={svgH / 2 + 8}
           textAnchor="middle"
           dominantBaseline="middle"
-          style={{ fontSize: 9, fill: '#bbb' }}
+          style={{ fontSize: 9, fill: phTextSecondary }}
         >
           Add a sheet element to your model
         </text>

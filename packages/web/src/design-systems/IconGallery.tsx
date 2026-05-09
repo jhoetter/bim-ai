@@ -442,6 +442,7 @@ import {
 
 type ColorScheme = 'mono' | 'accent' | 'color';
 
+/* eslint-disable bim-ai/no-hex-in-chrome -- gallery demo: these ARE the token value definitions */
 const COLOR_VARS: Record<ColorScheme, React.CSSProperties> = {
   mono: {},
   accent: {
@@ -475,6 +476,7 @@ const COLOR_VARS: Record<ColorScheme, React.CSSProperties> = {
     '--hi-room-op': '0.5',
   } as React.CSSProperties,
 };
+/* eslint-enable bim-ai/no-hex-in-chrome */
 
 type PairedEntry = {
   name: string;

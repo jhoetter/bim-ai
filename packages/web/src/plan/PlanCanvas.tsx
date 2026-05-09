@@ -3234,7 +3234,7 @@ export function PlanCanvas({
         return;
       }
       if (planTool === 'detail-region') {
-        let dr = draftRef.current;
+        const dr = draftRef.current;
         if (!dr || dr.kind !== 'detail-region') {
           draftRef.current = {
             kind: 'detail-region',

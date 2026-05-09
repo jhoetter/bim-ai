@@ -33,7 +33,7 @@ export function CommandPalette({
   const recordInvocation = usePaletteRecencyStore((s) => s.recordInvocation);
   const getRecencyScore = usePaletteRecencyStore((s) => s.getRecencyScore);
 
-  const nowRef = useRef(Date.now());
+  const nowRef = useRef(0);
   useEffect(() => {
     nowRef.current = Date.now();
   }, [invocations]);
