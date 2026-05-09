@@ -11,7 +11,7 @@ Source segment: `00:55:00 – 01:02:00`
 **Screenshot:**
 ![Levels in elevation](file:///Users/jhoetter/Desktop/Revit%20Specs/0246_00-57-24.png)
 
-**bim-ai status:** 🟡 Partial — bim-ai has a `datum_levels.py` module supporting level data, but level heads, symbol visibility in elevation views, and the plan-view auto-generation are not implemented in the frontend.
+**bim-ai status:** 🟡 Partial — `LevelStack.tsx` now shows a "+" button in the header that fires `createLevel { id, name, elevationMm: maxElev + 3000, alsoCreatePlanView: true }`, automatically creating both the level and a companion plan view. Elevation is editable inline for all levels. Level name can be renamed via double-click. Missing: level head symbols visible in elevation/section views; elevation datum line across the plan canvas.
 
 ---
 
