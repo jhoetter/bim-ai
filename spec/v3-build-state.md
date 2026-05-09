@@ -1,6 +1,6 @@
 # v3 Build State
 
-Last updated: 2026-05-09 (wave-9B: all 6 WPs merged ✅; 77/77 feature WPs done; wave-10 VIS dispatched — 10 WPs open; wave-9C (CQ) queued after VIS)
+Last updated: 2026-05-09 (wave-10 VIS: all 10 WPs merged ✅; 87/87 WPs total; wave-9C (CQ) queued next)
 Active heavy workers: 0 / 8
 
 ## Merged so far
@@ -146,28 +146,22 @@ All 6 WPs conflict-resolved and merged into main by orchestrator (2026-05-09).
 | WP-076 | COL-V3-04 presence avatars | 2026-05-09 | da276ea7 |
 | WP-077 | COL-V3-06 offline-tolerant authoring | 2026-05-09 | b11932e6 |
 
-## Wave-10 (VIS — Visual Finesse, T10)
+## Wave-10 (VIS — Visual Finesse, T10) ✅
 
-10 WPs targeting B4 "feels architectural" felt outcome. Prompt files: spec/v3-prompts/wp-078..087.md
+All 10 WPs merged into main by orchestrator (2026-05-09).
 
-Recommended dispatch order:
-- Phase A (instant impact, 1–2 days each, no deps): WP-078 (VIS-V3-01), WP-079 (VIS-V3-02), WP-080 (VIS-V3-03) — run in parallel, merge before dispatching phase B
-- Phase B (parallel after phase A): WP-081 (VIS-V3-04), WP-082 (VIS-V3-05), WP-083 (VIS-V3-06), WP-084 (VIS-V3-07), WP-087 (VIS-V3-10)
-- Phase C (after WP-078 merged): WP-085 (VIS-V3-08)
-- Phase D (anytime, audit WP): WP-086 (VIS-V3-09)
-
-| WP-ID | WP | Status |
-| ----- | -- | ------ |
-| WP-078 | VIS-V3-01 Token activation + warm dark chrome | open |
-| WP-079 | VIS-V3-02 Inter font loading | open |
-| WP-080 | VIS-V3-03 3D hemi light + category colour recalibration | open |
-| WP-081 | VIS-V3-04 Sun panel redesign | open |
-| WP-082 | VIS-V3-05 Hatch patterns as default plan rendering | open |
-| WP-083 | VIS-V3-06 Canvas-maximising layout | open |
-| WP-084 | VIS-V3-07 Status bar language polish | open |
-| WP-085 | VIS-V3-08 Light/paper mode for 2D views | open |
-| WP-086 | VIS-V3-09 Right-rail inspector as default property surface | open |
-| WP-087 | VIS-V3-10 Icon set review pass | open |
+| WP-ID | WP | Merged at | Commit |
+| ----- | -- | --------- | ------ |
+| WP-078 | VIS-V3-01 Token activation + warm dark chrome | 2026-05-09 | b2ccfeb4 |
+| WP-079 | VIS-V3-02 Inter font loading | 2026-05-09 | 0c5c1338 |
+| WP-080 | VIS-V3-03 3D hemi light + category colour recalibration | 2026-05-09 | e3cc390a |
+| WP-081 | VIS-V3-04 Sun panel redesign | 2026-05-09 | 7c3b6c30 |
+| WP-082 | VIS-V3-05 Hatch patterns as default plan rendering | 2026-05-09 | b90906bc |
+| WP-083 | VIS-V3-06 Canvas-maximising layout | 2026-05-09 | (merged) |
+| WP-084 | VIS-V3-07 Status bar language polish | 2026-05-09 | 266348e5 |
+| WP-085 | VIS-V3-08 Light/paper mode for 2D views | 2026-05-09 | (merged) |
+| WP-086 | VIS-V3-09 Right-rail inspector as default property surface | 2026-05-09 | f4b37868 |
+| WP-087 | VIS-V3-10 Icon set review pass | 2026-05-09 | 1711a11b |
 
 ## Wave-9C (sequential, quiet window — after all feature WPs merged)
 
