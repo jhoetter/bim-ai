@@ -3,9 +3,11 @@
   "checkpoint_id": "4cdffd31d595",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
-    "packages/web/src/plan/PlanCanvas.tsx"
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "spec/revit-parity/README.md",
+    "spec/revit-parity/ch01-ui-navigation.md"
   ],
   "sessions": [
     {
@@ -19,13 +21,19 @@
       "transcript": "/4c/dffd31d595/1/full.jsonl",
       "content_hash": "/4c/dffd31d595/1/content_hash.txt",
       "prompt": "/4c/dffd31d595/1/prompt.txt"
+    },
+    {
+      "metadata": "/4c/dffd31d595/2/metadata.json",
+      "transcript": "/4c/dffd31d595/2/full.jsonl",
+      "content_hash": "/4c/dffd31d595/2/content_hash.txt",
+      "prompt": "/4c/dffd31d595/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 7856,
-    "cache_creation_tokens": 4623184,
-    "cache_read_tokens": 254949032,
-    "output_tokens": 1433267,
-    "api_call_count": 2630
+    "input_tokens": 8768,
+    "cache_creation_tokens": 5854404,
+    "cache_read_tokens": 336066629,
+    "output_tokens": 1879319,
+    "api_call_count": 3472
   }
 }
