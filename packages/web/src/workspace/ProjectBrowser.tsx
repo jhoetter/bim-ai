@@ -101,6 +101,12 @@ export function ProjectBrowser(props: {
   const [vtCollapsed, setVtCollapsed] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
+  const [areaPlanInputOpen, setAreaPlanInputOpen] = useState(false);
+  const [areaPlanDraft, setAreaPlanDraft] = useState('');
+  const [vtNameInputOpen, setVtNameInputOpen] = useState(false);
+  const [vtNameDraft, setVtNameDraft] = useState('');
+  const [elevationInputOpen, setElevationInputOpen] = useState(false);
+  const [elevationDraft, setElevationDraft] = useState('');
 
   const { planViewsSorted, planViewBuckets, bucketKeys } = useMemo(() => {
     const sorted = Object.values(props.elementsById)
@@ -610,29 +616,57 @@ export function ProjectBrowser(props: {
           <div className="flex-1 text-[10px] uppercase tracking-wide text-muted">
             Area Plans {areaPlans.length > 0 ? `(${areaPlans.length})` : ''}
           </div>
-          <button
-            type="button"
-            className="text-[9px] text-muted hover:text-foreground"
-            data-testid="area-plan-new"
-            title="Create new Area Plan view"
-            onClick={async () => {
-              if (!modelId) return;
-              const name = window.prompt('Area Plan name:');
-              if (!name?.trim()) return;
-              const newId = `ap-${Date.now().toString(36)}`;
-              await applyCommand(modelId, {
-                type: 'upsertPlanView',
-                id: newId,
-                name: name.trim(),
-                levelId: '',
-                planPresentation: 'default',
-                discipline: 'architecture',
-                planViewSubtype: 'area_plan',
-              });
-            }}
-          >
-            +
-          </button>
+          {areaPlanInputOpen ? (
+            <div className="flex items-center gap-1">
+              <input
+                autoFocus
+                type="text"
+                aria-label="Area plan name"
+                value={areaPlanDraft}
+                onChange={(e) => setAreaPlanDraft(e.target.value)}
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter') {
+                    const name = areaPlanDraft.trim();
+                    setAreaPlanInputOpen(false);
+                    setAreaPlanDraft('');
+                    if (!name || !modelId) return;
+                    const newId = `ap-${Date.now().toString(36)}`;
+                    await applyCommand(modelId, {
+                      type: 'upsertPlanView',
+                      id: newId,
+                      name,
+                      levelId: '',
+                      planPresentation: 'default',
+                      discipline: 'architecture',
+                      planViewSubtype: 'area_plan',
+                    });
+                  } else if (e.key === 'Escape') {
+                    setAreaPlanInputOpen(false);
+                    setAreaPlanDraft('');
+                  }
+                }}
+                onBlur={() => {
+                  setAreaPlanInputOpen(false);
+                  setAreaPlanDraft('');
+                }}
+                className="w-24 rounded border border-border bg-background px-1 py-0 text-[9px] text-foreground"
+                placeholder="Plan name…"
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="text-[9px] text-muted hover:text-foreground"
+              data-testid="area-plan-new"
+              title="Create new Area Plan view"
+              onClick={() => {
+                if (!modelId) return;
+                setAreaPlanInputOpen(true);
+              }}
+            >
+              +
+            </button>
+          )}
         </div>
         {areaPlans.length === 0 ? (
           <p className="pl-2 text-[10px] text-muted">
@@ -727,21 +761,49 @@ export function ProjectBrowser(props: {
             <span>{vtCollapsed ? '▸' : '▾'}</span>
             View Templates ({viewTemplates.length})
           </button>
-          <button
-            type="button"
-            className="text-[9px] text-muted hover:text-foreground"
-            data-testid="view-template-new"
-            title="Create new view template"
-            onClick={async () => {
-              if (!modelId) return;
-              const name = window.prompt('View Template name:');
-              if (!name?.trim()) return;
-              const newId = `vt-${Date.now().toString(36)}`;
-              await vtStore.createTemplate(modelId, newId, name.trim());
-            }}
-          >
-            + New
-          </button>
+          {vtNameInputOpen ? (
+            <div className="flex items-center gap-1">
+              <input
+                autoFocus
+                type="text"
+                aria-label="View template name"
+                value={vtNameDraft}
+                onChange={(e) => setVtNameDraft(e.target.value)}
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter') {
+                    const name = vtNameDraft.trim();
+                    setVtNameInputOpen(false);
+                    setVtNameDraft('');
+                    if (!name || !modelId) return;
+                    const newId = `vt-${Date.now().toString(36)}`;
+                    await vtStore.createTemplate(modelId, newId, name);
+                  } else if (e.key === 'Escape') {
+                    setVtNameInputOpen(false);
+                    setVtNameDraft('');
+                  }
+                }}
+                onBlur={() => {
+                  setVtNameInputOpen(false);
+                  setVtNameDraft('');
+                }}
+                className="w-24 rounded border border-border bg-background px-1 py-0 text-[9px] text-foreground"
+                placeholder="Template name…"
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="text-[9px] text-muted hover:text-foreground"
+              data-testid="view-template-new"
+              title="Create new view template"
+              onClick={() => {
+                if (!modelId) return;
+                setVtNameInputOpen(true);
+              }}
+            >
+              + New
+            </button>
+          )}
         </div>
         {!vtCollapsed && viewTemplates.length === 0 && (
           <p className="pl-2 text-[10px] text-muted">
@@ -954,23 +1016,49 @@ export function ProjectBrowser(props: {
             </div>
             {props.onUpsertSemantic ? (
               <>
-                <button
-                  type="button"
-                  className="text-[9px] text-muted hover:text-foreground"
-                  data-testid="elevation-view-new"
-                  title="Create new elevation view"
-                  onClick={() => {
-                    const name = window.prompt('Elevation name:') ?? '';
-                    if (!name.trim()) return;
-                    props.onUpsertSemantic!({
-                      type: 'createElevationView',
-                      name: name.trim(),
-                      direction: 'north',
-                    });
-                  }}
-                >
-                  +
-                </button>
+                {elevationInputOpen ? (
+                  <div className="flex items-center gap-1">
+                    <input
+                      autoFocus
+                      type="text"
+                      aria-label="Elevation name"
+                      value={elevationDraft}
+                      onChange={(e) => setElevationDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const name = elevationDraft.trim();
+                          setElevationInputOpen(false);
+                          setElevationDraft('');
+                          if (!name) return;
+                          props.onUpsertSemantic!({
+                            type: 'createElevationView',
+                            name,
+                            direction: 'north',
+                          });
+                        } else if (e.key === 'Escape') {
+                          setElevationInputOpen(false);
+                          setElevationDraft('');
+                        }
+                      }}
+                      onBlur={() => {
+                        setElevationInputOpen(false);
+                        setElevationDraft('');
+                      }}
+                      className="w-24 rounded border border-border bg-background px-1 py-0 text-[9px] text-foreground"
+                      placeholder="Elevation name…"
+                    />
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="text-[9px] text-muted hover:text-foreground"
+                    data-testid="elevation-view-new"
+                    title="Create new elevation view"
+                    onClick={() => setElevationInputOpen(true)}
+                  >
+                    +
+                  </button>
+                )}
                 <button
                   type="button"
                   className="text-[9px] text-muted hover:text-foreground"

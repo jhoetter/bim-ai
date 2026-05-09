@@ -379,6 +379,14 @@ export function PlanCanvas({
   } | null>(null);
   const [geomEpoch, bumpGeom] = useState(0);
   const [measureReadout, setMeasureReadout] = useState<{ distMm: number } | null>(null);
+  const [pendingPlanRegion, setPendingPlanRegion] = useState<{
+    x0: number;
+    x1: number;
+    y0: number;
+    y1: number;
+    lvlId: string;
+    cutPlaneDraft: string;
+  } | null>(null);
   const [roomColorLegend, setRoomColorLegend] = useState<
     Array<{
       label: string;
@@ -2448,20 +2456,7 @@ export function PlanCanvas({
         const x1 = Math.max(d.sx, sp.xMm);
         const y0 = Math.min(d.sy, sp.yMm);
         const y1 = Math.max(d.sy, sp.yMm);
-        const cutPlaneOffsetMm = Number(
-          window.prompt('Cut-plane override height (mm above level, e.g. 900)', '900'),
-        );
-        onSemanticCommand({
-          type: 'createPlanRegion',
-          levelId: lvlId,
-          outlineMm: [
-            { xMm: x0, yMm: y0 },
-            { xMm: x1, yMm: y0 },
-            { xMm: x1, yMm: y1 },
-            { xMm: x0, yMm: y1 },
-          ],
-          cutPlaneOffsetMm: Number.isFinite(cutPlaneOffsetMm) ? cutPlaneOffsetMm : 900,
-        });
+        setPendingPlanRegion({ x0, x1, y0, y1, lvlId, cutPlaneDraft: '900' });
         draftRef.current = undefined;
         bumpGeom((x) => x + 1);
         return;
@@ -3262,14 +3257,8 @@ export function PlanCanvas({
       if (clickMm) {
         const ENDPOINT_SNAP_MM = 20;
         const wall = el;
-        const distStart = Math.hypot(
-          clickMm.xMm - wall.start.xMm,
-          clickMm.yMm - wall.start.yMm,
-        );
-        const distEnd = Math.hypot(
-          clickMm.xMm - wall.end.xMm,
-          clickMm.yMm - wall.end.yMm,
-        );
+        const distStart = Math.hypot(clickMm.xMm - wall.start.xMm, clickMm.yMm - wall.start.yMm);
+        const distEnd = Math.hypot(clickMm.xMm - wall.end.xMm, clickMm.yMm - wall.end.yMm);
         const nearestEndpoint =
           distStart <= ENDPOINT_SNAP_MM && distStart <= distEnd
             ? 'start'
@@ -3752,6 +3741,87 @@ export function PlanCanvas({
           </button>
         </div>
       ) : null}
+      {pendingPlanRegion && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            pointerEvents: 'auto',
+            zIndex: 40,
+          }}
+          className="flex flex-col gap-2 rounded border border-border bg-surface p-3 shadow-lg"
+          data-testid="cut-plane-dialog"
+        >
+          <label htmlFor="cut-plane-height" className="text-[11px] font-medium text-foreground">
+            Cut-plane height (mm above level)
+          </label>
+          <input
+            id="cut-plane-height"
+            autoFocus
+            type="number"
+            value={pendingPlanRegion.cutPlaneDraft}
+            onChange={(e) =>
+              setPendingPlanRegion((p) => p && { ...p, cutPlaneDraft: e.target.value })
+            }
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                const r = pendingPlanRegion;
+                setPendingPlanRegion(null);
+                const offsetMm = parseFloat(r.cutPlaneDraft);
+                onSemanticCommand({
+                  type: 'createPlanRegion',
+                  levelId: r.lvlId,
+                  outlineMm: [
+                    { xMm: r.x0, yMm: r.y0 },
+                    { xMm: r.x1, yMm: r.y0 },
+                    { xMm: r.x1, yMm: r.y1 },
+                    { xMm: r.x0, yMm: r.y1 },
+                  ],
+                  cutPlaneOffsetMm: Number.isFinite(offsetMm) ? offsetMm : 900,
+                });
+              } else if (e.key === 'Escape') {
+                setPendingPlanRegion(null);
+              }
+            }}
+            className="rounded border border-border bg-background px-2 py-1 text-xs font-mono text-foreground"
+            placeholder="900"
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              className="rounded border border-border px-2 py-0.5 text-[11px] text-muted hover:text-foreground"
+              onClick={() => setPendingPlanRegion(null)}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="rounded border border-accent bg-accent/20 px-2 py-0.5 text-[11px] text-foreground hover:bg-accent/40"
+              onClick={() => {
+                const r = pendingPlanRegion;
+                setPendingPlanRegion(null);
+                const offsetMm = parseFloat(r.cutPlaneDraft);
+                onSemanticCommand({
+                  type: 'createPlanRegion',
+                  levelId: r.lvlId,
+                  outlineMm: [
+                    { xMm: r.x0, yMm: r.y0 },
+                    { xMm: r.x1, yMm: r.y0 },
+                    { xMm: r.x1, yMm: r.y1 },
+                    { xMm: r.x0, yMm: r.y1 },
+                  ],
+                  cutPlaneOffsetMm: Number.isFinite(offsetMm) ? offsetMm : 900,
+                });
+              }}
+            >
+              Place Region
+            </button>
+          </div>
+        </div>
+      )}
       {/* Copy tool status chip — shown after first click (anchor set), waiting for destination */}
       {planTool === 'copy' && copyAnchorSet ? (
         <div
