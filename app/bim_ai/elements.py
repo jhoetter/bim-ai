@@ -2353,18 +2353,27 @@ class DecalElem(BaseModel):
     opacity: float = 1.0
 
 
-# ---------------------------------------------------------------------------
-# SCH-V3-01 — Custom property definition element
-# ---------------------------------------------------------------------------
+class ConceptSeedElem(BaseModel):
+    """CON-V3-02 — typed handoff contract between T6 (concept/tracing) and T9 (refinement agent).
 
+    A ConceptSeed carries structured layout JSON + envelope tokens + assumptions log.
+    Lifecycle: draft → committed (T9 can consume) → consumed.
+    """
 
-class PropertyDefinitionElem(BaseModel):
-    """SCH-V3-01 — project-scoped custom property definition."""
-
-    enum_values: list[str] | None = Field(default=None, alias="enumValues")
-    default_value: Any | None = Field(default=None, alias="defaultValue")
-    applies_to: list[str] = Field(alias="appliesTo")
-    show_in_schedule: bool = Field(default=True, alias="showInSchedule")
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["concept_seed"] = "concept_seed"
+    id: str
+    model_id: str = Field(alias="modelId")
+    source_underlay_id: str | None = Field(default=None, alias="sourceUnderlayId")
+    # Each token: {hostId, t, deltaMm, scaleFactor, rho}  (GBM shape)
+    envelope_tokens: list[dict] = Field(default_factory=list, alias="envelopeTokens")
+    # Each draft: {kind, params} — not yet committed to kernel
+    kernel_element_drafts: list[dict] = Field(default_factory=list, alias="kernelElementDrafts")
+    # Each entry: {assumption, confidence, source}
+    assumptions_log: list[dict] = Field(default_factory=list, alias="assumptionsLog")
+    status: Literal["draft", "committed", "consumed"] = "draft"
+    committed_at: str | None = Field(default=None, alias="committedAt")  # ISO 8601
+    schema_version: str = Field(default="con-v3.0", alias="schemaVersion")
 
 
 Element = Annotated[
@@ -2447,7 +2456,8 @@ Element = Annotated[
     | HatchPatternDefElem
     | MaterialElem
     | DecalElem
-    | PropertyDefinitionElem,
+    | PropertyDefinitionElem
+    | ConceptSeedElem,
     Field(discriminator="kind"),
 ]
 

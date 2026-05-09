@@ -5,6 +5,7 @@ import json
 import math
 import uuid
 from collections import Counter
+from datetime import datetime, timezone
 from typing import Any, Literal, NamedTuple, cast
 
 from pydantic import TypeAdapter
@@ -200,6 +201,9 @@ from bim_ai.commands import (
     CreateScheduleViewCmd,
     DrawDetailRegionCmd,
     UpdateDetailRegionCmd,
+    CreateConceptSeedCmd,
+    CommitConceptSeedCmd,
+    ConsumeConceptSeedCmd,
 )
 from bim_ai.constraints import Violation, evaluate
 from bim_ai.datum_levels import (
@@ -324,6 +328,7 @@ from bim_ai.elements import (
     DecalElem,
     PropertyDefinitionElem,
     HatchPatternDefElem,
+    ConceptSeedElem,
 )
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
@@ -5272,6 +5277,56 @@ def apply_inplace(
             if cmd.phase_demolished is not None:
                 patch["phase_demolished"] = cmd.phase_demolished
             els[cmd.id] = existing.model_copy(update=patch)
+
+        # CON-V3-02 — concept seed lifecycle
+        case CreateConceptSeedCmd():
+            if cmd.id in els:
+                raise ValueError(f"duplicate element id '{cmd.id}'")
+            if not cmd.model_id:
+                raise ValueError("create_concept_seed.modelId must be a non-empty string")
+            els[cmd.id] = ConceptSeedElem(
+                id=cmd.id,
+                modelId=cmd.model_id,
+                sourceUnderlayId=cmd.source_underlay_id,
+                envelopeTokens=cmd.envelope_tokens,
+                kernelElementDrafts=cmd.kernel_element_drafts,
+                assumptionsLog=cmd.assumptions_log,
+                status="draft",
+            )
+
+        case CommitConceptSeedCmd():
+            existing = els.get(cmd.id)
+            if existing is None or existing.kind != "concept_seed":
+                raise ValueError(f"commit_concept_seed: no ConceptSeedElem with id '{cmd.id}'")
+            if existing.status != "draft":
+                raise ValueError(
+                    f"commit_concept_seed: seed '{cmd.id}' is already '{existing.status}' "
+                    "(must be 'draft')"
+                )
+            patch_cs: dict = {
+                "status": "committed",
+                "committed_at": datetime.now(tz=timezone.utc).isoformat(),
+            }
+            if cmd.envelope_tokens is not None:
+                patch_cs["envelope_tokens"] = existing.envelope_tokens + cmd.envelope_tokens
+            if cmd.kernel_element_drafts is not None:
+                patch_cs["kernel_element_drafts"] = (
+                    existing.kernel_element_drafts + cmd.kernel_element_drafts
+                )
+            if cmd.assumptions_log is not None:
+                patch_cs["assumptions_log"] = existing.assumptions_log + cmd.assumptions_log
+            els[cmd.id] = existing.model_copy(update=patch_cs)
+
+        case ConsumeConceptSeedCmd():
+            existing = els.get(cmd.id)
+            if existing is None or existing.kind != "concept_seed":
+                raise ValueError(f"consume_concept_seed: no ConceptSeedElem with id '{cmd.id}'")
+            if existing.status != "committed":
+                raise ValueError(
+                    f"consume_concept_seed: seed '{cmd.id}' is '{existing.status}' "
+                    "(must be 'committed')"
+                )
+            els[cmd.id] = existing.model_copy(update={"status": "consumed"})
 
     # KRN-08: areas track a derived computedAreaSqMm. Recompute after every
     # command apply so create/update/delete of areas (and shafts that affect

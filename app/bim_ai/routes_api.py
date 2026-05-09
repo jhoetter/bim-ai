@@ -2765,3 +2765,41 @@ async def get_sheet_pixel_map(
                     }
 
     return {"map": pixel_map}
+
+
+# ---------------------------------------------------------------------------
+# CON-V3-02 — Concept-seed handoff endpoint (T6 → T9)
+# ---------------------------------------------------------------------------
+
+
+@api_router.get("/v3/models/{model_id}/concept-seeds")
+async def list_concept_seeds(
+    model_id: UUID,
+    status: str | None = Query(default=None),
+    session: AsyncSession = Depends(get_session),
+) -> list[dict[str, Any]]:
+    """CON-V3-02: return concept seeds for a model, optionally filtered by status.
+
+    Query params:
+      - status: 'draft' | 'committed' | 'consumed' — when set, only seeds with
+                matching status are returned. Omit to return all seeds.
+
+    T9 uses ``?status=committed`` to discover seeds ready for ingestion.
+    """
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    doc = Document.model_validate(row.document)
+
+    from bim_ai.elements import ConceptSeedElem as _ConceptSeedElem
+
+    seeds: list[dict[str, Any]] = []
+    for elem in doc.elements.values():
+        if not isinstance(elem, _ConceptSeedElem):
+            continue
+        if status is not None and elem.status != status:
+            continue
+        seeds.append(elem.model_dump(by_alias=True))
+
+    return seeds

@@ -45,6 +45,52 @@ export type HatchPatternDef = {
   svgSource?: string | null;
 };
 
+// ---------------------------------------------------------------------------
+// CON-V3-02 — Concept seed handoff contract (T6 → T9)
+// ---------------------------------------------------------------------------
+
+/** CON-V3-02: envelope token describing a GBM shape around a host element. */
+export type ConceptSeedEnvelopeToken = {
+  hostId: string;
+  t: number;
+  deltaMm: number;
+  scaleFactor: number;
+  rho: number;
+};
+
+export type ConceptSeedElem = {
+  kind: 'concept_seed';
+  id: string;
+  modelId: string;
+  sourceUnderlayId?: string;
+  envelopeTokens: ConceptSeedEnvelopeToken[];
+  kernelElementDrafts: Record<string, unknown>[];
+  assumptionsLog: Array<{ assumption: string; confidence: number; source: string }>;
+  status: 'draft' | 'committed' | 'consumed';
+  committedAt?: string;
+  schemaVersion: 'con-v3.0';
+};
+
+export type CreateConceptSeedCmd = {
+  type: 'create_concept_seed';
+  id: string;
+  modelId: string;
+  sourceUnderlayId?: string;
+  envelopeTokens?: ConceptSeedEnvelopeToken[];
+  kernelElementDrafts?: Record<string, unknown>[];
+  assumptionsLog?: Array<{ assumption: string; confidence: number; source: string }>;
+};
+
+export type CommitConceptSeedCmd = {
+  type: 'commit_concept_seed';
+  id: string;
+  envelopeTokens?: ConceptSeedEnvelopeToken[];
+  kernelElementDrafts?: Record<string, unknown>[];
+  assumptionsLog?: Array<{ assumption: string; confidence: number; source: string }>;
+};
+
+export type ConsumeConceptSeedCmd = { type: 'consume_concept_seed'; id: string };
+
 export type ElemKind =
   | 'toposolid'
   | 'project_settings'
@@ -133,7 +179,8 @@ export type ElemKind =
   | 'material'
   | 'decal'
   | 'hatch_pattern_def'
-  | 'property_definition';
+  | 'property_definition'
+  | 'concept_seed';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -1725,7 +1772,8 @@ export type Element =
   | HatchPatternDef
   | PropertyDefinitionElem
   | MaterialElem
-  | DecalElem;
+  | DecalElem
+  | ConceptSeedElem;
 
 export type Violation = {
   ruleId: string;
