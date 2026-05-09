@@ -817,6 +817,41 @@ export function InspectorPlanViewEditor({
       </label>
 
       <label className={LABEL_CLS}>
+        <span>Room Fill Opacity</span>
+        <div className="mt-1 flex items-center gap-2">
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            defaultValue={el.planRoomFillOpacityScale ?? 1}
+            key={`pv-rfill-${el.id}-${el.planRoomFillOpacityScale ?? 1}-${revision}`}
+            className="w-24"
+            onBlur={(e) => onPersistProperty('planRoomFillOpacityScale', e.target.value)}
+            data-testid="inspector-plan-room-fill-opacity"
+          />
+          <span className="font-mono text-[10px]">
+            {((el.planRoomFillOpacityScale ?? 1) * 100).toFixed(0)}%
+          </span>
+        </div>
+      </label>
+
+      <label className={LABEL_CLS}>
+        <span>Detail Level</span>
+        <select
+          className={INPUT_CLS}
+          value={el.planDetailLevel ?? ''}
+          onChange={(e) => onPersistProperty('planDetailLevel', e.target.value)}
+          data-testid="inspector-plan-detail-level"
+        >
+          <option value="">{pv('none')} (inherit)</option>
+          <option value="coarse">Coarse</option>
+          <option value="medium">Medium</option>
+          <option value="fine">Fine</option>
+        </select>
+      </label>
+
+      <label className={LABEL_CLS}>
         {pv('underlayLevel')}
         <select
           className={INPUT_CLS}

@@ -33,7 +33,7 @@ Source segment: `05:30:00 – 05:39:46`
 **Screenshot:**
 ![Room Interior Fill](file:///Users/jhoetter/Desktop/Revit%20Specs/0759_05-30-16.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — `InspectorPlanViewEditor` now exposes a "Room Fill Opacity" slider (0–100%) that fires `updateElementProperty { key: 'planRoomFillOpacityScale', value }`. Setting it to 0% hides room interior fills without deleting rooms. Setting it to empty inherits from the view template. The slider is in the plan view Properties tab. Missing: per-category VG override path equivalent to Revit's VG→Model→Rooms→Interior Fill; no magenta "Reveal Hidden" mode.
 
 ---
 
