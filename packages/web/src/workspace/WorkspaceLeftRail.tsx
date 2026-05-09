@@ -83,6 +83,21 @@ export function WorkspaceLeftRail({
               discipline: 'architecture',
             })
           }
+          onCreateLevel={() => {
+            const sortedLevels = (Object.values(elementsById) as Element[])
+              .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
+              .sort((a, b) => a.elevationMm - b.elevationMm);
+            const maxElev =
+              sortedLevels.length > 0 ? sortedLevels[sortedLevels.length - 1]!.elevationMm : 0;
+            const n = sortedLevels.length + 1;
+            void onSemanticCommand({
+              type: 'createLevel',
+              id: crypto.randomUUID(),
+              name: `Level ${n}`,
+              elevationMm: maxElev + 3000,
+              alsoCreatePlanView: true,
+            });
+          }}
         />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">

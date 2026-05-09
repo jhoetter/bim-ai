@@ -14,6 +14,8 @@ export function LevelStack(props: {
   onNameCommitted?: (levelId: string, name: string) => void;
 
   onCreatePlanView?: (levelId: string, levelName: string) => void;
+
+  onCreateLevel?: () => void;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [nameDraft, setNameDraft] = useState('');
@@ -35,7 +37,20 @@ export function LevelStack(props: {
 
   return (
     <div className="rounded border bg-surface p-2">
-      <div className="text-[11px] font-semibold uppercase text-muted">Levels</div>
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-semibold uppercase text-muted">Levels</span>
+        {props.onCreateLevel && (
+          <button
+            type="button"
+            data-testid="level-stack-create"
+            title="Create new level"
+            onClick={props.onCreateLevel}
+            className="rounded px-1.5 py-0.5 text-[10px] text-muted hover:bg-accent/10 hover:text-foreground"
+          >
+            +
+          </button>
+        )}
+      </div>
 
       <ul className="mt-2 space-y-1">
         {props.levels.map((lv) => (
