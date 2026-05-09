@@ -164,6 +164,53 @@ export function OptionsBar({
           </select>
         </label>
       )}
+      {activeTool === 'wall' && (
+        <label style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          <span>Offset (mm):</span>
+          <input
+            type="number"
+            data-testid="options-bar-wall-offset"
+            value={modifiers.wallDrawOffsetMm}
+            step={50}
+            onChange={(ev) =>
+              onModifiersChange({ ...modifiers, wallDrawOffsetMm: Number(ev.currentTarget.value) })
+            }
+            style={{ width: 64 }}
+          />
+        </label>
+      )}
+      {activeTool === 'wall' && (
+        <label style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          <input
+            type="checkbox"
+            data-testid="options-bar-wall-radius-toggle"
+            checked={modifiers.wallDrawRadiusMm !== null}
+            onChange={(ev) =>
+              onModifiersChange({
+                ...modifiers,
+                wallDrawRadiusMm: ev.currentTarget.checked ? 500 : null,
+              })
+            }
+          />
+          <span>Radius</span>
+          {modifiers.wallDrawRadiusMm !== null && (
+            <input
+              type="number"
+              data-testid="options-bar-wall-radius"
+              value={modifiers.wallDrawRadiusMm}
+              min={0}
+              step={100}
+              onChange={(ev) =>
+                onModifiersChange({
+                  ...modifiers,
+                  wallDrawRadiusMm: Math.max(0, Number(ev.currentTarget.value)),
+                })
+              }
+              style={{ width: 64 }}
+            />
+          )}
+        </label>
+      )}
     </div>
   );
 }

@@ -63,6 +63,14 @@ export function WorkspaceLeftRail({
           onElevationCommitted={(levelId, elevationMm) =>
             void onSemanticCommand({ type: 'moveLevelElevation', levelId, elevationMm })
           }
+          onNameCommitted={(levelId, name) =>
+            void onSemanticCommand({
+              type: 'updateElementProperty',
+              elementId: levelId,
+              key: 'name',
+              value: name,
+            })
+          }
         />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">

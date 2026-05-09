@@ -105,4 +105,34 @@ describe('<OptionsBar /> — EDT-06', () => {
     fireEvent.change(select, { target: { value: 'finish-face-exterior' } });
     expect(onLL).toHaveBeenCalledWith('finish-face-exterior');
   });
+
+  it('shows Offset and Radius controls for the wall tool', () => {
+    const { getByTestId, queryByTestId } = render(
+      <OptionsBar {...defaultProps({ activeTool: 'wall' })} />,
+    );
+    expect(getByTestId('options-bar-wall-offset')).toBeTruthy();
+    expect(getByTestId('options-bar-wall-radius-toggle')).toBeTruthy();
+    // Radius input hidden when toggle is off (wallDrawRadiusMm is null by default)
+    expect(queryByTestId('options-bar-wall-radius')).toBeNull();
+  });
+
+  it('enabling Radius toggle shows the radius input', () => {
+    const onChange = vi.fn();
+    const mods = { ...defaultToolGrammarModifiers(), wallDrawRadiusMm: null };
+    const { getByTestId, queryByTestId, rerender } = render(
+      <OptionsBar
+        {...defaultProps({ activeTool: 'wall', modifiers: mods, onModifiersChange: onChange })}
+      />,
+    );
+    expect(queryByTestId('options-bar-wall-radius')).toBeNull();
+    fireEvent.click(getByTestId('options-bar-wall-radius-toggle'));
+    const next = onChange.mock.calls[0]![0];
+    expect(next.wallDrawRadiusMm).toBe(500);
+    rerender(
+      <OptionsBar
+        {...defaultProps({ activeTool: 'wall', modifiers: next, onModifiersChange: onChange })}
+      />,
+    );
+    expect(getByTestId('options-bar-wall-radius')).toBeTruthy();
+  });
 });
