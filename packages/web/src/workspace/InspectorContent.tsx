@@ -744,6 +744,29 @@ export function InspectorPropertiesFor(
           <FieldRow label={f('clashResults')} value={String(el.results?.length ?? 0)} />
         </div>
       );
+    case 'sheet':
+      return (
+        <div>
+          {el.number ? <FieldRow label={f('number')} value={el.number} /> : null}
+          {el.size ? <FieldRow label={f('size')} value={el.size} /> : null}
+          {el.orientation ? <FieldRow label={f('orientation')} value={el.orientation} /> : null}
+          {el.titleblockTypeId ? (
+            <FieldRow label={f('titleblock')} value={el.titleblockTypeId} mono />
+          ) : null}
+          <FieldRow label={f('viewPlacements')} value={String(el.viewPlacements?.length ?? 0)} />
+        </div>
+      );
+    case 'schedule':
+      return (
+        <div>
+          {el.category ? <FieldRow label={f('category')} value={el.category} /> : null}
+          <FieldRow label={f('columns')} value={String(el.columns?.length ?? 0)} />
+          {el.filterExpr ? <FieldRow label={f('filter')} value={el.filterExpr} mono /> : null}
+          {el.sortKey ? (
+            <FieldRow label={f('sort')} value={`${el.sortKey} ${el.sortDir ?? 'asc'}`} mono />
+          ) : null}
+        </div>
+      );
     default:
       return <p className="text-sm text-muted">{t('inspector.noParams', { kind: el.kind })}</p>;
   }
@@ -1111,7 +1134,7 @@ export function InspectorPlanViewEditor({
                   JSON.stringify({
                     name: `Copy of ${el.name}`,
                     detailLevel: el.planDetailLevel ?? null,
-                    phaseFilter: (el as Record<string, unknown>).phaseFilter as string ?? null,
+                    phaseFilter: ((el as Record<string, unknown>).phaseFilter as string) ?? null,
                   }),
                 )
               }

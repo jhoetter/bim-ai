@@ -28,16 +28,26 @@ import { Viewport3DLayersPanel } from './Viewport3DLayersPanel';
 import type { WorkspaceMode } from './TopBar';
 import { humanKindLabel, InspectorEmptyTab } from './WorkspaceHelpers';
 
+const NAVIGABLE_KINDS = new Set<Element['kind']>([
+  'plan_view',
+  'viewpoint',
+  'section_cut',
+  'sheet',
+  'schedule',
+]);
+
 export function WorkspaceRightRail({
   mode,
   onSemanticCommand,
   onModeChange,
   codePresetIds,
+  onNavigateToElement,
 }: {
   mode: WorkspaceMode;
   onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
   onModeChange: (mode: WorkspaceMode) => void;
   codePresetIds: string[];
+  onNavigateToElement?: (elementId: string) => void;
 }): JSX.Element {
   const { t } = useTranslation();
   const selectedId = useBimStore((s) => s.selectedId);
@@ -200,37 +210,92 @@ export function WorkspaceRightRail({
           tabs={{
             properties: el ? (
               <>
-              {el.kind === 'plan_view' ? (
-                <>
-                  {planGridDatumLine ? (
-                    <p className="mb-2 break-all font-mono text-[10px] leading-snug text-muted">
-                      {planGridDatumLine}
-                    </p>
-                  ) : null}
-                  <InspectorPlanViewEditor
+                {el.kind === 'plan_view' ? (
+                  <>
+                    {planGridDatumLine ? (
+                      <p className="mb-2 break-all font-mono text-[10px] leading-snug text-muted">
+                        {planGridDatumLine}
+                      </p>
+                    ) : null}
+                    <InspectorPlanViewEditor
+                      el={el}
+                      elementsById={elementsById}
+                      revision={revision}
+                      onPersistProperty={(key, value) => {
+                        if (key === '__applyTemplate__') {
+                          const p = JSON.parse(value) as {
+                            planViewId: string;
+                            templateId: string;
+                          };
+                          void onSemanticCommand({ type: 'applyPlanViewTemplate', ...p });
+                        } else if (key === '__saveAsTemplate__') {
+                          const p = JSON.parse(value) as {
+                            name: string;
+                            detailLevel: string | null;
+                            phaseFilter: string | null;
+                          };
+                          const templateId = `tmpl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+                          void onSemanticCommand({
+                            type: 'CreateViewTemplate',
+                            templateId,
+                            name: p.name,
+                            detailLevel: p.detailLevel ?? undefined,
+                            phaseFilter: p.phaseFilter ?? undefined,
+                          });
+                        } else {
+                          void onSemanticCommand({
+                            type: 'updateElementProperty',
+                            elementId: el.id,
+                            key,
+                            value,
+                          });
+                        }
+                      }}
+                    />
+                  </>
+                ) : el.kind === 'room' ? (
+                  <InspectorRoomEditor
+                    el={el}
+                    revision={revision}
+                    onPersistProperty={(key, value) =>
+                      void onSemanticCommand({
+                        type: 'updateElementProperty',
+                        elementId: el.id,
+                        key,
+                        value,
+                      })
+                    }
+                  />
+                ) : el.kind === 'viewpoint' ? (
+                  <InspectorViewpointEditor
+                    el={el}
+                    revision={revision}
+                    onPersistProperty={(key, value) =>
+                      void onSemanticCommand({
+                        type: 'updateElementProperty',
+                        elementId: el.id,
+                        key,
+                        value,
+                      })
+                    }
+                  />
+                ) : el.kind === 'view_template' ? (
+                  <InspectorViewTemplateEditor
                     el={el}
                     elementsById={elementsById}
                     revision={revision}
                     onPersistProperty={(key, value) => {
-                      if (key === '__applyTemplate__') {
-                        const p = JSON.parse(value) as {
-                          planViewId: string;
-                          templateId: string;
+                      if (key === '__updateViewTemplate__') {
+                        const patch = JSON.parse(value) as {
+                          scale?: number | null;
+                          detailLevel?: string | null;
+                          phase?: string | null;
+                          phaseFilter?: string | null;
                         };
-                        void onSemanticCommand({ type: 'applyPlanViewTemplate', ...p });
-                      } else if (key === '__saveAsTemplate__') {
-                        const p = JSON.parse(value) as {
-                          name: string;
-                          detailLevel: string | null;
-                          phaseFilter: string | null;
-                        };
-                        const templateId = `tmpl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
                         void onSemanticCommand({
-                          type: 'CreateViewTemplate',
-                          templateId,
-                          name: p.name,
-                          detailLevel: p.detailLevel ?? undefined,
-                          phaseFilter: p.phaseFilter ?? undefined,
+                          type: 'UpdateViewTemplate',
+                          templateId: el.id,
+                          ...patch,
                         });
                       } else {
                         void onSemanticCommand({
@@ -242,120 +307,89 @@ export function WorkspaceRightRail({
                       }
                     }}
                   />
-                </>
-              ) : el.kind === 'room' ? (
-                <InspectorRoomEditor
-                  el={el}
-                  revision={revision}
-                  onPersistProperty={(key, value) =>
-                    void onSemanticCommand({
-                      type: 'updateElementProperty',
-                      elementId: el.id,
-                      key,
-                      value,
-                    })
-                  }
-                />
-              ) : el.kind === 'viewpoint' ? (
-                <InspectorViewpointEditor
-                  el={el}
-                  revision={revision}
-                  onPersistProperty={(key, value) =>
-                    void onSemanticCommand({
-                      type: 'updateElementProperty',
-                      elementId: el.id,
-                      key,
-                      value,
-                    })
-                  }
-                />
-              ) : el.kind === 'view_template' ? (
-                <InspectorViewTemplateEditor
-                  el={el}
-                  elementsById={elementsById}
-                  revision={revision}
-                  onPersistProperty={(key, value) => {
-                    if (key === '__updateViewTemplate__') {
-                      const patch = JSON.parse(value) as {
-                        scale?: number | null;
-                        detailLevel?: string | null;
-                        phase?: string | null;
-                        phaseFilter?: string | null;
-                      };
-                      void onSemanticCommand({
-                        type: 'UpdateViewTemplate',
-                        templateId: el.id,
-                        ...patch,
-                      });
-                    } else {
+                ) : el.kind === 'door' ? (
+                  <InspectorDoorEditor
+                    el={el}
+                    revision={revision}
+                    elementsById={elementsById}
+                    onPersistProperty={(key, value) =>
                       void onSemanticCommand({
                         type: 'updateElementProperty',
                         elementId: el.id,
                         key,
                         value,
-                      });
+                      })
                     }
-                  }}
-                />
-              ) : el.kind === 'door' ? (
-                <InspectorDoorEditor
-                  el={el}
-                  revision={revision}
-                  elementsById={elementsById}
-                  onPersistProperty={(key, value) =>
-                    void onSemanticCommand({
-                      type: 'updateElementProperty',
-                      elementId: el.id,
-                      key,
-                      value,
-                    })
-                  }
-                  onCreateType={(_baseFamilyId, _name, params) =>
-                    void onSemanticCommand({
-                      type: 'upsertFamilyType',
-                      discipline: 'door',
-                      parameters: params,
-                    })
-                  }
-                  onDisciplineChange={handleDisciplineChange}
-                />
-              ) : el.kind === 'window' ? (
-                <InspectorWindowEditor
-                  el={el}
-                  revision={revision}
-                  elementsById={elementsById}
-                  onPersistProperty={(key, value) =>
-                    void onSemanticCommand({
-                      type: 'updateElementProperty',
-                      elementId: el.id,
-                      key,
-                      value,
-                    })
-                  }
-                  onCreateType={(_baseFamilyId, _name, params) =>
-                    void onSemanticCommand({
-                      type: 'upsertFamilyType',
-                      discipline: 'window',
-                      parameters: params,
-                    })
-                  }
-                  onDisciplineChange={handleDisciplineChange}
-                />
-              ) : el.kind === 'project_settings' ? (
-                <InspectorProjectSettingsEditor
-                  el={el}
-                  onPersistProperty={(key, value) =>
-                    void onSemanticCommand({
-                      type: 'updateElementProperty',
-                      elementId: el.id,
-                      key,
-                      value,
-                    })
-                  }
-                />
-              ) : el.kind === 'wall' ? (
-                <>
-                  {InspectorPropertiesFor(el, t, {
+                    onCreateType={(_baseFamilyId, _name, params) =>
+                      void onSemanticCommand({
+                        type: 'upsertFamilyType',
+                        discipline: 'door',
+                        parameters: params,
+                      })
+                    }
+                    onDisciplineChange={handleDisciplineChange}
+                  />
+                ) : el.kind === 'window' ? (
+                  <InspectorWindowEditor
+                    el={el}
+                    revision={revision}
+                    elementsById={elementsById}
+                    onPersistProperty={(key, value) =>
+                      void onSemanticCommand({
+                        type: 'updateElementProperty',
+                        elementId: el.id,
+                        key,
+                        value,
+                      })
+                    }
+                    onCreateType={(_baseFamilyId, _name, params) =>
+                      void onSemanticCommand({
+                        type: 'upsertFamilyType',
+                        discipline: 'window',
+                        parameters: params,
+                      })
+                    }
+                    onDisciplineChange={handleDisciplineChange}
+                  />
+                ) : el.kind === 'project_settings' ? (
+                  <InspectorProjectSettingsEditor
+                    el={el}
+                    onPersistProperty={(key, value) =>
+                      void onSemanticCommand({
+                        type: 'updateElementProperty',
+                        elementId: el.id,
+                        key,
+                        value,
+                      })
+                    }
+                  />
+                ) : el.kind === 'wall' ? (
+                  <>
+                    {InspectorPropertiesFor(el, t, {
+                      elementsById,
+                      onPropertyChange: (property, value) =>
+                        void onSemanticCommand({
+                          type: 'updateElementProperty',
+                          elementId: el.id,
+                          key: property,
+                          value,
+                        }),
+                      onDisciplineChange: handleDisciplineChange,
+                    })}
+                    <WallMoveSection
+                      wallId={el.id}
+                      onMove={(dx, dy) =>
+                        void onSemanticCommand({
+                          type: 'moveWallDelta',
+                          wallId: el.id,
+                          dxMm: dx,
+                          dyMm: dy,
+                        })
+                      }
+                    />
+                  </>
+                ) : (
+                  InspectorPropertiesFor(el, t, {
                     elementsById,
                     onPropertyChange: (property, value) =>
                       void onSemanticCommand({
@@ -365,47 +399,61 @@ export function WorkspaceRightRail({
                         value,
                       }),
                     onDisciplineChange: handleDisciplineChange,
-                  })}
-                  <WallMoveSection
-                    wallId={el.id}
-                    onMove={(dx, dy) =>
-                      void onSemanticCommand({
-                        type: 'moveWallDelta',
-                        wallId: el.id,
-                        dxMm: dx,
-                        dyMm: dy,
-                      })
-                    }
-                  />
-                </>
-              ) : (
-                InspectorPropertiesFor(el, t, {
-                  elementsById,
-                  onPropertyChange: (property, value) =>
-                    void onSemanticCommand({
-                      type: 'updateElementProperty',
-                      elementId: el.id,
-                      key: property,
-                      value,
-                    }),
-                  onDisciplineChange: handleDisciplineChange,
-                })
-              )}
-              {activePlanViewId && (
-                <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 6, marginTop: 8 }}>
-                  <button
-                    data-testid="inspector-hide-category"
-                    type="button"
-                    onClick={() => {
-                      useBimStore.getState().setCategoryOverride(activePlanViewId, el.kind, { visible: false });
+                  })
+                )}
+                {onNavigateToElement && NAVIGABLE_KINDS.has(el.kind) && (
+                  <div
+                    style={{
+                      borderTop: '1px solid var(--color-border)',
+                      paddingTop: 6,
+                      marginTop: 8,
                     }}
-                    style={{ fontSize: 11, padding: '2px 8px', cursor: 'pointer', color: 'var(--color-muted)' }}
-                    title={`Hide all ${el.kind} elements in this view`}
                   >
-                    Hide Category in View
-                  </button>
-                </div>
-              )}
+                    <button
+                      data-testid="inspector-navigate-to-view"
+                      type="button"
+                      onClick={() => onNavigateToElement(el.id)}
+                      style={{
+                        fontSize: 11,
+                        padding: '2px 8px',
+                        cursor: 'pointer',
+                        color: 'var(--color-accent)',
+                        fontWeight: 500,
+                      }}
+                      title={`Open ${el.kind.replace('_', ' ')} in canvas`}
+                    >
+                      Open in Canvas ↗
+                    </button>
+                  </div>
+                )}
+                {activePlanViewId && (
+                  <div
+                    style={{
+                      borderTop: '1px solid var(--color-border)',
+                      paddingTop: 6,
+                      marginTop: 8,
+                    }}
+                  >
+                    <button
+                      data-testid="inspector-hide-category"
+                      type="button"
+                      onClick={() => {
+                        useBimStore
+                          .getState()
+                          .setCategoryOverride(activePlanViewId, el.kind, { visible: false });
+                      }}
+                      style={{
+                        fontSize: 11,
+                        padding: '2px 8px',
+                        cursor: 'pointer',
+                        color: 'var(--color-muted)',
+                      }}
+                      title={`Hide all ${el.kind} elements in this view`}
+                    >
+                      Hide Category in View
+                    </button>
+                  </div>
+                )}
               </>
             ) : (
               <InspectorEmptyTab message="No element selected." />

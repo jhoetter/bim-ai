@@ -1279,6 +1279,7 @@ export function Workspace(): JSX.Element {
             onSemanticCommand={onSemanticCommand}
             onModeChange={handleModeChange}
             codePresetIds={codePresetIds}
+            onNavigateToElement={openElementById}
           />
         }
         statusBar={
