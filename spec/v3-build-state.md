@@ -1,7 +1,7 @@
 # v3 Build State
 
-Last updated: 2026-05-09 (wave-8: all 8 WPs merged ✅; 63/63 done)
-Active heavy workers: 0 / 8
+Last updated: 2026-05-09 (wave-9A: 8 WPs dispatched; targeting 77/77 after wave-9B+CQ)
+Active heavy workers: 8 / 8
 
 ## Merged so far
 
@@ -118,24 +118,36 @@ All 8 WPs merged into main by orchestrator (2026-05-09).
 | WP-062 | CHR-V3-10 empty-state canvas | 2026-05-09 | a9bc4540 |
 | WP-063 | AST-V3-04 parametric kitchen kit | 2026-05-09 | 5bd50ddd |
 
-## Held back (pending deps or timing)
+## Wave-9A dispatched 🚀
 
-- CQ-04 god-file split — high merge-conflict risk; schedule for quiet window between waves.
-- CQ-03 workspace reorg — riskiest CQ item; dedicated quiet week.
-- TOP-V3-02..04, OSM-V3-01 — depends on TOP-V3-01 (WP-041 ✓); schedule wave-8.
-- AST-V3-04 kitchen kit — depends on AST-V3-01 (WP-042 ✓); schedule wave-8.
-- CON-V3-02 seed handoff — depends on IMG-V3-01 (WP-043 ✓); schedule wave-8.
-- OUT-V3-02, OUT-V3-03 PPTX/PDF export — depends on OUT-V3-01 (WP-045 ✓); schedule wave-8.
-- EDT-V3-05 loop-mode modifier — depends on EDT-V3-04 (WP-052, wave-7); schedule wave-8.
-- COL-V3-04 presence avatars — v3.1 stretch per spec; hold.
-- COL-V3-06 offline-tolerant authoring — next state; hold.
-- VG-V3-01 render-and-compare — deps met; schedule wave-8.
-- CTL-V3-01 catalog query API — deps met; schedule wave-8.
-- IMP-V3-01 image-as-underlay — Wave 0, no deps; schedule wave-8.
-- MAT-V3-02 material tokens — Wave 0, no deps; schedule wave-8.
-- CHR-V3-06, CHR-V3-07, CHR-V3-10 chrome WPs — Wave 0, no deps; schedule wave-8.
-- TST-V3-01 refinement-reliability CI test — deps met; schedule wave-8.
-- EXP-V3-01 render-pipeline export — deps met; schedule wave-8.
+8 agents in flight. Merge order: IMP/CON/TST (no conflicts) → OUT-V3-02/03 → TOP-V3-02 → TOP-V3-04 → OSM-V3-01 (conflicty last).
+
+| WP-ID | WP | Branch | Prompt |
+| ----- | -- | ------ | ------ |
+| WP-064 | TOP-V3-02 toposolid subdivisions | feat/v3-top-v3-02-toposolid-subdivisions | wp-064.md |
+| WP-066 | TOP-V3-04 site walls + graded regions | feat/v3-top-v3-04-site-walls | wp-066.md |
+| WP-067 | OSM-V3-01 neighborhood massing import | feat/v3-osm-v3-01-neighborhood-import | wp-067.md |
+| WP-069 | IMP-V3-01 image-as-underlay import | feat/v3-imp-v3-01-image-underlay | wp-069.md |
+| WP-070 | CON-V3-02 seed handoff contract | feat/v3-con-v3-02-seed-handoff | wp-070.md |
+| WP-071 | OUT-V3-02 frames + views PPTX export | feat/v3-out-v3-02-pptx-export | wp-071.md |
+| WP-072 | OUT-V3-03 branded PDF/PPTX export | feat/v3-out-v3-03-branded-export | wp-072.md |
+| WP-073 | TST-V3-01 refinement-reliability CI | feat/v3-tst-v3-01-refinement-reliability | wp-073.md |
+
+## Wave-9B (dispatch after 9A merges)
+
+| WP-ID | WP | Branch | Prompt | Dep |
+| ----- | -- | ------ | ------ | --- |
+| WP-065 | TOP-V3-03 subdivide-with-paint UX | feat/v3-top-v3-03-subdivide-paint | wp-065.md | WP-064 |
+| WP-068 | OSM-V3-02 neighborhood render style | feat/v3-osm-v3-02-neighborhood-render | wp-068.md | WP-067 |
+| WP-074 | EXP-V3-01 render-pipeline export | feat/v3-exp-v3-01-render-export | wp-074.md | — |
+| WP-075 | CHR-V3-07 project browser refresh | feat/v3-chr-v3-07-project-browser | wp-075.md | — |
+| WP-076 | COL-V3-04 presence avatars | feat/v3-col-v3-04-presence-avatars | wp-076.md | — |
+| WP-077 | COL-V3-06 offline-tolerant authoring | feat/v3-col-v3-06-offline-authoring | wp-077.md | — |
+
+## Wave-9C (sequential, quiet window — after all WPs merged)
+
+- CQ-04 — Python god-file split (engine.py, constraints.py, export_ifc.py) — 3 sub-PRs
+- CQ-03 — workspace/ reorg (137-file junk drawer) — last, dedicated quiet week
 
 ## Notes
 
