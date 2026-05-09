@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "1922a200f0d2",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/plan/planElementMeshBuilders.ts",
+    "packages/web/src/viewport/materials.ts",
+    "packages/web/src/viewport/sceneHelpers.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/19/22a200f0d2/0/metadata.json",
+      "transcript": "/19/22a200f0d2/0/full.jsonl",
+      "content_hash": "/19/22a200f0d2/0/content_hash.txt",
+      "prompt": "/19/22a200f0d2/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 6160,
+    "cache_creation_tokens": 3251663,
+    "cache_read_tokens": 137784871,
+    "output_tokens": 916603,
+    "api_call_count": 1460
+  }
+}
