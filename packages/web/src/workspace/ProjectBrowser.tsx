@@ -910,7 +910,7 @@ export function ProjectBrowser(props: {
                           <li key={pv.id}>
                             <button
                               type="button"
-                              className="w-full px-3 py-1 text-left text-[10px] hover:bg-[var(--color-surface-2)]"
+                              className="w-full px-3 py-1 text-left text-[10px] hover:bg-surface-strong"
                               onClick={async () => {
                                 if (!modelId) return;
                                 await vtStore.applyTemplate(modelId, pv.id, vt.id);

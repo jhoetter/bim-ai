@@ -139,7 +139,7 @@ export function WorkspaceRightRail({
             padding: '8px 16px',
             borderRadius: '6px',
             fontSize: 'var(--text-sm)',
-            backgroundColor: 'var(--color-surface-2)',
+            backgroundColor: 'var(--color-surface-strong)',
             boxShadow: 'var(--shadow-modal)',
             animation: 'slide-up 200ms var(--ease-paper) both',
           }}

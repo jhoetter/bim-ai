@@ -89,7 +89,7 @@ export function ScheduleView({ modelId, scheduleId, onHighlightElement }: Schedu
           style={{
             width: '100%',
             padding: 'var(--space-1) var(--space-2)',
-            background: 'var(--color-surface-2)',
+            background: 'var(--color-surface-strong)',
             color: 'var(--color-foreground)',
             border: '1px solid var(--color-border)',
             borderRadius: 'var(--radius-sm)',
@@ -175,7 +175,7 @@ export function ScheduleView({ modelId, scheduleId, onHighlightElement }: Schedu
                         }}
                         style={{
                           width: '100%',
-                          background: 'var(--color-surface-2)',
+                          background: 'var(--color-surface-strong)',
                           color: 'var(--color-foreground)',
                           border: '1px solid var(--color-accent)',
                           padding: '2px var(--space-1)',

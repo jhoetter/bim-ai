@@ -397,7 +397,7 @@ function TopBarRight({
         disabled={!hasPages}
         aria-label="Share live presentation"
         title={hasPages ? 'Share live presentation' : 'Add a Page first'}
-        style={{ background: 'var(--color-surface-2)' }}
+        style={{ background: 'var(--color-surface-strong)' }}
         className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-muted shadow-sm hover:bg-surface-strong hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
       >
         <span style={{ fontSize: 'var(--text-sm)' }}>Share live presentation</span>
