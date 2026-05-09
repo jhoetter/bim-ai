@@ -86,7 +86,7 @@ For layered walls this distinction matters significantly — the core can sit 50
 **Screenshot:**
 ![Wall Join Status](file:///Users/jhoetter/Desktop/Revit%20Specs/0354_01-11-28.png)
 
-**bim-ai status:** 🟡 Partial — bim-ai has `wall_join_evidence.py` suggesting join logic exists in the engine, but there is no user-facing Allow/Disallow control.
+**bim-ai status:** 🟡 Partial — the `wall-join` plan tool in `PlanCanvas.tsx` allows clicking on a wall corner then pressing Enter to cycle through join variants (miter / butt / square) via `setWallJoinVariant { wallIds, variant }`. Missing: explicit per-endpoint Allow/Disallow toggle equivalent to Revit's right-click → "Allow Join" / "Disallow Join" on individual wall ends.
 
 ---
 

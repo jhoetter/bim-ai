@@ -22,7 +22,7 @@ Source segment: `05:30:00 – 05:39:46`
 **Screenshot:**
 ![Room Separation Lines](file:///Users/jhoetter/Desktop/Revit%20Specs/0761_05-30-22.png)
 
-**bim-ai status:** 🟡 Partial — `RoomSeparationAuthoringWorkbench.tsx` provides a form-based authoring UI for room separation lines (start/end coordinate inputs, level selector, name). Missing: interactive click-to-draw in the plan canvas equivalent to Revit's line-drawing tool; VG visibility toggle for the annotation category.
+**bim-ai status:** 🟡 Partial — `PlanCanvas.tsx` (line 3599) renders `<SketchCanvas elementKind="room_separation">` when `planTool === 'room-separation-sketch'`, providing the interactive sketch-mode draw equivalent. The backend sketch-session finish emitter handles `room_separation` kind. Missing: `room_separation` category in the VVDialog annotation tab (no per-view hide toggle yet).
 
 ---
 

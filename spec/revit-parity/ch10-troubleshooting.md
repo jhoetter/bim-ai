@@ -68,7 +68,7 @@ Source segment: `05:30:54 – 05:33:32`
 ![Split Element](file:///Users/jhoetter/Desktop/Revit%20Specs/0821_05-36-11.png)
 *(Line trimming in area boundary sketch — Split Element-specific frame starts beyond 0841)*
 
-**bim-ai status:** 🟡 Partial — the `split` tool is registered in `toolRegistry.ts` as a modify tool (`MODIFY_TOOL_IDS`). Missing: confirmed canvas interaction wiring and backend split command; end-to-end UX not verified beyond registration.
+**bim-ai status:** ✅ Available — `PlanCanvas.tsx` handles `planTool === 'split'`: on click, `reduceSplit` state machine fires `splitWallAt { wallId, alongT }` against the nearest wall within 900 mm (if `alongT` is between 0.001 and 0.999, ensuring a non-endpoint split). Backend `SplitWallAtCmd` (line 1596 of `commands.py`) persists the operation.
 
 ---
 
@@ -79,4 +79,4 @@ Source segment: `05:30:54 – 05:33:32`
 **Screenshot:**
 ![Dimension for verification](file:///Users/jhoetter/Desktop/Revit%20Specs/0782_05-32-05.png)
 
-**bim-ai status:** 🟡 Partial — the `dimension` tool is registered in `toolRegistry.ts` and used in the model for verification (annotation category visible in VVDialog). Missing: interactive click-to-place aligned dimension equivalent to Revit's DI shortcut with permanent placement.
+**bim-ai status:** ✅ Available — `PlanCanvas.tsx` handles `planTool === 'dimension'` with two-click placement: first click sets the start anchor, second click fires `createDimension { levelId, aMm, bMm, offsetMm }` which persists permanently. `planElementMeshBuilders.ts` renders stored dimensions as line-segment geometry; `symbology.ts` draws the text label and extension lines. Missing from Revit parity: picking dimension references from wall faces/edges (bim-ai uses raw world-point pairs).
