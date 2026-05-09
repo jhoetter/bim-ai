@@ -192,8 +192,8 @@ export function resolveLighting(): LightingSpec {
     },
     hemi: {
       intensity: 0.45,
-      skyColor: '#d3e2ff',
-      groundColor: '#d8d3c4',
+      skyColor: '#e0d8cc',
+      groundColor: '#c8c0b0',
     },
     ssao: {
       kernelRadius: 0.25,

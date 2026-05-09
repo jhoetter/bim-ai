@@ -57,13 +57,13 @@
   --draft-snap: #f59e0b;
 
   /* §9.3 Color — element categories (3D + plan fill), light */
-  --cat-wall: #969aa1;
+  --cat-wall: #b0aa9e;     /* warm plaster */
   --cat-floor: #c2b6a3;
-  --cat-roof: #7a4949;
+  --cat-roof: #6b4f3e;     /* dark clay */
   --cat-door: #957155;
   --cat-window: #9bbbe0;
   --cat-stair: #54585f;
-  --cat-railing: #43464d;
+  --cat-railing: #706b64;  /* warm grey */
   --cat-room: #c9dfd2;
   --cat-site: #cbd1bd;
   --cat-section: #d93d3d;
@@ -174,13 +174,13 @@
   --draft-snap: #f3b03d;
 
   /* §9.3 Color — element categories, dark */
-  --cat-wall: #7a7d83;
+  --cat-wall: #a09a92;     /* warm plaster grey */
   --cat-floor: #6b5f4f;
-  --cat-roof: #944f4f;
+  --cat-roof: #7a5c4a;     /* clay slate */
   --cat-door: #b48a64;
   --cat-window: #5482b3;
   --cat-stair: #adafb5;
-  --cat-railing: #b8babf;
+  --cat-railing: #5a5650;  /* warm dark grey */
   --cat-room: #2e4439;
   --cat-site: #353d2e;
   --cat-section: #f15252;
