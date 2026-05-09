@@ -62,8 +62,8 @@ From the videos:
 | Hatch density | Dense, visible at 1:100 | ✅ paperMmRepeat 8→5, strokeWidth 0.12→0.18 | DONE |
 | Floor hatch opacity | 50-70% | ✅ 42% (up from 16%) | DONE |
 | Wall hatch inside cut | Brick/concrete hatching inside wall body | ✅ 45° diagonal hatch, paper-color at 22% opacity, via buildWallCutHatch() in planElementMeshBuilders.ts | DONE |
-| North point | Standard block always shown | Not implemented | BACKLOG |
-| Scale bar | Standard block always shown | Not implemented | BACKLOG |
+| North point | Standard block always shown | ✅ Half-filled circle compass overlay, bottom-left of plan canvas | DONE |
+| Scale bar | Standard block always shown | ✅ Two-tone graphical scale bar in zoom control button (alternating segments + cm label) | DONE |
 | Zone area labels | Auto-calculated m² per room | ✅ Area appended to planTagLabel pill: "name · X.X m²" in symbology.ts | DONE |
 | Grid visibility | Near-invisible, just guides | ✅ #e4e6e8 / #f0f1f2 (near-invisible) | DONE |
 
