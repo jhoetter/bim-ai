@@ -77,7 +77,7 @@ Source segment: `00:55:00 – 01:02:00`
 **Screenshot:**
 ![Delete Views](file:///Users/jhoetter/Desktop/Revit%20Specs/0259_00-58-17.png)
 
-**bim-ai status:** ✅ Available — `ProjectBrowser.tsx` shows a "Delete…" button for each plan view that fires `deleteElement { elementId }` behind a `confirm()` guard.
+**bim-ai status:** ✅ Available — `ProjectBrowser.tsx` has "Delete…" buttons for plan views, section cuts (`data-testid="section-cut-delete-{id}"`), and elevation views (`data-testid="elevation-view-delete-{id}"`). All fire `deleteElement { elementId }` guarded by `confirm()` and use `e.stopPropagation()` to avoid accidental selection.
 
 ---
 

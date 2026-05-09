@@ -14,7 +14,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Project Browser](file:///Users/jhoetter/Desktop/Revit%20Specs/0124_00-12-38.png)
 
-**bim-ai status:** 🟡 Partial — `ProjectBrowser.tsx` lists plan views (grouped by view template / discipline), 3D orbit viewpoints, plan viewpoints, section cuts, elevation views, schedules, sheets, view templates, sites, and link_model rows. Per-view inline rename (double-click) and delete (confirm-guarded button) are now implemented for plan views. Missing: families subtree, groups, legends, sorting by subdiscipline/phase.
+**bim-ai status:** 🟡 Partial — `ProjectBrowser.tsx` lists plan views (grouped by view template / discipline), 3D orbit viewpoints, plan viewpoints, section cuts, elevation views, schedules, sheets, view templates, sites, and link_model rows. Per-view inline rename (double-click) and delete (confirm-guarded button) are now implemented for plan views, section cuts, and elevation views. Missing: families subtree, groups, legends, sorting by subdiscipline/phase.
 
 ---
 
@@ -91,7 +91,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![View Scale](file:///Users/jhoetter/Desktop/Revit%20Specs/0161_00-21-28.png)
 
-**bim-ai status:** ❌ Not available — bim-ai does not have annotation-driven view scales.
+**bim-ai status:** ✅ Available — `PlanCanvas.tsx` shows a live "1:N" indicator in the bottom-left scale bar button, computing `plotScaleN = Math.round(halfUi * 2)` from the camera half-width. Clicking the button opens a preset menu with architectural scales (1:25 detail → 1:1000 master plan), each snapping the camera to the correct half-width. Missing: annotation-driven plot scale locking that persists on the plan_view element itself.
 
 ---
 
