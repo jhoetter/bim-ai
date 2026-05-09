@@ -5,7 +5,8 @@
   "branch": "feat/parity-readme-sync",
   "checkpoints_count": 2,
   "files_touched": [
-    "packages/web/src/plan/PlanCanvas.tsx"
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "spec/revit-parity/ch10-troubleshooting.md"
   ],
   "sessions": [
     {
@@ -19,6 +20,12 @@
       "transcript": "/5a/42933e4df7/1/full.jsonl",
       "content_hash": "/5a/42933e4df7/1/content_hash.txt",
       "prompt": "/5a/42933e4df7/1/prompt.txt"
+    },
+    {
+      "metadata": "/5a/42933e4df7/2/metadata.json",
+      "transcript": "/5a/42933e4df7/2/full.jsonl",
+      "content_hash": "/5a/42933e4df7/2/content_hash.txt",
+      "prompt": "/5a/42933e4df7/2/prompt.txt"
     }
   ],
   "token_usage": {
