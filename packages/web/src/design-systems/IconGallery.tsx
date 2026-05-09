@@ -5,15 +5,221 @@ import {
   WallHifi,
   DoorHifi,
   WindowHifi,
+  FloorHifi,
+  RoofHifi,
   StairHifi,
+  RailingHifi,
+  RoomHifi,
+  DimensionHifi,
+  SectionHifi,
+  TagHifi,
+  CurtainWallHifi,
   ColumnHifi,
   BeamHifi,
-  RoofHifi,
-  RoomHifi,
-  SectionHifi,
-  FloorHifi,
-} from '@bim-ai/icons';
-import {
+  CeilingHifi,
+  OpeningHifi,
+  ShaftOpeningHifi,
+  RampHifi,
+  MassHifi,
+  CurtainPanelHifi,
+  MullionHifi,
+  SkyLightHifi,
+  PartitionHifi,
+  WallSweepHifi,
+  WallRevealHifi,
+  ComponentHifi,
+  RoofExtrusionHifi,
+  RoofSoffitHifi,
+  FasciaHifi,
+  GutterHifi,
+  CurtainSystemHifi,
+  CurtainGridHifi,
+  VerticalOpeningHifi,
+  DormerOpeningHifi,
+  FaceOpeningHifi,
+  RoomSeparatorHifi,
+  AreaBoundaryHifi,
+  ReferencePlaneHifi,
+  WorkPlaneHifi,
+  ModelLineHifi,
+  ModelTextHifi,
+  StairPathHifi,
+  FoundationHifi,
+  StripFootingHifi,
+  TrussHifi,
+  BraceHifi,
+  RebarHifi,
+  StructuralConnectionHifi,
+  BeamSystemHifi,
+  FoundationSlabHifi,
+  SlabEdgeHifi,
+  AreaReinforcementHifi,
+  PathReinforcementHifi,
+  FabricSheetHifi,
+  ShearStudHifi,
+  AnchorHifi,
+  BoltHifi,
+  WeldHifi,
+  AnalyticalNodeHifi,
+  StructuralLoadHifi,
+  BoundaryConditionHifi,
+  DuctRectHifi,
+  DuctRoundHifi,
+  PipeHifi,
+  CableTrayHifi,
+  ConduitHifi,
+  MechanicalEquipmentHifi,
+  PlumbingFixtureHifi,
+  LightingFixtureHifi,
+  ElectricalPanelHifi,
+  FireSprinklerHifi,
+  DiffuserHifi,
+  MepSpaceHifi,
+  FlexDuctHifi,
+  DuctFittingHifi,
+  DuctAccessoryHifi,
+  DuctInsulationHifi,
+  DuctLiningHifi,
+  FlexPipeHifi,
+  PipeFittingHifi,
+  PipeAccessoryHifi,
+  PipeInsulationHifi,
+  CableTrayFittingHifi,
+  ConduitFittingHifi,
+  ElectricalWireHifi,
+  SwitchSystemHifi,
+  LightingSwitchHifi,
+  CommunicationDeviceHifi,
+  FireAlarmDeviceHifi,
+  DataDeviceHifi,
+  NurseCallHifi,
+  SecurityDeviceHifi,
+  HVACZoneHifi,
+  PanelScheduleHifi,
+  DuctSystemHifi,
+  PipingSystemHifi,
+  ValveHifi,
+  PlanViewHifi,
+  SectionViewHifi,
+  ElevationViewHifi,
+  OrbitViewHifi,
+  SheetHifi,
+  ScheduleViewHifi,
+  CalloutHifi,
+  ViewpointHifi,
+  SectionBoxHifi,
+  GridLineHifi,
+  LevelHifi,
+  DetailLineHifi,
+  ReflectedCeilingPlanHifi,
+  StructuralPlanHifi,
+  AreaPlanHifi,
+  DetailViewHifi,
+  DraftingViewHifi,
+  WalkthroughHifi,
+  LegendHifi,
+  SheetListHifi,
+  NoteBlockHifi,
+  ViewListHifi,
+  PanelScheduleViewHifi,
+  GraphicalColumnScheduleHifi,
+  ViewReferenceHifi,
+  RevisionCloudHifi,
+  BreakLineHifi,
+  CentreLineHifi,
+  KeynoteHifi,
+  MatchLineHifi,
+  ScaleBarHifi,
+  AreaLabelHifi,
+  SpotElevationHifi,
+  SlopeArrowHifi,
+  AngularDimensionHifi,
+  RadialDimensionHifi,
+  ArcLengthDimensionHifi,
+  OrdinalDimensionHifi,
+  SpotCoordinateHifi,
+  ElevationTagHifi,
+  FilledRegionHifi,
+  MaskingRegionHifi,
+  DetailComponentHifi,
+  RepeatingDetailHifi,
+  InsulationAnnotationHifi,
+  TextAnnotationHifi,
+  MultiCategoryTagHifi,
+  MaterialTagHifi,
+  RoomTagHifi,
+  SpaceTagHifi,
+  AreaTagHifi,
+  StairTagHifi,
+  SymbolHifi,
+  StairPathAnnotationHifi,
+  ReferencePointHifi,
+  TopoHifi,
+  PropertyLineHifi,
+  ParkingSpaceHifi,
+  PlantingHifi,
+  RoadHifi,
+  RetainingWallHifi,
+  NorthArrowHifi,
+  FamilyHifi,
+  FamilyTypeHifi,
+  GroupHifi,
+  AssemblyHifi,
+  LinkedModelHifi,
+  MaterialHifi,
+  WallLayerHifi,
+  PhaseHifi,
+  IssueHifi,
+  ClashHifi,
+  ValidationRuleHifi,
+  DeviationHifi,
+  WorksetHifi,
+  DesignOptionHifi,
+  RevisionHifi,
+  RFIHifi,
+  SubmittalHifi,
+  PointCloudHifi,
+  DigitalTwinHifi,
+  SyncHifi,
+  TransmittalHifi,
+  IFCHifi,
+  LODHifi,
+  QuantityTakeoffHifi,
+  EnergyModelHifi,
+  ScopeBoxHifi,
+  MoveHifi,
+  CopyHifi,
+  RotateHifi,
+  ScaleHifi,
+  OffsetHifi,
+  DeleteHifi,
+  MirrorHifi,
+  ArrayLinearHifi,
+  ArrayRadialHifi,
+  AlignHifi,
+  SplitHifi,
+  TrimExtendHifi,
+  VoidHifi,
+  PinHifi,
+  UnpinHifi,
+  JoinGeometryHifi,
+  UnjoinGeometryHifi,
+  SwitchJoinOrderHifi,
+  WallJoinsHifi,
+  PaintMaterialHifi,
+  MeasureBetweenHifi,
+  MeasureAlongHifi,
+  UngroupHifi,
+  ReloadLatestHifi,
+  EditingRequestHifi,
+  CopyMonitorHifi,
+  CoordinationReviewHifi,
+  PurgeUnusedHifi,
+  TransferProjectStandardsHifi,
+  ProjectInfoHifi,
+  ProjectParametersHifi,
+  SharedParametersHifi,
+  ObjectStylesHifi,
   WallIcon,
   DoorIcon,
   WindowIcon,
@@ -28,48 +234,6 @@ import {
   CurtainWallIcon,
   ColumnIcon,
   BeamIcon,
-  PlanViewIcon,
-  SectionViewIcon,
-  ElevationViewIcon,
-  OrbitViewIcon,
-  SheetIcon,
-  ScheduleViewIcon,
-  CalloutIcon,
-  ViewpointIcon,
-  SectionBoxIcon,
-  GridLineIcon,
-  LevelIcon,
-  DetailLineIcon,
-  FamilyIcon,
-  FamilyTypeIcon,
-  GroupIcon,
-  AssemblyIcon,
-  LinkedModelIcon,
-  MaterialIcon,
-  WallLayerIcon,
-  PhaseIcon,
-  IssueIcon,
-  ClashIcon,
-  ValidationRuleIcon,
-  DeviationIcon,
-  DuctRectIcon,
-  DuctRoundIcon,
-  PipeIcon,
-  CableTrayIcon,
-  ConduitIcon,
-  MechanicalEquipmentIcon,
-  PlumbingFixtureIcon,
-  LightingFixtureIcon,
-  ElectricalPanelIcon,
-  FireSprinklerIcon,
-  DiffuserIcon,
-  MepSpaceIcon,
-  FoundationIcon,
-  StripFootingIcon,
-  TrussIcon,
-  BraceIcon,
-  RebarIcon,
-  StructuralConnectionIcon,
   CeilingIcon,
   OpeningIcon,
   ShaftOpeningIcon,
@@ -79,46 +243,6 @@ import {
   MullionIcon,
   SkyLightIcon,
   PartitionIcon,
-  TopoIcon,
-  PropertyLineIcon,
-  ParkingSpaceIcon,
-  PlantingIcon,
-  RoadIcon,
-  RetainingWallIcon,
-  NorthArrowIcon,
-  RevisionCloudIcon,
-  BreakLineIcon,
-  CentreLineIcon,
-  KeynoteIcon,
-  MatchLineIcon,
-  ScaleBarIcon,
-  AreaLabelIcon,
-  SpotElevationIcon,
-  SlopeArrowIcon,
-  WorksetIcon,
-  DesignOptionIcon,
-  RevisionIcon,
-  RFIIcon,
-  SubmittalIcon,
-  PointCloudIcon,
-  DigitalTwinIcon,
-  SyncIcon,
-  TransmittalIcon,
-  IFCIcon,
-  LODIcon,
-  QuantityTakeoffIcon,
-  EnergyModelIcon,
-  ScopeBoxIcon,
-  MirrorIcon,
-  ArrayLinearIcon,
-  ArrayRadialIcon,
-  AlignIcon,
-  SplitIcon,
-  TrimExtendIcon,
-  VoidIcon,
-  PinIcon,
-  UnpinIcon,
-  // Architectural extended
   WallSweepIcon,
   WallRevealIcon,
   ComponentIcon,
@@ -138,7 +262,12 @@ import {
   ModelLineIcon,
   ModelTextIcon,
   StairPathIcon,
-  // Structural extended
+  FoundationIcon,
+  StripFootingIcon,
+  TrussIcon,
+  BraceIcon,
+  RebarIcon,
+  StructuralConnectionIcon,
   BeamSystemIcon,
   FoundationSlabIcon,
   SlabEdgeIcon,
@@ -152,7 +281,18 @@ import {
   AnalyticalNodeIcon,
   StructuralLoadIcon,
   BoundaryConditionIcon,
-  // MEP extended
+  DuctRectIcon,
+  DuctRoundIcon,
+  PipeIcon,
+  CableTrayIcon,
+  ConduitIcon,
+  MechanicalEquipmentIcon,
+  PlumbingFixtureIcon,
+  LightingFixtureIcon,
+  ElectricalPanelIcon,
+  FireSprinklerIcon,
+  DiffuserIcon,
+  MepSpaceIcon,
   FlexDuctIcon,
   DuctFittingIcon,
   DuctAccessoryIcon,
@@ -177,7 +317,18 @@ import {
   DuctSystemIcon,
   PipingSystemIcon,
   ValveIcon,
-  // Views extended
+  PlanViewIcon,
+  SectionViewIcon,
+  ElevationViewIcon,
+  OrbitViewIcon,
+  SheetIcon,
+  ScheduleViewIcon,
+  CalloutIcon,
+  ViewpointIcon,
+  SectionBoxIcon,
+  GridLineIcon,
+  LevelIcon,
+  DetailLineIcon,
   ReflectedCeilingPlanIcon,
   StructuralPlanIcon,
   AreaPlanIcon,
@@ -191,7 +342,15 @@ import {
   PanelScheduleViewIcon,
   GraphicalColumnScheduleIcon,
   ViewReferenceIcon,
-  // Annotation extended
+  RevisionCloudIcon,
+  BreakLineIcon,
+  CentreLineIcon,
+  KeynoteIcon,
+  MatchLineIcon,
+  ScaleBarIcon,
+  AreaLabelIcon,
+  SpotElevationIcon,
+  SlopeArrowIcon,
   AngularDimensionIcon,
   RadialDimensionIcon,
   ArcLengthDimensionIcon,
@@ -213,7 +372,48 @@ import {
   SymbolIcon,
   StairPathAnnotationIcon,
   ReferencePointIcon,
-  // Edit basic
+  TopoIcon,
+  PropertyLineIcon,
+  ParkingSpaceIcon,
+  PlantingIcon,
+  RoadIcon,
+  RetainingWallIcon,
+  NorthArrowIcon,
+  FamilyIcon,
+  FamilyTypeIcon,
+  GroupIcon,
+  AssemblyIcon,
+  LinkedModelIcon,
+  MaterialIcon,
+  WallLayerIcon,
+  PhaseIcon,
+  IssueIcon,
+  ClashIcon,
+  ValidationRuleIcon,
+  DeviationIcon,
+  WorksetIcon,
+  DesignOptionIcon,
+  RevisionIcon,
+  RFIIcon,
+  SubmittalIcon,
+  PointCloudIcon,
+  DigitalTwinIcon,
+  SyncIcon,
+  TransmittalIcon,
+  IFCIcon,
+  LODIcon,
+  QuantityTakeoffIcon,
+  EnergyModelIcon,
+  ScopeBoxIcon,
+  MirrorIcon,
+  ArrayLinearIcon,
+  ArrayRadialIcon,
+  AlignIcon,
+  SplitIcon,
+  TrimExtendIcon,
+  VoidIcon,
+  PinIcon,
+  UnpinIcon,
   MoveIcon,
   CopyIcon,
   RotateIcon,
@@ -228,7 +428,6 @@ import {
   MeasureBetweenIcon,
   MeasureAlongIcon,
   UngroupIcon,
-  // Collaboration
   ReloadLatestIcon,
   EditingRequestIcon,
   CopyMonitorIcon,
@@ -241,354 +440,809 @@ import {
   ObjectStylesIcon,
 } from '@bim-ai/icons';
 
-type HiFiEntry = { name: string; export: string; Icon: ComponentType<BimIconHifiProps> };
+type ColorScheme = 'mono' | 'accent' | 'color';
 
-const HIFI_ICONS: HiFiEntry[] = [
-  { name: 'Wall', export: 'WallHifi', Icon: WallHifi },
-  { name: 'Door', export: 'DoorHifi', Icon: DoorHifi },
-  { name: 'Window', export: 'WindowHifi', Icon: WindowHifi },
-  { name: 'Stair', export: 'StairHifi', Icon: StairHifi },
-  { name: 'Column', export: 'ColumnHifi', Icon: ColumnHifi },
-  { name: 'Beam', export: 'BeamHifi', Icon: BeamHifi },
-  { name: 'Roof', export: 'RoofHifi', Icon: RoofHifi },
-  { name: 'Room', export: 'RoomHifi', Icon: RoomHifi },
-  { name: 'Section', export: 'SectionHifi', Icon: SectionHifi },
-  { name: 'Floor slab', export: 'FloorHifi', Icon: FloorHifi },
-];
+const COLOR_VARS: Record<ColorScheme, React.CSSProperties> = {
+  mono: {},
+  accent: {
+    '--hi-concrete': '#d97706',
+    '--hi-concrete-op': '0.14',
+    '--hi-glass': '#d97706',
+    '--hi-glass-op': '0.22',
+    '--hi-steel': '#d97706',
+    '--hi-steel-op': '0.18',
+    '--hi-finish': '#d97706',
+    '--hi-finish-op': '0.09',
+    '--hi-leaf': '#b45309',
+    '--hi-roof': '#d97706',
+    '--hi-roof-op': '0.13',
+    '--hi-room': '#d97706',
+    '--hi-room-op': '0.07',
+  } as React.CSSProperties,
+  color: {
+    '--hi-concrete': '#c8c4be',
+    '--hi-concrete-op': '0.45',
+    '--hi-glass': '#7dd3fc',
+    '--hi-glass-op': '0.5',
+    '--hi-steel': '#94a3b8',
+    '--hi-steel-op': '0.4',
+    '--hi-finish': '#f0ead8',
+    '--hi-finish-op': '0.85',
+    '--hi-leaf': '#a16207',
+    '--hi-roof': '#f87171',
+    '--hi-roof-op': '0.38',
+    '--hi-room': '#fef3c7',
+    '--hi-room-op': '0.5',
+  } as React.CSSProperties,
+};
 
-type IconEntry = { name: string; export: string; Icon: BimIcon };
-type Section = { label: string; icons: IconEntry[] };
+type PairedEntry = {
+  name: string;
+  regularExport: string;
+  Regular: BimIcon;
+  hifiExport: string;
+  Hifi: ComponentType<BimIconHifiProps>;
+};
+
+type Section = { label: string; icons: PairedEntry[] };
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function p(
+  name: string,
+  regularExport: string,
+  Regular: BimIcon,
+  hifiExport: string,
+  Hifi: ComponentType<BimIconHifiProps>,
+): PairedEntry {
+  return { name, regularExport, Regular, hifiExport, Hifi };
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 const SECTIONS: Section[] = [
   {
     label: 'Drawing tools',
     icons: [
-      { name: 'Wall', export: 'WallIcon', Icon: WallIcon },
-      { name: 'Door', export: 'DoorIcon', Icon: DoorIcon },
-      { name: 'Window', export: 'WindowIcon', Icon: WindowIcon },
-      { name: 'Floor', export: 'FloorIcon', Icon: FloorIcon },
-      { name: 'Roof', export: 'RoofIcon', Icon: RoofIcon },
-      { name: 'Stair', export: 'StairIcon', Icon: StairIcon },
-      { name: 'Railing', export: 'RailingIcon', Icon: RailingIcon },
-      { name: 'Room', export: 'RoomIcon', Icon: RoomIcon },
-      { name: 'Dimension', export: 'DimensionIcon', Icon: DimensionIcon },
-      { name: 'Section', export: 'SectionIcon', Icon: SectionIcon },
-      { name: 'Tag', export: 'TagIcon', Icon: TagIcon },
-      { name: 'Curtain wall', export: 'CurtainWallIcon', Icon: CurtainWallIcon },
-      { name: 'Column', export: 'ColumnIcon', Icon: ColumnIcon },
-      { name: 'Beam', export: 'BeamIcon', Icon: BeamIcon },
+      p('Wall', 'WallIcon', WallIcon, 'WallHifi', WallHifi),
+      p('Door', 'DoorIcon', DoorIcon, 'DoorHifi', DoorHifi),
+      p('Window', 'WindowIcon', WindowIcon, 'WindowHifi', WindowHifi),
+      p('Floor', 'FloorIcon', FloorIcon, 'FloorHifi', FloorHifi),
+      p('Roof', 'RoofIcon', RoofIcon, 'RoofHifi', RoofHifi),
+      p('Stair', 'StairIcon', StairIcon, 'StairHifi', StairHifi),
+      p('Railing', 'RailingIcon', RailingIcon, 'RailingHifi', RailingHifi),
+      p('Room', 'RoomIcon', RoomIcon, 'RoomHifi', RoomHifi),
+      p('Dimension', 'DimensionIcon', DimensionIcon, 'DimensionHifi', DimensionHifi),
+      p('Section', 'SectionIcon', SectionIcon, 'SectionHifi', SectionHifi),
+      p('Tag', 'TagIcon', TagIcon, 'TagHifi', TagHifi),
+      p('Curtain wall', 'CurtainWallIcon', CurtainWallIcon, 'CurtainWallHifi', CurtainWallHifi),
+      p('Column', 'ColumnIcon', ColumnIcon, 'ColumnHifi', ColumnHifi),
+      p('Beam', 'BeamIcon', BeamIcon, 'BeamHifi', BeamHifi),
     ],
   },
   {
     label: 'Architectural',
     icons: [
-      { name: 'Ceiling', export: 'CeilingIcon', Icon: CeilingIcon },
-      { name: 'Opening', export: 'OpeningIcon', Icon: OpeningIcon },
-      { name: 'Shaft opening', export: 'ShaftOpeningIcon', Icon: ShaftOpeningIcon },
-      { name: 'Ramp', export: 'RampIcon', Icon: RampIcon },
-      { name: 'Mass', export: 'MassIcon', Icon: MassIcon },
-      { name: 'Curtain panel', export: 'CurtainPanelIcon', Icon: CurtainPanelIcon },
-      { name: 'Mullion', export: 'MullionIcon', Icon: MullionIcon },
-      { name: 'Skylight', export: 'SkyLightIcon', Icon: SkyLightIcon },
-      { name: 'Partition', export: 'PartitionIcon', Icon: PartitionIcon },
-      { name: 'Wall sweep', export: 'WallSweepIcon', Icon: WallSweepIcon },
-      { name: 'Wall reveal', export: 'WallRevealIcon', Icon: WallRevealIcon },
-      { name: 'Component', export: 'ComponentIcon', Icon: ComponentIcon },
-      { name: 'Roof extrusion', export: 'RoofExtrusionIcon', Icon: RoofExtrusionIcon },
-      { name: 'Roof soffit', export: 'RoofSoffitIcon', Icon: RoofSoffitIcon },
-      { name: 'Fascia', export: 'FasciaIcon', Icon: FasciaIcon },
-      { name: 'Gutter', export: 'GutterIcon', Icon: GutterIcon },
-      { name: 'Curtain system', export: 'CurtainSystemIcon', Icon: CurtainSystemIcon },
-      { name: 'Curtain grid', export: 'CurtainGridIcon', Icon: CurtainGridIcon },
-      { name: 'Vertical opening', export: 'VerticalOpeningIcon', Icon: VerticalOpeningIcon },
-      { name: 'Dormer opening', export: 'DormerOpeningIcon', Icon: DormerOpeningIcon },
-      { name: 'Face opening', export: 'FaceOpeningIcon', Icon: FaceOpeningIcon },
-      { name: 'Room separator', export: 'RoomSeparatorIcon', Icon: RoomSeparatorIcon },
-      { name: 'Area boundary', export: 'AreaBoundaryIcon', Icon: AreaBoundaryIcon },
-      { name: 'Reference plane', export: 'ReferencePlaneIcon', Icon: ReferencePlaneIcon },
-      { name: 'Work plane', export: 'WorkPlaneIcon', Icon: WorkPlaneIcon },
-      { name: 'Model line', export: 'ModelLineIcon', Icon: ModelLineIcon },
-      { name: 'Model text', export: 'ModelTextIcon', Icon: ModelTextIcon },
-      { name: 'Stair path', export: 'StairPathIcon', Icon: StairPathIcon },
+      p('Ceiling', 'CeilingIcon', CeilingIcon, 'CeilingHifi', CeilingHifi),
+      p('Opening', 'OpeningIcon', OpeningIcon, 'OpeningHifi', OpeningHifi),
+      p(
+        'Shaft opening',
+        'ShaftOpeningIcon',
+        ShaftOpeningIcon,
+        'ShaftOpeningHifi',
+        ShaftOpeningHifi,
+      ),
+      p('Ramp', 'RampIcon', RampIcon, 'RampHifi', RampHifi),
+      p('Mass', 'MassIcon', MassIcon, 'MassHifi', MassHifi),
+      p(
+        'Curtain panel',
+        'CurtainPanelIcon',
+        CurtainPanelIcon,
+        'CurtainPanelHifi',
+        CurtainPanelHifi,
+      ),
+      p('Mullion', 'MullionIcon', MullionIcon, 'MullionHifi', MullionHifi),
+      p('Skylight', 'SkyLightIcon', SkyLightIcon, 'SkyLightHifi', SkyLightHifi),
+      p('Partition', 'PartitionIcon', PartitionIcon, 'PartitionHifi', PartitionHifi),
+      p('Wall sweep', 'WallSweepIcon', WallSweepIcon, 'WallSweepHifi', WallSweepHifi),
+      p('Wall reveal', 'WallRevealIcon', WallRevealIcon, 'WallRevealHifi', WallRevealHifi),
+      p('Component', 'ComponentIcon', ComponentIcon, 'ComponentHifi', ComponentHifi),
+      p(
+        'Roof extrusion',
+        'RoofExtrusionIcon',
+        RoofExtrusionIcon,
+        'RoofExtrusionHifi',
+        RoofExtrusionHifi,
+      ),
+      p('Roof soffit', 'RoofSoffitIcon', RoofSoffitIcon, 'RoofSoffitHifi', RoofSoffitHifi),
+      p('Fascia', 'FasciaIcon', FasciaIcon, 'FasciaHifi', FasciaHifi),
+      p('Gutter', 'GutterIcon', GutterIcon, 'GutterHifi', GutterHifi),
+      p(
+        'Curtain system',
+        'CurtainSystemIcon',
+        CurtainSystemIcon,
+        'CurtainSystemHifi',
+        CurtainSystemHifi,
+      ),
+      p('Curtain grid', 'CurtainGridIcon', CurtainGridIcon, 'CurtainGridHifi', CurtainGridHifi),
+      p(
+        'Vertical opening',
+        'VerticalOpeningIcon',
+        VerticalOpeningIcon,
+        'VerticalOpeningHifi',
+        VerticalOpeningHifi,
+      ),
+      p(
+        'Dormer opening',
+        'DormerOpeningIcon',
+        DormerOpeningIcon,
+        'DormerOpeningHifi',
+        DormerOpeningHifi,
+      ),
+      p('Face opening', 'FaceOpeningIcon', FaceOpeningIcon, 'FaceOpeningHifi', FaceOpeningHifi),
+      p(
+        'Room separator',
+        'RoomSeparatorIcon',
+        RoomSeparatorIcon,
+        'RoomSeparatorHifi',
+        RoomSeparatorHifi,
+      ),
+      p(
+        'Area boundary',
+        'AreaBoundaryIcon',
+        AreaBoundaryIcon,
+        'AreaBoundaryHifi',
+        AreaBoundaryHifi,
+      ),
+      p(
+        'Reference plane',
+        'ReferencePlaneIcon',
+        ReferencePlaneIcon,
+        'ReferencePlaneHifi',
+        ReferencePlaneHifi,
+      ),
+      p('Work plane', 'WorkPlaneIcon', WorkPlaneIcon, 'WorkPlaneHifi', WorkPlaneHifi),
+      p('Model line', 'ModelLineIcon', ModelLineIcon, 'ModelLineHifi', ModelLineHifi),
+      p('Model text', 'ModelTextIcon', ModelTextIcon, 'ModelTextHifi', ModelTextHifi),
+      p('Stair path', 'StairPathIcon', StairPathIcon, 'StairPathHifi', StairPathHifi),
     ],
   },
   {
     label: 'Structural',
     icons: [
-      { name: 'Foundation', export: 'FoundationIcon', Icon: FoundationIcon },
-      { name: 'Strip footing', export: 'StripFootingIcon', Icon: StripFootingIcon },
-      { name: 'Truss', export: 'TrussIcon', Icon: TrussIcon },
-      { name: 'Brace', export: 'BraceIcon', Icon: BraceIcon },
-      { name: 'Rebar', export: 'RebarIcon', Icon: RebarIcon },
-      {
-        name: 'Struct. connection',
-        export: 'StructuralConnectionIcon',
-        Icon: StructuralConnectionIcon,
-      },
-      { name: 'Beam system', export: 'BeamSystemIcon', Icon: BeamSystemIcon },
-      { name: 'Foundation slab', export: 'FoundationSlabIcon', Icon: FoundationSlabIcon },
-      { name: 'Slab edge', export: 'SlabEdgeIcon', Icon: SlabEdgeIcon },
-      { name: 'Area reinforcement', export: 'AreaReinforcementIcon', Icon: AreaReinforcementIcon },
-      { name: 'Path reinforcement', export: 'PathReinforcementIcon', Icon: PathReinforcementIcon },
-      { name: 'Fabric sheet', export: 'FabricSheetIcon', Icon: FabricSheetIcon },
-      { name: 'Shear stud', export: 'ShearStudIcon', Icon: ShearStudIcon },
-      { name: 'Anchor', export: 'AnchorIcon', Icon: AnchorIcon },
-      { name: 'Bolt', export: 'BoltIcon', Icon: BoltIcon },
-      { name: 'Weld', export: 'WeldIcon', Icon: WeldIcon },
-      { name: 'Analytical node', export: 'AnalyticalNodeIcon', Icon: AnalyticalNodeIcon },
-      { name: 'Structural load', export: 'StructuralLoadIcon', Icon: StructuralLoadIcon },
-      { name: 'Boundary condition', export: 'BoundaryConditionIcon', Icon: BoundaryConditionIcon },
+      p('Foundation', 'FoundationIcon', FoundationIcon, 'FoundationHifi', FoundationHifi),
+      p(
+        'Strip footing',
+        'StripFootingIcon',
+        StripFootingIcon,
+        'StripFootingHifi',
+        StripFootingHifi,
+      ),
+      p('Truss', 'TrussIcon', TrussIcon, 'TrussHifi', TrussHifi),
+      p('Brace', 'BraceIcon', BraceIcon, 'BraceHifi', BraceHifi),
+      p('Rebar', 'RebarIcon', RebarIcon, 'RebarHifi', RebarHifi),
+      p(
+        'Struct. connection',
+        'StructuralConnectionIcon',
+        StructuralConnectionIcon,
+        'StructuralConnectionHifi',
+        StructuralConnectionHifi,
+      ),
+      p('Beam system', 'BeamSystemIcon', BeamSystemIcon, 'BeamSystemHifi', BeamSystemHifi),
+      p(
+        'Foundation slab',
+        'FoundationSlabIcon',
+        FoundationSlabIcon,
+        'FoundationSlabHifi',
+        FoundationSlabHifi,
+      ),
+      p('Slab edge', 'SlabEdgeIcon', SlabEdgeIcon, 'SlabEdgeHifi', SlabEdgeHifi),
+      p(
+        'Area reinforcement',
+        'AreaReinforcementIcon',
+        AreaReinforcementIcon,
+        'AreaReinforcementHifi',
+        AreaReinforcementHifi,
+      ),
+      p(
+        'Path reinforcement',
+        'PathReinforcementIcon',
+        PathReinforcementIcon,
+        'PathReinforcementHifi',
+        PathReinforcementHifi,
+      ),
+      p('Fabric sheet', 'FabricSheetIcon', FabricSheetIcon, 'FabricSheetHifi', FabricSheetHifi),
+      p('Shear stud', 'ShearStudIcon', ShearStudIcon, 'ShearStudHifi', ShearStudHifi),
+      p('Anchor', 'AnchorIcon', AnchorIcon, 'AnchorHifi', AnchorHifi),
+      p('Bolt', 'BoltIcon', BoltIcon, 'BoltHifi', BoltHifi),
+      p('Weld', 'WeldIcon', WeldIcon, 'WeldHifi', WeldHifi),
+      p(
+        'Analytical node',
+        'AnalyticalNodeIcon',
+        AnalyticalNodeIcon,
+        'AnalyticalNodeHifi',
+        AnalyticalNodeHifi,
+      ),
+      p(
+        'Structural load',
+        'StructuralLoadIcon',
+        StructuralLoadIcon,
+        'StructuralLoadHifi',
+        StructuralLoadHifi,
+      ),
+      p(
+        'Boundary condition',
+        'BoundaryConditionIcon',
+        BoundaryConditionIcon,
+        'BoundaryConditionHifi',
+        BoundaryConditionHifi,
+      ),
     ],
   },
   {
     label: 'MEP',
     icons: [
-      { name: 'Duct (rect)', export: 'DuctRectIcon', Icon: DuctRectIcon },
-      { name: 'Duct (round)', export: 'DuctRoundIcon', Icon: DuctRoundIcon },
-      { name: 'Pipe', export: 'PipeIcon', Icon: PipeIcon },
-      { name: 'Cable tray', export: 'CableTrayIcon', Icon: CableTrayIcon },
-      { name: 'Conduit', export: 'ConduitIcon', Icon: ConduitIcon },
-      { name: 'Mech. equipment', export: 'MechanicalEquipmentIcon', Icon: MechanicalEquipmentIcon },
-      { name: 'Plumbing fixture', export: 'PlumbingFixtureIcon', Icon: PlumbingFixtureIcon },
-      { name: 'Lighting fixture', export: 'LightingFixtureIcon', Icon: LightingFixtureIcon },
-      { name: 'Electrical panel', export: 'ElectricalPanelIcon', Icon: ElectricalPanelIcon },
-      { name: 'Fire sprinkler', export: 'FireSprinklerIcon', Icon: FireSprinklerIcon },
-      { name: 'Diffuser', export: 'DiffuserIcon', Icon: DiffuserIcon },
-      { name: 'MEP space', export: 'MepSpaceIcon', Icon: MepSpaceIcon },
-      { name: 'Flex duct', export: 'FlexDuctIcon', Icon: FlexDuctIcon },
-      { name: 'Duct fitting', export: 'DuctFittingIcon', Icon: DuctFittingIcon },
-      { name: 'Duct accessory', export: 'DuctAccessoryIcon', Icon: DuctAccessoryIcon },
-      { name: 'Duct insulation', export: 'DuctInsulationIcon', Icon: DuctInsulationIcon },
-      { name: 'Duct lining', export: 'DuctLiningIcon', Icon: DuctLiningIcon },
-      { name: 'Flex pipe', export: 'FlexPipeIcon', Icon: FlexPipeIcon },
-      { name: 'Pipe fitting', export: 'PipeFittingIcon', Icon: PipeFittingIcon },
-      { name: 'Pipe accessory', export: 'PipeAccessoryIcon', Icon: PipeAccessoryIcon },
-      { name: 'Pipe insulation', export: 'PipeInsulationIcon', Icon: PipeInsulationIcon },
-      { name: 'Cable tray fitting', export: 'CableTrayFittingIcon', Icon: CableTrayFittingIcon },
-      { name: 'Conduit fitting', export: 'ConduitFittingIcon', Icon: ConduitFittingIcon },
-      { name: 'Electrical wire', export: 'ElectricalWireIcon', Icon: ElectricalWireIcon },
-      { name: 'Switch system', export: 'SwitchSystemIcon', Icon: SwitchSystemIcon },
-      { name: 'Lighting switch', export: 'LightingSwitchIcon', Icon: LightingSwitchIcon },
-      { name: 'Comms device', export: 'CommunicationDeviceIcon', Icon: CommunicationDeviceIcon },
-      { name: 'Fire alarm', export: 'FireAlarmDeviceIcon', Icon: FireAlarmDeviceIcon },
-      { name: 'Data device', export: 'DataDeviceIcon', Icon: DataDeviceIcon },
-      { name: 'Nurse call', export: 'NurseCallIcon', Icon: NurseCallIcon },
-      { name: 'Security device', export: 'SecurityDeviceIcon', Icon: SecurityDeviceIcon },
-      { name: 'HVAC zone', export: 'HVACZoneIcon', Icon: HVACZoneIcon },
-      { name: 'Panel schedule', export: 'PanelScheduleIcon', Icon: PanelScheduleIcon },
-      { name: 'Duct system', export: 'DuctSystemIcon', Icon: DuctSystemIcon },
-      { name: 'Piping system', export: 'PipingSystemIcon', Icon: PipingSystemIcon },
-      { name: 'Valve', export: 'ValveIcon', Icon: ValveIcon },
+      p('Duct (rect)', 'DuctRectIcon', DuctRectIcon, 'DuctRectHifi', DuctRectHifi),
+      p('Duct (round)', 'DuctRoundIcon', DuctRoundIcon, 'DuctRoundHifi', DuctRoundHifi),
+      p('Pipe', 'PipeIcon', PipeIcon, 'PipeHifi', PipeHifi),
+      p('Cable tray', 'CableTrayIcon', CableTrayIcon, 'CableTrayHifi', CableTrayHifi),
+      p('Conduit', 'ConduitIcon', ConduitIcon, 'ConduitHifi', ConduitHifi),
+      p(
+        'Mech. equipment',
+        'MechanicalEquipmentIcon',
+        MechanicalEquipmentIcon,
+        'MechanicalEquipmentHifi',
+        MechanicalEquipmentHifi,
+      ),
+      p(
+        'Plumbing fixture',
+        'PlumbingFixtureIcon',
+        PlumbingFixtureIcon,
+        'PlumbingFixtureHifi',
+        PlumbingFixtureHifi,
+      ),
+      p(
+        'Lighting fixture',
+        'LightingFixtureIcon',
+        LightingFixtureIcon,
+        'LightingFixtureHifi',
+        LightingFixtureHifi,
+      ),
+      p(
+        'Electrical panel',
+        'ElectricalPanelIcon',
+        ElectricalPanelIcon,
+        'ElectricalPanelHifi',
+        ElectricalPanelHifi,
+      ),
+      p(
+        'Fire sprinkler',
+        'FireSprinklerIcon',
+        FireSprinklerIcon,
+        'FireSprinklerHifi',
+        FireSprinklerHifi,
+      ),
+      p('Diffuser', 'DiffuserIcon', DiffuserIcon, 'DiffuserHifi', DiffuserHifi),
+      p('MEP space', 'MepSpaceIcon', MepSpaceIcon, 'MepSpaceHifi', MepSpaceHifi),
+      p('Flex duct', 'FlexDuctIcon', FlexDuctIcon, 'FlexDuctHifi', FlexDuctHifi),
+      p('Duct fitting', 'DuctFittingIcon', DuctFittingIcon, 'DuctFittingHifi', DuctFittingHifi),
+      p(
+        'Duct accessory',
+        'DuctAccessoryIcon',
+        DuctAccessoryIcon,
+        'DuctAccessoryHifi',
+        DuctAccessoryHifi,
+      ),
+      p(
+        'Duct insulation',
+        'DuctInsulationIcon',
+        DuctInsulationIcon,
+        'DuctInsulationHifi',
+        DuctInsulationHifi,
+      ),
+      p('Duct lining', 'DuctLiningIcon', DuctLiningIcon, 'DuctLiningHifi', DuctLiningHifi),
+      p('Flex pipe', 'FlexPipeIcon', FlexPipeIcon, 'FlexPipeHifi', FlexPipeHifi),
+      p('Pipe fitting', 'PipeFittingIcon', PipeFittingIcon, 'PipeFittingHifi', PipeFittingHifi),
+      p(
+        'Pipe accessory',
+        'PipeAccessoryIcon',
+        PipeAccessoryIcon,
+        'PipeAccessoryHifi',
+        PipeAccessoryHifi,
+      ),
+      p(
+        'Pipe insulation',
+        'PipeInsulationIcon',
+        PipeInsulationIcon,
+        'PipeInsulationHifi',
+        PipeInsulationHifi,
+      ),
+      p(
+        'Cable tray fitting',
+        'CableTrayFittingIcon',
+        CableTrayFittingIcon,
+        'CableTrayFittingHifi',
+        CableTrayFittingHifi,
+      ),
+      p(
+        'Conduit fitting',
+        'ConduitFittingIcon',
+        ConduitFittingIcon,
+        'ConduitFittingHifi',
+        ConduitFittingHifi,
+      ),
+      p(
+        'Electrical wire',
+        'ElectricalWireIcon',
+        ElectricalWireIcon,
+        'ElectricalWireHifi',
+        ElectricalWireHifi,
+      ),
+      p(
+        'Switch system',
+        'SwitchSystemIcon',
+        SwitchSystemIcon,
+        'SwitchSystemHifi',
+        SwitchSystemHifi,
+      ),
+      p(
+        'Lighting switch',
+        'LightingSwitchIcon',
+        LightingSwitchIcon,
+        'LightingSwitchHifi',
+        LightingSwitchHifi,
+      ),
+      p(
+        'Comms device',
+        'CommunicationDeviceIcon',
+        CommunicationDeviceIcon,
+        'CommunicationDeviceHifi',
+        CommunicationDeviceHifi,
+      ),
+      p(
+        'Fire alarm',
+        'FireAlarmDeviceIcon',
+        FireAlarmDeviceIcon,
+        'FireAlarmDeviceHifi',
+        FireAlarmDeviceHifi,
+      ),
+      p('Data device', 'DataDeviceIcon', DataDeviceIcon, 'DataDeviceHifi', DataDeviceHifi),
+      p('Nurse call', 'NurseCallIcon', NurseCallIcon, 'NurseCallHifi', NurseCallHifi),
+      p(
+        'Security device',
+        'SecurityDeviceIcon',
+        SecurityDeviceIcon,
+        'SecurityDeviceHifi',
+        SecurityDeviceHifi,
+      ),
+      p('HVAC zone', 'HVACZoneIcon', HVACZoneIcon, 'HVACZoneHifi', HVACZoneHifi),
+      p(
+        'Panel schedule',
+        'PanelScheduleIcon',
+        PanelScheduleIcon,
+        'PanelScheduleHifi',
+        PanelScheduleHifi,
+      ),
+      p('Duct system', 'DuctSystemIcon', DuctSystemIcon, 'DuctSystemHifi', DuctSystemHifi),
+      p(
+        'Piping system',
+        'PipingSystemIcon',
+        PipingSystemIcon,
+        'PipingSystemHifi',
+        PipingSystemHifi,
+      ),
+      p('Valve', 'ValveIcon', ValveIcon, 'ValveHifi', ValveHifi),
     ],
   },
   {
     label: 'Views',
     icons: [
-      { name: 'Plan view', export: 'PlanViewIcon', Icon: PlanViewIcon },
-      { name: 'Section view', export: 'SectionViewIcon', Icon: SectionViewIcon },
-      { name: 'Elevation view', export: 'ElevationViewIcon', Icon: ElevationViewIcon },
-      { name: '3D / orbit', export: 'OrbitViewIcon', Icon: OrbitViewIcon },
-      { name: 'Sheet', export: 'SheetIcon', Icon: SheetIcon },
-      { name: 'Schedule', export: 'ScheduleViewIcon', Icon: ScheduleViewIcon },
-      { name: 'Callout', export: 'CalloutIcon', Icon: CalloutIcon },
-      { name: 'Viewpoint', export: 'ViewpointIcon', Icon: ViewpointIcon },
-      { name: 'Section box', export: 'SectionBoxIcon', Icon: SectionBoxIcon },
-      { name: 'Grid line', export: 'GridLineIcon', Icon: GridLineIcon },
-      { name: 'Level', export: 'LevelIcon', Icon: LevelIcon },
-      { name: 'Detail line', export: 'DetailLineIcon', Icon: DetailLineIcon },
-      { name: 'RCP', export: 'ReflectedCeilingPlanIcon', Icon: ReflectedCeilingPlanIcon },
-      { name: 'Structural plan', export: 'StructuralPlanIcon', Icon: StructuralPlanIcon },
-      { name: 'Area plan', export: 'AreaPlanIcon', Icon: AreaPlanIcon },
-      { name: 'Detail view', export: 'DetailViewIcon', Icon: DetailViewIcon },
-      { name: 'Drafting view', export: 'DraftingViewIcon', Icon: DraftingViewIcon },
-      { name: 'Walkthrough', export: 'WalkthroughIcon', Icon: WalkthroughIcon },
-      { name: 'Legend', export: 'LegendIcon', Icon: LegendIcon },
-      { name: 'Sheet list', export: 'SheetListIcon', Icon: SheetListIcon },
-      { name: 'Note block', export: 'NoteBlockIcon', Icon: NoteBlockIcon },
-      { name: 'View list', export: 'ViewListIcon', Icon: ViewListIcon },
-      { name: 'Panel schedule view', export: 'PanelScheduleViewIcon', Icon: PanelScheduleViewIcon },
-      {
-        name: 'Col. schedule',
-        export: 'GraphicalColumnScheduleIcon',
-        Icon: GraphicalColumnScheduleIcon,
-      },
-      { name: 'View reference', export: 'ViewReferenceIcon', Icon: ViewReferenceIcon },
+      p('Plan view', 'PlanViewIcon', PlanViewIcon, 'PlanViewHifi', PlanViewHifi),
+      p('Section view', 'SectionViewIcon', SectionViewIcon, 'SectionViewHifi', SectionViewHifi),
+      p(
+        'Elevation view',
+        'ElevationViewIcon',
+        ElevationViewIcon,
+        'ElevationViewHifi',
+        ElevationViewHifi,
+      ),
+      p('3D / orbit', 'OrbitViewIcon', OrbitViewIcon, 'OrbitViewHifi', OrbitViewHifi),
+      p('Sheet', 'SheetIcon', SheetIcon, 'SheetHifi', SheetHifi),
+      p('Schedule', 'ScheduleViewIcon', ScheduleViewIcon, 'ScheduleViewHifi', ScheduleViewHifi),
+      p('Callout', 'CalloutIcon', CalloutIcon, 'CalloutHifi', CalloutHifi),
+      p('Viewpoint', 'ViewpointIcon', ViewpointIcon, 'ViewpointHifi', ViewpointHifi),
+      p('Section box', 'SectionBoxIcon', SectionBoxIcon, 'SectionBoxHifi', SectionBoxHifi),
+      p('Grid line', 'GridLineIcon', GridLineIcon, 'GridLineHifi', GridLineHifi),
+      p('Level', 'LevelIcon', LevelIcon, 'LevelHifi', LevelHifi),
+      p('Detail line', 'DetailLineIcon', DetailLineIcon, 'DetailLineHifi', DetailLineHifi),
+      p(
+        'RCP',
+        'ReflectedCeilingPlanIcon',
+        ReflectedCeilingPlanIcon,
+        'ReflectedCeilingPlanHifi',
+        ReflectedCeilingPlanHifi,
+      ),
+      p(
+        'Structural plan',
+        'StructuralPlanIcon',
+        StructuralPlanIcon,
+        'StructuralPlanHifi',
+        StructuralPlanHifi,
+      ),
+      p('Area plan', 'AreaPlanIcon', AreaPlanIcon, 'AreaPlanHifi', AreaPlanHifi),
+      p('Detail view', 'DetailViewIcon', DetailViewIcon, 'DetailViewHifi', DetailViewHifi),
+      p(
+        'Drafting view',
+        'DraftingViewIcon',
+        DraftingViewIcon,
+        'DraftingViewHifi',
+        DraftingViewHifi,
+      ),
+      p('Walkthrough', 'WalkthroughIcon', WalkthroughIcon, 'WalkthroughHifi', WalkthroughHifi),
+      p('Legend', 'LegendIcon', LegendIcon, 'LegendHifi', LegendHifi),
+      p('Sheet list', 'SheetListIcon', SheetListIcon, 'SheetListHifi', SheetListHifi),
+      p('Note block', 'NoteBlockIcon', NoteBlockIcon, 'NoteBlockHifi', NoteBlockHifi),
+      p('View list', 'ViewListIcon', ViewListIcon, 'ViewListHifi', ViewListHifi),
+      p(
+        'Panel sch. view',
+        'PanelScheduleViewIcon',
+        PanelScheduleViewIcon,
+        'PanelScheduleViewHifi',
+        PanelScheduleViewHifi,
+      ),
+      p(
+        'Col. schedule',
+        'GraphicalColumnScheduleIcon',
+        GraphicalColumnScheduleIcon,
+        'GraphicalColumnScheduleHifi',
+        GraphicalColumnScheduleHifi,
+      ),
+      p(
+        'View reference',
+        'ViewReferenceIcon',
+        ViewReferenceIcon,
+        'ViewReferenceHifi',
+        ViewReferenceHifi,
+      ),
     ],
   },
   {
     label: 'Annotation & documentation',
     icons: [
-      { name: 'Revision cloud', export: 'RevisionCloudIcon', Icon: RevisionCloudIcon },
-      { name: 'Break line', export: 'BreakLineIcon', Icon: BreakLineIcon },
-      { name: 'Centre line', export: 'CentreLineIcon', Icon: CentreLineIcon },
-      { name: 'Keynote', export: 'KeynoteIcon', Icon: KeynoteIcon },
-      { name: 'Match line', export: 'MatchLineIcon', Icon: MatchLineIcon },
-      { name: 'Scale bar', export: 'ScaleBarIcon', Icon: ScaleBarIcon },
-      { name: 'Area label', export: 'AreaLabelIcon', Icon: AreaLabelIcon },
-      { name: 'Spot elevation', export: 'SpotElevationIcon', Icon: SpotElevationIcon },
-      { name: 'Slope arrow', export: 'SlopeArrowIcon', Icon: SlopeArrowIcon },
-      { name: 'Angular dim.', export: 'AngularDimensionIcon', Icon: AngularDimensionIcon },
-      { name: 'Radial dim.', export: 'RadialDimensionIcon', Icon: RadialDimensionIcon },
-      { name: 'Arc length dim.', export: 'ArcLengthDimensionIcon', Icon: ArcLengthDimensionIcon },
-      { name: 'Ordinal dim.', export: 'OrdinalDimensionIcon', Icon: OrdinalDimensionIcon },
-      { name: 'Spot coordinate', export: 'SpotCoordinateIcon', Icon: SpotCoordinateIcon },
-      { name: 'Elevation tag', export: 'ElevationTagIcon', Icon: ElevationTagIcon },
-      { name: 'Filled region', export: 'FilledRegionIcon', Icon: FilledRegionIcon },
-      { name: 'Masking region', export: 'MaskingRegionIcon', Icon: MaskingRegionIcon },
-      { name: 'Detail component', export: 'DetailComponentIcon', Icon: DetailComponentIcon },
-      { name: 'Repeating detail', export: 'RepeatingDetailIcon', Icon: RepeatingDetailIcon },
-      { name: 'Insulation', export: 'InsulationAnnotationIcon', Icon: InsulationAnnotationIcon },
-      { name: 'Text', export: 'TextAnnotationIcon', Icon: TextAnnotationIcon },
-      { name: 'Multi-cat. tag', export: 'MultiCategoryTagIcon', Icon: MultiCategoryTagIcon },
-      { name: 'Material tag', export: 'MaterialTagIcon', Icon: MaterialTagIcon },
-      { name: 'Room tag', export: 'RoomTagIcon', Icon: RoomTagIcon },
-      { name: 'Space tag', export: 'SpaceTagIcon', Icon: SpaceTagIcon },
-      { name: 'Area tag', export: 'AreaTagIcon', Icon: AreaTagIcon },
-      { name: 'Stair tag', export: 'StairTagIcon', Icon: StairTagIcon },
-      { name: 'Symbol', export: 'SymbolIcon', Icon: SymbolIcon },
-      {
-        name: 'Stair path annot.',
-        export: 'StairPathAnnotationIcon',
-        Icon: StairPathAnnotationIcon,
-      },
-      { name: 'Reference point', export: 'ReferencePointIcon', Icon: ReferencePointIcon },
+      p(
+        'Revision cloud',
+        'RevisionCloudIcon',
+        RevisionCloudIcon,
+        'RevisionCloudHifi',
+        RevisionCloudHifi,
+      ),
+      p('Break line', 'BreakLineIcon', BreakLineIcon, 'BreakLineHifi', BreakLineHifi),
+      p('Centre line', 'CentreLineIcon', CentreLineIcon, 'CentreLineHifi', CentreLineHifi),
+      p('Keynote', 'KeynoteIcon', KeynoteIcon, 'KeynoteHifi', KeynoteHifi),
+      p('Match line', 'MatchLineIcon', MatchLineIcon, 'MatchLineHifi', MatchLineHifi),
+      p('Scale bar', 'ScaleBarIcon', ScaleBarIcon, 'ScaleBarHifi', ScaleBarHifi),
+      p('Area label', 'AreaLabelIcon', AreaLabelIcon, 'AreaLabelHifi', AreaLabelHifi),
+      p(
+        'Spot elevation',
+        'SpotElevationIcon',
+        SpotElevationIcon,
+        'SpotElevationHifi',
+        SpotElevationHifi,
+      ),
+      p('Slope arrow', 'SlopeArrowIcon', SlopeArrowIcon, 'SlopeArrowHifi', SlopeArrowHifi),
+      p(
+        'Angular dim.',
+        'AngularDimensionIcon',
+        AngularDimensionIcon,
+        'AngularDimensionHifi',
+        AngularDimensionHifi,
+      ),
+      p(
+        'Radial dim.',
+        'RadialDimensionIcon',
+        RadialDimensionIcon,
+        'RadialDimensionHifi',
+        RadialDimensionHifi,
+      ),
+      p(
+        'Arc length dim.',
+        'ArcLengthDimensionIcon',
+        ArcLengthDimensionIcon,
+        'ArcLengthDimensionHifi',
+        ArcLengthDimensionHifi,
+      ),
+      p(
+        'Ordinal dim.',
+        'OrdinalDimensionIcon',
+        OrdinalDimensionIcon,
+        'OrdinalDimensionHifi',
+        OrdinalDimensionHifi,
+      ),
+      p(
+        'Spot coordinate',
+        'SpotCoordinateIcon',
+        SpotCoordinateIcon,
+        'SpotCoordinateHifi',
+        SpotCoordinateHifi,
+      ),
+      p(
+        'Elevation tag',
+        'ElevationTagIcon',
+        ElevationTagIcon,
+        'ElevationTagHifi',
+        ElevationTagHifi,
+      ),
+      p(
+        'Filled region',
+        'FilledRegionIcon',
+        FilledRegionIcon,
+        'FilledRegionHifi',
+        FilledRegionHifi,
+      ),
+      p(
+        'Masking region',
+        'MaskingRegionIcon',
+        MaskingRegionIcon,
+        'MaskingRegionHifi',
+        MaskingRegionHifi,
+      ),
+      p(
+        'Detail component',
+        'DetailComponentIcon',
+        DetailComponentIcon,
+        'DetailComponentHifi',
+        DetailComponentHifi,
+      ),
+      p(
+        'Repeating detail',
+        'RepeatingDetailIcon',
+        RepeatingDetailIcon,
+        'RepeatingDetailHifi',
+        RepeatingDetailHifi,
+      ),
+      p(
+        'Insulation',
+        'InsulationAnnotationIcon',
+        InsulationAnnotationIcon,
+        'InsulationAnnotationHifi',
+        InsulationAnnotationHifi,
+      ),
+      p('Text', 'TextAnnotationIcon', TextAnnotationIcon, 'TextAnnotationHifi', TextAnnotationHifi),
+      p(
+        'Multi-cat. tag',
+        'MultiCategoryTagIcon',
+        MultiCategoryTagIcon,
+        'MultiCategoryTagHifi',
+        MultiCategoryTagHifi,
+      ),
+      p('Material tag', 'MaterialTagIcon', MaterialTagIcon, 'MaterialTagHifi', MaterialTagHifi),
+      p('Room tag', 'RoomTagIcon', RoomTagIcon, 'RoomTagHifi', RoomTagHifi),
+      p('Space tag', 'SpaceTagIcon', SpaceTagIcon, 'SpaceTagHifi', SpaceTagHifi),
+      p('Area tag', 'AreaTagIcon', AreaTagIcon, 'AreaTagHifi', AreaTagHifi),
+      p('Stair tag', 'StairTagIcon', StairTagIcon, 'StairTagHifi', StairTagHifi),
+      p('Symbol', 'SymbolIcon', SymbolIcon, 'SymbolHifi', SymbolHifi),
+      p(
+        'Stair path annot.',
+        'StairPathAnnotationIcon',
+        StairPathAnnotationIcon,
+        'StairPathAnnotationHifi',
+        StairPathAnnotationHifi,
+      ),
+      p(
+        'Reference point',
+        'ReferencePointIcon',
+        ReferencePointIcon,
+        'ReferencePointHifi',
+        ReferencePointHifi,
+      ),
     ],
   },
   {
     label: 'Site & civil',
     icons: [
-      { name: 'Topography', export: 'TopoIcon', Icon: TopoIcon },
-      { name: 'Property line', export: 'PropertyLineIcon', Icon: PropertyLineIcon },
-      { name: 'Parking space', export: 'ParkingSpaceIcon', Icon: ParkingSpaceIcon },
-      { name: 'Planting / tree', export: 'PlantingIcon', Icon: PlantingIcon },
-      { name: 'Road', export: 'RoadIcon', Icon: RoadIcon },
-      { name: 'Retaining wall', export: 'RetainingWallIcon', Icon: RetainingWallIcon },
-      { name: 'North arrow', export: 'NorthArrowIcon', Icon: NorthArrowIcon },
+      p('Topography', 'TopoIcon', TopoIcon, 'TopoHifi', TopoHifi),
+      p(
+        'Property line',
+        'PropertyLineIcon',
+        PropertyLineIcon,
+        'PropertyLineHifi',
+        PropertyLineHifi,
+      ),
+      p(
+        'Parking space',
+        'ParkingSpaceIcon',
+        ParkingSpaceIcon,
+        'ParkingSpaceHifi',
+        ParkingSpaceHifi,
+      ),
+      p('Planting / tree', 'PlantingIcon', PlantingIcon, 'PlantingHifi', PlantingHifi),
+      p('Road', 'RoadIcon', RoadIcon, 'RoadHifi', RoadHifi),
+      p(
+        'Retaining wall',
+        'RetainingWallIcon',
+        RetainingWallIcon,
+        'RetainingWallHifi',
+        RetainingWallHifi,
+      ),
+      p('North arrow', 'NorthArrowIcon', NorthArrowIcon, 'NorthArrowHifi', NorthArrowHifi),
     ],
   },
   {
     label: 'Organization & coordination',
     icons: [
-      { name: 'Family', export: 'FamilyIcon', Icon: FamilyIcon },
-      { name: 'Family type', export: 'FamilyTypeIcon', Icon: FamilyTypeIcon },
-      { name: 'Group', export: 'GroupIcon', Icon: GroupIcon },
-      { name: 'Assembly', export: 'AssemblyIcon', Icon: AssemblyIcon },
-      { name: 'Linked model', export: 'LinkedModelIcon', Icon: LinkedModelIcon },
-      { name: 'Material', export: 'MaterialIcon', Icon: MaterialIcon },
-      { name: 'Wall layer', export: 'WallLayerIcon', Icon: WallLayerIcon },
-      { name: 'Phase', export: 'PhaseIcon', Icon: PhaseIcon },
-      { name: 'Issue', export: 'IssueIcon', Icon: IssueIcon },
-      { name: 'Clash', export: 'ClashIcon', Icon: ClashIcon },
-      { name: 'Validation rule', export: 'ValidationRuleIcon', Icon: ValidationRuleIcon },
-      { name: 'Deviation', export: 'DeviationIcon', Icon: DeviationIcon },
+      p('Family', 'FamilyIcon', FamilyIcon, 'FamilyHifi', FamilyHifi),
+      p('Family type', 'FamilyTypeIcon', FamilyTypeIcon, 'FamilyTypeHifi', FamilyTypeHifi),
+      p('Group', 'GroupIcon', GroupIcon, 'GroupHifi', GroupHifi),
+      p('Assembly', 'AssemblyIcon', AssemblyIcon, 'AssemblyHifi', AssemblyHifi),
+      p('Linked model', 'LinkedModelIcon', LinkedModelIcon, 'LinkedModelHifi', LinkedModelHifi),
+      p('Material', 'MaterialIcon', MaterialIcon, 'MaterialHifi', MaterialHifi),
+      p('Wall layer', 'WallLayerIcon', WallLayerIcon, 'WallLayerHifi', WallLayerHifi),
+      p('Phase', 'PhaseIcon', PhaseIcon, 'PhaseHifi', PhaseHifi),
+      p('Issue', 'IssueIcon', IssueIcon, 'IssueHifi', IssueHifi),
+      p('Clash', 'ClashIcon', ClashIcon, 'ClashHifi', ClashHifi),
+      p(
+        'Validation rule',
+        'ValidationRuleIcon',
+        ValidationRuleIcon,
+        'ValidationRuleHifi',
+        ValidationRuleHifi,
+      ),
+      p('Deviation', 'DeviationIcon', DeviationIcon, 'DeviationHifi', DeviationHifi),
     ],
   },
   {
     label: 'Workflow & data',
     icons: [
-      { name: 'Workset', export: 'WorksetIcon', Icon: WorksetIcon },
-      { name: 'Design option', export: 'DesignOptionIcon', Icon: DesignOptionIcon },
-      { name: 'Revision', export: 'RevisionIcon', Icon: RevisionIcon },
-      { name: 'RFI', export: 'RFIIcon', Icon: RFIIcon },
-      { name: 'Submittal', export: 'SubmittalIcon', Icon: SubmittalIcon },
-      { name: 'Point cloud', export: 'PointCloudIcon', Icon: PointCloudIcon },
-      { name: 'Digital twin', export: 'DigitalTwinIcon', Icon: DigitalTwinIcon },
-      { name: 'Sync', export: 'SyncIcon', Icon: SyncIcon },
-      { name: 'Transmittal', export: 'TransmittalIcon', Icon: TransmittalIcon },
-      { name: 'IFC', export: 'IFCIcon', Icon: IFCIcon },
-      { name: 'LOD', export: 'LODIcon', Icon: LODIcon },
-      { name: 'Qty takeoff', export: 'QuantityTakeoffIcon', Icon: QuantityTakeoffIcon },
-      { name: 'Energy model', export: 'EnergyModelIcon', Icon: EnergyModelIcon },
-      { name: 'Scope box', export: 'ScopeBoxIcon', Icon: ScopeBoxIcon },
+      p('Workset', 'WorksetIcon', WorksetIcon, 'WorksetHifi', WorksetHifi),
+      p(
+        'Design option',
+        'DesignOptionIcon',
+        DesignOptionIcon,
+        'DesignOptionHifi',
+        DesignOptionHifi,
+      ),
+      p('Revision', 'RevisionIcon', RevisionIcon, 'RevisionHifi', RevisionHifi),
+      p('RFI', 'RFIIcon', RFIIcon, 'RFIHifi', RFIHifi),
+      p('Submittal', 'SubmittalIcon', SubmittalIcon, 'SubmittalHifi', SubmittalHifi),
+      p('Point cloud', 'PointCloudIcon', PointCloudIcon, 'PointCloudHifi', PointCloudHifi),
+      p('Digital twin', 'DigitalTwinIcon', DigitalTwinIcon, 'DigitalTwinHifi', DigitalTwinHifi),
+      p('Sync', 'SyncIcon', SyncIcon, 'SyncHifi', SyncHifi),
+      p('Transmittal', 'TransmittalIcon', TransmittalIcon, 'TransmittalHifi', TransmittalHifi),
+      p('IFC', 'IFCIcon', IFCIcon, 'IFCHifi', IFCHifi),
+      p('LOD', 'LODIcon', LODIcon, 'LODHifi', LODHifi),
+      p(
+        'Qty takeoff',
+        'QuantityTakeoffIcon',
+        QuantityTakeoffIcon,
+        'QuantityTakeoffHifi',
+        QuantityTakeoffHifi,
+      ),
+      p('Energy model', 'EnergyModelIcon', EnergyModelIcon, 'EnergyModelHifi', EnergyModelHifi),
+      p('Scope box', 'ScopeBoxIcon', ScopeBoxIcon, 'ScopeBoxHifi', ScopeBoxHifi),
     ],
   },
   {
     label: 'Edit operations',
     icons: [
-      { name: 'Move', export: 'MoveIcon', Icon: MoveIcon },
-      { name: 'Copy', export: 'CopyIcon', Icon: CopyIcon },
-      { name: 'Rotate', export: 'RotateIcon', Icon: RotateIcon },
-      { name: 'Scale', export: 'ScaleIcon', Icon: ScaleIcon },
-      { name: 'Offset', export: 'OffsetIcon', Icon: OffsetIcon },
-      { name: 'Delete', export: 'DeleteIcon', Icon: DeleteIcon },
-      { name: 'Mirror', export: 'MirrorIcon', Icon: MirrorIcon },
-      { name: 'Array (linear)', export: 'ArrayLinearIcon', Icon: ArrayLinearIcon },
-      { name: 'Array (radial)', export: 'ArrayRadialIcon', Icon: ArrayRadialIcon },
-      { name: 'Align', export: 'AlignIcon', Icon: AlignIcon },
-      { name: 'Split', export: 'SplitIcon', Icon: SplitIcon },
-      { name: 'Trim / extend', export: 'TrimExtendIcon', Icon: TrimExtendIcon },
-      { name: 'Void', export: 'VoidIcon', Icon: VoidIcon },
-      { name: 'Pin', export: 'PinIcon', Icon: PinIcon },
-      { name: 'Unpin', export: 'UnpinIcon', Icon: UnpinIcon },
-      { name: 'Join geometry', export: 'JoinGeometryIcon', Icon: JoinGeometryIcon },
-      { name: 'Unjoin geometry', export: 'UnjoinGeometryIcon', Icon: UnjoinGeometryIcon },
-      { name: 'Switch join', export: 'SwitchJoinOrderIcon', Icon: SwitchJoinOrderIcon },
-      { name: 'Wall joins', export: 'WallJoinsIcon', Icon: WallJoinsIcon },
-      { name: 'Paint material', export: 'PaintMaterialIcon', Icon: PaintMaterialIcon },
-      { name: 'Measure between', export: 'MeasureBetweenIcon', Icon: MeasureBetweenIcon },
-      { name: 'Measure along', export: 'MeasureAlongIcon', Icon: MeasureAlongIcon },
-      { name: 'Ungroup', export: 'UngroupIcon', Icon: UngroupIcon },
+      p('Move', 'MoveIcon', MoveIcon, 'MoveHifi', MoveHifi),
+      p('Copy', 'CopyIcon', CopyIcon, 'CopyHifi', CopyHifi),
+      p('Rotate', 'RotateIcon', RotateIcon, 'RotateHifi', RotateHifi),
+      p('Scale', 'ScaleIcon', ScaleIcon, 'ScaleHifi', ScaleHifi),
+      p('Offset', 'OffsetIcon', OffsetIcon, 'OffsetHifi', OffsetHifi),
+      p('Delete', 'DeleteIcon', DeleteIcon, 'DeleteHifi', DeleteHifi),
+      p('Mirror', 'MirrorIcon', MirrorIcon, 'MirrorHifi', MirrorHifi),
+      p('Array (linear)', 'ArrayLinearIcon', ArrayLinearIcon, 'ArrayLinearHifi', ArrayLinearHifi),
+      p('Array (radial)', 'ArrayRadialIcon', ArrayRadialIcon, 'ArrayRadialHifi', ArrayRadialHifi),
+      p('Align', 'AlignIcon', AlignIcon, 'AlignHifi', AlignHifi),
+      p('Split', 'SplitIcon', SplitIcon, 'SplitHifi', SplitHifi),
+      p('Trim / extend', 'TrimExtendIcon', TrimExtendIcon, 'TrimExtendHifi', TrimExtendHifi),
+      p('Void', 'VoidIcon', VoidIcon, 'VoidHifi', VoidHifi),
+      p('Pin', 'PinIcon', PinIcon, 'PinHifi', PinHifi),
+      p('Unpin', 'UnpinIcon', UnpinIcon, 'UnpinHifi', UnpinHifi),
+      p(
+        'Join geometry',
+        'JoinGeometryIcon',
+        JoinGeometryIcon,
+        'JoinGeometryHifi',
+        JoinGeometryHifi,
+      ),
+      p(
+        'Unjoin geometry',
+        'UnjoinGeometryIcon',
+        UnjoinGeometryIcon,
+        'UnjoinGeometryHifi',
+        UnjoinGeometryHifi,
+      ),
+      p(
+        'Switch join',
+        'SwitchJoinOrderIcon',
+        SwitchJoinOrderIcon,
+        'SwitchJoinOrderHifi',
+        SwitchJoinOrderHifi,
+      ),
+      p('Wall joins', 'WallJoinsIcon', WallJoinsIcon, 'WallJoinsHifi', WallJoinsHifi),
+      p(
+        'Paint material',
+        'PaintMaterialIcon',
+        PaintMaterialIcon,
+        'PaintMaterialHifi',
+        PaintMaterialHifi,
+      ),
+      p(
+        'Measure between',
+        'MeasureBetweenIcon',
+        MeasureBetweenIcon,
+        'MeasureBetweenHifi',
+        MeasureBetweenHifi,
+      ),
+      p(
+        'Measure along',
+        'MeasureAlongIcon',
+        MeasureAlongIcon,
+        'MeasureAlongHifi',
+        MeasureAlongHifi,
+      ),
+      p('Ungroup', 'UngroupIcon', UngroupIcon, 'UngroupHifi', UngroupHifi),
     ],
   },
   {
     label: 'Collaboration',
     icons: [
-      { name: 'Reload latest', export: 'ReloadLatestIcon', Icon: ReloadLatestIcon },
-      { name: 'Editing request', export: 'EditingRequestIcon', Icon: EditingRequestIcon },
-      { name: 'Copy/monitor', export: 'CopyMonitorIcon', Icon: CopyMonitorIcon },
-      { name: 'Coord. review', export: 'CoordinationReviewIcon', Icon: CoordinationReviewIcon },
-      { name: 'Purge unused', export: 'PurgeUnusedIcon', Icon: PurgeUnusedIcon },
-      {
-        name: 'Transfer standards',
-        export: 'TransferProjectStandardsIcon',
-        Icon: TransferProjectStandardsIcon,
-      },
-      { name: 'Project info', export: 'ProjectInfoIcon', Icon: ProjectInfoIcon },
-      { name: 'Project params', export: 'ProjectParametersIcon', Icon: ProjectParametersIcon },
-      { name: 'Shared params', export: 'SharedParametersIcon', Icon: SharedParametersIcon },
-      { name: 'Object styles', export: 'ObjectStylesIcon', Icon: ObjectStylesIcon },
+      p(
+        'Reload latest',
+        'ReloadLatestIcon',
+        ReloadLatestIcon,
+        'ReloadLatestHifi',
+        ReloadLatestHifi,
+      ),
+      p(
+        'Editing request',
+        'EditingRequestIcon',
+        EditingRequestIcon,
+        'EditingRequestHifi',
+        EditingRequestHifi,
+      ),
+      p('Copy/monitor', 'CopyMonitorIcon', CopyMonitorIcon, 'CopyMonitorHifi', CopyMonitorHifi),
+      p(
+        'Coord. review',
+        'CoordinationReviewIcon',
+        CoordinationReviewIcon,
+        'CoordinationReviewHifi',
+        CoordinationReviewHifi,
+      ),
+      p('Purge unused', 'PurgeUnusedIcon', PurgeUnusedIcon, 'PurgeUnusedHifi', PurgeUnusedHifi),
+      p(
+        'Transfer standards',
+        'TransferProjectStandardsIcon',
+        TransferProjectStandardsIcon,
+        'TransferProjectStandardsHifi',
+        TransferProjectStandardsHifi,
+      ),
+      p('Project info', 'ProjectInfoIcon', ProjectInfoIcon, 'ProjectInfoHifi', ProjectInfoHifi),
+      p(
+        'Project params',
+        'ProjectParametersIcon',
+        ProjectParametersIcon,
+        'ProjectParametersHifi',
+        ProjectParametersHifi,
+      ),
+      p(
+        'Shared params',
+        'SharedParametersIcon',
+        SharedParametersIcon,
+        'SharedParametersHifi',
+        SharedParametersHifi,
+      ),
+      p(
+        'Object styles',
+        'ObjectStylesIcon',
+        ObjectStylesIcon,
+        'ObjectStylesHifi',
+        ObjectStylesHifi,
+      ),
     ],
   },
 ];
 
 const ALL_ICONS = SECTIONS.flatMap((s) => s.icons);
-
-function HiFiCard({ entry }: { entry: HiFiEntry }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleClick = useCallback(() => {
-    const text = `import { ${entry.export} } from '@bim-ai/icons'`;
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1400);
-    });
-  }, [entry.export]);
-
-  return (
-    <button
-      type="button"
-      onClick={handleClick}
-      title={`Click to copy import for ${entry.export}`}
-      className="group relative flex flex-col items-center gap-3 rounded-xl border border-border bg-surface p-5 text-center transition-all hover:border-accent hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-    >
-      {copied && (
-        <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-accent text-xs font-medium text-accent-foreground">
-          Copied!
-        </span>
-      )}
-      <div className="flex h-14 w-14 items-center justify-center">
-        <entry.Icon
-          size={48}
-          className="text-foreground transition-colors group-hover:text-accent"
-        />
-      </div>
-      <span className="text-[11px] text-muted-foreground">{entry.name}</span>
-      <span className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-foreground px-1.5 py-0.5 font-mono text-[10px] text-background opacity-0 transition-opacity group-hover:opacity-100">
-        {entry.export}
-      </span>
-    </button>
-  );
-}
 
 const SIZES = [16, 18, 20, 24, 32] as const;
 type Size = (typeof SIZES)[number];
@@ -596,45 +1250,61 @@ type Size = (typeof SIZES)[number];
 const STROKE_WIDTHS = [1, 1.5, 2] as const;
 type StrokeWidth = (typeof STROKE_WIDTHS)[number];
 
-function IconCard({
+const SCHEME_LABELS: { key: ColorScheme; label: string }[] = [
+  { key: 'mono', label: 'Mono' },
+  { key: 'accent', label: 'Accent' },
+  { key: 'color', label: 'Color' },
+];
+
+function PairedCard({
   entry,
   size,
   strokeWidth,
+  scheme,
 }: {
-  entry: IconEntry;
+  entry: PairedEntry;
   size: Size;
   strokeWidth: StrokeWidth;
+  scheme: ColorScheme;
 }) {
   const [copied, setCopied] = useState(false);
 
   const handleClick = useCallback(() => {
-    const text = `import { ${entry.export} } from '@bim-ai/icons'`;
+    const text = `import { ${entry.hifiExport} } from '@bim-ai/icons'`;
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1400);
     });
-  }, [entry.export]);
+  }, [entry.hifiExport]);
 
   return (
     <button
       type="button"
       onClick={handleClick}
-      title={`Click to copy import for ${entry.export}`}
-      className="group relative flex flex-col items-center gap-2 rounded-lg border border-border bg-surface p-4 text-center transition-all hover:border-accent hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      title={`Click to copy import for ${entry.hifiExport}`}
+      className="group relative flex flex-col items-center gap-0 overflow-hidden rounded-xl border border-border bg-surface text-center transition-all hover:border-accent hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
     >
       {copied && (
-        <span className="absolute inset-0 flex items-center justify-center rounded-lg bg-accent text-xs font-medium text-accent-foreground">
+        <span className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-accent text-xs font-medium text-accent-foreground">
           Copied!
         </span>
       )}
-      <entry.Icon
-        size={size}
-        strokeWidth={strokeWidth}
-        className="text-foreground transition-colors group-hover:text-accent"
-      />
-      <span className="max-w-full truncate text-[11px] text-muted-foreground">{entry.name}</span>
+      <div className="flex h-16 w-full items-center justify-center" style={COLOR_VARS[scheme]}>
+        <entry.Hifi
+          size={44}
+          className="text-foreground transition-colors group-hover:text-accent"
+        />
+      </div>
+      <div className="flex w-full items-center gap-1.5 border-t border-border/50 bg-background/40 px-2 py-1.5">
+        <entry.Regular
+          size={size}
+          strokeWidth={strokeWidth}
+          className="flex-shrink-0 text-muted-foreground/50 transition-colors group-hover:text-accent/60"
+        />
+        <span className="min-w-0 truncate text-[10px] text-muted-foreground">{entry.name}</span>
+      </div>
       <span className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-foreground px-1.5 py-0.5 font-mono text-[10px] text-background opacity-0 transition-opacity group-hover:opacity-100">
-        {entry.export}
+        {entry.hifiExport}
       </span>
     </button>
   );
@@ -642,28 +1312,31 @@ function IconCard({
 
 export function IconGallery() {
   const [query, setQuery] = useState('');
-  const [size, setSize] = useState<Size>(24);
+  const [size, setSize] = useState<Size>(20);
   const [strokeWidth, setStrokeWidth] = useState<StrokeWidth>(1.5);
+  const [scheme, setScheme] = useState<ColorScheme>('color');
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
     if (!q) return null;
     return ALL_ICONS.filter(
-      (e) => e.name.toLowerCase().includes(q) || e.export.toLowerCase().includes(q),
+      (e) =>
+        e.name.toLowerCase().includes(q) ||
+        e.regularExport.toLowerCase().includes(q) ||
+        e.hifiExport.toLowerCase().includes(q),
     );
   }, [query]);
 
-  const totalCount = ALL_ICONS.length;
-
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* sticky header */}
       <div className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur">
-        <div className="mx-auto max-w-5xl px-6 py-4">
+        <div className="mx-auto max-w-6xl px-6 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h1 className="text-base font-semibold">@bim-ai/icons</h1>
-              <p className="text-[11px] text-muted-foreground">{totalCount} BIM-native icons</p>
+              <p className="text-[11px] text-muted-foreground">
+                {ALL_ICONS.length} icons · 24px stroke + 48px hi-fi each
+              </p>
             </div>
 
             <input
@@ -675,6 +1348,31 @@ export function IconGallery() {
             />
 
             <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] text-muted-foreground">scheme</span>
+                <div className="flex rounded-md border border-border">
+                  {SCHEME_LABELS.map(({ key, label }, i) => (
+                    <button
+                      type="button"
+                      key={key}
+                      onClick={() => setScheme(key)}
+                      className={[
+                        'px-2 py-0.5 text-[11px] transition-colors',
+                        key === scheme
+                          ? 'bg-foreground text-background'
+                          : 'text-muted-foreground hover:text-foreground',
+                        i === 0 ? 'rounded-l-sm' : '',
+                        i === SCHEME_LABELS.length - 1 ? 'rounded-r-sm' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex items-center gap-1.5">
                 <span className="text-[11px] text-muted-foreground">size</span>
                 <div className="flex rounded-md border border-border">
@@ -729,31 +1427,7 @@ export function IconGallery() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-5xl px-6 py-8">
-        {/* High-fidelity section — always visible */}
-        <section className="mb-12">
-          <div className="mb-4 flex items-center gap-3">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              High-fidelity 48×48
-            </h2>
-            <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-medium text-accent">
-              new
-            </span>
-            <span className="text-[11px] text-muted-foreground/60">{HIFI_ICONS.length}</span>
-          </div>
-          <p className="mb-4 text-[11px] text-muted-foreground">
-            Designed for empty states, library tiles, and mode splash areas. Material hatching,
-            fills, and architectural detail that would be lost at 16–20px.
-          </p>
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-3">
-            {HIFI_ICONS.map((entry) => (
-              <HiFiCard key={entry.export} entry={entry} />
-            ))}
-          </div>
-        </section>
-
-        <hr className="mb-10 border-border" />
-
+      <div className="mx-auto max-w-6xl px-6 py-8">
         {filtered !== null ? (
           <div>
             <p className="mb-4 text-[11px] text-muted-foreground">
@@ -761,9 +1435,15 @@ export function IconGallery() {
                 ? 'No icons match.'
                 : `${filtered.length} result${filtered.length === 1 ? '' : 's'}`}
             </p>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(100px,1fr))] gap-2">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(110px,1fr))] gap-2">
               {filtered.map((entry) => (
-                <IconCard key={entry.export} entry={entry} size={size} strokeWidth={strokeWidth} />
+                <PairedCard
+                  key={entry.hifiExport}
+                  entry={entry}
+                  size={size}
+                  strokeWidth={strokeWidth}
+                  scheme={scheme}
+                />
               ))}
             </div>
           </div>
@@ -779,13 +1459,14 @@ export function IconGallery() {
                     {section.icons.length}
                   </span>
                 </div>
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(100px,1fr))] gap-2">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(110px,1fr))] gap-2">
                   {section.icons.map((entry) => (
-                    <IconCard
-                      key={entry.export}
+                    <PairedCard
+                      key={entry.hifiExport}
                       entry={entry}
                       size={size}
                       strokeWidth={strokeWidth}
+                      scheme={scheme}
                     />
                   ))}
                 </div>
@@ -797,13 +1478,11 @@ export function IconGallery() {
         <div className="mt-12 rounded-lg border border-border bg-surface p-5">
           <p className="mb-2 text-xs font-semibold text-muted-foreground">Usage</p>
           <pre className="overflow-x-auto rounded bg-surface-strong p-3 font-mono text-[12px] text-foreground">
-            {`import { WallIcon, DuctRectIcon, FoundationIcon } from '@bim-ai/icons'\n\n<WallIcon size={18} strokeWidth={1.5} className="text-stone-600" />`}
+            {`import { WallIcon, WallHifi } from '@bim-ai/icons'\n\n// 24px stroke icon\n<WallIcon size={18} strokeWidth={1.5} className="text-stone-600" />\n\n// 48px hi-fi icon (CSS vars control fills)\n<WallHifi size={48} className="text-stone-700" />`}
           </pre>
           <p className="mt-3 text-[11px] text-muted-foreground">
-            Click any icon to copy its import statement. All icons accept{' '}
-            <code className="rounded bg-surface-strong px-1 font-mono">size</code>,{' '}
-            <code className="rounded bg-surface-strong px-1 font-mono">strokeWidth</code>, and any
-            SVG attribute.
+            Click any card to copy its hi-fi import. Top area = 48px hi-fi in the selected color
+            scheme; bottom strip = 24px stroke icon at the chosen size and weight.
           </p>
         </div>
       </div>
