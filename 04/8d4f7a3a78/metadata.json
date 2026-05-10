@@ -1,0 +1,18 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "048d4f7a3a78",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/plan/SketchCanvas.test.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/04/8d4f7a3a78/0/metadata.json",
+      "transcript": "/04/8d4f7a3a78/0/full.jsonl",
+      "content_hash": "/04/8d4f7a3a78/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
