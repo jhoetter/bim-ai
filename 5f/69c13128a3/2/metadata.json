@@ -3,21 +3,21 @@
   "checkpoint_id": "5f69c13128a3",
   "session_id": "019e12e6-8567-71d3-bd23-bc42016e1f15",
   "strategy": "manual-commit",
-  "created_at": "2026-05-10T19:00:21.957837Z",
+  "created_at": "2026-05-10T19:08:10.929217Z",
   "branch": "main",
   "checkpoints_count": 0,
   "files_touched": [],
   "agent": "Codex",
   "model": "gpt-5.5",
   "turn_id": "2a417f9e58e0",
-  "checkpoint_transcript_start": 1378,
-  "transcript_lines_at_start": 1378,
+  "checkpoint_transcript_start": 1874,
+  "transcript_lines_at_start": 1874,
   "token_usage": {
-    "input_tokens": 372652,
+    "input_tokens": 103798,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 9933056,
-    "output_tokens": 30726,
-    "api_call_count": 80
+    "cache_read_tokens": 3019648,
+    "output_tokens": 10506,
+    "api_call_count": 25
   },
   "session_metrics": {
     "turn_count": 6
