@@ -336,6 +336,10 @@ class CreateElevationViewCmd(BaseModel):
     plan_detail_level: Literal["coarse", "medium", "fine"] | None = Field(
         default=None, alias="planDetailLevel"
     )
+    marker_group_id: str | None = Field(default=None, alias="markerGroupId")
+    marker_slot: Literal["north", "south", "east", "west", "custom"] | None = Field(
+        default=None, alias="markerSlot"
+    )
 
 
 class RestoreElementCmd(BaseModel):

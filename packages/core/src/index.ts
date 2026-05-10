@@ -1275,6 +1275,8 @@ export type Element =
       cropMaxMm?: XY | null;
       scale?: number;
       planDetailLevel?: 'coarse' | 'medium' | 'fine' | null;
+      markerGroupId?: string | null;
+      markerSlot?: 'north' | 'south' | 'east' | 'west' | 'custom' | null;
       pinned?: boolean;
     }
   | {

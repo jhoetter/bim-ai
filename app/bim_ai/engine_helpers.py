@@ -1028,6 +1028,44 @@ def ensure_internal_origin(doc: Document) -> Document:
     return doc
 
 
+CARDINAL_ELEVATION_MARKER_GROUP_ID = "elevation-marker-cardinal"
+CardinalElevationDirection = Literal["north", "south", "east", "west"]
+CARDINAL_ELEVATION_VIEW_SPECS: tuple[
+    tuple[str, str, CardinalElevationDirection],
+    ...,
+] = (
+    ("elevation-north", "North Elevation", "north"),
+    ("elevation-south", "South Elevation", "south"),
+    ("elevation-east", "East Elevation", "east"),
+    ("elevation-west", "West Elevation", "west"),
+)
+
+
+def ensure_cardinal_elevation_views(doc: Document) -> Document:
+    """F-033: seed Revit-style N/S/E/W elevation views for new project documents.
+
+    The helper is intentionally conservative: once any elevation view exists,
+    it assumes the document has been customized and will not add another
+    generated set.
+    """
+
+    if any(isinstance(e, ElevationViewElem) for e in doc.elements.values()):
+        return doc
+
+    for elev_id, name, direction in CARDINAL_ELEVATION_VIEW_SPECS:
+        if elev_id in doc.elements:
+            continue
+        doc.elements[elev_id] = ElevationViewElem(
+            kind="elevation_view",
+            id=elev_id,
+            name=name,
+            direction=direction,
+            marker_group_id=CARDINAL_ELEVATION_MARKER_GROUP_ID,
+            marker_slot=direction,
+        )
+    return doc
+
+
 def ensure_sun_settings(doc: Document) -> Document:
     """SUN-V3-01: ensure the singleton `sun_settings` element exists."""
     if any(isinstance(e, SunSettingsElem) for e in doc.elements.values()):

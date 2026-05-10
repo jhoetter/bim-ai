@@ -172,6 +172,8 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
                 crop_max_mm=cmd.crop_max_mm,
                 scale=cmd.scale,
                 plan_detail_level=cmd.plan_detail_level,
+                marker_group_id=cmd.marker_group_id,
+                marker_slot=cmd.marker_slot,
             )
 
         case PlaceTagCmd():

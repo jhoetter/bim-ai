@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from bim_ai.document import Document
 from bim_ai.elements import ElevationViewElem, LevelElem, Vec2Mm, WallElem
-from bim_ai.engine import try_commit_bundle
+from bim_ai.engine import ensure_cardinal_elevation_views, try_commit_bundle
 from bim_ai.section_projection_primitives import elevation_view_to_section_cut
 
 
@@ -75,6 +75,54 @@ def test_create_elevation_view_default_north():
     assert isinstance(ev, ElevationViewElem)
     assert ev.direction == "north"
     assert ev.name == "North Elevation"
+
+
+def test_create_elevation_view_preserves_marker_group_fields():
+    doc = _seed_with_box()
+    ok, nd, *_ = try_commit_bundle(
+        doc,
+        [
+            {
+                "type": "createElevationView",
+                "id": "elev-N",
+                "name": "North Elevation",
+                "direction": "north",
+                "markerGroupId": "marker-1",
+                "markerSlot": "north",
+            }
+        ],
+    )
+    assert ok is True and nd is not None
+    ev = nd.elements["elev-N"]
+    assert isinstance(ev, ElevationViewElem)
+    assert ev.marker_group_id == "marker-1"
+    assert ev.marker_slot == "north"
+
+
+def test_ensure_cardinal_elevation_views_seeds_four_grouped_views():
+    doc = Document(revision=1, elements={})
+    ensure_cardinal_elevation_views(doc)
+
+    elevations = [e for e in doc.elements.values() if isinstance(e, ElevationViewElem)]
+    assert [e.direction for e in elevations] == ["north", "south", "east", "west"]
+    assert {e.marker_group_id for e in elevations} == {"elevation-marker-cardinal"}
+    assert {e.marker_slot for e in elevations} == {"north", "south", "east", "west"}
+
+
+def test_ensure_cardinal_elevation_views_is_idempotent_when_customized():
+    doc = Document(
+        revision=1,
+        elements={
+            "custom-elev": ElevationViewElem(
+                kind="elevation_view", id="custom-elev", name="Custom", direction="west"
+            )
+        },
+    )
+    ensure_cardinal_elevation_views(doc)
+    ensure_cardinal_elevation_views(doc)
+
+    elevations = [e for e in doc.elements.values() if isinstance(e, ElevationViewElem)]
+    assert [e.id for e in elevations] == ["custom-elev"]
 
 
 def test_custom_direction_requires_angle():

@@ -965,6 +965,68 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
     };
   }
 
+  if (kind === 'elevation_view') {
+    const directionRaw = raw.direction;
+    const direction =
+      directionRaw === 'south' ||
+      directionRaw === 'east' ||
+      directionRaw === 'west' ||
+      directionRaw === 'custom'
+        ? directionRaw
+        : 'north';
+    const cropMinRaw = raw.cropMinMm ?? raw.crop_min_mm;
+    const cropMaxRaw = raw.cropMaxMm ?? raw.crop_max_mm;
+    const customAngleRaw = raw.customAngleDeg ?? raw.custom_angle_deg;
+    const customAngleDeg =
+      typeof customAngleRaw === 'number'
+        ? customAngleRaw
+        : typeof customAngleRaw === 'string' && customAngleRaw.trim() !== ''
+          ? Number(customAngleRaw)
+          : null;
+    const scaleRaw = raw.scale;
+    const scale =
+      typeof scaleRaw === 'number'
+        ? scaleRaw
+        : typeof scaleRaw === 'string' && scaleRaw.trim() !== ''
+          ? Number(scaleRaw)
+          : 100;
+    const pdlRaw = raw.planDetailLevel ?? raw.plan_detail_level;
+    const planDetailLevel =
+      pdlRaw === 'coarse' || pdlRaw === 'fine' || pdlRaw === 'medium' ? pdlRaw : null;
+    const markerSlotRaw = raw.markerSlot ?? raw.marker_slot;
+    const markerSlot =
+      markerSlotRaw === 'north' ||
+      markerSlotRaw === 'south' ||
+      markerSlotRaw === 'east' ||
+      markerSlotRaw === 'west' ||
+      markerSlotRaw === 'custom'
+        ? markerSlotRaw
+        : null;
+    return {
+      kind: 'elevation_view',
+      id,
+      name,
+      direction,
+      customAngleDeg: Number.isFinite(customAngleDeg) ? customAngleDeg : null,
+      cropMinMm:
+        cropMinRaw && typeof cropMinRaw === 'object'
+          ? coerceXY(cropMinRaw as Record<string, unknown>)
+          : null,
+      cropMaxMm:
+        cropMaxRaw && typeof cropMaxRaw === 'object'
+          ? coerceXY(cropMaxRaw as Record<string, unknown>)
+          : null,
+      scale: Number.isFinite(scale) ? scale : 100,
+      planDetailLevel,
+      markerGroupId:
+        typeof (raw.markerGroupId ?? raw.marker_group_id) === 'string'
+          ? String(raw.markerGroupId ?? raw.marker_group_id).trim() || null
+          : null,
+      markerSlot,
+      ...(raw.pinned != null ? { pinned: Boolean(raw.pinned) } : {}),
+    };
+  }
+
   if (kind === 'plan_view') {
     const pres = raw.planPresentation ?? raw.plan_presentation;
     const planPresentation =

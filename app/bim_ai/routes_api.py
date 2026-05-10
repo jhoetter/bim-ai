@@ -33,7 +33,14 @@ from bim_ai.document import Document
 from bim_ai.elements import Element, LevelElem, LinkModelElem, PlanViewElem
 from bim_ai.cmd.apply_bundle import apply_bundle as _apply_bundle
 from bim_ai.cmd.types import CommandBundle, BundleResult
-from bim_ai.engine import clone_document, ensure_internal_origin, ensure_seed_hatches, ensure_sun_settings, try_commit_bundle
+from bim_ai.engine import (
+    clone_document,
+    ensure_cardinal_elevation_views,
+    ensure_internal_origin,
+    ensure_seed_hatches,
+    ensure_sun_settings,
+    try_commit_bundle,
+)
 from bim_ai.agent_loop import (
     AGENT_BACKEND_ENV_VAR,
     AgentIterateRequest,
@@ -241,6 +248,7 @@ async def create_empty_model(
 
     # KRN-06: every new model has the singleton internal_origin from inception.
     ensure_internal_origin(seed_doc)
+    ensure_cardinal_elevation_views(seed_doc)
     ensure_sun_settings(seed_doc)
     ensure_seed_hatches(seed_doc)
     wire = document_to_wire(seed_doc)

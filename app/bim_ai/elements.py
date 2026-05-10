@@ -1381,6 +1381,8 @@ class ElevationViewElem(BaseModel):
     plan_detail_level: Literal["coarse", "medium", "fine"] | None = Field(
         default=None, alias="planDetailLevel"
     )
+    marker_group_id: str | None = Field(default=None, alias="markerGroupId")
+    marker_slot: ElevationDirection | None = Field(default=None, alias="markerSlot")
     pinned: bool = Field(default=False)
 
 

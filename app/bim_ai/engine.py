@@ -523,6 +523,7 @@ from bim_ai.engine_helpers import (  # noqa: E402,F401
     compute_baluster_positions,
     compute_wall_corner_mitre_angle,
     element_adapter,
+    ensure_cardinal_elevation_views,
     ensure_internal_origin,
     ensure_seed_hatches,
     ensure_sun_settings,

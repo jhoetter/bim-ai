@@ -1236,6 +1236,8 @@ export function ProjectBrowser(props: {
                         type: 'createElevationView',
                         name: d.name,
                         direction: d.direction,
+                        markerGroupId: 'elevation-marker-cardinal',
+                        markerSlot: d.direction,
                       });
                     }
                   }}
@@ -1334,6 +1336,7 @@ export function ProjectBrowser(props: {
                   {ev.direction === 'custom' && typeof ev.customAngleDeg === 'number'
                     ? ` (${ev.customAngleDeg}°)`
                     : ''}
+                  {ev.markerGroupId ? ` · marker ${ev.markerGroupId}` : ''}
                 </div>
               </li>
             ))}

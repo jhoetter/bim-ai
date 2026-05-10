@@ -22,6 +22,31 @@ const ev: Element = {
 };
 
 describe('VIE-03 — activateElevationView store action', () => {
+  it('hydrates elevation_view snapshots with marker grouping fields', () => {
+    useBimStore.getState().hydrateFromSnapshot({
+      modelId: 'm1',
+      revision: 1,
+      elements: {
+        'elevation-north': {
+          kind: 'elevation_view',
+          name: 'North Elevation',
+          direction: 'north',
+          markerGroupId: 'elevation-marker-cardinal',
+          markerSlot: 'north',
+        },
+      },
+      violations: [],
+    });
+
+    const hydrated = useBimStore.getState().elementsById['elevation-north'];
+    expect(hydrated?.kind).toBe('elevation_view');
+    if (hydrated?.kind === 'elevation_view') {
+      expect(hydrated.markerGroupId).toBe('elevation-marker-cardinal');
+      expect(hydrated.markerSlot).toBe('north');
+      expect(hydrated.scale).toBe(100);
+    }
+  });
+
   it('sets activeElevationViewId and clears plan view + viewpoint', () => {
     useBimStore.setState({
       elementsById: { 'ev-N': ev },
