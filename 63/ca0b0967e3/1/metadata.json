@@ -1,0 +1,65 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "63ca0b0967e3",
+  "session_id": "019e1203-761e-75a2-8e71-91fec676dc26",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T13:15:48.863136Z",
+  "branch": "revit-parity-dimension-text-grips",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/plan/GripLayer.test.tsx",
+    "packages/web/src/plan/GripLayer.tsx",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/grip-providers/dimensionGripProvider.ts",
+    "packages/web/src/plan/grip-providers/gripProviders.test.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "bc0c8dbab44a",
+  "token_usage": {
+    "input_tokens": 107062,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1926528,
+    "output_tokens": 6927,
+    "api_call_count": 25
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T13:15:48.850186Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 69,
+    "human_modified": 13,
+    "human_removed": 0,
+    "total_committed": 69,
+    "total_lines_changed": 82,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 414,
+      "user_lines_removed": 47,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/commands.py": 2,
+        "app/bim_ai/engine_dispatch_documentation.py": 2,
+        "app/bim_ai/schedule_derivation.py": 30,
+        "app/tests/test_schedule_opening_computed_fields.py": 47,
+        "packages/cli/lib/one-family-home-commands.mjs": 109,
+        "packages/web/src/workspace/ModeShells.test.tsx": 47,
+        "packages/web/src/workspace/ModeShells.tsx": 167,
+        "packages/web/src/workspace/Workspace.tsx": 3,
+        "packages/web/src/workspace/viewport/CanvasMount.tsx": 7
+      },
+      "user_removed_per_file": {
+        "app/bim_ai/schedule_derivation.py": 1,
+        "packages/cli/lib/one-family-home-commands.mjs": 21,
+        "packages/web/src/workspace/ModeShells.test.tsx": 1,
+        "packages/web/src/workspace/ModeShells.tsx": 23,
+        "packages/web/src/workspace/viewport/CanvasMount.tsx": 1
+      }
+    }
+  ]
+}
