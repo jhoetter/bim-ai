@@ -2,13 +2,25 @@
 
 Tracks architectural debt and robustness gaps surfaced by a PE-style audit on 2026-05-07. Production-readiness items (auth, deploy, observability, migrations) are out of scope here — handled separately.
 
+Last reconciled: 2026-05-10 after CI run `25622305508` passed on `main`.
+
 This tracker is for the code-quality items only:
 
 - Realtime/WS robustness gaps
 - Python dependency pinning + lockfile
-- `packages/web/src/workspace/` junk-drawer (137 files at one level)
-- Flat `app/bim_ai/` package + 3 god-files (~9.95k LOC across 3 files)
-- Monolithic 1,692-LOC zustand store
+- `packages/web/src/workspace/` junk-drawer (164 files at one level)
+- Flat `app/bim_ai/` package + 3 large central modules (`engine.py`, `constraints.py`, `export_ifc.py`)
+- Monolithic 2,137-LOC zustand store
+
+## Current Snapshot
+
+| ID    | Status    | Current state |
+| ----- | --------- | ------------- |
+| CQ-01 | `done`    | Sequenced WebSocket publish path, bounded replay buffer, resume/RESYNC flow, client reconnect/backoff, and regression coverage are merged and green. |
+| CQ-02 | `done`    | `uv.lock`, bounded Python deps, frozen installs, and lockfile CI checks are merged and green. |
+| CQ-03 | `open`    | `packages/web/src/workspace/` is still a flat 164-file directory; no reorg has landed. |
+| CQ-04 | `partial` | Multiple cohesive helper modules have been extracted from `constraints.py`, `engine.py`, and `export_ifc.py`; the large source files still exist and are not thin shims. |
+| CQ-05 | `partial` | Typed store slice contracts and tests exist; runtime store slicing is still open. |
 
 ## Status Legend
 
@@ -26,7 +38,7 @@ A CQ item is `done` when: (a) `make verify` passes; (b) new logic has unit-test 
 
 ## CQ-01 — WebSocket robustness (reconnect + replay buffer + sequence)
 
-**Status:** `partial`
+**Status:** `done`
 **Severity:** Medium
 **Blast radius:** Server hub + client WS layer + message envelope. Touches state hydration on reconnect.
 
@@ -47,7 +59,7 @@ A CQ item is `done` when: (a) `make verify` passes; (b) new logic has unit-test 
 - `app/bim_ai/main.py` (or wherever `/ws/{model_id}` is registered) — read `?resumeFrom=` query, dispatch to `Hub.resume`.
 - `packages/web/src/state/ws.ts` (or equivalent) — backoff, resume protocol, `lastSeq` persistence in store.
 
-**Progress 2026-05-10.** Hub sequencing/replay/backpressure exists and all model-scoped mutation broadcasts now use `Hub.publish(...)` so deltas, comments, activity, job updates, and imports are sequenced and replayable. `Hub` normalizes UUID/string model ids before room, buffer, and presence lookup. The workspace client persists `lastSeq` per model in `sessionStorage`, reconnects with `resumeFrom`, and clears the cursor after `RESYNC`; jobs and presentation sockets now reconnect with bounded exponential backoff. Added regression coverage in `app/tests/test_ws_robustness.py` and `packages/web/src/lib/wsReconnect.test.ts`.
+**Completion 2026-05-10.** Hub sequencing/replay/backpressure is merged. Model-scoped mutation broadcasts use `Hub.publish(...)` for deltas, comments, activity, job updates, and imports. `Hub` normalizes UUID/string model ids before room, buffer, and presence lookup. The workspace client persists `lastSeq` per model in `sessionStorage`, reconnects with `resumeFrom`, and clears the cursor after `RESYNC`; jobs and presentation sockets reconnect with bounded exponential backoff. Regression coverage: `app/tests/test_ws_robustness.py` and `packages/web/src/lib/wsReconnect.test.ts`.
 
 ---
 
@@ -77,13 +89,13 @@ A CQ item is `done` when: (a) `make verify` passes; (b) new logic has unit-test 
 
 ---
 
-## CQ-03 — Reorganise `packages/web/src/workspace/` (137-file junk drawer)
+## CQ-03 — Reorganise `packages/web/src/workspace/` (164-file junk drawer)
 
 **Status:** `open`
 **Severity:** Medium-High (gets worse with every WP)
 **Blast radius:** Very high. Hundreds of import paths.
 
-**Problem.** `packages/web/src/workspace/` holds 137 files in a single directory — ~29.5k LOC, ~40% of the entire frontend. The folder is a catch-all for agent panels, evidence/manifest readouts, BCF logic, snapshot machinery, viewport mounting, inspector UI, comments, schedules cross-cutting code, and one-off readout modules. Co-located sibling files have no semantic relationship.
+**Problem.** `packages/web/src/workspace/` currently holds 164 files in a single directory. The folder is a catch-all for agent panels, evidence/manifest readouts, BCF logic, snapshot machinery, viewport mounting, inspector UI, comments, schedules cross-cutting code, and one-off readout modules. Co-located sibling files have no semantic relationship.
 
 **Acceptance criteria.**
 
@@ -112,11 +124,11 @@ A CQ item is `done` when: (a) `make verify` passes; (b) new logic has unit-test 
 **Severity:** High (readability + test isolation)
 **Blast radius:** High. Every file that imports from these three.
 
-**Problem.** Three files in `app/bim_ai/` exceed 3,000 LOC each:
+**Problem.** Three files in `app/bim_ai/` remain large central modules:
 
-- `app/bim_ai/engine.py` — 3,330 LOC, ~52 function defs spanning command dispatch, replay, undo/redo, snapshot diffing.
-- `app/bim_ai/constraints.py` — 3,274 LOC mixing constraint evaluation, validation rules, and spatial geometry helpers.
-- `app/bim_ai/export_ifc.py` — 3,344 LOC of IFC export logic. Currently excluded from coverage (`pyproject.toml`), which is itself a smell.
+- `app/bim_ai/engine.py` — 7,255 LOC spanning command dispatch, replay, undo/redo, snapshot diffing, IFC replay preflight, and assorted helper APIs.
+- `app/bim_ai/constraints.py` — 2,986 LOC mixing constraint evaluation, validation rules, and spatial geometry helpers.
+- `app/bim_ai/export_ifc.py` — 3,343 LOC of IFC export logic. Coverage exclusion has been lifted, but the module is still too large.
 
 These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (the nightshift status logs already show this).
 
@@ -135,43 +147,25 @@ These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (t
 
 **Order:** `constraints.py` first (cleanest seams), then `engine.py`, then `export_ifc.py` (gnarliest, IFC-spec-driven).
 
-**Progress 2026-05-10.** Lifted the `bim_ai/export_ifc.py` coverage omit. Full backend pytest passes with `export_ifc.py` included in coverage (`2449 passed, 93 skipped, 1 deselected`; total coverage 74.95%).
+**Completed slices.**
 
-**Progress 2026-05-10.** Extracted IFC exchange-scope helpers from `export_ifc.py` into `bim_ai/export_ifc_scope.py` with focused tests for kernel-slice product classification and deterministic level/storey sketches. The broader `export_ifc.py` package split is still open.
+- `export_ifc.py`: coverage omit lifted; extracted `export_ifc_scope.py`, `export_ifc_geometry.py`, `export_ifc_properties.py`, and `export_ifc_readback.py`. Coverage now includes fake-IFC readback/topology tests, QTO template readback tests, geometry helper tests, scope helper tests, and property/QTO helper tests.
+- `constraints.py`: extracted `constraints_geometry.py`, `constraints_wall_geometry.py`, `constraints_sheet_viewports.py`, and `constraints_metadata.py`, preserving legacy private aliases and adding focused tests for geometry, wall/opening intervals, sheet viewport repair, and metadata maps.
+- `engine.py`: extracted `engine_plan_mesh.py`, `engine_mirror.py`, `engine_visibility.py`, and `engine_wall_helpers.py`, preserving existing `bim_ai.engine` imports and reusing focused regression coverage.
 
-**Progress 2026-05-10.** Extracted IFC geometry math helpers from `export_ifc.py` into `bim_ai/export_ifc_geometry.py` with focused tests for polygon metrics, bounds, level elevation lookup, room vertical spans, and wall local-to-world placement.
+**Latest verification.** Full backend suite passed after the latest CQ-04 slice: `2476 passed, 93 skipped, 1 deselected` with total coverage `75.82%`; each pushed workpackage passed GitHub CI on `main`.
 
-**Progress 2026-05-10.** Extracted IFC QTO/classification/Pset helpers from `export_ifc.py` into `bim_ai/export_ifc_properties.py`, adding test coverage for common Pset payloads for stairs, columns, beams, ceilings, and railings.
-
-**Progress 2026-05-10.** Extracted IFC readback/topology helpers from `export_ifc.py` into `bim_ai/export_ifc_readback.py`, preserving legacy private imports and adding fake-IFC tests for profile, body-solid, void-host, and slab-opening parsing.
-
-**Progress 2026-05-10.** Moved IFC QTO-template readback helpers from `export_ifc.py` into `bim_ai/export_ifc_readback.py`, preserving legacy private names and adding fake-IFC tests for named quantity reads and template counts.
-
-**Progress 2026-05-10.** Extracted reusable constraint polygon geometry helpers from `constraints.py` into `bim_ai/constraints_geometry.py`, preserving legacy private aliases and adding focused tests for polygon area/orientation, concave triangulation, and overlap area.
-
-**Progress 2026-05-10.** Extracted wall/room/opening geometry helpers from `constraints.py` into `bim_ai/constraints_wall_geometry.py`, preserving legacy private aliases and adding focused tests for room edge coverage, interval merging, hosted opening intervals, and wall-joint exemptions.
-
-**Progress 2026-05-10.** Extracted sheet viewport quick-fix constants and extent parsing/repair helpers from `constraints.py` into `bim_ai/constraints_sheet_viewports.py`, preserving legacy private aliases and adding direct tests for dimension parsing, extent repair, and zero-extent labels.
-
-**Progress 2026-05-10.** Extracted static constraint rule metadata and material-catalog advisory maps from `constraints.py` into `bim_ai/constraints_metadata.py`, preserving legacy private exports and adding tests for representative discipline/blocking-class/material mappings.
-
-**Progress 2026-05-10.** Extracted engine plan detail-level mesh helpers from `engine.py` into `bim_ai/engine_plan_mesh.py`, preserving the public `bim_ai.engine` mesh exports and reusing the existing detail-level rendering coverage.
-
-**Progress 2026-05-10.** Extracted engine mirror/reflection helpers from `engine.py` into `bim_ai/engine_mirror.py`, preserving legacy private exports through `bim_ai.engine` and reusing the mirror command regression coverage.
-
-**Progress 2026-05-10.** Extracted engine visibility helpers from `engine.py` into `bim_ai/engine_visibility.py`, preserving phase-filter, discipline-lens, design-option visibility, and pin predicate exports with focused regression coverage.
-
-**Progress 2026-05-10.** Extracted stacked/slanted wall helper functions from `engine.py` into `bim_ai/engine_wall_helpers.py`, preserving the public `bim_ai.engine` helper imports and reusing the stacked/slanted wall regression coverage.
+**Remaining work.** Continue extracting dispatch/replay/preflight-heavy engine code, IFC authoritative replay/import-preview code, and constraint evaluation/validation bodies until the original files are thin compatibility shims or replaced by packages.
 
 ---
 
-## CQ-05 — Slice the zustand store (`packages/web/src/state/store.ts`, 1,692 LOC)
+## CQ-05 — Slice the zustand store (`packages/web/src/state/store.ts`, 2,137 LOC)
 
 **Status:** `partial`
 **Severity:** Medium
 **Blast radius:** Medium. Every selector callsite stays valid if we keep the public hook surface; internal store wiring changes.
 
-**Problem.** A single `create()` call holds: hydration state, snapshot/elements, violations, viewer/orbit/visibility, plan tools, collaboration, activity, and category overrides. Hot-reload thrashes the whole tree on any mutation. The store is hard to test in isolation. Derived inline imports (`import('./storeTypes').CategoryOverrides`) suggest the file is fighting circular-dep gravity.
+**Problem.** A single `create()` call holds: hydration state, snapshot/elements, violations, viewer/orbit/visibility, plan tools, collaboration, activity, and category overrides. Hot-reload thrashes the whole tree on any mutation. The store is hard to test in isolation.
 
 **Acceptance criteria.**
 
@@ -186,16 +180,14 @@ These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (t
 
 **Approach note.** Easiest path: introduce slices using the [zustand "slices" pattern](https://docs.pmnd.rs/zustand/guides/slices-pattern) inside the existing `useBimStore` first (zero callsite churn). Then, in a follow-up PR, extract slices that are genuinely independent (most likely `useCollabStore`) into their own store.
 
-**Progress 2026-05-10.** Added explicit typed slice contracts for the stable `useBimStore` facade: model, viewport, plan authoring, collaboration, and workspace UI. Removed the store's dynamic `import('./storeTypes')` type casts and added regression coverage that exercises each slice's basic mutations through the public hook. Runtime slice extraction is still open.
+**Progress 2026-05-10.** Added explicit typed slice contracts for the stable `useBimStore` facade: model, viewport, plan authoring, collaboration, and workspace UI. Added regression coverage that exercises each slice's basic mutations through the public hook. Runtime slice extraction is still open.
 
 ---
 
-## Sequencing recommendation
+## Remaining Sequence
 
-1. **CQ-02** (Python pinning) — smallest, lowest risk, builds the lockfile-discipline muscle.
-2. **CQ-01** (WS robustness) — bounded feature work, real reliability win.
-3. **CQ-05** (zustand slices) — start with the in-store slice pattern (no callsite churn), defer extraction.
-4. **CQ-04** (Python god-files) — three independent PRs, serialised against nightshift activity.
-5. **CQ-03** (workspace/ reorg) — last; multiple sub-PRs by feature cluster. Deserves a quiet week with no parallel agents touching `workspace/`.
+1. **CQ-04** — keep extracting narrow, tested helper clusters until `engine.py`, `constraints.py`, and `export_ifc.py` become thin shims or packages.
+2. **CQ-05** — convert typed slice contracts into real runtime slices inside the stable `useBimStore` facade first, then split truly independent stores.
+3. **CQ-03** — reorg `packages/web/src/workspace/` by feature cluster in a quiet window; this is still the highest-churn remaining item.
 
-CQ-03 and CQ-04 are the two items most likely to conflict with nightshift agents — schedule them when those tracks are quiet, or pause the relevant nightshift slots for the merge window.
+CQ-03 and CQ-04 are the two remaining items most likely to conflict with parallel agents. Schedule them when those tracks are quiet, or pause the relevant nightshift slots for the merge window.
