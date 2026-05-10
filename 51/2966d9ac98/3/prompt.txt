@@ -1,0 +1,9 @@
+but that implies we have some legacy still in there; can you see for all legacy work and resolve it? ...
+
+---
+
+committed and pushed and merged to main?
+
+---
+
+merge everything outstanding to main...
