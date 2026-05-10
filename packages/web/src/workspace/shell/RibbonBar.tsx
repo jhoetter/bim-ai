@@ -4,7 +4,19 @@ import { Icons, ICON_SIZE, type IconName } from '@bim-ai/ui';
 import type { ToolId } from '../../tools/toolRegistry';
 import type { WorkspaceMode } from './TopBar';
 
-type RibbonTabId = 'architecture' | 'structure' | 'annotate' | 'view' | 'manage' | 'modify';
+type RibbonTabId =
+  | 'architecture'
+  | 'structure'
+  | 'systems'
+  | 'insert'
+  | 'annotate'
+  | 'analyze'
+  | 'massing-site'
+  | 'collaborate'
+  | 'view'
+  | 'manage'
+  | 'add-ins'
+  | 'modify';
 
 type RibbonCommand =
   | { type: 'tool'; id: ToolId; label: string; icon: IconName; testId?: string }
@@ -55,6 +67,7 @@ export function RibbonBar({
   onOpenSettings,
 }: RibbonBarProps): JSX.Element {
   const [activeTabId, setActiveTabId] = useState<RibbonTabId>('architecture');
+  const [minimized, setMinimized] = useState(false);
   const tabs = useMemo(() => buildRibbonTabs(selectedElementKind), [selectedElementKind]);
   const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? tabs[0]!;
 
@@ -83,62 +96,83 @@ export function RibbonBar({
       data-testid="ribbon-bar"
       className="border-b border-border bg-surface"
     >
-      <div
-        role="tablist"
-        aria-label="Ribbon tabs"
-        data-testid="ribbon-tabs"
-        className="flex items-end gap-0.5 overflow-x-auto px-3 pt-1"
-      >
-        {tabs.map((tab) => {
-          const active = tab.id === activeTab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              data-testid={`ribbon-tab-${tab.id}`}
-              data-contextual={tab.contextual ? 'true' : 'false'}
-              onClick={() => setActiveTabId(tab.id)}
-              className={[
-                'h-7 whitespace-nowrap rounded-t-md px-3 text-xs font-semibold transition-colors',
-                active
-                  ? 'bg-background text-foreground shadow-[inset_0_2px_0_0_var(--color-accent)]'
-                  : tab.contextual
-                    ? 'text-accent hover:bg-background'
-                    : 'text-muted hover:bg-background hover:text-foreground',
-              ].join(' ')}
+      <div className="flex items-end gap-2 px-3 pt-1">
+        <div
+          role="tablist"
+          aria-label="Ribbon tabs"
+          data-testid="ribbon-tabs"
+          className="flex min-w-0 flex-1 items-end gap-0.5 overflow-x-auto"
+        >
+          {tabs.map((tab) => {
+            const active = tab.id === activeTab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                data-testid={`ribbon-tab-${tab.id}`}
+                data-contextual={tab.contextual ? 'true' : 'false'}
+                onClick={() => {
+                  setActiveTabId(tab.id);
+                  setMinimized(false);
+                }}
+                className={[
+                  'h-7 whitespace-nowrap rounded-t-md px-3 text-xs font-semibold transition-colors',
+                  active
+                    ? 'bg-background text-foreground shadow-[inset_0_2px_0_0_var(--color-accent)]'
+                    : tab.contextual
+                      ? 'text-accent hover:bg-background'
+                      : 'text-muted hover:bg-background hover:text-foreground',
+                ].join(' ')}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          type="button"
+          aria-label={minimized ? 'Restore ribbon panels' : 'Minimize ribbon panels'}
+          aria-expanded={!minimized}
+          data-testid="ribbon-toggle-minimize"
+          onClick={() => setMinimized((v) => !v)}
+          className="mb-0.5 flex h-6 w-6 items-center justify-center rounded border border-border bg-background text-muted hover:text-foreground"
+        >
+          {minimized ? (
+            <Icons.disclosureOpen size={ICON_SIZE.chrome} aria-hidden="true" />
+          ) : (
+            <Icons.disclosureClosed size={ICON_SIZE.chrome} aria-hidden="true" />
+          )}
+        </button>
+      </div>
+      {!minimized ? (
+        <div
+          data-testid="ribbon-panels"
+          className="flex min-h-[58px] items-stretch gap-2 overflow-x-auto bg-background px-3 py-1.5"
+        >
+          {activeTab.panels.map((panel) => (
+            <div
+              key={panel.id}
+              role="group"
+              aria-label={panel.label}
+              className="flex min-w-fit items-stretch gap-1 border-r border-border pr-2 last:border-r-0"
             >
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-      <div
-        data-testid="ribbon-panels"
-        className="flex min-h-[58px] items-stretch gap-2 overflow-x-auto bg-background px-3 py-1.5"
-      >
-        {activeTab.panels.map((panel) => (
-          <div
-            key={panel.id}
-            role="group"
-            aria-label={panel.label}
-            className="flex min-w-fit items-stretch gap-1 border-r border-border pr-2 last:border-r-0"
-          >
-            {panel.commands.map((command) => (
-              <RibbonButton
-                key={`${command.type}:${command.id}`}
-                command={command}
-                active={command.type === 'tool' && command.id === activeToolId}
-                onClick={() => runCommand(command)}
-              />
-            ))}
-            <div className="flex min-w-14 items-end justify-center px-1 pb-0.5 text-[10px] font-medium text-muted">
-              {panel.label}
+              {panel.commands.map((command) => (
+                <RibbonButton
+                  key={`${command.type}:${command.id}`}
+                  command={command}
+                  active={command.type === 'tool' && command.id === activeToolId}
+                  onClick={() => runCommand(command)}
+                />
+              ))}
+              <div className="flex min-w-14 items-end justify-center px-1 pb-0.5 text-[10px] font-medium text-muted">
+                {panel.label}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -226,6 +260,50 @@ function buildRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
       ],
     },
     {
+      id: 'systems',
+      label: 'Systems',
+      panels: [
+        {
+          id: 'mechanical',
+          label: 'Mechanical',
+          commands: [
+            tool('shaft', 'Shaft', 'shaft'),
+            tool('wall-opening', 'Opening', 'wall-opening'),
+          ],
+        },
+        {
+          id: 'coordination',
+          label: 'Coordination',
+          commands: [
+            action('visibility-graphics', 'System VG', 'layerOn'),
+            action('command-palette', 'Systems Cmd', 'commandPalette'),
+          ],
+        },
+      ],
+    },
+    {
+      id: 'insert',
+      label: 'Insert',
+      panels: [
+        {
+          id: 'load',
+          label: 'Load',
+          commands: [
+            action('family-library', 'Load Family', 'family'),
+            tool('component', 'Component', 'family'),
+          ],
+        },
+        {
+          id: 'link',
+          label: 'Link',
+          commands: [
+            action('project-menu', 'Project Files', 'linkedModel'),
+            action('command-palette', 'Import/Link', 'commandPalette'),
+          ],
+        },
+      ],
+    },
+    {
       id: 'annotate',
       label: 'Annotate',
       panels: [
@@ -248,6 +326,72 @@ function buildRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
           commands: [
             tool('grid', 'Grid', 'gridLine'),
             tool('reference-plane', 'Ref Plane', 'gridLine'),
+          ],
+        },
+      ],
+    },
+    {
+      id: 'analyze',
+      label: 'Analyze',
+      panels: [
+        {
+          id: 'inquiry',
+          label: 'Inquiry',
+          commands: [
+            tool('measure', 'Measure', 'measure'),
+            action('visibility-graphics', 'Graphics', 'layerOn'),
+          ],
+        },
+        {
+          id: 'coordination',
+          label: 'Coordination',
+          commands: [
+            action('command-palette', 'Checks', 'clash'),
+            action('settings', 'Rules', 'validationRule'),
+          ],
+        },
+      ],
+    },
+    {
+      id: 'massing-site',
+      label: 'Massing & Site',
+      panels: [
+        {
+          id: 'site',
+          label: 'Site',
+          commands: [
+            tool('property-line', 'Property Line', 'detailLine'),
+            tool('toposolid_subdivision', 'Topo Subdivision', 'grid'),
+          ],
+        },
+        {
+          id: 'datum',
+          label: 'Datum',
+          commands: [
+            tool('reference-plane', 'Ref Plane', 'level'),
+            tool('grid', 'Grid', 'gridLine'),
+          ],
+        },
+      ],
+    },
+    {
+      id: 'collaborate',
+      label: 'Collaborate',
+      panels: [
+        {
+          id: 'coordination',
+          label: 'Coordinate',
+          commands: [
+            action('project-menu', 'Project', 'settings'),
+            action('command-palette', 'Issues', 'issue'),
+          ],
+        },
+        {
+          id: 'team',
+          label: 'Team',
+          commands: [
+            action('settings', 'Account', 'collaborators'),
+            action('visibility-graphics', 'Worksets', 'layerOn'),
           ],
         },
       ],
@@ -299,6 +443,20 @@ function buildRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
           commands: [
             action('command-palette', 'Commands', 'commandPalette'),
             action('settings', 'Help', 'settings'),
+          ],
+        },
+      ],
+    },
+    {
+      id: 'add-ins',
+      label: 'Add-Ins',
+      panels: [
+        {
+          id: 'automation',
+          label: 'Automation',
+          commands: [
+            action('command-palette', 'Commands', 'commandPalette'),
+            action('settings', 'Add-In Settings', 'settings'),
           ],
         },
       ],

@@ -77,4 +77,32 @@ describe('planCategoryGraphicHints slice', () => {
     expect(r!.grid_line.linePatternToken).toBe('dot');
     expect(r!.grid_line.linePatternSource).toBe('plan_view');
   });
+
+  it('resolvePlanCategoryGraphics carries per-view projection and cut transparency overrides', () => {
+    const elementsById = {
+      pv: {
+        kind: 'plan_view',
+        id: 'pv',
+        name: 'P',
+        levelId: 'lv',
+        categoryOverrides: {
+          wall: {
+            projection: { transparency: 35 },
+            cut: { transparency: 150 },
+          },
+        },
+      },
+      lv: { kind: 'level', id: 'lv', name: 'L', elevationMm: 0 },
+    } as Record<string, Element>;
+
+    const r = resolvePlanCategoryGraphics(elementsById, 'pv');
+
+    expect(r).not.toBeNull();
+    expect(r!.wall.projectionTransparency).toBe(35);
+    expect(r!.wall.projectionOpacity).toBe(0.65);
+    expect(r!.wall.cutTransparency).toBe(100);
+    expect(r!.wall.cutOpacity).toBe(0);
+    expect(r!.floor.projectionTransparency).toBe(0);
+    expect(r!.floor.projectionOpacity).toBe(1);
+  });
 });

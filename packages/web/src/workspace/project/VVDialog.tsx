@@ -85,6 +85,11 @@ const LINE_PATTERNS = ['Solid', 'Dashed', 'Dotted', 'Center'] as const;
 
 type Tab = 'model' | 'annotation' | 'filters' | 'links';
 
+function clampTransparency(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
 function ColorSwatch({
   color,
   onChange,
@@ -193,6 +198,8 @@ function CategoryRow({
       : 'By Category';
   const cutPattern = draft.cut?.linePattern ?? 'Solid';
   const projHalftone = draft.projection?.halftone ?? false;
+  const projTransparency = clampTransparency(draft.projection?.transparency ?? 0);
+  const cutTransparency = clampTransparency(draft.cut?.transparency ?? 0);
 
   return (
     <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
@@ -255,6 +262,31 @@ function CategoryRow({
           ))}
         </select>
       </td>
+      <td style={{ padding: '4px 6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            value={projTransparency}
+            aria-label={`${CATEGORY_LABELS[categoryKey] ?? categoryKey} projection transparency`}
+            onChange={(e) =>
+              onChange({
+                ...draft,
+                projection: {
+                  ...draft.projection,
+                  transparency: clampTransparency(Number(e.target.value)),
+                },
+              })
+            }
+            style={{ width: 76 }}
+          />
+          <span style={{ minWidth: 34, fontSize: 11, color: 'var(--color-muted)' }}>
+            {projTransparency}%
+          </span>
+        </div>
+      </td>
       {/* Cut: color, weight, pattern */}
       <td style={{ padding: '4px 8px' }}>
         <ColorSwatch
@@ -300,6 +332,31 @@ function CategoryRow({
             </option>
           ))}
         </select>
+      </td>
+      <td style={{ padding: '4px 6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            value={cutTransparency}
+            aria-label={`${CATEGORY_LABELS[categoryKey] ?? categoryKey} cut transparency`}
+            onChange={(e) =>
+              onChange({
+                ...draft,
+                cut: {
+                  ...draft.cut,
+                  transparency: clampTransparency(Number(e.target.value)),
+                },
+              })
+            }
+            style={{ width: 76 }}
+          />
+          <span style={{ minWidth: 34, fontSize: 11, color: 'var(--color-muted)' }}>
+            {cutTransparency}%
+          </span>
+        </div>
       </td>
       <td style={{ padding: '4px 8px', textAlign: 'center' }}>
         <input
@@ -542,7 +599,7 @@ export function VVDialog({
           border: '1px solid var(--color-border)',
           borderRadius: 6,
           boxShadow: '0 4px 24px rgba(0,0,0,0.2)',
-          minWidth: 720,
+          minWidth: 900,
           maxHeight: '85vh',
           display: 'flex',
           flexDirection: 'column',
@@ -600,9 +657,11 @@ export function VVDialog({
                 padding: '6px 14px',
                 fontSize: 12,
                 fontWeight: tab === t ? 600 : 400,
-                borderBottom: tab === t ? '2px solid var(--color-accent)' : '2px solid transparent',
                 background: 'transparent',
-                border: 'none',
+                borderTop: 'none',
+                borderRight: 'none',
+                borderBottom: tab === t ? '2px solid var(--color-accent)' : '2px solid transparent',
+                borderLeft: 'none',
                 cursor: 'pointer',
                 color: tab === t ? 'var(--color-foreground)' : 'var(--color-muted)',
               }}
@@ -650,7 +709,7 @@ export function VVDialog({
                   </th>
                   <th
                     scope="col"
-                    colSpan={3}
+                    colSpan={4}
                     style={{
                       padding: '6px 8px',
                       textAlign: 'center',
@@ -663,7 +722,7 @@ export function VVDialog({
                   </th>
                   <th
                     scope="col"
-                    colSpan={3}
+                    colSpan={4}
                     style={{
                       padding: '6px 8px',
                       textAlign: 'center',
@@ -696,6 +755,9 @@ export function VVDialog({
                   <th scope="col" style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>
                     Pattern
                   </th>
+                  <th scope="col" style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>
+                    Transp.
+                  </th>
                   <th
                     scope="col"
                     style={{
@@ -712,6 +774,9 @@ export function VVDialog({
                   </th>
                   <th scope="col" style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>
                     Pattern
+                  </th>
+                  <th scope="col" style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>
+                    Transp.
                   </th>
                   <th scope="col" style={{ padding: '4px 8px', fontSize: 11, fontWeight: 500 }}>
                     Halftone

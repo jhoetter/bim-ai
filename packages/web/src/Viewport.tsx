@@ -139,6 +139,61 @@ function Sep() {
   return <span className="opacity-30">·</span>;
 }
 
+type ViewerEdgeWidth = 1 | 2 | 3 | 4;
+type ViewerGdoRuntimeState = {
+  viewerShadowsEnabled?: boolean;
+  viewerAmbientOcclusionEnabled?: boolean;
+  viewerDepthCueEnabled?: boolean;
+  viewerSilhouetteEdgeWidth?: ViewerEdgeWidth;
+};
+
+const GDO_STORAGE_KEYS = {
+  shadows: 'bim.viewer.shadowsEnabled',
+  ambientOcclusion: 'bim.viewer.ambientOcclusionEnabled',
+  depthCue: 'bim.viewer.depthCueEnabled',
+  silhouetteEdgeWidth: 'bim.viewer.silhouetteEdgeWidth',
+} as const;
+
+function readStoredBoolean(key: string, fallback: boolean): boolean {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === 'true') return true;
+    if (raw === 'false') return false;
+  } catch {
+    /* noop */
+  }
+  return fallback;
+}
+
+function readStoredEdgeWidth(): ViewerEdgeWidth {
+  try {
+    const raw = Number(localStorage.getItem(GDO_STORAGE_KEYS.silhouetteEdgeWidth));
+    if (raw === 1 || raw === 2 || raw === 3 || raw === 4) return raw;
+  } catch {
+    /* noop */
+  }
+  return 1;
+}
+
+function applyModelEdgeDisplay(
+  root: THREE.Object3D,
+  edgeMode: 'normal' | 'none',
+  width: ViewerEdgeWidth,
+): void {
+  const visible = edgeMode === 'normal' && width > 0;
+  root.traverse((obj) => {
+    if (!(obj instanceof THREE.LineSegments) || !(obj.parent instanceof THREE.Mesh)) return;
+    obj.visible = visible;
+    const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+    for (const material of materials) {
+      if (!(material instanceof THREE.LineBasicMaterial)) continue;
+      material.linewidth = width;
+      material.opacity = visible ? Math.min(0.7, 0.3 + width * 0.1) : 0;
+      material.needsUpdate = true;
+    }
+  });
+}
+
 export function Viewport({
   wsConnected,
   onPersistViewpointField,
@@ -332,6 +387,8 @@ export function Viewport({
   const viewerPhaseFilter = useBimStore((s) => s.viewerPhaseFilter);
   const viewerRenderStyle = useBimStore((s) => s.viewerRenderStyle);
   const viewerBackground = useBimStore((s) => s.viewerBackground);
+  const viewerEdges = useBimStore((s) => s.viewerEdges);
+  const viewerGdoRuntime = useBimStore((s) => s as typeof s & ViewerGdoRuntimeState);
   const viewerProjection = useBimStore((s) => s.viewerProjection);
   const sectionBoxActive = useBimStore((s) => s.viewerSectionBoxActive);
   const walkActive = useBimStore((s) => s.viewerWalkModeActive);
@@ -352,6 +409,26 @@ export function Viewport({
     if (!el || el.kind !== 'viewpoint' || el.mode !== 'orbit_3d') return null;
     return el;
   }, [activeViewpointId, elementsById]);
+  const viewerShadowsEnabled =
+    viewerGdoRuntime.viewerShadowsEnabled ??
+    persistedOrbitViewpoint?.viewerShadowsEnabled ??
+    readStoredBoolean(GDO_STORAGE_KEYS.shadows, true);
+  const viewerAmbientOcclusionEnabled =
+    viewerGdoRuntime.viewerAmbientOcclusionEnabled ??
+    persistedOrbitViewpoint?.viewerAmbientOcclusionEnabled ??
+    readStoredBoolean(GDO_STORAGE_KEYS.ambientOcclusion, true);
+  const viewerDepthCueEnabled =
+    viewerGdoRuntime.viewerDepthCueEnabled ??
+    persistedOrbitViewpoint?.viewerDepthCueEnabled ??
+    readStoredBoolean(GDO_STORAGE_KEYS.depthCue, false);
+  const viewerSilhouetteEdgeWidth =
+    viewerGdoRuntime.viewerSilhouetteEdgeWidth ??
+    persistedOrbitViewpoint?.viewerSilhouetteEdgeWidth ??
+    readStoredEdgeWidth();
+  const viewerEdgesRef = useRef(viewerEdges);
+  const viewerSilhouetteEdgeWidthRef = useRef(viewerSilhouetteEdgeWidth);
+  viewerEdgesRef.current = viewerEdges;
+  viewerSilhouetteEdgeWidthRef.current = viewerSilhouetteEdgeWidth;
 
   useEffect(() => {
     const el = mountRef.current;
@@ -546,6 +623,7 @@ export function Viewport({
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       addEdges(mesh);
+      applyModelEdgeDisplay(mesh, viewerEdgesRef.current, viewerSilhouetteEdgeWidthRef.current);
       if (csgMeta?.materialKey === 'timber_cladding')
         addCladdingBoards(mesh, csgMeta.len, csgMeta.height, csgMeta.thick);
       else if (csgMeta?.materialKey === 'white_cladding')
@@ -1595,6 +1673,7 @@ export function Viewport({
         node.castShadow = !isSite;
         node.receiveShadow = true;
       });
+      applyModelEdgeDisplay(obj, viewerEdgesRef.current, viewerSilhouetteEdgeWidthRef.current);
 
       // Apply current clipping planes to this new mesh without re-traversing the whole scene.
       if (planes.length) {
@@ -1765,6 +1844,60 @@ export function Viewport({
       rnd.setClearColor(colorMap[viewerBackground], 1);
     }
   }, [viewerBackground]);
+
+  // ── F-113: shadows, ambient occlusion, depth cue, and silhouette edges ──
+  useEffect(() => {
+    const renderer = rendererRef.current;
+    const root = rootGroupRef.current;
+    const sun = sunRef.current;
+    if (renderer) {
+      renderer.shadowMap.enabled = viewerShadowsEnabled;
+      renderer.shadowMap.needsUpdate = true;
+    }
+    if (sun) sun.castShadow = viewerShadowsEnabled;
+    if (!root) return;
+    root.traverse((obj) => {
+      if (!(obj instanceof THREE.Mesh) || obj.userData.isClipCap) return;
+      obj.castShadow = viewerShadowsEnabled;
+      obj.receiveShadow = viewerShadowsEnabled;
+    });
+  }, [viewerShadowsEnabled]);
+
+  useEffect(() => {
+    const ssao = ssaoPassRef.current;
+    if (!ssao) return;
+    const reducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    ssao.enabled =
+      viewerAmbientOcclusionEnabled && !reducedMotion && viewerRenderStyle !== 'hidden-line';
+  }, [viewerAmbientOcclusionEnabled, viewerRenderStyle]);
+
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+    if (!viewerDepthCueEnabled) {
+      scene.fog = null;
+      return;
+    }
+    const fogColor =
+      viewerBackground === 'dark'
+        ? new THREE.Color(0x1a1a2e)
+        : viewerBackground === 'white'
+          ? new THREE.Color(0xffffff)
+          : new THREE.Color(0xe8f4fd);
+    scene.fog = new THREE.Fog(fogColor, 28, 140);
+  }, [viewerBackground, viewerDepthCueEnabled]);
+
+  useEffect(() => {
+    const root = rootGroupRef.current;
+    if (root) applyModelEdgeDisplay(root, viewerEdges, viewerSilhouetteEdgeWidth);
+    const selectedThickness = Math.max(1, viewerSilhouetteEdgeWidth * 1.2);
+    if (outlinePassRef.current) outlinePassRef.current.edgeThickness = selectedThickness;
+    for (const pass of remoteOutlinePassesRef.current.values()) {
+      pass.edgeThickness = selectedThickness;
+    }
+  }, [viewerEdges, viewerSilhouetteEdgeWidth]);
 
   // ── Clipping planes + section-box cage ───────────────────────────────────
   // Runs only when clip elevation or section box changes — not on every element edit.

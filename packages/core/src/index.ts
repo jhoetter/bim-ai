@@ -1072,6 +1072,14 @@ export type Element =
       viewerClipFloorElevMm?: number | null;
       hiddenSemanticKinds3d?: string[];
       cutawayStyle?: 'none' | 'cap' | 'floor' | 'box' | null;
+      /** F-113 — saved 3D graphic display option: cast/receive shadows. */
+      viewerShadowsEnabled?: boolean;
+      /** F-113 — saved 3D graphic display option: screen-space ambient occlusion. */
+      viewerAmbientOcclusionEnabled?: boolean;
+      /** F-113 — saved 3D graphic display option: distance fade / depth cue. */
+      viewerDepthCueEnabled?: boolean;
+      /** F-113 — saved 3D graphic display option: silhouette/model edge width in px. */
+      viewerSilhouetteEdgeWidth?: 1 | 2 | 3 | 4;
       sectionBoxEnabled?: boolean | null;
       sectionBoxMinMm?: { xMm: number; yMm: number; zMm: number } | null;
       sectionBoxMaxMm?: { xMm: number; yMm: number; zMm: number } | null;
