@@ -4,20 +4,42 @@
   "strategy": "manual-commit",
   "branch": "revit-parity-workpackage",
   "checkpoints_count": 0,
-  "files_touched": null,
+  "files_touched": [
+    "app/bim_ai/assets.py",
+    "app/bim_ai/commands.py",
+    "app/bim_ai/elements.py",
+    "app/bim_ai/templates/residential-eu.json",
+    "app/tests/test_ast_v3_01.py",
+    "app/tests/test_template_loader.py",
+    "packages/core/src/index.ts",
+    "packages/web/src/plan/symbology.ts",
+    "packages/web/src/state/storeCoercion.ts",
+    "packages/web/src/viewport/placedAssetRendering.test.ts",
+    "packages/web/src/viewport/placedAssetRendering.ts",
+    "packages/web/src/workspace/library/AssetCard.tsx",
+    "spec/revit-parity/README.md",
+    "spec/revit-parity/ch08-furniture-library.md",
+    "spec/revit-parity/ch12-furniture-placement.md"
+  ],
   "sessions": [
     {
       "metadata": "/af/fb4fad4889/0/metadata.json",
       "transcript": "/af/fb4fad4889/0/full.jsonl",
       "content_hash": "/af/fb4fad4889/0/content_hash.txt",
       "prompt": "/af/fb4fad4889/0/prompt.txt"
+    },
+    {
+      "metadata": "/af/fb4fad4889/1/metadata.json",
+      "transcript": "/af/fb4fad4889/1/full.jsonl",
+      "content_hash": "/af/fb4fad4889/1/content_hash.txt",
+      "prompt": "/af/fb4fad4889/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 155818,
+    "input_tokens": 318854,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 10615808,
-    "output_tokens": 15994,
-    "api_call_count": 54
+    "cache_read_tokens": 16023808,
+    "output_tokens": 35203,
+    "api_call_count": 104
   }
 }
