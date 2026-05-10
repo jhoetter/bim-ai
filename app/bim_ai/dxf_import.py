@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 import ezdxf
+from ezdxf import colors as ezdxf_colors
 
 # DXF $INSUNITS code → millimetre conversion factor.
 # Reference: https://ezdxf.readthedocs.io/en/stable/concepts/units.html
@@ -75,17 +76,64 @@ def _vec2(x: float, y: float, scale: float) -> dict[str, float]:
     return {"xMm": float(x) * scale, "yMm": float(y) * scale}
 
 
-def _line_to_prim(entity: Any, scale: float) -> dict[str, Any]:
+_ACI_FALLBACK_HEX: dict[int, str] = {
+    1: "#ff0000",
+    2: "#ffff00",
+    3: "#00ff00",
+    4: "#00ffff",
+    5: "#0000ff",
+    6: "#ff00ff",
+    7: "#ffffff",
+}
+
+
+def _aci_to_hex(aci: Any) -> str | None:
+    try:
+        aci_int = abs(int(aci))
+    except (TypeError, ValueError):
+        return None
+    if aci_int <= 0 or aci_int >= 256:
+        return None
+    try:
+        rgb = ezdxf_colors.aci2rgb(aci_int)
+        if hasattr(rgb, "r"):
+            r, g, b = rgb.r, rgb.g, rgb.b
+        else:
+            r, g, b = rgb[0], rgb[1], rgb[2]
+        return f"#{int(r):02x}{int(g):02x}{int(b):02x}"
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError):
+        return _ACI_FALLBACK_HEX.get(aci_int)
+
+
+def _layer_color_hex(doc: Any, layer_name: str) -> str | None:
+    try:
+        layer = doc.layers.get(layer_name)
+    except (AttributeError, KeyError):
+        return None
+    return _aci_to_hex(getattr(layer.dxf, "color", None))
+
+
+def _entity_layer_meta(entity: Any, doc: Any) -> dict[str, str]:
+    layer_name = str(getattr(entity.dxf, "layer", "") or "0")
+    color = _layer_color_hex(doc, layer_name)
+    return {
+        "layerName": layer_name,
+        **({"layerColor": color} if color else {}),
+    }
+
+
+def _line_to_prim(entity: Any, scale: float, doc: Any) -> dict[str, Any]:
     start = entity.dxf.start
     end = entity.dxf.end
     return {
         "kind": "line",
         "start": _vec2(start.x, start.y, scale),
         "end": _vec2(end.x, end.y, scale),
+        **_entity_layer_meta(entity, doc),
     }
 
 
-def _lwpolyline_to_prim(entity: Any, scale: float) -> dict[str, Any]:
+def _lwpolyline_to_prim(entity: Any, scale: float, doc: Any) -> dict[str, Any]:
     pts: list[dict[str, float]] = []
     for x, y, *_rest in entity.get_points("xy"):
         pts.append(_vec2(x, y, scale))
@@ -93,10 +141,11 @@ def _lwpolyline_to_prim(entity: Any, scale: float) -> dict[str, Any]:
         "kind": "polyline",
         "points": pts,
         "closed": bool(entity.is_closed),
+        **_entity_layer_meta(entity, doc),
     }
 
 
-def _polyline_to_prim(entity: Any, scale: float) -> dict[str, Any] | None:
+def _polyline_to_prim(entity: Any, scale: float, doc: Any) -> dict[str, Any] | None:
     is_3d = bool(getattr(entity, "is_3d_polyline", False))
     if is_3d:
         return None
@@ -110,10 +159,11 @@ def _polyline_to_prim(entity: Any, scale: float) -> dict[str, Any] | None:
         "kind": "polyline",
         "points": pts,
         "closed": bool(getattr(entity, "is_closed", False)),
+        **_entity_layer_meta(entity, doc),
     }
 
 
-def _arc_to_prim(entity: Any, scale: float) -> dict[str, Any]:
+def _arc_to_prim(entity: Any, scale: float, doc: Any) -> dict[str, Any]:
     centre = entity.dxf.center
     radius = float(entity.dxf.radius) * scale
     return {
@@ -122,10 +172,11 @@ def _arc_to_prim(entity: Any, scale: float) -> dict[str, Any]:
         "radiusMm": radius,
         "startDeg": float(entity.dxf.start_angle),
         "endDeg": float(entity.dxf.end_angle),
+        **_entity_layer_meta(entity, doc),
     }
 
 
-def _circle_to_prim(entity: Any, scale: float) -> dict[str, Any]:
+def _circle_to_prim(entity: Any, scale: float, doc: Any) -> dict[str, Any]:
     centre = entity.dxf.center
     radius = float(entity.dxf.radius) * scale
     return {
@@ -134,7 +185,24 @@ def _circle_to_prim(entity: Any, scale: float) -> dict[str, Any]:
         "radiusMm": radius,
         "startDeg": 0.0,
         "endDeg": 360.0,
+        **_entity_layer_meta(entity, doc),
     }
+
+
+def collect_dxf_layers(linework: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return stable per-layer metadata derived from parsed linework."""
+    layers: dict[str, dict[str, Any]] = {}
+    for prim in linework:
+        name = str(prim.get("layerName") or "0")
+        row = layers.setdefault(
+            name,
+            {"name": name, "primitiveCount": 0},
+        )
+        row["primitiveCount"] += 1
+        color = prim.get("layerColor")
+        if isinstance(color, str) and color and "color" not in row:
+            row["color"] = color
+    return sorted(layers.values(), key=lambda row: row["name"].casefold())
 
 
 def parse_dxf_to_linework(path: Path) -> list[dict[str, Any]]:
@@ -153,19 +221,19 @@ def parse_dxf_to_linework(path: Path) -> list[dict[str, Any]]:
         dxftype = entity.dxftype()
         try:
             if dxftype == "LINE":
-                linework.append(_line_to_prim(entity, scale))
+                linework.append(_line_to_prim(entity, scale, doc))
             elif dxftype == "LWPOLYLINE":
-                linework.append(_lwpolyline_to_prim(entity, scale))
+                linework.append(_lwpolyline_to_prim(entity, scale, doc))
             elif dxftype == "POLYLINE":
-                prim = _polyline_to_prim(entity, scale)
+                prim = _polyline_to_prim(entity, scale, doc)
                 if prim is not None:
                     linework.append(prim)
             elif dxftype == "ARC":
-                arc = _arc_to_prim(entity, scale)
+                arc = _arc_to_prim(entity, scale, doc)
                 if math.isfinite(arc["radiusMm"]) and arc["radiusMm"] > 0:
                     linework.append(arc)
             elif dxftype == "CIRCLE":
-                circle = _circle_to_prim(entity, scale)
+                circle = _circle_to_prim(entity, scale, doc)
                 if math.isfinite(circle["radiusMm"]) and circle["radiusMm"] > 0:
                     linework.append(circle)
         except (AttributeError, ValueError):
@@ -193,4 +261,5 @@ def build_link_dxf_payload(
         "rotationDeg": float(rotation_deg),
         "scaleFactor": float(scale_factor),
         "linework": linework,
+        "dxfLayers": collect_dxf_layers(linework),
     }

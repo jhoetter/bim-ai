@@ -214,4 +214,44 @@ describe('<ManageLinksDialog />', () => {
       }),
     );
   });
+
+  it('lists DXF layers and toggles hiddenLayerNames per layer', async () => {
+    useBimStore.setState({
+      modelId: 'host-model',
+      elementsById: {
+        'dxf-3': {
+          kind: 'link_dxf',
+          id: 'dxf-3',
+          name: 'Query layers',
+          levelId: 'lvl-1',
+          originMm: { xMm: 0, yMm: 0 },
+          rotationDeg: 0,
+          scaleFactor: 1,
+          dxfLayers: [
+            { name: 'A-WALL', color: '#ff0000', primitiveCount: 2 },
+            { name: 'A-DOOR', color: '#00ff00', primitiveCount: 1 },
+          ],
+          hiddenLayerNames: ['A-DOOR'],
+          linework: [],
+        },
+      },
+    });
+    const apply = vi.fn().mockResolvedValue({ ok: true });
+    const { getByTestId } = render(
+      <ManageLinksDialog open={true} onClose={vi.fn()} applyCommandImpl={apply} />,
+    );
+
+    expect(getByTestId('manage-dxf-links-layers-dxf-3')).toBeTruthy();
+    expect(
+      (getByTestId('manage-dxf-links-layer-visible-dxf-3-A-DOOR') as HTMLInputElement).checked,
+    ).toBe(false);
+    fireEvent.click(getByTestId('manage-dxf-links-layer-visible-dxf-3-A-WALL'));
+    await waitFor(() =>
+      expect(apply).toHaveBeenCalledWith('host-model', {
+        type: 'updateLinkDxf',
+        linkId: 'dxf-3',
+        hiddenLayerNames: ['A-DOOR', 'A-WALL'],
+      }),
+    );
+  });
 });

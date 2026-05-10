@@ -378,15 +378,24 @@ export type View = {
 
 /** FED-04: 2D linework primitive parsed from a DXF underlay. */
 export type DxfLineworkPrim =
-  | { kind: 'line'; start: XY; end: XY }
-  | { kind: 'polyline'; points: XY[]; closed?: boolean }
+  | { kind: 'line'; start: XY; end: XY; layerName?: string; layerColor?: string }
+  | { kind: 'polyline'; points: XY[]; closed?: boolean; layerName?: string; layerColor?: string }
   | {
       kind: 'arc';
       center: XY;
       radiusMm: number;
       startDeg: number;
       endDeg: number;
+      layerName?: string;
+      layerColor?: string;
     };
+
+/** F-019: queryable layer summary preserved from DXF import/link. */
+export type DxfLayerMeta = {
+  name: string;
+  color?: string;
+  primitiveCount?: number;
+};
 
 /** FED-04: engine command emitted by the DXF import flow. */
 export type CreateLinkDxfCmd = {
@@ -399,6 +408,8 @@ export type CreateLinkDxfCmd = {
   rotationDeg?: number;
   scaleFactor?: number;
   linework: DxfLineworkPrim[];
+  dxfLayers?: DxfLayerMeta[];
+  hiddenLayerNames?: string[];
   pinned?: boolean;
 };
 
@@ -1756,6 +1767,10 @@ export type Element =
       rotationDeg?: number;
       scaleFactor?: number;
       linework: DxfLineworkPrim[];
+      /** F-019: queryable DXF layer names/colors and primitive counts. */
+      dxfLayers?: DxfLayerMeta[];
+      /** F-019: layer names hidden for this linked/imported DXF in the current host view. */
+      hiddenLayerNames?: string[];
       pinned?: boolean;
       /** F-017 / F-020: render color mode. 'black_white' = desaturated grey (default); 'custom' = use customColor. */
       colorMode?: 'black_white' | 'custom';

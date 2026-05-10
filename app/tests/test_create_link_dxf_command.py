@@ -34,6 +34,8 @@ def test_create_link_dxf_inserts_element() -> None:
                 "kind": "line",
                 "start": {"xMm": 0.0, "yMm": 0.0},
                 "end": {"xMm": 1000.0, "yMm": 0.0},
+                "layerName": "A-WALL",
+                "layerColor": "#ff0000",
             },
             {
                 "kind": "polyline",
@@ -73,6 +75,9 @@ def test_create_link_dxf_inserts_element() -> None:
     assert link.scale_factor == pytest.approx(1.5)
     assert len(link.linework) == 3
     assert link.linework[0].kind == "line"
+    assert link.linework[0].layer_name == "A-WALL"
+    wall_layer = next(row for row in link.dxf_layers if row.name == "A-WALL")
+    assert wall_layer.color == "#ff0000"
     assert link.linework[1].kind == "polyline"
     assert link.linework[2].kind == "arc"
 
@@ -121,6 +126,39 @@ def test_create_link_dxf_round_trips_wire() -> None:
     assert wire["scaleFactor"] == 1.0
     assert wire["linework"][0]["kind"] == "line"
     assert wire["linework"][0]["start"] == {"xMm": 0.0, "yMm": 0.0}
+
+
+def test_update_link_dxf_hidden_layer_names() -> None:
+    doc = _doc_with_level()
+    ok, new_doc, _cmds, _viols, code = try_commit_bundle(
+        doc,
+        [
+            {
+                "type": "createLinkDxf",
+                "id": "lx-fixed",
+                "levelId": "lvl-1",
+                "originMm": {"xMm": 0.0, "yMm": 0.0},
+                "linework": [
+                    {
+                        "kind": "line",
+                        "start": {"xMm": 0.0, "yMm": 0.0},
+                        "end": {"xMm": 1.0, "yMm": 1.0},
+                        "layerName": "A-WALL",
+                    }
+                ],
+            },
+            {
+                "type": "updateLinkDxf",
+                "linkId": "lx-fixed",
+                "hiddenLayerNames": ["A-WALL"],
+            },
+        ],
+    )
+    assert ok is True, code
+    assert new_doc is not None
+    link = new_doc.elements["lx-fixed"]
+    assert isinstance(link, LinkDxfElem)
+    assert link.hidden_layer_names == ["A-WALL"]
 
 
 def test_update_link_dxf_level_id_via_property_command() -> None:
