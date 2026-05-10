@@ -25,6 +25,12 @@ def test_polygon_metrics_and_bounds_are_deterministic() -> None:
     assert xz_bounds_mm(poly) == (2000.0, 1500.0, 4000.0, 3000.0)
 
 
+def test_export_ifc_preserves_legacy_private_geometry_imports() -> None:
+    from bim_ai.export_ifc import _clamp
+
+    assert _clamp(12.0, 0.0, 10.0) == 10.0
+
+
 def test_wall_local_to_world_matches_wall_axis_and_length() -> None:
     wall = WallElem(
         id="w-1",

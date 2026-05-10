@@ -85,6 +85,16 @@ from bim_ai.roof_geometry import (
     gable_half_run_mm_and_ridge_axis,
 )
 
+# Back-compat for IFC replay helpers that import these private names lazily from
+# this legacy module while the exporter is being split into focused modules.
+_clamp = clamp
+_elev_m = level_elevation_m
+_polygon_area_m2_xy_mm = polygon_area_m2_xy_mm
+_polygon_perimeter_m_xy_mm = polygon_perimeter_m_xy_mm
+_room_outline_mm = room_outline_mm
+_vertical_span_m = room_vertical_span_m
+_xz_bounds_mm = xz_bounds_mm
+
 try:
     import ifcopenshell  # noqa: F401
     import ifcopenshell.util.element as ifc_elem_util
