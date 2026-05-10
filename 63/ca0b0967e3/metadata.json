@@ -3,7 +3,7 @@
   "checkpoint_id": "63ca0b0967e3",
   "strategy": "manual-commit",
   "branch": "revit-parity-dimension-text-grips",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "packages/web/src/plan/GripLayer.test.tsx",
     "packages/web/src/plan/GripLayer.tsx",
@@ -23,13 +23,19 @@
       "transcript": "/63/ca0b0967e3/1/full.jsonl",
       "content_hash": "/63/ca0b0967e3/1/content_hash.txt",
       "prompt": "/63/ca0b0967e3/1/prompt.txt"
+    },
+    {
+      "metadata": "/63/ca0b0967e3/2/metadata.json",
+      "transcript": "/63/ca0b0967e3/2/full.jsonl",
+      "content_hash": "/63/ca0b0967e3/2/content_hash.txt",
+      "prompt": "/63/ca0b0967e3/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 740881,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 7250176,
-    "output_tokens": 35008,
-    "api_call_count": 83
+    "input_tokens": 741196,
+    "cache_creation_tokens": 347272,
+    "cache_read_tokens": 24235299,
+    "output_tokens": 110554,
+    "api_call_count": 261
   }
 }
