@@ -7,6 +7,7 @@
   "files_touched": [
     "packages/web/src/Viewport.tsx",
     "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/workspace/Viewport3DLayersPanel.tsx",
     "packages/web/src/workspace/Workspace.tsx",
     "packages/web/src/workspace/WorkspaceRightRail.tsx",
     "packages/web/src/workspace/inspector/InspectorContent.tsx",
@@ -26,13 +27,19 @@
       "transcript": "/51/2966d9ac98/1/full.jsonl",
       "content_hash": "/51/2966d9ac98/1/content_hash.txt",
       "prompt": "/51/2966d9ac98/1/prompt.txt"
+    },
+    {
+      "metadata": "/51/2966d9ac98/2/metadata.json",
+      "transcript": "/51/2966d9ac98/2/full.jsonl",
+      "content_hash": "/51/2966d9ac98/2/content_hash.txt",
+      "prompt": "/51/2966d9ac98/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 13636,
-    "cache_creation_tokens": 347272,
-    "cache_read_tokens": 18612259,
-    "output_tokens": 78608,
-    "api_call_count": 190
+    "input_tokens": 13638,
+    "cache_creation_tokens": 347744,
+    "cache_read_tokens": 18927945,
+    "output_tokens": 78920,
+    "api_call_count": 192
   }
 }
