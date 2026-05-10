@@ -1,0 +1,22 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "0837d21c2626",
+  "strategy": "manual-commit",
+  "branch": "revit-parity-family-load-wave",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/families/FamilyLibraryPanel.externalCatalogs.test.tsx",
+    "packages/web/src/families/FamilyLibraryPanel.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "spec/revit-parity/README.md",
+    "spec/revit-parity/ch05-family-editor.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/08/37d21c2626/0/metadata.json",
+      "transcript": "/08/37d21c2626/0/full.jsonl",
+      "content_hash": "/08/37d21c2626/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
