@@ -1,0 +1,19 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "86db63fc9d99",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/familyEditor/ArrayTool.test.tsx",
+    "packages/web/src/familyEditor/FamilyEditorWorkbench.detailLevelVisibility.test.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/86/db63fc9d99/0/metadata.json",
+      "transcript": "/86/db63fc9d99/0/full.jsonl",
+      "content_hash": "/86/db63fc9d99/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
