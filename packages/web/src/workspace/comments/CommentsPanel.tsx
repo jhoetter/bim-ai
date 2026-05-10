@@ -1,7 +1,7 @@
 import { useState, type JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
-import type { UxComment } from '../state/store';
+import type { UxComment } from '../../state/store';
 
 export interface CommentsPanelProps {
   comments: UxComment[];

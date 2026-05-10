@@ -68,7 +68,7 @@ import {
 } from './browserRenderingBudgetReadout';
 import { VVDialog } from './VVDialog';
 import { ManageLinksDialog } from './ManageLinksDialog';
-import { CommentsPanel } from './CommentsPanel';
+import { CommentsPanel } from './comments';
 import { ActivityDrawer } from '../collab/ActivityDrawer';
 import { SharePresentationModal } from '../collab/SharePresentationModal';
 import { useActivityDrawerStore } from '../collab/activityDrawerStore';

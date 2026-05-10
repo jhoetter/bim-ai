@@ -14,13 +14,13 @@ This tracker is for the code-quality items only:
 
 ## Current Snapshot
 
-| ID    | Status    | Current state                                                                                                                                                                                |
-| ----- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CQ-01 | `done`    | Sequenced WebSocket publish path, bounded replay buffer, resume/RESYNC flow, client reconnect/backoff, and regression coverage are merged and green.                                         |
-| CQ-02 | `done`    | `uv.lock`, bounded Python deps, frozen installs, and lockfile CI checks are merged and green.                                                                                                |
-| CQ-03 | `partial` | `workspace/agent/`, `workspace/bcf/`, `workspace/evidence/`, and `workspace/inspector/` own their feature clusters; the root workspace directory is down from 164 to 128 files.              |
-| CQ-04 | `partial` | Multiple cohesive helper modules have been extracted from `constraints.py`, `engine.py`, and `export_ifc.py`; the large source files still exist and are not thin shims.                     |
-| CQ-05 | `partial` | Typed slice contracts and tests exist; model, plan authoring, collaboration, workspace UI, and viewport runtime slice factories are extracted while the stable `useBimStore` facade remains. |
+| ID    | Status    | Current state                                                                                                                                                                                          |
+| ----- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| CQ-01 | `done`    | Sequenced WebSocket publish path, bounded replay buffer, resume/RESYNC flow, client reconnect/backoff, and regression coverage are merged and green.                                                   |
+| CQ-02 | `done`    | `uv.lock`, bounded Python deps, frozen installs, and lockfile CI checks are merged and green.                                                                                                          |
+| CQ-03 | `partial` | `workspace/agent/`, `workspace/bcf/`, `workspace/evidence/`, `workspace/inspector/`, and `workspace/comments/` own their feature clusters; the root workspace directory is down from 164 to 126 files. |
+| CQ-04 | `partial` | Multiple cohesive helper modules have been extracted from `constraints.py`, `engine.py`, and `export_ifc.py`; the large source files still exist and are not thin shims.                               |
+| CQ-05 | `partial` | Typed slice contracts and tests exist; model, plan authoring, collaboration, workspace UI, and viewport runtime slice factories are extracted while the stable `useBimStore` facade remains.           |
 
 ## Status Legend
 
@@ -116,7 +116,7 @@ A CQ item is `done` when: (a) `make verify` passes; (b) new logic has unit-test 
 
 **Suggested first PR scope.** `agent/` cluster only — ~25 files, clearest semantic boundary, lowest risk.
 
-**Progress 2026-05-10.** Introduced `workspace/agent/` with an `index.ts` public surface. Moved the agent review pane, agent brief/readout/action helpers, freshness render test, and colocated unit tests into the folder. Updated `workspace/review/` imports to consume the agent public surface. Added `workspace/bcf/` for BCF issue-package and roundtrip evidence helpers/tests. Added `workspace/evidence/` for artifact-upload manifest, baseline lifecycle, digest invariant, staged-artifact formatting, and project-browser evidence helpers/tests. Added `workspace/inspector/` for the right-rail inspector shell, inspector content renderers, sun inspector panel, and colocated tests. Root `workspace/` files dropped from 164 to 128.
+**Progress 2026-05-10.** Introduced `workspace/agent/` with an `index.ts` public surface. Moved the agent review pane, agent brief/readout/action helpers, freshness render test, and colocated unit tests into the folder. Updated `workspace/review/` imports to consume the agent public surface. Added `workspace/bcf/` for BCF issue-package and roundtrip evidence helpers/tests. Added `workspace/evidence/` for artifact-upload manifest, baseline lifecycle, digest invariant, staged-artifact formatting, and project-browser evidence helpers/tests. Added `workspace/inspector/` for the right-rail inspector shell, inspector content renderers, sun inspector panel, and colocated tests. Added `workspace/comments/` for the comments panel surface and tests. Root `workspace/` files dropped from 164 to 126.
 
 ---
 
