@@ -118,7 +118,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-069 | Associate Family Parameter (Visible)                  | Nested Fam.    | 🟡            | Sweep and nested-instance visibility can bind to boolean family params; missing general associate-parameter buttons for every property                                                                                                                                                                                                                |
 | F-070 | Mirror – Draw Axis (DM)                               | Nested Fam.    | 🟡            | Mirror tool two-click interaction implemented for project elements; missing family-editor context and pick-axis mode                                                                                                                                                                                                                                  |
 | F-071 | Symbolic Lines                                        | Nested Fam.    | ✅            | Family editor symbolic lines support canvas drawing, subcategories, line style metadata, detail-level filters, visibility bindings, saved/loadable payloads, and placed-family project plan rendering with solid opening projection and dashed hidden-cut line styles.                                                                                |
-| F-072 | Opening (Projection) / Hidden Lines (Cut) subcats     | Nested Fam.    | 🟡            | Symbolic line authoring supports Symbolic Lines, Opening Projection, and Hidden Lines (Cut) subcategory metadata with object-style labels, lineweights, and dashed hidden-cut canvas/project-style evidence. Missing full project Visibility/Graphics category override controls                                                                      |
+| F-072 | Opening (Projection) / Hidden Lines (Cut) subcats     | Nested Fam.    | ✅            | Symbolic line authoring supports Symbolic Lines, Opening Projection, and Hidden Lines (Cut) subcategory metadata with object-style labels, lineweights, dashed hidden-cut rendering, placed-family project rendering, and dedicated project Visibility/Graphics rows for family symbolic, opening projection, and hidden-cut subcategories.           |
 | F-073 | Preview Visibility toggle (Family Editor)             | Nested Fam.    | 🟡            | Family editor has a Preview Visibility toggle and detail-level selector that filters sweeps, symbolic lines, and nested instances by visibility bindings and coarse/medium/fine settings on lists and canvas. Missing full Revit view-type-specific preview                                                                                           |
 | F-074 | Instance parameters for per-placement overrides       | Nested Fam.    | 🟡            | Placed assets persist per-instance `paramValues`; family params support instanceOverridable and resolver override precedence; missing complete Family Types dialog integration                                                                                                                                                                        |
 | F-075 | Family from furniture template (Metric Furniture.rft) | Param. Furn.   | ✅            | Metric Furniture `.rft` template entry seeds standalone host metadata, Furniture category, origin reference planes, chair parameters, two starter types, coarse symbolic lines, medium/fine sweep placeholder, and saved/project-loaded template metadata.                                                                                            |
@@ -174,12 +174,12 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 
 ## Summary Statistics
 
-_Last audited: 2026-05-10 after revit-parity closure wave 9._
+_Last audited: 2026-05-10 after revit-parity closure wave 10._
 
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
-| ✅ Fully available     | 96      | 80.0%      |
-| 🟡 Partially available | 24      | 20.0%      |
+| ✅ Fully available     | 97      | 80.8%      |
+| 🟡 Partially available | 23      | 19.2%      |
 | ❌ Not available       | 0       | 0%         |
 | **Total**              | **120** | **100%**   |
 

@@ -120,7 +120,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Opening Projection lines](file:///Users/jhoetter/Desktop/Revit%20Specs/0475_02-52-05.png)
 
-**bim-ai status:** 🟡 Partial — symbolic line authoring records subcategory metadata for Symbolic Lines, Opening Projection, and Hidden Lines (Cut). Missing: Object Styles/lineweight propagation, dashed hidden-line rendering, and project Visibility/Graphics controls for these subcategories.
+**bim-ai status:** ✅ Available — symbolic line authoring records subcategory metadata for Symbolic Lines, Opening Projection, and Hidden Lines (Cut), renders hidden-cut lines dashed in placed project views, and exposes dedicated project Visibility/Graphics rows for Family Symbolic Lines, Opening (Projection), and Hidden Lines (Cut) so each subcategory can be controlled independently in the active plan view.
 
 ---
 

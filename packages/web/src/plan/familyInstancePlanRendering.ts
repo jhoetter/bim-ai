@@ -16,6 +16,7 @@ import {
 } from '../familyEditor/familyEditorPersistence';
 import { liveTokenReader } from '../viewport/materials';
 import type { PlanDetailLevel } from './planDetailLevelLines';
+import type { PlanSemanticKind } from './planProjection';
 
 type FamilyTypeElement = Extract<Element, { kind: 'family_type' }>;
 type FamilyInstanceElement = Extract<Element, { kind: 'family_instance' }>;
@@ -53,6 +54,14 @@ function lineVisible(
 ): boolean {
   if (line.visibilityByDetailLevel?.[detailLevel] === false) return false;
   return isVisibleByBinding(line.visibilityBinding, params);
+}
+
+export function familySymbolicLineSemanticKind(
+  subcategory: FamilySymbolicLine['subcategory'],
+): PlanSemanticKind {
+  if (subcategory === 'opening_projection') return 'family_opening_projection';
+  if (subcategory === 'hidden_cut') return 'family_hidden_cut';
+  return 'family_symbolic_line';
 }
 
 function lineMaterial(
@@ -105,6 +114,7 @@ export function makeFamilyInstancePlanSymbol(
   instance: FamilyInstanceElement,
   elementsById: Record<string, Element>,
   detailLevel: PlanDetailLevel,
+  opts: { kindHidden?: (kind: string) => boolean } = {},
 ): THREE.Group | null {
   const type = elementsById[instance.familyTypeId];
   if (type?.kind !== 'family_type') return null;
@@ -115,7 +125,11 @@ export function makeFamilyInstancePlanSymbol(
     ...type.parameters,
     ...(instance.paramValues ?? {}),
   } as HostParams);
-  const visibleLines = def.symbolicLines.filter((line) => lineVisible(line, params, detailLevel));
+  const visibleLines = def.symbolicLines.filter(
+    (line) =>
+      lineVisible(line, params, detailLevel) &&
+      !opts.kindHidden?.(familySymbolicLineSemanticKind(line.subcategory)),
+  );
   if (visibleLines.length === 0) return null;
 
   const group = new THREE.Group();
@@ -130,12 +144,14 @@ export function makeFamilyInstancePlanSymbol(
       new THREE.Vector3(line.startMm.xMm / 1000, 0, line.startMm.yMm / 1000),
       new THREE.Vector3(line.endMm.xMm / 1000, 0, line.endMm.yMm / 1000),
     ];
+    const semanticKind = familySymbolicLineSemanticKind(line.subcategory);
     const segment = new THREE.Line(
       new THREE.BufferGeometry().setFromPoints(pts),
       lineMaterial(line),
     );
     segment.userData.bimPickId = instance.id;
     segment.userData.familySymbolicSubcategory = line.subcategory ?? 'symbolic';
+    segment.userData.familySymbolicSemanticKind = semanticKind;
     segment.renderOrder = 8;
     if (segment.material instanceof THREE.LineDashedMaterial) segment.computeLineDistances();
     group.add(segment);
@@ -161,7 +177,9 @@ export function addFamilyInstancePlanSymbols(
     } else if (opts.activeLevelId && element.levelId !== opts.activeLevelId) {
       continue;
     }
-    const symbol = makeFamilyInstancePlanSymbol(element, elementsById, opts.detailLevel);
+    const symbol = makeFamilyInstancePlanSymbol(element, elementsById, opts.detailLevel, {
+      kindHidden: opts.kindHidden,
+    });
     if (symbol) holder.add(symbol);
   }
 }
