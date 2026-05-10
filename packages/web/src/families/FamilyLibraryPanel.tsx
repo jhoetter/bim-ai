@@ -15,10 +15,16 @@
 
 import { useEffect, useMemo, useState, type JSX } from 'react';
 
-import type { AssetCategory, AssetLibraryEntry, Element, FamilyDiscipline } from '@bim-ai/core';
+import type {
+  AssetCategory,
+  AssetLibraryEntry,
+  Element,
+  FamilyDiscipline,
+  WallTypeLayer,
+} from '@bim-ai/core';
 
 import { BUILT_IN_FAMILIES } from './familyCatalog';
-import { BUILT_IN_WALL_TYPES } from './wallTypeCatalog';
+import { BUILT_IN_WALL_TYPES, materialHexFor, type WallAssemblyLayer } from './wallTypeCatalog';
 import { getThumbnail, PLACEHOLDER_THUMBNAIL } from './thumbnailCache';
 import { RenderedAssetThumbnail } from '../workspace/library/AssetCard';
 import {
@@ -111,8 +117,13 @@ interface CatalogEntry {
   kind: FamilyLibraryPlaceKind;
   catalogLabel?: string;
   assetEntry?: AssetLibraryEntry;
+  wallLayers?: WallThumbnailLayer[];
   searchText?: string;
 }
+
+type WallThumbnailLayer = Pick<WallTypeLayer | WallAssemblyLayer, 'thicknessMm' | 'materialKey'> & {
+  function?: string;
+};
 
 interface AssetCatalogGroup {
   id: `asset-${AssetCategory}`;
@@ -175,6 +186,7 @@ function buildCatalogByDiscipline(
         .toFixed(0)}mm`,
       custom: false,
       kind: 'wall_type',
+      wallLayers: wt.layers,
     });
   }
 
@@ -198,6 +210,7 @@ function buildCatalogByDiscipline(
         familyName: `${el.layers.length} layers`,
         custom: true,
         kind: 'wall_type',
+        wallLayers: el.layers,
       });
     } else if (el.kind === 'floor_type') {
       const bucket = (out['floor_type'] ??= []);
@@ -324,6 +337,86 @@ function TypeThumbnail({ typeId, name }: { typeId: string; name: string }): JSX.
   );
 }
 
+function WallTypeThumbnail({
+  layers,
+  name,
+}: {
+  layers: WallThumbnailLayer[];
+  name: string;
+}): JSX.Element {
+  const drawableLayers = layers.filter((layer) => layer.thicknessMm > 0);
+  const total = drawableLayers.reduce((acc, layer) => acc + layer.thicknessMm, 0);
+  const stripX = 10;
+  const stripY = 16;
+  const stripW = 44;
+  const stripH = 30;
+
+  return (
+    <svg
+      role="img"
+      aria-label={name}
+      data-testid="wall-type-thumbnail"
+      width={64}
+      height={64}
+      viewBox="0 0 64 64"
+      className="rounded border border-border bg-surface-muted"
+    >
+      <rect x={0} y={0} width={64} height={64} fill="var(--color-surface-muted)" />
+      <path
+        d="M10 16 L54 16 L58 20 L14 20 Z"
+        fill="var(--color-surface-strong)"
+        stroke="var(--color-border)"
+        strokeWidth={1}
+      />
+      <g>
+        {drawableLayers.map((layer, index) => {
+          const previous = drawableLayers
+            .slice(0, index)
+            .reduce((acc, item) => acc + item.thicknessMm, 0);
+          const x = stripX + (previous / total) * stripW;
+          const w = Math.max(2, (layer.thicknessMm / total) * stripW);
+          return (
+            <rect
+              key={`${layer.materialKey ?? layer.function ?? 'layer'}-${index}`}
+              x={x}
+              y={stripY}
+              width={index === drawableLayers.length - 1 ? stripX + stripW - x : w}
+              height={stripH}
+              fill={materialHexFor(layer.materialKey)}
+              stroke="var(--color-border)"
+              strokeWidth={0.45}
+            />
+          );
+        })}
+      </g>
+      <path
+        d="M54 16 L58 20 L58 50 L54 46 Z"
+        fill="var(--color-surface-strong)"
+        stroke="var(--color-border)"
+        strokeWidth={1}
+      />
+      <rect
+        x={stripX}
+        y={stripY}
+        width={stripW}
+        height={stripH}
+        fill="none"
+        stroke="var(--color-foreground)"
+        strokeOpacity={0.55}
+        strokeWidth={1}
+      />
+      <line
+        x1={stripX}
+        y1={stripY + stripH + 4}
+        x2={stripX + stripW}
+        y2={stripY + stripH + 4}
+        stroke="var(--color-muted)"
+        strokeWidth={1}
+      />
+    </svg>
+  );
+}
+
 function CatalogThumbnail({ entry }: { entry: CatalogEntry }): JSX.Element {
   if (entry.assetEntry) {
     return (
@@ -331,6 +424,9 @@ function CatalogThumbnail({ entry }: { entry: CatalogEntry }): JSX.Element {
         <RenderedAssetThumbnail entry={entry.assetEntry} />
       </div>
     );
+  }
+  if (entry.kind === 'wall_type' && entry.wallLayers) {
+    return <WallTypeThumbnail layers={entry.wallLayers} name={entry.name} />;
   }
   return <TypeThumbnail typeId={entry.id} name={entry.name} />;
 }
