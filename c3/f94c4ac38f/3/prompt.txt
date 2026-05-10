@@ -1,0 +1,1 @@
+In the current repository, use Entire history/transcripts to answer: what have we recently done? Focus on recent sessions/checkpoints/commits and summarize concrete work items, touched areas, and any unresolved follow-ups. Return concise bullet points with dates/times if available.
