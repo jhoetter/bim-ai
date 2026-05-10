@@ -3,7 +3,7 @@
   "checkpoint_id": "67061623112b",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "app/bim_ai/assets.py",
     "app/tests/test_vie_07_pin_element.py"
@@ -32,6 +32,19 @@
       "transcript": "/67/061623112b/3/full.jsonl",
       "content_hash": "/67/061623112b/3/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/67/061623112b/4/metadata.json",
+      "transcript": "/67/061623112b/4/full.jsonl",
+      "content_hash": "/67/061623112b/4/content_hash.txt",
+      "prompt": "/67/061623112b/4/prompt.txt"
     }
-  ]
+  ],
+  "token_usage": {
+    "input_tokens": 1751470,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 41829376,
+    "output_tokens": 109284,
+    "api_call_count": 331
+  }
 }
