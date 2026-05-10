@@ -1,0 +1,329 @@
+please look into @spec/target-house-seed.md  and @spec/target-house.jpeg ; our current house we are creating via make seed doesnt look as close as i want it to be to the image. can you please analyze how we can get there? please for this clear the current seeding, potentially use (or improve) @claude-skills/sketch-to-bim/**, and then implement accordingly. i want that you really are sure we match the image with our BIM model...
+--- Content from referenced files ---
+Content from @claude-skills/sketch-to-bim/SKILL.md:
+---
+name: sketch-to-bim
+description: Use this skill when the user hands you a customer sketch (line drawing, render, photo, or hand sketch) plus an optional verbal brief, and asks you to author or extend a bim-ai BIM model that matches the sketch. The skill defines a phased architect's workflow (massing → skeleton → envelope → openings → interior → detail → documentation) with per-phase visual checkpoints, soundness validation, and an iteration loop. Trigger phrases include "build a BIM model from this sketch", "seed the house from this sketch", "generate a BIM model that matches this drawing", or any task that anchors on `spec/target-house-seed*.{md,png}` or comparable customer-supplied imagery.
+---
+
+# Sketch-to-BIM — the architect's playbook
+
+You are the AI architect. The customer hands you a sketch (line drawing, render, photo, or hand sketch) and a brief; you produce a sound, correctly-proportioned BIM model in `bim-ai` that **looks like the sketch from the called-out viewpoints**. Your output is a working bim-ai model that can be loaded in the dev environment and resembles the sketch.
+
+This skill is the methodology a world-class architect would use, encoded as a deterministic process. Software stays deterministic; you provide the intelligence — interpreting the sketch with your own multimodal vision, judging silhouette match, picking materials, authoring corrective commands.
+
+---
+
+## The mindset shift
+
+You will fail this task if you treat it as a single translation problem (read sketch → emit one big command bundle → declare done). The previous attempt did exactly that and shipped a featureless box; see `nightshift/seed-fidelity-status.md` for the post-mortem.
+
+The right mental model is **iterative convergence through 5–7 phased passes**, each one visually validated before adding detail. After each phase: render, look, validate, correct. Never advance with a phase that doesn't read.
+
+> **Every phase is committed independently. Every phase is verified independently. You do not move to phase N+1 until phase N's silhouette matches the target.**
+
+---
+
+## Pre-flight (before you touch the engine)
+
+1. **Locate the inputs.** Read every customer-supplied document and image:
+   - The brief (markdown, e.g. `spec/target-house-seed.md`) — read it end-to-end.
+   - The reference imagery (e.g. `spec/target-house-seed-vis.png`, `spec/target-house-vis-colored.png`) — open every image with the Read tool. Look at it with your own vision. Describe back, in writing, what you see.
+   - Any sketch panels (main perspective, front / side / rear elevations, axonometric).
+
+2. **Fill out the structured brief.** Produce a JSON-shaped brief (SKB-21 format when it lands; today, write it as a Markdown file at `nightshift/<sprint>/brief.md`). Required fields:
+
+   ```
+   - style: "modernist" | "traditional" | "minimalist" | "industrial" | …
+   - program: [{ name, areaM2Approx, level, programmeCode? }, …]
+   - siteOrientation: { northDegCwFromPlanX }
+   - keyDimensions:
+       - footprint width / depth (mm)
+       - floor-to-floor heights (mm)
+       - ridge / eave heights (mm)
+       - any sketch-called-out dimensions (annotate with sketch coord if you eyeballed)
+   - materialIntent: [{ surface, materialKey?, evidence }, …]
+   - specialFeatures:
+       - asymmetricGable: { ridgeOffsetDir, severity }
+       - loggiaRecess: { face, depthMm }
+       - dormer: { face, dimensions }
+       - balcony: { face, projectionMm }
+   - referenceImages: [path, …]
+   - viewpoints: [{ name, sketchPanelMatched }, …]
+   ```
+
+3. **Log every assumption.** Where the sketch is ambiguous (overhang depth not called out, exact eave height not dimensioned), do not guess silently. Write the assumption to the assumption log with the sketch coordinate that triggered the inference. Use `agent_assumption` element kind once SKB-08 lands; before that, write a markdown bullet list at `nightshift/<sprint>/assumptions.md`.
+
+4. **Pick the closest archetype, if any** (SKB-09). Today there are none; you start from a blank model. When archetypes ship, use `bim-ai archetype list` and fork the closest one — never start from blank if a 70%-match archetype exists.
+
+5. **Calibrate.** Anchor 2–3 known dimensions from the sketch (typically: overall house width, floor-to-floor, one elevation point). Compute a pixel-to-mm scale factor. When SKB-04 (`bim-ai calibrate`) lands, use it; today, do the math by hand and record in `assumptions.md`.
+
+---
+
+## The 7 phases
+
+Author **only** the elements listed for the current phase; do not skip ahead. Each phase ends with: commit → checkpoint → validate → refine → advance.
+
+### Phase 1 — Massing
+
+**Author:** project-base-point, levels, the volumetric blocks that define overall form. When SKB-02 (`mass` element kind) lands: author `mass` elements. Today: stub with an oversized `floor` or a flat-roof shell of walls representing the overall envelope, materialKey unset.
+
+**Validate:**
+
+- Element-count prior (SKB-13): for a single-family two-story home expect ≥1 mass / shell, 2 levels, 1 base point.
+- Levels stack monotonically (no interleaving).
+- Footprint dimensions match the calibrated brief within 5%.
+
+**Checkpoint:** screenshot the SSW iso (or the sketch's main-perspective viewpoint). Compare silhouette — does the **outer outline** match the sketch's main perspective? **No materials, no openings, no roof slope yet.** Just the box outline.
+
+**Refine until match.** Then advance.
+
+### Phase 2 — Skeleton
+
+**Author:** primary structural walls (load-bearing exterior walls, primary partitions), floor slabs at every level, roof footprint placeholder (flat for now, even if the target has a gable). Do not yet add openings, materials, or detail.
+
+**Validate:**
+
+- SKB-05 architectural soundness pack (when it lands): wall corners meet, floors match wall enclosure, levels stack.
+- SKB-19 wall-graph closure: every floor's perimeter is a closed wall ring.
+- SKB-22 auto-join: walls at coincident endpoints are joined.
+
+Today, the existing `constraints.evaluate` runs at commit; check the violations list and resolve any blocking-severity items.
+
+**Checkpoint:** floor plan view + 3D iso. Floor plan should show closed rooms; iso should still match the silhouette.
+
+### Phase 3 — Envelope
+
+**Author:** the actual roof shape (gable / asymmetric_gable / hip / flat per the sketch), wall heights matched to roof attachment, exterior wall material keys. **Still no openings.**
+
+**Validate:**
+
+- SKB-11 roof-wall alignment: the roof footprint contains every upper-floor wall centerline.
+- Asymmetric gable sanity (if applicable): with current `_buildAsymmetricGableGeometry`, `eaveLeftMm + leftRunMm·tan(slopeDeg)` must be > `eaveRightMm` for a normal gable peak — if not, your slope or eave heights are wrong and the ridge will sit below an eave (producing a flat-looking roof, the seed-fidelity failure mode).
+- Roof material key resolves in MAT-01.
+
+**Checkpoint:** SSW iso. The asymmetric massing should now read clearly. The picture-frame outline (KRN-15 sweep) belongs in this phase if the sketch shows a thick gable frame.
+
+**Refine ruthlessly here.** This is where the seed-fidelity sprint failed — it advanced to materials/openings without confirming the silhouette.
+
+### Phase 4 — Openings
+
+**Author:** doors, windows, wall_openings on the envelope walls. Apply `outlineKind` (KRN-12) for non-rectangular windows. Apply `operationType` (KRN-13) for non-swing doors.
+
+**Validate:**
+
+- Openings within wall bounds (existing constraint).
+- SKB-06 proportion linter: door widths ∈ [700, 2000] mm, sill heights ∈ [80, 1500] mm.
+- Hosted openings on recessed walls: render against the recessed surface (KRN-16's `recessOffsetForOpening`).
+
+**Checkpoint:** front elevation viewpoint. Compare opening positions and proportions to the sketch's front elevation panel.
+
+### Phase 5 — Interior
+
+**Author:** room separations, partition walls, stairs, slab openings (stair shafts), railings, room outlines + programme codes.
+
+**Validate:**
+
+- VAL-01 / SKB-19 closure: every room is bounded by walls or room separations.
+- Stair runs base/top match the level stack.
+- Slab opening hosted on the correct floor.
+
+**Checkpoint:** plan view of each level. Compare to the sketch's plan if one is provided; otherwise verify rooms make programmatic sense.
+
+### Phase 6 — Detail
+
+**Author:** balcony, fascia / gutter sweeps (KRN-15), picture-frame outlines, dormers (KRN-14), wall recess zones (KRN-16) for loggias / bay windows, family-instance overrides for curtain panels (KRN-09). Apply secondary materials.
+
+**Validate:**
+
+- Sweep paths produce visible geometry (run an offline render — when SKB-03 lands, use `bim-ai checkpoint`; today, run the dev server and look).
+- Dormer footprint within host roof bounds.
+- Recess zones don't overlap, setback ≤ thickness × 8.
+
+**Checkpoint:** SSW iso (main perspective) + rear axonometric. Compare to the sketch's main-perspective panel.
+
+### Phase 7 — Documentation
+
+**Author:** sheets, schedules, plan_views, view_templates, section_cuts, dimensions, viewpoints (named to match the sketch's panels).
+
+**Validate:**
+
+- Sheet has all the viewports the brief calls out.
+- Every schedule renders rows.
+
+**Checkpoint:** open every sheet and every named viewpoint; confirm the documentation reads.
+
+---
+
+## The refine loop (within every phase)
+
+After every commit:
+
+1. **Render** the phase-relevant viewpoint(s). Use the dev server + Playwright e2e harness today; when SKB-03 lands, use `bim-ai checkpoint`.
+2. **Look** at the rendered PNG with your own multimodal vision. Compare to the sketch.
+3. **Score** the match qualitatively: silhouette ✓/✗, proportions ✓/✗, materials ✓/✗.
+4. If mismatch: **identify the largest visible delta** — typically one of: wrong dimension, wrong slope, missing element, wrong material.
+5. **Author 1–2 corrective commands** (`updateElementProperty`, `moveWallEndpoints`, etc.).
+6. **Re-render. Re-look.**
+7. Cap at 5 iterations per phase. If still mismatched, log an assumption and decide whether to escalate to the user or accept a documented gap.
+
+---
+
+## Anti-patterns (what the seed-fidelity sprint did wrong)
+
+These are the failure modes you must avoid; they are the observed behaviour from the 2026-05-07 attempt that produced a featureless box instead of a dramatic asymmetric gable house:
+
+- **Skipping phases.** Author all 87 commands at once → can't tell which phase broke fidelity. Don't.
+- **No visual verification.** Trusted "tests pass + bundle commits" as success. Tests verify code correctness, not silhouette match. Don't.
+- **Eyeballing dimensions** without recording them as assumptions. The "ridge offset 1500 mm" was a guess, not a calibrated measurement. Don't.
+- **Declaring "partial" when the silhouette is wrong.** The honest call is "failed; here's the gap". The sprint prompt warned about this exact mistake and I made it anyway. Don't.
+- **Building geometry without checking the renderer can faithfully render it.** The asymmetric_gable mesh isn't watertight; the dormer CSG cut silently no-ops. The agent had no way to detect this from inside the engine — only the rendered output reveals it. **Look at the render.**
+- **Choosing dimensions where `eaveLeftMm + leftRunMm · tan(slope) < eaveRightMm`.** Produces an inverted "slope" that flattens the gable. Sanity-check before committing the roof.
+
+---
+
+## Tool catalog
+
+### What exists today
+
+**Engine commands** (full list in `app/bim_ai/commands.py`): `createLevel`, `createWall`, `insertDoorOnWall`, `insertWindowOnWall`, `createWallOpening`, `createFloor`, `createRoof`, `createStair`, `createSlabOpening`, `createBalcony`, `createRailing`, `createSweep` (KRN-15), `createDormer` (KRN-14), `setWallRecessZones` (KRN-16), `attachWallTopToRoof`, `createSectionCut`, `upsertSheet`, `upsertSchedule`, `upsertPlanView`, `saveViewpoint`, etc. All are documented in `spec/workpackage-master-tracker.md` (search for KRN-XX detail blocks).
+
+**Bundle dry-run:** `bim-ai apply-bundle --dry-run --in <commands.json>` validates a bundle without committing. **Use this between phases.**
+
+**Render:** start dev with `make dev`; navigate to the 3D tab; activate a viewpoint via the project browser. Or programmatically via the Playwright harness in `packages/web/e2e/`.
+
+**Validators:** `app/bim_ai/constraints.py:evaluate()` runs at every commit; check the returned violation list.
+
+**Material catalog:** `app/bim_ai/material_catalog.py` (Python) and `packages/web/src/viewport/materials.ts` (TS). Every materialKey you author must resolve in both.
+
+### What is planned (SKB work packages)
+
+All listed in `spec/workpackage-master-tracker.md` under "Sketch-to-BIM agent methodology (SKB)". Highest-leverage items, in priority order:
+
+- **SKB-03** `bim-ai checkpoint` — render a viewpoint to PNG + compute SSIM/MSE deltas vs. target. The agent reads the PNG with its own vision and judges silhouette match. (Until this ships, run the dev server and screenshot manually.)
+- **SKB-04** `bim-ai calibrate` — pixel-to-mm scale + proportional query API.
+- **SKB-05** architectural soundness validator pack.
+- **SKB-09** archetype starter library.
+- **SKB-10** mandatory per-phase visual gate.
+- **SKB-15** the refine loop, formalised.
+
+---
+
+## What you produce
+
+At task end, you produce:
+
+1. **The seed bundle** — code in `packages/cli/lib/one-family-home-commands.mjs` (or a per-project file) that, when applied to an empty model, materialises the house. Authored phase-by-phase as readable JS sections with `// === PHASE N: <name> ===` markers.
+2. **The brief** — a structured markdown at `nightshift/<sprint>/brief.md` capturing inputs.
+3. **The assumption log** — every judgment call with sketch coordinates.
+4. **Per-phase checkpoint screenshots** — saved alongside the brief, named `phase-N-<name>-vp-<id>.png`.
+5. **A status doc** — `nightshift/<sprint>-status.md` honestly assessing visual fidelity. If the silhouette does not match the target sketch, the status doc says **failed**, not "partial". Honesty over face-saving.
+
+---
+
+## When you are stuck
+
+If iteration in a phase exceeds 5 cycles without convergence, escalate to the user with:
+
+- The current rendered PNG.
+- The target sketch panel.
+- The largest visible delta you've identified.
+- The 2–3 corrective approaches you've considered and your reasoning.
+- A concrete question.
+
+Do not silently accept a wrong silhouette. The seed-fidelity sprint did, and shipped a flat box.
+
+---
+
+## Glossary
+
+- **Phase** — a deliberate authoring pass over the model. 7 phases total (massing → skeleton → envelope → openings → interior → detail → documentation).
+- **Checkpoint** — a render-and-compare step at the end of each phase.
+- **Refine loop** — within-phase iteration after a failed checkpoint.
+- **Brief** — the structured-input distillation of the customer's sketch + verbal description.
+- **Assumption log** — every judgment call recorded with sketch coordinates so a human reviewer can audit the agent's reasoning.
+- **Silhouette** — the 2D outline of the rendered model from a fixed viewpoint, the primary fidelity metric.
+- **Soundness** — the geometric validity of the model: corners meet, floors match enclosures, roofs cover walls, levels stack.
+Content from @spec/target-house-seed.md:
+# Target House Seed — Precision Reference Spec
+
+> **Purpose.** Authoritative reference for what the demo seed house should look
+> like when perfectly modelled in BIM AI.
+
+---
+
+## 1. Geometry & Massing Logic
+
+The building is a monochromatic white architectural study composed of two primary intersecting volumes and one "wrapper" shell.
+
+Ground Volume: A rectangular cuboid with a 1:2 aspect ratio.
+
+Upper Volume (The Shift): A larger rectangular cuboid placed atop the ground floor, offset to the left. This creates a cantilever exactly 1/3 the width of the building, leaving a covered void beneath it on the left side.
+
+The "Wrapper" Shell: A continuous, thick (approx. 0.5 units) white band that forms the side walls and the roof. This shell creates a deeply recessed frontal plane (approx. 1 meter deep) for the upper floor.
+
+---
+
+## 2. Roof Subtractions (Boolean Ops)
+
+The roof is the most complex element and requires specific instructions:
+
+Profile: An asymmetrical pitched gable. The ridge is off-center to the right.
+
+The Cutout: On the right-hand slope, a large rectangular section is subtracted (Boolean difference), extending from the ridge down to the gutter line. This creates an "L-shaped" roof profile when viewed from the side and reveals a hidden upper-level terrace.
+
+The Inset: Within this cutout, there is a recessed vertical glass wall and a flat floor plane.
+
+---
+
+## 3. Facade Composition & Fenestration
+
+The Recessed Upper Front: Divided into three vertical zones:
+
+Left: A solid wall segment with a high-set, trapezoidal window following the roof's pitch.
+
+Center: A protruding vertical chimney-like volume clad in vertical siding.
+
+Right: A double-height "curtain wall" of glass divided by a central horizontal mullion.
+
+The Ground Front:
+
+- Two identical portrait-oriented rectangular windows. The right-most window reveals an interior staircase with at least 8 visible treads.
+- A simple, recessed rectangular door on the far right.
+
+The Balcony: A horizontal void across the entire upper front width. The railing consists of three thin, continuous black horizontal cables/rails fixed to the inner edge of the white shell.
+
+---
+
+## 4. Material Specification & Mapping
+
+Material A (Primary Shell): Matte white, seamless plaster/concrete with zero specular reflection. Applied to the roof, the side walls of the second floor, and the floor slabs.
+
+Material B (Cladding): High-definition vertical board-and-batten siding. The boards are narrow (approx. 10cm width). This texture is applied to all ground-floor walls and the central recessed section of the second floor.
+
+Material C (Glazing): Semi-transparent, neutral-tinted glass.
+
+Material D (Plinth): A low-profile, flat white rectangular base that extends exactly 0.5 units beyond the building's footprint on all sides.
+
+---
+
+## 5. Lighting & Rendering Parameters
+
+Perspective: Axonometric/Isometric view from the front-left.
+
+Lighting: Strong directional "Sun" light from the top-left-front.
+
+Shadows: Sharp-edged (Ray-traced). Note the triangular shadow cast by the roof overhang onto the recessed siding and the large rectangular shadow cast by the cantilever onto the ground plinth.
+
+Line Work: Thin, black ambient occlusion lines or "outline" rendering style (0.5pt thickness) highlighting every geometric edge.
+
+---
+
+## 6. Prompting Cheat-Sheet for AI
+
+High-fidelity architectural concept, axonometric view, asymmetrical pitched roof with a rectangular Boolean subtraction on the right slope, cantilevered second floor overhang, white plaster shell, vertical board-and-batten siding, three-rail horizontal balustrade, interior staircase visible through ground window, sharp directional shadows, minimalist 3D clay model style.
+--- End of content ---
+
+---
+
+you destroyed commands.json, was that safe?

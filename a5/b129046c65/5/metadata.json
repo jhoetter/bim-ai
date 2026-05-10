@@ -1,0 +1,67 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "a5b129046c65",
+  "session_id": "3489c088-a646-48c4-b4a6-6488ef3f8059",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T13:32:04.205513Z",
+  "branch": "revit-parity-qat-dimension-tag-shortcuts",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "app/bim_ai/commands.py",
+    "app/bim_ai/engine_dispatch_documentation.py",
+    "app/bim_ai/schedule_derivation.py",
+    "app/tests/test_schedule_opening_computed_fields.py",
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/viewport/ViewCube.tsx",
+    "packages/web/src/workspace/ModeShells.test.tsx",
+    "packages/web/src/workspace/ModeShells.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/WorkspaceRightRail.tsx",
+    "packages/web/src/workspace/shell/LeftRail.tsx",
+    "packages/web/src/workspace/viewport/CanvasMount.tsx",
+    "packages/web/src/workspace/viewport/Viewport3DLayersPanel.test.tsx",
+    "packages/web/src/workspace/viewport/Viewport3DLayersPanel.tsx",
+    "ux-revamp.md"
+  ],
+  "agent": "Gemini CLI",
+  "model": "gemini-3-flash-preview",
+  "turn_id": "0c831723a8a8",
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T13:32:04.170813Z",
+    "agent_lines": 473,
+    "agent_removed": 180,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 473,
+    "total_lines_changed": 653,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 792,
+      "agent_lines_removed": 790
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 792,
+      "agent_lines_removed": 790
+    }
+  ]
+}
