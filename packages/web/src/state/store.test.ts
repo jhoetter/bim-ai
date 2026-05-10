@@ -272,6 +272,53 @@ describe('hydrateFromSnapshot', () => {
     }
   });
 
+  it('coerces external IFC/PDF/image link metadata from snake_case payloads', () => {
+    const { hydrateFromSnapshot } = useBimStore.getState();
+    hydrateFromSnapshot({
+      modelId: 'm1',
+      revision: 1,
+      elements: {
+        'pdf-1': {
+          kind: 'link_external',
+          name: 'Permit set',
+          external_link_type: 'pdf',
+          source_path: '/underlays/permit.pdf',
+          source_name: 'permit.pdf',
+          source_metadata: { sizeBytes: 42 },
+          reload_status: 'ok',
+          last_reload_message: 'Reloaded',
+          loaded: false,
+          hidden: true,
+          pinned: true,
+          origin_mm: { x_mm: 10, y_mm: 20 },
+          origin_alignment_mode: 'project_origin',
+          rotation_deg: 15,
+          scale_factor: 2,
+          overlay_opacity: 0.35,
+        },
+      },
+      violations: [],
+    });
+    const link = useBimStore.getState().elementsById['pdf-1'];
+    expect(link?.kind).toBe('link_external');
+    if (link?.kind === 'link_external') {
+      expect(link.externalLinkType).toBe('pdf');
+      expect(link.sourcePath).toBe('/underlays/permit.pdf');
+      expect(link.sourceName).toBe('permit.pdf');
+      expect(link.sourceMetadata?.sizeBytes).toBe(42);
+      expect(link.reloadStatus).toBe('ok');
+      expect(link.lastReloadMessage).toBe('Reloaded');
+      expect(link.loaded).toBe(false);
+      expect(link.hidden).toBe(true);
+      expect(link.pinned).toBe(true);
+      expect(link.originMm).toEqual({ xMm: 10, yMm: 20 });
+      expect(link.originAlignmentMode).toBe('project_origin');
+      expect(link.rotationDeg).toBe(15);
+      expect(link.scaleFactor).toBe(2);
+      expect(link.overlayOpacity).toBe(0.35);
+    }
+  });
+
   it('coerces area and area plan scheme metadata from snake_case payloads', () => {
     const { hydrateFromSnapshot } = useBimStore.getState();
     hydrateFromSnapshot({

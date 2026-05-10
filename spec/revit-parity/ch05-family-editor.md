@@ -13,7 +13,7 @@ The Family Editor is a sub-environment within Revit for creating parametric comp
 **Screenshot:**
 ![Family Editor workspace](file:///Users/jhoetter/Desktop/Revit%20Specs/0376_01-50-45.png)
 
-**bim-ai status:** 🟡 Partial — bim-ai has an in-app `/family-editor` workspace with a template chooser, reference-plane and parameter panels, sweep/extrusion-style solids, arrays, nested instances, visibility bindings, and flex preview. Missing: full persistence/load-to-project workflow and Revit-style dedicated family ribbon/work-plane management.
+**bim-ai status:** ✅ Available — bim-ai has an in-app `/family-editor` workspace with a template chooser, reference-plane and parameter panels, sweep/extrusion-style solids, arrays, nested instances, visibility bindings, flex preview, saved authored family documents, project catalog persistence, and Load Into Project / reload behavior.
 
 ---
 
@@ -35,7 +35,7 @@ The Family Editor is a sub-environment within Revit for creating parametric comp
 **Screenshot:**
 ![Reference Planes](file:///Users/jhoetter/Desktop/Revit%20Specs/0391_01-52-22.png)
 
-**bim-ai status:** 🟡 Partial — the family editor can add horizontal and vertical reference planes and use them as authoring context. Missing: strong/weak reference semantics, polished naming/subcategory controls, and constraint locks.
+**bim-ai status:** ✅ Available — the family editor can add horizontal and vertical reference planes, edit names, classify them as Strong Reference / Weak Reference / Not a Reference, lock them, and use them as constraint-driving authoring references.
 
 ---
 
@@ -57,7 +57,7 @@ The Family Editor is a sub-environment within Revit for creating parametric comp
 **Screenshot:**
 ![Pick Lines with Lock](file:///Users/jhoetter/Desktop/Revit%20Specs/0619_03-49-44.png)
 
-**bim-ai status:** 🟡 Partial — family sweep profile sketches can pick reference planes as profile sketch lines and optionally lock those picked lines to the source reference plane. Locked picked lines store `reference_plane` source metadata and rederive automatically when the reference-plane offset is edited. Missing: model-edge picking, lock constraint visualization, and Pick Lines support across every sketch-based family/project tool.
+**bim-ai status:** ✅ Available — family sweep profile sketches can pick reference planes and family geometry edges as profile sketch lines. Enabling Lock stores source metadata, and locked picked lines rederive automatically when source planes, source edges, or constraint-driven offsets change.
 
 ---
 
@@ -79,7 +79,7 @@ The Family Editor is a sub-environment within Revit for creating parametric comp
 **Screenshot:**
 ![Dimension + Create Parameter](file:///Users/jhoetter/Desktop/Revit%20Specs/0394_01-52-46.png)
 
-**bim-ai status:** 🟡 Partial — the family editor can create aligned dimensions between reference planes and generate a bound `length_mm` family parameter from the measured offset. The dimension row records the two references, locked value, and parameter key, and the generated parameter appears in the family parameter table. Missing: canvas dimension placement, Revit's label dropdown UI, EQ/lock behavior, and constraint-driven reference-plane solving.
+**bim-ai status:** ✅ Available — the family editor can place aligned dimensions between reference planes, render them on canvas, label existing or new `length_mm` parameters from dropdown/create controls, and solve reference-plane offsets from bound parameter values while respecting locked planes.
 
 ---
 
@@ -155,7 +155,7 @@ This allows a family to show a simple 2D opening symbol at Coarse detail and a d
 **Screenshot:**
 ![Load Into Project](file:///Users/jhoetter/Desktop/Revit%20Specs/0424_01-58-16.png)
 
-**bim-ai status:** 🟡 Partial — external catalog families can now be loaded into the current project from `FamilyLibraryPanel.tsx` via a dedicated Load action. `Workspace.tsx` persists them as project `family_type` elements with `catalogSource` provenance using the existing `upsertFamilyType` command, while the separate Place action still loads and immediately enters placement. Missing: true Family Editor `.rfa` save/load, multi-open-project target selection, and overwrite/parameter-values dialogs.
+**bim-ai status:** ✅ Available — external catalog families can be loaded or placed, and Family Editor authored families can be saved, reopened, and loaded into the project as project catalog family definitions plus `family_type` rows. Reloading matching authored families offers Keep values vs Overwrite values choices while preserving the existing external catalog Load/Place workflow.
 
 ---
 

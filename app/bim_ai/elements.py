@@ -1656,6 +1656,33 @@ class LinkDxfElem(BaseModel):
     overlay_opacity: float | None = Field(default=None, alias="overlayOpacity", ge=0.0, le=1.0)
 
 
+class ExternalLinkElem(BaseModel):
+    """F-024 — generic IFC/PDF/image external-link row managed by Manage Links."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["link_external"] = "link_external"
+    id: str
+    name: str = "External link"
+    external_link_type: Literal["ifc", "pdf", "image"] = Field(alias="externalLinkType")
+    source_path: str = Field(alias="sourcePath")
+    source_name: str | None = Field(default=None, alias="sourceName")
+    source_metadata: dict[str, Any] = Field(default_factory=dict, alias="sourceMetadata")
+    reload_status: Literal["not_reloaded", "ok", "source_missing", "parse_error"] = Field(
+        default="not_reloaded", alias="reloadStatus"
+    )
+    last_reload_message: str | None = Field(default=None, alias="lastReloadMessage")
+    loaded: bool = Field(default=True)
+    hidden: bool = Field(default=False)
+    pinned: bool = Field(default=False)
+    origin_mm: Vec2Mm | None = Field(default=None, alias="originMm")
+    origin_alignment_mode: Literal["origin_to_origin", "project_origin", "shared_coords"] = Field(
+        default="origin_to_origin", alias="originAlignmentMode"
+    )
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    scale_factor: float = Field(default=1.0, alias="scaleFactor", gt=0)
+    overlay_opacity: float | None = Field(default=None, alias="overlayOpacity", ge=0.0, le=1.0)
+
+
 class FamilyCatalogSource(BaseModel):
     """FAM-08 — provenance for a family_type loaded from an external catalog."""
 
@@ -1669,6 +1696,8 @@ class FamilyTypeElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["family_type"] = "family_type"
     id: str
+    name: str = ""
+    family_id: str = Field(default="", alias="familyId")
     discipline: Literal["door", "window", "generic"] = "generic"
     parameters: dict[str, Any] = Field(default_factory=dict)
     catalog_source: FamilyCatalogSource | None = Field(default=None, alias="catalogSource")
@@ -3203,6 +3232,7 @@ Element = Annotated[
     | SunSettingsElem
     | LinkModelElem
     | LinkDxfElem
+    | ExternalLinkElem
     | SelectionSetElem
     | ClashTestElem
     | PlacedTagElem

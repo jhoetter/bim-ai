@@ -127,6 +127,54 @@ describe('InspectorPropertiesFor — spec §13', () => {
     fireEvent.change(select, { target: { value: 'lvl-2' } });
     expect(onPropertyChange).toHaveBeenCalledWith('levelId', 'lvl-2');
   });
+
+  it('renders editable wall type fields and layer summary', () => {
+    const wallType: Extract<Element, { kind: 'wall_type' }> = {
+      kind: 'wall_type',
+      id: 'wt-1',
+      name: 'Generic 200',
+      basisLine: 'center',
+      layers: [{ function: 'structure', materialKey: 'Concrete', thicknessMm: 200 }],
+    };
+    const onPropertyChange = vi.fn();
+
+    const { getByTestId, getByText } = render(
+      InspectorPropertiesFor(wallType, t, { onPropertyChange }),
+    );
+
+    const name = getByTestId('inspector-wall-type-name') as HTMLInputElement;
+    fireEvent.blur(name, { target: { value: 'Generic 250' } });
+    expect(onPropertyChange).toHaveBeenCalledWith('name', 'Generic 250');
+
+    fireEvent.change(getByTestId('inspector-wall-type-basis-line'), {
+      target: { value: 'face_exterior' },
+    });
+    expect(onPropertyChange).toHaveBeenCalledWith('basisLine', 'face_exterior');
+    expect(getByText('1 layer · 200 mm')).toBeTruthy();
+  });
+
+  it('renders editable family type parameters', () => {
+    const familyType: Extract<Element, { kind: 'family_type' }> = {
+      kind: 'family_type',
+      id: 'ft-1',
+      name: 'Door 900',
+      familyId: 'fam-door',
+      discipline: 'door',
+      parameters: { name: 'Door 900', widthMm: 900, fireRated: false },
+    };
+    const onPropertyChange = vi.fn();
+
+    const { getByTestId } = render(InspectorPropertiesFor(familyType, t, { onPropertyChange }));
+
+    const width = getByTestId('inspector-family-type-param-widthMm') as HTMLInputElement;
+    fireEvent.blur(width, { target: { value: '1000' } });
+    expect(onPropertyChange).toHaveBeenCalledWith('parameters.widthMm', 1000);
+
+    fireEvent.change(getByTestId('inspector-family-type-param-fireRated'), {
+      target: { value: 'true' },
+    });
+    expect(onPropertyChange).toHaveBeenCalledWith('parameters.fireRated', true);
+  });
 });
 
 describe('InspectorConstraintsFor', () => {

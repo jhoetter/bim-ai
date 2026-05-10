@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
   lineFromReferencePlane,
+  pickedFamilyGeometryLine,
   pickedReferencePlaneLine,
   rederiveLockedSketchLines,
+  solveReferencePlaneDimensionConstraints,
   trimExtendSketchLinesToCorner,
 } from './familySketchGeometry';
 
@@ -42,6 +44,67 @@ describe('familySketchGeometry', () => {
         endMm: { xMm: 10, yMm: 0 },
       },
     ]);
+  });
+
+  it('rederives locked picked lines from family geometry edges', () => {
+    const lines = [
+      pickedFamilyGeometryLine(
+        {
+          startMm: { xMm: 0, yMm: 0 },
+          endMm: { xMm: 100, yMm: 0 },
+        },
+        { kind: 'family_geometry', geometryKind: 'symbolic_line', index: 0 },
+        true,
+      ),
+    ];
+
+    expect(
+      rederiveLockedSketchLines(
+        lines,
+        [],
+        [
+          {
+            startMm: { xMm: 25, yMm: 50 },
+            endMm: { xMm: 125, yMm: 50 },
+          },
+        ],
+        100,
+      ),
+    ).toEqual([
+      {
+        startMm: { xMm: 25, yMm: 50 },
+        endMm: { xMm: 125, yMm: 50 },
+        source: { kind: 'family_geometry', geometryKind: 'symbolic_line', index: 0 },
+        locked: true,
+      },
+    ]);
+  });
+
+  it('solves aligned dimension constraints against reference-plane offsets', () => {
+    const solved = solveReferencePlaneDimensionConstraints(
+      [
+        { id: 'left', isVertical: true, offsetMm: 0, locked: true },
+        { id: 'right', isVertical: true, offsetMm: 1000 },
+      ],
+      [{ refAId: 'left', refBId: 'right', paramKey: 'Width', lockedValueMm: 1000 }],
+      { Width: 1500 },
+    );
+
+    expect(solved.find((plane) => plane.id === 'right')?.offsetMm).toBe(1500);
+  });
+
+  it('moves the unlocked anchor when the second reference plane is locked', () => {
+    const solved = solveReferencePlaneDimensionConstraints(
+      [
+        { id: 'left', isVertical: true, offsetMm: 0 },
+        { id: 'right', isVertical: true, offsetMm: 1000, locked: true },
+      ],
+      [{ refAId: 'left', refBId: 'right', paramKey: 'Width', lockedValueMm: 1000 }],
+      { Width: 750 },
+    );
+
+    expect(solved.find((plane) => plane.id === 'left')?.offsetMm).toBe(250);
+    expect(solved.find((plane) => plane.id === 'right')?.offsetMm).toBe(1000);
   });
 
   it('trims or extends the nearest endpoints of two profile lines to their corner', () => {

@@ -13,16 +13,19 @@ from bim_ai.engine import (
     CreateAgentAssumptionCmd,
     CreateAgentDeviationCmd,
     CreateBcfTopicCmd,
+    CreateExternalLinkCmd,
     CreateLinkDxfCmd,
     CreateLinkModelCmd,
     CreateOptionSetCmd,
     CreatePhaseCmd,
     DEFAULT_DISCIPLINE_BY_KIND,
     DeleteLinkModelCmd,
+    DeleteExternalLinkCmd,
     DeletePhaseCmd,
     DoorElem,
     LINKED_ID_SEPARATOR,
     LevelElem,
+    ExternalLinkElem,
     LinkDxfElem,
     LinkModelElem,
     MirrorElementsCmd,
@@ -50,6 +53,7 @@ from bim_ai.engine import (
     SetWallStackCmd,
     SiteElem,
     UnpinElementCmd,
+    UpdateExternalLinkCmd,
     UpdateLinkDxfCmd,
     UpdateLinkModelCmd,
     UpsertClashTestCmd,
@@ -378,6 +382,87 @@ def try_apply_coordination_command(doc, cmd, *, source_provider=None) -> bool:
                 custom_color=cmd.custom_color,
                 overlay_opacity=cmd.overlay_opacity,
             )
+
+        case CreateExternalLinkCmd():
+            lid = cmd.id or new_id()
+            if lid in els:
+                raise ValueError(f"duplicate element id '{lid}'")
+            src = (cmd.source_path or "").strip()
+            if not src:
+                raise ValueError("createExternalLink.sourcePath must be non-empty")
+            els[lid] = ExternalLinkElem(
+                kind="link_external",
+                id=lid,
+                name=cmd.name,
+                external_link_type=cmd.external_link_type,
+                source_path=src,
+                source_name=cmd.source_name,
+                source_metadata=dict(cmd.source_metadata),
+                reload_status=cmd.reload_status,
+                last_reload_message=cmd.last_reload_message,
+                loaded=bool(cmd.loaded),
+                hidden=bool(cmd.hidden),
+                pinned=bool(cmd.pinned),
+                origin_mm=cmd.origin_mm,
+                origin_alignment_mode=cmd.origin_alignment_mode,
+                rotation_deg=float(cmd.rotation_deg),
+                scale_factor=float(cmd.scale_factor),
+                overlay_opacity=cmd.overlay_opacity,
+            )
+
+        case UpdateExternalLinkCmd():
+            ext_link = els.get(cmd.link_id)
+            if not isinstance(ext_link, ExternalLinkElem):
+                raise ValueError("updateExternalLink.linkId must reference a link_external element")
+            spatial_updates_requested = (
+                cmd.origin_mm is not None
+                or cmd.rotation_deg is not None
+                or cmd.scale_factor is not None
+                or cmd.origin_alignment_mode is not None
+            )
+            if spatial_updates_requested and is_element_pinned(ext_link):
+                raise ValueError(f"pinned_element_blocked: '{cmd.link_id}' is pinned; unpin first")
+            ext_updates: dict[str, Any] = {}
+            if cmd.name is not None:
+                ext_updates["name"] = cmd.name
+            if cmd.source_path is not None:
+                src = cmd.source_path.strip()
+                if not src:
+                    raise ValueError("updateExternalLink.sourcePath must be non-empty")
+                ext_updates["source_path"] = src
+            if cmd.source_name is not None:
+                ext_updates["source_name"] = cmd.source_name
+            if cmd.source_metadata is not None:
+                ext_updates["source_metadata"] = dict(cmd.source_metadata)
+            if cmd.reload_status is not None:
+                ext_updates["reload_status"] = cmd.reload_status
+            if cmd.last_reload_message is not None:
+                ext_updates["last_reload_message"] = cmd.last_reload_message
+            if cmd.loaded is not None:
+                ext_updates["loaded"] = bool(cmd.loaded)
+            if cmd.hidden is not None:
+                ext_updates["hidden"] = bool(cmd.hidden)
+            if cmd.pinned is not None:
+                ext_updates["pinned"] = bool(cmd.pinned)
+            if cmd.origin_mm is not None:
+                ext_updates["origin_mm"] = cmd.origin_mm
+            if cmd.origin_alignment_mode is not None:
+                ext_updates["origin_alignment_mode"] = cmd.origin_alignment_mode
+            if cmd.rotation_deg is not None:
+                ext_updates["rotation_deg"] = float(cmd.rotation_deg)
+            if cmd.scale_factor is not None:
+                ext_updates["scale_factor"] = float(cmd.scale_factor)
+            if cmd.overlay_opacity is not None:
+                ext_updates["overlay_opacity"] = float(cmd.overlay_opacity)
+            els[cmd.link_id] = ext_link.model_copy(update=ext_updates)
+
+        case DeleteExternalLinkCmd():
+            ext_link = els.get(cmd.link_id)
+            if not isinstance(ext_link, ExternalLinkElem):
+                raise ValueError("deleteExternalLink.linkId must reference a link_external element")
+            if is_element_pinned(ext_link):
+                raise ValueError(f"pinned_element_blocked: '{cmd.link_id}' is pinned; unpin first")
+            del els[cmd.link_id]
 
         case UpsertSelectionSetCmd():
             sid = cmd.id or new_id()

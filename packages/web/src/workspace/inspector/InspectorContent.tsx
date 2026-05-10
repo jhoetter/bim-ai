@@ -50,6 +50,129 @@ function fmtMm(value: number | null | undefined): string {
   return `${value.toFixed(0)} mm`;
 }
 
+function parseTypeParameterDraft(value: string, prior: unknown): unknown {
+  if (typeof prior === 'number') {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : prior;
+  }
+  if (typeof prior === 'boolean') return value === 'true';
+  return value;
+}
+
+function TypeTextInput({
+  label,
+  value,
+  testId,
+  onCommit,
+}: {
+  label: string;
+  value: string;
+  testId: string;
+  onCommit?: (value: string) => void;
+}): JSX.Element {
+  return (
+    <label className="flex items-center gap-2 py-0.5">
+      <span className="w-28 shrink-0 text-xs text-muted">{label}</span>
+      <input
+        className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+        defaultValue={value}
+        data-testid={testId}
+        onBlur={(e) => {
+          const next = e.currentTarget.value.trim();
+          if (next && next !== value) onCommit?.(next);
+        }}
+      />
+    </label>
+  );
+}
+
+function TypeLayerSummary({
+  layers,
+}: {
+  layers: Extract<Element, { kind: 'wall_type' | 'floor_type' | 'roof_type' }>['layers'];
+}): JSX.Element {
+  const totalMm = layers.reduce((sum, layer) => sum + (Number(layer.thicknessMm) || 0), 0);
+  return (
+    <div className="rounded border border-border bg-surface-strong p-2 text-xs">
+      <div className="mb-1 flex items-center justify-between">
+        <span className="font-medium text-foreground">Type Layers</span>
+        <span className="text-muted">
+          {layers.length} layer{layers.length === 1 ? '' : 's'} · {fmtMm(totalMm)}
+        </span>
+      </div>
+      <div className="flex flex-col gap-1">
+        {layers.map((layer, index) => (
+          <div
+            key={`${layer.function}-${layer.materialKey ?? 'mat'}-${index}`}
+            className="grid grid-cols-[1fr_72px_72px] gap-2 border-t border-border pt-1 first:border-t-0 first:pt-0"
+          >
+            <span className="truncate" title={layer.materialKey ?? layer.function}>
+              {layer.materialKey ?? 'By category'}
+            </span>
+            <span className="text-muted">{layer.function}</span>
+            <span className="text-right font-mono">{fmtMm(layer.thicknessMm)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FamilyTypeParameterTable({
+  parameters,
+  onPropertyChange,
+}: {
+  parameters: Record<string, unknown>;
+  onPropertyChange?: (property: string, value: unknown) => void;
+}): JSX.Element {
+  const entries = Object.entries(parameters).sort(([a], [b]) => a.localeCompare(b));
+  return (
+    <div className="rounded border border-border bg-surface-strong p-2 text-xs">
+      <div className="mb-1 font-medium text-foreground">Type Parameters</div>
+      <div className="flex max-h-56 flex-col gap-1 overflow-y-auto">
+        {entries.map(([key, value]) => {
+          const display = value == null ? '' : String(value);
+          return (
+            <label key={key} className="grid grid-cols-[110px_minmax(0,1fr)] items-center gap-2">
+              <span className="truncate text-muted" title={key}>
+                {key}
+              </span>
+              {typeof value === 'boolean' ? (
+                <select
+                  className="rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                  value={String(value)}
+                  data-testid={`inspector-family-type-param-${key}`}
+                  onChange={(e) =>
+                    onPropertyChange?.(
+                      `parameters.${key}`,
+                      parseTypeParameterDraft(e.currentTarget.value, value),
+                    )
+                  }
+                >
+                  <option value="true">true</option>
+                  <option value="false">false</option>
+                </select>
+              ) : (
+                <input
+                  className="rounded border border-border bg-surface px-1 py-0.5 font-mono text-xs"
+                  defaultValue={display}
+                  data-testid={`inspector-family-type-param-${key}`}
+                  onBlur={(e) => {
+                    const next = e.currentTarget.value;
+                    if (next !== display) {
+                      onPropertyChange?.(`parameters.${key}`, parseTypeParameterDraft(next, value));
+                    }
+                  }}
+                />
+              )}
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /**
  * FED-03: render Copy/Monitor inspector rows for an element that may carry
  * either the legacy `monitorSourceId` string or the structured
@@ -988,10 +1111,67 @@ export function InspectorPropertiesFor(
     case 'family_type':
       return (
         <div className="flex flex-col gap-2">
-          <FieldRow label={f('name')} value={el.name} />
+          <TypeTextInput
+            label={f('name')}
+            value={String(el.parameters.name ?? el.name)}
+            testId="inspector-family-type-name"
+            onCommit={(value) => options?.onPropertyChange?.('name', value)}
+          />
           <FieldRow label="Discipline" value={el.discipline} />
-          <FieldRow label="Parameters" value={String(Object.keys(el.parameters).length)} mono />
+          <FamilyTypeParameterTable
+            parameters={el.parameters}
+            onPropertyChange={options?.onPropertyChange}
+          />
           {el.isBuiltIn ? <FieldRow label="Type" value="Built-in" /> : null}
+        </div>
+      );
+    case 'wall_type':
+      return (
+        <div className="flex flex-col gap-2">
+          <TypeTextInput
+            label={f('name')}
+            value={el.name}
+            testId="inspector-wall-type-name"
+            onCommit={(value) => options?.onPropertyChange?.('name', value)}
+          />
+          <label className="flex items-center gap-2 py-0.5">
+            <span className="w-28 shrink-0 text-xs text-muted">Basis Line</span>
+            <select
+              className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+              value={el.basisLine ?? 'center'}
+              data-testid="inspector-wall-type-basis-line"
+              onChange={(e) => options?.onPropertyChange?.('basisLine', e.currentTarget.value)}
+            >
+              <option value="center">Centerline</option>
+              <option value="face_interior">Finish Face: Interior</option>
+              <option value="face_exterior">Finish Face: Exterior</option>
+            </select>
+          </label>
+          <TypeLayerSummary layers={el.layers} />
+        </div>
+      );
+    case 'floor_type':
+      return (
+        <div className="flex flex-col gap-2">
+          <TypeTextInput
+            label={f('name')}
+            value={el.name}
+            testId="inspector-floor-type-name"
+            onCommit={(value) => options?.onPropertyChange?.('name', value)}
+          />
+          <TypeLayerSummary layers={el.layers} />
+        </div>
+      );
+    case 'roof_type':
+      return (
+        <div className="flex flex-col gap-2">
+          <TypeTextInput
+            label={f('name')}
+            value={el.name}
+            testId="inspector-roof-type-name"
+            onCommit={(value) => options?.onPropertyChange?.('name', value)}
+          />
+          <TypeLayerSummary layers={el.layers} />
         </div>
       );
     case 'view_template':

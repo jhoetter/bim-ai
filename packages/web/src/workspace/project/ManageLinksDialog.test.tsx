@@ -394,4 +394,147 @@ describe('<ManageLinksDialog />', () => {
       }),
     );
   });
+
+  it('lists IFC, PDF, and image external links with typed status rows', () => {
+    useBimStore.setState({
+      modelId: 'host-model',
+      elementsById: {
+        'ifc-1': {
+          kind: 'link_external',
+          id: 'ifc-1',
+          name: 'Coordination',
+          externalLinkType: 'ifc',
+          sourcePath: '/models/coordination.ifc',
+          reloadStatus: 'ok',
+          loaded: true,
+        },
+        'pdf-1': {
+          kind: 'link_external',
+          id: 'pdf-1',
+          name: 'Site PDF',
+          externalLinkType: 'pdf',
+          sourcePath: '/underlays/site.pdf',
+          sourceName: 'site.pdf',
+          reloadStatus: 'source_missing',
+          loaded: false,
+        },
+        'image-1': {
+          kind: 'link_external',
+          id: 'image-1',
+          name: 'Scanned plan',
+          externalLinkType: 'image',
+          sourcePath: '/underlays/scan.png',
+          hidden: true,
+        },
+      },
+    });
+
+    const { getByTestId } = render(<ManageLinksDialog open={true} onClose={vi.fn()} />);
+    expect(getByTestId('manage-external-links-row-ifc-1')).toBeTruthy();
+    expect(getByTestId('manage-external-links-type-ifc-1').textContent).toBe('IFC');
+    expect(getByTestId('manage-external-links-type-pdf-1').textContent).toBe('PDF');
+    expect(getByTestId('manage-external-links-status-pdf-1').textContent).toBe('Missing');
+    expect(getByTestId('manage-external-links-type-image-1').textContent).toBe('Image');
+    expect(getByTestId('manage-external-links-status-image-1').textContent).toBe('Hidden');
+  });
+
+  it('dispatches external link load, reload, path, visibility, alignment, pin, and remove actions', async () => {
+    useBimStore.setState({
+      modelId: 'host-model',
+      elementsById: {
+        'pdf-2': {
+          kind: 'link_external',
+          id: 'pdf-2',
+          name: 'Permit set',
+          externalLinkType: 'pdf',
+          sourcePath: '/old/permit.pdf',
+          loaded: false,
+          originAlignmentMode: 'origin_to_origin',
+        },
+      },
+    });
+    const apply = vi.fn().mockResolvedValue({ ok: true });
+    const { getByTestId } = render(
+      <ManageLinksDialog open={true} onClose={vi.fn()} applyCommandImpl={apply} />,
+    );
+
+    fireEvent.click(getByTestId('manage-external-links-load-pdf-2'));
+    await waitFor(() =>
+      expect(apply).toHaveBeenCalledWith('host-model', {
+        type: 'updateExternalLink',
+        linkId: 'pdf-2',
+        reloadSource: true,
+        sourcePath: '/old/permit.pdf',
+      }),
+    );
+
+    fireEvent.click(getByTestId('manage-external-links-reload-pdf-2'));
+    await waitFor(() =>
+      expect(apply).toHaveBeenLastCalledWith('host-model', {
+        type: 'updateExternalLink',
+        linkId: 'pdf-2',
+        reloadSource: true,
+        sourcePath: '/old/permit.pdf',
+      }),
+    );
+
+    fireEvent.change(getByTestId('manage-external-links-path-pdf-2'), {
+      target: { value: '/new/permit.pdf' },
+    });
+    fireEvent.click(getByTestId('manage-external-links-change-path-pdf-2'));
+    await waitFor(() =>
+      expect(apply).toHaveBeenLastCalledWith('host-model', {
+        type: 'updateExternalLink',
+        linkId: 'pdf-2',
+        sourcePath: '/new/permit.pdf',
+      }),
+    );
+
+    fireEvent.click(getByTestId('manage-external-links-visible-pdf-2'));
+    await waitFor(() =>
+      expect(apply).toHaveBeenLastCalledWith('host-model', {
+        type: 'updateExternalLink',
+        linkId: 'pdf-2',
+        hidden: true,
+      }),
+    );
+
+    fireEvent.change(getByTestId('manage-external-links-align-pdf-2'), {
+      target: { value: 'project_origin' },
+    });
+    await waitFor(() =>
+      expect(apply).toHaveBeenLastCalledWith('host-model', {
+        type: 'updateExternalLink',
+        linkId: 'pdf-2',
+        originAlignmentMode: 'project_origin',
+      }),
+    );
+
+    fireEvent.change(getByTestId('manage-external-links-opacity-pdf-2'), {
+      target: { value: '70' },
+    });
+    await waitFor(() =>
+      expect(apply).toHaveBeenLastCalledWith('host-model', {
+        type: 'updateExternalLink',
+        linkId: 'pdf-2',
+        overlayOpacity: 0.7,
+      }),
+    );
+
+    fireEvent.click(getByTestId('manage-external-links-position-pin-pdf-2'));
+    await waitFor(() =>
+      expect(apply).toHaveBeenLastCalledWith('host-model', {
+        type: 'pinElement',
+        elementId: 'pdf-2',
+      }),
+    );
+
+    fireEvent.click(getByTestId('manage-external-links-remove-pdf-2'));
+    await waitFor(() =>
+      expect(apply).toHaveBeenLastCalledWith('host-model', {
+        type: 'deleteExternalLink',
+        linkId: 'pdf-2',
+      }),
+    );
+  });
 });
