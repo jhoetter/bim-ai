@@ -3,14 +3,33 @@
   "checkpoint_id": "6448e55ee7e0",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
-  "files_touched": null,
+  "checkpoints_count": 2,
+  "files_touched": [
+    "claude-skills/sketch-to-bim/SKILL.md",
+    "packages/cli/lib/one-family-home-commands.mjs",
+    "packages/web/e2e/__fixtures__/seed-target-house-snapshot.json",
+    "packages/web/src/viewport/meshBuilders.asymmetricRoof.test.ts",
+    "packages/web/src/viewport/meshBuilders.ts"
+  ],
   "sessions": [
     {
       "metadata": "/64/48e55ee7e0/0/metadata.json",
       "transcript": "/64/48e55ee7e0/0/full.jsonl",
       "content_hash": "/64/48e55ee7e0/0/content_hash.txt",
       "prompt": "/64/48e55ee7e0/0/prompt.txt"
+    },
+    {
+      "metadata": "/64/48e55ee7e0/1/metadata.json",
+      "transcript": "/64/48e55ee7e0/1/full.jsonl",
+      "content_hash": "/64/48e55ee7e0/1/content_hash.txt",
+      "prompt": "/64/48e55ee7e0/1/prompt.txt"
     }
-  ]
+  ],
+  "token_usage": {
+    "input_tokens": 310954,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 9832448,
+    "output_tokens": 32807,
+    "api_call_count": 114
+  }
 }
