@@ -104,6 +104,12 @@ class ProjectSettingsElem(BaseModel):
         default="finish_faces",
         alias="volumeComputedAt",
     )
+    checkpoint_retention_limit: int = Field(
+        default=20,
+        ge=1,
+        le=99,
+        alias="checkpointRetentionLimit",
+    )
 
 
 class RoomColorSchemeRow(BaseModel):

@@ -4,6 +4,12 @@ import { useTranslation } from 'react-i18next';
 import type { DisciplineTag, Element } from '@bim-ai/core';
 
 import { BUILT_IN_FAMILIES, getFamilyById, getTypeById } from '../../families/familyCatalog';
+import {
+  coerceCheckpointRetentionLimit,
+  DEFAULT_CHECKPOINT_RETENTION_LIMIT,
+  MAX_CHECKPOINT_RETENTION_LIMIT,
+  MIN_CHECKPOINT_RETENTION_LIMIT,
+} from '../../state/backupRetention';
 
 import {
   planViewGraphicsMatrixRows,
@@ -1042,6 +1048,11 @@ export function InspectorPropertiesFor(
         <div>
           <FieldRow label={f('name')} value={el.name ?? '—'} />
           <FieldRow label={f('workset')} value={el.worksetId ?? '—'} mono />
+          <FieldRow
+            label="Checkpoint Retention"
+            value={String(el.checkpointRetentionLimit ?? DEFAULT_CHECKPOINT_RETENTION_LIMIT)}
+            mono
+          />
           {el.startingViewId ? (
             <FieldRow
               label={f('startingView')}
@@ -2156,6 +2167,28 @@ export function InspectorProjectSettingsEditor({
 }): JSX.Element {
   return (
     <div className="space-y-2 text-[11px]">
+      <label className={LABEL_CLS}>
+        <span>Checkpoint Retention</span>
+        <input
+          className={INPUT_CLS}
+          type="number"
+          min={MIN_CHECKPOINT_RETENTION_LIMIT}
+          max={MAX_CHECKPOINT_RETENTION_LIMIT}
+          defaultValue={String(el.checkpointRetentionLimit ?? DEFAULT_CHECKPOINT_RETENTION_LIMIT)}
+          key={`checkpoint-retention-${el.id}-${el.checkpointRetentionLimit ?? 'default'}`}
+          onBlur={(e) => {
+            const next = coerceCheckpointRetentionLimit(e.target.value);
+            e.currentTarget.value = String(next);
+            if (next !== (el.checkpointRetentionLimit ?? DEFAULT_CHECKPOINT_RETENTION_LIMIT)) {
+              onPersistProperty('checkpointRetentionLimit', String(next));
+            }
+          }}
+          data-testid="inspector-checkpoint-retention-limit"
+        />
+      </label>
+      <p className="text-[10px] leading-4 text-muted">
+        Retained database checkpoints; equivalent to Revit maximum backups for this project.
+      </p>
       <label className={LABEL_CLS}>
         <span>Volume Computed At</span>
         <select

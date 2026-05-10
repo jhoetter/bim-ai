@@ -587,6 +587,17 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                 if raw_area_scheme not in {"gross_building", "net", "rentable"}:
                     raise ValueError("areaScheme must be gross_building|net|rentable")
                 els[cmd.element_id] = el.model_copy(update={"area_scheme": raw_area_scheme})
+            elif cmd.key == "checkpointRetentionLimit" and isinstance(el, ProjectSettingsElem):
+                raw_checkpoint_limit = str(cmd.value or "").strip()
+                try:
+                    checkpoint_limit = int(raw_checkpoint_limit)
+                except ValueError as exc:
+                    raise ValueError("checkpointRetentionLimit must be an integer 1..99") from exc
+                if checkpoint_limit < 1 or checkpoint_limit > 99:
+                    raise ValueError("checkpointRetentionLimit must be an integer 1..99")
+                els[cmd.element_id] = el.model_copy(
+                    update={"checkpoint_retention_limit": checkpoint_limit}
+                )
             else:
                 raise ValueError(
                     "Only updateElementProperty key=name | label(grid) | title(issue) | "
@@ -615,6 +626,7 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     "isCurtainWall(wall) | roofAttachmentId(wall) | wallTypeId(wall) | "
                     "heightMm(wall) | thicknessMm(wall) | "
                     "paramValues(placed_asset JSON object) | "
+                    "checkpointRetentionLimit(project_settings integer 1..99) | "
                     "roofTypeId(roof) | roofGeometryMode(roof) | "
                     "sheetId(schedule) | titleBlock(sheet) | titleblockParametersPatch(sheet JSON object) supported in v2"
                 )

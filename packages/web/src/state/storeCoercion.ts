@@ -1,4 +1,5 @@
 import type { Element, EvidenceRef, EvidenceRefKind, Violation, XY } from '@bim-ai/core';
+import { coerceCheckpointRetentionLimit } from './backupRetention';
 import type { ViewFilter } from './storeTypes';
 
 export function coerceViolation(v: unknown): Violation {
@@ -596,6 +597,9 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
       ...((raw.startingViewId ?? raw.starting_view_id)
         ? { startingViewId: String(raw.startingViewId ?? raw.starting_view_id) }
         : {}),
+      checkpointRetentionLimit: coerceCheckpointRetentionLimit(
+        raw.checkpointRetentionLimit ?? raw.checkpoint_retention_limit,
+      ),
       volumeComputedAt: (raw.volumeComputedAt ?? 'finish_faces') as 'finish_faces' | 'core_faces',
       roomAreaComputationBasis: (raw.roomAreaComputationBasis ?? 'wall_finish') as
         | 'wall_finish'
@@ -1618,6 +1622,7 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
     const colorRaw = raw.colorMode ?? raw.color_mode;
     const colorMode: 'black_white' | 'custom' = colorRaw === 'custom' ? 'custom' : 'black_white';
     const opacityRaw = raw.overlayOpacity ?? raw.overlay_opacity;
+    const hiddenLayerNamesRaw = raw.hiddenLayerNames ?? raw.hidden_layer_names;
     const out: Record<string, unknown> = {
       kind: 'link_dxf',
       id,
@@ -1631,8 +1636,8 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
       dxfLayers: Array.isArray(raw.dxfLayers ?? raw.dxf_layers)
         ? (raw.dxfLayers ?? raw.dxf_layers)
         : [],
-      hiddenLayerNames: Array.isArray(raw.hiddenLayerNames ?? raw.hidden_layer_names)
-        ? (raw.hiddenLayerNames ?? raw.hidden_layer_names).map((v: unknown) => String(v))
+      hiddenLayerNames: Array.isArray(hiddenLayerNamesRaw)
+        ? hiddenLayerNamesRaw.map((v: unknown) => String(v))
         : [],
       colorMode,
     };
