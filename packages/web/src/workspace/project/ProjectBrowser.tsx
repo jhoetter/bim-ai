@@ -33,6 +33,7 @@ const AREA_SCHEMES = [
 ] as const;
 
 type AreaSchemeValue = (typeof AREA_SCHEMES)[number]['value'];
+type PlanViewSubtypeValue = NonNullable<Extract<Element, { kind: 'plan_view' }>['planViewSubtype']>;
 
 const DISCIPLINE_GROUPS = [
   { key: 'arch', label: 'Architecture' },
@@ -66,6 +67,68 @@ function subdisciplineTestToken(label: string): string {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '') || 'none'
   );
+}
+
+function planViewSubtypeLabel(subtype: PlanViewSubtypeValue | undefined): string {
+  if (subtype === 'lighting_plan') return 'Lighting Plans';
+  if (subtype === 'power_plan') return 'Power Plans';
+  if (subtype === 'coordination_plan') return 'Coordination Plans';
+  if (subtype === 'area_plan') return 'Area Plans';
+  return 'Floor Plans';
+}
+
+function planViewSubtypeTestToken(subtype: PlanViewSubtypeValue | undefined): string {
+  return subtype ?? 'floor_plan';
+}
+
+function phaseLabelForPlanView(
+  elementsById: Record<string, Element>,
+  pv: Extract<Element, { kind: 'plan_view' }>,
+): string {
+  const phaseId = pv.phaseId;
+  if (!phaseId) return 'No Phase';
+  const phase = elementsById[phaseId];
+  if (phase?.kind === 'phase') return phase.name ?? phase.id;
+  return phaseId;
+}
+
+function phaseTestToken(label: string): string {
+  return subdisciplineTestToken(label);
+}
+
+function defaultViewTemplateForPlanSubtype(
+  elementsById: Record<string, Element>,
+  subtype: PlanViewSubtypeValue | undefined,
+): Extract<Element, { kind: 'view_template' }> | null {
+  const wanted = subtype ?? 'floor_plan';
+  const templates = Object.values(elementsById).filter(
+    (e): e is Extract<Element, { kind: 'view_template' }> => e.kind === 'view_template',
+  );
+  const scored = templates
+    .map((template) => {
+      const haystack = `${template.id} ${template.name}`.toLowerCase();
+      let score = 0;
+      if (wanted === 'lighting_plan') {
+        if (haystack.includes('lighting')) score += 8;
+        if (haystack.includes('electrical')) score += 3;
+      } else if (wanted === 'power_plan') {
+        if (haystack.includes('power')) score += 8;
+        if (haystack.includes('electrical')) score += 3;
+      } else if (wanted === 'coordination_plan') {
+        if (haystack.includes('coordination')) score += 8;
+        if (haystack.includes('coord')) score += 4;
+      } else if (wanted === 'area_plan') {
+        if (haystack.includes('area')) score += 8;
+      } else {
+        if (haystack.includes('floor')) score += 6;
+        if (haystack.includes('architect')) score += 3;
+        if (haystack.includes('arch')) score += 2;
+      }
+      return { template, score };
+    })
+    .filter((row) => row.score > 0)
+    .sort((a, b) => b.score - a.score || a.template.name.localeCompare(b.template.name));
+  return scored[0]?.template ?? null;
 }
 
 function newDupPlanViewId(prefix: string) {
@@ -285,7 +348,9 @@ export function ProjectBrowser(props: {
   const hasDisciplineGrouping = floorPlanViews.some(
     (pv) =>
       normalizePlanViewDiscipline(pv.discipline as string | undefined) !== 'arch' ||
-      !!pv.viewSubdiscipline,
+      !!pv.viewSubdiscipline ||
+      !!pv.phaseId ||
+      (pv.planViewSubtype != null && pv.planViewSubtype !== 'floor_plan'),
   );
 
   /** DSC-V3-01: group physical elements into arch / struct / mep buckets. */
@@ -360,6 +425,29 @@ export function ProjectBrowser(props: {
     .filter((e): e is Extract<Element, { kind: 'view_template' }> => e.kind === 'view_template')
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  const legends = Object.values(props.elementsById)
+    .filter(
+      (
+        e,
+      ): e is Extract<
+        Element,
+        { kind: 'window_legend_view' | 'color_fill_legend' | 'pipe_legend' | 'duct_legend' }
+      > =>
+        e.kind === 'window_legend_view' ||
+        e.kind === 'color_fill_legend' ||
+        e.kind === 'pipe_legend' ||
+        e.kind === 'duct_legend',
+    )
+    .sort((a, b) => {
+      const an = 'name' in a ? a.name : 'title' in a ? (a.title ?? a.id) : a.id;
+      const bn = 'name' in b ? b.name : 'title' in b ? (b.title ?? b.id) : b.id;
+      return an.localeCompare(bn);
+    });
+
+  const detailGroups = Object.values(props.elementsById)
+    .filter((e): e is Extract<Element, { kind: 'detail_group' }> => e.kind === 'detail_group')
+    .sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id));
+
   const sites = Object.values(props.elementsById)
     .filter((e): e is Extract<Element, { kind: 'site' }> => e.kind === 'site')
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -390,6 +478,8 @@ export function ProjectBrowser(props: {
     elevationViews.length > 0 ||
     schedules.length > 0 ||
     viewTemplates.length > 0 ||
+    legends.length > 0 ||
+    detailGroups.length > 0 ||
     sites.length > 0 ||
     linkModels.length > 0;
 
@@ -412,7 +502,12 @@ export function ProjectBrowser(props: {
       planPresentation: pv.planPresentation ?? 'default',
       discipline: pv.discipline ?? 'architecture',
     };
+    const fallbackTemplate = defaultViewTemplateForPlanSubtype(
+      props.elementsById,
+      pv.planViewSubtype ?? 'floor_plan',
+    );
     if (pv.viewTemplateId) cmd.viewTemplateId = pv.viewTemplateId;
+    else if (fallbackTemplate) cmd.viewTemplateId = fallbackTemplate.id;
     if (pv.planDetailLevel) cmd.planDetailLevel = pv.planDetailLevel;
     if (pv.planRoomFillOpacityScale != null && Number.isFinite(pv.planRoomFillOpacityScale)) {
       cmd.planRoomFillOpacityScale = pv.planRoomFillOpacityScale;
@@ -469,7 +564,129 @@ export function ProjectBrowser(props: {
     props.onUpsertSemantic?.(cmd);
   };
 
-  const commitRename = async (viewId: string) => {
+  const renderPlanViewRow = (
+    pv: Extract<Element, { kind: 'plan_view' }>,
+    opts: { areaLabel?: string; duplicateTitle?: string } = {},
+  ) => (
+    <li key={pv.id} className="flex flex-col gap-0.5">
+      {renamingId === pv.id ? (
+        <input
+          autoFocus
+          type="text"
+          data-testid={`plan-view-rename-input-${pv.id}`}
+          value={renameDraft}
+          className="rounded border border-border bg-background px-1 py-0.5 text-xs"
+          onChange={(e) => setRenameDraft(e.currentTarget.value)}
+          onBlur={() => void commitRename(pv.id)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              void commitRename(pv.id);
+            }
+            if (e.key === 'Escape') {
+              e.preventDefault();
+              cancelRename();
+            }
+          }}
+        />
+      ) : (
+        <Btn
+          type="button"
+          variant="quiet"
+          className="w-full px-2 py-0.5 text-left text-[10px]"
+          title={planViewTooltip(pv, props.elementsById)}
+          onClick={() => activatePlanView(pv.id)}
+          onDoubleClick={() => {
+            setRenamingId(pv.id);
+            setRenameDraft(pv.name);
+          }}
+        >
+          {opts.areaLabel ? `area_plan · ${opts.areaLabel} · ${pv.name}` : `plan_view · ${pv.name}`}
+        </Btn>
+      )}
+      <div
+        className="pl-2 font-mono text-[9px] leading-tight text-muted"
+        data-bim-plan-view-evidence={pv.id}
+      >
+        {planLevelEvidenceToken(props.elementsById, pv.levelId)} ·{' '}
+        {planViewProjectBrowserEvidenceLine(props.elementsById, pv.id)}
+      </div>
+      {(() => {
+        const h = planViewBrowserHierarchyState(props.elementsById, pv.id);
+        const hasNonDefault = h.categoryTemplateCount > 0 || h.categoryPlanViewCount > 0;
+        const tagNonBuiltin = h.openingTagSource !== 'builtin' || h.roomTagSource !== 'builtin';
+        if (!hasNonDefault && !tagNonBuiltin) return null;
+        return (
+          <div
+            className="pl-2 font-mono text-[9px] leading-tight text-muted/70"
+            data-bim-plan-view-hierarchy={pv.id}
+          >
+            {hasNonDefault
+              ? `catSrc tmpl=${h.categoryTemplateCount} pv=${h.categoryPlanViewCount}`
+              : null}
+            {hasNonDefault && tagNonBuiltin ? ' · ' : null}
+            {tagNonBuiltin ? `tagSrc o=${h.openingTagSource} r=${h.roomTagSource}` : null}
+          </div>
+        );
+      })()}
+      {props.onUpsertSemantic ? (
+        <button
+          type="button"
+          className="pl-2 text-left text-[9px] text-muted underline"
+          title={
+            opts.duplicateTitle ?? 'Creates a duplicated plan_view with the same pinned settings'
+          }
+          onClick={() => dupPlanView(pv)}
+        >
+          Duplicate…
+        </button>
+      ) : null}
+      {deleteConfirmId === pv.id ? (
+        <span className="flex items-center gap-1 pl-2">
+          <button
+            type="button"
+            data-testid={`plan-view-delete-confirm-${pv.id}`}
+            className="text-[9px] text-red-700 underline"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteConfirmId(null);
+              void applyCommand(modelId!, {
+                type: 'deleteElement',
+                elementId: pv.id,
+              });
+            }}
+          >
+            Delete
+          </button>
+          <button
+            type="button"
+            className="text-[9px] text-muted underline"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteConfirmId(null);
+            }}
+          >
+            Cancel
+          </button>
+        </span>
+      ) : (
+        <button
+          type="button"
+          data-testid={`plan-view-delete-${pv.id}`}
+          title={`Delete this ${opts.areaLabel ? 'area plan' : 'plan'} view`}
+          className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
+          onClick={(e) => {
+            e.stopPropagation();
+            setDeleteConfirmId(pv.id);
+          }}
+        >
+          Delete…
+        </button>
+      )}
+    </li>
+  );
+
+  async function commitRename(viewId: string) {
     if (renamingId !== viewId) return;
     const trimmed = renameDraft.trim();
     const current = props.elementsById[viewId];
@@ -485,12 +702,12 @@ export function ProjectBrowser(props: {
     }
     setRenamingId(null);
     setRenameDraft('');
-  };
+  }
 
-  const cancelRename = () => {
+  function cancelRename() {
     setRenamingId(null);
     setRenameDraft('');
-  };
+  }
 
   const renameFamilyType = async (id: string, name: string) => {
     if (!modelId) return;
@@ -559,141 +776,64 @@ export function ProjectBrowser(props: {
                       <div className="pl-2 pt-1 text-[9px] font-semibold uppercase tracking-wide text-muted">
                         {label}
                       </div>
-                      {[...subBuckets.entries()].map(([subLabel, views]) => (
-                        <div
-                          key={`${key}-${subLabel}`}
-                          className="space-y-0.5"
-                          data-testid={`project-browser-subdiscipline-${key}-${subdisciplineTestToken(subLabel)}`}
-                        >
-                          <div className="pl-4 text-[9px] font-semibold text-muted">{subLabel}</div>
-                          <ul className="space-y-0.5">
-                            {views.map((pv) => (
-                              <li key={pv.id} className="flex flex-col gap-0.5">
-                                {renamingId === pv.id ? (
-                                  <input
-                                    autoFocus
-                                    type="text"
-                                    data-testid={`plan-view-rename-input-${pv.id}`}
-                                    value={renameDraft}
-                                    className="rounded border border-border bg-background px-1 py-0.5 text-xs"
-                                    onChange={(e) => setRenameDraft(e.currentTarget.value)}
-                                    onBlur={() => void commitRename(pv.id)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        void commitRename(pv.id);
-                                      }
-                                      if (e.key === 'Escape') {
-                                        e.preventDefault();
-                                        cancelRename();
-                                      }
-                                    }}
-                                  />
-                                ) : (
-                                  <Btn
-                                    type="button"
-                                    variant="quiet"
-                                    className="w-full px-2 py-0.5 text-left text-[10px]"
-                                    title={planViewTooltip(pv, props.elementsById)}
-                                    onClick={() => activatePlanView(pv.id)}
-                                    onDoubleClick={() => {
-                                      setRenamingId(pv.id);
-                                      setRenameDraft(pv.name);
-                                    }}
-                                  >
-                                    plan_view · {pv.name}
-                                  </Btn>
-                                )}
+                      {[...subBuckets.entries()].map(([subLabel, views]) => {
+                        const typeBuckets = new Map<
+                          PlanViewSubtypeValue | undefined,
+                          Extract<Element, { kind: 'plan_view' }>[]
+                        >();
+                        for (const pv of views) {
+                          const subtype = pv.planViewSubtype ?? 'floor_plan';
+                          const rows = typeBuckets.get(subtype) ?? [];
+                          rows.push(pv);
+                          typeBuckets.set(subtype, rows);
+                        }
+                        return (
+                          <div
+                            key={`${key}-${subLabel}`}
+                            className="space-y-0.5"
+                            data-testid={`project-browser-subdiscipline-${key}-${subdisciplineTestToken(subLabel)}`}
+                          >
+                            <div className="pl-4 text-[9px] font-semibold text-muted">
+                              {subLabel}
+                            </div>
+                            {[...typeBuckets.entries()].map(([subtype, typeViews]) => {
+                              const phaseBuckets = new Map<
+                                string,
+                                Extract<Element, { kind: 'plan_view' }>[]
+                              >();
+                              for (const pv of typeViews) {
+                                const phase = phaseLabelForPlanView(props.elementsById, pv);
+                                const rows = phaseBuckets.get(phase) ?? [];
+                                rows.push(pv);
+                                phaseBuckets.set(phase, rows);
+                              }
+                              return (
                                 <div
-                                  className="pl-2 font-mono text-[9px] leading-tight text-muted"
-                                  data-bim-plan-view-evidence={pv.id}
+                                  key={`${key}-${subLabel}-${subtype ?? 'floor_plan'}`}
+                                  className="space-y-0.5"
+                                  data-testid={`project-browser-view-type-${planViewSubtypeTestToken(subtype)}`}
                                 >
-                                  {planLevelEvidenceToken(props.elementsById, pv.levelId)} ·{' '}
-                                  {planViewProjectBrowserEvidenceLine(props.elementsById, pv.id)}
-                                </div>
-                                {(() => {
-                                  const h = planViewBrowserHierarchyState(
-                                    props.elementsById,
-                                    pv.id,
-                                  );
-                                  const hasNonDefault =
-                                    h.categoryTemplateCount > 0 || h.categoryPlanViewCount > 0;
-                                  const tagNonBuiltin =
-                                    h.openingTagSource !== 'builtin' ||
-                                    h.roomTagSource !== 'builtin';
-                                  if (!hasNonDefault && !tagNonBuiltin) return null;
-                                  return (
+                                  <div className="pl-6 text-[9px] font-semibold text-muted">
+                                    {planViewSubtypeLabel(subtype)}
+                                  </div>
+                                  {[...phaseBuckets.entries()].map(([phase, phaseViews]) => (
                                     <div
-                                      className="pl-2 font-mono text-[9px] leading-tight text-muted/70"
-                                      data-bim-plan-view-hierarchy={pv.id}
+                                      key={`${key}-${subLabel}-${subtype ?? 'floor_plan'}-${phase}`}
+                                      className="space-y-0.5"
+                                      data-testid={`project-browser-phase-${phaseTestToken(phase)}`}
                                     >
-                                      {hasNonDefault
-                                        ? `catSrc tmpl=${h.categoryTemplateCount} pv=${h.categoryPlanViewCount}`
-                                        : null}
-                                      {hasNonDefault && tagNonBuiltin ? ' · ' : null}
-                                      {tagNonBuiltin
-                                        ? `tagSrc o=${h.openingTagSource} r=${h.roomTagSource}`
-                                        : null}
+                                      <div className="pl-8 text-[9px] text-muted">{phase}</div>
+                                      <ul className="space-y-0.5">
+                                        {phaseViews.map((pv) => renderPlanViewRow(pv))}
+                                      </ul>
                                     </div>
-                                  );
-                                })()}
-                                {props.onUpsertSemantic ? (
-                                  <button
-                                    type="button"
-                                    className="pl-2 text-left text-[9px] text-muted underline"
-                                    title="Creates a duplicated plan_view with the same pinned settings"
-                                    onClick={() => dupPlanView(pv)}
-                                  >
-                                    Duplicate…
-                                  </button>
-                                ) : null}
-                                {deleteConfirmId === pv.id ? (
-                                  <span className="flex items-center gap-1 pl-2">
-                                    <button
-                                      type="button"
-                                      data-testid={`plan-view-delete-confirm-${pv.id}`}
-                                      className="text-[9px] text-red-700 underline"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setDeleteConfirmId(null);
-                                        void applyCommand(modelId!, {
-                                          type: 'deleteElement',
-                                          elementId: pv.id,
-                                        });
-                                      }}
-                                    >
-                                      Delete
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="text-[9px] text-muted underline"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setDeleteConfirmId(null);
-                                      }}
-                                    >
-                                      Cancel
-                                    </button>
-                                  </span>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    data-testid={`plan-view-delete-${pv.id}`}
-                                    title="Delete this plan view"
-                                    className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setDeleteConfirmId(pv.id);
-                                    }}
-                                  >
-                                    Delete…
-                                  </button>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ))}
+                                  ))}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })
@@ -880,6 +1020,10 @@ export function ProjectBrowser(props: {
                     setAreaPlanDraft('');
                     if (!name || !modelId || !levelId) return;
                     const newId = `ap-${Date.now().toString(36)}`;
+                    const defaultTemplate = defaultViewTemplateForPlanSubtype(
+                      props.elementsById,
+                      'area_plan',
+                    );
                     await applyCommand(modelId, {
                       type: 'upsertPlanView',
                       id: newId,
@@ -889,6 +1033,7 @@ export function ProjectBrowser(props: {
                       discipline: 'architecture',
                       planViewSubtype: 'area_plan',
                       areaScheme: areaPlanScheme,
+                      ...(defaultTemplate ? { viewTemplateId: defaultTemplate.id } : {}),
                     });
                   } else if (e.key === 'Escape') {
                     setAreaPlanInputOpen(false);
@@ -1194,6 +1339,76 @@ export function ProjectBrowser(props: {
       )}
 
       <ProjectBrowserSheetsGroup sheets={sheets} />
+
+      {legends.length ? (
+        <div className="space-y-1" data-testid="project-browser-legends-group">
+          <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-wide text-muted">
+            <span>Legends</span>
+            <span className="rounded border border-border bg-background px-1 py-0 text-[9px]">
+              {legends.length}
+            </span>
+          </div>
+          <ul className="space-y-0.5">
+            {legends.map((legend) => {
+              const label =
+                legend.kind === 'window_legend_view'
+                  ? legend.name
+                  : legend.kind === 'color_fill_legend'
+                    ? legend.title
+                    : (legend.title ?? legend.id);
+              const host =
+                'hostViewId' in legend
+                  ? `host=${legend.hostViewId}`
+                  : legend.parentSheetId
+                    ? `sheet=${legend.parentSheetId}`
+                    : `scope=${legend.scope}`;
+              return (
+                <li key={legend.id} className="flex flex-col gap-0.5">
+                  <Btn
+                    type="button"
+                    variant="quiet"
+                    className="w-full px-2 py-0.5 text-left text-[10px]"
+                    title={`${legend.kind} · ${label} · ${host}`}
+                    onClick={() => useBimStore.getState().select(legend.id)}
+                  >
+                    <span className="text-muted">{legend.kind} ·</span> {label}
+                  </Btn>
+                  <div className="pl-2 font-mono text-[9px] leading-tight text-muted">{host}</div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
+
+      {detailGroups.length ? (
+        <div className="space-y-1" data-testid="project-browser-groups-group">
+          <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-wide text-muted">
+            <span>Groups</span>
+            <span className="rounded border border-border bg-background px-1 py-0 text-[9px]">
+              {detailGroups.length}
+            </span>
+          </div>
+          <ul className="space-y-0.5">
+            {detailGroups.map((group) => (
+              <li key={group.id} className="flex flex-col gap-0.5">
+                <Btn
+                  type="button"
+                  variant="quiet"
+                  className="w-full px-2 py-0.5 text-left text-[10px]"
+                  title={`detail_group · ${group.name ?? group.id} · host=${group.hostViewId}`}
+                  onClick={() => useBimStore.getState().select(group.id)}
+                >
+                  <span className="text-muted">detail_group ·</span> {group.name ?? group.id}
+                </Btn>
+                <div className="pl-2 font-mono text-[9px] leading-tight text-muted">
+                  host={group.hostViewId} · members={group.memberIds.length}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {schedules.length ? (
         <div className="space-y-1">

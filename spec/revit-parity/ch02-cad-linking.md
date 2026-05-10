@@ -6,7 +6,7 @@ Source segment: `00:27:59 – 00:55:00`
 
 ## F-015 · Link CAD (DWG/DXF)
 
-**What it does:** Insert → Link CAD establishes a live reference to an external DWG/DXF file. The linked file stays as a separate entity; if the source DWG changes on disk, it can be reloaded. The file does *not* become part of the Revit model data, keeping file sizes small. Preferred workflow over Import CAD.
+**What it does:** Insert → Link CAD establishes a live reference to an external DWG/DXF file. The linked file stays as a separate entity; if the source DWG changes on disk, it can be reloaded. The file does _not_ become part of the Revit model data, keeping file sizes small. Preferred workflow over Import CAD.
 
 **Screenshot:**
 ![Link CAD dialog](file:///Users/jhoetter/Desktop/Revit%20Specs/0207_00-29-53.png)
@@ -29,6 +29,7 @@ Source segment: `00:27:59 – 00:55:00`
 ## F-017 · CAD Link Options (Colors / Layers / Units / Positioning)
 
 **What it does:** The "Link CAD Formats" dialog exposes four key options:
+
 - **Colors**: Preserve (keep original DWG colors), Black and White, or Invert.
 - **Layers**: All, Visible only, or Specify (pick which layers to bring in).
 - **Import units**: Auto-Detect, or explicit unit (feet, inches, mm, etc.).
@@ -37,7 +38,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![CAD Link Options](file:///Users/jhoetter/Desktop/Revit%20Specs/0209_00-30-10.png)
 
-**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` now includes a DXF Links section listing all `link_dxf` underlays with per-link opacity slider (0–100%) and color mode toggle (Black & White / Custom hex color). These settings are stored as `colorMode`, `customColor`, and `overlayOpacity` fields on each `link_dxf` element and read by `dxfUnderlay.ts` at render time. Layer names/colors are now preserved for supported DXF primitives and Manage Links can hide/show individual DXF layers per link. Missing: "Preserve original colors" drawing mode that applies native colors to every primitive automatically, and unit/positioning override controls at import time.
+**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` includes a DXF Links section listing all `link_dxf` underlays with per-link opacity slider (0–100%) and color mode toggle (Black & White / Preserve original colors / Custom hex color). These settings are stored as `colorMode`, `customColor`, and `overlayOpacity` fields on each `link_dxf` element and read by `dxfUnderlay.ts`/`PlanCanvas.tsx` at render time. Layer names/colors are preserved for supported DXF primitives, native color mode applies each primitive's layer color, Manage Links can hide/show individual DXF layers per link, and DXF `$INSUNITS` scaling is preserved server-side. Missing: import-time positioning/unit override UI beyond the existing link alignment controls.
 
 ---
 
@@ -70,7 +71,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Halftone Override](file:///Users/jhoetter/Desktop/Revit%20Specs/0340_01-09-17.png)
 
-**bim-ai status:** 🟡 Partial — `dxfUnderlay.ts` resolves every `link_dxf` element's configured overlay style. The default of 50% opacity (halftone-equivalent) matches Revit's visual intent, and `ManageLinksDialog.tsx` exposes a per-link opacity slider (0–100%) plus custom color mode that persists via `updateLinkDxf`. Both the 2D canvas underlay path and the live Three.js plan renderer now honor those settings. Missing: per-view opacity override in VVDialog, and full-opacity (non-halftone) mode as a dropdown choice within VV.
+**bim-ai status:** ✅ Available — `dxfUnderlay.ts` resolves every `link_dxf` element's configured overlay style. The default of 50% opacity (halftone-equivalent) matches Revit's visual intent, and `ManageLinksDialog.tsx` exposes a per-link opacity slider (0–100%) plus color mode that persists via `updateLinkDxf`. `VVDialog.tsx` now lists imported DXF/CAD rows on the Revit Links tab with per-view visibility and transparency slider (0–100%, including full opacity), stored in the active plan view's `categoryOverrides` and honored by the Three.js plan renderer.
 
 ---
 
@@ -114,4 +115,4 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Manage Links](file:///Users/jhoetter/Desktop/Revit%20Specs/0146_00-17-16.png)
 
-**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` lists all `link_model` rows (delete, alignment mode, visibility mode, spatial position lock, revision pinning with drift badge + Update button) AND all `link_dxf` underlays (spatial position lock, alignment mode, opacity slider 0–100%, color mode toggle Black & White / Custom hex). Missing: IFC / PDF / image link types; no file-path change workflow; Revit's unload/reload per-link controls (bim-ai shows delete only).
+**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` lists all `link_model` rows (delete, alignment mode, visibility mode, spatial position lock, revision pinning with drift badge + Update button) AND all `link_dxf` underlays (loaded/unloaded status, unload/reload control, source-path change field, spatial position lock, alignment mode, opacity slider 0–100%, color mode toggle Black & White / Preserve original colors / Custom hex, and layer visibility). Missing: IFC / PDF / image link types and true disk reparse on reload.

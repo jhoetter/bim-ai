@@ -161,6 +161,37 @@ def test_update_link_dxf_hidden_layer_names() -> None:
     assert link.hidden_layer_names == ["A-WALL"]
 
 
+def test_update_link_dxf_load_path_and_native_color_mode() -> None:
+    doc = _doc_with_level()
+    ok, new_doc, _cmds, _viols, code = try_commit_bundle(
+        doc,
+        [
+            {
+                "type": "createLinkDxf",
+                "id": "lx-fixed",
+                "levelId": "lvl-1",
+                "originMm": {"xMm": 0.0, "yMm": 0.0},
+                "linework": [],
+                "sourcePath": "/old/site.dxf",
+            },
+            {
+                "type": "updateLinkDxf",
+                "linkId": "lx-fixed",
+                "colorMode": "native",
+                "loaded": False,
+                "sourcePath": "/new/site.dxf",
+            },
+        ],
+    )
+    assert ok is True, code
+    assert new_doc is not None
+    link = new_doc.elements["lx-fixed"]
+    assert isinstance(link, LinkDxfElem)
+    assert link.color_mode == "native"
+    assert link.loaded is False
+    assert link.source_path == "/new/site.dxf"
+
+
 def test_update_link_dxf_level_id_via_property_command() -> None:
     doc = _doc_with_level()
     ok, new_doc, _cmds, _viols, code = try_commit_bundle(

@@ -6,7 +6,9 @@ import {
   DXF_UNDERLAY_STROKE,
   makeDxfLinkTransform,
   renderDxfUnderlay,
+  resolveDxfPrimitiveColor,
   resolveDxfLayerRows,
+  resolveDxfUnderlayStyle,
   resolveDxfAlignmentAnchorMm,
   selectDxfUnderlaysForLevel,
   type LinkDxfElement,
@@ -68,6 +70,27 @@ describe('renderDxfUnderlay', () => {
 
     expect(ctx.strokeStyle).toBe('#ff00aa');
     expect(ctx.globalAlpha).toBe(0.25);
+  });
+
+  it('uses native DXF layer colors when preserve original colors is enabled', () => {
+    const link = linkAtOrigin({
+      colorMode: 'native',
+      linework: [
+        {
+          kind: 'line',
+          layerColor: '#00ffaa',
+          start: { xMm: 0, yMm: 0 },
+          end: { xMm: 1000, yMm: 0 },
+        },
+      ],
+    });
+    const prim = link.linework[0]!;
+    expect(resolveDxfPrimitiveColor(link, prim)).toBe('#00ffaa');
+  });
+
+  it('lets a per-view imported-CAD transparency override the link opacity', () => {
+    const link = linkAtOrigin({ overlayOpacity: 0.9 });
+    expect(resolveDxfUnderlayStyle(link, { projection: { transparency: 75 } }).opacity).toBe(0.25);
   });
 
   it('skips primitives whose DXF layer is hidden on the link', () => {
@@ -252,6 +275,20 @@ describe('selectDxfUnderlaysForLevel', () => {
     };
     expect(selectDxfUnderlaysForLevel(elementsById, 'lvl-1').map((e) => e.id)).toEqual(['a']);
     expect(selectDxfUnderlaysForLevel(elementsById, 'lvl-2').map((e) => e.id)).toEqual(['b']);
+  });
+
+  it('omits unloaded DXF rows', () => {
+    const elementsById: Record<string, Element> = {
+      a: {
+        kind: 'link_dxf',
+        id: 'a',
+        levelId: 'lvl-1',
+        originMm: { xMm: 0, yMm: 0 },
+        loaded: false,
+        linework: [],
+      },
+    };
+    expect(selectDxfUnderlaysForLevel(elementsById, 'lvl-1')).toEqual([]);
   });
 
   it('returns [] when levelId is undefined', () => {

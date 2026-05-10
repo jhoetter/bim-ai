@@ -8,6 +8,7 @@ import { useBimStore } from '../../state/store';
 import type { CategoryOverride, CategoryOverrides } from '../../state/store';
 import type { ViewFilter } from '../../state/storeTypes';
 import { applyCommand } from '../../lib/api';
+import { dxfViewOverrideKey } from '../../plan/dxfUnderlay';
 
 const MODEL_CATEGORIES = [
   'wall',
@@ -623,6 +624,8 @@ export function VVDialog({
             <LinksTabBody
               elementsById={elementsById}
               modelId={modelId}
+              activePlanViewId={activePlanViewId}
+              setCategoryOverride={setCategoryOverride}
               applyCommandImpl={applyCommandImpl}
             />
           ) : tab === 'filters' ? (
@@ -792,29 +795,46 @@ export function VVDialog({
 }
 
 type LinkRow = Extract<Element, { kind: 'link_model' }>;
+type DxfLinkRow = Extract<Element, { kind: 'link_dxf' }>;
 
 function LinksTabBody({
   elementsById,
   modelId,
+  activePlanViewId,
+  setCategoryOverride,
   applyCommandImpl,
 }: {
   elementsById: Record<string, Element>;
   modelId?: string;
+  activePlanViewId?: string;
+  setCategoryOverride: (
+    planViewId: string,
+    categoryKey: string,
+    override: CategoryOverride,
+  ) => void;
   applyCommandImpl?: typeof applyCommand;
 }): JSX.Element {
   const links: LinkRow[] = (Object.values(elementsById) as Element[])
     .filter((e): e is LinkRow => e.kind === 'link_model')
     .sort((a, b) => a.name.localeCompare(b.name));
+  const dxfLinks: DxfLinkRow[] = (Object.values(elementsById) as Element[])
+    .filter((e): e is DxfLinkRow => e.kind === 'link_dxf')
+    .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
+  const activePlanView = activePlanViewId ? elementsById[activePlanViewId] : undefined;
+  const overrides =
+    activePlanView?.kind === 'plan_view'
+      ? ((activePlanView.categoryOverrides ?? {}) as CategoryOverrides)
+      : {};
   const [pending, setPending] = useState<string | null>(null);
   const apply = applyCommandImpl ?? applyCommand;
 
-  if (links.length === 0) {
+  if (links.length === 0 && dxfLinks.length === 0) {
     return (
       <div
         data-testid="vv-links-empty"
         style={{ padding: 14, fontSize: 12, color: 'var(--color-muted)' }}
       >
-        No linked models in this host.
+        No linked models or imported CAD in this host.
       </div>
     );
   }
@@ -850,13 +870,19 @@ function LinksTabBody({
             scope="col"
             style={{ padding: '6px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600 }}
           >
-            Visibility mode
+            Type / mode
           </th>
           <th
             scope="col"
             style={{ padding: '6px 8px', textAlign: 'center', fontSize: 11, fontWeight: 600 }}
           >
             Visible
+          </th>
+          <th
+            scope="col"
+            style={{ padding: '6px 8px', textAlign: 'center', fontSize: 11, fontWeight: 600 }}
+          >
+            Transparency
           </th>
         </tr>
       </thead>
@@ -887,8 +913,92 @@ function LinksTabBody({
                 onChange={() => void toggle(l)}
               />
             </td>
+            <td style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--color-muted)' }}>
+              -
+            </td>
           </tr>
         ))}
+        {dxfLinks.map((l) => {
+          const key = dxfViewOverrideKey(l.id);
+          const override = overrides[key] ?? {};
+          const transparency =
+            override.projection?.transparency ?? Math.round((1 - (l.overlayOpacity ?? 0.5)) * 100);
+          const visible = override.visible !== false && l.loaded !== false;
+          const updateDxfOverride = (next: CategoryOverride): void => {
+            if (!activePlanViewId) return;
+            setCategoryOverride(activePlanViewId, key, next);
+          };
+          return (
+            <tr key={l.id} data-testid={`vv-links-row-${l.id}`}>
+              <td style={{ padding: '6px 8px' }}>
+                <div style={{ fontSize: 12 }}>{l.name ?? 'DXF Underlay'}</div>
+                <div
+                  style={{
+                    fontFamily: 'var(--font-mono, monospace)',
+                    fontSize: 10,
+                    color: 'var(--color-muted)',
+                  }}
+                >
+                  {l.sourcePath ?? l.id}
+                </div>
+              </td>
+              <td style={{ padding: '6px 8px', fontSize: 11 }}>
+                Imported CAD
+                {l.colorMode === 'native' ? ' / original colors' : ''}
+              </td>
+              <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                <input
+                  type="checkbox"
+                  checked={visible}
+                  disabled={!activePlanViewId || l.loaded === false}
+                  data-testid={`vv-links-visible-${l.id}`}
+                  onChange={(e) => updateDxfOverride({ ...override, visible: e.target.checked })}
+                />
+              </td>
+              <td style={{ padding: '6px 8px' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={transparency}
+                    disabled={!activePlanViewId}
+                    data-testid={`vv-links-transparency-${l.id}`}
+                    onChange={(e) =>
+                      updateDxfOverride({
+                        ...override,
+                        projection: {
+                          ...override.projection,
+                          transparency: Number(e.target.value),
+                        },
+                      })
+                    }
+                    style={{ width: 96 }}
+                  />
+                  <span
+                    style={{
+                      width: 34,
+                      textAlign: 'right',
+                      fontFamily: 'var(--font-mono, monospace)',
+                      fontSize: 10,
+                      color: 'var(--color-muted)',
+                    }}
+                  >
+                    {transparency}%
+                  </span>
+                </div>
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );

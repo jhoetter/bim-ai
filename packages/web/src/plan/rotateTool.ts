@@ -9,12 +9,33 @@ function normalizeSignedAngleDeg(angleDeg: number): number {
   return Object.is(normalized, -0) ? 0 : normalized;
 }
 
+function rawAngleFromPoints(center: XY, point: XY): number {
+  return (Math.atan2(point.yMm - center.yMm, point.xMm - center.xMm) * 180) / Math.PI;
+}
+
 export function snapRotateAngleDeg(angleDeg: number): number {
   const snapped = Math.round(angleDeg / ROTATE_SNAP_INCREMENT_DEG) * ROTATE_SNAP_INCREMENT_DEG;
   return normalizeSignedAngleDeg(snapped);
 }
 
 export function rotateAngleFromPoints(center: XY, point: XY): number {
-  const rawDeg = (Math.atan2(point.yMm - center.yMm, point.xMm - center.xMm) * 180) / Math.PI;
+  const rawDeg = rawAngleFromPoints(center, point);
   return snapRotateAngleDeg(rawDeg);
+}
+
+export function rotateDeltaAngleFromReference(center: XY, reference: XY, point: XY): number {
+  return snapRotateAngleDeg(
+    rawAngleFromPoints(center, point) - rawAngleFromPoints(center, reference),
+  );
+}
+
+export function parseTypedRotateAngle(value: string): number | null {
+  const normalized = value
+    .trim()
+    .replace(/deg(?:rees?)?$/i, '')
+    .replace(/°$/, '')
+    .trim();
+  if (normalized === '') return null;
+  const angleDeg = Number(normalized);
+  return Number.isFinite(angleDeg) ? normalizeSignedAngleDeg(angleDeg) : null;
 }

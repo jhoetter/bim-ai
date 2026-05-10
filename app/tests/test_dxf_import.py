@@ -175,3 +175,5 @@ def test_build_link_dxf_payload_default_origin(tmp_path: Path) -> None:
     assert len(payload["linework"]) == 1
     assert payload["linework"][0]["kind"] == "line"
     assert payload["dxfLayers"] == [{"name": "0", "primitiveCount": 1, "color": "#ffffff"}]
+    assert payload["sourcePath"] == str(path)
+    assert payload["loaded"] is True

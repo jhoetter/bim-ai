@@ -1620,7 +1620,8 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
     const align: 'origin_to_origin' | 'project_origin' | 'shared_coords' =
       alignRaw === 'project_origin' || alignRaw === 'shared_coords' ? alignRaw : 'origin_to_origin';
     const colorRaw = raw.colorMode ?? raw.color_mode;
-    const colorMode: 'black_white' | 'custom' = colorRaw === 'custom' ? 'custom' : 'black_white';
+    const colorMode: 'black_white' | 'custom' | 'native' =
+      colorRaw === 'custom' || colorRaw === 'native' ? colorRaw : 'black_white';
     const opacityRaw = raw.overlayOpacity ?? raw.overlay_opacity;
     const hiddenLayerNamesRaw = raw.hiddenLayerNames ?? raw.hidden_layer_names;
     const out: Record<string, unknown> = {
@@ -1640,11 +1641,15 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
         ? hiddenLayerNamesRaw.map((v: unknown) => String(v))
         : [],
       colorMode,
+      loaded: raw.loaded == null ? true : Boolean(raw.loaded),
     };
     if (typeof raw.customColor === 'string' || typeof raw.custom_color === 'string') {
       out.customColor = String(raw.customColor ?? raw.custom_color);
     }
     if (opacityRaw != null) out.overlayOpacity = Number(opacityRaw);
+    if (typeof raw.sourcePath === 'string' || typeof raw.source_path === 'string') {
+      out.sourcePath = String(raw.sourcePath ?? raw.source_path);
+    }
     if (raw.pinned != null) out.pinned = Boolean(raw.pinned);
     return out as Element;
   }

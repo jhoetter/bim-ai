@@ -213,8 +213,72 @@ describe('ProjectBrowser — F-003 families context menu', () => {
     });
     expect(getByTestId('project-browser-subdiscipline-arch-interior')).toBeTruthy();
     expect(getByTestId('project-browser-subdiscipline-coordination-coordination')).toBeTruthy();
-    expect(getByText(/Architecture Plan/)).toBeTruthy();
-    expect(getByText(/Coordination Plan/)).toBeTruthy();
+    expect(getByText('plan_view · Architecture Plan')).toBeTruthy();
+    expect(getByText('plan_view · Coordination Plan')).toBeTruthy();
+  });
+
+  it('adds view type and phase hierarchy below discipline groups', () => {
+    const level: Element = { kind: 'level', id: 'lvl-1', name: 'Level 1', elevationMm: 0 };
+    const phase: Element = { kind: 'phase', id: 'phase-new', name: 'New Construction', ord: 2 };
+    const lightingPlan: Element = {
+      kind: 'plan_view',
+      id: 'pv-lighting',
+      name: 'Level 1 Lighting',
+      levelId: 'lvl-1',
+      discipline: 'mep',
+      viewSubdiscipline: 'Electrical',
+      planViewSubtype: 'lighting_plan',
+      phaseId: 'phase-new',
+    };
+    const { getByTestId, getByText } = renderBrowser({
+      elementsById: {
+        [level.id]: level,
+        [phase.id]: phase,
+        [lightingPlan.id]: lightingPlan,
+      },
+    });
+    expect(getByTestId('project-browser-subdiscipline-mep-electrical')).toBeTruthy();
+    expect(getByTestId('project-browser-view-type-lighting_plan')).toBeTruthy();
+    expect(getByTestId('project-browser-phase-new-construction')).toBeTruthy();
+    expect(getByText(/Level 1 Lighting/)).toBeTruthy();
+  });
+
+  it('renders legends and detail groups subtrees', () => {
+    const windowLegend: Element = {
+      kind: 'window_legend_view',
+      id: 'wlv-1',
+      name: 'Window Legend',
+      scope: 'project',
+      sortBy: 'type',
+    };
+    const colorLegend: Element = {
+      kind: 'color_fill_legend',
+      id: 'cfl-1',
+      hostViewId: 'pv-1',
+      positionMm: { xMm: 0, yMm: 0 },
+      schemeParameter: 'Department',
+      title: 'Department Legend',
+    };
+    const detailGroup: Element = {
+      kind: 'detail_group',
+      id: 'dg-1',
+      hostViewId: 'pv-1',
+      name: 'Typical Detail',
+      memberIds: ['a', 'b'],
+    };
+    const { getByTestId, getByText } = renderBrowser({
+      elementsById: {
+        [windowLegend.id]: windowLegend,
+        [colorLegend.id]: colorLegend,
+        [detailGroup.id]: detailGroup,
+      },
+    });
+    expect(getByTestId('project-browser-legends-group')).toBeTruthy();
+    expect(getByText(/Window Legend/)).toBeTruthy();
+    expect(getByText(/Department Legend/)).toBeTruthy();
+    expect(getByTestId('project-browser-groups-group')).toBeTruthy();
+    expect(getByText(/Typical Detail/)).toBeTruthy();
+    expect(getByText(/members=2/)).toBeTruthy();
   });
 
   it('creates Area Plan views with level, subtype, and scheme', async () => {
@@ -251,6 +315,74 @@ describe('ProjectBrowser — F-003 families context menu', () => {
           areaScheme: 'rentable',
         }),
       ),
+    );
+  });
+
+  it('adds the default area view template when creating an Area Plan', async () => {
+    useBimStore.setState({ modelId: 'model-1' });
+    const level: Element = { kind: 'level', id: 'lvl-1', name: 'Level 1', elevationMm: 0 };
+    const areaTemplate: Element = {
+      kind: 'view_template',
+      id: 'vt-area',
+      name: 'Area Plan Default',
+      scale: 100,
+    };
+    const { getByTestId, getByLabelText } = renderBrowser({
+      elementsById: {
+        [level.id]: level,
+        [areaTemplate.id]: areaTemplate,
+      },
+    });
+    fireEvent.click(getByTestId('area-plan-new'));
+    const input = getByLabelText('Area plan name') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'Level 1 Area' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() =>
+      expect(applyCommand).toHaveBeenCalledWith(
+        'model-1',
+        expect.objectContaining({
+          type: 'upsertPlanView',
+          name: 'Level 1 Area',
+          planViewSubtype: 'area_plan',
+          viewTemplateId: 'vt-area',
+        }),
+      ),
+    );
+  });
+
+  it('uses subtype default template when duplicating an untemplated plan view', () => {
+    const onUpsertSemantic = vi.fn();
+    const level: Element = { kind: 'level', id: 'lvl-1', name: 'Level 1', elevationMm: 0 };
+    const powerTemplate: Element = {
+      kind: 'view_template',
+      id: 'vt-power',
+      name: 'Power Plan Default',
+      scale: 100,
+    };
+    const powerPlan: Element = {
+      kind: 'plan_view',
+      id: 'pv-power',
+      name: 'Level 1 Power',
+      levelId: 'lvl-1',
+      discipline: 'mep',
+      viewSubdiscipline: 'Electrical',
+      planViewSubtype: 'power_plan',
+    };
+    const { getByText } = renderBrowser({
+      onUpsertSemantic,
+      elementsById: {
+        [level.id]: level,
+        [powerTemplate.id]: powerTemplate,
+        [powerPlan.id]: powerPlan,
+      },
+    });
+    fireEvent.click(getByText('Duplicate…'));
+    expect(onUpsertSemantic).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'upsertPlanView',
+        planViewSubtype: 'power_plan',
+        viewTemplateId: 'vt-power',
+      }),
     );
   });
 });

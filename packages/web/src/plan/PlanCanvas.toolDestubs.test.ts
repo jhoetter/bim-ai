@@ -86,4 +86,11 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
     expect(SRC).toContain('data-testid="plan-level-datum-line"');
     expect(SRC).toContain('data-testid="plan-level-elevation-badge"');
   });
+
+  it('keeps Rotate on the reference-ray and typed-angle workflow', () => {
+    expect(SRC).toMatch(/rotateReferenceRef/);
+    expect(SRC).toMatch(/rotateDeltaAngleFromReference/);
+    expect(SRC).toMatch(/parseTypedRotateAngle/);
+    expect(SRC).toContain('Click end ray or type angle + Enter');
+  });
 });

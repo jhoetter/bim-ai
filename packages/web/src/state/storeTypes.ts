@@ -108,6 +108,7 @@ export type CategoryOverride = {
     linePattern?: string | null;
     fillColor?: string | null;
     halftone?: boolean;
+    transparency?: number;
   };
   cut?: {
     lineWeightFactor?: number;

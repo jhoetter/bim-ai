@@ -254,4 +254,59 @@ describe('<ManageLinksDialog />', () => {
       }),
     );
   });
+
+  it('updates DXF load state, source path, and preserve-original-colors mode', async () => {
+    useBimStore.setState({
+      modelId: 'host-model',
+      elementsById: {
+        'dxf-4': {
+          kind: 'link_dxf',
+          id: 'dxf-4',
+          name: 'Survey',
+          levelId: 'lvl-1',
+          originMm: { xMm: 0, yMm: 0 },
+          rotationDeg: 0,
+          scaleFactor: 1,
+          sourcePath: '/old/site.dxf',
+          linework: [],
+        },
+      },
+    });
+    const apply = vi.fn().mockResolvedValue({ ok: true });
+    const { getByTestId } = render(
+      <ManageLinksDialog open={true} onClose={vi.fn()} applyCommandImpl={apply} />,
+    );
+
+    fireEvent.click(getByTestId('manage-dxf-links-load-dxf-4'));
+    await waitFor(() =>
+      expect(apply).toHaveBeenCalledWith('host-model', {
+        type: 'updateLinkDxf',
+        linkId: 'dxf-4',
+        loaded: false,
+      }),
+    );
+
+    fireEvent.change(getByTestId('manage-dxf-links-colormode-dxf-4'), {
+      target: { value: 'native' },
+    });
+    await waitFor(() =>
+      expect(apply).toHaveBeenCalledWith('host-model', {
+        type: 'updateLinkDxf',
+        linkId: 'dxf-4',
+        colorMode: 'native',
+      }),
+    );
+
+    fireEvent.change(getByTestId('manage-dxf-links-path-dxf-4'), {
+      target: { value: '/new/site.dxf' },
+    });
+    fireEvent.click(getByTestId('manage-dxf-links-change-path-dxf-4'));
+    await waitFor(() =>
+      expect(apply).toHaveBeenCalledWith('host-model', {
+        type: 'updateLinkDxf',
+        linkId: 'dxf-4',
+        sourcePath: '/new/site.dxf',
+      }),
+    );
+  });
 });

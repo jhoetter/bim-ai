@@ -34,6 +34,7 @@ import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
 
 import { useBimStore } from '../state/store';
+import type { CategoryOverride } from '../state/storeTypes';
 import { useTheme } from '../state/useTheme';
 import { liveTokenReader } from '../viewport/materials';
 import {
@@ -110,8 +111,11 @@ import { manualPlacedTagLabel, placeTagByCategoryCommand } from './manualTags';
 import { extractNeighborhoodMassPrimitives } from './neighborhoodMassRender';
 import { planAnnotationLabelSprite } from './planElementMeshBuilders';
 import {
+  dxfViewOverrideKey,
+  isDxfLinkVisibleInView,
   makeDxfLinkTransform,
   isDxfLayerHidden,
+  resolveDxfPrimitiveColor,
   resolveDxfUnderlayStyle,
   selectDxfUnderlaysForLevel,
 } from './dxfUnderlay';
@@ -127,7 +131,7 @@ import { PlanDetailLevelToolbar } from './PlanDetailLevelToolbar';
 import type { PlanDetailLevel } from './planDetailLevelLines';
 import { SketchCanvas, type MmToScreen, type PointerToMm } from './SketchCanvas';
 import { moveDeltaMm } from './moveTool';
-import { rotateAngleFromPoints } from './rotateTool';
+import { parseTypedRotateAngle, rotateDeltaAngleFromReference } from './rotateTool';
 import { selectNextConnectedWallByTab } from './wallChainSelection';
 import { buildWallRadiusFillet, type MmPoint } from './wallRadiusFillet';
 import { getFamilyById as getBuiltInFamilyById } from '../families/familyCatalog';
@@ -337,6 +341,8 @@ export function PlanCanvas({
   const [moveAnchorSet, setMoveAnchorSet] = useState(false);
   const rotateAnchorRef = useRef<{ xMm: number; yMm: number } | null>(null);
   const [rotateAnchorSet, setRotateAnchorSet] = useState(false);
+  const rotateReferenceRef = useRef<{ xMm: number; yMm: number } | null>(null);
+  const [rotateReferenceSet, setRotateReferenceSet] = useState(false);
   const [temporaryVisibilityMenuOpen, setTemporaryVisibilityMenuOpen] = useState(false);
   const splitStateRef = useRef<SplitState>(initialSplitState());
   const trimStateRef = useRef<TrimState>(initialTrimState());
@@ -826,6 +832,9 @@ export function PlanCanvas({
     setMoveAnchorSet(false);
     rotateAnchorRef.current = null;
     setRotateAnchorSet(false);
+    rotateReferenceRef.current = null;
+    setRotateReferenceSet(false);
+    setNumericInput(null);
     splitStateRef.current = initialSplitState();
     trimStateRef.current = initialTrimState();
     trimExtendFirstWallRef.current = null;
@@ -1130,36 +1139,69 @@ export function PlanCanvas({
     }
     const dxfLevelId = displayLevelId || activeLevelResolvedId;
     const dxfUnderlays = selectDxfUnderlaysForLevel(elementsById, dxfLevelId || undefined);
+    const activePlanView = activePlanViewId ? elementsById[activePlanViewId] : undefined;
+    const dxfViewOverrides =
+      activePlanView?.kind === 'plan_view'
+        ? ((activePlanView.categoryOverrides ?? {}) as Record<string, CategoryOverride>)
+        : {};
     for (const link of dxfUnderlays) {
       if (!link.linework || link.linework.length === 0) continue;
+      const dxfOverride = dxfViewOverrides[dxfViewOverrideKey(link.id)];
+      if (!isDxfLinkVisibleInView(link, dxfOverride)) continue;
       const transform = makeDxfLinkTransform(link, elementsById);
       const project = (xMm: number, yMm: number): THREE.Vector3 => {
         const p = transform({ xMm, yMm });
         return new THREE.Vector3(p.xMm / 1000, SLICE_Y - 0.001, p.yMm / 1000);
       };
-      const { color, opacity } = resolveDxfUnderlayStyle(link);
+      const style = resolveDxfUnderlayStyle(link, dxfOverride);
+      const makeMat = (color: string) =>
+        new THREE.LineBasicMaterial({
+          color,
+          transparent: true,
+          opacity: style.opacity,
+          linewidth: 1,
+        });
+      const segmentGroups = new Map<string, THREE.Vector3[]>();
+      const pushSegment = (color: string, a: THREE.Vector3, b: THREE.Vector3): void => {
+        const group = segmentGroups.get(color) ?? [];
+        group.push(a, b);
+        segmentGroups.set(color, group);
+      };
+      const pushPrimSegment = (
+        prim: (typeof link.linework)[number],
+        a: THREE.Vector3,
+        b: THREE.Vector3,
+      ): void => {
+        pushSegment(resolveDxfPrimitiveColor(link, prim, style), a, b);
+      };
       const mat = new THREE.LineBasicMaterial({
-        color,
+        color: style.color,
         transparent: true,
-        opacity,
+        opacity: style.opacity,
         linewidth: 1,
       });
       const segments: THREE.Vector3[] = [];
       for (const prim of link.linework) {
         if (isDxfLayerHidden(link, prim)) continue;
         if (prim.kind === 'line') {
-          segments.push(project(prim.start.xMm, prim.start.yMm));
-          segments.push(project(prim.end.xMm, prim.end.yMm));
+          const a = project(prim.start.xMm, prim.start.yMm);
+          const b = project(prim.end.xMm, prim.end.yMm);
+          segments.push(a, b);
+          pushPrimSegment(prim, a, b);
         } else if (prim.kind === 'polyline') {
           if (prim.points.length < 2) continue;
           for (let i = 0; i < prim.points.length - 1; i++) {
-            segments.push(project(prim.points[i]!.xMm, prim.points[i]!.yMm));
-            segments.push(project(prim.points[i + 1]!.xMm, prim.points[i + 1]!.yMm));
+            const a = project(prim.points[i]!.xMm, prim.points[i]!.yMm);
+            const b = project(prim.points[i + 1]!.xMm, prim.points[i + 1]!.yMm);
+            segments.push(a, b);
+            pushPrimSegment(prim, a, b);
           }
           if (prim.closed) {
             const lastIdx = prim.points.length - 1;
-            segments.push(project(prim.points[lastIdx]!.xMm, prim.points[lastIdx]!.yMm));
-            segments.push(project(prim.points[0]!.xMm, prim.points[0]!.yMm));
+            const a = project(prim.points[lastIdx]!.xMm, prim.points[lastIdx]!.yMm);
+            const b = project(prim.points[0]!.xMm, prim.points[0]!.yMm);
+            segments.push(a, b);
+            pushPrimSegment(prim, a, b);
           }
         } else if (prim.kind === 'arc') {
           const start = prim.startDeg;
@@ -1170,27 +1212,36 @@ export function PlanCanvas({
           for (let i = 0; i < steps; i++) {
             const t0 = ((start + (sweep * i) / steps) * Math.PI) / 180;
             const t1 = ((start + (sweep * (i + 1)) / steps) * Math.PI) / 180;
-            segments.push(
-              project(
-                prim.center.xMm + prim.radiusMm * Math.cos(t0),
-                prim.center.yMm + prim.radiusMm * Math.sin(t0),
-              ),
+            const a = project(
+              prim.center.xMm + prim.radiusMm * Math.cos(t0),
+              prim.center.yMm + prim.radiusMm * Math.sin(t0),
             );
-            segments.push(
-              project(
-                prim.center.xMm + prim.radiusMm * Math.cos(t1),
-                prim.center.yMm + prim.radiusMm * Math.sin(t1),
-              ),
+            const b = project(
+              prim.center.xMm + prim.radiusMm * Math.cos(t1),
+              prim.center.yMm + prim.radiusMm * Math.sin(t1),
             );
+            segments.push(a, b);
+            pushPrimSegment(prim, a, b);
           }
         }
       }
       if (segments.length === 0) continue;
-      const geom = new THREE.BufferGeometry().setFromPoints(segments);
-      const lineSeg = new THREE.LineSegments(geom, mat);
-      lineSeg.userData.dxfUnderlay = true;
-      lineSeg.userData.bimPickId = link.id;
-      grp.add(lineSeg);
+      if (style.colorMode === 'native') {
+        for (const [color, colorSegments] of segmentGroups) {
+          if (colorSegments.length === 0) continue;
+          const geom = new THREE.BufferGeometry().setFromPoints(colorSegments);
+          const lineSeg = new THREE.LineSegments(geom, makeMat(color));
+          lineSeg.userData.dxfUnderlay = true;
+          lineSeg.userData.bimPickId = link.id;
+          grp.add(lineSeg);
+        }
+      } else {
+        const geom = new THREE.BufferGeometry().setFromPoints(segments);
+        const lineSeg = new THREE.LineSegments(geom, mat);
+        lineSeg.userData.dxfUnderlay = true;
+        lineSeg.userData.bimPickId = link.id;
+        grp.add(lineSeg);
+      }
     }
 
     // KRN-10 — render masking regions hosted on the active plan view. These
@@ -3107,14 +3158,29 @@ export function PlanCanvas({
           // First click: store center of rotation
           rotateAnchorRef.current = sp;
           setRotateAnchorSet(true);
+          rotateReferenceRef.current = null;
+          setRotateReferenceSet(false);
+          setNumericInput(null);
           bumpGeom((x) => x + 1);
           return;
         }
-        // Second click: compute angle from center to click point and rotate selection
+        if (!rotateReferenceRef.current) {
+          // Second click: store the start-angle reference ray.
+          rotateReferenceRef.current = sp;
+          setRotateReferenceSet(true);
+          setNumericInput(null);
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        // Third click: compute delta from reference ray to endpoint and rotate selection.
         const anchor = rotateAnchorRef.current;
+        const reference = rotateReferenceRef.current;
         rotateAnchorRef.current = null;
         setRotateAnchorSet(false);
-        const angleDeg = rotateAngleFromPoints(anchor, sp);
+        rotateReferenceRef.current = null;
+        setRotateReferenceSet(false);
+        setNumericInput(null);
+        const angleDeg = rotateDeltaAngleFromReference(anchor, reference, sp);
         const elementIds = [selectedId, ...selectedIds].filter(Boolean) as string[];
         if (elementIds.length > 0) {
           onSemanticCommand({
@@ -3594,6 +3660,53 @@ export function PlanCanvas({
           return;
         }
       }
+      if (planTool === 'rotate' && rotateAnchorRef.current && rotateReferenceRef.current) {
+        if (/^[0-9]$/.test(ev.key) || ev.key === '.' || ev.key === '-') {
+          ev.preventDefault();
+          const seedPx = hudMm
+            ? worldToScreen(hudMm)
+            : worldToScreen(rotateReferenceRef.current ?? rotateAnchorRef.current);
+          setNumericInput((prev) => {
+            if (ev.key === '-' && prev?.value) return prev;
+            const value = (prev?.value ?? '') + ev.key;
+            return {
+              value,
+              pxX: prev?.pxX ?? seedPx.pxX,
+              pxY: prev?.pxY ?? seedPx.pxY,
+            };
+          });
+          return;
+        }
+        if (ev.key === 'Backspace' && numericInputRef.current) {
+          ev.preventDefault();
+          setNumericInput((prev) => (prev ? { ...prev, value: prev.value.slice(0, -1) } : prev));
+          return;
+        }
+        if (ev.key === 'Enter' && numericInputRef.current) {
+          ev.preventDefault();
+          const angleDeg = parseTypedRotateAngle(numericInputRef.current.value);
+          const anchor = rotateAnchorRef.current;
+          if (angleDeg !== null && anchor) {
+            const elementIds = [selectedId, ...selectedIds].filter(Boolean) as string[];
+            if (elementIds.length > 0) {
+              onSemanticCommand({
+                type: 'rotateElements',
+                elementIds,
+                centerXMm: anchor.xMm,
+                centerYMm: anchor.yMm,
+                angleDeg,
+              });
+            }
+          }
+          rotateAnchorRef.current = null;
+          setRotateAnchorSet(false);
+          rotateReferenceRef.current = null;
+          setRotateReferenceSet(false);
+          setNumericInput(null);
+          bumpGeom((x) => x + 1);
+          return;
+        }
+      }
       // F-104 — Tab cycles to the next endpoint-connected wall when a wall is
       // selected in select mode. Walks the wall graph: find all walls on the
       // same level whose start or end endpoint is within 10 mm of the current
@@ -3717,6 +3830,9 @@ export function PlanCanvas({
         } else if (planTool === 'rotate') {
           rotateAnchorRef.current = null;
           setRotateAnchorSet(false);
+          rotateReferenceRef.current = null;
+          setRotateReferenceSet(false);
+          setNumericInput(null);
         } else if (planTool === 'split') {
           const { state } = reduceSplit(splitStateRef.current, { kind: 'cancel' });
           splitStateRef.current = state;
@@ -4878,6 +4994,9 @@ export function PlanCanvas({
       {planTool === 'rotate' && rotateAnchorSet && rotateAnchorRef.current
         ? (() => {
             const anchorPx = worldToScreen(rotateAnchorRef.current);
+            const referencePx = rotateReferenceRef.current
+              ? worldToScreen(rotateReferenceRef.current)
+              : null;
             const cursorPx = hudMm ? worldToScreen(hudMm) : null;
             return (
               <>
@@ -4912,7 +5031,18 @@ export function PlanCanvas({
                     fill="hsl(var(--color-accent, 220 90% 56%))"
                     opacity="0.9"
                   />
-                  {/* Line from center to cursor */}
+                  {/* Start-angle reference ray, then live end-angle ray. */}
+                  {referencePx ? (
+                    <line
+                      x1={anchorPx.pxX}
+                      y1={anchorPx.pxY}
+                      x2={referencePx.pxX}
+                      y2={referencePx.pxY}
+                      stroke="hsl(var(--color-accent, 220 90% 56%))"
+                      strokeWidth="2"
+                      opacity="0.85"
+                    />
+                  ) : null}
                   {cursorPx ? (
                     <line
                       x1={anchorPx.pxX}
@@ -4939,7 +5069,11 @@ export function PlanCanvas({
                   }}
                   className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
                 >
-                  <span>Click to set snapped end angle and rotate</span>
+                  <span>
+                    {rotateReferenceSet
+                      ? 'Click end ray or type angle + Enter'
+                      : 'Click start reference ray'}
+                  </span>
                 </div>
               </>
             );
@@ -5198,8 +5332,9 @@ export function PlanCanvas({
         planToScreen={worldToScreen}
         onDispatch={onSemanticCommand}
       />
-      {/* EDT-01 — numeric override input rendered at the cursor. */}
-      {numericInput && gripDragRef.current && (
+      {/* EDT-01 / F-122 — numeric override input rendered at the cursor. */}
+      {numericInput &&
+      (gripDragRef.current || (planTool === 'rotate' && rotateAnchorSet && rotateReferenceSet)) ? (
         <div
           data-testid="grip-numeric-input"
           style={{
@@ -5220,9 +5355,12 @@ export function PlanCanvas({
           }}
         >
           {numericInput.value || '0'}
-          <span style={{ opacity: 0.6 }}> mm · Enter</span>
+          <span style={{ opacity: 0.6 }}>
+            {planTool === 'rotate' && rotateAnchorSet && rotateReferenceSet ? ' deg' : ' mm'} ·
+            Enter
+          </span>
         </div>
-      )}
+      ) : null}
       {/* EDT-05 — snap glyph layer (×, ⊥, dot+dash) above the canvas. */}
       <SnapGlyphLayer
         candidates={snapGlyphState.candidates}

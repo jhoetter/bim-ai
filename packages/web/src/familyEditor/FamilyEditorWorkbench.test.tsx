@@ -350,13 +350,52 @@ describe('FAM-067/FAM-071/FAM-072 — symbolic detail line authoring', () => {
     fireEvent.change(getByLabelText('symbolic-start-x'), { target: { value: '10' } });
     fireEvent.change(getByLabelText('symbolic-end-x'), { target: { value: '200' } });
     fireEvent.click(getByTestId('symbolic-line-add'));
-    expect(getByTestId('symbolic-lines-list').textContent).toContain('opening_projection');
+    expect(getByTestId('symbolic-lines-list').textContent).toContain('Opening Projection');
 
     fireEvent.change(getByLabelText('Symbolic line subcategory'), {
       target: { value: 'hidden_cut' },
     });
     fireEvent.click(getByTestId('symbolic-line-add'));
-    expect(getByTestId('symbolic-lines-list').textContent).toContain('hidden_cut');
+    expect(getByTestId('symbolic-lines-list').textContent).toContain('Hidden Lines (Cut)');
+    expect(getByTestId('symbolic-line-style-1').textContent).toContain('dashed');
+    expect(getByTestId('symbolic-project-rendering-evidence').textContent).toContain(
+      'Family: Hidden Lines (Cut):w2:dashed',
+    );
+    expect(getByTestId('symbolic-canvas-line-1').getAttribute('stroke-dasharray')).toBe('8 5');
+  });
+
+  it('draws symbolic lines from the canvas using the active subcategory style', () => {
+    const { getByLabelText, getByTestId } = renderWithI18n(<FamilyEditorWorkbench />);
+
+    fireEvent.change(getByLabelText('Symbolic line subcategory'), {
+      target: { value: 'hidden_cut' },
+    });
+    fireEvent.click(getByTestId('symbolic-line-canvas'), { clientX: 240, clientY: 130 });
+    expect(getByTestId('symbolic-canvas-start')).not.toBeNull();
+    fireEvent.click(getByTestId('symbolic-line-canvas'), { clientX: 340, clientY: 130 });
+
+    expect(getByTestId('symbolic-lines-list').textContent).toContain('(0, 0) → (500, 0)');
+    expect(getByTestId('symbolic-line-style-0').textContent).toContain('dashed');
+    expect(getByTestId('symbolic-canvas-line-0').getAttribute('stroke-dasharray')).toBe('8 5');
+  });
+
+  it('filters selected symbolic lines by preview detail level and boolean visibility params', () => {
+    const { getByLabelText, getByTestId, getByText, queryByTestId } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+
+    fireEvent.click(getByText('Furniture', { selector: 'button' }));
+    fireEvent.click(getByLabelText('select-symbolic-line-0'));
+    fireEvent.click(getByLabelText('symbolic-visibility-coarse'));
+    expect(getByTestId('preview-visibility-summary').textContent).toContain('4/5 symbolic lines');
+    expect(queryByTestId('symbolic-canvas-line-0')).toBeNull();
+
+    fireEvent.click(getByLabelText('symbolic-visibility-coarse'));
+    fireEvent.change(getByLabelText('Symbolic line visible when'), {
+      target: { value: 'Show_2D_Elements' },
+    });
+    fireEvent.click(getByLabelText('symbolic-show-when-false'));
+    expect(getByTestId('preview-visibility-summary').textContent).toContain('4/5 symbolic lines');
   });
 });
 
@@ -494,6 +533,33 @@ describe('FAM-02 — sweep tool flow', () => {
     addProfileLine('12', '-5', '12', '10');
 
     fireEvent.click(getByTestId('profile-trim-extend'));
+    const profileText = getByTestId('sweep-profile-list').textContent ?? '';
+    expect(profileText).toContain('(12, 0)');
+  });
+
+  it('runs Trim/Extend from the TR keyboard shortcut in profile sketch mode', () => {
+    const { getByText, getByLabelText, getByTestId, getAllByText } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+    fireEvent.click(getByText('Sweep'));
+    fireEvent.click(getAllByText('Add line')[0]);
+    fireEvent.click(getByText(/Edit Profile/));
+
+    const addProfileLine = (sx: string, sy: string, ex: string, ey: string) => {
+      fireEvent.change(getByLabelText('profile-sx'), { target: { value: sx } });
+      fireEvent.change(getByLabelText('profile-sy'), { target: { value: sy } });
+      fireEvent.change(getByLabelText('profile-ex'), { target: { value: ex } });
+      fireEvent.change(getByLabelText('profile-ey'), { target: { value: ey } });
+      fireEvent.click(getByText('Add line'));
+    };
+    addProfileLine('0', '0', '10', '0');
+    addProfileLine('12', '-5', '12', '10');
+
+    const profileSketch = getByLabelText('Sweep profile sketch');
+    profileSketch.focus();
+    fireEvent.keyDown(profileSketch, { key: 'T' });
+    fireEvent.keyDown(profileSketch, { key: 'R' });
+
     const profileText = getByTestId('sweep-profile-list').textContent ?? '';
     expect(profileText).toContain('(12, 0)');
   });
