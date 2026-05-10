@@ -16,13 +16,13 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       # packageManager field in repo root package.json selects the pnpm version (do not duplicate here).
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6.0.6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6.4.0
         with:
           node-version: 20
           cache: pnpm
@@ -87,7 +87,7 @@ jobs:
 
       - name: Upload Playwright report + screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: evidence-web-${{ github.run_id }}-playwright
           retention-days: 14
@@ -103,13 +103,13 @@ jobs:
       run:
         working-directory: app
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6.4.0
         with:
           node-version: 22
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6.2.0
         with:
           python-version: '3.12'
 
