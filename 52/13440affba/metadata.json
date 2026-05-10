@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "5213440affba",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/AssetCard.tsx",
+    "packages/web/src/workspace/AssetPreviewPane.tsx",
+    "packages/web/src/workspace/KitChainEditor.tsx",
+    "packages/web/src/workspace/LibraryOverlay.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/kitSolver.ts",
+    "packages/web/src/workspace/library/AssetCard.tsx",
+    "packages/web/src/workspace/library/AssetPreviewPane.tsx",
+    "packages/web/src/workspace/library/KitChainEditor.tsx",
+    "packages/web/src/workspace/library/LibraryOverlay.tsx",
+    "packages/web/src/workspace/library/index.ts",
+    "packages/web/src/workspace/library/kitSolver.ts",
+    "spec/code-quality-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/52/13440affba/0/metadata.json",
+      "transcript": "/52/13440affba/0/full.jsonl",
+      "content_hash": "/52/13440affba/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
