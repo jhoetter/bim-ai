@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "96a2d3ec2377",
+  "session_id": "019e12ef-d845-7a73-8ab1-4954b79742bc",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T22:17:27.131395Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/cli/cli.initiationCheck.test.mjs",
+    "packages/cli/lib/sketch-initiation.mjs",
+    "spec/sketch-to-bim-methodology.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "f2840cdac20e",
+  "checkpoint_transcript_start": 433,
+  "transcript_lines_at_start": 433,
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T22:17:27.107572Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 61,
+    "human_modified": 2,
+    "human_removed": 0,
+    "total_committed": 61,
+    "total_lines_changed": 63,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}
