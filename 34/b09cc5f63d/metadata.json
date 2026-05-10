@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "34b09cc5f63d",
+  "strategy": "manual-commit",
+  "branch": "feat/skb-03-visual-gate",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/34/b09cc5f63d/0/metadata.json",
+      "transcript": "/34/b09cc5f63d/0/full.jsonl",
+      "content_hash": "/34/b09cc5f63d/0/content_hash.txt",
+      "prompt": "/34/b09cc5f63d/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1189294,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 39414144,
+    "output_tokens": 72533,
+    "api_call_count": 316
+  }
+}
