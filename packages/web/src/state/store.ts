@@ -8,6 +8,7 @@ import {
   createPlanAuthoringRuntimeSlice,
   createWorkspaceUiRuntimeSlice,
 } from './storeRuntimeSlices';
+import { createModelRuntimeSlice } from './storeModelRuntimeSlice';
 import { createViewportRuntimeSlice } from './storeViewportRuntimeSlice';
 
 export type {
@@ -1558,143 +1559,15 @@ export const useBimStore = create<StoreState>((set, get) => {
   }
 
   return {
-    revision: 0,
-
-    elementsById: {},
-
-    violations: [],
-
-    selectedIds: [],
-
+    ...createModelRuntimeSlice(set, get, {
+      coerceElement,
+      coerceViolation,
+      defaultLevelId,
+    }),
     ...createPlanAuthoringRuntimeSlice(set),
     ...createCollaborationRuntimeSlice(set, peerSeed),
     ...createWorkspaceUiRuntimeSlice(set),
     ...createViewportRuntimeSlice(set, get),
-
-    planProjectionPrimitives: null,
-
-    planRoomSchemeWireReadout: null,
-
-    scheduleBudgetHydration: null,
-
-    lastLevelElevationPropagationEvidence: null,
-
-    linkSourceRevisions: {},
-
-    hydrateFromSnapshot: (snap) => {
-      const elements: Record<string, Element> = {};
-
-      for (const [id, raw] of Object.entries(snap.elements ?? {})) {
-        const typed = coerceElement(id, raw as Record<string, unknown>);
-        if (typed) elements[id] = typed;
-      }
-
-      const curLevel = get().activeLevelId;
-      const prevPv = get().activePlanViewId;
-      const prevVp = get().activeViewpointId;
-
-      set({
-        modelId: snap.modelId,
-
-        revision: snap.revision,
-
-        elementsById: elements,
-
-        violations: (snap.violations ?? []).map(coerceViolation),
-
-        activeLevelId:
-          curLevel && elements[curLevel]?.kind === 'level' ? curLevel : defaultLevelId(elements),
-        planProjectionPrimitives: null,
-
-        planRoomSchemeWireReadout: null,
-
-        scheduleBudgetHydration: null,
-
-        lastLevelElevationPropagationEvidence: null,
-
-        linkSourceRevisions:
-          snap.linkSourceRevisions && typeof snap.linkSourceRevisions === 'object'
-            ? { ...snap.linkSourceRevisions }
-            : {},
-
-        activePlanViewId: prevPv && elements[prevPv]?.kind === 'plan_view' ? prevPv : undefined,
-        activeViewpointId: prevVp && elements[prevVp]?.kind === 'viewpoint' ? prevVp : undefined,
-      });
-    },
-
-    applyDelta: (d) => {
-      const merged = { ...get().elementsById };
-
-      const dels = Array.isArray((d as { removedIds?: unknown }).removedIds)
-        ? (d.removedIds as string[])
-        : Array.isArray((d as { removed_ids?: unknown }).removed_ids)
-          ? (d as unknown as { removed_ids: string[] }).removed_ids
-          : [];
-
-      for (const rid of dels) {
-        delete merged[rid];
-      }
-
-      for (const [eid, raw] of Object.entries(d.elements ?? {})) {
-        const typed = coerceElement(eid, raw as Record<string, unknown>);
-
-        if (typed) merged[eid] = typed;
-      }
-
-      const st = get();
-      const pv = st.activePlanViewId;
-      const vp = st.activeViewpointId;
-
-      set({
-        revision: d.revision,
-
-        elementsById: merged,
-
-        violations: (d.violations ?? []).map(coerceViolation),
-
-        planProjectionPrimitives: null,
-
-        planRoomSchemeWireReadout: null,
-
-        scheduleBudgetHydration: null,
-
-        lastLevelElevationPropagationEvidence: null,
-
-        activePlanViewId: pv && merged[pv]?.kind === 'plan_view' ? pv : undefined,
-        activeViewpointId: vp && merged[vp]?.kind === 'viewpoint' ? vp : undefined,
-      });
-    },
-
-    select: (id) => set({ selectedId: id, selectedIds: [] }),
-
-    toggleSelectedId: (id) =>
-      set((s) => ({
-        selectedIds: s.selectedIds.includes(id)
-          ? s.selectedIds.filter((x) => x !== id)
-          : [...s.selectedIds, id],
-      })),
-
-    clearSelectedIds: () => set({ selectedIds: [] }),
-
-    /** FAM-10: paste-side merge — append elements without deleting any. */
-    mergeElements: (elements) =>
-      set((s) => {
-        const next = { ...s.elementsById };
-        for (const el of elements) {
-          if (el && typeof (el as { id?: unknown }).id === 'string') {
-            next[(el as { id: string }).id] = el as Element;
-          }
-        }
-        return { elementsById: next };
-      }),
-
-    /** FAM-10: paste-side family imports — register user families. */
-    importFamilyDefinitions: (defs) =>
-      set((s) => {
-        const next = { ...(s.userFamilies ?? {}) };
-        for (const def of defs) next[def.id] = def;
-        return { userFamilies: next };
-      }),
   };
 });
 
