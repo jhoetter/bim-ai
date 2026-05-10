@@ -5,7 +5,8 @@
   "branch": "main",
   "checkpoints_count": 2,
   "files_touched": [
-    "packages/web/src/plan/symbology.ts"
+    "packages/web/src/plan/symbology.ts",
+    "packages/web/src/plan/symbology.wirePrimitives.test.ts"
   ],
   "sessions": [
     {
@@ -25,13 +26,19 @@
       "transcript": "/ea/c7b8319b37/2/full.jsonl",
       "content_hash": "/ea/c7b8319b37/2/content_hash.txt",
       "prompt": "/ea/c7b8319b37/2/prompt.txt"
+    },
+    {
+      "metadata": "/ea/c7b8319b37/3/metadata.json",
+      "transcript": "/ea/c7b8319b37/3/full.jsonl",
+      "content_hash": "/ea/c7b8319b37/3/content_hash.txt",
+      "prompt": "/ea/c7b8319b37/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 2011253,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 60549888,
-    "output_tokens": 116569,
-    "api_call_count": 495
+    "input_tokens": 2011254,
+    "cache_creation_tokens": 4500,
+    "cache_read_tokens": 60696019,
+    "output_tokens": 119228,
+    "api_call_count": 496
   }
 }
