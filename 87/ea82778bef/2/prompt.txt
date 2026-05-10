@@ -1,0 +1,37 @@
+<image name=[Image #1]>
+
+---
+
+</image>
+
+---
+
+we use claude-skills/sketch-to-bim to generate bim models from sketches, but it usually generates with issues that the software already identifies: [Image #1]; please use that in the methodology as well. commit and push and merge to main
+
+---
+
+can you completely clear the current seeding? i want to start from scratch again.. (dont delete the spec/target-house-seed.md , but the current seeding created via make seed).
+
+---
+
+ok, can you now create the target-house from the spec/target-house-seed.md ?
+
+---
+
+can you merge that into main please?
+
+---
+
+but it looks exactly as before, i dont undestand that... it is the exact same seedhouse as before...
+
+---
+
+how was it possible you recreated the exact same house? that is my question.... i hoped for a WAY better model...
+
+---
+
+ahh ok, then really look into that please. really go into super deep detail to ensure that the house can be built just given a sketch and that we also can ensure that findings from the software can be fed into the creation again to ensure that our model becomes extremely good!
+
+---
+
+yeah i understand, i am asking you to look into the overall workflow we use to generate the seedhouse; make seed is not a generator, i get that. but i am asking YOU to use the claude-skills/sketch-to-bim to turn the [Image #1] into an actual seeding, but think about the overall workflow to get there; do the commands or such need to be updated? is everything everything that the software offers via CLI/API/... available during the workflow? i want to achieve that YOU can look into the spec/target-house-seed.md , understand what would be needed, then use the methodology of the sketch-to-bim to create the seeding...
