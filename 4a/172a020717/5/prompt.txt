@@ -1,0 +1,1 @@
+In /Users/jhoetter/repos/bim-ai, inspect remaining early UI/Nav and wall gaps in spec/revit-parity, especially F-003-F013 and F-036/F040/F043. Do not edit files. Identify stale statuses and the smallest code changes to close or reduce the most rows. Include exact paths and tests.
