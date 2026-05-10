@@ -147,15 +147,17 @@ describe('<FamilyLibraryPanel /> — FL-06', () => {
     expect(getByTestId(`family-row-${wt.id}`)).toBeTruthy();
   });
 
-  it('renders built-in wall types with wall assembly thumbnails', () => {
+  it('renders built-in wall types with rendered wall thumbnails', () => {
     const { getByTestId } = setup();
     const row = getByTestId('family-row-wall.ext-timber');
 
-    expect(row.querySelector('[data-testid="wall-type-thumbnail"]')).toBeTruthy();
-    expect(row.querySelector('img')).toBeNull();
+    const thumbnail = row.querySelector('[data-testid="wall-type-rendered-thumbnail"]');
+    expect(thumbnail).toBeTruthy();
+    expect(thumbnail?.tagName).toBe('IMG');
+    expect(row.querySelector('svg')).toBeNull();
   });
 
-  it('renders custom wall_type elements with wall assembly thumbnails', () => {
+  it('renders custom wall_type elements with rendered wall thumbnails', () => {
     const wt: Extract<Element, { kind: 'wall_type' }> = {
       kind: 'wall_type',
       id: 'wt-rendered',
@@ -169,8 +171,10 @@ describe('<FamilyLibraryPanel /> — FL-06', () => {
     const { getByTestId } = setup({ [wt.id]: wt });
     const row = getByTestId(`family-row-${wt.id}`);
 
-    expect(row.querySelector('[data-testid="wall-type-thumbnail"]')).toBeTruthy();
-    expect(row.querySelector('img')).toBeNull();
+    const thumbnail = row.querySelector('[data-testid="wall-type-rendered-thumbnail"]');
+    expect(thumbnail).toBeTruthy();
+    expect(thumbnail?.tagName).toBe('IMG');
+    expect(row.querySelector('svg')).toBeNull();
   });
 
   it('clicking the backdrop closes the panel', () => {
