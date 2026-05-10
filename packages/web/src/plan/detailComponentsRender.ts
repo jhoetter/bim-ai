@@ -44,10 +44,19 @@ export type TextNotePrimitive = {
   colour: string;
 };
 
+export type RevisionCloudPrimitive = {
+  kind: 'revision_cloud';
+  id: string;
+  boundaryMm: XY[];
+  colour: string;
+  strokeMm: number;
+};
+
 export type DetailComponentPrimitive =
   | DetailLinePrimitive
   | DetailRegionPrimitive
-  | TextNotePrimitive;
+  | TextNotePrimitive
+  | RevisionCloudPrimitive;
 
 /**
  * Walks `elementsById` and returns rendering primitives for every
@@ -91,6 +100,14 @@ export function extractDetailComponentPrimitives(
         anchor: el.anchor ?? 'tl',
         rotationDeg: el.rotationDeg ?? 0,
         colour: el.colour ?? '#202020',
+      });
+    } else if (el.kind === 'revision_cloud' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'revision_cloud',
+        id: el.id,
+        boundaryMm: el.boundaryMm,
+        colour: el.colour ?? '#e05000',
+        strokeMm: el.strokeMm ?? 1.0,
       });
     }
   }

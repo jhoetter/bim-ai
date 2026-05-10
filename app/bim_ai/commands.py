@@ -1593,6 +1593,21 @@ class CreateMaskingRegionCmd(BaseModel):
     fill_color: str = Field(default="#ffffff", alias="fillColor")
 
 
+# --- ANN-03: revision cloud --------------------------------------------------
+
+
+class CreateRevisionCloudCmd(BaseModel):
+    """ANN-03 — view-local revision cloud boundary."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createRevisionCloud"] = "createRevisionCloud"
+    id: str | None = None
+    host_view_id: str = Field(alias="hostViewId")
+    boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
+    colour: str = Field(default="#e05000")
+    stroke_mm: float = Field(default=1.0, alias="strokeMm")
+
+
 class UpdateMaskingRegionCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["updateMaskingRegion"] = "updateMaskingRegion"
@@ -2922,6 +2937,7 @@ Command = Annotated[
     | CreateMaskingRegionCmd
     | UpdateMaskingRegionCmd
     | DeleteMaskingRegionCmd
+    | CreateRevisionCloudCmd
     | SplitWallAtCmd
     | AlignElementToReferenceCmd
     | TrimElementToReferenceCmd

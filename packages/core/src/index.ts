@@ -260,6 +260,7 @@ export type ElemKind =
   | 'balcony'
   | 'area'
   | 'masking_region'
+  | 'revision_cloud'
   | 'constraint'
   | 'mass'
   | 'phase'
@@ -1790,6 +1791,15 @@ export type Element =
       hostViewId: string;
       boundaryMm: XY[];
       fillColor?: string;
+    }
+  | {
+      /** ANN-03 — view-local revision cloud (cloud-shaped closed annotation). */
+      kind: 'revision_cloud';
+      id: string;
+      hostViewId: string;
+      boundaryMm: XY[];
+      colour?: string;
+      strokeMm?: number;
     }
   | {
       /**
