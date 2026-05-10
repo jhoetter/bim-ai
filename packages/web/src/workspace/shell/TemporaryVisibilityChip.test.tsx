@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 
-import { useBimStore } from '../state/store';
+import { useBimStore } from '../../state/store';
 
 import { TemporaryVisibilityChip } from './TemporaryVisibilityChip';
 

@@ -2,7 +2,7 @@ import type { JSX } from 'react';
 
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
 
-import { useBimStore } from '../state/store';
+import { useBimStore } from '../../state/store';
 
 /**
  * VIE-04: status-bar chip showing the active temporary-visibility override

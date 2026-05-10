@@ -7,7 +7,7 @@ import { Btn } from '@bim-ai/ui';
 
 import { applyCommand } from '../../lib/api';
 import { useViewTemplateStore } from '../../collab/viewTemplateStore';
-import { PropagationToast } from '../PropagationToast';
+import { PropagationToast } from './PropagationToast';
 
 import {
   planViewBrowserHierarchyState,
