@@ -12,8 +12,8 @@ import {
   filterDatumWorkbenchViolations,
   formatElevationMmReadout,
   levelIdsFromDatumRows,
-} from './datumLevelStackReadout';
-import { formatLevelDatumPropagationEvidenceLine } from './levelDatumPropagationReadout';
+  formatLevelDatumPropagationEvidenceLine,
+} from './readouts';
 
 type Props = {
   selected: Element | undefined;

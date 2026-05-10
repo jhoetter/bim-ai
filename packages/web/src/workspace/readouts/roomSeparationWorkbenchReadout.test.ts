@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Element } from '@bim-ai/core';
 
-import type { PlanProjectionPrimitivesV1Wire } from '../plan/planProjectionWire';
+import type { PlanProjectionPrimitivesV1Wire } from '../../plan/planProjectionWire';
 
 import {
   buildRoomSeparationEvidenceToken,

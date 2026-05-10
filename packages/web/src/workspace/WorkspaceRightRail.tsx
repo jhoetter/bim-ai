@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { Element } from '@bim-ai/core';
 
 import { AdvisorPanel } from '../advisor/AdvisorPanel';
-import { buildPlanGridDatumInspectorLine } from './planViewDatumGridReadout';
+import { buildPlanGridDatumInspectorLine } from './readouts';
 import { useBimStore } from '../state/store';
 import {
   Inspector,

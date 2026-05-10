@@ -1,6 +1,6 @@
 import type { Element } from '@bim-ai/core';
 
-import type { PlanProjectionPrimitivesV1Wire } from '../plan/planProjectionWire';
+import type { PlanProjectionPrimitivesV1Wire } from '../../plan/planProjectionWire';
 
 type GridLinePrim = {
   id: string;

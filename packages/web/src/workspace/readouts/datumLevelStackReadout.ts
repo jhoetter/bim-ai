@@ -1,6 +1,6 @@
 import type { Element, Violation } from '@bim-ai/core';
 
-import { sortViolationsDeterministic } from '../advisor/advisorViolationContext';
+import { sortViolationsDeterministic } from '../../advisor/advisorViolationContext';
 
 /** Aligns with `bim_ai.constraints` level_datum_parent_offset_mismatch tolerance (>= 1.0 mm delta). */
 export const LEVEL_DATUM_ELEVATION_ALIGN_EPS_MM = 1;

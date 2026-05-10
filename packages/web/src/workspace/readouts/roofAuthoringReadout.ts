@@ -1,4 +1,4 @@
-import type { PlanProjectionPrimitivesV1Wire } from '../plan/planProjectionWire';
+import type { PlanProjectionPrimitivesV1Wire } from '../../plan/planProjectionWire';
 
 /** Match server `planProjectionPrimitives_v1.roofs[]` entry for a roof element id. */
 export function roofPlanWireRowForElement(

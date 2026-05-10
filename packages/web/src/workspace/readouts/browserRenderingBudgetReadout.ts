@@ -1,7 +1,7 @@
 import type { Element } from '@bim-ai/core';
 
-import type { PlanProjectionPrimitivesV1Wire } from '../plan/planProjectionWire';
-import { isPlanProjectionPrimitivesV1 } from '../plan/planProjectionWire';
+import type { PlanProjectionPrimitivesV1Wire } from '../../plan/planProjectionWire';
+import { isPlanProjectionPrimitivesV1 } from '../../plan/planProjectionWire';
 
 /** Keys whose array lengths contribute to plan canvas wire work (see `symbology.rebuildPlanMeshesFromWire`). */
 export const PLAN_WIRE_PRIMITIVE_ARRAY_KEYS: readonly string[] = [

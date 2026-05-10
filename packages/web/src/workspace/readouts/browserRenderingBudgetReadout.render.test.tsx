@@ -10,7 +10,7 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import type { PlanProjectionPrimitivesV1Wire } from '../plan/planProjectionWire';
+import type { PlanProjectionPrimitivesV1Wire } from '../../plan/planProjectionWire';
 import {
   BROWSER_BUDGET_OVER_BUDGET_ELEMENT_COUNT,
   BROWSER_BUDGET_OVER_BUDGET_PLAN_WIRE_ENTRIES,

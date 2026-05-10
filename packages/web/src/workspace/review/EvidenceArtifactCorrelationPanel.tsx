@@ -15,8 +15,8 @@ import {
 import {
   formatIfcExchangeManifestClosureLines,
   type IfcExchangeManifestClosureWire,
-} from '../ifcExchangeManifestClosureReadout';
-import { formatPrdCloseoutCrossCorrelationReadoutLines } from '../prdCloseoutCrossCorrelationReadout';
+  formatPrdCloseoutCrossCorrelationReadoutLines,
+} from '../readouts';
 import type { EvidenceArtifactSummary } from './evidenceArtifactParser';
 
 interface EvidenceArtifactCorrelationPanelProps {

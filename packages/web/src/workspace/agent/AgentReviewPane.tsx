@@ -19,7 +19,7 @@ import {
 import {
   buildBrowserRenderingBudgetReadoutV1,
   formatBrowserRenderingBudgetLines,
-} from '../browserRenderingBudgetReadout';
+} from '../readouts';
 import {
   formatAgentReviewReadoutConsistencyClosureLines,
   parseAgentReviewReadoutConsistencyClosureV1,

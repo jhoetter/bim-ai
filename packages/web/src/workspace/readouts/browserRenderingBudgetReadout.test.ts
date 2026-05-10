@@ -1,7 +1,7 @@
 import type { Element } from '@bim-ai/core';
 import { describe, expect, it } from 'vitest';
 
-import type { PlanProjectionPrimitivesV1Wire } from '../plan/planProjectionWire';
+import type { PlanProjectionPrimitivesV1Wire } from '../../plan/planProjectionWire';
 
 import {
   BROWSER_BUDGET_OVER_BUDGET_ELEMENT_COUNT,

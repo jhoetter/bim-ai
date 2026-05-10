@@ -1,6 +1,6 @@
 import type { Element } from '@bim-ai/core';
 
-import type { PlanProjectionPrimitivesV1Wire } from '../plan/planProjectionWire';
+import type { PlanProjectionPrimitivesV1Wire } from '../../plan/planProjectionWire';
 
 /** Matches `bim_ai.room_derivation` axis segment gate for near-horizontal / near-vertical segments. */
 export const ROOM_SEPARATION_AXIS_ALIGN_TOL_MM = 25;

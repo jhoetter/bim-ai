@@ -9,7 +9,7 @@ import { useBimStore } from '../state/store';
 
 import { SectionViewportSvg } from './sectionViewportSvg';
 import { formatSectionCutIdentityLine, formatSectionCutPlaneContext } from './sectionViewportDoc';
-import { formatSectionDatumElevationEvidenceLine } from './sectionDatumElevationReadout';
+import { formatSectionDatumElevationEvidenceLine } from './readouts';
 import { sheetsReferencingSectionCut } from './sheetViewRef';
 
 const PREVIEW_WIDTH_PX = 320;

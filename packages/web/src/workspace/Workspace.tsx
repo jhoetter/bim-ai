@@ -70,7 +70,7 @@ import {
 import {
   buildBrowserRenderingBudgetReadoutV1,
   formatBrowserRenderingBudgetLines,
-} from './browserRenderingBudgetReadout';
+} from './readouts';
 import { VVDialog } from './VVDialog';
 import { ManageLinksDialog } from './ManageLinksDialog';
 import { CommentsPanel } from './comments';

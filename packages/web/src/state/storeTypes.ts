@@ -18,7 +18,7 @@ import type {
   PlanRoomColorLegendRow,
   RoomProgrammeLegendEvidenceV0,
 } from '../plan/planProjectionWire';
-import type { LevelElevationPropagationEvidenceV0 } from '../workspace/levelDatumPropagationReadout';
+import type { LevelElevationPropagationEvidenceV0 } from '../workspace/readouts';
 
 export type PlanRoomSchemeWireReadout = {
   roomColorLegendRows: PlanRoomColorLegendRow[];

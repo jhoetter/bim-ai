@@ -11,7 +11,7 @@ import {
 import {
   parsePrdCloseoutCrossCorrelationManifestV1,
   type PrdCloseoutCrossCorrelationManifestWire,
-} from '../prdCloseoutCrossCorrelationReadout';
+} from '../readouts';
 
 export type EvidenceArtifactSummary = {
   semanticDigestPrefix16: string | null;

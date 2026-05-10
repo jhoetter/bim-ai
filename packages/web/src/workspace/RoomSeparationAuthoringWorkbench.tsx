@@ -10,7 +10,7 @@ import type { PlanProjectionPrimitivesV1Wire } from '../plan/planProjectionWire'
 import {
   buildRoomSeparationWorkbenchReadout,
   validateAxisAlignedSeparationSegmentMm,
-} from './roomSeparationWorkbenchReadout';
+} from './readouts';
 
 type LevelRow = Extract<Element, { kind: 'level' }>;
 

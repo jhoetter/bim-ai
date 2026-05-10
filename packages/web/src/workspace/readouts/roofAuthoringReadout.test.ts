@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { PlanProjectionPrimitivesV1Wire } from '../plan/planProjectionWire';
+import type { PlanProjectionPrimitivesV1Wire } from '../../plan/planProjectionWire';
 import {
   roofInspectorWireDiagnosticsLines,
   roofPlanWireRowForElement,
