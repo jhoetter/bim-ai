@@ -3,8 +3,10 @@
   "checkpoint_id": "eac7b8319b37",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
-  "files_touched": null,
+  "checkpoints_count": 2,
+  "files_touched": [
+    "packages/web/src/plan/symbology.ts"
+  ],
   "sessions": [
     {
       "metadata": "/ea/c7b8319b37/0/metadata.json",
@@ -17,13 +19,19 @@
       "transcript": "/ea/c7b8319b37/1/full.jsonl",
       "content_hash": "/ea/c7b8319b37/1/content_hash.txt",
       "prompt": "/ea/c7b8319b37/1/prompt.txt"
+    },
+    {
+      "metadata": "/ea/c7b8319b37/2/metadata.json",
+      "transcript": "/ea/c7b8319b37/2/full.jsonl",
+      "content_hash": "/ea/c7b8319b37/2/content_hash.txt",
+      "prompt": "/ea/c7b8319b37/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1632508,
+    "input_tokens": 2011253,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 55614464,
-    "output_tokens": 92821,
-    "api_call_count": 445
+    "cache_read_tokens": 60549888,
+    "output_tokens": 116569,
+    "api_call_count": 495
   }
 }
