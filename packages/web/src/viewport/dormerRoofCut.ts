@@ -4,12 +4,12 @@ import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg';
 import type { Element } from '@bim-ai/core';
 
 /**
- * KRN-14 — subtract a tall axis-aligned cut box for each hosted dormer
- * from the host roof geometry.
+ * KRN-14 / IFC-03 — subtract tall axis-aligned cut boxes for roof-hosted
+ * void elements from the host roof geometry.
  *
  * The roof geometry is now closed (asymmetric-gable bottom face landed
  * alongside this fix), so three-bvh-csg's SUBTRACTION produces a clean
- * hole instead of silently no-op'ing. We also validate that the dormer
+ * hole instead of silently no-op'ing. We also validate that the cut
  * footprint actually intersects the host roof bbox before attempting
  * CSG, and surface failures via console.warn rather than swallowing.
  */
@@ -23,7 +23,12 @@ export function applyDormerCutsToRoofGeom(
     (e): e is Extract<Element, { kind: 'dormer' }> =>
       e.kind === 'dormer' && (e as Extract<Element, { kind: 'dormer' }>).hostRoofId === roof.id,
   );
-  if (dormers.length === 0) return geom;
+  const roofOpenings = Object.values(elementsById).filter(
+    (e): e is Extract<Element, { kind: 'roof_opening' }> =>
+      e.kind === 'roof_opening' &&
+      (e as Extract<Element, { kind: 'roof_opening' }>).hostRoofId === roof.id,
+  );
+  if (dormers.length === 0 && roofOpenings.length === 0) return geom;
   const roofBbox = computeRoofBboxMm(roof);
   try {
     // three-bvh-csg requires both inputs to share the same attribute
@@ -48,11 +53,27 @@ export function applyDormerCutsToRoofGeom(
     let brush = new Brush(csgInput);
     brush.updateMatrixWorld();
     let cutsApplied = 0;
-    for (const d of dormers) {
-      const fp = computeDormerFootprintMm(d, roof);
+    const cuts: Array<{
+      id: string;
+      kind: 'dormer' | 'roof_opening';
+      footprint: { minX: number; maxX: number; minY: number; maxY: number };
+    }> = [
+      ...dormers.map((d) => ({
+        id: d.id,
+        kind: 'dormer' as const,
+        footprint: computeDormerFootprintMm(d, roof),
+      })),
+      ...roofOpenings.map((o) => ({
+        id: o.id,
+        kind: 'roof_opening' as const,
+        footprint: computeRoofOpeningFootprintMm(o),
+      })),
+    ];
+    for (const cut of cuts) {
+      const fp = cut.footprint;
       if (!bboxesOverlap(fp, roofBbox)) {
         console.warn(
-          `[dormerRoofCut] dormer ${d.id} footprint does not intersect host roof ${roof.id} bbox; skipping CSG cut.`,
+          `[dormerRoofCut] ${cut.kind} ${cut.id} footprint does not intersect host roof ${roof.id} bbox; skipping CSG cut.`,
         );
         continue;
       }
@@ -69,7 +90,7 @@ export function applyDormerCutsToRoofGeom(
       const depthM = zMax - zMin;
       if (widthM <= 0 || depthM <= 0) {
         console.warn(
-          `[dormerRoofCut] dormer ${d.id} has non-positive footprint (${widthM}m × ${depthM}m); skipping CSG cut.`,
+          `[dormerRoofCut] ${cut.kind} ${cut.id} has non-positive footprint (${widthM}m x ${depthM}m); skipping CSG cut.`,
         );
         continue;
       }
@@ -89,7 +110,7 @@ export function applyDormerCutsToRoofGeom(
     return cutGeom;
   } catch (err) {
     console.warn(
-      `[dormerRoofCut] CSG SUBTRACTION failed on roof ${roof.id} (${dormers.length} dormer(s)); rendering uncut.`,
+      `[dormerRoofCut] CSG SUBTRACTION failed on roof ${roof.id} (${dormers.length} dormer(s), ${roofOpenings.length} roof opening(s)); rendering uncut.`,
       err,
     );
     return geom;
@@ -154,5 +175,21 @@ function computeDormerFootprintMm(
     maxX: centreX + halfD,
     minY: centreY - halfW,
     maxY: centreY + halfW,
+  };
+}
+
+function computeRoofOpeningFootprintMm(opening: Extract<Element, { kind: 'roof_opening' }>): {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+} {
+  const xs = opening.boundaryMm.map((p) => p.xMm);
+  const ys = opening.boundaryMm.map((p) => p.yMm);
+  return {
+    minX: Math.min(...xs),
+    maxX: Math.max(...xs),
+    minY: Math.min(...ys),
+    maxY: Math.max(...ys),
   };
 }

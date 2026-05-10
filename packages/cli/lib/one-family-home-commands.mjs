@@ -348,6 +348,21 @@ export function buildOneFamilyHomeCommands() {
       overhangMm: 600,
       materialKey: 'white_render',
     },
+    {
+      type: 'createRoofOpening',
+      id: 'hf-roof-terrace-cutout',
+      name: 'Right-slope rectangular roof cutout',
+      hostRoofId: 'hf-roof-main',
+      // Spec §2: large rectangular subtraction on the right-hand slope,
+      // extending from near the ridge down toward the east gutter to reveal
+      // the hidden upper-level terrace and its recessed glass wall.
+      boundaryMm: [
+        { xMm: RIDGE_X + 250, yMm: 4200 },
+        { xMm: UF_W, yMm: 4200 },
+        { xMm: UF_W, yMm: 7400 },
+        { xMm: RIDGE_X + 250, yMm: 7400 },
+      ],
+    },
 
     // Attach all UF south segments and side walls to the gable.
     // hf-w-uf-s-c is also attached: height 5500 → trimmed by gable profile.
@@ -1061,6 +1076,17 @@ export function buildOneFamilyHomeCommands() {
     },
     {
       type: 'saveViewpoint',
+      id: 'vp-side-elev-east',
+      name: 'Side elevation (ESE — roof cutout side)',
+      mode: 'orbit_3d',
+      camera: {
+        position: { xMm: 15000, yMm: 2000, zMm: 6200 },
+        target: { xMm: 4200, yMm: 4500, zMm: 4300 },
+        up: { xMm: 0, yMm: 0, zMm: 1 },
+      },
+    },
+    {
+      type: 'saveViewpoint',
       id: 'vp-rear-axo',
       name: 'Rear axonometric (NE)',
       mode: 'orbit_3d',
@@ -1073,11 +1099,11 @@ export function buildOneFamilyHomeCommands() {
     {
       type: 'saveViewpoint',
       id: 'vp-terrace-se',
-      name: 'East terrace (SE corner)',
+      name: 'Roof cutout and east terrace (high SE)',
       mode: 'orbit_3d',
       camera: {
-        position: { xMm: 13000, yMm: -2000, zMm: 8000 },
-        target: { xMm: 6000, yMm: 4000, zMm: 3000 },
+        position: { xMm: 11500, yMm: 10500, zMm: 13500 },
+        target: { xMm: 3900, yMm: 6000, zMm: 4800 },
         up: { xMm: 0, yMm: 0, zMm: 1 },
       },
     },
