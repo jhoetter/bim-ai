@@ -78,7 +78,7 @@ import { CommentsPanel } from './comments';
 import { ActivityDrawer } from '../collab/ActivityDrawer';
 import { SharePresentationModal } from '../collab/SharePresentationModal';
 import { useActivityDrawerStore } from '../collab/activityDrawerStore';
-import { LibraryOverlay } from './LibraryOverlay';
+import { LibraryOverlay } from './library';
 import { useActivityStore } from '../collab/activityStore';
 import { TemporaryVisibilityChip } from './TemporaryVisibilityChip';
 import { CheatsheetModal } from '../cmd/CheatsheetModal';
