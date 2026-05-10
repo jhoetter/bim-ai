@@ -179,6 +179,9 @@ describe('planProjection', () => {
   it('maps common category aliases', () => {
     expect(canonHiddenCategory('Rooms')).toBe('room');
     expect(canonHiddenCategory('grid-lines')).toBe('grid_line');
+    expect(canonHiddenCategory('Family Symbolic Lines')).toBe('family_symbolic_line');
+    expect(canonHiddenCategory('Opening (Projection)')).toBe('family_opening_projection');
+    expect(canonHiddenCategory('Hidden Lines (Cut)')).toBe('family_hidden_cut');
   });
 
   it('inherits template hiddenCategories when plan_view references template', () => {

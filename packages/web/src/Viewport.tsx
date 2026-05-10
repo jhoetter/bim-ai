@@ -99,6 +99,7 @@ import {
   type GripMeshHandle,
 } from './viewport/grip3dRenderer';
 import { makePlacedAssetMesh } from './viewport/placedAssetRendering';
+import { makeFamilyInstanceMesh } from './viewport/familyInstance3d';
 // Side-effect import: registers floor/roof/column/beam/door/window 3D grip providers.
 import './viewport/grip3dProviders';
 import {
@@ -1346,7 +1347,8 @@ export function Viewport({
         e.kind === 'wall' ||
         e.kind === 'room' ||
         e.kind === 'floor' ||
-        e.kind === 'placed_asset'
+        e.kind === 'placed_asset' ||
+        e.kind === 'family_instance'
       ) {
         const lid = (e as { levelId: string }).levelId;
         const arr = elemsByLevel.get(lid) ?? [];
@@ -1665,6 +1667,9 @@ export function Viewport({
         }
         case 'placed_asset':
           obj = makePlacedAssetMesh(e, curr, paint);
+          break;
+        case 'family_instance':
+          obj = makeFamilyInstanceMesh(e, curr);
           break;
         case 'internal_origin':
           obj = makeInternalOriginMarker(e);

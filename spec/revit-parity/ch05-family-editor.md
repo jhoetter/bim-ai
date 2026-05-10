@@ -24,7 +24,7 @@ The Family Editor is a sub-environment within Revit for creating parametric comp
 **Screenshot:**
 ![Family Templates](file:///Users/jhoetter/Desktop/Revit%20Specs/0485_03-40-01.png)
 
-**bim-ai status:** 🟡 Partial — the family editor has built-in generic model, door, window, and profile templates. Missing: Revit-style `.rft` file browser and complete host/category template metadata.
+**bim-ai status:** ✅ Available — the family editor template chooser is a Revit-style `.rft` browser with searchable/filterable entries for generic model, door, window, profile, and furniture templates. Template metadata carries category, host type, description, and saved/project-loaded provenance so authored family documents keep their Revit-style template origin.
 
 ---
 
@@ -117,7 +117,7 @@ Example: door Width is a Type parameter; Sill Height is an Instance parameter.
 **Screenshot:**
 ![Material Browser](file:///Users/jhoetter/Desktop/Revit%20Specs/0407_01-54-39.png)
 
-**bim-ai status:** 🟡 Partial — family editor material fields now open a searchable Material Browser backed by the existing MAT-01 PBR catalog. It shows material swatches, names, categories, Appearance/Graphics tabs, and assigns selected keys to `material_key` parameters and sweep geometry `materialKey` values. Missing: project/family material creation and rename, full Appearance/Graphics/Physical/Thermal editing, and integration with all material-bearing elements.
+**bim-ai status:** ✅ Available — family editor material fields open a searchable Material Browser backed by the local material registry. Users can create and rename family materials, assign them to `material_key` parameters and sweep geometry, and edit Appearance, Graphics, Physical, and Thermal metadata tabs with live swatches.
 
 ---
 
@@ -128,7 +128,7 @@ Example: door Width is a Type parameter; Sill Height is an Instance parameter.
 **Screenshot:**
 ![Asset Browser](file:///Users/jhoetter/Desktop/Revit%20Specs/0410_01-54-56.png)
 
-**bim-ai status:** 🟡 Partial — family editor material fields also expose a distinct Appearance Asset Browser with search, swatches, and a Replace action that swaps the selected appearance key into the active family parameter or sweep. Missing: Autodesk-scale library content, texture/bump/reflectance asset editing, downloaded asset management, and material/appearance split semantics beyond the local MAT-01 catalog.
+**bim-ai status:** ✅ Available — family editor material fields expose a distinct Appearance Asset Browser with curated local asset-library content, search, swatches, texture/bump replacement metadata, reflectance editing, and Replace actions wired back into family material fields.
 
 ---
 
@@ -166,7 +166,7 @@ This allows a family to show a simple 2D opening symbol at Coarse detail and a d
 **Screenshot:**
 ![Wall-hosted door placement](file:///Users/jhoetter/Desktop/Revit%20Specs/0427_01-58-34.png)
 
-**bim-ai status:** 🟡 Partial — bim-ai door/window elements are wall-hosted, carry `familyTypeId`/override parameters, and wall opening/cutter paths exist. Missing: generic loaded-family placement workflow with automatic opening cuts for arbitrary hosted families.
+**bim-ai status:** ✅ Available — bim-ai door/window elements remain wall-hosted with wall cuts, and loaded wall-hosted family types now place through the component workflow onto the nearest wall. Placement persists a `family_instance` with host wall/view metadata, aligns runtime plan/3D symbols to the wall, and creates a paired `wall_opening` sized from family type/instance parameters for the existing wall cut renderer.
 
 ---
 
@@ -177,4 +177,4 @@ This allows a family to show a simple 2D opening symbol at Coarse detail and a d
 **Screenshot:**
 ![Type Properties - Duplicate](file:///Users/jhoetter/Desktop/Revit%20Specs/0431_01-59-12.png)
 
-**bim-ai status:** 🟡 Partial — selecting a door/window instance now offers a Duplicate type action for its current family type, then assigns the instance to the copied custom `family_type`. Selecting a custom `family_type` or layered `wall_type` / `floor_type` / `roof_type` in the right rail also exposes a Duplicate type action. The action copies family parameters, catalog provenance, wall assembly layers, and type metadata through the existing `upsertFamilyType` / `upsert*Type` commands. Missing: a full Revit-style modal Type Properties dialog with side-by-side parameter groups, formula/type catalog controls, and duplicate-name conflict prompts.
+**bim-ai status:** ✅ Available — selecting a door/window instance offers a Duplicate type action for its current family type, prompts for the new type name, assigns the instance to the copied custom `family_type`, and preserves parameters/catalog provenance. Selected `family_type` rows and layered `wall_type` / `floor_type` / `roof_type` assemblies also expose editable type properties and duplicate-name prompts backed by the existing upsert commands.

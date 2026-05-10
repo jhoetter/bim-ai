@@ -13,8 +13,8 @@ from bim_ai.engine import (
     DeleteGradedRegionCmd,
     DeleteToposolidCmd,
     DeleteToposolidSubdivisionCmd,
-    FamilyKitInstanceElem,
     FamilyInstanceElem,
+    FamilyKitInstanceElem,
     FamilyTypeElem,
     FloorElem,
     GradedRegionElem,
@@ -40,8 +40,58 @@ from bim_ai.engine import (
     UpdateToposolidCmd,
     UpdateToposolidSubdivisionCmd,
     Vec2Mm,
+    WallElem,
+    WallOpeningElem,
     new_id,
 )
+
+
+def _family_param_number(
+    family_type: FamilyTypeElem, overrides: dict[str, object], names: tuple[str, ...]
+) -> float | None:
+    for name in names:
+        raw = overrides.get(name, family_type.parameters.get(name))
+        if isinstance(raw, bool):
+            continue
+        if isinstance(raw, (int, float)):
+            return float(raw)
+        if isinstance(raw, str):
+            try:
+                return float(raw.strip())
+            except ValueError:
+                continue
+    return None
+
+
+def _opening_dimensions_for_family_type(
+    family_type: FamilyTypeElem, overrides: dict[str, object], host: WallElem
+) -> tuple[float, float, float]:
+    width = _family_param_number(
+        family_type,
+        overrides,
+        ("Width", "widthMm", "width_mm", "Rough Width", "roughWidthMm", "rough_width_mm"),
+    )
+    height = _family_param_number(
+        family_type,
+        overrides,
+        ("Height", "heightMm", "height_mm", "Rough Height", "roughHeightMm", "rough_height_mm"),
+    )
+    sill = _family_param_number(
+        family_type,
+        overrides,
+        ("Sill Height", "sillHeightMm", "sill_height_mm", "Sill_Height", "SillHeight"),
+    )
+    if width is None or width <= 0:
+        width = 900.0 if family_type.discipline != "window" else 1200.0
+    if height is None or height <= 0:
+        height = 2100.0 if family_type.discipline != "window" else 1500.0
+    if sill is None or sill < 0:
+        sill = 900.0 if family_type.discipline == "window" else 0.0
+    head = min(host.height_mm, sill + height)
+    if head <= sill:
+        sill = 0.0
+        head = min(host.height_mm, max(height, 1.0))
+    return width, sill, head
 
 
 def try_apply_siteassets_command(doc, cmd, *, source_provider=None) -> bool:
@@ -362,6 +412,38 @@ def try_apply_siteassets_command(doc, cmd, *, source_provider=None) -> bool:
                 hostElementId=cmd.host_element_id,
                 hostAlongT=cmd.host_along_t,
             )
+            if cmd.host_element_id is not None and cmd.host_along_t is not None:
+                host = els.get(cmd.host_element_id)
+                if isinstance(host, WallElem):
+                    opening_id = f"{eid}_opening"
+                    if opening_id in els:
+                        raise ValueError(
+                            f"placeFamilyInstance: duplicate hosted opening id '{opening_id}'"
+                        )
+                    dx = host.end.x_mm - host.start.x_mm
+                    dy = host.end.y_mm - host.start.y_mm
+                    wall_len = max((dx * dx + dy * dy) ** 0.5, 1.0)
+                    width, sill, head = _opening_dimensions_for_family_type(
+                        family_type, dict(cmd.param_values), host
+                    )
+                    half_t = min(0.49, max(1.0, width) / wall_len / 2.0)
+                    center_t = max(0.0, min(1.0, cmd.host_along_t))
+                    along_start = max(0.0, center_t - half_t)
+                    along_end = min(1.0, center_t + half_t)
+                    if along_start >= along_end:
+                        along_start = max(0.0, center_t - 0.01)
+                        along_end = min(1.0, center_t + 0.01)
+                    els[opening_id] = WallOpeningElem(
+                        kind="wall_opening",
+                        id=opening_id,
+                        name=f"{cmd.name or family_type.name} opening",
+                        hostWallId=cmd.host_element_id,
+                        alongTStart=along_start,
+                        alongTEnd=along_end,
+                        sillHeightMm=sill,
+                        headHeightMm=head,
+                        discipline="arch",
+                    )
 
         case MoveAssetDeltaCmd():
             el = els.get(cmd.element_id)

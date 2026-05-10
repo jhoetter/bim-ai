@@ -187,6 +187,7 @@ export interface FamilyDefinition {
   name: string;
   discipline: FamilyDiscipline;
   thumbnail?: string;
+  templateMetadata?: unknown;
   params: FamilyParamDef[];
   defaultTypes: {
     id: string;

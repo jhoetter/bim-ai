@@ -65,7 +65,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Detail Component placement](file:///Users/jhoetter/Desktop/Revit%20Specs/0464_02-49-17.png)
 
-**bim-ai status:** 🟡 Partial — the family editor now has a 2D symbolic/detail line authoring panel for view-only annotation geometry, and the Family Category panel includes a Detail Components category. Authored lines are carried in the load payload. Missing: loaded `.rfa` detail component placement, scale-aware project-view insertion, and library browsing for detail component families.
+**bim-ai status:** ✅ Available — the family editor has a 2D symbolic/detail line authoring panel, a Detail Components category, and load payloads that preserve authored linework. Loaded detail-component family types place through the project component workflow as view-hosted `family_instance` rows and render their symbolic/detail linework in the active project view without 3D model geometry.
 
 ---
 
@@ -87,7 +87,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Associate Family Parameter](file:///Users/jhoetter/Desktop/Revit%20Specs/0469_02-50-40.png)
 
-**bim-ai status:** 🟡 Partial — the family editor can author 2D symbolic line segments by coordinates and keeps them separate from 3D sweep/model geometry. Missing: canvas drawing tools, line styles, detail-level/view-type visibility settings, and project rendering of symbolic linework.
+**bim-ai status:** ✅ Available — the family editor can draw symbolic lines on canvas, assign symbolic/opening-projection/hidden-cut subcategories, store line style metadata, bind visibility to parameters/detail levels, and render the resulting linework for placed family instances in project plans with solid and dashed project line styles.
 
 ---
 
@@ -120,7 +120,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Opening Projection lines](file:///Users/jhoetter/Desktop/Revit%20Specs/0475_02-52-05.png)
 
-**bim-ai status:** 🟡 Partial — symbolic line authoring records subcategory metadata for Symbolic Lines, Opening Projection, and Hidden Lines (Cut). Missing: Object Styles/lineweight propagation, dashed hidden-line rendering, and project Visibility/Graphics controls for these subcategories.
+**bim-ai status:** ✅ Available — symbolic line authoring records subcategory metadata for Symbolic Lines, Opening Projection, and Hidden Lines (Cut), renders hidden-cut lines dashed in placed project views, and exposes dedicated project Visibility/Graphics rows for Family Symbolic Lines, Opening (Projection), and Hidden Lines (Cut) so each subcategory can be controlled independently in the active plan view.
 
 ---
 

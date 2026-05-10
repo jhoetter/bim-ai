@@ -71,15 +71,36 @@ describe('duplicateTypePropertiesCommand', () => {
     });
   });
 
+  it('uses an explicit duplicate type name when provided', () => {
+    const source = {
+      kind: 'wall_type',
+      id: 'wt-core',
+      name: 'Core Wall',
+      layers: [{ function: 'structure', materialKey: 'concrete', thicknessMm: 200 }],
+    } satisfies Extract<Element, { kind: 'wall_type' }>;
+
+    expect(duplicateTypePropertiesCommand(source, 'wt-core-wide', 'Core Wall Wide')).toMatchObject({
+      type: 'upsertWallType',
+      id: 'wt-core-wide',
+      name: 'Core Wall Wide',
+    });
+  });
+
   it('duplicates built-in opening family types for selected door/window instances', () => {
     expect(
-      duplicateOpeningFamilyTypeCommand('builtin:door:single:900x2100', 'door', {}, 'ft-door-copy'),
+      duplicateOpeningFamilyTypeCommand(
+        'builtin:door:single:900x2100',
+        'door',
+        {},
+        'ft-door-copy',
+        'Entry Door 1000',
+      ),
     ).toEqual({
       type: 'upsertFamilyType',
       id: 'ft-door-copy',
       discipline: 'door',
       parameters: {
-        name: 'Single 900\u00d72100 Copy',
+        name: 'Entry Door 1000',
         familyId: 'builtin:door:single',
         leafWidthMm: 900,
         leafHeightMm: 2100,

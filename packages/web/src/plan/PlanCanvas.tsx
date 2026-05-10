@@ -1013,6 +1013,7 @@ export function PlanCanvas({
 
     rebuildPlanMeshes(grp, elementsByIdForRender, {
       activeLevelId: displayLevelId || undefined,
+      activeViewId: activePlanViewId || undefined,
       selectedId,
       presentation: display.presentation,
       hiddenSemanticKinds: revealHiddenMode ? new Set<string>() : display.hiddenSemanticKinds,

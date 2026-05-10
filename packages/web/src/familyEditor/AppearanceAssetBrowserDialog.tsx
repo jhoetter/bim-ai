@@ -17,6 +17,7 @@ export function AppearanceAssetBrowserDialog({
     <MaterialBrowserDialog
       title="Appearance Asset Browser"
       actionLabel="Replace"
+      mode="appearanceAsset"
       currentKey={currentKey}
       onAssign={onReplace}
       onClose={onClose}

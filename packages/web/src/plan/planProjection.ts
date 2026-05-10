@@ -34,7 +34,11 @@ export type PlanSemanticKind =
   | 'masking_region'
   | 'detail_line'
   | 'text_note'
-  | 'placed_asset';
+  | 'placed_asset'
+  | 'family_instance'
+  | 'family_symbolic_line'
+  | 'family_opening_projection'
+  | 'family_hidden_cut';
 
 /** Map schedule / authoring labels to semantic drawing kinds consumed by symbology. */
 
@@ -115,6 +119,18 @@ export function canonHiddenCategory(cat: string): PlanSemanticKind | undefined {
     'placed assets': 'placed_asset',
     'placed asset': 'placed_asset',
     placed_asset: 'placed_asset',
+    family_instance: 'family_instance',
+    'loaded families': 'family_instance',
+    'loaded family': 'family_instance',
+    family_symbolic_line: 'family_symbolic_line',
+    'family symbolic lines': 'family_symbolic_line',
+    'symbolic lines': 'family_symbolic_line',
+    family_opening_projection: 'family_opening_projection',
+    'opening projection': 'family_opening_projection',
+    'opening (projection)': 'family_opening_projection',
+    family_hidden_cut: 'family_hidden_cut',
+    'hidden lines cut': 'family_hidden_cut',
+    'hidden lines (cut)': 'family_hidden_cut',
     furniture: 'placed_asset',
     furnishings: 'placed_asset',
     'generic models': 'placed_asset',

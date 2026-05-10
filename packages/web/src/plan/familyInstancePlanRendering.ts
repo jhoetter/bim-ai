@@ -5,12 +5,10 @@ import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
 import {
   buildFamilyParamMap,
   isVisibleByBinding,
-  type FamilyCatalogLookup,
   type HostParams,
 } from '../families/familyResolver';
 import type { FamilyDefinition, FamilySymbolicLine } from '../families/types';
 import {
-  authoredFamilyDefinitionsFromElements,
   buildAuthoredFamilyDefinition,
   FAMILY_EDITOR_DEFINITION_PARAM,
   FAMILY_EDITOR_DOCUMENT_PARAM,
@@ -18,6 +16,7 @@ import {
 } from '../familyEditor/familyEditorPersistence';
 import { liveTokenReader } from '../viewport/materials';
 import type { PlanDetailLevel } from './planDetailLevelLines';
+import type { PlanSemanticKind } from './planProjection';
 
 type FamilyTypeElement = Extract<Element, { kind: 'family_type' }>;
 type FamilyInstanceElement = Extract<Element, { kind: 'family_instance' }>;
@@ -38,7 +37,7 @@ function isFamilyDefinition(value: unknown): value is FamilyDefinition {
   );
 }
 
-function familyDefinitionForType(type: FamilyTypeElement): FamilyDefinition | null {
+export function familyDefinitionForType(type: FamilyTypeElement): FamilyDefinition | null {
   const embedded = type.parameters[FAMILY_EDITOR_DEFINITION_PARAM];
   if (isFamilyDefinition(embedded)) return embedded;
   const document = type.parameters[FAMILY_EDITOR_DOCUMENT_PARAM];
@@ -46,18 +45,6 @@ function familyDefinitionForType(type: FamilyTypeElement): FamilyDefinition | nu
     return buildAuthoredFamilyDefinition(document as AuthoredFamilyDocument);
   }
   return BUILT_IN_FAMILIES.find((def) => def.id === type.familyId) ?? null;
-}
-
-function buildCatalog(elementsById: Record<string, Element>): FamilyCatalogLookup {
-  const catalog: FamilyCatalogLookup = {};
-  for (const def of BUILT_IN_FAMILIES) catalog[def.id] = def;
-  for (const def of authoredFamilyDefinitionsFromElements(elementsById)) catalog[def.id] = def;
-  for (const element of Object.values(elementsById)) {
-    if (element.kind !== 'family_type') continue;
-    const def = familyDefinitionForType(element);
-    if (def) catalog[def.id] = def;
-  }
-  return catalog;
 }
 
 function lineVisible(
@@ -69,13 +56,21 @@ function lineVisible(
   return isVisibleByBinding(line.visibilityBinding, params);
 }
 
+export function familySymbolicLineSemanticKind(
+  subcategory: FamilySymbolicLine['subcategory'],
+): PlanSemanticKind {
+  if (subcategory === 'opening_projection') return 'family_opening_projection';
+  if (subcategory === 'hidden_cut') return 'family_hidden_cut';
+  return 'family_symbolic_line';
+}
+
 function lineMaterial(
   line: FamilySymbolicLine,
 ): THREE.LineBasicMaterial | THREE.LineDashedMaterial {
   const subcategory = line.subcategory ?? 'symbolic';
   const color =
     subcategory === 'opening_projection'
-      ? readToken('--draft-construction-blue', '#0ea5e9')
+      ? readPlanToken('--draft-construction-blue', '#0ea5e9')
       : subcategory === 'hidden_cut'
         ? readPlanToken('--draft-witness', '#64748b')
         : readPlanToken('--draft-cut', '#111827');
@@ -119,6 +114,7 @@ export function makeFamilyInstancePlanSymbol(
   instance: FamilyInstanceElement,
   elementsById: Record<string, Element>,
   detailLevel: PlanDetailLevel,
+  opts: { kindHidden?: (kind: string) => boolean } = {},
 ): THREE.Group | null {
   const type = elementsById[instance.familyTypeId];
   if (type?.kind !== 'family_type') return null;
@@ -129,12 +125,16 @@ export function makeFamilyInstancePlanSymbol(
     ...type.parameters,
     ...(instance.paramValues ?? {}),
   } as HostParams);
-  const visibleLines = def.symbolicLines.filter((line) => lineVisible(line, params, detailLevel));
+  const visibleLines = def.symbolicLines.filter(
+    (line) =>
+      lineVisible(line, params, detailLevel) &&
+      !opts.kindHidden?.(familySymbolicLineSemanticKind(line.subcategory)),
+  );
   if (visibleLines.length === 0) return null;
 
   const group = new THREE.Group();
   const placement = transformForInstance(instance, elementsById);
-  group.position.set(placement.xMm / 1000, PLAN_Y + 0.055, placement.yMm / 1000);
+  group.position.set(placement.xMm / 1000, FAMILY_INSTANCE_PLAN_Y, placement.yMm / 1000);
   group.rotation.y = -THREE.MathUtils.degToRad(placement.rotationDeg);
   group.userData.bimPickId = instance.id;
   group.userData.familyTypeId = instance.familyTypeId;
@@ -144,12 +144,14 @@ export function makeFamilyInstancePlanSymbol(
       new THREE.Vector3(line.startMm.xMm / 1000, 0, line.startMm.yMm / 1000),
       new THREE.Vector3(line.endMm.xMm / 1000, 0, line.endMm.yMm / 1000),
     ];
+    const semanticKind = familySymbolicLineSemanticKind(line.subcategory);
     const segment = new THREE.Line(
       new THREE.BufferGeometry().setFromPoints(pts),
       lineMaterial(line),
     );
     segment.userData.bimPickId = instance.id;
     segment.userData.familySymbolicSubcategory = line.subcategory ?? 'symbolic';
+    segment.userData.familySymbolicSemanticKind = semanticKind;
     segment.renderOrder = 8;
     if (segment.material instanceof THREE.LineDashedMaterial) segment.computeLineDistances();
     group.add(segment);
@@ -167,8 +169,7 @@ export function addFamilyInstancePlanSymbols(
     kindHidden?: (kind: string) => boolean;
   },
 ): void {
-  if (opts.kindHidden?.('placed_asset')) return;
-  buildCatalog(elementsById);
+  if (opts.kindHidden?.('family_instance')) return;
   for (const element of Object.values(elementsById)) {
     if (element.kind !== 'family_instance') continue;
     if (element.hostViewId) {
@@ -176,7 +177,9 @@ export function addFamilyInstancePlanSymbols(
     } else if (opts.activeLevelId && element.levelId !== opts.activeLevelId) {
       continue;
     }
-    const symbol = makeFamilyInstancePlanSymbol(element, elementsById, opts.detailLevel);
+    const symbol = makeFamilyInstancePlanSymbol(element, elementsById, opts.detailLevel, {
+      kindHidden: opts.kindHidden,
+    });
     if (symbol) holder.add(symbol);
   }
 }

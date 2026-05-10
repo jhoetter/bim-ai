@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 
-import { listMaterials } from '../viewport/materials';
+import { listMaterials, resolveMaterial } from '../viewport/materials';
 import { AppearanceAssetBrowserDialog } from './AppearanceAssetBrowserDialog';
 import { MaterialBrowserDialog } from './MaterialBrowserDialog';
 
@@ -33,6 +33,42 @@ describe('<MaterialBrowserDialog />', () => {
     expect(getByText(glass.displayName)).toBeTruthy();
     expect(queryByText(timber.displayName)).toBeNull();
   });
+
+  it('creates and renames family/project materials with editable metadata tabs', () => {
+    const onAssign = vi.fn();
+    const { getByLabelText, getByText, getByTestId } = render(
+      <MaterialBrowserDialog onAssign={onAssign} onClose={vi.fn()} />,
+    );
+
+    fireEvent.click(getByText('Create material'));
+    fireEvent.change(getByLabelText('New material name'), {
+      target: { value: 'Dialog Custom Finish 905' },
+    });
+    fireEvent.change(getByLabelText('New material category'), { target: { value: 'plaster' } });
+    fireEvent.click(getByText('Create'));
+
+    const created = listMaterials().find(
+      (material) => material.displayName === 'Dialog Custom Finish 905',
+    )!;
+    expect(created.baseColor).toBeTruthy();
+    fireEvent.click(getByTestId(`material-assign-${created.key}`));
+    expect(onAssign).toHaveBeenCalledWith(created.key);
+
+    fireEvent.click(getByTestId(`material-rename-${created.key}`));
+    fireEvent.change(getByLabelText('Rename Dialog Custom Finish 905'), {
+      target: { value: 'Dialog Renamed Finish 905' },
+    });
+    fireEvent.click(getByText('Save'));
+    expect(resolveMaterial(created.key)?.displayName).toBe('Dialog Renamed Finish 905');
+
+    fireEvent.click(getByText('Physical'));
+    fireEvent.change(getByLabelText('Density kg/m3'), { target: { value: '1440' } });
+    expect(resolveMaterial(created.key)?.physical?.densityKgPerM3).toBe(1440);
+
+    fireEvent.click(getByText('Thermal'));
+    fireEvent.change(getByLabelText('Conductivity W/mK'), { target: { value: '0.21' } });
+    expect(resolveMaterial(created.key)?.thermal?.conductivityWPerMK).toBe(0.21);
+  });
 });
 
 describe('<AppearanceAssetBrowserDialog />', () => {
@@ -46,5 +82,36 @@ describe('<AppearanceAssetBrowserDialog />', () => {
     expect(getByLabelText('Appearance Asset Browser')).toBeTruthy();
     fireEvent.click(getByTestId(`material-assign-${material.key}`));
     expect(onReplace).toHaveBeenCalledWith(material.key);
+  });
+
+  it('exposes curated asset metadata and reflectance editing', () => {
+    const asset = listMaterials().find((material) => material.key === 'asset_stainless_brushed')!;
+    const onReplace = vi.fn();
+    const { getByLabelText, getByTestId } = render(
+      <AppearanceAssetBrowserDialog onReplace={onReplace} onClose={vi.fn()} />,
+    );
+
+    expect(
+      listMaterials().filter((material) => material.source === 'curated_asset').length,
+    ).toBeGreaterThan(12);
+    fireEvent.change(getByLabelText('Search materials'), {
+      target: { value: asset.displayName },
+    });
+    fireEvent.change(getByLabelText('Texture map metadata'), {
+      target: { value: 'library/custom/stainless-brushed-color' },
+    });
+    fireEvent.change(getByLabelText('Bump map metadata'), {
+      target: { value: 'library/custom/stainless-brushed-bump' },
+    });
+    fireEvent.change(getByLabelText('Reflectance'), { target: { value: '0.81' } });
+
+    expect(resolveMaterial(asset.key)).toMatchObject({
+      textureMapUrl: 'library/custom/stainless-brushed-color',
+      bumpMapUrl: 'library/custom/stainless-brushed-bump',
+      reflectance: 0.81,
+    });
+
+    fireEvent.click(getByTestId(`material-assign-${asset.key}`));
+    expect(onReplace).toHaveBeenCalledWith(asset.key);
   });
 });

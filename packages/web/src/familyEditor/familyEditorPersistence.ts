@@ -25,6 +25,27 @@ export const FAMILY_EDITOR_TYPE_ROW_ID_PARAM = '__familyEditorTypeRowId';
 
 export type AuthoredFamilyTemplate = 'generic_model' | 'door' | 'window' | 'profile' | 'furniture';
 export type AuthoredFamilyCategory = AuthoredFamilyTemplate | 'detail_component';
+export type AuthoredFamilyTemplateHostType =
+  | 'standalone'
+  | 'wall_hosted'
+  | 'floor_hosted'
+  | 'ceiling_hosted'
+  | 'face_based'
+  | 'profile_based';
+
+export interface AuthoredFamilyTemplateMetadata {
+  templateId: AuthoredFamilyTemplate;
+  fileName: string;
+  browserPath: string;
+  displayName: string;
+  category: AuthoredFamilyCategory;
+  categoryLabel: string;
+  hostType: AuthoredFamilyTemplateHostType;
+  hostLabel: string;
+  originReferencePlaneIds: string[];
+  referencePlaneIds: string[];
+  defaultTypeNames: string[];
+}
 
 export interface AuthoredFamilyParam {
   key: string;
@@ -93,6 +114,7 @@ export interface AuthoredFamilyDocument {
   id: string;
   name: string;
   template: AuthoredFamilyTemplate;
+  templateMetadata?: AuthoredFamilyTemplateMetadata;
   categorySettings: AuthoredFamilyCategorySettings;
   viewRange: AuthoredFamilyViewRange;
   refPlanes: AuthoredFamilyRefPlane[];
@@ -175,6 +197,7 @@ export function buildAuthoredFamilyDefinition(document: AuthoredFamilyDocument):
     discipline,
     params,
     defaultTypes,
+    ...(document.templateMetadata ? { templateMetadata: document.templateMetadata } : {}),
     ...(geometry.length > 0 ? { geometry } : {}),
     ...(symbolicLines.length > 0 ? { symbolicLines } : {}),
   };
@@ -273,6 +296,17 @@ export function planAuthoredFamilyLoad(
     ? document.familyTypes
     : [{ id: 'family-type-1', name: `${document.name} Type`, values: {} }];
   const now = options.now ?? Date.now();
+  const templateParameters = document.templateMetadata
+    ? {
+        familyTemplateMetadata: document.templateMetadata,
+        familyTemplateId: document.templateMetadata.templateId,
+        familyTemplateFileName: document.templateMetadata.fileName,
+        familyTemplateHostType: document.templateMetadata.hostType,
+        familyTemplateCategory: document.templateMetadata.category,
+        familyTemplateBrowserPath: document.templateMetadata.browserPath,
+        familyTemplateOriginReferencePlaneIds: document.templateMetadata.originReferencePlaneIds,
+      }
+    : {};
   const commands = rows.map((row, index): AuthoredFamilyLoadCommand => {
     const existingForRow = existingByRowId.get(row.id);
     const typeId =
@@ -285,6 +319,7 @@ export function planAuthoredFamilyLoad(
       familyEditorCatalogId: FAMILY_EDITOR_CATALOG_ID,
       familyEditorSavedAt: document.savedAt,
       familyEditorVersion: document.version,
+      ...templateParameters,
     };
     const parameters: Record<string, unknown> =
       existingForRow && overwriteOption === 'keep-existing-values'
@@ -298,6 +333,7 @@ export function planAuthoredFamilyLoad(
             familyEditorCatalogId: FAMILY_EDITOR_CATALOG_ID,
             familyEditorSavedAt: document.savedAt,
             familyEditorVersion: document.version,
+            ...templateParameters,
           }
         : defaultParameters;
     return {
