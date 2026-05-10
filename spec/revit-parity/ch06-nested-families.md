@@ -142,4 +142,4 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Instance parameter Sill Offset](file:///Users/jhoetter/Desktop/Revit%20Specs/0481_02-53-44.png)
 
-**bim-ai status:** 🟡 Partial — placed assets and loaded family instances persist per-instance `paramValues`, family params support `instanceOverridable`, and the resolver gives instance overrides precedence over type defaults. Missing: complete Family Types dialog integration and a Revit-style instance-parameter editor for every placed authored family.
+**bim-ai status:** ✅ Available — placed authored `family_instance` elements expose instance-overridable family parameters in the Properties palette and persist edits through per-instance `paramValues`. The instance inspector also offers a sibling project type selector, so multiple placements of the same loaded family type can vary instance parameters such as sill/seat offsets without duplicating the type.

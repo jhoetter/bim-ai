@@ -139,6 +139,55 @@ describe('<FamilyLibraryPanel /> — FL-06', () => {
     expect(thumbnail?.getAttribute('height')).toBe('64');
   });
 
+  it('surfaces warehouse asset array formulas and saves edits through the panel callback', () => {
+    const asset: Extract<Element, { kind: 'asset_library_entry' }> = {
+      kind: 'asset_library_entry',
+      id: 'asset-dining-table-array',
+      assetKind: 'family_instance',
+      name: 'Dining Table With Chair Array',
+      tags: ['dining', 'table', 'array'],
+      category: 'furniture',
+      thumbnailKind: 'schematic_plan',
+      thumbnailWidthMm: 2400,
+      thumbnailHeightMm: 900,
+      planSymbolKind: 'table',
+      renderProxyKind: 'table',
+      paramSchema: [
+        { key: 'widthMm', kind: 'mm', default: 2400 },
+        { key: 'ChairSlotPitch', kind: 'mm', default: 600 },
+        {
+          key: 'Array_Length_Width',
+          kind: 'mm',
+          default: 4,
+          constraints: { formula: 'max(1, rounddown(widthMm / 600))' },
+        },
+      ],
+    };
+    const onUpdateArrayFormula = vi.fn();
+    const { getByTestId, getByLabelText } = render(
+      <FamilyLibraryPanel
+        open
+        onClose={() => undefined}
+        elementsById={{ [asset.id]: asset }}
+        onPlaceType={() => undefined}
+        onUpdateArrayFormula={onUpdateArrayFormula}
+      />,
+    );
+
+    expect(getByTestId('array-formula-editor-Array_Length_Width')).toBeTruthy();
+    const input = getByLabelText('Array formula Array_Length_Width') as HTMLInputElement;
+    expect(input.value).toBe('max(1, rounddown(widthMm / 600))');
+
+    fireEvent.change(input, { target: { value: 'max(1, rounddown(widthMm / 500))' } });
+    fireEvent.click(getByTestId('array-formula-save-Array_Length_Width'));
+
+    expect(onUpdateArrayFormula).toHaveBeenCalledWith({
+      target: { kind: 'asset', assetId: asset.id },
+      paramKey: 'Array_Length_Width',
+      formula: 'max(1, rounddown(widthMm / 500))',
+    });
+  });
+
   it('groups custom wall_type elements under "Wall Types"', () => {
     const wt: Extract<Element, { kind: 'wall_type' }> = {
       kind: 'wall_type',

@@ -79,7 +79,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Multiple Types](file:///Users/jhoetter/Desktop/Revit%20Specs/0521_03-42-07.png)
 
-**bim-ai status:** 🟡 Partial — the Family Types dialog already supports New Type, rename, select, delete, and per-type parameter values. The Furniture template now seeds two starter chair types (`600 x 600 Chair` and `750 x 750 Lounge`) with different furniture parameter values. Missing: persistence as loadable Revit-style family type catalogs and a project Type Selector for this authored furniture template.
+**bim-ai status:** ✅ Available — the Family Types dialog supports New Type, rename, select, delete, and per-type parameter values. The Furniture template seeds two starter chair types (`600 x 600 Chair` and `750 x 750 Lounge`), Save/Load Into Project persists each row as a separate project `family_type`, and the Component tool Type Selector lists loaded authored furniture types for placement.
 
 ---
 
@@ -90,7 +90,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Extrusion height from elevation](file:///Users/jhoetter/Desktop/Revit%20Specs/0623_03-50-05.png)
 
-**bim-ai status:** 🟡 Partial — family sweeps can now carry a `pathLengthParam`, so the resolver drives straight extrusion depth/height from a family parameter. The Furniture template uses this for seat thickness and leg height placeholders. Missing: true front-elevation sketch views, grip locking to named elevation reference planes, and separate extrusion start/end controls.
+**bim-ai status:** 🟡 Partial — family sweeps can now carry `pathLengthParam`, `pathStartOffsetParam`, and `pathEndOffsetParam`, so the resolver drives straight extrusion depth/height and bottom/top offsets from family parameters. The Furniture template uses these locks for seat thickness, leg height, and the generated backrest. Missing: true front-elevation sketch views and visible grip locking to named elevation reference planes.
 
 ---
 
@@ -101,7 +101,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Leg circle extrusion](file:///Users/jhoetter/Desktop/Revit%20Specs/0651_03-52-02.png)
 
-**bim-ai status:** 🟡 Partial — the Furniture template now seeds four circular leg extrusion placeholders using polygonal circle profiles, plus `Leg_Radius` and `Seat_Height` parameters. The resolver uses `Seat_Height` to drive the leg extrusion height. Missing: editable circle sketch primitive, radius-driven profile regeneration when `Leg_Radius` changes, copy-in-sketch workflow, and elevation locking.
+**bim-ai status:** 🟡 Partial — the Furniture template now seeds four leg sweeps with editable circle-profile metadata. The resolver regenerates polygonal circular profiles from `Leg_Radius`, derives each center from Width/Depth/`Leg_Offset`, and locks leg height to `Seat_Height`. Missing: canvas circle sketch primitive and copy-in-sketch workflow.
 
 ---
 
@@ -112,7 +112,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Leg Offset parameter](file:///Users/jhoetter/Desktop/Revit%20Specs/0653_03-52-15.png)
 
-**bim-ai status:** 🟡 Partial — the Furniture template seeds `Leg_Offset` and inner leg-offset reference planes, giving the authored chair a named inset parameter and editable offset planes. Missing: actual param-bound offset constraints, four generated leg placements, and automatic updates when Width/Depth types change.
+**bim-ai status:** ✅ Implemented — the Furniture template seeds `Leg_Offset`, inner leg-offset reference planes, and aligned dimensions from the center planes to those offset planes. The resolver generates the four leg placements from `±(Width/2 - Leg_Offset)` and `±(Depth/2 - Leg_Offset)`, so Width/Depth/Leg_Offset type changes update all leg profiles automatically.
 
 ---
 
@@ -134,4 +134,4 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Backrest Depth parameter](file:///Users/jhoetter/Desktop/Revit%20Specs/0534_03-42-59.png)
 
-**bim-ai status:** 🟡 Partial — the Furniture template seeds a `Backrest_Depth` type parameter, a matching reference plane, and an aligned dimension row between the center plane and the backrest plane. Missing: constraint solving that drives the plane from type values and a true elevation/profile workflow for the backrest solid.
+**bim-ai status:** ✅ Implemented — the Furniture template seeds a `Backrest_Depth` type parameter, a matching reference plane, and an aligned dimension row between the center plane and the backrest plane. Constraint solving drives the plane from default/type values, and the generated backrest solid derives its footprint from `Depth / 2 - Backrest_Depth` to `Depth / 2` with height locked between `Seat_Height` and `Backrest_Height`.

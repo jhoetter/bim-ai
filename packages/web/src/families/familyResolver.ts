@@ -26,6 +26,7 @@ import type {
   FamilyGeometryNode,
   FamilyInstanceRefNode,
   ParameterBinding,
+  ParametricLengthExpression,
   SweepGeometryNode,
   VisibilityBinding,
   VisibilityByDetailLevel,
@@ -189,7 +190,15 @@ function resolveGeometryNode(
 }
 
 function resolveSweepNode(node: SweepGeometryNode, hostParams: HostParams): THREE.Mesh {
-  const geom = meshFromSweep(applySweepPathLengthParam(node, hostParams));
+  const resolvedNode = applySweepParametricProfile(
+    applySweepPathLengthParam(node, hostParams),
+    hostParams,
+  );
+  const geom = meshFromSweep(resolvedNode);
+  const startOffsetMm = numericHostParam(hostParams, node.pathStartOffsetParam);
+  if (startOffsetMm !== null && startOffsetMm !== 0) {
+    geom.translate(0, 0, startOffsetMm);
+  }
   const mesh = new THREE.Mesh(geom);
   mesh.userData.materialKey = resolveSweepMaterialKey(node, hostParams);
   return mesh;
@@ -208,9 +217,13 @@ function applySweepPathLengthParam(
   node: SweepGeometryNode,
   hostParams: HostParams,
 ): SweepGeometryNode {
-  if (!node.pathLengthParam || node.pathLines.length !== 1) return node;
-  const raw = hostParams[node.pathLengthParam];
-  const lengthMm = typeof raw === 'number' ? raw : Number(raw);
+  if (node.pathLines.length !== 1) return node;
+  const startOffsetMm = numericHostParam(hostParams, node.pathStartOffsetParam) ?? 0;
+  const endOffsetMm = numericHostParam(hostParams, node.pathEndOffsetParam);
+  const lengthMm =
+    endOffsetMm !== null
+      ? endOffsetMm - startOffsetMm
+      : (numericHostParam(hostParams, node.pathLengthParam) ?? NaN);
   if (!Number.isFinite(lengthMm) || lengthMm <= 0) return node;
   const line = node.pathLines[0]!;
   const dx = line.endMm.xMm - line.startMm.xMm;
@@ -230,6 +243,103 @@ function applySweepPathLengthParam(
       },
     ],
   };
+}
+
+function applySweepParametricProfile(
+  node: SweepGeometryNode,
+  hostParams: HostParams,
+): SweepGeometryNode {
+  const profile = node.parametricProfile;
+  if (!profile) return node;
+  if (profile.kind === 'rectangle') {
+    const minX = resolveLengthExpression(profile.minX, hostParams);
+    const maxX = resolveLengthExpression(profile.maxX, hostParams);
+    const minY = resolveLengthExpression(profile.minY, hostParams);
+    const maxY = resolveLengthExpression(profile.maxY, hostParams);
+    if (
+      [minX, maxX, minY, maxY].some((v) => !Number.isFinite(v)) ||
+      minX === maxX ||
+      minY === maxY
+    ) {
+      return node;
+    }
+    return {
+      ...node,
+      profile: rectProfileLines(
+        Math.min(minX, maxX),
+        Math.max(minX, maxX),
+        Math.min(minY, maxY),
+        Math.max(minY, maxY),
+      ),
+    };
+  }
+  const radiusMm =
+    numericHostParam(hostParams, profile.radiusParam) ??
+    (typeof profile.fallbackRadiusMm === 'number' ? profile.fallbackRadiusMm : NaN);
+  if (!Number.isFinite(radiusMm) || radiusMm <= 0) return node;
+  const centerXMm = resolveLengthExpression(profile.centerX, hostParams);
+  const centerYMm = resolveLengthExpression(profile.centerY, hostParams);
+  if (!Number.isFinite(centerXMm) || !Number.isFinite(centerYMm)) return node;
+  return {
+    ...node,
+    profile: circularProfileLines(
+      centerXMm,
+      centerYMm,
+      radiusMm,
+      Math.max(8, Math.floor(profile.segments ?? 24)),
+    ),
+  };
+}
+
+function numericHostParam(hostParams: HostParams, paramName: string | undefined): number | null {
+  if (!paramName) return null;
+  const raw = hostParams[paramName];
+  const value = typeof raw === 'number' ? raw : Number(raw);
+  return Number.isFinite(value) ? value : null;
+}
+
+function resolveLengthExpression(expr: ParametricLengthExpression, hostParams: HostParams): number {
+  if (typeof expr === 'number') return expr;
+  if (expr.kind === 'param') {
+    return numericHostParam(hostParams, expr.paramName) ?? expr.fallbackMm ?? NaN;
+  }
+  try {
+    return evaluateFormulaOrThrow(expr.expression, numericParams(hostParams));
+  } catch (error) {
+    if (typeof expr.fallbackMm === 'number') return expr.fallbackMm;
+    throw error;
+  }
+}
+
+function rectProfileLines(minX: number, maxX: number, minY: number, maxY: number) {
+  return [
+    { startMm: { xMm: minX, yMm: minY }, endMm: { xMm: maxX, yMm: minY } },
+    { startMm: { xMm: maxX, yMm: minY }, endMm: { xMm: maxX, yMm: maxY } },
+    { startMm: { xMm: maxX, yMm: maxY }, endMm: { xMm: minX, yMm: maxY } },
+    { startMm: { xMm: minX, yMm: maxY }, endMm: { xMm: minX, yMm: minY } },
+  ];
+}
+
+function circularProfileLines(
+  centerXMm: number,
+  centerYMm: number,
+  radiusMm: number,
+  segments: number,
+) {
+  return Array.from({ length: segments }, (_value, index) => {
+    const a = (index / segments) * Math.PI * 2;
+    const b = ((index + 1) / segments) * Math.PI * 2;
+    return {
+      startMm: {
+        xMm: centerXMm + Math.cos(a) * radiusMm,
+        yMm: centerYMm + Math.sin(a) * radiusMm,
+      },
+      endMm: {
+        xMm: centerXMm + Math.cos(b) * radiusMm,
+        yMm: centerYMm + Math.sin(b) * radiusMm,
+      },
+    };
+  });
 }
 
 /**

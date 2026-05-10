@@ -1,7 +1,26 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render } from '@testing-library/react';
+import { I18nextProvider } from 'react-i18next';
 import type { Element } from '@bim-ai/core';
+import type { ReactElement } from 'react';
+import i18n from '../i18n';
+import { useBimStore } from '../state/store';
+import { WorkspaceRightRail } from './WorkspaceRightRail';
 import { inspectorPropertiesContextForElement } from './WorkspaceRightRailContext';
 import { typePropertyUpdateCommand } from './WorkspaceRightRailTypeCommands';
+
+vi.mock('./viewport', () => ({
+  Viewport3DLayersPanel: () => null,
+}));
+
+function renderWithI18n(ui: ReactElement) {
+  return render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>);
+}
+
+afterEach(() => {
+  cleanup();
+  useBimStore.setState({ selectedId: undefined, elementsById: {} });
+});
 
 describe('WorkspaceRightRail — Properties Palette context', () => {
   it('classifies Project Browser type rows as type context', () => {
@@ -78,6 +97,82 @@ describe('WorkspaceRightRail — type property commands', () => {
       id: 'ft-1',
       discipline: 'door',
       parameters: { name: 'Door 900', widthMm: 1000 },
+    });
+  });
+});
+
+describe('WorkspaceRightRail — placed authored family instances', () => {
+  it('edits only instance-overridable family params through paramValues', () => {
+    const familyType: Extract<Element, { kind: 'family_type' }> = {
+      kind: 'family_type',
+      id: 'ft-chair-600',
+      name: '600 x 600 Chair',
+      familyId: 'fam:furniture:chair',
+      discipline: 'generic',
+      parameters: {
+        name: '600 x 600 Chair',
+        Width: 600,
+        Seat_Height: 450,
+        __familyDefinition: {
+          id: 'fam:furniture:chair',
+          name: 'Chair',
+          discipline: 'generic',
+          params: [
+            {
+              key: 'Width',
+              label: 'Width',
+              type: 'length_mm',
+              default: 600,
+              instanceOverridable: false,
+            },
+            {
+              key: 'Seat_Height',
+              label: 'Seat Height',
+              type: 'length_mm',
+              default: 450,
+              instanceOverridable: true,
+            },
+          ],
+          defaultTypes: [],
+        },
+      },
+    };
+    const instance: Extract<Element, { kind: 'family_instance' }> = {
+      kind: 'family_instance',
+      id: 'fi-chair-1',
+      name: 'Chair 1',
+      familyTypeId: 'ft-chair-600',
+      levelId: 'lvl-1',
+      positionMm: { xMm: 0, yMm: 0 },
+      paramValues: { Seat_Height: 500 },
+    };
+    const onSemanticCommand = vi.fn();
+    useBimStore.setState({
+      selectedId: instance.id,
+      elementsById: {
+        [familyType.id]: familyType,
+        [instance.id]: instance,
+      },
+    });
+
+    const { getByTestId, queryByTestId } = renderWithI18n(
+      <WorkspaceRightRail
+        mode="plan"
+        onSemanticCommand={onSemanticCommand}
+        onModeChange={() => undefined}
+        codePresetIds={[]}
+      />,
+    );
+
+    expect(queryByTestId('inspector-family-instance-param-Width')).toBeNull();
+    const seatHeight = getByTestId('inspector-family-instance-param-Seat_Height');
+    fireEvent.change(seatHeight, { target: { value: '525' } });
+
+    expect(onSemanticCommand).toHaveBeenCalledWith({
+      type: 'updateElementProperty',
+      elementId: 'fi-chair-1',
+      key: 'paramValues',
+      value: { Seat_Height: 525 },
     });
   });
 });

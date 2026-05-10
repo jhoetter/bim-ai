@@ -1,13 +1,20 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { useBimStore } from '../../state/store';
-import { OptionsBar } from './OptionsBar';
+import {
+  OptionsBar,
+  setActiveComponentAssetId,
+  setActiveComponentFamilyTypeId,
+} from './OptionsBar';
 
 afterEach(() => {
   cleanup();
+  setActiveComponentAssetId(null);
+  setActiveComponentFamilyTypeId(null);
   act(() => {
     useBimStore.setState({
       planTool: 'select',
+      elementsById: {},
       wallLocationLine: 'wall-centerline',
       wallDrawOffsetMm: 0,
       wallDrawRadiusMm: null,
@@ -70,5 +77,37 @@ describe('OptionsBar', () => {
     });
     const { getByText } = render(<OptionsBar />);
     expect(getByText('Boundary Offset:')).toBeTruthy();
+  });
+
+  it('lists generic family_type rows in the component Type selector', () => {
+    act(() => {
+      useBimStore.setState({
+        planTool: 'component',
+        elementsById: {
+          'ft-chair-600': {
+            kind: 'family_type',
+            id: 'ft-chair-600',
+            name: '600 x 600 Chair',
+            familyId: 'fam:furniture:chair',
+            discipline: 'generic',
+            parameters: { name: '600 x 600 Chair' },
+          },
+          'ft-door': {
+            kind: 'family_type',
+            id: 'ft-door',
+            name: 'Door',
+            familyId: 'fam:door',
+            discipline: 'door',
+            parameters: { name: 'Door' },
+          },
+        },
+      });
+    });
+
+    const { getByRole, queryByText } = render(<OptionsBar />);
+
+    expect(getByRole('combobox', { name: /component family type/i })).toBeTruthy();
+    expect(queryByText('600 x 600 Chair')).toBeTruthy();
+    expect(queryByText('Door')).toBeNull();
   });
 });

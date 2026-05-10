@@ -2301,7 +2301,10 @@ export function PlanCanvas({
             })()
           : undefined;
         const familyType = familyTypeId ? elementsById[familyTypeId] : undefined;
-        const familyParams = familyType?.kind === 'family_type' ? familyType.parameters : undefined;
+        const familyParams =
+          familyType?.kind === 'family_type'
+            ? (familyType.parameters as Record<string, unknown>)
+            : undefined;
         const w =
           entry?.thumbnailWidthMm ??
           Number(familyParams?.widthMm ?? familyParams?.Width ?? familyParams?.lengthMm ?? 1000);

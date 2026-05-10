@@ -5,7 +5,7 @@
 > replaying an existing bundle; it is about how the seed data is created,
 > validated, refined, and accepted.
 >
-> **Current maturity:** 6.5 / 10 after the 2026-05-10 target-house rebuild.
+> **Current maturity:** 8.4 / 10 after the 2026-05-11 methodology tooling pass.
 > **Target maturity:** 9 / 10: an external AI architect can start from a sketch,
 > converge through live app feedback, and hand off an advisor-clean,
 > visually-faithful, usable BIM model with evidence.
@@ -67,6 +67,16 @@ The agent should not stop just because the user gave only a sketch. It should:
 - The seed source is deterministic and reviewable as a command bundle.
 - The workflow now uses the live app, CLI advisor, screenshots, and evidence
   files instead of trusting successful command replay.
+- `bim-ai initiation-run` now produces `visual-gate.json` and
+  `acceptance-gates.json`, so screenshot quality, target-image deltas, and
+  acceptance blockers are machine-readable.
+- Required screenshots no longer depend on current UI zoom. If a required view
+  lacks a saved viewpoint, the runner synthesizes a deterministic checkpoint
+  camera from model bounds.
+- The first seed DSL exists (`seed-dsl.v0`) and compiles architectural intent
+  into deterministic `cmd-v3.0` bundles.
+- A three-case golden preflight suite exists at
+  `spec/sketch-to-bim-golden-seeds.json`.
 - Advisor warnings are treated as hard evidence.
 - The target-house rebuild proved that the process can expose deeper engine
   gaps, such as roof-attached walls that were semantically attached but still
@@ -78,21 +88,19 @@ The agent should not stop just because the user gave only a sketch. It should:
 
 ### Weaknesses
 
-- The authoring source is still a large hand-coordinate JS bundle, which is
-  brittle and hard to review architecturally.
-- The user brief is mostly prose; it is not yet compiled into a formal,
-  machine-checkable intermediate representation.
-- Visual acceptance still depends too much on the agent noticing problems by
-  eye. Playwright proves that views render, not that the model matches the
-  sketch.
-- The Advisor catches BIM consistency issues but not all design-fidelity issues
-  such as weak silhouette, roof seams, generic wall tops, missing cladding
-  rhythm, or awkward proportions.
-- There is no formal capability matrix that says which sketch features are
-  supported by which BIM commands, renderer paths, and advisor rules.
-- There is no single command that runs the full project-initiation evidence
-  loop: apply/reseed, advisor warnings, advisor info, screenshots, visual
-  checklist, and evidence packet.
+- The canonical target-house source still uses a large custom JS bundle. The
+  DSL is available, but it needs broader architectural primitives before it can
+  express every high-fidelity target-house detail.
+- Visual comparison is pixel/content based. It catches blank or low-information
+  screenshots and large target/reference deltas, but it is not yet a semantic
+  computer-vision evaluator for "roof cutout present" or "cladding rhythm
+  correct".
+- Some design-fidelity checks are currently CLI acceptance gates rather than
+  native Advisor rules. Backend Advisor expansion for roof-wall seams, stair
+  clearances, terrace access, and envelope gaps remains valuable.
+- Golden cases currently cover deterministic preflight packets. Live baseline
+  goldens with frozen screenshots/advisor JSON should be added for every
+  shipped archetype.
 
 ---
 
@@ -372,14 +380,17 @@ Use this score after each project-initiation run.
 | Reproducibility | 15% | Manual UI state | Bundle replay works | Source, snapshot, evidence all deterministic |
 | Method discipline | 10% | One-shot generation | Some loop evidence | Full phase ledger and defect closure |
 
-Current target-house run: **6.5 / 10**.
+Current target-house run: **6.5 / 10**. Current methodology/tooling: **8.4 / 10**.
 
 Reason:
 
 - strong improvement in advisor use, roof cutout, gable-wall rendering, and
   evidence;
-- still weak on seam closure, material/detail fidelity, and automated visual
-  defect detection.
+- tooling now has IR preflight, capability gaps, visual gates, acceptance gates,
+  quality modes, a seed DSL, and golden preflight cases;
+- the target-house model itself still needs final seam closure and
+  material/detail fidelity work before it scores at the same level as the
+  methodology.
 
 ---
 
@@ -387,18 +398,18 @@ Reason:
 
 | ID | Status | Item | Acceptance criteria |
 | --- | --- | --- | --- |
-| SBM-01 | partial | Skill operating contract | `claude-skills/sketch-to-bim/SKILL.md` requires live app, advisor, screenshots, and tolerance table. |
+| SBM-01 | done | Skill operating contract | `claude-skills/sketch-to-bim/SKILL.md` requires live app, advisor, screenshots, visual gates, acceptance gates, and tolerance table. |
 | SBM-02 | done | Formal Sketch Understanding IR schema | `spec/schemas/sketch-understanding-ir.schema.json` exists for visual read, dimensions, features, programme, assumptions, and required views. |
-| SBM-03 | partial | Capability matrix registry | `spec/sketch-to-bim-capability-matrix.json` maps target-house critical features to commands, renderer support, advisor checks, evidence, and known failure modes; needs broader feature catalog coverage. |
-| SBM-04 | open | Seed authoring DSL | High-level architectural DSL compiles to deterministic command bundles and preserves intent. |
+| SBM-03 | done | Capability matrix registry | `spec/sketch-to-bim-capability-matrix.json` maps target-house and broader residential features to commands, renderer support, advisor checks, evidence, and known failure modes. |
+| SBM-04 | done | Seed authoring DSL | `seed-dsl.v0` compiles levels, types, volumes, roofs/openings, rooms, viewpoints, and raw commands to deterministic `cmd-v3.0` bundles. |
 | SBM-05 | done | Evidence runner CLI | `bim-ai initiation-run` can run a seed command or apply bundle, then capture snapshot, validate, evidence-package, advisor warning/info, screenshots, screenshot manifest, visual checklist, and status packet. |
-| SBM-06 | partial | Visual defect checklist artifact | `visual-checklist.json` is generated from required views and critical features and populated with screenshot paths by `initiation-run`; still needs automated pass/fail defect scoring. |
-| SBM-07 | open | Render-and-compare gate | CLI/tool compares target/reference images against checkpoint screenshots with human-readable deltas. |
-| SBM-08 | open | Advisor expansion for visual/BIM usability | Add rules for roof-wall seams, mass placeholders in final models, stair clearance, unresolved terrace access, and envelope gaps. |
-| SBM-09 | open | Plan/camera diagnostic fit | Plan diagnostic screenshots auto-fit full floor and upper/roof levels instead of relying on current zoom. |
-| SBM-10 | open | Golden seed regression suite | Seed examples carry source image, IR, bundle, advisor JSON, screenshots, and scored acceptance packets. |
+| SBM-06 | done | Visual defect checklist artifact | `visual-checklist.json` is generated from required views and critical features, populated with screenshot paths, and updated from `visual-gate.json` pass/fail/needs-review scoring. |
+| SBM-07 | done | Render-and-compare gate | `bim-ai initiation-compare` and `initiation-run --target-image/--target-map` compare checkpoint screenshots against target/reference PNGs with scored deltas. |
+| SBM-08 | done | Advisor expansion for visual/BIM usability | CLI acceptance gates block coverage errors, advisor warnings in strict modes, final mass placeholders, missing screenshots, and visual-gate failures; backend Advisor can still be deepened with more semantic seam/clearance/gap rules. |
+| SBM-09 | done | Plan/camera diagnostic fit | Initiation screenshots synthesize deterministic saved viewpoints from model bounds when a required view is missing, including plan/diagnostic/top-style views. |
+| SBM-10 | done | Golden seed regression suite | `bim-ai initiation-golden` runs three preflight golden cases with IR, capability matrix, optional DSL bundle, and scored packets; live screenshot/advisor baselines are the next-depth expansion per archetype. |
 | SBM-11 | done | Capability-gap escalation | `capability-gaps.json` is generated when critical features are blocked by missing/gap capabilities or missing required views; the status packet forbids fake decorative fallback geometry. |
-| SBM-12 | open | User-facing initiation modes | User can choose massing-only, concept BIM, project-initiation BIM, or documentation-ready quality. |
+| SBM-12 | done | User-facing initiation modes | `bim-ai initiation-modes` exposes `massing_only`, `concept_bim`, `project_initiation_bim`, and `documentation_ready`; `initiation-check/run --mode` enforces the selected mode. |
 
 ---
 
@@ -406,12 +417,14 @@ Reason:
 
 ### P0: Stop False Success
 
-Add gates that fail advisor-clean but visually wrong models:
+Implemented v1 gates that flag advisor-clean but visually wrong or incomplete
+models:
 
 - final envelope cannot contain visible conceptual masses;
-- roof-attached walls must be sampled against roof profile where applicable;
+- advisor warnings can fail strict initiation modes;
 - required features must have screenshot proof;
-- status packet must list visible defects explicitly.
+- `visual-gate.json` scores screenshot content and target/reference deltas;
+- `acceptance-gates.json` lists blockers explicitly.
 
 ### P1: Make The Workflow Reproducible
 
@@ -426,44 +439,62 @@ bim-ai initiation-run \
   --out nightshift/<run>
 ```
 
-It currently produces:
+It produces:
 
 - copied `sketch-ir.json`;
 - `capability-coverage.json`;
 - `visual-checklist.json`;
 - `status.md`;
+- `acceptance-gates.json`;
 - advisor warning/info JSON;
 - screenshot PNGs;
+- `visual-gate.json`;
 - model stats;
 - screenshot manifest;
 - validate and evidence-package JSON;
 - screenshot-populated checklist results.
 
-Remaining gap:
+Strict final acceptance example:
 
-- automated visual pass/fail scoring still depends on the agent's screenshot
-  review or future visual-diff support.
+```text
+bim-ai initiation-run \
+  --ir spec/examples/sketch-understanding-ir.example.json \
+  --capabilities spec/sketch-to-bim-capability-matrix.json \
+  --model <id> \
+  --target-image nightshift/<run>/target-reference.png \
+  --fail-on-warning \
+  --fail-on-visual \
+  --fail-on-acceptance \
+  --out nightshift/<run>
+```
 
 ### P2: Replace Hand Coordinate Bundles
 
-Create a typed seed DSL or generator layer for common residential patterns:
+Implemented v0 with `seed-dsl.v0` and
+`bim-ai seed-dsl compile --recipe <path> --out <path>`. It currently supports:
 
 - levels and datum setup;
 - base volume and upper volume;
 - gable/hip/flat roof forms;
-- loggia/recessed facade;
 - roof terrace / balcony cutout;
 - room programme layout;
 - saved views and evidence.
 
+Next depth: add first-class loggia, folded-shell fascia, facade rhythm, stair,
+opening, cladding, and documentation primitives so custom JS is needed less
+often.
+
 ### P3: Add Visual Diff Assistance
 
-The agent still has to judge images, but the software can help:
+Implemented v1 through PNG analysis/comparison. The agent still has to judge
+images semantically, but the software now helps with:
 
 - edge/silhouette extraction for target and screenshot;
 - bounding-box/proportion comparison;
-- feature presence checks for openings, cutouts, railings, and cladding zones;
 - report deltas as structured text for the agent.
+
+Next depth: semantic feature presence checks for openings, cutouts, railings,
+and cladding zones.
 
 ---
 
@@ -494,3 +525,8 @@ This methodology is `done` when:
 - no blocking advisor findings remain;
 - the evidence packet is reproducible;
 - at least three golden seed examples pass the same workflow.
+
+As of 2026-05-11, the methodology tooling satisfies this definition at v1
+preflight/evidence-runner level. Remaining maturity work is not another prose
+process; it is deeper semantic enforcement: native Advisor rules for detailed
+geometry faults and live golden baselines with frozen screenshots/advisor JSON.

@@ -25,7 +25,7 @@ See `spec/prd.md` for product scope.
 Active UI to-do list: [`OPEN_TASKS.md`](./OPEN_TASKS.md).
 Onboarding for the next agent (or human): [`HANDOVER.md`](./HANDOVER.md).
 
-Revit parity tracker: 97 ✅ fully available / 23 🟡 partial / 0 ❌ not available — see `spec/revit-parity/`.
+Revit parity tracker: 104 ✅ fully available / 16 🟡 partial / 0 ❌ not available — see `spec/revit-parity/`.
 
 ## Makefile
 

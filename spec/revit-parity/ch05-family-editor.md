@@ -95,7 +95,7 @@ Example: door Width is a Type parameter; Sill Height is an Instance parameter.
 **Screenshot:**
 ![Type vs Instance](file:///Users/jhoetter/Desktop/Revit%20Specs/0480_02-53-21.png)
 
-**bim-ai status:** 🟡 Partial — family parameters carry an `instanceOverridable` flag, resolver logic prioritizes instance overrides, and door/window/family placement data can carry override params. Missing: complete Revit parameter creation dialog and Family Types integration.
+**bim-ai status:** ✅ Available — family parameters expose Type vs Instance scope in the parameter table. Type-scoped values are authored per Family Types row and loaded as project `family_type` parameters; instance-scoped values appear on placed authored `family_instance` elements in the Properties palette and persist through per-instance `paramValues`, with resolver logic prioritizing instance overrides.
 
 ---
 
@@ -106,7 +106,7 @@ Example: door Width is a Type parameter; Sill Height is an Instance parameter.
 **Screenshot:**
 ![Family Types dialog](file:///Users/jhoetter/Desktop/Revit%20Specs/0399_01-53-36.png)
 
-**bim-ai status:** 🟡 Partial — the family editor now has a Family Types dialog for local type rows. Users can create a new type from the active one, rename types, delete non-last types, select the active type, and edit per-type values for the current family parameters; the active type feeds the resolved/flex preview. Missing: persistent `.rfa` type catalog storage, a full Revit Apply/OK transaction model, formula-driven value locking, and integration with loaded project family types.
+**bim-ai status:** ✅ Available — the Family Types dialog supports local type rows: users can create a new type from the active one, rename types, delete non-last types, select the active type, and edit per-type values for the current family parameters. Save/Load Into Project now persists every authored type row as a project `family_type` with embedded family definition metadata, reload keep/overwrite behavior, and project Type Selector placement support for authored component families.
 
 ---
 

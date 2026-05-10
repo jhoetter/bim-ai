@@ -4,6 +4,7 @@ import type { Element } from '@bim-ai/core';
 import {
   FAMILY_EDITOR_DEFINITION_PARAM,
   FAMILY_EDITOR_DOCUMENT_PARAM,
+  FAMILY_EDITOR_TYPE_ROW_ID_PARAM,
   buildAuthoredFamilyDefinition,
   planAuthoredFamilyLoad,
   readAuthoredFamilyCatalog,
@@ -165,6 +166,36 @@ describe('family editor persistence planning', () => {
       familyTemplateHostType: 'standalone',
       familyTemplateCategory: 'furniture',
       familyTemplateOriginReferencePlaneIds: ['center-left-right'],
+    });
+    expect(plan.commands).toHaveLength(1);
+    expect(plan.typeIds).toEqual(['ft-fam_casework_bench-1jk']);
+  });
+
+  it('plans every authored family type row as a project family_type catalog entry', () => {
+    const document: AuthoredFamilyDocument = {
+      ...BASE_DOCUMENT,
+      familyTypes: [
+        { id: 'family-type-1', name: '1200 Bench', values: { Width: 1200 } },
+        { id: 'family-type-2', name: '1800 Bench', values: { Width: 1800 } },
+      ],
+      activeFamilyTypeId: 'family-type-2',
+    };
+
+    const plan = planAuthoredFamilyLoad(document, {}, { now: 2000 });
+
+    expect(plan.commands.map((command) => command.name)).toEqual(['1200 Bench', '1800 Bench']);
+    expect(plan.typeId).toBe('ft-fam_casework_bench-family-type-2-1jk');
+    expect(plan.typeIds).toEqual([
+      'ft-fam_casework_bench-family-type-1-1jk',
+      'ft-fam_casework_bench-family-type-2-1jk',
+    ]);
+    expect(plan.commands[0]!.parameters).toMatchObject({
+      Width: 1200,
+      [FAMILY_EDITOR_TYPE_ROW_ID_PARAM]: 'family-type-1',
+    });
+    expect(plan.commands[1]!.parameters).toMatchObject({
+      Width: 1800,
+      [FAMILY_EDITOR_TYPE_ROW_ID_PARAM]: 'family-type-2',
     });
   });
 

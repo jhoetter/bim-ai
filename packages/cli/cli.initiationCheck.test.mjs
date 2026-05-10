@@ -103,6 +103,11 @@ function validIr() {
         kind: '3d',
         purpose: 'prove roof cutout',
       },
+      {
+        id: 'plan',
+        kind: 'diagnostic',
+        purpose: 'prove room and stair topology',
+      },
     ],
     assumptions: [
       {
@@ -268,4 +273,55 @@ test('initiation-run captures live advisor and evidence artifacts without screen
   const status = await fs.readFile(path.join(outDir, 'status.md'), 'utf8');
   assert.match(status, /Live Artifacts/);
   assert.match(status, /advisorWarning/);
+});
+
+test('initiation-compare scores identical PNGs as passing', async () => {
+  const fixture = path.resolve(
+    __dirname,
+    '../web/e2e/__screenshots__/ui-redesign-baselines.spec.ts/darwin/top-bar.png',
+  );
+  const res = await runCli([
+    'initiation-compare',
+    '--actual',
+    fixture,
+    '--target',
+    fixture,
+    '--threshold',
+    '0.99',
+  ]);
+
+  assert.equal(res.code, 0, res.stderr);
+  const report = JSON.parse(res.stdout);
+  assert.equal(report.thresholdPassed, true);
+  assert.ok(report.visualSimilarity >= 0.999);
+});
+
+test('seed-dsl compile writes a deterministic command bundle', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-seed-dsl-'));
+  const outPath = path.join(dir, 'bundle.json');
+  const recipePath = path.resolve(__dirname, '../../spec/examples/seed-dsl-modern-house.example.json');
+
+  const res = await runCli(['seed-dsl', 'compile', '--recipe', recipePath, '--out', outPath]);
+
+  assert.equal(res.code, 0, res.stderr);
+  const summary = JSON.parse(res.stdout);
+  assert.equal(summary.ok, true);
+  const bundle = JSON.parse(await fs.readFile(outPath, 'utf8'));
+  assert.equal(bundle.schemaVersion, 'cmd-v3.0');
+  assert.ok(bundle.commands.some((command) => command.type === 'createRoofOpening'));
+  assert.ok(bundle.commands.some((command) => command.type === 'saveViewpoint'));
+});
+
+test('initiation-golden runs the preflight golden suite', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-golden-'));
+  const manifestPath = path.resolve(__dirname, '../../spec/sketch-to-bim-golden-seeds.json');
+
+  const res = await runCli(['initiation-golden', '--manifest', manifestPath, '--out', dir]);
+
+  assert.equal(res.code, 0, res.stderr);
+  const summary = JSON.parse(res.stdout);
+  assert.equal(summary.caseCount, 3);
+  assert.equal(summary.failCount, 0);
+  const written = JSON.parse(await fs.readFile(path.join(dir, 'golden-summary.json'), 'utf8'));
+  assert.equal(written.passCount, 3);
 });

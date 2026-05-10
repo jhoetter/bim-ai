@@ -11,7 +11,7 @@ Source segment: `04:35:00 – 04:38:48`
 **Screenshot:**
 ![Furniture Library project](file:///Users/jhoetter/Desktop/Revit%20Specs/0735_04-36-52.png)
 
-**bim-ai status:** 🟡 Partial — bim-ai has a project-local `asset_library_entry` catalog surfaced by the Component tool, plus the `residential-eu` starter template now seeds a built-in furniture/fixture library: sofa, chair, dining table, counters, fridge, sink, toilet, shower, queen bed, single bed, wardrobe, floor lamp, and area rug. These entries carry searchable tags, param schemas, schematic thumbnails, and explicit plan/3D proxy kinds for recognizable placement. Missing: an interactive warehouse-style project view where users visually browse, copy, and paste family configurations between projects; no `.rvt`-style standalone library file workflow.
+**bim-ai status:** ✅ Implemented — bim-ai uses a project-local warehouse equivalent rather than a native `.rvt` file: the Family Library panel now presents furniture/fixture assets as visual "Project warehouse" shelves with rendered thumbnails, searchable tags, and a Copy action that reuses the existing placement path for the selected configuration. The residential starter template seeds common furniture/fixture assets (sofa, chair, dining table, counters, fridge, sink, toilet, shower, queen bed, single bed, wardrobe, floor lamp, and area rug), and external catalog families appear in the same visual warehouse flow. This covers the Revit course intent of keeping bespoke project furniture configurations available as a visual local catalogue without internet dependency.
 
 ---
 
@@ -33,7 +33,7 @@ Source segment: `04:35:00 – 04:38:48`
 **Screenshot:**
 ![Array parameter](file:///Users/jhoetter/Desktop/Revit%20Specs/0728_04-36-10.png)
 
-**bim-ai status:** 🟡 Partial — family geometry supports parameter-driven `array` nodes that resolve nested chair families from a host count parameter, including `fit_total` spacing over a table width. Formula-backed family parameters are evaluated before array resolution, so a furniture family can expose `Array_Length_Width = max(1, rounddown(Width / ChairSlotPitch))` and changing `Width` regenerates the chair count on both sides of a dining table. Covered by the focused F-089 resolver test in `packages/web/src/families/familyResolver.array.test.ts`. Missing: a furniture-library UI for browsing/editing these array formulas directly from a warehouse-style catalogue.
+**bim-ai status:** 🟡 Partial — family geometry supports parameter-driven `array` nodes that resolve nested chair families from a host count parameter, including `fit_total` spacing over a table width. Formula-backed family parameters are evaluated before array resolution, so a furniture family can expose `Array_Length_Width = max(1, rounddown(Width / ChairSlotPitch))` and changing `Width` regenerates the chair count on both sides of a dining table. Covered by the focused F-089 resolver test in `packages/web/src/families/familyResolver.array.test.ts`. The Family Library warehouse now detects array count parameters on project assets and external catalog families, shows inline formula editors, validates formulas, and emits `onUpdateArrayFormula` saves with asset/catalog placement context. Missing: Workspace-level persistence wiring for those formula edits in the active project store.
 
 ---
 

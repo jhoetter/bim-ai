@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "sketch-understanding-ir.v0",
+  "projectType": "single_family_house",
+  "qualityTarget": "documentation_ready",
+  "sourceInputs": {
+    "images": ["spec/target-house.jpeg"],
+    "briefs": ["spec/target-house-seed.md"],
+    "userInstruction": "Create a documentation-ready seed model with rooms, schedules, and saved evidence views."
+  },
+  "visualRead": {
+    "primaryView": "front-left axonometric",
+    "dominantVolumes": [
+      {
+        "id": "wrapper_shell",
+        "description": "White upper wrapper with gable roof and recessed loggia.",
+        "priority": "critical"
+      },
+      {
+        "id": "clad_base",
+        "description": "Smaller vertically clad ground base below the cantilever.",
+        "priority": "critical"
+      }
+    ],
+    "nonNegotiables": [
+      "embedded roof terrace with real access",
+      "front loggia",
+      "rooms and doors valid enough for schedules"
+    ]
+  },
+  "programme": [
+    { "name": "Entrance", "level": "ground", "programmeCode": "entry" },
+    { "name": "Living / Dining", "level": "ground", "programmeCode": "living" },
+    { "name": "Kitchen", "level": "ground", "programmeCode": "kitchen" },
+    { "name": "WC", "level": "ground", "programmeCode": "toilet" },
+    { "name": "Bedroom 1", "level": "upper", "programmeCode": "bedroom" },
+    { "name": "Bedroom 2", "level": "upper", "programmeCode": "bedroom" },
+    { "name": "Bath", "level": "upper", "programmeCode": "bathroom" },
+    { "name": "Roof Terrace", "level": "upper", "programmeCode": "terrace" }
+  ],
+  "features": [
+    {
+      "id": "roof_terrace",
+      "kind": "roof_terrace_cutout",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["main", "roof_high", "side"],
+      "capabilityNeeds": ["roof opening", "terrace guard", "access door"]
+    },
+    {
+      "id": "room_programme",
+      "kind": "room_programme_layout",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["ground_plan", "upper_plan", "wire"],
+      "capabilityNeeds": ["enclosed rooms", "doors", "stair clearance"]
+    },
+    {
+      "id": "documentation_packet",
+      "kind": "documentation_views",
+      "visualPriority": "high",
+      "mustRenderInViews": ["main", "ground_plan"],
+      "capabilityNeeds": ["saved views", "room schedule", "evidence package"]
+    }
+  ],
+  "requiredViews": [
+    { "id": "main", "kind": "3d", "purpose": "sketch match" },
+    { "id": "side", "kind": "3d", "purpose": "side envelope and terrace depth" },
+    { "id": "roof_high", "kind": "3d", "purpose": "roof opening proof" },
+    { "id": "ground_plan", "kind": "plan", "purpose": "ground-floor room and door proof" },
+    { "id": "upper_plan", "kind": "plan", "purpose": "upper room and terrace access proof" },
+    { "id": "wire", "kind": "diagnostic", "purpose": "topology defects and overlaps" }
+  ],
+  "assumptions": [
+    {
+      "id": "documentation_scope",
+      "statement": "Schedules are expected to be derived from rooms, doors, and windows created by the seed.",
+      "confidence": "high",
+      "validation": "schedule-table exports and advisor JSON"
+    }
+  ]
+}

@@ -39,7 +39,11 @@ export function setActiveComponentAssetId(v: string | null): void {
   activeComponentAssetId = v;
 }
 
-/** Selected project family_type for generic loaded-family placement. */
+/**
+ * Module-level selected family_type ID for loaded-family placement.
+ * This shares the component placement tool with asset placement but emits
+ * `placeFamilyInstance` instead of `PlaceAsset`.
+ */
 export let activeComponentFamilyTypeId: string | null = null;
 export function setActiveComponentFamilyTypeId(v: string | null): void {
   activeComponentFamilyTypeId = v;
@@ -76,6 +80,7 @@ export function OptionsBar(): JSX.Element | null {
   const applyAreaRules = useBimStore((s) => s.applyAreaRules);
   const setApplyAreaRules = useBimStore((s) => s.setApplyAreaRules);
   const [showComputations, setShowComputations] = useState(false);
+  const [, setComponentSelectionRevision] = useState(0);
 
   useEffect(() => {
     if (!showComputations) return;
@@ -362,16 +367,25 @@ export function OptionsBar(): JSX.Element | null {
       (e): e is Extract<Element, { kind: 'asset_library_entry' }> =>
         e.kind === 'asset_library_entry',
     );
+    const componentFamilyTypes = Object.values(elementsById)
+      .filter(
+        (e): e is Extract<Element, { kind: 'family_type' }> =>
+          e.kind === 'family_type' && e.discipline === 'generic',
+      )
+      .sort((a, b) =>
+        String(a.parameters.name ?? a.name).localeCompare(String(b.parameters.name ?? b.name)),
+      );
     return (
       <div data-testid="options-bar" className={BAR_CLASS}>
         <label className="flex items-center gap-2">
           <span className="text-muted">Asset:</span>
           <select
             data-testid="options-bar-component-asset"
-            defaultValue={activeComponentAssetId ?? ''}
+            value={activeComponentAssetId ?? ''}
             onChange={(e) => {
               setActiveComponentAssetId(e.target.value || null);
               setActiveComponentFamilyTypeId(null);
+              setComponentSelectionRevision((revision) => revision + 1);
             }}
             className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
             aria-label="Component asset"
@@ -380,6 +394,27 @@ export function OptionsBar(): JSX.Element | null {
             {assetLibraryEntries.map((a) => (
               <option key={a.id} value={a.id}>
                 {a.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Type:</span>
+          <select
+            data-testid="options-bar-component-family-type"
+            value={activeComponentFamilyTypeId ?? ''}
+            onChange={(e) => {
+              setActiveComponentFamilyTypeId(e.target.value || null);
+              setActiveComponentAssetId(null);
+              setComponentSelectionRevision((revision) => revision + 1);
+            }}
+            className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Component family type"
+          >
+            <option value="">— select family type —</option>
+            {componentFamilyTypes.map((familyType) => (
+              <option key={familyType.id} value={familyType.id}>
+                {String(familyType.parameters.name ?? familyType.name)}
               </option>
             ))}
           </select>

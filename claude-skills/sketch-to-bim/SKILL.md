@@ -121,7 +121,9 @@ These findings block phase advancement unless the user explicitly accepts them w
    node packages/cli/cli.mjs initiation-check \
      --ir spec/examples/sketch-understanding-ir.example.json \
      --capabilities spec/sketch-to-bim-capability-matrix.json \
-     --out nightshift/<run>/initiation-check
+     --out nightshift/<run>/initiation-check \
+     --mode project_initiation_bim \
+     --fail-on-acceptance
    ```
 
    After a live model exists, add `--model "$BIM_AI_MODEL_ID" --live` so the packet also captures advisor warning/info groups. Critical `capability_missing`, `critical_capability_gap`, or missing-view errors block authoring; partial capabilities require screenshot and advisor proof before acceptance.
@@ -133,10 +135,38 @@ These findings block phase advancement unless the user explicitly accepts them w
      --ir spec/examples/sketch-understanding-ir.example.json \
      --capabilities spec/sketch-to-bim-capability-matrix.json \
      --model "$BIM_AI_MODEL_ID" \
-     --out nightshift/<run>/initiation-run
+     --out nightshift/<run>/initiation-run \
+     --target-image nightshift/<run>/target-reference.png \
+     --fail-on-warning \
+     --fail-on-visual \
+     --fail-on-acceptance
    ```
 
-   Use `--seed-command "make seed"` or `--apply-bundle <path> --commit` when the runner should reseed/apply before capturing evidence. The runner captures snapshot, validate, evidence-package, advisor warning/info, screenshots, screenshot manifest, visual checklist, and status markdown. `--no-screenshots` is only for tests or explicitly documented headless limitations.
+   Use `--seed-command "make seed"` or `--apply-bundle <path> --commit` when the runner should reseed/apply before capturing evidence. The runner captures snapshot, validate, evidence-package, advisor warning/info, screenshots, screenshot manifest, `visual-gate.json`, `acceptance-gates.json`, visual checklist, and status markdown. `--target-image` expects a PNG reference; if the user supplied a JPG sketch, create/record a PNG reference crop for the checkpoint view or use `--target-map` with per-view PNG references. If a required view has no saved viewpoint, the runner synthesizes a deterministic checkpoint viewpoint instead of relying on the current UI zoom. `--no-screenshots` is only for tests or explicitly documented headless limitations.
+
+   Use explicit quality modes:
+
+   ```bash
+   node packages/cli/cli.mjs initiation-modes
+   ```
+
+   Available modes are `massing_only`, `concept_bim`, `project_initiation_bim`, and `documentation_ready`. The mode changes required views, programme expectations, and acceptance strictness.
+
+   When authoring from intent rather than a hand-coordinate JS file, compile the seed DSL first:
+
+   ```bash
+   node packages/cli/cli.mjs seed-dsl compile \
+     --recipe spec/examples/seed-dsl-modern-house.example.json \
+     --out nightshift/<run>/seed-bundle.json
+   ```
+
+   Before accepting methodology changes, run the golden preflight suite:
+
+   ```bash
+   node packages/cli/cli.mjs initiation-golden \
+     --manifest spec/sketch-to-bim-golden-seeds.json \
+     --out nightshift/<run>/golden
+   ```
 
 6. **Pick the closest archetype, if any** (SKB-09). Today there are none; you start from a blank model. When archetypes ship, use `bim-ai archetype list` and fork the closest one — never start from blank if a 70%-match archetype exists.
 
@@ -372,11 +402,17 @@ These are the failure modes you must avoid; they are the observed behaviour from
 
 **Bundle dry-run:** `bim-ai apply-bundle --dry-run --in <commands.json>` validates a bundle without committing. **Use this between phases.**
 
+**Seed DSL compiler:** `node packages/cli/cli.mjs seed-dsl compile --recipe <recipe.json> --out <bundle.json>` turns architectural intent (levels, volumes, roofs, roof openings, rooms, viewpoints, raw commands) into a deterministic `cmd-v3.0` bundle. Prefer a recipe when a seed is being created from scratch; keep custom JS for cases that need lower-level geometry until the DSL catches up.
+
 **Render:** start dev with `make dev`; navigate to the 3D tab; activate a viewpoint via the project browser. Or programmatically via the Playwright harness in `packages/web/e2e/`.
 
 **Validators:** `app/bim_ai/constraints.py:evaluate()` runs at every commit; check the returned violation list.
 
 **Advisor surface:** the right rail Advisor panel, `bim-ai advisor --output json`, and the API violation/advisory payload expose issue code, recommendation text, perspective / `codePreset`, and `elementIds`. Feed these findings into SKB-15 refine-loop evidence so corrections can target the elements the app already identified.
+
+**Initiation evidence runner:** `node packages/cli/cli.mjs initiation-run ...` captures live snapshot, validate, evidence package, advisor warning/info, screenshots, visual-gate scoring, acceptance gates, and status. Use `--target-image` or `--target-map` for automated render/reference comparison, and `--fail-on-warning --fail-on-visual --fail-on-acceptance` for final acceptance.
+
+**Golden suite:** `node packages/cli/cli.mjs initiation-golden --manifest spec/sketch-to-bim-golden-seeds.json --out <dir>` runs preflight packets for multiple sketch-to-BIM cases. Use this before changing methodology or capability-matrix behavior.
 
 **Seed snapshot fixture:** `node scripts/build-seed-snapshot.mjs` materialises the current canonical seed bundle into `packages/web/e2e/__fixtures__/seed-target-house-snapshot.json`. Run it after every bundle edit before visual checkpoints.
 
@@ -400,7 +436,7 @@ For example, the target-house roof cutout needs `createRoofOpening` **and** view
 
 All listed in `spec/workpackage-master-tracker.md` under "Sketch-to-BIM agent methodology (SKB)". Highest-leverage items, in priority order:
 
-- **SKB-03** `bim-ai checkpoint` — render a viewpoint to PNG + compute SSIM/MSE deltas vs. target. The agent reads the PNG with its own vision and judges silhouette match. (Until this ships, run the dev server and screenshot manually.)
+- **SKB-03 / visual gate** — implemented in the initiation runner as screenshot analysis plus optional PNG target comparison (`visual-gate.json`). The agent still reads the PNG with vision, but nonblank/content/scored evidence is now structured.
 - **SKB-04** `bim-ai calibrate` — pixel-to-mm scale + proportional query API.
 - **SKB-05** architectural soundness validator pack.
 - **SKB-09** archetype starter library.

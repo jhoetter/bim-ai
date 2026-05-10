@@ -15,10 +15,17 @@
 
 import { useEffect, useMemo, useState, type JSX } from 'react';
 
-import type { AssetCategory, AssetLibraryEntry, Element, FamilyDiscipline } from '@bim-ai/core';
+import type {
+  AssetCategory,
+  AssetLibraryEntry,
+  Element,
+  FamilyDiscipline,
+  ParamSchemaEntry,
+} from '@bim-ai/core';
 
 import { BUILT_IN_FAMILIES } from './familyCatalog';
 import { BUILT_IN_WALL_TYPES } from './wallTypeCatalog';
+import { validateFormula } from '../lib/expressionEvaluator';
 import {
   getFamilyTypeThumbnail,
   getFloorTypeThumbnail,
@@ -39,6 +46,7 @@ import {
   findLoadedCatalogFamilyType,
   type FamilyReloadOverwriteOption,
 } from './catalogFamilyReload';
+import type { FamilyGeometryNode, FamilyParamDef } from './types';
 
 export type { FamilyLibraryPlaceKind } from './familyPlacementAdapters';
 
@@ -51,6 +59,7 @@ export interface ExternalCatalogFamily {
   id: string;
   name: string;
   discipline: FamilyDiscipline;
+  params?: FamilyParamDef[];
   defaultTypes: {
     id: string;
     name: string;
@@ -58,6 +67,7 @@ export interface ExternalCatalogFamily {
     discipline: FamilyDiscipline;
     parameters: Record<string, unknown>;
   }[];
+  geometry?: FamilyGeometryNode[];
 }
 
 export interface ExternalCatalogIndexEntry {
@@ -93,6 +103,16 @@ export interface ExternalCatalogClient {
   getCatalog(catalogId: string): Promise<ExternalCatalogPayload>;
 }
 
+export type FamilyLibraryArrayFormulaTarget =
+  | { kind: 'asset'; assetId: string }
+  | { kind: 'catalog_family'; placement: ExternalCatalogPlacement };
+
+export interface FamilyLibraryArrayFormulaUpdate {
+  target: FamilyLibraryArrayFormulaTarget;
+  paramKey: string;
+  formula: string;
+}
+
 export interface FamilyLibraryPanelProps {
   open: boolean;
   onClose: () => void;
@@ -118,6 +138,11 @@ export interface FamilyLibraryPanelProps {
     overwriteOption?: FamilyReloadOverwriteOption,
   ) => void;
   /**
+   * F-089 — invoked when the warehouse formula editor saves an array-count
+   * formula exposed by a project asset or external catalog family.
+   */
+  onUpdateArrayFormula?: (update: FamilyLibraryArrayFormulaUpdate) => void;
+  /**
    * Optional client for the external-catalog API. Provided so tests can
    * inject a stub without spinning up the real fetch path. Defaults to a
    * fetch-backed implementation that hits `/api/family-catalogs`.
@@ -134,6 +159,7 @@ interface CatalogEntry {
   catalogLabel?: string;
   catalogPlacement?: ExternalCatalogPlacement;
   assetEntry?: AssetLibraryEntry;
+  arrayFormulas?: ArrayFormulaDescriptor[];
   familyTypeThumbnail?: Omit<FamilyTypeThumbnailInput, 'id' | 'name'>;
   wallThumbnail?: {
     layers: WallThumbnailLayerInput[];
@@ -144,6 +170,14 @@ interface CatalogEntry {
     layers: WallThumbnailLayerInput[];
   };
   searchText?: string;
+}
+
+interface ArrayFormulaDescriptor {
+  target: FamilyLibraryArrayFormulaTarget;
+  paramKey: string;
+  label: string;
+  formula: string;
+  knownParams: string[];
 }
 
 interface AssetCatalogGroup {
@@ -300,6 +334,7 @@ function buildAssetCatalogGroups(elementsById: Record<string, Element>): AssetCa
   for (const el of Object.values(elementsById)) {
     if (el.kind !== 'asset_library_entry') continue;
     const entry = assetElementToLibraryEntry(el);
+    const arrayFormulas = assetArrayFormulaDescriptors(entry);
     const bucket = (buckets[entry.category] ??= []);
     bucket.push({
       id: entry.id,
@@ -308,7 +343,14 @@ function buildAssetCatalogGroups(elementsById: Record<string, Element>): AssetCa
       custom: false,
       kind: 'asset',
       assetEntry: entry,
-      searchText: [entry.category, ...entry.tags, entry.planSymbolKind, entry.renderProxyKind]
+      arrayFormulas,
+      searchText: [
+        entry.category,
+        ...entry.tags,
+        entry.planSymbolKind,
+        entry.renderProxyKind,
+        ...arrayFormulas.flatMap((formula) => [formula.paramKey, formula.formula]),
+      ]
         .filter(Boolean)
         .join(' '),
     });
@@ -387,6 +429,94 @@ function dimensionsFromParameters(
   return { widthMm: resolvedWidth, heightMm: resolvedHeight };
 }
 
+type AssetParamSchemaWithFormula = ParamSchemaEntry & {
+  label?: string;
+  formula?: string | null;
+  arrayFormula?: string | null;
+  arrayCountParam?: boolean;
+};
+
+function stringFromUnknown(value: unknown): string | null {
+  return typeof value === 'string' ? value : null;
+}
+
+function objectRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function formulaFromAssetParam(param: ParamSchemaEntry): string | null {
+  const extended = param as AssetParamSchemaWithFormula;
+  const direct = stringFromUnknown(extended.formula) ?? stringFromUnknown(extended.arrayFormula);
+  if (direct != null) return direct;
+  const constraints = objectRecord(param.constraints);
+  return (
+    stringFromUnknown(constraints?.formula) ?? stringFromUnknown(constraints?.arrayFormula) ?? null
+  );
+}
+
+function isArrayParam(param: ParamSchemaEntry | FamilyParamDef, arrayCountParams?: Set<string>) {
+  if (arrayCountParams?.has(param.key)) return true;
+  const key = param.key.toLowerCase();
+  if (key.startsWith('array_') || key.includes('array')) return true;
+  const constraints = 'constraints' in param ? objectRecord(param.constraints) : null;
+  return (
+    constraints?.arrayCountParam === true ||
+    (param as AssetParamSchemaWithFormula).arrayCountParam === true
+  );
+}
+
+function labelForAssetParam(param: ParamSchemaEntry): string {
+  const label = stringFromUnknown((param as AssetParamSchemaWithFormula).label);
+  return label ?? param.key;
+}
+
+function collectArrayCountParams(nodes: unknown, out = new Set<string>()): Set<string> {
+  if (!Array.isArray(nodes)) return out;
+  for (const node of nodes) {
+    const record = objectRecord(node);
+    if (!record) continue;
+    if (record.kind === 'array' && typeof record.countParam === 'string') {
+      out.add(record.countParam);
+    }
+    if (record.target) collectArrayCountParams([record.target], out);
+    if (Array.isArray(record.geometry)) collectArrayCountParams(record.geometry, out);
+  }
+  return out;
+}
+
+function assetArrayFormulaDescriptors(entry: AssetLibraryEntry): ArrayFormulaDescriptor[] {
+  const params = entry.paramSchema ?? [];
+  const knownParams = params.map((p) => p.key);
+  return params
+    .filter((param) => isArrayParam(param))
+    .map((param) => ({
+      target: { kind: 'asset' as const, assetId: entry.id },
+      paramKey: param.key,
+      label: labelForAssetParam(param),
+      formula: formulaFromAssetParam(param) ?? '',
+      knownParams,
+    }));
+}
+
+function catalogArrayFormulaDescriptors(
+  placement: ExternalCatalogPlacement,
+): ArrayFormulaDescriptor[] {
+  const params = placement.family.params ?? [];
+  const arrayCountParams = collectArrayCountParams(placement.family.geometry);
+  const knownParams = params.map((p) => p.key);
+  return params
+    .filter((param) => isArrayParam(param, arrayCountParams))
+    .map((param) => ({
+      target: { kind: 'catalog_family' as const, placement },
+      paramKey: param.key,
+      label: param.label || param.key,
+      formula: param.formula ?? '',
+      knownParams,
+    }));
+}
+
 function catalogFamilyToEntry(
   catalog: ExternalCatalogPayload,
   family: ExternalCatalogFamily,
@@ -429,12 +559,14 @@ function catalogFamilyToEntry(
     catalogLabel: catalog.name,
     catalogPlacement: placement,
     assetEntry,
+    arrayFormulas: catalogArrayFormulaDescriptors(placement),
     searchText: [
       catalog.catalogId,
       catalog.name,
       catalog.description,
       family.discipline,
       ...family.defaultTypes.map((type) => type.name),
+      ...(family.params ?? []).flatMap((param) => [param.key, param.label, param.formula]),
     ]
       .filter(Boolean)
       .join(' '),
@@ -654,6 +786,90 @@ function CatalogThumbnail({ entry }: { entry: CatalogEntry }): JSX.Element {
   return <TypeThumbnail typeId={entry.id} name={entry.name} />;
 }
 
+function ArrayFormulaEditor({
+  descriptor,
+  onUpdate,
+}: {
+  descriptor: ArrayFormulaDescriptor;
+  onUpdate?: (update: FamilyLibraryArrayFormulaUpdate) => void;
+}): JSX.Element {
+  const [draft, setDraft] = useState(descriptor.formula);
+  const targetId =
+    descriptor.target.kind === 'asset'
+      ? descriptor.target.assetId
+      : descriptor.target.placement.family.id;
+  const inputId = `array-formula-${targetId}-${descriptor.paramKey}`.replace(
+    /[^A-Za-z0-9_-]/g,
+    '-',
+  );
+
+  useEffect(() => {
+    setDraft(descriptor.formula);
+  }, [descriptor.formula, descriptor.paramKey]);
+
+  const error = validateFormula(draft, descriptor.knownParams);
+  const changed = draft.trim() !== descriptor.formula.trim();
+  const canSave = Boolean(onUpdate) && changed && !error;
+
+  return (
+    <div
+      data-testid={`array-formula-editor-${descriptor.paramKey}`}
+      className="mt-2 rounded-md border border-border bg-surface-strong px-2 py-2"
+    >
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <label htmlFor={inputId} className="text-xs font-medium text-foreground">
+          {descriptor.label}
+        </label>
+        <span className="rounded-sm bg-surface-muted px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted">
+          Array formula
+        </span>
+      </div>
+      <div className="flex items-start gap-2">
+        <input
+          id={inputId}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          aria-label={`Array formula ${descriptor.paramKey}`}
+          aria-invalid={Boolean(error)}
+          data-testid={`array-formula-input-${descriptor.paramKey}`}
+          className="min-w-0 flex-1 rounded border border-border bg-background px-2 py-1 font-mono text-xs text-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent/40"
+          placeholder="e.g. max(1, rounddown(Width / ChairSlotPitch))"
+        />
+        <button
+          type="button"
+          disabled={!canSave}
+          data-testid={`array-formula-save-${descriptor.paramKey}`}
+          onClick={() => {
+            if (!canSave) return;
+            onUpdate?.({
+              target: descriptor.target,
+              paramKey: descriptor.paramKey,
+              formula: draft.trim(),
+            });
+          }}
+          className="rounded border border-border bg-surface px-2 py-1 text-xs text-foreground hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Save
+        </button>
+      </div>
+      {descriptor.knownParams.length > 0 ? (
+        <div className="mt-1 truncate text-[10px] text-muted">
+          Parameters: {descriptor.knownParams.join(', ')}
+        </div>
+      ) : null}
+      {error ? (
+        <div
+          role="alert"
+          data-testid={`array-formula-error-${descriptor.paramKey}`}
+          className="mt-1 text-[10px] text-rose-300"
+        >
+          {error}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function useLoadedCatalogFamilyGroups(
   catalogClient: ExternalCatalogClient,
   enabled: boolean,
@@ -705,6 +921,7 @@ export function FamilyLibraryPanel({
   onPlaceType,
   onPlaceCatalogFamily,
   onLoadCatalogFamily,
+  onUpdateArrayFormula,
   catalogClient = DEFAULT_CATALOG_CLIENT,
 }: FamilyLibraryPanelProps): JSX.Element | null {
   const [needle, setNeedle] = useState('');
@@ -756,6 +973,9 @@ export function FamilyLibraryPanel({
       >
         <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
           <span className="text-sm font-medium text-foreground">Family Library</span>
+          <span className="ml-auto mr-2 rounded-sm border border-border bg-surface-muted px-1.5 py-0.5 text-[10px] uppercase text-muted">
+            Project warehouse
+          </span>
           <button
             type="button"
             onClick={onClose}
@@ -852,11 +1072,14 @@ export function FamilyLibraryPanel({
                 data-testid={`family-group-${id}`}
                 className="mb-3"
               >
-                <div
-                  className="px-2 py-1 text-xs uppercase text-muted"
-                  style={{ letterSpacing: 'var(--text-eyebrow-tracking, 0.06em)' }}
-                >
-                  {label}
+                <div className="flex items-center justify-between gap-2 px-2 py-1">
+                  <span
+                    className="text-xs uppercase text-muted"
+                    style={{ letterSpacing: 'var(--text-eyebrow-tracking, 0.06em)' }}
+                  >
+                    {label}
+                  </span>
+                  <span className="text-[10px] text-muted">Warehouse shelf</span>
                 </div>
                 <ul className="flex flex-col">
                   {visibleEntries.map((entry) => {
@@ -883,6 +1106,13 @@ export function FamilyLibraryPanel({
                               </span>
                             ) : null}
                           </span>
+                          {entry.arrayFormulas?.map((descriptor) => (
+                            <ArrayFormulaEditor
+                              key={descriptor.paramKey}
+                              descriptor={descriptor}
+                              onUpdate={onUpdateArrayFormula}
+                            />
+                          ))}
                         </div>
                         <button
                           type="button"
@@ -902,7 +1132,7 @@ export function FamilyLibraryPanel({
                           }}
                           className="rounded border border-border bg-surface-strong px-2 py-0.5 text-xs hover:bg-accent-soft"
                         >
-                          Place
+                          Copy
                         </button>
                       </li>
                     );

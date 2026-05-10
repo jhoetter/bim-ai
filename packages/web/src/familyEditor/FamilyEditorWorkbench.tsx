@@ -68,6 +68,7 @@ type Param = {
   type: FamilyParamDef['type'];
   default: unknown;
   formula: string;
+  instanceOverridable: boolean;
 };
 
 type FamilyTypeRow = {
@@ -283,6 +284,7 @@ const FURNITURE_PARAMS: Param[] = [
     type: 'length_mm',
     default: 600,
     formula: '',
+    instanceOverridable: false,
   },
   {
     key: 'Depth',
@@ -290,6 +292,7 @@ const FURNITURE_PARAMS: Param[] = [
     type: 'length_mm',
     default: 600,
     formula: '',
+    instanceOverridable: false,
   },
   {
     key: 'Seat_Height',
@@ -297,6 +300,7 @@ const FURNITURE_PARAMS: Param[] = [
     type: 'length_mm',
     default: 450,
     formula: '',
+    instanceOverridable: true,
   },
   {
     key: 'Seat_Thickness',
@@ -304,6 +308,7 @@ const FURNITURE_PARAMS: Param[] = [
     type: 'length_mm',
     default: 80,
     formula: '',
+    instanceOverridable: false,
   },
   {
     key: 'Backrest_Depth',
@@ -311,6 +316,15 @@ const FURNITURE_PARAMS: Param[] = [
     type: 'length_mm',
     default: 180,
     formula: '',
+    instanceOverridable: true,
+  },
+  {
+    key: 'Backrest_Height',
+    label: 'Backrest Height',
+    type: 'length_mm',
+    default: 900,
+    formula: '',
+    instanceOverridable: false,
   },
   {
     key: 'Leg_Radius',
@@ -318,6 +332,7 @@ const FURNITURE_PARAMS: Param[] = [
     type: 'length_mm',
     default: 25,
     formula: '',
+    instanceOverridable: false,
   },
   {
     key: 'Leg_Offset',
@@ -325,6 +340,7 @@ const FURNITURE_PARAMS: Param[] = [
     type: 'length_mm',
     default: 90,
     formula: '',
+    instanceOverridable: true,
   },
   {
     key: 'Show_2D_Elements',
@@ -332,6 +348,7 @@ const FURNITURE_PARAMS: Param[] = [
     type: 'boolean',
     default: true,
     formula: '',
+    instanceOverridable: true,
   },
 ];
 
@@ -343,6 +360,7 @@ const FURNITURE_TYPE_ROWS: FamilyTypeRow[] = [
       Width: 600,
       Depth: 600,
       Backrest_Depth: 180,
+      Backrest_Height: 900,
       Leg_Offset: 90,
       Leg_Radius: 25,
     },
@@ -354,6 +372,7 @@ const FURNITURE_TYPE_ROWS: FamilyTypeRow[] = [
       Width: 750,
       Depth: 750,
       Backrest_Depth: 220,
+      Backrest_Height: 950,
       Leg_Offset: 110,
       Leg_Radius: 30,
     },
@@ -410,21 +429,68 @@ const FURNITURE_SWEEPS: SweepGeometryNode[] = [
     ],
     profilePlane: 'work_plane',
     pathLengthParam: 'Seat_Thickness',
+    pathStartOffsetParam: 'Seat_Height',
+    parametricProfile: {
+      kind: 'rectangle',
+      minX: { kind: 'formula', expression: '-Width / 2', fallbackMm: -300 },
+      maxX: { kind: 'formula', expression: 'Width / 2', fallbackMm: 300 },
+      minY: { kind: 'formula', expression: '-Depth / 2', fallbackMm: -300 },
+      maxY: { kind: 'formula', expression: 'Depth / 2', fallbackMm: 300 },
+    },
+    visibilityBinding: { paramName: 'Show_2D_Elements', whenTrue: false },
+    visibilityByDetailLevel: { coarse: false },
+  },
+  {
+    kind: 'sweep',
+    pathLines: [{ startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 0, yMm: 450 } }],
+    profile: [
+      { startMm: { xMm: -300, yMm: 120 }, endMm: { xMm: 300, yMm: 120 } },
+      { startMm: { xMm: 300, yMm: 120 }, endMm: { xMm: 300, yMm: 300 } },
+      { startMm: { xMm: 300, yMm: 300 }, endMm: { xMm: -300, yMm: 300 } },
+      { startMm: { xMm: -300, yMm: 300 }, endMm: { xMm: -300, yMm: 120 } },
+    ],
+    profilePlane: 'work_plane',
+    pathStartOffsetParam: 'Seat_Height',
+    pathEndOffsetParam: 'Backrest_Height',
+    parametricProfile: {
+      kind: 'rectangle',
+      minX: { kind: 'formula', expression: '-Width / 2', fallbackMm: -300 },
+      maxX: { kind: 'formula', expression: 'Width / 2', fallbackMm: 300 },
+      minY: { kind: 'formula', expression: 'Depth / 2 - Backrest_Depth', fallbackMm: 120 },
+      maxY: { kind: 'formula', expression: 'Depth / 2', fallbackMm: 300 },
+    },
     visibilityBinding: { paramName: 'Show_2D_Elements', whenTrue: false },
     visibilityByDetailLevel: { coarse: false },
   },
   ...[
-    [-210, -210],
-    [210, -210],
-    [210, 210],
-    [-210, 210],
+    [-1, -1],
+    [1, -1],
+    [1, 1],
+    [-1, 1],
   ].map(
-    ([xMm, yMm]): SweepGeometryNode => ({
+    ([xSign, ySign]): SweepGeometryNode => ({
       kind: 'sweep',
       pathLines: [{ startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 0, yMm: 450 } }],
-      profile: circularProfileLines(xMm, yMm, 25),
+      profile: circularProfileLines(xSign * 210, ySign * 210, 25),
       profilePlane: 'work_plane',
-      pathLengthParam: 'Seat_Height',
+      pathEndOffsetParam: 'Seat_Height',
+      parametricProfile: {
+        kind: 'circle',
+        centerX: {
+          kind: 'formula',
+          expression: xSign < 0 ? '-(Width / 2 - Leg_Offset)' : 'Width / 2 - Leg_Offset',
+          fallbackMm: xSign * 210,
+        },
+        centerY: {
+          kind: 'formula',
+          expression: ySign < 0 ? '-(Depth / 2 - Leg_Offset)' : 'Depth / 2 - Leg_Offset',
+          fallbackMm: ySign * 210,
+        },
+        radiusParam: 'Leg_Radius',
+        fallbackRadiusMm: 25,
+        segments: 24,
+        editablePrimitive: 'circle',
+      },
       visibilityBinding: { paramName: 'Show_2D_Elements', whenTrue: false },
       visibilityByDetailLevel: { coarse: false },
     }),
@@ -753,6 +819,22 @@ export function FamilyEditorWorkbench({
         paramKey: 'Backrest_Depth',
         canvasOffsetMm: 60,
       },
+      {
+        id: 'dim-leg-offset-x',
+        refAId: 'furniture-center-left-right',
+        refBId: 'furniture-leg-offset-x',
+        lockedValueMm: 90,
+        paramKey: 'Leg_Offset',
+        canvasOffsetMm: 88,
+      },
+      {
+        id: 'dim-leg-offset-y',
+        refAId: 'furniture-center-front-back',
+        refBId: 'furniture-leg-offset-y',
+        lockedValueMm: 90,
+        paramKey: 'Leg_Offset',
+        canvasOffsetMm: 116,
+      },
     ]);
     setDimensionDraft({
       refAId: '',
@@ -828,7 +910,12 @@ export function FamilyEditorWorkbench({
         }),
       ),
     );
-    setParams(document.params.map((param) => ({ ...param })));
+    setParams(
+      document.params.map((param) => ({
+        ...param,
+        instanceOverridable: param.instanceOverridable ?? false,
+      })),
+    );
     setFamilyTypes(document.familyTypes.map((row) => ({ ...row, values: { ...row.values } })));
     setActiveFamilyTypeId(document.activeFamilyTypeId);
     setFamilyTypesDialogOpen(false);
@@ -871,17 +958,20 @@ export function FamilyEditorWorkbench({
     if (onLoadIntoProject) {
       await onLoadIntoProject(plan);
     } else {
-      setLocalProjectFamilyTypes((prev) => ({
-        ...prev,
-        [plan.typeId]: {
-          kind: 'family_type',
-          id: plan.typeId,
-          name: plan.command.name,
-          familyId: plan.command.familyId,
-          discipline: plan.command.discipline,
-          parameters: plan.command.parameters,
-        },
-      }));
+      setLocalProjectFamilyTypes((prev) => {
+        const next = { ...prev };
+        for (const command of plan.commands) {
+          next[command.id] = {
+            kind: 'family_type',
+            id: command.id,
+            name: command.name,
+            familyId: command.familyId,
+            discipline: command.discipline,
+            parameters: command.parameters,
+          };
+        }
+        return next;
+      });
     }
     setPersistenceMessage(
       plan.reloaded
@@ -1007,6 +1097,7 @@ export function FamilyEditorWorkbench({
             type: 'length_mm' as const,
             default: lockedValueMm,
             formula: '',
+            instanceOverridable: false,
           },
         ]
       : params;
@@ -1038,6 +1129,7 @@ export function FamilyEditorWorkbench({
         type: 'length_mm',
         default: 0,
         formula: '',
+        instanceOverridable: false,
       },
     ]);
   }
@@ -2453,6 +2545,7 @@ export function FamilyEditorWorkbench({
               <th>Label</th>
               <th>Type</th>
               <th>Default</th>
+              <th>Scope</th>
               <th>{t('familyEditor.formulaLabel')}</th>
             </tr>
           </thead>
@@ -2517,6 +2610,18 @@ export function FamilyEditorWorkbench({
                         onChange={(e) => updateParam(i, { default: e.target.value })}
                       />
                     )}
+                  </td>
+                  <td>
+                    <select
+                      aria-label={`parameter-scope-${param.key}`}
+                      value={param.instanceOverridable ? 'instance' : 'type'}
+                      onChange={(e) =>
+                        updateParam(i, { instanceOverridable: e.target.value === 'instance' })
+                      }
+                    >
+                      <option value="type">Type</option>
+                      <option value="instance">Instance</option>
+                    </select>
                   </td>
                   <td>
                     <input
@@ -2964,6 +3069,7 @@ function FamilyTypesDialog({
                 <tr>
                   <th className="text-left">Parameter</th>
                   <th className="text-left">Type</th>
+                  <th className="text-left">Scope</th>
                   <th className="text-left">Value</th>
                 </tr>
               </thead>
@@ -2974,6 +3080,7 @@ function FamilyTypesDialog({
                     <tr key={param.key}>
                       <td>{param.label || param.key}</td>
                       <td>{param.type}</td>
+                      <td>{param.instanceOverridable ? 'Instance' : 'Type'}</td>
                       <td>
                         {param.type === 'boolean' ? (
                           <select

@@ -11,9 +11,16 @@ import { execSync } from 'node:child_process';
 import { buildOneFamilyHomeCommands } from './lib/one-family-home-commands.mjs';
 import {
   DEFAULT_CAPABILITY_MATRIX_PATH,
+  INITIATION_MODES,
   readJsonFile,
   writeInitiationPacket,
 } from './lib/sketch-initiation.mjs';
+import {
+  buildVisualGateReport,
+  comparePngFiles,
+  readTargetMap,
+} from './lib/png-visual-gate.mjs';
+import { compileSeedDsl } from './lib/seed-dsl.mjs';
 
 const base = (
   process.env.BIM_AI_BASE_URL ?? process.env.BIM_AI_API_ROOT ?? 'http://127.0.0.1:8500'
@@ -494,8 +501,101 @@ async function cmdPlanHouse(briefPath, outPath, modelHint) {
   console.log(JSON.stringify({ ok: true, out: outPath, commandCount: bundle.commands.length }, null, 2));
 }
 
-async function cmdInitiationCheck(irPath, capabilityMatrixPath, outDir, modelId, live) {
-  const ir = await readJsonFile(irPath);
+async function cmdSeedDslCompile(recipePath, outPath, modelHint) {
+  const recipe = await readJsonFile(recipePath);
+  const bundle = compileSeedDsl(recipe, { modelHint });
+  await fs.mkdir(path.dirname(outPath), { recursive: true });
+  await fs.writeFile(outPath, `${JSON.stringify(bundle, null, 2)}\n`, 'utf8');
+  console.log(JSON.stringify({
+    ok: true,
+    out: outPath,
+    schemaVersion: bundle.schemaVersion,
+    commandCount: bundle.commands.length,
+  }, null, 2));
+}
+
+async function cmdInitiationGolden(manifestPath, outDir) {
+  const manifest = await readJsonFile(manifestPath);
+  if (manifest.schemaVersion !== 'sketch-to-bim-golden-suite.v0' || !Array.isArray(manifest.cases)) {
+    throw new Error('Golden manifest must be sketch-to-bim-golden-suite.v0 with cases[].');
+  }
+  await fs.mkdir(outDir, { recursive: true });
+  const rows = [];
+  for (const [index, goldenCase] of manifest.cases.entries()) {
+    const id = safeArtifactName(goldenCase.id ?? `case-${index + 1}`);
+    const caseDir = path.join(outDir, id);
+    const irPath = goldenCase.ir;
+    const capabilityPath = goldenCase.capabilities ?? DEFAULT_CAPABILITY_MATRIX_PATH;
+    const ir = applyQualityMode(await readJsonFile(irPath), goldenCase.mode);
+    const matrix = await readJsonFile(capabilityPath);
+    let compiledBundle = null;
+    if (goldenCase.seedDslRecipe) {
+      compiledBundle = compileSeedDsl(await readJsonFile(goldenCase.seedDslRecipe), {
+        modelHint: goldenCase.modelHint,
+      });
+      await writeJsonArtifact(path.join(caseDir, 'compiled-seed-bundle.json'), compiledBundle);
+    }
+    const result = await writeInitiationPacket({
+      ir,
+      matrix,
+      outDir: caseDir,
+      irPath,
+      capabilityMatrixPath: capabilityPath,
+      modelId: goldenCase.modelId ?? null,
+      evidenceRun: {
+        acceptanceScope: 'preflight',
+        goldenCaseId: id,
+        compiledBundleCommandCount: compiledBundle?.commands?.length ?? null,
+      },
+    });
+    const expected = goldenCase.expected ?? {};
+    const maxErrors = Number.isFinite(expected.maxCoverageErrors) ? expected.maxCoverageErrors : 0;
+    const maxBlocked = Number.isFinite(expected.maxBlockedFeatures) ? expected.maxBlockedFeatures : 0;
+    const pass = (
+      result.summary.errorCount <= maxErrors &&
+      result.summary.blockedCount <= maxBlocked
+    );
+    rows.push({
+      id,
+      irPath,
+      capabilityPath,
+      outDir: caseDir,
+      pass,
+      coverageOk: result.ok,
+      acceptanceOk: result.acceptance?.ok ?? null,
+      commandCount: compiledBundle?.commands?.length ?? null,
+      summary: result.summary,
+    });
+  }
+  const summary = {
+    schemaVersion: 'sketch-to-bim-golden-suite-result.v0',
+    generatedAt: new Date().toISOString(),
+    manifestPath,
+    caseCount: rows.length,
+    passCount: rows.filter((row) => row.pass).length,
+    failCount: rows.filter((row) => !row.pass).length,
+    cases: rows,
+  };
+  await writeJsonArtifact(path.join(outDir, 'golden-summary.json'), summary);
+  console.log(JSON.stringify(summary, null, 2));
+  if (summary.failCount > 0) process.exit(2);
+}
+
+function applyQualityMode(ir, qualityMode) {
+  if (!qualityMode) return ir;
+  if (!INITIATION_MODES[qualityMode]) {
+    console.error(`Unknown initiation mode '${qualityMode}'. Use: ${Object.keys(INITIATION_MODES).join(', ')}`);
+    process.exit(1);
+  }
+  return { ...ir, qualityTarget: qualityMode };
+}
+
+async function cmdInitiationModes() {
+  console.log(JSON.stringify({ schemaVersion: 'sketch-to-bim-initiation-modes.v0', modes: INITIATION_MODES }, null, 2));
+}
+
+async function cmdInitiationCheck(irPath, capabilityMatrixPath, outDir, modelId, live, qualityMode, failOnAcceptance) {
+  const ir = applyQualityMode(await readJsonFile(irPath), qualityMode);
   const matrix = await readJsonFile(capabilityMatrixPath);
   let liveAdvisor = null;
   if (live) {
@@ -519,6 +619,7 @@ async function cmdInitiationCheck(irPath, capabilityMatrixPath, outDir, modelId,
   });
   console.log(JSON.stringify(result, null, 2));
   if (!result.ok) process.exit(2);
+  if (failOnAcceptance && result.acceptance?.ok === false) process.exit(5);
 }
 
 function safeArtifactName(value) {
@@ -630,8 +731,120 @@ async function writeLiveEvidenceArtifacts(modelId, outDir) {
 }
 
 function screenshotRequiredViews(ir) {
-  const supportedKinds = new Set(['3d', 'elevation', 'diagnostic']);
+  const supportedKinds = new Set(['3d', 'elevation', 'diagnostic', 'plan', 'floor_plan', 'section']);
   return (ir.requiredViews ?? []).filter((view) => supportedKinds.has(view?.kind));
+}
+
+function collectMmPoints(value, points) {
+  if (!value || typeof value !== 'object') return;
+  if (Array.isArray(value)) {
+    for (const item of value) collectMmPoints(item, points);
+    return;
+  }
+  if (Number.isFinite(value.xMm) && Number.isFinite(value.yMm)) {
+    points.push({
+      xMm: value.xMm,
+      yMm: value.yMm,
+      zMm: Number.isFinite(value.zMm) ? value.zMm : 0,
+    });
+  }
+  for (const child of Object.values(value)) collectMmPoints(child, points);
+}
+
+function modelBoundsFromSnapshot(snap) {
+  const elements = snap?.elements && typeof snap.elements === 'object' ? snap.elements : {};
+  const points = [];
+  for (const element of Object.values(elements)) {
+    if (!element || typeof element !== 'object' || element.kind === 'viewpoint') continue;
+    collectMmPoints(element, points);
+    for (const key of ['elevationMm', 'elevMm', 'baseElevationMm', 'topElevationMm']) {
+      if (Number.isFinite(element[key])) points.push({ xMm: 0, yMm: 0, zMm: element[key] });
+    }
+  }
+  if (!points.length) {
+    return {
+      minX: -5000,
+      minY: -4000,
+      minZ: 0,
+      maxX: 5000,
+      maxY: 4000,
+      maxZ: 6500,
+      center: { xMm: 0, yMm: 0, zMm: 3250 },
+      span: 10000,
+    };
+  }
+  const minX = Math.min(...points.map((point) => point.xMm));
+  const minY = Math.min(...points.map((point) => point.yMm));
+  const minZ = Math.min(...points.map((point) => point.zMm));
+  const maxX = Math.max(...points.map((point) => point.xMm));
+  const maxY = Math.max(...points.map((point) => point.yMm));
+  const maxZ = Math.max(...points.map((point) => point.zMm));
+  const span = Math.max(maxX - minX, maxY - minY, maxZ - minZ, 3000);
+  return {
+    minX,
+    minY,
+    minZ,
+    maxX,
+    maxY,
+    maxZ,
+    center: {
+      xMm: (minX + maxX) / 2,
+      yMm: (minY + maxY) / 2,
+      zMm: (minZ + maxZ) / 2,
+    },
+    span,
+  };
+}
+
+function syntheticCameraForView(view, bounds) {
+  const label = `${view?.id ?? ''} ${view?.kind ?? ''} ${view?.purpose ?? ''}`.toLowerCase();
+  const dist = bounds.span * 1.8;
+  const target = { ...bounds.center };
+  let position;
+  if (label.includes('plan') || label.includes('top') || label.includes('roof')) {
+    position = {
+      xMm: target.xMm + dist * 0.12,
+      yMm: target.yMm - dist * 0.12,
+      zMm: bounds.maxZ + dist * 1.15,
+    };
+  } else if (label.includes('rear') || label.includes('back') || label.includes('north')) {
+    position = { xMm: target.xMm, yMm: target.yMm + dist, zMm: target.zMm + bounds.span * 0.25 };
+  } else if (label.includes('east') || label.includes('right') || label.includes('side')) {
+    position = { xMm: target.xMm + dist, yMm: target.yMm, zMm: target.zMm + bounds.span * 0.25 };
+  } else if (label.includes('west') || label.includes('left')) {
+    position = { xMm: target.xMm - dist, yMm: target.yMm, zMm: target.zMm + bounds.span * 0.25 };
+  } else if (label.includes('front') || label.includes('south') || label.includes('elevation')) {
+    position = { xMm: target.xMm, yMm: target.yMm - dist, zMm: target.zMm + bounds.span * 0.22 };
+  } else {
+    position = {
+      xMm: target.xMm - dist * 0.7,
+      yMm: target.yMm - dist,
+      zMm: target.zMm + bounds.span * 0.55,
+    };
+  }
+  return { position, target, up: { xMm: 0, yMm: 0, zMm: 1 } };
+}
+
+async function snapshotPathForView({ view, snap, baseSnapshotPath, screenshotDir, hasSavedViewpoint, bounds }) {
+  if (hasSavedViewpoint) return { path: baseSnapshotPath, syntheticViewpoint: false };
+  const elements = snap?.elements && typeof snap.elements === 'object' ? snap.elements : {};
+  const syntheticSnapshot = {
+    ...snap,
+    elements: {
+      ...elements,
+      [view.id]: {
+        kind: 'viewpoint',
+        id: view.id,
+        name: `SKB ${view.purpose ?? view.id}`,
+        mode: 'orbit_3d',
+        camera: syntheticCameraForView(view, bounds),
+        hiddenSemanticKinds3d: [],
+      },
+    },
+  };
+  const syntheticPath = path.join(screenshotDir, `.snapshot-${safeArtifactName(view.id)}.json`);
+  await fs.writeFile(syntheticPath, `${JSON.stringify(syntheticSnapshot, null, 2)}\n`, 'utf8');
+  return { path: syntheticPath, syntheticViewpoint: true };
 }
 
 async function renderInitiationScreenshots(ir, snap, snapshotPath, outDir) {
@@ -645,14 +858,23 @@ async function renderInitiationScreenshots(ir, snap, snapshotPath, outDir) {
       .map((element) => element.id)
       .filter(Boolean),
   );
+  const bounds = modelBoundsFromSnapshot(snap);
   const captures = [];
   for (const view of views) {
     const filePath = path.join(screenshotDir, `${safeArtifactName(view.id)}.png`);
     const hasSavedViewpoint = savedViewpoints.has(view.id);
+    const viewSnapshot = await snapshotPathForView({
+      view,
+      snap,
+      baseSnapshotPath: snapshotPath,
+      screenshotDir,
+      hasSavedViewpoint,
+      bounds,
+    });
     const env = {
       ...process.env,
-      SKB_SNAPSHOT_PATH: path.resolve(snapshotPath),
-      SKB_VIEWPOINT_ID: hasSavedViewpoint ? view.id : '',
+      SKB_SNAPSHOT_PATH: path.resolve(viewSnapshot.path),
+      SKB_VIEWPOINT_ID: view.id,
       SKB_SCREENSHOT_OUT: path.resolve(filePath),
     };
     execSync(
@@ -664,8 +886,9 @@ async function renderInitiationScreenshots(ir, snap, snapshotPath, outDir) {
       viewKind: view.kind,
       purpose: view.purpose ?? '',
       screenshotPath: filePath,
-      usedViewpointId: hasSavedViewpoint ? view.id : null,
-      fallbackFit: !hasSavedViewpoint,
+      usedViewpointId: view.id,
+      syntheticViewpoint: viewSnapshot.syntheticViewpoint,
+      fallbackFit: false,
     });
   }
   return {
@@ -687,12 +910,18 @@ async function cmdInitiationRun({
   baseRevision,
   applyMode,
   failOnWarning,
+  targetImagePath,
+  targetMapPath,
+  visualThreshold,
+  failOnVisual,
+  qualityMode,
+  failOnAcceptance,
 }) {
   if (!modelId) {
     console.error('initiation-run requires --model <id> or BIM_AI_MODEL_ID.');
     process.exit(1);
   }
-  const ir = await readJsonFile(irPath);
+  const ir = applyQualityMode(await readJsonFile(irPath), qualityMode);
   const matrix = await readJsonFile(capabilityMatrixPath);
   await fs.mkdir(outDir, { recursive: true });
 
@@ -723,6 +952,7 @@ async function cmdInitiationRun({
 
   const live = await writeLiveEvidenceArtifacts(modelId, outDir);
   let screenshotManifest = null;
+  let visualGateReport = null;
   if (screenshots) {
     screenshotManifest = await renderInitiationScreenshots(
       ir,
@@ -730,10 +960,19 @@ async function cmdInitiationRun({
       live.liveArtifacts.snapshot,
       outDir,
     );
+    const targetMap = targetMapPath ? await readTargetMap(targetMapPath) : null;
+    visualGateReport = await buildVisualGateReport({
+      screenshotManifest,
+      targetImagePath,
+      targetMap,
+      threshold: visualThreshold,
+    });
   }
   const evidenceRun = {
     liveArtifacts: { ...runArtifacts, ...live.liveArtifacts },
+    modelStats: live.modelStats,
     screenshotManifest,
+    visualGateReport,
   };
   const result = await writeInitiationPacket({
     ir,
@@ -744,16 +983,35 @@ async function cmdInitiationRun({
     modelId,
     liveAdvisor: live.liveAdvisor,
     screenshotManifest,
+    visualGateReport,
     evidenceRun,
   });
   const finalResult = {
     ...result,
     liveArtifacts: evidenceRun.liveArtifacts,
     screenshotManifest,
+    visualGateReport,
   };
   console.log(JSON.stringify(finalResult, null, 2));
   if (!result.ok) process.exit(2);
   if (failOnWarning && (live.liveAdvisor.warning?.total ?? 0) > 0) process.exit(3);
+  if (failOnVisual && (visualGateReport?.summary?.failCount ?? 0) > 0) process.exit(4);
+  if (failOnAcceptance && result.acceptance?.ok === false) process.exit(5);
+}
+
+async function cmdInitiationCompare(actualPath, targetPath, outPath, threshold) {
+  if (!actualPath || !targetPath) {
+    console.error('initiation-compare requires --actual <png> --target <png>.');
+    usage();
+  }
+  const report = await comparePngFiles(actualPath, targetPath, { threshold });
+  const text = `${JSON.stringify(report, null, 2)}\n`;
+  if (outPath) {
+    await fs.mkdir(path.dirname(outPath), { recursive: true });
+    await fs.writeFile(outPath, text, 'utf8');
+  }
+  process.stdout.write(text);
+  if (!report.thresholdPassed) process.exit(1);
 }
 
 async function cmdExport(kind, modelId, outPath, viewId) {
@@ -1249,15 +1507,27 @@ Commands:
   dry-run [file|-]                     POST single command dry-run
   plan-house --brief <path> --out <path> [--model-hint id]
                                        validate brief JSON → write starter command bundle (one-family preset)
+  seed-dsl compile --recipe <path> --out <path> [--model-hint id]
+                                       SKB: compile architectural seed DSL intent into a deterministic cmd-v3.0 bundle.
   initiation-check --ir <path> --out <dir> [--capabilities <path>] [--model <id>] [--live]
+                   [--mode massing_only|concept_bim|project_initiation_bim|documentation_ready]
+                   [--fail-on-acceptance]
                                        SKB: validate Sketch Understanding IR against capability matrix,
                                        create capability coverage + visual checklist evidence packet.
   initiation-run --ir <path> --out <dir> --model <id> [--capabilities <path>]
                  [--seed-command <cmd>] [--apply-bundle <path> --base <rev> --commit|--dry-run]
-                 [--no-screenshots] [--fail-on-warning]
+                 [--no-screenshots] [--target-image <png>] [--target-map <json>]
+                 [--visual-threshold <float>] [--fail-on-warning] [--fail-on-visual]
+                 [--mode massing_only|concept_bim|project_initiation_bim|documentation_ready]
+                 [--fail-on-acceptance]
                                        SKB: live project-initiation evidence runner. Captures snapshot,
                                        validate, evidence-package, advisor warning/info, screenshot
-                                       manifest, and populated status/checklist artifacts.
+                                       manifest, visual-gate scoring, and populated status/checklist artifacts.
+  initiation-modes                     SKB: print supported sketch-to-BIM quality modes and defaults.
+  initiation-compare --actual <png> --target <png> [--threshold <float>] [--out <path>]
+                                       SKB: compare a checkpoint screenshot with a target/reference PNG.
+  initiation-golden --manifest <path> --out <dir>
+                                       SKB: run preflight/evidence packet checks for golden sketch-to-BIM seed cases.
   diff --from <rev> --to <rev> [--out <path>] [--text] [--summary-only]
                                        element-level diff between two revisions of the model
   agent-loop --goal <path|-> --max-iter <n> --evidence-out <dir> [--backend <name>]
@@ -1436,11 +1706,33 @@ async function main() {
       await cmdPlanHouse(briefArg, outArg, modelHint);
       return;
     }
+    if (cmd === 'seed-dsl') {
+      const subcmd = argv[1];
+      let recipeArg;
+      let outArg;
+      let modelHint;
+      const rest = argv.slice(2);
+      for (let i = 0; i < rest.length; i++) {
+        const a = rest[i];
+        if (a === '--recipe' && rest[i + 1]) recipeArg = rest[++i];
+        else if (a === '--out' && rest[i + 1]) outArg = rest[++i];
+        else if (a === '--model-hint' && rest[i + 1]) modelHint = rest[++i];
+      }
+      if (subcmd !== 'compile' || !recipeArg || !outArg) usage();
+      await cmdSeedDslCompile(recipeArg, outArg, modelHint);
+      return;
+    }
+    if (cmd === 'initiation-modes' || cmd === 'initiate-modes') {
+      await cmdInitiationModes();
+      return;
+    }
     if (cmd === 'initiation-check' || cmd === 'initiate-check') {
       let irArg;
       let outArg;
       let capabilityArg = DEFAULT_CAPABILITY_MATRIX_PATH;
       let live = false;
+      let qualityMode;
+      let failOnAcceptance = false;
       const rest = argv.slice(1);
       for (let i = 0; i < rest.length; i++) {
         const a = rest[i];
@@ -1449,13 +1741,15 @@ async function main() {
         else if (a === '--capabilities' && rest[i + 1]) capabilityArg = rest[++i];
         else if (a === '--capability-matrix' && rest[i + 1]) capabilityArg = rest[++i];
         else if (a === '--model' && rest[i + 1]) modelId = rest[++i];
+        else if (a === '--mode' && rest[i + 1]) qualityMode = rest[++i];
+        else if (a === '--fail-on-acceptance') failOnAcceptance = true;
         else if (a === '--live') live = true;
       }
       if (!irArg || !outArg) {
         console.error('initiation-check requires --ir <path> --out <dir>.');
         usage();
       }
-      await cmdInitiationCheck(irArg, capabilityArg, outArg, modelId, live);
+      await cmdInitiationCheck(irArg, capabilityArg, outArg, modelId, live, qualityMode, failOnAcceptance);
       return;
     }
     if (cmd === 'initiation-run' || cmd === 'initiate-run') {
@@ -1468,6 +1762,12 @@ async function main() {
       let baseRevision;
       let applyMode = 'dry_run';
       let failOnWarning = false;
+      let failOnVisual = false;
+      let targetImagePath;
+      let targetMapPath;
+      let visualThreshold = 0.62;
+      let qualityMode;
+      let failOnAcceptance = false;
       const rest = argv.slice(1);
       for (let i = 0; i < rest.length; i++) {
         const a = rest[i];
@@ -1484,6 +1784,12 @@ async function main() {
         else if (a === '--no-screenshots') screenshots = false;
         else if (a === '--screenshots') screenshots = true;
         else if (a === '--fail-on-warning') failOnWarning = true;
+        else if (a === '--fail-on-visual') failOnVisual = true;
+        else if (a === '--target-image' && rest[i + 1]) targetImagePath = rest[++i];
+        else if (a === '--target-map' && rest[i + 1]) targetMapPath = rest[++i];
+        else if (a === '--visual-threshold' && rest[i + 1]) visualThreshold = Number(rest[++i]);
+        else if (a === '--mode' && rest[i + 1]) qualityMode = rest[++i];
+        else if (a === '--fail-on-acceptance') failOnAcceptance = true;
       }
       if (!irArg || !outArg) {
         console.error('initiation-run requires --ir <path> --out <dir>.');
@@ -1501,7 +1807,42 @@ async function main() {
         baseRevision,
         applyMode,
         failOnWarning,
+        targetImagePath,
+        targetMapPath,
+        visualThreshold,
+        failOnVisual,
+        qualityMode,
+        failOnAcceptance,
       });
+      return;
+    }
+    if (cmd === 'initiation-compare' || cmd === 'initiate-compare') {
+      let actualPath;
+      let targetPath;
+      let outPath;
+      let threshold = 0.62;
+      const rest = argv.slice(1);
+      for (let i = 0; i < rest.length; i++) {
+        const a = rest[i];
+        if (a === '--actual' && rest[i + 1]) actualPath = rest[++i];
+        else if (a === '--target' && rest[i + 1]) targetPath = rest[++i];
+        else if (a === '--out' && rest[i + 1]) outPath = rest[++i];
+        else if (a === '--threshold' && rest[i + 1]) threshold = Number(rest[++i]);
+      }
+      await cmdInitiationCompare(actualPath, targetPath, outPath, threshold);
+      return;
+    }
+    if (cmd === 'initiation-golden' || cmd === 'initiate-golden') {
+      let manifestArg;
+      let outArg;
+      const rest = argv.slice(1);
+      for (let i = 0; i < rest.length; i++) {
+        const a = rest[i];
+        if (a === '--manifest' && rest[i + 1]) manifestArg = rest[++i];
+        else if (a === '--out' && rest[i + 1]) outArg = rest[++i];
+      }
+      if (!manifestArg || !outArg) usage();
+      await cmdInitiationGolden(manifestArg, outArg);
       return;
     }
 
