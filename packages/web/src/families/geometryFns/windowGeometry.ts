@@ -82,6 +82,7 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
     metalness: 0.0,
     opacity: glazingAlpha,
     transparent: true,
+    depthWrite: false,
     side: THREE.DoubleSide,
     envMapIntensity: 1.2,
   });
