@@ -3,7 +3,7 @@
   "checkpoint_id": "15cd1fedccc4",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "spec/code-quality-tracker.md"
   ],
@@ -19,13 +19,19 @@
       "transcript": "/15/cd1fedccc4/1/full.jsonl",
       "content_hash": "/15/cd1fedccc4/1/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/15/cd1fedccc4/2/metadata.json",
+      "transcript": "/15/cd1fedccc4/2/full.jsonl",
+      "content_hash": "/15/cd1fedccc4/2/content_hash.txt",
+      "prompt": "/15/cd1fedccc4/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 32229,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 2708352,
-    "output_tokens": 2820,
-    "api_call_count": 13
+    "input_tokens": 32544,
+    "cache_creation_tokens": 347272,
+    "cache_read_tokens": 19693475,
+    "output_tokens": 78366,
+    "api_call_count": 191
   }
 }
