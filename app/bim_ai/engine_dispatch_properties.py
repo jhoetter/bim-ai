@@ -1,0 +1,650 @@
+# ruff: noqa: I001
+
+from bim_ai.engine import (
+    AssignWallDatumConstraintsCmd,
+    CreateWallTypeCmd,
+    DoorElem,
+    FloorTypeElem,
+    GridLineElem,
+    IssueElem,
+    PlanDetailLevelPlan,
+    PlanViewElem,
+    ProjectSettingsElem,
+    RoofElem,
+    RoofGeometryMode,
+    RoofTypeElem,
+    RoomColorSchemeElem,
+    RoomElem,
+    SaveViewpointCmd,
+    ScheduleElem,
+    SheetElem,
+    UpdateElementPropertyCmd,
+    UpsertFloorTypeCmd,
+    UpsertProjectSettingsCmd,
+    UpsertRoofTypeCmd,
+    UpsertRoomColorSchemeCmd,
+    UpsertWallTypeCmd,
+    Vec2Mm,
+    ViewTemplateElem,
+    ViewpointElem,
+    WallElem,
+    WallTypeElem,
+    WindowElem,
+    _basis_line,
+    _canonical_room_scheme_rows,
+    _parse_plan_view_bool_override,
+    _parse_view_template_bool,
+    _propagate_floor_dims_for_type,
+    _propagate_wall_thickness_for_type,
+    _recompute_constrained_wall_heights,
+    _validate_plan_tag_style_ref,
+    _wall_thickness_from_type,
+    assert_valid_gable_pitched_rectangle_footprint_mm,
+    cast,
+    json,
+    new_id,
+    parse_plan_category_graphics_property_json,
+)
+
+
+def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
+    els = doc.elements
+    match cmd:
+        case UpdateElementPropertyCmd():
+            el = els.get(cmd.element_id)
+            if el is None:
+                raise ValueError("updateElementProperty.elementId unknown")
+            if isinstance(el, IssueElem):
+                if cmd.key != "title":
+                    raise ValueError("Issues only support updateElementProperty.key=title (v2)")
+                els[cmd.element_id] = el.model_copy(update={"title": cmd.value})
+            elif cmd.key == "name" and hasattr(el, "name"):
+                els[cmd.element_id] = el.model_copy(update={"name": cmd.value})
+            elif cmd.key == "programmeCode" and isinstance(el, RoomElem):
+                els[cmd.element_id] = el.model_copy(update={"programme_code": cmd.value})
+            elif cmd.key == "department" and isinstance(el, RoomElem):
+                els[cmd.element_id] = el.model_copy(update={"department": cmd.value})
+            elif cmd.key == "programmeGroup" and isinstance(el, RoomElem):
+                els[cmd.element_id] = el.model_copy(update={"programme_group": cmd.value})
+            elif cmd.key == "functionLabel" and isinstance(el, RoomElem):
+                els[cmd.element_id] = el.model_copy(update={"function_label": cmd.value})
+            elif cmd.key == "finishSet" and isinstance(el, RoomElem):
+                els[cmd.element_id] = el.model_copy(update={"finish_set": cmd.value})
+            elif cmd.key == "targetAreaM2" and isinstance(el, RoomElem):
+                raw_t = cmd.value.strip()
+                if not raw_t:
+                    els[cmd.element_id] = el.model_copy(update={"target_area_m2": None})
+                else:
+                    try:
+                        tv = float(raw_t)
+                    except ValueError as exc:
+                        raise ValueError("targetAreaM2 must be a number or empty to clear") from exc
+                    if tv <= 0:
+                        raise ValueError("targetAreaM2 must be positive when set")
+                    els[cmd.element_id] = el.model_copy(update={"target_area_m2": tv})
+            elif cmd.key == "label" and isinstance(el, GridLineElem):
+                els[cmd.element_id] = el.model_copy(update={"label": cmd.value})
+            elif isinstance(el, PlanViewElem):
+                raw = cmd.value.strip()
+                if cmd.key == "planPresentation":
+                    pres = raw if raw in {"default", "opening_focus", "room_scheme"} else "default"
+                    els[cmd.element_id] = el.model_copy(update={"plan_presentation": pres})
+                elif cmd.key == "categoriesHidden":
+                    hx: list[str] = []
+                    if raw:
+                        try:
+                            parsed = json.loads(raw)
+                            if isinstance(parsed, list):
+                                hx = [str(x) for x in parsed if isinstance(x, str)]
+                        except json.JSONDecodeError as exc:
+                            raise ValueError(
+                                "categoriesHidden must be a JSON array of strings"
+                            ) from exc
+                    els[cmd.element_id] = el.model_copy(update={"categories_hidden": hx})
+                elif cmd.key == "underlayLevelId":
+                    lv = raw or None
+                    if lv is not None and lv not in els:
+                        raise ValueError("underlayLevelId references unknown Level")
+                    els[cmd.element_id] = el.model_copy(update={"underlay_level_id": lv})
+                elif cmd.key == "viewTemplateId":
+                    vt = raw or None
+                    if vt is not None:
+                        vt_el = els.get(vt)
+                        if not isinstance(vt_el, ViewTemplateElem):
+                            raise ValueError("viewTemplateId must reference view_template")
+                    els[cmd.element_id] = el.model_copy(update={"view_template_id": vt})
+                elif cmd.key == "cropMinMm":
+                    if not raw:
+                        els[cmd.element_id] = el.model_copy(update={"crop_min_mm": None})
+                    else:
+                        try:
+                            parsed = json.loads(raw)
+                        except json.JSONDecodeError as exc:
+                            raise ValueError(
+                                "cropMinMm must be JSON object {xMm,yMm} or empty"
+                            ) from exc
+                        if not isinstance(parsed, dict):
+                            raise ValueError("cropMinMm must be a JSON object")
+                        els[cmd.element_id] = el.model_copy(
+                            update={"crop_min_mm": Vec2Mm.model_validate(parsed)}
+                        )
+                elif cmd.key == "cropMaxMm":
+                    if not raw:
+                        els[cmd.element_id] = el.model_copy(update={"crop_max_mm": None})
+                    else:
+                        try:
+                            parsed = json.loads(raw)
+                        except json.JSONDecodeError as exc:
+                            raise ValueError(
+                                "cropMaxMm must be JSON object {xMm,yMm} or empty"
+                            ) from exc
+                        if not isinstance(parsed, dict):
+                            raise ValueError("cropMaxMm must be a JSON object")
+                        els[cmd.element_id] = el.model_copy(
+                            update={"crop_max_mm": Vec2Mm.model_validate(parsed)}
+                        )
+                elif cmd.key == "cropEnabled":
+                    if raw == "":
+                        els[cmd.element_id] = el.model_copy(update={"crop_enabled": None})
+                    else:
+                        v = _parse_plan_view_bool_override(cmd.value)
+                        els[cmd.element_id] = el.model_copy(update={"crop_enabled": v})
+                elif cmd.key == "cropRegionVisible":
+                    if raw == "":
+                        els[cmd.element_id] = el.model_copy(update={"crop_region_visible": None})
+                    else:
+                        v = _parse_plan_view_bool_override(cmd.value)
+                        els[cmd.element_id] = el.model_copy(update={"crop_region_visible": v})
+                elif cmd.key == "viewRangeBottomMm":
+                    vrb: float | None = None
+                    if raw != "":
+                        vrb = float(raw)
+                    els[cmd.element_id] = el.model_copy(update={"view_range_bottom_mm": vrb})
+                elif cmd.key == "viewRangeTopMm":
+                    vrt: float | None = None
+                    if raw != "":
+                        vrt = float(raw)
+                    els[cmd.element_id] = el.model_copy(update={"view_range_top_mm": vrt})
+                elif cmd.key == "cutPlaneOffsetMm":
+                    cpo: float | None = None
+                    if raw != "":
+                        cpo = float(raw)
+                    els[cmd.element_id] = el.model_copy(update={"cut_plane_offset_mm": cpo})
+                elif cmd.key == "discipline":
+                    els[cmd.element_id] = el.model_copy(
+                        update={"discipline": raw if raw else "architecture"}
+                    )
+                elif cmd.key == "phaseId":
+                    els[cmd.element_id] = el.model_copy(update={"phase_id": raw or None})
+                elif cmd.key == "planDetailLevel":
+                    if raw == "":
+                        els[cmd.element_id] = el.model_copy(update={"plan_detail_level": None})
+                    elif raw not in {"coarse", "medium", "fine"}:
+                        raise ValueError("planDetailLevel must be coarse|medium|fine or empty")
+                    else:
+                        els[cmd.element_id] = el.model_copy(update={"plan_detail_level": raw})
+                elif cmd.key == "planRoomFillOpacityScale":
+                    if raw == "":
+                        els[cmd.element_id] = el.model_copy(
+                            update={"plan_room_fill_opacity_scale": None}
+                        )
+                    else:
+                        v = max(0.0, min(1.0, float(raw)))
+                        els[cmd.element_id] = el.model_copy(
+                            update={"plan_room_fill_opacity_scale": v}
+                        )
+                elif cmd.key == "planShowOpeningTags":
+                    v = _parse_plan_view_bool_override(cmd.value)
+                    els[cmd.element_id] = el.model_copy(update={"plan_show_opening_tags": v})
+                elif cmd.key == "planShowRoomLabels":
+                    v = _parse_plan_view_bool_override(cmd.value)
+                    els[cmd.element_id] = el.model_copy(update={"plan_show_room_labels": v})
+                elif cmd.key == "planOpeningTagStyleId":
+                    if raw == "":
+                        els[cmd.element_id] = el.model_copy(
+                            update={"plan_opening_tag_style_id": None}
+                        )
+                    else:
+                        _validate_plan_tag_style_ref(els, raw, "opening")
+                        els[cmd.element_id] = el.model_copy(
+                            update={"plan_opening_tag_style_id": raw}
+                        )
+                elif cmd.key == "planRoomTagStyleId":
+                    if raw == "":
+                        els[cmd.element_id] = el.model_copy(update={"plan_room_tag_style_id": None})
+                    else:
+                        _validate_plan_tag_style_ref(els, raw, "room")
+                        els[cmd.element_id] = el.model_copy(update={"plan_room_tag_style_id": raw})
+                elif cmd.key == "planCategoryGraphics":
+                    pcg = parse_plan_category_graphics_property_json(cmd.value)
+                    els[cmd.element_id] = el.model_copy(update={"plan_category_graphics": pcg})
+                else:
+                    raise ValueError(
+                        "plan_view updates: key=planPresentation | categoriesHidden | underlayLevelId | "
+                        "viewTemplateId | cropMinMm | cropMaxMm | cropEnabled | cropRegionVisible | "
+                        "viewRangeBottomMm | viewRangeTopMm | "
+                        "cutPlaneOffsetMm | discipline | phaseId | planDetailLevel | planRoomFillOpacityScale | "
+                        "planShowOpeningTags | planShowRoomLabels | planOpeningTagStyleId | planRoomTagStyleId | "
+                        "planCategoryGraphics | name"
+                    )
+            elif isinstance(el, ViewTemplateElem):
+                raw_vt = cmd.value.strip()
+                if cmd.key == "planShowOpeningTags":
+                    els[cmd.element_id] = el.model_copy(
+                        update={"plan_show_opening_tags": _parse_view_template_bool(cmd.value)}
+                    )
+                elif cmd.key == "planShowRoomLabels":
+                    els[cmd.element_id] = el.model_copy(
+                        update={"plan_show_room_labels": _parse_view_template_bool(cmd.value)}
+                    )
+                elif cmd.key == "planDetailLevel":
+                    if raw_vt == "":
+                        els[cmd.element_id] = el.model_copy(update={"plan_detail_level": None})
+                    elif raw_vt not in {"coarse", "medium", "fine"}:
+                        raise ValueError("planDetailLevel must be coarse|medium|fine or empty")
+                    else:
+                        els[cmd.element_id] = el.model_copy(
+                            update={"plan_detail_level": cast(PlanDetailLevelPlan, raw_vt)}
+                        )
+                elif cmd.key == "planRoomFillOpacityScale":
+                    if raw_vt == "":
+                        els[cmd.element_id] = el.model_copy(
+                            update={"plan_room_fill_opacity_scale": 1.0}
+                        )
+                    else:
+                        vscale = max(0.0, min(1.0, float(raw_vt)))
+                        els[cmd.element_id] = el.model_copy(
+                            update={"plan_room_fill_opacity_scale": vscale}
+                        )
+                elif cmd.key == "defaultPlanOpeningTagStyleId":
+                    if raw_vt == "":
+                        els[cmd.element_id] = el.model_copy(
+                            update={"default_plan_opening_tag_style_id": None}
+                        )
+                    else:
+                        _validate_plan_tag_style_ref(els, raw_vt, "opening")
+                        els[cmd.element_id] = el.model_copy(
+                            update={"default_plan_opening_tag_style_id": raw_vt}
+                        )
+                elif cmd.key == "defaultPlanRoomTagStyleId":
+                    if raw_vt == "":
+                        els[cmd.element_id] = el.model_copy(
+                            update={"default_plan_room_tag_style_id": None}
+                        )
+                    else:
+                        _validate_plan_tag_style_ref(els, raw_vt, "room")
+                        els[cmd.element_id] = el.model_copy(
+                            update={"default_plan_room_tag_style_id": raw_vt}
+                        )
+                elif cmd.key == "planCategoryGraphics":
+                    pcg_vt = parse_plan_category_graphics_property_json(cmd.value)
+                    els[cmd.element_id] = el.model_copy(update={"plan_category_graphics": pcg_vt})
+                else:
+                    raise ValueError(
+                        "view_template updates: key=planDetailLevel | planRoomFillOpacityScale | "
+                        "planShowOpeningTags | planShowRoomLabels | defaultPlanOpeningTagStyleId | "
+                        "defaultPlanRoomTagStyleId | planCategoryGraphics | name"
+                    )
+            elif isinstance(el, ViewpointElem):
+                raw = cmd.value.strip()
+                if cmd.key == "viewerClipCapElevMm":
+                    cap: float | None = None
+                    if raw != "":
+                        cap = float(raw)
+                        if not (cap >= 0):
+                            raise ValueError("viewerClipCapElevMm must be non-negative")
+                    els[cmd.element_id] = el.model_copy(update={"viewer_clip_cap_elev_mm": cap})
+                elif cmd.key == "viewerClipFloorElevMm":
+                    floor_v: float | None = None
+                    if raw != "":
+                        floor_v = float(raw)
+                        if not (floor_v >= 0):
+                            raise ValueError("viewerClipFloorElevMm must be non-negative")
+                    els[cmd.element_id] = el.model_copy(
+                        update={"viewer_clip_floor_elev_mm": floor_v}
+                    )
+                elif cmd.key == "hiddenSemanticKinds3d":
+                    hid: list[str] = []
+                    if raw:
+                        try:
+                            parsed = json.loads(raw)
+                            if isinstance(parsed, list):
+                                hid = [str(x) for x in parsed if isinstance(x, str)]
+                        except json.JSONDecodeError as exc:
+                            raise ValueError(
+                                "hiddenSemanticKinds3d must be a JSON array of strings"
+                            ) from exc
+                    els[cmd.element_id] = el.model_copy(update={"hidden_semantic_kinds_3d": hid})
+                elif cmd.key == "cutawayStyle":
+                    raw_cut = cmd.value.strip()
+                    cut_v: str | None = None
+                    if raw_cut != "":
+                        if raw_cut not in ("none", "cap", "floor", "box"):
+                            raise ValueError(
+                                "cutawayStyle must be empty (inherit) or none|cap|floor|box"
+                            )
+                        cut_v = raw_cut
+                    els[cmd.element_id] = el.model_copy(update={"cutaway_style": cut_v})
+                elif cmd.key == "name" and hasattr(el, "name"):
+                    els[cmd.element_id] = el.model_copy(update={"name": cmd.value})
+                else:
+                    raise ValueError(
+                        "viewpoint updates: key=viewerClipCapElevMm | viewerClipFloorElevMm | "
+                        "hiddenSemanticKinds3d | cutawayStyle | name"
+                    )
+            elif isinstance(el, WallElem):
+
+                def _str_val(v: object) -> str:
+                    return str(v).strip() if v is not None else ""
+
+                if cmd.key == "materialKey":
+                    els[cmd.element_id] = el.model_copy(
+                        update={"material_key": _str_val(cmd.value) or None}
+                    )
+                elif cmd.key == "isCurtainWall":
+                    if isinstance(cmd.value, bool):
+                        cw = cmd.value
+                    else:
+                        cw = _str_val(cmd.value).lower() in ("true", "1", "yes")
+                    els[cmd.element_id] = el.model_copy(update={"is_curtain_wall": cw})
+                elif cmd.key == "roofAttachmentId":
+                    rid = _str_val(cmd.value) or None
+                    if rid is not None and rid not in els:
+                        raise ValueError("roofAttachmentId must reference an existing element")
+                    els[cmd.element_id] = el.model_copy(update={"roof_attachment_id": rid})
+                elif cmd.key == "wallTypeId":
+                    wt = _str_val(cmd.value) or None
+                    if wt is not None and not isinstance(els.get(wt), WallTypeElem):
+                        raise ValueError("wallTypeId must reference an existing wall_type")
+                    els[cmd.element_id] = el.model_copy(update={"wall_type_id": wt})
+                elif cmd.key == "heightMm":
+                    els[cmd.element_id] = el.model_copy(
+                        update={"height_mm": float(_str_val(cmd.value))}
+                    )
+                elif cmd.key == "thicknessMm":
+                    els[cmd.element_id] = el.model_copy(
+                        update={"thickness_mm": float(_str_val(cmd.value))}
+                    )
+                elif cmd.key == "name":
+                    els[cmd.element_id] = el.model_copy(update={"name": _str_val(cmd.value)})
+                else:
+                    raise ValueError(
+                        "wall updates: key=materialKey | isCurtainWall | roofAttachmentId | wallTypeId | heightMm | thicknessMm | name"
+                    )
+            elif isinstance(el, (DoorElem, WindowElem)):
+                raw_v = str(cmd.value).strip() if cmd.value is not None else ""
+                if cmd.key == "familyTypeId":
+                    els[cmd.element_id] = el.model_copy(update={"family_type_id": raw_v or None})
+                elif cmd.key == "materialKey":
+                    els[cmd.element_id] = el.model_copy(update={"material_key": raw_v or None})
+                elif cmd.key == "operationType" and isinstance(el, DoorElem):
+                    if not raw_v:
+                        els[cmd.element_id] = el.model_copy(update={"operation_type": None})
+                    elif raw_v in (
+                        "swing_single",
+                        "swing_double",
+                        "sliding_single",
+                        "sliding_double",
+                        "bi_fold",
+                        "pocket",
+                        "pivot",
+                        "automatic_double",
+                    ):
+                        els[cmd.element_id] = el.model_copy(update={"operation_type": raw_v})
+                    else:
+                        raise ValueError(
+                            "operationType must be one of swing_single | swing_double | sliding_single | sliding_double | bi_fold | pocket | pivot | automatic_double"
+                        )
+                elif cmd.key == "slidingTrackSide" and isinstance(el, DoorElem):
+                    if not raw_v:
+                        els[cmd.element_id] = el.model_copy(update={"sliding_track_side": None})
+                    elif raw_v in ("wall_face", "in_pocket"):
+                        els[cmd.element_id] = el.model_copy(update={"sliding_track_side": raw_v})
+                    else:
+                        raise ValueError("slidingTrackSide must be wall_face | in_pocket")
+                elif cmd.key == "outlineKind" and isinstance(el, WindowElem):
+                    if not raw_v:
+                        els[cmd.element_id] = el.model_copy(update={"outline_kind": None})
+                    elif raw_v in (
+                        "rectangle",
+                        "arched_top",
+                        "gable_trapezoid",
+                        "circle",
+                        "octagon",
+                        "custom",
+                    ):
+                        els[cmd.element_id] = el.model_copy(update={"outline_kind": raw_v})
+                    else:
+                        raise ValueError(
+                            "outlineKind must be one of rectangle | arched_top | gable_trapezoid | circle | octagon | custom"
+                        )
+                elif cmd.key == "attachedRoofId" and isinstance(el, WindowElem):
+                    if not raw_v:
+                        els[cmd.element_id] = el.model_copy(update={"attached_roof_id": None})
+                    else:
+                        target = els.get(raw_v)
+                        if target is None:
+                            raise ValueError("attachedRoofId must reference an existing element")
+                        if not isinstance(target, RoofElem):
+                            raise ValueError("attachedRoofId must reference a roof element")
+                        els[cmd.element_id] = el.model_copy(update={"attached_roof_id": raw_v})
+                elif isinstance(el, DoorElem):
+                    raise ValueError(
+                        "door updates: key=familyTypeId | materialKey | operationType | slidingTrackSide | name"
+                    )
+                else:
+                    raise ValueError(
+                        "window updates: key=familyTypeId | materialKey | outlineKind | attachedRoofId | name"
+                    )
+            elif isinstance(el, ScheduleElem):
+                raw_s = cmd.value.strip()
+                if cmd.key == "sheetId":
+                    if not raw_s:
+                        els[cmd.element_id] = el.model_copy(update={"sheet_id": None})
+                    else:
+                        sh_tgt = els.get(raw_s)
+                        if not isinstance(sh_tgt, SheetElem):
+                            raise ValueError("sheetId must reference an existing sheet element")
+                        els[cmd.element_id] = el.model_copy(update={"sheet_id": raw_s})
+                else:
+                    raise ValueError("schedule updates: key=sheetId | name")
+            elif isinstance(el, SheetElem):
+                raw_sh = cmd.value.strip()
+                if cmd.key == "titleBlock":
+                    els[cmd.element_id] = el.model_copy(update={"title_block": raw_sh or None})
+                elif cmd.key == "titleblockParametersPatch":
+                    try:
+                        patch_obj = json.loads(cmd.value)
+                    except json.JSONDecodeError as exc:
+                        raise ValueError(
+                            "titleblockParametersPatch must be a JSON object string"
+                        ) from exc
+                    if not isinstance(patch_obj, dict):
+                        raise ValueError("titleblockParametersPatch must decode to an object")
+                    merged = dict(el.titleblock_parameters or {})
+                    for pk, pv in patch_obj.items():
+                        key_s = str(pk)
+                        if isinstance(pv, str):
+                            vv = pv.strip()
+                            if vv:
+                                merged[key_s] = vv
+                            else:
+                                merged.pop(key_s, None)
+                        elif pv is None:
+                            merged.pop(key_s, None)
+                        else:
+                            merged[key_s] = str(pv)
+                    els[cmd.element_id] = el.model_copy(update={"titleblock_parameters": merged})
+                else:
+                    raise ValueError(
+                        "sheet updates: key=titleBlock | titleblockParametersPatch | name"
+                    )
+            elif isinstance(el, RoofElem):
+                raw_r = cmd.value.strip()
+                if cmd.key == "roofTypeId":
+                    rtid = raw_r or None
+                    if rtid is not None:
+                        rt_el = els.get(rtid)
+                        if not isinstance(rt_el, RoofTypeElem):
+                            raise ValueError("roofTypeId must reference an existing roof_type")
+                    els[cmd.element_id] = el.model_copy(update={"roof_type_id": rtid})
+                elif cmd.key == "roofGeometryMode":
+                    mode_s = raw_r
+                    if mode_s not in ("mass_box", "gable_pitched_rectangle"):
+                        raise ValueError(
+                            "roofGeometryMode must be mass_box|gable_pitched_rectangle"
+                        )
+                    mode = cast(RoofGeometryMode, mode_s)
+                    if mode == "gable_pitched_rectangle":
+                        assert_valid_gable_pitched_rectangle_footprint_mm(
+                            [(p.x_mm, p.y_mm) for p in el.footprint_mm]
+                        )
+                    els[cmd.element_id] = el.model_copy(update={"roof_geometry_mode": mode})
+                else:
+                    raise ValueError("roof updates: key=roofTypeId | roofGeometryMode | name")
+            elif cmd.key == "discipline" and hasattr(el, "discipline"):
+                d = cmd.value.strip() if isinstance(cmd.value, str) else ""
+                if d not in {"arch", "struct", "mep", ""}:
+                    raise ValueError("discipline must be arch|struct|mep or empty")
+                els[cmd.element_id] = el.model_copy(update={"discipline": d if d else None})
+                els[cmd.element_id] = el.model_copy(update={"discipline": d if d else None})
+            else:
+                raise ValueError(
+                    "Only updateElementProperty key=name | label(grid) | title(issue) | "
+                    "programmeCode(room) | department(room) | programmeGroup(room) | functionLabel(room) | finishSet(room) | "
+                    "targetAreaM2(room) | "
+                    "planPresentation(plan_view) | categoriesHidden(plan_view JSON array) | "
+                    "underlayLevelId(plan_view) | viewTemplateId(plan_view) | "
+                    "cropMinMm(plan_view JSON object) | cropMaxMm(plan_view JSON object) | "
+                    "viewRangeBottomMm(plan_view) | viewRangeTopMm(plan_view) | cutPlaneOffsetMm(plan_view) | "
+                    "discipline(plan_view) | phaseId(plan_view) | "
+                    "planDetailLevel(plan_view coarse|medium|fine or empty) | "
+                    "planRoomFillOpacityScale(plan_view float 0..1 or empty) | "
+                    "planDetailLevel(view_template coarse|medium|fine or empty) | "
+                    "planRoomFillOpacityScale(view_template float 0..1 or empty resets default 1.0) | "
+                    "planShowOpeningTags(plan_view true|false or empty inherit; view_template true|false only) | "
+                    "planShowRoomLabels(plan_view true|false or empty inherit; view_template true|false only) | "
+                    "planOpeningTagStyleId(plan_view plan_tag_style id or empty inherit) | "
+                    "planRoomTagStyleId(plan_view plan_tag_style id or empty inherit) | "
+                    "defaultPlanOpeningTagStyleId(view_template plan_tag_style id or empty clear) | "
+                    "defaultPlanRoomTagStyleId(view_template plan_tag_style id or empty clear) | "
+                    "planCategoryGraphics(plan_view|view_template JSON array) | "
+                    "viewerClipCapElevMm(viewpoint) | viewerClipFloorElevMm(viewpoint) | "
+                    "hiddenSemanticKinds3d(viewpoint JSON array) | cutawayStyle(viewpoint) | "
+                    "familyTypeId(door/window) | materialKey(door/window|wall) | "
+                    "isCurtainWall(wall) | roofAttachmentId(wall) | wallTypeId(wall) | "
+                    "heightMm(wall) | thicknessMm(wall) | "
+                    "roofTypeId(roof) | roofGeometryMode(roof) | "
+                    "sheetId(schedule) | titleBlock(sheet) | titleblockParametersPatch(sheet JSON object) supported in v2"
+                )
+
+        case SaveViewpointCmd():
+            vid = cmd.id or new_id()
+            if vid in els:
+                raise ValueError(f"duplicate element id '{vid}'")
+            els[vid] = ViewpointElem(
+                kind="viewpoint",
+                id=vid,
+                name=cmd.name,
+                camera=cmd.camera,
+                mode=cmd.mode,
+                viewer_clip_cap_elev_mm=cmd.viewer_clip_cap_elev_mm,
+                viewer_clip_floor_elev_mm=cmd.viewer_clip_floor_elev_mm,
+                hidden_semantic_kinds_3d=list(cmd.hidden_semantic_kinds_3d or []),
+                cutaway_style=cmd.cutaway_style,
+            )
+
+        case UpsertProjectSettingsCmd():
+            sid = cmd.id
+            els[sid] = ProjectSettingsElem(
+                kind="project_settings",
+                id=sid,
+                length_unit=cmd.length_unit,
+                angular_unit_deg=cmd.angular_unit_deg,
+                display_locale=cmd.display_locale,
+            )
+
+        case UpsertRoomColorSchemeCmd():
+            sid = cmd.id
+            prev_el = els.get(sid)
+            if prev_el is not None and not isinstance(prev_el, RoomColorSchemeElem):
+                raise ValueError(
+                    "upsertRoomColorScheme.id must reference room_color_scheme when element exists"
+                )
+            canon_rows = _canonical_room_scheme_rows(list(cmd.scheme_rows))
+            els[sid] = RoomColorSchemeElem(kind="room_color_scheme", id=sid, scheme_rows=canon_rows)
+
+        case CreateWallTypeCmd():
+            tid = cmd.id or new_id()
+            if tid in els:
+                raise ValueError(f"duplicate element id '{tid}'")
+            els[tid] = WallTypeElem(
+                kind="wall_type",
+                id=tid,
+                name=cmd.name,
+                layers=list(cmd.layers),
+                basis_line=_basis_line(cmd.basis_line),
+            )
+
+        case UpsertWallTypeCmd():
+            prev = els.get(cmd.id)
+            if prev is not None and not isinstance(prev, WallTypeElem):
+                raise ValueError("upsertWallType.id must reference wall_type when element exists")
+            els[cmd.id] = WallTypeElem(
+                kind="wall_type",
+                id=cmd.id,
+                name=cmd.name,
+                layers=list(cmd.layers),
+                basis_line=_basis_line(cmd.basis_line),
+            )
+            _propagate_wall_thickness_for_type(els, cmd.id)
+
+        case UpsertFloorTypeCmd():
+            prev = els.get(cmd.id)
+            if prev is not None and not isinstance(prev, FloorTypeElem):
+                raise ValueError("upsertFloorType.id must reference floor_type when element exists")
+            els[cmd.id] = FloorTypeElem(
+                kind="floor_type",
+                id=cmd.id,
+                name=cmd.name,
+                layers=list(cmd.layers),
+            )
+            _propagate_floor_dims_for_type(els, cmd.id)
+
+        case UpsertRoofTypeCmd():
+            prev = els.get(cmd.id)
+            if prev is not None and not isinstance(prev, RoofTypeElem):
+                raise ValueError("upsertRoofType.id must reference roof_type when element exists")
+            els[cmd.id] = RoofTypeElem(
+                kind="roof_type",
+                id=cmd.id,
+                name=cmd.name,
+                layers=list(cmd.layers),
+            )
+
+        case AssignWallDatumConstraintsCmd():
+            w = els.get(cmd.wall_id)
+            if not isinstance(w, WallElem):
+                raise ValueError("assignWallDatumConstraints.wallId must reference a Wall")
+            upd = w.model_copy(
+                update={
+                    "wall_type_id": cmd.wall_type_id
+                    if cmd.wall_type_id is not None
+                    else w.wall_type_id,
+                    "base_constraint_level_id": cmd.base_constraint_level_id
+                    if cmd.base_constraint_level_id is not None
+                    else w.base_constraint_level_id,
+                    "top_constraint_level_id": cmd.top_constraint_level_id
+                    if cmd.top_constraint_level_id is not None
+                    else w.top_constraint_level_id,
+                    "base_constraint_offset_mm": cmd.base_constraint_offset_mm,
+                    "top_constraint_offset_mm": cmd.top_constraint_offset_mm,
+                }
+            )
+            thick = _wall_thickness_from_type(els, upd.wall_type_id, upd.thickness_mm)
+            upd = upd.model_copy(update={"thickness_mm": thick})
+            els[cmd.wall_id] = upd
+            _recompute_constrained_wall_heights(els)
+        case _:
+            return False
+    return True
