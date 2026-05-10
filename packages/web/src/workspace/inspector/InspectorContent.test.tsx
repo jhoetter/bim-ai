@@ -176,9 +176,13 @@ describe('InspectorGraphicsFor — T-14 / WP-UI-B01', () => {
     fireEvent.change(getByTestId('inspector-plan-view-area-scheme'), {
       target: { value: 'rentable' },
     });
+    fireEvent.change(getByTestId('inspector-plan-view-subdiscipline'), {
+      target: { value: 'Coordination' },
+    });
 
     expect(onPersistProperty).toHaveBeenCalledWith('planViewSubtype', 'area_plan');
     expect(onPersistProperty).toHaveBeenCalledWith('areaScheme', 'rentable');
+    expect(onPersistProperty).toHaveBeenCalledWith('viewSubdiscipline', 'Coordination');
   });
 
   it('renders graphics panel for view_template with footnote', () => {

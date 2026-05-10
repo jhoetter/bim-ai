@@ -1145,6 +1145,7 @@ class UpsertPlanViewCmd(BaseModel):
     )
     underlay_level_id: str | None = Field(default=None, alias="underlayLevelId")
     discipline: str = "architecture"
+    view_subdiscipline: str | None = Field(default=None, alias="viewSubdiscipline")
     plan_view_subtype: PlanViewSubtypeCmd | None = Field(default=None, alias="planViewSubtype")
     area_scheme: AreaSchemeCmd = Field(default="gross_building", alias="areaScheme")
     phase_id: str | None = Field(default=None, alias="phaseId")

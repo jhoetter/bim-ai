@@ -1321,6 +1321,26 @@ export function InspectorPlanViewEditor({
           <option value="arch">Architecture</option>
           <option value="struct">Structural</option>
           <option value="mep">MEP</option>
+          <option value="coordination">Coordination</option>
+        </select>
+      </label>
+
+      <label className={LABEL_CLS}>
+        <span>Sub-discipline</span>
+        <select
+          className={INPUT_CLS}
+          value={el.viewSubdiscipline ?? ''}
+          onChange={(e) => onPersistProperty('viewSubdiscipline', e.target.value)}
+          data-testid="inspector-plan-view-subdiscipline"
+        >
+          <option value="">(None)</option>
+          <option value="Architecture">Architecture</option>
+          <option value="Interior">Interior</option>
+          <option value="Structural">Structural</option>
+          <option value="Mechanical">Mechanical</option>
+          <option value="Electrical">Electrical</option>
+          <option value="Plumbing">Plumbing</option>
+          <option value="Coordination">Coordination</option>
         </select>
       </label>
 

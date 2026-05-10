@@ -33,6 +33,40 @@ const AREA_SCHEMES = [
 
 type AreaSchemeValue = (typeof AREA_SCHEMES)[number]['value'];
 
+const DISCIPLINE_GROUPS = [
+  { key: 'arch', label: 'Architecture' },
+  { key: 'struct', label: 'Structural' },
+  { key: 'mep', label: 'MEP' },
+  { key: 'coordination', label: 'Coordination' },
+] as const;
+
+type PlanViewDisciplineGroup = (typeof DISCIPLINE_GROUPS)[number]['key'];
+
+function normalizePlanViewDiscipline(raw: string | undefined): PlanViewDisciplineGroup {
+  if (raw === 'struct' || raw === 'structure' || raw === 'structural') return 'struct';
+  if (raw === 'mep' || raw === 'mechanical' || raw === 'electrical' || raw === 'plumbing') {
+    return 'mep';
+  }
+  if (raw === 'coordination' || raw === 'coord') return 'coordination';
+  return 'arch';
+}
+
+function defaultSubdisciplineForGroup(group: PlanViewDisciplineGroup): string {
+  if (group === 'struct') return 'Structural';
+  if (group === 'mep') return 'MEP';
+  if (group === 'coordination') return 'Coordination';
+  return 'Architecture';
+}
+
+function subdisciplineTestToken(label: string): string {
+  return (
+    label
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'none'
+  );
+}
+
 function newDupPlanViewId(prefix: string) {
   try {
     return `${prefix}-${crypto.randomUUID().slice(0, 10)}`;
@@ -116,6 +150,7 @@ function planViewTooltip(
   const parts = [`plan_view (${pv.name})`];
   parts.push(planLevelEvidenceToken(elementsById, pv.levelId));
   parts.push(`discipline: ${pv.discipline ?? 'architecture'}`);
+  if (pv.viewSubdiscipline) parts.push(`sub-discipline: ${pv.viewSubdiscipline}`);
   const tid = pv.viewTemplateId;
   if (tid) {
     const t = elementsById[tid];
@@ -211,21 +246,23 @@ export function ProjectBrowser(props: {
 
   /** F-032: group plan views by discipline for Project Browser section headers. */
   const planViewDiscBuckets = useMemo(() => {
-    const buckets: Record<string, Extract<Element, { kind: 'plan_view' }>[]> = {
+    const buckets: Record<PlanViewDisciplineGroup, Extract<Element, { kind: 'plan_view' }>[]> = {
       arch: [],
       struct: [],
       mep: [],
+      coordination: [],
     };
     for (const pv of floorPlanViews) {
-      const disc = (pv.discipline as string | undefined) ?? 'arch';
-      const key = disc in buckets ? disc : 'arch';
+      const key = normalizePlanViewDiscipline(pv.discipline as string | undefined);
       buckets[key].push(pv);
     }
     return buckets;
   }, [floorPlanViews]);
 
   const hasDisciplineGrouping = floorPlanViews.some(
-    (pv) => pv.discipline && pv.discipline !== 'arch',
+    (pv) =>
+      normalizePlanViewDiscipline(pv.discipline as string | undefined) !== 'arch' ||
+      !!pv.viewSubdiscipline,
   );
 
   /** DSC-V3-01: group physical elements into arch / struct / mep buckets. */
@@ -357,6 +394,7 @@ export function ProjectBrowser(props: {
     if (pv.planShowRoomLabels !== undefined) cmd.planShowRoomLabels = pv.planShowRoomLabels;
     if (pv.planOpeningTagStyleId) cmd.planOpeningTagStyleId = pv.planOpeningTagStyleId;
     if (pv.planRoomTagStyleId) cmd.planRoomTagStyleId = pv.planRoomTagStyleId;
+    if (pv.viewSubdiscipline) cmd.viewSubdiscipline = pv.viewSubdiscipline;
     if (pv.planViewSubtype) cmd.planViewSubtype = pv.planViewSubtype;
     if (pv.areaScheme) cmd.areaScheme = pv.areaScheme;
     if (pv.underlayLevelId) cmd.underlayLevelId = pv.underlayLevelId;
@@ -478,143 +516,157 @@ export function ProjectBrowser(props: {
           <div className="text-[10px] uppercase tracking-wide text-muted">Floor plans</div>
           <div className="space-y-0.5">
             {hasDisciplineGrouping
-              ? // F-032: discipline-grouped rendering when mixed disciplines are present
-                (
-                  [
-                    { key: 'arch', label: 'Architecture' },
-                    { key: 'struct', label: 'Structural' },
-                    { key: 'mep', label: 'MEP' },
-                  ] as const
-                ).map(({ key, label }) => {
+              ? // F-032/F-099: discipline/sub-discipline grouped rendering.
+                DISCIPLINE_GROUPS.map(({ key, label }) => {
                   const discViews = planViewDiscBuckets[key];
                   if (discViews.length === 0) return null;
+                  const subBuckets = new Map<string, Extract<Element, { kind: 'plan_view' }>[]>();
+                  for (const pv of discViews) {
+                    const sub = pv.viewSubdiscipline || defaultSubdisciplineForGroup(key);
+                    const rows = subBuckets.get(sub) ?? [];
+                    rows.push(pv);
+                    subBuckets.set(sub, rows);
+                  }
                   return (
                     <div key={key} className="space-y-0.5" data-bim-disc-group={key}>
                       <div className="pl-2 pt-1 text-[9px] font-semibold uppercase tracking-wide text-muted">
                         {label}
                       </div>
-                      <ul className="space-y-0.5">
-                        {discViews.map((pv) => (
-                          <li key={pv.id} className="flex flex-col gap-0.5">
-                            {renamingId === pv.id ? (
-                              <input
-                                autoFocus
-                                type="text"
-                                data-testid={`plan-view-rename-input-${pv.id}`}
-                                value={renameDraft}
-                                className="rounded border border-border bg-background px-1 py-0.5 text-xs"
-                                onChange={(e) => setRenameDraft(e.currentTarget.value)}
-                                onBlur={() => void commitRename(pv.id)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    void commitRename(pv.id);
-                                  }
-                                  if (e.key === 'Escape') {
-                                    e.preventDefault();
-                                    cancelRename();
-                                  }
-                                }}
-                              />
-                            ) : (
-                              <Btn
-                                type="button"
-                                variant="quiet"
-                                className="w-full px-2 py-0.5 text-left text-[10px]"
-                                title={planViewTooltip(pv, props.elementsById)}
-                                onClick={() => activatePlanView(pv.id)}
-                                onDoubleClick={() => {
-                                  setRenamingId(pv.id);
-                                  setRenameDraft(pv.name);
-                                }}
-                              >
-                                plan_view · {pv.name}
-                              </Btn>
-                            )}
-                            <div
-                              className="pl-2 font-mono text-[9px] leading-tight text-muted"
-                              data-bim-plan-view-evidence={pv.id}
-                            >
-                              {planLevelEvidenceToken(props.elementsById, pv.levelId)} ·{' '}
-                              {planViewProjectBrowserEvidenceLine(props.elementsById, pv.id)}
-                            </div>
-                            {(() => {
-                              const h = planViewBrowserHierarchyState(props.elementsById, pv.id);
-                              const hasNonDefault =
-                                h.categoryTemplateCount > 0 || h.categoryPlanViewCount > 0;
-                              const tagNonBuiltin =
-                                h.openingTagSource !== 'builtin' || h.roomTagSource !== 'builtin';
-                              if (!hasNonDefault && !tagNonBuiltin) return null;
-                              return (
+                      {[...subBuckets.entries()].map(([subLabel, views]) => (
+                        <div
+                          key={`${key}-${subLabel}`}
+                          className="space-y-0.5"
+                          data-testid={`project-browser-subdiscipline-${key}-${subdisciplineTestToken(subLabel)}`}
+                        >
+                          <div className="pl-4 text-[9px] font-semibold text-muted">{subLabel}</div>
+                          <ul className="space-y-0.5">
+                            {views.map((pv) => (
+                              <li key={pv.id} className="flex flex-col gap-0.5">
+                                {renamingId === pv.id ? (
+                                  <input
+                                    autoFocus
+                                    type="text"
+                                    data-testid={`plan-view-rename-input-${pv.id}`}
+                                    value={renameDraft}
+                                    className="rounded border border-border bg-background px-1 py-0.5 text-xs"
+                                    onChange={(e) => setRenameDraft(e.currentTarget.value)}
+                                    onBlur={() => void commitRename(pv.id)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        void commitRename(pv.id);
+                                      }
+                                      if (e.key === 'Escape') {
+                                        e.preventDefault();
+                                        cancelRename();
+                                      }
+                                    }}
+                                  />
+                                ) : (
+                                  <Btn
+                                    type="button"
+                                    variant="quiet"
+                                    className="w-full px-2 py-0.5 text-left text-[10px]"
+                                    title={planViewTooltip(pv, props.elementsById)}
+                                    onClick={() => activatePlanView(pv.id)}
+                                    onDoubleClick={() => {
+                                      setRenamingId(pv.id);
+                                      setRenameDraft(pv.name);
+                                    }}
+                                  >
+                                    plan_view · {pv.name}
+                                  </Btn>
+                                )}
                                 <div
-                                  className="pl-2 font-mono text-[9px] leading-tight text-muted/70"
-                                  data-bim-plan-view-hierarchy={pv.id}
+                                  className="pl-2 font-mono text-[9px] leading-tight text-muted"
+                                  data-bim-plan-view-evidence={pv.id}
                                 >
-                                  {hasNonDefault
-                                    ? `catSrc tmpl=${h.categoryTemplateCount} pv=${h.categoryPlanViewCount}`
-                                    : null}
-                                  {hasNonDefault && tagNonBuiltin ? ' · ' : null}
-                                  {tagNonBuiltin
-                                    ? `tagSrc o=${h.openingTagSource} r=${h.roomTagSource}`
-                                    : null}
+                                  {planLevelEvidenceToken(props.elementsById, pv.levelId)} ·{' '}
+                                  {planViewProjectBrowserEvidenceLine(props.elementsById, pv.id)}
                                 </div>
-                              );
-                            })()}
-                            {props.onUpsertSemantic ? (
-                              <button
-                                type="button"
-                                className="pl-2 text-left text-[9px] text-muted underline"
-                                title="Creates a duplicated plan_view with the same pinned settings"
-                                onClick={() => dupPlanView(pv)}
-                              >
-                                Duplicate…
-                              </button>
-                            ) : null}
-                            {deleteConfirmId === pv.id ? (
-                              <span className="flex items-center gap-1 pl-2">
-                                <button
-                                  type="button"
-                                  data-testid={`plan-view-delete-confirm-${pv.id}`}
-                                  className="text-[9px] text-red-700 underline"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setDeleteConfirmId(null);
-                                    void applyCommand(modelId!, {
-                                      type: 'deleteElement',
-                                      elementId: pv.id,
-                                    });
-                                  }}
-                                >
-                                  Delete
-                                </button>
-                                <button
-                                  type="button"
-                                  className="text-[9px] text-muted underline"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setDeleteConfirmId(null);
-                                  }}
-                                >
-                                  Cancel
-                                </button>
-                              </span>
-                            ) : (
-                              <button
-                                type="button"
-                                data-testid={`plan-view-delete-${pv.id}`}
-                                title="Delete this plan view"
-                                className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDeleteConfirmId(pv.id);
-                                }}
-                              >
-                                Delete…
-                              </button>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
+                                {(() => {
+                                  const h = planViewBrowserHierarchyState(
+                                    props.elementsById,
+                                    pv.id,
+                                  );
+                                  const hasNonDefault =
+                                    h.categoryTemplateCount > 0 || h.categoryPlanViewCount > 0;
+                                  const tagNonBuiltin =
+                                    h.openingTagSource !== 'builtin' ||
+                                    h.roomTagSource !== 'builtin';
+                                  if (!hasNonDefault && !tagNonBuiltin) return null;
+                                  return (
+                                    <div
+                                      className="pl-2 font-mono text-[9px] leading-tight text-muted/70"
+                                      data-bim-plan-view-hierarchy={pv.id}
+                                    >
+                                      {hasNonDefault
+                                        ? `catSrc tmpl=${h.categoryTemplateCount} pv=${h.categoryPlanViewCount}`
+                                        : null}
+                                      {hasNonDefault && tagNonBuiltin ? ' · ' : null}
+                                      {tagNonBuiltin
+                                        ? `tagSrc o=${h.openingTagSource} r=${h.roomTagSource}`
+                                        : null}
+                                    </div>
+                                  );
+                                })()}
+                                {props.onUpsertSemantic ? (
+                                  <button
+                                    type="button"
+                                    className="pl-2 text-left text-[9px] text-muted underline"
+                                    title="Creates a duplicated plan_view with the same pinned settings"
+                                    onClick={() => dupPlanView(pv)}
+                                  >
+                                    Duplicate…
+                                  </button>
+                                ) : null}
+                                {deleteConfirmId === pv.id ? (
+                                  <span className="flex items-center gap-1 pl-2">
+                                    <button
+                                      type="button"
+                                      data-testid={`plan-view-delete-confirm-${pv.id}`}
+                                      className="text-[9px] text-red-700 underline"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDeleteConfirmId(null);
+                                        void applyCommand(modelId!, {
+                                          type: 'deleteElement',
+                                          elementId: pv.id,
+                                        });
+                                      }}
+                                    >
+                                      Delete
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="text-[9px] text-muted underline"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDeleteConfirmId(null);
+                                      }}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    data-testid={`plan-view-delete-${pv.id}`}
+                                    title="Delete this plan view"
+                                    className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDeleteConfirmId(pv.id);
+                                    }}
+                                  >
+                                    Delete…
+                                  </button>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
                     </div>
                   );
                 })

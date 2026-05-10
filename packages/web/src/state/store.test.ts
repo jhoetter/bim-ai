@@ -129,6 +129,7 @@ describe('hydrateFromSnapshot', () => {
           kind: 'plan_view',
           name: 'Level 1 Rentable',
           level_id: 'lvl-0',
+          view_subdiscipline: 'Architecture',
           plan_view_subtype: 'area_plan',
           area_scheme: 'rentable',
         },
@@ -154,6 +155,7 @@ describe('hydrateFromSnapshot', () => {
     if (pv?.kind === 'plan_view') {
       expect(pv.planViewSubtype).toBe('area_plan');
       expect(pv.areaScheme).toBe('rentable');
+      expect(pv.viewSubdiscipline).toBe('Architecture');
     }
     const area = useBimStore.getState().elementsById['area-1'];
     expect(area?.kind).toBe('area');

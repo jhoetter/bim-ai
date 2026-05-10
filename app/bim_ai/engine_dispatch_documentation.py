@@ -903,6 +903,7 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
                 plan_presentation=pres,
                 underlay_level_id=cmd.underlay_level_id,
                 discipline=cmd.discipline or "architecture",
+                view_subdiscipline=cmd.view_subdiscipline,
                 plan_view_subtype=cmd.plan_view_subtype,
                 area_scheme=cmd.area_scheme,
                 phase_id=cmd.phase_id,

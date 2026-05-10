@@ -63,10 +63,17 @@ def test_plan_view_subtype_and_area_scheme_property_updates() -> None:
     apply_inplace(
         doc, UpdateElementPropertyCmd(elementId="pv", key="areaScheme", value="rentable")
     )
+    apply_inplace(
+        doc,
+        UpdateElementPropertyCmd(
+            elementId="pv", key="viewSubdiscipline", value="Coordination"
+        ),
+    )
     pv_out = doc.elements["pv"]
     assert isinstance(pv_out, PlanViewElem)
     assert pv_out.plan_view_subtype == "area_plan"
     assert pv_out.area_scheme == "rentable"
+    assert pv_out.view_subdiscipline == "Coordination"
 
 
 def test_plan_view_crop_range_discipline_phase() -> None:

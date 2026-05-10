@@ -184,6 +184,39 @@ describe('ProjectBrowser — F-003 families context menu', () => {
     expect(within(areaGroup).getByText(/area_plan · Rentable · Rentable Area/)).toBeTruthy();
   });
 
+  it('groups floor plan views by discipline and sub-discipline', () => {
+    const level: Element = { kind: 'level', id: 'lvl-1', name: 'Level 1', elevationMm: 0 };
+    const archPlan: Element = {
+      kind: 'plan_view',
+      id: 'pv-arch',
+      name: 'Architecture Plan',
+      levelId: 'lvl-1',
+      discipline: 'arch',
+      viewSubdiscipline: 'Interior',
+      planViewSubtype: 'floor_plan',
+    };
+    const coordPlan: Element = {
+      kind: 'plan_view',
+      id: 'pv-coordination',
+      name: 'Coordination Plan',
+      levelId: 'lvl-1',
+      discipline: 'coordination',
+      viewSubdiscipline: 'Coordination',
+      planViewSubtype: 'coordination_plan',
+    };
+    const { getByTestId, getByText } = renderBrowser({
+      elementsById: {
+        [level.id]: level,
+        [archPlan.id]: archPlan,
+        [coordPlan.id]: coordPlan,
+      },
+    });
+    expect(getByTestId('project-browser-subdiscipline-arch-interior')).toBeTruthy();
+    expect(getByTestId('project-browser-subdiscipline-coordination-coordination')).toBeTruthy();
+    expect(getByText(/Architecture Plan/)).toBeTruthy();
+    expect(getByText(/Coordination Plan/)).toBeTruthy();
+  });
+
   it('creates Area Plan views with level, subtype, and scheme', async () => {
     useBimStore.setState({ modelId: 'model-1' });
     const level: Element = { kind: 'level', id: 'lvl-1', name: 'Level 1', elevationMm: 0 };

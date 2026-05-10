@@ -1152,6 +1152,11 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
       underlayLevelId: (raw.underlayLevelId ?? raw.underlay_level_id ?? null) as string | null,
       discipline:
         typeof raw.discipline === 'string' && raw.discipline ? raw.discipline : 'architecture',
+      viewSubdiscipline:
+        typeof (raw.viewSubdiscipline ?? raw.view_subdiscipline) === 'string' &&
+        String(raw.viewSubdiscipline ?? raw.view_subdiscipline).trim()
+          ? String(raw.viewSubdiscipline ?? raw.view_subdiscipline).trim()
+          : null,
       planViewSubtype:
         typeof (raw.planViewSubtype ?? raw.plan_view_subtype) === 'string' &&
         (raw.planViewSubtype ?? raw.plan_view_subtype)

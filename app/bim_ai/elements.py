@@ -1591,6 +1591,7 @@ class PlanViewElem(BaseModel):
     )
     underlay_level_id: str | None = Field(default=None, alias="underlayLevelId")
     discipline: str = Field(default="architecture", alias="discipline")
+    view_subdiscipline: str | None = Field(default=None, alias="viewSubdiscipline")
     phase_id: str | None = Field(default=None, alias="phaseId")
     phase_filter: PhaseFilter = Field(default="all", alias="phaseFilter")
     crop_min_mm: Vec2Mm | None = Field(default=None, alias="cropMinMm")

@@ -1314,6 +1314,7 @@ export type Element =
       planPresentation?: 'default' | 'opening_focus' | 'room_scheme';
       underlayLevelId?: string | null;
       discipline?: string;
+      viewSubdiscipline?: string | null;
       phaseId?: string | null;
       phaseFilter?: PhaseFilter;
       cropMinMm?: XY | null;

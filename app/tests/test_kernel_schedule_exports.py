@@ -476,6 +476,7 @@ def test_upsert_area_plan_persists_subtype_and_scheme():
             "levelId": "lvl-1",
             "planViewSubtype": "area_plan",
             "areaScheme": "rentable",
+            "viewSubdiscipline": "Architecture",
         },
     )
     assert ok
@@ -483,6 +484,7 @@ def test_upsert_area_plan_persists_subtype_and_scheme():
     assert isinstance(pv, PlanViewElem)
     assert pv.plan_view_subtype == "area_plan"
     assert pv.area_scheme == "rentable"
+    assert pv.view_subdiscipline == "Architecture"
 
 
 def test_move_level_moves_stair_baselines_where_bound():

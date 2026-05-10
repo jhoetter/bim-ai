@@ -197,6 +197,10 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     els[cmd.element_id] = el.model_copy(
                         update={"discipline": raw if raw else "architecture"}
                     )
+                elif cmd.key == "viewSubdiscipline":
+                    els[cmd.element_id] = el.model_copy(
+                        update={"view_subdiscipline": raw or None}
+                    )
                 elif cmd.key == "phaseId":
                     els[cmd.element_id] = el.model_copy(update={"phase_id": raw or None})
                 elif cmd.key == "planDetailLevel":
@@ -246,8 +250,8 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                         "plan_view updates: key=planPresentation | categoriesHidden | underlayLevelId | "
                         "viewTemplateId | cropMinMm | cropMaxMm | cropEnabled | cropRegionVisible | "
                         "viewRangeBottomMm | viewRangeTopMm | "
-                        "cutPlaneOffsetMm | discipline | planViewSubtype | areaScheme | phaseId | "
-                        "planDetailLevel | planRoomFillOpacityScale | "
+                        "cutPlaneOffsetMm | discipline | viewSubdiscipline | planViewSubtype | "
+                        "areaScheme | phaseId | planDetailLevel | planRoomFillOpacityScale | "
                         "planShowOpeningTags | planShowRoomLabels | planOpeningTagStyleId | planRoomTagStyleId | "
                         "planCategoryGraphics | name"
                     )
@@ -574,8 +578,8 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     "underlayLevelId(plan_view) | viewTemplateId(plan_view) | "
                     "cropMinMm(plan_view JSON object) | cropMaxMm(plan_view JSON object) | "
                     "viewRangeBottomMm(plan_view) | viewRangeTopMm(plan_view) | cutPlaneOffsetMm(plan_view) | "
-                    "discipline(plan_view) | planViewSubtype(plan_view) | areaScheme(plan_view|area) | "
-                    "phaseId(plan_view) | "
+                    "discipline(plan_view) | viewSubdiscipline(plan_view) | "
+                    "planViewSubtype(plan_view) | areaScheme(plan_view|area) | phaseId(plan_view) | "
                     "planDetailLevel(plan_view coarse|medium|fine or empty) | "
                     "planRoomFillOpacityScale(plan_view float 0..1 or empty) | "
                     "planDetailLevel(view_template coarse|medium|fine or empty) | "

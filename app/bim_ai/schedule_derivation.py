@@ -733,6 +733,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     "level": lev,
                     "planPresentation": e.plan_presentation,
                     "discipline": getattr(e, "discipline", "") or "",
+                    "viewSubdiscipline": e.view_subdiscipline or "",
                     "planViewSubtype": e.plan_view_subtype or "floor_plan",
                     "areaScheme": e.area_scheme,
                     "familyTypeId": "",
