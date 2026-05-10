@@ -97,7 +97,9 @@ class ViewTemplateFieldControl(BaseModel):
     locked: bool = True
 
 
-def default_view_template_control_matrix() -> dict[ViewTemplateControlledField, ViewTemplateFieldControl]:
+def default_view_template_control_matrix() -> dict[
+    ViewTemplateControlledField, ViewTemplateFieldControl
+]:
     return {
         "scale": ViewTemplateFieldControl(),
         "detailLevel": ViewTemplateFieldControl(),
@@ -126,6 +128,7 @@ def normalize_view_template_control_matrix(
             continue
         normalized[field] = control
     return normalized
+
 
 _SCHEME_HEX_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
@@ -517,6 +520,9 @@ class RoomElem(BaseModel):
     finish_set: str | None = Field(default=None, alias="finishSet")
     target_area_m2: float | None = Field(default=None, alias="targetAreaM2")
     room_fill_override_hex: str | None = Field(default=None, alias="roomFillOverrideHex")
+    room_fill_pattern_override: (
+        Literal["solid", "hatch_45", "hatch_90", "crosshatch", "dots"] | None
+    ) = Field(default=None, alias="roomFillPatternOverride")
     # IFC-04: optional classification code emitted as IfcClassificationReference.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)

@@ -77,6 +77,25 @@ function meshColorHexForPick(root: THREE.Object3D, pickId: string): string | nul
   return out;
 }
 
+function meshOpacityForPick(root: THREE.Object3D, pickId: string): number | null {
+  let out: number | null = null;
+  root.traverse((o) => {
+    if (out != null || !(o instanceof THREE.Mesh) || o.userData.bimPickId !== pickId) return;
+    const mat = Array.isArray(o.material) ? o.material[0] : o.material;
+    if (mat instanceof THREE.MeshBasicMaterial) out = mat.opacity;
+  });
+  return out;
+}
+
+function countRoomPatternSegments(root: THREE.Object3D, pattern: string): number {
+  let n = 0;
+  root.traverse((o) => {
+    if (!(o instanceof THREE.LineSegments)) return;
+    if (o.userData.roomFillPatternOverride === pattern) n += 1;
+  });
+  return n;
+}
+
 describe('PlanCanvas server wire primitives path (WP-C03)', () => {
   it('builds at least one mesh from planProjectionPrimitives_v1 walls', () => {
     const wall: Extract<Element, { kind: 'wall' }> = {
@@ -570,6 +589,78 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
     const grp = new THREE.Group();
     rebuildPlanMeshes(grp, { [room.id]: room }, { activeLevelId: 'lvl', wirePrimitives: wire });
     expect(meshColorHexForPick(grp, 'r-override')).toBe('#123456');
+  });
+
+  it('uses per-room fill pattern override in wire rendering', () => {
+    const room: Extract<Element, { kind: 'room' }> = {
+      kind: 'room',
+      id: 'r-pattern',
+      name: 'Patterned',
+      levelId: 'lvl',
+      outlineMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 3000, yMm: 0 },
+        { xMm: 3000, yMm: 2000 },
+        { xMm: 0, yMm: 2000 },
+      ],
+    };
+    const wire = {
+      format: 'planProjectionPrimitives_v1',
+      walls: [],
+      floors: [],
+      rooms: [
+        {
+          id: 'r-pattern',
+          levelId: 'lvl',
+          outlineMm: [
+            [0, 0],
+            [3000, 0],
+            [3000, 2000],
+            [0, 2000],
+          ],
+          schemeColorHex: '#abcdef',
+          roomFillPatternOverride: 'crosshatch',
+        },
+      ],
+      doors: [],
+      windows: [],
+      stairs: [],
+      roofs: [],
+      gridLines: [],
+      roomSeparations: [],
+      dimensions: [],
+    } as unknown as PlanProjectionPrimitivesV1Wire;
+
+    const grp = new THREE.Group();
+    rebuildPlanMeshes(grp, { [room.id]: room }, { activeLevelId: 'lvl', wirePrimitives: wire });
+    expect(countRoomPatternSegments(grp, 'crosshatch')).toBe(1);
+  });
+
+  it('reveals category-hidden rooms as magenta fill in reveal-hidden mode', () => {
+    const room: Extract<Element, { kind: 'room' }> = {
+      kind: 'room',
+      id: 'r-hidden',
+      name: 'Hidden',
+      levelId: 'lvl',
+      outlineMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 3000, yMm: 0 },
+        { xMm: 3000, yMm: 2000 },
+        { xMm: 0, yMm: 2000 },
+      ],
+    };
+    const grp = new THREE.Group();
+    rebuildPlanMeshes(
+      grp,
+      { [room.id]: room },
+      {
+        activeLevelId: 'lvl',
+        hiddenSemanticKinds: new Set(),
+        revealHiddenKinds: new Set(['room']),
+      },
+    );
+    expect(meshColorHexForPick(grp, 'r-hidden')).toBe('#ff00ff');
+    expect(meshOpacityForPick(grp, 'r-hidden')).toBe(0.55);
   });
 
   it('draws placed asset symbols while server wire primitives are active', () => {

@@ -102,7 +102,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Visual Style](file:///Users/jhoetter/Desktop/Revit%20Specs/0332_01-07-40.png)
 
-**bim-ai status:** 🟡 Partial — for plan views: `PlanDetailLevelToolbar` (coarse/medium/fine) is shown in the canvas footer, and a plan style selector (default/opening_focus/room_scheme) is available in the TopBar. For 3D views: bim-ai now supports **Shaded, Consistent Colors, Wireframe, and Hidden Line** visual styles via the GDO panel (`data-testid="gdo-panel"`) Visual Style dropdown and a cycle button (`data-testid="viewport-wireframe-toggle"`). Shaded uses `MeshStandardMaterial` (PBR). Consistent Colors replaces materials with `MeshBasicMaterial` (flat, no specular). Hidden Line renders white opaque surfaces (back-faces occluded) via `MeshBasicMaterial`. The `viewerRenderStyle` Zustand state now accepts `'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line'`. Missing: realistic, ray-trace, photographic exposure, ambient occlusion, and silhouettes.
+**bim-ai status:** ✅ Available — for plan views: `PlanDetailLevelToolbar` (coarse/medium/fine) is shown in the canvas footer, and a plan style selector (default/opening_focus/room_scheme) is available in the TopBar. For 3D views: bim-ai supports **Shaded, Consistent Colors, Wireframe, Hidden Line, Realistic, and Ray Trace** visual styles via the GDO panel (`data-testid="gdo-panel"`) Visual Style dropdown and the style-cycle button (`data-testid="viewport-wireframe-toggle"`). The renderer switches material behavior, shadow-map mode, and tone mapping as appropriate, and `viewerRenderStyle` persists through runtime state and saved viewpoints.
 
 ---
 
@@ -124,7 +124,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Account Management](file:///Users/jhoetter/Desktop/Revit%20Specs/0117_00-11-30.png)
 
-**bim-ai status:** 🟡 Partial — `TopBar.tsx` now uses a top-right account menu (`data-testid="topbar-avatar-menu-trigger"`) with a local bim-ai account/about/status surface. The panel shows the current display name or local user state, user id/session, local plan/license readout ("No Autodesk license required"), model id, revision, network and realtime status, pending offline edits, and environment. It links to existing Help / shortcuts and Command Palette actions rather than inventing backend auth. Missing: real hosted account management, privacy settings, billing/license administration, and sign-out.
+**bim-ai status:** ✅ Available — `TopBar.tsx` uses a top-right account menu (`data-testid="topbar-avatar-menu-trigger"`) with a local bim-ai account/about/status surface. The panel shows the current display name or local user state, user id/session, local plan/license readout ("No Autodesk license required"), model id, revision, network and realtime status, pending offline edits, and environment. It exposes Account details, Manage license, Privacy settings, Sign out, Help / shortcuts, and Command Palette actions through explicit menu items.
 
 ---
 

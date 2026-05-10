@@ -10,7 +10,7 @@ Source segment: `05:34:19 – 06:41:32` (+ `08:35:57 – 09:57:57` for final 3D 
 
 **Screenshot:**
 ![Floor Edit Boundary](file:///Users/jhoetter/Desktop/Revit%20Specs/0580_03-45-40.png)
-*(Nearest available screenshot — floor/masking sketch mode context; floor-specific export frames start beyond 0841)*
+_(Nearest available screenshot — floor/masking sketch mode context; floor-specific export frames start beyond 0841)_
 
 **bim-ai status:** ✅ Done — the `floor-sketch` tool (hotkey `Shift+F`) renders a full `SketchCanvas` overlay with vertex accumulation, wall-snap picking, auto-close detection, and Finish ✓ / Cancel ✗ controls equivalent to Revit's Edit Boundary modal. Backend creates the floor element on Finish. Remaining gap: no interactive trim/extend inside the sketch editor; no one-click "Pick Lines" adoption of existing wall edges without clicking vertices.
 
@@ -33,7 +33,7 @@ Source segment: `05:34:19 – 06:41:32` (+ `08:35:57 – 09:57:57` for final 3D 
 
 **Screenshot:**
 ![Parapet walls](file:///Users/jhoetter/Desktop/Revit%20Specs/0310_01-03-58.png)
-*(Wall-type and height configuration context; parapet-specific frames start beyond 0841)*
+_(Wall-type and height configuration context; parapet-specific frames start beyond 0841)_
 
 **bim-ai status:** ✅ Done — parapet walls are modeled with the standard wall tool using the OptionsBar controls: set "Location Line" to "Finish Face: Interior" and set "Height" to the desired unconnected height (e.g., 900 mm). Chain mode allows drawing the full parapet perimeter in one continuous stroke. This matches the Revit workflow exactly — Revit also uses standard walls for parapets, not a dedicated parapet tool.
 
@@ -45,7 +45,7 @@ Source segment: `05:34:19 – 06:41:32` (+ `08:35:57 – 09:57:57` for final 3D 
 
 **Screenshot:**
 ![Wall Top Offset](file:///Users/jhoetter/Desktop/Revit%20Specs/0314_01-04-37.png)
-*(Wall Properties palette showing height constraints; Top Offset-specific frame is beyond 0841)*
+_(Wall Properties palette showing height constraints; Top Offset-specific frame is beyond 0841)_
 
 **bim-ai status:** ✅ Available — `InspectorContent.tsx` (wall `case`) now has editable "Base Offset (mm)" and "Top Offset (mm)" fields supporting negative values (step 50). Negative base offset (e.g. −200) moves the wall base below the level datum, enabling the sub-slab placement pattern shown in Revit.
 
@@ -57,7 +57,7 @@ Source segment: `05:34:19 – 06:41:32` (+ `08:35:57 – 09:57:57` for final 3D 
 
 **Screenshot:**
 ![3D View rotation](file:///Users/jhoetter/Desktop/Revit%20Specs/0029_00-00-51.png)
-*(3D house model — rotation-specific frame is beyond 0841)*
+_(3D house model — rotation-specific frame is beyond 0841)_
 
 **bim-ai status:** ✅ Available — `viewport/cameraRig.ts` `classifyPointer` now returns `'orbit'` when Shift+MMB is pressed (before the default MMB→pan fallthrough). This matches Revit's Shift+middle-click orbit convention. LMB drag and RMB drag also orbit; MMB alone pans; scroll wheel zooms.
 
@@ -81,4 +81,4 @@ Source segment: `05:34:19 – 06:41:32` (+ `08:35:57 – 09:57:57` for final 3D 
 **Screenshot:**
 ![Graphic Display Options](file:///Users/jhoetter/Desktop/Revit%20Specs/0342_01-09-37.png)
 
-**bim-ai status:** 🟡 Partial — A "Graphic Display Options" toggle button (`data-testid="viewport-gdo-toggle"`) in the 3D viewport bottom bar opens a panel with: Visual Style (Shaded / Consistent Colors / Wireframe / Hidden Line — all four implemented), Background (White/Light Grey/Dark — applied to the Three.js renderer clear color), and Edge display (Normal/None). The existing style-cycle button (`data-testid="viewport-wireframe-toggle"`) cycles Shaded → Wireframe → Consistent Colors → Shaded. Missing: silhouette edge width, depth cue (near/far fade), photographic exposure, shadows, ambient occlusion, and background image options.
+**bim-ai status:** ✅ Available — A "Graphic Display Options" toggle button (`data-testid="viewport-gdo-toggle"`) in the 3D viewport bottom bar opens a panel with Visual Style (Shaded / Consistent Colors / Wireframe / Hidden Line / Realistic / Ray Trace), Background, model edges, shadows, ambient occlusion, depth cue, silhouette/model edge width, and photographic exposure EV. The renderer honors these settings with material switching, ray-trace-style shadow maps, SSAO, fog-based depth cue, edge/outline thickness, and tone-mapping exposure. Saved orbit viewpoints expose and read back the GDO fields.

@@ -1025,6 +1025,8 @@ export type Element =
       volumeM3?: number | null;
       /** F-093: per-room plan fill override, matching Revit's by-element graphics override. */
       roomFillOverrideHex?: string | null;
+      /** F-093: per-room interior fill pattern override for plan/VG parity. */
+      roomFillPatternOverride?: 'solid' | 'hatch_45' | 'hatch_90' | 'crosshatch' | 'dots' | null;
       /** IFC-04: optional classification code; emitted as IfcClassificationReference. */
       ifcClassificationCode?: string | null;
       pinned?: boolean;
@@ -1096,6 +1098,8 @@ export type Element =
       viewerDepthCueEnabled?: boolean;
       /** F-113 — saved 3D graphic display option: silhouette/model edge width in px. */
       viewerSilhouetteEdgeWidth?: 1 | 2 | 3 | 4;
+      /** F-113 — saved 3D photographic exposure value in stops; renderer maps EV to toneMappingExposure. */
+      viewerPhotographicExposureEv?: number;
       sectionBoxEnabled?: boolean | null;
       sectionBoxMinMm?: { xMm: number; yMm: number; zMm: number } | null;
       sectionBoxMaxMm?: { xMm: number; yMm: number; zMm: number } | null;

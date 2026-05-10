@@ -145,6 +145,7 @@ type ViewerGdoRuntimeState = {
   viewerAmbientOcclusionEnabled?: boolean;
   viewerDepthCueEnabled?: boolean;
   viewerSilhouetteEdgeWidth?: ViewerEdgeWidth;
+  viewerPhotographicExposureEv?: number;
 };
 
 const GDO_STORAGE_KEYS = {
@@ -152,7 +153,12 @@ const GDO_STORAGE_KEYS = {
   ambientOcclusion: 'bim.viewer.ambientOcclusionEnabled',
   depthCue: 'bim.viewer.depthCueEnabled',
   silhouetteEdgeWidth: 'bim.viewer.silhouetteEdgeWidth',
+  photographicExposureEv: 'bim.viewer.photographicExposureEv',
 } as const;
+
+const PHOTOGRAPHIC_EXPOSURE_EV_MIN = -2;
+const PHOTOGRAPHIC_EXPOSURE_EV_MAX = 2;
+const PHOTOGRAPHIC_EXPOSURE_EV_STEP = 0.25;
 
 function readStoredBoolean(key: string, fallback: boolean): boolean {
   try {
@@ -173,6 +179,23 @@ function readStoredEdgeWidth(): ViewerEdgeWidth {
     /* noop */
   }
   return 1;
+}
+
+function normalizeExposureEv(value: unknown, fallback = 0): number {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  const stepped = Math.round(n / PHOTOGRAPHIC_EXPOSURE_EV_STEP) * PHOTOGRAPHIC_EXPOSURE_EV_STEP;
+  return Math.min(PHOTOGRAPHIC_EXPOSURE_EV_MAX, Math.max(PHOTOGRAPHIC_EXPOSURE_EV_MIN, stepped));
+}
+
+function readStoredExposureEv(): number {
+  try {
+    const raw = localStorage.getItem(GDO_STORAGE_KEYS.photographicExposureEv);
+    if (raw != null) return normalizeExposureEv(raw);
+  } catch {
+    /* noop */
+  }
+  return 0;
 }
 
 function applyModelEdgeDisplay(
@@ -425,6 +448,11 @@ export function Viewport({
     viewerGdoRuntime.viewerSilhouetteEdgeWidth ??
     persistedOrbitViewpoint?.viewerSilhouetteEdgeWidth ??
     readStoredEdgeWidth();
+  const viewerPhotographicExposureEv = normalizeExposureEv(
+    viewerGdoRuntime.viewerPhotographicExposureEv ??
+      persistedOrbitViewpoint?.viewerPhotographicExposureEv ??
+      readStoredExposureEv(),
+  );
   const viewerEdgesRef = useRef(viewerEdges);
   const viewerSilhouetteEdgeWidthRef = useRef(viewerSilhouetteEdgeWidth);
   viewerEdgesRef.current = viewerEdges;
@@ -447,7 +475,7 @@ export function Viewport({
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setClearColor(0x000000, 0);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    renderer.toneMappingExposure = 1;
     rendererRef.current = renderer;
     host.appendChild(renderer.domElement);
 
@@ -1765,7 +1793,7 @@ export function Viewport({
     prevElementsByIdRef.current = curr;
   }, [elementsById, viewerCategoryHidden, viewerPhaseFilter, lensMode, theme, text3dRebuildTick]);
 
-  // ── F-011: visual style (shaded / wireframe / consistent-colors / hidden-line) ──
+  // ── F-011: visual style (shaded / wireframe / consistent-colors / hidden-line / realistic / ray-trace) ──
   useEffect(() => {
     const cache = bimPickMapRef.current;
     for (const [, obj] of cache) {
@@ -1818,19 +1846,37 @@ export function Viewport({
             child.material.needsUpdate = true;
           }
         } else {
-          // 'shaded': restore original MeshStandardMaterial and disable wireframe.
+          // Shaded / realistic / ray-trace: restore original MeshStandardMaterial.
           if (child.userData.originalMaterial) {
             child.material = child.userData.originalMaterial as THREE.Material;
             delete child.userData.originalMaterial;
           }
           if (child.material instanceof THREE.MeshStandardMaterial) {
             child.material.wireframe = false;
+            if (viewerRenderStyle === 'realistic' || viewerRenderStyle === 'ray-trace') {
+              child.material.flatShading = false;
+            }
             child.material.needsUpdate = true;
           }
         }
       });
     }
   }, [viewerRenderStyle]);
+
+  useEffect(() => {
+    const renderer = rendererRef.current;
+    if (!renderer) return;
+    renderer.shadowMap.type =
+      viewerRenderStyle === 'ray-trace' ? THREE.VSMShadowMap : THREE.PCFSoftShadowMap;
+    renderer.shadowMap.needsUpdate = true;
+  }, [viewerRenderStyle]);
+
+  useEffect(() => {
+    const renderer = rendererRef.current;
+    if (!renderer) return;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = Math.pow(2, viewerPhotographicExposureEv);
+  }, [viewerPhotographicExposureEv]);
 
   // ── F-113: background colour ──────────────────────────────────────────────
   useEffect(() => {

@@ -69,6 +69,7 @@ describe('OrbitViewpointPersistedHud', () => {
       viewerAmbientOcclusionEnabled: true,
       viewerDepthCueEnabled: true,
       viewerSilhouetteEdgeWidth: 3 as const,
+      viewerPhotographicExposureEv: 0.75,
     };
     const el = renderHud(
       <OrbitViewpointPersistedHud activeViewpointId="vp-save" viewpoint={viewpoint} />,
@@ -83,6 +84,7 @@ describe('OrbitViewpointPersistedHud', () => {
     expect(el.textContent).toContain('AO on');
     expect(el.textContent).toContain('depth on');
     expect(el.textContent).toContain('edge 3');
+    expect(el.textContent).toContain('EV +0.75');
     expect(el.textContent).toContain('saved viewpoint element');
   });
 
@@ -118,6 +120,7 @@ describe('OrbitViewpointPersistedHud', () => {
       viewerAmbientOcclusionEnabled: false,
       viewerDepthCueEnabled: false,
       viewerSilhouetteEdgeWidth: 1 as const,
+      viewerPhotographicExposureEv: 0,
     };
     const el = renderHud(
       <OrbitViewpointPersistedHud
@@ -174,6 +177,18 @@ describe('OrbitViewpointPersistedHud', () => {
       elementId: 'vp-auth',
       key: 'viewerSilhouetteEdgeWidth',
       value: '4',
+    });
+
+    const exposure = el.querySelector('[data-testid="orbit-vp-exposure-ev"]') as HTMLInputElement;
+    act(() => {
+      fireEvent.change(exposure, { target: { value: '1.5' } });
+      fireEvent.blur(exposure);
+    });
+
+    expect(onPersistField).toHaveBeenCalledWith({
+      elementId: 'vp-auth',
+      key: 'viewerPhotographicExposureEv',
+      value: '1.5',
     });
   });
 });

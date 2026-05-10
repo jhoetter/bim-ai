@@ -144,6 +144,13 @@ export type ViewFilter = {
 };
 
 export type ViewerCameraActionKind = 'fit' | 'reset';
+export type ViewerRenderStyle =
+  | 'shaded'
+  | 'wireframe'
+  | 'consistent-colors'
+  | 'hidden-line'
+  | 'realistic'
+  | 'ray-trace';
 
 export type StoreState = {
   modelId?: string;
@@ -178,12 +185,18 @@ export type StoreState = {
   viewerClipFloorElevMm: number | null;
   /** When true for a semantic kind (`wall`, `roof`, …), that category is hidden in 3D. */
   viewerCategoryHidden: Record<string, boolean>;
-  /** F-011: current 3D render style — shaded (default), wireframe, consistent-colors, or hidden-line. */
-  viewerRenderStyle: 'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line';
+  /** F-011: current 3D render style. */
+  viewerRenderStyle: ViewerRenderStyle;
   /** F-113: 3D viewport background colour. */
   viewerBackground: 'white' | 'light_grey' | 'dark';
   /** F-113: edge display in the 3D viewport. */
   viewerEdges: 'normal' | 'none';
+  /** F-113: runtime 3D graphic display options mirrored from the View controls panel. */
+  viewerShadowsEnabled?: boolean;
+  viewerAmbientOcclusionEnabled?: boolean;
+  viewerDepthCueEnabled?: boolean;
+  viewerSilhouetteEdgeWidth?: 1 | 2 | 3 | 4;
+  viewerPhotographicExposureEv?: number;
   /** UX-11: 3D camera projection mode surfaced in View controls. */
   viewerProjection: 'perspective' | 'orthographic';
   /** UX-11: section-box clipping is a view-control state, not only a canvas button. */
@@ -279,10 +292,8 @@ export type StoreState = {
   setPlanRoomSchemeWireReadout: (readout: PlanRoomSchemeWireReadout | null) => void;
   setScheduleBudgetHydration: (v: { tab: string; rowCount: number } | null) => void;
   toggleViewerCategoryHidden: (semanticKind: string) => void;
-  /** F-011: switch between shaded, wireframe, consistent-colors, and hidden-line render modes. */
-  setViewerRenderStyle: (
-    style: 'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line',
-  ) => void;
+  /** F-011: switch between 3D visual styles. */
+  setViewerRenderStyle: (style: ViewerRenderStyle) => void;
   /** F-113: set 3D viewport background colour. */
   setViewerBackground: (bg: 'white' | 'light_grey' | 'dark') => void;
   /** F-113: set 3D viewport edge display mode. */

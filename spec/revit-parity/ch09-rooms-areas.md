@@ -33,7 +33,7 @@ Source segment: `05:30:00 – 05:39:46`
 **Screenshot:**
 ![Room Interior Fill](file:///Users/jhoetter/Desktop/Revit%20Specs/0759_05-30-16.png)
 
-**bim-ai status:** 🟡 Partial — the `room` model category in Visibility/Graphics Overrides (VV → Model tab) controls per-view room element visibility including interior fill. Users can toggle rooms on/off per view. Additionally, `InspectorPlanViewEditor` exposes a "Room Fill Opacity" slider (0–100%) that fires `updateElementProperty { key: 'planRoomFillOpacityScale', value }`, allowing opacity to be set to 0% to hide fills without deleting rooms. Missing: separate fill color/pattern override column distinct from wall cut patterns (Revit exposes surface foreground/background pattern per category); no per-room-instance color override equivalent to Revit's "Override Graphics in View → By Element"; no magenta "Reveal Hidden" mode.
+**bim-ai status:** ✅ Available — the `room` model category in Visibility/Graphics Overrides (VV → Model tab) controls per-view room element visibility including interior fill. `InspectorPlanViewEditor` exposes a "Room Fill Opacity" slider (0–100%) that fires `updateElementProperty { key: 'planRoomFillOpacityScale', value }`, allowing opacity to be set to 0% to hide fills without deleting rooms. Room instances support by-element fill color and fill pattern overrides (`roomFillOverrideHex`, `roomFillPatternOverride`) through the inspector, backend validation, plan projection wire primitives, and both plan render paths. Reveal Hidden shows hidden room fills in magenta.
 
 ---
 

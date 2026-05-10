@@ -635,10 +635,17 @@ function rebuildPlanMeshesFromWire(
       typeof overrideRaw === 'string' && /^#[0-9a-fA-F]{6}$/.test(overrideRaw.trim())
         ? overrideRaw.trim()
         : undefined;
+    const patternRaw = r.roomFillPatternOverride ?? r.room_fill_pattern_override;
+    const roomFillPatternOverride =
+      typeof patternRaw === 'string' &&
+      ['solid', 'hatch_45', 'hatch_90', 'crosshatch', 'dots'].includes(patternRaw.trim())
+        ? (patternRaw.trim() as 'solid' | 'hatch_45' | 'hatch_90' | 'crosshatch' | 'dots')
+        : undefined;
     const mesh = roomMesh(roomEl, presentation, {
       schemeColorHex: schemeHex,
       roomFillOpacityScale,
       roomFillOverrideHex,
+      roomFillPatternOverride,
     });
     holder.add(mesh);
     if (ann?.roomLabelsVisible === true && typeof mesh.userData.roomLabel === 'object') {

@@ -1747,6 +1747,23 @@ export function InspectorRoomEditor({
           onBlur={(e) => onPersistProperty('roomFillOverrideHex', e.target.value.trim())}
         />
       </label>
+      <label className={LABEL_CLS}>
+        Room fill pattern
+        <select
+          className={INPUT_CLS}
+          value={el.roomFillPatternOverride ?? ''}
+          key={`rm-fill-pattern-${el.id}-${el.roomFillPatternOverride ?? 'none'}-${revision}`}
+          data-testid="inspector-room-fill-pattern-override"
+          onChange={(e) => onPersistProperty('roomFillPatternOverride', e.target.value)}
+        >
+          <option value="">View default</option>
+          <option value="solid">Solid</option>
+          <option value="hatch_45">45 degree hatch</option>
+          <option value="hatch_90">90 degree hatch</option>
+          <option value="crosshatch">Crosshatch</option>
+          <option value="dots">Dots</option>
+        </select>
+      </label>
       <FieldRow label={f('level')} value={el.levelId} mono />
       <FieldRow label={f('outlinePoints')} value={String(el.outlineMm.length)} />
     </div>

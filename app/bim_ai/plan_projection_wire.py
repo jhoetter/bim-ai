@@ -1140,6 +1140,8 @@ def _build_plan_primitive_lists(
             }
             if (e.room_fill_override_hex or "").strip():
                 row["roomFillOverrideHex"] = (e.room_fill_override_hex or "").strip()
+            if (e.room_fill_pattern_override or "").strip():
+                row["roomFillPatternOverride"] = (e.room_fill_pattern_override or "").strip()
             if (e.programme_code or "").strip():
                 row["programmeCode"] = (e.programme_code or "").strip()
             if (e.department or "").strip():
