@@ -1,0 +1,58 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "4cdc8db8edcd",
+  "session_id": "019e12a2-e2b7-7121-b7a2-efaa44476317",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T17:33:25.380492Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/plan/PlanCanvas.toolDestubs.test.ts",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/wallRadiusFillet.test.ts",
+    "packages/web/src/state/storeRuntimeSlices.ts",
+    "packages/web/src/state/storeSliceContracts.test.ts",
+    "packages/web/src/state/storeSliceContracts.ts",
+    "packages/web/src/state/storeTypes.ts",
+    "packages/web/src/workspace/authoring/OptionsBar.test.tsx",
+    "packages/web/src/workspace/authoring/OptionsBar.tsx",
+    "spec/revit-parity/README.md",
+    "spec/revit-parity/ch04-walls.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "1a399e4c930b",
+  "checkpoint_transcript_start": 1972,
+  "transcript_lines_at_start": 1972,
+  "token_usage": {
+    "input_tokens": 43934,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 478464,
+    "output_tokens": 476,
+    "api_call_count": 6
+  },
+  "session_metrics": {
+    "turn_count": 10
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T17:33:25.095715Z",
+    "agent_lines": 341,
+    "agent_removed": 151,
+    "human_added": 132,
+    "human_modified": 3,
+    "human_removed": 0,
+    "total_committed": 476,
+    "total_lines_changed": 627,
+    "agent_percentage": 78.4688995215311,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
