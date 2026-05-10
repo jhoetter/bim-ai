@@ -1,0 +1,74 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "43436496f282",
+  "session_id": "019e1416-e3cb-79e3-9e38-d4bf8fbd3eec",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T23:06:15.781017Z",
+  "branch": "revit-parity-worker-integration-wave-11",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/familyEditor/familyEditorPersistence.ts",
+    "packages/web/src/familyEditor/FamilyEditorWorkbench.tsx",
+    "packages/web/src/workspace/authoring/OptionsBar.tsx",
+    "packages/web/src/workspace/WorkspaceRightRail.tsx",
+    "packages/web/src/familyEditor/familyEditorPersistence.test.ts",
+    "packages/web/src/familyEditor/FamilyEditorWorkbench.test.tsx",
+    "packages/web/src/workspace/authoring/OptionsBar.test.tsx",
+    "packages/web/src/workspace/WorkspaceRightRail.test.tsx",
+    "spec/revit-parity/README.md",
+    "spec/revit-parity/ch05-family-editor.md",
+    "spec/revit-parity/ch06-nested-families.md",
+    "spec/revit-parity/ch07-parametric-furniture.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "e22ee2403ab1",
+  "token_usage": {
+    "input_tokens": 159267,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 10281472,
+    "output_tokens": 27166,
+    "api_call_count": 105
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1414,
+      "user_lines_removed": 69,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/commands.py": 18,
+        "app/bim_ai/elements.py": 20,
+        "app/bim_ai/engine.py": 2,
+        "app/bim_ai/engine_dispatch_siteassets.py": 42,
+        "packages/core/src/index.ts": 15,
+        "packages/web/src/families/FamilyLibraryPanel.externalCatalogs.test.tsx": 88,
+        "packages/web/src/families/FamilyLibraryPanel.test.tsx": 49,
+        "packages/web/src/families/FamilyLibraryPanel.tsx": 233,
+        "packages/web/src/families/familyPlacementRuntime.ts": 37,
+        "packages/web/src/families/familyResolver.test.ts": 195,
+        "packages/web/src/families/familyResolver.ts": 114,
+        "packages/web/src/families/types.ts": 41,
+        "packages/web/src/familyEditor/FamilyEditorWorkbench.test.tsx": 5,
+        "packages/web/src/familyEditor/FamilyEditorWorkbench.tsx": 126,
+        "packages/web/src/familyEditor/familyEditorPersistence.ts": 83,
+        "packages/web/src/plan/PlanCanvas.tsx": 44,
+        "packages/web/src/plan/familyInstancePlanRendering.ts": 177,
+        "packages/web/src/state/storeCoercion.ts": 27,
+        "packages/web/src/workspace/Workspace.tsx": 10,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 45,
+        "packages/web/src/workspace/authoring/OptionsBar.tsx": 43
+      },
+      "user_removed_per_file": {
+        "packages/web/src/families/FamilyLibraryPanel.tsx": 8,
+        "packages/web/src/families/familyResolver.ts": 4,
+        "packages/web/src/familyEditor/FamilyEditorWorkbench.test.tsx": 3,
+        "packages/web/src/familyEditor/FamilyEditorWorkbench.tsx": 19,
+        "packages/web/src/familyEditor/familyEditorPersistence.ts": 32,
+        "packages/web/src/plan/PlanCanvas.tsx": 2,
+        "packages/web/src/workspace/authoring/OptionsBar.tsx": 1
+      }
+    }
+  ]
+}

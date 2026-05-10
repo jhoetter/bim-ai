@@ -1,0 +1,5 @@
+You are working in the bim-ai repo on branch/revit parity wave 10. You are not alone in the codebase: do not revert edits made by others, and adjust to existing/new changes. Ownership: Family Types / type-vs-instance / placed family instance parameter integration. Target close F-055, F-056, F-074, and F-081 if defensible. Inspect spec/revit-parity/README.md plus ch05-family-editor.md, ch06-nested-families.md, ch07-parametric-furniture.md. Implement persistent/loadable Revit-style family type catalog behavior, project Type Selector integration for authored family types, and instance parameter editing for placed authored families using existing family_type/family_instance/paramValues patterns. Keep writes scoped to packages/web/src/familyEditor/*, packages/web/src/workspace/WorkspaceRightRail*, packages/web/src/workspace/Workspace.tsx, focused tests, and tracker docs if needed. Do not run full CI; run focused tests/typecheck. Edit files directly and report changed paths and verification.
+
+---
+
+Status checkpoint please: summarize what is complete, which files you changed, current blockers, and whether you expect to finish shortly. Keep working unless blocked.

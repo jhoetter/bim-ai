@@ -8,7 +8,18 @@
     "packages/web/src/families/FamilyLibraryPanel.externalCatalogs.test.tsx",
     "packages/web/src/families/FamilyLibraryPanel.test.tsx",
     "packages/web/src/families/FamilyLibraryPanel.tsx",
-    "spec/revit-parity/README.md"
+    "packages/web/src/familyEditor/FamilyEditorWorkbench.test.tsx",
+    "packages/web/src/familyEditor/FamilyEditorWorkbench.tsx",
+    "packages/web/src/familyEditor/familyEditorPersistence.test.ts",
+    "packages/web/src/familyEditor/familyEditorPersistence.ts",
+    "packages/web/src/workspace/WorkspaceRightRail.test.tsx",
+    "packages/web/src/workspace/WorkspaceRightRail.tsx",
+    "packages/web/src/workspace/authoring/OptionsBar.test.tsx",
+    "packages/web/src/workspace/authoring/OptionsBar.tsx",
+    "spec/revit-parity/README.md",
+    "spec/revit-parity/ch05-family-editor.md",
+    "spec/revit-parity/ch06-nested-families.md",
+    "spec/revit-parity/ch07-parametric-furniture.md"
   ],
   "sessions": [
     {
@@ -34,13 +45,19 @@
       "transcript": "/43/436496f282/3/full.jsonl",
       "content_hash": "/43/436496f282/3/content_hash.txt",
       "prompt": "/43/436496f282/3/prompt.txt"
+    },
+    {
+      "metadata": "/43/436496f282/4/metadata.json",
+      "transcript": "/43/436496f282/4/full.jsonl",
+      "content_hash": "/43/436496f282/4/content_hash.txt",
+      "prompt": "/43/436496f282/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1988210,
+    "input_tokens": 2147477,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 51774208,
-    "output_tokens": 132234,
-    "api_call_count": 415
+    "cache_read_tokens": 62055680,
+    "output_tokens": 159400,
+    "api_call_count": 520
   }
 }
