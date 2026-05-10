@@ -54,6 +54,32 @@ export type SpotElevationPrimitive = {
   colour: string;
 };
 
+export type RadialDimensionPrimitive = {
+  kind: 'radial_dimension';
+  id: string;
+  centerMm: XY;
+  arcPointMm: XY;
+  colour: string;
+};
+
+export type DiameterDimensionPrimitive = {
+  kind: 'diameter_dimension';
+  id: string;
+  centerMm: XY;
+  arcPointMm: XY;
+  colour: string;
+};
+
+export type ArcLengthDimensionPrimitive = {
+  kind: 'arc_length_dimension';
+  id: string;
+  centerMm: XY;
+  radiusMm: number;
+  startAngleDeg: number;
+  endAngleDeg: number;
+  colour: string;
+};
+
 export type MaterialTagPrimitive = {
   kind: 'material_tag';
   id: string;
@@ -158,6 +184,9 @@ export type DetailComponentPrimitive =
   | DetailRegionPrimitive
   | TextNotePrimitive
   | SpotElevationPrimitive
+  | RadialDimensionPrimitive
+  | DiameterDimensionPrimitive
+  | ArcLengthDimensionPrimitive
   | MaterialTagPrimitive
   | MultiCategoryTagPrimitive
   | TreadNumberPrimitive
@@ -221,6 +250,32 @@ export function extractDetailComponentPrimitives(
         elevationMm: el.elevationMm,
         prefix: el.prefix ?? '',
         suffix: el.suffix ?? '',
+        colour: el.colour ?? '#202020',
+      });
+    } else if (el.kind === 'radial_dimension' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'radial_dimension',
+        id: el.id,
+        centerMm: el.centerMm,
+        arcPointMm: el.arcPointMm,
+        colour: el.colour ?? '#202020',
+      });
+    } else if (el.kind === 'diameter_dimension' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'diameter_dimension',
+        id: el.id,
+        centerMm: el.centerMm,
+        arcPointMm: el.arcPointMm,
+        colour: el.colour ?? '#202020',
+      });
+    } else if (el.kind === 'arc_length_dimension' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'arc_length_dimension',
+        id: el.id,
+        centerMm: el.centerMm,
+        radiusMm: el.radiusMm,
+        startAngleDeg: el.startAngleDeg,
+        endAngleDeg: el.endAngleDeg,
         colour: el.colour ?? '#202020',
       });
     } else if (el.kind === 'material_tag' && el.hostViewId === viewId) {

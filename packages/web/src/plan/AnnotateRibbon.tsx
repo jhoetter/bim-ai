@@ -124,6 +124,38 @@ export function AnnotateRibbon({
     });
   };
 
+  const placeRadialDimension = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createRadialDimension',
+      hostViewId: planViewId,
+      centerMm: { xMm: c.xMm, yMm: c.yMm },
+      arcPointMm: { xMm: c.xMm + 500, yMm: c.yMm },
+    });
+  };
+
+  const placeDiameterDimension = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createDiameterDimension',
+      hostViewId: planViewId,
+      centerMm: { xMm: c.xMm, yMm: c.yMm },
+      arcPointMm: { xMm: c.xMm + 500, yMm: c.yMm },
+    });
+  };
+
+  const placeArcLengthDimension = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createArcLengthDimension',
+      hostViewId: planViewId,
+      centerMm: { xMm: c.xMm, yMm: c.yMm },
+      radiusMm: 500,
+      startAngleDeg: 0,
+      endAngleDeg: 90,
+    });
+  };
+
   const placeMaterialTag = () => {
     const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
     onSemanticCommand({
@@ -354,6 +386,33 @@ export function AnnotateRibbon({
         title="Place a spot elevation annotation at the view centre."
       >
         Spot Elev.
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-radial-dimension"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeRadialDimension}
+        title="Place a radial dimension (center to arc point 500mm right)."
+      >
+        Radial Dim
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-diameter-dimension"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeDiameterDimension}
+        title="Place a diameter dimension (center to arc point 500mm right)."
+      >
+        Dia. Dim
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-arc-length-dimension"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeArcLengthDimension}
+        title="Place an arc length dimension (r=500mm, 0°→90°)."
+      >
+        Arc Len.
       </button>
       {textNoteInput ? (
         <div className="flex flex-col gap-1">
