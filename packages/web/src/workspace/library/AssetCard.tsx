@@ -1,5 +1,8 @@
-import type { ReactElement } from 'react';
-import type { AssetLibraryEntry } from '@bim-ai/core';
+import { useEffect, useRef, type ReactElement } from 'react';
+import type { AssetLibraryEntry, Element } from '@bim-ai/core';
+import * as THREE from 'three';
+
+import { makePlacedAssetMesh } from '../../viewport/placedAssetRendering';
 
 type AssetCardProps = {
   entry: AssetLibraryEntry;
@@ -33,320 +36,109 @@ function inferSymbolKind(
   return undefined;
 }
 
-function IsoBox({
-  x,
-  y,
-  w,
-  d,
-  h,
-  top,
-  side,
-  front,
-}: {
-  x: number;
-  y: number;
-  w: number;
-  d: number;
-  h: number;
-  top: string;
-  side: string;
-  front: string;
-}): ReactElement {
-  const dx = d * 0.42;
-  const dy = d * 0.28;
-  return (
-    <g stroke="var(--color-border-strong)" strokeWidth={1.1} strokeLinejoin="round">
-      <polygon
-        points={`${x},${y} ${x + w},${y} ${x + w + dx},${y + dy} ${x + dx},${y + dy}`}
-        fill={top}
-      />
-      <polygon
-        points={`${x},${y} ${x + dx},${y + dy} ${x + dx},${y + dy + h} ${x},${y + h}`}
-        fill={side}
-      />
-      <polygon
-        points={`${x + dx},${y + dy} ${x + w + dx},${y + dy} ${x + w + dx},${y + dy + h} ${x + dx},${y + dy + h}`}
-        fill={front}
-      />
-    </g>
-  );
-}
-
 export function RenderedAssetThumbnail({ entry }: { entry: AssetLibraryEntry }): ReactElement {
-  const symbolKind = entry.planSymbolKind ?? entry.renderProxyKind ?? inferSymbolKind(entry);
-  let body: ReactElement;
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  if (symbolKind === 'bed') {
-    body = (
-      <>
-        <IsoBox
-          x={9}
-          y={25}
-          w={38}
-          d={20}
-          h={13}
-          top="var(--color-surface-muted)"
-          side="var(--color-border)"
-          front="var(--disc-arch-soft)"
-        />
-        <IsoBox
-          x={13}
-          y={22}
-          w={30}
-          d={16}
-          h={7}
-          top="var(--color-surface)"
-          side="var(--color-surface-muted)"
-          front="var(--color-surface-muted)"
-        />
-        <IsoBox
-          x={15}
-          y={19}
-          w={10}
-          d={5}
-          h={4}
-          top="var(--color-canvas-paper)"
-          side="var(--color-surface-muted)"
-          front="var(--color-surface-strong)"
-        />
-        <IsoBox
-          x={28}
-          y={19}
-          w={10}
-          d={5}
-          h={4}
-          top="var(--color-canvas-paper)"
-          side="var(--color-surface-muted)"
-          front="var(--color-surface-strong)"
-        />
-      </>
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || typeof WebGLRenderingContext === 'undefined') return undefined;
+
+    let renderer: THREE.WebGLRenderer | null = null;
+    const scene = new THREE.Scene();
+    const group = makePlacedAssetMesh(
+      {
+        kind: 'placed_asset',
+        id: `thumbnail-${entry.id}`,
+        name: entry.name,
+        assetId: entry.id,
+        levelId: 'thumbnail-level',
+        positionMm: { xMm: 0, yMm: 0 },
+        rotationDeg: -25,
+        paramValues: {},
+      },
+      {
+        'thumbnail-level': {
+          kind: 'level',
+          id: 'thumbnail-level',
+          name: 'Preview',
+          elevationMm: 0,
+        },
+        [entry.id]: {
+          kind: 'asset_library_entry',
+          id: entry.id,
+          assetKind: entry.assetKind ?? 'family_instance',
+          name: entry.name,
+          tags: entry.tags,
+          category: entry.category,
+          disciplineTags: entry.disciplineTags,
+          thumbnailKind: entry.thumbnailKind,
+          thumbnailWidthMm: entry.thumbnailMm?.widthMm,
+          thumbnailHeightMm: entry.thumbnailMm?.heightMm,
+          planSymbolKind: entry.planSymbolKind ?? inferSymbolKind(entry),
+          renderProxyKind: entry.renderProxyKind ?? entry.planSymbolKind ?? inferSymbolKind(entry),
+          paramSchema: entry.paramSchema,
+          publishedFromOrgId: entry.publishedFromOrgId,
+          description: entry.description,
+        },
+      } satisfies Record<string, Element>,
+      null,
     );
-  } else if (symbolKind === 'chair') {
-    body = (
-      <>
-        <IsoBox
-          x={19}
-          y={30}
-          w={22}
-          d={15}
-          h={8}
-          top="var(--disc-arch-soft)"
-          side="var(--color-border-strong)"
-          front="var(--disc-arch-soft)"
-        />
-        <IsoBox
-          x={19}
-          y={18}
-          w={22}
-          d={6}
-          h={18}
-          top="var(--color-surface-muted)"
-          side="var(--color-border)"
-          front="var(--color-border-strong)"
-        />
-        {[22, 38].map((x) => (
-          <line
-            key={x}
-            x1={x}
-            y1={42}
-            x2={x - 2}
-            y2={53}
-            stroke="var(--color-border-strong)"
-            strokeWidth={2}
-          />
-        ))}
-      </>
-    );
-  } else if (symbolKind === 'table') {
-    body = (
-      <>
-        <IsoBox
-          x={12}
-          y={23}
-          w={34}
-          d={18}
-          h={5}
-          top="var(--disc-struct-soft)"
-          side="var(--color-border-strong)"
-          front="var(--color-border)"
-        />
-        {[18, 42].map((x) =>
-          [36, 45].map((y) => (
-            <line
-              key={`${x}-${y}`}
-              x1={x}
-              y1={y}
-              x2={x - 1}
-              y2={52}
-              stroke="var(--color-border-strong)"
-              strokeWidth={2}
-            />
-          )),
-        )}
-      </>
-    );
-  } else if (symbolKind === 'sofa') {
-    body = (
-      <>
-        <IsoBox
-          x={9}
-          y={30}
-          w={38}
-          d={18}
-          h={11}
-          top="var(--disc-arch-soft)"
-          side="var(--color-border)"
-          front="var(--disc-arch-soft)"
-        />
-        <IsoBox
-          x={10}
-          y={20}
-          w={36}
-          d={8}
-          h={17}
-          top="var(--color-surface-muted)"
-          side="var(--color-border-strong)"
-          front="var(--color-border-strong)"
-        />
-        <IsoBox
-          x={7}
-          y={29}
-          w={6}
-          d={18}
-          h={13}
-          top="var(--disc-arch-soft)"
-          side="var(--color-border-strong)"
-          front="var(--color-border)"
-        />
-        <IsoBox
-          x={45}
-          y={29}
-          w={6}
-          d={18}
-          h={13}
-          top="var(--disc-arch-soft)"
-          side="var(--color-border-strong)"
-          front="var(--color-border)"
-        />
-      </>
-    );
-  } else if (symbolKind === 'wardrobe' || symbolKind === 'fridge') {
-    const top = symbolKind === 'fridge' ? 'var(--color-canvas-paper)' : 'var(--disc-struct-soft)';
-    const side =
-      symbolKind === 'fridge' ? 'var(--color-surface-muted)' : 'var(--color-border-strong)';
-    const front =
-      symbolKind === 'fridge' ? 'var(--color-surface-strong)' : 'var(--disc-struct-soft)';
-    body = (
-      <>
-        <IsoBox x={18} y={13} w={22} d={13} h={36} top={top} side={side} front={front} />
-        <line
-          x1={33}
-          y1={19}
-          x2={33}
-          y2={54}
-          stroke="var(--color-border-strong)"
-          strokeWidth={1.2}
-        />
-        <line
-          x1={37}
-          y1={33}
-          x2={37}
-          y2={45}
-          stroke="var(--color-border-strong)"
-          strokeWidth={1.4}
-        />
-      </>
-    );
-  } else if (symbolKind === 'lamp') {
-    body = (
-      <>
-        <ellipse
-          cx={31}
-          cy={50}
-          rx={15}
-          ry={5}
-          fill="var(--color-surface-muted)"
-          stroke="var(--color-border-strong)"
-        />
-        <line x1={31} y1={21} x2={31} y2={50} stroke="var(--color-border)" strokeWidth={3} />
-        <polygon
-          points="20,20 42,20 36,34 25,34"
-          fill="var(--color-warning)"
-          stroke="var(--color-border-strong)"
-          strokeWidth={1.1}
-        />
-      </>
-    );
-  } else if (symbolKind === 'rug') {
-    body = (
-      <>
-        <polygon
-          points="12,28 43,20 54,35 22,45"
-          fill="var(--disc-mep-soft)"
-          stroke="var(--color-border-strong)"
-          strokeWidth={1.2}
-        />
-        <polygon
-          points="20,29 42,24 48,34 25,40"
-          fill="none"
-          stroke="var(--color-border-strong)"
-          strokeWidth={0.9}
-        />
-      </>
-    );
-  } else if (
-    symbolKind === 'sink' ||
-    symbolKind === 'toilet' ||
-    symbolKind === 'bath' ||
-    symbolKind === 'shower'
-  ) {
-    body = (
-      <>
-        <IsoBox
-          x={13}
-          y={23}
-          w={33}
-          d={17}
-          h={8}
-          top="var(--color-canvas-paper)"
-          side="var(--color-surface-muted)"
-          front="var(--color-surface-strong)"
-        />
-        <ellipse
-          cx={34}
-          cy={31}
-          rx={12}
-          ry={6}
-          fill="var(--disc-mep-soft)"
-          stroke="var(--color-border-strong)"
-        />
-      </>
-    );
-  } else {
-    body = (
-      <IsoBox
-        x={13}
-        y={22}
-        w={32}
-        d={18}
-        h={18}
-        top="var(--color-surface-muted)"
-        side="var(--color-border)"
-        front="var(--color-surface-muted)"
-      />
-    );
-  }
+
+    try {
+      scene.add(group);
+      const bounds = new THREE.Box3().setFromObject(group);
+      const center = bounds.getCenter(new THREE.Vector3());
+      const size = bounds.getSize(new THREE.Vector3());
+      group.position.sub(center);
+
+      const radius = Math.max(size.length() / 2, 0.35);
+      const viewSize = radius * 2.8;
+      const camera = new THREE.OrthographicCamera(
+        -viewSize / 2,
+        viewSize / 2,
+        viewSize / 2,
+        -viewSize / 2,
+        0.01,
+        radius * 10,
+      );
+      camera.position.set(radius * 2.6, radius * 2, radius * 3);
+      camera.lookAt(0, 0, 0);
+
+      scene.add(new THREE.AmbientLight('white', 1.15));
+      const keyLight = new THREE.DirectionalLight('white', 1.8);
+      keyLight.position.set(2, 4, 3);
+      scene.add(keyLight);
+
+      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+      renderer.setClearAlpha(0);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(64, 64, false);
+      renderer.render(scene, camera);
+    } catch {
+      renderer?.dispose();
+      renderer = null;
+    }
+
+    return () => {
+      group.traverse((object) => {
+        const mesh = object as THREE.Mesh;
+        if (mesh.geometry) mesh.geometry.dispose();
+        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        materials.filter(Boolean).forEach((material) => material.dispose());
+      });
+      renderer?.dispose();
+    };
+  }, [entry]);
 
   return (
-    <svg
-      viewBox="0 0 64 64"
+    <canvas
+      ref={canvasRef}
       width={64}
       height={64}
       aria-hidden="true"
       data-testid="asset-rendered-thumbnail"
-    >
-      {body}
-    </svg>
+      style={{ display: 'block', width: 56, height: 56 }}
+    />
   );
 }
 

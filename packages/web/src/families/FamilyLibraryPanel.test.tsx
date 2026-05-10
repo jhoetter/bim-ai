@@ -126,13 +126,12 @@ describe('<FamilyLibraryPanel /> — FL-06', () => {
       thumbnailHeightMm: 900,
     };
     const { getByTestId } = setup({ [asset.id]: asset });
-    const svg = getByTestId(`family-row-${asset.id}`).querySelector('svg');
+    const canvas = getByTestId(`family-row-${asset.id}`).querySelector('canvas');
 
-    expect(svg).toBeTruthy();
-    expect(svg?.getAttribute('data-testid')).toBe('asset-rendered-thumbnail');
-    expect(svg?.getAttribute('viewBox')).toBe('0 0 64 64');
-    expect(svg?.querySelectorAll('polygon').length).toBeGreaterThan(0);
-    expect(svg?.querySelectorAll('line').length).toBeGreaterThan(0);
+    expect(canvas).toBeTruthy();
+    expect(canvas?.getAttribute('data-testid')).toBe('asset-rendered-thumbnail');
+    expect(canvas?.getAttribute('width')).toBe('64');
+    expect(canvas?.getAttribute('height')).toBe('64');
   });
 
   it('groups custom wall_type elements under "Wall Types"', () => {
