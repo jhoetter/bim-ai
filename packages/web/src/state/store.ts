@@ -1,19 +1,15 @@
 import { create } from 'zustand';
 
-import type {
-  Element,
-  EvidenceRef,
-  EvidenceRefKind,
-  LensMode,
-  PerspectiveId,
-  Violation,
-  WorkspaceLayoutPreset,
-  XY,
-} from '@bim-ai/core';
+import type { Element, EvidenceRef, EvidenceRefKind, Violation, XY } from '@bim-ai/core';
 
 import type { PlanPresentationPreset } from '../plan/symbology';
 
 import type { CategoryOverrides, StoreState, ViewFilter } from './storeTypes';
+import {
+  createCollaborationRuntimeSlice,
+  createPlanAuthoringRuntimeSlice,
+  createWorkspaceUiRuntimeSlice,
+} from './storeRuntimeSlices';
 
 export type {
   PlanRoomSchemeWireReadout,
@@ -1573,118 +1569,9 @@ export const useBimStore = create<StoreState>((set, get) => {
 
     viewerMode: 'orbit_3d',
 
-    planTool: 'select',
-
-    wallLocationLine: 'wall-centerline',
-
-    applyAreaRules: true,
-
-    floorBoundaryOffsetMm: 0,
-
-    wallDrawOffsetMm: 0,
-
-    wallDrawHeightMm: 2800,
-
-    activeWallTypeId: null,
-
-    activeFloorTypeId: null,
-
-    orthoSnapHold: false,
-    userId: (() => {
-      try {
-        const u = sessionStorage.getItem('bim.userId');
-
-        if (u) return u;
-
-        const nid = crypto.randomUUID();
-
-        sessionStorage.setItem('bim.userId', nid);
-
-        return nid;
-      } catch {
-        return `user-${Math.random().toString(36).slice(2)}`;
-      }
-    })(),
-
-    userDisplayName: (() => {
-      try {
-        return sessionStorage.getItem('bim.displayName') || 'Collaborator';
-      } catch {
-        return 'Collaborator';
-      }
-    })(),
-
-    peerId: peerSeed,
-
-    presencePeers: {},
-
-    comments: [],
-
-    activityEvents: [],
-
-    planHudMm: undefined,
-
-    buildingPreset: (() => {
-      try {
-        return localStorage.getItem('bim.buildingPreset') || 'residential';
-      } catch {
-        return 'residential';
-      }
-    })(),
-
-    workspaceLayoutPreset: ((): WorkspaceLayoutPreset => {
-      const allowed: WorkspaceLayoutPreset[] = [
-        'classic',
-        'split_plan_3d',
-        'split_plan_section',
-        'coordination',
-        'schedules_focus',
-        'agent_review',
-      ];
-      try {
-        const raw = localStorage.getItem('bim.workspaceLayout');
-        if (raw && allowed.includes(raw as WorkspaceLayoutPreset))
-          return raw as WorkspaceLayoutPreset;
-      } catch {
-        /* noop */
-      }
-      return 'classic';
-    })(),
-
-    perspectiveId: ((): PerspectiveId => {
-      const allowed: PerspectiveId[] = [
-        'architecture',
-        'structure',
-        'mep',
-        'coordination',
-        'construction',
-        'agent',
-      ];
-      try {
-        const raw = localStorage.getItem('bim.perspective');
-        if (raw && allowed.includes(raw as PerspectiveId)) return raw as PerspectiveId;
-      } catch {
-        /* noop */
-      }
-      return 'architecture';
-    })(),
-
-    planPresentationPreset: ((): PlanPresentationPreset => {
-      const allowed: PlanPresentationPreset[] = ['default', 'opening_focus', 'room_scheme'];
-
-      try {
-        const raw = localStorage.getItem('bim.planPresentation');
-
-        if (raw && allowed.includes(raw as PlanPresentationPreset))
-          return raw as PlanPresentationPreset;
-      } catch {
-        /* noop */
-      }
-
-      return 'default';
-    })(),
-
-    lensMode: 'all' as LensMode,
+    ...createPlanAuthoringRuntimeSlice(set),
+    ...createCollaborationRuntimeSlice(set, peerSeed),
+    ...createWorkspaceUiRuntimeSlice(set),
 
     viewerClipElevMm: null,
 
@@ -1829,85 +1716,6 @@ export const useBimStore = create<StoreState>((set, get) => {
         return { userFamilies: next };
       }),
 
-    setViewerMode: (m) => set({ viewerMode: m }),
-
-    setPlanTool: (t) => set({ planTool: t }),
-
-    setActiveLevelId: (id) => set({ activeLevelId: id }),
-
-    setWallLocationLine: (wallLocationLine) => set({ wallLocationLine }),
-
-    setApplyAreaRules: (v) => set({ applyAreaRules: v }),
-
-    setFloorBoundaryOffsetMm: (floorBoundaryOffsetMm) => set({ floorBoundaryOffsetMm }),
-
-    setWallDrawOffsetMm: (wallDrawOffsetMm) => set({ wallDrawOffsetMm }),
-
-    setWallDrawHeightMm: (wallDrawHeightMm) => set({ wallDrawHeightMm }),
-
-    setActiveWallTypeId: (activeWallTypeId) => set({ activeWallTypeId }),
-
-    setActiveFloorTypeId: (activeFloorTypeId) => set({ activeFloorTypeId }),
-
-    setOrthoSnapHold: (v) => set({ orthoSnapHold: v }),
-
-    setPresencePeers: (peers) => set({ presencePeers: peers }),
-
-    setComments: (c) => set({ comments: c }),
-
-    mergeComment: (c) =>
-      set(() => {
-        const nx = [...get().comments.filter((x) => x.id !== c.id), c].sort((a, b) =>
-          String(b.createdAt ?? '').localeCompare(String(a.createdAt ?? '')),
-        );
-
-        return { comments: nx };
-      }),
-
-    setPlanHud: (mm) => set({ planHudMm: mm }),
-
-    setBuildingPreset: (preset) =>
-      set(() => {
-        try {
-          localStorage.setItem('bim.buildingPreset', preset);
-        } catch {
-          /* noop */
-        }
-        return { buildingPreset: preset };
-      }),
-
-    setWorkspaceLayoutPreset: (preset) =>
-      set(() => {
-        try {
-          localStorage.setItem('bim.workspaceLayout', preset);
-        } catch {
-          /* noop */
-        }
-        return { workspaceLayoutPreset: preset };
-      }),
-
-    setPerspectiveId: (perspectiveId) =>
-      set(() => {
-        try {
-          localStorage.setItem('bim.perspective', perspectiveId);
-        } catch {
-          /* noop */
-        }
-        return { perspectiveId };
-      }),
-
-    setPlanPresentationPreset: (planPresentationPreset) =>
-      set(() => {
-        try {
-          localStorage.setItem('bim.planPresentation', planPresentationPreset);
-        } catch {
-          /* noop */
-        }
-        return { planPresentationPreset };
-      }),
-
-    setLensMode: (lensMode) => set(() => ({ lensMode })),
-
     activatePlanView: (planViewElementId) => {
       if (!planViewElementId) {
         // VIE-04: leaving the plan view also drops any temporary visibility
@@ -1969,15 +1777,6 @@ export const useBimStore = create<StoreState>((set, get) => {
 
     setViewerClipFloorElevMm: (viewerClipFloorElevMm) => set({ viewerClipFloorElevMm }),
 
-    setPlanProjectionPrimitives: (planProjectionPrimitives) =>
-      planProjectionPrimitives === null
-        ? set({ planProjectionPrimitives: null, planRoomSchemeWireReadout: null })
-        : set({ planProjectionPrimitives }),
-
-    setPlanRoomSchemeWireReadout: (planRoomSchemeWireReadout) => set({ planRoomSchemeWireReadout }),
-
-    setScheduleBudgetHydration: (scheduleBudgetHydration) => set({ scheduleBudgetHydration }),
-
     toggleViewerCategoryHidden: (semanticKind) =>
       set(() => {
         const prior = get().viewerCategoryHidden[semanticKind];
@@ -2021,23 +1820,6 @@ export const useBimStore = create<StoreState>((set, get) => {
         orbitCameraNonce: state.orbitCameraNonce + 1,
       })),
 
-    setActivity: (e) => set({ activityEvents: e }),
-
-    setIdentity: (userId, userDisplayName, peerId) =>
-      set(() => {
-        try {
-          sessionStorage.setItem('bim.userId', userId);
-
-          sessionStorage.setItem('bim.displayName', userDisplayName);
-
-          sessionStorage.setItem('bim.peerId', peerId);
-        } catch {
-          /* noop */
-        }
-
-        return { userId, userDisplayName: userDisplayName, peerId };
-      }),
-
     // F-011: default to shaded mode.
     viewerRenderStyle: 'shaded',
 
@@ -2060,11 +1842,6 @@ export const useBimStore = create<StoreState>((set, get) => {
 
     toggleNeighborhoodMasses: () =>
       set((s) => ({ showNeighborhoodMasses: !s.showNeighborhoodMasses })),
-
-    // F-006: QAT Thin Lines toggle.
-    thinLinesEnabled: false,
-
-    toggleThinLines: () => set((s) => ({ thinLinesEnabled: !s.thinLinesEnabled })),
 
     vvDialogOpen: false,
 

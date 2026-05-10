@@ -14,13 +14,13 @@ This tracker is for the code-quality items only:
 
 ## Current Snapshot
 
-| ID    | Status    | Current state |
-| ----- | --------- | ------------- |
-| CQ-01 | `done`    | Sequenced WebSocket publish path, bounded replay buffer, resume/RESYNC flow, client reconnect/backoff, and regression coverage are merged and green. |
-| CQ-02 | `done`    | `uv.lock`, bounded Python deps, frozen installs, and lockfile CI checks are merged and green. |
-| CQ-03 | `open`    | `packages/web/src/workspace/` is still a flat 164-file directory; no reorg has landed. |
-| CQ-04 | `partial` | Multiple cohesive helper modules have been extracted from `constraints.py`, `engine.py`, and `export_ifc.py`; the large source files still exist and are not thin shims. |
-| CQ-05 | `partial` | Typed store slice contracts and tests exist; runtime store slicing is still open. |
+| ID    | Status    | Current state                                                                                                                                                               |
+| ----- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CQ-01 | `done`    | Sequenced WebSocket publish path, bounded replay buffer, resume/RESYNC flow, client reconnect/backoff, and regression coverage are merged and green.                        |
+| CQ-02 | `done`    | `uv.lock`, bounded Python deps, frozen installs, and lockfile CI checks are merged and green.                                                                               |
+| CQ-03 | `open`    | `packages/web/src/workspace/` is still a flat 164-file directory; no reorg has landed.                                                                                      |
+| CQ-04 | `partial` | Multiple cohesive helper modules have been extracted from `constraints.py`, `engine.py`, and `export_ifc.py`; the large source files still exist and are not thin shims.    |
+| CQ-05 | `partial` | Typed slice contracts and tests exist; plan authoring, collaboration, and workspace UI runtime slice factories are extracted while the stable `useBimStore` facade remains. |
 
 ## Status Legend
 
@@ -180,7 +180,7 @@ These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (t
 
 **Approach note.** Easiest path: introduce slices using the [zustand "slices" pattern](https://docs.pmnd.rs/zustand/guides/slices-pattern) inside the existing `useBimStore` first (zero callsite churn). Then, in a follow-up PR, extract slices that are genuinely independent (most likely `useCollabStore`) into their own store.
 
-**Progress 2026-05-10.** Added explicit typed slice contracts for the stable `useBimStore` facade: model, viewport, plan authoring, collaboration, and workspace UI. Added regression coverage that exercises each slice's basic mutations through the public hook. Runtime slice extraction is still open.
+**Progress 2026-05-10.** Added explicit typed slice contracts for the stable `useBimStore` facade: model, viewport, plan authoring, collaboration, and workspace UI. Added regression coverage that exercises each slice's basic mutations through the public hook. Extracted plan authoring, collaboration, and workspace UI runtime slice factories into `storeRuntimeSlices.ts`; the public selector API remains stable and no store uses dynamic imports.
 
 ---
 
