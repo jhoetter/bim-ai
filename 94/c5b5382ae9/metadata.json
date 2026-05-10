@@ -1,0 +1,54 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "94c5b5382ae9",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/ManageLinksDialog.driftBadge.test.tsx",
+    "packages/web/src/workspace/ManageLinksDialog.test.tsx",
+    "packages/web/src/workspace/ManageLinksDialog.tsx",
+    "packages/web/src/workspace/ProjectBrowser.test.tsx",
+    "packages/web/src/workspace/ProjectBrowser.tsx",
+    "packages/web/src/workspace/ProjectMenu.linkIfc.test.tsx",
+    "packages/web/src/workspace/ProjectMenu.test.tsx",
+    "packages/web/src/workspace/ProjectMenu.tsx",
+    "packages/web/src/workspace/VVDialog.linksTab.test.tsx",
+    "packages/web/src/workspace/VVDialog.test.tsx",
+    "packages/web/src/workspace/VVDialog.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/evidence/projectBrowserEvidence.ts",
+    "packages/web/src/workspace/project/ManageLinksDialog.driftBadge.test.tsx",
+    "packages/web/src/workspace/project/ManageLinksDialog.test.tsx",
+    "packages/web/src/workspace/project/ManageLinksDialog.tsx",
+    "packages/web/src/workspace/project/ProjectBrowser.test.tsx",
+    "packages/web/src/workspace/project/ProjectBrowser.tsx",
+    "packages/web/src/workspace/project/ProjectMenu.linkIfc.test.tsx",
+    "packages/web/src/workspace/project/ProjectMenu.test.tsx",
+    "packages/web/src/workspace/project/ProjectMenu.tsx",
+    "packages/web/src/workspace/project/VVDialog.linksTab.test.tsx",
+    "packages/web/src/workspace/project/VVDialog.test.tsx",
+    "packages/web/src/workspace/project/VVDialog.tsx",
+    "packages/web/src/workspace/project/index.ts",
+    "packages/web/src/workspace/project/projectSnapshots.test.ts",
+    "packages/web/src/workspace/project/projectSnapshots.ts",
+    "packages/web/src/workspace/projectSnapshots.test.ts",
+    "packages/web/src/workspace/projectSnapshots.ts",
+    "spec/code-quality-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/94/c5b5382ae9/0/metadata.json",
+      "transcript": "/94/c5b5382ae9/0/full.jsonl",
+      "content_hash": "/94/c5b5382ae9/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 26810,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1652352,
+    "output_tokens": 3633,
+    "api_call_count": 19
+  }
+}
