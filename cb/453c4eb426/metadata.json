@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "cb453c4eb426",
+  "strategy": "manual-commit",
+  "branch": "revit-parity-family-browser-context-menu",
+  "checkpoints_count": 2,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/cb/453c4eb426/0/metadata.json",
+      "transcript": "/cb/453c4eb426/0/full.jsonl",
+      "content_hash": "/cb/453c4eb426/0/content_hash.txt",
+      "prompt": "/cb/453c4eb426/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 945499,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 16926464,
+    "output_tokens": 52115,
+    "api_call_count": 185
+  }
+}
