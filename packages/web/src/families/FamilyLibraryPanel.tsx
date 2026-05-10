@@ -31,6 +31,10 @@ import {
   placeKindForFamilyDiscipline,
   type FamilyLibraryPlaceKind,
 } from './familyPlacementAdapters';
+import {
+  findLoadedCatalogFamilyType,
+  type FamilyReloadOverwriteOption,
+} from './catalogFamilyReload';
 
 export type { FamilyLibraryPlaceKind } from './familyPlacementAdapters';
 
@@ -97,12 +101,18 @@ export interface FamilyLibraryPanelProps {
    * project and resolving the family category to its placement adapter.
    * The panel closes afterwards.
    */
-  onPlaceCatalogFamily?: (placement: ExternalCatalogPlacement) => void;
+  onPlaceCatalogFamily?: (
+    placement: ExternalCatalogPlacement,
+    overwriteOption?: FamilyReloadOverwriteOption,
+  ) => void;
   /**
    * F-060 — invoked when an external-catalog family should be loaded into the
    * project without immediately entering placement mode.
    */
-  onLoadCatalogFamily?: (placement: ExternalCatalogPlacement) => void;
+  onLoadCatalogFamily?: (
+    placement: ExternalCatalogPlacement,
+    overwriteOption?: FamilyReloadOverwriteOption,
+  ) => void;
   /**
    * Optional client for the external-catalog API. Provided so tests can
    * inject a stub without spinning up the real fetch path. Defaults to a
@@ -395,15 +405,23 @@ function CatalogThumbnail({ entry }: { entry: CatalogEntry }): JSX.Element {
 
 function ExternalCatalogsTab({
   catalogClient,
+  elementsById,
   needle,
   onPlace,
   onLoad,
   onPanelClose,
 }: {
   catalogClient: ExternalCatalogClient;
+  elementsById: Record<string, Element>;
   needle: string;
-  onPlace: (placement: ExternalCatalogPlacement) => void;
-  onLoad: (placement: ExternalCatalogPlacement) => void;
+  onPlace: (
+    placement: ExternalCatalogPlacement,
+    overwriteOption?: FamilyReloadOverwriteOption,
+  ) => void;
+  onLoad: (
+    placement: ExternalCatalogPlacement,
+    overwriteOption?: FamilyReloadOverwriteOption,
+  ) => void;
   onPanelClose: () => void;
 }): JSX.Element {
   const [index, setIndex] = useState<ExternalCatalogIndexEntry[] | null>(null);
@@ -527,6 +545,9 @@ function ExternalCatalogsTab({
                               defaultType: def,
                             }
                           : null;
+                        const loadedType = placement
+                          ? findLoadedCatalogFamilyType(elementsById, placement)
+                          : null;
                         return (
                           <li
                             key={fam.id}
@@ -539,26 +560,64 @@ function ExternalCatalogsTab({
                               <span className="text-xs text-muted">
                                 {fam.discipline} · {fam.defaultTypes.length} type
                                 {fam.defaultTypes.length === 1 ? '' : 's'}
+                                {loadedType ? (
+                                  <span
+                                    className="ml-2 rounded-sm border border-border bg-surface-muted px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted"
+                                    data-testid={`external-family-${fam.id}-loaded-badge`}
+                                  >
+                                    Loaded
+                                  </span>
+                                ) : null}
                               </span>
                             </div>
                             {placement ? (
-                              <div className="flex items-center gap-1.5">
-                                <button
-                                  type="button"
-                                  data-testid={`external-family-${fam.id}-load`}
-                                  onClick={() => {
-                                    onLoad(placement);
-                                    onPanelClose();
-                                  }}
-                                  className="rounded border border-border bg-surface px-2 py-0.5 text-xs hover:bg-accent-soft"
-                                >
-                                  Load
-                                </button>
+                              <div className="flex flex-wrap items-center justify-end gap-1.5">
+                                {loadedType ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      data-testid={`external-family-${fam.id}-reload-keep-values`}
+                                      onClick={() => {
+                                        onLoad(placement, 'keep-existing-values');
+                                        onPanelClose();
+                                      }}
+                                      className="rounded border border-border bg-surface px-2 py-0.5 text-xs hover:bg-accent-soft"
+                                    >
+                                      Keep values
+                                    </button>
+                                    <button
+                                      type="button"
+                                      data-testid={`external-family-${fam.id}-reload-overwrite-values`}
+                                      onClick={() => {
+                                        onLoad(placement, 'overwrite-parameter-values');
+                                        onPanelClose();
+                                      }}
+                                      className="rounded border border-border bg-surface px-2 py-0.5 text-xs hover:bg-accent-soft"
+                                    >
+                                      Overwrite values
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    data-testid={`external-family-${fam.id}-load`}
+                                    onClick={() => {
+                                      onLoad(placement);
+                                      onPanelClose();
+                                    }}
+                                    className="rounded border border-border bg-surface px-2 py-0.5 text-xs hover:bg-accent-soft"
+                                  >
+                                    Load
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   data-testid={`external-family-${fam.id}-place`}
                                   onClick={() => {
-                                    onPlace(placement);
+                                    onPlace(
+                                      placement,
+                                      loadedType ? 'keep-existing-values' : undefined,
+                                    );
                                     onPanelClose();
                                   }}
                                   className="rounded border border-border bg-surface-strong px-2 py-0.5 text-xs hover:bg-accent-soft"
@@ -819,9 +878,14 @@ export function FamilyLibraryPanel({
           ) : (
             <ExternalCatalogsTab
               catalogClient={catalogClient}
+              elementsById={elementsById}
               needle={needle}
-              onPlace={(placement) => onPlaceCatalogFamily?.(placement)}
-              onLoad={(placement) => onLoadCatalogFamily?.(placement)}
+              onPlace={(placement, overwriteOption) =>
+                onPlaceCatalogFamily?.(placement, overwriteOption)
+              }
+              onLoad={(placement, overwriteOption) =>
+                onLoadCatalogFamily?.(placement, overwriteOption)
+              }
               onPanelClose={onClose}
             />
           )}

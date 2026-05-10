@@ -233,6 +233,66 @@ describe('<FamilyLibraryPanel /> — FAM-08 External Catalogs tab', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('loaded external families expose both reload overwrite choices', async () => {
+    const onLoadCatalogFamily = vi.fn();
+    const existingType: Extract<Element, { kind: 'family_type' }> = {
+      kind: 'family_type',
+      id: 'ft-sofa-loaded',
+      name: 'Project sofa',
+      familyId: 'catalog:living-room:sofa-3-seat',
+      discipline: 'generic',
+      parameters: {
+        name: 'Project sofa',
+        familyId: 'catalog:living-room:sofa-3-seat',
+        widthMm: 2400,
+      },
+      catalogSource: {
+        catalogId: 'living-room-furniture',
+        familyId: 'catalog:living-room:sofa-3-seat',
+        version: '0.9.0',
+      },
+    };
+    const { getByTestId, queryByTestId } = render(
+      <FamilyLibraryPanel
+        open
+        onClose={() => undefined}
+        elementsById={{ [existingType.id]: existingType }}
+        onPlaceType={() => undefined}
+        catalogClient={makeClient()}
+        initialTab="external"
+        onLoadCatalogFamily={onLoadCatalogFamily}
+      />,
+    );
+    await waitFor(() => getByTestId('external-catalog-living-room-furniture'));
+    await act(async () => {
+      fireEvent.click(getByTestId('external-catalog-toggle-living-room-furniture'));
+    });
+    await waitFor(() =>
+      getByTestId('external-family-catalog:living-room:sofa-3-seat-reload-keep-values'),
+    );
+
+    expect(
+      getByTestId('external-family-catalog:living-room:sofa-3-seat-loaded-badge'),
+    ).toBeTruthy();
+    expect(queryByTestId('external-family-catalog:living-room:sofa-3-seat-load')).toBeNull();
+
+    fireEvent.click(
+      getByTestId('external-family-catalog:living-room:sofa-3-seat-reload-keep-values'),
+    );
+    expect(onLoadCatalogFamily).toHaveBeenLastCalledWith(
+      expect.objectContaining({ catalogId: 'living-room-furniture' }),
+      'keep-existing-values',
+    );
+
+    fireEvent.click(
+      getByTestId('external-family-catalog:living-room:sofa-3-seat-reload-overwrite-values'),
+    );
+    expect(onLoadCatalogFamily).toHaveBeenLastCalledWith(
+      expect.objectContaining({ catalogId: 'living-room-furniture' }),
+      'overwrite-parameter-values',
+    );
+  });
+
   it('In Project tab shows catalogSource provenance badge for catalog-loaded family_type', () => {
     const ftFromCatalog: Extract<Element, { kind: 'family_type' }> = {
       kind: 'family_type',
