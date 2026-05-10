@@ -99,6 +99,12 @@
       "transcript": "/96/a2d3ec2377/14/full.jsonl",
       "content_hash": "/96/a2d3ec2377/14/content_hash.txt",
       "prompt": "/96/a2d3ec2377/14/prompt.txt"
+    },
+    {
+      "metadata": "/96/a2d3ec2377/15/metadata.json",
+      "transcript": "/96/a2d3ec2377/15/full.jsonl",
+      "content_hash": "/96/a2d3ec2377/15/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
