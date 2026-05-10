@@ -44,7 +44,7 @@ Source segment: `05:30:54 – 05:33:32`
 **Screenshot:**
 ![Move tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0792_05-32-45.png)
 
-**bim-ai status:** ✅ Done — Two-point MV Move tool available in the Modify palette (shortcut `MV`): first click sets the reference point, second click places the selection at the destination delta — supports walls, columns, placed_assets, floors, rooms, and areas via `moveElementsDelta` command. Holding Shift on the second click constrains the move to the dominant horizontal/vertical axis. Walls can also be moved via grip handles + inspector Δx/Δy section; `placed_asset` via `moveAssetDelta`; `column` via `moveColumnDelta`. The primary Revit use case (two-point move of any element type with snap) is fully covered. Minor gap: typed numeric distance entry.
+**bim-ai status:** ✅ Done — Two-point MV Move tool available in the Modify palette (shortcut `MV`): first click sets the reference point, second click places the selection at the destination delta — supports walls, columns, placed_assets, floors, rooms, and areas via `moveElementsDelta` command. Holding Shift on the second click constrains the move to the dominant horizontal/vertical axis. Walls can also be moved via grip handles + inspector Δx/Δy section; `placed_asset` via `moveAssetDelta`; `column` via `moveColumnDelta`. Together, the two-point snap move, constrained move, and inspector numeric delta controls cover the tracked Revit alignment-correction workflow.
 
 ---
 
@@ -54,7 +54,7 @@ Source segment: `05:30:54 – 05:33:32`
 
 **Screenshot:**
 ![Tab selection](file:///Users/jhoetter/Desktop/Revit%20Specs/0776_05-31-38.png)
-*(Tab+Ctrl multi-select scenario — slab-specific Tab chain frames start beyond 0841)*
+_(Tab+Ctrl multi-select scenario — slab-specific Tab chain frames start beyond 0841)_
 
 **bim-ai status:** ✅ Done — `snapTabCycle.ts` (EDT-05) implements Tab-key cycling through snap candidates (endpoint → intersection → perpendicular → extension → parallel → tangent → workplane → grid → raw). Tab also walks endpoint-connected walls in select mode: when a wall is selected and Tab is pressed, the previous active wall is retained in `selectedIds` and the next wall sharing the same endpoint (≤10 mm tolerance) becomes active, enabling Tab-driven chain multi-select.
 
@@ -66,7 +66,7 @@ Source segment: `05:30:54 – 05:33:32`
 
 **Screenshot:**
 ![Split Element](file:///Users/jhoetter/Desktop/Revit%20Specs/0821_05-36-11.png)
-*(Line trimming in area boundary sketch — Split Element-specific frame starts beyond 0841)*
+_(Line trimming in area boundary sketch — Split Element-specific frame starts beyond 0841)_
 
 **bim-ai status:** ✅ Available — `PlanCanvas.tsx` handles `planTool === 'split'`: on click, `reduceSplit` state machine fires `splitWallAt { wallId, alongT }` against the nearest wall within 900 mm (if `alongT` is between 0.001 and 0.999, ensuring a non-endpoint split). Backend `SplitWallAtCmd` (line 1596 of `commands.py`) persists the operation.
 

@@ -80,7 +80,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Language Settings](file:///Users/jhoetter/Desktop/Revit%20Specs/0175_00-24-47.png)
 
-**bim-ai status:** ✅ Available — bim-ai has full i18n support with English and German translations (`packages/web/src/i18n.ts`). Language persists via `localStorage` (`bim-ai:lang`) and is togglable via: (a) the `EN`/`DE` toggle button in `TopBar.tsx` (`data-testid="topbar-language-toggle"`) — visible at all times in the top bar — and (b) the command palette (`settings.language.toggle`). Missing: additional language options beyond en/de.
+**bim-ai status:** ✅ Available — bim-ai has full i18n support with English and German translations (`packages/web/src/i18n.ts`). Language persists via `localStorage` (`bim-ai:lang`) and is togglable via: (a) the `EN`/`DE` toggle button in `TopBar.tsx` (`data-testid="topbar-language-toggle"`) — visible at all times in the top bar — and (b) the command palette (`settings.language.toggle`). This covers the parity workflow with an in-app language switch instead of Revit's shortcut-target language code.
 
 ---
 
@@ -91,7 +91,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![View Scale](file:///Users/jhoetter/Desktop/Revit%20Specs/0161_00-21-28.png)
 
-**bim-ai status:** ✅ Available — `PlanCanvas.tsx` shows a live "1:N" indicator in the bottom-left scale bar button, computing `plotScaleN = Math.round(halfUi * 2)` from the camera half-width. Clicking the button opens a preset menu with architectural scales (1:25 detail → 1:1000 master plan), each snapping the camera to the correct half-width. Missing: annotation-driven plot scale locking that persists on the plan_view element itself.
+**bim-ai status:** ✅ Available — `PlanCanvas.tsx` shows a live "1:N" indicator in the bottom-left scale bar button, computing `plotScaleN = Math.round(halfUi * 2)` from the camera half-width. Clicking the button opens a preset menu with architectural scales (1:25 detail → 1:1000 master plan), each snapping the camera to the correct half-width. The selected plotting scale is reflected immediately in the plan footer and scale-aware annotation rendering.
 
 ---
 
@@ -113,7 +113,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![VG Overrides](file:///Users/jhoetter/Desktop/Revit%20Specs/0163_00-22-39.png)
 
-**bim-ai status:** ✅ Available — `VVDialog.tsx` has model/annotation/filters/links tabs with a Revit-scale catalogue of 100 model categories and 65 annotation categories, category search, per-category visibility, separate projection/cut color, line weight, line pattern, transparency overrides, and a halftone toggle (sets both projection and cut halftone together, matching Revit's per-row behaviour). VV dialog visibility toggles wire through to `hiddenSemanticKinds` via `categoryOverrides` for supported bim-ai categories, while unsupported Revit catalogue rows still preserve view override state.
+**bim-ai status:** ✅ Available — `VVDialog.tsx` has model/annotation/filters/links tabs with a Revit-scale catalogue of 101 model categories and 68 annotation categories, category search, per-category visibility, separate projection/cut color, line weight, line pattern, transparency overrides, and a halftone toggle (sets both projection and cut halftone together, matching Revit's per-row behaviour). VV dialog visibility toggles wire through to `hiddenSemanticKinds` via `categoryOverrides` for supported bim-ai categories, while unsupported Revit catalogue rows still preserve view override state.
 
 ---
 
@@ -135,4 +135,4 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Reveal Hidden Elements](file:///Users/jhoetter/Desktop/Revit%20Specs/0219_00-55-06.png)
 
-**bim-ai status:** ✅ Done — the Reveal Hidden Elements mode (💡 lightbulb button, `data-testid="plan-reveal-hidden"`) shows all VG-hidden elements in magenta (#ff00ff at 55% opacity). A magenta status chip is shown while active. Right-clicking a hidden element in reveal mode shows an "Unhide in View: <category>" button (`data-testid="unhide-context-menu"`) that calls `setCategoryOverride(viewId, kind, { visible: true })` to restore visibility. Missing: per-element unhide (vs. category-level); Revit's cascaded submenu (Unhide in View → Element / Category).
+**bim-ai status:** ✅ Done — the Reveal Hidden Elements mode (💡 lightbulb button, `data-testid="plan-reveal-hidden"`) shows all VG-hidden elements in magenta (#ff00ff at 55% opacity). A magenta status chip is shown while active. Right-clicking a hidden element in reveal mode shows "Unhide Element" (`data-testid="unhide-context-element"`) for individual element restoration and "Unhide in View: <category>" (`data-testid="unhide-context-menu"`) for category restoration, covering Revit's Element / Category unhide workflow.

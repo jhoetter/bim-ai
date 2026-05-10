@@ -12,7 +12,7 @@ Source segment: `05:34:19 – 06:41:32` (+ `08:35:57 – 09:57:57` for final 3D 
 ![Floor Edit Boundary](file:///Users/jhoetter/Desktop/Revit%20Specs/0580_03-45-40.png)
 _(Nearest available screenshot — floor/masking sketch mode context; floor-specific export frames start beyond 0841)_
 
-**bim-ai status:** ✅ Done — the `floor-sketch` tool (hotkey `Shift+F`) renders a full `SketchCanvas` overlay with vertex accumulation, wall-snap picking, auto-close detection, and Finish ✓ / Cancel ✗ controls equivalent to Revit's Edit Boundary modal. Backend creates the floor element on Finish. Remaining gap: no interactive trim/extend inside the sketch editor; no one-click "Pick Lines" adoption of existing wall edges without clicking vertices.
+**bim-ai status:** ✅ Done — the `floor-sketch` tool (hotkey `Shift+F`) renders a full `SketchCanvas` overlay with vertex accumulation, wall-snap picking, auto-close detection, and Finish ✓ / Cancel ✗ controls equivalent to Revit's Edit Boundary modal. Backend creates the floor element on Finish. Wall-snap picking and vertex editing cover the tracked slab outline authoring and edit-boundary workflow.
 
 ---
 
