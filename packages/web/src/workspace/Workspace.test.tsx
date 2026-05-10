@@ -24,7 +24,17 @@ vi.mock('../plan/PlanCanvas', () => ({
 
 import { Workspace } from './Workspace';
 
+const TABS_KEY = 'bim-ai:tabs-v1';
+
+function seedTabs(kind: string, id = 'tab-test-1') {
+  localStorage.setItem(
+    TABS_KEY,
+    JSON.stringify({ v: 1, tabs: [{ id, kind, label: `Test ${kind}` }], activeId: id }),
+  );
+}
+
 beforeEach(() => {
+  localStorage.removeItem(TABS_KEY);
   // Suppress the OnboardingTour dialog so aria-modal doesn't hide canvas content.
   localStorage.setItem('bim.onboarding-completed', 'true');
 });
@@ -32,6 +42,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   localStorage.removeItem('bim.onboarding-completed');
+  localStorage.removeItem(TABS_KEY);
 });
 
 describe('<Workspace /> — smoke', () => {
@@ -43,6 +54,20 @@ describe('<Workspace /> — smoke', () => {
     // CHR-V3-06: Inspector is absent from DOM when nothing is selected.
     expect(queryByTestId('inspector')).toBeNull();
     expect(getByTestId('status-bar')).toBeTruthy();
+  });
+
+  it('keeps the right rail open for 3D view controls when nothing is selected', () => {
+    seedTabs('3d');
+    const { getByTestId, getByRole } = renderWithProviders(<Workspace />);
+    expect(getByTestId('app-shell').dataset.rightCollapsed).toBe('false');
+    expect(getByRole('button', { name: /Show material lighting and surface depth/i })).toBeTruthy();
+  });
+
+  it('still collapses the right rail for an empty plan with no selection', () => {
+    seedTabs('plan');
+    const { getByTestId, queryByTestId } = renderWithProviders(<Workspace />);
+    expect(queryByTestId('inspector')).toBeNull();
+    expect(getByTestId('app-shell').dataset.rightCollapsed).toBe('true');
   });
 
   it('mounts the redesign canvas root', () => {

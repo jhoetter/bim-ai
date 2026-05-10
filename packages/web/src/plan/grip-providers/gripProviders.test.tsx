@@ -152,7 +152,7 @@ describe('F-077 — maskingRegionGripProvider', () => {
       { xMm: 1000, yMm: 1000 },
       { xMm: 0, yMm: 1000 },
     ],
-    fillColor: '#ffffff',
+    fillColor: 'var(--color-canvas-paper)',
   };
 
   it('emits one boundary grip per masking region vertex', () => {

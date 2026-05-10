@@ -273,6 +273,7 @@ export function Workspace(): JSX.Element {
       tabsState.activeId ? (tabsState.tabs.find((t) => t.id === tabsState.activeId) ?? null) : null,
     [tabsState],
   );
+  const effectiveMode = (activeTab?.kind as WorkspaceMode | undefined) ?? mode;
 
   const activePlanTarget = useMemo(
     () =>
@@ -973,8 +974,10 @@ export function Workspace(): JSX.Element {
     [modelId, setPendingPlacement],
   );
 
-  /* ── VIS-V3-06: right rail driven by selection state ─────────────── */
+  /* ── VIS-V3-06: right rail driven by task context ────────────────── */
   const hasSelection = !!selectedId;
+  const hasViewControlContext = effectiveMode === '3d' || (effectiveMode as string) === 'plan-3d';
+  const rightRailCollapsed = !hasSelection && !hasViewControlContext;
 
   /* ── Empty-state per §25 ──────────────────────────────────────────── */
   const emptyHint = patternFor(seedLoading ? 'canvas-loading' : 'canvas-empty');
@@ -1082,11 +1085,11 @@ export function Workspace(): JSX.Element {
       <AppShell
         leftCollapsed={leftRailCollapsed}
         onLeftCollapsedChange={setLeftRailCollapsed}
-        rightCollapsed={!hasSelection}
+        rightCollapsed={rightRailCollapsed}
         topBar={
           <div className="relative flex w-full items-center">
             <TopBar
-              mode={mode}
+              mode={effectiveMode}
               onModeChange={handleModeChange}
               projectName="BIM AI seed"
               projectNameRef={projectNameRef}
@@ -1225,14 +1228,14 @@ export function Workspace(): JSX.Element {
             ) : null}
             {showCanvasHint && !showEmptyState ? <EmptyStateHint /> : null}
             <FloatingPalette
-              mode={mode}
+              mode={effectiveMode}
               activeTool={planToolToToolId(planTool)}
               onToolSelect={handleToolSelect}
               disabledContext={toolDisabledContext}
               allowedToolIds={allowedToolIds}
             />
             <CanvasMount
-              mode={(activeTab?.kind as WorkspaceMode | undefined) ?? mode}
+              mode={effectiveMode}
               activeTabId={activeTab?.id}
               viewerMode={viewerMode}
               activeLevelId={
@@ -1263,7 +1266,7 @@ export function Workspace(): JSX.Element {
         }
         rightRail={
           <WorkspaceRightRail
-            mode={mode}
+            mode={effectiveMode}
             onSemanticCommand={onSemanticCommand}
             onModeChange={handleModeChange}
             codePresetIds={codePresetIds}

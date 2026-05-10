@@ -12,6 +12,7 @@ Purpose: track the full product-quality pass from the perspective of architects,
 - Right rail content is over-eager. It shows authoring workbenches for sheets, sections, and saved 3D views, creating noise when the user is inspecting documentation.
 - 3D saved-view controls are useful but too prominent on-canvas. They should not compete with the model.
 - Icons are mostly BIM-native stroke icons, but the places where users choose among object/view/document types would benefit from hi-fi icons.
+- Follow-up audit found the 3D right rail could collapse whenever no element was selected, leaving view controls either unavailable or visually disconnected from the canvas. 3D needs persistent view context even with empty selection.
 
 ## Workpackages
 
@@ -182,6 +183,9 @@ Implementation notes:
 - Added visual previews for 3D graphics modes in the right rail.
 - Added background swatches and an explicit edge on/off control so graphics settings no longer look like raw form fields.
 - Moved projection and section-box state into shared viewport UI state so the right rail can own those controls cleanly.
+- Kept the right rail open for 3D and split plan/3D tabs even without a selected element, so graphics, projection, section-box, and camera controls stay discoverable where users expect them.
+- Derived visible shell mode from the active tab so persisted/open views cannot leave the top bar, palette, canvas, and right rail describing different modes.
+- Added a focused regression for no-selection 3D tabs to guard against view controls becoming hidden behind inspector-only collapse logic.
 - Remaining technical work: move walk-mode activation into shared viewport UI state without breaking pointer-lock behavior.
 
 ### UX-12 Icon System Completion
