@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "8e4a504d1c94",
+  "session_id": "019e0f10-1203-7042-8eea-b5b9ea724341",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T09:29:32.370328Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/constraints.py",
+    "app/bim_ai/constraints_advisories.py",
+    "spec/code-quality-tracker.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "2c032f61f4a3",
+  "checkpoint_transcript_start": 5856,
+  "transcript_lines_at_start": 5856,
+  "token_usage": {
+    "input_tokens": 10731,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2281984,
+    "output_tokens": 2663,
+    "api_call_count": 12
+  },
+  "session_metrics": {
+    "turn_count": 10
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T09:29:32.19837Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 31,
+    "human_modified": 821,
+    "human_removed": 0,
+    "total_committed": 31,
+    "total_lines_changed": 852,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}
