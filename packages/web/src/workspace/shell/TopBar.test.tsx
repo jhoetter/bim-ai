@@ -15,6 +15,7 @@ function renderWithI18n(ui: React.ReactElement) {
 
 afterEach(() => {
   cleanup();
+  window.localStorage.clear();
 });
 
 const baseProps = {
@@ -116,22 +117,43 @@ describe('TopBar — spec §11', () => {
     expect(onProjectNameClick).toHaveBeenCalled();
   });
 
-  it('exposes QAT shortcuts for dimension and Tag by Category', () => {
+  it('exposes QAT shortcuts for measure, dimension, Tag by Category, and Close Inactive', () => {
+    const onMeasureShortcut = vi.fn();
     const onDimensionShortcut = vi.fn();
     const onTagByCategoryShortcut = vi.fn();
+    const onCloseInactiveTabs = vi.fn();
     const { getByTestId } = renderWithI18n(
       <TopBar
         {...baseProps}
         mode="plan"
         onModeChange={() => undefined}
+        onMeasureShortcut={onMeasureShortcut}
         onDimensionShortcut={onDimensionShortcut}
         onTagByCategoryShortcut={onTagByCategoryShortcut}
+        onCloseInactiveTabs={onCloseInactiveTabs}
       />,
     );
+    fireEvent.click(getByTestId('topbar-measure-shortcut'));
     fireEvent.click(getByTestId('topbar-dimension-shortcut'));
     fireEvent.click(getByTestId('topbar-tag-by-category-shortcut'));
+    fireEvent.click(getByTestId('topbar-close-inactive'));
+    expect(onMeasureShortcut).toHaveBeenCalledTimes(1);
     expect(onDimensionShortcut).toHaveBeenCalledTimes(1);
     expect(onTagByCategoryShortcut).toHaveBeenCalledTimes(1);
+    expect(onCloseInactiveTabs).toHaveBeenCalledTimes(1);
+  });
+
+  it('customizes visible QAT entries and persists the preference', () => {
+    const { getByTestId, queryByTestId, rerender } = renderWithI18n(
+      <TopBar {...baseProps} mode="plan" onModeChange={() => undefined} />,
+    );
+    expect(queryByTestId('topbar-measure-shortcut')).not.toBeNull();
+    fireEvent.click(getByTestId('topbar-qat-customize'));
+    fireEvent.click(getByTestId('topbar-qat-toggle-measure'));
+    expect(queryByTestId('topbar-measure-shortcut')).toBeNull();
+
+    rerender(<TopBar {...baseProps} mode="plan" onModeChange={() => undefined} />);
+    expect(queryByTestId('topbar-measure-shortcut')).toBeNull();
   });
 
   it('renders the collaborator badge when count > 0', () => {

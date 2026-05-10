@@ -46,6 +46,45 @@ export interface TopBarSelectOption {
   label: string;
 }
 
+const QAT_STORAGE_KEY = 'bim-ai.topbar.qat.visible.v1';
+
+type QatShortcutId = 'section' | 'measure' | 'dimension' | 'tag' | 'thin-lines' | 'close-inactive';
+
+const QAT_SHORTCUTS: Array<{ id: QatShortcutId; label: string }> = [
+  { id: 'section', label: 'Section' },
+  { id: 'measure', label: 'Measure' },
+  { id: 'dimension', label: 'Aligned Dimension' },
+  { id: 'tag', label: 'Tag by Category' },
+  { id: 'thin-lines', label: 'Thin Lines' },
+  { id: 'close-inactive', label: 'Close Inactive Views' },
+];
+
+const DEFAULT_QAT_VISIBLE: Record<QatShortcutId, boolean> = {
+  section: true,
+  measure: true,
+  dimension: true,
+  tag: true,
+  'thin-lines': true,
+  'close-inactive': true,
+};
+
+function readQatVisibility(): Record<QatShortcutId, boolean> {
+  if (typeof window === 'undefined') return { ...DEFAULT_QAT_VISIBLE };
+  try {
+    const raw = window.localStorage.getItem(QAT_STORAGE_KEY);
+    if (!raw) return { ...DEFAULT_QAT_VISIBLE };
+    const parsed = JSON.parse(raw) as Partial<Record<QatShortcutId, boolean>>;
+    return {
+      ...DEFAULT_QAT_VISIBLE,
+      ...Object.fromEntries(
+        QAT_SHORTCUTS.map((item) => [item.id, parsed[item.id] ?? DEFAULT_QAT_VISIBLE[item.id]]),
+      ),
+    } as Record<QatShortcutId, boolean>;
+  } catch {
+    return { ...DEFAULT_QAT_VISIBLE };
+  }
+}
+
 export interface TopBarProps {
   mode: WorkspaceMode;
   onModeChange: (next: WorkspaceMode) => void;
@@ -82,6 +121,8 @@ export interface TopBarProps {
   canUndo?: boolean;
   /** F-006: QAT Section shortcut — activates the section tool. */
   onSectionShortcut?: () => void;
+  /** F-006: QAT Measure shortcut — activates the measure tool. */
+  onMeasureShortcut?: () => void;
   /** F-006: QAT Aligned Dimension shortcut — activates the dimension tool. */
   onDimensionShortcut?: () => void;
   /** F-006: QAT Tag by Category shortcut — activates the tag tool. */
@@ -124,6 +165,7 @@ export function TopBar({
   onRedo,
   canUndo,
   onSectionShortcut,
+  onMeasureShortcut,
   onDimensionShortcut,
   onTagByCategoryShortcut,
   thinLinesEnabled,
@@ -155,10 +197,12 @@ export function TopBar({
         onRedo={onRedo}
         canUndo={canUndo}
         onSectionShortcut={onSectionShortcut}
+        onMeasureShortcut={onMeasureShortcut}
         onDimensionShortcut={onDimensionShortcut}
         onTagByCategoryShortcut={onTagByCategoryShortcut}
         thinLinesEnabled={thinLinesEnabled}
         onToggleThinLines={onToggleThinLines}
+        onCloseInactiveTabs={onCloseInactiveTabs}
       />
       {tabs !== undefined ? (
         <TopBarTabs
@@ -212,10 +256,12 @@ function TopBarLeft({
   onRedo,
   canUndo,
   onSectionShortcut,
+  onMeasureShortcut,
   onDimensionShortcut,
   onTagByCategoryShortcut,
   thinLinesEnabled,
   onToggleThinLines,
+  onCloseInactiveTabs,
 }: {
   projectName: string;
   onProjectNameClick?: () => void;
@@ -225,14 +271,30 @@ function TopBarLeft({
   onRedo?: () => void;
   canUndo?: boolean;
   onSectionShortcut?: () => void;
+  onMeasureShortcut?: () => void;
   onDimensionShortcut?: () => void;
   onTagByCategoryShortcut?: () => void;
   thinLinesEnabled?: boolean;
   onToggleThinLines?: () => void;
+  onCloseInactiveTabs?: () => void;
 }): JSX.Element {
   const { t } = useTranslation();
+  const [qatVisible, setQatVisible] = useState<Record<QatShortcutId, boolean>>(() =>
+    readQatVisibility(),
+  );
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(QAT_STORAGE_KEY, JSON.stringify(qatVisible));
+  }, [qatVisible]);
+
+  const toggleQatShortcut = (id: QatShortcutId) => {
+    setQatVisible((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
   return (
-    <div className="flex items-center gap-3" style={{ minWidth: 240 }}>
+    <div className="relative flex items-center gap-3" style={{ minWidth: 240 }}>
       <IconButton Icon={Icons.hamburger} label={IconLabels.hamburger} onClick={onHamburgerClick} />
       <div
         aria-label={t('topbar.appLogoAriaLabel')}
@@ -278,56 +340,114 @@ function TopBarLeft({
       >
         <Icons.redo size={ICON_SIZE.topbar} aria-hidden="true" />
       </button>
-      {/* F-006: QAT — Section shortcut */}
+      {qatVisible.section ? (
+        <button
+          type="button"
+          data-testid="topbar-section-shortcut"
+          title="Section"
+          aria-label="Section"
+          onClick={onSectionShortcut ?? (() => useBimStore.getState().setPlanTool('section'))}
+          className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground"
+        >
+          <Icons.section size={ICON_SIZE.topbar} aria-hidden="true" />
+        </button>
+      ) : null}
+      {qatVisible.measure ? (
+        <button
+          type="button"
+          data-testid="topbar-measure-shortcut"
+          title="Measure"
+          aria-label={IconLabels.measure}
+          onClick={onMeasureShortcut ?? (() => useBimStore.getState().setPlanTool('measure'))}
+          className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground"
+        >
+          <Icons.measure size={ICON_SIZE.topbar} aria-hidden="true" />
+        </button>
+      ) : null}
+      {qatVisible.dimension ? (
+        <button
+          type="button"
+          data-testid="topbar-dimension-shortcut"
+          title="Aligned Dimension"
+          aria-label="Aligned Dimension"
+          onClick={onDimensionShortcut ?? (() => useBimStore.getState().setPlanTool('dimension'))}
+          className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground"
+        >
+          <Icons.dimension size={ICON_SIZE.topbar} aria-hidden="true" />
+        </button>
+      ) : null}
+      {qatVisible.tag ? (
+        <button
+          type="button"
+          data-testid="topbar-tag-by-category-shortcut"
+          title="Tag by Category"
+          aria-label="Tag by Category"
+          onClick={onTagByCategoryShortcut ?? (() => useBimStore.getState().setPlanTool('tag'))}
+          className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground"
+        >
+          <Icons.tag size={ICON_SIZE.topbar} aria-hidden="true" />
+        </button>
+      ) : null}
+      {qatVisible['thin-lines'] ? (
+        <button
+          type="button"
+          data-testid="topbar-thin-lines"
+          title="Thin Lines"
+          aria-label={IconLabels.thinLines}
+          aria-pressed={thinLinesEnabled ?? false}
+          onClick={onToggleThinLines ?? (() => useBimStore.getState().toggleThinLines())}
+          className={[
+            'relative inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors',
+            thinLinesEnabled
+              ? 'bg-accent text-accent-foreground hover:bg-accent/80'
+              : 'text-muted hover:bg-surface hover:text-foreground',
+          ].join(' ')}
+        >
+          <Icons.thinLines size={ICON_SIZE.topbar} aria-hidden="true" />
+        </button>
+      ) : null}
+      {qatVisible['close-inactive'] ? (
+        <button
+          type="button"
+          data-testid="topbar-close-inactive"
+          title="Close Inactive Views"
+          aria-label="Close Inactive Views"
+          disabled={!onCloseInactiveTabs}
+          onClick={onCloseInactiveTabs}
+          className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Icons.close size={ICON_SIZE.topbar} aria-hidden="true" />
+        </button>
+      ) : null}
       <button
         type="button"
-        data-testid="topbar-section-shortcut"
-        title="Section"
-        aria-label="Section"
-        onClick={onSectionShortcut ?? (() => useBimStore.getState().setPlanTool('section'))}
+        data-testid="topbar-qat-customize"
+        title="Customize Quick Access Toolbar"
+        aria-label="Customize Quick Access Toolbar"
+        aria-expanded={customizeOpen}
+        onClick={() => setCustomizeOpen((v) => !v)}
         className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground"
       >
-        <Icons.section size={ICON_SIZE.topbar} aria-hidden="true" />
+        <Icons.settings size={ICON_SIZE.topbar} aria-hidden="true" />
       </button>
-      {/* F-006: QAT — Aligned Dimension shortcut */}
-      <button
-        type="button"
-        data-testid="topbar-dimension-shortcut"
-        title="Aligned Dimension"
-        aria-label="Aligned Dimension"
-        onClick={onDimensionShortcut ?? (() => useBimStore.getState().setPlanTool('dimension'))}
-        className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground"
-      >
-        <Icons.dimension size={ICON_SIZE.topbar} aria-hidden="true" />
-      </button>
-      {/* F-006: QAT — Tag by Category shortcut */}
-      <button
-        type="button"
-        data-testid="topbar-tag-by-category-shortcut"
-        title="Tag by Category"
-        aria-label="Tag by Category"
-        onClick={onTagByCategoryShortcut ?? (() => useBimStore.getState().setPlanTool('tag'))}
-        className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground"
-      >
-        <Icons.tag size={ICON_SIZE.topbar} aria-hidden="true" />
-      </button>
-      {/* F-006: QAT — Thin Lines toggle */}
-      <button
-        type="button"
-        data-testid="topbar-thin-lines"
-        title="Thin Lines"
-        aria-label={IconLabels.thinLines}
-        aria-pressed={thinLinesEnabled ?? false}
-        onClick={onToggleThinLines ?? (() => useBimStore.getState().toggleThinLines())}
-        className={[
-          'relative inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors',
-          thinLinesEnabled
-            ? 'bg-accent text-accent-foreground hover:bg-accent/80'
-            : 'text-muted hover:bg-surface hover:text-foreground',
-        ].join(' ')}
-      >
-        <Icons.thinLines size={ICON_SIZE.topbar} aria-hidden="true" />
-      </button>
+      {customizeOpen ? (
+        <div
+          data-testid="topbar-qat-menu"
+          className="absolute left-24 top-9 z-50 min-w-52 rounded-md border border-border bg-background p-2 text-xs shadow"
+        >
+          {QAT_SHORTCUTS.map((item) => (
+            <label key={item.id} className="flex items-center gap-2 px-1 py-1">
+              <input
+                type="checkbox"
+                checked={qatVisible[item.id]}
+                data-testid={`topbar-qat-toggle-${item.id}`}
+                onChange={() => toggleQatShortcut(item.id)}
+              />
+              <span>{item.label}</span>
+            </label>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
