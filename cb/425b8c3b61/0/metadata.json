@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "cb425b8c3b61",
+  "session_id": "019e11f8-3b0a-7561-a2c0-7db9170ff433",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T13:41:20.405551Z",
+  "branch": "revit-parity-move-shift-orthogonal",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "8f5731008cb2",
+  "token_usage": {
+    "input_tokens": 956830,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 17565312,
+    "output_tokens": 56740,
+    "api_call_count": 190
+  },
+  "session_metrics": {
+    "turn_count": 5
+  }
+}
