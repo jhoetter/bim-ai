@@ -1,9 +1,1 @@
-ok nice; so can we clean the OPEN_TODOS.md and code quality tracker?
-
----
-
-so where are we now in terms of code quality?
-
----
-
 can you focus on the CQ04, 05 and 03? and continue working until they are 100% solved?
