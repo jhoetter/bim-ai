@@ -30,6 +30,12 @@ export function snapKindLabel(kind: SnapKind): string {
   switch (kind) {
     case 'endpoint':
       return 'endpoint';
+    case 'midpoint':
+      return 'midpoint';
+    case 'nearest':
+      return 'nearest';
+    case 'center':
+      return 'center';
     case 'intersection':
       return 'intersection';
     case 'perpendicular':
@@ -101,6 +107,40 @@ export function SnapGlyph(props: SnapGlyphProps) {
             stroke={stroke}
             strokeWidth={1.5}
           />
+          <line
+            x1={pxX - half}
+            y1={pxY + half}
+            x2={pxX + half}
+            y2={pxY - half}
+            stroke={stroke}
+            strokeWidth={1.5}
+          />
+        </g>
+      );
+      break;
+    case 'midpoint':
+      glyph = (
+        <polygon
+          data-testid="snap-glyph-midpoint"
+          points={`${pxX},${pxY - half} ${pxX + half},${pxY} ${pxX},${pxY + half} ${pxX - half},${pxY}`}
+          fill="none"
+          stroke={stroke}
+          strokeWidth={1.5}
+        />
+      );
+      break;
+    case 'center':
+      glyph = (
+        <g data-testid="snap-glyph-center">
+          <circle cx={pxX} cy={pxY} r={half - 2} fill="none" stroke={stroke} strokeWidth={1.5} />
+          <circle cx={pxX} cy={pxY} r={2} fill={stroke} />
+        </g>
+      );
+      break;
+    case 'nearest':
+      glyph = (
+        <g data-testid="snap-glyph-nearest">
+          <circle cx={pxX} cy={pxY} r={3} fill={stroke} />
           <line
             x1={pxX - half}
             y1={pxY + half}

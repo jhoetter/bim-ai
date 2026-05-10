@@ -10,6 +10,9 @@ afterEach(() => {
 describe('EDT-05 — snapKindLabel', () => {
   it('returns Revit-style labels for each kind', () => {
     expect(snapKindLabel('endpoint')).toBe('endpoint');
+    expect(snapKindLabel('midpoint')).toBe('midpoint');
+    expect(snapKindLabel('nearest')).toBe('nearest');
+    expect(snapKindLabel('center')).toBe('center');
     expect(snapKindLabel('intersection')).toBe('intersection');
     expect(snapKindLabel('perpendicular')).toBe('perpendicular');
     expect(snapKindLabel('extension')).toBe('extension');
@@ -27,6 +30,15 @@ describe('EDT-05 — SnapGlyph kinds', () => {
   it('renders an intersection × glyph', () => {
     const { getByTestId } = render(<SnapGlyph pxX={100} pxY={50} kind="intersection" />);
     expect(getByTestId('snap-glyph-intersection')).toBeTruthy();
+  });
+
+  it('renders midpoint, nearest, and center glyphs', () => {
+    const { getByTestId, rerender } = render(<SnapGlyph pxX={100} pxY={50} kind="midpoint" />);
+    expect(getByTestId('snap-glyph-midpoint')).toBeTruthy();
+    rerender(<SnapGlyph pxX={100} pxY={50} kind="nearest" />);
+    expect(getByTestId('snap-glyph-nearest')).toBeTruthy();
+    rerender(<SnapGlyph pxX={100} pxY={50} kind="center" />);
+    expect(getByTestId('snap-glyph-center')).toBeTruthy();
   });
 
   it('renders a perpendicular ⊥ glyph', () => {

@@ -37,6 +37,7 @@ import { useBimStore } from '../state/store';
 import { useTheme } from '../state/useTheme';
 import { liveTokenReader } from '../viewport/materials';
 import {
+  collectCenterAnchors,
   collectSnapLines,
   collectWallAnchors,
   snapPlanCandidates,
@@ -606,6 +607,10 @@ export function PlanCanvas({
   const displayLevelId = display.activeLevelId;
   const anchors = useMemo(
     () => collectWallAnchors(elementsById, displayLevelId || undefined),
+    [elementsById, displayLevelId],
+  );
+  const centerAnchors = useMemo(
+    () => collectCenterAnchors(elementsById, displayLevelId || undefined),
     [elementsById, displayLevelId],
   );
   const snapLines = useMemo(
@@ -1913,6 +1918,7 @@ export function PlanCanvas({
           snapMm: orthoExtents(camRef.current.half).snapMm,
           orthoHold: orthoSnapHold,
           lines: linesScoped,
+          centers: centerAnchors,
         });
         // F-080 — if a one-shot snap override is active, restrict candidates
         // to only that kind so the glyph and tab-cycle honour the override.
@@ -1921,6 +1927,8 @@ export function PlanCanvas({
           ? {
               endpoint: activeOverride === 'endpoint',
               midpoint: activeOverride === 'midpoint',
+              nearest: activeOverride === 'nearest',
+              center: activeOverride === 'center',
               intersection: activeOverride === 'intersection',
               perpendicular: activeOverride === 'perpendicular',
               extension: activeOverride === 'extension',
@@ -3466,10 +3474,8 @@ export function PlanCanvas({
         }));
         return;
       }
-      // F-080 — Revit-style one-shot snap override shortcuts (SI / SE / SM / SP / SX / SW).
+      // F-080 — Revit-style one-shot snap override shortcuts (SI / SE / SM / SN / SC / SP / SX / SW).
       // Two-letter sequence: press S, then within 500 ms press the second letter.
-      // SN (nearest) and SC (center) are intentionally omitted — the snap engine has no
-      // corresponding SnapKind for those Revit overrides.
       if (!ev.metaKey && !ev.ctrlKey && !ev.altKey) {
         const now = Date.now();
         const last = lastKeyRef.current;
@@ -3479,6 +3485,8 @@ export function PlanCanvas({
             { key: 'i', kind: 'intersection', label: 'Intersection' },
             { key: 'e', kind: 'endpoint', label: 'Endpoint' },
             { key: 'm', kind: 'midpoint', label: 'Midpoint' },
+            { key: 'n', kind: 'nearest', label: 'Nearest' },
+            { key: 'c', kind: 'center', label: 'Center' },
             { key: 'p', kind: 'perpendicular', label: 'Perpendicular' },
             { key: 'x', kind: 'extension', label: 'Extension' },
             { key: 'w', kind: 'workplane', label: 'Work Plane' },
@@ -3941,6 +3949,7 @@ export function PlanCanvas({
   }, [
     anchors,
     bumpGeom,
+    centerAnchors,
     displayLevelId,
     elementsById,
     lvlId,
@@ -4548,6 +4557,8 @@ export function PlanCanvas({
                 intersection: 'SI',
                 endpoint: 'SE',
                 midpoint: 'SM',
+                nearest: 'SN',
+                center: 'SC',
                 perpendicular: 'SP',
                 extension: 'SX',
                 workplane: 'SW',

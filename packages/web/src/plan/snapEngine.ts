@@ -4,6 +4,9 @@ export type SnapKind =
   | 'raw'
   | 'grid'
   | 'endpoint'
+  | 'midpoint'
+  | 'nearest'
+  | 'center'
   /** EDT-05 — point where two infinite line extensions cross. */
   | 'intersection'
   /** EDT-05 — foot of perpendicular from cursor onto a line. */
@@ -22,6 +25,8 @@ export type SnapKind =
   | 'workplane';
 
 export type SnapHit = { point: XY; kind: SnapKind };
+export type SnapAnchorKind = 'endpoint' | 'midpoint' | 'center';
+export type SnapAnchor = XY & { snapKind?: SnapAnchorKind };
 
 /** Two-point line segment used by the EDT-05 snap kinds. */
 export interface SegmentLine {
@@ -64,26 +69,66 @@ export function orthoFromAnchor(cursor: XY, anchor: XY | undefined): XY {
 export function collectWallAnchors(
   els: Record<string, Element>,
   levelId: string | undefined,
-): XY[] {
-  const pts: XY[] = [];
+): SnapAnchor[] {
+  const pts: SnapAnchor[] = [];
 
   for (const e of Object.values(els)) {
     if (e.kind === 'wall') {
       if (levelId && e.levelId !== levelId) continue;
 
-      pts.push(e.start, e.end, midpoint(e.start, e.end));
+      pts.push(
+        { ...e.start, snapKind: 'endpoint' },
+        { ...e.end, snapKind: 'endpoint' },
+        { ...midpoint(e.start, e.end), snapKind: 'midpoint' },
+      );
     } else if (e.kind === 'room') {
       if (levelId && e.levelId !== levelId) continue;
 
-      pts.push(...(e.outlineMm ?? []));
+      pts.push(...(e.outlineMm ?? []).map((p) => ({ ...p, snapKind: 'endpoint' as const })));
     } else if (e.kind === 'grid_line') {
       // Global grids omit level — level-scoped stay tied to slab
       if (e.levelId && levelId && e.levelId !== levelId) continue;
 
-      pts.push(e.start, e.end, midpoint(e.start, e.end));
+      pts.push(
+        { ...e.start, snapKind: 'endpoint' },
+        { ...e.end, snapKind: 'endpoint' },
+        { ...midpoint(e.start, e.end), snapKind: 'midpoint' },
+      );
     }
   }
 
+  return pts;
+}
+
+function polygonCenter(points: XY[]): XY | null {
+  if (points.length === 0) return null;
+  const sum = points.reduce((acc, p) => ({ xMm: acc.xMm + p.xMm, yMm: acc.yMm + p.yMm }), {
+    xMm: 0,
+    yMm: 0,
+  });
+  return { xMm: sum.xMm / points.length, yMm: sum.yMm / points.length };
+}
+
+export function collectCenterAnchors(
+  els: Record<string, Element>,
+  levelId: string | undefined,
+): SnapAnchor[] {
+  const pts: SnapAnchor[] = [];
+  for (const e of Object.values(els)) {
+    if ('levelId' in e && levelId && e.levelId !== levelId) continue;
+    if (e.kind === 'room') {
+      const center = polygonCenter(e.outlineMm ?? []);
+      if (center) pts.push({ ...center, snapKind: 'center' });
+    } else if (e.kind === 'area') {
+      const center = polygonCenter(e.boundaryMm ?? []);
+      if (center) pts.push({ ...center, snapKind: 'center' });
+    } else if (e.kind === 'floor') {
+      const center = polygonCenter(e.boundaryMm ?? []);
+      if (center) pts.push({ ...center, snapKind: 'center' });
+    } else if (e.kind === 'column') {
+      pts.push({ xMm: e.positionMm.xMm, yMm: e.positionMm.yMm, snapKind: 'center' });
+    }
+  }
   return pts;
 }
 
@@ -278,11 +323,32 @@ export function produceWorkplaneSnaps(opts: {
   return [{ point: foot, kind: 'workplane' }];
 }
 
+export function produceNearestSnaps(opts: {
+  cursor: XY;
+  lines: SegmentLine[];
+  snapMm: number;
+}): SnapHit[] {
+  const tol2 = opts.snapMm * opts.snapMm;
+  let best: XY | null = null;
+  let bestD = Infinity;
+  for (const line of opts.lines) {
+    const pt = closestPointOnPolyline(opts.cursor, [line.start, line.end]);
+    if (!pt) continue;
+    const d = dist2(opts.cursor.xMm, opts.cursor.yMm, pt.xMm, pt.yMm);
+    if (d <= tol2 && d < bestD) {
+      best = pt;
+      bestD = d;
+    }
+  }
+  return best ? [{ point: best, kind: 'nearest' }] : [];
+}
+
 /** Multiple snap targets within radius — first is default; Tab-cycle can iterate. */
 
 export function snapPlanCandidates(opts: {
   cursor: XY;
-  anchors: XY[];
+  anchors: SnapAnchor[];
+  centers?: SnapAnchor[];
 
   gridStepMm: number;
   chainAnchor?: XY;
@@ -314,7 +380,7 @@ export function snapPlanCandidates(opts: {
 
   hits.push({ point: { xMm: gridPt.xMm, yMm: gridPt.yMm }, kind: 'grid' });
 
-  let bestAnch: XY | undefined;
+  let bestAnch: SnapAnchor | undefined;
 
   let bestD = Infinity;
 
@@ -328,7 +394,24 @@ export function snapPlanCandidates(opts: {
     }
   }
 
-  if (bestAnch) hits.unshift({ point: { xMm: bestAnch.xMm, yMm: bestAnch.yMm }, kind: 'endpoint' });
+  if (bestAnch)
+    hits.unshift({
+      point: { xMm: bestAnch.xMm, yMm: bestAnch.yMm },
+      kind: bestAnch.snapKind ?? 'endpoint',
+    });
+
+  let bestCenter: SnapAnchor | undefined;
+  let bestCenterD = Infinity;
+  for (const c of opts.centers ?? []) {
+    const dc = dist2(p.xMm, p.yMm, c.xMm, c.yMm);
+    if (dc <= tol2 && dc < bestCenterD) {
+      bestCenter = c;
+      bestCenterD = dc;
+    }
+  }
+  if (bestCenter) {
+    hits.push({ point: { xMm: bestCenter.xMm, yMm: bestCenter.yMm }, kind: 'center' });
+  }
 
   // EDT-05: intersection / perpendicular / extension candidates.
   if (opts.lines && opts.lines.length > 0) {
@@ -357,6 +440,9 @@ export function snapPlanCandidates(opts: {
       if (dist2(p.xMm, p.yMm, ext.xMm, ext.yMm) <= tol2) {
         hits.push({ point: ext, kind: 'extension' });
       }
+    }
+    for (const h of produceNearestSnaps({ cursor: p, lines: opts.lines, snapMm: opts.snapMm })) {
+      hits.push(h);
     }
   }
 
@@ -406,29 +492,35 @@ export function snapPlanCandidates(opts: {
   }
 
   out.sort((a, b) => {
-    // Endpoint > intersection > perpendicular > extension > parallel >
-    // tangent > workplane > grid > raw. Matches Revit's "stronger" snap
+    // Endpoint > midpoint > center > intersection > perpendicular > extension > parallel >
+    // tangent > workplane > nearest > grid > raw. Matches Revit's "stronger" snap
     // by kind, then proximity inside the same kind. EDT-05 closeout
     // inserts parallel / tangent / workplane between extension and
     // grid per the wave-04 prompt's precedence table.
     const rank = (k: SnapKind) =>
       k === 'endpoint'
         ? 0
-        : k === 'intersection'
+        : k === 'midpoint'
           ? 1
-          : k === 'perpendicular'
+          : k === 'center'
             ? 2
-            : k === 'extension'
+            : k === 'intersection'
               ? 3
-              : k === 'parallel'
+              : k === 'perpendicular'
                 ? 4
-                : k === 'tangent'
+                : k === 'extension'
                   ? 5
-                  : k === 'workplane'
+                  : k === 'parallel'
                     ? 6
-                    : k === 'grid'
+                    : k === 'tangent'
                       ? 7
-                      : 8;
+                      : k === 'workplane'
+                        ? 8
+                        : k === 'nearest'
+                          ? 9
+                          : k === 'grid'
+                            ? 10
+                            : 11;
     const ra = rank(a.kind);
     const rb = rank(b.kind);
     if (ra !== rb) return ra - rb;

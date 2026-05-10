@@ -6,6 +6,7 @@ import {
   infiniteLineIntersection,
   perpendicularFoot,
   produceParallelSnaps,
+  produceNearestSnaps,
   produceTangentSnaps,
   produceWorkplaneSnaps,
   snapPlanCandidates,
@@ -156,6 +157,21 @@ describe('EDT-05 — snapPlanCandidates kinds', () => {
     });
     expect(hits[0]?.kind).toBe('endpoint');
   });
+
+  it('emits midpoint, center, and nearest candidates for SN/SC overrides', () => {
+    const hits = snapPlanCandidates({
+      cursor: { xMm: 500, yMm: 25 },
+      anchors: [{ xMm: 500, yMm: 0, snapKind: 'midpoint' }],
+      centers: [{ xMm: 520, yMm: 20, snapKind: 'center' }],
+      gridStepMm: 1000,
+      snapMm: 100,
+      orthoHold: false,
+      lines: [HORIZONTAL],
+    });
+    expect(hits.some((h) => h.kind === 'midpoint')).toBe(true);
+    expect(hits.some((h) => h.kind === 'center')).toBe(true);
+    expect(hits.some((h) => h.kind === 'nearest')).toBe(true);
+  });
 });
 
 /* ─── EDT-05 closeout — tangent / parallel / workplane ───────────────── */
@@ -238,6 +254,19 @@ describe('EDT-05 closeout — produceTangentSnaps', () => {
       snapMm: 100,
     });
     expect(hits).toHaveLength(0);
+  });
+});
+
+describe('F-080 — produceNearestSnaps', () => {
+  it('returns the closest point on a segment inside tolerance', () => {
+    const hits = produceNearestSnaps({
+      cursor: { xMm: 400, yMm: 25 },
+      lines: [HORIZONTAL],
+      snapMm: 100,
+    });
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!.kind).toBe('nearest');
+    expect(hits[0]!.point).toEqual({ xMm: 400, yMm: 0 });
   });
 });
 

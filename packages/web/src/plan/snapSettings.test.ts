@@ -67,6 +67,9 @@ describe('EDT-05 — snapSettings', () => {
 describe('EDT-05 — applySnapSettings', () => {
   const HITS: SnapHit[] = [
     { kind: 'endpoint', point: { xMm: 0, yMm: 0 } },
+    { kind: 'midpoint', point: { xMm: 0.5, yMm: 0.5 } },
+    { kind: 'nearest', point: { xMm: 0.75, yMm: 0.75 } },
+    { kind: 'center', point: { xMm: 0.9, yMm: 0.9 } },
     { kind: 'perpendicular', point: { xMm: 1, yMm: 1 } },
     { kind: 'intersection', point: { xMm: 2, yMm: 2 } },
     { kind: 'extension', point: { xMm: 3, yMm: 3 } },
@@ -76,11 +79,18 @@ describe('EDT-05 — applySnapSettings', () => {
   it('drops the kinds the user has disabled', () => {
     const settings: SnapSettings = {
       ...DEFAULT_SNAP_SETTINGS,
+      nearest: false,
       perpendicular: false,
       extension: false,
     };
     const filtered = applySnapSettings(HITS, settings);
-    expect(filtered.map((h) => h.kind)).toEqual(['endpoint', 'intersection', 'grid']);
+    expect(filtered.map((h) => h.kind)).toEqual([
+      'endpoint',
+      'midpoint',
+      'center',
+      'intersection',
+      'grid',
+    ]);
   });
 
   it('keeps all kinds when every toggle is on', () => {
@@ -93,6 +103,8 @@ describe('EDT-05 — applySnapSettings', () => {
 
 describe('EDT-05 closeout — new toggleable kinds', () => {
   it('default has parallel + workplane on, tangent off', () => {
+    expect(DEFAULT_SNAP_SETTINGS.nearest).toBe(true);
+    expect(DEFAULT_SNAP_SETTINGS.center).toBe(true);
     expect(DEFAULT_SNAP_SETTINGS.parallel).toBe(true);
     expect(DEFAULT_SNAP_SETTINGS.tangent).toBe(false);
     expect(DEFAULT_SNAP_SETTINGS.workplane).toBe(true);

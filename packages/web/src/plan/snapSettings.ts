@@ -12,6 +12,8 @@ import type { SnapKind } from './snapEngine';
 export type ToggleableSnapKind =
   | 'endpoint'
   | 'midpoint'
+  | 'nearest'
+  | 'center'
   | 'intersection'
   | 'perpendicular'
   | 'extension'
@@ -25,6 +27,8 @@ export type SnapSettings = Record<ToggleableSnapKind, boolean>;
 export const DEFAULT_SNAP_SETTINGS: SnapSettings = {
   endpoint: true,
   midpoint: true,
+  nearest: true,
+  center: true,
   intersection: true,
   perpendicular: true,
   extension: true,
@@ -40,6 +44,8 @@ export const DEFAULT_SNAP_SETTINGS: SnapSettings = {
 export const SNAP_KINDS: ToggleableSnapKind[] = [
   'endpoint',
   'midpoint',
+  'nearest',
+  'center',
   'intersection',
   'perpendicular',
   'extension',
@@ -88,6 +94,12 @@ export function applySnapSettings<T extends { kind: SnapKind }>(
     switch (c.kind) {
       case 'endpoint':
         return settings.endpoint;
+      case 'midpoint':
+        return settings.midpoint;
+      case 'nearest':
+        return settings.nearest;
+      case 'center':
+        return settings.center;
       case 'intersection':
         return settings.intersection;
       case 'perpendicular':

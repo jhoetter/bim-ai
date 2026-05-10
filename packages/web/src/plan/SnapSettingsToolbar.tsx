@@ -16,6 +16,8 @@ import {
 const ROWS: Array<{ key: ToggleableSnapKind; label: string }> = [
   { key: 'endpoint', label: 'Endpoint' },
   { key: 'midpoint', label: 'Midpoint' },
+  { key: 'nearest', label: 'Nearest' },
+  { key: 'center', label: 'Center' },
   { key: 'intersection', label: 'Intersection' },
   { key: 'perpendicular', label: 'Perpendicular' },
   { key: 'extension', label: 'Extension' },
