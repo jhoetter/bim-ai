@@ -4,7 +4,12 @@
   "strategy": "manual-commit",
   "branch": "revit-parity-worker-integration-wave-11",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/families/FamilyLibraryPanel.externalCatalogs.test.tsx",
+    "packages/web/src/families/FamilyLibraryPanel.test.tsx",
+    "packages/web/src/families/FamilyLibraryPanel.tsx",
+    "spec/revit-parity/README.md"
+  ],
   "sessions": [
     {
       "metadata": "/43/436496f282/0/metadata.json",
@@ -23,6 +28,12 @@
       "transcript": "/43/436496f282/2/full.jsonl",
       "content_hash": "/43/436496f282/2/content_hash.txt",
       "prompt": "/43/436496f282/2/prompt.txt"
+    },
+    {
+      "metadata": "/43/436496f282/3/metadata.json",
+      "transcript": "/43/436496f282/3/full.jsonl",
+      "content_hash": "/43/436496f282/3/content_hash.txt",
+      "prompt": "/43/436496f282/3/prompt.txt"
     }
   ],
   "token_usage": {
