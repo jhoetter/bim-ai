@@ -29,6 +29,10 @@ import {
   buildPlaceholderDetailTitle,
   detailCalloutUnresolvedReason,
 } from './sheetDetailCalloutReadout';
+import {
+  recommendedSheetViewportsCommand,
+  recommendedViewsForSheet,
+} from './sheetRecommendedViewports';
 import { SectionViewportSvg } from './sectionViewportSvg';
 import { normalizeSheetPaperMm } from './sheetPaper';
 import {
@@ -243,6 +247,7 @@ function SheetCanvasWithSheet(props: {
   const emptyBoxY = marginMm + 2600;
   const emptyBoxW = Math.max(1000, wMm - marginMm * 2);
   const emptyBoxH = Math.max(1000, hMm - marginMm * 2 - 5200);
+  const recommendedViewCount = recommendedViewsForSheet(elementsById, sh.id).length;
 
   const scrollCls = bleed ? '' : ' max-h-[360px]';
 
@@ -461,6 +466,29 @@ function SheetCanvasWithSheet(props: {
       data-testid="sheet-canvas"
       className={`overflow-auto rounded border border-border bg-background p-2${scrollCls}`}
     >
+      {paintRows.length === 0 && authoring ? (
+        <div className="mb-2 flex items-center justify-between gap-2 rounded border border-border bg-surface-strong px-3 py-2">
+          <div className="min-w-0">
+            <div className="text-xs font-medium text-foreground">No viewports placed</div>
+            <div className="truncate text-[11px] text-muted">
+              {recommendedViewCount > 0
+                ? `${recommendedViewCount} unplaced view${recommendedViewCount === 1 ? '' : 's'} can be added to this sheet.`
+                : 'All recommended model views are already placed or no placeable views exist.'}
+            </div>
+          </div>
+          <button
+            type="button"
+            className="shrink-0 rounded border border-accent bg-accent/15 px-2 py-1 text-xs font-medium text-foreground hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-45"
+            disabled={recommendedViewCount === 0}
+            onClick={() => {
+              const cmd = recommendedSheetViewportsCommand(elementsById, sh.id);
+              if (cmd) props.onUpsertSemantic?.(cmd);
+            }}
+          >
+            Place recommended
+          </button>
+        </div>
+      ) : null}
       <div data-testid="sheet-canvas-full-bleed">
         <svg
           ref={svgRef}

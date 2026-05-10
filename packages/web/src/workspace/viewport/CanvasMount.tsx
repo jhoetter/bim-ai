@@ -34,6 +34,7 @@ export function CanvasMount({
   wsOn,
   onPersistViewpointField,
   lensMode,
+  onNavigateToElement,
 }: {
   mode: WorkspaceMode;
   viewerMode: 'plan_canvas' | 'orbit_3d';
@@ -54,6 +55,7 @@ export function CanvasMount({
     value: string;
   }) => void | Promise<void>;
   lensMode?: string;
+  onNavigateToElement?: (elementId: string) => void;
 }): JSX.Element {
   if ((mode as string) === 'plan-3d') {
     return (
@@ -124,6 +126,8 @@ export function CanvasMount({
           elementsById={elementsById}
           preferredScheduleId={preferredScheduleId}
           modelId={modelId}
+          onUpsertSemantic={onSemanticCommand}
+          onNavigateToElement={onNavigateToElement}
         />
       </ErrorBoundary>
     );

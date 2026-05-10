@@ -111,10 +111,15 @@ describe('LeftRailCollapsed — icon strip', () => {
   it('renders one button per section with aria-label', () => {
     const { getAllByRole } = render(<LeftRailCollapsed sections={sections} />);
     const buttons = getAllByRole('button').filter((button) =>
-      sections.some((section) => section.label === button.getAttribute('aria-label')),
+      sections.some((section) => button.getAttribute('aria-label')?.startsWith(section.label)),
     );
     expect(buttons).toHaveLength(2);
-    expect(buttons[0].getAttribute('aria-label')).toBe('Project');
-    expect(buttons[1].getAttribute('aria-label')).toBe('Views');
+    expect(buttons[0].getAttribute('aria-label')).toContain('Project');
+    expect(buttons[1].getAttribute('aria-label')).toContain('Views');
+  });
+
+  it('marks the section containing the active row in collapsed mode', () => {
+    const { getByRole } = render(<LeftRailCollapsed sections={sections} activeRowId="plan-eg" />);
+    expect(getByRole('button', { name: /Views/ }).getAttribute('data-active')).toBe('true');
   });
 });

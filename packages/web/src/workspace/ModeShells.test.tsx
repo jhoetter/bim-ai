@@ -70,7 +70,18 @@ const elementsById: Record<string, Element> = {
     kind: 'schedule',
     id: 'seed-sch-window',
     name: 'Window schedule',
+    filters: { category: 'window' },
   } as Extract<Element, { kind: 'schedule' }>,
+  'win-1': {
+    kind: 'window',
+    id: 'win-1',
+    name: 'W-01',
+    wallId: 'wall-1',
+    centerAlongMm: 0,
+    widthMm: 1200,
+    heightMm: 1400,
+    sillHeightMm: 900,
+  } as unknown as Element,
 };
 
 describe('SectionModeShell — spec §20.4', () => {
@@ -150,6 +161,63 @@ describe('ScheduleModeShell — spec §20.6', () => {
     );
     expect(getByText('W-01')).toBeTruthy();
     expect(getByText('1200')).toBeTruthy();
+  });
+
+  it('supports row selection, canvas navigation, sheet placement, and duplication', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          scheduleId: 'seed-sch-window',
+          name: 'Window schedule',
+          category: 'window',
+          columns: ['elementId', 'name', 'widthMm'],
+          columnMetadata: {
+            fields: {
+              elementId: { label: 'Element id', role: 'id' },
+              name: { label: 'Name', role: 'text' },
+              widthMm: { label: 'Width (mm)', role: 'number' },
+            },
+          },
+          rows: [{ elementId: 'win-1', name: 'W-01', widthMm: 1200 }],
+        }),
+        { status: 200 },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchSpy);
+    const onUpsertSemantic = vi.fn();
+    const onNavigateToElement = vi.fn();
+
+    const { getByText, getByRole } = render(
+      <ScheduleModeShell
+        elementsById={elementsById}
+        preferredScheduleId="seed-sch-window"
+        modelId="model-1"
+        onUpsertSemantic={onUpsertSemantic}
+        onNavigateToElement={onNavigateToElement}
+      />,
+    );
+
+    await waitFor(() => expect(getByText('W-01')).toBeTruthy());
+    fireEvent.click(getByText('W-01'));
+    fireEvent.click(getByRole('button', { name: 'Open row' }));
+    expect(onNavigateToElement).toHaveBeenCalledWith('win-1');
+
+    fireEvent.click(getByRole('button', { name: 'Place on sheet' }));
+    expect(onUpsertSemantic).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'upsertSheetViewports',
+        sheetId: 'seed-sheet-a101',
+      }),
+    );
+
+    fireEvent.click(getByRole('button', { name: 'Duplicate' }));
+    expect(onUpsertSemantic).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'upsertSchedule',
+        name: 'Window schedule copy',
+        filters: { category: 'window' },
+      }),
+    );
   });
 });
 

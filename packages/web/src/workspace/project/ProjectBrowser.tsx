@@ -4,6 +4,7 @@ import type { DisciplineTag, Element } from '@bim-ai/core';
 import { DEFAULT_DISCIPLINE_BY_KIND } from '@bim-ai/core';
 
 import { Btn } from '@bim-ai/ui';
+import { LinkedModelHifi, PhaseHifi, PlanViewHifi, ScheduleViewHifi } from '@bim-ai/icons';
 
 import { applyCommand } from '../../lib/api';
 import { useViewTemplateStore } from '../../collab/viewTemplateStore';
@@ -141,6 +142,28 @@ function viewTemplateEvidenceLine(
   const oRef = shortTemplateTagRef(elementsById, vt.defaultPlanOpeningTagStyleId, 'opening');
   const rRef = shortTemplateTagRef(elementsById, vt.defaultPlanRoomTagStyleId, 'room');
   return `${vt.scale} · ${d} · fill ${fill} · tags ${ot}/${rl} · tagDef o:${oRef} r:${rRef}`;
+}
+
+function projectBrowserScheduleCategory(schedule: Extract<Element, { kind: 'schedule' }>): string {
+  const filters = schedule.filters as Record<string, unknown> | undefined;
+  return String(filters?.category ?? '').trim();
+}
+
+function projectBrowserScheduleSheetStats(
+  elementsById: Record<string, Element>,
+): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const el of Object.values(elementsById)) {
+    if (el.kind !== 'sheet') continue;
+    for (const raw of el.viewportsMm ?? []) {
+      const rec = raw as Record<string, unknown>;
+      const viewRef = String(rec.viewRef ?? rec.view_ref ?? '').trim();
+      if (!viewRef.startsWith('schedule:')) continue;
+      const id = viewRef.slice('schedule:'.length);
+      counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+  }
+  return counts;
 }
 
 function planViewTooltip(
@@ -324,6 +347,10 @@ export function ProjectBrowser(props: {
   const schedules = Object.values(props.elementsById)
     .filter((e): e is Extract<Element, { kind: 'schedule' }> => e.kind === 'schedule')
     .sort((a, b) => a.name.localeCompare(b.name));
+  const scheduleSheetStats = useMemo(
+    () => projectBrowserScheduleSheetStats(props.elementsById),
+    [props.elementsById],
+  );
 
   const sheets = Object.values(props.elementsById)
     .filter((e): e is Extract<Element, { kind: 'sheet' }> => e.kind === 'sheet')
@@ -1170,27 +1197,53 @@ export function ProjectBrowser(props: {
 
       {schedules.length ? (
         <div className="space-y-1">
-          <div className="text-[10px] uppercase tracking-wide text-muted">Schedules</div>
+          <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-wide text-muted">
+            <span>Schedules</span>
+            <span className="rounded border border-border bg-background px-1 py-0 text-[9px]">
+              {schedules.length}
+            </span>
+          </div>
           <ul className="space-y-0.5">
-            {schedules.map((schRow) => (
-              <li key={schRow.id} className="flex flex-col gap-0.5">
-                <Btn
-                  type="button"
-                  variant="quiet"
-                  className="w-full px-2 py-0.5 text-left text-[10px]"
-                  title={`Select schedule (${schRow.name}) in explorer / inspector`}
-                  onClick={() => useBimStore.getState().select(schRow.id)}
-                >
-                  <span className="text-muted">schedule ·</span> {schRow.name}
-                </Btn>
-                <div
-                  className="pl-2 font-mono text-[9px] leading-tight text-muted"
-                  data-bim-schedule-evidence={schRow.id}
-                >
-                  {scheduleProjectBrowserEvidenceLine(props.elementsById, schRow)}
-                </div>
-              </li>
-            ))}
+            {schedules.map((schRow) => {
+              const viewportCount = scheduleSheetStats.get(schRow.id) ?? 0;
+              const category = projectBrowserScheduleCategory(schRow);
+              return (
+                <li key={schRow.id} className="flex flex-col gap-0.5">
+                  <Btn
+                    type="button"
+                    variant="quiet"
+                    className="w-full px-2 py-0.5 text-left text-[10px]"
+                    title={`Select schedule (${schRow.name}) in explorer / inspector`}
+                    onClick={() => useBimStore.getState().select(schRow.id)}
+                  >
+                    <span className="text-muted">schedule ·</span> {schRow.name}
+                  </Btn>
+                  <div className="flex flex-wrap gap-1 pl-2 text-[9px] leading-tight text-muted">
+                    {category ? (
+                      <span className="rounded border border-border bg-background px-1">
+                        {category}
+                      </span>
+                    ) : null}
+                    <span
+                      className={[
+                        'rounded border px-1',
+                        viewportCount > 0
+                          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                          : 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+                      ].join(' ')}
+                    >
+                      {viewportCount > 0 ? `${viewportCount} on sheet` : 'not on sheet'}
+                    </span>
+                  </div>
+                  <div
+                    className="pl-2 font-mono text-[9px] leading-tight text-muted"
+                    data-bim-schedule-evidence={schRow.id}
+                  >
+                    {scheduleProjectBrowserEvidenceLine(props.elementsById, schRow)}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </div>
       ) : null}
@@ -1923,7 +1976,82 @@ export function ProjectBrowserV3({
   };
 
   if (collapsed) {
-    return <div style={railStyle} data-collapsed="true" aria-label="Project browser (collapsed)" />;
+    const collapsedGroups = [
+      { id: 'views', label: 'Views', count: viewRows.length, Icon: PlanViewHifi },
+      { id: 'schedules', label: 'Schedules', count: scheduleRows.length, Icon: ScheduleViewHifi },
+      { id: 'links', label: 'Links / Imports', count: linkRows.length, Icon: LinkedModelHifi },
+      { id: 'phases', label: 'Phases', count: phaseRows.length, Icon: PhaseHifi },
+    ];
+    return (
+      <div
+        style={{
+          ...railStyle,
+          alignItems: 'center',
+          gap: 'var(--space-1)',
+          paddingTop: 'var(--space-2)',
+        }}
+        data-collapsed="true"
+        aria-label="Project browser (collapsed)"
+      >
+        {collapsedGroups.map(({ id, label, count, Icon }) => {
+          const isActive =
+            (id === 'views' && viewRows.some((row) => row.id === activeViewId)) ||
+            (id === 'schedules' && scheduleRows.some((row) => row.id === activeViewId));
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-label={`${label}${count ? `, ${count} items` : ''}`}
+              title={`${label}${count ? ` · ${count}` : ''}`}
+              data-testid={`pb-collapsed-${id}`}
+              data-active={isActive ? 'true' : 'false'}
+              onClick={() => {
+                const first =
+                  id === 'views'
+                    ? viewRows[0]
+                    : id === 'schedules'
+                      ? scheduleRows[0]
+                      : id === 'links'
+                        ? linkRows[0]
+                        : phaseRows[0];
+                if (first) onActivateView(first.id);
+              }}
+              style={{
+                width: 32,
+                height: 32,
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-md, 6px)',
+                background: isActive ? 'var(--color-accent-soft)' : 'var(--color-surface)',
+                color: 'var(--color-foreground)',
+                cursor: count > 0 ? 'pointer' : 'default',
+                opacity: count > 0 ? 1 : 0.45,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+              }}
+              disabled={count === 0}
+            >
+              <Icon size={22} aria-hidden="true" />
+              {isActive ? (
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    left: -1,
+                    top: 6,
+                    bottom: 6,
+                    width: 2,
+                    borderRadius: 2,
+                    background: 'var(--color-accent)',
+                  }}
+                />
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+    );
   }
 
   const viewGroups = groupByDiscipline(viewRows);

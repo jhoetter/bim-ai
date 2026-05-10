@@ -331,6 +331,13 @@ describe('ProjectBrowserV3 — CHR-V3-07', () => {
     expect(rail.style.width).toBe('var(--rail-width-collapsed, 36px)');
   });
 
+  it('collapsed state keeps active section and BIM-native shortcuts visible', () => {
+    const props = { ...makeDefaultProps(), collapsed: true, activeViewId: 'sch-01' };
+    const { getByTestId } = render(<ProjectBrowserV3 {...props} />);
+    expect(getByTestId('pb-collapsed-views')).toBeTruthy();
+    expect(getByTestId('pb-collapsed-schedules').getAttribute('data-active')).toBe('true');
+  });
+
   it('expanded state uses rail-width-expanded CSS var — no hex literals in inline styles', () => {
     const { container } = render(<ProjectBrowserV3 {...makeDefaultProps()} />);
     const html = container.innerHTML;

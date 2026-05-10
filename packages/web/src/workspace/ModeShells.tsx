@@ -13,6 +13,7 @@ import {
   type ScheduleTableModelV1,
 } from '../schedules/scheduleTableRenderer';
 import { formatScheduleCell } from '../schedules/scheduleUtils';
+import { firstSheetId, placeViewOnSheetCommand } from './sheets/sheetRecommendedViewports';
 
 /**
  * Mode-specific shells — spec §20.4 / §20.5 / §20.6 / §20.7.
@@ -120,16 +121,24 @@ export function ScheduleModeShell({
   elementsById,
   preferredScheduleId,
   modelId,
+  onUpsertSemantic,
+  onNavigateToElement,
 }: {
   elementsById: Record<string, Element>;
   preferredScheduleId?: string;
   modelId?: string;
+  onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
+  onNavigateToElement?: (elementId: string) => void;
 }): JSX.Element {
   const schedules = asArr(elementsById, 'schedule');
   const [activeId, setActiveId] = useState<string | null>(
     preferredScheduleId ?? schedules[0]?.id ?? SCHEDULE_DEFAULTS.activeScheduleId,
   );
   const active = activeId ? elementsById[activeId] : undefined;
+  const scheduleSheetStats = useMemo(
+    () => scheduleSheetPlacementStats(elementsById),
+    [elementsById],
+  );
 
   useEffect(() => {
     if (preferredScheduleId && elementsById[preferredScheduleId]?.kind === 'schedule') {
@@ -174,14 +183,28 @@ export function ScheduleModeShell({
                   : 'text-foreground hover:bg-surface-strong',
               ].join(' ')}
             >
-              {s.name}
+              <span className="block truncate">{s.name}</span>
+              <span className="mt-0.5 flex flex-wrap gap-1 text-[10px] text-muted">
+                {scheduleCategoryLabel(s) ? <span>{scheduleCategoryLabel(s)}</span> : null}
+                <span>
+                  {(scheduleSheetStats.get(s.id) ?? 0) > 0
+                    ? `${scheduleSheetStats.get(s.id)} sheet viewport`
+                    : 'not on sheet'}
+                </span>
+              </span>
             </button>
           ))
         )}
       </aside>
       <div className="overflow-auto bg-background p-3">
         {active && active.kind === 'schedule' ? (
-          <ScheduleGrid schedule={active} modelId={modelId} />
+          <ScheduleGrid
+            schedule={active}
+            modelId={modelId}
+            elementsById={elementsById}
+            onUpsertSemantic={onUpsertSemantic}
+            onNavigateToElement={onNavigateToElement}
+          />
         ) : (
           <PlaceholderCard
             title="Pick a schedule"
@@ -203,11 +226,24 @@ type ScheduleGridState =
 function ScheduleGrid({
   schedule,
   modelId,
+  elementsById,
+  onUpsertSemantic,
+  onNavigateToElement,
 }: {
   schedule: Extract<Element, { kind: 'schedule' }>;
   modelId?: string;
+  elementsById: Record<string, Element>;
+  onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
+  onNavigateToElement?: (elementId: string) => void;
 }): JSX.Element {
   const [state, setState] = useState<ScheduleGridState>({ status: 'idle' });
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+  const select = useBimStore((s) => s.select);
+  const firstSheet = useMemo(() => firstSheetId(elementsById), [elementsById]);
+  const sheetViewportCount = useMemo(
+    () => scheduleSheetPlacementStats(elementsById).get(schedule.id) ?? 0,
+    [elementsById, schedule.id],
+  );
 
   useEffect(() => {
     if (!modelId) {
@@ -238,6 +274,10 @@ function ScheduleGrid({
     };
   }, [modelId, schedule.id]);
 
+  useEffect(() => {
+    setSelectedRowId(null);
+  }, [schedule.id]);
+
   const model = useMemo<ScheduleTableModelV1 | null>(() => {
     if (state.status !== 'ready') return null;
     return buildScheduleTableModelV1({ payload: state.payload });
@@ -247,19 +287,82 @@ function ScheduleGrid({
     state.status === 'ready'
       ? String(state.payload.category ?? '').trim()
       : String((schedule.filters as Record<string, unknown> | undefined)?.category ?? '').trim();
+  const selectedRowIsElement = Boolean(selectedRowId && elementsById[selectedRowId]);
+
+  const placeOnSheet = () => {
+    if (!firstSheet || !onUpsertSemantic) return;
+    const cmd = placeViewOnSheetCommand(elementsById, firstSheet, schedule.id);
+    if (cmd) onUpsertSemantic(cmd);
+  };
+
+  const duplicateSchedule = () => {
+    if (!onUpsertSemantic) return;
+    onUpsertSemantic({
+      type: 'upsertSchedule',
+      id: `${schedule.id}-copy-${Date.now().toString(36)}`,
+      name: `${schedule.name} copy`,
+      filters: { ...(schedule.filters ?? {}) },
+      grouping: { ...(schedule.grouping ?? {}) },
+    });
+  };
+
+  const openSelectedElement = () => {
+    if (!selectedRowId || !elementsById[selectedRowId]) return;
+    select(selectedRowId);
+    onNavigateToElement?.(selectedRowId);
+  };
 
   return (
     <div className="flex flex-col gap-3">
-      <div>
-        <div className="text-md font-medium text-foreground">{schedule.name}</div>
-        <div className="text-xs text-muted">
-          Schedule id · <span className="font-mono">{schedule.id}</span>
-          {category ? (
-            <>
-              {' '}
-              · <span>{category}</span>
-            </>
-          ) : null}
+      <div className="flex flex-wrap items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="text-md font-medium text-foreground">{schedule.name}</div>
+          <div className="text-xs text-muted">
+            Schedule id · <span className="font-mono">{schedule.id}</span>
+            {category ? (
+              <>
+                {' '}
+                · <span>{category}</span>
+              </>
+            ) : null}{' '}
+            · {sheetViewportCount > 0 ? `${sheetViewportCount} sheet viewport` : 'not on sheet'}
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-1">
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 rounded border border-border bg-surface px-2 py-1 text-xs text-foreground hover:bg-surface-strong disabled:cursor-not-allowed disabled:opacity-45"
+            disabled={!selectedRowIsElement}
+            title={
+              selectedRowIsElement
+                ? 'Open the selected schedule row element in the canvas'
+                : 'Select a schedule row that resolves to a model element'
+            }
+            onClick={openSelectedElement}
+          >
+            <Icons.viewpoint size={ICON_SIZE.chrome} aria-hidden="true" />
+            Open row
+          </button>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 rounded border border-border bg-surface px-2 py-1 text-xs text-foreground hover:bg-surface-strong disabled:cursor-not-allowed disabled:opacity-45"
+            disabled={!firstSheet || !onUpsertSemantic}
+            title={firstSheet ? 'Place this schedule on the first sheet' : 'No sheet is available'}
+            onClick={placeOnSheet}
+          >
+            <Icons.sheet size={ICON_SIZE.chrome} aria-hidden="true" />
+            Place on sheet
+          </button>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 rounded border border-border bg-surface px-2 py-1 text-xs text-foreground hover:bg-surface-strong disabled:cursor-not-allowed disabled:opacity-45"
+            disabled={!onUpsertSemantic}
+            title="Duplicate this schedule definition"
+            onClick={duplicateSchedule}
+          >
+            <Icons.copy size={ICON_SIZE.chrome} aria-hidden="true" />
+            Duplicate
+          </button>
         </div>
       </div>
       {state.status === 'idle' ? (
@@ -278,7 +381,17 @@ function ScheduleGrid({
           {state.message}
         </div>
       ) : model ? (
-        <DerivedScheduleTable scheduleName={schedule.name} model={model} />
+        <DerivedScheduleTable
+          scheduleName={schedule.name}
+          model={model}
+          category={category}
+          selectedRowId={selectedRowId}
+          elementsById={elementsById}
+          onRowSelect={(rowId) => {
+            setSelectedRowId(rowId);
+            if (elementsById[rowId]) select(rowId);
+          }}
+        />
       ) : null}
     </div>
   );
@@ -287,9 +400,17 @@ function ScheduleGrid({
 function DerivedScheduleTable({
   scheduleName,
   model,
+  category,
+  selectedRowId,
+  elementsById,
+  onRowSelect,
 }: {
   scheduleName: string;
   model: ScheduleTableModelV1;
+  category: string;
+  selectedRowId: string | null;
+  elementsById: Record<string, Element>;
+  onRowSelect: (rowId: string) => void;
 }): JSX.Element {
   return (
     <div className="min-w-0">
@@ -328,7 +449,28 @@ function DerivedScheduleTable({
                     </td>
                   </tr>
                 ) : (
-                  <tr key={row.id} className="border-t border-border/60">
+                  <tr
+                    key={row.id}
+                    className={[
+                      'border-t border-border/60',
+                      selectedRowId === row.id ? 'bg-accent/15' : 'hover:bg-surface-strong',
+                    ].join(' ')}
+                    data-selected={selectedRowId === row.id ? 'true' : 'false'}
+                    data-resolves-element={elementsById[row.id] ? 'true' : 'false'}
+                    tabIndex={0}
+                    onClick={() => onRowSelect(row.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        onRowSelect(row.id);
+                      }
+                    }}
+                    title={
+                      elementsById[row.id]
+                        ? 'Select linked model element'
+                        : 'This schedule row has no linked model element id'
+                    }
+                  >
                     {model.columns.map((column) => (
                       <td key={`${row.id}-${column.key}`} className="px-2 py-1.5 align-top">
                         {formatScheduleCell(row.record[column.key])}
@@ -340,7 +482,8 @@ function DerivedScheduleTable({
             ) : (
               <tr>
                 <td className="px-2 py-3 text-muted" colSpan={Math.max(1, model.columns.length)}>
-                  No rows match this schedule.
+                  No rows match this {category ? `${category} ` : ''}schedule. Check the category,
+                  filters, and whether the model has matching elements.
                 </td>
               </tr>
             )}
@@ -354,6 +497,27 @@ function DerivedScheduleTable({
       ) : null}
     </div>
   );
+}
+
+function scheduleCategoryLabel(schedule: Extract<Element, { kind: 'schedule' }>): string {
+  const filters = schedule.filters as Record<string, unknown> | undefined;
+  const category = String(filters?.category ?? '').trim();
+  return category;
+}
+
+function scheduleSheetPlacementStats(elementsById: Record<string, Element>): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const el of Object.values(elementsById)) {
+    if (el.kind !== 'sheet') continue;
+    for (const raw of el.viewportsMm ?? []) {
+      const rec = raw as Record<string, unknown>;
+      const viewRef = String(rec.viewRef ?? rec.view_ref ?? '').trim();
+      if (!viewRef.startsWith('schedule:')) continue;
+      const id = viewRef.slice('schedule:'.length);
+      counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+  }
+  return counts;
 }
 
 /* ────────────────────────────────────────────────────────────────────── */

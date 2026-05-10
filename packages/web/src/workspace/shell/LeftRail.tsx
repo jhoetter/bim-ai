@@ -250,12 +250,17 @@ export function LeftRail({
 /** Slim (56 px) icon strip used by AppShell when the rail is collapsed. */
 export function LeftRailCollapsed({
   sections,
+  activeRowId,
   onExpand,
 }: {
   sections: LeftRailSection[];
+  activeRowId?: string;
   onExpand?: () => void;
 }): JSX.Element {
   const { t } = useTranslation();
+  const activeSectionId = activeRowId
+    ? sections.find((section) => sectionContainsRow(section.rows, activeRowId))?.id
+    : undefined;
   return (
     <nav
       aria-label={t('workspace.projectBrowserSections')}
@@ -277,25 +282,54 @@ export function LeftRailCollapsed({
       {sections.map((s) => {
         const HifiIcon = hifiIconForSection(s.id);
         const Icon = s.icon ?? Icons.disclosureClosed;
+        const isActive = activeSectionId === s.id;
+        const rowCount = countRows(s.rows);
         return (
           <button
             key={s.id}
             type="button"
-            aria-label={s.label}
-            title={s.label}
+            aria-label={`${s.label}${rowCount ? `, ${rowCount} items` : ''}`}
+            title={`${s.label}${rowCount ? ` · ${rowCount}` : ''}`}
+            data-active={isActive ? 'true' : 'false'}
             onClick={onExpand}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground/75 transition-colors hover:bg-surface-strong hover:text-foreground"
+            className={[
+              'relative inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors hover:bg-surface-strong hover:text-foreground',
+              isActive ? 'bg-accent/15 text-accent' : 'text-foreground/75',
+            ].join(' ')}
           >
             {HifiIcon ? (
               <HifiIcon size={25} aria-hidden="true" />
             ) : (
               <Icon size={ICON_SIZE.chrome} aria-hidden="true" />
             )}
+            {isActive ? (
+              <span
+                aria-hidden="true"
+                className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r bg-accent"
+              />
+            ) : null}
           </button>
         );
       })}
     </nav>
   );
+}
+
+function sectionContainsRow(rows: LeftRailRow[], rowId: string): boolean {
+  for (const row of rows) {
+    if (row.id === rowId) return true;
+    if (row.children && sectionContainsRow(row.children, rowId)) return true;
+  }
+  return false;
+}
+
+function countRows(rows: LeftRailRow[]): number {
+  let total = 0;
+  for (const row of rows) {
+    total += 1;
+    if (row.children) total += countRows(row.children);
+  }
+  return total;
 }
 
 function hifiIconForSection(sectionId: string): ComponentType<BimIconHifiProps> | undefined {

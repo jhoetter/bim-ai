@@ -152,6 +152,17 @@ export function WorkspaceRightRail({
   }, [selectedId, elementsById, planProjectionPrimitives]);
 
   const firstSheet = useMemo(() => firstSheetId(elementsById), [elementsById]);
+  const emptySelectionPanel = (
+    <RightRailEmptySelection
+      mode={mode}
+      activePlanViewName={
+        activePlanViewId && elementsById[activePlanViewId]?.kind === 'plan_view'
+          ? (elementsById[activePlanViewId] as Extract<Element, { kind: 'plan_view' }>).name
+          : undefined
+      }
+      has3dControls={show3dLayers}
+    />
+  );
 
   const resetActiveSavedView = useCallback(() => {
     if (!activeViewpoint || activeViewpoint.mode !== 'orbit_3d' || !activeViewpoint.camera) return;
@@ -599,17 +610,17 @@ export function WorkspaceRightRail({
                 )}
               </>
             ) : (
-              <InspectorEmptyTab message="No element selected." />
+              emptySelectionPanel
             ),
             constraints: el ? (
               InspectorConstraintsFor(el, t)
             ) : (
-              <InspectorEmptyTab message="No element selected." />
+              <InspectorEmptyTab message="Select a model element to inspect constraints and hosts." />
             ),
             identity: el ? (
               InspectorIdentityFor(el, t)
             ) : (
-              <InspectorEmptyTab message="No element selected." />
+              <InspectorEmptyTab message="Select a view, sheet, schedule, or model element to inspect identity." />
             ),
             graphics:
               el && (el.kind === 'plan_view' || el.kind === 'view_template') ? (
@@ -630,7 +641,7 @@ export function WorkspaceRightRail({
             evidence: el ? (
               <InspectorEvidenceFor element={el} elementsById={elementsById} />
             ) : (
-              <InspectorEmptyTab message="No evidence context." />
+              <InspectorEmptyTab message="Select a documented item to inspect provenance and evidence." />
             ),
           }}
           emptyStateActions={[
@@ -831,6 +842,50 @@ function InspectorContextActions({
         Actions
       </div>
       <div className="flex flex-wrap gap-1.5">{buttons}</div>
+    </div>
+  );
+}
+
+function RightRailEmptySelection({
+  mode,
+  activePlanViewName,
+  has3dControls,
+}: {
+  mode: WorkspaceMode;
+  activePlanViewName?: string;
+  has3dControls: boolean;
+}): JSX.Element {
+  const title =
+    mode === 'schedule'
+      ? 'Schedule review'
+      : mode === 'sheet'
+        ? 'Sheet review'
+        : mode === '3d' || (mode as string) === 'plan-3d'
+          ? '3D review'
+          : 'Plan editing';
+  const body =
+    mode === 'schedule'
+      ? 'Select a schedule row to highlight its source element, or select a schedule in the browser for sheet placement and identity.'
+      : mode === 'sheet'
+        ? 'Select a sheet viewport or documentation item to edit placement, crop, identity, and review context.'
+        : mode === '3d' || (mode as string) === 'plan-3d'
+          ? 'Select model geometry to inspect properties. View controls stay below for graphics, camera, section box, and hidden categories.'
+          : activePlanViewName
+            ? `Editing ${activePlanViewName}. Select an element, or use the tool palette to draw and annotate.`
+            : 'Select an element, or use the tool palette to draw walls, openings, rooms, dimensions, and annotations.';
+
+  return (
+    <div className="space-y-2 text-[11px]">
+      <div className="rounded border border-border bg-surface-strong p-2">
+        <div className="font-medium text-foreground">{title}</div>
+        <p className="mt-1 leading-snug text-muted">{body}</p>
+      </div>
+      {has3dControls ? (
+        <div className="rounded border border-border bg-background p-2 text-muted">
+          Graphics, projection, walk mode, fit/reset, and section box controls are available in View
+          controls below.
+        </div>
+      ) : null}
     </div>
   );
 }

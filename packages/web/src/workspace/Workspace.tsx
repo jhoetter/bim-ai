@@ -154,6 +154,7 @@ export function Workspace(): JSX.Element {
   const selectedId = useBimStore((s) => s.selectedId);
   const activeLevelId = useBimStore((s) => s.activeLevelId);
   const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
+  const activePlanViewId = useBimStore((s) => s.activePlanViewId);
   const activatePlanView = useBimStore((s) => s.activatePlanView);
   const planHudMm = useBimStore((s) => s.planHudMm);
   const presencePeers = useBimStore((s) => s.presencePeers);
@@ -1199,6 +1200,7 @@ export function Workspace(): JSX.Element {
         leftRailCollapsed={
           <LeftRailCollapsed
             sections={browserSections}
+            activeRowId={activePlanViewId ?? selectedId ?? activeLevelId ?? undefined}
             onExpand={() => setLeftRailCollapsed(false)}
           />
         }
@@ -1257,6 +1259,7 @@ export function Workspace(): JSX.Element {
               wsOn={wsOn}
               onPersistViewpointField={persistViewpointField}
               lensMode={lensMode}
+              onNavigateToElement={openElementById}
             />
             {/* VIE-04 — temporary visibility chip overlay, above the status bar */}
             <div className="pointer-events-auto absolute bottom-10 left-3 z-10">

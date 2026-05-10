@@ -192,7 +192,7 @@ Implementation notes:
 
 ### UX-12 Icon System Completion
 
-Status: open.
+Status: in progress.
 
 Goal: icons should explain concepts faster than text, without turning dense production UI into illustration.
 
@@ -213,9 +213,14 @@ Placement rules:
 - Use preview thumbnails rather than abstract icons when the user is choosing a visual result, such as graphics style or background.
 - Do not put display-mode icons into the 3D axis/ViewCube.
 
+Implementation notes:
+
+- Schedule mode primary actions now carry compact stroke icons for open row, place on sheet, and duplicate.
+- Collapsed project-browser rails now use BIM-native hi-fi icons and active-section indication instead of an empty/neutral strip.
+
 ### UX-13 Project Browser And Left Sidebar
 
-Status: open.
+Status: in progress.
 
 Goal: the browser should be the user's mental model of the BIM file.
 
@@ -227,9 +232,15 @@ Goal: the browser should be the user's mental model of the BIM file.
 - Context menus should expose natural actions per item: open, rename, duplicate view, place on sheet, create schedule, reveal in canvas.
 - Avoid mixing datums and saved views without secondary labels.
 
+Implementation notes:
+
+- Schedule rows now show category and sheet-placement health chips in the Project Browser, with a compact count in the Schedules header.
+- Schedule mode sidebar mirrors this status so unsheeted schedules are visible before opening the inspector.
+- Collapsed browser state now keeps section shortcuts, counts, and active-section indication visible.
+
 ### UX-14 Inspector And Right Rail
 
-Status: open.
+Status: in progress.
 
 Goal: the right rail should answer "what is selected, what can I do, what matters now?"
 
@@ -238,6 +249,11 @@ Goal: the right rail should answer "what is selected, what can I do, what matter
 - For views and sheets, show view/document actions before generic properties.
 - For model elements, show geometry/type/host/level before raw identity.
 - Add compact empty-selection guidance that changes by mode: plan editing, 3D review, sheet review, schedules.
+
+Implementation notes:
+
+- Empty-selection properties now switch copy by mode: plan editing, 3D review, sheet review, and schedule review.
+- 3D empty-selection guidance explicitly points to the persistent right-rail View controls rather than leaving the inspector as a generic "no selection" panel.
 - Make global authoring workbenches feel separate from selected-element properties.
 - Reduce uppercase micro-headings where they create noise; use compact but readable labels.
 
@@ -272,11 +288,14 @@ Goal: schedules should feel like live BIM data, not generic tables.
 Implementation notes:
 
 - Schedule hydration is now implemented for saved models.
-- Remaining work: row selection, sort/filter UI, and sheet-placement actions from the schedule surface.
+- Schedule mode now has direct Place on sheet and Duplicate actions for the active schedule.
+- Derived schedule rows are selectable; rows that resolve to model element ids can select/open the source element from the schedule surface.
+- Empty derived tables now explain category/filter/model-match causes instead of showing a generic no-row message.
+- Remaining work: fuller sort/filter UI inside the dedicated Schedule mode shell and richer per-row edit affordances.
 
 ### UX-17 Sheets And Documentation
 
-Status: open.
+Status: in progress.
 
 Goal: sheets should feel like printable deliverables.
 
@@ -286,6 +305,10 @@ Goal: sheets should feel like printable deliverables.
 - Viewport labels/detail numbers should be readable at normal zoom.
 - Review/comment mode should feel layered on top of documentation, not mixed into authoring tools.
 - Add visual status for unsheeted sections/elevations/schedules.
+
+Implementation notes:
+
+- Empty sheet canvases now show a direct "Place recommended" action when unplaced views are available, so the sheet surface is not a dead end.
 
 ### UX-18 Sections And Elevations
 
@@ -313,7 +336,7 @@ Goal: global chrome should orient users without stealing space.
 
 ### UX-20 Empty, Loading, Error, And Offline States
 
-Status: open.
+Status: in progress.
 
 Goal: every non-happy state should tell the user what happened and what to do next.
 
@@ -323,6 +346,12 @@ Goal: every non-happy state should tell the user what happened and what to do ne
 - Offline state: explain what still works locally and what is queued.
 - Loading states should use stable skeletons or compact status rows, not layout-shifting text.
 - Errors should include recovery actions where possible.
+
+Implementation notes:
+
+- Schedule empty rows explain category/filter/model-match causes.
+- Right-rail empty selection states now adapt to plan, 3D, sheet, and schedule contexts.
+- Empty sheets now surface direct viewport placement from the sheet surface.
 
 ### UX-21 Accessibility And Keyboard Flow
 
