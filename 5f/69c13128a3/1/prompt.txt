@@ -1,0 +1,43 @@
+for now, please dont always wait for the CI build. instead do that at the very, very end only (of the whole revit-parity work); it likely will break by then, but we can then fix it easily. running it after ecah workpackage takes too long
+
+---
+
+can you commit and push and merge with main? and update the tracker? i.e. finish your current workpackage, but then i want to conclude for the moment
+
+---
+
+I need to free up the `main` branch so I can check it out in my main repo, but I do not want to lose or disrupt any of your progress.
+
+  You are currently in the worktree at:
+
+  /Users/jhoetter/repos/bim-ai-revit-family-sketch-wave
+
+  Git says `main` is checked out there, so I cannot switch another worktree to `main`.
+
+  Please preserve all your current work safely by moving this worktree off `main` onto a dedicated branch, without resetting, deleting, stashing, or discarding anything. First check
+  `git status`, then create/switch to a feature branch from the current state, for example:
+
+  git switch -c agent-family-sketch-work
+
+  If that branch name already exists, choose a clear unique branch name. After that, confirm the branch name and confirm the worktree still has all your changes. Please do not run
+  destructive commands like `git reset --hard`, `git checkout -- .`, or `git clean`.
+
+---
+
+is everything merged with main cleanly? also from the available remote branches in the repo?
+
+---
+
+[Image #1] so all those can be removed exept for entire checkpoitns?
+
+---
+
+do that
+
+---
+
+ok please continue with the revit parity closing loop as earlier
+
+---
+
+if you can, it makes sense to dispatch subagents to work on packages in parallel...
