@@ -260,6 +260,7 @@ export type ElemKind =
   | 'balcony'
   | 'area'
   | 'masking_region'
+  | 'spot_elevation'
   | 'constraint'
   | 'mass'
   | 'phase'
@@ -1790,6 +1791,17 @@ export type Element =
       hostViewId: string;
       boundaryMm: XY[];
       fillColor?: string;
+    }
+  | {
+      /** ANN-02 — view-local spot elevation annotation (diamond symbol + text). */
+      kind: 'spot_elevation';
+      id: string;
+      hostViewId: string;
+      positionMm: XY;
+      elevationMm: number;
+      prefix?: string;
+      suffix?: string;
+      colour?: string;
     }
   | {
       /**

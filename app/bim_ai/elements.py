@@ -612,6 +612,20 @@ class TextNoteElem(BaseModel):
     colour: str = Field(default="#202020")
 
 
+class SpotElevationElem(BaseModel):
+    """ANN-02 — view-local spot elevation annotation (diamond symbol + text)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["spot_elevation"] = "spot_elevation"
+    id: str
+    host_view_id: str = Field(alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    elevation_mm: float = Field(alias="elevationMm")
+    prefix: str = Field(default="")
+    suffix: str = Field(default="")
+    colour: str = Field(default="#202020")
+
+
 ViewpointCutawayStyle = Literal["none", "cap", "floor", "box"]
 
 

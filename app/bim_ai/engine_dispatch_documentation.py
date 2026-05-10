@@ -16,6 +16,7 @@ from bim_ai.engine import (
     CreateReferencePlaneCmd,
     CreateScheduleViewCmd,
     CreateSectionCutCmd,
+    CreateSpotElevationCmd,
     CreateTextNoteCmd,
     DeletePlanRegionCmd,
     DeletePropertyLineCmd,
@@ -41,6 +42,7 @@ from bim_ai.engine import (
     SetElementPropCmd,
     SheetElem,
     TagDefinitionElem,
+    SpotElevationElem,
     TextNoteElem,
     UpdatePlanRegionCmd,
     UpdatePlanViewCropCmd,
@@ -276,6 +278,26 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
                 font_size_mm=cmd.font_size_mm,
                 anchor=cmd.anchor,
                 rotation_deg=cmd.rotation_deg,
+                colour=cmd.colour,
+            )
+
+        case CreateSpotElevationCmd():
+            sid = cmd.id or new_id()
+            if sid in els:
+                raise ValueError(f"duplicate element id '{sid}'")
+            view = els.get(cmd.host_view_id)
+            if view is None or view.kind not in {"plan_view", "section_cut", "elevation_view"}:
+                raise ValueError(
+                    "createSpotElevation.hostViewId must reference plan_view/section_cut/elevation_view"
+                )
+            els[sid] = SpotElevationElem(
+                kind="spot_elevation",
+                id=sid,
+                host_view_id=cmd.host_view_id,
+                position_mm=cmd.position_mm,
+                elevation_mm=cmd.elevation_mm,
+                prefix=cmd.prefix,
+                suffix=cmd.suffix,
                 colour=cmd.colour,
             )
 
