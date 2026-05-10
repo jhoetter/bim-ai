@@ -75,6 +75,26 @@ describe('KRN-08 — extractAreaPrimitives', () => {
     expect(prims.map((p) => p.id)).toEqual(['a-rentable']);
   });
 
+  it('supports arbitrary non-rectangular area boundaries', () => {
+    const lShape: Extract<Element, { kind: 'area' }> = {
+      ...porch,
+      id: 'a-l',
+      boundaryMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 4000, yMm: 0 },
+        { xMm: 4000, yMm: 1000 },
+        { xMm: 1500, yMm: 1000 },
+        { xMm: 1500, yMm: 3000 },
+        { xMm: 0, yMm: 3000 },
+      ],
+      computedAreaSqMm: undefined,
+    };
+    const prims = extractAreaPrimitives({ [lShape.id]: lShape }, 'lvl_g', 'gross_building');
+    expect(prims[0]!.boundaryMm).toHaveLength(6);
+    expect(prims[0]!.computedAreaSqMm).toBeCloseTo(7_000_000, 0);
+    expect(prims[0]!.tagLabel).toBe('Porch · 7.00 m²');
+  });
+
   it('polygonCentroidMm degenerates to the mean for collinear vertices', () => {
     const c = polygonCentroidMm([
       { xMm: 0, yMm: 0 },

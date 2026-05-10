@@ -1,7 +1,7 @@
 import { useState, type JSX } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
-import type { DisciplineTag, Element } from '@bim-ai/core';
+import type { DisciplineTag, Element, ViewTemplateControlledField } from '@bim-ai/core';
 
 import { BUILT_IN_FAMILIES, getFamilyById, getTypeById } from '../../families/familyCatalog';
 import {
@@ -1263,6 +1263,37 @@ export function InspectorGraphicsFor({
 const INPUT_CLS =
   'mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px]';
 const LABEL_CLS = 'block text-[10px] text-muted';
+const VIEW_TEMPLATE_CONTROL_FIELDS: Array<{
+  field: ViewTemplateControlledField;
+  label: string;
+}> = [
+  { field: 'scale', label: 'Scale' },
+  { field: 'detailLevel', label: 'Detail level' },
+  { field: 'phase', label: 'Phase' },
+  { field: 'phaseFilter', label: 'Phase filter' },
+  { field: 'elementOverrides', label: 'Element overrides' },
+];
+
+function viewTemplateControlState(
+  el: Extract<Element, { kind: 'view_template' }>,
+  field: ViewTemplateControlledField,
+): { included: boolean; locked: boolean } {
+  const control = el.templateControlMatrix?.[field];
+  const included = control?.included ?? true;
+  return { included, locked: control?.locked ?? included };
+}
+
+function viewTemplateControlPatch(
+  field: ViewTemplateControlledField,
+  included: boolean,
+  locked: boolean,
+): string {
+  return JSON.stringify({
+    templateControlMatrix: {
+      [field]: { included, locked: included ? locked : false },
+    },
+  });
+}
 
 /** Editable inspector for plan_view elements (Properties tab). */
 export function InspectorPlanViewEditor({
@@ -2078,6 +2109,51 @@ export function InspectorViewTemplateEditor({
   return (
     <div className="space-y-2 text-[11px]">
       <p className="text-[10px] font-semibold text-muted">{t('inspector.viewTemplate.heading')}</p>
+
+      <div className="rounded border border-border">
+        <div className="grid grid-cols-[1fr_54px_44px] gap-1 border-b border-border px-2 py-1 text-[9px] font-semibold uppercase text-muted">
+          <span>Property</span>
+          <span>Include</span>
+          <span>Lock</span>
+        </div>
+        {VIEW_TEMPLATE_CONTROL_FIELDS.map(({ field, label }) => {
+          const control = viewTemplateControlState(el, field);
+          return (
+            <div
+              key={field}
+              className="grid grid-cols-[1fr_54px_44px] items-center gap-1 px-2 py-1 text-[10px]"
+            >
+              <span className="truncate text-muted">{label}</span>
+              <input
+                type="checkbox"
+                data-testid={`inspector-vt-control-${field}-include`}
+                aria-label={`${label} include`}
+                checked={control.included}
+                onChange={(e) => {
+                  const included = e.target.checked;
+                  onPersistProperty(
+                    '__updateViewTemplate__',
+                    viewTemplateControlPatch(field, included, included ? control.locked : false),
+                  );
+                }}
+              />
+              <input
+                type="checkbox"
+                data-testid={`inspector-vt-control-${field}-lock`}
+                aria-label={`${label} lock`}
+                checked={control.locked}
+                disabled={!control.included}
+                onChange={(e) => {
+                  onPersistProperty(
+                    '__updateViewTemplate__',
+                    viewTemplateControlPatch(field, control.included, e.target.checked),
+                  );
+                }}
+              />
+            </div>
+          );
+        })}
+      </div>
 
       <label className={LABEL_CLS}>
         {t('inspector.fields.name')}

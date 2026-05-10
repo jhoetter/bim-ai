@@ -2273,6 +2273,9 @@ class CreateViewTemplateCmd(BaseModel):
     element_overrides: list[dict] = Field(default_factory=list, alias="elementOverrides")
     phase: str | None = Field(default=None)
     phase_filter: str | None = Field(default=None, alias="phaseFilter")
+    template_control_matrix: dict[str, Any] | None = Field(
+        default=None, alias="templateControlMatrix"
+    )
 
 
 class UpdateViewTemplateCmd(BaseModel):
@@ -2287,6 +2290,9 @@ class UpdateViewTemplateCmd(BaseModel):
     element_overrides: list[dict] | None = Field(default=None, alias="elementOverrides")
     phase: str | None = Field(default=None)
     phase_filter: str | None = Field(default=None, alias="phaseFilter")
+    template_control_matrix: dict[str, Any] | None = Field(
+        default=None, alias="templateControlMatrix"
+    )
 
 
 class ApplyViewTemplateCmd(BaseModel):

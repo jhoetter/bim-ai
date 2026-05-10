@@ -33,6 +33,27 @@ from bim_ai.engine import (
     ViewTemplateElem,
     WindowLegendViewElem,
 )
+from bim_ai.elements import normalize_view_template_control_matrix
+
+
+def _template_field_included(tpl: ViewTemplateElem, field: str) -> bool:
+    control = tpl.template_control_matrix.get(field)
+    return True if control is None else control.included
+
+
+def _view_template_plan_patch(tpl: ViewTemplateElem) -> dict[str, Any]:
+    view_patch: dict[str, Any] = {}
+    if _template_field_included(tpl, "scale") and tpl.scale is not None and isinstance(tpl.scale, int):
+        view_patch["scale"] = tpl.scale
+    if _template_field_included(tpl, "detailLevel") and tpl.detail_level is not None:
+        view_patch["plan_detail_level"] = tpl.detail_level
+    if _template_field_included(tpl, "elementOverrides") and tpl.element_overrides:
+        view_patch["element_overrides"] = list(tpl.element_overrides)
+    if _template_field_included(tpl, "phase") and tpl.phase is not None:
+        view_patch["phase_id"] = tpl.phase
+    if _template_field_included(tpl, "phaseFilter") and tpl.phase_filter is not None:
+        view_patch["phase_filter"] = tpl.phase_filter
+    return view_patch
 
 
 def try_apply_viewsheets_command(doc, cmd, *, source_provider=None) -> bool:
@@ -236,6 +257,9 @@ def try_apply_viewsheets_command(doc, cmd, *, source_provider=None) -> bool:
                 element_overrides=list(cmd.element_overrides),
                 phase=cmd.phase,
                 phase_filter=cmd.phase_filter,
+                template_control_matrix=normalize_view_template_control_matrix(
+                    cmd.template_control_matrix
+                ),
             )
 
         case UpdateViewTemplateCmd():
@@ -255,6 +279,11 @@ def try_apply_viewsheets_command(doc, cmd, *, source_provider=None) -> bool:
                 patch["phase"] = cmd.phase
             if cmd.phase_filter is not None:
                 patch["phase_filter"] = cmd.phase_filter
+            if "template_control_matrix" in cmd.model_fields_set:
+                patch["template_control_matrix"] = normalize_view_template_control_matrix(
+                    cmd.template_control_matrix,
+                    base=tpl.template_control_matrix,
+                )
             updated_tpl = tpl.model_copy(update=patch)
             els[cmd.template_id] = updated_tpl
             # Propagate non-None template fields to all bound views
@@ -263,15 +292,7 @@ def try_apply_viewsheets_command(doc, cmd, *, source_provider=None) -> bool:
                     continue
                 if elem.template_id != cmd.template_id:
                     continue
-                view_patch: dict[str, Any] = {}
-                if updated_tpl.scale is not None and isinstance(updated_tpl.scale, int):
-                    view_patch["scale"] = updated_tpl.scale
-                if updated_tpl.detail_level is not None:
-                    view_patch["plan_detail_level"] = updated_tpl.detail_level
-                if updated_tpl.element_overrides:
-                    view_patch["element_overrides"] = list(updated_tpl.element_overrides)
-                if updated_tpl.phase is not None:
-                    view_patch["phase_id"] = updated_tpl.phase
+                view_patch = _view_template_plan_patch(updated_tpl)
                 if view_patch:
                     els[elem.id] = elem.model_copy(update=view_patch)
 
@@ -283,14 +304,7 @@ def try_apply_viewsheets_command(doc, cmd, *, source_provider=None) -> bool:
             if not isinstance(tpl_el, ViewTemplateElem):
                 raise ValueError("ApplyViewTemplate.templateId must reference a view_template")
             view_patch: dict[str, Any] = {"template_id": cmd.template_id}
-            if tpl_el.scale is not None and isinstance(tpl_el.scale, int):
-                view_patch["scale"] = tpl_el.scale
-            if tpl_el.detail_level is not None:
-                view_patch["plan_detail_level"] = tpl_el.detail_level
-            if tpl_el.element_overrides:
-                view_patch["element_overrides"] = list(tpl_el.element_overrides)
-            if tpl_el.phase is not None:
-                view_patch["phase_id"] = tpl_el.phase
+            view_patch.update(_view_template_plan_patch(tpl_el))
             els[cmd.view_id] = view_el.model_copy(update=view_patch)
 
         case UnbindViewTemplateCmd():

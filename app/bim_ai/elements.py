@@ -82,6 +82,50 @@ WallLayerFunction = Literal["structure", "insulation", "finish"]
 WallBasisLine = Literal["center", "face_interior", "face_exterior"]
 PlanDetailLevelPlan = Literal["coarse", "medium", "fine"]
 PhaseFilter = Literal["all", "existing", "demolition", "new"]
+ViewTemplateControlledField = Literal[
+    "scale",
+    "detailLevel",
+    "elementOverrides",
+    "phase",
+    "phaseFilter",
+]
+
+
+class ViewTemplateFieldControl(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    included: bool = True
+    locked: bool = True
+
+
+def default_view_template_control_matrix() -> dict[ViewTemplateControlledField, ViewTemplateFieldControl]:
+    return {
+        "scale": ViewTemplateFieldControl(),
+        "detailLevel": ViewTemplateFieldControl(),
+        "elementOverrides": ViewTemplateFieldControl(),
+        "phase": ViewTemplateFieldControl(),
+        "phaseFilter": ViewTemplateFieldControl(),
+    }
+
+
+def normalize_view_template_control_matrix(
+    matrix: dict[str, Any] | None,
+    *,
+    base: dict[str, ViewTemplateFieldControl] | None = None,
+) -> dict[ViewTemplateControlledField, ViewTemplateFieldControl]:
+    normalized = dict(base or default_view_template_control_matrix())
+    if matrix is None:
+        return normalized
+    for field, raw_control in matrix.items():
+        if field not in normalized:
+            continue
+        if isinstance(raw_control, ViewTemplateFieldControl):
+            control = raw_control
+        elif isinstance(raw_control, dict):
+            control = ViewTemplateFieldControl.model_validate(raw_control)
+        else:
+            continue
+        normalized[field] = control
+    return normalized
 
 _SCHEME_HEX_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
@@ -1813,6 +1857,10 @@ class ViewTemplateElem(BaseModel):
     element_overrides: list[dict] = Field(default_factory=list, alias="elementOverrides")
     phase: str | None = Field(default=None)
     phase_filter: str | None = Field(default=None, alias="phaseFilter")
+    template_control_matrix: dict[ViewTemplateControlledField, ViewTemplateFieldControl] = Field(
+        default_factory=default_view_template_control_matrix,
+        alias="templateControlMatrix",
+    )
 
 
 class SheetXY(BaseModel):

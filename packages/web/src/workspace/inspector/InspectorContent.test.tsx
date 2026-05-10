@@ -8,6 +8,7 @@ import {
   InspectorProjectSettingsEditor,
   InspectorPlanViewEditor,
   InspectorPropertiesFor,
+  InspectorViewTemplateEditor,
 } from './InspectorContent';
 import i18n from '../../i18n';
 
@@ -205,6 +206,38 @@ describe('InspectorGraphicsFor — T-14 / WP-UI-B01', () => {
       onPersistProperty: vi.fn(),
     });
     expect(result).toBeNull();
+  });
+});
+
+describe('InspectorViewTemplateEditor', () => {
+  it('persists include and lock controls for template-controlled fields', () => {
+    const onPersistProperty = vi.fn();
+    const template: Extract<Element, { kind: 'view_template' }> = {
+      kind: 'view_template',
+      id: 'vt-locked',
+      name: 'Template',
+      scale: 100,
+      templateControlMatrix: {
+        scale: { included: true, locked: true },
+      },
+    };
+
+    const { getByTestId } = render(
+      <InspectorViewTemplateEditor
+        el={template}
+        revision={1}
+        elementsById={{ [template.id]: template }}
+        onPersistProperty={onPersistProperty}
+      />,
+    );
+
+    fireEvent.click(getByTestId('inspector-vt-control-scale-include'));
+    expect(onPersistProperty).toHaveBeenCalledWith(
+      '__updateViewTemplate__',
+      JSON.stringify({
+        templateControlMatrix: { scale: { included: false, locked: false } },
+      }),
+    );
   });
 });
 

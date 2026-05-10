@@ -496,6 +496,22 @@ export type PlanCategoryGraphicRow = {
   linePatternToken?: PlanLinePatternToken | null;
 };
 
+export type ViewTemplateControlledField =
+  | 'scale'
+  | 'detailLevel'
+  | 'elementOverrides'
+  | 'phase'
+  | 'phaseFilter';
+
+export type ViewTemplateFieldControl = {
+  included: boolean;
+  locked?: boolean;
+};
+
+export type ViewTemplateControlMatrix = Partial<
+  Record<ViewTemplateControlledField, ViewTemplateFieldControl>
+>;
+
 export type PlanTagTarget = 'opening' | 'room';
 
 export type PlanTagBadgeStyle = 'none' | 'rounded' | 'flag';
@@ -1424,6 +1440,7 @@ export type Element =
       elementOverrides?: Array<{ categoryOrId: string; alternateRender: string }>;
       phase?: string | null;
       phaseFilter?: string | null;
+      templateControlMatrix?: ViewTemplateControlMatrix;
     }
   | Sheet
   | TitleblockType
@@ -2388,6 +2405,7 @@ export type ViewTemplate = {
   elementOverrides?: Array<{ categoryOrId: string; alternateRender: string }>;
   phase?: string;
   phaseFilter?: string;
+  templateControlMatrix?: ViewTemplateControlMatrix;
 };
 
 export type ViewTemplatePropagation = {
