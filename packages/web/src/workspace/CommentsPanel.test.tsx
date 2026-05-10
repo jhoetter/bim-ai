@@ -144,8 +144,8 @@ describe('CommentsPanel', () => {
     fireEvent.click(getByTestId('comment-post-btn'));
     await waitFor(() => {
       expect(onPost).toHaveBeenCalledWith('Hello world');
+      expect(input.value).toBe('');
     });
-    expect(input.value).toBe('');
   });
 
   it('Post button is disabled when input is empty', () => {
