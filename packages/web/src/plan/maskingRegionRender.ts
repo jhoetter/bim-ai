@@ -15,6 +15,7 @@ export type MaskingRegionPrimitive = {
   kind: 'masking_region';
   id: string;
   boundaryMm: XY[];
+  voidBoundariesMm: XY[][];
   fillColor: string;
 };
 
@@ -30,6 +31,7 @@ export function extractMaskingRegionPrimitives(
         kind: 'masking_region',
         id: el.id,
         boundaryMm: el.boundaryMm,
+        voidBoundariesMm: el.voidBoundariesMm ?? [],
         fillColor: el.fillColor ?? '#ffffff',
       });
     }

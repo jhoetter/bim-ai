@@ -1203,6 +1203,16 @@ export function PlanCanvas({
           shape.lineTo(m.boundaryMm[i]!.xMm / 1000, m.boundaryMm[i]!.yMm / 1000);
         }
         shape.closePath();
+        for (const voidLoop of m.voidBoundariesMm) {
+          if (voidLoop.length < 3) continue;
+          const hole = new THREE.Path();
+          hole.moveTo(voidLoop[0]!.xMm / 1000, voidLoop[0]!.yMm / 1000);
+          for (let i = 1; i < voidLoop.length; i++) {
+            hole.lineTo(voidLoop[i]!.xMm / 1000, voidLoop[i]!.yMm / 1000);
+          }
+          hole.closePath();
+          shape.holes.push(hole);
+        }
         const geom = new THREE.ShapeGeometry(shape);
         geom.rotateX(-Math.PI / 2);
         // Sit just above element wires (SLICE_Y) but below detail components

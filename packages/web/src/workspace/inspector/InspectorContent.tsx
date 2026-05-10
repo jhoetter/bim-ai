@@ -884,6 +884,7 @@ export function InspectorPropertiesFor(
         <div className="space-y-1 text-[11px]">
           <FieldRow label="Host View" value={viewName} />
           <FieldRow label="Boundary Vertices" value={String(el.boundaryMm.length)} />
+          <FieldRow label="Void Loops" value={String(el.voidBoundariesMm?.length ?? 0)} />
           {/* KRN-10 / F-077: editable fill color */}
           <div className="flex items-center justify-between gap-4 border-b border-border py-1.5 last:border-b-0">
             <span className="text-xs text-muted">Fill Color</span>
@@ -898,13 +899,7 @@ export function InspectorPropertiesFor(
               <span className="font-mono text-[10px] text-muted">{fillColor}</span>
             </div>
           </div>
-          {/* F-077: Edit Boundary — re-enter masking-region sketch tool */}
-          <div className="pt-1">
-            <p className="text-[10px] text-muted">
-              To redraw the boundary: delete this region and use the Masking Region tool to draw a
-              new one.
-            </p>
-          </div>
+          <FieldRow label="Edit Boundary" value="Vertex grips" />
         </div>
       );
     }

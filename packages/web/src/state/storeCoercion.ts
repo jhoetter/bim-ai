@@ -670,6 +670,31 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
     };
   }
 
+  if (kind === 'masking_region') {
+    const voidsRaw = raw.voidBoundariesMm ?? raw.void_boundaries_mm;
+    const voidBoundariesMm = Array.isArray(voidsRaw)
+      ? voidsRaw
+          .filter((loop): loop is Record<string, unknown>[] => Array.isArray(loop))
+          .map((loop) =>
+            loop
+              .filter((pt): pt is Record<string, unknown> => pt != null && typeof pt === 'object')
+              .map(coerceXY),
+          )
+          .filter((loop) => loop.length >= 3)
+      : [];
+    return {
+      kind: 'masking_region',
+      id,
+      hostViewId: String(raw.hostViewId ?? raw.host_view_id ?? ''),
+      boundaryMm: coerceLoop('boundaryMm', 'boundary_mm'),
+      voidBoundariesMm,
+      fillColor:
+        typeof (raw.fillColor ?? raw.fill_color) === 'string'
+          ? String(raw.fillColor ?? raw.fill_color)
+          : '#ffffff',
+    };
+  }
+
   if (kind === 'roof') {
     const rg =
       raw.roofGeometryMode === 'gable_pitched_rectangle' ||

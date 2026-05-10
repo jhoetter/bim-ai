@@ -109,6 +109,14 @@ def test_update_masking_region_replaces_boundary_and_fill() -> None:
             "type": "updateMaskingRegion",
             "maskingRegionId": "mr1",
             "boundaryMm": new_boundary,
+            "voidBoundariesMm": [
+                [
+                    {"xMm": 500, "yMm": 500},
+                    {"xMm": 1000, "yMm": 500},
+                    {"xMm": 1000, "yMm": 1000},
+                    {"xMm": 500, "yMm": 1000},
+                ]
+            ],
             "fillColor": "#000000",
         },
     )
@@ -117,6 +125,8 @@ def test_update_masking_region_replaces_boundary_and_fill() -> None:
     assert isinstance(mr, MaskingRegionElem)
     assert mr.fill_color == "#000000"
     assert mr.boundary_mm[2].x_mm == 2000
+    assert len(mr.void_boundaries_mm) == 1
+    assert mr.void_boundaries_mm[0][2].y_mm == 1000
 
 
 def test_delete_masking_region_removes_element() -> None:

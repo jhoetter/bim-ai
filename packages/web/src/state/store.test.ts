@@ -119,6 +119,44 @@ describe('hydrateFromSnapshot', () => {
     }
   });
 
+  it('coerces masking region elements with editable boundary', () => {
+    const { hydrateFromSnapshot } = useBimStore.getState();
+    hydrateFromSnapshot({
+      modelId: 'm1',
+      revision: 1,
+      elements: {
+        'mr-1': {
+          kind: 'masking_region',
+          hostViewId: 'pv-1',
+          boundaryMm: [
+            { xMm: 0, yMm: 0 },
+            { xMm: 1200, yMm: 0 },
+            { xMm: 1200, yMm: 800 },
+            { xMm: 0, yMm: 800 },
+          ],
+          voidBoundariesMm: [
+            [
+              { xMm: 300, yMm: 200 },
+              { xMm: 600, yMm: 200 },
+              { xMm: 600, yMm: 500 },
+              { xMm: 300, yMm: 500 },
+            ],
+          ],
+          fillColor: '#f8fafc',
+        },
+      },
+      violations: [],
+    });
+    const region = useBimStore.getState().elementsById['mr-1'];
+    expect(region?.kind).toBe('masking_region');
+    if (region?.kind === 'masking_region') {
+      expect(region.hostViewId).toBe('pv-1');
+      expect(region.boundaryMm).toHaveLength(4);
+      expect(region.voidBoundariesMm).toHaveLength(1);
+      expect(region.fillColor).toBe('#f8fafc');
+    }
+  });
+
   it('populates violations from snapshot', () => {
     const { hydrateFromSnapshot } = useBimStore.getState();
     hydrateFromSnapshot({

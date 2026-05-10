@@ -1794,6 +1794,7 @@ export type Element =
       id: string;
       hostViewId: string;
       boundaryMm: XY[];
+      voidBoundariesMm?: XY[][];
       fillColor?: string;
     }
   | {

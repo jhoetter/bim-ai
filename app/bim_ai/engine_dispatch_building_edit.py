@@ -383,11 +383,17 @@ def try_apply_building_edit_command(doc, cmd, *, source_provider=None) -> bool:
                 )
             if len(cmd.boundary_mm) < 3:
                 raise ValueError("createMaskingRegion.boundaryMm must contain at least 3 points")
+            for void in cmd.void_boundaries_mm:
+                if len(void) < 3:
+                    raise ValueError(
+                        "createMaskingRegion.voidBoundariesMm entries must contain at least 3 points"
+                    )
             els[mid] = MaskingRegionElem(
                 kind="masking_region",
                 id=mid,
                 host_view_id=cmd.host_view_id,
                 boundary_mm=list(cmd.boundary_mm),
+                void_boundaries_mm=[list(void) for void in cmd.void_boundaries_mm],
                 fill_color=cmd.fill_color,
             )
 
@@ -404,6 +410,13 @@ def try_apply_building_edit_command(doc, cmd, *, source_provider=None) -> bool:
                         "updateMaskingRegion.boundaryMm must contain at least 3 points"
                     )
                 updates_mr["boundary_mm"] = list(cmd.boundary_mm)
+            if cmd.void_boundaries_mm is not None:
+                for void in cmd.void_boundaries_mm:
+                    if len(void) < 3:
+                        raise ValueError(
+                            "updateMaskingRegion.voidBoundariesMm entries must contain at least 3 points"
+                        )
+                updates_mr["void_boundaries_mm"] = [list(void) for void in cmd.void_boundaries_mm]
             if cmd.fill_color is not None:
                 updates_mr["fill_color"] = cmd.fill_color
             els[cmd.masking_region_id] = mr.model_copy(update=updates_mr)

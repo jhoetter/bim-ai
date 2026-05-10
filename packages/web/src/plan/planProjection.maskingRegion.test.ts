@@ -13,6 +13,14 @@ const maskingRegion: Extract<Element, { kind: 'masking_region' }> = {
     { xMm: 1000, yMm: 1000 },
     { xMm: 0, yMm: 1000 },
   ],
+  voidBoundariesMm: [
+    [
+      { xMm: 250, yMm: 250 },
+      { xMm: 500, yMm: 250 },
+      { xMm: 500, yMm: 500 },
+      { xMm: 250, yMm: 500 },
+    ],
+  ],
   fillColor: '#ffffff',
 };
 
@@ -45,6 +53,7 @@ describe('KRN-10 — extractMaskingRegionPrimitives', () => {
     expect(prims).toHaveLength(1);
     expect(prims[0]!.id).toBe('mr-1');
     expect(prims[0]!.boundaryMm).toHaveLength(4);
+    expect(prims[0]!.voidBoundariesMm).toHaveLength(1);
     expect(prims[0]!.fillColor).toBe('#ffffff');
   });
 

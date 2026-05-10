@@ -1755,6 +1755,9 @@ class MaskingRegionElem(BaseModel):
     id: str
     host_view_id: str = Field(alias="hostViewId")
     boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
+    void_boundaries_mm: list[list[Vec2Mm]] = Field(
+        default_factory=list, alias="voidBoundariesMm"
+    )
     fill_color: str = Field(default="#ffffff", alias="fillColor")
 
 

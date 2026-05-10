@@ -508,6 +508,16 @@ export function WorkspaceRightRail({
                     el={el as Extract<Element, { kind: 'project_base_point' | 'survey_point' }>}
                     onSemanticCommand={onSemanticCommand}
                   />
+                ) : el.kind === 'masking_region' ? (
+                  InspectorPropertiesFor(el, t, {
+                    elementsById,
+                    onPropertyChange: (property, value) =>
+                      void onSemanticCommand({
+                        type: 'updateMaskingRegion',
+                        maskingRegionId: el.id,
+                        [property]: value,
+                      }),
+                  })
                 ) : el.kind === 'placed_asset' ? (
                   <PlacedAssetInspector
                     el={el as Extract<Element, { kind: 'placed_asset' }>}

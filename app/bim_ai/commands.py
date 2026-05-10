@@ -1612,6 +1612,9 @@ class CreateMaskingRegionCmd(BaseModel):
     id: str | None = None
     host_view_id: str = Field(alias="hostViewId")
     boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
+    void_boundaries_mm: list[list[Vec2Mm]] = Field(
+        default_factory=list, alias="voidBoundariesMm"
+    )
     fill_color: str = Field(default="#ffffff", alias="fillColor")
 
 
@@ -1620,6 +1623,9 @@ class UpdateMaskingRegionCmd(BaseModel):
     type: Literal["updateMaskingRegion"] = "updateMaskingRegion"
     masking_region_id: str = Field(alias="maskingRegionId")
     boundary_mm: list[Vec2Mm] | None = Field(default=None, alias="boundaryMm")
+    void_boundaries_mm: list[list[Vec2Mm]] | None = Field(
+        default=None, alias="voidBoundariesMm"
+    )
     fill_color: str | None = Field(default=None, alias="fillColor")
 
 

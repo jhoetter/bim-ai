@@ -16,6 +16,7 @@ import { columnGripProvider } from './columnGripProvider';
 import { dimensionGripProvider } from './dimensionGripProvider';
 import { doorGripProvider } from './doorGripProvider';
 import { floorGripProvider } from './floorGripProvider';
+import { maskingRegionGripProvider } from './maskingRegionGripProvider';
 import { referencePlaneGripProvider } from './referencePlaneGripProvider';
 import { sectionCutGripProvider } from './sectionCutGripProvider';
 import { windowGripProvider } from './windowGripProvider';
@@ -26,6 +27,7 @@ export {
   dimensionGripProvider,
   doorGripProvider,
   floorGripProvider,
+  maskingRegionGripProvider,
   referencePlaneGripProvider,
   sectionCutGripProvider,
   windowGripProvider,
@@ -41,6 +43,8 @@ export function gripsFor(element: Element, context: PlanContext = {}): GripDescr
       return windowGripProvider.grips(element, context);
     case 'floor':
       return floorGripProvider.grips(element, context);
+    case 'masking_region':
+      return maskingRegionGripProvider.grips(element, context);
     case 'column':
       return columnGripProvider.grips(element, context);
     case 'beam':

@@ -9,6 +9,7 @@ import {
   doorGripProvider,
   floorGripProvider,
   gripsFor,
+  maskingRegionGripProvider,
   referencePlaneGripProvider,
   sectionCutGripProvider,
   windowGripProvider,
@@ -137,6 +138,45 @@ describe('EDT-01 — floorGripProvider', () => {
     expect(next[0]).toEqual({ xMm: 0, yMm: 0 });
     expect(next[1]).toEqual({ xMm: 5100, yMm: 50 });
     expect(next[2]).toEqual({ xMm: 5000, yMm: 4000 });
+  });
+});
+
+describe('F-077 — maskingRegionGripProvider', () => {
+  const region: Extract<Element, { kind: 'masking_region' }> = {
+    kind: 'masking_region',
+    id: 'mr-1',
+    hostViewId: 'pv-1',
+    boundaryMm: [
+      { xMm: 0, yMm: 0 },
+      { xMm: 1000, yMm: 0 },
+      { xMm: 1000, yMm: 1000 },
+      { xMm: 0, yMm: 1000 },
+    ],
+    fillColor: '#ffffff',
+  };
+
+  it('emits one boundary grip per masking region vertex', () => {
+    const grips = maskingRegionGripProvider.grips(region, {});
+    expect(grips.map((g) => g.id)).toEqual([
+      'mr-1:mask-boundary:0',
+      'mr-1:mask-boundary:1',
+      'mr-1:mask-boundary:2',
+      'mr-1:mask-boundary:3',
+    ]);
+    expect(gripsFor(region).map((g) => g.id)).toEqual(grips.map((g) => g.id));
+  });
+
+  it('drag-commit emits updateMaskingRegion with only the moved vertex changed', () => {
+    const grips = maskingRegionGripProvider.grips(region, {});
+    const cmd = grips[2]!.onCommit({ xMm: 250, yMm: -100 }) as {
+      type: string;
+      maskingRegionId: string;
+      boundaryMm: { xMm: number; yMm: number }[];
+    };
+    expect(cmd.type).toBe('updateMaskingRegion');
+    expect(cmd.maskingRegionId).toBe('mr-1');
+    expect(cmd.boundaryMm[0]).toEqual(region.boundaryMm[0]);
+    expect(cmd.boundaryMm[2]).toEqual({ xMm: 1250, yMm: 900 });
   });
 });
 

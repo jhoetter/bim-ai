@@ -35,7 +35,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Masking Region](file:///Users/jhoetter/Desktop/Revit%20Specs/0580_03-45-40.png)
 
-**bim-ai status:** 🟡 Partial — `maskingRegionRender.ts` (KRN-10) renders masking regions as white-fill opaque polygons. The plan canvas `masking-region` tool (hotkey MR) now uses `SketchCanvas` overlay for full polygon authoring: click-to-add vertices, auto-close detection, Pick Walls support. The VV dialog includes "Masking Regions" as a toggleable annotation category. Fill color is now editable via the inspector color picker (`inspector-masking-fillcolor`), persisted through `updateElementProperty`. Missing: "Edit Boundary" re-entry for placed regions (SketchCanvas does not yet support pre-populated vertices; workaround note shown in inspector); no Revit-style sub-region (negative cutout) support.
+**bim-ai status:** ✅ Implemented — `maskingRegionRender.ts` (KRN-10) renders masking regions as opaque filled polygons hosted by plan/section/elevation views. The plan canvas `masking-region` tool (hotkey MR) uses `SketchCanvas` overlay for polygon authoring with click-to-add vertices, auto-close detection, rectangle, and Pick Walls support. The VV dialog includes "Masking Regions" as a toggleable annotation category. Fill color is editable via the inspector color picker (`inspector-masking-fillcolor`) and persists through `updateMaskingRegion`. Placed masking regions expose boundary vertex grips, so selecting a region re-enters boundary editing without delete/recreate. `voidBoundariesMm` supports Revit-style negative cutout loops that render as holes in the opaque region.
 
 ---
 
