@@ -113,7 +113,7 @@ describe('<FamilyLibraryPanel /> — FL-06', () => {
     expect(onPlaceType).toHaveBeenCalledWith('asset', asset.id);
   });
 
-  it('constrains large asset thumbnails inside the family row preview box', () => {
+  it('renders in-project assets with rendered family-preview thumbnails', () => {
     const asset: Extract<Element, { kind: 'asset_library_entry' }> = {
       kind: 'asset_library_entry',
       id: 'asset-dining-table-2200',
@@ -124,20 +124,15 @@ describe('<FamilyLibraryPanel /> — FL-06', () => {
       thumbnailKind: 'schematic_plan',
       thumbnailWidthMm: 2200,
       thumbnailHeightMm: 900,
-      planSymbolKind: 'table',
-      renderProxyKind: 'table',
     };
     const { getByTestId } = setup({ [asset.id]: asset });
     const svg = getByTestId(`family-row-${asset.id}`).querySelector('svg');
 
     expect(svg).toBeTruthy();
-    expect(svg?.getAttribute('width')).toBeNull();
-    expect(svg?.getAttribute('height')).toBeNull();
-    expect(svg?.getAttribute('preserveAspectRatio')).toBe('xMidYMid meet');
-    expect(svg?.getAttribute('style')).toContain('width: 100%');
-    expect(svg?.getAttribute('style')).toContain('overflow: hidden');
-    expect(svg?.querySelector('style')?.textContent).toContain('vector-effect');
-    expect(svg?.querySelector('style')?.textContent).toContain('stroke-width: 1.35px');
+    expect(svg?.getAttribute('data-testid')).toBe('asset-rendered-thumbnail');
+    expect(svg?.getAttribute('viewBox')).toBe('0 0 64 64');
+    expect(svg?.querySelectorAll('polygon').length).toBeGreaterThan(0);
+    expect(svg?.querySelectorAll('line').length).toBeGreaterThan(0);
   });
 
   it('groups custom wall_type elements under "Wall Types"', () => {

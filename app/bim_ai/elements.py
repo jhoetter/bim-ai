@@ -876,7 +876,6 @@ class ColorFillLegendElem(BaseModel):
     title: str = Field(default="Color Fill Legend")
 
 
-
 ViewpointCutawayStyle = Literal["none", "cap", "floor", "box"]
 
 
@@ -1529,6 +1528,9 @@ class LinkDxfElem(BaseModel):
     name: str = "DXF Underlay"
     level_id: str = Field(alias="levelId")
     origin_mm: Vec2Mm = Field(alias="originMm")
+    origin_alignment_mode: Literal["origin_to_origin", "project_origin", "shared_coords"] = Field(
+        default="origin_to_origin", alias="originAlignmentMode"
+    )
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
     scale_factor: float = Field(default=1.0, alias="scaleFactor", gt=0)
     linework: list[DxfLineworkPrim] = Field(default_factory=list)
@@ -2019,10 +2021,9 @@ class MaskingRegionElem(BaseModel):
     id: str
     host_view_id: str = Field(alias="hostViewId")
     boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
-    void_boundaries_mm: list[list[Vec2Mm]] = Field(
-        default_factory=list, alias="voidBoundariesMm"
-    )
+    void_boundaries_mm: list[list[Vec2Mm]] = Field(default_factory=list, alias="voidBoundariesMm")
     fill_color: str = Field(default="#ffffff", alias="fillColor")
+
 
 # ---------------------------------------------------------------------------
 # MEP elements — pipe, duct, and their legend annotations (MEP-01..04)
@@ -2658,7 +2659,6 @@ class ToposolidElem(BaseModel):
     discipline: str | None = None
 
 
-
 # ---------------------------------------------------------------------------
 # TOP-V3-02 — Toposolid subdivision (surface finish region)
 # ---------------------------------------------------------------------------
@@ -3029,7 +3029,6 @@ class NeighborhoodImportSessionElem(BaseModel):
     fetch_timestamp: str = Field(alias="fetchTimestamp")  # ISO 8601
     osm_etag: str | None = Field(None, alias="osmEtag")
     radius_m: float = Field(200.0, alias="radiusM")
-
 
 
 # NOTE: PropertyDefinitionElem is defined earlier in this file (SCH-V3-01).

@@ -437,6 +437,7 @@ export function ManageLinksDialog({
                 const colorMode = l.colorMode ?? 'black_white';
                 const customColor = l.customColor ?? '#7f7f7f';
                 const opacityPct = Math.round((l.overlayOpacity ?? 0.5) * 100);
+                const align: AlignMode = l.originAlignmentMode ?? 'origin_to_origin';
                 return (
                   <li
                     key={l.id}
@@ -461,6 +462,26 @@ export function ManageLinksDialog({
                       >
                         {l.pinned ? 'Position locked' : 'Lock position'}
                       </button>
+                      <label className="flex items-center gap-1">
+                        Align
+                        <select
+                          value={align}
+                          disabled={pending}
+                          data-testid={`manage-dxf-links-align-${l.id}`}
+                          onChange={(e) =>
+                            void submitUpdateDxf(l.id, {
+                              originAlignmentMode: e.target.value as AlignMode,
+                            })
+                          }
+                          className="rounded border border-border bg-surface-strong px-1 py-0.5 text-[11px]"
+                        >
+                          {(Object.keys(ALIGN_LABELS) as AlignMode[]).map((m) => (
+                            <option key={m} value={m}>
+                              {ALIGN_LABELS[m]}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
                       <label className="flex items-center gap-1">
                         Opacity
                         <input

@@ -1573,6 +1573,35 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
     };
   }
 
+  if (kind === 'link_dxf') {
+    const levelId = String(raw.levelId ?? raw.level_id ?? '');
+    if (!levelId) return null;
+    const alignRaw = String(raw.originAlignmentMode ?? raw.origin_alignment_mode ?? '');
+    const align: 'origin_to_origin' | 'project_origin' | 'shared_coords' =
+      alignRaw === 'project_origin' || alignRaw === 'shared_coords' ? alignRaw : 'origin_to_origin';
+    const colorRaw = raw.colorMode ?? raw.color_mode;
+    const colorMode: 'black_white' | 'custom' = colorRaw === 'custom' ? 'custom' : 'black_white';
+    const opacityRaw = raw.overlayOpacity ?? raw.overlay_opacity;
+    const out: Record<string, unknown> = {
+      kind: 'link_dxf',
+      id,
+      name,
+      levelId,
+      originMm: coerceXY((raw.originMm ?? raw.origin_mm) as Record<string, unknown>),
+      originAlignmentMode: align,
+      rotationDeg: Number(raw.rotationDeg ?? raw.rotation_deg ?? 0),
+      scaleFactor: Number(raw.scaleFactor ?? raw.scale_factor ?? 1),
+      linework: Array.isArray(raw.linework) ? raw.linework : [],
+      colorMode,
+    };
+    if (typeof raw.customColor === 'string' || typeof raw.custom_color === 'string') {
+      out.customColor = String(raw.customColor ?? raw.custom_color);
+    }
+    if (opacityRaw != null) out.overlayOpacity = Number(opacityRaw);
+    if (raw.pinned != null) out.pinned = Boolean(raw.pinned);
+    return out as Element;
+  }
+
   if (kind === 'project_base_point') {
     return {
       kind: 'project_base_point',

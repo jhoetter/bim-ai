@@ -81,7 +81,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Align CAD to Base Point](file:///Users/jhoetter/Desktop/Revit%20Specs/0302_01-02-46.png)
 
-**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` exposes three alignment modes for every `link_model` row via an `AlignMode` selector: `origin_to_origin` ("Origin → Origin"), `project_origin` ("Project Base Point"), and `shared_coords` ("Shared Coords"). These map directly to Revit's Link CAD positioning options. Missing: the equivalent UI for `link_dxf` underlays (DXF alignment mode is not exposed); no interactive pick-point workflow to click a DWG corner and snap it to the Project Base Point in the canvas.
+**bim-ai status:** ✅ Available — `ManageLinksDialog.tsx` exposes three alignment modes for both `link_model` rows and `link_dxf` underlays: `origin_to_origin` ("Origin → Origin"), `project_origin` ("Project Base Point"), and `shared_coords` ("Shared Coords"). For DXF, the CAD internal origin is aligned to the host project base point or survey point, with `originMm`, `rotationDeg`, and `scaleFactor` remaining as per-link adjustments. Both the 2D canvas underlay path (`dxfUnderlay.ts`) and the live Three.js plan-render path (`PlanCanvas.tsx`) use the same transform helper, preventing drift between renderers.
 
 ---
 
@@ -114,4 +114,4 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Manage Links](file:///Users/jhoetter/Desktop/Revit%20Specs/0146_00-17-16.png)
 
-**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` lists all `link_model` rows (delete, alignment mode, visibility mode, revision pinning with drift badge + Update button) AND all `link_dxf` underlays (opacity slider 0–100%, color mode toggle Black & White / Custom hex). Missing: IFC / PDF / image link types; no file-path change workflow; Revit's unload/reload per-link controls (bim-ai shows delete only).
+**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` lists all `link_model` rows (delete, alignment mode, visibility mode, spatial position lock, revision pinning with drift badge + Update button) AND all `link_dxf` underlays (spatial position lock, alignment mode, opacity slider 0–100%, color mode toggle Black & White / Custom hex). Missing: IFC / PDF / image link types; no file-path change workflow; Revit's unload/reload per-link controls (bim-ai shows delete only).

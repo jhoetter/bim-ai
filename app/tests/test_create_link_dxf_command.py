@@ -26,6 +26,7 @@ def test_create_link_dxf_inserts_element() -> None:
         "name": "Site plan",
         "levelId": "lvl-1",
         "originMm": {"xMm": 100.0, "yMm": 50.0},
+        "originAlignmentMode": "project_origin",
         "rotationDeg": 12.5,
         "scaleFactor": 1.5,
         "linework": [
@@ -58,9 +59,7 @@ def test_create_link_dxf_inserts_element() -> None:
     assert new_doc is not None
 
     link_ids = [
-        eid
-        for eid, el in new_doc.elements.items()
-        if getattr(el, "kind", None) == "link_dxf"
+        eid for eid, el in new_doc.elements.items() if getattr(el, "kind", None) == "link_dxf"
     ]
     assert len(link_ids) == 1
     link = new_doc.elements[link_ids[0]]
@@ -69,6 +68,7 @@ def test_create_link_dxf_inserts_element() -> None:
     assert link.level_id == "lvl-1"
     assert link.origin_mm.x_mm == 100.0
     assert link.origin_mm.y_mm == 50.0
+    assert link.origin_alignment_mode == "project_origin"
     assert link.rotation_deg == pytest.approx(12.5)
     assert link.scale_factor == pytest.approx(1.5)
     assert len(link.linework) == 3
@@ -116,6 +116,7 @@ def test_create_link_dxf_round_trips_wire() -> None:
     assert wire["kind"] == "link_dxf"
     assert wire["levelId"] == "lvl-1"
     assert wire["originMm"] == {"xMm": 0.0, "yMm": 0.0}
+    assert wire["originAlignmentMode"] == "origin_to_origin"
     assert wire["rotationDeg"] == 0.0
     assert wire["scaleFactor"] == 1.0
     assert wire["linework"][0]["kind"] == "line"
@@ -172,3 +173,29 @@ def test_update_link_dxf_level_id_rejects_unknown_level() -> None:
     assert ok is False
     assert new_doc is None
     assert "levelId must reference an existing Level" in code
+
+
+def test_update_link_dxf_alignment_mode() -> None:
+    doc = _doc_with_level()
+    ok, new_doc, _cmds, _viols, code = try_commit_bundle(
+        doc,
+        [
+            {
+                "type": "createLinkDxf",
+                "id": "lx-fixed",
+                "levelId": "lvl-1",
+                "originMm": {"xMm": 0.0, "yMm": 0.0},
+                "linework": [],
+            },
+            {
+                "type": "updateLinkDxf",
+                "linkId": "lx-fixed",
+                "originAlignmentMode": "shared_coords",
+            },
+        ],
+    )
+    assert ok is True, code
+    assert new_doc is not None
+    link = new_doc.elements["lx-fixed"]
+    assert isinstance(link, LinkDxfElem)
+    assert link.origin_alignment_mode == "shared_coords"

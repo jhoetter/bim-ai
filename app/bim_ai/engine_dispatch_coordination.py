@@ -246,9 +246,7 @@ def try_apply_coordination_command(doc, cmd, *, source_provider=None) -> bool:
                 or cmd.origin_alignment_mode is not None
             )
             if spatial_updates_requested and is_element_pinned(link):
-                raise ValueError(
-                    f"pinned_element_blocked: '{cmd.link_id}' is pinned; unpin first"
-                )
+                raise ValueError(f"pinned_element_blocked: '{cmd.link_id}' is pinned; unpin first")
             updates: dict[str, Any] = {}
             if cmd.name is not None:
                 updates["name"] = cmd.name
@@ -290,6 +288,8 @@ def try_apply_coordination_command(doc, cmd, *, source_provider=None) -> bool:
                 dxf_updates["custom_color"] = cmd.custom_color
             if cmd.overlay_opacity is not None:
                 dxf_updates["overlay_opacity"] = float(cmd.overlay_opacity)
+            if cmd.origin_alignment_mode is not None:
+                dxf_updates["origin_alignment_mode"] = cmd.origin_alignment_mode
             els[cmd.link_id] = dxf_link.model_copy(update=dxf_updates)
 
         case CreateLinkDxfCmd():
@@ -304,6 +304,7 @@ def try_apply_coordination_command(doc, cmd, *, source_provider=None) -> bool:
                 name=cmd.name,
                 level_id=cmd.level_id,
                 origin_mm=cmd.origin_mm,
+                origin_alignment_mode=cmd.origin_alignment_mode,
                 rotation_deg=float(cmd.rotation_deg),
                 scale_factor=float(cmd.scale_factor),
                 linework=list(cmd.linework),
