@@ -68,6 +68,12 @@ type FamilyViewRange = {
   viewDepthOffsetMm: number;
 };
 
+type SymbolicLineSubcategory = 'symbolic' | 'opening_projection' | 'hidden_cut';
+
+type SymbolicLine = SketchLine & {
+  subcategory: SymbolicLineSubcategory;
+};
+
 /**
  * Resolve a family parameter for rendering.
  *
@@ -119,6 +125,14 @@ const DEFAULT_FAMILY_VIEW_RANGE: FamilyViewRange = {
   cutPlaneOffsetMm: 1200,
   bottomOffsetMm: 0,
   viewDepthOffsetMm: -1200,
+};
+
+const EMPTY_SYMBOLIC_LINE_DRAFT = {
+  sx: 0,
+  sy: 0,
+  ex: 500,
+  ey: 0,
+  subcategory: 'symbolic' as SymbolicLineSubcategory,
 };
 
 const EMPTY_SWEEP_DRAFT: SweepDraft = {
@@ -204,6 +218,8 @@ export function FamilyEditorWorkbench(): JSX.Element {
   const [selectedSweepIndex, setSelectedSweepIndex] = useState<number | null>(null);
   const [arrays, setArrays] = useState<ArrayGeometryNode[]>([]);
   const [arrayDraft, setArrayDraft] = useState<ArrayDraft | null>(null);
+  const [symbolicLines, setSymbolicLines] = useState<SymbolicLine[]>([]);
+  const [symbolicLineDraft, setSymbolicLineDraft] = useState(EMPTY_SYMBOLIC_LINE_DRAFT);
   const [nestedInstances, setNestedInstances] = useState<FamilyInstanceRefNode[]>([]);
   const [selectedNestedIndex, setSelectedNestedIndex] = useState<number | null>(null);
   const [materialTarget, setMaterialTarget] = useState<MaterialAssignmentTarget | null>(null);
@@ -448,6 +464,17 @@ export function FamilyEditorWorkbench(): JSX.Element {
 
   function cancelArray() {
     setArrayDraft(null);
+  }
+
+  function addSymbolicLine() {
+    setSymbolicLines((prev) => [
+      ...prev,
+      {
+        startMm: { xMm: symbolicLineDraft.sx, yMm: symbolicLineDraft.sy },
+        endMm: { xMm: symbolicLineDraft.ex, yMm: symbolicLineDraft.ey },
+        subcategory: symbolicLineDraft.subcategory,
+      },
+    ]);
   }
 
   /* ─── FAM-01 — nested family instance authoring ──────────────────── */
@@ -776,6 +803,55 @@ export function FamilyEditorWorkbench(): JSX.Element {
         </section>
       </div>
 
+      <section className="rounded border p-3 space-y-2" aria-label="Symbolic line authoring">
+        <h2 className="font-semibold">Symbolic Lines and Detail Components</h2>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <select
+            aria-label="Symbolic line subcategory"
+            value={symbolicLineDraft.subcategory}
+            onChange={(e) =>
+              setSymbolicLineDraft((prev) => ({
+                ...prev,
+                subcategory: e.target.value as SymbolicLineSubcategory,
+              }))
+            }
+          >
+            <option value="symbolic">Symbolic Lines</option>
+            <option value="opening_projection">Opening Projection</option>
+            <option value="hidden_cut">Hidden Lines (Cut)</option>
+          </select>
+          {(
+            [
+              ['sx', 'symbolic-start-x'],
+              ['sy', 'symbolic-start-y'],
+              ['ex', 'symbolic-end-x'],
+              ['ey', 'symbolic-end-y'],
+            ] as const
+          ).map(([key, label]) => (
+            <input
+              key={key}
+              type="number"
+              aria-label={label}
+              value={symbolicLineDraft[key]}
+              onChange={(e) =>
+                setSymbolicLineDraft((prev) => ({ ...prev, [key]: Number(e.target.value) }))
+              }
+            />
+          ))}
+          <button type="button" onClick={addSymbolicLine} data-testid="symbolic-line-add">
+            Add symbolic line
+          </button>
+        </div>
+        <ul className="space-y-1 text-xs" data-testid="symbolic-lines-list">
+          {symbolicLines.map((line, index) => (
+            <li key={index}>
+              {line.subcategory}: ({line.startMm.xMm}, {line.startMm.yMm}) → ({line.endMm.xMm},{' '}
+              {line.endMm.yMm})
+            </li>
+          ))}
+        </ul>
+      </section>
+
       {selectedNested && selectedNestedIndex !== null && (
         <NestedInstanceInspector
           instance={selectedNested}
@@ -1076,6 +1152,7 @@ export function FamilyEditorWorkbench(): JSX.Element {
             template,
             categorySettings,
             viewRange,
+            symbolicLines,
             refPlanes,
             params,
             resolved,

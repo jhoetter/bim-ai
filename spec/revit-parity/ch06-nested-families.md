@@ -65,7 +65,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Detail Component placement](file:///Users/jhoetter/Desktop/Revit%20Specs/0464_02-49-17.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — the family editor now has a 2D symbolic/detail line authoring panel for view-only annotation geometry, and the Family Category panel includes a Detail Components category. Authored lines are carried in the load payload. Missing: loaded `.rfa` detail component placement, scale-aware project-view insertion, and library browsing for detail component families.
 
 ---
 
@@ -87,7 +87,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Associate Family Parameter](file:///Users/jhoetter/Desktop/Revit%20Specs/0469_02-50-40.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — the family editor can author 2D symbolic line segments by coordinates and keeps them separate from 3D sweep/model geometry. Missing: canvas drawing tools, line styles, detail-level/view-type visibility settings, and project rendering of symbolic linework.
 
 ---
 
@@ -109,7 +109,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Symbolic Lines](file:///Users/jhoetter/Desktop/Revit%20Specs/0472_02-51-29.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — symbolic line authoring records subcategory metadata for Symbolic Lines, Opening Projection, and Hidden Lines (Cut). Missing: Object Styles/lineweight propagation, dashed hidden-line rendering, and project Visibility/Graphics controls for these subcategories.
 
 ---
 
