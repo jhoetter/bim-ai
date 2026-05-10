@@ -475,6 +475,38 @@ def _room_area_inset_mm_for_level(doc: Document, level_id: str) -> float:
     return avg_thickness / 2.0
 
 
+def _avg_wall_half_thickness_mm_for_level(doc: Document, level_id: str) -> float:
+    walls = [
+        e
+        for e in doc.elements.values()
+        if isinstance(e, WallElem) and e.level_id == level_id
+    ]
+    if not walls:
+        return 0.0
+    return (sum(w.thickness_mm for w in walls) / len(walls)) / 2.0
+
+
+def _room_volume_height_mm_for_level(doc: Document, level_id: str) -> float:
+    level = doc.elements.get(level_id)
+    base_z = float(level.elevation_mm) if isinstance(level, LevelElem) else 0.0
+    higher = sorted(
+        float(e.elevation_mm)
+        for e in doc.elements.values()
+        if isinstance(e, LevelElem) and float(e.elevation_mm) > base_z
+    )
+    return max(1000.0, (higher[0] - base_z) if higher else 2800.0)
+
+
+def _bbox_area_m2_with_inset(bbox: dict[str, Any], inset_mm: float) -> float:
+    mn = bbox.get("min") or {}
+    mx = bbox.get("max") or {}
+    x_lo = float(mn.get("x") or 0) + inset_mm
+    y_lo = float(mn.get("y") or 0) + inset_mm
+    x_hi = float(mx.get("x") or 0) - inset_mm
+    y_hi = float(mx.get("y") or 0) - inset_mm
+    return max(0.0, (x_hi - x_lo) / 1000.0) * max(0.0, (y_hi - y_lo) / 1000.0)
+
+
 def compute_room_boundary_derivation(doc: Document) -> dict[str, Any]:
     """Single deterministic bundle: candidates, classification, diagnostics, preview warnings."""
     lvl_names = {e.id: e.name or e.id for e in doc.elements.values() if isinstance(e, LevelElem)}
@@ -489,9 +521,12 @@ def compute_room_boundary_derivation(doc: Document) -> dict[str, Any]:
     _area_basis = (
         _proj_settings.room_area_computation_basis if _proj_settings else "wall_finish"
     )
+    _volume_basis = _proj_settings.volume_computed_at if _proj_settings else "finish_faces"
 
     # Cache inset per level to avoid re-scanning elements for every quad combination.
     _inset_cache: dict[str, float] = {}
+    _volume_height_cache: dict[str, float] = {}
+    _volume_inset_cache: dict[str, float] = {}
 
     candidates: list[dict[str, Any]] = []
     for lid, seglist in segments_by_level.items():
@@ -509,8 +544,24 @@ def compute_room_boundary_derivation(doc: Document) -> dict[str, Any]:
             qs = quad_closes_rectangle(quad)
             if not qs:
                 continue
+            original_bbox = dict(qs.get("bboxMm") or {})
             qs["levelId"] = lid
             qs["levelName"] = lvl_names.get(lid, lid)
+            if lid not in _volume_height_cache:
+                _volume_height_cache[lid] = _room_volume_height_mm_for_level(doc, lid)
+            if lid not in _volume_inset_cache:
+                _volume_inset_cache[lid] = (
+                    _avg_wall_half_thickness_mm_for_level(doc, lid)
+                    if _volume_basis == "core_faces"
+                    else 0.0
+                )
+            volume_area_m2 = _bbox_area_m2_with_inset(original_bbox, _volume_inset_cache[lid])
+            qs["volumeComputedAt"] = _volume_basis
+            qs["volumeAreaInsetMm"] = round(_volume_inset_cache[lid], 4)
+            qs["approxVolumeM3"] = round(
+                volume_area_m2 * (_volume_height_cache[lid] / 1000.0),
+                4,
+            )
             if inset_mm > 0.0:
                 bbox = qs.get("bboxMm") or {}
                 mn = bbox.get("min") or {}
