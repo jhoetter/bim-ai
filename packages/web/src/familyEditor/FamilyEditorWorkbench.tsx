@@ -85,6 +85,13 @@ type FamilyDimension = {
   paramKey: string;
 };
 
+type EqConstraint = {
+  id: string;
+  orientation: 'vertical' | 'horizontal';
+  refPlaneIds: string[];
+  equalGapMm: number;
+};
+
 /**
  * Resolve a family parameter for rendering.
  *
@@ -121,6 +128,33 @@ const DEFAULT_FAMILY_TYPE_ID = 'family-type-1';
 
 function initialFamilyTypeRows(): FamilyTypeRow[] {
   return [{ id: DEFAULT_FAMILY_TYPE_ID, name: 'Type 1', values: {} }];
+}
+
+function applyEqConstraintToPlanes(planes: RefPlane[], constraint: EqConstraint): RefPlane[] {
+  const indexed = constraint.refPlaneIds
+    .map((id) => planes.find((plane) => plane.id === id))
+    .filter((plane): plane is RefPlane => Boolean(plane))
+    .sort((a, b) => a.offsetMm - b.offsetMm);
+  if (indexed.length < 3) return planes;
+  const first = indexed[0]!;
+  const last = indexed[indexed.length - 1]!;
+  const gap = (last.offsetMm - first.offsetMm) / (indexed.length - 1);
+  const offsets = new Map(indexed.map((plane, i) => [plane.id, first.offsetMm + gap * i]));
+  return planes.map((plane) =>
+    offsets.has(plane.id) ? { ...plane, offsetMm: Math.round(offsets.get(plane.id)!) } : plane,
+  );
+}
+
+function equalGapForPlanes(planes: RefPlane[], ids: string[]): number {
+  const selected = ids
+    .map((id) => planes.find((plane) => plane.id === id))
+    .filter((plane): plane is RefPlane => Boolean(plane))
+    .sort((a, b) => a.offsetMm - b.offsetMm);
+  if (selected.length < 2) return 0;
+  return Math.round(
+    Math.abs(selected[selected.length - 1]!.offsetMm - selected[0]!.offsetMm) /
+      (selected.length - 1),
+  );
 }
 
 const DEFAULT_CATEGORY_SETTINGS: FamilyCategorySettings = {
@@ -418,6 +452,8 @@ export function FamilyEditorWorkbench(): JSX.Element {
   const [symbolicAlignDraft, setSymbolicAlignDraft] = useState(EMPTY_SYMBOLIC_ALIGN_DRAFT);
   const [dimensions, setDimensions] = useState<FamilyDimension[]>([]);
   const [dimensionDraft, setDimensionDraft] = useState({ refAId: '', refBId: '', paramKey: '' });
+  const [eqConstraints, setEqConstraints] = useState<EqConstraint[]>([]);
+  const [eqOrientation, setEqOrientation] = useState<'vertical' | 'horizontal'>('vertical');
   const [nestedInstances, setNestedInstances] = useState<FamilyInstanceRefNode[]>([]);
   const [selectedNestedIndex, setSelectedNestedIndex] = useState<number | null>(null);
   const [materialTarget, setMaterialTarget] = useState<MaterialAssignmentTarget | null>(null);
@@ -476,13 +512,22 @@ export function FamilyEditorWorkbench(): JSX.Element {
       },
     ]);
     setDimensionDraft({ refAId: '', refBId: '', paramKey: '' });
+    setEqConstraints([]);
+    setEqOrientation('vertical');
     setNestedInstances([]);
     setSelectedNestedIndex(null);
   }
 
   function updateRefPlane(index: number, patch: Partial<RefPlane>) {
-    const next = refPlanes.map((plane, i) => (i === index ? { ...plane, ...patch } : plane));
+    const patched = refPlanes.map((plane, i) => (i === index ? { ...plane, ...patch } : plane));
+    const next = eqConstraints.reduce(applyEqConstraintToPlanes, patched);
     setRefPlanes(next);
+    setEqConstraints((prev) =>
+      prev.map((constraint) => ({
+        ...constraint,
+        equalGapMm: equalGapForPlanes(next, constraint.refPlaneIds),
+      })),
+    );
     setSweepDraft((draft) =>
       draft
         ? {
@@ -500,6 +545,27 @@ export function FamilyEditorWorkbench(): JSX.Element {
         return plane ? alignSymbolicLineToPlane(line, plane, true) : line;
       }),
     );
+  }
+
+  function createEqConstraint() {
+    const isVertical = eqOrientation === 'vertical';
+    const selected = refPlanes
+      .filter((plane) => plane.isVertical === isVertical)
+      .sort((a, b) => a.offsetMm - b.offsetMm);
+    if (selected.length < 3) return;
+    const refPlaneIds = selected.map((plane) => plane.id);
+    const constraint: EqConstraint = {
+      id: `eq-${eqConstraints.length + 1}`,
+      orientation: eqOrientation,
+      refPlaneIds,
+      equalGapMm: equalGapForPlanes(refPlanes, refPlaneIds),
+    };
+    const next = applyEqConstraintToPlanes(refPlanes, constraint);
+    setRefPlanes(next);
+    setEqConstraints((prev) => [
+      ...prev,
+      { ...constraint, equalGapMm: equalGapForPlanes(next, refPlaneIds) },
+    ]);
   }
 
   function refPlaneDistanceMm(refAId: string, refBId: string): number {
@@ -1486,6 +1552,36 @@ export function FamilyEditorWorkbench(): JSX.Element {
             </li>
           ))}
         </ul>
+        <div className="flex flex-wrap items-center gap-2 border-t border-border pt-2 text-xs">
+          <span>EQ</span>
+          <select
+            aria-label="eq-reference-orientation"
+            value={eqOrientation}
+            onChange={(e) => setEqOrientation(e.target.value as 'vertical' | 'horizontal')}
+          >
+            <option value="vertical">Vertical reference planes</option>
+            <option value="horizontal">Horizontal reference planes</option>
+          </select>
+          <button
+            type="button"
+            onClick={createEqConstraint}
+            disabled={
+              refPlanes.filter((plane) => plane.isVertical === (eqOrientation === 'vertical'))
+                .length < 3
+            }
+            data-testid="dimension-eq-create"
+          >
+            Equalize
+          </button>
+        </div>
+        <ul className="space-y-1 text-xs" data-testid="family-eq-constraints-list">
+          {eqConstraints.map((constraint) => (
+            <li key={constraint.id}>
+              EQ {constraint.orientation}: {constraint.refPlaneIds.length} refs · gap{' '}
+              {constraint.equalGapMm} mm
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section>
@@ -1651,6 +1747,7 @@ export function FamilyEditorWorkbench(): JSX.Element {
             viewRange,
             symbolicLines,
             dimensions,
+            eqConstraints,
             refPlanes,
             params,
             resolved,

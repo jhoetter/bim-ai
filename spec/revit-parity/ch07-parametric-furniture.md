@@ -24,7 +24,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![EQ constraint](file:///Users/jhoetter/Desktop/Revit%20Specs/0494_03-40-28.png)
 
-**bim-ai status:** ❌ Not available — reference-plane dimensions can be created, but there is no EQ toggle or constraint solver that keeps multiple plane gaps equal.
+**bim-ai status:** 🟡 Partial — the family editor can create an EQ constraint across three or more matching horizontal/vertical reference planes. The constraint equalizes intermediate plane offsets and reapplies equal spacing when an outer constrained plane moves. Missing: canvas dimension-string EQ glyphs, arbitrary mixed reference picking, and a full constraint solver tied to named dimensions/type values.
 
 ---
 
