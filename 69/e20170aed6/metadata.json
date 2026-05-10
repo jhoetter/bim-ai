@@ -3,7 +3,7 @@
   "checkpoint_id": "69e20170aed6",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     ".gitignore",
     "packages/web/e2e/__fixtures__/seed-target-house-snapshot.json",
@@ -24,13 +24,19 @@
       "transcript": "/69/e20170aed6/1/full.jsonl",
       "content_hash": "/69/e20170aed6/1/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/69/e20170aed6/2/metadata.json",
+      "transcript": "/69/e20170aed6/2/full.jsonl",
+      "content_hash": "/69/e20170aed6/2/content_hash.txt",
+      "prompt": "/69/e20170aed6/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 216099,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 5370240,
-    "output_tokens": 9838,
-    "api_call_count": 58
+    "input_tokens": 216414,
+    "cache_creation_tokens": 347272,
+    "cache_read_tokens": 22355363,
+    "output_tokens": 85384,
+    "api_call_count": 236
   }
 }
