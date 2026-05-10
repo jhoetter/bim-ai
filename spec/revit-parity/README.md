@@ -49,7 +49,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 
 | ID    | Feature                                              | Chapter        | bim-ai Status | Notes                                                                                                                |
 | ----- | ---------------------------------------------------- | -------------- | ------------- | -------------------------------------------------------------------------------------------------------------------- |
-| F-003 | Project Browser                                      | UI & Nav       | 🟡            | Plan views, 3D/section/elevation/sheet/schedule groups exist; no families/groups/legends subtree                     |
+| F-003 | Project Browser                                      | UI & Nav       | 🟡            | Plan views, 3D/section/elevation/sheet/schedule groups and family type rows exist; family rows support right-click select/rename/duplicate. Missing legends/groups subtree and subdiscipline/phase sorting |
 | F-004 | Properties Palette (context-sensitive)               | UI & Nav       | 🟡            | Right-rail inspector with editable fields; missing type/instance separation and Edit Type button                     |
 | F-005 | Ribbon Interface (tabbed toolbar)                    | UI & Nav       | ❌            | Different UI paradigm                                                                                                |
 | F-006 | Quick Access Toolbar                                 | UI & Nav       | 🟡            | Undo/Redo, Section, Thin Lines, Aligned Dimension, Tag by Category, and 3D View quick-access entries are wired; missing user-customisable pin/unpin |

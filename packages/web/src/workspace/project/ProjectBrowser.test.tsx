@@ -7,10 +7,19 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import type { Element } from '@bim-ai/core';
-import { ProjectBrowserV3 } from './ProjectBrowser';
+import type { ComponentProps } from 'react';
+import { ProjectBrowser, ProjectBrowserV3 } from './ProjectBrowser';
+import { applyCommand } from '../../lib/api';
+import { useBimStore } from '../../state/store';
+
+vi.mock('../../lib/api', () => ({
+  applyCommand: vi.fn(),
+}));
 
 afterEach(() => {
   cleanup();
+  vi.mocked(applyCommand).mockReset();
+  useBimStore.setState({ modelId: undefined, selectedId: undefined });
 });
 
 // ---------------------------------------------------------------------------
@@ -44,6 +53,14 @@ const scheduleEl: Element = {
   columns: [{ fieldKey: 'name', label: 'Name' }],
 };
 
+const wallTypeEl: Element = {
+  kind: 'wall_type',
+  id: 'wt-01',
+  name: 'Generic 200',
+  basisLine: 'center',
+  layers: [{ thicknessMm: 200, function: 'structure', materialKey: 'concrete' }],
+};
+
 const _imageUnderlayEl: Element = {
   kind: 'image_underlay',
   id: 'img-01',
@@ -68,6 +85,65 @@ function makeDefaultProps(elements: Element[] = [viewpointEl, savedViewEl, sched
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
+
+describe('ProjectBrowser — F-003 families context menu', () => {
+  function renderBrowser(overrides: Partial<ComponentProps<typeof ProjectBrowser>> = {}) {
+    return render(
+      <ProjectBrowser
+        elementsById={{
+          [viewpointEl.id]: viewpointEl,
+          [wallTypeEl.id]: wallTypeEl,
+        }}
+        {...overrides}
+      />,
+    );
+  }
+
+  it('opens a right-click context menu for family type rows', () => {
+    const { getByTestId, queryByTestId } = renderBrowser();
+    expect(queryByTestId('project-browser-family-context-menu')).toBeNull();
+    fireEvent.contextMenu(getByTestId('pb-family-type-wt-01'), { clientX: 88, clientY: 120 });
+    expect(getByTestId('project-browser-family-context-menu')).toBeTruthy();
+  });
+
+  it('context menu Select Type selects the family type element', () => {
+    const { getByTestId } = renderBrowser();
+    fireEvent.contextMenu(getByTestId('pb-family-type-wt-01'), { clientX: 0, clientY: 0 });
+    fireEvent.click(getByTestId('project-browser-family-ctx-select'));
+    expect(useBimStore.getState().selectedId).toBe('wt-01');
+  });
+
+  it('context menu Rename commits updateElementProperty name for family types', async () => {
+    useBimStore.setState({ modelId: 'model-1' });
+    const { getByTestId } = renderBrowser();
+    fireEvent.contextMenu(getByTestId('pb-family-type-wt-01'), { clientX: 0, clientY: 0 });
+    fireEvent.click(getByTestId('project-browser-family-ctx-rename'));
+    const input = getByTestId('pb-family-type-rename-wt-01') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'Generic 250' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(applyCommand).toHaveBeenCalledWith('model-1', {
+      type: 'updateElementProperty',
+      elementId: 'wt-01',
+      key: 'name',
+      value: 'Generic 250',
+    });
+  });
+
+  it('context menu Duplicate emits an upsert command for the type kind', () => {
+    const onUpsertSemantic = vi.fn();
+    const { getByTestId } = renderBrowser({ onUpsertSemantic });
+    fireEvent.contextMenu(getByTestId('pb-family-type-wt-01'), { clientX: 0, clientY: 0 });
+    fireEvent.click(getByTestId('project-browser-family-ctx-duplicate'));
+    expect(onUpsertSemantic).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'upsertWallType',
+        name: 'Generic 200 Copy',
+        layers: wallTypeEl.layers,
+        basisLine: 'center',
+      }),
+    );
+  });
+});
 
 describe('ProjectBrowserV3 — CHR-V3-07', () => {
   it('renders Views group header with viewpoint elements', () => {
