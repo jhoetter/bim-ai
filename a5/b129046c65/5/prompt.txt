@@ -327,3 +327,9 @@ High-fidelity architectural concept, axonometric view, asymmetrical pitched roof
 ---
 
 you destroyed commands.json, was that safe?
+
+---
+
+are you 100% sure it really looks exactly as in the @spec/target-house.jpeg ?
+--- Content from referenced files ---
+--- End of content ---
