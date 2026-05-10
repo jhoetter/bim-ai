@@ -3,7 +3,7 @@
   "checkpoint_id": "5ff0b20760d2",
   "strategy": "manual-commit",
   "branch": "revit-parity-type-duplicate-wave",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "app/tests/test_one_family_bundle_roundtrip.py",
     "claude-skills/sketch-to-bim/SKILL.md",
@@ -11,7 +11,9 @@
     "packages/cli/lib/one-family-home-commands.mjs",
     "packages/web/e2e/__fixtures__/seed-target-house-snapshot.json",
     "packages/web/src/viewport/dormerRoofCut.ts",
-    "packages/web/src/viewport/roofOpeningCut.test.ts"
+    "packages/web/src/viewport/meshBuilders.ts",
+    "packages/web/src/viewport/roofOpeningCut.test.ts",
+    "scripts/build-seed-snapshot.mjs"
   ],
   "sessions": [
     {
@@ -43,13 +45,19 @@
       "transcript": "/5f/f0b20760d2/4/full.jsonl",
       "content_hash": "/5f/f0b20760d2/4/content_hash.txt",
       "prompt": "/5f/f0b20760d2/4/prompt.txt"
+    },
+    {
+      "metadata": "/5f/f0b20760d2/5/metadata.json",
+      "transcript": "/5f/f0b20760d2/5/full.jsonl",
+      "content_hash": "/5f/f0b20760d2/5/content_hash.txt",
+      "prompt": "/5f/f0b20760d2/5/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 2284864,
+    "input_tokens": 2411603,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 59496448,
-    "output_tokens": 162228,
-    "api_call_count": 489
+    "cache_read_tokens": 61546624,
+    "output_tokens": 171070,
+    "api_call_count": 512
   }
 }

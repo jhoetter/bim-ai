@@ -1,0 +1,1 @@
+In /Users/jhoetter/repos/bim-ai, inspect the codebase for a minimal workpackage toward Revit parity F-057/F-058 Material Browser / Asset Browser in the family editor. Do not edit files. Return existing material/catalog data structures and UI, files/functions to modify, likely tests, and whether a scoped package should mark F-057/F-058 partial.
