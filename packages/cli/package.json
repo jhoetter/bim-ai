@@ -10,6 +10,6 @@
     "build": "node -e \"process.exit(0)\"",
     "typecheck": "node -e \"process.exit(0)\"",
     "lint": "node -e \"process.exit(0)\"",
-    "test": "node --test cli.linkSubcommands.test.mjs"
+    "test": "node --test *.test.mjs"
   }
 }

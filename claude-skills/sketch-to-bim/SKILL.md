@@ -115,6 +115,17 @@ These findings block phase advancement unless the user explicitly accepts them w
 
 5. **Build the capability matrix.** For every critical visual feature, map the feature to the command/API surface, renderer support, advisor coverage, and known failure mode. If a critical feature cannot be represented faithfully, create a capability-gap task instead of faking it with decorative geometry.
 
+   Run the executable preflight as soon as the Sketch Understanding IR exists:
+
+   ```bash
+   node packages/cli/cli.mjs initiation-check \
+     --ir spec/examples/sketch-understanding-ir.example.json \
+     --capabilities spec/sketch-to-bim-capability-matrix.json \
+     --out nightshift/<run>/initiation-check
+   ```
+
+   After a live model exists, add `--model "$BIM_AI_MODEL_ID" --live` so the packet also captures advisor warning/info groups. Critical `capability_missing`, `critical_capability_gap`, or missing-view errors block authoring; partial capabilities require screenshot and advisor proof before acceptance.
+
 6. **Pick the closest archetype, if any** (SKB-09). Today there are none; you start from a blank model. When archetypes ship, use `bim-ai archetype list` and fork the closest one — never start from blank if a 70%-match archetype exists.
 
 7. **Calibrate.** Anchor 2–3 known dimensions from the sketch (typically: overall house width, floor-to-floor, one elevation point). Compute a pixel-to-mm scale factor. When SKB-04 (`bim-ai calibrate`) lands, use it; today, do the math by hand and record in `assumptions.md`.
