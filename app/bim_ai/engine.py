@@ -401,6 +401,24 @@ from bim_ai.engine_plan_mesh import (
 from bim_ai.engine_plan_mesh import (
     planWindowMesh as planWindowMesh,
 )
+from bim_ai.engine_visibility import (
+    element_passes_lens as element_passes_lens,
+)
+from bim_ai.engine_visibility import (
+    element_passes_phase_filter as element_passes_phase_filter,
+)
+from bim_ai.engine_visibility import (
+    is_element_pinned as is_element_pinned,
+)
+from bim_ai.engine_visibility import (
+    phase_render_style as phase_render_style,
+)
+from bim_ai.engine_visibility import (
+    resolve_visible_elements as resolve_visible_elements,
+)
+from bim_ai.engine_visibility import (
+    supports_pin as _supports_pin,
+)
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
     KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION,
@@ -461,56 +479,6 @@ def _plan_detail_default_medium(raw: str | None) -> PlanDetailLevelPlan:
     if raw == "medium":
         return "medium"
     return "medium"
-
-
-def element_passes_phase_filter(elem: Any, phase_filter: str) -> bool:
-    """Return True if the element should be visible under the given phase filter.
-
-    Rules (using element.phase_created / element.phase_demolished):
-    - 'all':        always visible.
-    - 'existing':   phase_created == 'existing' and phase_demolished is None
-    - 'demolition': phase_demolished == 'demolition'
-    - 'new':        phase_created == 'new'
-    """
-    if phase_filter == "all":
-        return True
-    phase_created = getattr(elem, "phase_created", "existing")
-    phase_demolished = getattr(elem, "phase_demolished", None)
-    if phase_filter == "existing":
-        return phase_created == "existing" and (phase_demolished is None)
-    if phase_filter == "demolition":
-        return phase_demolished == "demolition"
-    if phase_filter == "new":
-        return phase_created == "new"
-    return True
-
-
-def phase_render_style(elem: Any, phase_filter: str) -> dict[str, str]:
-    """Return CSS token names for the element's phase render style.
-
-    Returns a dict with keys 'stroke', 'strokeDashArray', 'strokeWidth'.
-    """
-    phase_created = getattr(elem, "phase_created", "existing")
-    phase_demolished = getattr(elem, "phase_demolished", None)
-
-    if phase_demolished == "demolition":
-        return {
-            "stroke": "var(--phase-demolition)",
-            "strokeDashArray": "4 4",
-            "strokeWidth": "var(--draft-lw-projection)",
-        }
-    if phase_created == "new":
-        return {
-            "stroke": "var(--phase-new)",
-            "strokeDashArray": "none",
-            "strokeWidth": "var(--draft-lw-cut)",
-        }
-    # existing
-    return {
-        "stroke": "var(--phase-existing)",
-        "strokeDashArray": "none",
-        "strokeWidth": "var(--draft-lw-projection)",
-    }
 
 
 def _optional_plan_detail_override(raw: str | None) -> PlanDetailLevelPlan | None:
@@ -6246,66 +6214,6 @@ def apply_inplace(
     from bim_ai.area_calculation import recompute_all_areas
 
     recompute_all_areas(els)
-
-
-# ---------------------------------------------------------------------------
-# DSC-V3-02 — discipline lens helper used by rendering layers.
-# ---------------------------------------------------------------------------
-
-_LENS_TO_DISCIPLINE: dict[str, str] = {
-    "show_arch": "arch",
-    "show_struct": "struct",
-    "show_mep": "mep",
-}
-
-
-def element_passes_lens(elem_discipline: str | None, lens: str) -> bool:
-    """Return True if the element should be foreground under the given lens.
-
-    Elements with no discipline are treated as 'arch'.
-    show_all always returns True.
-    """
-    if lens == "show_all":
-        return True
-    expected = _LENS_TO_DISCIPLINE.get(lens)
-    resolved = elem_discipline if elem_discipline is not None else "arch"
-    return resolved == expected
-
-
-def resolve_visible_elements(doc: Document, option_locks: dict[str, str]) -> list[str]:
-    visible = []
-    for eid, elem in doc.elements.items():
-        # VIE-V3-02: drafting views have no model geometry; exclude from projection.
-        if isinstance(elem, ViewElem) and elem.sub_kind == "drafting":
-            continue
-        set_id = getattr(elem, "option_set_id", None)
-        opt_id = getattr(elem, "option_id", None)
-        if set_id is None:
-            visible.append(eid)
-            continue
-        locked = option_locks.get(set_id)
-        if locked is not None:
-            if opt_id == locked:
-                visible.append(eid)
-        else:
-            the_set = next((s for s in doc.design_option_sets if s.id == set_id), None)
-            if the_set is not None:
-                primary = next((o for o in the_set.options if o.is_primary), None)
-                if primary is not None and opt_id == primary.id:
-                    visible.append(eid)
-    return visible
-
-
-def _supports_pin(el: Element) -> bool:
-    """VIE-07: pinned is declared on a representative subset of element kinds."""
-    return "pinned" in type(el).model_fields
-
-
-def is_element_pinned(el: Element | None) -> bool:
-    """VIE-07: True iff the element exposes a pinned field set to True."""
-    if el is None:
-        return False
-    return bool(getattr(el, "pinned", False))
 
 
 def _apply_mirror_elements(els: dict[str, Element], cmd: MirrorElementsCmd) -> None:
