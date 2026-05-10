@@ -3,7 +3,7 @@
   "checkpoint_id": "190b0a656b51",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "app/bim_ai/export_ifc.py",
     "app/bim_ai/export_ifc_authoritative_replay.py",
@@ -15,13 +15,19 @@
       "transcript": "/19/0b0a656b51/0/full.jsonl",
       "content_hash": "/19/0b0a656b51/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/19/0b0a656b51/1/metadata.json",
+      "transcript": "/19/0b0a656b51/1/full.jsonl",
+      "content_hash": "/19/0b0a656b51/1/content_hash.txt",
+      "prompt": "/19/0b0a656b51/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 43856,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 3662976,
-    "output_tokens": 6956,
-    "api_call_count": 23
+    "input_tokens": 44171,
+    "cache_creation_tokens": 347272,
+    "cache_read_tokens": 20648099,
+    "output_tokens": 82502,
+    "api_call_count": 201
   }
 }
