@@ -143,7 +143,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-094 | Area Boundary Lines                                  | Rooms & Areas | 🟡            | area-boundary sketch tool (hotkey AR); area_boundary in VVDialog; missing auto-snap to wall faces                   |
 | F-095 | Area Tool                                            | Rooms & Areas | 🟡            | area-boundary sketch tool stores area elements; right-rail shows computed area/rule set; missing auto-close snap     |
 | F-096 | Area and Volume Computations dialog                  | Rooms & Areas | ✅            | Project settings expose Volume Computed At and Room Area Computation Basis; OptionsBar dialog edits both; backend room derivation consumes area basis and volume basis with evidence fields |
-| F-097 | Apply Area Rules toggle                              | Rooms & Areas | 🟡            | "Apply Area Rules" checkbox (data-testid="options-bar-apply-area-rules") in OptionsBar when area-boundary tool is active; stored in useBimStore.applyAreaRules; missing backend consumption to snap boundary lines to wall faces |
+| F-097 | Apply Area Rules toggle                              | Rooms & Areas | ✅            | OptionsBar checkbox persists `applyAreaRules` on area elements; backend area calculation consumes it with project room-area computation basis (bbox approximation, not full polygon shrink) |
 | F-098 | Area Plan (Gross Building) view type                 | Rooms & Areas | ✅            | Area Plans persist `planViewSubtype` + `areaScheme` (Gross Building/Net/Rentable), Project Browser groups by scheme, creation selects level/scheme, and area boundaries render/author only in matching Area Plan views |
 | F-099 | Discipline property for views                        | Rooms & Areas | ✅            | Plan views persist discipline + viewSubdiscipline, inspector edits both, deterministic evidence/schedules include both, and Project Browser groups floor plans by discipline/sub-discipline |
 | F-100 | Filter tool (multi-select type filter)               | Troubleshoot   | 🟡            | Ctrl+Click multi-select + count chip; Filter popover with category checkboxes; box-select (drag marquee) for walls/columns/placed_assets/floors/rooms/areas. Missing: Tab to add connected elements to multi-select |
@@ -178,8 +178,8 @@ _Last audited: 2026-05-09 against codebase at commit `docs/tracker-sync-wave-11`
 
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
-| ✅ Fully available     | 34      | 28%        |
-| 🟡 Partially available | 39      | 33%        |
+| ✅ Fully available     | 44      | 37%        |
+| 🟡 Partially available | 29      | 24%        |
 | ❌ Not available       | 47      | 39%        |
 | **Total**              | **120** | **100%**   |
 
@@ -192,7 +192,7 @@ Based on the frequency and centrality of features in the course. WP cross-refs p
 1. **Wall tooling** (F-034–F-047) — walls are the most-touched feature across the entire course. Location line, join behavior, chain mode, and type editing are used in virtually every video. _Editing mechanics partially addressed by `EDT-V3-01` (constraint rules), `EDT-V3-02` (snap cursor), `EDT-V3-04/05` (shortcuts + loop mode), `EDT-V3-06` (drag-the-number), `EDT-V3-12` (numeric override). Wall type/assembly editing and Location Line have **no WP yet**._
 2. **Visibility / Graphic Overrides** (F-012, F-020, F-093) — used constantly for visual management of linked files and model categories. _v3 deliberately does not clone the 120-toggle VG matrix (anti-pattern A8 → D8). The replacement is the status-bar discipline lens + view templates + right-click category override. No direct parity WP; by design._
 3. **Project Browser + view management** (F-003, F-027–F-033) — every workflow step involves switching views; without this, navigation overhead is enormous. _`CHR-V3-07` (Project Browser refresh, status: `next`) directly addresses this._
-4. **Rooms** (F-091–F-092) — backend logic exists (`room_derivation.py`); front-end interactive placement is the missing piece. _**No WP yet.**_
+4. **Rooms & Areas remaining gaps** (F-093–F-095) — room placement and room separation are ✅; remaining work is room fill/per-instance graphics plus area-boundary wall-face snapping and area auto-loop placement polish.
 5. **Levels UX** (F-025–F-026) — data model exists (`datum_levels.py`); needs level head display in elevation views and interactive rename. _**No WP yet.**_
 6. **Temporary Hide/Isolate** (F-047, F-101–F-102) — F-047 and F-101 are ✅: PlanCanvas sunglasses menu supports temporary isolate/hide by category and by selected element, with `TemporaryVisibilityChip` reset. F-102 is ✅ for permanent view-specific hide via VVDialog plus inspector Hide Element/Hide Category. F-014 is ✅ — lightbulb reveal mode shows hidden elements in magenta with unhide actions.
 7. **Family Editor** (F-048–F-062) — major architectural feature gap. v3's approach is a catalog model (`family_catalog_format.py`) rather than an in-app parametric editor. _Out of scope for v3; long-term vision item._
