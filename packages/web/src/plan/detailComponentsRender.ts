@@ -44,10 +44,21 @@ export type TextNotePrimitive = {
   colour: string;
 };
 
+export type SpotElevationPrimitive = {
+  kind: 'spot_elevation';
+  id: string;
+  positionMm: XY;
+  elevationMm: number;
+  prefix: string;
+  suffix: string;
+  colour: string;
+};
+
 export type DetailComponentPrimitive =
   | DetailLinePrimitive
   | DetailRegionPrimitive
-  | TextNotePrimitive;
+  | TextNotePrimitive
+  | SpotElevationPrimitive;
 
 /**
  * Walks `elementsById` and returns rendering primitives for every
@@ -90,6 +101,16 @@ export function extractDetailComponentPrimitives(
         fontSizeMm: el.fontSizeMm,
         anchor: el.anchor ?? 'tl',
         rotationDeg: el.rotationDeg ?? 0,
+        colour: el.colour ?? '#202020',
+      });
+    } else if (el.kind === 'spot_elevation' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'spot_elevation',
+        id: el.id,
+        positionMm: el.positionMm,
+        elevationMm: el.elevationMm,
+        prefix: el.prefix ?? '',
+        suffix: el.suffix ?? '',
         colour: el.colour ?? '#202020',
       });
     }

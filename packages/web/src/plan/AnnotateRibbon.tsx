@@ -114,6 +114,16 @@ export function AnnotateRibbon({
     });
   };
 
+  const placeSpotElevation = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createSpotElevation',
+      hostViewId: planViewId,
+      positionMm: { xMm: c.xMm, yMm: c.yMm },
+      elevationMm: 0,
+    });
+  };
+
   const commitTextNote = () => {
     const text = textNoteDraft.trim();
     if (!text) {
@@ -212,6 +222,15 @@ export function AnnotateRibbon({
         title="Drop an 800×800mm opaque masking region that occludes underlying linework."
       >
         Masking Region
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-spot-elevation"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeSpotElevation}
+        title="Place a spot elevation annotation at the view centre."
+      >
+        Spot Elev.
       </button>
       {textNoteInput ? (
         <div className="flex flex-col gap-1">
