@@ -49,6 +49,10 @@ _ANALYSIS_FORMAT = (
     "/best"
 )
 
+# Optional cookies file path — set via YTDLP_COOKIES env var or --cookies CLI flag.
+# Also enables remote challenge-solver components (required for YouTube n-challenge).
+_YTDLP_COOKIES: str | None = os.environ.get("YTDLP_COOKIES")
+
 _TEXT_PROMPT = """\
 Watch this video carefully and produce a granular, timestamped breakdown
 of exactly what is shown and heard.
@@ -131,9 +135,18 @@ def _clean_url(youtube_url: str) -> str:
     return _up.urlunparse(p._replace(query=_up.urlencode(qs, doseq=True)))
 
 
+def _ytdlp_auth_flags() -> list[str]:
+    """Return --cookies + --remote-components flags when a cookies file is configured."""
+    flags: list[str] = []
+    cookies = _YTDLP_COOKIES
+    if cookies:
+        flags += ["--cookies", cookies, "--remote-components", "ejs:github"]
+    return flags
+
+
 def _get_duration(youtube_url: str) -> float:
     result = subprocess.run(
-        ["yt-dlp", "--quiet", "--print", "duration", youtube_url],
+        ["yt-dlp", "--quiet", "--print", "duration", *_ytdlp_auth_flags(), youtube_url],
         check=True, capture_output=True, text=True,
     )
     return float(result.stdout.strip())
@@ -141,7 +154,8 @@ def _get_duration(youtube_url: str) -> float:
 
 def _get_stream_url(youtube_url: str) -> str:
     result = subprocess.run(
-        ["yt-dlp", "--quiet", "-f", "bestvideo[ext=mp4]/bestvideo", "--get-url", youtube_url],
+        ["yt-dlp", "--quiet", "-f", "bestvideo[ext=mp4]/bestvideo", "--get-url",
+         *_ytdlp_auth_flags(), youtube_url],
         check=True, capture_output=True, text=True,
     )
     return result.stdout.strip().splitlines()[0]
@@ -291,6 +305,7 @@ def _download_chunk(
             "-f", _ANALYSIS_FORMAT,
             "--download-sections", section,
             "-o", str(chunk_dir / "chunk.%(ext)s"),
+            *_ytdlp_auth_flags(),
             youtube_url,
         ],
         check=True,
@@ -490,7 +505,16 @@ def main() -> None:
         metavar="OUTPUT_DIR",
         help="Also extract frame screenshots into this directory (requires yt-dlp + ffmpeg)",
     )
+    parser.add_argument(
+        "--cookies",
+        metavar="COOKIES_FILE",
+        help="Path to Netscape cookies file for yt-dlp (overrides YTDLP_COOKIES env var)",
+    )
     args = parser.parse_args()
+
+    if args.cookies:
+        global _YTDLP_COOKIES  # noqa: PLW0603
+        _YTDLP_COOKIES = args.cookies
 
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
