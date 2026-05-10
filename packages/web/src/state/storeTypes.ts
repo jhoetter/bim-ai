@@ -30,6 +30,7 @@ export type ViewerMode = 'plan_canvas' | 'orbit_3d';
 
 export type PlanTool =
   | 'select'
+  | 'query'
   | 'wall'
   | 'floor'
   | 'floor-sketch'
@@ -103,6 +104,9 @@ export type ActivityEvent = {
 };
 
 export type CategoryOverride = {
+  dxf?: {
+    hiddenLayerNames?: string[];
+  };
   projection?: {
     lineWeightFactor?: number;
     lineColor?: string | null;

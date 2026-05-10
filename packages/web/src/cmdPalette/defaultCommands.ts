@@ -54,6 +54,15 @@ registerCommand({
   invoke: () => useBimStore.getState().setPlanTool('select'),
 });
 
+registerCommand({
+  id: 'tool.query',
+  label: 'Query',
+  shortcut: 'Q',
+  keywords: ['query', 'inspect', 'cad', 'dxf', 'layer'],
+  category: 'command',
+  invoke: () => useBimStore.getState().setPlanTool('query'),
+});
+
 // Phase / view commands
 registerCommand({
   id: 'view.phase.demolition',

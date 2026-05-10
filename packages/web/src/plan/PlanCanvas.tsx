@@ -116,12 +116,16 @@ import { extractNeighborhoodMassPrimitives } from './neighborhoodMassRender';
 import { planAnnotationLabelSprite } from './planElementMeshBuilders';
 import {
   dxfViewOverrideKey,
+  hiddenDxfLayerNamesForView,
   isDxfLinkVisibleInView,
   makeDxfLinkTransform,
   isDxfLayerHidden,
+  queryDxfPrimitiveAtPoint,
   resolveDxfPrimitiveColor,
   resolveDxfUnderlayStyle,
   selectDxfUnderlaysForLevel,
+  setDxfLayerHiddenInView,
+  type DxfPrimitiveQueryHit,
 } from './dxfUnderlay';
 import {
   buildDriftBadgeCanvas,
@@ -428,6 +432,8 @@ export function PlanCanvas({
   } | null>(null);
   numericInputRef.current = numericInput;
   const [hudMm, setHudMm] = useState<{ xMm: number; yMm: number }>();
+  const hudMmRef = useRef<{ xMm: number; yMm: number } | undefined>(undefined);
+  hudMmRef.current = hudMm;
   const [halfUi, setHalfUi] = useState(22);
   const [showZoomMenu, setShowZoomMenu] = useState(false);
   // ANN-02: state for the right-click "Generate Section / Elevation" menu.
@@ -448,6 +454,11 @@ export function PlanCanvas({
     endpoint: 'start' | 'end';
     position: { x: number; y: number };
     currentlyDisallowed: boolean;
+  } | null>(null);
+  const [dxfQueryHover, setDxfQueryHover] = useState<DxfPrimitiveQueryHit | null>(null);
+  const [dxfQueryDialog, setDxfQueryDialog] = useState<{
+    hit: DxfPrimitiveQueryHit;
+    position: { x: number; y: number };
   } | null>(null);
   const [geomEpoch, bumpGeom] = useState(0);
   const [measureReadout, setMeasureReadout] = useState<{ distMm: number } | null>(null);
@@ -1187,7 +1198,7 @@ export function PlanCanvas({
       });
       const segments: THREE.Vector3[] = [];
       for (const prim of link.linework) {
-        if (isDxfLayerHidden(link, prim)) continue;
+        if (isDxfLayerHidden(link, prim, dxfOverride)) continue;
         if (prim.kind === 'line') {
           const a = project(prim.start.xMm, prim.start.yMm);
           const b = project(prim.end.xMm, prim.end.yMm);
@@ -2037,8 +2048,31 @@ export function PlanCanvas({
       const v = snapped(ev.clientX, ev.clientY);
       if (!v) return;
 
+      if (planTool === 'query') {
+        const dxfLevelId = displayLevelId || activeLevelResolvedId;
+        const dxfUnderlays = selectDxfUnderlaysForLevel(elementsById, dxfLevelId || undefined);
+        const activePlanView = activePlanViewId ? elementsById[activePlanViewId] : undefined;
+        const viewOverrides =
+          activePlanView?.kind === 'plan_view'
+            ? ((activePlanView.categoryOverrides ?? {}) as Record<string, CategoryOverride>)
+            : {};
+        const rect = rnd.domElement.getBoundingClientRect();
+        const toleranceMm = (12 / Math.max(1, rect.height)) * 2 * camRef.current.half * 1000;
+        setDxfQueryHover(
+          queryDxfPrimitiveAtPoint(dxfUnderlays, v, {
+            toleranceMm,
+            elementsById,
+            viewOverridesByLinkId: Object.fromEntries(
+              dxfUnderlays.map((link) => [link.id, viewOverrides[dxfViewOverrideKey(link.id)]]),
+            ),
+          }),
+        );
+      } else {
+        setDxfQueryHover((prev) => (prev ? null : prev));
+      }
+
       // B02 — snap candidates: endpoint, midpoint, and wall-wall intersection
-      const isDrawing = planTool != null && planTool !== 'select';
+      const isDrawing = planTool != null && planTool !== 'select' && planTool !== 'query';
       if (isDrawing) {
         const pixH = rnd.domElement.clientHeight || 1;
         const toleranceMm = (12 / pixH) * 2 * camRef.current.half * 1000;
@@ -2679,6 +2713,27 @@ export function PlanCanvas({
         }
         return;
       }
+      if (planTool === 'query') {
+        const dxfLevelId = displayLevelId || activeLevelResolvedId;
+        const dxfUnderlays = selectDxfUnderlaysForLevel(elementsById, dxfLevelId || undefined);
+        const activePlanView = activePlanViewId ? elementsById[activePlanViewId] : undefined;
+        const viewOverrides =
+          activePlanView?.kind === 'plan_view'
+            ? ((activePlanView.categoryOverrides ?? {}) as Record<string, CategoryOverride>)
+            : {};
+        const rect = rnd.domElement.getBoundingClientRect();
+        const toleranceMm = (12 / Math.max(1, rect.height)) * 2 * camRef.current.half * 1000;
+        const hit = queryDxfPrimitiveAtPoint(dxfUnderlays, sp, {
+          toleranceMm,
+          elementsById,
+          viewOverridesByLinkId: Object.fromEntries(
+            dxfUnderlays.map((link) => [link.id, viewOverrides[dxfViewOverrideKey(link.id)]]),
+          ),
+        });
+        setDxfQueryHover(hit);
+        setDxfQueryDialog(hit ? { hit, position: { x: ev.clientX, y: ev.clientY } } : null);
+        return;
+      }
       if (planTool === 'tag') {
         const rectBox = rnd.domElement.getBoundingClientRect();
         const ray = new THREE.Raycaster();
@@ -2765,12 +2820,18 @@ export function PlanCanvas({
         wallFlipRef.current = false;
         const pathStart = { xMm: startX, yMm: startY };
         const pathEnd = { xMm: endX, yMm: endY };
-        const createWallCommand = (id: string, start: MmPoint, end: MmPoint) => ({
+        const createWallCommand = (
+          id: string,
+          start: MmPoint,
+          end: MmPoint,
+          wallCurve?: NonNullable<Extract<Element, { kind: 'wall' }>['wallCurve']>,
+        ) => ({
           type: 'createWall',
           id,
           levelId: lvlId,
           start,
           end,
+          ...(wallCurve ? { wallCurve } : {}),
           locationLine: wallLocationLine,
           wallTypeId: activeWallTypeId ?? undefined,
           heightMm: wallDrawHeightMm,
@@ -2822,12 +2883,18 @@ export function PlanCanvas({
             start: adjustedStart,
             end: adjustedEnd,
           });
-          let lastArcWall:
-            | NonNullable<Extract<Draft, { kind: 'wall' }>['previousWall']>
-            | undefined;
-          for (const arc of fillet.arcSegments) {
-            lastArcWall = dispatchWallCommand(crypto.randomUUID(), arc.start, arc.end);
-          }
+          const arcWallId = crypto.randomUUID();
+          pendingWallCommands.push(
+            createWallCommand(arcWallId, fillet.previousEnd, fillet.currentStart, fillet.wallCurve),
+          );
+          const arcWallForChain = {
+            id: arcWallId,
+            pathStart: fillet.previousEnd,
+            pathEnd: fillet.currentStart,
+            actualStart: fillet.previousEnd,
+            actualEnd: fillet.currentStart,
+            cornerEndpoint: 'end' as const,
+          };
           if (
             Math.hypot(
               pathEnd.xMm - fillet.currentStart.xMm,
@@ -2841,7 +2908,7 @@ export function PlanCanvas({
               flipped,
             );
           } else {
-            previousWallForChain = lastArcWall;
+            previousWallForChain = arcWallForChain;
           }
         } else {
           previousWallForChain = dispatchWallCommand(
@@ -3769,8 +3836,9 @@ export function PlanCanvas({
       if (planTool === 'rotate' && rotateAnchorRef.current && rotateReferenceRef.current) {
         if (/^[0-9]$/.test(ev.key) || ev.key === '.' || ev.key === '-') {
           ev.preventDefault();
-          const seedPx = hudMm
-            ? worldToScreen(hudMm)
+          const hoverMm = hudMmRef.current;
+          const seedPx = hoverMm
+            ? worldToScreen(hoverMm)
             : worldToScreen(rotateReferenceRef.current ?? rotateAnchorRef.current);
           setNumericInput((prev) => {
             if (ev.key === '-' && prev?.value) return prev;
@@ -4399,6 +4467,13 @@ export function PlanCanvas({
     if (planTool !== 'measure') setMeasureReadout(null);
   }, [planTool]);
 
+  useEffect(() => {
+    if (planTool !== 'query') {
+      setDxfQueryHover(null);
+      setDxfQueryDialog(null);
+    }
+  }, [planTool]);
+
   // F-115 — reset pending component rotation when leaving the component tool;
   // also remove any lingering ghost preview from the scene.
   useEffect(() => {
@@ -4566,6 +4641,116 @@ export function PlanCanvas({
           >
             Unhide in View: {unhideContextMenu.elementKind}
           </button>
+        </div>
+      )}
+      {dxfQueryHover && planTool === 'query' ? (
+        <div
+          data-testid="dxf-query-hover"
+          className="pointer-events-none absolute left-3 top-3 z-40 rounded border border-border bg-surface px-2 py-1 text-[11px] shadow-sm"
+        >
+          {dxfQueryHover.link.name ?? 'DXF Underlay'} / {dxfQueryHover.layerName}
+        </div>
+      ) : null}
+      {dxfQueryDialog && (
+        <div
+          data-testid="dxf-query-dialog"
+          className="pointer-events-auto absolute z-50 w-64 rounded border border-border bg-surface p-3 text-xs shadow-md"
+          style={{ left: dxfQueryDialog.position.x, top: dxfQueryDialog.position.y }}
+        >
+          <div className="mb-2 flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="font-medium">Imported CAD Query</div>
+              <div className="truncate text-[11px] text-muted">
+                {dxfQueryDialog.hit.link.name ?? 'DXF Underlay'}
+              </div>
+            </div>
+            <button
+              type="button"
+              aria-label="Close imported CAD query"
+              className="rounded border border-border px-1.5 py-0.5 text-[11px] hover:bg-surface-strong"
+              onClick={() => setDxfQueryDialog(null)}
+            >
+              Close
+            </button>
+          </div>
+          <dl className="grid grid-cols-[64px_1fr] gap-x-2 gap-y-1 text-[11px]">
+            <dt className="text-muted">Layer</dt>
+            <dd className="min-w-0 truncate" data-testid="dxf-query-layer">
+              {dxfQueryDialog.hit.layerName}
+            </dd>
+            <dt className="text-muted">Color</dt>
+            <dd className="flex min-w-0 items-center gap-1">
+              <span
+                className="h-2.5 w-2.5 shrink-0 rounded-sm border border-border"
+                style={{ backgroundColor: dxfQueryDialog.hit.color }}
+              />
+              <span className="truncate font-mono">{dxfQueryDialog.hit.color}</span>
+            </dd>
+            <dt className="text-muted">Link</dt>
+            <dd className="min-w-0 truncate">{dxfQueryDialog.hit.link.id}</dd>
+            <dt className="text-muted">Primitive</dt>
+            <dd className="min-w-0 truncate">
+              {dxfQueryDialog.hit.primitive.kind} #{dxfQueryDialog.hit.primitiveIndex + 1}
+            </dd>
+          </dl>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {(() => {
+              const hit = dxfQueryDialog.hit;
+              const key = dxfViewOverrideKey(hit.link.id);
+              const activePlanView = activePlanViewId ? elementsById[activePlanViewId] : undefined;
+              const override =
+                activePlanView?.kind === 'plan_view'
+                  ? ((activePlanView.categoryOverrides ?? {}) as Record<string, CategoryOverride>)[
+                      key
+                    ]
+                  : undefined;
+              const hiddenInView = (override?.dxf?.hiddenLayerNames ?? []).includes(hit.layerName);
+              const hiddenGlobally = (hit.link.hiddenLayerNames ?? []).includes(hit.layerName);
+              const effectiveHidden = hiddenDxfLayerNamesForView(hit.link, override).includes(
+                hit.layerName,
+              );
+              const canShow = hiddenInView && !hiddenGlobally;
+              return (
+                <>
+                  <button
+                    type="button"
+                    disabled={!activePlanViewId || effectiveHidden}
+                    data-testid="dxf-query-hide-layer-view"
+                    className="rounded border border-border px-2 py-1 text-[11px] hover:bg-surface-strong disabled:opacity-50"
+                    onClick={() => {
+                      if (!activePlanViewId) return;
+                      const next = setDxfLayerHiddenInView(override, hit.layerName, true);
+                      setCategoryOverride(activePlanViewId, key, next);
+                      setDxfQueryDialog({
+                        ...dxfQueryDialog,
+                        hit,
+                      });
+                    }}
+                  >
+                    Hide Layer in View
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!activePlanViewId || !canShow}
+                    data-testid="dxf-query-show-layer-view"
+                    className="rounded border border-border px-2 py-1 text-[11px] hover:bg-surface-strong disabled:opacity-50"
+                    title={
+                      hiddenGlobally
+                        ? 'This layer is hidden globally in Manage Links'
+                        : 'Show this layer in the active view'
+                    }
+                    onClick={() => {
+                      if (!activePlanViewId) return;
+                      const next = setDxfLayerHiddenInView(override, hit.layerName, false);
+                      setCategoryOverride(activePlanViewId, key, next);
+                    }}
+                  >
+                    Show Layer in View
+                  </button>
+                </>
+              );
+            })()}
+          </div>
         </div>
       )}
       {/* F-040: Allow/Disallow Join context menu shown when right-clicking near a wall endpoint */}

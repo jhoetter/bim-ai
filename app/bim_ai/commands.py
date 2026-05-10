@@ -33,6 +33,7 @@ from bim_ai.elements import (
     Text3dFontFamily,
     Vec2Mm,
     Vec3Mm,
+    WallArcCurve,
     WallRecessZone,
     WallTypeLayer,
 )
@@ -68,6 +69,7 @@ class CreateWallCmd(BaseModel):
     level_id: str = Field(alias="levelId")
     start: Vec2Mm
     end: Vec2Mm
+    wall_curve: WallArcCurve | None = Field(default=None, alias="wallCurve")
     thickness_mm: float = Field(alias="thicknessMm", default=200)
     height_mm: float = Field(alias="heightMm", default=2800)
     wall_type_id: str | None = Field(default=None, alias="wallTypeId")
@@ -1565,6 +1567,8 @@ class CreateLinkDxfCmd(BaseModel):
     origin_alignment_mode: Literal["origin_to_origin", "project_origin", "shared_coords"] = Field(
         default="origin_to_origin", alias="originAlignmentMode"
     )
+    unit_override: str | int | None = Field(default=None, alias="unitOverride")
+    unit_scale_to_mm: float | None = Field(default=None, alias="unitScaleToMm", gt=0)
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
     scale_factor: float = Field(default=1.0, alias="scaleFactor", gt=0)
     linework: list[DxfLineworkPrim] = Field(default_factory=list)
@@ -1581,6 +1585,11 @@ class CreateLinkDxfCmd(BaseModel):
     )
     last_reload_message: str | None = Field(default=None, alias="lastReloadMessage")
     loaded: bool = Field(default=True)
+    color_mode: Literal["black_white", "custom", "native"] | None = Field(
+        default=None, alias="colorMode"
+    )
+    custom_color: str | None = Field(default=None, alias="customColor")
+    overlay_opacity: float | None = Field(default=None, alias="overlayOpacity", ge=0.0, le=1.0)
 
 
 class UpdateLinkDxfCmd(BaseModel):
@@ -1603,6 +1612,8 @@ class UpdateLinkDxfCmd(BaseModel):
     origin_alignment_mode: Literal["origin_to_origin", "project_origin", "shared_coords"] | None = (
         Field(default=None, alias="originAlignmentMode")
     )
+    unit_override: str | int | None = Field(default=None, alias="unitOverride")
+    unit_scale_to_mm: float | None = Field(default=None, alias="unitScaleToMm", gt=0)
     linework: list[DxfLineworkPrim] | None = Field(default=None)
     dxf_layers: list[DxfLayerMeta] | None = Field(default=None, alias="dxfLayers")
     source_path: str | None = Field(default=None, alias="sourcePath")

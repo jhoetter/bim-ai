@@ -47,6 +47,36 @@ function coerceXY(raw: Record<string, unknown>): { xMm: number; yMm: number } {
   };
 }
 
+function coerceWallCurve(raw: unknown): Extract<Element, { kind: 'wall' }>['wallCurve'] {
+  if (!raw || typeof raw !== 'object') return null;
+  const row = raw as Record<string, unknown>;
+  if (row.kind !== 'arc') return null;
+  const centerRaw = row.center;
+  const radiusMm = Number(row.radiusMm ?? row.radius_mm);
+  const startAngleDeg = Number(row.startAngleDeg ?? row.start_angle_deg);
+  const endAngleDeg = Number(row.endAngleDeg ?? row.end_angle_deg);
+  const sweepDeg = Number(row.sweepDeg ?? row.sweep_deg);
+  if (
+    !centerRaw ||
+    typeof centerRaw !== 'object' ||
+    !Number.isFinite(radiusMm) ||
+    radiusMm <= 0 ||
+    !Number.isFinite(startAngleDeg) ||
+    !Number.isFinite(endAngleDeg) ||
+    !Number.isFinite(sweepDeg)
+  ) {
+    return null;
+  }
+  return {
+    kind: 'arc',
+    center: coerceXY(centerRaw as Record<string, unknown>),
+    radiusMm,
+    startAngleDeg,
+    endAngleDeg,
+    sweepDeg,
+  };
+}
+
 function coerceXYZ(raw: Record<string, unknown>): { xMm: number; yMm: number; zMm: number } {
   return {
     xMm: Number(raw.xMm ?? raw.x_mm ?? 0),
@@ -196,6 +226,9 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
       levelId: String(raw.levelId ?? ''),
       start: coerceXY(raw.start as Record<string, unknown>),
       end: coerceXY(raw.end as Record<string, unknown>),
+      ...(raw.wallCurve || raw.wall_curve
+        ? { wallCurve: coerceWallCurve(raw.wallCurve ?? raw.wall_curve) }
+        : {}),
       thicknessMm: Number(raw.thicknessMm ?? raw.thickness_mm ?? 200),
       heightMm: Number(raw.heightMm ?? raw.height_mm ?? 2800),
       ...(typeof raw.materialKey === 'string' || typeof raw.material_key === 'string'
@@ -1635,6 +1668,11 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
       levelId,
       originMm: coerceXY((raw.originMm ?? raw.origin_mm) as Record<string, unknown>),
       originAlignmentMode: align,
+      unitOverride: raw.unitOverride ?? raw.unit_override ?? undefined,
+      unitScaleToMm:
+        raw.unitScaleToMm != null || raw.unit_scale_to_mm != null
+          ? Number(raw.unitScaleToMm ?? raw.unit_scale_to_mm)
+          : undefined,
       rotationDeg: Number(raw.rotationDeg ?? raw.rotation_deg ?? 0),
       scaleFactor: Number(raw.scaleFactor ?? raw.scale_factor ?? 1),
       linework: Array.isArray(raw.linework) ? raw.linework : [],

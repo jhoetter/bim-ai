@@ -21,6 +21,15 @@ function degToRad(deg: number): number {
   return (deg * Math.PI) / 180;
 }
 
+export type DxfPrimitiveQueryHit = {
+  link: LinkDxfElement;
+  primitive: DxfLineworkPrim;
+  primitiveIndex: number;
+  layerName: string;
+  color: string;
+  distanceMm: number;
+};
+
 /**
  * FED-04 — render a single `link_dxf` element's linework as desaturated
  * grey strokes onto a 2D canvas context. `worldToScreen` maps the host's
@@ -83,9 +92,51 @@ export function renderDxfUnderlay(
   ctx.restore();
 }
 
-export function isDxfLayerHidden(link: LinkDxfElement, prim: DxfLineworkPrim): boolean {
-  const hidden = link.hiddenLayerNames ?? [];
-  return Boolean(prim.layerName && hidden.includes(prim.layerName));
+export function dxfPrimitiveLayerName(prim: DxfLineworkPrim): string {
+  return prim.layerName ?? '0';
+}
+
+export function hiddenDxfLayerNamesForView(
+  link: LinkDxfElement,
+  viewOverride?: CategoryOverride,
+): string[] {
+  return Array.from(
+    new Set([...(link.hiddenLayerNames ?? []), ...(viewOverride?.dxf?.hiddenLayerNames ?? [])]),
+  );
+}
+
+export function isDxfLayerHiddenByName(
+  link: LinkDxfElement,
+  layerName: string,
+  viewOverride?: CategoryOverride,
+): boolean {
+  return hiddenDxfLayerNamesForView(link, viewOverride).includes(layerName);
+}
+
+export function isDxfLayerHidden(
+  link: LinkDxfElement,
+  prim: DxfLineworkPrim,
+  viewOverride?: CategoryOverride,
+): boolean {
+  return isDxfLayerHiddenByName(link, dxfPrimitiveLayerName(prim), viewOverride);
+}
+
+export function setDxfLayerHiddenInView(
+  override: CategoryOverride | undefined,
+  layerName: string,
+  hidden: boolean,
+): CategoryOverride {
+  const current = override?.dxf?.hiddenLayerNames ?? [];
+  const next = hidden
+    ? Array.from(new Set([...current, layerName]))
+    : current.filter((name) => name !== layerName);
+  return {
+    ...(override ?? {}),
+    dxf: {
+      ...(override?.dxf ?? {}),
+      hiddenLayerNames: next,
+    },
+  };
 }
 
 export function resolveDxfLayerRows(
@@ -219,6 +270,78 @@ function arcToPolylineSegments(arc: Extract<DxfLineworkPrim, { kind: 'arc' }>): 
     out.push({ xMm: cx + r * Math.cos(rad), yMm: cy + r * Math.sin(rad) });
   }
   return out;
+}
+
+function distancePointToSegmentMm(p: XY, a: XY, b: XY): number {
+  const dx = b.xMm - a.xMm;
+  const dy = b.yMm - a.yMm;
+  const len2 = dx * dx + dy * dy;
+  if (len2 <= 1e-9) return Math.hypot(p.xMm - a.xMm, p.yMm - a.yMm);
+  const t = Math.max(0, Math.min(1, ((p.xMm - a.xMm) * dx + (p.yMm - a.yMm) * dy) / len2));
+  const x = a.xMm + dx * t;
+  const y = a.yMm + dy * t;
+  return Math.hypot(p.xMm - x, p.yMm - y);
+}
+
+function primitiveSegmentsMm(prim: DxfLineworkPrim): Array<[XY, XY]> {
+  if (prim.kind === 'line') return [[prim.start, prim.end]];
+  if (prim.kind === 'polyline') {
+    const segments: Array<[XY, XY]> = [];
+    for (let i = 0; i < prim.points.length - 1; i++) {
+      segments.push([prim.points[i]!, prim.points[i + 1]!]);
+    }
+    if (prim.closed && prim.points.length > 2) {
+      segments.push([prim.points[prim.points.length - 1]!, prim.points[0]!]);
+    }
+    return segments;
+  }
+  const arcPts = arcToPolylineSegments(prim);
+  const segments: Array<[XY, XY]> = [];
+  for (let i = 0; i < arcPts.length - 1; i++) {
+    segments.push([arcPts[i]!, arcPts[i + 1]!]);
+  }
+  return segments;
+}
+
+export function queryDxfPrimitiveAtPoint(
+  links: LinkDxfElement[],
+  pointMm: XY,
+  opts: {
+    toleranceMm: number;
+    elementsById?: Record<string, Element>;
+    viewOverridesByLinkId?: Record<string, CategoryOverride | undefined>;
+  },
+): DxfPrimitiveQueryHit | null {
+  let best: DxfPrimitiveQueryHit | null = null;
+  for (const link of links) {
+    if (link.loaded === false) continue;
+    if (!link.linework || link.linework.length === 0) continue;
+    const viewOverride = opts.viewOverridesByLinkId?.[link.id];
+    if (!isDxfLinkVisibleInView(link, viewOverride)) continue;
+    const transform = makeDxfLinkTransform(link, opts.elementsById);
+    const style = resolveDxfUnderlayStyle(link, viewOverride);
+    for (let primitiveIndex = 0; primitiveIndex < link.linework.length; primitiveIndex++) {
+      const primitive = link.linework[primitiveIndex]!;
+      if (isDxfLayerHidden(link, primitive, viewOverride)) continue;
+      let primitiveDistance = Infinity;
+      for (const [rawA, rawB] of primitiveSegmentsMm(primitive)) {
+        const distance = distancePointToSegmentMm(pointMm, transform(rawA), transform(rawB));
+        if (distance < primitiveDistance) primitiveDistance = distance;
+      }
+      if (primitiveDistance > opts.toleranceMm) continue;
+      if (best && primitiveDistance >= best.distanceMm) continue;
+      const layerName = dxfPrimitiveLayerName(primitive);
+      best = {
+        link,
+        primitive,
+        primitiveIndex,
+        layerName,
+        color: resolveDxfPrimitiveColor(link, primitive, style),
+        distanceMm: primitiveDistance,
+      };
+    }
+  }
+  return best;
 }
 
 /**

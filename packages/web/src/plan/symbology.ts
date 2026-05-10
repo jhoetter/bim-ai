@@ -961,10 +961,24 @@ export function modelXyBoundsMm(
 ): { minXmm: number; minYmm: number; maxXmm: number; maxYmm: number } | null {
   const xs: number[] = [];
   const ys: number[] = [];
+  const pushWallCurveBounds = (wall: Extract<Element, { kind: 'wall' }>) => {
+    const curve = wall.wallCurve;
+    if (!curve || curve.kind !== 'arc') return;
+    const sweepRad = THREE.MathUtils.degToRad(curve.sweepDeg);
+    const startRad = THREE.MathUtils.degToRad(curve.startAngleDeg);
+    const steps = Math.max(8, Math.ceil(Math.abs(sweepRad) / (Math.PI / 24)));
+    const radiusMm = curve.radiusMm + wall.thicknessMm / 2;
+    for (let i = 0; i <= steps; i++) {
+      const a = startRad + (sweepRad * i) / steps;
+      xs.push(curve.center.xMm + Math.cos(a) * radiusMm);
+      ys.push(curve.center.yMm + Math.sin(a) * radiusMm);
+    }
+  };
   for (const el of Object.values(elementsById)) {
     if (el.kind === 'wall') {
       xs.push(el.start.xMm, el.end.xMm);
       ys.push(el.start.yMm, el.end.yMm);
+      pushWallCurveBounds(el);
     } else if (el.kind === 'floor') {
       for (const p of el.boundaryMm) {
         xs.push(p.xMm);

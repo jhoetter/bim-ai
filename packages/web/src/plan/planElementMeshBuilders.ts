@@ -60,6 +60,120 @@ function planLocationLineOffsetFrac(loc: WallLocationLine): number {
   }
 }
 
+function wallCurvePointsMm(
+  curve: NonNullable<Extract<Element, { kind: 'wall' }>['wallCurve']>,
+  radiusMm: number,
+): Array<{ xMm: number; yMm: number }> {
+  const sweepRad = THREE.MathUtils.degToRad(curve.sweepDeg);
+  const startRad = THREE.MathUtils.degToRad(curve.startAngleDeg);
+  const steps = Math.max(8, Math.ceil(Math.abs(sweepRad) / (Math.PI / 24)));
+  const pts: Array<{ xMm: number; yMm: number }> = [];
+  for (let i = 0; i <= steps; i++) {
+    const angle = startRad + (sweepRad * i) / steps;
+    pts.push({
+      xMm: curve.center.xMm + Math.cos(angle) * radiusMm,
+      yMm: curve.center.yMm + Math.sin(angle) * radiusMm,
+    });
+  }
+  return pts;
+}
+
+function planCurvedWallMesh(
+  wall: Extract<Element, { kind: 'wall' }>,
+  selectedId?: string,
+  lineWeightScale = 1,
+): THREE.Object3D {
+  const curve = wall.wallCurve;
+  if (!curve || curve.kind !== 'arc') return new THREE.Group();
+
+  const p = getPlanPalette();
+  const fillColor = wall.id === selectedId ? p.wallSelected : p.wallFill;
+  const thickMm = THREE.MathUtils.clamp(wall.thicknessMm * lineWeightScale, 20, 1800);
+  const locFrac = planLocationLineOffsetFrac(wall.locationLine ?? 'wall-centerline');
+  const centerRadiusMm = Math.max(1, curve.radiusMm + locFrac * thickMm);
+  const outerRadiusMm = centerRadiusMm + thickMm / 2;
+  const innerRadiusMm = Math.max(1, centerRadiusMm - thickMm / 2);
+  const outer = wallCurvePointsMm(curve, outerRadiusMm);
+  const inner = wallCurvePointsMm(curve, innerRadiusMm).reverse();
+  const outline = [...outer, ...inner];
+
+  const group = new THREE.Group();
+  group.userData.bimPickId = wall.id;
+  if (outline.length < 4) return group;
+
+  const shape = new THREE.Shape();
+  shape.moveTo(ux(outline[0]!.xMm), -uz(outline[0]!.yMm));
+  for (let i = 1; i < outline.length; i++) {
+    shape.lineTo(ux(outline[i]!.xMm), -uz(outline[i]!.yMm));
+  }
+  shape.closePath();
+
+  const fillMesh = new THREE.Mesh(
+    new THREE.ShapeGeometry(shape),
+    new THREE.MeshBasicMaterial({ color: fillColor, depthWrite: false }),
+  );
+  fillMesh.rotation.x = -Math.PI / 2;
+  fillMesh.position.y = PLAN_Y;
+  fillMesh.userData.bimPickId = wall.id;
+  group.add(fillMesh);
+
+  const outlinePts = outline.map((pt) => new THREE.Vector3(ux(pt.xMm), PLAN_Y + 0.001, uz(pt.yMm)));
+  outlinePts.push(outlinePts[0]!.clone());
+  const outlineLine = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(outlinePts),
+    new THREE.LineBasicMaterial({
+      color: readToken('--draft-cut', '#1d2330'),
+      linewidth: 1,
+      depthTest: false,
+    }),
+  );
+  outlineLine.renderOrder = 3;
+  outlineLine.userData.bimPickId = wall.id;
+  group.add(outlineLine);
+
+  if (wall.id !== selectedId && thickMm >= 40) {
+    const centerline = wallCurvePointsMm(curve, centerRadiusMm);
+    const hatchPositions: number[] = [];
+    const stride = Math.max(2, Math.floor(centerline.length / 12));
+    for (let i = 1; i < centerline.length - 1; i += stride) {
+      const pt = centerline[i]!;
+      const angle = Math.atan2(pt.yMm - curve.center.yMm, pt.xMm - curve.center.xMm);
+      const nx = Math.cos(angle);
+      const ny = Math.sin(angle);
+      const half = thickMm * 0.32;
+      hatchPositions.push(
+        ux(pt.xMm - nx * half),
+        PLAN_Y + 0.003,
+        uz(pt.yMm - ny * half),
+        ux(pt.xMm + nx * half),
+        PLAN_Y + 0.003,
+        uz(pt.yMm + ny * half),
+      );
+    }
+    if (hatchPositions.length > 0) {
+      const hatchGeo = new THREE.BufferGeometry();
+      hatchGeo.setAttribute(
+        'position',
+        new THREE.BufferAttribute(new Float32Array(hatchPositions), 3),
+      );
+      const hatch = new THREE.LineSegments(
+        hatchGeo,
+        new THREE.LineBasicMaterial({
+          color: new THREE.Color(readToken('--draft-paper', '#fdfcf9')),
+          transparent: true,
+          opacity: 0.35,
+          depthTest: false,
+        }),
+      );
+      hatch.renderOrder = 5;
+      hatch.userData.bimPickId = wall.id;
+      group.add(hatch);
+    }
+  }
+
+  return group;
+}
+
 export function planWallMesh(
   wall: Extract<Element, { kind: 'wall' }>,
   selectedId?: string,
@@ -67,6 +181,10 @@ export function planWallMesh(
   elementsById?: Record<string, Element>,
   detailLevel: PlanDetailLevel = 'medium',
 ): THREE.Object3D {
+  if (wall.wallCurve?.kind === 'arc') {
+    return planCurvedWallMesh(wall, selectedId, lineWeightScale);
+  }
+
   const { lenM: len, nx, nz } = segmentDir(wall);
 
   const sx = ux(wall.start.xMm);

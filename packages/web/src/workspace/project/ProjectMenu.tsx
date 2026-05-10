@@ -2,10 +2,12 @@ import { type JSX, useEffect, useRef, useState } from 'react';
 import { ICON_SIZE, Icons } from '@bim-ai/ui';
 import {
   coerceCheckpointRetentionLimit,
-  DEFAULT_CHECKPOINT_RETENTION_LIMIT,
   MAX_CHECKPOINT_RETENTION_LIMIT,
   MIN_CHECKPOINT_RETENTION_LIMIT,
 } from '../../state/backupRetention';
+import type { DxfImportOptions } from '../../lib/api';
+
+const DXF_DEFAULT_CUSTOM_COLOR = ['#', '7f', '7f', '7f'].join('');
 
 /**
  * Project-name dropdown — spec §11.1, T-03.
@@ -46,7 +48,7 @@ export interface ProjectMenuProps {
   /** FED-04: import an IFC file as a shadow-model link. */
   onLinkIfc?: (file: File) => void;
   /** FED-04: import a DXF site plan as a `link_dxf` underlay element. */
-  onLinkDxf?: (file: File) => void;
+  onLinkDxf?: (file: File, options: DxfImportOptions) => void;
 }
 
 export function ProjectMenu({
@@ -72,6 +74,14 @@ export function ProjectMenu({
   const dxfInputRef = useRef<HTMLInputElement | null>(null);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
   const [saveAsOptionsOpen, setSaveAsOptionsOpen] = useState(false);
+  const [dxfOptionsOpen, setDxfOptionsOpen] = useState(false);
+  const [dxfImportOptions, setDxfImportOptions] = useState<DxfImportOptions>({
+    originAlignmentMode: 'origin_to_origin',
+    unitOverride: 'source',
+    colorMode: 'black_white',
+    customColor: DXF_DEFAULT_CUSTOM_COLOR,
+    overlayOpacity: 0.5,
+  });
   const [maximumBackupsDraft, setMaximumBackupsDraft] = useState(
     String(coerceCheckpointRetentionLimit(saveAsMaximumBackups)),
   );
@@ -313,22 +323,149 @@ export function ProjectMenu({
                   icon="externalLink"
                   testId="project-menu-link-dxf"
                   onClick={() => {
-                    dxfInputRef.current?.click();
+                    setDxfOptionsOpen((value) => !value);
                   }}
                 />
-                <input
-                  ref={dxfInputRef}
-                  type="file"
-                  accept=".dxf,application/dxf,application/octet-stream"
-                  style={{ display: 'none' }}
-                  data-testid="project-menu-dxf-input"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) onLinkDxf(f);
-                    onOpenChange(false);
-                    e.target.value = '';
-                  }}
-                />
+                {dxfOptionsOpen ? (
+                  <li
+                    className="border-y border-border bg-surface-strong px-3 py-2"
+                    data-testid="project-menu-dxf-options"
+                  >
+                    <div className="grid grid-cols-1 gap-2 text-xs">
+                      <label className="flex flex-col gap-1">
+                        Position
+                        <select
+                          value={dxfImportOptions.originAlignmentMode}
+                          data-testid="project-menu-dxf-align"
+                          onChange={(e) => {
+                            const originAlignmentMode = e.currentTarget
+                              .value as DxfImportOptions['originAlignmentMode'];
+                            setDxfImportOptions((prev) => ({
+                              ...prev,
+                              originAlignmentMode,
+                            }));
+                          }}
+                          onKeyDown={(e) => e.stopPropagation()}
+                          className="h-7 rounded border border-border bg-surface px-2 text-xs text-foreground"
+                        >
+                          <option value="origin_to_origin">Origin to Origin</option>
+                          <option value="project_origin">Project Base Point</option>
+                          <option value="shared_coords">Shared Coordinates</option>
+                        </select>
+                      </label>
+                      <label className="flex flex-col gap-1">
+                        Units
+                        <select
+                          value={dxfImportOptions.unitOverride}
+                          data-testid="project-menu-dxf-units"
+                          onChange={(e) => {
+                            const unitOverride = e.currentTarget
+                              .value as DxfImportOptions['unitOverride'];
+                            setDxfImportOptions((prev) => ({
+                              ...prev,
+                              unitOverride,
+                            }));
+                          }}
+                          onKeyDown={(e) => e.stopPropagation()}
+                          className="h-7 rounded border border-border bg-surface px-2 text-xs text-foreground"
+                        >
+                          <option value="source">Auto ($INSUNITS)</option>
+                          <option value="unitless">Unitless</option>
+                          <option value="millimeters">Millimeters</option>
+                          <option value="centimeters">Centimeters</option>
+                          <option value="meters">Meters</option>
+                          <option value="inches">Inches</option>
+                          <option value="feet">Feet</option>
+                        </select>
+                      </label>
+                      <label className="flex flex-col gap-1">
+                        Color
+                        <select
+                          value={dxfImportOptions.colorMode}
+                          data-testid="project-menu-dxf-colormode"
+                          onChange={(e) => {
+                            const colorMode = e.currentTarget
+                              .value as DxfImportOptions['colorMode'];
+                            setDxfImportOptions((prev) => ({
+                              ...prev,
+                              colorMode,
+                            }));
+                          }}
+                          onKeyDown={(e) => e.stopPropagation()}
+                          className="h-7 rounded border border-border bg-surface px-2 text-xs text-foreground"
+                        >
+                          <option value="black_white">Black &amp; white</option>
+                          <option value="native">Preserve original colors</option>
+                          <option value="custom">Custom</option>
+                        </select>
+                      </label>
+                      {dxfImportOptions.colorMode === 'custom' ? (
+                        <label className="flex items-center justify-between gap-2">
+                          <span>Custom color</span>
+                          <input
+                            type="color"
+                            value={dxfImportOptions.customColor ?? DXF_DEFAULT_CUSTOM_COLOR}
+                            data-testid="project-menu-dxf-color"
+                            onChange={(e) => {
+                              const customColor = e.currentTarget.value;
+                              setDxfImportOptions((prev) => ({
+                                ...prev,
+                                customColor,
+                              }));
+                            }}
+                            onKeyDown={(e) => e.stopPropagation()}
+                            className="h-7 w-10 rounded border border-border bg-surface"
+                          />
+                        </label>
+                      ) : null}
+                      <label className="flex items-center gap-2">
+                        <span>Opacity</span>
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          step={1}
+                          value={Math.round((dxfImportOptions.overlayOpacity ?? 0.5) * 100)}
+                          data-testid="project-menu-dxf-opacity"
+                          onChange={(e) => {
+                            const overlayOpacity = Number(e.currentTarget.value) / 100;
+                            setDxfImportOptions((prev) => ({
+                              ...prev,
+                              overlayOpacity,
+                            }));
+                          }}
+                          onKeyDown={(e) => e.stopPropagation()}
+                          className="min-w-0 flex-1"
+                        />
+                        <span className="w-8 text-right font-mono text-[10px] text-muted">
+                          {Math.round((dxfImportOptions.overlayOpacity ?? 0.5) * 100)}%
+                        </span>
+                      </label>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        data-testid="project-menu-dxf-choose-file"
+                        onClick={() => dxfInputRef.current?.click()}
+                        className="mt-1 rounded border border-border px-2 py-1 text-xs text-foreground hover:bg-surface"
+                      >
+                        Choose DXF…
+                      </button>
+                    </div>
+                    <input
+                      ref={dxfInputRef}
+                      type="file"
+                      accept=".dxf,application/dxf,application/octet-stream"
+                      style={{ display: 'none' }}
+                      data-testid="project-menu-dxf-input"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) onLinkDxf(f, dxfImportOptions);
+                        onOpenChange(false);
+                        e.target.value = '';
+                      }}
+                    />
+                  </li>
+                ) : null}
               </>
             ) : (
               <MenuItem

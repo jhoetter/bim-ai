@@ -113,7 +113,7 @@ describe('<ToolPalette /> — spec §16', () => {
       />,
     );
     fireEvent.keyDown(getByRole('toolbar'), { key: 'ArrowRight' });
-    expect(onSelect).toHaveBeenLastCalledWith('wall');
+    expect(onSelect).toHaveBeenLastCalledWith('query');
     fireEvent.keyDown(getByRole('toolbar'), { key: 'ArrowLeft' });
     expect(onSelect).toHaveBeenLastCalledWith('ceiling'); // wraps backwards from select
   });

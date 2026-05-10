@@ -397,6 +397,15 @@ export type DxfLayerMeta = {
   primitiveCount?: number;
 };
 
+export type DxfUnitOverride =
+  | 'source'
+  | 'unitless'
+  | 'inches'
+  | 'feet'
+  | 'millimeters'
+  | 'centimeters'
+  | 'meters';
+
 /** FED-04: engine command emitted by the DXF import flow. */
 export type CreateLinkDxfCmd = {
   type: 'createLinkDxf';
@@ -405,6 +414,8 @@ export type CreateLinkDxfCmd = {
   levelId: string;
   originMm: XY;
   originAlignmentMode?: 'origin_to_origin' | 'project_origin' | 'shared_coords';
+  unitOverride?: DxfUnitOverride | number | null;
+  unitScaleToMm?: number;
   rotationDeg?: number;
   scaleFactor?: number;
   linework: DxfLineworkPrim[];
@@ -417,6 +428,9 @@ export type CreateLinkDxfCmd = {
   reloadStatus?: 'not_reloaded' | 'ok' | 'source_missing' | 'parse_error' | 'embedded';
   lastReloadMessage?: string;
   loaded?: boolean;
+  colorMode?: 'black_white' | 'custom' | 'native';
+  customColor?: string;
+  overlayOpacity?: number;
 };
 
 /** KRN-V3-05: a single tread line in a by_sketch stair. */
@@ -591,6 +605,16 @@ export type WallLocationLine =
   | 'core-centerline'
   | 'core-face-exterior'
   | 'core-face-interior';
+
+export type WallArcCurve = {
+  kind: 'arc';
+  center: XY;
+  radiusMm: number;
+  /** Degrees in model XY, positive sweep = counter-clockwise from start to end. */
+  startAngleDeg: number;
+  endAngleDeg: number;
+  sweepDeg: number;
+};
 
 /**
  * KRN-09 — kind of substitution applied to a curtain-wall grid cell.
@@ -859,6 +883,8 @@ export type Element =
       levelId: string;
       start: XY;
       end: XY;
+      /** F-043: optional native curved-wall baseline. start/end remain tangent endpoints. */
+      wallCurve?: WallArcCurve | null;
       thicknessMm: number;
       heightMm: number;
       materialKey?: string | null;
@@ -1804,6 +1830,10 @@ export type Element =
        * `originMm` remains an additional per-link offset.
        */
       originAlignmentMode?: 'origin_to_origin' | 'project_origin' | 'shared_coords';
+      /** F-017: import-time DXF unit override; omitted/source means use `$INSUNITS`. */
+      unitOverride?: DxfUnitOverride | number | null;
+      /** F-017: effective source-unit to millimetre scale applied while parsing. */
+      unitScaleToMm?: number;
       rotationDeg?: number;
       scaleFactor?: number;
       linework: DxfLineworkPrim[];

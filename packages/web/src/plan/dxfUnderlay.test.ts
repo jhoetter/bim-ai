@@ -4,13 +4,16 @@ import type { Element } from '@bim-ai/core';
 import {
   DXF_UNDERLAY_OPACITY,
   DXF_UNDERLAY_STROKE,
+  hiddenDxfLayerNamesForView,
   makeDxfLinkTransform,
+  queryDxfPrimitiveAtPoint,
   renderDxfUnderlay,
   resolveDxfPrimitiveColor,
   resolveDxfLayerRows,
   resolveDxfUnderlayStyle,
   resolveDxfAlignmentAnchorMm,
   selectDxfUnderlaysForLevel,
+  setDxfLayerHiddenInView,
   type LinkDxfElement,
 } from './dxfUnderlay';
 
@@ -116,6 +119,16 @@ describe('renderDxfUnderlay', () => {
 
     expect((ctx.beginPath as unknown as ReturnType<typeof vi.fn>).mock.calls.length).toBe(1);
     expect((ctx.lineTo as unknown as ReturnType<typeof vi.fn>).mock.calls).toEqual([[0, 100]]);
+  });
+
+  it('merges global and per-view DXF layer hidden state', () => {
+    const link = linkAtOrigin({ hiddenLayerNames: ['A-DOOR'] });
+    const override = setDxfLayerHiddenInView(undefined, 'A-WALL', true);
+
+    expect(hiddenDxfLayerNamesForView(link, override).sort()).toEqual(['A-DOOR', 'A-WALL']);
+    expect(setDxfLayerHiddenInView(override, 'A-WALL', false)).toEqual({
+      dxf: { hiddenLayerNames: [] },
+    });
   });
 
   it('derives queryable layer rows from linework when dxfLayers is absent', () => {
@@ -249,6 +262,108 @@ describe('renderDxfUnderlay', () => {
     renderDxfUnderlay(ctx, linkAtOrigin({ linework: [] }), () => [0, 0]);
     expect((ctx.beginPath as unknown as ReturnType<typeof vi.fn>).mock.calls.length).toBe(0);
     expect((ctx.stroke as unknown as ReturnType<typeof vi.fn>).mock.calls.length).toBe(0);
+  });
+});
+
+describe('queryDxfPrimitiveAtPoint', () => {
+  it('identifies the nearest visible DXF primitive with layer, color, and link info', () => {
+    const link = linkAtOrigin({
+      id: 'site-dxf',
+      name: 'Site plan',
+      colorMode: 'native',
+      linework: [
+        {
+          kind: 'line',
+          layerName: 'A-WALL',
+          layerColor: '#ff0000',
+          start: { xMm: 0, yMm: 0 },
+          end: { xMm: 1000, yMm: 0 },
+        },
+        {
+          kind: 'line',
+          layerName: 'A-DOOR',
+          layerColor: '#00ff00',
+          start: { xMm: 0, yMm: 500 },
+          end: { xMm: 1000, yMm: 500 },
+        },
+      ],
+    });
+
+    const hit = queryDxfPrimitiveAtPoint([link], { xMm: 250, yMm: 20 }, { toleranceMm: 50 });
+
+    expect(hit?.link.id).toBe('site-dxf');
+    expect(hit?.primitiveIndex).toBe(0);
+    expect(hit?.layerName).toBe('A-WALL');
+    expect(hit?.color).toBe('#ff0000');
+    expect(hit?.distanceMm).toBeCloseTo(20, 6);
+  });
+
+  it('honors per-view layer hides and whole-link visibility overrides while querying', () => {
+    const link = linkAtOrigin({
+      id: 'dxf-1',
+      linework: [
+        {
+          kind: 'line',
+          layerName: 'A-WALL',
+          start: { xMm: 0, yMm: 0 },
+          end: { xMm: 1000, yMm: 0 },
+        },
+      ],
+    });
+    const hiddenLayerOverride = setDxfLayerHiddenInView(undefined, 'A-WALL', true);
+
+    expect(
+      queryDxfPrimitiveAtPoint(
+        [link],
+        { xMm: 500, yMm: 0 },
+        {
+          toleranceMm: 20,
+          viewOverridesByLinkId: { 'dxf-1': hiddenLayerOverride },
+        },
+      ),
+    ).toBeNull();
+
+    expect(
+      queryDxfPrimitiveAtPoint(
+        [link],
+        { xMm: 500, yMm: 0 },
+        {
+          toleranceMm: 20,
+          viewOverridesByLinkId: { 'dxf-1': { visible: false } },
+        },
+      ),
+    ).toBeNull();
+  });
+
+  it('queries transformed polyline and arc segments', () => {
+    const link = linkAtOrigin({
+      originMm: { xMm: 100, yMm: 50 },
+      rotationDeg: 90,
+      linework: [
+        {
+          kind: 'polyline',
+          layerName: 'A-POLY',
+          points: [
+            { xMm: 0, yMm: 0 },
+            { xMm: 100, yMm: 0 },
+          ],
+        },
+        {
+          kind: 'arc',
+          layerName: 'A-ARC',
+          center: { xMm: 0, yMm: 0 },
+          radiusMm: 100,
+          startDeg: 0,
+          endDeg: 90,
+        },
+      ],
+    });
+
+    const polyHit = queryDxfPrimitiveAtPoint([link], { xMm: 100, yMm: 125 }, { toleranceMm: 5 });
+    expect(polyHit?.layerName).toBe('A-POLY');
+
+    const arcHit = queryDxfPrimitiveAtPoint([link], { xMm: 0, yMm: 50 }, { toleranceMm: 8 });
+    expect(arcHit?.layerName).toBe('A-ARC');
   });
 });
 

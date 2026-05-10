@@ -64,4 +64,40 @@ describe('VIE-01 — planWallMesh detail-level binding', () => {
       0,
     );
   });
+
+  it('curved walls render as a native arc body with pick metadata', () => {
+    const curvedWall: Extract<Element, { kind: 'wall' }> = {
+      ...wall,
+      id: 'w-arc',
+      start: { xMm: 500, yMm: 0 },
+      end: { xMm: 1000, yMm: 500 },
+      wallTypeId: null,
+      wallCurve: {
+        kind: 'arc',
+        center: { xMm: 500, yMm: 500 },
+        radiusMm: 500,
+        startAngleDeg: -90,
+        endAngleDeg: 0,
+        sweepDeg: 90,
+      },
+    };
+
+    const node = planWallMesh(curvedWall);
+    let meshCount = 0;
+    let maxVertexCount = 0;
+    node.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        meshCount += 1;
+        expect(child.userData.bimPickId).toBe('w-arc');
+        const pos = ((child as THREE.Mesh).geometry as THREE.BufferGeometry).getAttribute(
+          'position',
+        );
+        maxVertexCount = Math.max(maxVertexCount, pos.count);
+      }
+    });
+
+    expect(meshCount).toBeGreaterThan(0);
+    expect(maxVertexCount).toBeGreaterThan(8);
+    expect(node.userData.bimPickId).toBe('w-arc');
+  });
 });
