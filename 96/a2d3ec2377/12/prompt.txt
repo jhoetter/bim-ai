@@ -1,0 +1,5 @@
+You are not alone in the codebase: other agents are working in parallel on separate Revit parity packages. Do not revert or overwrite edits outside your assigned scope.
+
+Task: implement a focused Revit parity package for F-064 Overwrite options when reloading families. Create/use a dedicated branch/worktree from current origin/main. Own family load/reload/collision/overwrite files and tests, likely around FamilyLibraryPanel/Workspace load action, familyCollisionResolution, family type upsert/collision handling, and spec/revit-parity/ch06-nested-families.md. Avoid FamilyEditorWorkbench and ch07 furniture docs; leave spec/revit-parity/README.md counts to the orchestrator.
+
+Goal: provide a visible/usable partial overwrite flow when loading a family that already exists: at minimum distinguish overwrite existing parameter values vs keep existing values, and document remaining gaps. Add focused tests. Do not run full CI/build; run cheap focused tests/formatting only. Commit your branch, push it, and report branch name, commit hash, changed files, and verification.
