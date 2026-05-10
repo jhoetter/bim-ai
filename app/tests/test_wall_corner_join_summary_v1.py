@@ -52,6 +52,42 @@ def test_summary_l_corner_butt_join_ids_and_token() -> None:
     assert j0["affectedOpeningIds"] == []
 
 
+def test_summary_disallowed_endpoint_sets_skip_reason() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "wh": WallElem(
+                kind="wall",
+                id="wh",
+                name="H",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 4000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+                joinDisallowStart=True,
+            ),
+            "wv": WallElem(
+                kind="wall",
+                id="wv",
+                name="V",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 0, "yMm": 3000},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    s = collect_wall_corner_join_summary_v1(doc)
+    assert s is not None
+    assert len(s["joins"]) == 1
+    j0 = s["joins"][0]
+    assert j0["joinKind"] == "butt"
+    assert j0["skipReason"] == "join_disallowed"
+
+
 def test_summary_opening_near_corner_lists_affected_opening_id() -> None:
     doc = Document(
         revision=1,

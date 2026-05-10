@@ -375,9 +375,15 @@ export function SchematicThumbnail({ entry }: { entry: AssetLibraryEntry }): Rea
   return (
     <svg
       viewBox={`0 0 ${w} ${h}`}
-      width={w}
-      height={h}
-      style={{ overflow: 'visible', display: 'block' }}
+      preserveAspectRatio="xMidYMid meet"
+      style={{
+        display: 'block',
+        width: '100%',
+        height: '100%',
+        maxWidth: '100%',
+        maxHeight: '100%',
+        overflow: 'hidden',
+      }}
       aria-hidden="true"
     >
       {body}
