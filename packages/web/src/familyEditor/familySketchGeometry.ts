@@ -8,6 +8,10 @@ export type FamilySketchRefPlane = {
 
 type Point = { xMm: number; yMm: number };
 
+function normalizeCoordinate(value: number): number {
+  return Math.abs(value) < 1e-9 ? 0 : value;
+}
+
 function cloneLine(line: SketchLine): SketchLine {
   return {
     ...line,
@@ -72,8 +76,12 @@ function infiniteLineIntersection(a: SketchLine, b: SketchLine): Point | null {
   const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
   if (Math.abs(denom) < 1e-9) return null;
   return {
-    xMm: ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denom,
-    yMm: ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denom,
+    xMm: normalizeCoordinate(
+      ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denom,
+    ),
+    yMm: normalizeCoordinate(
+      ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denom,
+    ),
   };
 }
 

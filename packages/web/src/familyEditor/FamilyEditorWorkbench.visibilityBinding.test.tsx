@@ -25,12 +25,23 @@ afterEach(() => {
 function authorBooleanParam(utils: ReturnType<typeof renderWithI18n>, key: string, label: string) {
   const { getAllByRole } = utils;
   fireEvent.click(getAllByRole('button').find((b) => b.textContent === 'Add parameter')!);
-  const textInputs = getAllByRole('textbox') as HTMLInputElement[];
-  fireEvent.change(textInputs[0], { target: { value: key } });
-  fireEvent.change(textInputs[1], { target: { value: label } });
-  // Type select is the only <select> in the row.
-  const selects = utils.container.querySelectorAll('select');
-  fireEvent.change(selects[0], { target: { value: 'boolean' } });
+  const typeSelects = Array.from(utils.container.querySelectorAll('select')).filter((candidate) =>
+    Array.from(candidate.options).some((option) => option.value === 'boolean'),
+  );
+  const typeSelect = typeSelects.at(-1);
+  if (!typeSelect) {
+    throw new Error('Parameter type select not found');
+  }
+  const row = typeSelect.closest('tr');
+  if (!row) {
+    throw new Error('Parameter row not found');
+  }
+  const textInputs = row.querySelectorAll(
+    'input:not([type="number"])',
+  ) as NodeListOf<HTMLInputElement>;
+  fireEvent.change(textInputs[0]!, { target: { value: key } });
+  fireEvent.change(textInputs[1]!, { target: { value: label } });
+  fireEvent.change(typeSelect, { target: { value: 'boolean' } });
 }
 
 function authorSweep(utils: ReturnType<typeof renderWithI18n>) {

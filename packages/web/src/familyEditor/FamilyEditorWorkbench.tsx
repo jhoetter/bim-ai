@@ -2027,7 +2027,7 @@ function MaterialDefaultEditor({
     >
       <span
         className="h-5 w-5 rounded border border-border"
-        style={{ backgroundColor: material?.baseColor ?? '#cccccc' }}
+        style={{ backgroundColor: material?.baseColor ?? 'var(--color-surface-strong)' }}
         aria-hidden="true"
       />
       <span className="max-w-36 truncate" data-testid="material-default-label">
@@ -2093,7 +2093,7 @@ function SweepPropertiesPanel({
         <span className="w-32">Material</span>
         <span
           className="h-5 w-5 rounded border border-border"
-          style={{ backgroundColor: material?.baseColor ?? '#cccccc' }}
+          style={{ backgroundColor: material?.baseColor ?? 'var(--color-surface-strong)' }}
           aria-hidden="true"
         />
         <span data-testid="selected-sweep-material">

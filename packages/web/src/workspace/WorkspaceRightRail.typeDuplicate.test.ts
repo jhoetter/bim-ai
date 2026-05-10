@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Element } from '@bim-ai/core';
+
+vi.mock('./viewport', () => ({
+  Viewport3DLayersPanel: () => null,
+}));
 
 import {
   duplicateOpeningFamilyTypeCommand,
@@ -50,8 +54,8 @@ describe('duplicateTypePropertiesCommand', () => {
       name: 'Core Wall',
       basisLine: 'face_exterior',
       layers: [
-        { function: 'finish_1', material: 'gypsum', thicknessMm: 12 },
-        { function: 'structure', material: 'concrete', thicknessMm: 200 },
+        { function: 'finish', materialKey: 'gypsum', thicknessMm: 12 },
+        { function: 'structure', materialKey: 'concrete', thicknessMm: 200 },
       ],
     } satisfies Extract<Element, { kind: 'wall_type' }>;
 
@@ -61,8 +65,8 @@ describe('duplicateTypePropertiesCommand', () => {
       name: 'Core Wall Copy',
       basisLine: 'face_exterior',
       layers: [
-        { function: 'finish_1', material: 'gypsum', thicknessMm: 12 },
-        { function: 'structure', material: 'concrete', thicknessMm: 200 },
+        { function: 'finish', materialKey: 'gypsum', thicknessMm: 12 },
+        { function: 'structure', materialKey: 'concrete', thicknessMm: 200 },
       ],
     });
   });
