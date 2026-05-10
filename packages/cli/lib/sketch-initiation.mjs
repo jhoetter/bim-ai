@@ -342,12 +342,35 @@ export function buildVisualChecklist(ir, coverage) {
   };
 }
 
+export function applyScreenshotManifestToChecklist(checklist, screenshotManifest) {
+  const captures = new Map(
+    (screenshotManifest?.captures ?? [])
+      .filter((capture) => capture && typeof capture.viewId === 'string')
+      .map((capture) => [capture.viewId, capture]),
+  );
+  return {
+    ...checklist,
+    items: (checklist.items ?? []).map((item) => {
+      const capture = item.viewId ? captures.get(item.viewId) : null;
+      if (!capture?.screenshotPath) return item;
+      return {
+        ...item,
+        status: item.status === 'unchecked' ? 'needs_review' : item.status,
+        screenshotPath: capture.screenshotPath,
+        notes: item.notes || (capture.fallbackFit
+          ? 'Screenshot captured with fit fallback because no saved viewpoint id matched this required view.'
+          : ''),
+      };
+    }),
+  };
+}
+
 function markdownTable(rows) {
   if (!rows.length) return '_None._\n';
   return rows.join('\n') + '\n';
 }
 
-export function formatStatusMarkdown(coverage, checklist, liveAdvisor = null) {
+export function formatStatusMarkdown(coverage, checklist, liveAdvisor = null, evidenceRun = null) {
   const lines = [];
   lines.push('# Sketch-to-BIM Initiation Check');
   lines.push('');
@@ -405,12 +428,47 @@ export function formatStatusMarkdown(coverage, checklist, liveAdvisor = null) {
     }
   }
   lines.push('');
+  lines.push('## Live Artifacts');
+  lines.push('');
+  if (!evidenceRun?.liveArtifacts) {
+    lines.push('Not captured by this packet.');
+  } else {
+    for (const [label, filePath] of Object.entries(evidenceRun.liveArtifacts)) {
+      lines.push(`- ${label}: \`${filePath}\``);
+    }
+  }
+  lines.push('');
+  lines.push('## Screenshots');
+  lines.push('');
+  if (!evidenceRun?.screenshotManifest) {
+    lines.push('Not captured by this packet.');
+  } else {
+    const captures = evidenceRun.screenshotManifest.captures ?? [];
+    lines.push(`Captured ${captures.length} screenshot(s).`);
+    for (const capture of captures) {
+      const fallback = capture.fallbackFit ? ' (fit fallback)' : '';
+      lines.push(`- ${capture.viewId}: \`${capture.screenshotPath}\`${fallback}`);
+    }
+  }
+  lines.push('');
   return `${lines.join('\n')}\n`;
 }
 
-export async function writeInitiationPacket({ ir, matrix, outDir, irPath = null, capabilityMatrixPath = null, modelId = null, liveAdvisor = null }) {
+export async function writeInitiationPacket({
+  ir,
+  matrix,
+  outDir,
+  irPath = null,
+  capabilityMatrixPath = null,
+  modelId = null,
+  liveAdvisor = null,
+  screenshotManifest = null,
+  evidenceRun = null,
+}) {
   const coverage = buildCapabilityCoverage(ir, matrix, { irPath, capabilityMatrixPath, modelId });
-  const checklist = buildVisualChecklist(ir, coverage);
+  const checklist = screenshotManifest
+    ? applyScreenshotManifestToChecklist(buildVisualChecklist(ir, coverage), screenshotManifest)
+    : buildVisualChecklist(ir, coverage);
   await fs.mkdir(outDir, { recursive: true });
 
   const files = {
@@ -422,10 +480,18 @@ export async function writeInitiationPacket({ ir, matrix, outDir, irPath = null,
   await fs.writeFile(files.ir, `${JSON.stringify(ir, null, 2)}\n`, 'utf8');
   await fs.writeFile(files.coverage, `${JSON.stringify(coverage, null, 2)}\n`, 'utf8');
   await fs.writeFile(files.checklist, `${JSON.stringify(checklist, null, 2)}\n`, 'utf8');
-  await fs.writeFile(files.status, formatStatusMarkdown(coverage, checklist, liveAdvisor), 'utf8');
+  await fs.writeFile(
+    files.status,
+    formatStatusMarkdown(coverage, checklist, liveAdvisor, evidenceRun),
+    'utf8',
+  );
   if (liveAdvisor) {
     files.liveAdvisor = path.join(outDir, 'live-advisor.json');
     await fs.writeFile(files.liveAdvisor, `${JSON.stringify(liveAdvisor, null, 2)}\n`, 'utf8');
+  }
+  if (screenshotManifest) {
+    files.screenshotManifest = path.join(outDir, 'screenshot-manifest.json');
+    await fs.writeFile(files.screenshotManifest, `${JSON.stringify(screenshotManifest, null, 2)}\n`, 'utf8');
   }
 
   return {

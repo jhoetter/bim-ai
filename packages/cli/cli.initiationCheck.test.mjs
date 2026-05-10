@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
@@ -25,6 +26,29 @@ function runCli(args, env = {}) {
       stderr += c.toString();
     });
     child.on('exit', (code) => resolve({ code, stdout, stderr }));
+  });
+}
+
+function startStubServer(handler) {
+  return new Promise((resolve) => {
+    const server = http.createServer(async (req, res) => {
+      let body = '';
+      for await (const chunk of req) body += chunk;
+      let parsed;
+      try {
+        parsed = body ? JSON.parse(body) : null;
+      } catch {
+        parsed = body;
+      }
+      const out = handler(req, parsed);
+      res.statusCode = out?.status ?? 200;
+      res.setHeader('content-type', 'application/json');
+      res.end(JSON.stringify(out?.body ?? { ok: true }));
+    });
+    server.listen(0, '127.0.0.1', () => {
+      const addr = server.address();
+      resolve({ server, base: `http://127.0.0.1:${addr.port}` });
+    });
   });
 }
 
@@ -169,4 +193,76 @@ test('initiation-check blocks a critical feature with no capability route', asyn
   assert.equal(coverage.summary.errorCount, 1);
   assert.equal(coverage.features[0].readiness, 'blocked');
   assert.equal(coverage.issues[0].code, 'capability_missing');
+});
+
+test('initiation-run captures live advisor and evidence artifacts without screenshots', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-initiation-run-'));
+  const irPath = path.join(dir, 'ir.json');
+  const matrixPath = path.join(dir, 'matrix.json');
+  const outDir = path.join(dir, 'packet');
+  await writeJson(irPath, validIr());
+  await writeJson(matrixPath, validMatrix());
+  const snapshotBody = {
+    modelId: 'model-1',
+    revision: 7,
+    elements: {
+      'vp-main': { kind: 'viewpoint', id: 'main' },
+      'wall-1': { kind: 'wall', id: 'wall-1' },
+    },
+    violations: [],
+  };
+  const { server, base } = await startStubServer((req) => {
+    if (req.url?.endsWith('/snapshot')) return { body: snapshotBody };
+    if (req.url?.endsWith('/validate')) {
+      return {
+        body: {
+          modelId: 'model-1',
+          revision: 7,
+          violations: [],
+          checks: { errorViolationCount: 0, blockingViolationCount: 0 },
+        },
+      };
+    }
+    if (req.url?.endsWith('/evidence-package')) {
+      return {
+        body: {
+          format: 'evidencePackage_v1',
+          modelId: 'model-1',
+          revision: 7,
+          elementCount: 2,
+        },
+      };
+    }
+    return { status: 404, body: { error: req.url } };
+  });
+
+  const res = await runCli(
+    [
+      'initiation-run',
+      '--ir',
+      irPath,
+      '--capabilities',
+      matrixPath,
+      '--model',
+      'model-1',
+      '--out',
+      outDir,
+      '--no-screenshots',
+    ],
+    { BIM_AI_BASE_URL: base },
+  );
+  server.close();
+
+  assert.equal(res.code, 0, res.stderr);
+  const out = JSON.parse(res.stdout);
+  assert.equal(out.ok, true);
+  assert.equal(out.liveArtifacts.snapshot.endsWith('live/snapshot.json'), true);
+
+  const warning = JSON.parse(await fs.readFile(path.join(outDir, 'live', 'advisor-warning.json'), 'utf8'));
+  assert.equal(warning.total, 0);
+  const stats = JSON.parse(await fs.readFile(path.join(outDir, 'live', 'model-stats.json'), 'utf8'));
+  assert.equal(stats.countsByKind.wall, 1);
+  const status = await fs.readFile(path.join(outDir, 'status.md'), 'utf8');
+  assert.match(status, /Live Artifacts/);
+  assert.match(status, /advisorWarning/);
 });

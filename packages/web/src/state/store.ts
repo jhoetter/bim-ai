@@ -98,10 +98,11 @@ export const useBimStore = create<StoreState>((set, get) => {
 // bundles via the DEV / E2E env check (VITE_E2E_DISABLE_WS doubles as a
 // general "this is an e2e build" gate; production builds set neither).
 try {
+  const devFlag = Boolean(import.meta.env.DEV);
   const e2eFlag =
     typeof import.meta.env.VITE_E2E_DISABLE_WS === 'string' &&
     ['1', 'true', 'yes'].includes(import.meta.env.VITE_E2E_DISABLE_WS.trim().toLowerCase());
-  if (e2eFlag && typeof window !== 'undefined') {
+  if ((devFlag || e2eFlag) && typeof window !== 'undefined') {
     (window as unknown as { __bimStore?: typeof useBimStore }).__bimStore = useBimStore;
   }
 } catch {

@@ -126,6 +126,18 @@ These findings block phase advancement unless the user explicitly accepts them w
 
    After a live model exists, add `--model "$BIM_AI_MODEL_ID" --live` so the packet also captures advisor warning/info groups. Critical `capability_missing`, `critical_capability_gap`, or missing-view errors block authoring; partial capabilities require screenshot and advisor proof before acceptance.
 
+   For the actual live evidence loop, prefer the stricter runner:
+
+   ```bash
+   node packages/cli/cli.mjs initiation-run \
+     --ir spec/examples/sketch-understanding-ir.example.json \
+     --capabilities spec/sketch-to-bim-capability-matrix.json \
+     --model "$BIM_AI_MODEL_ID" \
+     --out nightshift/<run>/initiation-run
+   ```
+
+   Use `--seed-command "make seed"` or `--apply-bundle <path> --commit` when the runner should reseed/apply before capturing evidence. The runner captures snapshot, validate, evidence-package, advisor warning/info, screenshots, screenshot manifest, visual checklist, and status markdown. `--no-screenshots` is only for tests or explicitly documented headless limitations.
+
 6. **Pick the closest archetype, if any** (SKB-09). Today there are none; you start from a blank model. When archetypes ship, use `bim-ai archetype list` and fork the closest one — never start from blank if a 70%-match archetype exists.
 
 7. **Calibrate.** Anchor 2–3 known dimensions from the sketch (typically: overall house width, floor-to-floor, one elevation point). Compute a pixel-to-mm scale factor. When SKB-04 (`bim-ai calibrate`) lands, use it; today, do the math by hand and record in `assumptions.md`.
