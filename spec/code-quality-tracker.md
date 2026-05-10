@@ -151,6 +151,8 @@ These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (t
 
 **Progress 2026-05-10.** Extracted static constraint rule metadata and material-catalog advisory maps from `constraints.py` into `bim_ai/constraints_metadata.py`, preserving legacy private exports and adding tests for representative discipline/blocking-class/material mappings.
 
+**Progress 2026-05-10.** Extracted engine plan detail-level mesh helpers from `engine.py` into `bim_ai/engine_plan_mesh.py`, preserving the public `bim_ai.engine` mesh exports and reusing the existing detail-level rendering coverage.
+
 ---
 
 ## CQ-05 — Slice the zustand store (`packages/web/src/state/store.ts`, 1,692 LOC)

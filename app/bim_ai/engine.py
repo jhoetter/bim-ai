@@ -365,6 +365,21 @@ from bim_ai.elements import (
     WindowElem,
     WindowLegendViewElem,
 )
+from bim_ai.engine_plan_mesh import (
+    LineSegment as LineSegment,
+)
+from bim_ai.engine_plan_mesh import (
+    planDoorMesh as planDoorMesh,
+)
+from bim_ai.engine_plan_mesh import (
+    planFamilyInstanceMesh as planFamilyInstanceMesh,
+)
+from bim_ai.engine_plan_mesh import (
+    planStairMesh as planStairMesh,
+)
+from bim_ai.engine_plan_mesh import (
+    planWindowMesh as planWindowMesh,
+)
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
     KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION,
@@ -3388,7 +3403,9 @@ def apply_inplace(
         case AlignElementToReferenceCmd():
             target = els.get(cmd.target_element_id)
             if target is None:
-                raise ValueError(f"alignElementToReference: element {cmd.target_element_id!r} not found")
+                raise ValueError(
+                    f"alignElementToReference: element {cmd.target_element_id!r} not found"
+                )
             ref = cmd.reference_mm
             if isinstance(target, WallElem):
                 d_start = (target.start.x_mm - ref.x_mm) ** 2 + (target.start.y_mm - ref.y_mm) ** 2
@@ -3414,15 +3431,23 @@ def apply_inplace(
                         dy = ref.y_mm - target.end.y_mm
                         new_start = Vec2Mm(xMm=target.start.x_mm, yMm=target.start.y_mm + dy)
                         new_end = Vec2Mm(xMm=target.end.x_mm, yMm=ref.y_mm)
-                els[cmd.target_element_id] = target.model_copy(update={"start": new_start, "end": new_end})
+                els[cmd.target_element_id] = target.model_copy(
+                    update={"start": new_start, "end": new_end}
+                )
             elif isinstance(target, (ColumnElem, PlacedAssetElem)):
                 pos = target.position_mm
                 dx_abs = abs(ref.x_mm - pos.x_mm)
                 dy_abs = abs(ref.y_mm - pos.y_mm)
-                new_pos = Vec2Mm(xMm=ref.x_mm, yMm=pos.y_mm) if dx_abs <= dy_abs else Vec2Mm(xMm=pos.x_mm, yMm=ref.y_mm)
+                new_pos = (
+                    Vec2Mm(xMm=ref.x_mm, yMm=pos.y_mm)
+                    if dx_abs <= dy_abs
+                    else Vec2Mm(xMm=pos.x_mm, yMm=ref.y_mm)
+                )
                 els[cmd.target_element_id] = target.model_copy(update={"position_mm": new_pos})
             else:
-                raise ValueError(f"alignElementToReference: unsupported element kind {target.kind!r}")
+                raise ValueError(
+                    f"alignElementToReference: unsupported element kind {target.kind!r}"
+                )
 
         case TrimElementToReferenceCmd():
             ref = els.get(cmd.reference_wall_id)
@@ -3462,6 +3487,7 @@ def apply_inplace(
 
         case TrimExtendToCornerCmd():
             import math as _math
+
             wa = els.get(cmd.wall_id_a)
             wb = els.get(cmd.wall_id_b)
             if not isinstance(wa, WallElem) or not isinstance(wb, WallElem):
@@ -3531,12 +3557,8 @@ def apply_inplace(
         case SetWallJoinDisallowCmd():
             wall = els.get(cmd.wall_id)
             if not isinstance(wall, WallElem):
-                raise ValueError(
-                    "setWallJoinDisallow.wallId must reference a Wall"
-                )
-            update_field = (
-                "join_disallow_start" if cmd.endpoint == "start" else "join_disallow_end"
-            )
+                raise ValueError("setWallJoinDisallow.wallId must reference a Wall")
+            update_field = "join_disallow_start" if cmd.endpoint == "start" else "join_disallow_end"
             els[cmd.wall_id] = wall.model_copy(update={update_field: cmd.disallow})
 
         case CreateColumnCmd():
@@ -5168,9 +5190,7 @@ def apply_inplace(
         case HideElementInViewCmd():
             view = els.get(cmd.plan_view_id)
             if not isinstance(view, PlanViewElem):
-                raise ValueError(
-                    f"hideElementInView: {cmd.plan_view_id!r} is not a plan_view"
-                )
+                raise ValueError(f"hideElementInView: {cmd.plan_view_id!r} is not a plan_view")
             updated = list(view.hidden_element_ids)
             if cmd.element_id not in updated:
                 updated.append(cmd.element_id)
@@ -5179,9 +5199,7 @@ def apply_inplace(
         case UnhideElementInViewCmd():
             view = els.get(cmd.plan_view_id)
             if not isinstance(view, PlanViewElem):
-                raise ValueError(
-                    f"unhideElementInView: {cmd.plan_view_id!r} is not a plan_view"
-                )
+                raise ValueError(f"unhideElementInView: {cmd.plan_view_id!r} is not a plan_view")
             updated = [eid for eid in view.hidden_element_ids if eid != cmd.element_id]
             els[cmd.plan_view_id] = view.model_copy(update={"hidden_element_ids": updated})
 
@@ -5360,9 +5378,7 @@ def apply_inplace(
         case CreateToposolidSubdivisionCmd():
             sid = cmd.id
             if sid in els:
-                raise ValueError(
-                    f"create_toposolid_subdivision: element '{sid}' already exists"
-                )
+                raise ValueError(f"create_toposolid_subdivision: element '{sid}' already exists")
             host = els.get(cmd.host_toposolid_id)
             if not isinstance(host, ToposolidElem):
                 raise ValueError(
@@ -5373,10 +5389,12 @@ def apply_inplace(
                 raise ValueError(
                     "create_toposolid_subdivision.boundaryMm requires at least 3 points"
                 )
-            host_xs = [pt.get("xMm", pt.get("x_mm", 0)) for pt in host.boundary_mm
-                       if isinstance(pt, dict)]
-            host_ys = [pt.get("yMm", pt.get("y_mm", 0)) for pt in host.boundary_mm
-                       if isinstance(pt, dict)]
+            host_xs = [
+                pt.get("xMm", pt.get("x_mm", 0)) for pt in host.boundary_mm if isinstance(pt, dict)
+            ]
+            host_ys = [
+                pt.get("yMm", pt.get("y_mm", 0)) for pt in host.boundary_mm if isinstance(pt, dict)
+            ]
             if not host_xs:
                 host_xs = [getattr(pt, "x_mm", 0) for pt in host.boundary_mm]
                 host_ys = [getattr(pt, "y_mm", 0) for pt in host.boundary_mm]
@@ -5452,12 +5470,12 @@ def apply_inplace(
                     f"CreateGradedRegion.hostToposolidId '{cmd.host_toposolid_id}' does not reference an existing toposolid"
                 )
             if len(cmd.boundary_mm) < 3:
-                raise ValueError("CreateGradedRegion.boundaryMm requires at least 3 boundary points")
+                raise ValueError(
+                    "CreateGradedRegion.boundaryMm requires at least 3 boundary points"
+                )
             if cmd.target_mode == "flat":
                 if cmd.target_z_mm is None:
-                    raise ValueError(
-                        "CreateGradedRegion: targetZMm is required for flat mode"
-                    )
+                    raise ValueError("CreateGradedRegion: targetZMm is required for flat mode")
             elif cmd.target_mode == "slope":
                 if cmd.slope_axis_deg is None or cmd.slope_deg_percent is None:
                     raise ValueError(
@@ -5477,13 +5495,13 @@ def apply_inplace(
         case UpdateGradedRegionCmd():
             existing = els.get(cmd.id)
             if not isinstance(existing, GradedRegionElem):
-                raise ValueError(
-                    f"UpdateGradedRegion: no graded_region element with id '{cmd.id}'"
-                )
+                raise ValueError(f"UpdateGradedRegion: no graded_region element with id '{cmd.id}'")
             patch: dict[str, object] = {}
             if cmd.boundary_mm is not None:
                 if len(cmd.boundary_mm) < 3:
-                    raise ValueError("UpdateGradedRegion.boundaryMm requires at least 3 boundary points")
+                    raise ValueError(
+                        "UpdateGradedRegion.boundaryMm requires at least 3 boundary points"
+                    )
                 patch["boundary_mm"] = cmd.boundary_mm
             if cmd.target_mode is not None:
                 patch["target_mode"] = cmd.target_mode
@@ -5498,9 +5516,7 @@ def apply_inplace(
         case DeleteGradedRegionCmd():
             existing = els.get(cmd.id)
             if not isinstance(existing, GradedRegionElem):
-                raise ValueError(
-                    f"DeleteGradedRegion: no graded_region element with id '{cmd.id}'"
-                )
+                raise ValueError(f"DeleteGradedRegion: no graded_region element with id '{cmd.id}'")
             del els[cmd.id]
 
         # -----------------------------------------------------------------
@@ -5559,7 +5575,9 @@ def apply_inplace(
         case MoveAssetDeltaCmd():
             el = els.get(cmd.element_id)
             if not isinstance(el, PlacedAssetElem):
-                raise ValueError(f"moveAssetDelta: elementId '{cmd.element_id}' must reference a placed_asset")
+                raise ValueError(
+                    f"moveAssetDelta: elementId '{cmd.element_id}' must reference a placed_asset"
+                )
             new_pos = Vec2Mm(
                 xMm=el.position_mm.x_mm + cmd.dx_mm,
                 yMm=el.position_mm.y_mm + cmd.dy_mm,
@@ -5569,7 +5587,9 @@ def apply_inplace(
         case MoveColumnDeltaCmd():
             el = els.get(cmd.element_id)
             if not isinstance(el, ColumnElem):
-                raise ValueError(f"moveColumnDelta: elementId '{cmd.element_id}' must reference a column")
+                raise ValueError(
+                    f"moveColumnDelta: elementId '{cmd.element_id}' must reference a column"
+                )
             new_pos = Vec2Mm(
                 xMm=el.position_mm.x_mm + cmd.dx_mm,
                 yMm=el.position_mm.y_mm + cmd.dy_mm,
@@ -5583,26 +5603,51 @@ def apply_inplace(
                     continue
                 match el.kind:
                     case "wall":
-                        els[eid] = el.model_copy(update={
-                            "start": Vec2Mm(xMm=el.start.x_mm + cmd.dx_mm, yMm=el.start.y_mm + cmd.dy_mm),
-                            "end": Vec2Mm(xMm=el.end.x_mm + cmd.dx_mm, yMm=el.end.y_mm + cmd.dy_mm),
-                        })
+                        els[eid] = el.model_copy(
+                            update={
+                                "start": Vec2Mm(
+                                    xMm=el.start.x_mm + cmd.dx_mm, yMm=el.start.y_mm + cmd.dy_mm
+                                ),
+                                "end": Vec2Mm(
+                                    xMm=el.end.x_mm + cmd.dx_mm, yMm=el.end.y_mm + cmd.dy_mm
+                                ),
+                            }
+                        )
                     case "column":
-                        els[eid] = el.model_copy(update={
-                            "position_mm": Vec2Mm(xMm=el.position_mm.x_mm + cmd.dx_mm, yMm=el.position_mm.y_mm + cmd.dy_mm),
-                        })
+                        els[eid] = el.model_copy(
+                            update={
+                                "position_mm": Vec2Mm(
+                                    xMm=el.position_mm.x_mm + cmd.dx_mm,
+                                    yMm=el.position_mm.y_mm + cmd.dy_mm,
+                                ),
+                            }
+                        )
                     case "placed_asset":
-                        els[eid] = el.model_copy(update={
-                            "position_mm": Vec2Mm(xMm=el.position_mm.x_mm + cmd.dx_mm, yMm=el.position_mm.y_mm + cmd.dy_mm),
-                        })
+                        els[eid] = el.model_copy(
+                            update={
+                                "position_mm": Vec2Mm(
+                                    xMm=el.position_mm.x_mm + cmd.dx_mm,
+                                    yMm=el.position_mm.y_mm + cmd.dy_mm,
+                                ),
+                            }
+                        )
                     case "floor":
-                        new_pts = [Vec2Mm(xMm=p.x_mm + cmd.dx_mm, yMm=p.y_mm + cmd.dy_mm) for p in el.boundary_mm]
+                        new_pts = [
+                            Vec2Mm(xMm=p.x_mm + cmd.dx_mm, yMm=p.y_mm + cmd.dy_mm)
+                            for p in el.boundary_mm
+                        ]
                         els[eid] = el.model_copy(update={"boundary_mm": new_pts})
                     case "room":
-                        new_pts = [Vec2Mm(xMm=p.x_mm + cmd.dx_mm, yMm=p.y_mm + cmd.dy_mm) for p in el.outline_mm]
+                        new_pts = [
+                            Vec2Mm(xMm=p.x_mm + cmd.dx_mm, yMm=p.y_mm + cmd.dy_mm)
+                            for p in el.outline_mm
+                        ]
                         els[eid] = el.model_copy(update={"outline_mm": new_pts})
                     case "area":
-                        new_pts = [Vec2Mm(xMm=p.x_mm + cmd.dx_mm, yMm=p.y_mm + cmd.dy_mm) for p in el.boundary_mm]
+                        new_pts = [
+                            Vec2Mm(xMm=p.x_mm + cmd.dx_mm, yMm=p.y_mm + cmd.dy_mm)
+                            for p in el.boundary_mm
+                        ]
                         els[eid] = el.model_copy(update={"boundary_mm": new_pts})
 
         case RotateElementsCmd():
@@ -5626,24 +5671,30 @@ def apply_inplace(
                     case "wall":
                         nx0, ny0 = _rotate_pt(el.start.x_mm, el.start.y_mm)
                         nx1, ny1 = _rotate_pt(el.end.x_mm, el.end.y_mm)
-                        els[eid] = el.model_copy(update={
-                            "start": Vec2Mm(xMm=nx0, yMm=ny0),
-                            "end": Vec2Mm(xMm=nx1, yMm=ny1),
-                        })
+                        els[eid] = el.model_copy(
+                            update={
+                                "start": Vec2Mm(xMm=nx0, yMm=ny0),
+                                "end": Vec2Mm(xMm=nx1, yMm=ny1),
+                            }
+                        )
                     case "column":
                         nx, ny = _rotate_pt(el.position_mm.x_mm, el.position_mm.y_mm)
                         new_rot = (el.rotation_deg + cmd.angle_deg) % 360
-                        els[eid] = el.model_copy(update={
-                            "position_mm": Vec2Mm(xMm=nx, yMm=ny),
-                            "rotation_deg": new_rot,
-                        })
+                        els[eid] = el.model_copy(
+                            update={
+                                "position_mm": Vec2Mm(xMm=nx, yMm=ny),
+                                "rotation_deg": new_rot,
+                            }
+                        )
                     case "placed_asset":
                         nx, ny = _rotate_pt(el.position_mm.x_mm, el.position_mm.y_mm)
                         new_rot = (el.rotation_deg + cmd.angle_deg) % 360
-                        els[eid] = el.model_copy(update={
-                            "position_mm": Vec2Mm(xMm=nx, yMm=ny),
-                            "rotation_deg": new_rot,
-                        })
+                        els[eid] = el.model_copy(
+                            update={
+                                "position_mm": Vec2Mm(xMm=nx, yMm=ny),
+                                "rotation_deg": new_rot,
+                            }
+                        )
                     case "floor":
                         new_pts = []
                         for pt in el.boundary_mm:
@@ -5869,9 +5920,7 @@ def apply_inplace(
                     "data:image/png, data:image/jpeg, or data:application/pdf"
                 )
             if len(cmd.src.encode()) > _MAX_SRC_BYTES:
-                raise ValueError(
-                    "ImportImageUnderlay: src exceeds maximum allowed size of 50 MB"
-                )
+                raise ValueError("ImportImageUnderlay: src exceeds maximum allowed size of 50 MB")
             els[eid] = ImageUnderlayElem(
                 kind="image_underlay",
                 id=eid,
@@ -5885,9 +5934,7 @@ def apply_inplace(
         case MoveImageUnderlayCmd():
             underlay = els.get(cmd.id)
             if not isinstance(underlay, ImageUnderlayElem):
-                raise ValueError(
-                    f"MoveImageUnderlay: element '{cmd.id}' is not an image_underlay"
-                )
+                raise ValueError(f"MoveImageUnderlay: element '{cmd.id}' is not an image_underlay")
             existing_rect = underlay.rect_mm
             new_rect = {
                 "xMm": cmd.rect_mm.get("xMm", existing_rect.get("xMm", 0)),
@@ -5900,9 +5947,7 @@ def apply_inplace(
         case ScaleImageUnderlayCmd():
             underlay = els.get(cmd.id)
             if not isinstance(underlay, ImageUnderlayElem):
-                raise ValueError(
-                    f"ScaleImageUnderlay: element '{cmd.id}' is not an image_underlay"
-                )
+                raise ValueError(f"ScaleImageUnderlay: element '{cmd.id}' is not an image_underlay")
             existing_rect = underlay.rect_mm
             new_rect = {
                 "xMm": existing_rect.get("xMm", 0),
@@ -6024,9 +6069,7 @@ def apply_inplace(
                 sortOrder=cmd.sort_order,
             )
             new_frame_ids = list(canvas.frame_ids) + [cmd.id]
-            els[cmd.presentation_canvas_id] = canvas.model_copy(
-                update={"frame_ids": new_frame_ids}
-            )
+            els[cmd.presentation_canvas_id] = canvas.model_copy(update={"frame_ids": new_frame_ids})
 
         case UpdateFrameCmd():
             frame = els.get(cmd.id)
@@ -7453,216 +7496,6 @@ def resolve_wall_face_offset_at_cut(
         wall.lean_mm.x_mm * fraction,
         wall.lean_mm.y_mm * fraction,
     )
-
-
-# ---------------------------------------------------------------------------
-# VIE-V3-01: Plan mesh helpers — Coarse / Medium / Fine routing
-# ---------------------------------------------------------------------------
-
-
-class LineSegment(NamedTuple):
-    """A single 2-D line segment in plan-view space (mm)."""
-
-    x0: float
-    y0: float
-    x1: float
-    y1: float
-    is_arc: bool = False
-    phase_render_style: str | None = None
-
-
-def _phase_render_style_for(el: Any) -> str | None:
-    if getattr(el, "phase_demolished", None):
-        return "bold_dashed_grey"
-    return None
-
-
-def _door_coarse_outline(door: DoorElem, depth_mm: float = 200.0) -> list[LineSegment]:
-    half = door.width_mm / 2.0
-    style = _phase_render_style_for(door)
-    return [
-        LineSegment(-half, 0.0, -half, depth_mm, False, style),
-        LineSegment(half, 0.0, half, depth_mm, False, style),
-    ]
-
-
-def _door_medium_outline(door: DoorElem, depth_mm: float = 200.0) -> list[LineSegment]:
-    half = door.width_mm / 2.0
-    style = _phase_render_style_for(door)
-    return [
-        LineSegment(-half, 0.0, -half, depth_mm, False, style),
-        LineSegment(half, 0.0, half, depth_mm, False, style),
-        LineSegment(-half, 0.0, half, 0.0, False, style),
-        LineSegment(-half, depth_mm, half, depth_mm, False, style),
-    ]
-
-
-def _door_fine_detail(door: DoorElem, depth_mm: float = 200.0) -> list[LineSegment]:
-    segs = _door_medium_outline(door, depth_mm)
-    style = _phase_render_style_for(door)
-    segs.append(LineSegment(-door.width_mm / 2.0, 0.0, door.width_mm / 2.0, 0.0, True, style))
-    return segs
-
-
-def planDoorMesh(door: DoorElem, detail_level: str) -> list[LineSegment]:
-    """Route door plan geometry by detail level (coarse/medium/fine).
-
-    Unknown level falls back to fine behaviour.
-    """
-    if detail_level == "coarse":
-        return _door_coarse_outline(door)
-    elif detail_level == "medium":
-        return _door_medium_outline(door)
-    else:
-        return _door_fine_detail(door)
-
-
-def _window_coarse(window: WindowElem) -> list[LineSegment]:
-    style = _phase_render_style_for(window)
-    return [LineSegment(-window.width_mm / 2.0, 0.0, window.width_mm / 2.0, 0.0, False, style)]
-
-
-def _window_medium(window: WindowElem, depth_mm: float = 200.0) -> list[LineSegment]:
-    half = window.width_mm / 2.0
-    style = _phase_render_style_for(window)
-    return [
-        LineSegment(-half, 0.0, half, 0.0, False, style),
-        LineSegment(-half, depth_mm, half, depth_mm, False, style),
-    ]
-
-
-def _window_fine(window: WindowElem, depth_mm: float = 200.0) -> list[LineSegment]:
-    segs = _window_medium(window, depth_mm)
-    half = window.width_mm / 2.0
-    style = _phase_render_style_for(window)
-    segs.append(LineSegment(-half, depth_mm / 2.0, half, depth_mm / 2.0, False, style))
-    return segs
-
-
-def planWindowMesh(window: WindowElem, detail_level: str) -> list[LineSegment]:
-    """Route window plan geometry by detail level (coarse/medium/fine).
-
-    coarse  → 1 line; medium  → 2 lines; fine → 3 lines.
-    Unknown level falls back to fine behaviour.
-    """
-    if detail_level == "coarse":
-        return _window_coarse(window)
-    elif detail_level == "medium":
-        return _window_medium(window)
-    else:
-        return _window_fine(window)
-
-
-def _stair_bounding_rect(stair: StairElem) -> list[LineSegment]:
-    sx = float(stair.run_start.x_mm)
-    sy = float(stair.run_start.y_mm)
-    ex = float(stair.run_end.x_mm)
-    ey = float(stair.run_end.y_mm)
-    run_len = math.hypot(ex - sx, ey - sy) or 1.0
-    tx = (ex - sx) / run_len
-    ty = (ey - sy) / run_len
-    nx = -ty
-    ny = tx
-    half_w = stair.width_mm / 2.0
-    px = nx * half_w
-    py = ny * half_w
-    style = _phase_render_style_for(stair)
-    return [
-        LineSegment(sx + px, sy + py, ex + px, ey + py, False, style),
-        LineSegment(ex + px, ey + py, ex - px, ey - py, False, style),
-        LineSegment(ex - px, ey - py, sx - px, sy - py, False, style),
-        LineSegment(sx - px, sy - py, sx + px, sy + py, False, style),
-    ]
-
-
-def _stair_medium(stair: StairElem) -> list[LineSegment]:
-    segs = _stair_bounding_rect(stair)
-    sx = float(stair.run_start.x_mm)
-    sy = float(stair.run_start.y_mm)
-    ex = float(stair.run_end.x_mm)
-    ey = float(stair.run_end.y_mm)
-    style = _phase_render_style_for(stair)
-    segs.append(LineSegment(sx, sy, (sx + ex) / 2.0, (sy + ey) / 2.0, False, style))
-    return segs
-
-
-def _stair_fine(stair: StairElem) -> list[LineSegment]:
-    segs = _stair_bounding_rect(stair)
-    sx = float(stair.run_start.x_mm)
-    sy = float(stair.run_start.y_mm)
-    ex = float(stair.run_end.x_mm)
-    ey = float(stair.run_end.y_mm)
-    run_len = math.hypot(ex - sx, ey - sy) or 1.0
-    tx = (ex - sx) / run_len
-    ty = (ey - sy) / run_len
-    nx = -ty
-    ny = tx
-    half_w = stair.width_mm / 2.0
-    tread_count = max(2, int(round(run_len / max(stair.tread_mm, 1.0))))
-    style = _phase_render_style_for(stair)
-    for i in range(1, tread_count):
-        t = run_len * i / tread_count
-        cx = sx + tx * t
-        cy = sy + ty * t
-        segs.append(
-            LineSegment(
-                cx - nx * half_w, cy - ny * half_w, cx + nx * half_w, cy + ny * half_w, False, style
-            )
-        )
-    segs.append(LineSegment(sx, sy, ex, ey, False, style))
-    return segs
-
-
-def planStairMesh(stair: StairElem, detail_level: str) -> list[LineSegment]:
-    """Route stair plan geometry by detail level (coarse/medium/fine).
-
-    coarse → 4 segments; medium → rect + arrow; fine → treads + arrow.
-    Unknown level falls back to fine behaviour.
-    """
-    if detail_level == "coarse":
-        return _stair_bounding_rect(stair)
-    elif detail_level == "medium":
-        return _stair_medium(stair)
-    else:
-        return _stair_fine(stair)
-
-
-def _family_coarse(instance: ColumnElem) -> list[LineSegment]:
-    cx = float(instance.position_mm.x_mm)
-    cy = float(instance.position_mm.y_mm)
-    half_b = instance.b_mm / 2.0
-    half_h = instance.h_mm / 2.0
-    style = _phase_render_style_for(instance)
-    return [
-        LineSegment(cx - half_b, cy - half_h, cx + half_b, cy - half_h, False, style),
-        LineSegment(cx + half_b, cy - half_h, cx + half_b, cy + half_h, False, style),
-        LineSegment(cx + half_b, cy + half_h, cx - half_b, cy + half_h, False, style),
-        LineSegment(cx - half_b, cy + half_h, cx - half_b, cy - half_h, False, style),
-    ]
-
-
-def _family_full(instance: ColumnElem) -> list[LineSegment]:
-    segs = _family_coarse(instance)
-    cx = float(instance.position_mm.x_mm)
-    cy = float(instance.position_mm.y_mm)
-    half_b = instance.b_mm / 2.0
-    half_h = instance.h_mm / 2.0
-    style = _phase_render_style_for(instance)
-    segs.append(LineSegment(cx - half_b, cy - half_h, cx + half_b, cy + half_h, False, style))
-    segs.append(LineSegment(cx + half_b, cy - half_h, cx - half_b, cy + half_h, False, style))
-    return segs
-
-
-def planFamilyInstanceMesh(instance: ColumnElem, detail_level: str) -> list[LineSegment]:
-    """Route family-instance plan geometry by detail level (coarse/medium/fine).
-
-    coarse → 4-segment bounding box; medium/fine → bounding box + cross-hair.
-    Unknown level falls back to medium/fine behaviour.
-    """
-    if detail_level == "coarse":
-        return _family_coarse(instance)
-    else:
-        return _family_full(instance)
 
 
 # ---------------------------------------------------------------------------
