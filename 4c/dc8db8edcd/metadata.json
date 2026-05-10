@@ -48,6 +48,12 @@
       "transcript": "/4c/dc8db8edcd/4/full.jsonl",
       "content_hash": "/4c/dc8db8edcd/4/content_hash.txt",
       "prompt": "/4c/dc8db8edcd/4/prompt.txt"
+    },
+    {
+      "metadata": "/4c/dc8db8edcd/5/metadata.json",
+      "transcript": "/4c/dc8db8edcd/5/full.jsonl",
+      "content_hash": "/4c/dc8db8edcd/5/content_hash.txt",
+      "prompt": "/4c/dc8db8edcd/5/prompt.txt"
     }
   ],
   "token_usage": {
