@@ -109,7 +109,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Symbolic Lines](file:///Users/jhoetter/Desktop/Revit%20Specs/0472_02-51-29.png)
 
-**bim-ai status:** 🟡 Partial — symbolic line authoring records subcategory metadata for Symbolic Lines, Opening Projection, and Hidden Lines (Cut). Missing: Object Styles/lineweight propagation, dashed hidden-line rendering, and project Visibility/Graphics controls for these subcategories.
+**bim-ai status:** 🟡 Partial — the family editor can author 2D symbolic line segments by coordinates and keeps them separate from 3D sweep/model geometry. Missing: canvas drawing tools, line styles, detail-level/view-type visibility settings, and project rendering of symbolic linework.
 
 ---
 
@@ -120,7 +120,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Opening Projection lines](file:///Users/jhoetter/Desktop/Revit%20Specs/0475_02-52-05.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — symbolic line authoring records subcategory metadata for Symbolic Lines, Opening Projection, and Hidden Lines (Cut). Missing: Object Styles/lineweight propagation, dashed hidden-line rendering, and project Visibility/Graphics controls for these subcategories.
 
 ---
 
@@ -131,7 +131,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Preview Visibility](file:///Users/jhoetter/Desktop/Revit%20Specs/0476_02-52-15.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — the family editor now has a Preview Visibility toggle and coarse/medium/fine detail-level selector. When enabled, the family editor filters sweeps and nested instances using their visibility bindings and detail-level visibility settings, with a live visible-count summary. Missing: full canvas rendering parity, plan/RCP/elevation/view-type filtering, and project-context preview modes.
 
 ---
 
