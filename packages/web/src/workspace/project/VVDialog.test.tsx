@@ -29,6 +29,7 @@ afterEach(() => {
 describe('VVDialog', () => {
   beforeEach(() => {
     mockSetCategoryOverride.mockClear();
+    mockStore.elementsById['pv-1'].categoryOverrides = {};
   });
 
   it('renders with 15 model category rows when open', () => {
@@ -97,5 +98,52 @@ describe('VVDialog', () => {
     fireEvent.click(screen.getByText('OK'));
     expect(mockSetCategoryOverride).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('exposes projection and cut transparency controls for model and annotation categories', () => {
+    render(<VVDialog open={true} onClose={() => {}} />);
+    expect(screen.getByLabelText('Walls projection transparency')).toBeDefined();
+    expect(screen.getByLabelText('Walls cut transparency')).toBeDefined();
+
+    fireEvent.click(screen.getByTestId('vv-tab-annotation'));
+    expect(screen.getByLabelText('Text Notes projection transparency')).toBeDefined();
+    expect(screen.getByLabelText('Text Notes cut transparency')).toBeDefined();
+  });
+
+  it('reads existing category transparency overrides into the matrix', () => {
+    mockStore.elementsById['pv-1'].categoryOverrides = {
+      wall: {
+        projection: { transparency: 35 },
+        cut: { transparency: 80 },
+      },
+    };
+
+    render(<VVDialog open={true} onClose={() => {}} />);
+
+    expect((screen.getByLabelText('Walls projection transparency') as HTMLInputElement).value).toBe(
+      '35',
+    );
+    expect((screen.getByLabelText('Walls cut transparency') as HTMLInputElement).value).toBe('80');
+  });
+
+  it('persists projection and cut transparency overrides on Apply', () => {
+    render(<VVDialog open={true} onClose={() => {}} />);
+
+    fireEvent.change(screen.getByLabelText('Walls projection transparency'), {
+      target: { value: '45' },
+    });
+    fireEvent.change(screen.getByLabelText('Walls cut transparency'), {
+      target: { value: '70' },
+    });
+    fireEvent.click(screen.getByText('Apply'));
+
+    expect(mockSetCategoryOverride).toHaveBeenCalledWith(
+      'pv-1',
+      'wall',
+      expect.objectContaining({
+        projection: expect.objectContaining({ transparency: 45 }),
+        cut: expect.objectContaining({ transparency: 70 }),
+      }),
+    );
   });
 });

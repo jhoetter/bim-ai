@@ -65,6 +65,10 @@ describe('OrbitViewpointPersistedHud', () => {
       viewerClipCapElevMm: 4500,
       viewerClipFloorElevMm: 900,
       hiddenSemanticKinds3d: ['roof', 'stair'],
+      viewerShadowsEnabled: false,
+      viewerAmbientOcclusionEnabled: true,
+      viewerDepthCueEnabled: true,
+      viewerSilhouetteEdgeWidth: 3 as const,
     };
     const el = renderHud(
       <OrbitViewpointPersistedHud activeViewpointId="vp-save" viewpoint={viewpoint} />,
@@ -75,6 +79,10 @@ describe('OrbitViewpointPersistedHud', () => {
     expect(el.textContent).toContain('900');
     expect(el.textContent).toContain('Box clip (cap + floor)');
     expect(el.textContent).toContain('2: roof, stair');
+    expect(el.textContent).toContain('shadows off');
+    expect(el.textContent).toContain('AO on');
+    expect(el.textContent).toContain('depth on');
+    expect(el.textContent).toContain('edge 3');
     expect(el.textContent).toContain('saved viewpoint element');
   });
 
@@ -106,6 +114,10 @@ describe('OrbitViewpointPersistedHud', () => {
       camera: cameraFixture(),
       viewerClipCapElevMm: 1000,
       hiddenSemanticKinds3d: [],
+      viewerShadowsEnabled: true,
+      viewerAmbientOcclusionEnabled: false,
+      viewerDepthCueEnabled: false,
+      viewerSilhouetteEdgeWidth: 1 as const,
     };
     const el = renderHud(
       <OrbitViewpointPersistedHud
@@ -138,6 +150,30 @@ describe('OrbitViewpointPersistedHud', () => {
       elementId: 'vp-auth',
       key: 'cutawayStyle',
       value: 'box',
+    });
+
+    const shadows = el.querySelector(
+      '[data-testid="orbit-vp-shadows-toggle"]',
+    ) as HTMLButtonElement;
+    act(() => {
+      fireEvent.click(shadows);
+    });
+
+    expect(onPersistField).toHaveBeenCalledWith({
+      elementId: 'vp-auth',
+      key: 'viewerShadowsEnabled',
+      value: 'false',
+    });
+
+    const edgeWidth = el.querySelector('[data-testid="orbit-vp-edge-width"]') as HTMLSelectElement;
+    act(() => {
+      fireEvent.change(edgeWidth, { target: { value: '4' } });
+    });
+
+    expect(onPersistField).toHaveBeenCalledWith({
+      elementId: 'vp-auth',
+      key: 'viewerSilhouetteEdgeWidth',
+      value: '4',
     });
   });
 });

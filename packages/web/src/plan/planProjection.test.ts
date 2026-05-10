@@ -127,6 +127,28 @@ describe('planProjection', () => {
     );
   });
 
+  it('planViewGraphicsMatrixRows includes category transparency in effective rows', () => {
+    const elementsById = {
+      pv: {
+        kind: 'plan_view' as const,
+        id: 'pv',
+        name: 'P',
+        levelId: 'lv',
+        categoryOverrides: {
+          wall: {
+            projection: { transparency: 25 },
+            cut: { transparency: 60 },
+          },
+        },
+      },
+      lv: { kind: 'level' as const, id: 'lv', name: 'L', elevationMm: 0 },
+    } as Record<string, Element>;
+    const row = planViewGraphicsMatrixRows(elementsById, 'pv').find((r) => r.label === 'Cat wall');
+
+    expect(row?.effective).toContain('projTrans=25%');
+    expect(row?.effective).toContain('cutTrans=60%');
+  });
+
   it('planViewProjectBrowserEvidenceLine mentions tag styles', () => {
     const elementsById = {
       pv: {

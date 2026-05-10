@@ -288,6 +288,12 @@ describe('RibbonBar — F-005', () => {
     const { getByTestId, getByRole } = render(<RibbonBar activeToolId="wall" />);
     expect(getByTestId('ribbon-bar')).toBeTruthy();
     expect(getByRole('tab', { name: 'Architecture' }).getAttribute('aria-selected')).toBe('true');
+    expect(getByRole('tab', { name: 'Systems' })).toBeTruthy();
+    expect(getByRole('tab', { name: 'Insert' })).toBeTruthy();
+    expect(getByRole('tab', { name: 'Collaborate' })).toBeTruthy();
+    expect(getByRole('tab', { name: 'Massing & Site' })).toBeTruthy();
+    expect(getByRole('tab', { name: 'Analyze' })).toBeTruthy();
+    expect(getByRole('tab', { name: 'Add-Ins' })).toBeTruthy();
     expect(getByTestId('ribbon-command-wall').getAttribute('aria-pressed')).toBe('true');
     expect(getByTestId('ribbon-command-door')).toBeTruthy();
   });
@@ -311,6 +317,23 @@ describe('RibbonBar — F-005', () => {
     fireEvent.click(getByTestId('ribbon-command-visibility-graphics'));
     expect(onModeChange).toHaveBeenCalledWith('3d');
     expect(onOpenVisibilityGraphics).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens added catalogue tabs and minimizes ribbon panels', () => {
+    const onOpenFamilyLibrary = vi.fn();
+    const { getByTestId, queryByTestId } = render(
+      <RibbonBar onOpenFamilyLibrary={onOpenFamilyLibrary} />,
+    );
+    fireEvent.click(getByTestId('ribbon-tab-insert'));
+    fireEvent.click(getByTestId('ribbon-command-family-library'));
+    expect(onOpenFamilyLibrary).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(getByTestId('ribbon-toggle-minimize'));
+    expect(queryByTestId('ribbon-panels')).toBeNull();
+    expect(getByTestId('ribbon-toggle-minimize').getAttribute('aria-expanded')).toBe('false');
+
+    fireEvent.click(getByTestId('ribbon-tab-analyze'));
+    expect(getByTestId('ribbon-panels')).toBeTruthy();
   });
 
   it('adds a contextual Modify tab when an element is selected', () => {

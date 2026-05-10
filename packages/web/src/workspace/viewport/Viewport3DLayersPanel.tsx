@@ -1,6 +1,7 @@
 import { type JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
+import { useBimStore } from '../../state/store';
 
 export const VIEWER_HIDDEN_KIND_KEYS = [
   'wall',
@@ -15,6 +16,54 @@ export const VIEWER_HIDDEN_KIND_KEYS = [
 
 export type ViewerHiddenKindKey = (typeof VIEWER_HIDDEN_KIND_KEYS)[number];
 type ViewerRenderStyle = 'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line';
+type ViewerEdgeWidth = 1 | 2 | 3 | 4;
+
+type ViewerGdoRuntimeState = {
+  viewerShadowsEnabled?: boolean;
+  viewerAmbientOcclusionEnabled?: boolean;
+  viewerDepthCueEnabled?: boolean;
+  viewerSilhouetteEdgeWidth?: ViewerEdgeWidth;
+};
+
+const GDO_STORAGE_KEYS = {
+  shadows: 'bim.viewer.shadowsEnabled',
+  ambientOcclusion: 'bim.viewer.ambientOcclusionEnabled',
+  depthCue: 'bim.viewer.depthCueEnabled',
+  silhouetteEdgeWidth: 'bim.viewer.silhouetteEdgeWidth',
+} as const;
+
+function readStoredBoolean(key: string, fallback: boolean): boolean {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === 'true') return true;
+    if (raw === 'false') return false;
+  } catch {
+    /* noop */
+  }
+  return fallback;
+}
+
+function readStoredEdgeWidth(): ViewerEdgeWidth {
+  try {
+    const raw = Number(localStorage.getItem(GDO_STORAGE_KEYS.silhouetteEdgeWidth));
+    if (raw === 1 || raw === 2 || raw === 3 || raw === 4) return raw;
+  } catch {
+    /* noop */
+  }
+  return 1;
+}
+
+function writeStoredString(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* noop */
+  }
+}
+
+function setViewerGdoRuntimeState(partial: ViewerGdoRuntimeState): void {
+  useBimStore.setState(partial as object);
+}
 
 const GRAPHIC_STYLE_OPTIONS: Array<{
   value: ViewerRenderStyle;
@@ -83,6 +132,14 @@ export interface Viewport3DLayersPanelProps {
   onSetBackground: (bg: 'white' | 'light_grey' | 'dark') => void;
   viewerEdges: 'normal' | 'none';
   onSetEdges: (edges: 'normal' | 'none') => void;
+  viewerShadowsEnabled?: boolean;
+  onSetShadowsEnabled?: (enabled: boolean) => void;
+  viewerAmbientOcclusionEnabled?: boolean;
+  onSetAmbientOcclusionEnabled?: (enabled: boolean) => void;
+  viewerDepthCueEnabled?: boolean;
+  onSetDepthCueEnabled?: (enabled: boolean) => void;
+  viewerSilhouetteEdgeWidth?: ViewerEdgeWidth;
+  onSetSilhouetteEdgeWidth?: (width: ViewerEdgeWidth) => void;
   viewerProjection: 'perspective' | 'orthographic';
   onSetProjection: (projection: 'perspective' | 'orthographic') => void;
   sectionBoxActive: boolean;
@@ -110,6 +167,14 @@ export function Viewport3DLayersPanel({
   onSetBackground,
   viewerEdges,
   onSetEdges,
+  viewerShadowsEnabled,
+  onSetShadowsEnabled,
+  viewerAmbientOcclusionEnabled,
+  onSetAmbientOcclusionEnabled,
+  viewerDepthCueEnabled,
+  onSetDepthCueEnabled,
+  viewerSilhouetteEdgeWidth,
+  onSetSilhouetteEdgeWidth,
   viewerProjection,
   onSetProjection,
   sectionBoxActive,
@@ -128,6 +193,42 @@ export function Viewport3DLayersPanel({
   onUpdateSavedView,
 }: Viewport3DLayersPanelProps): JSX.Element {
   const { t } = useTranslation();
+  const storedGdo = useBimStore((s) => s as typeof s & ViewerGdoRuntimeState);
+  const resolvedShadowsEnabled =
+    viewerShadowsEnabled ??
+    storedGdo.viewerShadowsEnabled ??
+    readStoredBoolean(GDO_STORAGE_KEYS.shadows, true);
+  const resolvedAmbientOcclusionEnabled =
+    viewerAmbientOcclusionEnabled ??
+    storedGdo.viewerAmbientOcclusionEnabled ??
+    readStoredBoolean(GDO_STORAGE_KEYS.ambientOcclusion, true);
+  const resolvedDepthCueEnabled =
+    viewerDepthCueEnabled ??
+    storedGdo.viewerDepthCueEnabled ??
+    readStoredBoolean(GDO_STORAGE_KEYS.depthCue, false);
+  const resolvedSilhouetteEdgeWidth =
+    viewerSilhouetteEdgeWidth ?? storedGdo.viewerSilhouetteEdgeWidth ?? readStoredEdgeWidth();
+
+  const setShadowsEnabled = (enabled: boolean): void => {
+    writeStoredString(GDO_STORAGE_KEYS.shadows, String(enabled));
+    setViewerGdoRuntimeState({ viewerShadowsEnabled: enabled });
+    onSetShadowsEnabled?.(enabled);
+  };
+  const setAmbientOcclusionEnabled = (enabled: boolean): void => {
+    writeStoredString(GDO_STORAGE_KEYS.ambientOcclusion, String(enabled));
+    setViewerGdoRuntimeState({ viewerAmbientOcclusionEnabled: enabled });
+    onSetAmbientOcclusionEnabled?.(enabled);
+  };
+  const setDepthCueEnabled = (enabled: boolean): void => {
+    writeStoredString(GDO_STORAGE_KEYS.depthCue, String(enabled));
+    setViewerGdoRuntimeState({ viewerDepthCueEnabled: enabled });
+    onSetDepthCueEnabled?.(enabled);
+  };
+  const setSilhouetteEdgeWidth = (width: ViewerEdgeWidth): void => {
+    writeStoredString(GDO_STORAGE_KEYS.silhouetteEdgeWidth, String(width));
+    setViewerGdoRuntimeState({ viewerSilhouetteEdgeWidth: width });
+    onSetSilhouetteEdgeWidth?.(width);
+  };
   const iconForKind: Record<ViewerHiddenKindKey, typeof Icons.wall> = {
     wall: Icons.wall,
     floor: Icons.floor,
@@ -150,6 +251,8 @@ export function Viewport3DLayersPanel({
         <div className="flex flex-wrap gap-1">
           <ViewStatePill label={activeStyleLabel} />
           <ViewStatePill label={viewerProjection === 'orthographic' ? 'Ortho' : 'Perspective'} />
+          <ViewStatePill label={resolvedShadowsEnabled ? 'Shadows' : 'No shadows'} />
+          {resolvedDepthCueEnabled ? <ViewStatePill label="Depth cue" /> : null}
           <ViewStatePill label={sectionBoxActive ? 'Section box' : 'No section box'} />
           {hiddenLayerCount > 0 ? <ViewStatePill label={`${hiddenLayerCount} hidden`} /> : null}
         </div>
@@ -207,29 +310,74 @@ export function Viewport3DLayersPanel({
             </div>
           </div>
           <div>
-            <div className="mb-1 text-[10px] text-muted">Edges</div>
+            <div className="mb-1 flex items-center justify-between gap-2 text-[10px] text-muted">
+              <span>Edges</span>
+              <span>Width {resolvedSilhouetteEdgeWidth}</span>
+            </div>
+            <div className="grid grid-cols-[1fr_1fr_92px] gap-1">
+              <button
+                type="button"
+                onClick={() => onSetEdges('normal')}
+                aria-label="On model edges"
+                title="On model edges"
+                data-active={viewerEdges === 'normal' ? 'true' : 'false'}
+                className={[
+                  'h-7 rounded border px-2 text-[11px] transition-colors',
+                  viewerEdges === 'normal'
+                    ? 'border-accent bg-accent/15 font-medium text-foreground'
+                    : 'border-border bg-background text-muted hover:text-foreground',
+                ].join(' ')}
+              >
+                On
+              </button>
+              <button
+                type="button"
+                onClick={() => onSetEdges('none')}
+                aria-label="Off model edges"
+                title="Off model edges"
+                data-active={viewerEdges === 'none' ? 'true' : 'false'}
+                className={[
+                  'h-7 rounded border px-2 text-[11px] transition-colors',
+                  viewerEdges === 'none'
+                    ? 'border-accent bg-accent/15 font-medium text-foreground'
+                    : 'border-border bg-background text-muted hover:text-foreground',
+                ].join(' ')}
+              >
+                Off
+              </button>
+              <select
+                aria-label="Silhouette edge width"
+                title="Silhouette edge width"
+                className="h-7 rounded border border-border bg-background px-1 text-[11px] text-foreground"
+                value={resolvedSilhouetteEdgeWidth}
+                onChange={(e) => setSilhouetteEdgeWidth(Number(e.target.value) as ViewerEdgeWidth)}
+              >
+                {[1, 2, 3, 4].map((width) => (
+                  <option key={width} value={width}>
+                    {width}px
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <div className="mb-1 text-[10px] text-muted">Lighting</div>
             <div className="grid grid-cols-2 gap-1">
-              {[
-                ['normal', 'On'],
-                ['none', 'Off'],
-              ].map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => onSetEdges(value as 'normal' | 'none')}
-                  aria-label={`${label} model edges`}
-                  title={`${label} model edges`}
-                  data-active={viewerEdges === value ? 'true' : 'false'}
-                  className={[
-                    'h-7 rounded border px-2 text-[11px] transition-colors',
-                    viewerEdges === value
-                      ? 'border-accent bg-accent/15 font-medium text-foreground'
-                      : 'border-border bg-background text-muted hover:text-foreground',
-                  ].join(' ')}
-                >
-                  {label}
-                </button>
-              ))}
+              <GdoToggleButton
+                label="Shadows"
+                pressed={resolvedShadowsEnabled}
+                onClick={() => setShadowsEnabled(!resolvedShadowsEnabled)}
+              />
+              <GdoToggleButton
+                label="Ambient occlusion"
+                pressed={resolvedAmbientOcclusionEnabled}
+                onClick={() => setAmbientOcclusionEnabled(!resolvedAmbientOcclusionEnabled)}
+              />
+              <GdoToggleButton
+                label="Depth cue"
+                pressed={resolvedDepthCueEnabled}
+                onClick={() => setDepthCueEnabled(!resolvedDepthCueEnabled)}
+              />
             </div>
           </div>
         </div>
@@ -407,6 +555,35 @@ export function Viewport3DLayersPanel({
         </div>
       </details>
     </div>
+  );
+}
+
+function GdoToggleButton({
+  label,
+  pressed,
+  onClick,
+}: {
+  label: string;
+  pressed: boolean;
+  onClick: () => void;
+}): JSX.Element {
+  return (
+    <button
+      type="button"
+      aria-pressed={pressed}
+      aria-label={`${pressed ? 'Disable' : 'Enable'} ${label}`}
+      title={`${pressed ? 'Disable' : 'Enable'} ${label}`}
+      data-active={pressed ? 'true' : 'false'}
+      onClick={onClick}
+      className={[
+        'h-7 rounded border px-2 text-[11px] transition-colors',
+        pressed
+          ? 'border-accent bg-accent/15 font-medium text-foreground'
+          : 'border-border bg-background text-muted hover:text-foreground',
+      ].join(' ')}
+    >
+      {label}
+    </button>
   );
 }
 

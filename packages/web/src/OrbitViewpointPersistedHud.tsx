@@ -27,6 +27,11 @@ function fmtMm(n: number | null | undefined): string {
   return String(n);
 }
 
+function fmtOnOff(v: boolean | null | undefined): string {
+  if (v == null) return 'inherit';
+  return v ? 'on' : 'off';
+}
+
 function isPersistedCutawayStyle(v: unknown): v is OrbitViewCutawayStyleToken {
   return v === 'none' || v === 'cap' || v === 'floor' || v === 'box';
 }
@@ -130,6 +135,19 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
     void onPersistField({ elementId: viewpoint.id, key: 'cutawayStyle', value: next });
   };
 
+  const commitGdoBoolean = (
+    key: 'viewerShadowsEnabled' | 'viewerAmbientOcclusionEnabled' | 'viewerDepthCueEnabled',
+    value: boolean,
+  ) => {
+    if (!onPersistField) return;
+    void onPersistField({ elementId: viewpoint.id, key, value: String(value) });
+  };
+
+  const commitSilhouetteEdgeWidth = (value: string) => {
+    if (!onPersistField) return;
+    void onPersistField({ elementId: viewpoint.id, key: 'viewerSilhouetteEdgeWidth', value });
+  };
+
   return (
     <div
       data-testid="orbit-viewpoint-persisted-hud"
@@ -146,6 +164,12 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
         <span>floor {fmtMm(viewpoint.viewerClipFloorElevMm)}</span>
         <span className="col-span-2 truncate font-sans text-[10px] text-foreground/90">
           {styleLabel} · {hiddenReadout}
+        </span>
+        <span className="col-span-2 truncate font-sans text-[10px] text-foreground/90">
+          shadows {fmtOnOff(viewpoint.viewerShadowsEnabled)} · AO{' '}
+          {fmtOnOff(viewpoint.viewerAmbientOcclusionEnabled)} · depth{' '}
+          {fmtOnOff(viewpoint.viewerDepthCueEnabled)} · edge{' '}
+          {viewpoint.viewerSilhouetteEdgeWidth ?? 'inherit'}
         </span>
       </div>
 
@@ -170,6 +194,15 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
           <div className="flex gap-2">
             <dt className="shrink-0 text-muted">Hidden</dt>
             <dd className="min-w-0 break-words text-foreground/90">{hiddenReadout}</dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="shrink-0 text-muted">Graphics</dt>
+            <dd className="min-w-0 break-words text-foreground/90">
+              Shadows {fmtOnOff(viewpoint.viewerShadowsEnabled)}, AO{' '}
+              {fmtOnOff(viewpoint.viewerAmbientOcclusionEnabled)}, depth{' '}
+              {fmtOnOff(viewpoint.viewerDepthCueEnabled)}, edge{' '}
+              {viewpoint.viewerSilhouetteEdgeWidth ?? 'inherit'}
+            </dd>
           </div>
         </dl>
       ) : (
@@ -228,6 +261,53 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
                 onBlur={commitHidden}
               />
             </label>
+            <div className="grid grid-cols-2 gap-1">
+              <button
+                type="button"
+                data-testid="orbit-vp-shadows-toggle"
+                className="rounded border border-border bg-background px-2 py-1 text-[10px] text-foreground"
+                onClick={() =>
+                  commitGdoBoolean('viewerShadowsEnabled', !viewpoint.viewerShadowsEnabled)
+                }
+              >
+                Shadows {fmtOnOff(viewpoint.viewerShadowsEnabled)}
+              </button>
+              <button
+                type="button"
+                data-testid="orbit-vp-ao-toggle"
+                className="rounded border border-border bg-background px-2 py-1 text-[10px] text-foreground"
+                onClick={() =>
+                  commitGdoBoolean(
+                    'viewerAmbientOcclusionEnabled',
+                    !viewpoint.viewerAmbientOcclusionEnabled,
+                  )
+                }
+              >
+                AO {fmtOnOff(viewpoint.viewerAmbientOcclusionEnabled)}
+              </button>
+              <button
+                type="button"
+                data-testid="orbit-vp-depth-toggle"
+                className="rounded border border-border bg-background px-2 py-1 text-[10px] text-foreground"
+                onClick={() =>
+                  commitGdoBoolean('viewerDepthCueEnabled', !viewpoint.viewerDepthCueEnabled)
+                }
+              >
+                Depth {fmtOnOff(viewpoint.viewerDepthCueEnabled)}
+              </button>
+              <select
+                data-testid="orbit-vp-edge-width"
+                className="rounded border border-border bg-background px-2 py-1 text-[10px] text-foreground"
+                value={viewpoint.viewerSilhouetteEdgeWidth ?? ''}
+                onChange={(e) => commitSilhouetteEdgeWidth(e.target.value)}
+              >
+                <option value="">Edge inherit</option>
+                <option value="1">Edge 1px</option>
+                <option value="2">Edge 2px</option>
+                <option value="3">Edge 3px</option>
+                <option value="4">Edge 4px</option>
+              </select>
+            </div>
           </div>
         </details>
       )}

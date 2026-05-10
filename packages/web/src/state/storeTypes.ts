@@ -116,6 +116,7 @@ export type CategoryOverride = {
     linePattern?: string | null;
     fillColor?: string | null;
     halftone?: boolean;
+    transparency?: number;
   };
   visible?: boolean;
 };

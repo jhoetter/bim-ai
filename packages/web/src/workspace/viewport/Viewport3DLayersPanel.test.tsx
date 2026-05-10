@@ -28,6 +28,14 @@ function makeProps(
     onSetBackground: vi.fn(),
     viewerEdges: 'normal',
     onSetEdges: vi.fn(),
+    viewerShadowsEnabled: true,
+    onSetShadowsEnabled: vi.fn(),
+    viewerAmbientOcclusionEnabled: true,
+    onSetAmbientOcclusionEnabled: vi.fn(),
+    viewerDepthCueEnabled: false,
+    onSetDepthCueEnabled: vi.fn(),
+    viewerSilhouetteEdgeWidth: 1,
+    onSetSilhouetteEdgeWidth: vi.fn(),
     viewerProjection: 'perspective',
     onSetProjection: vi.fn(),
     sectionBoxActive: false,
@@ -66,13 +74,42 @@ describe('<Viewport3DLayersPanel />', () => {
   it('calls background and edge controls from the graphics panel', () => {
     const onSetBackground = vi.fn();
     const onSetEdges = vi.fn();
+    const onSetSilhouetteEdgeWidth = vi.fn();
     const { getByRole } = render(
-      <Viewport3DLayersPanel {...makeProps({ onSetBackground, onSetEdges })} />,
+      <Viewport3DLayersPanel
+        {...makeProps({ onSetBackground, onSetEdges, onSetSilhouetteEdgeWidth })}
+      />,
     );
     fireEvent.click(getByRole('button', { name: 'Use Dark background' }));
     fireEvent.click(getByRole('button', { name: 'Off model edges' }));
+    fireEvent.change(getByRole('combobox', { name: 'Silhouette edge width' }), {
+      target: { value: '3' },
+    });
     expect(onSetBackground).toHaveBeenCalledWith('dark');
     expect(onSetEdges).toHaveBeenCalledWith('none');
+    expect(onSetSilhouetteEdgeWidth).toHaveBeenCalledWith(3);
+  });
+
+  it('calls Revit-like GDO lighting controls from the graphics panel', () => {
+    const onSetShadowsEnabled = vi.fn();
+    const onSetAmbientOcclusionEnabled = vi.fn();
+    const onSetDepthCueEnabled = vi.fn();
+    const { getByRole, getAllByText } = render(
+      <Viewport3DLayersPanel
+        {...makeProps({
+          onSetShadowsEnabled,
+          onSetAmbientOcclusionEnabled,
+          onSetDepthCueEnabled,
+        })}
+      />,
+    );
+    expect(getAllByText('Shadows').length).toBeGreaterThan(0);
+    fireEvent.click(getByRole('button', { name: 'Disable Shadows' }));
+    fireEvent.click(getByRole('button', { name: 'Disable Ambient occlusion' }));
+    fireEvent.click(getByRole('button', { name: 'Enable Depth cue' }));
+    expect(onSetShadowsEnabled).toHaveBeenCalledWith(false);
+    expect(onSetAmbientOcclusionEnabled).toHaveBeenCalledWith(false);
+    expect(onSetDepthCueEnabled).toHaveBeenCalledWith(true);
   });
 
   it('calls camera and section-box controls from the view panel', () => {

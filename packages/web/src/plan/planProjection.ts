@@ -299,10 +299,23 @@ export type ResolvedPlanCategoryGraphic = {
   linePatternIsDefaulted: boolean;
   visible: boolean;
   lineColor: string | null;
+  projectionTransparency: number;
+  cutTransparency: number;
+  projectionOpacity: number;
+  cutOpacity: number;
 };
 
 function categoryGraphicsRowMap(rows: PlanCategoryGraphicRow[] | undefined) {
   return new Map((rows ?? []).map((r) => [r.categoryKey, r]));
+}
+
+function clampCategoryTransparency(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function transparencyToOpacity(transparency: number): number {
+  return Math.round((1 - transparency / 100) * 10000) / 10000;
 }
 
 /** Client merge mirror of server `resolve_plan_category_graphics_for_pinned_view`. */
@@ -365,6 +378,10 @@ export function resolvePlanCategoryGraphics(
       linePatternIsDefaulted: pDef,
       visible: true,
       lineColor: null,
+      projectionTransparency: 0,
+      cutTransparency: 0,
+      projectionOpacity: 1,
+      cutOpacity: 1,
     };
   }
   // Apply per-view category overrides (VV dialog).
@@ -374,7 +391,14 @@ export function resolvePlanCategoryGraphics(
       string,
       {
         visible?: boolean;
-        projection?: { lineWeightFactor?: number; lineColor?: string | null };
+        projection?: {
+          lineWeightFactor?: number;
+          lineColor?: string | null;
+          transparency?: number;
+        };
+        cut?: {
+          transparency?: number;
+        };
       }
     >;
     for (const [catKey, ovr] of Object.entries(overrides)) {
@@ -388,6 +412,16 @@ export function resolvePlanCategoryGraphics(
       }
       if (ovr.projection?.lineColor != null) {
         out[k].lineColor = ovr.projection.lineColor;
+      }
+      const projectionTransparency = clampCategoryTransparency(ovr.projection?.transparency);
+      if (projectionTransparency != null) {
+        out[k].projectionTransparency = projectionTransparency;
+        out[k].projectionOpacity = transparencyToOpacity(projectionTransparency);
+      }
+      const cutTransparency = clampCategoryTransparency(ovr.cut?.transparency);
+      if (cutTransparency != null) {
+        out[k].cutTransparency = cutTransparency;
+        out[k].cutOpacity = transparencyToOpacity(cutTransparency);
       }
     }
   }
@@ -590,7 +624,10 @@ function formatCategoryGraphicsMatrixCell(
 }
 
 function formatCategoryGraphicsEffectiveCell(r: ResolvedPlanCategoryGraphic): string {
-  return `f=${r.lineWeightFactor} pat=${r.linePatternToken}`;
+  const parts = [`f=${r.lineWeightFactor}`, `pat=${r.linePatternToken}`];
+  if (r.projectionTransparency > 0) parts.push(`projTrans=${r.projectionTransparency}%`);
+  if (r.cutTransparency > 0) parts.push(`cutTrans=${r.cutTransparency}%`);
+  return parts.join(' ');
 }
 
 /**
