@@ -37,6 +37,12 @@
       "transcript": "/e0/e431d87ade/1/full.jsonl",
       "content_hash": "/e0/e431d87ade/1/content_hash.txt",
       "prompt": "/e0/e431d87ade/1/prompt.txt"
+    },
+    {
+      "metadata": "/e0/e431d87ade/2/metadata.json",
+      "transcript": "/e0/e431d87ade/2/full.jsonl",
+      "content_hash": "/e0/e431d87ade/2/content_hash.txt",
+      "prompt": "/e0/e431d87ade/2/prompt.txt"
     }
   ],
   "token_usage": {
