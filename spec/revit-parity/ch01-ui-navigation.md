@@ -14,7 +14,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Project Browser](file:///Users/jhoetter/Desktop/Revit%20Specs/0124_00-12-38.png)
 
-**bim-ai status:** 🟡 Partial — `ProjectBrowser.tsx` lists plan views (grouped by view template / discipline), 3D orbit viewpoints, plan viewpoints, section cuts, elevation views, schedules, sheets, view templates, sites, link_model rows, and a collapsible Families section (wall_type, floor_type, roof_type grouped by category). Per-view inline rename (double-click) and delete (confirm-guarded button) are now implemented for plan views, section cuts, and elevation views. Family type rows now have a right-click context menu for Select Type, Rename, and Duplicate, wired to the existing selection and `updateElementProperty`/`upsert*Type` commands. Missing: legends panel, sorting by subdiscipline/phase.
+**bim-ai status:** 🟡 Partial — `ProjectBrowser.tsx` lists plan views, 3D orbit viewpoints, plan viewpoints, section cuts, elevation views, schedules, sheets, view templates, sites, link_model rows, and a collapsible Families section (wall_type, floor_type, roof_type grouped by category). Floor plans group by discipline and subdiscipline when those fields are set. Per-view inline rename (double-click) and delete (confirm-guarded button) are implemented for plan views, section cuts, and elevation views. Family type rows have a right-click context menu for Select Type, Rename, and Duplicate, wired to the existing selection and `updateElementProperty`/`upsert*Type` commands. Missing: legends/groups subtree and phase grouping.
 
 ---
 
@@ -25,7 +25,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Properties Palette](file:///Users/jhoetter/Desktop/Revit%20Specs/0133_00-14-50.png)
 
-**bim-ai status:** 🟡 Partial — Right-rail inspector shows element properties with editable fields (name, offsets, type, phase, dimension inputs). When no element is selected, the active plan view's full `InspectorPlanViewEditor` is shown in the right rail (name, presentation, room labels, opening tags, underlay level, view range, crop bounds, view template). Added: "Edit Type" button in wall/floor/roof inspector opens the MaterialLayerStackWorkbench type editor by selecting the type element. Missing: type/instance parameter separation, automatic tab context switch when an element type is selected.
+**bim-ai status:** 🟡 Partial — Right-rail inspector shows element properties with editable instance fields (name, offsets, type, phase, dimension inputs). When no element is selected, the active plan view's full `InspectorPlanViewEditor` is shown in the right rail (name, presentation, room labels, opening tags, underlay level, view range, crop bounds, view template). "Edit Type" buttons in wall/floor/roof inspectors open the MaterialLayerStackWorkbench type editor by selecting the type element. Missing: full Revit type/instance palette separation and automatic tab context switch when an element type is selected.
 
 ---
 
@@ -113,7 +113,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![VG Overrides](file:///Users/jhoetter/Desktop/Revit%20Specs/0163_00-22-39.png)
 
-**bim-ai status:** 🟡 Partial — `VVDialog.tsx` has model/annotation/filters/links tabs with per-category visibility, color, line weight, pattern overrides, and halftone toggle (sets both projection and cut halftone together, matching Revit's per-row behaviour). Covers 15 model categories (Walls, Floors, Roofs, Ceilings, Columns, Structural Framing, Stairs, Railings, Doors, Windows, Rooms, Furniture/Generic Models, Property Lines, Site, Site/Origin) and 14 annotation categories (Grids, Levels, Dimensions, Room Tags, Door Tags, Window Tags, Section Marks, Elevation Marks, Room Separation Lines, Area Boundary Lines, Reference Planes, Masking Regions, Detail Lines, Text Notes). VV dialog visibility toggles now wire through to `hiddenSemanticKinds` via `categoryOverrides` so unchecking a category in the VV dialog actually hides those elements in the view. Missing: full Revit catalogue of ~120 categories, transparency, and projection vs. cut pattern split.
+**bim-ai status:** 🟡 Partial — `VVDialog.tsx` has model/annotation/filters/links tabs with per-category visibility, separate projection/cut color, line weight, and pattern overrides, plus a halftone toggle (sets both projection and cut halftone together, matching Revit's per-row behaviour). Covers 15 model categories (Walls, Floors, Roofs, Ceilings, Columns, Structural Framing, Stairs, Railings, Doors, Windows, Rooms, Furniture/Generic Models, Property Lines, Site, Site/Origin) and 14 annotation categories (Grids, Levels, Dimensions, Room Tags, Door Tags, Window Tags, Section Marks, Elevation Marks, Room Separation Lines, Area Boundary Lines, Reference Planes, Masking Regions, Detail Lines, Text Notes). VV dialog visibility toggles wire through to `hiddenSemanticKinds` via `categoryOverrides` so unchecking a category hides those elements in the view. Missing: full Revit catalogue of ~120 categories and transparency controls.
 
 ---
 

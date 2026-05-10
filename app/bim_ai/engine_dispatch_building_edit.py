@@ -1,9 +1,12 @@
 # ruff: noqa: I001
 
+import math
+
 from bim_ai.engine import (
     AlignElementToReferenceCmd,
     Any,
     AreaElem,
+    AssetLibraryEntryElem,
     BalconyElem,
     ColumnElem,
     CreateAreaCmd,
@@ -59,6 +62,49 @@ from bim_ai.engine import (
     new_id,
     resolve_material,
 )
+
+
+def _asset_numeric_param(
+    target: PlacedAssetElem, entry: AssetLibraryEntryElem | None, keys: tuple[str, ...]
+) -> float | None:
+    for key in keys:
+        raw = target.param_values.get(key)
+        try:
+            value = float(raw)
+        except (TypeError, ValueError):
+            continue
+        if value > 0:
+            return value
+    for key in keys:
+        for param in entry.param_schema if entry and entry.param_schema else []:
+            if param.key != key:
+                continue
+            try:
+                value = float(param.default)
+            except (TypeError, ValueError):
+                continue
+            if value > 0:
+                return value
+    return None
+
+
+def _placed_asset_half_extents_mm(
+    target: PlacedAssetElem,
+    entry: AssetLibraryEntryElem | None,
+) -> tuple[float, float]:
+    width = _asset_numeric_param(target, entry, ("widthMm", "lengthMm", "diameterMm"))
+    if width is None:
+        width = entry.thumbnail_width_mm if entry and entry.thumbnail_width_mm else 1000.0
+    depth = _asset_numeric_param(target, entry, ("depthMm", "diameterMm"))
+    if depth is None:
+        depth = entry.thumbnail_height_mm if entry and entry.thumbnail_height_mm else 1000.0
+    rot = math.radians(target.rotation_deg)
+    cos_r = abs(math.cos(rot))
+    sin_r = abs(math.sin(rot))
+    return (
+        cos_r * width / 2.0 + sin_r * depth / 2.0,
+        sin_r * width / 2.0 + cos_r * depth / 2.0,
+    )
 
 
 def try_apply_building_edit_command(doc, cmd, *, source_provider=None) -> bool:
@@ -608,7 +654,7 @@ def try_apply_building_edit_command(doc, cmd, *, source_provider=None) -> bool:
                 els[cmd.target_element_id] = target.model_copy(
                     update={"start": new_start, "end": new_end}
                 )
-            elif isinstance(target, (ColumnElem, PlacedAssetElem)):
+            elif isinstance(target, ColumnElem):
                 pos = target.position_mm
                 dx_abs = abs(ref.x_mm - pos.x_mm)
                 dy_abs = abs(ref.y_mm - pos.y_mm)
@@ -617,6 +663,20 @@ def try_apply_building_edit_command(doc, cmd, *, source_provider=None) -> bool:
                     if dx_abs <= dy_abs
                     else Vec2Mm(xMm=pos.x_mm, yMm=ref.y_mm)
                 )
+                els[cmd.target_element_id] = target.model_copy(update={"position_mm": new_pos})
+            elif isinstance(target, PlacedAssetElem):
+                pos = target.position_mm
+                entry_raw = els.get(target.asset_id)
+                entry = entry_raw if isinstance(entry_raw, AssetLibraryEntryElem) else None
+                half_x, half_y = _placed_asset_half_extents_mm(target, entry)
+                x_face_distance = abs(abs(ref.x_mm - pos.x_mm) - half_x)
+                y_face_distance = abs(abs(ref.y_mm - pos.y_mm) - half_y)
+                if x_face_distance <= y_face_distance:
+                    new_x = ref.x_mm - half_x if ref.x_mm >= pos.x_mm else ref.x_mm + half_x
+                    new_pos = Vec2Mm(xMm=new_x, yMm=pos.y_mm)
+                else:
+                    new_y = ref.y_mm - half_y if ref.y_mm >= pos.y_mm else ref.y_mm + half_y
+                    new_pos = Vec2Mm(xMm=pos.x_mm, yMm=new_y)
                 els[cmd.target_element_id] = target.model_copy(update={"position_mm": new_pos})
             else:
                 raise ValueError(

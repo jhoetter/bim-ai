@@ -92,6 +92,7 @@ import {
   type ExternalCatalogPlacement,
   type FamilyLibraryPlaceKind,
 } from '../families/FamilyLibraryPanel';
+import { getFamilyPlacementAdapter } from '../families/familyPlacementAdapters';
 import { applyCommandBundle } from '../lib/api';
 import { OnboardingTour } from '../onboarding/OnboardingTour';
 import { readOnboardingProgress, resetOnboarding } from '../onboarding/tour';
@@ -914,30 +915,12 @@ export function Workspace(): JSX.Element {
   const handlePlaceFamilyType = useCallback(
     (kind: FamilyLibraryPlaceKind, typeId: string) => {
       setPendingPlacement({ kind, typeId });
-      switch (kind) {
-        case 'door':
-          setPlanTool('door');
-          break;
-        case 'window':
-          setPlanTool('window');
-          break;
-        case 'wall_type':
-          setPlanTool('wall');
-          break;
-        case 'floor_type':
-          setPlanTool('floor');
-          break;
-        case 'roof_type':
-          // No legacy 'roof' plan tool; the type is staged for the next roof draw.
-          break;
-        case 'asset':
-          setActiveComponentAssetId(typeId);
-          setPlanTool('component');
-          break;
-        case 'stair':
-        case 'railing':
-          // No legacy plan tool for these; the type is staged for the workbench draw.
-          break;
+      const adapter = getFamilyPlacementAdapter(kind);
+      if (adapter.identifierRole === 'assetId') {
+        setActiveComponentAssetId(typeId);
+      }
+      if (adapter.planTool) {
+        setPlanTool(adapter.planTool);
       }
     },
     [setPlanTool],
@@ -951,7 +934,7 @@ export function Workspace(): JSX.Element {
       const kind: FamilyLibraryPlaceKind =
         placement.family.discipline === 'door' || placement.family.discipline === 'window'
           ? (placement.family.discipline as FamilyLibraryPlaceKind)
-          : 'wall_type';
+          : 'component_family';
       const discipline =
         placement.family.discipline === 'door' || placement.family.discipline === 'window'
           ? placement.family.discipline
@@ -977,9 +960,9 @@ export function Workspace(): JSX.Element {
         log.error('component-tool', 'applyCommandBundle failed', err);
         return;
       }
-      setPendingPlacement({ kind, typeId: newTypeId });
+      handlePlaceFamilyType(kind, newTypeId);
     },
-    [modelId, setPendingPlacement],
+    [handlePlaceFamilyType, modelId],
   );
 
   /* ── VIS-V3-06: right rail driven by task context ────────────────── */

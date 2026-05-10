@@ -13,7 +13,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Furniture template](file:///Users/jhoetter/Desktop/Revit%20Specs/0487_03-40-03.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — family editor/resolver visibility bindings can tie sweeps and nested instances to boolean family parameters, covering the core Yes/No visibility behavior. Missing: finished furniture-template presets and a general associate-parameter button on every eligible property.
 
 ---
 
@@ -24,7 +24,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![EQ constraint](file:///Users/jhoetter/Desktop/Revit%20Specs/0494_03-40-28.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — family geometry nodes support coarse/medium/fine visibility and resolver filtering. Missing: a finished furniture family template that combines coarse symbolic-only output with medium/fine 3D solids and project preview controls.
 
 ---
 

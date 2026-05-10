@@ -11,7 +11,7 @@ Source segment: `05:30:54 – 05:33:32`
 **Screenshot:**
 ![Filter tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0777_05-31-45.png)
 
-**bim-ai status:** 🟡 Partial — Ctrl+Click multi-select now builds an additional selection set (`selectedIds` in the store). The count is shown as a chip at the bottom of the plan canvas. Clicking "Filter" opens a popover listing the categories in the selection with checkboxes; unchecking a category removes those element IDs from the selection. Delete and Ctrl+C now act on the full `selectedIds` set. Box-select (drag marquee) now works for walls, columns, placed_assets, floors, rooms, and areas — all collected IDs are pushed into `selectedIds` via `toggleSelectedId`. Missing: Tab to add connected elements to multi-select.
+**bim-ai status:** ✅ Done — Ctrl+Click multi-select builds an additional selection set (`selectedIds` in the store). The count is shown as a chip at the bottom of the plan canvas. Clicking "Filter" opens a popover listing the categories in the selection with checkboxes; unchecking a category removes those element IDs from the selection. Delete and Ctrl+C act on the full `selectedIds` set. Box-select (drag marquee) works for walls, columns, placed_assets, floors, rooms, and areas. Tab chain-selection in select mode now adds endpoint-connected walls to the multi-select set while advancing the active wall.
 
 ---
 
@@ -56,7 +56,7 @@ Source segment: `05:30:54 – 05:33:32`
 ![Tab selection](file:///Users/jhoetter/Desktop/Revit%20Specs/0776_05-31-38.png)
 *(Tab+Ctrl multi-select scenario — slab-specific Tab chain frames start beyond 0841)*
 
-**bim-ai status:** 🟡 Partial — `snapTabCycle.ts` (EDT-05) implements Tab-key cycling through snap candidates (endpoint → intersection → perpendicular → extension → parallel → tangent → workplane → grid → raw). Tab now also cycles to the next endpoint-connected wall in select mode (single-element chain walk): when a wall is selected and Tab is pressed, the selection advances to the next wall sharing the same endpoint (≤10 mm tolerance), with round-robin cycling at junctions. Missing: bulk multi-select of an entire wall loop in one Tab sequence.
+**bim-ai status:** ✅ Done — `snapTabCycle.ts` (EDT-05) implements Tab-key cycling through snap candidates (endpoint → intersection → perpendicular → extension → parallel → tangent → workplane → grid → raw). Tab also walks endpoint-connected walls in select mode: when a wall is selected and Tab is pressed, the previous active wall is retained in `selectedIds` and the next wall sharing the same endpoint (≤10 mm tolerance) becomes active, enabling Tab-driven chain multi-select.
 
 ---
 

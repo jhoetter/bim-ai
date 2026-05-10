@@ -123,6 +123,7 @@ import type { PlanDetailLevel } from './planDetailLevelLines';
 import { SketchCanvas, type MmToScreen, type PointerToMm } from './SketchCanvas';
 import { moveDeltaMm } from './moveTool';
 import { rotateAngleFromPoints } from './rotateTool';
+import { selectNextConnectedWallByTab } from './wallChainSelection';
 import { getFamilyById as getBuiltInFamilyById } from '../families/familyCatalog';
 import type { FamilyDefinition } from '../families/types';
 import {
@@ -3495,49 +3496,22 @@ export function PlanCanvas({
       // F-104 — Tab cycles to the next endpoint-connected wall when a wall is
       // selected in select mode. Walks the wall graph: find all walls on the
       // same level whose start or end endpoint is within 10 mm of the current
-      // wall's end endpoint, then advance the round-robin index and select the
-      // next candidate. If no connected wall is found at the end, try the start
-      // endpoint so Tab still does something useful on isolated segments.
+      // wall's end endpoint, then advance the round-robin index and add the
+      // next candidate to the multi-select chain.
       if (ev.key === 'Tab' && planTool === 'select' && selectedId) {
-        const curEl = elementsById[selectedId];
-        if (curEl?.kind === 'wall') {
+        const nextWallSelection = selectNextConnectedWallByTab(
+          elementsById,
+          selectedId,
+          selectedIds,
+          wallTabCycleIndexRef.current,
+        );
+        if (nextWallSelection) {
           ev.preventDefault();
-          type WallEl = Extract<Element, { kind: 'wall' }>;
-          const curWall = curEl as WallEl;
-          const TOLS = 10; // mm tolerance for shared endpoint
-          const allWalls = Object.values(elementsById).filter(
-            (e): e is WallEl => e.kind === 'wall' && e.levelId === curWall.levelId,
-          );
-          const ptClose = (ax: number, ay: number, bx: number, by: number) =>
-            Math.abs(ax - bx) < TOLS && Math.abs(ay - by) < TOLS;
-          // Prefer walls connected at curWall's end point (forward walk).
-          // Fall back to walls connected at the start point.
-          let connected = allWalls.filter(
-            (w) =>
-              w.id !== curWall.id &&
-              (ptClose(w.start.xMm, w.start.yMm, curWall.end.xMm, curWall.end.yMm) ||
-                ptClose(w.end.xMm, w.end.yMm, curWall.end.xMm, curWall.end.yMm)),
-          );
-          if (connected.length === 0) {
-            connected = allWalls.filter(
-              (w) =>
-                w.id !== curWall.id &&
-                (ptClose(w.start.xMm, w.start.yMm, curWall.start.xMm, curWall.start.yMm) ||
-                  ptClose(w.end.xMm, w.end.yMm, curWall.start.xMm, curWall.start.yMm)),
-            );
-          }
-          if (connected.length > 0) {
-            // Advance cycle index; reset when the selected element changes.
-            const cycleState = wallTabCycleIndexRef.current;
-            if (cycleState.selId !== selectedId) {
-              cycleState.selId = selectedId;
-              cycleState.index = 0;
-            } else {
-              cycleState.index = (cycleState.index + 1) % connected.length;
-            }
-            const nextWall = connected[cycleState.index];
-            selectEl(nextWall.id);
-          }
+          wallTabCycleIndexRef.current = nextWallSelection.nextCycleState;
+          useBimStore.setState({
+            selectedId: nextWallSelection.nextSelectedId,
+            selectedIds: nextWallSelection.nextSelectedIds,
+          });
           return;
         }
       }
