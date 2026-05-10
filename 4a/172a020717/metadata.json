@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "4a172a020717",
+  "strategy": "manual-commit",
+  "branch": "revit-parity-next-gap-wave",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "app/bim_ai/engine_dispatch_building_edit.py",
+    "app/tests/test_edt04_engine_commands.py",
+    "packages/web/src/families/FamilyLibraryPanel.tsx",
+    "packages/web/src/families/familyPlacementAdapters.test.ts",
+    "packages/web/src/families/familyPlacementAdapters.ts",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/wallChainSelection.test.ts",
+    "packages/web/src/plan/wallChainSelection.ts",
+    "packages/web/src/workspace/Workspace.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/4a/172a020717/0/metadata.json",
+      "transcript": "/4a/172a020717/0/full.jsonl",
+      "content_hash": "/4a/172a020717/0/content_hash.txt",
+      "prompt": "/4a/172a020717/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 921319,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 29520640,
+    "output_tokens": 76254,
+    "api_call_count": 233
+  }
+}
