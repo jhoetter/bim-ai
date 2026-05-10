@@ -1,0 +1,5 @@
+i accidentally stopped the conversation for the renderings of the family assets in the browser. [Image #1] walltypes arent rendered yet, why? can you fix that?
+
+---
+
+can you merge that into main?
