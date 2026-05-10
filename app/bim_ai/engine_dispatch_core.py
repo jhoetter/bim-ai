@@ -122,6 +122,7 @@ def try_apply_core_command(doc, cmd, *, source_provider=None) -> bool:
                 level_id=cmd.level_id,
                 start=cmd.start,
                 end=cmd.end,
+                wall_curve=cmd.wall_curve,
                 thickness_mm=thick,
                 height_mm=h_mm,
                 wall_type_id=cmd.wall_type_id,
@@ -155,7 +156,9 @@ def try_apply_core_command(doc, cmd, *, source_provider=None) -> bool:
             w = els.get(cmd.wall_id)
             if not isinstance(w, WallElem):
                 raise ValueError("move_wall_endpoints.wallId must reference a Wall")
-            els[cmd.wall_id] = w.model_copy(update={"start": cmd.start, "end": cmd.end})
+            els[cmd.wall_id] = w.model_copy(
+                update={"start": cmd.start, "end": cmd.end, "wall_curve": None}
+            )
 
         case MoveBeamEndpointsCmd():
             # EDT-01 propagation — beams aren't yet stored in the

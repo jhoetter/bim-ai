@@ -22,6 +22,7 @@ import type { IconName } from '@bim-ai/ui';
 
 export type ToolId =
   | 'select'
+  | 'query'
   | 'wall'
   | 'door'
   | 'window'
@@ -101,6 +102,15 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       shortcut: 'V',
       modes: ['plan', '3d', 'plan-3d', 'section', 'sheet', 'schedule', 'agent'],
       tooltip: t('tools.select.tooltip'),
+    },
+    query: {
+      id: 'query',
+      label: 'Query',
+      icon: 'search',
+      hotkey: 'Q',
+      shortcut: 'Q',
+      modes: ['plan', 'plan-3d'],
+      tooltip: 'Inspect imported CAD layer under the pointer',
     },
     wall: {
       id: 'wall',
@@ -437,6 +447,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
 
 const PALETTE_ORDER: ToolId[] = [
   'select',
+  'query',
   'wall',
   'door',
   'window',

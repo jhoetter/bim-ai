@@ -1069,14 +1069,14 @@ export function Workspace(): JSX.Element {
           console.warn('link-ifc selected', { name: file.name, size: file.size });
           setManageLinksOpen(true);
         }}
-        onLinkDxf={(file) => {
+        onLinkDxf={(file, options) => {
           if (!modelId || !activeLevelId) {
             setManageLinksOpen(true);
             return;
           }
           void (async () => {
             try {
-              await uploadDxfFile(modelId, file, activeLevelId);
+              await uploadDxfFile(modelId, file, activeLevelId, options);
               // Refresh will happen via WebSocket broadcast
               setManageLinksOpen(true);
             } catch (err) {

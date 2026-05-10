@@ -268,15 +268,40 @@ export async function fetchBuildingPresets(): Promise<string[]> {
 }
 
 /** FED-04b: upload a DXF file from the browser via multipart form. */
+export type DxfImportOptions = {
+  originAlignmentMode?: 'origin_to_origin' | 'project_origin' | 'shared_coords';
+  unitOverride?:
+    | 'source'
+    | 'unitless'
+    | 'inches'
+    | 'feet'
+    | 'millimeters'
+    | 'centimeters'
+    | 'meters';
+  colorMode?: 'black_white' | 'native' | 'custom';
+  customColor?: string;
+  overlayOpacity?: number;
+  hiddenLayerNames?: string[];
+};
+
 export async function uploadDxfFile(
   modelId: string,
   file: File,
   levelId: string,
+  options: DxfImportOptions = {},
 ): Promise<{ linkDxfId: string; name: string }> {
   const form = new FormData();
   form.append('file', file, file.name);
   form.append('levelId', levelId);
   form.append('name', file.name.replace(/\.dxf$/i, ''));
+  form.append('originAlignmentMode', options.originAlignmentMode ?? 'origin_to_origin');
+  form.append('unitOverride', options.unitOverride ?? 'source');
+  form.append('colorMode', options.colorMode ?? 'black_white');
+  if (options.customColor) form.append('customColor', options.customColor);
+  form.append('overlayOpacity', String(options.overlayOpacity ?? 0.5));
+  if (options.hiddenLayerNames?.length) {
+    form.append('hiddenLayerNames', options.hiddenLayerNames.join(','));
+  }
   const res = await fetch(`/api/models/${encodeURIComponent(modelId)}/upload-dxf-file`, {
     method: 'POST',
     body: form,

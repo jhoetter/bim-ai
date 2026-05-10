@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import re
 from typing import Annotated, Any, Literal
 
@@ -22,6 +23,32 @@ class Vec3Mm(BaseModel):
     x_mm: float = Field(alias="xMm")
     y_mm: float = Field(alias="yMm")
     z_mm: float = Field(alias="zMm")
+
+
+class WallArcCurve(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["arc"] = "arc"
+    center: Vec2Mm
+    radius_mm: float = Field(alias="radiusMm", gt=0)
+    start_angle_deg: float = Field(alias="startAngleDeg")
+    end_angle_deg: float = Field(alias="endAngleDeg")
+    sweep_deg: float = Field(alias="sweepDeg")
+
+    @model_validator(mode="after")
+    def _validate_arc(self) -> WallArcCurve:
+        vals = (
+            self.center.x_mm,
+            self.center.y_mm,
+            self.radius_mm,
+            self.start_angle_deg,
+            self.end_angle_deg,
+            self.sweep_deg,
+        )
+        if not all(math.isfinite(v) for v in vals):
+            raise ValueError("wallCurve values must be finite")
+        if abs(self.sweep_deg) <= 0.001 or abs(self.sweep_deg) > 360:
+            raise ValueError("wallCurve.sweepDeg must be in (-360, 360] excluding 0")
+        return self
 
 
 class CameraMm(BaseModel):
@@ -339,6 +366,7 @@ class WallElem(BaseModel):
     level_id: str = Field(alias="levelId")
     start: Vec2Mm
     end: Vec2Mm
+    wall_curve: WallArcCurve | None = Field(default=None, alias="wallCurve")
     thickness_mm: float = Field(alias="thicknessMm", default=200)
     height_mm: float = Field(alias="heightMm", default=2800)
     wall_type_id: str | None = Field(default=None, alias="wallTypeId")
@@ -383,8 +411,6 @@ class WallElem(BaseModel):
 
     @model_validator(mode="after")
     def _validate_lean_taper(self) -> WallElem:
-        import math
-
         if self.lean_mm is not None:
             magnitude = math.sqrt(self.lean_mm.x_mm**2 + self.lean_mm.y_mm**2)
             max_lean = self.height_mm * math.tan(math.radians(60))
@@ -1605,6 +1631,8 @@ class LinkDxfElem(BaseModel):
     origin_alignment_mode: Literal["origin_to_origin", "project_origin", "shared_coords"] = Field(
         default="origin_to_origin", alias="originAlignmentMode"
     )
+    unit_override: str | int | None = Field(default=None, alias="unitOverride")
+    unit_scale_to_mm: float | None = Field(default=None, alias="unitScaleToMm", gt=0)
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
     scale_factor: float = Field(default=1.0, alias="scaleFactor", gt=0)
     linework: list[DxfLineworkPrim] = Field(default_factory=list)

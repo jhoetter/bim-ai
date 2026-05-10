@@ -150,7 +150,11 @@ def _expand_dxf_reload_command(doc: Document, command: dict[str, Any]) -> dict[s
 
     from pathlib import Path
 
-    from bim_ai.dxf_import import collect_dxf_layers, dxf_source_metadata, parse_dxf_to_linework
+    from bim_ai.dxf_import import (
+        collect_dxf_layers,
+        dxf_source_metadata,
+        parse_dxf_to_linework_with_scale,
+    )
 
     path = Path(source_path)
     if not path.is_file():
@@ -161,7 +165,11 @@ def _expand_dxf_reload_command(doc: Document, command: dict[str, Any]) -> dict[s
             "loaded": False,
         }
     try:
-        linework = parse_dxf_to_linework(path)
+        unit_override = command.get("unitOverride", link.unit_override)
+        linework, unit_scale_to_mm = parse_dxf_to_linework_with_scale(
+            path,
+            unit_override=unit_override,
+        )
     except Exception as exc:
         return {
             **base,
@@ -174,8 +182,14 @@ def _expand_dxf_reload_command(doc: Document, command: dict[str, Any]) -> dict[s
         **base,
         "linework": linework,
         "dxfLayers": collect_dxf_layers(linework),
+        "unitOverride": unit_override,
+        "unitScaleToMm": unit_scale_to_mm,
         "cadReferenceType": "linked",
-        "sourceMetadata": dxf_source_metadata(path),
+        "sourceMetadata": {
+            **dxf_source_metadata(path),
+            "unitOverride": unit_override,
+            "unitScaleToMm": unit_scale_to_mm,
+        },
         "reloadStatus": "ok",
         "lastReloadMessage": f"Reloaded from {path}",
         "loaded": True,

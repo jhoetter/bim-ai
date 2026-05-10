@@ -120,7 +120,7 @@ _(Wall Properties palette showing height parameters — Top Offset-specific fram
 **Screenshot:**
 ![Wall Radius option](file:///Users/jhoetter/Desktop/Revit%20Specs/0358_01-12-28.png)
 
-**bim-ai status:** 🟡 Partial — the live wall Options Bar exposes a Radius toggle/input backed by `wallDrawRadiusMm`; chained wall placement in `PlanCanvas.tsx` uses `wallRadiusFillet.ts` to shorten the previous wall to the tangent point and insert short wall segments along the rounded corner. Missing: a native curved-wall element/arc baseline and rendered curved wall solids.
+**bim-ai status:** ✅ Available — the live wall Options Bar exposes a Radius toggle/input backed by `wallDrawRadiusMm`; chained wall placement in `PlanCanvas.tsx` uses `wallRadiusFillet.ts` to shorten the previous wall to the tangent point, create one semantic curved wall with `wallCurve` arc metadata for the fillet, then continue the straight leg. Backend `createWall` round-trips the arc metadata, snapshot coercion preserves it, and plan/3D rendering draw the curved wall as a native curved solid while retaining compatibility with older tessellated data.
 
 ---
 

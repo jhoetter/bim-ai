@@ -1203,8 +1203,14 @@ class ImportDxfBody(BaseModel):
     level_id: str = Field(alias="levelId")
     name: str = Field(default="DXF Underlay")
     origin_mm: dict[str, float] | None = Field(default=None, alias="originMm")
+    origin_alignment_mode: str = Field(default="origin_to_origin", alias="originAlignmentMode")
+    unit_override: str | int | None = Field(default=None, alias="unitOverride")
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
     scale_factor: float = Field(default=1.0, alias="scaleFactor", gt=0)
+    color_mode: str = Field(default="black_white", alias="colorMode")
+    custom_color: str | None = Field(default=None, alias="customColor")
+    overlay_opacity: float = Field(default=0.5, alias="overlayOpacity", ge=0.0, le=1.0)
+    hidden_layer_names: list[str] = Field(default_factory=list, alias="hiddenLayerNames")
 
 
 @api_router.post("/models/{host_id}/import-dxf")
@@ -1224,7 +1230,11 @@ async def import_dxf(
 
     from pathlib import Path as _Path
 
-    from bim_ai.dxf_import import dxf_source_metadata, parse_dxf_to_linework
+    from bim_ai.dxf_import import (
+        collect_dxf_layers,
+        dxf_source_metadata,
+        parse_dxf_to_linework_with_scale,
+    )
 
     host_row = await load_model_row(session, host_id)
     if host_row is None:
@@ -1237,7 +1247,10 @@ async def import_dxf(
         )
 
     try:
-        linework = parse_dxf_to_linework(dxf_path)
+        linework, unit_scale_to_mm = parse_dxf_to_linework_with_scale(
+            dxf_path,
+            unit_override=body.unit_override,
+        )
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"DXF parse failed: {exc}") from exc
 
@@ -1254,15 +1267,27 @@ async def import_dxf(
         "name": body.name,
         "levelId": body.level_id,
         "originMm": body.origin_mm or {"xMm": 0.0, "yMm": 0.0},
+        "originAlignmentMode": body.origin_alignment_mode,
+        "unitOverride": body.unit_override,
+        "unitScaleToMm": unit_scale_to_mm,
         "rotationDeg": float(body.rotation_deg),
         "scaleFactor": float(body.scale_factor),
         "linework": linework,
+        "dxfLayers": collect_dxf_layers(linework),
+        "hiddenLayerNames": body.hidden_layer_names,
         "sourcePath": str(dxf_path),
         "cadReferenceType": "linked",
-        "sourceMetadata": dxf_source_metadata(dxf_path),
+        "sourceMetadata": {
+            **dxf_source_metadata(dxf_path),
+            "unitOverride": body.unit_override,
+            "unitScaleToMm": unit_scale_to_mm,
+        },
         "reloadStatus": "ok",
         "lastReloadMessage": f"Loaded from {dxf_path}",
         "loaded": True,
+        "colorMode": body.color_mode,
+        "customColor": body.custom_color,
+        "overlayOpacity": body.overlay_opacity,
     }
     try:
         ok, new_doc, _cmds, viols, code = try_commit_bundle(host_doc, [create_cmd])
@@ -1317,6 +1342,12 @@ async def upload_dxf_file(
     file: UploadFile,
     levelId: str = Form(...),
     name: str = Form(default=""),
+    originAlignmentMode: str = Form(default="origin_to_origin"),
+    unitOverride: str | None = Form(default=None),
+    colorMode: str = Form(default="black_white"),
+    customColor: str | None = Form(default=None),
+    overlayOpacity: float = Form(default=0.5),
+    hiddenLayerNames: str = Form(default=""),
     session: AsyncSession = Depends(get_session),
     hub: Hub = Depends(get_hub),
 ) -> dict[str, Any]:
@@ -1331,7 +1362,7 @@ async def upload_dxf_file(
     import tempfile
     from pathlib import Path as _Path
 
-    from bim_ai.dxf_import import parse_dxf_to_linework
+    from bim_ai.dxf_import import collect_dxf_layers, parse_dxf_to_linework_with_scale
 
     host_row = await load_model_row(session, host_id)
     if host_row is None:
@@ -1352,7 +1383,10 @@ async def upload_dxf_file(
         tmp_path = tmp.name
 
     try:
-        linework = parse_dxf_to_linework(_Path(tmp_path))
+        linework, unit_scale_to_mm = parse_dxf_to_linework_with_scale(
+            _Path(tmp_path),
+            unit_override=unitOverride,
+        )
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"DXF parse failed: {exc}") from exc
     finally:
@@ -1361,23 +1395,35 @@ async def upload_dxf_file(
         except OSError:
             pass
 
+    hidden_layer_names = [name.strip() for name in hiddenLayerNames.split(",") if name.strip()]
+
     create_cmd = {
         "type": "createLinkDxf",
         "name": display_name,
         "levelId": levelId,
         "originMm": {"xMm": 0.0, "yMm": 0.0},
+        "originAlignmentMode": originAlignmentMode,
+        "unitOverride": unitOverride,
+        "unitScaleToMm": unit_scale_to_mm,
         "rotationDeg": 0.0,
         "scaleFactor": 1.0,
         "linework": linework,
+        "dxfLayers": collect_dxf_layers(linework),
+        "hiddenLayerNames": hidden_layer_names,
         "sourcePath": file.filename or display_name,
         "cadReferenceType": "embedded",
         "sourceMetadata": {
             "fileName": file.filename or display_name,
             "sizeBytes": len(content),
+            "unitOverride": unitOverride,
+            "unitScaleToMm": unit_scale_to_mm,
         },
         "reloadStatus": "embedded",
         "lastReloadMessage": "Embedded CAD import has no reloadable source path",
         "loaded": True,
+        "colorMode": colorMode,
+        "customColor": customColor,
+        "overlayOpacity": overlayOpacity,
     }
     try:
         ok, new_doc, _cmds, viols, code = try_commit_bundle(host_doc, [create_cmd])

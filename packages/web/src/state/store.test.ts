@@ -74,6 +74,46 @@ describe('hydrateFromSnapshot', () => {
     }
   });
 
+  it('coerces curved wall arc metadata from snapshots', () => {
+    const { hydrateFromSnapshot } = useBimStore.getState();
+    hydrateFromSnapshot({
+      modelId: 'm1',
+      revision: 1,
+      elements: {
+        'wall-arc': {
+          kind: 'wall',
+          name: 'Arc',
+          levelId: 'lvl-0',
+          start: { xMm: 500, yMm: 0 },
+          end: { xMm: 1000, yMm: 500 },
+          wall_curve: {
+            kind: 'arc',
+            center: { x_mm: 500, y_mm: 500 },
+            radius_mm: 500,
+            start_angle_deg: -90,
+            end_angle_deg: 0,
+            sweep_deg: 90,
+          },
+          thicknessMm: 200,
+          heightMm: 2800,
+        },
+      },
+      violations: [],
+    });
+    const wall = useBimStore.getState().elementsById['wall-arc'];
+    expect(wall?.kind).toBe('wall');
+    if (wall?.kind === 'wall') {
+      expect(wall.wallCurve).toEqual({
+        kind: 'arc',
+        center: { xMm: 500, yMm: 500 },
+        radiusMm: 500,
+        startAngleDeg: -90,
+        endAngleDeg: 0,
+        sweepDeg: 90,
+      });
+    }
+  });
+
   it('coerces door elements correctly', () => {
     const { hydrateFromSnapshot } = useBimStore.getState();
     hydrateFromSnapshot({

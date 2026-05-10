@@ -131,6 +131,22 @@ def test_parse_dxf_units_scaling(tmp_path: Path) -> None:
     assert line["end"]["yMm"] == 0.0
 
 
+def test_parse_dxf_unit_override_replaces_insunits(tmp_path: Path) -> None:
+    from bim_ai.dxf_import import parse_dxf_to_linework
+
+    doc = _new_dxf()
+    doc.header["$INSUNITS"] = 1  # inches
+    doc.modelspace().add_line((0.0, 0.0), (1.0, 0.0))
+    path = tmp_path / "override.dxf"
+    doc.saveas(str(path))
+
+    default_linework = parse_dxf_to_linework(path)
+    override_linework = parse_dxf_to_linework(path, unit_override="meters")
+
+    assert default_linework[0]["end"] == {"xMm": 25.4, "yMm": 0.0}
+    assert override_linework[0]["end"] == {"xMm": 1000.0, "yMm": 0.0}
+
+
 def test_parse_dxf_arcs_and_circles(tmp_path: Path) -> None:
     """ARC / CIRCLE entities round-trip into ``arc`` primitives."""
 
@@ -170,6 +186,8 @@ def test_build_link_dxf_payload_default_origin(tmp_path: Path) -> None:
     assert payload["type"] == "createLinkDxf"
     assert payload["levelId"] == "lvl-1"
     assert payload["originMm"] == {"xMm": 0.0, "yMm": 0.0}
+    assert payload["originAlignmentMode"] == "origin_to_origin"
+    assert payload["unitScaleToMm"] == 1.0
     assert payload["rotationDeg"] == 0.0
     assert payload["scaleFactor"] == 1.0
     assert len(payload["linework"]) == 1
@@ -180,6 +198,38 @@ def test_build_link_dxf_payload_default_origin(tmp_path: Path) -> None:
     assert payload["sourceMetadata"]["path"] == str(path)
     assert payload["reloadStatus"] == "ok"
     assert payload["loaded"] is True
+
+
+def test_build_link_dxf_payload_includes_import_time_options(tmp_path: Path) -> None:
+    """Import-time CAD options are emitted on the initial create command."""
+
+    from bim_ai.dxf_import import build_link_dxf_payload
+
+    doc = _new_dxf()
+    doc.header["$INSUNITS"] = 1
+    doc.layers.new("A-WALL", dxfattribs={"color": 1})
+    doc.modelspace().add_line((0.0, 0.0), (1.0, 0.0), dxfattribs={"layer": "A-WALL"})
+    path = tmp_path / "options.dxf"
+    doc.saveas(str(path))
+
+    payload = build_link_dxf_payload(
+        path,
+        level_id="lvl-1",
+        origin_alignment_mode="shared_coords",
+        unit_override="meters",
+        color_mode="native",
+        overlay_opacity=0.65,
+        hidden_layer_names=["A-WALL"],
+    )
+
+    assert payload["originAlignmentMode"] == "shared_coords"
+    assert payload["unitOverride"] == "meters"
+    assert payload["unitScaleToMm"] == 1000.0
+    assert payload["linework"][0]["end"] == {"xMm": 1000.0, "yMm": 0.0}
+    assert payload["dxfLayers"] == [{"name": "A-WALL", "primitiveCount": 1, "color": "#ff0000"}]
+    assert payload["hiddenLayerNames"] == ["A-WALL"]
+    assert payload["colorMode"] == "native"
+    assert payload["overlayOpacity"] == 0.65
 
 
 def test_expand_dxf_reload_command_reparses_current_source(tmp_path: Path) -> None:

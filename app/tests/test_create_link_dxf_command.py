@@ -27,8 +27,12 @@ def test_create_link_dxf_inserts_element() -> None:
         "levelId": "lvl-1",
         "originMm": {"xMm": 100.0, "yMm": 50.0},
         "originAlignmentMode": "project_origin",
+        "unitOverride": "feet",
+        "unitScaleToMm": 304.8,
         "rotationDeg": 12.5,
         "scaleFactor": 1.5,
+        "colorMode": "native",
+        "overlayOpacity": 0.65,
         "linework": [
             {
                 "kind": "line",
@@ -71,8 +75,12 @@ def test_create_link_dxf_inserts_element() -> None:
     assert link.origin_mm.x_mm == 100.0
     assert link.origin_mm.y_mm == 50.0
     assert link.origin_alignment_mode == "project_origin"
+    assert link.unit_override == "feet"
+    assert link.unit_scale_to_mm == pytest.approx(304.8)
     assert link.rotation_deg == pytest.approx(12.5)
     assert link.scale_factor == pytest.approx(1.5)
+    assert link.color_mode == "native"
+    assert link.overlay_opacity == pytest.approx(0.65)
     assert len(link.linework) == 3
     assert link.linework[0].kind == "line"
     assert link.linework[0].layer_name == "A-WALL"
@@ -122,6 +130,7 @@ def test_create_link_dxf_round_trips_wire() -> None:
     assert wire["levelId"] == "lvl-1"
     assert wire["originMm"] == {"xMm": 0.0, "yMm": 0.0}
     assert wire["originAlignmentMode"] == "origin_to_origin"
+    assert wire["unitOverride"] is None
     assert wire["rotationDeg"] == 0.0
     assert wire["scaleFactor"] == 1.0
     assert wire["linework"][0]["kind"] == "line"

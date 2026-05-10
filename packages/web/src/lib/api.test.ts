@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
 
-import { ApiHttpError, applyCommand, applyCommandBundle } from './api';
+import { ApiHttpError, applyCommand, applyCommandBundle, uploadDxfFile } from './api';
 
 function mockFetchOnce(payload: { ok: boolean; status: number; statusText: string; body: string }) {
   vi.stubGlobal(
@@ -136,5 +136,48 @@ describe('applyCommandBundle', () => {
       commands: [{ type: 'x' }],
       userId: 'u',
     });
+  });
+});
+
+describe('uploadDxfFile', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('sends import-time unit, positioning, and color options', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ linkDxfId: 'dxf-1', name: 'site' }),
+      }),
+    );
+
+    const file = new File(['0\nSECTION\n2\nEOF'], 'site.dxf', {
+      type: 'application/octet-stream',
+    });
+    await uploadDxfFile('model 1', file, 'lvl-1', {
+      originAlignmentMode: 'shared_coords',
+      unitOverride: 'meters',
+      colorMode: 'custom',
+      customColor: '#123456',
+      overlayOpacity: 0.65,
+      hiddenLayerNames: ['A-DEMO'],
+    });
+
+    expect(fetch).toHaveBeenCalledWith('/api/models/model%201/upload-dxf-file', {
+      method: 'POST',
+      body: expect.any(FormData),
+    });
+    const init = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
+    const form = init.body as FormData;
+    expect(form.get('levelId')).toBe('lvl-1');
+    expect(form.get('originAlignmentMode')).toBe('shared_coords');
+    expect(form.get('unitOverride')).toBe('meters');
+    expect(form.get('colorMode')).toBe('custom');
+    expect(form.get('customColor')).toBe('#123456');
+    expect(form.get('overlayOpacity')).toBe('0.65');
+    expect(form.get('hiddenLayerNames')).toBe('A-DEMO');
   });
 });

@@ -5,8 +5,18 @@ export type WallFilletSegment = {
   end: MmPoint;
 };
 
+export type WallFilletArc = {
+  kind: 'arc';
+  center: MmPoint;
+  radiusMm: number;
+  startAngleDeg: number;
+  endAngleDeg: number;
+  sweepDeg: number;
+};
+
 export type WallFilletResult = {
   previousEnd: MmPoint;
+  wallCurve: WallFilletArc;
   arcSegments: WallFilletSegment[];
   currentStart: MmPoint;
   effectiveRadiusMm: number;
@@ -35,13 +45,17 @@ function normalizeSweep(rad: number): number {
   return out;
 }
 
+function radToDeg(rad: number): number {
+  const deg = (rad * 180) / Math.PI;
+  return Math.abs(deg) < 1e-9 ? 0 : deg;
+}
+
 /**
  * Builds a tangent circular fillet for two connected wall baselines.
  *
- * The app does not yet have a native curved-wall element, so F-043 is represented
- * as short straight wall pieces along the arc. The previous wall should be
- * shortened to `previousEnd`, then `arcSegments` and the current wall from
- * `currentStart` to the clicked endpoint are created as normal walls.
+ * F-043 now returns semantic arc metadata for a native curved wall. `arcSegments`
+ * remains as a compatibility fallback for callers or old data paths that still
+ * need tessellated straight wall pieces.
  */
 export function buildWallRadiusFillet(
   previousStart: MmPoint,
@@ -102,6 +116,15 @@ export function buildWallRadiusFillet(
   const sweep = normalizeSweep(endAngle - startAngle);
   if (Math.abs(sweep) <= EPS) return null;
 
+  const wallCurve: WallFilletArc = {
+    kind: 'arc',
+    center,
+    radiusMm: effectiveRadiusMm,
+    startAngleDeg: radToDeg(startAngle),
+    endAngleDeg: radToDeg(endAngle),
+    sweepDeg: radToDeg(sweep),
+  };
+
   const steps = Math.max(3, Math.ceil(Math.abs(sweep) / (Math.PI / 12)));
   const arcPoints: MmPoint[] = [];
   for (let i = 0; i <= steps; i++) {
@@ -122,5 +145,5 @@ export function buildWallRadiusFillet(
   }
   if (arcSegments.length === 0) return null;
 
-  return { previousEnd, arcSegments, currentStart, effectiveRadiusMm };
+  return { previousEnd, wallCurve, arcSegments, currentStart, effectiveRadiusMm };
 }

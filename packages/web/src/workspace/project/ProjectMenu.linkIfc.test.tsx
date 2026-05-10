@@ -66,4 +66,47 @@ describe('FED-04 — ProjectMenu IFC link entries', () => {
     expect(onLinkIfc).toHaveBeenCalledTimes(1);
     expect(onLinkIfc.mock.calls[0][0].name).toBe('demo.ifc');
   });
+
+  it('collects DXF import options before selecting a file', () => {
+    const onLinkDxf = vi.fn();
+    const customColor = ['#', '12', '34', '56'].join('');
+    const { getByTestId } = render(<Harness onLinkIfc={() => {}} onLinkDxf={onLinkDxf} />);
+    fireEvent.click(getByTestId('project-menu-link-dxf'));
+
+    fireEvent.change(getByTestId('project-menu-dxf-align'), {
+      target: { value: 'shared_coords' },
+    });
+    fireEvent.change(getByTestId('project-menu-dxf-units'), {
+      target: { value: 'meters' },
+    });
+    fireEvent.change(getByTestId('project-menu-dxf-colormode'), {
+      target: { value: 'custom' },
+    });
+    fireEvent.change(getByTestId('project-menu-dxf-color'), {
+      target: { value: customColor },
+    });
+    fireEvent.change(getByTestId('project-menu-dxf-opacity'), {
+      target: { value: '65' },
+    });
+
+    const input = getByTestId('project-menu-dxf-input') as HTMLInputElement;
+    const clickSpy = vi.spyOn(input, 'click').mockImplementation(() => {});
+    fireEvent.click(getByTestId('project-menu-dxf-choose-file'));
+    expect(clickSpy).toHaveBeenCalled();
+
+    const file = new File(['0\nEOF'], 'site.dxf', { type: 'application/octet-stream' });
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(onLinkDxf).toHaveBeenCalledTimes(1);
+    expect(onLinkDxf.mock.calls[0][0].name).toBe('site.dxf');
+    expect(onLinkDxf.mock.calls[0][1]).toEqual(
+      expect.objectContaining({
+        originAlignmentMode: 'shared_coords',
+        unitOverride: 'meters',
+        colorMode: 'custom',
+        customColor,
+        overlayOpacity: 0.65,
+      }),
+    );
+  });
 });

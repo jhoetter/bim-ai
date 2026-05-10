@@ -165,6 +165,83 @@ function locationLineOffsetFrac(loc: WallLocationLine): number {
   }
 }
 
+function makeCurvedWallMesh(
+  wall: WallElem,
+  elevM: number,
+  paint: ViewportPaintBundle | null,
+  elementsById?: Record<string, Element>,
+): THREE.Mesh {
+  const curve = wall.wallCurve!;
+  const thick = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2);
+  const locFrac = locationLineOffsetFrac(wall.locationLine ?? 'wall-centerline');
+  const centerRadius = Math.max(0.001, curve.radiusMm / 1000 + locFrac * thick);
+  const outerRadius = centerRadius + thick / 2;
+  const innerRadius = Math.max(0.001, centerRadius - thick / 2);
+  const sweepRad = THREE.MathUtils.degToRad(curve.sweepDeg);
+  const startRad = THREE.MathUtils.degToRad(curve.startAngleDeg);
+  const steps = Math.max(10, Math.ceil(Math.abs(sweepRad) / (Math.PI / 24)));
+  const pointAt = (radius: number, idx: number) => {
+    const a = startRad + (sweepRad * idx) / steps;
+    return {
+      x: curve.center.xMm / 1000 + Math.cos(a) * radius,
+      y: -(curve.center.yMm / 1000 + Math.sin(a) * radius),
+    };
+  };
+
+  const shape = new THREE.Shape();
+  const first = pointAt(outerRadius, 0);
+  shape.moveTo(first.x, first.y);
+  for (let i = 1; i <= steps; i++) {
+    const p = pointAt(outerRadius, i);
+    shape.lineTo(p.x, p.y);
+  }
+  for (let i = steps; i >= 0; i--) {
+    const p = pointAt(innerRadius, i);
+    shape.lineTo(p.x, p.y);
+  }
+  shape.closePath();
+
+  const baseOff = (wall.baseConstraintOffsetMm ?? 0) / 1000;
+  const yBase = elevM + baseOff;
+  const height =
+    wall.topConstraintLevelId &&
+    elementsById &&
+    elementsById[wall.topConstraintLevelId]?.kind === 'level'
+      ? THREE.MathUtils.clamp(
+          (elementsById[wall.topConstraintLevelId] as Extract<Element, { kind: 'level' }>)
+            .elevationMm /
+            1000 +
+            (wall.topConstraintOffsetMm ?? 0) / 1000 -
+            yBase,
+          0.25,
+          40,
+        )
+      : THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40);
+
+  const wallMatSpec = resolveMaterial(wall.materialKey);
+  const isWhite = wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render';
+  const wallBaseColor =
+    wallMatSpec?.baseColor ?? (isWhite ? '#f4f4f0' : categoryColorOr(paint, 'wall'));
+  const mesh = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(shape, { depth: height, bevelEnabled: false }),
+    new THREE.MeshStandardMaterial({
+      color: wallBaseColor,
+      roughness:
+        wallMatSpec?.roughness ?? (isWhite ? 0.92 : (paint?.categories.wall.roughness ?? 0.85)),
+      metalness: wallMatSpec?.metalness ?? paint?.categories.wall.metalness ?? 0,
+      envMapIntensity:
+        isWhite || wallMatSpec?.category === 'render' || wallMatSpec?.category === 'cladding'
+          ? 0.15
+          : 1.0,
+    }),
+  );
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.y = yBase;
+  mesh.userData.bimPickId = wall.id;
+  addEdges(mesh);
+  return mesh;
+}
+
 // CSG wall-opening cuts: enabled by default; set VITE_ENABLE_CSG=false to disable.
 export const CSG_ENABLED = import.meta.env.VITE_ENABLE_CSG !== 'false';
 
@@ -2112,6 +2189,10 @@ export function makeWallMesh(
   paint: ViewportPaintBundle | null,
   elementsById?: Record<string, Element>,
 ): THREE.Mesh | THREE.Group {
+  if (wall.wallCurve?.kind === 'arc') {
+    return makeCurvedWallMesh(wall, elevM, paint, elementsById);
+  }
+
   if (wall.roofAttachmentId && elementsById) {
     const roof = elementsById[wall.roofAttachmentId];
     if (roof?.kind === 'roof') {

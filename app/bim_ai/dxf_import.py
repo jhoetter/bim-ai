@@ -46,6 +46,18 @@ _INSUNITS_TO_MM: dict[int, float] = {
     20: 0.3048,  # US survey feet
 }
 
+_UNIT_OVERRIDE_TO_INSUNITS: dict[str, int] = {
+    "unitless": 0,
+    "inches": 1,
+    "feet": 2,
+    "millimeters": 4,
+    "millimetres": 4,
+    "centimeters": 5,
+    "centimetres": 5,
+    "meters": 6,
+    "metres": 6,
+}
+
 _SKIPPED_DXF_TYPES: set[str] = {
     "3DFACE",
     "3DSOLID",
@@ -71,6 +83,29 @@ def _scale_factor_from_insunits(insunits: Any) -> float:
     except (TypeError, ValueError):
         return 1.0
     return _INSUNITS_TO_MM.get(code, 1.0)
+
+
+def _scale_factor_from_unit_override(unit_override: Any) -> float | None:
+    if unit_override is None:
+        return None
+    if isinstance(unit_override, str):
+        raw = unit_override.strip().lower()
+        if raw in {"", "source", "auto", "insunits"}:
+            return None
+        if raw in _UNIT_OVERRIDE_TO_INSUNITS:
+            return _scale_factor_from_insunits(_UNIT_OVERRIDE_TO_INSUNITS[raw])
+        try:
+            return _scale_factor_from_insunits(int(raw))
+        except ValueError:
+            raise ValueError(f"unsupported DXF unit override: {unit_override}") from None
+    return _scale_factor_from_insunits(unit_override)
+
+
+def _effective_scale_factor(doc: Any, unit_override: Any = None) -> float:
+    override_scale = _scale_factor_from_unit_override(unit_override)
+    if override_scale is not None:
+        return override_scale
+    return _scale_factor_from_insunits(doc.header.get("$INSUNITS", 0))
 
 
 def _vec2(x: float, y: float, scale: float) -> dict[str, float]:
@@ -218,16 +253,19 @@ def dxf_source_metadata(path: Path) -> dict[str, Any]:
     }
 
 
-def parse_dxf_to_linework(path: Path) -> list[dict[str, Any]]:
+def parse_dxf_to_linework_with_scale(
+    path: Path,
+    unit_override: Any = None,
+) -> tuple[list[dict[str, Any]], float]:
     """Parse the modelspace of a DXF file into a list of ``DxfLineworkPrim`` dicts.
 
     Coordinates are returned in **millimetres**, after applying the file's
-    ``$INSUNITS`` header (default: assume the DXF is already mm). 3D-only
-    entities, hatches, dimensions, text, and blocks are skipped silently.
+    ``$INSUNITS`` header (default: assume the DXF is already mm) or the
+    caller's import-time unit override. 3D-only entities, hatches,
+    dimensions, text, and blocks are skipped silently.
     """
     doc = ezdxf.readfile(str(path))
-    insunits = doc.header.get("$INSUNITS", 0)
-    scale = _scale_factor_from_insunits(insunits)
+    scale = _effective_scale_factor(doc, unit_override)
 
     linework: list[dict[str, Any]] = []
     for entity in doc.modelspace():
@@ -252,18 +290,31 @@ def parse_dxf_to_linework(path: Path) -> list[dict[str, Any]]:
         except (AttributeError, ValueError):
             continue
 
-    return linework
+    return linework, scale
+
+
+def parse_dxf_to_linework(path: Path, unit_override: Any = None) -> list[dict[str, Any]]:
+    return parse_dxf_to_linework_with_scale(path, unit_override=unit_override)[0]
 
 
 def build_link_dxf_payload(
     file_path: Path,
     level_id: str,
     origin_mm: dict[str, float] | None = None,
+    origin_alignment_mode: str = "origin_to_origin",
+    unit_override: Any = None,
     rotation_deg: float = 0.0,
     scale_factor: float = 1.0,
+    color_mode: str = "black_white",
+    custom_color: str | None = None,
+    overlay_opacity: float = 0.5,
+    hidden_layer_names: list[str] | None = None,
 ) -> dict[str, Any]:
     """Build the ``createLinkDxf`` engine-command payload from a DXF file."""
-    linework = parse_dxf_to_linework(file_path)
+    linework, unit_scale_to_mm = parse_dxf_to_linework_with_scale(
+        file_path,
+        unit_override=unit_override,
+    )
     if origin_mm is None:
         origin_mm = {"xMm": 0.0, "yMm": 0.0}
     return {
@@ -271,14 +322,21 @@ def build_link_dxf_payload(
         "name": "DXF Underlay",
         "levelId": level_id,
         "originMm": origin_mm,
+        "originAlignmentMode": origin_alignment_mode,
+        "unitOverride": unit_override,
+        "unitScaleToMm": unit_scale_to_mm,
         "rotationDeg": float(rotation_deg),
         "scaleFactor": float(scale_factor),
         "linework": linework,
         "dxfLayers": collect_dxf_layers(linework),
+        "hiddenLayerNames": hidden_layer_names or [],
         "sourcePath": str(file_path),
         "cadReferenceType": "linked",
         "sourceMetadata": dxf_source_metadata(file_path),
         "reloadStatus": "ok",
         "lastReloadMessage": f"Loaded from {file_path}",
         "loaded": True,
+        "colorMode": color_mode,
+        "customColor": custom_color,
+        "overlayOpacity": overlay_opacity,
     }

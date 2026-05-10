@@ -38,7 +38,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![CAD Link Options](file:///Users/jhoetter/Desktop/Revit%20Specs/0209_00-30-10.png)
 
-**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` includes a DXF Links section listing all `link_dxf` underlays with per-link opacity slider (0–100%) and color mode toggle (Black & White / Preserve original colors / Custom hex color). These settings are stored as `colorMode`, `customColor`, and `overlayOpacity` fields on each `link_dxf` element and read by `dxfUnderlay.ts`/`PlanCanvas.tsx` at render time. Layer names/colors are preserved for supported DXF primitives, native color mode applies each primitive's layer color, Manage Links can hide/show individual DXF layers per link, and DXF `$INSUNITS` scaling is preserved server-side. Missing: import-time positioning/unit override UI beyond the existing link alignment controls.
+**bim-ai status:** ✅ Available — Link/Import DXF exposes import-time positioning/alignment, unit override, color mode, custom color, and opacity options in `ProjectMenu.tsx`; `uploadDxfFile` sends the multipart option payload; backend parsing applies the unit override during initial import and persists alignment/unit/color/layer fields on `link_dxf`. Manage Links still provides per-link opacity, color mode, layer visibility, and alignment controls after import.
 
 ---
 
@@ -60,7 +60,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Query Tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0238_00-56-21.png)
 
-**bim-ai status:** 🟡 Partial — DXF import now preserves each supported primitive's `layerName` plus layer color, stores a compact `dxfLayers` summary on `link_dxf`, and Manage Links lists those layers with per-link visibility checkboxes. Toggling a layer persists `hiddenLayerNames` via `updateLinkDxf`, and both 2D/3D plan underlay renderers skip hidden layer primitives. Missing: hover-pick Import Instance Query dialog, true per-view layer overrides, and DWG parsing beyond the existing DXF pipeline.
+**bim-ai status:** ✅ Available — DXF import preserves each supported primitive's `layerName` plus layer color, stores a compact `dxfLayers` summary on `link_dxf`, and Manage Links lists those layers with per-link visibility checkboxes. The Query plan tool hit-tests linked/imported DXF underlay primitives, shows the layer/color/link/primitive details, and can hide/show that layer in the active view through `categoryOverrides[link_dxf:<id>].dxf.hiddenLayerNames` without changing other views.
 
 ---
 

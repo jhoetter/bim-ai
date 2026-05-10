@@ -341,6 +341,10 @@ def try_apply_coordination_command(doc, cmd, *, source_provider=None) -> bool:
                 ]
             if cmd.origin_alignment_mode is not None:
                 dxf_updates["origin_alignment_mode"] = cmd.origin_alignment_mode
+            if cmd.unit_override is not None:
+                dxf_updates["unit_override"] = cmd.unit_override
+            if cmd.unit_scale_to_mm is not None:
+                dxf_updates["unit_scale_to_mm"] = cmd.unit_scale_to_mm
             els[cmd.link_id] = dxf_link.model_copy(update=dxf_updates)
 
         case CreateLinkDxfCmd():
@@ -356,6 +360,8 @@ def try_apply_coordination_command(doc, cmd, *, source_provider=None) -> bool:
                 level_id=cmd.level_id,
                 origin_mm=cmd.origin_mm,
                 origin_alignment_mode=cmd.origin_alignment_mode,
+                unit_override=cmd.unit_override,
+                unit_scale_to_mm=cmd.unit_scale_to_mm,
                 rotation_deg=float(cmd.rotation_deg),
                 scale_factor=float(cmd.scale_factor),
                 linework=list(cmd.linework),
@@ -368,6 +374,9 @@ def try_apply_coordination_command(doc, cmd, *, source_provider=None) -> bool:
                 reload_status=cmd.reload_status,
                 last_reload_message=cmd.last_reload_message,
                 loaded=bool(cmd.loaded),
+                color_mode=cmd.color_mode,
+                custom_color=cmd.custom_color,
+                overlay_opacity=cmd.overlay_opacity,
             )
 
         case UpsertSelectionSetCmd():
