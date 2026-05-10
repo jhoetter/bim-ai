@@ -47,6 +47,7 @@ from bim_ai.engine import (
     new_id,
     parse_plan_category_graphics_property_json,
 )
+from bim_ai.elements import ProjectBasePointElem, SurveyPointElem, Vec3Mm
 
 
 def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
@@ -510,6 +511,29 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     raise ValueError("discipline must be arch|struct|mep or empty")
                 els[cmd.element_id] = el.model_copy(update={"discipline": d if d else None})
                 els[cmd.element_id] = el.model_copy(update={"discipline": d if d else None})
+            elif cmd.key == "positionMm" and isinstance(
+                el, (ProjectBasePointElem, SurveyPointElem)
+            ):
+                raw_pos = cmd.value
+                if not isinstance(raw_pos, dict):
+                    raise ValueError("positionMm for coordinate points must be an object")
+                els[cmd.element_id] = el.model_copy(
+                    update={
+                        "position_mm": Vec3Mm(
+                            xMm=float(raw_pos.get("xMm", raw_pos.get("x_mm", 0))),
+                            yMm=float(raw_pos.get("yMm", raw_pos.get("y_mm", 0))),
+                            zMm=float(raw_pos.get("zMm", raw_pos.get("z_mm", 0))),
+                        )
+                    }
+                )
+            elif cmd.key == "clipped" and isinstance(el, (ProjectBasePointElem, SurveyPointElem)):
+                raw_clipped = cmd.value
+                clipped = (
+                    raw_clipped
+                    if isinstance(raw_clipped, bool)
+                    else str(raw_clipped).strip().lower() in {"1", "true", "yes", "on"}
+                )
+                els[cmd.element_id] = el.model_copy(update={"clipped": clipped})
             elif cmd.key == "levelId" and isinstance(el, LinkDxfElem):
                 next_level_id = str(cmd.value or "").strip()
                 if next_level_id not in els or not isinstance(els[next_level_id], LevelElem):

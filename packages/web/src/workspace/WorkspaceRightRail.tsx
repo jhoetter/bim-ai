@@ -1079,6 +1079,7 @@ function CoordinatePointInspector({
 }): JSX.Element {
   const label = el.kind === 'project_base_point' ? 'Project Base Point' : 'Survey Point';
   const elevationMm = el.kind === 'survey_point' ? el.sharedElevationMm : 0;
+  const clipped = el.clipped ?? false;
 
   function commitPosition(xMm: number, yMm: number) {
     void onSemanticCommand({
@@ -1092,6 +1093,23 @@ function CoordinatePointInspector({
   return (
     <div className="space-y-2">
       <div className="text-[11px] font-semibold text-foreground">{label}</div>
+      <label className="flex items-center justify-between gap-2 rounded border border-border bg-surface/60 px-2 py-1 text-xs text-foreground">
+        <span>{clipped ? 'Clipped' : 'Unclipped'}</span>
+        <input
+          type="checkbox"
+          checked={clipped}
+          data-testid="inspector-coordinate-clipped"
+          aria-label={`${label} clipped`}
+          onChange={(e) =>
+            void onSemanticCommand({
+              type: 'updateElementProperty',
+              elementId: el.id,
+              key: 'clipped',
+              value: e.currentTarget.checked,
+            })
+          }
+        />
+      </label>
       <div className="space-y-1 text-xs text-muted">
         <div className="flex items-center gap-1">
           <span className="font-medium w-20">X (E/W):</span>

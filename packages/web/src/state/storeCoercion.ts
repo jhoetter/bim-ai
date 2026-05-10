@@ -1444,6 +1444,26 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
     };
   }
 
+  if (kind === 'project_base_point') {
+    return {
+      kind: 'project_base_point',
+      id,
+      positionMm: coerceXYZ((raw.positionMm ?? raw.position_mm) as Record<string, unknown>),
+      angleToTrueNorthDeg: Number(raw.angleToTrueNorthDeg ?? raw.angle_to_true_north_deg ?? 0),
+      clipped: Boolean(raw.clipped ?? false),
+    };
+  }
+
+  if (kind === 'survey_point') {
+    return {
+      kind: 'survey_point',
+      id,
+      positionMm: coerceXYZ((raw.positionMm ?? raw.position_mm) as Record<string, unknown>),
+      sharedElevationMm: Number(raw.sharedElevationMm ?? raw.shared_elevation_mm ?? 0),
+      clipped: Boolean(raw.clipped ?? false),
+    };
+  }
+
   if (kind === 'clash_test') {
     const coerceIds = (v: unknown): string[] =>
       Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];

@@ -1135,6 +1135,7 @@ class ProjectBasePointElem(BaseModel):
     angle_to_true_north_deg: float = Field(default=0.0, alias="angleToTrueNorthDeg")
     latitude_deg: float = Field(default=0.0, alias="latitudeDeg")
     longitude_deg: float = Field(default=0.0, alias="longitudeDeg")
+    clipped: bool = False
 
 
 class SurveyPointElem(BaseModel):
@@ -1145,6 +1146,7 @@ class SurveyPointElem(BaseModel):
     id: str
     position_mm: Vec3Mm = Field(alias="positionMm")
     shared_elevation_mm: float = Field(default=0.0, alias="sharedElevationMm")
+    clipped: bool = False
 
 
 class InternalOriginElem(BaseModel):

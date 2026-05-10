@@ -17,6 +17,35 @@ beforeEach(() => {
 });
 
 describe('coerceElement — viewpoint visibility / coordination', () => {
+  it('parses coordinate point clipped state', () => {
+    const { hydrateFromSnapshot } = useBimStore.getState();
+    hydrateFromSnapshot({
+      modelId: 'm1',
+      revision: 1,
+      elements: {
+        pbp: {
+          kind: 'project_base_point',
+          positionMm: { xMm: 10, yMm: 20, zMm: 0 },
+          angleToTrueNorthDeg: 5,
+          clipped: true,
+        },
+        sp: {
+          kind: 'survey_point',
+          positionMm: { xMm: 1, yMm: 2, zMm: 3 },
+          sharedElevationMm: 100,
+          clipped: true,
+        },
+      },
+      violations: [],
+    });
+    const pbp = useBimStore.getState().elementsById.pbp;
+    expect(pbp?.kind).toBe('project_base_point');
+    if (pbp?.kind === 'project_base_point') expect(pbp.clipped).toBe(true);
+    const sp = useBimStore.getState().elementsById.sp;
+    expect(sp?.kind).toBe('survey_point');
+    if (sp?.kind === 'survey_point') expect(sp.clipped).toBe(true);
+  });
+
   it('parses hiddenElementIds on viewpoint', () => {
     const { hydrateFromSnapshot } = useBimStore.getState();
     hydrateFromSnapshot({

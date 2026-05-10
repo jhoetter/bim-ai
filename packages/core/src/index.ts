@@ -1632,12 +1632,14 @@ export type Element =
       id: string;
       positionMm: XYZ;
       angleToTrueNorthDeg: number;
+      clipped?: boolean;
     }
   | {
       kind: 'survey_point';
       id: string;
       positionMm: XYZ;
       sharedElevationMm: number;
+      clipped?: boolean;
     }
   | {
       kind: 'internal_origin';

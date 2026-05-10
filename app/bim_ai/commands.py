@@ -440,7 +440,7 @@ class UpdateElementPropertyCmd(BaseModel):
     type: Literal["updateElementProperty"] = "updateElementProperty"
     element_id: str = Field(alias="elementId")
     key: str
-    value: str | bool | int | float | None = ""
+    value: str | bool | int | float | dict[str, Any] | None = ""
     force_pin_override: bool = Field(default=False, alias="forcePinOverride")
 
 
@@ -1145,6 +1145,7 @@ class CreateProjectBasePointCmd(BaseModel):
     id: str | None = None
     position_mm: Vec3Mm = Field(alias="positionMm")
     angle_to_true_north_deg: float = Field(default=0.0, alias="angleToTrueNorthDeg")
+    clipped: bool = False
 
 
 class MoveProjectBasePointCmd(BaseModel):
@@ -1171,6 +1172,7 @@ class CreateSurveyPointCmd(BaseModel):
     id: str | None = None
     position_mm: Vec3Mm = Field(alias="positionMm")
     shared_elevation_mm: float = Field(default=0.0, alias="sharedElevationMm")
+    clipped: bool = False
 
 
 class MoveSurveyPointCmd(BaseModel):

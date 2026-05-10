@@ -77,6 +77,7 @@ def try_apply_building_edit_command(doc, cmd, *, source_provider=None) -> bool:
                 id=pid,
                 position_mm=cmd.position_mm,
                 angle_to_true_north_deg=cmd.angle_to_true_north_deg,
+                clipped=cmd.clipped,
             )
 
         case MoveProjectBasePointCmd():
@@ -118,6 +119,7 @@ def try_apply_building_edit_command(doc, cmd, *, source_provider=None) -> bool:
                 id=sid,
                 position_mm=cmd.position_mm,
                 shared_elevation_mm=cmd.shared_elevation_mm,
+                clipped=cmd.clipped,
             )
 
         case MoveSurveyPointCmd():
