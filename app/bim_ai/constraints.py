@@ -8,6 +8,14 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from bim_ai.constraints_geometry import (
+    clip_convex_against_convex,
+    ear_clip_triangulate,
+    polygon_area_abs_mm2,
+    polygon_bbox,
+    polygon_overlap_area_mm2,
+    polygon_signed_area,
+)
 from bim_ai.datum_levels import (
     expected_level_elevation_from_parent,
     level_datum_cycle_participant_level_ids,
@@ -466,178 +474,11 @@ def _sheet_viewport_zero_extent_labels(rows: list[Any]) -> list[str]:
     return labels
 
 
-def polygon_area_abs_mm2(poly: list[tuple[float, float]]) -> float:
-    """Shoelace area (absolute), mm²."""
-    n = len(poly)
-    if n < 3:
-        return 0.0
-    a = 0.0
-    for i in range(n):
-        x1, y1 = poly[i]
-        x2, y2 = poly[(i + 1) % n]
-        a += x1 * y2 - x2 * y1
-    return abs(a / 2.0)
-
-
-def _polygon_signed_area(poly: list[tuple[float, float]]) -> float:
-    n = len(poly)
-    if n < 3:
-        return 0.0
-    a = 0.0
-    for i in range(n):
-        x1, y1 = poly[i]
-        x2, y2 = poly[(i + 1) % n]
-        a += x1 * y2 - x2 * y1
-    return a / 2.0
-
-
-def _polygon_bbox(poly: list[tuple[float, float]]) -> tuple[float, float, float, float]:
-    xs = [p[0] for p in poly]
-    ys = [p[1] for p in poly]
-    return min(xs), min(ys), max(xs), max(ys)
-
-
-def _ear_clip_triangulate(
-    poly: list[tuple[float, float]],
-) -> list[tuple[tuple[float, float], tuple[float, float], tuple[float, float]]]:
-    """Ear-clipping triangulation of a simple polygon (handles concave shapes)."""
-
-    n = len(poly)
-    if n < 3:
-        return []
-    if n == 3:
-        return [(poly[0], poly[1], poly[2])]
-
-    # Force CCW orientation so the convex test below is uniform.
-    pts = list(poly)
-    if _polygon_signed_area(pts) < 0:
-        pts = list(reversed(pts))
-
-    indices = list(range(len(pts)))
-    triangles: list[tuple[tuple[float, float], tuple[float, float], tuple[float, float]]] = []
-
-    def _point_in_triangle(
-        p: tuple[float, float],
-        a: tuple[float, float],
-        b: tuple[float, float],
-        c: tuple[float, float],
-    ) -> bool:
-        d1 = (p[0] - b[0]) * (a[1] - b[1]) - (a[0] - b[0]) * (p[1] - b[1])
-        d2 = (p[0] - c[0]) * (b[1] - c[1]) - (b[0] - c[0]) * (p[1] - c[1])
-        d3 = (p[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (p[1] - a[1])
-        has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0)
-        has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0)
-        return not (has_neg and has_pos)
-
-    safety = 0
-    while len(indices) > 3 and safety < 4 * n:
-        safety += 1
-        ear_found = False
-        m = len(indices)
-        for k in range(m):
-            i_prev = indices[(k - 1) % m]
-            i_curr = indices[k]
-            i_next = indices[(k + 1) % m]
-            a = pts[i_prev]
-            b = pts[i_curr]
-            c = pts[i_next]
-            cross = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
-            if cross <= 0:
-                continue
-            valid = True
-            for j in indices:
-                if j in (i_prev, i_curr, i_next):
-                    continue
-                if _point_in_triangle(pts[j], a, b, c):
-                    valid = False
-                    break
-            if valid:
-                triangles.append((a, b, c))
-                indices.pop(k)
-                ear_found = True
-                break
-        if not ear_found:
-            # Degenerate polygon — give up rather than loop forever.
-            return []
-    if len(indices) == 3:
-        triangles.append((pts[indices[0]], pts[indices[1]], pts[indices[2]]))
-    return triangles
-
-
-def _clip_convex_against_convex(
-    subject: list[tuple[float, float]],
-    clip: list[tuple[float, float]],
-) -> list[tuple[float, float]]:
-    """Sutherland–Hodgman: clip the (convex) subject against the (convex) clip."""
-
-    if not subject or not clip:
-        return []
-    # Ensure clip is CCW so the half-plane test below is consistent.
-    if _polygon_signed_area(clip) < 0:
-        clip = list(reversed(clip))
-    output = list(subject)
-    n = len(clip)
-    for i in range(n):
-        if not output:
-            break
-        ax, ay = clip[i]
-        bx, by = clip[(i + 1) % n]
-        edge_x = bx - ax
-        edge_y = by - ay
-        prev_list = output
-        output = []
-        m = len(prev_list)
-        for j in range(m):
-            curr = prev_list[j]
-            prev = prev_list[j - 1]
-            curr_in = edge_x * (curr[1] - ay) - edge_y * (curr[0] - ax) >= 0
-            prev_in = edge_x * (prev[1] - ay) - edge_y * (prev[0] - ax) >= 0
-            if curr_in or prev_in:
-                if curr_in != prev_in:
-                    rx = curr[0] - prev[0]
-                    ry = curr[1] - prev[1]
-                    denom = edge_x * ry - edge_y * rx
-                    if abs(denom) < 1e-12:
-                        cross_pt = prev
-                    else:
-                        t = (edge_x * (prev[1] - ay) - edge_y * (prev[0] - ax)) / -denom
-                        cross_pt = (prev[0] + t * rx, prev[1] + t * ry)
-                    output.append(cross_pt)
-                if curr_in:
-                    output.append(curr)
-    return output
-
-
-def _polygon_overlap_area_mm2(
-    poly_a: list[tuple[float, float]],
-    poly_b: list[tuple[float, float]],
-) -> float:
-    """Polygon-polygon intersection area in mm² for arbitrary simple polygons.
-
-    Triangulates each polygon (ear clipping handles concave shapes), then sums
-    the area of every triangle-vs-triangle clip via Sutherland–Hodgman. O(n²·m²)
-    but n, m are small (floor footprints are typically ≤16 vertices).
-    """
-
-    if len(poly_a) < 3 or len(poly_b) < 3:
-        return 0.0
-    ax0, ay0, ax1, ay1 = _polygon_bbox(poly_a)
-    bx0, by0, bx1, by1 = _polygon_bbox(poly_b)
-    if ax1 < bx0 or bx1 < ax0 or ay1 < by0 or by1 < ay0:
-        return 0.0
-    tris_a = _ear_clip_triangulate(poly_a)
-    tris_b = _ear_clip_triangulate(poly_b)
-    if not tris_a or not tris_b:
-        return 0.0
-    total = 0.0
-    for ta in tris_a:
-        ta_list = [ta[0], ta[1], ta[2]]
-        for tb in tris_b:
-            tb_list = [tb[0], tb[1], tb[2]]
-            clipped = _clip_convex_against_convex(ta_list, tb_list)
-            if len(clipped) >= 3:
-                total += polygon_area_abs_mm2(clipped)
-    return total
+_polygon_signed_area = polygon_signed_area
+_polygon_bbox = polygon_bbox
+_ear_clip_triangulate = ear_clip_triangulate
+_clip_convex_against_convex = clip_convex_against_convex
+_polygon_overlap_area_mm2 = polygon_overlap_area_mm2
 
 
 def annotate_violation_disciplines(violations: list[Violation]) -> list[Violation]:
@@ -3580,9 +3421,7 @@ def _dormer_overflow_point_in_polygon(
     for i in range(n):
         xi, yi = poly[i]
         xj, yj = poly[j]
-        if ((yi > py) != (yj > py)) and (
-            px < (xj - xi) * (py - yi) / (yj - yi + 1e-12) + xi
-        ):
+        if ((yi > py) != (yj > py)) and (px < (xj - xi) * (py - yi) / (yj - yi + 1e-12) + xi):
             inside = not inside
         j = i
     return inside

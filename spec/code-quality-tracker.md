@@ -143,6 +143,8 @@ These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (t
 
 **Progress 2026-05-10.** Extracted IFC QTO/classification/Pset helpers from `export_ifc.py` into `bim_ai/export_ifc_properties.py`, adding test coverage for common Pset payloads for stairs, columns, beams, ceilings, and railings.
 
+**Progress 2026-05-10.** Extracted reusable constraint polygon geometry helpers from `constraints.py` into `bim_ai/constraints_geometry.py`, preserving legacy private aliases and adding focused tests for polygon area/orientation, concave triangulation, and overlap area.
+
 ---
 
 ## CQ-05 — Slice the zustand store (`packages/web/src/state/store.ts`, 1,692 LOC)
