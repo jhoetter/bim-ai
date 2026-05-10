@@ -3,7 +3,7 @@
   "checkpoint_id": "631f03933eb6",
   "strategy": "manual-commit",
   "branch": "revit-parity-wall-join-wave",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "app/bim_ai/wall_join_evidence.py",
     "app/tests/test_wall_corner_join_summary_v1.py",
@@ -35,13 +35,19 @@
       "transcript": "/63/1f03933eb6/3/full.jsonl",
       "content_hash": "/63/1f03933eb6/3/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/63/1f03933eb6/4/metadata.json",
+      "transcript": "/63/1f03933eb6/4/full.jsonl",
+      "content_hash": "/63/1f03933eb6/4/content_hash.txt",
+      "prompt": "/63/1f03933eb6/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 41807,
+    "input_tokens": 1136289,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 2291072,
-    "output_tokens": 1059,
-    "api_call_count": 14
+    "cache_read_tokens": 33554304,
+    "output_tokens": 80455,
+    "api_call_count": 263
   }
 }
