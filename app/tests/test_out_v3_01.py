@@ -61,12 +61,13 @@ def _build_test_app() -> tuple[FastAPI, dict[str, Any]]:
 
     @app.get("/api/models/{model_id}/presentations")
     async def list_presentations(model_id: str) -> Any:
-        active = [
+        rows = [
             p
             for p in _presentations.values()
-            if p["modelId"] == model_id and not p["isRevoked"]
+            if p["modelId"] == model_id
         ]
-        return {"presentations": active}
+        rows.sort(key=lambda p: (p["isRevoked"], -p["createdAt"]))
+        return {"presentations": rows}
 
     @app.post("/api/models/{model_id}/presentations/{link_id}/revoke")
     async def revoke_presentation(model_id: str, link_id: str) -> Any:
@@ -89,6 +90,18 @@ def _build_test_app() -> tuple[FastAPI, dict[str, Any]]:
                 pass
 
         return {"revokedAt": now_ms}
+
+    @app.post("/api/models/{model_id}/presentations/{link_id}/activate")
+    async def activate_presentation(model_id: str, link_id: str) -> Any:
+        from fastapi import HTTPException
+
+        if link_id not in _presentations or _presentations[link_id]["modelId"] != model_id:
+            raise HTTPException(status_code=404, detail="Presentation not found")
+
+        now_ms = int(time.time() * 1000)
+        _presentations[link_id]["isRevoked"] = False
+
+        return {"activatedAt": now_ms, "isRevoked": False}
 
     @app.get("/api/p/{token}")
     async def resolve_presentation(token: str) -> Any:
@@ -259,21 +272,38 @@ class TestRevokePresentation:
         assert res.status_code == 404
 
 
+class TestActivatePresentation:
+    def test_sets_is_revoked_false(self, client: TestClient, presentations: dict) -> None:
+        create = client.post(f"/api/models/{MODEL_ID}/presentations", json={})
+        link_id = create.json()["id"]
+        client.post(f"/api/models/{MODEL_ID}/presentations/{link_id}/revoke")
+
+        res = client.post(f"/api/models/{MODEL_ID}/presentations/{link_id}/activate")
+        assert res.status_code == 200
+        assert "activatedAt" in res.json()
+        assert res.json()["isRevoked"] is False
+        assert presentations[link_id]["isRevoked"] is False
+
+    def test_404_unknown_link(self, client: TestClient) -> None:
+        res = client.post(f"/api/models/{MODEL_ID}/presentations/bad-id/activate")
+        assert res.status_code == 404
+
+
 class TestListPresentations:
-    def test_lists_non_revoked_presentations(self, client: TestClient) -> None:
+    def test_lists_presentations(self, client: TestClient) -> None:
         client.post(f"/api/models/{MODEL_ID}/presentations", json={})
         res = client.get(f"/api/models/{MODEL_ID}/presentations")
         assert res.status_code == 200
         assert len(res.json()["presentations"]) >= 1
 
-    def test_does_not_list_revoked_presentations(self, client: TestClient) -> None:
+    def test_lists_revoked_presentations_as_inactive(self, client: TestClient) -> None:
         create = client.post(f"/api/models/{MODEL_ID}/presentations", json={})
         link_id = create.json()["id"]
         client.post(f"/api/models/{MODEL_ID}/presentations/{link_id}/revoke")
 
         res = client.get(f"/api/models/{MODEL_ID}/presentations")
-        ids = [p["id"] for p in res.json()["presentations"]]
-        assert link_id not in ids
+        row = next(p for p in res.json()["presentations"] if p["id"] == link_id)
+        assert row["isRevoked"] is True
 
 
 class TestPresentationWebSocket:

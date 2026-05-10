@@ -2687,13 +2687,14 @@ async def list_presentations(
     model_id: UUID,
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
-    """OUT-V3-01: list non-revoked presentation links for a model."""
+    """OUT-V3-01: list presentation links for a model, including inactive links."""
     res = await session.execute(
-        select(PublicLinkRecord).where(
+        select(PublicLinkRecord)
+        .where(
             PublicLinkRecord.model_id == str(model_id),
-            PublicLinkRecord.is_revoked.is_(False),
             PublicLinkRecord.display_name == "presentation",
         )
+        .order_by(PublicLinkRecord.is_revoked.asc(), desc(PublicLinkRecord.created_at))
     )
     import json as _json
 
@@ -2751,6 +2752,31 @@ async def revoke_presentation(
         _presentation_ws_sessions.pop(token, None)
 
     return {"revokedAt": now_ms}
+
+
+@api_router.post("/models/{model_id}/presentations/{link_id}/activate")
+async def activate_presentation(
+    model_id: UUID,
+    link_id: str,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """OUT-V3-01: reactivate a presentation link without rotating its token."""
+    res = await session.execute(
+        select(PublicLinkRecord).where(
+            PublicLinkRecord.id == link_id,
+            PublicLinkRecord.model_id == str(model_id),
+            PublicLinkRecord.display_name == "presentation",
+        )
+    )
+    link_record = res.scalars().first()
+    if link_record is None:
+        raise HTTPException(status_code=404, detail="Presentation not found")
+
+    now_ms = int(time.time() * 1000)
+    link_record.is_revoked = False
+    await session.commit()
+
+    return {"activatedAt": now_ms, "isRevoked": False}
 
 
 @api_router.get("/p/{token}")

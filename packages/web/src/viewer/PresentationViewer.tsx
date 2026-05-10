@@ -1,6 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
+import type { Snapshot } from '@bim-ai/core';
+
+import { Viewport } from '../Viewport';
 import { MAX_WS_RECONNECT_ATTEMPTS, reconnectDelayMs } from '../lib/wsReconnect';
+import { useBimStore } from '../state/store';
 
 interface PresentationMeta {
   id: string;
@@ -13,6 +17,7 @@ interface PresentationData {
   modelId?: string;
   revision?: number;
   elements?: Record<string, unknown>;
+  violations?: Snapshot['violations'];
   wsUrl?: string;
   presentation?: PresentationMeta;
   allowMeasurement?: boolean;
@@ -27,6 +32,8 @@ export function PresentationViewer({ token }: Props) {
   const [data, setData] = useState<PresentationData | null>(null);
   const [revoked, setRevoked] = useState(false);
   const [loading, setLoading] = useState(true);
+  const hydrateFromSnapshot = useBimStore((s) => s.hydrateFromSnapshot);
+  const clearSelection = useBimStore((s) => s.select);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -127,6 +134,20 @@ export function PresentationViewer({ token }: Props) {
     };
   }, [data?.wsUrl, token]);
 
+  useEffect(() => {
+    if (!data || data.status !== 'ok') return;
+
+    const snapshot: Snapshot = {
+      modelId: data.modelId ?? 'presentation',
+      revision: data.revision ?? 0,
+      elements: data.elements ?? {},
+      violations: data.violations ?? [],
+    };
+
+    clearSelection(undefined);
+    hydrateFromSnapshot(snapshot);
+  }, [clearSelection, data, hydrateFromSnapshot]);
+
   if (loading) {
     return (
       <div
@@ -171,33 +192,48 @@ export function PresentationViewer({ token }: Props) {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       <PresentationBanner displayName={data?.presentation?.displayName} />
       <div
+        data-testid="public-presentation-viewport"
         style={{
           flex: 1,
           marginTop: 32,
           position: 'relative',
-          background: 'var(--color-surface)',
+          minHeight: 0,
+          background: 'var(--color-background)',
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-            color: 'var(--color-muted-foreground)',
-            fontSize: 'var(--text-sm)',
-          }}
-        >
-          {data
-            ? `Viewing model ${data.modelId} — revision ${data.revision}`
-            : 'No presentation data'}
-        </div>
+        {data?.elements && Object.keys(data.elements).length > 0 ? (
+          <Viewport wsConnected={Boolean(data.wsUrl)} onSemanticCommand={() => undefined} />
+        ) : (
+          <EmptyPresentation />
+        )}
       </div>
     </div>
   );
 }
 
+function EmptyPresentation() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        color: 'var(--color-muted-foreground)',
+        fontSize: 'var(--text-sm)',
+      }}
+    >
+      This presentation has no visible model elements.
+    </div>
+  );
+}
+
 function PresentationBanner({ displayName }: { displayName?: string }) {
+  const sharedBy =
+    displayName && displayName !== 'presentation'
+      ? `Shared by ${displayName}`
+      : 'Live presentation (read-only)';
+
   return (
     <div
       style={{
@@ -216,9 +252,7 @@ function PresentationBanner({ displayName }: { displayName?: string }) {
         borderBottom: '1px solid var(--color-border)',
       }}
     >
-      <span style={{ color: 'var(--color-foreground)' }}>
-        {displayName ? `Shared by ${displayName}` : 'Live presentation (read-only)'}
-      </span>
+      <span style={{ color: 'var(--color-foreground)' }}>{sharedBy}</span>
       <a
         href="/login"
         style={{

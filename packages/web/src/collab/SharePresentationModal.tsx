@@ -23,6 +23,8 @@ interface Props {
   pages?: PageOption[];
 }
 
+const NEW_LINK_COPIED_ID = '__new_presentation_link__';
+
 export function SharePresentationModal({ modelId, open, onClose, pages = [] }: Props) {
   const [presentations, setPresentations] = useState<PresentationRecord[]>([]);
   const [selectedPageIds, setSelectedPageIds] = useState<string[]>([]);
@@ -97,7 +99,7 @@ export function SharePresentationModal({ modelId, open, onClose, pages = [] }: P
       const data = await res.json();
       const url = `${window.location.origin}/p/${data.token}`;
       await navigator.clipboard.writeText(url);
-      setCopiedToken(data.token);
+      setCopiedToken(NEW_LINK_COPIED_ID);
       setTimeout(() => setCopiedToken(null), 2000);
       await fetchPresentations();
     } finally {
@@ -113,14 +115,34 @@ export function SharePresentationModal({ modelId, open, onClose, pages = [] }: P
     fetchPresentations,
   ]);
 
-  const handleRevoke = useCallback(
-    async (linkId: string) => {
+  const handleCopyExistingLink = useCallback(async (token: string) => {
+    setError(null);
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/p/${token}`);
+      setCopiedToken(token);
+      setTimeout(() => setCopiedToken(null), 2000);
+    } catch {
+      setError('Failed to copy presentation link');
+    }
+  }, []);
+
+  const handleSetActive = useCallback(
+    async (linkId: string, active: boolean) => {
       setLoading(true);
       setError(null);
       try {
-        await fetch(`/api/models/${modelId}/presentations/${linkId}/revoke`, {
+        const action = active ? 'activate' : 'revoke';
+        const res = await fetch(`/api/models/${modelId}/presentations/${linkId}/${action}`, {
           method: 'POST',
         });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setError(
+            (data as { detail?: string }).detail ??
+              `Failed to ${active ? 'activate' : 'deactivate'} presentation`,
+          );
+          return;
+        }
         await fetchPresentations();
       } finally {
         setLoading(false);
@@ -330,7 +352,7 @@ export function SharePresentationModal({ modelId, open, onClose, pages = [] }: P
             marginBottom: 24,
           }}
         >
-          {copiedToken ? 'Copied!' : loading ? 'Creating…' : 'Copy link'}
+          {copiedToken === NEW_LINK_COPIED_ID ? 'Copied!' : loading ? 'Creating…' : 'Copy link'}
         </button>
 
         {presentations.length > 0 && (
@@ -343,7 +365,7 @@ export function SharePresentationModal({ modelId, open, onClose, pages = [] }: P
                 marginBottom: 12,
               }}
             >
-              Active presentations
+              Presentations
             </p>
             {presentations.map((p) => (
               <div
@@ -356,7 +378,7 @@ export function SharePresentationModal({ modelId, open, onClose, pages = [] }: P
                   borderBottom: '1px solid var(--color-border)',
                 }}
               >
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-foreground)' }}>
                     {new Date(p.createdAt).toLocaleDateString()}
                   </span>
@@ -369,23 +391,50 @@ export function SharePresentationModal({ modelId, open, onClose, pages = [] }: P
                   >
                     {p.openCount} view{p.openCount !== 1 ? 's' : ''}
                   </span>
+                  <span
+                    style={{
+                      fontSize: 'var(--text-xs)',
+                      color: p.isRevoked
+                        ? 'var(--color-muted-foreground)'
+                        : 'var(--color-success, var(--color-accent))',
+                      marginLeft: 8,
+                    }}
+                  >
+                    {p.isRevoked ? 'Inactive' : 'Active'}
+                  </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleRevoke(p.id)}
-                  disabled={loading}
-                  aria-busy={loading}
-                  style={{
-                    fontSize: 'var(--text-sm)',
-                    color: 'var(--color-danger)',
-                    border: 'none',
-                    background: 'none',
-                    cursor: 'pointer',
-                    padding: '4px 8px',
-                  }}
-                >
-                  Revoke
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => void handleCopyExistingLink(p.token)}
+                    style={{
+                      fontSize: 'var(--text-sm)',
+                      color: 'var(--color-accent)',
+                      border: 'none',
+                      background: 'none',
+                      cursor: 'pointer',
+                      padding: '4px 8px',
+                    }}
+                  >
+                    {copiedToken === p.token ? 'Copied!' : 'Copy link'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleSetActive(p.id, p.isRevoked)}
+                    disabled={loading}
+                    aria-busy={loading}
+                    style={{
+                      fontSize: 'var(--text-sm)',
+                      color: p.isRevoked ? 'var(--color-accent)' : 'var(--color-danger)',
+                      border: 'none',
+                      background: 'none',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      padding: '4px 8px',
+                    }}
+                  >
+                    {p.isRevoked ? 'Activate' : 'Deactivate'}
+                  </button>
+                </div>
               </div>
             ))}
           </section>
