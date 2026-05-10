@@ -18,6 +18,8 @@ export interface FamilyParamDef {
 export interface SketchLine {
   startMm: { xMm: number; yMm: number };
   endMm: { xMm: number; yMm: number };
+  source?: { kind: 'reference_plane'; refPlaneId: string };
+  locked?: boolean;
 }
 
 /**

@@ -57,7 +57,7 @@ The Family Editor is a sub-environment within Revit for creating parametric comp
 **Screenshot:**
 ![Pick Lines with Lock](file:///Users/jhoetter/Desktop/Revit%20Specs/0619_03-49-44.png)
 
-**bim-ai status:** 🟡 Partial — external catalog families can now be loaded into the current project from `FamilyLibraryPanel.tsx` via a dedicated Load action. `Workspace.tsx` persists them as project `family_type` elements with `catalogSource` provenance using the existing `upsertFamilyType` command, while the separate Place action still loads and immediately enters placement. Missing: true Family Editor `.rfa` save/load, multi-open-project target selection, and overwrite/parameter-values dialogs.
+**bim-ai status:** 🟡 Partial — family sweep profile sketches can pick reference planes as profile sketch lines and optionally lock those picked lines to the source reference plane. Locked picked lines store `reference_plane` source metadata and rederive automatically when the reference-plane offset is edited. Missing: model-edge picking, lock constraint visualization, and Pick Lines support across every sketch-based family/project tool.
 
 ---
 
@@ -68,7 +68,7 @@ The Family Editor is a sub-environment within Revit for creating parametric comp
 **Screenshot:**
 ![Trim/Extend to Corner](file:///Users/jhoetter/Desktop/Revit%20Specs/0387_01-52-00.png)
 
-**bim-ai status:** ❌ Not available — bim-ai has no 2D sketch cleanup tools.
+**bim-ai status:** 🟡 Partial — family sweep profile sketches expose a TR cleanup action: users choose two profile lines and trim/extend their nearest endpoints to the infinite-line intersection. Missing: keyboard-driven `TR`, canvas click selection, gap/overlap feedback, and reuse across every sketch mode.
 
 ---
 
