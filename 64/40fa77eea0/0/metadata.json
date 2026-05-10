@@ -1,0 +1,39 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "6440fa77eea0",
+  "session_id": "019e12a2-e2b7-7121-b7a2-efaa44476317",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T17:11:54.791457Z",
+  "branch": "revit-parity-link-pinning-wave",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "c4c7ca58e46b",
+  "token_usage": {
+    "input_tokens": 1235634,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 35648384,
+    "output_tokens": 86613,
+    "api_call_count": 279
+  },
+  "session_metrics": {
+    "turn_count": 10
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 164,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/engine_dispatch_coordination.py": 12,
+        "app/tests/test_vie_07_pin_element.py": 59,
+        "packages/web/src/workspace/inspector/InspectorContent.pin.test.tsx": 38,
+        "packages/web/src/workspace/inspector/InspectorContent.tsx": 2,
+        "packages/web/src/workspace/project/ManageLinksDialog.tsx": 53
+      }
+    }
+  ]
+}

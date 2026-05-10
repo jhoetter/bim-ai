@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "6440fa77eea0",
+  "strategy": "manual-commit",
+  "branch": "revit-parity-link-pinning-wave",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/64/40fa77eea0/0/metadata.json",
+      "transcript": "/64/40fa77eea0/0/full.jsonl",
+      "content_hash": "/64/40fa77eea0/0/content_hash.txt",
+      "prompt": "/64/40fa77eea0/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1235634,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 35648384,
+    "output_tokens": 86613,
+    "api_call_count": 279
+  }
+}
