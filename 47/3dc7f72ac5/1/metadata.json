@@ -1,0 +1,55 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "473dc7f72ac5",
+  "session_id": "019e0f10-1203-7042-8eea-b5b9ea724341",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T12:52:37.810189Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/plan/SheetCanvas.tsx",
+    "packages/web/src/plan/SheetReviewSurface.tsx",
+    "packages/web/src/workspace/ModeShells.tsx",
+    "packages/web/src/workspace/sheets/SectionPlaceholderPane.tsx",
+    "packages/web/src/workspace/sheets/sheetRecommendedViewports.test.ts",
+    "packages/web/src/workspace/sheets/sheetRecommendedViewports.ts",
+    "packages/web/src/workspace/sheets/sheetViewportAuthoring.tsx",
+    "packages/web/src/workspace/viewport/CanvasMount.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "7834f8a7153c",
+  "checkpoint_transcript_start": 8540,
+  "transcript_lines_at_start": 8540,
+  "token_usage": {
+    "input_tokens": 566197,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 16880000,
+    "output_tokens": 29533,
+    "api_call_count": 112
+  },
+  "session_metrics": {
+    "turn_count": 17
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T12:52:37.291758Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 423,
+    "human_modified": 12,
+    "human_removed": 0,
+    "total_committed": 423,
+    "total_lines_changed": 435,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}

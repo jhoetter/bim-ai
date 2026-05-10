@@ -1,0 +1,19 @@
+<image name=[Image #1]>
+
+---
+
+</image>
+
+---
+
+[Image #1]also you can see e.g. how in certain perspectives like 3D there are issues with how things are displayed, it is overall a bit messy, ...
+
+really be thorough and implement this holistically as consistent, beautiful, easy to use,...
+
+---
+
+but is everything of ux-revamp.md implemented?
+
+---
+
+go ahead and implement EVERYTHING
