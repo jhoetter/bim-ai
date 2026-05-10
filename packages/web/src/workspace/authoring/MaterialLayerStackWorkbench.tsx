@@ -80,6 +80,19 @@ export function MaterialLayerStackWorkbench({
     setDraftRows((prev) => prev.map((row) => (row.index === index ? { ...row, ...patch } : row)));
   };
 
+  const moveDraftLayer = (index: number, direction: -1 | 1) => {
+    setDraftRows((prev) => {
+      const from = prev.findIndex((row) => row.index === index);
+      const to = from + direction;
+      if (from < 0 || to < 0 || to >= prev.length) return prev;
+      const next = [...prev];
+      const moving = next[from]!;
+      next[from] = next[to]!;
+      next[to] = moving;
+      return next.map((row, nextIndex) => ({ ...row, index: nextIndex }));
+    });
+  };
+
   const handleApply = () => {
     setApplyError(null);
     if (!typeAuthoring || !isLayeredTypeElement(selected)) return;
@@ -147,10 +160,11 @@ export function MaterialLayerStackWorkbench({
                   mm
                 </th>
                 <th scope="col" className="p-1.5 font-medium" />
+                <th scope="col" className="p-1.5 font-medium" />
               </tr>
             </thead>
             <tbody>
-              {draftRows.map((row) => (
+              {draftRows.map((row, rowPosition) => (
                 <tr
                   key={row.index}
                   className="border-border border-b odd:bg-background even:bg-muted/15 last:border-b-0"
@@ -201,6 +215,32 @@ export function MaterialLayerStackWorkbench({
                         updateDraft(row.index, { thicknessMm: Number(e.target.value) })
                       }
                     />
+                  </td>
+                  <td className="p-1">
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        aria-label={`Move layer ${row.index} up`}
+                        title="Move layer up"
+                        disabled={rowPosition === 0}
+                        data-testid={`material-layer-move-up-${row.index}`}
+                        className="rounded border border-border px-1 text-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                        onClick={() => moveDraftLayer(row.index, -1)}
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Move layer ${row.index} down`}
+                        title="Move layer down"
+                        disabled={rowPosition === draftRows.length - 1}
+                        data-testid={`material-layer-move-down-${row.index}`}
+                        className="rounded border border-border px-1 text-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                        onClick={() => moveDraftLayer(row.index, 1)}
+                      >
+                        ↓
+                      </button>
+                    </div>
                   </td>
                   <td className="p-1">
                     <button
@@ -290,6 +330,7 @@ export function MaterialLayerStackWorkbench({
             type="button"
             className="rounded bg-accent px-2 py-1 text-[10px] font-medium text-accent-foreground hover:opacity-90"
             onClick={handleApply}
+            data-testid="material-layer-apply"
           >
             Apply type stack
           </button>
