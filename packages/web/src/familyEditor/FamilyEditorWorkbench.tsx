@@ -14,12 +14,15 @@ import { validateFormula } from '../lib/expressionEvaluator';
 import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
 import { LoadedFamiliesSidebar, NESTED_FAMILY_DRAG_TYPE } from './LoadedFamiliesSidebar';
 import { NestedInstanceInspector, type HostParamRef } from './NestedInstanceInspector';
+import { AppearanceAssetBrowserDialog } from './AppearanceAssetBrowserDialog';
 import {
   pickedReferencePlaneLine,
   rederiveLockedSketchLines,
   trimExtendSketchLinesToCorner,
   type FamilySketchRefPlane,
 } from './familySketchGeometry';
+import { MaterialBrowserDialog } from './MaterialBrowserDialog';
+import { resolveMaterial } from '../viewport/materials';
 
 /** VIE-02 — plan detail levels usable for per-node visibility binding. */
 type DetailLevelKey = 'coarse' | 'medium' | 'fine';
@@ -71,6 +74,8 @@ type SweepDraft = {
    *  profile loop. */
   step: 'path' | 'profile';
 };
+
+type MaterialAssignmentTarget = { kind: 'param'; index: number } | { kind: 'sweep'; index: number };
 
 const EMPTY_SWEEP_DRAFT: SweepDraft = {
   pathLines: [],
@@ -151,6 +156,8 @@ export function FamilyEditorWorkbench(): JSX.Element {
   const [arrayDraft, setArrayDraft] = useState<ArrayDraft | null>(null);
   const [nestedInstances, setNestedInstances] = useState<FamilyInstanceRefNode[]>([]);
   const [selectedNestedIndex, setSelectedNestedIndex] = useState<number | null>(null);
+  const [materialTarget, setMaterialTarget] = useState<MaterialAssignmentTarget | null>(null);
+  const [appearanceTarget, setAppearanceTarget] = useState<MaterialAssignmentTarget | null>(null);
   const [lastNestedAction, setLastNestedAction] = useState<AddNestedFamilyInstanceAction | null>(
     null,
   );
@@ -307,6 +314,36 @@ export function FamilyEditorWorkbench(): JSX.Element {
         return { ...s, visibilityByDetailLevel: next };
       }),
     );
+  }
+
+  function updateSweepMaterial(index: number, materialKey: string | null) {
+    setSweeps((prev) =>
+      prev.map((sweep, i) => {
+        if (i !== index) return sweep;
+        if (!materialKey) {
+          const { materialKey: _omit, ...rest } = sweep;
+          return rest as SweepGeometryNode;
+        }
+        return { ...sweep, materialKey };
+      }),
+    );
+  }
+
+  function assignMaterial(target: MaterialAssignmentTarget, materialKey: string) {
+    if (target.kind === 'param') {
+      updateParam(target.index, { default: materialKey });
+    } else {
+      updateSweepMaterial(target.index, materialKey);
+    }
+  }
+
+  function materialKeyForTarget(target: MaterialAssignmentTarget | null): string | null {
+    if (!target) return null;
+    if (target.kind === 'param') {
+      const value = params[target.index]?.default;
+      return typeof value === 'string' ? value : null;
+    }
+    return sweeps[target.index]?.materialKey ?? null;
   }
 
   function startArray() {
@@ -663,6 +700,15 @@ export function FamilyEditorWorkbench(): JSX.Element {
               sweep={sweeps[selectedSweepIndex]}
               params={params}
               onUpdate={(binding) => updateSweepVisibility(selectedSweepIndex, binding)}
+              onUpdateMaterial={(materialKey) =>
+                updateSweepMaterial(selectedSweepIndex, materialKey)
+              }
+              onOpenMaterialBrowser={() =>
+                setMaterialTarget({ kind: 'sweep', index: selectedSweepIndex })
+              }
+              onOpenAppearanceAssetBrowser={() =>
+                setAppearanceTarget({ kind: 'sweep', index: selectedSweepIndex })
+              }
               onUpdateDetailLevel={(level, visible) =>
                 updateSweepDetailLevelVisibility(selectedSweepIndex, level, visible)
               }
@@ -754,6 +800,13 @@ export function FamilyEditorWorkbench(): JSX.Element {
                         onChange={(e) => updateParam(i, { default: Number(e.target.value) })}
                       />
                     )}
+                    {param.type === 'material_key' && (
+                      <MaterialDefaultEditor
+                        materialKey={typeof param.default === 'string' ? param.default : ''}
+                        onOpenBrowser={() => setMaterialTarget({ kind: 'param', index: i })}
+                        onOpenAssetBrowser={() => setAppearanceTarget({ kind: 'param', index: i })}
+                      />
+                    )}
                   </td>
                   <td>
                     <input
@@ -825,11 +878,46 @@ export function FamilyEditorWorkbench(): JSX.Element {
       <button
         type="button"
         onClick={() =>
-          console.warn('load-into-project stub', { template, refPlanes, params, resolved, sweeps })
+          console.warn('load-into-project stub', {
+            template,
+            refPlanes,
+            params,
+            resolved,
+            sweeps,
+            materialKeys: {
+              params: params
+                .filter((param) => param.type === 'material_key')
+                .map((param) => ({ key: param.key, materialKey: param.default })),
+              sweeps: sweeps.map((sweep, index) => ({
+                index,
+                materialKey: sweep.materialKey ?? null,
+              })),
+            },
+          })
         }
       >
         {t('familyEditor.loadIntoProject')}
       </button>
+      {materialTarget ? (
+        <MaterialBrowserDialog
+          currentKey={materialKeyForTarget(materialTarget)}
+          onAssign={(materialKey) => {
+            assignMaterial(materialTarget, materialKey);
+            setMaterialTarget(null);
+          }}
+          onClose={() => setMaterialTarget(null)}
+        />
+      ) : null}
+      {appearanceTarget ? (
+        <AppearanceAssetBrowserDialog
+          currentKey={materialKeyForTarget(appearanceTarget)}
+          onReplace={(materialKey) => {
+            assignMaterial(appearanceTarget, materialKey);
+            setAppearanceTarget(null);
+          }}
+          onClose={() => setAppearanceTarget(null)}
+        />
+      ) : null}
       {lastNestedAction && (
         <span
           data-testid="last-nested-action"
@@ -850,10 +938,46 @@ interface SweepPropertiesPanelProps {
   sweep: SweepGeometryNode;
   params: Param[];
   onUpdate: (binding: VisibilityBinding | undefined) => void;
+  onUpdateMaterial: (materialKey: string | null) => void;
+  onOpenMaterialBrowser: () => void;
+  onOpenAppearanceAssetBrowser: () => void;
   onUpdateDetailLevel: (level: DetailLevelKey, visible: boolean) => void;
 }
 
 const VISIBLE_ALWAYS = '__always__';
+
+function MaterialDefaultEditor({
+  materialKey,
+  onOpenBrowser,
+  onOpenAssetBrowser,
+}: {
+  materialKey: string;
+  onOpenBrowser: () => void;
+  onOpenAssetBrowser: () => void;
+}): JSX.Element {
+  const material = resolveMaterial(materialKey);
+  return (
+    <div
+      className="flex flex-wrap items-center gap-2 text-xs"
+      data-testid="material-default-editor"
+    >
+      <span
+        className="h-5 w-5 rounded border border-border"
+        style={{ backgroundColor: material?.baseColor ?? '#cccccc' }}
+        aria-hidden="true"
+      />
+      <span className="max-w-36 truncate" data-testid="material-default-label">
+        {material ? material.displayName : materialKey || 'None'}
+      </span>
+      <button type="button" className="rounded border px-2 py-0.5" onClick={onOpenBrowser}>
+        Browse
+      </button>
+      <button type="button" className="rounded border px-2 py-0.5" onClick={onOpenAssetBrowser}>
+        Asset Browser
+      </button>
+    </div>
+  );
+}
 
 /**
  * FAM-03 + VIE-02 — properties panel for a selected geometry node.
@@ -868,6 +992,9 @@ function SweepPropertiesPanel({
   sweep,
   params,
   onUpdate,
+  onUpdateMaterial,
+  onOpenMaterialBrowser,
+  onOpenAppearanceAssetBrowser,
   onUpdateDetailLevel,
 }: SweepPropertiesPanelProps): JSX.Element {
   const booleanParams = params.filter((p) => p.type === 'boolean');
@@ -876,6 +1003,7 @@ function SweepPropertiesPanel({
   const whenTrue = binding ? binding.whenTrue : true;
   const detailVis = sweep.visibilityByDetailLevel;
   const detailVisible = (level: DetailLevelKey): boolean => detailVis?.[level] !== false;
+  const material = resolveMaterial(sweep.materialKey);
 
   function onParamChange(value: string) {
     if (value === VISIBLE_ALWAYS) {
@@ -897,6 +1025,40 @@ function SweepPropertiesPanel({
       aria-label={t('familyEditor.geometryPropertiesAriaLabel')}
     >
       <h3 className="font-semibold text-sm">{t('familyEditor.geometryPropertiesHeading')}</h3>
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="w-32">Material</span>
+        <span
+          className="h-5 w-5 rounded border border-border"
+          style={{ backgroundColor: material?.baseColor ?? '#cccccc' }}
+          aria-hidden="true"
+        />
+        <span data-testid="selected-sweep-material">
+          {material ? material.displayName : (sweep.materialKey ?? 'None')}
+        </span>
+        <button
+          type="button"
+          className="rounded border px-2 py-0.5 text-xs"
+          onClick={onOpenMaterialBrowser}
+        >
+          Browse
+        </button>
+        <button
+          type="button"
+          className="rounded border px-2 py-0.5 text-xs"
+          onClick={onOpenAppearanceAssetBrowser}
+        >
+          Asset Browser
+        </button>
+        {sweep.materialKey ? (
+          <button
+            type="button"
+            className="rounded border px-2 py-0.5 text-xs"
+            onClick={() => onUpdateMaterial(null)}
+          >
+            Clear
+          </button>
+        ) : null}
+      </div>
       <label className="flex items-center gap-2 text-sm">
         <span className="w-32">{t('familyEditor.visibleWhenLabel')}</span>
         <select

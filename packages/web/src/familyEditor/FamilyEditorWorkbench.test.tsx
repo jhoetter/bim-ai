@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import { FamilyEditorWorkbench, resolveFamilyParamValue } from './FamilyEditorWorkbench';
 import i18n from '../i18n';
+import { listMaterials } from '../viewport/materials';
 
 function renderWithI18n(ui: React.ReactElement) {
   return render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>);
@@ -112,6 +113,74 @@ describe('FAM-09 — flex test mode', () => {
     expect(flexInput.value).toBe('999');
     fireEvent.click(getByText('Reset'));
     expect((getByLabelText('flex-param_1') as HTMLInputElement).value).toBe('');
+  });
+});
+
+describe('FAM material browser parity', () => {
+  it('assigns material defaults to material_key family parameters', () => {
+    const material = listMaterials()[0]!;
+    const { getAllByRole, getByTestId } = renderWithI18n(<FamilyEditorWorkbench />);
+
+    fireEvent.click(getAllByRole('button').find((b) => b.textContent === 'Add parameter')!);
+    fireEvent.change(getAllByRole('combobox')[0], { target: { value: 'material_key' } });
+    fireEvent.click(getByTestId('material-default-editor').querySelector('button')!);
+    fireEvent.click(getByTestId(`material-assign-${material.key}`));
+
+    expect(getByTestId('material-default-label').textContent).toContain(material.displayName);
+  });
+
+  it('replaces material defaults from the appearance asset browser', () => {
+    const material = listMaterials().find((candidate) => candidate.category === 'glass')!;
+    const { getAllByRole, getByText, getByTestId, getByLabelText } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+
+    fireEvent.click(getAllByRole('button').find((b) => b.textContent === 'Add parameter')!);
+    fireEvent.change(getAllByRole('combobox')[0], { target: { value: 'material_key' } });
+    fireEvent.click(getByText('Asset Browser'));
+    expect(getByLabelText('Appearance Asset Browser')).toBeTruthy();
+    fireEvent.change(getByLabelText('Search materials'), {
+      target: { value: material.displayName },
+    });
+    fireEvent.click(getByTestId(`material-assign-${material.key}`));
+
+    expect(getByTestId('material-default-label').textContent).toContain(material.displayName);
+  });
+
+  it('assigns a material to selected sweep geometry', () => {
+    const material = listMaterials().find((candidate) => candidate.category === 'concrete')!;
+    const { getByText, getByLabelText, getByTestId, getAllByText } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+    fireEvent.click(getByText('Sweep'));
+
+    fireEvent.change(getByLabelText('path-sx'), { target: { value: '0' } });
+    fireEvent.change(getByLabelText('path-sy'), { target: { value: '0' } });
+    fireEvent.change(getByLabelText('path-ex'), { target: { value: '1000' } });
+    fireEvent.change(getByLabelText('path-ey'), { target: { value: '0' } });
+    fireEvent.click(getAllByText('Add line')[0]);
+    fireEvent.click(getByText(/Edit Profile/));
+
+    const addProfileLine = (sx: string, sy: string, ex: string, ey: string) => {
+      fireEvent.change(getByLabelText('profile-sx'), { target: { value: sx } });
+      fireEvent.change(getByLabelText('profile-sy'), { target: { value: sy } });
+      fireEvent.change(getByLabelText('profile-ex'), { target: { value: ex } });
+      fireEvent.change(getByLabelText('profile-ey'), { target: { value: ey } });
+      fireEvent.click(getByText('Add line'));
+    };
+    addProfileLine('0', '0', '50', '0');
+    addProfileLine('50', '0', '25', '50');
+    addProfileLine('25', '50', '0', '0');
+    fireEvent.click(getByText(/Finish/));
+
+    fireEvent.click(getByLabelText('select-sweep-0'));
+    fireEvent.click(getByText('Browse'));
+    fireEvent.change(getByLabelText('Search materials'), {
+      target: { value: material.displayName },
+    });
+    fireEvent.click(getByTestId(`material-assign-${material.key}`));
+
+    expect(getByTestId('selected-sweep-material').textContent).toContain(material.displayName);
   });
 });
 

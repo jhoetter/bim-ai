@@ -117,7 +117,7 @@ Example: door Width is a Type parameter; Sill Height is an Instance parameter.
 **Screenshot:**
 ![Material Browser](file:///Users/jhoetter/Desktop/Revit%20Specs/0407_01-54-39.png)
 
-**bim-ai status:** ❌ Not available — bim-ai has no visual material browser or asset-based material system.
+**bim-ai status:** 🟡 Partial — family editor material fields now open a searchable Material Browser backed by the existing MAT-01 PBR catalog. It shows material swatches, names, categories, Appearance/Graphics tabs, and assigns selected keys to `material_key` parameters and sweep geometry `materialKey` values. Missing: project/family material creation and rename, full Appearance/Graphics/Physical/Thermal editing, and integration with all material-bearing elements.
 
 ---
 
@@ -128,7 +128,7 @@ Example: door Width is a Type parameter; Sill Height is an Instance parameter.
 **Screenshot:**
 ![Asset Browser](file:///Users/jhoetter/Desktop/Revit%20Specs/0410_01-54-56.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — family editor material fields also expose a distinct Appearance Asset Browser with search, swatches, and a Replace action that swaps the selected appearance key into the active family parameter or sweep. Missing: Autodesk-scale library content, texture/bump/reflectance asset editing, downloaded asset management, and material/appearance split semantics beyond the local MAT-01 catalog.
 
 ---
 
