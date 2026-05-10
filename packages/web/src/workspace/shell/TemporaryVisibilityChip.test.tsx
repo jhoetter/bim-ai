@@ -34,4 +34,19 @@ describe('VIE-04 — TemporaryVisibilityChip', () => {
     fireEvent.click(getByTestId('temp-visibility-chip'));
     expect(useBimStore.getState().temporaryVisibility).toBeNull();
   });
+
+  it('shows element targets when temporary element mode is active', () => {
+    useBimStore.setState({
+      temporaryVisibility: {
+        viewId: 'pv-1',
+        mode: 'isolate',
+        categories: [],
+        elementIds: ['wall-7'],
+      },
+    });
+    const { getByTestId } = render(<TemporaryVisibilityChip />);
+    const chip = getByTestId('temp-visibility-chip');
+    expect(chip.textContent).toContain('Isolate');
+    expect(chip.textContent).toContain('#wall-7');
+  });
 });

@@ -322,6 +322,7 @@ export function PlanCanvas({
   const [moveAnchorSet, setMoveAnchorSet] = useState(false);
   const rotateAnchorRef = useRef<{ xMm: number; yMm: number } | null>(null);
   const [rotateAnchorSet, setRotateAnchorSet] = useState(false);
+  const [temporaryVisibilityMenuOpen, setTemporaryVisibilityMenuOpen] = useState(false);
   const splitStateRef = useRef<SplitState>(initialSplitState());
   const trimStateRef = useRef<TrimState>(initialTrimState());
   const trimExtendFirstWallRef = useRef<string | null>(null);
@@ -475,7 +476,9 @@ export function PlanCanvas({
         next[id] = el;
         continue;
       }
-      const inSet = temporaryVisibility.categories.includes(el.kind);
+      const inSet =
+        temporaryVisibility.categories.includes(el.kind) ||
+        (temporaryVisibility.elementIds ?? []).includes(id);
       const visible = temporaryVisibility.mode === 'isolate' ? inSet : !inSet;
       if (visible) next[id] = el;
     }
@@ -5154,16 +5157,16 @@ export function PlanCanvas({
         : null}
       {/* VIE-04 — Temporary visibility (isolate / hide) trigger, lower-right corner above reveal-hidden. */}
       {selectedId ? (
-        <div
-          className="pointer-events-auto absolute right-3 z-10 flex gap-1"
-          style={{ bottom: 68 }}
-        >
+        <div className="pointer-events-auto absolute right-3 z-10" style={{ bottom: 68 }}>
           {temporaryVisibility ? (
             <button
               type="button"
               title="Reset Temporary Visibility"
               data-testid="temp-visibility-toggle"
-              onClick={() => clearTemporaryVisibility()}
+              onClick={() => {
+                setTemporaryVisibilityMenuOpen(false);
+                clearTemporaryVisibility();
+              }}
               style={{
                 padding: '2px 8px',
                 fontSize: 10,
@@ -5177,20 +5180,13 @@ export function PlanCanvas({
               👓 Reset
             </button>
           ) : (
-            <>
+            <div style={{ position: 'relative', display: 'inline-flex' }}>
               <button
                 type="button"
-                title="Isolate Category temporarily"
+                title="Temporary Hide/Isolate"
                 data-testid="temp-visibility-toggle"
-                onClick={() => {
-                  const el = elementsByIdRaw[selectedId];
-                  const categories = el ? [el.kind] : [];
-                  setTemporaryVisibility({
-                    viewId: activePlanViewId ?? 'default',
-                    mode: 'isolate',
-                    categories,
-                  });
-                }}
+                aria-expanded={temporaryVisibilityMenuOpen}
+                onClick={() => setTemporaryVisibilityMenuOpen((open) => !open)}
                 style={{
                   padding: '2px 8px',
                   fontSize: 10,
@@ -5201,34 +5197,83 @@ export function PlanCanvas({
                   cursor: 'pointer',
                 }}
               >
-                👓 Isolate
+                👓
               </button>
-              <button
-                type="button"
-                title="Hide Category temporarily"
-                data-testid="temp-hide-toggle"
-                onClick={() => {
-                  const el = elementsByIdRaw[selectedId];
-                  const categories = el ? [el.kind] : [];
-                  setTemporaryVisibility({
-                    viewId: activePlanViewId ?? 'default',
-                    mode: 'hide',
-                    categories,
-                  });
-                }}
-                style={{
-                  padding: '2px 8px',
-                  fontSize: 10,
-                  background: 'var(--color-surface)',
-                  color: 'var(--color-muted)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 4,
-                  cursor: 'pointer',
-                }}
-              >
-                👁 Hide
-              </button>
-            </>
+              {temporaryVisibilityMenuOpen ? (
+                <div
+                  data-testid="temp-visibility-menu"
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    bottom: 26,
+                    display: 'grid',
+                    gridTemplateColumns: '1fr',
+                    gap: 2,
+                    minWidth: 132,
+                    padding: 4,
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 6,
+                    background: 'var(--color-surface)',
+                    boxShadow: '0 6px 16px rgba(0,0,0,0.18)',
+                  }}
+                >
+                  {[
+                    {
+                      testId: 'temp-isolate-category-toggle',
+                      label: 'Isolate Category',
+                      mode: 'isolate' as const,
+                      category: true,
+                    },
+                    {
+                      testId: 'temp-isolate-element-toggle',
+                      label: 'Isolate Element',
+                      mode: 'isolate' as const,
+                      category: false,
+                    },
+                    {
+                      testId: 'temp-hide-toggle',
+                      label: 'Hide Category',
+                      mode: 'hide' as const,
+                      category: true,
+                    },
+                    {
+                      testId: 'temp-hide-element-toggle',
+                      label: 'Hide Element',
+                      mode: 'hide' as const,
+                      category: false,
+                    },
+                  ].map((item) => (
+                    <button
+                      key={item.testId}
+                      type="button"
+                      data-testid={item.testId}
+                      onClick={() => {
+                        const el = elementsByIdRaw[selectedId];
+                        setTemporaryVisibility({
+                          viewId: activePlanViewId ?? 'default',
+                          mode: item.mode,
+                          categories: item.category && el ? [el.kind] : [],
+                          elementIds: item.category ? [] : [selectedId],
+                        });
+                        setTemporaryVisibilityMenuOpen(false);
+                      }}
+                      style={{
+                        padding: '3px 6px',
+                        fontSize: 10,
+                        textAlign: 'left',
+                        background: 'transparent',
+                        color: 'var(--color-muted)',
+                        border: 0,
+                        borderRadius: 4,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           )}
         </div>
       ) : null}

@@ -100,4 +100,26 @@ describe('VIE-04 — isElementVisibleUnderTemporaryVisibility helper', () => {
     expect(isElementVisibleUnderTemporaryVisibility('door', o)).toBe(false);
     expect(isElementVisibleUnderTemporaryVisibility('wall', o)).toBe(true);
   });
+
+  it('isolate: listed element ids render without showing the whole category', () => {
+    const o: TemporaryVisibility = {
+      viewId: 'v',
+      mode: 'isolate',
+      categories: [],
+      elementIds: ['wall-2'],
+    };
+    expect(isElementVisibleUnderTemporaryVisibility('wall', o, 'wall-2')).toBe(true);
+    expect(isElementVisibleUnderTemporaryVisibility('wall', o, 'wall-1')).toBe(false);
+  });
+
+  it('hide: listed element ids are dropped without hiding the whole category', () => {
+    const o: TemporaryVisibility = {
+      viewId: 'v',
+      mode: 'hide',
+      categories: [],
+      elementIds: ['door-1'],
+    };
+    expect(isElementVisibleUnderTemporaryVisibility('door', o, 'door-1')).toBe(false);
+    expect(isElementVisibleUnderTemporaryVisibility('door', o, 'door-2')).toBe(true);
+  });
 });

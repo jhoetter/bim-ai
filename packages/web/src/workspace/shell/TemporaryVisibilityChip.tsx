@@ -13,7 +13,8 @@ export function TemporaryVisibilityChip(): JSX.Element | null {
   const clear = useBimStore((s) => s.clearTemporaryVisibility);
   if (override === null) return null;
   const label = override.mode === 'isolate' ? 'Isolate' : 'Hide';
-  const cats = override.categories.length > 0 ? override.categories.join(', ') : '—';
+  const parts = [...override.categories, ...(override.elementIds ?? []).map((id) => `#${id}`)];
+  const targets = parts.length > 0 ? parts.join(', ') : '—';
   return (
     <button
       type="button"
@@ -23,7 +24,7 @@ export function TemporaryVisibilityChip(): JSX.Element | null {
       className="inline-flex items-center gap-1 rounded border border-amber-500 bg-amber-100 px-2 py-0.5 text-[11px] text-amber-900 hover:bg-amber-200"
     >
       <span>
-        {label}: {cats}
+        {label}: {targets}
       </span>
       <Icons.close size={ICON_SIZE.chrome} aria-hidden="true" className="opacity-70" />
     </button>

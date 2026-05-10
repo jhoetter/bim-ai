@@ -320,8 +320,9 @@ export type StoreState = {
 
   /**
    * VIE-04: client-only temporary visibility override scoped to one view.
-   * `mode: 'isolate'` shows only the listed categories; `mode: 'hide'` hides
-   * them. Cleared on view change or explicit reset; never persisted.
+   * `mode: 'isolate'` shows only the listed categories / element ids;
+   * `mode: 'hide'` hides them. Cleared on view change or explicit reset;
+   * never persisted.
    */
   temporaryVisibility: TemporaryVisibility | null;
   setTemporaryVisibility: (next: TemporaryVisibility | null) => void;
@@ -342,6 +343,8 @@ export type TemporaryVisibility = {
   mode: TemporaryVisibilityMode;
   /** Element kinds (`wall`, `door`, …) covered by the override. */
   categories: string[];
+  /** Specific element ids covered by the override. */
+  elementIds?: string[];
 };
 
 /**
@@ -352,8 +355,11 @@ export type TemporaryVisibility = {
 export function isElementVisibleUnderTemporaryVisibility(
   kind: string,
   override: TemporaryVisibility | null,
+  elementId?: string,
 ): boolean {
   if (override === null) return true;
-  const inSet = override.categories.includes(kind);
+  const inCategorySet = override.categories.includes(kind);
+  const inElementSet = elementId ? (override.elementIds ?? []).includes(elementId) : false;
+  const inSet = inCategorySet || inElementSet;
   return override.mode === 'isolate' ? inSet : !inSet;
 }
