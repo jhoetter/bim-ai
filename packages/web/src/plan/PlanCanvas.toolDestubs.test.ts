@@ -54,6 +54,18 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
     expect(SRC).toMatch(/type:\s*['"]createSlabOpening['"][\s\S]{0,400}isShaft:\s*true/);
   });
 
+  it('uses the visible wall options-bar state for wall location and offset', () => {
+    expect(SRC).toMatch(
+      /const\s+\{[\s\S]*wallLocationLine[\s\S]*wallDrawOffsetMm[\s\S]*\}\s*=\s*useBimStore\.getState\(\)/,
+    );
+    expect(SRC).toMatch(/locationLine:\s*wallLocationLine/);
+  });
+
+  it('cycles the visible wall location-line setting with Tab while the wall tool is active', () => {
+    expect(SRC).toMatch(/ev\.key\s*===\s*['"]Tab['"][\s\S]{0,80}planTool\s*===\s*['"]wall['"]/);
+    expect(SRC).toMatch(/setWallLocationLine\(cycleWallLocationLine\(st\.wallLocationLine\)\)/);
+  });
+
   it('passes the Wall-Join variant through unchanged from the reducer effect', () => {
     expect(SRC).toMatch(
       /type:\s*['"]setWallJoinVariant['"][\s\S]{0,200}variant:\s*effect\.commitJoin\.variant/,

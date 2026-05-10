@@ -28,7 +28,7 @@ import {
   initialCeilingState,
   reduceCeiling,
   type CeilingState,
-  type WallLocationLine,
+  cycleWallLocationLine,
 } from '../tools/toolGrammar';
 import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
@@ -2497,12 +2497,8 @@ export function PlanCanvas({
           bumpGeom((x) => x + 1);
           return;
         }
-        const wallLocationLine = useToolPrefs
-          .getState()
-          .getCycle('wall', 'location-line', 'wall-centerline') as WallLocationLine;
-        const wallDrawHeightMm = useBimStore.getState().wallDrawHeightMm;
-        const activeWallTypeId = useBimStore.getState().activeWallTypeId;
-        const wallDrawOffsetMm = useBimStore.getState().wallDrawOffsetMm;
+        const { wallLocationLine, wallDrawHeightMm, activeWallTypeId, wallDrawOffsetMm } =
+          useBimStore.getState();
         let startX = d.sx;
         let startY = d.sy;
         let endX = sp.xMm;
@@ -3441,6 +3437,12 @@ export function PlanCanvas({
           }
           return;
         }
+      }
+      if (ev.key === 'Tab' && planTool === 'wall') {
+        ev.preventDefault();
+        const st = useBimStore.getState();
+        st.setWallLocationLine(cycleWallLocationLine(st.wallLocationLine));
+        return;
       }
       // EDT-05 — Tab cycles snap candidates while a draw tool is active.
       if (

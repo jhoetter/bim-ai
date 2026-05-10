@@ -130,6 +130,12 @@ export function TabBar({
             data-active={isActive ? 'true' : 'false'}
             data-drag-over={isDragOver ? 'true' : 'false'}
             draggable={Boolean(onReorder)}
+            onClick={() => onActivate(tab.id)}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter' && e.key !== ' ') return;
+              e.preventDefault();
+              onActivate(tab.id);
+            }}
             onDragStart={(e) => {
               if (!onReorder) return;
               setDragSrc(idx);
@@ -177,7 +183,10 @@ export function TabBar({
           >
             <button
               type="button"
-              onClick={() => onActivate(tab.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onActivate(tab.id);
+              }}
               aria-label={`${t(`workspace.tabs.${tab.kind}`)}: ${tab.label}`}
               className="flex items-center gap-1.5 rounded"
               title={`${t(`workspace.tabs.${tab.kind}`)} · ${tab.label}`}

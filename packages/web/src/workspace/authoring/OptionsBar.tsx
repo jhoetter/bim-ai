@@ -54,6 +54,8 @@ export function OptionsBar(): JSX.Element | null {
   const setWallLocationLine = useBimStore((s) => s.setWallLocationLine);
   const floorBoundaryOffsetMm = useBimStore((s) => s.floorBoundaryOffsetMm);
   const setFloorBoundaryOffsetMm = useBimStore((s) => s.setFloorBoundaryOffsetMm);
+  const wallDrawOffsetMm = useBimStore((s) => s.wallDrawOffsetMm);
+  const setWallDrawOffsetMm = useBimStore((s) => s.setWallDrawOffsetMm);
   const wallDrawHeightMm = useBimStore((s) => s.wallDrawHeightMm);
   const setWallDrawHeightMm = useBimStore((s) => s.setWallDrawHeightMm);
   const activeWallTypeId = useBimStore((s) => s.activeWallTypeId);
@@ -109,6 +111,19 @@ export function OptionsBar(): JSX.Element | null {
           ))}
         </select>
         <span className="text-muted opacity-60">Tab to cycle</span>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Offset:</span>
+          <input
+            type="number"
+            value={wallDrawOffsetMm}
+            step={50}
+            onChange={(e) => setWallDrawOffsetMm(Number(e.target.value))}
+            className="w-20 rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Wall baseline offset in mm"
+            data-testid="options-bar-wall-offset"
+          />
+          <span className="text-muted opacity-60">mm</span>
+        </label>
         <label className="flex items-center gap-2">
           <span className="text-muted">Height:</span>
           <input

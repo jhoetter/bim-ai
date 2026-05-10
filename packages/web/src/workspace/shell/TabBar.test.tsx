@@ -43,6 +43,19 @@ describe('TabBar — spec §11.3', () => {
     expect(onActivate).toHaveBeenCalledWith('3d:vp1');
   });
 
+  it('activates from the full tab surface and keyboard', () => {
+    const onActivate = vi.fn();
+    const { getByTestId } = renderWithI18n(
+      <TabBar tabs={tabs} activeId="plan:l0" onActivate={onActivate} onClose={() => {}} />,
+    );
+    const tab = getByTestId('tab-activate-3d:vp1').closest('[role="tab"]') as HTMLElement;
+    fireEvent.click(tab);
+    fireEvent.keyDown(tab, { key: 'Enter' });
+    fireEvent.keyDown(tab, { key: ' ' });
+    expect(onActivate).toHaveBeenCalledTimes(3);
+    expect(onActivate).toHaveBeenLastCalledWith('3d:vp1');
+  });
+
   it('clicking ✕ fires onClose with the id', () => {
     const onClose = vi.fn();
     const { getByTestId } = renderWithI18n(

@@ -9,6 +9,7 @@ afterEach(() => {
     useBimStore.setState({
       planTool: 'select',
       wallLocationLine: 'wall-centerline',
+      wallDrawOffsetMm: 0,
       floorBoundaryOffsetMm: 0,
     });
   });
@@ -37,6 +38,16 @@ describe('OptionsBar', () => {
     const select = getByRole('combobox', { name: /wall location line/i });
     fireEvent.change(select, { target: { value: 'finish-face-exterior' } });
     expect(useBimStore.getState().wallLocationLine).toBe('finish-face-exterior');
+  });
+
+  it('updates the wall baseline offset from the wall options bar', () => {
+    act(() => {
+      useBimStore.setState({ planTool: 'wall', wallDrawOffsetMm: 0 });
+    });
+    const { getByRole } = render(<OptionsBar />);
+    const input = getByRole('spinbutton', { name: /wall baseline offset/i });
+    fireEvent.change(input, { target: { value: '150' } });
+    expect(useBimStore.getState().wallDrawOffsetMm).toBe(150);
   });
 
   it('renders Boundary Offset control when activeTool is floor', () => {

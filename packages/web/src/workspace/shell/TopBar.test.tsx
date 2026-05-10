@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import { TopBar, WORKSPACE_MODES } from './TopBar';
 import { TopBarV3 } from '../chrome/TopBar';
+import type { ViewTab } from '../tabsModel';
 import i18n from '../../i18n';
 
 function renderWithI18n(ui: React.ReactElement) {
@@ -20,6 +21,11 @@ const baseProps = {
   projectName: 'Seed house V2',
   theme: 'light' as const,
 };
+
+const viewTabs: ViewTab[] = [
+  { id: 'plan:l0', kind: 'plan', targetId: 'l0', label: 'Plan · Level 0' },
+  { id: '3d:vp1', kind: '3d', targetId: 'vp1', label: '3D · Default' },
+];
 
 describe('TopBar — spec §11', () => {
   it('renders all 7 mode pills with hotkey hints', () => {
@@ -129,6 +135,26 @@ describe('TopBar — spec §11', () => {
     );
     fireEvent.click(getByTestId('topbar-cmdpalette'));
     expect(onCommandPalette).toHaveBeenCalled();
+  });
+
+  it('activates view tabs from the whole tab surface and keyboard', () => {
+    const onTabActivate = vi.fn();
+    const { getByTestId } = renderWithI18n(
+      <TopBar
+        {...baseProps}
+        mode="plan"
+        onModeChange={() => undefined}
+        tabs={viewTabs}
+        activeTabId="plan:l0"
+        onTabActivate={onTabActivate}
+      />,
+    );
+    const tab = getByTestId('tab-activate-3d:vp1').closest('[role="tab"]') as HTMLElement;
+    fireEvent.click(tab);
+    fireEvent.keyDown(tab, { key: 'Enter' });
+    fireEvent.keyDown(tab, { key: ' ' });
+    expect(onTabActivate).toHaveBeenCalledTimes(3);
+    expect(onTabActivate).toHaveBeenLastCalledWith('3d:vp1');
   });
 
   it('renders peer avatar chips from the peers prop', () => {

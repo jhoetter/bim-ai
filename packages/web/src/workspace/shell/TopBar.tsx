@@ -432,6 +432,14 @@ function TopBarTabs({
     return () => document.removeEventListener('mousedown', onDoc);
   }, [popoverOpen]);
 
+  useEffect(() => {
+    if (!activeId || !scrollRef.current) return;
+    const activeEl = scrollRef.current.querySelector<HTMLElement>(`[data-tab-id="${activeId}"]`);
+    if (activeEl && typeof activeEl.scrollIntoView === 'function') {
+      activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }
+  }, [activeId]);
+
   function handleTabListKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
     if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
     const tabEls = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('[role="tab"]'));
@@ -467,6 +475,12 @@ function TopBarTabs({
             data-tab-id={tab.id}
             data-active={isActive ? 'true' : 'false'}
             draggable={Boolean(onReorder)}
+            onClick={() => onActivate?.(tab.id)}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter' && e.key !== ' ') return;
+              e.preventDefault();
+              onActivate?.(tab.id);
+            }}
             onDragStart={(e) => {
               if (!onReorder) return;
               setDragSrc(idx);
@@ -503,7 +517,10 @@ function TopBarTabs({
           >
             <button
               type="button"
-              onClick={() => onActivate?.(tab.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onActivate?.(tab.id);
+              }}
               aria-label={`${tab.kind}: ${tab.label}`}
               className="flex items-center gap-1.5"
               data-testid={`tab-activate-${tab.id}`}
