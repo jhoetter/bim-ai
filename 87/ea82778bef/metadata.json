@@ -1,0 +1,16 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "87ea82778bef",
+  "strategy": "manual-commit",
+  "branch": "revit-parity-type-duplicate-wave",
+  "checkpoints_count": 0,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/87/ea82778bef/0/metadata.json",
+      "transcript": "/87/ea82778bef/0/full.jsonl",
+      "content_hash": "/87/ea82778bef/0/content_hash.txt",
+      "prompt": "/87/ea82778bef/0/prompt.txt"
+    }
+  ]
+}
