@@ -388,11 +388,11 @@ Reason:
 | ID | Status | Item | Acceptance criteria |
 | --- | --- | --- | --- |
 | SBM-01 | partial | Skill operating contract | `claude-skills/sketch-to-bim/SKILL.md` requires live app, advisor, screenshots, and tolerance table. |
-| SBM-02 | open | Formal Sketch Understanding IR schema | JSON schema exists for visual read, dimensions, features, programme, assumptions, and required views. |
-| SBM-03 | open | Capability matrix registry | Critical sketch features map to commands, renderer support, advisor checks, and known failure modes. |
+| SBM-02 | done | Formal Sketch Understanding IR schema | `spec/schemas/sketch-understanding-ir.schema.json` exists for visual read, dimensions, features, programme, assumptions, and required views. |
+| SBM-03 | partial | Capability matrix registry | `spec/sketch-to-bim-capability-matrix.json` maps target-house critical features to commands, renderer support, advisor checks, evidence, and known failure modes; needs broader feature catalog coverage. |
 | SBM-04 | open | Seed authoring DSL | High-level architectural DSL compiles to deterministic command bundles and preserves intent. |
-| SBM-05 | open | Evidence runner CLI | One command runs apply/reseed, advisor warning/info, screenshots, and status packet generation. |
-| SBM-06 | open | Visual defect checklist artifact | Each screenshot receives a structured pass/fail checklist for silhouette, roof, openings, interiors, materials, and artifacts. |
+| SBM-05 | partial | Evidence runner CLI | `bim-ai initiation-check` creates preflight coverage, visual checklist, status packet, and optional live advisor capture; still needs apply/reseed and screenshot automation in the same command. |
+| SBM-06 | partial | Visual defect checklist artifact | `visual-checklist.json` is generated from required views and critical features; still needs screenshot pass/fail population by the live render runner. |
 | SBM-07 | open | Render-and-compare gate | CLI/tool compares target/reference images against checkpoint screenshots with human-readable deltas. |
 | SBM-08 | open | Advisor expansion for visual/BIM usability | Add rules for roof-wall seams, mass placeholders in final models, stair clearance, unresolved terrace access, and envelope gaps. |
 | SBM-09 | open | Plan/camera diagnostic fit | Plan diagnostic screenshots auto-fit full floor and upper/roof levels instead of relying on current zoom. |
@@ -415,23 +415,31 @@ Add gates that fail advisor-clean but visually wrong models:
 
 ### P1: Make The Workflow Reproducible
 
-Build `bim-ai initiate-check` or similar:
+Build out `bim-ai initiation-check`:
 
 ```text
-bim-ai initiate-check \
+bim-ai initiation-check \
+  --ir spec/examples/sketch-understanding-ir.example.json \
+  --capabilities spec/sketch-to-bim-capability-matrix.json \
   --model <id> \
-  --source spec/target-house-seed.md \
-  --views required \
+  --live \
   --out nightshift/<run>
 ```
 
-It should produce:
+It currently produces:
+
+- copied `sketch-ir.json`;
+- `capability-coverage.json`;
+- `visual-checklist.json`;
+- `status.md`;
+- optional `live-advisor.json` when `--live` is used.
+
+It still needs to produce:
 
 - advisor warning/info JSON;
 - screenshot PNGs;
-- visual checklist template;
 - model stats;
-- status markdown.
+- screenshot-populated checklist results.
 
 ### P2: Replace Hand Coordinate Bundles
 

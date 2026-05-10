@@ -9,6 +9,11 @@ import { stdin } from 'node:process';
 import { execSync } from 'node:child_process';
 
 import { buildOneFamilyHomeCommands } from './lib/one-family-home-commands.mjs';
+import {
+  DEFAULT_CAPABILITY_MATRIX_PATH,
+  readJsonFile,
+  writeInitiationPacket,
+} from './lib/sketch-initiation.mjs';
 
 const base = (
   process.env.BIM_AI_BASE_URL ?? process.env.BIM_AI_API_ROOT ?? 'http://127.0.0.1:8500'
@@ -110,7 +115,7 @@ function advisoryCode(v) {
   return v?.advisoryClass ?? v?.ruleId ?? v?.code ?? 'unknown';
 }
 
-async function cmdAdvisor(modelId, { output = 'text', severity = null } = {}) {
+async function advisorSummary(modelId, { severity = null } = {}) {
   const snap = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`);
   let violations = Array.isArray(snap.violations) ? snap.violations : [];
   if (severity) violations = violations.filter((v) => String(v?.severity ?? '') === severity);
@@ -144,24 +149,24 @@ async function cmdAdvisor(modelId, { output = 'text', severity = null } = {}) {
       return (rank[a.severity] ?? 9) - (rank[b.severity] ?? 9) || a.code.localeCompare(b.code);
     });
 
+  return {
+    modelId: snap.modelId,
+    revision: snap.revision,
+    total: violations.length,
+    groups: grouped,
+  };
+}
+
+async function cmdAdvisor(modelId, { output = 'text', severity = null } = {}) {
+  const summary = await advisorSummary(modelId, { severity });
+
   if (output === 'json') {
-    console.log(
-      JSON.stringify(
-        {
-          modelId: snap.modelId,
-          revision: snap.revision,
-          total: violations.length,
-          groups: grouped,
-        },
-        null,
-        2,
-      ),
-    );
+    console.log(JSON.stringify(summary, null, 2));
     return;
   }
 
-  console.log(`advisor model=${snap.modelId} revision=${snap.revision} findings=${violations.length}`);
-  for (const g of grouped) {
+  console.log(`advisor model=${summary.modelId} revision=${summary.revision} findings=${summary.total}`);
+  for (const g of summary.groups) {
     const ids = g.elementIds.length ? ` ids=${g.elementIds.join(',')}` : '';
     console.log(`${g.severity}\t${g.code}\t${g.count}${ids}`);
     for (const msg of g.messages) console.log(`  ${msg}`);
@@ -487,6 +492,33 @@ async function cmdPlanHouse(briefPath, outPath, modelHint) {
   await fs.mkdir(path.dirname(outPath), { recursive: true });
   await fs.writeFile(outPath, `${JSON.stringify(bundle, null, 2)}\n`, 'utf8');
   console.log(JSON.stringify({ ok: true, out: outPath, commandCount: bundle.commands.length }, null, 2));
+}
+
+async function cmdInitiationCheck(irPath, capabilityMatrixPath, outDir, modelId, live) {
+  const ir = await readJsonFile(irPath);
+  const matrix = await readJsonFile(capabilityMatrixPath);
+  let liveAdvisor = null;
+  if (live) {
+    if (!modelId) {
+      console.error('initiation-check --live requires --model <id> or BIM_AI_MODEL_ID.');
+      process.exit(1);
+    }
+    liveAdvisor = {
+      warning: await advisorSummary(modelId, { severity: 'warning' }),
+      info: await advisorSummary(modelId, { severity: 'info' }),
+    };
+  }
+  const result = await writeInitiationPacket({
+    ir,
+    matrix,
+    outDir,
+    irPath,
+    capabilityMatrixPath,
+    modelId: modelId ?? null,
+    liveAdvisor,
+  });
+  console.log(JSON.stringify(result, null, 2));
+  if (!result.ok) process.exit(2);
 }
 
 async function cmdExport(kind, modelId, outPath, viewId) {
@@ -982,6 +1014,9 @@ Commands:
   dry-run [file|-]                     POST single command dry-run
   plan-house --brief <path> --out <path> [--model-hint id]
                                        validate brief JSON → write starter command bundle (one-family preset)
+  initiation-check --ir <path> --out <dir> [--capabilities <path>] [--model <id>] [--live]
+                                       SKB: validate Sketch Understanding IR against capability matrix,
+                                       create capability coverage + visual checklist evidence packet.
   diff --from <rev> --to <rev> [--out <path>] [--text] [--summary-only]
                                        element-level diff between two revisions of the model
   agent-loop --goal <path|-> --max-iter <n> --evidence-out <dir> [--backend <name>]
@@ -1158,6 +1193,28 @@ async function main() {
       }
       if (!briefArg || !outArg) usage();
       await cmdPlanHouse(briefArg, outArg, modelHint);
+      return;
+    }
+    if (cmd === 'initiation-check' || cmd === 'initiate-check') {
+      let irArg;
+      let outArg;
+      let capabilityArg = DEFAULT_CAPABILITY_MATRIX_PATH;
+      let live = false;
+      const rest = argv.slice(1);
+      for (let i = 0; i < rest.length; i++) {
+        const a = rest[i];
+        if (a === '--ir' && rest[i + 1]) irArg = rest[++i];
+        else if (a === '--out' && rest[i + 1]) outArg = rest[++i];
+        else if (a === '--capabilities' && rest[i + 1]) capabilityArg = rest[++i];
+        else if (a === '--capability-matrix' && rest[i + 1]) capabilityArg = rest[++i];
+        else if (a === '--model' && rest[i + 1]) modelId = rest[++i];
+        else if (a === '--live') live = true;
+      }
+      if (!irArg || !outArg) {
+        console.error('initiation-check requires --ir <path> --out <dir>.');
+        usage();
+      }
+      await cmdInitiationCheck(irArg, capabilityArg, outArg, modelId, live);
       return;
     }
 
