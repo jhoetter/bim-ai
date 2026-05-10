@@ -3,11 +3,12 @@
   "checkpoint_id": "4cdc8db8edcd",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 4,
   "files_touched": [
     "packages/web/src/plan/PlanCanvas.toolDestubs.test.ts",
     "packages/web/src/plan/PlanCanvas.tsx",
     "packages/web/src/plan/wallRadiusFillet.test.ts",
+    "packages/web/src/plan/wallRadiusFillet.ts",
     "packages/web/src/state/storeRuntimeSlices.ts",
     "packages/web/src/state/storeSliceContracts.test.ts",
     "packages/web/src/state/storeSliceContracts.ts",
@@ -29,13 +30,19 @@
       "transcript": "/4c/dc8db8edcd/1/full.jsonl",
       "content_hash": "/4c/dc8db8edcd/1/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/4c/dc8db8edcd/2/metadata.json",
+      "transcript": "/4c/dc8db8edcd/2/full.jsonl",
+      "content_hash": "/4c/dc8db8edcd/2/content_hash.txt",
+      "prompt": "/4c/dc8db8edcd/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1476006,
+    "input_tokens": 1601860,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 49335552,
-    "output_tokens": 125191,
-    "api_call_count": 404
+    "cache_read_tokens": 51662848,
+    "output_tokens": 134258,
+    "api_call_count": 436
   }
 }
