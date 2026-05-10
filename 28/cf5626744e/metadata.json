@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "28cf5626744e",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/engine.py",
+    "app/bim_ai/engine_mirror.py",
+    "spec/code-quality-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/28/cf5626744e/0/metadata.json",
+      "transcript": "/28/cf5626744e/0/full.jsonl",
+      "content_hash": "/28/cf5626744e/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 79760,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2988672,
+    "output_tokens": 7739,
+    "api_call_count": 31
+  }
+}
