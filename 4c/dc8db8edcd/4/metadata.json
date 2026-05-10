@@ -1,0 +1,55 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "4cdc8db8edcd",
+  "session_id": "019e12ef-d845-7a73-8ab1-4954b79742bc",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T17:34:47.346607Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "f2840cdac20e",
+  "token_usage": {
+    "input_tokens": 83943,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 632192,
+    "output_tokens": 4837,
+    "api_call_count": 13
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 661,
+      "user_lines_removed": 161,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/families/geometryFns/windowGeometry.ts": 1,
+        "packages/web/src/plan/PlanCanvas.toolDestubs.test.ts": 2,
+        "packages/web/src/plan/PlanCanvas.tsx": 112,
+        "packages/web/src/plan/wallRadiusFillet.test.ts": 45,
+        "packages/web/src/plan/wallRadiusFillet.ts": 126,
+        "packages/web/src/state/storeRuntimeSlices.ts": 4,
+        "packages/web/src/state/storeSliceContracts.test.ts": 2,
+        "packages/web/src/state/storeSliceContracts.ts": 2,
+        "packages/web/src/state/storeTypes.ts": 2,
+        "packages/web/src/viewport/glassMaterial.test.ts": 64,
+        "packages/web/src/viewport/meshBuilders.ts": 1,
+        "packages/web/src/viewport/solidMaterialDepth.test.ts": 118,
+        "packages/web/src/workspace/authoring/OptionsBar.test.tsx": 14,
+        "packages/web/src/workspace/authoring/OptionsBar.tsx": 24,
+        "spec/revit-parity/README.md": 141,
+        "spec/revit-parity/ch04-walls.md": 3
+      },
+      "user_removed_per_file": {
+        "packages/web/src/plan/PlanCanvas.toolDestubs.test.ts": 1,
+        "packages/web/src/plan/PlanCanvas.tsx": 8,
+        "packages/web/src/viewport/glassMaterial.test.ts": 1,
+        "packages/web/src/viewport/meshBuilders.ts": 8,
+        "spec/revit-parity/README.md": 141,
+        "spec/revit-parity/ch04-walls.md": 2
+      }
+    }
+  ]
+}
