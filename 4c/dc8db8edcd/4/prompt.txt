@@ -1,1 +1,9 @@
-i accidentally stopped the conversation for the renderings of the family assets in the browser. [Image #1] walltypes arent rendered yet, why? can you fix that?
+<image name=[Image #1]>
+
+---
+
+</image>
+
+---
+
+[Image #1] but those are 2d svg renders, not as the others...
