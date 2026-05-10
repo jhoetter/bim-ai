@@ -1,0 +1,100 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "7e5e7d721739",
+  "session_id": "9d1d6c74-7b8e-4829-83df-f6225a087748",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T13:50:22.336394Z",
+  "branch": "revit-parity-layer-stack-reorder",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "app/bim_ai/commands.py",
+    "app/bim_ai/elements.py",
+    "app/bim_ai/engine.py",
+    "app/bim_ai/engine_dispatch_documentation.py",
+    "app/bim_ai/routes_api.py",
+    "packages/cli/cli.mjs",
+    "packages/cli/lib/one-family-home-commands.mjs",
+    "packages/core/src/index.ts",
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/plan/AnnotateRibbon.tsx",
+    "packages/web/src/plan/detailComponentsRender.ts",
+    "packages/web/src/state/storeSliceContracts.ts",
+    "packages/web/src/state/storeTypes.ts",
+    "packages/web/src/state/storeViewportRuntimeSlice.ts",
+    "packages/web/src/workspace/WorkspaceRightRail.tsx",
+    "packages/web/src/workspace/viewport/Viewport3DLayersPanel.test.tsx",
+    "packages/web/src/workspace/viewport/Viewport3DLayersPanel.tsx",
+    "spec/.DS_Store",
+    "spec/target-house-seed-vis.png",
+    "spec/target-house-vis-colored.png",
+    "ux-revamp.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "315cb5187921",
+  "checkpoint_transcript_start": 94,
+  "transcript_lines_at_start": 94,
+  "token_usage": {
+    "input_tokens": 3,
+    "cache_creation_tokens": 197,
+    "cache_read_tokens": 32507,
+    "output_tokens": 14,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T13:50:22.331727Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 3,
+    "human_removed": 661,
+    "total_committed": 0,
+    "total_lines_changed": 664,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1238,
+      "user_lines_removed": 661,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/commands.py": 17,
+        "app/bim_ai/elements.py": 18,
+        "app/bim_ai/engine.py": 3,
+        "app/bim_ai/engine_dispatch_documentation.py": 22,
+        "app/bim_ai/routes_api.py": 24,
+        "packages/cli/cli.mjs": 108,
+        "packages/cli/cli.mjs_suffix": 29,
+        "packages/cli/lib/one-family-home-commands.mjs": 250,
+        "packages/core/src/index.ts": 12,
+        "packages/web/e2e/skb-checkpoint.spec.ts": 92,
+        "packages/web/playwright.skb.config.ts": 12,
+        "packages/web/src/Viewport.tsx": 7,
+        "packages/web/src/plan/AnnotateRibbon.tsx": 42,
+        "packages/web/src/plan/detailComponentsRender.ts": 22,
+        "packages/web/src/state/storeSliceContracts.ts": 4,
+        "packages/web/src/state/storeTypes.ts": 8,
+        "packages/web/src/state/storeViewportRuntimeSlice.ts": 8,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 8,
+        "packages/web/src/workspace/viewport/Viewport3DLayersPanel.test.tsx": 33,
+        "packages/web/src/workspace/viewport/Viewport3DLayersPanel.tsx": 235,
+        "spec/revit-annotations.md": 98,
+        "ux-revamp.md": 186
+      },
+      "user_removed_per_file": {
+        "packages/cli/cli.mjs": 20,
+        "packages/cli/lib/one-family-home-commands.mjs": 597,
+        "packages/web/src/Viewport.tsx": 4,
+        "packages/web/src/plan/detailComponentsRender.ts": 1,
+        "packages/web/src/workspace/viewport/Viewport3DLayersPanel.test.tsx": 1,
+        "packages/web/src/workspace/viewport/Viewport3DLayersPanel.tsx": 38
+      }
+    }
+  ]
+}
