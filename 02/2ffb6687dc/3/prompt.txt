@@ -1,0 +1,17 @@
+when i try to share a link, like e.g. http://localhost:2000/p/REDACTED#theme=light, i get No routes matched location "/p/REDACTED#theme=light"
+
+---
+
+[Image #1] just this
+
+---
+
+No routes matched location "/p/REDACTED#theme=light"  ....
+
+---
+
+[Image #1] i want that i can copy an existing link again and activate  / decativate
+
+---
+
+commit and push and merge to main
