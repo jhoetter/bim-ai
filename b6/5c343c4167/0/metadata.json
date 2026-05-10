@@ -1,0 +1,50 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "b65c343c4167",
+  "session_id": "019e0f10-1203-7042-8eea-b5b9ea724341",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T12:21:01.957125Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/workspace/WorkspaceHelpers.tsx",
+    "packages/web/src/workspace/tabsModel.ts",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/WorkspaceLeftRail.tsx",
+    "packages/web/src/workspace/workspaceUtils.ts",
+    "packages/web/src/workspace/tabsModel.test.ts",
+    "packages/web/src/workspace/sheets/SheetCanvas.tsx",
+    "packages/web/src/workspace/sheets/SheetDocumentationManifest.tsx",
+    "packages/web/src/workspace/inspector/InspectorContent.tsx",
+    "packages/web/src/i18n.ts",
+    "packages/cli/lib/one-family-home-commands.mjs",
+    "packages/web/src/workspace/WorkspaceRightRail.tsx",
+    "packages/web/src/OrbitViewpointPersistedHud.tsx",
+    "packages/web/src/workspace/sheets/SectionPlaceholderPane.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "e1e591df74ea",
+  "token_usage": {
+    "input_tokens": 5186430,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 194834560,
+    "output_tokens": 376740,
+    "api_call_count": 1582
+  },
+  "session_metrics": {
+    "turn_count": 15
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T12:21:01.568842Z",
+    "agent_lines": 312,
+    "agent_removed": 117,
+    "human_added": 76,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 388,
+    "total_lines_changed": 505,
+    "agent_percentage": 84.95049504950495,
+    "metric_version": 2
+  }
+}

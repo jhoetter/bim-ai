@@ -1,0 +1,14 @@
+ok, please then do that. also look into the UX, i think there are some bugs maybe with walls and such; not sure also if our tab display is working correctly. please investigate and make all fixes you can find.
+
+---
+
+[Image #1]i have that some unclarities exist, not sure if they come through our seeding or via UX; no idea what the difference is between levels and views on levels. I have the ground floor plan as views twice, [Image #2] but also as a level. the views however say there is nothing. sections doesnt look good ([Image #3]), and sheets seem completely empty? ([Image #4]); i am just unsure if really our UX is absolutely top. how can we ensure it is absolutely 10 / 10, super intuitive, powerful, ... ?
+also please see which icons would be wortwhile to update to hifi icons (we now have hifi icons for each bim icon).
+
+analyze the WHOLE UX, create a tracker document ux-revamp.md, track down all workpackages, really take the perspective of an architect/engineer/... and think through how we can achieve the BEST POSSIBLE UX on all views, overall layout, way of editing, way of display, consistency & clarity, ease-of-use, ...
+
+---
+
+[Image #1]also you can see e.g. how in certain perspectives like 3D there are issues with how things are displayed, it is overall a bit messy, ...
+
+really be thorough and implement this holistically as consistent, beautiful, easy to use,...
