@@ -167,4 +167,30 @@ describe('FAM-03 — Visible When UI', () => {
     expect(utils.queryByTestId('sweep-path-length-association')).toBeNull();
     expect(utils.queryByTestId('sweep-material-association')).toBeNull();
   });
+
+  it('uses Associate Family Parameter buttons and the Show 2D visibility preset', () => {
+    const utils = renderWithI18n(<FamilyEditorWorkbench />);
+    authorSweep(utils);
+    fireEvent.click(utils.getByLabelText('select-sweep-0'));
+
+    fireEvent.click(utils.getByTestId('sweep-associate-visible'));
+    expect((utils.getByLabelText('Visible When') as HTMLSelectElement).value).toBe(
+      'Show_2D_Elements',
+    );
+
+    fireEvent.click(utils.getByTestId('symbolic-line-add'));
+    fireEvent.click(utils.getByLabelText('select-symbolic-line-0'));
+    fireEvent.click(utils.getByTestId('symbolic-associate-visible'));
+    expect((utils.getByLabelText('Symbolic line visible when') as HTMLSelectElement).value).toBe(
+      'Show_2D_Elements',
+    );
+
+    fireEvent.click(utils.getByTestId('visibility-preset-show-2d'));
+    fireEvent.click(utils.getByLabelText('Preview Visibility'));
+    fireEvent.change(utils.getByLabelText('Preview detail level'), { target: { value: 'coarse' } });
+    expect(utils.getByTestId('preview-visibility-summary').textContent).toContain('0/1 sweeps');
+    expect(utils.getByTestId('preview-visibility-summary').textContent).toContain(
+      '1/1 symbolic lines',
+    );
+  });
 });

@@ -53,6 +53,29 @@ export interface VisibilityByDetailLevel {
   fine?: boolean;
 }
 
+export type FamilyVisibilityViewType =
+  | 'plan_rcp'
+  | 'front_back'
+  | 'left_right'
+  | 'three_d'
+  | 'elevation'
+  | 'section';
+
+/**
+ * F-059 — per-view-type visibility for a single family geometry node.
+ *
+ * Defaults: every view type visible. Set a key to `false` to hide the
+ * node when the resolver/editor preview runs in the matching view type.
+ */
+export type VisibilityByViewType = Partial<Record<FamilyVisibilityViewType, boolean>>;
+
+export interface FamilyPlanViewRange {
+  topOffsetMm: number;
+  cutPlaneOffsetMm: number;
+  bottomOffsetMm: number;
+  viewDepthOffsetMm: number;
+}
+
 export type ParametricLengthExpression =
   | number
   | { kind: 'param'; paramName: string; fallbackMm?: number }
@@ -80,6 +103,7 @@ export interface FamilySymbolicLine extends SketchLine {
   subcategory?: 'symbolic' | 'opening_projection' | 'hidden_cut';
   visibilityBinding?: VisibilityBinding;
   visibilityByDetailLevel?: VisibilityByDetailLevel;
+  visibilityByViewType?: VisibilityByViewType;
 }
 
 /** Sweep node — extrude a 2D profile along a 2D path. */
@@ -111,6 +135,8 @@ export interface SweepGeometryNode {
   /** VIE-02: hide this sweep when the resolver runs at a matching plan
    *  detail level. Unset keys default to visible. */
   visibilityByDetailLevel?: VisibilityByDetailLevel;
+  /** F-059: hide this sweep when preview/resolution runs in a matching view type. */
+  visibilityByViewType?: VisibilityByViewType;
 }
 
 /* ─── FAM-01: Nested-family parameter bindings ─────────────────────────── */
@@ -140,6 +166,8 @@ export interface FamilyInstanceRefNode {
   /** VIE-02: hide this nested instance when the resolver runs at a
    *  matching plan detail level. Unset keys default to visible. */
   visibilityByDetailLevel?: VisibilityByDetailLevel;
+  /** F-059: hide this nested instance when preview/resolution runs in a matching view type. */
+  visibilityByViewType?: VisibilityByViewType;
 }
 
 /* ─── FAM-05: Array node (linear + radial, parameter-driven count) ─────── */
@@ -178,6 +206,8 @@ export interface ArrayGeometryNode {
   /** VIE-02: hide this whole array when the resolver runs at a matching
    *  plan detail level. Unset keys default to visible. */
   visibilityByDetailLevel?: VisibilityByDetailLevel;
+  /** F-059: hide this whole array when preview/resolution runs in a matching view type. */
+  visibilityByViewType?: VisibilityByViewType;
 }
 
 export type FamilyGeometryNode = SweepGeometryNode | FamilyInstanceRefNode | ArrayGeometryNode;

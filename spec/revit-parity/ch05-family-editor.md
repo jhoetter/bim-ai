@@ -46,7 +46,7 @@ The Family Editor is a sub-environment within Revit for creating parametric comp
 **Screenshot:**
 ![Extrusion tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0384_01-51-46.png)
 
-**bim-ai status:** 🟡 Partial — family sweep/extrusion authoring creates solid geometry from profiles and resolves it through the family sweep geometry pipeline. Missing: Revit-grade sketch locks, profile cleanup tools, and elevation-driven extrusion start/end parameters.
+**bim-ai status:** ✅ Available — family sweep/extrusion authoring creates solid geometry from line, picked-line, and circle sketch profiles. Picked profile lines can be locked to reference planes or family edges and rederive as those references move. Selected sweeps expose Associate Family Parameter controls for extrusion depth, start, and end, plus a front-elevation grip sketch showing the locked bottom/top extents.
 
 ---
 
@@ -68,7 +68,7 @@ The Family Editor is a sub-environment within Revit for creating parametric comp
 **Screenshot:**
 ![Trim/Extend to Corner](file:///Users/jhoetter/Desktop/Revit%20Specs/0387_01-52-00.png)
 
-**bim-ai status:** 🟡 Partial — family sweep profile sketches expose a TR cleanup action: users choose two profile lines and trim/extend their nearest endpoints to the infinite-line intersection. Missing: keyboard-driven `TR`, canvas click selection, gap/overlap feedback, and reuse across every sketch mode.
+**bim-ai status:** ✅ Available — family sweep profile sketches expose Trim/Extend to Corner from both the cleanup controls and the `TR` keyboard shortcut in sketch mode. The workflow selects two profile lines and trims/extends their nearest endpoints to the infinite-line intersection so picked-line profiles can be closed without redrawing.
 
 ---
 
@@ -144,7 +144,7 @@ This allows a family to show a simple 2D opening symbol at Coarse detail and a d
 **Screenshot:**
 ![Visibility Settings](file:///Users/jhoetter/Desktop/Revit%20Specs/0470_02-50-50.png)
 
-**bim-ai status:** 🟡 Partial — family geometry nodes support coarse/medium/fine visibility and boolean visibility bindings in the editor/resolver. Missing: full Revit view-type visibility dialog.
+**bim-ai status:** ✅ Available — family geometry nodes, symbolic lines, nested instances, and arrays support coarse/medium/fine visibility, Plan/RCP, Front/Back, Left/Right, 3D Views, Elevations, and Sections view-type visibility flags, plus Yes/No visibility bindings. The Family Editor properties panels expose the same detail-level and view-type checkbox semantics, and the resolver honors them for family and project preview contexts.
 
 ---
 

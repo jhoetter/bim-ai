@@ -33,7 +33,7 @@ Source segment: `01:02:00 – 01:13:55`
 **Screenshot:**
 ![Edit Wall Assembly](file:///Users/jhoetter/Desktop/Revit%20Specs/0326_01-06-13.png)
 
-**bim-ai status:** 🟡 Partial — `MaterialLayerStackWorkbench.tsx` supports multi-layer editing for `wall_type`, `floor_type`, and `roof_type` elements (material, thickness, function per layer), including row add/remove and up/down layer reordering before the `upsert*Type` command is applied. Missing: rich Edit Assembly dialog UX with wrapping behavior equivalent to Revit's modal.
+**bim-ai status:** ✅ Available — `MaterialLayerStackWorkbench.tsx` supports multi-layer editing for `wall_type`, `floor_type`, and `roof_type` elements: material, thickness, function per layer, row add/remove, up/down reordering, and per-layer wrapping flags for wall ends and inserts before the `upsert*Type` command is applied. Layer stack evidence includes wrapping counts for regression coverage.
 
 ---
 

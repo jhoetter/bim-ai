@@ -45,7 +45,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 
 **Screenshot:**
 ![Sofa parametric family](file:///Users/jhoetter/Desktop/Revit%20Specs/0686_03-55-52.png)
-*(Parametric chair family placed in project — sofa-specific frames start beyond 0841)*
+_(Parametric chair family placed in project — sofa-specific frames start beyond 0841)_
 
 **bim-ai status:** ✅ Done — The residential starter template includes a built-in `3-Seat Sofa` asset with width/depth/height parameter schema, searchable furniture tags, `planSymbolKind: 'sofa'`, and a recognizable schematic plan + lightweight 3D seating proxy. The `PlaceAsset` command and `updateElementProperty { key: "paramValues" }` can carry alternate sofa widths/depths. The right rail exposes those instance parameters after placement, and selected placed assets now show on-canvas width/depth face grips that resize the sofa interactively by patching `paramValues`.
 
@@ -57,7 +57,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 
 **Screenshot:**
 ![Kitchen parametric family](file:///Users/jhoetter/Desktop/Revit%20Specs/0736_04-37-24.png)
-*(Dining table family in furniture library project — kitchen-specific frames start beyond 0841)*
+_(Dining table family in furniture library project — kitchen-specific frames start beyond 0841)_
 
 **bim-ai status:** ✅ Done — The residential starter template includes `Kitchen Slab Layout 3000x650`, a composite placed asset with width/depth/height parameters plus `sinkOffsetMm` and `fridgeOffsetMm`. It reuses the counter placement workflow, so it can be placed, Spacebar-rotated, copied, moved, aligned, and edited through right-rail instance parameters. The plan renderer draws cabinet bays plus embedded sink and refrigerator symbols, and the 3D proxy adds a countertop, sink basin, and refrigerator mass at the configured offsets. Selected instances now expose sink/fridge offset grips on canvas; dragging them patches `paramValues` through `updateElementProperty`.
 
@@ -69,7 +69,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 
 **Screenshot:**
 ![Bathroom layout family](file:///Users/jhoetter/Desktop/Revit%20Specs/0574_03-45-08.png)
-*(Chair placed in project floor plan — bathroom-layout-specific frames start beyond 0841)*
+_(Chair placed in project floor plan — bathroom-layout-specific frames start beyond 0841)_
 
 **bim-ai status:** ✅ Done — The residential starter template includes `Compact Bathroom Layout 2400x2200`, a composite placed asset with width/depth/height parameters plus `showerOffsetMm`, `toiletOffsetMm`, and `vanityOffsetMm`. It places and rotates as one family instance, exposes its offsets as instance parameters, and renders a coordinated toilet/vanity/shower layout in both plan and lightweight 3D proxy form. Selected instances now expose shower/toilet/vanity offset grips on canvas; dragging them patches `paramValues` through `updateElementProperty`.
 
@@ -81,7 +81,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 
 **Screenshot:**
 ![Parametric bed family](file:///Users/jhoetter/Desktop/Revit%20Specs/0740_04-38-07.png)
-*(Parametric table family in furniture library — bed-specific frames start beyond 0841)*
+_(Parametric table family in furniture library — bed-specific frames start beyond 0841)_
 
 **bim-ai status:** ✅ Done — The residential starter template includes `Queen Bed 1800x2100` and `Single Bed 900x2000` assets with width/depth/height parameter schemas, searchable bedroom tags, explicit `planSymbolKind: 'bed'`, and recognizable pillows/mattress/headboard plan linework plus a lightweight 3D proxy. These can be placed, rotated by Spacebar / Rotate, edited through right-rail instance parameters, and resized in plan through on-canvas width/depth face grips backed by `paramValues`.
 
@@ -93,7 +93,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 
 **Screenshot:**
 ![Align tool furniture](file:///Users/jhoetter/Desktop/Revit%20Specs/0465_02-49-25.png)
-*(Align tool used in window family editor — furniture-align-specific frames start beyond 0841)*
+_(Align tool used in window family editor — furniture-align-specific frames start beyond 0841)_
 
 **bim-ai status:** ✅ Done — The Align tool (hotkey `AL`) provides a two-click interactive workflow: first click sets the reference point, second click picks the nearest element and fires `alignElementToReference { targetElementId, referenceMm }`. It supports **walls** (translates along dominant axis so nearest endpoint coincides with reference), **columns** (snaps `position_mm` to reference along the closer axis), and **placed_assets**. Placed assets now align their nearest face, not just their center point, using the associated asset width/depth plus instance `paramValues` overrides. Backend accepts both `targetElementId` and legacy `targetWallId` via Pydantic `AliasChoices`. Dashed crosshair SVG overlay + status chip guide the workflow.
 
@@ -105,6 +105,6 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 
 **Screenshot:**
 ![Rotate tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0575_03-45-10.png)
-*(Spacebar rotation during component placement — rotate-tool-specific frames start beyond 0841)*
+_(Spacebar rotation during component placement — rotate-tool-specific frames start beyond 0841)_
 
-**bim-ai status:** 🟡 Partial (better) — General-purpose two-click Rotate tool (`RO` hotkey) now implemented: first click sets the center of rotation, second click picks the end angle direction (bearing from center) snapped to standard 45° increments (0°/45°/90°/etc.). Supported element kinds: wall (rotates start+end endpoints), column (rotates position + rotation_deg), placed_asset (rotates position + rotation_deg), floor (rotates boundary_mm polygon), room (rotates outline_mm polygon), area (rotates boundary_mm polygon). Column drag-handle grip and inspector rotation input remain available. Missing: numeric "rotate by typed angle" dialog; no start-angle reference ray (angle is absolute bearing from center).
+**bim-ai status:** ✅ Available — the general-purpose Rotate tool (`RO` hotkey) supports center pick, explicit start-angle reference ray, end-ray pick, typed numeric angle + Enter, snapped angle math, and rotation of wall, column, placed_asset, floor, room, and area selections. Column drag-handle grips and inspector rotation input remain available for direct edits.

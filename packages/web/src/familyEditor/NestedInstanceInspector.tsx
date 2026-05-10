@@ -15,8 +15,11 @@ import { useTranslation } from 'react-i18next';
 import type {
   FamilyDefinition,
   FamilyInstanceRefNode,
+  FamilyVisibilityViewType,
   ParameterBinding,
   VisibilityBinding,
+  VisibilityByDetailLevel,
+  VisibilityByViewType,
 } from '../families/types';
 import { validateFormula } from '../lib/expressionEvaluator';
 
@@ -36,6 +39,19 @@ export interface NestedInstanceInspectorProps {
 }
 
 const VISIBLE_ALWAYS = '__always__';
+const DETAIL_LEVELS: { key: keyof VisibilityByDetailLevel; label: string }[] = [
+  { key: 'coarse', label: 'Coarse' },
+  { key: 'medium', label: 'Medium' },
+  { key: 'fine', label: 'Fine' },
+];
+const VIEW_TYPES: { key: FamilyVisibilityViewType; label: string }[] = [
+  { key: 'plan_rcp', label: 'Plan/RCP' },
+  { key: 'front_back', label: 'Front/Back' },
+  { key: 'left_right', label: 'Left/Right' },
+  { key: 'three_d', label: '3D Views' },
+  { key: 'elevation', label: 'Elevations' },
+  { key: 'section', label: 'Sections' },
+];
 
 export function NestedInstanceInspector({
   instance,
@@ -66,6 +82,18 @@ export function NestedInstanceInspector({
 
   function setVisibility(binding: VisibilityBinding | undefined) {
     onUpdate({ visibilityBinding: binding });
+  }
+
+  function setDetailLevelVisibility(level: keyof VisibilityByDetailLevel, visible: boolean) {
+    const next: VisibilityByDetailLevel = { ...(instance.visibilityByDetailLevel ?? {}) };
+    next[level] = visible;
+    onUpdate({ visibilityByDetailLevel: next });
+  }
+
+  function setViewTypeVisibility(viewType: FamilyVisibilityViewType, visible: boolean) {
+    const next: VisibilityByViewType = { ...(instance.visibilityByViewType ?? {}) };
+    next[viewType] = visible;
+    onUpdate({ visibilityByViewType: next });
   }
 
   return (
@@ -163,6 +191,38 @@ export function NestedInstanceInspector({
             </select>
           </label>
         )}
+        <div className="mt-2" role="group" aria-label="Nested visibility by detail level">
+          <div className="text-xs font-medium">Detail levels</div>
+          <div className="mt-1 flex flex-wrap gap-3 text-sm">
+            {DETAIL_LEVELS.map((option) => (
+              <label key={option.key} className="inline-flex items-center gap-1">
+                <input
+                  type="checkbox"
+                  aria-label={`nested-visibility-${option.key}`}
+                  checked={instance.visibilityByDetailLevel?.[option.key] !== false}
+                  onChange={(e) => setDetailLevelVisibility(option.key, e.target.checked)}
+                />
+                {option.label}
+              </label>
+            ))}
+          </div>
+        </div>
+        <div className="mt-2" role="group" aria-label="Nested visibility by view type">
+          <div className="text-xs font-medium">View types</div>
+          <div className="mt-1 flex flex-wrap gap-3 text-sm">
+            {VIEW_TYPES.map((option) => (
+              <label key={option.key} className="inline-flex items-center gap-1">
+                <input
+                  type="checkbox"
+                  aria-label={`nested-visibility-view-${option.key}`}
+                  checked={instance.visibilityByViewType?.[option.key] !== false}
+                  onChange={(e) => setViewTypeVisibility(option.key, e.target.checked)}
+                />
+                {option.label}
+              </label>
+            ))}
+          </div>
+        </div>
       </section>
     </section>
   );

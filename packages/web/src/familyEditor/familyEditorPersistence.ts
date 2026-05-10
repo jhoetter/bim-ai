@@ -14,6 +14,7 @@ import type {
   SweepGeometryNode,
   VisibilityBinding,
   VisibilityByDetailLevel,
+  VisibilityByViewType,
 } from '../families/types';
 import type { FamilyReloadOverwriteOption } from '../families/catalogFamilyReload';
 
@@ -92,6 +93,7 @@ export interface AuthoredFamilySymbolicLine extends SketchLine {
   alignmentLock?: { refPlaneId: string };
   visibilityBinding?: VisibilityBinding;
   visibilityByDetailLevel?: VisibilityByDetailLevel;
+  visibilityByViewType?: VisibilityByViewType;
 }
 
 export interface AuthoredFamilyDimension {

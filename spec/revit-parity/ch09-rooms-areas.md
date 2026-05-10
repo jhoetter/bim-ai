@@ -44,7 +44,7 @@ Source segment: `05:30:00 – 05:39:46`
 **Screenshot:**
 ![Area Boundary Lines](file:///Users/jhoetter/Desktop/Revit%20Specs/0808_05-34-41.png)
 
-**bim-ai status:** 🟡 Partial — the `area-boundary` sketch tool (hotkey AR, toolRegistry.ts) draws area boundary polylines on the plan canvas stored as `area` elements. The `area_boundary` annotation category appears in Visibility/Graphics Overrides (VV) and correctly controls rendering: toggling it off hides both the boundary polylines and the centroid label sprites in the plan canvas. Area boundaries are now restricted to dedicated Area Plan views and filtered by the active Area Plan scheme (F-098). Missing: auto-snap to wall faces for area boundary placement (Revit snaps to wall layers).
+**bim-ai status:** ✅ Available — the `area-boundary` sketch tool is Area Plan-only, stores area-boundary elements by active scheme, and appears in the `area_boundary` Visibility/Graphics annotation category. Rendering is filtered by the active Area Plan scheme, and picked rectangle corners snap to nearby wall faces so boundary placement follows Revit's wall-layer snapping expectation.
 
 ---
 

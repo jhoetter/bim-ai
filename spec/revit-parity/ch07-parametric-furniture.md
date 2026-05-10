@@ -24,7 +24,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![EQ constraint](file:///Users/jhoetter/Desktop/Revit%20Specs/0494_03-40-28.png)
 
-**bim-ai status:** 🟡 Partial — the family editor can create an EQ constraint across three or more matching horizontal/vertical reference planes. The constraint equalizes intermediate plane offsets and reapplies equal spacing when an outer constrained plane moves. Missing: canvas dimension-string EQ glyphs, arbitrary mixed reference picking, and a full constraint solver tied to named dimensions/type values.
+**bim-ai status:** ✅ Available — the family editor can create EQ constraints across three or more picked matching horizontal/vertical reference planes from the dimension canvas. EQ glyphs render on the dimension string, can be toggled off, and the constraint reapplies equal spacing when an outer constrained plane moves.
 
 ---
 
@@ -46,7 +46,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Yes/No Visibility parameter](file:///Users/jhoetter/Desktop/Revit%20Specs/0601_03-48-28.png)
 
-**bim-ai status:** 🟡 Partial — family editor parameters support boolean defaults and sweeps/nested instances can bind their Visible state to a boolean family parameter. The Furniture template seeds `Show_2D_Elements` and binds coarse symbolic plan lines to it while the 3D sweep placeholder uses the inverse binding. Missing: a general Associate Family Parameter button on every eligible property and project-placement UI for toggling authored-family visibility params.
+**bim-ai status:** ✅ Available — family editor parameters support boolean defaults, and sweeps, symbolic lines, and nested instances can bind Visible to a Yes/No parameter. Associate Family Parameter buttons and the Show 2D Elements preset wire coarse symbolic linework to `Show_2D_Elements=true` while 3D sweep geometry uses the inverse binding for medium/fine previews and loaded families.
 
 ---
 
@@ -90,7 +90,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Extrusion height from elevation](file:///Users/jhoetter/Desktop/Revit%20Specs/0623_03-50-05.png)
 
-**bim-ai status:** 🟡 Partial — family sweeps can now carry `pathLengthParam`, `pathStartOffsetParam`, and `pathEndOffsetParam`, so the resolver drives straight extrusion depth/height and bottom/top offsets from family parameters. The Furniture template uses these locks for seat thickness, leg height, and the generated backrest. Missing: true front-elevation sketch views and visible grip locking to named elevation reference planes.
+**bim-ai status:** ✅ Available — family sweeps carry `pathLengthParam`, `pathStartOffsetParam`, and `pathEndOffsetParam`, so the resolver drives straight extrusion depth/height and bottom/top offsets from family parameters. Selected sweeps now show a front-elevation sketch with visible top/bottom grip lines and Associate controls for locking those extents to named height parameters.
 
 ---
 
@@ -101,7 +101,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Leg circle extrusion](file:///Users/jhoetter/Desktop/Revit%20Specs/0651_03-52-02.png)
 
-**bim-ai status:** 🟡 Partial — the Furniture template now seeds four leg sweeps with editable circle-profile metadata. The resolver regenerates polygonal circular profiles from `Leg_Radius`, derives each center from Width/Depth/`Leg_Offset`, and locks leg height to `Seat_Height`. Missing: canvas circle sketch primitive and copy-in-sketch workflow.
+**bim-ai status:** ✅ Available — the Furniture template seeds four leg sweeps with editable circle-profile metadata. The resolver regenerates polygonal circular profiles from `Leg_Radius`, derives each center from Width/Depth/`Leg_Offset`, and locks leg height to `Seat_Height`; the sweep profile sketch can also add a circle primitive, bind its radius name, and copy it into sibling extrusion sweeps.
 
 ---
 
@@ -123,7 +123,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Detail level 2D vs 3D](file:///Users/jhoetter/Desktop/Revit%20Specs/0679_03-55-13.png)
 
-**bim-ai status:** 🟡 Partial — the Furniture template seeds coarse-only symbolic lines and a medium/fine-only sweep placeholder, and the family editor Preview Visibility control can switch detail levels to show the 2D/3D split. Missing: full project-context preview behavior and complete rendering of authored symbolic family linework in placed instances.
+**bim-ai status:** ✅ Available — the Furniture template seeds coarse-only symbolic chair linework and medium/fine 3D sweep geometry. Family Editor Preview Visibility can switch detail levels and view types, Plan/RCP preview applies View Range cut filtering to the resolved 3D sweeps, and placed authored furniture instances render symbolic family linework in project plans according to detail level, visibility bindings, rotation, and per-instance parameter overrides.
 
 ---
 

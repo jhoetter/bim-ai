@@ -14,7 +14,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Project Browser](file:///Users/jhoetter/Desktop/Revit%20Specs/0124_00-12-38.png)
 
-**bim-ai status:** 🟡 Partial — `ProjectBrowser.tsx` lists plan views, 3D orbit viewpoints, plan viewpoints, section cuts, elevation views, schedules, sheets, view templates, sites, link_model rows, and a collapsible Families section (wall_type, floor_type, roof_type grouped by category). Floor plans group by discipline and subdiscipline when those fields are set. Per-view inline rename (double-click) and delete (confirm-guarded button) are implemented for plan views, section cuts, and elevation views. Family type rows have a right-click context menu for Select Type, Rename, and Duplicate, wired to the existing selection and `updateElementProperty`/`upsert*Type` commands. Missing: legends/groups subtree and phase grouping.
+**bim-ai status:** ✅ Available — `ProjectBrowser.tsx` lists plan views, 3D orbit viewpoints, plan viewpoints, section cuts, elevation views, schedules, sheets, legends, groups, view templates, sites, Revit/link rows, and a collapsible Families section. Floor plans group by discipline, subdiscipline, type, and phase when those fields are present. Per-view inline rename/delete and family type right-click Select Type, Rename, and Duplicate actions are wired to the existing selection and semantic commands.
 
 ---
 
