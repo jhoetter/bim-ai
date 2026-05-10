@@ -57,6 +57,8 @@ from bim_ai.export_ifc_readback import (
     _count_ifc_products_with_qto_template,
     _first_body_extruded_area_solid,
     _ifc_try_product_is_a,
+    _kernel_wall_plan_geometry_mm,  # noqa: F401 - legacy private re-export
+    _product_host_storey_global_id,  # noqa: F401 - legacy private re-export
     _profile_xy_polyline_mm,
     _read_named_qto_values,  # noqa: F401 - legacy private re-export
     _void_rel_and_host_for_opening,
