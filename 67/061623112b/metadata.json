@@ -116,6 +116,12 @@
       "transcript": "/67/061623112b/17/full.jsonl",
       "content_hash": "/67/061623112b/17/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/67/061623112b/18/metadata.json",
+      "transcript": "/67/061623112b/18/full.jsonl",
+      "content_hash": "/67/061623112b/18/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
