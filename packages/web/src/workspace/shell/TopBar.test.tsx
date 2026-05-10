@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import { TopBar, WORKSPACE_MODES } from './TopBar';
+import { RibbonBar } from './RibbonBar';
 import { TopBarV3 } from '../chrome/TopBar';
 import type { ViewTab } from '../tabsModel';
 import i18n from '../../i18n';
@@ -220,6 +221,44 @@ describe('TopBar — spec §11', () => {
       <TopBar {...baseProps} mode="plan" onModeChange={() => undefined} avatarInitials="JH" />,
     );
     expect(getByLabelText('Account').textContent).toBe('JH');
+  });
+});
+
+describe('RibbonBar — F-005', () => {
+  it('renders ribbon tabs and grouped Architecture commands by default', () => {
+    const { getByTestId, getByRole } = render(<RibbonBar activeToolId="wall" />);
+    expect(getByTestId('ribbon-bar')).toBeTruthy();
+    expect(getByRole('tab', { name: 'Architecture' }).getAttribute('aria-selected')).toBe('true');
+    expect(getByTestId('ribbon-command-wall').getAttribute('aria-pressed')).toBe('true');
+    expect(getByTestId('ribbon-command-door')).toBeTruthy();
+  });
+
+  it('switches tabs and dispatches tool commands', () => {
+    const onToolSelect = vi.fn();
+    const { getByTestId } = render(<RibbonBar onToolSelect={onToolSelect} />);
+    fireEvent.click(getByTestId('ribbon-tab-annotate'));
+    fireEvent.click(getByTestId('ribbon-command-dimension'));
+    expect(onToolSelect).toHaveBeenCalledWith('dimension');
+  });
+
+  it('dispatches view modes and top-level actions from ribbon panels', () => {
+    const onModeChange = vi.fn();
+    const onOpenVisibilityGraphics = vi.fn();
+    const { getByTestId } = render(
+      <RibbonBar onModeChange={onModeChange} onOpenVisibilityGraphics={onOpenVisibilityGraphics} />,
+    );
+    fireEvent.click(getByTestId('ribbon-tab-view'));
+    fireEvent.click(getByTestId('ribbon-command-3d'));
+    fireEvent.click(getByTestId('ribbon-command-visibility-graphics'));
+    expect(onModeChange).toHaveBeenCalledWith('3d');
+    expect(onOpenVisibilityGraphics).toHaveBeenCalledTimes(1);
+  });
+
+  it('adds a contextual Modify tab when an element is selected', () => {
+    const { getByTestId } = render(<RibbonBar selectedElementKind="wall" />);
+    const tab = getByTestId('ribbon-tab-modify');
+    expect(tab.textContent).toBe('Modify | Wall');
+    expect(tab.getAttribute('data-contextual')).toBe('true');
   });
 });
 

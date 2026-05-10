@@ -30,6 +30,8 @@ import { OptionsBar, ToolModifierBar } from '../authoring';
 
 export interface AppShellProps {
   topBar: ReactNode;
+  /** Optional tabbed command ribbon shown below the top bar. */
+  ribbonBar?: ReactNode;
   leftRail: ReactNode;
   /** Compact contents shown when the left rail is collapsed (icon-strip). */
   leftRailCollapsed?: ReactNode;
@@ -52,6 +54,7 @@ export interface AppShellProps {
 
 export function AppShell({
   topBar,
+  ribbonBar,
   leftRail,
   leftRailCollapsed,
   canvas,
@@ -140,6 +143,7 @@ export function AppShell({
         {topBar}
       </div>
       <div style={{ gridArea: 'optionsbar' }}>
+        {ribbonBar}
         <ToolModifierBar />
         <OptionsBar />
       </div>

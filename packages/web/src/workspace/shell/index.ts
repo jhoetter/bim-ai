@@ -2,6 +2,7 @@ export * from './AppShell';
 export * from './EmptyStateHint';
 export * from './LeftRail';
 export * from './ParticipantStrip';
+export * from './RibbonBar';
 export * from './StatusBar';
 export * from './TabBar';
 export * from './TemporaryVisibilityChip';
