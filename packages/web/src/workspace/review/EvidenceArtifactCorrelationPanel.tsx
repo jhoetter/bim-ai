@@ -4,13 +4,11 @@ import { collaborationConflictQueueInspectionLinesFromHints } from '../../lib/co
 import { formatAgentReviewActionDetails } from '../agent';
 import { EvidenceBaselineLifecycleReadoutV1Table } from '../evidenceBaselineLifecycleReadout';
 import {
-  summarizeBcfIssuePackageExport,
-  type BcfIssuePackageExportWire,
-} from '../bcfIssuePackageExportFormat';
-import {
   summarizeBcfRoundtripEvidenceSummary,
+  summarizeBcfIssuePackageExport,
   type BcfRoundtripEvidenceSummaryWire,
-} from '../bcfRoundtripEvidenceSummaryFormat';
+  type BcfIssuePackageExportWire,
+} from '../bcf';
 import { formatStagedArtifactResolutionMode } from '../formatStagedArtifactResolutionMode';
 import {
   formatIfcExchangeManifestClosureLines,

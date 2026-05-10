@@ -18,7 +18,7 @@ This tracker is for the code-quality items only:
 | ----- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | CQ-01 | `done`    | Sequenced WebSocket publish path, bounded replay buffer, resume/RESYNC flow, client reconnect/backoff, and regression coverage are merged and green.                                         |
 | CQ-02 | `done`    | `uv.lock`, bounded Python deps, frozen installs, and lockfile CI checks are merged and green.                                                                                                |
-| CQ-03 | `partial` | `workspace/agent/` now owns the agent review pane, agent readouts/actions, and their tests; the root workspace directory is down from 164 to 150 files.                                      |
+| CQ-03 | `partial` | `workspace/agent/` and `workspace/bcf/` own their feature clusters; the root workspace directory is down from 164 to 146 files.                                                              |
 | CQ-04 | `partial` | Multiple cohesive helper modules have been extracted from `constraints.py`, `engine.py`, and `export_ifc.py`; the large source files still exist and are not thin shims.                     |
 | CQ-05 | `partial` | Typed slice contracts and tests exist; model, plan authoring, collaboration, workspace UI, and viewport runtime slice factories are extracted while the stable `useBimStore` facade remains. |
 
@@ -116,7 +116,7 @@ A CQ item is `done` when: (a) `make verify` passes; (b) new logic has unit-test 
 
 **Suggested first PR scope.** `agent/` cluster only — ~25 files, clearest semantic boundary, lowest risk.
 
-**Progress 2026-05-10.** Introduced `workspace/agent/` with an `index.ts` public surface. Moved the agent review pane, agent brief/readout/action helpers, freshness render test, and colocated unit tests into the folder. Updated `workspace/review/` imports to consume the agent public surface. Root `workspace/` files dropped from 164 to 150.
+**Progress 2026-05-10.** Introduced `workspace/agent/` with an `index.ts` public surface. Moved the agent review pane, agent brief/readout/action helpers, freshness render test, and colocated unit tests into the folder. Updated `workspace/review/` imports to consume the agent public surface. Added `workspace/bcf/` for BCF issue-package and roundtrip evidence helpers/tests. Root `workspace/` files dropped from 164 to 146.
 
 ---
 
