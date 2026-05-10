@@ -3,7 +3,7 @@
   "checkpoint_id": "a5b129046c65",
   "strategy": "manual-commit",
   "branch": "revit-parity-qat-dimension-tag-shortcuts",
-  "checkpoints_count": 4,
+  "checkpoints_count": 5,
   "files_touched": [
     "app/bim_ai/commands.py",
     "app/bim_ai/engine_dispatch_documentation.py",
@@ -39,13 +39,19 @@
       "transcript": "/a5/b129046c65/2/full.jsonl",
       "content_hash": "/a5/b129046c65/2/content_hash.txt",
       "prompt": "/a5/b129046c65/2/prompt.txt"
+    },
+    {
+      "metadata": "/a5/b129046c65/3/metadata.json",
+      "transcript": "/a5/b129046c65/3/full.jsonl",
+      "content_hash": "/a5/b129046c65/3/content_hash.txt",
+      "prompt": "/a5/b129046c65/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1408990,
+    "input_tokens": 1519225,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 19792768,
-    "output_tokens": 63979,
-    "api_call_count": 222
+    "cache_read_tokens": 20752512,
+    "output_tokens": 71063,
+    "api_call_count": 236
   }
 }
