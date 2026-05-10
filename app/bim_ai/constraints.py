@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import math
 from collections import defaultdict
-from enum import StrEnum
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -15,6 +14,13 @@ from bim_ai.constraints_geometry import (
     polygon_bbox,
     polygon_overlap_area_mm2,
     polygon_signed_area,
+)
+from bim_ai.constraints_metadata import (
+    MATERIAL_CATALOG_AUDIT_MESSAGES,
+    MATERIAL_CATALOG_AUDIT_RULE_IDS,
+    RULE_BLOCKING_CLASS,
+    RULE_DISCIPLINE,
+    AdvisorBlockingClass,
 )
 from bim_ai.constraints_sheet_viewports import (
     SCHEDULE_VIEWPORT_AUTOPLACE_HEIGHT_MM,
@@ -146,15 +152,6 @@ _SHEET_VIEWPORT_MIN_SIDE_MM = SHEET_VIEWPORT_MIN_SIDE_MM
 _SHEET_DEFAULT_TITLEBLOCK_SYMBOL = SHEET_DEFAULT_TITLEBLOCK_SYMBOL
 
 
-class AdvisorBlockingClass(StrEnum):
-    geometry = "geometry"
-    exchange = "exchange"
-    documentation = "documentation"
-    schedule = "schedule"
-    sheet = "sheet"
-    evidence = "evidence"
-
-
 class Violation(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     rule_id: str = Field(alias="ruleId")
@@ -167,273 +164,12 @@ class Violation(BaseModel):
     blocking_class: str | None = Field(default=None, alias="blockingClass")
 
 
-_RULE_DISCIPLINE: dict[str, str] = {
-    "wall_overlap": "coordination",
-    "window_overlaps_door": "coordination",
-    "level_duplicate_elevation": "structure",
-    "level_datum_parent_cycle": "structure",
-    "level_datum_parent_offset_mismatch": "structure",
-    "level_parent_unresolved": "structure",
-    "datum_grid_reference_missing": "structure",
-    "elevation_marker_view_unresolved": "structure",
-    "section_level_reference_missing": "coordination",
-    "wall_missing_level": "structure",
-    "wall_zero_length": "structure",
-    "wall_constraint_levels_inverted": "structure",
-    "grid_zero_length": "architecture",
-    "dimension_zero_length": "architecture",
-    "dimension_bad_level": "structure",
-    "room_outline_degenerate": "architecture",
-    "room_programme_metadata_hint": "architecture",
-    "room_finish_metadata_hint": "architecture",
-    "room_target_area_mismatch": "architecture",
-    "room_programme_inconsistent_within_level": "architecture",
-    "room_outline_spans_axis_room_separation": "architecture",
-    "room_overlap_plan": "architecture",
-    "room_boundary_axis_closure_insufficient_segments": "architecture",
-    "room_boundary_axis_segment_enum_cap": "architecture",
-    "room_boundary_axis_segments_missing_orientation_mix": "architecture",
-    "room_boundary_non_axis_segments_skipped": "architecture",
-    "room_derived_interior_separation_ambiguous": "architecture",
-    "door_off_wall": "architecture",
-    "door_not_on_wall": "architecture",
-    "window_off_wall": "architecture",
-    "floor_missing_level": "structure",
-    "floor_polygon_degenerate": "structure",
-    "floor_overlap": "coordination",
-    "slab_opening_missing_floor": "structure",
-    "slab_opening_polygon_degenerate": "structure",
-    "toposolid_pierce_check": "site",
-    "stair_missing_levels": "architecture",
-    "stair_geometry_unreasonable": "architecture",
-    "stair_comfort_eu_proxy": "architecture",
-    "stair_schedule_degenerate_run": "architecture",
-    "stair_schedule_incomplete_riser_tread": "architecture",
-    "stair_schedule_guardrail_placeholder_uncorrelated": "architecture",
-    "ids_cleanroom_door_without_family_type": "agent",
-    "ids_cleanroom_window_without_family_type": "agent",
-    "ids_cleanroom_door_pressure_metadata_missing": "agent",
-    "ids_cleanroom_family_type_unknown": "agent",
-    "ids_cleanroom_cleanroom_class_missing": "agent",
-    "ids_cleanroom_interlock_grade_missing": "agent",
-    "ids_cleanroom_opening_finish_material_missing": "agent",
-    "plan_view_sheet_viewport_crop_missing": "coordination",
-    "plan_view_sheet_viewport_crop_inverted": "coordination",
-    "plan_view_sheet_viewport_zero_extent": "coordination",
-    "sheet_viewport_unknown_ref": "coordination",
-    "schedule_orphan_sheet_ref": "coordination",
-    "schedule_opening_identifier_missing": "coordination",
-    "schedule_opening_orphan_host": "coordination",
-    "schedule_opening_family_type_incomplete": "coordination",
-    "schedule_opening_host_wall_type_incomplete": "coordination",
-    "schedule_sheet_viewport_missing": "coordination",
-    "schedule_sheet_export_parity_csv_diverges": "coordination",
-    "schedule_sheet_export_parity_json_diverges": "coordination",
-    "schedule_sheet_export_parity_listing_diverges": "coordination",
-    "sheet_missing_titleblock": "coordination",
-    "sheet_revision_issue_metadata_missing": "coordination",
-    "sheet_viewport_zero_extent": "coordination",
-    "exchange_manifest_ifc_gltf_slice_mismatch": "exchange",
-    "exchange_ifc_unhandled_geometry_present": "exchange",
-    "exchange_ifc_kernel_geometry_skip_summary": "exchange",
-    "exchange_ifc_roundtrip_count_mismatch": "exchange",
-    "exchange_ifc_roundtrip_programme_mismatch": "exchange",
-    "exchange_ifc_ids_identity_pset_gap": "exchange",
-    "exchange_ifc_ids_qto_gap": "exchange",
-    "exchange_ifc_material_layer_readback_mismatch": "exchange",
-    "exchange_ifc_import_preview_extraction_gaps": "exchange",
-    "exchange_ifc_import_preview_unsupported_products": "exchange",
-    "exchange_ifc_import_preview_ids_pointer_gap": "exchange",
-    "exchange_ifc_import_preview_id_collision": "exchange",
-    "exchange_ifc_manifest_authoritative_alignment_drift": "exchange",
-    "exchange_ifc_manifest_unsupported_alignment_drift": "exchange",
-    "exchange_ifc_manifest_ids_pointer_alignment_drift": "exchange",
-    "exchange_ifc_qto_stair_gap": "exchange",
-    "exchange_ifc_qto_room_gap": "exchange",
-    "exchange_ifc_pset_floor_gap": "exchange",
-    "exchange_ifc_pset_roof_gap": "exchange",
-    "material_catalog_missing_layer_stack": "exchange",
-    "material_catalog_stale_assembly_reference": "exchange",
-    "material_catalog_missing_material": "exchange",
-    "material_catalog_unsupported_layer_function": "exchange",
-    "material_catalog_not_propagated": "exchange",
-    "agent_brief_assumption_unresolved": "agent",
-    "agent_brief_deviation_unacknowledged": "agent",
-    "agent_brief_assumption_reference_broken": "agent",
-    "plan_view_tag_style_fallback": "architecture",
-    "plan_view_tag_style_ref_invalid": "architecture",
-    "plan_view_tag_style_target_mismatch": "architecture",
-    "plan_view_tag_style_override": "architecture",
-    "plan_template_tag_style_ref_invalid": "architecture",
-    "room_color_scheme_identity_missing": "architecture",
-    "room_color_scheme_row_missing_label": "architecture",
-    "room_color_scheme_row_invalid_fill_color": "architecture",
-    "room_color_scheme_row_duplicate_override_key": "architecture",
-    "section_on_sheet_cut_line_missing": "coordination",
-    "section_on_sheet_profile_token_missing": "coordination",
-    "section_on_sheet_revision_issue_unresolved": "coordination",
-    "gltf_export_manifest_expected_extension_missing": "exchange",
-    "gltf_export_manifest_extension_order_drift": "exchange",
-    "prd_closeout_advisor_readiness_status_drift": "agent",
-    "prd_closeout_section_missing_in_readiness": "agent",
-    "prd_closeout_reason_code_drift": "agent",
-    # New rules — wave-4 prompt-2
-    "room_boundary_open": "architecture",
-    # New rules — wave-4 prompt-7
-    "schedule_not_placed_on_sheet": "coordination",
-    "sheet_viewport_schedule_stale": "coordination",
-    "schedule_field_registry_gap": "coordination",
-    # FED-03: Cross-link Copy/Monitor drift advisory.
-    "monitored_source_drift": "coordination",
-    # KRN-14: Dormer footprint vertex outside host roof polygon.
-    "dormer_overflow_v1": "architecture",
-}
+_RULE_DISCIPLINE = RULE_DISCIPLINE
 
-_RULE_BLOCKING_CLASS: dict[str, str] = {
-    # geometry
-    "wall_overlap": "geometry",
-    "window_overlaps_door": "geometry",
-    "wall_zero_length": "geometry",
-    "wall_missing_level": "geometry",
-    "wall_constraint_levels_inverted": "geometry",
-    "grid_zero_length": "geometry",
-    "door_off_wall": "geometry",
-    "door_not_on_wall": "geometry",
-    "window_off_wall": "geometry",
-    "floor_missing_level": "geometry",
-    "floor_polygon_degenerate": "geometry",
-    "floor_overlap": "geometry",
-    "slab_opening_missing_floor": "geometry",
-    "slab_opening_polygon_degenerate": "geometry",
-    "toposolid_pierce_check": "documentation",
-    "room_outline_degenerate": "geometry",
-    "room_overlap_plan": "geometry",
-    "stair_geometry_unreasonable": "geometry",
-    "stair_missing_levels": "geometry",
-    "stair_comfort_eu_proxy": "geometry",
-    "room_boundary_open": "geometry",
-    "dormer_overflow_v1": "geometry",
-    # documentation
-    "level_duplicate_elevation": "documentation",
-    "level_datum_parent_cycle": "documentation",
-    "level_datum_parent_offset_mismatch": "documentation",
-    "level_parent_unresolved": "documentation",
-    "datum_grid_reference_missing": "documentation",
-    "elevation_marker_view_unresolved": "documentation",
-    "section_level_reference_missing": "documentation",
-    "dimension_zero_length": "documentation",
-    "dimension_bad_level": "documentation",
-    "room_programme_metadata_hint": "documentation",
-    "room_finish_metadata_hint": "documentation",
-    "room_target_area_mismatch": "documentation",
-    "room_programme_inconsistent_within_level": "documentation",
-    "room_outline_spans_axis_room_separation": "documentation",
-    "room_boundary_axis_closure_insufficient_segments": "documentation",
-    "room_boundary_axis_segment_enum_cap": "documentation",
-    "room_boundary_axis_segments_missing_orientation_mix": "documentation",
-    "room_boundary_non_axis_segments_skipped": "documentation",
-    "room_derived_interior_separation_ambiguous": "documentation",
-    "stair_schedule_degenerate_run": "documentation",
-    "stair_schedule_incomplete_riser_tread": "documentation",
-    "stair_schedule_guardrail_placeholder_uncorrelated": "documentation",
-    "ids_cleanroom_door_without_family_type": "documentation",
-    "ids_cleanroom_window_without_family_type": "documentation",
-    "ids_cleanroom_door_pressure_metadata_missing": "documentation",
-    "ids_cleanroom_family_type_unknown": "documentation",
-    "ids_cleanroom_cleanroom_class_missing": "documentation",
-    "ids_cleanroom_interlock_grade_missing": "documentation",
-    "ids_cleanroom_opening_finish_material_missing": "documentation",
-    "plan_view_tag_style_fallback": "documentation",
-    "plan_view_tag_style_ref_invalid": "documentation",
-    "plan_view_tag_style_target_mismatch": "documentation",
-    "plan_view_tag_style_override": "documentation",
-    "plan_template_tag_style_ref_invalid": "documentation",
-    "room_color_scheme_identity_missing": "documentation",
-    "room_color_scheme_row_missing_label": "documentation",
-    "room_color_scheme_row_invalid_fill_color": "documentation",
-    "room_color_scheme_row_duplicate_override_key": "documentation",
-    # schedule
-    "schedule_opening_identifier_missing": "schedule",
-    "schedule_opening_orphan_host": "schedule",
-    "schedule_opening_family_type_incomplete": "schedule",
-    "schedule_opening_host_wall_type_incomplete": "schedule",
-    "schedule_orphan_sheet_ref": "schedule",
-    "schedule_sheet_viewport_missing": "schedule",
-    "schedule_sheet_export_parity_csv_diverges": "schedule",
-    "schedule_sheet_export_parity_json_diverges": "schedule",
-    "schedule_sheet_export_parity_listing_diverges": "schedule",
-    "schedule_not_placed_on_sheet": "schedule",
-    "sheet_viewport_schedule_stale": "schedule",
-    "schedule_field_registry_gap": "schedule",
-    # sheet
-    "plan_view_sheet_viewport_crop_missing": "sheet",
-    "plan_view_sheet_viewport_crop_inverted": "sheet",
-    "plan_view_sheet_viewport_zero_extent": "sheet",
-    "sheet_viewport_unknown_ref": "sheet",
-    "sheet_missing_titleblock": "sheet",
-    "sheet_revision_issue_metadata_missing": "sheet",
-    "sheet_viewport_zero_extent": "sheet",
-    "section_on_sheet_cut_line_missing": "sheet",
-    "section_on_sheet_profile_token_missing": "sheet",
-    "section_on_sheet_revision_issue_unresolved": "sheet",
-    # exchange
-    "exchange_manifest_ifc_gltf_slice_mismatch": "exchange",
-    "exchange_ifc_unhandled_geometry_present": "exchange",
-    "exchange_ifc_kernel_geometry_skip_summary": "exchange",
-    "exchange_ifc_roundtrip_count_mismatch": "exchange",
-    "exchange_ifc_roundtrip_programme_mismatch": "exchange",
-    "exchange_ifc_ids_identity_pset_gap": "exchange",
-    "exchange_ifc_ids_qto_gap": "exchange",
-    "exchange_ifc_material_layer_readback_mismatch": "exchange",
-    "exchange_ifc_import_preview_extraction_gaps": "exchange",
-    "exchange_ifc_import_preview_unsupported_products": "exchange",
-    "exchange_ifc_import_preview_ids_pointer_gap": "exchange",
-    "exchange_ifc_import_preview_id_collision": "exchange",
-    "exchange_ifc_manifest_authoritative_alignment_drift": "exchange",
-    "exchange_ifc_manifest_unsupported_alignment_drift": "exchange",
-    "exchange_ifc_manifest_ids_pointer_alignment_drift": "exchange",
-    "material_catalog_missing_layer_stack": "exchange",
-    "material_catalog_stale_assembly_reference": "exchange",
-    "material_catalog_missing_material": "exchange",
-    "material_catalog_unsupported_layer_function": "exchange",
-    "material_catalog_not_propagated": "exchange",
-    "gltf_export_manifest_expected_extension_missing": "exchange",
-    "gltf_export_manifest_extension_order_drift": "exchange",
-    "exchange_ifc_qto_stair_gap": "exchange",
-    "exchange_ifc_qto_room_gap": "exchange",
-    "exchange_ifc_pset_floor_gap": "exchange",
-    "exchange_ifc_pset_roof_gap": "exchange",
-    # evidence
-    "agent_brief_assumption_unresolved": "evidence",
-    "agent_brief_deviation_unacknowledged": "evidence",
-    "agent_brief_assumption_reference_broken": "evidence",
-    "prd_closeout_advisor_readiness_status_drift": "evidence",
-    "prd_closeout_section_missing_in_readiness": "evidence",
-    "prd_closeout_reason_code_drift": "evidence",
-    # coordination
-    "monitored_source_drift": "coordination",
-}
+_RULE_BLOCKING_CLASS = RULE_BLOCKING_CLASS
 
-_MATERIAL_CATALOG_AUDIT_RULE_IDS: dict[str, str] = {
-    "missing_layer_stack": "material_catalog_missing_layer_stack",
-    "stale_reference": "material_catalog_stale_assembly_reference",
-    "missing_material": "material_catalog_missing_material",
-    "unsupported_function": "material_catalog_unsupported_layer_function",
-    "not_propagated": "material_catalog_not_propagated",
-}
-
-_MATERIAL_CATALOG_AUDIT_MESSAGES: dict[str, str] = {
-    "missing_layer_stack": (
-        "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack)."
-    ),
-    "stale_reference": "Assembly type id does not resolve to a layered type element in the document.",
-    "missing_material": "Typed layer stack exists but one or more layers lack a catalog materialKey.",
-    "unsupported_function": "Layer uses a wall-layer function token outside the kernel catalog slice.",
-    "not_propagated": (
-        "Typed layer stack thickness does not match instance/cut thickness within epsilon "
-        "(see material_assembly_resolve layered assembly cut metrics)."
-    ),
-}
+_MATERIAL_CATALOG_AUDIT_RULE_IDS = MATERIAL_CATALOG_AUDIT_RULE_IDS
+_MATERIAL_CATALOG_AUDIT_MESSAGES = MATERIAL_CATALOG_AUDIT_MESSAGES
 
 
 _viewport_dimension_mm = viewport_dimension_mm
