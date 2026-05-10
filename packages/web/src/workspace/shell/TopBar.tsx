@@ -14,6 +14,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Icons, IconLabels, ICON_SIZE, type LucideLikeIcon } from '@bim-ai/ui';
 import { useBimStore } from '../../state/store';
+import { AccountStatusMenu, type AccountStatusInfo } from './AccountStatusMenu';
 import { SourceViewChip } from './SourceViewChip';
 import { type ViewTab, type TabKind } from '../tabsModel';
 
@@ -101,6 +102,8 @@ export interface TopBarProps {
   onCollaboratorsClick?: () => void;
   /** Identifier shown as the avatar fallback when no avatar URL is provided. */
   avatarInitials?: string;
+  /** F-013: local account/license/status/about readout for the top-right account menu. */
+  accountStatus?: AccountStatusInfo;
   /** Presence peers to render as avatar chips (up to 6). */
   peers?: Array<{ name?: string; color?: string }>;
   /** OUT-V3-01: true when at least one Page exists in the model. */
@@ -155,6 +158,7 @@ export function TopBar({
   collaboratorsCount,
   onCollaboratorsClick,
   avatarInitials,
+  accountStatus,
   peers,
   hasPages,
   onSharePresentation,
@@ -225,6 +229,7 @@ export function TopBar({
         collaboratorsCount={collaboratorsCount}
         onCollaboratorsClick={onCollaboratorsClick}
         avatarInitials={avatarInitials}
+        accountStatus={accountStatus}
         peers={peers}
         hasPages={hasPages}
         onSharePresentation={onSharePresentation}
@@ -789,6 +794,7 @@ function TopBarRight({
   collaboratorsCount,
   onCollaboratorsClick,
   avatarInitials,
+  accountStatus,
   peers,
   hasPages,
   onSharePresentation,
@@ -801,6 +807,7 @@ function TopBarRight({
   collaboratorsCount?: number;
   onCollaboratorsClick?: () => void;
   avatarInitials?: string;
+  accountStatus?: AccountStatusInfo;
   peers?: Array<{ name?: string; color?: string }>;
   hasPages?: boolean;
   onSharePresentation?: () => void;
@@ -903,19 +910,17 @@ function TopBarRight({
               }
             }}
           >
-            <button
-              type="button"
-              role="menuitem"
-              data-testid="topbar-avatar-menu-settings"
-              onClick={() => {
+            <AccountStatusMenu
+              info={accountStatus}
+              onSettings={() => {
                 setAvatarMenuOpen(false);
                 onSettings?.();
               }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-surface-strong"
-            >
-              <Icons.settings size={13} aria-hidden="true" />
-              Settings
-            </button>
+              onCommandPalette={() => {
+                setAvatarMenuOpen(false);
+                onCommandPalette?.();
+              }}
+            />
             <div className="my-1 h-px bg-border" aria-hidden="true" />
             <button
               type="button"
