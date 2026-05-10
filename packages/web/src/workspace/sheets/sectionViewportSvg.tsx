@@ -1,7 +1,7 @@
 /* eslint-disable bim-ai/no-hex-in-chrome -- pre-v3 hex literals; remove when this file is migrated in B4 Phase 2 */
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { fetchSectionProjectionWire } from '../plan/sectionProjectionWire';
+import { fetchSectionProjectionWire } from '../../plan/sectionProjectionWire';
 import {
   SECTION_VIEWPORT_ADVISORY_MAX_CHARS,
   SECTION_VIEWPORT_LABEL_FONT_MAX_PX,
@@ -18,7 +18,7 @@ import {
   SECTION_VIEWPORT_WALL_HATCH_ALONG_CUT_TILE,
   SECTION_VIEWPORT_WALL_HATCH_ALONG_STROKE_FACTOR,
   SECTION_VIEWPORT_WALL_HATCH_EDGE_ON_TILE,
-} from '../plan/symbology';
+} from '../../plan/symbology';
 import {
   formatSectionAlongCutSpanMmLabel,
   formatSectionDocMaterialHintCaption,

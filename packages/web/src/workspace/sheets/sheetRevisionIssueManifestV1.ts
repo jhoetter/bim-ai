@@ -1,6 +1,6 @@
 /** Deterministic revision/issue segments (parity with app/bim_ai/sheet_titleblock_revision_issue_v1.py). */
 
-import { sha256Utf8 } from '../plan/roomSchemeColor';
+import { sha256Utf8 } from '../../plan/roomSchemeColor';
 
 export const SHEET_TITLEBLOCK_REVISION_ISSUE_MANIFEST_V1 =
   'sheetTitleblockRevisionIssueManifest_v1';

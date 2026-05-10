@@ -15,16 +15,13 @@ function renderWithI18n(ui: React.ReactElement) {
   return render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>);
 }
 
-vi.mock('./SheetCanvas', () => ({
+vi.mock('./sheets', () => ({
   SheetCanvas: ({
     preferredSheetId,
   }: {
     preferredSheetId?: string;
     elementsById: Record<string, Element>;
   }) => <div data-testid="sheet-canvas" data-preferred-sheet-id={preferredSheetId ?? ''} />,
-}));
-
-vi.mock('./SectionPlaceholderPane', () => ({
   SectionPlaceholderPane: ({
     activeLevelLabel,
     modelId,

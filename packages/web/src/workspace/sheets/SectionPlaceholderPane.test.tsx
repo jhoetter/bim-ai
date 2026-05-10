@@ -8,7 +8,7 @@ import {
   SectionPlaceholderPane,
   SECTION_WORKBENCH_NO_WALL_CAPTION,
 } from './SectionPlaceholderPane';
-import { useBimStore } from '../state/store';
+import { useBimStore } from '../../state/store';
 
 vi.mock('./sectionViewportSvg', () => ({
   SectionViewportSvg: (p: { sectionCutId: string }) => (

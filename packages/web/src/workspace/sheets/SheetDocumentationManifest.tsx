@@ -18,9 +18,9 @@ import {
   normalizeTitleblockRevisionIssueV1,
   sheetRevisionIssueMetadataPresent,
 } from './sheetRevisionIssueManifestV1';
-import { scheduleTableRendererSheetReadout } from '../schedules/scheduleTableRenderer';
-import { formatSchedulePaginationPlacementReadout } from '../schedules/schedulePanelRegistryChrome';
-import { roomColorSchemeLegendPlacementReadoutLines } from './readouts';
+import { scheduleTableRendererSheetReadout } from '../../schedules/scheduleTableRenderer';
+import { formatSchedulePaginationPlacementReadout } from '../../schedules/schedulePanelRegistryChrome';
+import { roomColorSchemeLegendPlacementReadoutLines } from '../readouts';
 
 type SheetEl = Extract<Element, { kind: 'sheet' }>;
 

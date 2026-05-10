@@ -12,7 +12,7 @@ import {
   formatSheetRevIssExportListingSegmentV1,
   normalizeTitleblockRevisionIssueV1,
 } from './sheetRevisionIssueManifestV1';
-import { scheduleTableRendererSheetReadout } from '../schedules/scheduleTableRenderer';
+import { scheduleTableRendererSheetReadout } from '../../schedules/scheduleTableRenderer';
 
 describe('viewportCropExtentsMm', () => {
   it('returns absolute span between corners', () => {

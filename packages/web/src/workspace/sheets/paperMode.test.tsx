@@ -10,20 +10,20 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter } from 'react-router';
-import i18n from '../i18n';
+import i18n from '../../i18n';
 
 const TABS_KEY = 'bim-ai:tabs-v1';
 const ONBOARDING_KEY = 'bim.onboarding-completed';
 
 // Stub heavy canvases so jsdom renders the chrome without WebGL.
-vi.mock('../Viewport', () => ({
+vi.mock('../../Viewport', () => ({
   Viewport: () => <div data-testid="stub-viewport" />,
 }));
-vi.mock('../plan/PlanCanvas', () => ({
+vi.mock('../../plan/PlanCanvas', () => ({
   PlanCanvas: () => <div data-testid="stub-plan-canvas" />,
 }));
 
-import { Workspace } from './Workspace';
+import { Workspace } from '../Workspace';
 
 function renderWorkspace() {
   return render(

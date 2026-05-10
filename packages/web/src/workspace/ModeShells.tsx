@@ -5,9 +5,8 @@ import { Icons, ICON_SIZE } from '@bim-ai/ui';
 import { SCHEDULE_DEFAULTS } from './modeSurfaces';
 import { AdvisorPanel } from '../advisor/AdvisorPanel';
 import { useBimStore } from '../state/store';
-import { SheetCanvas } from './SheetCanvas';
 import { SheetReviewSurface } from '../plan/SheetReviewSurface';
-import { SectionPlaceholderPane } from './SectionPlaceholderPane';
+import { SheetCanvas, SectionPlaceholderPane } from './sheets';
 
 /**
  * Mode-specific shells — spec §20.4 / §20.5 / §20.6 / §20.7.

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type JSX, type MouseEvent } f
 
 import type { Comment, Element, Markup, SheetAnchor } from '@bim-ai/core';
 
-import { SheetCanvas } from '../workspace/SheetCanvas';
+import { SheetCanvas } from '../workspace/sheets';
 import { CommentsPanel } from '../workspace/comments';
 import { MarkupCanvas } from '../collab/MarkupCanvas';
 import { useBimStore, type UxComment } from '../state/store';

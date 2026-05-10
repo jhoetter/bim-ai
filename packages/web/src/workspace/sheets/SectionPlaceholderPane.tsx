@@ -4,12 +4,12 @@ import type { Element } from '@bim-ai/core';
 
 import { Btn, Panel } from '@bim-ai/ui';
 
-import { fetchSectionProjectionWire } from '../plan/sectionProjectionWire';
-import { useBimStore } from '../state/store';
+import { fetchSectionProjectionWire } from '../../plan/sectionProjectionWire';
+import { useBimStore } from '../../state/store';
 
 import { SectionViewportSvg } from './sectionViewportSvg';
 import { formatSectionCutIdentityLine, formatSectionCutPlaneContext } from './sectionViewportDoc';
-import { formatSectionDatumElevationEvidenceLine } from './readouts';
+import { formatSectionDatumElevationEvidenceLine } from '../readouts';
 import { sheetsReferencingSectionCut } from './sheetViewRef';
 
 const PREVIEW_WIDTH_PX = 320;
