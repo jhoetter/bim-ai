@@ -2720,6 +2720,7 @@ Element = Annotated[
     | DetailRegionElem
     | TextNoteElem
     | AnnotationSymbolElem
+    | SpotElevationElem
     | ReferencePlaneElem
     | PropertyLineElem
     | SweepElem
