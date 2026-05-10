@@ -159,6 +159,8 @@ These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (t
 
 **Progress 2026-05-10.** Extracted engine visibility helpers from `engine.py` into `bim_ai/engine_visibility.py`, preserving phase-filter, discipline-lens, design-option visibility, and pin predicate exports with focused regression coverage.
 
+**Progress 2026-05-10.** Extracted stacked/slanted wall helper functions from `engine.py` into `bim_ai/engine_wall_helpers.py`, preserving the public `bim_ai.engine` helper imports and reusing the stacked/slanted wall regression coverage.
+
 ---
 
 ## CQ-05 — Slice the zustand store (`packages/web/src/state/store.ts`, 1,692 LOC)
