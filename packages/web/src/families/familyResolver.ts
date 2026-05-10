@@ -92,17 +92,53 @@ function buildNestedParamMap(
   bindings: Record<string, ParameterBinding>,
   hostParams: HostParams,
 ): HostParams {
-  const out: HostParams = {};
-  for (const p of def.params) {
-    const dv = p.default;
-    if (typeof dv === 'number' || typeof dv === 'boolean' || typeof dv === 'string') {
-      out[p.key] = dv;
-    }
-  }
+  const out = buildFamilyParamMap(def, {});
   for (const [paramName, binding] of Object.entries(bindings)) {
     out[paramName] = resolveParameterBinding(binding, hostParams);
   }
+  resolveFormulaParams(def, out);
   return out;
+}
+
+function numericParams(params: HostParams): Record<string, number | boolean> {
+  const out: Record<string, number | boolean> = {};
+  for (const [k, v] of Object.entries(params)) {
+    if (typeof v === 'number' || typeof v === 'boolean') out[k] = v;
+  }
+  return out;
+}
+
+function resolveFormulaParams(def: FamilyDefinition, params: HostParams): void {
+  for (let pass = 0; pass < def.params.length; pass++) {
+    let changed = false;
+    for (const p of def.params) {
+      const formula = typeof p.formula === 'string' ? p.formula.trim() : '';
+      if (!formula) continue;
+      const next = evaluateFormulaOrThrow(formula, numericParams(params));
+      if (params[p.key] !== next) {
+        params[p.key] = next;
+        changed = true;
+      }
+    }
+    if (!changed) return;
+  }
+}
+
+/**
+ * Resolve a family's effective host parameter map:
+ * defaults, then caller overrides, then formula-backed params.
+ */
+export function buildFamilyParamMap(def: FamilyDefinition, params: HostParams): HostParams {
+  const merged: HostParams = {};
+  for (const p of def.params) {
+    const dv = p.default;
+    if (typeof dv === 'number' || typeof dv === 'boolean' || typeof dv === 'string') {
+      merged[p.key] = dv;
+    }
+  }
+  Object.assign(merged, params);
+  resolveFormulaParams(def, merged);
+  return merged;
 }
 
 /**
@@ -336,14 +372,7 @@ export function resolveFamilyGeometry(
   }
   const group = new THREE.Group();
   group.userData.familyId = familyId;
-  const merged: HostParams = {};
-  for (const p of def.params) {
-    const dv = p.default;
-    if (typeof dv === 'number' || typeof dv === 'boolean' || typeof dv === 'string') {
-      merged[p.key] = dv;
-    }
-  }
-  Object.assign(merged, params);
+  const merged = buildFamilyParamMap(def, params);
   for (const geomNode of def.geometry ?? []) {
     const child = resolveGeometryNode(geomNode, merged, catalog, 1, detailLevel);
     if (child) group.add(child);

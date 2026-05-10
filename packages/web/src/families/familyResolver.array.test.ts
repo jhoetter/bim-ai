@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import {
+  buildFamilyParamMap,
   resolveArrayNode,
   resolveFamilyGeometry,
   type FamilyCatalogLookup,
@@ -220,5 +221,68 @@ describe('FAM-05 — array node embedded in a family + acceptance scenario', () 
       if (c instanceof THREE.Group && c.userData.familyId === 'fam:chair') chairs++;
     });
     expect(chairs).toBe(8);
+  });
+});
+
+describe('F-089 — furniture Array_Length_Width parameter', () => {
+  function parametricDiningTable(): FamilyDefinition {
+    const chairArray = (yMm: number): ArrayGeometryNode => ({
+      kind: 'array',
+      target: chairTarget({ xMm: 0, yMm, zMm: 0 }),
+      mode: 'linear',
+      countParam: 'Array_Length_Width',
+      spacing: { kind: 'fit_total', totalLengthParam: 'Width' },
+      axisStart: { xMm: 0, yMm, zMm: 0 },
+      axisEnd: { xMm: 0, yMm, zMm: 0 },
+    });
+
+    return {
+      id: 'catalog:furniture:dining-table-array-length-width',
+      name: 'Dining Table - Parametric Chair Arrays',
+      discipline: 'generic',
+      params: [
+        {
+          key: 'Width',
+          label: 'Table Width',
+          type: 'length_mm',
+          default: 2400,
+          instanceOverridable: true,
+        },
+        {
+          key: 'ChairSlotPitch',
+          label: 'Chair Slot Pitch',
+          type: 'length_mm',
+          default: 600,
+          instanceOverridable: false,
+        },
+        {
+          key: 'Array_Length_Width',
+          label: 'Array Length Width',
+          type: 'length_mm',
+          default: 4,
+          formula: 'max(1, rounddown(Width / ChairSlotPitch))',
+          instanceOverridable: false,
+        },
+      ],
+      defaultTypes: [],
+      geometry: [chairArray(-450), chairArray(450)],
+    };
+  }
+
+  it('derives the Array_Length_Width count from table Width before resolving chair arrays', () => {
+    const tableFamily = parametricDiningTable();
+    const catalog: FamilyCatalogLookup = {
+      'fam:chair': chairFamily(),
+      [tableFamily.id]: tableFamily,
+    };
+
+    expect(buildFamilyParamMap(tableFamily, { Width: 2400 }).Array_Length_Width).toBe(4);
+    expect(buildFamilyParamMap(tableFamily, { Width: 3000 }).Array_Length_Width).toBe(5);
+
+    const standard = resolveFamilyGeometry(tableFamily.id, { Width: 2400 }, catalog);
+    expect(chairCount(standard)).toBe(8);
+
+    const wide = resolveFamilyGeometry(tableFamily.id, { Width: 3000 }, catalog);
+    expect(chairCount(wide)).toBe(10);
   });
 });

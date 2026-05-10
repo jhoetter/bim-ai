@@ -33,7 +33,7 @@ Source segment: `04:35:00 – 04:38:48`
 **Screenshot:**
 ![Array parameter](file:///Users/jhoetter/Desktop/Revit%20Specs/0728_04-36-10.png)
 
-**bim-ai status:** ❌ Not available — bim-ai has no array/pattern tool for elements.
+**bim-ai status:** 🟡 Partial — family geometry supports parameter-driven `array` nodes that resolve nested chair families from a host count parameter, including `fit_total` spacing over a table width. Formula-backed family parameters are evaluated before array resolution, so a furniture family can expose `Array_Length_Width = max(1, rounddown(Width / ChairSlotPitch))` and changing `Width` regenerates the chair count on both sides of a dining table. Covered by the focused F-089 resolver test in `packages/web/src/families/familyResolver.array.test.ts`. Missing: a furniture-library UI for browsing/editing these array formulas directly from a warehouse-style catalogue.
 
 ---
 
