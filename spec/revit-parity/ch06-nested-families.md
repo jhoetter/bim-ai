@@ -27,7 +27,7 @@ Choice 2 is required when parametric values (e.g., glass thickness) were changed
 **Screenshot:**
 ![Overwrite options](file:///Users/jhoetter/Desktop/Revit%20Specs/0445_02-45-46.png)
 
-**bim-ai status:** 🟡 Partial — sweep and nested-instance visibility can bind to boolean family parameters, covering the primary Visible-when use case. Missing: general associate-parameter buttons for every property.
+**bim-ai status:** 🟡 Partial — external catalog reloads now detect an already-loaded `family_type` by catalog provenance and surface two explicit reload choices in the Family Library: keep existing project parameter values, or overwrite parameter values from the catalog defaults. The reload reuses the existing type id so placed instances continue to reference the updated type. Missing: true `.rfa` family definition/geometry replacement, nested-family reload inside the Family Editor host context, a Revit-style modal prompt, and per-instance/type parameter separation beyond the current project `family_type.parameters` map.
 
 ---
 

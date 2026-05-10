@@ -92,6 +92,10 @@ import {
   type ExternalCatalogPlacement,
   type FamilyLibraryPlaceKind,
 } from '../families/FamilyLibraryPanel';
+import {
+  planCatalogFamilyLoad,
+  type FamilyReloadOverwriteOption,
+} from '../families/catalogFamilyReload';
 import { getFamilyPlacementAdapter } from '../families/familyPlacementAdapters';
 import { applyCommandBundle } from '../lib/api';
 import { OnboardingTour } from '../onboarding/OnboardingTour';
@@ -927,54 +931,30 @@ export function Workspace(): JSX.Element {
   );
 
   const loadCatalogFamilyIntoProject = useCallback(
-    async (placement: ExternalCatalogPlacement) => {
+    async (placement: ExternalCatalogPlacement, overwriteOption?: FamilyReloadOverwriteOption) => {
       if (!modelId) return null;
-      const safeFamId = placement.family.id.replace(/[^A-Za-z0-9_-]/g, '_');
-      const newTypeId = `ft-${safeFamId}-${Date.now().toString(36)}`;
-      const kind: FamilyLibraryPlaceKind =
-        placement.family.discipline === 'door' || placement.family.discipline === 'window'
-          ? (placement.family.discipline as FamilyLibraryPlaceKind)
-          : 'component_family';
-      const discipline =
-        placement.family.discipline === 'door' || placement.family.discipline === 'window'
-          ? placement.family.discipline
-          : 'generic';
-      const cmd = {
-        type: 'upsertFamilyType',
-        id: newTypeId,
-        discipline,
-        parameters: {
-          name: placement.defaultType.name,
-          familyId: placement.family.id,
-          ...placement.defaultType.parameters,
-        },
-        catalogSource: {
-          catalogId: placement.catalogId,
-          familyId: placement.family.id,
-          version: placement.catalogVersion,
-        },
-      };
+      const loadPlan = planCatalogFamilyLoad(placement, elementsById, { overwriteOption });
       try {
-        await applyCommandBundle(modelId, [cmd], { userId: 'component-tool' });
+        await applyCommandBundle(modelId, [loadPlan.command], { userId: 'component-tool' });
       } catch (err) {
         log.error('component-tool', 'applyCommandBundle failed', err);
         return null;
       }
-      return { kind, typeId: newTypeId };
+      return { kind: loadPlan.kind, typeId: loadPlan.typeId };
     },
-    [modelId],
+    [elementsById, modelId],
   );
 
   const handleLoadCatalogFamily = useCallback(
-    async (placement: ExternalCatalogPlacement) => {
-      await loadCatalogFamilyIntoProject(placement);
+    async (placement: ExternalCatalogPlacement, overwriteOption?: FamilyReloadOverwriteOption) => {
+      await loadCatalogFamilyIntoProject(placement, overwriteOption);
     },
     [loadCatalogFamilyIntoProject],
   );
 
   const handlePlaceCatalogFamily = useCallback(
-    async (placement: ExternalCatalogPlacement) => {
-      const loaded = await loadCatalogFamilyIntoProject(placement);
+    async (placement: ExternalCatalogPlacement, overwriteOption?: FamilyReloadOverwriteOption) => {
+      const loaded = await loadCatalogFamilyIntoProject(placement, overwriteOption);
       if (loaded) handlePlaceFamilyType(loaded.kind, loaded.typeId);
     },
     [handlePlaceFamilyType, loadCatalogFamilyIntoProject],
