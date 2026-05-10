@@ -372,11 +372,11 @@ export function buildOneFamilyHomeCommands() {
     //   Material A (white render):  roof ✓ | UF side walls (E/N/W) | floor slabs ✓
     //   Material B (cladding_warm_wood): all GF walls + chimney face — single material per spec §4
     //   Parapet walls → white_render (part of the upper "wrapper shell")
-    { type: 'updateElementProperty', elementId: 'hf-w-gf-s', key: 'materialKey', value: 'white_cladding' },
-    { type: 'updateElementProperty', elementId: 'hf-w-gf-e', key: 'materialKey', value: 'white_cladding' },
-    { type: 'updateElementProperty', elementId: 'hf-w-gf-n', key: 'materialKey', value: 'white_cladding' },
-    { type: 'updateElementProperty', elementId: 'hf-w-gf-w', key: 'materialKey', value: 'white_cladding' },
-    // UF south split walls: loggia back surfaces → white_render; chimney face → white_cladding (Material B).
+    { type: 'updateElementProperty', elementId: 'hf-w-gf-s', key: 'materialKey', value: 'cladding_warm_wood' },
+    { type: 'updateElementProperty', elementId: 'hf-w-gf-e', key: 'materialKey', value: 'cladding_warm_wood' },
+    { type: 'updateElementProperty', elementId: 'hf-w-gf-n', key: 'materialKey', value: 'cladding_warm_wood' },
+    { type: 'updateElementProperty', elementId: 'hf-w-gf-w', key: 'materialKey', value: 'cladding_warm_wood' },
+    // UF south split walls: loggia back surfaces → white_render; chimney face → cladding_warm_wood.
     { type: 'updateElementProperty', elementId: 'hf-w-uf-s-l', key: 'materialKey', value: 'white_render' },
     { type: 'updateElementProperty', elementId: 'hf-w-uf-s-c', key: 'materialKey', value: 'white_cladding' },
     { type: 'updateElementProperty', elementId: 'hf-w-uf-s-r', key: 'materialKey', value: 'white_render' },
