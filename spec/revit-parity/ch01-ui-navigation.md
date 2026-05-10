@@ -124,7 +124,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Account Management](file:///Users/jhoetter/Desktop/Revit%20Specs/0117_00-11-30.png)
 
-**bim-ai status:** ❌ Not applicable (different SaaS model).
+**bim-ai status:** 🟡 Partial — `TopBar.tsx` now uses a top-right account menu (`data-testid="topbar-avatar-menu-trigger"`) with a local bim-ai account/about/status surface. The panel shows the current display name or local user state, user id/session, local plan/license readout ("No Autodesk license required"), model id, revision, network and realtime status, pending offline edits, and environment. It links to existing Help / shortcuts and Command Palette actions rather than inventing backend auth. Missing: real hosted account management, privacy settings, billing/license administration, and sign-out.
 
 ---
 

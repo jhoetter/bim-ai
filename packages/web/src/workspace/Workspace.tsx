@@ -1091,6 +1091,18 @@ export function Workspace(): JSX.Element {
               onCollaboratorsClick={() => setCommentsOpen((v) => !v)}
               peers={Object.values(presencePeers)}
               avatarInitials={userDisplayName ? userDisplayName.slice(0, 2).toUpperCase() : 'BA'}
+              accountStatus={{
+                displayName: userDisplayName || 'Local user',
+                userId: userId ?? presenceLocalUserId ?? 'local-dev',
+                modelId: modelId ?? null,
+                revision,
+                wsConnected: wsOn,
+                online: isOnline,
+                pendingEdits: pendingCommandCount,
+                appMode: import.meta.env.MODE,
+                planLabel: 'Local authoring',
+                licenseLabel: 'No Autodesk license required',
+              }}
               hasPages={sheetPages.length > 0}
               onSharePresentation={() => setSharePresentationOpen(true)}
               onUndo={() => void handleUndoRedo(true)}

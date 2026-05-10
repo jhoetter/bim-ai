@@ -222,6 +222,65 @@ describe('TopBar — spec §11', () => {
     );
     expect(getByLabelText('Account').textContent).toBe('JH');
   });
+
+  it('opens a local account, license, about, and status panel from the avatar menu', () => {
+    const { getByTestId } = renderWithI18n(
+      <TopBar
+        {...baseProps}
+        mode="plan"
+        onModeChange={() => undefined}
+        avatarInitials="JH"
+        accountStatus={{
+          displayName: 'Jane Hoetter',
+          userId: 'user-123',
+          modelId: 'model-456',
+          revision: 17,
+          wsConnected: true,
+          online: false,
+          pendingEdits: 2,
+          appMode: 'test',
+          planLabel: 'Local authoring',
+          licenseLabel: 'No Autodesk license required',
+        }}
+      />,
+    );
+
+    fireEvent.click(getByTestId('topbar-avatar-menu-trigger'));
+
+    expect(getByTestId('account-status-display-name').textContent).toBe('Jane Hoetter');
+    expect(getByTestId('account-status-plan').textContent).toBe('Local authoring');
+    expect(getByTestId('account-status-license').textContent).toBe('No Autodesk license required');
+    expect(getByTestId('account-status-model').textContent).toBe('model-456');
+    expect(getByTestId('account-status-revision').textContent).toBe('r17');
+    expect(getByTestId('account-status-network').textContent).toBe('Offline');
+    expect(getByTestId('account-status-realtime').textContent).toBe('Connected');
+    expect(getByTestId('account-status-pending').textContent).toBe('2');
+    expect(getByTestId('account-status-environment').textContent).toBe('test');
+  });
+
+  it('routes account panel actions to existing help and command palette handlers', () => {
+    const onSettings = vi.fn();
+    const onCommandPalette = vi.fn();
+    const { getByTestId, queryByTestId } = renderWithI18n(
+      <TopBar
+        {...baseProps}
+        mode="plan"
+        onModeChange={() => undefined}
+        onSettings={onSettings}
+        onCommandPalette={onCommandPalette}
+      />,
+    );
+
+    fireEvent.click(getByTestId('topbar-avatar-menu-trigger'));
+    fireEvent.click(getByTestId('account-status-settings'));
+    expect(onSettings).toHaveBeenCalledTimes(1);
+    expect(queryByTestId('topbar-avatar-menu')).toBeNull();
+
+    fireEvent.click(getByTestId('topbar-avatar-menu-trigger'));
+    fireEvent.click(getByTestId('account-status-command-palette'));
+    expect(onCommandPalette).toHaveBeenCalledTimes(1);
+    expect(queryByTestId('topbar-avatar-menu')).toBeNull();
+  });
 });
 
 describe('RibbonBar — F-005', () => {
