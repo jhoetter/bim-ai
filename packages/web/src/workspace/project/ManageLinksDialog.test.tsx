@@ -100,4 +100,85 @@ describe('<ManageLinksDialog />', () => {
     await waitFor(() => expect(apply).toHaveBeenCalledTimes(1));
     expect(apply.mock.calls[0]![1]).toMatchObject({ type: 'deleteLinkModel', linkId: 'link-2' });
   });
+
+  it('dispatches pinElement/unpinElement for linked model position locks', async () => {
+    useBimStore.setState({
+      modelId: 'host-model',
+      elementsById: {
+        'link-3': {
+          kind: 'link_model',
+          id: 'link-3',
+          name: 'L3',
+          sourceModelId: '44444444-4444-4444-4444-444444444444',
+          positionMm: { xMm: 0, yMm: 0, zMm: 0 },
+          rotationDeg: 0,
+          originAlignmentMode: 'origin_to_origin',
+        },
+      },
+    });
+    const apply = vi.fn().mockResolvedValue({ ok: true });
+    const { getByTestId, rerender } = render(
+      <ManageLinksDialog open={true} onClose={vi.fn()} applyCommandImpl={apply} />,
+    );
+    fireEvent.click(getByTestId('manage-links-position-pin-link-3'));
+    await waitFor(() =>
+      expect(apply).toHaveBeenCalledWith('host-model', {
+        type: 'pinElement',
+        elementId: 'link-3',
+      }),
+    );
+
+    useBimStore.setState({
+      modelId: 'host-model',
+      elementsById: {
+        'link-3': {
+          kind: 'link_model',
+          id: 'link-3',
+          name: 'L3',
+          sourceModelId: '44444444-4444-4444-4444-444444444444',
+          positionMm: { xMm: 0, yMm: 0, zMm: 0 },
+          rotationDeg: 0,
+          originAlignmentMode: 'origin_to_origin',
+          pinned: true,
+        },
+      },
+    });
+    rerender(<ManageLinksDialog open={true} onClose={vi.fn()} applyCommandImpl={apply} />);
+    fireEvent.click(getByTestId('manage-links-position-pin-link-3'));
+    await waitFor(() =>
+      expect(apply).toHaveBeenLastCalledWith('host-model', {
+        type: 'unpinElement',
+        elementId: 'link-3',
+      }),
+    );
+  });
+
+  it('dispatches pinElement for DXF underlay position locks', async () => {
+    useBimStore.setState({
+      modelId: 'host-model',
+      elementsById: {
+        'dxf-1': {
+          kind: 'link_dxf',
+          id: 'dxf-1',
+          name: 'Site',
+          levelId: 'lvl-1',
+          originMm: { xMm: 0, yMm: 0 },
+          rotationDeg: 0,
+          scaleFactor: 1,
+          linework: [],
+        },
+      },
+    });
+    const apply = vi.fn().mockResolvedValue({ ok: true });
+    const { getByTestId } = render(
+      <ManageLinksDialog open={true} onClose={vi.fn()} applyCommandImpl={apply} />,
+    );
+    fireEvent.click(getByTestId('manage-dxf-links-position-pin-dxf-1'));
+    await waitFor(() =>
+      expect(apply).toHaveBeenCalledWith('host-model', {
+        type: 'pinElement',
+        elementId: 'dxf-1',
+      }),
+    );
+  });
 });

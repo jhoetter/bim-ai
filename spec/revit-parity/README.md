@@ -2,7 +2,7 @@
 
 Source: "The Complete Revit 2026 Course for Architectural Design" — 6-hour recorded session analyzed at timestamp level.
 Screenshots: `/Users/jhoetter/Desktop/Revit Specs/` (local only, not committed to git).
-Last updated: 2026-05-09.
+Last updated: 2026-05-10.
 
 ---
 
@@ -64,7 +64,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-015 | Link CAD (DWG/DXF) — live reference                 | CAD            | 🟡            | DXF import backend + multipart upload endpoint implemented; frontend file-picker now enabled (Insert → Link DXF…) wired to upload-dxf-file; underlay appears via WebSocket broadcast. No live reload on source-file change |
 | F-016 | Import CAD (embedded)                                | CAD            | 🟡            | Same backend + frontend file-picker as F-015; linked vs. embedded distinction not present (single link_dxf element kind) |
 | F-017 | CAD Link Options (Colors/Layers/Units/Positioning)   | CAD            | 🟡            | ManageLinksDialog DXF Links section: per-link opacity slider (0–100%) and color mode toggle (B&W / Custom hex); missing layer visibility filtering, "Preserve original colors", and unit/positioning controls at import time |
-| F-018 | Pin / Unpin linked files                             | CAD            | 🟡            | ManageLinksDialog has revision pinning with drift badge + Update button; no spatial position lock                    |
+| F-018 | Pin / Unpin linked files                             | CAD            | ✅            | Link model and DXF rows support position pin/unpin from Manage Links and the Inspector; pinned link_model rows block spatial updates and delete, while revision pinning remains available |
 | F-019 | Query tool for DWG layer visibility                  | CAD            | ❌            | DXF layer metadata not preserved; no per-layer visibility UI                                                         |
 | F-020 | Halftone / transparency for imported files (VG)      | CAD            | 🟡            | Per-link opacity now configurable (0–100%) via ManageLinksDialog and honored by both canvas/Three.js plan render paths; missing per-view opacity override in VVDialog and full-opacity (non-halftone) mode as a dropdown choice within VV |
 | F-021 | Align CAD with Project Base Point                    | CAD            | 🟡            | ManageLinksDialog has origin/project base point/shared coords for link_model; missing for link_dxf                   |
@@ -178,8 +178,8 @@ _Last audited: 2026-05-09 against codebase at commit `docs/tracker-sync-wave-11`
 
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
-| ✅ Fully available     | 55      | 46%        |
-| 🟡 Partially available | 35      | 29%        |
+| ✅ Fully available     | 56      | 46%        |
+| 🟡 Partially available | 34      | 28%        |
 | ❌ Not available       | 30      | 25%        |
 | **Total**              | **120** | **100%**   |
 

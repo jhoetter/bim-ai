@@ -184,6 +184,23 @@ export function ManageLinksDialog({
     }
   };
 
+  const submitPositionPin = async (elementId: string, pinned: boolean): Promise<void> => {
+    setError(null);
+    if (!modelId) return;
+    setPending(true);
+    try {
+      await apply(modelId, {
+        type: pinned ? 'unpinElement' : 'pinElement',
+        elementId,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to update link pin';
+      setError(msg);
+    } finally {
+      setPending(false);
+    }
+  };
+
   return (
     <div
       role="dialog"
@@ -302,6 +319,26 @@ export function ManageLinksDialog({
                           ))}
                         </select>
                       </label>
+                      <button
+                        type="button"
+                        disabled={pending}
+                        data-testid={`manage-links-position-pin-${l.id}`}
+                        aria-pressed={Boolean(l.pinned)}
+                        onClick={() => void submitPositionPin(l.id, Boolean(l.pinned))}
+                        className={[
+                          'rounded border px-2 py-0.5 text-[11px] hover:bg-surface-strong disabled:opacity-50',
+                          l.pinned
+                            ? 'border-amber-500 bg-amber-100 text-amber-900'
+                            : 'border-border',
+                        ].join(' ')}
+                        title={
+                          l.pinned
+                            ? 'Unlock this linked model position'
+                            : 'Lock this linked model position'
+                        }
+                      >
+                        {l.pinned ? 'Position locked' : 'Lock position'}
+                      </button>
                       {isPinned ? (
                         <span
                           data-testid={`manage-links-pin-state-${l.id}`}
@@ -408,6 +445,22 @@ export function ManageLinksDialog({
                   >
                     <span className="text-xs">{l.name ?? 'DXF Underlay'}</span>
                     <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                      <button
+                        type="button"
+                        disabled={pending}
+                        data-testid={`manage-dxf-links-position-pin-${l.id}`}
+                        aria-pressed={Boolean(l.pinned)}
+                        onClick={() => void submitPositionPin(l.id, Boolean(l.pinned))}
+                        className={[
+                          'rounded border px-2 py-0.5 text-[11px] hover:bg-surface-strong disabled:opacity-50',
+                          l.pinned
+                            ? 'border-amber-500 bg-amber-100 text-amber-900'
+                            : 'border-border',
+                        ].join(' ')}
+                        title={l.pinned ? 'Unlock this DXF underlay' : 'Lock this DXF underlay'}
+                      >
+                        {l.pinned ? 'Position locked' : 'Lock position'}
+                      </button>
                       <label className="flex items-center gap-1">
                         Opacity
                         <input

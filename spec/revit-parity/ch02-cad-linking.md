@@ -48,7 +48,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Pin CAD file](file:///Users/jhoetter/Desktop/Revit%20Specs/0303_01-02-56.png)
 
-**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` implements **revision pinning**: each `link_model` row can be pinned to a specific snapshot revision, preventing automatic advancement. The UI shows the pinned revision number, a yellow drift badge when the source has moved past it, and a one-click "Update" button to bump to head. Pin / Unpin actions are wired to backend commands. This covers the *version-lock* intent of Revit pinning but not the *spatial position lock* (elements can still be moved/deleted regardless of pin state).
+**bim-ai status:** ✅ Available — linked model and DXF underlay rows now support spatial position pin/unpin. `ManageLinksDialog.tsx` exposes a "Lock position" / "Position locked" control for both `link_model` and `link_dxf` rows, and the selected-element Inspector pin toggle also appears for both link kinds. Backend generic `pinElement` / `unpinElement` works for both models. Pinned `link_model` rows reject position, rotation, alignment, and delete operations while still allowing revision pinning/drift updates; this preserves the separate Revit-like version-lock workflow.
 
 ---
 
