@@ -151,3 +151,20 @@ export function defaultTabFallbackForKind(
   }
   return null;
 }
+
+export function resolvePlanTabTarget(
+  elementsById: Record<string, Element>,
+  targetId: string | undefined,
+  fallbackLevelId: string | undefined,
+): { activeLevelId: string; activePlanViewId?: string } {
+  if (targetId) {
+    const target = elementsById[targetId];
+    if (target?.kind === 'plan_view') {
+      return { activeLevelId: target.levelId, activePlanViewId: target.id };
+    }
+    if (target?.kind === 'level') {
+      return { activeLevelId: target.id };
+    }
+  }
+  return { activeLevelId: fallbackLevelId ?? '' };
+}

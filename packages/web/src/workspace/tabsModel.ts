@@ -156,10 +156,10 @@ export function activateOrOpenKind(
  * via the right rail, not opened as tabs). */
 export function tabFromElement(el: Element): Omit<ViewTab, 'id'> | null {
   if (el.kind === 'level') {
-    return { kind: 'plan', targetId: el.id, label: `Plan · ${el.name}` };
+    return { kind: 'plan', targetId: el.id, label: `Level plan · ${el.name}` };
   }
   if (el.kind === 'plan_view') {
-    return { kind: 'plan', targetId: el.id, label: `Plan · ${el.name}` };
+    return { kind: 'plan', targetId: el.id, label: `Plan view · ${el.name}` };
   }
   if (el.kind === 'viewpoint') {
     return { kind: '3d', targetId: el.id, label: `3D · ${el.name}` };

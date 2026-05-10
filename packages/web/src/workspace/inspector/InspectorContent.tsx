@@ -1033,7 +1033,9 @@ export function InspectorPropertiesFor(
           <FieldRow label={f('clashResults')} value={String(el.results?.length ?? 0)} />
         </div>
       );
-    case 'sheet':
+    case 'sheet': {
+      const legacyViewportCount = Array.isArray(el.viewportsMm) ? el.viewportsMm.length : 0;
+      const placementCount = el.viewPlacements?.length ?? 0;
       return (
         <div>
           {el.number ? <FieldRow label={f('number')} value={el.number} /> : null}
@@ -1042,9 +1044,14 @@ export function InspectorPropertiesFor(
           {el.titleblockTypeId ? (
             <FieldRow label={f('titleblock')} value={el.titleblockTypeId} mono />
           ) : null}
-          <FieldRow label={f('viewPlacements')} value={String(el.viewPlacements?.length ?? 0)} />
+          <FieldRow label={f('viewports')} value={String(legacyViewportCount + placementCount)} />
+          <FieldRow
+            label={f('viewPlacementSource')}
+            value={legacyViewportCount ? 'sheet viewports' : 'view placements'}
+          />
         </div>
       );
+    }
     case 'schedule':
       return (
         <div>

@@ -75,6 +75,10 @@ export function WorkspaceRightRail({
 
   const el = selectedId ? (elementsById[selectedId] as Element | undefined) : undefined;
   const show3dLayers = mode === '3d' || (mode as string) === 'plan-3d';
+  const showAuthoringWorkbenches =
+    mode === 'plan' ||
+    (mode as string) === 'plan-3d' ||
+    (el ? !NAVIGABLE_KINDS.has(el.kind) : false);
 
   // CHR-V3-06: sibling count for the applies-to radio.
   const siblingCount = useMemo(() => {
@@ -582,14 +586,16 @@ export function WorkspaceRightRail({
           />
         </div>
       ) : null}
-      <div className="border-t border-border">
-        <AuthoringWorkbenchesPanel
-          selected={el}
-          elementsById={elementsById}
-          activeLevelId={activeLevelId ?? ''}
-          onUpsertSemantic={(cmd) => void onSemanticCommand(cmd)}
-        />
-      </div>
+      {showAuthoringWorkbenches ? (
+        <div className="border-t border-border">
+          <AuthoringWorkbenchesPanel
+            selected={el}
+            elementsById={elementsById}
+            activeLevelId={activeLevelId ?? ''}
+            onUpsertSemantic={(cmd) => void onSemanticCommand(cmd)}
+          />
+        </div>
+      ) : null}
       <div className="border-t border-border p-3">
         <div
           className="mb-2 text-[10px] font-semibold uppercase text-muted"

@@ -43,6 +43,7 @@ export function WorkspaceLeftRail({
   const elementsById = useBimStore((s) => s.elementsById);
   const activeLevelId = useBimStore((s) => s.activeLevelId);
   const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
+  const activatePlanView = useBimStore((s) => s.activatePlanView);
   const selectedId = useBimStore((s) => s.selectedId);
   const select = useBimStore((s) => s.select);
   const setOrbitCameraFromViewpointMm = useBimStore((s) => s.setOrbitCameraFromViewpointMm);
@@ -243,12 +244,14 @@ export function WorkspaceLeftRail({
               return;
             }
             if (el.kind === 'level') {
+              activatePlanView(undefined);
               setActiveLevelId(id);
               openTabFromElement(el);
               onModeChange('plan');
               return;
             }
             if (el.kind === 'plan_view') {
+              activatePlanView(id);
               openTabFromElement(el);
               onSetModeOnly?.('plan'); // change mode without overriding the active tab
               select(id);

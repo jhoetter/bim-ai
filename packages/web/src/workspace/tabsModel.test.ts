@@ -94,7 +94,7 @@ describe('tabsModel — spec §11.3', () => {
     expect(tabFromElement(level)).toEqual({
       kind: 'plan',
       targetId: 'lvl-0',
-      label: 'Plan · Level 0',
+      label: 'Level plan · Level 0',
     });
 
     const vp: Element = {

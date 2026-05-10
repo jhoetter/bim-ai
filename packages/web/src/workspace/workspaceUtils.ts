@@ -89,6 +89,7 @@ export function buildBrowserSections(elementsById: Record<string, Element>): Lef
   const schedules = all.filter(
     (e): e is Extract<Element, { kind: 'schedule' }> => e.kind === 'schedule',
   );
+  const levelNameById = new Map(levels.map((l) => [l.id, l.name]));
   return [
     {
       id: 'project',
@@ -98,7 +99,12 @@ export function buildBrowserSections(elementsById: Record<string, Element>): Lef
         {
           id: 'levels',
           label: 'Levels',
-          children: levels.map((l) => ({ id: l.id, label: l.name, hint: `${l.elevationMm}mm` })),
+          hint: 'model datums',
+          children: levels.map((l) => ({
+            id: l.id,
+            label: l.name,
+            hint: `datum · ${l.elevationMm}mm`,
+          })),
         },
       ],
     },
@@ -110,17 +116,22 @@ export function buildBrowserSections(elementsById: Record<string, Element>): Lef
         {
           id: 'plans',
           label: 'Floor Plans',
-          children: planViews.map((p) => ({ id: p.id, label: p.name })),
+          hint: 'saved views',
+          children: planViews.map((p) => ({
+            id: p.id,
+            label: p.name,
+            hint: `${levelNameById.get(p.levelId) ?? p.levelId} · view`,
+          })),
         },
         {
           id: 'viewpoints',
           label: '3D Views',
-          children: viewpoints.map((v) => ({ id: v.id, label: v.name })),
+          children: viewpoints.map((v) => ({ id: v.id, label: v.name, hint: 'saved view' })),
         },
         {
           id: 'sections',
           label: 'Sections',
-          children: sections.map((s) => ({ id: s.id, label: s.name })),
+          children: sections.map((s) => ({ id: s.id, label: s.name, hint: 'cut view' })),
         },
         ...(areaPlans.length > 0
           ? [

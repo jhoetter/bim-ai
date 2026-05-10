@@ -92,7 +92,12 @@ import { applyCommandBundle } from '../lib/api';
 import { OnboardingTour } from '../onboarding/OnboardingTour';
 import { readOnboardingProgress, resetOnboarding } from '../onboarding/tour';
 import { canvasContainerStyle, CanvasMount } from './viewport';
-import { defaultTabFallbackForKind, EmptyStateOverlay, FloatingPalette } from './WorkspaceHelpers';
+import {
+  defaultTabFallbackForKind,
+  EmptyStateOverlay,
+  FloatingPalette,
+  resolvePlanTabTarget,
+} from './WorkspaceHelpers';
 import { EmptyStateHint, TemporaryVisibilityChip } from './shell';
 import { MilestoneDialog } from '../collab/MilestoneDialog';
 import { WorkspaceLeftRail } from './WorkspaceLeftRail';
@@ -148,6 +153,7 @@ export function Workspace(): JSX.Element {
   const selectedId = useBimStore((s) => s.selectedId);
   const activeLevelId = useBimStore((s) => s.activeLevelId);
   const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
+  const activatePlanView = useBimStore((s) => s.activatePlanView);
   const planHudMm = useBimStore((s) => s.planHudMm);
   const presencePeers = useBimStore((s) => s.presencePeers);
   const userDisplayName = useBimStore((s) => s.userDisplayName);
@@ -267,6 +273,14 @@ export function Workspace(): JSX.Element {
     [tabsState],
   );
 
+  const activePlanTarget = useMemo(
+    () =>
+      activeTab?.kind === 'plan' || activeTab?.kind === 'plan-3d'
+        ? resolvePlanTabTarget(elementsById, activeTab.targetId, activeLevelId)
+        : { activeLevelId: activeLevelId ?? '' },
+    [activeTab, activeLevelId, elementsById],
+  );
+
   const handleTabActivate = useCallback(
     (id: string) => {
       let pendingPlanCamera: ViewportSnapshot['planCamera'] | undefined;
@@ -303,9 +317,15 @@ export function Workspace(): JSX.Element {
         const next = activateTab(snapshotted, id);
         const t = next.tabs.find((x) => x.id === id);
         if (!t) return next;
-        // Keep the store's active level in sync with the active tab's target.
+        // Keep the store's active plan state in sync with the active tab's target.
         if ((t.kind === 'plan' || t.kind === 'plan-3d') && t.targetId) {
-          setActiveLevelId(t.targetId);
+          const target = useBimStore.getState().elementsById[t.targetId];
+          if (target?.kind === 'plan_view') {
+            activatePlanView(target.id);
+          } else if (target?.kind === 'level') {
+            activatePlanView(undefined);
+            setActiveLevelId(target.id);
+          }
         }
         // Restore the incoming tab's 3D camera, if it has one.
         const restored = t.viewportState?.orbitCameraPoseMm;
@@ -329,7 +349,7 @@ export function Workspace(): JSX.Element {
         planCameraHandleRef.current?.applySnapshot(pendingPlanCamera);
       }
     },
-    [setActiveLevelId],
+    [activatePlanView, setActiveLevelId],
   );
 
   const handleTabClose = useCallback((id: string) => {
@@ -1215,7 +1235,7 @@ export function Workspace(): JSX.Element {
               viewerMode={viewerMode}
               activeLevelId={
                 activeTab?.kind === 'plan' || activeTab?.kind === 'plan-3d'
-                  ? (activeTab.targetId ?? activeLevelId ?? '')
+                  ? activePlanTarget.activeLevelId
                   : (activeLevelId ?? '')
               }
               elementsById={elementsById}

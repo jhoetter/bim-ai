@@ -12,8 +12,8 @@ import { formatSectionCutIdentityLine, formatSectionCutPlaneContext } from './se
 import { formatSectionDatumElevationEvidenceLine } from '../readouts';
 import { sheetsReferencingSectionCut } from './sheetViewRef';
 
-const PREVIEW_WIDTH_PX = 320;
-const PREVIEW_HEIGHT_PX = 220;
+const PREVIEW_WIDTH_PX = 720;
+const PREVIEW_HEIGHT_PX = 420;
 
 export const SECTION_WORKBENCH_NO_WALL_CAPTION =
   'No wall primitives for this cut in the current snapshot.';
@@ -65,12 +65,10 @@ function SectionWorkbenchLivePreview(props: {
   const [showNoWallCaption, setShowNoWallCaption] = useState(false);
 
   return (
-    <div className="mt-2">
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-muted">
-        Live preview
-      </div>
+    <div className="mt-3">
+      <div className="text-[10px] font-semibold uppercase tracking-wide text-muted">Preview</div>
       <div
-        className="mt-1 h-[220px] max-w-[320px] overflow-hidden rounded border border-border bg-white"
+        className="mt-1 h-[min(420px,55vh)] w-full max-w-[760px] overflow-hidden rounded border border-border bg-white"
         data-testid="section-workbench-preview-svg"
       >
         <SectionViewportSvg
@@ -140,11 +138,9 @@ export function SectionPlaceholderPane(props: { activeLevelLabel: string; modelI
 
   return (
     <Panel title={`Sections (${props.activeLevelLabel})`}>
-      <p className="text-[11px] leading-snug text-muted">
-        Live preview uses the same section projection wire as sheet viewports (export{' '}
-        <code className="text-[10px]">secDoc[…]</code> segments stay server-owned). This is not a
-        per-layer cut solid, CSG, or replacement section engine—only documented primitives in the
-        snapshot.
+      <p className="max-w-[760px] text-[11px] leading-snug text-muted">
+        Preview the selected section cut, then place it on a sheet when the composition reads
+        correctly.
       </p>
 
       {cuts.length === 0 ? (
@@ -186,7 +182,7 @@ export function SectionPlaceholderPane(props: { activeLevelLabel: string; modelI
           {previewSectionId ? (
             <div className="mt-3 border-t border-border pt-2">
               <div className="text-[10px] font-semibold uppercase tracking-wide text-muted">
-                Sheets
+                Sheet placement
               </div>
               {sheetRows.length ? (
                 <ul className="mt-1 space-y-1 text-[11px]">
@@ -215,6 +211,17 @@ export function SectionPlaceholderPane(props: { activeLevelLabel: string; modelI
               )}
             </div>
           ) : null}
+
+          <details className="mt-3 max-w-[760px] border-t border-border pt-2 text-[10px] text-muted">
+            <summary className="cursor-pointer font-semibold uppercase tracking-wide">
+              Evidence
+            </summary>
+            <p className="mt-1 leading-snug">
+              Uses the same section projection wire as sheet viewports. Export{' '}
+              <code className="text-[10px]">secDoc[…]</code> segments remain server-owned; this is a
+              documented primitive preview, not a replacement section engine.
+            </p>
+          </details>
 
           <div className="mt-3 border-t border-border pt-2">
             <div className="text-[10px] font-semibold uppercase tracking-wide text-muted">

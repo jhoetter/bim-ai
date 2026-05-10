@@ -133,17 +133,24 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
   return (
     <div
       data-testid="orbit-viewpoint-persisted-hud"
-      className={`absolute bottom-3 right-3 z-10 max-w-[min(340px,calc(100%-24px))] rounded-lg border border-border bg-surface/80 px-3 py-2 text-[10px] text-muted backdrop-blur ${cardPe}`}
+      className={`absolute bottom-3 right-3 z-10 max-w-[min(300px,calc(100%-24px))] rounded-md border border-border bg-surface/85 px-2.5 py-2 text-[10px] text-muted shadow-elev-1 backdrop-blur ${cardPe}`}
     >
-      <div className="font-semibold text-foreground/90">Persisted viewpoint (document)</div>
-      <div className="mt-0.5 font-mono text-[9px] text-foreground/80">
+      <div className="font-semibold text-foreground/90">Saved 3D view</div>
+      <div className="mt-0.5 truncate font-mono text-[9px] text-foreground/80">
         {viewpoint.name}
         <span className="text-muted"> · </span>
         <span>{viewpoint.id}</span>
       </div>
+      <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5 font-mono text-[9px]">
+        <span>cap {fmtMm(viewpoint.viewerClipCapElevMm)}</span>
+        <span>floor {fmtMm(viewpoint.viewerClipFloorElevMm)}</span>
+        <span className="col-span-2 truncate font-sans text-[10px] text-foreground/90">
+          {styleLabel} · {hiddenReadout}
+        </span>
+      </div>
 
       {readOnlyUi ? (
-        <dl className="mt-2 space-y-1 leading-snug">
+        <dl className="sr-only">
           <div className="flex gap-2">
             <dt className="shrink-0 text-muted">Cap (mm)</dt>
             <dd className="min-w-0 font-mono text-foreground/90">
@@ -166,65 +173,66 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
           </div>
         </dl>
       ) : (
-        <div className="mt-2 space-y-2 leading-snug">
-          <label className="block">
-            <span className="text-muted">Cap (mm)</span>
-            <input
-              data-testid="orbit-vp-cap-mm"
-              className="mt-0.5 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground"
-              inputMode="numeric"
-              placeholder="empty = off"
-              value={capDraft}
-              onChange={(e) => setCapDraft(e.target.value)}
-              onBlur={commitCap}
-            />
-          </label>
-          <label className="block">
-            <span className="text-muted">Floor (mm)</span>
-            <input
-              data-testid="orbit-vp-floor-mm"
-              className="mt-0.5 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground"
-              inputMode="numeric"
-              placeholder="empty = off"
-              value={floorDraft}
-              onChange={(e) => setFloorDraft(e.target.value)}
-              onBlur={commitFloor}
-            />
-          </label>
-          <label className="block">
-            <span className="text-muted">Cutaway style</span>
-            <select
-              data-testid="orbit-vp-cutaway-select"
-              className="mt-0.5 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground"
-              value={cutSelect}
-              onChange={(e) => commitCutawayStyle(e.target.value)}
-            >
-              <option value="">Inherit from clip elevations</option>
-              <option value="none">Explicit: none</option>
-              <option value="cap">Explicit: cap only</option>
-              <option value="floor">Explicit: floor only</option>
-              <option value="box">Explicit: box</option>
-            </select>
-          </label>
-          <label className="block">
-            <span className="text-muted">Hidden kinds (comma-separated)</span>
-            <input
-              data-testid="orbit-vp-hidden-kinds"
-              className="mt-0.5 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground"
-              placeholder="e.g. roof, stair"
-              value={hiddenCsv}
-              onChange={(e) => setHiddenCsv(e.target.value)}
-              onBlur={commitHidden}
-            />
-          </label>
-          <p className="text-[9px] text-muted">
-            Effective readout now: <span className="text-foreground/90">{styleLabel}</span> ·{' '}
-            <span className="break-words text-foreground/90">{hiddenReadout}</span>
-          </p>
-        </div>
+        <details className="mt-1.5 leading-snug">
+          <summary className="cursor-pointer text-[10px] font-medium text-accent">
+            Edit saved view
+          </summary>
+          <div className="mt-2 space-y-2">
+            <label className="block">
+              <span className="text-muted">Cap (mm)</span>
+              <input
+                data-testid="orbit-vp-cap-mm"
+                className="mt-0.5 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground"
+                inputMode="numeric"
+                placeholder="empty = off"
+                value={capDraft}
+                onChange={(e) => setCapDraft(e.target.value)}
+                onBlur={commitCap}
+              />
+            </label>
+            <label className="block">
+              <span className="text-muted">Floor (mm)</span>
+              <input
+                data-testid="orbit-vp-floor-mm"
+                className="mt-0.5 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground"
+                inputMode="numeric"
+                placeholder="empty = off"
+                value={floorDraft}
+                onChange={(e) => setFloorDraft(e.target.value)}
+                onBlur={commitFloor}
+              />
+            </label>
+            <label className="block">
+              <span className="text-muted">Cutaway style</span>
+              <select
+                data-testid="orbit-vp-cutaway-select"
+                className="mt-0.5 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground"
+                value={cutSelect}
+                onChange={(e) => commitCutawayStyle(e.target.value)}
+              >
+                <option value="">Inherit from clip elevations</option>
+                <option value="none">Explicit: none</option>
+                <option value="cap">Explicit: cap only</option>
+                <option value="floor">Explicit: floor only</option>
+                <option value="box">Explicit: box</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-muted">Hidden kinds (comma-separated)</span>
+              <input
+                data-testid="orbit-vp-hidden-kinds"
+                className="mt-0.5 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground"
+                placeholder="e.g. roof, stair"
+                value={hiddenCsv}
+                onChange={(e) => setHiddenCsv(e.target.value)}
+                onBlur={commitHidden}
+              />
+            </label>
+          </div>
+        </details>
       )}
 
-      <p className="mt-2 border-t border-border pt-2 text-[9px] leading-snug text-muted/90">
+      <p className="mt-1.5 border-t border-border pt-1.5 text-[9px] leading-snug text-muted/90">
         {readOnlyUi
           ? 'Values are from the saved viewpoint element in the document, not live camera orbit.'
           : 'Edits save on blur (numbers / hidden kinds) or immediately for cutaway style.'}

@@ -254,6 +254,8 @@ i18n.init({
             ruleCount: 'Rules',
             toleranceMm: 'Tolerance (mm)',
             clashResults: 'Clash results',
+            viewports: 'Viewports',
+            viewPlacementSource: 'Placement source',
           },
           planView: {
             namePlaceholder: 'Name',
@@ -1063,6 +1065,8 @@ i18n.init({
             ruleCount: 'Regeln',
             toleranceMm: 'Toleranz (mm)',
             clashResults: 'Kollisionsergebnisse',
+            viewports: 'Ansichtsfenster',
+            viewPlacementSource: 'Platzierungsquelle',
           },
           planView: {
             namePlaceholder: 'Name',

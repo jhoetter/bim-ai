@@ -18,6 +18,7 @@ import {
   normalizeTitleblockRevisionIssueV1,
   sheetRevisionIssueMetadataPresent,
 } from './sheetRevisionIssueManifestV1';
+import { normalizeSheetPaperMm } from './sheetPaper';
 import { scheduleTableRendererSheetReadout } from '../../schedules/scheduleTableRenderer';
 import { formatSchedulePaginationPlacementReadout } from '../../schedules/schedulePanelRegistryChrome';
 import { roomColorSchemeLegendPlacementReadoutLines } from '../readouts';
@@ -46,14 +47,10 @@ export function SheetDocumentationManifest(props: {
 }) {
   const { sheet, modelId, elementsById, authoring, tbDraft, vpDrafts } = props;
 
-  const paperW =
-    typeof sheet.paperWidthMm === 'number' && Number.isFinite(sheet.paperWidthMm)
-      ? sheet.paperWidthMm
-      : 42_000;
-  const paperH =
-    typeof sheet.paperHeightMm === 'number' && Number.isFinite(sheet.paperHeightMm)
-      ? sheet.paperHeightMm
-      : 29_700;
+  const { widthMm: paperW, heightMm: paperH } = normalizeSheetPaperMm(
+    sheet.paperWidthMm,
+    sheet.paperHeightMm,
+  );
   const orientation = paperW >= paperH ? 'landscape' : 'portrait';
 
   const titleblockParametersDisplay = useMemo(() => {

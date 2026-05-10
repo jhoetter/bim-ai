@@ -30,6 +30,7 @@ import {
   detailCalloutUnresolvedReason,
 } from './sheetDetailCalloutReadout';
 import { SectionViewportSvg } from './sectionViewportSvg';
+import { normalizeSheetPaperMm } from './sheetPaper';
 import {
   formatSheetRevIssTitleblockDisplaySegmentV1,
   normalizeTitleblockRevisionIssueV1,
@@ -191,14 +192,7 @@ function SheetCanvasWithSheet(props: {
   const { sheet: sh, evidenceFullBleed, modelId, elementsById } = props;
 
   const bleed = evidenceFullBleed ?? false;
-  const wMm =
-    typeof sh.paperWidthMm === 'number' && Number.isFinite(sh.paperWidthMm)
-      ? sh.paperWidthMm
-      : 42_000;
-  const hMm =
-    typeof sh.paperHeightMm === 'number' && Number.isFinite(sh.paperHeightMm)
-      ? sh.paperHeightMm
-      : 29_700;
+  const { widthMm: wMm, heightMm: hMm } = normalizeSheetPaperMm(sh.paperWidthMm, sh.paperHeightMm);
 
   const vps = (sh.viewportsMm ?? []) as Array<Record<string, unknown>>;
   const nextDraftBase = (): SheetViewportMmDraft[] =>
@@ -242,6 +236,13 @@ function SheetCanvasWithSheet(props: {
 
   const footerY0 = Math.max(2800, hMm - 5200);
   const xRight = wMm - 2600;
+  const marginMm = Math.max(1600, Math.min(wMm, hMm) * 0.045);
+  const titleY = marginMm + 1000;
+  const subtitleY = titleY + 1000;
+  const emptyBoxX = marginMm;
+  const emptyBoxY = marginMm + 2600;
+  const emptyBoxW = Math.max(1000, wMm - marginMm * 2);
+  const emptyBoxH = Math.max(1000, hMm - marginMm * 2 - 5200);
 
   const scrollCls = bleed ? '' : ' max-h-[360px]';
 
@@ -469,14 +470,26 @@ function SheetCanvasWithSheet(props: {
           xmlns="http://www.w3.org/2000/svg"
         >
           <rect width={wMm} height={hMm} fill="#f8fafc" stroke="#1e293b" strokeWidth={120} />
-          <rect x={800} y={800} width={wMm - 1600} height={3600} fill="#edf2ff" opacity={0.9} />
+          <rect
+            x={marginMm}
+            y={marginMm}
+            width={Math.max(1000, wMm - marginMm * 2)}
+            height={2400}
+            fill="#edf2ff"
+            opacity={0.9}
+          />
 
-          <text x={2400} y={2400} className="fill-slate-800" style={{ fontSize: '1200px' }}>
-            A1 metaphor — {sh.name}
+          <text x={marginMm + 900} y={titleY} className="fill-slate-800" style={{ fontSize: 1200 }}>
+            {sh.name}
           </text>
 
-          <text x={2400} y={3600} className="fill-slate-500" style={{ fontSize: '800px' }}>
-            TB {sh.titleBlock ?? '—'}
+          <text
+            x={marginMm + 900}
+            y={subtitleY}
+            className="fill-slate-500"
+            style={{ fontSize: 800 }}
+          >
+            Title block {sh.titleBlock ?? '—'}
           </text>
 
           {footerLines
@@ -506,6 +519,39 @@ function SheetCanvasWithSheet(props: {
             >
               {revIssSeg}
             </text>
+          ) : null}
+
+          {paintRows.length === 0 ? (
+            <g data-testid="sheet-empty-viewports">
+              <rect
+                x={emptyBoxX}
+                y={emptyBoxY}
+                width={emptyBoxW}
+                height={emptyBoxH}
+                fill="#ffffff"
+                stroke="#94a3b8"
+                strokeWidth={80}
+                strokeDasharray="520 320"
+              />
+              <text
+                x={wMm / 2}
+                y={emptyBoxY + emptyBoxH / 2 - 450}
+                fill="#475569"
+                style={{ fontSize: 900, fontWeight: 600 }}
+                textAnchor="middle"
+              >
+                No views placed on this sheet
+              </text>
+              <text
+                x={wMm / 2}
+                y={emptyBoxY + emptyBoxH / 2 + 500}
+                fill="#64748b"
+                style={{ fontSize: 600 }}
+                textAnchor="middle"
+              >
+                Place floor plans, sections, schedules, or 3D views as sheet viewports.
+              </text>
+            </g>
           ) : null}
 
           {paintRows.map((row) => {
