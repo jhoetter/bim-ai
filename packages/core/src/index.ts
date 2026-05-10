@@ -261,6 +261,11 @@ export type ElemKind =
   | 'area'
   | 'masking_region'
   | 'spot_elevation'
+  | 'material_tag'
+  | 'multi_category_tag'
+  | 'tread_number'
+  | 'keynote'
+  | 'span_direction'
   | 'constraint'
   | 'mass'
   | 'phase'
@@ -1806,6 +1811,59 @@ export type Element =
       elevationMm: number;
       prefix?: string;
       suffix?: string;
+      colour?: string;
+    }
+  | {
+      /** ANN-12 — view-local material layer tag. */
+      kind: 'material_tag';
+      id: string;
+      hostViewId: string;
+      hostElementId: string;
+      layerIndex?: number;
+      positionMm: XY;
+      textOverride?: string | null;
+      colour?: string;
+    }
+  | {
+      /** ANN-13 — view-local multi-category tag (type mark). */
+      kind: 'multi_category_tag';
+      id: string;
+      hostViewId: string;
+      hostElementId: string;
+      positionMm: XY;
+      parameterName?: string;
+      textOverride?: string | null;
+      colour?: string;
+    }
+  | {
+      /** ANN-14 — auto-numbered tread annotation for a stair. */
+      kind: 'tread_number';
+      id: string;
+      hostViewId: string;
+      stairElementId: string;
+      startNumber?: number;
+      colour?: string;
+    }
+  | {
+      /** ANN-15 — view-local keynote annotation linking to a key/description. */
+      kind: 'keynote';
+      id: string;
+      hostViewId: string;
+      positionMm: XY;
+      keynoteKey: string;
+      keynoteText?: string;
+      target?: 'element' | 'material' | 'user';
+      hostElementId?: string | null;
+      colour?: string;
+    }
+  | {
+      /** ANN-16 — floor slab span direction arrow annotation. */
+      kind: 'span_direction';
+      id: string;
+      hostViewId: string;
+      positionMm: XY;
+      directionDeg?: number;
+      lengthMm?: number;
       colour?: string;
     }
   | {

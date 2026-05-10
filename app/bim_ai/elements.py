@@ -626,6 +626,77 @@ class SpotElevationElem(BaseModel):
     colour: str = Field(default="#202020")
 
 
+class MaterialTagElem(BaseModel):
+    """ANN-12 — view-local material layer tag."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["material_tag"] = "material_tag"
+    id: str
+    host_view_id: str = Field(alias="hostViewId")
+    host_element_id: str = Field(alias="hostElementId")
+    layer_index: int = Field(default=0, alias="layerIndex", ge=0)
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    text_override: str | None = Field(default=None, alias="textOverride")
+    colour: str = Field(default="#202020")
+
+
+class MultiCategoryTagElem(BaseModel):
+    """ANN-13 — view-local multi-category tag (type mark)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["multi_category_tag"] = "multi_category_tag"
+    id: str
+    host_view_id: str = Field(alias="hostViewId")
+    host_element_id: str = Field(alias="hostElementId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    parameter_name: str = Field(default="Type Mark", alias="parameterName")
+    text_override: str | None = Field(default=None, alias="textOverride")
+    colour: str = Field(default="#202020")
+
+
+class TreadNumberElem(BaseModel):
+    """ANN-14 — auto-numbered tread annotation for a stair."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["tread_number"] = "tread_number"
+    id: str
+    host_view_id: str = Field(alias="hostViewId")
+    stair_element_id: str = Field(alias="stairElementId")
+    start_number: int = Field(default=1, alias="startNumber", ge=1)
+    colour: str = Field(default="#202020")
+
+
+KeynoteTarget = Literal["element", "material", "user"]
+
+
+class KeynoteElem(BaseModel):
+    """ANN-15 — view-local keynote annotation linking to a key/description."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["keynote"] = "keynote"
+    id: str
+    host_view_id: str = Field(alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    keynote_key: str = Field(alias="keynoteKey")
+    keynote_text: str = Field(default="", alias="keynoteText")
+    target: KeynoteTarget = Field(default="user")
+    host_element_id: str | None = Field(default=None, alias="hostElementId")
+    colour: str = Field(default="#202020")
+
+
+class SpanDirectionElem(BaseModel):
+    """ANN-16 — floor slab span direction arrow annotation."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["span_direction"] = "span_direction"
+    id: str
+    host_view_id: str = Field(alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    direction_deg: float = Field(default=0.0, alias="directionDeg")
+    length_mm: float = Field(default=800.0, alias="lengthMm", gt=0)
+    colour: str = Field(default="#202020")
+
+
 ViewpointCutawayStyle = Literal["none", "cap", "floor", "box"]
 
 
@@ -1953,6 +2024,12 @@ ElementKind = Literal[
     "dormer",
     "area",
     "masking_region",
+    "spot_elevation",
+    "material_tag",
+    "multi_category_tag",
+    "tread_number",
+    "keynote",
+    "span_direction",
     "mass",
     "constraint",
     "roof_join",
@@ -2687,6 +2764,12 @@ Element = Annotated[
     | DormerElem
     | AreaElem
     | MaskingRegionElem
+    | SpotElevationElem
+    | MaterialTagElem
+    | MultiCategoryTagElem
+    | TreadNumberElem
+    | KeynoteElem
+    | SpanDirectionElem
     | ColumnElem
     | BeamElem
     | CeilingElem

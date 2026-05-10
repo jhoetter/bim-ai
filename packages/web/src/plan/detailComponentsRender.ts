@@ -54,11 +54,64 @@ export type SpotElevationPrimitive = {
   colour: string;
 };
 
+export type MaterialTagPrimitive = {
+  kind: 'material_tag';
+  id: string;
+  positionMm: XY;
+  hostElementId: string;
+  layerIndex: number;
+  textOverride: string | null;
+  colour: string;
+};
+
+export type MultiCategoryTagPrimitive = {
+  kind: 'multi_category_tag';
+  id: string;
+  positionMm: XY;
+  hostElementId: string;
+  parameterName: string;
+  textOverride: string | null;
+  colour: string;
+};
+
+export type TreadNumberPrimitive = {
+  kind: 'tread_number';
+  id: string;
+  stairElementId: string;
+  startNumber: number;
+  colour: string;
+};
+
+export type KeynotePrimitive = {
+  kind: 'keynote';
+  id: string;
+  positionMm: XY;
+  keynoteKey: string;
+  keynoteText: string;
+  target: 'element' | 'material' | 'user';
+  hostElementId: string | null;
+  colour: string;
+};
+
+export type SpanDirectionPrimitive = {
+  kind: 'span_direction';
+  id: string;
+  positionMm: XY;
+  directionDeg: number;
+  lengthMm: number;
+  colour: string;
+};
+
 export type DetailComponentPrimitive =
   | DetailLinePrimitive
   | DetailRegionPrimitive
   | TextNotePrimitive
-  | SpotElevationPrimitive;
+  | SpotElevationPrimitive
+  | MaterialTagPrimitive
+  | MultiCategoryTagPrimitive
+  | TreadNumberPrimitive
+  | KeynotePrimitive
+  | SpanDirectionPrimitive;
 
 /**
  * Walks `elementsById` and returns rendering primitives for every
@@ -111,6 +164,54 @@ export function extractDetailComponentPrimitives(
         elevationMm: el.elevationMm,
         prefix: el.prefix ?? '',
         suffix: el.suffix ?? '',
+        colour: el.colour ?? '#202020',
+      });
+    } else if (el.kind === 'material_tag' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'material_tag',
+        id: el.id,
+        positionMm: el.positionMm,
+        hostElementId: el.hostElementId,
+        layerIndex: el.layerIndex ?? 0,
+        textOverride: el.textOverride ?? null,
+        colour: el.colour ?? '#202020',
+      });
+    } else if (el.kind === 'multi_category_tag' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'multi_category_tag',
+        id: el.id,
+        positionMm: el.positionMm,
+        hostElementId: el.hostElementId,
+        parameterName: el.parameterName ?? 'Type Mark',
+        textOverride: el.textOverride ?? null,
+        colour: el.colour ?? '#202020',
+      });
+    } else if (el.kind === 'tread_number' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'tread_number',
+        id: el.id,
+        stairElementId: el.stairElementId,
+        startNumber: el.startNumber ?? 1,
+        colour: el.colour ?? '#202020',
+      });
+    } else if (el.kind === 'keynote' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'keynote',
+        id: el.id,
+        positionMm: el.positionMm,
+        keynoteKey: el.keynoteKey,
+        keynoteText: el.keynoteText ?? '',
+        target: el.target ?? 'user',
+        hostElementId: el.hostElementId ?? null,
+        colour: el.colour ?? '#202020',
+      });
+    } else if (el.kind === 'span_direction' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'span_direction',
+        id: el.id,
+        positionMm: el.positionMm,
+        directionDeg: el.directionDeg ?? 0,
+        lengthMm: el.lengthMm ?? 800,
         colour: el.colour ?? '#202020',
       });
     }

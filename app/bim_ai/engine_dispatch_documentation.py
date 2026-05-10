@@ -17,6 +17,11 @@ from bim_ai.engine import (
     CreateScheduleViewCmd,
     CreateSectionCutCmd,
     CreateSpotElevationCmd,
+    CreateMaterialTagCmd,
+    CreateMultiCategoryTagCmd,
+    CreateTreadNumberCmd,
+    CreateKeynoteCmd,
+    CreateSpanDirectionCmd,
     CreateTextNoteCmd,
     DeletePlanRegionCmd,
     DeletePropertyLineCmd,
@@ -43,6 +48,11 @@ from bim_ai.engine import (
     SheetElem,
     TagDefinitionElem,
     SpotElevationElem,
+    MaterialTagElem,
+    MultiCategoryTagElem,
+    TreadNumberElem,
+    KeynoteElem,
+    SpanDirectionElem,
     TextNoteElem,
     UpdatePlanRegionCmd,
     UpdatePlanViewCropCmd,
@@ -300,6 +310,106 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
                 elevation_mm=cmd.elevation_mm,
                 prefix=cmd.prefix,
                 suffix=cmd.suffix,
+                colour=cmd.colour,
+            )
+
+        case CreateMaterialTagCmd():
+            mid = cmd.id or new_id()
+            if mid in els:
+                raise ValueError(f"duplicate element id '{mid}'")
+            view = els.get(cmd.host_view_id)
+            if view is None or view.kind not in {"plan_view", "section_cut", "elevation_view"}:
+                raise ValueError(
+                    "createMaterialTag.hostViewId must reference plan_view/section_cut/elevation_view"
+                )
+            els[mid] = MaterialTagElem(
+                kind="material_tag",
+                id=mid,
+                host_view_id=cmd.host_view_id,
+                host_element_id=cmd.host_element_id,
+                layer_index=cmd.layer_index,
+                position_mm=cmd.position_mm,
+                text_override=cmd.text_override,
+                colour=cmd.colour,
+            )
+
+        case CreateMultiCategoryTagCmd():
+            mcid = cmd.id or new_id()
+            if mcid in els:
+                raise ValueError(f"duplicate element id '{mcid}'")
+            view = els.get(cmd.host_view_id)
+            if view is None or view.kind not in {"plan_view", "section_cut", "elevation_view"}:
+                raise ValueError(
+                    "createMultiCategoryTag.hostViewId must reference plan_view/section_cut/elevation_view"
+                )
+            els[mcid] = MultiCategoryTagElem(
+                kind="multi_category_tag",
+                id=mcid,
+                host_view_id=cmd.host_view_id,
+                host_element_id=cmd.host_element_id,
+                position_mm=cmd.position_mm,
+                parameter_name=cmd.parameter_name,
+                text_override=cmd.text_override,
+                colour=cmd.colour,
+            )
+
+        case CreateTreadNumberCmd():
+            tnid = cmd.id or new_id()
+            if tnid in els:
+                raise ValueError(f"duplicate element id '{tnid}'")
+            view = els.get(cmd.host_view_id)
+            if view is None or view.kind not in {"plan_view", "section_cut", "elevation_view"}:
+                raise ValueError(
+                    "createTreadNumber.hostViewId must reference plan_view/section_cut/elevation_view"
+                )
+            els[tnid] = TreadNumberElem(
+                kind="tread_number",
+                id=tnid,
+                host_view_id=cmd.host_view_id,
+                stair_element_id=cmd.stair_element_id,
+                start_number=cmd.start_number,
+                colour=cmd.colour,
+            )
+
+        case CreateKeynoteCmd():
+            knid = cmd.id or new_id()
+            if knid in els:
+                raise ValueError(f"duplicate element id '{knid}'")
+            view = els.get(cmd.host_view_id)
+            if view is None or view.kind not in {"plan_view", "section_cut", "elevation_view"}:
+                raise ValueError(
+                    "createKeynote.hostViewId must reference plan_view/section_cut/elevation_view"
+                )
+            if not cmd.keynote_key:
+                raise ValueError("createKeynote.keynoteKey must be non-empty")
+            els[knid] = KeynoteElem(
+                kind="keynote",
+                id=knid,
+                host_view_id=cmd.host_view_id,
+                position_mm=cmd.position_mm,
+                keynote_key=cmd.keynote_key,
+                keynote_text=cmd.keynote_text,
+                target=cmd.target,
+                host_element_id=cmd.host_element_id,
+                colour=cmd.colour,
+            )
+
+        case CreateSpanDirectionCmd():
+            sdid = cmd.id or new_id()
+            if sdid in els:
+                raise ValueError(f"duplicate element id '{sdid}'")
+            view = els.get(cmd.host_view_id)
+            if view is None or view.kind not in {"plan_view", "section_cut", "elevation_view"}:
+                raise ValueError(
+                    "createSpanDirection.hostViewId must reference plan_view/section_cut/elevation_view"
+                )
+            els[sdid] = SpanDirectionElem(
+                kind="span_direction",
+                id=sdid,
+                host_view_id=cmd.host_view_id,
+                position_mm=cmd.position_mm,
+                direction_deg=cmd.direction_deg,
+                length_mm=cmd.length_mm,
                 colour=cmd.colour,
             )
 

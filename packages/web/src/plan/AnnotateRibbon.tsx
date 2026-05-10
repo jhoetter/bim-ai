@@ -124,6 +124,58 @@ export function AnnotateRibbon({
     });
   };
 
+  const placeMaterialTag = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createMaterialTag',
+      hostViewId: planViewId,
+      hostElementId: '',
+      layerIndex: 0,
+      positionMm: { xMm: c.xMm, yMm: c.yMm },
+    });
+  };
+
+  const placeMultiCategoryTag = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createMultiCategoryTag',
+      hostViewId: planViewId,
+      hostElementId: '',
+      positionMm: { xMm: c.xMm, yMm: c.yMm },
+    });
+  };
+
+  const placeTreadNumber = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    void c;
+    onSemanticCommand({
+      type: 'createTreadNumber',
+      hostViewId: planViewId,
+      stairElementId: '',
+    });
+  };
+
+  const placeKeynote = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createKeynote',
+      hostViewId: planViewId,
+      positionMm: { xMm: c.xMm, yMm: c.yMm },
+      keynoteKey: 'A1',
+      keynoteText: '',
+    });
+  };
+
+  const placeSpanDirection = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createSpanDirection',
+      hostViewId: planViewId,
+      positionMm: { xMm: c.xMm, yMm: c.yMm },
+      directionDeg: 0,
+    });
+  };
+
   const commitTextNote = () => {
     const text = textNoteDraft.trim();
     if (!text) {
@@ -283,6 +335,51 @@ export function AnnotateRibbon({
           Text Note
         </button>
       )}
+      <button
+        type="button"
+        data-testid="plan-annotate-material-tag"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeMaterialTag}
+        title="Place a material layer tag at the view centre."
+      >
+        Material Tag
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-multi-category-tag"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeMultiCategoryTag}
+        title="Place a multi-category tag at the view centre."
+      >
+        Multi-Category Tag
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-tread-number"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeTreadNumber}
+        title="Place tread number annotations on a stair."
+      >
+        Tread Number
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-keynote"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeKeynote}
+        title="Place a keynote annotation at the view centre."
+      >
+        Keynote
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-span-direction"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeSpanDirection}
+        title="Place a span direction arrow at the view centre."
+      >
+        Span Direction
+      </button>
     </div>
   );
 }

@@ -297,6 +297,74 @@ class CreateSpotElevationCmd(BaseModel):
     colour: str = Field(default="#202020")
 
 
+class CreateMaterialTagCmd(BaseModel):
+    """ANN-12 — place a material layer tag."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createMaterialTag"] = "createMaterialTag"
+    id: str | None = None
+    host_view_id: str = Field(alias="hostViewId")
+    host_element_id: str = Field(alias="hostElementId")
+    layer_index: int = Field(default=0, alias="layerIndex")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    text_override: str | None = Field(default=None, alias="textOverride")
+    colour: str = Field(default="#202020")
+
+
+class CreateMultiCategoryTagCmd(BaseModel):
+    """ANN-13 — place a multi-category tag."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createMultiCategoryTag"] = "createMultiCategoryTag"
+    id: str | None = None
+    host_view_id: str = Field(alias="hostViewId")
+    host_element_id: str = Field(alias="hostElementId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    parameter_name: str = Field(default="Type Mark", alias="parameterName")
+    text_override: str | None = Field(default=None, alias="textOverride")
+    colour: str = Field(default="#202020")
+
+
+class CreateTreadNumberCmd(BaseModel):
+    """ANN-14 — place tread number annotations on a stair."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createTreadNumber"] = "createTreadNumber"
+    id: str | None = None
+    host_view_id: str = Field(alias="hostViewId")
+    stair_element_id: str = Field(alias="stairElementId")
+    start_number: int = Field(default=1, alias="startNumber")
+    colour: str = Field(default="#202020")
+
+
+class CreateKeynoteCmd(BaseModel):
+    """ANN-15 — place a keynote annotation."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createKeynote"] = "createKeynote"
+    id: str | None = None
+    host_view_id: str = Field(alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    keynote_key: str = Field(alias="keynoteKey")
+    keynote_text: str = Field(default="", alias="keynoteText")
+    target: Literal["element", "material", "user"] = Field(default="user")
+    host_element_id: str | None = Field(default=None, alias="hostElementId")
+    colour: str = Field(default="#202020")
+
+
+class CreateSpanDirectionCmd(BaseModel):
+    """ANN-16 — place a span direction arrow."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createSpanDirection"] = "createSpanDirection"
+    id: str | None = None
+    host_view_id: str = Field(alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    direction_deg: float = Field(default=0.0, alias="directionDeg")
+    length_mm: float = Field(default=800.0, alias="lengthMm")
+    colour: str = Field(default="#202020")
+
+
 class DeleteElementCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["deleteElement"] = "deleteElement"
@@ -2928,6 +2996,11 @@ Command = Annotated[
     | CreateDetailLineCmd
     | CreateDetailRegionCmd
     | CreateSpotElevationCmd
+    | CreateMaterialTagCmd
+    | CreateMultiCategoryTagCmd
+    | CreateTreadNumberCmd
+    | CreateKeynoteCmd
+    | CreateSpanDirectionCmd
     | CreateTextNoteCmd
     | CreateReferencePlaneCmd
     | UpdateReferencePlaneCmd
