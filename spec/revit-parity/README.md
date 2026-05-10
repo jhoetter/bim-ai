@@ -102,7 +102,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-053 | Trim / Extend to Corner (TR)                          | Family Editor  | 🟡            | Family sweep profile sketches expose a TR cleanup action that trims/extends two selected profile lines to their infinite-line intersection. Missing keyboard-driven TR tool and broader sketch-mode integration                                                                                       |
 | F-054 | Aligned Dimension (DI) + Create Parameter             | Family Editor  | ❌            |                                                                                                                                                                                                                                                                                                       |
 | F-055 | Type vs. Instance Parameters                          | Family Editor  | 🟡            | Family params carry `instanceOverridable`; resolver prioritizes instance overrides; door/window/family placement data supports override params. Missing full Revit parameter dialog                                                                                                                   |
-| F-056 | Family Types dialog                                   | Family Editor  | ❌            |                                                                                                                                                                                                                                                                                                       |
+| F-056 | Family Types dialog                                   | Family Editor  | 🟡            | Family editor now has a Family Types dialog for local type rows: create, rename, delete, select active type, and edit per-type parameter values that feed the resolved preview. Missing persistent/loadable Revit family type catalog and full Apply/formula validation semantics                     |
 | F-057 | Material Browser                                      | Family Editor  | 🟡            | Family editor material fields now open a searchable Material Browser with swatches, categories, Appearance/Graphics tabs, and assignment to `material_key` params and sweep materials. Missing project/family material creation, rename, and full physical/thermal tabs                               |
 | F-058 | Asset Browser (Autodesk material library)             | Family Editor  | 🟡            | Family editor exposes a separate Appearance Asset Browser using the MAT-01 appearance catalog with search, swatches, and Replace action. Missing Autodesk-scale asset library content, texture/bump map replacement, and reflectance editing                                                          |
 | F-059 | Family Element Visibility Settings                    | Family Editor  | 🟡            | Family geometry supports detail-level visibility and Yes/No visibility bindings in editor/resolver; missing full Revit view-type visibility dialog                                                                                                                                                    |
@@ -179,8 +179,8 @@ _Last audited: 2026-05-09 against codebase at commit `docs/tracker-sync-wave-11`
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
 | ✅ Fully available     | 57      | 47%        |
-| 🟡 Partially available | 40      | 33%        |
-| ❌ Not available       | 23      | 19%        |
+| 🟡 Partially available | 41      | 34%        |
+| ❌ Not available       | 22      | 18%        |
 | **Total**              | **120** | **100%**   |
 
 ---

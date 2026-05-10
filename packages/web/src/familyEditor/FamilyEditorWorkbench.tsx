@@ -45,6 +45,12 @@ type Param = {
   formula: string;
 };
 
+type FamilyTypeRow = {
+  id: string;
+  name: string;
+  values: Record<string, unknown>;
+};
+
 /**
  * Resolve a family parameter for rendering.
  *
@@ -76,6 +82,12 @@ type SweepDraft = {
 };
 
 type MaterialAssignmentTarget = { kind: 'param'; index: number } | { kind: 'sweep'; index: number };
+
+const DEFAULT_FAMILY_TYPE_ID = 'family-type-1';
+
+function initialFamilyTypeRows(): FamilyTypeRow[] {
+  return [{ id: DEFAULT_FAMILY_TYPE_ID, name: 'Type 1', values: {} }];
+}
 
 const EMPTY_SWEEP_DRAFT: SweepDraft = {
   pathLines: [],
@@ -147,6 +159,9 @@ export function FamilyEditorWorkbench(): JSX.Element {
   const [template, setTemplate] = useState<Template>('generic_model');
   const [refPlanes, setRefPlanes] = useState<RefPlane[]>([]);
   const [params, setParams] = useState<Param[]>([]);
+  const [familyTypes, setFamilyTypes] = useState<FamilyTypeRow[]>(() => initialFamilyTypeRows());
+  const [activeFamilyTypeId, setActiveFamilyTypeId] = useState(DEFAULT_FAMILY_TYPE_ID);
+  const [familyTypesDialogOpen, setFamilyTypesDialogOpen] = useState(false);
   const [flexMode, setFlexMode] = useState(false);
   const [flexValues, setFlexValues] = useState<Record<string, unknown>>({});
   const [sweeps, setSweeps] = useState<SweepGeometryNode[]>([]);
@@ -204,6 +219,36 @@ export function FamilyEditorWorkbench(): JSX.Element {
 
   function updateParam(index: number, patch: Partial<Param>) {
     setParams((prev) => prev.map((p, i) => (i === index ? { ...p, ...patch } : p)));
+  }
+
+  function upsertFamilyTypeRow(row: FamilyTypeRow) {
+    setFamilyTypes((prev) => prev.map((candidate) => (candidate.id === row.id ? row : candidate)));
+  }
+
+  function createFamilyTypeRow() {
+    setFamilyTypes((prev) => {
+      const base =
+        prev.find((row) => row.id === activeFamilyTypeId) ?? prev[0] ?? initialFamilyTypeRows()[0]!;
+      const nextId = `family-type-${prev.length + 1}`;
+      const row: FamilyTypeRow = {
+        id: nextId,
+        name: `${base.name} Copy`,
+        values: { ...base.values },
+      };
+      setActiveFamilyTypeId(nextId);
+      return [...prev, row];
+    });
+  }
+
+  function deleteFamilyTypeRow(id: string) {
+    setFamilyTypes((prev) => {
+      if (prev.length <= 1) return prev;
+      const next = prev.filter((row) => row.id !== id);
+      if (activeFamilyTypeId === id) {
+        setActiveFamilyTypeId(next[0]?.id ?? DEFAULT_FAMILY_TYPE_ID);
+      }
+      return next;
+    });
   }
 
   function setFlexValue(key: string, raw: string) {
@@ -436,12 +481,22 @@ export function FamilyEditorWorkbench(): JSX.Element {
   // is off, defaults-merged-with-flex-overrides when on.
   const resolved = useMemo(() => {
     const overrides = flexMode ? flexValues : undefined;
+    const activeTypeValues = familyTypes.find((row) => row.id === activeFamilyTypeId)?.values ?? {};
     const map: Record<string, unknown> = {};
     for (const param of params) {
-      map[param.key] = resolveFamilyParamValue(param, overrides);
+      map[param.key] = resolveFamilyParamValue(
+        {
+          ...param,
+          default:
+            activeTypeValues[param.key] !== undefined && activeTypeValues[param.key] !== ''
+              ? activeTypeValues[param.key]
+              : param.default,
+        },
+        overrides,
+      );
     }
     return map;
-  }, [params, flexMode, flexValues]);
+  }, [params, flexMode, flexValues, familyTypes, activeFamilyTypeId]);
 
   /* ─── FAM-01 — Loaded Families filtering + usage counts ─────────── */
 
@@ -532,6 +587,14 @@ export function FamilyEditorWorkbench(): JSX.Element {
           aria-pressed={flexMode}
         >
           {t('familyEditor.flexToggle')}
+        </button>
+        <button
+          type="button"
+          className="px-3 py-1 rounded border"
+          onClick={() => setFamilyTypesDialogOpen(true)}
+          data-testid="family-types-open"
+        >
+          Family Types
         </button>
       </div>
 
@@ -875,6 +938,19 @@ export function FamilyEditorWorkbench(): JSX.Element {
         </section>
       )}
 
+      {familyTypesDialogOpen ? (
+        <FamilyTypesDialog
+          params={params}
+          familyTypes={familyTypes}
+          activeFamilyTypeId={activeFamilyTypeId}
+          onSetActive={setActiveFamilyTypeId}
+          onUpsert={upsertFamilyTypeRow}
+          onCreate={createFamilyTypeRow}
+          onDelete={deleteFamilyTypeRow}
+          onClose={() => setFamilyTypesDialogOpen(false)}
+        />
+      ) : null}
+
       <button
         type="button"
         onClick={() =>
@@ -945,6 +1021,163 @@ interface SweepPropertiesPanelProps {
 }
 
 const VISIBLE_ALWAYS = '__always__';
+
+function parseFamilyTypeValue(param: Param, raw: string): unknown {
+  if (param.type === 'length_mm' || param.type === 'angle_deg') {
+    const numeric = Number(raw);
+    return Number.isFinite(numeric) ? numeric : raw;
+  }
+  if (param.type === 'boolean') return raw === 'true';
+  return raw;
+}
+
+function FamilyTypesDialog({
+  params,
+  familyTypes,
+  activeFamilyTypeId,
+  onSetActive,
+  onUpsert,
+  onCreate,
+  onDelete,
+  onClose,
+}: {
+  params: Param[];
+  familyTypes: FamilyTypeRow[];
+  activeFamilyTypeId: string;
+  onSetActive: (id: string) => void;
+  onUpsert: (row: FamilyTypeRow) => void;
+  onCreate: () => void;
+  onDelete: (id: string) => void;
+  onClose: () => void;
+}): JSX.Element {
+  const active = familyTypes.find((row) => row.id === activeFamilyTypeId) ?? familyTypes[0]!;
+
+  function updateActive(patch: Partial<FamilyTypeRow>) {
+    onUpsert({ ...active, ...patch });
+  }
+
+  function updateValue(param: Param, raw: string) {
+    updateActive({
+      values: {
+        ...active.values,
+        [param.key]: parseFamilyTypeValue(param, raw),
+      },
+    });
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Family Types"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+    >
+      <div className="max-h-[80vh] w-full max-w-3xl overflow-hidden rounded border border-border bg-surface shadow-lg">
+        <header className="flex items-center gap-2 border-b border-border px-3 py-2">
+          <h2 className="text-sm font-semibold">Family Types</h2>
+          <button type="button" className="ml-auto text-xs underline" onClick={onClose}>
+            Close
+          </button>
+        </header>
+        <div className="grid max-h-[72vh] grid-cols-[220px_1fr] overflow-hidden">
+          <aside className="border-r border-border p-3">
+            <button
+              type="button"
+              className="mb-2 rounded border px-2 py-1 text-xs"
+              onClick={onCreate}
+              data-testid="family-types-new"
+            >
+              New Type
+            </button>
+            <ul className="space-y-1">
+              {familyTypes.map((row) => (
+                <li key={row.id}>
+                  <button
+                    type="button"
+                    className={
+                      row.id === activeFamilyTypeId
+                        ? 'w-full rounded bg-accent/15 px-2 py-1 text-left text-xs'
+                        : 'w-full rounded px-2 py-1 text-left text-xs hover:bg-surface-strong'
+                    }
+                    onClick={() => onSetActive(row.id)}
+                    data-testid={`family-type-row-${row.id}`}
+                  >
+                    {row.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </aside>
+          <section className="overflow-y-auto p-3">
+            <label className="mb-3 flex items-center gap-2 text-sm">
+              <span className="w-24">Type name</span>
+              <input
+                aria-label="Family type name"
+                className="rounded border px-2 py-1 text-sm"
+                value={active.name}
+                onChange={(e) => updateActive({ name: e.target.value })}
+              />
+            </label>
+            <table className="w-full text-sm">
+              <thead>
+                <tr>
+                  <th className="text-left">Parameter</th>
+                  <th className="text-left">Type</th>
+                  <th className="text-left">Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                {params.map((param) => {
+                  const raw = active.values[param.key] ?? param.default ?? '';
+                  return (
+                    <tr key={param.key}>
+                      <td>{param.label || param.key}</td>
+                      <td>{param.type}</td>
+                      <td>
+                        {param.type === 'boolean' ? (
+                          <select
+                            aria-label={`family-type-value-${param.key}`}
+                            value={String(Boolean(raw))}
+                            onChange={(e) => updateValue(param, e.target.value)}
+                          >
+                            <option value="true">True</option>
+                            <option value="false">False</option>
+                          </select>
+                        ) : (
+                          <input
+                            aria-label={`family-type-value-${param.key}`}
+                            type={
+                              param.type === 'length_mm' || param.type === 'angle_deg'
+                                ? 'number'
+                                : 'text'
+                            }
+                            value={String(raw)}
+                            onChange={(e) => updateValue(param, e.target.value)}
+                          />
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div className="mt-3">
+              <button
+                type="button"
+                className="rounded border px-2 py-1 text-xs disabled:opacity-40"
+                disabled={familyTypes.length <= 1}
+                onClick={() => onDelete(active.id)}
+                data-testid="family-types-delete"
+              >
+                Delete Type
+              </button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function MaterialDefaultEditor({
   materialKey,
