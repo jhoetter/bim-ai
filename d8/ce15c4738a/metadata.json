@@ -6,6 +6,7 @@
   "checkpoints_count": 1,
   "files_touched": [
     "packages/web/src/workspace/CanvasMount.tsx",
+    "packages/web/src/workspace/TopBar.test.tsx",
     "packages/web/src/workspace/Workspace.tsx",
     "packages/web/src/workspace/WorkspaceHelpers.tsx",
     "packages/web/src/workspace/WorkspaceLeftRail.tsx",
@@ -33,6 +34,12 @@
       "transcript": "/d8/ce15c4738a/1/full.jsonl",
       "content_hash": "/d8/ce15c4738a/1/content_hash.txt",
       "prompt": "/d8/ce15c4738a/1/prompt.txt"
+    },
+    {
+      "metadata": "/d8/ce15c4738a/2/metadata.json",
+      "transcript": "/d8/ce15c4738a/2/full.jsonl",
+      "content_hash": "/d8/ce15c4738a/2/content_hash.txt",
+      "prompt": "/d8/ce15c4738a/2/prompt.txt"
     }
   ],
   "token_usage": {
