@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "5ff0b20760d2",
+  "session_id": "019e1302-b40a-74d3-9d1a-7518018605ee",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T18:11:22.523098Z",
+  "branch": "revit-parity-type-duplicate-wave",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/tests/test_one_family_bundle_roundtrip.py",
+    "claude-skills/sketch-to-bim/SKILL.md",
+    "packages/cli/cli.mjs",
+    "packages/cli/lib/one-family-home-commands.mjs",
+    "packages/web/e2e/__fixtures__/seed-target-house-snapshot.json",
+    "packages/web/src/viewport/dormerRoofCut.ts",
+    "packages/web/src/viewport/roofOpeningCut.test.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "0816db149967",
+  "checkpoint_transcript_start": 124,
+  "transcript_lines_at_start": 124,
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T18:11:22.508114Z",
+    "agent_lines": 1970,
+    "agent_removed": 363,
+    "human_added": 0,
+    "human_modified": 217,
+    "human_removed": 75,
+    "total_committed": 2187,
+    "total_lines_changed": 2628,
+    "agent_percentage": 88.77473363774733,
+    "metric_version": 2
+  }
+}
