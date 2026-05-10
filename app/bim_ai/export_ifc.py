@@ -71,6 +71,12 @@ from bim_ai.export_ifc_scope import (
     IFC_EXCHANGE_EMITTABLE_GEOMETRY_KINDS,  # noqa: F401 - re-exported for existing imports
     import_scope_unsupported_ifc_products_v0,
 )
+from bim_ai.export_ifc_site_exchange import (
+    build_site_exchange_evidence_v0 as _build_site_exchange_evidence_v0,
+)
+from bim_ai.export_ifc_site_exchange import (
+    build_site_exchange_evidence_v0_for_manifest,  # noqa: F401 - legacy public re-export
+)
 from bim_ai.ifc_material_layer_exchange_v0 import (
     kernel_ifc_material_layer_set_readback_v0,
     try_attach_kernel_ifc_material_layer_set,
@@ -173,90 +179,18 @@ def _kernel_ifc_space_export_props(rm: RoomElem) -> dict[str, str]:
     return out
 
 
-def _kernel_site_element_ids_sorted(doc: Document | None) -> list[str]:
-    if doc is None:
-        return []
-    return sorted(eid for eid, e in doc.elements.items() if isinstance(e, SiteElem))
-
-
-def build_site_exchange_evidence_v0_for_manifest(doc: Document) -> dict[str, Any]:
-    """Offline-safe document-only site participation (manifest); independent of STEP."""
-
-    kernel_ids = _kernel_site_element_ids_sorted(doc)
-    kn = len(kernel_ids)
-    eligible = document_kernel_export_eligible(doc)
-    out: dict[str, Any] = {
-        "schemaVersion": 0,
-        "kernelSiteCount": kn,
-        "kernelIfcExportEligible": eligible,
-        "joinedKernelSiteIdsExpected": ",".join(kernel_ids) if kn else "",
-    }
-    if not eligible:
-        out["note"] = (
-            "kernelExpectedIfcKinds stays empty until wall/slab-floor eligibility is satisfied; "
-            "kernel SiteElem counts remain declared here."
-        )
-    return out
-
-
 def build_site_exchange_evidence_v0(
     *,
     doc: Document | None,
     model: Any | None = None,
     unavailable_reason: str | None = None,
 ) -> dict[str, Any]:
-    """Kernel site ↔ IFC ``IfcSite`` identity slice for inspectors (WP-X03)."""
-
-    kernel_ids = _kernel_site_element_ids_sorted(doc)
-    kn = len(kernel_ids)
-    joined_expect = ",".join(kernel_ids)
-    base: dict[str, Any] = {
-        "schemaVersion": 0,
-        "kernelSiteCount": kn,
-        "joinedKernelSiteIdsExpected": joined_expect if kn else "",
-    }
-
-    if unavailable_reason is not None:
-        base["reason"] = unavailable_reason
-        base["ifcSiteCount"] = None
-        base["identityReferenceJoined"] = None
-        base["sitesWithPsetSiteCommonReference"] = None
-        base["kernelIdsMatchJoinedReference"] = False
-        return base
-
-    if model is None:
-        base["ifcSiteCount"] = None
-        base["identityReferenceJoined"] = None
-        base["sitesWithPsetSiteCommonReference"] = None
-        base["kernelIdsMatchJoinedReference"] = None
-        return base
-
-    sites_raw = model.by_type("IfcSite") or []
-    sites_sorted = sorted(sites_raw, key=lambda s: str(getattr(s, "GlobalId", None) or ""))
-    base["ifcSiteCount"] = len(sites_sorted)
-
-    refs_nonempty = 0
-    joined_from_ifc = ""
-    if ifc_elem_util is not None:
-        for si in sites_sorted:
-            ps = ifc_elem_util.get_psets(si)
-            bucket = ps.get("Pset_SiteCommon") or {}
-            ref = bucket.get("Reference")
-            if isinstance(ref, str) and ref.strip():
-                refs_nonempty += 1
-                if not joined_from_ifc:
-                    joined_from_ifc = ref.strip()
-
-    base["sitesWithPsetSiteCommonReference"] = refs_nonempty
-    base["identityReferenceJoined"] = joined_from_ifc or None
-
-    if kn == 0:
-        base["kernelIdsMatchJoinedReference"] = refs_nonempty == 0
-    else:
-        parsed = sorted(part.strip() for part in joined_from_ifc.split(",") if part.strip())
-        base["kernelIdsMatchJoinedReference"] = bool(parsed == kernel_ids and refs_nonempty >= 1)
-
-    return base
+    return _build_site_exchange_evidence_v0(
+        doc=doc,
+        model=model,
+        unavailable_reason=unavailable_reason,
+        ifc_elem_util=ifc_elem_util,
+    )
 
 
 def inspect_kernel_ifc_semantics(
