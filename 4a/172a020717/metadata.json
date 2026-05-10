@@ -13,7 +13,14 @@
     "packages/web/src/plan/PlanCanvas.tsx",
     "packages/web/src/plan/wallChainSelection.test.ts",
     "packages/web/src/plan/wallChainSelection.ts",
-    "packages/web/src/workspace/Workspace.tsx"
+    "packages/web/src/workspace/Workspace.tsx",
+    "spec/revit-parity/README.md",
+    "spec/revit-parity/ch01-ui-navigation.md",
+    "spec/revit-parity/ch05-family-editor.md",
+    "spec/revit-parity/ch06-nested-families.md",
+    "spec/revit-parity/ch07-parametric-furniture.md",
+    "spec/revit-parity/ch10-troubleshooting.md",
+    "spec/revit-parity/ch12-furniture-placement.md"
   ],
   "sessions": [
     {
@@ -21,13 +28,19 @@
       "transcript": "/4a/172a020717/0/full.jsonl",
       "content_hash": "/4a/172a020717/0/content_hash.txt",
       "prompt": "/4a/172a020717/0/prompt.txt"
+    },
+    {
+      "metadata": "/4a/172a020717/1/metadata.json",
+      "transcript": "/4a/172a020717/1/full.jsonl",
+      "content_hash": "/4a/172a020717/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 921319,
+    "input_tokens": 1151674,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 29520640,
-    "output_tokens": 76254,
-    "api_call_count": 233
+    "cache_read_tokens": 38552704,
+    "output_tokens": 95434,
+    "api_call_count": 285
   }
 }
