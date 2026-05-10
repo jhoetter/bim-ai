@@ -74,6 +74,14 @@ type SymbolicLine = SketchLine & {
   subcategory: SymbolicLineSubcategory;
 };
 
+type FamilyDimension = {
+  id: string;
+  refAId: string;
+  refBId: string;
+  lockedValueMm: number;
+  paramKey: string;
+};
+
 /**
  * Resolve a family parameter for rendering.
  *
@@ -222,6 +230,8 @@ export function FamilyEditorWorkbench(): JSX.Element {
   const [arrayDraft, setArrayDraft] = useState<ArrayDraft | null>(null);
   const [symbolicLines, setSymbolicLines] = useState<SymbolicLine[]>([]);
   const [symbolicLineDraft, setSymbolicLineDraft] = useState(EMPTY_SYMBOLIC_LINE_DRAFT);
+  const [dimensions, setDimensions] = useState<FamilyDimension[]>([]);
+  const [dimensionDraft, setDimensionDraft] = useState({ refAId: '', refBId: '', paramKey: '' });
   const [nestedInstances, setNestedInstances] = useState<FamilyInstanceRefNode[]>([]);
   const [selectedNestedIndex, setSelectedNestedIndex] = useState<number | null>(null);
   const [materialTarget, setMaterialTarget] = useState<MaterialAssignmentTarget | null>(null);
@@ -255,6 +265,42 @@ export function FamilyEditorWorkbench(): JSX.Element {
           }
         : draft,
     );
+  }
+
+  function refPlaneDistanceMm(refAId: string, refBId: string): number {
+    const a = refPlanes.find((plane) => plane.id === refAId);
+    const b = refPlanes.find((plane) => plane.id === refBId);
+    if (!a || !b) return 0;
+    return Math.abs(a.offsetMm - b.offsetMm);
+  }
+
+  function createDimensionParameter() {
+    const refAId = dimensionDraft.refAId || refPlanes[0]?.id || '';
+    const refBId = dimensionDraft.refBId || refPlanes[1]?.id || '';
+    if (!refAId || !refBId || refAId === refBId) return;
+    const paramKey = (dimensionDraft.paramKey || `dimension_${dimensions.length + 1}`).trim();
+    const lockedValueMm = refPlaneDistanceMm(refAId, refBId);
+    setDimensions((prev) => [
+      ...prev,
+      {
+        id: `dim-${prev.length + 1}`,
+        refAId,
+        refBId,
+        lockedValueMm,
+        paramKey,
+      },
+    ]);
+    setParams((prev) => [
+      ...prev,
+      {
+        key: paramKey,
+        label: paramKey,
+        type: 'length_mm',
+        default: lockedValueMm,
+        formula: '',
+      },
+    ]);
+    setDimensionDraft((prev) => ({ ...prev, paramKey: '' }));
   }
 
   function addParam() {
@@ -1058,6 +1104,57 @@ export function FamilyEditorWorkbench(): JSX.Element {
         </div>
       </section>
 
+      <section className="rounded border p-3 space-y-2" aria-label="Aligned dimensions">
+        <h2 className="font-semibold">Aligned Dimensions</h2>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <select
+            aria-label="dimension-reference-a"
+            value={dimensionDraft.refAId || refPlanes[0]?.id || ''}
+            onChange={(e) => setDimensionDraft((prev) => ({ ...prev, refAId: e.target.value }))}
+          >
+            <option value="">Reference A</option>
+            {refPlanes.map((plane) => (
+              <option key={plane.id} value={plane.id}>
+                {plane.name} {plane.isVertical ? 'V' : 'H'} {plane.offsetMm}mm
+              </option>
+            ))}
+          </select>
+          <select
+            aria-label="dimension-reference-b"
+            value={dimensionDraft.refBId || refPlanes[1]?.id || ''}
+            onChange={(e) => setDimensionDraft((prev) => ({ ...prev, refBId: e.target.value }))}
+          >
+            <option value="">Reference B</option>
+            {refPlanes.map((plane) => (
+              <option key={plane.id} value={plane.id}>
+                {plane.name} {plane.isVertical ? 'V' : 'H'} {plane.offsetMm}mm
+              </option>
+            ))}
+          </select>
+          <input
+            aria-label="dimension-parameter-name"
+            value={dimensionDraft.paramKey}
+            placeholder={`dimension_${dimensions.length + 1}`}
+            onChange={(e) => setDimensionDraft((prev) => ({ ...prev, paramKey: e.target.value }))}
+          />
+          <button
+            type="button"
+            onClick={createDimensionParameter}
+            disabled={refPlanes.length < 2}
+            data-testid="dimension-create-parameter"
+          >
+            Create Parameter
+          </button>
+        </div>
+        <ul className="space-y-1 text-xs" data-testid="family-dimensions-list">
+          {dimensions.map((dimension) => (
+            <li key={dimension.id}>
+              {dimension.paramKey}: {dimension.lockedValueMm} mm
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <section>
         <h2 className="font-semibold mb-2">{t('familyEditor.parametersHeading')}</h2>
         <table className="w-full mb-2">
@@ -1206,6 +1303,7 @@ export function FamilyEditorWorkbench(): JSX.Element {
             categorySettings,
             viewRange,
             symbolicLines,
+            dimensions,
             refPlanes,
             params,
             resolved,

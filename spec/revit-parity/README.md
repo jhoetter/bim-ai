@@ -100,7 +100,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-051 | Extrusion tool                                        | Family Editor  | 🟡            | Sweep/extrusion authoring creates solid geometry from profiles and resolves via family sweep geometry; missing Revit-grade sketch locks and elevation-driven extrusion params                                                                                                                         |
 | F-052 | Pick Lines with Lock (sketch mode)                    | Family Editor  | 🟡            | Family sweep profile sketches can pick reference planes as sketch lines with Lock metadata; locked picked lines rederive when the reference-plane offset changes. Missing model-edge picking and lock constraints across all sketch tools                                                             |
 | F-053 | Trim / Extend to Corner (TR)                          | Family Editor  | 🟡            | Family sweep profile sketches expose a TR cleanup action that trims/extends two selected profile lines to their infinite-line intersection. Missing keyboard-driven TR tool and broader sketch-mode integration                                                                                       |
-| F-054 | Aligned Dimension (DI) + Create Parameter             | Family Editor  | ❌            |                                                                                                                                                                                                                                                                                                       |
+| F-054 | Aligned Dimension (DI) + Create Parameter             | Family Editor  | 🟡            | Family editor can create aligned dimensions between reference planes and generate a bound length parameter from the measured offset. Missing canvas dimension placement, label dropdown UI, and constraint-driven reference-plane solving                                                             |
 | F-055 | Type vs. Instance Parameters                          | Family Editor  | 🟡            | Family params carry `instanceOverridable`; resolver prioritizes instance overrides; door/window/family placement data supports override params. Missing full Revit parameter dialog                                                                                                                   |
 | F-056 | Family Types dialog                                   | Family Editor  | 🟡            | Family editor now has a Family Types dialog for local type rows: create, rename, delete, select active type, and edit per-type parameter values that feed the resolved preview. Missing persistent/loadable Revit family type catalog and full Apply/formula validation semantics                     |
 | F-057 | Material Browser                                      | Family Editor  | 🟡            | Family editor material fields now open a searchable Material Browser with swatches, categories, Appearance/Graphics tabs, and assignment to `material_key` params and sweep materials. Missing project/family material creation, rename, and full physical/thermal tabs                               |
@@ -179,8 +179,8 @@ _Last audited: 2026-05-09 against codebase at commit `docs/tracker-sync-wave-11`
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
 | ✅ Fully available     | 57      | 47%        |
-| 🟡 Partially available | 47      | 39%        |
-| ❌ Not available       | 16      | 13%        |
+| 🟡 Partially available | 48      | 40%        |
+| ❌ Not available       | 15      | 13%        |
 | **Total**              | **120** | **100%**   |
 
 ---
