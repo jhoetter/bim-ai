@@ -3,7 +3,7 @@
   "checkpoint_id": "7adf4a69f20a",
   "strategy": "manual-commit",
   "branch": "revit-parity-dxf-alignment-wave",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "packages/web/src/families/FamilyLibraryPanel.test.tsx",
     "packages/web/src/families/FamilyLibraryPanel.tsx",
@@ -33,6 +33,19 @@
       "transcript": "/7a/df4a69f20a/3/full.jsonl",
       "content_hash": "/7a/df4a69f20a/3/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/7a/df4a69f20a/4/metadata.json",
+      "transcript": "/7a/df4a69f20a/4/full.jsonl",
+      "content_hash": "/7a/df4a69f20a/4/content_hash.txt",
+      "prompt": "/7a/df4a69f20a/4/prompt.txt"
     }
-  ]
+  ],
+  "token_usage": {
+    "input_tokens": 1508408,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 40295296,
+    "output_tokens": 99940,
+    "api_call_count": 306
+  }
 }

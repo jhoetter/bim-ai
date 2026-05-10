@@ -1,0 +1,42 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "7adf4a69f20a",
+  "session_id": "019e12a2-e2b7-7121-b7a2-efaa44476317",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T17:21:09.411438Z",
+  "branch": "revit-parity-dxf-alignment-wave",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "1a399e4c930b",
+  "token_usage": {
+    "input_tokens": 1508408,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 40295296,
+    "output_tokens": 99940,
+    "api_call_count": 306
+  },
+  "session_metrics": {
+    "turn_count": 10
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 511,
+      "user_lines_removed": 13,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/families/FamilyLibraryPanel.test.tsx": 5,
+        "packages/web/src/families/FamilyLibraryPanel.tsx": 2,
+        "packages/web/src/workspace/library/AssetCard.tsx": 504
+      },
+      "user_removed_per_file": {
+        "packages/web/src/families/FamilyLibraryPanel.test.tsx": 10,
+        "packages/web/src/families/FamilyLibraryPanel.tsx": 2,
+        "packages/web/src/workspace/library/AssetCard.tsx": 1
+      }
+    }
+  ]
+}
