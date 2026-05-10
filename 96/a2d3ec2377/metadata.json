@@ -1,0 +1,20 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "96a2d3ec2377",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/cli/cli.initiationCheck.test.mjs",
+    "packages/cli/lib/sketch-initiation.mjs",
+    "spec/sketch-to-bim-methodology.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/96/a2d3ec2377/0/metadata.json",
+      "transcript": "/96/a2d3ec2377/0/full.jsonl",
+      "content_hash": "/96/a2d3ec2377/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
