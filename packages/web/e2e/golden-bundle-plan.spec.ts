@@ -247,10 +247,14 @@ test.describe('golden bundle affordances', () => {
     await page.goto('/');
     await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
 
-    // workspaceLayoutPreset is dead code; navigate to sheet mode through the current left rail.
-    await page.getByRole('button', { name: 'Expand sidebar' }).click();
-    await page.waitForSelector('[data-testid="left-rail-row-hf-sheet-ga01"]', { timeout: 15_000 });
-    await page.getByTestId('left-rail-row-hf-sheet-ga01').click();
+    // Navigate through the current left rail; desktop UX defaults expanded, but
+    // keep this robust for collapsed localStorage carried across browser contexts.
+    const sheetRow = page.getByTestId('left-rail-row-hf-sheet-ga01');
+    if (!(await sheetRow.isVisible({ timeout: 2_000 }).catch(() => false))) {
+      await page.getByRole('button', { name: 'Expand sidebar' }).click();
+    }
+    await expect(sheetRow).toBeVisible({ timeout: 15_000 });
+    await sheetRow.click();
 
     const canvas = page.getByTestId('sheet-canvas');
     await expect(canvas).toBeVisible({ timeout: 10_000 });

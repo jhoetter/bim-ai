@@ -32,6 +32,9 @@ function makeProps(
     onSetProjection: vi.fn(),
     sectionBoxActive: false,
     onSetSectionBoxActive: vi.fn(),
+    viewerWalkModeActive: false,
+    onSetWalkModeActive: vi.fn(),
+    onRequestCameraAction: vi.fn(),
     viewerClipElevMm: null,
     onSetClipElevMm: vi.fn(),
     viewerClipFloorElevMm: null,
@@ -75,13 +78,45 @@ describe('<Viewport3DLayersPanel />', () => {
   it('calls camera and section-box controls from the view panel', () => {
     const onSetProjection = vi.fn();
     const onSetSectionBoxActive = vi.fn();
+    const onSetWalkModeActive = vi.fn();
+    const onRequestCameraAction = vi.fn();
     const { getByRole } = render(
-      <Viewport3DLayersPanel {...makeProps({ onSetProjection, onSetSectionBoxActive })} />,
+      <Viewport3DLayersPanel
+        {...makeProps({
+          onSetProjection,
+          onSetSectionBoxActive,
+          onSetWalkModeActive,
+          onRequestCameraAction,
+        })}
+      />,
     );
     fireEvent.click(getByRole('button', { name: 'Use Ortho projection' }));
+    fireEvent.click(getByRole('button', { name: 'Enter walk mode' }));
+    fireEvent.click(getByRole('button', { name: 'Fit model to view' }));
+    fireEvent.click(getByRole('button', { name: 'Reset camera home' }));
     fireEvent.click(getByRole('button', { name: 'Section box off' }));
     expect(onSetProjection).toHaveBeenCalledWith('orthographic');
+    expect(onSetWalkModeActive).toHaveBeenCalledWith(true);
+    expect(onRequestCameraAction).toHaveBeenCalledWith('fit');
+    expect(onRequestCameraAction).toHaveBeenCalledWith('reset');
     expect(onSetSectionBoxActive).toHaveBeenCalledWith(true);
+  });
+
+  it('summarizes active 3D view state at the top of the panel', () => {
+    const { getAllByText, getByText } = render(
+      <Viewport3DLayersPanel
+        {...makeProps({
+          viewerRenderStyle: 'wireframe',
+          viewerProjection: 'orthographic',
+          sectionBoxActive: true,
+          viewerCategoryHidden: { wall: true, floor: true },
+        })}
+      />,
+    );
+    expect(getAllByText('Wire').length).toBeGreaterThan(0);
+    expect(getAllByText('Ortho').length).toBeGreaterThan(0);
+    expect(getAllByText('Section box').length).toBeGreaterThan(0);
+    expect(getByText('2 hidden')).toBeTruthy();
   });
 
   it('shows checkboxes as checked when category is NOT hidden', () => {

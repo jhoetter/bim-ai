@@ -141,6 +141,8 @@ export type ViewFilter = {
   };
 };
 
+export type ViewerCameraActionKind = 'fit' | 'reset';
+
 export type StoreState = {
   modelId?: string;
   revision: number;
@@ -184,6 +186,10 @@ export type StoreState = {
   viewerProjection: 'perspective' | 'orthographic';
   /** UX-11: section-box clipping is a view-control state, not only a canvas button. */
   viewerSectionBoxActive: boolean;
+  /** UX-11: walk mode is launched from View controls instead of canvas chrome. */
+  viewerWalkModeActive: boolean;
+  /** UX-11: one-shot camera commands issued by right-rail View controls. */
+  viewerCameraAction: { kind: ViewerCameraActionKind; nonce: number } | null;
   /** F-014: when true, the plan canvas shows VG-hidden elements (magenta mode). */
   revealHiddenMode: boolean;
   /**
@@ -281,6 +287,10 @@ export type StoreState = {
   setViewerProjection: (projection: 'perspective' | 'orthographic') => void;
   /** UX-11: set section-box clipping visibility. */
   setViewerSectionBoxActive: (active: boolean) => void;
+  /** UX-11: enter or exit 3D walk mode. */
+  setViewerWalkModeActive: (active: boolean) => void;
+  /** UX-11: request a viewport camera action from chrome outside the canvas. */
+  requestViewerCameraAction: (kind: ViewerCameraActionKind) => void;
   /** F-014: enter or exit Reveal Hidden Elements mode. */
   setRevealHiddenMode: (v: boolean) => void;
   /** Apply saved 3D viewpoint clip planes + semantic category hides (WP-E02/E03). */

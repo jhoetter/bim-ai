@@ -32,10 +32,14 @@ export type ViewportRuntimeSlice = Pick<
   | 'viewerEdges'
   | 'viewerProjection'
   | 'viewerSectionBoxActive'
+  | 'viewerWalkModeActive'
+  | 'viewerCameraAction'
   | 'setViewerBackground'
   | 'setViewerEdges'
   | 'setViewerProjection'
   | 'setViewerSectionBoxActive'
+  | 'setViewerWalkModeActive'
+  | 'requestViewerCameraAction'
   | 'revealHiddenMode'
   | 'setRevealHiddenMode'
   | 'showNeighborhoodMasses'
@@ -174,10 +178,20 @@ export function createViewportRuntimeSlice(set: StoreSet, get: StoreGet): Viewpo
     viewerEdges: 'normal',
     viewerProjection: 'perspective',
     viewerSectionBoxActive: false,
+    viewerWalkModeActive: false,
+    viewerCameraAction: null,
     setViewerBackground: (bg) => set({ viewerBackground: bg }),
     setViewerEdges: (edges) => set({ viewerEdges: edges }),
     setViewerProjection: (projection) => set({ viewerProjection: projection }),
     setViewerSectionBoxActive: (active) => set({ viewerSectionBoxActive: active }),
+    setViewerWalkModeActive: (active) => set({ viewerWalkModeActive: active }),
+    requestViewerCameraAction: (kind) =>
+      set((state) => ({
+        viewerCameraAction: {
+          kind,
+          nonce: (state.viewerCameraAction?.nonce ?? 0) + 1,
+        },
+      })),
     revealHiddenMode: false,
     setRevealHiddenMode: (v) => set({ revealHiddenMode: v }),
     showNeighborhoodMasses: true,

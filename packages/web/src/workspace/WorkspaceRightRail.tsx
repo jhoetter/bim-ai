@@ -70,6 +70,9 @@ export function WorkspaceRightRail({
   const setViewerProjection = useBimStore((s) => s.setViewerProjection);
   const viewerSectionBoxActive = useBimStore((s) => s.viewerSectionBoxActive);
   const setViewerSectionBoxActive = useBimStore((s) => s.setViewerSectionBoxActive);
+  const viewerWalkModeActive = useBimStore((s) => s.viewerWalkModeActive);
+  const setViewerWalkModeActive = useBimStore((s) => s.setViewerWalkModeActive);
+  const requestViewerCameraAction = useBimStore((s) => s.requestViewerCameraAction);
   const viewerClipElevMm = useBimStore((s) => s.viewerClipElevMm);
   const setViewerClipElevMm = useBimStore((s) => s.setViewerClipElevMm);
   const viewerClipFloorElevMm = useBimStore((s) => s.viewerClipFloorElevMm);
@@ -674,6 +677,9 @@ export function WorkspaceRightRail({
             onSetProjection={setViewerProjection}
             sectionBoxActive={viewerSectionBoxActive}
             onSetSectionBoxActive={setViewerSectionBoxActive}
+            viewerWalkModeActive={viewerWalkModeActive}
+            onSetWalkModeActive={setViewerWalkModeActive}
+            onRequestCameraAction={requestViewerCameraAction}
             viewerClipElevMm={viewerClipElevMm}
             onSetClipElevMm={setViewerClipElevMm}
             viewerClipFloorElevMm={viewerClipFloorElevMm}

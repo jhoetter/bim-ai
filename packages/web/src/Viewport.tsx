@@ -11,8 +11,6 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 
 import type { Element } from '@bim-ai/core';
-import { Icons, ICON_SIZE } from '@bim-ai/ui';
-
 import {
   OrbitViewpointPersistedHud,
   type OrbitViewpointPersistFieldPayload,
@@ -195,7 +193,6 @@ export function Viewport({
 
   const [currentAzimuth, setCurrentAzimuth] = useState(Math.PI / 4);
   const [currentElevation, setCurrentElevation] = useState(0.45);
-  const [walkActive, setWalkActive] = useState(false);
   const [text3dRebuildTick, setText3dRebuildTick] = useState(0);
   // ANN-02: state for the right-click "Generate Section / Elevation" menu in 3D.
   const [wallContextMenu, setWallContextMenu] = useState<{
@@ -335,9 +332,9 @@ export function Viewport({
   const viewerRenderStyle = useBimStore((s) => s.viewerRenderStyle);
   const viewerBackground = useBimStore((s) => s.viewerBackground);
   const viewerProjection = useBimStore((s) => s.viewerProjection);
-  const setViewerProjection = useBimStore((s) => s.setViewerProjection);
   const sectionBoxActive = useBimStore((s) => s.viewerSectionBoxActive);
-  const setSectionBoxActive = useBimStore((s) => s.setViewerSectionBoxActive);
+  const walkActive = useBimStore((s) => s.viewerWalkModeActive);
+  const viewerCameraAction = useBimStore((s) => s.viewerCameraAction);
   const lensMode = useBimStore((s) => s.lensMode);
   const orthoMode = viewerProjection === 'orthographic';
 
@@ -998,7 +995,7 @@ export function Viewport({
       if (!walkController.snapshot().active) return;
       if (ev.key === 'Escape') {
         walkController.setActive(false);
-        setWalkActive(false);
+        useBimStore.getState().setViewerWalkModeActive(false);
         return;
       }
       if (ev.key === 'Shift') walkController.setRunning(true);
@@ -1034,7 +1031,7 @@ export function Viewport({
     function onPointerLockChange(): void {
       if (!document.pointerLockElement && walkController.snapshot().active) {
         walkController.setActive(false);
-        setWalkActive(false);
+        useBimStore.getState().setViewerWalkModeActive(false);
       }
     }
     document.addEventListener('pointerlockchange', onPointerLockChange);
@@ -1154,6 +1151,37 @@ export function Viewport({
       }
     }
   }, [orthoMode]);
+
+  useEffect(() => {
+    if (!viewerCameraAction) return;
+    const rig = cameraRigRef.current;
+    const camera = cameraRef.current;
+    if (!rig || !camera) return;
+
+    if (viewerCameraAction.kind === 'fit') {
+      const root = rootGroupRef.current;
+      const box = root ? computeRootBoundingBox(root) : null;
+      if (box) {
+        rig.frame(box);
+        rig.setHome();
+      }
+    } else {
+      rig.reset();
+    }
+
+    const snap = rig.snapshot();
+    camera.position.set(snap.position.x, snap.position.y, snap.position.z);
+    camera.up.set(snap.up.x, snap.up.y, snap.up.z).normalize();
+    camera.lookAt(snap.target.x, snap.target.y, snap.target.z);
+    const orthoCamera = orthoCameraRef.current;
+    if (orthoCamera) {
+      orthoCamera.position.copy(camera.position);
+      orthoCamera.up.copy(camera.up);
+      orthoCamera.lookAt(snap.target.x, snap.target.y, snap.target.z);
+    }
+    setCurrentAzimuth(snap.azimuth);
+    setCurrentElevation(snap.elevation);
+  }, [viewerCameraAction]);
 
   // ── Incremental geometry effect ──────────────────────────────────────────
   // Diffs elementsById against the previous snapshot and surgically adds,
@@ -1955,6 +1983,16 @@ export function Viewport({
       }
       wc.setLevels(walkLevelsRef.current);
       wc.setActive(true);
+      try {
+        const pointerLockRequest = mountRef.current?.requestPointerLock();
+        if (pointerLockRequest && 'catch' in pointerLockRequest) {
+          void pointerLockRequest.catch(() => {
+            /* Browser may require the next canvas click; keep walk mode armed. */
+          });
+        }
+      } catch {
+        /* Browser may require the next canvas click; keep walk mode armed. */
+      }
     } else {
       wc.setActive(false);
       if (cam) {
@@ -2082,72 +2120,16 @@ export function Viewport({
         </div>
       )}
 
-      <div className="pointer-events-auto absolute bottom-3 left-3 z-20 flex flex-col items-start gap-1.5">
-        <button
-          type="button"
-          onClick={() => {
-            const next = !walkActive;
-            setWalkActive(next);
-            if (next) {
-              mountRef.current?.requestPointerLock();
-            } else {
-              document.exitPointerLock();
-            }
-          }}
-          aria-pressed={walkActive}
-          data-active={walkActive ? 'true' : 'false'}
-          className={[
-            'inline-flex h-8 w-8 items-center justify-center rounded-md border border-border shadow-sm backdrop-blur-sm',
-            walkActive
-              ? 'bg-accent text-accent-foreground'
-              : 'bg-surface/90 text-foreground hover:bg-surface-strong',
-          ].join(' ')}
-          title={t('viewport.walkTitle')}
-          aria-label={t('viewport.walkTitle')}
-        >
-          <Icons.viewpoint size={ICON_SIZE.chrome} aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          onClick={() => setSectionBoxActive(!sectionBoxActive)}
-          aria-pressed={sectionBoxActive}
-          data-active={sectionBoxActive ? 'true' : 'false'}
-          className={[
-            'inline-flex h-8 w-8 items-center justify-center rounded-md border border-border shadow-sm backdrop-blur-sm',
-            sectionBoxActive
-              ? 'bg-accent text-accent-foreground'
-              : 'bg-surface/90 text-foreground hover:bg-surface-strong',
-          ].join(' ')}
-          title={t('viewport.sectionBoxTitle')}
-          aria-label={t('viewport.sectionBoxTitle')}
-        >
-          <Icons.sectionBox size={ICON_SIZE.chrome} aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          onClick={() => setViewerProjection(orthoMode ? 'perspective' : 'orthographic')}
-          aria-pressed={orthoMode}
-          data-active={orthoMode ? 'true' : 'false'}
-          className={[
-            'inline-flex h-8 w-8 items-center justify-center rounded-md border border-border shadow-sm backdrop-blur-sm',
-            orthoMode
-              ? 'bg-accent text-accent-foreground'
-              : 'bg-surface/90 text-foreground hover:bg-surface-strong',
-          ].join(' ')}
-          title={t('viewport.orthoTitle')}
-          aria-label={t('viewport.orthoTitle')}
-        >
-          <Icons.planView size={ICON_SIZE.chrome} aria-hidden="true" />
-        </button>
-        {sectionBoxActive && sectionBoxRef.current ? (
+      {sectionBoxActive && sectionBoxRef.current ? (
+        <div className="pointer-events-none absolute left-3 bottom-3 z-20">
           <span
             data-testid="section-box-summary"
-            className="rounded-pill border border-border bg-surface px-2 py-0.5 text-[11px] font-mono text-muted"
+            className="rounded-pill border border-border bg-surface/85 px-2 py-0.5 text-[11px] font-mono text-muted backdrop-blur-sm"
           >
             {sectionBoxRef.current.summary()}
           </span>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       {/* Architectural sky gradient — visible through the transparent Three.js canvas */}
       <div

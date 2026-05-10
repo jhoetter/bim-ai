@@ -186,7 +186,9 @@ Implementation notes:
 - Kept the right rail open for 3D and split plan/3D tabs even without a selected element, so graphics, projection, section-box, and camera controls stay discoverable where users expect them.
 - Derived visible shell mode from the active tab so persisted/open views cannot leave the top bar, palette, canvas, and right rail describing different modes.
 - Added a focused regression for no-selection 3D tabs to guard against view controls becoming hidden behind inspector-only collapse logic.
-- Remaining technical work: move walk-mode activation into shared viewport UI state without breaking pointer-lock behavior.
+- Moved walk mode, fit, reset, projection, and section-box activation into the right-rail View controls panel; the canvas no longer carries the bottom-left developer-looking control stack.
+- Added an active 3D view summary for graphics style, projection, section-box state, and hidden category count.
+- Walk mode now uses shared viewport UI state, with pointer-lock activation handled by the 3D viewport and Esc/pointer-lock loss writing back to the same state.
 
 ### UX-12 Icon System Completion
 

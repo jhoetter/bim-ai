@@ -17,9 +17,8 @@ type BimStoreBridge = {
   };
 };
 
-if (!SNAPSHOT_PATH || !fs.existsSync(SNAPSHOT_PATH)) {
-  throw new Error(`SKB_SNAPSHOT_PATH missing or invalid: ${SNAPSHOT_PATH}`);
-}
+const HAS_SKB_SNAPSHOT = Boolean(SNAPSHOT_PATH && fs.existsSync(SNAPSHOT_PATH));
+test.skip(!HAS_SKB_SNAPSHOT, `SKB_SNAPSHOT_PATH missing or invalid: ${SNAPSHOT_PATH}`);
 
 async function bootWorkspace(page: Page) {
   await page.addInitScript(() => {

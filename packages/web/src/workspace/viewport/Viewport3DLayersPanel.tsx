@@ -87,6 +87,9 @@ export interface Viewport3DLayersPanelProps {
   onSetProjection: (projection: 'perspective' | 'orthographic') => void;
   sectionBoxActive: boolean;
   onSetSectionBoxActive: (active: boolean) => void;
+  viewerWalkModeActive: boolean;
+  onSetWalkModeActive: (active: boolean) => void;
+  onRequestCameraAction: (kind: 'fit' | 'reset') => void;
   viewerClipElevMm: number | null;
   onSetClipElevMm: (mm: number | null) => void;
   viewerClipFloorElevMm: number | null;
@@ -111,6 +114,9 @@ export function Viewport3DLayersPanel({
   onSetProjection,
   sectionBoxActive,
   onSetSectionBoxActive,
+  viewerWalkModeActive,
+  onSetWalkModeActive,
+  onRequestCameraAction,
   viewerClipElevMm,
   onSetClipElevMm,
   viewerClipFloorElevMm,
@@ -132,9 +138,22 @@ export function Viewport3DLayersPanel({
     room: Icons.room,
     site_origin: Icons.grid,
   };
+  const activeStyleLabel =
+    GRAPHIC_STYLE_OPTIONS.find((option) => option.value === viewerRenderStyle)?.label ?? 'Shaded';
+  const hiddenLayerCount = VIEWER_HIDDEN_KIND_KEYS.filter(
+    (key) => viewerCategoryHidden[key],
+  ).length;
   return (
     <div data-testid="viewport3d-layers-panel" className="flex flex-col gap-3 px-3 py-3">
-      <div className="text-[10px] font-semibold uppercase text-muted">View controls</div>
+      <div className="space-y-1">
+        <div className="text-[10px] font-semibold uppercase text-muted">View controls</div>
+        <div className="flex flex-wrap gap-1">
+          <ViewStatePill label={activeStyleLabel} />
+          <ViewStatePill label={viewerProjection === 'orthographic' ? 'Ortho' : 'Perspective'} />
+          <ViewStatePill label={sectionBoxActive ? 'Section box' : 'No section box'} />
+          {hiddenLayerCount > 0 ? <ViewStatePill label={`${hiddenLayerCount} hidden`} /> : null}
+        </div>
+      </div>
 
       <section className="rounded border border-border bg-surface-strong p-2">
         <div className="mb-1.5 text-[10px] font-semibold uppercase text-muted">Graphics</div>
@@ -238,6 +257,45 @@ export function Viewport3DLayersPanel({
               {label}
             </button>
           ))}
+        </div>
+        <div className="mt-2 grid grid-cols-3 gap-1">
+          <button
+            type="button"
+            onClick={() => onSetWalkModeActive(!viewerWalkModeActive)}
+            aria-pressed={viewerWalkModeActive}
+            aria-label={viewerWalkModeActive ? 'Exit walk mode' : 'Enter walk mode'}
+            title={viewerWalkModeActive ? 'Exit walk mode' : 'Enter walk mode'}
+            data-active={viewerWalkModeActive ? 'true' : 'false'}
+            className={[
+              'flex h-8 items-center justify-center gap-1 rounded border px-1.5 text-[11px] transition-colors',
+              viewerWalkModeActive
+                ? 'border-accent bg-accent/15 font-medium text-foreground'
+                : 'border-border bg-background text-muted hover:text-foreground',
+            ].join(' ')}
+          >
+            <Icons.viewpoint size={ICON_SIZE.chrome} aria-hidden="true" />
+            Walk
+          </button>
+          <button
+            type="button"
+            onClick={() => onRequestCameraAction('fit')}
+            aria-label="Fit model to view"
+            title="Fit model to view"
+            className="flex h-8 items-center justify-center gap-1 rounded border border-border bg-background px-1.5 text-[11px] text-muted transition-colors hover:text-foreground"
+          >
+            <Icons.orbitView size={ICON_SIZE.chrome} aria-hidden="true" />
+            Fit
+          </button>
+          <button
+            type="button"
+            onClick={() => onRequestCameraAction('reset')}
+            aria-label="Reset camera home"
+            title="Reset camera home"
+            className="flex h-8 items-center justify-center gap-1 rounded border border-border bg-background px-1.5 text-[11px] text-muted transition-colors hover:text-foreground"
+          >
+            <Icons.viewCubeReset size={ICON_SIZE.chrome} aria-hidden="true" />
+            Reset
+          </button>
         </div>
       </section>
 
@@ -349,6 +407,14 @@ export function Viewport3DLayersPanel({
         </div>
       </details>
     </div>
+  );
+}
+
+function ViewStatePill({ label }: { label: string }): JSX.Element {
+  return (
+    <span className="rounded-pill border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted">
+      {label}
+    </span>
   );
 }
 
