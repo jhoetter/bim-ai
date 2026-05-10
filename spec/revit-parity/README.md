@@ -119,7 +119,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-070 | Mirror – Draw Axis (DM)                               | Nested Fam.    | 🟡            | Mirror tool two-click interaction implemented for project elements; missing family-editor context and pick-axis mode                                                                                                                                                                                  |
 | F-071 | Symbolic Lines                                        | Nested Fam.    | 🟡            | Family editor can author 2D symbolic line segments with coordinates and keep them in the load payload. Missing canvas drawing, line styles, visibility settings, and project rendering                                                                                                                |
 | F-072 | Opening (Projection) / Hidden Lines (Cut) subcats     | Nested Fam.    | 🟡            | Symbolic line authoring supports Symbolic Lines, Opening Projection, and Hidden Lines (Cut) subcategory metadata. Missing Object Styles/lineweight propagation and dashed hidden-line rendering                                                                                                       |
-| F-073 | Preview Visibility toggle (Family Editor)             | Nested Fam.    | ❌            |                                                                                                                                                                                                                                                                                                       |
+| F-073 | Preview Visibility toggle (Family Editor)             | Nested Fam.    | 🟡            | Family editor has a Preview Visibility toggle and detail-level selector that filters sweeps/nested instances by visibility bindings and coarse/medium/fine settings. Missing real canvas rendering parity and view-type-specific preview                                                              |
 | F-074 | Instance parameters for per-placement overrides       | Nested Fam.    | 🟡            | Placed assets persist per-instance `paramValues`; family params support instanceOverridable and resolver override precedence; missing complete Family Types dialog integration                                                                                                                        |
 | F-075 | Family from furniture template (Metric Furniture.rft) | Param. Furn.   | ❌            |                                                                                                                                                                                                                                                                                                       |
 | F-076 | EQ (Equal) constraint on dimensions                   | Param. Furn.   | ❌            |                                                                                                                                                                                                                                                                                                       |
@@ -179,8 +179,8 @@ _Last audited: 2026-05-09 against codebase at commit `docs/tracker-sync-wave-11`
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
 | ✅ Fully available     | 57      | 47%        |
-| 🟡 Partially available | 46      | 38%        |
-| ❌ Not available       | 17      | 14%        |
+| 🟡 Partially available | 47      | 39%        |
+| ❌ Not available       | 16      | 13%        |
 | **Total**              | **120** | **100%**   |
 
 ---

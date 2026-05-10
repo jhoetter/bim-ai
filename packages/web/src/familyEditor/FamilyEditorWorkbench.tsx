@@ -211,6 +211,8 @@ export function FamilyEditorWorkbench(): JSX.Element {
   const [categorySettings, setCategorySettings] =
     useState<FamilyCategorySettings>(DEFAULT_CATEGORY_SETTINGS);
   const [viewRange, setViewRange] = useState<FamilyViewRange>(DEFAULT_FAMILY_VIEW_RANGE);
+  const [previewVisibility, setPreviewVisibility] = useState(false);
+  const [previewDetailLevel, setPreviewDetailLevel] = useState<DetailLevelKey>('medium');
   const [flexMode, setFlexMode] = useState(false);
   const [flexValues, setFlexValues] = useState<Record<string, unknown>>({});
   const [sweeps, setSweeps] = useState<SweepGeometryNode[]>([]);
@@ -611,6 +613,23 @@ export function FamilyEditorWorkbench(): JSX.Element {
     { value: 'detail_component', label: 'Detail Components' },
   ];
 
+  function visibleInPreview(node: {
+    visibilityBinding?: VisibilityBinding;
+    visibilityByDetailLevel?: VisibilityByDetailLevel;
+  }): boolean {
+    if (!previewVisibility) return true;
+    if (node.visibilityByDetailLevel?.[previewDetailLevel] === false) return false;
+    if (node.visibilityBinding) {
+      return (
+        Boolean(resolved[node.visibilityBinding.paramName]) === node.visibilityBinding.whenTrue
+      );
+    }
+    return true;
+  }
+
+  const previewVisibleSweepCount = sweeps.filter(visibleInPreview).length;
+  const previewVisibleNestedCount = nestedInstances.filter(visibleInPreview).length;
+
   return (
     <div className="p-4 space-y-6">
       <div className="flex gap-2">
@@ -667,6 +686,34 @@ export function FamilyEditorWorkbench(): JSX.Element {
           Family Types
         </button>
       </div>
+
+      <section className="rounded border p-3" aria-label="Preview visibility controls">
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              aria-label="Preview Visibility"
+              checked={previewVisibility}
+              onChange={(e) => setPreviewVisibility(e.target.checked)}
+            />
+            Preview Visibility
+          </label>
+          <select
+            aria-label="Preview detail level"
+            value={previewDetailLevel}
+            onChange={(e) => setPreviewDetailLevel(e.target.value as DetailLevelKey)}
+          >
+            <option value="coarse">Coarse</option>
+            <option value="medium">Medium</option>
+            <option value="fine">Fine</option>
+          </select>
+          <span className="text-xs text-muted" data-testid="preview-visibility-summary">
+            {previewVisibility
+              ? `${previewVisibleSweepCount}/${sweeps.length} sweeps and ${previewVisibleNestedCount}/${nestedInstances.length} nested instances visible`
+              : 'Preview visibility off'}
+          </span>
+        </div>
+      </section>
 
       {arrayDraft && (
         <ArrayDraftPanel
@@ -778,26 +825,30 @@ export function FamilyEditorWorkbench(): JSX.Element {
             <p className="text-xs text-muted">{t('familyEditor.editingCanvasEmpty')}</p>
           ) : (
             <ul className="space-y-1 text-sm" data-testid="nested-instances-list">
-              {nestedInstances.map((inst, i) => (
-                <li key={i}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedNestedIndex(i)}
-                    className={
-                      selectedNestedIndex === i ? 'underline font-semibold' : 'underline text-left'
-                    }
-                    aria-label={`select-nested-instance-${i}`}
-                    data-testid={`nested-instance-${i}`}
-                  >
-                    {t('familyEditor.nestedInstanceListLabel', {
-                      index: i + 1,
-                      familyId: inst.familyId,
-                      x: Math.round(inst.positionMm.xMm),
-                      y: Math.round(inst.positionMm.yMm),
-                    })}
-                  </button>
-                </li>
-              ))}
+              {nestedInstances.map((inst, i) =>
+                visibleInPreview(inst) ? (
+                  <li key={i}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedNestedIndex(i)}
+                      className={
+                        selectedNestedIndex === i
+                          ? 'underline font-semibold'
+                          : 'underline text-left'
+                      }
+                      aria-label={`select-nested-instance-${i}`}
+                      data-testid={`nested-instance-${i}`}
+                    >
+                      {t('familyEditor.nestedInstanceListLabel', {
+                        index: i + 1,
+                        familyId: inst.familyId,
+                        x: Math.round(inst.positionMm.xMm),
+                        y: Math.round(inst.positionMm.yMm),
+                      })}
+                    </button>
+                  </li>
+                ) : null,
+              )}
             </ul>
           )}
         </section>
@@ -922,34 +973,36 @@ export function FamilyEditorWorkbench(): JSX.Element {
         <section>
           <h2 className="font-semibold mb-2">{t('familyEditor.sweepsHeading')}</h2>
           <ul className="text-sm">
-            {sweeps.map((s, i) => (
-              <li key={i} data-testid={`sweep-${i}`}>
-                <button
-                  type="button"
-                  className={
-                    selectedSweepIndex === i ? 'underline font-semibold' : 'underline text-left'
-                  }
-                  onClick={() => setSelectedSweepIndex(i)}
-                  aria-label={`select-sweep-${i}`}
-                >
-                  {t('familyEditor.sweepLabel', {
-                    index: i + 1,
-                    pathSegs: s.pathLines.length,
-                    profSegs: s.profile.length,
-                  })}
-                </button>
-                {s.visibilityBinding && (
-                  <span className="ml-2 text-xs text-muted">
-                    {t('familyEditor.visibleWhenSummary', {
-                      paramName: s.visibilityBinding.paramName,
-                      state: s.visibilityBinding.whenTrue
-                        ? t('familyEditor.showWhenTrue')
-                        : t('familyEditor.showWhenFalse'),
+            {sweeps.map((s, i) =>
+              visibleInPreview(s) ? (
+                <li key={i} data-testid={`sweep-${i}`}>
+                  <button
+                    type="button"
+                    className={
+                      selectedSweepIndex === i ? 'underline font-semibold' : 'underline text-left'
+                    }
+                    onClick={() => setSelectedSweepIndex(i)}
+                    aria-label={`select-sweep-${i}`}
+                  >
+                    {t('familyEditor.sweepLabel', {
+                      index: i + 1,
+                      pathSegs: s.pathLines.length,
+                      profSegs: s.profile.length,
                     })}
-                  </span>
-                )}
-              </li>
-            ))}
+                  </button>
+                  {s.visibilityBinding && (
+                    <span className="ml-2 text-xs text-muted">
+                      {t('familyEditor.visibleWhenSummary', {
+                        paramName: s.visibilityBinding.paramName,
+                        state: s.visibilityBinding.whenTrue
+                          ? t('familyEditor.showWhenTrue')
+                          : t('familyEditor.showWhenFalse'),
+                      })}
+                    </span>
+                  )}
+                </li>
+              ) : null,
+            )}
           </ul>
           {selectedSweepIndex !== null && sweeps[selectedSweepIndex] && (
             <SweepPropertiesPanel

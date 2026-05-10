@@ -261,6 +261,42 @@ describe('FAM-067/FAM-071/FAM-072 — symbolic detail line authoring', () => {
   });
 });
 
+describe('FAM-073 — preview visibility', () => {
+  it('filters family geometry by preview detail level visibility', () => {
+    const { getByText, getByLabelText, getByTestId, getAllByText, queryByTestId } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+    fireEvent.click(getByText('Sweep'));
+
+    fireEvent.change(getByLabelText('path-sx'), { target: { value: '0' } });
+    fireEvent.change(getByLabelText('path-sy'), { target: { value: '0' } });
+    fireEvent.change(getByLabelText('path-ex'), { target: { value: '1000' } });
+    fireEvent.change(getByLabelText('path-ey'), { target: { value: '0' } });
+    fireEvent.click(getAllByText('Add line')[0]);
+    fireEvent.click(getByText(/Edit Profile/));
+
+    const addProfileLine = (sx: string, sy: string, ex: string, ey: string) => {
+      fireEvent.change(getByLabelText('profile-sx'), { target: { value: sx } });
+      fireEvent.change(getByLabelText('profile-sy'), { target: { value: sy } });
+      fireEvent.change(getByLabelText('profile-ex'), { target: { value: ex } });
+      fireEvent.change(getByLabelText('profile-ey'), { target: { value: ey } });
+      fireEvent.click(getByText('Add line'));
+    };
+    addProfileLine('0', '0', '50', '0');
+    addProfileLine('50', '0', '25', '50');
+    addProfileLine('25', '50', '0', '0');
+    fireEvent.click(getByText(/Finish/));
+
+    fireEvent.click(getByLabelText('select-sweep-0'));
+    fireEvent.click(getByLabelText('visibility-fine'));
+    fireEvent.click(getByLabelText('Preview Visibility'));
+    fireEvent.change(getByLabelText('Preview detail level'), { target: { value: 'fine' } });
+
+    expect(getByTestId('preview-visibility-summary').textContent).toContain('0/1 sweeps');
+    expect(queryByTestId('sweep-0')).toBeNull();
+  });
+});
+
 describe('FAM-02 — sweep tool flow', () => {
   it('opens a sketch session when Sweep is clicked', () => {
     const { getByText, queryByLabelText } = renderWithI18n(<FamilyEditorWorkbench />);
