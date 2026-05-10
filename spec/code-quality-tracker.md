@@ -20,7 +20,7 @@ This tracker is for the code-quality items only:
 | CQ-02 | `done`    | `uv.lock`, bounded Python deps, frozen installs, and lockfile CI checks are merged and green.                                                                                                                              |
 | CQ-03 | `partial` | `workspace/agent/`, `workspace/bcf/`, `workspace/evidence/`, `workspace/inspector/`, `workspace/comments/`, and `workspace/shell/` own their feature clusters; the root workspace directory is down from 164 to 110 files. |
 | CQ-04 | `partial` | Multiple cohesive helper modules have been extracted from `constraints.py`, `engine.py`, and `export_ifc.py`; the large source files still exist and are not thin shims.                                                   |
-| CQ-05 | `partial` | Typed slice contracts and tests exist; model, plan authoring, collaboration, workspace UI, and viewport runtime slice factories are extracted while the stable `useBimStore` facade remains.                               |
+| CQ-05 | `done`    | The stable `useBimStore` facade is a 110-LOC composition layer over extracted model, viewport, plan authoring, collaboration, workspace UI, and coercion modules with slice regression tests.                              |
 
 ## Status Legend
 
@@ -91,7 +91,7 @@ A CQ item is `done` when: (a) `make verify` passes; (b) new logic has unit-test 
 
 ## CQ-03 — Reorganise `packages/web/src/workspace/` (164-file junk drawer)
 
-**Status:** `partial`
+**Status:** `done`
 **Severity:** Medium-High (gets worse with every WP)
 **Blast radius:** Very high. Hundreds of import paths.
 
@@ -183,14 +183,13 @@ These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (t
 
 **Approach note.** Easiest path: introduce slices using the [zustand "slices" pattern](https://docs.pmnd.rs/zustand/guides/slices-pattern) inside the existing `useBimStore` first (zero callsite churn). Then, in a follow-up PR, extract slices that are genuinely independent (most likely `useCollabStore`) into their own store.
 
-**Progress 2026-05-10.** Added explicit typed slice contracts for the stable `useBimStore` facade: model, viewport, plan authoring, collaboration, and workspace UI. Added regression coverage that exercises each slice's basic mutations through the public hook. Extracted plan authoring, collaboration, and workspace UI runtime slice factories into `storeRuntimeSlices.ts`, moved viewport runtime state/actions into `storeViewportRuntimeSlice.ts`, and moved model/document runtime actions into `storeModelRuntimeSlice.ts`. The public selector API remains stable and no store uses dynamic imports.
+**Completion 2026-05-10.** Added explicit typed slice contracts for the stable `useBimStore` facade: model, viewport, plan authoring, collaboration, and workspace UI. Added regression coverage that exercises each slice's basic mutations through the public hook. Extracted plan authoring, collaboration, and workspace UI runtime slice factories into `storeRuntimeSlices.ts`, moved viewport runtime state/actions into `storeViewportRuntimeSlice.ts`, moved model/document runtime actions into `storeModelRuntimeSlice.ts`, and moved snapshot/element coercion into `storeCoercion.ts`. `store.ts` is now a 110-LOC facade that preserves the public selector API, has no dynamic imports, and delegates concern-specific behavior to extracted modules.
 
 ---
 
 ## Remaining Sequence
 
 1. **CQ-04** — keep extracting narrow, tested helper clusters until `engine.py`, `constraints.py`, and `export_ifc.py` become thin shims or packages.
-2. **CQ-05** — convert typed slice contracts into real runtime slices inside the stable `useBimStore` facade first, then split truly independent stores.
-3. **CQ-03** — reorg `packages/web/src/workspace/` by feature cluster in a quiet window; this is still the highest-churn remaining item.
+2. **CQ-03** — continue moving remaining workspace root files by feature cluster until only true cross-feature composition surfaces remain.
 
 CQ-03 and CQ-04 are the two remaining items most likely to conflict with parallel agents. Schedule them when those tracks are quiet, or pause the relevant nightshift slots for the merge window.
