@@ -1021,8 +1021,8 @@ export function buildOneFamilyHomeCommands() {
       name: 'Main isometric (SSW — south facade + west gable, spec §5 front-left)',
       mode: 'orbit_3d',
       camera: {
-        position: { xMm: -4000, yMm: -8000, zMm: 10000 },
-        target: { xMm: 3500, yMm: 4000, zMm: 1500 },
+        position: { xMm: -3000, yMm: -9000, zMm: 11000 },
+        target: { xMm: 3500, yMm: 4000, zMm: 3500 },
         up: { xMm: 0, yMm: 0, zMm: 1 },
       },
     },
