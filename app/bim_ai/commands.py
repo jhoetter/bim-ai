@@ -2571,6 +2571,32 @@ class IndexAssetCmd(BaseModel):
     )
     thumbnail_width_mm: float | None = Field(default=None, alias="thumbnailWidthMm")
     thumbnail_height_mm: float | None = Field(default=None, alias="thumbnailHeightMm")
+    plan_symbol_kind: Literal[
+        "fridge",
+        "oven",
+        "sink",
+        "counter",
+        "sofa",
+        "table",
+        "chair",
+        "toilet",
+        "bath",
+        "shower",
+        "generic",
+    ] | None = Field(default=None, alias="planSymbolKind")
+    render_proxy_kind: Literal[
+        "fridge",
+        "oven",
+        "sink",
+        "counter",
+        "sofa",
+        "table",
+        "chair",
+        "toilet",
+        "bath",
+        "shower",
+        "generic",
+    ] | None = Field(default=None, alias="renderProxyKind")
     param_schema: list[dict[str, Any]] | None = Field(default=None, alias="paramSchema")
     published_from_org_id: str | None = Field(default=None, alias="publishedFromOrgId")
     description: str | None = None

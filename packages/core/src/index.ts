@@ -2655,6 +2655,19 @@ export type AssetCategory =
 /** Discipline filter tag that feeds LIB-V3-01 cross-theme. */
 export type AssetDisciplineTag = 'arch' | 'struct' | 'mep';
 
+export type AssetSymbolKind =
+  | 'fridge'
+  | 'oven'
+  | 'sink'
+  | 'counter'
+  | 'sofa'
+  | 'table'
+  | 'chair'
+  | 'toilet'
+  | 'bath'
+  | 'shower'
+  | 'generic';
+
 /** One parameter definition in an asset's parametric schema. */
 export type ParamSchemaEntry = {
   key: string;
@@ -2673,6 +2686,8 @@ export type AssetLibraryEntry = {
   disciplineTags?: AssetDisciplineTag[];
   thumbnailKind: 'schematic_plan' | 'rendered_3d';
   thumbnailMm?: { widthMm: number; heightMm: number };
+  planSymbolKind?: AssetSymbolKind;
+  renderProxyKind?: AssetSymbolKind;
   paramSchema?: ParamSchemaEntry[];
   publishedFromOrgId?: string;
   description?: string;
@@ -2690,6 +2705,8 @@ export type AssetLibraryEntryElem = {
   thumbnailKind: 'schematic_plan' | 'rendered_3d';
   thumbnailWidthMm?: number;
   thumbnailHeightMm?: number;
+  planSymbolKind?: AssetSymbolKind;
+  renderProxyKind?: AssetSymbolKind;
   paramSchema?: ParamSchemaEntry[];
   publishedFromOrgId?: string;
   description?: string;

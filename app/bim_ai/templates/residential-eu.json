@@ -51,6 +51,186 @@
         "name": "Roof — Plan",
         "levelId": "tmpl-lvl-roof"
       },
+      "asset-kitchen-fridge-tall": {
+        "kind": "asset_library_entry",
+        "id": "asset-kitchen-fridge-tall",
+        "assetKind": "block_2d",
+        "name": "Tall Fridge 600x650",
+        "category": "kitchen",
+        "tags": ["fridge", "refrigerator", "appliance", "kitchen"],
+        "disciplineTags": ["arch"],
+        "thumbnailKind": "schematic_plan",
+        "thumbnailWidthMm": 600,
+        "thumbnailHeightMm": 650,
+        "planSymbolKind": "fridge",
+        "renderProxyKind": "fridge",
+        "paramSchema": [
+          { "key": "widthMm", "kind": "mm", "default": 600 },
+          { "key": "depthMm", "kind": "mm", "default": 650 },
+          { "key": "heightMm", "kind": "mm", "default": 1850 }
+        ],
+        "description": "Freestanding residential refrigerator with plan and 3D appliance rendering."
+      },
+      "asset-kitchen-oven-600": {
+        "kind": "asset_library_entry",
+        "id": "asset-kitchen-oven-600",
+        "assetKind": "block_2d",
+        "name": "Built-in Oven 600",
+        "category": "kitchen",
+        "tags": ["oven", "appliance", "cooktop", "kitchen"],
+        "disciplineTags": ["arch"],
+        "thumbnailKind": "schematic_plan",
+        "thumbnailWidthMm": 600,
+        "thumbnailHeightMm": 600,
+        "planSymbolKind": "oven",
+        "renderProxyKind": "oven",
+        "paramSchema": [
+          { "key": "widthMm", "kind": "mm", "default": 600 },
+          { "key": "depthMm", "kind": "mm", "default": 600 },
+          { "key": "heightMm", "kind": "mm", "default": 900 }
+        ],
+        "description": "Built-in kitchen oven and cooktop appliance."
+      },
+      "asset-kitchen-sink-600": {
+        "kind": "asset_library_entry",
+        "id": "asset-kitchen-sink-600",
+        "assetKind": "block_2d",
+        "name": "Single Bowl Sink 600",
+        "category": "kitchen",
+        "tags": ["sink", "basin", "plumbing", "kitchen"],
+        "disciplineTags": ["arch", "mep"],
+        "thumbnailKind": "schematic_plan",
+        "thumbnailWidthMm": 600,
+        "thumbnailHeightMm": 500,
+        "planSymbolKind": "sink",
+        "renderProxyKind": "sink",
+        "paramSchema": [
+          { "key": "widthMm", "kind": "mm", "default": 600 },
+          { "key": "depthMm", "kind": "mm", "default": 500 },
+          { "key": "heightMm", "kind": "mm", "default": 900 }
+        ],
+        "description": "Residential sink fixture with basin plan symbol."
+      },
+      "asset-living-sofa-3-seat": {
+        "kind": "asset_library_entry",
+        "id": "asset-living-sofa-3-seat",
+        "assetKind": "block_2d",
+        "name": "3-Seat Sofa",
+        "category": "furniture",
+        "tags": ["sofa", "living", "seating"],
+        "disciplineTags": ["arch"],
+        "thumbnailKind": "schematic_plan",
+        "thumbnailWidthMm": 2200,
+        "thumbnailHeightMm": 950,
+        "planSymbolKind": "sofa",
+        "renderProxyKind": "sofa",
+        "paramSchema": [
+          { "key": "widthMm", "kind": "mm", "default": 2200 },
+          { "key": "depthMm", "kind": "mm", "default": 950 },
+          { "key": "heightMm", "kind": "mm", "default": 780 }
+        ],
+        "description": "Three-seat sofa with furniture plan symbol and 3D massing."
+      },
+      "asset-dining-table-1600x900": {
+        "kind": "asset_library_entry",
+        "id": "asset-dining-table-1600x900",
+        "assetKind": "block_2d",
+        "name": "Dining Table 1600x900",
+        "category": "furniture",
+        "tags": ["table", "dining", "furniture"],
+        "disciplineTags": ["arch"],
+        "thumbnailKind": "schematic_plan",
+        "thumbnailWidthMm": 1600,
+        "thumbnailHeightMm": 900,
+        "planSymbolKind": "table",
+        "renderProxyKind": "table",
+        "paramSchema": [
+          { "key": "widthMm", "kind": "mm", "default": 1600 },
+          { "key": "depthMm", "kind": "mm", "default": 900 },
+          { "key": "heightMm", "kind": "mm", "default": 740 }
+        ],
+        "description": "Dining table with legs in plan and 3D."
+      },
+      "asset-bathroom-toilet": {
+        "kind": "asset_library_entry",
+        "id": "asset-bathroom-toilet",
+        "assetKind": "block_2d",
+        "name": "Floor Toilet",
+        "category": "bathroom",
+        "tags": ["toilet", "wc", "bathroom", "plumbing"],
+        "disciplineTags": ["arch", "mep"],
+        "thumbnailKind": "schematic_plan",
+        "thumbnailWidthMm": 380,
+        "thumbnailHeightMm": 670,
+        "planSymbolKind": "toilet",
+        "renderProxyKind": "toilet",
+        "paramSchema": [
+          { "key": "widthMm", "kind": "mm", "default": 380 },
+          { "key": "depthMm", "kind": "mm", "default": 670 },
+          { "key": "heightMm", "kind": "mm", "default": 760 }
+        ],
+        "description": "Floor-mounted toilet fixture with bathroom plan symbol."
+      },
+      "asset-kitchen-counter-2400": {
+        "kind": "asset_library_entry",
+        "id": "asset-kitchen-counter-2400",
+        "assetKind": "block_2d",
+        "name": "Base Counter 2400x600",
+        "category": "casework",
+        "tags": ["counter", "cabinet", "casework", "kitchen"],
+        "disciplineTags": ["arch"],
+        "thumbnailKind": "schematic_plan",
+        "thumbnailWidthMm": 2400,
+        "thumbnailHeightMm": 600,
+        "planSymbolKind": "counter",
+        "renderProxyKind": "counter",
+        "paramSchema": [
+          { "key": "widthMm", "kind": "mm", "default": 2400 },
+          { "key": "depthMm", "kind": "mm", "default": 600 },
+          { "key": "heightMm", "kind": "mm", "default": 900 }
+        ],
+        "description": "Kitchen base counter with cabinet bay plan linework and 3D countertop proxy."
+      },
+      "asset-living-lounge-chair": {
+        "kind": "asset_library_entry",
+        "id": "asset-living-lounge-chair",
+        "assetKind": "block_2d",
+        "name": "Lounge Chair",
+        "category": "furniture",
+        "tags": ["chair", "lounge", "seating", "living"],
+        "disciplineTags": ["arch"],
+        "thumbnailKind": "schematic_plan",
+        "thumbnailWidthMm": 850,
+        "thumbnailHeightMm": 900,
+        "planSymbolKind": "chair",
+        "renderProxyKind": "chair",
+        "paramSchema": [
+          { "key": "widthMm", "kind": "mm", "default": 850 },
+          { "key": "depthMm", "kind": "mm", "default": 900 },
+          { "key": "heightMm", "kind": "mm", "default": 850 }
+        ],
+        "description": "Lounge chair with recognizable plan and 3D seating proxy."
+      },
+      "asset-bathroom-shower-900": {
+        "kind": "asset_library_entry",
+        "id": "asset-bathroom-shower-900",
+        "assetKind": "block_2d",
+        "name": "Square Shower 900x900",
+        "category": "bathroom",
+        "tags": ["shower", "bathroom", "plumbing"],
+        "disciplineTags": ["arch", "mep"],
+        "thumbnailKind": "schematic_plan",
+        "thumbnailWidthMm": 900,
+        "thumbnailHeightMm": 900,
+        "planSymbolKind": "shower",
+        "renderProxyKind": "shower",
+        "paramSchema": [
+          { "key": "widthMm", "kind": "mm", "default": 900 },
+          { "key": "depthMm", "kind": "mm", "default": 900 },
+          { "key": "heightMm", "kind": "mm", "default": 80 }
+        ],
+        "description": "Square shower tray with diagonal plan marker and lightweight 3D glass proxy."
+      },
       "tmpl-grid-1": {
         "kind": "grid_line",
         "id": "tmpl-grid-1",

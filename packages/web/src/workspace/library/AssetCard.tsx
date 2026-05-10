@@ -13,9 +13,155 @@ function SchematicThumbnail({ entry }: { entry: AssetLibraryEntry }): ReactEleme
   const w = entry.thumbnailMm?.widthMm ?? 60;
   const h = entry.thumbnailMm?.heightMm ?? 60;
   const cat = entry.category;
+  const symbolKind = entry.planSymbolKind ?? entry.renderProxyKind;
 
   let body: ReactElement;
-  if (cat === 'kitchen' || cat === 'bathroom') {
+  if (symbolKind === 'fridge') {
+    body = (
+      <>
+        <rect
+          x={4}
+          y={4}
+          width={w - 8}
+          height={h - 8}
+          fill="none"
+          stroke="var(--draft-cut)"
+          strokeWidth={0.5}
+        />
+        <line
+          x1={w / 2}
+          y1={4}
+          x2={w / 2}
+          y2={h - 4}
+          stroke="var(--draft-cut)"
+          strokeWidth={0.25}
+        />
+        <line
+          x1={w * 0.72}
+          y1={h * 0.22}
+          x2={w * 0.72}
+          y2={h * 0.78}
+          stroke="var(--draft-cut)"
+          strokeWidth={0.25}
+        />
+        <line
+          x1={w * 0.18}
+          y1={h * 0.64}
+          x2={w * 0.82}
+          y2={h * 0.64}
+          stroke="var(--draft-cut)"
+          strokeWidth={0.25}
+        />
+      </>
+    );
+  } else if (symbolKind === 'oven') {
+    const r = Math.min(w, h) * 0.07;
+    body = (
+      <>
+        <rect
+          x={4}
+          y={4}
+          width={w - 8}
+          height={h - 8}
+          fill="none"
+          stroke="var(--draft-cut)"
+          strokeWidth={0.5}
+        />
+        {[0.3, 0.5, 0.7].map((x) => (
+          <circle
+            key={x}
+            cx={w * x}
+            cy={h * 0.28}
+            r={r}
+            fill="none"
+            stroke="var(--draft-cut)"
+            strokeWidth={0.25}
+          />
+        ))}
+        <rect
+          x={w * 0.24}
+          y={h * 0.52}
+          width={w * 0.52}
+          height={h * 0.26}
+          fill="none"
+          stroke="var(--draft-cut)"
+          strokeWidth={0.25}
+        />
+      </>
+    );
+  } else if (symbolKind === 'sink') {
+    body = (
+      <>
+        <rect
+          x={4}
+          y={4}
+          width={w - 8}
+          height={h - 8}
+          fill="none"
+          stroke="var(--cat-fixture)"
+          strokeWidth={0.5}
+        />
+        <rect
+          x={w * 0.18}
+          y={h * 0.24}
+          width={w * 0.64}
+          height={h * 0.52}
+          rx={Math.min(w, h) * 0.08}
+          fill="none"
+          stroke="var(--cat-fixture)"
+          strokeWidth={0.25}
+        />
+      </>
+    );
+  } else if (symbolKind === 'counter') {
+    body = (
+      <>
+        <rect
+          x={4}
+          y={4}
+          width={w - 8}
+          height={h - 8}
+          fill="none"
+          stroke="var(--draft-cut)"
+          strokeWidth={0.5}
+        />
+        {[0.25, 0.5, 0.75].map((x) => (
+          <line
+            key={x}
+            x1={w * x}
+            y1={4}
+            x2={w * x}
+            y2={h - 4}
+            stroke="var(--draft-cut)"
+            strokeWidth={0.25}
+          />
+        ))}
+      </>
+    );
+  } else if (symbolKind === 'toilet') {
+    body = (
+      <>
+        <rect
+          x={w * 0.28}
+          y={4}
+          width={w * 0.44}
+          height={h * 0.26}
+          fill="none"
+          stroke="var(--cat-fixture)"
+          strokeWidth={0.5}
+        />
+        <ellipse
+          cx={w / 2}
+          cy={h * 0.62}
+          rx={Math.min(w, h) * 0.22}
+          ry={Math.min(w, h) * 0.28}
+          fill="none"
+          stroke="var(--cat-fixture)"
+          strokeWidth={0.5}
+        />
+      </>
+    );
+  } else if (cat === 'kitchen' || cat === 'bathroom') {
     const r = Math.min(w, h) * 0.15;
     const cx = w / 2;
     const cy = h / 2;

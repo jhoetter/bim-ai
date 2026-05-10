@@ -1334,6 +1334,15 @@ export function Workspace(): JSX.Element {
                       heightMm: (a['thumbnailHeightMm'] as number) ?? 60,
                     }
                   : undefined,
+              planSymbolKind: a['planSymbolKind'] as
+                | import('@bim-ai/core').AssetSymbolKind
+                | undefined,
+              renderProxyKind: a['renderProxyKind'] as
+                | import('@bim-ai/core').AssetSymbolKind
+                | undefined,
+              paramSchema: a['paramSchema'] as
+                | import('@bim-ai/core').ParamSchemaEntry[]
+                | undefined,
               description: a['description'] as string | undefined,
             };
           })}

@@ -98,6 +98,7 @@ import {
   type AxisIndicatorHandle,
   type GripMeshHandle,
 } from './viewport/grip3dRenderer';
+import { makePlacedAssetMesh } from './viewport/placedAssetRendering';
 // Side-effect import: registers floor/roof/column/beam/door/window 3D grip providers.
 import './viewport/grip3dProviders';
 import {
@@ -1202,6 +1203,7 @@ export function Viewport({
     const wallOpeningsByWall = new Map<string, WallOpeningElem[]>();
     const railingsByStair = new Map<string, string[]>();
     const elemsByLevel = new Map<string, string[]>();
+    const placedAssetsByAssetEntry = new Map<string, string[]>();
 
     for (const [id, e] of Object.entries(curr)) {
       if (e.kind === 'door') {
@@ -1228,7 +1230,18 @@ export function Viewport({
           railingsByStair.set(rl.hostedStairId, arr);
         }
       }
-      if (e.kind === 'wall' || e.kind === 'room' || e.kind === 'floor') {
+      if (e.kind === 'placed_asset') {
+        const pa = e as Extract<Element, { kind: 'placed_asset' }>;
+        const arr = placedAssetsByAssetEntry.get(pa.assetId) ?? [];
+        arr.push(id);
+        placedAssetsByAssetEntry.set(pa.assetId, arr);
+      }
+      if (
+        e.kind === 'wall' ||
+        e.kind === 'room' ||
+        e.kind === 'floor' ||
+        e.kind === 'placed_asset'
+      ) {
         const lid = (e as { levelId: string }).levelId;
         const arr = elemsByLevel.get(lid) ?? [];
         arr.push(id);
@@ -1290,6 +1303,9 @@ export function Viewport({
           // KRN-14: dormer change → host roof needs to re-CSG.
           extraDirty.add((e as Extract<Element, { kind: 'dormer' }>).hostRoofId);
           break;
+        case 'asset_library_entry':
+          for (const assetId of placedAssetsByAssetEntry.get(id) ?? []) extraDirty.add(assetId);
+          break;
       }
     };
 
@@ -1297,12 +1313,20 @@ export function Viewport({
     // Added/removed hosted elements must also rebuild their host wall (CSG opening changes).
     for (const id of addedIds) {
       const e = curr[id];
+      if (e?.kind === 'asset_library_entry') {
+        for (const assetId of placedAssetsByAssetEntry.get(id) ?? []) extraDirty.add(assetId);
+      }
       if (e?.kind === 'door') extraDirty.add((e as DoorElem).wallId);
       if (e?.kind === 'window') extraDirty.add((e as WindowElem).wallId);
       if (e?.kind === 'wall_opening') extraDirty.add((e as WallOpeningElem).hostWallId);
     }
     for (const id of removedIds) {
       const e = prev[id];
+      if (e?.kind === 'asset_library_entry') {
+        for (const [assetId, pa] of Object.entries(curr)) {
+          if (pa.kind === 'placed_asset' && pa.assetId === id) extraDirty.add(assetId);
+        }
+      }
       if (e?.kind === 'door') extraDirty.add((e as DoorElem).wallId);
       if (e?.kind === 'window') extraDirty.add((e as WindowElem).wallId);
       if (e?.kind === 'wall_opening') extraDirty.add((e as WallOpeningElem).hostWallId);
@@ -1533,6 +1557,9 @@ export function Viewport({
           obj = mesh;
           break;
         }
+        case 'placed_asset':
+          obj = makePlacedAssetMesh(e, curr, paint);
+          break;
         case 'internal_origin':
           obj = makeInternalOriginMarker(e);
           break;

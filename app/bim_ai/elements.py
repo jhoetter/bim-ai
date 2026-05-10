@@ -2720,6 +2720,21 @@ class AssetParamEntry(BaseModel):
     constraints: Any = None
 
 
+AssetSymbolKind = Literal[
+    "fridge",
+    "oven",
+    "sink",
+    "counter",
+    "sofa",
+    "table",
+    "chair",
+    "toilet",
+    "bath",
+    "shower",
+    "generic",
+]
+
+
 class AssetLibraryEntryElem(BaseModel):
     """AST-V3-01 — searchable asset library entry with schematic-2D thumbnail."""
 
@@ -2742,6 +2757,8 @@ class AssetLibraryEntryElem(BaseModel):
     )
     thumbnail_width_mm: float | None = Field(default=None, alias="thumbnailWidthMm")
     thumbnail_height_mm: float | None = Field(default=None, alias="thumbnailHeightMm")
+    plan_symbol_kind: AssetSymbolKind | None = Field(default=None, alias="planSymbolKind")
+    render_proxy_kind: AssetSymbolKind | None = Field(default=None, alias="renderProxyKind")
     param_schema: list[AssetParamEntry] | None = Field(default=None, alias="paramSchema")
     published_from_org_id: str | None = Field(default=None, alias="publishedFromOrgId")
     description: str | None = None

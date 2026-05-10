@@ -135,6 +135,8 @@ describe('hydrateFromSnapshot', () => {
           thumbnail_kind: 'schematic_plan',
           thumbnail_width_mm: 2200,
           thumbnail_height_mm: 900,
+          plan_symbol_kind: 'sofa',
+          render_proxy_kind: 'sofa',
         },
         'placed-sofa': {
           kind: 'placed_asset',
@@ -157,6 +159,8 @@ describe('hydrateFromSnapshot', () => {
     if (asset?.kind === 'asset_library_entry') {
       expect(asset.thumbnailWidthMm).toBe(2200);
       expect(asset.disciplineTags).toEqual(['arch']);
+      expect(asset.planSymbolKind).toBe('sofa');
+      expect(asset.renderProxyKind).toBe('sofa');
     }
     if (placed?.kind === 'placed_asset') {
       expect(placed.assetId).toBe('asset-sofa');

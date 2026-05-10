@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bim_ai.elements import (
+    AssetLibraryEntryElem,
     GridLineElem,
     InternalOriginElem,
     LevelElem,
@@ -71,6 +72,11 @@ def test_load_residential_eu_snapshot():
     assert len(texts) == 1
     assert texts[0].text == "Kerala House"
     assert texts[0].font_family == "helvetiker"
+
+    assets = [e for e in els.values() if isinstance(e, AssetLibraryEntryElem)]
+    asset_names = {a.name for a in assets}
+    assert "Tall Fridge 600x650" in asset_names
+    assert "Single Bowl Sink 600" in asset_names
 
 
 def test_load_template_unknown_raises():

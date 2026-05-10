@@ -3,6 +3,11 @@ import * as THREE from 'three';
 import type { Element, PlanLinePatternToken } from '@bim-ai/core';
 
 import { liveTokenReader } from '../viewport/materials';
+import {
+  makePlacedAssetPlanSymbol,
+  type AssetLibraryEntryElement,
+  type PlacedAssetElement,
+} from '../viewport/placedAssetRendering';
 import type { LineWeights } from './draftingStandards';
 import {
   coerceVec2Mm,
@@ -889,9 +894,6 @@ function addPlacedAssetPlanSymbols(
 ): void {
   if (opts.kindHidden?.('placed_asset')) return;
 
-  type PlacedAssetElement = Extract<Element, { kind: 'placed_asset' }>;
-  type AssetLibraryEntryElement = Extract<Element, { kind: 'asset_library_entry' }>;
-
   const assetEntries: Record<string, AssetLibraryEntryElement> = {};
   for (const e of Object.values(elementsById)) {
     if (e.kind === 'asset_library_entry') {
@@ -906,57 +908,7 @@ function addPlacedAssetPlanSymbols(
 
   for (const asset of placedAssets) {
     const entry = assetEntries[asset.assetId];
-    const wM = (entry?.thumbnailWidthMm ?? 1000) / 1000;
-    const dM = (entry?.thumbnailHeightMm ?? 600) / 1000;
-    const cx = asset.positionMm.xMm / 1000;
-    const cz = asset.positionMm.yMm / 1000;
-    const rotRad = ((asset.rotationDeg ?? 0) * Math.PI) / 180;
-    const hw = wM / 2;
-    const hd = dM / 2;
-    const cosR = Math.cos(rotRad);
-    const sinR = Math.sin(rotRad);
-    const y = PLAN_Y + 0.005;
-
-    const corners = [
-      { x: -hw, z: -hd },
-      { x: hw, z: -hd },
-      { x: hw, z: hd },
-      { x: -hw, z: hd },
-    ];
-
-    const worldCorners = corners.map(
-      (c) => new THREE.Vector3(cx + c.x * cosR - c.z * sinR, y, cz + c.x * sinR + c.z * cosR),
-    );
-
-    const outlinePts = [...worldCorners, worldCorners[0]!];
-    const outlineGeom = new THREE.BufferGeometry().setFromPoints(outlinePts);
-    const outlineLine = new THREE.Line(
-      outlineGeom,
-      new THREE.LineBasicMaterial({
-        color: '#111827',
-        linewidth: 1.5,
-        depthTest: false,
-        depthWrite: false,
-      }),
-    );
-    outlineLine.userData.bimPickId = asset.id;
-    outlineLine.renderOrder = 980;
-    holder.add(outlineLine);
-
-    const diagPts = [worldCorners[0]!, worldCorners[2]!];
-    const diagGeom = new THREE.BufferGeometry().setFromPoints(diagPts);
-    const diagLine = new THREE.Line(
-      diagGeom,
-      new THREE.LineBasicMaterial({
-        color: '#111827',
-        linewidth: 1,
-        depthTest: false,
-        depthWrite: false,
-      }),
-    );
-    diagLine.userData.bimPickId = asset.id;
-    diagLine.renderOrder = 980;
-    holder.add(diagLine);
+    holder.add(makePlacedAssetPlanSymbol(asset, entry, { y: PLAN_Y + 0.005 }));
   }
 }
 

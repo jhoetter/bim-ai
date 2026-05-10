@@ -1596,8 +1596,24 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
   if (kind === 'asset_library_entry') {
     const listOfStrings = (v: unknown): string[] =>
       Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+    const isAssetSymbolKind = (
+      v: unknown,
+    ): v is Extract<Element, { kind: 'asset_library_entry' }>['planSymbolKind'] =>
+      v === 'fridge' ||
+      v === 'oven' ||
+      v === 'sink' ||
+      v === 'counter' ||
+      v === 'sofa' ||
+      v === 'table' ||
+      v === 'chair' ||
+      v === 'toilet' ||
+      v === 'bath' ||
+      v === 'shower' ||
+      v === 'generic';
     const thumbnailWidth = raw.thumbnailWidthMm ?? raw.thumbnail_width_mm;
     const thumbnailHeight = raw.thumbnailHeightMm ?? raw.thumbnail_height_mm;
+    const planSymbolKind = raw.planSymbolKind ?? raw.plan_symbol_kind;
+    const renderProxyKind = raw.renderProxyKind ?? raw.render_proxy_kind;
     const paramSchema = raw.paramSchema ?? raw.param_schema;
     return {
       kind: 'asset_library_entry',
@@ -1631,6 +1647,8 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
       ...(thumbnailHeight != null && Number.isFinite(Number(thumbnailHeight))
         ? { thumbnailHeightMm: Number(thumbnailHeight) }
         : {}),
+      ...(isAssetSymbolKind(planSymbolKind) ? { planSymbolKind } : {}),
+      ...(isAssetSymbolKind(renderProxyKind) ? { renderProxyKind } : {}),
       ...(Array.isArray(paramSchema) ? { paramSchema } : {}),
       ...(raw.publishedFromOrgId || raw.published_from_org_id
         ? { publishedFromOrgId: String(raw.publishedFromOrgId ?? raw.published_from_org_id) }

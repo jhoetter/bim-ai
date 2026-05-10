@@ -81,6 +81,8 @@ def render_schematic_thumbnail_svg(entry: AssetLibraryEntryElem) -> str:
     w = entry.thumbnail_width_mm or 60.0
     h = entry.thumbnail_height_mm or 60.0
     cat = entry.category
+    symbol_kind = entry.plan_symbol_kind
+    label_text = " ".join([entry.id, entry.name, *entry.tags, cat]).lower()
 
     def _furniture(w: float, h: float) -> str:
         return (
@@ -102,6 +104,77 @@ def render_schematic_thumbnail_svg(entry: AssetLibraryEntryElem) -> str:
             f'<line x1="8" y1="{cy:.1f}" x2="{w - 8:.1f}" y2="{cy:.1f}" '
             f'stroke="var(--cat-fixture)" stroke-width="0.25"/>'
         )
+
+    def _kitchen(w: float, h: float) -> str:
+        if symbol_kind == "fridge" or any(
+            token in label_text for token in ("fridge", "refrigerator", "freezer")
+        ):
+            return (
+                f'<rect x="4" y="4" width="{w - 8:.1f}" height="{h - 8:.1f}" '
+                f'fill="none" stroke="var(--draft-cut)" stroke-width="0.5"/>'
+                f'<line x1="{w / 2:.1f}" y1="4" x2="{w / 2:.1f}" y2="{h - 4:.1f}" '
+                f'stroke="var(--draft-cut)" stroke-width="0.25"/>'
+                f'<line x1="{w * 0.72:.1f}" y1="{h * 0.22:.1f}" '
+                f'x2="{w * 0.72:.1f}" y2="{h * 0.78:.1f}" '
+                f'stroke="var(--draft-cut)" stroke-width="0.25"/>'
+                f'<line x1="{w * 0.18:.1f}" y1="{h * 0.64:.1f}" '
+                f'x2="{w * 0.82:.1f}" y2="{h * 0.64:.1f}" '
+                f'stroke="var(--draft-cut)" stroke-width="0.25"/>'
+            )
+        if symbol_kind == "oven" or any(
+            token in label_text for token in ("oven", "cooktop", "range", "hob")
+        ):
+            r = min(w, h) * 0.07
+            rings = "".join(
+                f'<circle cx="{cx:.1f}" cy="{h * 0.28:.1f}" r="{r:.1f}" '
+                f'fill="none" stroke="var(--draft-cut)" stroke-width="0.25"/>'
+                for cx in (w * 0.3, w * 0.5, w * 0.7)
+            )
+            return (
+                f'<rect x="4" y="4" width="{w - 8:.1f}" height="{h - 8:.1f}" '
+                f'fill="none" stroke="var(--draft-cut)" stroke-width="0.5"/>'
+                f"{rings}"
+                f'<rect x="{w * 0.24:.1f}" y="{h * 0.52:.1f}" width="{w * 0.52:.1f}" '
+                f'height="{h * 0.26:.1f}" fill="none" stroke="var(--draft-cut)" '
+                f'stroke-width="0.25"/>'
+            )
+        if symbol_kind == "sink" or "sink" in label_text:
+            return (
+                f'<rect x="4" y="4" width="{w - 8:.1f}" height="{h - 8:.1f}" '
+                f'fill="none" stroke="var(--cat-fixture)" stroke-width="0.5"/>'
+                f'<rect x="{w * 0.18:.1f}" y="{h * 0.24:.1f}" width="{w * 0.64:.1f}" '
+                f'height="{h * 0.52:.1f}" rx="{min(w, h) * 0.08:.1f}" '
+                f'fill="none" stroke="var(--cat-fixture)" stroke-width="0.25"/>'
+                f'<circle cx="{w / 2:.1f}" cy="{h / 2:.1f}" r="{min(w, h) * 0.04:.1f}" '
+                f'fill="none" stroke="var(--cat-fixture)" stroke-width="0.25"/>'
+            )
+        return _furniture(w, h)
+
+    def _bathroom(w: float, h: float) -> str:
+        if symbol_kind == "toilet" or any(
+            token in label_text for token in ("toilet", "wc")
+        ):
+            r = min(w, h) * 0.22
+            return (
+                f'<rect x="{w * 0.28:.1f}" y="4" width="{w * 0.44:.1f}" '
+                f'height="{h * 0.26:.1f}" fill="none" stroke="var(--cat-fixture)" '
+                f'stroke-width="0.5"/>'
+                f'<ellipse cx="{w / 2:.1f}" cy="{h * 0.62:.1f}" rx="{r:.1f}" '
+                f'ry="{r * 1.25:.1f}" fill="none" stroke="var(--cat-fixture)" '
+                f'stroke-width="0.5"/>'
+            )
+        if symbol_kind in {"bath", "shower"} or any(
+            token in label_text for token in ("bath", "bathtub", "tub", "shower")
+        ):
+            return (
+                f'<rect x="4" y="4" width="{w - 8:.1f}" height="{h - 8:.1f}" '
+                f'rx="{min(w, h) * 0.08:.1f}" fill="none" stroke="var(--cat-fixture)" '
+                f'stroke-width="0.5"/>'
+                f'<line x1="{w * 0.18:.1f}" y1="{h * 0.22:.1f}" '
+                f'x2="{w * 0.82:.1f}" y2="{h * 0.78:.1f}" '
+                f'stroke="var(--cat-fixture)" stroke-width="0.25"/>'
+            )
+        return _plumbing(w, h)
 
     def _door(w: float, h: float) -> str:
         r = min(w, h) - 8
@@ -132,8 +205,8 @@ def render_schematic_thumbnail_svg(entry: AssetLibraryEntryElem) -> str:
     _SYMBOL_MAP = {
         "furniture": _furniture,
         "casework": _furniture,
-        "kitchen": _plumbing,
-        "bathroom": _plumbing,
+        "kitchen": _kitchen,
+        "bathroom": _bathroom,
         "door": _door,
         "window": _window,
         "decal": _default,
@@ -153,7 +226,12 @@ def render_schematic_thumbnail_svg(entry: AssetLibraryEntryElem) -> str:
 # API-V3-01 tool descriptor registration (import-time side effect)
 # ---------------------------------------------------------------------------
 
-from bim_ai.api.registry import ExitCode, RestEndpoint, ToolDescriptor, register  # noqa: E402
+from bim_ai.api.registry import (
+    ExitCode,
+    RestEndpoint,
+    ToolDescriptor,
+    register,
+)  # noqa: E402
 
 _ASSET_CATEGORY_ENUM = [
     "furniture",
@@ -167,6 +245,19 @@ _ASSET_CATEGORY_ENUM = [
 ]
 
 _ASSET_KIND_ENUM = ["family_instance", "block_2d", "kit", "decal", "profile"]
+_ASSET_SYMBOL_KIND_ENUM = [
+    "fridge",
+    "oven",
+    "sink",
+    "counter",
+    "sofa",
+    "table",
+    "chair",
+    "toilet",
+    "bath",
+    "shower",
+    "generic",
+]
 
 _COMMON_EXIT_CODES: dict[str, ExitCode] = {
     "ok": ExitCode(code=0, meaning="Success"),
@@ -205,6 +296,16 @@ register(
                 },
                 "thumbnailWidthMm": {"type": "number"},
                 "thumbnailHeightMm": {"type": "number"},
+                "planSymbolKind": {
+                    "type": "string",
+                    "enum": _ASSET_SYMBOL_KIND_ENUM,
+                    "description": "Explicit 2D plan symbol renderer to use for placed instances.",
+                },
+                "renderProxyKind": {
+                    "type": "string",
+                    "enum": _ASSET_SYMBOL_KIND_ENUM,
+                    "description": "Explicit lightweight 3D proxy renderer to use for placed instances.",
+                },
                 "paramSchema": {
                     "type": "array",
                     "items": {
@@ -265,7 +366,12 @@ register(
                     "type": "string",
                     "enum": ["arch", "struct", "mep"],
                 },
-                "limit": {"type": "integer", "minimum": 1, "maximum": 100, "default": 20},
+                "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "default": 20,
+                },
             },
             "additionalProperties": False,
         },
@@ -296,7 +402,9 @@ register(
             "not_found": ExitCode(code=1, meaning="Model not found"),
         },
         cliExample="bim-ai asset search --model <id> --query sink --category kitchen",
-        restEndpoint=RestEndpoint(method="GET", path="/api/models/{model_id}/assets/search"),
+        restEndpoint=RestEndpoint(
+            method="GET", path="/api/models/{model_id}/assets/search"
+        ),
         sideEffects="none",
         agentSafetyNotes="Read-only. Returns ranked asset entries. Empty query returns all entries up to limit.",
     )

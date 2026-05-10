@@ -563,7 +563,65 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
       },
     );
 
-    expect(countLinesForPick(grp, 'pa-sofa')).toBe(2);
+    expect(countLinesForPick(grp, 'pa-sofa')).toBeGreaterThanOrEqual(2);
     expect(assetLinesRenderAbovePlanFill(grp, 'pa-sofa')).toBe(true);
+  });
+
+  it('draws a fridge as appliance linework instead of a generic rectangle', () => {
+    const assetEntry: Extract<Element, { kind: 'asset_library_entry' }> = {
+      kind: 'asset_library_entry',
+      id: 'asset-fridge',
+      assetKind: 'block_2d',
+      name: 'Tall Fridge',
+      category: 'kitchen',
+      tags: ['fridge', 'refrigerator'],
+      disciplineTags: [],
+      thumbnailKind: 'schematic_plan',
+      thumbnailWidthMm: 600,
+      thumbnailHeightMm: 650,
+      planSymbolKind: 'fridge',
+      renderProxyKind: 'fridge',
+    };
+    const placedAsset: Extract<Element, { kind: 'placed_asset' }> = {
+      kind: 'placed_asset',
+      id: 'pa-fridge',
+      name: 'Kitchen fridge',
+      assetId: 'asset-fridge',
+      levelId: 'lvl',
+      positionMm: { xMm: 1500, yMm: 1200 },
+      rotationDeg: 0,
+      paramValues: {},
+    };
+
+    const grp = new THREE.Group();
+    rebuildPlanMeshes(
+      grp,
+      { 'asset-fridge': assetEntry, 'pa-fridge': placedAsset },
+      {
+        activeLevelId: 'lvl',
+        wirePrimitives: {
+          format: 'planProjectionPrimitives_v1',
+          walls: [],
+          floors: [],
+          rooms: [],
+          doors: [],
+          windows: [],
+          stairs: [],
+          roofs: [],
+          gridLines: [],
+          roomSeparations: [],
+          dimensions: [],
+        } as unknown as PlanProjectionPrimitivesV1Wire,
+      },
+    );
+
+    expect(countLinesForPick(grp, 'pa-fridge')).toBeGreaterThan(3);
+    let symbolKind: unknown;
+    grp.traverse((o) => {
+      if (o.userData.bimPickId === 'pa-fridge' && o.userData.assetSymbolKind) {
+        symbolKind = o.userData.assetSymbolKind;
+      }
+    });
+    expect(symbolKind).toBe('fridge');
   });
 });

@@ -109,6 +109,25 @@ def test_index_asset_with_param_schema():
     assert elem.param_schema[0].kind == "mm"
 
 
+def test_index_asset_with_explicit_render_kinds():
+    doc = _empty_doc()
+    _apply(
+        doc,
+        {
+            "type": "IndexAsset",
+            "id": "asset-fridge-1",
+            "name": "Appliance 600",
+            "category": "kitchen",
+            "planSymbolKind": "fridge",
+            "renderProxyKind": "fridge",
+        },
+    )
+    elem = doc.elements["asset-fridge-1"]
+    assert isinstance(elem, AssetLibraryEntryElem)
+    assert elem.plan_symbol_kind == "fridge"
+    assert elem.render_proxy_kind == "fridge"
+
+
 def test_index_asset_discipline_tags():
     doc = _empty_doc()
     _apply(
@@ -365,6 +384,24 @@ def test_thumbnail_default_dimensions():
     # Default should be 60×60 (may render as 60 or 60.0)
     assert 'width="60' in svg
     assert 'height="60' in svg
+
+
+def test_thumbnail_uses_explicit_symbol_kind_over_generic_name():
+    entry = AssetLibraryEntryElem(
+        kind="asset_library_entry",
+        id="t-3",
+        assetKind="block_2d",
+        name="Appliance 600",
+        tags=[],
+        category="kitchen",
+        planSymbolKind="fridge",
+        thumbnailKind="schematic_plan",
+        thumbnailWidthMm=60,
+        thumbnailHeightMm=65,
+    )
+    svg = render_schematic_thumbnail_svg(entry)
+    assert 'x1="30.0" y1="4"' in svg
+    assert "var(--draft-cut)" in svg
 
 
 # ---------------------------------------------------------------------------
