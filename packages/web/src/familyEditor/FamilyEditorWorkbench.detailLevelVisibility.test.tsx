@@ -7,9 +7,10 @@
  * carries `visibilityByDetailLevel.coarse === false`.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, type RenderResult } from '@testing-library/react';
+import { cleanup, fireEvent, render, waitFor, type RenderResult } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import { FamilyEditorWorkbench } from './FamilyEditorWorkbench';
+import { FAMILY_EDITOR_DOCUMENT_PARAM } from './familyEditorPersistence';
 import i18n from '../i18n';
 
 function renderWithI18n(ui: React.ReactElement): RenderResult {
@@ -64,54 +65,50 @@ describe('VIE-02 — family editor visibility-by-detail-level UI', () => {
     expect(fine.checked).toBe(true);
   });
 
-  it('unchecking the Coarse box stamps visibilityByDetailLevel.coarse=false on the sweep', () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    try {
-      const view = renderWithI18n(<FamilyEditorWorkbench />);
-      authorOneSweep(view);
-      fireEvent.click(view.getByLabelText('select-sweep-0'));
+  it('unchecking the Coarse box stamps visibilityByDetailLevel.coarse=false on the sweep', async () => {
+    const onLoadIntoProject = vi.fn();
+    const view = renderWithI18n(
+      <FamilyEditorWorkbench storage={null} onLoadIntoProject={onLoadIntoProject} />,
+    );
+    authorOneSweep(view);
+    fireEvent.click(view.getByLabelText('select-sweep-0'));
 
-      const coarse = view.getByLabelText('visibility-coarse') as HTMLInputElement;
-      fireEvent.click(coarse);
-      expect(coarse.checked).toBe(false);
+    const coarse = view.getByLabelText('visibility-coarse') as HTMLInputElement;
+    fireEvent.click(coarse);
+    expect(coarse.checked).toBe(false);
 
-      // The Load-into-Project stub logs the current sweeps array. Use it
-      // as the read-side of the binding to confirm the flag actually
-      // landed on the geometry node, not just on UI state.
-      fireEvent.click(view.getByText('Load into Project'));
-      const calls = warnSpy.mock.calls.filter((c) => c[0] === 'load-into-project stub');
-      expect(calls.length).toBeGreaterThan(0);
-      const payload = calls[calls.length - 1][1] as {
-        sweeps: Array<{ visibilityByDetailLevel?: Record<string, boolean> }>;
-      };
-      expect(payload.sweeps[0].visibilityByDetailLevel?.coarse).toBe(false);
-      // Medium / fine remain unset (= visible by default).
-      expect(payload.sweeps[0].visibilityByDetailLevel?.medium ?? true).toBe(true);
-      expect(payload.sweeps[0].visibilityByDetailLevel?.fine ?? true).toBe(true);
-    } finally {
-      warnSpy.mockRestore();
-    }
+    fireEvent.click(view.getByTestId('family-load-into-project'));
+    await waitFor(() => expect(onLoadIntoProject).toHaveBeenCalledTimes(1));
+    const payload = onLoadIntoProject.mock.calls[0][0].command.parameters[
+      FAMILY_EDITOR_DOCUMENT_PARAM
+    ] as {
+      sweeps: Array<{ visibilityByDetailLevel?: Record<string, boolean> }>;
+    };
+    expect(payload.sweeps[0].visibilityByDetailLevel?.coarse).toBe(false);
+    // Medium / fine remain unset (= visible by default).
+    expect(payload.sweeps[0].visibilityByDetailLevel?.medium ?? true).toBe(true);
+    expect(payload.sweeps[0].visibilityByDetailLevel?.fine ?? true).toBe(true);
   });
 
-  it('toggling all three boxes off independently records every binding', () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    try {
-      const view = renderWithI18n(<FamilyEditorWorkbench />);
-      authorOneSweep(view);
-      fireEvent.click(view.getByLabelText('select-sweep-0'));
-      fireEvent.click(view.getByLabelText('visibility-coarse'));
-      fireEvent.click(view.getByLabelText('visibility-medium'));
-      fireEvent.click(view.getByLabelText('visibility-fine'));
-      fireEvent.click(view.getByText('Load into Project'));
-      const calls = warnSpy.mock.calls.filter((c) => c[0] === 'load-into-project stub');
-      const payload = calls[calls.length - 1][1] as {
-        sweeps: Array<{ visibilityByDetailLevel?: Record<string, boolean> }>;
-      };
-      expect(payload.sweeps[0].visibilityByDetailLevel?.coarse).toBe(false);
-      expect(payload.sweeps[0].visibilityByDetailLevel?.medium).toBe(false);
-      expect(payload.sweeps[0].visibilityByDetailLevel?.fine).toBe(false);
-    } finally {
-      warnSpy.mockRestore();
-    }
+  it('toggling all three boxes off independently records every binding', async () => {
+    const onLoadIntoProject = vi.fn();
+    const view = renderWithI18n(
+      <FamilyEditorWorkbench storage={null} onLoadIntoProject={onLoadIntoProject} />,
+    );
+    authorOneSweep(view);
+    fireEvent.click(view.getByLabelText('select-sweep-0'));
+    fireEvent.click(view.getByLabelText('visibility-coarse'));
+    fireEvent.click(view.getByLabelText('visibility-medium'));
+    fireEvent.click(view.getByLabelText('visibility-fine'));
+    fireEvent.click(view.getByTestId('family-load-into-project'));
+    await waitFor(() => expect(onLoadIntoProject).toHaveBeenCalledTimes(1));
+    const payload = onLoadIntoProject.mock.calls[0][0].command.parameters[
+      FAMILY_EDITOR_DOCUMENT_PARAM
+    ] as {
+      sweeps: Array<{ visibilityByDetailLevel?: Record<string, boolean> }>;
+    };
+    expect(payload.sweeps[0].visibilityByDetailLevel?.coarse).toBe(false);
+    expect(payload.sweeps[0].visibilityByDetailLevel?.medium).toBe(false);
+    expect(payload.sweeps[0].visibilityByDetailLevel?.fine).toBe(false);
   });
 });
