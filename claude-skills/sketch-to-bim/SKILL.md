@@ -15,6 +15,8 @@ This skill is the methodology a world-class architect would use, encoded as a de
 
 You will fail this task if you treat it as a single translation problem (read sketch → emit one big command bundle → declare done). The previous attempt did exactly that and shipped a featureless box; see `nightshift/seed-fidelity-status.md` for the post-mortem.
 
+You will also fail if you treat `make seed`, `bim-ai plan-house`, or `scripts/build-seed-snapshot.mjs` as generators. They replay the checked-in canonical bundle. To improve a seed house, edit the bundle source itself (usually `packages/cli/lib/one-family-home-commands.mjs` or a replacement project bundle), rebuild the snapshot, render checkpoints, read advisor findings, and feed those findings back into the next bundle edit.
+
 The right mental model is **iterative convergence through 5–7 phased passes**, each one visually validated before adding detail. After each phase: render, look, validate, correct. Never advance with a phase that doesn't read.
 
 > **Every phase is committed independently. Every phase is verified independently. You do not move to phase N+1 until phase N's silhouette matches the target.**
@@ -203,9 +205,25 @@ These are the failure modes you must avoid; they are the observed behaviour from
 
 **Validators:** `app/bim_ai/constraints.py:evaluate()` runs at every commit; check the returned violation list.
 
-**Advisor surface:** the right rail Advisor panel and the API violation/advisory payload expose issue code, recommendation text, perspective / `codePreset`, and `elementIds`. Feed these findings into SKB-15 refine-loop evidence so corrections can target the elements the app already identified.
+**Advisor surface:** the right rail Advisor panel, `bim-ai advisor --output json`, and the API violation/advisory payload expose issue code, recommendation text, perspective / `codePreset`, and `elementIds`. Feed these findings into SKB-15 refine-loop evidence so corrections can target the elements the app already identified.
+
+**Seed snapshot fixture:** `node scripts/build-seed-snapshot.mjs` materialises the current canonical seed bundle into `packages/web/e2e/__fixtures__/seed-target-house-snapshot.json`. Run it after every bundle edit before visual checkpoints.
+
+**Target-house visual checkpoint:** `pnpm --filter @bim-ai/web exec playwright test e2e/seed-target-house.spec.ts` renders saved target-house viewpoints from the fixture. Inspect the emitted PNGs before declaring progress.
 
 **Material catalog:** `app/bim_ai/material_catalog.py` (Python) and `packages/web/src/viewport/materials.ts` (TS). Every materialKey you author must resolve in both.
+
+### Capability sanity check
+
+Before committing to a sketch feature, prove the full loop supports it:
+
+- Command exists and persists the semantic element (`app/bim_ai/commands.py` + engine dispatch).
+- Snapshot/API exposes it to agents.
+- Renderer displays it in the checkpoint image.
+- Advisor/constraints can report problems against its `elementIds`.
+- IFC/glTF/export behavior is either implemented or documented as a deliberate gap.
+
+For example, the target-house roof cutout needs `createRoofOpening` **and** viewport roof-opening subtraction; authoring a semantic `roof_opening` is not enough if the checkpoint render still shows an uncut roof.
 
 ### What is planned (SKB work packages)
 

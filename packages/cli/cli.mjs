@@ -106,6 +106,68 @@ async function snapshot(modelId) {
   console.log(JSON.stringify(json, null, 2));
 }
 
+function advisoryCode(v) {
+  return v?.advisoryClass ?? v?.ruleId ?? v?.code ?? 'unknown';
+}
+
+async function cmdAdvisor(modelId, { output = 'text', severity = null } = {}) {
+  const snap = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`);
+  let violations = Array.isArray(snap.violations) ? snap.violations : [];
+  if (severity) violations = violations.filter((v) => String(v?.severity ?? '') === severity);
+
+  const groups = new Map();
+  for (const v of violations) {
+    const code = advisoryCode(v);
+    const key = `${v?.severity ?? 'unknown'}:${code}`;
+    const row = groups.get(key) ?? {
+      severity: v?.severity ?? 'unknown',
+      code,
+      count: 0,
+      elementIds: new Set(),
+      messages: new Set(),
+    };
+    row.count += 1;
+    for (const id of v?.elementIds ?? []) row.elementIds.add(id);
+    if (v?.message) row.messages.add(v.message);
+    groups.set(key, row);
+  }
+  const grouped = [...groups.values()]
+    .map((g) => ({
+      severity: g.severity,
+      code: g.code,
+      count: g.count,
+      elementIds: [...g.elementIds].sort(),
+      messages: [...g.messages].slice(0, 3),
+    }))
+    .sort((a, b) => {
+      const rank = { error: 0, warning: 1, info: 2 };
+      return (rank[a.severity] ?? 9) - (rank[b.severity] ?? 9) || a.code.localeCompare(b.code);
+    });
+
+  if (output === 'json') {
+    console.log(
+      JSON.stringify(
+        {
+          modelId: snap.modelId,
+          revision: snap.revision,
+          total: violations.length,
+          groups: grouped,
+        },
+        null,
+        2,
+      ),
+    );
+    return;
+  }
+
+  console.log(`advisor model=${snap.modelId} revision=${snap.revision} findings=${violations.length}`);
+  for (const g of grouped) {
+    const ids = g.elementIds.length ? ` ids=${g.elementIds.join(',')}` : '';
+    console.log(`${g.severity}\t${g.code}\t${g.count}${ids}`);
+    for (const msg of g.messages) console.log(`  ${msg}`);
+  }
+}
+
 // FED-01 polish: federation subcommands.
 
 function parseAlignMode(s, fallback = 'origin_to_origin') {
@@ -897,6 +959,8 @@ Commands:
   schema                              GET /api/schema (commands + presets ids)
   presets                             summarize schema + building presets
   snapshot                            GET snapshot (needs BIM_AI_MODEL_ID)
+  advisor [--output json] [--severity info|warning|error]
+                                      Group snapshot violations/advisories for agent refinement.
   evidence                            Combined artifact: counts-by-kind + full validate rollup
   evidence-package                    Phase A checklist JSON (captures recommended layouts + manifests)
   schedule-table [--csv] [--columns keys] <scheduleId>   Server-derived rows (optional CSV; columns=comma-separated keys)
@@ -1208,6 +1272,18 @@ async function main() {
 
     if (cmd === 'snapshot') {
       await snapshot(modelId);
+      return;
+    }
+
+    if (cmd === 'advisor') {
+      const rest = argv.slice(1);
+      const output = rest.includes('--output')
+        ? rest[rest.indexOf('--output') + 1]
+        : rest.find((a) => a.startsWith('--output='))?.split('=')[1] ?? 'text';
+      const severity = rest.includes('--severity')
+        ? rest[rest.indexOf('--severity') + 1]
+        : rest.find((a) => a.startsWith('--severity='))?.split('=')[1] ?? null;
+      await cmdAdvisor(modelId, { output, severity });
       return;
     }
 

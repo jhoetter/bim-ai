@@ -100,9 +100,18 @@ async function hydrateStore(page: Page, snapshot: SnapshotShape) {
   }, snapshot);
   // Allow React to commit the new elements + Three.js to build meshes.
   await page.waitForTimeout(800);
+  // Hide the idle canvas hint so checkpoint PNGs contain only model evidence.
+  await page.mouse.move(20, 20);
+  await page.waitForTimeout(350);
 }
 
-type ViewpointId = 'fit' | 'vp-main-iso' | 'vp-front-elev' | 'vp-side-elev-east' | 'vp-rear-axo';
+type ViewpointId =
+  | 'fit'
+  | 'vp-main-iso'
+  | 'vp-front-elev'
+  | 'vp-side-elev-east'
+  | 'vp-rear-axo'
+  | 'vp-terrace-se';
 
 async function activateViewpoint(
   page: Page,
@@ -195,6 +204,13 @@ test.describe('seed-target-house', () => {
     const snapshot = loadSnapshot();
     const activated = await activateViewpoint(page, 'vp-rear-axo', snapshot);
     const out = await captureViewpoint(page, 'rear-axo', !activated);
+    expect(fs.existsSync(out)).toBe(true);
+  });
+
+  test('terrace roof cutout', async ({ page }) => {
+    const snapshot = loadSnapshot();
+    const activated = await activateViewpoint(page, 'vp-terrace-se', snapshot);
+    const out = await captureViewpoint(page, 'terrace-cutout', !activated);
     expect(fs.existsSync(out)).toBe(true);
   });
 });

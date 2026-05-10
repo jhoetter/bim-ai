@@ -79,10 +79,10 @@ if (result.status !== 0) {
   process.exit(result.status ?? 1);
 }
 
-fs.mkdirSync(FIXTURE_DIR, { recursive: true });
-fs.writeFileSync(FIXTURE_PATH, result.stdout);
-
 const snap = JSON.parse(result.stdout);
+fs.mkdirSync(FIXTURE_DIR, { recursive: true });
+fs.writeFileSync(FIXTURE_PATH, `${JSON.stringify(snap, null, 2)}\n`);
+
 const kindCounts = {};
 for (const elem of Object.values(snap.elements)) {
   const k = (elem && /** @type {{kind?: string}} */ (elem).kind) || '?';

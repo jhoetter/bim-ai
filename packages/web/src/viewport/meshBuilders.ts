@@ -1174,6 +1174,128 @@ function _buildLShapeGeometry(
   return merged;
 }
 
+function _buildAsymmetricGableGeometryWithRoofOpenings(
+  roof: Extract<Element, { kind: 'roof' }>,
+  roofOpenings: Array<Extract<Element, { kind: 'roof_opening' }>>,
+  boundsMm: ReturnType<typeof xzBoundsMm>,
+  refElev: number,
+  slopeRad: number,
+  ridgeAlongX: boolean,
+): THREE.BufferGeometry | null {
+  if (ridgeAlongX || roofOpenings.length !== 1 || (roof.footprintMm ?? []).length !== 4) {
+    return null;
+  }
+
+  const opening = roofOpenings[0];
+  const rawBounds = xzBoundsMm(roof.footprintMm ?? []);
+  const xs = opening.boundaryMm.map((p) => p.xMm);
+  const zs = opening.boundaryMm.map((p) => p.yMm);
+  const tolMm = 2;
+  const edgeAware = (v: number, rawMin: number, rawMax: number, outMin: number, outMax: number) => {
+    if (Math.abs(v - rawMin) <= tolMm) return outMin;
+    if (Math.abs(v - rawMax) <= tolMm) return outMax;
+    return v;
+  };
+
+  const ox0 = boundsMm.minX / 1000;
+  const ox1 = boundsMm.maxX / 1000;
+  const oz0 = boundsMm.minZ / 1000;
+  const oz1 = boundsMm.maxZ / 1000;
+  const holeX0 =
+    edgeAware(Math.min(...xs), rawBounds.minX, rawBounds.maxX, boundsMm.minX, boundsMm.maxX) / 1000;
+  const holeX1 =
+    edgeAware(Math.max(...xs), rawBounds.minX, rawBounds.maxX, boundsMm.minX, boundsMm.maxX) / 1000;
+  const holeZ0 =
+    edgeAware(Math.min(...zs), rawBounds.minZ, rawBounds.maxZ, boundsMm.minZ, boundsMm.maxZ) / 1000;
+  const holeZ1 =
+    edgeAware(Math.max(...zs), rawBounds.minZ, rawBounds.maxZ, boundsMm.minZ, boundsMm.maxZ) / 1000;
+
+  const halfSpan = (ox1 - ox0) / 2;
+  const center = (ox0 + ox1) / 2;
+  const offset = THREE.MathUtils.clamp(
+    (roof.ridgeOffsetTransverseMm ?? 0) / 1000,
+    -halfSpan + 1e-6,
+    halfSpan - 1e-6,
+  );
+  const rx = center + offset;
+  const eaveLeftY =
+    roof.eaveHeightLeftMm != null ? refElev + roof.eaveHeightLeftMm / 1000 : refElev;
+  const eaveRightY =
+    roof.eaveHeightRightMm != null ? refElev + roof.eaveHeightRightMm / 1000 : refElev;
+  const ridgeY = eaveLeftY + (halfSpan + offset) * Math.tan(slopeRad);
+
+  const cutIsOnEastSlope = holeX0 > rx && holeX1 >= ox1 - 1e-4;
+  const cutInsideDepth = holeZ0 > oz0 && holeZ1 < oz1 && holeZ0 < holeZ1;
+  if (!cutIsOnEastSlope || !cutInsideDepth) return null;
+
+  const yAtX = (x: number) => {
+    if (x <= rx) {
+      const t = (x - ox0) / Math.max(rx - ox0, 1e-6);
+      return THREE.MathUtils.lerp(eaveLeftY, ridgeY, t);
+    }
+    const t = (x - rx) / Math.max(ox1 - rx, 1e-6);
+    return THREE.MathUtils.lerp(ridgeY, eaveRightY, t);
+  };
+
+  const positions: number[] = [];
+  const addTopRect = (x0: number, x1: number, z0: number, z1: number) => {
+    if (x1 - x0 <= 1e-5 || z1 - z0 <= 1e-5) return;
+    positions.push(
+      x0,
+      yAtX(x0),
+      z0,
+      x0,
+      yAtX(x0),
+      z1,
+      x1,
+      yAtX(x1),
+      z0,
+      x0,
+      yAtX(x0),
+      z1,
+      x1,
+      yAtX(x1),
+      z1,
+      x1,
+      yAtX(x1),
+      z0,
+    );
+  };
+
+  addTopRect(ox0, rx, oz0, oz1);
+  addTopRect(rx, ox1, oz0, holeZ0);
+  addTopRect(rx, holeX0, holeZ0, holeZ1);
+  addTopRect(rx, ox1, holeZ1, oz1);
+
+  // Keep the visible south/north gable end caps; the target opening is an
+  // internal east-slope subtraction and does not intersect either end cap.
+  positions.push(
+    ox0,
+    eaveLeftY,
+    oz0,
+    rx,
+    ridgeY,
+    oz0,
+    ox1,
+    eaveRightY,
+    oz0,
+    ox0,
+    eaveLeftY,
+    oz1,
+    ox1,
+    eaveRightY,
+    oz1,
+    rx,
+    ridgeY,
+    oz1,
+  );
+
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.computeVertexNormals();
+  return g;
+}
+
 // ─── makeRoofMassMesh ────────────────────────────────────────────────────────
 
 export function makeRoofMassMesh(
@@ -1205,13 +1327,24 @@ export function makeRoofMassMesh(
   const oz0 = b.minZ / 1000;
   const oz1 = b.maxZ / 1000;
 
+  const dormersForRoof = Object.values(elementsById).filter(
+    (e): e is Extract<Element, { kind: 'dormer' }> =>
+      e.kind === 'dormer' && (e as Extract<Element, { kind: 'dormer' }>).hostRoofId === roof.id,
+  );
+  const roofOpeningsForRoof = Object.values(elementsById).filter(
+    (e): e is Extract<Element, { kind: 'roof_opening' }> =>
+      e.kind === 'roof_opening' &&
+      (e as Extract<Element, { kind: 'roof_opening' }>).hostRoofId === roof.id,
+  );
+
+  const slopeRad = (THREE.MathUtils.clamp(Number(roof.slopeDeg ?? 25), 5, 70) * Math.PI) / 180;
   let geom: THREE.BufferGeometry;
+  let ridgeAlongXForCut = true;
   if (roof.roofGeometryMode === 'flat') {
     const slabThick = 0.15;
     geom = new THREE.BoxGeometry(ox1 - ox0, slabThick, oz1 - oz0);
     geom.translate((ox0 + ox1) / 2, eaveY + slabThick / 2, (oz0 + oz1) / 2);
   } else {
-    const slopeRad = (THREE.MathUtils.clamp(Number(roof.slopeDeg ?? 25), 5, 70) * Math.PI) / 180;
     const spanXm = b.spanX / 1000;
     const spanZm = b.spanZ / 1000;
 
@@ -1220,6 +1353,7 @@ export function makeRoofMassMesh(
     if (roof.ridgeAxis === 'x') ridgeAlongX = true;
     else if (roof.ridgeAxis === 'z') ridgeAlongX = false;
     else ridgeAlongX = spanXm >= spanZm;
+    ridgeAlongXForCut = ridgeAlongX;
 
     // L-shape detection: explicit mode wins; otherwise infer from compactness ratio.
     const isExplicitLShape = roof.roofGeometryMode === 'gable_pitched_l_shape';
@@ -1259,15 +1393,31 @@ export function makeRoofMassMesh(
     }
   }
 
+  const analyticRoofOpeningGeom =
+    roof.roofGeometryMode === 'asymmetric_gable' && roofOpeningsForRoof.length > 0
+      ? _buildAsymmetricGableGeometryWithRoofOpenings(
+          roof,
+          roofOpeningsForRoof,
+          b,
+          refElev,
+          slopeRad,
+          ridgeAlongXForCut,
+        )
+      : null;
+  const roofOpeningsHandledAnalytically = !!analyticRoofOpeningGeom;
+  if (analyticRoofOpeningGeom) {
+    geom = analyticRoofOpeningGeom;
+  }
+
   // KRN-14 — apply CSG cuts for any dormer that hosts on this roof. The
   // cut helper is registered (or not) by the bootstrap module; tests that
   // don't exercise the dormer path leave it null so three-bvh-csg never
   // gets imported in jsdom.
-  const dormersForRoof = Object.values(elementsById).filter(
-    (e): e is Extract<Element, { kind: 'dormer' }> =>
-      e.kind === 'dormer' && (e as Extract<Element, { kind: 'dormer' }>).hostRoofId === roof.id,
-  );
-  if (dormersForRoof.length > 0 && _dormerCutFn) {
+  if (
+    (dormersForRoof.length > 0 ||
+      (!roofOpeningsHandledAnalytically && roofOpeningsForRoof.length > 0)) &&
+    _dormerCutFn
+  ) {
     geom = _dormerCutFn(geom, roof, elementsById, refElev);
   }
 
