@@ -300,6 +300,10 @@ def try_apply_coordination_command(doc, cmd, *, source_provider=None) -> bool:
                 dxf_updates["custom_color"] = cmd.custom_color
             if cmd.overlay_opacity is not None:
                 dxf_updates["overlay_opacity"] = float(cmd.overlay_opacity)
+            if cmd.source_path is not None:
+                dxf_updates["source_path"] = cmd.source_path
+            if cmd.loaded is not None:
+                dxf_updates["loaded"] = bool(cmd.loaded)
             if cmd.hidden_layer_names is not None:
                 known_layers = {row.name for row in dxf_link.dxf_layers}
                 if known_layers:
@@ -333,6 +337,8 @@ def try_apply_coordination_command(doc, cmd, *, source_provider=None) -> bool:
                 dxf_layers=cmd.dxf_layers or _derive_dxf_layers(list(cmd.linework)),
                 hidden_layer_names=list(dict.fromkeys(cmd.hidden_layer_names)),
                 pinned=bool(cmd.pinned),
+                source_path=cmd.source_path,
+                loaded=bool(cmd.loaded),
             )
 
         case UpsertSelectionSetCmd():

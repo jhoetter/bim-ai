@@ -206,9 +206,11 @@ describe('hydrateFromSnapshot', () => {
           scale_factor: 2,
           linework: [],
           pinned: true,
-          color_mode: 'custom',
+          color_mode: 'native',
           custom_color: '#ff00aa',
           overlay_opacity: 0.4,
+          source_path: '/site/survey.dxf',
+          loaded: false,
         },
       },
       violations: [],
@@ -222,9 +224,11 @@ describe('hydrateFromSnapshot', () => {
       expect(link.rotationDeg).toBe(12);
       expect(link.scaleFactor).toBe(2);
       expect(link.pinned).toBe(true);
-      expect(link.colorMode).toBe('custom');
+      expect(link.colorMode).toBe('native');
       expect(link.customColor).toBe('#ff00aa');
       expect(link.overlayOpacity).toBe(0.4);
+      expect(link.sourcePath).toBe('/site/survey.dxf');
+      expect(link.loaded).toBe(false);
     }
   });
 

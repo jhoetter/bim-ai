@@ -1558,7 +1558,11 @@ class LinkDxfElem(BaseModel):
     dxf_layers: list[DxfLayerMeta] = Field(default_factory=list, alias="dxfLayers")
     hidden_layer_names: list[str] = Field(default_factory=list, alias="hiddenLayerNames")
     pinned: bool = Field(default=False)
-    color_mode: Literal["black_white", "custom"] | None = Field(default=None, alias="colorMode")
+    source_path: str | None = Field(default=None, alias="sourcePath")
+    loaded: bool = Field(default=True)
+    color_mode: Literal["black_white", "custom", "native"] | None = Field(
+        default=None, alias="colorMode"
+    )
     custom_color: str | None = Field(default=None, alias="customColor")
     overlay_opacity: float | None = Field(default=None, alias="overlayOpacity", ge=0.0, le=1.0)
 

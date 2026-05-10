@@ -82,4 +82,44 @@ describe('<VVDialog /> Revit Links tab', () => {
       expect.objectContaining({ type: 'updateLinkModel', linkId: 'link-1', hidden: true }),
     );
   });
+
+  it('stores per-view imported-CAD visibility and transparency overrides', () => {
+    useBimStore.setState({
+      modelId: 'host-model',
+      activePlanViewId: 'view-1',
+      elementsById: {
+        'view-1': {
+          kind: 'plan_view',
+          id: 'view-1',
+          name: 'Level 1',
+          levelId: 'lvl-1',
+          categoryOverrides: {},
+        },
+        'dxf-1': {
+          kind: 'link_dxf',
+          id: 'dxf-1',
+          name: 'Survey',
+          levelId: 'lvl-1',
+          originMm: { xMm: 0, yMm: 0 },
+          linework: [],
+          overlayOpacity: 0.5,
+        },
+      },
+    });
+    const { getByTestId } = render(<VVDialog open={true} onClose={vi.fn()} />);
+    fireEvent.click(getByTestId('vv-tab-links'));
+
+    fireEvent.click(getByTestId('vv-links-visible-dxf-1'));
+    let view = useBimStore.getState().elementsById['view-1'];
+    expect(view?.kind === 'plan_view' ? view.categoryOverrides?.['link_dxf:dxf-1'] : null).toEqual({
+      visible: false,
+    });
+
+    fireEvent.change(getByTestId('vv-links-transparency-dxf-1'), { target: { value: '70' } });
+    view = useBimStore.getState().elementsById['view-1'];
+    expect(view?.kind === 'plan_view' ? view.categoryOverrides?.['link_dxf:dxf-1'] : null).toEqual({
+      visible: false,
+      projection: { transparency: 70 },
+    });
+  });
 });

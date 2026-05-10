@@ -411,6 +411,8 @@ export type CreateLinkDxfCmd = {
   dxfLayers?: DxfLayerMeta[];
   hiddenLayerNames?: string[];
   pinned?: boolean;
+  sourcePath?: string;
+  loaded?: boolean;
 };
 
 /** KRN-V3-05: a single tread line in a by_sketch stair. */
@@ -1773,8 +1775,10 @@ export type Element =
       /** F-019: layer names hidden for this linked/imported DXF in the current host view. */
       hiddenLayerNames?: string[];
       pinned?: boolean;
-      /** F-017 / F-020: render color mode. 'black_white' = desaturated grey (default); 'custom' = use customColor. */
-      colorMode?: 'black_white' | 'custom';
+      sourcePath?: string;
+      loaded?: boolean;
+      /** F-017 / F-020: render color mode. 'black_white' = desaturated grey (default); 'native' = use DXF layer colors. */
+      colorMode?: 'black_white' | 'custom' | 'native';
       /** F-017: hex color used when colorMode === 'custom'. */
       customColor?: string;
       /** F-020: per-link opacity 0.0–1.0 (default 0.5). */

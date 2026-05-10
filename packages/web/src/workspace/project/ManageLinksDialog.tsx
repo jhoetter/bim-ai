@@ -80,6 +80,7 @@ export function ManageLinksDialog({
   const [addAlign, setAddAlign] = useState<AlignMode>('origin_to_origin');
   const [addVis, setAddVis] = useState<VisibilityMode>('host_view');
   const [pending, setPending] = useState(false);
+  const [dxfPathDrafts, setDxfPathDrafts] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -201,6 +202,9 @@ export function ManageLinksDialog({
       setPending(false);
     }
   };
+
+  const dxfPathDraft = (link: DxfLinkRow): string =>
+    dxfPathDrafts[link.id] ?? link.sourcePath ?? '';
 
   return (
     <div
@@ -439,6 +443,7 @@ export function ManageLinksDialog({
                 const customColor = l.customColor ?? '#7f7f7f';
                 const opacityPct = Math.round((l.overlayOpacity ?? 0.5) * 100);
                 const align: AlignMode = l.originAlignmentMode ?? 'origin_to_origin';
+                const loaded = l.loaded !== false;
                 const layerRows = resolveDxfLayerRows(l);
                 const hiddenLayerNames = l.hiddenLayerNames ?? [];
                 const hiddenLayerSet = new Set(hiddenLayerNames);
@@ -448,8 +453,35 @@ export function ManageLinksDialog({
                     data-testid={`manage-dxf-links-row-${l.id}`}
                     className="flex flex-col gap-1 rounded border border-border px-2 py-1"
                   >
-                    <span className="text-xs">{l.name ?? 'DXF Underlay'}</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <span className="text-xs">{l.name ?? 'DXF Underlay'}</span>
+                        <div className="truncate font-mono text-[10px] text-muted">
+                          {l.sourcePath ?? 'No saved path'}
+                        </div>
+                      </div>
+                      <span
+                        data-testid={`manage-dxf-links-status-${l.id}`}
+                        className={[
+                          'rounded border px-1.5 py-0.5 text-[10px]',
+                          loaded
+                            ? 'border-emerald-500 text-emerald-700'
+                            : 'border-border text-muted',
+                        ].join(' ')}
+                      >
+                        {loaded ? 'Loaded' : 'Unloaded'}
+                      </span>
+                    </div>
                     <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                      <button
+                        type="button"
+                        disabled={pending}
+                        data-testid={`manage-dxf-links-load-${l.id}`}
+                        onClick={() => void submitUpdateDxf(l.id, { loaded: !loaded })}
+                        className="rounded border border-border px-2 py-0.5 text-[11px] hover:bg-surface-strong disabled:opacity-50"
+                      >
+                        {loaded ? 'Unload' : 'Reload'}
+                      </button>
                       <button
                         type="button"
                         disabled={pending}
@@ -521,6 +553,7 @@ export function ManageLinksDialog({
                           className="rounded border border-border bg-surface-strong px-1 py-0.5 text-[11px]"
                         >
                           <option value="black_white">Black &amp; white</option>
+                          <option value="native">Preserve original colors</option>
                           <option value="custom">Custom</option>
                         </select>
                       </label>
@@ -541,6 +574,30 @@ export function ManageLinksDialog({
                           <span className="font-mono text-[10px] text-muted">{customColor}</span>
                         </label>
                       ) : null}
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px]">
+                      <label className="flex min-w-0 flex-1 items-center gap-1">
+                        Path
+                        <input
+                          type="text"
+                          value={dxfPathDraft(l)}
+                          disabled={pending}
+                          data-testid={`manage-dxf-links-path-${l.id}`}
+                          onChange={(e) =>
+                            setDxfPathDrafts((prev) => ({ ...prev, [l.id]: e.target.value }))
+                          }
+                          className="min-w-0 flex-1 rounded border border-border bg-surface-strong px-1 py-0.5 font-mono text-[11px]"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        disabled={pending}
+                        data-testid={`manage-dxf-links-change-path-${l.id}`}
+                        onClick={() => void submitUpdateDxf(l.id, { sourcePath: dxfPathDraft(l) })}
+                        className="rounded border border-border px-2 py-0.5 text-[11px] hover:bg-surface-strong disabled:opacity-50"
+                      >
+                        Change Path
+                      </button>
                     </div>
                     {layerRows.length > 0 ? (
                       <div

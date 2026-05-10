@@ -1,4 +1,5 @@
 import type { DxfLineworkPrim, Element, XY } from '@bim-ai/core';
+import type { CategoryOverride } from '../state/storeTypes';
 
 /** FED-04 — `link_dxf` element shape for type-narrowed callers. */
 export type LinkDxfElement = Extract<Element, { kind: 'link_dxf' }>;
@@ -11,6 +12,7 @@ export const DXF_UNDERLAY_LINE_WIDTH = 1;
 export type DxfUnderlayStyle = {
   color: string;
   opacity: number;
+  colorMode: NonNullable<LinkDxfElement['colorMode']>;
 };
 
 export type DxfAlignmentMode = NonNullable<LinkDxfElement['originAlignmentMode']>;
@@ -36,17 +38,18 @@ export function renderDxfUnderlay(
   const linework: DxfLineworkPrim[] = link.linework ?? [];
   if (linework.length === 0) return;
 
-  const { color, opacity } = resolveDxfUnderlayStyle(link);
+  const style = resolveDxfUnderlayStyle(link);
 
   ctx.save();
-  ctx.strokeStyle = color;
-  ctx.globalAlpha = opacity;
+  ctx.strokeStyle = style.color;
+  ctx.globalAlpha = style.opacity;
   ctx.lineWidth = DXF_UNDERLAY_LINE_WIDTH;
 
   const transform = makeDxfLinkTransform(link, elementsById);
 
   for (const prim of linework) {
     if (isDxfLayerHidden(link, prim)) continue;
+    ctx.strokeStyle = resolveDxfPrimitiveColor(link, prim, style);
     if (prim.kind === 'line') {
       const [sx, sy] = worldToScreen(transform(prim.start));
       const [ex, ey] = worldToScreen(transform(prim.end));
@@ -109,11 +112,47 @@ export function resolveDxfLayerRows(
   return Array.from(rows.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export function resolveDxfUnderlayStyle(link: LinkDxfElement): DxfUnderlayStyle {
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
+export function resolveDxfUnderlayStyle(
+  link: LinkDxfElement,
+  viewOverride?: CategoryOverride,
+): DxfUnderlayStyle {
+  const baseOpacity =
+    typeof link.overlayOpacity === 'number' ? link.overlayOpacity : DXF_UNDERLAY_OPACITY;
+  const transparency = viewOverride?.projection?.transparency;
+  const overrideOpacity =
+    typeof transparency === 'number'
+      ? 1 - Math.max(0, Math.min(100, transparency)) / 100
+      : undefined;
+  const halftoneOpacity = viewOverride?.projection?.halftone ? 0.5 : undefined;
   return {
     color: link.colorMode === 'custom' && link.customColor ? link.customColor : DXF_UNDERLAY_STROKE,
-    opacity: typeof link.overlayOpacity === 'number' ? link.overlayOpacity : DXF_UNDERLAY_OPACITY,
+    opacity: clamp01(overrideOpacity ?? halftoneOpacity ?? baseOpacity),
+    colorMode: link.colorMode ?? 'black_white',
   };
+}
+
+export function resolveDxfPrimitiveColor(
+  link: LinkDxfElement,
+  prim: DxfLineworkPrim,
+  style = resolveDxfUnderlayStyle(link),
+): string {
+  if (style.colorMode === 'native' && prim.layerColor) return prim.layerColor;
+  return style.color;
+}
+
+export function dxfViewOverrideKey(linkId: string): string {
+  return `link_dxf:${linkId}`;
+}
+
+export function isDxfLinkVisibleInView(
+  link: LinkDxfElement,
+  viewOverride?: CategoryOverride,
+): boolean {
+  return link.loaded !== false && viewOverride?.visible !== false;
 }
 
 function findOriginPoint(
@@ -194,7 +233,7 @@ export function selectDxfUnderlaysForLevel(
   if (!levelId) return [];
   const out: LinkDxfElement[] = [];
   for (const el of Object.values(elementsById)) {
-    if (el.kind === 'link_dxf' && el.levelId === levelId) {
+    if (el.kind === 'link_dxf' && el.levelId === levelId && el.loaded !== false) {
       out.push(el as LinkDxfElement);
     }
   }

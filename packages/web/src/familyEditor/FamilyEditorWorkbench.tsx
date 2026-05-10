@@ -1,4 +1,4 @@
-import { useMemo, useState, type DragEvent, type JSX } from 'react';
+import { useMemo, useState, type DragEvent, type JSX, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type {
   ArrayGeometryNode,
@@ -75,6 +75,14 @@ type SymbolicLine = SketchLine & {
   alignmentLock?: { refPlaneId: string };
   visibilityBinding?: VisibilityBinding;
   visibilityByDetailLevel?: VisibilityByDetailLevel;
+};
+
+type SymbolicLineStyle = {
+  label: string;
+  objectStyle: string;
+  stroke: string;
+  strokeWidth: number;
+  dashArray?: string;
 };
 
 type FamilyDimension = {
@@ -395,6 +403,28 @@ const EMPTY_SYMBOLIC_LINE_DRAFT = {
   subcategory: 'symbolic' as SymbolicLineSubcategory,
 };
 
+const SYMBOLIC_LINE_OBJECT_STYLES: Record<SymbolicLineSubcategory, SymbolicLineStyle> = {
+  symbolic: {
+    label: 'Symbolic Lines',
+    objectStyle: 'Family: Symbolic Lines',
+    stroke: 'var(--color-foreground)',
+    strokeWidth: 2,
+  },
+  opening_projection: {
+    label: 'Opening Projection',
+    objectStyle: 'Family: Opening Projection',
+    stroke: 'var(--color-accent)',
+    strokeWidth: 3,
+  },
+  hidden_cut: {
+    label: 'Hidden Lines (Cut)',
+    objectStyle: 'Family: Hidden Lines (Cut)',
+    stroke: 'var(--color-muted-foreground)',
+    strokeWidth: 2,
+    dashArray: '8 5',
+  },
+};
+
 const EMPTY_SYMBOLIC_ALIGN_DRAFT = {
   lineIndex: 0,
   refPlaneId: '',
@@ -488,6 +518,11 @@ export function FamilyEditorWorkbench(): JSX.Element {
   const [arrayDraft, setArrayDraft] = useState<ArrayDraft | null>(null);
   const [symbolicLines, setSymbolicLines] = useState<SymbolicLine[]>([]);
   const [symbolicLineDraft, setSymbolicLineDraft] = useState(EMPTY_SYMBOLIC_LINE_DRAFT);
+  const [selectedSymbolicLineIndex, setSelectedSymbolicLineIndex] = useState<number | null>(null);
+  const [symbolicCanvasStart, setSymbolicCanvasStart] = useState<{
+    xMm: number;
+    yMm: number;
+  } | null>(null);
   const [symbolicAlignDraft, setSymbolicAlignDraft] = useState(EMPTY_SYMBOLIC_ALIGN_DRAFT);
   const [dimensions, setDimensions] = useState<FamilyDimension[]>([]);
   const [dimensionDraft, setDimensionDraft] = useState({ refAId: '', refBId: '', paramKey: '' });
@@ -540,6 +575,8 @@ export function FamilyEditorWorkbench(): JSX.Element {
     setArrayDraft(null);
     setSymbolicLines(FURNITURE_SYMBOLIC_LINES.map((line) => ({ ...line })));
     setSymbolicLineDraft(EMPTY_SYMBOLIC_LINE_DRAFT);
+    setSelectedSymbolicLineIndex(null);
+    setSymbolicCanvasStart(null);
     setSymbolicAlignDraft(EMPTY_SYMBOLIC_ALIGN_DRAFT);
     setDimensions([
       {
@@ -863,6 +900,74 @@ export function FamilyEditorWorkbench(): JSX.Element {
         subcategory: symbolicLineDraft.subcategory,
       },
     ]);
+    setSelectedSymbolicLineIndex(symbolicLines.length);
+  }
+
+  function updateSymbolicLineVisibility(index: number, binding: VisibilityBinding | undefined) {
+    setSymbolicLines((prev) =>
+      prev.map((line, i) => {
+        if (i !== index) return line;
+        if (binding === undefined) {
+          const { visibilityBinding: _omit, ...rest } = line;
+          return rest as SymbolicLine;
+        }
+        return { ...line, visibilityBinding: binding };
+      }),
+    );
+  }
+
+  function updateSymbolicLineDetailLevelVisibility(
+    index: number,
+    level: DetailLevelKey,
+    visible: boolean,
+  ) {
+    setSymbolicLines((prev) =>
+      prev.map((line, i) => {
+        if (i !== index) return line;
+        const next: VisibilityByDetailLevel = { ...(line.visibilityByDetailLevel ?? {}) };
+        next[level] = visible;
+        return { ...line, visibilityByDetailLevel: next };
+      }),
+    );
+  }
+
+  function canvasPointFromMouseEvent(event: MouseEvent<SVGSVGElement>): {
+    xMm: number;
+    yMm: number;
+  } {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const width = rect.width || 480;
+    const height = rect.height || 260;
+    const scale = 5;
+    return {
+      xMm: Math.round((event.clientX - rect.left - width / 2) * scale),
+      yMm: Math.round((height / 2 - (event.clientY - rect.top)) * scale),
+    };
+  }
+
+  function drawSymbolicLineOnCanvas(event: MouseEvent<SVGSVGElement>) {
+    const point = canvasPointFromMouseEvent(event);
+    if (!symbolicCanvasStart) {
+      setSymbolicCanvasStart(point);
+      return;
+    }
+    const nextLine: SymbolicLine = {
+      startMm: symbolicCanvasStart,
+      endMm: point,
+      subcategory: symbolicLineDraft.subcategory,
+    };
+    setSymbolicLines((prev) => {
+      setSelectedSymbolicLineIndex(prev.length);
+      return [...prev, nextLine];
+    });
+    setSymbolicLineDraft((prev) => ({
+      ...prev,
+      sx: symbolicCanvasStart.xMm,
+      sy: symbolicCanvasStart.yMm,
+      ex: point.xMm,
+      ey: point.yMm,
+    }));
+    setSymbolicCanvasStart(null);
   }
 
   function alignSymbolicLineToPlane(
@@ -1058,6 +1163,14 @@ export function FamilyEditorWorkbench(): JSX.Element {
   const previewVisibleSweepCount = sweeps.filter(visibleInPreview).length;
   const previewVisibleNestedCount = nestedInstances.filter(visibleInPreview).length;
   const previewVisibleSymbolicLineCount = symbolicLines.filter(visibleInPreview).length;
+  const selectedSymbolicLine =
+    selectedSymbolicLineIndex !== null ? symbolicLines[selectedSymbolicLineIndex] : null;
+  const symbolicProjectRenderingEvidence = symbolicLines
+    .map((line, index) => {
+      const style = SYMBOLIC_LINE_OBJECT_STYLES[line.subcategory];
+      return `L${index + 1}:${style.objectStyle}:w${style.strokeWidth}:${style.dashArray ? 'dashed' : 'solid'}`;
+    })
+    .join('|');
 
   return (
     <div className="p-4 space-y-6">
@@ -1285,6 +1398,44 @@ export function FamilyEditorWorkbench(): JSX.Element {
 
       <section className="rounded border p-3 space-y-2" aria-label="Symbolic line authoring">
         <h2 className="font-semibold">Symbolic Lines and Detail Components</h2>
+        <svg
+          role="img"
+          aria-label="Symbolic line drawing canvas"
+          data-testid="symbolic-line-canvas"
+          viewBox="0 0 480 260"
+          className="h-64 w-full rounded border border-border bg-surface"
+          onClick={drawSymbolicLineOnCanvas}
+        >
+          <line x1="240" y1="0" x2="240" y2="260" stroke="var(--color-border)" />
+          <line x1="0" y1="130" x2="480" y2="130" stroke="var(--color-border)" />
+          {symbolicLines.map((line, index) => {
+            if (!visibleInPreview(line)) return null;
+            const style = SYMBOLIC_LINE_OBJECT_STYLES[line.subcategory];
+            return (
+              <line
+                key={index}
+                data-testid={`symbolic-canvas-line-${index}`}
+                x1={240 + line.startMm.xMm / 5}
+                y1={130 - line.startMm.yMm / 5}
+                x2={240 + line.endMm.xMm / 5}
+                y2={130 - line.endMm.yMm / 5}
+                stroke={style.stroke}
+                strokeWidth={style.strokeWidth}
+                strokeDasharray={style.dashArray}
+                strokeLinecap="round"
+              />
+            );
+          })}
+          {symbolicCanvasStart ? (
+            <circle
+              data-testid="symbolic-canvas-start"
+              cx={240 + symbolicCanvasStart.xMm / 5}
+              cy={130 - symbolicCanvasStart.yMm / 5}
+              r="4"
+              fill="var(--color-accent)"
+            />
+          ) : null}
+        </svg>
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <select
             aria-label="Symbolic line subcategory"
@@ -1325,17 +1476,52 @@ export function FamilyEditorWorkbench(): JSX.Element {
         <ul className="space-y-1 text-xs" data-testid="symbolic-lines-list">
           {symbolicLines.map((line, index) =>
             visibleInPreview(line) ? (
-              <li key={index}>
-                {line.subcategory}: ({line.startMm.xMm}, {line.startMm.yMm}) → ({line.endMm.xMm},{' '}
-                {line.endMm.yMm}){line.alignmentLock ? ' · locked' : ''}
-                {line.visibilityBinding
-                  ? ` · visible when ${line.visibilityBinding.paramName}`
-                  : ''}
-                {line.visibilityByDetailLevel ? ' · coarse-only' : ''}
+              <li key={index} className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  className={
+                    selectedSymbolicLineIndex === index
+                      ? 'underline font-semibold'
+                      : 'underline text-left'
+                  }
+                  onClick={() => setSelectedSymbolicLineIndex(index)}
+                  aria-label={`select-symbolic-line-${index}`}
+                >
+                  {SYMBOLIC_LINE_OBJECT_STYLES[line.subcategory].label}: ({line.startMm.xMm},{' '}
+                  {line.startMm.yMm}) → ({line.endMm.xMm}, {line.endMm.yMm})
+                </button>
+                <span
+                  data-testid={`symbolic-line-style-${index}`}
+                  className="rounded border border-border px-1 py-0.5"
+                >
+                  {SYMBOLIC_LINE_OBJECT_STYLES[line.subcategory].objectStyle} · weight{' '}
+                  {SYMBOLIC_LINE_OBJECT_STYLES[line.subcategory].strokeWidth}
+                  {SYMBOLIC_LINE_OBJECT_STYLES[line.subcategory].dashArray ? ' · dashed' : ''}
+                </span>
+                {line.alignmentLock ? <span>locked</span> : null}
+                {line.visibilityBinding ? ` visible when ${line.visibilityBinding.paramName}` : ''}
+                {line.visibilityByDetailLevel ? ' detail-filtered' : ''}
               </li>
             ) : null,
           )}
         </ul>
+        <span
+          className="sr-only"
+          data-testid="symbolic-project-rendering-evidence"
+          data-evidence={symbolicProjectRenderingEvidence}
+        >
+          {symbolicProjectRenderingEvidence}
+        </span>
+        {selectedSymbolicLine && selectedSymbolicLineIndex !== null ? (
+          <SymbolicLinePropertiesPanel
+            line={selectedSymbolicLine}
+            params={params}
+            onUpdate={(binding) => updateSymbolicLineVisibility(selectedSymbolicLineIndex, binding)}
+            onUpdateDetailLevel={(level, visible) =>
+              updateSymbolicLineDetailLevelVisibility(selectedSymbolicLineIndex, level, visible)
+            }
+          />
+        ) : null}
         {symbolicLines.length > 0 && refPlanes.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span>Align</span>
@@ -1785,6 +1971,8 @@ export function FamilyEditorWorkbench(): JSX.Element {
             categorySettings,
             viewRange,
             symbolicLines,
+            symbolicLineObjectStyles: SYMBOLIC_LINE_OBJECT_STYLES,
+            symbolicProjectRenderingEvidence,
             dimensions,
             eqConstraints,
             refPlanes,
@@ -1852,6 +2040,107 @@ interface SweepPropertiesPanelProps {
 }
 
 const VISIBLE_ALWAYS = '__always__';
+
+function SymbolicLinePropertiesPanel({
+  line,
+  params,
+  onUpdate,
+  onUpdateDetailLevel,
+}: {
+  line: SymbolicLine;
+  params: Param[];
+  onUpdate: (binding: VisibilityBinding | undefined) => void;
+  onUpdateDetailLevel: (level: DetailLevelKey, visible: boolean) => void;
+}): JSX.Element {
+  const booleanParams = params.filter((p) => p.type === 'boolean');
+  const binding = line.visibilityBinding;
+  const selected = binding ? binding.paramName : VISIBLE_ALWAYS;
+  const whenTrue = binding ? binding.whenTrue : true;
+  const detailVisible = (level: DetailLevelKey): boolean =>
+    line.visibilityByDetailLevel?.[level] !== false;
+  const style = SYMBOLIC_LINE_OBJECT_STYLES[line.subcategory];
+
+  function onParamChange(value: string) {
+    if (value === VISIBLE_ALWAYS) {
+      onUpdate(undefined);
+    } else {
+      onUpdate({ paramName: value, whenTrue });
+    }
+  }
+
+  function onWhenChange(next: boolean) {
+    if (!binding) return;
+    onUpdate({ paramName: binding.paramName, whenTrue: next });
+  }
+
+  return (
+    <div className="rounded border p-3 text-sm" role="region" aria-label="Symbolic line properties">
+      <h3 className="mb-2 font-semibold text-sm">Symbolic Line Properties</h3>
+      <div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
+        <span>Object Style</span>
+        <span data-testid="selected-symbolic-object-style">
+          {style.objectStyle} · weight {style.strokeWidth}
+          {style.dashArray ? ' · dashed' : ''}
+        </span>
+      </div>
+      <label className="flex items-center gap-2">
+        <span className="w-32">Visible when</span>
+        <select
+          aria-label="Symbolic line visible when"
+          value={selected}
+          onChange={(e) => onParamChange(e.target.value)}
+        >
+          <option value={VISIBLE_ALWAYS}>Always visible</option>
+          {booleanParams.map((p) => (
+            <option key={p.key} value={p.key}>
+              {p.label || p.key}
+            </option>
+          ))}
+        </select>
+      </label>
+      {binding ? (
+        <div className="mt-2 flex gap-3">
+          <label className="flex items-center gap-1">
+            <input
+              type="radio"
+              name="symbolicVisibilityWhen"
+              checked={whenTrue}
+              onChange={() => onWhenChange(true)}
+              aria-label="symbolic-show-when-true"
+            />
+            Show when true
+          </label>
+          <label className="flex items-center gap-1">
+            <input
+              type="radio"
+              name="symbolicVisibilityWhen"
+              checked={!whenTrue}
+              onChange={() => onWhenChange(false)}
+              aria-label="symbolic-show-when-false"
+            />
+            Show when false
+          </label>
+        </div>
+      ) : null}
+      <div className="mt-2" role="group" aria-label="Symbolic visibility by detail level">
+        <div className="font-medium">Detail levels</div>
+        <div className="mt-1 flex gap-4">
+          {(['coarse', 'medium', 'fine'] as const).map((level) => (
+            <label key={level} className="inline-flex items-center gap-1 capitalize">
+              <input
+                type="checkbox"
+                aria-label={`symbolic-visibility-${level}`}
+                checked={detailVisible(level)}
+                onChange={(e) => onUpdateDetailLevel(level, e.target.checked)}
+              />
+              {level}
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function parseFamilyTypeValue(param: Param, raw: string): unknown {
   if (param.type === 'length_mm' || param.type === 'angle_deg') {
@@ -2452,9 +2741,35 @@ function SweepProfileSketch({
   const [pickPlaneId, setPickPlaneId] = useState('');
   const [trimFirstIndex, setTrimFirstIndex] = useState(0);
   const [trimSecondIndex, setTrimSecondIndex] = useState(1);
+  const [trimShortcutArmed, setTrimShortcutArmed] = useState(false);
   const selectedPickPlaneId = pickPlaneId || refPlanes[0]?.id || '';
+  function commitTrimExtend() {
+    if (trimFirstIndex !== trimSecondIndex) {
+      onTrimExtend(trimFirstIndex, trimSecondIndex);
+    }
+  }
   return (
-    <div className="space-y-2">
+    <div
+      className="space-y-2"
+      tabIndex={0}
+      aria-label="Sweep profile sketch"
+      onKeyDown={(e) => {
+        const tagName = (e.target as HTMLElement).tagName.toLowerCase();
+        if (tagName === 'input' || tagName === 'select' || tagName === 'button') return;
+        const key = e.key.toLowerCase();
+        if (key === 't') {
+          setTrimShortcutArmed(true);
+          return;
+        }
+        if (trimShortcutArmed && key === 'r') {
+          e.preventDefault();
+          commitTrimExtend();
+          setTrimShortcutArmed(false);
+          return;
+        }
+        setTrimShortcutArmed(false);
+      }}
+    >
       <div className="text-xs text-muted">{t('familyEditor.sweepProfileHint')}</div>
       <ul className="text-xs space-y-1" data-testid="sweep-profile-list">
         {lines.map((l, i) => (
@@ -2570,7 +2885,7 @@ function SweepProfileSketch({
             type="button"
             data-testid="profile-trim-extend"
             disabled={trimFirstIndex === trimSecondIndex}
-            onClick={() => onTrimExtend(trimFirstIndex, trimSecondIndex)}
+            onClick={commitTrimExtend}
           >
             TR
           </button>

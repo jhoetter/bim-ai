@@ -1571,6 +1571,8 @@ class CreateLinkDxfCmd(BaseModel):
     dxf_layers: list[DxfLayerMeta] = Field(default_factory=list, alias="dxfLayers")
     hidden_layer_names: list[str] = Field(default_factory=list, alias="hiddenLayerNames")
     pinned: bool = Field(default=False)
+    source_path: str | None = Field(default=None, alias="sourcePath")
+    loaded: bool = Field(default=True)
 
 
 class UpdateLinkDxfCmd(BaseModel):
@@ -1584,13 +1586,17 @@ class UpdateLinkDxfCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["updateLinkDxf"] = "updateLinkDxf"
     link_id: str = Field(alias="linkId")
-    color_mode: Literal["black_white", "custom"] | None = Field(default=None, alias="colorMode")
+    color_mode: Literal["black_white", "custom", "native"] | None = Field(
+        default=None, alias="colorMode"
+    )
     custom_color: str | None = Field(default=None, alias="customColor")
     overlay_opacity: float | None = Field(default=None, alias="overlayOpacity", ge=0.0, le=1.0)
     hidden_layer_names: list[str] | None = Field(default=None, alias="hiddenLayerNames")
     origin_alignment_mode: Literal["origin_to_origin", "project_origin", "shared_coords"] | None = (
         Field(default=None, alias="originAlignmentMode")
     )
+    source_path: str | None = Field(default=None, alias="sourcePath")
+    loaded: bool | None = Field(default=None)
 
 
 # --- FED-02: selection_set + clash_test commands ----------------------------------

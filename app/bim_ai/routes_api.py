@@ -1243,6 +1243,8 @@ async def import_dxf(
         "rotationDeg": float(body.rotation_deg),
         "scaleFactor": float(body.scale_factor),
         "linework": linework,
+        "sourcePath": str(dxf_path),
+        "loaded": True,
     }
     try:
         ok, new_doc, _cmds, viols, code = try_commit_bundle(host_doc, [create_cmd])
@@ -1353,6 +1355,8 @@ async def upload_dxf_file(
         "rotationDeg": 0.0,
         "scaleFactor": 1.0,
         "linework": linework,
+        "sourcePath": file.filename or display_name,
+        "loaded": True,
     }
     try:
         ok, new_doc, _cmds, viols, code = try_commit_bundle(host_doc, [create_cmd])

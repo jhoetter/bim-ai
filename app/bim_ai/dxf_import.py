@@ -262,4 +262,6 @@ def build_link_dxf_payload(
         "scaleFactor": float(scale_factor),
         "linework": linework,
         "dxfLayers": collect_dxf_layers(linework),
+        "sourcePath": str(file_path),
+        "loaded": True,
     }
