@@ -3,7 +3,7 @@
   "checkpoint_id": "f2a689525679",
   "strategy": "manual-commit",
   "branch": "revit-parity-zero-gap-wave",
-  "checkpoints_count": 7,
+  "checkpoints_count": 8,
   "files_touched": [
     "app/bim_ai/commands.py",
     "app/bim_ai/elements.py",
@@ -57,13 +57,19 @@
       "transcript": "/f2/a689525679/3/full.jsonl",
       "content_hash": "/f2/a689525679/3/content_hash.txt",
       "prompt": "/f2/a689525679/3/prompt.txt"
+    },
+    {
+      "metadata": "/f2/a689525679/4/metadata.json",
+      "transcript": "/f2/a689525679/4/full.jsonl",
+      "content_hash": "/f2/a689525679/4/content_hash.txt",
+      "prompt": "/f2/a689525679/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1539184,
+    "input_tokens": 1702438,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 43238912,
-    "output_tokens": 116653,
-    "api_call_count": 360
+    "cache_read_tokens": 46864384,
+    "output_tokens": 129220,
+    "api_call_count": 392
   }
 }
