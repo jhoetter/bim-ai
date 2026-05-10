@@ -106,7 +106,7 @@ Example: door Width is a Type parameter; Sill Height is an Instance parameter.
 **Screenshot:**
 ![Family Types dialog](file:///Users/jhoetter/Desktop/Revit%20Specs/0399_01-53-36.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — the family editor now has a Family Types dialog for local type rows. Users can create a new type from the active one, rename types, delete non-last types, select the active type, and edit per-type values for the current family parameters; the active type feeds the resolved/flex preview. Missing: persistent `.rfa` type catalog storage, a full Revit Apply/OK transaction model, formula-driven value locking, and integration with loaded project family types.
 
 ---
 

@@ -184,6 +184,37 @@ describe('FAM material browser parity', () => {
   });
 });
 
+describe('FAM-056 — Family Types dialog', () => {
+  it('edits active type parameter values and feeds the resolved preview', () => {
+    const { getAllByRole, getByText, getByLabelText, getByTestId } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+
+    fireEvent.click(getAllByRole('button').find((b) => b.textContent === 'Add parameter')!);
+    fireEvent.click(getByTestId('family-types-open'));
+    fireEvent.change(getByLabelText('family-type-value-param_1'), { target: { value: '1500' } });
+    fireEvent.click(getByText('Close'));
+    fireEvent.click(getByText('Flex'));
+
+    expect(getByTestId('resolved-param_1').textContent).toContain('1500');
+  });
+
+  it('creates, renames, selects, and deletes family types', () => {
+    const { getByTestId, getByLabelText, queryByText } = renderWithI18n(<FamilyEditorWorkbench />);
+
+    fireEvent.click(getByTestId('family-types-open'));
+    fireEvent.click(getByTestId('family-types-new'));
+    fireEvent.change(getByLabelText('Family type name'), { target: { value: '900 x 2100' } });
+    expect(queryByText('900 x 2100')).toBeTruthy();
+
+    fireEvent.click(getByTestId('family-type-row-family-type-1'));
+    expect((getByLabelText('Family type name') as HTMLInputElement).value).toBe('Type 1');
+    fireEvent.click(getByTestId('family-type-row-family-type-2'));
+    fireEvent.click(getByTestId('family-types-delete'));
+    expect(queryByText('900 x 2100')).toBeNull();
+  });
+});
+
 describe('FAM-02 — sweep tool flow', () => {
   it('opens a sketch session when Sweep is clicked', () => {
     const { getByText, queryByLabelText } = renderWithI18n(<FamilyEditorWorkbench />);
