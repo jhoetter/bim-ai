@@ -1,0 +1,42 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "e467c867ee64",
+  "session_id": "019e0f10-1203-7042-8eea-b5b9ea724341",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T13:43:34.511496Z",
+  "branch": "revit-parity-layer-stack-reorder",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/authoring/MaterialLayerStackWorkbench.test.tsx",
+    "packages/web/src/workspace/authoring/MaterialLayerStackWorkbench.tsx",
+    "spec/revit-parity/README.md",
+    "spec/revit-parity/ch04-walls.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "7834f8a7153c",
+  "checkpoint_transcript_start": 9125,
+  "transcript_lines_at_start": 9125,
+  "token_usage": {
+    "input_tokens": 52282,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1126528,
+    "output_tokens": 838,
+    "api_call_count": 11
+  },
+  "session_metrics": {
+    "turn_count": 17
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T13:43:34.045057Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 90,
+    "human_modified": 3,
+    "human_removed": 0,
+    "total_committed": 90,
+    "total_lines_changed": 93,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}
