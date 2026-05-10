@@ -1456,12 +1456,8 @@ export function PlanCanvas({
       const ch = grp.children[i]!;
       if ((ch.userData as { placedTag?: unknown }).placedTag) grp.remove(ch);
     }
-    if (
-      activePlanViewId &&
-      (!display.hiddenSemanticKinds.has('placed_tag') || revealHiddenMode)
-    ) {
-      const placedTagReveal =
-        revealHiddenMode && display.hiddenSemanticKinds.has('placed_tag');
+    if (activePlanViewId && (!display.hiddenSemanticKinds.has('placed_tag') || revealHiddenMode)) {
+      const placedTagReveal = revealHiddenMode && display.hiddenSemanticKinds.has('placed_tag');
       for (const tag of Object.values(elementsById)) {
         if (tag.kind !== 'placed_tag') continue;
         if (tag.hostViewId !== activePlanViewId) continue;
@@ -4666,7 +4662,7 @@ export function PlanCanvas({
           className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
           data-testid="copy-tool-chip"
         >
-                  <span>Click reference point · hold Shift to constrain</span>
+          <span>Click reference point · hold Shift to constrain</span>
         </div>
       ) : null}
       {planTool === 'copy' && copyAnchorSet ? (

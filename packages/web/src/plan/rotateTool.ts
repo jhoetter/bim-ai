@@ -10,8 +10,7 @@ function normalizeSignedAngleDeg(angleDeg: number): number {
 }
 
 export function snapRotateAngleDeg(angleDeg: number): number {
-  const snapped =
-    Math.round(angleDeg / ROTATE_SNAP_INCREMENT_DEG) * ROTATE_SNAP_INCREMENT_DEG;
+  const snapped = Math.round(angleDeg / ROTATE_SNAP_INCREMENT_DEG) * ROTATE_SNAP_INCREMENT_DEG;
   return normalizeSignedAngleDeg(snapped);
 }
 
