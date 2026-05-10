@@ -157,11 +157,9 @@ describe('SKT-01 — SketchCanvas', () => {
   });
 
   it('cancel calls the cancel endpoint and triggers onCancelled', async () => {
-    let openCalls = 0;
     let cancelCalls = 0;
     mockFetch(async (url) => {
       if (url === '/api/sketch-sessions') {
-        openCalls += 1;
         return new Response(
           JSON.stringify({
             session: {
@@ -197,11 +195,13 @@ describe('SKT-01 — SketchCanvas', () => {
       />,
     );
 
-    await waitFor(() => expect(openCalls).toBe(1));
+    await waitFor(() =>
+      expect(getByTestId('sketch-status').textContent).toContain('0 sketch issues'),
+    );
     await act(async () => {
       fireEvent.click(getByTestId('sketch-cancel'));
     });
     await waitFor(() => expect(onCancelled).toHaveBeenCalled());
-    expect(cancelCalls).toBe(1);
+    await waitFor(() => expect(cancelCalls).toBe(1));
   });
 });
