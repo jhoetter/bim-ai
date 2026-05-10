@@ -53,6 +53,12 @@ export interface VisibilityByDetailLevel {
   fine?: boolean;
 }
 
+export interface FamilySymbolicLine extends SketchLine {
+  subcategory?: 'symbolic' | 'opening_projection' | 'hidden_cut';
+  visibilityBinding?: VisibilityBinding;
+  visibilityByDetailLevel?: VisibilityByDetailLevel;
+}
+
 /** Sweep node — extrude a 2D profile along a 2D path. */
 export interface SweepGeometryNode {
   kind: 'sweep';
@@ -152,6 +158,7 @@ export interface FamilyDefinition {
   name: string;
   discipline: FamilyDiscipline;
   thumbnail?: string;
+  templateMetadata?: unknown;
   params: FamilyParamDef[];
   defaultTypes: {
     id: string;
@@ -168,6 +175,8 @@ export interface FamilyDefinition {
    * authored/loadable family geometry that the FAM-01 resolver walks.
    */
   geometry?: FamilyGeometryNode[];
+  /** Project-runtime 2D symbolic/detail linework authored in the Family Editor. */
+  symbolicLines?: FamilySymbolicLine[];
 }
 
 // Parameter resolution: instance override > type params > family default > inline fallback

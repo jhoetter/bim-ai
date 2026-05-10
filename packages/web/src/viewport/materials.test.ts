@@ -1,14 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
+  createProjectMaterial,
   isStandingSeamMetalKey,
   listMaterials,
   materialBaseColor,
+  renameMaterial,
   resolveAllCategoryMaterials,
   resolveCategoryMaterial,
   resolveLighting,
   resolveMaterial,
   resolveSelection,
   resolveViewportPaintBundle,
+  updateMaterialDefinition,
   type ElementCategoryToken,
   type TokenReader,
 } from './materials';
@@ -248,5 +251,49 @@ describe('MAT-01 — material registry', () => {
     ]) {
       expect(resolveMaterial(k)!.category).toBe('metal_roof');
     }
+  });
+
+  it('stores custom material names and appearance/physical/thermal metadata', () => {
+    const material = createProjectMaterial({
+      displayName: 'Registry Custom Finish 907',
+      baseColor: '#445566',
+      category: 'render',
+      source: 'family',
+    });
+
+    expect(resolveMaterial(material.key)).toMatchObject({
+      displayName: 'Registry Custom Finish 907',
+      baseColor: '#445566',
+      category: 'render',
+      source: 'family',
+    });
+
+    renameMaterial(material.key, 'Registry Renamed Finish 907');
+    updateMaterialDefinition(material.key, {
+      textureMapUrl: 'library/custom/registry-color',
+      bumpMapUrl: 'library/custom/registry-bump',
+      reflectance: 0.67,
+      physical: { densityKgPerM3: 1560 },
+      thermal: { conductivityWPerMK: 0.29 },
+    });
+
+    expect(resolveMaterial(material.key)).toMatchObject({
+      displayName: 'Registry Renamed Finish 907',
+      textureMapUrl: 'library/custom/registry-color',
+      bumpMapUrl: 'library/custom/registry-bump',
+      reflectance: 0.67,
+      physical: { densityKgPerM3: 1560 },
+      thermal: { conductivityWPerMK: 0.29 },
+    });
+  });
+
+  it('includes curated appearance assets with texture and bump metadata', () => {
+    const curated = listMaterials().filter((material) => material.source === 'curated_asset');
+    expect(curated.length).toBeGreaterThan(12);
+    expect(resolveMaterial('asset_oak_plank_satin')).toMatchObject({
+      textureMapUrl: expect.stringContaining('oak'),
+      bumpMapUrl: expect.stringContaining('bump'),
+      category: 'timber',
+    });
   });
 });

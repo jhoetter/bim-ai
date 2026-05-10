@@ -11,6 +11,10 @@ import {
   writeAuthoredFamilyCatalog,
   type AuthoredFamilyDocument,
 } from './familyEditorPersistence';
+import {
+  buildFamilyTemplateMetadata,
+  getFamilyTemplateBrowserEntry,
+} from './familyTemplateCatalog';
 
 const BASE_DOCUMENT: AuthoredFamilyDocument = {
   id: 'fam:casework:bench',
@@ -123,7 +127,15 @@ describe('family editor persistence planning', () => {
   });
 
   it('plans project family_type creation with embedded authored document and definition', () => {
-    const plan = planAuthoredFamilyLoad(BASE_DOCUMENT, {}, { now: 2000 });
+    const document: AuthoredFamilyDocument = {
+      ...BASE_DOCUMENT,
+      templateMetadata: buildFamilyTemplateMetadata(getFamilyTemplateBrowserEntry('furniture'), {
+        originReferencePlaneIds: ['center-left-right'],
+        referencePlaneIds: ['center-left-right'],
+        defaultTypeNames: ['1200 Bench'],
+      }),
+    };
+    const plan = planAuthoredFamilyLoad(document, {}, { now: 2000 });
 
     expect(plan.reloaded).toBe(false);
     expect(plan.typeId).toBe('ft-fam_casework_bench-1jk');
@@ -136,9 +148,23 @@ describe('family editor persistence planning', () => {
     });
     expect(plan.command.parameters[FAMILY_EDITOR_DOCUMENT_PARAM]).toMatchObject({
       id: 'fam:casework:bench',
+      templateMetadata: {
+        fileName: 'Metric Furniture.rft',
+        hostType: 'standalone',
+        category: 'furniture',
+      },
     });
     expect(plan.command.parameters[FAMILY_EDITOR_DEFINITION_PARAM]).toMatchObject({
       id: 'fam:casework:bench',
+      templateMetadata: {
+        fileName: 'Metric Furniture.rft',
+      },
+    });
+    expect(plan.command.parameters).toMatchObject({
+      familyTemplateFileName: 'Metric Furniture.rft',
+      familyTemplateHostType: 'standalone',
+      familyTemplateCategory: 'furniture',
+      familyTemplateOriginReferencePlaneIds: ['center-left-right'],
     });
   });
 

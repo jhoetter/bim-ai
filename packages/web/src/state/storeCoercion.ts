@@ -1044,6 +1044,33 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
     };
   }
 
+  if (kind === 'family_instance') {
+    const familyTypeId = raw.familyTypeId ?? raw.family_type_id;
+    if (typeof familyTypeId !== 'string') return null;
+    const paramValues = raw.paramValues ?? raw.param_values;
+    return {
+      kind: 'family_instance',
+      id,
+      name,
+      familyTypeId,
+      ...(raw.levelId || raw.level_id ? { levelId: String(raw.levelId ?? raw.level_id) } : {}),
+      ...(raw.hostViewId || raw.host_view_id
+        ? { hostViewId: String(raw.hostViewId ?? raw.host_view_id) }
+        : {}),
+      positionMm: coerceXY((raw.positionMm ?? raw.position_mm) as Record<string, unknown>),
+      rotationDeg: Number(raw.rotationDeg ?? raw.rotation_deg ?? 0),
+      ...(paramValues && typeof paramValues === 'object' && !Array.isArray(paramValues)
+        ? { paramValues: paramValues as Record<string, unknown> }
+        : {}),
+      ...(raw.hostElementId || raw.host_element_id
+        ? { hostElementId: String(raw.hostElementId ?? raw.host_element_id) }
+        : {}),
+      ...(raw.hostAlongT !== undefined || raw.host_along_t !== undefined
+        ? { hostAlongT: Number(raw.hostAlongT ?? raw.host_along_t) }
+        : {}),
+    };
+  }
+
   if (kind === 'room_separation') {
     return {
       kind: 'room_separation',

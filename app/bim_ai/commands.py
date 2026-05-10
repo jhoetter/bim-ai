@@ -2744,6 +2744,23 @@ class PlaceAssetCmd(BaseModel):
     host_element_id: str | None = Field(default=None, alias="hostElementId")
 
 
+class PlaceFamilyInstanceCmd(BaseModel):
+    """Place an instance of a project-loaded family_type."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["placeFamilyInstance"] = "placeFamilyInstance"
+    id: str | None = None
+    name: str | None = None
+    family_type_id: str = Field(alias="familyTypeId")
+    level_id: str | None = Field(default=None, alias="levelId")
+    host_view_id: str | None = Field(default=None, alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    param_values: dict[str, Any] = Field(default_factory=dict, alias="paramValues")
+    host_element_id: str | None = Field(default=None, alias="hostElementId")
+    host_along_t: float | None = Field(default=None, alias="hostAlongT", ge=0, le=1)
+
+
 class MoveAssetDeltaCmd(BaseModel):
     """Move a placed_asset element by a positional delta."""
 
@@ -3545,6 +3562,7 @@ Command = Annotated[
     | DeleteGradedRegionCmd
     | IndexAssetCmd
     | PlaceAssetCmd
+    | PlaceFamilyInstanceCmd
     | MoveAssetDeltaCmd
     | MoveColumnDeltaCmd
     | MoveElementsDeltaCmd

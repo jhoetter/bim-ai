@@ -33,15 +33,24 @@ import {
   readAuthoredFamilyCatalog,
   upsertAuthoredFamilyCatalogDocument,
   writeAuthoredFamilyCatalog,
+  type AuthoredFamilyCategory,
   type AuthoredFamilyDocument,
   type AuthoredFamilyLoadPlan,
+  type AuthoredFamilyTemplate,
+  type AuthoredFamilyTemplateHostType,
 } from './familyEditorPersistence';
+import {
+  FAMILY_TEMPLATE_BROWSER_ENTRIES,
+  buildFamilyTemplateMetadata,
+  filterFamilyTemplateBrowserEntries,
+  getFamilyTemplateBrowserEntry,
+} from './familyTemplateCatalog';
 import type { FamilyReloadOverwriteOption } from '../families/catalogFamilyReload';
 
 /** VIE-02 — plan detail levels usable for per-node visibility binding. */
 type DetailLevelKey = 'coarse' | 'medium' | 'fine';
 
-type Template = 'generic_model' | 'door' | 'window' | 'profile' | 'furniture';
+type Template = AuthoredFamilyTemplate;
 
 type RefPlane = FamilySketchRefPlane & {
   id: string;
@@ -67,7 +76,7 @@ type FamilyTypeRow = {
   values: Record<string, unknown>;
 };
 
-type FamilyCategory = Template | 'detail_component';
+type FamilyCategory = AuthoredFamilyCategory;
 
 type FamilyCategorySettings = {
   category: FamilyCategory;
@@ -552,6 +561,13 @@ export function FamilyEditorWorkbench({
   const [persistenceMessage, setPersistenceMessage] = useState('');
   const [pendingLoadPlan, setPendingLoadPlan] = useState<AuthoredFamilyLoadPlan | null>(null);
   const [template, setTemplate] = useState<Template>('generic_model');
+  const [templateSearch, setTemplateSearch] = useState('');
+  const [templateHostFilter, setTemplateHostFilter] = useState<
+    AuthoredFamilyTemplateHostType | 'all'
+  >('all');
+  const [templateCategoryFilter, setTemplateCategoryFilter] = useState<FamilyCategory | 'all'>(
+    'all',
+  );
   const [refPlanes, setRefPlanes] = useState<RefPlane[]>([]);
   const [params, setParams] = useState<Param[]>([]);
   const [familyTypes, setFamilyTypes] = useState<FamilyTypeRow[]>(() => initialFamilyTypeRows());
@@ -661,21 +677,59 @@ export function FamilyEditorWorkbench({
     );
   }
 
+  function resetAuthoredFamilyContent() {
+    setParams([]);
+    setFamilyTypes(initialFamilyTypeRows());
+    setActiveFamilyTypeId(DEFAULT_FAMILY_TYPE_ID);
+    setFamilyTypesDialogOpen(false);
+    setPreviewVisibility(false);
+    setPreviewDetailLevel('medium');
+    setFlexMode(false);
+    setFlexValues({});
+    setSweeps([]);
+    setSelectedSweepIndex(null);
+    setArrays([]);
+    setArrayDraft(null);
+    setSymbolicLines([]);
+    setSymbolicLineDraft(EMPTY_SYMBOLIC_LINE_DRAFT);
+    setSelectedSymbolicLineIndex(null);
+    setSymbolicCanvasStart(null);
+    setSymbolicAlignDraft(EMPTY_SYMBOLIC_ALIGN_DRAFT);
+    setDimensions([]);
+    setDimensionDraft({
+      refAId: '',
+      refBId: '',
+      labelMode: 'new',
+      paramKey: '',
+      newParamKey: '',
+    });
+    setEqConstraints([]);
+    setEqOrientation('vertical');
+    setNestedInstances([]);
+    setSelectedNestedIndex(null);
+  }
+
   function selectTemplate(nextTemplate: Template) {
+    const templateEntry = getFamilyTemplateBrowserEntry(nextTemplate);
     setTemplate(nextTemplate);
-    if (nextTemplate !== 'furniture') return;
+    setCategorySettings({
+      category: templateEntry.category,
+      alwaysVertical: templateEntry.defaultAlwaysVertical,
+      workPlaneBased: templateEntry.defaultWorkPlaneBased,
+      roomCalculationPoint: templateEntry.defaultRoomCalculationPoint,
+      shared: templateEntry.defaultShared,
+    });
+    if (nextTemplate !== 'furniture') {
+      setRefPlanes([]);
+      setViewRange(DEFAULT_FAMILY_VIEW_RANGE);
+      resetAuthoredFamilyContent();
+      return;
+    }
     setRefPlanes(FURNITURE_REF_PLANES.map((plane) => ({ ...plane })));
     setParams(FURNITURE_PARAMS.map((param) => ({ ...param })));
     setFamilyTypes(FURNITURE_TYPE_ROWS.map((row) => ({ ...row, values: { ...row.values } })));
     setActiveFamilyTypeId(DEFAULT_FAMILY_TYPE_ID);
     setFamilyTypesDialogOpen(false);
-    setCategorySettings({
-      category: 'furniture',
-      alwaysVertical: false,
-      workPlaneBased: false,
-      roomCalculationPoint: false,
-      shared: false,
-    });
     setViewRange(DEFAULT_FAMILY_VIEW_RANGE);
     setPreviewVisibility(true);
     setPreviewDetailLevel('coarse');
@@ -713,12 +767,24 @@ export function FamilyEditorWorkbench({
     setSelectedNestedIndex(null);
   }
 
+  function currentTemplateMetadata() {
+    const entry = getFamilyTemplateBrowserEntry(template);
+    return buildFamilyTemplateMetadata(entry, {
+      originReferencePlaneIds: refPlanes
+        .filter((plane) => plane.offsetMm === 0 && plane.isSymmetryRef)
+        .map((plane) => plane.id),
+      referencePlaneIds: refPlanes.map((plane) => plane.id),
+      defaultTypeNames: familyTypes.map((row) => row.name),
+    });
+  }
+
   function currentAuthoredFamilyDocument(): AuthoredFamilyDocument {
     const savedAt = now();
     return {
       id: familyId.trim() || 'authored-family-1',
       name: familyName.trim() || 'Untitled Family',
       template,
+      templateMetadata: currentTemplateMetadata(),
       categorySettings,
       viewRange,
       refPlanes: refPlanes.map((plane) => ({ ...plane })),
@@ -1467,13 +1533,22 @@ export function FamilyEditorWorkbench({
       BUILT_IN_FAMILIES.find((f) => f.id === selectedNested.familyId))
     : undefined;
 
-  const templates: { value: Template; label: string }[] = [
-    { value: 'generic_model', label: t('familyEditor.templateGenericModel') },
-    { value: 'door', label: t('familyEditor.templateDoor') },
-    { value: 'window', label: t('familyEditor.templateWindow') },
-    { value: 'profile', label: t('familyEditor.templateProfile') },
-    { value: 'furniture', label: t('familyEditor.templateFurniture') },
-  ];
+  const visibleTemplateEntries = useMemo(
+    () =>
+      filterFamilyTemplateBrowserEntries(FAMILY_TEMPLATE_BROWSER_ENTRIES, {
+        query: templateSearch,
+        hostType: templateHostFilter,
+        category: templateCategoryFilter,
+      }),
+    [templateCategoryFilter, templateHostFilter, templateSearch],
+  );
+  const selectedTemplateEntry = getFamilyTemplateBrowserEntry(template);
+  const templateHostOptions = Array.from(
+    new Map(FAMILY_TEMPLATE_BROWSER_ENTRIES.map((entry) => [entry.hostType, entry.hostLabel])),
+  );
+  const templateCategoryOptions = Array.from(
+    new Map(FAMILY_TEMPLATE_BROWSER_ENTRIES.map((entry) => [entry.category, entry.categoryLabel])),
+  );
 
   const categoryOptions: { value: FamilyCategory; label: string }[] = [
     { value: 'generic_model', label: 'Generic Models' },
@@ -1524,21 +1599,75 @@ export function FamilyEditorWorkbench({
 
   return (
     <div className="p-4 space-y-6">
-      <div className="flex gap-2">
-        {templates.map(({ value, label }) => (
-          <button
-            type="button"
-            key={value}
-            className={
-              template === value
-                ? 'bg-accent text-accent-foreground px-3 py-1 rounded'
-                : 'px-3 py-1 rounded border'
+      <section className="rounded border p-3 space-y-3" aria-label="Family template browser">
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <label className="flex items-center gap-2">
+            <span>Template search</span>
+            <input
+              aria-label="Search family templates"
+              value={templateSearch}
+              onChange={(e) => setTemplateSearch(e.target.value)}
+              className="rounded border px-2 py-1"
+              placeholder=".rft, category, host"
+            />
+          </label>
+          <select
+            aria-label="Filter family templates by host"
+            value={templateHostFilter}
+            onChange={(e) =>
+              setTemplateHostFilter(e.target.value as AuthoredFamilyTemplateHostType | 'all')
             }
-            onClick={() => selectTemplate(value)}
           >
-            {label}
-          </button>
-        ))}
+            <option value="all">All hosts</option>
+            {templateHostOptions.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <select
+            aria-label="Filter family templates by category"
+            value={templateCategoryFilter}
+            onChange={(e) => setTemplateCategoryFilter(e.target.value as FamilyCategory | 'all')}
+          >
+            <option value="all">All categories</option>
+            {templateCategoryOptions.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <span className="text-xs text-muted" data-testid="selected-template-metadata">
+            {selectedTemplateEntry.fileName} · {selectedTemplateEntry.categoryLabel} ·{' '}
+            {selectedTemplateEntry.hostLabel}
+          </span>
+        </div>
+        <ul className="grid gap-2 md:grid-cols-2" data-testid="family-template-browser">
+          {visibleTemplateEntries.map((entry) => (
+            <li key={entry.id}>
+              <button
+                type="button"
+                className={
+                  template === entry.id
+                    ? 'w-full rounded border border-accent bg-accent/10 p-2 text-left'
+                    : 'w-full rounded border p-2 text-left'
+                }
+                onClick={() => selectTemplate(entry.id)}
+                aria-pressed={template === entry.id}
+                data-testid={`family-template-${entry.id}`}
+              >
+                <span className="block text-sm font-semibold">{entry.fileName}</span>
+                <span className="block text-xs text-muted">
+                  {entry.categoryLabel} · {entry.hostLabel}
+                </span>
+                <span className="block text-xs text-muted">{entry.description}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <div className="flex gap-2">
         <button
           type="button"
           className="px-3 py-1 rounded border ml-auto"
