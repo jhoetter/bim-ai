@@ -13,7 +13,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Furniture template](file:///Users/jhoetter/Desktop/Revit%20Specs/0487_03-40-03.png)
 
-**bim-ai status:** 🟡 Partial — family editor/resolver visibility bindings can tie sweeps and nested instances to boolean family parameters, covering the core Yes/No visibility behavior. Missing: finished furniture-template presets and a general associate-parameter button on every eligible property.
+**bim-ai status:** 🟡 Partial — the family editor now exposes a Furniture template preset. Selecting it seeds origin reference planes, a Furniture category, chair parameters (Width, Depth, Seat Height, Seat Thickness, Backrest Depth, Leg Radius, Leg Offset, Show 2D Elements), two starter types, coarse-only symbolic plan lines, and a medium/fine sweep placeholder. Missing: Revit `.rft` file browsing, full project-load family catalog persistence, and host-free placement directly from this authored template.
 
 ---
 
@@ -24,7 +24,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![EQ constraint](file:///Users/jhoetter/Desktop/Revit%20Specs/0494_03-40-28.png)
 
-**bim-ai status:** 🟡 Partial — family geometry nodes support coarse/medium/fine visibility and resolver filtering. Missing: a finished furniture family template that combines coarse symbolic-only output with medium/fine 3D solids and project preview controls.
+**bim-ai status:** ❌ Not available — reference-plane dimensions can be created, but there is no EQ toggle or constraint solver that keeps multiple plane gaps equal.
 
 ---
 
@@ -46,7 +46,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Yes/No Visibility parameter](file:///Users/jhoetter/Desktop/Revit%20Specs/0601_03-48-28.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — family editor parameters support boolean defaults and sweeps/nested instances can bind their Visible state to a boolean family parameter. The Furniture template seeds `Show_2D_Elements` and binds coarse symbolic plan lines to it while the 3D sweep placeholder uses the inverse binding. Missing: a general Associate Family Parameter button on every eligible property and project-placement UI for toggling authored-family visibility params.
 
 ---
 
@@ -57,7 +57,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Symbolic Lines chair](file:///Users/jhoetter/Desktop/Revit%20Specs/0513_03-41-37.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — the Furniture template seeds symbolic plan-view linework for a chair outline/backrest, tagged as coarse-only and bound to `Show_2D_Elements`. The general family editor can also author symbolic/detail lines with subcategory metadata. Missing: canvas drawing for furniture symbols, line style/object-style propagation, and project plan rendering of authored symbolic family linework.
 
 ---
 
@@ -79,7 +79,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Multiple Types](file:///Users/jhoetter/Desktop/Revit%20Specs/0521_03-42-07.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — the Family Types dialog already supports New Type, rename, select, delete, and per-type parameter values. The Furniture template now seeds two starter chair types (`600 x 600 Chair` and `750 x 750 Lounge`) with different furniture parameter values. Missing: persistence as loadable Revit-style family type catalogs and a project Type Selector for this authored furniture template.
 
 ---
 
@@ -90,7 +90,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Extrusion height from elevation](file:///Users/jhoetter/Desktop/Revit%20Specs/0623_03-50-05.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** ❌ Not available — family sweeps can be authored, but there is no elevation-view extrusion depth workflow or height-locking to named elevation reference planes.
 
 ---
 
@@ -101,7 +101,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Leg circle extrusion](file:///Users/jhoetter/Desktop/Revit%20Specs/0651_03-52-02.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** ❌ Not available — the Furniture template seeds a `Leg_Radius` parameter, but there is no circle sketch primitive, circular extrusion, or generated four-leg geometry.
 
 ---
 
@@ -112,7 +112,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Leg Offset parameter](file:///Users/jhoetter/Desktop/Revit%20Specs/0653_03-52-15.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — the Furniture template seeds `Leg_Offset` and inner leg-offset reference planes, giving the authored chair a named inset parameter and editable offset planes. Missing: actual param-bound offset constraints, four generated leg placements, and automatic updates when Width/Depth types change.
 
 ---
 
@@ -123,7 +123,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Detail level 2D vs 3D](file:///Users/jhoetter/Desktop/Revit%20Specs/0679_03-55-13.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — the Furniture template seeds coarse-only symbolic lines and a medium/fine-only sweep placeholder, and the family editor Preview Visibility control can switch detail levels to show the 2D/3D split. Missing: full project-context preview behavior and complete rendering of authored symbolic family linework in placed instances.
 
 ---
 
@@ -134,4 +134,4 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Backrest Depth parameter](file:///Users/jhoetter/Desktop/Revit%20Specs/0534_03-42-59.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — the Furniture template seeds a `Backrest_Depth` type parameter, a matching reference plane, and an aligned dimension row between the center plane and the backrest plane. Missing: constraint solving that drives the plane from type values and a true elevation/profile workflow for the backrest solid.

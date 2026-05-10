@@ -9,6 +9,16 @@ function renderWithI18n(ui: React.ReactElement) {
   return render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>);
 }
 
+function parameterTypeSelect(comboboxes: HTMLElement[]): HTMLSelectElement {
+  const select = comboboxes.find((candidate) =>
+    Array.from((candidate as HTMLSelectElement).options ?? []).some(
+      (option) => option.value === 'material_key',
+    ),
+  );
+  if (!select) throw new Error('Parameter type select not found');
+  return select as HTMLSelectElement;
+}
+
 afterEach(() => {
   cleanup();
 });
@@ -20,6 +30,7 @@ describe('<FamilyEditorWorkbench />', () => {
     expect(getByText('Door')).toBeTruthy();
     expect(getByText('Window')).toBeTruthy();
     expect(getByText('Profile')).toBeTruthy();
+    expect(getByText('Furniture', { selector: 'button' })).toBeTruthy();
   });
 
   it('add horizontal reference plane', () => {
@@ -40,6 +51,51 @@ describe('<FamilyEditorWorkbench />', () => {
     fireEvent.click(getByText('Load into Project'));
     expect(warnSpy).toHaveBeenCalledWith('load-into-project stub', expect.anything());
     warnSpy.mockRestore();
+  });
+});
+
+describe('FAM-075/FAM-079/FAM-081/FAM-085 — furniture template preset', () => {
+  it('seeds a furniture family with ref planes, params, symbolic lines, sweeps, and types', () => {
+    const { getByText, getAllByText, getByLabelText, getByTestId } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+
+    fireEvent.click(getByText('Furniture', { selector: 'button' }));
+
+    expect((getByLabelText('Family category') as HTMLSelectElement).value).toBe('furniture');
+    expect(getByText('Center Left/Right')).toBeTruthy();
+    expect(getByText('Center Front/Back')).toBeTruthy();
+    expect(getAllByText('Backrest Depth').length).toBeGreaterThan(0);
+    expect(getByTestId('family-dimensions-list').textContent).toContain('Backrest_Depth');
+    expect(getByLabelText('parameter-default-Show_2D_Elements')).toBeTruthy();
+    expect((getByLabelText('parameter-default-Show_2D_Elements') as HTMLInputElement).checked).toBe(
+      true,
+    );
+    expect(getByTestId('symbolic-lines-list').textContent).toContain('visible when');
+    expect(getByTestId('preview-visibility-summary').textContent).toContain(
+      '0/1 sweeps, 5/5 symbolic lines',
+    );
+
+    fireEvent.click(getByTestId('family-types-open'));
+    expect(getByText('600 x 600 Chair')).toBeTruthy();
+    expect(getByText('750 x 750 Lounge')).toBeTruthy();
+  });
+
+  it('uses detail level preview to swap coarse symbolic lines for medium 3D geometry', () => {
+    const { getByText, getByLabelText, getByTestId } = renderWithI18n(<FamilyEditorWorkbench />);
+
+    fireEvent.click(getByText('Furniture', { selector: 'button' }));
+    fireEvent.change(getByLabelText('Preview detail level'), { target: { value: 'medium' } });
+
+    expect(getByTestId('preview-visibility-summary').textContent).toContain(
+      '0/1 sweeps, 0/5 symbolic lines',
+    );
+
+    fireEvent.click(getByLabelText('parameter-default-Show_2D_Elements'));
+
+    expect(getByTestId('preview-visibility-summary').textContent).toContain(
+      '1/1 sweeps, 0/5 symbolic lines',
+    );
   });
 });
 
@@ -122,7 +178,9 @@ describe('FAM material browser parity', () => {
     const { getAllByRole, getByTestId } = renderWithI18n(<FamilyEditorWorkbench />);
 
     fireEvent.click(getAllByRole('button').find((b) => b.textContent === 'Add parameter')!);
-    fireEvent.change(getAllByRole('combobox')[0], { target: { value: 'material_key' } });
+    fireEvent.change(parameterTypeSelect(getAllByRole('combobox')), {
+      target: { value: 'material_key' },
+    });
     fireEvent.click(getByTestId('material-default-editor').querySelector('button')!);
     fireEvent.click(getByTestId(`material-assign-${material.key}`));
 
@@ -136,7 +194,9 @@ describe('FAM material browser parity', () => {
     );
 
     fireEvent.click(getAllByRole('button').find((b) => b.textContent === 'Add parameter')!);
-    fireEvent.change(getAllByRole('combobox')[0], { target: { value: 'material_key' } });
+    fireEvent.change(parameterTypeSelect(getAllByRole('combobox')), {
+      target: { value: 'material_key' },
+    });
     fireEvent.click(getByText('Asset Browser'));
     expect(getByLabelText('Appearance Asset Browser')).toBeTruthy();
     fireEvent.change(getByLabelText('Search materials'), {
@@ -217,7 +277,7 @@ describe('FAM-056 — Family Types dialog', () => {
 
 describe('FAM-054 — aligned dimensions', () => {
   it('creates a length parameter from an aligned reference-plane dimension', () => {
-    const { getByText, getByLabelText, getByTestId, getByDisplayValue } = renderWithI18n(
+    const { getByText, getByLabelText, getByTestId, getAllByDisplayValue } = renderWithI18n(
       <FamilyEditorWorkbench />,
     );
 
@@ -228,7 +288,7 @@ describe('FAM-054 — aligned dimensions', () => {
     fireEvent.click(getByTestId('dimension-create-parameter'));
 
     expect(getByTestId('family-dimensions-list').textContent).toContain('Width: 1000 mm');
-    expect(getByDisplayValue('Width')).toBeTruthy();
+    expect(getAllByDisplayValue('Width').length).toBeGreaterThan(0);
   });
 });
 
