@@ -1,5 +1,7 @@
 # ruff: noqa: I001
 
+import math
+
 from bim_ai.engine import (
     Any,
     ApplyPlanViewTemplateCmd,
@@ -39,6 +41,9 @@ from bim_ai.engine import (
     CreateScheduleViewCmd,
     CreateSectionCutCmd,
     CreateSpotElevationCmd,
+    CreateSpotCoordinateCmd,
+    CreateSpotSlopeCmd,
+    CreateInsulationAnnotationCmd,
     CreateMaterialTagCmd,
     CreateMultiCategoryTagCmd,
     CreateTreadNumberCmd,
@@ -71,6 +76,9 @@ from bim_ai.engine import (
     SetElementPropCmd,
     SheetElem,
     SpotElevationElem,
+    SpotCoordinateElem,
+    SpotSlopeElem,
+    InsulationAnnotationElem,
     MaterialTagElem,
     MultiCategoryTagElem,
     TreadNumberElem,
@@ -337,9 +345,68 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
                 colour=cmd.colour,
             )
 
-        case CreateRadialDimensionCmd():
-            import math
+        case CreateSpotCoordinateCmd():
+            sid = cmd.id or new_id()
+            if sid in els:
+                raise ValueError(f"duplicate element id '{sid}'")
+            view = els.get(cmd.host_view_id)
+            if view is None or view.kind not in {"plan_view", "section_cut", "elevation_view"}:
+                raise ValueError(
+                    "createSpotCoordinate.hostViewId must reference plan_view/section_cut/elevation_view"
+                )
+            els[sid] = SpotCoordinateElem(
+                kind="spot_coordinate",
+                id=sid,
+                host_view_id=cmd.host_view_id,
+                position_mm=cmd.position_mm,
+                north_mm=cmd.north_mm,
+                east_mm=cmd.east_mm,
+                colour=cmd.colour,
+            )
 
+        case CreateSpotSlopeCmd():
+            sid = cmd.id or new_id()
+            if sid in els:
+                raise ValueError(f"duplicate element id '{sid}'")
+            view = els.get(cmd.host_view_id)
+            if view is None or view.kind not in {"plan_view", "section_cut", "elevation_view"}:
+                raise ValueError(
+                    "createSpotSlope.hostViewId must reference plan_view/section_cut/elevation_view"
+                )
+            els[sid] = SpotSlopeElem(
+                kind="spot_slope",
+                id=sid,
+                host_view_id=cmd.host_view_id,
+                position_mm=cmd.position_mm,
+                slope_pct=cmd.slope_pct,
+                slope_format=cmd.slope_format,
+                colour=cmd.colour,
+            )
+
+        case CreateInsulationAnnotationCmd():
+            sid = cmd.id or new_id()
+            if sid in els:
+                raise ValueError(f"duplicate element id '{sid}'")
+            view = els.get(cmd.host_view_id)
+            if view is None or view.kind not in {"plan_view", "section_cut", "elevation_view"}:
+                raise ValueError(
+                    "createInsulationAnnotation.hostViewId must reference plan_view/section_cut/elevation_view"
+                )
+            if math.isclose(cmd.start_mm.x_mm, cmd.end_mm.x_mm) and math.isclose(
+                cmd.start_mm.y_mm, cmd.end_mm.y_mm
+            ):
+                raise ValueError("createInsulationAnnotation.startMm and endMm must differ")
+            els[sid] = InsulationAnnotationElem(
+                kind="insulation_annotation",
+                id=sid,
+                host_view_id=cmd.host_view_id,
+                start_mm=cmd.start_mm,
+                end_mm=cmd.end_mm,
+                width_mm=cmd.width_mm,
+                colour=cmd.colour,
+            )
+
+        case CreateRadialDimensionCmd():
             rid = cmd.id or new_id()
             if rid in els:
                 raise ValueError(f"duplicate element id '{rid}'")
@@ -362,8 +429,6 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
             )
 
         case CreateDiameterDimensionCmd():
-            import math
-
             did = cmd.id or new_id()
             if did in els:
                 raise ValueError(f"duplicate element id '{did}'")
@@ -386,8 +451,6 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
             )
 
         case CreateArcLengthDimensionCmd():
-            import math
-
             aid = cmd.id or new_id()
             if aid in els:
                 raise ValueError(f"duplicate element id '{aid}'")
@@ -594,6 +657,7 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
                 scheme_parameter=cmd.scheme_parameter,
                 title=cmd.title,
             )
+
 
         case CreateReferencePlaneCmd():
             rpid = cmd.id or new_id()

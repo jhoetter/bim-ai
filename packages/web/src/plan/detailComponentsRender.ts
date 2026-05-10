@@ -80,6 +80,33 @@ export type ArcLengthDimensionPrimitive = {
   colour: string;
 };
 
+export type SpotCoordinatePrimitive = {
+  kind: 'spot_coordinate';
+  id: string;
+  positionMm: XY;
+  northMm: number;
+  eastMm: number;
+  colour: string;
+};
+
+export type SpotSlopePrimitive = {
+  kind: 'spot_slope';
+  id: string;
+  positionMm: XY;
+  slopePct: number;
+  slopeFormat: 'percent' | 'ratio' | 'degree';
+  colour: string;
+};
+
+export type InsulationAnnotationPrimitive = {
+  kind: 'insulation_annotation';
+  id: string;
+  startMm: XY;
+  endMm: XY;
+  widthMm: number;
+  colour: string;
+};
+
 export type MaterialTagPrimitive = {
   kind: 'material_tag';
   id: string;
@@ -197,7 +224,10 @@ export type DetailComponentPrimitive =
   | PlacedDetailComponentPrimitive
   | RepeatingDetailPrimitive
   | DetailGroupPrimitive
-  | ColorFillLegendPrimitive;
+  | ColorFillLegendPrimitive
+  | SpotCoordinatePrimitive
+  | SpotSlopePrimitive
+  | InsulationAnnotationPrimitive;
 
 /**
  * Walks `elementsById` and returns rendering primitives for every
@@ -376,6 +406,33 @@ export function extractDetailComponentPrimitives(
         positionMm: el.positionMm,
         schemeParameter: el.schemeParameter ?? 'Name',
         title: el.title ?? 'Color Fill Legend',
+      });
+    } else if (el.kind === 'spot_coordinate' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'spot_coordinate',
+        id: el.id,
+        positionMm: el.positionMm,
+        northMm: el.northMm,
+        eastMm: el.eastMm,
+        colour: el.colour ?? '#202020',
+      });
+    } else if (el.kind === 'spot_slope' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'spot_slope',
+        id: el.id,
+        positionMm: el.positionMm,
+        slopePct: el.slopePct,
+        slopeFormat: el.slopeFormat ?? 'percent',
+        colour: el.colour ?? '#202020',
+      });
+    } else if (el.kind === 'insulation_annotation' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'insulation_annotation',
+        id: el.id,
+        startMm: el.startMm,
+        endMm: el.endMm,
+        widthMm: el.widthMm ?? 200.0,
+        colour: el.colour ?? '#202020',
       });
     }
   }
