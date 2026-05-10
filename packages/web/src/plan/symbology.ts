@@ -548,8 +548,10 @@ function rebuildPlanMeshesFromWire(
   holder: THREE.Object3D,
   elementsById: Record<string, Element>,
   opts: {
+    activeLevelId?: string;
     selectedId?: string;
     presentation?: PlanPresentationPreset;
+    hiddenSemanticKinds?: ReadonlySet<string>;
     wirePrimitives: PlanProjectionPrimitivesV1Wire;
     roomFillOpacityScale?: number;
     planAnnotationHints?: PlanAnnotationHintsResolved | null;
@@ -568,6 +570,7 @@ function rebuildPlanMeshesFromWire(
   const ann = opts.planAnnotationHints ?? null;
   const tagOpenScale = opts.planTagFontScales?.opening ?? 1;
   const tagRoomScale = opts.planTagFontScales?.room ?? 1;
+  const kindHidden = (kind: string): boolean => opts.hiddenSemanticKinds?.has(kind) ?? false;
 
   const wallsRaw = Array.isArray(prim.walls) ? (prim.walls as Record<string, unknown>[]) : [];
   const wallsByWireId = new Map<string, Extract<Element, { kind: 'wall' }>>();
@@ -654,6 +657,11 @@ function rebuildPlanMeshesFromWire(
       }
     }
   }
+
+  addPlacedAssetPlanSymbols(holder, elementsById, {
+    activeLevelId: opts.activeLevelId,
+    kindHidden,
+  });
 
   const suppressProjection = opts.lineWeights?.projMinor === null;
 
@@ -868,6 +876,75 @@ function rebuildPlanMeshesFromWire(
             offsetMm: coerceVec2Mm(dm.offsetMm ?? { x: 0, y: 0 }),
           };
     holder.add(dimensionsThree(dEl));
+  }
+}
+
+function addPlacedAssetPlanSymbols(
+  holder: THREE.Object3D,
+  elementsById: Record<string, Element>,
+  opts: {
+    activeLevelId?: string;
+    kindHidden?: (kind: string) => boolean;
+  },
+): void {
+  if (opts.kindHidden?.('placed_asset')) return;
+
+  type PlacedAssetElement = Extract<Element, { kind: 'placed_asset' }>;
+  type AssetLibraryEntryElement = Extract<Element, { kind: 'asset_library_entry' }>;
+
+  const assetEntries: Record<string, AssetLibraryEntryElement> = {};
+  for (const e of Object.values(elementsById)) {
+    if (e.kind === 'asset_library_entry') {
+      assetEntries[e.id] = e as AssetLibraryEntryElement;
+    }
+  }
+
+  const placedAssets = Object.values(elementsById).filter(
+    (e): e is PlacedAssetElement =>
+      e.kind === 'placed_asset' && (!opts.activeLevelId || e.levelId === opts.activeLevelId),
+  );
+
+  for (const asset of placedAssets) {
+    const entry = assetEntries[asset.assetId];
+    const wM = (entry?.thumbnailWidthMm ?? 1000) / 1000;
+    const dM = (entry?.thumbnailHeightMm ?? 600) / 1000;
+    const cx = asset.positionMm.xMm / 1000;
+    const cz = asset.positionMm.yMm / 1000;
+    const rotRad = ((asset.rotationDeg ?? 0) * Math.PI) / 180;
+    const hw = wM / 2;
+    const hd = dM / 2;
+    const cosR = Math.cos(rotRad);
+    const sinR = Math.sin(rotRad);
+    const y = PLAN_Y + 0.005;
+
+    const corners = [
+      { x: -hw, z: -hd },
+      { x: hw, z: -hd },
+      { x: hw, z: hd },
+      { x: -hw, z: hd },
+    ];
+
+    const worldCorners = corners.map(
+      (c) => new THREE.Vector3(cx + c.x * cosR - c.z * sinR, y, cz + c.x * sinR + c.z * cosR),
+    );
+
+    const outlinePts = [...worldCorners, worldCorners[0]!];
+    const outlineGeom = new THREE.BufferGeometry().setFromPoints(outlinePts);
+    const outlineLine = new THREE.Line(
+      outlineGeom,
+      new THREE.LineBasicMaterial({ color: '#8B4513', linewidth: 1.5 }),
+    );
+    outlineLine.userData.bimPickId = asset.id;
+    holder.add(outlineLine);
+
+    const diagPts = [worldCorners[0]!, worldCorners[2]!];
+    const diagGeom = new THREE.BufferGeometry().setFromPoints(diagPts);
+    const diagLine = new THREE.Line(
+      diagGeom,
+      new THREE.LineBasicMaterial({ color: '#8B4513', linewidth: 1 }),
+    );
+    diagLine.userData.bimPickId = asset.id;
+    holder.add(diagLine);
   }
 }
 
@@ -1127,8 +1204,10 @@ export function rebuildPlanMeshes(
 
   if (opts.wirePrimitives && isPlanProjectionPrimitivesV1(opts.wirePrimitives)) {
     rebuildPlanMeshesFromWire(holder, elementsById, {
+      activeLevelId: opts.activeLevelId,
       selectedId: opts.selectedId,
       presentation: opts.presentation,
+      hiddenSemanticKinds: opts.hiddenSemanticKinds,
       wirePrimitives: opts.wirePrimitives,
       roomFillOpacityScale,
       planAnnotationHints: opts.planAnnotationHints ?? null,
@@ -1233,65 +1312,7 @@ export function rebuildPlanMeshes(
   // F-114: placed_asset schematic plan symbols (rectangle outline + cross diagonal).
   {
     const before = holder.children.length;
-    type PlacedAssetElement = Extract<Element, { kind: 'placed_asset' }>;
-    type AssetLibraryEntryElement = Extract<Element, { kind: 'asset_library_entry' }>;
-
-    const assetEntries: Record<string, AssetLibraryEntryElement> = {};
-    for (const e of Object.values(elementsById)) {
-      if (e.kind === 'asset_library_entry') {
-        assetEntries[e.id] = e as AssetLibraryEntryElement;
-      }
-    }
-
-    const placedAssets = Object.values(elementsById).filter(
-      (e): e is PlacedAssetElement => e.kind === 'placed_asset' && (!level || e.levelId === level),
-    );
-
-    for (const asset of placedAssets) {
-      if (kindHidden('placed_asset')) continue;
-      const entry = assetEntries[asset.assetId];
-      const wM = (entry?.thumbnailWidthMm ?? 1000) / 1000;
-      const dM = (entry?.thumbnailHeightMm ?? 600) / 1000;
-      const cx = asset.positionMm.xMm / 1000;
-      const cz = asset.positionMm.yMm / 1000;
-      const rotRad = ((asset.rotationDeg ?? 0) * Math.PI) / 180;
-      const hw = wM / 2;
-      const hd = dM / 2;
-      const cosR = Math.cos(rotRad);
-      const sinR = Math.sin(rotRad);
-      const Y = PLAN_Y + 0.005;
-
-      const corners = [
-        { x: -hw, z: -hd },
-        { x: hw, z: -hd },
-        { x: hw, z: hd },
-        { x: -hw, z: hd },
-      ];
-
-      const worldCorners = corners.map(
-        (c) => new THREE.Vector3(cx + c.x * cosR - c.z * sinR, Y, cz + c.x * sinR + c.z * cosR),
-      );
-
-      // Closed rectangle outline
-      const outlinePts = [...worldCorners, worldCorners[0]!];
-      const outlineGeom = new THREE.BufferGeometry().setFromPoints(outlinePts);
-      const outlineLine = new THREE.Line(
-        outlineGeom,
-        new THREE.LineBasicMaterial({ color: '#8B4513', linewidth: 1.5 }),
-      );
-      outlineLine.userData.bimPickId = asset.id;
-      holder.add(outlineLine);
-
-      // Cross diagonal (corner 0 → corner 2)
-      const diagPts = [worldCorners[0]!, worldCorners[2]!];
-      const diagGeom = new THREE.BufferGeometry().setFromPoints(diagPts);
-      const diagLine = new THREE.Line(
-        diagGeom,
-        new THREE.LineBasicMaterial({ color: '#8B4513', linewidth: 1 }),
-      );
-      diagLine.userData.bimPickId = asset.id;
-      holder.add(diagLine);
-    }
+    addPlacedAssetPlanSymbols(holder, elementsById, { activeLevelId: level, kindHidden });
     tintNewChildren(before, 'placed_asset');
   }
 

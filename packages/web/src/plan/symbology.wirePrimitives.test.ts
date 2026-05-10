@@ -39,6 +39,14 @@ function countAnnotationOverlaySprites(root: THREE.Object3D): number {
   return n;
 }
 
+function countLinesForPick(root: THREE.Object3D, pickId: string): number {
+  let n = 0;
+  root.traverse((o) => {
+    if (o instanceof THREE.Line && o.userData.bimPickId === pickId) n += 1;
+  });
+  return n;
+}
+
 function hasMeshNode(root: THREE.Object3D): boolean {
   let found = false;
   root.traverse((o) => {
@@ -494,5 +502,55 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
       planAnnotationHints: { openingTagsVisible: true, roomLabelsVisible: true },
     });
     expect(countAnnotationOverlaySprites(grpOn)).toBe(2);
+  });
+
+  it('draws placed asset symbols while server wire primitives are active', () => {
+    const assetEntry: Extract<Element, { kind: 'asset_library_entry' }> = {
+      kind: 'asset_library_entry',
+      id: 'asset-sofa',
+      assetKind: 'block_2d',
+      name: 'Sofa',
+      category: 'furniture',
+      tags: [],
+      disciplineTags: [],
+      thumbnailKind: 'schematic_plan',
+      thumbnailWidthMm: 2200,
+      thumbnailHeightMm: 900,
+    };
+    const placedAsset: Extract<Element, { kind: 'placed_asset' }> = {
+      kind: 'placed_asset',
+      id: 'pa-sofa',
+      name: 'Living sofa',
+      assetId: 'asset-sofa',
+      levelId: 'lvl',
+      positionMm: { xMm: 1500, yMm: 1200 },
+      rotationDeg: 90,
+      paramValues: {},
+    };
+    const primitives = {
+      format: 'planProjectionPrimitives_v1',
+      walls: [],
+      floors: [],
+      rooms: [],
+      doors: [],
+      windows: [],
+      stairs: [],
+      roofs: [],
+      gridLines: [],
+      roomSeparations: [],
+      dimensions: [],
+    } as const;
+
+    const grp = new THREE.Group();
+    rebuildPlanMeshes(
+      grp,
+      { 'asset-sofa': assetEntry, 'pa-sofa': placedAsset },
+      {
+        activeLevelId: 'lvl',
+        wirePrimitives: primitives as unknown as PlanProjectionPrimitivesV1Wire,
+      },
+    );
+
+    expect(countLinesForPick(grp, 'pa-sofa')).toBe(2);
   });
 });
