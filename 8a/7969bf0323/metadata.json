@@ -3,8 +3,11 @@
   "checkpoint_id": "8a7969bf0323",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
-  "files_touched": null,
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/cli/lib/one-family-home-commands.mjs",
+    "spec/target-house-seed.md"
+  ],
   "sessions": [
     {
       "metadata": "/8a/7969bf0323/0/metadata.json",
@@ -17,13 +20,19 @@
       "transcript": "/8a/7969bf0323/1/full.jsonl",
       "content_hash": "/8a/7969bf0323/1/content_hash.txt",
       "prompt": "/8a/7969bf0323/1/prompt.txt"
+    },
+    {
+      "metadata": "/8a/7969bf0323/2/metadata.json",
+      "transcript": "/8a/7969bf0323/2/full.jsonl",
+      "content_hash": "/8a/7969bf0323/2/content_hash.txt",
+      "prompt": "/8a/7969bf0323/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 61263,
+    "input_tokens": 199187,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 3691520,
-    "output_tokens": 6292,
-    "api_call_count": 24
+    "cache_read_tokens": 5716480,
+    "output_tokens": 22176,
+    "api_call_count": 50
   }
 }
