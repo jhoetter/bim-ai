@@ -9,12 +9,14 @@ const ALL_TOOLS: readonly PlanTool[] = [
   'window',
   'room',
   'room_rectangle',
+  'area',
   'grid',
   'dimension',
   'tag',
   'floor-sketch',
   'roof-sketch',
   'room-separation-sketch',
+  'area-boundary',
   'toposolid_subdivision',
 ];
 

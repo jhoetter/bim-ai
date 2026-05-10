@@ -87,6 +87,20 @@ function meshOpacityForPick(root: THREE.Object3D, pickId: string): number | null
   return out;
 }
 
+function sectionFillActualMaxYForPick(root: THREE.Object3D, pickId: string): number | null {
+  let out: number | null = null;
+  root.traverse((o) => {
+    if (out != null || !(o instanceof THREE.Mesh) || o.userData.bimPickId !== pickId) return;
+    const mat = Array.isArray(o.material) ? o.material[0] : o.material;
+    if (!(mat instanceof THREE.MeshBasicMaterial)) return;
+    o.geometry.computeBoundingBox();
+    const box = o.geometry.boundingBox;
+    if (!box) return;
+    out = -box.min.y * 1000;
+  });
+  return out;
+}
+
 function countRoomPatternSegments(root: THREE.Object3D, pattern: string): number {
   let n = 0;
   root.traverse((o) => {
@@ -144,6 +158,88 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
     );
 
     expect(hasMeshNode(grp)).toBe(true);
+  });
+
+  it('uses live per-end disallow flags to gate wire wall join cleanup meshes', () => {
+    const butt: Extract<Element, { kind: 'wall' }> = {
+      kind: 'wall',
+      id: 'w-butt',
+      name: 'Butt',
+      levelId: 'lvl',
+      start: { xMm: 0, yMm: -1000 },
+      end: { xMm: 0, yMm: 0 },
+      thicknessMm: 200,
+      heightMm: 2800,
+      joinDisallowEnd: true,
+    };
+    const host: Extract<Element, { kind: 'wall' }> = {
+      kind: 'wall',
+      id: 'w-host',
+      name: 'Host',
+      levelId: 'lvl',
+      start: { xMm: -1000, yMm: 0 },
+      end: { xMm: 1000, yMm: 0 },
+      thicknessMm: 200,
+      heightMm: 2800,
+    };
+
+    const primitives = {
+      format: 'planProjectionPrimitives_v1',
+      walls: [
+        {
+          id: 'w-butt',
+          levelId: 'lvl',
+          startMm: { x: 0, y: -1000 },
+          endMm: { x: 0, y: 0 },
+          thicknessMm: 200,
+          heightMm: 2800,
+        },
+        {
+          id: 'w-host',
+          levelId: 'lvl',
+          startMm: { x: -1000, y: 0 },
+          endMm: { x: 1000, y: 0 },
+          thicknessMm: 200,
+          heightMm: 2800,
+        },
+      ],
+      floors: [],
+      rooms: [],
+      doors: [],
+      windows: [],
+      stairs: [],
+      roofs: [],
+      gridLines: [],
+      roomSeparations: [],
+      dimensions: [],
+      wallCornerJoinSummary_v1: {
+        format: 'wallCornerJoinSummary_v1',
+        joins: [
+          {
+            joinId: 'j-butt-host',
+            wallIds: ['w-butt', 'w-host'],
+            vertexMm: { xMm: 0, yMm: 0 },
+            levelId: 'lvl',
+            joinKind: 'butt',
+            planDisplayToken: 'wall_join',
+            affectedOpeningIds: [],
+            skipReason: null,
+          },
+        ],
+      },
+    } as const;
+
+    const grp = new THREE.Group();
+    rebuildPlanMeshes(
+      grp,
+      { [butt.id]: butt, [host.id]: host },
+      {
+        activeLevelId: 'lvl',
+        wirePrimitives: primitives as unknown as PlanProjectionPrimitivesV1Wire,
+      },
+    );
+
+    expect(sectionFillActualMaxYForPick(grp, 'w-butt')).toBeCloseTo(0, 6);
   });
 
   it('exposes bimAiRoofGeometrySupportToken on roof outline group userData when server sends roofGeometrySupportToken', () => {

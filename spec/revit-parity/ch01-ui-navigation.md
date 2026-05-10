@@ -113,7 +113,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![VG Overrides](file:///Users/jhoetter/Desktop/Revit%20Specs/0163_00-22-39.png)
 
-**bim-ai status:** 🟡 Partial — `VVDialog.tsx` has model/annotation/filters/links tabs with per-category visibility, separate projection/cut color, line weight, and pattern overrides, plus a halftone toggle (sets both projection and cut halftone together, matching Revit's per-row behaviour). Covers 15 model categories (Walls, Floors, Roofs, Ceilings, Columns, Structural Framing, Stairs, Railings, Doors, Windows, Rooms, Furniture/Generic Models, Property Lines, Site, Site/Origin) and 14 annotation categories (Grids, Levels, Dimensions, Room Tags, Door Tags, Window Tags, Section Marks, Elevation Marks, Room Separation Lines, Area Boundary Lines, Reference Planes, Masking Regions, Detail Lines, Text Notes). VV dialog visibility toggles wire through to `hiddenSemanticKinds` via `categoryOverrides` so unchecking a category hides those elements in the view. Missing: full Revit catalogue of ~120 categories and transparency controls.
+**bim-ai status:** ✅ Available — `VVDialog.tsx` has model/annotation/filters/links tabs with a Revit-scale catalogue of 100 model categories and 65 annotation categories, category search, per-category visibility, separate projection/cut color, line weight, line pattern, transparency overrides, and a halftone toggle (sets both projection and cut halftone together, matching Revit's per-row behaviour). VV dialog visibility toggles wire through to `hiddenSemanticKinds` via `categoryOverrides` for supported bim-ai categories, while unsupported Revit catalogue rows still preserve view override state.
 
 ---
 

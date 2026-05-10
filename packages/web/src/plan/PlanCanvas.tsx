@@ -110,6 +110,7 @@ import {
 import { extractDetailComponentPrimitives } from './detailComponentsRender';
 import { extractMaskingRegionPrimitives } from './maskingRegionRender';
 import { extractAreaPrimitives } from './areaRender';
+import { areaPlanPlacementContext, findAreaPlacementBoundary } from './areaPlacement';
 import { manualPlacedTagLabel, placeTagByCategoryCommand } from './manualTags';
 import { extractNeighborhoodMassPrimitives } from './neighborhoodMassRender';
 import { planAnnotationLabelSprite } from './planElementMeshBuilders';
@@ -1828,18 +1829,8 @@ export function PlanCanvas({
       }
     };
 
-    const activeAreaPlanContext = () => {
-      const activePv = activePlanViewId ? elementsById[activePlanViewId] : null;
-      if (!activePv || activePv.kind !== 'plan_view' || activePv.planViewSubtype !== 'area_plan') {
-        return null;
-      }
-      const areaScheme = activePv.areaScheme ?? 'gross_building';
-      return {
-        levelId: activePv.levelId || lvlId,
-        areaScheme,
-        ruleSet: areaScheme === 'gross_building' ? ('gross' as const) : ('net' as const),
-      };
-    };
+    const activeAreaPlanContext = () =>
+      areaPlanPlacementContext(elementsById, activePlanViewId, lvlId);
 
     const areaSnapPoint = (pointMm: { xMm: number; yMm: number }) => {
       const ctx = activeAreaPlanContext();
@@ -3031,6 +3022,29 @@ export function PlanCanvas({
           endMm: { xMm: sp.xMm, yMm: sp.yMm },
         });
         draftRef.current = undefined;
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      if (planTool === 'area') {
+        const ctx = activeAreaPlanContext();
+        if (!ctx) {
+          draftRef.current = undefined;
+          clearPreview();
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        const clickMm = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY) ?? sp;
+        const boundary = findAreaPlacementBoundary(elementsById, ctx, clickMm);
+        if (!boundary) {
+          draftRef.current = undefined;
+          clearPreview();
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        selectEl(boundary.existingAreaId);
+        useBimStore.getState().clearSelectedIds();
+        draftRef.current = undefined;
+        clearPreview();
         bumpGeom((x) => x + 1);
         return;
       }

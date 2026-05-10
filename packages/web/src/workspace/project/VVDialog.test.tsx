@@ -32,9 +32,9 @@ describe('VVDialog', () => {
     mockStore.elementsById['pv-1'].categoryOverrides = {};
   });
 
-  it('renders with 15 model category rows when open', () => {
+  it('renders a Revit-scale model category catalogue when open', () => {
     render(<VVDialog open={true} onClose={() => {}} />);
-    // 15 model categories
+    expect(screen.getAllByTestId(/^vv-category-row-/)).toHaveLength(100);
     expect(screen.getByText('Walls')).toBeDefined();
     expect(screen.getByText('Floors')).toBeDefined();
     expect(screen.getByText('Roofs')).toBeDefined();
@@ -50,6 +50,31 @@ describe('VVDialog', () => {
     expect(screen.getByText('Property Lines')).toBeDefined();
     expect(screen.getByText('Site')).toBeDefined();
     expect(screen.getByText('Site / Origin')).toBeDefined();
+    expect(screen.getByText('Mechanical Equipment')).toBeDefined();
+    expect(screen.getByText('Structural Foundations')).toBeDefined();
+    expect(screen.getByText('Duct Systems')).toBeDefined();
+  });
+
+  it('renders a Revit-scale annotation category catalogue', () => {
+    render(<VVDialog open={true} onClose={() => {}} />);
+    fireEvent.click(screen.getByTestId('vv-tab-annotation'));
+
+    expect(screen.getAllByTestId(/^vv-category-row-/)).toHaveLength(65);
+    expect(screen.getByText('Text Notes')).toBeDefined();
+    expect(screen.getByText('Revision Clouds')).toBeDefined();
+    expect(screen.getByText('Spot Elevations')).toBeDefined();
+    expect(screen.getByText('Multi-Category Tags')).toBeDefined();
+  });
+
+  it('filters the category catalogue with search', () => {
+    render(<VVDialog open={true} onClose={() => {}} />);
+
+    fireEvent.change(screen.getByTestId('vv-category-search'), {
+      target: { value: 'mechanical' },
+    });
+
+    expect(screen.getByText('Mechanical Equipment')).toBeDefined();
+    expect(screen.queryByText('Walls')).toBeNull();
   });
 
   it('does not render when closed', () => {

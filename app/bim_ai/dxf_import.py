@@ -14,6 +14,7 @@ broaden coverage if customers ask for hatching or annotation.
 from __future__ import annotations
 
 import math
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -205,6 +206,18 @@ def collect_dxf_layers(linework: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return sorted(layers.values(), key=lambda row: row["name"].casefold())
 
 
+def dxf_source_metadata(path: Path) -> dict[str, Any]:
+    """Return stable source-file metadata stored on reloadable linked DXFs."""
+    stat = path.stat()
+    return {
+        "path": str(path),
+        "fileName": path.name,
+        "sizeBytes": stat.st_size,
+        "mtimeMs": int(stat.st_mtime * 1000),
+        "loadedAt": datetime.now(UTC).isoformat(),
+    }
+
+
 def parse_dxf_to_linework(path: Path) -> list[dict[str, Any]]:
     """Parse the modelspace of a DXF file into a list of ``DxfLineworkPrim`` dicts.
 
@@ -263,5 +276,9 @@ def build_link_dxf_payload(
         "linework": linework,
         "dxfLayers": collect_dxf_layers(linework),
         "sourcePath": str(file_path),
+        "cadReferenceType": "linked",
+        "sourceMetadata": dxf_source_metadata(file_path),
+        "reloadStatus": "ok",
+        "lastReloadMessage": f"Loaded from {file_path}",
         "loaded": True,
     }

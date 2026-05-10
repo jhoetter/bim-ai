@@ -444,6 +444,10 @@ export function ManageLinksDialog({
                 const opacityPct = Math.round((l.overlayOpacity ?? 0.5) * 100);
                 const align: AlignMode = l.originAlignmentMode ?? 'origin_to_origin';
                 const loaded = l.loaded !== false;
+                const cadReferenceType = l.cadReferenceType ?? 'linked';
+                const currentPathDraft = dxfPathDraft(l);
+                const reloadable =
+                  cadReferenceType === 'linked' && Boolean(currentPathDraft.trim());
                 const layerRows = resolveDxfLayerRows(l);
                 const hiddenLayerNames = l.hiddenLayerNames ?? [];
                 const hiddenLayerSet = new Set(hiddenLayerNames);
@@ -455,9 +459,18 @@ export function ManageLinksDialog({
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <span className="text-xs">{l.name ?? 'DXF Underlay'}</span>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="truncate text-xs">{l.name ?? 'DXF Underlay'}</span>
+                          <span
+                            data-testid={`manage-dxf-links-reference-type-${l.id}`}
+                            className="shrink-0 rounded border border-border px-1 py-0.5 text-[10px] text-muted"
+                          >
+                            {cadReferenceType === 'linked' ? 'Linked CAD' : 'Imported CAD'}
+                          </span>
+                        </div>
                         <div className="truncate font-mono text-[10px] text-muted">
-                          {l.sourcePath ?? 'No saved path'}
+                          {l.sourcePath ??
+                            (cadReferenceType === 'embedded' ? 'Embedded import' : 'No saved path')}
                         </div>
                       </div>
                       <span
@@ -469,7 +482,13 @@ export function ManageLinksDialog({
                             : 'border-border text-muted',
                         ].join(' ')}
                       >
-                        {loaded ? 'Loaded' : 'Unloaded'}
+                        {l.reloadStatus === 'source_missing'
+                          ? 'Missing'
+                          : l.reloadStatus === 'parse_error'
+                            ? 'Parse error'
+                            : loaded
+                              ? 'Loaded'
+                              : 'Unloaded'}
                       </span>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-[11px]">
@@ -477,11 +496,37 @@ export function ManageLinksDialog({
                         type="button"
                         disabled={pending}
                         data-testid={`manage-dxf-links-load-${l.id}`}
-                        onClick={() => void submitUpdateDxf(l.id, { loaded: !loaded })}
+                        onClick={() =>
+                          void submitUpdateDxf(
+                            l.id,
+                            loaded
+                              ? { loaded: false }
+                              : cadReferenceType === 'linked'
+                                ? { reloadSource: true, sourcePath: currentPathDraft }
+                                : { loaded: true },
+                          )
+                        }
                         className="rounded border border-border px-2 py-0.5 text-[11px] hover:bg-surface-strong disabled:opacity-50"
                       >
-                        {loaded ? 'Unload' : 'Reload'}
+                        {loaded ? 'Unload' : cadReferenceType === 'linked' ? 'Reload' : 'Load'}
                       </button>
+                      {cadReferenceType === 'linked' ? (
+                        <button
+                          type="button"
+                          disabled={pending || !reloadable}
+                          data-testid={`manage-dxf-links-reload-${l.id}`}
+                          onClick={() =>
+                            void submitUpdateDxf(l.id, {
+                              reloadSource: true,
+                              sourcePath: currentPathDraft,
+                            })
+                          }
+                          className="rounded border border-border px-2 py-0.5 text-[11px] hover:bg-surface-strong disabled:opacity-50"
+                          title={reloadable ? 'Reload from source path' : 'Source path required'}
+                        >
+                          Reload Source
+                        </button>
+                      ) : null}
                       <button
                         type="button"
                         disabled={pending}
@@ -580,7 +625,7 @@ export function ManageLinksDialog({
                         Path
                         <input
                           type="text"
-                          value={dxfPathDraft(l)}
+                          value={currentPathDraft}
                           disabled={pending}
                           data-testid={`manage-dxf-links-path-${l.id}`}
                           onChange={(e) =>

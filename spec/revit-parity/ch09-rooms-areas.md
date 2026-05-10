@@ -55,7 +55,7 @@ Source segment: `05:30:00 – 05:39:46`
 **Screenshot:**
 ![Area tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0831_05-37-44.png)
 
-**bim-ai status:** 🟡 Partial — the `area-boundary` sketch tool (hotkey AR) draws Area Plan polygons stored as `area` elements. Users can add arbitrary vertices and close the loop by clicking near the first point, pressing Enter, or double-clicking; Shift-click keeps the rectangular diagonal-corner shortcut. Vertices retain wall-face snap, active Area Plan scheme/rules are persisted, and the right-rail inspector shows computed area (m²), rule set (gross/net/no_rules), level, and boundary vertex count. Missing: Revit-style click-inside-existing-boundary placement.
+**bim-ai status:** ✅ Available — the `area-boundary` sketch tool (hotkey AR) draws Area Plan polygons stored as `area` elements. Users can add arbitrary vertices and close the loop by clicking near the first point, pressing Enter, or double-clicking; Shift-click keeps the rectangular diagonal-corner shortcut. Vertices retain wall-face snap, active Area Plan scheme/rules are persisted, and the right-rail inspector shows computed area (m²), rule set (gross/net/no_rules), level, and boundary vertex count. The `area` placement tool also supports Revit-style click-inside existing boundary placement/selection with active Area Plan scheme and level filtering, outside-click rejection, and nested-boundary smallest-hit behavior.
 
 ---
 

@@ -447,6 +447,10 @@ function wallElemFromWirePrimitive(
   const lwh = Number(row.lineWeightHint ?? 1);
   const baseT = Number(row.thicknessMm ?? 200);
   const scale = Number.isFinite(lwh) && lwh > 0 && lwh <= 3 ? lwh : 1;
+  const joinDisallowStart =
+    typeof row.joinDisallowStart === 'boolean' ? row.joinDisallowStart : undefined;
+  const joinDisallowEnd =
+    typeof row.joinDisallowEnd === 'boolean' ? row.joinDisallowEnd : undefined;
   return {
     kind: 'wall',
     id: String(row.id ?? ''),
@@ -456,6 +460,26 @@ function wallElemFromWirePrimitive(
     end: coerceVec2Mm(row.endMm),
     thicknessMm: baseT * scale,
     heightMm: Number(row.heightMm ?? 2800),
+    ...(joinDisallowStart !== undefined ? { joinDisallowStart } : {}),
+    ...(joinDisallowEnd !== undefined ? { joinDisallowEnd } : {}),
+  };
+}
+
+function mergeWireWallWithLiveState(
+  wireWall: Extract<Element, { kind: 'wall' }>,
+  elementsById: Record<string, Element>,
+): Extract<Element, { kind: 'wall' }> {
+  const live = elementsById[wireWall.id];
+  if (!live || live.kind !== 'wall') return wireWall;
+  return {
+    ...live,
+    levelId: wireWall.levelId,
+    start: wireWall.start,
+    end: wireWall.end,
+    thicknessMm: wireWall.thicknessMm,
+    heightMm: wireWall.heightMm,
+    joinDisallowStart: wireWall.joinDisallowStart ?? live.joinDisallowStart,
+    joinDisallowEnd: wireWall.joinDisallowEnd ?? live.joinDisallowEnd,
   };
 }
 
@@ -727,16 +751,19 @@ function rebuildPlanMeshesFromWire(
   // Build a merged elementsById that includes wire-sourced walls for join lookups
   const elementsWithWireWalls: Record<string, Element> = { ...elementsById };
   for (const [id, w] of wallsByWireId.entries()) {
-    if (!elementsWithWireWalls[id]) elementsWithWireWalls[id] = w;
+    elementsWithWireWalls[id] = mergeWireWallWithLiveState(w, elementsById);
   }
 
   for (const w of wallsByWireId.values()) {
-    const joinsForWall = joinRecords.filter((j) => j.wallIds.includes(w.id));
-    const outlineMm = computeWallSectionPolygon(w, joinsForWall, elementsWithWireWalls);
+    const mergedWall = elementsWithWireWalls[w.id];
+    const renderWall: Extract<Element, { kind: 'wall' }> =
+      mergedWall?.kind === 'wall' ? mergedWall : w;
+    const joinsForWall = joinRecords.filter((j) => j.wallIds.includes(renderWall.id));
+    const outlineMm = computeWallSectionPolygon(renderWall, joinsForWall, elementsWithWireWalls);
     if (outlineMm.length >= 3) {
-      holder.add(planWallSectionMesh(w, outlineMm, selectedId));
+      holder.add(planWallSectionMesh(renderWall, outlineMm, selectedId));
     } else {
-      holder.add(planWallMesh(w, selectedId, 1, elementsById, wireDetail));
+      holder.add(planWallMesh(renderWall, selectedId, 1, elementsById, wireDetail));
     }
   }
 
