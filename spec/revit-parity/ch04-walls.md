@@ -40,6 +40,7 @@ Source segment: `01:02:00 – 01:13:55`
 ## F-037 · Wall Location Line
 
 **What it does:** The Options Bar "Location Line" dropdown controls which face or centerline of the wall is aligned to the cursor when drawing:
+
 - Wall Centerline
 - Core Centerline
 - Finish Face: Exterior
@@ -73,7 +74,7 @@ For layered walls this distinction matters significantly — the core can sit 50
 
 **Screenshot:**
 ![Top Offset](file:///Users/jhoetter/Desktop/Revit%20Specs/0314_01-04-37.png)
-*(Wall Properties palette showing height parameters — Top Offset-specific frame starts beyond 0841)*
+_(Wall Properties palette showing height parameters — Top Offset-specific frame starts beyond 0841)_
 
 **bim-ai status:** ✅ Available — `InspectorContent.tsx` (wall `case`) now shows editable "Base Offset (mm)" and "Top Offset (mm)" number inputs (step 50, `defaultValue` keyed by element ID). On blur they fire `onPropertyChange?.('baseConstraintOffsetMm', val)` and `onPropertyChange?.('topConstraintOffsetMm', val)`, which triggers `updateElementProperty` in `WorkspaceRightRail`. The backend `CreateWallCmd` and element model already carry these fields.
 
@@ -119,7 +120,7 @@ For layered walls this distinction matters significantly — the core can sit 50
 **Screenshot:**
 ![Wall Radius option](file:///Users/jhoetter/Desktop/Revit%20Specs/0358_01-12-28.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — the live wall Options Bar exposes a Radius toggle/input backed by `wallDrawRadiusMm`; chained wall placement in `PlanCanvas.tsx` uses `wallRadiusFillet.ts` to shorten the previous wall to the tangent point and insert short wall segments along the rounded corner. Missing: a native curved-wall element/arc baseline and rendered curved wall solids.
 
 ---
 

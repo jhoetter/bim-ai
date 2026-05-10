@@ -10,6 +10,7 @@ afterEach(() => {
       planTool: 'select',
       wallLocationLine: 'wall-centerline',
       wallDrawOffsetMm: 0,
+      wallDrawRadiusMm: null,
       floorBoundaryOffsetMm: 0,
     });
   });
@@ -48,6 +49,19 @@ describe('OptionsBar', () => {
     const input = getByRole('spinbutton', { name: /wall baseline offset/i });
     fireEvent.change(input, { target: { value: '150' } });
     expect(useBimStore.getState().wallDrawOffsetMm).toBe(150);
+  });
+
+  it('enables and updates the wall corner radius from the wall options bar', () => {
+    act(() => {
+      useBimStore.setState({ planTool: 'wall', wallDrawRadiusMm: null });
+    });
+    const { getByRole } = render(<OptionsBar />);
+    fireEvent.click(getByRole('checkbox', { name: /enable wall corner radius/i }));
+    expect(useBimStore.getState().wallDrawRadiusMm).toBe(500);
+    fireEvent.change(getByRole('spinbutton', { name: /wall corner radius/i }), {
+      target: { value: '900' },
+    });
+    expect(useBimStore.getState().wallDrawRadiusMm).toBe(900);
   });
 
   it('renders Boundary Offset control when activeTool is floor', () => {

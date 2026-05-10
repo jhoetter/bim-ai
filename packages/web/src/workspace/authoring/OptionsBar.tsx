@@ -59,6 +59,8 @@ export function OptionsBar(): JSX.Element | null {
   const setFloorBoundaryOffsetMm = useBimStore((s) => s.setFloorBoundaryOffsetMm);
   const wallDrawOffsetMm = useBimStore((s) => s.wallDrawOffsetMm);
   const setWallDrawOffsetMm = useBimStore((s) => s.setWallDrawOffsetMm);
+  const wallDrawRadiusMm = useBimStore((s) => s.wallDrawRadiusMm);
+  const setWallDrawRadiusMm = useBimStore((s) => s.setWallDrawRadiusMm);
   const wallDrawHeightMm = useBimStore((s) => s.wallDrawHeightMm);
   const setWallDrawHeightMm = useBimStore((s) => s.setWallDrawHeightMm);
   const activeWallTypeId = useBimStore((s) => s.activeWallTypeId);
@@ -138,6 +140,28 @@ export function OptionsBar(): JSX.Element | null {
             className="w-20 rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
             aria-label="Wall height in mm"
             data-testid="options-bar-wall-height"
+          />
+          <span className="text-muted opacity-60">mm</span>
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={wallDrawRadiusMm !== null}
+            onChange={(e) => setWallDrawRadiusMm(e.target.checked ? 500 : null)}
+            aria-label="Enable wall corner radius"
+            data-testid="options-bar-wall-radius-toggle"
+          />
+          <span className="text-muted">Radius:</span>
+          <input
+            type="number"
+            value={wallDrawRadiusMm ?? 500}
+            step={100}
+            min={0}
+            disabled={wallDrawRadiusMm === null}
+            onChange={(e) => setWallDrawRadiusMm(Math.max(0, Number(e.target.value)))}
+            className="w-20 rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground disabled:opacity-45"
+            aria-label="Wall corner radius in mm"
+            data-testid="options-bar-wall-radius"
           />
           <span className="text-muted opacity-60">mm</span>
         </label>
