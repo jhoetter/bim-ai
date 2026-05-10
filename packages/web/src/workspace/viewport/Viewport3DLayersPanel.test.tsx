@@ -6,7 +6,7 @@ import {
   VIEWER_HIDDEN_KIND_KEYS,
   type Viewport3DLayersPanelProps,
 } from './Viewport3DLayersPanel';
-import i18n from '../i18n';
+import i18n from '../../i18n';
 
 afterEach(() => {
   cleanup();

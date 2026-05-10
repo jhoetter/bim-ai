@@ -1,4 +1,4 @@
-import type { PlanGraphicsMatrixRow } from '../plan/planProjection';
+import type { PlanGraphicsMatrixRow } from '../../plan/planProjection';
 
 export function PlanViewGraphicsMatrix(props: {
   rows: PlanGraphicsMatrixRow[];

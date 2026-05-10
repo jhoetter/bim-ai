@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 
 import type { Element } from '@bim-ai/core';
 
-import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFromWall';
+import { elevationFromWall, sectionCutFromWall } from '../../lib/sectionElevationFromWall';
 
 export type WallContextMenuPosition = { x: number; y: number };
 

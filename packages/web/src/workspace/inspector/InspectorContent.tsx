@@ -9,7 +9,7 @@ import {
   planViewGraphicsMatrixRows,
   viewTemplateGraphicsMatrixRows,
 } from '../../plan/planProjection';
-import { PlanViewGraphicsMatrix } from '../PlanViewGraphicsMatrix';
+import { PlanViewGraphicsMatrix } from './PlanViewGraphicsMatrix';
 import { SavedViewTagGraphicsAuthoring, SavedViewTemplateGraphicsAuthoring } from '../authoring';
 
 /**

@@ -92,7 +92,7 @@ import {
 import { applyCommandBundle } from '../lib/api';
 import { OnboardingTour } from '../onboarding/OnboardingTour';
 import { readOnboardingProgress, resetOnboarding } from '../onboarding/tour';
-import { canvasContainerStyle, CanvasMount } from './CanvasMount';
+import { canvasContainerStyle, CanvasMount } from './viewport';
 import { defaultTabFallbackForKind, EmptyStateOverlay, FloatingPalette } from './WorkspaceHelpers';
 import { EmptyStateHint } from './EmptyStateHint';
 import { MilestoneDialog } from '../collab/MilestoneDialog';

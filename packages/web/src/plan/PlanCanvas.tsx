@@ -117,7 +117,7 @@ import {
   selectDriftedElements,
 } from './monitorDriftBadge';
 import { elevationFromWall } from '../lib/sectionElevationFromWall';
-import { WallContextMenu, type WallContextMenuCommand } from '../workspace/WallContextMenu';
+import { WallContextMenu, type WallContextMenuCommand } from '../workspace/viewport';
 import { PlanDetailLevelToolbar } from './PlanDetailLevelToolbar';
 import type { PlanDetailLevel } from './planDetailLevelLines';
 import { SketchCanvas, type MmToScreen, type PointerToMm } from './SketchCanvas';

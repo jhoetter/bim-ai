@@ -89,7 +89,7 @@ import { buildMassMesh } from './viewport/meshBuilders.mass';
 import { isElementVisibleUnderPhaseFilter } from './viewport/phaseFilter';
 import { applyDormerCutsToRoofGeom } from './viewport/dormerRoofCut';
 import { registerDormerCutFn } from './viewport/meshBuilders';
-import { WallContextMenu, type WallContextMenuCommand } from './workspace/WallContextMenu';
+import { WallContextMenu, type WallContextMenuCommand } from './workspace/viewport';
 import { gripsFor, type Grip3dDescriptor } from './viewport/grip3d';
 import { computeSunPositionNoaa } from './viewport/sunPositionNoaa';
 import { useSunStore } from './sunStore';

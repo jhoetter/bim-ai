@@ -26,7 +26,7 @@ import {
 } from './inspector';
 import type { DisciplineTag } from '@bim-ai/core';
 import { AuthoringWorkbenchesPanel } from './authoring';
-import { Viewport3DLayersPanel } from './Viewport3DLayersPanel';
+import { Viewport3DLayersPanel } from './viewport';
 import type { WorkspaceMode } from './shell';
 import { humanKindLabel, InspectorEmptyTab } from './WorkspaceHelpers';
 

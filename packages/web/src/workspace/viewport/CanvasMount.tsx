@@ -2,16 +2,16 @@ import type { CSSProperties, JSX, RefObject } from 'react';
 
 import type { Element } from '@bim-ai/core';
 
-import { Viewport } from '../Viewport';
-import { ErrorBoundary } from '../ErrorBoundary';
-import { PlanCanvas, type PlanCameraHandle } from '../plan/PlanCanvas';
+import { Viewport } from '../../Viewport';
+import { ErrorBoundary } from '../../ErrorBoundary';
+import { PlanCanvas, type PlanCameraHandle } from '../../plan/PlanCanvas';
 import {
   AgentReviewModeShell,
   ScheduleModeShell,
   SectionModeShell,
   SheetModeShell,
-} from './ModeShells';
-import type { WorkspaceMode } from './shell';
+} from '../ModeShells';
+import type { WorkspaceMode } from '../shell';
 
 export const canvasContainerStyle: CSSProperties = {
   position: 'relative',
