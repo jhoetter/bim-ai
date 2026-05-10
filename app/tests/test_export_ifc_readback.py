@@ -2,14 +2,17 @@ from __future__ import annotations
 
 from bim_ai import export_ifc
 from bim_ai.export_ifc_readback import (
+    _count_ifc_products_with_qto_template,
     _first_body_extruded_area_solid,
     _ifc_global_id_slug,
     _ifc_inverse_seq_local,
     _ifc_model_has_slab_void_opening_topology_v0,
+    _ifc_product_defines_qto_template,
     _ifc_rel_voids_host_building_element,
     _ifc_try_product_is_a,
     _kernel_slab_opening_replay_element_id,
     _profile_xy_polyline_mm,
+    _read_named_qto_values,
     _void_rel_and_host_for_opening,
 )
 
@@ -60,6 +63,33 @@ def test_first_body_extruded_area_solid_ignores_non_body_representations():
         ),
     )
     assert _first_body_extruded_area_solid(product) is solid
+
+
+def test_qto_template_helpers_read_and_count_named_quantities():
+    qto = _Ifc(
+        "IfcElementQuantity",
+        Name="Qto_WallBaseQuantities",
+        Quantities=[
+            _Ifc("IfcQuantityLength", Name="Length", LengthValue=4.5),
+            _Ifc("IfcQuantityArea", Name="GrossSideArea", AreaValue="12.25"),
+            _Ifc("IfcQuantityCount", Name="BadCount", CountValue="n/a"),
+        ],
+    )
+    rel = _Ifc("IfcRelDefinesByProperties", RelatingPropertyDefinition=qto)
+    product = _Ifc("IfcWall", IsDefinedBy=[rel])
+    other = _Ifc("IfcWall", IsDefinedBy=[])
+
+    assert _ifc_product_defines_qto_template(product, "Qto_WallBaseQuantities") is True
+    assert _ifc_product_defines_qto_template(product, "Qto_SlabBaseQuantities") is False
+    assert _count_ifc_products_with_qto_template(
+        [product, other], "Qto_WallBaseQuantities"
+    ) == 1
+    assert _read_named_qto_values(product, "Qto_WallBaseQuantities") == {
+        "Length": 4.5,
+        "GrossSideArea": 12.25,
+    }
+    assert _read_named_qto_values(product, "Qto_SlabBaseQuantities") == {}
+    assert export_ifc._read_named_qto_values is _read_named_qto_values
 
 
 def test_void_rel_host_lookup_prefers_inverse_and_falls_back_to_model_scan():

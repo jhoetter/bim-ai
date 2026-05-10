@@ -28,6 +28,64 @@ def _references_from_products(products: list[Any], pset_name: str, *, limit: int
     return sorted(refs)
 
 
+def _ifc_product_defines_qto_template(product: Any, qto_template_name: str) -> bool:
+    rels = getattr(product, "IsDefinedBy", None) or []
+    for rel in rels:
+        try:
+            if not rel.is_a("IfcRelDefinesByProperties"):
+                continue
+        except Exception:
+            continue
+        dfn = getattr(rel, "RelatingPropertyDefinition", None)
+        if dfn is None:
+            continue
+        try:
+            if dfn.is_a("IfcElementQuantity") and getattr(dfn, "Name", None) == qto_template_name:
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def _count_ifc_products_with_qto_template(products: list[Any], qto_template_name: str) -> int:
+    """Count IFC products that define an ``IfcElementQuantity`` with the given name."""
+    return sum(1 for p in products if _ifc_product_defines_qto_template(p, qto_template_name))
+
+
+def _read_named_qto_values(product: Any, qto_template_name: str) -> dict[str, float]:
+    """Read scalar quantity values from a named IfcElementQuantity attached to a product."""
+    rels = getattr(product, "IsDefinedBy", None) or []
+    for rel in rels:
+        try:
+            if not rel.is_a("IfcRelDefinesByProperties"):
+                continue
+        except Exception:
+            continue
+        dfn = getattr(rel, "RelatingPropertyDefinition", None)
+        if dfn is None:
+            continue
+        try:
+            if not dfn.is_a("IfcElementQuantity"):
+                continue
+            if getattr(dfn, "Name", None) != qto_template_name:
+                continue
+        except Exception:
+            continue
+        result: dict[str, float] = {}
+        for qty in getattr(dfn, "Quantities", None) or []:
+            name = str(getattr(qty, "Name", None) or "")
+            for attr in ("CountValue", "LengthValue", "AreaValue", "VolumeValue", "WeightValue"):
+                val = getattr(qty, attr, None)
+                if val is not None:
+                    try:
+                        result[name] = float(val)
+                    except (ValueError, TypeError):
+                        pass
+                    break
+        return result
+    return {}
+
+
 def _ifc_global_id_slug(raw: Any) -> str:
     s = str(raw or "").strip()
     if not s:

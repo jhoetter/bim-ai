@@ -58,9 +58,11 @@ from bim_ai.export_ifc_properties import (
     try_attach_qto,
 )
 from bim_ai.export_ifc_readback import (
+    _count_ifc_products_with_qto_template,
     _first_body_extruded_area_solid,
     _ifc_global_id_slug,
     _ifc_model_has_slab_void_opening_topology_v0,
+    _ifc_product_defines_qto_template,
     _ifc_try_product_is_a,
     _kernel_horizontal_extrusion_footprint_mm_and_thickness,
     _kernel_slab_opening_replay_element_id,
@@ -68,6 +70,7 @@ from bim_ai.export_ifc_readback import (
     _kernel_wall_plan_geometry_mm,
     _product_host_storey_global_id,
     _profile_xy_polyline_mm,
+    _read_named_qto_values,
     _references_from_products,
     _void_rel_and_host_for_opening,
 )
@@ -357,65 +360,6 @@ def _kernel_ifc_space_export_props(rm: RoomElem) -> dict[str, str]:
     if rm.finish_set:
         out["FinishSet"] = rm.finish_set
     return out
-
-
-def _ifc_product_defines_qto_template(product: Any, qto_template_name: str) -> bool:
-    rels = getattr(product, "IsDefinedBy", None) or []
-    for rel in rels:
-        try:
-            if not rel.is_a("IfcRelDefinesByProperties"):
-                continue
-        except Exception:
-            continue
-        dfn = getattr(rel, "RelatingPropertyDefinition", None)
-        if dfn is None:
-            continue
-        try:
-            if dfn.is_a("IfcElementQuantity") and getattr(dfn, "Name", None) == qto_template_name:
-                return True
-        except Exception:
-            continue
-    return False
-
-
-def _count_ifc_products_with_qto_template(products: list[Any], qto_template_name: str) -> int:
-    """Count IFC products that define an ``IfcElementQuantity`` with ``Name == qto_template_name``."""
-
-    return sum(1 for p in products if _ifc_product_defines_qto_template(p, qto_template_name))
-
-
-def _read_named_qto_values(product: Any, qto_template_name: str) -> dict[str, float]:
-    """Read scalar quantity values from a named IfcElementQuantity attached to a product."""
-    rels = getattr(product, "IsDefinedBy", None) or []
-    for rel in rels:
-        try:
-            if not rel.is_a("IfcRelDefinesByProperties"):
-                continue
-        except Exception:
-            continue
-        dfn = getattr(rel, "RelatingPropertyDefinition", None)
-        if dfn is None:
-            continue
-        try:
-            if not dfn.is_a("IfcElementQuantity"):
-                continue
-            if getattr(dfn, "Name", None) != qto_template_name:
-                continue
-        except Exception:
-            continue
-        result: dict[str, float] = {}
-        for qty in getattr(dfn, "Quantities", None) or []:
-            name = str(getattr(qty, "Name", None) or "")
-            for attr in ("CountValue", "LengthValue", "AreaValue", "VolumeValue", "WeightValue"):
-                val = getattr(qty, attr, None)
-                if val is not None:
-                    try:
-                        result[name] = float(val)
-                    except (ValueError, TypeError):
-                        pass
-                    break
-        return result
-    return {}
 
 
 def _kernel_site_element_ids_sorted(doc: Document | None) -> list[str]:
