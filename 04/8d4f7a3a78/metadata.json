@@ -3,7 +3,7 @@
   "checkpoint_id": "048d4f7a3a78",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "packages/web/src/plan/SketchCanvas.test.tsx"
   ],
@@ -13,6 +13,19 @@
       "transcript": "/04/8d4f7a3a78/0/full.jsonl",
       "content_hash": "/04/8d4f7a3a78/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/04/8d4f7a3a78/1/metadata.json",
+      "transcript": "/04/8d4f7a3a78/1/full.jsonl",
+      "content_hash": "/04/8d4f7a3a78/1/content_hash.txt",
+      "prompt": ""
     }
-  ]
+  ],
+  "token_usage": {
+    "input_tokens": 1114331,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 44844672,
+    "output_tokens": 79332,
+    "api_call_count": 390
+  }
 }
