@@ -47,6 +47,16 @@ from bim_ai.export_ifc_geometry import (
     wall_local_to_world_m,
     xz_bounds_mm,
 )
+from bim_ai.export_ifc_properties import (
+    attach_beam_common_pset,
+    attach_ceiling_common_pset,
+    attach_column_common_pset,
+    attach_railing_common_pset,
+    attach_stair_common_pset,
+    maybe_attach_classification,
+    try_attach_classification_reference,
+    try_attach_qto,
+)
 from bim_ai.export_ifc_scope import (
     IFC_EXCHANGE_EMITTABLE_GEOMETRY_KINDS,  # noqa: F401 - re-exported for existing imports
     import_scope_unsupported_ifc_products_v0,
@@ -2467,207 +2477,6 @@ def build_ifc_unsupported_merge_map_v0(step_text: str) -> dict[str, Any]:
     }
 
 
-def _try_attach_qto(f: Any, product: Any, qto_name: str, properties: dict[str, float]) -> None:
-    """Narrow QTO slice (WP-X03) — ignored when IfcOpenShell build lacks qto use-cases."""
-
-    try:
-        from ifcopenshell.api.pset.add_qto import add_qto  # type: ignore import-not-found
-        from ifcopenshell.api.pset.edit_qto import edit_qto  # type: ignore import-not-found
-
-        qto = add_qto(f, product=product, name=qto_name)
-        edit_qto(f, qto=qto, properties=dict(properties))
-    except Exception:
-        return
-
-
-def _try_attach_classification_reference(
-    f: Any,
-    product: Any,
-    *,
-    classification_code: str | None,
-    classification_cache: dict[str, Any],
-    classification_ref_cache: dict[str, Any],
-) -> None:
-    """IFC-04: attach an IfcClassificationReference for a given OmniClass /
-    Uniclass / NSCC code via IfcRelAssociatesClassification. Reuses the
-    ``code → IfcClassificationReference`` cache so multiple products with
-    the same code share a single reference.
-
-    Best-effort — silently returns when ifcopenshell or its classification
-    use-case is unavailable, so tests on minimal builds keep passing.
-    """
-
-    if not classification_code:
-        return
-    code = str(classification_code).strip()
-    if not code:
-        return
-    try:
-        import ifcopenshell.api.classification  # noqa: PLC0415
-    except ImportError:
-        return
-    try:
-        # System name is the code's prefix up to ":" or "_" — stable across
-        # OmniClass-22, Uniclass-Pr, NSCC. Defaults to "BimAi" so the
-        # classification entity is always identifiable in the IFC.
-        sys_name = code.split(":", 1)[0].split("_", 1)[0] or "BimAi"
-        cls_ent = classification_cache.get(sys_name)
-        if cls_ent is None:
-            cls_ent = ifcopenshell.api.classification.add_classification(
-                f, classification=str(sys_name)[:64]
-            )
-            classification_cache[sys_name] = cls_ent
-        ref_ent = classification_ref_cache.get(code)
-        if ref_ent is None:
-            ref_ent = ifcopenshell.api.classification.add_reference(
-                f,
-                products=[product],
-                classification=cls_ent,
-                identification=str(code)[:128],
-                name=str(code)[:128],
-            )
-            classification_ref_cache[code] = ref_ent
-        else:
-            try:
-                ifcopenshell.api.classification.add_reference(
-                    f,
-                    products=[product],
-                    reference=ref_ent,
-                )
-            except Exception:
-                # Older ifcopenshell builds don't support `reference=`; fall
-                # back to creating a fresh per-product reference so the
-                # classification still surfaces, just without sharing.
-                ifcopenshell.api.classification.add_reference(
-                    f,
-                    products=[product],
-                    classification=cls_ent,
-                    identification=str(code)[:128],
-                    name=str(code)[:128],
-                )
-    except Exception:
-        return
-
-
-def _maybe_attach_classification(
-    f: Any,
-    product: Any,
-    element: Any,
-    *,
-    classification_cache: dict[str, Any],
-    classification_ref_cache: dict[str, Any],
-) -> None:
-    """IFC-04: shared shim that pulls ``ifc_classification_code`` off any
-    bim-ai element (architectural categories already had it; stairs /
-    columns / beams gain it in this WP) and emits an
-    ``IfcRelAssociatesClassification`` via the existing reference cache.
-    """
-
-    _try_attach_classification_reference(
-        f,
-        product,
-        classification_code=getattr(element, "ifc_classification_code", None),
-        classification_cache=classification_cache,
-        classification_ref_cache=classification_ref_cache,
-    )
-
-
-def _safe_edit_pset(f: Any, product: Any, *, name: str, properties: dict[str, Any]) -> None:
-    """IFC-04: best-effort attach Pset_*Common to a product. Silently
-    drops when the IfcOpenShell pset use-case is unavailable so tests
-    on minimal builds keep passing."""
-
-    if not properties:
-        return
-    try:
-        from ifcopenshell.api.pset.add_pset import add_pset  # noqa: PLC0415
-        from ifcopenshell.api.pset.edit_pset import edit_pset  # noqa: PLC0415
-    except ImportError:
-        return
-    try:
-        ps = add_pset(f, product=product, name=name)
-        edit_pset(f, pset=ps, properties=dict(properties))
-    except Exception:
-        return
-
-
-def _attach_stair_common_pset(f: Any, ifc_stair: Any, stair: StairElem, doc: Document) -> None:
-    """IFC-04: populate the standard `Pset_StairCommon` properties from
-    a `StairElem`. Only emits properties with a non-default value so the
-    pset stays compact."""
-
-    bl = doc.elements.get(stair.base_level_id)
-    tl = doc.elements.get(stair.top_level_id)
-    rise_mm = (
-        abs(tl.elevation_mm - bl.elevation_mm)
-        if isinstance(bl, LevelElem) and isinstance(tl, LevelElem)
-        else float(stair.riser_mm) * 16.0
-    )
-    riser_mm_val = float(stair.riser_mm) if stair.riser_mm > 0 else 175.0
-    riser_count = max(1, round(rise_mm / riser_mm_val))
-    props: dict[str, Any] = {
-        "NumberOfRiser": int(riser_count),
-        "NumberOfTreads": int(max(0, riser_count - 1)),
-        "RiserHeight": float(riser_mm_val) / 1000.0,
-        "TreadLength": float(stair.tread_mm) / 1000.0,
-    }
-    _safe_edit_pset(f, ifc_stair, name="Pset_StairCommon", properties=props)
-
-
-def _attach_column_common_pset(f: Any, ifc_column: Any, column: ColumnElem) -> None:
-    """IFC-04: populate `Pset_ColumnCommon` (LoadBearing / IsExternal /
-    Reference) from a `ColumnElem`."""
-
-    props: dict[str, Any] = {
-        "Reference": str(column.id),
-        "LoadBearing": True,
-        "IsExternal": False,
-    }
-    _safe_edit_pset(f, ifc_column, name="Pset_ColumnCommon", properties=props)
-
-
-def _attach_beam_common_pset(f: Any, ifc_beam: Any, beam: BeamElem) -> None:
-    """IFC-04: populate `Pset_BeamCommon` (Span / LoadBearing /
-    IsExternal / Reference) from a `BeamElem`. ``Span`` is the
-    horizontal start→end length in metres."""
-
-    sx = float(beam.start_mm.x_mm) / 1000.0
-    sy = float(beam.start_mm.y_mm) / 1000.0
-    ex = float(beam.end_mm.x_mm) / 1000.0
-    ey = float(beam.end_mm.y_mm) / 1000.0
-    span_m = math.hypot(ex - sx, ey - sy)
-    props: dict[str, Any] = {
-        "Reference": str(beam.id),
-        "Span": float(span_m),
-        "LoadBearing": True,
-        "IsExternal": False,
-    }
-    _safe_edit_pset(f, ifc_beam, name="Pset_BeamCommon", properties=props)
-
-
-def _attach_ceiling_common_pset(f: Any, ifc_covering: Any, ceiling: CeilingElem) -> None:
-    """IFC-04: populate `Pset_CoveringCommon` for an `IfcCovering` that
-    backs a `CeilingElem` (Reference / IsExternal)."""
-
-    props: dict[str, Any] = {
-        "Reference": str(ceiling.id),
-        "IsExternal": False,
-    }
-    _safe_edit_pset(f, ifc_covering, name="Pset_CoveringCommon", properties=props)
-
-
-def _attach_railing_common_pset(f: Any, ifc_railing: Any, railing: RailingElem) -> None:
-    """IFC-04: populate `Pset_RailingCommon` (Height / IsExternal /
-    Reference) from a `RailingElem`."""
-
-    props: dict[str, Any] = {
-        "Reference": str(railing.id),
-        "Height": float(railing.guard_height_mm) / 1000.0,
-        "IsExternal": False,
-    }
-    _safe_edit_pset(f, ifc_railing, name="Pset_RailingCommon", properties=props)
-
-
 def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
     """Build IFC geometry or return `(None, 0)` to fall back to empty hull."""
 
@@ -2820,7 +2629,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
                 hwin = clamp(float(_e.height_mm) / 1000.0, 0.15, max(0.2, height_m - 0.2))
                 opening_area_m2 += wo * float(hwin)
         net_side_area_m2 = max(0.0, gross_side_area_m2 - opening_area_m2)
-        _try_attach_qto(
+        try_attach_qto(
             f,
             wal,
             "Qto_WallBaseQuantities",
@@ -2852,7 +2661,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
                 material_key=getattr(w, "material_key", None),
                 material_by_key_cache=material_by_key_cache,
             )
-        _try_attach_classification_reference(
+        try_attach_classification_reference(
             f,
             wal,
             classification_code=getattr(w, "ifc_classification_code", None),
@@ -2923,7 +2732,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         slab_perm_m = polygon_perimeter_m_xy_mm(
             [*pts, pts[0]] if pts else pts,
         )
-        _try_attach_qto(
+        try_attach_qto(
             f,
             slab,
             "Qto_SlabBaseQuantities",
@@ -2934,7 +2743,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
                 "Width": float(thick_m),
             },
         )
-        _try_attach_classification_reference(
+        try_attach_classification_reference(
             f,
             slab,
             classification_code=getattr(fl, "ifc_classification_code", None),
@@ -3069,7 +2878,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         )
 
         if filling_class == "IfcDoor":
-            _try_attach_qto(
+            try_attach_qto(
                 f,
                 filler,
                 "Qto_DoorBaseQuantities",
@@ -3081,7 +2890,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
                 },
             )
         else:
-            _try_attach_qto(
+            try_attach_qto(
                 f,
                 filler,
                 "Qto_WindowBaseQuantities",
@@ -3105,7 +2914,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
 
         # IFC-04: attach IfcClassificationReference when set on the door /
         # window kernel element.
-        _try_attach_classification_reference(
+        try_attach_classification_reference(
             f,
             filler,
             classification_code=classification_code,
@@ -3221,7 +3030,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         gross_area = polygon_area_m2_xy_mm(pts_outline)
         net_perimeter = polygon_perimeter_m_xy_mm(pts_outline)
         net_volume = float(gross_area) * float(prism_h_m)
-        _try_attach_qto(
+        try_attach_qto(
             f,
             sp,
             "Qto_SpaceBaseQuantities",
@@ -3232,7 +3041,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
                 "NetPerimeter": net_perimeter,
             },
         )
-        _try_attach_classification_reference(
+        try_attach_classification_reference(
             f,
             sp,
             classification_code=getattr(rm, "ifc_classification_code", None),
@@ -3516,7 +3325,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         # Perimeter is the closed-loop perimeter.
         roof_area_m2 = polygon_area_m2_xy_mm(rp_mm)
         roof_perim_m = polygon_perimeter_m_xy_mm([*rp_mm, rp_mm[0]] if rp_mm else rp_mm)
-        _try_attach_qto(
+        try_attach_qto(
             f,
             roof_ent,
             "Qto_SlabBaseQuantities",
@@ -3526,7 +3335,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
                 "Perimeter": float(roof_perim_m),
             },
         )
-        _try_attach_classification_reference(
+        try_attach_classification_reference(
             f,
             roof_ent,
             classification_code=getattr(rf, "ifc_classification_code", None),
@@ -3613,7 +3422,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         riser_mm_val = float(st.riser_mm) if st.riser_mm > 0 else 175.0
         riser_count = max(1, round(rise_mm / riser_mm_val))
         run_len_m = math.hypot(ex - sx, ey - sy)
-        _try_attach_qto(
+        try_attach_qto(
             f,
             stair_ent,
             "Qto_StairBaseQuantities",
@@ -3627,8 +3436,8 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         # IFC-04: full Pset_StairCommon properties (NumberOfRiser /
         # NumberOfTreads / RiserHeight / TreadLength) on top of the
         # kernel-identity Reference, plus optional classification.
-        _attach_stair_common_pset(f, stair_ent, st, doc)
-        _maybe_attach_classification(
+        attach_stair_common_pset(f, stair_ent, st, doc)
+        maybe_attach_classification(
             f,
             stair_ent,
             st,
@@ -3694,7 +3503,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         )
         geo_products += 1
         attach_kernel_identity_pset(col_ent, "Pset_ColumnCommon", cid)
-        _attach_column_common_pset(f, col_ent, col)
+        attach_column_common_pset(f, col_ent, col)
         if col.material_key:
             try_attach_kernel_ifc_single_material(
                 f,
@@ -3702,7 +3511,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
                 material_key=col.material_key,
                 material_by_key_cache=material_by_key_cache,
             )
-        _maybe_attach_classification(
+        maybe_attach_classification(
             f,
             col_ent,
             col,
@@ -3777,7 +3586,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         )
         geo_products += 1
         attach_kernel_identity_pset(beam_ent, "Pset_BeamCommon", bid)
-        _attach_beam_common_pset(f, beam_ent, bm)
+        attach_beam_common_pset(f, beam_ent, bm)
         if bm.material_key:
             try_attach_kernel_ifc_single_material(
                 f,
@@ -3785,7 +3594,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
                 material_key=bm.material_key,
                 material_by_key_cache=material_by_key_cache,
             )
-        _maybe_attach_classification(
+        maybe_attach_classification(
             f,
             beam_ent,
             bm,
@@ -3827,7 +3636,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         )
         geo_products += 1
         attach_kernel_identity_pset(cov_ent, "Pset_CoveringCommon", cid)
-        _attach_ceiling_common_pset(f, cov_ent, ceil)
+        attach_ceiling_common_pset(f, cov_ent, ceil)
 
     for rid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, RailingElem)):
         rl = doc.elements[rid]
@@ -3878,7 +3687,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         )
         geo_products += 1
         attach_kernel_identity_pset(railing_ent, "Pset_RailingCommon", rid)
-        _attach_railing_common_pset(f, railing_ent, rl)
+        attach_railing_common_pset(f, railing_ent, rl)
 
     if geo_products == 0:
         return None, 0

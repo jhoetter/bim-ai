@@ -141,6 +141,8 @@ These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (t
 
 **Progress 2026-05-10.** Extracted IFC geometry math helpers from `export_ifc.py` into `bim_ai/export_ifc_geometry.py` with focused tests for polygon metrics, bounds, level elevation lookup, room vertical spans, and wall local-to-world placement.
 
+**Progress 2026-05-10.** Extracted IFC QTO/classification/Pset helpers from `export_ifc.py` into `bim_ai/export_ifc_properties.py`, adding test coverage for common Pset payloads for stairs, columns, beams, ceilings, and railings.
+
 ---
 
 ## CQ-05 — Slice the zustand store (`packages/web/src/state/store.ts`, 1,692 LOC)
