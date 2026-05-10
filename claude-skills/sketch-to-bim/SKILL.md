@@ -9,6 +9,8 @@ You are the AI architect. The customer hands you a sketch (line drawing, render,
 
 This skill is the methodology a world-class architect would use, encoded as a deterministic process. Software stays deterministic; you provide the intelligence — interpreting the sketch with your own multimodal vision, judging silhouette match, picking materials, authoring corrective commands.
 
+Before any substantial sketch-to-BIM run, read `spec/sketch-to-bim-methodology.md`. Treat it as the product/engineering tracker for this workflow: it defines the user input contract, Sketch Understanding IR, capability matrix, acceptance gates, scoring rubric, and implementation backlog. This skill is the operational checklist; the spec is the durable methodology source.
+
 ---
 
 ## The mindset shift
@@ -67,6 +69,12 @@ These findings block phase advancement unless the user explicitly accepts them w
 
 ## Pre-flight (before you touch the engine)
 
+0. **Load the methodology tracker.** Read `spec/sketch-to-bim-methodology.md` and identify:
+   - the expected user input level (sketch-only, sketch + brief, or fully dimensioned);
+   - the target output level (massing-only, concept BIM, project-initiation BIM, documentation-ready);
+   - the required acceptance gates for this run;
+   - any capability gaps that must be resolved before modelling.
+
 1. **Locate the inputs.** Read every customer-supplied document and image:
    - The brief (markdown, e.g. `spec/target-house-seed.md`) — read it end-to-end.
    - The reference imagery (e.g. `spec/target-house-seed-vis.png`, `spec/target-house-vis-colored.png`) — open every image with the Read tool. Look at it with your own vision. Describe back, in writing, what you see.
@@ -82,7 +90,7 @@ These findings block phase advancement unless the user explicitly accepts them w
 
    If the written brief conflicts with what the image clearly shows, treat the image as authoritative and update the brief/spec before rebuilding the seed. Do not proceed from a generic architectural label such as "asymmetric gable"; translate the visible geometry into buildable elements.
 
-3. **Fill out the structured brief.** Produce a JSON-shaped brief (SKB-21 format when it lands; today, write it as a Markdown file at `nightshift/<sprint>/brief.md`). Required fields:
+3. **Fill out the Sketch Understanding IR.** Produce the structured brief described in `spec/sketch-to-bim-methodology.md` (SKB-21 format when it lands; today, write it as JSON or Markdown at `nightshift/<sprint>/brief.md`). Required fields:
 
    ```
    - style: "modernist" | "traditional" | "minimalist" | "industrial" | …
@@ -105,9 +113,11 @@ These findings block phase advancement unless the user explicitly accepts them w
 
 4. **Log every assumption.** Where the sketch is ambiguous (overhang depth not called out, exact eave height not dimensioned), do not guess silently. Write the assumption to the assumption log with the sketch coordinate that triggered the inference. Use `agent_assumption` element kind once SKB-08 lands; before that, write a markdown bullet list at `nightshift/<sprint>/assumptions.md`.
 
-5. **Pick the closest archetype, if any** (SKB-09). Today there are none; you start from a blank model. When archetypes ship, use `bim-ai archetype list` and fork the closest one — never start from blank if a 70%-match archetype exists.
+5. **Build the capability matrix.** For every critical visual feature, map the feature to the command/API surface, renderer support, advisor coverage, and known failure mode. If a critical feature cannot be represented faithfully, create a capability-gap task instead of faking it with decorative geometry.
 
-6. **Calibrate.** Anchor 2–3 known dimensions from the sketch (typically: overall house width, floor-to-floor, one elevation point). Compute a pixel-to-mm scale factor. When SKB-04 (`bim-ai calibrate`) lands, use it; today, do the math by hand and record in `assumptions.md`.
+6. **Pick the closest archetype, if any** (SKB-09). Today there are none; you start from a blank model. When archetypes ship, use `bim-ai archetype list` and fork the closest one — never start from blank if a 70%-match archetype exists.
+
+7. **Calibrate.** Anchor 2–3 known dimensions from the sketch (typically: overall house width, floor-to-floor, one elevation point). Compute a pixel-to-mm scale factor. When SKB-04 (`bim-ai calibrate`) lands, use it; today, do the math by hand and record in `assumptions.md`.
 
 ---
 

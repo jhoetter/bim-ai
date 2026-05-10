@@ -1,0 +1,109 @@
+{
+  "schemaVersion": "sketch-understanding-ir.v0",
+  "projectType": "single_family_house",
+  "qualityTarget": "project_initiation_bim",
+  "sourceInputs": {
+    "images": ["spec/target-house.jpeg"],
+    "briefs": ["spec/target-house-seed.md"],
+    "userInstruction": "Create a BIM seed model from the sketch."
+  },
+  "visualRead": {
+    "primaryView": "front-left axonometric",
+    "style": "minimalist modern residential",
+    "dominantVolumes": [
+      {
+        "id": "upper_white_wrapper",
+        "description": "Dominant smooth white folded upper shell with thick roof/wall edges.",
+        "priority": "critical"
+      },
+      {
+        "id": "ground_clad_base",
+        "description": "Smaller rectangular ground-floor base with vertical cladding.",
+        "priority": "critical"
+      }
+    ],
+    "nonNegotiables": [
+      "embedded roof terrace cut into right roof plane",
+      "deep recessed upper front loggia",
+      "white roof/wall shell, not a dark pitched roof",
+      "visible cantilever over the smaller ground-floor base"
+    ],
+    "forbiddenOutcomes": [
+      "generic roof-on-box house",
+      "metadata-only roof opening",
+      "conceptual mass boxes left as final envelope",
+      "room-separation rectangles used to hide enclosure issues"
+    ]
+  },
+  "dimensions": {
+    "confidence": "estimated_from_image",
+    "floorToFloorMm": 3000,
+    "overallDepthMm": 8200,
+    "upperShellWidthMm": 8000,
+    "groundBaseWidthMm": 5600
+  },
+  "programme": [
+    { "name": "Entrance / stair hall", "level": "ground", "programmeCode": "circulation" },
+    { "name": "Guest WC", "level": "ground", "programmeCode": "toilet" },
+    { "name": "Living / dining", "level": "ground", "programmeCode": "living" },
+    { "name": "Kitchen", "level": "ground", "programmeCode": "kitchen" },
+    { "name": "Master bedroom", "level": "upper", "programmeCode": "bedroom" },
+    { "name": "Secondary bedroom", "level": "upper", "programmeCode": "bedroom" },
+    { "name": "Bathroom", "level": "upper", "programmeCode": "bathroom" },
+    { "name": "Embedded roof terrace", "level": "upper", "programmeCode": "terrace" }
+  ],
+  "features": [
+    {
+      "id": "roof_terrace_cutout",
+      "kind": "roof_opening_with_occupied_terrace",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["main_front_left", "roof_high", "east_side"],
+      "capabilityNeeds": [
+        "createRoofOpening renders a real void",
+        "terrace has floor, return walls, guard, and access door"
+      ]
+    },
+    {
+      "id": "front_loggia",
+      "kind": "recessed_loggia",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["main_front_left", "front_elevation"],
+      "capabilityNeeds": ["recessed facade plane", "three-bay rhythm", "front guard rail"]
+    },
+    {
+      "id": "gable_cut_envelope",
+      "kind": "roof_attached_wall_profile",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["main_front_left", "front_elevation", "east_side"],
+      "capabilityNeeds": [
+        "roof-attached wall tops sample roof profile along wall length",
+        "no rectangular wall top where sketch shows sloped/gable edge"
+      ]
+    }
+  ],
+  "requiredViews": [
+    { "id": "main_front_left", "kind": "3d", "purpose": "sketch-matched primary read" },
+    { "id": "front_elevation", "kind": "3d", "purpose": "front loggia and gable profile" },
+    { "id": "east_side", "kind": "3d", "purpose": "roof terrace cutout and side envelope" },
+    {
+      "id": "roof_high",
+      "kind": "3d",
+      "purpose": "proof that roof terrace is a real occupied void"
+    },
+    { "id": "ground_plan", "kind": "plan", "purpose": "room and stair sanity" },
+    { "id": "upper_plan", "kind": "plan", "purpose": "upper rooms and roof terrace sanity" },
+    {
+      "id": "wire_diagnostic",
+      "kind": "diagnostic",
+      "purpose": "hidden overlaps and bad room boundaries"
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "scale_001",
+      "statement": "Overall depth estimated at 8.2 m because no dimensioned drawing was supplied.",
+      "confidence": "medium",
+      "validation": "compare model proportions in main and side screenshots"
+    }
+  ]
+}
