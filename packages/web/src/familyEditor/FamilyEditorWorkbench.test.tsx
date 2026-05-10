@@ -88,6 +88,7 @@ describe('<FamilyEditorWorkbench />', () => {
     await waitFor(() => expect(onLoadIntoProject).toHaveBeenCalledTimes(1));
     expect(onLoadIntoProject.mock.calls[0][0]).toMatchObject({
       typeId: 'ft-fam_casework_bench-1jk',
+      typeIds: ['ft-fam_casework_bench-1jk'],
       reloaded: false,
       command: {
         type: 'upsertFamilyType',
@@ -96,6 +97,39 @@ describe('<FamilyEditorWorkbench />', () => {
         discipline: 'generic',
       },
     });
+  });
+
+  it('loads authored family type catalogs and preserves parameter scope metadata', async () => {
+    const onLoadIntoProject = vi.fn();
+    const { getByLabelText, getByTestId, getByText, getAllByRole } = renderWithI18n(
+      <FamilyEditorWorkbench now={() => 2000} onLoadIntoProject={onLoadIntoProject} />,
+    );
+
+    fireEvent.change(getByLabelText('Family name'), { target: { value: 'Parametric Chair' } });
+    fireEvent.change(getByLabelText('Family id'), { target: { value: 'fam:furniture:chair' } });
+    fireEvent.click(getAllByRole('button').find((b) => b.textContent === 'Add parameter')!);
+    fireEvent.change(getByLabelText('parameter-scope-param_1'), {
+      target: { value: 'instance' },
+    });
+    fireEvent.click(getByTestId('family-types-open'));
+    fireEvent.click(getByTestId('family-types-new'));
+    fireEvent.change(getByLabelText('Family type name'), { target: { value: 'Wide Chair' } });
+    fireEvent.click(getByText('Close'));
+
+    fireEvent.click(getByTestId('family-load-into-project'));
+
+    await waitFor(() => expect(onLoadIntoProject).toHaveBeenCalledTimes(1));
+    const plan = onLoadIntoProject.mock.calls[0][0];
+    expect(plan.commands).toHaveLength(2);
+    expect(plan.commands.map((command: { name: string }) => command.name)).toEqual([
+      'Type 1',
+      'Wide Chair',
+    ]);
+    expect(
+      plan.command.parameters.__familyDefinition.params.find(
+        (param: { key: string }) => param.key === 'param_1',
+      ).instanceOverridable,
+    ).toBe(true);
   });
 
   it('creates a local project family_type when no host project callback is supplied', () => {
@@ -199,13 +233,14 @@ describe('FAM-075/FAM-079/FAM-081/FAM-085 — furniture template preset', () => 
     expect(getByDisplayValue('Center Front/Back')).toBeTruthy();
     expect(getAllByText('Backrest Depth').length).toBeGreaterThan(0);
     expect(getByTestId('family-dimensions-list').textContent).toContain('Backrest_Depth');
+    expect(getByTestId('family-dimensions-list').textContent).toContain('Leg_Offset');
     expect(getByLabelText('parameter-default-Show_2D_Elements')).toBeTruthy();
     expect((getByLabelText('parameter-default-Show_2D_Elements') as HTMLInputElement).checked).toBe(
       true,
     );
     expect(getByTestId('symbolic-lines-list').textContent).toContain('visible when');
     expect(getByTestId('preview-visibility-summary').textContent).toContain(
-      '0/5 sweeps, 5/5 symbolic lines',
+      '0/6 sweeps, 5/5 symbolic lines',
     );
 
     fireEvent.click(getByTestId('family-types-open'));
@@ -220,13 +255,13 @@ describe('FAM-075/FAM-079/FAM-081/FAM-085 — furniture template preset', () => 
     fireEvent.change(getByLabelText('Preview detail level'), { target: { value: 'medium' } });
 
     expect(getByTestId('preview-visibility-summary').textContent).toContain(
-      '0/5 sweeps, 0/5 symbolic lines',
+      '0/6 sweeps, 0/5 symbolic lines',
     );
 
     fireEvent.click(getByLabelText('parameter-default-Show_2D_Elements'));
 
     expect(getByTestId('preview-visibility-summary').textContent).toContain(
-      '5/5 sweeps, 0/5 symbolic lines',
+      '6/6 sweeps, 0/5 symbolic lines',
     );
   });
 });
@@ -795,6 +830,7 @@ describe('resolveFamilyParamValue', () => {
     type: 'length_mm' as const,
     default: 1200,
     formula: '',
+    instanceOverridable: false,
   };
 
   it('returns default when no overrides given', () => {

@@ -271,6 +271,234 @@ describe('FAM-082/FAM-083 — parameter-driven furniture extrusions', () => {
     expect(bboxes[0]!.max.z - bboxes[0]!.min.z).toBeCloseTo(720, 0);
   });
 
+  it('locks straight sweep start/end to elevation parameters', () => {
+    const backrest: SweepGeometryNode = {
+      kind: 'sweep',
+      pathLines: [{ startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 0, yMm: 450 } }],
+      profile: rectProfile(600, 120),
+      profilePlane: 'work_plane',
+      pathStartOffsetParam: 'Seat_Height',
+      pathEndOffsetParam: 'Backrest_Height',
+    };
+    const family: FamilyDefinition = {
+      id: 'elevation-locked-chair',
+      name: 'Elevation Locked Chair',
+      discipline: 'generic',
+      params: [
+        {
+          key: 'Seat_Height',
+          label: 'Seat Height',
+          type: 'length_mm',
+          default: 450,
+          instanceOverridable: true,
+        },
+        {
+          key: 'Backrest_Height',
+          label: 'Backrest Height',
+          type: 'length_mm',
+          default: 900,
+          instanceOverridable: true,
+        },
+      ],
+      defaultTypes: [],
+      geometry: [backrest],
+    };
+    const group = resolveFamilyGeometry(
+      family.id,
+      { Seat_Height: 480, Backrest_Height: 980 },
+      { [family.id]: family },
+    );
+    const bboxes = meshGeometryBboxes(group);
+
+    expect(bboxes).toHaveLength(1);
+    expect(bboxes[0]!.min.z).toBeCloseTo(480, 0);
+    expect(bboxes[0]!.max.z).toBeCloseTo(980, 0);
+  });
+
+  it('regenerates circular leg profile radius and placement from furniture parameters', () => {
+    function legSweep(xSign: -1 | 1, ySign: -1 | 1): SweepGeometryNode {
+      return {
+        kind: 'sweep',
+        pathLines: [{ startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 0, yMm: 450 } }],
+        profile: rectProfile(50, 50),
+        profilePlane: 'work_plane',
+        pathEndOffsetParam: 'Seat_Height',
+        parametricProfile: {
+          kind: 'circle',
+          centerX: {
+            kind: 'formula',
+            expression: xSign < 0 ? '-(Width / 2 - Leg_Offset)' : 'Width / 2 - Leg_Offset',
+          },
+          centerY: {
+            kind: 'formula',
+            expression: ySign < 0 ? '-(Depth / 2 - Leg_Offset)' : 'Depth / 2 - Leg_Offset',
+          },
+          radiusParam: 'Leg_Radius',
+          segments: 24,
+          editablePrimitive: 'circle',
+        },
+      };
+    }
+    const leg: SweepGeometryNode = {
+      kind: 'sweep',
+      pathLines: [{ startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 0, yMm: 450 } }],
+      profile: rectProfile(50, 50),
+      profilePlane: 'work_plane',
+      pathEndOffsetParam: 'Seat_Height',
+      parametricProfile: {
+        kind: 'circle',
+        centerX: { kind: 'formula', expression: 'Width / 2 - Leg_Offset' },
+        centerY: { kind: 'formula', expression: '-(Depth / 2 - Leg_Offset)' },
+        radiusParam: 'Leg_Radius',
+        segments: 24,
+        editablePrimitive: 'circle',
+      },
+    };
+    const family: FamilyDefinition = {
+      id: 'parametric-leg-chair',
+      name: 'Parametric Leg Chair',
+      discipline: 'generic',
+      params: [
+        {
+          key: 'Width',
+          label: 'Width',
+          type: 'length_mm',
+          default: 600,
+          instanceOverridable: true,
+        },
+        {
+          key: 'Depth',
+          label: 'Depth',
+          type: 'length_mm',
+          default: 600,
+          instanceOverridable: true,
+        },
+        {
+          key: 'Leg_Offset',
+          label: 'Leg Offset',
+          type: 'length_mm',
+          default: 90,
+          instanceOverridable: true,
+        },
+        {
+          key: 'Leg_Radius',
+          label: 'Leg Radius',
+          type: 'length_mm',
+          default: 25,
+          instanceOverridable: true,
+        },
+        {
+          key: 'Seat_Height',
+          label: 'Seat Height',
+          type: 'length_mm',
+          default: 450,
+          instanceOverridable: true,
+        },
+      ],
+      defaultTypes: [],
+      geometry: [leg, legSweep(-1, -1), legSweep(1, -1), legSweep(1, 1), legSweep(-1, 1)],
+    };
+    const group = resolveFamilyGeometry(
+      family.id,
+      { Width: 1000, Depth: 800, Leg_Offset: 120, Leg_Radius: 40, Seat_Height: 460 },
+      { [family.id]: family },
+    );
+    const bboxes = meshGeometryBboxes(group);
+
+    expect(bboxes).toHaveLength(5);
+    expect(bboxes[0]!.min.x).toBeCloseTo(340, 1);
+    expect(bboxes[0]!.max.x).toBeCloseTo(420, 1);
+    expect(bboxes[0]!.min.y).toBeCloseTo(-320, 1);
+    expect(bboxes[0]!.max.y).toBeCloseTo(-240, 1);
+    expect(bboxes[0]!.max.z).toBeCloseTo(460, 0);
+    const centers = bboxes.slice(1).map((bb) => ({
+      x: Math.round((bb.min.x + bb.max.x) / 2),
+      y: Math.round((bb.min.y + bb.max.y) / 2),
+    }));
+    expect(centers).toEqual([
+      { x: -380, y: -280 },
+      { x: 380, y: -280 },
+      { x: 380, y: 280 },
+      { x: -380, y: 280 },
+    ]);
+  });
+
+  it('regenerates backrest footprint from Width, Depth, and Backrest_Depth', () => {
+    const backrest: SweepGeometryNode = {
+      kind: 'sweep',
+      pathLines: [{ startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 0, yMm: 450 } }],
+      profile: rectProfile(600, 180),
+      profilePlane: 'work_plane',
+      pathStartOffsetParam: 'Seat_Height',
+      pathEndOffsetParam: 'Backrest_Height',
+      parametricProfile: {
+        kind: 'rectangle',
+        minX: { kind: 'formula', expression: '-Width / 2' },
+        maxX: { kind: 'formula', expression: 'Width / 2' },
+        minY: { kind: 'formula', expression: 'Depth / 2 - Backrest_Depth' },
+        maxY: { kind: 'formula', expression: 'Depth / 2' },
+      },
+    };
+    const family: FamilyDefinition = {
+      id: 'parametric-backrest-chair',
+      name: 'Parametric Backrest Chair',
+      discipline: 'generic',
+      params: [
+        {
+          key: 'Width',
+          label: 'Width',
+          type: 'length_mm',
+          default: 600,
+          instanceOverridable: true,
+        },
+        {
+          key: 'Depth',
+          label: 'Depth',
+          type: 'length_mm',
+          default: 600,
+          instanceOverridable: true,
+        },
+        {
+          key: 'Backrest_Depth',
+          label: 'Backrest Depth',
+          type: 'length_mm',
+          default: 180,
+          instanceOverridable: true,
+        },
+        {
+          key: 'Seat_Height',
+          label: 'Seat Height',
+          type: 'length_mm',
+          default: 450,
+          instanceOverridable: true,
+        },
+        {
+          key: 'Backrest_Height',
+          label: 'Backrest Height',
+          type: 'length_mm',
+          default: 900,
+          instanceOverridable: true,
+        },
+      ],
+      defaultTypes: [],
+      geometry: [backrest],
+    };
+    const group = resolveFamilyGeometry(
+      family.id,
+      { Width: 720, Depth: 640, Backrest_Depth: 200, Seat_Height: 450, Backrest_Height: 920 },
+      { [family.id]: family },
+    );
+    const bboxes = meshGeometryBboxes(group);
+
+    expect(bboxes).toHaveLength(1);
+    expect(bboxes[0]!.min.x).toBeCloseTo(-360, 0);
+    expect(bboxes[0]!.max.x).toBeCloseTo(360, 0);
+    expect(bboxes[0]!.min.y).toBeCloseTo(120, 0);
+    expect(bboxes[0]!.max.y).toBeCloseTo(320, 0);
+    expect(bboxes[0]!.min.z).toBeCloseTo(450, 0);
+    expect(bboxes[0]!.max.z).toBeCloseTo(920, 0);
+  });
+
   it('uses a material_key parameter to resolve sweep material association', () => {
     const seat: SweepGeometryNode = {
       kind: 'sweep',

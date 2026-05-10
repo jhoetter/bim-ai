@@ -62,6 +62,61 @@ const SOFA_PAYLOAD: ExternalCatalogPayload = {
         },
       ],
     },
+    {
+      id: 'catalog:living-room:dining-table-array',
+      name: 'Dining Table With Chair Array',
+      discipline: 'generic',
+      params: [
+        {
+          key: 'Width',
+          label: 'Table Width',
+          type: 'length_mm',
+          default: 2400,
+          instanceOverridable: true,
+        },
+        {
+          key: 'ChairSlotPitch',
+          label: 'Chair Slot Pitch',
+          type: 'length_mm',
+          default: 600,
+          instanceOverridable: false,
+        },
+        {
+          key: 'Array_Length_Width',
+          label: 'Array Length Width',
+          type: 'length_mm',
+          default: 4,
+          formula: 'max(1, rounddown(Width / 600))',
+          instanceOverridable: false,
+        },
+      ],
+      defaultTypes: [
+        {
+          id: 'catalog:living-room:dining-table-array:standard',
+          name: 'Standard 2400',
+          familyId: 'catalog:living-room:dining-table-array',
+          discipline: 'generic',
+          parameters: { Width: 2400, ChairSlotPitch: 600 },
+        },
+      ],
+      geometry: [
+        {
+          kind: 'array',
+          target: {
+            kind: 'family_instance_ref',
+            familyId: 'catalog:living-room:chair',
+            positionMm: { xMm: 0, yMm: 0, zMm: 0 },
+            rotationDeg: 0,
+            parameterBindings: {},
+          },
+          mode: 'linear',
+          countParam: 'Array_Length_Width',
+          spacing: { kind: 'fit_total', totalLengthParam: 'Width' },
+          axisStart: { xMm: 0, yMm: 0, zMm: 0 },
+          axisEnd: { xMm: 0, yMm: 0, zMm: 0 },
+        },
+      ],
+    },
   ],
 };
 
@@ -227,6 +282,39 @@ describe('<FamilyLibraryPanel /> — FAM-08 catalog families', () => {
       expect.objectContaining({ catalogId: 'living-room-furniture' }),
       'keep-existing-values',
     );
+  });
+
+  it('surfaces catalog-family array formulas and saves edits with placement context', async () => {
+    const onUpdateArrayFormula = vi.fn();
+    const { getByLabelText, getByTestId } = render(
+      <FamilyLibraryPanel
+        open
+        onClose={() => undefined}
+        elementsById={{}}
+        onPlaceType={() => undefined}
+        catalogClient={makeClient()}
+        onUpdateArrayFormula={onUpdateArrayFormula}
+      />,
+    );
+    await waitFor(() => getByTestId('family-row-catalog:living-room:dining-table-array'));
+
+    const input = getByLabelText('Array formula Array_Length_Width') as HTMLInputElement;
+    expect(input.value).toBe('max(1, rounddown(Width / 600))');
+    fireEvent.change(input, { target: { value: 'max(1, rounddown(Width / 500))' } });
+    fireEvent.click(getByTestId('array-formula-save-Array_Length_Width'));
+
+    expect(onUpdateArrayFormula).toHaveBeenCalledTimes(1);
+    expect(onUpdateArrayFormula.mock.calls[0]![0]).toMatchObject({
+      target: {
+        kind: 'catalog_family',
+        placement: {
+          catalogId: 'living-room-furniture',
+          family: { id: 'catalog:living-room:dining-table-array' },
+        },
+      },
+      paramKey: 'Array_Length_Width',
+      formula: 'max(1, rounddown(Width / 500))',
+    });
   });
 
   it('shows catalogSource provenance badge for catalog-loaded family_type', () => {

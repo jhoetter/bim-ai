@@ -21,6 +21,7 @@ export const FAMILY_EDITOR_CATALOG_STORAGE_KEY = 'bim-ai.family-editor.catalog.v
 export const FAMILY_EDITOR_CATALOG_ID = 'family-editor';
 export const FAMILY_EDITOR_DOCUMENT_PARAM = '__familyEditorDocument';
 export const FAMILY_EDITOR_DEFINITION_PARAM = '__familyDefinition';
+export const FAMILY_EDITOR_TYPE_ROW_ID_PARAM = '__familyEditorTypeRowId';
 
 export type AuthoredFamilyTemplate = 'generic_model' | 'door' | 'window' | 'profile' | 'furniture';
 export type AuthoredFamilyCategory = AuthoredFamilyTemplate | 'detail_component';
@@ -31,6 +32,7 @@ export interface AuthoredFamilyParam {
   type: FamilyParamDef['type'];
   default: unknown;
   formula: string;
+  instanceOverridable?: boolean;
 }
 
 export interface AuthoredFamilyTypeRow {
@@ -118,8 +120,10 @@ export interface AuthoredFamilyLoadCommand extends Record<string, unknown> {
 
 export interface AuthoredFamilyLoadPlan {
   command: AuthoredFamilyLoadCommand;
+  commands: AuthoredFamilyLoadCommand[];
   kind: FamilyLibraryPlaceKind;
   typeId: string;
+  typeIds: string[];
   familyId: string;
   reloaded: boolean;
   overwriteOption: FamilyReloadOverwriteOption | null;
@@ -146,7 +150,7 @@ export function buildAuthoredFamilyDefinition(document: AuthoredFamilyDocument):
       label: param.label || param.key,
       type: param.type,
       default: param.default,
-      instanceOverridable: true,
+      instanceOverridable: param.instanceOverridable ?? false,
       ...(formula ? { formula } : {}),
     };
   });
@@ -163,6 +167,7 @@ export function buildAuthoredFamilyDefinition(document: AuthoredFamilyDocument):
     ...document.nestedInstances.map((node) => ({ ...node })),
     ...document.arrays.map((node) => ({ ...node })),
   ];
+  const symbolicLines = document.symbolicLines.map((line) => ({ ...line }));
 
   return {
     id: document.id,
@@ -171,6 +176,7 @@ export function buildAuthoredFamilyDefinition(document: AuthoredFamilyDocument):
     params,
     defaultTypes,
     ...(geometry.length > 0 ? { geometry } : {}),
+    ...(symbolicLines.length > 0 ? { symbolicLines } : {}),
   };
 }
 
@@ -229,6 +235,28 @@ export function findLoadedAuthoredFamilyType(
   return null;
 }
 
+function loadedAuthoredFamilyTypesByRowId(
+  elementsById: Record<string, Element>,
+  document: AuthoredFamilyDocument,
+): Map<string, Extract<Element, { kind: 'family_type' }>> {
+  const byRowId = new Map<string, Extract<Element, { kind: 'family_type' }>>();
+  const rows = document.familyTypes.length
+    ? document.familyTypes
+    : [{ id: 'family-type-1', name: `${document.name} Type`, values: {} }];
+  for (const element of Object.values(elementsById)) {
+    if (element.kind !== 'family_type') continue;
+    const savedDocument = extractAuthoredFamilyDocument(element);
+    if (savedDocument?.id !== document.id && element.familyId !== document.id) continue;
+    const rowId = element.parameters[FAMILY_EDITOR_TYPE_ROW_ID_PARAM];
+    if (typeof rowId === 'string' && rowId) {
+      byRowId.set(rowId, element);
+    } else if (rows.length === 1) {
+      byRowId.set(rows[0]!.id, element);
+    }
+  }
+  return byRowId;
+}
+
 export function planAuthoredFamilyLoad(
   document: AuthoredFamilyDocument,
   elementsById: Record<string, Element>,
@@ -239,42 +267,60 @@ export function planAuthoredFamilyLoad(
 ): AuthoredFamilyLoadPlan {
   const definition = buildAuthoredFamilyDefinition(document);
   const existing = findLoadedAuthoredFamilyType(elementsById, document);
+  const existingByRowId = loadedAuthoredFamilyTypesByRowId(elementsById, document);
   const overwriteOption = existing ? (options.overwriteOption ?? 'keep-existing-values') : null;
-  const activeType = document.familyTypes.find((row) => row.id === document.activeFamilyTypeId) ??
-    document.familyTypes[0] ?? { id: 'family-type-1', name: `${document.name} Type`, values: {} };
-  const typeId = existing?.id ?? newAuthoredFamilyTypeId(document, options.now ?? Date.now());
-  const defaultParameters = {
-    ...familyTypeParameters(document.id, activeType, document.params),
-    [FAMILY_EDITOR_DOCUMENT_PARAM]: document,
-    [FAMILY_EDITOR_DEFINITION_PARAM]: definition,
-    familyEditorCatalogId: FAMILY_EDITOR_CATALOG_ID,
-    familyEditorSavedAt: document.savedAt,
-    familyEditorVersion: document.version,
-  };
-  const parameters: Record<string, unknown> =
-    existing && overwriteOption === 'keep-existing-values'
-      ? {
-          ...existing.parameters,
-          familyId: document.id,
-          [FAMILY_EDITOR_DOCUMENT_PARAM]: document,
-          [FAMILY_EDITOR_DEFINITION_PARAM]: definition,
-          familyEditorCatalogId: FAMILY_EDITOR_CATALOG_ID,
-          familyEditorSavedAt: document.savedAt,
-          familyEditorVersion: document.version,
-        }
-      : defaultParameters;
-
-  return {
-    command: {
+  const rows = document.familyTypes.length
+    ? document.familyTypes
+    : [{ id: 'family-type-1', name: `${document.name} Type`, values: {} }];
+  const now = options.now ?? Date.now();
+  const commands = rows.map((row, index): AuthoredFamilyLoadCommand => {
+    const existingForRow = existingByRowId.get(row.id);
+    const typeId =
+      existingForRow?.id ?? newAuthoredFamilyTypeId(document, now, rows.length > 1 ? row.id : null);
+    const defaultParameters = {
+      ...familyTypeParameters(document.id, row, document.params),
+      [FAMILY_EDITOR_DOCUMENT_PARAM]: document,
+      [FAMILY_EDITOR_DEFINITION_PARAM]: definition,
+      [FAMILY_EDITOR_TYPE_ROW_ID_PARAM]: row.id,
+      familyEditorCatalogId: FAMILY_EDITOR_CATALOG_ID,
+      familyEditorSavedAt: document.savedAt,
+      familyEditorVersion: document.version,
+    };
+    const parameters: Record<string, unknown> =
+      existingForRow && overwriteOption === 'keep-existing-values'
+        ? {
+            ...existingForRow.parameters,
+            name: existingForRow.parameters.name ?? row.name,
+            familyId: document.id,
+            [FAMILY_EDITOR_DOCUMENT_PARAM]: document,
+            [FAMILY_EDITOR_DEFINITION_PARAM]: definition,
+            [FAMILY_EDITOR_TYPE_ROW_ID_PARAM]: row.id,
+            familyEditorCatalogId: FAMILY_EDITOR_CATALOG_ID,
+            familyEditorSavedAt: document.savedAt,
+            familyEditorVersion: document.version,
+          }
+        : defaultParameters;
+    return {
       type: 'upsertFamilyType',
       id: typeId,
-      name: String(parameters.name ?? document.name),
+      name: String(parameters.name ?? row.name ?? `${document.name} Type ${index + 1}`),
       familyId: document.id,
       discipline: definition.discipline as 'door' | 'window' | 'generic',
       parameters,
-    },
+    };
+  });
+  const activeIndex = Math.max(
+    0,
+    rows.findIndex((row) => row.id === document.activeFamilyTypeId),
+  );
+  const command = commands[activeIndex] ?? commands[0]!;
+
+  return {
+    command,
+    commands,
     kind: placeKindForFamilyDiscipline(definition.discipline),
-    typeId,
+    typeId: command.id,
+    typeIds: commands.map((next) => next.id),
     familyId: document.id,
     reloaded: existing !== null,
     overwriteOption,
@@ -326,7 +372,12 @@ function isAuthoredFamilyDocument(value: unknown): value is AuthoredFamilyDocume
   );
 }
 
-function newAuthoredFamilyTypeId(document: AuthoredFamilyDocument, now: number): string {
+function newAuthoredFamilyTypeId(
+  document: AuthoredFamilyDocument,
+  now: number,
+  rowId: string | null = null,
+): string {
   const safeFamId = document.id.replace(/[^A-Za-z0-9_-]/g, '_');
-  return `ft-${safeFamId}-${now.toString(36)}`;
+  const safeRowId = rowId ? `-${rowId.replace(/[^A-Za-z0-9_-]/g, '_')}` : '';
+  return `ft-${safeFamId}${safeRowId}-${now.toString(36)}`;
 }

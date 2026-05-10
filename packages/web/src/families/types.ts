@@ -53,6 +53,35 @@ export interface VisibilityByDetailLevel {
   fine?: boolean;
 }
 
+export type ParametricLengthExpression =
+  | number
+  | { kind: 'param'; paramName: string; fallbackMm?: number }
+  | { kind: 'formula'; expression: string; fallbackMm?: number };
+
+export type SweepParametricProfile =
+  | {
+      kind: 'rectangle';
+      minX: ParametricLengthExpression;
+      maxX: ParametricLengthExpression;
+      minY: ParametricLengthExpression;
+      maxY: ParametricLengthExpression;
+    }
+  | {
+      kind: 'circle';
+      centerX: ParametricLengthExpression;
+      centerY: ParametricLengthExpression;
+      radiusParam: string;
+      fallbackRadiusMm?: number;
+      segments?: number;
+      editablePrimitive?: 'circle' | 'polygon';
+    };
+
+export interface FamilySymbolicLine extends SketchLine {
+  subcategory?: 'symbolic' | 'opening_projection' | 'hidden_cut';
+  visibilityBinding?: VisibilityBinding;
+  visibilityByDetailLevel?: VisibilityByDetailLevel;
+}
+
 /** Sweep node — extrude a 2D profile along a 2D path. */
 export interface SweepGeometryNode {
   kind: 'sweep';
@@ -66,6 +95,12 @@ export interface SweepGeometryNode {
   profilePlane: 'normal_to_path_start' | 'work_plane';
   /** Optional host parameter that drives the length/depth of a straight path extrusion. */
   pathLengthParam?: string;
+  /** Optional elevation-plane lock for the sweep's bottom/start offset. */
+  pathStartOffsetParam?: string;
+  /** Optional elevation-plane lock for the sweep's top/end offset. Overrides `pathLengthParam`. */
+  pathEndOffsetParam?: string;
+  /** Optional host-parameter profile generator used by parametric family templates. */
+  parametricProfile?: SweepParametricProfile;
   /** Optional: load profile from a profile family (FAM-08). */
   profileFamilyId?: string;
   materialKey?: string;
@@ -168,6 +203,12 @@ export interface FamilyDefinition {
    * authored/loadable family geometry that the FAM-01 resolver walks.
    */
   geometry?: FamilyGeometryNode[];
+  /**
+   * Project-runtime 2D linework authored in the Family Editor.
+   * Symbolic/detail lines render in plan/detail views for placed family
+   * instances while 3D sweep geometry remains model-only.
+   */
+  symbolicLines?: FamilySymbolicLine[];
 }
 
 // Parameter resolution: instance override > type params > family default > inline fallback

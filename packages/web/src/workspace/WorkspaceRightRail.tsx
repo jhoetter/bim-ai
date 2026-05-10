@@ -8,6 +8,14 @@ import { AdvisorPanel } from '../advisor/AdvisorPanel';
 import { buildPlanGridDatumInspectorLine } from './readouts';
 import { useBimStore } from '../state/store';
 import { getTypeById } from '../families/familyCatalog';
+import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
+import type { FamilyDefinition, FamilyParamDef } from '../families/types';
+import {
+  buildAuthoredFamilyDefinition,
+  FAMILY_EDITOR_DEFINITION_PARAM,
+  FAMILY_EDITOR_DOCUMENT_PARAM,
+  type AuthoredFamilyDocument,
+} from '../familyEditor/familyEditorPersistence';
 import {
   Inspector,
   InspectorConstraintsFor,
@@ -124,6 +132,43 @@ export function duplicateOpeningFamilyTypeCommand(
       familyId: builtIn.familyId,
     },
   };
+}
+
+type FamilyTypeElement = Extract<Element, { kind: 'family_type' }>;
+
+function isFamilyDefinition(value: unknown): value is FamilyDefinition {
+  return Boolean(
+    value &&
+    typeof value === 'object' &&
+    typeof (value as { id?: unknown }).id === 'string' &&
+    Array.isArray((value as { params?: unknown }).params),
+  );
+}
+
+function familyDefinitionForType(type: FamilyTypeElement | undefined): FamilyDefinition | null {
+  if (!type) return null;
+  const embedded = type.parameters[FAMILY_EDITOR_DEFINITION_PARAM];
+  if (isFamilyDefinition(embedded)) return embedded;
+  const document = type.parameters[FAMILY_EDITOR_DOCUMENT_PARAM];
+  if (document && typeof document === 'object') {
+    return buildAuthoredFamilyDefinition(document as AuthoredFamilyDocument);
+  }
+  return BUILT_IN_FAMILIES.find((definition) => definition.id === type.familyId) ?? null;
+}
+
+function familyInstanceSiblingTypes(
+  type: FamilyTypeElement | undefined,
+  elementsById: Record<string, Element>,
+): FamilyTypeElement[] {
+  if (!type) return [];
+  return Object.values(elementsById)
+    .filter(
+      (candidate): candidate is FamilyTypeElement =>
+        candidate.kind === 'family_type' && candidate.familyId === type.familyId,
+    )
+    .sort((a, b) =>
+      String(a.parameters.name ?? a.name).localeCompare(String(b.parameters.name ?? b.name)),
+    );
 }
 
 export function WorkspaceRightRail({
@@ -672,6 +717,21 @@ export function WorkspaceRightRail({
                           ] as Extract<Element, { kind: 'asset_library_entry' }>)
                         : undefined
                     }
+                    onSemanticCommand={onSemanticCommand}
+                  />
+                ) : el.kind === 'family_instance' ? (
+                  <FamilyInstanceInspector
+                    el={el as Extract<Element, { kind: 'family_instance' }>}
+                    familyType={
+                      elementsById[
+                        (el as Extract<Element, { kind: 'family_instance' }>).familyTypeId
+                      ]?.kind === 'family_type'
+                        ? (elementsById[
+                            (el as Extract<Element, { kind: 'family_instance' }>).familyTypeId
+                          ] as FamilyTypeElement)
+                        : undefined
+                    }
+                    elementsById={elementsById}
                     onSemanticCommand={onSemanticCommand}
                   />
                 ) : el.kind === 'column' ? (
@@ -1274,6 +1334,182 @@ function PlacedAssetInspector({
         </button>
       </div>
     </div>
+  );
+}
+
+function FamilyInstanceInspector({
+  el,
+  familyType,
+  elementsById,
+  onSemanticCommand,
+}: {
+  el: Extract<Element, { kind: 'family_instance' }>;
+  familyType?: FamilyTypeElement;
+  elementsById: Record<string, Element>;
+  onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
+}): JSX.Element {
+  const params =
+    familyDefinitionForType(familyType)?.params.filter((param) => param.instanceOverridable) ?? [];
+  const siblingTypes = familyInstanceSiblingTypes(familyType, elementsById);
+
+  function currentParamValue(param: FamilyParamDef): unknown {
+    if (el.paramValues && param.key in el.paramValues) return el.paramValues[param.key];
+    if (familyType?.parameters && param.key in familyType.parameters) {
+      return familyType.parameters[param.key];
+    }
+    return param.default;
+  }
+
+  function commitParamValue(param: FamilyParamDef, value: unknown): void {
+    void onSemanticCommand({
+      type: 'updateElementProperty',
+      elementId: el.id,
+      key: 'paramValues',
+      value: { ...(el.paramValues ?? {}), [param.key]: value },
+    });
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="text-[11px] font-semibold text-foreground">{el.name}</div>
+      <label className="flex flex-col gap-1 text-xs text-muted">
+        Type
+        <select
+          className="rounded border border-border bg-surface px-1 py-0.5 text-xs text-foreground"
+          value={el.familyTypeId}
+          data-testid="inspector-family-instance-type"
+          onChange={(event) => {
+            void onSemanticCommand({
+              type: 'updateElementProperty',
+              elementId: el.id,
+              key: 'familyTypeId',
+              value: event.target.value,
+            });
+          }}
+        >
+          {siblingTypes.length === 0 ? (
+            <option value={el.familyTypeId}>{familyType?.name ?? el.familyTypeId}</option>
+          ) : (
+            siblingTypes.map((type) => (
+              <option key={type.id} value={type.id}>
+                {String(type.parameters.name ?? type.name)}
+              </option>
+            ))
+          )}
+        </select>
+      </label>
+      <div className="space-y-1 text-xs text-muted">
+        <div>
+          <span className="font-medium">X:</span> {el.positionMm.xMm.toFixed(1)} mm
+        </div>
+        <div>
+          <span className="font-medium">Y:</span> {el.positionMm.yMm.toFixed(1)} mm
+        </div>
+        <div>
+          <span className="font-medium">Rotation:</span> {el.rotationDeg ?? 0}°
+        </div>
+      </div>
+      {params.length > 0 ? (
+        <div className="border-t border-border pt-2 space-y-2">
+          <div
+            className="text-[10px] font-semibold uppercase text-muted"
+            style={{ letterSpacing: '0.08em', opacity: 0.7 }}
+          >
+            Instance Parameters
+          </div>
+          {params.map((param) => (
+            <FamilyInstanceParamField
+              key={param.key}
+              param={param}
+              value={currentParamValue(param)}
+              onCommit={(value) => commitParamValue(param, value)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="rounded border border-border bg-background p-2 text-xs text-muted">
+          This family type has no instance parameters.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FamilyInstanceParamField({
+  param,
+  value,
+  onCommit,
+}: {
+  param: FamilyParamDef;
+  value: unknown;
+  onCommit: (value: unknown) => void;
+}): JSX.Element {
+  const label =
+    param.type === 'length_mm' ? `${param.label || param.key} (mm)` : param.label || param.key;
+  const fieldId = `inspector-family-instance-param-${param.key}`;
+
+  if (param.type === 'boolean') {
+    return (
+      <label className="flex items-center gap-2 text-xs text-muted">
+        <input
+          type="checkbox"
+          checked={Boolean(value)}
+          data-testid={fieldId}
+          onChange={(event) => onCommit(event.target.checked)}
+        />
+        {param.label || param.key}
+      </label>
+    );
+  }
+
+  if (param.type === 'option') {
+    const options = param.options ?? [];
+    return (
+      <label className="flex flex-col gap-1 text-xs text-muted">
+        {label}
+        <select
+          value={String(value ?? '')}
+          className="rounded border border-border bg-surface px-1 py-0.5 text-xs text-foreground"
+          data-testid={fieldId}
+          onChange={(event) => onCommit(event.target.value)}
+        >
+          {options.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </label>
+    );
+  }
+
+  if (param.type === 'length_mm' || param.type === 'angle_deg') {
+    return (
+      <label className="flex flex-col gap-1 text-xs text-muted">
+        {label}
+        <input
+          type="number"
+          step={param.type === 'angle_deg' ? 1 : 25}
+          value={Number.isFinite(Number(value)) ? Number(value) : Number(param.default ?? 0)}
+          className="rounded border border-border bg-surface px-1 py-0.5 text-xs text-foreground"
+          data-testid={fieldId}
+          onChange={(event) => onCommit(Number(event.target.value))}
+        />
+      </label>
+    );
+  }
+
+  return (
+    <label className="flex flex-col gap-1 text-xs text-muted">
+      {label}
+      <input
+        type="text"
+        value={String(value ?? '')}
+        className="rounded border border-border bg-surface px-1 py-0.5 text-xs text-foreground"
+        data-testid={fieldId}
+        onChange={(event) => onCommit(event.target.value)}
+      />
+    </label>
   );
 }
 

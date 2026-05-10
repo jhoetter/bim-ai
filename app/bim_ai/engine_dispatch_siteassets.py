@@ -14,6 +14,8 @@ from bim_ai.engine import (
     DeleteToposolidCmd,
     DeleteToposolidSubdivisionCmd,
     FamilyKitInstanceElem,
+    FamilyInstanceElem,
+    FamilyTypeElem,
     FloorElem,
     GradedRegionElem,
     IndexAssetCmd,
@@ -24,6 +26,7 @@ from bim_ai.engine import (
     MoveColumnDeltaCmd,
     MoveElementsDeltaCmd,
     PlaceAssetCmd,
+    PlaceFamilyInstanceCmd,
     PlaceKitCmd,
     PlacedAssetElem,
     RotateElementsCmd,
@@ -319,6 +322,45 @@ def try_apply_siteassets_command(doc, cmd, *, source_provider=None) -> bool:
                 rotationDeg=cmd.rotation_deg,
                 paramValues=cmd.param_values,
                 hostElementId=cmd.host_element_id,
+            )
+
+        case PlaceFamilyInstanceCmd():
+            eid = cmd.id or new_id()
+            if eid in els:
+                raise ValueError(f"placeFamilyInstance: duplicate element id '{eid}'")
+            family_type = els.get(cmd.family_type_id)
+            if not isinstance(family_type, FamilyTypeElem):
+                raise ValueError(
+                    f"placeFamilyInstance: familyTypeId '{cmd.family_type_id}' is not a FamilyType"
+                )
+            if cmd.level_id is not None and (
+                cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem)
+            ):
+                raise ValueError("placeFamilyInstance.levelId must reference an existing Level")
+            if cmd.host_view_id is not None:
+                view = els.get(cmd.host_view_id)
+                if view is None or view.kind not in {"plan_view", "section_cut", "elevation_view"}:
+                    raise ValueError(
+                        "placeFamilyInstance.hostViewId must reference plan_view/section_cut/elevation_view"
+                    )
+            if cmd.host_element_id is not None:
+                host = els.get(cmd.host_element_id)
+                if host is None:
+                    raise ValueError("placeFamilyInstance.hostElementId must reference an element")
+                if cmd.host_along_t is not None and host.kind != "wall":
+                    raise ValueError("placeFamilyInstance.hostAlongT requires a wall host")
+            els[eid] = FamilyInstanceElem(
+                kind="family_instance",
+                id=eid,
+                name=cmd.name or family_type.name,
+                familyTypeId=cmd.family_type_id,
+                levelId=cmd.level_id,
+                hostViewId=cmd.host_view_id,
+                positionMm=cmd.position_mm,
+                rotationDeg=cmd.rotation_deg,
+                paramValues=cmd.param_values,
+                hostElementId=cmd.host_element_id,
+                hostAlongT=cmd.host_along_t,
             )
 
         case MoveAssetDeltaCmd():

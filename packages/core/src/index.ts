@@ -216,6 +216,7 @@ export type ElemKind =
   | 'roof_opening'
   | 'railing'
   | 'family_type'
+  | 'family_instance'
   | 'room_separation'
   | 'plan_region'
   | 'tag_definition'
@@ -1346,6 +1347,20 @@ export type Element =
       isBuiltIn?: boolean;
       /** FAM-08 — provenance when the type was loaded from an external catalog. */
       catalogSource?: { catalogId: string; familyId: string; version: string };
+    }
+  | {
+      kind: 'family_instance';
+      id: string;
+      name: string;
+      familyTypeId: string;
+      levelId?: string;
+      hostViewId?: string;
+      positionMm: XY;
+      rotationDeg?: number;
+      paramValues?: Record<string, unknown>;
+      hostElementId?: string;
+      hostAlongT?: number;
+      discipline?: DisciplineTag | null;
     }
   | {
       kind: 'balcony';

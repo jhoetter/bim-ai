@@ -18,6 +18,7 @@ import {
 } from '../lib/api';
 import {
   setActiveComponentAssetId,
+  setActiveComponentFamilyTypeId,
   syncLastLevelElevationPropagationFromApplyResponse,
 } from './authoring';
 import { planToolsForPerspective } from './planToolsByPerspective';
@@ -955,9 +956,18 @@ export function Workspace(): JSX.Element {
       const adapter = getFamilyPlacementAdapter(kind);
       if (adapter.identifierRole === 'assetId') {
         setActiveComponentAssetId(typeId);
+        setActiveComponentFamilyTypeId(null);
+      } else if (
+        adapter.semanticInstanceKind === 'family_type_component' ||
+        adapter.hostRequirement === 'wall'
+      ) {
+        setActiveComponentFamilyTypeId(typeId);
+        setActiveComponentAssetId(null);
       }
       if (adapter.planTool) {
         setPlanTool(adapter.planTool);
+      } else if (adapter.semanticInstanceKind === 'family_type_component') {
+        setPlanTool('component');
       }
     },
     [setPlanTool],
