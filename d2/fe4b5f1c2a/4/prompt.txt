@@ -1,0 +1,14 @@
+You are working in /Users/jhoetter/repos/bim-ai-revit-parity-wave-4 on branch revit-parity-closure-wave-8. You are not alone in the codebase: other workers and the main agent may edit unrelated files. Do not revert or overwrite changes outside your scope.
+
+Task: close F-024 Manage Links remaining gap: IFC/PDF/image link types. Current tracker says link_model and link_dxf rows are covered, linked DXF reload reparses, but IFC/PDF/image link types are missing.
+
+Ownership/write scope: link element types/commands/API/ManageLinksDialog/tests only. Avoid family editor, reference planes, inspector broad changes, and tracker docs.
+
+Acceptance:
+- Manage Links can list and manage first-class IFC, PDF, and image link rows or a clean generic external-link representation with typed variants for IFC/PDF/image.
+- Rows include status, source path/name metadata, unload/reload/remove where meaningful, visibility/pin/position controls where consistent with existing link_model/link_dxf behavior.
+- Backend/core types and update commands validate/persist those link rows.
+- Add focused tests for type/command behavior and ManageLinksDialog rendering/actions.
+- Run focused backend/frontend tests and practical typecheck/lint/format checks.
+
+Do not edit spec/revit-parity/README.md; report proposed tracker row/status in final.
