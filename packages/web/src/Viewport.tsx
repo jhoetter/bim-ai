@@ -195,9 +195,7 @@ export function Viewport({
 
   const [currentAzimuth, setCurrentAzimuth] = useState(Math.PI / 4);
   const [currentElevation, setCurrentElevation] = useState(0.45);
-  const [orthoMode, setOrthoMode] = useState(false);
   const [walkActive, setWalkActive] = useState(false);
-  const [sectionBoxActive, setSectionBoxActive] = useState(false);
   const [text3dRebuildTick, setText3dRebuildTick] = useState(0);
   // ANN-02: state for the right-click "Generate Section / Elevation" menu in 3D.
   const [wallContextMenu, setWallContextMenu] = useState<{
@@ -336,7 +334,12 @@ export function Viewport({
   const viewerPhaseFilter = useBimStore((s) => s.viewerPhaseFilter);
   const viewerRenderStyle = useBimStore((s) => s.viewerRenderStyle);
   const viewerBackground = useBimStore((s) => s.viewerBackground);
+  const viewerProjection = useBimStore((s) => s.viewerProjection);
+  const setViewerProjection = useBimStore((s) => s.setViewerProjection);
+  const sectionBoxActive = useBimStore((s) => s.viewerSectionBoxActive);
+  const setSectionBoxActive = useBimStore((s) => s.setViewerSectionBoxActive);
   const lensMode = useBimStore((s) => s.lensMode);
+  const orthoMode = viewerProjection === 'orthographic';
 
   const viewerClipElevMm = useBimStore((s) => s.viewerClipElevMm);
   const viewerClipFloorElevMm = useBimStore((s) => s.viewerClipFloorElevMm);
@@ -2106,7 +2109,7 @@ export function Viewport({
         </button>
         <button
           type="button"
-          onClick={() => setSectionBoxActive((v) => !v)}
+          onClick={() => setSectionBoxActive(!sectionBoxActive)}
           aria-pressed={sectionBoxActive}
           data-active={sectionBoxActive ? 'true' : 'false'}
           className={[
@@ -2122,7 +2125,7 @@ export function Viewport({
         </button>
         <button
           type="button"
-          onClick={() => setOrthoMode((v) => !v)}
+          onClick={() => setViewerProjection(orthoMode ? 'perspective' : 'orthographic')}
           aria-pressed={orthoMode}
           data-active={orthoMode ? 'true' : 'false'}
           className={[
