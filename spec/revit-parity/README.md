@@ -114,7 +114,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-065 | Family Category and Parameters dialog                 | Nested Fam.    | 🟡            | Family editor exposes category selection plus Always Vertical, Work Plane-Based, Room Calculation Point, and Shared flags in a Family Category and Parameters panel. Missing backend persistence and project tag/VG category propagation                                                              |
 | F-066 | View Range in Family Editor                           | Nested Fam.    | 🟡            | Family editor exposes top/cut/bottom/view-depth offsets with a live summary for local family plan-preview settings. Missing actual plan cut filtering of family geometry and nested-host view-range propagation                                                                                       |
 | F-067 | Detail Component (2D annotation component)            | Nested Fam.    | 🟡            | Family editor now has a 2D symbolic/detail line authoring panel for view-only annotation geometry, including detail-component category support. Missing loaded `.rfa` detail component placement and scale-aware project-view insertion                                                               |
-| F-068 | Align Tool (AL) + Lock                                | Nested Fam.    | ❌            | No interactive align + lock in family editor context                                                                                                                                                                                                                                                  |
+| F-068 | Align Tool (AL) + Lock                                | Nested Fam.    | 🟡            | Family editor symbolic lines can be aligned to a reference plane with an optional lock; locked lines follow reference-plane offset edits. Missing canvas click workflow, edge picking, and broad geometry support                                                                                     |
 | F-069 | Associate Family Parameter (Visible)                  | Nested Fam.    | 🟡            | Sweep and nested-instance visibility can bind to boolean family params; missing general associate-parameter buttons for every property                                                                                                                                                                |
 | F-070 | Mirror – Draw Axis (DM)                               | Nested Fam.    | 🟡            | Mirror tool two-click interaction implemented for project elements; missing family-editor context and pick-axis mode                                                                                                                                                                                  |
 | F-071 | Symbolic Lines                                        | Nested Fam.    | 🟡            | Family editor can author 2D symbolic line segments with coordinates and keep them in the load payload. Missing canvas drawing, line styles, visibility settings, and project rendering                                                                                                                |
@@ -179,8 +179,8 @@ _Last audited: 2026-05-09 against codebase at commit `docs/tracker-sync-wave-11`
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
 | ✅ Fully available     | 57      | 47%        |
-| 🟡 Partially available | 48      | 40%        |
-| ❌ Not available       | 15      | 13%        |
+| 🟡 Partially available | 49      | 41%        |
+| ❌ Not available       | 14      | 12%        |
 | **Total**              | **120** | **100%**   |
 
 ---

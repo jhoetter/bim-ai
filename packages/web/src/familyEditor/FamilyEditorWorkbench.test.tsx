@@ -314,6 +314,23 @@ describe('FAM-073 — preview visibility', () => {
   });
 });
 
+describe('FAM-068 — family align and lock', () => {
+  it('aligns a symbolic line to a reference plane and follows locked plane edits', () => {
+    const { getByText, getByLabelText, getByTestId } = renderWithI18n(<FamilyEditorWorkbench />);
+
+    fireEvent.click(getByText('Add vertical'));
+    fireEvent.change(getByLabelText('ref-plane-offset-0'), { target: { value: '250' } });
+    fireEvent.click(getByTestId('symbolic-line-add'));
+    fireEvent.click(getByTestId('symbolic-line-align'));
+
+    expect(getByTestId('symbolic-lines-list').textContent).toContain('(250, 0)');
+    expect(getByTestId('symbolic-lines-list').textContent).toContain('locked');
+
+    fireEvent.change(getByLabelText('ref-plane-offset-0'), { target: { value: '400' } });
+    expect(getByTestId('symbolic-lines-list').textContent).toContain('(400, 0)');
+  });
+});
+
 describe('FAM-02 — sweep tool flow', () => {
   it('opens a sketch session when Sweep is clicked', () => {
     const { getByText, queryByLabelText } = renderWithI18n(<FamilyEditorWorkbench />);
