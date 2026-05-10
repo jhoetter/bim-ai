@@ -291,8 +291,6 @@ export function makeFloorSlabMesh(
       // Floor slabs are diffuse; sky env-map reflections wash the catalog
       // colour pale-blue. Drop to 0.15 so the warm-tone floors read true.
       envMapIntensity: 0.15,
-      transparent: true,
-      opacity: 0.92,
     }),
   );
   mesh.position.set(0, elev, 0);
@@ -1284,8 +1282,6 @@ export function makeRoofMassMesh(
     geom,
     new THREE.MeshStandardMaterial({
       color: roofColor,
-      transparent: true,
-      opacity: 0.94,
       roughness:
         roofMatSpec?.roughness ?? (roofIsCustom ? 0.9 : (paint?.categories.roof.roughness ?? 0.74)),
       metalness: roofMatSpec?.metalness ?? paint?.categories.roof.metalness ?? 0.0,
@@ -2586,8 +2582,6 @@ export function makeSiteMesh(
       roughness: paint?.categories.site.roughness ?? 0.95,
       metalness: paint?.categories.site.metalness ?? 0.0,
       aoMapIntensity: 0,
-      transparent: true,
-      opacity: 0.85,
     }),
   );
   mesh.position.set(0, elev + baseOffset - padTh, 0);
@@ -2656,6 +2650,7 @@ export function makeBalconyMesh(
       color: 0xb0d8e8,
       transparent: true,
       opacity: 0.42,
+      depthWrite: false,
       roughness: 0.05,
       metalness: 0.05,
       envMapIntensity: 0.5,
@@ -2756,8 +2751,6 @@ export function makeCeilingMesh(
     new THREE.MeshStandardMaterial({
       color: categoryColorOr(paint, 'floor'),
       roughness: paint?.categories.floor.roughness ?? 0.9,
-      transparent: true,
-      opacity: 0.7,
     }),
   );
   mesh.position.set(0, elev + heightOff, 0);

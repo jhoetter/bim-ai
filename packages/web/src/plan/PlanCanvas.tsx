@@ -128,6 +128,7 @@ import { SketchCanvas, type MmToScreen, type PointerToMm } from './SketchCanvas'
 import { moveDeltaMm } from './moveTool';
 import { rotateAngleFromPoints } from './rotateTool';
 import { selectNextConnectedWallByTab } from './wallChainSelection';
+import { buildWallRadiusFillet, type MmPoint } from './wallRadiusFillet';
 import { getFamilyById as getBuiltInFamilyById } from '../families/familyCatalog';
 import type { FamilyDefinition } from '../families/types';
 import {
@@ -183,7 +184,19 @@ function rayToPlanMm(
 }
 
 type Draft =
-  | { kind: 'wall'; sx: number; sy: number }
+  | {
+      kind: 'wall';
+      sx: number;
+      sy: number;
+      previousWall?: {
+        id: string;
+        pathStart: MmPoint;
+        pathEnd: MmPoint;
+        actualStart: MmPoint;
+        actualEnd: MmPoint;
+        cornerEndpoint: 'start' | 'end';
+      };
+    }
   | { kind: 'grid'; sx: number; sy: number }
   | { kind: 'dim'; ax: number; ay: number }
   | { kind: 'measure'; ax: number; ay: number }
@@ -262,7 +275,7 @@ export interface PlanCameraHandle {
 type Props = {
   wsConnected: boolean;
   activeLevelResolvedId: string;
-  onSemanticCommand: (cmd: Record<string, unknown>) => void;
+  onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
   /** Ref filled with the imperative camera handle once the canvas mounts. */
   cameraHandleRef?: RefObject<PlanCameraHandle | null>;
   /** Camera to restore on mount (ignored after first render). */
@@ -497,6 +510,7 @@ export function PlanCanvas({
   const planTool = useBimStore((s) => s.planTool);
   const wallLocationLine = useBimStore((s) => s.wallLocationLine);
   const wallDrawOffsetMm = useBimStore((s) => s.wallDrawOffsetMm);
+  const wallDrawRadiusMm = useBimStore((s) => s.wallDrawRadiusMm);
   const wallDrawHeightMm = useBimStore((s) => s.wallDrawHeightMm);
   const activeWallTypeId = useBimStore((s) => s.activeWallTypeId);
   const orthoSnapHold = useBimStore((s) => s.orthoSnapHold);
@@ -2585,8 +2599,13 @@ export function PlanCanvas({
           bumpGeom((x) => x + 1);
           return;
         }
-        const { wallLocationLine, wallDrawHeightMm, activeWallTypeId, wallDrawOffsetMm } =
-          useBimStore.getState();
+        const {
+          wallLocationLine,
+          wallDrawHeightMm,
+          activeWallTypeId,
+          wallDrawOffsetMm,
+          wallDrawRadiusMm,
+        } = useBimStore.getState();
         let startX = d.sx;
         let startY = d.sy;
         let endX = sp.xMm;
@@ -2606,18 +2625,102 @@ export function PlanCanvas({
         }
         const flipped = wallFlipRef.current;
         wallFlipRef.current = false;
-        onSemanticCommand({
+        const pathStart = { xMm: startX, yMm: startY };
+        const pathEnd = { xMm: endX, yMm: endY };
+        const createWallCommand = (id: string, start: MmPoint, end: MmPoint) => ({
           type: 'createWall',
+          id,
           levelId: lvlId,
-          start: { xMm: flipped ? endX : startX, yMm: flipped ? endY : startY },
-          end: { xMm: flipped ? startX : endX, yMm: flipped ? startY : endY },
+          start,
+          end,
           locationLine: wallLocationLine,
           wallTypeId: activeWallTypeId ?? undefined,
           heightMm: wallDrawHeightMm,
         });
+        const pendingWallCommands: Record<string, unknown>[] = [];
+        const dispatchWallCommand = (id: string, start: MmPoint, end: MmPoint, reverse = false) => {
+          const actualStart = reverse ? end : start;
+          const actualEnd = reverse ? start : end;
+          pendingWallCommands.push(createWallCommand(id, actualStart, actualEnd));
+          return {
+            id,
+            pathStart: start,
+            pathEnd: end,
+            actualStart,
+            actualEnd,
+            cornerEndpoint: reverse ? ('start' as const) : ('end' as const),
+          };
+        };
+        let previousWallForChain:
+          | NonNullable<Extract<Draft, { kind: 'wall' }>['previousWall']>
+          | undefined;
+        const previousWall = d.previousWall;
+        const canFillet =
+          wallDrawRadiusMm !== null &&
+          wallDrawRadiusMm > 0 &&
+          previousWall !== undefined &&
+          Math.hypot(
+            previousWall.pathEnd.xMm - pathStart.xMm,
+            previousWall.pathEnd.yMm - pathStart.yMm,
+          ) < 1;
+        const fillet = canFillet
+          ? buildWallRadiusFillet(
+              previousWall!.pathStart,
+              previousWall!.pathEnd,
+              pathEnd,
+              wallDrawRadiusMm ?? 0,
+            )
+          : null;
+        if (fillet) {
+          const adjustedStart =
+            previousWall!.cornerEndpoint === 'start'
+              ? fillet.previousEnd
+              : previousWall!.actualStart;
+          const adjustedEnd =
+            previousWall!.cornerEndpoint === 'end' ? fillet.previousEnd : previousWall!.actualEnd;
+          pendingWallCommands.push({
+            type: 'moveWallEndpoints',
+            wallId: previousWall!.id,
+            start: adjustedStart,
+            end: adjustedEnd,
+          });
+          let lastArcWall:
+            | NonNullable<Extract<Draft, { kind: 'wall' }>['previousWall']>
+            | undefined;
+          for (const arc of fillet.arcSegments) {
+            lastArcWall = dispatchWallCommand(crypto.randomUUID(), arc.start, arc.end);
+          }
+          if (
+            Math.hypot(
+              pathEnd.xMm - fillet.currentStart.xMm,
+              pathEnd.yMm - fillet.currentStart.yMm,
+            ) > 1
+          ) {
+            previousWallForChain = dispatchWallCommand(
+              crypto.randomUUID(),
+              fillet.currentStart,
+              pathEnd,
+              flipped,
+            );
+          } else {
+            previousWallForChain = lastArcWall;
+          }
+        } else {
+          previousWallForChain = dispatchWallCommand(
+            crypto.randomUUID(),
+            pathStart,
+            pathEnd,
+            flipped,
+          );
+        }
+        void (async () => {
+          for (const cmd of pendingWallCommands) {
+            await onSemanticCommand(cmd);
+          }
+        })();
         // EDT-V3-05: re-arm from endpoint when loop mode is on.
         draftRef.current = useToolPrefs.getState().loopMode
-          ? { kind: 'wall', sx: sp.xMm, sy: sp.yMm }
+          ? { kind: 'wall', sx: sp.xMm, sy: sp.yMm, previousWall: previousWallForChain }
           : undefined;
         bumpGeom((x) => x + 1);
         return;
@@ -4252,6 +4355,7 @@ export function PlanCanvas({
             <span>{draftRef.current?.kind === 'wall' ? 'Pick endpoint' : 'Pick start point'}</span>
             <span>line {wallLocationLine.replace(/-/g, ' ')}</span>
             <span>offset {wallDrawOffsetMm} mm</span>
+            <span>radius {wallDrawRadiusMm ?? 0} mm</span>
             <span>height {wallDrawHeightMm} mm</span>
             <span>
               type{' '}

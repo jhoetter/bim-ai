@@ -56,9 +56,10 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
 
   it('uses the visible wall options-bar state for wall location and offset', () => {
     expect(SRC).toMatch(
-      /const\s+\{[\s\S]*wallLocationLine[\s\S]*wallDrawOffsetMm[\s\S]*\}\s*=\s*useBimStore\.getState\(\)/,
+      /const\s+\{[\s\S]*wallLocationLine[\s\S]*wallDrawOffsetMm[\s\S]*wallDrawRadiusMm[\s\S]*\}\s*=\s*useBimStore\.getState\(\)/,
     );
     expect(SRC).toMatch(/locationLine:\s*wallLocationLine/);
+    expect(SRC).toMatch(/buildWallRadiusFillet\(/);
   });
 
   it('cycles the visible wall location-line setting with Tab while the wall tool is active', () => {

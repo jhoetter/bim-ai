@@ -29,6 +29,7 @@ export type PlanAuthoringRuntimeSlice = Pick<
   | 'applyAreaRules'
   | 'floorBoundaryOffsetMm'
   | 'wallDrawOffsetMm'
+  | 'wallDrawRadiusMm'
   | 'wallDrawHeightMm'
   | 'activeWallTypeId'
   | 'activeFloorTypeId'
@@ -44,6 +45,7 @@ export type PlanAuthoringRuntimeSlice = Pick<
   | 'setApplyAreaRules'
   | 'setFloorBoundaryOffsetMm'
   | 'setWallDrawOffsetMm'
+  | 'setWallDrawRadiusMm'
   | 'setWallDrawHeightMm'
   | 'setActiveWallTypeId'
   | 'setActiveFloorTypeId'
@@ -166,6 +168,7 @@ export function createPlanAuthoringRuntimeSlice(set: StoreSet): PlanAuthoringRun
     applyAreaRules: true,
     floorBoundaryOffsetMm: 0,
     wallDrawOffsetMm: 0,
+    wallDrawRadiusMm: null,
     wallDrawHeightMm: 2800,
     activeWallTypeId: null,
     activeFloorTypeId: null,
@@ -186,6 +189,7 @@ export function createPlanAuthoringRuntimeSlice(set: StoreSet): PlanAuthoringRun
     setApplyAreaRules: (v) => set({ applyAreaRules: v }),
     setFloorBoundaryOffsetMm: (floorBoundaryOffsetMm) => set({ floorBoundaryOffsetMm }),
     setWallDrawOffsetMm: (wallDrawOffsetMm) => set({ wallDrawOffsetMm }),
+    setWallDrawRadiusMm: (wallDrawRadiusMm) => set({ wallDrawRadiusMm }),
     setWallDrawHeightMm: (wallDrawHeightMm) => set({ wallDrawHeightMm }),
     setActiveWallTypeId: (activeWallTypeId) => set({ activeWallTypeId }),
     setActiveFloorTypeId: (activeFloorTypeId) => set({ activeFloorTypeId }),

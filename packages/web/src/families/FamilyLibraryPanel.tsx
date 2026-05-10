@@ -19,7 +19,12 @@ import type { AssetCategory, AssetLibraryEntry, Element, FamilyDiscipline } from
 
 import { BUILT_IN_FAMILIES } from './familyCatalog';
 import { BUILT_IN_WALL_TYPES } from './wallTypeCatalog';
-import { getThumbnail, PLACEHOLDER_THUMBNAIL } from './thumbnailCache';
+import {
+  getThumbnail,
+  getWallTypeThumbnail,
+  PLACEHOLDER_THUMBNAIL,
+  type WallThumbnailLayerInput,
+} from './thumbnailCache';
 import { RenderedAssetThumbnail } from '../workspace/library/AssetCard';
 import {
   ASSET_CATEGORY_FAMILY_GROUPS,
@@ -111,6 +116,10 @@ interface CatalogEntry {
   kind: FamilyLibraryPlaceKind;
   catalogLabel?: string;
   assetEntry?: AssetLibraryEntry;
+  wallThumbnail?: {
+    layers: WallThumbnailLayerInput[];
+    basisLine?: 'center' | 'face_interior' | 'face_exterior';
+  };
   searchText?: string;
 }
 
@@ -175,6 +184,7 @@ function buildCatalogByDiscipline(
         .toFixed(0)}mm`,
       custom: false,
       kind: 'wall_type',
+      wallThumbnail: { layers: wt.layers, basisLine: wt.basisLine },
     });
   }
 
@@ -198,6 +208,7 @@ function buildCatalogByDiscipline(
         familyName: `${el.layers.length} layers`,
         custom: true,
         kind: 'wall_type',
+        wallThumbnail: { layers: el.layers, basisLine: el.basisLine },
       });
     } else if (el.kind === 'floor_type') {
       const bucket = (out['floor_type'] ??= []);
@@ -324,6 +335,45 @@ function TypeThumbnail({ typeId, name }: { typeId: string; name: string }): JSX.
   );
 }
 
+function WallTypeThumbnail({
+  id,
+  name,
+  thumbnail,
+}: {
+  id: string;
+  name: string;
+  thumbnail: NonNullable<CatalogEntry['wallThumbnail']>;
+}): JSX.Element {
+  const [src, setSrc] = useState<string>(PLACEHOLDER_THUMBNAIL);
+
+  useEffect(() => {
+    let cancelled = false;
+    void getWallTypeThumbnail({
+      id,
+      name,
+      layers: thumbnail.layers,
+      basisLine: thumbnail.basisLine,
+    }).then((url) => {
+      if (!cancelled) setSrc(url);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, name, thumbnail]);
+
+  return (
+    <img
+      src={src}
+      alt={name}
+      width={64}
+      height={64}
+      data-testid="wall-type-rendered-thumbnail"
+      className="rounded border border-border bg-surface-muted"
+      style={{ objectFit: 'cover' }}
+    />
+  );
+}
+
 function CatalogThumbnail({ entry }: { entry: CatalogEntry }): JSX.Element {
   if (entry.assetEntry) {
     return (
@@ -331,6 +381,9 @@ function CatalogThumbnail({ entry }: { entry: CatalogEntry }): JSX.Element {
         <RenderedAssetThumbnail entry={entry.assetEntry} />
       </div>
     );
+  }
+  if (entry.kind === 'wall_type' && entry.wallThumbnail) {
+    return <WallTypeThumbnail id={entry.id} name={entry.name} thumbnail={entry.wallThumbnail} />;
   }
   return <TypeThumbnail typeId={entry.id} name={entry.name} />;
 }

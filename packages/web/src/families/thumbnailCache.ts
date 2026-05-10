@@ -9,15 +9,17 @@
 
 import * as THREE from 'three';
 
-import type { Element } from '@bim-ai/core';
+import type { Element, WallTypeLayer } from '@bim-ai/core';
 
 import { buildDoorGeometry } from './geometryFns/doorGeometry';
 import { buildWindowGeometry } from './geometryFns/windowGeometry';
 import { buildStairGeometry } from './geometryFns/stairGeometry';
 import { buildRailingGeometry } from './geometryFns/railingGeometry';
 import { getFamilyById, getTypeById } from './familyCatalog';
+import type { WallAssemblyLayer, WallAssemblyLayerFunction } from './wallTypeCatalog';
 import { resolveFamilyGeometry, type FamilyCatalogLookup } from './familyResolver';
 import type { FamilyDefinition } from './types';
+import { makeLayeredWallMesh } from '../viewport/meshBuilders.layeredWall';
 
 const SIZE = 128;
 const PLACEHOLDER_DATA_URL =
@@ -35,6 +37,21 @@ const inFlight = new Map<string, Promise<string>>();
 
 let renderer: THREE.WebGLRenderer | null = null;
 let rendererInitialized = false;
+
+export type WallThumbnailLayerInput = {
+  thicknessMm: number;
+  materialKey?: string | null;
+  function?: WallTypeLayer['function'] | WallAssemblyLayerFunction;
+  name?: string;
+  exterior?: boolean;
+};
+
+export type WallThumbnailInput = {
+  id: string;
+  name: string;
+  layers: WallThumbnailLayerInput[];
+  basisLine?: 'center' | 'face_interior' | 'face_exterior';
+};
 
 function ensureRenderer(): THREE.WebGLRenderer | null {
   if (rendererInitialized) return renderer;
@@ -173,6 +190,87 @@ function buildThumbnailScene(typeId: string): THREE.Group | null {
   return null;
 }
 
+function normalizeWallLayerFunction(
+  value: WallThumbnailLayerInput['function'] | undefined,
+): WallAssemblyLayerFunction {
+  if (
+    value === 'structure' ||
+    value === 'insulation' ||
+    value === 'finish' ||
+    value === 'membrane' ||
+    value === 'air'
+  ) {
+    return value;
+  }
+  return 'structure';
+}
+
+function fallbackMaterialKey(layerFunction: WallAssemblyLayerFunction): string {
+  switch (layerFunction) {
+    case 'insulation':
+      return 'timber_frame_insulation';
+    case 'finish':
+      return 'plasterboard';
+    case 'membrane':
+      return 'vcl_membrane';
+    case 'air':
+      return 'air';
+    default:
+      return 'masonry_block';
+  }
+}
+
+function wallThumbnailCacheKey(input: WallThumbnailInput): string {
+  const layers = input.layers.map((layer) => [
+    layer.thicknessMm,
+    layer.materialKey ?? '',
+    layer.function ?? '',
+    layer.exterior ? 1 : 0,
+  ]);
+  return `wall:${input.id}:${input.basisLine ?? 'center'}:${JSON.stringify(layers)}`;
+}
+
+function buildWallTypeThumbnailScene(input: WallThumbnailInput): THREE.Group {
+  const layers =
+    input.layers.length > 0
+      ? input.layers
+      : [{ thicknessMm: 200, function: 'structure' as const, materialKey: 'masonry_block' }];
+
+  const assemblyLayers: WallAssemblyLayer[] = layers.map((layer, index) => {
+    const layerFunction = normalizeWallLayerFunction(layer.function);
+    return {
+      name: layer.name ?? `Layer ${index + 1}`,
+      thicknessMm: Math.max(1, layer.thicknessMm),
+      materialKey: layer.materialKey ?? fallbackMaterialKey(layerFunction),
+      function: layerFunction,
+      exterior: layer.exterior,
+    };
+  });
+
+  const wall = {
+    kind: 'wall',
+    id: `thumb-wall-${input.id}`,
+    name: input.name,
+    levelId: 'thumbnail-level',
+    start: { xMm: -900, yMm: 0 },
+    end: { xMm: 900, yMm: 0 },
+    thicknessMm: assemblyLayers.reduce((acc, layer) => acc + layer.thicknessMm, 0),
+    heightMm: 1200,
+  } as Extract<Element, { kind: 'wall' }>;
+
+  return makeLayeredWallMesh(
+    wall,
+    {
+      id: input.id,
+      name: input.name,
+      basisLine: input.basisLine ?? 'center',
+      layers: assemblyLayers,
+    },
+    0,
+    null,
+  );
+}
+
 function blobUrlFromCanvas(canvas: HTMLCanvasElement): Promise<string> {
   return new Promise<string>((resolve) => {
     if (typeof canvas.toBlob === 'function') {
@@ -215,6 +313,31 @@ async function renderTypeThumbnail(typeId: string): Promise<string> {
   }
 }
 
+async function renderWallTypeThumbnail(input: WallThumbnailInput): Promise<string> {
+  const r = ensureRenderer();
+  if (!r) return PLACEHOLDER_DATA_URL;
+
+  const group = buildWallTypeThumbnailScene(input);
+  const scene = new THREE.Scene();
+  scene.add(group);
+  const camera = frameGroup(group, scene);
+  try {
+    r.render(scene, camera);
+    return await blobUrlFromCanvas(r.domElement);
+  } catch {
+    return PLACEHOLDER_DATA_URL;
+  } finally {
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh) {
+        obj.geometry?.dispose?.();
+        const mat = obj.material;
+        if (Array.isArray(mat)) mat.forEach((m) => m.dispose?.());
+        else mat?.dispose?.();
+      }
+    });
+  }
+}
+
 export async function getThumbnail(typeId: string): Promise<string> {
   const cached = cache.get(typeId);
   if (cached) return cached;
@@ -229,6 +352,24 @@ export async function getThumbnail(typeId: string): Promise<string> {
       return url;
     });
   inFlight.set(typeId, promise);
+  return promise;
+}
+
+export async function getWallTypeThumbnail(input: WallThumbnailInput): Promise<string> {
+  const cacheKey = wallThumbnailCacheKey(input);
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+  const pending = inFlight.get(cacheKey);
+  if (pending) return pending;
+
+  const promise = renderWallTypeThumbnail(input)
+    .catch(() => PLACEHOLDER_DATA_URL)
+    .then((url) => {
+      cache.set(cacheKey, url);
+      inFlight.delete(cacheKey);
+      return url;
+    });
+  inFlight.set(cacheKey, promise);
   return promise;
 }
 

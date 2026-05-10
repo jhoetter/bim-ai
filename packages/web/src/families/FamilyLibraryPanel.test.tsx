@@ -147,6 +147,36 @@ describe('<FamilyLibraryPanel /> — FL-06', () => {
     expect(getByTestId(`family-row-${wt.id}`)).toBeTruthy();
   });
 
+  it('renders built-in wall types with rendered wall thumbnails', () => {
+    const { getByTestId } = setup();
+    const row = getByTestId('family-row-wall.ext-timber');
+
+    const thumbnail = row.querySelector('[data-testid="wall-type-rendered-thumbnail"]');
+    expect(thumbnail).toBeTruthy();
+    expect(thumbnail?.tagName).toBe('IMG');
+    expect(row.querySelector('svg')).toBeNull();
+  });
+
+  it('renders custom wall_type elements with rendered wall thumbnails', () => {
+    const wt: Extract<Element, { kind: 'wall_type' }> = {
+      kind: 'wall_type',
+      id: 'wt-rendered',
+      name: 'Rendered Wall Type',
+      basisLine: 'center',
+      layers: [
+        { thicknessMm: 13, function: 'finish', materialKey: 'plaster' },
+        { thicknessMm: 140, function: 'structure', materialKey: 'timber_stud' },
+      ],
+    };
+    const { getByTestId } = setup({ [wt.id]: wt });
+    const row = getByTestId(`family-row-${wt.id}`);
+
+    const thumbnail = row.querySelector('[data-testid="wall-type-rendered-thumbnail"]');
+    expect(thumbnail).toBeTruthy();
+    expect(thumbnail?.tagName).toBe('IMG');
+    expect(row.querySelector('svg')).toBeNull();
+  });
+
   it('clicking the backdrop closes the panel', () => {
     const { getByTestId, onClose } = setup();
     fireEvent.click(getByTestId('family-library-panel'));

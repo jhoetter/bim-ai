@@ -206,6 +206,7 @@ export type StoreState = {
   applyAreaRules: boolean;
   floorBoundaryOffsetMm: number;
   wallDrawOffsetMm: number;
+  wallDrawRadiusMm: number | null;
   wallDrawHeightMm: number;
   activeWallTypeId: string | null;
   activeFloorTypeId: string | null;
@@ -250,6 +251,7 @@ export type StoreState = {
   setApplyAreaRules: (v: boolean) => void;
   setFloorBoundaryOffsetMm: (mm: number) => void;
   setWallDrawOffsetMm: (v: number) => void;
+  setWallDrawRadiusMm: (v: number | null) => void;
   setWallDrawHeightMm: (h: number) => void;
   setActiveWallTypeId: (id: string | null) => void;
   setActiveFloorTypeId: (id: string | null) => void;
