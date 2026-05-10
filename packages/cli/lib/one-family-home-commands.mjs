@@ -1,58 +1,176 @@
 /** @typedef {Record<string, unknown>} BimCommand */
 
 /*
- * Canonical seed: the demo "one-family home" project.
- * Rebuilt from scratch per spec/target-house-seed.md (v3 boolean-subtraction massing)
- * and claude-skills/sketch-to-bim/SKILL.md. Visual ground truth:
- * spec/target-house-vis-colored.png + spec/target-house-seed-vis.png.
+ * Canonical seed: target house from spec/target-house-seed.md.
  *
- * Brief at nightshift/seed-target-house/brief.md.
+ * The image-locked read is intentionally different from the previous seed:
+ * - a smaller vertically-clad ground-floor base;
+ * - a wider smooth-white upper wrapper shell;
+ * - a deep front loggia inside that shell;
+ * - a white asymmetric roof shell with a visible embedded roof terrace cutout.
  *
- * Coordinate convention (plan):
- *   +xMm = east, +yMm = north (south facade is at y=0, viewed from SSW)
- *   Heights use zMm (engine z = render Y).
+ * Coordinate convention:
+ *   +xMm = east/right, +yMm = north/back. South/front facade is y=0.
  */
 
-// ── Dimensional constants ─────────────────────────────────────────────
-const GF_W = 7500; // Ground floor E-W width; EXT_W = GF_W−UF_W = 2500 = 1/3 GF_W (spec §1)
-const D = 8000; // Building depth N-S, shared by all volumes
-const UF_W = 5000; // Upper floor E-W width (west-aligned; east extension = GF_W−UF_W)
-const F2F = 3000; // Ground → first floor height
-const PARAPET_H = 200; // East terrace parapet height above first-floor slab
-const WALL_T = 250; // Standard exterior wall thickness
+const F2F = 3000;
+const D = 11000;
+const SHELL_W = 12000;
+const GF_X0 = 1800;
+const GF_X1 = 10500;
+const GF_W = GF_X1 - GF_X0;
+const WALL_T = 250;
+const PLINTH_EXT = 500;
 
-// Loggia (recessed upper front, spec §1 "wrapper shell creates deeply recessed frontal plane")
-const LOGGIA_SETBACK = 1000; // mm setback — spec §1 brief value
+const LOGGIA_Y = 1400;
+const SHELL_FACE_Y = -450;
+const SHELL_THICK = 650;
 
-// Plinth (Material D — spec §4 "extends exactly 0.5 units beyond building footprint")
-const PLINTH_EXT = 500; // mm extension on all sides
-
-// Roof — near-symmetric gable per visual ground truth (target-house-vis-colored.png).
-// Slope sanity: eaveLeft + leftRun·tan(slopeDeg) > eaveRight
-//   1500 + 3000·tan(30°) = 1500 + 1732 = 3232 > 2300 ✓
-const EAVE_L = 1500; // West eave height above UF level (F2F+1500 = z=4500 abs)
-const EAVE_R = 2300; // East eave height above UF level (F2F+2300 = z=5300 abs)
-const RIDGE_OFF = 500; // Ridge offset east of UF centre (2500+500 = x=3000 from west edge)
-const SLOPE_DEG = 30; // Gable pitch in degrees
-
-// Derived: ridge position and absolute height (used in sweep path)
-const RIDGE_X = UF_W / 2 + RIDGE_OFF; // = 3000 — ridge x from west UF edge = leftRun
+const EAVE_L = 2850;
+const EAVE_R = 2500;
+const RIDGE_OFF = 500;
+const SLOPE_DEG = 24;
+const RIDGE_X = SHELL_W / 2 + RIDGE_OFF;
 const RIDGE_H_ABS =
   F2F + EAVE_L + Math.round(RIDGE_X * Math.tan((SLOPE_DEG * Math.PI) / 180));
-// = 3000 + 1500 + round(3000 × 0.5774) = 3000 + 1500 + 1732 = 6232
 
-// Chimney-like center protrusion (spec §3 "protruding vertical chimney-like volume
-// clad in vertical siding"). Spans the middle third of the UF south loggia.
-const CHIMNEY_X0 = 2000; // chimney left edge — equal 2000 mm left/right zones; right edge at ridge x=3000
-const CHIMNEY_X1 = 3000; // chimney right edge = ridge x — 1000 mm narrow chimney, 20% of UF facade
-const CHIMNEY_H = 2000; // Height above UF level — roof at x=1500 is 2366 mm, so 2000 clears by 366 mm
+const CUT_X0 = 7200;
+const CUT_X1 = SHELL_W;
+const CUT_Y0 = 2200;
+const CUT_Y1 = 9000;
+
+const CHIMNEY_X0 = 4700;
+const CHIMNEY_X1 = 6200;
+
+function rect(x0, y0, x1, y1) {
+  return [
+    { xMm: x0, yMm: y0 },
+    { xMm: x1, yMm: y0 },
+    { xMm: x1, yMm: y1 },
+    { xMm: x0, yMm: y1 },
+  ];
+}
+
+function roomSepRect(prefix, name, levelId, x0, y0, x1, y1) {
+  return [
+    {
+      type: 'createRoomSeparation',
+      id: `${prefix}-s`,
+      name: `${name} south room separation`,
+      levelId,
+      start: { xMm: x0, yMm: y0 },
+      end: { xMm: x1, yMm: y0 },
+    },
+    {
+      type: 'createRoomSeparation',
+      id: `${prefix}-e`,
+      name: `${name} east room separation`,
+      levelId,
+      start: { xMm: x1, yMm: y0 },
+      end: { xMm: x1, yMm: y1 },
+    },
+    {
+      type: 'createRoomSeparation',
+      id: `${prefix}-n`,
+      name: `${name} north room separation`,
+      levelId,
+      start: { xMm: x1, yMm: y1 },
+      end: { xMm: x0, yMm: y1 },
+    },
+    {
+      type: 'createRoomSeparation',
+      id: `${prefix}-w`,
+      name: `${name} west room separation`,
+      levelId,
+      start: { xMm: x0, yMm: y1 },
+      end: { xMm: x0, yMm: y0 },
+    },
+  ];
+}
+
+function wallTypeFor(materialKey, thicknessMm) {
+  if (materialKey === 'glass_clear') return 'hf-wt-glass';
+  if (materialKey === 'cladding_warm_wood') return 'hf-wt-cladding';
+  if (materialKey === 'white_render') return 'hf-wt-white-render';
+  if (thicknessMm <= 140) return 'hf-wt-internal';
+  return 'hf-wt-white-render';
+}
+
+function wall(id, name, levelId, x0, y0, x1, y1, heightMm, materialKey = null, thicknessMm = WALL_T) {
+  const cmds = [
+    {
+      type: 'createWall',
+      id,
+      name,
+      levelId,
+      start: { xMm: x0, yMm: y0 },
+      end: { xMm: x1, yMm: y1 },
+      thicknessMm,
+      heightMm,
+      wallTypeId: wallTypeFor(materialKey, thicknessMm),
+    },
+  ];
+  if (materialKey) {
+    cmds.push({ type: 'updateElementProperty', elementId: id, key: 'materialKey', value: materialKey });
+  }
+  return cmds;
+}
+
+function mass(id, name, levelId, x0, y0, x1, y1, heightMm, materialKey) {
+  return {
+    type: 'createMass',
+    id,
+    name,
+    levelId,
+    footprintMm: rect(x0, y0, x1, y1),
+    heightMm,
+    materialKey,
+  };
+}
+
+function sweep(id, name, pathMm, profileMm, materialKey) {
+  return {
+    type: 'createSweep',
+    id,
+    name,
+    levelId: 'hf-lvl-ground',
+    pathMm,
+    profileMm,
+    profilePlane: 'work_plane',
+    materialKey,
+  };
+}
+
+function asset(id, name, category, width, height, tags = []) {
+  return {
+    type: 'IndexAsset',
+    id,
+    name,
+    category,
+    tags: [...tags, 'seed'],
+    thumbnailWidthMm: width,
+    thumbnailHeightMm: height,
+  };
+}
+
+function place(id, assetId, name, levelId, x, y, rotationDeg = 0) {
+  return {
+    type: 'PlaceAsset',
+    id,
+    assetId,
+    name,
+    levelId,
+    positionMm: { xMm: x, yMm: y },
+    rotationDeg,
+  };
+}
 
 /**
  * @returns {BimCommand[]}
  */
 export function buildOneFamilyHomeCommands() {
   return [
-    // ── Project base point + levels ───────────────────────────────────
+    // === PHASE 0: PROJECT SPINE ===
     {
       type: 'createProjectBasePoint',
       id: 'hf-pbp',
@@ -61,1058 +179,571 @@ export function buildOneFamilyHomeCommands() {
     },
     { type: 'createLevel', id: 'hf-lvl-ground', name: 'Ground Floor', elevationMm: 0 },
     { type: 'createLevel', id: 'hf-lvl-upper', name: 'First Floor', elevationMm: F2F },
-
-    // === PHASE 1: MASSING ===
-    // Three massing volumes define the asymmetric two-stack composition:
-    //   GF (7500×8000) — wider base, board-and-batten cladding
-    //   UF (5000×8000, west-aligned) — upper shell, white render
-    //   East parapet block (2500×8000, 200 mm) — low parapet for roof terrace
-    // East extension = exactly 1/3 of GF_W per spec §1.
     {
-      type: 'createMass',
-      id: 'hf-mass-gf',
-      name: 'Ground floor mass',
-      levelId: 'hf-lvl-ground',
-      footprintMm: [
-        { xMm: 0, yMm: 0 },
-        { xMm: GF_W, yMm: 0 },
-        { xMm: GF_W, yMm: D },
-        { xMm: 0, yMm: D },
+      type: 'upsertWallType',
+      id: 'hf-wt-white-render',
+      name: 'White render exterior wall',
+      layers: [
+        { thicknessMm: 160, function: 'structure', materialKey: 'concrete' },
+        { thicknessMm: 90, function: 'finish', materialKey: 'white_render' },
       ],
-      heightMm: F2F,
-      materialKey: 'cladding_warm_wood',
+      basisLine: 'center',
     },
     {
-      type: 'createMass',
-      id: 'hf-mass-uf',
-      name: 'Upper floor mass (west-aligned)',
-      levelId: 'hf-lvl-upper',
-      footprintMm: [
-        { xMm: 0, yMm: 0 },
-        { xMm: UF_W, yMm: 0 },
-        { xMm: UF_W, yMm: D },
-        { xMm: 0, yMm: D },
+      type: 'upsertWallType',
+      id: 'hf-wt-cladding',
+      name: 'Vertical timber clad exterior wall',
+      layers: [
+        { thicknessMm: 160, function: 'structure', materialKey: 'concrete' },
+        { thicknessMm: 90, function: 'finish', materialKey: 'cladding_warm_wood' },
       ],
-      heightMm: EAVE_R + 1000,
-      materialKey: 'white_render',
+      basisLine: 'center',
     },
     {
-      type: 'createMass',
-      id: 'hf-mass-parapet',
-      name: 'East terrace parapet block',
-      levelId: 'hf-lvl-upper',
-      footprintMm: [
-        { xMm: UF_W, yMm: 0 },
-        { xMm: GF_W, yMm: 0 },
-        { xMm: GF_W, yMm: D },
-        { xMm: UF_W, yMm: D },
-      ],
-      heightMm: PARAPET_H,
-      materialKey: 'white_render',
+      type: 'upsertWallType',
+      id: 'hf-wt-internal',
+      name: 'Internal partition 120',
+      layers: [{ thicknessMm: 120, function: 'structure', materialKey: 'gypsum_board' }],
+      basisLine: 'center',
+    },
+    {
+      type: 'upsertWallType',
+      id: 'hf-wt-glass',
+      name: 'Clear glass guard / curtain wall',
+      layers: [{ thicknessMm: 80, function: 'finish', materialKey: 'glass_clear' }],
+      basisLine: 'center',
+    },
+    {
+      type: 'upsertFamilyType',
+      id: 'hf-ft-door-ext',
+      discipline: 'door',
+      parameters: { widthMm: 900, heightMm: 2100, typeMark: 'D-EXT' },
+    },
+    {
+      type: 'upsertFamilyType',
+      id: 'hf-ft-door-slider',
+      discipline: 'door',
+      parameters: { widthMm: 2500, heightMm: 2300, operationType: 'sliding_double', typeMark: 'D-SLD' },
+    },
+    {
+      type: 'upsertFamilyType',
+      id: 'hf-ft-window-portrait',
+      discipline: 'window',
+      parameters: { widthMm: 620, heightMm: 1850, typeMark: 'W-POR' },
+    },
+    {
+      type: 'upsertFamilyType',
+      id: 'hf-ft-window-trapezoid',
+      discipline: 'window',
+      parameters: { widthMm: 1700, heightMm: 1700, outlineKind: 'gable_trapezoid', typeMark: 'W-TRAP' },
     },
 
-    // === PHASE 2: SKELETON ===
-    // Delete phase-1 masses; author load-bearing walls, floor slabs, flat-roof placeholder.
-    // Manual authoring avoids coplanar-slab z-fighting that materializeMassToWalls
-    // would produce at the UF / east-terrace boundary.
-    { type: 'deleteElement', elementId: 'hf-mass-gf' },
-    { type: 'deleteElement', elementId: 'hf-mass-uf' },
-    { type: 'deleteElement', elementId: 'hf-mass-parapet' },
+    // === PHASE 1: IMAGE-LOCKED MASSING ===
+    mass(
+      'hf-mass-front-bottom-frame',
+      'White wrapper bottom front frame / loggia sill',
+      'hf-lvl-upper',
+      0,
+      SHELL_FACE_Y,
+      SHELL_W,
+      LOGGIA_Y,
+      SHELL_THICK,
+      'white_render',
+    ),
+    mass(
+      'hf-mass-front-left-jamb',
+      'White wrapper left front jamb',
+      'hf-lvl-upper',
+      0,
+      SHELL_FACE_Y,
+      SHELL_THICK,
+      LOGGIA_Y,
+      EAVE_L + 450,
+      'white_render',
+    ),
+    mass(
+      'hf-mass-front-right-jamb',
+      'White wrapper right front jamb',
+      'hf-lvl-upper',
+      SHELL_W - SHELL_THICK,
+      SHELL_FACE_Y,
+      SHELL_W,
+      LOGGIA_Y,
+      EAVE_R + 650,
+      'white_render',
+    ),
+    mass(
+      'hf-mass-roof-cut-front-return',
+      'White roof cutout front return face',
+      'hf-lvl-upper',
+      CUT_X0,
+      CUT_Y0 - SHELL_THICK,
+      CUT_X1,
+      CUT_Y0,
+      EAVE_R + 1200,
+      'white_render',
+    ),
+    mass(
+      'hf-mass-roof-cut-back-return',
+      'White roof cutout back return face',
+      'hf-lvl-upper',
+      CUT_X0,
+      CUT_Y1,
+      CUT_X1,
+      CUT_Y1 + SHELL_THICK,
+      EAVE_R + 1200,
+      'white_render',
+    ),
+    mass(
+      'hf-mass-roof-cut-inner-return',
+      'White roof cutout inner return face',
+      'hf-lvl-upper',
+      CUT_X0 - SHELL_THICK,
+      CUT_Y0,
+      CUT_X0,
+      CUT_Y1,
+      EAVE_R + 1200,
+      'white_render',
+    ),
 
-    // Ground-floor perimeter walls (CCW from SW corner, height = F2F).
-    {
-      type: 'createWall',
-      id: 'hf-w-gf-s',
-      name: 'GF south wall',
-      levelId: 'hf-lvl-ground',
-      start: { xMm: 0, yMm: 0 },
-      end: { xMm: GF_W, yMm: 0 },
-      thicknessMm: WALL_T,
-      heightMm: F2F,
-    },
-    {
-      type: 'createWall',
-      id: 'hf-w-gf-e',
-      name: 'GF east wall',
-      levelId: 'hf-lvl-ground',
-      start: { xMm: GF_W, yMm: 0 },
-      end: { xMm: GF_W, yMm: D },
-      thicknessMm: WALL_T,
-      heightMm: F2F,
-    },
-    {
-      type: 'createWall',
-      id: 'hf-w-gf-n',
-      name: 'GF north wall',
-      levelId: 'hf-lvl-ground',
-      start: { xMm: GF_W, yMm: D },
-      end: { xMm: 0, yMm: D },
-      thicknessMm: WALL_T,
-      heightMm: F2F,
-    },
-    {
-      type: 'createWall',
-      id: 'hf-w-gf-w',
-      name: 'GF west wall',
-      levelId: 'hf-lvl-ground',
-      start: { xMm: 0, yMm: D },
-      end: { xMm: 0, yMm: 0 },
-      thicknessMm: WALL_T,
-      heightMm: F2F,
-    },
+    // === PHASE 2: STRUCTURAL SHELL ===
+    ...wall('hf-w-gf-s', 'GF south cladded wall', 'hf-lvl-ground', GF_X0, 0, GF_X1, 0, F2F, 'cladding_warm_wood'),
+    ...wall('hf-w-gf-e', 'GF east cladded wall', 'hf-lvl-ground', GF_X1, 0, GF_X1, D, F2F, 'cladding_warm_wood'),
+    ...wall('hf-w-gf-n', 'GF north cladded wall', 'hf-lvl-ground', GF_X1, D, GF_X0, D, F2F, 'cladding_warm_wood'),
+    ...wall('hf-w-gf-w', 'GF west cladded wall', 'hf-lvl-ground', GF_X0, D, GF_X0, 0, F2F, 'cladding_warm_wood'),
 
-    // Upper-floor perimeter walls (5000×8000, west-aligned).
-    // heightMm oversized at 5500 so attachWallTopToRoof can trim them
-    // correctly along the asymmetric gable slopes in Phase 3.
-    // UF south wall split into 3 segments so each zone gets its own material:
-    //   s-l (x=0..1500): loggia left zone → white_render on back surface
-    //   s-c (x=1500..3000): chimney face, stays flush → cladding_warm_wood
-    //   s-r (x=3000..5000): loggia right zone → white_render on back surface
-    {
-      type: 'createWall',
-      id: 'hf-w-uf-s-l',
-      name: 'UF south wall left (loggia)',
-      levelId: 'hf-lvl-upper',
-      start: { xMm: 0, yMm: 0 },
-      end: { xMm: CHIMNEY_X0, yMm: 0 },
-      thicknessMm: WALL_T,
-      heightMm: 5500,
-    },
-    {
-      type: 'createWall',
-      id: 'hf-w-uf-s-c',
-      name: 'UF south wall centre (chimney face)',
-      levelId: 'hf-lvl-upper',
-      start: { xMm: CHIMNEY_X0, yMm: 0 },
-      end: { xMm: CHIMNEY_X1, yMm: 0 },
-      thicknessMm: WALL_T,
-      heightMm: 5500,
-    },
-    {
-      type: 'createWall',
-      id: 'hf-w-uf-s-r',
-      name: 'UF south wall right (loggia)',
-      levelId: 'hf-lvl-upper',
-      start: { xMm: CHIMNEY_X1, yMm: 0 },
-      end: { xMm: UF_W, yMm: 0 },
-      thicknessMm: WALL_T,
-      heightMm: 5500,
-    },
-    {
-      type: 'createWall',
-      id: 'hf-w-uf-e',
-      name: 'UF east wall',
-      levelId: 'hf-lvl-upper',
-      start: { xMm: UF_W, yMm: 0 },
-      end: { xMm: UF_W, yMm: D },
-      thicknessMm: WALL_T,
-      heightMm: 5500,
-    },
-    {
-      type: 'createWall',
-      id: 'hf-w-uf-n',
-      name: 'UF north wall',
-      levelId: 'hf-lvl-upper',
-      start: { xMm: UF_W, yMm: D },
-      end: { xMm: 0, yMm: D },
-      thicknessMm: WALL_T,
-      heightMm: 5500,
-    },
-    {
-      type: 'createWall',
-      id: 'hf-w-uf-w',
-      name: 'UF west wall',
-      levelId: 'hf-lvl-upper',
-      start: { xMm: 0, yMm: D },
-      end: { xMm: 0, yMm: 0 },
-      thicknessMm: WALL_T,
-      heightMm: 5500,
-    },
+    ...wall('hf-w-uf-w', 'Upper white west shell wall', 'hf-lvl-upper', 0, D, 0, 0, 5600, 'white_render'),
+    ...wall('hf-w-uf-e', 'Upper white east shell wall', 'hf-lvl-upper', SHELL_W, 0, SHELL_W, D, 5600, 'white_render'),
+    ...wall('hf-w-uf-n', 'Upper white north shell wall', 'hf-lvl-upper', SHELL_W, D, 0, D, 5600, 'white_render'),
+    ...wall('hf-w-uf-s-l', 'Recessed upper loggia left bay', 'hf-lvl-upper', SHELL_THICK, LOGGIA_Y, CHIMNEY_X0, LOGGIA_Y, 3600, 'white_render'),
+    ...wall('hf-w-uf-s-c', 'Recessed upper loggia vertical cladding pier', 'hf-lvl-upper', CHIMNEY_X0, LOGGIA_Y, CHIMNEY_X1, LOGGIA_Y, 3600, 'cladding_warm_wood'),
+    ...wall('hf-w-uf-s-r', 'Recessed upper loggia right glass bay host', 'hf-lvl-upper', CHIMNEY_X1, LOGGIA_Y, SHELL_W - SHELL_THICK, LOGGIA_Y, 3600, 'white_render'),
 
-    // East terrace parapet walls — south / east / north
-    // (west edge abuts the UF east wall; no parapet needed there).
-    {
-      type: 'createWall',
-      id: 'hf-w-pa-s',
-      name: 'Terrace parapet south',
-      levelId: 'hf-lvl-upper',
-      start: { xMm: UF_W, yMm: 0 },
-      end: { xMm: GF_W, yMm: 0 },
-      thicknessMm: WALL_T,
-      heightMm: PARAPET_H,
-    },
-    {
-      type: 'createWall',
-      id: 'hf-w-pa-e',
-      name: 'Terrace parapet east',
-      levelId: 'hf-lvl-upper',
-      start: { xMm: GF_W, yMm: 0 },
-      end: { xMm: GF_W, yMm: D },
-      thicknessMm: WALL_T,
-      heightMm: PARAPET_H,
-    },
-    {
-      type: 'createWall',
-      id: 'hf-w-pa-n',
-      name: 'Terrace parapet north',
-      levelId: 'hf-lvl-upper',
-      start: { xMm: GF_W, yMm: D },
-      end: { xMm: UF_W, yMm: D },
-      thicknessMm: WALL_T,
-      heightMm: PARAPET_H,
-    },
-
-    // Floor slabs.
-    // GF slab extends PLINTH_EXT mm beyond the footprint on all sides to create
-    // the low white plinth base (Material D, spec §4).
     {
       type: 'createFloor',
       id: 'hf-flr-ground',
-      name: 'Ground floor slab + plinth',
+      name: 'Projecting white plinth slab',
       levelId: 'hf-lvl-ground',
-      boundaryMm: [
-        { xMm: -PLINTH_EXT, yMm: -PLINTH_EXT },
-        { xMm: GF_W + PLINTH_EXT, yMm: -PLINTH_EXT },
-        { xMm: GF_W + PLINTH_EXT, yMm: D + PLINTH_EXT },
-        { xMm: -PLINTH_EXT, yMm: D + PLINTH_EXT },
-      ],
+      boundaryMm: rect(GF_X0 - PLINTH_EXT, -PLINTH_EXT, GF_X1 + PLINTH_EXT, D + PLINTH_EXT),
       materialKey: 'white_render',
     },
     {
       type: 'createFloor',
       id: 'hf-flr-upper',
-      name: 'First floor slab (west)',
+      name: 'Upper floor plate inside white wrapper',
       levelId: 'hf-lvl-upper',
       boundaryMm: [
         { xMm: 0, yMm: 0 },
-        { xMm: UF_W, yMm: 0 },
-        { xMm: UF_W, yMm: D },
+        { xMm: SHELL_W, yMm: 0 },
+        { xMm: SHELL_W, yMm: CUT_Y0 },
+        { xMm: CUT_X0, yMm: CUT_Y0 },
+        { xMm: CUT_X0, yMm: CUT_Y1 },
+        { xMm: SHELL_W, yMm: CUT_Y1 },
+        { xMm: SHELL_W, yMm: D },
         { xMm: 0, yMm: D },
       ],
       materialKey: 'white_render',
     },
     {
       type: 'createFloor',
-      id: 'hf-flr-deck',
-      name: 'East roof terrace deck',
+      id: 'hf-flr-roof-terrace',
+      name: 'Embedded roof terrace floor inside cutout',
       levelId: 'hf-lvl-upper',
-      boundaryMm: [
-        { xMm: UF_W, yMm: 0 },
-        { xMm: GF_W, yMm: 0 },
-        { xMm: GF_W, yMm: D },
-        { xMm: UF_W, yMm: D },
-      ],
+      boundaryMm: rect(CUT_X0 + 150, CUT_Y0 + 150, CUT_X1 - 180, CUT_Y1 - 150),
       materialKey: 'white_render',
     },
 
-    // Flat roof placeholder — Phase 3 deletes and recreates as asymmetric_gable.
+    // === PHASE 3: WHITE FOLDED ROOF WITH EMBEDDED BALCONY VOID ===
     {
       type: 'createRoof',
       id: 'hf-roof-main',
-      name: 'Upper-volume roof (flat placeholder)',
+      name: 'White folded roof shell with terrace cutout',
       referenceLevelId: 'hf-lvl-upper',
-      footprintMm: [
-        { xMm: 0, yMm: 0 },
-        { xMm: UF_W, yMm: 0 },
-        { xMm: UF_W, yMm: D },
-        { xMm: 0, yMm: D },
-      ],
-      roofGeometryMode: 'flat',
-      slopeDeg: 0,
-      overhangMm: 0,
-    },
-
-    // === PHASE 3: ENVELOPE ===
-    // Promote the flat placeholder to the calibrated asymmetric gable.
-    // updateElementProperty for roofs is restricted to name/roofTypeId/roofGeometryMode
-    // subset, so we delete + recreate rather than mutate in place.
-    { type: 'deleteElement', elementId: 'hf-roof-main' },
-    {
-      type: 'createRoof',
-      id: 'hf-roof-main',
-      name: 'Upper-volume asymmetric gable',
-      referenceLevelId: 'hf-lvl-upper',
-      footprintMm: [
-        { xMm: 0, yMm: 0 },
-        { xMm: UF_W, yMm: 0 },
-        { xMm: UF_W, yMm: D },
-        { xMm: 0, yMm: D },
-      ],
+      footprintMm: rect(0, 0, SHELL_W, D),
       roofGeometryMode: 'asymmetric_gable',
-      // Near-symmetric per visual ground truth; ridge slightly east of centre.
-      // Slope sanity: 1500 + 3000·tan(30°) = 3232 > 2300 (east eave) ✓
       ridgeOffsetTransverseMm: RIDGE_OFF,
       eaveHeightLeftMm: EAVE_L,
       eaveHeightRightMm: EAVE_R,
       slopeDeg: SLOPE_DEG,
-      overhangMm: 600,
+      overhangMm: 320,
       materialKey: 'white_render',
     },
     {
       type: 'createRoofOpening',
       id: 'hf-roof-terrace-cutout',
-      name: 'Right-slope rectangular roof cutout',
+      name: 'Large embedded roof terrace cutout',
       hostRoofId: 'hf-roof-main',
-      // Spec §2: large rectangular subtraction on the right-hand slope,
-      // extending from near the ridge down toward the east gutter to reveal
-      // the hidden upper-level terrace and its recessed glass wall.
-      boundaryMm: [
-        { xMm: RIDGE_X + 250, yMm: 4200 },
-        { xMm: UF_W, yMm: 4200 },
-        { xMm: UF_W, yMm: 7400 },
-        { xMm: RIDGE_X + 250, yMm: 7400 },
-      ],
+      boundaryMm: rect(CUT_X0, CUT_Y0, CUT_X1, CUT_Y1),
     },
+    ...['hf-w-uf-w', 'hf-w-uf-e', 'hf-w-uf-n', 'hf-w-uf-s-l', 'hf-w-uf-s-c', 'hf-w-uf-s-r'].map((wallId) => ({
+      type: 'attachWallTopToRoof',
+      wallId,
+      roofId: 'hf-roof-main',
+    })),
 
-    // Attach all UF south segments and side walls to the gable.
-    // hf-w-uf-s-c is also attached: height 5500 → trimmed by gable profile.
-    // The chimney reads as a protrusion because s-l and s-r are recessed 1500 mm back while s-c is flush.
-    { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-s-l', roofId: 'hf-roof-main' },
-    { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-s-c', roofId: 'hf-roof-main' },
-    { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-s-r', roofId: 'hf-roof-main' },
-    { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-e', roofId: 'hf-roof-main' },
-    { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-n', roofId: 'hf-roof-main' },
-    { type: 'attachWallTopToRoof', wallId: 'hf-w-uf-w', roofId: 'hf-roof-main' },
+    // Glass wall and guard surfaces inside the roof balcony.
+    ...wall('hf-w-roof-terrace-glass-back', 'Roof terrace recessed glass wall', 'hf-lvl-upper', CUT_X0 + 120, CUT_Y1 - 150, CUT_X1 - 420, CUT_Y1 - 150, 2200, 'glass_clear', 90),
+    ...wall('hf-w-roof-terrace-glass-side', 'Roof terrace transparent side guard', 'hf-lvl-upper', CUT_X1 - 160, CUT_Y0 + 350, CUT_X1 - 160, CUT_Y1 - 350, 1200, 'glass_clear', 80),
 
-    // Dense-mesh fix for UF north gable-end wall: a minimal recessZone forces
-    // makeRecessedWallMesh (25-sample path) over makeSlopedWallMesh (2-sample),
-    // correctly producing the triangular gable crown at the peak.
-    {
-      type: 'setWallRecessZones',
-      wallId: 'hf-w-uf-n',
-      recessZones: [{ alongTStart: 0.0, alongTEnd: 1.0, setbackMm: 50, floorContinues: false }],
-    },
-
-    // Apply materials — spec §4:
-    //   Material A (white render):  roof ✓ | UF side walls (E/N/W) | floor slabs ✓
-    //   Material B (cladding_warm_wood): all GF walls + chimney face — single material per spec §4
-    //   Parapet walls → white_render (part of the upper "wrapper shell")
-    { type: 'updateElementProperty', elementId: 'hf-w-gf-s', key: 'materialKey', value: 'cladding_warm_wood' },
-    { type: 'updateElementProperty', elementId: 'hf-w-gf-e', key: 'materialKey', value: 'cladding_warm_wood' },
-    { type: 'updateElementProperty', elementId: 'hf-w-gf-n', key: 'materialKey', value: 'cladding_warm_wood' },
-    { type: 'updateElementProperty', elementId: 'hf-w-gf-w', key: 'materialKey', value: 'cladding_warm_wood' },
-    // UF south split walls: loggia back surfaces → white_render; chimney face → cladding_warm_wood.
-    { type: 'updateElementProperty', elementId: 'hf-w-uf-s-l', key: 'materialKey', value: 'white_render' },
-    { type: 'updateElementProperty', elementId: 'hf-w-uf-s-c', key: 'materialKey', value: 'white_cladding' },
-    { type: 'updateElementProperty', elementId: 'hf-w-uf-s-r', key: 'materialKey', value: 'white_render' },
-    // UF side walls = white render (Material A — the "wrapper shell").
-    { type: 'updateElementProperty', elementId: 'hf-w-uf-e', key: 'materialKey', value: 'white_render' },
-    { type: 'updateElementProperty', elementId: 'hf-w-uf-n', key: 'materialKey', value: 'white_render' },
-    { type: 'updateElementProperty', elementId: 'hf-w-uf-w', key: 'materialKey', value: 'white_render' },
-    // Parapet walls = white render (part of the upper shell).
-    { type: 'updateElementProperty', elementId: 'hf-w-pa-s', key: 'materialKey', value: 'white_render' },
-    { type: 'updateElementProperty', elementId: 'hf-w-pa-e', key: 'materialKey', value: 'white_render' },
-    { type: 'updateElementProperty', elementId: 'hf-w-pa-n', key: 'materialKey', value: 'white_render' },
-
-    // Picture-frame sweep (KRN-15) — white gable pentagon outline on south face.
-    // Path traces the asymmetric gable polygon (5 vertices, closed):
-    //   SW → SE (eave line at F2F) → E-eave → Ridge → W-eave → close.
-    // Ridge x = RIDGE_X = 3000, Ridge z = RIDGE_H_ABS = 6232 (derived above).
-    {
-      type: 'createSweep',
-      id: 'hf-sw-frame',
-      name: 'Picture-frame gable outline',
-      levelId: 'hf-lvl-ground',
-      pathMm: [
-        { xMm: 0, yMm: 0, zMm: F2F },
-        { xMm: UF_W, yMm: 0, zMm: F2F },
-        { xMm: UF_W, yMm: 0, zMm: F2F + EAVE_R },
-        { xMm: RIDGE_X, yMm: 0, zMm: RIDGE_H_ABS },
-        { xMm: 0, yMm: 0, zMm: F2F + EAVE_L },
-        { xMm: 0, yMm: 0, zMm: F2F },
+    // Front white picture frame and black loggia rails.
+    sweep(
+      'hf-sw-front-wrapper-frame',
+      'Thick white front wrapper outline',
+      [
+        { xMm: 0, yMm: SHELL_FACE_Y, zMm: F2F },
+        { xMm: SHELL_W, yMm: SHELL_FACE_Y, zMm: F2F },
+        { xMm: SHELL_W, yMm: SHELL_FACE_Y, zMm: F2F + EAVE_R },
+        { xMm: RIDGE_X, yMm: SHELL_FACE_Y, zMm: RIDGE_H_ABS },
+        { xMm: 0, yMm: SHELL_FACE_Y, zMm: F2F + EAVE_L },
+        { xMm: 0, yMm: SHELL_FACE_Y, zMm: F2F },
       ],
-      profileMm: [
-        { uMm: -100, vMm: -60 },
-        { uMm: 100, vMm: -60 },
-        { uMm: 100, vMm: 60 },
-        { uMm: -100, vMm: 60 },
-      ],
-      profilePlane: 'work_plane',
-      materialKey: 'white_render',
-    },
+      rect(-120, -90, 120, 90).map((p) => ({ uMm: p.xMm, vMm: p.yMm })),
+      'white_render',
+    ),
+    ...[900, 1080, 1260].map((z, i) =>
+      sweep(
+        `hf-sw-loggia-rail-${i + 1}`,
+        `Black loggia rail ${i + 1}`,
+        [
+          { xMm: 450, yMm: SHELL_FACE_Y - 40, zMm: F2F + z },
+          { xMm: SHELL_W - 450, yMm: SHELL_FACE_Y - 40, zMm: F2F + z },
+        ],
+        rect(-22, -22, 22, 22).map((p) => ({ uMm: p.xMm, vMm: p.yMm })),
+        'aluminium_black',
+      ),
+    ),
 
-    // === PHASE 4: OPENINGS ===
-    // Ground-floor south facade — spec §3:
-    //   Two identical portrait windows (left half of facade).
-    //   Window 2 aligns with the stair so at least 8 treads are visible (spec §3).
-    //   Recessed door at the far right (alongT=0.88 → x≈6600 of 7500).
+    // === PHASE 4: OPENINGS AND FACADE RHYTHM ===
     {
       type: 'insertWindowOnWall',
       id: 'hf-win-gf-s-1',
-      name: 'GF south window (left)',
+      name: 'GF portrait window left',
       wallId: 'hf-w-gf-s',
-      alongT: 0.15,
-      widthMm: 700,
-      heightMm: 1800,
-      sillHeightMm: 200,
+      alongT: 0.36,
+      widthMm: 620,
+      heightMm: 1850,
+      sillHeightMm: 250,
+      familyTypeId: 'hf-ft-window-portrait',
     },
     {
       type: 'insertWindowOnWall',
       id: 'hf-win-gf-s-2',
-      name: 'GF south window (right of pair — stair visible through)',
+      name: 'GF stair portrait window',
       wallId: 'hf-w-gf-s',
-      alongT: 0.37,
-      widthMm: 700,
-      heightMm: 1800,
-      sillHeightMm: 200,
+      alongT: 0.66,
+      widthMm: 620,
+      heightMm: 1850,
+      sillHeightMm: 250,
+      familyTypeId: 'hf-ft-window-portrait',
+    },
+    {
+      type: 'insertWindowOnWall',
+      id: 'hf-win-living-west',
+      name: 'Living room west side window',
+      wallId: 'hf-w-gf-w',
+      alongT: 0.5,
+      widthMm: 900,
+      heightMm: 1500,
+      sillHeightMm: 700,
+      familyTypeId: 'hf-ft-window-portrait',
+    },
+    {
+      type: 'insertWindowOnWall',
+      id: 'hf-win-wc-west',
+      name: 'Guest WC west window',
+      wallId: 'hf-w-gf-w',
+      alongT: 0.88,
+      widthMm: 600,
+      heightMm: 650,
+      sillHeightMm: 1600,
+      familyTypeId: 'hf-ft-window-portrait',
+    },
+    {
+      type: 'insertWindowOnWall',
+      id: 'hf-win-kitchen-north',
+      name: 'Kitchen north side window',
+      wallId: 'hf-w-gf-n',
+      alongT: 0.28,
+      widthMm: 1100,
+      heightMm: 1300,
+      sillHeightMm: 900,
+      familyTypeId: 'hf-ft-window-portrait',
     },
     {
       type: 'insertDoorOnWall',
       id: 'hf-door-front',
-      name: 'Front door (far right, recessed)',
+      name: 'Recessed front door under cantilever',
       wallId: 'hf-w-gf-s',
       alongT: 0.88,
       widthMm: 900,
+      familyTypeId: 'hf-ft-door-ext',
     },
-
-    // Loggia recess — all three south wall segments recessed equally.
-    // The chimney centre (s-c) is ALSO recessed so its face sits at the loggia back plane
-    // (y=LOGGIA_SETBACK), making the chimney read as an interior column visible through
-    // the glass — not a solid protrusion at the facade line.
-    // This also aligns all three balcony slabs to the same y so they form one flat band.
-    {
-      type: 'setWallRecessZones',
-      wallId: 'hf-w-uf-s-l',
-      recessZones: [{ alongTStart: 0.0, alongTEnd: 1.0, setbackMm: LOGGIA_SETBACK, floorContinues: true }],
-    },
-    {
-      type: 'setWallRecessZones',
-      wallId: 'hf-w-uf-s-c',
-      recessZones: [{ alongTStart: 0.0, alongTEnd: 1.0, setbackMm: LOGGIA_SETBACK, floorContinues: true }],
-    },
-    {
-      type: 'setWallRecessZones',
-      wallId: 'hf-w-uf-s-r',
-      recessZones: [{ alongTStart: 0.0, alongTEnd: 1.0, setbackMm: LOGGIA_SETBACK, floorContinues: true }],
-    },
-
-    // Left loggia zone — wide trapezoidal window filling most of the 2000 mm zone.
-    // hf-w-uf-s-l spans x=0..2000; alongT=0.5 → x=1000 mm; 1500 mm wide leaves 250 mm margins.
     {
       type: 'insertWindowOnWall',
       id: 'hf-win-loggia-trap',
-      name: 'Loggia left — trapezoidal slope-following window',
+      name: 'Upper loggia left sloped window',
       wallId: 'hf-w-uf-s-l',
       alongT: 0.5,
-      widthMm: 1500,
-      heightMm: 1600,
-      sillHeightMm: 200,
+      widthMm: 1700,
+      heightMm: 1700,
+      sillHeightMm: 260,
+      familyTypeId: 'hf-ft-window-trapezoid',
     },
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-win-loggia-trap',
-      key: 'outlineKind',
-      value: 'gable_trapezoid',
-    },
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-win-loggia-trap',
-      key: 'attachedRoofId',
-      value: 'hf-roof-main',
-    },
-
-    // Right loggia zone — double-height sliding-glass curtain wall (spec §3
-    // "double-height curtain wall of glass divided by a central horizontal mullion").
-    // hf-w-uf-s-r spans x=3000..5000; alongT=0.5 → x=4000 mm (wall centre).
+    { type: 'updateElementProperty', elementId: 'hf-win-loggia-trap', key: 'outlineKind', value: 'gable_trapezoid' },
+    { type: 'updateElementProperty', elementId: 'hf-win-loggia-trap', key: 'attachedRoofId', value: 'hf-roof-main' },
     {
       type: 'insertDoorOnWall',
       id: 'hf-door-loggia',
-      name: 'Loggia right — sliding glass curtain wall',
+      name: 'Upper loggia right full-height glass',
       wallId: 'hf-w-uf-s-r',
-      alongT: 0.5,
-      widthMm: 1800,
+      alongT: 0.52,
+      widthMm: 2500,
+      familyTypeId: 'hf-ft-door-slider',
+    },
+    { type: 'updateElementProperty', elementId: 'hf-door-loggia', key: 'operationType', value: 'sliding_double' },
+    {
+      type: 'insertWindowOnWall',
+      id: 'hf-win-bed2-west',
+      name: 'Bedroom 2 west side window',
+      wallId: 'hf-w-uf-w',
+      alongT: 0.37,
+      widthMm: 900,
+      heightMm: 1450,
+      sillHeightMm: 800,
+      familyTypeId: 'hf-ft-window-portrait',
     },
     {
-      type: 'updateElementProperty',
-      elementId: 'hf-door-loggia',
-      key: 'operationType',
-      value: 'sliding_double',
+      type: 'insertWindowOnWall',
+      id: 'hf-win-bath-north',
+      name: 'Bathroom north clerestory window',
+      wallId: 'hf-w-uf-n',
+      alongT: 0.48,
+      widthMm: 800,
+      heightMm: 700,
+      sillHeightMm: 1700,
+      familyTypeId: 'hf-ft-window-portrait',
     },
+    {
+      type: 'insertDoorOnWall',
+      id: 'hf-door-roof-terrace',
+      name: 'Roof terrace recessed glass access door',
+      wallId: 'hf-w-roof-terrace-glass-back',
+      alongT: 0.5,
+      widthMm: 1200,
+      familyTypeId: 'hf-ft-door-slider',
+    },
+    { type: 'updateElementProperty', elementId: 'hf-door-roof-terrace', key: 'operationType', value: 'sliding_single' },
 
-    // === PHASE 5: INTERIOR ===
-    // Main stair — straight N-S run, GF → UF.
-    // Start close to the GF south wall so treads face south and are visible
-    // through GF south window 2 (at x≈2775, spec §3 "at least 8 visible treads").
-    // 17 risers × 176 mm = 2992 mm ≈ F2F. Run 3520 mm (16 treads × 220 mm).
+    // === PHASE 5: INTERIOR PROGRAMME ===
     {
       type: 'createStair',
       id: 'hf-stair-main',
-      name: 'Main stair',
+      name: 'Visible stair behind front portrait window',
       baseLevelId: 'hf-lvl-ground',
       topLevelId: 'hf-lvl-upper',
-      runStartMm: { xMm: 2700, yMm: 500 },
-      runEndMm: { xMm: 2700, yMm: 4020 },
-      widthMm: 900,
+      runStartMm: { xMm: 7450, yMm: 1350 },
+      runEndMm: { xMm: 7450, yMm: 6500 },
+      widthMm: 1100,
       riserMm: 176,
-      treadMm: 220,
+      treadMm: 280,
     },
-
-    // Stair-shaft slab opening in the first-floor slab.
     {
       type: 'createSlabOpening',
       id: 'hf-slab-stair',
-      name: 'Stair shaft opening',
+      name: 'Upper floor stair opening',
       hostFloorId: 'hf-flr-upper',
-      boundaryMm: [
-        { xMm: 2250, yMm: 500 },
-        { xMm: 3150, yMm: 500 },
-        { xMm: 3150, yMm: 4020 },
-        { xMm: 2250, yMm: 4020 },
-      ],
+      boundaryMm: rect(6850, 1250, 8050, 6700),
       isShaft: true,
     },
+    ...wall('hf-w-gf-ptn-entry', 'GF stair hall partition', 'hf-lvl-ground', 6400, 0, 6400, 4700, 2700, null, 120),
+    ...wall('hf-w-gf-ptn-living-kitchen', 'GF living kitchen partition', 'hf-lvl-ground', 6400, 5000, GF_X1, 5000, 2700, null, 120),
+    ...wall('hf-w-gf-ptn-wc', 'GF WC partition', 'hf-lvl-ground', 3800, 0, 3800, 3300, 2700, null, 120),
+    ...wall('hf-w-uf-ptn-mid', 'UF bedroom corridor partition', 'hf-lvl-upper', SHELL_THICK, 4500, SHELL_W - SHELL_THICK, 4500, 2700, null, 120),
+    ...wall('hf-w-uf-ptn-bath', 'UF bathroom partition', 'hf-lvl-upper', 4400, 4500, 4400, D - 650, 2700, null, 120),
 
-    // Stair railing (west side of stair run).
-    {
-      type: 'createRailing',
-      id: 'hf-rail-stair',
-      name: 'Stair railing',
-      hostedStairId: 'hf-stair-main',
-      pathMm: [
-        { xMm: 2250, yMm: 500 },
-        { xMm: 2250, yMm: 4020 },
-      ],
-    },
-
-    // Ground-floor light partitions — enough to make the interior programme legible
-    // without changing the exterior shell or the stair visibility through the facade.
-    {
-      type: 'createWall',
-      id: 'hf-w-gf-ptn-front',
-      name: 'GF partition — front service band',
-      levelId: 'hf-lvl-ground',
-      start: { xMm: 3700, yMm: 2600 },
-      end: { xMm: GF_W, yMm: 2600 },
-      thicknessMm: 120,
-      heightMm: 2700,
-    },
-    {
-      type: 'createWall',
-      id: 'hf-w-gf-ptn-wc',
-      name: 'GF partition — guest WC side',
-      levelId: 'hf-lvl-ground',
-      start: { xMm: 5400, yMm: 200 },
-      end: { xMm: 5400, yMm: 2600 },
-      thicknessMm: 120,
-      heightMm: 2700,
-    },
-    {
-      type: 'createWall',
-      id: 'hf-w-gf-ptn-kitchen',
-      name: 'GF partition — kitchen datum',
-      levelId: 'hf-lvl-ground',
-      start: { xMm: 3700, yMm: 4300 },
-      end: { xMm: GF_W, yMm: 4300 },
-      thicknessMm: 120,
-      heightMm: 2700,
-    },
-
-    // UF partition walls — E-W mid-depth + N-S back partition.
-    {
-      type: 'createWall',
-      id: 'hf-w-uf-ptn-mid',
-      name: 'UF mid partition (E-W)',
-      levelId: 'hf-lvl-upper',
-      start: { xMm: 0, yMm: 4000 },
-      end: { xMm: UF_W, yMm: 4000 },
-      thicknessMm: 120,
-      heightMm: 2700,
-    },
-    {
-      type: 'createWall',
-      id: 'hf-w-uf-ptn-back',
-      name: 'UF back partition (N-S)',
-      levelId: 'hf-lvl-upper',
-      start: { xMm: 2500, yMm: 4000 },
-      end: { xMm: 2500, yMm: D },
-      thicknessMm: 120,
-      heightMm: 2700,
-    },
-
-    // Sliding glass doors on UF east wall → east roof terrace (spec §2
-    // "recessed vertical glass wall... reveals a hidden upper-level terrace").
-    {
-      type: 'insertDoorOnWall',
-      id: 'hf-door-terrace',
-      name: 'Terrace sliding doors (UF east → terrace)',
-      wallId: 'hf-w-uf-e',
-      alongT: 0.35,
-      widthMm: 2400,
-    },
-    {
-      type: 'updateElementProperty',
-      elementId: 'hf-door-terrace',
-      key: 'operationType',
-      value: 'sliding_double',
-    },
-
-    // Rooms — labelled programme zones per spec §5.
     {
       type: 'createRoomOutline',
       id: 'hf-room-entry-stair',
       name: 'Entrance / stair hall',
       levelId: 'hf-lvl-ground',
-      outlineMm: [
-        { xMm: 200, yMm: 200 },
-        { xMm: 3700, yMm: 200 },
-        { xMm: 3700, yMm: 2600 },
-        { xMm: 200, yMm: 2600 },
-      ],
+      outlineMm: rect(6600, 800, 10200, 4500),
       programmeCode: 'circulation',
       functionLabel: 'entrance-stair',
-      finishSet: 'hardwearing-entry',
-      targetAreaM2: 8,
-    },
-    {
-      type: 'createRoomOutline',
-      id: 'hf-room-gf-wc',
-      name: 'Guest WC',
-      levelId: 'hf-lvl-ground',
-      outlineMm: [
-        { xMm: 5400, yMm: 200 },
-        { xMm: 7300, yMm: 200 },
-        { xMm: 7300, yMm: 2400 },
-        { xMm: 5400, yMm: 2400 },
-      ],
-      programmeCode: 'toilet',
-      functionLabel: 'guest-wc',
-      finishSet: 'wet-room',
-      targetAreaM2: 4,
+      targetAreaM2: 13.3,
     },
     {
       type: 'createRoomOutline',
       id: 'hf-room-living-dining',
       name: 'Living / dining room',
       levelId: 'hf-lvl-ground',
-      outlineMm: [
-        { xMm: 200, yMm: 2800 },
-        { xMm: 3600, yMm: 2800 },
-        { xMm: 3600, yMm: 7800 },
-        { xMm: 200, yMm: 7800 },
-      ],
+      outlineMm: rect(2100, 4800, 6300, D - 400),
       programmeCode: 'living',
       functionLabel: 'living-dining',
-      finishSet: 'warm-living',
-      targetAreaM2: 17,
+      targetAreaM2: 24.4,
     },
     {
       type: 'createRoomOutline',
       id: 'hf-room-kitchen',
       name: 'Kitchen',
       levelId: 'hf-lvl-ground',
-      outlineMm: [
-        { xMm: 3800, yMm: 4400 },
-        { xMm: 7300, yMm: 4400 },
-        { xMm: 7300, yMm: 7800 },
-        { xMm: 3800, yMm: 7800 },
-      ],
+      outlineMm: rect(6600, 5200, GF_X1 - 300, D - 400),
       programmeCode: 'kitchen',
       functionLabel: 'kitchen',
-      finishSet: 'kitchen-durable',
-      targetAreaM2: 12,
+      targetAreaM2: 19.4,
+    },
+    {
+      type: 'createRoomOutline',
+      id: 'hf-room-gf-wc',
+      name: 'Guest WC',
+      levelId: 'hf-lvl-ground',
+      outlineMm: rect(2100, 800, 3600, 3000),
+      programmeCode: 'toilet',
+      functionLabel: 'guest-wc',
+      targetAreaM2: 3.3,
     },
     {
       type: 'createRoomOutline',
       id: 'hf-room-bed-1',
-      name: 'Bedroom 1 (master)',
+      name: 'Bedroom 1',
       levelId: 'hf-lvl-upper',
-      outlineMm: [
-        { xMm: 200, yMm: 200 },
-        { xMm: 3000, yMm: 200 },
-        { xMm: 3000, yMm: 3900 },
-        { xMm: 200, yMm: 3900 },
-      ],
+      outlineMm: rect(800, 1500, 4400, 4300),
       programmeCode: 'bedroom',
       functionLabel: 'master-bedroom',
-      finishSet: 'quiet-bedroom',
-      targetAreaM2: 10,
+      targetAreaM2: 10.1,
     },
     {
       type: 'createRoomOutline',
       id: 'hf-room-bed-2',
       name: 'Bedroom 2',
       levelId: 'hf-lvl-upper',
-      outlineMm: [
-        { xMm: 200, yMm: 4100 },
-        { xMm: 2400, yMm: 4100 },
-        { xMm: 2400, yMm: 7800 },
-        { xMm: 200, yMm: 7800 },
-      ],
+      outlineMm: rect(800, 4900, 4200, D - 700),
       programmeCode: 'bedroom',
       functionLabel: 'secondary-bedroom',
-      finishSet: 'quiet-bedroom',
-      targetAreaM2: 12,
+      targetAreaM2: 18.4,
     },
     {
       type: 'createRoomOutline',
       id: 'hf-room-bath',
       name: 'Bathroom',
       levelId: 'hf-lvl-upper',
-      outlineMm: [
-        { xMm: 2600, yMm: 4100 },
-        { xMm: 4800, yMm: 4100 },
-        { xMm: 4800, yMm: 7800 },
-        { xMm: 2600, yMm: 7800 },
-      ],
+      outlineMm: rect(4600, 4900, 6800, D - 700),
       programmeCode: 'bathroom',
       functionLabel: 'family-bathroom',
-      finishSet: 'wet-room',
-      targetAreaM2: 6,
-    },
-    {
-      type: 'createRoomOutline',
-      id: 'hf-room-landing',
-      name: 'Landing / study nook',
-      levelId: 'hf-lvl-upper',
-      outlineMm: [
-        { xMm: 3200, yMm: 200 },
-        { xMm: 4800, yMm: 200 },
-        { xMm: 4800, yMm: 3900 },
-        { xMm: 3200, yMm: 3900 },
-      ],
-      programmeCode: 'circulation',
-      functionLabel: 'landing-study',
-      finishSet: 'hardwearing-entry',
-      targetAreaM2: 6,
+      targetAreaM2: 11.9,
     },
     {
       type: 'createRoomOutline',
       id: 'hf-room-deck',
-      name: 'East roof terrace',
+      name: 'Embedded roof terrace',
       levelId: 'hf-lvl-upper',
-      outlineMm: [
-        { xMm: UF_W + 200, yMm: 200 },
-        { xMm: GF_W - 200, yMm: 200 },
-        { xMm: GF_W - 200, yMm: D - 200 },
-        { xMm: UF_W + 200, yMm: D - 200 },
-      ],
+      outlineMm: rect(CUT_X0 + 250, CUT_Y0 + 250, CUT_X1 - 300, CUT_Y1 - 250),
       programmeCode: 'terrace',
-      functionLabel: 'roof-terrace',
-      finishSet: 'exterior-terrace',
-      targetAreaM2: 20,
+      functionLabel: 'roof-balcony',
+      targetAreaM2: 25.8,
     },
+    ...roomSepRect('hf-rs-entry', 'Entrance / stair hall', 'hf-lvl-ground', 6600, 800, 10200, 4500),
+    ...roomSepRect('hf-rs-living', 'Living / dining room', 'hf-lvl-ground', 2100, 4800, 6300, D - 400),
+    ...roomSepRect('hf-rs-kitchen', 'Kitchen', 'hf-lvl-ground', 6600, 5200, GF_X1 - 300, D - 400),
+    ...roomSepRect('hf-rs-gf-wc', 'Guest WC', 'hf-lvl-ground', 2100, 800, 3600, 3000),
+    ...roomSepRect('hf-rs-bed-1', 'Bedroom 1', 'hf-lvl-upper', 800, 1500, 4400, 4300),
+    ...roomSepRect('hf-rs-bed-2', 'Bedroom 2', 'hf-lvl-upper', 800, 4900, 4200, D - 700),
+    ...roomSepRect('hf-rs-bath', 'Bathroom', 'hf-lvl-upper', 4600, 4900, 6800, D - 700),
+    ...roomSepRect('hf-rs-deck', 'Embedded roof terrace', 'hf-lvl-upper', CUT_X0 + 250, CUT_Y0 + 250, CUT_X1 - 300, CUT_Y1 - 250),
 
-    // Asset library entries used by the seeded interior.
-    {
-      type: 'IndexAsset',
-      id: 'hf-asset-sofa',
-      name: 'Two-seat sofa',
-      category: 'furniture',
-      tags: ['living', 'seating', 'seed'],
-      thumbnailWidthMm: 2200,
-      thumbnailHeightMm: 900,
-      description: 'Schematic sofa used to make the living room legible in plan.',
-    },
-    {
-      type: 'IndexAsset',
-      id: 'hf-asset-coffee-table',
-      name: 'Coffee table',
-      category: 'furniture',
-      tags: ['living', 'table', 'seed'],
-      thumbnailWidthMm: 1000,
-      thumbnailHeightMm: 600,
-    },
-    {
-      type: 'IndexAsset',
-      id: 'hf-asset-dining-table',
-      name: 'Dining table',
-      category: 'furniture',
-      tags: ['dining', 'table', 'seed'],
-      thumbnailWidthMm: 1600,
-      thumbnailHeightMm: 900,
-    },
-    {
-      type: 'IndexAsset',
-      id: 'hf-asset-dining-chair',
-      name: 'Dining chair',
-      category: 'furniture',
-      tags: ['dining', 'chair', 'seed'],
-      thumbnailWidthMm: 450,
-      thumbnailHeightMm: 450,
-    },
-    {
-      type: 'IndexAsset',
-      id: 'hf-asset-kitchen-run',
-      name: 'Kitchen cabinet run',
-      category: 'kitchen',
-      tags: ['kitchen', 'casework', 'seed'],
-      thumbnailWidthMm: 3000,
-      thumbnailHeightMm: 650,
-    },
-    {
-      type: 'IndexAsset',
-      id: 'hf-asset-kitchen-island',
-      name: 'Kitchen island',
-      category: 'kitchen',
-      tags: ['kitchen', 'island', 'seed'],
-      thumbnailWidthMm: 1800,
-      thumbnailHeightMm: 900,
-    },
-    {
-      type: 'IndexAsset',
-      id: 'hf-asset-fridge',
-      name: 'Fridge / pantry unit',
-      category: 'kitchen',
-      tags: ['kitchen', 'appliance', 'seed'],
-      thumbnailWidthMm: 700,
-      thumbnailHeightMm: 700,
-    },
-    {
-      type: 'IndexAsset',
-      id: 'hf-asset-toilet',
-      name: 'Toilet',
-      category: 'bathroom',
-      tags: ['bathroom', 'wc', 'seed'],
-      thumbnailWidthMm: 700,
-      thumbnailHeightMm: 450,
-    },
-    {
-      type: 'IndexAsset',
-      id: 'hf-asset-basin',
-      name: 'Wash basin',
-      category: 'bathroom',
-      tags: ['bathroom', 'basin', 'seed'],
-      thumbnailWidthMm: 600,
-      thumbnailHeightMm: 450,
-    },
-    {
-      type: 'IndexAsset',
-      id: 'hf-asset-shower',
-      name: 'Shower tray',
-      category: 'bathroom',
-      tags: ['bathroom', 'shower', 'seed'],
-      thumbnailWidthMm: 900,
-      thumbnailHeightMm: 900,
-    },
-    {
-      type: 'IndexAsset',
-      id: 'hf-asset-queen-bed',
-      name: 'Queen bed',
-      category: 'furniture',
-      tags: ['bedroom', 'bed', 'seed'],
-      thumbnailWidthMm: 2000,
-      thumbnailHeightMm: 1600,
-    },
-    {
-      type: 'IndexAsset',
-      id: 'hf-asset-single-bed',
-      name: 'Single bed',
-      category: 'furniture',
-      tags: ['bedroom', 'bed', 'seed'],
-      thumbnailWidthMm: 2000,
-      thumbnailHeightMm: 900,
-    },
-    {
-      type: 'IndexAsset',
-      id: 'hf-asset-wardrobe',
-      name: 'Wardrobe',
-      category: 'casework',
-      tags: ['bedroom', 'storage', 'seed'],
-      thumbnailWidthMm: 1800,
-      thumbnailHeightMm: 600,
-    },
-    {
-      type: 'IndexAsset',
-      id: 'hf-asset-desk',
-      name: 'Small desk',
-      category: 'furniture',
-      tags: ['bedroom', 'study', 'seed'],
-      thumbnailWidthMm: 1200,
-      thumbnailHeightMm: 600,
-    },
-    {
-      type: 'IndexAsset',
-      id: 'hf-asset-outdoor-table',
-      name: 'Outdoor table',
-      category: 'furniture',
-      tags: ['terrace', 'outdoor', 'seed'],
-      thumbnailWidthMm: 1200,
-      thumbnailHeightMm: 800,
-    },
-    {
-      type: 'IndexAsset',
-      id: 'hf-asset-lounge-chair',
-      name: 'Lounge chair',
-      category: 'furniture',
-      tags: ['terrace', 'outdoor', 'seating', 'seed'],
-      thumbnailWidthMm: 800,
-      thumbnailHeightMm: 800,
-    },
+    // === PHASE 6: ASSET READABILITY ===
+    asset('hf-asset-sofa', 'Two-seat sofa', 'furniture', 2200, 900, ['living']),
+    asset('hf-asset-coffee-table', 'Coffee table', 'furniture', 1000, 600, ['living']),
+    asset('hf-asset-dining-table', 'Dining table', 'furniture', 1600, 900, ['dining']),
+    asset('hf-asset-kitchen-run', 'Kitchen cabinet run', 'kitchen', 3000, 650, ['kitchen']),
+    asset('hf-asset-kitchen-island', 'Kitchen island', 'kitchen', 1800, 900, ['kitchen']),
+    asset('hf-asset-toilet', 'Toilet', 'bathroom', 700, 450, ['bathroom']),
+    asset('hf-asset-basin', 'Wash basin', 'bathroom', 600, 450, ['bathroom']),
+    asset('hf-asset-shower', 'Shower tray', 'bathroom', 900, 900, ['bathroom']),
+    asset('hf-asset-queen-bed', 'Queen bed', 'furniture', 2000, 1600, ['bedroom']),
+    asset('hf-asset-single-bed', 'Single bed', 'furniture', 2000, 900, ['bedroom']),
+    asset('hf-asset-wardrobe', 'Wardrobe', 'casework', 1800, 600, ['bedroom']),
+    asset('hf-asset-desk', 'Small desk', 'furniture', 1200, 600, ['study']),
+    asset('hf-asset-outdoor-table', 'Outdoor table', 'furniture', 1200, 800, ['terrace']),
+    asset('hf-asset-lounge-chair', 'Lounge chair', 'furniture', 800, 800, ['terrace']),
 
-    // Placed interior assets — schematic plan symbols tied to the indexed library.
-    { type: 'PlaceAsset', id: 'hf-pa-sofa', assetId: 'hf-asset-sofa', name: 'Living sofa', levelId: 'hf-lvl-ground', positionMm: { xMm: 1200, yMm: 6500 }, rotationDeg: 90 },
-    { type: 'PlaceAsset', id: 'hf-pa-coffee-table', assetId: 'hf-asset-coffee-table', name: 'Living coffee table', levelId: 'hf-lvl-ground', positionMm: { xMm: 2300, yMm: 6500 }, rotationDeg: 90 },
-    { type: 'PlaceAsset', id: 'hf-pa-dining-table', assetId: 'hf-asset-dining-table', name: 'Dining table', levelId: 'hf-lvl-ground', positionMm: { xMm: 2300, yMm: 4900 }, rotationDeg: 0 },
-    { type: 'PlaceAsset', id: 'hf-pa-dining-chair-1', assetId: 'hf-asset-dining-chair', name: 'Dining chair 1', levelId: 'hf-lvl-ground', positionMm: { xMm: 2300, yMm: 4200 }, rotationDeg: 0 },
-    { type: 'PlaceAsset', id: 'hf-pa-dining-chair-2', assetId: 'hf-asset-dining-chair', name: 'Dining chair 2', levelId: 'hf-lvl-ground', positionMm: { xMm: 2300, yMm: 5600 }, rotationDeg: 180 },
-    { type: 'PlaceAsset', id: 'hf-pa-kitchen-run', assetId: 'hf-asset-kitchen-run', name: 'North kitchen cabinet run', levelId: 'hf-lvl-ground', positionMm: { xMm: 5550, yMm: 7480 }, rotationDeg: 0 },
-    { type: 'PlaceAsset', id: 'hf-pa-kitchen-island', assetId: 'hf-asset-kitchen-island', name: 'Kitchen island', levelId: 'hf-lvl-ground', positionMm: { xMm: 5550, yMm: 5750 }, rotationDeg: 0 },
-    { type: 'PlaceAsset', id: 'hf-pa-fridge', assetId: 'hf-asset-fridge', name: 'Fridge / pantry', levelId: 'hf-lvl-ground', positionMm: { xMm: 6900, yMm: 6900 }, rotationDeg: 90 },
-    { type: 'PlaceAsset', id: 'hf-pa-gf-toilet', assetId: 'hf-asset-toilet', name: 'Guest WC toilet', levelId: 'hf-lvl-ground', positionMm: { xMm: 6350, yMm: 1700 }, rotationDeg: 180 },
-    { type: 'PlaceAsset', id: 'hf-pa-gf-basin', assetId: 'hf-asset-basin', name: 'Guest WC basin', levelId: 'hf-lvl-ground', positionMm: { xMm: 5700, yMm: 800 }, rotationDeg: 0 },
-    { type: 'PlaceAsset', id: 'hf-pa-master-bed', assetId: 'hf-asset-queen-bed', name: 'Master bed', levelId: 'hf-lvl-upper', positionMm: { xMm: 1350, yMm: 1900 }, rotationDeg: 90 },
-    { type: 'PlaceAsset', id: 'hf-pa-master-wardrobe', assetId: 'hf-asset-wardrobe', name: 'Master wardrobe', levelId: 'hf-lvl-upper', positionMm: { xMm: 2350, yMm: 3350 }, rotationDeg: 0 },
-    { type: 'PlaceAsset', id: 'hf-pa-bed2', assetId: 'hf-asset-single-bed', name: 'Bedroom 2 bed', levelId: 'hf-lvl-upper', positionMm: { xMm: 1200, yMm: 5900 }, rotationDeg: 90 },
-    { type: 'PlaceAsset', id: 'hf-pa-bed2-desk', assetId: 'hf-asset-desk', name: 'Bedroom 2 desk', levelId: 'hf-lvl-upper', positionMm: { xMm: 1700, yMm: 7300 }, rotationDeg: 0 },
-    { type: 'PlaceAsset', id: 'hf-pa-bath-toilet', assetId: 'hf-asset-toilet', name: 'Bathroom toilet', levelId: 'hf-lvl-upper', positionMm: { xMm: 3300, yMm: 5050 }, rotationDeg: 90 },
-    { type: 'PlaceAsset', id: 'hf-pa-bath-basin', assetId: 'hf-asset-basin', name: 'Bathroom basin', levelId: 'hf-lvl-upper', positionMm: { xMm: 4400, yMm: 5050 }, rotationDeg: 270 },
-    { type: 'PlaceAsset', id: 'hf-pa-bath-shower', assetId: 'hf-asset-shower', name: 'Bathroom shower', levelId: 'hf-lvl-upper', positionMm: { xMm: 3800, yMm: 7100 }, rotationDeg: 0 },
-    { type: 'PlaceAsset', id: 'hf-pa-terrace-table', assetId: 'hf-asset-outdoor-table', name: 'Terrace outdoor table', levelId: 'hf-lvl-upper', positionMm: { xMm: 6250, yMm: 4300 }, rotationDeg: 0 },
-    { type: 'PlaceAsset', id: 'hf-pa-terrace-chair-1', assetId: 'hf-asset-lounge-chair', name: 'Terrace lounge chair 1', levelId: 'hf-lvl-upper', positionMm: { xMm: 6250, yMm: 3000 }, rotationDeg: 0 },
-    { type: 'PlaceAsset', id: 'hf-pa-terrace-chair-2', assetId: 'hf-asset-lounge-chair', name: 'Terrace lounge chair 2', levelId: 'hf-lvl-upper', positionMm: { xMm: 6250, yMm: 5600 }, rotationDeg: 180 },
+    place('hf-pa-sofa', 'hf-asset-sofa', 'Living sofa', 'hf-lvl-ground', 3500, 7800, 90),
+    place('hf-pa-coffee-table', 'hf-asset-coffee-table', 'Living coffee table', 'hf-lvl-ground', 4300, 7800, 90),
+    place('hf-pa-dining-table', 'hf-asset-dining-table', 'Dining table', 'hf-lvl-ground', 4400, 5650, 0),
+    place('hf-pa-kitchen-run', 'hf-asset-kitchen-run', 'Kitchen cabinet run', 'hf-lvl-ground', 8350, 10300, 0),
+    place('hf-pa-kitchen-island', 'hf-asset-kitchen-island', 'Kitchen island', 'hf-lvl-ground', 8350, 7900, 0),
+    place('hf-pa-gf-toilet', 'hf-asset-toilet', 'Guest WC toilet', 'hf-lvl-ground', 2950, 2050, 180),
+    place('hf-pa-gf-basin', 'hf-asset-basin', 'Guest WC basin', 'hf-lvl-ground', 2500, 1150, 0),
+    place('hf-pa-master-bed', 'hf-asset-queen-bed', 'Master bed', 'hf-lvl-upper', 2500, 2850, 90),
+    place('hf-pa-master-wardrobe', 'hf-asset-wardrobe', 'Master wardrobe', 'hf-lvl-upper', 3600, 3900, 0),
+    place('hf-pa-bed2', 'hf-asset-single-bed', 'Bedroom 2 bed', 'hf-lvl-upper', 2500, 6800, 90),
+    place('hf-pa-bed2-desk', 'hf-asset-desk', 'Bedroom 2 desk', 'hf-lvl-upper', 3350, 9500, 0),
+    place('hf-pa-bath-toilet', 'hf-asset-toilet', 'Bathroom toilet', 'hf-lvl-upper', 5350, 5850, 90),
+    place('hf-pa-bath-basin', 'hf-asset-basin', 'Bathroom basin', 'hf-lvl-upper', 6200, 6000, 270),
+    place('hf-pa-bath-shower', 'hf-asset-shower', 'Bathroom shower', 'hf-lvl-upper', 5700, 9250, 0),
+    place('hf-pa-terrace-table', 'hf-asset-outdoor-table', 'Roof terrace outdoor table', 'hf-lvl-upper', 9500, 5600, 0),
+    place('hf-pa-terrace-chair-1', 'hf-asset-lounge-chair', 'Roof terrace lounge chair 1', 'hf-lvl-upper', 9500, 4100, 0),
+    place('hf-pa-terrace-chair-2', 'hf-asset-lounge-chair', 'Roof terrace lounge chair 2', 'hf-lvl-upper', 9500, 7200, 180),
 
-    // === PHASE 6: DETAIL ===
-    // Chimney-like centre protrusion (spec §3 "protruding chimney-like volume clad
-    // in vertical siding"). The UF south wall's non-recessed centre section
-    // (T=0.3..0.6, x=1500..3000) provides the south face. Two return walls close
-    // the left and right edges so the protrusion reads as a solid volume.
-    {
-      type: 'createWall',
-      id: 'hf-w-chimney-w',
-      name: 'Chimney west return',
-      levelId: 'hf-lvl-upper',
-      start: { xMm: CHIMNEY_X0, yMm: LOGGIA_SETBACK },
-      end: { xMm: CHIMNEY_X0, yMm: 0 },
-      thicknessMm: WALL_T,
-      heightMm: 5500,
-      materialKey: 'cladding_warm_wood',
-    },
-    {
-      type: 'createWall',
-      id: 'hf-w-chimney-e',
-      name: 'Chimney east return',
-      levelId: 'hf-lvl-upper',
-      start: { xMm: CHIMNEY_X1, yMm: 0 },
-      end: { xMm: CHIMNEY_X1, yMm: LOGGIA_SETBACK },
-      thicknessMm: WALL_T,
-      heightMm: 5500,
-      materialKey: 'cladding_warm_wood',
-    },
-    {
-      type: 'createWall',
-      id: 'hf-w-chimney-back',
-      name: 'Chimney back wall',
-      levelId: 'hf-lvl-upper',
-      start: { xMm: CHIMNEY_X0, yMm: LOGGIA_SETBACK },
-      end: { xMm: CHIMNEY_X1, yMm: LOGGIA_SETBACK },
-      thicknessMm: WALL_T,
-      heightMm: 5500,
-      materialKey: 'cladding_warm_wood',
-    },
-    // Attach chimney return walls and back wall to the gable roof so their tops
-    // are trimmed flush with the gable profile (closes the open corner gaps).
-    { type: 'attachWallTopToRoof', wallId: 'hf-w-chimney-w', roofId: 'hf-roof-main' },
-    { type: 'attachWallTopToRoof', wallId: 'hf-w-chimney-e', roofId: 'hf-roof-main' },
-    { type: 'attachWallTopToRoof', wallId: 'hf-w-chimney-back', roofId: 'hf-roof-main' },
-
-    // Loggia balcony slabs + balustrades (spec §3 "three thin, continuous black
-    // horizontal cables/rails fixed to the inner edge of the white shell").
-    // One per loggia wall segment; the chimney centre section has no balcony.
-    {
-      type: 'createBalcony',
-      id: 'hf-balcony-l',
-      name: 'Loggia balcony left',
-      wallId: 'hf-w-uf-s-l',
-      elevationMm: F2F,
-      projectionMm: 700,
-      slabThicknessMm: 150,
-      balustradeHeightMm: 1100,
-    },
-    {
-      type: 'createBalcony',
-      id: 'hf-balcony-r',
-      name: 'Loggia balcony right',
-      wallId: 'hf-w-uf-s-r',
-      elevationMm: F2F,
-      projectionMm: 700,
-      slabThicknessMm: 150,
-      balustradeHeightMm: 1100,
-    },
-    {
-      type: 'createBalcony',
-      id: 'hf-balcony-c',
-      name: 'Loggia balcony centre (chimney)',
-      wallId: 'hf-w-uf-s-c',
-      elevationMm: F2F,
-      projectionMm: 700,
-      slabThicknessMm: 150,
-      balustradeHeightMm: 1100,
-    },
-
-    // === PHASE 7: DOCUMENTATION ===
-    // Four camera presets matching the panels in target-house-vis-colored.png.
+    // === PHASE 7: DOCUMENTATION AND CHECKPOINT VIEWS ===
     {
       type: 'saveViewpoint',
       id: 'vp-main-iso',
-      name: 'Main isometric (SSW — south facade + west gable, spec §5 front-left)',
+      name: 'Main image-locked axonometric - front loggia and roof cutout',
       mode: 'orbit_3d',
       camera: {
-        position: { xMm: -3000, yMm: -9000, zMm: 11000 },
-        target: { xMm: 3500, yMm: 4000, zMm: 3500 },
+        position: { xMm: -6500, yMm: -11500, zMm: 12800 },
+        target: { xMm: 6100, yMm: 5200, zMm: 5100 },
         up: { xMm: 0, yMm: 0, zMm: 1 },
       },
     },
     {
       type: 'saveViewpoint',
       id: 'vp-front-elev',
-      name: 'Front elevation (south)',
+      name: 'Front elevation - recessed upper loggia',
       mode: 'orbit_3d',
       camera: {
-        position: { xMm: 3500, yMm: -12000, zMm: 4250 },
-        target: { xMm: 3500, yMm: 4000, zMm: 4250 },
-        up: { xMm: 0, yMm: 0, zMm: 1 },
-      },
-    },
-    {
-      type: 'saveViewpoint',
-      id: 'vp-side-elev-west',
-      name: 'Side elevation (WSW)',
-      mode: 'orbit_3d',
-      camera: {
-        position: { xMm: -14000, yMm: -1000, zMm: 5000 },
-        target: { xMm: 2500, yMm: 5000, zMm: 2500 },
+        position: { xMm: 6000, yMm: -18000, zMm: 5000 },
+        target: { xMm: 6000, yMm: 3300, zMm: 5000 },
         up: { xMm: 0, yMm: 0, zMm: 1 },
       },
     },
     {
       type: 'saveViewpoint',
       id: 'vp-side-elev-east',
-      name: 'Side elevation (ESE — roof cutout side)',
+      name: 'Right/east view - embedded roof balcony',
       mode: 'orbit_3d',
       camera: {
-        position: { xMm: 15000, yMm: 2000, zMm: 6200 },
-        target: { xMm: 4200, yMm: 4500, zMm: 4300 },
+        position: { xMm: 20500, yMm: 3200, zMm: 8500 },
+        target: { xMm: 8400, yMm: 5600, zMm: 5200 },
         up: { xMm: 0, yMm: 0, zMm: 1 },
       },
     },
     {
       type: 'saveViewpoint',
       id: 'vp-rear-axo',
-      name: 'Rear axonometric (NE)',
+      name: 'Rear/right axonometric - terrace return faces',
       mode: 'orbit_3d',
       camera: {
-        position: { xMm: 12000, yMm: 14000, zMm: 8000 },
-        target: { xMm: 3500, yMm: 4000, zMm: 4250 },
+        position: { xMm: 18200, yMm: 16500, zMm: 11600 },
+        target: { xMm: 7200, yMm: 6200, zMm: 5200 },
         up: { xMm: 0, yMm: 0, zMm: 1 },
       },
     },
     {
       type: 'saveViewpoint',
       id: 'vp-terrace-se',
-      name: 'Roof cutout and east terrace (high SE)',
+      name: 'High roof terrace checkpoint',
       mode: 'orbit_3d',
       camera: {
-        position: { xMm: 11500, yMm: 10500, zMm: 13500 },
-        target: { xMm: 3900, yMm: 6000, zMm: 4800 },
+        position: { xMm: 16500, yMm: 12500, zMm: 15000 },
+        target: { xMm: 9300, yMm: 6100, zMm: 5700 },
         up: { xMm: 0, yMm: 0, zMm: 1 },
       },
     },
-
-    // Plan views.
     {
       type: 'upsertPlanView',
       id: 'hf-pv-ground',
-      name: 'GF plan',
+      name: 'Ground floor plan',
       levelId: 'hf-lvl-ground',
       planShowRoomLabels: true,
       planRoomFillOpacityScale: 0.45,
@@ -1120,23 +751,19 @@ export function buildOneFamilyHomeCommands() {
     {
       type: 'upsertPlanView',
       id: 'hf-pv-upper',
-      name: 'First-floor plan',
+      name: 'First floor and roof terrace plan',
       levelId: 'hf-lvl-upper',
       planShowRoomLabels: true,
       planRoomFillOpacityScale: 0.45,
     },
-
-    // Section cut through loggia at y=2000 — reveals gable + recess + balcony.
     {
       type: 'createSectionCut',
       id: 'hf-sec-loggia',
-      name: 'South facade section through loggia',
-      lineStartMm: { xMm: 0, yMm: 2000 },
-      lineEndMm: { xMm: GF_W, yMm: 2000 },
+      name: 'Section through front loggia and folded roof',
+      lineStartMm: { xMm: 0, yMm: LOGGIA_Y },
+      lineEndMm: { xMm: SHELL_W, yMm: LOGGIA_Y },
       cropDepthMm: 9000,
     },
-
-    // Sheet + schedules.
     {
       type: 'upsertSheet',
       id: 'hf-sheet-ga01',
@@ -1144,81 +771,64 @@ export function buildOneFamilyHomeCommands() {
       titleBlock: 'A2-bim-ai-default',
       paperWidthMm: 594,
       paperHeightMm: 420,
+      titleblockParameters: {
+        revisionId: 'A',
+        revisionCode: 'A',
+        issueDate: '2026-05-10',
+        issuePurpose: 'Seed reference rebuild',
+      },
     },
     { type: 'upsertSchedule', id: 'hf-sch-rooms', name: 'Room schedule', sheetId: 'hf-sheet-ga01' },
-    {
-      type: 'upsertSchedule',
-      id: 'hf-sch-windows',
-      name: 'Window schedule',
-      sheetId: 'hf-sheet-ga01',
-    },
+    { type: 'upsertSchedule', id: 'hf-sch-windows', name: 'Window schedule', sheetId: 'hf-sheet-ga01' },
     { type: 'upsertSchedule', id: 'hf-sch-doors', name: 'Door schedule', sheetId: 'hf-sheet-ga01' },
     {
       type: 'upsertSheetViewports',
       sheetId: 'hf-sheet-ga01',
       viewportsMm: [
         {
-          viewportId: 'hf-vp-ga01-ground',
-          label: 'GF plan',
+          viewportId: 'vp-sheet-ground-plan',
+          label: 'Ground floor plan',
           viewRef: 'plan:hf-pv-ground',
-          detailNumber: '1',
-          scale: '1:100',
-          xMm: 3_200,
-          yMm: 5_800,
-          widthMm: 24_800,
-          heightMm: 19_400,
+          xMm: 20,
+          yMm: 20,
+          widthMm: 260,
+          heightMm: 180,
         },
         {
-          viewportId: 'hf-vp-ga01-upper',
-          label: 'First-floor plan',
-          viewRef: 'plan:hf-pv-upper',
-          detailNumber: '2',
-          scale: '1:100',
-          xMm: 30_000,
-          yMm: 5_800,
-          widthMm: 23_600,
-          heightMm: 19_400,
-        },
-        {
-          viewportId: 'hf-vp-ga01-section',
-          label: 'South facade section',
+          viewportId: 'vp-sheet-section-loggia',
+          label: 'Loggia section',
           viewRef: 'section:hf-sec-loggia',
-          detailNumber: '3',
-          scale: '1:100',
-          xMm: 3_200,
-          yMm: 27_200,
-          widthMm: 25_400,
-          heightMm: 10_500,
+          xMm: 300,
+          yMm: 20,
+          widthMm: 260,
+          heightMm: 180,
         },
         {
-          viewportId: 'hf-vp-ga01-room-schedule',
+          viewportId: 'vp-sheet-room-schedule',
           label: 'Room schedule',
           viewRef: 'schedule:hf-sch-rooms',
-          detailNumber: '4',
-          xMm: 30_200,
-          yMm: 27_200,
-          widthMm: 23_400,
-          heightMm: 3_000,
+          xMm: 20,
+          yMm: 230,
+          widthMm: 170,
+          heightMm: 120,
         },
         {
-          viewportId: 'hf-vp-ga01-door-schedule',
-          label: 'Door schedule',
-          viewRef: 'schedule:hf-sch-doors',
-          detailNumber: '5',
-          xMm: 30_200,
-          yMm: 31_000,
-          widthMm: 23_400,
-          heightMm: 3_000,
-        },
-        {
-          viewportId: 'hf-vp-ga01-window-schedule',
+          viewportId: 'vp-sheet-window-schedule',
           label: 'Window schedule',
           viewRef: 'schedule:hf-sch-windows',
-          detailNumber: '6',
-          xMm: 30_200,
-          yMm: 34_800,
-          widthMm: 23_400,
-          heightMm: 3_000,
+          xMm: 210,
+          yMm: 230,
+          widthMm: 170,
+          heightMm: 120,
+        },
+        {
+          viewportId: 'vp-sheet-door-schedule',
+          label: 'Door schedule',
+          viewRef: 'schedule:hf-sch-doors',
+          xMm: 400,
+          yMm: 230,
+          widthMm: 170,
+          heightMm: 120,
         },
       ],
     },

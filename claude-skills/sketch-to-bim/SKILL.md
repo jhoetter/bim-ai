@@ -19,6 +19,8 @@ You will also fail if you treat `make seed`, `bim-ai plan-house`, or `scripts/bu
 
 The right mental model is **iterative convergence through 5–7 phased passes**, each one visually validated before adding detail. After each phase: render, look, validate, correct. Never advance with a phase that doesn't read.
 
+For seed work, the loop is not optional: keep the dev app running while authoring, reseed after each meaningful bundle edit, inspect the same UI Advisor panel the user sees, capture/check screenshots from saved viewpoints, and revise the source bundle until visible geometry and advisor findings converge. Do not rely only on offline snapshot generation, unit tests, or successful command replay.
+
 > **Every phase is committed independently. Every phase is verified independently. You do not move to phase N+1 until phase N's silhouette matches the target.**
 
 ---

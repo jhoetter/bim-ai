@@ -731,11 +731,15 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
   }
 
   if (kind === 'roof') {
+    const rawMode = String(raw.roofGeometryMode ?? raw.roof_geometry_mode ?? 'mass_box');
     const rg =
-      raw.roofGeometryMode === 'gable_pitched_rectangle' ||
-      raw.roof_geometry_mode === 'gable_pitched_rectangle'
-        ? ('gable_pitched_rectangle' as const)
-        : ('mass_box' as const);
+      rawMode === 'gable_pitched_rectangle' ||
+      rawMode === 'asymmetric_gable' ||
+      rawMode === 'gable_pitched_l_shape' ||
+      rawMode === 'hip' ||
+      rawMode === 'flat'
+        ? rawMode
+        : 'mass_box';
     return {
       kind: 'roof',
       id,
@@ -754,6 +758,27 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
           ? (raw.edgeSlopeFlags as Record<string, boolean>)
           : undefined,
       roofGeometryMode: rg,
+      ridgeOffsetTransverseMm:
+        raw.ridgeOffsetTransverseMm !== undefined
+          ? Number(raw.ridgeOffsetTransverseMm)
+          : raw.ridge_offset_transverse_mm !== undefined
+            ? Number(raw.ridge_offset_transverse_mm)
+            : undefined,
+      eaveHeightLeftMm:
+        raw.eaveHeightLeftMm !== undefined
+          ? Number(raw.eaveHeightLeftMm)
+          : raw.eave_height_left_mm !== undefined
+            ? Number(raw.eave_height_left_mm)
+            : undefined,
+      eaveHeightRightMm:
+        raw.eaveHeightRightMm !== undefined
+          ? Number(raw.eaveHeightRightMm)
+          : raw.eave_height_right_mm !== undefined
+            ? Number(raw.eave_height_right_mm)
+            : undefined,
+      ...(raw.materialKey || raw.material_key
+        ? { materialKey: String(raw.materialKey ?? raw.material_key) }
+        : {}),
       ...(raw.roofTypeId || raw.roof_type_id
         ? { roofTypeId: String(raw.roofTypeId ?? raw.roof_type_id) }
         : {}),
@@ -783,6 +808,17 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
       hostFloorId: String(raw.hostFloorId ?? raw.host_floor_id ?? ''),
       boundaryMm: coerceLoop('boundaryMm', 'boundary_mm'),
       isShaft: Boolean(raw.isShaft ?? raw.is_shaft),
+    };
+  }
+
+  if (kind === 'roof_opening') {
+    return {
+      kind: 'roof_opening',
+      id,
+      name,
+      hostRoofId: String(raw.hostRoofId ?? raw.host_roof_id ?? ''),
+      boundaryMm: coerceLoop('boundaryMm', 'boundary_mm'),
+      pinned: Boolean(raw.pinned),
     };
   }
 

@@ -30,9 +30,9 @@
       "monitorSource": null,
       "pinned": false
     },
-    "0ddbc081-2e03-487c-90ce-566803ff4424": {
+    "6dd09469-ac53-425c-8bb4-b45bcfbead16": {
       "kind": "plan_view",
-      "id": "0ddbc081-2e03-487c-90ce-566803ff4424",
+      "id": "6dd09469-ac53-425c-8bb4-b45bcfbead16",
       "name": "Ground Floor — Plan",
       "levelId": "hf-lvl-ground",
       "viewTemplateId": null,
@@ -77,9 +77,9 @@
       "monitorSource": null,
       "pinned": false
     },
-    "95c5d0de-d7b6-48dc-94d3-a40748afd1f8": {
+    "c6069bb4-752a-4292-9905-0e6229560686": {
       "kind": "plan_view",
-      "id": "95c5d0de-d7b6-48dc-94d3-a40748afd1f8",
+      "id": "c6069bb4-752a-4292-9905-0e6229560686",
       "name": "First Floor — Plan",
       "levelId": "hf-lvl-upper",
       "viewTemplateId": null,
@@ -113,22 +113,322 @@
       "planViewSubtype": null,
       "areaScheme": "gross_building"
     },
+    "hf-wt-white-render": {
+      "kind": "wall_type",
+      "id": "hf-wt-white-render",
+      "name": "White render exterior wall",
+      "layers": [
+        {
+          "thicknessMm": 160,
+          "function": "structure",
+          "materialKey": "concrete"
+        },
+        {
+          "thicknessMm": 90,
+          "function": "finish",
+          "materialKey": "white_render"
+        }
+      ],
+      "basisLine": "center"
+    },
+    "hf-wt-cladding": {
+      "kind": "wall_type",
+      "id": "hf-wt-cladding",
+      "name": "Vertical timber clad exterior wall",
+      "layers": [
+        {
+          "thicknessMm": 160,
+          "function": "structure",
+          "materialKey": "concrete"
+        },
+        {
+          "thicknessMm": 90,
+          "function": "finish",
+          "materialKey": "cladding_warm_wood"
+        }
+      ],
+      "basisLine": "center"
+    },
+    "hf-wt-internal": {
+      "kind": "wall_type",
+      "id": "hf-wt-internal",
+      "name": "Internal partition 120",
+      "layers": [
+        {
+          "thicknessMm": 120,
+          "function": "structure",
+          "materialKey": "gypsum_board"
+        }
+      ],
+      "basisLine": "center"
+    },
+    "hf-wt-glass": {
+      "kind": "wall_type",
+      "id": "hf-wt-glass",
+      "name": "Clear glass guard / curtain wall",
+      "layers": [
+        {
+          "thicknessMm": 80,
+          "function": "finish",
+          "materialKey": "glass_clear"
+        }
+      ],
+      "basisLine": "center"
+    },
+    "hf-ft-door-ext": {
+      "kind": "family_type",
+      "id": "hf-ft-door-ext",
+      "discipline": "door",
+      "parameters": {
+        "widthMm": 900,
+        "heightMm": 2100,
+        "typeMark": "D-EXT"
+      },
+      "catalogSource": null
+    },
+    "hf-ft-door-slider": {
+      "kind": "family_type",
+      "id": "hf-ft-door-slider",
+      "discipline": "door",
+      "parameters": {
+        "widthMm": 2500,
+        "heightMm": 2300,
+        "operationType": "sliding_double",
+        "typeMark": "D-SLD"
+      },
+      "catalogSource": null
+    },
+    "hf-ft-window-portrait": {
+      "kind": "family_type",
+      "id": "hf-ft-window-portrait",
+      "discipline": "window",
+      "parameters": {
+        "widthMm": 620,
+        "heightMm": 1850,
+        "typeMark": "W-POR"
+      },
+      "catalogSource": null
+    },
+    "hf-ft-window-trapezoid": {
+      "kind": "family_type",
+      "id": "hf-ft-window-trapezoid",
+      "discipline": "window",
+      "parameters": {
+        "widthMm": 1700,
+        "heightMm": 1700,
+        "outlineKind": "gable_trapezoid",
+        "typeMark": "W-TRAP"
+      },
+      "catalogSource": null
+    },
+    "hf-mass-front-bottom-frame": {
+      "kind": "mass",
+      "id": "hf-mass-front-bottom-frame",
+      "name": "White wrapper bottom front frame / loggia sill",
+      "levelId": "hf-lvl-upper",
+      "footprintMm": [
+        {
+          "xMm": 0,
+          "yMm": -450
+        },
+        {
+          "xMm": 12000,
+          "yMm": -450
+        },
+        {
+          "xMm": 12000,
+          "yMm": 1400
+        },
+        {
+          "xMm": 0,
+          "yMm": 1400
+        }
+      ],
+      "heightMm": 650,
+      "rotationDeg": 0,
+      "materialKey": "white_render",
+      "phaseId": "massing",
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "discipline": "arch"
+    },
+    "hf-mass-front-left-jamb": {
+      "kind": "mass",
+      "id": "hf-mass-front-left-jamb",
+      "name": "White wrapper left front jamb",
+      "levelId": "hf-lvl-upper",
+      "footprintMm": [
+        {
+          "xMm": 0,
+          "yMm": -450
+        },
+        {
+          "xMm": 650,
+          "yMm": -450
+        },
+        {
+          "xMm": 650,
+          "yMm": 1400
+        },
+        {
+          "xMm": 0,
+          "yMm": 1400
+        }
+      ],
+      "heightMm": 3300,
+      "rotationDeg": 0,
+      "materialKey": "white_render",
+      "phaseId": "massing",
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "discipline": "arch"
+    },
+    "hf-mass-front-right-jamb": {
+      "kind": "mass",
+      "id": "hf-mass-front-right-jamb",
+      "name": "White wrapper right front jamb",
+      "levelId": "hf-lvl-upper",
+      "footprintMm": [
+        {
+          "xMm": 11350,
+          "yMm": -450
+        },
+        {
+          "xMm": 12000,
+          "yMm": -450
+        },
+        {
+          "xMm": 12000,
+          "yMm": 1400
+        },
+        {
+          "xMm": 11350,
+          "yMm": 1400
+        }
+      ],
+      "heightMm": 3150,
+      "rotationDeg": 0,
+      "materialKey": "white_render",
+      "phaseId": "massing",
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "discipline": "arch"
+    },
+    "hf-mass-roof-cut-front-return": {
+      "kind": "mass",
+      "id": "hf-mass-roof-cut-front-return",
+      "name": "White roof cutout front return face",
+      "levelId": "hf-lvl-upper",
+      "footprintMm": [
+        {
+          "xMm": 7200,
+          "yMm": 1550
+        },
+        {
+          "xMm": 12000,
+          "yMm": 1550
+        },
+        {
+          "xMm": 12000,
+          "yMm": 2200
+        },
+        {
+          "xMm": 7200,
+          "yMm": 2200
+        }
+      ],
+      "heightMm": 3700,
+      "rotationDeg": 0,
+      "materialKey": "white_render",
+      "phaseId": "massing",
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "discipline": "arch"
+    },
+    "hf-mass-roof-cut-back-return": {
+      "kind": "mass",
+      "id": "hf-mass-roof-cut-back-return",
+      "name": "White roof cutout back return face",
+      "levelId": "hf-lvl-upper",
+      "footprintMm": [
+        {
+          "xMm": 7200,
+          "yMm": 9000
+        },
+        {
+          "xMm": 12000,
+          "yMm": 9000
+        },
+        {
+          "xMm": 12000,
+          "yMm": 9650
+        },
+        {
+          "xMm": 7200,
+          "yMm": 9650
+        }
+      ],
+      "heightMm": 3700,
+      "rotationDeg": 0,
+      "materialKey": "white_render",
+      "phaseId": "massing",
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "discipline": "arch"
+    },
+    "hf-mass-roof-cut-inner-return": {
+      "kind": "mass",
+      "id": "hf-mass-roof-cut-inner-return",
+      "name": "White roof cutout inner return face",
+      "levelId": "hf-lvl-upper",
+      "footprintMm": [
+        {
+          "xMm": 6550,
+          "yMm": 2200
+        },
+        {
+          "xMm": 7200,
+          "yMm": 2200
+        },
+        {
+          "xMm": 7200,
+          "yMm": 9000
+        },
+        {
+          "xMm": 6550,
+          "yMm": 9000
+        }
+      ],
+      "heightMm": 3700,
+      "rotationDeg": 0,
+      "materialKey": "white_render",
+      "phaseId": "massing",
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "discipline": "arch"
+    },
     "hf-w-gf-s": {
       "kind": "wall",
       "id": "hf-w-gf-s",
-      "name": "GF south wall",
+      "name": "GF south cladded wall",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 0,
+        "xMm": 1800,
         "yMm": 0
       },
       "end": {
-        "xMm": 7500,
+        "xMm": 10500,
         "yMm": 0
       },
       "thicknessMm": 250,
       "heightMm": 3000,
-      "wallTypeId": null,
+      "wallTypeId": "hf-wt-cladding",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
       "baseConstraintOffsetMm": 0,
@@ -161,19 +461,19 @@
     "hf-w-gf-e": {
       "kind": "wall",
       "id": "hf-w-gf-e",
-      "name": "GF east wall",
+      "name": "GF east cladded wall",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 7500,
+        "xMm": 10500,
         "yMm": 0
       },
       "end": {
-        "xMm": 7500,
-        "yMm": 8000
+        "xMm": 10500,
+        "yMm": 11000
       },
       "thicknessMm": 250,
       "heightMm": 3000,
-      "wallTypeId": null,
+      "wallTypeId": "hf-wt-cladding",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
       "baseConstraintOffsetMm": 0,
@@ -206,19 +506,19 @@
     "hf-w-gf-n": {
       "kind": "wall",
       "id": "hf-w-gf-n",
-      "name": "GF north wall",
+      "name": "GF north cladded wall",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 7500,
-        "yMm": 8000
+        "xMm": 10500,
+        "yMm": 11000
       },
       "end": {
-        "xMm": 0,
-        "yMm": 8000
+        "xMm": 1800,
+        "yMm": 11000
       },
       "thicknessMm": 250,
       "heightMm": 3000,
-      "wallTypeId": null,
+      "wallTypeId": "hf-wt-cladding",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
       "baseConstraintOffsetMm": 0,
@@ -251,19 +551,19 @@
     "hf-w-gf-w": {
       "kind": "wall",
       "id": "hf-w-gf-w",
-      "name": "GF west wall",
+      "name": "GF west cladded wall",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 0,
-        "yMm": 8000
+        "xMm": 1800,
+        "yMm": 11000
       },
       "end": {
-        "xMm": 0,
+        "xMm": 1800,
         "yMm": 0
       },
       "thicknessMm": 250,
       "heightMm": 3000,
-      "wallTypeId": null,
+      "wallTypeId": "hf-wt-cladding",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
       "baseConstraintOffsetMm": 0,
@@ -293,22 +593,22 @@
       "joinDisallowStart": false,
       "joinDisallowEnd": false
     },
-    "hf-w-uf-s-l": {
+    "hf-w-uf-w": {
       "kind": "wall",
-      "id": "hf-w-uf-s-l",
-      "name": "UF south wall left (loggia)",
+      "id": "hf-w-uf-w",
+      "name": "Upper white west shell wall",
       "levelId": "hf-lvl-upper",
       "start": {
         "xMm": 0,
-        "yMm": 0
+        "yMm": 11000
       },
       "end": {
-        "xMm": 2000,
+        "xMm": 0,
         "yMm": 0
       },
       "thicknessMm": 250,
-      "heightMm": 5500,
-      "wallTypeId": null,
+      "heightMm": 5600,
+      "wallTypeId": "hf-wt-white-render",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
       "baseConstraintOffsetMm": 0,
@@ -325,124 +625,7 @@
       "curtainWallVCount": null,
       "curtainWallHCount": null,
       "curtainPanelOverrides": null,
-      "recessZones": [
-        {
-          "alongTStart": 0,
-          "alongTEnd": 1,
-          "setbackMm": 1000,
-          "sillHeightMm": null,
-          "headHeightMm": null,
-          "floorContinues": true
-        }
-      ],
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "props": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
-    },
-    "hf-w-uf-s-c": {
-      "kind": "wall",
-      "id": "hf-w-uf-s-c",
-      "name": "UF south wall centre (chimney face)",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 2000,
-        "yMm": 0
-      },
-      "end": {
-        "xMm": 3000,
-        "yMm": 0
-      },
-      "thicknessMm": 250,
-      "heightMm": 5500,
-      "wallTypeId": null,
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0,
-      "topConstraintOffsetMm": 0,
-      "roofAttachmentId": "hf-roof-main",
-      "insulationExtensionMm": 0,
-      "materialKey": "white_cladding",
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainPanelOverrides": null,
-      "recessZones": [
-        {
-          "alongTStart": 0,
-          "alongTEnd": 1,
-          "setbackMm": 1000,
-          "sillHeightMm": null,
-          "headHeightMm": null,
-          "floorContinues": true
-        }
-      ],
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "props": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
-    },
-    "hf-w-uf-s-r": {
-      "kind": "wall",
-      "id": "hf-w-uf-s-r",
-      "name": "UF south wall right (loggia)",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 3000,
-        "yMm": 0
-      },
-      "end": {
-        "xMm": 5000,
-        "yMm": 0
-      },
-      "thicknessMm": 250,
-      "heightMm": 5500,
-      "wallTypeId": null,
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0,
-      "topConstraintOffsetMm": 0,
-      "roofAttachmentId": "hf-roof-main",
-      "insulationExtensionMm": 0,
-      "materialKey": "white_render",
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainPanelOverrides": null,
-      "recessZones": [
-        {
-          "alongTStart": 0,
-          "alongTEnd": 1,
-          "setbackMm": 1000,
-          "sillHeightMm": null,
-          "headHeightMm": null,
-          "floorContinues": true
-        }
-      ],
+      "recessZones": null,
       "stack": null,
       "leanMm": null,
       "taperRatio": null,
@@ -458,19 +641,19 @@
     "hf-w-uf-e": {
       "kind": "wall",
       "id": "hf-w-uf-e",
-      "name": "UF east wall",
+      "name": "Upper white east shell wall",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 5000,
+        "xMm": 12000,
         "yMm": 0
       },
       "end": {
-        "xMm": 5000,
-        "yMm": 8000
+        "xMm": 12000,
+        "yMm": 11000
       },
       "thicknessMm": 250,
-      "heightMm": 5500,
-      "wallTypeId": null,
+      "heightMm": 5600,
+      "wallTypeId": "hf-wt-white-render",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
       "baseConstraintOffsetMm": 0,
@@ -503,73 +686,19 @@
     "hf-w-uf-n": {
       "kind": "wall",
       "id": "hf-w-uf-n",
-      "name": "UF north wall",
+      "name": "Upper white north shell wall",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 5000,
-        "yMm": 8000
+        "xMm": 12000,
+        "yMm": 11000
       },
       "end": {
         "xMm": 0,
-        "yMm": 8000
+        "yMm": 11000
       },
       "thicknessMm": 250,
-      "heightMm": 5500,
-      "wallTypeId": null,
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0,
-      "topConstraintOffsetMm": 0,
-      "roofAttachmentId": "hf-roof-main",
-      "insulationExtensionMm": 0,
-      "materialKey": "white_render",
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainPanelOverrides": null,
-      "recessZones": [
-        {
-          "alongTStart": 0,
-          "alongTEnd": 1,
-          "setbackMm": 50,
-          "sillHeightMm": null,
-          "headHeightMm": null,
-          "floorContinues": false
-        }
-      ],
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "props": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
-    },
-    "hf-w-uf-w": {
-      "kind": "wall",
-      "id": "hf-w-uf-w",
-      "name": "UF west wall",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 0,
-        "yMm": 8000
-      },
-      "end": {
-        "xMm": 0,
-        "yMm": 0
-      },
-      "thicknessMm": 250,
-      "heightMm": 5500,
-      "wallTypeId": null,
+      "heightMm": 5600,
+      "wallTypeId": "hf-wt-white-render",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
       "baseConstraintOffsetMm": 0,
@@ -599,27 +728,27 @@
       "joinDisallowStart": false,
       "joinDisallowEnd": false
     },
-    "hf-w-pa-s": {
+    "hf-w-uf-s-l": {
       "kind": "wall",
-      "id": "hf-w-pa-s",
-      "name": "Terrace parapet south",
+      "id": "hf-w-uf-s-l",
+      "name": "Recessed upper loggia left bay",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 5000,
-        "yMm": 0
+        "xMm": 650,
+        "yMm": 1400
       },
       "end": {
-        "xMm": 7500,
-        "yMm": 0
+        "xMm": 4700,
+        "yMm": 1400
       },
       "thicknessMm": 250,
-      "heightMm": 200,
-      "wallTypeId": null,
+      "heightMm": 3600,
+      "wallTypeId": "hf-wt-white-render",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
       "baseConstraintOffsetMm": 0,
       "topConstraintOffsetMm": 0,
-      "roofAttachmentId": null,
+      "roofAttachmentId": "hf-roof-main",
       "insulationExtensionMm": 0,
       "materialKey": "white_render",
       "ifcClassificationCode": null,
@@ -644,29 +773,29 @@
       "joinDisallowStart": false,
       "joinDisallowEnd": false
     },
-    "hf-w-pa-e": {
+    "hf-w-uf-s-c": {
       "kind": "wall",
-      "id": "hf-w-pa-e",
-      "name": "Terrace parapet east",
+      "id": "hf-w-uf-s-c",
+      "name": "Recessed upper loggia vertical cladding pier",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 7500,
-        "yMm": 0
+        "xMm": 4700,
+        "yMm": 1400
       },
       "end": {
-        "xMm": 7500,
-        "yMm": 8000
+        "xMm": 6200,
+        "yMm": 1400
       },
       "thicknessMm": 250,
-      "heightMm": 200,
-      "wallTypeId": null,
+      "heightMm": 3600,
+      "wallTypeId": "hf-wt-cladding",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
       "baseConstraintOffsetMm": 0,
       "topConstraintOffsetMm": 0,
-      "roofAttachmentId": null,
+      "roofAttachmentId": "hf-roof-main",
       "insulationExtensionMm": 0,
-      "materialKey": "white_render",
+      "materialKey": "cladding_warm_wood",
       "ifcClassificationCode": null,
       "isCurtainWall": false,
       "pinned": false,
@@ -689,27 +818,27 @@
       "joinDisallowStart": false,
       "joinDisallowEnd": false
     },
-    "hf-w-pa-n": {
+    "hf-w-uf-s-r": {
       "kind": "wall",
-      "id": "hf-w-pa-n",
-      "name": "Terrace parapet north",
+      "id": "hf-w-uf-s-r",
+      "name": "Recessed upper loggia right glass bay host",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 7500,
-        "yMm": 8000
+        "xMm": 6200,
+        "yMm": 1400
       },
       "end": {
-        "xMm": 5000,
-        "yMm": 8000
+        "xMm": 11350,
+        "yMm": 1400
       },
       "thicknessMm": 250,
-      "heightMm": 200,
-      "wallTypeId": null,
+      "heightMm": 3600,
+      "wallTypeId": "hf-wt-white-render",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
       "baseConstraintOffsetMm": 0,
       "topConstraintOffsetMm": 0,
-      "roofAttachmentId": null,
+      "roofAttachmentId": "hf-roof-main",
       "insulationExtensionMm": 0,
       "materialKey": "white_render",
       "ifcClassificationCode": null,
@@ -737,24 +866,24 @@
     "hf-flr-ground": {
       "kind": "floor",
       "id": "hf-flr-ground",
-      "name": "Ground floor slab + plinth",
+      "name": "Projecting white plinth slab",
       "levelId": "hf-lvl-ground",
       "boundaryMm": [
         {
-          "xMm": -500,
+          "xMm": 1300,
           "yMm": -500
         },
         {
-          "xMm": 8000,
+          "xMm": 11000,
           "yMm": -500
         },
         {
-          "xMm": 8000,
-          "yMm": 8500
+          "xMm": 11000,
+          "yMm": 11500
         },
         {
-          "xMm": -500,
-          "yMm": 8500
+          "xMm": 1300,
+          "yMm": 11500
         }
       ],
       "thicknessMm": 220,
@@ -778,7 +907,7 @@
     "hf-flr-upper": {
       "kind": "floor",
       "id": "hf-flr-upper",
-      "name": "First floor slab (west)",
+      "name": "Upper floor plate inside white wrapper",
       "levelId": "hf-lvl-upper",
       "boundaryMm": [
         {
@@ -786,16 +915,32 @@
           "yMm": 0
         },
         {
-          "xMm": 5000,
+          "xMm": 12000,
           "yMm": 0
         },
         {
-          "xMm": 5000,
-          "yMm": 8000
+          "xMm": 12000,
+          "yMm": 2200
+        },
+        {
+          "xMm": 7200,
+          "yMm": 2200
+        },
+        {
+          "xMm": 7200,
+          "yMm": 9000
+        },
+        {
+          "xMm": 12000,
+          "yMm": 9000
+        },
+        {
+          "xMm": 12000,
+          "yMm": 11000
         },
         {
           "xMm": 0,
-          "yMm": 8000
+          "yMm": 11000
         }
       ],
       "thicknessMm": 220,
@@ -816,27 +961,27 @@
       "discipline": "arch",
       "props": null
     },
-    "hf-flr-deck": {
+    "hf-flr-roof-terrace": {
       "kind": "floor",
-      "id": "hf-flr-deck",
-      "name": "East roof terrace deck",
+      "id": "hf-flr-roof-terrace",
+      "name": "Embedded roof terrace floor inside cutout",
       "levelId": "hf-lvl-upper",
       "boundaryMm": [
         {
-          "xMm": 5000,
-          "yMm": 0
+          "xMm": 7350,
+          "yMm": 2350
         },
         {
-          "xMm": 7500,
-          "yMm": 0
+          "xMm": 11820,
+          "yMm": 2350
         },
         {
-          "xMm": 7500,
-          "yMm": 8000
+          "xMm": 11820,
+          "yMm": 8850
         },
         {
-          "xMm": 5000,
-          "yMm": 8000
+          "xMm": 7350,
+          "yMm": 8850
         }
       ],
       "thicknessMm": 220,
@@ -860,7 +1005,7 @@
     "hf-roof-main": {
       "kind": "roof",
       "id": "hf-roof-main",
-      "name": "Upper-volume asymmetric gable",
+      "name": "White folded roof shell with terrace cutout",
       "referenceLevelId": "hf-lvl-upper",
       "footprintMm": [
         {
@@ -868,25 +1013,25 @@
           "yMm": 0
         },
         {
-          "xMm": 5000,
+          "xMm": 12000,
           "yMm": 0
         },
         {
-          "xMm": 5000,
-          "yMm": 8000
+          "xMm": 12000,
+          "yMm": 11000
         },
         {
           "xMm": 0,
-          "yMm": 8000
+          "yMm": 11000
         }
       ],
-      "overhangMm": 600,
-      "slopeDeg": 30,
+      "overhangMm": 320,
+      "slopeDeg": 24,
       "edgeSlopeFlags": {},
       "roofGeometryMode": "asymmetric_gable",
       "ridgeOffsetTransverseMm": 500,
-      "eaveHeightLeftMm": 1500,
-      "eaveHeightRightMm": 2300,
+      "eaveHeightLeftMm": 2850,
+      "eaveHeightRightMm": 2500,
       "roofTypeId": null,
       "materialKey": "white_render",
       "ifcClassificationCode": null,
@@ -903,81 +1048,171 @@
     "hf-roof-terrace-cutout": {
       "kind": "roof_opening",
       "id": "hf-roof-terrace-cutout",
-      "name": "Right-slope rectangular roof cutout",
+      "name": "Large embedded roof terrace cutout",
       "hostRoofId": "hf-roof-main",
       "boundaryMm": [
         {
-          "xMm": 3250,
-          "yMm": 4200
+          "xMm": 7200,
+          "yMm": 2200
         },
         {
-          "xMm": 5000,
-          "yMm": 4200
+          "xMm": 12000,
+          "yMm": 2200
         },
         {
-          "xMm": 5000,
-          "yMm": 7400
+          "xMm": 12000,
+          "yMm": 9000
         },
         {
-          "xMm": 3250,
-          "yMm": 7400
+          "xMm": 7200,
+          "yMm": 9000
         }
       ],
       "pinned": false
     },
-    "hf-sw-frame": {
+    "hf-w-roof-terrace-glass-back": {
+      "kind": "wall",
+      "id": "hf-w-roof-terrace-glass-back",
+      "name": "Roof terrace recessed glass wall",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 7320,
+        "yMm": 8850
+      },
+      "end": {
+        "xMm": 11580,
+        "yMm": 8850
+      },
+      "thicknessMm": 80,
+      "heightMm": 2200,
+      "wallTypeId": "hf-wt-glass",
+      "baseConstraintLevelId": null,
+      "topConstraintLevelId": null,
+      "baseConstraintOffsetMm": 0,
+      "topConstraintOffsetMm": 0,
+      "roofAttachmentId": null,
+      "insulationExtensionMm": 0,
+      "materialKey": "glass_clear",
+      "ifcClassificationCode": null,
+      "isCurtainWall": false,
+      "pinned": false,
+      "phaseId": null,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "curtainWallVCount": null,
+      "curtainWallHCount": null,
+      "curtainPanelOverrides": null,
+      "recessZones": null,
+      "stack": null,
+      "leanMm": null,
+      "taperRatio": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null,
+      "siteHostId": null,
+      "joinDisallowStart": false,
+      "joinDisallowEnd": false
+    },
+    "hf-w-roof-terrace-glass-side": {
+      "kind": "wall",
+      "id": "hf-w-roof-terrace-glass-side",
+      "name": "Roof terrace transparent side guard",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 11840,
+        "yMm": 2550
+      },
+      "end": {
+        "xMm": 11840,
+        "yMm": 8650
+      },
+      "thicknessMm": 80,
+      "heightMm": 1200,
+      "wallTypeId": "hf-wt-glass",
+      "baseConstraintLevelId": null,
+      "topConstraintLevelId": null,
+      "baseConstraintOffsetMm": 0,
+      "topConstraintOffsetMm": 0,
+      "roofAttachmentId": null,
+      "insulationExtensionMm": 0,
+      "materialKey": "glass_clear",
+      "ifcClassificationCode": null,
+      "isCurtainWall": false,
+      "pinned": false,
+      "phaseId": null,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "curtainWallVCount": null,
+      "curtainWallHCount": null,
+      "curtainPanelOverrides": null,
+      "recessZones": null,
+      "stack": null,
+      "leanMm": null,
+      "taperRatio": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null,
+      "siteHostId": null,
+      "joinDisallowStart": false,
+      "joinDisallowEnd": false
+    },
+    "hf-sw-front-wrapper-frame": {
       "kind": "sweep",
-      "id": "hf-sw-frame",
-      "name": "Picture-frame gable outline",
+      "id": "hf-sw-front-wrapper-frame",
+      "name": "Thick white front wrapper outline",
       "levelId": "hf-lvl-ground",
       "pathMm": [
         {
           "xMm": 0,
-          "yMm": 0,
+          "yMm": -450,
           "zMm": 3000
         },
         {
-          "xMm": 5000,
-          "yMm": 0,
+          "xMm": 12000,
+          "yMm": -450,
           "zMm": 3000
         },
         {
-          "xMm": 5000,
-          "yMm": 0,
-          "zMm": 5300
+          "xMm": 12000,
+          "yMm": -450,
+          "zMm": 5500
         },
         {
-          "xMm": 3000,
-          "yMm": 0,
-          "zMm": 6232
-        },
-        {
-          "xMm": 0,
-          "yMm": 0,
-          "zMm": 4500
+          "xMm": 6500,
+          "yMm": -450,
+          "zMm": 8744
         },
         {
           "xMm": 0,
-          "yMm": 0,
+          "yMm": -450,
+          "zMm": 5850
+        },
+        {
+          "xMm": 0,
+          "yMm": -450,
           "zMm": 3000
         }
       ],
       "profileMm": [
         {
-          "uMm": -100,
-          "vMm": -60
+          "uMm": -120,
+          "vMm": -90
         },
         {
-          "uMm": 100,
-          "vMm": -60
+          "uMm": 120,
+          "vMm": -90
         },
         {
-          "uMm": 100,
-          "vMm": 60
+          "uMm": 120,
+          "vMm": 90
         },
         {
-          "uMm": -100,
-          "vMm": 60
+          "uMm": -120,
+          "vMm": 90
         }
       ],
       "profilePlane": "work_plane",
@@ -987,16 +1222,142 @@
       "phaseDemolished": null,
       "discipline": "arch"
     },
+    "hf-sw-loggia-rail-1": {
+      "kind": "sweep",
+      "id": "hf-sw-loggia-rail-1",
+      "name": "Black loggia rail 1",
+      "levelId": "hf-lvl-ground",
+      "pathMm": [
+        {
+          "xMm": 450,
+          "yMm": -490,
+          "zMm": 3900
+        },
+        {
+          "xMm": 11550,
+          "yMm": -490,
+          "zMm": 3900
+        }
+      ],
+      "profileMm": [
+        {
+          "uMm": -22,
+          "vMm": -22
+        },
+        {
+          "uMm": 22,
+          "vMm": -22
+        },
+        {
+          "uMm": 22,
+          "vMm": 22
+        },
+        {
+          "uMm": -22,
+          "vMm": 22
+        }
+      ],
+      "profilePlane": "work_plane",
+      "materialKey": "aluminium_black",
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "discipline": "arch"
+    },
+    "hf-sw-loggia-rail-2": {
+      "kind": "sweep",
+      "id": "hf-sw-loggia-rail-2",
+      "name": "Black loggia rail 2",
+      "levelId": "hf-lvl-ground",
+      "pathMm": [
+        {
+          "xMm": 450,
+          "yMm": -490,
+          "zMm": 4080
+        },
+        {
+          "xMm": 11550,
+          "yMm": -490,
+          "zMm": 4080
+        }
+      ],
+      "profileMm": [
+        {
+          "uMm": -22,
+          "vMm": -22
+        },
+        {
+          "uMm": 22,
+          "vMm": -22
+        },
+        {
+          "uMm": 22,
+          "vMm": 22
+        },
+        {
+          "uMm": -22,
+          "vMm": 22
+        }
+      ],
+      "profilePlane": "work_plane",
+      "materialKey": "aluminium_black",
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "discipline": "arch"
+    },
+    "hf-sw-loggia-rail-3": {
+      "kind": "sweep",
+      "id": "hf-sw-loggia-rail-3",
+      "name": "Black loggia rail 3",
+      "levelId": "hf-lvl-ground",
+      "pathMm": [
+        {
+          "xMm": 450,
+          "yMm": -490,
+          "zMm": 4260
+        },
+        {
+          "xMm": 11550,
+          "yMm": -490,
+          "zMm": 4260
+        }
+      ],
+      "profileMm": [
+        {
+          "uMm": -22,
+          "vMm": -22
+        },
+        {
+          "uMm": 22,
+          "vMm": -22
+        },
+        {
+          "uMm": 22,
+          "vMm": 22
+        },
+        {
+          "uMm": -22,
+          "vMm": 22
+        }
+      ],
+      "profilePlane": "work_plane",
+      "materialKey": "aluminium_black",
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "discipline": "arch"
+    },
     "hf-win-gf-s-1": {
       "kind": "window",
       "id": "hf-win-gf-s-1",
-      "name": "GF south window (left)",
+      "name": "GF portrait window left",
       "wallId": "hf-w-gf-s",
-      "alongT": 0.15,
-      "widthMm": 700,
-      "sillHeightMm": 200,
-      "heightMm": 1800,
-      "familyTypeId": null,
+      "alongT": 0.36,
+      "widthMm": 620,
+      "sillHeightMm": 250,
+      "heightMm": 1850,
+      "familyTypeId": "hf-ft-window-portrait",
       "materialKey": null,
       "hostCutDepthMm": null,
       "revealInteriorMm": null,
@@ -1019,13 +1380,100 @@
     "hf-win-gf-s-2": {
       "kind": "window",
       "id": "hf-win-gf-s-2",
-      "name": "GF south window (right of pair — stair visible through)",
+      "name": "GF stair portrait window",
       "wallId": "hf-w-gf-s",
-      "alongT": 0.37,
-      "widthMm": 700,
-      "sillHeightMm": 200,
-      "heightMm": 1800,
-      "familyTypeId": null,
+      "alongT": 0.66,
+      "widthMm": 620,
+      "sillHeightMm": 250,
+      "heightMm": 1850,
+      "familyTypeId": "hf-ft-window-portrait",
+      "materialKey": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "sealRebateMm": null,
+      "lodPlan": null,
+      "outlineKind": null,
+      "outlineMm": null,
+      "attachedRoofId": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null
+    },
+    "hf-win-living-west": {
+      "kind": "window",
+      "id": "hf-win-living-west",
+      "name": "Living room west side window",
+      "wallId": "hf-w-gf-w",
+      "alongT": 0.5,
+      "widthMm": 900,
+      "sillHeightMm": 700,
+      "heightMm": 1500,
+      "familyTypeId": "hf-ft-window-portrait",
+      "materialKey": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "sealRebateMm": null,
+      "lodPlan": null,
+      "outlineKind": null,
+      "outlineMm": null,
+      "attachedRoofId": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null
+    },
+    "hf-win-wc-west": {
+      "kind": "window",
+      "id": "hf-win-wc-west",
+      "name": "Guest WC west window",
+      "wallId": "hf-w-gf-w",
+      "alongT": 0.88,
+      "widthMm": 600,
+      "sillHeightMm": 1600,
+      "heightMm": 650,
+      "familyTypeId": "hf-ft-window-portrait",
+      "materialKey": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "sealRebateMm": null,
+      "lodPlan": null,
+      "outlineKind": null,
+      "outlineMm": null,
+      "attachedRoofId": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null
+    },
+    "hf-win-kitchen-north": {
+      "kind": "window",
+      "id": "hf-win-kitchen-north",
+      "name": "Kitchen north side window",
+      "wallId": "hf-w-gf-n",
+      "alongT": 0.28,
+      "widthMm": 1100,
+      "sillHeightMm": 900,
+      "heightMm": 1300,
+      "familyTypeId": "hf-ft-window-portrait",
       "materialKey": null,
       "hostCutDepthMm": null,
       "revealInteriorMm": null,
@@ -1048,11 +1496,11 @@
     "hf-door-front": {
       "kind": "door",
       "id": "hf-door-front",
-      "name": "Front door (far right, recessed)",
+      "name": "Recessed front door under cantilever",
       "wallId": "hf-w-gf-s",
       "alongT": 0.88,
       "widthMm": 900,
-      "familyTypeId": null,
+      "familyTypeId": "hf-ft-door-ext",
       "materialKey": null,
       "hostCutDepthMm": null,
       "revealInteriorMm": null,
@@ -1073,13 +1521,13 @@
     "hf-win-loggia-trap": {
       "kind": "window",
       "id": "hf-win-loggia-trap",
-      "name": "Loggia left — trapezoidal slope-following window",
+      "name": "Upper loggia left sloped window",
       "wallId": "hf-w-uf-s-l",
       "alongT": 0.5,
-      "widthMm": 1500,
-      "sillHeightMm": 200,
-      "heightMm": 1600,
-      "familyTypeId": null,
+      "widthMm": 1700,
+      "sillHeightMm": 260,
+      "heightMm": 1700,
+      "familyTypeId": "hf-ft-window-trapezoid",
       "materialKey": null,
       "hostCutDepthMm": null,
       "revealInteriorMm": null,
@@ -1102,11 +1550,11 @@
     "hf-door-loggia": {
       "kind": "door",
       "id": "hf-door-loggia",
-      "name": "Loggia right — sliding glass curtain wall",
+      "name": "Upper loggia right full-height glass",
       "wallId": "hf-w-uf-s-r",
-      "alongT": 0.5,
-      "widthMm": 1800,
-      "familyTypeId": null,
+      "alongT": 0.52,
+      "widthMm": 2500,
+      "familyTypeId": "hf-ft-door-slider",
       "materialKey": null,
       "hostCutDepthMm": null,
       "revealInteriorMm": null,
@@ -1124,36 +1572,119 @@
       "discipline": "arch",
       "props": null
     },
+    "hf-win-bed2-west": {
+      "kind": "window",
+      "id": "hf-win-bed2-west",
+      "name": "Bedroom 2 west side window",
+      "wallId": "hf-w-uf-w",
+      "alongT": 0.37,
+      "widthMm": 900,
+      "sillHeightMm": 800,
+      "heightMm": 1450,
+      "familyTypeId": "hf-ft-window-portrait",
+      "materialKey": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "sealRebateMm": null,
+      "lodPlan": null,
+      "outlineKind": null,
+      "outlineMm": null,
+      "attachedRoofId": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null
+    },
+    "hf-win-bath-north": {
+      "kind": "window",
+      "id": "hf-win-bath-north",
+      "name": "Bathroom north clerestory window",
+      "wallId": "hf-w-uf-n",
+      "alongT": 0.48,
+      "widthMm": 800,
+      "sillHeightMm": 1700,
+      "heightMm": 700,
+      "familyTypeId": "hf-ft-window-portrait",
+      "materialKey": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "sealRebateMm": null,
+      "lodPlan": null,
+      "outlineKind": null,
+      "outlineMm": null,
+      "attachedRoofId": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null
+    },
+    "hf-door-roof-terrace": {
+      "kind": "door",
+      "id": "hf-door-roof-terrace",
+      "name": "Roof terrace recessed glass access door",
+      "wallId": "hf-w-roof-terrace-glass-back",
+      "alongT": 0.5,
+      "widthMm": 1200,
+      "familyTypeId": "hf-ft-door-slider",
+      "materialKey": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "lodPlan": null,
+      "operationType": "sliding_single",
+      "slidingTrackSide": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null
+    },
     "hf-stair-main": {
       "kind": "stair",
       "id": "hf-stair-main",
-      "name": "Main stair",
+      "name": "Visible stair behind front portrait window",
       "baseLevelId": "hf-lvl-ground",
       "topLevelId": "hf-lvl-upper",
       "runStartMm": {
-        "xMm": 2700,
-        "yMm": 500
+        "xMm": 7450,
+        "yMm": 1350
       },
       "runEndMm": {
-        "xMm": 2700,
-        "yMm": 4020
+        "xMm": 7450,
+        "yMm": 6500
       },
-      "widthMm": 900,
+      "widthMm": 1100,
       "riserMm": 176,
-      "treadMm": 220,
+      "treadMm": 280,
       "shape": "straight",
       "runs": [
         {
           "id": "hf-stair-main-run-1",
           "startMm": {
-            "xMm": 2700,
-            "yMm": 500
+            "xMm": 7450,
+            "yMm": 1350
           },
           "endMm": {
-            "xMm": 2700,
-            "yMm": 4020
+            "xMm": 7450,
+            "yMm": 6500
           },
-          "widthMm": 900,
+          "widthMm": 1100,
           "riserCount": 8,
           "polylineMm": null
         }
@@ -1184,69 +1715,90 @@
     "hf-slab-stair": {
       "kind": "slab_opening",
       "id": "hf-slab-stair",
-      "name": "Stair shaft opening",
+      "name": "Upper floor stair opening",
       "hostFloorId": "hf-flr-upper",
       "boundaryMm": [
         {
-          "xMm": 2250,
-          "yMm": 500
+          "xMm": 6850,
+          "yMm": 1250
         },
         {
-          "xMm": 3150,
-          "yMm": 500
+          "xMm": 8050,
+          "yMm": 1250
         },
         {
-          "xMm": 3150,
-          "yMm": 4020
+          "xMm": 8050,
+          "yMm": 6700
         },
         {
-          "xMm": 2250,
-          "yMm": 4020
+          "xMm": 6850,
+          "yMm": 6700
         }
       ],
       "isShaft": true,
       "pinned": false
     },
-    "hf-rail-stair": {
-      "kind": "railing",
-      "id": "hf-rail-stair",
-      "name": "Stair railing",
-      "hostedStairId": "hf-stair-main",
-      "pathMm": [
-        {
-          "xMm": 2250,
-          "yMm": 500
-        },
-        {
-          "xMm": 2250,
-          "yMm": 4020
-        }
-      ],
-      "guardHeightMm": 1040,
-      "balusterPattern": null,
-      "handrailSupports": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "agentTrace": null,
-      "discipline": "arch"
-    },
-    "hf-w-gf-ptn-front": {
+    "hf-w-gf-ptn-entry": {
       "kind": "wall",
-      "id": "hf-w-gf-ptn-front",
-      "name": "GF partition — front service band",
+      "id": "hf-w-gf-ptn-entry",
+      "name": "GF stair hall partition",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 3700,
-        "yMm": 2600
+        "xMm": 6400,
+        "yMm": 0
       },
       "end": {
-        "xMm": 7500,
-        "yMm": 2600
+        "xMm": 6400,
+        "yMm": 4700
       },
       "thicknessMm": 120,
       "heightMm": 2700,
-      "wallTypeId": null,
+      "wallTypeId": "hf-wt-internal",
+      "baseConstraintLevelId": null,
+      "topConstraintLevelId": null,
+      "baseConstraintOffsetMm": 0,
+      "topConstraintOffsetMm": 0,
+      "roofAttachmentId": null,
+      "insulationExtensionMm": 0,
+      "materialKey": null,
+      "ifcClassificationCode": null,
+      "isCurtainWall": false,
+      "pinned": false,
+      "phaseId": null,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "curtainWallVCount": null,
+      "curtainWallHCount": null,
+      "curtainPanelOverrides": null,
+      "recessZones": null,
+      "stack": null,
+      "leanMm": null,
+      "taperRatio": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null,
+      "siteHostId": null,
+      "joinDisallowStart": false,
+      "joinDisallowEnd": false
+    },
+    "hf-w-gf-ptn-living-kitchen": {
+      "kind": "wall",
+      "id": "hf-w-gf-ptn-living-kitchen",
+      "name": "GF living kitchen partition",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 6400,
+        "yMm": 5000
+      },
+      "end": {
+        "xMm": 10500,
+        "yMm": 5000
+      },
+      "thicknessMm": 120,
+      "heightMm": 2700,
+      "wallTypeId": "hf-wt-internal",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
       "baseConstraintOffsetMm": 0,
@@ -1279,64 +1831,19 @@
     "hf-w-gf-ptn-wc": {
       "kind": "wall",
       "id": "hf-w-gf-ptn-wc",
-      "name": "GF partition — guest WC side",
+      "name": "GF WC partition",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 5400,
-        "yMm": 200
+        "xMm": 3800,
+        "yMm": 0
       },
       "end": {
-        "xMm": 5400,
-        "yMm": 2600
+        "xMm": 3800,
+        "yMm": 3300
       },
       "thicknessMm": 120,
       "heightMm": 2700,
-      "wallTypeId": null,
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0,
-      "topConstraintOffsetMm": 0,
-      "roofAttachmentId": null,
-      "insulationExtensionMm": 0,
-      "materialKey": null,
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainPanelOverrides": null,
-      "recessZones": null,
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "props": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
-    },
-    "hf-w-gf-ptn-kitchen": {
-      "kind": "wall",
-      "id": "hf-w-gf-ptn-kitchen",
-      "name": "GF partition — kitchen datum",
-      "levelId": "hf-lvl-ground",
-      "start": {
-        "xMm": 3700,
-        "yMm": 4300
-      },
-      "end": {
-        "xMm": 7500,
-        "yMm": 4300
-      },
-      "thicknessMm": 120,
-      "heightMm": 2700,
-      "wallTypeId": null,
+      "wallTypeId": "hf-wt-internal",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
       "baseConstraintOffsetMm": 0,
@@ -1369,19 +1876,19 @@
     "hf-w-uf-ptn-mid": {
       "kind": "wall",
       "id": "hf-w-uf-ptn-mid",
-      "name": "UF mid partition (E-W)",
+      "name": "UF bedroom corridor partition",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 0,
-        "yMm": 4000
+        "xMm": 650,
+        "yMm": 4500
       },
       "end": {
-        "xMm": 5000,
-        "yMm": 4000
+        "xMm": 11350,
+        "yMm": 4500
       },
       "thicknessMm": 120,
       "heightMm": 2700,
-      "wallTypeId": null,
+      "wallTypeId": "hf-wt-internal",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
       "baseConstraintOffsetMm": 0,
@@ -1411,22 +1918,22 @@
       "joinDisallowStart": false,
       "joinDisallowEnd": false
     },
-    "hf-w-uf-ptn-back": {
+    "hf-w-uf-ptn-bath": {
       "kind": "wall",
-      "id": "hf-w-uf-ptn-back",
-      "name": "UF back partition (N-S)",
+      "id": "hf-w-uf-ptn-bath",
+      "name": "UF bathroom partition",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 2500,
-        "yMm": 4000
+        "xMm": 4400,
+        "yMm": 4500
       },
       "end": {
-        "xMm": 2500,
-        "yMm": 8000
+        "xMm": 4400,
+        "yMm": 10350
       },
       "thicknessMm": 120,
       "heightMm": 2700,
-      "wallTypeId": null,
+      "wallTypeId": "hf-wt-internal",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
       "baseConstraintOffsetMm": 0,
@@ -1455,31 +1962,6 @@
       "siteHostId": null,
       "joinDisallowStart": false,
       "joinDisallowEnd": false
-    },
-    "hf-door-terrace": {
-      "kind": "door",
-      "id": "hf-door-terrace",
-      "name": "Terrace sliding doors (UF east → terrace)",
-      "wallId": "hf-w-uf-e",
-      "alongT": 0.35,
-      "widthMm": 2400,
-      "familyTypeId": null,
-      "materialKey": null,
-      "hostCutDepthMm": null,
-      "revealInteriorMm": null,
-      "interlockGrade": null,
-      "lodPlan": null,
-      "operationType": "sliding_double",
-      "slidingTrackSide": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "props": null
     },
     "hf-room-entry-stair": {
       "kind": "room",
@@ -1488,20 +1970,20 @@
       "levelId": "hf-lvl-ground",
       "outlineMm": [
         {
-          "xMm": 200,
-          "yMm": 200
+          "xMm": 6600,
+          "yMm": 800
         },
         {
-          "xMm": 3700,
-          "yMm": 200
+          "xMm": 10200,
+          "yMm": 800
         },
         {
-          "xMm": 3700,
-          "yMm": 2600
+          "xMm": 10200,
+          "yMm": 4500
         },
         {
-          "xMm": 200,
-          "yMm": 2600
+          "xMm": 6600,
+          "yMm": 4500
         }
       ],
       "upperLimitLevelId": null,
@@ -1510,45 +1992,8 @@
       "department": null,
       "programmeGroup": null,
       "functionLabel": "entrance-stair",
-      "finishSet": "hardwearing-entry",
-      "targetAreaM2": 8,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "props": null
-    },
-    "hf-room-gf-wc": {
-      "kind": "room",
-      "id": "hf-room-gf-wc",
-      "name": "Guest WC",
-      "levelId": "hf-lvl-ground",
-      "outlineMm": [
-        {
-          "xMm": 5400,
-          "yMm": 200
-        },
-        {
-          "xMm": 7300,
-          "yMm": 200
-        },
-        {
-          "xMm": 7300,
-          "yMm": 2400
-        },
-        {
-          "xMm": 5400,
-          "yMm": 2400
-        }
-      ],
-      "upperLimitLevelId": null,
-      "volumeCeilingOffsetMm": null,
-      "programmeCode": "toilet",
-      "department": null,
-      "programmeGroup": null,
-      "functionLabel": "guest-wc",
-      "finishSet": "wet-room",
-      "targetAreaM2": 4,
+      "finishSet": null,
+      "targetAreaM2": 13.3,
       "ifcClassificationCode": null,
       "pinned": false,
       "phaseCreated": null,
@@ -1562,20 +2007,20 @@
       "levelId": "hf-lvl-ground",
       "outlineMm": [
         {
-          "xMm": 200,
-          "yMm": 2800
+          "xMm": 2100,
+          "yMm": 4800
         },
         {
-          "xMm": 3600,
-          "yMm": 2800
+          "xMm": 6300,
+          "yMm": 4800
         },
         {
-          "xMm": 3600,
-          "yMm": 7800
+          "xMm": 6300,
+          "yMm": 10600
         },
         {
-          "xMm": 200,
-          "yMm": 7800
+          "xMm": 2100,
+          "yMm": 10600
         }
       ],
       "upperLimitLevelId": null,
@@ -1584,8 +2029,8 @@
       "department": null,
       "programmeGroup": null,
       "functionLabel": "living-dining",
-      "finishSet": "warm-living",
-      "targetAreaM2": 17,
+      "finishSet": null,
+      "targetAreaM2": 24.4,
       "ifcClassificationCode": null,
       "pinned": false,
       "phaseCreated": null,
@@ -1599,20 +2044,20 @@
       "levelId": "hf-lvl-ground",
       "outlineMm": [
         {
-          "xMm": 3800,
-          "yMm": 4400
+          "xMm": 6600,
+          "yMm": 5200
         },
         {
-          "xMm": 7300,
-          "yMm": 4400
+          "xMm": 10200,
+          "yMm": 5200
         },
         {
-          "xMm": 7300,
-          "yMm": 7800
+          "xMm": 10200,
+          "yMm": 10600
         },
         {
-          "xMm": 3800,
-          "yMm": 7800
+          "xMm": 6600,
+          "yMm": 10600
         }
       ],
       "upperLimitLevelId": null,
@@ -1621,8 +2066,45 @@
       "department": null,
       "programmeGroup": null,
       "functionLabel": "kitchen",
-      "finishSet": "kitchen-durable",
-      "targetAreaM2": 12,
+      "finishSet": null,
+      "targetAreaM2": 19.4,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "props": null
+    },
+    "hf-room-gf-wc": {
+      "kind": "room",
+      "id": "hf-room-gf-wc",
+      "name": "Guest WC",
+      "levelId": "hf-lvl-ground",
+      "outlineMm": [
+        {
+          "xMm": 2100,
+          "yMm": 800
+        },
+        {
+          "xMm": 3600,
+          "yMm": 800
+        },
+        {
+          "xMm": 3600,
+          "yMm": 3000
+        },
+        {
+          "xMm": 2100,
+          "yMm": 3000
+        }
+      ],
+      "upperLimitLevelId": null,
+      "volumeCeilingOffsetMm": null,
+      "programmeCode": "toilet",
+      "department": null,
+      "programmeGroup": null,
+      "functionLabel": "guest-wc",
+      "finishSet": null,
+      "targetAreaM2": 3.3,
       "ifcClassificationCode": null,
       "pinned": false,
       "phaseCreated": null,
@@ -1632,24 +2114,24 @@
     "hf-room-bed-1": {
       "kind": "room",
       "id": "hf-room-bed-1",
-      "name": "Bedroom 1 (master)",
+      "name": "Bedroom 1",
       "levelId": "hf-lvl-upper",
       "outlineMm": [
         {
-          "xMm": 200,
-          "yMm": 200
+          "xMm": 800,
+          "yMm": 1500
         },
         {
-          "xMm": 3000,
-          "yMm": 200
+          "xMm": 4400,
+          "yMm": 1500
         },
         {
-          "xMm": 3000,
-          "yMm": 3900
+          "xMm": 4400,
+          "yMm": 4300
         },
         {
-          "xMm": 200,
-          "yMm": 3900
+          "xMm": 800,
+          "yMm": 4300
         }
       ],
       "upperLimitLevelId": null,
@@ -1658,8 +2140,8 @@
       "department": null,
       "programmeGroup": null,
       "functionLabel": "master-bedroom",
-      "finishSet": "quiet-bedroom",
-      "targetAreaM2": 10,
+      "finishSet": null,
+      "targetAreaM2": 10.1,
       "ifcClassificationCode": null,
       "pinned": false,
       "phaseCreated": null,
@@ -1673,20 +2155,20 @@
       "levelId": "hf-lvl-upper",
       "outlineMm": [
         {
-          "xMm": 200,
-          "yMm": 4100
+          "xMm": 800,
+          "yMm": 4900
         },
         {
-          "xMm": 2400,
-          "yMm": 4100
+          "xMm": 4200,
+          "yMm": 4900
         },
         {
-          "xMm": 2400,
-          "yMm": 7800
+          "xMm": 4200,
+          "yMm": 10300
         },
         {
-          "xMm": 200,
-          "yMm": 7800
+          "xMm": 800,
+          "yMm": 10300
         }
       ],
       "upperLimitLevelId": null,
@@ -1695,8 +2177,8 @@
       "department": null,
       "programmeGroup": null,
       "functionLabel": "secondary-bedroom",
-      "finishSet": "quiet-bedroom",
-      "targetAreaM2": 12,
+      "finishSet": null,
+      "targetAreaM2": 18.4,
       "ifcClassificationCode": null,
       "pinned": false,
       "phaseCreated": null,
@@ -1710,20 +2192,20 @@
       "levelId": "hf-lvl-upper",
       "outlineMm": [
         {
-          "xMm": 2600,
-          "yMm": 4100
+          "xMm": 4600,
+          "yMm": 4900
         },
         {
-          "xMm": 4800,
-          "yMm": 4100
+          "xMm": 6800,
+          "yMm": 4900
         },
         {
-          "xMm": 4800,
-          "yMm": 7800
+          "xMm": 6800,
+          "yMm": 10300
         },
         {
-          "xMm": 2600,
-          "yMm": 7800
+          "xMm": 4600,
+          "yMm": 10300
         }
       ],
       "upperLimitLevelId": null,
@@ -1732,45 +2214,8 @@
       "department": null,
       "programmeGroup": null,
       "functionLabel": "family-bathroom",
-      "finishSet": "wet-room",
-      "targetAreaM2": 6,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "props": null
-    },
-    "hf-room-landing": {
-      "kind": "room",
-      "id": "hf-room-landing",
-      "name": "Landing / study nook",
-      "levelId": "hf-lvl-upper",
-      "outlineMm": [
-        {
-          "xMm": 3200,
-          "yMm": 200
-        },
-        {
-          "xMm": 4800,
-          "yMm": 200
-        },
-        {
-          "xMm": 4800,
-          "yMm": 3900
-        },
-        {
-          "xMm": 3200,
-          "yMm": 3900
-        }
-      ],
-      "upperLimitLevelId": null,
-      "volumeCeilingOffsetMm": null,
-      "programmeCode": "circulation",
-      "department": null,
-      "programmeGroup": null,
-      "functionLabel": "landing-study",
-      "finishSet": "hardwearing-entry",
-      "targetAreaM2": 6,
+      "finishSet": null,
+      "targetAreaM2": 11.9,
       "ifcClassificationCode": null,
       "pinned": false,
       "phaseCreated": null,
@@ -1780,24 +2225,24 @@
     "hf-room-deck": {
       "kind": "room",
       "id": "hf-room-deck",
-      "name": "East roof terrace",
+      "name": "Embedded roof terrace",
       "levelId": "hf-lvl-upper",
       "outlineMm": [
         {
-          "xMm": 5200,
-          "yMm": 200
+          "xMm": 7450,
+          "yMm": 2450
         },
         {
-          "xMm": 7300,
-          "yMm": 200
+          "xMm": 11700,
+          "yMm": 2450
         },
         {
-          "xMm": 7300,
-          "yMm": 7800
+          "xMm": 11700,
+          "yMm": 8750
         },
         {
-          "xMm": 5200,
-          "yMm": 7800
+          "xMm": 7450,
+          "yMm": 8750
         }
       ],
       "upperLimitLevelId": null,
@@ -1805,21 +2250,501 @@
       "programmeCode": "terrace",
       "department": null,
       "programmeGroup": null,
-      "functionLabel": "roof-terrace",
-      "finishSet": "exterior-terrace",
-      "targetAreaM2": 20,
+      "functionLabel": "roof-balcony",
+      "finishSet": null,
+      "targetAreaM2": 25.8,
       "ifcClassificationCode": null,
       "pinned": false,
       "phaseCreated": null,
       "phaseDemolished": null,
       "props": null
     },
+    "hf-rs-entry-s": {
+      "kind": "room_separation",
+      "id": "hf-rs-entry-s",
+      "name": "Entrance / stair hall south room separation",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 6600,
+        "yMm": 800
+      },
+      "end": {
+        "xMm": 10200,
+        "yMm": 800
+      },
+      "pinned": false
+    },
+    "hf-rs-entry-e": {
+      "kind": "room_separation",
+      "id": "hf-rs-entry-e",
+      "name": "Entrance / stair hall east room separation",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 10200,
+        "yMm": 800
+      },
+      "end": {
+        "xMm": 10200,
+        "yMm": 4500
+      },
+      "pinned": false
+    },
+    "hf-rs-entry-n": {
+      "kind": "room_separation",
+      "id": "hf-rs-entry-n",
+      "name": "Entrance / stair hall north room separation",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 10200,
+        "yMm": 4500
+      },
+      "end": {
+        "xMm": 6600,
+        "yMm": 4500
+      },
+      "pinned": false
+    },
+    "hf-rs-entry-w": {
+      "kind": "room_separation",
+      "id": "hf-rs-entry-w",
+      "name": "Entrance / stair hall west room separation",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 6600,
+        "yMm": 4500
+      },
+      "end": {
+        "xMm": 6600,
+        "yMm": 800
+      },
+      "pinned": false
+    },
+    "hf-rs-living-s": {
+      "kind": "room_separation",
+      "id": "hf-rs-living-s",
+      "name": "Living / dining room south room separation",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 2100,
+        "yMm": 4800
+      },
+      "end": {
+        "xMm": 6300,
+        "yMm": 4800
+      },
+      "pinned": false
+    },
+    "hf-rs-living-e": {
+      "kind": "room_separation",
+      "id": "hf-rs-living-e",
+      "name": "Living / dining room east room separation",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 6300,
+        "yMm": 4800
+      },
+      "end": {
+        "xMm": 6300,
+        "yMm": 10600
+      },
+      "pinned": false
+    },
+    "hf-rs-living-n": {
+      "kind": "room_separation",
+      "id": "hf-rs-living-n",
+      "name": "Living / dining room north room separation",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 6300,
+        "yMm": 10600
+      },
+      "end": {
+        "xMm": 2100,
+        "yMm": 10600
+      },
+      "pinned": false
+    },
+    "hf-rs-living-w": {
+      "kind": "room_separation",
+      "id": "hf-rs-living-w",
+      "name": "Living / dining room west room separation",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 2100,
+        "yMm": 10600
+      },
+      "end": {
+        "xMm": 2100,
+        "yMm": 4800
+      },
+      "pinned": false
+    },
+    "hf-rs-kitchen-s": {
+      "kind": "room_separation",
+      "id": "hf-rs-kitchen-s",
+      "name": "Kitchen south room separation",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 6600,
+        "yMm": 5200
+      },
+      "end": {
+        "xMm": 10200,
+        "yMm": 5200
+      },
+      "pinned": false
+    },
+    "hf-rs-kitchen-e": {
+      "kind": "room_separation",
+      "id": "hf-rs-kitchen-e",
+      "name": "Kitchen east room separation",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 10200,
+        "yMm": 5200
+      },
+      "end": {
+        "xMm": 10200,
+        "yMm": 10600
+      },
+      "pinned": false
+    },
+    "hf-rs-kitchen-n": {
+      "kind": "room_separation",
+      "id": "hf-rs-kitchen-n",
+      "name": "Kitchen north room separation",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 10200,
+        "yMm": 10600
+      },
+      "end": {
+        "xMm": 6600,
+        "yMm": 10600
+      },
+      "pinned": false
+    },
+    "hf-rs-kitchen-w": {
+      "kind": "room_separation",
+      "id": "hf-rs-kitchen-w",
+      "name": "Kitchen west room separation",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 6600,
+        "yMm": 10600
+      },
+      "end": {
+        "xMm": 6600,
+        "yMm": 5200
+      },
+      "pinned": false
+    },
+    "hf-rs-gf-wc-s": {
+      "kind": "room_separation",
+      "id": "hf-rs-gf-wc-s",
+      "name": "Guest WC south room separation",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 2100,
+        "yMm": 800
+      },
+      "end": {
+        "xMm": 3600,
+        "yMm": 800
+      },
+      "pinned": false
+    },
+    "hf-rs-gf-wc-e": {
+      "kind": "room_separation",
+      "id": "hf-rs-gf-wc-e",
+      "name": "Guest WC east room separation",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 3600,
+        "yMm": 800
+      },
+      "end": {
+        "xMm": 3600,
+        "yMm": 3000
+      },
+      "pinned": false
+    },
+    "hf-rs-gf-wc-n": {
+      "kind": "room_separation",
+      "id": "hf-rs-gf-wc-n",
+      "name": "Guest WC north room separation",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 3600,
+        "yMm": 3000
+      },
+      "end": {
+        "xMm": 2100,
+        "yMm": 3000
+      },
+      "pinned": false
+    },
+    "hf-rs-gf-wc-w": {
+      "kind": "room_separation",
+      "id": "hf-rs-gf-wc-w",
+      "name": "Guest WC west room separation",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 2100,
+        "yMm": 3000
+      },
+      "end": {
+        "xMm": 2100,
+        "yMm": 800
+      },
+      "pinned": false
+    },
+    "hf-rs-bed-1-s": {
+      "kind": "room_separation",
+      "id": "hf-rs-bed-1-s",
+      "name": "Bedroom 1 south room separation",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 800,
+        "yMm": 1500
+      },
+      "end": {
+        "xMm": 4400,
+        "yMm": 1500
+      },
+      "pinned": false
+    },
+    "hf-rs-bed-1-e": {
+      "kind": "room_separation",
+      "id": "hf-rs-bed-1-e",
+      "name": "Bedroom 1 east room separation",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 4400,
+        "yMm": 1500
+      },
+      "end": {
+        "xMm": 4400,
+        "yMm": 4300
+      },
+      "pinned": false
+    },
+    "hf-rs-bed-1-n": {
+      "kind": "room_separation",
+      "id": "hf-rs-bed-1-n",
+      "name": "Bedroom 1 north room separation",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 4400,
+        "yMm": 4300
+      },
+      "end": {
+        "xMm": 800,
+        "yMm": 4300
+      },
+      "pinned": false
+    },
+    "hf-rs-bed-1-w": {
+      "kind": "room_separation",
+      "id": "hf-rs-bed-1-w",
+      "name": "Bedroom 1 west room separation",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 800,
+        "yMm": 4300
+      },
+      "end": {
+        "xMm": 800,
+        "yMm": 1500
+      },
+      "pinned": false
+    },
+    "hf-rs-bed-2-s": {
+      "kind": "room_separation",
+      "id": "hf-rs-bed-2-s",
+      "name": "Bedroom 2 south room separation",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 800,
+        "yMm": 4900
+      },
+      "end": {
+        "xMm": 4200,
+        "yMm": 4900
+      },
+      "pinned": false
+    },
+    "hf-rs-bed-2-e": {
+      "kind": "room_separation",
+      "id": "hf-rs-bed-2-e",
+      "name": "Bedroom 2 east room separation",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 4200,
+        "yMm": 4900
+      },
+      "end": {
+        "xMm": 4200,
+        "yMm": 10300
+      },
+      "pinned": false
+    },
+    "hf-rs-bed-2-n": {
+      "kind": "room_separation",
+      "id": "hf-rs-bed-2-n",
+      "name": "Bedroom 2 north room separation",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 4200,
+        "yMm": 10300
+      },
+      "end": {
+        "xMm": 800,
+        "yMm": 10300
+      },
+      "pinned": false
+    },
+    "hf-rs-bed-2-w": {
+      "kind": "room_separation",
+      "id": "hf-rs-bed-2-w",
+      "name": "Bedroom 2 west room separation",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 800,
+        "yMm": 10300
+      },
+      "end": {
+        "xMm": 800,
+        "yMm": 4900
+      },
+      "pinned": false
+    },
+    "hf-rs-bath-s": {
+      "kind": "room_separation",
+      "id": "hf-rs-bath-s",
+      "name": "Bathroom south room separation",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 4600,
+        "yMm": 4900
+      },
+      "end": {
+        "xMm": 6800,
+        "yMm": 4900
+      },
+      "pinned": false
+    },
+    "hf-rs-bath-e": {
+      "kind": "room_separation",
+      "id": "hf-rs-bath-e",
+      "name": "Bathroom east room separation",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 6800,
+        "yMm": 4900
+      },
+      "end": {
+        "xMm": 6800,
+        "yMm": 10300
+      },
+      "pinned": false
+    },
+    "hf-rs-bath-n": {
+      "kind": "room_separation",
+      "id": "hf-rs-bath-n",
+      "name": "Bathroom north room separation",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 6800,
+        "yMm": 10300
+      },
+      "end": {
+        "xMm": 4600,
+        "yMm": 10300
+      },
+      "pinned": false
+    },
+    "hf-rs-bath-w": {
+      "kind": "room_separation",
+      "id": "hf-rs-bath-w",
+      "name": "Bathroom west room separation",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 4600,
+        "yMm": 10300
+      },
+      "end": {
+        "xMm": 4600,
+        "yMm": 4900
+      },
+      "pinned": false
+    },
+    "hf-rs-deck-s": {
+      "kind": "room_separation",
+      "id": "hf-rs-deck-s",
+      "name": "Embedded roof terrace south room separation",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 7450,
+        "yMm": 2450
+      },
+      "end": {
+        "xMm": 11700,
+        "yMm": 2450
+      },
+      "pinned": false
+    },
+    "hf-rs-deck-e": {
+      "kind": "room_separation",
+      "id": "hf-rs-deck-e",
+      "name": "Embedded roof terrace east room separation",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 11700,
+        "yMm": 2450
+      },
+      "end": {
+        "xMm": 11700,
+        "yMm": 8750
+      },
+      "pinned": false
+    },
+    "hf-rs-deck-n": {
+      "kind": "room_separation",
+      "id": "hf-rs-deck-n",
+      "name": "Embedded roof terrace north room separation",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 11700,
+        "yMm": 8750
+      },
+      "end": {
+        "xMm": 7450,
+        "yMm": 8750
+      },
+      "pinned": false
+    },
+    "hf-rs-deck-w": {
+      "kind": "room_separation",
+      "id": "hf-rs-deck-w",
+      "name": "Embedded roof terrace west room separation",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 7450,
+        "yMm": 8750
+      },
+      "end": {
+        "xMm": 7450,
+        "yMm": 2450
+      },
+      "pinned": false
+    },
     "hf-asset-sofa": {
       "kind": "asset_library_entry",
       "id": "hf-asset-sofa",
       "assetKind": "block_2d",
       "name": "Two-seat sofa",
-      "tags": ["living", "seating", "seed"],
+      "tags": ["living", "seed"],
       "category": "furniture",
       "disciplineTags": [],
       "thumbnailKind": "schematic_plan",
@@ -1829,14 +2754,14 @@
       "renderProxyKind": null,
       "paramSchema": null,
       "publishedFromOrgId": null,
-      "description": "Schematic sofa used to make the living room legible in plan."
+      "description": null
     },
     "hf-asset-coffee-table": {
       "kind": "asset_library_entry",
       "id": "hf-asset-coffee-table",
       "assetKind": "block_2d",
       "name": "Coffee table",
-      "tags": ["living", "table", "seed"],
+      "tags": ["living", "seed"],
       "category": "furniture",
       "disciplineTags": [],
       "thumbnailKind": "schematic_plan",
@@ -1853,7 +2778,7 @@
       "id": "hf-asset-dining-table",
       "assetKind": "block_2d",
       "name": "Dining table",
-      "tags": ["dining", "table", "seed"],
+      "tags": ["dining", "seed"],
       "category": "furniture",
       "disciplineTags": [],
       "thumbnailKind": "schematic_plan",
@@ -1865,29 +2790,12 @@
       "publishedFromOrgId": null,
       "description": null
     },
-    "hf-asset-dining-chair": {
-      "kind": "asset_library_entry",
-      "id": "hf-asset-dining-chair",
-      "assetKind": "block_2d",
-      "name": "Dining chair",
-      "tags": ["dining", "chair", "seed"],
-      "category": "furniture",
-      "disciplineTags": [],
-      "thumbnailKind": "schematic_plan",
-      "thumbnailWidthMm": 450,
-      "thumbnailHeightMm": 450,
-      "planSymbolKind": null,
-      "renderProxyKind": null,
-      "paramSchema": null,
-      "publishedFromOrgId": null,
-      "description": null
-    },
     "hf-asset-kitchen-run": {
       "kind": "asset_library_entry",
       "id": "hf-asset-kitchen-run",
       "assetKind": "block_2d",
       "name": "Kitchen cabinet run",
-      "tags": ["kitchen", "casework", "seed"],
+      "tags": ["kitchen", "seed"],
       "category": "kitchen",
       "disciplineTags": [],
       "thumbnailKind": "schematic_plan",
@@ -1904,7 +2812,7 @@
       "id": "hf-asset-kitchen-island",
       "assetKind": "block_2d",
       "name": "Kitchen island",
-      "tags": ["kitchen", "island", "seed"],
+      "tags": ["kitchen", "seed"],
       "category": "kitchen",
       "disciplineTags": [],
       "thumbnailKind": "schematic_plan",
@@ -1916,29 +2824,12 @@
       "publishedFromOrgId": null,
       "description": null
     },
-    "hf-asset-fridge": {
-      "kind": "asset_library_entry",
-      "id": "hf-asset-fridge",
-      "assetKind": "block_2d",
-      "name": "Fridge / pantry unit",
-      "tags": ["kitchen", "appliance", "seed"],
-      "category": "kitchen",
-      "disciplineTags": [],
-      "thumbnailKind": "schematic_plan",
-      "thumbnailWidthMm": 700,
-      "thumbnailHeightMm": 700,
-      "planSymbolKind": null,
-      "renderProxyKind": null,
-      "paramSchema": null,
-      "publishedFromOrgId": null,
-      "description": null
-    },
     "hf-asset-toilet": {
       "kind": "asset_library_entry",
       "id": "hf-asset-toilet",
       "assetKind": "block_2d",
       "name": "Toilet",
-      "tags": ["bathroom", "wc", "seed"],
+      "tags": ["bathroom", "seed"],
       "category": "bathroom",
       "disciplineTags": [],
       "thumbnailKind": "schematic_plan",
@@ -1955,7 +2846,7 @@
       "id": "hf-asset-basin",
       "assetKind": "block_2d",
       "name": "Wash basin",
-      "tags": ["bathroom", "basin", "seed"],
+      "tags": ["bathroom", "seed"],
       "category": "bathroom",
       "disciplineTags": [],
       "thumbnailKind": "schematic_plan",
@@ -1972,7 +2863,7 @@
       "id": "hf-asset-shower",
       "assetKind": "block_2d",
       "name": "Shower tray",
-      "tags": ["bathroom", "shower", "seed"],
+      "tags": ["bathroom", "seed"],
       "category": "bathroom",
       "disciplineTags": [],
       "thumbnailKind": "schematic_plan",
@@ -1989,7 +2880,7 @@
       "id": "hf-asset-queen-bed",
       "assetKind": "block_2d",
       "name": "Queen bed",
-      "tags": ["bedroom", "bed", "seed"],
+      "tags": ["bedroom", "seed"],
       "category": "furniture",
       "disciplineTags": [],
       "thumbnailKind": "schematic_plan",
@@ -2006,7 +2897,7 @@
       "id": "hf-asset-single-bed",
       "assetKind": "block_2d",
       "name": "Single bed",
-      "tags": ["bedroom", "bed", "seed"],
+      "tags": ["bedroom", "seed"],
       "category": "furniture",
       "disciplineTags": [],
       "thumbnailKind": "schematic_plan",
@@ -2023,7 +2914,7 @@
       "id": "hf-asset-wardrobe",
       "assetKind": "block_2d",
       "name": "Wardrobe",
-      "tags": ["bedroom", "storage", "seed"],
+      "tags": ["bedroom", "seed"],
       "category": "casework",
       "disciplineTags": [],
       "thumbnailKind": "schematic_plan",
@@ -2040,7 +2931,7 @@
       "id": "hf-asset-desk",
       "assetKind": "block_2d",
       "name": "Small desk",
-      "tags": ["bedroom", "study", "seed"],
+      "tags": ["study", "seed"],
       "category": "furniture",
       "disciplineTags": [],
       "thumbnailKind": "schematic_plan",
@@ -2057,7 +2948,7 @@
       "id": "hf-asset-outdoor-table",
       "assetKind": "block_2d",
       "name": "Outdoor table",
-      "tags": ["terrace", "outdoor", "seed"],
+      "tags": ["terrace", "seed"],
       "category": "furniture",
       "disciplineTags": [],
       "thumbnailKind": "schematic_plan",
@@ -2074,7 +2965,7 @@
       "id": "hf-asset-lounge-chair",
       "assetKind": "block_2d",
       "name": "Lounge chair",
-      "tags": ["terrace", "outdoor", "seating", "seed"],
+      "tags": ["terrace", "seed"],
       "category": "furniture",
       "disciplineTags": [],
       "thumbnailKind": "schematic_plan",
@@ -2093,8 +2984,8 @@
       "assetId": "hf-asset-sofa",
       "levelId": "hf-lvl-ground",
       "positionMm": {
-        "xMm": 1200,
-        "yMm": 6500
+        "xMm": 3500,
+        "yMm": 7800
       },
       "rotationDeg": 90,
       "paramValues": {},
@@ -2108,8 +2999,8 @@
       "assetId": "hf-asset-coffee-table",
       "levelId": "hf-lvl-ground",
       "positionMm": {
-        "xMm": 2300,
-        "yMm": 6500
+        "xMm": 4300,
+        "yMm": 7800
       },
       "rotationDeg": 90,
       "paramValues": {},
@@ -2123,40 +3014,10 @@
       "assetId": "hf-asset-dining-table",
       "levelId": "hf-lvl-ground",
       "positionMm": {
-        "xMm": 2300,
-        "yMm": 4900
+        "xMm": 4400,
+        "yMm": 5650
       },
       "rotationDeg": 0,
-      "paramValues": {},
-      "hostElementId": null,
-      "discipline": null
-    },
-    "hf-pa-dining-chair-1": {
-      "kind": "placed_asset",
-      "id": "hf-pa-dining-chair-1",
-      "name": "Dining chair 1",
-      "assetId": "hf-asset-dining-chair",
-      "levelId": "hf-lvl-ground",
-      "positionMm": {
-        "xMm": 2300,
-        "yMm": 4200
-      },
-      "rotationDeg": 0,
-      "paramValues": {},
-      "hostElementId": null,
-      "discipline": null
-    },
-    "hf-pa-dining-chair-2": {
-      "kind": "placed_asset",
-      "id": "hf-pa-dining-chair-2",
-      "name": "Dining chair 2",
-      "assetId": "hf-asset-dining-chair",
-      "levelId": "hf-lvl-ground",
-      "positionMm": {
-        "xMm": 2300,
-        "yMm": 5600
-      },
-      "rotationDeg": 180,
       "paramValues": {},
       "hostElementId": null,
       "discipline": null
@@ -2164,12 +3025,12 @@
     "hf-pa-kitchen-run": {
       "kind": "placed_asset",
       "id": "hf-pa-kitchen-run",
-      "name": "North kitchen cabinet run",
+      "name": "Kitchen cabinet run",
       "assetId": "hf-asset-kitchen-run",
       "levelId": "hf-lvl-ground",
       "positionMm": {
-        "xMm": 5550,
-        "yMm": 7480
+        "xMm": 8350,
+        "yMm": 10300
       },
       "rotationDeg": 0,
       "paramValues": {},
@@ -2183,25 +3044,10 @@
       "assetId": "hf-asset-kitchen-island",
       "levelId": "hf-lvl-ground",
       "positionMm": {
-        "xMm": 5550,
-        "yMm": 5750
+        "xMm": 8350,
+        "yMm": 7900
       },
       "rotationDeg": 0,
-      "paramValues": {},
-      "hostElementId": null,
-      "discipline": null
-    },
-    "hf-pa-fridge": {
-      "kind": "placed_asset",
-      "id": "hf-pa-fridge",
-      "name": "Fridge / pantry",
-      "assetId": "hf-asset-fridge",
-      "levelId": "hf-lvl-ground",
-      "positionMm": {
-        "xMm": 6900,
-        "yMm": 6900
-      },
-      "rotationDeg": 90,
       "paramValues": {},
       "hostElementId": null,
       "discipline": null
@@ -2213,8 +3059,8 @@
       "assetId": "hf-asset-toilet",
       "levelId": "hf-lvl-ground",
       "positionMm": {
-        "xMm": 6350,
-        "yMm": 1700
+        "xMm": 2950,
+        "yMm": 2050
       },
       "rotationDeg": 180,
       "paramValues": {},
@@ -2228,8 +3074,8 @@
       "assetId": "hf-asset-basin",
       "levelId": "hf-lvl-ground",
       "positionMm": {
-        "xMm": 5700,
-        "yMm": 800
+        "xMm": 2500,
+        "yMm": 1150
       },
       "rotationDeg": 0,
       "paramValues": {},
@@ -2243,8 +3089,8 @@
       "assetId": "hf-asset-queen-bed",
       "levelId": "hf-lvl-upper",
       "positionMm": {
-        "xMm": 1350,
-        "yMm": 1900
+        "xMm": 2500,
+        "yMm": 2850
       },
       "rotationDeg": 90,
       "paramValues": {},
@@ -2258,8 +3104,8 @@
       "assetId": "hf-asset-wardrobe",
       "levelId": "hf-lvl-upper",
       "positionMm": {
-        "xMm": 2350,
-        "yMm": 3350
+        "xMm": 3600,
+        "yMm": 3900
       },
       "rotationDeg": 0,
       "paramValues": {},
@@ -2273,8 +3119,8 @@
       "assetId": "hf-asset-single-bed",
       "levelId": "hf-lvl-upper",
       "positionMm": {
-        "xMm": 1200,
-        "yMm": 5900
+        "xMm": 2500,
+        "yMm": 6800
       },
       "rotationDeg": 90,
       "paramValues": {},
@@ -2288,8 +3134,8 @@
       "assetId": "hf-asset-desk",
       "levelId": "hf-lvl-upper",
       "positionMm": {
-        "xMm": 1700,
-        "yMm": 7300
+        "xMm": 3350,
+        "yMm": 9500
       },
       "rotationDeg": 0,
       "paramValues": {},
@@ -2303,8 +3149,8 @@
       "assetId": "hf-asset-toilet",
       "levelId": "hf-lvl-upper",
       "positionMm": {
-        "xMm": 3300,
-        "yMm": 5050
+        "xMm": 5350,
+        "yMm": 5850
       },
       "rotationDeg": 90,
       "paramValues": {},
@@ -2318,8 +3164,8 @@
       "assetId": "hf-asset-basin",
       "levelId": "hf-lvl-upper",
       "positionMm": {
-        "xMm": 4400,
-        "yMm": 5050
+        "xMm": 6200,
+        "yMm": 6000
       },
       "rotationDeg": 270,
       "paramValues": {},
@@ -2333,8 +3179,8 @@
       "assetId": "hf-asset-shower",
       "levelId": "hf-lvl-upper",
       "positionMm": {
-        "xMm": 3800,
-        "yMm": 7100
+        "xMm": 5700,
+        "yMm": 9250
       },
       "rotationDeg": 0,
       "paramValues": {},
@@ -2344,12 +3190,12 @@
     "hf-pa-terrace-table": {
       "kind": "placed_asset",
       "id": "hf-pa-terrace-table",
-      "name": "Terrace outdoor table",
+      "name": "Roof terrace outdoor table",
       "assetId": "hf-asset-outdoor-table",
       "levelId": "hf-lvl-upper",
       "positionMm": {
-        "xMm": 6250,
-        "yMm": 4300
+        "xMm": 9500,
+        "yMm": 5600
       },
       "rotationDeg": 0,
       "paramValues": {},
@@ -2359,12 +3205,12 @@
     "hf-pa-terrace-chair-1": {
       "kind": "placed_asset",
       "id": "hf-pa-terrace-chair-1",
-      "name": "Terrace lounge chair 1",
+      "name": "Roof terrace lounge chair 1",
       "assetId": "hf-asset-lounge-chair",
       "levelId": "hf-lvl-upper",
       "positionMm": {
-        "xMm": 6250,
-        "yMm": 3000
+        "xMm": 9500,
+        "yMm": 4100
       },
       "rotationDeg": 0,
       "paramValues": {},
@@ -2374,209 +3220,32 @@
     "hf-pa-terrace-chair-2": {
       "kind": "placed_asset",
       "id": "hf-pa-terrace-chair-2",
-      "name": "Terrace lounge chair 2",
+      "name": "Roof terrace lounge chair 2",
       "assetId": "hf-asset-lounge-chair",
       "levelId": "hf-lvl-upper",
       "positionMm": {
-        "xMm": 6250,
-        "yMm": 5600
+        "xMm": 9500,
+        "yMm": 7200
       },
       "rotationDeg": 180,
       "paramValues": {},
       "hostElementId": null,
       "discipline": null
     },
-    "hf-w-chimney-w": {
-      "kind": "wall",
-      "id": "hf-w-chimney-w",
-      "name": "Chimney west return",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 2000,
-        "yMm": 1000
-      },
-      "end": {
-        "xMm": 2000,
-        "yMm": 0
-      },
-      "thicknessMm": 250,
-      "heightMm": 5500,
-      "wallTypeId": null,
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0,
-      "topConstraintOffsetMm": 0,
-      "roofAttachmentId": "hf-roof-main",
-      "insulationExtensionMm": 0,
-      "materialKey": "cladding_warm_wood",
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainPanelOverrides": null,
-      "recessZones": null,
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "props": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
-    },
-    "hf-w-chimney-e": {
-      "kind": "wall",
-      "id": "hf-w-chimney-e",
-      "name": "Chimney east return",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 3000,
-        "yMm": 0
-      },
-      "end": {
-        "xMm": 3000,
-        "yMm": 1000
-      },
-      "thicknessMm": 250,
-      "heightMm": 5500,
-      "wallTypeId": null,
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0,
-      "topConstraintOffsetMm": 0,
-      "roofAttachmentId": "hf-roof-main",
-      "insulationExtensionMm": 0,
-      "materialKey": "cladding_warm_wood",
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainPanelOverrides": null,
-      "recessZones": null,
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "props": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
-    },
-    "hf-w-chimney-back": {
-      "kind": "wall",
-      "id": "hf-w-chimney-back",
-      "name": "Chimney back wall",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 2000,
-        "yMm": 1000
-      },
-      "end": {
-        "xMm": 3000,
-        "yMm": 1000
-      },
-      "thicknessMm": 250,
-      "heightMm": 5500,
-      "wallTypeId": null,
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0,
-      "topConstraintOffsetMm": 0,
-      "roofAttachmentId": "hf-roof-main",
-      "insulationExtensionMm": 0,
-      "materialKey": "cladding_warm_wood",
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainPanelOverrides": null,
-      "recessZones": null,
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "props": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
-    },
-    "hf-balcony-l": {
-      "kind": "balcony",
-      "id": "hf-balcony-l",
-      "name": "Loggia balcony left",
-      "wallId": "hf-w-uf-s-l",
-      "elevationMm": 3000,
-      "projectionMm": 700,
-      "slabThicknessMm": 150,
-      "balustradeHeightMm": 1100,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "discipline": "arch"
-    },
-    "hf-balcony-r": {
-      "kind": "balcony",
-      "id": "hf-balcony-r",
-      "name": "Loggia balcony right",
-      "wallId": "hf-w-uf-s-r",
-      "elevationMm": 3000,
-      "projectionMm": 700,
-      "slabThicknessMm": 150,
-      "balustradeHeightMm": 1100,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "discipline": "arch"
-    },
-    "hf-balcony-c": {
-      "kind": "balcony",
-      "id": "hf-balcony-c",
-      "name": "Loggia balcony centre (chimney)",
-      "wallId": "hf-w-uf-s-c",
-      "elevationMm": 3000,
-      "projectionMm": 700,
-      "slabThicknessMm": 150,
-      "balustradeHeightMm": 1100,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "discipline": "arch"
-    },
     "vp-main-iso": {
       "kind": "viewpoint",
       "id": "vp-main-iso",
-      "name": "Main isometric (SSW — south facade + west gable, spec §5 front-left)",
+      "name": "Main image-locked axonometric - front loggia and roof cutout",
       "camera": {
         "position": {
-          "xMm": -3000,
-          "yMm": -9000,
-          "zMm": 11000
+          "xMm": -6500,
+          "yMm": -11500,
+          "zMm": 12800
         },
         "target": {
-          "xMm": 3500,
-          "yMm": 4000,
-          "zMm": 3500
+          "xMm": 6100,
+          "yMm": 5200,
+          "zMm": 5100
         },
         "up": {
           "xMm": 0,
@@ -2597,48 +3266,17 @@
     "vp-front-elev": {
       "kind": "viewpoint",
       "id": "vp-front-elev",
-      "name": "Front elevation (south)",
+      "name": "Front elevation - recessed upper loggia",
       "camera": {
         "position": {
-          "xMm": 3500,
-          "yMm": -12000,
-          "zMm": 4250
-        },
-        "target": {
-          "xMm": 3500,
-          "yMm": 4000,
-          "zMm": 4250
-        },
-        "up": {
-          "xMm": 0,
-          "yMm": 0,
-          "zMm": 1
-        }
-      },
-      "mode": "orbit_3d",
-      "viewerClipCapElevMm": null,
-      "viewerClipFloorElevMm": null,
-      "hiddenSemanticKinds3d": [],
-      "cutawayStyle": null,
-      "sectionBoxEnabled": null,
-      "sectionBoxMinMm": null,
-      "sectionBoxMaxMm": null,
-      "optionLocks": {}
-    },
-    "vp-side-elev-west": {
-      "kind": "viewpoint",
-      "id": "vp-side-elev-west",
-      "name": "Side elevation (WSW)",
-      "camera": {
-        "position": {
-          "xMm": -14000,
-          "yMm": -1000,
+          "xMm": 6000,
+          "yMm": -18000,
           "zMm": 5000
         },
         "target": {
-          "xMm": 2500,
-          "yMm": 5000,
-          "zMm": 2500
+          "xMm": 6000,
+          "yMm": 3300,
+          "zMm": 5000
         },
         "up": {
           "xMm": 0,
@@ -2659,17 +3297,17 @@
     "vp-side-elev-east": {
       "kind": "viewpoint",
       "id": "vp-side-elev-east",
-      "name": "Side elevation (ESE — roof cutout side)",
+      "name": "Right/east view - embedded roof balcony",
       "camera": {
         "position": {
-          "xMm": 15000,
-          "yMm": 2000,
-          "zMm": 6200
+          "xMm": 20500,
+          "yMm": 3200,
+          "zMm": 8500
         },
         "target": {
-          "xMm": 4200,
-          "yMm": 4500,
-          "zMm": 4300
+          "xMm": 8400,
+          "yMm": 5600,
+          "zMm": 5200
         },
         "up": {
           "xMm": 0,
@@ -2690,17 +3328,17 @@
     "vp-rear-axo": {
       "kind": "viewpoint",
       "id": "vp-rear-axo",
-      "name": "Rear axonometric (NE)",
+      "name": "Rear/right axonometric - terrace return faces",
       "camera": {
         "position": {
-          "xMm": 12000,
-          "yMm": 14000,
-          "zMm": 8000
+          "xMm": 18200,
+          "yMm": 16500,
+          "zMm": 11600
         },
         "target": {
-          "xMm": 3500,
-          "yMm": 4000,
-          "zMm": 4250
+          "xMm": 7200,
+          "yMm": 6200,
+          "zMm": 5200
         },
         "up": {
           "xMm": 0,
@@ -2721,17 +3359,17 @@
     "vp-terrace-se": {
       "kind": "viewpoint",
       "id": "vp-terrace-se",
-      "name": "Roof cutout and east terrace (high SE)",
+      "name": "High roof terrace checkpoint",
       "camera": {
         "position": {
-          "xMm": 11500,
-          "yMm": 10500,
-          "zMm": 13500
+          "xMm": 16500,
+          "yMm": 12500,
+          "zMm": 15000
         },
         "target": {
-          "xMm": 3900,
-          "yMm": 6000,
-          "zMm": 4800
+          "xMm": 9300,
+          "yMm": 6100,
+          "zMm": 5700
         },
         "up": {
           "xMm": 0,
@@ -2752,7 +3390,7 @@
     "hf-pv-ground": {
       "kind": "plan_view",
       "id": "hf-pv-ground",
-      "name": "GF plan",
+      "name": "Ground floor plan",
       "levelId": "hf-lvl-ground",
       "viewTemplateId": null,
       "planPresentation": "default",
@@ -2788,7 +3426,7 @@
     "hf-pv-upper": {
       "kind": "plan_view",
       "id": "hf-pv-upper",
-      "name": "First-floor plan",
+      "name": "First floor and roof terrace plan",
       "levelId": "hf-lvl-upper",
       "viewTemplateId": null,
       "planPresentation": "default",
@@ -2824,14 +3462,14 @@
     "hf-sec-loggia": {
       "kind": "section_cut",
       "id": "hf-sec-loggia",
-      "name": "South facade section through loggia",
+      "name": "Section through front loggia and folded roof",
       "lineStartMm": {
         "xMm": 0,
-        "yMm": 2000
+        "yMm": 1400
       },
       "lineEndMm": {
-        "xMm": 7500,
-        "yMm": 2000
+        "xMm": 12000,
+        "yMm": 1400
       },
       "cropDepthMm": 9000,
       "segmentedPathMm": [],
@@ -2858,72 +3496,59 @@
       "titleBlock": "A2-bim-ai-default",
       "viewportsMm": [
         {
-          "viewportId": "hf-vp-ga01-ground",
-          "label": "GF plan",
+          "viewportId": "vp-sheet-ground-plan",
+          "label": "Ground floor plan",
           "viewRef": "plan:hf-pv-ground",
-          "detailNumber": "1",
-          "scale": "1:100",
-          "xMm": 3200,
-          "yMm": 5800,
-          "widthMm": 24800,
-          "heightMm": 19400
+          "xMm": 20,
+          "yMm": 20,
+          "widthMm": 260,
+          "heightMm": 180
         },
         {
-          "viewportId": "hf-vp-ga01-upper",
-          "label": "First-floor plan",
-          "viewRef": "plan:hf-pv-upper",
-          "detailNumber": "2",
-          "scale": "1:100",
-          "xMm": 30000,
-          "yMm": 5800,
-          "widthMm": 23600,
-          "heightMm": 19400
-        },
-        {
-          "viewportId": "hf-vp-ga01-section",
-          "label": "South facade section",
+          "viewportId": "vp-sheet-section-loggia",
+          "label": "Loggia section",
           "viewRef": "section:hf-sec-loggia",
-          "detailNumber": "3",
-          "scale": "1:100",
-          "xMm": 3200,
-          "yMm": 27200,
-          "widthMm": 25400,
-          "heightMm": 10500
+          "xMm": 300,
+          "yMm": 20,
+          "widthMm": 260,
+          "heightMm": 180
         },
         {
-          "viewportId": "hf-vp-ga01-room-schedule",
+          "viewportId": "vp-sheet-room-schedule",
           "label": "Room schedule",
           "viewRef": "schedule:hf-sch-rooms",
-          "detailNumber": "4",
-          "xMm": 30200,
-          "yMm": 27200,
-          "widthMm": 23400,
-          "heightMm": 3000
+          "xMm": 20,
+          "yMm": 230,
+          "widthMm": 170,
+          "heightMm": 120
         },
         {
-          "viewportId": "hf-vp-ga01-door-schedule",
-          "label": "Door schedule",
-          "viewRef": "schedule:hf-sch-doors",
-          "detailNumber": "5",
-          "xMm": 30200,
-          "yMm": 31000,
-          "widthMm": 23400,
-          "heightMm": 3000
-        },
-        {
-          "viewportId": "hf-vp-ga01-window-schedule",
+          "viewportId": "vp-sheet-window-schedule",
           "label": "Window schedule",
           "viewRef": "schedule:hf-sch-windows",
-          "detailNumber": "6",
-          "xMm": 30200,
-          "yMm": 34800,
-          "widthMm": 23400,
-          "heightMm": 3000
+          "xMm": 210,
+          "yMm": 230,
+          "widthMm": 170,
+          "heightMm": 120
+        },
+        {
+          "viewportId": "vp-sheet-door-schedule",
+          "label": "Door schedule",
+          "viewRef": "schedule:hf-sch-doors",
+          "xMm": 400,
+          "yMm": 230,
+          "widthMm": 170,
+          "heightMm": 120
         }
       ],
       "paperWidthMm": 594,
       "paperHeightMm": 420,
-      "titleblockParameters": {}
+      "titleblockParameters": {
+        "revisionId": "A",
+        "revisionCode": "A",
+        "issueDate": "2026-05-10",
+        "issuePurpose": "Seed reference rebuild"
+      }
     },
     "hf-sch-rooms": {
       "kind": "schedule",
@@ -2989,13 +3614,6 @@
     {
       "ruleId": "gltf_export_manifest_expected_extension_missing",
       "severity": "info",
-      "message": "glTF export manifest: extension 'bim_ai_layered_assembly_cut_alignment_v0' not emitted but eligible element kind 'wall' is present (skipReasonCode='no_eligible_elements').",
-      "elementIds": [],
-      "blocking": false
-    },
-    {
-      "ruleId": "gltf_export_manifest_expected_extension_missing",
-      "severity": "info",
       "message": "glTF export manifest: extension 'bim_ai_roof_unsupported_shape_summary_v0' not emitted but eligible element kind 'roof' is present (skipReasonCode='no_eligible_elements').",
       "elementIds": [],
       "blocking": false
@@ -3011,14 +3629,14 @@
       "ruleId": "material_catalog_missing_layer_stack",
       "severity": "info",
       "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-flr-deck"],
+      "elementIds": ["hf-flr-ground"],
       "blocking": false
     },
     {
       "ruleId": "material_catalog_missing_layer_stack",
       "severity": "info",
       "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-flr-ground"],
+      "elementIds": ["hf-flr-roof-terrace"],
       "blocking": false
     },
     {
@@ -3036,192 +3654,24 @@
       "blocking": false
     },
     {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-chimney-back"],
-      "blocking": false
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-chimney-e"],
-      "blocking": false
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-chimney-w"],
-      "blocking": false
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-gf-e"],
-      "blocking": false
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-gf-n"],
-      "blocking": false
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-gf-ptn-front"],
-      "blocking": false
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-gf-ptn-kitchen"],
-      "blocking": false
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-gf-ptn-wc"],
-      "blocking": false
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-gf-s"],
-      "blocking": false
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-gf-w"],
-      "blocking": false
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-pa-e"],
-      "blocking": false
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-pa-n"],
-      "blocking": false
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-pa-s"],
-      "blocking": false
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-uf-e"],
-      "blocking": false
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-uf-n"],
-      "blocking": false
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-uf-ptn-back"],
-      "blocking": false
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-uf-ptn-mid"],
-      "blocking": false
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-uf-s-c"],
-      "blocking": false
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-uf-s-l"],
-      "blocking": false
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-uf-s-r"],
-      "blocking": false
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-w-uf-w"],
-      "blocking": false
-    },
-    {
       "ruleId": "plan_view_sheet_viewport_crop_missing",
       "severity": "info",
-      "message": "Plan view 'hf-pv-ground' placed on sheet 'hf-sheet-ga01' viewport 'hf-vp-ga01-ground' has no crop box (cropMinMm/cropMaxMm absent); the plan-on-sheet boundary is unconstrained.",
-      "elementIds": ["hf-sheet-ga01", "hf-vp-ga01-ground", "hf-pv-ground"],
-      "blocking": false
-    },
-    {
-      "ruleId": "plan_view_sheet_viewport_crop_missing",
-      "severity": "info",
-      "message": "Plan view 'hf-pv-upper' placed on sheet 'hf-sheet-ga01' viewport 'hf-vp-ga01-upper' has no crop box (cropMinMm/cropMaxMm absent); the plan-on-sheet boundary is unconstrained.",
-      "elementIds": ["hf-sheet-ga01", "hf-vp-ga01-upper", "hf-pv-upper"],
+      "message": "Plan view 'hf-pv-ground' placed on sheet 'hf-sheet-ga01' viewport 'vp-sheet-ground-plan' has no crop box (cropMinMm/cropMaxMm absent); the plan-on-sheet boundary is unconstrained.",
+      "elementIds": ["hf-sheet-ga01", "vp-sheet-ground-plan", "hf-pv-ground"],
       "blocking": false
     },
     {
       "ruleId": "plan_view_tag_style_fallback",
       "severity": "info",
-      "message": "Plan view 'GF plan' has room tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling.",
+      "message": "Plan view 'Ground floor plan' has room tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling.",
       "elementIds": ["hf-pv-ground"],
       "blocking": false
     },
     {
       "ruleId": "plan_view_tag_style_fallback",
       "severity": "info",
-      "message": "Plan view 'First-floor plan' has room tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling.",
+      "message": "Plan view 'First floor and roof terrace plan' has room tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling.",
       "elementIds": ["hf-pv-upper"],
-      "blocking": false
-    },
-    {
-      "ruleId": "room_boundary_open",
-      "severity": "warning",
-      "message": "Room 'Entrance / stair hall' (hf-room-entry-stair) has an open boundary — it is not fully enclosed by axis-aligned walls or room separations.",
-      "elementIds": ["hf-room-entry-stair"],
-      "blocking": false
-    },
-    {
-      "ruleId": "room_boundary_open",
-      "severity": "warning",
-      "message": "Room 'Kitchen' (hf-room-kitchen) has an open boundary — it is not fully enclosed by axis-aligned walls or room separations.",
-      "elementIds": ["hf-room-kitchen"],
       "blocking": false
     },
     {
@@ -3232,213 +3682,87 @@
       "blocking": false
     },
     {
-      "ruleId": "room_no_door",
+      "ruleId": "room_derived_interior_separation_ambiguous",
       "severity": "warning",
-      "message": "Room centroid is far from any door/window (coordination heuristic).",
-      "elementIds": ["hf-room-bed-2"],
+      "message": "Derived rectangle interior is split by a room separation; authoritative vacant footprint is ambiguous.",
+      "elementIds": [
+        "hf-rs-entry-e",
+        "hf-rs-entry-n",
+        "hf-rs-entry-s",
+        "hf-rs-entry-w",
+        "hf-rs-gf-wc-e",
+        "hf-rs-gf-wc-n",
+        "hf-rs-gf-wc-s",
+        "hf-rs-gf-wc-w",
+        "hf-rs-kitchen-e",
+        "hf-rs-kitchen-n",
+        "hf-rs-kitchen-s",
+        "hf-rs-kitchen-w",
+        "hf-rs-living-e",
+        "hf-rs-living-n",
+        "hf-rs-living-s",
+        "hf-rs-living-w",
+        "hf-w-gf-e",
+        "hf-w-gf-n",
+        "hf-w-gf-s",
+        "hf-w-gf-w"
+      ],
       "blocking": false
     },
     {
-      "ruleId": "room_no_door",
-      "severity": "warning",
-      "message": "Room centroid is far from any door/window (coordination heuristic).",
-      "elementIds": ["hf-room-living-dining"],
-      "blocking": false
-    },
-    {
-      "ruleId": "room_target_area_mismatch",
+      "ruleId": "room_finish_metadata_hint",
       "severity": "info",
-      "message": "Room outline area (8.140 m²) differs from targetAreaM2 (6.000 m²) beyond the advisory tolerance.",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
       "elementIds": ["hf-room-bath"],
       "blocking": false
     },
     {
-      "ruleId": "room_target_area_mismatch",
+      "ruleId": "room_finish_metadata_hint",
       "severity": "info",
-      "message": "Room outline area (8.140 m²) differs from targetAreaM2 (12.000 m²) beyond the advisory tolerance.",
-      "elementIds": ["hf-room-bed-2"],
-      "blocking": false
-    },
-    {
-      "ruleId": "room_target_area_mismatch",
-      "severity": "info",
-      "message": "Room outline area (15.960 m²) differs from targetAreaM2 (20.000 m²) beyond the advisory tolerance.",
-      "elementIds": ["hf-room-deck"],
-      "blocking": false
-    },
-    {
-      "ruleId": "room_target_area_mismatch",
-      "severity": "info",
-      "message": "Room outline area (8.400 m²) differs from targetAreaM2 (8.000 m²) beyond the advisory tolerance.",
-      "elementIds": ["hf-room-entry-stair"],
-      "blocking": false
-    },
-    {
-      "ruleId": "room_unenclosed",
-      "severity": "warning",
-      "message": "Room boundary has 2 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [1, 2]).",
-      "elementIds": ["hf-room-bath"],
-      "blocking": false
-    },
-    {
-      "ruleId": "room_unenclosed",
-      "severity": "warning",
-      "message": "Room boundary has 3 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 3]).",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
       "elementIds": ["hf-room-bed-1"],
       "blocking": false
     },
     {
-      "ruleId": "room_unenclosed",
-      "severity": "warning",
-      "message": "Room boundary has 2 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [2, 3]).",
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
       "elementIds": ["hf-room-bed-2"],
       "blocking": false
     },
     {
-      "ruleId": "room_unenclosed",
-      "severity": "warning",
-      "message": "Room boundary has 4 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 2, 3]).",
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
       "elementIds": ["hf-room-deck"],
       "blocking": false
     },
     {
-      "ruleId": "room_unenclosed",
-      "severity": "warning",
-      "message": "Room boundary has 4 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 2, 3]).",
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
       "elementIds": ["hf-room-entry-stair"],
       "blocking": false
     },
     {
-      "ruleId": "room_unenclosed",
-      "severity": "warning",
-      "message": "Room boundary has 3 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 2]).",
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
       "elementIds": ["hf-room-gf-wc"],
       "blocking": false
     },
     {
-      "ruleId": "room_unenclosed",
-      "severity": "warning",
-      "message": "Room boundary has 3 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [1, 2, 3]).",
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
       "elementIds": ["hf-room-kitchen"],
       "blocking": false
     },
     {
-      "ruleId": "room_unenclosed",
-      "severity": "warning",
-      "message": "Room boundary has 3 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 3]).",
-      "elementIds": ["hf-room-landing"],
-      "blocking": false
-    },
-    {
-      "ruleId": "room_unenclosed",
-      "severity": "warning",
-      "message": "Room boundary has 4 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 2, 3]).",
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
       "elementIds": ["hf-room-living-dining"],
-      "blocking": false
-    },
-    {
-      "ruleId": "schedule_opening_family_type_incomplete",
-      "severity": "warning",
-      "message": "Door is missing familyTypeId (type schedule columns are incomplete).",
-      "elementIds": ["hf-door-front"],
-      "blocking": false
-    },
-    {
-      "ruleId": "schedule_opening_family_type_incomplete",
-      "severity": "warning",
-      "message": "Door is missing familyTypeId (type schedule columns are incomplete).",
-      "elementIds": ["hf-door-loggia"],
-      "blocking": false
-    },
-    {
-      "ruleId": "schedule_opening_family_type_incomplete",
-      "severity": "warning",
-      "message": "Door is missing familyTypeId (type schedule columns are incomplete).",
-      "elementIds": ["hf-door-terrace"],
-      "blocking": false
-    },
-    {
-      "ruleId": "schedule_opening_family_type_incomplete",
-      "severity": "warning",
-      "message": "Window is missing familyTypeId (type schedule columns are incomplete).",
-      "elementIds": ["hf-win-gf-s-1"],
-      "blocking": false
-    },
-    {
-      "ruleId": "schedule_opening_family_type_incomplete",
-      "severity": "warning",
-      "message": "Window is missing familyTypeId (type schedule columns are incomplete).",
-      "elementIds": ["hf-win-gf-s-2"],
-      "blocking": false
-    },
-    {
-      "ruleId": "schedule_opening_family_type_incomplete",
-      "severity": "warning",
-      "message": "Window is missing familyTypeId (type schedule columns are incomplete).",
-      "elementIds": ["hf-win-loggia-trap"],
-      "blocking": false
-    },
-    {
-      "ruleId": "schedule_opening_host_wall_type_incomplete",
-      "severity": "warning",
-      "message": "Host wall has no wallTypeId (hostWallType schedule columns cannot resolve).",
-      "elementIds": ["hf-door-front", "hf-w-gf-s"],
-      "blocking": false
-    },
-    {
-      "ruleId": "schedule_opening_host_wall_type_incomplete",
-      "severity": "warning",
-      "message": "Host wall has no wallTypeId (hostWallType schedule columns cannot resolve).",
-      "elementIds": ["hf-door-loggia", "hf-w-uf-s-r"],
-      "blocking": false
-    },
-    {
-      "ruleId": "schedule_opening_host_wall_type_incomplete",
-      "severity": "warning",
-      "message": "Host wall has no wallTypeId (hostWallType schedule columns cannot resolve).",
-      "elementIds": ["hf-door-terrace", "hf-w-uf-e"],
-      "blocking": false
-    },
-    {
-      "ruleId": "schedule_opening_host_wall_type_incomplete",
-      "severity": "warning",
-      "message": "Host wall has no wallTypeId (hostWallType schedule columns cannot resolve).",
-      "elementIds": ["hf-w-gf-s", "hf-win-gf-s-1"],
-      "blocking": false
-    },
-    {
-      "ruleId": "schedule_opening_host_wall_type_incomplete",
-      "severity": "warning",
-      "message": "Host wall has no wallTypeId (hostWallType schedule columns cannot resolve).",
-      "elementIds": ["hf-w-gf-s", "hf-win-gf-s-2"],
-      "blocking": false
-    },
-    {
-      "ruleId": "schedule_opening_host_wall_type_incomplete",
-      "severity": "warning",
-      "message": "Host wall has no wallTypeId (hostWallType schedule columns cannot resolve).",
-      "elementIds": ["hf-w-uf-s-l", "hf-win-loggia-trap"],
-      "blocking": false
-    },
-    {
-      "ruleId": "section_on_sheet_revision_issue_unresolved",
-      "severity": "info",
-      "message": "Section viewport 'hf-vp-ga01-section' on sheet 'hf-sheet-ga01' references section cut 'hf-sec-loggia' but the sheet titleblock revision/issue cross-reference is empty (revisionId and revisionCode are both absent).",
-      "elementIds": ["hf-sheet-ga01", "hf-sec-loggia"],
-      "blocking": false
-    },
-    {
-      "ruleId": "sheet_revision_issue_metadata_missing",
-      "severity": "warning",
-      "message": "Sheet has a title block and viewports but titleblock revision/issue metadata is incomplete: set revisionId and/or revision code (revisionCode or legacy revision) in titleblockParameters.",
-      "elementIds": ["hf-sheet-ga01"],
-      "blocking": false
-    },
-    {
-      "ruleId": "stair_comfort_eu_proxy",
-      "severity": "info",
-      "message": "Stair tread/riser differs from documented EU residential comfort proxy (≥ 260 mm tread depth, ≤ 190 mm riser).",
-      "elementIds": ["hf-stair-main"],
       "blocking": false
     }
   ]

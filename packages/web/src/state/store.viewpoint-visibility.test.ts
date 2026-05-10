@@ -17,6 +17,68 @@ beforeEach(() => {
 });
 
 describe('coerceElement — viewpoint visibility / coordination', () => {
+  it('preserves asymmetric target-house roof fields and hosted roof openings', () => {
+    const { hydrateFromSnapshot } = useBimStore.getState();
+    hydrateFromSnapshot({
+      modelId: 'm1',
+      revision: 1,
+      elements: {
+        'roof-1': {
+          kind: 'roof',
+          name: 'White asymmetric shell roof',
+          referenceLevelId: 'lvl-1',
+          footprintMm: [
+            { xMm: 0, yMm: 0 },
+            { xMm: 8000, yMm: 0 },
+            { xMm: 8000, yMm: 8200 },
+            { xMm: 0, yMm: 8200 },
+          ],
+          overhangMm: 320,
+          slopeDeg: 24,
+          roofGeometryMode: 'asymmetric_gable',
+          ridgeOffsetTransverseMm: 500,
+          eaveHeightLeftMm: 2450,
+          eaveHeightRightMm: 2100,
+          materialKey: 'white_render',
+        },
+        'roof-cut-1': {
+          kind: 'roof_opening',
+          name: 'Embedded roof terrace cutout',
+          hostRoofId: 'roof-1',
+          boundaryMm: [
+            { xMm: 4700, yMm: 1700 },
+            { xMm: 8000, yMm: 1700 },
+            { xMm: 8000, yMm: 6900 },
+            { xMm: 4700, yMm: 6900 },
+          ],
+        },
+      },
+      violations: [],
+    });
+
+    const roof = useBimStore.getState().elementsById['roof-1'];
+    expect(roof?.kind).toBe('roof');
+    if (roof?.kind === 'roof') {
+      expect(roof.roofGeometryMode).toBe('asymmetric_gable');
+      expect(roof.materialKey).toBe('white_render');
+      expect(roof.ridgeOffsetTransverseMm).toBe(500);
+      expect(roof.eaveHeightLeftMm).toBe(2450);
+      expect(roof.eaveHeightRightMm).toBe(2100);
+    }
+
+    const opening = useBimStore.getState().elementsById['roof-cut-1'];
+    expect(opening?.kind).toBe('roof_opening');
+    if (opening?.kind === 'roof_opening') {
+      expect(opening.hostRoofId).toBe('roof-1');
+      expect(opening.boundaryMm).toEqual([
+        { xMm: 4700, yMm: 1700 },
+        { xMm: 8000, yMm: 1700 },
+        { xMm: 8000, yMm: 6900 },
+        { xMm: 4700, yMm: 6900 },
+      ]);
+    }
+  });
+
   it('parses coordinate point clipped state', () => {
     const { hydrateFromSnapshot } = useBimStore.getState();
     hydrateFromSnapshot({

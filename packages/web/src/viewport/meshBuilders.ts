@@ -1435,7 +1435,12 @@ export function makeRoofMassMesh(
       roughness:
         roofMatSpec?.roughness ?? (roofIsCustom ? 0.9 : (paint?.categories.roof.roughness ?? 0.74)),
       metalness: roofMatSpec?.metalness ?? paint?.categories.roof.metalness ?? 0.0,
-      envMapIntensity: roofIsCustom && !roofMatSpec ? 0.1 : 1.0,
+      envMapIntensity:
+        roofMatSpec?.category === 'render' || roofMatSpec?.category === 'cladding'
+          ? 0.15
+          : roofIsCustom && !roofMatSpec
+            ? 0.1
+            : 1.0,
       side: THREE.DoubleSide,
     }),
   );
