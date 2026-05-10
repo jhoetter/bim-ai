@@ -20,7 +20,7 @@ import type { AssetCategory, AssetLibraryEntry, Element, FamilyDiscipline } from
 import { BUILT_IN_FAMILIES } from './familyCatalog';
 import { BUILT_IN_WALL_TYPES } from './wallTypeCatalog';
 import { getThumbnail, PLACEHOLDER_THUMBNAIL } from './thumbnailCache';
-import { SchematicThumbnail } from '../workspace/library/AssetCard';
+import { RenderedAssetThumbnail } from '../workspace/library/AssetCard';
 import {
   ASSET_CATEGORY_FAMILY_GROUPS,
   placeKindForFamilyDiscipline,
@@ -328,7 +328,7 @@ function CatalogThumbnail({ entry }: { entry: CatalogEntry }): JSX.Element {
   if (entry.assetEntry) {
     return (
       <div className="flex h-16 w-16 items-center justify-center rounded border border-border bg-surface-muted">
-        <SchematicThumbnail entry={entry.assetEntry} />
+        <RenderedAssetThumbnail entry={entry.assetEntry} />
       </div>
     );
   }
