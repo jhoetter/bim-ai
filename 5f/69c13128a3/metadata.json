@@ -1,0 +1,16 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "5f69c13128a3",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/5f/69c13128a3/0/metadata.json",
+      "transcript": "/5f/69c13128a3/0/full.jsonl",
+      "content_hash": "/5f/69c13128a3/0/content_hash.txt",
+      "prompt": "/5f/69c13128a3/0/prompt.txt"
+    }
+  ]
+}
