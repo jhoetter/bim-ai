@@ -33,6 +33,8 @@ import { resolveMaterial } from '../viewport/materials';
 import {
   authoredFamilyDefinitionsFromElements,
   buildAuthoredFamilyDefinition,
+  collectNestedFamilyDependencies,
+  expandFamilyDefinitionsWithNestedDependencies,
   planAuthoredFamilyLoad,
   readAuthoredFamilyCatalog,
   upsertAuthoredFamilyCatalogDocument,
@@ -714,6 +716,22 @@ export function FamilyEditorWorkbench({
     () => ({ ...projectElementsById, ...localProjectFamilyTypes }),
     [localProjectFamilyTypes, projectElementsById],
   );
+  const authoredFamilyDefinitions = useMemo(
+    () =>
+      expandFamilyDefinitionsWithNestedDependencies([
+        ...savedFamilies.map(buildAuthoredFamilyDefinition),
+        ...authoredFamilyDefinitionsFromElements(projectFamilyElements),
+      ]),
+    [projectFamilyElements, savedFamilies],
+  );
+  const availableNestedFamilyDefinitions = useMemo(
+    () =>
+      expandFamilyDefinitionsWithNestedDependencies([
+        ...BUILT_IN_FAMILIES,
+        ...authoredFamilyDefinitions,
+      ]),
+    [authoredFamilyDefinitions],
+  );
 
   function addRefPlane(isVertical: boolean) {
     setRefPlanes((prev) => [
@@ -905,7 +923,7 @@ export function FamilyEditorWorkbench({
 
   function currentAuthoredFamilyDocument(): AuthoredFamilyDocument {
     const savedAt = now();
-    return {
+    const document: AuthoredFamilyDocument = {
       id: familyId.trim() || 'authored-family-1',
       name: familyName.trim() || 'Untitled Family',
       template,
@@ -925,6 +943,11 @@ export function FamilyEditorWorkbench({
       savedAt,
       version: `family-editor-${savedAt}`,
     };
+    const nestedFamilyDefinitions = collectNestedFamilyDependencies(
+      document,
+      availableNestedFamilyDefinitions,
+    );
+    return nestedFamilyDefinitions.length ? { ...document, nestedFamilyDefinitions } : document;
   }
 
   function saveFamilyDocument(): AuthoredFamilyDocument {
@@ -1953,10 +1976,7 @@ export function FamilyEditorWorkbench({
   /* ─── FAM-01 — Loaded Families filtering + usage counts ─────────── */
 
   const loadedFamilies: FamilyDefinition[] = useMemo(() => {
-    const authored = [
-      ...savedFamilies.map(buildAuthoredFamilyDefinition),
-      ...authoredFamilyDefinitionsFromElements(projectFamilyElements),
-    ].filter((family, index, all) => {
+    const authored = authoredFamilyDefinitions.filter((family, index, all) => {
       if (family.id === familyId) return false;
       return all.findIndex((candidate) => candidate.id === family.id) === index;
     });
@@ -1971,7 +1991,7 @@ export function FamilyEditorWorkbench({
       return catalog.filter((f) => f.discipline === 'generic');
     }
     return catalog.filter((f) => f.discipline === template || f.discipline === 'generic');
-  }, [familyId, projectFamilyElements, savedFamilies, template]);
+  }, [authoredFamilyDefinitions, familyId, template]);
 
   const usageCounts = useMemo(() => {
     const counts: Record<string, number> = {};

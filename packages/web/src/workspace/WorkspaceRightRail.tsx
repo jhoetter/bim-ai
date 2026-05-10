@@ -9,6 +9,7 @@ import { buildPlanGridDatumInspectorLine } from './readouts';
 import { useBimStore } from '../state/store';
 import { getTypeById } from '../families/familyCatalog';
 import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
+import { familyInstanceProjectCategoryKey } from '../families/familyPlacementRuntime';
 import type { FamilyDefinition, FamilyParamDef } from '../families/types';
 import {
   buildAuthoredFamilyDefinition,
@@ -828,9 +829,16 @@ export function WorkspaceRightRail({
                       data-testid="inspector-hide-category"
                       type="button"
                       onClick={() => {
+                        const categoryKey =
+                          el.kind === 'family_instance'
+                            ? familyInstanceProjectCategoryKey(
+                                el as Extract<Element, { kind: 'family_instance' }>,
+                                elementsById,
+                              )
+                            : el.kind;
                         useBimStore
                           .getState()
-                          .setCategoryOverride(activePlanViewId, el.kind, { visible: false });
+                          .setCategoryOverride(activePlanViewId, categoryKey, { visible: false });
                       }}
                       style={{
                         fontSize: 11,

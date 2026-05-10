@@ -189,6 +189,28 @@ describe('resolveNestedFamilyInstance — 2-level expansion', () => {
     expect(resolveParameterBinding(formula, { roughWidthMm: 1500, frameSectMm: 50 })).toBe(1400);
   });
 
+  it('hydrates project-loaded nestedDefinitions when the catalog only has the host family', () => {
+    const host: FamilyDefinition = {
+      ...doorWithSwingFamily(),
+      nestedDefinitions: [swingArcFamily()],
+    };
+
+    const group = resolveFamilyGeometry(
+      host.id,
+      { roughWidthMm: 900, frameSectMm: 50 },
+      { [host.id]: host },
+    );
+
+    let foundNested = false;
+    group.traverse((n) => {
+      if (n instanceof THREE.Group && n.userData.familyId === 'builtin:family:swing-arc') {
+        foundNested = true;
+      }
+    });
+    expect(foundNested).toBe(true);
+    expect(meshGeometryBboxes(group).length).toBeGreaterThanOrEqual(1);
+  });
+
   it('uses family-default param value when binding is absent', () => {
     // A door family with no bindings — the swing-arc should fall
     // back to its declared default radius (500mm).

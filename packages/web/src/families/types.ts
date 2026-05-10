@@ -12,6 +12,22 @@ export interface FamilyParamDef {
   formula?: string | null;
 }
 
+export type FamilyDefinitionCategory =
+  | 'generic_model'
+  | 'door'
+  | 'window'
+  | 'profile'
+  | 'furniture'
+  | 'detail_component';
+
+export interface FamilyDefinitionCategorySettings {
+  category: FamilyDefinitionCategory;
+  alwaysVertical: boolean;
+  workPlaneBased: boolean;
+  roomCalculationPoint: boolean;
+  shared: boolean;
+}
+
 /* ─── FAM-02: Family geometry nodes ────────────────────────────────────── */
 
 /** A sketched line segment in a 2D family-editor work plane (mm). */
@@ -218,6 +234,7 @@ export interface FamilyDefinition {
   discipline: FamilyDiscipline;
   thumbnail?: string;
   templateMetadata?: unknown;
+  categorySettings?: FamilyDefinitionCategorySettings;
   params: FamilyParamDef[];
   defaultTypes: {
     id: string;
@@ -240,6 +257,14 @@ export interface FamilyDefinition {
    * instances while 3D sweep geometry remains model-only.
    */
   symbolicLines?: FamilySymbolicLine[];
+  /**
+   * Authored-family dependency closure for project-loaded families.
+   *
+   * A project `family_type` may only carry the top-level family definition.
+   * This field embeds the nested authored/built-in family definitions needed
+   * to resolve its `family_instance_ref` and array subtrees after reload.
+   */
+  nestedDefinitions?: FamilyDefinition[];
 }
 
 // Parameter resolution: instance override > type params > family default > inline fallback

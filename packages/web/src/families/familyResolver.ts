@@ -100,6 +100,21 @@ export type HostParams = Record<string, number | boolean | string>;
 
 export type FamilyCatalogLookup = Record<string, FamilyDefinition>;
 
+function catalogWithEmbeddedNestedDefinitions(
+  rootDef: FamilyDefinition,
+  catalog: FamilyCatalogLookup,
+): FamilyCatalogLookup {
+  const hydrated: FamilyCatalogLookup = { ...catalog, [rootDef.id]: rootDef };
+  const stack = [...(rootDef.nestedDefinitions ?? [])];
+  while (stack.length > 0) {
+    const def = stack.pop()!;
+    if (hydrated[def.id] && hydrated[def.id] !== def) continue;
+    hydrated[def.id] = def;
+    stack.push(...(def.nestedDefinitions ?? []));
+  }
+  return hydrated;
+}
+
 /**
  * Compute the effective value of a single binding against the host
  * parameter map. Throws on missing host param or formula error.
@@ -556,6 +571,7 @@ export function resolveNestedFamilyInstance(
   if (!def) {
     throw new Error(`FAM-01: family '${node.familyId}' not found in catalog`);
   }
+  const nestedCatalog = catalogWithEmbeddedNestedDefinitions(def, catalog);
   const group = new THREE.Group();
   group.userData.familyId = node.familyId;
   const positionEmptyGroup = () => {
@@ -584,7 +600,13 @@ export function resolveNestedFamilyInstance(
   const geometry = def.geometry ?? [];
   const nestedContext = withZOffset(context, node.positionMm.zMm);
   for (const geomNode of geometry) {
-    const child = resolveGeometryNode(geomNode, nestedParams, catalog, depth + 1, nestedContext);
+    const child = resolveGeometryNode(
+      geomNode,
+      nestedParams,
+      nestedCatalog,
+      depth + 1,
+      nestedContext,
+    );
     if (child) group.add(child);
   }
 
@@ -607,10 +629,14 @@ export function resolveFamilyGeometry(
   detailLevelOrOptions?: ResolverDetailLevel | FamilyResolveVisibilityOptions,
 ): THREE.Group {
   const context = normalizeResolveContext(detailLevelOrOptions);
-  const def = catalog[familyId];
+  const originalDef = catalog[familyId];
+  const catalogForResolve = originalDef
+    ? catalogWithEmbeddedNestedDefinitions(originalDef, catalog)
+    : catalog;
+  const def = catalogForResolve[familyId];
   if (!def) throw new Error(`FAM-01: family '${familyId}' not found in catalog`);
   // Detect cycles defensively before we walk.
-  const cycle = detectFamilyCycle(familyId, catalog);
+  const cycle = detectFamilyCycle(familyId, catalogForResolve);
   if (cycle) {
     throw new Error(`FAM-01: cycle detected in family graph: ${cycle.join(' → ')}`);
   }
@@ -618,7 +644,7 @@ export function resolveFamilyGeometry(
   group.userData.familyId = familyId;
   const merged = buildFamilyParamMap(def, params);
   for (const geomNode of def.geometry ?? []) {
-    const child = resolveGeometryNode(geomNode, merged, catalog, 1, context);
+    const child = resolveGeometryNode(geomNode, merged, catalogForResolve, 1, context);
     if (child) group.add(child);
   }
   return group;
