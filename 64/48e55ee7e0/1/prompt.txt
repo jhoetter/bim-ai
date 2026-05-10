@@ -53,15 +53,3 @@ can you please see regarding the tracker? it still says 47 not available, but th
 ---
 
 [Image #1]still this on main... can you be 100% sure all is merged? ...
-
----
-
-ok nice; can you please look into the local ~/repos/bim-ai-<x> directories? check if all of them are merged correctly, and if yes, remove them (not bim-ai itself of course!!!!)
-
----
-
-but i also have them locally, on my desktop, is what i am saying
-
----
-
-ok, then please continue with the parity work.. as before, dispatched, parallel where possible, ...
