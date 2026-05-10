@@ -1,0 +1,60 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "de901e22e5cb",
+  "session_id": "3489c088-a646-48c4-b4a6-6488ef3f8059",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T13:33:23.460356Z",
+  "branch": "revit-parity-qat-dimension-tag-shortcuts",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "packages/web/src/cmdPalette/defaultCommands.ts",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/manualTags.test.ts",
+    "packages/web/src/plan/manualTags.ts",
+    "packages/web/src/plan/planProjection.ts",
+    "packages/web/src/state/storeTypes.ts",
+    "packages/web/src/workspace/planToolsByPerspective.ts",
+    "packages/web/src/workspace/shell/TopBar.test.tsx",
+    "packages/web/src/workspace/shell/TopBar.tsx",
+    "packages/web/src/workspace/workspaceUtils.ts",
+    "spec/revit-parity/README.md",
+    "spec/revit-parity/ch01-ui-navigation.md"
+  ],
+  "agent": "Gemini CLI",
+  "model": "gemini-3-flash-preview",
+  "turn_id": "fd8f76d81514",
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T13:33:23.415694Z",
+    "agent_lines": 266,
+    "agent_removed": 4,
+    "human_added": 2,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 268,
+    "total_lines_changed": 272,
+    "agent_percentage": 99.26470588235294,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 1,
+      "user_lines_removed": 0,
+      "agent_lines_added": 613,
+      "agent_lines_removed": 599,
+      "user_added_per_file": {
+        "packages/web/src/plan/manualTags.test.ts": 1
+      }
+    }
+  ]
+}

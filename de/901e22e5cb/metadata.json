@@ -3,8 +3,21 @@
   "checkpoint_id": "de901e22e5cb",
   "strategy": "manual-commit",
   "branch": "revit-parity-qat-dimension-tag-shortcuts",
-  "checkpoints_count": 1,
-  "files_touched": null,
+  "checkpoints_count": 3,
+  "files_touched": [
+    "packages/web/src/cmdPalette/defaultCommands.ts",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/manualTags.test.ts",
+    "packages/web/src/plan/manualTags.ts",
+    "packages/web/src/plan/planProjection.ts",
+    "packages/web/src/state/storeTypes.ts",
+    "packages/web/src/workspace/planToolsByPerspective.ts",
+    "packages/web/src/workspace/shell/TopBar.test.tsx",
+    "packages/web/src/workspace/shell/TopBar.tsx",
+    "packages/web/src/workspace/workspaceUtils.ts",
+    "spec/revit-parity/README.md",
+    "spec/revit-parity/ch01-ui-navigation.md"
+  ],
   "sessions": [
     {
       "metadata": "/de/901e22e5cb/0/metadata.json",
@@ -23,6 +36,12 @@
       "transcript": "/de/901e22e5cb/2/full.jsonl",
       "content_hash": "/de/901e22e5cb/2/content_hash.txt",
       "prompt": "/de/901e22e5cb/2/prompt.txt"
+    },
+    {
+      "metadata": "/de/901e22e5cb/3/metadata.json",
+      "transcript": "/de/901e22e5cb/3/full.jsonl",
+      "content_hash": "/de/901e22e5cb/3/content_hash.txt",
+      "prompt": "/de/901e22e5cb/3/prompt.txt"
     }
   ],
   "token_usage": {
