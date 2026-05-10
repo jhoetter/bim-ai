@@ -1,0 +1,51 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "f2a689525679",
+  "strategy": "manual-commit",
+  "branch": "revit-parity-zero-gap-wave",
+  "checkpoints_count": 5,
+  "files_touched": [
+    "app/bim_ai/commands.py",
+    "app/bim_ai/elements.py",
+    "app/bim_ai/engine_dispatch_properties.py",
+    "app/bim_ai/templates/residential-eu.json",
+    "app/tests/test_ast_v3_01.py",
+    "app/tests/test_template_loader.py",
+    "packages/core/src/index.ts",
+    "packages/web/src/families/FamilyLibraryPanel.test.tsx",
+    "packages/web/src/families/FamilyLibraryPanel.tsx",
+    "packages/web/src/plan/PlanCanvas.toolDestubs.test.ts",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/dxfUnderlay.test.ts",
+    "packages/web/src/plan/dxfUnderlay.ts",
+    "packages/web/src/plan/grip-providers/gripProviders.test.tsx",
+    "packages/web/src/plan/grip-providers/index.ts",
+    "packages/web/src/plan/grip-providers/placedAssetGripProvider.ts",
+    "packages/web/src/state/storeCoercion.ts",
+    "packages/web/src/viewport/placedAssetRendering.test.ts",
+    "packages/web/src/viewport/placedAssetRendering.ts",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/WorkspaceRightRail.tsx",
+    "packages/web/src/workspace/authoring/OptionsBar.tsx",
+    "packages/web/src/workspace/library/AssetCard.tsx",
+    "spec/revit-parity/README.md",
+    "spec/revit-parity/ch02-cad-linking.md",
+    "spec/revit-parity/ch03-levels-views.md",
+    "spec/revit-parity/ch12-furniture-placement.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f2/a689525679/0/metadata.json",
+      "transcript": "/f2/a689525679/0/full.jsonl",
+      "content_hash": "/f2/a689525679/0/content_hash.txt",
+      "prompt": "/f2/a689525679/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 841520,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 26766976,
+    "output_tokens": 66446,
+    "api_call_count": 209
+  }
+}
