@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "8ee81f21db84",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "claude-skills/watch-yt/watch_yt.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/8e/e81f21db84/0/metadata.json",
+      "transcript": "/8e/e81f21db84/0/full.jsonl",
+      "content_hash": "/8e/e81f21db84/0/content_hash.txt",
+      "prompt": "/8e/e81f21db84/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 3126547,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 119119872,
+    "output_tokens": 173837,
+    "api_call_count": 854
+  }
+}
