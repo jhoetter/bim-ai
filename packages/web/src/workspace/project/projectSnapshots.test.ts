@@ -1,8 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  buildSnapshotFilename,
   buildSnapshotPayload,
   pushRecentProject,
+  pushRollingSnapshotBackup,
   readRecentProjects,
+  readRollingSnapshotBackups,
   readSnapshotFile,
 } from './projectSnapshots';
 import type { Snapshot } from '@bim-ai/core';
@@ -56,6 +59,27 @@ describe('projectSnapshots — T-03', () => {
     const recent = readRecentProjects();
     expect(recent.length).toBe(5);
     expect(recent.map((r) => r.label)).toEqual(['F', 'E', 'D', 'A', 'C']);
+  });
+
+  it('pushRollingSnapshotBackup assigns Revit-style ordinal slots and caps by maximum backups', () => {
+    const first = pushRollingSnapshotBackup(
+      buildSnapshotPayload(FAKE_SNAP, 'House', { maximumBackups: 2 }),
+      2,
+    );
+    const second = pushRollingSnapshotBackup(
+      buildSnapshotPayload(FAKE_SNAP, 'House', { maximumBackups: 2 }),
+      2,
+    );
+    const third = pushRollingSnapshotBackup(
+      buildSnapshotPayload(FAKE_SNAP, 'House', { maximumBackups: 2 }),
+      2,
+    );
+
+    expect(first.payload.saveAsOptions?.backupOrdinal).toBe(1);
+    expect(second.payload.saveAsOptions?.backupOrdinal).toBe(2);
+    expect(third.payload.saveAsOptions?.backupOrdinal).toBe(1);
+    expect(readRollingSnapshotBackups().map((backup) => backup.ordinal)).toEqual([1, 2]);
+    expect(buildSnapshotFilename(third.payload)).toBe('House.0001.json');
   });
 
   it('readRecentProjects survives a corrupt blob', () => {

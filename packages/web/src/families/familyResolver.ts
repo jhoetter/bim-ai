@@ -190,7 +190,18 @@ function resolveGeometryNode(
 
 function resolveSweepNode(node: SweepGeometryNode, hostParams: HostParams): THREE.Mesh {
   const geom = meshFromSweep(applySweepPathLengthParam(node, hostParams));
-  return new THREE.Mesh(geom);
+  const mesh = new THREE.Mesh(geom);
+  mesh.userData.materialKey = resolveSweepMaterialKey(node, hostParams);
+  return mesh;
+}
+
+function resolveSweepMaterialKey(
+  node: SweepGeometryNode,
+  hostParams: HostParams,
+): string | undefined {
+  if (!node.materialKeyParam) return node.materialKey;
+  const raw = hostParams[node.materialKeyParam];
+  return typeof raw === 'string' && raw.trim() ? raw : node.materialKey;
 }
 
 function applySweepPathLengthParam(

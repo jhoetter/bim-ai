@@ -22,11 +22,16 @@ afterEach(() => {
   cleanup();
 });
 
-function authorBooleanParam(utils: ReturnType<typeof renderWithI18n>, key: string, label: string) {
+function authorParam(
+  utils: ReturnType<typeof renderWithI18n>,
+  key: string,
+  label: string,
+  type: 'length_mm' | 'material_key' | 'boolean',
+) {
   const { getAllByRole } = utils;
   fireEvent.click(getAllByRole('button').find((b) => b.textContent === 'Add parameter')!);
   const typeSelects = Array.from(utils.container.querySelectorAll('select')).filter((candidate) =>
-    Array.from(candidate.options).some((option) => option.value === 'boolean'),
+    Array.from(candidate.options).some((option) => option.value === type),
   );
   const typeSelect = typeSelects.at(-1);
   if (!typeSelect) {
@@ -41,7 +46,11 @@ function authorBooleanParam(utils: ReturnType<typeof renderWithI18n>, key: strin
   ) as NodeListOf<HTMLInputElement>;
   fireEvent.change(textInputs[0]!, { target: { value: key } });
   fireEvent.change(textInputs[1]!, { target: { value: label } });
-  fireEvent.change(typeSelect, { target: { value: 'boolean' } });
+  fireEvent.change(typeSelect, { target: { value: type } });
+}
+
+function authorBooleanParam(utils: ReturnType<typeof renderWithI18n>, key: string, label: string) {
+  authorParam(utils, key, label, 'boolean');
 }
 
 function authorSweep(utils: ReturnType<typeof renderWithI18n>) {
@@ -127,5 +136,35 @@ describe('FAM-03 — Visible When UI', () => {
     expect(utils.queryByLabelText('Show when false')).toBeNull();
     const li = utils.getByTestId('sweep-0');
     expect(within(li).queryByText(/visible when/)).toBeNull();
+  });
+
+  it('associates sweep path length and material fields with family parameters', () => {
+    const utils = renderWithI18n(<FamilyEditorWorkbench />);
+    authorParam(utils, 'Seat_Height', 'Seat Height', 'length_mm');
+    authorParam(utils, 'Finish_Material', 'Finish Material', 'material_key');
+    authorSweep(utils);
+    fireEvent.click(utils.getByLabelText('select-sweep-0'));
+
+    fireEvent.change(utils.getByLabelText('Associate path length parameter'), {
+      target: { value: 'Seat_Height' },
+    });
+    fireEvent.change(utils.getByLabelText('Associate material parameter'), {
+      target: { value: 'Finish_Material' },
+    });
+
+    expect(utils.getByTestId('sweep-path-length-association').textContent).toContain('Seat_Height');
+    expect(utils.getByTestId('sweep-material-association').textContent).toContain(
+      'Finish_Material',
+    );
+
+    fireEvent.change(utils.getByLabelText('Associate path length parameter'), {
+      target: { value: '__always__' },
+    });
+    fireEvent.change(utils.getByLabelText('Associate material parameter'), {
+      target: { value: '__always__' },
+    });
+
+    expect(utils.queryByTestId('sweep-path-length-association')).toBeNull();
+    expect(utils.queryByTestId('sweep-material-association')).toBeNull();
   });
 });

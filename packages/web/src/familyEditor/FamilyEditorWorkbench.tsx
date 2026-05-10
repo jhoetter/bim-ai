@@ -850,6 +850,32 @@ export function FamilyEditorWorkbench(): JSX.Element {
     );
   }
 
+  function updateSweepPathLengthParam(index: number, paramName: string | null) {
+    setSweeps((prev) =>
+      prev.map((sweep, i) => {
+        if (i !== index) return sweep;
+        if (!paramName) {
+          const { pathLengthParam: _omit, ...rest } = sweep;
+          return rest as SweepGeometryNode;
+        }
+        return { ...sweep, pathLengthParam: paramName };
+      }),
+    );
+  }
+
+  function updateSweepMaterialParam(index: number, paramName: string | null) {
+    setSweeps((prev) =>
+      prev.map((sweep, i) => {
+        if (i !== index) return sweep;
+        if (!paramName) {
+          const { materialKeyParam: _omit, ...rest } = sweep;
+          return rest as SweepGeometryNode;
+        }
+        return { ...sweep, materialKeyParam: paramName };
+      }),
+    );
+  }
+
   function assignMaterial(target: MaterialAssignmentTarget, materialKey: string) {
     if (target.kind === 'param') {
       updateParam(target.index, { default: materialKey });
@@ -1683,6 +1709,12 @@ export function FamilyEditorWorkbench(): JSX.Element {
               onUpdateMaterial={(materialKey) =>
                 updateSweepMaterial(selectedSweepIndex, materialKey)
               }
+              onUpdatePathLengthParam={(paramName) =>
+                updateSweepPathLengthParam(selectedSweepIndex, paramName)
+              }
+              onUpdateMaterialParam={(paramName) =>
+                updateSweepMaterialParam(selectedSweepIndex, paramName)
+              }
               onOpenMaterialBrowser={() =>
                 setMaterialTarget({ kind: 'sweep', index: selectedSweepIndex })
               }
@@ -1986,6 +2018,8 @@ export function FamilyEditorWorkbench(): JSX.Element {
               sweeps: sweeps.map((sweep, index) => ({
                 index,
                 materialKey: sweep.materialKey ?? null,
+                materialKeyParam: sweep.materialKeyParam ?? null,
+                pathLengthParam: sweep.pathLengthParam ?? null,
               })),
             },
           })
@@ -2034,6 +2068,8 @@ interface SweepPropertiesPanelProps {
   params: Param[];
   onUpdate: (binding: VisibilityBinding | undefined) => void;
   onUpdateMaterial: (materialKey: string | null) => void;
+  onUpdatePathLengthParam: (paramName: string | null) => void;
+  onUpdateMaterialParam: (paramName: string | null) => void;
   onOpenMaterialBrowser: () => void;
   onOpenAppearanceAssetBrowser: () => void;
   onUpdateDetailLevel: (level: DetailLevelKey, visible: boolean) => void;
@@ -2346,17 +2382,23 @@ function SweepPropertiesPanel({
   params,
   onUpdate,
   onUpdateMaterial,
+  onUpdatePathLengthParam,
+  onUpdateMaterialParam,
   onOpenMaterialBrowser,
   onOpenAppearanceAssetBrowser,
   onUpdateDetailLevel,
 }: SweepPropertiesPanelProps): JSX.Element {
   const booleanParams = params.filter((p) => p.type === 'boolean');
+  const lengthParams = params.filter((p) => p.type === 'length_mm');
+  const materialParams = params.filter((p) => p.type === 'material_key');
   const binding = sweep.visibilityBinding;
   const selected = binding ? binding.paramName : VISIBLE_ALWAYS;
   const whenTrue = binding ? binding.whenTrue : true;
   const detailVis = sweep.visibilityByDetailLevel;
   const detailVisible = (level: DetailLevelKey): boolean => detailVis?.[level] !== false;
   const material = resolveMaterial(sweep.materialKey);
+  const associatedPathLength = sweep.pathLengthParam ?? VISIBLE_ALWAYS;
+  const associatedMaterial = sweep.materialKeyParam ?? VISIBLE_ALWAYS;
 
   function onParamChange(value: string) {
     if (value === VISIBLE_ALWAYS) {
@@ -2378,6 +2420,28 @@ function SweepPropertiesPanel({
       aria-label={t('familyEditor.geometryPropertiesAriaLabel')}
     >
       <h3 className="font-semibold text-sm">{t('familyEditor.geometryPropertiesHeading')}</h3>
+      <label className="flex items-center gap-2 text-sm">
+        <span className="w-32">Path Length</span>
+        <select
+          aria-label="Associate path length parameter"
+          value={associatedPathLength}
+          onChange={(e) =>
+            onUpdatePathLengthParam(e.target.value === VISIBLE_ALWAYS ? null : e.target.value)
+          }
+        >
+          <option value={VISIBLE_ALWAYS}>Unassociated</option>
+          {lengthParams.map((p) => (
+            <option key={p.key} value={p.key}>
+              {p.label || p.key}
+            </option>
+          ))}
+        </select>
+        {sweep.pathLengthParam ? (
+          <span className="text-xs text-muted" data-testid="sweep-path-length-association">
+            associated with {sweep.pathLengthParam}
+          </span>
+        ) : null}
+      </label>
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="w-32">Material</span>
         <span
@@ -2412,6 +2476,28 @@ function SweepPropertiesPanel({
           </button>
         ) : null}
       </div>
+      <label className="flex items-center gap-2 text-sm">
+        <span className="w-32">Material parameter</span>
+        <select
+          aria-label="Associate material parameter"
+          value={associatedMaterial}
+          onChange={(e) =>
+            onUpdateMaterialParam(e.target.value === VISIBLE_ALWAYS ? null : e.target.value)
+          }
+        >
+          <option value={VISIBLE_ALWAYS}>Unassociated</option>
+          {materialParams.map((p) => (
+            <option key={p.key} value={p.key}>
+              {p.label || p.key}
+            </option>
+          ))}
+        </select>
+        {sweep.materialKeyParam ? (
+          <span className="text-xs text-muted" data-testid="sweep-material-association">
+            associated with {sweep.materialKeyParam}
+          </span>
+        ) : null}
+      </label>
       <label className="flex items-center gap-2 text-sm">
         <span className="w-32">{t('familyEditor.visibleWhenLabel')}</span>
         <select

@@ -37,6 +37,7 @@ describe('<ProjectMenu /> — T-03', () => {
     expect(getByTestId('project-menu')).toBeTruthy();
     expect(getByTestId('project-menu-insert-seed')).toBeTruthy();
     expect(getByTestId('project-menu-save-snapshot')).toBeTruthy();
+    expect(getByTestId('project-menu-save-as-options')).toBeTruthy();
     expect(getByTestId('project-menu-open-snapshot')).toBeTruthy();
     expect(getByTestId('project-menu-new-clear')).toBeTruthy();
   });
@@ -72,6 +73,24 @@ describe('<ProjectMenu /> — T-03', () => {
     render(<Harness open={true} onOpenChange={onOpenChange} />);
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('edits Save As Options maximum backups', () => {
+    const onSaveAsMaximumBackupsChange = vi.fn();
+    const { getByTestId } = render(
+      <Harness
+        open={true}
+        onOpenChange={() => {}}
+        saveAsMaximumBackups={12}
+        onSaveAsMaximumBackupsChange={onSaveAsMaximumBackupsChange}
+      />,
+    );
+    fireEvent.click(getByTestId('project-menu-save-as-options'));
+    const input = getByTestId('project-menu-maximum-backups') as HTMLInputElement;
+    expect(input.value).toBe('12');
+    fireEvent.change(input, { target: { value: '150' } });
+    fireEvent.click(getByTestId('project-menu-save-as-options-apply'));
+    expect(onSaveAsMaximumBackupsChange).toHaveBeenCalledWith(99);
   });
 
   it('does not render replay tour item when onReplayTour is omitted', () => {

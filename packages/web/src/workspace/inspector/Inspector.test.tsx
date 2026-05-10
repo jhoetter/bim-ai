@@ -59,6 +59,44 @@ describe('Inspector — spec §13', () => {
     expect(getByText('props')).toBeTruthy();
   });
 
+  it('renames the Properties tab for type and instance contexts', () => {
+    const { getAllByRole, rerender } = renderWithI18n(
+      <Inspector
+        selection={{ label: 'Wall Type · Generic 200', id: 'wt-1' }}
+        propertiesContext="type"
+        tabs={{
+          properties: <div>type props</div>,
+          constraints: <div>constraints</div>,
+          identity: <div>identity</div>,
+        }}
+      />,
+    );
+    expect(getAllByRole('tab').map((t) => t.textContent)).toEqual([
+      'Type',
+      'Constraints',
+      'Identity',
+    ]);
+
+    rerender(
+      <I18nextProvider i18n={i18n}>
+        <Inspector
+          selection={selection}
+          propertiesContext="instance"
+          tabs={{
+            properties: <div>instance props</div>,
+            constraints: <div>constraints</div>,
+            identity: <div>identity</div>,
+          }}
+        />
+      </I18nextProvider>,
+    );
+    expect(getAllByRole('tab').map((t) => t.textContent)).toEqual([
+      'Instance',
+      'Constraints',
+      'Identity',
+    ]);
+  });
+
   it('switches body when tab is clicked', () => {
     const { getByText, queryByText } = renderWithI18n(
       <Inspector

@@ -46,4 +46,36 @@ describe('MaterialLayerStackWorkbench', () => {
       }),
     );
   });
+
+  it('persists layer wrapping flags in the type stack command', () => {
+    const onUpsertSemantic = vi.fn();
+    const { getByLabelText, getByTestId } = render(
+      <MaterialLayerStackWorkbench
+        selected={wallType}
+        elementsById={{ [wallType.id]: wallType }}
+        revision={1}
+        onUpsertSemantic={onUpsertSemantic}
+      />,
+    );
+
+    fireEvent.click(getByLabelText('Wrap layer 0 at wall ends'));
+    fireEvent.click(getByLabelText('Wrap layer 2 at inserts'));
+    fireEvent.click(getByTestId('material-layer-apply'));
+
+    expect(onUpsertSemantic).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'upsertWallType',
+        layers: [
+          { thicknessMm: 12, function: 'finish', materialKey: 'gyp', wrapsAtEnds: true },
+          { thicknessMm: 180, function: 'structure', materialKey: 'concrete' },
+          {
+            thicknessMm: 30,
+            function: 'insulation',
+            materialKey: 'mineral-wool',
+            wrapsAtInserts: true,
+          },
+        ],
+      }),
+    );
+  });
 });

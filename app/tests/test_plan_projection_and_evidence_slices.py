@@ -1130,6 +1130,7 @@ def test_plan_projection_room_primitives_include_programme_and_color() -> None:
                 name="Office",
                 levelId="lvl",
                 programmeCode="OFF",
+                roomFillOverrideHex="#123456",
                 outlineMm=[
                     {"xMm": 0, "yMm": 0},
                     {"xMm": 2000, "yMm": 0},
@@ -1144,6 +1145,7 @@ def test_plan_projection_room_primitives_include_programme_and_color() -> None:
     assert len(rooms) == 1
     assert rooms[0].get("programmeCode") == "OFF"
     assert str(rooms[0].get("schemeColorHex", "")).startswith("#")
+    assert rooms[0].get("roomFillOverrideHex") == "#123456"
 
 
 def test_plan_projection_annotation_hints_emit_plan_tag_labels_when_enabled() -> None:

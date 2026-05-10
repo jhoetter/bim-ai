@@ -70,11 +70,16 @@ import {
   ManageLinksDialog,
   ProjectMenu,
   type ProjectMenuItemRecent,
+  pushRollingSnapshotBackup,
   pushRecentProject,
   readRecentProjects,
   readSnapshotFile,
   VVDialog,
 } from './project';
+import {
+  coerceCheckpointRetentionLimit,
+  DEFAULT_CHECKPOINT_RETENTION_LIMIT,
+} from '../state/backupRetention';
 import {
   buildBrowserRenderingBudgetReadoutV1,
   formatBrowserRenderingBudgetLines,
@@ -215,6 +220,13 @@ export function Workspace(): JSX.Element {
 
   // AST-V3-01 — library overlay (Alt+2)
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const projectSettings =
+    elementsById.project_settings?.kind === 'project_settings'
+      ? elementsById.project_settings
+      : null;
+  const saveAsMaximumBackups = coerceCheckpointRetentionLimit(
+    projectSettings?.checkpointRetentionLimit ?? DEFAULT_CHECKPOINT_RETENTION_LIMIT,
+  );
 
   // COL-VIS: share presentation modal
   const [sharePresentationOpen, setSharePresentationOpen] = useState(false);
@@ -387,11 +399,14 @@ export function Workspace(): JSX.Element {
       elements: st.elementsById as unknown as Record<string, unknown>,
       violations: [],
     };
-    const payload = buildSnapshotPayload(snap);
-    downloadSnapshot(payload);
-    const next = pushRecentProject(payload);
+    const payload = buildSnapshotPayload(snap, undefined, {
+      maximumBackups: saveAsMaximumBackups,
+    });
+    const { payload: rollingPayload } = pushRollingSnapshotBackup(payload, saveAsMaximumBackups);
+    downloadSnapshot(rollingPayload);
+    const next = pushRecentProject(rollingPayload);
     setRecentProjects(next.map((r) => ({ id: r.id, label: r.label })));
-  }, [setSeedError]);
+  }, [saveAsMaximumBackups, setSeedError]);
 
   const handleRestoreSnapshot = useCallback(
     async (file: File): Promise<void> => {
@@ -479,6 +494,23 @@ export function Workspace(): JSX.Element {
       }
     },
     [hydrateFromSnapshot, setSeedError],
+  );
+
+  const handleSaveAsMaximumBackupsChange = useCallback(
+    (maximumBackups: number) => {
+      const settings = useBimStore.getState().elementsById.project_settings;
+      if (!settings || settings.kind !== 'project_settings') {
+        setSeedError('Save As Options require project settings in the current model.');
+        return;
+      }
+      void onSemanticCommand({
+        type: 'updateElementProperty',
+        elementId: settings.id,
+        key: 'checkpointRetentionLimit',
+        value: String(coerceCheckpointRetentionLimit(maximumBackups)),
+      });
+    },
+    [onSemanticCommand, setSeedError],
   );
 
   /* ── AST-V3-01 — library place callback ─────────────────────────────── */
@@ -1020,6 +1052,8 @@ export function Workspace(): JSX.Element {
         onPickRecent={handlePickRecent}
         onInsertSeed={() => void insertSeedHouse()}
         onSaveSnapshot={handleSaveSnapshot}
+        saveAsMaximumBackups={saveAsMaximumBackups}
+        onSaveAsMaximumBackupsChange={handleSaveAsMaximumBackupsChange}
         onRestoreSnapshot={(f) => void handleRestoreSnapshot(f)}
         onNewClear={handleNewClear}
         onReplayTour={() => {

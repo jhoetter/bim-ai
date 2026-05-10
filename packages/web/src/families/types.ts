@@ -63,6 +63,8 @@ export interface SweepGeometryNode {
   /** Optional: load profile from a profile family (FAM-08). */
   profileFamilyId?: string;
   materialKey?: string;
+  /** Optional host material_key parameter that drives the sweep material. */
+  materialKeyParam?: string;
   /** FAM-03: bind visibility to a host boolean param. */
   visibilityBinding?: VisibilityBinding;
   /** VIE-02: hide this sweep when the resolver runs at a matching plan

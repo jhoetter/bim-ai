@@ -13,7 +13,11 @@ import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react
 import { createRef, type RefObject } from 'react';
 
 import { SketchCanvas, type MmToScreen, type PointerToMm } from './SketchCanvas';
-import { hitTestWallAtMm, type WallForPicking } from './SketchCanvasPickWalls';
+import {
+  hitTestWallAtMm,
+  snapPointToNearestWallFaceMm,
+  type WallForPicking,
+} from './SketchCanvasPickWalls';
 
 afterEach(() => {
   cleanup();
@@ -64,6 +68,14 @@ describe('SKT-02 — hitTestWallAtMm pure logic', () => {
     expect(a).toBe('w-south');
     expect(b).toBe('w-east');
     expect(a).not.toBe(b);
+  });
+
+  it('snaps area boundary points to the nearest wall face within tolerance', () => {
+    expect(snapPointToNearestWallFaceMm(RECT_WALLS, { xMm: 2000, yMm: 90 })).toEqual({
+      xMm: 2000,
+      yMm: 100,
+    });
+    expect(snapPointToNearestWallFaceMm(RECT_WALLS, { xMm: 2500, yMm: 1500 })).toBeNull();
   });
 });
 

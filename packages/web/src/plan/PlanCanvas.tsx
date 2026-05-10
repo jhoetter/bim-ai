@@ -130,6 +130,7 @@ import { WallContextMenu, type WallContextMenuCommand } from '../workspace/viewp
 import { PlanDetailLevelToolbar } from './PlanDetailLevelToolbar';
 import type { PlanDetailLevel } from './planDetailLevelLines';
 import { SketchCanvas, type MmToScreen, type PointerToMm } from './SketchCanvas';
+import { snapPointToNearestWallFaceMm } from './SketchCanvasPickWalls';
 import { moveDeltaMm } from './moveTool';
 import { parseTypedRotateAngle, rotateDeltaAngleFromReference } from './rotateTool';
 import { selectNextConnectedWallByTab } from './wallChainSelection';
@@ -2955,21 +2956,33 @@ export function PlanCanvas({
         }
         const activeAreaScheme = activePv.areaScheme ?? 'gross_building';
         const areaRuleSet = activeAreaScheme === 'gross_building' ? 'gross' : 'net';
+        const wallsForAreaSnap = Object.values(elementsById)
+          .filter(
+            (el): el is Extract<Element, { kind: 'wall' }> =>
+              el.kind === 'wall' && el.levelId === (activePv.levelId || lvlId),
+          )
+          .map((w) => ({
+            id: w.id,
+            startMm: { xMm: w.start.xMm, yMm: w.start.yMm },
+            endMm: { xMm: w.end.xMm, yMm: w.end.yMm },
+            thicknessMm: w.thicknessMm,
+          }));
+        const areaPt = snapPointToNearestWallFaceMm(wallsForAreaSnap, sp) ?? sp;
         const d = draftRef.current;
         if (!d || d.kind !== 'area-boundary') {
-          draftRef.current = { kind: 'area-boundary', sx: sp.xMm, sy: sp.yMm };
+          draftRef.current = { kind: 'area-boundary', sx: areaPt.xMm, sy: areaPt.yMm };
           bumpGeom((x) => x + 1);
           return;
         }
-        if (Math.hypot(sp.xMm - d.sx, sp.yMm - d.sy) < 1) {
+        if (Math.hypot(areaPt.xMm - d.sx, areaPt.yMm - d.sy) < 1) {
           draftRef.current = undefined;
           bumpGeom((x) => x + 1);
           return;
         }
-        const x0 = Math.min(d.sx, sp.xMm);
-        const x1 = Math.max(d.sx, sp.xMm);
-        const y0 = Math.min(d.sy, sp.yMm);
-        const y1 = Math.max(d.sy, sp.yMm);
+        const x0 = Math.min(d.sx, areaPt.xMm);
+        const x1 = Math.max(d.sx, areaPt.xMm);
+        const y0 = Math.min(d.sy, areaPt.yMm);
+        const y1 = Math.max(d.sy, areaPt.yMm);
         onSemanticCommand({
           type: 'createArea',
           name: 'Area',

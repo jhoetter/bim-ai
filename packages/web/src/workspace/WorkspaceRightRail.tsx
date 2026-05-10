@@ -15,6 +15,7 @@ import {
   InspectorGraphicsFor,
   InspectorIdentityFor,
   type InspectorApplyScope,
+  type InspectorPropertiesContext,
   InspectorPlanViewEditor,
   InspectorProjectSettingsEditor,
   InspectorPropertiesFor,
@@ -25,6 +26,7 @@ import {
   InspectorWindowEditor,
   SunInspectorPanel,
 } from './inspector';
+import { inspectorPropertiesContextForElement } from './WorkspaceRightRailContext';
 import type { DisciplineTag } from '@bim-ai/core';
 import { AuthoringWorkbenchesPanel } from './authoring';
 import { Viewport3DLayersPanel } from './viewport';
@@ -194,6 +196,7 @@ export function WorkspaceRightRail({
     mode === 'plan' ||
     (mode as string) === 'plan-3d' ||
     (el ? !NAVIGABLE_KINDS.has(el.kind) : false);
+  const inspectorPropertiesContext = inspectorPropertiesContextForElement(el);
 
   // CHR-V3-06: sibling count for the applies-to radio.
   const siblingCount = useMemo(() => {
@@ -393,11 +396,16 @@ export function WorkspaceRightRail({
         <Inspector
           key={selectedId ?? 'none'}
           selection={inspectorSelection}
-          siblingCount={siblingCount}
+          propertiesContext={inspectorPropertiesContext}
+          siblingCount={inspectorPropertiesContext === 'type' ? 1 : siblingCount}
           onApplyScopeChange={handleApplyScopeChange}
           tabs={{
             properties: el ? (
               <>
+                <InspectorSelectionContextBanner
+                  element={el}
+                  context={inspectorPropertiesContext}
+                />
                 <InspectorContextActions
                   element={el}
                   firstSheetId={firstSheet}
@@ -1040,6 +1048,28 @@ function RightRailEmptySelection({
           controls below.
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function InspectorSelectionContextBanner({
+  element,
+  context,
+}: {
+  element: Element;
+  context: InspectorPropertiesContext;
+}): JSX.Element | null {
+  if (context !== 'type') return null;
+  return (
+    <div
+      data-testid="inspector-type-context"
+      className="mb-3 rounded border border-accent/40 bg-accent/10 p-2 text-[11px]"
+    >
+      <div className="font-medium text-foreground">Type Properties</div>
+      <p className="mt-1 leading-snug text-muted">
+        Editing {(element as { name?: string }).name ?? element.id} updates this type definition;
+        placed instances keep their own instance parameters.
+      </p>
     </div>
   );
 }

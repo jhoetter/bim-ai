@@ -35,6 +35,7 @@ import { evaluateFormula } from '../../lib/expressionEvaluator';
  */
 
 export type InspectorTab = 'properties' | 'constraints' | 'identity' | 'graphics' | 'evidence';
+export type InspectorPropertiesContext = 'properties' | 'instance' | 'type' | 'view';
 
 /** CHR-V3-06: scope for bulk-edit radio. */
 export type InspectorApplyScope = 'this' | 'all';
@@ -69,6 +70,8 @@ export interface InspectorProps {
   onClearSelection?: () => void;
   /** Initial active tab; uncontrolled. */
   defaultTab?: InspectorTab;
+  /** Context-sensitive label for the first tab. */
+  propertiesContext?: InspectorPropertiesContext;
   /**
    * CHR-V3-06: number of sibling elements of the same kind in the model.
    * When > 1, an "Applies to: this / all N" radio appears at the top of
@@ -87,6 +90,7 @@ export function Inspector({
   onReset,
   onClearSelection,
   defaultTab = 'properties',
+  propertiesContext = 'properties',
   siblingCount = 1,
   onApplyScopeChange,
 }: InspectorProps): JSX.Element | null {
@@ -100,8 +104,17 @@ export function Inspector({
   const hasGraphics = tabs.graphics !== undefined;
   const hasEvidence = tabs.evidence !== undefined;
 
+  const propertiesLabel =
+    propertiesContext === 'type'
+      ? 'Type'
+      : propertiesContext === 'instance'
+        ? 'Instance'
+        : propertiesContext === 'view'
+          ? 'View'
+          : t('inspector.tabs.properties');
+
   const tabDefs: { id: InspectorTab; label: string }[] = [
-    { id: 'properties', label: t('inspector.tabs.properties') },
+    { id: 'properties', label: propertiesLabel },
     { id: 'constraints', label: t('inspector.tabs.constraints') },
     { id: 'identity', label: t('inspector.tabs.identity') },
   ];
