@@ -267,12 +267,12 @@ def render_schematic_thumbnail_svg(entry: AssetLibraryEntryElem) -> str:
 # API-V3-01 tool descriptor registration (import-time side effect)
 # ---------------------------------------------------------------------------
 
-from bim_ai.api.registry import (
+from bim_ai.api.registry import (  # noqa: E402
     ExitCode,
     RestEndpoint,
     ToolDescriptor,
     register,
-)  # noqa: E402
+)
 
 _ASSET_CATEGORY_ENUM = [
     "furniture",
