@@ -124,6 +124,7 @@ import { WallContextMenu, type WallContextMenuCommand } from '../workspace/viewp
 import { PlanDetailLevelToolbar } from './PlanDetailLevelToolbar';
 import type { PlanDetailLevel } from './planDetailLevelLines';
 import { SketchCanvas, type MmToScreen, type PointerToMm } from './SketchCanvas';
+import { rotateAngleFromPoints } from './rotateTool';
 import { getFamilyById as getBuiltInFamilyById } from '../families/familyCatalog';
 import type { FamilyDefinition } from '../families/types';
 import {
@@ -2985,7 +2986,7 @@ export function PlanCanvas({
         const anchor = rotateAnchorRef.current;
         rotateAnchorRef.current = null;
         setRotateAnchorSet(false);
-        const angleDeg = (Math.atan2(sp.yMm - anchor.yMm, sp.xMm - anchor.xMm) * 180) / Math.PI;
+        const angleDeg = rotateAngleFromPoints(anchor, sp);
         const elementIds = [selectedId, ...selectedIds].filter(Boolean) as string[];
         if (elementIds.length > 0) {
           onSemanticCommand({
@@ -4843,7 +4844,7 @@ export function PlanCanvas({
                   }}
                   className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
                 >
-                  <span>Click to set end angle and rotate</span>
+                  <span>Click to set snapped end angle and rotate</span>
                 </div>
               </>
             );

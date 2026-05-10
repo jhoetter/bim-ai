@@ -168,7 +168,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-119 | Parametric bathroom layout family                    | Furn. Place   | ❌            |                                                                                                                      |
 | F-120 | Parametric bed family (2D)                           | Furn. Place   | ❌            |                                                                                                                      |
 | F-121 | Align tool (AL) for furniture-to-wall                | Furn. Place   | 🟡            | Two-click workflow: first click = reference point (shows dashed crosshair SVG + coordinate label), second click snaps nearest wall (≤900 mm) via `alignElementToReference`. Missing: arbitrary face alignment, Lock constraint, non-wall elements |
-| F-122 | Rotate tool (about user-defined center)              | Furn. Place   | 🟡            | General-purpose two-click RO tool: first click = center, second click = end angle; supports wall, column, placed_asset, floor, room, area. Missing: angular snap at standard angles (0°/45°/90°), numeric "rotate by typed angle" dialog, start-angle reference ray |
+| F-122 | Rotate tool (about user-defined center)              | Furn. Place   | 🟡            | General-purpose two-click RO tool: first click = center, second click = snapped end angle; supports wall, column, placed_asset, floor, room, area. Missing: numeric typed-angle dialog and start-angle reference ray |
 
 ---
 
