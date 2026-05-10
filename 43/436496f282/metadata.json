@@ -3,23 +3,13 @@
   "checkpoint_id": "43436496f282",
   "strategy": "manual-commit",
   "branch": "revit-parity-worker-integration-wave-11",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "packages/web/src/families/FamilyLibraryPanel.externalCatalogs.test.tsx",
     "packages/web/src/families/FamilyLibraryPanel.test.tsx",
     "packages/web/src/families/FamilyLibraryPanel.tsx",
-    "packages/web/src/familyEditor/FamilyEditorWorkbench.test.tsx",
     "packages/web/src/familyEditor/FamilyEditorWorkbench.tsx",
-    "packages/web/src/familyEditor/familyEditorPersistence.test.ts",
-    "packages/web/src/familyEditor/familyEditorPersistence.ts",
-    "packages/web/src/workspace/WorkspaceRightRail.test.tsx",
-    "packages/web/src/workspace/WorkspaceRightRail.tsx",
-    "packages/web/src/workspace/authoring/OptionsBar.test.tsx",
-    "packages/web/src/workspace/authoring/OptionsBar.tsx",
-    "spec/revit-parity/README.md",
-    "spec/revit-parity/ch05-family-editor.md",
-    "spec/revit-parity/ch06-nested-families.md",
-    "spec/revit-parity/ch07-parametric-furniture.md"
+    "spec/revit-parity/README.md"
   ],
   "sessions": [
     {
