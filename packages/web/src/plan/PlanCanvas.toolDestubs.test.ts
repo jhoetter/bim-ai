@@ -71,4 +71,13 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
       /type:\s*['"]setWallJoinVariant['"][\s\S]{0,200}variant:\s*effect\.commitJoin\.variant/,
     );
   });
+
+  it('routes Room Separation sketch sessions through Pick Walls-capable SketchCanvas', () => {
+    expect(SRC).toMatch(
+      /planTool\s*===\s*['"]room-separation-sketch['"][\s\S]{0,180}['"]room_separation['"]/,
+    );
+    expect(SRC).toMatch(
+      /<SketchCanvas[\s\S]{0,900}wallsForPicking=\{Object\.values\(elementsById\)/,
+    );
+  });
 });
