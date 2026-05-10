@@ -1268,15 +1268,27 @@ export function PlanCanvas({
       }
     }
 
-    // KRN-08 — render area boundaries (thick dashed red) + centroid tag for
-    // every area element on the active level.
+    // F-098 — render area boundaries only in dedicated Area Plan views, filtered
+    // by Area Plan scheme.
     for (let i = grp.children.length - 1; i >= 0; i--) {
       const ch = grp.children[i]!;
       if ((ch.userData as { areaElement?: unknown }).areaElement) grp.remove(ch);
     }
-    const areaLevelId = displayLevelId || activeLevelResolvedId;
-    if (areaLevelId && (!display.hiddenSemanticKinds.has('area_boundary') || revealHiddenMode)) {
-      const areaPrims = extractAreaPrimitives(elementsById, areaLevelId);
+    const activeAreaPlan = activePlanViewId ? elementsById[activePlanViewId] : null;
+    const areaPlanScheme =
+      activeAreaPlan?.kind === 'plan_view' && activeAreaPlan.planViewSubtype === 'area_plan'
+        ? (activeAreaPlan.areaScheme ?? 'gross_building')
+        : undefined;
+    const areaLevelId =
+      activeAreaPlan?.kind === 'plan_view' && activeAreaPlan.planViewSubtype === 'area_plan'
+        ? activeAreaPlan.levelId
+        : undefined;
+    if (
+      areaLevelId &&
+      areaPlanScheme &&
+      (!display.hiddenSemanticKinds.has('area_boundary') || revealHiddenMode)
+    ) {
+      const areaPrims = extractAreaPrimitives(elementsById, areaLevelId, areaPlanScheme);
       const areaCategoryReveal =
         revealHiddenMode && display.hiddenSemanticKinds.has('area_boundary');
       for (const a of areaPrims) {
@@ -2785,8 +2797,20 @@ export function PlanCanvas({
         return;
       }
       if (planTool === 'area-boundary') {
-        // KRN-08: two-click rectangular area-boundary fallback while
-        // SKT-01 sketch sessions extend to the `area` element kind.
+        // F-098/KRN-08: area boundaries are authored only in dedicated Area Plan
+        // views and inherit that view's Area Scheme.
+        const activePv = activePlanViewId ? elementsById[activePlanViewId] : null;
+        if (
+          !activePv ||
+          activePv.kind !== 'plan_view' ||
+          activePv.planViewSubtype !== 'area_plan'
+        ) {
+          draftRef.current = undefined;
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        const activeAreaScheme = activePv.areaScheme ?? 'gross_building';
+        const areaRuleSet = activeAreaScheme === 'gross_building' ? 'gross' : 'net';
         const d = draftRef.current;
         if (!d || d.kind !== 'area-boundary') {
           draftRef.current = { kind: 'area-boundary', sx: sp.xMm, sy: sp.yMm };
@@ -2805,14 +2829,15 @@ export function PlanCanvas({
         onSemanticCommand({
           type: 'createArea',
           name: 'Area',
-          levelId: lvlId,
+          levelId: activePv.levelId || lvlId,
           boundaryMm: [
             { xMm: x0, yMm: y0 },
             { xMm: x1, yMm: y0 },
             { xMm: x1, yMm: y1 },
             { xMm: x0, yMm: y1 },
           ],
-          ruleSet: 'gross',
+          ruleSet: areaRuleSet,
+          areaScheme: activeAreaScheme,
           applyAreaRules: useBimStore.getState().applyAreaRules,
         });
         draftRef.current = undefined;

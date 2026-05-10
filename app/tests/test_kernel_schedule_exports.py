@@ -462,6 +462,29 @@ def test_upsert_plan_view_command():
     assert pv is not None and getattr(pv, "kind", None) == "plan_view"
 
 
+def test_upsert_area_plan_persists_subtype_and_scheme():
+    doc = Document(
+        revision=1,
+        elements={"lvl-1": LevelElem(kind="level", id="lvl-1", name="EG", elevationMm=0)},
+    )
+    ok, new_doc, *_ = try_commit(
+        doc,
+        {
+            "type": "upsertPlanView",
+            "id": "ap-rentable",
+            "name": "EG rentable area",
+            "levelId": "lvl-1",
+            "planViewSubtype": "area_plan",
+            "areaScheme": "rentable",
+        },
+    )
+    assert ok
+    pv = new_doc.elements.get("ap-rentable")
+    assert isinstance(pv, PlanViewElem)
+    assert pv.plan_view_subtype == "area_plan"
+    assert pv.area_scheme == "rentable"
+
+
 def test_move_level_moves_stair_baselines_where_bound():
     from bim_ai.elements import StairElem as SE
 

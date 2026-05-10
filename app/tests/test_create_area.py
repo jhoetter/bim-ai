@@ -122,6 +122,36 @@ def test_update_area_replaces_boundary_and_recomputes() -> None:
     assert a.computed_area_sq_mm == pytest.approx(30_000_000.0)
 
 
+def test_create_and_update_area_scheme() -> None:
+    ok, doc, *_ = try_commit(
+        _doc_with_level(),
+        {
+            "type": "createArea",
+            "id": "a1",
+            "levelId": "lvl_g",
+            "boundaryMm": _porch_boundary(),
+            "ruleSet": "net",
+            "areaScheme": "rentable",
+        },
+    )
+    assert ok
+    a = doc.elements["a1"]
+    assert isinstance(a, AreaElem)
+    assert a.area_scheme == "rentable"
+    ok2, doc2, *_ = try_commit(
+        doc,
+        {
+            "type": "updateArea",
+            "areaId": "a1",
+            "areaScheme": "gross_building",
+        },
+    )
+    assert ok2
+    a2 = doc2.elements["a1"]
+    assert isinstance(a2, AreaElem)
+    assert a2.area_scheme == "gross_building"
+
+
 def test_delete_area_removes_element() -> None:
     ok, doc, *_ = try_commit(
         _doc_with_level(),

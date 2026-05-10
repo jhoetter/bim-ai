@@ -263,6 +263,19 @@ def test_plan_view_browser_hierarchy_v0_emitted_for_pinned_view() -> None:
     assert hier["planViewId"] == "pv1"
 
 
+def test_area_plan_browser_hierarchy_includes_scheme_metadata() -> None:
+    doc = _minimal_doc_with_plan_view()
+    pv = doc.elements["pv1"]
+    assert isinstance(pv, PlanViewElem)
+    doc.elements["pv1"] = pv.model_copy(
+        update={"plan_view_subtype": "area_plan", "area_scheme": "gross_building"}
+    )
+    out = plan_projection_wire_from_request(doc, plan_view_id="pv1")
+    hier = out["planViewBrowserHierarchy_v0"]
+    assert hier["planViewSubtype"] == "area_plan"
+    assert hier["areaScheme"] == "gross_building"
+
+
 def test_plan_view_browser_hierarchy_absent_for_unpinned() -> None:
     doc = _minimal_doc_with_plan_view()
     out = plan_projection_wire_from_request(doc, plan_view_id=None, fallback_level_id="lvl")

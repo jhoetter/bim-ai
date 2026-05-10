@@ -667,6 +667,8 @@ def _plan_view_browser_hierarchy_v0(
         "storedViewRangeBottomMm": pv.view_range_bottom_mm,
         "storedViewRangeTopMm": pv.view_range_top_mm,
         "discipline": pv.discipline,
+        "planViewSubtype": pv.plan_view_subtype,
+        "areaScheme": pv.area_scheme,
         "tagStyles": [_tag_summary(res_open, "opening"), _tag_summary(res_room, "room")],
         "categoryGraphicsSourceCounts": cat_source_counts,
         "categoryGraphicsRows": cat_rows,

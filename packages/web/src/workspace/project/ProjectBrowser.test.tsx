@@ -5,7 +5,7 @@
  * menu, collapsed state, zero hex literals in output, drag-to-reorder.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render } from '@testing-library/react';
+import { cleanup, fireEvent, render, waitFor, within } from '@testing-library/react';
 import type { Element } from '@bim-ai/core';
 import type { ComponentProps } from 'react';
 import { ProjectBrowser, ProjectBrowserV3 } from './ProjectBrowser';
@@ -141,6 +141,83 @@ describe('ProjectBrowser — F-003 families context menu', () => {
         layers: wallTypeEl.layers,
         basisLine: 'center',
       }),
+    );
+  });
+
+  it('groups Area Plan views by scheme outside the Floor Plans section', () => {
+    const level: Element = { kind: 'level', id: 'lvl-1', name: 'Level 1', elevationMm: 0 };
+    const floorPlan: Element = {
+      kind: 'plan_view',
+      id: 'pv-floor',
+      name: 'Level 1 Floor',
+      levelId: 'lvl-1',
+      planViewSubtype: 'floor_plan',
+    };
+    const grossPlan: Element = {
+      kind: 'plan_view',
+      id: 'ap-gross',
+      name: 'Gross Area',
+      levelId: 'lvl-1',
+      planViewSubtype: 'area_plan',
+      areaScheme: 'gross_building',
+    };
+    const rentablePlan: Element = {
+      kind: 'plan_view',
+      id: 'ap-rentable',
+      name: 'Rentable Area',
+      levelId: 'lvl-1',
+      planViewSubtype: 'area_plan',
+      areaScheme: 'rentable',
+    };
+    const { getByTestId } = renderBrowser({
+      elementsById: {
+        [level.id]: level,
+        [floorPlan.id]: floorPlan,
+        [grossPlan.id]: grossPlan,
+        [rentablePlan.id]: rentablePlan,
+      },
+    });
+    const areaGroup = getByTestId('project-browser-area-plans-group');
+    expect(within(areaGroup).getByTestId('area-plan-scheme-gross_building')).toBeTruthy();
+    expect(within(areaGroup).getByTestId('area-plan-scheme-rentable')).toBeTruthy();
+    expect(within(areaGroup).getByText(/area_plan · Gross Building · Gross Area/)).toBeTruthy();
+    expect(within(areaGroup).getByText(/area_plan · Rentable · Rentable Area/)).toBeTruthy();
+  });
+
+  it('creates Area Plan views with level, subtype, and scheme', async () => {
+    useBimStore.setState({ modelId: 'model-1' });
+    const level: Element = { kind: 'level', id: 'lvl-1', name: 'Level 1', elevationMm: 0 };
+    const floorPlan: Element = {
+      kind: 'plan_view',
+      id: 'pv-floor',
+      name: 'Level 1 Floor',
+      levelId: 'lvl-1',
+      planViewSubtype: 'floor_plan',
+    };
+    const { getByTestId, getByLabelText } = renderBrowser({
+      elementsById: {
+        [level.id]: level,
+        [floorPlan.id]: floorPlan,
+      },
+    });
+    fireEvent.click(getByTestId('area-plan-new'));
+    fireEvent.change(getByTestId('area-plan-new-scheme'), {
+      target: { value: 'rentable' },
+    });
+    const input = getByLabelText('Area plan name') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'Level 1 Rentable' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() =>
+      expect(applyCommand).toHaveBeenCalledWith(
+        'model-1',
+        expect.objectContaining({
+          type: 'upsertPlanView',
+          name: 'Level 1 Rentable',
+          levelId: 'lvl-1',
+          planViewSubtype: 'area_plan',
+          areaScheme: 'rentable',
+        }),
+      ),
     );
   });
 });

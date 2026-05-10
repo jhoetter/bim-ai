@@ -15,6 +15,7 @@ const porch: Extract<Element, { kind: 'area' }> = {
     { xMm: 0, yMm: 5000 },
   ],
   ruleSet: 'gross',
+  areaScheme: 'gross_building',
   computedAreaSqMm: 20_000_000,
 };
 
@@ -29,13 +30,14 @@ describe('KRN-08 — extractAreaPrimitives', () => {
     const prims = extractAreaPrimitives(
       { [porch.id]: porch, [otherLevel.id]: otherLevel },
       'lvl_g',
+      'gross_building',
     );
     expect(prims).toHaveLength(1);
     expect(prims[0]!.id).toBe('a-porch');
   });
 
   it('formats the tag label as "<name> · <area> m²" — KRN-08 acceptance', () => {
-    const prims = extractAreaPrimitives({ [porch.id]: porch }, 'lvl_g');
+    const prims = extractAreaPrimitives({ [porch.id]: porch }, 'lvl_g', 'gross_building');
     expect(prims[0]!.tagLabel).toBe('Porch · 20.00 m²');
   });
 
@@ -44,19 +46,33 @@ describe('KRN-08 — extractAreaPrimitives', () => {
       ...porch,
       computedAreaSqMm: undefined,
     };
-    const prims = extractAreaPrimitives({ [naked.id]: naked }, 'lvl_g');
+    const prims = extractAreaPrimitives({ [naked.id]: naked }, 'lvl_g', 'gross_building');
     expect(prims[0]!.computedAreaSqMm).toBeCloseTo(20_000_000, 0);
     expect(prims[0]!.tagLabel).toBe('Porch · 20.00 m²');
   });
 
   it('places the centroid tag at the polygon centroid', () => {
-    const prims = extractAreaPrimitives({ [porch.id]: porch }, 'lvl_g');
+    const prims = extractAreaPrimitives({ [porch.id]: porch }, 'lvl_g', 'gross_building');
     expect(prims[0]!.centroidMm.xMm).toBeCloseTo(2000, 6);
     expect(prims[0]!.centroidMm.yMm).toBeCloseTo(2500, 6);
   });
 
   it('returns an empty list when no level is active', () => {
-    expect(extractAreaPrimitives({ [porch.id]: porch }, undefined)).toEqual([]);
+    expect(extractAreaPrimitives({ [porch.id]: porch }, undefined, 'gross_building')).toEqual([]);
+  });
+
+  it('filters areas by active Area Plan scheme', () => {
+    const rentable: Extract<Element, { kind: 'area' }> = {
+      ...porch,
+      id: 'a-rentable',
+      areaScheme: 'rentable',
+    };
+    const prims = extractAreaPrimitives(
+      { [porch.id]: porch, [rentable.id]: rentable },
+      'lvl_g',
+      'rentable',
+    );
+    expect(prims.map((p) => p.id)).toEqual(['a-rentable']);
   });
 
   it('polygonCentroidMm degenerates to the mean for collinear vertices', () => {
