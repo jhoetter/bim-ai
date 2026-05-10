@@ -166,6 +166,7 @@ i18n.init({
             constraints: 'Constraints',
             identity: 'Identity',
             graphics: 'Graphics',
+            evidence: 'Evidence',
             ariaLabel: 'Inspector tabs',
           },
           empty: {
@@ -977,6 +978,7 @@ i18n.init({
             constraints: 'Einschränkungen',
             identity: 'Identität',
             graphics: 'Grafik',
+            evidence: 'Nachweise',
             ariaLabel: 'Inspektor-Tabs',
           },
           empty: {

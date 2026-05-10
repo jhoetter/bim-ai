@@ -1,6 +1,7 @@
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Element } from '@bim-ai/core';
+import { WallHifi } from '@bim-ai/icons';
 
 import { log } from '../logger';
 import { type PlanCameraHandle } from '../plan/PlanCanvas';
@@ -1219,6 +1220,7 @@ export function Workspace(): JSX.Element {
                 ctaPending={seedLoading}
                 ctaError={seedError}
                 onCta={() => void insertSeedHouse()}
+                Icon={WallHifi}
               />
             ) : null}
             {showCanvasHint && !showEmptyState ? <EmptyStateHint /> : null}

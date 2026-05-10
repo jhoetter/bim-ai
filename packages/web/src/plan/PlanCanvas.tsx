@@ -485,6 +485,10 @@ export function PlanCanvas({
   const activePlanViewId = useBimStore((s) => s.activePlanViewId);
   const planPresentation = useBimStore((s) => s.planPresentationPreset);
   const planTool = useBimStore((s) => s.planTool);
+  const wallLocationLine = useBimStore((s) => s.wallLocationLine);
+  const wallDrawOffsetMm = useBimStore((s) => s.wallDrawOffsetMm);
+  const wallDrawHeightMm = useBimStore((s) => s.wallDrawHeightMm);
+  const activeWallTypeId = useBimStore((s) => s.activeWallTypeId);
   const orthoSnapHold = useBimStore((s) => s.orthoSnapHold);
   const selectEl = useBimStore((s) => s.select);
   const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
@@ -4162,6 +4166,25 @@ export function PlanCanvas({
           ? `X ${(hudMm.xMm / 1000).toFixed(2)} m · Y ${(hudMm.yMm / 1000).toFixed(2)} m`
           : '—'}
       </div>
+      {planTool === 'wall' && hudMm ? (
+        <div className="pointer-events-none absolute left-3 bottom-14 z-10 max-w-[min(360px,calc(100%-24px))] rounded border border-border bg-surface/90 px-2 py-1.5 text-[10px] text-foreground shadow-elev-1 backdrop-blur">
+          <div className="font-semibold">Wall placement</div>
+          <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-muted">
+            <span>{draftRef.current?.kind === 'wall' ? 'Pick endpoint' : 'Pick start point'}</span>
+            <span>line {wallLocationLine.replace(/-/g, ' ')}</span>
+            <span>offset {wallDrawOffsetMm} mm</span>
+            <span>height {wallDrawHeightMm} mm</span>
+            <span>
+              type{' '}
+              {activeWallTypeId && elementsByIdRaw[activeWallTypeId]?.kind === 'wall_type'
+                ? (elementsByIdRaw[activeWallTypeId] as Extract<Element, { kind: 'wall_type' }>)
+                    .name
+                : 'Default'}
+            </span>
+          </div>
+          <div className="mt-0.5 text-[9px] text-muted">Tab cycles location line · Esc cancels</div>
+        </div>
+      ) : null}
       {snapLabel && (
         <div className="pointer-events-none absolute bottom-8 left-1/2 z-10 -translate-x-1/2 rounded border border-border bg-surface/90 px-2 py-0.5 font-mono text-[10px] text-foreground backdrop-blur">
           {snapLabel}

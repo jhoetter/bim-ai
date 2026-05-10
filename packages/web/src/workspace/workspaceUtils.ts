@@ -6,7 +6,9 @@ import {
   LevelIcon,
   PlanViewIcon,
   ScheduleViewIcon,
+  SectionViewIcon,
   SheetIcon,
+  OrbitViewIcon,
   WallLayerIcon,
 } from '@bim-ai/ui';
 
@@ -99,10 +101,12 @@ export function buildBrowserSections(elementsById: Record<string, Element>): Lef
         {
           id: 'levels',
           label: 'Levels',
+          icon: LevelIcon,
           hint: 'model datums',
           children: levels.map((l) => ({
             id: l.id,
             label: l.name,
+            icon: LevelIcon,
             hint: `datum · ${l.elevationMm}mm`,
           })),
         },
@@ -116,22 +120,38 @@ export function buildBrowserSections(elementsById: Record<string, Element>): Lef
         {
           id: 'plans',
           label: 'Floor Plans',
+          icon: PlanViewIcon,
           hint: 'saved views',
           children: planViews.map((p) => ({
             id: p.id,
             label: p.name,
+            icon: PlanViewIcon,
             hint: `${levelNameById.get(p.levelId) ?? p.levelId} · view`,
           })),
         },
         {
           id: 'viewpoints',
           label: '3D Views',
-          children: viewpoints.map((v) => ({ id: v.id, label: v.name, hint: 'saved view' })),
+          icon: OrbitViewIcon,
+          hint: 'saved cameras',
+          children: viewpoints.map((v) => ({
+            id: v.id,
+            label: v.name,
+            icon: OrbitViewIcon,
+            hint: 'saved view',
+          })),
         },
         {
           id: 'sections',
           label: 'Sections',
-          children: sections.map((s) => ({ id: s.id, label: s.name, hint: 'cut view' })),
+          icon: SectionViewIcon,
+          hint: 'cut views',
+          children: sections.map((s) => ({
+            id: s.id,
+            label: s.name,
+            icon: SectionViewIcon,
+            hint: 'cut view',
+          })),
         },
         ...(areaPlans.length > 0
           ? [
@@ -148,13 +168,18 @@ export function buildBrowserSections(elementsById: Record<string, Element>): Lef
       id: 'sheets',
       label: 'Sheets',
       icon: SheetIcon,
-      rows: sheets.map((s) => ({ id: s.id, label: s.name })),
+      rows: sheets.map((s) => ({
+        id: s.id,
+        label: s.name,
+        icon: SheetIcon,
+        hint: `${s.viewportsMm?.length ?? 0} viewports`,
+      })),
     },
     {
       id: 'schedules',
       label: 'Schedules',
       icon: ScheduleViewIcon,
-      rows: schedules.map((s) => ({ id: s.id, label: s.name })),
+      rows: schedules.map((s) => ({ id: s.id, label: s.name, icon: ScheduleViewIcon })),
     },
     {
       id: 'types',

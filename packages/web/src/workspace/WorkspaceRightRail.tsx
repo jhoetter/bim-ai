@@ -27,6 +27,7 @@ import {
 import type { DisciplineTag } from '@bim-ai/core';
 import { AuthoringWorkbenchesPanel } from './authoring';
 import { Viewport3DLayersPanel } from './viewport';
+import { firstSheetId, placeViewOnSheetCommand } from './sheets/sheetRecommendedViewports';
 import type { WorkspaceMode } from './shell';
 import { humanKindLabel, InspectorEmptyTab } from './WorkspaceHelpers';
 
@@ -64,6 +65,9 @@ export function WorkspaceRightRail({
   const viewerClipFloorElevMm = useBimStore((s) => s.viewerClipFloorElevMm);
   const setViewerClipFloorElevMm = useBimStore((s) => s.setViewerClipFloorElevMm);
   const activeViewpointId = useBimStore((s) => s.activeViewpointId);
+  const orbitCameraPoseMm = useBimStore((s) => s.orbitCameraPoseMm);
+  const setOrbitCameraFromViewpointMm = useBimStore((s) => s.setOrbitCameraFromViewpointMm);
+  const applyOrbitViewpointPreset = useBimStore((s) => s.applyOrbitViewpointPreset);
   const violations = useBimStore((s) => s.violations);
   const buildingPreset = useBimStore((s) => s.buildingPreset);
   const setBuildingPreset = useBimStore((s) => s.setBuildingPreset);
@@ -74,6 +78,10 @@ export function WorkspaceRightRail({
   const activePlanViewId = useBimStore((s) => s.activePlanViewId);
 
   const el = selectedId ? (elementsById[selectedId] as Element | undefined) : undefined;
+  const activeViewpoint =
+    activeViewpointId && elementsById[activeViewpointId]?.kind === 'viewpoint'
+      ? (elementsById[activeViewpointId] as Extract<Element, { kind: 'viewpoint' }>)
+      : undefined;
   const show3dLayers = mode === '3d' || (mode as string) === 'plan-3d';
   const showAuthoringWorkbenches =
     mode === 'plan' ||
@@ -129,6 +137,61 @@ export function WorkspaceRightRail({
     if (!found || found.kind !== 'plan_view') return '';
     return buildPlanGridDatumInspectorLine(elementsById, planProjectionPrimitives, found.id);
   }, [selectedId, elementsById, planProjectionPrimitives]);
+
+  const firstSheet = useMemo(() => firstSheetId(elementsById), [elementsById]);
+
+  const resetActiveSavedView = useCallback(() => {
+    if (!activeViewpoint || activeViewpoint.mode !== 'orbit_3d' || !activeViewpoint.camera) return;
+    setOrbitCameraFromViewpointMm({
+      position: activeViewpoint.camera.position,
+      target: activeViewpoint.camera.target,
+      up: activeViewpoint.camera.up,
+    });
+    applyOrbitViewpointPreset({
+      capElevMm: activeViewpoint.viewerClipCapElevMm,
+      floorElevMm: activeViewpoint.viewerClipFloorElevMm,
+      hideSemanticKinds: activeViewpoint.hiddenSemanticKinds3d,
+    });
+  }, [activeViewpoint, applyOrbitViewpointPreset, setOrbitCameraFromViewpointMm]);
+
+  const updateActiveSavedView = useCallback(() => {
+    if (!activeViewpoint || activeViewpoint.mode !== 'orbit_3d') return;
+    if (orbitCameraPoseMm) {
+      void onSemanticCommand({
+        type: 'updateElementProperty',
+        elementId: activeViewpoint.id,
+        key: 'camera',
+        value: orbitCameraPoseMm,
+      });
+    }
+    void onSemanticCommand({
+      type: 'updateElementProperty',
+      elementId: activeViewpoint.id,
+      key: 'viewerClipCapElevMm',
+      value: viewerClipElevMm,
+    });
+    void onSemanticCommand({
+      type: 'updateElementProperty',
+      elementId: activeViewpoint.id,
+      key: 'viewerClipFloorElevMm',
+      value: viewerClipFloorElevMm,
+    });
+    void onSemanticCommand({
+      type: 'updateElementProperty',
+      elementId: activeViewpoint.id,
+      key: 'hiddenSemanticKinds3d',
+      value: Object.entries(viewerCategoryHidden)
+        .filter(([, hidden]) => hidden)
+        .map(([kind]) => kind),
+    });
+  }, [
+    activeViewpoint,
+    onSemanticCommand,
+    orbitCameraPoseMm,
+    viewerCategoryHidden,
+    viewerClipElevMm,
+    viewerClipFloorElevMm,
+  ]);
 
   return (
     <div className="h-full overflow-y-auto">
@@ -217,6 +280,29 @@ export function WorkspaceRightRail({
           tabs={{
             properties: el ? (
               <>
+                <InspectorContextActions
+                  element={el}
+                  firstSheetId={firstSheet}
+                  onNavigateToElement={onNavigateToElement}
+                  onPlaceRecommendedViews={(sheetId) => {
+                    const cmd = placeViewOnSheetCommand(elementsById, sheetId, el.id);
+                    if (cmd) void onSemanticCommand(cmd);
+                  }}
+                  onDuplicatePlanView={(planView) => {
+                    void onSemanticCommand({
+                      type: 'upsertPlanView',
+                      id: `pv-${crypto.randomUUID()}`,
+                      name: `${planView.name} copy`,
+                      levelId: planView.levelId,
+                      discipline: planView.discipline,
+                      viewTemplateId: planView.viewTemplateId,
+                      cropMinMm: planView.cropMinMm,
+                      cropMaxMm: planView.cropMaxMm,
+                    });
+                  }}
+                  onResetSavedView={resetActiveSavedView}
+                  onUpdateSavedView={updateActiveSavedView}
+                />
                 {el.kind === 'plan_view' ? (
                   <>
                     {planGridDatumLine ? (
@@ -437,31 +523,6 @@ export function WorkspaceRightRail({
                     onEditType: (typeId) => select(typeId),
                   })
                 )}
-                {onNavigateToElement && NAVIGABLE_KINDS.has(el.kind) && (
-                  <div
-                    style={{
-                      borderTop: '1px solid var(--color-border)',
-                      paddingTop: 6,
-                      marginTop: 8,
-                    }}
-                  >
-                    <button
-                      data-testid="inspector-navigate-to-view"
-                      type="button"
-                      onClick={() => onNavigateToElement(el.id)}
-                      style={{
-                        fontSize: 11,
-                        padding: '2px 8px',
-                        cursor: 'pointer',
-                        color: 'var(--color-accent)',
-                        fontWeight: 500,
-                      }}
-                      title={`Open ${el.kind.replace('_', ' ')} in canvas`}
-                    >
-                      Open in Canvas ↗
-                    </button>
-                  </div>
-                )}
                 {activePlanViewId && (
                   <div
                     style={{
@@ -543,6 +604,11 @@ export function WorkspaceRightRail({
                   }
                 />
               ) : undefined,
+            evidence: el ? (
+              <InspectorEvidenceFor element={el} elementsById={elementsById} />
+            ) : (
+              <InspectorEmptyTab message="No evidence context." />
+            ),
           }}
           emptyStateActions={[
             {
@@ -583,6 +649,8 @@ export function WorkspaceRightRail({
             viewerClipFloorElevMm={viewerClipFloorElevMm}
             onSetClipFloorElevMm={setViewerClipFloorElevMm}
             activeViewpointId={activeViewpointId ?? undefined}
+            onResetToSavedView={activeViewpoint ? resetActiveSavedView : undefined}
+            onUpdateSavedView={activeViewpoint ? updateActiveSavedView : undefined}
           />
         </div>
       ) : null}
@@ -630,6 +698,161 @@ export function WorkspaceRightRail({
           </ul>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function InspectorContextActions({
+  element,
+  firstSheetId,
+  onNavigateToElement,
+  onPlaceRecommendedViews,
+  onDuplicatePlanView,
+  onResetSavedView,
+  onUpdateSavedView,
+}: {
+  element: Element;
+  firstSheetId: string | null;
+  onNavigateToElement?: (elementId: string) => void;
+  onPlaceRecommendedViews: (sheetId: string) => void;
+  onDuplicatePlanView: (planView: Extract<Element, { kind: 'plan_view' }>) => void;
+  onResetSavedView: () => void;
+  onUpdateSavedView: () => void;
+}): JSX.Element | null {
+  const buttons: JSX.Element[] = [];
+
+  if (onNavigateToElement && NAVIGABLE_KINDS.has(element.kind)) {
+    buttons.push(
+      <button
+        key="open"
+        data-testid="inspector-navigate-to-view"
+        type="button"
+        onClick={() => onNavigateToElement(element.id)}
+        className="rounded border border-accent bg-accent/15 px-2 py-1 text-[11px] font-medium text-foreground hover:bg-accent/20"
+      >
+        Open in Canvas
+      </button>,
+    );
+  }
+
+  if (element.kind === 'plan_view') {
+    buttons.push(
+      <button
+        key="duplicate"
+        type="button"
+        className="rounded border border-border bg-background px-2 py-1 text-[11px] text-foreground hover:bg-surface"
+        onClick={() => onDuplicatePlanView(element)}
+      >
+        Duplicate view
+      </button>,
+    );
+  }
+
+  if (
+    firstSheetId &&
+    (element.kind === 'plan_view' ||
+      element.kind === 'section_cut' ||
+      element.kind === 'schedule' ||
+      element.kind === 'viewpoint')
+  ) {
+    buttons.push(
+      <button
+        key="place"
+        type="button"
+        className="rounded border border-border bg-background px-2 py-1 text-[11px] text-foreground hover:bg-surface"
+        onClick={() => onPlaceRecommendedViews(firstSheetId)}
+      >
+        Place on sheet
+      </button>,
+    );
+  }
+
+  if (element.kind === 'viewpoint' && element.mode === 'orbit_3d') {
+    buttons.push(
+      <button
+        key="reset"
+        type="button"
+        className="rounded border border-border bg-background px-2 py-1 text-[11px] text-foreground hover:bg-surface"
+        onClick={onResetSavedView}
+      >
+        Reset to saved camera
+      </button>,
+      <button
+        key="update"
+        type="button"
+        className="rounded border border-accent bg-accent/15 px-2 py-1 text-[11px] font-medium text-foreground hover:bg-accent/20"
+        onClick={onUpdateSavedView}
+      >
+        Update saved view
+      </button>,
+    );
+  }
+
+  if (buttons.length === 0) return null;
+  return (
+    <div className="mb-3 rounded border border-border bg-surface-strong p-2">
+      <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
+        Actions
+      </div>
+      <div className="flex flex-wrap gap-1.5">{buttons}</div>
+    </div>
+  );
+}
+
+function InspectorEvidenceFor({
+  element,
+  elementsById,
+}: {
+  element: Element;
+  elementsById: Record<string, Element>;
+}): JSX.Element {
+  const displayName = (element as { name?: string }).name ?? element.id;
+  const parent =
+    'levelId' in element && typeof element.levelId === 'string'
+      ? elementsById[element.levelId]
+      : undefined;
+  const architectRows = [
+    ['Type', humanKindLabel(element.kind)],
+    ['Name', displayName],
+    parent && parent.kind === 'level' ? ['Level datum', parent.name] : null,
+  ].filter((row): row is string[] => Array.isArray(row));
+  return (
+    <div className="space-y-3 text-[11px]">
+      <div className="rounded border border-border bg-surface-strong p-2">
+        <div className="font-medium text-foreground">Professional context</div>
+        <dl className="mt-2 space-y-1">
+          {architectRows.map(([k, v]) => (
+            <div key={k} className="flex justify-between gap-3">
+              <dt className="text-muted">{k}</dt>
+              <dd className="text-right text-foreground">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+      <details className="rounded border border-border bg-background p-2">
+        <summary className="cursor-pointer font-medium text-muted">Raw provenance</summary>
+        <dl className="mt-2 space-y-1 font-mono text-[10px] text-muted">
+          <div>
+            <dt className="inline">id: </dt>
+            <dd className="inline break-all">{element.id}</dd>
+          </div>
+          <div>
+            <dt className="inline">kind: </dt>
+            <dd className="inline">{element.kind}</dd>
+          </div>
+          {'evidenceRefs' in element &&
+          Array.isArray((element as { evidenceRefs?: unknown }).evidenceRefs) ? (
+            <div>
+              <dt className="inline">evidenceRefs: </dt>
+              <dd className="inline break-all">
+                {((element as { evidenceRefs?: unknown[] }).evidenceRefs ?? [])
+                  .map((ref) => String(ref))
+                  .join(', ')}
+              </dd>
+            </div>
+          ) : null}
+        </dl>
+      </details>
     </div>
   );
 }

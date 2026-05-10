@@ -1,6 +1,7 @@
-import type { JSX } from 'react';
+import type { ComponentType, JSX } from 'react';
 
 import type { Element } from '@bim-ai/core';
+import type { BimIconHifiProps } from '@bim-ai/icons';
 
 import { ToolPalette } from '../tools/ToolPalette';
 import type { ToolDisabledContext, ToolId } from '../tools/toolRegistry';
@@ -50,6 +51,7 @@ export function EmptyStateOverlay({
   ctaPending,
   ctaError,
   onCta,
+  Icon,
 }: {
   headline: string;
   hint: string;
@@ -57,6 +59,7 @@ export function EmptyStateOverlay({
   ctaPending: boolean;
   ctaError: string | null;
   onCta: () => void;
+  Icon?: ComponentType<BimIconHifiProps>;
 }): JSX.Element {
   return (
     <div
@@ -73,6 +76,7 @@ export function EmptyStateOverlay({
       }}
     >
       <div className="pointer-events-auto flex flex-col items-center gap-3 rounded-lg bg-surface/95 px-6 py-5 text-center shadow-elev-2 backdrop-blur">
+        {Icon ? <Icon size={42} aria-hidden="true" className="text-accent" /> : null}
         <div className="text-md font-medium text-foreground">{headline}</div>
         <div className="text-sm text-muted">{hint}</div>
         {ctaLabel ? (

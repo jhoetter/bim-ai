@@ -3,6 +3,13 @@ import { useMemo, useState } from 'react';
 
 import type { Element } from '@bim-ai/core';
 import { Icons } from '@bim-ai/ui';
+import {
+  LevelHifi,
+  PlanViewHifi,
+  ScheduleViewHifi,
+  SectionViewHifi,
+  SheetHifi,
+} from '@bim-ai/icons';
 
 import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
 import { LevelStack } from '../levels/LevelStack';
@@ -44,6 +51,7 @@ export function WorkspaceLeftRail({
   const activeLevelId = useBimStore((s) => s.activeLevelId);
   const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
   const activatePlanView = useBimStore((s) => s.activatePlanView);
+  const activePlanViewId = useBimStore((s) => s.activePlanViewId);
   const selectedId = useBimStore((s) => s.selectedId);
   const select = useBimStore((s) => s.select);
   const setOrbitCameraFromViewpointMm = useBimStore((s) => s.setOrbitCameraFromViewpointMm);
@@ -177,9 +185,10 @@ export function WorkspaceLeftRail({
         />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
+        <BrowserLegend />
         <LeftRail
           sections={browserSections}
-          activeRowId={activeFamilyTypeId ?? activeLevelId}
+          activeRowId={activeFamilyTypeId ?? activePlanViewId ?? selectedId ?? activeLevelId}
           onRowRename={(id) => {
             const el = elementsById[id];
             if (!el) return;
@@ -364,5 +373,28 @@ export function WorkspaceLeftRail({
         </div>
       )}
     </div>
+  );
+}
+
+function BrowserLegend(): JSX.Element {
+  const items = [
+    { label: 'Datum', Icon: LevelHifi },
+    { label: 'View', Icon: PlanViewHifi },
+    { label: 'Sheet', Icon: SheetHifi },
+    { label: 'Schedule', Icon: ScheduleViewHifi },
+    { label: 'Cut', Icon: SectionViewHifi },
+  ];
+  return (
+    <details className="border-b border-border bg-surface px-3 py-2 text-[10px] text-muted">
+      <summary className="cursor-pointer font-medium text-foreground/80">Browser legend</summary>
+      <div className="mt-2 grid grid-cols-2 gap-1.5">
+        {items.map(({ label, Icon }) => (
+          <div key={label} className="flex items-center gap-1.5">
+            <Icon size={22} aria-hidden="true" className="shrink-0 text-accent" />
+            <span>{label}</span>
+          </div>
+        ))}
+      </div>
+    </details>
   );
 }

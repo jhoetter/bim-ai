@@ -34,7 +34,7 @@ import { evaluateFormula } from '../../lib/expressionEvaluator';
  * uses the evaluator + an optional unit chip (mm / cm / m).
  */
 
-export type InspectorTab = 'properties' | 'constraints' | 'identity' | 'graphics';
+export type InspectorTab = 'properties' | 'constraints' | 'identity' | 'graphics' | 'evidence';
 
 /** CHR-V3-06: scope for bulk-edit radio. */
 export type InspectorApplyScope = 'this' | 'all';
@@ -56,6 +56,8 @@ export interface InspectorProps {
     identity?: ReactNode;
     /** When provided, a "Graphics" tab appears after Identity. */
     graphics?: ReactNode;
+    /** Professional evidence/provenance details. Collapsed away from everyday properties. */
+    evidence?: ReactNode;
   };
   /** Quick-action lines for the empty state — not used when selection is null
    * (Inspector is absent from DOM). Kept for API compatibility. */
@@ -96,6 +98,7 @@ export function Inspector({
 
   // Compute hasGraphics before the early-return so hook count is stable.
   const hasGraphics = tabs.graphics !== undefined;
+  const hasEvidence = tabs.evidence !== undefined;
 
   const tabDefs: { id: InspectorTab; label: string }[] = [
     { id: 'properties', label: t('inspector.tabs.properties') },
@@ -103,10 +106,12 @@ export function Inspector({
     { id: 'identity', label: t('inspector.tabs.identity') },
   ];
   if (hasGraphics) tabDefs.push({ id: 'graphics', label: t('inspector.tabs.graphics') });
+  if (hasEvidence) tabDefs.push({ id: 'evidence', label: t('inspector.tabs.evidence') });
 
   useEffect(() => {
     if (activeTab === 'graphics' && !hasGraphics) setActiveTab('properties');
-  }, [activeTab, hasGraphics]);
+    if (activeTab === 'evidence' && !hasEvidence) setActiveTab('properties');
+  }, [activeTab, hasGraphics, hasEvidence]);
 
   const handleTabKey = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
@@ -135,6 +140,8 @@ export function Inspector({
         return tabs.identity ?? <EmptyTab message={t('inspector.noIdentityMeta')} />;
       case 'graphics':
         return tabs.graphics ?? null;
+      case 'evidence':
+        return tabs.evidence ?? null;
       default:
         return null;
     }
