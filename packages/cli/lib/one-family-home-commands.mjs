@@ -960,7 +960,7 @@ export function buildOneFamilyHomeCommands() {
       end: { xMm: CHIMNEY_X0, yMm: 0 },
       thicknessMm: WALL_T,
       heightMm: 5500,
-      materialKey: 'white_cladding',
+      materialKey: 'cladding_warm_wood',
     },
     {
       type: 'createWall',
@@ -971,13 +971,24 @@ export function buildOneFamilyHomeCommands() {
       end: { xMm: CHIMNEY_X1, yMm: LOGGIA_SETBACK },
       thicknessMm: WALL_T,
       heightMm: 5500,
-      materialKey: 'white_cladding',
+      materialKey: 'cladding_warm_wood',
     },
-    // chimney-back wall removed: s-c's recessed back face (at y=LOGGIA_SETBACK) now
-    // provides the south face of the chimney column at the same depth.
-    // Attach chimney return walls to the gable roof.
+    {
+      type: 'createWall',
+      id: 'hf-w-chimney-back',
+      name: 'Chimney back wall',
+      levelId: 'hf-lvl-upper',
+      start: { xMm: CHIMNEY_X0, yMm: LOGGIA_SETBACK },
+      end: { xMm: CHIMNEY_X1, yMm: LOGGIA_SETBACK },
+      thicknessMm: WALL_T,
+      heightMm: 5500,
+      materialKey: 'cladding_warm_wood',
+    },
+    // Attach chimney return walls and back wall to the gable roof so their tops
+    // are trimmed flush with the gable profile (closes the open corner gaps).
     { type: 'attachWallTopToRoof', wallId: 'hf-w-chimney-w', roofId: 'hf-roof-main' },
     { type: 'attachWallTopToRoof', wallId: 'hf-w-chimney-e', roofId: 'hf-roof-main' },
+    { type: 'attachWallTopToRoof', wallId: 'hf-w-chimney-back', roofId: 'hf-roof-main' },
 
     // Loggia balcony slabs + balustrades (spec §3 "three thin, continuous black
     // horizontal cables/rails fixed to the inner edge of the white shell").
