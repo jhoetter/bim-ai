@@ -1,0 +1,49 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "6448e55ee7e0",
+  "session_id": "019e12e6-8567-71d3-bd23-bc42016e1f15",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T20:30:01.522058Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "440c38c52a2e",
+  "checkpoint_transcript_start": 2275,
+  "transcript_lines_at_start": 2275,
+  "token_usage": {
+    "input_tokens": 565895,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 10637440,
+    "output_tokens": 26444,
+    "api_call_count": 91
+  },
+  "session_metrics": {
+    "turn_count": 6
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1998,
+      "user_lines_removed": 1704,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "claude-skills/sketch-to-bim/SKILL.md": 128,
+        "nightshift/seedhouse-rebuild-2026-05-10-advisor-info.json": 32,
+        "nightshift/seedhouse-rebuild-2026-05-10-advisor-warning.json": 6,
+        "nightshift/seedhouse-rebuild-2026-05-10-assumptions.md": 10,
+        "nightshift/seedhouse-rebuild-2026-05-10-brief.md": 63,
+        "nightshift/seedhouse-rebuild-2026-05-10-status.md": 49,
+        "packages/cli/lib/one-family-home-commands.mjs": 350,
+        "packages/web/e2e/__fixtures__/seed-target-house-snapshot.json": 1360
+      },
+      "user_removed_per_file": {
+        "claude-skills/sketch-to-bim/SKILL.md": 6,
+        "packages/cli/lib/one-family-home-commands.mjs": 411,
+        "packages/web/e2e/__fixtures__/seed-target-house-snapshot.json": 1287
+      }
+    }
+  ]
+}
