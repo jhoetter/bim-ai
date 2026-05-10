@@ -14,13 +14,19 @@ import { validateFormula } from '../lib/expressionEvaluator';
 import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
 import { LoadedFamiliesSidebar, NESTED_FAMILY_DRAG_TYPE } from './LoadedFamiliesSidebar';
 import { NestedInstanceInspector, type HostParamRef } from './NestedInstanceInspector';
+import {
+  pickedReferencePlaneLine,
+  rederiveLockedSketchLines,
+  trimExtendSketchLinesToCorner,
+  type FamilySketchRefPlane,
+} from './familySketchGeometry';
 
 /** VIE-02 — plan detail levels usable for per-node visibility binding. */
 type DetailLevelKey = 'coarse' | 'medium' | 'fine';
 
 type Template = 'generic_model' | 'door' | 'window' | 'profile';
 
-type RefPlane = {
+type RefPlane = FamilySketchRefPlane & {
   id: string;
   name: string;
   isVertical: boolean;
@@ -72,6 +78,8 @@ const EMPTY_SWEEP_DRAFT: SweepDraft = {
   profilePlane: 'normal_to_path_start',
   step: 'path',
 };
+
+const SKETCH_REF_EXTENT_MM = 1000;
 
 /* ─── FAM-05: Array authoring draft ─────────────────────────────────────── */
 
@@ -160,6 +168,20 @@ export function FamilyEditorWorkbench(): JSX.Element {
     ]);
   }
 
+  function updateRefPlane(index: number, patch: Partial<RefPlane>) {
+    const next = refPlanes.map((plane, i) => (i === index ? { ...plane, ...patch } : plane));
+    setRefPlanes(next);
+    setSweepDraft((draft) =>
+      draft
+        ? {
+            ...draft,
+            pathLines: rederiveLockedSketchLines(draft.pathLines, next, SKETCH_REF_EXTENT_MM),
+            profile: rederiveLockedSketchLines(draft.profile, next, SKETCH_REF_EXTENT_MM),
+          }
+        : draft,
+    );
+  }
+
   function addParam() {
     setParams((prev) => [
       ...prev,
@@ -213,6 +235,23 @@ export function FamilyEditorWorkbench(): JSX.Element {
 
   function appendSweepProfileLine(line: SketchLine) {
     setSweepDraft((prev) => (prev ? { ...prev, profile: [...prev.profile, line] } : prev));
+  }
+
+  function appendPickedProfileRefPlane(planeId: string, locked: boolean) {
+    const plane = refPlanes.find((candidate) => candidate.id === planeId);
+    if (!plane) return;
+    appendSweepProfileLine(pickedReferencePlaneLine(plane, locked, SKETCH_REF_EXTENT_MM));
+  }
+
+  function trimExtendProfileLines(firstIndex: number, secondIndex: number) {
+    setSweepDraft((prev) =>
+      prev
+        ? {
+            ...prev,
+            profile: trimExtendSketchLinesToCorner(prev.profile, firstIndex, secondIndex),
+          }
+        : prev,
+    );
   }
 
   function advanceSweepToProfile() {
@@ -575,7 +614,10 @@ export function FamilyEditorWorkbench(): JSX.Element {
             <SweepProfileSketch
               t={t}
               lines={sweepDraft.profile}
+              refPlanes={refPlanes}
               onAppendLine={appendSweepProfileLine}
+              onPickReferencePlane={appendPickedProfileRefPlane}
+              onTrimExtend={trimExtendProfileLines}
               onFinish={finishSweep}
             />
           )}
@@ -632,11 +674,21 @@ export function FamilyEditorWorkbench(): JSX.Element {
       <section>
         <h2 className="font-semibold mb-2">{t('familyEditor.referencePlanesHeading')}</h2>
         <ul className="space-y-1 mb-2">
-          {refPlanes.map((plane) => (
+          {refPlanes.map((plane, index) => (
             <li key={plane.id} className="flex gap-4">
               <span>{plane.name}</span>
               <span>{plane.isVertical ? 'V' : 'H'}</span>
-              <span>{plane.offsetMm} mm</span>
+              <label className="flex items-center gap-1 text-sm">
+                <span className="sr-only">Offset</span>
+                <input
+                  type="number"
+                  aria-label={`ref-plane-offset-${index}`}
+                  value={plane.offsetMm}
+                  onChange={(e) => updateRefPlane(index, { offsetMm: Number(e.target.value) })}
+                  className="w-24 rounded border px-1 py-0.5 text-xs"
+                />
+                <span>mm</span>
+              </label>
             </li>
           ))}
         </ul>
@@ -1154,11 +1206,27 @@ function SweepPathSketch({ t, lines, onAppendLine, onAdvance }: PathSketchProps)
 }
 
 interface ProfileSketchProps extends SweepSketchProps {
+  refPlanes: RefPlane[];
+  onPickReferencePlane: (planeId: string, locked: boolean) => void;
+  onTrimExtend: (firstIndex: number, secondIndex: number) => void;
   onFinish: () => void;
 }
 
-function SweepProfileSketch({ t, lines, onAppendLine, onFinish }: ProfileSketchProps): JSX.Element {
+function SweepProfileSketch({
+  t,
+  lines,
+  refPlanes,
+  onAppendLine,
+  onPickReferencePlane,
+  onTrimExtend,
+  onFinish,
+}: ProfileSketchProps): JSX.Element {
   const [draft, setDraft] = useState({ sx: 0, sy: 0, ex: 50, ey: 0 });
+  const [lockPicked, setLockPicked] = useState(true);
+  const [pickPlaneId, setPickPlaneId] = useState('');
+  const [trimFirstIndex, setTrimFirstIndex] = useState(0);
+  const [trimSecondIndex, setTrimSecondIndex] = useState(1);
+  const selectedPickPlaneId = pickPlaneId || refPlanes[0]?.id || '';
   return (
     <div className="space-y-2">
       <div className="text-xs text-muted">{t('familyEditor.sweepProfileHint')}</div>
@@ -1166,9 +1234,47 @@ function SweepProfileSketch({ t, lines, onAppendLine, onFinish }: ProfileSketchP
         {lines.map((l, i) => (
           <li key={i}>
             ({l.startMm.xMm}, {l.startMm.yMm}) → ({l.endMm.xMm}, {l.endMm.yMm})
+            {l.locked ? <span> · locked</span> : null}
           </li>
         ))}
       </ul>
+      {refPlanes.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <label className="flex items-center gap-1">
+            Pick Lines
+            <select
+              aria-label="profile-pick-reference-plane"
+              value={selectedPickPlaneId}
+              onChange={(e) => setPickPlaneId(e.target.value)}
+              className="rounded border px-1 py-0.5"
+            >
+              {refPlanes.map((plane) => (
+                <option key={plane.id} value={plane.id}>
+                  {plane.name} {plane.isVertical ? 'V' : 'H'} {plane.offsetMm}mm
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex items-center gap-1">
+            <input
+              type="checkbox"
+              aria-label="profile-pick-lock"
+              checked={lockPicked}
+              onChange={(e) => setLockPicked(e.target.checked)}
+            />
+            Lock
+          </label>
+          <button
+            type="button"
+            data-testid="profile-pick-reference-plane"
+            onClick={() => {
+              if (selectedPickPlaneId) onPickReferencePlane(selectedPickPlaneId, lockPicked);
+            }}
+          >
+            Pick
+          </button>
+        </div>
+      ) : null}
       <div className="flex gap-2 items-center text-xs">
         <input
           type="number"
@@ -1207,6 +1313,43 @@ function SweepProfileSketch({ t, lines, onAppendLine, onFinish }: ProfileSketchP
           {t('familyEditor.sweepAddLine')}
         </button>
       </div>
+      {lines.length >= 2 ? (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span>Trim/Extend</span>
+          <select
+            aria-label="profile-trim-first-line"
+            value={trimFirstIndex}
+            onChange={(e) => setTrimFirstIndex(Number(e.target.value))}
+            className="rounded border px-1 py-0.5"
+          >
+            {lines.map((_line, index) => (
+              <option key={index} value={index}>
+                Line {index + 1}
+              </option>
+            ))}
+          </select>
+          <select
+            aria-label="profile-trim-second-line"
+            value={trimSecondIndex}
+            onChange={(e) => setTrimSecondIndex(Number(e.target.value))}
+            className="rounded border px-1 py-0.5"
+          >
+            {lines.map((_line, index) => (
+              <option key={index} value={index}>
+                Line {index + 1}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            data-testid="profile-trim-extend"
+            disabled={trimFirstIndex === trimSecondIndex}
+            onClick={() => onTrimExtend(trimFirstIndex, trimSecondIndex)}
+          >
+            TR
+          </button>
+        </div>
+      ) : null}
       <button
         type="button"
         onClick={onFinish}

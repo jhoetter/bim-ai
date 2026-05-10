@@ -159,6 +159,46 @@ describe('FAM-02 — sweep tool flow', () => {
     fireEvent.click(getByText(/Finish/));
     expect(queryByTestId('sweep-0')).not.toBeNull();
   });
+
+  it('picks a locked reference plane into the profile and follows offset edits', () => {
+    const { getByText, getByLabelText, getByTestId, getAllByText } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+    fireEvent.click(getByText('Add vertical'));
+    fireEvent.click(getByText('Sweep'));
+
+    fireEvent.click(getAllByText('Add line')[0]);
+    fireEvent.click(getByText(/Edit Profile/));
+    fireEvent.click(getByTestId('profile-pick-reference-plane'));
+    expect(getByTestId('sweep-profile-list').textContent).toContain('locked');
+
+    fireEvent.change(getByLabelText('ref-plane-offset-0'), { target: { value: '300' } });
+    expect(getByTestId('sweep-profile-list').textContent).toContain('(300, -1000)');
+    expect(getByTestId('sweep-profile-list').textContent).toContain('(300, 1000)');
+  });
+
+  it('trims and extends two profile lines to a clean corner', () => {
+    const { getByText, getByLabelText, getByTestId, getAllByText } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+    fireEvent.click(getByText('Sweep'));
+    fireEvent.click(getAllByText('Add line')[0]);
+    fireEvent.click(getByText(/Edit Profile/));
+
+    const addProfileLine = (sx: string, sy: string, ex: string, ey: string) => {
+      fireEvent.change(getByLabelText('profile-sx'), { target: { value: sx } });
+      fireEvent.change(getByLabelText('profile-sy'), { target: { value: sy } });
+      fireEvent.change(getByLabelText('profile-ex'), { target: { value: ex } });
+      fireEvent.change(getByLabelText('profile-ey'), { target: { value: ey } });
+      fireEvent.click(getByText('Add line'));
+    };
+    addProfileLine('0', '0', '10', '0');
+    addProfileLine('12', '-5', '12', '10');
+
+    fireEvent.click(getByTestId('profile-trim-extend'));
+    const profileText = getByTestId('sweep-profile-list').textContent ?? '';
+    expect(profileText).toContain('(12, 0)');
+  });
 });
 
 describe('resolveFamilyParamValue', () => {
