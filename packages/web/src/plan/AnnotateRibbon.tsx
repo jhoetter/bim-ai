@@ -124,6 +124,37 @@ export function AnnotateRibbon({
     });
   };
 
+  const placeSpotCoordinate = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createSpotCoordinate',
+      hostViewId: planViewId,
+      positionMm: { xMm: c.xMm, yMm: c.yMm },
+      northMm: 0,
+      eastMm: 0,
+    });
+  };
+
+  const placeSpotSlope = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createSpotSlope',
+      hostViewId: planViewId,
+      positionMm: { xMm: c.xMm, yMm: c.yMm },
+      slopePct: 5.0,
+    });
+  };
+
+  const placeInsulationAnnotation = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createInsulationAnnotation',
+      hostViewId: planViewId,
+      startMm: { xMm: c.xMm - 500, yMm: c.yMm },
+      endMm: { xMm: c.xMm + 500, yMm: c.yMm },
+    });
+  };
+
   const commitTextNote = () => {
     const text = textNoteDraft.trim();
     if (!text) {
@@ -231,6 +262,33 @@ export function AnnotateRibbon({
         title="Place a spot elevation annotation at the view centre."
       >
         Spot Elev.
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-spot-coordinate"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeSpotCoordinate}
+        title="Place a spot coordinate annotation (N/E) at the view centre."
+      >
+        Spot Coord.
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-spot-slope"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeSpotSlope}
+        title="Place a spot slope annotation at the view centre."
+      >
+        Spot Slope
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-insulation"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeInsulationAnnotation}
+        title="Place an insulation annotation (zigzag) across the view centre."
+      >
+        Insulation
       </button>
       {textNoteInput ? (
         <div className="flex flex-col gap-1">

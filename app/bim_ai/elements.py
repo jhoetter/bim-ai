@@ -626,6 +626,48 @@ class SpotElevationElem(BaseModel):
     colour: str = Field(default="#202020")
 
 
+class SpotCoordinateElem(BaseModel):
+    """ANN-09 — view-local spot coordinate annotation (N/E at a point)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["spot_coordinate"] = "spot_coordinate"
+    id: str
+    host_view_id: str = Field(alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    north_mm: float = Field(alias="northMm")
+    east_mm: float = Field(alias="eastMm")
+    colour: str = Field(default="#202020")
+
+
+SpotSlopeFormat = Literal["percent", "ratio", "degree"]
+
+
+class SpotSlopeElem(BaseModel):
+    """ANN-10 — view-local spot slope annotation."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["spot_slope"] = "spot_slope"
+    id: str
+    host_view_id: str = Field(alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    slope_pct: float = Field(alias="slopePct")
+    slope_format: SpotSlopeFormat = Field(default="percent", alias="slopeFormat")
+    colour: str = Field(default="#202020")
+
+
+class InsulationAnnotationElem(BaseModel):
+    """ANN-11 — view-local insulation annotation (zigzag line)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["insulation_annotation"] = "insulation_annotation"
+    id: str
+    host_view_id: str = Field(alias="hostViewId")
+    start_mm: Vec2Mm = Field(alias="startMm")
+    end_mm: Vec2Mm = Field(alias="endMm")
+    width_mm: float = Field(default=200.0, alias="widthMm", gt=0)
+    colour: str = Field(default="#202020")
+
+
 ViewpointCutawayStyle = Literal["none", "cap", "floor", "box"]
 
 

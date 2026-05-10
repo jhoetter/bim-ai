@@ -297,6 +297,47 @@ class CreateSpotElevationCmd(BaseModel):
     colour: str = Field(default="#202020")
 
 
+class CreateSpotCoordinateCmd(BaseModel):
+    """ANN-09 — view-local spot coordinate."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createSpotCoordinate"] = "createSpotCoordinate"
+    id: str | None = None
+    host_view_id: str = Field(alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    north_mm: float = Field(alias="northMm")
+    east_mm: float = Field(alias="eastMm")
+    colour: str = Field(default="#202020")
+
+
+class CreateSpotSlopeCmd(BaseModel):
+    """ANN-10 — view-local spot slope."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createSpotSlope"] = "createSpotSlope"
+    id: str | None = None
+    host_view_id: str = Field(alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    slope_pct: float = Field(alias="slopePct")
+    slope_format: Literal["percent", "ratio", "degree"] = Field(
+        default="percent", alias="slopeFormat"
+    )
+    colour: str = Field(default="#202020")
+
+
+class CreateInsulationAnnotationCmd(BaseModel):
+    """ANN-11 — view-local insulation annotation."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createInsulationAnnotation"] = "createInsulationAnnotation"
+    id: str | None = None
+    host_view_id: str = Field(alias="hostViewId")
+    start_mm: Vec2Mm = Field(alias="startMm")
+    end_mm: Vec2Mm = Field(alias="endMm")
+    width_mm: float = Field(default=200.0, alias="widthMm")
+    colour: str = Field(default="#202020")
+
+
 class DeleteElementCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["deleteElement"] = "deleteElement"
@@ -2922,6 +2963,9 @@ Command = Annotated[
     | CreateDetailLineCmd
     | CreateDetailRegionCmd
     | CreateSpotElevationCmd
+    | CreateSpotCoordinateCmd
+    | CreateSpotSlopeCmd
+    | CreateInsulationAnnotationCmd
     | CreateTextNoteCmd
     | CreateReferencePlaneCmd
     | UpdateReferencePlaneCmd

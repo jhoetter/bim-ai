@@ -261,6 +261,9 @@ export type ElemKind =
   | 'area'
   | 'masking_region'
   | 'spot_elevation'
+  | 'spot_coordinate'
+  | 'spot_slope'
+  | 'insulation_annotation'
   | 'constraint'
   | 'mass'
   | 'phase'
@@ -1805,6 +1808,36 @@ export type Element =
       elevationMm: number;
       prefix?: string;
       suffix?: string;
+      colour?: string;
+    }
+  | {
+      /** ANN-09 — view-local spot coordinate annotation (N/E at a point). */
+      kind: 'spot_coordinate';
+      id: string;
+      hostViewId: string;
+      positionMm: XY;
+      northMm: number;
+      eastMm: number;
+      colour?: string;
+    }
+  | {
+      /** ANN-10 — view-local spot slope annotation. */
+      kind: 'spot_slope';
+      id: string;
+      hostViewId: string;
+      positionMm: XY;
+      slopePct: number;
+      slopeFormat?: 'percent' | 'ratio' | 'degree';
+      colour?: string;
+    }
+  | {
+      /** ANN-11 — view-local insulation annotation (zigzag line). */
+      kind: 'insulation_annotation';
+      id: string;
+      hostViewId: string;
+      startMm: XY;
+      endMm: XY;
+      widthMm?: number;
       colour?: string;
     }
   | {
