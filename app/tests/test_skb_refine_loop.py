@@ -83,13 +83,28 @@ def test_outcome_serialises_to_evidence_dict() -> None:
     out = RefineLoopOutcome(
         phase="massing",
         iterations=[],
-        final_checkpoint=CheckpointResult(delta=0.05, threshold=0.1),
+        final_checkpoint=CheckpointResult(
+            delta=0.05,
+            threshold=0.1,
+            advisor_findings=[
+                {
+                    "code": "room_target_area_mismatch",
+                    "elementIds": ["hf-room-bath"],
+                }
+            ],
+        ),
         converged=True,
     )
     d = out.to_evidence_dict()
     assert d["phase"] == "massing"
     assert d["converged"] is True
     assert d["final_checkpoint"]["passed"] is True
+    assert d["final_checkpoint"]["advisor_findings"] == [
+        {
+            "code": "room_target_area_mismatch",
+            "elementIds": ["hf-room-bath"],
+        }
+    ]
 
 
 def test_apply_correction_failure_recorded() -> None:
@@ -110,3 +125,41 @@ def test_apply_correction_failure_recorded() -> None:
     # Loop continues even if apply fails — eventually converges via 3rd checkpoint
     assert out.converged
     assert all(not it.applied for it in out.iterations)
+
+
+def test_advisor_findings_are_available_to_correction_proposal() -> None:
+    checkpoints = iter(
+        [
+            CheckpointResult(
+                delta=0.5,
+                threshold=0.1,
+                advisor_findings=[
+                    {
+                        "code": "stair_comfort_eu_proxy",
+                        "elementIds": ["hf-stair-main"],
+                    }
+                ],
+            ),
+            CheckpointResult(delta=0.05, threshold=0.1),
+        ]
+    )
+    seen_codes: list[str] = []
+
+    def proposals(cp: CheckpointResult) -> CorrectionProposal:
+        seen_codes.extend(f["code"] for f in cp.advisor_findings)
+        return CorrectionProposal(commands=[{"type": "noop"}], rationale="fix advisor finding")
+
+    out = run_refine_loop(
+        phase="interior",
+        checkpoint=lambda: next(checkpoints),
+        propose_correction=proposals,
+        apply_correction=lambda cmds: True,
+    )
+    assert out.converged
+    assert seen_codes == ["stair_comfort_eu_proxy"]
+    assert out.iterations[0].checkpoint.advisor_findings == [
+        {
+            "code": "stair_comfort_eu_proxy",
+            "elementIds": ["hf-stair-main"],
+        }
+    ]

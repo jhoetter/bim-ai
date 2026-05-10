@@ -34,6 +34,8 @@ class CheckpointResult:
     delta: float                               # 0.0 = identical to target, higher = worse
     threshold: float                           # acceptance threshold for this phase
     note: str = ""                             # free-form commentary
+    advisor_findings: list[dict[str, Any]] = field(default_factory=list)
+    # AdvisorPanel / constraints findings observed at the same checkpoint.
 
     @property
     def passed(self) -> bool:
@@ -81,6 +83,7 @@ class RefineLoopOutcome:
                         "threshold": it.checkpoint.threshold,
                         "passed": it.checkpoint.passed,
                         "note": it.checkpoint.note,
+                        "advisor_findings": list(it.checkpoint.advisor_findings),
                     },
                     "correction": (
                         {
@@ -99,6 +102,7 @@ class RefineLoopOutcome:
                     "delta": self.final_checkpoint.delta,
                     "threshold": self.final_checkpoint.threshold,
                     "passed": self.final_checkpoint.passed,
+                    "advisor_findings": list(self.final_checkpoint.advisor_findings),
                 }
                 if self.final_checkpoint is not None
                 else None

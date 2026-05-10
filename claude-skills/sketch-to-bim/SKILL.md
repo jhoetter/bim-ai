@@ -59,7 +59,7 @@ The right mental model is **iterative convergence through 5–7 phased passes**,
 
 ## The 7 phases
 
-Author **only** the elements listed for the current phase; do not skip ahead. Each phase ends with: commit → checkpoint → validate → refine → advance.
+Author **only** the elements listed for the current phase; do not skip ahead. Each phase ends with: commit → checkpoint → advisor pass → validate → refine → advance.
 
 ### Phase 1 — Massing
 
@@ -85,7 +85,7 @@ Author **only** the elements listed for the current phase; do not skip ahead. Ea
 - SKB-19 wall-graph closure: every floor's perimeter is a closed wall ring.
 - SKB-22 auto-join: walls at coincident endpoints are joined.
 
-Today, the existing `constraints.evaluate` runs at commit; check the violations list and resolve any blocking-severity items.
+Today, the existing `constraints.evaluate` runs at commit; check the violations list and resolve any blocking-severity items. Also read the Advisor panel for the active `codePreset` / perspective and treat its non-blocking findings as phase evidence, not UI noise.
 
 **Checkpoint:** floor plan view + 3D iso. Floor plan should show closed rooms; iso should still match the silhouette.
 
@@ -158,11 +158,22 @@ After every commit:
 
 1. **Render** the phase-relevant viewpoint(s). Use the dev server + Playwright e2e harness today; when SKB-03 lands, use `bim-ai checkpoint`.
 2. **Look** at the rendered PNG with your own multimodal vision. Compare to the sketch.
-3. **Score** the match qualitatively: silhouette ✓/✗, proportions ✓/✗, materials ✓/✗.
-4. If mismatch: **identify the largest visible delta** — typically one of: wrong dimension, wrong slope, missing element, wrong material.
-5. **Author 1–2 corrective commands** (`updateElementProperty`, `moveWallEndpoints`, etc.).
-6. **Re-render. Re-look.**
-7. Cap at 5 iterations per phase. If still mismatched, log an assumption and decide whether to escalate to the user or accept a documented gap.
+3. **Read the Advisor panel / violation payload.** Capture each finding's `code` or `advisoryClass`, severity, message, recommendation, perspective / `codePreset`, and `elementIds`. Use the same filter the user would use in the UI, e.g. residential + Architektur for architectural sketch-to-BIM work.
+4. **Score** the match qualitatively: silhouette ✓/✗, proportions ✓/✗, materials ✓/✗, advisor ✓/✗.
+5. If mismatch: **identify the largest visible or advisor-reported delta** — typically one of: wrong dimension, wrong slope, missing element, wrong material, target-area mismatch, unbounded room, bad stair comfort, unresolved opening / host issue.
+6. **Author 1–2 corrective commands** (`updateElementProperty`, `moveWallEndpoints`, room outline edits, stair tread / riser edits, etc.).
+7. **Re-render. Re-read advisor. Re-look.**
+8. Cap at 5 iterations per phase. If still mismatched, log an assumption and decide whether to escalate to the user or accept a documented gap.
+
+### Advisor findings are first-class input
+
+The software already identifies many issues the sketch-to-BIM agent tends to create. Use those findings as a targeted punch list inside the same refinement loop as visual deltas:
+
+- `room_target_area_mismatch`: compare computed room outline area with `targetAreaM2`; adjust the room boundary when the sketch/program is right, or adjust `targetAreaM2` only when the brief target was an agent guess.
+- `stair_comfort_eu_proxy`: revise tread depth, riser height, run count, or stair footprint before leaving Phase 5 Interior.
+- Any host / opening / room-boundary / material-resolution advisory: fix the named `elementIds` before adding detail that would hide the underlying problem.
+
+Do not advance a phase just because the commit is accepted. If the Advisor panel shows findings tied to elements authored in the current phase, either resolve them, record a deliberate tolerance with rationale, or escalate. The status doc must list unresolved advisor findings next to unresolved visual-fidelity gaps.
 
 ---
 
@@ -172,6 +183,7 @@ These are the failure modes you must avoid; they are the observed behaviour from
 
 - **Skipping phases.** Author all 87 commands at once → can't tell which phase broke fidelity. Don't.
 - **No visual verification.** Trusted "tests pass + bundle commits" as success. Tests verify code correctness, not silhouette match. Don't.
+- **Ignoring app-identified advisor issues.** The UI may already say `room_target_area_mismatch` for `hf-room-bath` or `stair_comfort_eu_proxy` for `hf-stair-main`. Don't keep refining by eyesight while leaving those named findings open.
 - **Eyeballing dimensions** without recording them as assumptions. The "ridge offset 1500 mm" was a guess, not a calibrated measurement. Don't.
 - **Declaring "partial" when the silhouette is wrong.** The honest call is "failed; here's the gap". The sprint prompt warned about this exact mistake and I made it anyway. Don't.
 - **Building geometry without checking the renderer can faithfully render it.** The asymmetric_gable mesh isn't watertight; the dormer CSG cut silently no-ops. The agent had no way to detect this from inside the engine — only the rendered output reveals it. **Look at the render.**
@@ -190,6 +202,8 @@ These are the failure modes you must avoid; they are the observed behaviour from
 **Render:** start dev with `make dev`; navigate to the 3D tab; activate a viewpoint via the project browser. Or programmatically via the Playwright harness in `packages/web/e2e/`.
 
 **Validators:** `app/bim_ai/constraints.py:evaluate()` runs at every commit; check the returned violation list.
+
+**Advisor surface:** the right rail Advisor panel and the API violation/advisory payload expose issue code, recommendation text, perspective / `codePreset`, and `elementIds`. Feed these findings into SKB-15 refine-loop evidence so corrections can target the elements the app already identified.
 
 **Material catalog:** `app/bim_ai/material_catalog.py` (Python) and `packages/web/src/viewport/materials.ts` (TS). Every materialKey you author must resolve in both.
 
@@ -215,6 +229,7 @@ At task end, you produce:
 3. **The assumption log** — every judgment call with sketch coordinates.
 4. **Per-phase checkpoint screenshots** — saved alongside the brief, named `phase-N-<name>-vp-<id>.png`.
 5. **A status doc** — `nightshift/<sprint>-status.md` honestly assessing visual fidelity. If the silhouette does not match the target sketch, the status doc says **failed**, not "partial". Honesty over face-saving.
+6. **Unresolved advisor findings** — a short table of any remaining advisory / violation codes, affected `elementIds`, and why they were accepted or escalated.
 
 ---
 
