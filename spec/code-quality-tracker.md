@@ -155,6 +155,7 @@ These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (t
 - `constraints.py`: extracted `constraints_geometry.py`, `constraints_wall_geometry.py`, `constraints_sheet_viewports.py`, and `constraints_metadata.py`, preserving legacy private aliases and adding focused tests for geometry, wall/opening intervals, sheet viewport repair, and metadata maps.
 - `engine.py`: extracted `engine_plan_mesh.py`, `engine_mirror.py`, `engine_visibility.py`, and `engine_wall_helpers.py`, preserving existing `bim_ai.engine` imports and reusing focused regression coverage.
 - `engine.py`: extracted pure replay diagnostics constants/builders into `engine_replay_diagnostics.py`, preserving existing `bim_ai.engine` imports and replay diagnostics regression coverage.
+- `engine.py`: extracted authoritative replay preflight and command-bundle merge preflight logic into `engine_authoritative_replay.py`, preserving existing `bim_ai.engine` imports. `engine.py` is down to 6,594 LOC.
 - `export_ifc.py`: extracted IFC authoritative replay, semantic roundtrip, import-preview, and unsupported-merge-map readback logic into `export_ifc_authoritative_replay.py`, preserving legacy `bim_ai.export_ifc` imports. `export_ifc.py` is down to 1,945 LOC.
 
 **Latest verification.** Full backend suite passed after the latest CQ-04 slice: `2476 passed, 93 skipped, 1 deselected` with total coverage `75.83%`; each pushed workpackage passed GitHub CI on `main`.
