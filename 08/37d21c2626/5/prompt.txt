@@ -1,0 +1,1 @@
+for now, please dont always wait for the CI build. instead do that at the very, very end only (of the whole revit-parity work); it likely will break by then, but we can then fix it easily. running it after ecah workpackage takes too long
