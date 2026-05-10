@@ -72,6 +72,7 @@ type SymbolicLineSubcategory = 'symbolic' | 'opening_projection' | 'hidden_cut';
 
 type SymbolicLine = SketchLine & {
   subcategory: SymbolicLineSubcategory;
+  alignmentLock?: { refPlaneId: string };
 };
 
 type FamilyDimension = {
@@ -141,6 +142,12 @@ const EMPTY_SYMBOLIC_LINE_DRAFT = {
   ex: 500,
   ey: 0,
   subcategory: 'symbolic' as SymbolicLineSubcategory,
+};
+
+const EMPTY_SYMBOLIC_ALIGN_DRAFT = {
+  lineIndex: 0,
+  refPlaneId: '',
+  locked: true,
 };
 
 const EMPTY_SWEEP_DRAFT: SweepDraft = {
@@ -230,6 +237,7 @@ export function FamilyEditorWorkbench(): JSX.Element {
   const [arrayDraft, setArrayDraft] = useState<ArrayDraft | null>(null);
   const [symbolicLines, setSymbolicLines] = useState<SymbolicLine[]>([]);
   const [symbolicLineDraft, setSymbolicLineDraft] = useState(EMPTY_SYMBOLIC_LINE_DRAFT);
+  const [symbolicAlignDraft, setSymbolicAlignDraft] = useState(EMPTY_SYMBOLIC_ALIGN_DRAFT);
   const [dimensions, setDimensions] = useState<FamilyDimension[]>([]);
   const [dimensionDraft, setDimensionDraft] = useState({ refAId: '', refBId: '', paramKey: '' });
   const [nestedInstances, setNestedInstances] = useState<FamilyInstanceRefNode[]>([]);
@@ -264,6 +272,14 @@ export function FamilyEditorWorkbench(): JSX.Element {
             profile: rederiveLockedSketchLines(draft.profile, next, SKETCH_REF_EXTENT_MM),
           }
         : draft,
+    );
+    setSymbolicLines((prev) =>
+      prev.map((line) => {
+        const lockedPlaneId = line.alignmentLock?.refPlaneId;
+        if (!lockedPlaneId) return line;
+        const plane = next.find((candidate) => candidate.id === lockedPlaneId);
+        return plane ? alignSymbolicLineToPlane(line, plane, true) : line;
+      }),
     );
   }
 
@@ -523,6 +539,43 @@ export function FamilyEditorWorkbench(): JSX.Element {
         subcategory: symbolicLineDraft.subcategory,
       },
     ]);
+  }
+
+  function alignSymbolicLineToPlane(
+    line: SymbolicLine,
+    plane: RefPlane,
+    locked: boolean,
+  ): SymbolicLine {
+    const nextLine = plane.isVertical
+      ? {
+          ...line,
+          startMm: { ...line.startMm, xMm: plane.offsetMm },
+          endMm: { ...line.endMm, xMm: plane.offsetMm },
+        }
+      : {
+          ...line,
+          startMm: { ...line.startMm, yMm: plane.offsetMm },
+          endMm: { ...line.endMm, yMm: plane.offsetMm },
+        };
+    if (!locked) {
+      const { alignmentLock: _omit, ...rest } = nextLine;
+      return rest as SymbolicLine;
+    }
+    return { ...nextLine, alignmentLock: { refPlaneId: plane.id } };
+  }
+
+  function alignSelectedSymbolicLine() {
+    const line = symbolicLines[symbolicAlignDraft.lineIndex];
+    const refPlaneId = symbolicAlignDraft.refPlaneId || refPlanes[0]?.id || '';
+    const plane = refPlanes.find((candidate) => candidate.id === refPlaneId);
+    if (!line || !plane) return;
+    setSymbolicLines((prev) =>
+      prev.map((candidate, index) =>
+        index === symbolicAlignDraft.lineIndex
+          ? alignSymbolicLineToPlane(candidate, plane, symbolicAlignDraft.locked)
+          : candidate,
+      ),
+    );
   }
 
   /* ─── FAM-01 — nested family instance authoring ──────────────────── */
@@ -943,10 +996,59 @@ export function FamilyEditorWorkbench(): JSX.Element {
           {symbolicLines.map((line, index) => (
             <li key={index}>
               {line.subcategory}: ({line.startMm.xMm}, {line.startMm.yMm}) → ({line.endMm.xMm},{' '}
-              {line.endMm.yMm})
+              {line.endMm.yMm}){line.alignmentLock ? ' · locked' : ''}
             </li>
           ))}
         </ul>
+        {symbolicLines.length > 0 && refPlanes.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span>Align</span>
+            <select
+              aria-label="align-symbolic-line"
+              value={symbolicAlignDraft.lineIndex}
+              onChange={(e) =>
+                setSymbolicAlignDraft((prev) => ({ ...prev, lineIndex: Number(e.target.value) }))
+              }
+            >
+              {symbolicLines.map((_line, index) => (
+                <option key={index} value={index}>
+                  Line {index + 1}
+                </option>
+              ))}
+            </select>
+            <select
+              aria-label="align-reference-plane"
+              value={symbolicAlignDraft.refPlaneId || refPlanes[0]?.id || ''}
+              onChange={(e) =>
+                setSymbolicAlignDraft((prev) => ({ ...prev, refPlaneId: e.target.value }))
+              }
+            >
+              {refPlanes.map((plane) => (
+                <option key={plane.id} value={plane.id}>
+                  {plane.name} {plane.isVertical ? 'V' : 'H'} {plane.offsetMm}mm
+                </option>
+              ))}
+            </select>
+            <label className="flex items-center gap-1">
+              <input
+                type="checkbox"
+                aria-label="align-lock"
+                checked={symbolicAlignDraft.locked}
+                onChange={(e) =>
+                  setSymbolicAlignDraft((prev) => ({ ...prev, locked: e.target.checked }))
+                }
+              />
+              Lock
+            </label>
+            <button
+              type="button"
+              onClick={alignSelectedSymbolicLine}
+              data-testid="symbolic-line-align"
+            >
+              Align
+            </button>
+          </div>
+        ) : null}
       </section>
 
       {selectedNested && selectedNestedIndex !== null && (

@@ -76,7 +76,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Align Tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0465_02-49-25.png)
 
-**bim-ai status:** ❌ Not available — bim-ai has no interactive align + lock operation in a family editor context.
+**bim-ai status:** 🟡 Partial — the family editor now supports aligning a symbolic line to a selected reference plane, with an optional Lock flag. Locked symbolic lines follow the reference plane when its offset changes. Missing: Revit's canvas click workflow, model/edge picking, lock glyph interaction, and broad support for sweeps/nested family geometry.
 
 ---
 
