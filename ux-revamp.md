@@ -154,4 +154,5 @@ Goal: evidence/readout surfaces should not make the everyday UX feel like a debu
 ## Final Implementation Notes
 
 - Closed in the 2026-05-10 UX pass with focused regression coverage for sheet recommendation/placement commands plus existing routing, section, sheet, 3D, inspector, and browser tests.
+- Post-close audit on 2026-05-10 found and patched remaining product gaps: schedule tabs now hydrate server-derived rows, schedule seed definitions carry category filters, 3D visual-style controls moved out of the canvas into the View controls panel, the collapsed browser uses hi-fi recognition icons, and the default browser state is expanded.
 - Remaining future UX work should be tracked as new product enhancements, not as open items in this revamp.

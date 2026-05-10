@@ -1,4 +1,4 @@
-import { type JSX, useState } from 'react';
+import { type JSX, useEffect, useMemo, useState } from 'react';
 import type { Element } from '@bim-ai/core';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
 import { ScheduleViewHifi } from '@bim-ai/icons';
@@ -8,6 +8,11 @@ import { AdvisorPanel } from '../advisor/AdvisorPanel';
 import { useBimStore } from '../state/store';
 import { SheetReviewSurface } from '../plan/SheetReviewSurface';
 import { SheetCanvas, SectionPlaceholderPane } from './sheets';
+import {
+  buildScheduleTableModelV1,
+  type ScheduleTableModelV1,
+} from '../schedules/scheduleTableRenderer';
+import { formatScheduleCell } from '../schedules/scheduleUtils';
 
 /**
  * Mode-specific shells — spec §20.4 / §20.5 / §20.6 / §20.7.
@@ -113,14 +118,28 @@ export function SheetModeShell({
 
 export function ScheduleModeShell({
   elementsById,
+  preferredScheduleId,
+  modelId,
 }: {
   elementsById: Record<string, Element>;
+  preferredScheduleId?: string;
+  modelId?: string;
 }): JSX.Element {
   const schedules = asArr(elementsById, 'schedule');
   const [activeId, setActiveId] = useState<string | null>(
-    schedules[0]?.id ?? SCHEDULE_DEFAULTS.activeScheduleId,
+    preferredScheduleId ?? schedules[0]?.id ?? SCHEDULE_DEFAULTS.activeScheduleId,
   );
   const active = activeId ? elementsById[activeId] : undefined;
+
+  useEffect(() => {
+    if (preferredScheduleId && elementsById[preferredScheduleId]?.kind === 'schedule') {
+      setActiveId(preferredScheduleId);
+      return;
+    }
+    if (!activeId || elementsById[activeId]?.kind !== 'schedule') {
+      setActiveId(schedules[0]?.id ?? null);
+    }
+  }, [activeId, elementsById, preferredScheduleId, schedules]);
 
   return (
     <div
@@ -162,7 +181,7 @@ export function ScheduleModeShell({
       </aside>
       <div className="overflow-auto bg-background p-3">
         {active && active.kind === 'schedule' ? (
-          <ScheduleGrid schedule={active} />
+          <ScheduleGrid schedule={active} modelId={modelId} />
         ) : (
           <PlaceholderCard
             title="Pick a schedule"
@@ -175,39 +194,164 @@ export function ScheduleModeShell({
   );
 }
 
+type ScheduleGridState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'ready'; payload: Record<string, unknown> }
+  | { status: 'error'; message: string };
+
 function ScheduleGrid({
   schedule,
+  modelId,
 }: {
   schedule: Extract<Element, { kind: 'schedule' }>;
+  modelId?: string;
 }): JSX.Element {
+  const [state, setState] = useState<ScheduleGridState>({ status: 'idle' });
+
+  useEffect(() => {
+    if (!modelId) {
+      setState({ status: 'idle' });
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      setState({ status: 'loading' });
+      try {
+        const mid = encodeURIComponent(modelId);
+        const sid = encodeURIComponent(schedule.id);
+        const res = await fetch(`/api/models/${mid}/schedules/${sid}/table`);
+        const txt = await res.text();
+        const payload = JSON.parse(txt) as Record<string, unknown>;
+        if (!res.ok) throw new Error(String(payload.detail ?? txt));
+        if (!cancelled) setState({ status: 'ready', payload });
+      } catch (error) {
+        if (!cancelled)
+          setState({
+            status: 'error',
+            message: error instanceof Error ? error.message : String(error),
+          });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [modelId, schedule.id]);
+
+  const model = useMemo<ScheduleTableModelV1 | null>(() => {
+    if (state.status !== 'ready') return null;
+    return buildScheduleTableModelV1({ payload: state.payload });
+  }, [state]);
+
+  const category =
+    state.status === 'ready'
+      ? String(state.payload.category ?? '').trim()
+      : String((schedule.filters as Record<string, unknown> | undefined)?.category ?? '').trim();
+
   return (
     <div className="flex flex-col gap-3">
       <div>
         <div className="text-md font-medium text-foreground">{schedule.name}</div>
         <div className="text-xs text-muted">
           Schedule id · <span className="font-mono">{schedule.id}</span>
+          {category ? (
+            <>
+              {' '}
+              · <span>{category}</span>
+            </>
+          ) : null}
         </div>
       </div>
-      <table className="w-full border-collapse text-sm" aria-label={`${schedule.name} grid`}>
-        <thead>
-          <tr className="text-xs uppercase text-muted">
-            <th className="border-b border-border px-2 py-1.5 text-left">Mark</th>
-            <th className="border-b border-border px-2 py-1.5 text-left">Type</th>
-            <th className="border-b border-border px-2 py-1.5 text-right">Width</th>
-            <th className="border-b border-border px-2 py-1.5 text-right">Height</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td className="border-b border-border px-2 py-1.5 font-mono text-xs">—</td>
-            <td className="border-b border-border px-2 py-1.5 text-muted">
-              Rows hydrate from the server `derive_schedule_table` endpoint.
-            </td>
-            <td className="border-b border-border px-2 py-1.5 text-right text-muted">—</td>
-            <td className="border-b border-border px-2 py-1.5 text-right text-muted">—</td>
-          </tr>
-        </tbody>
-      </table>
+      {state.status === 'idle' ? (
+        <div className="rounded border border-border bg-surface px-3 py-2 text-sm text-muted">
+          Open a saved model to derive schedule rows.
+        </div>
+      ) : state.status === 'loading' ? (
+        <div className="rounded border border-border bg-surface px-3 py-2 text-sm text-muted">
+          Loading schedule rows…
+        </div>
+      ) : state.status === 'error' ? (
+        <div
+          role="alert"
+          className="rounded border border-danger/40 bg-danger/10 px-3 py-2 text-sm"
+        >
+          {state.message}
+        </div>
+      ) : model ? (
+        <DerivedScheduleTable scheduleName={schedule.name} model={model} />
+      ) : null}
+    </div>
+  );
+}
+
+function DerivedScheduleTable({
+  scheduleName,
+  model,
+}: {
+  scheduleName: string;
+  model: ScheduleTableModelV1;
+}): JSX.Element {
+  return (
+    <div className="min-w-0">
+      <div className="mb-2 text-xs text-muted">
+        {model.leafRowCount} row{model.leafRowCount === 1 ? '' : 's'}
+        {model.groupCount ? ` · ${model.groupCount} group${model.groupCount === 1 ? '' : 's'}` : ''}
+      </div>
+      <div className="max-h-[min(520px,calc(100vh-210px))] overflow-auto border border-border bg-surface">
+        <table
+          className="w-full min-w-max border-collapse text-sm"
+          aria-label={`${scheduleName} grid`}
+        >
+          <thead>
+            <tr className="text-xs uppercase text-muted">
+              {model.columns.map((column) => (
+                <th
+                  key={column.key}
+                  className="sticky top-0 border-b border-border bg-surface px-2 py-1.5 text-left"
+                  style={{ minWidth: column.displayWidthHintPx }}
+                >
+                  {column.headerLabel}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {model.bodyRows.length ? (
+              model.bodyRows.map((row) =>
+                row.kind === 'groupHeader' ? (
+                  <tr key={row.id} className="bg-accent/10">
+                    <td
+                      className="px-2 py-1 text-xs font-semibold text-muted"
+                      colSpan={model.columns.length}
+                    >
+                      {row.label}
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={row.id} className="border-t border-border/60">
+                    {model.columns.map((column) => (
+                      <td key={`${row.id}-${column.key}`} className="px-2 py-1.5 align-top">
+                        {formatScheduleCell(row.record[column.key])}
+                      </td>
+                    ))}
+                  </tr>
+                ),
+              )
+            ) : (
+              <tr>
+                <td className="px-2 py-3 text-muted" colSpan={Math.max(1, model.columns.length)}>
+                  No rows match this schedule.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      {model.footerParts.length ? (
+        <div className="mt-2 rounded border border-border/60 px-2 py-1 font-mono text-[10px] text-muted">
+          {model.footerParts.join(' · ')}
+        </div>
+      ) : null}
     </div>
   );
 }

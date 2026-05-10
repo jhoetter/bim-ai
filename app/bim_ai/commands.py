@@ -945,6 +945,8 @@ class UpsertScheduleCmd(BaseModel):
     id: str | None = None
     name: str = "Schedule"
     sheet_id: str | None = Field(default=None, alias="sheetId")
+    filters: dict[str, Any] = Field(default_factory=dict)
+    grouping: dict[str, Any] = Field(default_factory=dict)
 
 
 class UpsertScheduleFiltersCmd(BaseModel):
@@ -2156,7 +2158,6 @@ class DeleteToposolidCmd(BaseModel):
     toposolid_id: str = Field(alias="toposolidId")
 
 
-
 # ---------------------------------------------------------------------------
 # TOP-V3-02 — Toposolid subdivision commands
 # ---------------------------------------------------------------------------
@@ -2339,8 +2340,6 @@ class SetToolPrefCmd(BaseModel):
     tool: str
     pref_key: str = Field(alias="prefKey")
     pref_value: str = Field(alias="prefValue")
-
-
 
 
 # ---------------------------------------------------------------------------

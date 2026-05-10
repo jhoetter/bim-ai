@@ -1,5 +1,16 @@
 import {
+  type BimIconHifiProps,
+  FamilyHifi,
+  LevelHifi,
+  PlanViewHifi,
+  ScheduleViewHifi,
+  SectionViewHifi,
+  SheetHifi,
+  WallLayerHifi,
+} from '@bim-ai/icons';
+import {
   type CSSProperties,
+  type ComponentType,
   type JSX,
   type KeyboardEvent,
   type ReactNode,
@@ -264,6 +275,7 @@ export function LeftRailCollapsed({
       <div className="my-1 h-px w-5 bg-border" aria-hidden="true" />
       {/* Section shortcuts — clicking also expands */}
       {sections.map((s) => {
+        const HifiIcon = hifiIconForSection(s.id);
         const Icon = s.icon ?? Icons.disclosureClosed;
         return (
           <button
@@ -272,14 +284,30 @@ export function LeftRailCollapsed({
             aria-label={s.label}
             title={s.label}
             onClick={onExpand}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface-strong hover:text-foreground"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground/75 transition-colors hover:bg-surface-strong hover:text-foreground"
           >
-            <Icon size={ICON_SIZE.chrome} aria-hidden="true" />
+            {HifiIcon ? (
+              <HifiIcon size={25} aria-hidden="true" />
+            ) : (
+              <Icon size={ICON_SIZE.chrome} aria-hidden="true" />
+            )}
           </button>
         );
       })}
     </nav>
   );
+}
+
+function hifiIconForSection(sectionId: string): ComponentType<BimIconHifiProps> | undefined {
+  const normalized = sectionId.toLowerCase();
+  if (normalized.includes('level') || normalized.includes('project')) return LevelHifi;
+  if (normalized.includes('view')) return PlanViewHifi;
+  if (normalized.includes('sheet')) return SheetHifi;
+  if (normalized.includes('schedule')) return ScheduleViewHifi;
+  if (normalized.includes('section')) return SectionViewHifi;
+  if (normalized.includes('type')) return WallLayerHifi;
+  if (normalized.includes('family')) return FamilyHifi;
+  return undefined;
 }
 
 function SearchField({
@@ -316,7 +344,7 @@ function SectionBlock({
     <div className="mb-2">
       <div
         className="flex items-center gap-1.5 px-4 pb-0.5 pt-3 text-[10px] font-semibold uppercase text-muted"
-        style={{ letterSpacing: '0.08em', opacity: 0.7 }}
+        style={{ letterSpacing: 0, opacity: 0.7 }}
       >
         {section.icon ? <section.icon size={12} aria-hidden="true" /> : null}
         <span>{section.label}</span>

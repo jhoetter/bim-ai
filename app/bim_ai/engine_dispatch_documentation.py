@@ -558,6 +558,8 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
                 id=sc,
                 name=cmd.name,
                 sheet_id=cmd.sheet_id,
+                filters=dict(cmd.filters or {}),
+                grouping=dict(cmd.grouping or {}),
             )
 
         case UpsertScheduleFiltersCmd():

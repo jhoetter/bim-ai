@@ -440,12 +440,41 @@ def _allowed_levels_from_schedule_filter_equals(feq: dict[str, Any]) -> frozense
     return None
 
 
+def _infer_schedule_category_from_name(name: str) -> str | None:
+    lowered = name.strip().lower()
+    if "window" in lowered:
+        return "window"
+    if "door" in lowered:
+        return "door"
+    if "room" in lowered:
+        return "room"
+    if "floor" in lowered:
+        return "floor"
+    if "roof" in lowered:
+        return "roof"
+    if "stair" in lowered:
+        return "stair"
+    if "sheet" in lowered:
+        return "sheet"
+    if "plan" in lowered:
+        return "plan_view"
+    if "assembly" in lowered or "assemblies" in lowered:
+        return "material_assembly"
+    return None
+
+
 def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
     sch = doc.elements.get(schedule_id)
     if not isinstance(sch, ScheduleElem):
         raise ValueError(f"schedule id '{schedule_id}' not found or not a schedule")
     filt = dict(sch.filters or {})
-    cat = str(filt.get("category") or filt.get("Category") or "room").lower()
+    cat = str(
+        filt.get("category")
+        or filt.get("Category")
+        or sch.category
+        or _infer_schedule_category_from_name(sch.name)
+        or "room"
+    ).lower()
     sch_group = dict(sch.grouping or {})
 
     lvl_lab = _level_labels(doc)

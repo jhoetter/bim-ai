@@ -29,6 +29,7 @@ export function CanvasMount({
   cameraHandleRef,
   initialCamera,
   preferredSheetId,
+  preferredScheduleId,
   modelId,
   wsOn,
   onPersistViewpointField,
@@ -44,6 +45,7 @@ export function CanvasMount({
   cameraHandleRef?: RefObject<PlanCameraHandle | null>;
   initialCamera?: { centerMm?: { xMm: number; yMm: number }; halfMm?: number };
   preferredSheetId?: string;
+  preferredScheduleId?: string;
   modelId?: string;
   wsOn?: boolean;
   onPersistViewpointField?: (p: {
@@ -118,7 +120,11 @@ export function CanvasMount({
   if (mode === 'schedule')
     return (
       <ErrorBoundary label="SchedulePanel">
-        <ScheduleModeShell elementsById={elementsById} />
+        <ScheduleModeShell
+          elementsById={elementsById}
+          preferredScheduleId={preferredScheduleId}
+          modelId={modelId}
+        />
       </ErrorBoundary>
     );
   if (mode === 'agent')

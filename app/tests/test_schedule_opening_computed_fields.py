@@ -130,6 +130,53 @@ def test_window_schedule_opening_area_aspect_head_height() -> None:
     assert tbl["totals"]["sumRoughOpeningHeightMm"] == 1500
 
 
+def test_legacy_schedule_name_infers_opening_category_without_filters() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lv": LevelElem(kind="level", id="lv", name="L1", elevationMm=0),
+            "wa": WallElem(
+                kind="wall",
+                id="wa",
+                name="W",
+                levelId="lv",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "d1": DoorElem(
+                kind="door",
+                id="d1",
+                name="D",
+                wallId="wa",
+                alongT=0.5,
+                widthMm=900,
+            ),
+            "w1": WindowElem(
+                kind="window",
+                id="w1",
+                name="W-01",
+                wallId="wa",
+                alongT=0.25,
+                widthMm=1200,
+                heightMm=1500,
+                sillHeightMm=900,
+            ),
+            "sch-door": ScheduleElem(kind="schedule", id="sch-door", name="Door schedule"),
+            "sch-window": ScheduleElem(kind="schedule", id="sch-window", name="Window schedule"),
+        },
+    )
+
+    door_tbl = derive_schedule_table(doc, "sch-door")
+    window_tbl = derive_schedule_table(doc, "sch-window")
+
+    assert door_tbl["category"] == "door"
+    assert [r["elementId"] for r in door_tbl["rows"]] == ["d1"]
+    assert window_tbl["category"] == "window"
+    assert [r["elementId"] for r in window_tbl["rows"]] == ["w1"]
+
+
 def test_window_schedule_rough_opening_includes_interior_reveal() -> None:
     doc = Document(
         revision=1,

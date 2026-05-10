@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render } from '@testing-library/react';
+import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import type { Element } from '@bim-ai/core';
 import {
@@ -39,6 +39,7 @@ vi.mock('./sheets', () => ({
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
 });
 
 const elementsById: Record<string, Element> = {
@@ -64,6 +65,11 @@ const elementsById: Record<string, Element> = {
     kind: 'schedule',
     id: 'seed-sch-door',
     name: 'Door schedule',
+  } as Extract<Element, { kind: 'schedule' }>,
+  'seed-sch-window': {
+    kind: 'schedule',
+    id: 'seed-sch-window',
+    name: 'Window schedule',
   } as Extract<Element, { kind: 'schedule' }>,
 };
 
@@ -104,6 +110,46 @@ describe('ScheduleModeShell — spec §20.6', () => {
     const { getByTestId, getAllByText } = render(<ScheduleModeShell elementsById={elementsById} />);
     expect(getByTestId('schedule-mode-shell')).toBeTruthy();
     expect(getAllByText('Door schedule').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('opens the preferred schedule tab and renders server-derived rows', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          scheduleId: 'seed-sch-window',
+          name: 'Window schedule',
+          category: 'window',
+          columns: ['elementId', 'name', 'widthMm', 'heightMm'],
+          columnMetadata: {
+            fields: {
+              elementId: { label: 'Element id', role: 'id' },
+              name: { label: 'Name', role: 'text' },
+              widthMm: { label: 'Width (mm)', role: 'number' },
+              heightMm: { label: 'Height (mm)', role: 'number' },
+            },
+          },
+          rows: [{ elementId: 'win-1', name: 'W-01', widthMm: 1200, heightMm: 1400 }],
+          totalRows: 1,
+        }),
+        { status: 200 },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchSpy);
+
+    const { getAllByText, getByText } = render(
+      <ScheduleModeShell
+        elementsById={elementsById}
+        preferredScheduleId="seed-sch-window"
+        modelId="model-1"
+      />,
+    );
+
+    expect(getAllByText('Window schedule').length).toBeGreaterThanOrEqual(1);
+    await waitFor(() =>
+      expect(fetchSpy).toHaveBeenCalledWith('/api/models/model-1/schedules/seed-sch-window/table'),
+    );
+    expect(getByText('W-01')).toBeTruthy();
+    expect(getByText('1200')).toBeTruthy();
   });
 });
 

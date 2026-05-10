@@ -60,6 +60,12 @@ export function WorkspaceRightRail({
   const activeLevelId = useBimStore((s) => s.activeLevelId);
   const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
   const toggleViewerCategoryHidden = useBimStore((s) => s.toggleViewerCategoryHidden);
+  const viewerRenderStyle = useBimStore((s) => s.viewerRenderStyle);
+  const setViewerRenderStyle = useBimStore((s) => s.setViewerRenderStyle);
+  const viewerBackground = useBimStore((s) => s.viewerBackground);
+  const setViewerBackground = useBimStore((s) => s.setViewerBackground);
+  const viewerEdges = useBimStore((s) => s.viewerEdges);
+  const setViewerEdges = useBimStore((s) => s.setViewerEdges);
   const viewerClipElevMm = useBimStore((s) => s.viewerClipElevMm);
   const setViewerClipElevMm = useBimStore((s) => s.setViewerClipElevMm);
   const viewerClipFloorElevMm = useBimStore((s) => s.viewerClipFloorElevMm);
@@ -644,6 +650,12 @@ export function WorkspaceRightRail({
           <Viewport3DLayersPanel
             viewerCategoryHidden={viewerCategoryHidden}
             onToggleCategory={toggleViewerCategoryHidden}
+            viewerRenderStyle={viewerRenderStyle}
+            onSetRenderStyle={setViewerRenderStyle}
+            viewerBackground={viewerBackground}
+            onSetBackground={setViewerBackground}
+            viewerEdges={viewerEdges}
+            onSetEdges={setViewerEdges}
             viewerClipElevMm={viewerClipElevMm}
             onSetClipElevMm={setViewerClipElevMm}
             viewerClipFloorElevMm={viewerClipFloorElevMm}

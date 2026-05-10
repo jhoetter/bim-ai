@@ -11,6 +11,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 
 import type { Element } from '@bim-ai/core';
+import { Icons, ICON_SIZE } from '@bim-ai/ui';
 
 import {
   OrbitViewpointPersistedHud,
@@ -198,7 +199,6 @@ export function Viewport({
   const [walkActive, setWalkActive] = useState(false);
   const [sectionBoxActive, setSectionBoxActive] = useState(false);
   const [text3dRebuildTick, setText3dRebuildTick] = useState(0);
-  const [gdoOpen, setGdoOpen] = useState(false);
   // ANN-02: state for the right-click "Generate Section / Elevation" menu in 3D.
   const [wallContextMenu, setWallContextMenu] = useState<{
     wall: Extract<Element, { kind: 'wall' }>;
@@ -336,7 +336,6 @@ export function Viewport({
   const viewerPhaseFilter = useBimStore((s) => s.viewerPhaseFilter);
   const viewerRenderStyle = useBimStore((s) => s.viewerRenderStyle);
   const viewerBackground = useBimStore((s) => s.viewerBackground);
-  const viewerEdges = useBimStore((s) => s.viewerEdges);
   const lensMode = useBimStore((s) => s.lensMode);
 
   const viewerClipElevMm = useBimStore((s) => s.viewerClipElevMm);
@@ -2095,12 +2094,15 @@ export function Viewport({
           aria-pressed={walkActive}
           data-active={walkActive ? 'true' : 'false'}
           className={[
-            'rounded-md border border-border px-2 py-1 text-xs',
-            walkActive ? 'bg-accent text-accent-foreground' : 'bg-surface text-foreground',
+            'inline-flex h-8 w-8 items-center justify-center rounded-md border border-border shadow-sm backdrop-blur-sm',
+            walkActive
+              ? 'bg-accent text-accent-foreground'
+              : 'bg-surface/90 text-foreground hover:bg-surface-strong',
           ].join(' ')}
           title={t('viewport.walkTitle')}
+          aria-label={t('viewport.walkTitle')}
         >
-          {t('viewport.walkLabel')}: {walkActive ? t('viewport.on') : t('viewport.off')}
+          <Icons.viewpoint size={ICON_SIZE.chrome} aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -2108,12 +2110,15 @@ export function Viewport({
           aria-pressed={sectionBoxActive}
           data-active={sectionBoxActive ? 'true' : 'false'}
           className={[
-            'rounded-md border border-border px-2 py-1 text-xs',
-            sectionBoxActive ? 'bg-accent text-accent-foreground' : 'bg-surface text-foreground',
+            'inline-flex h-8 w-8 items-center justify-center rounded-md border border-border shadow-sm backdrop-blur-sm',
+            sectionBoxActive
+              ? 'bg-accent text-accent-foreground'
+              : 'bg-surface/90 text-foreground hover:bg-surface-strong',
           ].join(' ')}
           title={t('viewport.sectionBoxTitle')}
+          aria-label={t('viewport.sectionBoxTitle')}
         >
-          {t('viewport.sectionBoxLabel')}: {sectionBoxActive ? t('viewport.on') : t('viewport.off')}
+          <Icons.sectionBox size={ICON_SIZE.chrome} aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -2121,131 +2126,15 @@ export function Viewport({
           aria-pressed={orthoMode}
           data-active={orthoMode ? 'true' : 'false'}
           className={[
-            'rounded-md border border-border px-2 py-1 text-xs',
-            orthoMode ? 'bg-accent text-accent-foreground' : 'bg-surface text-foreground',
+            'inline-flex h-8 w-8 items-center justify-center rounded-md border border-border shadow-sm backdrop-blur-sm',
+            orthoMode
+              ? 'bg-accent text-accent-foreground'
+              : 'bg-surface/90 text-foreground hover:bg-surface-strong',
           ].join(' ')}
           title={t('viewport.orthoTitle')}
+          aria-label={t('viewport.orthoTitle')}
         >
-          {t('viewport.orthoLabel')}: {orthoMode ? t('viewport.on') : t('viewport.off')}
-        </button>
-        {/* F-113: Graphic Display Options */}
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setGdoOpen((o) => !o)}
-            aria-expanded={gdoOpen}
-            aria-haspopup="dialog"
-            data-active={gdoOpen ? 'true' : 'false'}
-            data-testid="viewport-gdo-toggle"
-            className={[
-              'rounded-md border border-border px-2 py-1 text-xs',
-              gdoOpen ? 'bg-accent text-accent-foreground' : 'bg-surface text-foreground',
-            ].join(' ')}
-            title="Graphic Display Options (GDO)"
-          >
-            Display
-          </button>
-          {gdoOpen && (
-            <div
-              role="dialog"
-              aria-label="Graphic Display Options"
-              className="absolute bottom-full right-0 mb-1 w-48 rounded border border-border bg-surface p-3 shadow-elev-2 text-[11px] space-y-2"
-              data-testid="gdo-panel"
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') setGdoOpen(false);
-              }}
-            >
-              <div className="font-semibold text-foreground">Graphic Display</div>
-
-              <label className="flex flex-col gap-0.5">
-                <span className="text-muted">Visual Style</span>
-                <select
-                  value={viewerRenderStyle}
-                  onChange={(e) =>
-                    useBimStore
-                      .getState()
-                      .setViewerRenderStyle(
-                        e.target.value as
-                          | 'shaded'
-                          | 'wireframe'
-                          | 'consistent-colors'
-                          | 'hidden-line',
-                      )
-                  }
-                  className="rounded border border-border bg-surface px-1 py-0.5 text-foreground"
-                >
-                  <option value="shaded">Shaded</option>
-                  <option value="consistent-colors">Consistent Colors</option>
-                  <option value="wireframe">Wireframe</option>
-                  <option value="hidden-line">Hidden Line</option>
-                </select>
-              </label>
-
-              <label className="flex flex-col gap-0.5">
-                <span className="text-muted">Background</span>
-                <select
-                  value={viewerBackground}
-                  onChange={(e) =>
-                    useBimStore
-                      .getState()
-                      .setViewerBackground(e.target.value as 'white' | 'light_grey' | 'dark')
-                  }
-                  className="rounded border border-border bg-surface px-1 py-0.5 text-foreground"
-                >
-                  <option value="white">White</option>
-                  <option value="light_grey">Sky</option>
-                  <option value="dark">Dark</option>
-                </select>
-              </label>
-
-              <label className="flex flex-col gap-0.5">
-                <span className="text-muted">Edges</span>
-                <select
-                  value={viewerEdges}
-                  onChange={(e) =>
-                    useBimStore.getState().setViewerEdges(e.target.value as 'normal' | 'none')
-                  }
-                  className="rounded border border-border bg-surface px-1 py-0.5 text-foreground"
-                >
-                  <option value="normal">Normal</option>
-                  <option value="none">None</option>
-                </select>
-              </label>
-            </div>
-          )}
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            const cycle: Record<
-              'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line',
-              'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line'
-            > = {
-              shaded: 'wireframe',
-              wireframe: 'consistent-colors',
-              'consistent-colors': 'shaded',
-              'hidden-line': 'shaded',
-            };
-            useBimStore.getState().setViewerRenderStyle(cycle[viewerRenderStyle]);
-          }}
-          aria-pressed={viewerRenderStyle !== 'shaded'}
-          data-active={viewerRenderStyle !== 'shaded' ? 'true' : 'false'}
-          data-testid="viewport-wireframe-toggle"
-          className={[
-            'rounded-md border border-border px-2 py-1 text-xs',
-            viewerRenderStyle !== 'shaded'
-              ? 'bg-accent text-accent-foreground'
-              : 'bg-surface text-foreground',
-          ].join(' ')}
-          title="Cycle visual style: Shaded → Wireframe → Consistent Colors"
-        >
-          {viewerRenderStyle === 'shaded'
-            ? 'Shaded'
-            : viewerRenderStyle === 'wireframe'
-              ? 'Wireframe'
-              : viewerRenderStyle === 'consistent-colors'
-                ? 'Consistent Colors'
-                : 'Hidden Line'}
+          <Icons.planView size={ICON_SIZE.chrome} aria-hidden="true" />
         </button>
         {sectionBoxActive && sectionBoxRef.current ? (
           <span

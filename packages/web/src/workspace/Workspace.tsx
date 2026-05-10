@@ -232,7 +232,7 @@ export function Workspace(): JSX.Element {
     viewerMode === 'orbit_3d' ? '3d' : 'plan',
   );
   const [theme, setTheme] = useState<Theme>(() => (getCurrentTheme() as Theme) ?? 'light');
-  const [leftRailCollapsed, setLeftRailCollapsed] = useState(true);
+  const [leftRailCollapsed, setLeftRailCollapsed] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [familyLibraryOpen, setFamilyLibraryOpen] = useState(false);
   const [_pendingPlacement, setPendingPlacement] = useState<{
@@ -1246,6 +1246,9 @@ export function Workspace(): JSX.Element {
               initialCamera={activeTab?.viewportState?.planCamera}
               preferredSheetId={
                 activeTab?.kind === 'sheet' ? (activeTab.targetId ?? undefined) : undefined
+              }
+              preferredScheduleId={
+                activeTab?.kind === 'schedule' ? (activeTab.targetId ?? undefined) : undefined
               }
               modelId={modelId ?? undefined}
               wsOn={wsOn}

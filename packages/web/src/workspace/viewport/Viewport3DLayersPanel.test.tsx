@@ -22,6 +22,12 @@ function makeProps(
   return {
     viewerCategoryHidden: {},
     onToggleCategory: vi.fn(),
+    viewerRenderStyle: 'shaded',
+    onSetRenderStyle: vi.fn(),
+    viewerBackground: 'light_grey',
+    onSetBackground: vi.fn(),
+    viewerEdges: 'normal',
+    onSetEdges: vi.fn(),
     viewerClipElevMm: null,
     onSetClipElevMm: vi.fn(),
     viewerClipFloorElevMm: null,
@@ -37,6 +43,13 @@ describe('<Viewport3DLayersPanel />', () => {
     for (const key of VIEWER_HIDDEN_KIND_KEYS) {
       expect(getByTestId(`layer-toggle-${key}`)).toBeTruthy();
     }
+  });
+
+  it('calls graphics controls when render style changes', () => {
+    const onSetRenderStyle = vi.fn();
+    const { getByText } = render(<Viewport3DLayersPanel {...makeProps({ onSetRenderStyle })} />);
+    fireEvent.click(getByText('Wire'));
+    expect(onSetRenderStyle).toHaveBeenCalledWith('wireframe');
   });
 
   it('shows checkboxes as checked when category is NOT hidden', () => {

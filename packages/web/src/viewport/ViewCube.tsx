@@ -58,14 +58,14 @@ interface FaceDef {
 }
 
 const FACES: FaceDef[] = [
-  { id: 'FRONT', label: 'F', transform: `rotateY(0deg) translateZ(${HALF}px)`, shade: 0.04 },
-  { id: 'BACK', label: 'B', transform: `rotateY(180deg) translateZ(${HALF}px)`, shade: 0.12 },
-  { id: 'RIGHT', label: 'R', transform: `rotateY(90deg) translateZ(${HALF}px)`, shade: 0.08 },
-  { id: 'LEFT', label: 'L', transform: `rotateY(-90deg) translateZ(${HALF}px)`, shade: 0.08 },
-  { id: 'TOP', label: 'T', transform: `rotateX(90deg) translateZ(${HALF}px)`, shade: 0.0 },
+  { id: 'FRONT', label: 'Front', transform: `rotateY(0deg) translateZ(${HALF}px)`, shade: 0.04 },
+  { id: 'BACK', label: 'Back', transform: `rotateY(180deg) translateZ(${HALF}px)`, shade: 0.12 },
+  { id: 'RIGHT', label: 'Right', transform: `rotateY(90deg) translateZ(${HALF}px)`, shade: 0.08 },
+  { id: 'LEFT', label: 'Left', transform: `rotateY(-90deg) translateZ(${HALF}px)`, shade: 0.08 },
+  { id: 'TOP', label: 'Top', transform: `rotateX(90deg) translateZ(${HALF}px)`, shade: 0.0 },
   {
     id: 'BOTTOM',
-    label: 'Bt',
+    label: 'Base',
     transform: `rotateX(-90deg) translateZ(${HALF}px)`,
     shade: 0.22,
   },
@@ -164,7 +164,7 @@ export function ViewCube({
       {/* Stage: drag here to orbit; click a face/corner to snap. */}
       <div
         data-testid="view-cube-stage"
-        style={{ ...stageStyle, filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.22))' }}
+        style={{ ...stageStyle, filter: 'drop-shadow(0 2px 6px rgba(15,23,42,0.18))' }}
         onPointerDown={handlePointerDown}
         onClickCapture={handleClickCapture}
       >
@@ -213,11 +213,11 @@ export function ViewCube({
           fontSize: 9,
           fontWeight: 700,
           color: 'var(--color-foreground)',
-          opacity: 0.6,
-          letterSpacing: '0.08em',
+          opacity: 0.55,
+          letterSpacing: 0,
         }}
       >
-        {compassLabelFromAzimuth(currentAzimuth)}
+        {compassNameFromAzimuth(currentAzimuth)}
       </div>
     </div>
   );
@@ -236,9 +236,9 @@ function CubeFace({ face, onClick }: { face: FaceDef; onClick: () => void }): JS
     background: bgColor,
     border: '1px solid var(--color-border)',
     color: 'var(--color-foreground)',
-    fontSize: 8,
-    fontWeight: 500,
-    letterSpacing: '0.1em',
+    fontSize: 7.5,
+    fontWeight: 600,
+    letterSpacing: 0,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -261,4 +261,12 @@ function CubeFace({ face, onClick }: { face: FaceDef; onClick: () => void }): JS
       {face.label}
     </button>
   );
+}
+
+function compassNameFromAzimuth(azimuth: number): string {
+  const label = compassLabelFromAzimuth(azimuth);
+  if (label === 'N') return 'North';
+  if (label === 'E') return 'East';
+  if (label === 'S') return 'South';
+  return 'West';
 }

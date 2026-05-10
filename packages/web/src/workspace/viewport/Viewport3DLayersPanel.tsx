@@ -18,6 +18,12 @@ export type ViewerHiddenKindKey = (typeof VIEWER_HIDDEN_KIND_KEYS)[number];
 export interface Viewport3DLayersPanelProps {
   viewerCategoryHidden: Record<string, boolean>;
   onToggleCategory: (kind: ViewerHiddenKindKey) => void;
+  viewerRenderStyle: 'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line';
+  onSetRenderStyle: (style: 'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line') => void;
+  viewerBackground: 'white' | 'light_grey' | 'dark';
+  onSetBackground: (bg: 'white' | 'light_grey' | 'dark') => void;
+  viewerEdges: 'normal' | 'none';
+  onSetEdges: (edges: 'normal' | 'none') => void;
   viewerClipElevMm: number | null;
   onSetClipElevMm: (mm: number | null) => void;
   viewerClipFloorElevMm: number | null;
@@ -32,6 +38,12 @@ export interface Viewport3DLayersPanelProps {
 export function Viewport3DLayersPanel({
   viewerCategoryHidden,
   onToggleCategory,
+  viewerRenderStyle,
+  onSetRenderStyle,
+  viewerBackground,
+  onSetBackground,
+  viewerEdges,
+  onSetEdges,
   viewerClipElevMm,
   onSetClipElevMm,
   viewerClipFloorElevMm,
@@ -55,9 +67,63 @@ export function Viewport3DLayersPanel({
   };
   return (
     <div data-testid="viewport3d-layers-panel" className="flex flex-col gap-3 px-3 py-3">
-      <div className="text-[10px] font-semibold uppercase tracking-widest text-muted">
-        View controls
-      </div>
+      <div className="text-[10px] font-semibold uppercase text-muted">View controls</div>
+
+      <section className="rounded border border-border bg-surface-strong p-2">
+        <div className="mb-1.5 text-[10px] font-semibold uppercase text-muted">Graphics</div>
+        <div className="grid grid-cols-2 gap-1">
+          {[
+            ['shaded', 'Shaded'],
+            ['consistent-colors', 'Colors'],
+            ['wireframe', 'Wire'],
+            ['hidden-line', 'Hidden'],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() =>
+                onSetRenderStyle(
+                  value as 'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line',
+                )
+              }
+              data-active={viewerRenderStyle === value ? 'true' : 'false'}
+              className={[
+                'h-7 rounded border px-2 text-[11px]',
+                viewerRenderStyle === value
+                  ? 'border-accent bg-accent/15 font-medium text-foreground'
+                  : 'border-border bg-background text-muted hover:text-foreground',
+              ].join(' ')}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <label className="block text-[10px] text-muted">
+            Background
+            <select
+              value={viewerBackground}
+              onChange={(e) => onSetBackground(e.target.value as 'white' | 'light_grey' | 'dark')}
+              className="mt-1 h-7 w-full rounded border border-border bg-background px-2 text-[11px] text-foreground"
+            >
+              <option value="light_grey">Sky</option>
+              <option value="white">White</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
+          <label className="block text-[10px] text-muted">
+            Edges
+            <select
+              value={viewerEdges}
+              onChange={(e) => onSetEdges(e.target.value as 'normal' | 'none')}
+              className="mt-1 h-7 w-full rounded border border-border bg-background px-2 text-[11px] text-foreground"
+            >
+              <option value="normal">Normal</option>
+              <option value="none">None</option>
+            </select>
+          </label>
+        </div>
+      </section>
 
       {activeViewpointId ? (
         <div className="rounded border border-border bg-surface-strong p-2">
@@ -104,7 +170,7 @@ export function Viewport3DLayersPanel({
       </div>
 
       <details className="rounded border border-border bg-surface-strong px-2 py-1.5" open>
-        <summary className="cursor-pointer text-[10px] font-semibold uppercase tracking-widest text-muted">
+        <summary className="cursor-pointer text-[10px] font-semibold uppercase text-muted">
           Section box
         </summary>
         <div className="mt-2 space-y-2">
