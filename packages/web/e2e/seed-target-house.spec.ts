@@ -74,6 +74,19 @@ async function bootWorkspace(page: Page) {
   await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
 }
 
+async function ensure3dMode(page: Page) {
+  const viewport = page.getByTestId('orbit-3d-viewport');
+  if (await viewport.isVisible({ timeout: 1_000 }).catch(() => false)) return;
+
+  const splitTab = page.getByRole('tab', { name: /Plan \+ 3D|3D/i }).first();
+  if (await splitTab.isVisible({ timeout: 5_000 }).catch(() => false)) {
+    await splitTab.click();
+  } else {
+    await page.keyboard.press('2');
+  }
+  await expect(viewport).toBeVisible({ timeout: 30_000 });
+}
+
 async function hydrateStore(page: Page, snapshot: SnapshotShape) {
   await page.evaluate((snap) => {
     type StoreShape = {
@@ -151,9 +164,10 @@ async function captureViewpoint(page: Page, label: string, useFit: boolean) {
 test.describe('seed-target-house', () => {
   test.beforeEach(async ({ page }) => {
     await bootWorkspace(page);
-    await page.locator('button', { hasText: '3D' }).first().click();
+    await ensure3dMode(page);
     const snapshot = loadSnapshot();
     await hydrateStore(page, snapshot);
+    await ensure3dMode(page);
   });
 
   test('main iso', async ({ page }) => {

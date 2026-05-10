@@ -6,6 +6,7 @@ test.describe('cockpit hydration', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('bim.welcome.dismissed', '1');
+      localStorage.setItem('bim.onboarding-completed', 'true');
       localStorage.setItem('bim.workspaceLayout', 'split_plan_3d');
     });
 
@@ -26,7 +27,7 @@ test.describe('cockpit hydration', () => {
       });
     });
 
-    await page.route(`**/api/models/${encodeURIComponent(MODEL_ID)}/snapshot`, async (route) => {
+    await page.route(`**/api/models/${encodeURIComponent(MODEL_ID)}/snapshot**`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

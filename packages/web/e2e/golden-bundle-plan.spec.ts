@@ -77,7 +77,7 @@ test.describe('golden bundle affordances', () => {
       });
     });
 
-    await page.route(`**/api/models/${encodeURIComponent(MODEL_ID)}/snapshot`, async (route) => {
+    await page.route(`**/api/models/${encodeURIComponent(MODEL_ID)}/snapshot**`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -247,7 +247,8 @@ test.describe('golden bundle affordances', () => {
     await page.goto('/');
     await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
 
-    // workspaceLayoutPreset is dead code; navigate to sheet mode by clicking the sheet row
+    // workspaceLayoutPreset is dead code; navigate to sheet mode through the current left rail.
+    await page.getByRole('button', { name: 'Expand sidebar' }).click();
     await page.waitForSelector('[data-testid="left-rail-row-hf-sheet-ga01"]', { timeout: 15_000 });
     await page.getByTestId('left-rail-row-hf-sheet-ga01').click();
 
@@ -259,7 +260,9 @@ test.describe('golden bundle affordances', () => {
     await expect(canvas.locator('svg svg path[fill^="url(#"]').first()).toBeVisible({
       timeout: 15_000,
     });
-    await expect(canvas.getByText(/EG · 0\.00 m/).first()).toBeVisible({ timeout: 15_000 });
+    await expect(canvas.getByText(/EG \| \+0\.000 m/).first()).toBeVisible({
+      timeout: 15_000,
+    });
   });
 
   test('applies evidence3d clip query params on 3D section box controls', async ({ page }) => {

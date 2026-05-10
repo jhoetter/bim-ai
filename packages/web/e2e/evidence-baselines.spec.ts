@@ -138,7 +138,7 @@ async function sharedRoutes(page: Page, layoutPreset: string) {
     });
   });
 
-  await page.route(`**/api/models/${encodeURIComponent(MODEL_ID)}/snapshot`, async (route) => {
+  await page.route(`**/api/models/${encodeURIComponent(MODEL_ID)}/snapshot**`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -788,9 +788,8 @@ test.describe('evidence PNG baselines', () => {
     await sharedRoutes(page, 'split_plan_3d');
     await page.goto('/');
     await page.waitForSelector('[data-testid="app-shell"]', { timeout: 30_000 });
-    // workspaceLayoutPreset is dead code; navigate to plan-3d mode explicitly
-    await page.getByRole('tab', { name: /Plan \+ 3D/i }).click();
     await expect(page.getByTestId('plan-canvas')).toBeVisible();
+    await page.keyboard.press('2');
     await expect(page.getByTestId('orbit-3d-viewport')).toBeVisible({ timeout: 10_000 });
   });
 
