@@ -172,6 +172,28 @@ const DEFAULT_FAMILY_VIEW_RANGE: FamilyViewRange = {
   viewDepthOffsetMm: -1200,
 };
 
+function circularProfileLines(
+  centerXMm: number,
+  centerYMm: number,
+  radiusMm: number,
+  segments = 16,
+): SketchLine[] {
+  return Array.from({ length: segments }, (_value, index) => {
+    const a = (index / segments) * Math.PI * 2;
+    const b = ((index + 1) / segments) * Math.PI * 2;
+    return {
+      startMm: {
+        xMm: Math.round(centerXMm + Math.cos(a) * radiusMm),
+        yMm: Math.round(centerYMm + Math.sin(a) * radiusMm),
+      },
+      endMm: {
+        xMm: Math.round(centerXMm + Math.cos(b) * radiusMm),
+        yMm: Math.round(centerYMm + Math.sin(b) * radiusMm),
+      },
+    };
+  });
+}
+
 const FURNITURE_REF_PLANES: RefPlane[] = [
   {
     id: 'furniture-center-left-right',
@@ -335,7 +357,7 @@ const FURNITURE_SYMBOLIC_LINES: SymbolicLine[] = [
 const FURNITURE_SWEEPS: SweepGeometryNode[] = [
   {
     kind: 'sweep',
-    pathLines: [{ startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 0, yMm: 450 } }],
+    pathLines: [{ startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 0, yMm: 80 } }],
     profile: [
       { startMm: { xMm: -300, yMm: -300 }, endMm: { xMm: 300, yMm: -300 } },
       { startMm: { xMm: 300, yMm: -300 }, endMm: { xMm: 300, yMm: 300 } },
@@ -343,9 +365,26 @@ const FURNITURE_SWEEPS: SweepGeometryNode[] = [
       { startMm: { xMm: -300, yMm: 300 }, endMm: { xMm: -300, yMm: -300 } },
     ],
     profilePlane: 'work_plane',
+    pathLengthParam: 'Seat_Thickness',
     visibilityBinding: { paramName: 'Show_2D_Elements', whenTrue: false },
     visibilityByDetailLevel: { coarse: false },
   },
+  ...[
+    [-210, -210],
+    [210, -210],
+    [210, 210],
+    [-210, 210],
+  ].map(
+    ([xMm, yMm]): SweepGeometryNode => ({
+      kind: 'sweep',
+      pathLines: [{ startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 0, yMm: 450 } }],
+      profile: circularProfileLines(xMm, yMm, 25),
+      profilePlane: 'work_plane',
+      pathLengthParam: 'Seat_Height',
+      visibilityBinding: { paramName: 'Show_2D_Elements', whenTrue: false },
+      visibilityByDetailLevel: { coarse: false },
+    }),
+  ),
 ];
 
 const EMPTY_SYMBOLIC_LINE_DRAFT = {

@@ -90,7 +90,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Extrusion height from elevation](file:///Users/jhoetter/Desktop/Revit%20Specs/0623_03-50-05.png)
 
-**bim-ai status:** ❌ Not available — family sweeps can be authored, but there is no elevation-view extrusion depth workflow or height-locking to named elevation reference planes.
+**bim-ai status:** 🟡 Partial — family sweeps can now carry a `pathLengthParam`, so the resolver drives straight extrusion depth/height from a family parameter. The Furniture template uses this for seat thickness and leg height placeholders. Missing: true front-elevation sketch views, grip locking to named elevation reference planes, and separate extrusion start/end controls.
 
 ---
 
@@ -101,7 +101,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Leg circle extrusion](file:///Users/jhoetter/Desktop/Revit%20Specs/0651_03-52-02.png)
 
-**bim-ai status:** ❌ Not available — the Furniture template seeds a `Leg_Radius` parameter, but there is no circle sketch primitive, circular extrusion, or generated four-leg geometry.
+**bim-ai status:** 🟡 Partial — the Furniture template now seeds four circular leg extrusion placeholders using polygonal circle profiles, plus `Leg_Radius` and `Seat_Height` parameters. The resolver uses `Seat_Height` to drive the leg extrusion height. Missing: editable circle sketch primitive, radius-driven profile regeneration when `Leg_Radius` changes, copy-in-sketch workflow, and elevation locking.
 
 ---
 

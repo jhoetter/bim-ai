@@ -58,6 +58,8 @@ export interface SweepGeometryNode {
   /** Where the profile is positioned: perpendicular to the path's first
    *  tangent (default) or in the active work plane (Z=0). */
   profilePlane: 'normal_to_path_start' | 'work_plane';
+  /** Optional host parameter that drives the length/depth of a straight path extrusion. */
+  pathLengthParam?: string;
   /** Optional: load profile from a profile family (FAM-08). */
   profileFamilyId?: string;
   materialKey?: string;
