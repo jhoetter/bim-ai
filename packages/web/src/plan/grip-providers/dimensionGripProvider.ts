@@ -18,6 +18,22 @@ import type {
 
 export type Dimension = Extract<Element, { kind: 'dimension' }>;
 
+export function dimensionTextOffsetResetCommand(
+  gripId: string,
+  elementsById: Record<string, Element>,
+): GripCommand | null {
+  if (!gripId.endsWith(':text')) return null;
+  const elementId = gripId.slice(0, -':text'.length);
+  const el = elementsById[elementId];
+  if (!el || el.kind !== 'dimension') return null;
+  return {
+    type: 'updateElementProperty',
+    elementId,
+    key: 'textOffsetMm',
+    value: null,
+  };
+}
+
 function unitNormal(a: XY, b: XY): { nx: number; ny: number } {
   const dx = b.xMm - a.xMm;
   const dy = b.yMm - a.yMm;

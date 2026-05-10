@@ -13,6 +13,7 @@ import {
   sectionCutGripProvider,
   windowGripProvider,
 } from './index';
+import { dimensionTextOffsetResetCommand } from './dimensionGripProvider';
 
 const SAMPLE_WALL: Extract<Element, { kind: 'wall' }> = {
   kind: 'wall',
@@ -284,6 +285,16 @@ describe('EDT-01 — dimensionGripProvider', () => {
     expect(text.id).toBe('dim-1:text');
     const cmd = text.onCommit({ xMm: 200, yMm: 300 }) as { value: string };
     expect(JSON.parse(cmd.value)).toEqual({ xMm: 300, yMm: 0 });
+  });
+
+  it('double-click text grip reset emits a null textOffsetMm update', () => {
+    expect(dimensionTextOffsetResetCommand('dim-1:text', { 'dim-1': dim })).toEqual({
+      type: 'updateElementProperty',
+      elementId: 'dim-1',
+      key: 'textOffsetMm',
+      value: null,
+    });
+    expect(dimensionTextOffsetResetCommand('dim-1:offset', { 'dim-1': dim })).toBeNull();
   });
 });
 

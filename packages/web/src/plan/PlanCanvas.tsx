@@ -69,6 +69,7 @@ import {
 } from './snapTabCycle';
 import { type DraftMutation, type GripDescriptor } from './gripProtocol';
 import { gripsFor } from './grip-providers';
+import { dimensionTextOffsetResetCommand } from './grip-providers/dimensionGripProvider';
 import { tempDimensionsFor, type TempDimTarget } from './tempDimensions';
 import { findLockedConstraintFor } from './tempDimensionLockState';
 import { GripLayer, TempDimLayer } from './GripLayer';
@@ -4096,16 +4097,9 @@ export function PlanCanvas({
 
   const handleGripDoubleClick = useCallback(
     (grip: GripDescriptor) => {
-      if (!grip.id.endsWith(':text')) return;
-      const elementId = grip.id.slice(0, -':text'.length);
-      const el = elementsById[elementId];
-      if (!el || el.kind !== 'dimension') return;
-      void onSemanticCommand({
-        type: 'updateElementProperty',
-        elementId,
-        key: 'textOffsetMm',
-        value: null,
-      });
+      const cmd = dimensionTextOffsetResetCommand(grip.id, elementsById);
+      if (!cmd) return;
+      void onSemanticCommand(cmd);
     },
     [elementsById, onSemanticCommand],
   );
