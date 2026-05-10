@@ -215,6 +215,32 @@ describe('FAM-056 — Family Types dialog', () => {
   });
 });
 
+describe('FAM-065/FAM-066 — family category and view range settings', () => {
+  it('edits family category parameter flags', () => {
+    const { getByLabelText } = renderWithI18n(<FamilyEditorWorkbench />);
+
+    fireEvent.change(getByLabelText('Family category'), {
+      target: { value: 'detail_component' },
+    });
+    fireEvent.click(getByLabelText('Always Vertical'));
+    fireEvent.click(getByLabelText('Work Plane-Based'));
+
+    expect((getByLabelText('Family category') as HTMLSelectElement).value).toBe('detail_component');
+    expect((getByLabelText('Always Vertical') as HTMLInputElement).checked).toBe(true);
+    expect((getByLabelText('Work Plane-Based') as HTMLInputElement).checked).toBe(true);
+  });
+
+  it('edits family editor view range offsets', () => {
+    const { getByLabelText, getByTestId } = renderWithI18n(<FamilyEditorWorkbench />);
+
+    fireEvent.change(getByLabelText('Cut plane'), { target: { value: '1400' } });
+    fireEvent.change(getByLabelText('View depth'), { target: { value: '-1600' } });
+
+    expect(getByTestId('family-view-range-summary').textContent).toContain('Cut 1400 mm');
+    expect(getByTestId('family-view-range-summary').textContent).toContain('depth -1600 mm');
+  });
+});
+
 describe('FAM-02 — sweep tool flow', () => {
   it('opens a sketch session when Sweep is clicked', () => {
     const { getByText, queryByLabelText } = renderWithI18n(<FamilyEditorWorkbench />);

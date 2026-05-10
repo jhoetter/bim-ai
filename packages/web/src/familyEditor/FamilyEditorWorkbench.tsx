@@ -51,6 +51,23 @@ type FamilyTypeRow = {
   values: Record<string, unknown>;
 };
 
+type FamilyCategory = Template | 'detail_component';
+
+type FamilyCategorySettings = {
+  category: FamilyCategory;
+  alwaysVertical: boolean;
+  workPlaneBased: boolean;
+  roomCalculationPoint: boolean;
+  shared: boolean;
+};
+
+type FamilyViewRange = {
+  topOffsetMm: number;
+  cutPlaneOffsetMm: number;
+  bottomOffsetMm: number;
+  viewDepthOffsetMm: number;
+};
+
 /**
  * Resolve a family parameter for rendering.
  *
@@ -88,6 +105,21 @@ const DEFAULT_FAMILY_TYPE_ID = 'family-type-1';
 function initialFamilyTypeRows(): FamilyTypeRow[] {
   return [{ id: DEFAULT_FAMILY_TYPE_ID, name: 'Type 1', values: {} }];
 }
+
+const DEFAULT_CATEGORY_SETTINGS: FamilyCategorySettings = {
+  category: 'generic_model',
+  alwaysVertical: false,
+  workPlaneBased: false,
+  roomCalculationPoint: false,
+  shared: false,
+};
+
+const DEFAULT_FAMILY_VIEW_RANGE: FamilyViewRange = {
+  topOffsetMm: 2300,
+  cutPlaneOffsetMm: 1200,
+  bottomOffsetMm: 0,
+  viewDepthOffsetMm: -1200,
+};
 
 const EMPTY_SWEEP_DRAFT: SweepDraft = {
   pathLines: [],
@@ -162,6 +194,9 @@ export function FamilyEditorWorkbench(): JSX.Element {
   const [familyTypes, setFamilyTypes] = useState<FamilyTypeRow[]>(() => initialFamilyTypeRows());
   const [activeFamilyTypeId, setActiveFamilyTypeId] = useState(DEFAULT_FAMILY_TYPE_ID);
   const [familyTypesDialogOpen, setFamilyTypesDialogOpen] = useState(false);
+  const [categorySettings, setCategorySettings] =
+    useState<FamilyCategorySettings>(DEFAULT_CATEGORY_SETTINGS);
+  const [viewRange, setViewRange] = useState<FamilyViewRange>(DEFAULT_FAMILY_VIEW_RANGE);
   const [flexMode, setFlexMode] = useState(false);
   const [flexValues, setFlexValues] = useState<Record<string, unknown>>({});
   const [sweeps, setSweeps] = useState<SweepGeometryNode[]>([]);
@@ -541,6 +576,14 @@ export function FamilyEditorWorkbench(): JSX.Element {
     { value: 'profile', label: t('familyEditor.templateProfile') },
   ];
 
+  const categoryOptions: { value: FamilyCategory; label: string }[] = [
+    { value: 'generic_model', label: 'Generic Models' },
+    { value: 'door', label: 'Doors' },
+    { value: 'window', label: 'Windows' },
+    { value: 'profile', label: 'Profiles' },
+    { value: 'detail_component', label: 'Detail Components' },
+  ];
+
   return (
     <div className="p-4 space-y-6">
       <div className="flex gap-2">
@@ -608,6 +651,81 @@ export function FamilyEditorWorkbench(): JSX.Element {
           onCancel={cancelArray}
         />
       )}
+
+      <section
+        className="grid gap-4 rounded border p-3 md:grid-cols-2"
+        aria-label="Family settings"
+      >
+        <div className="space-y-2">
+          <h2 className="font-semibold">Family Category and Parameters</h2>
+          <label className="flex items-center gap-2 text-sm">
+            <span className="w-36">Category</span>
+            <select
+              aria-label="Family category"
+              value={categorySettings.category}
+              onChange={(e) =>
+                setCategorySettings((prev) => ({
+                  ...prev,
+                  category: e.target.value as FamilyCategory,
+                }))
+              }
+            >
+              {categoryOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {(
+            [
+              ['alwaysVertical', 'Always Vertical'],
+              ['workPlaneBased', 'Work Plane-Based'],
+              ['roomCalculationPoint', 'Room Calculation Point'],
+              ['shared', 'Shared'],
+            ] as const
+          ).map(([key, label]) => (
+            <label key={key} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                aria-label={label}
+                checked={categorySettings[key]}
+                onChange={(e) =>
+                  setCategorySettings((prev) => ({ ...prev, [key]: e.target.checked }))
+                }
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+        <div className="space-y-2">
+          <h2 className="font-semibold">Family View Range</h2>
+          {(
+            [
+              ['topOffsetMm', 'Top offset'],
+              ['cutPlaneOffsetMm', 'Cut plane'],
+              ['bottomOffsetMm', 'Bottom offset'],
+              ['viewDepthOffsetMm', 'View depth'],
+            ] as const
+          ).map(([key, label]) => (
+            <label key={key} className="flex items-center gap-2 text-sm">
+              <span className="w-28">{label}</span>
+              <input
+                type="number"
+                aria-label={label}
+                value={viewRange[key]}
+                onChange={(e) =>
+                  setViewRange((prev) => ({ ...prev, [key]: Number(e.target.value) }))
+                }
+              />
+              <span className="text-xs text-muted">mm</span>
+            </label>
+          ))}
+          <p className="text-xs text-muted" data-testid="family-view-range-summary">
+            Cut {viewRange.cutPlaneOffsetMm} mm · depth {viewRange.viewDepthOffsetMm} mm
+          </p>
+        </div>
+      </section>
 
       <div className="grid gap-4 md:grid-cols-[260px_1fr]">
         <LoadedFamiliesSidebar
@@ -956,6 +1074,8 @@ export function FamilyEditorWorkbench(): JSX.Element {
         onClick={() =>
           console.warn('load-into-project stub', {
             template,
+            categorySettings,
+            viewRange,
             refPlanes,
             params,
             resolved,
