@@ -28,6 +28,10 @@ function makeProps(
     onSetBackground: vi.fn(),
     viewerEdges: 'normal',
     onSetEdges: vi.fn(),
+    viewerProjection: 'perspective',
+    onSetProjection: vi.fn(),
+    sectionBoxActive: false,
+    onSetSectionBoxActive: vi.fn(),
     viewerClipElevMm: null,
     onSetClipElevMm: vi.fn(),
     viewerClipFloorElevMm: null,
@@ -47,9 +51,37 @@ describe('<Viewport3DLayersPanel />', () => {
 
   it('calls graphics controls when render style changes', () => {
     const onSetRenderStyle = vi.fn();
-    const { getByText } = render(<Viewport3DLayersPanel {...makeProps({ onSetRenderStyle })} />);
+    const { getByTestId, getByText } = render(
+      <Viewport3DLayersPanel {...makeProps({ onSetRenderStyle })} />,
+    );
+    expect(getByTestId('graphic-style-preview-shaded')).toBeTruthy();
+    expect(getByTestId('graphic-style-preview-wireframe')).toBeTruthy();
     fireEvent.click(getByText('Wire'));
     expect(onSetRenderStyle).toHaveBeenCalledWith('wireframe');
+  });
+
+  it('calls background and edge controls from the graphics panel', () => {
+    const onSetBackground = vi.fn();
+    const onSetEdges = vi.fn();
+    const { getByRole } = render(
+      <Viewport3DLayersPanel {...makeProps({ onSetBackground, onSetEdges })} />,
+    );
+    fireEvent.click(getByRole('button', { name: 'Use Dark background' }));
+    fireEvent.click(getByRole('button', { name: 'Off model edges' }));
+    expect(onSetBackground).toHaveBeenCalledWith('dark');
+    expect(onSetEdges).toHaveBeenCalledWith('none');
+  });
+
+  it('calls camera and section-box controls from the view panel', () => {
+    const onSetProjection = vi.fn();
+    const onSetSectionBoxActive = vi.fn();
+    const { getByRole } = render(
+      <Viewport3DLayersPanel {...makeProps({ onSetProjection, onSetSectionBoxActive })} />,
+    );
+    fireEvent.click(getByRole('button', { name: 'Use Ortho projection' }));
+    fireEvent.click(getByRole('button', { name: 'Section box off' }));
+    expect(onSetProjection).toHaveBeenCalledWith('orthographic');
+    expect(onSetSectionBoxActive).toHaveBeenCalledWith(true);
   });
 
   it('shows checkboxes as checked when category is NOT hidden', () => {

@@ -156,3 +156,189 @@ Goal: evidence/readout surfaces should not make the everyday UX feel like a debu
 - Closed in the 2026-05-10 UX pass with focused regression coverage for sheet recommendation/placement commands plus existing routing, section, sheet, 3D, inspector, and browser tests.
 - Post-close audit on 2026-05-10 found and patched remaining product gaps: schedule tabs now hydrate server-derived rows, schedule seed definitions carry category filters, 3D visual-style controls moved out of the canvas into the View controls panel, the collapsed browser uses hi-fi recognition icons, and the default browser state is expanded.
 - Remaining future UX work should be tracked as new product enhancements, not as open items in this revamp.
+
+## Continuation Audit - Product-Quality UX
+
+Verdict: the revamp is directionally right, but not yet at the "best possible" bar. The product now has the right large surfaces - project browser, tabs, canvas, inspector, sheets, schedules, and 3D saved views - but several interactions still feel like exposed implementation controls rather than a calm BIM authoring workflow. This section is the backlog for the next UX pass and should stay open until the app feels obvious without explanation.
+
+### UX-11 3D Editing And View Controls
+
+Status: in progress.
+
+Goal: 3D should feel like a professional model review and editing workspace, not a debug viewer.
+
+- Keep the ViewCube purely about orientation: front/back/left/right/top/base and drag-to-orbit. It must not carry visual-style or display-state controls.
+- Put visual style where users naturally look: right rail `View controls > Graphics`.
+- Replace text-only visual-style controls with preview icons for Shaded, Consistent Colors, Wireframe, and Hidden Line.
+- Make Section Box, Walk, Orthographic/Perspective, Fit, Reset Camera, and Saved View state available from a coherent view-control surface. Today some of these still live on-canvas because their state is local to the viewport.
+- Use icon+tooltip controls for canvas commands, but keep mode names visible in the right rail.
+- Add a small active-view summary near the right rail header: visual style, projection, section box, hidden categories.
+- Make 3D edit affordances explicit: select element, edit grips, right-click actions, and escape/cancel should be discoverable without reading shortcuts.
+- Avoid bottom-left clusters that look like temporary developer controls.
+- Add e2e coverage for switching visual style, toggling section box, and selecting a saved 3D view without blanking the canvas.
+
+Implementation notes:
+
+- Added visual previews for 3D graphics modes in the right rail.
+- Added background swatches and an explicit edge on/off control so graphics settings no longer look like raw form fields.
+- Moved projection and section-box state into shared viewport UI state so the right rail can own those controls cleanly.
+- Remaining technical work: move walk-mode activation into shared viewport UI state without breaking pointer-lock behavior.
+
+### UX-12 Icon System Completion
+
+Status: open.
+
+Goal: icons should explain concepts faster than text, without turning dense production UI into illustration.
+
+Icons still worth adding or promoting:
+
+- Visual style icons: shaded cube, colored category blocks, wireframe cube, hidden-line drawing.
+- Projection icons: perspective frustum, orthographic cube.
+- Camera actions: fit to model, reset camera, orbit, pan, walk mode.
+- View-state icons: section box, cut plane cap, floor clip, hidden category, isolated selection.
+- Documentation icons: placed-on-sheet, not-on-sheet, schedule row/table, viewport crop.
+- Editing icons: align to wall face, host opening, move endpoint, split wall, trim/extend, rotate around point.
+- Review icons: comment pin, unresolved issue, evidence link, changed since saved view.
+
+Placement rules:
+
+- Use hi-fi icons for recognition moments: empty states, browser collapsed rail, creation palettes, and mode landing states.
+- Use stroke icons for dense repeated controls: rows, tabs, compact inspector buttons, table cells.
+- Use preview thumbnails rather than abstract icons when the user is choosing a visual result, such as graphics style or background.
+- Do not put display-mode icons into the 3D axis/ViewCube.
+
+### UX-13 Project Browser And Left Sidebar
+
+Status: open.
+
+Goal: the browser should be the user's mental model of the BIM file.
+
+- Keep expanded browser as the default on desktop; collapsed rail is useful but should not be the first-run state.
+- Make collapsed rail icons visually distinctive and BIM-native.
+- Add active-section indication in the collapsed rail so users can tell where they are without expanding.
+- Add counts and health hints where helpful: schedules with row count, sheets with viewport count, views with pinned level, sections with placed/not placed status.
+- Search should preserve context: matches should show parent section and not look like unrelated flat rows.
+- Context menus should expose natural actions per item: open, rename, duplicate view, place on sheet, create schedule, reveal in canvas.
+- Avoid mixing datums and saved views without secondary labels.
+
+### UX-14 Inspector And Right Rail
+
+Status: open.
+
+Goal: the right rail should answer "what is selected, what can I do, what matters now?"
+
+- Make contextual primary actions visually stronger than metadata.
+- Keep raw ids, provenance, constraints, and evidence secondary or collapsed.
+- For views and sheets, show view/document actions before generic properties.
+- For model elements, show geometry/type/host/level before raw identity.
+- Add compact empty-selection guidance that changes by mode: plan editing, 3D review, sheet review, schedules.
+- Make global authoring workbenches feel separate from selected-element properties.
+- Reduce uppercase micro-headings where they create noise; use compact but readable labels.
+
+### UX-15 Plan Editing
+
+Status: open.
+
+Goal: plan editing should feel precise and reversible.
+
+- Tool palette should separate Draw, Modify, Annotate, and Review.
+- Active tool needs a persistent, obvious state in the toolbar and status bar.
+- On-canvas previews should show start point, current point, length, angle, offset, level, and type where relevant.
+- Snaps should be visible only when useful; avoid constant glyph noise.
+- Finish/cancel affordances should be consistent across wall, room, floor, roof, opening, separation, and annotation flows.
+- Provide local undo feedback for staged edits before server persistence.
+- Add natural right-click actions for selected plan elements.
+
+### UX-16 Schedules
+
+Status: in progress.
+
+Goal: schedules should feel like live BIM data, not generic tables.
+
+- Schedule tabs should open the exact schedule selected in the Project Browser or tab strip.
+- Derived rows should hydrate from the backend and show loading/error/empty states.
+- Columns should have human labels, stable widths, sticky headers, and readable numeric formatting.
+- Row count, grouping count, category, and filters should be visible without overwhelming the table.
+- Add sorting/filtering affordances once backend table derivation exposes stable sort contracts.
+- Add direct actions: open selected element in canvas, place schedule on sheet, duplicate schedule.
+- Empty schedules should explain whether there are no matching elements or whether the model is unavailable.
+
+Implementation notes:
+
+- Schedule hydration is now implemented for saved models.
+- Remaining work: row selection, sort/filter UI, and sheet-placement actions from the schedule surface.
+
+### UX-17 Sheets And Documentation
+
+Status: open.
+
+Goal: sheets should feel like printable deliverables.
+
+- Sheet surface should prioritize paper, title block, placed views, schedules, and review pins.
+- Placement controls should be direct: place recommended views, place selected view, replace viewport, align viewport, resize crop.
+- Sheet empty state should never be a dead end.
+- Viewport labels/detail numbers should be readable at normal zoom.
+- Review/comment mode should feel layered on top of documentation, not mixed into authoring tools.
+- Add visual status for unsheeted sections/elevations/schedules.
+
+### UX-18 Sections And Elevations
+
+Status: open.
+
+Goal: sections/elevations should be useful drawings first, evidence views second.
+
+- Improve line hierarchy further: cut, beyond, hidden, datum, annotation.
+- Add scale/crop controls in terms architects expect.
+- Show whether the section is placed on a sheet and where.
+- Add quick actions: place on sheet, duplicate, rename, update crop, open source marker.
+- Keep evidence available but collapsed.
+
+### UX-19 Top Bar, Tabs, And Global Navigation
+
+Status: open.
+
+Goal: global chrome should orient users without stealing space.
+
+- Tabs should clearly distinguish plan, 3D, sheet, schedule, section, and raw level datum.
+- Long tab labels should truncate gracefully but preserve type and target name.
+- Top bar should not become a parking lot for mode-specific controls.
+- Share/search/collaboration controls should stay consistent and visually quiet.
+- Command palette should mirror visible actions and use the same labels/icons.
+
+### UX-20 Empty, Loading, Error, And Offline States
+
+Status: open.
+
+Goal: every non-happy state should tell the user what happened and what to do next.
+
+- Empty plan: distinguish no elements on level vs no saved plan view vs filtered-out categories.
+- Empty sheet: offer direct placement actions.
+- Empty schedule: identify category/filter reason.
+- Offline state: explain what still works locally and what is queued.
+- Loading states should use stable skeletons or compact status rows, not layout-shifting text.
+- Errors should include recovery actions where possible.
+
+### UX-21 Accessibility And Keyboard Flow
+
+Status: open.
+
+Goal: expert workflows should be fast and accessible.
+
+- Every icon-only button must have a useful accessible name and hover title.
+- Focus order should follow left rail -> top tabs -> canvas -> right rail -> status.
+- Keyboard shortcuts should appear in contextual hints, not as permanent instructional clutter.
+- Escape should consistently cancel transient modes and close overlays.
+- Tree navigation in the browser should remain robust after filtering.
+- Color should not be the only signal for active/hidden/error states.
+
+### UX-22 Visual QA Gates
+
+Status: open.
+
+Goal: CI should protect the UX from regressions, not only type correctness.
+
+- Add Playwright screenshots for plan, 3D, sheet, schedule, section, collapsed browser, expanded browser, inspector selection, and empty states.
+- Add canvas pixel checks for nonblank 3D and sheet rendering.
+- Add viewport-size checks for laptop, wide desktop, and mobile/tablet breakpoints.
+- Add assertions that text does not overlap key controls in common viewports.
+- Track golden screenshots only for stable shell surfaces; dynamic model canvas should use semantic and pixel-health checks.
