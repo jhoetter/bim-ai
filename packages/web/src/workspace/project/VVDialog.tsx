@@ -10,25 +10,125 @@ import type { ViewFilter } from '../../state/storeTypes';
 import { applyCommand } from '../../lib/api';
 import { dxfViewOverrideKey } from '../../plan/dxfUnderlay';
 
-const MODEL_CATEGORIES = [
+const MODEL_CATEGORIES: string[] = [
+  'air_terminal',
+  'analytical_beam',
+  'analytical_brace',
+  'analytical_column',
+  'analytical_floor',
+  'analytical_foundation',
+  'analytical_link',
+  'analytical_node',
+  'analytical_opening',
+  'analytical_panel',
+  'analytical_space',
+  'analytical_surface',
+  'analytical_wall',
+  'assembly',
+  'audio_visual_device',
+  'cable_tray',
+  'cable_tray_fitting',
+  'casework',
   'wall',
   'floor',
   'roof',
   'ceiling',
   'column',
   'beam',
-  'stair',
-  'railing',
+  'communication_device',
+  'conduit',
+  'conduit_fitting',
+  'curtain_panel',
+  'curtain_wall_mullion',
+  'data_device',
   'door',
-  'window',
-  'room',
+  'duct',
+  'duct_accessory',
+  'duct_fitting',
+  'duct_insulation',
+  'duct_lining',
+  'duct_placeholder',
+  'duct_system',
+  'electrical_circuit',
+  'electrical_equipment',
+  'electrical_fixture',
+  'entourage',
+  'fire_alarm_device',
+  'flex_duct',
+  'flex_pipe',
+  'food_service_equipment',
+  'furniture',
+  'furniture_system',
+  'generic_model',
   'placed_asset',
+  'hardscape',
+  'hvac_zone',
+  'lighting_device',
+  'lighting_fixture',
+  'mass',
+  'mass_floor',
+  'mechanical_equipment',
+  'medical_equipment',
+  'model_group',
+  'model_line',
+  'nurse_call_device',
+  'parking',
+  'part',
+  'pipe',
+  'pipe_accessory',
+  'pipe_fitting',
+  'pipe_insulation',
+  'pipe_placeholder',
+  'piping_system',
+  'planting',
+  'plumbing_fixture',
   'property_line',
+  'railing',
+  'ramp',
+  'road',
+  'room',
+  'security_device',
+  'shaft_opening',
   'site',
   'site_origin',
-] as const;
+  'specialty_equipment',
+  'sprinkler',
+  'stair',
+  'structural_area_reinforcement',
+  'structural_column',
+  'structural_connection',
+  'structural_fabric_area',
+  'structural_fabric_reinforcement',
+  'structural_foundation',
+  'structural_framing_system',
+  'structural_path_reinforcement',
+  'structural_rebar',
+  'structural_stiffener',
+  'structural_truss',
+  'temporary_structure',
+  'topography',
+  'vertical_circulation',
+  'window',
+  'wire',
+  'zone',
+];
 
-const ANNOTATION_CATEGORIES = [
+const ANNOTATION_CATEGORIES: string[] = [
+  'area_tag',
+  'assembly_tag',
+  'beam_annotation',
+  'brace_annotation',
+  'callout_head',
+  'color_fill_legend',
+  'column_tag',
+  'communication_device_tag',
+  'contour_label',
+  'curtain_panel_tag',
+  'curtain_wall_tag',
+  'data_device_tag',
+  'detail_component',
+  'detail_group',
+  'detail_item_tag',
   'grid_line',
   'level_datum',
   'dimension',
@@ -37,30 +137,166 @@ const ANNOTATION_CATEGORIES = [
   'window_tag',
   'section_mark',
   'elevation_mark',
+  'electrical_equipment_tag',
+  'electrical_fixture_tag',
+  'entourage_tag',
+  'fire_alarm_device_tag',
+  'floor_tag',
+  'furniture_tag',
+  'generic_annotation',
+  'generic_model_tag',
+  'keynote_tag',
+  'lighting_device_tag',
+  'lighting_fixture_tag',
+  'material_tag',
+  'mechanical_equipment_tag',
+  'multi_category_tag',
+  'parking_tag',
+  'pipe_tag',
+  'planting_tag',
+  'plumbing_fixture_tag',
+  'railing_tag',
+  'revision_cloud',
+  'roof_tag',
   'room_separation',
   'area_boundary',
   'reference_plane',
   'masking_region',
   'detail_line',
+  'scope_box',
+  'span_direction_symbol',
+  'specialty_equipment_tag',
+  'spot_coordinate',
+  'spot_elevation',
+  'spot_slope',
+  'stair_path',
+  'stair_tag',
+  'structural_column_tag',
+  'structural_foundation_tag',
+  'structural_framing_tag',
+  'structural_rebar_tag',
   'text_note',
-] as const;
+  'view_reference',
+  'view_title',
+  'wall_tag',
+];
 
 const CATEGORY_LABELS: Record<string, string> = {
+  air_terminal: 'Air Terminals',
+  analytical_beam: 'Analytical Beams',
+  analytical_brace: 'Analytical Braces',
+  analytical_column: 'Analytical Columns',
+  analytical_floor: 'Analytical Floors',
+  analytical_foundation: 'Analytical Foundations',
+  analytical_link: 'Analytical Links',
+  analytical_node: 'Analytical Nodes',
+  analytical_opening: 'Analytical Openings',
+  analytical_panel: 'Analytical Panels',
+  analytical_space: 'Analytical Spaces',
+  analytical_surface: 'Analytical Surfaces',
+  analytical_wall: 'Analytical Walls',
+  assembly: 'Assemblies',
+  audio_visual_device: 'Audio Visual Devices',
+  cable_tray: 'Cable Trays',
+  cable_tray_fitting: 'Cable Tray Fittings',
+  casework: 'Casework',
   wall: 'Walls',
   floor: 'Floors',
   roof: 'Roofs',
   ceiling: 'Ceilings',
   column: 'Columns',
   beam: 'Structural Framing',
-  stair: 'Stairs',
-  railing: 'Railings',
+  communication_device: 'Communication Devices',
+  conduit: 'Conduits',
+  conduit_fitting: 'Conduit Fittings',
+  curtain_panel: 'Curtain Panels',
+  curtain_wall_mullion: 'Curtain Wall Mullions',
+  data_device: 'Data Devices',
   door: 'Doors',
-  window: 'Windows',
-  room: 'Rooms',
+  duct: 'Ducts',
+  duct_accessory: 'Duct Accessories',
+  duct_fitting: 'Duct Fittings',
+  duct_insulation: 'Duct Insulations',
+  duct_lining: 'Duct Linings',
+  duct_placeholder: 'Duct Placeholders',
+  duct_system: 'Duct Systems',
+  electrical_circuit: 'Electrical Circuits',
+  electrical_equipment: 'Electrical Equipment',
+  electrical_fixture: 'Electrical Fixtures',
+  entourage: 'Entourage',
+  fire_alarm_device: 'Fire Alarm Devices',
+  flex_duct: 'Flex Ducts',
+  flex_pipe: 'Flex Pipes',
+  food_service_equipment: 'Food Service Equipment',
+  furniture: 'Furniture',
+  furniture_system: 'Furniture Systems',
+  generic_model: 'Generic Models',
   placed_asset: 'Furniture / Generic Models',
+  hardscape: 'Hardscape',
+  hvac_zone: 'HVAC Zones',
+  lighting_device: 'Lighting Devices',
+  lighting_fixture: 'Lighting Fixtures',
+  mass: 'Mass',
+  mass_floor: 'Mass Floors',
+  mechanical_equipment: 'Mechanical Equipment',
+  medical_equipment: 'Medical Equipment',
+  model_group: 'Model Groups',
+  model_line: 'Model Lines',
+  nurse_call_device: 'Nurse Call Devices',
+  parking: 'Parking',
+  part: 'Parts',
+  pipe: 'Pipes',
+  pipe_accessory: 'Pipe Accessories',
+  pipe_fitting: 'Pipe Fittings',
+  pipe_insulation: 'Pipe Insulations',
+  pipe_placeholder: 'Pipe Placeholders',
+  piping_system: 'Piping Systems',
+  planting: 'Planting',
+  plumbing_fixture: 'Plumbing Fixtures',
   property_line: 'Property Lines',
+  railing: 'Railings',
+  ramp: 'Ramps',
+  road: 'Roads',
+  room: 'Rooms',
+  security_device: 'Security Devices',
+  shaft_opening: 'Shaft Openings',
   site: 'Site',
   site_origin: 'Site / Origin',
+  specialty_equipment: 'Specialty Equipment',
+  sprinkler: 'Sprinklers',
+  stair: 'Stairs',
+  structural_area_reinforcement: 'Structural Area Reinforcement',
+  structural_column: 'Structural Columns',
+  structural_connection: 'Structural Connections',
+  structural_fabric_area: 'Structural Fabric Areas',
+  structural_fabric_reinforcement: 'Structural Fabric Reinforcement',
+  structural_foundation: 'Structural Foundations',
+  structural_framing_system: 'Structural Framing Systems',
+  structural_path_reinforcement: 'Structural Path Reinforcement',
+  structural_rebar: 'Structural Rebar',
+  structural_stiffener: 'Structural Stiffeners',
+  structural_truss: 'Structural Trusses',
+  temporary_structure: 'Temporary Structures',
+  topography: 'Topography',
+  vertical_circulation: 'Vertical Circulation',
+  window: 'Windows',
+  wire: 'Wires',
+  zone: 'Zones',
+  area_tag: 'Area Tags',
+  assembly_tag: 'Assembly Tags',
+  beam_annotation: 'Beam Annotations',
+  brace_annotation: 'Brace Annotations',
+  callout_head: 'Callout Heads',
+  color_fill_legend: 'Color Fill Legends',
+  column_tag: 'Column Tags',
+  communication_device_tag: 'Communication Device Tags',
+  contour_label: 'Contour Labels',
+  curtain_panel_tag: 'Curtain Panel Tags',
+  curtain_wall_tag: 'Curtain Wall Tags',
+  data_device_tag: 'Data Device Tags',
+  detail_component: 'Detail Components',
+  detail_group: 'Detail Groups',
+  detail_item_tag: 'Detail Item Tags',
   grid_line: 'Grids',
   level_datum: 'Levels',
   dimension: 'Dimensions',
@@ -69,12 +305,48 @@ const CATEGORY_LABELS: Record<string, string> = {
   window_tag: 'Window Tags',
   section_mark: 'Section Marks',
   elevation_mark: 'Elevation Marks',
+  electrical_equipment_tag: 'Electrical Equipment Tags',
+  electrical_fixture_tag: 'Electrical Fixture Tags',
+  entourage_tag: 'Entourage Tags',
+  fire_alarm_device_tag: 'Fire Alarm Device Tags',
+  floor_tag: 'Floor Tags',
+  furniture_tag: 'Furniture Tags',
+  generic_annotation: 'Generic Annotations',
+  generic_model_tag: 'Generic Model Tags',
+  keynote_tag: 'Keynote Tags',
+  lighting_device_tag: 'Lighting Device Tags',
+  lighting_fixture_tag: 'Lighting Fixture Tags',
+  material_tag: 'Material Tags',
+  mechanical_equipment_tag: 'Mechanical Equipment Tags',
+  multi_category_tag: 'Multi-Category Tags',
+  parking_tag: 'Parking Tags',
+  pipe_tag: 'Pipe Tags',
+  planting_tag: 'Planting Tags',
+  plumbing_fixture_tag: 'Plumbing Fixture Tags',
+  railing_tag: 'Railing Tags',
+  revision_cloud: 'Revision Clouds',
+  roof_tag: 'Roof Tags',
   room_separation: 'Room Separation Lines',
   area_boundary: 'Area Boundary Lines',
   reference_plane: 'Reference Planes',
   masking_region: 'Masking Regions',
   detail_line: 'Detail Lines',
+  scope_box: 'Scope Boxes',
+  span_direction_symbol: 'Span Direction Symbols',
+  specialty_equipment_tag: 'Specialty Equipment Tags',
+  spot_coordinate: 'Spot Coordinates',
+  spot_elevation: 'Spot Elevations',
+  spot_slope: 'Spot Slopes',
+  stair_path: 'Stair Paths',
+  stair_tag: 'Stair Tags',
+  structural_column_tag: 'Structural Column Tags',
+  structural_foundation_tag: 'Structural Foundation Tags',
+  structural_framing_tag: 'Structural Framing Tags',
+  structural_rebar_tag: 'Structural Rebar Tags',
   text_note: 'Text Notes',
+  view_reference: 'View References',
+  view_title: 'View Titles',
+  wall_tag: 'Wall Tags',
 };
 
 const PRESET_COLORS = ['#000000', '#808080', '#0000ff', '#ff0000', '#008000', 'custom'] as const;
@@ -202,7 +474,10 @@ function CategoryRow({
   const cutTransparency = clampTransparency(draft.cut?.transparency ?? 0);
 
   return (
-    <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+    <tr
+      data-testid={`vv-category-row-${categoryKey}`}
+      style={{ borderBottom: '1px solid var(--color-border)' }}
+    >
       <td style={{ padding: '4px 8px', fontSize: 12 }}>
         {CATEGORY_LABELS[categoryKey] ?? categoryKey}
       </td>
@@ -516,6 +791,7 @@ export function VVDialog({
   const modelId = useBimStore((s) => s.modelId);
 
   const [tab, setTab] = useState<Tab>('model');
+  const [categorySearch, setCategorySearch] = useState('');
   const [draft, setDraft] = useState<CategoryOverrides>({});
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRef, open);
@@ -572,6 +848,16 @@ export function VVDialog({
     : 'No Plan View';
 
   const categories = tab === 'model' ? MODEL_CATEGORIES : ANNOTATION_CATEGORIES;
+  const categoryQuery = categorySearch.trim().toLowerCase();
+  const visibleCategories =
+    categoryQuery === ''
+      ? categories
+      : categories.filter((cat) => {
+          const label = CATEGORY_LABELS[cat] ?? cat;
+          return (
+            label.toLowerCase().includes(categoryQuery) || cat.toLowerCase().includes(categoryQuery)
+          );
+        });
 
   return (
     <div
@@ -695,105 +981,150 @@ export function VVDialog({
               removeViewFilter={removeViewFilter}
             />
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-              <thead>
-                <tr style={{ background: 'var(--color-background)' }}>
-                  <th
-                    scope="col"
-                    style={{ padding: '6px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600 }}
-                  >
-                    Category
-                  </th>
-                  <th scope="col" style={{ padding: '6px 8px', fontSize: 11, fontWeight: 600 }}>
-                    Visible
-                  </th>
-                  <th
-                    scope="col"
-                    colSpan={4}
-                    style={{
-                      padding: '6px 8px',
-                      textAlign: 'center',
-                      fontSize: 11,
-                      fontWeight: 600,
-                      borderLeft: '1px solid var(--color-border)',
-                    }}
-                  >
-                    Projection
-                  </th>
-                  <th
-                    scope="col"
-                    colSpan={4}
-                    style={{
-                      padding: '6px 8px',
-                      textAlign: 'center',
-                      fontSize: 11,
-                      fontWeight: 600,
-                      borderLeft: '1px solid var(--color-border)',
-                    }}
-                  >
-                    Cut
-                  </th>
-                  <th scope="col" style={{ padding: '6px 8px', fontSize: 11, fontWeight: 600 }} />
-                </tr>
-                <tr style={{ background: 'var(--color-background)' }}>
-                  <th scope="col" style={{ padding: '4px 8px' }} />
-                  <th scope="col" style={{ padding: '4px 8px' }} />
-                  <th
-                    scope="col"
-                    style={{
-                      padding: '4px 8px',
-                      fontSize: 10,
-                      fontWeight: 500,
-                      borderLeft: '1px solid var(--color-border)',
-                    }}
-                  >
-                    Color
-                  </th>
-                  <th scope="col" style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>
-                    Weight
-                  </th>
-                  <th scope="col" style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>
-                    Pattern
-                  </th>
-                  <th scope="col" style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>
-                    Transp.
-                  </th>
-                  <th
-                    scope="col"
-                    style={{
-                      padding: '4px 8px',
-                      fontSize: 10,
-                      fontWeight: 500,
-                      borderLeft: '1px solid var(--color-border)',
-                    }}
-                  >
-                    Color
-                  </th>
-                  <th scope="col" style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>
-                    Weight
-                  </th>
-                  <th scope="col" style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>
-                    Pattern
-                  </th>
-                  <th scope="col" style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>
-                    Transp.
-                  </th>
-                  <th scope="col" style={{ padding: '4px 8px', fontSize: 11, fontWeight: 500 }}>
-                    Halftone
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {categories.map((cat) => (
-                  <CategoryRow
-                    key={cat}
-                    categoryKey={cat}
-                    draft={draft[cat] ?? {}}
-                    onChange={(upd) => handleCategoryChange(cat, upd)}
-                  />
-                ))}
-              </tbody>
-            </table>
+            <>
+              <div
+                style={{
+                  position: 'sticky',
+                  top: 0,
+                  zIndex: 1,
+                  borderBottom: '1px solid var(--color-border)',
+                  background: 'var(--color-surface)',
+                  padding: '8px 10px',
+                }}
+              >
+                <input
+                  type="search"
+                  value={categorySearch}
+                  onChange={(e) => setCategorySearch(e.target.value)}
+                  aria-label="Search visibility categories"
+                  placeholder="Search categories"
+                  data-testid="vv-category-search"
+                  style={{
+                    width: 280,
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 4,
+                    background: 'var(--color-background)',
+                    color: 'var(--color-foreground)',
+                    fontSize: 12,
+                    padding: '5px 8px',
+                  }}
+                />
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead>
+                  <tr style={{ background: 'var(--color-background)' }}>
+                    <th
+                      scope="col"
+                      style={{
+                        padding: '6px 8px',
+                        textAlign: 'left',
+                        fontSize: 11,
+                        fontWeight: 600,
+                      }}
+                    >
+                      Category
+                    </th>
+                    <th scope="col" style={{ padding: '6px 8px', fontSize: 11, fontWeight: 600 }}>
+                      Visible
+                    </th>
+                    <th
+                      scope="col"
+                      colSpan={4}
+                      style={{
+                        padding: '6px 8px',
+                        textAlign: 'center',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        borderLeft: '1px solid var(--color-border)',
+                      }}
+                    >
+                      Projection
+                    </th>
+                    <th
+                      scope="col"
+                      colSpan={4}
+                      style={{
+                        padding: '6px 8px',
+                        textAlign: 'center',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        borderLeft: '1px solid var(--color-border)',
+                      }}
+                    >
+                      Cut
+                    </th>
+                    <th scope="col" style={{ padding: '6px 8px', fontSize: 11, fontWeight: 600 }} />
+                  </tr>
+                  <tr style={{ background: 'var(--color-background)' }}>
+                    <th scope="col" style={{ padding: '4px 8px' }} />
+                    <th scope="col" style={{ padding: '4px 8px' }} />
+                    <th
+                      scope="col"
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: 10,
+                        fontWeight: 500,
+                        borderLeft: '1px solid var(--color-border)',
+                      }}
+                    >
+                      Color
+                    </th>
+                    <th scope="col" style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>
+                      Weight
+                    </th>
+                    <th scope="col" style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>
+                      Pattern
+                    </th>
+                    <th scope="col" style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>
+                      Transp.
+                    </th>
+                    <th
+                      scope="col"
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: 10,
+                        fontWeight: 500,
+                        borderLeft: '1px solid var(--color-border)',
+                      }}
+                    >
+                      Color
+                    </th>
+                    <th scope="col" style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>
+                      Weight
+                    </th>
+                    <th scope="col" style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>
+                      Pattern
+                    </th>
+                    <th scope="col" style={{ padding: '4px 8px', fontSize: 10, fontWeight: 500 }}>
+                      Transp.
+                    </th>
+                    <th scope="col" style={{ padding: '4px 8px', fontSize: 11, fontWeight: 500 }}>
+                      Halftone
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleCategories.map((cat) => (
+                    <CategoryRow
+                      key={cat}
+                      categoryKey={cat}
+                      draft={draft[cat] ?? {}}
+                      onChange={(upd) => handleCategoryChange(cat, upd)}
+                    />
+                  ))}
+                  {visibleCategories.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={11}
+                        style={{ padding: 12, color: 'var(--color-muted)', fontSize: 12 }}
+                      >
+                        No matching categories
+                      </td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </>
           )}
         </div>
 

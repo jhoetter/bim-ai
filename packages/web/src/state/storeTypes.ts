@@ -39,6 +39,7 @@ export type PlanTool =
   | 'window'
   | 'room'
   | 'room_rectangle'
+  | 'area'
   | 'grid'
   | 'dimension'
   | 'tag'

@@ -341,7 +341,12 @@ function buildRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
         {
           id: 'room',
           label: 'Room',
-          commands: [tool('room', 'Room', 'room'), tool('ceiling', 'Ceiling', 'ceiling')],
+          commands: [
+            tool('room', 'Room', 'room'),
+            tool('area', 'Area', 'room'),
+            tool('area-boundary', 'Area Boundary', 'gridLine'),
+            tool('ceiling', 'Ceiling', 'ceiling'),
+          ],
         },
         {
           id: 'circulation',

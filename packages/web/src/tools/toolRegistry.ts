@@ -33,6 +33,7 @@ export type ToolId =
   | 'stair'
   | 'railing'
   | 'room'
+  | 'area'
   | 'dimension'
   | 'section'
   | 'elevation'
@@ -195,6 +196,15 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       shortcut: 'M',
       modes: ['plan', 'plan-3d'],
       tooltip: t('tools.room.tooltip'),
+    },
+    area: {
+      id: 'area',
+      label: t('tools.area.label'),
+      icon: 'room',
+      hotkey: 'AA',
+      shortcut: 'AA',
+      modes: ['plan', 'plan-3d'],
+      tooltip: t('tools.area.tooltip'),
     },
     dimension: {
       id: 'dimension',
@@ -437,6 +447,7 @@ const PALETTE_ORDER: ToolId[] = [
   'stair',
   'railing',
   'room',
+  'area',
   'room-separation-sketch',
   'dimension',
   'measure',

@@ -176,4 +176,54 @@ def test_build_link_dxf_payload_default_origin(tmp_path: Path) -> None:
     assert payload["linework"][0]["kind"] == "line"
     assert payload["dxfLayers"] == [{"name": "0", "primitiveCount": 1, "color": "#ffffff"}]
     assert payload["sourcePath"] == str(path)
+    assert payload["cadReferenceType"] == "linked"
+    assert payload["sourceMetadata"]["path"] == str(path)
+    assert payload["reloadStatus"] == "ok"
     assert payload["loaded"] is True
+
+
+def test_expand_dxf_reload_command_reparses_current_source(tmp_path: Path) -> None:
+    from bim_ai.document import Document
+    from bim_ai.elements import LevelElem, LinkDxfElem
+    from bim_ai.routes_commands import _expand_dxf_reload_command
+
+    doc_file = _new_dxf()
+    doc_file.header["$INSUNITS"] = 0
+    doc_file.layers.new("A-WALL", dxfattribs={"color": 1})
+    doc_file.modelspace().add_line(
+        (0.0, 0.0),
+        (250.0, 0.0),
+        dxfattribs={"layer": "A-WALL"},
+    )
+    path = tmp_path / "reload.dxf"
+    doc_file.saveas(str(path))
+
+    host_doc = Document(
+        revision=1,
+        elements={
+            "lvl-1": LevelElem(id="lvl-1", name="Level 1", elevation_mm=0.0),
+            "dxf-1": LinkDxfElem(
+                id="dxf-1",
+                level_id="lvl-1",
+                origin_mm={"xMm": 0.0, "yMm": 0.0},
+                source_path=str(path),
+                cad_reference_type="linked",
+                linework=[],
+                loaded=False,
+            ),
+        },
+    )
+
+    expanded = _expand_dxf_reload_command(
+        host_doc,
+        {"type": "updateLinkDxf", "linkId": "dxf-1", "reloadSource": True},
+    )
+
+    assert expanded["type"] == "updateLinkDxf"
+    assert expanded["linkId"] == "dxf-1"
+    assert expanded["loaded"] is True
+    assert expanded["reloadStatus"] == "ok"
+    assert expanded["sourcePath"] == str(path)
+    assert expanded["sourceMetadata"]["path"] == str(path)
+    assert expanded["linework"][0]["layerName"] == "A-WALL"
+    assert expanded["dxfLayers"] == [{"name": "A-WALL", "primitiveCount": 1, "color": "#ff0000"}]

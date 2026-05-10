@@ -75,6 +75,7 @@ from bim_ai.engine import (
     reconcile_monitored_element,
     run_clash_test,
 )
+from bim_ai.elements import DxfLayerMeta
 
 
 def _derive_dxf_layers(linework: list[Any]) -> list[dict[str, Any]]:
@@ -302,10 +303,29 @@ def try_apply_coordination_command(doc, cmd, *, source_provider=None) -> bool:
                 dxf_updates["overlay_opacity"] = float(cmd.overlay_opacity)
             if cmd.source_path is not None:
                 dxf_updates["source_path"] = cmd.source_path
+            if cmd.cad_reference_type is not None:
+                dxf_updates["cad_reference_type"] = cmd.cad_reference_type
+            if cmd.source_metadata is not None:
+                dxf_updates["source_metadata"] = dict(cmd.source_metadata)
+            if cmd.reload_status is not None:
+                dxf_updates["reload_status"] = cmd.reload_status
+            if cmd.last_reload_message is not None:
+                dxf_updates["last_reload_message"] = cmd.last_reload_message
+            if cmd.linework is not None:
+                dxf_updates["linework"] = list(cmd.linework)
+                dxf_updates["dxf_layers"] = (
+                    list(cmd.dxf_layers)
+                    if cmd.dxf_layers is not None
+                    else [
+                        DxfLayerMeta.model_validate(row)
+                        for row in _derive_dxf_layers(list(cmd.linework))
+                    ]
+                )
             if cmd.loaded is not None:
                 dxf_updates["loaded"] = bool(cmd.loaded)
             if cmd.hidden_layer_names is not None:
-                known_layers = {row.name for row in dxf_link.dxf_layers}
+                layer_rows = dxf_updates.get("dxf_layers", dxf_link.dxf_layers)
+                known_layers = {row.name for row in layer_rows}
                 if known_layers:
                     unknown = sorted(set(cmd.hidden_layer_names) - known_layers)
                     if unknown:
@@ -314,6 +334,11 @@ def try_apply_coordination_command(doc, cmd, *, source_provider=None) -> bool:
                             + ", ".join(unknown)
                         )
                 dxf_updates["hidden_layer_names"] = list(dict.fromkeys(cmd.hidden_layer_names))
+            elif "dxf_layers" in dxf_updates:
+                known_layers = {row.name for row in dxf_updates["dxf_layers"]}
+                dxf_updates["hidden_layer_names"] = [
+                    name for name in dxf_link.hidden_layer_names if name in known_layers
+                ]
             if cmd.origin_alignment_mode is not None:
                 dxf_updates["origin_alignment_mode"] = cmd.origin_alignment_mode
             els[cmd.link_id] = dxf_link.model_copy(update=dxf_updates)
@@ -338,6 +363,10 @@ def try_apply_coordination_command(doc, cmd, *, source_provider=None) -> bool:
                 hidden_layer_names=list(dict.fromkeys(cmd.hidden_layer_names)),
                 pinned=bool(cmd.pinned),
                 source_path=cmd.source_path,
+                cad_reference_type=cmd.cad_reference_type,
+                source_metadata=dict(cmd.source_metadata),
+                reload_status=cmd.reload_status,
+                last_reload_message=cmd.last_reload_message,
                 loaded=bool(cmd.loaded),
             )
 

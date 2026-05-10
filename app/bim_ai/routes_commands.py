@@ -20,7 +20,7 @@ from bim_ai.agent_review_readout_consistency_closure import (
 )
 from bim_ai.db import get_session
 from bim_ai.document import Document
-from bim_ai.elements import LinkModelElem
+from bim_ai.elements import LinkDxfElem, LinkModelElem
 from bim_ai.engine import (
     bundle_replay_diagnostics,
     clone_document,
@@ -108,6 +108,78 @@ _COMMANDS_NEEDING_LINK_SOURCES: frozenset[str] = frozenset(
 def _command_needs_link_sources(command: dict[str, Any]) -> bool:
     """FED-02 / FED-03: which command types consult linked source documents."""
     return isinstance(command, dict) and command.get("type") in _COMMANDS_NEEDING_LINK_SOURCES
+
+
+def _expand_dxf_reload_command(doc: Document, command: dict[str, Any]) -> dict[str, Any]:
+    """Materialise updateLinkDxf.reloadSource into parsed linework/layer updates.
+
+    The engine remains pure and undoable: the route reads the current source
+    file once, then commits a normal updateLinkDxf payload containing the
+    refreshed primitives and source metadata.
+    """
+
+    if not isinstance(command, dict):
+        return command
+    if command.get("type") != "updateLinkDxf" or command.get("reloadSource") is not True:
+        return command
+
+    link_id = command.get("linkId")
+    link = doc.elements.get(str(link_id)) if link_id is not None else None
+    if not isinstance(link, LinkDxfElem):
+        return command
+
+    source_path = str(command.get("sourcePath") or link.source_path or "").strip()
+    base: dict[str, Any] = {
+        **{k: v for k, v in command.items() if k != "reloadSource"},
+        "sourcePath": source_path or link.source_path,
+    }
+    if link.cad_reference_type != "linked":
+        return {
+            **base,
+            "reloadStatus": "embedded",
+            "lastReloadMessage": "Embedded CAD import has no reloadable source path",
+            "loaded": bool(command.get("loaded", link.loaded)),
+        }
+    if not source_path:
+        return {
+            **base,
+            "reloadStatus": "source_missing",
+            "lastReloadMessage": "Linked DXF has no source path",
+            "loaded": False,
+        }
+
+    from pathlib import Path
+
+    from bim_ai.dxf_import import collect_dxf_layers, dxf_source_metadata, parse_dxf_to_linework
+
+    path = Path(source_path)
+    if not path.is_file():
+        return {
+            **base,
+            "reloadStatus": "source_missing",
+            "lastReloadMessage": f"DXF source file not found: {source_path}",
+            "loaded": False,
+        }
+    try:
+        linework = parse_dxf_to_linework(path)
+    except Exception as exc:
+        return {
+            **base,
+            "reloadStatus": "parse_error",
+            "lastReloadMessage": f"DXF parse failed: {exc}",
+            "loaded": False,
+        }
+
+    return {
+        **base,
+        "linework": linework,
+        "dxfLayers": collect_dxf_layers(linework),
+        "cadReferenceType": "linked",
+        "sourceMetadata": dxf_source_metadata(path),
+        "reloadStatus": "ok",
+        "lastReloadMessage": f"Reloaded from {path}",
+        "loaded": True,
+    }
 
 
 async def _validate_link_model_command_against_db(
@@ -282,18 +354,20 @@ async def apply_command(
 
     uid = body.user_id or "local-dev"
 
-    await _validate_link_model_command_against_db(session, model_id, body.command)
-
     baseline_doc = Document.model_validate(row.document)
+    command_for_commit = _expand_dxf_reload_command(baseline_doc, body.command)
+
+    await _validate_link_model_command_against_db(session, model_id, command_for_commit)
+
     doc_before = clone_document(baseline_doc)
 
     src_provider: SourceDocProvider | None = None
-    if _command_needs_link_sources(body.command):
+    if _command_needs_link_sources(command_for_commit):
         src_provider = await _build_link_source_provider(session, baseline_doc)
 
     try:
         ok, new_doc, _cmd_obj, violations, code = try_commit(
-            baseline_doc, body.command, source_provider=src_provider
+            baseline_doc, command_for_commit, source_provider=src_provider
         )
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Invalid command: {exc}") from exc
@@ -309,7 +383,7 @@ async def apply_command(
         model_id=model_id,
         user_id=uid,
         revision_after=new_doc.revision,
-        forward_commands=[body.command],
+        forward_commands=[command_for_commit],
         undo_commands=undo_cmds,
         created_at=datetime.now(UTC),
     )
@@ -338,7 +412,7 @@ async def apply_command(
         "revision": new_doc.revision,
         "elements": elems_out,
         "violations": viols_wire,
-        "appliedCommand": body.command,
+        "appliedCommand": command_for_commit,
         "clientOpId": body.client_op_id,
         "delta": delta,
     }
@@ -347,7 +421,7 @@ async def apply_command(
             build_level_elevation_propagation_evidence_v0(
                 doc_before,
                 new_doc,
-                applied_commands=[body.command],
+                applied_commands=[command_for_commit],
             )
         )
     vt_prop = compute_view_template_propagation(doc_before, new_doc, _cmd_obj)
@@ -413,15 +487,16 @@ async def apply_command_bundle(
 
     uid = body.user_id or "local-dev"
     baseline_doc = Document.model_validate(row.document)
+    commands_for_commit = [_expand_dxf_reload_command(baseline_doc, c) for c in body.commands]
     doc_before = clone_document(baseline_doc)
 
     src_provider: SourceDocProvider | None = None
-    if any(_command_needs_link_sources(c) for c in body.commands):
+    if any(_command_needs_link_sources(c) for c in commands_for_commit):
         src_provider = await _build_link_source_provider(session, baseline_doc)
 
     try:
         ok, new_doc, _cmds, violations, code = try_commit_bundle(
-            baseline_doc, body.commands, source_provider=src_provider
+            baseline_doc, commands_for_commit, source_provider=src_provider
         )
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Invalid bundle: {exc}") from exc
@@ -436,7 +511,7 @@ async def apply_command_bundle(
                 "violations": viols_wire,
                 "replayDiagnostics": replay_bundle_diagnostics_for_outcome(
                     baseline_doc,
-                    body.commands,
+                    commands_for_commit,
                     outcome_code=code,
                 ),
             },
@@ -450,7 +525,7 @@ async def apply_command_bundle(
         model_id=model_id,
         user_id=uid,
         revision_after=new_doc.revision,
-        forward_commands=body.commands,
+        forward_commands=commands_for_commit,
         undo_commands=undo_cmds,
         created_at=datetime.now(UTC),
     )
@@ -484,20 +559,20 @@ async def apply_command_bundle(
         "revision": new_doc.revision,
         "elements": elems_out,
         "violations": viols_wire,
-        "appliedCommands": body.commands,
+        "appliedCommands": commands_for_commit,
         "clientOpId": body.client_op_id,
         "delta": delta,
-        "replayDiagnostics": bundle_replay_diagnostics(body.commands),
+        "replayDiagnostics": bundle_replay_diagnostics(commands_for_commit),
     }
-    if _commands_include_move_level_elevation(body.commands):
+    if _commands_include_move_level_elevation(commands_for_commit):
         payload["levelElevationPropagationEvidence_v0"] = (
             build_level_elevation_propagation_evidence_v0(
                 doc_before,
                 new_doc,
-                applied_commands=body.commands,
+                applied_commands=commands_for_commit,
             )
         )
-    for raw_cmd in body.commands:
+    for raw_cmd in commands_for_commit:
         try:
             from bim_ai.commands import Command  # noqa: PLC0415
 

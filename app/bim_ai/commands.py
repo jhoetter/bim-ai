@@ -1572,6 +1572,14 @@ class CreateLinkDxfCmd(BaseModel):
     hidden_layer_names: list[str] = Field(default_factory=list, alias="hiddenLayerNames")
     pinned: bool = Field(default=False)
     source_path: str | None = Field(default=None, alias="sourcePath")
+    cad_reference_type: Literal["linked", "embedded"] = Field(
+        default="linked", alias="cadReferenceType"
+    )
+    source_metadata: dict[str, Any] = Field(default_factory=dict, alias="sourceMetadata")
+    reload_status: Literal["not_reloaded", "ok", "source_missing", "parse_error", "embedded"] = (
+        Field(default="not_reloaded", alias="reloadStatus")
+    )
+    last_reload_message: str | None = Field(default=None, alias="lastReloadMessage")
     loaded: bool = Field(default=True)
 
 
@@ -1595,7 +1603,18 @@ class UpdateLinkDxfCmd(BaseModel):
     origin_alignment_mode: Literal["origin_to_origin", "project_origin", "shared_coords"] | None = (
         Field(default=None, alias="originAlignmentMode")
     )
+    linework: list[DxfLineworkPrim] | None = Field(default=None)
+    dxf_layers: list[DxfLayerMeta] | None = Field(default=None, alias="dxfLayers")
     source_path: str | None = Field(default=None, alias="sourcePath")
+    cad_reference_type: Literal["linked", "embedded"] | None = Field(
+        default=None, alias="cadReferenceType"
+    )
+    source_metadata: dict[str, Any] | None = Field(default=None, alias="sourceMetadata")
+    reload_status: (
+        Literal["not_reloaded", "ok", "source_missing", "parse_error", "embedded"] | None
+    ) = Field(default=None, alias="reloadStatus")
+    last_reload_message: str | None = Field(default=None, alias="lastReloadMessage")
+    reload_source: bool = Field(default=False, alias="reloadSource")
     loaded: bool | None = Field(default=None)
 
 

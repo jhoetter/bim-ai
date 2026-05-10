@@ -9,7 +9,17 @@ from uuid import UUID, uuid4
 
 logger = logging.getLogger(__name__)
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import (
+    APIRouter,
+    Depends,
+    Form,
+    HTTPException,
+    Query,
+    Request,
+    UploadFile,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 from sqlalchemy import desc, select
@@ -110,7 +120,14 @@ from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
 from bim_ai.sheet_preview_svg import SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2
 from bim_ai.permissions import authorize_command
 from bim_ai.milestones import CreateMilestoneBody
-from bim_ai.tables import MilestoneRecord, ModelRecord, ProjectRecord, PublicLinkRecord, RoleAssignmentRecord, UndoStackRecord
+from bim_ai.tables import (
+    MilestoneRecord,
+    ModelRecord,
+    ProjectRecord,
+    PublicLinkRecord,
+    RoleAssignmentRecord,
+    UndoStackRecord,
+)
 from bim_ai.template_loader import (
     list_templates,
     load_template_snapshot,
@@ -133,9 +150,7 @@ api_router.include_router(sketch_router)
 # ---------------------------------------------------------------------------
 
 
-async def resolve_caller_role(
-    session: AsyncSession, model_id: str | UUID, user_id: str
-) -> str:
+async def resolve_caller_role(session: AsyncSession, model_id: str | UUID, user_id: str) -> str:
     """Return the caller's role for model_id. Defaults to 'admin' when no record exists."""
     res = await session.execute(
         select(RoleAssignmentRecord).where(
@@ -148,9 +163,7 @@ async def resolve_caller_role(
     return record.role if record is not None else "admin"
 
 
-async def _resolve_token_role(
-    session: AsyncSession, model_id_str: str, token: str
-) -> str:
+async def _resolve_token_role(session: AsyncSession, model_id_str: str, token: str) -> str:
     """Resolve a public-link token to a role; raises 403 if invalid or expired."""
     now_ms = int(time.time() * 1000)
     res = await session.execute(
@@ -945,7 +958,11 @@ async def schedule_view_rows(
             if w is not None:
                 fields["widthMm"] = w
         elif category == "window":
-            for attr, key in (("width_mm", "widthMm"), ("height_mm", "heightMm"), ("sill_height_mm", "sillHeightMm")):
+            for attr, key in (
+                ("width_mm", "widthMm"),
+                ("height_mm", "heightMm"),
+                ("sill_height_mm", "sillHeightMm"),
+            ):
                 v = getattr(elem, attr, None)
                 if v is not None:
                     fields[key] = v
@@ -961,7 +978,10 @@ async def schedule_view_rows(
     if effective_sort_key:
         reverse = effective_sort_dir == "desc"
         rows.sort(
-            key=lambda r: (r["fields"].get(effective_sort_key) is None, r["fields"].get(effective_sort_key, "")),
+            key=lambda r: (
+                r["fields"].get(effective_sort_key) is None,
+                r["fields"].get(effective_sort_key, ""),
+            ),
             reverse=reverse,
         )
 
@@ -1047,9 +1067,7 @@ async def import_ifc_to_shadow_link(
             with open(body.file_path, encoding="utf-8") as fh:
                 step_text = fh.read()
         except OSError as exc:
-            raise HTTPException(
-                status_code=400, detail=f"Cannot read IFC file: {exc}"
-            ) from exc
+            raise HTTPException(status_code=400, detail=f"Cannot read IFC file: {exc}") from exc
     else:
         raise HTTPException(
             status_code=400,
@@ -1116,9 +1134,7 @@ async def import_ifc_to_shadow_link(
         host_ok, new_host_doc, _cmd, host_viols, host_code = try_commit(host_doc, create_link)
     except Exception as exc:
         await session.rollback()
-        raise HTTPException(
-            status_code=400, detail=f"createLinkModel failed: {exc}"
-        ) from exc
+        raise HTTPException(status_code=400, detail=f"createLinkModel failed: {exc}") from exc
     if not host_ok or new_host_doc is None:
         await session.rollback()
         raise HTTPException(
@@ -1208,7 +1224,7 @@ async def import_dxf(
 
     from pathlib import Path as _Path
 
-    from bim_ai.dxf_import import parse_dxf_to_linework
+    from bim_ai.dxf_import import dxf_source_metadata, parse_dxf_to_linework
 
     host_row = await load_model_row(session, host_id)
     if host_row is None:
@@ -1223,9 +1239,7 @@ async def import_dxf(
     try:
         linework = parse_dxf_to_linework(dxf_path)
     except Exception as exc:
-        raise HTTPException(
-            status_code=400, detail=f"DXF parse failed: {exc}"
-        ) from exc
+        raise HTTPException(status_code=400, detail=f"DXF parse failed: {exc}") from exc
 
     host_doc = Document.model_validate(host_row.document)
     if body.level_id not in host_doc.elements or not isinstance(
@@ -1244,6 +1258,10 @@ async def import_dxf(
         "scaleFactor": float(body.scale_factor),
         "linework": linework,
         "sourcePath": str(dxf_path),
+        "cadReferenceType": "linked",
+        "sourceMetadata": dxf_source_metadata(dxf_path),
+        "reloadStatus": "ok",
+        "lastReloadMessage": f"Loaded from {dxf_path}",
         "loaded": True,
     }
     try:
@@ -1321,12 +1339,8 @@ async def upload_dxf_file(
 
     # Validate level exists
     host_doc = Document.model_validate(host_row.document)
-    if levelId not in host_doc.elements or not isinstance(
-        host_doc.elements[levelId], LevelElem
-    ):
-        raise HTTPException(
-            status_code=400, detail="levelId must reference an existing Level"
-        )
+    if levelId not in host_doc.elements or not isinstance(host_doc.elements[levelId], LevelElem):
+        raise HTTPException(status_code=400, detail="levelId must reference an existing Level")
 
     # Use filename without extension as name if not provided
     display_name = name.strip() or _Path(file.filename or "DXF Underlay").stem
@@ -1356,6 +1370,13 @@ async def upload_dxf_file(
         "scaleFactor": 1.0,
         "linework": linework,
         "sourcePath": file.filename or display_name,
+        "cadReferenceType": "embedded",
+        "sourceMetadata": {
+            "fileName": file.filename or display_name,
+            "sizeBytes": len(content),
+        },
+        "reloadStatus": "embedded",
+        "lastReloadMessage": "Embedded CAD import has no reloadable source path",
         "loaded": True,
     }
     try:
@@ -1482,7 +1503,9 @@ async def apply_bundle_route(
     doc = Document.model_validate(row.document)
     mode = body.mode if body.mode in ("dry_run", "commit") else "dry_run"
 
-    result, new_doc_from_bundle = _apply_bundle(doc, body.bundle, mode, model_id=str(model_id), submitter=body.submitter)  # type: ignore[arg-type]
+    result, new_doc_from_bundle = _apply_bundle(
+        doc, body.bundle, mode, model_id=str(model_id), submitter=body.submitter
+    )  # type: ignore[arg-type]
 
     # Surface blocking advisory classes as HTTP 409
     _BLOCKING_ADVISORY_CLASSES = {
@@ -1529,6 +1552,7 @@ async def apply_bundle_route(
 
         try:
             from bim_ai.activity import emit_activity_row
+
             await emit_activity_row(
                 session,
                 model_id=str(model_id),
@@ -1544,9 +1568,7 @@ async def apply_bundle_route(
 
         delta = compute_delta_wire(doc_before, new_doc)
         try:
-            await hub.publish(
-                model_id, {"type": "delta", "modelId": str(model_id), **delta}
-            )
+            await hub.publish(model_id, {"type": "delta", "modelId": str(model_id), **delta})
         except Exception:
             pass
 
@@ -1843,9 +1865,7 @@ async def resolve_shared_token(
 ) -> dict[str, Any]:
     """COL-V3-03: resolve a public link token and return the model document."""
     now_ms = int(time.time() * 1000)
-    res = await session.execute(
-        select(PublicLinkRecord).where(PublicLinkRecord.token == token)
-    )
+    res = await session.execute(select(PublicLinkRecord).where(PublicLinkRecord.token == token))
     link_record = res.scalars().first()
     if link_record is None or link_record.is_revoked:
         raise HTTPException(status_code=410, detail="Link not found or revoked")
@@ -1895,9 +1915,7 @@ async def verify_public_link_password(
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     """COL-V3-03: verify the password for a public link."""
-    res = await session.execute(
-        select(PublicLinkRecord).where(PublicLinkRecord.token == token)
-    )
+    res = await session.execute(select(PublicLinkRecord).where(PublicLinkRecord.token == token))
     link_record = res.scalars().first()
     if link_record is None:
         raise HTTPException(status_code=404, detail="Public link not found")
@@ -2011,9 +2029,7 @@ async def restore_activity_row(
 
     delta = compute_delta_wire(doc_before, restore_doc)
     try:
-        await hub.publish(
-            model_id, {"type": "delta", "modelId": str(model_id), **delta}
-        )
+        await hub.publish(model_id, {"type": "delta", "modelId": str(model_id), **delta})
     except Exception:
         pass
 
@@ -2053,9 +2069,7 @@ async def websocket_loop(
                 "type": "snapshot",
                 "modelId": sid,
                 "revision": doc.revision,
-                "elements": {
-                    k: el.model_dump(by_alias=True) for k, el in doc.elements.items()
-                },
+                "elements": {k: el.model_dump(by_alias=True) for k, el in doc.elements.items()},
                 "violations": violations_wire(doc.elements),
             },
         )
@@ -2831,7 +2845,9 @@ async def resolve_presentation_token(
         "wsUrl": f"/api/p/{token}/ws",
         "allowMeasurement": link_record.allow_measurement,
         "allowComment": link_record.allow_comment,
-        "pageScopeIds": _json.loads(link_record.page_scope_ids) if link_record.page_scope_ids else [],
+        "pageScopeIds": _json.loads(link_record.page_scope_ids)
+        if link_record.page_scope_ids
+        else [],
         "presentation": {
             "id": link_record.id,
             "displayName": link_record.display_name,
@@ -2879,6 +2895,8 @@ async def presentation_ws(
         hub.unregister(websocket)
         if token in _presentation_ws_sessions:
             _presentation_ws_sessions[token].discard(websocket)
+
+
 # MRK-V3-03 — Sheet pixel-map endpoint
 # ---------------------------------------------------------------------------
 
@@ -2918,7 +2936,11 @@ async def get_sheet_pixel_map(
     sheet_elem = doc.elements.get(sheet_id)
     if sheet_elem is not None and hasattr(sheet_elem, "view_placements"):
         for vp in getattr(sheet_elem, "view_placements", []) or []:
-            vp_dict = vp if isinstance(vp, dict) else (vp.model_dump(by_alias=True) if hasattr(vp, "model_dump") else {})
+            vp_dict = (
+                vp
+                if isinstance(vp, dict)
+                else (vp.model_dump(by_alias=True) if hasattr(vp, "model_dump") else {})
+            )
             view_id = vp_dict.get("viewId", "")
             x_min = int(vp_dict.get("xPxMin", 0))
             x_max = int(vp_dict.get("xPxMax", 0))

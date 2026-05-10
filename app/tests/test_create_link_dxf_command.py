@@ -192,6 +192,60 @@ def test_update_link_dxf_load_path_and_native_color_mode() -> None:
     assert link.source_path == "/new/site.dxf"
 
 
+def test_update_link_dxf_replaces_linework_layers_and_reload_status() -> None:
+    doc = _doc_with_level()
+    ok, new_doc, _cmds, _viols, code = try_commit_bundle(
+        doc,
+        [
+            {
+                "type": "createLinkDxf",
+                "id": "lx-fixed",
+                "levelId": "lvl-1",
+                "originMm": {"xMm": 0.0, "yMm": 0.0},
+                "linework": [
+                    {
+                        "kind": "line",
+                        "start": {"xMm": 0.0, "yMm": 0.0},
+                        "end": {"xMm": 1.0, "yMm": 1.0},
+                        "layerName": "OLD",
+                    }
+                ],
+                "hiddenLayerNames": ["OLD"],
+                "sourcePath": "/source/site.dxf",
+                "cadReferenceType": "linked",
+            },
+            {
+                "type": "updateLinkDxf",
+                "linkId": "lx-fixed",
+                "linework": [
+                    {
+                        "kind": "line",
+                        "start": {"xMm": 0.0, "yMm": 0.0},
+                        "end": {"xMm": 5.0, "yMm": 0.0},
+                        "layerName": "NEW",
+                        "layerColor": "#ff0000",
+                    }
+                ],
+                "dxfLayers": [{"name": "NEW", "primitiveCount": 1, "color": "#ff0000"}],
+                "sourceMetadata": {"path": "/source/site.dxf", "sizeBytes": 123},
+                "reloadStatus": "ok",
+                "lastReloadMessage": "Reloaded from /source/site.dxf",
+                "loaded": True,
+            },
+        ],
+    )
+    assert ok is True, code
+    assert new_doc is not None
+    link = new_doc.elements["lx-fixed"]
+    assert isinstance(link, LinkDxfElem)
+    assert len(link.linework) == 1
+    assert link.linework[0].layer_name == "NEW"
+    assert [row.name for row in link.dxf_layers] == ["NEW"]
+    assert link.hidden_layer_names == []
+    assert link.source_metadata["sizeBytes"] == 123
+    assert link.reload_status == "ok"
+
+
 def test_update_link_dxf_level_id_via_property_command() -> None:
     doc = _doc_with_level()
     ok, new_doc, _cmds, _viols, code = try_commit_bundle(

@@ -309,4 +309,89 @@ describe('<ManageLinksDialog />', () => {
       }),
     );
   });
+
+  it('reloads linked DXF rows from source instead of only flipping load state', async () => {
+    useBimStore.setState({
+      modelId: 'host-model',
+      elementsById: {
+        'dxf-linked': {
+          kind: 'link_dxf',
+          id: 'dxf-linked',
+          name: 'Linked survey',
+          levelId: 'lvl-1',
+          originMm: { xMm: 0, yMm: 0 },
+          rotationDeg: 0,
+          scaleFactor: 1,
+          sourcePath: '/source/site.dxf',
+          cadReferenceType: 'linked',
+          loaded: false,
+          linework: [],
+        },
+      },
+    });
+    const apply = vi.fn().mockResolvedValue({ ok: true });
+    const { getByTestId } = render(
+      <ManageLinksDialog open={true} onClose={vi.fn()} applyCommandImpl={apply} />,
+    );
+
+    expect(getByTestId('manage-dxf-links-reference-type-dxf-linked').textContent).toBe(
+      'Linked CAD',
+    );
+    fireEvent.click(getByTestId('manage-dxf-links-load-dxf-linked'));
+    await waitFor(() =>
+      expect(apply).toHaveBeenCalledWith('host-model', {
+        type: 'updateLinkDxf',
+        linkId: 'dxf-linked',
+        reloadSource: true,
+        sourcePath: '/source/site.dxf',
+      }),
+    );
+
+    fireEvent.click(getByTestId('manage-dxf-links-reload-dxf-linked'));
+    await waitFor(() =>
+      expect(apply).toHaveBeenLastCalledWith('host-model', {
+        type: 'updateLinkDxf',
+        linkId: 'dxf-linked',
+        reloadSource: true,
+        sourcePath: '/source/site.dxf',
+      }),
+    );
+  });
+
+  it('labels embedded CAD imports and loads them without source reload', async () => {
+    useBimStore.setState({
+      modelId: 'host-model',
+      elementsById: {
+        'dxf-embedded': {
+          kind: 'link_dxf',
+          id: 'dxf-embedded',
+          name: 'Uploaded detail',
+          levelId: 'lvl-1',
+          originMm: { xMm: 0, yMm: 0 },
+          rotationDeg: 0,
+          scaleFactor: 1,
+          cadReferenceType: 'embedded',
+          loaded: false,
+          linework: [],
+        },
+      },
+    });
+    const apply = vi.fn().mockResolvedValue({ ok: true });
+    const { getByTestId, queryByTestId } = render(
+      <ManageLinksDialog open={true} onClose={vi.fn()} applyCommandImpl={apply} />,
+    );
+
+    expect(getByTestId('manage-dxf-links-reference-type-dxf-embedded').textContent).toBe(
+      'Imported CAD',
+    );
+    expect(queryByTestId('manage-dxf-links-reload-dxf-embedded')).toBeNull();
+    fireEvent.click(getByTestId('manage-dxf-links-load-dxf-embedded'));
+    await waitFor(() =>
+      expect(apply).toHaveBeenCalledWith('host-model', {
+        type: 'updateLinkDxf',
+        linkId: 'dxf-embedded',
+        loaded: true,
+      }),
+    );
+  });
 });

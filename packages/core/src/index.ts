@@ -412,6 +412,10 @@ export type CreateLinkDxfCmd = {
   hiddenLayerNames?: string[];
   pinned?: boolean;
   sourcePath?: string;
+  cadReferenceType?: 'linked' | 'embedded';
+  sourceMetadata?: Record<string, unknown>;
+  reloadStatus?: 'not_reloaded' | 'ok' | 'source_missing' | 'parse_error' | 'embedded';
+  lastReloadMessage?: string;
   loaded?: boolean;
 };
 
@@ -1809,6 +1813,12 @@ export type Element =
       hiddenLayerNames?: string[];
       pinned?: boolean;
       sourcePath?: string;
+      /** F-015/F-016/F-024: distinguishes reloadable linked CAD from embedded/imported CAD. */
+      cadReferenceType?: 'linked' | 'embedded';
+      /** F-015/F-024: source-file metadata captured on import/reload. */
+      sourceMetadata?: Record<string, unknown>;
+      reloadStatus?: 'not_reloaded' | 'ok' | 'source_missing' | 'parse_error' | 'embedded';
+      lastReloadMessage?: string;
       loaded?: boolean;
       /** F-017 / F-020: render color mode. 'black_white' = desaturated grey (default); 'native' = use DXF layer colors. */
       colorMode?: 'black_white' | 'custom' | 'native';

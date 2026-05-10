@@ -1666,6 +1666,20 @@ function nearEq(a: number, b: number, eps = 1.5): boolean {
   return Math.abs(a - b) <= eps;
 }
 
+function wallJoinDisallowedAtVertex(
+  wall: Extract<Element, { kind: 'wall' }>,
+  vx: number,
+  vy: number,
+): boolean {
+  if (nearEq(wall.start.xMm, vx) && nearEq(wall.start.yMm, vy)) {
+    return wall.joinDisallowStart ?? false;
+  }
+  if (nearEq(wall.end.xMm, vx) && nearEq(wall.end.yMm, vy)) {
+    return wall.joinDisallowEnd ?? false;
+  }
+  return false;
+}
+
 function lineIntersect2D(
   p1: { x: number; y: number },
   d1: { x: number; y: number },
@@ -1720,6 +1734,9 @@ export function computeWallSectionPolygon(
     if (!otherId) continue;
     const other = wallsById[otherId];
     if (!other || other.kind !== 'wall') continue;
+    if (wallJoinDisallowedAtVertex(wall, vx, vy) || wallJoinDisallowedAtVertex(other, vx, vy)) {
+      continue;
+    }
 
     if (join.joinKind === 'butt') {
       const otherAtStart = nearEq(other.start.xMm, vx) && nearEq(other.start.yMm, vy);

@@ -52,6 +52,10 @@ i18n.init({
             label: 'Area Boundary',
             tooltip: 'Sketch a legal/permit area polygon on the active level (AR)',
           },
+          area: {
+            label: 'Area',
+            tooltip: 'Place/select an area by clicking inside an Area Plan boundary (AA)',
+          },
           maskingRegion: {
             label: 'Masking Region',
             tooltip: 'Sketch a 2D opaque region that hides underlying linework (MR)',
@@ -878,6 +882,10 @@ i18n.init({
           areaBoundary: {
             label: 'Flächenumgrenzung',
             tooltip: 'Skizziere ein Flächen-/Berechnungspolygon auf der aktiven Ebene (AR)',
+          },
+          area: {
+            label: 'Fläche',
+            tooltip: 'Fläche durch Klick in eine Flächenplan-Umgrenzung platzieren/auswählen (AA)',
           },
           maskingRegion: {
             label: 'Maskierungsbereich',

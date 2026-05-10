@@ -1612,6 +1612,14 @@ class LinkDxfElem(BaseModel):
     hidden_layer_names: list[str] = Field(default_factory=list, alias="hiddenLayerNames")
     pinned: bool = Field(default=False)
     source_path: str | None = Field(default=None, alias="sourcePath")
+    cad_reference_type: Literal["linked", "embedded"] = Field(
+        default="linked", alias="cadReferenceType"
+    )
+    source_metadata: dict[str, Any] = Field(default_factory=dict, alias="sourceMetadata")
+    reload_status: Literal["not_reloaded", "ok", "source_missing", "parse_error", "embedded"] = (
+        Field(default="not_reloaded", alias="reloadStatus")
+    )
+    last_reload_message: str | None = Field(default=None, alias="lastReloadMessage")
     loaded: bool = Field(default=True)
     color_mode: Literal["black_white", "custom", "native"] | None = Field(
         default=None, alias="colorMode"

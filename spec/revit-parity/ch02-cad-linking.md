@@ -11,7 +11,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Link CAD dialog](file:///Users/jhoetter/Desktop/Revit%20Specs/0207_00-29-53.png)
 
-**bim-ai status:** 🟡 Partial — backend is fully implemented: `app/bim_ai/dxf_import.py` parses DXF geometry via `ezdxf`, `build_link_dxf_payload` wraps it into a `link_dxf` engine command, and `POST /api/models/{host_id}/import-dxf` materialises the element (server-side path) plus the new `POST /api/models/{host_id}/upload-dxf-file` multipart endpoint for browser uploads. The resulting `link_dxf` element renders as a desaturated grey underlay on the plan canvas with origin/rotation/scale support. Frontend file-picker is now enabled (Insert → Link DXF…) and wired to `POST /api/models/{id}/upload-dxf-file`; the underlay appears immediately after selection via WebSocket broadcast. No live reload on source-file change.
+**bim-ai status:** ✅ Available — `app/bim_ai/dxf_import.py` parses DXF geometry via `ezdxf`, `build_link_dxf_payload` wraps it into a `link_dxf` engine command, and `POST /api/models/{host_id}/import-dxf` materialises server-path linked CAD with source path/stat metadata. The linked `link_dxf` element renders as a plan underlay with origin/rotation/scale support, source metadata, reload status/messages, and Manage Links reload reparses the current source path to refresh primitives, layers, and metadata.
 
 ---
 
@@ -22,7 +22,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Import vs Link](file:///Users/jhoetter/Desktop/Revit%20Specs/0206_00-29-37.png)
 
-**bim-ai status:** 🟡 Partial — same backend as F-015 (`upload-dxf-file` API). bim-ai uses a single `link_dxf` element kind that behaves like a link (the parsed linework is stored in the element, not as a separate file reference), so the linked vs. embedded distinction does not exist today. Frontend file-picker is now enabled (Insert → Link DXF…) and wired to `POST /api/models/{id}/upload-dxf-file`; the underlay appears immediately after selection via WebSocket broadcast.
+**bim-ai status:** ✅ Available — browser-uploaded DXF imports use the same geometry pipeline as F-015 but are marked `cadReferenceType: "embedded"` with filename/size metadata and preserved imported linework. Server-path DXFs are marked `linked` and remain disk-reloadable. Manage Links labels rows as Imported CAD vs Linked CAD and only offers source reparse for linked rows.
 
 ---
 
@@ -115,4 +115,4 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Manage Links](file:///Users/jhoetter/Desktop/Revit%20Specs/0146_00-17-16.png)
 
-**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` lists all `link_model` rows (delete, alignment mode, visibility mode, spatial position lock, revision pinning with drift badge + Update button) AND all `link_dxf` underlays (loaded/unloaded status, unload/reload control, source-path change field, spatial position lock, alignment mode, opacity slider 0–100%, color mode toggle Black & White / Preserve original colors / Custom hex, and layer visibility). Missing: IFC / PDF / image link types and true disk reparse on reload.
+**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` lists all `link_model` rows (delete, alignment mode, visibility mode, spatial position lock, revision pinning with drift badge + Update button) and all `link_dxf` underlays (linked/imported CAD label, loaded/unloaded status, reload status/message, source metadata, source-path change field, spatial position lock, alignment mode, opacity slider 0–100%, color mode toggle Black & White / Preserve original colors / Custom hex, and layer visibility). Linked DXF reload reparses the source file and refreshes primitives/layers. Missing: IFC / PDF / image link types.
