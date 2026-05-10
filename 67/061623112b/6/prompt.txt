@@ -1,0 +1,139 @@
+<image name=[Image #1]>
+
+---
+
+</image>
+
+---
+
+we use claude-skills/sketch-to-bim to generate bim models from sketches, but it usually generates with issues that the software already identifies: [Image #1]; please use that in the methodology as well. commit and push and merge to main
+
+---
+
+can you completely clear the current seeding? i want to start from scratch again.. (dont delete the spec/target-house-seed.md , but the current seeding created via make seed).
+
+---
+
+ok, can you now create the target-house from the spec/target-house-seed.md ?
+
+---
+
+can you merge that into main please?
+
+---
+
+but it looks exactly as before, i dont undestand that... it is the exact same seedhouse as before...
+
+---
+
+how was it possible you recreated the exact same house? that is my question.... i hoped for a WAY better model...
+
+---
+
+ahh ok, then really look into that please. really go into super deep detail to ensure that the house can be built just given a sketch and that we also can ensure that findings from the software can be fed into the creation again to ensure that our model becomes extremely good!
+
+---
+
+yeah i understand, i am asking you to look into the overall workflow we use to generate the seedhouse; make seed is not a generator, i get that. but i am asking YOU to use the claude-skills/sketch-to-bim to turn the [Image #1] into an actual seeding, but think about the overall workflow to get there; do the commands or such need to be updated? is everything everything that the software offers via CLI/API/... available during the workflow? i want to achieve that YOU can look into the spec/target-house-seed.md , understand what would be needed, then use the methodology of the sketch-to-bim to create the seeding...
+
+---
+
+i want to checkout to main but i get this: fatal: 'main' is already used by worktree at '/Users/jhoetter/repos/bim-ai-revit-family-sketch-wave'
+
+---
+
+can i have that the ther agent is working but i still can see main branch? i dont want to lose any progress
+
+---
+
+please write a propmt for this i can tell the other ai agent that i want to be able to switch to main, if it can help me with that (without killing its progress at all)
+
+---
+
+[Image #1]i am super confused, it again looks IDENTICAL as before
+
+---
+
+Then do this now.... i want to finally get the house as in the spec/target-house-seed.md , and for this you must completely re-imagine the seeding we currently do... i.e. i DO NOT WANT TO SEE the same house again with the next seeding!
+
+---
+
+it is more than just a wider ground floor or such; look e.g. into the roof, which has an embedded balcony in [Image #1]. that is the one i want to see.
+
+---
+
+not just the only main architectural feature. please look into if spec/target-house-seed.md well describes what you see in [Image #1] ...
+
+---
+
+can we also add to the claude-skills/sketch-to-bim that it should also analyze the image to fully 100% understand? and update please the spec/target-house-seed.md to better describe it perfectly, in greatest detail.
+
+once you did that, commit and push to main, and then rebuild the seeding, and then commit and push to main again
+
+---
+
+it looks already more like the actual image, but i think you aren't yet using the warnings, e.g. [Image #1] clearly shows: Raumgrenze nicht geschlossen, ohr Raum ohne Tür -> maybe it makes sense that you spin up the server while creating the sketch so you can get the warnings in realtime as you are defining the seeding? also so you can take screenshots or something and check you are on track? and adjust if needed? also you create suuuuper weird layouts interior, e.g. staircases going into walls and so on. that is also weird. [Image #2] for instance here, the staircase is literally almost directly at the wall. your houses are tiny it seems to me.
+
+---
+
+[Image #1] but dont you see this has OBVIOUS FLAWS?? [Image #2] also still CLEAR recommendations by the software what is wrong...
+
+this is so frustrating
+
+---
+
+i am just saying: you still are rather thinking about this ONE current seeding rather than the methodology; i am super pissed that the AI isn't even considering reading the hints that the software computes directly (our localhost:2000 software, which is why i considered that you have a server running and get updates etc while building); your bim models always have faults, i had multiple sessions already where i asked you to create a bim model on a sketch and it was always faulty. I want that claude-skills defines how YOU need to plan out going from sketch/specs to a full-fledged BIM model; and you constantly fail. the claude-skills/sketch-to-bim is your hint, but you can consider screenshots via a rendering of the model from different perspectives, and the advisor comments / rules etc, just as e.g. room_derived_interior_separation_ambiguous (warning). 
+You need to understand: an AI agent like YOU is the AI architect that is always tasked to model from sketch, so you need to understand given the methodology how the seed can be generated. the seeding here is just for now how i start a project; in the future, that will be the "project initiation" workflow, so it must work super well. so now really plan this out, go in details for the workflow and technology approach here, USE the software, and ensure that the initiation from a sketch already is a perfectly functioning model.
+
+---
+
+using these new skills, try recreating our seedhouse from scratch again. REally from scratch. use the fuill methodology; i want to see if it really works now... 
+run as a subagent so it isnt biased, but investigate afterwards
+
+---
+
+please commit and push. there is a LOT of progress here :)
+
+---
+
+[Image #1] you can see that e.g. the walls aren't correctly cut off as with the roof, i.e. a rectangle but that isnt the case in the [Image #2] . also still some more gaps. how can we further improve this to ensure the methodology for seeding is working EXTREMELY well
+
+---
+
+[Image #1] getting better and better, but still e.g. rendering gaps or whatever, als square walls still partially (only one i can see), ...
+
+---
+
+did you commit and push?
+
+---
+
+how can we further improve the architecture / workflow / methodology behind our seeding-genereation (i.e. not the make seed but the actual creation of the seed data)? how would you currently rate it, where are strenghs + weaknesses?
+
+---
+
+can you write this into a tracker, i.e. in specs a sketch-to-bim-methodology.md and write down those things? what would need to be the input of the user, is it still just the sketch plus an instruction? go ahead and implement the improvements however needed; take your time, this is a core part of the software and makes the first "wow"-impression if working well
+
+---
+
+are you 100% done or not?
+
+---
+
+so how is the rating now?
+
+---
+
+ha, so you are not 100% done!!
+
+---
+
+ok, go ahead and implement it now
+
+---
+
+are you fully done, is all implemented? else continue
+
+---
+
+please continue implementing until 100% of the long-termi vision are done.
