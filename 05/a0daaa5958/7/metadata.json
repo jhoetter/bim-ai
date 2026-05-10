@@ -1,0 +1,52 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "05a0daaa5958",
+  "session_id": "019e12e9-1085-71d1-a4cd-d2bb6cef9c69",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T17:46:59.446262Z",
+  "branch": "revit-parity-family-load-wave",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/families/FamilyLibraryPanel.test.tsx",
+    "packages/web/src/families/FamilyLibraryPanel.tsx",
+    "packages/web/src/families/thumbnailCache.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "6d3e6be58ceb",
+  "token_usage": {
+    "input_tokens": 64334,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 568320,
+    "output_tokens": 4902,
+    "api_call_count": 12
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T17:46:59.436491Z",
+    "agent_lines": 194,
+    "agent_removed": 92,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 194,
+    "total_lines_changed": 286,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 58,
+      "user_lines_removed": 1,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/skb/refine_loop.py": 4,
+        "app/tests/test_skb_refine_loop.py": 54
+      },
+      "user_removed_per_file": {
+        "app/tests/test_skb_refine_loop.py": 1
+      }
+    }
+  ]
+}
