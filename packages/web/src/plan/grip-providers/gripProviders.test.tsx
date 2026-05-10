@@ -341,6 +341,101 @@ describe('F-117/F-120 — placedAssetGripProvider', () => {
       value: { widthMm: 2400, fabric: 'linen', depthMm: 1200 },
     });
   });
+
+  it('adds composite kitchen offset grips that patch paramValues through updateElementProperty', () => {
+    const kitchenEntry: Extract<Element, { kind: 'asset_library_entry' }> = {
+      ...sofaEntry,
+      id: 'asset-kitchen-layout',
+      name: 'Kitchen Slab Layout',
+      tags: ['kitchen', 'counter', 'sink', 'fridge'],
+      category: 'kitchen',
+      thumbnailWidthMm: 3000,
+      thumbnailHeightMm: 650,
+      planSymbolKind: 'counter',
+      renderProxyKind: 'counter',
+      paramSchema: [
+        { key: 'widthMm', kind: 'mm', default: 3000 },
+        { key: 'depthMm', kind: 'mm', default: 650 },
+        { key: 'sinkOffsetMm', kind: 'mm', default: 1500 },
+        { key: 'fridgeOffsetMm', kind: 'mm', default: 350 },
+      ],
+    };
+    const kitchen: Extract<Element, { kind: 'placed_asset' }> = {
+      ...sofa,
+      id: 'pa-kitchen',
+      name: 'Kitchen Slab Layout',
+      assetId: kitchenEntry.id,
+      positionMm: { xMm: 1000, yMm: 2000 },
+      rotationDeg: 0,
+      paramValues: { sinkOffsetMm: 1700, finish: 'laminate' },
+    };
+
+    const grips = placedAssetGripProvider.grips(kitchen, {
+      elementsById: { [kitchenEntry.id]: kitchenEntry },
+    });
+    const sink = grips.find((g) => g.id === 'pa-kitchen:sinkOffsetMm')!;
+    const fridge = grips.find((g) => g.id === 'pa-kitchen:fridgeOffsetMm')!;
+
+    expect(grips.map((g) => g.id)).toContain('pa-kitchen:sinkOffsetMm');
+    expect(grips.map((g) => g.id)).toContain('pa-kitchen:fridgeOffsetMm');
+    expect(sink.positionMm).toEqual({ xMm: 1200, yMm: 2000 });
+    expect(fridge.positionMm).toEqual({ xMm: -150, yMm: 2000 });
+    expect(sink.onCommit({ xMm: 125, yMm: 50 })).toEqual({
+      type: 'updateElementProperty',
+      elementId: 'pa-kitchen',
+      key: 'paramValues',
+      value: { sinkOffsetMm: 1825, finish: 'laminate' },
+    });
+  });
+
+  it('projects rotated composite offset drags onto the asset width axis', () => {
+    const bathEntry: Extract<Element, { kind: 'asset_library_entry' }> = {
+      ...sofaEntry,
+      id: 'asset-bath-layout',
+      name: 'Compact Bathroom Layout',
+      tags: ['bathroom', 'toilet', 'vanity', 'shower'],
+      category: 'bathroom',
+      thumbnailWidthMm: 2400,
+      thumbnailHeightMm: 2200,
+      planSymbolKind: 'bathroom_layout',
+      renderProxyKind: 'bathroom_layout',
+      paramSchema: [
+        { key: 'widthMm', kind: 'mm', default: 2400 },
+        { key: 'depthMm', kind: 'mm', default: 2200 },
+        { key: 'showerOffsetMm', kind: 'mm', default: 450 },
+        { key: 'toiletOffsetMm', kind: 'mm', default: 1180 },
+        { key: 'vanityOffsetMm', kind: 'mm', default: 1900 },
+      ],
+    };
+    const bath: Extract<Element, { kind: 'placed_asset' }> = {
+      ...sofa,
+      id: 'pa-bath',
+      name: 'Compact Bathroom Layout',
+      assetId: bathEntry.id,
+      positionMm: { xMm: 1000, yMm: 2000 },
+      rotationDeg: 90,
+      paramValues: { toiletOffsetMm: 1180 },
+    };
+
+    const toilet = placedAssetGripProvider
+      .grips(bath, { elementsById: { [bathEntry.id]: bathEntry } })
+      .find((g) => g.id === 'pa-bath:toiletOffsetMm')!;
+
+    expect(toilet.positionMm.xMm).toBeCloseTo(780, 6);
+    expect(toilet.positionMm.yMm).toBeCloseTo(1980, 6);
+    expect(toilet.onCommit({ xMm: 0, yMm: 100 })).toEqual({
+      type: 'updateElementProperty',
+      elementId: 'pa-bath',
+      key: 'paramValues',
+      value: { toiletOffsetMm: 1280 },
+    });
+    expect(toilet.onNumericOverride(99999)).toEqual({
+      type: 'updateElementProperty',
+      elementId: 'pa-bath',
+      key: 'paramValues',
+      value: { toiletOffsetMm: 2320 },
+    });
+  });
 });
 
 describe('EDT-01 — sectionCutGripProvider', () => {

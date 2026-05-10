@@ -148,6 +148,25 @@ def test_index_asset_accepts_bedroom_and_living_symbol_kinds():
         assert elem.render_proxy_kind == symbol_kind
 
 
+def test_index_asset_accepts_bathroom_layout_symbol_kind():
+    doc = _empty_doc()
+    _apply(
+        doc,
+        {
+            "type": "IndexAsset",
+            "id": "asset-bath-layout",
+            "name": "Compact Bathroom Layout",
+            "category": "bathroom",
+            "planSymbolKind": "bathroom_layout",
+            "renderProxyKind": "bathroom_layout",
+        },
+    )
+    elem = doc.elements["asset-bath-layout"]
+    assert isinstance(elem, AssetLibraryEntryElem)
+    assert elem.plan_symbol_kind == "bathroom_layout"
+    assert elem.render_proxy_kind == "bathroom_layout"
+
+
 def test_index_asset_discipline_tags():
     doc = _empty_doc()
     _apply(
@@ -509,3 +528,13 @@ def test_tool_descriptors_have_required_fields():
         assert d.outputSchema
         assert d.restEndpoint
         assert d.cliExample
+
+
+def test_asset_index_descriptor_advertises_bathroom_layout_symbol_kind():
+    from bim_ai.api.registry import get_descriptor
+
+    d = get_descriptor("asset-index")
+    assert d is not None
+    props = d.inputSchema["properties"]
+    assert "bathroom_layout" in props["planSymbolKind"]["enum"]
+    assert "bathroom_layout" in props["renderProxyKind"]["enum"]
