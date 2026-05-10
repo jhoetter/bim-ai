@@ -1,0 +1,1 @@
+please activate entire.io not just for claude and codex, but also gemini. check the docs online how to do that
