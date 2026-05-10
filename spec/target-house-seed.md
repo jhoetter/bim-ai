@@ -60,7 +60,38 @@ Material D (Plinth): A low-profile, flat white rectangular base that extends exa
 
 ---
 
-## 5. Lighting & Rendering Parameters
+## 5. Interior Programme, Labels & Assets
+
+The seed must not stop at the exterior shell. It should include a plausible, inspectable one-family interior so plan views, schedules, room labels, and asset workflows are represented in the demo.
+
+Ground floor:
+
+- Entrance / stair hall at the front, aligned with the recessed front door and the visible stair window.
+- Guest WC / powder room near the entrance.
+- Kitchen as a distinct room or zone with a cabinet run, island or prep counter, fridge/pantry marker, and sink marker.
+- Living / dining room facing the larger open part of the plan, with sofa, coffee table, dining table, and chairs.
+
+First floor:
+
+- Master bedroom with bed and wardrobe assets.
+- Secondary bedroom with bed, desk or storage asset.
+- Bathroom with toilet, basin, and shower/bath assets.
+- Landing / circulation zone around the stair opening, labelled separately when there is enough plan area.
+
+Roof terrace:
+
+- Terrace room/zone label and at least one outdoor furniture grouping, e.g. table and lounge chairs.
+
+Asset expectations:
+
+- Assets may be schematic 2D/plan assets; they do not need photorealistic geometry.
+- Every placed asset must reference an indexed asset library entry and carry a clear name.
+- Room outlines must use meaningful `programmeCode`, `functionLabel`, and `targetAreaM2` metadata where supported.
+- The interior layout is subordinate to the exterior reference image: it must not disturb the facade, roof, loggia, stair visibility, or main massing proportions.
+
+---
+
+## 6. Lighting & Rendering Parameters
 
 Perspective: Axonometric/Isometric view from the front-left.
 
@@ -72,6 +103,6 @@ Line Work: Thin, black ambient occlusion lines or "outline" rendering style (0.5
 
 ---
 
-## 6. Prompting Cheat-Sheet for AI
+## 7. Prompting Cheat-Sheet for AI
 
 High-fidelity architectural concept, axonometric view, asymmetrical pitched roof with a rectangular Boolean subtraction on the right slope, cantilevered second floor overhang, white plaster shell, vertical board-and-batten siding, three-rail horizontal balustrade, interior staircase visible through ground window, sharp directional shadows, minimalist 3D clay model style.
