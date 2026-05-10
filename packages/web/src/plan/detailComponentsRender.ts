@@ -44,10 +44,22 @@ export type TextNotePrimitive = {
   colour: string;
 };
 
+export type AngularDimensionPrimitive = {
+  kind: 'angular_dimension';
+  id: string;
+  hostViewId: string;
+  vertexMm: XY;
+  rayAMm: XY;
+  rayBMm: XY;
+  arcRadiusMm: number;
+  colour: string;
+};
+
 export type DetailComponentPrimitive =
   | DetailLinePrimitive
   | DetailRegionPrimitive
-  | TextNotePrimitive;
+  | TextNotePrimitive
+  | AngularDimensionPrimitive;
 
 /**
  * Walks `elementsById` and returns rendering primitives for every
@@ -90,6 +102,17 @@ export function extractDetailComponentPrimitives(
         fontSizeMm: el.fontSizeMm,
         anchor: el.anchor ?? 'tl',
         rotationDeg: el.rotationDeg ?? 0,
+        colour: el.colour ?? '#202020',
+      });
+    } else if (el.kind === 'angular_dimension' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'angular_dimension',
+        id: el.id,
+        hostViewId: el.hostViewId,
+        vertexMm: el.vertexMm,
+        rayAMm: el.rayAMm,
+        rayBMm: el.rayBMm,
+        arcRadiusMm: el.arcRadiusMm ?? 500,
         colour: el.colour ?? '#202020',
       });
     }

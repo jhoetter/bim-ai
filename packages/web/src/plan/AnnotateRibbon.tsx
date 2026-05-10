@@ -96,6 +96,18 @@ export function AnnotateRibbon({
     });
   };
 
+  const placeAngularDimension = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createAngularDimension',
+      hostViewId: planViewId,
+      vertexMm: { xMm: c.xMm, yMm: c.yMm },
+      rayAMm: { xMm: c.xMm + 800, yMm: c.yMm },
+      rayBMm: { xMm: c.xMm + 565, yMm: c.yMm + 565 },
+      arcRadiusMm: 400,
+    });
+  };
+
   const placeMaskingRegion = () => {
     // KRN-10 — drop a square masking region at the view centre. Sketch-based
     // boundary authoring is propagated by Agent 4; until then the click-polygon
@@ -203,6 +215,15 @@ export function AnnotateRibbon({
         title="Drop an 800×800mm hatched region at the view centre."
       >
         Detail Region (Sketch)
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-angular-dimension"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeAngularDimension}
+        title="Place an angular dimension (45°) at the view centre."
+      >
+        ∠ Dim
       </button>
       <button
         type="button"
