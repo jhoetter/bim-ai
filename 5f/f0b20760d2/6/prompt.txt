@@ -1,0 +1,13 @@
+please watch this video: https://www.youtube.com/watch?v=HTtKD5ZkJfk&list=LL using the yt watch skill ( @claude-skills/watch-yt/ )  and document in a tracker revit-annotations.md whether all of them are implemented in our software or not. if any is missing, ensure that we implement them fully; for each missing / added insight, create a branch, implement it, push, and then merge with main
+
+---
+
+oh our software also is supposed to be used for MEP, why would you not add this? please fully build everything...
+
+---
+
+i thik you can continue? please complete
+
+---
+
+so we can close this session here?
