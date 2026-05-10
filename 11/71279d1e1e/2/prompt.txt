@@ -1,0 +1,21 @@
+<image name=[Image #1]>
+
+---
+
+</image>
+
+---
+
+<image name=[Image #2]>
+
+---
+
+</image>
+
+---
+
+[Image #1][Image #2]doesnt look at all like we have also interior assets, right?
+
+---
+
+still dont see anything... is it correctly on the main? ...

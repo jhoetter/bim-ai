@@ -4,7 +4,11 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "packages/cli/lib/one-family-home-commands.mjs",
+    "packages/web/src/plan/symbology.ts",
+    "packages/web/src/plan/symbology.wirePrimitives.test.ts"
+  ],
   "sessions": [
     {
       "metadata": "/11/71279d1e1e/0/metadata.json",
@@ -17,13 +21,19 @@
       "transcript": "/11/71279d1e1e/1/full.jsonl",
       "content_hash": "/11/71279d1e1e/1/content_hash.txt",
       "prompt": "/11/71279d1e1e/1/prompt.txt"
+    },
+    {
+      "metadata": "/11/71279d1e1e/2/metadata.json",
+      "transcript": "/11/71279d1e1e/2/full.jsonl",
+      "content_hash": "/11/71279d1e1e/2/content_hash.txt",
+      "prompt": "/11/71279d1e1e/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1805719,
+    "input_tokens": 1866341,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 65440384,
-    "output_tokens": 110110,
-    "api_call_count": 521
+    "cache_read_tokens": 67267840,
+    "output_tokens": 116052,
+    "api_call_count": 533
   }
 }

@@ -1,0 +1,54 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "1171279d1e1e",
+  "session_id": "019e1239-9259-7d11-928d-62ded7e5d803",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T14:31:08.904984Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/cli/lib/one-family-home-commands.mjs",
+    "packages/web/src/plan/symbology.ts",
+    "packages/web/src/plan/symbology.wirePrimitives.test.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "f2cccdb2b3bc",
+  "checkpoint_transcript_start": 410,
+  "transcript_lines_at_start": 410,
+  "token_usage": {
+    "input_tokens": 60622,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1827456,
+    "output_tokens": 5942,
+    "api_call_count": 12
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T14:31:08.861729Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 39,
+    "human_modified": 4,
+    "human_removed": 0,
+    "total_committed": 39,
+    "total_lines_changed": 43,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 147,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/commands.py": 75,
+        "app/bim_ai/elements.py": 72
+      }
+    }
+  ]
+}
