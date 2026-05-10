@@ -1,0 +1,43 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "e0e431d87ade",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/Inspector.test.tsx",
+    "packages/web/src/workspace/Inspector.tsx",
+    "packages/web/src/workspace/InspectorContent.monitorSource.test.tsx",
+    "packages/web/src/workspace/InspectorContent.pin.test.tsx",
+    "packages/web/src/workspace/InspectorContent.test.tsx",
+    "packages/web/src/workspace/InspectorContent.tsx",
+    "packages/web/src/workspace/InspectorContent.workset.test.tsx",
+    "packages/web/src/workspace/SunInspectorPanel.tsx",
+    "packages/web/src/workspace/WorkspaceRightRail.tsx",
+    "packages/web/src/workspace/inspector/Inspector.test.tsx",
+    "packages/web/src/workspace/inspector/Inspector.tsx",
+    "packages/web/src/workspace/inspector/InspectorContent.monitorSource.test.tsx",
+    "packages/web/src/workspace/inspector/InspectorContent.pin.test.tsx",
+    "packages/web/src/workspace/inspector/InspectorContent.test.tsx",
+    "packages/web/src/workspace/inspector/InspectorContent.tsx",
+    "packages/web/src/workspace/inspector/InspectorContent.workset.test.tsx",
+    "packages/web/src/workspace/inspector/SunInspectorPanel.tsx",
+    "packages/web/src/workspace/inspector/index.ts",
+    "spec/code-quality-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/e0/e431d87ade/0/metadata.json",
+      "transcript": "/e0/e431d87ade/0/full.jsonl",
+      "content_hash": "/e0/e431d87ade/0/content_hash.txt",
+      "prompt": "/e0/e431d87ade/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 112323,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1948288,
+    "output_tokens": 6281,
+    "api_call_count": 32
+  }
+}
