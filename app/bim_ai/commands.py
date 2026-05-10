@@ -545,7 +545,6 @@ class CreateColorFillLegendCmd(BaseModel):
     title: str = Field(default="Color Fill Legend")
 
 
-
 class DeleteElementCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["deleteElement"] = "deleteElement"
@@ -1562,6 +1561,9 @@ class CreateLinkDxfCmd(BaseModel):
     name: str = "DXF Underlay"
     level_id: str = Field(alias="levelId")
     origin_mm: Vec2Mm = Field(alias="originMm")
+    origin_alignment_mode: Literal["origin_to_origin", "project_origin", "shared_coords"] = Field(
+        default="origin_to_origin", alias="originAlignmentMode"
+    )
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
     scale_factor: float = Field(default=1.0, alias="scaleFactor", gt=0)
     linework: list[DxfLineworkPrim] = Field(default_factory=list)
@@ -1582,6 +1584,9 @@ class UpdateLinkDxfCmd(BaseModel):
     color_mode: Literal["black_white", "custom"] | None = Field(default=None, alias="colorMode")
     custom_color: str | None = Field(default=None, alias="customColor")
     overlay_opacity: float | None = Field(default=None, alias="overlayOpacity", ge=0.0, le=1.0)
+    origin_alignment_mode: Literal["origin_to_origin", "project_origin", "shared_coords"] | None = (
+        Field(default=None, alias="originAlignmentMode")
+    )
 
 
 # --- FED-02: selection_set + clash_test commands ----------------------------------
@@ -1876,9 +1881,7 @@ class CreateMaskingRegionCmd(BaseModel):
     id: str | None = None
     host_view_id: str = Field(alias="hostViewId")
     boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
-    void_boundaries_mm: list[list[Vec2Mm]] = Field(
-        default_factory=list, alias="voidBoundariesMm"
-    )
+    void_boundaries_mm: list[list[Vec2Mm]] = Field(default_factory=list, alias="voidBoundariesMm")
     fill_color: str = Field(default="#ffffff", alias="fillColor")
 
 
@@ -1902,9 +1905,7 @@ class UpdateMaskingRegionCmd(BaseModel):
     type: Literal["updateMaskingRegion"] = "updateMaskingRegion"
     masking_region_id: str = Field(alias="maskingRegionId")
     boundary_mm: list[Vec2Mm] | None = Field(default=None, alias="boundaryMm")
-    void_boundaries_mm: list[list[Vec2Mm]] | None = Field(
-        default=None, alias="voidBoundariesMm"
-    )
+    void_boundaries_mm: list[list[Vec2Mm]] | None = Field(default=None, alias="voidBoundariesMm")
     fill_color: str | None = Field(default=None, alias="fillColor")
 
 
@@ -2571,42 +2572,48 @@ class IndexAssetCmd(BaseModel):
     )
     thumbnail_width_mm: float | None = Field(default=None, alias="thumbnailWidthMm")
     thumbnail_height_mm: float | None = Field(default=None, alias="thumbnailHeightMm")
-    plan_symbol_kind: Literal[
-        "bed",
-        "wardrobe",
-        "lamp",
-        "rug",
-        "fridge",
-        "oven",
-        "sink",
-        "counter",
-        "sofa",
-        "table",
-        "chair",
-        "toilet",
-        "bath",
-        "shower",
-        "bathroom_layout",
-        "generic",
-    ] | None = Field(default=None, alias="planSymbolKind")
-    render_proxy_kind: Literal[
-        "bed",
-        "wardrobe",
-        "lamp",
-        "rug",
-        "fridge",
-        "oven",
-        "sink",
-        "counter",
-        "sofa",
-        "table",
-        "chair",
-        "toilet",
-        "bath",
-        "shower",
-        "bathroom_layout",
-        "generic",
-    ] | None = Field(default=None, alias="renderProxyKind")
+    plan_symbol_kind: (
+        Literal[
+            "bed",
+            "wardrobe",
+            "lamp",
+            "rug",
+            "fridge",
+            "oven",
+            "sink",
+            "counter",
+            "sofa",
+            "table",
+            "chair",
+            "toilet",
+            "bath",
+            "shower",
+            "bathroom_layout",
+            "generic",
+        ]
+        | None
+    ) = Field(default=None, alias="planSymbolKind")
+    render_proxy_kind: (
+        Literal[
+            "bed",
+            "wardrobe",
+            "lamp",
+            "rug",
+            "fridge",
+            "oven",
+            "sink",
+            "counter",
+            "sofa",
+            "table",
+            "chair",
+            "toilet",
+            "bath",
+            "shower",
+            "bathroom_layout",
+            "generic",
+        ]
+        | None
+    ) = Field(default=None, alias="renderProxyKind")
     param_schema: list[dict[str, Any]] | None = Field(default=None, alias="paramSchema")
     published_from_org_id: str | None = Field(default=None, alias="publishedFromOrgId")
     description: str | None = None

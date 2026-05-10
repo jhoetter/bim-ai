@@ -13,6 +13,8 @@ export type DxfUnderlayStyle = {
   opacity: number;
 };
 
+export type DxfAlignmentMode = NonNullable<LinkDxfElement['originAlignmentMode']>;
+
 function degToRad(deg: number): number {
   return (deg * Math.PI) / 180;
 }
@@ -29,6 +31,7 @@ export function renderDxfUnderlay(
   ctx: CanvasRenderingContext2D,
   link: LinkDxfElement,
   worldToScreen: (xy: XY) => [number, number],
+  elementsById?: Record<string, Element>,
 ): void {
   const linework: DxfLineworkPrim[] = link.linework ?? [];
   if (linework.length === 0) return;
@@ -40,7 +43,7 @@ export function renderDxfUnderlay(
   ctx.globalAlpha = opacity;
   ctx.lineWidth = DXF_UNDERLAY_LINE_WIDTH;
 
-  const transform = applyLinkTransform(link);
+  const transform = makeDxfLinkTransform(link, elementsById);
 
   for (const prim of linework) {
     if (prim.kind === 'line') {
@@ -83,9 +86,40 @@ export function resolveDxfUnderlayStyle(link: LinkDxfElement): DxfUnderlayStyle 
   };
 }
 
-function applyLinkTransform(link: LinkDxfElement): (xy: XY) => XY {
-  const ox = link.originMm.xMm;
-  const oy = link.originMm.yMm;
+function findOriginPoint(
+  elementsById: Record<string, Element> | undefined,
+  kind: 'project_base_point' | 'survey_point',
+): { xMm: number; yMm: number } | undefined {
+  if (!elementsById) return undefined;
+  for (const el of Object.values(elementsById)) {
+    if (el.kind !== kind) continue;
+    return { xMm: el.positionMm.xMm, yMm: el.positionMm.yMm };
+  }
+  return undefined;
+}
+
+export function resolveDxfAlignmentAnchorMm(
+  link: LinkDxfElement,
+  elementsById?: Record<string, Element>,
+): XY {
+  const mode: DxfAlignmentMode = link.originAlignmentMode ?? 'origin_to_origin';
+  const base =
+    mode === 'project_origin'
+      ? findOriginPoint(elementsById, 'project_base_point')
+      : mode === 'shared_coords'
+        ? findOriginPoint(elementsById, 'survey_point')
+        : undefined;
+  return {
+    xMm: (base?.xMm ?? 0) + link.originMm.xMm,
+    yMm: (base?.yMm ?? 0) + link.originMm.yMm,
+  };
+}
+
+export function makeDxfLinkTransform(
+  link: LinkDxfElement,
+  elementsById?: Record<string, Element>,
+): (xy: XY) => XY {
+  const anchor = resolveDxfAlignmentAnchorMm(link, elementsById);
   const scale = link.scaleFactor ?? 1;
   const rot = degToRad(link.rotationDeg ?? 0);
   const cosR = Math.cos(rot);
@@ -95,7 +129,7 @@ function applyLinkTransform(link: LinkDxfElement): (xy: XY) => XY {
     const sy = yMm * scale;
     const rx = sx * cosR - sy * sinR;
     const ry = sx * sinR + sy * cosR;
-    return { xMm: rx + ox, yMm: ry + oy };
+    return { xMm: rx + anchor.xMm, yMm: ry + anchor.yMm };
   };
 }
 

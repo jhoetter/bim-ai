@@ -4,7 +4,9 @@ import type { Element } from '@bim-ai/core';
 import {
   DXF_UNDERLAY_OPACITY,
   DXF_UNDERLAY_STROKE,
+  makeDxfLinkTransform,
   renderDxfUnderlay,
+  resolveDxfAlignmentAnchorMm,
   selectDxfUnderlaysForLevel,
   type LinkDxfElement,
 } from './dxfUnderlay';
@@ -125,6 +127,49 @@ describe('renderDxfUnderlay', () => {
     expect(moveCalls[0][1]).toBeCloseTo(50, 6);
     expect(lineCalls[0][0]).toBeCloseTo(100, 6);
     expect(lineCalls[0][1]).toBeCloseTo(70, 6);
+  });
+
+  it('aligns DXF origin to the host project base point when requested', () => {
+    const ctx = makeMockContext();
+    const link = linkAtOrigin({
+      originAlignmentMode: 'project_origin',
+      originMm: { xMm: 25, yMm: 50 },
+      linework: [{ kind: 'line', start: { xMm: 0, yMm: 0 }, end: { xMm: 100, yMm: 0 } }],
+    });
+    const elementsById: Record<string, Element> = {
+      pbp: {
+        kind: 'project_base_point',
+        id: 'pbp',
+        positionMm: { xMm: 1000, yMm: 2000, zMm: 0 },
+        angleToTrueNorthDeg: 0,
+      },
+    };
+    renderDxfUnderlay(ctx, link, ({ xMm, yMm }) => [xMm, yMm], elementsById);
+
+    const moveCalls = (ctx.moveTo as unknown as ReturnType<typeof vi.fn>).mock.calls;
+    const lineCalls = (ctx.lineTo as unknown as ReturnType<typeof vi.fn>).mock.calls;
+    expect(moveCalls[0]).toEqual([1025, 2050]);
+    expect(lineCalls[0]).toEqual([1125, 2050]);
+  });
+
+  it('aligns DXF origin to the host survey point when shared coordinates are requested', () => {
+    const link = linkAtOrigin({
+      originAlignmentMode: 'shared_coords',
+      originMm: { xMm: -10, yMm: 15 },
+    });
+    const elementsById: Record<string, Element> = {
+      sp: {
+        kind: 'survey_point',
+        id: 'sp',
+        positionMm: { xMm: 300, yMm: 700, zMm: 0 },
+        sharedElevationMm: 0,
+      },
+    };
+    expect(resolveDxfAlignmentAnchorMm(link, elementsById)).toEqual({ xMm: 290, yMm: 715 });
+    expect(makeDxfLinkTransform(link, elementsById)({ xMm: 20, yMm: 30 })).toEqual({
+      xMm: 310,
+      yMm: 745,
+    });
   });
 
   it('does nothing when linework is empty', () => {

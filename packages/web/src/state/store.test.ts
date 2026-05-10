@@ -170,6 +170,44 @@ describe('hydrateFromSnapshot', () => {
     }
   });
 
+  it('coerces DXF link alignment metadata from snake_case payloads', () => {
+    const { hydrateFromSnapshot } = useBimStore.getState();
+    hydrateFromSnapshot({
+      modelId: 'm1',
+      revision: 1,
+      elements: {
+        'dxf-1': {
+          kind: 'link_dxf',
+          name: 'Site',
+          level_id: 'lvl-0',
+          origin_mm: { x_mm: 100, y_mm: 200 },
+          origin_alignment_mode: 'shared_coords',
+          rotation_deg: 12,
+          scale_factor: 2,
+          linework: [],
+          pinned: true,
+          color_mode: 'custom',
+          custom_color: '#ff00aa',
+          overlay_opacity: 0.4,
+        },
+      },
+      violations: [],
+    });
+    const link = useBimStore.getState().elementsById['dxf-1'];
+    expect(link?.kind).toBe('link_dxf');
+    if (link?.kind === 'link_dxf') {
+      expect(link.levelId).toBe('lvl-0');
+      expect(link.originMm).toEqual({ xMm: 100, yMm: 200 });
+      expect(link.originAlignmentMode).toBe('shared_coords');
+      expect(link.rotationDeg).toBe(12);
+      expect(link.scaleFactor).toBe(2);
+      expect(link.pinned).toBe(true);
+      expect(link.colorMode).toBe('custom');
+      expect(link.customColor).toBe('#ff00aa');
+      expect(link.overlayOpacity).toBe(0.4);
+    }
+  });
+
   it('coerces area and area plan scheme metadata from snake_case payloads', () => {
     const { hydrateFromSnapshot } = useBimStore.getState();
     hydrateFromSnapshot({

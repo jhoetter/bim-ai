@@ -67,10 +67,10 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-018 | Pin / Unpin linked files                             | CAD            | ✅            | Link model and DXF rows support position pin/unpin from Manage Links and the Inspector; pinned link_model rows block spatial updates and delete, while revision pinning remains available |
 | F-019 | Query tool for DWG layer visibility                  | CAD            | ❌            | DXF layer metadata not preserved; no per-layer visibility UI                                                         |
 | F-020 | Halftone / transparency for imported files (VG)      | CAD            | 🟡            | Per-link opacity now configurable (0–100%) via ManageLinksDialog and honored by both canvas/Three.js plan render paths; missing per-view opacity override in VVDialog and full-opacity (non-halftone) mode as a dropdown choice within VV |
-| F-021 | Align CAD with Project Base Point                    | CAD            | 🟡            | ManageLinksDialog has origin/project base point/shared coords for link_model; missing for link_dxf                   |
+| F-021 | Align CAD with Project Base Point                    | CAD            | ✅            | ManageLinksDialog exposes Origin to Origin / Project Base Point / Shared Coords alignment for link_model and link_dxf rows; DXF canvas and Three.js plan render paths resolve the host project base point/survey point anchors |
 | F-022 | Project Base Point & Survey Point                    | CAD            | ✅            | First-class elements in core; 3D/plan markers rendered; inspector edits N/S/E/W coordinates and persisted Clip/Unclip state |
 | F-023 | Work Plane assignment for linked elements            | CAD            | ✅            | `link_dxf` `levelId` controls the underlay work plane; inspector exposes an editable level dropdown and backend validates level updates; Manage Links also shows DXF level association |
-| F-024 | Manage Links dialog                                  | CAD            | 🟡            | ManageLinksDialog lists link_model rows (delete/alignment/visibility/pin) AND link_dxf underlays (opacity + color mode); missing IFC/PDF/image types, unload/reload controls, file-path change |
+| F-024 | Manage Links dialog                                  | CAD            | 🟡            | ManageLinksDialog lists link_model rows (delete/alignment/visibility/pin) AND link_dxf underlays (position lock, alignment, opacity + color mode); missing IFC/PDF/image types, unload/reload controls, file-path change |
 | F-025 | Levels (datum planes)                                | Levels & Views | ✅            | LevelStack inline create/rename/elevation edits; SectionViewportSvg renders blue dashed datum lines with circle heads + "Name \| ±X.XXX m" labels; PlanCanvas shows the active level datum line and elevation badge |
 | F-026 | Rename Levels                                        | Levels & Views | ✅            | LevelStack inline rename via double-click; commits via updateElementProperty                                         |
 | F-027 | Create Floor Plan Views from levels                  | Levels & Views | ✅            | LevelStack "+" per level fires upsertPlanView; newly created views appear in Project Browser                         |
@@ -178,8 +178,8 @@ _Last audited: 2026-05-09 against codebase at commit `docs/tracker-sync-wave-11`
 
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
-| ✅ Fully available     | 56      | 46%        |
-| 🟡 Partially available | 34      | 28%        |
+| ✅ Fully available     | 57      | 47%        |
+| 🟡 Partially available | 33      | 27%        |
 | ❌ Not available       | 30      | 25%        |
 | **Total**              | **120** | **100%**   |
 

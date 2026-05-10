@@ -395,6 +395,7 @@ export type CreateLinkDxfCmd = {
   name?: string;
   levelId: string;
   originMm: XY;
+  originAlignmentMode?: 'origin_to_origin' | 'project_origin' | 'shared_coords';
   rotationDeg?: number;
   scaleFactor?: number;
   linework: DxfLineworkPrim[];
@@ -1746,6 +1747,12 @@ export type Element =
       name?: string;
       levelId: string;
       originMm: XY;
+      /**
+       * F-021: CAD positioning mode. For DXF, project/shared modes align the
+       * DXF internal origin to the host Project Base Point or Survey Point;
+       * `originMm` remains an additional per-link offset.
+       */
+      originAlignmentMode?: 'origin_to_origin' | 'project_origin' | 'shared_coords';
       rotationDeg?: number;
       scaleFactor?: number;
       linework: DxfLineworkPrim[];

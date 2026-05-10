@@ -181,4 +181,37 @@ describe('<ManageLinksDialog />', () => {
       }),
     );
   });
+
+  it('dispatches updateLinkDxf when the DXF alignment mode changes', async () => {
+    useBimStore.setState({
+      modelId: 'host-model',
+      elementsById: {
+        'dxf-2': {
+          kind: 'link_dxf',
+          id: 'dxf-2',
+          name: 'Survey',
+          levelId: 'lvl-1',
+          originMm: { xMm: 0, yMm: 0 },
+          originAlignmentMode: 'origin_to_origin',
+          rotationDeg: 0,
+          scaleFactor: 1,
+          linework: [],
+        },
+      },
+    });
+    const apply = vi.fn().mockResolvedValue({ ok: true });
+    const { getByTestId } = render(
+      <ManageLinksDialog open={true} onClose={vi.fn()} applyCommandImpl={apply} />,
+    );
+    fireEvent.change(getByTestId('manage-dxf-links-align-dxf-2'), {
+      target: { value: 'project_origin' },
+    });
+    await waitFor(() =>
+      expect(apply).toHaveBeenCalledWith('host-model', {
+        type: 'updateLinkDxf',
+        linkId: 'dxf-2',
+        originAlignmentMode: 'project_origin',
+      }),
+    );
+  });
 });

@@ -109,7 +109,11 @@ import { extractAreaPrimitives } from './areaRender';
 import { manualPlacedTagLabel, placeTagByCategoryCommand } from './manualTags';
 import { extractNeighborhoodMassPrimitives } from './neighborhoodMassRender';
 import { planAnnotationLabelSprite } from './planElementMeshBuilders';
-import { resolveDxfUnderlayStyle, selectDxfUnderlaysForLevel } from './dxfUnderlay';
+import {
+  makeDxfLinkTransform,
+  resolveDxfUnderlayStyle,
+  selectDxfUnderlaysForLevel,
+} from './dxfUnderlay';
 import {
   buildDriftBadgeCanvas,
   driftBadgeTooltip,
@@ -1113,18 +1117,10 @@ export function PlanCanvas({
     const dxfUnderlays = selectDxfUnderlaysForLevel(elementsById, dxfLevelId || undefined);
     for (const link of dxfUnderlays) {
       if (!link.linework || link.linework.length === 0) continue;
-      const ox = link.originMm.xMm;
-      const oy = link.originMm.yMm;
-      const sc = link.scaleFactor ?? 1;
-      const rot = ((link.rotationDeg ?? 0) * Math.PI) / 180;
-      const cosR = Math.cos(rot);
-      const sinR = Math.sin(rot);
+      const transform = makeDxfLinkTransform(link, elementsById);
       const project = (xMm: number, yMm: number): THREE.Vector3 => {
-        const sx = xMm * sc;
-        const sy = yMm * sc;
-        const rx = sx * cosR - sy * sinR;
-        const ry = sx * sinR + sy * cosR;
-        return new THREE.Vector3((rx + ox) / 1000, SLICE_Y - 0.001, (ry + oy) / 1000);
+        const p = transform({ xMm, yMm });
+        return new THREE.Vector3(p.xMm / 1000, SLICE_Y - 0.001, p.yMm / 1000);
       };
       const { color, opacity } = resolveDxfUnderlayStyle(link);
       const mat = new THREE.LineBasicMaterial({
