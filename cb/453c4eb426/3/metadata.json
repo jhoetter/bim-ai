@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "cb453c4eb426",
+  "session_id": "3489c088-a646-48c4-b4a6-6488ef3f8059",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T13:38:17.49142Z",
+  "branch": "revit-parity-family-browser-context-menu",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Gemini CLI",
+  "model": "gemini-3-flash-preview",
+  "turn_id": "63773fc93ba5",
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 348,
+      "user_lines_removed": 597,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/cli/lib/one-family-home-commands.mjs": 250,
+        "spec/revit-annotations.md": 98
+      },
+      "user_removed_per_file": {
+        "packages/cli/lib/one-family-home-commands.mjs": 597
+      }
+    }
+  ]
+}
