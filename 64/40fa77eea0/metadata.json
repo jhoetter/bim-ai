@@ -4,20 +4,28 @@
   "strategy": "manual-commit",
   "branch": "revit-parity-link-pinning-wave",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "spec/revit-parity/README.md"
+  ],
   "sessions": [
     {
       "metadata": "/64/40fa77eea0/0/metadata.json",
       "transcript": "/64/40fa77eea0/0/full.jsonl",
       "content_hash": "/64/40fa77eea0/0/content_hash.txt",
       "prompt": "/64/40fa77eea0/0/prompt.txt"
+    },
+    {
+      "metadata": "/64/40fa77eea0/1/metadata.json",
+      "transcript": "/64/40fa77eea0/1/full.jsonl",
+      "content_hash": "/64/40fa77eea0/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 1235634,
+    "input_tokens": 1460736,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 35648384,
-    "output_tokens": 86613,
-    "api_call_count": 279
+    "cache_read_tokens": 40154880,
+    "output_tokens": 99281,
+    "api_call_count": 326
   }
 }
