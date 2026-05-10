@@ -28,6 +28,12 @@
       "transcript": "/cf/28f6d2a606/2/full.jsonl",
       "content_hash": "/cf/28f6d2a606/2/content_hash.txt",
       "prompt": "/cf/28f6d2a606/2/prompt.txt"
+    },
+    {
+      "metadata": "/cf/28f6d2a606/3/metadata.json",
+      "transcript": "/cf/28f6d2a606/3/full.jsonl",
+      "content_hash": "/cf/28f6d2a606/3/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
