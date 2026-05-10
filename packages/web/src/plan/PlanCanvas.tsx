@@ -124,6 +124,7 @@ import { WallContextMenu, type WallContextMenuCommand } from '../workspace/viewp
 import { PlanDetailLevelToolbar } from './PlanDetailLevelToolbar';
 import type { PlanDetailLevel } from './planDetailLevelLines';
 import { SketchCanvas, type MmToScreen, type PointerToMm } from './SketchCanvas';
+import { moveDeltaMm } from './moveTool';
 import { rotateAngleFromPoints } from './rotateTool';
 import { getFamilyById as getBuiltInFamilyById } from '../families/familyCatalog';
 import type { FamilyDefinition } from '../families/types';
@@ -2914,8 +2915,7 @@ export function PlanCanvas({
         // F-116: multi-copy — clear anchor but stay in copy mode if Multiple is checked.
         copyAnchorRef.current = null;
         setCopyAnchorSet(false);
-        const dx = sp.xMm - anchor.xMm;
-        const dy = sp.yMm - anchor.yMm;
+        const { dxMm: dx, dyMm: dy } = moveDeltaMm(anchor, sp, ev.shiftKey);
         const st = useBimStore.getState();
         const sourceEl = st.elementsById[selectedId];
         if (sourceEl) {
@@ -4666,7 +4666,7 @@ export function PlanCanvas({
           className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
           data-testid="copy-tool-chip"
         >
-          <span>Click reference point</span>
+                  <span>Click reference point · hold Shift to constrain</span>
         </div>
       ) : null}
       {planTool === 'copy' && copyAnchorSet ? (
