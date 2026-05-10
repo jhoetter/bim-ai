@@ -365,6 +365,77 @@ class CreateSpanDirectionCmd(BaseModel):
     colour: str = Field(default="#202020")
 
 
+class CreateDetailComponentCmd(BaseModel):
+    """ANN-17 — place a 2D detail component."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createDetailComponent"] = "createDetailComponent"
+    id: str | None = None
+    host_view_id: str = Field(alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    component_shape: Literal[
+        "us_wide_flange_beam",
+        "concrete_column_square",
+        "concrete_column_round",
+        "steel_angle",
+        "steel_channel",
+        "bolt",
+        "weld_symbol",
+        "break_line",
+        "centerline_end",
+    ] = Field(alias="componentShape")
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    scale: float = Field(default=1.0)
+    colour: str = Field(default="#202020")
+
+
+class CreateRepeatingDetailCmd(BaseModel):
+    """ANN-18 — create a repeating detail component pattern."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createRepeatingDetail"] = "createRepeatingDetail"
+    id: str | None = None
+    host_view_id: str = Field(alias="hostViewId")
+    start_mm: Vec2Mm = Field(alias="startMm")
+    end_mm: Vec2Mm = Field(alias="endMm")
+    component_shape: Literal[
+        "us_wide_flange_beam",
+        "concrete_column_square",
+        "concrete_column_round",
+        "steel_angle",
+        "steel_channel",
+        "bolt",
+        "weld_symbol",
+        "break_line",
+        "centerline_end",
+    ] = Field(alias="componentShape")
+    spacing_mm: float = Field(default=200.0, alias="spacingMm")
+    colour: str = Field(default="#202020")
+
+
+class CreateDetailGroupCmd(BaseModel):
+    """ANN-19 — create a named group of detail elements."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createDetailGroup"] = "createDetailGroup"
+    id: str | None = None
+    host_view_id: str = Field(alias="hostViewId")
+    name: str = Field(default="Group")
+    member_ids: list[str] = Field(alias="memberIds")
+
+
+class CreateColorFillLegendCmd(BaseModel):
+    """ANN-20 — place a color fill legend in a view."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createColorFillLegend"] = "createColorFillLegend"
+    id: str | None = None
+    host_view_id: str = Field(alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    scheme_parameter: str = Field(default="Name", alias="schemeParameter")
+    title: str = Field(default="Color Fill Legend")
+
+
 class DeleteElementCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["deleteElement"] = "deleteElement"
@@ -3080,6 +3151,10 @@ Command = Annotated[
     | CreateTreadNumberCmd
     | CreateKeynoteCmd
     | CreateSpanDirectionCmd
+    | CreateDetailComponentCmd
+    | CreateRepeatingDetailCmd
+    | CreateDetailGroupCmd
+    | CreateColorFillLegendCmd
     | CreateTextNoteCmd
     | CreateReferencePlaneCmd
     | UpdateReferencePlaneCmd

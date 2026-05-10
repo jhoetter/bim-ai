@@ -697,6 +697,70 @@ class SpanDirectionElem(BaseModel):
     colour: str = Field(default="#202020")
 
 
+DetailComponentShape = Literal[
+    "us_wide_flange_beam",
+    "concrete_column_square",
+    "concrete_column_round",
+    "steel_angle",
+    "steel_channel",
+    "bolt",
+    "weld_symbol",
+    "break_line",
+    "centerline_end",
+]
+
+
+class DetailComponentElem(BaseModel):
+    """ANN-17 — view-local 2D detail component (predefined shape)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["detail_component"] = "detail_component"
+    id: str
+    host_view_id: str = Field(alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    component_shape: DetailComponentShape = Field(alias="componentShape")
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    scale: float = Field(default=1.0, gt=0)
+    colour: str = Field(default="#202020")
+
+
+class RepeatingDetailElem(BaseModel):
+    """ANN-18 — view-local repeating detail component pattern along a line."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["repeating_detail"] = "repeating_detail"
+    id: str
+    host_view_id: str = Field(alias="hostViewId")
+    start_mm: Vec2Mm = Field(alias="startMm")
+    end_mm: Vec2Mm = Field(alias="endMm")
+    component_shape: DetailComponentShape = Field(alias="componentShape")
+    spacing_mm: float = Field(default=200.0, alias="spacingMm", gt=0)
+    colour: str = Field(default="#202020")
+
+
+class DetailGroupElem(BaseModel):
+    """ANN-19 — named group of view-local detail elements."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["detail_group"] = "detail_group"
+    id: str
+    host_view_id: str = Field(alias="hostViewId")
+    name: str = Field(default="Group")
+    member_ids: list[str] = Field(alias="memberIds")
+
+
+class ColorFillLegendElem(BaseModel):
+    """ANN-20 — view-local color fill legend box (room colour scheme legend)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["color_fill_legend"] = "color_fill_legend"
+    id: str
+    host_view_id: str = Field(alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    scheme_parameter: str = Field(default="Name", alias="schemeParameter")
+    title: str = Field(default="Color Fill Legend")
+
+
 ViewpointCutawayStyle = Literal["none", "cap", "floor", "box"]
 
 
@@ -2131,6 +2195,10 @@ ElementKind = Literal[
     "tread_number",
     "keynote",
     "span_direction",
+    "detail_component",
+    "repeating_detail",
+    "detail_group",
+    "color_fill_legend",
     "mass",
     "constraint",
     "roof_join",
@@ -2871,6 +2939,10 @@ Element = Annotated[
     | TreadNumberElem
     | KeynoteElem
     | SpanDirectionElem
+    | DetailComponentElem
+    | RepeatingDetailElem
+    | DetailGroupElem
+    | ColorFillLegendElem
     | ColumnElem
     | BeamElem
     | CeilingElem

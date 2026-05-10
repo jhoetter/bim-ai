@@ -207,6 +207,46 @@ export function AnnotateRibbon({
     });
   };
 
+  const placeDetailComponent = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createDetailComponent',
+      hostViewId: planViewId,
+      positionMm: { xMm: c.xMm, yMm: c.yMm },
+      componentShape: 'bolt',
+    });
+  };
+
+  const placeRepeatingDetail = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createRepeatingDetail',
+      hostViewId: planViewId,
+      startMm: { xMm: c.xMm - 500, yMm: c.yMm },
+      endMm: { xMm: c.xMm + 500, yMm: c.yMm },
+      componentShape: 'break_line',
+      spacingMm: 200,
+    });
+  };
+
+  const placeDetailGroup = () => {
+    onSemanticCommand({
+      type: 'createDetailGroup',
+      hostViewId: planViewId,
+      name: 'Group 1',
+      memberIds: [],
+    });
+  };
+
+  const placeColorFillLegend = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createColorFillLegend',
+      hostViewId: planViewId,
+      positionMm: { xMm: c.xMm + 800, yMm: c.yMm + 800 },
+    });
+  };
+
   const commitTextNote = () => {
     const text = textNoteDraft.trim();
     if (!text) {
@@ -428,6 +468,42 @@ export function AnnotateRibbon({
         title="Place a duct system legend at the view centre."
       >
         Duct Legend
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-detail-component"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeDetailComponent}
+        title="Place a 2D detail component (bolt) at the view centre."
+      >
+        Detail Component
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-repeating-detail"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeRepeatingDetail}
+        title="Place a repeating detail component pattern 1000mm across the view centre."
+      >
+        Repeating Detail
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-detail-group"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeDetailGroup}
+        title="Create a named detail group."
+      >
+        Detail Group
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-color-fill-legend"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeColorFillLegend}
+        title="Place a color fill legend at the view centre offset."
+      >
+        Color Fill Legend
       </button>
     </div>
   );

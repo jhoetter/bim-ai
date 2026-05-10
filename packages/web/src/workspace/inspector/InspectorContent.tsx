@@ -1003,9 +1003,10 @@ export function InspectorPropertiesFor(
         <div>
           <FieldRow
             label={f('colorFillLegend')}
-            value={resolveElName(el.planViewId, elementsById)}
+            value={resolveElName(el.hostViewId, elementsById)}
           />
-          <FieldRow label={f('schemeField')} value={el.schemeField} />
+          <FieldRow label={f('schemeParameter')} value={el.schemeParameter} />
+          <FieldRow label={f('title')} value={el.title} />
         </div>
       );
     case 'grid_line':

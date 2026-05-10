@@ -118,6 +118,41 @@ export type DuctLegendPrimitive = {
   entries: { systemType: string; label: string; colour: string }[];
 };
 
+export type PlacedDetailComponentPrimitive = {
+  kind: 'detail_component';
+  id: string;
+  positionMm: XY;
+  componentShape: string;
+  rotationDeg: number;
+  scale: number;
+  colour: string;
+};
+
+export type RepeatingDetailPrimitive = {
+  kind: 'repeating_detail';
+  id: string;
+  startMm: XY;
+  endMm: XY;
+  componentShape: string;
+  spacingMm: number;
+  colour: string;
+};
+
+export type DetailGroupPrimitive = {
+  kind: 'detail_group';
+  id: string;
+  name: string;
+  memberIds: string[];
+};
+
+export type ColorFillLegendPrimitive = {
+  kind: 'color_fill_legend';
+  id: string;
+  positionMm: XY;
+  schemeParameter: string;
+  title: string;
+};
+
 export type DetailComponentPrimitive =
   | DetailLinePrimitive
   | DetailRegionPrimitive
@@ -129,7 +164,11 @@ export type DetailComponentPrimitive =
   | KeynotePrimitive
   | SpanDirectionPrimitive
   | PipeLegendPrimitive
-  | DuctLegendPrimitive;
+  | DuctLegendPrimitive
+  | PlacedDetailComponentPrimitive
+  | RepeatingDetailPrimitive
+  | DetailGroupPrimitive
+  | ColorFillLegendPrimitive;
 
 /**
  * Walks `elementsById` and returns rendering primitives for every
@@ -247,6 +286,41 @@ export function extractDetailComponentPrimitives(
         positionMm: el.positionMm,
         title: el.title ?? 'Duct Legend',
         entries: el.entries ?? [],
+      });
+    } else if (el.kind === 'detail_component' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'detail_component',
+        id: el.id,
+        positionMm: el.positionMm,
+        componentShape: el.componentShape,
+        rotationDeg: el.rotationDeg ?? 0,
+        scale: el.scale ?? 1,
+        colour: el.colour ?? '#202020',
+      });
+    } else if (el.kind === 'repeating_detail' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'repeating_detail',
+        id: el.id,
+        startMm: el.startMm,
+        endMm: el.endMm,
+        componentShape: el.componentShape,
+        spacingMm: el.spacingMm ?? 200,
+        colour: el.colour ?? '#202020',
+      });
+    } else if (el.kind === 'detail_group' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'detail_group',
+        id: el.id,
+        name: el.name ?? 'Group',
+        memberIds: el.memberIds ?? [],
+      });
+    } else if (el.kind === 'color_fill_legend' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'color_fill_legend',
+        id: el.id,
+        positionMm: el.positionMm,
+        schemeParameter: el.schemeParameter ?? 'Name',
+        title: el.title ?? 'Color Fill Legend',
       });
     }
   }

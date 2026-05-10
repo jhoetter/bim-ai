@@ -1375,10 +1375,10 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
     return {
       kind: 'color_fill_legend',
       id,
-      name,
-      planViewId: String(raw.planViewId ?? raw.plan_view_id ?? ''),
+      hostViewId: String(raw.hostViewId ?? raw.host_view_id ?? ''),
       positionMm: coerceXY((raw.positionMm ?? raw.position_mm ?? {}) as Record<string, unknown>),
-      schemeField: String(raw.schemeField ?? raw.scheme_field ?? 'programmeCode'),
+      schemeParameter: String(raw.schemeParameter ?? raw.scheme_parameter ?? 'Name'),
+      title: String(raw.title ?? 'Color Fill Legend'),
     };
   }
 

@@ -266,6 +266,9 @@ export type ElemKind =
   | 'tread_number'
   | 'keynote'
   | 'span_direction'
+  | 'detail_component'
+  | 'repeating_detail'
+  | 'detail_group'
   | 'constraint'
   | 'mass'
   | 'phase'
@@ -1553,10 +1556,10 @@ export type Element =
   | {
       kind: 'color_fill_legend';
       id: string;
-      name: string;
-      planViewId: string;
+      hostViewId: string;
       positionMm: XY;
-      schemeField: string;
+      schemeParameter: string;
+      title: string;
     }
   | {
       kind: 'shared_param_file';
@@ -1867,6 +1870,36 @@ export type Element =
       directionDeg?: number;
       lengthMm?: number;
       colour?: string;
+    }
+  | {
+      /** ANN-17 — view-local 2D detail component (predefined shape). */
+      kind: 'detail_component';
+      id: string;
+      hostViewId: string;
+      positionMm: XY;
+      componentShape: string;
+      rotationDeg?: number;
+      scale?: number;
+      colour?: string;
+    }
+  | {
+      /** ANN-18 — view-local repeating detail component pattern along a line. */
+      kind: 'repeating_detail';
+      id: string;
+      hostViewId: string;
+      startMm: XY;
+      endMm: XY;
+      componentShape: string;
+      spacingMm?: number;
+      colour?: string;
+    }
+  | {
+      /** ANN-19 — named group of view-local detail elements. */
+      kind: 'detail_group';
+      id: string;
+      hostViewId: string;
+      name?: string;
+      memberIds: string[];
     }
   | {
       /**
