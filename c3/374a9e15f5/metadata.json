@@ -4,20 +4,36 @@
   "strategy": "manual-commit",
   "branch": "revit-parity-snap-overrides-sn-sc",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/SnapGlyphLayer.test.tsx",
+    "packages/web/src/plan/SnapGlyphLayer.tsx",
+    "packages/web/src/plan/SnapSettingsToolbar.test.tsx",
+    "packages/web/src/plan/SnapSettingsToolbar.tsx",
+    "packages/web/src/plan/snapEngine.test.ts",
+    "packages/web/src/plan/snapEngine.ts",
+    "packages/web/src/plan/snapSettings.test.ts",
+    "packages/web/src/plan/snapSettings.ts"
+  ],
   "sessions": [
     {
       "metadata": "/c3/374a9e15f5/0/metadata.json",
       "transcript": "/c3/374a9e15f5/0/full.jsonl",
       "content_hash": "/c3/374a9e15f5/0/content_hash.txt",
       "prompt": "/c3/374a9e15f5/0/prompt.txt"
+    },
+    {
+      "metadata": "/c3/374a9e15f5/1/metadata.json",
+      "transcript": "/c3/374a9e15f5/1/full.jsonl",
+      "content_hash": "/c3/374a9e15f5/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 765130,
+    "input_tokens": 832441,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 10712064,
-    "output_tokens": 41396,
-    "api_call_count": 125
+    "cache_read_tokens": 17939840,
+    "output_tokens": 51099,
+    "api_call_count": 162
   }
 }
