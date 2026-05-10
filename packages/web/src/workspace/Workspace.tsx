@@ -58,21 +58,22 @@ import {
   type ViewportSnapshot,
 } from './tabsModel';
 import { persistTabs, pruneTabsAgainstElements, readPersistedTabs } from './tabsPersistence';
-import { ProjectMenu, type ProjectMenuItemRecent } from './ProjectMenu';
 import {
   buildSnapshotPayload,
   downloadSnapshot,
   findRecentProject,
+  ManageLinksDialog,
+  ProjectMenu,
+  type ProjectMenuItemRecent,
   pushRecentProject,
   readRecentProjects,
   readSnapshotFile,
-} from './projectSnapshots';
+  VVDialog,
+} from './project';
 import {
   buildBrowserRenderingBudgetReadoutV1,
   formatBrowserRenderingBudgetLines,
 } from './readouts';
-import { VVDialog } from './VVDialog';
-import { ManageLinksDialog } from './ManageLinksDialog';
 import { CommentsPanel } from './comments';
 import { ActivityDrawer } from '../collab/ActivityDrawer';
 import { SharePresentationModal } from '../collab/SharePresentationModal';

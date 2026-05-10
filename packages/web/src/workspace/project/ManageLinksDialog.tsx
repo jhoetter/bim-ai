@@ -1,11 +1,11 @@
 /* eslint-disable bim-ai/no-hex-in-chrome -- pre-v3 hex literals; remove when this file is migrated in B4 Phase 2 */
 import { type JSX, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useFocusTrap } from '../useFocusTrap';
+import { useFocusTrap } from '../../useFocusTrap';
 import type { Element } from '@bim-ai/core';
 
-import { applyCommand, ApiHttpError } from '../lib/api';
-import { useBimStore } from '../state/store';
+import { applyCommand, ApiHttpError } from '../../lib/api';
+import { useBimStore } from '../../state/store';
 
 /**
  * FED-01 — Manage Links dialog (full polish).

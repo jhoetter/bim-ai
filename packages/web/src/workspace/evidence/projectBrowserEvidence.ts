@@ -1,7 +1,6 @@
 import type { Element } from '@bim-ai/core';
 
-import { readViewportRoleFromRaw } from '../sheetDetailCalloutReadout';
-import { sheetsReferencingSectionCut } from '../sheetViewRef';
+import { readViewportRoleFromRaw, sheetsReferencingSectionCut } from '../sheets';
 
 /** Monospace subtitle token for pinned plan_view level (no new kernel fields). */
 

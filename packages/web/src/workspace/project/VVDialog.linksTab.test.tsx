@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 
 import { VVDialog } from './VVDialog';
-import { useBimStore } from '../state/store';
+import { useBimStore } from '../../state/store';
 
 const SOURCE_UUID = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 

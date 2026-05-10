@@ -18,7 +18,7 @@ const mockStore = {
   setCategoryOverride: mockSetCategoryOverride,
 };
 
-vi.mock('../state/store', () => ({
+vi.mock('../../state/store', () => ({
   useBimStore: (selector: (s: typeof mockStore) => unknown) => selector(mockStore),
 }));
 

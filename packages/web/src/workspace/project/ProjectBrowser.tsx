@@ -5,16 +5,16 @@ import { DEFAULT_DISCIPLINE_BY_KIND } from '@bim-ai/core';
 
 import { Btn } from '@bim-ai/ui';
 
-import { applyCommand } from '../lib/api';
-import { useViewTemplateStore } from '../collab/viewTemplateStore';
-import { PropagationToast } from './PropagationToast';
+import { applyCommand } from '../../lib/api';
+import { useViewTemplateStore } from '../../collab/viewTemplateStore';
+import { PropagationToast } from '../PropagationToast';
 
 import {
   planViewBrowserHierarchyState,
   planViewProjectBrowserEvidenceLine,
   viewpointOrbit3dEvidenceLine,
-} from '../plan/planProjection';
-import { NewSheetDialog } from '../plan/NewSheetDialog';
+} from '../../plan/planProjection';
+import { NewSheetDialog } from '../../plan/NewSheetDialog';
 import {
   planLevelEvidenceToken,
   scheduleProjectBrowserEvidenceLine,
@@ -22,8 +22,8 @@ import {
   sectionCutProjectBrowserEvidenceLine,
   sheetProjectBrowserEvidenceLine,
   siteProjectBrowserEvidenceLine,
-} from './evidence';
-import { useBimStore } from '../state/store';
+} from '../evidence';
+import { useBimStore } from '../../state/store';
 
 function newDupPlanViewId(prefix: string) {
   try {

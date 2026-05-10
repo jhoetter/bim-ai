@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 
 import { ManageLinksDialog } from './ManageLinksDialog';
-import { useBimStore } from '../state/store';
+import { useBimStore } from '../../state/store';
 
 beforeEach(() => {
   useBimStore.setState({

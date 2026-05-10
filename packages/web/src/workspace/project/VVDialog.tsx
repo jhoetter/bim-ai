@@ -1,13 +1,13 @@
 /* eslint-disable bim-ai/no-hex-in-chrome -- pre-v3 hex literals; remove when this file is migrated in B4 Phase 2 */
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useFocusTrap } from '../useFocusTrap';
+import { useFocusTrap } from '../../useFocusTrap';
 import type { JSX } from 'react';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
 import type { Element } from '@bim-ai/core';
-import { useBimStore } from '../state/store';
-import type { CategoryOverride, CategoryOverrides } from '../state/store';
-import type { ViewFilter } from '../state/storeTypes';
-import { applyCommand } from '../lib/api';
+import { useBimStore } from '../../state/store';
+import type { CategoryOverride, CategoryOverrides } from '../../state/store';
+import type { ViewFilter } from '../../state/storeTypes';
+import { applyCommand } from '../../lib/api';
 
 const MODEL_CATEGORIES = [
   'wall',
