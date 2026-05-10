@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "7e5e7d721739",
+  "session_id": "05bf7d92-0567-4a81-a2a2-23d060872fd3",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T13:50:13.711947Z",
+  "branch": "revit-parity-layer-stack-reorder",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/routes_api.py",
+    "packages/cli/cli.mjs",
+    "packages/cli/lib/one-family-home-commands.mjs",
+    "packages/web/src/workspace/viewport/Viewport3DLayersPanel.tsx",
+    "spec/.DS_Store"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "c906c0c535fc",
+  "checkpoint_transcript_start": 261,
+  "transcript_lines_at_start": 261,
+  "token_usage": {
+    "input_tokens": 27,
+    "cache_creation_tokens": 20879,
+    "cache_read_tokens": 2495373,
+    "output_tokens": 10664,
+    "api_call_count": 23
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T13:50:13.701714Z",
+    "agent_lines": 617,
+    "agent_removed": 655,
+    "human_added": 346,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 963,
+    "total_lines_changed": 1620,
+    "agent_percentage": 78.51851851851852,
+    "metric_version": 2
+  }
+}
