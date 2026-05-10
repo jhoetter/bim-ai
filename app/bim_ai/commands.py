@@ -1051,6 +1051,16 @@ class UpsertRoomVolumeCmd(BaseModel):
     volume_ceiling_offset_mm: float | None = Field(default=None, alias="volumeCeilingOffsetMm")
 
 
+AreaSchemeCmd = Literal["gross_building", "net", "rentable"]
+PlanViewSubtypeCmd = Literal[
+    "floor_plan",
+    "area_plan",
+    "lighting_plan",
+    "power_plan",
+    "coordination_plan",
+]
+
+
 class UpsertPlanViewCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["upsertPlanView"] = "upsertPlanView"
@@ -1064,6 +1074,8 @@ class UpsertPlanViewCmd(BaseModel):
     )
     underlay_level_id: str | None = Field(default=None, alias="underlayLevelId")
     discipline: str = "architecture"
+    plan_view_subtype: PlanViewSubtypeCmd | None = Field(default=None, alias="planViewSubtype")
+    area_scheme: AreaSchemeCmd = Field(default="gross_building", alias="areaScheme")
     phase_id: str | None = Field(default=None, alias="phaseId")
     crop_min_mm: Vec2Mm | None = Field(default=None, alias="cropMinMm")
     crop_max_mm: Vec2Mm | None = Field(default=None, alias="cropMaxMm")
@@ -1649,6 +1661,7 @@ class CreateAreaCmd(BaseModel):
     level_id: str = Field(alias="levelId")
     boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
     rule_set: AreaRuleSetCmd = Field(default="no_rules", alias="ruleSet")
+    area_scheme: AreaSchemeCmd = Field(default="gross_building", alias="areaScheme")
     apply_area_rules: bool = Field(default=True, alias="applyAreaRules")
 
 
@@ -1661,6 +1674,7 @@ class UpdateAreaCmd(BaseModel):
     name: str | None = None
     boundary_mm: list[Vec2Mm] | None = Field(default=None, alias="boundaryMm")
     rule_set: AreaRuleSetCmd | None = Field(default=None, alias="ruleSet")
+    area_scheme: AreaSchemeCmd | None = Field(default=None, alias="areaScheme")
 
 
 class DeleteAreaCmd(BaseModel):

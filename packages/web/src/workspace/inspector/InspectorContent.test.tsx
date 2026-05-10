@@ -5,6 +5,7 @@ import {
   InspectorConstraintsFor,
   InspectorGraphicsFor,
   InspectorIdentityFor,
+  InspectorPlanViewEditor,
   InspectorPropertiesFor,
 } from './InspectorContent';
 import i18n from '../../i18n';
@@ -151,6 +152,33 @@ describe('InspectorGraphicsFor — T-14 / WP-UI-B01', () => {
     });
     const { container } = render(result!);
     expect(container.firstChild).toBeTruthy();
+  });
+
+  it('persists Area Plan subtype and scheme from the plan view editor', () => {
+    const onPersistProperty = vi.fn();
+    const areaPlan: Element = {
+      ...planView,
+      planViewSubtype: 'area_plan',
+      areaScheme: 'gross_building',
+    };
+    const { getByTestId } = render(
+      <InspectorPlanViewEditor
+        el={areaPlan}
+        elementsById={{ ...elementsById, [areaPlan.id]: areaPlan }}
+        revision={1}
+        onPersistProperty={onPersistProperty}
+      />,
+    );
+
+    fireEvent.change(getByTestId('inspector-plan-view-subtype'), {
+      target: { value: 'area_plan' },
+    });
+    fireEvent.change(getByTestId('inspector-plan-view-area-scheme'), {
+      target: { value: 'rentable' },
+    });
+
+    expect(onPersistProperty).toHaveBeenCalledWith('planViewSubtype', 'area_plan');
+    expect(onPersistProperty).toHaveBeenCalledWith('areaScheme', 'rentable');
   });
 
   it('renders graphics panel for view_template with footnote', () => {

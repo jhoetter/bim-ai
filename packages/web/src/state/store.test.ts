@@ -119,6 +119,51 @@ describe('hydrateFromSnapshot', () => {
     }
   });
 
+  it('coerces area and area plan scheme metadata from snake_case payloads', () => {
+    const { hydrateFromSnapshot } = useBimStore.getState();
+    hydrateFromSnapshot({
+      modelId: 'm1',
+      revision: 1,
+      elements: {
+        'pv-area': {
+          kind: 'plan_view',
+          name: 'Level 1 Rentable',
+          level_id: 'lvl-0',
+          plan_view_subtype: 'area_plan',
+          area_scheme: 'rentable',
+        },
+        'area-1': {
+          kind: 'area',
+          name: 'Rentable Suite',
+          level_id: 'lvl-0',
+          boundary_mm: [
+            { x_mm: 0, y_mm: 0 },
+            { x_mm: 4000, y_mm: 0 },
+            { x_mm: 4000, y_mm: 3000 },
+            { x_mm: 0, y_mm: 3000 },
+          ],
+          rule_set: 'net',
+          area_scheme: 'rentable',
+          computed_area_sq_mm: 12_000_000,
+        },
+      },
+      violations: [],
+    });
+    const pv = useBimStore.getState().elementsById['pv-area'];
+    expect(pv?.kind).toBe('plan_view');
+    if (pv?.kind === 'plan_view') {
+      expect(pv.planViewSubtype).toBe('area_plan');
+      expect(pv.areaScheme).toBe('rentable');
+    }
+    const area = useBimStore.getState().elementsById['area-1'];
+    expect(area?.kind).toBe('area');
+    if (area?.kind === 'area') {
+      expect(area.ruleSet).toBe('net');
+      expect(area.areaScheme).toBe('rentable');
+      expect(area.computedAreaSqMm).toBe(12_000_000);
+    }
+  });
+
   it('coerces masking region elements with editable boundary', () => {
     const { hydrateFromSnapshot } = useBimStore.getState();
     hydrateFromSnapshot({

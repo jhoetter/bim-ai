@@ -149,6 +149,10 @@ function readViewTemplateBool(raw: unknown, defaultVal: boolean): boolean {
   return o === undefined ? defaultVal : o;
 }
 
+function coerceAreaScheme(raw: unknown): 'gross_building' | 'net' | 'rentable' {
+  return raw === 'net' || raw === 'rentable' ? raw : 'gross_building';
+}
+
 export function coerceElement(id: string, raw: Record<string, unknown>): Element | null {
   const kind = raw.kind;
   const name =
@@ -401,6 +405,37 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
         : {}),
     };
   }
+
+  if (kind === 'area') {
+    const ruleRaw = raw.ruleSet ?? raw.rule_set;
+    const ruleSet = ruleRaw === 'gross' || ruleRaw === 'net' ? ruleRaw : ('no_rules' as const);
+    const computedRaw = raw.computedAreaSqMm ?? raw.computed_area_sq_mm;
+    const boundaryRaw = raw.boundaryMm ?? raw.boundary_mm;
+    const computedAreaSqMm =
+      typeof computedRaw === 'number' && Number.isFinite(computedRaw)
+        ? computedRaw
+        : typeof computedRaw === 'string' && computedRaw.trim() !== ''
+          ? Number(computedRaw)
+          : undefined;
+    return {
+      kind: 'area',
+      id,
+      name,
+      levelId: String(raw.levelId ?? raw.level_id ?? ''),
+      boundaryMm: Array.isArray(boundaryRaw)
+        ? boundaryRaw.map((p) => coerceXY((p ?? {}) as Record<string, unknown>))
+        : [],
+      ruleSet,
+      areaScheme: coerceAreaScheme(raw.areaScheme ?? raw.area_scheme),
+      ...(computedAreaSqMm !== undefined && Number.isFinite(computedAreaSqMm)
+        ? { computedAreaSqMm }
+        : {}),
+      ...(raw.pinned != null ? { pinned: Boolean(raw.pinned) } : {}),
+      phaseCreated: (raw.phaseCreated ?? raw.phase_created ?? null) as string | null,
+      phaseDemolished: (raw.phaseDemolished ?? raw.phase_demolished ?? null) as string | null,
+    };
+  }
+
   if (kind === 'grid_line') {
     const lid = raw.levelId ?? raw.level_id;
     return {
@@ -1118,14 +1153,16 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
       discipline:
         typeof raw.discipline === 'string' && raw.discipline ? raw.discipline : 'architecture',
       planViewSubtype:
-        typeof raw.planViewSubtype === 'string' && raw.planViewSubtype
-          ? (raw.planViewSubtype as
+        typeof (raw.planViewSubtype ?? raw.plan_view_subtype) === 'string' &&
+        (raw.planViewSubtype ?? raw.plan_view_subtype)
+          ? ((raw.planViewSubtype ?? raw.plan_view_subtype) as
               | 'floor_plan'
               | 'area_plan'
               | 'lighting_plan'
               | 'power_plan'
               | 'coordination_plan')
           : undefined,
+      areaScheme: coerceAreaScheme(raw.areaScheme ?? raw.area_scheme),
       phaseId: (raw.phaseId ?? raw.phase_id ?? null) as string | null,
       cropMinMm,
       cropMaxMm,

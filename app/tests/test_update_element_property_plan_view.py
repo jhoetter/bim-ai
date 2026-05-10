@@ -51,6 +51,24 @@ def test_plan_view_plan_presentation_categories_hidden_underlay() -> None:
     assert pv_out.underlay_level_id == "lv2"
 
 
+def test_plan_view_subtype_and_area_scheme_property_updates() -> None:
+    els = {
+        "lv": LevelElem(kind="level", id="lv", name="EG", elevationMm=0),
+        "pv": PlanViewElem(kind="plan_view", id="pv", name="Test", levelId="lv"),
+    }
+    doc = Document(revision=1, elements=els)
+    apply_inplace(
+        doc, UpdateElementPropertyCmd(elementId="pv", key="planViewSubtype", value="area_plan")
+    )
+    apply_inplace(
+        doc, UpdateElementPropertyCmd(elementId="pv", key="areaScheme", value="rentable")
+    )
+    pv_out = doc.elements["pv"]
+    assert isinstance(pv_out, PlanViewElem)
+    assert pv_out.plan_view_subtype == "area_plan"
+    assert pv_out.area_scheme == "rentable"
+
+
 def test_plan_view_crop_range_discipline_phase() -> None:
     els = {
         "lv": LevelElem(kind="level", id="lv", name="EG", elevationMm=0),

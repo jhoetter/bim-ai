@@ -15,6 +15,7 @@ export type AreaPrimitive = {
   boundaryMm: XY[];
   centroidMm: XY;
   ruleSet: 'gross' | 'net' | 'no_rules';
+  areaScheme: 'gross_building' | 'net' | 'rentable';
   computedAreaSqMm: number;
   /** Pre-formatted tag label, e.g. "Porch · 20.00 m²". */
   tagLabel: string;
@@ -61,17 +62,19 @@ function polygonAreaAbsSqMm(boundary: XY[]): number {
 
 /**
  * Extract area-element rendering primitives for a given level. Pass the
- * `levelId` of the active plan view; areas anchored to other levels are
- * filtered out so each plan view shows only its own areas.
+ * `levelId` and Area Plan scheme of the active plan view; areas anchored to
+ * other levels/schemes are filtered out so each Area Plan shows its own areas.
  */
 export function extractAreaPrimitives(
   elementsById: Record<string, Element>,
   levelId: string | undefined,
+  areaScheme: 'gross_building' | 'net' | 'rentable' | undefined,
 ): AreaPrimitive[] {
-  if (!levelId) return [];
+  if (!levelId || !areaScheme) return [];
   const out: AreaPrimitive[] = [];
   for (const el of Object.values(elementsById)) {
-    if (el.kind === 'area' && el.levelId === levelId) {
+    const elScheme = el.kind === 'area' ? (el.areaScheme ?? 'gross_building') : undefined;
+    if (el.kind === 'area' && el.levelId === levelId && elScheme === areaScheme) {
       const computed = el.computedAreaSqMm ?? polygonAreaAbsSqMm(el.boundaryMm);
       const sqM = computed / 1_000_000;
       const tagLabel = `${el.name} · ${sqM.toFixed(2)} m²`;
@@ -82,6 +85,7 @@ export function extractAreaPrimitives(
         boundaryMm: el.boundaryMm,
         centroidMm: polygonCentroidMm(el.boundaryMm),
         ruleSet: el.ruleSet,
+        areaScheme: elScheme,
         computedAreaSqMm: computed,
         tagLabel,
       });

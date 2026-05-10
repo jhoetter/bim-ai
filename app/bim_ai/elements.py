@@ -1491,6 +1491,14 @@ PlanCategoryGraphicCategoryKey = Literal[
 ]
 
 PlanLinePatternTokenPlan = Literal["solid", "dash_short", "dash_long", "dot"]
+PlanViewSubtypePlan = Literal[
+    "floor_plan",
+    "area_plan",
+    "lighting_plan",
+    "power_plan",
+    "coordination_plan",
+]
+AreaScheme = Literal["gross_building", "net", "rentable"]
 
 
 class PlanCategoryGraphicRow(BaseModel):
@@ -1549,6 +1557,9 @@ class PlanViewElem(BaseModel):
     element_overrides: list[dict] = Field(default_factory=list, alias="elementOverrides")
     # DSC-V3-02: per-view discipline lens; does not mutate element discipline
     default_lens: LensMode = Field(default="show_all", alias="defaultLens")
+    # F-028/F-098: Revit-like plan subtype and area scheme metadata.
+    plan_view_subtype: PlanViewSubtypePlan | None = Field(default=None, alias="planViewSubtype")
+    area_scheme: AreaScheme = Field(default="gross_building", alias="areaScheme")
 
 
 class ViewTemplateElem(BaseModel):
@@ -1807,6 +1818,7 @@ class AreaElem(BaseModel):
     level_id: str = Field(alias="levelId")
     boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
     rule_set: AreaRuleSet = Field(default="no_rules", alias="ruleSet")
+    area_scheme: AreaScheme = Field(default="gross_building", alias="areaScheme")
     apply_area_rules: bool = Field(default=True, alias="applyAreaRules")
     computed_area_sq_mm: float | None = Field(default=None, alias="computedAreaSqMm")
     pinned: bool = Field(default=False)

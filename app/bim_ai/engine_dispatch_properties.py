@@ -2,6 +2,7 @@
 
 from bim_ai.engine import (
     AssignWallDatumConstraintsCmd,
+    AreaElem,
     CreateWallTypeCmd,
     DoorElem,
     FloorTypeElem,
@@ -92,6 +93,25 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                 if cmd.key == "planPresentation":
                     pres = raw if raw in {"default", "opening_focus", "room_scheme"} else "default"
                     els[cmd.element_id] = el.model_copy(update={"plan_presentation": pres})
+                elif cmd.key == "planViewSubtype":
+                    if raw == "":
+                        els[cmd.element_id] = el.model_copy(update={"plan_view_subtype": None})
+                    elif raw not in {
+                        "floor_plan",
+                        "area_plan",
+                        "lighting_plan",
+                        "power_plan",
+                        "coordination_plan",
+                    }:
+                        raise ValueError(
+                            "planViewSubtype must be floor_plan|area_plan|lighting_plan|power_plan|coordination_plan or empty"
+                        )
+                    else:
+                        els[cmd.element_id] = el.model_copy(update={"plan_view_subtype": raw})
+                elif cmd.key == "areaScheme":
+                    if raw not in {"gross_building", "net", "rentable"}:
+                        raise ValueError("areaScheme must be gross_building|net|rentable")
+                    els[cmd.element_id] = el.model_copy(update={"area_scheme": raw})
                 elif cmd.key == "categoriesHidden":
                     hx: list[str] = []
                     if raw:
@@ -226,7 +246,8 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                         "plan_view updates: key=planPresentation | categoriesHidden | underlayLevelId | "
                         "viewTemplateId | cropMinMm | cropMaxMm | cropEnabled | cropRegionVisible | "
                         "viewRangeBottomMm | viewRangeTopMm | "
-                        "cutPlaneOffsetMm | discipline | phaseId | planDetailLevel | planRoomFillOpacityScale | "
+                        "cutPlaneOffsetMm | discipline | planViewSubtype | areaScheme | phaseId | "
+                        "planDetailLevel | planRoomFillOpacityScale | "
                         "planShowOpeningTags | planShowRoomLabels | planOpeningTagStyleId | planRoomTagStyleId | "
                         "planCategoryGraphics | name"
                     )
@@ -539,6 +560,11 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                 if next_level_id not in els or not isinstance(els[next_level_id], LevelElem):
                     raise ValueError("link_dxf levelId must reference an existing Level")
                 els[cmd.element_id] = el.model_copy(update={"level_id": next_level_id})
+            elif cmd.key == "areaScheme" and isinstance(el, AreaElem):
+                raw_area_scheme = str(cmd.value or "").strip()
+                if raw_area_scheme not in {"gross_building", "net", "rentable"}:
+                    raise ValueError("areaScheme must be gross_building|net|rentable")
+                els[cmd.element_id] = el.model_copy(update={"area_scheme": raw_area_scheme})
             else:
                 raise ValueError(
                     "Only updateElementProperty key=name | label(grid) | title(issue) | "
@@ -548,7 +574,8 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     "underlayLevelId(plan_view) | viewTemplateId(plan_view) | "
                     "cropMinMm(plan_view JSON object) | cropMaxMm(plan_view JSON object) | "
                     "viewRangeBottomMm(plan_view) | viewRangeTopMm(plan_view) | cutPlaneOffsetMm(plan_view) | "
-                    "discipline(plan_view) | phaseId(plan_view) | "
+                    "discipline(plan_view) | planViewSubtype(plan_view) | areaScheme(plan_view|area) | "
+                    "phaseId(plan_view) | "
                     "planDetailLevel(plan_view coarse|medium|fine or empty) | "
                     "planRoomFillOpacityScale(plan_view float 0..1 or empty) | "
                     "planDetailLevel(view_template coarse|medium|fine or empty) | "

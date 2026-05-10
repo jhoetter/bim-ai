@@ -25,6 +25,14 @@ import {
 } from '../evidence';
 import { useBimStore } from '../../state/store';
 
+const AREA_SCHEMES = [
+  { value: 'gross_building', label: 'Gross Building' },
+  { value: 'net', label: 'Net' },
+  { value: 'rentable', label: 'Rentable' },
+] as const;
+
+type AreaSchemeValue = (typeof AREA_SCHEMES)[number]['value'];
+
 function newDupPlanViewId(prefix: string) {
   try {
     return `${prefix}-${crypto.randomUUID().slice(0, 10)}`;
@@ -143,6 +151,8 @@ export function ProjectBrowser(props: {
   const [renameDraft, setRenameDraft] = useState('');
   const [areaPlanInputOpen, setAreaPlanInputOpen] = useState(false);
   const [areaPlanDraft, setAreaPlanDraft] = useState('');
+  const [areaPlanScheme, setAreaPlanScheme] = useState<AreaSchemeValue>('gross_building');
+  const [areaPlanLevelId, setAreaPlanLevelId] = useState('');
   const [vtNameInputOpen, setVtNameInputOpen] = useState(false);
   const [vtNameDraft, setVtNameDraft] = useState('');
   const [elevationInputOpen, setElevationInputOpen] = useState(false);
@@ -176,6 +186,28 @@ export function ProjectBrowser(props: {
     const area = planViewsSorted.filter((pv) => pv.planViewSubtype === 'area_plan');
     return { floorPlanViews: floor, areaPlans: area };
   }, [planViewsSorted]);
+
+  const levelsSorted = useMemo(
+    () =>
+      Object.values(props.elementsById)
+        .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
+        .sort((a, b) => a.elevationMm - b.elevationMm || a.name.localeCompare(b.name)),
+    [props.elementsById],
+  );
+
+  const areaPlanBuckets = useMemo(() => {
+    const buckets: Record<AreaSchemeValue, Extract<Element, { kind: 'plan_view' }>[]> = {
+      gross_building: [],
+      net: [],
+      rentable: [],
+    };
+    for (const pv of areaPlans) {
+      const scheme =
+        pv.areaScheme === 'net' || pv.areaScheme === 'rentable' ? pv.areaScheme : 'gross_building';
+      buckets[scheme].push(pv);
+    }
+    return buckets;
+  }, [areaPlans]);
 
   /** F-032: group plan views by discipline for Project Browser section headers. */
   const planViewDiscBuckets = useMemo(() => {
@@ -325,6 +357,8 @@ export function ProjectBrowser(props: {
     if (pv.planShowRoomLabels !== undefined) cmd.planShowRoomLabels = pv.planShowRoomLabels;
     if (pv.planOpeningTagStyleId) cmd.planOpeningTagStyleId = pv.planOpeningTagStyleId;
     if (pv.planRoomTagStyleId) cmd.planRoomTagStyleId = pv.planRoomTagStyleId;
+    if (pv.planViewSubtype) cmd.planViewSubtype = pv.planViewSubtype;
+    if (pv.areaScheme) cmd.areaScheme = pv.areaScheme;
     if (pv.underlayLevelId) cmd.underlayLevelId = pv.underlayLevelId;
     if (pv.phaseId) cmd.phaseId = pv.phaseId;
     if (pv.categoriesHidden?.length) cmd.categoriesHidden = [...pv.categoriesHidden];
@@ -727,6 +761,32 @@ export function ProjectBrowser(props: {
           </div>
           {areaPlanInputOpen ? (
             <div className="flex items-center gap-1">
+              <select
+                aria-label="Area plan scheme"
+                data-testid="area-plan-new-scheme"
+                className="w-24 rounded border border-border bg-background px-1 py-0 text-[9px] text-foreground"
+                value={areaPlanScheme}
+                onChange={(e) => setAreaPlanScheme(e.target.value as AreaSchemeValue)}
+              >
+                {AREA_SCHEMES.map((scheme) => (
+                  <option key={scheme.value} value={scheme.value}>
+                    {scheme.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label="Area plan level"
+                data-testid="area-plan-new-level"
+                className="w-20 rounded border border-border bg-background px-1 py-0 text-[9px] text-foreground"
+                value={areaPlanLevelId || levelsSorted[0]?.id || ''}
+                onChange={(e) => setAreaPlanLevelId(e.target.value)}
+              >
+                {levelsSorted.map((level) => (
+                  <option key={level.id} value={level.id}>
+                    {level.name}
+                  </option>
+                ))}
+              </select>
               <input
                 autoFocus
                 type="text"
@@ -736,27 +796,25 @@ export function ProjectBrowser(props: {
                 onKeyDown={async (e) => {
                   if (e.key === 'Enter') {
                     const name = areaPlanDraft.trim();
+                    const levelId = areaPlanLevelId || levelsSorted[0]?.id || '';
                     setAreaPlanInputOpen(false);
                     setAreaPlanDraft('');
-                    if (!name || !modelId) return;
+                    if (!name || !modelId || !levelId) return;
                     const newId = `ap-${Date.now().toString(36)}`;
                     await applyCommand(modelId, {
                       type: 'upsertPlanView',
                       id: newId,
                       name,
-                      levelId: '',
+                      levelId,
                       planPresentation: 'default',
                       discipline: 'architecture',
                       planViewSubtype: 'area_plan',
+                      areaScheme: areaPlanScheme,
                     });
                   } else if (e.key === 'Escape') {
                     setAreaPlanInputOpen(false);
                     setAreaPlanDraft('');
                   }
-                }}
-                onBlur={() => {
-                  setAreaPlanInputOpen(false);
-                  setAreaPlanDraft('');
                 }}
                 className="w-24 rounded border border-border bg-background px-1 py-0 text-[9px] text-foreground"
                 placeholder="Plan name…"
@@ -770,6 +828,7 @@ export function ProjectBrowser(props: {
               title="Create new Area Plan view"
               onClick={() => {
                 if (!modelId) return;
+                setAreaPlanLevelId(levelsSorted[0]?.id || '');
                 setAreaPlanInputOpen(true);
               }}
             >
@@ -782,105 +841,118 @@ export function ProjectBrowser(props: {
             No area plan views yet — click + to create one.
           </p>
         ) : (
-          <ul className="space-y-0.5">
-            {areaPlans.map((pv) => (
-              <li key={pv.id} className="flex flex-col gap-0.5">
-                {renamingId === pv.id ? (
-                  <input
-                    autoFocus
-                    type="text"
-                    data-testid={`plan-view-rename-input-${pv.id}`}
-                    value={renameDraft}
-                    className="rounded border border-border bg-background px-1 py-0.5 text-xs"
-                    onChange={(e) => setRenameDraft(e.currentTarget.value)}
-                    onBlur={() => void commitRename(pv.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        void commitRename(pv.id);
-                      }
-                      if (e.key === 'Escape') {
-                        e.preventDefault();
-                        cancelRename();
-                      }
-                    }}
-                  />
-                ) : (
-                  <Btn
-                    type="button"
-                    variant="quiet"
-                    className="w-full px-2 py-0.5 text-left text-[10px]"
-                    title={planViewTooltip(pv, props.elementsById)}
-                    onClick={() => activatePlanView(pv.id)}
-                    onDoubleClick={() => {
-                      setRenamingId(pv.id);
-                      setRenameDraft(pv.name);
-                    }}
-                  >
-                    area_plan · {pv.name}
-                  </Btn>
-                )}
-                <div
-                  className="pl-2 font-mono text-[9px] leading-tight text-muted"
-                  data-bim-plan-view-evidence={pv.id}
-                >
-                  {planLevelEvidenceToken(props.elementsById, pv.levelId)} ·{' '}
-                  {planViewProjectBrowserEvidenceLine(props.elementsById, pv.id)}
+          <div className="space-y-1">
+            {AREA_SCHEMES.map((scheme) => {
+              const rows = areaPlanBuckets[scheme.value];
+              if (rows.length === 0) return null;
+              return (
+                <div key={scheme.value} data-testid={`area-plan-scheme-${scheme.value}`}>
+                  <div className="pl-2 text-[9px] font-semibold uppercase text-muted">
+                    {scheme.label} ({rows.length})
+                  </div>
+                  <ul className="space-y-0.5">
+                    {rows.map((pv) => (
+                      <li key={pv.id} className="flex flex-col gap-0.5">
+                        {renamingId === pv.id ? (
+                          <input
+                            autoFocus
+                            type="text"
+                            data-testid={`plan-view-rename-input-${pv.id}`}
+                            value={renameDraft}
+                            className="rounded border border-border bg-background px-1 py-0.5 text-xs"
+                            onChange={(e) => setRenameDraft(e.currentTarget.value)}
+                            onBlur={() => void commitRename(pv.id)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                void commitRename(pv.id);
+                              }
+                              if (e.key === 'Escape') {
+                                e.preventDefault();
+                                cancelRename();
+                              }
+                            }}
+                          />
+                        ) : (
+                          <Btn
+                            type="button"
+                            variant="quiet"
+                            className="w-full px-2 py-0.5 text-left text-[10px]"
+                            title={planViewTooltip(pv, props.elementsById)}
+                            onClick={() => activatePlanView(pv.id)}
+                            onDoubleClick={() => {
+                              setRenamingId(pv.id);
+                              setRenameDraft(pv.name);
+                            }}
+                          >
+                            area_plan · {scheme.label} · {pv.name}
+                          </Btn>
+                        )}
+                        <div
+                          className="pl-2 font-mono text-[9px] leading-tight text-muted"
+                          data-bim-plan-view-evidence={pv.id}
+                        >
+                          {planLevelEvidenceToken(props.elementsById, pv.levelId)} ·{' '}
+                          {planViewProjectBrowserEvidenceLine(props.elementsById, pv.id)}
+                        </div>
+                        {props.onUpsertSemantic ? (
+                          <button
+                            type="button"
+                            className="pl-2 text-left text-[9px] text-muted underline"
+                            title="Creates a duplicated area plan view with the same pinned settings"
+                            onClick={() => dupPlanView(pv)}
+                          >
+                            Duplicate…
+                          </button>
+                        ) : null}
+                        {deleteConfirmId === pv.id ? (
+                          <span className="flex items-center gap-1 pl-2">
+                            <button
+                              type="button"
+                              className="text-[9px] text-red-700 underline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteConfirmId(null);
+                                void applyCommand(modelId!, {
+                                  type: 'deleteElement',
+                                  elementId: pv.id,
+                                });
+                              }}
+                            >
+                              Delete
+                            </button>
+                            <button
+                              type="button"
+                              className="text-[9px] text-muted underline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteConfirmId(null);
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            data-testid={`plan-view-delete-${pv.id}`}
+                            title="Delete this area plan view"
+                            className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteConfirmId(pv.id);
+                            }}
+                          >
+                            Delete…
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                {props.onUpsertSemantic ? (
-                  <button
-                    type="button"
-                    className="pl-2 text-left text-[9px] text-muted underline"
-                    title="Creates a duplicated area plan view with the same pinned settings"
-                    onClick={() => dupPlanView(pv)}
-                  >
-                    Duplicate…
-                  </button>
-                ) : null}
-                {deleteConfirmId === pv.id ? (
-                  <span className="flex items-center gap-1 pl-2">
-                    <button
-                      type="button"
-                      className="text-[9px] text-red-700 underline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteConfirmId(null);
-                        void applyCommand(modelId!, {
-                          type: 'deleteElement',
-                          elementId: pv.id,
-                        });
-                      }}
-                    >
-                      Delete
-                    </button>
-                    <button
-                      type="button"
-                      className="text-[9px] text-muted underline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteConfirmId(null);
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    data-testid={`plan-view-delete-${pv.id}`}
-                    title="Delete this area plan view"
-                    className="pl-2 text-left text-[9px] text-muted underline hover:text-red-700"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeleteConfirmId(pv.id);
-                    }}
-                  >
-                    Delete…
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
+              );
+            })}
+          </div>
         )}
       </div>
 

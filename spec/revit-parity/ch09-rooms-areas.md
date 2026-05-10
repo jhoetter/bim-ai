@@ -44,7 +44,7 @@ Source segment: `05:30:00 – 05:39:46`
 **Screenshot:**
 ![Area Boundary Lines](file:///Users/jhoetter/Desktop/Revit%20Specs/0808_05-34-41.png)
 
-**bim-ai status:** 🟡 Partial — the `area-boundary` sketch tool (hotkey AR, toolRegistry.ts) draws area boundary polylines on the plan canvas stored as `area` elements. The `area_boundary` annotation category appears in Visibility/Graphics Overrides (VV) and now correctly controls rendering: toggling it off hides both the boundary polylines and the centroid label sprites in the plan canvas (`PlanCanvas.tsx` gates the KRN-08 area rendering block on `!display.hiddenSemanticKinds.has('area_boundary')`; `planProjection.ts` maps the VV label via `canonHiddenCategory`). Missing: auto-snap to wall faces for area boundary placement (Revit snaps to wall layers), and separate Area Plan view type (F-098).
+**bim-ai status:** 🟡 Partial — the `area-boundary` sketch tool (hotkey AR, toolRegistry.ts) draws area boundary polylines on the plan canvas stored as `area` elements. The `area_boundary` annotation category appears in Visibility/Graphics Overrides (VV) and correctly controls rendering: toggling it off hides both the boundary polylines and the centroid label sprites in the plan canvas. Area boundaries are now restricted to dedicated Area Plan views and filtered by the active Area Plan scheme (F-098). Missing: auto-snap to wall faces for area boundary placement (Revit snaps to wall layers).
 
 ---
 
@@ -92,7 +92,7 @@ This determines where area boundary lines snap relative to wall layers, affectin
 **Screenshot:**
 ![Area Plan view type](file:///Users/jhoetter/Desktop/Revit%20Specs/0837_05-38-35.png)
 
-**bim-ai status:** 🟡 Partial — Area Plan views are now a distinct `planViewSubtype: 'area_plan'` on `plan_view` elements. They appear in a dedicated "Area Plans" section in the Project Browser (separate from "Floor Plans"), and the discipline inspector dropdown includes "Area Plan" as a type option. Missing: automatic Area Plan creation from Architecture → Room & Area → Area Plan workflow; the area-boundary tool is not auto-restricted to area plan views; no separate area-scheme (Gross Building / Net / Rentable) grouping within the Area Plans section.
+**bim-ai status:** ✅ Implemented — Area Plan views persist both `planViewSubtype: 'area_plan'` and `areaScheme` (`gross_building | net | rentable`) on backend `plan_view` elements, `upsertPlanView`, store coercion, schedules, and deterministic `planViewBrowserHierarchy_v0` evidence. The Project Browser has a dedicated Area Plans section grouped by Gross Building / Net / Rentable, and its creation workflow selects both the target level and area scheme before issuing `upsertPlanView`. The Inspector exposes the Area Plan scheme for plan views, and area elements carry/edit their own `areaScheme`. The `area-boundary` tool is now restricted to active Area Plan views, stamps created areas with the active view's scheme, and the plan canvas renders area boundaries/tags only inside matching Area Plan views.
 
 ---
 

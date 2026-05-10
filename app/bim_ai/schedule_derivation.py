@@ -733,6 +733,8 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     "level": lev,
                     "planPresentation": e.plan_presentation,
                     "discipline": getattr(e, "discipline", "") or "",
+                    "planViewSubtype": e.plan_view_subtype or "floor_plan",
+                    "areaScheme": e.area_scheme,
                     "familyTypeId": "",
                 }
                 own = owning.get(e.id)
@@ -914,6 +916,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "perimeterM": round(perimeter, 3),
                         "computedAreaM2": round(computed, 3),
                         "ruleSet": e.rule_set,
+                        "areaScheme": e.area_scheme,
                         "familyTypeId": "",
                     }
                 )

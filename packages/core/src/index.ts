@@ -1345,6 +1345,8 @@ export type Element =
         | 'lighting_plan'
         | 'power_plan'
         | 'coordination_plan';
+      /** F-098: Area Plan scheme for Gross Building / Net / Rentable grouping. */
+      areaScheme?: 'gross_building' | 'net' | 'rentable';
     }
   | {
       kind: 'view_template';
@@ -1784,6 +1786,7 @@ export type Element =
       levelId: string;
       boundaryMm: XY[];
       ruleSet: 'gross' | 'net' | 'no_rules';
+      areaScheme?: 'gross_building' | 'net' | 'rentable';
       computedAreaSqMm?: number;
       pinned?: boolean;
       phaseCreated?: string | null;

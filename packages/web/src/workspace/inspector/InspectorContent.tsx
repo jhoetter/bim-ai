@@ -633,11 +633,25 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
-    case 'area':
+    case 'area': {
+      const { onPropertyChange: areaPropChange } = options ?? {};
       return (
         <div className="flex flex-col gap-2">
           <FieldRow label={f('name')} value={el.name} />
           <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
+          <label className={LABEL_CLS}>
+            <span>Area Scheme</span>
+            <select
+              className={INPUT_CLS}
+              value={el.areaScheme ?? 'gross_building'}
+              onChange={(e) => areaPropChange?.('areaScheme', e.target.value)}
+              data-testid="inspector-area-scheme"
+            >
+              <option value="gross_building">Gross Building</option>
+              <option value="net">Net</option>
+              <option value="rentable">Rentable</option>
+            </select>
+          </label>
           <FieldRow
             label="Rule Set"
             value={el.ruleSet === 'gross' ? 'Gross' : el.ruleSet === 'net' ? 'Net' : 'No Rules'}
@@ -652,6 +666,7 @@ export function InspectorPropertiesFor(
           <FieldRow label="Boundary Vertices" value={String(el.boundaryMm.length)} mono />
         </div>
       );
+    }
     case 'dimension': {
       const distMm = Math.hypot(el.bMm.xMm - el.aMm.xMm, el.bMm.yMm - el.aMm.yMm);
       const { onPropertyChange: dimPropChange } = options ?? {};
@@ -1323,6 +1338,22 @@ export function InspectorPlanViewEditor({
           <option value="coordination_plan">Coordination Plan</option>
         </select>
       </label>
+
+      {el.planViewSubtype === 'area_plan' ? (
+        <label className={LABEL_CLS}>
+          <span>Area Scheme</span>
+          <select
+            className={INPUT_CLS}
+            value={el.areaScheme ?? 'gross_building'}
+            onChange={(e) => onPersistProperty('areaScheme', e.target.value)}
+            data-testid="inspector-plan-view-area-scheme"
+          >
+            <option value="gross_building">Gross Building</option>
+            <option value="net">Net</option>
+            <option value="rentable">Rentable</option>
+          </select>
+        </label>
+      ) : null}
 
       <label className={LABEL_CLS}>
         <span>Room Labels</span>

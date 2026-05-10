@@ -348,6 +348,7 @@ def try_apply_building_edit_command(doc, cmd, *, source_provider=None) -> bool:
                 level_id=cmd.level_id,
                 boundary_mm=list(cmd.boundary_mm),
                 rule_set=cmd.rule_set,
+                area_scheme=cmd.area_scheme,
                 apply_area_rules=cmd.apply_area_rules,
             )
 
@@ -364,6 +365,8 @@ def try_apply_building_edit_command(doc, cmd, *, source_provider=None) -> bool:
                 updates["boundary_mm"] = list(cmd.boundary_mm)
             if cmd.rule_set is not None:
                 updates["rule_set"] = cmd.rule_set
+            if cmd.area_scheme is not None:
+                updates["area_scheme"] = cmd.area_scheme
             els[cmd.area_id] = area.model_copy(update=updates)
 
         case DeleteAreaCmd():
