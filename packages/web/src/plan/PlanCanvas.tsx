@@ -105,7 +105,9 @@ import {
 import { extractDetailComponentPrimitives } from './detailComponentsRender';
 import { extractMaskingRegionPrimitives } from './maskingRegionRender';
 import { extractAreaPrimitives } from './areaRender';
+import { manualPlacedTagLabel, placeTagByCategoryCommand } from './manualTags';
 import { extractNeighborhoodMassPrimitives } from './neighborhoodMassRender';
+import { planAnnotationLabelSprite } from './planElementMeshBuilders';
 import {
   DXF_UNDERLAY_OPACITY,
   DXF_UNDERLAY_STROKE,
@@ -1445,6 +1447,41 @@ export function PlanCanvas({
       }
     }
 
+    // ANN-01/F-006 — render manual Tag by Category annotations hosted on the
+    // active view. Auto-generated room/opening labels are still controlled by
+    // the view annotation hints above; placed tags are explicit elements.
+    for (let i = grp.children.length - 1; i >= 0; i--) {
+      const ch = grp.children[i]!;
+      if ((ch.userData as { placedTag?: unknown }).placedTag) grp.remove(ch);
+    }
+    if (
+      activePlanViewId &&
+      (!display.hiddenSemanticKinds.has('placed_tag') || revealHiddenMode)
+    ) {
+      const placedTagReveal =
+        revealHiddenMode && display.hiddenSemanticKinds.has('placed_tag');
+      for (const tag of Object.values(elementsById)) {
+        if (tag.kind !== 'placed_tag') continue;
+        if (tag.hostViewId !== activePlanViewId) continue;
+        if (display.hiddenElementIds.has(tag.id) && !revealHiddenMode) continue;
+        const host = elementsById[tag.hostElementId];
+        if (host && display.hiddenElementIds.has(host.id) && !revealHiddenMode) continue;
+        const label = manualPlacedTagLabel(tag, elementsById);
+        const sprite = planAnnotationLabelSprite(
+          tag.positionMm.xMm / 1000,
+          tag.positionMm.yMm / 1000,
+          label,
+          tag.id,
+        );
+        sprite.position.y = SLICE_Y + 0.012;
+        sprite.userData.placedTag = true;
+        if (placedTagReveal || (revealHiddenMode && display.hiddenElementIds.has(tag.id))) {
+          sprite.material.color.set('#ff00ff');
+        }
+        grp.add(sprite);
+      }
+    }
+
     // PLN-02 — render dashed crop frame + 8 drag handles whenever a plan_view
     // has crop bounds and the frame is visible (cropRegionVisible || cropEnabled).
     // Removes the previous overlay first so the renderer never accumulates
@@ -2475,6 +2512,33 @@ export function PlanCanvas({
         } else {
           selectEl(id);
           useBimStore.getState().clearSelectedIds();
+        }
+        return;
+      }
+      if (planTool === 'tag') {
+        const rectBox = rnd.domElement.getBoundingClientRect();
+        const ray = new THREE.Raycaster();
+        ray.setFromCamera(
+          new THREE.Vector2(
+            ((ev.clientX - rectBox.left) / rectBox.width) * 2 - 1,
+            -(((ev.clientY - rectBox.top) / rectBox.height) * 2 - 1),
+          ),
+          camNow,
+        );
+        const hits = ray.intersectObjects(grp.children, true);
+        const h = hits.find(
+          (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
+        );
+        const id =
+          typeof (h?.object.userData as { bimPickId?: unknown }).bimPickId === 'string'
+            ? (h!.object.userData as { bimPickId: string }).bimPickId
+            : undefined;
+        const cmd = placeTagByCategoryCommand(elementsById, activePlanViewId, id, {
+          xMm: sp.xMm,
+          yMm: sp.yMm,
+        });
+        if (cmd) {
+          onSemanticCommand(cmd);
         }
         return;
       }

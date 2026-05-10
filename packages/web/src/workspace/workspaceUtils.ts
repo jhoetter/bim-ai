@@ -50,6 +50,7 @@ export const KNOWN_PLAN_TOOLS = new Set<ToolId>([
   'window',
   'room',
   'dimension',
+  'tag',
   'floor-sketch',
   'roof-sketch',
   'room-separation-sketch',

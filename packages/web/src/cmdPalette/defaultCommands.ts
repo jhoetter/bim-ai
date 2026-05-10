@@ -173,6 +173,14 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'tool.tag-by-category',
+  label: 'Tag by Category',
+  keywords: ['tag', 'annotation', 'room tag', 'door tag', 'window tag'],
+  category: 'command',
+  invoke: () => useBimStore.getState().setPlanTool('tag'),
+});
+
+registerCommand({
   id: 'tool.elevation',
   label: 'Place Elevation / Section Marker',
   keywords: ['elevation', 'section', 'cut', 'marker'],

@@ -41,6 +41,7 @@ export type PlanTool =
   | 'room_rectangle'
   | 'grid'
   | 'dimension'
+  | 'tag'
   | 'elevation'
   | 'reference-plane'
   | 'property-line'

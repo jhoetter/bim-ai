@@ -116,6 +116,24 @@ describe('TopBar — spec §11', () => {
     expect(onProjectNameClick).toHaveBeenCalled();
   });
 
+  it('exposes QAT shortcuts for dimension and Tag by Category', () => {
+    const onDimensionShortcut = vi.fn();
+    const onTagByCategoryShortcut = vi.fn();
+    const { getByTestId } = renderWithI18n(
+      <TopBar
+        {...baseProps}
+        mode="plan"
+        onModeChange={() => undefined}
+        onDimensionShortcut={onDimensionShortcut}
+        onTagByCategoryShortcut={onTagByCategoryShortcut}
+      />,
+    );
+    fireEvent.click(getByTestId('topbar-dimension-shortcut'));
+    fireEvent.click(getByTestId('topbar-tag-by-category-shortcut'));
+    expect(onDimensionShortcut).toHaveBeenCalledTimes(1);
+    expect(onTagByCategoryShortcut).toHaveBeenCalledTimes(1);
+  });
+
   it('renders the collaborator badge when count > 0', () => {
     const { getByTestId } = renderWithI18n(
       <TopBar {...baseProps} mode="plan" onModeChange={() => undefined} collaboratorsCount={3} />,

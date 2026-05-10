@@ -47,7 +47,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Quick Access Toolbar](file:///Users/jhoetter/Desktop/Revit%20Specs/0138_00-16-09.png)
 
-**bim-ai status:** 🟡 Partial — The TopBar now includes Undo (`data-testid="topbar-undo"`), Redo (`data-testid="topbar-redo"`), Section shortcut (`data-testid="topbar-section-shortcut"`, activates the `section` plan tool via `setPlanTool`), and Thin Lines toggle (`data-testid="topbar-thin-lines"`, wired to `thinLinesEnabled` store state + `toggleThinLines` action; overrides all `lineWeights` to 1 px in PlanCanvas when active). The 3D View button (F-112) also serves as a QAT equivalent. Missing: Aligned Dimension shortcut, Tag by Category shortcut, user-customisable pin/unpin of tools.
+**bim-ai status:** 🟡 Partial — The TopBar now includes Undo (`data-testid="topbar-undo"`), Redo (`data-testid="topbar-redo"`), Section shortcut (`data-testid="topbar-section-shortcut"`, activates the `section` plan tool via `setPlanTool`), Aligned Dimension shortcut (`data-testid="topbar-dimension-shortcut"`, activates the `dimension` plan tool), Tag by Category shortcut (`data-testid="topbar-tag-by-category-shortcut"`, activates the `tag` plan tool and places view-local tags on room/door/window clicks), and Thin Lines toggle (`data-testid="topbar-thin-lines"`, wired to `thinLinesEnabled` store state + `toggleThinLines` action; overrides all `lineWeights` to 1 px in PlanCanvas when active). The 3D View button (F-112) also serves as a QAT equivalent. Missing: user-customisable pin/unpin of tools.
 
 ---
 

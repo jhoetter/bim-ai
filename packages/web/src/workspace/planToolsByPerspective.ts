@@ -11,6 +11,7 @@ const ALL_TOOLS: readonly PlanTool[] = [
   'room_rectangle',
   'grid',
   'dimension',
+  'tag',
   'floor-sketch',
   'roof-sketch',
   'room-separation-sketch',
@@ -29,11 +30,11 @@ export function planToolsForPerspective(p: PerspectiveId): readonly PlanTool[] {
       return ALL_TOOLS.filter((x) => x !== 'door' && x !== 'window');
 
     case 'mep':
-      return ALL_TOOLS.filter((x) => ['select', 'grid', 'dimension', 'wall'].includes(x));
+      return ALL_TOOLS.filter((x) => ['select', 'grid', 'dimension', 'tag', 'wall'].includes(x));
 
     case 'construction':
       return ALL_TOOLS.filter((x) =>
-        ['select', 'wall', 'room', 'room_rectangle', 'grid', 'dimension'].includes(x),
+        ['select', 'wall', 'room', 'room_rectangle', 'grid', 'dimension', 'tag'].includes(x),
       );
 
     default: {

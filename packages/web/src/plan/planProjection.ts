@@ -21,6 +21,7 @@ export type PlanSemanticKind =
   | 'grid_line'
   | 'room_separation'
   | 'dimension'
+  | 'placed_tag'
   | 'ceiling'
   | 'railing'
   | 'column'
@@ -73,6 +74,10 @@ export function canonHiddenCategory(cat: string): PlanSemanticKind | undefined {
     'room-separations': 'room_separation',
     dimensions: 'dimension',
     dimension: 'dimension',
+    tags: 'placed_tag',
+    tag: 'placed_tag',
+    placed_tags: 'placed_tag',
+    placed_tag: 'placed_tag',
     ceilings: 'ceiling',
     ceiling: 'ceiling',
     railings: 'railing',
