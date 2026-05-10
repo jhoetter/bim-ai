@@ -926,9 +926,9 @@ export function Workspace(): JSX.Element {
     [setPlanTool],
   );
 
-  const handlePlaceCatalogFamily = useCallback(
+  const loadCatalogFamilyIntoProject = useCallback(
     async (placement: ExternalCatalogPlacement) => {
-      if (!modelId) return;
+      if (!modelId) return null;
       const safeFamId = placement.family.id.replace(/[^A-Za-z0-9_-]/g, '_');
       const newTypeId = `ft-${safeFamId}-${Date.now().toString(36)}`;
       const kind: FamilyLibraryPlaceKind =
@@ -958,11 +958,26 @@ export function Workspace(): JSX.Element {
         await applyCommandBundle(modelId, [cmd], { userId: 'component-tool' });
       } catch (err) {
         log.error('component-tool', 'applyCommandBundle failed', err);
-        return;
+        return null;
       }
-      handlePlaceFamilyType(kind, newTypeId);
+      return { kind, typeId: newTypeId };
     },
-    [handlePlaceFamilyType, modelId],
+    [modelId],
+  );
+
+  const handleLoadCatalogFamily = useCallback(
+    async (placement: ExternalCatalogPlacement) => {
+      await loadCatalogFamilyIntoProject(placement);
+    },
+    [loadCatalogFamilyIntoProject],
+  );
+
+  const handlePlaceCatalogFamily = useCallback(
+    async (placement: ExternalCatalogPlacement) => {
+      const loaded = await loadCatalogFamilyIntoProject(placement);
+      if (loaded) handlePlaceFamilyType(loaded.kind, loaded.typeId);
+    },
+    [handlePlaceFamilyType, loadCatalogFamilyIntoProject],
   );
 
   /* ── VIS-V3-06: right rail driven by task context ────────────────── */
@@ -998,6 +1013,7 @@ export function Workspace(): JSX.Element {
         elementsById={elementsById}
         onPlaceType={handlePlaceFamilyType}
         onPlaceCatalogFamily={handlePlaceCatalogFamily}
+        onLoadCatalogFamily={handleLoadCatalogFamily}
       />
       <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
       <VVDialog open={vvDialogOpen} onClose={closeVVDialog} />

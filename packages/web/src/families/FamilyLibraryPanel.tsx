@@ -99,6 +99,11 @@ export interface FamilyLibraryPanelProps {
    */
   onPlaceCatalogFamily?: (placement: ExternalCatalogPlacement) => void;
   /**
+   * F-060 — invoked when an external-catalog family should be loaded into the
+   * project without immediately entering placement mode.
+   */
+  onLoadCatalogFamily?: (placement: ExternalCatalogPlacement) => void;
+  /**
    * Optional client for the external-catalog API. Provided so tests can
    * inject a stub without spinning up the real fetch path. Defaults to a
    * fetch-backed implementation that hits `/api/family-catalogs`.
@@ -392,11 +397,13 @@ function ExternalCatalogsTab({
   catalogClient,
   needle,
   onPlace,
+  onLoad,
   onPanelClose,
 }: {
   catalogClient: ExternalCatalogClient;
   needle: string;
   onPlace: (placement: ExternalCatalogPlacement) => void;
+  onLoad: (placement: ExternalCatalogPlacement) => void;
   onPanelClose: () => void;
 }): JSX.Element {
   const [index, setIndex] = useState<ExternalCatalogIndexEntry[] | null>(null);
@@ -511,6 +518,15 @@ function ExternalCatalogsTab({
                       .filter((fam) => externalMatchesNeedle(payload, fam, needle))
                       .map((fam) => {
                         const def = fam.defaultTypes[0];
+                        const placement = def
+                          ? {
+                              catalogId: payload.catalogId,
+                              catalogName: payload.name,
+                              catalogVersion: payload.version,
+                              family: fam,
+                              defaultType: def,
+                            }
+                          : null;
                         return (
                           <li
                             key={fam.id}
@@ -525,24 +541,31 @@ function ExternalCatalogsTab({
                                 {fam.defaultTypes.length === 1 ? '' : 's'}
                               </span>
                             </div>
-                            {def ? (
-                              <button
-                                type="button"
-                                data-testid={`external-family-${fam.id}-place`}
-                                onClick={() => {
-                                  onPlace({
-                                    catalogId: payload.catalogId,
-                                    catalogName: payload.name,
-                                    catalogVersion: payload.version,
-                                    family: fam,
-                                    defaultType: def,
-                                  });
-                                  onPanelClose();
-                                }}
-                                className="rounded border border-border bg-surface-strong px-2 py-0.5 text-xs hover:bg-accent-soft"
-                              >
-                                Place
-                              </button>
+                            {placement ? (
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  data-testid={`external-family-${fam.id}-load`}
+                                  onClick={() => {
+                                    onLoad(placement);
+                                    onPanelClose();
+                                  }}
+                                  className="rounded border border-border bg-surface px-2 py-0.5 text-xs hover:bg-accent-soft"
+                                >
+                                  Load
+                                </button>
+                                <button
+                                  type="button"
+                                  data-testid={`external-family-${fam.id}-place`}
+                                  onClick={() => {
+                                    onPlace(placement);
+                                    onPanelClose();
+                                  }}
+                                  className="rounded border border-border bg-surface-strong px-2 py-0.5 text-xs hover:bg-accent-soft"
+                                >
+                                  Place
+                                </button>
+                              </div>
                             ) : null}
                           </li>
                         );
@@ -564,6 +587,7 @@ export function FamilyLibraryPanel({
   elementsById,
   onPlaceType,
   onPlaceCatalogFamily,
+  onLoadCatalogFamily,
   catalogClient = DEFAULT_CATALOG_CLIENT,
   initialTab = 'in-project',
 }: FamilyLibraryPanelProps): JSX.Element | null {
@@ -797,6 +821,7 @@ export function FamilyLibraryPanel({
               catalogClient={catalogClient}
               needle={needle}
               onPlace={(placement) => onPlaceCatalogFamily?.(placement)}
+              onLoad={(placement) => onLoadCatalogFamily?.(placement)}
               onPanelClose={onClose}
             />
           )}

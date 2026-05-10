@@ -201,6 +201,38 @@ describe('<FamilyLibraryPanel /> — FAM-08 External Catalogs tab', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('Load on an external family fires onLoadCatalogFamily without placing', async () => {
+    const onLoadCatalogFamily = vi.fn<(_p: ExternalCatalogPlacement) => void>();
+    const onPlaceCatalogFamily = vi.fn<(_p: ExternalCatalogPlacement) => void>();
+    const onClose = vi.fn();
+    const { getByTestId } = render(
+      <FamilyLibraryPanel
+        open
+        onClose={onClose}
+        elementsById={{}}
+        onPlaceType={() => undefined}
+        catalogClient={makeClient()}
+        initialTab="external"
+        onLoadCatalogFamily={onLoadCatalogFamily}
+        onPlaceCatalogFamily={onPlaceCatalogFamily}
+      />,
+    );
+    await waitFor(() => getByTestId('external-catalog-living-room-furniture'));
+    await act(async () => {
+      fireEvent.click(getByTestId('external-catalog-toggle-living-room-furniture'));
+    });
+    await waitFor(() => getByTestId('external-family-catalog:living-room:sofa-3-seat-load'));
+    fireEvent.click(getByTestId('external-family-catalog:living-room:sofa-3-seat-load'));
+
+    expect(onLoadCatalogFamily).toHaveBeenCalledTimes(1);
+    expect(onPlaceCatalogFamily).not.toHaveBeenCalled();
+    const placement = onLoadCatalogFamily.mock.calls[0]![0]!;
+    expect(placement.catalogId).toBe('living-room-furniture');
+    expect(placement.family.id).toBe('catalog:living-room:sofa-3-seat');
+    expect(placement.defaultType.id).toBe('catalog:living-room:sofa-3-seat:standard');
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it('In Project tab shows catalogSource provenance badge for catalog-loaded family_type', () => {
     const ftFromCatalog: Extract<Element, { kind: 'family_type' }> = {
       kind: 'family_type',

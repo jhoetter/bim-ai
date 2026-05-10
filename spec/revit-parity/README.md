@@ -106,7 +106,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-057 | Material Browser                                      | Family Editor  | ❌            | No visual material browser                                                                                                                                                                                                                                                                            |
 | F-058 | Asset Browser (Autodesk material library)             | Family Editor  | ❌            |                                                                                                                                                                                                                                                                                                       |
 | F-059 | Family Element Visibility Settings                    | Family Editor  | 🟡            | Family geometry supports detail-level visibility and Yes/No visibility bindings in editor/resolver; missing full Revit view-type visibility dialog                                                                                                                                                    |
-| F-060 | Load Family Into Project                              | Family Editor  | ❌            |                                                                                                                                                                                                                                                                                                       |
+| F-060 | Load Family Into Project                              | Family Editor  | 🟡            | External Catalogs tab exposes separate Load and Place actions; Load persists a catalog-backed `family_type` with `catalogSource` provenance without entering placement. Missing true Family Editor `.rfa` save/load and overwrite dialogs                                                             |
 | F-061 | Wall-hosted family placement (door/window)            | Family Editor  | 🟡            | Door/window elements are wall-hosted, carry familyTypeId/overrideParams, and wall openings/cutters exist; missing generic loaded-family placement workflow                                                                                                                                            |
 | F-062 | Type Properties – Duplicate                           | Family Editor  | ❌            |                                                                                                                                                                                                                                                                                                       |
 | F-063 | Nested Families                                       | Nested Fam.    | 🟡            | Family editor supports nested family instances, parameter/formula bindings, drag/drop from loaded families, and resolver recursion/cycle detection; missing project persistence/reload UX                                                                                                             |
@@ -179,8 +179,8 @@ _Last audited: 2026-05-09 against codebase at commit `docs/tracker-sync-wave-11`
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
 | ✅ Fully available     | 57      | 47%        |
-| 🟡 Partially available | 34      | 28%        |
-| ❌ Not available       | 29      | 24%        |
+| 🟡 Partially available | 35      | 29%        |
+| ❌ Not available       | 28      | 23%        |
 | **Total**              | **120** | **100%**   |
 
 ---
