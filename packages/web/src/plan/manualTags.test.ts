@@ -37,9 +37,7 @@ const elementsById: Record<string, Element> = {
 
 describe('manual Tag by Category helpers', () => {
   it('emits a manual placeTag command for taggable hosts', () => {
-    expect(
-      placeTagByCategoryCommand(elementsById, 'pv', 'room', { xMm: 250, yMm: 500 }),
-    ).toEqual({
+    expect(placeTagByCategoryCommand(elementsById, 'pv', 'room', { xMm: 250, yMm: 500 })).toEqual({
       type: 'placeTag',
       hostElementId: 'room',
       hostViewId: 'pv',
