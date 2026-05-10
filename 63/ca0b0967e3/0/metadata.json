@@ -1,0 +1,57 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "63ca0b0967e3",
+  "session_id": "019e11f8-3b0a-7561-a2c0-7db9170ff433",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T13:15:48.55176Z",
+  "branch": "revit-parity-dimension-text-grips",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "c8ebcbb7d870",
+  "token_usage": {
+    "input_tokens": 633819,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 5323648,
+    "output_tokens": 28081,
+    "api_call_count": 58
+  },
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 414,
+      "user_lines_removed": 47,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/commands.py": 2,
+        "app/bim_ai/engine_dispatch_documentation.py": 2,
+        "app/bim_ai/schedule_derivation.py": 30,
+        "app/tests/test_schedule_opening_computed_fields.py": 47,
+        "packages/cli/lib/one-family-home-commands.mjs": 109,
+        "packages/web/src/workspace/ModeShells.test.tsx": 47,
+        "packages/web/src/workspace/ModeShells.tsx": 167,
+        "packages/web/src/workspace/Workspace.tsx": 3,
+        "packages/web/src/workspace/viewport/CanvasMount.tsx": 7
+      },
+      "user_removed_per_file": {
+        "app/bim_ai/schedule_derivation.py": 1,
+        "packages/cli/lib/one-family-home-commands.mjs": 21,
+        "packages/web/src/workspace/ModeShells.test.tsx": 1,
+        "packages/web/src/workspace/ModeShells.tsx": 23,
+        "packages/web/src/workspace/viewport/CanvasMount.tsx": 1
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 414,
+      "agent_lines_removed": 47
+    }
+  ]
+}

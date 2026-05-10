@@ -1,0 +1,13 @@
+i accidentally stopped the last conversation, can you check in entire.io history what we wrote / did ? or in the commit? can you check if the ux-revamp.md is fully implemented and if the CI/CD is working? (GitHub)
+
+---
+
+but also fully merged to main?
+
+---
+
+[Image #1]can you see why the schedules aren't generating?
+
+---
+
+i am not sure it really fully implements the ux-revamp.md , e.g. i still have weird displays of e.g. 3d axis: [Image #1] for like the display of wireframe vs rendered and such; also i have zero hifi icons, right? and still overall layouting (left sidebar in collapsed, topbar etc) isn't perfect yet - can you please investigate if really merged?
