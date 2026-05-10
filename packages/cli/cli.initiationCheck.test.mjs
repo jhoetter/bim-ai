@@ -193,6 +193,9 @@ test('initiation-check blocks a critical feature with no capability route', asyn
   assert.equal(coverage.summary.errorCount, 1);
   assert.equal(coverage.features[0].readiness, 'blocked');
   assert.equal(coverage.issues[0].code, 'capability_missing');
+  const gaps = JSON.parse(await fs.readFile(path.join(outDir, 'capability-gaps.json'), 'utf8'));
+  assert.equal(gaps.taskCount, 1);
+  assert.equal(gaps.tasks[0].featureKind, 'unsupported_magic_roof');
 });
 
 test('initiation-run captures live advisor and evidence artifacts without screenshots', async () => {

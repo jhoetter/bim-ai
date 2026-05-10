@@ -277,6 +277,43 @@ export function buildCapabilityCoverage(ir, matrix, options = {}) {
   };
 }
 
+export function buildCapabilityGapTasks(coverage) {
+  const tasks = [];
+  for (const feature of coverage.features ?? []) {
+    const gapIssues = (coverage.issues ?? []).filter((item) => (
+      ['capability_missing', 'critical_capability_gap', 'feature_view_missing'].includes(item.code) &&
+      String(item.path ?? '').includes(feature.featureId)
+    ));
+    if (feature.readiness !== 'blocked' && gapIssues.length === 0) continue;
+    const matchedGaps = (feature.capabilityMatches ?? []).filter(
+      (capability) => capability.status === 'gap',
+    );
+    tasks.push({
+      id: `skb-gap-${feature.featureId}`,
+      featureId: feature.featureId,
+      featureKind: feature.kind,
+      visualPriority: feature.visualPriority,
+      readiness: feature.readiness,
+      reason: gapIssues.length
+        ? gapIssues.map((item) => item.message)
+        : ['Feature is blocked by capability coverage.'],
+      capabilityMatches: feature.capabilityMatches ?? [],
+      missingViews: feature.missingViews ?? [],
+      requiredAction: matchedGaps.length
+        ? 'Implement or repair the listed command/render/advisor capability before modelling this feature.'
+        : 'Add a capability-matrix entry or required saved view before authoring this feature.',
+      fallbackPolicy:
+        'Do not fake this feature with decorative masses, hidden categories, or metadata-only geometry.',
+    });
+  }
+  return {
+    schemaVersion: 'sketch-to-bim-capability-gaps.v0',
+    generatedAt: new Date().toISOString(),
+    taskCount: tasks.length,
+    tasks,
+  };
+}
+
 function uniqueStrings(values) {
   return [...new Set(values.filter((value) => typeof value === 'string' && value.trim() !== ''))];
 }
@@ -451,6 +488,17 @@ export function formatStatusMarkdown(coverage, checklist, liveAdvisor = null, ev
     }
   }
   lines.push('');
+  lines.push('## Capability Gaps');
+  lines.push('');
+  if (!evidenceRun?.capabilityGaps || evidenceRun.capabilityGaps.taskCount === 0) {
+    lines.push('No blocked critical capability gaps were generated.');
+  } else {
+    lines.push(`Generated ${evidenceRun.capabilityGaps.taskCount} capability-gap task(s).`);
+    for (const task of evidenceRun.capabilityGaps.tasks) {
+      lines.push(`- ${task.id}: ${task.featureKind} (${task.readiness})`);
+    }
+  }
+  lines.push('');
   return `${lines.join('\n')}\n`;
 }
 
@@ -466,6 +514,7 @@ export async function writeInitiationPacket({
   evidenceRun = null,
 }) {
   const coverage = buildCapabilityCoverage(ir, matrix, { irPath, capabilityMatrixPath, modelId });
+  const capabilityGaps = buildCapabilityGapTasks(coverage);
   const checklist = screenshotManifest
     ? applyScreenshotManifestToChecklist(buildVisualChecklist(ir, coverage), screenshotManifest)
     : buildVisualChecklist(ir, coverage);
@@ -482,7 +531,12 @@ export async function writeInitiationPacket({
   await fs.writeFile(files.checklist, `${JSON.stringify(checklist, null, 2)}\n`, 'utf8');
   await fs.writeFile(
     files.status,
-    formatStatusMarkdown(coverage, checklist, liveAdvisor, evidenceRun),
+    formatStatusMarkdown(
+      coverage,
+      checklist,
+      liveAdvisor,
+      { ...(evidenceRun ?? {}), capabilityGaps },
+    ),
     'utf8',
   );
   if (liveAdvisor) {
@@ -492,6 +546,10 @@ export async function writeInitiationPacket({
   if (screenshotManifest) {
     files.screenshotManifest = path.join(outDir, 'screenshot-manifest.json');
     await fs.writeFile(files.screenshotManifest, `${JSON.stringify(screenshotManifest, null, 2)}\n`, 'utf8');
+  }
+  if (capabilityGaps.taskCount > 0) {
+    files.capabilityGaps = path.join(outDir, 'capability-gaps.json');
+    await fs.writeFile(files.capabilityGaps, `${JSON.stringify(capabilityGaps, null, 2)}\n`, 'utf8');
   }
 
   return {

@@ -397,7 +397,7 @@ Reason:
 | SBM-08 | open | Advisor expansion for visual/BIM usability | Add rules for roof-wall seams, mass placeholders in final models, stair clearance, unresolved terrace access, and envelope gaps. |
 | SBM-09 | open | Plan/camera diagnostic fit | Plan diagnostic screenshots auto-fit full floor and upper/roof levels instead of relying on current zoom. |
 | SBM-10 | open | Golden seed regression suite | Seed examples carry source image, IR, bundle, advisor JSON, screenshots, and scored acceptance packets. |
-| SBM-11 | open | Capability-gap escalation | If a critical feature cannot render faithfully, the workflow creates a tracked engine/render task instead of faking geometry. |
+| SBM-11 | done | Capability-gap escalation | `capability-gaps.json` is generated when critical features are blocked by missing/gap capabilities or missing required views; the status packet forbids fake decorative fallback geometry. |
 | SBM-12 | open | User-facing initiation modes | User can choose massing-only, concept BIM, project-initiation BIM, or documentation-ready quality. |
 
 ---
