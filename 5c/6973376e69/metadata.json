@@ -15,6 +15,19 @@
       "transcript": "/5c/6973376e69/0/full.jsonl",
       "content_hash": "/5c/6973376e69/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/5c/6973376e69/1/metadata.json",
+      "transcript": "/5c/6973376e69/1/full.jsonl",
+      "content_hash": "/5c/6973376e69/1/content_hash.txt",
+      "prompt": ""
     }
-  ]
+  ],
+  "token_usage": {
+    "input_tokens": 25823,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2364672,
+    "output_tokens": 1647,
+    "api_call_count": 22
+  }
 }
