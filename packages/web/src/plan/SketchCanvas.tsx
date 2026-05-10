@@ -144,6 +144,7 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [activeIssueIndex, setActiveIssueIndex] = useState(0);
   const overlayRef = useRef<HTMLDivElement | null>(null);
+  const sessionRef = useRef<SketchSessionWire | null>(null);
   // Tick to force re-render on pointer move so SVG vertices reflect pan / zoom.
   const [, setTick] = useState(0);
 
@@ -156,6 +157,7 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
           ? await getSketchSession(initialSessionId)
           : await openSketchSession(modelId, levelId, { elementKind });
         if (cancelled) return;
+        sessionRef.current = resp.session;
         setSession(resp.session);
         setValidation(resp.validation);
       } catch (err) {
@@ -171,16 +173,18 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
   }, [modelId, levelId, elementKind, initialSessionId, onCancelled]);
 
   const handleCancel = useCallback(async () => {
-    if (!session) {
+    const activeSession = sessionRef.current ?? session;
+    if (!activeSession) {
       onCancelled();
       return;
     }
     try {
       setBusy(true);
-      await cancelSketchSession(session.sessionId);
+      await cancelSketchSession(activeSession.sessionId);
     } catch {
       // Cancel failures shouldn't block the UX; we drop the overlay regardless.
     } finally {
+      sessionRef.current = null;
       setBusy(false);
       onCancelled();
     }
