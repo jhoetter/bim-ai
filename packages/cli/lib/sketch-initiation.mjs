@@ -1,7 +1,43 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import { applyVisualGateToChecklist } from './png-visual-gate.mjs';
+
 export const DEFAULT_CAPABILITY_MATRIX_PATH = 'spec/sketch-to-bim-capability-matrix.json';
+export const INITIATION_MODES = {
+  massing_only: {
+    label: 'Massing only',
+    description: 'Envelope/silhouette study. Rooms and documentation are optional.',
+    requireProgramme: false,
+    requireDiagnosticView: false,
+    failOnAdvisorWarning: false,
+    minRequiredViews: 1,
+  },
+  concept_bim: {
+    label: 'Concept BIM',
+    description: 'Architectural concept with primary BIM objects and basic usability evidence.',
+    requireProgramme: false,
+    requireDiagnosticView: true,
+    failOnAdvisorWarning: false,
+    minRequiredViews: 2,
+  },
+  project_initiation_bim: {
+    label: 'Project-initiation BIM',
+    description: 'Usable seed model with rooms, access, advisor feedback, screenshots, and evidence packet.',
+    requireProgramme: true,
+    requireDiagnosticView: true,
+    failOnAdvisorWarning: true,
+    minRequiredViews: 3,
+  },
+  documentation_ready: {
+    label: 'Documentation ready',
+    description: 'Project-initiation BIM plus plans/sheets/schedules that can be handed off directly.',
+    requireProgramme: true,
+    requireDiagnosticView: true,
+    failOnAdvisorWarning: true,
+    minRequiredViews: 4,
+  },
+};
 
 const PRIORITIES = new Set(['critical', 'high', 'medium', 'low']);
 const CAPABILITY_STATUSES = new Set(['supported', 'partial', 'gap']);
@@ -51,6 +87,15 @@ export function validateSketchIr(ir) {
   }
   requireString(issues, ir, 'projectType', '$');
   requireString(issues, ir, 'qualityTarget', '$');
+  const mode = INITIATION_MODES[ir.qualityTarget];
+  if (typeof ir.qualityTarget === 'string' && !mode) {
+    issues.push(issue(
+      'error',
+      'invalid_quality_target',
+      '$.qualityTarget',
+      `qualityTarget must be one of ${Object.keys(INITIATION_MODES).join(', ')}.`,
+    ));
+  }
 
   if (!isObject(ir.sourceInputs)) {
     issues.push(issue('error', 'missing_object', '$.sourceInputs', 'sourceInputs must be an object.'));
@@ -87,7 +132,9 @@ export function validateSketchIr(ir) {
     }
   });
 
-  const requiredViews = requireArray(issues, ir, 'requiredViews', '$', { min: 1 });
+  const requiredViews = requireArray(issues, ir, 'requiredViews', '$', {
+    min: mode?.minRequiredViews ?? 1,
+  });
   requiredViews.forEach((view, index) => {
     const p = `$.requiredViews[${index}]`;
     if (!isObject(view)) {
@@ -115,7 +162,26 @@ export function validateSketchIr(ir) {
   });
 
   if (!Array.isArray(ir.programme) || ir.programme.length === 0) {
-    issues.push(issue('warning', 'programme_missing', '$.programme', 'No programme entries were supplied; room and usability checks will be weaker.'));
+    issues.push(issue(
+      mode?.requireProgramme ? 'error' : 'warning',
+      'programme_missing',
+      '$.programme',
+      'No programme entries were supplied; room and usability checks will be weaker.',
+    ));
+  }
+
+  if (mode?.requireDiagnosticView && Array.isArray(ir.requiredViews)) {
+    const hasDiagnostic = ir.requiredViews.some((view) => (
+      ['diagnostic', 'plan', 'floor_plan', 'section'].includes(view?.kind)
+    ));
+    if (!hasDiagnostic) {
+      issues.push(issue(
+        ir.qualityTarget === 'documentation_ready' ? 'error' : 'warning',
+        'diagnostic_view_missing',
+        '$.requiredViews',
+        `${mode.label} should include a diagnostic/plan/section view so topology defects are visible.`,
+      ));
+    }
   }
 
   return issues;
@@ -402,6 +468,119 @@ export function applyScreenshotManifestToChecklist(checklist, screenshotManifest
   };
 }
 
+export function buildAcceptanceGateReport({
+  ir,
+  coverage,
+  liveAdvisor = null,
+  screenshotManifest = null,
+  visualGateReport = null,
+  evidenceRun = null,
+} = {}) {
+  const mode = INITIATION_MODES[ir?.qualityTarget] ?? INITIATION_MODES.project_initiation_bim;
+  const preflightOnly = evidenceRun?.acceptanceScope === 'preflight';
+  const blockers = [];
+  const tolerances = [];
+
+  if ((coverage?.summary?.errorCount ?? 0) > 0) {
+    blockers.push({
+      code: 'coverage_errors',
+      severity: 'error',
+      message: `${coverage.summary.errorCount} IR/capability coverage error(s) remain.`,
+    });
+  }
+  if ((coverage?.summary?.blockedCount ?? 0) > 0) {
+    blockers.push({
+      code: 'blocked_features',
+      severity: 'error',
+      message: `${coverage.summary.blockedCount} feature(s) are blocked by missing capability coverage.`,
+    });
+  }
+
+  const warningCount = liveAdvisor?.warning?.total ?? 0;
+  if (mode.failOnAdvisorWarning && warningCount > 0) {
+    blockers.push({
+      code: 'advisor_warning_findings',
+      severity: 'warning',
+      message: `${warningCount} live advisor warning finding(s) remain.`,
+      groups: liveAdvisor.warning.groups ?? [],
+    });
+  } else if (warningCount > 0) {
+    tolerances.push({
+      code: 'advisor_warning_findings',
+      message: `${warningCount} live advisor warning finding(s) require explicit review for this mode.`,
+    });
+  }
+
+  if (!preflightOnly && mode.minRequiredViews > 0 && !screenshotManifest) {
+    blockers.push({
+      code: 'screenshots_missing',
+      severity: 'error',
+      message: 'No screenshot manifest was captured for the initiation packet.',
+    });
+  }
+  if (!preflightOnly && screenshotManifest && Array.isArray(ir?.requiredViews)) {
+    const captured = new Set((screenshotManifest.captures ?? []).map((capture) => capture.viewId));
+    const missing = ir.requiredViews
+      .filter((view) => ['3d', 'elevation', 'diagnostic', 'plan', 'floor_plan', 'section'].includes(view?.kind))
+      .map((view) => view.id)
+      .filter((viewId) => !captured.has(viewId));
+    if (missing.length) {
+      blockers.push({
+        code: 'required_screenshots_missing',
+        severity: 'error',
+        message: `Required screenshot view(s) were not captured: ${missing.join(', ')}.`,
+      });
+    }
+  }
+
+  const modelStats = evidenceRun?.modelStats ?? null;
+  const massCount = modelStats?.countsByKind?.mass ?? 0;
+  if (ir?.qualityTarget !== 'massing_only' && massCount > 0) {
+    blockers.push({
+      code: 'final_mass_placeholder',
+      severity: 'error',
+      message: `${massCount} mass placeholder element(s) remain in a final BIM initiation model.`,
+    });
+  }
+
+  if ((visualGateReport?.summary?.failCount ?? 0) > 0) {
+    blockers.push({
+      code: 'visual_gate_failures',
+      severity: 'error',
+      message: `${visualGateReport.summary.failCount} screenshot view(s) failed visual-gate scoring.`,
+      captures: (visualGateReport.captures ?? [])
+        .filter((capture) => capture.status === 'fail')
+        .map((capture) => ({
+          viewId: capture.viewId,
+          blockers: capture.blockers ?? [],
+          screenshotPath: capture.screenshotPath ?? null,
+        })),
+    });
+  }
+  if ((visualGateReport?.summary?.needsReviewCount ?? 0) > 0) {
+    tolerances.push({
+      code: 'visual_gate_needs_human_review',
+      message: `${visualGateReport.summary.needsReviewCount} screenshot view(s) have no target comparison and need human review.`,
+    });
+  }
+
+  return {
+    schemaVersion: 'sketch-to-bim-acceptance-gates.v0',
+    generatedAt: new Date().toISOString(),
+    qualityTarget: ir?.qualityTarget ?? null,
+    ok: blockers.length === 0,
+    summary: {
+      blockerCount: blockers.length,
+      toleranceCount: tolerances.length,
+      advisorWarningCount: warningCount,
+      visualFailCount: visualGateReport?.summary?.failCount ?? 0,
+      visualNeedsReviewCount: visualGateReport?.summary?.needsReviewCount ?? 0,
+    },
+    blockers,
+    tolerances,
+  };
+}
+
 function markdownTable(rows) {
   if (!rows.length) return '_None._\n';
   return rows.join('\n') + '\n';
@@ -488,6 +667,24 @@ export function formatStatusMarkdown(coverage, checklist, liveAdvisor = null, ev
     }
   }
   lines.push('');
+  lines.push('## Visual Gate');
+  lines.push('');
+  if (!evidenceRun?.visualGateReport) {
+    lines.push('Not scored by this packet.');
+  } else {
+    const summary = evidenceRun.visualGateReport.summary ?? {};
+    lines.push(
+      `Captured views scored: ${summary.captureCount ?? 0}; pass=${summary.passCount ?? 0}; needs_review=${summary.needsReviewCount ?? 0}; fail=${summary.failCount ?? 0}.`,
+    );
+    for (const capture of evidenceRun.visualGateReport.captures ?? []) {
+      const similarity = capture.comparison
+        ? ` similarity=${capture.comparison.visualSimilarity.toFixed(3)}`
+        : '';
+      const blockers = capture.blockers?.length ? ` blockers=${capture.blockers.join(',')}` : '';
+      lines.push(`- ${capture.viewId}: ${capture.status}${similarity}${blockers}`);
+    }
+  }
+  lines.push('');
   lines.push('## Capability Gaps');
   lines.push('');
   if (!evidenceRun?.capabilityGaps || evidenceRun.capabilityGaps.taskCount === 0) {
@@ -496,6 +693,21 @@ export function formatStatusMarkdown(coverage, checklist, liveAdvisor = null, ev
     lines.push(`Generated ${evidenceRun.capabilityGaps.taskCount} capability-gap task(s).`);
     for (const task of evidenceRun.capabilityGaps.tasks) {
       lines.push(`- ${task.id}: ${task.featureKind} (${task.readiness})`);
+    }
+  }
+  lines.push('');
+  lines.push('## Acceptance Gates');
+  lines.push('');
+  if (!evidenceRun?.acceptanceGateReport) {
+    lines.push('Not evaluated by this packet.');
+  } else {
+    const report = evidenceRun.acceptanceGateReport;
+    lines.push(`Result: ${report.ok ? 'pass' : 'blocked'} (${report.summary.blockerCount} blocker(s), ${report.summary.toleranceCount} tolerance(s)).`);
+    for (const blocker of report.blockers ?? []) {
+      lines.push(`- \`${blocker.code}\`: ${blocker.message}`);
+    }
+    for (const tolerance of report.tolerances ?? []) {
+      lines.push(`- tolerance \`${tolerance.code}\`: ${tolerance.message}`);
     }
   }
   lines.push('');
@@ -511,13 +723,25 @@ export async function writeInitiationPacket({
   modelId = null,
   liveAdvisor = null,
   screenshotManifest = null,
+  visualGateReport = null,
   evidenceRun = null,
 }) {
   const coverage = buildCapabilityCoverage(ir, matrix, { irPath, capabilityMatrixPath, modelId });
   const capabilityGaps = buildCapabilityGapTasks(coverage);
-  const checklist = screenshotManifest
+  const screenshotChecklist = screenshotManifest
     ? applyScreenshotManifestToChecklist(buildVisualChecklist(ir, coverage), screenshotManifest)
     : buildVisualChecklist(ir, coverage);
+  const checklist = visualGateReport
+    ? applyVisualGateToChecklist(screenshotChecklist, visualGateReport)
+    : screenshotChecklist;
+  const acceptanceGateReport = buildAcceptanceGateReport({
+    ir,
+    coverage,
+    liveAdvisor,
+    screenshotManifest,
+    visualGateReport,
+    evidenceRun,
+  });
   await fs.mkdir(outDir, { recursive: true });
 
   const files = {
@@ -535,7 +759,7 @@ export async function writeInitiationPacket({
       coverage,
       checklist,
       liveAdvisor,
-      { ...(evidenceRun ?? {}), capabilityGaps },
+      { ...(evidenceRun ?? {}), capabilityGaps, visualGateReport, acceptanceGateReport },
     ),
     'utf8',
   );
@@ -547,6 +771,12 @@ export async function writeInitiationPacket({
     files.screenshotManifest = path.join(outDir, 'screenshot-manifest.json');
     await fs.writeFile(files.screenshotManifest, `${JSON.stringify(screenshotManifest, null, 2)}\n`, 'utf8');
   }
+  if (visualGateReport) {
+    files.visualGate = path.join(outDir, 'visual-gate.json');
+    await fs.writeFile(files.visualGate, `${JSON.stringify(visualGateReport, null, 2)}\n`, 'utf8');
+  }
+  files.acceptanceGates = path.join(outDir, 'acceptance-gates.json');
+  await fs.writeFile(files.acceptanceGates, `${JSON.stringify(acceptanceGateReport, null, 2)}\n`, 'utf8');
   if (capabilityGaps.taskCount > 0) {
     files.capabilityGaps = path.join(outDir, 'capability-gaps.json');
     await fs.writeFile(files.capabilityGaps, `${JSON.stringify(capabilityGaps, null, 2)}\n`, 'utf8');
@@ -557,5 +787,6 @@ export async function writeInitiationPacket({
     outDir,
     files,
     summary: coverage.summary,
+    acceptance: acceptanceGateReport,
   };
 }

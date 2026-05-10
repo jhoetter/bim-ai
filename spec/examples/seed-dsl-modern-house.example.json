@@ -1,0 +1,133 @@
+{
+  "schemaVersion": "seed-dsl.v0",
+  "id": "modern-house-with-terrace-v0",
+  "intent": "Small modern two-storey house seed with upper wrapper, roof terrace opening, rooms, and saved evidence views.",
+  "levels": [
+    { "id": "lvl-ground", "name": "Ground Floor", "elevationMm": 0 },
+    { "id": "lvl-upper", "name": "First Floor", "elevationMm": 3000 }
+  ],
+  "types": {
+    "wallTypes": [
+      {
+        "id": "wt-white-wrapper",
+        "name": "Matte white wrapper",
+        "layers": [
+          { "thicknessMm": 170, "function": "structure", "materialKey": "concrete" },
+          { "thicknessMm": 80, "function": "finish", "materialKey": "white_render" }
+        ]
+      },
+      {
+        "id": "wt-internal",
+        "name": "Internal partition",
+        "layers": [{ "thicknessMm": 120, "function": "structure", "materialKey": "gypsum_board" }]
+      }
+    ]
+  },
+  "volumes": [
+    {
+      "id": "ground-base",
+      "name": "Ground cladded base",
+      "levelId": "lvl-ground",
+      "wallHeightMm": 3000,
+      "wallTypeId": "wt-white-wrapper",
+      "materialKey": "cladding_warm_wood",
+      "footprintMm": [
+        { "xMm": 1000, "yMm": 0 },
+        { "xMm": 7000, "yMm": 0 },
+        { "xMm": 7000, "yMm": 8200 },
+        { "xMm": 1000, "yMm": 8200 }
+      ]
+    },
+    {
+      "id": "upper-wrapper",
+      "name": "Upper white wrapper",
+      "levelId": "lvl-upper",
+      "wallHeightMm": 3200,
+      "wallTypeId": "wt-white-wrapper",
+      "materialKey": "white_render",
+      "footprintMm": [
+        { "xMm": 0, "yMm": -450 },
+        { "xMm": 8000, "yMm": -450 },
+        { "xMm": 8000, "yMm": 8200 },
+        { "xMm": 0, "yMm": 8200 }
+      ]
+    }
+  ],
+  "roofs": [
+    {
+      "id": "roof-main",
+      "name": "Asymmetric gable roof with occupied terrace cutout",
+      "referenceLevelId": "lvl-upper",
+      "roofGeometryMode": "asymmetric_gable",
+      "ridgeOffsetTransverseMm": 450,
+      "eaveHeightLeftMm": 2500,
+      "eaveHeightRightMm": 2350,
+      "slopeDeg": 23,
+      "overhangMm": 0,
+      "materialKey": "white_render",
+      "footprintMm": [
+        { "xMm": 0, "yMm": -450 },
+        { "xMm": 8000, "yMm": -450 },
+        { "xMm": 8000, "yMm": 8200 },
+        { "xMm": 0, "yMm": 8200 }
+      ],
+      "openings": [
+        {
+          "id": "roof-terrace-opening",
+          "name": "Embedded roof terrace void",
+          "boundaryMm": [
+            { "xMm": 5400, "yMm": 3300 },
+            { "xMm": 8000, "yMm": 3300 },
+            { "xMm": 8000, "yMm": 6500 },
+            { "xMm": 5400, "yMm": 6500 }
+          ]
+        }
+      ]
+    }
+  ],
+  "rooms": [
+    {
+      "id": "room-living",
+      "name": "Living / Dining",
+      "levelId": "lvl-ground",
+      "programmeCode": "living",
+      "outlineMm": [
+        { "xMm": 3600, "yMm": 700 },
+        { "xMm": 6500, "yMm": 700 },
+        { "xMm": 6500, "yMm": 5200 },
+        { "xMm": 3600, "yMm": 5200 }
+      ]
+    },
+    {
+      "id": "room-bedroom",
+      "name": "Bedroom",
+      "levelId": "lvl-upper",
+      "programmeCode": "bed",
+      "outlineMm": [
+        { "xMm": 600, "yMm": 1600 },
+        { "xMm": 3300, "yMm": 1600 },
+        { "xMm": 3300, "yMm": 4300 },
+        { "xMm": 600, "yMm": 4300 }
+      ]
+    }
+  ],
+  "viewpoints": [
+    {
+      "id": "main-front-left",
+      "name": "Main front-left evidence view",
+      "camera": {
+        "position": { "xMm": -8500, "yMm": -10500, "zMm": 8200 },
+        "target": { "xMm": 4100, "yMm": 3600, "zMm": 3100 },
+        "up": { "xMm": 0, "yMm": 0, "zMm": 1 }
+      }
+    }
+  ],
+  "assumptions": [
+    {
+      "key": "scale_from_image",
+      "value": "overall depth estimated around 8.2 m",
+      "confidence": 0.6,
+      "source": "spec/target-house-seed.md"
+    }
+  ]
+}

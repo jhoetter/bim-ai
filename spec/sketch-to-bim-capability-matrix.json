@@ -198,6 +198,197 @@
         "status.md"
       ],
       "fallback": "Stop acceptance until the missing view or advisor artifact is produced."
+    },
+    {
+      "id": "cap.primary_massing_envelope",
+      "title": "Primary massing and envelope proportions",
+      "featureKinds": [
+        "basic_massing_envelope",
+        "primary_volumes",
+        "cantilevered_upper_volume",
+        "setback_volume"
+      ],
+      "status": "supported",
+      "commandSurface": ["createLevel", "createFloor", "createWall", "createRoof", "saveViewpoint"],
+      "rendererSurface": ["floor, wall, and roof solids render as opaque architectural elements"],
+      "advisorCoverage": [
+        "mass placeholders are reported by acceptance-gate checks",
+        "visual-gate screenshots prove silhouette"
+      ],
+      "knownFailureModes": [
+        "final model is a generic box",
+        "upper/lower proportions read as toy scale",
+        "study mass remains visible as finished architecture"
+      ],
+      "requiredEvidence": [
+        "main 3D screenshot",
+        "side/rear screenshot proving volume hierarchy",
+        "model stats with no final mass placeholders"
+      ],
+      "fallback": "Keep only explicit BIM elements in final envelope; use mass geometry solely for discarded studies."
+    },
+    {
+      "id": "cap.standard_roof_forms",
+      "title": "Standard roof forms",
+      "featureKinds": [
+        "asymmetric_gable_roof",
+        "gable_roof",
+        "hip_roof",
+        "flat_roof_parapet",
+        "roof_overhang"
+      ],
+      "status": "partial",
+      "commandSurface": ["createRoof", "upsertRoofType", "attachWallTopToRoof"],
+      "rendererSurface": [
+        "roof mesh supports mass_box, gable, asymmetric_gable, hip, and flat/parapet intent where implemented"
+      ],
+      "advisorCoverage": [
+        "roof type/layer info",
+        "roof-wall host warnings",
+        "visual gate still required for special profiles"
+      ],
+      "knownFailureModes": [
+        "requested roof kind falls back to mass_box",
+        "roof overhang hides wall-top defects",
+        "parapet or fascia reads as a floating strip"
+      ],
+      "requiredEvidence": [
+        "roof/high screenshot",
+        "front and side screenshots",
+        "visual-gate report for target/reference comparison where available"
+      ],
+      "fallback": "Escalate unusual roof geometry to a capability task before using approximate decorative sweeps."
+    },
+    {
+      "id": "cap.opening_and_glazing_rhythm",
+      "title": "Openings and glazing rhythm",
+      "featureKinds": [
+        "facade_bay_rhythm",
+        "large_glazing",
+        "portrait_windows",
+        "sliding_door",
+        "corner_glazing"
+      ],
+      "status": "supported",
+      "commandSurface": [
+        "insertDoorOnWall",
+        "insertWindowOnWall",
+        "upsertFamilyType",
+        "createWallOpening"
+      ],
+      "rendererSurface": ["hosted openings and family instances must be visible in plan and 3D"],
+      "advisorCoverage": ["opening host warnings", "room_no_door for access-critical spaces"],
+      "knownFailureModes": [
+        "windows are hosted on the wrong wall face",
+        "openings do not cut the host wall",
+        "facade rhythm differs materially from sketch"
+      ],
+      "requiredEvidence": [
+        "front elevation screenshot",
+        "door/window schedule",
+        "advisor warning JSON with no opening-host blockers"
+      ],
+      "fallback": "Model rhythm with hosted openings first; decorative mullions are secondary and cannot substitute for cuts."
+    },
+    {
+      "id": "cap.room_programme_layout",
+      "title": "Room programme and plan layout",
+      "featureKinds": [
+        "room_programme_layout",
+        "plan_usability",
+        "accessible_room_sequence",
+        "stair_clearance"
+      ],
+      "status": "partial",
+      "commandSurface": [
+        "createRoomOutline",
+        "createRoomPoly",
+        "createStair",
+        "insertDoorOnWall",
+        "createSlabOpening"
+      ],
+      "rendererSurface": ["plan/diagnostic views expose rooms, doors, stairs, and slab openings"],
+      "advisorCoverage": [
+        "room_boundary_open",
+        "room_no_door",
+        "room_derived_interior_separation_ambiguous",
+        "stair comfort warnings"
+      ],
+      "knownFailureModes": [
+        "rooms are named but not enclosed",
+        "stair collides with exterior wall",
+        "universal separation lines make derivation ambiguous"
+      ],
+      "requiredEvidence": [
+        "ground plan diagnostic screenshot",
+        "upper plan diagnostic screenshot",
+        "advisor warning JSON with zero room/stair blockers"
+      ],
+      "fallback": "Redesign the layout geometry; do not patch advisor warnings with hidden or global separation geometry."
+    },
+    {
+      "id": "cap.site_orientation_and_sun",
+      "title": "Site orientation and sun context",
+      "featureKinds": [
+        "site_orientation",
+        "sun_study_context",
+        "north_reference",
+        "plinth_and_shadow_context"
+      ],
+      "status": "partial",
+      "commandSurface": [
+        "createProjectBasePoint",
+        "upsertProjectSettings",
+        "site/toposolid commands where available"
+      ],
+      "rendererSurface": [
+        "scene sun direction, plinths, and context surfaces can support sketch comparison"
+      ],
+      "advisorCoverage": [
+        "project settings and evidence-package metadata; visual gate required for shadow fidelity"
+      ],
+      "knownFailureModes": [
+        "orientation assumption is undocumented",
+        "plinth/site plane distorts perceived house scale",
+        "sun/shadow direction contradicts reference image"
+      ],
+      "requiredEvidence": [
+        "assumption log",
+        "main screenshot with date/orientation metadata",
+        "status packet tolerance if orientation is unknown"
+      ],
+      "fallback": "Use neutral orientation and record the assumption unless the user supplies site north."
+    },
+    {
+      "id": "cap.documentation_views_schedules",
+      "title": "Documentation views and schedules",
+      "featureKinds": [
+        "documentation_views",
+        "sheets",
+        "room_schedule",
+        "door_window_schedule",
+        "handoff_packet"
+      ],
+      "status": "partial",
+      "commandSurface": [
+        "saveViewpoint",
+        "createLevel with plan views",
+        "schedule-table CLI",
+        "evidence-package endpoint"
+      ],
+      "rendererSurface": ["saved plan, 3D, and diagnostic views must hydrate from snapshot"],
+      "advisorCoverage": ["sheet/schedule unresolved references", "plan view tag fallback info"],
+      "knownFailureModes": [
+        "views exist only in UI state and are not reproducible",
+        "schedules contain missing or placeholder rooms",
+        "sheets reference stale views"
+      ],
+      "requiredEvidence": [
+        "screenshot manifest",
+        "schedule exports where required",
+        "evidence-package JSON"
+      ],
+      "fallback": "Do not claim documentation-ready mode until view and schedule artifacts are generated."
     }
   ]
 }
