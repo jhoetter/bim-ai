@@ -1044,7 +1044,7 @@ function coerceElement(id: string, raw: Record<string, unknown>): Element | null
         ? (coRaw as Record<string, unknown>)
         : {};
     const vfRaw = raw.viewFilters ?? raw.view_filters;
-    const viewFilters = Array.isArray(vfRaw) ? (vfRaw as import('./storeTypes').ViewFilter[]) : [];
+    const viewFilters = Array.isArray(vfRaw) ? (vfRaw as ViewFilter[]) : [];
     return {
       kind: 'plan_view',
       id,
