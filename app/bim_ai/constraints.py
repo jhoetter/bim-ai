@@ -16,6 +16,17 @@ from bim_ai.constraints_geometry import (
     polygon_overlap_area_mm2,
     polygon_signed_area,
 )
+from bim_ai.constraints_sheet_viewports import (
+    SCHEDULE_VIEWPORT_AUTOPLACE_HEIGHT_MM,
+    SCHEDULE_VIEWPORT_AUTOPLACE_WIDTH_MM,
+    SCHEDULE_VIEWPORT_AUTOPLACE_X_MM,
+    SCHEDULE_VIEWPORT_AUTOPLACE_Y_MM,
+    SHEET_DEFAULT_TITLEBLOCK_SYMBOL,
+    SHEET_VIEWPORT_MIN_SIDE_MM,
+    repair_sheet_viewport_extents_inplace_rows,
+    sheet_viewport_zero_extent_labels,
+    viewport_dimension_mm,
+)
 from bim_ai.constraints_wall_geometry import (
     ROOM_UNENCLOSED_GAP_TOL_MM,
     ROOM_UNENCLOSED_PARALLEL_TOL_RAD,
@@ -127,15 +138,12 @@ from bim_ai.stair_plan_proxy import stair_schedule_row_extensions_v1
 
 ROOM_PLAN_OVERLAP_THRESHOLD_MM2 = 50_000.0
 
-# Sheet mm rectangle for schedule_sheet_viewport_missing upsertSheetViewports quick-fix (default ISO A0 canvas).
-_SCHEDULE_VIEWPORT_AUTOPLACE_X_MM = 800.0
-_SCHEDULE_VIEWPORT_AUTOPLACE_Y_MM = 800.0
-_SCHEDULE_VIEWPORT_AUTOPLACE_WIDTH_MM = 14_000.0
-_SCHEDULE_VIEWPORT_AUTOPLACE_HEIGHT_MM = 9000.0
-
-# Degenerate viewport quick-fix clamps (deterministic replay).
-_SHEET_VIEWPORT_MIN_SIDE_MM = 10.0
-_SHEET_DEFAULT_TITLEBLOCK_SYMBOL = "A1"
+_SCHEDULE_VIEWPORT_AUTOPLACE_X_MM = SCHEDULE_VIEWPORT_AUTOPLACE_X_MM
+_SCHEDULE_VIEWPORT_AUTOPLACE_Y_MM = SCHEDULE_VIEWPORT_AUTOPLACE_Y_MM
+_SCHEDULE_VIEWPORT_AUTOPLACE_WIDTH_MM = SCHEDULE_VIEWPORT_AUTOPLACE_WIDTH_MM
+_SCHEDULE_VIEWPORT_AUTOPLACE_HEIGHT_MM = SCHEDULE_VIEWPORT_AUTOPLACE_HEIGHT_MM
+_SHEET_VIEWPORT_MIN_SIDE_MM = SHEET_VIEWPORT_MIN_SIDE_MM
+_SHEET_DEFAULT_TITLEBLOCK_SYMBOL = SHEET_DEFAULT_TITLEBLOCK_SYMBOL
 
 
 class AdvisorBlockingClass(StrEnum):
@@ -428,68 +436,9 @@ _MATERIAL_CATALOG_AUDIT_MESSAGES: dict[str, str] = {
 }
 
 
-def _viewport_dimension_mm(vp: dict[str, Any], camel_key: str, snake_key: str) -> float | None:
-    raw = vp.get(camel_key)
-    if raw is None:
-        raw = vp.get(snake_key)
-    if raw is None:
-        return None
-    if isinstance(raw, bool):
-        return None
-    if isinstance(raw, (int, float)):
-        return float(raw)
-    if isinstance(raw, str):
-        stripped = raw.strip()
-        if not stripped:
-            return None
-        try:
-            return float(stripped)
-        except ValueError:
-            return None
-    return None
-
-
-def _repair_sheet_viewport_extents_inplace_rows(
-    rows: list[Any],
-) -> tuple[list[Any], bool]:
-    """Clone viewport rows; clamp invalid or non-positive width/heightMm dict entries."""
-
-    repaired: list[Any] = []
-    changed = False
-    for vp in rows:
-        if not isinstance(vp, dict):
-            repaired.append(vp)
-            continue
-        out = dict(vp)
-        w = _viewport_dimension_mm(out, "widthMm", "width_mm")
-        h = _viewport_dimension_mm(out, "heightMm", "height_mm")
-        if w is None or w <= 0:
-            out["widthMm"] = _SHEET_VIEWPORT_MIN_SIDE_MM
-            changed = True
-        if h is None or h <= 0:
-            out["heightMm"] = _SHEET_VIEWPORT_MIN_SIDE_MM
-            changed = True
-        repaired.append(out)
-    return repaired, changed
-
-
-def _sheet_viewport_zero_extent_labels(rows: list[Any]) -> list[str]:
-    labels: list[str] = []
-    for idx, vp in enumerate(rows):
-        if not isinstance(vp, dict):
-            continue
-        w = _viewport_dimension_mm(vp, "widthMm", "width_mm")
-        h = _viewport_dimension_mm(vp, "heightMm", "height_mm")
-        bad = ((w is None) or (w <= 0)) or ((h is None) or (h <= 0))
-        if not bad:
-            continue
-        vid = vp.get("viewportId") or vp.get("viewport_id")
-        if isinstance(vid, str) and vid.strip():
-            labels.append(vid.strip())
-        else:
-            labels.append(f"idx={idx}")
-    labels.sort()
-    return labels
+_viewport_dimension_mm = viewport_dimension_mm
+_repair_sheet_viewport_extents_inplace_rows = repair_sheet_viewport_extents_inplace_rows
+_sheet_viewport_zero_extent_labels = sheet_viewport_zero_extent_labels
 
 
 _polygon_signed_area = polygon_signed_area
