@@ -521,6 +521,241 @@ async function cmdInitiationCheck(irPath, capabilityMatrixPath, outDir, modelId,
   if (!result.ok) process.exit(2);
 }
 
+function safeArtifactName(value) {
+  return String(value || 'view')
+    .replace(/[^A-Za-z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80) || 'view';
+}
+
+function modelStatsFromSnapshot(snap) {
+  const elements = snap?.elements && typeof snap.elements === 'object' ? snap.elements : {};
+  const countsByKind = {};
+  for (const element of Object.values(elements)) {
+    const kind = element && typeof element === 'object' && typeof element.kind === 'string'
+      ? element.kind
+      : '?';
+    countsByKind[kind] = (countsByKind[kind] ?? 0) + 1;
+  }
+  return {
+    modelId: snap?.modelId ?? null,
+    revision: snap?.revision ?? null,
+    elementCount: Object.keys(elements).length,
+    countsByKind,
+  };
+}
+
+async function writeJsonArtifact(filePath, payload) {
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.writeFile(filePath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+  return filePath;
+}
+
+async function applyRunnerBundle(modelId, userId, bundlePath, baseRevision, mode) {
+  const raw = (await fs.readFile(bundlePath, 'utf8')).trim();
+  if (!raw) throw new Error(`Empty bundle JSON: ${bundlePath}`);
+  const blob = JSON.parse(raw);
+  const resolvedBaseRevision = Number.isFinite(baseRevision)
+    ? baseRevision
+    : (await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`)).revision;
+  let bundle;
+  if (blob && typeof blob === 'object' && blob.schemaVersion === 'cmd-v3.0') {
+    bundle = { ...blob, parentRevision: resolvedBaseRevision };
+  } else {
+    bundle = {
+      schemaVersion: 'cmd-v3.0',
+      commands: commandsFromBundleJson(blob),
+      assumptions: [
+        {
+          key: 'initiation-run-legacy-bundle',
+          value: true,
+          confidence: 0,
+          source: 'cli-initiation-run',
+        },
+      ],
+      parentRevision: resolvedBaseRevision,
+    };
+  }
+  const res = await fetch(`${base}/api/models/${encodeURIComponent(modelId)}/bundles`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ bundle, mode, userId }),
+  });
+  const text = await res.text();
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    json = { raw: text };
+  }
+  return {
+    ok: res.ok,
+    status: res.status,
+    mode,
+    bundlePath,
+    baseRevision: resolvedBaseRevision,
+    response: json,
+  };
+}
+
+async function writeLiveEvidenceArtifacts(modelId, outDir) {
+  const liveDir = path.join(outDir, 'live');
+  await fs.mkdir(liveDir, { recursive: true });
+  const snap = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`);
+  const validate = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/validate`);
+  const evidencePackage = await fetchJson(
+    'GET',
+    `${base}/api/models/${encodeURIComponent(modelId)}/evidence-package`,
+  );
+  const liveAdvisor = {
+    warning: await advisorSummary(modelId, { severity: 'warning' }),
+    info: await advisorSummary(modelId, { severity: 'info' }),
+  };
+  const modelStats = modelStatsFromSnapshot(snap);
+  const liveArtifacts = {
+    snapshot: await writeJsonArtifact(path.join(liveDir, 'snapshot.json'), snap),
+    validate: await writeJsonArtifact(path.join(liveDir, 'validate.json'), validate),
+    evidencePackage: await writeJsonArtifact(
+      path.join(liveDir, 'evidence-package.json'),
+      evidencePackage,
+    ),
+    advisorWarning: await writeJsonArtifact(
+      path.join(liveDir, 'advisor-warning.json'),
+      liveAdvisor.warning,
+    ),
+    advisorInfo: await writeJsonArtifact(path.join(liveDir, 'advisor-info.json'), liveAdvisor.info),
+    modelStats: await writeJsonArtifact(path.join(liveDir, 'model-stats.json'), modelStats),
+  };
+  return { snap, validate, evidencePackage, liveAdvisor, modelStats, liveArtifacts };
+}
+
+function screenshotRequiredViews(ir) {
+  const supportedKinds = new Set(['3d', 'elevation', 'diagnostic']);
+  return (ir.requiredViews ?? []).filter((view) => supportedKinds.has(view?.kind));
+}
+
+async function renderInitiationScreenshots(ir, snap, snapshotPath, outDir) {
+  const views = screenshotRequiredViews(ir);
+  const screenshotDir = path.join(outDir, 'screenshots');
+  await fs.mkdir(screenshotDir, { recursive: true });
+  const elements = snap?.elements && typeof snap.elements === 'object' ? snap.elements : {};
+  const savedViewpoints = new Set(
+    Object.values(elements)
+      .filter((element) => element && typeof element === 'object' && element.kind === 'viewpoint')
+      .map((element) => element.id)
+      .filter(Boolean),
+  );
+  const captures = [];
+  for (const view of views) {
+    const filePath = path.join(screenshotDir, `${safeArtifactName(view.id)}.png`);
+    const hasSavedViewpoint = savedViewpoints.has(view.id);
+    const env = {
+      ...process.env,
+      SKB_SNAPSHOT_PATH: path.resolve(snapshotPath),
+      SKB_VIEWPOINT_ID: hasSavedViewpoint ? view.id : '',
+      SKB_SCREENSHOT_OUT: path.resolve(filePath),
+    };
+    execSync(
+      'pnpm --filter @bim-ai/web exec playwright test packages/web/e2e/skb-checkpoint.spec.ts --config playwright.skb.config.ts',
+      { stdio: 'inherit', env, cwd: process.cwd() },
+    );
+    captures.push({
+      viewId: view.id,
+      viewKind: view.kind,
+      purpose: view.purpose ?? '',
+      screenshotPath: filePath,
+      usedViewpointId: hasSavedViewpoint ? view.id : null,
+      fallbackFit: !hasSavedViewpoint,
+    });
+  }
+  return {
+    schemaVersion: 'sketch-to-bim-screenshot-manifest.v0',
+    generatedAt: new Date().toISOString(),
+    captures,
+  };
+}
+
+async function cmdInitiationRun({
+  irPath,
+  capabilityMatrixPath,
+  outDir,
+  modelId,
+  userId,
+  screenshots,
+  seedCommand,
+  applyBundlePath,
+  baseRevision,
+  applyMode,
+  failOnWarning,
+}) {
+  if (!modelId) {
+    console.error('initiation-run requires --model <id> or BIM_AI_MODEL_ID.');
+    process.exit(1);
+  }
+  const ir = await readJsonFile(irPath);
+  const matrix = await readJsonFile(capabilityMatrixPath);
+  await fs.mkdir(outDir, { recursive: true });
+
+  const runArtifacts = {};
+  if (seedCommand) {
+    const seedCommandPath = path.join(outDir, 'seed-command.txt');
+    await fs.writeFile(seedCommandPath, `${seedCommand}\n`, 'utf8');
+    execSync(seedCommand, { stdio: 'inherit', cwd: process.cwd(), shell: true });
+    runArtifacts.seedCommand = seedCommandPath;
+  }
+  if (applyBundlePath) {
+    const applyResult = await applyRunnerBundle(
+      modelId,
+      userId,
+      applyBundlePath,
+      baseRevision,
+      applyMode,
+    );
+    runArtifacts.bundleApply = await writeJsonArtifact(
+      path.join(outDir, applyMode === 'commit' ? 'bundle-apply.json' : 'bundle-dry-run.json'),
+      applyResult,
+    );
+    if (!applyResult.ok) {
+      console.log(JSON.stringify({ ok: false, outDir, runArtifacts, applyResult }, null, 2));
+      process.exit(1);
+    }
+  }
+
+  const live = await writeLiveEvidenceArtifacts(modelId, outDir);
+  let screenshotManifest = null;
+  if (screenshots) {
+    screenshotManifest = await renderInitiationScreenshots(
+      ir,
+      live.snap,
+      live.liveArtifacts.snapshot,
+      outDir,
+    );
+  }
+  const evidenceRun = {
+    liveArtifacts: { ...runArtifacts, ...live.liveArtifacts },
+    screenshotManifest,
+  };
+  const result = await writeInitiationPacket({
+    ir,
+    matrix,
+    outDir,
+    irPath,
+    capabilityMatrixPath,
+    modelId,
+    liveAdvisor: live.liveAdvisor,
+    screenshotManifest,
+    evidenceRun,
+  });
+  const finalResult = {
+    ...result,
+    liveArtifacts: evidenceRun.liveArtifacts,
+    screenshotManifest,
+  };
+  console.log(JSON.stringify(finalResult, null, 2));
+  if (!result.ok) process.exit(2);
+  if (failOnWarning && (live.liveAdvisor.warning?.total ?? 0) > 0) process.exit(3);
+}
+
 async function cmdExport(kind, modelId, outPath, viewId) {
   if (kind === 'gltf') {
     if (!modelId) usage();
@@ -1017,6 +1252,12 @@ Commands:
   initiation-check --ir <path> --out <dir> [--capabilities <path>] [--model <id>] [--live]
                                        SKB: validate Sketch Understanding IR against capability matrix,
                                        create capability coverage + visual checklist evidence packet.
+  initiation-run --ir <path> --out <dir> --model <id> [--capabilities <path>]
+                 [--seed-command <cmd>] [--apply-bundle <path> --base <rev> --commit|--dry-run]
+                 [--no-screenshots] [--fail-on-warning]
+                                       SKB: live project-initiation evidence runner. Captures snapshot,
+                                       validate, evidence-package, advisor warning/info, screenshot
+                                       manifest, and populated status/checklist artifacts.
   diff --from <rev> --to <rev> [--out <path>] [--text] [--summary-only]
                                        element-level diff between two revisions of the model
   agent-loop --goal <path|-> --max-iter <n> --evidence-out <dir> [--backend <name>]
@@ -1215,6 +1456,52 @@ async function main() {
         usage();
       }
       await cmdInitiationCheck(irArg, capabilityArg, outArg, modelId, live);
+      return;
+    }
+    if (cmd === 'initiation-run' || cmd === 'initiate-run') {
+      let irArg;
+      let outArg;
+      let capabilityArg = DEFAULT_CAPABILITY_MATRIX_PATH;
+      let screenshots = true;
+      let seedCommand;
+      let applyBundlePath;
+      let baseRevision;
+      let applyMode = 'dry_run';
+      let failOnWarning = false;
+      const rest = argv.slice(1);
+      for (let i = 0; i < rest.length; i++) {
+        const a = rest[i];
+        if (a === '--ir' && rest[i + 1]) irArg = rest[++i];
+        else if (a === '--out' && rest[i + 1]) outArg = rest[++i];
+        else if (a === '--capabilities' && rest[i + 1]) capabilityArg = rest[++i];
+        else if (a === '--capability-matrix' && rest[i + 1]) capabilityArg = rest[++i];
+        else if (a === '--model' && rest[i + 1]) modelId = rest[++i];
+        else if (a === '--seed-command' && rest[i + 1]) seedCommand = rest[++i];
+        else if (a === '--apply-bundle' && rest[i + 1]) applyBundlePath = rest[++i];
+        else if (a === '--base' && rest[i + 1]) baseRevision = Number(rest[++i]);
+        else if (a === '--commit') applyMode = 'commit';
+        else if (a === '--dry-run') applyMode = 'dry_run';
+        else if (a === '--no-screenshots') screenshots = false;
+        else if (a === '--screenshots') screenshots = true;
+        else if (a === '--fail-on-warning') failOnWarning = true;
+      }
+      if (!irArg || !outArg) {
+        console.error('initiation-run requires --ir <path> --out <dir>.');
+        usage();
+      }
+      await cmdInitiationRun({
+        irPath: irArg,
+        capabilityMatrixPath: capabilityArg,
+        outDir: outArg,
+        modelId,
+        userId,
+        screenshots,
+        seedCommand,
+        applyBundlePath,
+        baseRevision,
+        applyMode,
+        failOnWarning,
+      });
       return;
     }
 

@@ -21,16 +21,15 @@ afterEach(() => {
 });
 
 function authorNumericParam(utils: ReturnType<typeof renderWithI18n>, key: string, label: string) {
-  const { getAllByRole } = utils;
-  fireEvent.click(getAllByRole('button').find((b) => b.textContent === 'Add parameter')!);
-  const textInputs = getAllByRole('textbox') as HTMLInputElement[];
-  // Each param row contributes 3 textboxes (key, label, formula) — write to
-  // the last freshly-added row so successive calls don't overwrite earlier
-  // params. The row's <select> defaults to length_mm; leave it so the param
-  // shows up in the Array tool's numeric-param dropdowns.
-  const last = textInputs.length;
-  fireEvent.change(textInputs[last - 3], { target: { value: key } });
-  fireEvent.change(textInputs[last - 2], { target: { value: label } });
+  fireEvent.click(utils.getAllByRole('button').find((b) => b.textContent === 'Add parameter')!);
+  const rows = utils.container.querySelectorAll('table tbody tr');
+  const row = rows[rows.length - 1];
+  const inputs = row?.querySelectorAll('input');
+  if (!inputs || inputs.length < 2) {
+    throw new Error('Expected a freshly-added parameter row');
+  }
+  fireEvent.change(inputs[0], { target: { value: key } });
+  fireEvent.change(inputs[1], { target: { value: label } });
 }
 
 describe('FAM-05 — Array tool UI', () => {
@@ -57,7 +56,7 @@ describe('FAM-05 — Array tool UI', () => {
     fireEvent.change(utils.getByLabelText('Count parameter'), {
       target: { value: 'chairCount' },
     });
-    expect((finish as HTMLButtonElement).disabled).toBe(false);
+    expect((utils.getByText(/Finish/) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it('completing the flow appends an array node to the family', () => {
@@ -99,6 +98,6 @@ describe('FAM-05 — Array tool UI', () => {
     fireEvent.change(utils.getByLabelText('Fit total length param'), {
       target: { value: 'tableWidth' },
     });
-    expect((finish as HTMLButtonElement).disabled).toBe(false);
+    expect((utils.getByText(/Finish/) as HTMLButtonElement).disabled).toBe(false);
   });
 });

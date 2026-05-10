@@ -119,6 +119,7 @@ test('SKB-03 checkpoint render', async ({ page }) => {
   await bootWorkspace(page);
   await ensure3dMode(page);
   await hydrateStore(page, snapshot);
+  await ensure3dMode(page);
 
   if (VIEWPOINT_ID) {
     const activated = await activateViewpoint(page, VIEWPOINT_ID, snapshot);

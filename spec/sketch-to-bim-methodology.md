@@ -391,13 +391,13 @@ Reason:
 | SBM-02 | done | Formal Sketch Understanding IR schema | `spec/schemas/sketch-understanding-ir.schema.json` exists for visual read, dimensions, features, programme, assumptions, and required views. |
 | SBM-03 | partial | Capability matrix registry | `spec/sketch-to-bim-capability-matrix.json` maps target-house critical features to commands, renderer support, advisor checks, evidence, and known failure modes; needs broader feature catalog coverage. |
 | SBM-04 | open | Seed authoring DSL | High-level architectural DSL compiles to deterministic command bundles and preserves intent. |
-| SBM-05 | partial | Evidence runner CLI | `bim-ai initiation-check` creates preflight coverage, visual checklist, status packet, and optional live advisor capture; still needs apply/reseed and screenshot automation in the same command. |
-| SBM-06 | partial | Visual defect checklist artifact | `visual-checklist.json` is generated from required views and critical features; still needs screenshot pass/fail population by the live render runner. |
+| SBM-05 | done | Evidence runner CLI | `bim-ai initiation-run` can run a seed command or apply bundle, then capture snapshot, validate, evidence-package, advisor warning/info, screenshots, screenshot manifest, visual checklist, and status packet. |
+| SBM-06 | partial | Visual defect checklist artifact | `visual-checklist.json` is generated from required views and critical features and populated with screenshot paths by `initiation-run`; still needs automated pass/fail defect scoring. |
 | SBM-07 | open | Render-and-compare gate | CLI/tool compares target/reference images against checkpoint screenshots with human-readable deltas. |
 | SBM-08 | open | Advisor expansion for visual/BIM usability | Add rules for roof-wall seams, mass placeholders in final models, stair clearance, unresolved terrace access, and envelope gaps. |
 | SBM-09 | open | Plan/camera diagnostic fit | Plan diagnostic screenshots auto-fit full floor and upper/roof levels instead of relying on current zoom. |
 | SBM-10 | open | Golden seed regression suite | Seed examples carry source image, IR, bundle, advisor JSON, screenshots, and scored acceptance packets. |
-| SBM-11 | open | Capability-gap escalation | If a critical feature cannot render faithfully, the workflow creates a tracked engine/render task instead of faking geometry. |
+| SBM-11 | done | Capability-gap escalation | `capability-gaps.json` is generated when critical features are blocked by missing/gap capabilities or missing required views; the status packet forbids fake decorative fallback geometry. |
 | SBM-12 | open | User-facing initiation modes | User can choose massing-only, concept BIM, project-initiation BIM, or documentation-ready quality. |
 
 ---
@@ -415,14 +415,14 @@ Add gates that fail advisor-clean but visually wrong models:
 
 ### P1: Make The Workflow Reproducible
 
-Build out `bim-ai initiation-check`:
+Build out `bim-ai initiation-run`:
 
 ```text
-bim-ai initiation-check \
+bim-ai initiation-run \
   --ir spec/examples/sketch-understanding-ir.example.json \
   --capabilities spec/sketch-to-bim-capability-matrix.json \
   --model <id> \
-  --live \
+  --seed-command "make seed" \
   --out nightshift/<run>
 ```
 
@@ -432,14 +432,17 @@ It currently produces:
 - `capability-coverage.json`;
 - `visual-checklist.json`;
 - `status.md`;
-- optional `live-advisor.json` when `--live` is used.
-
-It still needs to produce:
-
 - advisor warning/info JSON;
 - screenshot PNGs;
 - model stats;
+- screenshot manifest;
+- validate and evidence-package JSON;
 - screenshot-populated checklist results.
+
+Remaining gap:
+
+- automated visual pass/fail scoring still depends on the agent's screenshot
+  review or future visual-diff support.
 
 ### P2: Replace Hand Coordinate Bundles
 

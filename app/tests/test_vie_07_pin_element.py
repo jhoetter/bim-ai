@@ -173,7 +173,7 @@ def test_pinned_link_model_still_allows_revision_pin_update():
         doc1, [{"type": "updateLinkModel", "linkId": "link-1", "sourceModelRevision": 7}]
     )
     assert ok2 is True and doc2 is not None
-    assert getattr(doc2.elements["link-1"], "source_model_revision") == 7
+    assert doc2.elements["link-1"].source_model_revision == 7
 
 
 def test_pin_element_supports_link_dxf_underlay():
