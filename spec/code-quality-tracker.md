@@ -152,8 +152,9 @@ These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (t
 - `export_ifc.py`: coverage omit lifted; extracted `export_ifc_scope.py`, `export_ifc_geometry.py`, `export_ifc_properties.py`, and `export_ifc_readback.py`. Coverage now includes fake-IFC readback/topology tests, QTO template readback tests, geometry helper tests, scope helper tests, and property/QTO helper tests.
 - `constraints.py`: extracted `constraints_geometry.py`, `constraints_wall_geometry.py`, `constraints_sheet_viewports.py`, and `constraints_metadata.py`, preserving legacy private aliases and adding focused tests for geometry, wall/opening intervals, sheet viewport repair, and metadata maps.
 - `engine.py`: extracted `engine_plan_mesh.py`, `engine_mirror.py`, `engine_visibility.py`, and `engine_wall_helpers.py`, preserving existing `bim_ai.engine` imports and reusing focused regression coverage.
+- `engine.py`: extracted pure replay diagnostics constants/builders into `engine_replay_diagnostics.py`, preserving existing `bim_ai.engine` imports and replay diagnostics regression coverage.
 
-**Latest verification.** Full backend suite passed after the latest CQ-04 slice: `2476 passed, 93 skipped, 1 deselected` with total coverage `75.82%`; each pushed workpackage passed GitHub CI on `main`.
+**Latest verification.** Full backend suite passed after the latest CQ-04 slice: `2476 passed, 93 skipped, 1 deselected` with total coverage `75.83%`; each pushed workpackage passed GitHub CI on `main`.
 
 **Remaining work.** Continue extracting dispatch/replay/preflight-heavy engine code, IFC authoritative replay/import-preview code, and constraint evaluation/validation bodies until the original files are thin compatibility shims or replaced by packages.
 
