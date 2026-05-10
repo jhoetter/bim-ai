@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "e8504abb13e9",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/export_ifc.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/e8/504abb13e9/0/metadata.json",
+      "transcript": "/e8/504abb13e9/0/full.jsonl",
+      "content_hash": "/e8/504abb13e9/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 102304,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 3848064,
+    "output_tokens": 6942,
+    "api_call_count": 38
+  }
+}
