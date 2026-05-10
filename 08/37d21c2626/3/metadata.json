@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "0837d21c2626",
+  "session_id": "019e1203-761e-75a2-8e71-91fec676dc26",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T17:48:20.534148Z",
+  "branch": "revit-parity-family-load-wave",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/families/FamilyLibraryPanel.externalCatalogs.test.tsx",
+    "packages/web/src/families/FamilyLibraryPanel.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "spec/revit-parity/README.md",
+    "spec/revit-parity/ch05-family-editor.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "8f36cb41008b",
+  "checkpoint_transcript_start": 3459,
+  "transcript_lines_at_start": 3459,
+  "session_metrics": {
+    "turn_count": 5
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T17:48:20.421985Z",
+    "agent_lines": 102,
+    "agent_removed": 27,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 102,
+    "total_lines_changed": 129,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
