@@ -297,6 +297,44 @@ class CreateSpotElevationCmd(BaseModel):
     colour: str = Field(default="#202020")
 
 
+class CreateRadialDimensionCmd(BaseModel):
+    """ANN-06 — radial dimension."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createRadialDimension"] = "createRadialDimension"
+    id: str | None = None
+    host_view_id: str = Field(alias="hostViewId")
+    center_mm: Vec2Mm = Field(alias="centerMm")
+    arc_point_mm: Vec2Mm = Field(alias="arcPointMm")
+    colour: str = Field(default="#202020")
+
+
+class CreateDiameterDimensionCmd(BaseModel):
+    """ANN-07 — diameter dimension."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createDiameterDimension"] = "createDiameterDimension"
+    id: str | None = None
+    host_view_id: str = Field(alias="hostViewId")
+    center_mm: Vec2Mm = Field(alias="centerMm")
+    arc_point_mm: Vec2Mm = Field(alias="arcPointMm")
+    colour: str = Field(default="#202020")
+
+
+class CreateArcLengthDimensionCmd(BaseModel):
+    """ANN-08 — arc length dimension."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createArcLengthDimension"] = "createArcLengthDimension"
+    id: str | None = None
+    host_view_id: str = Field(alias="hostViewId")
+    center_mm: Vec2Mm = Field(alias="centerMm")
+    radius_mm: float = Field(alias="radiusMm")
+    start_angle_deg: float = Field(alias="startAngleDeg")
+    end_angle_deg: float = Field(alias="endAngleDeg")
+    colour: str = Field(default="#202020")
+
+
 class DeleteElementCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["deleteElement"] = "deleteElement"
@@ -2916,6 +2954,9 @@ Command = Annotated[
     | CreateDetailLineCmd
     | CreateDetailRegionCmd
     | CreateSpotElevationCmd
+    | CreateRadialDimensionCmd
+    | CreateDiameterDimensionCmd
+    | CreateArcLengthDimensionCmd
     | CreateTextNoteCmd
     | CreateReferencePlaneCmd
     | UpdateReferencePlaneCmd
