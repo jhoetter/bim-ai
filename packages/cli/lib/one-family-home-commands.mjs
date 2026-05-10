@@ -1072,8 +1072,22 @@ export function buildOneFamilyHomeCommands() {
     },
 
     // Plan views.
-    { type: 'upsertPlanView', id: 'hf-pv-ground', name: 'GF plan', levelId: 'hf-lvl-ground' },
-    { type: 'upsertPlanView', id: 'hf-pv-upper', name: 'First-floor plan', levelId: 'hf-lvl-upper' },
+    {
+      type: 'upsertPlanView',
+      id: 'hf-pv-ground',
+      name: 'GF plan',
+      levelId: 'hf-lvl-ground',
+      planShowRoomLabels: true,
+      planRoomFillOpacityScale: 0.45,
+    },
+    {
+      type: 'upsertPlanView',
+      id: 'hf-pv-upper',
+      name: 'First-floor plan',
+      levelId: 'hf-lvl-upper',
+      planShowRoomLabels: true,
+      planRoomFillOpacityScale: 0.45,
+    },
 
     // Section cut through loggia at y=2000 — reveals gable + recess + balcony.
     {

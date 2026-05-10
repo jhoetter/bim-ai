@@ -47,6 +47,18 @@ function countLinesForPick(root: THREE.Object3D, pickId: string): number {
   return n;
 }
 
+function assetLinesRenderAbovePlanFill(root: THREE.Object3D, pickId: string): boolean {
+  let ok = true;
+  root.traverse((o) => {
+    if (!(o instanceof THREE.Line) || o.userData.bimPickId !== pickId) return;
+    const mat = Array.isArray(o.material) ? o.material[0] : o.material;
+    if (!(mat instanceof THREE.LineBasicMaterial)) ok = false;
+    if ((mat as THREE.LineBasicMaterial).depthTest !== false) ok = false;
+    if (o.renderOrder < 900) ok = false;
+  });
+  return ok;
+}
+
 function hasMeshNode(root: THREE.Object3D): boolean {
   let found = false;
   root.traverse((o) => {
@@ -552,5 +564,6 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
     );
 
     expect(countLinesForPick(grp, 'pa-sofa')).toBe(2);
+    expect(assetLinesRenderAbovePlanFill(grp, 'pa-sofa')).toBe(true);
   });
 });

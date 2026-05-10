@@ -932,18 +932,30 @@ function addPlacedAssetPlanSymbols(
     const outlineGeom = new THREE.BufferGeometry().setFromPoints(outlinePts);
     const outlineLine = new THREE.Line(
       outlineGeom,
-      new THREE.LineBasicMaterial({ color: '#8B4513', linewidth: 1.5 }),
+      new THREE.LineBasicMaterial({
+        color: '#111827',
+        linewidth: 1.5,
+        depthTest: false,
+        depthWrite: false,
+      }),
     );
     outlineLine.userData.bimPickId = asset.id;
+    outlineLine.renderOrder = 980;
     holder.add(outlineLine);
 
     const diagPts = [worldCorners[0]!, worldCorners[2]!];
     const diagGeom = new THREE.BufferGeometry().setFromPoints(diagPts);
     const diagLine = new THREE.Line(
       diagGeom,
-      new THREE.LineBasicMaterial({ color: '#8B4513', linewidth: 1 }),
+      new THREE.LineBasicMaterial({
+        color: '#111827',
+        linewidth: 1,
+        depthTest: false,
+        depthWrite: false,
+      }),
     );
     diagLine.userData.bimPickId = asset.id;
+    diagLine.renderOrder = 980;
     holder.add(diagLine);
   }
 }
