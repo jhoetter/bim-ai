@@ -1,6 +1,7 @@
 import { type JSX, useState } from 'react';
 import type { Element } from '@bim-ai/core';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
+import { ScheduleViewHifi } from '@bim-ai/icons';
 
 import { SCHEDULE_DEFAULTS } from './modeSurfaces';
 import { AdvisorPanel } from '../advisor/AdvisorPanel';
@@ -37,13 +38,19 @@ function asArr<T extends Element['kind']>(
 export function SectionModeShell({
   activeLevelLabel = '',
   modelId,
+  onUpsertSemantic,
 }: {
   activeLevelLabel?: string;
   modelId?: string;
+  onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
 }): JSX.Element {
   return (
     <div data-testid="section-mode-shell" className="h-full w-full overflow-auto">
-      <SectionPlaceholderPane activeLevelLabel={activeLevelLabel} modelId={modelId} />
+      <SectionPlaceholderPane
+        activeLevelLabel={activeLevelLabel}
+        modelId={modelId}
+        onUpsertSemantic={onUpsertSemantic}
+      />
     </div>
   );
 }
@@ -56,10 +63,12 @@ export function SheetModeShell({
   elementsById,
   preferredSheetId,
   modelId,
+  onUpsertSemantic,
 }: {
   elementsById: Record<string, Element>;
   preferredSheetId?: string;
   modelId?: string;
+  onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
 }): JSX.Element {
   const evidenceFullBleed = new URLSearchParams(window.location.search).has('evidenceSheetFull');
 
@@ -79,6 +88,7 @@ export function SheetModeShell({
           sheetId={resolvedSheet.id}
           modelId={modelId}
           elementsById={elementsById}
+          onUpsertSemantic={onUpsertSemantic}
         />
       </div>
     );
@@ -91,6 +101,7 @@ export function SheetModeShell({
         preferredSheetId={preferredSheetId}
         modelId={modelId}
         evidenceFullBleed={evidenceFullBleed}
+        onUpsertSemantic={onUpsertSemantic}
       />
     </div>
   );
@@ -125,7 +136,11 @@ export function ScheduleModeShell({
           Schedules
         </div>
         {schedules.length === 0 ? (
-          <p className="px-1 text-sm text-muted">No schedules yet.</p>
+          <div className="px-1 py-3 text-center text-xs text-muted">
+            <ScheduleViewHifi size={34} aria-hidden="true" className="mx-auto mb-1 text-accent" />
+            <div className="font-medium text-foreground">No schedules yet</div>
+            <p className="mt-0.5">Create a door, room, or window schedule from Project tools.</p>
+          </div>
         ) : (
           schedules.map((s) => (
             <button

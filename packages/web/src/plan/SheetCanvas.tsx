@@ -221,7 +221,7 @@ export function SheetCanvas({ elementsById, preferredSheetId }: SheetCanvasProps
             dominantBaseline="middle"
             style={{ fontSize: 9, fill: 'var(--color-muted)' }}
           >
-            Open a plan view, then drag it onto this sheet
+            Use Place recommended views or Place on sheet
           </text>
         </>
       )}

@@ -25,6 +25,7 @@ export type SheetReviewSurfaceProps = {
   modelId: string;
   readOnly?: boolean;
   elementsById: Record<string, Element>;
+  onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
 };
 
 export function SheetReviewSurface({
@@ -32,6 +33,7 @@ export function SheetReviewSurface({
   modelId,
   readOnly = false,
   elementsById,
+  onUpsertSemantic,
 }: SheetReviewSurfaceProps): JSX.Element {
   const userId = useBimStore((s) => s.userId);
   const userDisplayName = useBimStore((s) => s.userDisplayName);
@@ -256,7 +258,7 @@ export function SheetReviewSurface({
       style={{ background: 'var(--color-surface-strong)' }}
     >
       <div
-        className="relative flex-1 overflow-hidden"
+        className="relative flex-1 overflow-auto"
         style={{ paddingBottom: 40 }}
         onClick={handleCanvasClick}
         ref={canvasRef}
@@ -266,6 +268,7 @@ export function SheetReviewSurface({
           preferredSheetId={sheetId}
           modelId={modelId}
           evidenceFullBleed
+          onUpsertSemantic={onUpsertSemantic}
         />
         {sheetComments.map((c) => {
           const anchor = c.anchor as SheetAnchor;

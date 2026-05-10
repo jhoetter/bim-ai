@@ -11,6 +11,7 @@ import { SectionViewportSvg } from './sectionViewportSvg';
 import { formatSectionCutIdentityLine, formatSectionCutPlaneContext } from './sectionViewportDoc';
 import { formatSectionDatumElevationEvidenceLine } from '../readouts';
 import { sheetsReferencingSectionCut } from './sheetViewRef';
+import { firstSheetId, placeViewOnSheetCommand } from './sheetRecommendedViewports';
 
 const PREVIEW_WIDTH_PX = 720;
 const PREVIEW_HEIGHT_PX = 420;
@@ -91,7 +92,11 @@ function SectionWorkbenchLivePreview(props: {
 }
 
 /** Section workbench: live projection preview, sheet deep links, Project Browser–aligned selection. */
-export function SectionPlaceholderPane(props: { activeLevelLabel: string; modelId?: string }) {
+export function SectionPlaceholderPane(props: {
+  activeLevelLabel: string;
+  modelId?: string;
+  onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
+}) {
   const elementsById = useBimStore((s) => s.elementsById);
   const selectedId = useBimStore((s) => s.selectedId);
   const select = useBimStore((s) => s.select);
@@ -116,6 +121,7 @@ export function SectionPlaceholderPane(props: { activeLevelLabel: string; modelI
     if (!previewSectionId) return [];
     return sheetsReferencingSectionCut(elementsById, previewSectionId);
   }, [elementsById, previewSectionId]);
+  const firstSheet = useMemo(() => firstSheetId(elementsById), [elementsById]);
 
   const previewCut = useMemo(() => {
     if (!previewSectionId) return undefined;
@@ -202,12 +208,27 @@ export function SectionPlaceholderPane(props: { activeLevelLabel: string; modelI
                   ))}
                 </ul>
               ) : (
-                <p className="mt-1 text-[10px] leading-snug text-muted">
-                  No sheet viewports target this cut yet. Add{' '}
-                  <code className="text-[10px]">section:{previewSectionId}</code> (or{' '}
-                  <code className="text-[10px]">sec:</code>) on a sheet viewport, then use
-                  Coordination layout for canvas + export evidence.
-                </p>
+                <div className="mt-1 space-y-2">
+                  <p className="text-[10px] leading-snug text-muted">
+                    Not on a sheet yet. Place this cut before issuing documentation.
+                  </p>
+                  {firstSheet && props.onUpsertSemantic ? (
+                    <button
+                      type="button"
+                      className="h-7 rounded border border-accent bg-accent/15 px-2 text-[11px] font-medium text-foreground hover:bg-accent/20"
+                      onClick={() => {
+                        const cmd = placeViewOnSheetCommand(
+                          elementsById,
+                          firstSheet,
+                          previewSectionId,
+                        );
+                        if (cmd) props.onUpsertSemantic?.(cmd);
+                      }}
+                    >
+                      Place on sheet
+                    </button>
+                  ) : null}
+                </div>
               )}
             </div>
           ) : null}

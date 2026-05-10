@@ -3,6 +3,11 @@ import type { Dispatch, SetStateAction } from 'react';
 import { Fragment } from 'react';
 
 import { parseSheetViewRef } from './sheetViewRef';
+import {
+  buildRecommendedSheetViewportDrafts,
+  recommendedSheetViewportsCommand,
+  recommendedViewsForSheet,
+} from './sheetRecommendedViewports';
 
 /** Normalized authoring row for replayable `upsertSheetViewports`. */
 
@@ -286,6 +291,7 @@ export function SheetViewportEditor(props: {
   onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
 }) {
   const { drafts, setDrafts, elementsById, onUpsertSemantic } = props;
+  const recommendedCount = recommendedViewsForSheet(elementsById, props.sheetId).length;
 
   const commit = () => {
     if (!props.onUpsertSemantic) return;
@@ -691,6 +697,25 @@ export function SheetViewportEditor(props: {
       </datalist>
 
       <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className="rounded border border-accent bg-accent/15 px-2 py-1 text-[11px] font-medium"
+          disabled={(props.disabled ?? !onUpsertSemantic) || recommendedCount === 0}
+          title={
+            recommendedCount > 0
+              ? `Place ${recommendedCount} unplaced view${recommendedCount === 1 ? '' : 's'} on this sheet`
+              : 'All recommended views are already placed'
+          }
+          onClick={() => {
+            const next = buildRecommendedSheetViewportDrafts(elementsById, props.sheetId);
+            setDrafts(next);
+            const cmd = recommendedSheetViewportsCommand(elementsById, props.sheetId);
+            if (cmd) onUpsertSemantic?.(cmd);
+          }}
+        >
+          Place recommended views
+        </button>
+
         <button
           type="button"
           className="rounded border border-border bg-background px-2 py-1 text-[10px]"

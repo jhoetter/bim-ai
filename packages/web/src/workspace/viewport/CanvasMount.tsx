@@ -98,7 +98,12 @@ export function CanvasMount({
     );
   if (mode === 'section')
     return (
-      <SectionModeShell key={activeTabId} activeLevelLabel={activeLevelId} modelId={modelId} />
+      <SectionModeShell
+        key={activeTabId}
+        activeLevelLabel={activeLevelId}
+        modelId={modelId}
+        onUpsertSemantic={onSemanticCommand}
+      />
     );
   if (mode === 'sheet')
     return (
@@ -107,6 +112,7 @@ export function CanvasMount({
         elementsById={elementsById}
         preferredSheetId={preferredSheetId}
         modelId={modelId}
+        onUpsertSemantic={onSemanticCommand}
       />
     );
   if (mode === 'schedule')
