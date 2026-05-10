@@ -2,7 +2,7 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "05a0daaa5958",
   "strategy": "manual-commit",
-  "branch": "revit-parity-wall-radius-fillet-wave",
+  "branch": "main",
   "checkpoints_count": 0,
   "files_touched": [
     "packages/web/src/families/FamilyLibraryPanel.test.tsx",
@@ -20,6 +20,12 @@
       "metadata": "/05/a0daaa5958/1/metadata.json",
       "transcript": "/05/a0daaa5958/1/full.jsonl",
       "content_hash": "/05/a0daaa5958/1/content_hash.txt",
+      "prompt": ""
+    },
+    {
+      "metadata": "/05/a0daaa5958/2/metadata.json",
+      "transcript": "/05/a0daaa5958/2/full.jsonl",
+      "content_hash": "/05/a0daaa5958/2/content_hash.txt",
       "prompt": ""
     }
   ]
