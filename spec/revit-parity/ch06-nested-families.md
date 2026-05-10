@@ -18,6 +18,7 @@ Source segment: `02:45:00 – 02:54:00`
 ## F-064 · Overwrite options when reloading families
 
 **What it does:** When loading a family into a project (or a nested family into a host family) where a version already exists, Revit shows a dialog with two choices:
+
 1. **Overwrite the existing version** — updates geometry only; parameter values in the project stay as they were.
 2. **Overwrite the existing version and its parameter values** — also resets all parameter values to the family's defaults.
 
@@ -33,6 +34,7 @@ Choice 2 is required when parametric values (e.g., glass thickness) were changed
 ## F-065 · Family Category and Parameters dialog
 
 **What it does:** In the Family Editor, Manage → Family Category and Parameters lets you:
+
 - Change the family's category (e.g., from "Generic Models" to "Windows").
 - Set family parameters like "Always Vertical", "Room Calculation Point", "Work Plane-Based".
 
@@ -41,7 +43,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Family Category dialog](file:///Users/jhoetter/Desktop/Revit%20Specs/0451_02-47-03.png)
 
-**bim-ai status:** 🟡 Partial — placed assets persist per-instance `paramValues`; family params support `instanceOverridable` and resolver override precedence. Missing: complete Family Types dialog integration for every loaded family class.
+**bim-ai status:** 🟡 Partial — the family editor now exposes a Family Category and Parameters panel with category selection plus Always Vertical, Work Plane-Based, Room Calculation Point, and Shared flags. Missing: backend persistence, Revit category metadata completeness, project tag eligibility, and Visibility/Graphics category propagation for loaded families.
 
 ---
 
@@ -52,7 +54,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![View Range in Family Editor](file:///Users/jhoetter/Desktop/Revit%20Specs/0456_02-47-57.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — the family editor now exposes plan-preview View Range offsets for Top, Cut Plane, Bottom, and View Depth, with a live cut/depth summary. Missing: actual plan cut filtering of family geometry, nested-host view-range propagation, and Revit's full View Range modal semantics.
 
 ---
 
