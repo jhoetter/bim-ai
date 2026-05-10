@@ -29,6 +29,37 @@ def _endpoints_rounded_mm(w: WallElem, eps_mm: float = 1.0) -> set[tuple[float, 
     }
 
 
+def _endpoint_label_for_vertex(
+    w: WallElem, vx: float, vy: float, eps_mm: float = 1.0
+) -> str | None:
+    sx = round(float(w.start.x_mm) / eps_mm) * eps_mm
+    sy = round(float(w.start.y_mm) / eps_mm) * eps_mm
+    ex = round(float(w.end.x_mm) / eps_mm) * eps_mm
+    ey = round(float(w.end.y_mm) / eps_mm) * eps_mm
+    if sx == vx and sy == vy:
+        return "start"
+    if ex == vx and ey == vy:
+        return "end"
+    return None
+
+
+def _join_disallowed_at_vertex(w: WallElem, vx: float, vy: float) -> bool:
+    endpoint = _endpoint_label_for_vertex(w, vx, vy)
+    if endpoint == "start":
+        return bool(w.join_disallow_start)
+    if endpoint == "end":
+        return bool(w.join_disallow_end)
+    return False
+
+
+def _join_disallowed_between(
+    wall_a: WallElem, wall_b: WallElem, vx: float, vy: float
+) -> bool:
+    return _join_disallowed_at_vertex(wall_a, vx, vy) or _join_disallowed_at_vertex(
+        wall_b, vx, vy
+    )
+
+
 def _wall_unit_xy(w: WallElem) -> tuple[float, float] | None:
     dx = float(w.end.x_mm - w.start.x_mm)
     dy = float(w.end.y_mm - w.start.y_mm)
@@ -251,6 +282,8 @@ def collect_wall_corner_join_evidence_v0(doc: Document) -> dict[str, Any] | None
                 if len(common) != 1:
                     continue
                 vx, vy = next(iter(common))
+                if _join_disallowed_between(wa, wb, vx, vy):
+                    continue
                 joins.append(
                     {
                         "wallIds": sorted([wa.id, wb.id]),
@@ -342,6 +375,9 @@ def collect_wall_corner_join_summary_v1(doc: Document) -> dict[str, Any] | None:
                 else:
                     kind = "unsupported_skew"
                     skip_reason = "non_square_corner"
+
+                if _join_disallowed_between(wa, wb, vx, vy):
+                    skip_reason = "join_disallowed"
 
                 affected = _collect_affected_opening_ids_corner(
                     doc, wall_a=wa, wall_b=wb, vx=vx_r, vy=vy_r

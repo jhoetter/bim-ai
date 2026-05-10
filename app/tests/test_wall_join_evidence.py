@@ -47,6 +47,37 @@ def test_collect_corner_join_for_axis_aligned_l_shape() -> None:
     ]
 
 
+def test_disallowed_endpoint_is_not_corner_join_evidence() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "wh": WallElem(
+                kind="wall",
+                id="wh",
+                name="H",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 4000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+                joinDisallowStart=True,
+            ),
+            "wv": WallElem(
+                kind="wall",
+                id="wv",
+                name="V",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 0, "yMm": 3000},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    assert collect_wall_corner_join_evidence_v0(doc) is None
+
+
 def test_collinear_walls_sharing_endpoint_are_not_corner_joins() -> None:
     doc = Document(
         revision=1,
