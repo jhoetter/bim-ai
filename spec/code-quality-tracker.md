@@ -145,6 +145,8 @@ These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (t
 
 **Progress 2026-05-10.** Extracted reusable constraint polygon geometry helpers from `constraints.py` into `bim_ai/constraints_geometry.py`, preserving legacy private aliases and adding focused tests for polygon area/orientation, concave triangulation, and overlap area.
 
+**Progress 2026-05-10.** Extracted wall/room/opening geometry helpers from `constraints.py` into `bim_ai/constraints_wall_geometry.py`, preserving legacy private aliases and adding focused tests for room edge coverage, interval merging, hosted opening intervals, and wall-joint exemptions.
+
 ---
 
 ## CQ-05 — Slice the zustand store (`packages/web/src/state/store.ts`, 1,692 LOC)
