@@ -3,7 +3,7 @@
   "checkpoint_id": "e467c867ee64",
   "strategy": "manual-commit",
   "branch": "revit-parity-layer-stack-reorder",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "packages/web/src/workspace/authoring/MaterialLayerStackWorkbench.test.tsx",
     "packages/web/src/workspace/authoring/MaterialLayerStackWorkbench.tsx",
@@ -22,13 +22,19 @@
       "transcript": "/e4/67c867ee64/1/full.jsonl",
       "content_hash": "/e4/67c867ee64/1/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/e4/67c867ee64/2/metadata.json",
+      "transcript": "/e4/67c867ee64/2/full.jsonl",
+      "content_hash": "/e4/67c867ee64/2/content_hash.txt",
+      "prompt": "/e4/67c867ee64/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 52282,
+    "input_tokens": 1040429,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 1126528,
-    "output_tokens": 838,
-    "api_call_count": 11
+    "cache_read_tokens": 20646912,
+    "output_tokens": 61824,
+    "api_call_count": 215
   }
 }
