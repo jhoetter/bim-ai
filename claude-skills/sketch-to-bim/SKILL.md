@@ -30,7 +30,17 @@ The right mental model is **iterative convergence through 5–7 phased passes**,
    - The reference imagery (e.g. `spec/target-house-seed-vis.png`, `spec/target-house-vis-colored.png`) — open every image with the Read tool. Look at it with your own vision. Describe back, in writing, what you see.
    - Any sketch panels (main perspective, front / side / rear elevations, axonometric).
 
-2. **Fill out the structured brief.** Produce a JSON-shaped brief (SKB-21 format when it lands; today, write it as a Markdown file at `nightshift/<sprint>/brief.md`). Required fields:
+2. **Perform a visual source-of-truth pass.** The image is not decorative context; it is the primary design evidence. Before authoring commands, write a concise visual readout that names the non-negotiable features visible in the sketch:
+
+   - primary silhouette and camera direction;
+   - which volume is dominant, which volume supports it, and where any cantilever/void occurs;
+   - roof form, roof thickness, cutouts, embedded balconies, parapets, and return faces;
+   - facade bay rhythm, recessed planes, glazing proportions, railings, visible stairs, and cladding direction;
+   - material contrast and linework.
+
+   If the written brief conflicts with what the image clearly shows, treat the image as authoritative and update the brief/spec before rebuilding the seed. Do not proceed from a generic architectural label such as "asymmetric gable"; translate the visible geometry into buildable elements.
+
+3. **Fill out the structured brief.** Produce a JSON-shaped brief (SKB-21 format when it lands; today, write it as a Markdown file at `nightshift/<sprint>/brief.md`). Required fields:
 
    ```
    - style: "modernist" | "traditional" | "minimalist" | "industrial" | …
@@ -51,11 +61,11 @@ The right mental model is **iterative convergence through 5–7 phased passes**,
    - viewpoints: [{ name, sketchPanelMatched }, …]
    ```
 
-3. **Log every assumption.** Where the sketch is ambiguous (overhang depth not called out, exact eave height not dimensioned), do not guess silently. Write the assumption to the assumption log with the sketch coordinate that triggered the inference. Use `agent_assumption` element kind once SKB-08 lands; before that, write a markdown bullet list at `nightshift/<sprint>/assumptions.md`.
+4. **Log every assumption.** Where the sketch is ambiguous (overhang depth not called out, exact eave height not dimensioned), do not guess silently. Write the assumption to the assumption log with the sketch coordinate that triggered the inference. Use `agent_assumption` element kind once SKB-08 lands; before that, write a markdown bullet list at `nightshift/<sprint>/assumptions.md`.
 
-4. **Pick the closest archetype, if any** (SKB-09). Today there are none; you start from a blank model. When archetypes ship, use `bim-ai archetype list` and fork the closest one — never start from blank if a 70%-match archetype exists.
+5. **Pick the closest archetype, if any** (SKB-09). Today there are none; you start from a blank model. When archetypes ship, use `bim-ai archetype list` and fork the closest one — never start from blank if a 70%-match archetype exists.
 
-5. **Calibrate.** Anchor 2–3 known dimensions from the sketch (typically: overall house width, floor-to-floor, one elevation point). Compute a pixel-to-mm scale factor. When SKB-04 (`bim-ai calibrate`) lands, use it; today, do the math by hand and record in `assumptions.md`.
+6. **Calibrate.** Anchor 2–3 known dimensions from the sketch (typically: overall house width, floor-to-floor, one elevation point). Compute a pixel-to-mm scale factor. When SKB-04 (`bim-ai calibrate`) lands, use it; today, do the math by hand and record in `assumptions.md`.
 
 ---
 
