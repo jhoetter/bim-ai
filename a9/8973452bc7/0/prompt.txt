@@ -1,0 +1,1 @@
+ok, please then do that. also look into the UX, i think there are some bugs maybe with walls and such; not sure also if our tab display is working correctly. please investigate and make all fixes you can find.
