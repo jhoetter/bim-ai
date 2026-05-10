@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "41a10778a3a1",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/plan/SheetReviewSurface.tsx",
+    "packages/web/src/workspace/CommentsPanel.test.tsx",
+    "packages/web/src/workspace/CommentsPanel.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/comments/CommentsPanel.test.tsx",
+    "packages/web/src/workspace/comments/CommentsPanel.tsx",
+    "packages/web/src/workspace/comments/index.ts",
+    "spec/code-quality-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/41/a10778a3a1/0/metadata.json",
+      "transcript": "/41/a10778a3a1/0/full.jsonl",
+      "content_hash": "/41/a10778a3a1/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 7741,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 853376,
+    "output_tokens": 1691,
+    "api_call_count": 9
+  }
+}
