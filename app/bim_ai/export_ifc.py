@@ -37,6 +37,16 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
+from bim_ai.export_ifc_geometry import (
+    clamp,
+    level_elevation_m,
+    polygon_area_m2_xy_mm,
+    polygon_perimeter_m_xy_mm,
+    room_outline_mm,
+    room_vertical_span_m,
+    wall_local_to_world_m,
+    xz_bounds_mm,
+)
 from bim_ai.export_ifc_scope import (
     IFC_EXCHANGE_EMITTABLE_GEOMETRY_KINDS,  # noqa: F401 - re-exported for existing imports
     import_scope_unsupported_ifc_products_v0,
@@ -1146,7 +1156,7 @@ def _replay_infer_roof_overhang_mm_from_placement(
     """Inverse of ``roof_z_center = elev + overhang_m * 0.12 + rise_m/2`` with exporter clamps."""
 
     ov_m = (float(roof_z_center_m) - float(storey_elev_m) - float(rise_m) / 2.0) / 0.12
-    return float(_clamp(ov_m * 1000.0, 0.0, 5000.0))
+    return float(clamp(ov_m * 1000.0, 0.0, 5000.0))
 
 
 def _replay_level_ids_matching_elevation_mm(
@@ -1371,7 +1381,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             )
             continue
         outline_sl, thick_mm = geo_sl
-        thick_mm = float(_clamp(thick_mm, 50.0, 1800.0))
+        thick_mm = float(clamp(thick_mm, 50.0, 1800.0))
         sname = str(getattr(slab, "Name", None) or "") or ref_s
         floor_cmds.append(
             CreateFloorCmd(
@@ -2457,34 +2467,6 @@ def build_ifc_unsupported_merge_map_v0(step_text: str) -> dict[str, Any]:
     }
 
 
-def _clamp(v: float, lo: float, hi: float) -> float:
-    return max(lo, min(hi, v))
-
-
-def _polygon_area_m2_xy_mm(poly_mm: list[tuple[float, float]]) -> float:
-    n = len(poly_mm)
-    if n < 3:
-        return 0.0
-    a = 0.0
-    for i in range(n):
-        x1, y1 = poly_mm[i]
-        x2, y2 = poly_mm[(i + 1) % n]
-        a += x1 * y2 - x2 * y1
-    return abs(a / 2.0) / 1e6
-
-
-def _polygon_perimeter_m_xy_mm(poly_mm: list[tuple[float, float]]) -> float:
-    n = len(poly_mm)
-    if n < 2:
-        return 0.0
-    p = 0.0
-    for i in range(n):
-        x1, y1 = poly_mm[i]
-        x2, y2 = poly_mm[(i + 1) % n]
-        p += math.hypot(x2 - x1, y2 - y1)
-    return p / 1000.0
-
-
 def _try_attach_qto(f: Any, product: Any, qto_name: str, properties: dict[str, float]) -> None:
     """Narrow QTO slice (WP-X03) — ignored when IfcOpenShell build lacks qto use-cases."""
 
@@ -2686,69 +2668,6 @@ def _attach_railing_common_pset(f: Any, ifc_railing: Any, railing: RailingElem) 
     _safe_edit_pset(f, ifc_railing, name="Pset_RailingCommon", properties=props)
 
 
-def _elev_m(doc: Document, level_id: str) -> float:
-    el = doc.elements.get(level_id)
-    return el.elevation_mm / 1000.0 if isinstance(el, LevelElem) else 0.0
-
-
-def wall_local_to_world_m(wall: WallElem, elevation_m: float) -> tuple[np.ndarray, float]:
-    """4×4 homogeneous transform + wall length — matches `create_2pt_wall` placement."""
-
-    p1_ = np.array([wall.start.x_mm / 1000.0, wall.start.y_mm / 1000.0], dtype=float)
-    p2_ = np.array([wall.end.x_mm / 1000.0, wall.end.y_mm / 1000.0], dtype=float)
-
-    dv = p2_ - p1_
-    ln = float(np.linalg.norm(dv))
-    length_m = ln if ln >= 1e-9 else 1e-6
-    vx, vy = (dv / ln).tolist() if ln >= 1e-9 else (1.0, 0.0)
-
-    mat = np.array(
-        [
-            [vx, -vy, 0.0, p1_[0]],
-            [vy, vx, 0.0, p1_[1]],
-            [0.0, 0.0, 1.0, elevation_m],
-            [0.0, 0.0, 0.0, 1.0],
-        ],
-        dtype=float,
-    )
-    return mat, length_m
-
-
-def _xz_bounds_mm(poly_mm: list[tuple[float, float]]) -> tuple[float, float, float, float]:
-    xs = [p[0] for p in poly_mm]
-    zs = [p[1] for p in poly_mm]
-    mn_x, mx_x = min(xs), max(xs)
-    mn_z, mx_z = min(zs), max(zs)
-    span_x = max(mx_x - mn_x, 1.0)
-    span_z = max(mx_z - mn_z, 1.0)
-    cx = (mn_x + mx_x) / 2.0
-    cz = (mn_z + mx_z) / 2.0
-    return cx, cz, span_x, span_z
-
-
-def _room_outline_mm(rm: RoomElem) -> list[tuple[float, float]]:
-    return [(p.x_mm, p.y_mm) for p in rm.outline_mm]
-
-
-def _vertical_span_m(doc: Document, rm: RoomElem, floor_elev_m: float) -> tuple[float, float]:
-    """(base_z, ceiling_z) world elevation for crude space prism."""
-
-    if rm.upper_limit_level_id:
-        ceil_el = doc.elements.get(rm.upper_limit_level_id)
-        ceiling_z = (
-            ceil_el.elevation_mm / 1000.0 if isinstance(ceil_el, LevelElem) else floor_elev_m + 2.8
-        )
-    else:
-        ceiling_z = floor_elev_m + 2.8
-    offset = (
-        rm.volume_ceiling_offset_mm / 1000.0 if rm.volume_ceiling_offset_mm is not None else 0.0
-    )
-    ceiling_z -= offset
-    if ceiling_z < floor_elev_m + 1.0:
-        ceiling_z = floor_elev_m + 2.2
-    return floor_elev_m, ceiling_z
-
-
 def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
     """Build IFC geometry or return `(None, 0)` to fall back to empty hull."""
 
@@ -2872,9 +2791,9 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
 
         ey = w.end.y_mm / 1000.0
 
-        ez = _elev_m(doc, w.level_id)
-        height_m = _clamp(w.height_mm / 1000.0, 0.25, 40.0)
-        thick_m = _clamp(w.thickness_mm / 1000.0, 0.05, 2.0)
+        ez = level_elevation_m(doc, w.level_id)
+        height_m = clamp(w.height_mm / 1000.0, 0.25, 40.0)
+        thick_m = clamp(w.thickness_mm / 1000.0, 0.05, 2.0)
 
         wal = ifcopenshell.api.root.create_entity(f, ifc_class="IfcWall", name=w.name or wid)
 
@@ -2893,12 +2812,12 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         opening_area_m2 = 0.0
         for _e in doc.elements.values():
             if isinstance(_e, DoorElem) and _e.wall_id == wid:
-                wo = _clamp(float(_e.width_mm) / 1000.0, 0.05, 12.0)
-                ho = _clamp(height_m * 0.86, 0.6, max(0.5, height_m - 0.05))
+                wo = clamp(float(_e.width_mm) / 1000.0, 0.05, 12.0)
+                ho = clamp(height_m * 0.86, 0.6, max(0.5, height_m - 0.05))
                 opening_area_m2 += wo * float(ho)
             elif isinstance(_e, WindowElem) and _e.wall_id == wid:
-                wo = _clamp(float(_e.width_mm) / 1000.0, 0.05, 12.0)
-                hwin = _clamp(float(_e.height_mm) / 1000.0, 0.15, max(0.2, height_m - 0.2))
+                wo = clamp(float(_e.width_mm) / 1000.0, 0.05, 12.0)
+                hwin = clamp(float(_e.height_mm) / 1000.0, 0.15, max(0.2, height_m - 0.2))
                 opening_area_m2 += wo * float(hwin)
         net_side_area_m2 = max(0.0, gross_side_area_m2 - opening_area_m2)
         _try_attach_qto(
@@ -2949,13 +2868,13 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             continue
         st_inst = storey_for(fl.level_id)
 
-        cx_mm, cz_mm, _, _ = _xz_bounds_mm(pts)
+        cx_mm, cz_mm, _, _ = xz_bounds_mm(pts)
         cx_m = cx_mm / 1000.0
 
         cy_m = cz_mm / 1000.0
 
-        elev_z = _elev_m(doc, fl.level_id)
-        thick_m = _clamp(fl.thickness_mm / 1000.0, 0.05, 1.8)
+        elev_z = level_elevation_m(doc, fl.level_id)
+        thick_m = clamp(fl.thickness_mm / 1000.0, 0.05, 1.8)
 
         profile: list[tuple[float, float]] = []
 
@@ -3000,8 +2919,8 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         if hasattr(slab, "PredefinedType"):
             slab.PredefinedType = "FLOOR"
 
-        slab_area_m2 = _polygon_area_m2_xy_mm(pts)
-        slab_perm_m = _polygon_perimeter_m_xy_mm(
+        slab_area_m2 = polygon_area_m2_xy_mm(pts)
+        slab_perm_m = polygon_perimeter_m_xy_mm(
             [*pts, pts[0]] if pts else pts,
         )
         _try_attach_qto(
@@ -3046,7 +2965,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             return None
         hw = opening_width_m / (2.0 * ll)
 
-        half_t = float(_clamp(hw, 1e-4, 0.49))
+        half_t = float(clamp(hw, 1e-4, 0.49))
 
         usable_t0 = half_t
 
@@ -3054,7 +2973,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         if usable_t1 <= usable_t0:
             return None
 
-        ct = float(_clamp(along_t, usable_t0, usable_t1))
+        ct = float(clamp(along_t, usable_t0, usable_t1))
 
         return ct - half_t, ct + half_t
 
@@ -3077,11 +2996,11 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         iw = wall_products.get(host_wall_id)
 
         assert iw is not None
-        thick_m_host = _clamp(host_wall_ent.thickness_mm / 1000.0, 0.05, 2.0)
-        elev_w = _elev_m(doc, host_wall_ent.level_id)
+        thick_m_host = clamp(host_wall_ent.thickness_mm / 1000.0, 0.05, 2.0)
+        elev_w = level_elevation_m(doc, host_wall_ent.level_id)
         wmat, len_m_host = wall_local_to_world_m(host_wall_ent, elev_w)
 
-        width_open = _clamp(opening_width_mm / 1000.0, 0.2, len_m_host * 0.95)
+        width_open = clamp(opening_width_mm / 1000.0, 0.2, len_m_host * 0.95)
 
         ih = open_height_m
         open_depth = float(max(thick_m_host * 1.55, panel_thickness * 2 + 1e-3, 0.35))
@@ -3203,8 +3122,8 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             continue
         wh = doc.elements[d.wall_id]
         assert isinstance(wh, WallElem)
-        w_h_m = _clamp(wh.height_mm / 1000.0, 0.25, 40.0)
-        dh = float(_clamp(w_h_m * 0.86, 0.6, min(3.8, max(0.5, w_h_m - 0.05))))
+        w_h_m = clamp(wh.height_mm / 1000.0, 0.25, 40.0)
+        dh = float(clamp(w_h_m * 0.86, 0.6, min(3.8, max(0.5, w_h_m - 0.05))))
 
         hosted_opening_bundle(
             d.wall_id,
@@ -3227,13 +3146,15 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             continue
         wh_wall = doc.elements[zwin.wall_id]
         assert isinstance(wh_wall, WallElem)
-        w_top = _elev_m(doc, wh_wall.level_id) + _clamp(wh_wall.height_mm / 1000.0, 0.25, 40.0)
-        sill_z = float(_clamp(zwin.sill_height_mm / 1000.0, 0.06, max(0.2, w_top - 1.6)))
+        w_top = level_elevation_m(doc, wh_wall.level_id) + clamp(
+            wh_wall.height_mm / 1000.0, 0.25, 40.0
+        )
+        sill_z = float(clamp(zwin.sill_height_mm / 1000.0, 0.06, max(0.2, w_top - 1.6)))
         wh_m = float(
-            _clamp(
+            clamp(
                 zwin.height_mm / 1000.0,
                 0.15,
-                max(0.2, _clamp(wh_wall.height_mm / 1000.0, 0.25, 40.0) - sill_z - 0.08),
+                max(0.2, clamp(wh_wall.height_mm / 1000.0, 0.25, 40.0) - sill_z - 0.08),
             )
         )
 
@@ -3255,17 +3176,17 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         rm = doc.elements[rid]
 
         assert isinstance(rm, RoomElem)
-        pts_outline = _room_outline_mm(rm)
+        pts_outline = room_outline_mm(rm)
         if len(pts_outline) < 3:
             continue
 
-        lev_elev_m = float(_elev_m(doc, rm.level_id))
-        base_z_m, ceil_z_m = _vertical_span_m(doc, rm, lev_elev_m)
-        prism_h_m = float(_clamp(ceil_z_m - base_z_m, 2.2, 12.0))
+        lev_elev_m = float(level_elevation_m(doc, rm.level_id))
+        base_z_m, ceil_z_m = room_vertical_span_m(doc, rm, lev_elev_m)
+        prism_h_m = float(clamp(ceil_z_m - base_z_m, 2.2, 12.0))
 
         slab_z_mid = lev_elev_m + prism_h_m / 2.0
 
-        cx_mm, cz_mm, _, _ = _xz_bounds_mm(pts_outline)
+        cx_mm, cz_mm, _, _ = xz_bounds_mm(pts_outline)
 
         cx_m = cx_mm / 1000.0
 
@@ -3297,8 +3218,8 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         attach_kernel_identity_pset(
             sp, "Pset_SpaceCommon", rid, **_kernel_ifc_space_export_props(rm)
         )
-        gross_area = _polygon_area_m2_xy_mm(pts_outline)
-        net_perimeter = _polygon_perimeter_m_xy_mm(pts_outline)
+        gross_area = polygon_area_m2_xy_mm(pts_outline)
+        net_perimeter = polygon_perimeter_m_xy_mm(pts_outline)
         net_volume = float(gross_area) * float(prism_h_m)
         _try_attach_qto(
             f,
@@ -3329,11 +3250,11 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         op_pts_mm = [(p.x_mm, p.y_mm) for p in sop.boundary_mm]
         if len(op_pts_mm) < 3:
             continue
-        cx_mm, cz_mm, _, _ = _xz_bounds_mm(op_pts_mm)
+        cx_mm, cz_mm, _, _ = xz_bounds_mm(op_pts_mm)
         cx_m = cx_mm / 1000.0
         cy_m = cz_mm / 1000.0
-        elev_z = float(_elev_m(doc, host_fl.level_id))
-        thick_host = float(_clamp(host_fl.thickness_mm / 1000.0, 0.05, 1.8))
+        elev_z = float(level_elevation_m(doc, host_fl.level_id))
+        thick_host = float(clamp(host_fl.thickness_mm / 1000.0, 0.05, 1.8))
         slab_z_center = elev_z + thick_host / 2.0
         open_depth = float(max(thick_host * 2.25, 0.14))
 
@@ -3367,10 +3288,10 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         rp_mm = [(p.x_mm, p.y_mm) for p in rf.footprint_mm]
         if len(rp_mm) < 3:
             continue
-        cx_mm, cz_mm, span_x_mm, span_z_mm = _xz_bounds_mm(rp_mm)
-        ov = _clamp(float(rf.overhang_mm or 0) / 1000.0, 0.0, 5.0)
-        elev = float(_elev_m(doc, rf.reference_level_id))
-        rise = float(_clamp(float(rf.slope_deg or 25) / 70.0, 0.25, 2.8))
+        cx_mm, cz_mm, span_x_mm, span_z_mm = xz_bounds_mm(rp_mm)
+        ov = clamp(float(rf.overhang_mm or 0) / 1000.0, 0.0, 5.0)
+        elev = float(level_elevation_m(doc, rf.reference_level_id))
+        rise = float(clamp(float(rf.slope_deg or 25) / 70.0, 0.25, 2.8))
         roof_z_center = elev + ov * 0.12 + rise / 2.0
         cx_m = cx_mm / 1000.0
         cy_m = cz_mm / 1000.0
@@ -3407,7 +3328,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             along_ridge_m = along_ridge_mm / 1000.0
 
             slope_deg = float(rf.slope_deg or 25.0)
-            slope_rad = math.radians(_clamp(slope_deg, 5.0, 70.0))
+            slope_rad = math.radians(clamp(slope_deg, 5.0, 70.0))
 
             ridge_offset_m = (rf.ridge_offset_transverse_mm or 0.0) / 1000.0
             # Clamp inside the rectangle so the ridge stays interior.
@@ -3593,8 +3514,8 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         # IFC-04: roof QTO via Qto_SlabBaseQuantities (IfcRoof shares the
         # slab geometry surface). GrossArea is the plan footprint area;
         # Perimeter is the closed-loop perimeter.
-        roof_area_m2 = _polygon_area_m2_xy_mm(rp_mm)
-        roof_perim_m = _polygon_perimeter_m_xy_mm([*rp_mm, rp_mm[0]] if rp_mm else rp_mm)
+        roof_area_m2 = polygon_area_m2_xy_mm(rp_mm)
+        roof_perim_m = polygon_perimeter_m_xy_mm([*rp_mm, rp_mm[0]] if rp_mm else rp_mm)
         _try_attach_qto(
             f,
             roof_ent,
@@ -3628,7 +3549,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         op_pts_mm = [(p.x_mm, p.y_mm) for p in rop.boundary_mm]
         if len(op_pts_mm) < 3:
             continue
-        cx_mm, cz_mm, _, _ = _xz_bounds_mm(op_pts_mm)
+        cx_mm, cz_mm, _, _ = xz_bounds_mm(op_pts_mm)
         cx_m = cx_mm / 1000.0
         cy_m = cz_mm / 1000.0
         z_center = roof_z_center_by_id.get(rop.host_roof_id, 0.0)
@@ -3672,9 +3593,9 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             if isinstance(bl, LevelElem) and isinstance(tl, LevelElem)
             else float(st.riser_mm) * 16.0
         )
-        rise_m = float(_clamp(rise_mm / 1000.0, 0.5, 12.0))
-        elev_base = float(_elev_m(doc, st.base_level_id))
-        width_m = float(_clamp(st.width_mm / 1000.0, 0.3, 4.0))
+        rise_m = float(clamp(rise_mm / 1000.0, 0.5, 12.0))
+        elev_base = float(level_elevation_m(doc, st.base_level_id))
+        width_m = float(clamp(st.width_mm / 1000.0, 0.3, 4.0))
 
         stair_ent = ifcopenshell.api.root.create_entity(
             f, ifc_class="IfcStair", name=st.name or sid
@@ -3722,10 +3643,13 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         assert isinstance(col, ColumnElem)
         cx = float(col.position_mm.x_mm) / 1000.0
         cy = float(col.position_mm.y_mm) / 1000.0
-        elev = float(_elev_m(doc, col.level_id)) + float(col.base_constraint_offset_mm) / 1000.0
-        b_m = float(_clamp(col.b_mm / 1000.0, 0.05, 6.0))
-        h_m = float(_clamp(col.h_mm / 1000.0, 0.05, 6.0))
-        height_m = float(_clamp(col.height_mm / 1000.0, 0.1, 40.0))
+        elev = (
+            float(level_elevation_m(doc, col.level_id))
+            + float(col.base_constraint_offset_mm) / 1000.0
+        )
+        b_m = float(clamp(col.b_mm / 1000.0, 0.05, 6.0))
+        h_m = float(clamp(col.h_mm / 1000.0, 0.05, 6.0))
+        height_m = float(clamp(col.height_mm / 1000.0, 0.1, 40.0))
         rot_rad = math.radians(float(col.rotation_deg))
         col_ent = ifcopenshell.api.root.create_entity(
             f, ifc_class="IfcColumn", name=col.name or cid
@@ -3796,9 +3720,9 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         span_m = math.hypot(bex - bsx, bey - bsy)
         if span_m < 1e-6:
             continue
-        elev_b = float(_elev_m(doc, bm.level_id))
-        beam_w = float(_clamp(bm.width_mm / 1000.0, 0.05, 4.0))
-        beam_h = float(_clamp(bm.height_mm / 1000.0, 0.05, 4.0))
+        elev_b = float(level_elevation_m(doc, bm.level_id))
+        beam_w = float(clamp(bm.width_mm / 1000.0, 0.05, 4.0))
+        beam_h = float(clamp(bm.height_mm / 1000.0, 0.05, 4.0))
         beam_ent = ifcopenshell.api.root.create_entity(f, ifc_class="IfcBeam", name=bm.name or bid)
         # Beam profile is widthMm × heightMm; extruded along the start→end
         # axis (local +Z). World placement rotates local +Z to align with
@@ -3875,11 +3799,13 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         cpts = [(p.x_mm, p.y_mm) for p in ceil.boundary_mm]
         if len(cpts) < 3:
             continue
-        ccx_mm, ccz_mm, _, _ = _xz_bounds_mm(cpts)
+        ccx_mm, ccz_mm, _, _ = xz_bounds_mm(cpts)
         ccx_m = ccx_mm / 1000.0
         ccy_m = ccz_mm / 1000.0
-        ceil_elev_z = float(_elev_m(doc, ceil.level_id)) + float(ceil.height_offset_mm) / 1000.0
-        ceil_thick_m = float(_clamp(ceil.thickness_mm / 1000.0, 0.005, 0.5))
+        ceil_elev_z = (
+            float(level_elevation_m(doc, ceil.level_id)) + float(ceil.height_offset_mm) / 1000.0
+        )
+        ceil_thick_m = float(clamp(ceil.thickness_mm / 1000.0, 0.005, 0.5))
         ceil_profile: list[tuple[float, float]] = []
         for px, py in cpts:
             ceil_profile.append((px / 1000.0 - ccx_m, py / 1000.0 - ccy_m))
@@ -3916,7 +3842,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         if rl.hosted_stair_id:
             stair_h = doc.elements.get(rl.hosted_stair_id)
             if isinstance(stair_h, StairElem):
-                railing_elev_z = float(_elev_m(doc, stair_h.base_level_id))
+                railing_elev_z = float(level_elevation_m(doc, stair_h.base_level_id))
                 host_storey = storey_for(stair_h.base_level_id)
         # Body: 50mm-wide × guardHeightMm tall extrusion along each
         # path segment. We emit a single representation built from the
@@ -3931,7 +3857,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         rseg = math.hypot(rex - rsx, rey - rsy)
         if rseg < 1e-6:
             continue
-        guard_h_m = float(_clamp(rl.guard_height_mm / 1000.0, 0.4, 2.5))
+        guard_h_m = float(clamp(rl.guard_height_mm / 1000.0, 0.4, 2.5))
         rail_w_m = 0.05
         railing_ent = ifcopenshell.api.root.create_entity(
             f, ifc_class="IfcRailing", name=rl.name or rid

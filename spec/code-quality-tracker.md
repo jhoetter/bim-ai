@@ -139,6 +139,8 @@ These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (t
 
 **Progress 2026-05-10.** Extracted IFC exchange-scope helpers from `export_ifc.py` into `bim_ai/export_ifc_scope.py` with focused tests for kernel-slice product classification and deterministic level/storey sketches. The broader `export_ifc.py` package split is still open.
 
+**Progress 2026-05-10.** Extracted IFC geometry math helpers from `export_ifc.py` into `bim_ai/export_ifc_geometry.py` with focused tests for polygon metrics, bounds, level elevation lookup, room vertical spans, and wall local-to-world placement.
+
 ---
 
 ## CQ-05 — Slice the zustand store (`packages/web/src/state/store.ts`, 1,692 LOC)
