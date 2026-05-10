@@ -1,0 +1,43 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "631f03933eb6",
+  "session_id": "9d1d6c74-7b8e-4829-83df-f6225a087748",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T17:03:50.78024Z",
+  "branch": "revit-parity-wall-join-wave",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/wall_join_evidence.py",
+    "app/tests/test_wall_corner_join_summary_v1.py",
+    "app/tests/test_wall_join_evidence.py",
+    "spec/revit-parity/README.md",
+    "spec/revit-parity/ch04-walls.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "e21168486aec",
+  "checkpoint_transcript_start": 293,
+  "transcript_lines_at_start": 293,
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  },
+  "session_metrics": {
+    "turn_count": 19
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T17:03:50.775095Z",
+    "agent_lines": 105,
+    "agent_removed": 2,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 105,
+    "total_lines_changed": 107,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
