@@ -38,6 +38,7 @@ from bim_ai.engine import (
     CreatePropertyLineCmd,
     CreateRadialDimensionCmd,
     CreateReferencePlaneCmd,
+    CreateRevisionCloudCmd,
     CreateScheduleViewCmd,
     CreateSectionCutCmd,
     CreateSpotElevationCmd,
@@ -70,6 +71,7 @@ from bim_ai.engine import (
     PropertyLineElem,
     RadialDimensionElem,
     ReferencePlaneElem,
+    RevisionCloudElem,
     RoomElem,
     ScheduleElem,
     SectionCutElem,
@@ -1199,6 +1201,25 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
                 title=cmd.title,
             )
 
+        case CreateRevisionCloudCmd():
+            rid = cmd.id or new_id()
+            if rid in els:
+                raise ValueError(f"duplicate element id '{rid}'")
+            view = els.get(cmd.host_view_id)
+            if view is None or view.kind not in {"plan_view", "section_cut", "elevation_view"}:
+                raise ValueError(
+                    "createRevisionCloud.hostViewId must reference plan_view/section_cut/elevation_view"
+                )
+            if len(cmd.boundary_mm) < 3:
+                raise ValueError("createRevisionCloud.boundaryMm must contain at least 3 points")
+            els[rid] = RevisionCloudElem(
+                kind="revision_cloud",
+                id=rid,
+                host_view_id=cmd.host_view_id,
+                boundary_mm=list(cmd.boundary_mm),
+                colour=cmd.colour,
+                stroke_mm=cmd.stroke_mm,
+            )
         case _:
             return False
     return True

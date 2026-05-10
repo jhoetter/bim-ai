@@ -206,6 +206,14 @@ export type ColorFillLegendPrimitive = {
   title: string;
 };
 
+export type RevisionCloudPrimitive = {
+  kind: 'revision_cloud';
+  id: string;
+  boundaryMm: XY[];
+  colour: string;
+  strokeMm: number;
+};
+
 export type DetailComponentPrimitive =
   | DetailLinePrimitive
   | DetailRegionPrimitive
@@ -227,7 +235,8 @@ export type DetailComponentPrimitive =
   | ColorFillLegendPrimitive
   | SpotCoordinatePrimitive
   | SpotSlopePrimitive
-  | InsulationAnnotationPrimitive;
+  | InsulationAnnotationPrimitive
+  | RevisionCloudPrimitive;
 
 /**
  * Walks `elementsById` and returns rendering primitives for every
@@ -433,6 +442,14 @@ export function extractDetailComponentPrimitives(
         endMm: el.endMm,
         widthMm: el.widthMm ?? 200.0,
         colour: el.colour ?? '#202020',
+      });
+    } else if (el.kind === 'revision_cloud' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'revision_cloud',
+        id: el.id,
+        boundaryMm: el.boundaryMm,
+        colour: el.colour ?? '#e05000',
+        strokeMm: el.strokeMm ?? 1.0,
       });
     }
   }

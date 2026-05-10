@@ -309,6 +309,24 @@ export function AnnotateRibbon({
       hostViewId: planViewId,
       startMm: { xMm: c.xMm - 500, yMm: c.yMm },
       endMm: { xMm: c.xMm + 500, yMm: c.yMm },
+      widthMm: 200,
+    });
+  };
+
+  const placeRevisionCloud = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createRevisionCloud',
+      hostViewId: planViewId,
+      boundaryMm: [
+        { xMm: c.xMm - 600, yMm: c.yMm - 400 },
+        { xMm: c.xMm, yMm: c.yMm - 600 },
+        { xMm: c.xMm + 600, yMm: c.yMm - 400 },
+        { xMm: c.xMm + 600, yMm: c.yMm + 400 },
+        { xMm: c.xMm, yMm: c.yMm + 600 },
+        { xMm: c.xMm - 600, yMm: c.yMm + 400 },
+      ],
+      colour: '#e05000',
     });
   };
 
@@ -473,6 +491,15 @@ export function AnnotateRibbon({
         title="Place an insulation annotation (zigzag) across the view centre."
       >
         Insulation
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-revision-cloud"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeRevisionCloud}
+        title="Drop a hexagonal revision cloud at the view centre to mark revised areas."
+      >
+        Rev. Cloud
       </button>
       {textNoteInput ? (
         <div className="flex flex-col gap-1">

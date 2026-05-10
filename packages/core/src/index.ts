@@ -272,6 +272,7 @@ export type ElemKind =
   | 'detail_component'
   | 'repeating_detail'
   | 'detail_group'
+  | 'revision_cloud'
   | 'constraint'
   | 'mass'
   | 'phase'
@@ -1972,6 +1973,15 @@ export type Element =
       hostViewId: string;
       name?: string;
       memberIds: string[];
+    }
+  | {
+      /** ANN-03 — view-local revision cloud (cloud-shaped closed annotation). */
+      kind: 'revision_cloud';
+      id: string;
+      hostViewId: string;
+      boundaryMm: XY[];
+      colour?: string;
+      strokeMm?: number;
     }
   | {
       /**

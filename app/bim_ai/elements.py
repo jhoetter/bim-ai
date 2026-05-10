@@ -1992,7 +1992,6 @@ class MaskingRegionElem(BaseModel):
     )
     fill_color: str = Field(default="#ffffff", alias="fillColor")
 
-
 # ---------------------------------------------------------------------------
 # MEP elements — pipe, duct, and their legend annotations (MEP-01..04)
 # ---------------------------------------------------------------------------
@@ -2092,6 +2091,18 @@ class DuctLegendElem(BaseModel):
     position_mm: Vec2Mm = Field(alias="positionMm")
     entries: list[DuctLegendEntrySpec] = Field(default_factory=list)
     title: str = Field(default="Duct Legend")
+
+
+class RevisionCloudElem(BaseModel):
+    """ANN-03 — view-local revision cloud (closed cloud-shaped polygon boundary)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["revision_cloud"] = "revision_cloud"
+    id: str
+    host_view_id: str = Field(alias="hostViewId")
+    boundary_mm: list[Vec2Mm] = Field(alias="boundaryMm")
+    colour: str = Field(default="#e05000")
+    stroke_mm: float = Field(default=1.0, alias="strokeMm", gt=0)
 
 
 class SelectionSetRuleSpec(BaseModel):
