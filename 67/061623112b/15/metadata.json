@@ -1,0 +1,62 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "67061623112b",
+  "session_id": "019e13f7-61ef-7cd2-ada1-ff10739d593c",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T22:24:53.277358Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/assets.py",
+    "app/tests/test_vie_07_pin_element.py"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "cc0b946996ad",
+  "token_usage": {
+    "input_tokens": 56528,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 689280,
+    "output_tokens": 4449,
+    "api_call_count": 27
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T22:24:53.270593Z",
+    "agent_lines": 3,
+    "agent_removed": 3,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 3,
+    "total_lines_changed": 6,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 417,
+      "user_lines_removed": 2,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/commands.py": 18,
+        "app/bim_ai/elements.py": 20,
+        "app/bim_ai/engine.py": 2,
+        "app/bim_ai/engine_dispatch_siteassets.py": 42,
+        "packages/core/src/index.ts": 15,
+        "packages/web/src/families/familyPlacementRuntime.ts": 37,
+        "packages/web/src/families/types.ts": 12,
+        "packages/web/src/familyEditor/familyEditorPersistence.ts": 2,
+        "packages/web/src/plan/PlanCanvas.tsx": 44,
+        "packages/web/src/plan/familyInstancePlanRendering.ts": 177,
+        "packages/web/src/state/storeCoercion.ts": 27,
+        "packages/web/src/workspace/Workspace.tsx": 10,
+        "packages/web/src/workspace/authoring/OptionsBar.tsx": 11
+      },
+      "user_removed_per_file": {
+        "packages/web/src/plan/PlanCanvas.tsx": 2
+      }
+    }
+  ]
+}

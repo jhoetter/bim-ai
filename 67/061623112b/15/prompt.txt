@@ -1,0 +1,32 @@
+my python CI CD is failing:
+Run uv run ruff check bim_ai tests
+E402 Module level import not at top of file
+   --> bim_ai/assets.py:270:1
+    |
+268 |   # ---------------------------------------------------------------------------
+269 |
+270 | / from bim_ai.api.registry import (
+271 | |     ExitCode,
+272 | |     RestEndpoint,
+273 | |     ToolDescriptor,
+274 | |     register,
+275 | | )  # noqa: E402
+    | |_^
+276 |
+277 |   _ASSET_CATEGORY_ENUM = [
+    |
+
+B009 [*] Do not call `getattr` with a constant attribute value. It is not any safer than normal property access.
+   --> tests/test_vie_07_pin_element.py:176:12
+    |
+174 |     )
+175 |     assert ok2 is True and doc2 is not None
+176 |     assert getattr(doc2.elements["link-1"], "source_model_revision") == 7
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+help: Replace `getattr` with attribute access
+
+Found 2 errors.
+[*] 1 fixable with the `--fix` option.
+Error: Process completed with exit code 1.
+ please solve, commit and push and merge with main as soon as solved. check GH repo response pipeline (wait for feedback, you can get it)
