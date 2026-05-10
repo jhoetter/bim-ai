@@ -301,6 +301,7 @@ _ASSET_SYMBOL_KIND_ENUM = [
     "toilet",
     "bath",
     "shower",
+    "bathroom_layout",
     "generic",
 ]
 

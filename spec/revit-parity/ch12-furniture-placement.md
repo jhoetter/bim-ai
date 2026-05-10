@@ -59,7 +59,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 ![Kitchen parametric family](file:///Users/jhoetter/Desktop/Revit%20Specs/0736_04-37-24.png)
 *(Dining table family in furniture library project — kitchen-specific frames start beyond 0841)*
 
-**bim-ai status:** ✅ Done — The residential starter template includes `Kitchen Slab Layout 3000x650`, a composite placed asset with width/depth/height parameters plus `sinkOffsetMm` and `fridgeOffsetMm`. It reuses the counter placement workflow, so it can be placed, Spacebar-rotated, copied, moved, aligned, and edited through right-rail instance parameters. The plan renderer draws cabinet bays plus embedded sink and refrigerator symbols, and the 3D proxy adds a countertop, sink basin, and refrigerator mass at the configured offsets.
+**bim-ai status:** ✅ Done — The residential starter template includes `Kitchen Slab Layout 3000x650`, a composite placed asset with width/depth/height parameters plus `sinkOffsetMm` and `fridgeOffsetMm`. It reuses the counter placement workflow, so it can be placed, Spacebar-rotated, copied, moved, aligned, and edited through right-rail instance parameters. The plan renderer draws cabinet bays plus embedded sink and refrigerator symbols, and the 3D proxy adds a countertop, sink basin, and refrigerator mass at the configured offsets. Selected instances now expose sink/fridge offset grips on canvas; dragging them patches `paramValues` through `updateElementProperty`.
 
 ---
 
@@ -71,7 +71,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 ![Bathroom layout family](file:///Users/jhoetter/Desktop/Revit%20Specs/0574_03-45-08.png)
 *(Chair placed in project floor plan — bathroom-layout-specific frames start beyond 0841)*
 
-**bim-ai status:** ✅ Done — The residential starter template includes `Compact Bathroom Layout 2400x2200`, a composite placed asset with width/depth/height parameters plus `showerOffsetMm`, `toiletOffsetMm`, and `vanityOffsetMm`. It places and rotates as one family instance, exposes its offsets as instance parameters, and renders a coordinated toilet/vanity/shower layout in both plan and lightweight 3D proxy form.
+**bim-ai status:** ✅ Done — The residential starter template includes `Compact Bathroom Layout 2400x2200`, a composite placed asset with width/depth/height parameters plus `showerOffsetMm`, `toiletOffsetMm`, and `vanityOffsetMm`. It places and rotates as one family instance, exposes its offsets as instance parameters, and renders a coordinated toilet/vanity/shower layout in both plan and lightweight 3D proxy form. Selected instances now expose shower/toilet/vanity offset grips on canvas; dragging them patches `paramValues` through `updateElementProperty`.
 
 ---
 
