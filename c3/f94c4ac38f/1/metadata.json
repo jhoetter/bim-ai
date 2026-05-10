@@ -1,0 +1,92 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "c3f94c4ac38f",
+  "session_id": "019e12a2-e2b7-7121-b7a2-efaa44476317",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T16:24:53.665706Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "app/bim_ai/assets.py",
+    "app/bim_ai/commands.py",
+    "app/bim_ai/elements.py",
+    "app/bim_ai/engine_dispatch_siteassets.py",
+    "app/bim_ai/templates/residential-eu.json",
+    "app/tests/test_ast_v3_01.py",
+    "app/tests/test_template_loader.py",
+    "packages/core/src/index.ts",
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/plan/symbology.ts",
+    "packages/web/src/plan/symbology.wirePrimitives.test.ts",
+    "packages/web/src/state/store.test.ts",
+    "packages/web/src/state/storeCoercion.ts",
+    "packages/web/src/viewport/placedAssetRendering.test.ts",
+    "packages/web/src/viewport/placedAssetRendering.ts",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/library/AssetCard.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "bfe0f6306fc1",
+  "token_usage": {
+    "input_tokens": 416626,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 12838656,
+    "output_tokens": 36228,
+    "api_call_count": 102
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T16:24:53.615409Z",
+    "agent_lines": 340,
+    "agent_removed": 1,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 61,
+    "total_committed": 340,
+    "total_lines_changed": 402,
+    "agent_percentage": 84.82587064676616,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 949,
+      "user_lines_removed": 61,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/assets.py": 81,
+        "app/bim_ai/templates/residential-eu.json": 108,
+        "app/tests/test_template_loader.py": 6,
+        "packages/web/src/Viewport.tsx": 28,
+        "packages/web/src/plan/symbology.ts": 6,
+        "packages/web/src/plan/symbology.wirePrimitives.test.ts": 57,
+        "packages/web/src/viewport/placedAssetRendering.test.ts": 79,
+        "packages/web/src/viewport/placedAssetRendering.ts": 584
+      },
+      "user_removed_per_file": {
+        "app/bim_ai/assets.py": 5,
+        "packages/web/src/Viewport.tsx": 1,
+        "packages/web/src/plan/symbology.ts": 54,
+        "packages/web/src/plan/symbology.wirePrimitives.test.ts": 1
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 948,
+      "agent_lines_removed": 61
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1350,
+      "agent_lines_removed": 62
+    }
+  ]
+}

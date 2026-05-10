@@ -1,0 +1,9 @@
+we recently added that interior assets can be added; i want that they are also already rendered, e.g. as in rayon; if there is a fridge in the floorplan in the kitchen, show it as a fridge and not just the rectangle; if needed, add accordingly relevant content to the asset libraries (see how other tools do this); i also want that this translates to the 3d rendering
+
+---
+
+[Image #1] i want it to be on a quality like in rayon, how do we get there?
+
+---
+
+then do that please..
