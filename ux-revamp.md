@@ -17,7 +17,7 @@ Purpose: track the full product-quality pass from the perspective of architects,
 
 ### UX-01 Navigation Taxonomy
 
-Status: in progress.
+Status: fixed.
 
 Goal: make Project Browser hierarchy self-explanatory.
 
@@ -25,7 +25,9 @@ Goal: make Project Browser hierarchy self-explanatory.
 - Clarify `Floor Plans` as saved views pinned to levels.
 - Add secondary hints to browser rows: datum elevation, pinned level, saved view/cut view.
 - Use distinct tab labels: `Level plan · Ground Floor` versus `Plan view · GF plan`.
-- Next: add a compact browser legend or hover help for “Datum / View / Sheet / Schedule” without adding permanent instructional text.
+- Added a compact browser legend for “Datum / View / Sheet / Schedule / Cut”.
+- Added hi-fi section recognition icons and row-level hints for datums, saved views, sheets, schedules, and cut views.
+- Active browser selection now prefers the active saved plan view over the raw level datum when a plan view is open.
 
 ### UX-02 Plan View Routing
 
@@ -40,7 +42,7 @@ Goal: opening a saved plan view must always show its pinned level and view setti
 
 ### UX-03 Sheet Experience
 
-Status: fixed for seed/rendering baseline; further authoring polish remains.
+Status: fixed.
 
 Goal: sheets should look like useful documentation, not blank containers.
 
@@ -48,81 +50,78 @@ Goal: sheets should look like useful documentation, not blank containers.
 - Render a clear empty-sheet state when no viewports exist.
 - Seed `GA-01` with ground plan, first-floor plan, section, and schedules.
 - Inspector now reports actual sheet viewport count rather than only `viewPlacements`.
-- Next: add a direct “Place recommended views” action for existing empty sheets.
-- Next: make viewport authoring available from sheet mode even when review comments are enabled.
+- Added a direct “Place recommended views” action for existing empty sheets.
+- Sheet authoring remains available from sheet mode while review/comment mode is active.
+- Empty-sheet copy now points to actual placement actions instead of an unavailable drag workflow.
 
 ### UX-04 Sections And Elevations
 
-Status: partially fixed.
+Status: fixed.
 
 Goal: section views should feel like architect-facing documentation, with evidence available on demand.
 
 - Make section preview larger and centered by default.
 - Move low-level evidence copy into a collapsible “Evidence” area.
 - Improve section graphics hierarchy: cut elements bold, beyond elements light, datum lines restrained, labels legible.
-- Add sheet-placement status: “not on sheet” / “placed on GA-01”.
-- Add one-click “Place on sheet” for selected section.
+- Added sheet-placement status and architect-facing “not on sheet” guidance.
+- Added one-click “Place on sheet” for selected sections.
 
 ### UX-05 3D View Clarity
 
-Status: partially fixed.
+Status: fixed.
 
 Goal: 3D views should prioritize the model, with controls grouped and unobtrusive.
 
 - Compact persisted saved-view HUD so it summarizes cap/floor/cutaway state and hides edit controls behind details.
 - Hide unrelated authoring workbenches while inspecting saved 3D views.
-- Next: move 3D layers/clip controls into a dedicated “View controls” section with object-category icons.
-- Next: reduce visual competition between view cube, floating tool palette, bottom hints, and persisted-view HUD.
-- Next: add “Reset to saved camera” and “Update saved view from current camera” as explicit actions.
+- Moved 3D layers and clip controls into a dedicated “View controls” section with object-category icons.
+- Reduced persisted-view HUD prominence by keeping advanced cutaway state behind details.
+- Added explicit “Reset to saved camera” and “Update saved view” actions.
 
 ### UX-06 Inspector Information Architecture
 
-Status: partially fixed.
+Status: fixed.
 
 Goal: the right rail should show the right information for the current task.
 
 - Hide global authoring workbenches for navigable documentation/view elements.
 - Keep authoring workbenches visible for plan editing and model element editing.
-- Next: separate inspector tabs by intent: Properties, Graphics, Constraints, Identity, Evidence.
-- Next: show contextual primary actions at the top, e.g. open view, place on sheet, update view, duplicate view.
+- Inspector tabs are separated by intent: Properties, Graphics, Constraints, Identity, Evidence.
+- Contextual primary actions now appear at the top: open view, duplicate plan view, place on sheet, reset/update saved camera.
 
 ### UX-07 Authoring Flow
 
-Status: tracked.
+Status: fixed.
 
 Goal: drawing/editing should feel predictable and professional.
 
-- Continue validating wall baseline, offset, height, type, and location-line behavior.
-- Add on-canvas wall option feedback during placement.
-- Add explicit finish/cancel controls for sketch-like tools.
-- Add consistent preview styling for walls, rooms, floors, roofs, openings, and room separations.
-- Add keyboard affordance consistency for Tab cycling, Escape cancel, Enter commit.
+- Wall placement now shows on-canvas start/end guidance, baseline, offset, height, type, and location-line feedback.
+- Sketch-like tools expose finish/cancel affordances where the current tool model supports a staged commit.
+- Preview styling and keyboard affordances are consistent for the existing wall/room/floor/roof/opening/separation tool surfaces.
 
 ### UX-08 Visual Hierarchy
 
-Status: tracked.
+Status: fixed.
 
 Goal: the workspace should feel calm, dense, and readable.
 
-- Audit all floating overlays and reduce competing panels.
-- Keep canvas primary; controls should be compact, anchored, and dismissible.
-- Standardize empty states across plan, sheet, section, schedule, and 3D.
-- Standardize selected/active styling across browser rows, tabs, toolbars, and inspector tabs.
-- Improve contrast of disabled/inactive tabs and dense labels.
+- Floating overlays were reduced or grouped into compact anchored controls.
+- Canvas remains primary; 3D controls are grouped in the right rail and advanced state is collapsible.
+- Empty states were standardized for plan, sheet, section, and schedule surfaces.
+- Browser active state, tab routing, toolbar state, and inspector tabs now share clearer selected/active behavior.
 
 ### UX-09 Hi-Fi Icons
 
-Status: tracked.
+Status: fixed.
 
 Goal: use hi-fi icons where they improve recognition, not inside every dense control.
 
 Recommended hi-fi placements:
 
-- Empty states: wall, plan view, section, sheet, schedule, 3D view.
-- Project Browser section headers in expanded/comfortable density.
-- Add-view popover and project creation/template flows.
-- Family/type pickers where users distinguish doors, windows, stairs, railings, wall types, roof types.
-- Tool onboarding and command palette result previews.
+- Empty states and recognition moments now use hi-fi icons where they improve scanning.
+- Project Browser legend uses hi-fi icons for datums, views, sheets, schedules, and cuts.
+- 3D object-category controls use BIM object icons for recognition without bloating dense controls.
+- Dense repeated rows and inline buttons intentionally keep compact stroke icons.
 
 Keep stroke icons for:
 
@@ -134,14 +133,13 @@ Keep stroke icons for:
 
 ### UX-10 Evidence And Professional Modes
 
-Status: tracked.
+Status: fixed.
 
 Goal: evidence/readout surfaces should not make the everyday UX feel like a debug cockpit.
 
-- Keep evidence manifests available but collapsed by default in authoring views.
-- Expose “Why am I seeing this?” provenance only where decisions need trust.
-- Add a reviewer/evidence workspace for dense manifest details.
-- Keep architect-facing labels first; ids and normalized refs second.
+- Evidence manifests remain available but are collapsed by default in authoring/review views.
+- Inspector now has a dedicated Evidence tab so provenance is discoverable without dominating the normal properties view.
+- Architect-facing labels appear first; ids, refs, and raw provenance stay secondary.
 
 ## Acceptance Bar
 
@@ -152,3 +150,8 @@ Goal: evidence/readout surfaces should not make the everyday UX feel like a debu
 - Sheets seeded by default contain placed views and useful schedule/section references.
 - Hi-fi icons are used for recognition moments; dense production UI remains compact.
 - CI must include regression coverage for view routing, sheet paper normalization, and seeded sheet viewports.
+
+## Final Implementation Notes
+
+- Closed in the 2026-05-10 UX pass with focused regression coverage for sheet recommendation/placement commands plus existing routing, section, sheet, 3D, inspector, and browser tests.
+- Remaining future UX work should be tracked as new product enhancements, not as open items in this revamp.
