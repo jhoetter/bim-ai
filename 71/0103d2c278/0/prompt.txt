@@ -65,3 +65,7 @@ commited and pushed?
 ---
 
 [Image #1][Image #2][Image #3] the first seems like actual 3d model, walltypes arent rendered, and furniture etc seems like a poorly rendered svg...
+
+---
+
+[Image #1] good, but out of frame
