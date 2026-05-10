@@ -1,0 +1,39 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "a5b129046c65",
+  "strategy": "manual-commit",
+  "branch": "revit-parity-qat-dimension-tag-shortcuts",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "app/bim_ai/commands.py",
+    "app/bim_ai/engine_dispatch_documentation.py",
+    "app/bim_ai/schedule_derivation.py",
+    "app/tests/test_schedule_opening_computed_fields.py",
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/viewport/ViewCube.tsx",
+    "packages/web/src/workspace/ModeShells.test.tsx",
+    "packages/web/src/workspace/ModeShells.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/WorkspaceRightRail.tsx",
+    "packages/web/src/workspace/shell/LeftRail.tsx",
+    "packages/web/src/workspace/viewport/CanvasMount.tsx",
+    "packages/web/src/workspace/viewport/Viewport3DLayersPanel.test.tsx",
+    "packages/web/src/workspace/viewport/Viewport3DLayersPanel.tsx",
+    "ux-revamp.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/a5/b129046c65/0/metadata.json",
+      "transcript": "/a5/b129046c65/0/full.jsonl",
+      "content_hash": "/a5/b129046c65/0/content_hash.txt",
+      "prompt": "/a5/b129046c65/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 903715,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 15222400,
+    "output_tokens": 47240,
+    "api_call_count": 169
+  }
+}
