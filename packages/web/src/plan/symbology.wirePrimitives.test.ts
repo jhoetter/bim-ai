@@ -67,6 +67,16 @@ function hasMeshNode(root: THREE.Object3D): boolean {
   return found;
 }
 
+function meshColorHexForPick(root: THREE.Object3D, pickId: string): string | null {
+  let out: string | null = null;
+  root.traverse((o) => {
+    if (out || !(o instanceof THREE.Mesh) || o.userData.bimPickId !== pickId) return;
+    const mat = Array.isArray(o.material) ? o.material[0] : o.material;
+    if (mat instanceof THREE.MeshBasicMaterial) out = `#${mat.color.getHexString()}`;
+  });
+  return out;
+}
+
 describe('PlanCanvas server wire primitives path (WP-C03)', () => {
   it('builds at least one mesh from planProjectionPrimitives_v1 walls', () => {
     const wall: Extract<Element, { kind: 'wall' }> = {
@@ -514,6 +524,52 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
       planAnnotationHints: { openingTagsVisible: true, roomLabelsVisible: true },
     });
     expect(countAnnotationOverlaySprites(grpOn)).toBe(2);
+  });
+
+  it('uses per-room fill override ahead of room scheme color in wire rendering', () => {
+    const room: Extract<Element, { kind: 'room' }> = {
+      kind: 'room',
+      id: 'r-override',
+      name: 'Focus',
+      levelId: 'lvl',
+      roomFillOverrideHex: '#123456',
+      outlineMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 3000, yMm: 0 },
+        { xMm: 3000, yMm: 2000 },
+        { xMm: 0, yMm: 2000 },
+      ],
+    };
+    const wire = {
+      format: 'planProjectionPrimitives_v1',
+      walls: [],
+      floors: [],
+      rooms: [
+        {
+          id: 'r-override',
+          levelId: 'lvl',
+          outlineMm: [
+            [0, 0],
+            [3000, 0],
+            [3000, 2000],
+            [0, 2000],
+          ],
+          schemeColorHex: '#abcdef',
+          roomFillOverrideHex: '#123456',
+        },
+      ],
+      doors: [],
+      windows: [],
+      stairs: [],
+      roofs: [],
+      gridLines: [],
+      roomSeparations: [],
+      dimensions: [],
+    } as unknown as PlanProjectionPrimitivesV1Wire;
+
+    const grp = new THREE.Group();
+    rebuildPlanMeshes(grp, { [room.id]: room }, { activeLevelId: 'lvl', wirePrimitives: wire });
+    expect(meshColorHexForPick(grp, 'r-override')).toBe('#123456');
   });
 
   it('draws placed asset symbols while server wire primitives are active', () => {

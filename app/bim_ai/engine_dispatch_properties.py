@@ -87,6 +87,18 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     if tv <= 0:
                         raise ValueError("targetAreaM2 must be positive when set")
                     els[cmd.element_id] = el.model_copy(update={"target_area_m2": tv})
+            elif cmd.key == "roomFillOverrideHex" and isinstance(el, RoomElem):
+                raw_hex = cmd.value.strip()
+                if raw_hex == "":
+                    els[cmd.element_id] = el.model_copy(update={"room_fill_override_hex": None})
+                elif len(raw_hex) == 7 and raw_hex.startswith("#") and all(
+                    c in "0123456789abcdefABCDEF" for c in raw_hex[1:]
+                ):
+                    els[cmd.element_id] = el.model_copy(
+                        update={"room_fill_override_hex": raw_hex.lower()}
+                    )
+                else:
+                    raise ValueError("roomFillOverrideHex must be #RRGGBB or empty to clear")
             elif cmd.key == "label" and isinstance(el, GridLineElem):
                 els[cmd.element_id] = el.model_copy(update={"label": cmd.value})
             elif isinstance(el, PlanViewElem):

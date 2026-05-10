@@ -270,6 +270,45 @@ describe('FAM-082/FAM-083 — parameter-driven furniture extrusions', () => {
     expect(bboxes).toHaveLength(1);
     expect(bboxes[0]!.max.z - bboxes[0]!.min.z).toBeCloseTo(720, 0);
   });
+
+  it('uses a material_key parameter to resolve sweep material association', () => {
+    const seat: SweepGeometryNode = {
+      kind: 'sweep',
+      pathLines: [{ startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 0, yMm: 100 } }],
+      profile: rectProfile(600, 600),
+      profilePlane: 'work_plane',
+      materialKey: 'fabric_blue',
+      materialKeyParam: 'Finish_Material',
+    };
+    const family: FamilyDefinition = {
+      id: 'material-chair',
+      name: 'Material Chair',
+      discipline: 'generic',
+      params: [
+        {
+          key: 'Finish_Material',
+          label: 'Finish Material',
+          type: 'material_key',
+          default: 'fabric_blue',
+          instanceOverridable: true,
+        },
+      ],
+      defaultTypes: [],
+      geometry: [seat],
+    };
+    const group = resolveFamilyGeometry(
+      family.id,
+      { Finish_Material: 'oak_light' },
+      { [family.id]: family },
+    );
+    const meshes: THREE.Mesh[] = [];
+    group.traverse((node) => {
+      if (node instanceof THREE.Mesh) meshes.push(node);
+    });
+
+    expect(meshes).toHaveLength(1);
+    expect(meshes[0]!.userData.materialKey).toBe('oak_light');
+  });
 });
 
 describe('FAM-01 cycle detection', () => {

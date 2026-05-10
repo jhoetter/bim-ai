@@ -74,6 +74,41 @@ export function hitTestWallAtMm(
   return best?.id ?? null;
 }
 
+export function snapPointToNearestWallFaceMm(
+  walls: WallForPicking[],
+  ptMm: { xMm: number; yMm: number },
+): { xMm: number; yMm: number } | null {
+  let best: { wall: WallForPicking; dist: number; cx: number; cy: number } | null = null;
+  for (const wall of walls) {
+    const ax = wall.startMm.xMm;
+    const ay = wall.startMm.yMm;
+    const bx = wall.endMm.xMm;
+    const by = wall.endMm.yMm;
+    const dx = bx - ax;
+    const dy = by - ay;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) continue;
+    const t = Math.max(0, Math.min(1, ((ptMm.xMm - ax) * dx + (ptMm.yMm - ay) * dy) / lenSq));
+    const cx = ax + t * dx;
+    const cy = ay + t * dy;
+    const dist = Math.hypot(ptMm.xMm - cx, ptMm.yMm - cy);
+    if (dist > wall.thicknessMm / 2 + HIT_PADDING_MM) continue;
+    if (best === null || dist < best.dist) best = { wall, dist, cx, cy };
+  }
+  if (best === null) return null;
+  const wx = best.wall.endMm.xMm - best.wall.startMm.xMm;
+  const wy = best.wall.endMm.yMm - best.wall.startMm.yMm;
+  const len = Math.hypot(wx, wy);
+  if (len === 0) return null;
+  const nx = -wy / len;
+  const ny = wx / len;
+  const side = (ptMm.xMm - best.cx) * nx + (ptMm.yMm - best.cy) * ny >= 0 ? 1 : -1;
+  return {
+    xMm: best.cx + nx * side * (best.wall.thicknessMm / 2),
+    yMm: best.cy + ny * side * (best.wall.thicknessMm / 2),
+  };
+}
+
 interface OffsetModeChipProps {
   mode: PickWallsOffsetMode;
   onChange: (next: PickWallsOffsetMode) => void;

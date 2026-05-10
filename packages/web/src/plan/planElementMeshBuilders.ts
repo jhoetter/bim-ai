@@ -1059,7 +1059,7 @@ export function stairPlanThree(
 export function roomMesh(
   room: Extract<Element, { kind: 'room' }>,
   presentation?: PlanPresentationPreset,
-  opts?: { schemeColorHex?: string; roomFillOpacityScale?: number },
+  opts?: { schemeColorHex?: string; roomFillOpacityScale?: number; roomFillOverrideHex?: string },
 ): THREE.Mesh {
   const scheme = presentation ?? 'default';
 
@@ -1107,12 +1107,20 @@ export function roomMesh(
           };
 
   const scale = opts?.roomFillOpacityScale ?? 1;
+  const instanceOverride =
+    typeof opts?.roomFillOverrideHex === 'string' &&
+    /^#[0-9a-fA-F]{6}$/.test(opts.roomFillOverrideHex)
+      ? opts.roomFillOverrideHex
+      : typeof room.roomFillOverrideHex === 'string' &&
+          /^#[0-9a-fA-F]{6}$/.test(room.roomFillOverrideHex)
+        ? room.roomFillOverrideHex
+        : undefined;
 
   const mesh = new THREE.Mesh(
     geo,
 
     new THREE.MeshBasicMaterial({
-      color: fill.color,
+      color: instanceOverride ?? fill.color,
 
       transparent: true,
 

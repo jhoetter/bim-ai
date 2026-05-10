@@ -1,5 +1,11 @@
 import { type JSX, useEffect, useRef, useState } from 'react';
 import { ICON_SIZE, Icons } from '@bim-ai/ui';
+import {
+  coerceCheckpointRetentionLimit,
+  DEFAULT_CHECKPOINT_RETENTION_LIMIT,
+  MAX_CHECKPOINT_RETENTION_LIMIT,
+  MIN_CHECKPOINT_RETENTION_LIMIT,
+} from '../../state/backupRetention';
 
 /**
  * Project-name dropdown — spec §11.1, T-03.
@@ -29,6 +35,8 @@ export interface ProjectMenuProps {
   onPickRecent?: (id: string) => void;
   onInsertSeed?: () => void;
   onSaveSnapshot?: () => void;
+  saveAsMaximumBackups?: number;
+  onSaveAsMaximumBackupsChange?: (maximumBackups: number) => void;
   onRestoreSnapshot?: (file: File) => void;
   onNewClear?: () => void;
   /** Replay the onboarding tour from the beginning (spec §24). */
@@ -49,6 +57,8 @@ export function ProjectMenu({
   onPickRecent,
   onInsertSeed,
   onSaveSnapshot,
+  saveAsMaximumBackups,
+  onSaveAsMaximumBackupsChange,
   onRestoreSnapshot,
   onNewClear,
   onReplayTour,
@@ -61,6 +71,10 @@ export function ProjectMenu({
   const ifcInputRef = useRef<HTMLInputElement | null>(null);
   const dxfInputRef = useRef<HTMLInputElement | null>(null);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
+  const [saveAsOptionsOpen, setSaveAsOptionsOpen] = useState(false);
+  const [maximumBackupsDraft, setMaximumBackupsDraft] = useState(
+    String(coerceCheckpointRetentionLimit(saveAsMaximumBackups)),
+  );
 
   // Position the popover under the anchor.
   useEffect(() => {
@@ -70,6 +84,14 @@ export function ProjectMenu({
     const rect = anchor.getBoundingClientRect();
     setPos({ left: rect.left, top: rect.bottom + 4 });
   }, [open, anchorRef]);
+
+  useEffect(() => {
+    if (!open) {
+      setSaveAsOptionsOpen(false);
+      return;
+    }
+    setMaximumBackupsDraft(String(coerceCheckpointRetentionLimit(saveAsMaximumBackups)));
+  }, [open, saveAsMaximumBackups]);
 
   // Click-outside + Escape close.
   useEffect(() => {
@@ -180,6 +202,54 @@ export function ProjectMenu({
             onSaveSnapshot?.();
           }}
         />
+        <MenuItem
+          label="Save As Options…"
+          icon="settings"
+          testId="project-menu-save-as-options"
+          onClick={() => {
+            setSaveAsOptionsOpen((value) => !value);
+          }}
+        />
+        {saveAsOptionsOpen ? (
+          <li className="border-y border-border bg-surface-strong px-3 py-2">
+            <label className="flex flex-col gap-1 text-xs text-foreground">
+              <span>Maximum backups</span>
+              <input
+                aria-label="Maximum backups"
+                data-testid="project-menu-maximum-backups"
+                type="number"
+                min={MIN_CHECKPOINT_RETENTION_LIMIT}
+                max={MAX_CHECKPOINT_RETENTION_LIMIT}
+                step={1}
+                value={maximumBackupsDraft}
+                onChange={(e) => setMaximumBackupsDraft(e.currentTarget.value)}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                }}
+                className="h-7 rounded border border-border bg-surface px-2 text-xs text-foreground"
+              />
+            </label>
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <span className="text-[10px] text-muted">
+                Applies to retained snapshots and rolling export slots.
+              </span>
+              <button
+                type="button"
+                role="menuitem"
+                data-testid="project-menu-save-as-options-apply"
+                className="rounded border border-border px-2 py-1 text-xs text-foreground hover:bg-surface"
+                onClick={() => {
+                  const next = coerceCheckpointRetentionLimit(maximumBackupsDraft);
+                  setMaximumBackupsDraft(String(next));
+                  onSaveAsMaximumBackupsChange?.(next);
+                  setSaveAsOptionsOpen(false);
+                }}
+              >
+                Apply
+              </button>
+            </div>
+          </li>
+        ) : null}
         <MenuItem
           label="Open snapshot from disk…"
           icon="externalLink"

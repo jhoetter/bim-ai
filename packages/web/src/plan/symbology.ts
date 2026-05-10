@@ -630,9 +630,15 @@ function rebuildPlanMeshesFromWire(
       typeof hexRaw === 'string' && /^#[0-9a-fA-F]{6}$/.test(hexRaw.trim())
         ? hexRaw.trim()
         : undefined;
+    const overrideRaw = r.roomFillOverrideHex ?? r.room_fill_override_hex;
+    const roomFillOverrideHex =
+      typeof overrideRaw === 'string' && /^#[0-9a-fA-F]{6}$/.test(overrideRaw.trim())
+        ? overrideRaw.trim()
+        : undefined;
     const mesh = roomMesh(roomEl, presentation, {
       schemeColorHex: schemeHex,
       roomFillOpacityScale,
+      roomFillOverrideHex,
     });
     holder.add(mesh);
     if (ann?.roomLabelsVisible === true && typeof mesh.userData.roomLabel === 'object') {

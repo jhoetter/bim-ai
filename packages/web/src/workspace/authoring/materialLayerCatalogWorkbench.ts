@@ -28,6 +28,8 @@ export type MaterialLayerRow = {
   materialKey: string;
   materialDisplay: string;
   thicknessMm: number;
+  wrapsAtEnds: boolean;
+  wrapsAtInserts: boolean;
 };
 
 export type MaterialLayerReadout = {
@@ -69,6 +71,8 @@ function normalizeLayer(lyr: WallTypeLayer): Omit<MaterialLayerRow, 'index'> {
     materialKey: mk,
     materialDisplay: resolveMaterialDisplayLabel(mk),
     thicknessMm: roundThicknessMm(Number(lyr.thicknessMm)),
+    wrapsAtEnds: lyr.wrapsAtEnds === true,
+    wrapsAtInserts: lyr.wrapsAtInserts === true,
   };
 }
 
@@ -108,7 +112,9 @@ export function buildMaterialStackEvidenceToken(readout: MaterialLayerReadout): 
         ? 'match'
         : 'mismatch';
   const src = readout.layerSource;
-  return `host=${host};type=${typeId};layers=${n};cut=${readout.cutProxyThicknessMm ?? 'na'};stackMm=${readout.layerTotalThicknessMm};align=${match};src=${src}`;
+  const wrapEnds = readout.layers.filter((row) => row.wrapsAtEnds).length;
+  const wrapInserts = readout.layers.filter((row) => row.wrapsAtInserts).length;
+  return `host=${host};type=${typeId};layers=${n};cut=${readout.cutProxyThicknessMm ?? 'na'};stackMm=${readout.layerTotalThicknessMm};align=${match};src=${src};wrapEnds=${wrapEnds};wrapInserts=${wrapInserts}`;
 }
 
 export function resolveMaterialLayerReadout(
@@ -157,6 +163,8 @@ export function resolveMaterialLayerReadout(
             materialKey: '',
             materialDisplay: '',
             thicknessMm: roundThicknessMm(selected.thicknessMm),
+            wrapsAtEnds: false,
+            wrapsAtInserts: false,
           },
         ];
         layerSource = 'instance_fallback';
@@ -169,6 +177,8 @@ export function resolveMaterialLayerReadout(
           materialKey: '',
           materialDisplay: '',
           thicknessMm: roundThicknessMm(selected.thicknessMm),
+          wrapsAtEnds: false,
+          wrapsAtInserts: false,
         },
       ];
       layerSource = 'instance_fallback';
@@ -211,6 +221,8 @@ export function resolveMaterialLayerReadout(
             materialKey: '',
             materialDisplay: '',
             thicknessMm: roundThicknessMm(selected.thicknessMm),
+            wrapsAtEnds: false,
+            wrapsAtInserts: false,
           },
         ];
         layerSource = 'instance_fallback';
@@ -223,6 +235,8 @@ export function resolveMaterialLayerReadout(
           materialKey: '',
           materialDisplay: '',
           thicknessMm: roundThicknessMm(selected.thicknessMm),
+          wrapsAtEnds: false,
+          wrapsAtInserts: false,
         },
       ];
       layerSource = 'instance_fallback';
@@ -296,6 +310,8 @@ export type LayerAuthoringDraftRow = {
   thicknessMm: number;
   function: WallLayerFunction;
   materialKey: string;
+  wrapsAtEnds?: boolean;
+  wrapsAtInserts?: boolean;
 };
 
 export function materialRowsToDraft(rows: MaterialLayerRow[]): LayerAuthoringDraftRow[] {
@@ -304,6 +320,8 @@ export function materialRowsToDraft(rows: MaterialLayerRow[]): LayerAuthoringDra
     thicknessMm: r.thicknessMm,
     function: r.function,
     materialKey: r.materialKey,
+    wrapsAtEnds: r.wrapsAtEnds,
+    wrapsAtInserts: r.wrapsAtInserts,
   }));
 }
 
@@ -336,6 +354,8 @@ export function buildUpsertLayeredTypeCommand(
     thicknessMm: roundThicknessMm(Number(r.thicknessMm)),
     function: r.function,
     materialKey: r.materialKey.trim(),
+    ...(r.wrapsAtEnds ? { wrapsAtEnds: true } : {}),
+    ...(r.wrapsAtInserts ? { wrapsAtInserts: true } : {}),
   }));
 
   if (el.kind === 'wall_type') {

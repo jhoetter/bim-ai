@@ -1704,6 +1704,18 @@ export function InspectorRoomEditor({
           onBlur={(e) => onPersistProperty('targetAreaM2', e.target.value.trim())}
         />
       </label>
+      <label className={LABEL_CLS}>
+        Room fill override
+        <input
+          className={INPUT_CLS}
+          defaultValue={el.roomFillOverrideHex ?? ''}
+          key={`rm-fill-${el.id}-${el.roomFillOverrideHex ?? 'none'}-${revision}`}
+          placeholder="#RRGGBB"
+          pattern="^#[0-9a-fA-F]{6}$"
+          data-testid="inspector-room-fill-override"
+          onBlur={(e) => onPersistProperty('roomFillOverrideHex', e.target.value.trim())}
+        />
+      </label>
       <FieldRow label={f('level')} value={el.levelId} mono />
       <FieldRow label={f('outlinePoints')} value={String(el.outlineMm.length)} />
     </div>

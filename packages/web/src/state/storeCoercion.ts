@@ -404,6 +404,10 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
                 : Number(raw.volumeM3 ?? raw.volume_m3),
           }
         : {}),
+      ...(typeof raw.roomFillOverrideHex === 'string' ||
+      typeof raw.room_fill_override_hex === 'string'
+        ? { roomFillOverrideHex: String(raw.roomFillOverrideHex ?? raw.room_fill_override_hex) }
+        : {}),
     };
   }
 

@@ -157,6 +157,8 @@ class WallTypeLayer(BaseModel):
     thickness_mm: float = Field(alias="thicknessMm", gt=0)
     layer_function: WallLayerFunction = Field(alias="function")
     material_key: str | None = Field(default=None, alias="materialKey")
+    wraps_at_ends: bool = Field(default=False, alias="wrapsAtEnds")
+    wraps_at_inserts: bool = Field(default=False, alias="wrapsAtInserts")
 
 
 class WallTypeElem(BaseModel):
@@ -470,6 +472,7 @@ class RoomElem(BaseModel):
     function_label: str | None = Field(default=None, alias="functionLabel")
     finish_set: str | None = Field(default=None, alias="finishSet")
     target_area_m2: float | None = Field(default=None, alias="targetAreaM2")
+    room_fill_override_hex: str | None = Field(default=None, alias="roomFillOverrideHex")
     # IFC-04: optional classification code emitted as IfcClassificationReference.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)

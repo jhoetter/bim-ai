@@ -514,6 +514,8 @@ export type WallTypeLayer = {
   thicknessMm: number;
   function: WallLayerFunction;
   materialKey?: string | null;
+  wrapsAtEnds?: boolean | null;
+  wrapsAtInserts?: boolean | null;
 };
 
 export type EvidenceRefKind =
@@ -1005,6 +1007,8 @@ export type Element =
       finishSet?: string | null;
       targetAreaM2?: number | null;
       volumeM3?: number | null;
+      /** F-093: per-room plan fill override, matching Revit's by-element graphics override. */
+      roomFillOverrideHex?: string | null;
       /** IFC-04: optional classification code; emitted as IfcClassificationReference. */
       ifcClassificationCode?: string | null;
       pinned?: boolean;

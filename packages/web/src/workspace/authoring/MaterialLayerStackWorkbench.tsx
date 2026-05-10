@@ -159,6 +159,12 @@ export function MaterialLayerStackWorkbench({
                 <th scope="col" className="p-1.5 font-medium text-right">
                   mm
                 </th>
+                <th scope="col" className="p-1.5 font-medium">
+                  Wrap Ends
+                </th>
+                <th scope="col" className="p-1.5 font-medium">
+                  Wrap Inserts
+                </th>
                 <th scope="col" className="p-1.5 font-medium" />
                 <th scope="col" className="p-1.5 font-medium" />
               </tr>
@@ -214,6 +220,22 @@ export function MaterialLayerStackWorkbench({
                       onChange={(e) =>
                         updateDraft(row.index, { thicknessMm: Number(e.target.value) })
                       }
+                    />
+                  </td>
+                  <td className="p-1.5 text-center">
+                    <input
+                      type="checkbox"
+                      aria-label={`Wrap layer ${row.index} at wall ends`}
+                      checked={row.wrapsAtEnds}
+                      onChange={(e) => updateDraft(row.index, { wrapsAtEnds: e.target.checked })}
+                    />
+                  </td>
+                  <td className="p-1.5 text-center">
+                    <input
+                      type="checkbox"
+                      aria-label={`Wrap layer ${row.index} at inserts`}
+                      checked={row.wrapsAtInserts}
+                      onChange={(e) => updateDraft(row.index, { wrapsAtInserts: e.target.checked })}
                     />
                   </td>
                   <td className="p-1">
@@ -320,7 +342,14 @@ export function MaterialLayerStackWorkbench({
             onClick={() =>
               setDraftRows((prev) => [
                 ...prev,
-                { index: prev.length, thicknessMm: 100, function: 'finish', materialKey: '' },
+                {
+                  index: prev.length,
+                  thicknessMm: 100,
+                  function: 'finish',
+                  materialKey: '',
+                  wrapsAtEnds: false,
+                  wrapsAtInserts: false,
+                },
               ])
             }
           >

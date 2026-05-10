@@ -1138,6 +1138,8 @@ def _build_plan_primitive_lists(
                 "outlineMm": outlines,
                 "schemeColorHex": _scheme_color_hex_for_room(e, scheme_rows),
             }
+            if (e.room_fill_override_hex or "").strip():
+                row["roomFillOverrideHex"] = (e.room_fill_override_hex or "").strip()
             if (e.programme_code or "").strip():
                 row["programmeCode"] = (e.programme_code or "").strip()
             if (e.department or "").strip():
