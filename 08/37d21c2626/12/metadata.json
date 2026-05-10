@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "0837d21c2626",
+  "session_id": "b6b30240-c308-4814-998e-4e0b8f11ee67",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T17:51:07.602699Z",
+  "branch": "revit-parity-type-duplicate-wave",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/families/FamilyLibraryPanel.externalCatalogs.test.tsx",
+    "packages/web/src/families/FamilyLibraryPanel.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "spec/revit-parity/README.md",
+    "spec/revit-parity/ch05-family-editor.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "bfc80e588e0c",
+  "checkpoint_transcript_start": 22,
+  "transcript_lines_at_start": 22,
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T17:51:07.601023Z",
+    "agent_lines": 102,
+    "agent_removed": 27,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 102,
+    "total_lines_changed": 129,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
