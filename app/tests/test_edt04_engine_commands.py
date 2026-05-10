@@ -14,12 +14,14 @@ import pytest
 
 from bim_ai.document import Document
 from bim_ai.elements import (
+    AssetLibraryEntryElem,
     BeamElem,
     CeilingElem,
     ColumnElem,
     DoorElem,
     JoinGeometryElem,
     LevelElem,
+    PlacedAssetElem,
     WallElem,
     WallOpeningElem,
     WindowElem,
@@ -139,6 +141,52 @@ def test_align_element_rejects_non_wall_target():
                 "referenceMm": {"xMm": 0, "yMm": 0},
             },
         )
+
+
+def test_align_placed_asset_snaps_nearest_face_to_reference():
+    doc = _seed_doc()
+    doc.elements["asset-sofa"] = AssetLibraryEntryElem(
+        kind="asset_library_entry",
+        id="asset-sofa",
+        assetKind="block_2d",
+        name="Sofa",
+        category="furniture",
+        tags=["sofa"],
+        thumbnailKind="schematic_plan",
+        thumbnailWidthMm=2200,
+        thumbnailHeightMm=950,
+        planSymbolKind="sofa",
+        renderProxyKind="sofa",
+        paramSchema=[
+            {"key": "widthMm", "kind": "mm", "default": 2200},
+            {"key": "depthMm", "kind": "mm", "default": 950},
+        ],
+    )
+    doc.elements["pa-sofa"] = PlacedAssetElem(
+        kind="placed_asset",
+        id="pa-sofa",
+        name="Sofa",
+        assetId="asset-sofa",
+        levelId="lvl-0",
+        positionMm={"xMm": 4100, "yMm": 1200},
+        rotationDeg=0,
+        paramValues={"widthMm": 2400},
+    )
+
+    ok, doc_a, *_ = try_commit(
+        doc,
+        {
+            "type": "alignElementToReference",
+            "targetElementId": "pa-sofa",
+            "referenceMm": {"xMm": 5000, "yMm": 1300},
+        },
+    )
+
+    assert ok and doc_a is not None
+    sofa = doc_a.elements["pa-sofa"]
+    assert isinstance(sofa, PlacedAssetElem)
+    assert math.isclose(sofa.position_mm.x_mm, 3800.0)
+    assert math.isclose(sofa.position_mm.y_mm, 1200.0)
 
 
 # ------------------------- trimElementToReference --------------------------

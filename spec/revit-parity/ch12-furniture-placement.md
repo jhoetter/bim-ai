@@ -95,7 +95,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 ![Align tool furniture](file:///Users/jhoetter/Desktop/Revit%20Specs/0465_02-49-25.png)
 *(Align tool used in window family editor — furniture-align-specific frames start beyond 0841)*
 
-**bim-ai status:** 🟡 Partial (better) — The Align tool (hotkey `AL`) provides a two-click interactive workflow: first click sets the reference point, second click picks the nearest element and fires `alignElementToReference { targetElementId, referenceMm }`. Now supports **walls** (translates along dominant axis so nearest endpoint coincides with reference), **columns** (snaps `position_mm` to reference along closer axis), and **placed_assets** (same position snap). Backend accepts both `targetElementId` and legacy `targetWallId` via Pydantic `AliasChoices`. Dashed crosshair SVG overlay + status chip guide the workflow. Missing: alignment to arbitrary element faces; optional "Lock" constraint; alignment of floor/roof polygons.
+**bim-ai status:** ✅ Done — The Align tool (hotkey `AL`) provides a two-click interactive workflow: first click sets the reference point, second click picks the nearest element and fires `alignElementToReference { targetElementId, referenceMm }`. It supports **walls** (translates along dominant axis so nearest endpoint coincides with reference), **columns** (snaps `position_mm` to reference along the closer axis), and **placed_assets**. Placed assets now align their nearest face, not just their center point, using the associated asset width/depth plus instance `paramValues` overrides. Backend accepts both `targetElementId` and legacy `targetWallId` via Pydantic `AliasChoices`. Dashed crosshair SVG overlay + status chip guide the workflow.
 
 ---
 

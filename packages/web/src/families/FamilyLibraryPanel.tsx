@@ -8,10 +8,9 @@
  * pre-loaded and closes the panel.
  *
  * FAM-08 — adds an "External Catalogs" tab fed by GET /api/family-catalogs.
- * Placing an external-catalog family invokes `onPlaceCatalogFamily` which
- * loads the family into the project (creating a `family_type` element
- * carrying `catalogSource` provenance) and starts the Component placement
- * tool.
+ * Placing an external-catalog family invokes `onPlaceCatalogFamily`; the
+ * host loads the family into the project and then resolves placement through
+ * the same category-specific placement adapters used by in-project families.
  */
 
 import { useEffect, useMemo, useState, type JSX } from 'react';
@@ -22,16 +21,13 @@ import { BUILT_IN_FAMILIES } from './familyCatalog';
 import { BUILT_IN_WALL_TYPES } from './wallTypeCatalog';
 import { getThumbnail, PLACEHOLDER_THUMBNAIL } from './thumbnailCache';
 import { SchematicThumbnail } from '../workspace/library/AssetCard';
+import {
+  ASSET_CATEGORY_FAMILY_GROUPS,
+  placeKindForFamilyDiscipline,
+  type FamilyLibraryPlaceKind,
+} from './familyPlacementAdapters';
 
-export type FamilyLibraryPlaceKind =
-  | 'asset'
-  | 'door'
-  | 'window'
-  | 'stair'
-  | 'railing'
-  | 'wall_type'
-  | 'floor_type'
-  | 'roof_type';
+export type { FamilyLibraryPlaceKind } from './familyPlacementAdapters';
 
 /**
  * FAM-08 wire shape for one family inside an external catalog. Mirrors
@@ -93,8 +89,8 @@ export interface FamilyLibraryPanelProps {
   /**
    * FAM-08 — invoked when a Place button on an external-catalog family is
    * clicked. The host is responsible for loading the family into the
-   * project (creating a `family_type` element with `catalogSource`) and
-   * starting the Component placement tool. The panel closes afterwards.
+   * project and resolving the family category to its placement adapter.
+   * The panel closes afterwards.
    */
   onPlaceCatalogFamily?: (placement: ExternalCatalogPlacement) => void;
   /**
@@ -136,19 +132,7 @@ const DISCIPLINE_ORDER: {
   { id: 'wall_type', label: 'Wall Types', placeKind: 'wall_type' },
   { id: 'floor_type', label: 'Floor Types', placeKind: 'floor_type' },
   { id: 'roof_type', label: 'Roof Types', placeKind: 'roof_type' },
-  // FAM-08 — components loaded from external catalogs default to `generic`.
-  { id: 'generic', label: 'Components', placeKind: 'door' },
-];
-
-const ASSET_CATEGORY_ORDER: { id: AssetCategory; label: string }[] = [
-  { id: 'furniture', label: 'Furniture' },
-  { id: 'kitchen', label: 'Appliances' },
-  { id: 'casework', label: 'Casework' },
-  { id: 'bathroom', label: 'Plumbing Fixtures' },
-  { id: 'door', label: 'Door Components' },
-  { id: 'window', label: 'Window Components' },
-  { id: 'decal', label: 'Decals' },
-  { id: 'profile', label: 'Profiles' },
+  { id: 'generic', label: 'Component Families', placeKind: 'component_family' },
 ];
 
 const DEFAULT_CATALOG_CLIENT: ExternalCatalogClient = {
@@ -177,7 +161,7 @@ function buildCatalogByDiscipline(
         name: t.name,
         familyName: fam.name,
         custom: false,
-        kind: fam.discipline as FamilyLibraryPlaceKind,
+        kind: placeKindForFamilyDiscipline(fam.discipline),
       });
     }
   }
@@ -203,7 +187,7 @@ function buildCatalogByDiscipline(
         name: String(el.parameters.name ?? el.name ?? el.id),
         familyName: cs ? `From: ${cs.catalogId}` : 'Custom',
         custom: !cs,
-        kind: el.discipline as FamilyLibraryPlaceKind,
+        kind: placeKindForFamilyDiscipline(el.discipline),
         catalogLabel: cs ? cs.catalogId : undefined,
       });
     } else if (el.kind === 'wall_type') {
@@ -282,7 +266,7 @@ function buildAssetCatalogGroups(elementsById: Record<string, Element>): AssetCa
         .join(' '),
     });
   }
-  return ASSET_CATEGORY_ORDER.map(({ id, label }) => ({
+  return ASSET_CATEGORY_FAMILY_GROUPS.map(({ id, label }) => ({
     id: `asset-${id}` as const,
     label,
     entries: (buckets[id] ?? []).sort((a, b) => a.name.localeCompare(b.name)),

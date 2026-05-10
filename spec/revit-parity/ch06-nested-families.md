@@ -11,7 +11,7 @@ Source segment: `02:45:00 – 02:54:00`
 **Screenshot:**
 ![Nested Family](file:///Users/jhoetter/Desktop/Revit%20Specs/0444_02-45-41.png)
 
-**bim-ai status:** ❌ Not available — bim-ai has no hierarchical family nesting system.
+**bim-ai status:** 🟡 Partial — the family editor supports nested family instances, parameter/formula bindings, drag/drop from loaded families, and resolver recursion with cycle detection. Missing: project persistence/reload UX and full overwrite semantics.
 
 ---
 
@@ -26,7 +26,7 @@ Choice 2 is required when parametric values (e.g., glass thickness) were changed
 **Screenshot:**
 ![Overwrite options](file:///Users/jhoetter/Desktop/Revit%20Specs/0445_02-45-46.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — sweep and nested-instance visibility can bind to boolean family parameters, covering the primary Visible-when use case. Missing: general associate-parameter buttons for every property.
 
 ---
 
@@ -41,7 +41,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Family Category dialog](file:///Users/jhoetter/Desktop/Revit%20Specs/0451_02-47-03.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — placed assets persist per-instance `paramValues`; family params support `instanceOverridable` and resolver override precedence. Missing: complete Family Types dialog integration for every loaded family class.
 
 ---
 

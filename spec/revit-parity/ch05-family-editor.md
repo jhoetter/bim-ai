@@ -13,7 +13,7 @@ The Family Editor is a sub-environment within Revit for creating parametric comp
 **Screenshot:**
 ![Family Editor workspace](file:///Users/jhoetter/Desktop/Revit%20Specs/0376_01-50-45.png)
 
-**bim-ai status:** ❌ Not available — bim-ai has no in-app parametric family editor.
+**bim-ai status:** 🟡 Partial — bim-ai has an in-app `/family-editor` workspace with a template chooser, reference-plane and parameter panels, sweep/extrusion-style solids, arrays, nested instances, visibility bindings, and flex preview. Missing: full persistence/load-to-project workflow and Revit-style dedicated family ribbon/work-plane management.
 
 ---
 
@@ -24,7 +24,7 @@ The Family Editor is a sub-environment within Revit for creating parametric comp
 **Screenshot:**
 ![Family Templates](file:///Users/jhoetter/Desktop/Revit%20Specs/0485_03-40-01.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — the family editor has built-in generic model, door, window, and profile templates. Missing: Revit-style `.rft` file browser and complete host/category template metadata.
 
 ---
 
@@ -35,7 +35,7 @@ The Family Editor is a sub-environment within Revit for creating parametric comp
 **Screenshot:**
 ![Reference Planes](file:///Users/jhoetter/Desktop/Revit%20Specs/0391_01-52-22.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — the family editor can add horizontal and vertical reference planes and use them as authoring context. Missing: strong/weak reference semantics, polished naming/subcategory controls, and constraint locks.
 
 ---
 
@@ -46,7 +46,7 @@ The Family Editor is a sub-environment within Revit for creating parametric comp
 **Screenshot:**
 ![Extrusion tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0384_01-51-46.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — family sweep/extrusion authoring creates solid geometry from profiles and resolves it through the family sweep geometry pipeline. Missing: Revit-grade sketch locks, profile cleanup tools, and elevation-driven extrusion start/end parameters.
 
 ---
 
@@ -94,7 +94,7 @@ Example: door Width is a Type parameter; Sill Height is an Instance parameter.
 **Screenshot:**
 ![Type vs Instance](file:///Users/jhoetter/Desktop/Revit%20Specs/0480_02-53-21.png)
 
-**bim-ai status:** ❌ Not available — bim-ai has no type/instance parameter distinction model.
+**bim-ai status:** 🟡 Partial — family parameters carry an `instanceOverridable` flag, resolver logic prioritizes instance overrides, and door/window/family placement data can carry override params. Missing: complete Revit parameter creation dialog and Family Types integration.
 
 ---
 
@@ -105,7 +105,7 @@ Example: door Width is a Type parameter; Sill Height is an Instance parameter.
 **Screenshot:**
 ![Family Types dialog](file:///Users/jhoetter/Desktop/Revit%20Specs/0399_01-53-36.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — family geometry nodes support coarse/medium/fine visibility and boolean visibility bindings in the editor/resolver. Missing: full Revit view-type visibility dialog.
 
 ---
 
@@ -164,7 +164,7 @@ This allows a family to show a simple 2D opening symbol at Coarse detail and a d
 **Screenshot:**
 ![Wall-hosted door placement](file:///Users/jhoetter/Desktop/Revit%20Specs/0427_01-58-34.png)
 
-**bim-ai status:** ❌ Not available — bim-ai doors/windows are not yet wall-hosted families with automatic opening cuts.
+**bim-ai status:** 🟡 Partial — bim-ai door/window elements are wall-hosted, carry `familyTypeId`/override parameters, and wall opening/cutter paths exist. Missing: generic loaded-family placement workflow with automatic opening cuts for arbitrary hosted families.
 
 ---
 
