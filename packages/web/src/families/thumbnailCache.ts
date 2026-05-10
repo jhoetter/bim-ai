@@ -20,6 +20,7 @@ import type { WallAssemblyLayer, WallAssemblyLayerFunction } from './wallTypeCat
 import { resolveFamilyGeometry, type FamilyCatalogLookup } from './familyResolver';
 import type { FamilyDefinition } from './types';
 import { makeLayeredWallMesh } from '../viewport/meshBuilders.layeredWall';
+import { makeFloorSlabMesh, makeRoofMassMesh } from '../viewport/meshBuilders';
 
 const SIZE = 128;
 const PLACEHOLDER_DATA_URL =
@@ -51,6 +52,12 @@ export type WallThumbnailInput = {
   name: string;
   layers: WallThumbnailLayerInput[];
   basisLine?: 'center' | 'face_interior' | 'face_exterior';
+};
+
+export type AssemblyTypeThumbnailInput = {
+  id: string;
+  name: string;
+  layers: WallThumbnailLayerInput[];
 };
 
 function ensureRenderer(): THREE.WebGLRenderer | null {
@@ -205,6 +212,13 @@ function normalizeWallLayerFunction(
   return 'structure';
 }
 
+function normalizeCoreLayerFunction(
+  value: WallThumbnailLayerInput['function'] | undefined,
+): WallTypeLayer['function'] {
+  if (value === 'structure' || value === 'insulation' || value === 'finish') return value;
+  return 'structure';
+}
+
 function fallbackMaterialKey(layerFunction: WallAssemblyLayerFunction): string {
   switch (layerFunction) {
     case 'insulation':
@@ -269,6 +283,81 @@ function buildWallTypeThumbnailScene(input: WallThumbnailInput): THREE.Group {
     0,
     null,
   );
+}
+
+function assemblyThicknessMm(input: AssemblyTypeThumbnailInput): number {
+  const total = input.layers.reduce((sum, layer) => sum + Math.max(0, layer.thicknessMm), 0);
+  return Math.max(80, total || 180);
+}
+
+function buildFloorTypeThumbnailScene(input: AssemblyTypeThumbnailInput): THREE.Object3D {
+  const level: Extract<Element, { kind: 'level' }> = {
+    kind: 'level',
+    id: 'thumbnail-level',
+    name: 'Preview',
+    elevationMm: 0,
+  };
+  const floorType: Extract<Element, { kind: 'floor_type' }> = {
+    kind: 'floor_type',
+    id: input.id,
+    name: input.name,
+    layers: input.layers.map((layer) => ({
+      thicknessMm: layer.thicknessMm,
+      materialKey: layer.materialKey ?? '',
+      function: normalizeCoreLayerFunction(layer.function),
+    })),
+  };
+  const floor: Extract<Element, { kind: 'floor' }> = {
+    kind: 'floor',
+    id: `thumb-floor-${input.id}`,
+    name: input.name,
+    levelId: level.id,
+    floorTypeId: floorType.id,
+    thicknessMm: assemblyThicknessMm(input),
+    boundaryMm: [
+      { xMm: -1500, yMm: -950 },
+      { xMm: 1500, yMm: -950 },
+      { xMm: 1500, yMm: 950 },
+      { xMm: -1500, yMm: 950 },
+    ],
+  };
+  return makeFloorSlabMesh(floor, { [level.id]: level, [floorType.id]: floorType }, null);
+}
+
+function buildRoofTypeThumbnailScene(input: AssemblyTypeThumbnailInput): THREE.Object3D {
+  const level: Extract<Element, { kind: 'level' }> = {
+    kind: 'level',
+    id: 'thumbnail-level',
+    name: 'Preview',
+    elevationMm: 0,
+  };
+  const roofType: Extract<Element, { kind: 'roof_type' }> = {
+    kind: 'roof_type',
+    id: input.id,
+    name: input.name,
+    layers: input.layers.map((layer) => ({
+      thicknessMm: layer.thicknessMm,
+      materialKey: layer.materialKey ?? '',
+      function: normalizeCoreLayerFunction(layer.function),
+    })),
+  };
+  const roof: Extract<Element, { kind: 'roof' }> = {
+    kind: 'roof',
+    id: `thumb-roof-${input.id}`,
+    name: input.name,
+    referenceLevelId: level.id,
+    roofTypeId: roofType.id,
+    footprintMm: [
+      { xMm: -1600, yMm: -950 },
+      { xMm: 1600, yMm: -950 },
+      { xMm: 1600, yMm: 950 },
+      { xMm: -1600, yMm: 950 },
+    ],
+    overhangMm: 150,
+    slopeDeg: 32,
+    roofGeometryMode: 'gable_pitched_rectangle',
+  };
+  return makeRoofMassMesh(roof, { [level.id]: level, [roofType.id]: roofType }, null);
 }
 
 function blobUrlFromCanvas(canvas: HTMLCanvasElement): Promise<string> {
@@ -338,6 +427,37 @@ async function renderWallTypeThumbnail(input: WallThumbnailInput): Promise<strin
   }
 }
 
+async function renderAssemblyTypeThumbnail(
+  kind: 'floor_type' | 'roof_type',
+  input: AssemblyTypeThumbnailInput,
+): Promise<string> {
+  const r = ensureRenderer();
+  if (!r) return PLACEHOLDER_DATA_URL;
+
+  const group =
+    kind === 'floor_type'
+      ? buildFloorTypeThumbnailScene(input)
+      : buildRoofTypeThumbnailScene(input);
+  const scene = new THREE.Scene();
+  scene.add(group);
+  const camera = frameGroup(group, scene);
+  try {
+    r.render(scene, camera);
+    return await blobUrlFromCanvas(r.domElement);
+  } catch {
+    return PLACEHOLDER_DATA_URL;
+  } finally {
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh || obj instanceof THREE.LineSegments) {
+        obj.geometry?.dispose?.();
+        const mat = obj.material;
+        if (Array.isArray(mat)) mat.forEach((m) => m.dispose?.());
+        else mat?.dispose?.();
+      }
+    });
+  }
+}
+
 export async function getThumbnail(typeId: string): Promise<string> {
   const cached = cache.get(typeId);
   if (cached) return cached;
@@ -363,6 +483,54 @@ export async function getWallTypeThumbnail(input: WallThumbnailInput): Promise<s
   if (pending) return pending;
 
   const promise = renderWallTypeThumbnail(input)
+    .catch(() => PLACEHOLDER_DATA_URL)
+    .then((url) => {
+      cache.set(cacheKey, url);
+      inFlight.delete(cacheKey);
+      return url;
+    });
+  inFlight.set(cacheKey, promise);
+  return promise;
+}
+
+function assemblyTypeThumbnailCacheKey(
+  kind: 'floor_type' | 'roof_type',
+  input: AssemblyTypeThumbnailInput,
+): string {
+  const layers = input.layers.map((layer) => [
+    layer.thicknessMm,
+    layer.materialKey ?? '',
+    layer.function ?? '',
+  ]);
+  return `${kind}:${input.id}:${JSON.stringify(layers)}`;
+}
+
+export async function getFloorTypeThumbnail(input: AssemblyTypeThumbnailInput): Promise<string> {
+  const cacheKey = assemblyTypeThumbnailCacheKey('floor_type', input);
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+  const pending = inFlight.get(cacheKey);
+  if (pending) return pending;
+
+  const promise = renderAssemblyTypeThumbnail('floor_type', input)
+    .catch(() => PLACEHOLDER_DATA_URL)
+    .then((url) => {
+      cache.set(cacheKey, url);
+      inFlight.delete(cacheKey);
+      return url;
+    });
+  inFlight.set(cacheKey, promise);
+  return promise;
+}
+
+export async function getRoofTypeThumbnail(input: AssemblyTypeThumbnailInput): Promise<string> {
+  const cacheKey = assemblyTypeThumbnailCacheKey('roof_type', input);
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+  const pending = inFlight.get(cacheKey);
+  if (pending) return pending;
+
+  const promise = renderAssemblyTypeThumbnail('roof_type', input)
     .catch(() => PLACEHOLDER_DATA_URL)
     .then((url) => {
       cache.set(cacheKey, url);

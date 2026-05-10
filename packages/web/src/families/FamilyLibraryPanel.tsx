@@ -7,8 +7,8 @@
  * type names; "Place" sets the active draw tool with `familyTypeId`
  * pre-loaded and closes the panel.
  *
- * FAM-08 — adds an "External Catalogs" tab fed by GET /api/family-catalogs.
- * Placing an external-catalog family invokes `onPlaceCatalogFamily`; the
+ * FAM-08 — adds catalog-backed families fed by GET /api/family-catalogs.
+ * Placing a catalog family invokes `onPlaceCatalogFamily`; the
  * host loads the family into the project and then resolves placement through
  * the same category-specific placement adapters used by in-project families.
  */
@@ -20,7 +20,9 @@ import type { AssetCategory, AssetLibraryEntry, Element, FamilyDiscipline } from
 import { BUILT_IN_FAMILIES } from './familyCatalog';
 import { BUILT_IN_WALL_TYPES } from './wallTypeCatalog';
 import {
+  getFloorTypeThumbnail,
   getThumbnail,
+  getRoofTypeThumbnail,
   getWallTypeThumbnail,
   PLACEHOLDER_THUMBNAIL,
   type WallThumbnailLayerInput,
@@ -83,9 +85,9 @@ export interface ExternalCatalogPlacement {
 }
 
 export interface ExternalCatalogClient {
-  /** Fetch the catalog index (used by the External Catalogs tab). */
+  /** Fetch the catalog index. */
   listCatalogs(): Promise<ExternalCatalogIndexEntry[]>;
-  /** Fetch one catalog payload (used when a catalog is expanded). */
+  /** Fetch one catalog payload. */
   getCatalog(catalogId: string): Promise<ExternalCatalogPayload>;
 }
 
@@ -119,8 +121,6 @@ export interface FamilyLibraryPanelProps {
    * fetch-backed implementation that hits `/api/family-catalogs`.
    */
   catalogClient?: ExternalCatalogClient;
-  /** Initial active tab (default: in-project). */
-  initialTab?: 'in-project' | 'external';
 }
 
 interface CatalogEntry {
@@ -130,10 +130,15 @@ interface CatalogEntry {
   custom: boolean;
   kind: FamilyLibraryPlaceKind;
   catalogLabel?: string;
+  catalogPlacement?: ExternalCatalogPlacement;
   assetEntry?: AssetLibraryEntry;
   wallThumbnail?: {
     layers: WallThumbnailLayerInput[];
     basisLine?: 'center' | 'face_interior' | 'face_exterior';
+  };
+  assemblyThumbnail?: {
+    kind: 'floor_type' | 'roof_type';
+    layers: WallThumbnailLayerInput[];
   };
   searchText?: string;
 }
@@ -142,6 +147,12 @@ interface AssetCatalogGroup {
   id: `asset-${AssetCategory}`;
   label: string;
   entries: CatalogEntry[];
+}
+
+interface LoadedCatalogFamiliesState {
+  groups: AssetCatalogGroup[];
+  loading: boolean;
+  error: string | null;
 }
 
 const DISCIPLINE_ORDER: {
@@ -233,6 +244,7 @@ function buildCatalogByDiscipline(
         familyName: `${el.layers.length} layers`,
         custom: true,
         kind: 'floor_type',
+        assemblyThumbnail: { kind: 'floor_type', layers: el.layers },
       });
     } else if (el.kind === 'roof_type') {
       const bucket = (out['roof_type'] ??= []);
@@ -242,6 +254,7 @@ function buildCatalogByDiscipline(
         familyName: `${el.layers.length} layers`,
         custom: true,
         kind: 'roof_type',
+        assemblyThumbnail: { kind: 'roof_type', layers: el.layers },
       });
     }
   }
@@ -299,6 +312,164 @@ function buildAssetCatalogGroups(elementsById: Record<string, Element>): AssetCa
   })).filter((group) => group.entries.length > 0);
 }
 
+function inferCatalogAssetCategory(
+  catalog: ExternalCatalogPayload | ExternalCatalogIndexEntry,
+  family: ExternalCatalogFamily,
+): AssetCategory {
+  const familyText = `${family.id} ${family.name}`.toLowerCase().replace(/[-_:]/g, ' ');
+  const catalogText = `${catalog.catalogId} ${catalog.name} ${catalog.description}`
+    .toLowerCase()
+    .replace(/[-_:]/g, ' ');
+  if (/\b(bath|bathroom|toilet|wc|basin|washbasin|shower|tub)\b/.test(familyText)) {
+    return 'bathroom';
+  }
+  if (/\b(counter|cabinet|casework|island|wardrobe|closet|cupboard)\b/.test(familyText)) {
+    return 'casework';
+  }
+  if (/\b(kitchen|sink|oven|fridge|refrigerator|appliance)\b/.test(familyText)) {
+    return 'kitchen';
+  }
+  if (/\b(door)\b/.test(familyText)) return 'door';
+  if (/\b(window)\b/.test(familyText)) return 'window';
+  if (/\b(bath|bathroom|plumbing)\b/.test(catalogText)) return 'bathroom';
+  if (/\b(kitchen|appliance)\b/.test(catalogText)) return 'kitchen';
+  if (/\b(casework)\b/.test(catalogText)) return 'casework';
+  return 'furniture';
+}
+
+function inferCatalogSymbolKind(
+  family: ExternalCatalogFamily,
+): NonNullable<AssetLibraryEntry['renderProxyKind']> {
+  const text = `${family.id} ${family.name}`.toLowerCase().replace(/[-_:]/g, ' ');
+  if (/\b(bed|mattress|queen|king|single\s+bed|double\s+bed)\b/.test(text)) return 'bed';
+  if (/\b(wardrobe|closet|robe|storage|cupboard)\b/.test(text)) return 'wardrobe';
+  if (/\b(lamp|light|floor\s+lamp|table\s+lamp)\b/.test(text)) return 'lamp';
+  if (/\b(rug|carpet|mat)\b/.test(text)) return 'rug';
+  if (/\b(fridge|refrigerator|freezer)\b/.test(text)) return 'fridge';
+  if (/\b(oven|cooker|range|hob|cooktop)\b/.test(text)) return 'oven';
+  if (/\b(sink|basin|washbasin)\b/.test(text)) return 'sink';
+  if (/\b(counter|cabinet|casework|island|worktop)\b/.test(text)) return 'counter';
+  if (/\b(sofa|couch|settee)\b/.test(text)) return 'sofa';
+  if (/\b(table|desk)\b/.test(text)) return 'table';
+  if (/\b(chair|armchair|lounge\s+chair)\b/.test(text)) return 'chair';
+  if (/\b(toilet|wc)\b/.test(text)) return 'toilet';
+  if (/\b(bath|bathtub|tub)\b/.test(text)) return 'bath';
+  if (/\b(shower)\b/.test(text)) return 'shower';
+  return 'generic';
+}
+
+function dimensionsFromParameters(
+  params: Record<string, unknown>,
+): { widthMm: number; heightMm: number } | undefined {
+  const width =
+    typeof params.widthMm === 'number'
+      ? params.widthMm
+      : typeof params.lengthMm === 'number'
+        ? params.lengthMm
+        : undefined;
+  const height =
+    typeof params.depthMm === 'number'
+      ? params.depthMm
+      : typeof params.heightMm === 'number'
+        ? params.heightMm
+        : undefined;
+  if (width == null && height == null) return undefined;
+  const resolvedWidth = width ?? height ?? 64;
+  const resolvedHeight = height ?? width ?? resolvedWidth;
+  return { widthMm: resolvedWidth, heightMm: resolvedHeight };
+}
+
+function catalogFamilyToEntry(
+  catalog: ExternalCatalogPayload,
+  family: ExternalCatalogFamily,
+): CatalogEntry | null {
+  const defaultType = family.defaultTypes[0];
+  if (!defaultType) return null;
+
+  const category = inferCatalogAssetCategory(catalog, family);
+  const symbolKind = inferCatalogSymbolKind(family);
+  const placement: ExternalCatalogPlacement = {
+    catalogId: catalog.catalogId,
+    catalogName: catalog.name,
+    catalogVersion: catalog.version,
+    family,
+    defaultType,
+  };
+  const dimensions = dimensionsFromParameters(defaultType.parameters);
+  const familyTypeCount = `${family.defaultTypes.length} type${
+    family.defaultTypes.length === 1 ? '' : 's'
+  }`;
+  const assetEntry: AssetLibraryEntry = {
+    id: family.id,
+    assetKind: 'family_instance',
+    name: family.name,
+    tags: [category, catalog.catalogId, catalog.name, family.discipline],
+    category,
+    thumbnailKind: 'schematic_plan',
+    thumbnailMm: dimensions,
+    planSymbolKind: symbolKind,
+    renderProxyKind: symbolKind,
+    description: `${catalog.name} · ${familyTypeCount}`,
+  };
+
+  return {
+    id: family.id,
+    name: family.name,
+    familyName: `${catalog.name} · ${familyTypeCount}`,
+    custom: false,
+    kind: placeKindForFamilyDiscipline(family.discipline),
+    catalogLabel: catalog.name,
+    catalogPlacement: placement,
+    assetEntry,
+    searchText: [
+      catalog.catalogId,
+      catalog.name,
+      catalog.description,
+      family.discipline,
+      ...family.defaultTypes.map((type) => type.name),
+    ]
+      .filter(Boolean)
+      .join(' '),
+  };
+}
+
+function buildCatalogFamilyGroups(catalogs: ExternalCatalogPayload[]): AssetCatalogGroup[] {
+  const buckets: Partial<Record<AssetCategory, CatalogEntry[]>> = {};
+  for (const catalog of catalogs) {
+    for (const family of catalog.families) {
+      const entry = catalogFamilyToEntry(catalog, family);
+      if (!entry) continue;
+      const category = entry.assetEntry?.category ?? inferCatalogAssetCategory(catalog, family);
+      const bucket = (buckets[category] ??= []);
+      bucket.push(entry);
+    }
+  }
+  return ASSET_CATEGORY_FAMILY_GROUPS.map(({ id, label }) => ({
+    id: `asset-${id}` as const,
+    label,
+    entries: (buckets[id] ?? []).sort((a, b) => a.name.localeCompare(b.name)),
+  })).filter((group) => group.entries.length > 0);
+}
+
+function mergeAssetCatalogGroups(
+  localGroups: AssetCatalogGroup[],
+  catalogGroups: AssetCatalogGroup[],
+): AssetCatalogGroup[] {
+  const byId = new Map<AssetCatalogGroup['id'], AssetCatalogGroup>();
+  for (const group of [...localGroups, ...catalogGroups]) {
+    const existing = byId.get(group.id);
+    if (existing) {
+      existing.entries.push(...group.entries);
+      existing.entries.sort((a, b) => a.name.localeCompare(b.name));
+    } else {
+      byId.set(group.id, { ...group, entries: [...group.entries] });
+    }
+  }
+  return ASSET_CATEGORY_FAMILY_GROUPS.map(({ id }) => byId.get(`asset-${id}` as const)).filter(
+    (group): group is AssetCatalogGroup => Boolean(group),
+  );
+}
+
 function matchesNeedle(entry: CatalogEntry, needle: string): boolean {
   if (!needle) return true;
   const n = needle.toLowerCase();
@@ -307,22 +478,6 @@ function matchesNeedle(entry: CatalogEntry, needle: string): boolean {
     entry.familyName.toLowerCase().includes(n) ||
     Boolean(entry.searchText?.toLowerCase().includes(n))
   );
-}
-
-function externalMatchesNeedle(
-  catalog: ExternalCatalogPayload | ExternalCatalogIndexEntry,
-  family: ExternalCatalogFamily | undefined,
-  needle: string,
-): boolean {
-  if (!needle) return true;
-  const n = needle.toLowerCase();
-  if (catalog.name.toLowerCase().includes(n)) return true;
-  if ('description' in catalog && catalog.description.toLowerCase().includes(n)) return true;
-  if (family) {
-    if (family.name.toLowerCase().includes(n)) return true;
-    if (family.defaultTypes.some((t) => t.name.toLowerCase().includes(n))) return true;
-  }
-  return false;
 }
 
 function TypeThumbnail({ typeId, name }: { typeId: string; name: string }): JSX.Element {
@@ -389,6 +544,44 @@ function WallTypeThumbnail({
   );
 }
 
+function AssemblyTypeThumbnail({
+  id,
+  name,
+  thumbnail,
+}: {
+  id: string;
+  name: string;
+  thumbnail: NonNullable<CatalogEntry['assemblyThumbnail']>;
+}): JSX.Element {
+  const [src, setSrc] = useState<string>(PLACEHOLDER_THUMBNAIL);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load =
+      thumbnail.kind === 'floor_type'
+        ? getFloorTypeThumbnail({ id, name, layers: thumbnail.layers })
+        : getRoofTypeThumbnail({ id, name, layers: thumbnail.layers });
+    void load.then((url) => {
+      if (!cancelled) setSrc(url);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, name, thumbnail]);
+
+  return (
+    <img
+      src={src}
+      alt={name}
+      width={64}
+      height={64}
+      data-testid={`${thumbnail.kind}-rendered-thumbnail`}
+      className="rounded border border-border bg-surface-muted"
+      style={{ objectFit: 'cover' }}
+    />
+  );
+}
+
 function CatalogThumbnail({ entry }: { entry: CatalogEntry }): JSX.Element {
   if (entry.assetEntry) {
     return (
@@ -400,244 +593,56 @@ function CatalogThumbnail({ entry }: { entry: CatalogEntry }): JSX.Element {
   if (entry.kind === 'wall_type' && entry.wallThumbnail) {
     return <WallTypeThumbnail id={entry.id} name={entry.name} thumbnail={entry.wallThumbnail} />;
   }
+  if ((entry.kind === 'floor_type' || entry.kind === 'roof_type') && entry.assemblyThumbnail) {
+    return (
+      <AssemblyTypeThumbnail id={entry.id} name={entry.name} thumbnail={entry.assemblyThumbnail} />
+    );
+  }
   return <TypeThumbnail typeId={entry.id} name={entry.name} />;
 }
 
-function ExternalCatalogsTab({
-  catalogClient,
-  elementsById,
-  needle,
-  onPlace,
-  onLoad,
-  onPanelClose,
-}: {
-  catalogClient: ExternalCatalogClient;
-  elementsById: Record<string, Element>;
-  needle: string;
-  onPlace: (
-    placement: ExternalCatalogPlacement,
-    overwriteOption?: FamilyReloadOverwriteOption,
-  ) => void;
-  onLoad: (
-    placement: ExternalCatalogPlacement,
-    overwriteOption?: FamilyReloadOverwriteOption,
-  ) => void;
-  onPanelClose: () => void;
-}): JSX.Element {
-  const [index, setIndex] = useState<ExternalCatalogIndexEntry[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<string | null>(null);
-  const [payloadById, setPayloadById] = useState<Record<string, ExternalCatalogPayload>>({});
-  const [loadingId, setLoadingId] = useState<string | null>(null);
+function useLoadedCatalogFamilyGroups(
+  catalogClient: ExternalCatalogClient,
+  enabled: boolean,
+): LoadedCatalogFamiliesState {
+  const [state, setState] = useState<LoadedCatalogFamiliesState>({
+    groups: [],
+    loading: false,
+    error: null,
+  });
 
   useEffect(() => {
+    if (!enabled) {
+      setState({ groups: [], loading: false, error: null });
+      return;
+    }
+
     let cancelled = false;
-    setError(null);
+    setState((prev) => ({ ...prev, loading: true, error: null }));
     catalogClient
       .listCatalogs()
-      .then((list) => {
-        if (!cancelled) setIndex(list);
+      .then((index) => Promise.all(index.map((entry) => catalogClient.getCatalog(entry.catalogId))))
+      .then((catalogs) => {
+        if (!cancelled) {
+          setState({ groups: buildCatalogFamilyGroups(catalogs), loading: false, error: null });
+        }
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : String(err));
+        if (!cancelled) {
+          setState({
+            groups: [],
+            loading: false,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
       });
+
     return () => {
       cancelled = true;
     };
-  }, [catalogClient]);
+  }, [catalogClient, enabled]);
 
-  async function expand(catalogId: string): Promise<void> {
-    if (expanded === catalogId) {
-      setExpanded(null);
-      return;
-    }
-    setExpanded(catalogId);
-    if (payloadById[catalogId]) return;
-    setLoadingId(catalogId);
-    try {
-      const payload = await catalogClient.getCatalog(catalogId);
-      setPayloadById((prev) => ({ ...prev, [catalogId]: payload }));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoadingId(null);
-    }
-  }
-
-  if (error) {
-    return (
-      <div
-        role="alert"
-        data-testid="external-catalogs-error"
-        className="px-3 py-6 text-sm text-rose-300"
-      >
-        {error}
-      </div>
-    );
-  }
-  if (index === null) {
-    return (
-      <div data-testid="external-catalogs-loading" className="px-3 py-6 text-sm text-muted">
-        Loading external catalogs…
-      </div>
-    );
-  }
-  if (index.length === 0) {
-    return (
-      <div data-testid="external-catalogs-empty" className="px-3 py-6 text-sm text-muted">
-        No external catalogs available.
-      </div>
-    );
-  }
-
-  const visibleIndex = needle
-    ? index.filter((entry) => {
-        if (entry.name.toLowerCase().includes(needle.toLowerCase())) return true;
-        const payload = payloadById[entry.catalogId];
-        if (!payload) return false;
-        return payload.families.some((fam) => externalMatchesNeedle(payload, fam, needle));
-      })
-    : index;
-
-  return (
-    <div data-testid="external-catalogs-tab" className="flex flex-col">
-      {visibleIndex.map((entry) => {
-        const payload = payloadById[entry.catalogId];
-        const isExpanded = expanded === entry.catalogId;
-        return (
-          <section
-            key={entry.catalogId}
-            data-testid={`external-catalog-${entry.catalogId}`}
-            className="mb-2 rounded-md border border-border"
-          >
-            <button
-              type="button"
-              onClick={() => void expand(entry.catalogId)}
-              data-testid={`external-catalog-toggle-${entry.catalogId}`}
-              className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-accent-soft"
-            >
-              <div className="flex flex-col">
-                <span className="text-sm text-foreground">{entry.name}</span>
-                <span className="text-xs text-muted">
-                  {entry.description} · v{entry.version} · {entry.familyCount} families
-                </span>
-              </div>
-              <span aria-hidden className="text-muted">
-                {isExpanded ? '▾' : '▸'}
-              </span>
-            </button>
-            {isExpanded ? (
-              <div className="border-t border-border px-2 py-2">
-                {loadingId === entry.catalogId && !payload ? (
-                  <div className="px-2 py-3 text-sm text-muted">Loading…</div>
-                ) : payload ? (
-                  <ul className="flex flex-col">
-                    {payload.families
-                      .filter((fam) => externalMatchesNeedle(payload, fam, needle))
-                      .map((fam) => {
-                        const def = fam.defaultTypes[0];
-                        const placement = def
-                          ? {
-                              catalogId: payload.catalogId,
-                              catalogName: payload.name,
-                              catalogVersion: payload.version,
-                              family: fam,
-                              defaultType: def,
-                            }
-                          : null;
-                        const loadedType = placement
-                          ? findLoadedCatalogFamilyType(elementsById, placement)
-                          : null;
-                        return (
-                          <li
-                            key={fam.id}
-                            data-testid={`external-family-${fam.id}`}
-                            className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-accent-soft"
-                          >
-                            <TypeThumbnail typeId={fam.id} name={fam.name} />
-                            <div className="flex flex-1 flex-col">
-                              <span className="text-sm text-foreground">{fam.name}</span>
-                              <span className="text-xs text-muted">
-                                {fam.discipline} · {fam.defaultTypes.length} type
-                                {fam.defaultTypes.length === 1 ? '' : 's'}
-                                {loadedType ? (
-                                  <span
-                                    className="ml-2 rounded-sm border border-border bg-surface-muted px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted"
-                                    data-testid={`external-family-${fam.id}-loaded-badge`}
-                                  >
-                                    Loaded
-                                  </span>
-                                ) : null}
-                              </span>
-                            </div>
-                            {placement ? (
-                              <div className="flex flex-wrap items-center justify-end gap-1.5">
-                                {loadedType ? (
-                                  <>
-                                    <button
-                                      type="button"
-                                      data-testid={`external-family-${fam.id}-reload-keep-values`}
-                                      onClick={() => {
-                                        onLoad(placement, 'keep-existing-values');
-                                        onPanelClose();
-                                      }}
-                                      className="rounded border border-border bg-surface px-2 py-0.5 text-xs hover:bg-accent-soft"
-                                    >
-                                      Keep values
-                                    </button>
-                                    <button
-                                      type="button"
-                                      data-testid={`external-family-${fam.id}-reload-overwrite-values`}
-                                      onClick={() => {
-                                        onLoad(placement, 'overwrite-parameter-values');
-                                        onPanelClose();
-                                      }}
-                                      className="rounded border border-border bg-surface px-2 py-0.5 text-xs hover:bg-accent-soft"
-                                    >
-                                      Overwrite values
-                                    </button>
-                                  </>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    data-testid={`external-family-${fam.id}-load`}
-                                    onClick={() => {
-                                      onLoad(placement);
-                                      onPanelClose();
-                                    }}
-                                    className="rounded border border-border bg-surface px-2 py-0.5 text-xs hover:bg-accent-soft"
-                                  >
-                                    Load
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  data-testid={`external-family-${fam.id}-place`}
-                                  onClick={() => {
-                                    onPlace(
-                                      placement,
-                                      loadedType ? 'keep-existing-values' : undefined,
-                                    );
-                                    onPanelClose();
-                                  }}
-                                  className="rounded border border-border bg-surface-strong px-2 py-0.5 text-xs hover:bg-accent-soft"
-                                >
-                                  Place
-                                </button>
-                              </div>
-                            ) : null}
-                          </li>
-                        );
-                      })}
-                  </ul>
-                ) : null}
-              </div>
-            ) : null}
-          </section>
-        );
-      })}
-    </div>
-  );
+  return state;
 }
 
 export function FamilyLibraryPanel({
@@ -648,13 +653,26 @@ export function FamilyLibraryPanel({
   onPlaceCatalogFamily,
   onLoadCatalogFamily,
   catalogClient = DEFAULT_CATALOG_CLIENT,
-  initialTab = 'in-project',
 }: FamilyLibraryPanelProps): JSX.Element | null {
   const [needle, setNeedle] = useState('');
-  const [tab, setTab] = useState<'in-project' | 'external'>(initialTab);
 
   const grouped = useMemo(() => buildCatalogByDiscipline(elementsById), [elementsById]);
   const assetGroups = useMemo(() => buildAssetCatalogGroups(elementsById), [elementsById]);
+  const catalogFamiliesEnabled =
+    catalogClient !== DEFAULT_CATALOG_CLIENT ||
+    Boolean(onPlaceCatalogFamily || onLoadCatalogFamily);
+  const catalogFamilies = useLoadedCatalogFamilyGroups(catalogClient, catalogFamiliesEnabled);
+  const combinedAssetGroups = useMemo(
+    () => mergeAssetCatalogGroups(assetGroups, catalogFamilies.groups),
+    [assetGroups, catalogFamilies.groups],
+  );
+  const hasVisibleEntries =
+    DISCIPLINE_ORDER.some(({ id }) =>
+      (grouped[id] ?? []).some((entry) => matchesNeedle(entry, needle)),
+    ) ||
+    combinedAssetGroups.some(({ entries }) =>
+      entries.some((entry) => matchesNeedle(entry, needle)),
+    );
 
   useEffect(() => {
     if (!open) return;
@@ -694,50 +712,6 @@ export function FamilyLibraryPanel({
             ×
           </button>
         </div>
-        <div
-          className="flex items-center gap-1 border-b border-border px-3 py-1"
-          role="tablist"
-          aria-label="Family library tabs"
-          onKeyDown={(e) => {
-            if (e.key === 'ArrowRight') setTab('external');
-            else if (e.key === 'ArrowLeft') setTab('in-project');
-          }}
-        >
-          <button
-            type="button"
-            id="family-library-tab-in-project"
-            role="tab"
-            aria-selected={tab === 'in-project'}
-            aria-controls="family-library-panel-tab"
-            tabIndex={tab === 'in-project' ? 0 : -1}
-            data-testid="family-library-tab-in-project"
-            onClick={() => setTab('in-project')}
-            className={`rounded-t px-2 py-1 text-xs ${
-              tab === 'in-project'
-                ? 'border-b-2 border-accent text-foreground'
-                : 'text-muted hover:text-foreground'
-            }`}
-          >
-            In Project
-          </button>
-          <button
-            type="button"
-            id="family-library-tab-external"
-            role="tab"
-            aria-selected={tab === 'external'}
-            aria-controls="family-library-panel-tab"
-            tabIndex={tab === 'external' ? 0 : -1}
-            data-testid="family-library-tab-external"
-            onClick={() => setTab('external')}
-            className={`rounded-t px-2 py-1 text-xs ${
-              tab === 'external'
-                ? 'border-b-2 border-accent text-foreground'
-                : 'text-muted hover:text-foreground'
-            }`}
-          >
-            External Catalogs
-          </button>
-        </div>
         <div className="border-b border-border px-3 py-2">
           <input
             autoFocus
@@ -749,146 +723,158 @@ export function FamilyLibraryPanel({
           />
         </div>
         <div
-          id="family-library-panel-tab"
-          role="tabpanel"
-          aria-labelledby={`family-library-tab-${tab}`}
+          id="family-library-panel-results"
+          aria-label="Family library results"
           className="flex-1 overflow-y-auto px-2 py-2"
         >
-          {tab === 'in-project' ? (
-            <>
-              {DISCIPLINE_ORDER.map(({ id, label }) => {
-                const entries = (grouped[id] ?? []).filter((e) => matchesNeedle(e, needle));
-                if (entries.length === 0) return null;
-                return (
-                  <section
-                    key={id}
-                    aria-label={label}
-                    data-testid={`family-group-${id}`}
-                    className="mb-3"
-                  >
-                    <div
-                      className="px-2 py-1 text-xs uppercase text-muted"
-                      style={{ letterSpacing: 'var(--text-eyebrow-tracking, 0.06em)' }}
-                    >
-                      {label}
-                    </div>
-                    <ul className="flex flex-col">
-                      {entries.map((entry) => (
-                        <li
-                          key={entry.id}
-                          data-testid={`family-row-${entry.id}`}
-                          className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-accent-soft"
-                        >
-                          <CatalogThumbnail entry={entry} />
-                          <div className="flex flex-1 flex-col">
-                            <span className="text-sm text-foreground">{entry.name}</span>
-                            <span className="text-xs text-muted">
-                              {entry.familyName}
-                              {entry.custom ? (
-                                <span
-                                  className="ml-2 rounded-sm border border-border bg-surface-muted px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted"
-                                  data-testid={`family-row-${entry.id}-custom-badge`}
-                                >
-                                  Custom
-                                </span>
-                              ) : null}
-                              {entry.catalogLabel ? (
-                                <span
-                                  className="ml-2 rounded-sm border border-border bg-surface-muted px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted"
-                                  data-testid={`family-row-${entry.id}-catalog-badge`}
-                                >
-                                  {entry.catalogLabel}
-                                </span>
-                              ) : null}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              onPlaceType(entry.kind, entry.id);
-                              onClose();
-                            }}
-                            className="rounded border border-border bg-surface-strong px-2 py-0.5 text-xs hover:bg-accent-soft"
-                          >
-                            Place
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                );
-              })}
-              {assetGroups.map(({ id, label, entries }) => {
-                const visibleEntries = entries.filter((e) => matchesNeedle(e, needle));
-                if (visibleEntries.length === 0) return null;
-                return (
-                  <section
-                    key={id}
-                    aria-label={label}
-                    data-testid={`family-group-${id}`}
-                    className="mb-3"
-                  >
-                    <div
-                      className="px-2 py-1 text-xs uppercase text-muted"
-                      style={{ letterSpacing: 'var(--text-eyebrow-tracking, 0.06em)' }}
-                    >
-                      {label}
-                    </div>
-                    <ul className="flex flex-col">
-                      {visibleEntries.map((entry) => (
-                        <li
-                          key={entry.id}
-                          data-testid={`family-row-${entry.id}`}
-                          className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-accent-soft"
-                        >
-                          <CatalogThumbnail entry={entry} />
-                          <div className="flex flex-1 flex-col">
-                            <span className="text-sm text-foreground">{entry.name}</span>
-                            <span className="text-xs text-muted">{entry.familyName}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              onPlaceType(entry.kind, entry.id);
-                              onClose();
-                            }}
-                            className="rounded border border-border bg-surface-strong px-2 py-0.5 text-xs hover:bg-accent-soft"
-                          >
-                            Place
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                );
-              })}
-              {DISCIPLINE_ORDER.every(({ id }) => {
-                const entries = (grouped[id] ?? []).filter((e) => matchesNeedle(e, needle));
-                return entries.length === 0;
-              }) &&
-              assetGroups.every(({ entries }) => {
-                const visibleEntries = entries.filter((e) => matchesNeedle(e, needle));
-                return visibleEntries.length === 0;
-              }) ? (
-                <div className="px-3 py-6 text-center text-sm text-muted">
-                  No matching families.
+          {DISCIPLINE_ORDER.map(({ id, label }) => {
+            const entries = (grouped[id] ?? []).filter((e) => matchesNeedle(e, needle));
+            if (entries.length === 0) return null;
+            return (
+              <section
+                key={id}
+                aria-label={label}
+                data-testid={`family-group-${id}`}
+                className="mb-3"
+              >
+                <div
+                  className="px-2 py-1 text-xs uppercase text-muted"
+                  style={{ letterSpacing: 'var(--text-eyebrow-tracking, 0.06em)' }}
+                >
+                  {label}
                 </div>
-              ) : null}
-            </>
-          ) : (
-            <ExternalCatalogsTab
-              catalogClient={catalogClient}
-              elementsById={elementsById}
-              needle={needle}
-              onPlace={(placement, overwriteOption) =>
-                onPlaceCatalogFamily?.(placement, overwriteOption)
-              }
-              onLoad={(placement, overwriteOption) =>
-                onLoadCatalogFamily?.(placement, overwriteOption)
-              }
-              onPanelClose={onClose}
-            />
-          )}
+                <ul className="flex flex-col">
+                  {entries.map((entry) => (
+                    <li
+                      key={entry.id}
+                      data-testid={`family-row-${entry.id}`}
+                      className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-accent-soft"
+                    >
+                      <CatalogThumbnail entry={entry} />
+                      <div className="flex flex-1 flex-col">
+                        <span className="text-sm text-foreground">{entry.name}</span>
+                        <span className="text-xs text-muted">
+                          {entry.familyName}
+                          {entry.custom ? (
+                            <span
+                              className="ml-2 rounded-sm border border-border bg-surface-muted px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted"
+                              data-testid={`family-row-${entry.id}-custom-badge`}
+                            >
+                              Custom
+                            </span>
+                          ) : null}
+                          {entry.catalogLabel ? (
+                            <span
+                              className="ml-2 rounded-sm border border-border bg-surface-muted px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted"
+                              data-testid={`family-row-${entry.id}-catalog-badge`}
+                            >
+                              {entry.catalogLabel}
+                            </span>
+                          ) : null}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onPlaceType(entry.kind, entry.id);
+                          onClose();
+                        }}
+                        className="rounded border border-border bg-surface-strong px-2 py-0.5 text-xs hover:bg-accent-soft"
+                      >
+                        Place
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
+          })}
+          {combinedAssetGroups.map(({ id, label, entries }) => {
+            const visibleEntries = entries.filter((e) => matchesNeedle(e, needle));
+            if (visibleEntries.length === 0) return null;
+            return (
+              <section
+                key={id}
+                aria-label={label}
+                data-testid={`family-group-${id}`}
+                className="mb-3"
+              >
+                <div
+                  className="px-2 py-1 text-xs uppercase text-muted"
+                  style={{ letterSpacing: 'var(--text-eyebrow-tracking, 0.06em)' }}
+                >
+                  {label}
+                </div>
+                <ul className="flex flex-col">
+                  {visibleEntries.map((entry) => {
+                    const loadedType = entry.catalogPlacement
+                      ? findLoadedCatalogFamilyType(elementsById, entry.catalogPlacement)
+                      : null;
+                    return (
+                      <li
+                        key={entry.id}
+                        data-testid={`family-row-${entry.id}`}
+                        className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-accent-soft"
+                      >
+                        <CatalogThumbnail entry={entry} />
+                        <div className="flex flex-1 flex-col">
+                          <span className="text-sm text-foreground">{entry.name}</span>
+                          <span className="text-xs text-muted">
+                            {entry.familyName}
+                            {loadedType ? (
+                              <span
+                                className="ml-2 rounded-sm border border-border bg-surface-muted px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted"
+                                data-testid={`family-row-${entry.id}-loaded-badge`}
+                              >
+                                Loaded
+                              </span>
+                            ) : null}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          data-testid={
+                            entry.catalogPlacement ? `external-family-${entry.id}-place` : undefined
+                          }
+                          onClick={() => {
+                            if (entry.catalogPlacement) {
+                              onPlaceCatalogFamily?.(
+                                entry.catalogPlacement,
+                                loadedType ? 'keep-existing-values' : undefined,
+                              );
+                            } else {
+                              onPlaceType(entry.kind, entry.id);
+                            }
+                            onClose();
+                          }}
+                          className="rounded border border-border bg-surface-strong px-2 py-0.5 text-xs hover:bg-accent-soft"
+                        >
+                          Place
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            );
+          })}
+          {catalogFamilies.loading ? (
+            <div data-testid="family-catalogs-loading" className="px-3 py-4 text-sm text-muted">
+              Loading catalog families…
+            </div>
+          ) : null}
+          {catalogFamilies.error ? (
+            <div
+              role="alert"
+              data-testid="family-catalogs-error"
+              className="px-3 py-4 text-sm text-rose-300"
+            >
+              {catalogFamilies.error}
+            </div>
+          ) : null}
+          {!hasVisibleEntries && !catalogFamilies.loading ? (
+            <div className="px-3 py-6 text-center text-sm text-muted">No matching families.</div>
+          ) : null}
         </div>
       </div>
     </div>

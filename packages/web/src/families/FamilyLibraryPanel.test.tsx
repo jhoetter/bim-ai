@@ -126,12 +126,14 @@ describe('<FamilyLibraryPanel /> — FL-06', () => {
       thumbnailHeightMm: 900,
     };
     const { getByTestId } = setup({ [asset.id]: asset });
-    const canvas = getByTestId(`family-row-${asset.id}`).querySelector('canvas');
+    const thumbnail = getByTestId(`family-row-${asset.id}`).querySelector(
+      '[data-testid="asset-rendered-thumbnail"]',
+    );
 
-    expect(canvas).toBeTruthy();
-    expect(canvas?.getAttribute('data-testid')).toBe('asset-rendered-thumbnail');
-    expect(canvas?.getAttribute('width')).toBe('64');
-    expect(canvas?.getAttribute('height')).toBe('64');
+    expect(thumbnail).toBeTruthy();
+    expect(thumbnail?.tagName).toBe('IMG');
+    expect(thumbnail?.getAttribute('width')).toBe('64');
+    expect(thumbnail?.getAttribute('height')).toBe('64');
   });
 
   it('groups custom wall_type elements under "Wall Types"', () => {
@@ -175,6 +177,36 @@ describe('<FamilyLibraryPanel /> — FL-06', () => {
     expect(thumbnail).toBeTruthy();
     expect(thumbnail?.tagName).toBe('IMG');
     expect(row.querySelector('svg')).toBeNull();
+  });
+
+  it('renders custom floor and roof types with rendered 3D thumbnails', () => {
+    const floorType: Extract<Element, { kind: 'floor_type' }> = {
+      kind: 'floor_type',
+      id: 'ft-rendered',
+      name: 'Rendered Floor Type',
+      layers: [
+        { thicknessMm: 60, function: 'finish', materialKey: 'screed' },
+        { thicknessMm: 180, function: 'structure', materialKey: 'concrete' },
+      ],
+    };
+    const roofType: Extract<Element, { kind: 'roof_type' }> = {
+      kind: 'roof_type',
+      id: 'rt-rendered',
+      name: 'Rendered Roof Type',
+      layers: [
+        { thicknessMm: 45, function: 'finish', materialKey: 'standing_seam' },
+        { thicknessMm: 160, function: 'structure', materialKey: 'timber' },
+      ],
+    };
+    const { getByTestId } = setup({ [floorType.id]: floorType, [roofType.id]: roofType });
+
+    const floorRow = getByTestId(`family-row-${floorType.id}`);
+    const roofRow = getByTestId(`family-row-${roofType.id}`);
+
+    expect(floorRow.querySelector('[data-testid="floor_type-rendered-thumbnail"]')).toBeTruthy();
+    expect(roofRow.querySelector('[data-testid="roof_type-rendered-thumbnail"]')).toBeTruthy();
+    expect(floorRow.querySelector('svg')).toBeNull();
+    expect(roofRow.querySelector('svg')).toBeNull();
   });
 
   it('clicking the backdrop closes the panel', () => {

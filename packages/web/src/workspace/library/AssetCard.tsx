@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 import type { AssetLibraryEntry, Element } from '@bim-ai/core';
 import * as THREE from 'three';
 
@@ -10,6 +10,20 @@ type AssetCardProps = {
   onSelect: (entry: AssetLibraryEntry) => void;
   onPlace: (entry: AssetLibraryEntry) => void;
 };
+
+const RENDERED_THUMBNAIL_SIZE = 128;
+const RENDERED_THUMBNAIL_UNAVAILABLE =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'>" +
+      "<rect width='128' height='128' rx='6' fill='#f3f4f6'/>" +
+      '</svg>',
+  );
+
+const renderedThumbnailCache = new Map<string, string>();
+const renderedThumbnailInFlight = new Map<string, Promise<string>>();
+let renderedThumbnailRenderer: THREE.WebGLRenderer | null = null;
+let renderedThumbnailRendererInitialized = false;
 
 /** Schematic-plan thumbnail SVG drawn at 1:50 paper scale with --draft-* line weights. */
 function inferSymbolKind(
@@ -36,108 +50,181 @@ function inferSymbolKind(
   return undefined;
 }
 
+function ensureRenderedThumbnailRenderer(): THREE.WebGLRenderer | null {
+  if (renderedThumbnailRendererInitialized) return renderedThumbnailRenderer;
+  renderedThumbnailRendererInitialized = true;
+  if (typeof document === 'undefined') return null;
+  if (
+    typeof navigator !== 'undefined' &&
+    typeof navigator.userAgent === 'string' &&
+    navigator.userAgent.toLowerCase().includes('jsdom')
+  ) {
+    return null;
+  }
+
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = RENDERED_THUMBNAIL_SIZE;
+    canvas.height = RENDERED_THUMBNAIL_SIZE;
+    renderedThumbnailRenderer = new THREE.WebGLRenderer({
+      canvas,
+      alpha: true,
+      antialias: true,
+      preserveDrawingBuffer: true,
+    });
+    renderedThumbnailRenderer.setPixelRatio(1);
+    renderedThumbnailRenderer.setSize(RENDERED_THUMBNAIL_SIZE, RENDERED_THUMBNAIL_SIZE, false);
+    renderedThumbnailRenderer.setClearColor(0xf3f4f6, 0);
+    return renderedThumbnailRenderer;
+  } catch {
+    renderedThumbnailRenderer = null;
+    return null;
+  }
+}
+
+function disposeObject3D(object: THREE.Object3D): void {
+  object.traverse((child) => {
+    const mesh = child as THREE.Mesh;
+    mesh.geometry?.dispose?.();
+    const material = mesh.material;
+    if (Array.isArray(material)) material.forEach((m) => m?.dispose?.());
+    else material?.dispose?.();
+  });
+}
+
+function renderedThumbnailCacheKey(entry: AssetLibraryEntry): string {
+  return JSON.stringify({
+    id: entry.id,
+    name: entry.name,
+    category: entry.category,
+    thumbnailMm: entry.thumbnailMm,
+    planSymbolKind: entry.planSymbolKind,
+    renderProxyKind: entry.renderProxyKind,
+    paramSchema: entry.paramSchema,
+    description: entry.description,
+  });
+}
+
+async function renderAssetThumbnail(entry: AssetLibraryEntry): Promise<string> {
+  const renderer = ensureRenderedThumbnailRenderer();
+  if (!renderer) return RENDERED_THUMBNAIL_UNAVAILABLE;
+
+  const scene = new THREE.Scene();
+  scene.add(new THREE.AmbientLight('white', 1.25));
+  const keyLight = new THREE.DirectionalLight('white', 1.85);
+  keyLight.position.set(2.5, 4, 3);
+  scene.add(keyLight);
+  const fillLight = new THREE.HemisphereLight(0xdde6ff, 0xc8c2b0, 0.5);
+  scene.add(fillLight);
+
+  const symbolKind = entry.renderProxyKind ?? entry.planSymbolKind ?? inferSymbolKind(entry);
+  const group = makePlacedAssetMesh(
+    {
+      kind: 'placed_asset',
+      id: `thumbnail-${entry.id}`,
+      name: entry.name,
+      assetId: entry.id,
+      levelId: 'thumbnail-level',
+      positionMm: { xMm: 0, yMm: 0 },
+      rotationDeg: -25,
+      paramValues: {},
+    },
+    {
+      'thumbnail-level': {
+        kind: 'level',
+        id: 'thumbnail-level',
+        name: 'Preview',
+        elevationMm: 0,
+      },
+      [entry.id]: {
+        kind: 'asset_library_entry',
+        id: entry.id,
+        assetKind: entry.assetKind ?? 'family_instance',
+        name: entry.name,
+        tags: entry.tags,
+        category: entry.category,
+        disciplineTags: entry.disciplineTags,
+        thumbnailKind: 'rendered_3d',
+        thumbnailWidthMm: entry.thumbnailMm?.widthMm,
+        thumbnailHeightMm: entry.thumbnailMm?.heightMm,
+        planSymbolKind: entry.planSymbolKind,
+        renderProxyKind: symbolKind,
+        paramSchema: entry.paramSchema,
+        publishedFromOrgId: entry.publishedFromOrgId,
+        description: entry.description,
+      },
+    } satisfies Record<string, Element>,
+    null,
+  );
+
+  try {
+    scene.add(group);
+    const bounds = new THREE.Box3().setFromObject(group);
+    const center = bounds.getCenter(new THREE.Vector3());
+    const size = bounds.getSize(new THREE.Vector3());
+    group.position.sub(center);
+
+    const radius = Math.max(size.length() / 2, 0.35);
+    const camera = new THREE.PerspectiveCamera(32, 1, 0.01, radius * 12);
+    camera.position.set(radius * 2.4, radius * 1.8, radius * 2.7);
+    camera.lookAt(0, 0, 0);
+
+    renderer.clear(true, true, true);
+    renderer.render(scene, camera);
+    return renderer.domElement.toDataURL('image/png');
+  } catch {
+    return RENDERED_THUMBNAIL_UNAVAILABLE;
+  } finally {
+    disposeObject3D(scene);
+  }
+}
+
+function getRenderedAssetThumbnail(entry: AssetLibraryEntry): Promise<string> {
+  const cacheKey = renderedThumbnailCacheKey(entry);
+  const cached = renderedThumbnailCache.get(cacheKey);
+  if (cached) return Promise.resolve(cached);
+  const pending = renderedThumbnailInFlight.get(cacheKey);
+  if (pending) return pending;
+
+  const promise = renderAssetThumbnail(entry)
+    .catch(() => RENDERED_THUMBNAIL_UNAVAILABLE)
+    .then((url) => {
+      renderedThumbnailCache.set(cacheKey, url);
+      renderedThumbnailInFlight.delete(cacheKey);
+      return url;
+    });
+  renderedThumbnailInFlight.set(cacheKey, promise);
+  return promise;
+}
+
 export function RenderedAssetThumbnail({ entry }: { entry: AssetLibraryEntry }): ReactElement {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [src, setSrc] = useState<string>(RENDERED_THUMBNAIL_UNAVAILABLE);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || typeof WebGLRenderingContext === 'undefined') return undefined;
-
-    let renderer: THREE.WebGLRenderer | null = null;
-    const scene = new THREE.Scene();
-    const group = makePlacedAssetMesh(
-      {
-        kind: 'placed_asset',
-        id: `thumbnail-${entry.id}`,
-        name: entry.name,
-        assetId: entry.id,
-        levelId: 'thumbnail-level',
-        positionMm: { xMm: 0, yMm: 0 },
-        rotationDeg: -25,
-        paramValues: {},
-      },
-      {
-        'thumbnail-level': {
-          kind: 'level',
-          id: 'thumbnail-level',
-          name: 'Preview',
-          elevationMm: 0,
-        },
-        [entry.id]: {
-          kind: 'asset_library_entry',
-          id: entry.id,
-          assetKind: entry.assetKind ?? 'family_instance',
-          name: entry.name,
-          tags: entry.tags,
-          category: entry.category,
-          disciplineTags: entry.disciplineTags,
-          thumbnailKind: entry.thumbnailKind,
-          thumbnailWidthMm: entry.thumbnailMm?.widthMm,
-          thumbnailHeightMm: entry.thumbnailMm?.heightMm,
-          planSymbolKind: entry.planSymbolKind ?? inferSymbolKind(entry),
-          renderProxyKind: entry.renderProxyKind ?? entry.planSymbolKind ?? inferSymbolKind(entry),
-          paramSchema: entry.paramSchema,
-          publishedFromOrgId: entry.publishedFromOrgId,
-          description: entry.description,
-        },
-      } satisfies Record<string, Element>,
-      null,
-    );
-
-    try {
-      scene.add(group);
-      const bounds = new THREE.Box3().setFromObject(group);
-      const center = bounds.getCenter(new THREE.Vector3());
-      const size = bounds.getSize(new THREE.Vector3());
-      group.position.sub(center);
-
-      const radius = Math.max(size.length() / 2, 0.35);
-      const viewSize = radius * 2.8;
-      const camera = new THREE.OrthographicCamera(
-        -viewSize / 2,
-        viewSize / 2,
-        viewSize / 2,
-        -viewSize / 2,
-        0.01,
-        radius * 10,
-      );
-      camera.position.set(radius * 2.6, radius * 2, radius * 3);
-      camera.lookAt(0, 0, 0);
-
-      scene.add(new THREE.AmbientLight('white', 1.15));
-      const keyLight = new THREE.DirectionalLight('white', 1.8);
-      keyLight.position.set(2, 4, 3);
-      scene.add(keyLight);
-
-      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-      renderer.setClearAlpha(0);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-      renderer.setSize(64, 64, false);
-      renderer.render(scene, camera);
-    } catch {
-      renderer?.dispose();
-      renderer = null;
-    }
-
+    let cancelled = false;
+    setSrc(RENDERED_THUMBNAIL_UNAVAILABLE);
+    void getRenderedAssetThumbnail(entry).then((url) => {
+      if (!cancelled) setSrc(url);
+    });
     return () => {
-      group.traverse((object) => {
-        const mesh = object as THREE.Mesh;
-        if (mesh.geometry) mesh.geometry.dispose();
-        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        materials.filter(Boolean).forEach((material) => material.dispose());
-      });
-      renderer?.dispose();
+      cancelled = true;
     };
   }, [entry]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={64}
-      height={64}
+    <img
+      src={src}
+      alt=""
       aria-hidden="true"
       data-testid="asset-rendered-thumbnail"
-      style={{ display: 'block', width: 56, height: 56 }}
+      width={64}
+      height={64}
+      style={{
+        display: 'block',
+        width: '100%',
+        height: '100%',
+        objectFit: 'contain',
+      }}
     />
   );
 }
@@ -744,7 +831,7 @@ export function AssetCard({ entry, selected, onSelect, onPlace }: AssetCardProps
           borderRadius: 2,
         }}
       >
-        <SchematicThumbnail entry={entry} />
+        <RenderedAssetThumbnail entry={entry} />
       </div>
       <span
         style={{
