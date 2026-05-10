@@ -114,6 +114,30 @@ export function AnnotateRibbon({
     });
   };
 
+  const placeNorthArrow = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createAnnotationSymbol',
+      hostViewId: planViewId,
+      positionMm: { xMm: c.xMm + 800, yMm: c.yMm + 800 },
+      symbolType: 'north_arrow',
+      rotationDeg: 0,
+      scale: 1.0,
+    });
+  };
+
+  const placeStairPath = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createAnnotationSymbol',
+      hostViewId: planViewId,
+      positionMm: { xMm: c.xMm, yMm: c.yMm },
+      symbolType: 'stair_up',
+      rotationDeg: 0,
+      scale: 1.0,
+    });
+  };
+
   const commitTextNote = () => {
     const text = textNoteDraft.trim();
     if (!text) {
@@ -212,6 +236,24 @@ export function AnnotateRibbon({
         title="Drop an 800×800mm opaque masking region that occludes underlying linework."
       >
         Masking Region
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-north-arrow"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeNorthArrow}
+        title="Place a North Arrow symbol offset from the view centre."
+      >
+        N Arrow
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-stair-path"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeStairPath}
+        title="Place a Stair Path (UP) symbol at the view centre."
+      >
+        Stair ↑
       </button>
       {textNoteInput ? (
         <div className="flex flex-col gap-1">
