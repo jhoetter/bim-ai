@@ -3,9 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any, Literal
 
-# Imported lazily from the legacy constraints facade while constraints.py is being split.
-# constraints.py defines Violation before importing this module.
-from bim_ai.constraints import Violation  # noqa: E402
+from bim_ai.constraints_core import Violation
 from bim_ai.document import Document
 from bim_ai.elements import (
     AgentAssumptionElem,

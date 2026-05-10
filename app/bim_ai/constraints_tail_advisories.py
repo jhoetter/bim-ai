@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-# Imported lazily from the legacy constraints facade while constraints.py is being split.
-# constraints.py defines these names before importing this module.
-from bim_ai.constraints import (  # noqa: E402
+from bim_ai.constraints_core import (
     _RULE_BLOCKING_CLASS,
     _SCHEDULE_VIEWPORT_AUTOPLACE_HEIGHT_MM,
     _SCHEDULE_VIEWPORT_AUTOPLACE_WIDTH_MM,
@@ -12,7 +10,6 @@ from bim_ai.constraints import (  # noqa: E402
     _SCHEDULE_VIEWPORT_AUTOPLACE_Y_MM,
     AdvisorBlockingClass,
     Violation,
-    evaluate,
 )
 from bim_ai.document import Document
 from bim_ai.elements import (
@@ -145,6 +142,8 @@ def _section_on_sheet_advisory_violations(elements: dict[str, Element]) -> list[
 
 def advisorBlockingClassSummary_v1(doc: Document) -> dict[str, Any]:
     """Per-class violation counts at each severity for a document."""
+    from bim_ai.constraints_evaluation import evaluate
+
     viols = evaluate(doc.elements)  # type: ignore[arg-type]
     counts: dict[str, dict[str, int]] = {
         cls.value: {"error": 0, "warning": 0, "info": 0} for cls in AdvisorBlockingClass
