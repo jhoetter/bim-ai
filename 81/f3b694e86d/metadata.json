@@ -3,7 +3,7 @@
   "checkpoint_id": "81f3b694e86d",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "ux-revamp.md"
   ],
@@ -19,13 +19,19 @@
       "transcript": "/81/f3b694e86d/1/full.jsonl",
       "content_hash": "/81/f3b694e86d/1/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/81/f3b694e86d/2/metadata.json",
+      "transcript": "/81/f3b694e86d/2/full.jsonl",
+      "content_hash": "/81/f3b694e86d/2/content_hash.txt",
+      "prompt": "/81/f3b694e86d/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 14515,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 489344,
-    "output_tokens": 397,
-    "api_call_count": 5
+    "input_tokens": 14830,
+    "cache_creation_tokens": 347272,
+    "cache_read_tokens": 17474467,
+    "output_tokens": 75943,
+    "api_call_count": 183
   }
 }
