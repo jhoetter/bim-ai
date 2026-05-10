@@ -627,6 +627,23 @@ class TextNoteElem(BaseModel):
     colour: str = Field(default="#202020")
 
 
+AnnotationSymbolType = Literal["north_arrow", "stair_up", "stair_down", "centerline"]
+
+
+class AnnotationSymbolElem(BaseModel):
+    """ANN-05 — view-local graphical symbol (North Arrow, Stair Path, Centerline)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["annotation_symbol"] = "annotation_symbol"
+    id: str
+    host_view_id: str = Field(alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    symbol_type: AnnotationSymbolType = Field(alias="symbolType")
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    scale: float = Field(default=1.0, gt=0)
+    colour: str = Field(default="#202020")
+
+
 class SpotElevationElem(BaseModel):
     """ANN-02 — view-local spot elevation annotation (diamond symbol + text)."""
 
@@ -3051,6 +3068,7 @@ Element = Annotated[
     | DetailLineElem
     | DetailRegionElem
     | TextNoteElem
+    | AnnotationSymbolElem
     | ReferencePlaneElem
     | PropertyLineElem
     | SweepElem

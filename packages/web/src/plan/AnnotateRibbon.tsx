@@ -342,6 +342,20 @@ export function AnnotateRibbon({
     });
   };
 
+  const placeAnnotationSymbol = (
+    symbolType: 'north_arrow' | 'stair_up' | 'stair_down' | 'centerline',
+  ) => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createAnnotationSymbol',
+      hostViewId: planViewId,
+      positionMm: { xMm: c.xMm, yMm: c.yMm },
+      symbolType,
+      rotationDeg: symbolType === 'north_arrow' ? 0 : 90,
+      scale: 1,
+    });
+  };
+
   const commitTextNote = () => {
     const text = textNoteDraft.trim();
     if (!text) {
@@ -521,6 +535,33 @@ export function AnnotateRibbon({
         title="Drop a hexagonal revision cloud at the view centre to mark revised areas."
       >
         Rev. Cloud
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-north-arrow"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={() => placeAnnotationSymbol('north_arrow')}
+        title="Place a north arrow annotation symbol at the view centre."
+      >
+        North Arrow
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-stair-path"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={() => placeAnnotationSymbol('stair_up')}
+        title="Place an upward stair path annotation symbol at the view centre."
+      >
+        Stair Path
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-centerline"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={() => placeAnnotationSymbol('centerline')}
+        title="Place a centerline annotation symbol at the view centre."
+      >
+        Centerline
       </button>
       {textNoteInput ? (
         <div className="flex flex-col gap-1">

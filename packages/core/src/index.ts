@@ -256,6 +256,7 @@ export type ElemKind =
   | 'detail_region'
   | 'draft_detail_region'
   | 'text_note'
+  | 'annotation_symbol'
   | 'sweep'
   | 'dormer'
   | 'balcony'
@@ -1514,6 +1515,17 @@ export type Element =
       fontSizeMm: number;
       anchor?: 'tl' | 'tc' | 'tr' | 'cl' | 'c' | 'cr' | 'bl' | 'bc' | 'br';
       rotationDeg?: number;
+      colour?: string;
+    }
+  | {
+      /** ANN-05 — view-local graphical symbol (North Arrow, Stair Path, Centerline). */
+      kind: 'annotation_symbol';
+      id: string;
+      hostViewId: string;
+      positionMm: XY;
+      symbolType: 'north_arrow' | 'stair_up' | 'stair_down' | 'centerline';
+      rotationDeg?: number;
+      scale?: number;
       colour?: string;
     }
   | {

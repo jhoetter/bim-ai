@@ -44,6 +44,16 @@ export type TextNotePrimitive = {
   colour: string;
 };
 
+export type AnnotationSymbolPrimitive = {
+  kind: 'annotation_symbol';
+  id: string;
+  positionMm: XY;
+  symbolType: 'north_arrow' | 'stair_up' | 'stair_down' | 'centerline';
+  rotationDeg: number;
+  scale: number;
+  colour: string;
+};
+
 export type SpotElevationPrimitive = {
   kind: 'spot_elevation';
   id: string;
@@ -229,6 +239,7 @@ export type DetailComponentPrimitive =
   | DetailLinePrimitive
   | DetailRegionPrimitive
   | TextNotePrimitive
+  | AnnotationSymbolPrimitive
   | SpotElevationPrimitive
   | RadialDimensionPrimitive
   | DiameterDimensionPrimitive
@@ -291,6 +302,16 @@ export function extractDetailComponentPrimitives(
         fontSizeMm: el.fontSizeMm,
         anchor: el.anchor ?? 'tl',
         rotationDeg: el.rotationDeg ?? 0,
+        colour: el.colour ?? '#202020',
+      });
+    } else if (el.kind === 'annotation_symbol' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'annotation_symbol',
+        id: el.id,
+        positionMm: el.positionMm,
+        symbolType: el.symbolType,
+        rotationDeg: el.rotationDeg ?? 0,
+        scale: el.scale ?? 1,
         colour: el.colour ?? '#202020',
       });
     } else if (el.kind === 'spot_elevation' && el.hostViewId === viewId) {
