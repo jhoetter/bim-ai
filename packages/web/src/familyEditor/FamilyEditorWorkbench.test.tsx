@@ -292,6 +292,28 @@ describe('FAM-054 — aligned dimensions', () => {
   });
 });
 
+describe('FAM-076 — equal reference-plane dimensions', () => {
+  it('equalizes matching reference planes and keeps gaps equal when an outer plane moves', () => {
+    const { getByText, getByLabelText, getByTestId } = renderWithI18n(<FamilyEditorWorkbench />);
+
+    fireEvent.click(getByText('Add vertical'));
+    fireEvent.click(getByText('Add vertical'));
+    fireEvent.click(getByText('Add vertical'));
+    fireEvent.change(getByLabelText('ref-plane-offset-1'), { target: { value: '400' } });
+    fireEvent.change(getByLabelText('ref-plane-offset-2'), { target: { value: '1000' } });
+
+    fireEvent.click(getByTestId('dimension-eq-create'));
+
+    expect((getByLabelText('ref-plane-offset-1') as HTMLInputElement).value).toBe('500');
+    expect(getByTestId('family-eq-constraints-list').textContent).toContain('gap 500 mm');
+
+    fireEvent.change(getByLabelText('ref-plane-offset-2'), { target: { value: '1200' } });
+
+    expect((getByLabelText('ref-plane-offset-1') as HTMLInputElement).value).toBe('600');
+    expect(getByTestId('family-eq-constraints-list').textContent).toContain('gap 600 mm');
+  });
+});
+
 describe('FAM-065/FAM-066 — family category and view range settings', () => {
   it('edits family category parameter flags', () => {
     const { getByLabelText } = renderWithI18n(<FamilyEditorWorkbench />);

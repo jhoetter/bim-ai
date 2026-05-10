@@ -122,7 +122,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-073 | Preview Visibility toggle (Family Editor)             | Nested Fam.    | 🟡            | Family editor has a Preview Visibility toggle and detail-level selector that filters sweeps/nested instances by visibility bindings and coarse/medium/fine settings. Missing real canvas rendering parity and view-type-specific preview                                                              |
 | F-074 | Instance parameters for per-placement overrides       | Nested Fam.    | 🟡            | Placed assets persist per-instance `paramValues`; family params support instanceOverridable and resolver override precedence; missing complete Family Types dialog integration                                                                                                                        |
 | F-075 | Family from furniture template (Metric Furniture.rft) | Param. Furn.   | 🟡            | Family editor has a Furniture template preset with origin ref planes, Furniture category, chair params, two starter types, coarse symbolic lines, and medium/fine sweep placeholder. Missing `.rft` browser and project-load persistence                                                              |
-| F-076 | EQ (Equal) constraint on dimensions                   | Param. Furn.   | ❌            |                                                                                                                                                                                                                                                                                                       |
+| F-076 | EQ (Equal) constraint on dimensions                   | Param. Furn.   | 🟡            | Family editor can equalize three or more matching reference planes and keep intermediate offsets evenly spaced when an outer constrained plane moves. Missing canvas EQ glyphs, arbitrary reference picking, and full type-driven constraint solving                                                  |
 | F-077 | Masking Region                                        | Param. Furn.   | ✅            | masking_region supports sketch creation, VV visibility, inspector fill color, editable boundary vertex grips, and optional void loops for negative cutouts                                                                                                                                            |
 | F-078 | Yes/No parameter for conditional visibility           | Param. Furn.   | 🟡            | Family editor/resolver supports boolean visibility bindings for sweeps and nested instances; missing full furniture-template authoring presets                                                                                                                                                        |
 | F-079 | Symbolic Lines for 2D furniture                       | Param. Furn.   | 🟡            | Furniture template seeds coarse-only symbolic chair plan linework bound to `Show_2D_Elements`; general family editor symbolic lines exist. Missing canvas drawing, line style propagation, and placed-family project rendering                                                                        |
@@ -179,8 +179,8 @@ _Last audited: 2026-05-09 against codebase at commit `docs/tracker-sync-wave-11`
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
 | ✅ Fully available     | 57      | 47%        |
-| 🟡 Partially available | 55      | 46%        |
-| ❌ Not available       | 8       | 7%         |
+| 🟡 Partially available | 56      | 47%        |
+| ❌ Not available       | 7       | 6%         |
 | **Total**              | **120** | **100%**   |
 
 ---
