@@ -1479,6 +1479,8 @@ class DxfLineworkLine(BaseModel):
     kind: Literal["line"] = "line"
     start: Vec2Mm
     end: Vec2Mm
+    layer_name: str | None = Field(default=None, alias="layerName")
+    layer_color: str | None = Field(default=None, alias="layerColor")
 
 
 class DxfLineworkPolyline(BaseModel):
@@ -1488,6 +1490,8 @@ class DxfLineworkPolyline(BaseModel):
     kind: Literal["polyline"] = "polyline"
     points: list[Vec2Mm]
     closed: bool = False
+    layer_name: str | None = Field(default=None, alias="layerName")
+    layer_color: str | None = Field(default=None, alias="layerColor")
 
 
 class DxfLineworkArc(BaseModel):
@@ -1503,12 +1507,23 @@ class DxfLineworkArc(BaseModel):
     radius_mm: float = Field(alias="radiusMm", gt=0)
     start_deg: float = Field(alias="startDeg")
     end_deg: float = Field(alias="endDeg")
+    layer_name: str | None = Field(default=None, alias="layerName")
+    layer_color: str | None = Field(default=None, alias="layerColor")
 
 
 DxfLineworkPrim = Annotated[
     DxfLineworkLine | DxfLineworkPolyline | DxfLineworkArc,
     Field(discriminator="kind"),
 ]
+
+
+class DxfLayerMeta(BaseModel):
+    """F-019 — queryable DXF layer summary preserved on a link."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    name: str
+    color: str | None = None
+    primitive_count: int = Field(default=0, alias="primitiveCount", ge=0)
 
 
 class LinkDxfElem(BaseModel):
@@ -1534,6 +1549,8 @@ class LinkDxfElem(BaseModel):
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
     scale_factor: float = Field(default=1.0, alias="scaleFactor", gt=0)
     linework: list[DxfLineworkPrim] = Field(default_factory=list)
+    dxf_layers: list[DxfLayerMeta] = Field(default_factory=list, alias="dxfLayers")
+    hidden_layer_names: list[str] = Field(default_factory=list, alias="hiddenLayerNames")
     pinned: bool = Field(default=False)
     color_mode: Literal["black_white", "custom"] | None = Field(default=None, alias="colorMode")
     custom_color: str | None = Field(default=None, alias="customColor")

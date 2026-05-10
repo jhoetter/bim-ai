@@ -42,6 +42,29 @@ def test_parse_dxf_lines(tmp_path: Path) -> None:
     assert linework[1]["end"] == {"xMm": 1000.0, "yMm": 1000.0}
 
 
+def test_parse_dxf_preserves_layer_names_and_colours(tmp_path: Path) -> None:
+    from bim_ai.dxf_import import collect_dxf_layers, parse_dxf_to_linework
+
+    doc = _new_dxf()
+    doc.header["$INSUNITS"] = 0
+    doc.layers.new("A-WALL", dxfattribs={"color": 1})
+    doc.layers.new("A-DOOR", dxfattribs={"color": 3})
+    msp = doc.modelspace()
+    msp.add_line((0.0, 0.0), (100.0, 0.0), dxfattribs={"layer": "A-WALL"})
+    msp.add_circle((25.0, 25.0), 10.0, dxfattribs={"layer": "A-DOOR"})
+    path = tmp_path / "layers.dxf"
+    doc.saveas(str(path))
+
+    linework = parse_dxf_to_linework(path)
+    assert [p["layerName"] for p in linework] == ["A-WALL", "A-DOOR"]
+    assert linework[0]["layerColor"] == "#ff0000"
+    layers = collect_dxf_layers(linework)
+    assert layers == [
+        {"name": "A-DOOR", "primitiveCount": 1, "color": "#00ff00"},
+        {"name": "A-WALL", "primitiveCount": 1, "color": "#ff0000"},
+    ]
+
+
 def test_parse_dxf_polylines(tmp_path: Path) -> None:
     """An LWPOLYLINE round-trips into a single closed ``polyline`` primitive."""
 
@@ -151,3 +174,4 @@ def test_build_link_dxf_payload_default_origin(tmp_path: Path) -> None:
     assert payload["scaleFactor"] == 1.0
     assert len(payload["linework"]) == 1
     assert payload["linework"][0]["kind"] == "line"
+    assert payload["dxfLayers"] == [{"name": "0", "primitiveCount": 1, "color": "#ffffff"}]

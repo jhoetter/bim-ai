@@ -37,7 +37,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![CAD Link Options](file:///Users/jhoetter/Desktop/Revit%20Specs/0209_00-30-10.png)
 
-**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` now includes a DXF Links section listing all `link_dxf` underlays with per-link opacity slider (0–100%) and color mode toggle (Black & White / Custom hex color). These settings are stored as `colorMode`, `customColor`, and `overlayOpacity` fields on each `link_dxf` element and read by `dxfUnderlay.ts` at render time. Missing: layer visibility filtering (DXF layer metadata is not preserved in linework primitives), "Preserve original colors" mode (requires layer-level color data from import), and unit/positioning override controls at import time.
+**bim-ai status:** 🟡 Partial — `ManageLinksDialog.tsx` now includes a DXF Links section listing all `link_dxf` underlays with per-link opacity slider (0–100%) and color mode toggle (Black & White / Custom hex color). These settings are stored as `colorMode`, `customColor`, and `overlayOpacity` fields on each `link_dxf` element and read by `dxfUnderlay.ts` at render time. Layer names/colors are now preserved for supported DXF primitives and Manage Links can hide/show individual DXF layers per link. Missing: "Preserve original colors" drawing mode that applies native colors to every primitive automatically, and unit/positioning override controls at import time.
 
 ---
 
@@ -59,7 +59,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Query Tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0238_00-56-21.png)
 
-**bim-ai status:** ❌ Not available — the DXF linework is stored as flat primitives (lines/polylines/arcs); DXF layer metadata is not preserved in the `link_dxf` element, so there is no layer name to query or toggle. No per-layer visibility UI exists in ManageLinksDialog or VVDialog.
+**bim-ai status:** 🟡 Partial — DXF import now preserves each supported primitive's `layerName` plus layer color, stores a compact `dxfLayers` summary on `link_dxf`, and Manage Links lists those layers with per-link visibility checkboxes. Toggling a layer persists `hiddenLayerNames` via `updateLinkDxf`, and both 2D/3D plan underlay renderers skip hidden layer primitives. Missing: hover-pick Import Instance Query dialog, true per-view layer overrides, and DWG parsing beyond the existing DXF pipeline.
 
 ---
 

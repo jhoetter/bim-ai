@@ -1592,6 +1592,12 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
       rotationDeg: Number(raw.rotationDeg ?? raw.rotation_deg ?? 0),
       scaleFactor: Number(raw.scaleFactor ?? raw.scale_factor ?? 1),
       linework: Array.isArray(raw.linework) ? raw.linework : [],
+      dxfLayers: Array.isArray(raw.dxfLayers ?? raw.dxf_layers)
+        ? (raw.dxfLayers ?? raw.dxf_layers)
+        : [],
+      hiddenLayerNames: Array.isArray(raw.hiddenLayerNames ?? raw.hidden_layer_names)
+        ? (raw.hiddenLayerNames ?? raw.hidden_layer_names).map((v: unknown) => String(v))
+        : [],
       colorMode,
     };
     if (typeof raw.customColor === 'string' || typeof raw.custom_color === 'string') {

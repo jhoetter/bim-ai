@@ -46,6 +46,7 @@ export function renderDxfUnderlay(
   const transform = makeDxfLinkTransform(link, elementsById);
 
   for (const prim of linework) {
+    if (isDxfLayerHidden(link, prim)) continue;
     if (prim.kind === 'line') {
       const [sx, sy] = worldToScreen(transform(prim.start));
       const [ex, ey] = worldToScreen(transform(prim.end));
@@ -77,6 +78,35 @@ export function renderDxfUnderlay(
   }
 
   ctx.restore();
+}
+
+export function isDxfLayerHidden(link: LinkDxfElement, prim: DxfLineworkPrim): boolean {
+  const hidden = link.hiddenLayerNames ?? [];
+  return Boolean(prim.layerName && hidden.includes(prim.layerName));
+}
+
+export function resolveDxfLayerRows(
+  link: LinkDxfElement,
+): { name: string; color?: string; primitiveCount: number }[] {
+  if (link.dxfLayers?.length) {
+    return link.dxfLayers.map((row) => {
+      const out: { name: string; color?: string; primitiveCount: number } = {
+        name: row.name,
+        primitiveCount: row.primitiveCount ?? 0,
+      };
+      if (row.color) out.color = row.color;
+      return out;
+    });
+  }
+  const rows = new Map<string, { name: string; color?: string; primitiveCount: number }>();
+  for (const prim of link.linework ?? []) {
+    const name = prim.layerName ?? '0';
+    const row = rows.get(name) ?? { name, primitiveCount: 0 };
+    row.primitiveCount += 1;
+    if (prim.layerColor && !row.color) row.color = prim.layerColor;
+    rows.set(name, row);
+  }
+  return Array.from(rows.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function resolveDxfUnderlayStyle(link: LinkDxfElement): DxfUnderlayStyle {

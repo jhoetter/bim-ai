@@ -77,6 +77,18 @@ from bim_ai.engine import (
 )
 
 
+def _derive_dxf_layers(linework: list[Any]) -> list[dict[str, Any]]:
+    layers: dict[str, dict[str, Any]] = {}
+    for prim in linework:
+        name = getattr(prim, "layer_name", None) or "0"
+        row = layers.setdefault(name, {"name": name, "primitiveCount": 0})
+        row["primitiveCount"] += 1
+        color = getattr(prim, "layer_color", None)
+        if color and "color" not in row:
+            row["color"] = color
+    return sorted(layers.values(), key=lambda row: str(row["name"]).casefold())
+
+
 def try_apply_coordination_command(doc, cmd, *, source_provider=None) -> bool:
     els = doc.elements
     match cmd:
@@ -288,6 +300,16 @@ def try_apply_coordination_command(doc, cmd, *, source_provider=None) -> bool:
                 dxf_updates["custom_color"] = cmd.custom_color
             if cmd.overlay_opacity is not None:
                 dxf_updates["overlay_opacity"] = float(cmd.overlay_opacity)
+            if cmd.hidden_layer_names is not None:
+                known_layers = {row.name for row in dxf_link.dxf_layers}
+                if known_layers:
+                    unknown = sorted(set(cmd.hidden_layer_names) - known_layers)
+                    if unknown:
+                        raise ValueError(
+                            "updateLinkDxf.hiddenLayerNames includes unknown DXF layer(s): "
+                            + ", ".join(unknown)
+                        )
+                dxf_updates["hidden_layer_names"] = list(dict.fromkeys(cmd.hidden_layer_names))
             if cmd.origin_alignment_mode is not None:
                 dxf_updates["origin_alignment_mode"] = cmd.origin_alignment_mode
             els[cmd.link_id] = dxf_link.model_copy(update=dxf_updates)
@@ -308,6 +330,8 @@ def try_apply_coordination_command(doc, cmd, *, source_provider=None) -> bool:
                 rotation_deg=float(cmd.rotation_deg),
                 scale_factor=float(cmd.scale_factor),
                 linework=list(cmd.linework),
+                dxf_layers=cmd.dxf_layers or _derive_dxf_layers(list(cmd.linework)),
+                hidden_layer_names=list(dict.fromkeys(cmd.hidden_layer_names)),
                 pinned=bool(cmd.pinned),
             )
 

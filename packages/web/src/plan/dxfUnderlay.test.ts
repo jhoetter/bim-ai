@@ -6,6 +6,7 @@ import {
   DXF_UNDERLAY_STROKE,
   makeDxfLinkTransform,
   renderDxfUnderlay,
+  resolveDxfLayerRows,
   resolveDxfAlignmentAnchorMm,
   selectDxfUnderlaysForLevel,
   type LinkDxfElement,
@@ -67,6 +68,54 @@ describe('renderDxfUnderlay', () => {
 
     expect(ctx.strokeStyle).toBe('#ff00aa');
     expect(ctx.globalAlpha).toBe(0.25);
+  });
+
+  it('skips primitives whose DXF layer is hidden on the link', () => {
+    const ctx = makeMockContext();
+    const link = linkAtOrigin({
+      hiddenLayerNames: ['A-WALL'],
+      linework: [
+        {
+          kind: 'line',
+          layerName: 'A-WALL',
+          start: { xMm: 0, yMm: 0 },
+          end: { xMm: 1000, yMm: 0 },
+        },
+        {
+          kind: 'line',
+          layerName: 'A-DOOR',
+          start: { xMm: 0, yMm: 0 },
+          end: { xMm: 0, yMm: 1000 },
+        },
+      ],
+    });
+    renderDxfUnderlay(ctx, link, ({ xMm, yMm }) => [xMm / 10, yMm / 10]);
+
+    expect((ctx.beginPath as unknown as ReturnType<typeof vi.fn>).mock.calls.length).toBe(1);
+    expect((ctx.lineTo as unknown as ReturnType<typeof vi.fn>).mock.calls).toEqual([[0, 100]]);
+  });
+
+  it('derives queryable layer rows from linework when dxfLayers is absent', () => {
+    const link = linkAtOrigin({
+      linework: [
+        {
+          kind: 'line',
+          layerName: 'A-WALL',
+          layerColor: '#ff0000',
+          start: { xMm: 0, yMm: 0 },
+          end: { xMm: 1, yMm: 1 },
+        },
+        {
+          kind: 'line',
+          layerName: 'A-WALL',
+          start: { xMm: 0, yMm: 0 },
+          end: { xMm: 2, yMm: 2 },
+        },
+      ],
+    });
+    expect(resolveDxfLayerRows(link)).toEqual([
+      { name: 'A-WALL', color: '#ff0000', primitiveCount: 2 },
+    ]);
   });
 
   it('walks every vertex of an open polyline and adds a closing edge when closed', () => {

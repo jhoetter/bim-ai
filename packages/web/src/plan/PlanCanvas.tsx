@@ -111,6 +111,7 @@ import { extractNeighborhoodMassPrimitives } from './neighborhoodMassRender';
 import { planAnnotationLabelSprite } from './planElementMeshBuilders';
 import {
   makeDxfLinkTransform,
+  isDxfLayerHidden,
   resolveDxfUnderlayStyle,
   selectDxfUnderlaysForLevel,
 } from './dxfUnderlay';
@@ -1145,6 +1146,7 @@ export function PlanCanvas({
       });
       const segments: THREE.Vector3[] = [];
       for (const prim of link.linework) {
+        if (isDxfLayerHidden(link, prim)) continue;
         if (prim.kind === 'line') {
           segments.push(project(prim.start.xMm, prim.start.yMm));
           segments.push(project(prim.end.xMm, prim.end.yMm));

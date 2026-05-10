@@ -5,6 +5,7 @@ import { useFocusTrap } from '../../useFocusTrap';
 import type { Element } from '@bim-ai/core';
 
 import { applyCommand, ApiHttpError } from '../../lib/api';
+import { resolveDxfLayerRows } from '../../plan/dxfUnderlay';
 import { useBimStore } from '../../state/store';
 
 /**
@@ -438,6 +439,9 @@ export function ManageLinksDialog({
                 const customColor = l.customColor ?? '#7f7f7f';
                 const opacityPct = Math.round((l.overlayOpacity ?? 0.5) * 100);
                 const align: AlignMode = l.originAlignmentMode ?? 'origin_to_origin';
+                const layerRows = resolveDxfLayerRows(l);
+                const hiddenLayerNames = l.hiddenLayerNames ?? [];
+                const hiddenLayerSet = new Set(hiddenLayerNames);
                 return (
                   <li
                     key={l.id}
@@ -538,6 +542,55 @@ export function ManageLinksDialog({
                         </label>
                       ) : null}
                     </div>
+                    {layerRows.length > 0 ? (
+                      <div
+                        className="mt-1 border-t border-border pt-1"
+                        data-testid={`manage-dxf-links-layers-${l.id}`}
+                      >
+                        <div className="mb-1 flex items-center justify-between gap-2 text-[10px] uppercase text-muted">
+                          <span>Layers</span>
+                          <span className="normal-case">
+                            {hiddenLayerSet.size}/{layerRows.length} hidden
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+                          {layerRows.map((layer) => {
+                            const hidden = hiddenLayerSet.has(layer.name);
+                            const nextHidden = hidden
+                              ? hiddenLayerNames.filter((name) => name !== layer.name)
+                              : [...hiddenLayerNames, layer.name];
+                            return (
+                              <label
+                                key={layer.name}
+                                className="flex min-w-0 items-center gap-1 text-[11px]"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={!hidden}
+                                  disabled={pending}
+                                  data-testid={`manage-dxf-links-layer-visible-${l.id}-${layer.name}`}
+                                  onChange={() =>
+                                    void submitUpdateDxf(l.id, {
+                                      hiddenLayerNames: nextHidden,
+                                    })
+                                  }
+                                />
+                                <span
+                                  className="h-2.5 w-2.5 shrink-0 rounded-sm border border-border"
+                                  style={{ backgroundColor: layer.color ?? '#7f7f7f' }}
+                                />
+                                <span className="truncate" title={layer.name}>
+                                  {layer.name}
+                                </span>
+                                <span className="ml-auto shrink-0 font-mono text-[10px] text-muted">
+                                  {layer.primitiveCount}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
                   </li>
                 );
               })}

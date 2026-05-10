@@ -13,6 +13,7 @@ from bim_ai.elements import (
     CurtainPanelOverride,
     DormerPositionOnRoof,
     DormerRoofKind,
+    DxfLayerMeta,
     DxfLineworkPrim,
     EvidenceRef,
     HandrailSupport,
@@ -1567,6 +1568,8 @@ class CreateLinkDxfCmd(BaseModel):
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
     scale_factor: float = Field(default=1.0, alias="scaleFactor", gt=0)
     linework: list[DxfLineworkPrim] = Field(default_factory=list)
+    dxf_layers: list[DxfLayerMeta] = Field(default_factory=list, alias="dxfLayers")
+    hidden_layer_names: list[str] = Field(default_factory=list, alias="hiddenLayerNames")
     pinned: bool = Field(default=False)
 
 
@@ -1584,6 +1587,7 @@ class UpdateLinkDxfCmd(BaseModel):
     color_mode: Literal["black_white", "custom"] | None = Field(default=None, alias="colorMode")
     custom_color: str | None = Field(default=None, alias="customColor")
     overlay_opacity: float | None = Field(default=None, alias="overlayOpacity", ge=0.0, le=1.0)
+    hidden_layer_names: list[str] | None = Field(default=None, alias="hiddenLayerNames")
     origin_alignment_mode: Literal["origin_to_origin", "project_origin", "shared_coords"] | None = (
         Field(default=None, alias="originAlignmentMode")
     )
