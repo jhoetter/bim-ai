@@ -106,7 +106,7 @@ Example: door Width is a Type parameter; Sill Height is an Instance parameter.
 **Screenshot:**
 ![Family Types dialog](file:///Users/jhoetter/Desktop/Revit%20Specs/0399_01-53-36.png)
 
-**bim-ai status:** 🟡 Partial — family geometry nodes support coarse/medium/fine visibility and boolean visibility bindings in the editor/resolver. Missing: full Revit view-type visibility dialog.
+**bim-ai status:** ❌ Not available.
 
 ---
 
@@ -144,7 +144,7 @@ This allows a family to show a simple 2D opening symbol at Coarse detail and a d
 **Screenshot:**
 ![Visibility Settings](file:///Users/jhoetter/Desktop/Revit%20Specs/0470_02-50-50.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — family geometry nodes support coarse/medium/fine visibility and boolean visibility bindings in the editor/resolver. Missing: full Revit view-type visibility dialog.
 
 ---
 
@@ -155,7 +155,7 @@ This allows a family to show a simple 2D opening symbol at Coarse detail and a d
 **Screenshot:**
 ![Load Into Project](file:///Users/jhoetter/Desktop/Revit%20Specs/0424_01-58-16.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — external catalog families can now be loaded into the current project from `FamilyLibraryPanel.tsx` via a dedicated Load action. `Workspace.tsx` persists them as project `family_type` elements with `catalogSource` provenance using the existing `upsertFamilyType` command, while the separate Place action still loads and immediately enters placement. Missing: true Family Editor `.rfa` save/load, multi-open-project target selection, and overwrite/parameter-values dialogs.
 
 ---
 
@@ -177,4 +177,4 @@ This allows a family to show a simple 2D opening symbol at Coarse detail and a d
 **Screenshot:**
 ![Type Properties - Duplicate](file:///Users/jhoetter/Desktop/Revit%20Specs/0431_01-59-12.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — selecting a door/window instance now offers a Duplicate type action for its current family type, then assigns the instance to the copied custom `family_type`. Selecting a custom `family_type` or layered `wall_type` / `floor_type` / `roof_type` in the right rail also exposes a Duplicate type action. The action copies family parameters, catalog provenance, wall assembly layers, and type metadata through the existing `upsertFamilyType` / `upsert*Type` commands. Missing: a full Revit-style modal Type Properties dialog with side-by-side parameter groups, formula/type catalog controls, and duplicate-name conflict prompts.

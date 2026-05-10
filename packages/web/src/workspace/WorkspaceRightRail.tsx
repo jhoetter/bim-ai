@@ -7,6 +7,7 @@ import type { Element, ParamSchemaEntry } from '@bim-ai/core';
 import { AdvisorPanel } from '../advisor/AdvisorPanel';
 import { buildPlanGridDatumInspectorLine } from './readouts';
 import { useBimStore } from '../state/store';
+import { getTypeById } from '../families/familyCatalog';
 import {
   Inspector,
   InspectorConstraintsFor,
@@ -38,6 +39,99 @@ const NAVIGABLE_KINDS = new Set<Element['kind']>([
   'sheet',
   'schedule',
 ]);
+
+type DuplicableTypeElement = Extract<
+  Element,
+  { kind: 'family_type' | 'wall_type' | 'floor_type' | 'roof_type' }
+>;
+
+function isDuplicableTypeElement(element: Element): element is DuplicableTypeElement {
+  return (
+    element.kind === 'family_type' ||
+    element.kind === 'wall_type' ||
+    element.kind === 'floor_type' ||
+    element.kind === 'roof_type'
+  );
+}
+
+function newDuplicateTypeId(prefix: string): string {
+  try {
+    return `${prefix}-${crypto.randomUUID().slice(0, 10)}`;
+  } catch {
+    return `${prefix}-${Date.now().toString(36)}`;
+  }
+}
+
+export function duplicateTypePropertiesCommand(
+  element: DuplicableTypeElement,
+  nextId = newDuplicateTypeId(element.id),
+): Record<string, unknown> & { id: string } {
+  if (element.kind === 'family_type') {
+    const sourceName = String(element.parameters.name ?? element.name ?? element.id);
+    const discipline =
+      element.discipline === 'door' || element.discipline === 'window'
+        ? element.discipline
+        : 'generic';
+    return {
+      type: 'upsertFamilyType',
+      id: nextId,
+      discipline,
+      parameters: {
+        ...element.parameters,
+        name: `${sourceName} Copy`,
+      },
+      ...(element.catalogSource ? { catalogSource: { ...element.catalogSource } } : {}),
+    };
+  }
+  if (element.kind === 'wall_type') {
+    return {
+      type: 'upsertWallType',
+      id: nextId,
+      name: `${element.name} Copy`,
+      layers: element.layers.map((layer) => ({ ...layer })),
+      basisLine: element.basisLine ?? 'center',
+    };
+  }
+  if (element.kind === 'floor_type') {
+    return {
+      type: 'upsertFloorType',
+      id: nextId,
+      name: `${element.name} Copy`,
+      layers: element.layers.map((layer) => ({ ...layer })),
+    };
+  }
+  return {
+    type: 'upsertRoofType',
+    id: nextId,
+    name: `${element.name} Copy`,
+    layers: element.layers.map((layer) => ({ ...layer })),
+  };
+}
+
+export function duplicateOpeningFamilyTypeCommand(
+  familyTypeId: string | null | undefined,
+  discipline: 'door' | 'window',
+  elementsById: Record<string, Element>,
+  nextId = newDuplicateTypeId(familyTypeId ?? `ft-${discipline}`),
+): (Record<string, unknown> & { id: string }) | null {
+  if (!familyTypeId) return null;
+  const custom = elementsById[familyTypeId];
+  if (custom?.kind === 'family_type') {
+    return duplicateTypePropertiesCommand(custom, nextId);
+  }
+  const builtIn = getTypeById(familyTypeId);
+  if (!builtIn) return null;
+  return {
+    type: 'upsertFamilyType',
+    id: nextId,
+    discipline,
+    parameters: {
+      ...builtIn.parameters,
+      name: `${builtIn.name} Copy`,
+      familyId: builtIn.familyId,
+    },
+  };
+}
 
 export function WorkspaceRightRail({
   mode,
@@ -324,6 +418,10 @@ export function WorkspaceRightRail({
                       cropMaxMm: planView.cropMaxMm,
                     });
                   }}
+                  onDuplicateType={(typeElement) => {
+                    const cmd = duplicateTypePropertiesCommand(typeElement);
+                    void Promise.resolve(onSemanticCommand(cmd)).then(() => select(cmd.id));
+                  }}
                   onResetSavedView={resetActiveSavedView}
                   onUpdateSavedView={updateActiveSavedView}
                 />
@@ -444,6 +542,22 @@ export function WorkspaceRightRail({
                         parameters: params,
                       })
                     }
+                    onDuplicateType={(familyTypeId) => {
+                      const cmd = duplicateOpeningFamilyTypeCommand(
+                        familyTypeId,
+                        'door',
+                        elementsById,
+                      );
+                      if (!cmd) return;
+                      void Promise.resolve(onSemanticCommand(cmd)).then(() =>
+                        onSemanticCommand({
+                          type: 'updateElementProperty',
+                          elementId: el.id,
+                          key: 'familyTypeId',
+                          value: cmd.id,
+                        }),
+                      );
+                    }}
                     onDisciplineChange={handleDisciplineChange}
                   />
                 ) : el.kind === 'window' ? (
@@ -466,6 +580,22 @@ export function WorkspaceRightRail({
                         parameters: params,
                       })
                     }
+                    onDuplicateType={(familyTypeId) => {
+                      const cmd = duplicateOpeningFamilyTypeCommand(
+                        familyTypeId,
+                        'window',
+                        elementsById,
+                      );
+                      if (!cmd) return;
+                      void Promise.resolve(onSemanticCommand(cmd)).then(() =>
+                        onSemanticCommand({
+                          type: 'updateElementProperty',
+                          elementId: el.id,
+                          key: 'familyTypeId',
+                          value: cmd.id,
+                        }),
+                      );
+                    }}
                     onDisciplineChange={handleDisciplineChange}
                   />
                 ) : el.kind === 'project_settings' ? (
@@ -763,6 +893,7 @@ function InspectorContextActions({
   onNavigateToElement,
   onPlaceRecommendedViews,
   onDuplicatePlanView,
+  onDuplicateType,
   onResetSavedView,
   onUpdateSavedView,
 }: {
@@ -771,6 +902,7 @@ function InspectorContextActions({
   onNavigateToElement?: (elementId: string) => void;
   onPlaceRecommendedViews: (sheetId: string) => void;
   onDuplicatePlanView: (planView: Extract<Element, { kind: 'plan_view' }>) => void;
+  onDuplicateType: (element: DuplicableTypeElement) => void;
   onResetSavedView: () => void;
   onUpdateSavedView: () => void;
 }): JSX.Element | null {
@@ -799,6 +931,20 @@ function InspectorContextActions({
         onClick={() => onDuplicatePlanView(element)}
       >
         Duplicate view
+      </button>,
+    );
+  }
+
+  if (isDuplicableTypeElement(element)) {
+    buttons.push(
+      <button
+        key="duplicate-type"
+        type="button"
+        data-testid="inspector-duplicate-type"
+        className="rounded border border-border bg-background px-2 py-1 text-[11px] text-foreground hover:bg-surface"
+        onClick={() => onDuplicateType(element)}
+      >
+        Duplicate type
       </button>,
     );
   }

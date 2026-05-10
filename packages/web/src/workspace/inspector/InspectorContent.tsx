@@ -1827,6 +1827,7 @@ export function InspectorDoorEditor({
   elementsById = {},
   onPersistProperty,
   onCreateType,
+  onDuplicateType,
   onDisciplineChange,
 }: {
   el: Extract<Element, { kind: 'door' }>;
@@ -1834,6 +1835,7 @@ export function InspectorDoorEditor({
   elementsById?: Record<string, Element>;
   onPersistProperty: (key: string, value: string) => void;
   onCreateType?: (baseFamilyId: string, name: string, params: Record<string, unknown>) => void;
+  onDuplicateType?: (familyTypeId: string | null | undefined) => void;
   onDisciplineChange?: (discipline: DisciplineTag | null) => void;
 }): JSX.Element {
   const { t } = useTranslation();
@@ -1884,15 +1886,27 @@ export function InspectorDoorEditor({
           )}
         </select>
       </label>
-      {onCreateType && !showForm && (
-        <button
-          type="button"
-          onClick={() => setShowForm(true)}
-          className="text-[10px] text-accent hover:underline"
-        >
-          + New custom type…
-        </button>
-      )}
+      <div className="flex flex-wrap gap-2">
+        {onCreateType && !showForm ? (
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            className="text-[10px] text-accent hover:underline"
+          >
+            + New custom type…
+          </button>
+        ) : null}
+        {onDuplicateType && el.familyTypeId ? (
+          <button
+            type="button"
+            data-testid="inspector-door-duplicate-type"
+            onClick={() => onDuplicateType(el.familyTypeId)}
+            className="text-[10px] text-accent hover:underline"
+          >
+            Duplicate type
+          </button>
+        ) : null}
+      </div>
       {onCreateType && showForm && (
         <CustomTypeForm
           discipline="door"
@@ -1920,6 +1934,7 @@ export function InspectorWindowEditor({
   elementsById = {},
   onPersistProperty,
   onCreateType,
+  onDuplicateType,
   onDisciplineChange,
 }: {
   el: Extract<Element, { kind: 'window' }>;
@@ -1927,6 +1942,7 @@ export function InspectorWindowEditor({
   elementsById?: Record<string, Element>;
   onPersistProperty: (key: string, value: string) => void;
   onCreateType?: (baseFamilyId: string, name: string, params: Record<string, unknown>) => void;
+  onDuplicateType?: (familyTypeId: string | null | undefined) => void;
   onDisciplineChange?: (discipline: DisciplineTag | null) => void;
 }): JSX.Element {
   const { t } = useTranslation();
@@ -1968,15 +1984,27 @@ export function InspectorWindowEditor({
           )}
         </select>
       </label>
-      {onCreateType && !showForm && (
-        <button
-          type="button"
-          onClick={() => setShowForm(true)}
-          className="text-[10px] text-accent hover:underline"
-        >
-          + New custom type…
-        </button>
-      )}
+      <div className="flex flex-wrap gap-2">
+        {onCreateType && !showForm ? (
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            className="text-[10px] text-accent hover:underline"
+          >
+            + New custom type…
+          </button>
+        ) : null}
+        {onDuplicateType && el.familyTypeId ? (
+          <button
+            type="button"
+            data-testid="inspector-window-duplicate-type"
+            onClick={() => onDuplicateType(el.familyTypeId)}
+            className="text-[10px] text-accent hover:underline"
+          >
+            Duplicate type
+          </button>
+        ) : null}
+      </div>
       {onCreateType && showForm && (
         <CustomTypeForm
           discipline="window"

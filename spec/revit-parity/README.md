@@ -108,7 +108,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-059 | Family Element Visibility Settings                    | Family Editor  | 🟡            | Family geometry supports detail-level visibility and Yes/No visibility bindings in editor/resolver; missing full Revit view-type visibility dialog                                                                                                                                                    |
 | F-060 | Load Family Into Project                              | Family Editor  | 🟡            | External Catalogs tab exposes separate Load and Place actions; Load persists a catalog-backed `family_type` with `catalogSource` provenance without entering placement. Missing true Family Editor `.rfa` save/load and overwrite dialogs                                                             |
 | F-061 | Wall-hosted family placement (door/window)            | Family Editor  | 🟡            | Door/window elements are wall-hosted, carry familyTypeId/overrideParams, and wall openings/cutters exist; missing generic loaded-family placement workflow                                                                                                                                            |
-| F-062 | Type Properties – Duplicate                           | Family Editor  | ❌            |                                                                                                                                                                                                                                                                                                       |
+| F-062 | Type Properties – Duplicate                           | Family Editor  | 🟡            | Door/window inspectors can duplicate the current family type and assign the instance to the copy; selected `family_type` rows and layered wall/floor/roof type assemblies also expose Duplicate type. Missing full Revit modal Type Properties dialog and duplicate-name prompts                      |
 | F-063 | Nested Families                                       | Nested Fam.    | 🟡            | Family editor supports nested family instances, parameter/formula bindings, drag/drop from loaded families, and resolver recursion/cycle detection; missing project persistence/reload UX                                                                                                             |
 | F-064 | Overwrite options when reloading families             | Nested Fam.    | ❌            |                                                                                                                                                                                                                                                                                                       |
 | F-065 | Family Category and Parameters dialog                 | Nested Fam.    | ❌            |                                                                                                                                                                                                                                                                                                       |
@@ -179,8 +179,8 @@ _Last audited: 2026-05-09 against codebase at commit `docs/tracker-sync-wave-11`
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
 | ✅ Fully available     | 57      | 47%        |
-| 🟡 Partially available | 35      | 29%        |
-| ❌ Not available       | 28      | 23%        |
+| 🟡 Partially available | 36      | 30%        |
+| ❌ Not available       | 27      | 22%        |
 | **Total**              | **120** | **100%**   |
 
 ---
