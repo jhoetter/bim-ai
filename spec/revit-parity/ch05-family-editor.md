@@ -79,7 +79,7 @@ The Family Editor is a sub-environment within Revit for creating parametric comp
 **Screenshot:**
 ![Dimension + Create Parameter](file:///Users/jhoetter/Desktop/Revit%20Specs/0394_01-52-46.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — the family editor can create aligned dimensions between reference planes and generate a bound `length_mm` family parameter from the measured offset. The dimension row records the two references, locked value, and parameter key, and the generated parameter appears in the family parameter table. Missing: canvas dimension placement, Revit's label dropdown UI, EQ/lock behavior, and constraint-driven reference-plane solving.
 
 ---
 

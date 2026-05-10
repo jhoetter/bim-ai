@@ -215,6 +215,23 @@ describe('FAM-056 — Family Types dialog', () => {
   });
 });
 
+describe('FAM-054 — aligned dimensions', () => {
+  it('creates a length parameter from an aligned reference-plane dimension', () => {
+    const { getByText, getByLabelText, getByTestId, getByDisplayValue } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+
+    fireEvent.click(getByText('Add vertical'));
+    fireEvent.click(getByText('Add vertical'));
+    fireEvent.change(getByLabelText('ref-plane-offset-1'), { target: { value: '1000' } });
+    fireEvent.change(getByLabelText('dimension-parameter-name'), { target: { value: 'Width' } });
+    fireEvent.click(getByTestId('dimension-create-parameter'));
+
+    expect(getByTestId('family-dimensions-list').textContent).toContain('Width: 1000 mm');
+    expect(getByDisplayValue('Width')).toBeTruthy();
+  });
+});
+
 describe('FAM-065/FAM-066 — family category and view range settings', () => {
   it('edits family category parameter flags', () => {
     const { getByLabelText } = renderWithI18n(<FamilyEditorWorkbench />);
