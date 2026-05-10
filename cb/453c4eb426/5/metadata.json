@@ -1,0 +1,63 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "cb453c4eb426",
+  "session_id": "9d1d6c74-7b8e-4829-83df-f6225a087748",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T13:38:18.497947Z",
+  "branch": "revit-parity-family-browser-context-menu",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/workspace/project/ProjectBrowser.test.tsx",
+    "packages/web/src/workspace/project/ProjectBrowser.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "7aa7ba1b7866",
+  "checkpoint_transcript_start": 66,
+  "transcript_lines_at_start": 66,
+  "token_usage": {
+    "input_tokens": 3,
+    "cache_creation_tokens": 118,
+    "cache_read_tokens": 32003,
+    "output_tokens": 124,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 5
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T13:38:18.494215Z",
+    "agent_lines": 43,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 7,
+    "human_removed": 12,
+    "total_committed": 47,
+    "total_lines_changed": 64,
+    "agent_percentage": 67.1875,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 677,
+      "user_lines_removed": 613,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/routes_api.py": 24,
+        "packages/cli/cli.mjs": 1,
+        "packages/cli/lib/one-family-home-commands.mjs": 250,
+        "packages/web/e2e/skb-checkpoint.spec.ts": 85,
+        "packages/web/src/workspace/project/ProjectBrowser.test.tsx": 17,
+        "packages/web/src/workspace/project/ProjectBrowser.tsx": 202,
+        "spec/revit-annotations.md": 98
+      },
+      "user_removed_per_file": {
+        "packages/cli/lib/one-family-home-commands.mjs": 597,
+        "packages/web/src/workspace/project/ProjectBrowser.test.tsx": 1,
+        "packages/web/src/workspace/project/ProjectBrowser.tsx": 15
+      }
+    }
+  ]
+}
