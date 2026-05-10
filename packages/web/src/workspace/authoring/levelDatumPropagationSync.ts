@@ -1,7 +1,7 @@
-import type { ApplyCommandResp } from '../lib/api';
-import { useBimStore } from '../state/store';
+import type { ApplyCommandResp } from '../../lib/api';
+import { useBimStore } from '../../state/store';
 
-import { parseLevelElevationPropagationEvidence } from './readouts';
+import { parseLevelElevationPropagationEvidence } from '../readouts';
 
 export function syncLastLevelElevationPropagationFromApplyResponse(
   r: ApplyCommandResp & Record<string, unknown>,

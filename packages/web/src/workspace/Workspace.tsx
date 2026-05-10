@@ -15,7 +15,7 @@ import {
   redoModel,
   uploadDxfFile,
 } from '../lib/api';
-import { syncLastLevelElevationPropagationFromApplyResponse } from './levelDatumPropagationSync';
+import { syncLastLevelElevationPropagationFromApplyResponse } from './authoring';
 import { planToolsForPerspective } from './planToolsByPerspective';
 import {
   buildCollaborationConflictQueueV1,

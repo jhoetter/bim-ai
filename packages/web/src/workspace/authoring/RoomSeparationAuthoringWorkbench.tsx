@@ -5,12 +5,12 @@ import type { Element } from '@bim-ai/core';
 
 import { Btn } from '@bim-ai/ui';
 
-import type { PlanProjectionPrimitivesV1Wire } from '../plan/planProjectionWire';
+import type { PlanProjectionPrimitivesV1Wire } from '../../plan/planProjectionWire';
 
 import {
   buildRoomSeparationWorkbenchReadout,
   validateAxisAlignedSeparationSegmentMm,
-} from './readouts';
+} from '../readouts';
 
 type LevelRow = Extract<Element, { kind: 'level' }>;
 

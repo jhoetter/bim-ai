@@ -8,8 +8,7 @@ import {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { OptionsBar } from '../OptionsBar';
-import { ToolModifierBar } from '../ToolModifierBar';
+import { OptionsBar, ToolModifierBar } from '../authoring';
 
 /**
  * AppShell — the canonical layout grid for the BIM AI workspace.

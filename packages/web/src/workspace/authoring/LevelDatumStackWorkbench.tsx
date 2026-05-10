@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 
 import type { Element, Violation } from '@bim-ai/core';
 
-import { translatedContextForRuleId } from '../advisor/advisorViolationContext';
-import { useBimStore } from '../state/store';
+import { translatedContextForRuleId } from '../../advisor/advisorViolationContext';
+import { useBimStore } from '../../state/store';
 
 import {
   buildLevelDatumStackEvidenceToken,
@@ -13,7 +13,7 @@ import {
   formatElevationMmReadout,
   levelIdsFromDatumRows,
   formatLevelDatumPropagationEvidenceLine,
-} from './readouts';
+} from '../readouts';
 
 type Props = {
   selected: Element | undefined;

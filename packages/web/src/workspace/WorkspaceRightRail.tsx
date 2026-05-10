@@ -25,7 +25,7 @@ import {
   SunInspectorPanel,
 } from './inspector';
 import type { DisciplineTag } from '@bim-ai/core';
-import { AuthoringWorkbenchesPanel } from './AuthoringWorkbenchesPanel';
+import { AuthoringWorkbenchesPanel } from './authoring';
 import { Viewport3DLayersPanel } from './Viewport3DLayersPanel';
 import type { WorkspaceMode } from './shell';
 import { humanKindLabel, InspectorEmptyTab } from './WorkspaceHelpers';

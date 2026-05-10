@@ -5,7 +5,7 @@ import type { RoomColorSchemeRow } from '@bim-ai/core';
 
 import { Btn, Icons, ICON_SIZE, Panel } from '@bim-ai/ui';
 
-import { useBimStore, type PlanRoomSchemeWireReadout } from '../state/store';
+import { useBimStore, type PlanRoomSchemeWireReadout } from '../../state/store';
 
 import {
   buildUpsertRoomColorSchemeCmdPayload,
@@ -13,7 +13,7 @@ import {
   normalizeSchemeColorHex,
   rowHasProgrammeOrDepartment,
 } from './roomColorSchemeCanon';
-import { roomColorSchemeLegendReadoutParts } from '../schedules/roomColorSchemeLegendReadout';
+import { roomColorSchemeLegendReadoutParts } from '../../schedules/roomColorSchemeLegendReadout';
 
 const SINGLETON_SCHEME_ID = 'bim-room-color-scheme';
 

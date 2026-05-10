@@ -10,10 +10,7 @@ import {
   viewTemplateGraphicsMatrixRows,
 } from '../../plan/planProjection';
 import { PlanViewGraphicsMatrix } from '../PlanViewGraphicsMatrix';
-import {
-  SavedViewTagGraphicsAuthoring,
-  SavedViewTemplateGraphicsAuthoring,
-} from '../savedViewTagGraphicsAuthoring';
+import { SavedViewTagGraphicsAuthoring, SavedViewTemplateGraphicsAuthoring } from '../authoring';
 
 /**
  * Inspector parameter renderers — spec §13.

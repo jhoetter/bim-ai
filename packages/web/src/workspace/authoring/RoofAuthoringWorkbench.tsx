@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 
 import type { Element } from '@bim-ai/core';
 
-import type { PlanProjectionPrimitivesV1Wire } from '../plan/planProjectionWire';
-import { roofInspectorWireDiagnosticsLines, roofPlanWireRowForElement } from './readouts';
+import type { PlanProjectionPrimitivesV1Wire } from '../../plan/planProjectionWire';
+import { roofInspectorWireDiagnosticsLines, roofPlanWireRowForElement } from '../readouts';
 
 type RoofEl = Extract<Element, { kind: 'roof' }>;
 

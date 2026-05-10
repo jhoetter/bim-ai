@@ -10,12 +10,12 @@
 
 import type { JSX } from 'react';
 
-import { ToolModifierBar as ToolModifierBarPure } from '../tools/ToolModifierBar';
-import { getToolModifierDescriptors } from '../tools/modifierBar';
-import type { CycleModifierDescriptor, ToggleModifierDescriptor } from '../tools/modifierBar';
-import { useToolPrefs } from '../tools/toolPrefsStore';
-import { useBimStore } from '../state/store';
-import type { ToolId } from '../tools/toolRegistry';
+import { ToolModifierBar as ToolModifierBarPure } from '../../tools/ToolModifierBar';
+import { getToolModifierDescriptors } from '../../tools/modifierBar';
+import type { CycleModifierDescriptor, ToggleModifierDescriptor } from '../../tools/modifierBar';
+import { useToolPrefs } from '../../tools/toolPrefsStore';
+import { useBimStore } from '../../state/store';
+import type { ToolId } from '../../tools/toolRegistry';
 
 export function ToolModifierBar(): JSX.Element | null {
   const planTool = useBimStore((s) => s.planTool) as ToolId | null;

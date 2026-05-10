@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
-import { useBimStore } from '../state/store';
+import { useBimStore } from '../../state/store';
 import { OptionsBar } from './OptionsBar';
 
 afterEach(() => {

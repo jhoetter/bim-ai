@@ -1,8 +1,8 @@
 import { type JSX, useEffect, useState } from 'react';
 import type { Element } from '@bim-ai/core';
-import { useBimStore } from '../state/store';
-import { applyCommand } from '../lib/api';
-import { WALL_LOCATION_LINE_ORDER, type WallLocationLine } from '../tools/toolGrammar';
+import { useBimStore } from '../../state/store';
+import { applyCommand } from '../../lib/api';
+import { WALL_LOCATION_LINE_ORDER, type WallLocationLine } from '../../tools/toolGrammar';
 
 const LOCATION_LINE_LABELS: Record<WallLocationLine, string> = {
   'wall-centerline': 'Wall Centerline',

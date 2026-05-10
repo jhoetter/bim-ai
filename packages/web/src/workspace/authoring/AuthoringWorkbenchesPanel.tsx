@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { Element } from '@bim-ai/core';
-import { useBimStore } from '../state/store';
+import { useBimStore } from '../../state/store';
 import { LevelDatumStackWorkbench } from './LevelDatumStackWorkbench';
 import { MaterialLayerStackWorkbench } from './MaterialLayerStackWorkbench';
 import { RoofAuthoringWorkbench } from './RoofAuthoringWorkbench';

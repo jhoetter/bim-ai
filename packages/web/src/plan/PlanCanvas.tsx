@@ -129,15 +129,15 @@ import {
   pasteFromOSClipboard,
 } from '../clipboard/copyPaste';
 import { useToolPrefs } from '../tools/toolPrefsStore';
-import { SubdivisionPalette } from '../workspace/SubdivisionPalette';
-import type { SubdivisionCategory } from '../workspace/SubdivisionPalette';
 import {
   activeComponentAssetId,
   copyMultipleEnabled,
   mirrorCopyEnabled,
   pendingComponentRotationDeg,
   setPendingComponentRotationDeg,
-} from '../workspace/OptionsBar';
+  SubdivisionPalette,
+  type SubdivisionCategory,
+} from '../workspace/authoring';
 
 function readPlanToken(name: string, fallback: string): string {
   const v = liveTokenReader().read(name);

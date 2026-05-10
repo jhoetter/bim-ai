@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import type { Element } from '@bim-ai/core';
-import { useBimStore } from '../state/store';
+import { useBimStore } from '../../state/store';
 import { AuthoringWorkbenchesPanel } from './AuthoringWorkbenchesPanel';
 
 afterEach(() => {
