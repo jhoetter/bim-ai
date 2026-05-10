@@ -113,6 +113,31 @@ describe('<FamilyLibraryPanel /> — FL-06', () => {
     expect(onPlaceType).toHaveBeenCalledWith('asset', asset.id);
   });
 
+  it('constrains large asset thumbnails inside the family row preview box', () => {
+    const asset: Extract<Element, { kind: 'asset_library_entry' }> = {
+      kind: 'asset_library_entry',
+      id: 'asset-dining-table-2200',
+      assetKind: 'family_instance',
+      name: 'Dining table',
+      tags: ['dining', 'table'],
+      category: 'furniture',
+      thumbnailKind: 'schematic_plan',
+      thumbnailWidthMm: 2200,
+      thumbnailHeightMm: 900,
+      planSymbolKind: 'table',
+      renderProxyKind: 'table',
+    };
+    const { getByTestId } = setup({ [asset.id]: asset });
+    const svg = getByTestId(`family-row-${asset.id}`).querySelector('svg');
+
+    expect(svg).toBeTruthy();
+    expect(svg?.getAttribute('width')).toBeNull();
+    expect(svg?.getAttribute('height')).toBeNull();
+    expect(svg?.getAttribute('preserveAspectRatio')).toBe('xMidYMid meet');
+    expect(svg?.getAttribute('style')).toContain('width: 100%');
+    expect(svg?.getAttribute('style')).toContain('overflow: hidden');
+  });
+
   it('groups custom wall_type elements under "Wall Types"', () => {
     const wt: Extract<Element, { kind: 'wall_type' }> = {
       kind: 'wall_type',
