@@ -228,8 +228,8 @@ describe('<ManageLinksDialog />', () => {
           rotationDeg: 0,
           scaleFactor: 1,
           dxfLayers: [
-            { name: 'A-WALL', color: '#ff0000', primitiveCount: 2 },
-            { name: 'A-DOOR', color: '#00ff00', primitiveCount: 1 },
+            { name: 'A-WALL', color: 'red', primitiveCount: 2 },
+            { name: 'A-DOOR', color: 'lime', primitiveCount: 1 },
           ],
           hiddenLayerNames: ['A-DOOR'],
           linework: [],
