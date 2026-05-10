@@ -92,6 +92,26 @@ describe('hydrateFromSnapshot', () => {
     }
   });
 
+  it('coerces project settings checkpoint retention', () => {
+    const { hydrateFromSnapshot } = useBimStore.getState();
+    hydrateFromSnapshot({
+      modelId: 'm1',
+      revision: 1,
+      elements: {
+        project_settings: {
+          kind: 'project_settings',
+          checkpoint_retention_limit: 150,
+        },
+      },
+      violations: [],
+    });
+    const settings = useBimStore.getState().elementsById.project_settings;
+    expect(settings?.kind).toBe('project_settings');
+    if (settings?.kind === 'project_settings') {
+      expect(settings.checkpointRetentionLimit).toBe(99);
+    }
+  });
+
   it('coerces room elements with outline', () => {
     const { hydrateFromSnapshot } = useBimStore.getState();
     hydrateFromSnapshot({

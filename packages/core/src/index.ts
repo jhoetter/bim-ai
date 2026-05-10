@@ -776,6 +776,7 @@ export type Element =
       name?: string;
       worksetId?: string | null;
       startingViewId?: string | null;
+      checkpointRetentionLimit?: number;
       volumeComputedAt?: 'finish_faces' | 'core_faces';
       roomAreaComputationBasis?:
         | 'wall_finish'

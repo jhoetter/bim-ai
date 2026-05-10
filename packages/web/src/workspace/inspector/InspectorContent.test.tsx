@@ -5,6 +5,7 @@ import {
   InspectorConstraintsFor,
   InspectorGraphicsFor,
   InspectorIdentityFor,
+  InspectorProjectSettingsEditor,
   InspectorPlanViewEditor,
   InspectorPropertiesFor,
 } from './InspectorContent';
@@ -204,5 +205,27 @@ describe('InspectorGraphicsFor — T-14 / WP-UI-B01', () => {
       onPersistProperty: vi.fn(),
     });
     expect(result).toBeNull();
+  });
+});
+
+describe('InspectorProjectSettingsEditor', () => {
+  it('persists checkpoint retention as a clamped project setting', () => {
+    const onPersistProperty = vi.fn();
+    const projectSettings: Extract<Element, { kind: 'project_settings' }> = {
+      kind: 'project_settings',
+      id: 'project_settings',
+      checkpointRetentionLimit: 12,
+    };
+
+    const { getByTestId } = render(
+      <InspectorProjectSettingsEditor el={projectSettings} onPersistProperty={onPersistProperty} />,
+    );
+
+    const input = getByTestId('inspector-checkpoint-retention-limit') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '150' } });
+    fireEvent.blur(input);
+
+    expect(input.value).toBe('99');
+    expect(onPersistProperty).toHaveBeenCalledWith('checkpointRetentionLimit', '99');
   });
 });

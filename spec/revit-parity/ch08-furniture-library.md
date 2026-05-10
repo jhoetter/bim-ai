@@ -44,4 +44,4 @@ Source segment: `04:35:00 – 04:38:48`
 **Screenshot:**
 ![File Save Options](file:///Users/jhoetter/Desktop/Revit%20Specs/0566_03-44-29.png)
 
-**bim-ai status:** ❌ Not applicable (bim-ai uses a database model, not file-based with rolling backups).
+**bim-ai status:** 🟡 Partial — bim-ai uses database checkpoints rather than `.rvt` rolling backup files, but the project settings element now exposes `checkpointRetentionLimit` as the DB/project equivalent of Revit's "Maximum backups." The right-rail Project Settings editor includes a "Checkpoint Retention" numeric field (1-99, default 20) that persists through `updateElementProperty`, and snapshot hydration coerces legacy or missing values to the supported range. Missing: actual file-family `.0001.rvt` backup files and a full save-as options dialog.
