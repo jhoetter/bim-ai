@@ -135,7 +135,9 @@ These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (t
 
 **Order:** `constraints.py` first (cleanest seams), then `engine.py`, then `export_ifc.py` (gnarliest, IFC-spec-driven).
 
-**Progress 2026-05-10.** Lifted the `bim_ai/export_ifc.py` coverage omit. Full backend pytest passes with `export_ifc.py` included in coverage (`2449 passed, 93 skipped, 1 deselected`; total coverage 74.95%). The actual module splits are still open.
+**Progress 2026-05-10.** Lifted the `bim_ai/export_ifc.py` coverage omit. Full backend pytest passes with `export_ifc.py` included in coverage (`2449 passed, 93 skipped, 1 deselected`; total coverage 74.95%).
+
+**Progress 2026-05-10.** Extracted IFC exchange-scope helpers from `export_ifc.py` into `bim_ai/export_ifc_scope.py` with focused tests for kernel-slice product classification and deterministic level/storey sketches. The broader `export_ifc.py` package split is still open.
 
 ---
 

@@ -37,6 +37,13 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
+from bim_ai.export_ifc_scope import (
+    IFC_EXCHANGE_EMITTABLE_GEOMETRY_KINDS,  # noqa: F401 - re-exported for existing imports
+    import_scope_unsupported_ifc_products_v0,
+    levels_from_document_sketch,
+    space_programme_sample_from_ifc_model,
+    storeys_sketch_from_ifc_model,
+)
 from bim_ai.ifc_material_layer_exchange_v0 import (
     kernel_ifc_material_layer_set_readback_v0,
     try_attach_kernel_ifc_material_layer_set,
@@ -75,116 +82,6 @@ KERNEL_IFC_DOMINANT_KINDS: frozenset[str] = frozenset(
 IFC_ENCODING_KERNEL_V1 = "bim_ai_ifc_kernel_v1"
 KERNEL_IFC_AUTHORITATIVE_REPLAY_SCHEMA_VERSION = 0
 AUTHORITATIVE_REPLAY_KIND_V0 = "authoritative_kernel_slice_v0"
-
-# Semantic geometry kinds emitted as physical IFC bodies in kernel export (for advisor parity).
-IFC_EXCHANGE_EMITTABLE_GEOMETRY_KINDS: frozenset[str] = frozenset(
-    {"wall", "floor", "door", "window", "room", "roof", "stair", "slab_opening"}
-)
-
-# Kernel slice physical products (IfcOpenShell `is_a` roots — includes subtypes e.g. IfcWallStandardCase).
-_KERNEL_SLICE_IFC_PRODUCT_ROOTS: tuple[str, ...] = (
-    "IfcWall",
-    "IfcSlab",
-    "IfcRoof",
-    "IfcStair",
-    "IfcSpace",
-    "IfcOpeningElement",
-    "IfcDoor",
-    "IfcWindow",
-)
-
-# Spatial / aggregation `IfcProduct` instances always present in kernel IFC graph — not merge-target signals.
-_KERNEL_IFC_SCOPE_EXCLUDED_PRODUCT_ROOTS: tuple[str, ...] = (
-    "IfcSite",
-    "IfcBuilding",
-    "IfcBuildingStorey",
-)
-
-
-def _ifc_product_is_kernel_slice_supported(product: Any) -> bool:
-    for root in _KERNEL_IFC_SCOPE_EXCLUDED_PRODUCT_ROOTS:
-        try:
-            if product.is_a(root):
-                return True
-        except Exception:
-            continue
-    for root in _KERNEL_SLICE_IFC_PRODUCT_ROOTS:
-        try:
-            if product.is_a(root):
-                return True
-        except Exception:
-            continue
-    return False
-
-
-def _import_scope_unsupported_ifc_products_v0(model: Any) -> dict[str, Any]:
-    """IFC product instances outside the kernel slice roots (import-merge scope evidence)."""
-
-    counts: dict[str, int] = {}
-    for p in model.by_type("IfcProduct") or []:
-        if _ifc_product_is_kernel_slice_supported(p):
-            continue
-        try:
-            cls_name = str(p.is_a())
-        except Exception:
-            cls_name = "Unknown"
-        counts[cls_name] = counts.get(cls_name, 0) + 1
-    return {"schemaVersion": 0, "countsByClass": dict(sorted(counts.items()))}
-
-
-def _storeys_sketch_from_ifc_model(model: Any) -> list[dict[str, Any]]:
-    storeys = model.by_type("IfcBuildingStorey") or []
-    keyed: list[tuple[tuple[float, str, str], dict[str, Any]]] = []
-    for st in storeys:
-        raw_elev = getattr(st, "Elevation", None)
-        elev_sort = float(raw_elev) if isinstance(raw_elev, (int, float)) else 0.0
-        name = str(getattr(st, "Name", None) or "")
-        gid = str(getattr(st, "GlobalId", None) or "")
-        row: dict[str, Any] = {
-            "name": name,
-            "elevation": raw_elev if isinstance(raw_elev, (int, float)) else None,
-        }
-        if gid:
-            row["globalId"] = gid
-        keyed.append(((elev_sort, name, gid), row))
-    keyed.sort(key=lambda t: t[0])
-    return [t[1] for t in keyed]
-
-
-def _levels_from_document_sketch(doc: Document) -> list[dict[str, Any]]:
-    levels = [(eid, e) for eid, e in doc.elements.items() if isinstance(e, LevelElem)]
-    levels.sort(key=lambda t: (t[1].elevation_mm, t[0]))
-    return [{"id": eid, "name": e.name or "", "elevationMm": e.elevation_mm} for eid, e in levels]
-
-
-def _space_programme_sample_from_ifc_model(model: Any, *, limit: int) -> list[dict[str, Any]]:
-    if ifc_elem_util is None:
-        return []
-    spaces = model.by_type("IfcSpace") or []
-    keyed: list[tuple[str, dict[str, Any]]] = []
-    for sp in spaces:
-        ps = ifc_elem_util.get_psets(sp)
-        bucket = ps.get("Pset_SpaceCommon") or {}
-        prog_keys = ("ProgrammeCode", "Department", "FunctionLabel", "FinishSet")
-        chunk = {k: bucket[k] for k in prog_keys if bucket.get(k)}
-        if not chunk:
-            continue
-        ref = bucket.get("Reference")
-        ref_s = ref.strip() if isinstance(ref, str) else ""
-        sk = (
-            ref_s
-            or str(getattr(sp, "Name", None) or "")
-            or str(getattr(sp, "GlobalId", None) or "")
-        )
-        row: dict[str, Any] = {"programmeFields": chunk}
-        if ref_s:
-            row["reference"] = ref_s
-        nm = str(getattr(sp, "Name", None) or "").strip()
-        if nm:
-            row["spaceName"] = nm
-        keyed.append((sk, row))
-    keyed.sort(key=lambda t: t[0])
-    return [t[1] for t in keyed[:limit]]
 
 
 def ifcopenshell_available() -> bool:
@@ -806,7 +703,7 @@ def inspect_kernel_ifc_semantics(
             "FinishSet": _count_space_programme("Pset_SpaceCommon", "FinishSet"),
         },
         "qtoTemplates": qto_names,
-        "importScopeUnsupportedIfcProducts_v0": _import_scope_unsupported_ifc_products_v0(model),
+        "importScopeUnsupportedIfcProducts_v0": import_scope_unsupported_ifc_products_v0(model),
         "siteExchangeEvidence_v0": build_site_exchange_evidence_v0(doc=doc, model=model),
         "materialLayerSetReadback_v0": kernel_ifc_material_layer_set_readback_v0(model, doc),
         "propertySetCoverageEvidence_v0": build_kernel_ifc_property_set_coverage_evidence_v0(
@@ -1375,7 +1272,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
         "roofs": has_roof_products,
         "stairs": has_stair_products,
     }
-    unsupported = _import_scope_unsupported_ifc_products_v0(model)
+    unsupported = import_scope_unsupported_ifc_products_v0(model)
 
     if ifc_elem_util is None:
         return {
@@ -2296,10 +2193,10 @@ def summarize_kernel_ifc_semantic_roundtrip(doc: Document) -> dict[str, Any]:
             "Traceability-only read-back (storeys, level echo, wall/space Reference, programme samples, QTO names) — "
             "not import-merge replay commands."
         ),
-        "levelsFromDocument": _levels_from_document_sketch(doc),
-        "storeysFromIfc": _storeys_sketch_from_ifc_model(model),
+        "levelsFromDocument": levels_from_document_sketch(doc),
+        "storeysFromIfc": storeys_sketch_from_ifc_model(model),
         "qtoTemplatesFromIfc": qto_names_sk,
-        "spaceProgrammeSampleFromIfc": _space_programme_sample_from_ifc_model(model, limit=8),
+        "spaceProgrammeSampleFromIfc": space_programme_sample_from_ifc_model(model, limit=8),
         "referenceIdsFromIfc": {
             "IfcWall": _references_from_products(
                 list(walls_m), "Pset_WallCommon", limit=sketch_limit
@@ -3902,9 +3799,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         elev_b = float(_elev_m(doc, bm.level_id))
         beam_w = float(_clamp(bm.width_mm / 1000.0, 0.05, 4.0))
         beam_h = float(_clamp(bm.height_mm / 1000.0, 0.05, 4.0))
-        beam_ent = ifcopenshell.api.root.create_entity(
-            f, ifc_class="IfcBeam", name=bm.name or bid
-        )
+        beam_ent = ifcopenshell.api.root.create_entity(f, ifc_class="IfcBeam", name=bm.name or bid)
         # Beam profile is widthMm × heightMm; extruded along the start→end
         # axis (local +Z). World placement rotates local +Z to align with
         # the beam's plan direction and lifts the beam by heightMm/2 so
@@ -3983,9 +3878,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         ccx_mm, ccz_mm, _, _ = _xz_bounds_mm(cpts)
         ccx_m = ccx_mm / 1000.0
         ccy_m = ccz_mm / 1000.0
-        ceil_elev_z = (
-            float(_elev_m(doc, ceil.level_id)) + float(ceil.height_offset_mm) / 1000.0
-        )
+        ceil_elev_z = float(_elev_m(doc, ceil.level_id)) + float(ceil.height_offset_mm) / 1000.0
         ceil_thick_m = float(_clamp(ceil.thickness_mm / 1000.0, 0.005, 0.5))
         ceil_profile: list[tuple[float, float]] = []
         for px, py in cpts:
@@ -3996,9 +3889,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         )
         if hasattr(cov_ent, "PredefinedType"):
             cov_ent.PredefinedType = "CEILING"
-        rep_cov = add_slab_representation(
-            f, body_ctx, depth=ceil_thick_m, polyline=ceil_profile
-        )
+        rep_cov = add_slab_representation(f, body_ctx, depth=ceil_thick_m, polyline=ceil_profile)
         cov_mat = np.eye(4, dtype=float)
         cov_mat[0, 3] = ccx_m
         cov_mat[1, 3] = ccy_m
