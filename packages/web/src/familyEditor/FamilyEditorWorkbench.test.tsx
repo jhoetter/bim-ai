@@ -73,7 +73,7 @@ describe('FAM-075/FAM-079/FAM-081/FAM-085 — furniture template preset', () => 
     );
     expect(getByTestId('symbolic-lines-list').textContent).toContain('visible when');
     expect(getByTestId('preview-visibility-summary').textContent).toContain(
-      '0/1 sweeps, 5/5 symbolic lines',
+      '0/5 sweeps, 5/5 symbolic lines',
     );
 
     fireEvent.click(getByTestId('family-types-open'));
@@ -88,13 +88,13 @@ describe('FAM-075/FAM-079/FAM-081/FAM-085 — furniture template preset', () => 
     fireEvent.change(getByLabelText('Preview detail level'), { target: { value: 'medium' } });
 
     expect(getByTestId('preview-visibility-summary').textContent).toContain(
-      '0/1 sweeps, 0/5 symbolic lines',
+      '0/5 sweeps, 0/5 symbolic lines',
     );
 
     fireEvent.click(getByLabelText('parameter-default-Show_2D_Elements'));
 
     expect(getByTestId('preview-visibility-summary').textContent).toContain(
-      '1/1 sweeps, 0/5 symbolic lines',
+      '5/5 sweeps, 0/5 symbolic lines',
     );
   });
 });

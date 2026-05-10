@@ -239,6 +239,39 @@ describe('resolveNestedFamilyInstance — 2-level expansion', () => {
   });
 });
 
+describe('FAM-082/FAM-083 — parameter-driven furniture extrusions', () => {
+  it('uses a length parameter to drive straight sweep extrusion height', () => {
+    const seat: SweepGeometryNode = {
+      kind: 'sweep',
+      pathLines: [{ startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 0, yMm: 100 } }],
+      profile: rectProfile(600, 600),
+      profilePlane: 'work_plane',
+      pathLengthParam: 'Seat_Height',
+    };
+    const family: FamilyDefinition = {
+      id: 'parametric-chair',
+      name: 'Parametric Chair',
+      discipline: 'generic',
+      params: [
+        {
+          key: 'Seat_Height',
+          label: 'Seat Height',
+          type: 'length_mm',
+          default: 450,
+          instanceOverridable: true,
+        },
+      ],
+      defaultTypes: [],
+      geometry: [seat],
+    };
+    const group = resolveFamilyGeometry(family.id, { Seat_Height: 720 }, { [family.id]: family });
+    const bboxes = meshGeometryBboxes(group);
+
+    expect(bboxes).toHaveLength(1);
+    expect(bboxes[0]!.max.z - bboxes[0]!.min.z).toBeCloseTo(720, 0);
+  });
+});
+
 describe('FAM-01 cycle detection', () => {
   it('detects a 2-cycle (A → B → A)', () => {
     const a: FamilyDefinition = {

@@ -177,7 +177,7 @@ function resolveGeometryNode(
   // FAM-03: visibility binding short-circuit applies to every node kind.
   if (!isVisibleByBinding(node.visibilityBinding, hostParams)) return null;
   if (node.kind === 'sweep') {
-    return resolveSweepNode(node);
+    return resolveSweepNode(node, hostParams);
   }
   if (node.kind === 'family_instance_ref') {
     return resolveNestedFamilyInstance(node, hostParams, catalog, depth, detailLevel);
@@ -188,9 +188,37 @@ function resolveGeometryNode(
   return null;
 }
 
-function resolveSweepNode(node: SweepGeometryNode): THREE.Mesh {
-  const geom = meshFromSweep(node);
+function resolveSweepNode(node: SweepGeometryNode, hostParams: HostParams): THREE.Mesh {
+  const geom = meshFromSweep(applySweepPathLengthParam(node, hostParams));
   return new THREE.Mesh(geom);
+}
+
+function applySweepPathLengthParam(
+  node: SweepGeometryNode,
+  hostParams: HostParams,
+): SweepGeometryNode {
+  if (!node.pathLengthParam || node.pathLines.length !== 1) return node;
+  const raw = hostParams[node.pathLengthParam];
+  const lengthMm = typeof raw === 'number' ? raw : Number(raw);
+  if (!Number.isFinite(lengthMm) || lengthMm <= 0) return node;
+  const line = node.pathLines[0]!;
+  const dx = line.endMm.xMm - line.startMm.xMm;
+  const dy = line.endMm.yMm - line.startMm.yMm;
+  const currentLength = Math.hypot(dx, dy);
+  if (currentLength <= 0) return node;
+  const scale = lengthMm / currentLength;
+  return {
+    ...node,
+    pathLines: [
+      {
+        ...line,
+        endMm: {
+          xMm: line.startMm.xMm + dx * scale,
+          yMm: line.startMm.yMm + dy * scale,
+        },
+      },
+    ],
+  };
 }
 
 /**
