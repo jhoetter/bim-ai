@@ -3,7 +3,7 @@
   "checkpoint_id": "87ea82778bef",
   "strategy": "manual-commit",
   "branch": "revit-parity-type-duplicate-wave",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "packages/web/src/workspace/WorkspaceRightRail.tsx",
     "packages/web/src/workspace/WorkspaceRightRail.typeDuplicate.test.ts",
@@ -34,13 +34,19 @@
       "transcript": "/87/ea82778bef/3/full.jsonl",
       "content_hash": "/87/ea82778bef/3/content_hash.txt",
       "prompt": "/87/ea82778bef/3/prompt.txt"
+    },
+    {
+      "metadata": "/87/ea82778bef/4/metadata.json",
+      "transcript": "/87/ea82778bef/4/full.jsonl",
+      "content_hash": "/87/ea82778bef/4/content_hash.txt",
+      "prompt": "/87/ea82778bef/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 381525,
+    "input_tokens": 481881,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 12562816,
-    "output_tokens": 35316,
-    "api_call_count": 103
+    "cache_read_tokens": 13616512,
+    "output_tokens": 41320,
+    "api_call_count": 119
   }
 }

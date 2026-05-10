@@ -1,0 +1,1 @@
+In /Users/jhoetter/repos/bim-ai, inspect the codebase for a minimal workpackage toward Revit parity F-052/F-053 family sketch Pick Lines with Lock and Trim/Extend to Corner. Do not edit files. Return existing family-editor sketch state/tools, geometry helpers, files/functions to modify, likely tests, and smallest viable partial implementation.

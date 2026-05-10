@@ -1,0 +1,55 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "87ea82778bef",
+  "session_id": "019e1302-b40a-74d3-9d1a-7518018605ee",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T17:58:35.313704Z",
+  "branch": "revit-parity-type-duplicate-wave",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/workspace/WorkspaceRightRail.tsx",
+    "packages/web/src/workspace/WorkspaceRightRail.typeDuplicate.test.ts",
+    "spec/revit-parity/README.md",
+    "spec/revit-parity/ch05-family-editor.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "0816db149967",
+  "token_usage": {
+    "input_tokens": 100356,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1053696,
+    "output_tokens": 6004,
+    "api_call_count": 16
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T17:58:35.300441Z",
+    "agent_lines": 146,
+    "agent_removed": 4,
+    "human_added": 127,
+    "human_modified": 8,
+    "human_removed": 0,
+    "total_committed": 281,
+    "total_lines_changed": 303,
+    "agent_percentage": 49.504950495049506,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 43,
+      "user_lines_removed": 9,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/viewport/dormerRoofCut.ts": 43
+      },
+      "user_removed_per_file": {
+        "packages/web/src/viewport/dormerRoofCut.ts": 9
+      }
+    }
+  ]
+}
