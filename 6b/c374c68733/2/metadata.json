@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "6bc374c68733",
+  "session_id": "019e1239-9259-7d11-928d-62ded7e5d803",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T14:15:34.314609Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "8c4e69341c52",
+  "token_usage": {
+    "input_tokens": 111486,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 901888,
+    "output_tokens": 11718,
+    "api_call_count": 16
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 77,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/elements.py": 77
+      }
+    }
+  ]
+}
