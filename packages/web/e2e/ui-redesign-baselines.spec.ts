@@ -91,6 +91,7 @@ test.describe('UI redesign — chrome baselines', () => {
     await expect(bar).toBeVisible();
     await expect(bar).toHaveScreenshot('status-bar.png', {
       maxDiffPixelRatio: 0.05,
+      timeout: process.env.CI ? 20_000 : 5_000,
     });
   });
 
