@@ -2,7 +2,7 @@
 
 Tracks architectural debt and robustness gaps surfaced by a PE-style audit on 2026-05-07. Production-readiness items (auth, deploy, observability, migrations) are out of scope here — handled separately.
 
-Last reconciled: 2026-05-10 after CI run `25622305508` passed on `main`.
+Last reconciled: 2026-05-10 after local full verification on `main`.
 
 This tracker is for the code-quality items only:
 
@@ -18,7 +18,7 @@ This tracker is for the code-quality items only:
 | ----- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | CQ-01 | `done`    | Sequenced WebSocket publish path, bounded replay buffer, resume/RESYNC flow, client reconnect/backoff, and regression coverage are merged and green.                                                                                             |
 | CQ-02 | `done`    | `uv.lock`, bounded Python deps, frozen installs, and lockfile CI checks are merged and green.                                                                                                                                                    |
-| CQ-03 | `partial` | Feature clusters now own their files under `workspace/agent/`, `bcf/`, `evidence/`, `inspector/`, `comments/`, `shell/`, `readouts/`, `sheets/`, `project/`, `authoring/`, `library/`, and `viewport/`; only 17 cross-feature shell/shared files remain at root. |
+| CQ-03 | `done`    | Feature clusters now own their files under `workspace/agent/`, `bcf/`, `evidence/`, `inspector/`, `comments/`, `shell/`, `readouts/`, `sheets/`, `project/`, `authoring/`, `library/`, and `viewport/`; only 17 cross-feature shell/shared files remain at root. |
 | CQ-04 | `partial` | Multiple cohesive helper modules have been extracted from `constraints.py`, `engine.py`, and `export_ifc.py`; the large source files still exist and are not thin shims.                                                                         |
 | CQ-05 | `done`    | The stable `useBimStore` facade is a 110-LOC composition layer over extracted model, viewport, plan authoring, collaboration, workspace UI, and coercion modules with slice regression tests.                                                    |
 
@@ -38,7 +38,7 @@ A CQ item is `done` when: (a) `make verify` passes; (b) new logic has unit-test 
 
 ## CQ-01 — WebSocket robustness (reconnect + replay buffer + sequence)
 
-**Status:** `partial`
+**Status:** `done`
 **Severity:** Medium
 **Blast radius:** Server hub + client WS layer + message envelope. Touches state hydration on reconnect.
 
@@ -163,7 +163,7 @@ These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (t
 - `export_ifc.py`: extracted kernel IFC manifest eligibility, geometry skip counts, expected emit counts, and artifact hint construction into `export_ifc_manifest.py`, preserving legacy `bim_ai.export_ifc` imports. `export_ifc.py` is down to 1,781 LOC.
 - `export_ifc.py`: extracted kernel site exchange evidence helpers into `export_ifc_site_exchange.py`, preserving legacy `bim_ai.export_ifc` imports. `export_ifc.py` is down to 1,715 LOC.
 
-**Latest verification.** Full backend suite passed after the latest CQ-04 slice: `2476 passed, 93 skipped, 1 deselected` with total coverage `75.83%`; each pushed workpackage passed GitHub CI on `main`.
+**Latest verification.** Full local verification passed after the latest CQ-04 slice: `pnpm verify`; `uv run ruff check bim_ai tests`; `uv run pytest -q` with `2476 passed, 93 skipped, 1 deselected` and total coverage `75.87%`.
 
 **Remaining work.** Continue extracting dispatch/replay/preflight-heavy engine code, IFC authoritative replay/import-preview code, and constraint evaluation/validation bodies until the original files are thin compatibility shims or replaced by packages.
 
@@ -171,7 +171,7 @@ These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (t
 
 ## CQ-05 — Slice the zustand store (`packages/web/src/state/store.ts`, 2,137 LOC)
 
-**Status:** `partial`
+**Status:** `done`
 **Severity:** Medium
 **Blast radius:** Medium. Every selector callsite stays valid if we keep the public hook surface; internal store wiring changes.
 
@@ -197,6 +197,5 @@ These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (t
 ## Remaining Sequence
 
 1. **CQ-04** — keep extracting narrow, tested helper clusters until `engine.py`, `constraints.py`, and `export_ifc.py` become thin shims or packages.
-2. **CQ-03** — continue moving remaining workspace root files by feature cluster until only true cross-feature composition surfaces remain.
 
-CQ-03 and CQ-04 are the two remaining items most likely to conflict with parallel agents. Schedule them when those tracks are quiet, or pause the relevant nightshift slots for the merge window.
+CQ-04 remains the only code-quality tracker item that is intentionally still marked partial because the legacy Python entry modules are not yet thin package shims.
