@@ -27,7 +27,7 @@ import { resolveMaterial } from '../viewport/materials';
 /** VIE-02 — plan detail levels usable for per-node visibility binding. */
 type DetailLevelKey = 'coarse' | 'medium' | 'fine';
 
-type Template = 'generic_model' | 'door' | 'window' | 'profile';
+type Template = 'generic_model' | 'door' | 'window' | 'profile' | 'furniture';
 
 type RefPlane = FamilySketchRefPlane & {
   id: string;
@@ -73,6 +73,8 @@ type SymbolicLineSubcategory = 'symbolic' | 'opening_projection' | 'hidden_cut';
 type SymbolicLine = SketchLine & {
   subcategory: SymbolicLineSubcategory;
   alignmentLock?: { refPlaneId: string };
+  visibilityBinding?: VisibilityBinding;
+  visibilityByDetailLevel?: VisibilityByDetailLevel;
 };
 
 type FamilyDimension = {
@@ -135,6 +137,182 @@ const DEFAULT_FAMILY_VIEW_RANGE: FamilyViewRange = {
   bottomOffsetMm: 0,
   viewDepthOffsetMm: -1200,
 };
+
+const FURNITURE_REF_PLANES: RefPlane[] = [
+  {
+    id: 'furniture-center-left-right',
+    name: 'Center Left/Right',
+    isVertical: true,
+    offsetMm: 0,
+    isSymmetryRef: true,
+  },
+  {
+    id: 'furniture-center-front-back',
+    name: 'Center Front/Back',
+    isVertical: false,
+    offsetMm: 0,
+    isSymmetryRef: true,
+  },
+  {
+    id: 'furniture-backrest-depth',
+    name: 'Backrest Depth',
+    isVertical: false,
+    offsetMm: 180,
+    isSymmetryRef: false,
+  },
+  {
+    id: 'furniture-leg-offset-x',
+    name: 'Leg Offset X',
+    isVertical: true,
+    offsetMm: 90,
+    isSymmetryRef: false,
+  },
+  {
+    id: 'furniture-leg-offset-y',
+    name: 'Leg Offset Y',
+    isVertical: false,
+    offsetMm: 90,
+    isSymmetryRef: false,
+  },
+];
+
+const FURNITURE_PARAMS: Param[] = [
+  {
+    key: 'Width',
+    label: 'Width',
+    type: 'length_mm',
+    default: 600,
+    formula: '',
+  },
+  {
+    key: 'Depth',
+    label: 'Depth',
+    type: 'length_mm',
+    default: 600,
+    formula: '',
+  },
+  {
+    key: 'Seat_Height',
+    label: 'Seat Height',
+    type: 'length_mm',
+    default: 450,
+    formula: '',
+  },
+  {
+    key: 'Seat_Thickness',
+    label: 'Seat Thickness',
+    type: 'length_mm',
+    default: 80,
+    formula: '',
+  },
+  {
+    key: 'Backrest_Depth',
+    label: 'Backrest Depth',
+    type: 'length_mm',
+    default: 180,
+    formula: '',
+  },
+  {
+    key: 'Leg_Radius',
+    label: 'Leg Radius',
+    type: 'length_mm',
+    default: 25,
+    formula: '',
+  },
+  {
+    key: 'Leg_Offset',
+    label: 'Leg Offset',
+    type: 'length_mm',
+    default: 90,
+    formula: '',
+  },
+  {
+    key: 'Show_2D_Elements',
+    label: 'Show 2D Elements',
+    type: 'boolean',
+    default: true,
+    formula: '',
+  },
+];
+
+const FURNITURE_TYPE_ROWS: FamilyTypeRow[] = [
+  {
+    id: DEFAULT_FAMILY_TYPE_ID,
+    name: '600 x 600 Chair',
+    values: {
+      Width: 600,
+      Depth: 600,
+      Backrest_Depth: 180,
+      Leg_Offset: 90,
+      Leg_Radius: 25,
+    },
+  },
+  {
+    id: 'family-type-2',
+    name: '750 x 750 Lounge',
+    values: {
+      Width: 750,
+      Depth: 750,
+      Backrest_Depth: 220,
+      Leg_Offset: 110,
+      Leg_Radius: 30,
+    },
+  },
+];
+
+const FURNITURE_SYMBOLIC_LINES: SymbolicLine[] = [
+  {
+    startMm: { xMm: -300, yMm: -300 },
+    endMm: { xMm: 300, yMm: -300 },
+    subcategory: 'symbolic',
+    visibilityBinding: { paramName: 'Show_2D_Elements', whenTrue: true },
+    visibilityByDetailLevel: { medium: false, fine: false },
+  },
+  {
+    startMm: { xMm: 300, yMm: -300 },
+    endMm: { xMm: 300, yMm: 300 },
+    subcategory: 'symbolic',
+    visibilityBinding: { paramName: 'Show_2D_Elements', whenTrue: true },
+    visibilityByDetailLevel: { medium: false, fine: false },
+  },
+  {
+    startMm: { xMm: 300, yMm: 300 },
+    endMm: { xMm: -300, yMm: 300 },
+    subcategory: 'symbolic',
+    visibilityBinding: { paramName: 'Show_2D_Elements', whenTrue: true },
+    visibilityByDetailLevel: { medium: false, fine: false },
+  },
+  {
+    startMm: { xMm: -300, yMm: 300 },
+    endMm: { xMm: -300, yMm: -300 },
+    subcategory: 'symbolic',
+    visibilityBinding: { paramName: 'Show_2D_Elements', whenTrue: true },
+    visibilityByDetailLevel: { medium: false, fine: false },
+  },
+  {
+    startMm: { xMm: -300, yMm: 120 },
+    endMm: { xMm: 300, yMm: 300 },
+    subcategory: 'symbolic',
+    visibilityBinding: { paramName: 'Show_2D_Elements', whenTrue: true },
+    visibilityByDetailLevel: { medium: false, fine: false },
+  },
+];
+
+const FURNITURE_SWEEPS: SweepGeometryNode[] = [
+  {
+    kind: 'sweep',
+    pathLines: [{ startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 0, yMm: 450 } }],
+    profile: [
+      { startMm: { xMm: -300, yMm: -300 }, endMm: { xMm: 300, yMm: -300 } },
+      { startMm: { xMm: 300, yMm: -300 }, endMm: { xMm: 300, yMm: 300 } },
+      { startMm: { xMm: 300, yMm: 300 }, endMm: { xMm: -300, yMm: 300 } },
+      { startMm: { xMm: -300, yMm: 300 }, endMm: { xMm: -300, yMm: -300 } },
+    ],
+    profilePlane: 'work_plane',
+    visibilityBinding: { paramName: 'Show_2D_Elements', whenTrue: false },
+    visibilityByDetailLevel: { coarse: false },
+  },
+];
 
 const EMPTY_SYMBOLIC_LINE_DRAFT = {
   sx: 0,
@@ -259,6 +437,47 @@ export function FamilyEditorWorkbench(): JSX.Element {
         isSymmetryRef: false,
       },
     ]);
+  }
+
+  function selectTemplate(nextTemplate: Template) {
+    setTemplate(nextTemplate);
+    if (nextTemplate !== 'furniture') return;
+    setRefPlanes(FURNITURE_REF_PLANES.map((plane) => ({ ...plane })));
+    setParams(FURNITURE_PARAMS.map((param) => ({ ...param })));
+    setFamilyTypes(FURNITURE_TYPE_ROWS.map((row) => ({ ...row, values: { ...row.values } })));
+    setActiveFamilyTypeId(DEFAULT_FAMILY_TYPE_ID);
+    setFamilyTypesDialogOpen(false);
+    setCategorySettings({
+      category: 'furniture',
+      alwaysVertical: false,
+      workPlaneBased: false,
+      roomCalculationPoint: false,
+      shared: false,
+    });
+    setViewRange(DEFAULT_FAMILY_VIEW_RANGE);
+    setPreviewVisibility(true);
+    setPreviewDetailLevel('coarse');
+    setFlexMode(false);
+    setFlexValues({});
+    setSweeps(FURNITURE_SWEEPS.map((sweep) => ({ ...sweep })));
+    setSelectedSweepIndex(null);
+    setArrays([]);
+    setArrayDraft(null);
+    setSymbolicLines(FURNITURE_SYMBOLIC_LINES.map((line) => ({ ...line })));
+    setSymbolicLineDraft(EMPTY_SYMBOLIC_LINE_DRAFT);
+    setSymbolicAlignDraft(EMPTY_SYMBOLIC_ALIGN_DRAFT);
+    setDimensions([
+      {
+        id: 'dim-backrest-depth',
+        refAId: 'furniture-center-front-back',
+        refBId: 'furniture-backrest-depth',
+        lockedValueMm: 180,
+        paramKey: 'Backrest_Depth',
+      },
+    ]);
+    setDimensionDraft({ refAId: '', refBId: '', paramKey: '' });
+    setNestedInstances([]);
+    setSelectedNestedIndex(null);
   }
 
   function updateRefPlane(index: number, patch: Partial<RefPlane>) {
@@ -670,6 +889,9 @@ export function FamilyEditorWorkbench(): JSX.Element {
     // helpers (e.g. swing-arc). Keep the rule simple: same-template
     // → same-discipline; generic templates → all families.
     if (template === 'generic_model' || template === 'profile') return BUILT_IN_FAMILIES;
+    if (template === 'furniture') {
+      return BUILT_IN_FAMILIES.filter((f) => f.discipline === 'generic');
+    }
     return BUILT_IN_FAMILIES.filter((f) => f.discipline === template || f.discipline === 'generic');
   }, [template]);
 
@@ -702,6 +924,7 @@ export function FamilyEditorWorkbench(): JSX.Element {
     { value: 'door', label: t('familyEditor.templateDoor') },
     { value: 'window', label: t('familyEditor.templateWindow') },
     { value: 'profile', label: t('familyEditor.templateProfile') },
+    { value: 'furniture', label: t('familyEditor.templateFurniture') },
   ];
 
   const categoryOptions: { value: FamilyCategory; label: string }[] = [
@@ -709,6 +932,7 @@ export function FamilyEditorWorkbench(): JSX.Element {
     { value: 'door', label: 'Doors' },
     { value: 'window', label: 'Windows' },
     { value: 'profile', label: 'Profiles' },
+    { value: 'furniture', label: 'Furniture' },
     { value: 'detail_component', label: 'Detail Components' },
   ];
 
@@ -728,6 +952,7 @@ export function FamilyEditorWorkbench(): JSX.Element {
 
   const previewVisibleSweepCount = sweeps.filter(visibleInPreview).length;
   const previewVisibleNestedCount = nestedInstances.filter(visibleInPreview).length;
+  const previewVisibleSymbolicLineCount = symbolicLines.filter(visibleInPreview).length;
 
   return (
     <div className="p-4 space-y-6">
@@ -741,7 +966,7 @@ export function FamilyEditorWorkbench(): JSX.Element {
                 ? 'bg-accent text-accent-foreground px-3 py-1 rounded'
                 : 'px-3 py-1 rounded border'
             }
-            onClick={() => setTemplate(value)}
+            onClick={() => selectTemplate(value)}
           >
             {label}
           </button>
@@ -808,7 +1033,7 @@ export function FamilyEditorWorkbench(): JSX.Element {
           </select>
           <span className="text-xs text-muted" data-testid="preview-visibility-summary">
             {previewVisibility
-              ? `${previewVisibleSweepCount}/${sweeps.length} sweeps and ${previewVisibleNestedCount}/${nestedInstances.length} nested instances visible`
+              ? `${previewVisibleSweepCount}/${sweeps.length} sweeps, ${previewVisibleSymbolicLineCount}/${symbolicLines.length} symbolic lines, and ${previewVisibleNestedCount}/${nestedInstances.length} nested instances visible`
               : 'Preview visibility off'}
           </span>
         </div>
@@ -993,12 +1218,18 @@ export function FamilyEditorWorkbench(): JSX.Element {
           </button>
         </div>
         <ul className="space-y-1 text-xs" data-testid="symbolic-lines-list">
-          {symbolicLines.map((line, index) => (
-            <li key={index}>
-              {line.subcategory}: ({line.startMm.xMm}, {line.startMm.yMm}) → ({line.endMm.xMm},{' '}
-              {line.endMm.yMm}){line.alignmentLock ? ' · locked' : ''}
-            </li>
-          ))}
+          {symbolicLines.map((line, index) =>
+            visibleInPreview(line) ? (
+              <li key={index}>
+                {line.subcategory}: ({line.startMm.xMm}, {line.startMm.yMm}) → ({line.endMm.xMm},{' '}
+                {line.endMm.yMm}){line.alignmentLock ? ' · locked' : ''}
+                {line.visibilityBinding
+                  ? ` · visible when ${line.visibilityBinding.paramName}`
+                  : ''}
+                {line.visibilityByDetailLevel ? ' · coarse-only' : ''}
+              </li>
+            ) : null,
+          )}
         </ul>
         {symbolicLines.length > 0 && refPlanes.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -1314,6 +1545,20 @@ export function FamilyEditorWorkbench(): JSX.Element {
                         materialKey={typeof param.default === 'string' ? param.default : ''}
                         onOpenBrowser={() => setMaterialTarget({ kind: 'param', index: i })}
                         onOpenAssetBrowser={() => setAppearanceTarget({ kind: 'param', index: i })}
+                      />
+                    )}
+                    {param.type === 'boolean' && (
+                      <input
+                        type="checkbox"
+                        aria-label={`parameter-default-${param.key}`}
+                        checked={Boolean(param.default)}
+                        onChange={(e) => updateParam(i, { default: e.target.checked })}
+                      />
+                    )}
+                    {param.type === 'option' && (
+                      <input
+                        value={String(param.default ?? '')}
+                        onChange={(e) => updateParam(i, { default: e.target.value })}
                       />
                     )}
                   </td>
