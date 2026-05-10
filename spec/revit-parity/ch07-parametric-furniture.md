@@ -13,7 +13,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Furniture template](file:///Users/jhoetter/Desktop/Revit%20Specs/0487_03-40-03.png)
 
-**bim-ai status:** 🟡 Partial — the family editor now exposes a Furniture template preset. Selecting it seeds origin reference planes, a Furniture category, chair parameters (Width, Depth, Seat Height, Seat Thickness, Backrest Depth, Leg Radius, Leg Offset, Show 2D Elements), two starter types, coarse-only symbolic plan lines, and a medium/fine sweep placeholder. Missing: Revit `.rft` file browsing, full project-load family catalog persistence, and host-free placement directly from this authored template.
+**bim-ai status:** ✅ Available — the Metric Furniture `.rft` template entry seeds standalone host metadata, Furniture category, origin reference planes, chair parameters (Width, Depth, Seat Height, Seat Thickness, Backrest Depth, Leg Radius, Leg Offset, Show 2D Elements), two starter types, coarse-only symbolic plan lines, and a medium/fine sweep placeholder. Saved and project-loaded authored furniture families preserve template metadata and place host-free through project component placement.
 
 ---
 
@@ -57,7 +57,7 @@ This chapter walks through creating a fully parametric chair family from scratch
 **Screenshot:**
 ![Symbolic Lines chair](file:///Users/jhoetter/Desktop/Revit%20Specs/0513_03-41-37.png)
 
-**bim-ai status:** 🟡 Partial — the Furniture template seeds symbolic plan-view linework for a chair outline/backrest, tagged as coarse-only and bound to `Show_2D_Elements`. The general family editor can also author symbolic/detail lines with subcategory metadata. Missing: canvas drawing for furniture symbols, line style/object-style propagation, and project plan rendering of authored symbolic family linework.
+**bim-ai status:** ✅ Available — the Furniture template seeds symbolic plan-view linework for a chair outline/backrest, tagged as coarse-only and bound to `Show_2D_Elements`. General symbolic/detail line authoring now supports canvas drawing, subcategory metadata, detail-level visibility, and project plan rendering for placed authored furniture instances with rotation and per-instance parameter overrides.
 
 ---
 

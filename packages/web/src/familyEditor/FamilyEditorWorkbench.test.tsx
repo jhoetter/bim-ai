@@ -3,8 +3,11 @@ import { cleanup, fireEvent, render, waitFor, within } from '@testing-library/re
 import { I18nextProvider } from 'react-i18next';
 import { FamilyEditorWorkbench, resolveFamilyParamValue } from './FamilyEditorWorkbench';
 import i18n from '../i18n';
-import { listMaterials } from '../viewport/materials';
-import { FAMILY_EDITOR_DOCUMENT_PARAM } from './familyEditorPersistence';
+import { listMaterials, resolveMaterial } from '../viewport/materials';
+import {
+  FAMILY_EDITOR_DOCUMENT_PARAM,
+  type AuthoredFamilyDocument,
+} from './familyEditorPersistence';
 
 function renderWithI18n(ui: React.ReactElement) {
   return render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>);
@@ -33,12 +36,45 @@ afterEach(() => {
 
 describe('<FamilyEditorWorkbench />', () => {
   it('renders template chooser', () => {
-    const { getByText } = renderWithI18n(<FamilyEditorWorkbench />);
-    expect(getByText('Generic Model')).toBeTruthy();
-    expect(getByText('Door')).toBeTruthy();
-    expect(getByText('Window')).toBeTruthy();
-    expect(getByText('Profile')).toBeTruthy();
-    expect(getByText('Furniture', { selector: 'button' })).toBeTruthy();
+    const { getByLabelText, getByTestId, getByText } = renderWithI18n(<FamilyEditorWorkbench />);
+    expect(getByLabelText('Search family templates')).toBeTruthy();
+    expect(getByText('Metric Generic Model.rft')).toBeTruthy();
+    expect(getByText('Metric Door.rft')).toBeTruthy();
+    expect(getByText('Metric Window.rft')).toBeTruthy();
+    expect(getByText('Metric Profile.rft')).toBeTruthy();
+    expect(getByTestId('family-template-furniture')).toBeTruthy();
+  });
+
+  it('searches and filters the .rft template browser', () => {
+    const { getByLabelText, getByText, queryByText } = renderWithI18n(<FamilyEditorWorkbench />);
+
+    fireEvent.change(getByLabelText('Search family templates'), {
+      target: { value: 'furniture' },
+    });
+
+    expect(getByText('Metric Furniture.rft')).toBeTruthy();
+    expect(queryByText('Metric Door.rft')).toBeNull();
+
+    fireEvent.change(getByLabelText('Search family templates'), { target: { value: '' } });
+    fireEvent.change(getByLabelText('Filter family templates by host'), {
+      target: { value: 'wall_hosted' },
+    });
+
+    expect(getByText('Metric Door.rft')).toBeTruthy();
+    expect(getByText('Metric Window.rft')).toBeTruthy();
+    expect(queryByText('Metric Furniture.rft')).toBeNull();
+  });
+
+  it('applies host and category metadata when selecting a template entry', () => {
+    const { getByLabelText, getByTestId } = renderWithI18n(<FamilyEditorWorkbench />);
+
+    fireEvent.click(getByTestId('family-template-door'));
+
+    expect((getByLabelText('Family category') as HTMLSelectElement).value).toBe('door');
+    expect((getByLabelText('Always Vertical') as HTMLInputElement).checked).toBe(true);
+    expect(getByTestId('selected-template-metadata').textContent).toContain(
+      'Metric Door.rft · Doors · Wall-hosted',
+    );
   });
 
   it('add horizontal reference plane', () => {
@@ -73,6 +109,34 @@ describe('<FamilyEditorWorkbench />', () => {
 
     expect((getByLabelText('Family name') as HTMLInputElement).value).toBe('Temporary Name');
     expect(getByTestId('family-persistence-message').textContent).toContain('Opened');
+  });
+
+  it('persists selected .rft template metadata in saved family documents', () => {
+    const storage = {
+      getItem: vi.fn(() => null),
+      setItem: vi.fn(),
+    };
+    const { getByLabelText, getByTestId } = renderWithI18n(
+      <FamilyEditorWorkbench now={() => 1000} storage={storage} />,
+    );
+
+    fireEvent.click(getByTestId('family-template-furniture'));
+    fireEvent.change(getByLabelText('Family name'), { target: { value: 'Lounge Chair' } });
+    fireEvent.change(getByLabelText('Family id'), { target: { value: 'fam:furniture:lounge' } });
+    fireEvent.click(getByTestId('family-save'));
+
+    const saved = JSON.parse(storage.setItem.mock.calls[0]![1]) as AuthoredFamilyDocument[];
+    expect(saved[0]).toMatchObject({
+      id: 'fam:furniture:lounge',
+      template: 'furniture',
+      templateMetadata: {
+        fileName: 'Metric Furniture.rft',
+        category: 'furniture',
+        hostType: 'standalone',
+        originReferencePlaneIds: ['furniture-center-left-right', 'furniture-center-front-back'],
+        defaultTypeNames: ['600 x 600 Chair', '750 x 750 Lounge'],
+      },
+    });
   });
 
   it('loads an authored family into the project as an upsertFamilyType command', async () => {
@@ -192,7 +256,7 @@ describe('FAM-075/FAM-079/FAM-081/FAM-085 — furniture template preset', () => 
     const { getByText, getAllByText, getByLabelText, getByTestId, getByDisplayValue } =
       renderWithI18n(<FamilyEditorWorkbench />);
 
-    fireEvent.click(getByText('Furniture', { selector: 'button' }));
+    fireEvent.click(getByTestId('family-template-furniture'));
 
     expect((getByLabelText('Family category') as HTMLSelectElement).value).toBe('furniture');
     expect(getByDisplayValue('Center Left/Right')).toBeTruthy();
@@ -214,9 +278,9 @@ describe('FAM-075/FAM-079/FAM-081/FAM-085 — furniture template preset', () => 
   });
 
   it('uses detail level preview to swap coarse symbolic lines for medium 3D geometry', () => {
-    const { getByText, getByLabelText, getByTestId } = renderWithI18n(<FamilyEditorWorkbench />);
+    const { getByLabelText, getByTestId } = renderWithI18n(<FamilyEditorWorkbench />);
 
-    fireEvent.click(getByText('Furniture', { selector: 'button' }));
+    fireEvent.click(getByTestId('family-template-furniture'));
     fireEvent.change(getByLabelText('Preview detail level'), { target: { value: 'medium' } });
 
     expect(getByTestId('preview-visibility-summary').textContent).toContain(
@@ -339,6 +403,42 @@ describe('FAM material browser parity', () => {
     fireEvent.click(getByTestId(`material-assign-${material.key}`));
 
     expect(getByTestId('material-default-label').textContent).toContain(material.displayName);
+  });
+
+  it('persists created and renamed material selections on material_key parameters', () => {
+    const { getAllByRole, getByText, getByTestId, getByLabelText } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+
+    fireEvent.click(getAllByRole('button').find((b) => b.textContent === 'Add parameter')!);
+    fireEvent.change(parameterTypeSelect(getAllByRole('combobox')), {
+      target: { value: 'material_key' },
+    });
+    fireEvent.click(getByTestId('material-default-editor').querySelector('button')!);
+    fireEvent.click(getByText('Create material'));
+    fireEvent.change(getByLabelText('New material name'), {
+      target: { value: 'Family Field Finish 906' },
+    });
+    fireEvent.click(getByText('Create'));
+
+    const created = listMaterials().find(
+      (material) => material.displayName === 'Family Field Finish 906',
+    )!;
+    fireEvent.click(getByTestId(`material-assign-${created.key}`));
+    expect(getByTestId('material-default-label').textContent).toContain('Family Field Finish 906');
+
+    fireEvent.click(getByTestId('material-default-editor').querySelector('button')!);
+    fireEvent.click(getByTestId(`material-rename-${created.key}`));
+    fireEvent.change(getByLabelText('Rename Family Field Finish 906'), {
+      target: { value: 'Family Field Renamed Finish 906' },
+    });
+    fireEvent.click(getByText('Save'));
+    fireEvent.click(getByText('Close'));
+
+    expect(resolveMaterial(created.key)?.displayName).toBe('Family Field Renamed Finish 906');
+    expect(getByTestId('material-default-label').textContent).toContain(
+      'Family Field Renamed Finish 906',
+    );
   });
 
   it('assigns a material to selected sweep geometry', () => {
@@ -582,11 +682,11 @@ describe('FAM-067/FAM-071/FAM-072 — symbolic detail line authoring', () => {
   });
 
   it('filters selected symbolic lines by preview detail level and boolean visibility params', () => {
-    const { getByLabelText, getByTestId, getByText, queryByTestId } = renderWithI18n(
+    const { getByLabelText, getByTestId, queryByTestId } = renderWithI18n(
       <FamilyEditorWorkbench />,
     );
 
-    fireEvent.click(getByText('Furniture', { selector: 'button' }));
+    fireEvent.click(getByTestId('family-template-furniture'));
     fireEvent.click(getByLabelText('select-symbolic-line-0'));
     fireEvent.click(getByLabelText('symbolic-visibility-coarse'));
     expect(getByTestId('preview-visibility-summary').textContent).toContain('4/5 symbolic lines');

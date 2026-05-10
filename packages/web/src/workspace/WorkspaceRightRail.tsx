@@ -55,12 +55,22 @@ function newDuplicateTypeId(prefix: string): string {
   }
 }
 
+function duplicateTypePromptName(defaultName: string): string | null {
+  if (typeof window === 'undefined' || typeof window.prompt !== 'function') return defaultName;
+  const next = window.prompt('Duplicate type name', defaultName);
+  if (next == null) return null;
+  const trimmed = next.trim();
+  return trimmed ? trimmed : defaultName;
+}
+
 export function duplicateTypePropertiesCommand(
   element: DuplicableTypeElement,
   nextId = newDuplicateTypeId(element.id),
+  nextName?: string,
 ): Record<string, unknown> & { id: string } {
   if (element.kind === 'family_type') {
     const sourceName = String(element.parameters.name ?? element.name ?? element.id);
+    const duplicateName = nextName?.trim() || `${sourceName} Copy`;
     const discipline =
       element.discipline === 'door' || element.discipline === 'window'
         ? element.discipline
@@ -71,7 +81,7 @@ export function duplicateTypePropertiesCommand(
       discipline,
       parameters: {
         ...element.parameters,
-        name: `${sourceName} Copy`,
+        name: duplicateName,
       },
       ...(element.catalogSource ? { catalogSource: { ...element.catalogSource } } : {}),
     };
@@ -80,7 +90,7 @@ export function duplicateTypePropertiesCommand(
     return {
       type: 'upsertWallType',
       id: nextId,
-      name: `${element.name} Copy`,
+      name: nextName?.trim() || `${element.name} Copy`,
       layers: element.layers.map((layer) => ({ ...layer })),
       basisLine: element.basisLine ?? 'center',
     };
@@ -89,14 +99,14 @@ export function duplicateTypePropertiesCommand(
     return {
       type: 'upsertFloorType',
       id: nextId,
-      name: `${element.name} Copy`,
+      name: nextName?.trim() || `${element.name} Copy`,
       layers: element.layers.map((layer) => ({ ...layer })),
     };
   }
   return {
     type: 'upsertRoofType',
     id: nextId,
-    name: `${element.name} Copy`,
+    name: nextName?.trim() || `${element.name} Copy`,
     layers: element.layers.map((layer) => ({ ...layer })),
   };
 }
@@ -106,11 +116,12 @@ export function duplicateOpeningFamilyTypeCommand(
   discipline: 'door' | 'window',
   elementsById: Record<string, Element>,
   nextId = newDuplicateTypeId(familyTypeId ?? `ft-${discipline}`),
+  nextName?: string,
 ): (Record<string, unknown> & { id: string }) | null {
   if (!familyTypeId) return null;
   const custom = elementsById[familyTypeId];
   if (custom?.kind === 'family_type') {
-    return duplicateTypePropertiesCommand(custom, nextId);
+    return duplicateTypePropertiesCommand(custom, nextId, nextName);
   }
   const builtIn = getTypeById(familyTypeId);
   if (!builtIn) return null;
@@ -120,7 +131,7 @@ export function duplicateOpeningFamilyTypeCommand(
     discipline,
     parameters: {
       ...builtIn.parameters,
-      name: `${builtIn.name} Copy`,
+      name: nextName?.trim() || `${builtIn.name} Copy`,
       familyId: builtIn.familyId,
     },
   };
@@ -418,7 +429,10 @@ export function WorkspaceRightRail({
                     });
                   }}
                   onDuplicateType={(typeElement) => {
-                    const cmd = duplicateTypePropertiesCommand(typeElement);
+                    const defaultName = `${typeElement.name} Copy`;
+                    const nextName = duplicateTypePromptName(defaultName);
+                    if (nextName == null) return;
+                    const cmd = duplicateTypePropertiesCommand(typeElement, undefined, nextName);
                     void Promise.resolve(onSemanticCommand(cmd)).then(() => select(cmd.id));
                   }}
                   onResetSavedView={resetActiveSavedView}
@@ -542,10 +556,19 @@ export function WorkspaceRightRail({
                       })
                     }
                     onDuplicateType={(familyTypeId) => {
+                      const existing = familyTypeId ? elementsById[familyTypeId] : undefined;
+                      const builtIn = getTypeById(familyTypeId ?? '');
+                      const defaultName = `${
+                        existing?.kind === 'family_type' ? existing.name : (builtIn?.name ?? 'Door')
+                      } Copy`;
+                      const nextName = duplicateTypePromptName(defaultName);
+                      if (nextName == null) return;
                       const cmd = duplicateOpeningFamilyTypeCommand(
                         familyTypeId,
                         'door',
                         elementsById,
+                        undefined,
+                        nextName,
                       );
                       if (!cmd) return;
                       void Promise.resolve(onSemanticCommand(cmd)).then(() =>
@@ -580,10 +603,21 @@ export function WorkspaceRightRail({
                       })
                     }
                     onDuplicateType={(familyTypeId) => {
+                      const existing = familyTypeId ? elementsById[familyTypeId] : undefined;
+                      const builtIn = getTypeById(familyTypeId ?? '');
+                      const defaultName = `${
+                        existing?.kind === 'family_type'
+                          ? existing.name
+                          : (builtIn?.name ?? 'Window')
+                      } Copy`;
+                      const nextName = duplicateTypePromptName(defaultName);
+                      if (nextName == null) return;
                       const cmd = duplicateOpeningFamilyTypeCommand(
                         familyTypeId,
                         'window',
                         elementsById,
+                        undefined,
+                        nextName,
                       );
                       if (!cmd) return;
                       void Promise.resolve(onSemanticCommand(cmd)).then(() =>

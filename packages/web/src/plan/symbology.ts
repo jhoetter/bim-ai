@@ -33,6 +33,7 @@ import {
 } from './planElementMeshBuilders';
 import type { WallJoinRecord } from './planElementMeshBuilders';
 import { dormerPlanGroup } from './dormerPlanSymbol';
+import { addFamilyInstancePlanSymbols } from './familyInstancePlanRendering';
 
 /** Plan slice elevation in world units (walls still render with real height elsewhere). */
 
@@ -578,6 +579,7 @@ function rebuildPlanMeshesFromWire(
   elementsById: Record<string, Element>,
   opts: {
     activeLevelId?: string;
+    activeViewId?: string;
     selectedId?: string;
     presentation?: PlanPresentationPreset;
     hiddenSemanticKinds?: ReadonlySet<string>;
@@ -600,6 +602,7 @@ function rebuildPlanMeshesFromWire(
   const tagOpenScale = opts.planTagFontScales?.opening ?? 1;
   const tagRoomScale = opts.planTagFontScales?.room ?? 1;
   const kindHidden = (kind: string): boolean => opts.hiddenSemanticKinds?.has(kind) ?? false;
+  const wireDetail = opts.detailLevel ?? 'medium';
 
   const wallsRaw = Array.isArray(prim.walls) ? (prim.walls as Record<string, unknown>[]) : [];
   const wallsByWireId = new Map<string, Extract<Element, { kind: 'wall' }>>();
@@ -704,6 +707,12 @@ function rebuildPlanMeshesFromWire(
     activeLevelId: opts.activeLevelId,
     kindHidden,
   });
+  addFamilyInstancePlanSymbols(holder, elementsById, {
+    activeLevelId: opts.activeLevelId,
+    activeViewId: opts.activeViewId,
+    detailLevel: wireDetail,
+    kindHidden,
+  });
 
   const suppressProjection = opts.lineWeights?.projMinor === null;
 
@@ -745,8 +754,6 @@ function rebuildPlanMeshesFromWire(
       holder.add(grp);
     }
   }
-
-  const wireDetail = opts.detailLevel ?? 'medium';
 
   // Build a merged elementsById that includes wire-sourced walls for join lookups
   const elementsWithWireWalls: Record<string, Element> = { ...elementsById };
@@ -1201,6 +1208,7 @@ export function rebuildPlanMeshes(
     /** F-102: element IDs that are individually hidden but shown magenta in reveal mode. */
     revealHiddenElementIds?: ReadonlySet<string>;
     wirePrimitives?: PlanProjectionPrimitivesV1Wire | null;
+    activeViewId?: string;
     planGraphicHints?: PlanGraphicHintsResolved | null;
     planAnnotationHints?: PlanAnnotationHintsResolved | null;
     planTagFontScales?: { opening: number; room: number } | null;
@@ -1223,6 +1231,7 @@ export function rebuildPlanMeshes(
   if (opts.wirePrimitives && isPlanProjectionPrimitivesV1(opts.wirePrimitives)) {
     rebuildPlanMeshesFromWire(holder, elementsById, {
       activeLevelId: opts.activeLevelId,
+      activeViewId: opts.activeViewId,
       selectedId: opts.selectedId,
       presentation: opts.presentation,
       hiddenSemanticKinds: opts.hiddenSemanticKinds,
@@ -1332,6 +1341,17 @@ export function rebuildPlanMeshes(
     const before = holder.children.length;
     addPlacedAssetPlanSymbols(holder, elementsById, { activeLevelId: level, kindHidden });
     tintNewChildren(before, 'placed_asset');
+  }
+
+  {
+    const before = holder.children.length;
+    addFamilyInstancePlanSymbols(holder, elementsById, {
+      activeLevelId: level,
+      activeViewId: opts.activeViewId,
+      detailLevel,
+      kindHidden,
+    });
+    tintNewChildren(before, 'family_instance');
   }
 
   // CAN-V3-01: floor/roof outlines are projection geometry — suppress when projMajor is null (1:500+).

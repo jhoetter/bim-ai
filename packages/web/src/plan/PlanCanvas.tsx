@@ -144,6 +144,10 @@ import { parseTypedRotateAngle, rotateDeltaAngleFromReference } from './rotateTo
 import { selectNextConnectedWallByTab } from './wallChainSelection';
 import { buildWallRadiusFillet, type MmPoint } from './wallRadiusFillet';
 import { getFamilyById as getBuiltInFamilyById } from '../families/familyCatalog';
+import {
+  familyTypePlacesAsDetailComponent,
+  familyTypeRequiresWallHost,
+} from '../families/familyPlacementRuntime';
 import type { FamilyDefinition } from '../families/types';
 import {
   copyElementsToClipboard,
@@ -153,6 +157,7 @@ import {
 import { useToolPrefs } from '../tools/toolPrefsStore';
 import {
   activeComponentAssetId,
+  activeComponentFamilyTypeId,
   copyMultipleEnabled,
   mirrorCopyEnabled,
   pendingComponentRotationDeg,
@@ -1008,6 +1013,7 @@ export function PlanCanvas({
 
     rebuildPlanMeshes(grp, elementsByIdForRender, {
       activeLevelId: displayLevelId || undefined,
+      activeViewId: activePlanViewId || undefined,
       selectedId,
       presentation: display.presentation,
       hiddenSemanticKinds: revealHiddenMode ? new Set<string>() : display.hiddenSemanticKinds,
@@ -2283,6 +2289,7 @@ export function PlanCanvas({
       // F-115 — live ghost preview for the component placement tool.
       if (planTool === 'component') {
         const assetId = activeComponentAssetId;
+        const familyTypeId = activeComponentFamilyTypeId;
         const entry = assetId
           ? (() => {
               for (const el of Object.values(elementsById)) {
@@ -2293,8 +2300,14 @@ export function PlanCanvas({
               return undefined;
             })()
           : undefined;
-        const w = entry?.thumbnailWidthMm ?? 1000;
-        const h = entry?.thumbnailHeightMm ?? 600;
+        const familyType = familyTypeId ? elementsById[familyTypeId] : undefined;
+        const familyParams = familyType?.kind === 'family_type' ? familyType.parameters : undefined;
+        const w =
+          entry?.thumbnailWidthMm ??
+          Number(familyParams?.widthMm ?? familyParams?.Width ?? familyParams?.lengthMm ?? 1000);
+        const h =
+          entry?.thumbnailHeightMm ??
+          Number(familyParams?.depthMm ?? familyParams?.Depth ?? familyParams?.heightMm ?? 600);
         const rr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
         if (rr) {
           if (componentGhostRef.current) {
@@ -2769,6 +2782,7 @@ export function PlanCanvas({
           wallId: n.wall.id,
           alongT: n.alongT,
           widthMm: 900,
+          ...(activeComponentFamilyTypeId ? { familyTypeId: activeComponentFamilyTypeId } : {}),
         });
         return;
       }
@@ -2782,6 +2796,7 @@ export function PlanCanvas({
           widthMm: 1200,
           sillHeightMm: 900,
           heightMm: 1500,
+          ...(activeComponentFamilyTypeId ? { familyTypeId: activeComponentFamilyTypeId } : {}),
         });
         return;
       }
@@ -3369,6 +3384,7 @@ export function PlanCanvas({
       }
       if (planTool === 'component') {
         const assetId = activeComponentAssetId;
+        const familyTypeId = activeComponentFamilyTypeId;
         if (assetId && lvlId) {
           onSemanticCommand({
             type: 'PlaceAsset',
@@ -3378,6 +3394,31 @@ export function PlanCanvas({
             rotationDeg: pendingComponentRotationDeg,
           });
           bumpGeom((x) => x + 1);
+        } else if (familyTypeId) {
+          const familyType = elementsById[familyTypeId];
+          if (familyType?.kind === 'family_type') {
+            const placesAsDetail = familyTypePlacesAsDetailComponent(familyType);
+            const requiresWallHost = familyTypeRequiresWallHost(familyType);
+            const wallHit = requiresWallHost
+              ? nearestWallAt(elementsById, displayLevelId || undefined, sp.xMm, sp.yMm)
+              : undefined;
+            if (!requiresWallHost || (wallHit && wallHit.distMm <= 900)) {
+              onSemanticCommand({
+                type: 'placeFamilyInstance',
+                familyTypeId,
+                ...(placesAsDetail
+                  ? { hostViewId: activePlanViewId }
+                  : {
+                      levelId: lvlId,
+                      ...(requiresWallHost ? { hostViewId: activePlanViewId } : {}),
+                    }),
+                positionMm: sp,
+                rotationDeg: pendingComponentRotationDeg,
+                ...(wallHit ? { hostElementId: wallHit.wall.id, hostAlongT: wallHit.alongT } : {}),
+              });
+              bumpGeom((x) => x + 1);
+            }
+          }
         }
         // Clear ghost after placement so it does not linger if the cursor leaves the canvas.
         if (componentGhostRef.current) {

@@ -268,10 +268,88 @@ export interface MaterialPbrSpec {
   category: MaterialCategoryKind;
   /** Optional URL to a normal map texture (deferred — used by future PRs). */
   normalMapUrl?: string;
+  /** Appearance asset texture metadata, kept authorable even before texture loading. */
+  textureMapUrl?: string;
+  /** Appearance asset bump/normal metadata shown by the Asset Browser. */
+  bumpMapUrl?: string;
+  /** Approximate appearance reflectance for browser editing/readback. */
+  reflectance?: number;
   /** Optional plan/section hatch pattern label. */
   hatchPattern?: string;
   /** Human label for schedules / UI. */
   displayName: string;
+  source?: 'builtin' | 'curated_asset' | 'project' | 'family';
+  graphics?: {
+    useRenderAppearance?: boolean;
+    surfacePattern?: string;
+    cutPattern?: string;
+    shadedColor?: string;
+  };
+  physical?: {
+    materialClass?: string;
+    densityKgPerM3?: number;
+    compressiveStrengthMpa?: number;
+    manufacturer?: string;
+    comments?: string;
+  };
+  thermal?: {
+    conductivityWPerMK?: number;
+    specificHeatJPerKgK?: number;
+    thermalResistanceM2KPerW?: number;
+  };
+}
+
+export type MaterialCreateInput = {
+  displayName: string;
+  baseColor?: string;
+  category?: MaterialCategoryKind;
+  source?: 'project' | 'family';
+};
+
+export type MaterialUpdatePatch = Partial<
+  Omit<MaterialPbrSpec, 'key' | 'category' | 'source'> & {
+    category: MaterialCategoryKind;
+  }
+>;
+
+export const DEFAULT_PROJECT_MATERIAL_COLOR = '#b8b2a8';
+
+const DEFAULT_MATERIAL_METADATA = {
+  graphics: {
+    useRenderAppearance: true,
+    surfacePattern: 'Solid fill',
+    cutPattern: 'By material',
+  },
+  physical: {
+    materialClass: 'Generic',
+    densityKgPerM3: 1200,
+  },
+  thermal: {
+    conductivityWPerMK: 0.35,
+    specificHeatJPerKgK: 900,
+    thermalResistanceM2KPerW: 0.12,
+  },
+} satisfies Pick<MaterialPbrSpec, 'graphics' | 'physical' | 'thermal'>;
+
+function withDefaultMetadata(spec: MaterialPbrSpec): MaterialPbrSpec {
+  return {
+    ...spec,
+    source: spec.source ?? 'builtin',
+    reflectance: spec.reflectance ?? Math.max(0, Math.min(1, 1 - spec.roughness)),
+    graphics: { ...DEFAULT_MATERIAL_METADATA.graphics, ...spec.graphics },
+    physical: { ...DEFAULT_MATERIAL_METADATA.physical, ...spec.physical },
+    thermal: { ...DEFAULT_MATERIAL_METADATA.thermal, ...spec.thermal },
+  };
+}
+
+function materialSlug(label: string): string {
+  return (
+    label
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'material'
+  );
 }
 
 const MATERIAL_REGISTRY: Record<string, MaterialPbrSpec> = {
@@ -594,17 +672,318 @@ const MATERIAL_REGISTRY: Record<string, MaterialPbrSpec> = {
     category: 'placeholder',
     displayName: 'Placeholder (unloaded)',
   },
+
+  // Curated appearance assets exposed by the Revit-style Asset Browser.
+  asset_oak_plank_satin: {
+    key: 'asset_oak_plank_satin',
+    baseColor: '#b8894d',
+    roughness: 0.42,
+    metalness: 0,
+    category: 'timber',
+    displayName: 'Oak plank - satin',
+    textureMapUrl: 'library/wood/oak-plank-satin-albedo',
+    bumpMapUrl: 'library/wood/oak-plank-satin-bump',
+    reflectance: 0.58,
+    hatchPattern: 'wood',
+    source: 'curated_asset',
+    physical: { materialClass: 'Wood', densityKgPerM3: 710, manufacturer: 'bim-ai library' },
+    thermal: { conductivityWPerMK: 0.17, specificHeatJPerKgK: 1600 },
+  },
+  asset_walnut_veneer_matte: {
+    key: 'asset_walnut_veneer_matte',
+    baseColor: '#5d3928',
+    roughness: 0.62,
+    metalness: 0,
+    category: 'timber',
+    displayName: 'Walnut veneer - matte',
+    textureMapUrl: 'library/wood/walnut-veneer-matte-albedo',
+    bumpMapUrl: 'library/wood/walnut-veneer-matte-bump',
+    reflectance: 0.38,
+    hatchPattern: 'wood',
+    source: 'curated_asset',
+    physical: { materialClass: 'Wood', densityKgPerM3: 650 },
+    thermal: { conductivityWPerMK: 0.16, specificHeatJPerKgK: 1500 },
+  },
+  asset_birch_plywood: {
+    key: 'asset_birch_plywood',
+    baseColor: '#d5b77e',
+    roughness: 0.55,
+    metalness: 0,
+    category: 'timber',
+    displayName: 'Birch plywood',
+    textureMapUrl: 'library/wood/birch-plywood-albedo',
+    bumpMapUrl: 'library/wood/birch-plywood-bump',
+    reflectance: 0.45,
+    hatchPattern: 'plywood',
+    source: 'curated_asset',
+    physical: { materialClass: 'Wood panel', densityKgPerM3: 680 },
+    thermal: { conductivityWPerMK: 0.13, specificHeatJPerKgK: 1700 },
+  },
+  asset_polished_concrete_warm: {
+    key: 'asset_polished_concrete_warm',
+    baseColor: '#aaa49a',
+    roughness: 0.28,
+    metalness: 0,
+    category: 'concrete',
+    displayName: 'Polished concrete - warm',
+    textureMapUrl: 'library/concrete/polished-warm-albedo',
+    bumpMapUrl: 'library/concrete/polished-warm-bump',
+    reflectance: 0.72,
+    hatchPattern: 'concrete',
+    source: 'curated_asset',
+    physical: { materialClass: 'Concrete', densityKgPerM3: 2400, compressiveStrengthMpa: 35 },
+    thermal: { conductivityWPerMK: 1.4, specificHeatJPerKgK: 880 },
+  },
+  asset_board_form_concrete_fine: {
+    key: 'asset_board_form_concrete_fine',
+    baseColor: '#918b82',
+    roughness: 0.76,
+    metalness: 0,
+    category: 'concrete',
+    displayName: 'Board form concrete - fine grain',
+    textureMapUrl: 'library/concrete/board-form-fine-albedo',
+    bumpMapUrl: 'library/concrete/board-form-fine-bump',
+    reflectance: 0.24,
+    hatchPattern: 'concrete',
+    source: 'curated_asset',
+    physical: { materialClass: 'Concrete', densityKgPerM3: 2350, compressiveStrengthMpa: 30 },
+    thermal: { conductivityWPerMK: 1.35, specificHeatJPerKgK: 880 },
+  },
+  asset_cast_concrete_light: {
+    key: 'asset_cast_concrete_light',
+    baseColor: '#c7c2b8',
+    roughness: 0.68,
+    metalness: 0,
+    category: 'concrete',
+    displayName: 'Cast concrete - light',
+    textureMapUrl: 'library/concrete/cast-light-albedo',
+    bumpMapUrl: 'library/concrete/cast-light-bump',
+    reflectance: 0.32,
+    hatchPattern: 'concrete',
+    source: 'curated_asset',
+    physical: { materialClass: 'Concrete', densityKgPerM3: 2300, compressiveStrengthMpa: 25 },
+    thermal: { conductivityWPerMK: 1.25, specificHeatJPerKgK: 880 },
+  },
+  asset_brick_running_red: {
+    key: 'asset_brick_running_red',
+    baseColor: '#944834',
+    roughness: 0.88,
+    metalness: 0,
+    category: 'brick',
+    displayName: 'Brick running bond - red',
+    textureMapUrl: 'library/masonry/brick-running-red-albedo',
+    bumpMapUrl: 'library/masonry/brick-running-red-bump',
+    reflectance: 0.12,
+    hatchPattern: 'brick',
+    source: 'curated_asset',
+    physical: { materialClass: 'Masonry', densityKgPerM3: 1800 },
+    thermal: { conductivityWPerMK: 0.77, specificHeatJPerKgK: 840 },
+  },
+  asset_brick_stack_grey: {
+    key: 'asset_brick_stack_grey',
+    baseColor: '#74716c',
+    roughness: 0.86,
+    metalness: 0,
+    category: 'brick',
+    displayName: 'Brick stack bond - grey',
+    textureMapUrl: 'library/masonry/brick-stack-grey-albedo',
+    bumpMapUrl: 'library/masonry/brick-stack-grey-bump',
+    reflectance: 0.14,
+    hatchPattern: 'brick',
+    source: 'curated_asset',
+    physical: { materialClass: 'Masonry', densityKgPerM3: 1750 },
+    thermal: { conductivityWPerMK: 0.72, specificHeatJPerKgK: 840 },
+  },
+  asset_limestone_honed: {
+    key: 'asset_limestone_honed',
+    baseColor: '#cfc6ad',
+    roughness: 0.5,
+    metalness: 0,
+    category: 'stone',
+    displayName: 'Limestone - honed',
+    textureMapUrl: 'library/stone/limestone-honed-albedo',
+    bumpMapUrl: 'library/stone/limestone-honed-bump',
+    reflectance: 0.5,
+    hatchPattern: 'stone',
+    source: 'curated_asset',
+    physical: { materialClass: 'Stone', densityKgPerM3: 2550 },
+    thermal: { conductivityWPerMK: 1.3, specificHeatJPerKgK: 910 },
+  },
+  asset_slate_cleft: {
+    key: 'asset_slate_cleft',
+    baseColor: '#34383a',
+    roughness: 0.74,
+    metalness: 0,
+    category: 'stone',
+    displayName: 'Slate - cleft',
+    textureMapUrl: 'library/stone/slate-cleft-albedo',
+    bumpMapUrl: 'library/stone/slate-cleft-bump',
+    reflectance: 0.2,
+    hatchPattern: 'stone',
+    source: 'curated_asset',
+    physical: { materialClass: 'Stone', densityKgPerM3: 2700 },
+    thermal: { conductivityWPerMK: 2.0, specificHeatJPerKgK: 760 },
+  },
+  asset_stainless_brushed: {
+    key: 'asset_stainless_brushed',
+    baseColor: '#b7b8b5',
+    roughness: 0.24,
+    metalness: 0.9,
+    category: 'metal',
+    displayName: 'Stainless steel - brushed',
+    textureMapUrl: 'library/metal/stainless-brushed-albedo',
+    bumpMapUrl: 'library/metal/stainless-brushed-brush-lines',
+    reflectance: 0.76,
+    source: 'curated_asset',
+    physical: { materialClass: 'Metal', densityKgPerM3: 8000 },
+    thermal: { conductivityWPerMK: 16, specificHeatJPerKgK: 500 },
+  },
+  asset_anodized_black: {
+    key: 'asset_anodized_black',
+    baseColor: '#151617',
+    roughness: 0.36,
+    metalness: 0.7,
+    category: 'metal',
+    displayName: 'Anodized aluminium - black',
+    textureMapUrl: 'library/metal/anodized-black-albedo',
+    bumpMapUrl: 'library/metal/anodized-black-bump',
+    reflectance: 0.64,
+    source: 'curated_asset',
+    physical: { materialClass: 'Metal', densityKgPerM3: 2700 },
+    thermal: { conductivityWPerMK: 205, specificHeatJPerKgK: 900 },
+  },
+  asset_copper_patina: {
+    key: 'asset_copper_patina',
+    baseColor: '#4e8b7d',
+    roughness: 0.7,
+    metalness: 0.55,
+    category: 'metal_roof',
+    displayName: 'Copper roof - aged patina',
+    textureMapUrl: 'library/roof/copper-patina-albedo',
+    bumpMapUrl: 'library/roof/copper-patina-bump',
+    reflectance: 0.3,
+    source: 'curated_asset',
+    physical: { materialClass: 'Metal roofing', densityKgPerM3: 8940 },
+    thermal: { conductivityWPerMK: 385, specificHeatJPerKgK: 385 },
+  },
+  asset_clear_glass_double: {
+    key: 'asset_clear_glass_double',
+    baseColor: '#c8e4f1',
+    roughness: 0.02,
+    metalness: 0,
+    category: 'glass',
+    displayName: 'Clear glass - double glazed',
+    textureMapUrl: 'library/glass/clear-double-transmission',
+    bumpMapUrl: 'library/glass/clear-double-wave',
+    reflectance: 0.98,
+    source: 'curated_asset',
+    physical: { materialClass: 'Glass', densityKgPerM3: 2500 },
+    thermal: { conductivityWPerMK: 0.8, specificHeatJPerKgK: 840, thermalResistanceM2KPerW: 0.35 },
+  },
+  asset_spandrel_glass_grey: {
+    key: 'asset_spandrel_glass_grey',
+    baseColor: '#79828a',
+    roughness: 0.18,
+    metalness: 0,
+    category: 'glass',
+    displayName: 'Spandrel glass - grey',
+    textureMapUrl: 'library/glass/spandrel-grey-albedo',
+    bumpMapUrl: 'library/glass/spandrel-grey-bump',
+    reflectance: 0.82,
+    source: 'curated_asset',
+    physical: { materialClass: 'Glass', densityKgPerM3: 2500 },
+    thermal: { conductivityWPerMK: 0.9, specificHeatJPerKgK: 840 },
+  },
+  asset_acoustic_plaster_white: {
+    key: 'asset_acoustic_plaster_white',
+    baseColor: '#eee9df',
+    roughness: 0.96,
+    metalness: 0,
+    category: 'plaster',
+    displayName: 'Acoustic plaster - white',
+    textureMapUrl: 'library/plaster/acoustic-white-albedo',
+    bumpMapUrl: 'library/plaster/acoustic-white-bump',
+    reflectance: 0.04,
+    hatchPattern: 'plaster',
+    source: 'curated_asset',
+    physical: { materialClass: 'Plaster', densityKgPerM3: 950 },
+    thermal: { conductivityWPerMK: 0.22, specificHeatJPerKgK: 1000 },
+  },
+  asset_epdm_membrane_black: {
+    key: 'asset_epdm_membrane_black',
+    baseColor: '#202020',
+    roughness: 0.8,
+    metalness: 0,
+    category: 'membrane',
+    displayName: 'EPDM membrane - black',
+    textureMapUrl: 'library/membrane/epdm-black-albedo',
+    bumpMapUrl: 'library/membrane/epdm-black-bump',
+    reflectance: 0.2,
+    hatchPattern: 'membrane',
+    source: 'curated_asset',
+    physical: { materialClass: 'Membrane', densityKgPerM3: 1100 },
+    thermal: { conductivityWPerMK: 0.25, specificHeatJPerKgK: 1900 },
+  },
 };
+
+function nextMaterialKey(displayName: string): string {
+  const base = `project_${materialSlug(displayName)}`;
+  if (!MATERIAL_REGISTRY[base]) return base;
+  let suffix = 2;
+  while (MATERIAL_REGISTRY[`${base}_${suffix}`]) suffix += 1;
+  return `${base}_${suffix}`;
+}
+
+export function createProjectMaterial(input: MaterialCreateInput): MaterialPbrSpec {
+  const displayName = input.displayName.trim() || 'New Material';
+  const key = nextMaterialKey(displayName);
+  const spec = withDefaultMetadata({
+    key,
+    baseColor: input.baseColor ?? DEFAULT_PROJECT_MATERIAL_COLOR,
+    roughness: 0.72,
+    metalness: 0,
+    category: input.category ?? 'placeholder',
+    displayName,
+    source: input.source ?? 'project',
+  });
+  MATERIAL_REGISTRY[key] = spec;
+  return spec;
+}
+
+export function renameMaterial(materialKey: string, displayName: string): MaterialPbrSpec | null {
+  const existing = MATERIAL_REGISTRY[materialKey];
+  const nextName = displayName.trim();
+  if (!existing || !nextName) return null;
+  MATERIAL_REGISTRY[materialKey] = { ...existing, displayName: nextName };
+  return withDefaultMetadata(MATERIAL_REGISTRY[materialKey]);
+}
+
+export function updateMaterialDefinition(
+  materialKey: string,
+  patch: MaterialUpdatePatch,
+): MaterialPbrSpec | null {
+  const existing = MATERIAL_REGISTRY[materialKey];
+  if (!existing) return null;
+  MATERIAL_REGISTRY[materialKey] = withDefaultMetadata({
+    ...existing,
+    ...patch,
+    graphics: { ...existing.graphics, ...patch.graphics },
+    physical: { ...existing.physical, ...patch.physical },
+    thermal: { ...existing.thermal, ...patch.thermal },
+  });
+  return MATERIAL_REGISTRY[materialKey];
+}
 
 /** Resolve a `materialKey` to its PBR spec, or null if unknown. */
 export function resolveMaterial(materialKey: string | null | undefined): MaterialPbrSpec | null {
   if (!materialKey) return null;
-  return MATERIAL_REGISTRY[materialKey] ?? null;
+  const spec = MATERIAL_REGISTRY[materialKey];
+  return spec ? withDefaultMetadata(spec) : null;
 }
 
 /** Read-only view of every registered material spec. */
 export function listMaterials(): MaterialPbrSpec[] {
-  return Object.values(MATERIAL_REGISTRY);
+  return Object.values(MATERIAL_REGISTRY).map(withDefaultMetadata);
 }
 
 /** Cheap base-colour lookup (legacy callers); falls back to neutral grey. */

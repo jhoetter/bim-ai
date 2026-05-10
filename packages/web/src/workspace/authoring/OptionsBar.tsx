@@ -39,6 +39,12 @@ export function setActiveComponentAssetId(v: string | null): void {
   activeComponentAssetId = v;
 }
 
+/** Selected project family_type for generic loaded-family placement. */
+export let activeComponentFamilyTypeId: string | null = null;
+export function setActiveComponentFamilyTypeId(v: string | null): void {
+  activeComponentFamilyTypeId = v;
+}
+
 /**
  * Module-level pending rotation for the component placement tool.
  * Spacebar in PlanCanvas increments this by 90° (mod 360).
@@ -365,6 +371,7 @@ export function OptionsBar(): JSX.Element | null {
             defaultValue={activeComponentAssetId ?? ''}
             onChange={(e) => {
               setActiveComponentAssetId(e.target.value || null);
+              setActiveComponentFamilyTypeId(null);
             }}
             className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
             aria-label="Component asset"

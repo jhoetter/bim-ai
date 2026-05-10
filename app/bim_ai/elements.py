@@ -1703,6 +1703,24 @@ class FamilyTypeElem(BaseModel):
     catalog_source: FamilyCatalogSource | None = Field(default=None, alias="catalogSource")
 
 
+class FamilyInstanceElem(BaseModel):
+    """Placed instance of a project-loaded family_type."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["family_instance"] = "family_instance"
+    id: str
+    name: str = ""
+    family_type_id: str = Field(alias="familyTypeId")
+    level_id: str | None = Field(default=None, alias="levelId")
+    host_view_id: str | None = Field(default=None, alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    param_values: dict[str, Any] = Field(default_factory=dict, alias="paramValues")
+    host_element_id: str | None = Field(default=None, alias="hostElementId")
+    host_along_t: float | None = Field(default=None, alias="hostAlongT")
+    discipline: DisciplineTag | None = Field(default=None)
+
+
 class RoomSeparationElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["room_separation"] = "room_separation"
@@ -2443,6 +2461,7 @@ ElementKind = Literal[
     "roof_opening",
     "railing",
     "family_type",
+    "family_instance",
     "room_separation",
     "plan_region",
     "tag_definition",
@@ -3256,6 +3275,7 @@ Element = Annotated[
     | RepeatingDetailElem
     | DetailGroupElem
     | ColorFillLegendElem
+    | FamilyInstanceElem
     | ColumnElem
     | BeamElem
     | CeilingElem

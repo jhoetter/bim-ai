@@ -47,6 +47,19 @@ function countLinesForPick(root: THREE.Object3D, pickId: string): number {
   return n;
 }
 
+function countFamilySymbolicLines(root: THREE.Object3D, pickId: string): number {
+  let n = 0;
+  root.traverse((o) => {
+    if (
+      o instanceof THREE.Line &&
+      o.userData.bimPickId === pickId &&
+      o.userData.familySymbolicSubcategory
+    )
+      n += 1;
+  });
+  return n;
+}
+
 function assetLinesRenderAbovePlanFill(root: THREE.Object3D, pickId: string): boolean {
   let ok = true;
   root.traverse((o) => {
@@ -866,5 +879,70 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
       }
     });
     expect(symbolKind).toBe('fridge');
+  });
+
+  it('renders loaded family symbolic lines with detail-level visibility in project plan', () => {
+    const familyType: Extract<Element, { kind: 'family_type' }> = {
+      kind: 'family_type',
+      id: 'ft-chair',
+      name: 'Chair Type',
+      familyId: 'fam-chair',
+      discipline: 'generic',
+      parameters: {
+        __familyDefinition: {
+          id: 'fam-chair',
+          name: 'Chair',
+          discipline: 'generic',
+          params: [],
+          defaultTypes: [],
+          symbolicLines: [
+            {
+              startMm: { xMm: -250, yMm: -250 },
+              endMm: { xMm: 250, yMm: -250 },
+              subcategory: 'symbolic',
+              visibilityByDetailLevel: { coarse: true, medium: false, fine: false },
+            },
+            {
+              startMm: { xMm: -250, yMm: 250 },
+              endMm: { xMm: 250, yMm: 250 },
+              subcategory: 'hidden_cut',
+              visibilityByDetailLevel: { coarse: false, medium: true, fine: true },
+            },
+          ],
+        },
+      },
+    };
+    const instance: Extract<Element, { kind: 'family_instance' }> = {
+      kind: 'family_instance',
+      id: 'fi-chair',
+      name: 'Chair 1',
+      familyTypeId: 'ft-chair',
+      levelId: 'lvl',
+      positionMm: { xMm: 1000, yMm: 1200 },
+    };
+
+    const coarse = new THREE.Group();
+    rebuildPlanMeshes(
+      coarse,
+      { 'ft-chair': familyType, 'fi-chair': instance },
+      {
+        activeLevelId: 'lvl',
+        planGraphicHints: { detailLevel: 'coarse' } as never,
+      },
+    );
+
+    const medium = new THREE.Group();
+    rebuildPlanMeshes(
+      medium,
+      { 'ft-chair': familyType, 'fi-chair': instance },
+      {
+        activeLevelId: 'lvl',
+        planGraphicHints: { detailLevel: 'medium' } as never,
+      },
+    );
+
+    expect(countFamilySymbolicLines(coarse, 'fi-chair')).toBe(1);
+    expect(countFamilySymbolicLines(medium, 'fi-chair')).toBe(1);
+    expect(someLineHasDashedMaterial(medium)).toBe(true);
   });
 });
