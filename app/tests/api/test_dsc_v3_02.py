@@ -86,7 +86,10 @@ def _build_test_app() -> FastAPI:
             if blocking & _BLOCKING_ADVISORY_CLASSES:
                 raise HTTPException(
                     status_code=409,
-                    detail={"result": result.model_dump(by_alias=True), "violations": result.violations},
+                    detail={
+                        "result": result.model_dump(by_alias=True),
+                        "violations": result.violations,
+                    },
                 )
 
         if result.applied and result.new_revision is not None and new_doc is not None:
@@ -107,6 +110,7 @@ def _build_test_app() -> FastAPI:
     @app.get("/api/v3/tools")
     async def list_tools() -> Any:
         from bim_ai.api.registry import get_catalog
+
         catalog = get_catalog()
         return {"tools": [{"name": t.name} for t in catalog.tools]}
 
@@ -234,7 +238,9 @@ class TestSetViewLensViaEngine:
         bundle = CommandBundle.model_validate(
             {
                 "schemaVersion": "cmd-v3.0",
-                "commands": [{"type": "set_view_lens", "viewId": "nonexistent", "lens": "show_all"}],
+                "commands": [
+                    {"type": "set_view_lens", "viewId": "nonexistent", "lens": "show_all"}
+                ],
                 "assumptions": [_VALID_ASSUMPTION],
                 "parentRevision": 1,
             }

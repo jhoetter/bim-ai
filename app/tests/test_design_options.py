@@ -82,12 +82,8 @@ def test_add_option():
 def test_add_option_is_primary_clears_siblings():
     doc = _base_doc()
     apply_inplace(doc, CreateOptionSetCmd(id="set1", name="Kitchen"))
-    apply_inplace(
-        doc, AddOptionCmd(optionSetId="set1", optionId="opt_a", name="A", isPrimary=True)
-    )
-    apply_inplace(
-        doc, AddOptionCmd(optionSetId="set1", optionId="opt_b", name="B", isPrimary=True)
-    )
+    apply_inplace(doc, AddOptionCmd(optionSetId="set1", optionId="opt_a", name="A", isPrimary=True))
+    apply_inplace(doc, AddOptionCmd(optionSetId="set1", optionId="opt_b", name="B", isPrimary=True))
     the_set = doc.design_option_sets[0]
     assert the_set.options[0].is_primary is False
     assert the_set.options[1].is_primary is True
@@ -210,9 +206,7 @@ def test_assign_element_unknown_element_raises():
     with pytest.raises(ValueError, match="not found"):
         apply_inplace(
             doc,
-            AssignElementToOptionCmd(
-                elementId="no_elem", optionSetId="set1", optionId="opt_a"
-            ),
+            AssignElementToOptionCmd(elementId="no_elem", optionSetId="set1", optionId="opt_a"),
         )
 
 
@@ -237,9 +231,7 @@ def test_set_view_option_lock_clear():
     doc = _doc_with_plan_view()
     apply_inplace(doc, CreateOptionSetCmd(id="set1", name="Kitchen"))
     apply_inplace(doc, AddOptionCmd(optionSetId="set1", optionId="opt_a", name="A"))
-    apply_inplace(
-        doc, SetViewOptionLockCmd(viewId="pv1", optionSetId="set1", optionId="opt_a")
-    )
+    apply_inplace(doc, SetViewOptionLockCmd(viewId="pv1", optionSetId="set1", optionId="opt_a"))
     apply_inplace(doc, SetViewOptionLockCmd(viewId="pv1", optionSetId="set1", optionId=None))
     view = doc.elements["pv1"]
     assert view.option_locks == {}

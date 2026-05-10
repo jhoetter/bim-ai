@@ -175,7 +175,14 @@ def test_set_element_override_replaces_same_category() -> None:
 
 def test_set_element_override_on_non_view_fails() -> None:
     doc = _seed()
-    cmds = [{"type": "SetElementOverride", "viewId": "bogus", "categoryOrId": "wall", "alternateRender": "outline"}]
+    cmds = [
+        {
+            "type": "SetElementOverride",
+            "viewId": "bogus",
+            "categoryOrId": "wall",
+            "alternateRender": "outline",
+        }
+    ]
     ok, *_ = try_commit_bundle(doc, cmds)
     assert not ok
 
