@@ -68,6 +68,41 @@ def test_update_element_property_room_fill_override_hex_roundtrip() -> None:
     assert r2.room_fill_override_hex is None
 
 
+def test_update_element_property_room_fill_pattern_override_validates() -> None:
+    lv = LevelElem(kind="level", id="lv", name="L1", elevation_mm=0)
+    rm = RoomElem(
+        kind="room",
+        id="rm-1",
+        name="R",
+        level_id="lv",
+        outline_mm=_sq(((0.0, 0.0), (2000.0, 0.0), (2000.0, 1000.0), (0.0, 1000.0))),
+    )
+    doc = Document(revision=1, elements={"lv": lv, "rm-1": rm})
+    apply_inplace(
+        doc,
+        UpdateElementPropertyCmd(
+            elementId="rm-1", key="roomFillPatternOverride", value="crosshatch"
+        ),
+    )
+    r = doc.elements["rm-1"]
+    assert isinstance(r, RoomElem)
+    assert r.room_fill_pattern_override == "crosshatch"
+    apply_inplace(
+        doc, UpdateElementPropertyCmd(elementId="rm-1", key="roomFillPatternOverride", value="")
+    )
+    r2 = doc.elements["rm-1"]
+    assert isinstance(r2, RoomElem)
+    assert r2.room_fill_pattern_override is None
+
+    with pytest.raises(ValueError, match="roomFillPatternOverride"):
+        apply_inplace(
+            doc,
+            UpdateElementPropertyCmd(
+                elementId="rm-1", key="roomFillPatternOverride", value="diagonal"
+            ),
+        )
+
+
 def test_create_room_rectangle_with_target_area_m2() -> None:
     from bim_ai.engine import try_commit
 

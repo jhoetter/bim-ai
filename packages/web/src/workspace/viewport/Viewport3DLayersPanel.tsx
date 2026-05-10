@@ -2,6 +2,7 @@ import { type JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
 import { useBimStore } from '../../state/store';
+import type { ViewerRenderStyle } from '../../state/storeTypes';
 
 export const VIEWER_HIDDEN_KIND_KEYS = [
   'wall',
@@ -15,7 +16,6 @@ export const VIEWER_HIDDEN_KIND_KEYS = [
 ] as const;
 
 export type ViewerHiddenKindKey = (typeof VIEWER_HIDDEN_KIND_KEYS)[number];
-type ViewerRenderStyle = 'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line';
 type ViewerEdgeWidth = 1 | 2 | 3 | 4;
 
 type ViewerGdoRuntimeState = {
@@ -23,6 +23,7 @@ type ViewerGdoRuntimeState = {
   viewerAmbientOcclusionEnabled?: boolean;
   viewerDepthCueEnabled?: boolean;
   viewerSilhouetteEdgeWidth?: ViewerEdgeWidth;
+  viewerPhotographicExposureEv?: number;
 };
 
 const GDO_STORAGE_KEYS = {
@@ -30,7 +31,12 @@ const GDO_STORAGE_KEYS = {
   ambientOcclusion: 'bim.viewer.ambientOcclusionEnabled',
   depthCue: 'bim.viewer.depthCueEnabled',
   silhouetteEdgeWidth: 'bim.viewer.silhouetteEdgeWidth',
+  photographicExposureEv: 'bim.viewer.photographicExposureEv',
 } as const;
+
+const PHOTOGRAPHIC_EXPOSURE_EV_MIN = -2;
+const PHOTOGRAPHIC_EXPOSURE_EV_MAX = 2;
+const PHOTOGRAPHIC_EXPOSURE_EV_STEP = 0.25;
 
 function readStoredBoolean(key: string, fallback: boolean): boolean {
   try {
@@ -51,6 +57,28 @@ function readStoredEdgeWidth(): ViewerEdgeWidth {
     /* noop */
   }
   return 1;
+}
+
+function normalizeExposureEv(value: unknown, fallback = 0): number {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  const stepped = Math.round(n / PHOTOGRAPHIC_EXPOSURE_EV_STEP) * PHOTOGRAPHIC_EXPOSURE_EV_STEP;
+  return Math.min(PHOTOGRAPHIC_EXPOSURE_EV_MAX, Math.max(PHOTOGRAPHIC_EXPOSURE_EV_MIN, stepped));
+}
+
+function readStoredExposureEv(): number {
+  try {
+    const raw = localStorage.getItem(GDO_STORAGE_KEYS.photographicExposureEv);
+    if (raw != null) return normalizeExposureEv(raw);
+  } catch {
+    /* noop */
+  }
+  return 0;
+}
+
+function formatExposureEv(value: number): string {
+  const fixed = value.toFixed(2).replace(/\.?0+$/, '');
+  return value > 0 ? `+${fixed}` : fixed;
 }
 
 function writeStoredString(key: string, value: string): void {
@@ -89,6 +117,16 @@ const GRAPHIC_STYLE_OPTIONS: Array<{
     value: 'hidden-line',
     label: 'Hidden',
     title: 'Show clean documentation-style outlines',
+  },
+  {
+    value: 'realistic',
+    label: 'Realistic',
+    title: 'Show physically lit materials with photographic tone mapping',
+  },
+  {
+    value: 'ray-trace',
+    label: 'Ray trace',
+    title: 'Show a high-quality ray-trace-style preview with soft shadows',
   },
 ];
 
@@ -140,6 +178,8 @@ export interface Viewport3DLayersPanelProps {
   onSetDepthCueEnabled?: (enabled: boolean) => void;
   viewerSilhouetteEdgeWidth?: ViewerEdgeWidth;
   onSetSilhouetteEdgeWidth?: (width: ViewerEdgeWidth) => void;
+  viewerPhotographicExposureEv?: number;
+  onSetPhotographicExposureEv?: (ev: number) => void;
   viewerProjection: 'perspective' | 'orthographic';
   onSetProjection: (projection: 'perspective' | 'orthographic') => void;
   sectionBoxActive: boolean;
@@ -175,6 +215,8 @@ export function Viewport3DLayersPanel({
   onSetDepthCueEnabled,
   viewerSilhouetteEdgeWidth,
   onSetSilhouetteEdgeWidth,
+  viewerPhotographicExposureEv,
+  onSetPhotographicExposureEv,
   viewerProjection,
   onSetProjection,
   sectionBoxActive,
@@ -208,6 +250,11 @@ export function Viewport3DLayersPanel({
     readStoredBoolean(GDO_STORAGE_KEYS.depthCue, false);
   const resolvedSilhouetteEdgeWidth =
     viewerSilhouetteEdgeWidth ?? storedGdo.viewerSilhouetteEdgeWidth ?? readStoredEdgeWidth();
+  const resolvedPhotographicExposureEv = normalizeExposureEv(
+    viewerPhotographicExposureEv ??
+      storedGdo.viewerPhotographicExposureEv ??
+      readStoredExposureEv(),
+  );
 
   const setShadowsEnabled = (enabled: boolean): void => {
     writeStoredString(GDO_STORAGE_KEYS.shadows, String(enabled));
@@ -228,6 +275,12 @@ export function Viewport3DLayersPanel({
     writeStoredString(GDO_STORAGE_KEYS.silhouetteEdgeWidth, String(width));
     setViewerGdoRuntimeState({ viewerSilhouetteEdgeWidth: width });
     onSetSilhouetteEdgeWidth?.(width);
+  };
+  const setPhotographicExposureEv = (ev: number): void => {
+    const next = normalizeExposureEv(ev);
+    writeStoredString(GDO_STORAGE_KEYS.photographicExposureEv, String(next));
+    setViewerGdoRuntimeState({ viewerPhotographicExposureEv: next });
+    onSetPhotographicExposureEv?.(next);
   };
   const iconForKind: Record<ViewerHiddenKindKey, typeof Icons.wall> = {
     wall: Icons.wall,
@@ -252,6 +305,7 @@ export function Viewport3DLayersPanel({
           <ViewStatePill label={activeStyleLabel} />
           <ViewStatePill label={viewerProjection === 'orthographic' ? 'Ortho' : 'Perspective'} />
           <ViewStatePill label={resolvedShadowsEnabled ? 'Shadows' : 'No shadows'} />
+          <ViewStatePill label={`EV ${formatExposureEv(resolvedPhotographicExposureEv)}`} />
           {resolvedDepthCueEnabled ? <ViewStatePill label="Depth cue" /> : null}
           <ViewStatePill label={sectionBoxActive ? 'Section box' : 'No section box'} />
           {hiddenLayerCount > 0 ? <ViewStatePill label={`${hiddenLayerCount} hidden`} /> : null}
@@ -379,6 +433,23 @@ export function Viewport3DLayersPanel({
                 onClick={() => setDepthCueEnabled(!resolvedDepthCueEnabled)}
               />
             </div>
+          </div>
+          <div>
+            <div className="mb-1 flex items-center justify-between gap-2 text-[10px] text-muted">
+              <span>Exposure</span>
+              <span>EV {formatExposureEv(resolvedPhotographicExposureEv)}</span>
+            </div>
+            <input
+              type="range"
+              aria-label="Photographic exposure"
+              title="Photographic exposure"
+              min={PHOTOGRAPHIC_EXPOSURE_EV_MIN}
+              max={PHOTOGRAPHIC_EXPOSURE_EV_MAX}
+              step={PHOTOGRAPHIC_EXPOSURE_EV_STEP}
+              value={resolvedPhotographicExposureEv}
+              onChange={(e) => setPhotographicExposureEv(Number(e.target.value))}
+              className="w-full accent-accent"
+            />
           </div>
         </div>
       </section>
@@ -644,6 +715,34 @@ function GraphicStylePreview({
         <span className="absolute bottom-1 left-1.5 h-4 w-3 rounded-sm border border-border bg-sky-300/80" />
         <span className="absolute bottom-1 left-4 h-5 w-3 rounded-sm border border-border bg-emerald-300/80" />
         <span className="absolute bottom-1 right-1.5 h-3 w-3 rounded-sm border border-border bg-amber-300/80" />
+      </span>
+    );
+  }
+
+  if (style === 'realistic') {
+    return (
+      <span
+        data-testid="graphic-style-preview-realistic"
+        aria-hidden="true"
+        className={`relative h-7 w-10 overflow-hidden rounded border ${border} bg-gradient-to-br from-sky-100 via-surface to-stone-200`}
+      >
+        <span className="absolute bottom-1 left-1.5 h-4 w-4 rounded-sm border border-border bg-stone-300 shadow-md" />
+        <span className="absolute bottom-2 left-4 h-5 w-4 rounded-sm border border-border bg-emerald-200 shadow-sm" />
+        <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-white shadow" />
+      </span>
+    );
+  }
+
+  if (style === 'ray-trace') {
+    return (
+      <span
+        data-testid="graphic-style-preview-ray-trace"
+        aria-hidden="true"
+        className={`relative h-7 w-10 overflow-hidden rounded border ${border} bg-gradient-to-br from-slate-100 via-white to-sky-100`}
+      >
+        <span className="absolute bottom-1 left-1 h-4 w-6 rounded-sm border border-border bg-surface shadow-lg" />
+        <span className="absolute bottom-4 left-5 h-px w-4 rotate-[-18deg] bg-white/90 shadow" />
+        <span className="absolute bottom-1 right-1 h-1 w-7 rounded-full bg-foreground/15 blur-[1px]" />
       </span>
     );
   }

@@ -32,6 +32,12 @@ function fmtOnOff(v: boolean | null | undefined): string {
   return v ? 'on' : 'off';
 }
 
+function fmtExposureEv(v: number | null | undefined): string {
+  if (v == null || !Number.isFinite(v)) return 'inherit';
+  const fixed = v.toFixed(2).replace(/\.?0+$/, '');
+  return v > 0 ? `+${fixed}` : fixed;
+}
+
 function isPersistedCutawayStyle(v: unknown): v is OrbitViewCutawayStyleToken {
   return v === 'none' || v === 'cap' || v === 'floor' || v === 'box';
 }
@@ -51,6 +57,7 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
 
   const [capDraft, setCapDraft] = useState('');
   const [floorDraft, setFloorDraft] = useState('');
+  const [exposureDraft, setExposureDraft] = useState('');
   const [hiddenCsv, setHiddenCsv] = useState('');
   const [cutSelect, setCutSelect] = useState('');
 
@@ -60,6 +67,8 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
     setCapDraft(cap != null && Number.isFinite(cap) ? String(cap) : '');
     const fl = viewpoint.viewerClipFloorElevMm;
     setFloorDraft(fl != null && Number.isFinite(fl) ? String(fl) : '');
+    const ev = viewpoint.viewerPhotographicExposureEv;
+    setExposureDraft(ev != null && Number.isFinite(ev) ? String(ev) : '');
     setHiddenCsv(hiddenKindsToCsv(viewpoint));
     setCutSelect(isPersistedCutawayStyle(viewpoint.cutawayStyle) ? viewpoint.cutawayStyle : '');
   }, [viewpoint]);
@@ -148,6 +157,14 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
     void onPersistField({ elementId: viewpoint.id, key: 'viewerSilhouetteEdgeWidth', value });
   };
 
+  const commitPhotographicExposureEv = () => {
+    if (!onPersistField) return;
+    const trimmed = exposureDraft.trim();
+    const value = trimmed === '' ? '' : trimmed;
+    if (value !== '' && !Number.isFinite(Number(value))) return;
+    void onPersistField({ elementId: viewpoint.id, key: 'viewerPhotographicExposureEv', value });
+  };
+
   return (
     <div
       data-testid="orbit-viewpoint-persisted-hud"
@@ -169,7 +186,8 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
           shadows {fmtOnOff(viewpoint.viewerShadowsEnabled)} · AO{' '}
           {fmtOnOff(viewpoint.viewerAmbientOcclusionEnabled)} · depth{' '}
           {fmtOnOff(viewpoint.viewerDepthCueEnabled)} · edge{' '}
-          {viewpoint.viewerSilhouetteEdgeWidth ?? 'inherit'}
+          {viewpoint.viewerSilhouetteEdgeWidth ?? 'inherit'} · EV{' '}
+          {fmtExposureEv(viewpoint.viewerPhotographicExposureEv)}
         </span>
       </div>
 
@@ -201,7 +219,8 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
               Shadows {fmtOnOff(viewpoint.viewerShadowsEnabled)}, AO{' '}
               {fmtOnOff(viewpoint.viewerAmbientOcclusionEnabled)}, depth{' '}
               {fmtOnOff(viewpoint.viewerDepthCueEnabled)}, edge{' '}
-              {viewpoint.viewerSilhouetteEdgeWidth ?? 'inherit'}
+              {viewpoint.viewerSilhouetteEdgeWidth ?? 'inherit'}, EV{' '}
+              {fmtExposureEv(viewpoint.viewerPhotographicExposureEv)}
             </dd>
           </div>
         </dl>
@@ -308,6 +327,20 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
                 <option value="4">Edge 4px</option>
               </select>
             </div>
+            <label className="block">
+              <span className="text-muted">
+                Exposure EV ({fmtExposureEv(viewpoint.viewerPhotographicExposureEv)})
+              </span>
+              <input
+                data-testid="orbit-vp-exposure-ev"
+                className="mt-0.5 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground"
+                inputMode="decimal"
+                placeholder="empty = inherit"
+                value={exposureDraft}
+                onChange={(e) => setExposureDraft(e.target.value)}
+                onBlur={commitPhotographicExposureEv}
+              />
+            </label>
           </div>
         </details>
       )}

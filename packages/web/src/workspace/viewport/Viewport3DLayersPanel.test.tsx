@@ -36,6 +36,8 @@ function makeProps(
     onSetDepthCueEnabled: vi.fn(),
     viewerSilhouetteEdgeWidth: 1,
     onSetSilhouetteEdgeWidth: vi.fn(),
+    viewerPhotographicExposureEv: 0,
+    onSetPhotographicExposureEv: vi.fn(),
     viewerProjection: 'perspective',
     onSetProjection: vi.fn(),
     sectionBoxActive: false,
@@ -67,8 +69,14 @@ describe('<Viewport3DLayersPanel />', () => {
     );
     expect(getByTestId('graphic-style-preview-shaded')).toBeTruthy();
     expect(getByTestId('graphic-style-preview-wireframe')).toBeTruthy();
+    expect(getByTestId('graphic-style-preview-realistic')).toBeTruthy();
+    expect(getByTestId('graphic-style-preview-ray-trace')).toBeTruthy();
     fireEvent.click(getByText('Wire'));
     expect(onSetRenderStyle).toHaveBeenCalledWith('wireframe');
+    fireEvent.click(getByText('Realistic'));
+    expect(onSetRenderStyle).toHaveBeenCalledWith('realistic');
+    fireEvent.click(getByText('Ray trace'));
+    expect(onSetRenderStyle).toHaveBeenCalledWith('ray-trace');
   });
 
   it('calls background and edge controls from the graphics panel', () => {
@@ -94,12 +102,14 @@ describe('<Viewport3DLayersPanel />', () => {
     const onSetShadowsEnabled = vi.fn();
     const onSetAmbientOcclusionEnabled = vi.fn();
     const onSetDepthCueEnabled = vi.fn();
+    const onSetPhotographicExposureEv = vi.fn();
     const { getByRole, getAllByText } = render(
       <Viewport3DLayersPanel
         {...makeProps({
           onSetShadowsEnabled,
           onSetAmbientOcclusionEnabled,
           onSetDepthCueEnabled,
+          onSetPhotographicExposureEv,
         })}
       />,
     );
@@ -107,9 +117,13 @@ describe('<Viewport3DLayersPanel />', () => {
     fireEvent.click(getByRole('button', { name: 'Disable Shadows' }));
     fireEvent.click(getByRole('button', { name: 'Disable Ambient occlusion' }));
     fireEvent.click(getByRole('button', { name: 'Enable Depth cue' }));
+    fireEvent.change(getByRole('slider', { name: 'Photographic exposure' }), {
+      target: { value: '1.25' },
+    });
     expect(onSetShadowsEnabled).toHaveBeenCalledWith(false);
     expect(onSetAmbientOcclusionEnabled).toHaveBeenCalledWith(false);
     expect(onSetDepthCueEnabled).toHaveBeenCalledWith(true);
+    expect(onSetPhotographicExposureEv).toHaveBeenCalledWith(1.25);
   });
 
   it('calls camera and section-box controls from the view panel', () => {

@@ -8,6 +8,7 @@ import {
   InspectorProjectSettingsEditor,
   InspectorPlanViewEditor,
   InspectorPropertiesFor,
+  InspectorRoomEditor,
   InspectorViewTemplateEditor,
 } from './InspectorContent';
 import i18n from '../../i18n';
@@ -72,6 +73,31 @@ describe('InspectorPropertiesFor — spec §13', () => {
     expect((getByLabelText('Stair tread depth in millimetres') as HTMLInputElement).value).toBe(
       '280',
     );
+  });
+
+  it('persists room fill pattern override', () => {
+    const room: Extract<Element, { kind: 'room' }> = {
+      kind: 'room',
+      id: 'room-1',
+      name: 'Office',
+      levelId: 'lvl-1',
+      outlineMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 2000, yMm: 0 },
+        { xMm: 2000, yMm: 2000 },
+        { xMm: 0, yMm: 2000 },
+      ],
+      roomFillPatternOverride: 'hatch_45',
+    };
+    const onPropertyChange = vi.fn();
+    const { getByTestId } = render(
+      <InspectorRoomEditor el={room} revision={1} onPersistProperty={onPropertyChange} />,
+    );
+    const select = getByTestId('inspector-room-fill-pattern-override') as HTMLSelectElement;
+    expect(select.value).toBe('hatch_45');
+
+    fireEvent.change(select, { target: { value: 'crosshatch' } });
+    expect(onPropertyChange).toHaveBeenCalledWith('roomFillPatternOverride', 'crosshatch');
   });
 
   it('renders editable DXF work-plane level dropdown', () => {

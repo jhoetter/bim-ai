@@ -104,6 +104,14 @@ export interface TopBarProps {
   avatarInitials?: string;
   /** F-013: local account/license/status/about readout for the top-right account menu. */
   accountStatus?: AccountStatusInfo;
+  /** F-013: opens the local account/profile details surface. */
+  onAccountDetails?: () => void;
+  /** F-013: opens the local license/plan management surface. */
+  onManageLicense?: () => void;
+  /** F-013: opens privacy/session preferences. */
+  onPrivacySettings?: () => void;
+  /** F-013: signs out of the local browser session. */
+  onSignOut?: () => void;
   /** Presence peers to render as avatar chips (up to 6). */
   peers?: Array<{ name?: string; color?: string }>;
   /** OUT-V3-01: true when at least one Page exists in the model. */
@@ -159,6 +167,10 @@ export function TopBar({
   onCollaboratorsClick,
   avatarInitials,
   accountStatus,
+  onAccountDetails,
+  onManageLicense,
+  onPrivacySettings,
+  onSignOut,
   peers,
   hasPages,
   onSharePresentation,
@@ -230,6 +242,10 @@ export function TopBar({
         onCollaboratorsClick={onCollaboratorsClick}
         avatarInitials={avatarInitials}
         accountStatus={accountStatus}
+        onAccountDetails={onAccountDetails}
+        onManageLicense={onManageLicense}
+        onPrivacySettings={onPrivacySettings}
+        onSignOut={onSignOut}
         peers={peers}
         hasPages={hasPages}
         onSharePresentation={onSharePresentation}
@@ -795,6 +811,10 @@ function TopBarRight({
   onCollaboratorsClick,
   avatarInitials,
   accountStatus,
+  onAccountDetails,
+  onManageLicense,
+  onPrivacySettings,
+  onSignOut,
   peers,
   hasPages,
   onSharePresentation,
@@ -808,6 +828,10 @@ function TopBarRight({
   onCollaboratorsClick?: () => void;
   avatarInitials?: string;
   accountStatus?: AccountStatusInfo;
+  onAccountDetails?: () => void;
+  onManageLicense?: () => void;
+  onPrivacySettings?: () => void;
+  onSignOut?: () => void;
   peers?: Array<{ name?: string; color?: string }>;
   hasPages?: boolean;
   onSharePresentation?: () => void;
@@ -919,6 +943,22 @@ function TopBarRight({
               onCommandPalette={() => {
                 setAvatarMenuOpen(false);
                 onCommandPalette?.();
+              }}
+              onAccountDetails={() => {
+                setAvatarMenuOpen(false);
+                (onAccountDetails ?? onSettings)?.();
+              }}
+              onManageLicense={() => {
+                setAvatarMenuOpen(false);
+                (onManageLicense ?? onSettings)?.();
+              }}
+              onPrivacySettings={() => {
+                setAvatarMenuOpen(false);
+                (onPrivacySettings ?? onSettings)?.();
+              }}
+              onSignOut={() => {
+                setAvatarMenuOpen(false);
+                (onSignOut ?? onSettings)?.();
               }}
             />
             <div className="my-1 h-px bg-border" aria-hidden="true" />

@@ -256,11 +256,19 @@ describe('TopBar — spec §11', () => {
     expect(getByTestId('account-status-realtime').textContent).toBe('Connected');
     expect(getByTestId('account-status-pending').textContent).toBe('2');
     expect(getByTestId('account-status-environment').textContent).toBe('test');
+    expect(getByTestId('account-status-details').textContent).toContain('Account details');
+    expect(getByTestId('account-status-manage-license').textContent).toContain('Manage license');
+    expect(getByTestId('account-status-privacy').textContent).toContain('Privacy settings');
+    expect(getByTestId('account-status-sign-out').textContent).toContain('Sign out');
   });
 
-  it('routes account panel actions to existing help and command palette handlers', () => {
+  it('routes account panel actions to account, license, privacy, sign-out, help, and command handlers', () => {
     const onSettings = vi.fn();
     const onCommandPalette = vi.fn();
+    const onAccountDetails = vi.fn();
+    const onManageLicense = vi.fn();
+    const onPrivacySettings = vi.fn();
+    const onSignOut = vi.fn();
     const { getByTestId, queryByTestId } = renderWithI18n(
       <TopBar
         {...baseProps}
@@ -268,8 +276,27 @@ describe('TopBar — spec §11', () => {
         onModeChange={() => undefined}
         onSettings={onSettings}
         onCommandPalette={onCommandPalette}
+        onAccountDetails={onAccountDetails}
+        onManageLicense={onManageLicense}
+        onPrivacySettings={onPrivacySettings}
+        onSignOut={onSignOut}
       />,
     );
+
+    fireEvent.click(getByTestId('topbar-avatar-menu-trigger'));
+    fireEvent.click(getByTestId('account-status-details'));
+    expect(onAccountDetails).toHaveBeenCalledTimes(1);
+    expect(queryByTestId('topbar-avatar-menu')).toBeNull();
+
+    fireEvent.click(getByTestId('topbar-avatar-menu-trigger'));
+    fireEvent.click(getByTestId('account-status-manage-license'));
+    expect(onManageLicense).toHaveBeenCalledTimes(1);
+    expect(queryByTestId('topbar-avatar-menu')).toBeNull();
+
+    fireEvent.click(getByTestId('topbar-avatar-menu-trigger'));
+    fireEvent.click(getByTestId('account-status-privacy'));
+    expect(onPrivacySettings).toHaveBeenCalledTimes(1);
+    expect(queryByTestId('topbar-avatar-menu')).toBeNull();
 
     fireEvent.click(getByTestId('topbar-avatar-menu-trigger'));
     fireEvent.click(getByTestId('account-status-settings'));
@@ -279,6 +306,11 @@ describe('TopBar — spec §11', () => {
     fireEvent.click(getByTestId('topbar-avatar-menu-trigger'));
     fireEvent.click(getByTestId('account-status-command-palette'));
     expect(onCommandPalette).toHaveBeenCalledTimes(1);
+    expect(queryByTestId('topbar-avatar-menu')).toBeNull();
+
+    fireEvent.click(getByTestId('topbar-avatar-menu-trigger'));
+    fireEvent.click(getByTestId('account-status-sign-out'));
+    expect(onSignOut).toHaveBeenCalledTimes(1);
     expect(queryByTestId('topbar-avatar-menu')).toBeNull();
   });
 });

@@ -35,6 +35,18 @@ export type WallJoinRecord = {
   skipReason: string | null;
 };
 
+type RoomFillPatternOverride = NonNullable<
+  Extract<Element, { kind: 'room' }>['roomFillPatternOverride']
+>;
+
+const ROOM_FILL_PATTERN_VALUES = new Set<string>([
+  'solid',
+  'hatch_45',
+  'hatch_90',
+  'crosshatch',
+  'dots',
+]);
+
 function planLocationLineOffsetFrac(loc: WallLocationLine): number {
   switch (loc) {
     case 'finish-face-exterior':
@@ -1059,7 +1071,12 @@ export function stairPlanThree(
 export function roomMesh(
   room: Extract<Element, { kind: 'room' }>,
   presentation?: PlanPresentationPreset,
-  opts?: { schemeColorHex?: string; roomFillOpacityScale?: number; roomFillOverrideHex?: string },
+  opts?: {
+    schemeColorHex?: string;
+    roomFillOpacityScale?: number;
+    roomFillOverrideHex?: string;
+    roomFillPatternOverride?: RoomFillPatternOverride;
+  },
 ): THREE.Mesh {
   const scheme = presentation ?? 'default';
 
@@ -1115,12 +1132,16 @@ export function roomMesh(
           /^#[0-9a-fA-F]{6}$/.test(room.roomFillOverrideHex)
         ? room.roomFillOverrideHex
         : undefined;
+  const fillColor = instanceOverride ?? fill.color;
+  const patternOverride =
+    opts?.roomFillPatternOverride ??
+    normalizeRoomFillPatternOverride(room.roomFillPatternOverride ?? undefined);
 
   const mesh = new THREE.Mesh(
     geo,
 
     new THREE.MeshBasicMaterial({
-      color: instanceOverride ?? fill.color,
+      color: fillColor,
 
       transparent: true,
 
@@ -1145,7 +1166,146 @@ export function roomMesh(
     areaMm2: polygonAreaMm2(room.outlineMm),
   };
 
+  if (patternOverride && patternOverride !== 'solid') {
+    const pattern = buildRoomFillPatternLines(room.outlineMm, patternOverride, fillColor);
+    if (pattern) mesh.add(pattern);
+  }
+
   return mesh;
+}
+
+function normalizeRoomFillPatternOverride(raw: unknown): RoomFillPatternOverride | undefined {
+  return typeof raw === 'string' && ROOM_FILL_PATTERN_VALUES.has(raw)
+    ? (raw as RoomFillPatternOverride)
+    : undefined;
+}
+
+function buildRoomFillPatternLines(
+  outlineMm: Array<{ xMm: number; yMm: number }>,
+  pattern: RoomFillPatternOverride,
+  fillColor: string,
+): THREE.LineSegments | null {
+  const positions =
+    pattern === 'dots'
+      ? dotPatternSegments(outlineMm)
+      : [
+          ...parallelPatternSegments(
+            outlineMm,
+            pattern === 'hatch_90' ? 1 : 1 / Math.SQRT2,
+            pattern === 'hatch_90' ? 0 : -1 / Math.SQRT2,
+          ),
+          ...(pattern === 'crosshatch'
+            ? parallelPatternSegments(outlineMm, 1 / Math.SQRT2, 1 / Math.SQRT2)
+            : []),
+        ];
+  if (positions.length === 0) return null;
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+  const mat = new THREE.LineBasicMaterial({
+    color: new THREE.Color(darkenHex(fillColor, 0.45)),
+    transparent: true,
+    opacity: 0.72,
+    depthTest: false,
+  });
+  const lines = new THREE.LineSegments(geo, mat);
+  lines.renderOrder = 7;
+  lines.userData.roomFillPatternOverride = pattern;
+  return lines;
+}
+
+function parallelPatternSegments(
+  pts: Array<{ xMm: number; yMm: number }>,
+  nx: number,
+  ny: number,
+): number[] {
+  if (pts.length < 3) return [];
+  const spacingMm = 450;
+  const zLocal = 0.002;
+  let minC = Infinity;
+  let maxC = -Infinity;
+  for (const p of pts) {
+    const c = p.xMm * nx + p.yMm * ny;
+    minC = Math.min(minC, c);
+    maxC = Math.max(maxC, c);
+  }
+
+  const positions: number[] = [];
+  const dx = -ny;
+  const dy = nx;
+  const first = Math.floor(minC / spacingMm) * spacingMm;
+  for (let c = first; c <= maxC + spacingMm; c += spacingMm) {
+    const xs: Array<{ xMm: number; yMm: number; t: number }> = [];
+    for (let i = 0; i < pts.length; i++) {
+      const p1 = pts[i]!;
+      const p2 = pts[(i + 1) % pts.length]!;
+      const d = (p2.xMm - p1.xMm) * nx + (p2.yMm - p1.yMm) * ny;
+      if (Math.abs(d) < 1e-9) continue;
+      const u = (c - (p1.xMm * nx + p1.yMm * ny)) / d;
+      if (u < -1e-9 || u >= 1 - 1e-9) continue;
+      const xMm = p1.xMm + (p2.xMm - p1.xMm) * u;
+      const yMm = p1.yMm + (p2.yMm - p1.yMm) * u;
+      xs.push({ xMm, yMm, t: xMm * dx + yMm * dy });
+    }
+    xs.sort((a, b) => a.t - b.t);
+    for (let j = 0; j + 1 < xs.length; j += 2) {
+      const a = xs[j]!;
+      const b = xs[j + 1]!;
+      positions.push(ux(a.xMm), -uz(a.yMm), zLocal, ux(b.xMm), -uz(b.yMm), zLocal);
+    }
+  }
+  return positions;
+}
+
+function dotPatternSegments(pts: Array<{ xMm: number; yMm: number }>): number[] {
+  if (pts.length < 3) return [];
+  const xs = pts.map((p) => p.xMm);
+  const ys = pts.map((p) => p.yMm);
+  const spacingMm = 450;
+  const dotHalfMm = 36;
+  const zLocal = 0.002;
+  const positions: number[] = [];
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  for (let x = Math.ceil(minX / spacingMm) * spacingMm; x <= maxX; x += spacingMm) {
+    for (let y = Math.ceil(minY / spacingMm) * spacingMm; y <= maxY; y += spacingMm) {
+      if (!pointInPolygonMm(x, y, pts)) continue;
+      positions.push(
+        ux(x - dotHalfMm),
+        -uz(y),
+        zLocal,
+        ux(x + dotHalfMm),
+        -uz(y),
+        zLocal,
+        ux(x),
+        -uz(y - dotHalfMm),
+        zLocal,
+        ux(x),
+        -uz(y + dotHalfMm),
+        zLocal,
+      );
+    }
+  }
+  return positions;
+}
+
+function pointInPolygonMm(
+  xMm: number,
+  yMm: number,
+  pts: Array<{ xMm: number; yMm: number }>,
+): boolean {
+  let inside = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const pi = pts[i]!;
+    const pj = pts[j]!;
+    const crosses =
+      pi.yMm > yMm !== pj.yMm > yMm &&
+      xMm < ((pj.xMm - pi.xMm) * (yMm - pi.yMm)) / (pj.yMm - pi.yMm) + pi.xMm;
+    if (crosses) inside = !inside;
+  }
+  return inside;
 }
 
 export function planAnnotationLabelSprite(

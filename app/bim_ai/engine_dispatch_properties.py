@@ -91,14 +91,28 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                 raw_hex = cmd.value.strip()
                 if raw_hex == "":
                     els[cmd.element_id] = el.model_copy(update={"room_fill_override_hex": None})
-                elif len(raw_hex) == 7 and raw_hex.startswith("#") and all(
-                    c in "0123456789abcdefABCDEF" for c in raw_hex[1:]
+                elif (
+                    len(raw_hex) == 7
+                    and raw_hex.startswith("#")
+                    and all(c in "0123456789abcdefABCDEF" for c in raw_hex[1:])
                 ):
                     els[cmd.element_id] = el.model_copy(
                         update={"room_fill_override_hex": raw_hex.lower()}
                     )
                 else:
                     raise ValueError("roomFillOverrideHex must be #RRGGBB or empty to clear")
+            elif cmd.key == "roomFillPatternOverride" and isinstance(el, RoomElem):
+                raw_pattern = cmd.value.strip()
+                if raw_pattern == "":
+                    els[cmd.element_id] = el.model_copy(update={"room_fill_pattern_override": None})
+                elif raw_pattern in {"solid", "hatch_45", "hatch_90", "crosshatch", "dots"}:
+                    els[cmd.element_id] = el.model_copy(
+                        update={"room_fill_pattern_override": raw_pattern}
+                    )
+                else:
+                    raise ValueError(
+                        "roomFillPatternOverride must be solid|hatch_45|hatch_90|crosshatch|dots or empty to clear"
+                    )
             elif cmd.key == "label" and isinstance(el, GridLineElem):
                 els[cmd.element_id] = el.model_copy(update={"label": cmd.value})
             elif isinstance(el, PlanViewElem):
@@ -211,9 +225,7 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                         update={"discipline": raw if raw else "architecture"}
                     )
                 elif cmd.key == "viewSubdiscipline":
-                    els[cmd.element_id] = el.model_copy(
-                        update={"view_subdiscipline": raw or None}
-                    )
+                    els[cmd.element_id] = el.model_copy(update={"view_subdiscipline": raw or None})
                 elif cmd.key == "phaseId":
                     els[cmd.element_id] = el.model_copy(update={"phase_id": raw or None})
                 elif cmd.key == "planDetailLevel":

@@ -18,12 +18,20 @@ export interface AccountStatusMenuProps {
   info?: AccountStatusInfo;
   onSettings?: () => void;
   onCommandPalette?: () => void;
+  onAccountDetails?: () => void;
+  onManageLicense?: () => void;
+  onPrivacySettings?: () => void;
+  onSignOut?: () => void;
 }
 
 export function AccountStatusMenu({
   info,
   onSettings,
   onCommandPalette,
+  onAccountDetails,
+  onManageLicense,
+  onPrivacySettings,
+  onSignOut,
 }: AccountStatusMenuProps): JSX.Element {
   const displayName = clean(info?.displayName) ?? 'Local user';
   const userId = clean(info?.userId) ?? 'local session';
@@ -82,6 +90,36 @@ export function AccountStatusMenu({
         <button
           type="button"
           role="menuitem"
+          data-testid="account-status-details"
+          onClick={onAccountDetails}
+          className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-surface-strong"
+        >
+          <Icons.collaborators size={13} aria-hidden="true" />
+          Account details
+        </button>
+        <button
+          type="button"
+          role="menuitem"
+          data-testid="account-status-manage-license"
+          onClick={onManageLicense}
+          className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-surface-strong"
+        >
+          <Icons.externalLink size={13} aria-hidden="true" />
+          Manage license
+        </button>
+        <button
+          type="button"
+          role="menuitem"
+          data-testid="account-status-privacy"
+          onClick={onPrivacySettings}
+          className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-surface-strong"
+        >
+          <Icons.settings size={13} aria-hidden="true" />
+          Privacy settings
+        </button>
+        <button
+          type="button"
+          role="menuitem"
           data-testid="account-status-settings"
           onClick={onSettings}
           className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-surface-strong"
@@ -98,6 +136,16 @@ export function AccountStatusMenu({
         >
           <Icons.commandPalette size={13} aria-hidden="true" />
           Command palette
+        </button>
+        <button
+          type="button"
+          role="menuitem"
+          data-testid="account-status-sign-out"
+          onClick={onSignOut}
+          className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-surface-strong"
+        >
+          <Icons.close size={13} aria-hidden="true" />
+          Sign out
         </button>
       </section>
     </div>
