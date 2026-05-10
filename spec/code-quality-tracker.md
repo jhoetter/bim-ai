@@ -160,6 +160,7 @@ These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (t
 - `engine.py`: extracted authoritative replay preflight and command-bundle merge preflight logic into `engine_authoritative_replay.py`, preserving existing `bim_ai.engine` imports. `engine.py` is down to 6,594 LOC.
 - `engine.py`: extracted the command dispatch body into `engine_dispatch.py`, preserving `from bim_ai.engine import apply_inplace` and focused command regression coverage. `engine.py` is down to 1,821 LOC.
 - `export_ifc.py`: extracted IFC authoritative replay, semantic roundtrip, import-preview, and unsupported-merge-map readback logic into `export_ifc_authoritative_replay.py`, preserving legacy `bim_ai.export_ifc` imports. `export_ifc.py` is down to 1,945 LOC.
+- `export_ifc.py`: extracted kernel IFC manifest eligibility, geometry skip counts, expected emit counts, and artifact hint construction into `export_ifc_manifest.py`, preserving legacy `bim_ai.export_ifc` imports. `export_ifc.py` is down to 1,781 LOC.
 
 **Latest verification.** Full backend suite passed after the latest CQ-04 slice: `2476 passed, 93 skipped, 1 deselected` with total coverage `75.83%`; each pushed workpackage passed GitHub CI on `main`.
 
