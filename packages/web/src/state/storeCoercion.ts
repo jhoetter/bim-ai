@@ -1593,6 +1593,74 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
     };
   }
 
+  if (kind === 'asset_library_entry') {
+    const listOfStrings = (v: unknown): string[] =>
+      Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+    const thumbnailWidth = raw.thumbnailWidthMm ?? raw.thumbnail_width_mm;
+    const thumbnailHeight = raw.thumbnailHeightMm ?? raw.thumbnail_height_mm;
+    const paramSchema = raw.paramSchema ?? raw.param_schema;
+    return {
+      kind: 'asset_library_entry',
+      id,
+      name,
+      assetKind:
+        raw.assetKind === 'family_instance' ||
+        raw.assetKind === 'kit' ||
+        raw.assetKind === 'decal' ||
+        raw.assetKind === 'profile'
+          ? raw.assetKind
+          : 'block_2d',
+      category:
+        raw.category === 'kitchen' ||
+        raw.category === 'bathroom' ||
+        raw.category === 'door' ||
+        raw.category === 'window' ||
+        raw.category === 'decal' ||
+        raw.category === 'profile' ||
+        raw.category === 'casework'
+          ? raw.category
+          : 'furniture',
+      tags: listOfStrings(raw.tags),
+      disciplineTags: listOfStrings(raw.disciplineTags ?? raw.discipline_tags).filter(
+        (x): x is 'arch' | 'struct' | 'mep' => x === 'arch' || x === 'struct' || x === 'mep',
+      ),
+      thumbnailKind: raw.thumbnailKind === 'rendered_3d' ? 'rendered_3d' : 'schematic_plan',
+      ...(thumbnailWidth != null && Number.isFinite(Number(thumbnailWidth))
+        ? { thumbnailWidthMm: Number(thumbnailWidth) }
+        : {}),
+      ...(thumbnailHeight != null && Number.isFinite(Number(thumbnailHeight))
+        ? { thumbnailHeightMm: Number(thumbnailHeight) }
+        : {}),
+      ...(Array.isArray(paramSchema) ? { paramSchema } : {}),
+      ...(raw.publishedFromOrgId || raw.published_from_org_id
+        ? { publishedFromOrgId: String(raw.publishedFromOrgId ?? raw.published_from_org_id) }
+        : {}),
+      ...(typeof raw.description === 'string' ? { description: raw.description } : {}),
+    };
+  }
+
+  if (kind === 'placed_asset') {
+    const assetId = raw.assetId ?? raw.asset_id;
+    const levelId = raw.levelId ?? raw.level_id;
+    if (typeof assetId !== 'string' || typeof levelId !== 'string') return null;
+    const paramValues = raw.paramValues ?? raw.param_values;
+    return {
+      kind: 'placed_asset',
+      id,
+      name,
+      assetId,
+      levelId,
+      positionMm: coerceXY((raw.positionMm ?? raw.position_mm) as Record<string, unknown>),
+      rotationDeg: Number(raw.rotationDeg ?? raw.rotation_deg ?? 0),
+      ...(paramValues && typeof paramValues === 'object' && !Array.isArray(paramValues)
+        ? { paramValues: paramValues as Record<string, unknown> }
+        : {}),
+      ...(raw.hostElementId || raw.host_element_id
+        ? { hostElementId: String(raw.hostElementId ?? raw.host_element_id) }
+        : {}),
+    };
+  }
+
   if (kind === 'clash_test') {
     const coerceIds = (v: unknown): string[] =>
       Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
