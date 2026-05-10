@@ -30,8 +30,12 @@ export type ViewportRuntimeSlice = Pick<
   | 'setViewerRenderStyle'
   | 'viewerBackground'
   | 'viewerEdges'
+  | 'viewerProjection'
+  | 'viewerSectionBoxActive'
   | 'setViewerBackground'
   | 'setViewerEdges'
+  | 'setViewerProjection'
+  | 'setViewerSectionBoxActive'
   | 'revealHiddenMode'
   | 'setRevealHiddenMode'
   | 'showNeighborhoodMasses'
@@ -168,8 +172,12 @@ export function createViewportRuntimeSlice(set: StoreSet, get: StoreGet): Viewpo
     setViewerRenderStyle: (style) => set({ viewerRenderStyle: style }),
     viewerBackground: 'light_grey',
     viewerEdges: 'normal',
+    viewerProjection: 'perspective',
+    viewerSectionBoxActive: false,
     setViewerBackground: (bg) => set({ viewerBackground: bg }),
     setViewerEdges: (edges) => set({ viewerEdges: edges }),
+    setViewerProjection: (projection) => set({ viewerProjection: projection }),
+    setViewerSectionBoxActive: (active) => set({ viewerSectionBoxActive: active }),
     revealHiddenMode: false,
     setRevealHiddenMode: (v) => set({ revealHiddenMode: v }),
     showNeighborhoodMasses: true,

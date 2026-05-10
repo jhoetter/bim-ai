@@ -311,6 +311,22 @@ class CreateSpotElevationCmd(BaseModel):
     colour: str = Field(default="#202020")
 
 
+class CreateAnnotationSymbolCmd(BaseModel):
+    """ANN-05 — place a view-local annotation symbol (North Arrow, Stair Path, Centerline)."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createAnnotationSymbol"] = "createAnnotationSymbol"
+    id: str | None = None
+    host_view_id: str = Field(alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    symbol_type: Literal["north_arrow", "stair_up", "stair_down", "centerline"] = Field(
+        alias="symbolType"
+    )
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    scale: float = Field(default=1.0)
+    colour: str = Field(default="#202020")
+
+
 class DeleteElementCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["deleteElement"] = "deleteElement"
@@ -2960,6 +2976,7 @@ Command = Annotated[
     | SetEdgeProfileRunModeCmd
     | CreateSoffitCmd
     | SetWallRecessZonesCmd
+    | CreateAnnotationSymbolCmd
     | CreateAreaCmd
     | UpdateAreaCmd
     | DeleteAreaCmd

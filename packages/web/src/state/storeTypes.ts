@@ -180,6 +180,10 @@ export type StoreState = {
   viewerBackground: 'white' | 'light_grey' | 'dark';
   /** F-113: edge display in the 3D viewport. */
   viewerEdges: 'normal' | 'none';
+  /** UX-11: 3D camera projection mode surfaced in View controls. */
+  viewerProjection: 'perspective' | 'orthographic';
+  /** UX-11: section-box clipping is a view-control state, not only a canvas button. */
+  viewerSectionBoxActive: boolean;
   /** F-014: when true, the plan canvas shows VG-hidden elements (magenta mode). */
   revealHiddenMode: boolean;
   /**
@@ -273,6 +277,10 @@ export type StoreState = {
   setViewerBackground: (bg: 'white' | 'light_grey' | 'dark') => void;
   /** F-113: set 3D viewport edge display mode. */
   setViewerEdges: (edges: 'normal' | 'none') => void;
+  /** UX-11: set 3D camera projection mode. */
+  setViewerProjection: (projection: 'perspective' | 'orthographic') => void;
+  /** UX-11: set section-box clipping visibility. */
+  setViewerSectionBoxActive: (active: boolean) => void;
   /** F-014: enter or exit Reveal Hidden Elements mode. */
   setRevealHiddenMode: (v: boolean) => void;
   /** Apply saved 3D viewpoint clip planes + semantic category hides (WP-E02/E03). */

@@ -73,13 +73,24 @@ export type AngularDimensionPrimitive = {
   colour: string;
 };
 
+export type AnnotationSymbolPrimitive = {
+  kind: 'annotation_symbol';
+  id: string;
+  positionMm: XY;
+  symbolType: 'north_arrow' | 'stair_up' | 'stair_down' | 'centerline';
+  rotationDeg: number;
+  scale: number;
+  colour: string;
+};
+
 export type DetailComponentPrimitive =
   | DetailLinePrimitive
   | DetailRegionPrimitive
   | TextNotePrimitive
   | SpotElevationPrimitive
   | RevisionCloudPrimitive
-  | AngularDimensionPrimitive;
+  | AngularDimensionPrimitive
+  | AnnotationSymbolPrimitive;
 
 /**
  * Walks `elementsById` and returns rendering primitives for every
@@ -151,6 +162,16 @@ export function extractDetailComponentPrimitives(
         rayAMm: el.rayAMm,
         rayBMm: el.rayBMm,
         arcRadiusMm: el.arcRadiusMm ?? 500,
+        colour: el.colour ?? '#202020',
+      });
+    } else if (el.kind === 'annotation_symbol' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'annotation_symbol',
+        id: el.id,
+        positionMm: el.positionMm,
+        symbolType: el.symbolType,
+        rotationDeg: el.rotationDeg ?? 0,
+        scale: el.scale ?? 1.0,
         colour: el.colour ?? '#202020',
       });
     }

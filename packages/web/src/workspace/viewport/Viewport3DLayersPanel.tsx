@@ -14,16 +14,79 @@ export const VIEWER_HIDDEN_KIND_KEYS = [
 ] as const;
 
 export type ViewerHiddenKindKey = (typeof VIEWER_HIDDEN_KIND_KEYS)[number];
+type ViewerRenderStyle = 'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line';
+
+const GRAPHIC_STYLE_OPTIONS: Array<{
+  value: ViewerRenderStyle;
+  label: string;
+  title: string;
+}> = [
+  {
+    value: 'shaded',
+    label: 'Shaded',
+    title: 'Show material lighting and surface depth',
+  },
+  {
+    value: 'consistent-colors',
+    label: 'Colors',
+    title: 'Show clear category colors for scanning the model',
+  },
+  {
+    value: 'wireframe',
+    label: 'Wire',
+    title: 'Show transparent wireframe geometry',
+  },
+  {
+    value: 'hidden-line',
+    label: 'Hidden',
+    title: 'Show clean documentation-style outlines',
+  },
+];
+
+const BACKGROUND_OPTIONS: Array<{
+  value: 'light_grey' | 'white' | 'dark';
+  label: string;
+  swatchClassName: string;
+}> = [
+  {
+    value: 'light_grey',
+    label: 'Sky',
+    swatchClassName: 'bg-gradient-to-b from-sky-100 to-stone-100',
+  },
+  {
+    value: 'white',
+    label: 'White',
+    swatchClassName: 'bg-white',
+  },
+  {
+    value: 'dark',
+    label: 'Dark',
+    swatchClassName: 'bg-slate-900',
+  },
+];
+
+const CAMERA_OPTIONS: Array<{
+  value: 'perspective' | 'orthographic';
+  label: string;
+  Icon: typeof Icons.viewpoint;
+}> = [
+  { value: 'perspective', label: 'Perspective', Icon: Icons.viewpoint },
+  { value: 'orthographic', label: 'Ortho', Icon: Icons.planView },
+];
 
 export interface Viewport3DLayersPanelProps {
   viewerCategoryHidden: Record<string, boolean>;
   onToggleCategory: (kind: ViewerHiddenKindKey) => void;
-  viewerRenderStyle: 'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line';
-  onSetRenderStyle: (style: 'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line') => void;
+  viewerRenderStyle: ViewerRenderStyle;
+  onSetRenderStyle: (style: ViewerRenderStyle) => void;
   viewerBackground: 'white' | 'light_grey' | 'dark';
   onSetBackground: (bg: 'white' | 'light_grey' | 'dark') => void;
   viewerEdges: 'normal' | 'none';
   onSetEdges: (edges: 'normal' | 'none') => void;
+  viewerProjection: 'perspective' | 'orthographic';
+  onSetProjection: (projection: 'perspective' | 'orthographic') => void;
+  sectionBoxActive: boolean;
+  onSetSectionBoxActive: (active: boolean) => void;
   viewerClipElevMm: number | null;
   onSetClipElevMm: (mm: number | null) => void;
   viewerClipFloorElevMm: number | null;
@@ -44,6 +107,10 @@ export function Viewport3DLayersPanel({
   onSetBackground,
   viewerEdges,
   onSetEdges,
+  viewerProjection,
+  onSetProjection,
+  sectionBoxActive,
+  onSetSectionBoxActive,
   viewerClipElevMm,
   onSetClipElevMm,
   viewerClipFloorElevMm,
@@ -71,57 +138,106 @@ export function Viewport3DLayersPanel({
 
       <section className="rounded border border-border bg-surface-strong p-2">
         <div className="mb-1.5 text-[10px] font-semibold uppercase text-muted">Graphics</div>
-        <div className="grid grid-cols-2 gap-1">
-          {[
-            ['shaded', 'Shaded'],
-            ['consistent-colors', 'Colors'],
-            ['wireframe', 'Wire'],
-            ['hidden-line', 'Hidden'],
-          ].map(([value, label]) => (
+        <div className="grid grid-cols-2 gap-1.5">
+          {GRAPHIC_STYLE_OPTIONS.map(({ value, label, title }) => (
             <button
               key={value}
               type="button"
-              onClick={() =>
-                onSetRenderStyle(
-                  value as 'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line',
-                )
-              }
+              onClick={() => onSetRenderStyle(value)}
               data-active={viewerRenderStyle === value ? 'true' : 'false'}
+              aria-label={title}
+              title={title}
               className={[
-                'h-7 rounded border px-2 text-[11px]',
+                'flex h-[66px] flex-col items-center justify-center gap-1 rounded border px-1.5 text-[11px] transition-colors',
                 viewerRenderStyle === value
                   ? 'border-accent bg-accent/15 font-medium text-foreground'
                   : 'border-border bg-background text-muted hover:text-foreground',
               ].join(' ')}
             >
+              <GraphicStylePreview style={value} active={viewerRenderStyle === value} />
               {label}
             </button>
           ))}
         </div>
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          <label className="block text-[10px] text-muted">
-            Background
-            <select
-              value={viewerBackground}
-              onChange={(e) => onSetBackground(e.target.value as 'white' | 'light_grey' | 'dark')}
-              className="mt-1 h-7 w-full rounded border border-border bg-background px-2 text-[11px] text-foreground"
+        <div className="mt-2 space-y-2">
+          <div>
+            <div className="mb-1 text-[10px] text-muted">Background</div>
+            <div className="grid grid-cols-3 gap-1">
+              {BACKGROUND_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => onSetBackground(option.value)}
+                  aria-label={`Use ${option.label} background`}
+                  title={`Use ${option.label} background`}
+                  data-active={viewerBackground === option.value ? 'true' : 'false'}
+                  className={[
+                    'flex h-8 items-center gap-1 rounded border px-1 text-[10px] transition-colors',
+                    viewerBackground === option.value
+                      ? 'border-accent bg-accent/15 font-medium text-foreground'
+                      : 'border-border bg-background text-muted hover:text-foreground',
+                  ].join(' ')}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`h-4 w-4 rounded-sm border border-border ${option.swatchClassName}`}
+                  />
+                  <span className="min-w-0 truncate">{option.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="mb-1 text-[10px] text-muted">Edges</div>
+            <div className="grid grid-cols-2 gap-1">
+              {[
+                ['normal', 'On'],
+                ['none', 'Off'],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => onSetEdges(value as 'normal' | 'none')}
+                  aria-label={`${label} model edges`}
+                  title={`${label} model edges`}
+                  data-active={viewerEdges === value ? 'true' : 'false'}
+                  className={[
+                    'h-7 rounded border px-2 text-[11px] transition-colors',
+                    viewerEdges === value
+                      ? 'border-accent bg-accent/15 font-medium text-foreground'
+                      : 'border-border bg-background text-muted hover:text-foreground',
+                  ].join(' ')}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded border border-border bg-surface-strong p-2">
+        <div className="mb-1.5 text-[10px] font-semibold uppercase text-muted">Camera</div>
+        <div className="grid grid-cols-2 gap-1">
+          {CAMERA_OPTIONS.map(({ value, label, Icon }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => onSetProjection(value)}
+              aria-label={`Use ${label} projection`}
+              title={`Use ${label} projection`}
+              data-active={viewerProjection === value ? 'true' : 'false'}
+              className={[
+                'flex h-8 items-center justify-center gap-1.5 rounded border px-2 text-[11px] transition-colors',
+                viewerProjection === value
+                  ? 'border-accent bg-accent/15 font-medium text-foreground'
+                  : 'border-border bg-background text-muted hover:text-foreground',
+              ].join(' ')}
             >
-              <option value="light_grey">Sky</option>
-              <option value="white">White</option>
-              <option value="dark">Dark</option>
-            </select>
-          </label>
-          <label className="block text-[10px] text-muted">
-            Edges
-            <select
-              value={viewerEdges}
-              onChange={(e) => onSetEdges(e.target.value as 'normal' | 'none')}
-              className="mt-1 h-7 w-full rounded border border-border bg-background px-2 text-[11px] text-foreground"
-            >
-              <option value="normal">Normal</option>
-              <option value="none">None</option>
-            </select>
-          </label>
+              <Icon size={ICON_SIZE.chrome} aria-hidden="true" />
+              {label}
+            </button>
+          ))}
         </div>
       </section>
 
@@ -174,6 +290,21 @@ export function Viewport3DLayersPanel({
           Section box
         </summary>
         <div className="mt-2 space-y-2">
+          <button
+            type="button"
+            onClick={() => onSetSectionBoxActive(!sectionBoxActive)}
+            aria-pressed={sectionBoxActive}
+            data-active={sectionBoxActive ? 'true' : 'false'}
+            className={[
+              'flex h-8 w-full items-center justify-center gap-1.5 rounded border px-2 text-[11px] transition-colors',
+              sectionBoxActive
+                ? 'border-accent bg-accent/15 font-medium text-foreground'
+                : 'border-border bg-background text-muted hover:text-foreground',
+            ].join(' ')}
+          >
+            <Icons.sectionBox size={ICON_SIZE.chrome} aria-hidden="true" />
+            {sectionBoxActive ? 'Section box on' : 'Section box off'}
+          </button>
           <label className="block text-[10px] text-muted">
             {t('layers3d.sectionBoxCap')}
             <input
@@ -218,5 +349,71 @@ export function Viewport3DLayersPanel({
         </div>
       </details>
     </div>
+  );
+}
+
+function GraphicStylePreview({
+  style,
+  active,
+}: {
+  style: ViewerRenderStyle;
+  active: boolean;
+}): JSX.Element {
+  const accentLine = active ? 'bg-accent/70' : 'bg-muted/70';
+  const border = active ? 'border-accent' : 'border-border';
+
+  if (style === 'wireframe') {
+    return (
+      <span
+        data-testid="graphic-style-preview-wireframe"
+        aria-hidden="true"
+        className={`relative h-7 w-10 overflow-hidden rounded border ${border} bg-background`}
+      >
+        <span className={`absolute left-2 top-1 h-5 w-5 rotate-45 border ${border}`} />
+        <span className={`absolute left-4 top-1 h-5 w-5 rotate-45 border ${border}`} />
+        <span className={`absolute left-1 top-3 h-px w-8 ${accentLine}`} />
+        <span className={`absolute left-5 top-1 h-5 w-px ${accentLine}`} />
+      </span>
+    );
+  }
+
+  if (style === 'hidden-line') {
+    return (
+      <span
+        data-testid="graphic-style-preview-hidden-line"
+        aria-hidden="true"
+        className={`relative h-7 w-10 overflow-hidden rounded border ${border} bg-background`}
+      >
+        <span className="absolute bottom-1 left-1.5 h-4 w-7 rounded-sm border border-foreground/70 bg-surface" />
+        <span className="absolute bottom-3 left-5 h-3 w-3 border-l border-t border-foreground/60" />
+        <span className="absolute bottom-2 left-3 h-px w-5 border-t border-dashed border-muted" />
+      </span>
+    );
+  }
+
+  if (style === 'consistent-colors') {
+    return (
+      <span
+        data-testid="graphic-style-preview-consistent-colors"
+        aria-hidden="true"
+        className={`relative h-7 w-10 overflow-hidden rounded border ${border} bg-background`}
+      >
+        <span className="absolute bottom-1 left-1.5 h-4 w-3 rounded-sm border border-border bg-sky-300/80" />
+        <span className="absolute bottom-1 left-4 h-5 w-3 rounded-sm border border-border bg-emerald-300/80" />
+        <span className="absolute bottom-1 right-1.5 h-3 w-3 rounded-sm border border-border bg-amber-300/80" />
+      </span>
+    );
+  }
+
+  return (
+    <span
+      data-testid="graphic-style-preview-shaded"
+      aria-hidden="true"
+      className={`relative h-7 w-10 overflow-hidden rounded border ${border} bg-gradient-to-br from-surface via-surface-strong to-muted/40`}
+    >
+      <span className="absolute bottom-1 left-2 h-4 w-5 rounded-sm border border-border bg-surface shadow-sm" />
+      <span className="absolute bottom-3 left-4 h-3 w-4 rounded-sm border border-border bg-surface-strong shadow-sm" />
+      <span className="absolute left-2 top-1 h-1.5 w-1.5 rounded-full bg-white/80" />
+    </span>
   );
 }
