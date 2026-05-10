@@ -16,7 +16,10 @@ import {
   redoModel,
   uploadDxfFile,
 } from '../lib/api';
-import { syncLastLevelElevationPropagationFromApplyResponse } from './authoring';
+import {
+  setActiveComponentAssetId,
+  syncLastLevelElevationPropagationFromApplyResponse,
+} from './authoring';
 import { planToolsForPerspective } from './planToolsByPerspective';
 import {
   buildCollaborationConflictQueueV1,
@@ -926,6 +929,10 @@ export function Workspace(): JSX.Element {
           break;
         case 'roof_type':
           // No legacy 'roof' plan tool; the type is staged for the next roof draw.
+          break;
+        case 'asset':
+          setActiveComponentAssetId(typeId);
+          setPlanTool('component');
           break;
         case 'stair':
         case 'railing':

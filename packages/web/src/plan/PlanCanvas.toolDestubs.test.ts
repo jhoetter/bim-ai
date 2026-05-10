@@ -80,4 +80,9 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
       /<SketchCanvas[\s\S]{0,900}wallsForPicking=\{Object\.values\(elementsById\)/,
     );
   });
+
+  it('renders the active level datum line and elevation badge in plan view', () => {
+    expect(SRC).toContain('data-testid="plan-level-datum-line"');
+    expect(SRC).toContain('data-testid="plan-level-elevation-badge"');
+  });
 });

@@ -191,6 +191,48 @@
         ],
         "description": "Kitchen base counter with cabinet bay plan linework and 3D countertop proxy."
       },
+      "asset-kitchen-slab-layout": {
+        "kind": "asset_library_entry",
+        "id": "asset-kitchen-slab-layout",
+        "assetKind": "block_2d",
+        "name": "Kitchen Slab Layout 3000x650",
+        "category": "kitchen",
+        "tags": ["kitchen", "counter", "sink", "fridge", "appliance", "layout"],
+        "disciplineTags": ["arch", "mep"],
+        "thumbnailKind": "schematic_plan",
+        "thumbnailWidthMm": 3000,
+        "thumbnailHeightMm": 650,
+        "planSymbolKind": "counter",
+        "renderProxyKind": "counter",
+        "paramSchema": [
+          {
+            "key": "widthMm",
+            "kind": "mm",
+            "default": 3000,
+            "constraints": { "min": 1800, "max": 4800 }
+          },
+          {
+            "key": "depthMm",
+            "kind": "mm",
+            "default": 650,
+            "constraints": { "min": 550, "max": 750 }
+          },
+          { "key": "heightMm", "kind": "mm", "default": 900 },
+          {
+            "key": "sinkOffsetMm",
+            "kind": "mm",
+            "default": 1500,
+            "constraints": { "min": 650, "max": 2500 }
+          },
+          {
+            "key": "fridgeOffsetMm",
+            "kind": "mm",
+            "default": 350,
+            "constraints": { "min": 300, "max": 800 }
+          }
+        ],
+        "description": "Composite kitchen slab family with adjustable sink and refrigerator offsets in a single placed asset."
+      },
       "asset-living-lounge-chair": {
         "kind": "asset_library_entry",
         "id": "asset-living-lounge-chair",
@@ -374,6 +416,54 @@
           { "key": "heightMm", "kind": "mm", "default": 80 }
         ],
         "description": "Square shower tray with diagonal plan marker and lightweight 3D glass proxy."
+      },
+      "asset-bathroom-layout-compact": {
+        "kind": "asset_library_entry",
+        "id": "asset-bathroom-layout-compact",
+        "assetKind": "block_2d",
+        "name": "Compact Bathroom Layout 2400x2200",
+        "category": "bathroom",
+        "tags": ["bathroom", "layout", "toilet", "sink", "vanity", "shower", "plumbing"],
+        "disciplineTags": ["arch", "mep"],
+        "thumbnailKind": "schematic_plan",
+        "thumbnailWidthMm": 2400,
+        "thumbnailHeightMm": 2200,
+        "planSymbolKind": "bathroom_layout",
+        "renderProxyKind": "bathroom_layout",
+        "paramSchema": [
+          {
+            "key": "widthMm",
+            "kind": "mm",
+            "default": 2400,
+            "constraints": { "min": 1800, "max": 3600 }
+          },
+          {
+            "key": "depthMm",
+            "kind": "mm",
+            "default": 2200,
+            "constraints": { "min": 1800, "max": 3200 }
+          },
+          { "key": "heightMm", "kind": "mm", "default": 2100 },
+          {
+            "key": "showerOffsetMm",
+            "kind": "mm",
+            "default": 450,
+            "constraints": { "min": 300, "max": 1000 }
+          },
+          {
+            "key": "toiletOffsetMm",
+            "kind": "mm",
+            "default": 1180,
+            "constraints": { "min": 700, "max": 1800 }
+          },
+          {
+            "key": "vanityOffsetMm",
+            "kind": "mm",
+            "default": 1900,
+            "constraints": { "min": 1200, "max": 2300 }
+          }
+        ],
+        "description": "Composite bathroom layout family with toilet, vanity basin, and shower positions controlled by instance parameters."
       },
       "tmpl-grid-1": {
         "kind": "grid_line",

@@ -89,6 +89,30 @@ describe('<FamilyLibraryPanel /> — FL-06', () => {
     expect(getByTestId(`family-row-${customDoor.id}-custom-badge`)).toBeTruthy();
   });
 
+  it('shows in-project interior assets as component families', () => {
+    const asset: Extract<Element, { kind: 'asset_library_entry' }> = {
+      kind: 'asset_library_entry',
+      id: 'asset-bedroom-queen-bed-1800',
+      assetKind: 'family_instance',
+      name: 'Queen Bed 1800x2100',
+      tags: ['bedroom', 'bed'],
+      category: 'furniture',
+      thumbnailKind: 'schematic_plan',
+      thumbnailWidthMm: 1800,
+      thumbnailHeightMm: 2100,
+      planSymbolKind: 'bed',
+      renderProxyKind: 'bed',
+    };
+    const onPlaceType = vi.fn();
+    const { getByTestId } = setup({ [asset.id]: asset }, onPlaceType);
+
+    expect(getByTestId('family-group-asset-furniture')).toBeTruthy();
+    const row = getByTestId(`family-row-${asset.id}`);
+    expect(row).toBeTruthy();
+    fireEvent.click(row.querySelector('button')!);
+    expect(onPlaceType).toHaveBeenCalledWith('asset', asset.id);
+  });
+
   it('groups custom wall_type elements under "Wall Types"', () => {
     const wt: Extract<Element, { kind: 'wall_type' }> = {
       kind: 'wall_type',

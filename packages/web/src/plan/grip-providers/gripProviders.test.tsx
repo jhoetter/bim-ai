@@ -10,6 +10,7 @@ import {
   floorGripProvider,
   gripsFor,
   maskingRegionGripProvider,
+  placedAssetGripProvider,
   referencePlaneGripProvider,
   sectionCutGripProvider,
   windowGripProvider,
@@ -259,6 +260,86 @@ describe('EDT-01 — beamGripProvider', () => {
     expect(cmd.type).toBe('moveBeamEndpoints');
     expect(cmd.endMm.xMm).toBeCloseTo(7500, 6);
     expect(cmd.endMm.yMm).toBeCloseTo(0, 6);
+  });
+});
+
+describe('F-117/F-120 — placedAssetGripProvider', () => {
+  const sofaEntry: Extract<Element, { kind: 'asset_library_entry' }> = {
+    kind: 'asset_library_entry',
+    id: 'asset-sofa',
+    assetKind: 'family_instance',
+    name: 'Sofa',
+    tags: ['sofa'],
+    category: 'furniture',
+    thumbnailKind: 'schematic_plan',
+    thumbnailWidthMm: 2200,
+    thumbnailHeightMm: 950,
+    planSymbolKind: 'sofa',
+    renderProxyKind: 'sofa',
+    paramSchema: [
+      { key: 'widthMm', kind: 'mm', default: 2200 },
+      { key: 'depthMm', kind: 'mm', default: 950 },
+    ],
+  };
+  const sofa: Extract<Element, { kind: 'placed_asset' }> = {
+    kind: 'placed_asset',
+    id: 'pa-1',
+    name: 'Sofa',
+    assetId: 'asset-sofa',
+    levelId: 'L1',
+    positionMm: { xMm: 1000, yMm: 2000 },
+    rotationDeg: 0,
+    paramValues: { widthMm: 2400, fabric: 'linen' },
+  };
+
+  it('emits face grips for width and depth using instance values and schema defaults', () => {
+    const grips = placedAssetGripProvider.grips(sofa, {
+      elementsById: { [sofa.id]: sofa, [sofaEntry.id]: sofaEntry },
+    });
+
+    expect(grips.map((g) => g.id)).toEqual([
+      'pa-1:width:plus',
+      'pa-1:width:minus',
+      'pa-1:depth:plus',
+      'pa-1:depth:minus',
+    ]);
+    expect(grips[0].positionMm).toEqual({ xMm: 2200, yMm: 2000 });
+    expect(grips[2].positionMm).toEqual({ xMm: 1000, yMm: 2475 });
+    expect(
+      gripsFor(sofa, { elementsById: { [sofaEntry.id]: sofaEntry } }).map((g) => g.id),
+    ).toEqual(grips.map((g) => g.id));
+  });
+
+  it('drag-commit patches widthMm without dropping existing instance params', () => {
+    const [widthPlus] = placedAssetGripProvider.grips(sofa, {
+      elementsById: { [sofaEntry.id]: sofaEntry },
+    });
+    const cmd = widthPlus.onCommit({ xMm: 100, yMm: 0 }) as {
+      type: string;
+      elementId: string;
+      key: string;
+      value: Record<string, unknown>;
+    };
+
+    expect(cmd).toEqual({
+      type: 'updateElementProperty',
+      elementId: 'pa-1',
+      key: 'paramValues',
+      value: { widthMm: 2600, fabric: 'linen' },
+    });
+  });
+
+  it('numeric override patches depthMm exactly', () => {
+    const depthMinus = placedAssetGripProvider
+      .grips(sofa, { elementsById: { [sofaEntry.id]: sofaEntry } })
+      .find((g) => g.id === 'pa-1:depth:minus')!;
+
+    expect(depthMinus.onNumericOverride(1200)).toEqual({
+      type: 'updateElementProperty',
+      elementId: 'pa-1',
+      key: 'paramValues',
+      value: { widthMm: 2400, fabric: 'linen', depthMm: 1200 },
+    });
   });
 });
 

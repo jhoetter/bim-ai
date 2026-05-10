@@ -109,11 +109,7 @@ import { extractAreaPrimitives } from './areaRender';
 import { manualPlacedTagLabel, placeTagByCategoryCommand } from './manualTags';
 import { extractNeighborhoodMassPrimitives } from './neighborhoodMassRender';
 import { planAnnotationLabelSprite } from './planElementMeshBuilders';
-import {
-  DXF_UNDERLAY_OPACITY,
-  DXF_UNDERLAY_STROKE,
-  selectDxfUnderlaysForLevel,
-} from './dxfUnderlay';
+import { resolveDxfUnderlayStyle, selectDxfUnderlaysForLevel } from './dxfUnderlay';
 import {
   buildDriftBadgeCanvas,
   driftBadgeTooltip,
@@ -641,12 +637,6 @@ export function PlanCanvas({
     const el = elementsById[selectedId];
     return el && el.kind === 'wall' ? el : undefined;
   }, [selectedId, elementsById]);
-  // F-088 — selected dimension (enables grip layer + text-label drag handle).
-  const selectedDimension = useMemo(() => {
-    if (!selectedId) return undefined;
-    const el = elementsById[selectedId];
-    return el && el.kind === 'dimension' ? el : undefined;
-  }, [selectedId, elementsById]);
   const selectedElement = useMemo(
     () => (selectedId ? elementsById[selectedId] : undefined),
     [selectedId, elementsById],
@@ -1135,10 +1125,11 @@ export function PlanCanvas({
         const ry = sx * sinR + sy * cosR;
         return new THREE.Vector3((rx + ox) / 1000, SLICE_Y - 0.001, (ry + oy) / 1000);
       };
+      const { color, opacity } = resolveDxfUnderlayStyle(link);
       const mat = new THREE.LineBasicMaterial({
-        color: DXF_UNDERLAY_STROKE,
+        color,
         transparent: true,
-        opacity: DXF_UNDERLAY_OPACITY,
+        opacity,
         linewidth: 1,
       });
       const segments: THREE.Vector3[] = [];
@@ -5029,27 +5020,43 @@ export function PlanCanvas({
           <span className="ml-1 text-foreground/70">1:{plotScaleN}</span>
         </button>
       </div>
-      {/* F-025: Level elevation badge — top-left corner showing current level name and elevation. */}
+      {/* F-025: Revit-style active level datum line across the plan canvas. */}
       {activeLevelElem && (
-        <div
-          data-testid="plan-level-elevation-badge"
-          style={{
-            position: 'absolute',
-            top: 8,
-            left: 8,
-            backgroundColor: 'rgba(30, 58, 138, 0.85)',
-            color: 'white',
-            padding: '3px 8px',
-            borderRadius: 4,
-            fontSize: 11,
-            fontFamily: 'monospace',
-            pointerEvents: 'none',
-            zIndex: 10,
-            userSelect: 'none',
-          }}
-        >
-          {activeLevelElem.name} | {fmtElev(activeLevelElem.elevationMm ?? 0)}
-        </div>
+        <>
+          <div
+            data-testid="plan-level-datum-line"
+            className="pointer-events-none absolute left-0 right-0 top-7 z-10"
+            aria-hidden="true"
+          >
+            <div
+              className="absolute left-2 right-10 top-0 border-t border-dashed"
+              style={{ borderColor: 'rgba(37, 99, 235, 0.9)' }}
+            />
+            <div
+              className="absolute right-3 -top-[7px] h-3.5 w-3.5 rounded-full border bg-surface"
+              style={{ borderColor: 'rgba(37, 99, 235, 0.9)' }}
+            />
+          </div>
+          <div
+            data-testid="plan-level-elevation-badge"
+            style={{
+              position: 'absolute',
+              top: 8,
+              left: 8,
+              backgroundColor: 'rgba(30, 58, 138, 0.85)',
+              color: 'white',
+              padding: '3px 8px',
+              borderRadius: 4,
+              fontSize: 11,
+              fontFamily: 'monospace',
+              pointerEvents: 'none',
+              zIndex: 11,
+              userSelect: 'none',
+            }}
+          >
+            {activeLevelElem.name} | {fmtElev(activeLevelElem.elevationMm ?? 0)}
+          </div>
+        </>
       )}
       {/* North point — architectural drawing convention, always aligned to grid north (up). */}
       <div className="pointer-events-none absolute left-3 bottom-14 z-10 opacity-55">
@@ -5094,7 +5101,7 @@ export function PlanCanvas({
       {/* EDT-01 — grip layer (raycast above element pick so grips win
           on hover). Renders the live draft preview during drag.
           F-088: also shown for selected dimensions (text + offset grips). */}
-      {(selectedWall ?? selectedDimension) && (
+      {gripDescriptors.length > 0 && (
         <GripLayer
           grips={gripDescriptors}
           worldToScreen={worldToScreen}

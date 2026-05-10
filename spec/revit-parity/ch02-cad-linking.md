@@ -70,7 +70,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Halftone Override](file:///Users/jhoetter/Desktop/Revit%20Specs/0340_01-09-17.png)
 
-**bim-ai status:** 🟡 Partial — `dxfUnderlay.ts` renders every `link_dxf` element at configurable opacity via `ctx.globalAlpha`. The default of 50% (halftone-equivalent) matches Revit's visual intent, and `ManageLinksDialog.tsx` now exposes a per-link opacity slider (0–100%) that persists via `updateLinkDxf`. Per-link opacity is now configurable (0–100%) via ManageLinksDialog. Missing: per-view opacity override in VVDialog, and full-opacity (non-halftone) mode as a dropdown choice within VV.
+**bim-ai status:** 🟡 Partial — `dxfUnderlay.ts` resolves every `link_dxf` element's configured overlay style. The default of 50% opacity (halftone-equivalent) matches Revit's visual intent, and `ManageLinksDialog.tsx` exposes a per-link opacity slider (0–100%) plus custom color mode that persists via `updateLinkDxf`. Both the 2D canvas underlay path and the live Three.js plan renderer now honor those settings. Missing: per-view opacity override in VVDialog, and full-opacity (non-halftone) mode as a dropdown choice within VV.
 
 ---
 
@@ -103,7 +103,7 @@ Source segment: `00:27:59 – 00:55:00`
 **Screenshot:**
 ![Work Plane assignment](file:///Users/jhoetter/Desktop/Revit%20Specs/0801_05-33-52.png)
 
-**bim-ai status:** 🟡 Partial — The `link_dxf` element's `levelId` field controls which level the DXF underlay is associated with (its "work plane"). The right-rail inspector shows the current level for selected DXF underlay elements. `ManageLinksDialog` lists each DXF underlay with its level association. Missing: interactive level-dropdown editor in the inspector (currently read-only display); the Revit-style "Set Work Plane" dialog that allows selecting a named reference plane as an alternative to a level.
+**bim-ai status:** ✅ Available — The `link_dxf` element's `levelId` field controls which level the DXF underlay is associated with (its "work plane"). The right-rail inspector exposes an editable level dropdown (`data-testid="inspector-link-dxf-level"`) for selected DXF underlay elements, and the backend `updateElementProperty { key: "levelId" }` path validates that the target is an existing level. `ManageLinksDialog` also lists each DXF underlay with its level association. The named-reference-plane variant of Revit's Set Work Plane dialog is not modeled, but level-hosted CAD work-plane assignment is covered.
 
 ---
 

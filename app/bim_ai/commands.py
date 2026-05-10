@@ -2586,6 +2586,7 @@ class IndexAssetCmd(BaseModel):
         "toilet",
         "bath",
         "shower",
+        "bathroom_layout",
         "generic",
     ] | None = Field(default=None, alias="planSymbolKind")
     render_proxy_kind: Literal[
@@ -2603,6 +2604,7 @@ class IndexAssetCmd(BaseModel):
         "toilet",
         "bath",
         "shower",
+        "bathroom_layout",
         "generic",
     ] | None = Field(default=None, alias="renderProxyKind")
     param_schema: list[dict[str, Any]] | None = Field(default=None, alias="paramSchema")

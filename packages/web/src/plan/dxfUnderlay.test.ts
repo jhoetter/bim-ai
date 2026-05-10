@@ -53,6 +53,20 @@ describe('renderDxfUnderlay', () => {
     expect(ctx.globalAlpha).toBe(DXF_UNDERLAY_OPACITY);
   });
 
+  it('uses configured overlay colour and opacity for linked underlays', () => {
+    const ctx = makeMockContext();
+    const link = linkAtOrigin({
+      colorMode: 'custom',
+      customColor: '#ff00aa',
+      overlayOpacity: 0.25,
+      linework: [{ kind: 'line', start: { xMm: 0, yMm: 0 }, end: { xMm: 1000, yMm: 0 } }],
+    });
+    renderDxfUnderlay(ctx, link, ({ xMm, yMm }) => [xMm / 10, yMm / 10]);
+
+    expect(ctx.strokeStyle).toBe('#ff00aa');
+    expect(ctx.globalAlpha).toBe(0.25);
+  });
+
   it('walks every vertex of an open polyline and adds a closing edge when closed', () => {
     const ctx = makeMockContext();
     const link = linkAtOrigin({

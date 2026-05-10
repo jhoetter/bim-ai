@@ -2735,6 +2735,7 @@ AssetSymbolKind = Literal[
     "toilet",
     "bath",
     "shower",
+    "bathroom_layout",
     "generic",
 ]
 

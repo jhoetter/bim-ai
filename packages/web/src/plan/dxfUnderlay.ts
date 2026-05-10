@@ -8,6 +8,11 @@ export const DXF_UNDERLAY_STROKE = '#7f7f7f';
 export const DXF_UNDERLAY_OPACITY = 0.5;
 export const DXF_UNDERLAY_LINE_WIDTH = 1;
 
+export type DxfUnderlayStyle = {
+  color: string;
+  opacity: number;
+};
+
 function degToRad(deg: number): number {
   return (deg * Math.PI) / 180;
 }
@@ -28,10 +33,7 @@ export function renderDxfUnderlay(
   const linework: DxfLineworkPrim[] = link.linework ?? [];
   if (linework.length === 0) return;
 
-  const color =
-    link.colorMode === 'custom' && link.customColor ? link.customColor : DXF_UNDERLAY_STROKE;
-  const opacity =
-    typeof link.overlayOpacity === 'number' ? link.overlayOpacity : DXF_UNDERLAY_OPACITY;
+  const { color, opacity } = resolveDxfUnderlayStyle(link);
 
   ctx.save();
   ctx.strokeStyle = color;
@@ -72,6 +74,13 @@ export function renderDxfUnderlay(
   }
 
   ctx.restore();
+}
+
+export function resolveDxfUnderlayStyle(link: LinkDxfElement): DxfUnderlayStyle {
+  return {
+    color: link.colorMode === 'custom' && link.customColor ? link.customColor : DXF_UNDERLAY_STROKE,
+    opacity: typeof link.overlayOpacity === 'number' ? link.overlayOpacity : DXF_UNDERLAY_OPACITY,
+  };
 }
 
 function applyLinkTransform(link: LinkDxfElement): (xy: XY) => XY {

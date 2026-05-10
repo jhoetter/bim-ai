@@ -256,6 +256,46 @@ def test_place_asset_with_param_values():
     assert elem.param_values["widthMm"] == 1600
 
 
+def test_update_placed_asset_param_values_after_placement():
+    doc, level_id = _doc_with_level()
+    _apply(
+        doc,
+        {
+            "type": "IndexAsset",
+            "id": "a-parametric-sofa",
+            "name": "Sofa",
+            "category": "furniture",
+            "paramSchema": [
+                {"key": "widthMm", "kind": "mm", "default": 2200},
+                {"key": "depthMm", "kind": "mm", "default": 950},
+            ],
+        },
+    )
+    _apply(
+        doc,
+        {
+            "type": "PlaceAsset",
+            "id": "placed-parametric-sofa",
+            "assetId": "a-parametric-sofa",
+            "levelId": level_id,
+            "positionMm": {"xMm": 100, "yMm": 200},
+        },
+    )
+    _apply(
+        doc,
+        {
+            "type": "updateElementProperty",
+            "elementId": "placed-parametric-sofa",
+            "key": "paramValues",
+            "value": {"widthMm": 2600, "depthMm": 1000},
+        },
+    )
+
+    elem = doc.elements["placed-parametric-sofa"]
+    assert isinstance(elem, PlacedAssetElem)
+    assert elem.param_values == {"widthMm": 2600, "depthMm": 1000}
+
+
 def test_place_asset_rotation():
     doc, level_id = _doc_with_level()
     _apply(doc, {"type": "IndexAsset", "id": "a-5", "name": "Chair", "category": "furniture"})
