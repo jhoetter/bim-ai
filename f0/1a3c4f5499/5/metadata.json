@@ -1,0 +1,82 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "f01a3c4f5499",
+  "session_id": "9d1d6c74-7b8e-4829-83df-f6225a087748",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T14:34:06.138674Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "app/bim_ai/commands.py",
+    "app/bim_ai/elements.py",
+    "app/bim_ai/engine.py",
+    "app/bim_ai/engine_dispatch_documentation.py",
+    "packages/core/src/index.ts",
+    "packages/web/src/i18n.ts",
+    "packages/web/src/plan/AnnotateRibbon.tsx",
+    "packages/web/src/plan/detailComponentsRender.ts",
+    "packages/web/src/state/storeCoercion.ts",
+    "packages/web/src/workspace/inspector/InspectorContent.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "468746476256",
+  "checkpoint_transcript_start": 146,
+  "transcript_lines_at_start": 146,
+  "token_usage": {
+    "input_tokens": 15,
+    "cache_creation_tokens": 5978,
+    "cache_read_tokens": 241586,
+    "output_tokens": 3380,
+    "api_call_count": 7
+  },
+  "session_metrics": {
+    "turn_count": 15
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T14:34:06.132671Z",
+    "agent_lines": 83,
+    "agent_removed": 4,
+    "human_added": 276,
+    "human_modified": 9,
+    "human_removed": 0,
+    "total_committed": 368,
+    "total_lines_changed": 372,
+    "agent_percentage": 23.387096774193548,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 68,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/elements.py": 68
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 285,
+      "user_lines_removed": 9,
+      "agent_lines_added": 160,
+      "agent_lines_removed": 4,
+      "user_added_per_file": {
+        "app/bim_ai/engine_dispatch_documentation.py": 90,
+        "packages/core/src/index.ts": 36,
+        "packages/web/src/i18n.ts": 2,
+        "packages/web/src/plan/AnnotateRibbon.tsx": 76,
+        "packages/web/src/plan/detailComponentsRender.ts": 75,
+        "packages/web/src/state/storeCoercion.ts": 3,
+        "packages/web/src/workspace/inspector/InspectorContent.tsx": 3
+      },
+      "user_removed_per_file": {
+        "packages/core/src/index.ts": 3,
+        "packages/web/src/plan/detailComponentsRender.ts": 1,
+        "packages/web/src/state/storeCoercion.ts": 3,
+        "packages/web/src/workspace/inspector/InspectorContent.tsx": 2
+      }
+    }
+  ]
+}

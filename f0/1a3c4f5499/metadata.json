@@ -3,16 +3,18 @@
   "checkpoint_id": "f01a3c4f5499",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 3,
+  "checkpoints_count": 5,
   "files_touched": [
     "app/bim_ai/commands.py",
     "app/bim_ai/elements.py",
     "app/bim_ai/engine.py",
     "app/bim_ai/engine_dispatch_documentation.py",
     "packages/core/src/index.ts",
+    "packages/web/src/i18n.ts",
     "packages/web/src/plan/AnnotateRibbon.tsx",
     "packages/web/src/plan/detailComponentsRender.ts",
-    "packages/web/src/state/storeCoercion.ts"
+    "packages/web/src/state/storeCoercion.ts",
+    "packages/web/src/workspace/inspector/InspectorContent.tsx"
   ],
   "sessions": [
     {
@@ -44,13 +46,19 @@
       "transcript": "/f0/1a3c4f5499/4/full.jsonl",
       "content_hash": "/f0/1a3c4f5499/4/content_hash.txt",
       "prompt": "/f0/1a3c4f5499/4/prompt.txt"
+    },
+    {
+      "metadata": "/f0/1a3c4f5499/5/metadata.json",
+      "transcript": "/f0/1a3c4f5499/5/full.jsonl",
+      "content_hash": "/f0/1a3c4f5499/5/content_hash.txt",
+      "prompt": "/f0/1a3c4f5499/5/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1775856,
-    "cache_creation_tokens": 257584,
-    "cache_read_tokens": 75269169,
-    "output_tokens": 169497,
-    "api_call_count": 610
+    "input_tokens": 1775871,
+    "cache_creation_tokens": 263562,
+    "cache_read_tokens": 75510755,
+    "output_tokens": 172877,
+    "api_call_count": 617
   }
 }
