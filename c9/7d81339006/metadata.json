@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "c97d81339006",
+  "strategy": "manual-commit",
+  "branch": "revit-parity-rotate-angular-snap",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/c9/7d81339006/0/metadata.json",
+      "transcript": "/c9/7d81339006/0/full.jsonl",
+      "content_hash": "/c9/7d81339006/0/content_hash.txt",
+      "prompt": "/c9/7d81339006/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 947267,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 17052288,
+    "output_tokens": 52362,
+    "api_call_count": 186
+  }
+}
