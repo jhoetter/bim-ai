@@ -434,7 +434,9 @@ def try_apply_core_command(doc, cmd, *, source_provider=None) -> bool:
             )
 
             derivation = compute_room_boundary_derivation(doc)
-            candidates = derivation.get("candidates", [])
+            candidates = derivation.get("axisAlignedRectangleCandidates") or derivation.get(
+                "candidates", []
+            )
 
             best = None
             best_area = float("inf")
