@@ -1,0 +1,42 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "254c797ef83b",
+  "session_id": "05bf7d92-0567-4a81-a2a2-23d060872fd3",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T13:57:10.593485Z",
+  "branch": "revit-parity-layer-stack-reorder",
+  "checkpoints_count": 2,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "0e208145e19b",
+  "token_usage": {
+    "input_tokens": 107,
+    "cache_creation_tokens": 230640,
+    "cache_read_tokens": 6916255,
+    "output_tokens": 50125,
+    "api_call_count": 89
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 1,
+      "user_lines_removed": 0,
+      "agent_lines_added": 133,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/elements.py": 1
+      }
+    }
+  ]
+}
