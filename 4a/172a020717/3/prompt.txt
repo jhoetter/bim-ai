@@ -1,0 +1,1 @@
+In /Users/jhoetter/repos/bim-ai, inspect remaining CAD/UI/View partial rows in spec/revit-parity, especially F-012, F-017-F021, F-024, F-028-F032. Do not edit files. Return a concise ranked list of stale statuses plus practical small code changes that can close the most rows fastest. Include exact file paths and tests.
