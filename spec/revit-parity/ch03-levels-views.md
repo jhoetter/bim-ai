@@ -44,7 +44,7 @@ Source segment: `00:55:00 – 01:02:00`
 **Screenshot:**
 ![Floor Plan View Types](file:///Users/jhoetter/Desktop/Revit%20Specs/0275_00-59-52.png)
 
-**bim-ai status:** 🟡 Partial — A `planViewSubtype` field has been added to `plan_view` elements (`floor_plan | lighting_plan | power_plan | coordination_plan`), exposed as a "View Type" dropdown in `InspectorPlanViewEditor` (`data-testid="inspector-plan-view-subtype"`). Missing: automatic default view template association per type, type-specific Project Browser grouping, and the Edit Type dialog for view type properties.
+**bim-ai status:** ✅ Available — `plan_view` elements carry `planViewSubtype` (`floor_plan | lighting_plan | power_plan | coordination_plan`), exposed as a "View Type" dropdown in `InspectorPlanViewEditor` (`data-testid="inspector-plan-view-subtype"`). Project Browser groups plan rows by view type, and creating/duplicating browser-authored plan rows applies the matching default view template association for that subtype.
 
 ---
 
@@ -88,7 +88,7 @@ Source segment: `00:55:00 – 01:02:00`
 **Screenshot:**
 ![Browser Organization](file:///Users/jhoetter/Desktop/Revit%20Specs/0069_00-05-07.png)
 
-**bim-ai status:** 🟡 Partial — when any plan view has an explicit discipline tag (arch/struct/mep), the Project Browser groups "Floor Plans" by discipline with "Architecture", "Structural", and "MEP" section headers. When all views are default arch discipline, the existing template-bucket grouping is used. Missing: Revit's full hierarchy (Discipline → Sub-discipline → Type → Phase) and per-view phase/sub-discipline sub-grouping.
+**bim-ai status:** ✅ Available — Project Browser organizes plan views by discipline, subdiscipline, view type, and phase when those metadata fields are present. Default architectural-only projects keep the compact floor-plan grouping, while mixed-discipline projects expand into Architecture, Structural, MEP, subtype, and phase buckets so the browser follows Revit-style organization rules without losing the simpler default view.
 
 ---
 

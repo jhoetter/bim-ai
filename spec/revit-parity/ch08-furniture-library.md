@@ -33,7 +33,7 @@ Source segment: `04:35:00 – 04:38:48`
 **Screenshot:**
 ![Array parameter](file:///Users/jhoetter/Desktop/Revit%20Specs/0728_04-36-10.png)
 
-**bim-ai status:** 🟡 Partial — family geometry supports parameter-driven `array` nodes that resolve nested chair families from a host count parameter, including `fit_total` spacing over a table width. Formula-backed family parameters are evaluated before array resolution, so a furniture family can expose `Array_Length_Width = max(1, rounddown(Width / ChairSlotPitch))` and changing `Width` regenerates the chair count on both sides of a dining table. Covered by the focused F-089 resolver test in `packages/web/src/families/familyResolver.array.test.ts`. The Family Library warehouse now detects array count parameters on project assets and external catalog families, shows inline formula editors, validates formulas, and emits `onUpdateArrayFormula` saves with asset/catalog placement context. Missing: Workspace-level persistence wiring for those formula edits in the active project store.
+**bim-ai status:** ✅ Available — family geometry supports parameter-driven `array` nodes that resolve nested chair families from a host count parameter, including `fit_total` spacing over a table width. Formula-backed family parameters are evaluated before array resolution, and the Family Library warehouse UI detects project-asset/catalog-family array formulas, validates edits inline, and persists saved formulas through Workspace to asset `paramSchema` or loaded catalog `family_type` metadata.
 
 ---
 

@@ -25,11 +25,14 @@ import type {
   FamilyDefinition,
   FamilyGeometryNode,
   FamilyInstanceRefNode,
+  FamilyPlanViewRange,
+  FamilyVisibilityViewType,
   ParameterBinding,
   ParametricLengthExpression,
   SweepGeometryNode,
   VisibilityBinding,
   VisibilityByDetailLevel,
+  VisibilityByViewType,
 } from './types';
 
 /**
@@ -38,6 +41,18 @@ import type {
  * here so `families/familyResolver.ts` doesn't import the plan package.
  */
 export type ResolverDetailLevel = 'coarse' | 'medium' | 'fine';
+export type ResolverViewType = FamilyVisibilityViewType;
+
+export interface FamilyResolveVisibilityOptions {
+  detailLevel?: ResolverDetailLevel;
+  viewType?: ResolverViewType;
+  viewRange?: FamilyPlanViewRange;
+  applyViewRange?: boolean;
+}
+
+type FamilyResolveContext = FamilyResolveVisibilityOptions & {
+  zOffsetMm: number;
+};
 
 /**
  * VIE-02 — true if a node is hidden at `detailLevel`. Unset levels
@@ -51,6 +66,31 @@ function isHiddenByDetailLevel(
 ): boolean {
   if (!detailLevel || !vis) return false;
   return vis[detailLevel] === false;
+}
+
+function isHiddenByViewType(
+  vis: VisibilityByViewType | undefined,
+  viewType: ResolverViewType | undefined,
+): boolean {
+  if (!viewType || !vis) return false;
+  return vis[viewType] === false;
+}
+
+function normalizeResolveContext(
+  detailLevelOrOptions?: ResolverDetailLevel | FamilyResolveVisibilityOptions,
+): FamilyResolveContext {
+  if (typeof detailLevelOrOptions === 'string') {
+    return { detailLevel: detailLevelOrOptions, zOffsetMm: 0 };
+  }
+  return {
+    ...(detailLevelOrOptions ?? {}),
+    zOffsetMm: (detailLevelOrOptions as { zOffsetMm?: number } | undefined)?.zOffsetMm ?? 0,
+  };
+}
+
+function withZOffset(context: FamilyResolveContext, zOffsetMm: number): FamilyResolveContext {
+  if (zOffsetMm === 0) return context;
+  return { ...context, zOffsetMm: context.zOffsetMm + zOffsetMm };
 }
 
 /** Max recursion depth for nested-family expansion. */
@@ -171,25 +211,38 @@ function resolveGeometryNode(
   hostParams: HostParams,
   catalog: FamilyCatalogLookup,
   depth: number,
-  detailLevel?: ResolverDetailLevel,
+  context: FamilyResolveContext,
 ): THREE.Object3D | null {
   // VIE-02: per-detail-level visibility short-circuit.
-  if (isHiddenByDetailLevel(node.visibilityByDetailLevel, detailLevel)) return null;
+  if (isHiddenByDetailLevel(node.visibilityByDetailLevel, context.detailLevel)) return null;
+  // F-059: per-view-type visibility short-circuit.
+  if (isHiddenByViewType(node.visibilityByViewType, context.viewType)) return null;
   // FAM-03: visibility binding short-circuit applies to every node kind.
   if (!isVisibleByBinding(node.visibilityBinding, hostParams)) return null;
   if (node.kind === 'sweep') {
+    if (isSweepHiddenByPlanCut(node, hostParams, context)) return null;
     return resolveSweepNode(node, hostParams);
   }
   if (node.kind === 'family_instance_ref') {
-    return resolveNestedFamilyInstance(node, hostParams, catalog, depth, detailLevel);
+    return resolveNestedFamilyInstance(node, hostParams, catalog, depth, context);
   }
   if (node.kind === 'array') {
-    return resolveArrayNode(node, hostParams, catalog, depth, detailLevel);
+    return resolveArrayNode(node, hostParams, catalog, depth, context);
   }
   return null;
 }
 
 function resolveSweepNode(node: SweepGeometryNode, hostParams: HostParams): THREE.Mesh {
+  const geom = resolveSweepGeometry(node, hostParams);
+  const mesh = new THREE.Mesh(geom);
+  mesh.userData.materialKey = resolveSweepMaterialKey(node, hostParams);
+  return mesh;
+}
+
+function resolveSweepGeometry(
+  node: SweepGeometryNode,
+  hostParams: HostParams,
+): THREE.BufferGeometry {
   const resolvedNode = applySweepParametricProfile(
     applySweepPathLengthParam(node, hostParams),
     hostParams,
@@ -199,9 +252,34 @@ function resolveSweepNode(node: SweepGeometryNode, hostParams: HostParams): THRE
   if (startOffsetMm !== null && startOffsetMm !== 0) {
     geom.translate(0, 0, startOffsetMm);
   }
-  const mesh = new THREE.Mesh(geom);
-  mesh.userData.materialKey = resolveSweepMaterialKey(node, hostParams);
-  return mesh;
+  return geom;
+}
+
+export function sweepIntersectsPlanCut(
+  node: SweepGeometryNode,
+  hostParams: HostParams,
+  viewRange: FamilyPlanViewRange,
+  zOffsetMm = 0,
+): boolean {
+  const geom = resolveSweepGeometry(node, hostParams);
+  geom.computeBoundingBox();
+  const box = geom.boundingBox;
+  const minZ = (box?.min.z ?? 0) + zOffsetMm;
+  const maxZ = (box?.max.z ?? 0) + zOffsetMm;
+  geom.dispose();
+  const cut = viewRange.cutPlaneOffsetMm;
+  return minZ <= cut && maxZ >= cut;
+}
+
+function isSweepHiddenByPlanCut(
+  node: SweepGeometryNode,
+  hostParams: HostParams,
+  context: FamilyResolveContext,
+): boolean {
+  if (context.viewType !== 'plan_rcp' || context.applyViewRange === false || !context.viewRange) {
+    return false;
+  }
+  return !sweepIntersectsPlanCut(node, hostParams, context.viewRange, context.zOffsetMm);
 }
 
 function resolveSweepMaterialKey(
@@ -356,8 +434,9 @@ export function resolveArrayNode(
   hostParams: HostParams,
   catalog: FamilyCatalogLookup,
   depth: number = 0,
-  detailLevel?: ResolverDetailLevel,
+  detailLevelOrOptions?: ResolverDetailLevel | FamilyResolveVisibilityOptions,
 ): THREE.Group {
+  const context = normalizeResolveContext(detailLevelOrOptions);
   if (depth > MAX_NESTED_FAMILY_DEPTH) {
     throw new Error(
       `FAM-05: array node depth ${depth} exceeds MAX_NESTED_FAMILY_DEPTH (${MAX_NESTED_FAMILY_DEPTH}); cycle in family graph?`,
@@ -366,6 +445,9 @@ export function resolveArrayNode(
   const group = new THREE.Group();
   group.userData.arrayMode = node.mode;
   group.userData.countParam = node.countParam;
+  if (isHiddenByDetailLevel(node.visibilityByDetailLevel, context.detailLevel)) return group;
+  if (isHiddenByViewType(node.visibilityByViewType, context.viewType)) return group;
+  if (!isVisibleByBinding(node.visibilityBinding, hostParams)) return group;
 
   const rawCount = hostParams[node.countParam];
   const numericCount = typeof rawCount === 'number' ? rawCount : Number(rawCount ?? 1);
@@ -397,7 +479,7 @@ export function resolveArrayNode(
         hostParams,
         catalog,
         depth + 1,
-        detailLevel,
+        context,
       );
       child.position.add(offset);
       group.add(child);
@@ -413,7 +495,7 @@ export function resolveArrayNode(
         hostParams,
         catalog,
         depth + 1,
-        detailLevel,
+        context,
       );
       // Rotate the child's position around the axis through `center`.
       const rel = new THREE.Vector3().subVectors(child.position, center);
@@ -440,7 +522,7 @@ export function resolveArrayNode(
       hostParams,
       catalog,
       depth + 1,
-      detailLevel,
+      context,
     );
     centerCopy.position.set(center.x, center.y, center.z);
     centerCopy.userData.arrayCenter = true;
@@ -462,8 +544,9 @@ export function resolveNestedFamilyInstance(
   hostParams: HostParams,
   catalog: FamilyCatalogLookup,
   depth: number = 0,
-  detailLevel?: ResolverDetailLevel,
+  detailLevelOrOptions?: ResolverDetailLevel | FamilyResolveVisibilityOptions,
 ): THREE.Group {
+  const context = normalizeResolveContext(detailLevelOrOptions);
   if (depth > MAX_NESTED_FAMILY_DEPTH) {
     throw new Error(
       `FAM-01: nested family depth ${depth} exceeds MAX_NESTED_FAMILY_DEPTH (${MAX_NESTED_FAMILY_DEPTH}); cycle in family graph?`,
@@ -475,22 +558,33 @@ export function resolveNestedFamilyInstance(
   }
   const group = new THREE.Group();
   group.userData.familyId = node.familyId;
+  const positionEmptyGroup = () => {
+    group.position.set(node.positionMm.xMm, node.positionMm.yMm, node.positionMm.zMm);
+    group.rotation.y = (node.rotationDeg * Math.PI) / 180;
+    return group;
+  };
+
+  if (isHiddenByDetailLevel(node.visibilityByDetailLevel, context.detailLevel)) {
+    return positionEmptyGroup();
+  }
+  if (isHiddenByViewType(node.visibilityByViewType, context.viewType)) {
+    return positionEmptyGroup();
+  }
 
   // Visibility short-circuit before we recurse.
   if (node.visibilityBinding) {
     const v = hostParams[node.visibilityBinding.paramName];
     const truthy = Boolean(v);
     if (truthy !== node.visibilityBinding.whenTrue) {
-      group.position.set(node.positionMm.xMm, node.positionMm.yMm, node.positionMm.zMm);
-      group.rotation.y = (node.rotationDeg * Math.PI) / 180;
-      return group;
+      return positionEmptyGroup();
     }
   }
 
   const nestedParams = buildNestedParamMap(def, node.parameterBindings, hostParams);
   const geometry = def.geometry ?? [];
+  const nestedContext = withZOffset(context, node.positionMm.zMm);
   for (const geomNode of geometry) {
-    const child = resolveGeometryNode(geomNode, nestedParams, catalog, depth + 1, detailLevel);
+    const child = resolveGeometryNode(geomNode, nestedParams, catalog, depth + 1, nestedContext);
     if (child) group.add(child);
   }
 
@@ -510,8 +604,9 @@ export function resolveFamilyGeometry(
   familyId: string,
   params: HostParams,
   catalog: FamilyCatalogLookup,
-  detailLevel?: ResolverDetailLevel,
+  detailLevelOrOptions?: ResolverDetailLevel | FamilyResolveVisibilityOptions,
 ): THREE.Group {
+  const context = normalizeResolveContext(detailLevelOrOptions);
   const def = catalog[familyId];
   if (!def) throw new Error(`FAM-01: family '${familyId}' not found in catalog`);
   // Detect cycles defensively before we walk.
@@ -523,7 +618,7 @@ export function resolveFamilyGeometry(
   group.userData.familyId = familyId;
   const merged = buildFamilyParamMap(def, params);
   for (const geomNode of def.geometry ?? []) {
-    const child = resolveGeometryNode(geomNode, merged, catalog, 1, detailLevel);
+    const child = resolveGeometryNode(geomNode, merged, catalog, 1, context);
     if (child) group.add(child);
   }
   return group;

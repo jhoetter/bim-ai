@@ -54,7 +54,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![View Range in Family Editor](file:///Users/jhoetter/Desktop/Revit%20Specs/0456_02-47-57.png)
 
-**bim-ai status:** 🟡 Partial — the family editor now exposes plan-preview View Range offsets for Top, Cut Plane, Bottom, and View Depth, with a live cut/depth summary. Missing: actual plan cut filtering of family geometry, nested-host view-range propagation, and Revit's full View Range modal semantics.
+**bim-ai status:** ✅ Available — the family editor exposes plan-preview View Range offsets for Top, Cut Plane, Bottom, and View Depth, with a live cut/depth summary. Plan/RCP preview and resolver paths now hide sweep geometry whose resolved vertical extent misses the active Cut Plane, including nested-family geometry with host z-offset propagation.
 
 ---
 
@@ -76,7 +76,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Align Tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0465_02-49-25.png)
 
-**bim-ai status:** 🟡 Partial — the family editor now supports aligning a symbolic line to a selected reference plane, with an optional Lock flag. Locked symbolic lines follow the reference plane when its offset changes. Missing: Revit's canvas click workflow, model/edge picking, lock glyph interaction, and broad support for sweeps/nested family geometry.
+**bim-ai status:** ✅ Available — the family editor supports Revit-style symbolic-line alignment: start Align on the canvas, pick a reference plane, then pick the symbolic line. The rendered lock glyph can be clicked to release the constraint, and locked symbolic lines follow reference-plane offset edits.
 
 ---
 
@@ -87,7 +87,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Associate Family Parameter](file:///Users/jhoetter/Desktop/Revit%20Specs/0469_02-50-40.png)
 
-**bim-ai status:** ✅ Available — the family editor can draw symbolic lines on canvas, assign symbolic/opening-projection/hidden-cut subcategories, store line style metadata, bind visibility to parameters/detail levels, and render the resulting linework for placed family instances in project plans with solid and dashed project line styles.
+**bim-ai status:** ✅ Available — family editor sweep and symbolic-line property panels expose Associate Family Parameter buttons for Visible and eligible geometry/material fields. Visible associations create/reuse Yes/No parameters such as `Show_2D_Elements`; sweep extrusion depth/start/end and material fields bind to length/material parameters and persist into authored family payloads.
 
 ---
 
@@ -98,7 +98,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Mirror - Draw Axis](file:///Users/jhoetter/Desktop/Revit%20Specs/0467_02-50-08.png)
 
-**bim-ai status:** 🟡 Partial — The mirror tool (hotkey `MM`) is available in the plan canvas for regular project elements: first click sets the axis start point, second click completes the axis and fires `mirrorElements { elementIds: [selectedId], axis, alsoCopy: true }`. The backend (`engine.py`) handles wall and floor boundary reflection. Missing: mirror within the family editor context (the spec's primary use case); "Copy" checkbox in OptionsBar (defaults to alsoCopy=true); multi-element selection for bulk mirror; preview of the mirrored result before confirming.
+**bim-ai status:** ✅ Available — family editor symbolic lines support Mirror - Draw Axis directly in the authoring canvas. Users select a symbolic line, enable Mirror Draw Axis, click two axis points, and choose whether Copy preserves the original or replaces it with the mirrored line.
 
 ---
 
@@ -109,7 +109,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Symbolic Lines](file:///Users/jhoetter/Desktop/Revit%20Specs/0472_02-51-29.png)
 
-**bim-ai status:** 🟡 Partial — the family editor can author 2D symbolic line segments by coordinates and keeps them separate from 3D sweep/model geometry. Missing: canvas drawing tools, line styles, detail-level/view-type visibility settings, and project rendering of symbolic linework.
+**bim-ai status:** ✅ Available — the family editor can author symbolic linework by coordinates or direct canvas drawing, keeps it separate from 3D sweep/model geometry, stores subcategory/object-style metadata, supports detail-level and view-type visibility settings, and renders placed-family symbolic linework in project plans with solid opening projection and dashed hidden-cut styles.
 
 ---
 
@@ -131,7 +131,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Preview Visibility](file:///Users/jhoetter/Desktop/Revit%20Specs/0476_02-52-15.png)
 
-**bim-ai status:** 🟡 Partial — the family editor now has a Preview Visibility toggle and coarse/medium/fine detail-level selector. When enabled, the family editor filters sweeps and nested instances using their visibility bindings and detail-level visibility settings, with a live visible-count summary. Missing: full canvas rendering parity, plan/RCP/elevation/view-type filtering, and project-context preview modes.
+**bim-ai status:** ✅ Available — the family editor Preview Visibility toggle now combines detail level, view type (Plan/RCP, Front/Back, Left/Right, 3D Views, Elevations, Sections), boolean visibility bindings, and Plan/RCP View Range cut filtering. The live summary and authored canvas/list views filter sweeps, symbolic lines, and nested instances using the same visibility semantics that the family resolver uses for project-loaded family geometry.
 
 ---
 

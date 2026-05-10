@@ -328,6 +328,20 @@ describe('FAM-075/FAM-079/FAM-081/FAM-085 — furniture template preset', () => 
       '6/6 sweeps, 0/5 symbolic lines',
     );
   });
+
+  it('uses plan/RCP preview view range to hide furniture sweeps above the cut plane', () => {
+    const { getByLabelText, getByTestId } = renderWithI18n(<FamilyEditorWorkbench />);
+
+    fireEvent.click(getByTestId('family-template-furniture'));
+    fireEvent.change(getByLabelText('Preview detail level'), { target: { value: 'medium' } });
+    fireEvent.click(getByLabelText('parameter-default-Show_2D_Elements'));
+    expect(getByTestId('preview-visibility-summary').textContent).toContain('6/6 sweeps');
+
+    fireEvent.change(getByLabelText('Preview view type'), { target: { value: 'plan_rcp' } });
+
+    expect(getByTestId('preview-visibility-summary').textContent).toContain('0/6 sweeps');
+    expect(getByTestId('preview-visibility-summary').textContent).toContain('Plan/RCP');
+  });
 });
 
 describe('FAM-09 — flex test mode', () => {
@@ -649,6 +663,29 @@ describe('FAM-076 — equal reference-plane dimensions', () => {
     expect((getByLabelText('ref-plane-offset-1') as HTMLInputElement).value).toBe('600');
     expect(getByTestId('family-eq-constraints-list').textContent).toContain('gap 600 mm');
   });
+
+  it('picks reference planes from the canvas and renders a removable EQ glyph', () => {
+    const { container, getByText, getByLabelText, getByTestId, queryByTestId } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+
+    fireEvent.click(getByText('Add vertical'));
+    fireEvent.click(getByText('Add vertical'));
+    fireEvent.click(getByText('Add vertical'));
+    fireEvent.change(getByLabelText('ref-plane-offset-1'), { target: { value: '400' } });
+    fireEvent.change(getByLabelText('ref-plane-offset-2'), { target: { value: '1000' } });
+
+    fireEvent.click(getByTestId('dimension-eq-pick-mode'));
+    const refs = Array.from(container.querySelectorAll('[data-testid^="dimension-ref-plane-"]'));
+    refs.slice(0, 3).forEach((ref) => fireEvent.click(ref));
+    expect(getByTestId('dimension-eq-picked-count').textContent).toContain('3 picked');
+
+    fireEvent.click(getByTestId('dimension-eq-create-picked'));
+    expect(getByTestId('family-eq-constraints-list').textContent).toContain('EQ vertical');
+    const glyph = getByTestId('eq-glyph-eq-1');
+    fireEvent.doubleClick(glyph);
+    expect(queryByTestId('eq-glyph-eq-1')).toBeNull();
+  });
 });
 
 describe('FAM-065/FAM-066 — family category and view range settings', () => {
@@ -728,6 +765,13 @@ describe('FAM-067/FAM-071/FAM-072 — symbolic detail line authoring', () => {
     expect(queryByTestId('symbolic-canvas-line-0')).toBeNull();
 
     fireEvent.click(getByLabelText('symbolic-visibility-coarse'));
+    fireEvent.click(getByLabelText('symbolic-visibility-view-three_d'));
+    expect(getByTestId('preview-visibility-summary').textContent).toContain('4/5 symbolic lines');
+    expect(queryByTestId('symbolic-canvas-line-0')).toBeNull();
+
+    fireEvent.change(getByLabelText('Preview view type'), { target: { value: 'plan_rcp' } });
+    expect(getByTestId('preview-visibility-summary').textContent).toContain('5/5 symbolic lines');
+
     fireEvent.change(getByLabelText('Symbolic line visible when'), {
       target: { value: 'Show_2D_Elements' },
     });
@@ -770,6 +814,39 @@ describe('FAM-073 — preview visibility', () => {
     expect(getByTestId('preview-visibility-summary').textContent).toContain('0/1 sweeps');
     expect(queryByTestId('sweep-0')).toBeNull();
   });
+
+  it('filters family geometry by preview view type visibility', () => {
+    const { getByText, getByLabelText, getByTestId, getAllByText, queryByTestId } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+    fireEvent.click(getByText('Sweep'));
+
+    fireEvent.change(getByLabelText('path-sx'), { target: { value: '0' } });
+    fireEvent.change(getByLabelText('path-sy'), { target: { value: '0' } });
+    fireEvent.change(getByLabelText('path-ex'), { target: { value: '1000' } });
+    fireEvent.change(getByLabelText('path-ey'), { target: { value: '0' } });
+    fireEvent.click(getAllByText('Add line')[0]);
+    fireEvent.click(getByText(/Edit Profile/));
+
+    const addProfileLine = (sx: string, sy: string, ex: string, ey: string) => {
+      fireEvent.change(getByLabelText('profile-sx'), { target: { value: sx } });
+      fireEvent.change(getByLabelText('profile-sy'), { target: { value: sy } });
+      fireEvent.change(getByLabelText('profile-ex'), { target: { value: ex } });
+      fireEvent.change(getByLabelText('profile-ey'), { target: { value: ey } });
+      fireEvent.click(getByText('Add line'));
+    };
+    addProfileLine('0', '0', '50', '0');
+    addProfileLine('50', '0', '25', '50');
+    addProfileLine('25', '50', '0', '0');
+    fireEvent.click(getByText(/Finish/));
+
+    fireEvent.click(getByLabelText('select-sweep-0'));
+    fireEvent.click(getByLabelText('visibility-view-three_d'));
+    fireEvent.click(getByLabelText('Preview Visibility'));
+
+    expect(getByTestId('preview-visibility-summary').textContent).toContain('0/1 sweeps');
+    expect(queryByTestId('sweep-0')).toBeNull();
+  });
 });
 
 describe('FAM-068 — family align and lock', () => {
@@ -786,6 +863,40 @@ describe('FAM-068 — family align and lock', () => {
 
     fireEvent.change(getByLabelText('ref-plane-offset-0'), { target: { value: '400' } });
     expect(getByTestId('symbolic-lines-list').textContent).toContain('(400, 0)');
+  });
+
+  it('supports the canvas click workflow and lock glyph for symbolic-line alignment', () => {
+    const { container, getByText, getByLabelText, getByTestId } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+
+    fireEvent.click(getByText('Add vertical'));
+    fireEvent.change(getByLabelText('ref-plane-offset-0'), { target: { value: '250' } });
+    fireEvent.click(getByTestId('symbolic-line-add'));
+
+    fireEvent.click(getByTestId('canvas-align-start'));
+    const ref = container.querySelector('[data-testid^="symbolic-canvas-ref-plane-"]');
+    expect(ref).not.toBeNull();
+    fireEvent.click(ref!);
+    expect(getByTestId('canvas-align-status').textContent).toContain('pick line');
+    fireEvent.click(getByTestId('symbolic-canvas-line-0'));
+
+    expect(getByTestId('symbolic-lines-list').textContent).toContain('(250, 0)');
+    expect(getByTestId('symbolic-lock-glyph-0')).not.toBeNull();
+    fireEvent.click(getByTestId('symbolic-lock-glyph-0'));
+    expect(getByTestId('symbolic-lines-list').textContent).not.toContain('locked');
+  });
+
+  it('mirrors a selected family symbolic line by a user-drawn axis with Copy enabled', () => {
+    const { getByLabelText, getByTestId } = renderWithI18n(<FamilyEditorWorkbench />);
+
+    fireEvent.click(getByTestId('symbolic-line-add'));
+    fireEvent.click(getByLabelText('select-symbolic-line-0'));
+    fireEvent.click(getByTestId('family-mirror-draw-axis'));
+    fireEvent.click(getByTestId('symbolic-line-canvas'), { clientX: 240, clientY: 130 });
+    fireEvent.click(getByTestId('symbolic-line-canvas'), { clientX: 240, clientY: 30 });
+
+    expect(getByTestId('symbolic-lines-list').textContent).toContain('(-500, 0)');
   });
 });
 
@@ -920,6 +1031,55 @@ describe('FAM-02 — sweep tool flow', () => {
 
     const profileText = getByTestId('sweep-profile-list').textContent ?? '';
     expect(profileText).toContain('(12, 0)');
+  });
+
+  it('adds and copies a circle sketch profile into separate extrusion sweeps', () => {
+    const { getByText, getByLabelText, getByTestId, getAllByText } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+    fireEvent.click(getByText('Sweep'));
+    fireEvent.click(getAllByText('Add line')[0]);
+    fireEvent.click(getByText(/Edit Profile/));
+
+    fireEvent.change(getByLabelText('circle-radius'), { target: { value: '30' } });
+    fireEvent.change(getByLabelText('circle-radius-parameter'), {
+      target: { value: 'Leg_Radius' },
+    });
+    fireEvent.click(getByTestId('profile-add-circle'));
+    expect(getByTestId('sweep-profile-list').textContent).toContain('(30, 0)');
+
+    fireEvent.change(getByLabelText('circle-copy-dx'), { target: { value: '200' } });
+    fireEvent.change(getByLabelText('circle-copy-dy'), { target: { value: '0' } });
+    fireEvent.click(getByTestId('profile-copy-circle'));
+    expect(getByTestId('sweep-profile-list').textContent).toContain('(230, 0)');
+
+    fireEvent.click(getByText(/Finish/));
+    expect(getByTestId('sweep-0')).not.toBeNull();
+    expect(getByTestId('sweep-1')).not.toBeNull();
+  });
+
+  it('associates extrusion elevation start and end grips with family parameters', () => {
+    const { getByText, getByLabelText, getByTestId, getAllByText } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+    fireEvent.click(getByText('Sweep'));
+    fireEvent.click(getAllByText('Add line')[0]);
+    fireEvent.click(getByText(/Edit Profile/));
+    fireEvent.click(getByTestId('profile-add-circle'));
+    fireEvent.click(getByText(/Finish/));
+    fireEvent.click(getByLabelText('select-sweep-0'));
+
+    fireEvent.click(getByTestId('sweep-associate-path-start'));
+    fireEvent.click(getByTestId('sweep-associate-path-end'));
+
+    expect((getByLabelText('Associate extrusion start parameter') as HTMLSelectElement).value).toBe(
+      'Extrusion_Start',
+    );
+    expect((getByLabelText('Associate extrusion end parameter') as HTMLSelectElement).value).toBe(
+      'Extrusion_End',
+    );
+    expect(getByTestId('elevation-extrusion-sketch').textContent).toContain('Extrusion_Start');
+    expect(getByTestId('elevation-extrusion-sketch').textContent).toContain('Extrusion_End');
   });
 });
 

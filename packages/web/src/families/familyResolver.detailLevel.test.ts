@@ -98,6 +98,128 @@ describe('VIE-02 — sweep visibilityByDetailLevel', () => {
   });
 });
 
+describe('F-059/F-066 — family resolver view type and plan cut visibility', () => {
+  it('honors per-view-type visibility while keeping omitted view type backward-compatible', () => {
+    const hiddenInPlan: SweepGeometryNode = {
+      kind: 'sweep',
+      pathLines: straightPath(800),
+      profile: rectProfile(40, 40),
+      profilePlane: 'normal_to_path_start',
+      visibilityByViewType: { plan_rcp: false, three_d: true },
+    };
+    const fam: FamilyDefinition = {
+      id: 'fam:view-types',
+      name: 'View Type Family',
+      discipline: 'generic',
+      params: [],
+      defaultTypes: [],
+      geometry: [hiddenInPlan],
+    };
+    const catalog: FamilyCatalogLookup = { [fam.id]: fam };
+
+    expect(meshCount(resolveFamilyGeometry(fam.id, {}, catalog))).toBe(1);
+    expect(meshCount(resolveFamilyGeometry(fam.id, {}, catalog, { viewType: 'plan_rcp' }))).toBe(0);
+    expect(meshCount(resolveFamilyGeometry(fam.id, {}, catalog, { viewType: 'three_d' }))).toBe(1);
+  });
+
+  it('filters plan/RCP sweeps whose vertical extents miss the active cut plane', () => {
+    const verticalSweep: SweepGeometryNode = {
+      kind: 'sweep',
+      pathLines: [{ startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 0, yMm: 100 } }],
+      profile: rectProfile(100, 100),
+      profilePlane: 'work_plane',
+    };
+    const fam: FamilyDefinition = {
+      id: 'fam:view-range',
+      name: 'View Range Family',
+      discipline: 'generic',
+      params: [],
+      defaultTypes: [],
+      geometry: [verticalSweep],
+    };
+    const catalog: FamilyCatalogLookup = { [fam.id]: fam };
+
+    const cutThrough = resolveFamilyGeometry(fam.id, {}, catalog, {
+      viewType: 'plan_rcp',
+      viewRange: {
+        topOffsetMm: 2300,
+        cutPlaneOffsetMm: 50,
+        bottomOffsetMm: 0,
+        viewDepthOffsetMm: -1200,
+      },
+    });
+    const cutAbove = resolveFamilyGeometry(fam.id, {}, catalog, {
+      viewType: 'plan_rcp',
+      viewRange: {
+        topOffsetMm: 2300,
+        cutPlaneOffsetMm: 1200,
+        bottomOffsetMm: 0,
+        viewDepthOffsetMm: -1200,
+      },
+    });
+
+    expect(meshCount(cutThrough)).toBe(1);
+    expect(meshCount(cutAbove)).toBe(0);
+  });
+
+  it('propagates host plan cut height through nested family instance z offsets', () => {
+    const child: FamilyDefinition = {
+      id: 'fam:child-cut',
+      name: 'Child Cut',
+      discipline: 'generic',
+      params: [],
+      defaultTypes: [],
+      geometry: [
+        {
+          kind: 'sweep',
+          pathLines: [{ startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 0, yMm: 100 } }],
+          profile: rectProfile(100, 100),
+          profilePlane: 'work_plane',
+        },
+      ],
+    };
+    const host: FamilyDefinition = {
+      id: 'fam:host-cut',
+      name: 'Host Cut',
+      discipline: 'generic',
+      params: [],
+      defaultTypes: [],
+      geometry: [
+        {
+          kind: 'family_instance_ref',
+          familyId: child.id,
+          positionMm: { xMm: 0, yMm: 0, zMm: 1100 },
+          rotationDeg: 0,
+          parameterBindings: {},
+        },
+      ],
+    };
+    const catalog: FamilyCatalogLookup = { [child.id]: child, [host.id]: host };
+
+    const throughNested = resolveFamilyGeometry(host.id, {}, catalog, {
+      viewType: 'plan_rcp',
+      viewRange: {
+        topOffsetMm: 2300,
+        cutPlaneOffsetMm: 1150,
+        bottomOffsetMm: 0,
+        viewDepthOffsetMm: -1200,
+      },
+    });
+    const belowNested = resolveFamilyGeometry(host.id, {}, catalog, {
+      viewType: 'plan_rcp',
+      viewRange: {
+        topOffsetMm: 2300,
+        cutPlaneOffsetMm: 900,
+        bottomOffsetMm: 0,
+        viewDepthOffsetMm: -1200,
+      },
+    });
+
+    expect(meshCount(throughNested)).toBe(1);
+    expect(meshCount(belowNested)).toBe(0);
+  });
+});
+
 describe('VIE-02 — family_instance_ref visibilityByDetailLevel', () => {
   it('a nested instance hidden at coarse skips its entire subtree', () => {
     const swingArc: FamilyDefinition = {

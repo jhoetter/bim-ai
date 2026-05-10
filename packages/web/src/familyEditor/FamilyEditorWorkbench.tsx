@@ -6,11 +6,15 @@ import type {
   FamilyDefinition,
   FamilyInstanceRefNode,
   FamilyParamDef,
+  FamilyVisibilityViewType,
   SketchLine,
+  SweepParametricProfile,
   SweepGeometryNode,
   VisibilityBinding,
   VisibilityByDetailLevel,
+  VisibilityByViewType,
 } from '../families/types';
+import { sweepIntersectsPlanCut } from '../families/familyResolver';
 import { validateFormula } from '../lib/expressionEvaluator';
 import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
 import { LoadedFamiliesSidebar, NESTED_FAMILY_DRAG_TYPE } from './LoadedFamiliesSidebar';
@@ -49,6 +53,16 @@ import type { FamilyReloadOverwriteOption } from '../families/catalogFamilyReloa
 
 /** VIE-02 — plan detail levels usable for per-node visibility binding. */
 type DetailLevelKey = 'coarse' | 'medium' | 'fine';
+type PreviewViewTypeKey = FamilyVisibilityViewType;
+
+const FAMILY_VISIBILITY_VIEW_TYPES: { key: PreviewViewTypeKey; label: string }[] = [
+  { key: 'plan_rcp', label: 'Plan/RCP' },
+  { key: 'front_back', label: 'Front/Back' },
+  { key: 'left_right', label: 'Left/Right' },
+  { key: 'three_d', label: '3D Views' },
+  { key: 'elevation', label: 'Elevations' },
+  { key: 'section', label: 'Sections' },
+];
 
 type Template = AuthoredFamilyTemplate;
 
@@ -101,6 +115,7 @@ type SymbolicLine = SketchLine & {
   alignmentLock?: { refPlaneId: string };
   visibilityBinding?: VisibilityBinding;
   visibilityByDetailLevel?: VisibilityByDetailLevel;
+  visibilityByViewType?: VisibilityByViewType;
 };
 
 type SymbolicLineStyle = {
@@ -152,6 +167,8 @@ type SweepDraft = {
   pathLines: SketchLine[];
   profile: SketchLine[];
   profilePlane: 'normal_to_path_start' | 'work_plane';
+  parametricProfile?: SweepParametricProfile;
+  copiedCircleProfiles?: Array<{ profile: SweepParametricProfile; lines: SketchLine[] }>;
   /** which sub-step the user is in: drawing the path, or sketching the
    *  profile loop. */
   step: 'path' | 'profile';
@@ -540,6 +557,18 @@ const EMPTY_SWEEP_DRAFT: SweepDraft = {
   step: 'path',
 };
 
+const EMPTY_MIRROR_DRAFT = {
+  active: false,
+  copy: true,
+  axisStart: null as { xMm: number; yMm: number } | null,
+};
+
+const EMPTY_CANVAS_ALIGN_DRAFT = {
+  active: false,
+  locked: true,
+  refPlaneId: '',
+};
+
 const SKETCH_REF_EXTENT_MM = 1000;
 
 /* ─── FAM-05: Array authoring draft ─────────────────────────────────────── */
@@ -644,6 +673,7 @@ export function FamilyEditorWorkbench({
   const [viewRange, setViewRange] = useState<FamilyViewRange>(DEFAULT_FAMILY_VIEW_RANGE);
   const [previewVisibility, setPreviewVisibility] = useState(false);
   const [previewDetailLevel, setPreviewDetailLevel] = useState<DetailLevelKey>('medium');
+  const [previewViewType, setPreviewViewType] = useState<PreviewViewTypeKey>('three_d');
   const [flexMode, setFlexMode] = useState(false);
   const [flexValues, setFlexValues] = useState<Record<string, unknown>>({});
   const [sweeps, setSweeps] = useState<SweepGeometryNode[]>([]);
@@ -659,6 +689,8 @@ export function FamilyEditorWorkbench({
     yMm: number;
   } | null>(null);
   const [symbolicAlignDraft, setSymbolicAlignDraft] = useState(EMPTY_SYMBOLIC_ALIGN_DRAFT);
+  const [canvasAlignDraft, setCanvasAlignDraft] = useState(EMPTY_CANVAS_ALIGN_DRAFT);
+  const [mirrorDraft, setMirrorDraft] = useState(EMPTY_MIRROR_DRAFT);
   const [dimensions, setDimensions] = useState<FamilyDimension[]>([]);
   const [dimensionDraft, setDimensionDraft] = useState({
     refAId: '',
@@ -669,6 +701,8 @@ export function FamilyEditorWorkbench({
   });
   const [eqConstraints, setEqConstraints] = useState<EqConstraint[]>([]);
   const [eqOrientation, setEqOrientation] = useState<'vertical' | 'horizontal'>('vertical');
+  const [eqPickMode, setEqPickMode] = useState(false);
+  const [eqPickedRefIds, setEqPickedRefIds] = useState<string[]>([]);
   const [nestedInstances, setNestedInstances] = useState<FamilyInstanceRefNode[]>([]);
   const [selectedNestedIndex, setSelectedNestedIndex] = useState<number | null>(null);
   const [materialTarget, setMaterialTarget] = useState<MaterialAssignmentTarget | null>(null);
@@ -750,6 +784,7 @@ export function FamilyEditorWorkbench({
     setFamilyTypesDialogOpen(false);
     setPreviewVisibility(false);
     setPreviewDetailLevel('medium');
+    setPreviewViewType('three_d');
     setFlexMode(false);
     setFlexValues({});
     setSweeps([]);
@@ -761,6 +796,8 @@ export function FamilyEditorWorkbench({
     setSelectedSymbolicLineIndex(null);
     setSymbolicCanvasStart(null);
     setSymbolicAlignDraft(EMPTY_SYMBOLIC_ALIGN_DRAFT);
+    setCanvasAlignDraft(EMPTY_CANVAS_ALIGN_DRAFT);
+    setMirrorDraft(EMPTY_MIRROR_DRAFT);
     setDimensions([]);
     setDimensionDraft({
       refAId: '',
@@ -771,6 +808,8 @@ export function FamilyEditorWorkbench({
     });
     setEqConstraints([]);
     setEqOrientation('vertical');
+    setEqPickMode(false);
+    setEqPickedRefIds([]);
     setNestedInstances([]);
     setSelectedNestedIndex(null);
   }
@@ -810,6 +849,8 @@ export function FamilyEditorWorkbench({
     setSelectedSymbolicLineIndex(null);
     setSymbolicCanvasStart(null);
     setSymbolicAlignDraft(EMPTY_SYMBOLIC_ALIGN_DRAFT);
+    setCanvasAlignDraft(EMPTY_CANVAS_ALIGN_DRAFT);
+    setMirrorDraft(EMPTY_MIRROR_DRAFT);
     setDimensions([
       {
         id: 'dim-backrest-depth',
@@ -845,6 +886,8 @@ export function FamilyEditorWorkbench({
     });
     setEqConstraints([]);
     setEqOrientation('vertical');
+    setEqPickMode(false);
+    setEqPickedRefIds([]);
     setNestedInstances([]);
     setSelectedNestedIndex(null);
   }
@@ -932,6 +975,8 @@ export function FamilyEditorWorkbench({
     setSelectedSymbolicLineIndex(null);
     setSymbolicCanvasStart(null);
     setSymbolicAlignDraft(EMPTY_SYMBOLIC_ALIGN_DRAFT);
+    setCanvasAlignDraft(EMPTY_CANVAS_ALIGN_DRAFT);
+    setMirrorDraft(EMPTY_MIRROR_DRAFT);
     setDimensions(
       document.dimensions.map(
         (dimension, index): FamilyDimension => ({
@@ -949,6 +994,8 @@ export function FamilyEditorWorkbench({
     });
     setEqConstraints(document.eqConstraints.map((constraint) => ({ ...constraint })));
     setEqOrientation('vertical');
+    setEqPickMode(false);
+    setEqPickedRefIds([]);
     setNestedInstances(document.nestedInstances.map((instance) => ({ ...instance })));
     setSelectedNestedIndex(null);
     setPersistenceMessage(`Opened ${document.name}`);
@@ -1033,25 +1080,53 @@ export function FamilyEditorWorkbench({
     setSymbolicLines(nextSymbolicLines);
   }
 
-  function createEqConstraint() {
-    const isVertical = eqOrientation === 'vertical';
-    const selected = refPlanes
-      .filter((plane) => plane.isVertical === isVertical)
+  function createEqConstraintForRefIds(refPlaneIds: string[]) {
+    const selected = refPlaneIds
+      .map((id) => refPlanes.find((plane) => plane.id === id))
+      .filter((plane): plane is RefPlane => Boolean(plane))
       .sort((a, b) => a.offsetMm - b.offsetMm);
     if (selected.length < 3) return;
-    const refPlaneIds = selected.map((plane) => plane.id);
+    if (!selected.every((plane) => plane.isVertical === selected[0]!.isVertical)) return;
+    const selectedIds = selected.map((plane) => plane.id);
     const constraint: EqConstraint = {
       id: `eq-${eqConstraints.length + 1}`,
-      orientation: eqOrientation,
-      refPlaneIds,
-      equalGapMm: equalGapForPlanes(refPlanes, refPlaneIds),
+      orientation: selected[0]!.isVertical ? 'vertical' : 'horizontal',
+      refPlaneIds: selectedIds,
+      equalGapMm: equalGapForPlanes(refPlanes, selectedIds),
     };
     const next = applyEqConstraintToPlanes(refPlanes, constraint);
     setRefPlanes(next);
     setEqConstraints((prev) => [
       ...prev,
-      { ...constraint, equalGapMm: equalGapForPlanes(next, refPlaneIds) },
+      { ...constraint, equalGapMm: equalGapForPlanes(next, selectedIds) },
     ]);
+    setEqPickedRefIds([]);
+    setEqPickMode(false);
+  }
+
+  function createEqConstraint() {
+    const isVertical = eqOrientation === 'vertical';
+    createEqConstraintForRefIds(
+      refPlanes
+        .filter((plane) => plane.isVertical === isVertical)
+        .sort((a, b) => a.offsetMm - b.offsetMm)
+        .map((plane) => plane.id),
+    );
+  }
+
+  function createPickedEqConstraint() {
+    createEqConstraintForRefIds(eqPickedRefIds);
+  }
+
+  function toggleEqPickedRef(planeId: string) {
+    if (!eqPickMode) return;
+    setEqPickedRefIds((prev) =>
+      prev.includes(planeId) ? prev.filter((id) => id !== planeId) : [...prev, planeId],
+    );
+  }
+
+  function removeEqConstraint(id: string) {
+    setEqConstraints((prev) => prev.filter((constraint) => constraint.id !== id));
   }
 
   function refPlaneDistanceMm(refAId: string, refBId: string): number {
@@ -1134,6 +1209,50 @@ export function FamilyEditorWorkbench({
     ]);
   }
 
+  function ensureParam(nextParam: Param): string {
+    const key = nextParam.key.trim();
+    if (!key) return nextParam.key;
+    setParams((prev) =>
+      prev.some((param) => param.key === key)
+        ? prev
+        : [
+            ...prev,
+            {
+              ...nextParam,
+              key,
+              label: nextParam.label || key,
+            },
+          ],
+    );
+    return key;
+  }
+
+  function ensureBooleanParam(key = 'Show_2D_Elements', label = 'Show 2D Elements'): string {
+    return ensureParam({
+      key,
+      label,
+      type: 'boolean',
+      default: true,
+      formula: '',
+      instanceOverridable: true,
+    });
+  }
+
+  function firstBooleanParamKey(): string {
+    return params.find((param) => param.type === 'boolean')?.key ?? ensureBooleanParam();
+  }
+
+  function ensureLengthParam(key: string, label: string, defaultMm: number): string {
+    return ensureParam({
+      key,
+      label,
+      type: 'length_mm',
+      default: defaultMm,
+      formula: '',
+      instanceOverridable: false,
+    });
+  }
+
   function updateParam(index: number, patch: Partial<Param>) {
     setParams((prev) => {
       const next = prev.map((p, i) => (i === index ? { ...p, ...patch } : p));
@@ -1212,7 +1331,77 @@ export function FamilyEditorWorkbench({
   }
 
   function appendSweepProfileLine(line: SketchLine) {
-    setSweepDraft((prev) => (prev ? { ...prev, profile: [...prev.profile, line] } : prev));
+    setSweepDraft((prev) =>
+      prev
+        ? {
+            ...prev,
+            profile: [...prev.profile, line],
+            parametricProfile: undefined,
+            copiedCircleProfiles: undefined,
+          }
+        : prev,
+    );
+  }
+
+  function appendSweepProfileCircle(
+    centerXMm: number,
+    centerYMm: number,
+    radiusMm: number,
+    radiusParam: string,
+  ) {
+    const safeRadius = Math.max(1, Math.round(radiusMm));
+    const profile: SweepParametricProfile = {
+      kind: 'circle',
+      centerX: centerXMm,
+      centerY: centerYMm,
+      radiusParam,
+      fallbackRadiusMm: safeRadius,
+      segments: 24,
+      editablePrimitive: 'circle',
+    };
+    setSweepDraft((prev) =>
+      prev
+        ? {
+            ...prev,
+            profile: circularProfileLines(centerXMm, centerYMm, safeRadius, 24),
+            parametricProfile: profile,
+            copiedCircleProfiles: [],
+          }
+        : prev,
+    );
+  }
+
+  function copySweepProfileCircle(dxMm: number, dyMm: number) {
+    setSweepDraft((prev) => {
+      if (!prev?.parametricProfile || prev.parametricProfile.kind !== 'circle') return prev;
+      const base = prev.parametricProfile;
+      const baseX =
+        typeof base.centerX === 'number' ? base.centerX : (base.centerX.fallbackMm ?? 0);
+      const baseY =
+        typeof base.centerY === 'number' ? base.centerY : (base.centerY.fallbackMm ?? 0);
+      const radius = base.fallbackRadiusMm ?? 25;
+      const copiedCenterX = Math.round(baseX + dxMm);
+      const copiedCenterY = Math.round(baseY + dyMm);
+      const profile: SweepParametricProfile = {
+        ...base,
+        centerX: copiedCenterX,
+        centerY: copiedCenterY,
+      };
+      return {
+        ...prev,
+        profile: [
+          ...prev.profile,
+          ...circularProfileLines(copiedCenterX, copiedCenterY, radius, base.segments ?? 24),
+        ],
+        copiedCircleProfiles: [
+          ...(prev.copiedCircleProfiles ?? []),
+          {
+            profile,
+            lines: circularProfileLines(copiedCenterX, copiedCenterY, radius, base.segments ?? 24),
+          },
+        ],
+      };
+    });
   }
 
   function appendPickedProfileRefPlane(planeId: string, locked: boolean) {
@@ -1260,8 +1449,16 @@ export function FamilyEditorWorkbench({
         pathLines: prev.pathLines,
         profile: prev.profile,
         profilePlane: prev.profilePlane,
+        ...(prev.parametricProfile ? { parametricProfile: prev.parametricProfile } : {}),
       };
-      setSweeps((s) => [...s, node]);
+      const copiedNodes: SweepGeometryNode[] = (prev.copiedCircleProfiles ?? []).map((copy) => ({
+        kind: 'sweep',
+        pathLines: prev.pathLines,
+        profile: copy.lines,
+        profilePlane: prev.profilePlane,
+        parametricProfile: copy.profile,
+      }));
+      setSweeps((s) => [...s, node, ...copiedNodes]);
       return null;
     });
   }
@@ -1299,6 +1496,21 @@ export function FamilyEditorWorkbench({
     );
   }
 
+  function updateSweepViewTypeVisibility(
+    index: number,
+    viewType: PreviewViewTypeKey,
+    visible: boolean,
+  ) {
+    setSweeps((prev) =>
+      prev.map((s, i) => {
+        if (i !== index) return s;
+        const next: VisibilityByViewType = { ...(s.visibilityByViewType ?? {}) };
+        next[viewType] = visible;
+        return { ...s, visibilityByViewType: next };
+      }),
+    );
+  }
+
   function updateSweepMaterial(index: number, materialKey: string | null) {
     setSweeps((prev) =>
       prev.map((sweep, i) => {
@@ -1321,6 +1533,32 @@ export function FamilyEditorWorkbench({
           return rest as SweepGeometryNode;
         }
         return { ...sweep, pathLengthParam: paramName };
+      }),
+    );
+  }
+
+  function updateSweepPathStartOffsetParam(index: number, paramName: string | null) {
+    setSweeps((prev) =>
+      prev.map((sweep, i) => {
+        if (i !== index) return sweep;
+        if (!paramName) {
+          const { pathStartOffsetParam: _omit, ...rest } = sweep;
+          return rest as SweepGeometryNode;
+        }
+        return { ...sweep, pathStartOffsetParam: paramName };
+      }),
+    );
+  }
+
+  function updateSweepPathEndOffsetParam(index: number, paramName: string | null) {
+    setSweeps((prev) =>
+      prev.map((sweep, i) => {
+        if (i !== index) return sweep;
+        if (!paramName) {
+          const { pathEndOffsetParam: _omit, ...rest } = sweep;
+          return rest as SweepGeometryNode;
+        }
+        return { ...sweep, pathEndOffsetParam: paramName };
       }),
     );
   }
@@ -1419,6 +1657,21 @@ export function FamilyEditorWorkbench({
     );
   }
 
+  function updateSymbolicLineViewTypeVisibility(
+    index: number,
+    viewType: PreviewViewTypeKey,
+    visible: boolean,
+  ) {
+    setSymbolicLines((prev) =>
+      prev.map((line, i) => {
+        if (i !== index) return line;
+        const next: VisibilityByViewType = { ...(line.visibilityByViewType ?? {}) };
+        next[viewType] = visible;
+        return { ...line, visibilityByViewType: next };
+      }),
+    );
+  }
+
   function canvasPointFromMouseEvent(event: MouseEvent<SVGSVGElement>): {
     xMm: number;
     yMm: number;
@@ -1435,6 +1688,15 @@ export function FamilyEditorWorkbench({
 
   function drawSymbolicLineOnCanvas(event: MouseEvent<SVGSVGElement>) {
     const point = canvasPointFromMouseEvent(event);
+    if (mirrorDraft.active) {
+      if (!mirrorDraft.axisStart) {
+        setMirrorDraft((prev) => ({ ...prev, axisStart: point }));
+        return;
+      }
+      mirrorSelectedSymbolicLine(mirrorDraft.axisStart, point, mirrorDraft.copy);
+      setMirrorDraft((prev) => ({ ...prev, active: false, axisStart: null }));
+      return;
+    }
     if (!symbolicCanvasStart) {
       setSymbolicCanvasStart(point);
       return;
@@ -1456,6 +1718,65 @@ export function FamilyEditorWorkbench({
       ey: point.yMm,
     }));
     setSymbolicCanvasStart(null);
+  }
+
+  function canvasCoord(point: { xMm: number; yMm: number }): { x: number; y: number } {
+    return { x: 240 + point.xMm / 5, y: 130 - point.yMm / 5 };
+  }
+
+  function mirrorPointAcrossAxis(
+    point: { xMm: number; yMm: number },
+    axisStart: { xMm: number; yMm: number },
+    axisEnd: { xMm: number; yMm: number },
+  ): { xMm: number; yMm: number } {
+    const ax = axisStart.xMm;
+    const ay = axisStart.yMm;
+    const bx = axisEnd.xMm;
+    const by = axisEnd.yMm;
+    const dx = bx - ax;
+    const dy = by - ay;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq <= 0) return point;
+    const t = ((point.xMm - ax) * dx + (point.yMm - ay) * dy) / lenSq;
+    const px = ax + t * dx;
+    const py = ay + t * dy;
+    return {
+      xMm: Math.round(2 * px - point.xMm),
+      yMm: Math.round(2 * py - point.yMm),
+    };
+  }
+
+  function mirroredSymbolicLine(
+    line: SymbolicLine,
+    axisStart: { xMm: number; yMm: number },
+    axisEnd: { xMm: number; yMm: number },
+  ): SymbolicLine {
+    const { alignmentLock: _lock, ...rest } = line;
+    return {
+      ...rest,
+      startMm: mirrorPointAcrossAxis(line.startMm, axisStart, axisEnd),
+      endMm: mirrorPointAcrossAxis(line.endMm, axisStart, axisEnd),
+    };
+  }
+
+  function mirrorSelectedSymbolicLine(
+    axisStart: { xMm: number; yMm: number },
+    axisEnd: { xMm: number; yMm: number },
+    copy: boolean,
+  ) {
+    if (selectedSymbolicLineIndex === null) return;
+    setSymbolicLines((prev) => {
+      const line = prev[selectedSymbolicLineIndex];
+      if (!line) return prev;
+      const mirrored = mirroredSymbolicLine(line, axisStart, axisEnd);
+      if (copy) {
+        setSelectedSymbolicLineIndex(prev.length);
+        return [...prev, mirrored];
+      }
+      return prev.map((candidate, index) =>
+        index === selectedSymbolicLineIndex ? mirrored : candidate,
+      );
+    });
   }
 
   function alignSymbolicLineToPlane(
@@ -1495,6 +1816,53 @@ export function FamilyEditorWorkbench({
     );
   }
 
+  function alignCanvasSymbolicLine(index: number) {
+    if (!canvasAlignDraft.active || !canvasAlignDraft.refPlaneId) return;
+    const plane = refPlanes.find((candidate) => candidate.id === canvasAlignDraft.refPlaneId);
+    if (!plane) return;
+    setSymbolicLines((prev) =>
+      prev.map((candidate, lineIndex) =>
+        lineIndex === index
+          ? alignSymbolicLineToPlane(candidate, plane, canvasAlignDraft.locked)
+          : candidate,
+      ),
+    );
+    setSelectedSymbolicLineIndex(index);
+    setCanvasAlignDraft((prev) => ({ ...prev, active: false, refPlaneId: '' }));
+  }
+
+  function toggleSymbolicLineLock(index: number) {
+    setSymbolicLines((prev) =>
+      prev.map((line, lineIndex) => {
+        if (lineIndex !== index || !line.alignmentLock) return line;
+        const { alignmentLock: _omit, ...rest } = line;
+        return rest as SymbolicLine;
+      }),
+    );
+  }
+
+  function applyShow2DVisibilityPreset() {
+    const paramName = ensureBooleanParam();
+    setSymbolicLines((prev) =>
+      prev.map((line) => ({
+        ...line,
+        visibilityBinding: { paramName, whenTrue: true },
+        visibilityByDetailLevel: {
+          ...(line.visibilityByDetailLevel ?? {}),
+          medium: false,
+          fine: false,
+        },
+      })),
+    );
+    setSweeps((prev) =>
+      prev.map((sweep) => ({
+        ...sweep,
+        visibilityBinding: { paramName, whenTrue: false },
+        visibilityByDetailLevel: { ...(sweep.visibilityByDetailLevel ?? {}), coarse: false },
+      })),
+    );
+  }
+
   /* ─── FAM-01 — nested family instance authoring ──────────────────── */
 
   function addNestedFamilyInstance(familyId: string, dropPointMm?: { xMm: number; yMm: number }) {
@@ -1526,6 +1894,10 @@ export function FamilyEditorWorkbench({
         // Strip undefined visibilityBinding so the node doesn't carry the field.
         if ('visibilityBinding' in patch && patch.visibilityBinding === undefined) {
           const { visibilityBinding: _omit, ...rest } = merged;
+          return rest as FamilyInstanceRefNode;
+        }
+        if ('visibilityByViewType' in patch && patch.visibilityByViewType === undefined) {
+          const { visibilityByViewType: _omit, ...rest } = merged;
           return rest as FamilyInstanceRefNode;
         }
         return merged;
@@ -1654,9 +2026,11 @@ export function FamilyEditorWorkbench({
   function visibleInPreview(node: {
     visibilityBinding?: VisibilityBinding;
     visibilityByDetailLevel?: VisibilityByDetailLevel;
+    visibilityByViewType?: VisibilityByViewType;
   }): boolean {
     if (!previewVisibility) return true;
     if (node.visibilityByDetailLevel?.[previewDetailLevel] === false) return false;
+    if (node.visibilityByViewType?.[previewViewType] === false) return false;
     if (node.visibilityBinding) {
       return (
         Boolean(resolved[node.visibilityBinding.paramName]) === node.visibilityBinding.whenTrue
@@ -1665,7 +2039,17 @@ export function FamilyEditorWorkbench({
     return true;
   }
 
-  const previewVisibleSweepCount = sweeps.filter(visibleInPreview).length;
+  function sweepVisibleInPreview(sweep: SweepGeometryNode): boolean {
+    if (!visibleInPreview(sweep)) return false;
+    if (!previewVisibility || previewViewType !== 'plan_rcp') return true;
+    return sweepIntersectsPlanCut(
+      sweep,
+      resolved as Record<string, number | boolean | string>,
+      viewRange,
+    );
+  }
+
+  const previewVisibleSweepCount = sweeps.filter(sweepVisibleInPreview).length;
   const previewVisibleNestedCount = nestedInstances.filter(visibleInPreview).length;
   const previewVisibleSymbolicLineCount = symbolicLines.filter(visibleInPreview).length;
   const selectedSymbolicLine =
@@ -1820,9 +2204,20 @@ export function FamilyEditorWorkbench({
             <option value="medium">Medium</option>
             <option value="fine">Fine</option>
           </select>
+          <select
+            aria-label="Preview view type"
+            value={previewViewType}
+            onChange={(e) => setPreviewViewType(e.target.value as PreviewViewTypeKey)}
+          >
+            {FAMILY_VISIBILITY_VIEW_TYPES.map((option) => (
+              <option key={option.key} value={option.key}>
+                {option.label}
+              </option>
+            ))}
+          </select>
           <span className="text-xs text-muted" data-testid="preview-visibility-summary">
             {previewVisibility
-              ? `${previewVisibleSweepCount}/${sweeps.length} sweeps, ${previewVisibleSymbolicLineCount}/${symbolicLines.length} symbolic lines, and ${previewVisibleNestedCount}/${nestedInstances.length} nested instances visible`
+              ? `${previewVisibleSweepCount}/${sweeps.length} sweeps, ${previewVisibleSymbolicLineCount}/${symbolicLines.length} symbolic lines, and ${previewVisibleNestedCount}/${nestedInstances.length} nested instances visible in ${FAMILY_VISIBILITY_VIEW_TYPES.find((option) => option.key === previewViewType)?.label ?? previewViewType}`
               : 'Preview visibility off'}
           </span>
         </div>
@@ -1979,24 +2374,101 @@ export function FamilyEditorWorkbench({
         >
           <line x1="240" y1="0" x2="240" y2="260" stroke="var(--color-border)" />
           <line x1="0" y1="130" x2="480" y2="130" stroke="var(--color-border)" />
+          {refPlanes.map((plane) =>
+            plane.isVertical ? (
+              <line
+                key={plane.id}
+                data-testid={`symbolic-canvas-ref-plane-${plane.id}`}
+                x1={240 + plane.offsetMm / 5}
+                y1="0"
+                x2={240 + plane.offsetMm / 5}
+                y2="260"
+                stroke="var(--color-accent)"
+                strokeDasharray="5 4"
+                onClick={(event) => {
+                  if (!canvasAlignDraft.active) return;
+                  event.stopPropagation();
+                  setCanvasAlignDraft((prev) => ({ ...prev, refPlaneId: plane.id }));
+                }}
+              />
+            ) : (
+              <line
+                key={plane.id}
+                data-testid={`symbolic-canvas-ref-plane-${plane.id}`}
+                x1="0"
+                y1={130 - plane.offsetMm / 5}
+                x2="480"
+                y2={130 - plane.offsetMm / 5}
+                stroke="var(--color-accent)"
+                strokeDasharray="5 4"
+                onClick={(event) => {
+                  if (!canvasAlignDraft.active) return;
+                  event.stopPropagation();
+                  setCanvasAlignDraft((prev) => ({ ...prev, refPlaneId: plane.id }));
+                }}
+              />
+            ),
+          )}
           {symbolicLines.map((line, index) => {
             if (!visibleInPreview(line)) return null;
             const style = SYMBOLIC_LINE_OBJECT_STYLES[line.subcategory];
+            const start = canvasCoord(line.startMm);
+            const end = canvasCoord(line.endMm);
+            const midX = (start.x + end.x) / 2;
+            const midY = (start.y + end.y) / 2;
             return (
-              <line
-                key={index}
-                data-testid={`symbolic-canvas-line-${index}`}
-                x1={240 + line.startMm.xMm / 5}
-                y1={130 - line.startMm.yMm / 5}
-                x2={240 + line.endMm.xMm / 5}
-                y2={130 - line.endMm.yMm / 5}
-                stroke={style.stroke}
-                strokeWidth={style.strokeWidth}
-                strokeDasharray={style.dashArray}
-                strokeLinecap="round"
-              />
+              <g key={index}>
+                <line
+                  data-testid={`symbolic-canvas-line-${index}`}
+                  x1={start.x}
+                  y1={start.y}
+                  x2={end.x}
+                  y2={end.y}
+                  stroke={style.stroke}
+                  strokeWidth={style.strokeWidth}
+                  strokeDasharray={style.dashArray}
+                  strokeLinecap="round"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (canvasAlignDraft.active) alignCanvasSymbolicLine(index);
+                    else setSelectedSymbolicLineIndex(index);
+                  }}
+                />
+                {line.alignmentLock ? (
+                  <g
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`symbolic-lock-glyph-${index}`}
+                    data-testid={`symbolic-lock-glyph-${index}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      toggleSymbolicLineLock(index);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        toggleSymbolicLineLock(index);
+                      }
+                    }}
+                  >
+                    <circle cx={midX} cy={midY - 12} r="7" fill="var(--color-warning)" />
+                    <text x={midX} y={midY - 8} textAnchor="middle" fontSize="10">
+                      L
+                    </text>
+                  </g>
+                ) : null}
+              </g>
             );
           })}
+          {mirrorDraft.active && mirrorDraft.axisStart ? (
+            <circle
+              data-testid="mirror-axis-start"
+              cx={canvasCoord(mirrorDraft.axisStart).x}
+              cy={canvasCoord(mirrorDraft.axisStart).y}
+              r="4"
+              fill="var(--color-warning)"
+            />
+          ) : null}
           {symbolicCanvasStart ? (
             <circle
               data-testid="symbolic-canvas-start"
@@ -2043,6 +2515,13 @@ export function FamilyEditorWorkbench({
           <button type="button" onClick={addSymbolicLine} data-testid="symbolic-line-add">
             Add symbolic line
           </button>
+          <button
+            type="button"
+            onClick={applyShow2DVisibilityPreset}
+            data-testid="visibility-preset-show-2d"
+          >
+            Show 2D preset
+          </button>
         </div>
         <ul className="space-y-1 text-xs" data-testid="symbolic-lines-list">
           {symbolicLines.map((line, index) =>
@@ -2088,11 +2567,88 @@ export function FamilyEditorWorkbench({
             line={selectedSymbolicLine}
             params={params}
             onUpdate={(binding) => updateSymbolicLineVisibility(selectedSymbolicLineIndex, binding)}
+            onAssociateVisibility={() =>
+              updateSymbolicLineVisibility(selectedSymbolicLineIndex, {
+                paramName: firstBooleanParamKey(),
+                whenTrue: true,
+              })
+            }
             onUpdateDetailLevel={(level, visible) =>
               updateSymbolicLineDetailLevelVisibility(selectedSymbolicLineIndex, level, visible)
             }
+            onUpdateViewType={(viewType, visible) =>
+              updateSymbolicLineViewTypeVisibility(selectedSymbolicLineIndex, viewType, visible)
+            }
           />
         ) : null}
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <button
+            type="button"
+            className={
+              canvasAlignDraft.active
+                ? 'rounded bg-accent px-2 py-1 text-accent-foreground'
+                : 'rounded border px-2 py-1'
+            }
+            onClick={() =>
+              setCanvasAlignDraft((prev) => ({
+                active: !prev.active,
+                locked: prev.locked,
+                refPlaneId: '',
+              }))
+            }
+            data-testid="canvas-align-start"
+          >
+            Align on canvas
+          </button>
+          <label className="flex items-center gap-1">
+            <input
+              type="checkbox"
+              aria-label="canvas-align-lock"
+              checked={canvasAlignDraft.locked}
+              onChange={(event) =>
+                setCanvasAlignDraft((prev) => ({ ...prev, locked: event.target.checked }))
+              }
+            />
+            Lock
+          </label>
+          <span data-testid="canvas-align-status">
+            {canvasAlignDraft.active
+              ? canvasAlignDraft.refPlaneId
+                ? 'pick line'
+                : 'pick reference'
+              : 'idle'}
+          </span>
+          <button
+            type="button"
+            className={
+              mirrorDraft.active
+                ? 'rounded bg-accent px-2 py-1 text-accent-foreground'
+                : 'rounded border px-2 py-1'
+            }
+            disabled={selectedSymbolicLineIndex === null}
+            onClick={() =>
+              setMirrorDraft((prev) => ({
+                active: !prev.active,
+                copy: prev.copy,
+                axisStart: null,
+              }))
+            }
+            data-testid="family-mirror-draw-axis"
+          >
+            Mirror Draw Axis
+          </button>
+          <label className="flex items-center gap-1">
+            <input
+              type="checkbox"
+              aria-label="mirror-copy"
+              checked={mirrorDraft.copy}
+              onChange={(event) =>
+                setMirrorDraft((prev) => ({ ...prev, copy: event.target.checked }))
+              }
+            />
+            Copy
+          </label>
+        </div>
         {symbolicLines.length > 0 && refPlanes.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span>Align</span>
@@ -2205,6 +2761,8 @@ export function FamilyEditorWorkbench({
               onAppendLine={appendSweepProfileLine}
               onPickReferencePlane={appendPickedProfileRefPlane}
               onPickFamilyGeometry={appendPickedProfileFamilyGeometry}
+              onAppendCircle={appendSweepProfileCircle}
+              onCopyCircle={copySweepProfileCircle}
               onTrimExtend={trimExtendProfileLines}
               onFinish={finishSweep}
             />
@@ -2217,7 +2775,7 @@ export function FamilyEditorWorkbench({
           <h2 className="font-semibold mb-2">{t('familyEditor.sweepsHeading')}</h2>
           <ul className="text-sm">
             {sweeps.map((s, i) =>
-              visibleInPreview(s) ? (
+              sweepVisibleInPreview(s) ? (
                 <li key={i} data-testid={`sweep-${i}`}>
                   <button
                     type="button"
@@ -2259,8 +2817,38 @@ export function FamilyEditorWorkbench({
               onUpdatePathLengthParam={(paramName) =>
                 updateSweepPathLengthParam(selectedSweepIndex, paramName)
               }
+              onUpdatePathStartOffsetParam={(paramName) =>
+                updateSweepPathStartOffsetParam(selectedSweepIndex, paramName)
+              }
+              onUpdatePathEndOffsetParam={(paramName) =>
+                updateSweepPathEndOffsetParam(selectedSweepIndex, paramName)
+              }
               onUpdateMaterialParam={(paramName) =>
                 updateSweepMaterialParam(selectedSweepIndex, paramName)
+              }
+              onAssociateVisibility={() =>
+                updateSweepVisibility(selectedSweepIndex, {
+                  paramName: firstBooleanParamKey(),
+                  whenTrue: true,
+                })
+              }
+              onAssociatePathLength={() =>
+                updateSweepPathLengthParam(
+                  selectedSweepIndex,
+                  ensureLengthParam('Extrusion_Depth', 'Extrusion Depth', 1000),
+                )
+              }
+              onAssociatePathStart={() =>
+                updateSweepPathStartOffsetParam(
+                  selectedSweepIndex,
+                  ensureLengthParam('Extrusion_Start', 'Extrusion Start', 0),
+                )
+              }
+              onAssociatePathEnd={() =>
+                updateSweepPathEndOffsetParam(
+                  selectedSweepIndex,
+                  ensureLengthParam('Extrusion_End', 'Extrusion End', 1000),
+                )
               }
               onOpenMaterialBrowser={() =>
                 setMaterialTarget({ kind: 'sweep', index: selectedSweepIndex })
@@ -2270,6 +2858,9 @@ export function FamilyEditorWorkbench({
               }
               onUpdateDetailLevel={(level, visible) =>
                 updateSweepDetailLevelVisibility(selectedSweepIndex, level, visible)
+              }
+              onUpdateViewType={(viewType, visible) =>
+                updateSweepViewTypeVisibility(selectedSweepIndex, viewType, visible)
               }
             />
           )}
@@ -2351,6 +2942,7 @@ export function FamilyEditorWorkbench({
             plane.isVertical ? (
               <line
                 key={plane.id}
+                data-testid={`dimension-ref-plane-${plane.id}`}
                 x1={240 + plane.offsetMm / 5}
                 y1="12"
                 x2={240 + plane.offsetMm / 5}
@@ -2361,10 +2953,13 @@ export function FamilyEditorWorkbench({
                     : 'var(--color-accent)'
                 }
                 strokeDasharray={plane.referenceType === 'strong_reference' ? undefined : '5 4'}
+                strokeWidth={eqPickedRefIds.includes(plane.id) ? 3 : 1}
+                onClick={() => toggleEqPickedRef(plane.id)}
               />
             ) : (
               <line
                 key={plane.id}
+                data-testid={`dimension-ref-plane-${plane.id}`}
                 x1="12"
                 y1={90 - plane.offsetMm / 5}
                 x2="468"
@@ -2375,6 +2970,8 @@ export function FamilyEditorWorkbench({
                     : 'var(--color-accent)'
                 }
                 strokeDasharray={plane.referenceType === 'strong_reference' ? undefined : '5 4'}
+                strokeWidth={eqPickedRefIds.includes(plane.id) ? 3 : 1}
+                onClick={() => toggleEqPickedRef(plane.id)}
               />
             ),
           )}
@@ -2408,6 +3005,51 @@ export function FamilyEditorWorkbench({
                 <line x1={x - 5} y1={y2} x2={x + 5} y2={y2} stroke="var(--color-warning)" />
                 <text x={x + 7} y={(y1 + y2) / 2} fontSize="11">
                   {label}
+                </text>
+              </g>
+            );
+          })}
+          {eqConstraints.map((constraint) => {
+            const selected = constraint.refPlaneIds
+              .map((id) => refPlanes.find((plane) => plane.id === id))
+              .filter((plane): plane is RefPlane => Boolean(plane))
+              .sort((a, b) => a.offsetMm - b.offsetMm);
+            if (selected.length < 2) return null;
+            const first = selected[0]!;
+            const last = selected[selected.length - 1]!;
+            const x =
+              constraint.orientation === 'vertical'
+                ? 240 + (first.offsetMm + last.offsetMm) / 10
+                : 240 + 36;
+            const y =
+              constraint.orientation === 'vertical'
+                ? 28
+                : 90 - (first.offsetMm + last.offsetMm) / 10;
+            return (
+              <g
+                key={constraint.id}
+                role="button"
+                tabIndex={0}
+                aria-label={`eq-glyph-${constraint.id}`}
+                data-testid={`eq-glyph-${constraint.id}`}
+                onDoubleClick={() => removeEqConstraint(constraint.id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    removeEqConstraint(constraint.id);
+                  }
+                }}
+              >
+                <rect
+                  x={x - 13}
+                  y={y - 9}
+                  width="26"
+                  height="16"
+                  rx="2"
+                  fill="var(--color-warning)"
+                />
+                <text x={x} y={y + 3} textAnchor="middle" fontSize="10">
+                  EQ
                 </text>
               </g>
             );
@@ -2525,6 +3167,25 @@ export function FamilyEditorWorkbench({
           >
             Equalize
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              setEqPickMode((prev) => !prev);
+              setEqPickedRefIds([]);
+            }}
+            data-testid="dimension-eq-pick-mode"
+          >
+            Pick EQ refs
+          </button>
+          <button
+            type="button"
+            onClick={createPickedEqConstraint}
+            disabled={eqPickedRefIds.length < 3}
+            data-testid="dimension-eq-create-picked"
+          >
+            Equalize picked
+          </button>
+          <span data-testid="dimension-eq-picked-count">{eqPickedRefIds.length} picked</span>
         </div>
         <ul className="space-y-1 text-xs" data-testid="family-eq-constraints-list">
           {eqConstraints.map((constraint) => (
@@ -2859,10 +3520,17 @@ interface SweepPropertiesPanelProps {
   onUpdate: (binding: VisibilityBinding | undefined) => void;
   onUpdateMaterial: (materialKey: string | null) => void;
   onUpdatePathLengthParam: (paramName: string | null) => void;
+  onUpdatePathStartOffsetParam: (paramName: string | null) => void;
+  onUpdatePathEndOffsetParam: (paramName: string | null) => void;
   onUpdateMaterialParam: (paramName: string | null) => void;
+  onAssociateVisibility: () => void;
+  onAssociatePathLength: () => void;
+  onAssociatePathStart: () => void;
+  onAssociatePathEnd: () => void;
   onOpenMaterialBrowser: () => void;
   onOpenAppearanceAssetBrowser: () => void;
   onUpdateDetailLevel: (level: DetailLevelKey, visible: boolean) => void;
+  onUpdateViewType: (viewType: PreviewViewTypeKey, visible: boolean) => void;
 }
 
 const VISIBLE_ALWAYS = '__always__';
@@ -2871,12 +3539,16 @@ function SymbolicLinePropertiesPanel({
   line,
   params,
   onUpdate,
+  onAssociateVisibility,
   onUpdateDetailLevel,
+  onUpdateViewType,
 }: {
   line: SymbolicLine;
   params: Param[];
   onUpdate: (binding: VisibilityBinding | undefined) => void;
+  onAssociateVisibility: () => void;
   onUpdateDetailLevel: (level: DetailLevelKey, visible: boolean) => void;
+  onUpdateViewType: (viewType: PreviewViewTypeKey, visible: boolean) => void;
 }): JSX.Element {
   const booleanParams = params.filter((p) => p.type === 'boolean');
   const binding = line.visibilityBinding;
@@ -2884,6 +3556,8 @@ function SymbolicLinePropertiesPanel({
   const whenTrue = binding ? binding.whenTrue : true;
   const detailVisible = (level: DetailLevelKey): boolean =>
     line.visibilityByDetailLevel?.[level] !== false;
+  const viewTypeVisible = (viewType: PreviewViewTypeKey): boolean =>
+    line.visibilityByViewType?.[viewType] !== false;
   const style = SYMBOLIC_LINE_OBJECT_STYLES[line.subcategory];
 
   function onParamChange(value: string) {
@@ -2923,6 +3597,14 @@ function SymbolicLinePropertiesPanel({
             </option>
           ))}
         </select>
+        <button
+          type="button"
+          className="rounded border px-2 py-0.5 text-xs"
+          onClick={onAssociateVisibility}
+          data-testid="symbolic-associate-visible"
+        >
+          Associate Family Parameter
+        </button>
       </label>
       {binding ? (
         <div className="mt-2 flex gap-3">
@@ -2960,6 +3642,22 @@ function SymbolicLinePropertiesPanel({
                 onChange={(e) => onUpdateDetailLevel(level, e.target.checked)}
               />
               {level}
+            </label>
+          ))}
+        </div>
+      </div>
+      <div className="mt-2" role="group" aria-label="Symbolic visibility by view type">
+        <div className="font-medium">View types</div>
+        <div className="mt-1 flex flex-wrap gap-4">
+          {FAMILY_VISIBILITY_VIEW_TYPES.map((option) => (
+            <label key={option.key} className="inline-flex items-center gap-1">
+              <input
+                type="checkbox"
+                aria-label={`symbolic-visibility-view-${option.key}`}
+                checked={viewTypeVisible(option.key)}
+                onChange={(e) => onUpdateViewType(option.key, e.target.checked)}
+              />
+              {option.label}
             </label>
           ))}
         </div>
@@ -3175,10 +3873,17 @@ function SweepPropertiesPanel({
   onUpdate,
   onUpdateMaterial,
   onUpdatePathLengthParam,
+  onUpdatePathStartOffsetParam,
+  onUpdatePathEndOffsetParam,
   onUpdateMaterialParam,
+  onAssociateVisibility,
+  onAssociatePathLength,
+  onAssociatePathStart,
+  onAssociatePathEnd,
   onOpenMaterialBrowser,
   onOpenAppearanceAssetBrowser,
   onUpdateDetailLevel,
+  onUpdateViewType,
 }: SweepPropertiesPanelProps): JSX.Element {
   const booleanParams = params.filter((p) => p.type === 'boolean');
   const lengthParams = params.filter((p) => p.type === 'length_mm');
@@ -3188,8 +3893,12 @@ function SweepPropertiesPanel({
   const whenTrue = binding ? binding.whenTrue : true;
   const detailVis = sweep.visibilityByDetailLevel;
   const detailVisible = (level: DetailLevelKey): boolean => detailVis?.[level] !== false;
+  const viewTypeVisible = (viewType: PreviewViewTypeKey): boolean =>
+    sweep.visibilityByViewType?.[viewType] !== false;
   const material = resolveMaterial(sweep.materialKey);
   const associatedPathLength = sweep.pathLengthParam ?? VISIBLE_ALWAYS;
+  const associatedPathStart = sweep.pathStartOffsetParam ?? VISIBLE_ALWAYS;
+  const associatedPathEnd = sweep.pathEndOffsetParam ?? VISIBLE_ALWAYS;
   const associatedMaterial = sweep.materialKeyParam ?? VISIBLE_ALWAYS;
 
   function onParamChange(value: string) {
@@ -3228,12 +3937,95 @@ function SweepPropertiesPanel({
             </option>
           ))}
         </select>
+        <button
+          type="button"
+          className="rounded border px-2 py-0.5 text-xs"
+          onClick={onAssociatePathLength}
+          data-testid="sweep-associate-path-length"
+        >
+          Associate Family Parameter
+        </button>
         {sweep.pathLengthParam ? (
           <span className="text-xs text-muted" data-testid="sweep-path-length-association">
             associated with {sweep.pathLengthParam}
           </span>
         ) : null}
       </label>
+      <div className="rounded border border-border p-2" aria-label="Elevation extrusion controls">
+        <div className="mb-2 text-sm font-medium">Elevation Extents</div>
+        <svg
+          role="img"
+          aria-label="Elevation extrusion sketch"
+          data-testid="elevation-extrusion-sketch"
+          viewBox="0 0 280 120"
+          className="mb-2 h-28 w-full rounded border border-border bg-surface"
+        >
+          <line x1="32" y1="96" x2="248" y2="96" stroke="var(--color-border)" />
+          <rect x="96" y="32" width="88" height="64" fill="var(--color-accent)" opacity="0.18" />
+          <line x1="80" y1="96" x2="200" y2="96" stroke="var(--color-warning)" strokeWidth="2" />
+          <line x1="80" y1="32" x2="200" y2="32" stroke="var(--color-warning)" strokeWidth="2" />
+          <circle cx="200" cy="96" r="5" fill="var(--color-warning)" />
+          <circle cx="200" cy="32" r="5" fill="var(--color-warning)" />
+          <text x="206" y="100" fontSize="10">
+            {sweep.pathStartOffsetParam ?? 'Start'}
+          </text>
+          <text x="206" y="36" fontSize="10">
+            {sweep.pathEndOffsetParam ?? sweep.pathLengthParam ?? 'End'}
+          </text>
+        </svg>
+        <label className="mb-1 flex items-center gap-2 text-sm">
+          <span className="w-32">Extrusion Start</span>
+          <select
+            aria-label="Associate extrusion start parameter"
+            value={associatedPathStart}
+            onChange={(e) =>
+              onUpdatePathStartOffsetParam(
+                e.target.value === VISIBLE_ALWAYS ? null : e.target.value,
+              )
+            }
+          >
+            <option value={VISIBLE_ALWAYS}>Unassociated</option>
+            {lengthParams.map((p) => (
+              <option key={p.key} value={p.key}>
+                {p.label || p.key}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="rounded border px-2 py-0.5 text-xs"
+            onClick={onAssociatePathStart}
+            data-testid="sweep-associate-path-start"
+          >
+            Associate Family Parameter
+          </button>
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <span className="w-32">Extrusion End</span>
+          <select
+            aria-label="Associate extrusion end parameter"
+            value={associatedPathEnd}
+            onChange={(e) =>
+              onUpdatePathEndOffsetParam(e.target.value === VISIBLE_ALWAYS ? null : e.target.value)
+            }
+          >
+            <option value={VISIBLE_ALWAYS}>Unassociated</option>
+            {lengthParams.map((p) => (
+              <option key={p.key} value={p.key}>
+                {p.label || p.key}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="rounded border px-2 py-0.5 text-xs"
+            onClick={onAssociatePathEnd}
+            data-testid="sweep-associate-path-end"
+          >
+            Associate Family Parameter
+          </button>
+        </label>
+      </div>
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="w-32">Material</span>
         <span
@@ -3304,6 +4096,14 @@ function SweepPropertiesPanel({
             </option>
           ))}
         </select>
+        <button
+          type="button"
+          className="rounded border px-2 py-0.5 text-xs"
+          onClick={onAssociateVisibility}
+          data-testid="sweep-associate-visible"
+        >
+          Associate Family Parameter
+        </button>
       </label>
       {binding && (
         <div className="flex gap-3 text-sm">
@@ -3346,6 +4146,22 @@ function SweepPropertiesPanel({
               </label>
             );
           })}
+        </div>
+      </div>
+      <div role="group" aria-label="Visibility by view type">
+        <div className="text-sm font-medium">View types</div>
+        <div className="mt-1 flex flex-wrap gap-4 text-sm">
+          {FAMILY_VISIBILITY_VIEW_TYPES.map((option) => (
+            <label key={option.key} className="inline-flex items-center gap-1">
+              <input
+                type="checkbox"
+                aria-label={`visibility-view-${option.key}`}
+                checked={viewTypeVisible(option.key)}
+                onChange={(e) => onUpdateViewType(option.key, e.target.checked)}
+              />
+              {option.label}
+            </label>
+          ))}
         </div>
       </div>
     </div>
@@ -3603,6 +4419,13 @@ interface ProfileSketchProps extends SweepSketchProps {
   familyGeometryLines: SketchLine[];
   onPickReferencePlane: (planeId: string, locked: boolean) => void;
   onPickFamilyGeometry: (index: number, locked: boolean) => void;
+  onAppendCircle: (
+    centerXMm: number,
+    centerYMm: number,
+    radiusMm: number,
+    radiusParam: string,
+  ) => void;
+  onCopyCircle: (dxMm: number, dyMm: number) => void;
   onTrimExtend: (firstIndex: number, secondIndex: number) => void;
   onFinish: () => void;
 }
@@ -3615,10 +4438,20 @@ function SweepProfileSketch({
   onAppendLine,
   onPickReferencePlane,
   onPickFamilyGeometry,
+  onAppendCircle,
+  onCopyCircle,
   onTrimExtend,
   onFinish,
 }: ProfileSketchProps): JSX.Element {
   const [draft, setDraft] = useState({ sx: 0, sy: 0, ex: 50, ey: 0 });
+  const [circleDraft, setCircleDraft] = useState({
+    cx: 0,
+    cy: 0,
+    radius: 25,
+    radiusParam: 'Leg_Radius',
+    copyDx: 400,
+    copyDy: 0,
+  });
   const [lockPicked, setLockPicked] = useState(true);
   const [pickPlaneId, setPickPlaneId] = useState('');
   const [pickFamilyGeometryIndex, setPickFamilyGeometryIndex] = useState(0);
@@ -3762,6 +4595,66 @@ function SweepProfileSketch({
           }
         >
           {t('familyEditor.sweepAddLine')}
+        </button>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 rounded border border-border p-2 text-xs">
+        <span>Circle</span>
+        <input
+          type="number"
+          aria-label="circle-center-x"
+          value={circleDraft.cx}
+          onChange={(e) => setCircleDraft({ ...circleDraft, cx: Number(e.target.value) })}
+        />
+        <input
+          type="number"
+          aria-label="circle-center-y"
+          value={circleDraft.cy}
+          onChange={(e) => setCircleDraft({ ...circleDraft, cy: Number(e.target.value) })}
+        />
+        <input
+          type="number"
+          aria-label="circle-radius"
+          value={circleDraft.radius}
+          onChange={(e) => setCircleDraft({ ...circleDraft, radius: Number(e.target.value) })}
+        />
+        <input
+          aria-label="circle-radius-parameter"
+          value={circleDraft.radiusParam}
+          onChange={(e) => setCircleDraft({ ...circleDraft, radiusParam: e.target.value })}
+        />
+        <button
+          type="button"
+          data-testid="profile-add-circle"
+          onClick={() =>
+            onAppendCircle(
+              circleDraft.cx,
+              circleDraft.cy,
+              circleDraft.radius,
+              circleDraft.radiusParam || 'Leg_Radius',
+            )
+          }
+        >
+          Add circle
+        </button>
+        <span>Copy</span>
+        <input
+          type="number"
+          aria-label="circle-copy-dx"
+          value={circleDraft.copyDx}
+          onChange={(e) => setCircleDraft({ ...circleDraft, copyDx: Number(e.target.value) })}
+        />
+        <input
+          type="number"
+          aria-label="circle-copy-dy"
+          value={circleDraft.copyDy}
+          onChange={(e) => setCircleDraft({ ...circleDraft, copyDy: Number(e.target.value) })}
+        />
+        <button
+          type="button"
+          data-testid="profile-copy-circle"
+          onClick={() => onCopyCircle(circleDraft.copyDx, circleDraft.copyDy)}
+        >
+          Copy circle
         </button>
       </div>
       {lines.length >= 2 ? (

@@ -97,9 +97,11 @@ import '../cmdPalette/defaultCommands';
 import {
   FamilyLibraryPanel,
   type ExternalCatalogPlacement,
+  type FamilyLibraryArrayFormulaUpdate,
   type FamilyLibraryPlaceKind,
 } from '../families/FamilyLibraryPanel';
 import {
+  findLoadedCatalogFamilyType,
   planCatalogFamilyLoad,
   type FamilyReloadOverwriteOption,
 } from '../families/catalogFamilyReload';
@@ -1003,6 +1005,82 @@ export function Workspace(): JSX.Element {
     [handlePlaceFamilyType, loadCatalogFamilyIntoProject],
   );
 
+  const handleUpdateArrayFormula = useCallback(
+    async (update: FamilyLibraryArrayFormulaUpdate) => {
+      if (!modelId) return;
+      if (update.target.kind === 'asset') {
+        const asset = elementsById[update.target.assetId];
+        if (asset?.kind !== 'asset_library_entry') return;
+        const paramSchema = (asset.paramSchema ?? []).map((param) =>
+          param.key === update.paramKey
+            ? {
+                ...param,
+                constraints: {
+                  ...((param.constraints && typeof param.constraints === 'object'
+                    ? param.constraints
+                    : {}) as Record<string, unknown>),
+                  formula: update.formula,
+                },
+              }
+            : param,
+        );
+        await onSemanticCommand({
+          type: 'updateElementProperty',
+          elementId: asset.id,
+          key: 'paramSchema',
+          value: paramSchema,
+        });
+        return;
+      }
+
+      const placement = update.target.placement;
+      const updatedPlacement: ExternalCatalogPlacement = {
+        ...placement,
+        family: {
+          ...placement.family,
+          params: (placement.family.params ?? []).map((param) =>
+            param.key === update.paramKey ? { ...param, formula: update.formula } : param,
+          ),
+        },
+      };
+      const loaded = findLoadedCatalogFamilyType(elementsById, placement);
+      const plan = planCatalogFamilyLoad(updatedPlacement, elementsById, {
+        overwriteOption: loaded ? 'keep-existing-values' : 'overwrite-parameter-values',
+      });
+      const catalogArrayFormulaParams = {
+        ...((loaded?.parameters.catalogArrayFormulaParams &&
+        typeof loaded.parameters.catalogArrayFormulaParams === 'object'
+          ? loaded.parameters.catalogArrayFormulaParams
+          : {}) as Record<string, unknown>),
+        [update.paramKey]: update.formula,
+      };
+      const command = {
+        ...plan.command,
+        parameters: {
+          ...plan.command.parameters,
+          [`${update.paramKey}Formula`]: update.formula,
+          catalogArrayFormulaParams,
+        },
+      };
+      try {
+        const r = await applyCommandBundle(modelId, [command], { userId: 'component-tool' });
+        if (r.revision !== undefined) {
+          hydrateFromSnapshot({
+            modelId,
+            revision: r.revision,
+            elements: r.elements ?? {},
+            violations: (r.violations ?? []) as Violation[],
+          });
+          setUndoDepth((d) => d + 1);
+        }
+      } catch (err) {
+        log.error('component-tool', 'array formula update failed', err);
+        setSeedError(err instanceof Error ? err.message : 'Array formula update failed');
+      }
+    },
+    [elementsById, hydrateFromSnapshot, modelId, onSemanticCommand, setSeedError],
+  );
+
   /* ── VIS-V3-06: right rail driven by task context ────────────────── */
   const hasSelection = !!selectedId;
   const hasViewControlContext = effectiveMode === '3d' || (effectiveMode as string) === 'plan-3d';
@@ -1037,6 +1115,7 @@ export function Workspace(): JSX.Element {
         onPlaceType={handlePlaceFamilyType}
         onPlaceCatalogFamily={handlePlaceCatalogFamily}
         onLoadCatalogFamily={handleLoadCatalogFamily}
+        onUpdateArrayFormula={handleUpdateArrayFormula}
       />
       <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
       <VVDialog open={vvDialogOpen} onClose={closeVVDialog} />
