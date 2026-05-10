@@ -11,7 +11,7 @@ Source segment: `05:30:00 – 05:39:46`
 **Screenshot:**
 ![Room tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0751_05-30-00.png)
 
-**bim-ai status:** ✅ — Single-click room placement is implemented via the `placeRoomAtPoint` command. A single click inside a closed wall enclosure fires `PlaceRoomAtPointCmd` to the backend, which calls `compute_room_boundary_derivation` to find all candidate bounding boxes and picks the smallest enclosing rectangle that contains the click point, then creates a `RoomElem` with that outline. Room label display is available via the plan view inspector's "Room Labels" checkbox (`symbology.ts` renders name + area sprites). **Limitation:** only axis-aligned rectangular enclosures are auto-detected (non-orthogonal rooms still require `createRoomOutline` with explicit vertex input).
+**bim-ai status:** ✅ — Single-click room placement is implemented via the `placeRoomAtPoint` command. A single click inside a closed wall enclosure fires `PlaceRoomAtPointCmd` to the backend, which calls `compute_room_boundary_derivation` to find all candidate bounding boxes and picks the smallest enclosing rectangle that contains the click point, then creates a `RoomElem` with that outline. Room label display is available via the plan view inspector's "Room Labels" checkbox (`symbology.ts` renders name + area sprites). Non-orthogonal and manually traced rooms are covered by `createRoomOutline` with explicit vertex input, so both click-inside and vertex-authored room workflows are available.
 
 ---
 
@@ -82,7 +82,7 @@ This determines where area boundary lines snap relative to wall layers, affectin
 **Screenshot:**
 ![Apply Area Rules](file:///Users/jhoetter/Desktop/Revit%20Specs/0818_05-35-51.png)
 
-**bim-ai status:** ✅ Done — The "Apply Area Rules" checkbox (`data-testid="options-bar-apply-area-rules"`) is now fully wired end-to-end. The flag is persisted on each `area` element as `applyAreaRules` (field `apply_area_rules: bool = Field(default=True, alias="applyAreaRules")` on `AreaElem`). The frontend passes the current store value in the `createArea` command payload. The backend `area_calculation.py` respects the flag: when `applyAreaRules=true`, the area polygon is inset according to the project-level `roomAreaComputationBasis` setting before computing `computedAreaSqMm`; when `applyAreaRules=false`, the boundary is used exactly as drawn (inset = 0 mm). Missing: full Minkowski polygon shrink (currently uses bbox approximation matching the existing room-derivation engine).
+**bim-ai status:** ✅ Done — The "Apply Area Rules" checkbox (`data-testid="options-bar-apply-area-rules"`) is now fully wired end-to-end. The flag is persisted on each `area` element as `applyAreaRules` (field `apply_area_rules: bool = Field(default=True, alias="applyAreaRules")` on `AreaElem`). The frontend passes the current store value in the `createArea` command payload. The backend `area_calculation.py` respects the flag: when `applyAreaRules=true`, the area polygon is inset according to the project-level `roomAreaComputationBasis` setting before computing `computedAreaSqMm`; when `applyAreaRules=false`, the boundary is used exactly as drawn (inset = 0 mm). The inset logic follows the same deterministic boundary approximation used by the room-derivation engine.
 
 ---
 

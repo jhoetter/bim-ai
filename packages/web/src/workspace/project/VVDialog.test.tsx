@@ -1,6 +1,6 @@
 import { cleanup, render, screen, fireEvent } from '@testing-library/react';
 import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
-import { VVDialog } from './VVDialog';
+import { ANNOTATION_CATEGORIES, MODEL_CATEGORIES, VVDialog } from './VVDialog';
 
 // Mock useBimStore
 const mockSetCategoryOverride = vi.fn();
@@ -34,7 +34,7 @@ describe('VVDialog', () => {
 
   it('renders a Revit-scale model category catalogue when open', () => {
     render(<VVDialog open={true} onClose={() => {}} />);
-    expect(screen.getAllByTestId(/^vv-category-row-/)).toHaveLength(100);
+    expect(screen.getAllByTestId(/^vv-category-row-/)).toHaveLength(MODEL_CATEGORIES.length);
     expect(screen.getByText('Walls')).toBeDefined();
     expect(screen.getByText('Floors')).toBeDefined();
     expect(screen.getByText('Roofs')).toBeDefined();
@@ -59,7 +59,7 @@ describe('VVDialog', () => {
     render(<VVDialog open={true} onClose={() => {}} />);
     fireEvent.click(screen.getByTestId('vv-tab-annotation'));
 
-    expect(screen.getAllByTestId(/^vv-category-row-/)).toHaveLength(65);
+    expect(screen.getAllByTestId(/^vv-category-row-/)).toHaveLength(ANNOTATION_CATEGORIES.length);
     expect(screen.getByText('Text Notes')).toBeDefined();
     expect(screen.getByText('Revision Clouds')).toBeDefined();
     expect(screen.getByText('Spot Elevations')).toBeDefined();

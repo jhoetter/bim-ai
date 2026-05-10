@@ -10,7 +10,7 @@ import type { ViewFilter } from '../../state/storeTypes';
 import { applyCommand } from '../../lib/api';
 import { dxfViewOverrideKey } from '../../plan/dxfUnderlay';
 
-const MODEL_CATEGORIES: string[] = [
+export const MODEL_CATEGORIES: string[] = [
   'air_terminal',
   'analytical_beam',
   'analytical_brace',
@@ -114,7 +114,7 @@ const MODEL_CATEGORIES: string[] = [
   'zone',
 ];
 
-const ANNOTATION_CATEGORIES: string[] = [
+export const ANNOTATION_CATEGORIES: string[] = [
   'area_tag',
   'assembly_tag',
   'beam_annotation',
