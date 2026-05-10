@@ -22,7 +22,7 @@ import {
   sectionCutProjectBrowserEvidenceLine,
   sheetProjectBrowserEvidenceLine,
   siteProjectBrowserEvidenceLine,
-} from './projectBrowserEvidence';
+} from './evidence';
 import { useBimStore } from '../state/store';
 
 function newDupPlanViewId(prefix: string) {

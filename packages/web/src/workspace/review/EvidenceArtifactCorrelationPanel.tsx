@@ -2,14 +2,16 @@ import { Btn } from '@bim-ai/ui';
 
 import { collaborationConflictQueueInspectionLinesFromHints } from '../../lib/collaborationConflictQueue';
 import { formatAgentReviewActionDetails } from '../agent';
-import { EvidenceBaselineLifecycleReadoutV1Table } from '../evidenceBaselineLifecycleReadout';
 import {
   summarizeBcfRoundtripEvidenceSummary,
   summarizeBcfIssuePackageExport,
   type BcfRoundtripEvidenceSummaryWire,
   type BcfIssuePackageExportWire,
 } from '../bcf';
-import { formatStagedArtifactResolutionMode } from '../formatStagedArtifactResolutionMode';
+import {
+  EvidenceBaselineLifecycleReadoutV1Table,
+  formatStagedArtifactResolutionMode,
+} from '../evidence';
 import {
   formatIfcExchangeManifestClosureLines,
   type IfcExchangeManifestClosureWire,
