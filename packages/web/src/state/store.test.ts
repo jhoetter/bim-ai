@@ -119,6 +119,53 @@ describe('hydrateFromSnapshot', () => {
     }
   });
 
+  it('coerces asset library entries and placed assets from snapshot payloads', () => {
+    const { hydrateFromSnapshot } = useBimStore.getState();
+    hydrateFromSnapshot({
+      modelId: 'm1',
+      revision: 1,
+      elements: {
+        'asset-sofa': {
+          kind: 'asset_library_entry',
+          name: 'Sofa',
+          asset_kind: 'block_2d',
+          category: 'furniture',
+          tags: ['living'],
+          discipline_tags: ['arch'],
+          thumbnail_kind: 'schematic_plan',
+          thumbnail_width_mm: 2200,
+          thumbnail_height_mm: 900,
+        },
+        'placed-sofa': {
+          kind: 'placed_asset',
+          name: 'Living room sofa',
+          asset_id: 'asset-sofa',
+          level_id: 'lvl-0',
+          position_mm: { x_mm: 1800, y_mm: 2200 },
+          rotation_deg: 90,
+          param_values: { seats: 3 },
+        },
+      },
+      violations: [],
+    });
+
+    const { elementsById } = useBimStore.getState();
+    const asset = elementsById['asset-sofa'];
+    const placed = elementsById['placed-sofa'];
+    expect(asset?.kind).toBe('asset_library_entry');
+    expect(placed?.kind).toBe('placed_asset');
+    if (asset?.kind === 'asset_library_entry') {
+      expect(asset.thumbnailWidthMm).toBe(2200);
+      expect(asset.disciplineTags).toEqual(['arch']);
+    }
+    if (placed?.kind === 'placed_asset') {
+      expect(placed.assetId).toBe('asset-sofa');
+      expect(placed.levelId).toBe('lvl-0');
+      expect(placed.positionMm).toEqual({ xMm: 1800, yMm: 2200 });
+      expect(placed.rotationDeg).toBe(90);
+    }
+  });
+
   it('coerces area and area plan scheme metadata from snake_case payloads', () => {
     const { hydrateFromSnapshot } = useBimStore.getState();
     hydrateFromSnapshot({
