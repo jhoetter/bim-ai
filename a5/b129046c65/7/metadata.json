@@ -1,0 +1,109 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "a5b129046c65",
+  "session_id": "9d1d6c74-7b8e-4829-83df-f6225a087748",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T13:32:05.247203Z",
+  "branch": "revit-parity-qat-dimension-tag-shortcuts",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "app/bim_ai/commands.py",
+    "app/bim_ai/engine_dispatch_documentation.py",
+    "app/bim_ai/schedule_derivation.py",
+    "app/tests/test_schedule_opening_computed_fields.py",
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/viewport/ViewCube.tsx",
+    "packages/web/src/workspace/ModeShells.test.tsx",
+    "packages/web/src/workspace/ModeShells.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/WorkspaceRightRail.tsx",
+    "packages/web/src/workspace/shell/LeftRail.tsx",
+    "packages/web/src/workspace/viewport/CanvasMount.tsx",
+    "packages/web/src/workspace/viewport/Viewport3DLayersPanel.test.tsx",
+    "packages/web/src/workspace/viewport/Viewport3DLayersPanel.tsx",
+    "ux-revamp.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "64a649d9d2b6",
+  "token_usage": {
+    "input_tokens": 22,
+    "cache_creation_tokens": 20112,
+    "cache_read_tokens": 284858,
+    "output_tokens": 2232,
+    "api_call_count": 12
+  },
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T13:32:05.243201Z",
+    "agent_lines": 0,
+    "agent_removed": 8,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 172,
+    "total_committed": 29,
+    "total_lines_changed": 180,
+    "agent_percentage": 4.444444444444445,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 553,
+      "user_lines_removed": 193,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/commands.py": 2,
+        "app/bim_ai/engine_dispatch_documentation.py": 2,
+        "app/bim_ai/schedule_derivation.py": 30,
+        "app/tests/test_schedule_opening_computed_fields.py": 47,
+        "packages/cli/lib/one-family-home-commands.mjs": 109,
+        "packages/web/src/viewport/ViewCube.tsx": 21,
+        "packages/web/src/workspace/ModeShells.test.tsx": 47,
+        "packages/web/src/workspace/ModeShells.tsx": 167,
+        "packages/web/src/workspace/Workspace.tsx": 4,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 16,
+        "packages/web/src/workspace/shell/LeftRail.tsx": 31,
+        "packages/web/src/workspace/viewport/CanvasMount.tsx": 7,
+        "packages/web/src/workspace/viewport/Viewport3DLayersPanel.tsx": 70
+      },
+      "user_removed_per_file": {
+        "app/bim_ai/schedule_derivation.py": 1,
+        "packages/cli/lib/one-family-home-commands.mjs": 21,
+        "packages/web/src/Viewport.tsx": 121,
+        "packages/web/src/viewport/ViewCube.tsx": 13,
+        "packages/web/src/workspace/ModeShells.test.tsx": 1,
+        "packages/web/src/workspace/ModeShells.tsx": 23,
+        "packages/web/src/workspace/Workspace.tsx": 1,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 4,
+        "packages/web/src/workspace/shell/LeftRail.tsx": 3,
+        "packages/web/src/workspace/viewport/CanvasMount.tsx": 1,
+        "packages/web/src/workspace/viewport/Viewport3DLayersPanel.tsx": 4
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 793,
+      "agent_lines_removed": 790
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 793,
+      "agent_lines_removed": 790
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 793,
+      "agent_lines_removed": 790
+    }
+  ]
+}
