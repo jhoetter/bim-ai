@@ -1,0 +1,60 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "de0241eda73b",
+  "session_id": "05bf7d92-0567-4a81-a2a2-23d060872fd3",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T15:13:42.098331Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/commands.py",
+    "app/bim_ai/elements.py",
+    "app/bim_ai/engine.py",
+    "app/bim_ai/engine_dispatch_documentation.py",
+    "packages/core/src/index.ts",
+    "packages/web/src/plan/AnnotateRibbon.tsx",
+    "packages/web/src/plan/detailComponentsRender.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "13b376deabc1",
+  "checkpoint_transcript_start": 416,
+  "transcript_lines_at_start": 416,
+  "token_usage": {
+    "input_tokens": 12,
+    "cache_creation_tokens": 8868,
+    "cache_read_tokens": 1557466,
+    "output_tokens": 4169,
+    "api_call_count": 11
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T15:13:42.084884Z",
+    "agent_lines": 362,
+    "agent_removed": 3,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 362,
+    "total_lines_changed": 365,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 26,
+      "user_lines_removed": 2,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "claude-skills/watch-yt/watch_yt.py": 26
+      },
+      "user_removed_per_file": {
+        "claude-skills/watch-yt/watch_yt.py": 2
+      }
+    }
+  ]
+}
