@@ -11,7 +11,7 @@ Source segment: `02:45:00 – 02:54:00`
 **Screenshot:**
 ![Nested Family](file:///Users/jhoetter/Desktop/Revit%20Specs/0444_02-45-41.png)
 
-**bim-ai status:** 🟡 Partial — the family editor supports nested family instances, parameter/formula bindings, drag/drop from loaded families, and resolver recursion with cycle detection. Missing: project persistence/reload UX and full overwrite semantics.
+**bim-ai status:** ✅ Available — the family editor supports nested family instances, parameter/formula bindings, drag/drop from loaded families, resolver recursion with cycle detection, and project persistence. Loading a host authored family now embeds a transitive nested-family manifest (`familyEditorNestedFamilyIds`, definitions, and source documents) on the project `family_type`, so nested dependencies travel with the host and are refreshed on reload.
 
 ---
 
@@ -27,7 +27,7 @@ Choice 2 is required when parametric values (e.g., glass thickness) were changed
 **Screenshot:**
 ![Overwrite options](file:///Users/jhoetter/Desktop/Revit%20Specs/0445_02-45-46.png)
 
-**bim-ai status:** 🟡 Partial — external catalog reloads now detect an already-loaded `family_type` by catalog provenance and surface two explicit reload choices in the Family Library: keep existing project parameter values, or overwrite parameter values from the catalog defaults. The reload reuses the existing type id so placed instances continue to reference the updated type. Missing: true `.rfa` family definition/geometry replacement, nested-family reload inside the Family Editor host context, a Revit-style modal prompt, and per-instance/type parameter separation beyond the current project `family_type.parameters` map.
+**bim-ai status:** ✅ Available — external catalog and authored-family reloads detect already-loaded `family_type` rows and surface explicit Keep values vs Overwrite parameter values choices. Reloads reuse existing type ids so placed instances continue to reference the refreshed type, update embedded family definitions/documents, and refresh nested-family dependency manifests while honoring the selected parameter overwrite mode.
 
 ---
 
@@ -43,7 +43,7 @@ The category determines which visibility category controls the family in VG over
 **Screenshot:**
 ![Family Category dialog](file:///Users/jhoetter/Desktop/Revit%20Specs/0451_02-47-03.png)
 
-**bim-ai status:** 🟡 Partial — the family editor now exposes a Family Category and Parameters panel with category selection plus Always Vertical, Work Plane-Based, Room Calculation Point, and Shared flags. Missing: backend persistence, Revit category metadata completeness, project tag eligibility, and Visibility/Graphics category propagation for loaded families.
+**bim-ai status:** ✅ Available — the family editor exposes a Family Category and Parameters panel with category selection plus Always Vertical, Work Plane-Based, Room Calculation Point, and Shared flags. Those settings persist into loaded project `family_type` metadata as explicit category/category-settings parameters, tag category metadata, and loaded-family VG category keys, and placement/runtime category helpers consume the project metadata before falling back to the embedded family document.
 
 ---
 

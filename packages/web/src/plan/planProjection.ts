@@ -36,6 +36,7 @@ export type PlanSemanticKind =
   | 'text_note'
   | 'placed_asset'
   | 'family_instance'
+  | 'detail_component'
   | 'family_symbolic_line'
   | 'family_opening_projection'
   | 'family_hidden_cut';
@@ -119,9 +120,13 @@ export function canonHiddenCategory(cat: string): PlanSemanticKind | undefined {
     'placed assets': 'placed_asset',
     'placed asset': 'placed_asset',
     placed_asset: 'placed_asset',
+    generic_model: 'placed_asset',
     family_instance: 'family_instance',
     'loaded families': 'family_instance',
     'loaded family': 'family_instance',
+    detail_component: 'detail_component',
+    'detail components': 'detail_component',
+    'detail component': 'detail_component',
     family_symbolic_line: 'family_symbolic_line',
     'family symbolic lines': 'family_symbolic_line',
     'symbolic lines': 'family_symbolic_line',

@@ -14,6 +14,7 @@ import {
   FAMILY_EDITOR_DOCUMENT_PARAM,
   type AuthoredFamilyDocument,
 } from '../familyEditor/familyEditorPersistence';
+import { familyInstanceProjectCategoryKey } from '../families/familyPlacementRuntime';
 import { liveTokenReader } from '../viewport/materials';
 import type { PlanDetailLevel } from './planDetailLevelLines';
 import type { PlanSemanticKind } from './planProjection';
@@ -62,6 +63,18 @@ export function familySymbolicLineSemanticKind(
   if (subcategory === 'opening_projection') return 'family_opening_projection';
   if (subcategory === 'hidden_cut') return 'family_hidden_cut';
   return 'family_symbolic_line';
+}
+
+export function familyInstancePlanCategorySemanticKind(
+  instance: FamilyInstanceElement,
+  elementsById: Record<string, Element>,
+): PlanSemanticKind {
+  const category = familyInstanceProjectCategoryKey(instance, elementsById);
+  if (category === 'door' || category === 'window' || category === 'detail_component') {
+    return category;
+  }
+  if (category === 'furniture' || category === 'generic_model') return 'placed_asset';
+  return 'family_instance';
 }
 
 function lineMaterial(
@@ -118,6 +131,10 @@ export function makeFamilyInstancePlanSymbol(
 ): THREE.Group | null {
   const type = elementsById[instance.familyTypeId];
   if (type?.kind !== 'family_type') return null;
+  if (opts.kindHidden?.('family_instance')) return null;
+  if (opts.kindHidden?.(familyInstancePlanCategorySemanticKind(instance, elementsById))) {
+    return null;
+  }
   const def = familyDefinitionForType(type);
   if (!def?.symbolicLines?.length) return null;
 
@@ -169,7 +186,6 @@ export function addFamilyInstancePlanSymbols(
     kindHidden?: (kind: string) => boolean;
   },
 ): void {
-  if (opts.kindHidden?.('family_instance')) return;
   for (const element of Object.values(elementsById)) {
     if (element.kind !== 'family_instance') continue;
     if (element.hostViewId) {
