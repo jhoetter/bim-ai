@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, fireEvent, render } from '@testing-library/react';
 import type { Element } from '@bim-ai/core';
 import {
   InspectorConstraintsFor,
@@ -69,6 +69,34 @@ describe('InspectorPropertiesFor — spec §13', () => {
     expect((getByLabelText('Stair tread depth in millimetres') as HTMLInputElement).value).toBe(
       '280',
     );
+  });
+
+  it('renders editable DXF work-plane level dropdown', () => {
+    const linkDxf = {
+      kind: 'link_dxf',
+      id: 'dxf-1',
+      name: 'Survey underlay',
+      levelId: 'lvl-1',
+      originMm: { xMm: 0, yMm: 0 },
+      rotationDeg: 0,
+      scaleFactor: 1,
+      linework: [],
+    } as Extract<Element, { kind: 'link_dxf' }>;
+    const elementsById = {
+      'lvl-1': { kind: 'level', id: 'lvl-1', name: 'Ground', elevationMm: 0 },
+      'lvl-2': { kind: 'level', id: 'lvl-2', name: 'Upper', elevationMm: 3000 },
+      [linkDxf.id]: linkDxf,
+    } as Record<string, Element>;
+    const onPropertyChange = vi.fn();
+
+    const { getByTestId } = render(
+      InspectorPropertiesFor(linkDxf, t, { elementsById, onPropertyChange }),
+    );
+    const select = getByTestId('inspector-link-dxf-level') as HTMLSelectElement;
+    expect(select.value).toBe('lvl-1');
+
+    fireEvent.change(select, { target: { value: 'lvl-2' } });
+    expect(onPropertyChange).toHaveBeenCalledWith('levelId', 'lvl-2');
   });
 });
 

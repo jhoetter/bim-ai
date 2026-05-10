@@ -14,6 +14,7 @@ def _doc_with_level() -> Document:
         revision=1,
         elements={
             "lvl-1": LevelElem(id="lvl-1", name="Level 1", elevation_mm=0.0),
+            "lvl-2": LevelElem(id="lvl-2", name="Level 2", elevation_mm=3000.0),
         },
     )
 
@@ -119,3 +120,55 @@ def test_create_link_dxf_round_trips_wire() -> None:
     assert wire["scaleFactor"] == 1.0
     assert wire["linework"][0]["kind"] == "line"
     assert wire["linework"][0]["start"] == {"xMm": 0.0, "yMm": 0.0}
+
+
+def test_update_link_dxf_level_id_via_property_command() -> None:
+    doc = _doc_with_level()
+    ok, new_doc, _cmds, _viols, code = try_commit_bundle(
+        doc,
+        [
+            {
+                "type": "createLinkDxf",
+                "id": "lx-fixed",
+                "levelId": "lvl-1",
+                "originMm": {"xMm": 0.0, "yMm": 0.0},
+                "linework": [],
+            },
+            {
+                "type": "updateElementProperty",
+                "elementId": "lx-fixed",
+                "key": "levelId",
+                "value": "lvl-2",
+            },
+        ],
+    )
+    assert ok is True, code
+    assert new_doc is not None
+    link = new_doc.elements["lx-fixed"]
+    assert isinstance(link, LinkDxfElem)
+    assert link.level_id == "lvl-2"
+
+
+def test_update_link_dxf_level_id_rejects_unknown_level() -> None:
+    doc = _doc_with_level()
+    ok, new_doc, _cmds, _viols, code = try_commit_bundle(
+        doc,
+        [
+            {
+                "type": "createLinkDxf",
+                "id": "lx-fixed",
+                "levelId": "lvl-1",
+                "originMm": {"xMm": 0.0, "yMm": 0.0},
+                "linework": [],
+            },
+            {
+                "type": "updateElementProperty",
+                "elementId": "lx-fixed",
+                "key": "levelId",
+                "value": "lvl-missing",
+            },
+        ],
+    )
+    assert ok is False
+    assert new_doc is None
+    assert "levelId must reference an existing Level" in code

@@ -827,15 +827,36 @@ export function InspectorPropertiesFor(
       );
     }
     case 'link_dxf': {
-      const levelNames = Object.fromEntries(
-        Object.values(elementsById)
-          .filter((e) => e.kind === 'level')
-          .map((e) => [e.id, (e as Extract<Element, { kind: 'level' }>).name]),
+      const { onPropertyChange: linkDxfPropChange } = options ?? {};
+      const levels = Object.values(elementsById).filter(
+        (e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level',
       );
+      const levelNames = Object.fromEntries(levels.map((e) => [e.id, e.name]));
       return (
         <div className="space-y-1 text-[11px]">
           <FieldRow label="Name" value={el.name ?? '(unnamed DXF)'} />
-          <FieldRow label="Level" value={levelNames[el.levelId] ?? el.levelId} />
+          {linkDxfPropChange && levels.length > 0 ? (
+            <div className="flex items-center justify-between gap-4 border-b border-border py-1.5">
+              <label className="text-xs text-muted" htmlFor={`link-dxf-level-${el.id}`}>
+                Level
+              </label>
+              <select
+                id={`link-dxf-level-${el.id}`}
+                className="max-w-[180px] rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                value={el.levelId}
+                data-testid="inspector-link-dxf-level"
+                onChange={(e) => linkDxfPropChange('levelId', e.currentTarget.value)}
+              >
+                {levels.map((level) => (
+                  <option key={level.id} value={level.id}>
+                    {level.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <FieldRow label="Level" value={levelNames[el.levelId] ?? el.levelId} />
+          )}
           <FieldRow
             label="Origin"
             value={`(${Math.round(el.originMm.xMm)}, ${Math.round(el.originMm.yMm)}) mm`}

@@ -7,6 +7,8 @@ from bim_ai.engine import (
     FloorTypeElem,
     GridLineElem,
     IssueElem,
+    LevelElem,
+    LinkDxfElem,
     PlanDetailLevelPlan,
     PlanViewElem,
     ProjectSettingsElem,
@@ -508,6 +510,11 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     raise ValueError("discipline must be arch|struct|mep or empty")
                 els[cmd.element_id] = el.model_copy(update={"discipline": d if d else None})
                 els[cmd.element_id] = el.model_copy(update={"discipline": d if d else None})
+            elif cmd.key == "levelId" and isinstance(el, LinkDxfElem):
+                next_level_id = str(cmd.value or "").strip()
+                if next_level_id not in els or not isinstance(els[next_level_id], LevelElem):
+                    raise ValueError("link_dxf levelId must reference an existing Level")
+                els[cmd.element_id] = el.model_copy(update={"level_id": next_level_id})
             else:
                 raise ValueError(
                     "Only updateElementProperty key=name | label(grid) | title(issue) | "
