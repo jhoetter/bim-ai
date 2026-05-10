@@ -6,6 +6,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { stdin } from 'node:process';
+import { execSync } from 'node:child_process';
 
 import { buildOneFamilyHomeCommands } from './lib/one-family-home-commands.mjs';
 
@@ -792,6 +793,97 @@ async function cmdApiVersion() {
   console.log(JSON.stringify(json, null, 2));
 }
 
+async function cmdCheckpoint(modelId, targetPath, viewpointId, threshold, outPath) {
+  if (!modelId) {
+    console.error('checkpoint requires BIM_AI_MODEL_ID');
+    process.exit(1);
+  }
+  if (!targetPath) {
+    console.error('checkpoint requires --target <path>');
+    process.exit(1);
+  }
+
+  // 1. Get current model state
+  const snap = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`);
+  const tmpSnapPath = 'skb-temp-snapshot.json';
+  const tmpActualPng = 'skb-temp-actual.png';
+  await fs.writeFile(tmpSnapPath, JSON.stringify(snap, null, 2));
+
+  try {
+    // 2. Run Playwright headless render
+    console.error(`[skb-03] Rendering snapshot via Playwright (viewpoint: ${viewpointId ?? 'fit'})...`);
+    const env = {
+      ...process.env,
+      SKB_SNAPSHOT_PATH: path.resolve(tmpSnapPath),
+      SKB_VIEWPOINT_ID: viewpointId ?? '',
+      SKB_SCREENSHOT_OUT: path.resolve(tmpActualPng),
+    };
+
+    // Find project root (assume we are in packages/cli/ or root)
+    const root = process.cwd();
+    execSync(
+      `pnpm --filter @bim-ai/web exec playwright test packages/web/e2e/skb-checkpoint.spec.ts --config playwright.skb.config.ts`,
+      {
+        stdio: 'inherit',
+        env,
+        cwd: root,
+      },
+    );
+
+    // 3. Call backend for comparison
+    console.error(`[skb-03] Comparing actual render against ${targetPath}...`);
+    const result = await fetchJson('POST', `${base}/api/v3/skb/checkpoint`, {
+      actualPng: path.resolve(tmpActualPng),
+      targetPng: path.resolve(targetPath),
+      threshold: threshold ? parseFloat(threshold) : 0.05,
+    });
+
+    if (outPath) {
+      await fs.writeFile(outPath, JSON.stringify(result, null, 2));
+    }
+
+    console.log(JSON.stringify(result, null, 2));
+
+    if (result.passed === false) {
+      console.error(
+        `[skb-03] Visual gate FAILED (delta: ${result.overall_delta_normalised.toFixed(
+          4,
+        )} > threshold: ${result.threshold})`,
+      );
+      process.exit(1);
+    } else {
+      console.error(`[skb-03] Visual gate PASSED`);
+    }
+  } finally {
+    // Cleanup
+    await fs.rm(tmpSnapPath).catch(() => {});
+  }
+}
+
+async function cmdCompare(pathA, pathB, rest) {
+  if (!pathA || !pathB) {
+    console.error(
+      'Usage: bim-ai compare <snapshot-a.json> <snapshot-b.json> [--metric=ssim|mse|pixel-diff] [--threshold=0.7] [--region=<name>]',
+    );
+    process.exit(1);
+  }
+  const { readFileSync } = await import('fs');
+  const snapshotA = JSON.parse(readFileSync(pathA, 'utf8'));
+  const snapshotB = JSON.parse(readFileSync(pathB, 'utf8'));
+  const metricArg = rest.find((a) => a.startsWith('--metric='))?.split('=')[1] ?? 'ssim';
+  const thresholdArg = rest.find((a) => a.startsWith('--threshold='))?.split('=')[1];
+  const regionArg = rest.find((a) => a.startsWith('--region='))?.split('=')[1];
+  const result = await fetchJson('POST', `${base}/api/v3/compare`, {
+    snapshotA,
+    snapshotB,
+    metric: metricArg,
+    threshold: thresholdArg ? parseFloat(thresholdArg) : undefined,
+    region: regionArg,
+  });
+  console.log(JSON.stringify(result, null, 2));
+  if (result.thresholdPassed === false) process.exit(1);
+}
+
 function usage() {
   console.error(
     `bim-ai <command> [args]
@@ -848,6 +940,8 @@ Commands:
                                       KRN-V3-06: update cut-plane or name of an existing plan region.
   plan-region delete <id>             KRN-V3-06: delete a plan region.
   watch                               WebSocket watcher (continuous live commits — no Synchronize step required)
+  checkpoint --target <path> [--viewpoint <id>] [--threshold <float>] [--out <path>]
+                                      SKB-03: render current model + compare pixels to target PNG.
   compare <a.json> <b.json> [--metric=ssim|mse|pixel-diff] [--threshold=<float>] [--region=<name>]
                                       VG-V3-01: render-and-compare two snapshots; exit 1 if threshold not met
   api list-tools [--output json]      API-V3-01: list all registered tool descriptors
@@ -1870,27 +1964,21 @@ async function main() {
     if (cmd === 'compare') {
       // VG-V3-01: render-and-compare two snapshots
       const [pathA, pathB, ...rest] = argv.slice(1);
-      if (!pathA || !pathB) {
-        console.error(
-          'Usage: bim-ai compare <snapshot-a.json> <snapshot-b.json> [--metric=ssim|mse|pixel-diff] [--threshold=0.7] [--region=<name>]',
-        );
-        process.exit(1);
+      await cmdCompare(pathA, pathB, rest);
+      return;
+    }
+
+    if (cmd === 'checkpoint') {
+      const rest = argv.slice(1);
+      let targetPath, viewpointId, threshold, outPath;
+      for (let i = 0; i < rest.length; i++) {
+        const a = rest[i];
+        if (a === '--target' && rest[i + 1]) targetPath = rest[++i];
+        else if (a === '--viewpoint' && rest[i + 1]) viewpointId = rest[++i];
+        else if (a === '--threshold' && rest[i + 1]) threshold = rest[++i];
+        else if (a === '--out' && rest[i + 1]) outPath = rest[++i];
       }
-      const { readFileSync } = await import('fs');
-      const snapshotA = JSON.parse(readFileSync(pathA, 'utf8'));
-      const snapshotB = JSON.parse(readFileSync(pathB, 'utf8'));
-      const metricArg = rest.find((a) => a.startsWith('--metric='))?.split('=')[1] ?? 'ssim';
-      const thresholdArg = rest.find((a) => a.startsWith('--threshold='))?.split('=')[1];
-      const regionArg = rest.find((a) => a.startsWith('--region='))?.split('=')[1];
-      const result = await fetchJson('POST', `${base}/api/v3/compare`, {
-        snapshotA,
-        snapshotB,
-        metric: metricArg,
-        threshold: thresholdArg ? parseFloat(thresholdArg) : undefined,
-        region: regionArg,
-      });
-      console.log(JSON.stringify(result, null, 2));
-      if (result.thresholdPassed === false) process.exit(1);
+      await cmdCheckpoint(modelId, targetPath, viewpointId, threshold, outPath);
       return;
     }
 

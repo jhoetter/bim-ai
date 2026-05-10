@@ -2291,6 +2291,30 @@ async def compare_snapshots_endpoint(body: dict) -> dict:
     )
 
 
+# ---------------------------------------------------------------------------
+# SKB-03 — Visual Checkpoint
+# ---------------------------------------------------------------------------
+
+
+@api_router.post("/v3/skb/checkpoint")
+async def skb_visual_checkpoint(body: dict) -> dict:
+    """SKB-03 — visual checkpoint tool (image-to-image comparison).
+
+    Accepts body with actualPng, targetPng, and optional threshold.
+    Returns a CheckpointReport.
+    """
+    actual_png = body.get("actualPng")
+    target_png = body.get("targetPng")
+    threshold = body.get("threshold", 0.05)
+    if not actual_png or not target_png:
+        raise HTTPException(status_code=422, detail="actualPng and targetPng are required")
+
+    from bim_ai.skb.visual_checkpoint import compare_pngs
+
+    report = compare_pngs(actual_png, target_png, threshold=float(threshold))
+    return report.to_dict()
+
+
 @api_router.get("/v3/tools")
 async def v3_list_tools() -> dict[str, Any]:
     catalog = get_catalog()
