@@ -386,7 +386,13 @@ export function SchematicThumbnail({ entry }: { entry: AssetLibraryEntry }): Rea
       }}
       aria-hidden="true"
     >
-      {body}
+      <style>{`
+        .asset-schematic-linework * {
+          vector-effect: non-scaling-stroke;
+          stroke-width: 1.35px !important;
+        }
+      `}</style>
+      <g className="asset-schematic-linework">{body}</g>
     </svg>
   );
 }

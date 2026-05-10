@@ -230,6 +230,58 @@ function lineMaterial(color: string, lineWidth: number): THREE.LineBasicMaterial
   });
 }
 
+function fillMaterial(color: string, opacity = 0.16): THREE.MeshBasicMaterial {
+  return new THREE.MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity,
+    depthTest: false,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+}
+
+function addFilledRect(
+  group: THREE.Group,
+  pickId: string,
+  width: number,
+  depth: number,
+  cx: number,
+  cz: number,
+  color: string,
+  opacity = 0.14,
+): THREE.Mesh {
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, depth), fillMaterial(color, opacity));
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.set(cx, -0.004, cz);
+  mesh.renderOrder = 990;
+  mesh.userData.bimPickId = pickId;
+  group.add(mesh);
+  return mesh;
+}
+
+function addFilledCircle(
+  group: THREE.Group,
+  pickId: string,
+  radius: number,
+  cx: number,
+  cz: number,
+  color: string,
+  opacity = 0.14,
+  segments = 32,
+): THREE.Mesh {
+  const mesh = new THREE.Mesh(
+    new THREE.CircleGeometry(radius, segments),
+    fillMaterial(color, opacity),
+  );
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.set(cx, -0.003, cz);
+  mesh.renderOrder = 991;
+  mesh.userData.bimPickId = pickId;
+  group.add(mesh);
+  return mesh;
+}
+
 function addPolyline(
   group: THREE.Group,
   pts: Array<[number, number]>,
@@ -301,6 +353,7 @@ function addPlacedAssetSymbolLines(
   const hw = spec.widthM / 2;
   const hd = spec.depthM / 2;
 
+  addPlacedAssetSymbolFills(group, spec, pickId);
   addRect(group, hw, hd, mat, pickId);
 
   switch (spec.symbolKind) {
@@ -625,6 +678,141 @@ function addPlacedAssetSymbolLines(
         fine,
         pickId,
       );
+      break;
+  }
+}
+
+function addPlacedAssetSymbolFills(
+  group: THREE.Group,
+  spec: PlacedAssetRenderSpec,
+  pickId: string,
+): void {
+  const hw = spec.widthM / 2;
+  const hd = spec.depthM / 2;
+  const base = spec.color;
+
+  switch (spec.symbolKind) {
+    case 'bed':
+      addFilledRect(group, pickId, spec.widthM, spec.depthM, 0, 0, '#d6d3d1', 0.2);
+      addFilledRect(
+        group,
+        pickId,
+        spec.widthM * 0.88,
+        spec.depthM * 0.72,
+        0,
+        hd * 0.08,
+        '#f5f5f4',
+        0.72,
+      );
+      addFilledRect(
+        group,
+        pickId,
+        spec.widthM * 0.28,
+        spec.depthM * 0.16,
+        -hw * 0.34,
+        -hd * 0.66,
+        '#ffffff',
+        0.86,
+      );
+      addFilledRect(
+        group,
+        pickId,
+        spec.widthM * 0.28,
+        spec.depthM * 0.16,
+        hw * 0.34,
+        -hd * 0.66,
+        '#ffffff',
+        0.86,
+      );
+      break;
+    case 'wardrobe':
+      addFilledRect(group, pickId, spec.widthM, spec.depthM, 0, 0, '#e5d3b3', 0.5);
+      break;
+    case 'lamp':
+      addFilledCircle(group, pickId, Math.min(hw, hd) * 0.72, 0, 0, '#fef3c7', 0.68);
+      addFilledCircle(group, pickId, Math.min(hw, hd) * 0.16, 0, 0, '#a1a1aa', 0.45);
+      break;
+    case 'rug':
+      addFilledRect(group, pickId, spec.widthM, spec.depthM, 0, 0, '#dbeafe', 0.42);
+      addFilledRect(group, pickId, spec.widthM * 0.76, spec.depthM * 0.62, 0, 0, '#bfdbfe', 0.38);
+      break;
+    case 'fridge':
+      addFilledRect(group, pickId, spec.widthM, spec.depthM, 0, 0, '#f8fafc', 0.72);
+      break;
+    case 'oven':
+      addFilledRect(group, pickId, spec.widthM, spec.depthM, 0, 0, '#52525b', 0.36);
+      addFilledRect(
+        group,
+        pickId,
+        spec.widthM * 0.58,
+        spec.depthM * 0.32,
+        0,
+        hd * 0.28,
+        '#18181b',
+        0.28,
+      );
+      break;
+    case 'sink':
+      addFilledRect(group, pickId, spec.widthM, spec.depthM, 0, 0, '#e0f2fe', 0.48);
+      addFilledRect(group, pickId, spec.widthM * 0.62, spec.depthM * 0.42, 0, 0, '#bfdbfe', 0.54);
+      break;
+    case 'counter':
+      addFilledRect(group, pickId, spec.widthM, spec.depthM, 0, 0, '#e7e5e4', 0.46);
+      break;
+    case 'sofa':
+      addFilledRect(group, pickId, spec.widthM, spec.depthM, 0, 0, '#d6c7b5', 0.48);
+      addFilledRect(
+        group,
+        pickId,
+        spec.widthM * 0.82,
+        spec.depthM * 0.46,
+        0,
+        hd * 0.18,
+        '#c4b5a5',
+        0.36,
+      );
+      break;
+    case 'table':
+      addFilledRect(group, pickId, spec.widthM * 0.82, spec.depthM * 0.74, 0, 0, '#d6b28d', 0.5);
+      break;
+    case 'chair':
+      addFilledRect(group, pickId, spec.widthM, spec.depthM, 0, 0, '#d6c7b5', 0.44);
+      addFilledRect(
+        group,
+        pickId,
+        spec.widthM * 0.7,
+        spec.depthM * 0.46,
+        0,
+        hd * 0.16,
+        '#c4b5a5',
+        0.42,
+      );
+      break;
+    case 'toilet':
+      addFilledCircle(group, pickId, Math.min(hw, hd) * 0.48, 0, hd * 0.1, '#f8fafc', 0.78);
+      addFilledRect(
+        group,
+        pickId,
+        spec.widthM * 0.54,
+        spec.depthM * 0.24,
+        0,
+        -hd * 0.72,
+        '#f1f5f9',
+        0.74,
+      );
+      break;
+    case 'bath':
+      addFilledRect(group, pickId, spec.widthM, spec.depthM, 0, 0, '#f8fafc', 0.72);
+      addFilledRect(group, pickId, spec.widthM * 0.72, spec.depthM * 0.58, 0, 0, '#dbeafe', 0.36);
+      break;
+    case 'shower':
+      addFilledRect(group, pickId, spec.widthM, spec.depthM, 0, 0, '#e0f2fe', 0.42);
+      break;
+    case 'bathroom_layout':
+      addFilledRect(group, pickId, spec.widthM, spec.depthM, 0, 0, '#f8fafc', 0.34);
+      break;
+    default:
+      addFilledRect(group, pickId, spec.widthM, spec.depthM, 0, 0, base, 0.18);
       break;
   }
 }

@@ -154,6 +154,12 @@ describe('placed asset rendering', () => {
     expect(plan.userData.assetSymbolKind).toBe(kind);
     expect(mesh.userData.assetSymbolKind).toBe(kind);
 
+    let planMeshCount = 0;
+    plan.traverse((o) => {
+      if (o instanceof THREE.Mesh && o.userData.bimPickId === asset.id) planMeshCount += 1;
+    });
+    expect(planMeshCount).toBeGreaterThan(0);
+
     let meshCount = 0;
     mesh.traverse((o) => {
       if (o instanceof THREE.Mesh && o.userData.bimPickId === asset.id) meshCount += 1;
