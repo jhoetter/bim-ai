@@ -30,6 +30,7 @@ export interface ManageLinksDialogProps {
 
 type LinkRow = Extract<Element, { kind: 'link_model' }>;
 type DxfLinkRow = Extract<Element, { kind: 'link_dxf' }>;
+type ExternalLinkRow = Extract<Element, { kind: 'link_external' }>;
 
 type AlignMode = 'origin_to_origin' | 'project_origin' | 'shared_coords';
 type VisibilityMode = 'host_view' | 'linked_view';
@@ -43,6 +44,12 @@ const ALIGN_LABELS: Record<AlignMode, string> = {
 const VIS_LABELS: Record<VisibilityMode, string> = {
   host_view: 'Host view',
   linked_view: 'Linked view',
+};
+
+const EXTERNAL_LINK_LABELS: Record<ExternalLinkRow['externalLinkType'], string> = {
+  ifc: 'IFC',
+  pdf: 'PDF',
+  image: 'Image',
 };
 
 export function ManageLinksDialog({
@@ -72,6 +79,14 @@ export function ManageLinksDialog({
     [elementsById],
   );
 
+  const externalLinks: ExternalLinkRow[] = useMemo(
+    () =>
+      Object.values(elementsById)
+        .filter((e): e is ExternalLinkRow => e.kind === 'link_external')
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [elementsById],
+  );
+
   const [name, setName] = useState('Linked structure');
   const [sourceModelId, setSourceModelId] = useState('');
   const [posXMm, setPosXMm] = useState('0');
@@ -81,6 +96,7 @@ export function ManageLinksDialog({
   const [addVis, setAddVis] = useState<VisibilityMode>('host_view');
   const [pending, setPending] = useState(false);
   const [dxfPathDrafts, setDxfPathDrafts] = useState<Record<string, string>>({});
+  const [externalPathDrafts, setExternalPathDrafts] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -186,6 +202,37 @@ export function ManageLinksDialog({
     }
   };
 
+  const submitUpdateExternal = async (
+    linkId: string,
+    patch: Record<string, unknown>,
+  ): Promise<void> => {
+    setError(null);
+    if (!modelId) return;
+    setPending(true);
+    try {
+      await apply(modelId, { type: 'updateExternalLink', linkId, ...patch });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to update external link';
+      setError(msg);
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const submitDeleteExternal = async (linkId: string): Promise<void> => {
+    setError(null);
+    if (!modelId) return;
+    setPending(true);
+    try {
+      await apply(modelId, { type: 'deleteExternalLink', linkId });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to remove external link';
+      setError(msg);
+    } finally {
+      setPending(false);
+    }
+  };
+
   const submitPositionPin = async (elementId: string, pinned: boolean): Promise<void> => {
     setError(null);
     if (!modelId) return;
@@ -205,6 +252,8 @@ export function ManageLinksDialog({
 
   const dxfPathDraft = (link: DxfLinkRow): string =>
     dxfPathDrafts[link.id] ?? link.sourcePath ?? '';
+  const externalPathDraft = (link: ExternalLinkRow): string =>
+    externalPathDrafts[link.id] ?? link.sourcePath ?? '';
 
   return (
     <div
@@ -693,6 +742,229 @@ export function ManageLinksDialog({
                         </div>
                       </div>
                     ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+
+        <section className="mb-4">
+          <h3 className="mb-1 text-[10px] uppercase text-muted" style={{ letterSpacing: '0.06em' }}>
+            IFC / PDF / image links
+          </h3>
+          {externalLinks.length === 0 ? (
+            <div className="text-xs text-muted" data-testid="manage-external-links-empty">
+              No IFC, PDF, or image links.
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-1" data-testid="manage-external-links-list">
+              {externalLinks.map((l) => {
+                const loaded = l.loaded !== false;
+                const hidden = Boolean(l.hidden);
+                const align: AlignMode = l.originAlignmentMode ?? 'origin_to_origin';
+                const currentPathDraft = externalPathDraft(l);
+                const reloadable = Boolean(currentPathDraft.trim());
+                const opacityPct = Math.round((l.overlayOpacity ?? 0.5) * 100);
+                const showOpacity = l.externalLinkType === 'pdf' || l.externalLinkType === 'image';
+                const sourceName =
+                  l.sourceName ??
+                  (typeof l.sourceMetadata?.sourceName === 'string'
+                    ? l.sourceMetadata.sourceName
+                    : undefined);
+                return (
+                  <li
+                    key={l.id}
+                    data-testid={`manage-external-links-row-${l.id}`}
+                    className="flex flex-col gap-1 rounded border border-border px-2 py-1"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="truncate text-xs">{l.name}</span>
+                          <span
+                            data-testid={`manage-external-links-type-${l.id}`}
+                            className="shrink-0 rounded border border-border px-1 py-0.5 text-[10px] text-muted"
+                          >
+                            {EXTERNAL_LINK_LABELS[l.externalLinkType]}
+                          </span>
+                        </div>
+                        <div className="truncate font-mono text-[10px] text-muted">
+                          {sourceName ? `${sourceName} · ${l.sourcePath}` : l.sourcePath}
+                        </div>
+                      </div>
+                      <span
+                        data-testid={`manage-external-links-status-${l.id}`}
+                        className={[
+                          'rounded border px-1.5 py-0.5 text-[10px]',
+                          loaded && !hidden
+                            ? 'border-emerald-500 text-emerald-700'
+                            : 'border-border text-muted',
+                        ].join(' ')}
+                      >
+                        {l.reloadStatus === 'source_missing'
+                          ? 'Missing'
+                          : l.reloadStatus === 'parse_error'
+                            ? 'Error'
+                            : hidden
+                              ? 'Hidden'
+                              : loaded
+                                ? 'Loaded'
+                                : 'Unloaded'}
+                      </span>
+                    </div>
+                    {l.lastReloadMessage ? (
+                      <div
+                        className="text-[10px] text-muted"
+                        data-testid={`manage-external-links-message-${l.id}`}
+                      >
+                        {l.lastReloadMessage}
+                      </div>
+                    ) : null}
+                    <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                      <button
+                        type="button"
+                        disabled={pending}
+                        data-testid={`manage-external-links-load-${l.id}`}
+                        onClick={() =>
+                          void submitUpdateExternal(
+                            l.id,
+                            loaded
+                              ? { loaded: false }
+                              : { reloadSource: true, sourcePath: currentPathDraft },
+                          )
+                        }
+                        className="rounded border border-border px-2 py-0.5 text-[11px] hover:bg-surface-strong disabled:opacity-50"
+                      >
+                        {loaded ? 'Unload' : 'Reload'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={pending || !reloadable}
+                        data-testid={`manage-external-links-reload-${l.id}`}
+                        onClick={() =>
+                          void submitUpdateExternal(l.id, {
+                            reloadSource: true,
+                            sourcePath: currentPathDraft,
+                          })
+                        }
+                        className="rounded border border-border px-2 py-0.5 text-[11px] hover:bg-surface-strong disabled:opacity-50"
+                        title={reloadable ? 'Reload source metadata' : 'Source path required'}
+                      >
+                        Reload Source
+                      </button>
+                      <button
+                        type="button"
+                        disabled={pending}
+                        data-testid={`manage-external-links-remove-${l.id}`}
+                        onClick={() => void submitDeleteExternal(l.id)}
+                        className="rounded border border-border px-2 py-0.5 text-[11px] hover:bg-surface-strong disabled:opacity-50"
+                      >
+                        Remove
+                      </button>
+                      <button
+                        type="button"
+                        disabled={pending}
+                        data-testid={`manage-external-links-visible-${l.id}`}
+                        aria-pressed={!hidden}
+                        onClick={() => void submitUpdateExternal(l.id, { hidden: !hidden })}
+                        className="rounded border border-border px-2 py-0.5 text-[11px] hover:bg-surface-strong disabled:opacity-50"
+                      >
+                        {hidden ? 'Show' : 'Hide'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={pending}
+                        data-testid={`manage-external-links-position-pin-${l.id}`}
+                        aria-pressed={Boolean(l.pinned)}
+                        onClick={() => void submitPositionPin(l.id, Boolean(l.pinned))}
+                        className={[
+                          'rounded border px-2 py-0.5 text-[11px] hover:bg-surface-strong disabled:opacity-50',
+                          l.pinned
+                            ? 'border-amber-500 bg-amber-100 text-amber-900'
+                            : 'border-border',
+                        ].join(' ')}
+                        title={
+                          l.pinned
+                            ? 'Unlock this external link'
+                            : 'Lock this external link position'
+                        }
+                      >
+                        {l.pinned ? 'Position locked' : 'Lock position'}
+                      </button>
+                      <label className="flex items-center gap-1">
+                        Align
+                        <select
+                          value={align}
+                          disabled={pending}
+                          data-testid={`manage-external-links-align-${l.id}`}
+                          onChange={(e) =>
+                            void submitUpdateExternal(l.id, {
+                              originAlignmentMode: e.target.value as AlignMode,
+                            })
+                          }
+                          className="rounded border border-border bg-surface-strong px-1 py-0.5 text-[11px]"
+                        >
+                          {(Object.keys(ALIGN_LABELS) as AlignMode[]).map((m) => (
+                            <option key={m} value={m}>
+                              {ALIGN_LABELS[m]}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      {showOpacity ? (
+                        <label className="flex items-center gap-1">
+                          Opacity
+                          <input
+                            type="range"
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={opacityPct}
+                            disabled={pending}
+                            data-testid={`manage-external-links-opacity-${l.id}`}
+                            onChange={(e) =>
+                              void submitUpdateExternal(l.id, {
+                                overlayOpacity: Number(e.target.value) / 100,
+                              })
+                            }
+                            className="w-24"
+                          />
+                          <span className="w-8 text-right font-mono text-[10px] text-muted">
+                            {opacityPct}%
+                          </span>
+                        </label>
+                      ) : null}
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px]">
+                      <label className="flex min-w-0 flex-1 items-center gap-1">
+                        Path
+                        <input
+                          type="text"
+                          value={currentPathDraft}
+                          disabled={pending}
+                          data-testid={`manage-external-links-path-${l.id}`}
+                          onChange={(e) =>
+                            setExternalPathDrafts((prev) => ({
+                              ...prev,
+                              [l.id]: e.target.value,
+                            }))
+                          }
+                          className="min-w-0 flex-1 rounded border border-border bg-surface-strong px-1 py-0.5 font-mono text-[11px]"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        disabled={pending}
+                        data-testid={`manage-external-links-change-path-${l.id}`}
+                        onClick={() =>
+                          void submitUpdateExternal(l.id, { sourcePath: externalPathDraft(l) })
+                        }
+                        className="rounded border border-border px-2 py-0.5 text-[11px] hover:bg-surface-strong disabled:opacity-50"
+                      >
+                        Change Path
+                      </button>
+                    </div>
                   </li>
                 );
               })}

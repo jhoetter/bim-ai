@@ -7,6 +7,8 @@ export type FamilyReloadOverwriteOption = 'keep-existing-values' | 'overwrite-pa
 export interface CatalogFamilyTypeCommand extends Record<string, unknown> {
   type: 'upsertFamilyType';
   id: string;
+  name: string;
+  familyId: string;
   discipline: 'door' | 'window' | 'generic';
   parameters: Record<string, unknown>;
   catalogSource: {
@@ -79,7 +81,7 @@ export function planCatalogFamilyLoad(
     familyId: placement.family.id,
     ...placement.defaultType.parameters,
   };
-  const parameters =
+  const parameters: Record<string, unknown> =
     existing && overwriteOption === 'keep-existing-values'
       ? {
           ...existing.parameters,
@@ -91,6 +93,8 @@ export function planCatalogFamilyLoad(
     command: {
       type: 'upsertFamilyType',
       id: typeId,
+      name: String(parameters.name ?? placement.defaultType.name),
+      familyId: placement.family.id,
       discipline,
       parameters,
       catalogSource: {

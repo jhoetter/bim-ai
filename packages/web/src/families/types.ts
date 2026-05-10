@@ -18,7 +18,13 @@ export interface FamilyParamDef {
 export interface SketchLine {
   startMm: { xMm: number; yMm: number };
   endMm: { xMm: number; yMm: number };
-  source?: { kind: 'reference_plane'; refPlaneId: string };
+  source?:
+    | { kind: 'reference_plane'; refPlaneId: string }
+    | {
+        kind: 'family_geometry';
+        geometryKind: 'symbolic_line' | 'sweep_path' | 'sweep_profile';
+        index: number;
+      };
   locked?: boolean;
 }
 

@@ -1,5 +1,6 @@
 import { useMemo, useState, type DragEvent, type JSX, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Element } from '@bim-ai/core';
 import type {
   ArrayGeometryNode,
   FamilyDefinition,
@@ -16,13 +17,26 @@ import { LoadedFamiliesSidebar, NESTED_FAMILY_DRAG_TYPE } from './LoadedFamilies
 import { NestedInstanceInspector, type HostParamRef } from './NestedInstanceInspector';
 import { AppearanceAssetBrowserDialog } from './AppearanceAssetBrowserDialog';
 import {
+  pickedFamilyGeometryLine,
   pickedReferencePlaneLine,
   rederiveLockedSketchLines,
+  solveReferencePlaneDimensionConstraints,
   trimExtendSketchLinesToCorner,
   type FamilySketchRefPlane,
 } from './familySketchGeometry';
 import { MaterialBrowserDialog } from './MaterialBrowserDialog';
 import { resolveMaterial } from '../viewport/materials';
+import {
+  authoredFamilyDefinitionsFromElements,
+  buildAuthoredFamilyDefinition,
+  planAuthoredFamilyLoad,
+  readAuthoredFamilyCatalog,
+  upsertAuthoredFamilyCatalogDocument,
+  writeAuthoredFamilyCatalog,
+  type AuthoredFamilyDocument,
+  type AuthoredFamilyLoadPlan,
+} from './familyEditorPersistence';
+import type { FamilyReloadOverwriteOption } from '../families/catalogFamilyReload';
 
 /** VIE-02 — plan detail levels usable for per-node visibility binding. */
 type DetailLevelKey = 'coarse' | 'medium' | 'fine';
@@ -35,6 +49,8 @@ type RefPlane = FamilySketchRefPlane & {
   isVertical: boolean;
   offsetMm: number;
   isSymmetryRef: boolean;
+  referenceType: 'strong_reference' | 'weak_reference' | 'not_reference';
+  locked: boolean;
 };
 
 type Param = {
@@ -91,6 +107,7 @@ type FamilyDimension = {
   refBId: string;
   lockedValueMm: number;
   paramKey: string;
+  canvasOffsetMm: number;
 };
 
 type EqConstraint = {
@@ -209,6 +226,8 @@ const FURNITURE_REF_PLANES: RefPlane[] = [
     isVertical: true,
     offsetMm: 0,
     isSymmetryRef: true,
+    referenceType: 'strong_reference',
+    locked: true,
   },
   {
     id: 'furniture-center-front-back',
@@ -216,6 +235,8 @@ const FURNITURE_REF_PLANES: RefPlane[] = [
     isVertical: false,
     offsetMm: 0,
     isSymmetryRef: true,
+    referenceType: 'strong_reference',
+    locked: true,
   },
   {
     id: 'furniture-backrest-depth',
@@ -223,6 +244,8 @@ const FURNITURE_REF_PLANES: RefPlane[] = [
     isVertical: false,
     offsetMm: 180,
     isSymmetryRef: false,
+    referenceType: 'weak_reference',
+    locked: false,
   },
   {
     id: 'furniture-leg-offset-x',
@@ -230,6 +253,8 @@ const FURNITURE_REF_PLANES: RefPlane[] = [
     isVertical: true,
     offsetMm: 90,
     isSymmetryRef: false,
+    referenceType: 'weak_reference',
+    locked: false,
   },
   {
     id: 'furniture-leg-offset-y',
@@ -237,6 +262,8 @@ const FURNITURE_REF_PLANES: RefPlane[] = [
     isVertical: false,
     offsetMm: 90,
     isSymmetryRef: false,
+    referenceType: 'weak_reference',
+    locked: false,
   },
 ];
 
@@ -496,8 +523,34 @@ export interface AddNestedFamilyInstanceAction {
   positionMm: { xMm: number; yMm: number; zMm: number };
 }
 
-export function FamilyEditorWorkbench(): JSX.Element {
+export interface FamilyEditorWorkbenchProps {
+  projectElementsById?: Record<string, Element>;
+  storage?: Pick<Storage, 'getItem' | 'setItem'> | null;
+  now?: () => number;
+  onLoadIntoProject?: (plan: AuthoredFamilyLoadPlan) => void | Promise<void>;
+}
+
+export function FamilyEditorWorkbench({
+  projectElementsById = {},
+  storage,
+  now = () => Date.now(),
+  onLoadIntoProject,
+}: FamilyEditorWorkbenchProps = {}): JSX.Element {
   const { t } = useTranslation();
+  const effectiveStorage =
+    storage === undefined && typeof globalThis.localStorage !== 'undefined'
+      ? globalThis.localStorage
+      : storage;
+  const [familyId, setFamilyId] = useState('authored-family-1');
+  const [familyName, setFamilyName] = useState('Untitled Family');
+  const [savedFamilies, setSavedFamilies] = useState<AuthoredFamilyDocument[]>(() =>
+    readAuthoredFamilyCatalog(effectiveStorage),
+  );
+  const [localProjectFamilyTypes, setLocalProjectFamilyTypes] = useState<
+    Record<string, Extract<Element, { kind: 'family_type' }>>
+  >({});
+  const [persistenceMessage, setPersistenceMessage] = useState('');
+  const [pendingLoadPlan, setPendingLoadPlan] = useState<AuthoredFamilyLoadPlan | null>(null);
   const [template, setTemplate] = useState<Template>('generic_model');
   const [refPlanes, setRefPlanes] = useState<RefPlane[]>([]);
   const [params, setParams] = useState<Param[]>([]);
@@ -525,7 +578,13 @@ export function FamilyEditorWorkbench(): JSX.Element {
   } | null>(null);
   const [symbolicAlignDraft, setSymbolicAlignDraft] = useState(EMPTY_SYMBOLIC_ALIGN_DRAFT);
   const [dimensions, setDimensions] = useState<FamilyDimension[]>([]);
-  const [dimensionDraft, setDimensionDraft] = useState({ refAId: '', refBId: '', paramKey: '' });
+  const [dimensionDraft, setDimensionDraft] = useState({
+    refAId: '',
+    refBId: '',
+    labelMode: 'new' as 'existing' | 'new',
+    paramKey: '',
+    newParamKey: '',
+  });
   const [eqConstraints, setEqConstraints] = useState<EqConstraint[]>([]);
   const [eqOrientation, setEqOrientation] = useState<'vertical' | 'horizontal'>('vertical');
   const [nestedInstances, setNestedInstances] = useState<FamilyInstanceRefNode[]>([]);
@@ -534,6 +593,10 @@ export function FamilyEditorWorkbench(): JSX.Element {
   const [appearanceTarget, setAppearanceTarget] = useState<MaterialAssignmentTarget | null>(null);
   const [lastNestedAction, setLastNestedAction] = useState<AddNestedFamilyInstanceAction | null>(
     null,
+  );
+  const projectFamilyElements = useMemo(
+    () => ({ ...projectElementsById, ...localProjectFamilyTypes }),
+    [localProjectFamilyTypes, projectElementsById],
   );
 
   function addRefPlane(isVertical: boolean) {
@@ -545,8 +608,57 @@ export function FamilyEditorWorkbench(): JSX.Element {
         isVertical,
         offsetMm: 0,
         isSymmetryRef: false,
+        referenceType: 'weak_reference',
+        locked: false,
       },
     ]);
+  }
+
+  function currentParamValueMap(
+    paramList = params,
+    activeTypeValuesOverride?: Record<string, unknown>,
+  ): Record<string, unknown> {
+    const activeTypeValues =
+      activeTypeValuesOverride ??
+      familyTypes.find((row) => row.id === activeFamilyTypeId)?.values ??
+      {};
+    const map: Record<string, unknown> = {};
+    for (const param of paramList) {
+      const typedDefault =
+        activeTypeValues[param.key] !== undefined && activeTypeValues[param.key] !== ''
+          ? activeTypeValues[param.key]
+          : param.default;
+      map[param.key] = resolveFamilyParamValue(
+        { ...param, default: typedDefault },
+        flexMode ? flexValues : undefined,
+      );
+    }
+    return map;
+  }
+
+  function pickableFamilyGeometryLines(lines = symbolicLines): SketchLine[] {
+    return lines.map((line) => ({
+      startMm: { ...line.startMm },
+      endMm: { ...line.endMm },
+    }));
+  }
+
+  function solveDimensionConstrainedRefPlanes(
+    planes: RefPlane[],
+    dimensionList = dimensions,
+    paramList = params,
+    activeTypeValuesOverride?: Record<string, unknown>,
+  ): RefPlane[] {
+    return solveReferencePlaneDimensionConstraints(
+      planes,
+      dimensionList.map((dimension) => ({
+        refAId: dimension.refAId,
+        refBId: dimension.refBId,
+        paramKey: dimension.paramKey,
+        lockedValueMm: dimension.lockedValueMm,
+      })),
+      currentParamValueMap(paramList, activeTypeValuesOverride),
+    );
   }
 
   function selectTemplate(nextTemplate: Template) {
@@ -585,18 +697,150 @@ export function FamilyEditorWorkbench(): JSX.Element {
         refBId: 'furniture-backrest-depth',
         lockedValueMm: 180,
         paramKey: 'Backrest_Depth',
+        canvasOffsetMm: 60,
       },
     ]);
-    setDimensionDraft({ refAId: '', refBId: '', paramKey: '' });
+    setDimensionDraft({
+      refAId: '',
+      refBId: '',
+      labelMode: 'new',
+      paramKey: '',
+      newParamKey: '',
+    });
     setEqConstraints([]);
     setEqOrientation('vertical');
     setNestedInstances([]);
     setSelectedNestedIndex(null);
   }
 
+  function currentAuthoredFamilyDocument(): AuthoredFamilyDocument {
+    const savedAt = now();
+    return {
+      id: familyId.trim() || 'authored-family-1',
+      name: familyName.trim() || 'Untitled Family',
+      template,
+      categorySettings,
+      viewRange,
+      refPlanes: refPlanes.map((plane) => ({ ...plane })),
+      params: params.map((param) => ({ ...param })),
+      familyTypes: familyTypes.map((row) => ({ ...row, values: { ...row.values } })),
+      activeFamilyTypeId,
+      sweeps: sweeps.map((sweep) => ({ ...sweep })),
+      arrays: arrays.map((array) => ({ ...array })),
+      nestedInstances: nestedInstances.map((instance) => ({ ...instance })),
+      symbolicLines: symbolicLines.map((line) => ({ ...line })),
+      dimensions: dimensions.map((dimension) => ({ ...dimension })),
+      eqConstraints: eqConstraints.map((constraint) => ({ ...constraint })),
+      savedAt,
+      version: `family-editor-${savedAt}`,
+    };
+  }
+
+  function saveFamilyDocument(): AuthoredFamilyDocument {
+    const document = currentAuthoredFamilyDocument();
+    const nextCatalog = upsertAuthoredFamilyCatalogDocument(savedFamilies, document);
+    setSavedFamilies(nextCatalog);
+    writeAuthoredFamilyCatalog(nextCatalog, effectiveStorage);
+    setPersistenceMessage(`Saved ${document.name}`);
+    return document;
+  }
+
+  function loadFamilyDocument(documentId: string) {
+    const document = savedFamilies.find((candidate) => candidate.id === documentId);
+    if (!document) return;
+    setFamilyId(document.id);
+    setFamilyName(document.name);
+    setTemplate(document.template);
+    setCategorySettings(document.categorySettings);
+    setViewRange(document.viewRange);
+    setRefPlanes(
+      document.refPlanes.map(
+        (plane): RefPlane => ({
+          ...plane,
+          referenceType: plane.referenceType ?? 'weak_reference',
+          locked: plane.locked ?? false,
+        }),
+      ),
+    );
+    setParams(document.params.map((param) => ({ ...param })));
+    setFamilyTypes(document.familyTypes.map((row) => ({ ...row, values: { ...row.values } })));
+    setActiveFamilyTypeId(document.activeFamilyTypeId);
+    setFamilyTypesDialogOpen(false);
+    setPreviewVisibility(false);
+    setPreviewDetailLevel('medium');
+    setFlexMode(false);
+    setFlexValues({});
+    setSweeps(document.sweeps.map((sweep) => ({ ...sweep })));
+    setSelectedSweepIndex(null);
+    setArrays(document.arrays.map((array) => ({ ...array })));
+    setArrayDraft(null);
+    setSymbolicLines(document.symbolicLines.map((line) => ({ ...line })));
+    setSymbolicLineDraft(EMPTY_SYMBOLIC_LINE_DRAFT);
+    setSelectedSymbolicLineIndex(null);
+    setSymbolicCanvasStart(null);
+    setSymbolicAlignDraft(EMPTY_SYMBOLIC_ALIGN_DRAFT);
+    setDimensions(
+      document.dimensions.map(
+        (dimension, index): FamilyDimension => ({
+          ...dimension,
+          canvasOffsetMm: dimension.canvasOffsetMm ?? 64 + index * 28,
+        }),
+      ),
+    );
+    setDimensionDraft({
+      refAId: '',
+      refBId: '',
+      labelMode: 'new',
+      paramKey: '',
+      newParamKey: '',
+    });
+    setEqConstraints(document.eqConstraints.map((constraint) => ({ ...constraint })));
+    setEqOrientation('vertical');
+    setNestedInstances(document.nestedInstances.map((instance) => ({ ...instance })));
+    setSelectedNestedIndex(null);
+    setPersistenceMessage(`Opened ${document.name}`);
+  }
+
+  async function applyAuthoredFamilyLoadPlan(plan: AuthoredFamilyLoadPlan) {
+    if (onLoadIntoProject) {
+      await onLoadIntoProject(plan);
+    } else {
+      setLocalProjectFamilyTypes((prev) => ({
+        ...prev,
+        [plan.typeId]: {
+          kind: 'family_type',
+          id: plan.typeId,
+          name: plan.command.name,
+          familyId: plan.command.familyId,
+          discipline: plan.command.discipline,
+          parameters: plan.command.parameters,
+        },
+      }));
+    }
+    setPersistenceMessage(
+      plan.reloaded
+        ? `Reloaded ${familyName.trim() || 'Untitled Family'} into project`
+        : `Loaded ${familyName.trim() || 'Untitled Family'} into project`,
+    );
+  }
+
+  async function loadFamilyIntoProject(overwriteOption?: FamilyReloadOverwriteOption) {
+    const document = saveFamilyDocument();
+    const plan = planAuthoredFamilyLoad(document, projectFamilyElements, {
+      now: now(),
+      overwriteOption,
+    });
+    if (plan.reloaded && !overwriteOption) {
+      setPendingLoadPlan(plan);
+      return;
+    }
+    await applyAuthoredFamilyLoadPlan(plan);
+  }
+
   function updateRefPlane(index: number, patch: Partial<RefPlane>) {
     const patched = refPlanes.map((plane, i) => (i === index ? { ...plane, ...patch } : plane));
-    const next = eqConstraints.reduce(applyEqConstraintToPlanes, patched);
+    const equalized = eqConstraints.reduce(applyEqConstraintToPlanes, patched);
+    const next = solveDimensionConstrainedRefPlanes(equalized);
     setRefPlanes(next);
     setEqConstraints((prev) =>
       prev.map((constraint) => ({
@@ -604,23 +848,33 @@ export function FamilyEditorWorkbench(): JSX.Element {
         equalGapMm: equalGapForPlanes(next, constraint.refPlaneIds),
       })),
     );
+    const nextSymbolicLines = symbolicLines.map((line) => {
+      const lockedPlaneId = line.alignmentLock?.refPlaneId;
+      if (!lockedPlaneId) return line;
+      const plane = next.find((candidate) => candidate.id === lockedPlaneId);
+      return plane ? alignSymbolicLineToPlane(line, plane, true) : line;
+    });
+    const nextPickableLines = pickableFamilyGeometryLines(nextSymbolicLines);
     setSweepDraft((draft) =>
       draft
         ? {
             ...draft,
-            pathLines: rederiveLockedSketchLines(draft.pathLines, next, SKETCH_REF_EXTENT_MM),
-            profile: rederiveLockedSketchLines(draft.profile, next, SKETCH_REF_EXTENT_MM),
+            pathLines: rederiveLockedSketchLines(
+              draft.pathLines,
+              next,
+              nextPickableLines,
+              SKETCH_REF_EXTENT_MM,
+            ),
+            profile: rederiveLockedSketchLines(
+              draft.profile,
+              next,
+              nextPickableLines,
+              SKETCH_REF_EXTENT_MM,
+            ),
           }
         : draft,
     );
-    setSymbolicLines((prev) =>
-      prev.map((line) => {
-        const lockedPlaneId = line.alignmentLock?.refPlaneId;
-        if (!lockedPlaneId) return line;
-        const plane = next.find((candidate) => candidate.id === lockedPlaneId);
-        return plane ? alignSymbolicLineToPlane(line, plane, true) : line;
-      }),
-    );
+    setSymbolicLines(nextSymbolicLines);
   }
 
   function createEqConstraint() {
@@ -655,29 +909,58 @@ export function FamilyEditorWorkbench(): JSX.Element {
     const refAId = dimensionDraft.refAId || refPlanes[0]?.id || '';
     const refBId = dimensionDraft.refBId || refPlanes[1]?.id || '';
     if (!refAId || !refBId || refAId === refBId) return;
-    const paramKey = (dimensionDraft.paramKey || `dimension_${dimensions.length + 1}`).trim();
+    const paramKey =
+      dimensionDraft.labelMode === 'existing'
+        ? (
+            dimensionDraft.paramKey ||
+            params.find((param) => param.type === 'length_mm')?.key ||
+            ''
+          ).trim()
+        : (dimensionDraft.newParamKey || `dimension_${dimensions.length + 1}`).trim();
+    if (!paramKey) return;
     const lockedValueMm = refPlaneDistanceMm(refAId, refBId);
-    setDimensions((prev) => [
-      ...prev,
+    const nextDimensions = [
+      ...dimensions,
       {
-        id: `dim-${prev.length + 1}`,
+        id: `dim-${dimensions.length + 1}`,
         refAId,
         refBId,
         lockedValueMm,
         paramKey,
+        canvasOffsetMm: 64 + dimensions.length * 28,
       },
-    ]);
-    setParams((prev) => [
+    ];
+    const shouldCreateParam =
+      dimensionDraft.labelMode === 'new' && !params.some((param) => param.key === paramKey);
+    const nextParams = shouldCreateParam
+      ? [
+          ...params,
+          {
+            key: paramKey,
+            label: paramKey,
+            type: 'length_mm' as const,
+            default: lockedValueMm,
+            formula: '',
+          },
+        ]
+      : params;
+    setDimensions(nextDimensions);
+    setParams(nextParams);
+    setRefPlanes((prev) => solveDimensionConstrainedRefPlanes(prev, nextDimensions, nextParams));
+    setDimensionDraft((prev) => ({
       ...prev,
-      {
-        key: paramKey,
-        label: paramKey,
-        type: 'length_mm',
-        default: lockedValueMm,
-        formula: '',
-      },
-    ]);
-    setDimensionDraft((prev) => ({ ...prev, paramKey: '' }));
+      paramKey: '',
+      newParamKey: '',
+      labelMode: shouldCreateParam ? 'new' : prev.labelMode,
+    }));
+  }
+
+  function updateDimensionLabel(dimensionId: string, paramKey: string) {
+    const nextDimensions = dimensions.map((dimension) =>
+      dimension.id === dimensionId ? { ...dimension, paramKey } : dimension,
+    );
+    setDimensions(nextDimensions);
+    setRefPlanes((prev) => solveDimensionConstrainedRefPlanes(prev, nextDimensions));
   }
 
   function addParam() {
@@ -694,11 +977,20 @@ export function FamilyEditorWorkbench(): JSX.Element {
   }
 
   function updateParam(index: number, patch: Partial<Param>) {
-    setParams((prev) => prev.map((p, i) => (i === index ? { ...p, ...patch } : p)));
+    setParams((prev) => {
+      const next = prev.map((p, i) => (i === index ? { ...p, ...patch } : p));
+      setRefPlanes((planes) => solveDimensionConstrainedRefPlanes(planes, dimensions, next));
+      return next;
+    });
   }
 
   function upsertFamilyTypeRow(row: FamilyTypeRow) {
     setFamilyTypes((prev) => prev.map((candidate) => (candidate.id === row.id ? row : candidate)));
+    if (row.id === activeFamilyTypeId) {
+      setRefPlanes((planes) =>
+        solveDimensionConstrainedRefPlanes(planes, dimensions, params, row.values),
+      );
+    }
   }
 
   function createFamilyTypeRow() {
@@ -769,6 +1061,18 @@ export function FamilyEditorWorkbench(): JSX.Element {
     const plane = refPlanes.find((candidate) => candidate.id === planeId);
     if (!plane) return;
     appendSweepProfileLine(pickedReferencePlaneLine(plane, locked, SKETCH_REF_EXTENT_MM));
+  }
+
+  function appendPickedProfileFamilyGeometry(index: number, locked: boolean) {
+    const line = pickableFamilyGeometryLines()[index];
+    if (!line) return;
+    appendSweepProfileLine(
+      pickedFamilyGeometryLine(
+        line,
+        { kind: 'family_geometry', geometryKind: 'symbolic_line', index },
+        locked,
+      ),
+    );
   }
 
   function trimExtendProfileLines(firstIndex: number, secondIndex: number) {
@@ -1119,17 +1423,25 @@ export function FamilyEditorWorkbench(): JSX.Element {
   /* ─── FAM-01 — Loaded Families filtering + usage counts ─────────── */
 
   const loadedFamilies: FamilyDefinition[] = useMemo(() => {
+    const authored = [
+      ...savedFamilies.map(buildAuthoredFamilyDefinition),
+      ...authoredFamilyDefinitionsFromElements(projectFamilyElements),
+    ].filter((family, index, all) => {
+      if (family.id === familyId) return false;
+      return all.findIndex((candidate) => candidate.id === family.id) === index;
+    });
+    const catalog = [...BUILT_IN_FAMILIES, ...authored];
     // Filter the catalog to families compatible with the host's
     // category. `generic_model` and `profile` host any discipline;
     // `door` / `window` hosts pull in same-discipline plus generic
     // helpers (e.g. swing-arc). Keep the rule simple: same-template
     // → same-discipline; generic templates → all families.
-    if (template === 'generic_model' || template === 'profile') return BUILT_IN_FAMILIES;
+    if (template === 'generic_model' || template === 'profile') return catalog;
     if (template === 'furniture') {
-      return BUILT_IN_FAMILIES.filter((f) => f.discipline === 'generic');
+      return catalog.filter((f) => f.discipline === 'generic');
     }
-    return BUILT_IN_FAMILIES.filter((f) => f.discipline === template || f.discipline === 'generic');
-  }, [template]);
+    return catalog.filter((f) => f.discipline === template || f.discipline === 'generic');
+  }, [familyId, projectFamilyElements, savedFamilies, template]);
 
   const usageCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -1197,6 +1509,18 @@ export function FamilyEditorWorkbench(): JSX.Element {
       return `L${index + 1}:${style.objectStyle}:w${style.strokeWidth}:${style.dashArray ? 'dashed' : 'solid'}`;
     })
     .join('|');
+  const lengthParams = params.filter((param) => param.type === 'length_mm');
+  const dimensionParamValues = currentParamValueMap();
+
+  function dimensionDisplayValue(dimension: FamilyDimension): number {
+    const raw = dimensionParamValues[dimension.paramKey];
+    if (typeof raw === 'number' && Number.isFinite(raw)) return Math.round(raw);
+    if (typeof raw === 'string' && raw.trim() !== '') {
+      const parsed = Number(raw);
+      if (Number.isFinite(parsed)) return Math.round(parsed);
+    }
+    return dimension.lockedValueMm;
+  }
 
   return (
     <div className="p-4 space-y-6">
@@ -1656,8 +1980,10 @@ export function FamilyEditorWorkbench(): JSX.Element {
               t={t}
               lines={sweepDraft.profile}
               refPlanes={refPlanes}
+              familyGeometryLines={pickableFamilyGeometryLines()}
               onAppendLine={appendSweepProfileLine}
               onPickReferencePlane={appendPickedProfileRefPlane}
+              onPickFamilyGeometry={appendPickedProfileFamilyGeometry}
               onTrimExtend={trimExtendProfileLines}
               onFinish={finishSweep}
             />
@@ -1733,9 +2059,38 @@ export function FamilyEditorWorkbench(): JSX.Element {
         <h2 className="font-semibold mb-2">{t('familyEditor.referencePlanesHeading')}</h2>
         <ul className="space-y-1 mb-2">
           {refPlanes.map((plane, index) => (
-            <li key={plane.id} className="flex gap-4">
-              <span>{plane.name}</span>
+            <li key={plane.id} className="flex flex-wrap items-center gap-3">
+              <span className="sr-only">{plane.name}</span>
+              <input
+                aria-label={`ref-plane-name-${index}`}
+                value={plane.name}
+                onChange={(e) => updateRefPlane(index, { name: e.target.value })}
+                className="w-36 rounded border px-1 py-0.5 text-xs"
+              />
               <span>{plane.isVertical ? 'V' : 'H'}</span>
+              <select
+                aria-label={`ref-plane-reference-type-${index}`}
+                value={plane.referenceType}
+                onChange={(e) =>
+                  updateRefPlane(index, {
+                    referenceType: e.target.value as RefPlane['referenceType'],
+                  })
+                }
+                className="rounded border px-1 py-0.5 text-xs"
+              >
+                <option value="strong_reference">Strong Reference</option>
+                <option value="weak_reference">Weak Reference</option>
+                <option value="not_reference">Not a Reference</option>
+              </select>
+              <label className="flex items-center gap-1 text-xs">
+                <input
+                  type="checkbox"
+                  aria-label={`ref-plane-locked-${index}`}
+                  checked={plane.locked}
+                  onChange={(e) => updateRefPlane(index, { locked: e.target.checked })}
+                />
+                Locked
+              </label>
               <label className="flex items-center gap-1 text-sm">
                 <span className="sr-only">Offset</span>
                 <input
@@ -1762,6 +2117,81 @@ export function FamilyEditorWorkbench(): JSX.Element {
 
       <section className="rounded border p-3 space-y-2" aria-label="Aligned dimensions">
         <h2 className="font-semibold">Aligned Dimensions</h2>
+        <svg
+          role="img"
+          aria-label="Family dimension canvas"
+          data-testid="family-dimension-canvas"
+          viewBox="0 0 480 180"
+          className="h-44 w-full rounded border border-border bg-surface"
+        >
+          <line x1="240" y1="0" x2="240" y2="180" stroke="var(--color-border)" />
+          <line x1="0" y1="90" x2="480" y2="90" stroke="var(--color-border)" />
+          {refPlanes.map((plane) =>
+            plane.isVertical ? (
+              <line
+                key={plane.id}
+                x1={240 + plane.offsetMm / 5}
+                y1="12"
+                x2={240 + plane.offsetMm / 5}
+                y2="168"
+                stroke={
+                  plane.referenceType === 'not_reference'
+                    ? 'var(--color-muted-foreground)'
+                    : 'var(--color-accent)'
+                }
+                strokeDasharray={plane.referenceType === 'strong_reference' ? undefined : '5 4'}
+              />
+            ) : (
+              <line
+                key={plane.id}
+                x1="12"
+                y1={90 - plane.offsetMm / 5}
+                x2="468"
+                y2={90 - plane.offsetMm / 5}
+                stroke={
+                  plane.referenceType === 'not_reference'
+                    ? 'var(--color-muted-foreground)'
+                    : 'var(--color-accent)'
+                }
+                strokeDasharray={plane.referenceType === 'strong_reference' ? undefined : '5 4'}
+              />
+            ),
+          )}
+          {dimensions.map((dimension) => {
+            const a = refPlanes.find((plane) => plane.id === dimension.refAId);
+            const b = refPlanes.find((plane) => plane.id === dimension.refBId);
+            if (!a || !b || a.isVertical !== b.isVertical) return null;
+            const label = `${dimension.paramKey} = ${dimensionDisplayValue(dimension)} mm`;
+            if (a.isVertical) {
+              const x1 = 240 + a.offsetMm / 5;
+              const x2 = 240 + b.offsetMm / 5;
+              const y = Math.max(16, 90 - dimension.canvasOffsetMm / 5);
+              return (
+                <g key={dimension.id} data-testid={`family-dimension-canvas-dim-${dimension.id}`}>
+                  <line x1={x1} y1={y} x2={x2} y2={y} stroke="var(--color-warning)" />
+                  <line x1={x1} y1={y - 5} x2={x1} y2={y + 5} stroke="var(--color-warning)" />
+                  <line x1={x2} y1={y - 5} x2={x2} y2={y + 5} stroke="var(--color-warning)" />
+                  <text x={(x1 + x2) / 2} y={y - 7} textAnchor="middle" fontSize="11">
+                    {label}
+                  </text>
+                </g>
+              );
+            }
+            const y1 = 90 - a.offsetMm / 5;
+            const y2 = 90 - b.offsetMm / 5;
+            const x = Math.min(464, 240 + dimension.canvasOffsetMm / 5);
+            return (
+              <g key={dimension.id} data-testid={`family-dimension-canvas-dim-${dimension.id}`}>
+                <line x1={x} y1={y1} x2={x} y2={y2} stroke="var(--color-warning)" />
+                <line x1={x - 5} y1={y1} x2={x + 5} y2={y1} stroke="var(--color-warning)" />
+                <line x1={x - 5} y1={y2} x2={x + 5} y2={y2} stroke="var(--color-warning)" />
+                <text x={x + 7} y={(y1 + y2) / 2} fontSize="11">
+                  {label}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <select
             aria-label="dimension-reference-a"
@@ -1787,11 +2217,41 @@ export function FamilyEditorWorkbench(): JSX.Element {
               </option>
             ))}
           </select>
+          <select
+            aria-label="dimension-label-mode"
+            value={dimensionDraft.labelMode}
+            onChange={(e) =>
+              setDimensionDraft((prev) => ({
+                ...prev,
+                labelMode: e.target.value as 'existing' | 'new',
+              }))
+            }
+          >
+            <option value="new">Create Parameter</option>
+            <option value="existing">Existing Parameter</option>
+          </select>
+          {dimensionDraft.labelMode === 'existing' ? (
+            <select
+              aria-label="dimension-existing-parameter"
+              value={dimensionDraft.paramKey || lengthParams[0]?.key || ''}
+              onChange={(e) => setDimensionDraft((prev) => ({ ...prev, paramKey: e.target.value }))}
+            >
+              <option value="">Label: &lt;None&gt;</option>
+              {lengthParams.map((param) => (
+                <option key={param.key} value={param.key}>
+                  {param.label || param.key}
+                </option>
+              ))}
+            </select>
+          ) : null}
           <input
             aria-label="dimension-parameter-name"
-            value={dimensionDraft.paramKey}
+            value={dimensionDraft.newParamKey}
             placeholder={`dimension_${dimensions.length + 1}`}
-            onChange={(e) => setDimensionDraft((prev) => ({ ...prev, paramKey: e.target.value }))}
+            onChange={(e) =>
+              setDimensionDraft((prev) => ({ ...prev, newParamKey: e.target.value }))
+            }
+            disabled={dimensionDraft.labelMode === 'existing'}
           />
           <button
             type="button"
@@ -1804,8 +2264,22 @@ export function FamilyEditorWorkbench(): JSX.Element {
         </div>
         <ul className="space-y-1 text-xs" data-testid="family-dimensions-list">
           {dimensions.map((dimension) => (
-            <li key={dimension.id}>
-              {dimension.paramKey}: {dimension.lockedValueMm} mm
+            <li key={dimension.id} className="flex flex-wrap items-center gap-2">
+              <span>
+                {dimension.paramKey}: {dimensionDisplayValue(dimension)} mm
+              </span>
+              <select
+                aria-label={`dimension-label-${dimension.id}`}
+                value={dimension.paramKey}
+                onChange={(e) => updateDimensionLabel(dimension.id, e.target.value)}
+              >
+                <option value="">Label: &lt;None&gt;</option>
+                {lengthParams.map((param) => (
+                  <option key={param.key} value={param.key}>
+                    {param.label || param.key}
+                  </option>
+                ))}
+              </select>
             </li>
           ))}
         </ul>
@@ -1995,38 +2469,120 @@ export function FamilyEditorWorkbench(): JSX.Element {
         />
       ) : null}
 
+      <section className="rounded border p-3" aria-label="Family persistence">
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <label className="flex items-center gap-2">
+            <span>Family name</span>
+            <input
+              aria-label="Family name"
+              value={familyName}
+              onChange={(e) => setFamilyName(e.target.value)}
+              className="rounded border px-2 py-1"
+            />
+          </label>
+          <label className="flex items-center gap-2">
+            <span>Family id</span>
+            <input
+              aria-label="Family id"
+              value={familyId}
+              onChange={(e) => setFamilyId(e.target.value)}
+              className="rounded border px-2 py-1"
+            />
+          </label>
+          <button
+            type="button"
+            className="rounded border px-2 py-1"
+            onClick={saveFamilyDocument}
+            data-testid="family-save"
+          >
+            Save Family
+          </button>
+          <select
+            aria-label="Open saved family"
+            defaultValue=""
+            onChange={(e) => {
+              loadFamilyDocument(e.target.value);
+              e.currentTarget.value = '';
+            }}
+          >
+            <option value="">Open</option>
+            {savedFamilies.map((document) => (
+              <option key={document.id} value={document.id}>
+                {document.name}
+              </option>
+            ))}
+          </select>
+          {persistenceMessage ? (
+            <span className="text-xs text-muted" data-testid="family-persistence-message">
+              {persistenceMessage}
+            </span>
+          ) : null}
+        </div>
+      </section>
+
       <button
         type="button"
-        onClick={() =>
-          console.warn('load-into-project stub', {
-            template,
-            categorySettings,
-            viewRange,
-            symbolicLines,
-            symbolicLineObjectStyles: SYMBOLIC_LINE_OBJECT_STYLES,
-            symbolicProjectRenderingEvidence,
-            dimensions,
-            eqConstraints,
-            refPlanes,
-            params,
-            resolved,
-            sweeps,
-            materialKeys: {
-              params: params
-                .filter((param) => param.type === 'material_key')
-                .map((param) => ({ key: param.key, materialKey: param.default })),
-              sweeps: sweeps.map((sweep, index) => ({
-                index,
-                materialKey: sweep.materialKey ?? null,
-                materialKeyParam: sweep.materialKeyParam ?? null,
-                pathLengthParam: sweep.pathLengthParam ?? null,
-              })),
-            },
-          })
-        }
+        onClick={() => void loadFamilyIntoProject()}
+        data-testid="family-load-into-project"
       >
         {t('familyEditor.loadIntoProject')}
       </button>
+      {pendingLoadPlan ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Reload Family"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+        >
+          <div className="w-full max-w-md rounded border border-border bg-surface p-4 shadow-lg">
+            <h2 className="text-sm font-semibold">Reload Family</h2>
+            <p className="mt-2 text-sm text-muted">
+              {familyName.trim() || 'Untitled Family'} already exists in this project.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded border px-2 py-1 text-sm"
+                onClick={async () => {
+                  const document = currentAuthoredFamilyDocument();
+                  const plan = planAuthoredFamilyLoad(document, projectFamilyElements, {
+                    now: now(),
+                    overwriteOption: 'keep-existing-values',
+                  });
+                  setPendingLoadPlan(null);
+                  await applyAuthoredFamilyLoadPlan(plan);
+                }}
+                data-testid="family-reload-keep-values"
+              >
+                Keep existing values
+              </button>
+              <button
+                type="button"
+                className="rounded border px-2 py-1 text-sm"
+                onClick={async () => {
+                  const document = currentAuthoredFamilyDocument();
+                  const plan = planAuthoredFamilyLoad(document, projectFamilyElements, {
+                    now: now(),
+                    overwriteOption: 'overwrite-parameter-values',
+                  });
+                  setPendingLoadPlan(null);
+                  await applyAuthoredFamilyLoadPlan(plan);
+                }}
+                data-testid="family-reload-overwrite-values"
+              >
+                Overwrite parameter values
+              </button>
+              <button
+                type="button"
+                className="rounded border px-2 py-1 text-sm"
+                onClick={() => setPendingLoadPlan(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {materialTarget ? (
         <MaterialBrowserDialog
           currentKey={materialKeyForTarget(materialTarget)}
@@ -2808,7 +3364,9 @@ function SweepPathSketch({ t, lines, onAppendLine, onAdvance }: PathSketchProps)
 
 interface ProfileSketchProps extends SweepSketchProps {
   refPlanes: RefPlane[];
+  familyGeometryLines: SketchLine[];
   onPickReferencePlane: (planeId: string, locked: boolean) => void;
+  onPickFamilyGeometry: (index: number, locked: boolean) => void;
   onTrimExtend: (firstIndex: number, secondIndex: number) => void;
   onFinish: () => void;
 }
@@ -2817,14 +3375,17 @@ function SweepProfileSketch({
   t,
   lines,
   refPlanes,
+  familyGeometryLines,
   onAppendLine,
   onPickReferencePlane,
+  onPickFamilyGeometry,
   onTrimExtend,
   onFinish,
 }: ProfileSketchProps): JSX.Element {
   const [draft, setDraft] = useState({ sx: 0, sy: 0, ex: 50, ey: 0 });
   const [lockPicked, setLockPicked] = useState(true);
   const [pickPlaneId, setPickPlaneId] = useState('');
+  const [pickFamilyGeometryIndex, setPickFamilyGeometryIndex] = useState(0);
   const [trimFirstIndex, setTrimFirstIndex] = useState(0);
   const [trimSecondIndex, setTrimSecondIndex] = useState(1);
   const [trimShortcutArmed, setTrimShortcutArmed] = useState(false);
@@ -2899,6 +3460,33 @@ function SweepProfileSketch({
             }}
           >
             Pick
+          </button>
+        </div>
+      ) : null}
+      {familyGeometryLines.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <label className="flex items-center gap-1">
+            Pick Family Edge
+            <select
+              aria-label="profile-pick-family-edge"
+              value={pickFamilyGeometryIndex}
+              onChange={(e) => setPickFamilyGeometryIndex(Number(e.target.value))}
+              className="rounded border px-1 py-0.5"
+            >
+              {familyGeometryLines.map((line, index) => (
+                <option key={index} value={index}>
+                  Edge {index + 1} ({line.startMm.xMm},{line.startMm.yMm}) → ({line.endMm.xMm},
+                  {line.endMm.yMm})
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            data-testid="profile-pick-family-edge"
+            onClick={() => onPickFamilyGeometry(pickFamilyGeometryIndex, lockPicked)}
+          >
+            Pick Edge
           </button>
         </div>
       ) : null}

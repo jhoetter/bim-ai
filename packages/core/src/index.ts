@@ -251,6 +251,7 @@ export type ElemKind =
   | 'internal_origin'
   | 'link_model'
   | 'link_dxf'
+  | 'link_external'
   | 'placed_tag'
   | 'detail_line'
   | 'detail_region'
@@ -430,6 +431,30 @@ export type CreateLinkDxfCmd = {
   loaded?: boolean;
   colorMode?: 'black_white' | 'custom' | 'native';
   customColor?: string;
+  overlayOpacity?: number;
+};
+
+export type ExternalLinkType = 'ifc' | 'pdf' | 'image';
+export type ExternalLinkStatus = 'not_reloaded' | 'ok' | 'source_missing' | 'parse_error';
+
+/** F-024: generic reloadable external-link row for IFC, PDF, and image references. */
+export type CreateExternalLinkCmd = {
+  type: 'createExternalLink';
+  id?: string;
+  name?: string;
+  externalLinkType: ExternalLinkType;
+  sourcePath: string;
+  sourceName?: string;
+  originMm?: XY;
+  originAlignmentMode?: 'origin_to_origin' | 'project_origin' | 'shared_coords';
+  rotationDeg?: number;
+  scaleFactor?: number;
+  sourceMetadata?: Record<string, unknown>;
+  reloadStatus?: ExternalLinkStatus;
+  lastReloadMessage?: string;
+  loaded?: boolean;
+  hidden?: boolean;
+  pinned?: boolean;
   overlayOpacity?: number;
 };
 
@@ -1855,6 +1880,30 @@ export type Element =
       /** F-017: hex color used when colorMode === 'custom'. */
       customColor?: string;
       /** F-020: per-link opacity 0.0–1.0 (default 0.5). */
+      overlayOpacity?: number;
+    }
+  | {
+      /**
+       * F-024 — generic external-link row for file references that are managed
+       * like Revit links but do not have parsed host geometry in this slice.
+       * Typed variants cover IFC, PDF, and raster-image links.
+       */
+      kind: 'link_external';
+      id: string;
+      name: string;
+      externalLinkType: ExternalLinkType;
+      sourcePath: string;
+      sourceName?: string;
+      sourceMetadata?: Record<string, unknown>;
+      reloadStatus?: ExternalLinkStatus;
+      lastReloadMessage?: string;
+      loaded?: boolean;
+      hidden?: boolean;
+      pinned?: boolean;
+      originMm?: XY;
+      originAlignmentMode?: 'origin_to_origin' | 'project_origin' | 'shared_coords';
+      rotationDeg?: number;
+      scaleFactor?: number;
       overlayOpacity?: number;
     }
   | {

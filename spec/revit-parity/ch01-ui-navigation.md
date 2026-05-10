@@ -25,7 +25,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Properties Palette](file:///Users/jhoetter/Desktop/Revit%20Specs/0133_00-14-50.png)
 
-**bim-ai status:** 🟡 Partial — Right-rail inspector shows element properties with editable instance fields (name, offsets, type, phase, dimension inputs). When no element is selected, the active plan view's full `InspectorPlanViewEditor` is shown in the right rail (name, presentation, room labels, opening tags, underlay level, view range, crop bounds, view template). "Edit Type" buttons in wall/floor/roof inspectors open the MaterialLayerStackWorkbench type editor by selecting the type element. Missing: full Revit type/instance palette separation and automatic tab context switch when an element type is selected.
+**bim-ai status:** ✅ Available — Right-rail inspector shows context-sensitive view, instance, and type properties. When nothing is selected, the active plan view's full `InspectorPlanViewEditor` is shown. Selected model elements expose editable instance fields, and Project Browser type rows switch the first tab to Type context, suppress instance bulk-edit scope, show a type-definition notice, and expose editable wall/floor/roof/family type fields backed by upsert type commands.
 
 ---
 

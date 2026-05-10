@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render } from '@testing-library/react';
+import { cleanup, fireEvent, render, waitFor, within } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import { FamilyEditorWorkbench, resolveFamilyParamValue } from './FamilyEditorWorkbench';
 import i18n from '../i18n';
 import { listMaterials } from '../viewport/materials';
+import { FAMILY_EDITOR_DOCUMENT_PARAM } from './familyEditorPersistence';
 
 function renderWithI18n(ui: React.ReactElement) {
   return render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>);
@@ -19,8 +20,15 @@ function parameterTypeSelect(comboboxes: HTMLElement[]): HTMLSelectElement {
   return select as HTMLSelectElement;
 }
 
+function parameterTableControls(getByText: (text: string) => HTMLElement) {
+  const table = getByText('Key').closest('table');
+  if (!table) throw new Error('Parameter table not found');
+  return within(table);
+}
+
 afterEach(() => {
   cleanup();
+  localStorage.clear();
 });
 
 describe('<FamilyEditorWorkbench />', () => {
@@ -45,26 +53,150 @@ describe('<FamilyEditorWorkbench />', () => {
     expect(getAllByRole('row').length).toBeGreaterThan(1);
   });
 
-  it('load into project stub', () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const { getByText } = renderWithI18n(<FamilyEditorWorkbench />);
-    fireEvent.click(getByText('Load into Project'));
-    expect(warnSpy).toHaveBeenCalledWith('load-into-project stub', expect.anything());
-    warnSpy.mockRestore();
+  it('saves and opens an authored family document', () => {
+    const { getByLabelText, getByTestId, getByText } = renderWithI18n(
+      <FamilyEditorWorkbench now={() => 1000} />,
+    );
+
+    fireEvent.change(getByLabelText('Family name'), { target: { value: 'Casework Bench' } });
+    fireEvent.change(getByLabelText('Family id'), { target: { value: 'fam:casework:bench' } });
+    fireEvent.click(getByText('Add parameter'));
+    fireEvent.change(getByLabelText('Family name'), { target: { value: 'Temporary Name' } });
+
+    fireEvent.click(getByTestId('family-save'));
+    expect(getByTestId('family-persistence-message').textContent).toContain('Temporary Name');
+
+    fireEvent.change(getByLabelText('Family name'), { target: { value: 'Unsaved Name' } });
+    fireEvent.change(getByLabelText('Open saved family'), {
+      target: { value: 'fam:casework:bench' },
+    });
+
+    expect((getByLabelText('Family name') as HTMLInputElement).value).toBe('Temporary Name');
+    expect(getByTestId('family-persistence-message').textContent).toContain('Opened');
+  });
+
+  it('loads an authored family into the project as an upsertFamilyType command', async () => {
+    const onLoadIntoProject = vi.fn();
+    const { getByLabelText, getByTestId } = renderWithI18n(
+      <FamilyEditorWorkbench now={() => 2000} onLoadIntoProject={onLoadIntoProject} />,
+    );
+
+    fireEvent.change(getByLabelText('Family name'), { target: { value: 'Casework Bench' } });
+    fireEvent.change(getByLabelText('Family id'), { target: { value: 'fam:casework:bench' } });
+    fireEvent.click(getByTestId('family-load-into-project'));
+
+    await waitFor(() => expect(onLoadIntoProject).toHaveBeenCalledTimes(1));
+    expect(onLoadIntoProject.mock.calls[0][0]).toMatchObject({
+      typeId: 'ft-fam_casework_bench-1jk',
+      reloaded: false,
+      command: {
+        type: 'upsertFamilyType',
+        name: 'Type 1',
+        familyId: 'fam:casework:bench',
+        discipline: 'generic',
+      },
+    });
+  });
+
+  it('creates a local project family_type when no host project callback is supplied', () => {
+    const { getByLabelText, getByTestId, getByRole } = renderWithI18n(
+      <FamilyEditorWorkbench now={() => 2000} />,
+    );
+
+    fireEvent.change(getByLabelText('Family name'), { target: { value: 'Casework Bench' } });
+    fireEvent.change(getByLabelText('Family id'), { target: { value: 'fam:casework:bench' } });
+    fireEvent.click(getByTestId('family-load-into-project'));
+
+    expect(getByTestId('family-persistence-message').textContent).toContain(
+      'Loaded Casework Bench into project',
+    );
+
+    fireEvent.click(getByTestId('family-load-into-project'));
+
+    expect(getByRole('dialog', { name: 'Reload Family' })).toBeTruthy();
+  });
+
+  it('prompts for keep-values or overwrite when loading over an existing authored family', async () => {
+    const onLoadIntoProject = vi.fn();
+    const existingDocument = {
+      id: 'authored-family-1',
+      name: 'Untitled Family',
+      template: 'generic_model',
+      categorySettings: {
+        category: 'generic_model',
+        alwaysVertical: false,
+        workPlaneBased: false,
+        roomCalculationPoint: false,
+        shared: false,
+      },
+      viewRange: {
+        topOffsetMm: 2300,
+        cutPlaneOffsetMm: 1200,
+        bottomOffsetMm: 0,
+        viewDepthOffsetMm: -1200,
+      },
+      refPlanes: [],
+      params: [],
+      familyTypes: [{ id: 'family-type-1', name: 'Type 1', values: {} }],
+      activeFamilyTypeId: 'family-type-1',
+      sweeps: [],
+      arrays: [],
+      nestedInstances: [],
+      symbolicLines: [],
+      dimensions: [],
+      eqConstraints: [],
+      savedAt: 1000,
+      version: 'family-editor-1000',
+    };
+    const existingFamilyType = {
+      kind: 'family_type',
+      id: 'ft-existing',
+      name: 'Project Type',
+      familyId: 'authored-family-1',
+      discipline: 'generic',
+      parameters: {
+        name: 'Project Type',
+        familyId: 'authored-family-1',
+        Width: 1800,
+        [FAMILY_EDITOR_DOCUMENT_PARAM]: existingDocument,
+      },
+    } as const;
+
+    const { getByTestId, getByRole } = renderWithI18n(
+      <FamilyEditorWorkbench
+        now={() => 3000}
+        projectElementsById={{ 'ft-existing': existingFamilyType }}
+        onLoadIntoProject={onLoadIntoProject}
+      />,
+    );
+
+    fireEvent.click(getByTestId('family-load-into-project'));
+
+    expect(getByRole('dialog', { name: 'Reload Family' })).toBeTruthy();
+    fireEvent.click(getByTestId('family-reload-keep-values'));
+
+    await waitFor(() => expect(onLoadIntoProject).toHaveBeenCalledTimes(1));
+    expect(onLoadIntoProject.mock.calls[0][0]).toMatchObject({
+      reloaded: true,
+      overwriteOption: 'keep-existing-values',
+      command: {
+        id: 'ft-existing',
+        parameters: { Width: 1800 },
+      },
+    });
   });
 });
 
 describe('FAM-075/FAM-079/FAM-081/FAM-085 — furniture template preset', () => {
   it('seeds a furniture family with ref planes, params, symbolic lines, sweeps, and types', () => {
-    const { getByText, getAllByText, getByLabelText, getByTestId } = renderWithI18n(
-      <FamilyEditorWorkbench />,
-    );
+    const { getByText, getAllByText, getByLabelText, getByTestId, getByDisplayValue } =
+      renderWithI18n(<FamilyEditorWorkbench />);
 
     fireEvent.click(getByText('Furniture', { selector: 'button' }));
 
     expect((getByLabelText('Family category') as HTMLSelectElement).value).toBe('furniture');
-    expect(getByText('Center Left/Right')).toBeTruthy();
-    expect(getByText('Center Front/Back')).toBeTruthy();
+    expect(getByDisplayValue('Center Left/Right')).toBeTruthy();
+    expect(getByDisplayValue('Center Front/Back')).toBeTruthy();
     expect(getAllByText('Backrest Depth').length).toBeGreaterThan(0);
     expect(getByTestId('family-dimensions-list').textContent).toContain('Backrest_Depth');
     expect(getByLabelText('parameter-default-Show_2D_Elements')).toBeTruthy();
@@ -114,10 +246,11 @@ describe('FAM-09 — flex test mode', () => {
 
     // Author one parameter named "Width" with default 1200
     fireEvent.click(getAllByRole('button').find((b) => b.textContent === 'Add parameter')!);
-    const textInputs = getAllByRole('textbox') as HTMLInputElement[];
+    const table = parameterTableControls(getByText);
+    const textInputs = table.getAllByRole('textbox') as HTMLInputElement[];
     fireEvent.change(textInputs[0], { target: { value: 'Width' } });
     fireEvent.change(textInputs[1], { target: { value: 'Width' } });
-    const numericInputs = getAllByRole('spinbutton') as HTMLInputElement[];
+    const numericInputs = table.getAllByRole('spinbutton') as HTMLInputElement[];
     fireEvent.change(numericInputs[0], { target: { value: '1200' } });
 
     // Enter flex mode
@@ -137,10 +270,11 @@ describe('FAM-09 — flex test mode', () => {
     );
 
     fireEvent.click(getAllByRole('button').find((b) => b.textContent === 'Add parameter')!);
-    const textInputs = getAllByRole('textbox') as HTMLInputElement[];
+    const table = parameterTableControls(getByText);
+    const textInputs = table.getAllByRole('textbox') as HTMLInputElement[];
     fireEvent.change(textInputs[0], { target: { value: 'Width' } });
     fireEvent.change(textInputs[1], { target: { value: 'Width' } });
-    const defaultInput = (getAllByRole('spinbutton') as HTMLInputElement[])[0];
+    const defaultInput = (table.getAllByRole('spinbutton') as HTMLInputElement[])[0];
     fireEvent.change(defaultInput, { target: { value: '1200' } });
 
     fireEvent.click(getByText('Flex'));
@@ -152,7 +286,7 @@ describe('FAM-09 — flex test mode', () => {
     expect(queryByLabelText('Flex parameter sidebar')).toBeNull();
 
     // Default value is still 1200 (not overwritten)
-    const defaultAfter = (getAllByRole('spinbutton') as HTMLInputElement[])[0];
+    const defaultAfter = (table.getAllByRole('spinbutton') as HTMLInputElement[])[0];
     expect(defaultAfter.value).toBe('1200');
 
     // Re-entering flex shows empty input again (flex values discarded)
@@ -288,7 +422,75 @@ describe('FAM-054 — aligned dimensions', () => {
     fireEvent.click(getByTestId('dimension-create-parameter'));
 
     expect(getByTestId('family-dimensions-list').textContent).toContain('Width: 1000 mm');
+    expect(getByTestId('family-dimension-canvas-dim-dim-1').textContent).toContain('Width');
     expect(getAllByDisplayValue('Width').length).toBeGreaterThan(0);
+  });
+
+  it('labels a dimension with an existing parameter and solves the reference-plane offset', () => {
+    const { getByText, getByLabelText, getByTestId, getAllByRole } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+
+    fireEvent.click(getAllByRole('button').find((b) => b.textContent === 'Add parameter')!);
+    const table = parameterTableControls(getByText);
+    const textInputs = table.getAllByRole('textbox') as HTMLInputElement[];
+    fireEvent.change(textInputs[0], { target: { value: 'Depth' } });
+    fireEvent.change(textInputs[1], { target: { value: 'Depth' } });
+    const defaultInput = (table.getAllByRole('spinbutton') as HTMLInputElement[]).find(
+      (input) => input.value === '0',
+    )!;
+    fireEvent.change(defaultInput, { target: { value: '750' } });
+
+    fireEvent.click(getByText('Add vertical'));
+    fireEvent.click(getByText('Add vertical'));
+    fireEvent.change(getByLabelText('ref-plane-offset-1'), { target: { value: '1000' } });
+    fireEvent.change(getByLabelText('dimension-label-mode'), {
+      target: { value: 'existing' },
+    });
+    fireEvent.change(getByLabelText('dimension-existing-parameter'), {
+      target: { value: 'Depth' },
+    });
+    fireEvent.click(getByTestId('dimension-create-parameter'));
+
+    expect((getByLabelText('ref-plane-offset-1') as HTMLInputElement).value).toBe('750');
+    expect(getByTestId('family-dimensions-list').textContent).toContain('Depth: 750 mm');
+  });
+
+  it('updates a labeled dimension through Family Types and drives the canvas references', () => {
+    const { getByText, getByLabelText, getByTestId } = renderWithI18n(<FamilyEditorWorkbench />);
+
+    fireEvent.click(getByText('Add vertical'));
+    fireEvent.click(getByText('Add vertical'));
+    fireEvent.change(getByLabelText('ref-plane-offset-1'), { target: { value: '1000' } });
+    fireEvent.change(getByLabelText('dimension-parameter-name'), { target: { value: 'Width' } });
+    fireEvent.click(getByTestId('dimension-create-parameter'));
+
+    fireEvent.click(getByTestId('family-types-open'));
+    fireEvent.change(getByLabelText('family-type-value-Width'), { target: { value: '1200' } });
+
+    expect((getByLabelText('ref-plane-offset-1') as HTMLInputElement).value).toBe('1200');
+    expect(getByTestId('family-dimensions-list').textContent).toContain('Width: 1200 mm');
+  });
+});
+
+describe('FAM-050 — reference plane properties', () => {
+  it('edits reference-plane name, strong/weak/not-reference classification, and lock state', () => {
+    const { getByText, getByLabelText } = renderWithI18n(<FamilyEditorWorkbench />);
+
+    fireEvent.click(getByText('Add vertical'));
+    fireEvent.change(getByLabelText('ref-plane-name-0'), {
+      target: { value: 'Latch Centerline' },
+    });
+    fireEvent.change(getByLabelText('ref-plane-reference-type-0'), {
+      target: { value: 'strong_reference' },
+    });
+    fireEvent.click(getByLabelText('ref-plane-locked-0'));
+
+    expect((getByLabelText('ref-plane-name-0') as HTMLInputElement).value).toBe('Latch Centerline');
+    expect((getByLabelText('ref-plane-reference-type-0') as HTMLSelectElement).value).toBe(
+      'strong_reference',
+    );
+    expect((getByLabelText('ref-plane-locked-0') as HTMLInputElement).checked).toBe(true);
   });
 });
 
@@ -512,6 +714,27 @@ describe('FAM-02 — sweep tool flow', () => {
     fireEvent.change(getByLabelText('ref-plane-offset-0'), { target: { value: '300' } });
     expect(getByTestId('sweep-profile-list').textContent).toContain('(300, -1000)');
     expect(getByTestId('sweep-profile-list').textContent).toContain('(300, 1000)');
+  });
+
+  it('picks a locked family edge into the profile and follows its source constraint', () => {
+    const { getByText, getByLabelText, getByTestId, getAllByText } = renderWithI18n(
+      <FamilyEditorWorkbench />,
+    );
+
+    fireEvent.click(getByText('Add vertical'));
+    fireEvent.change(getByLabelText('ref-plane-offset-0'), { target: { value: '250' } });
+    fireEvent.click(getByTestId('symbolic-line-add'));
+    fireEvent.click(getByTestId('symbolic-line-align'));
+
+    fireEvent.click(getByText('Sweep'));
+    fireEvent.click(getAllByText('Add line')[0]);
+    fireEvent.click(getByText(/Edit Profile/));
+    fireEvent.click(getByTestId('profile-pick-family-edge'));
+    expect(getByTestId('sweep-profile-list').textContent).toContain('locked');
+    expect(getByTestId('sweep-profile-list').textContent).toContain('(250, 0)');
+
+    fireEvent.change(getByLabelText('ref-plane-offset-0'), { target: { value: '400' } });
+    expect(getByTestId('sweep-profile-list').textContent).toContain('(400, 0)');
   });
 
   it('trims and extends two profile lines to a clean corner', () => {

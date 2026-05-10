@@ -33,6 +33,11 @@ import { Viewport3DLayersPanel } from './viewport';
 import { firstSheetId, placeViewOnSheetCommand } from './sheets/sheetRecommendedViewports';
 import type { WorkspaceMode } from './shell';
 import { humanKindLabel, InspectorEmptyTab } from './WorkspaceHelpers';
+import {
+  isDuplicableTypeElement,
+  type DuplicableTypeElement,
+  typePropertyUpdateCommand,
+} from './WorkspaceRightRailTypeCommands';
 
 const NAVIGABLE_KINDS = new Set<Element['kind']>([
   'plan_view',
@@ -41,20 +46,6 @@ const NAVIGABLE_KINDS = new Set<Element['kind']>([
   'sheet',
   'schedule',
 ]);
-
-type DuplicableTypeElement = Extract<
-  Element,
-  { kind: 'family_type' | 'wall_type' | 'floor_type' | 'roof_type' }
->;
-
-function isDuplicableTypeElement(element: Element): element is DuplicableTypeElement {
-  return (
-    element.kind === 'family_type' ||
-    element.kind === 'wall_type' ||
-    element.kind === 'floor_type' ||
-    element.kind === 'roof_type'
-  );
-}
 
 function newDuplicateTypeId(prefix: string): string {
   try {
@@ -692,13 +683,18 @@ export function WorkspaceRightRail({
                 ) : (
                   InspectorPropertiesFor(el, t, {
                     elementsById,
-                    onPropertyChange: (property, value) =>
+                    onPropertyChange: (property, value) => {
+                      if (isDuplicableTypeElement(el)) {
+                        void onSemanticCommand(typePropertyUpdateCommand(el, property, value));
+                        return;
+                      }
                       void onSemanticCommand({
                         type: 'updateElementProperty',
                         elementId: el.id,
                         key: property,
                         value,
-                      }),
+                      });
+                    },
                     onDisciplineChange: handleDisciplineChange,
                     onEditType: (typeId) => select(typeId),
                   })

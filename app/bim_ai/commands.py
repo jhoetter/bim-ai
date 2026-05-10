@@ -1014,6 +1014,8 @@ class UpsertFamilyTypeCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["upsertFamilyType"] = "upsertFamilyType"
     id: str | None = None
+    name: str | None = None
+    family_id: str | None = Field(default=None, alias="familyId")
     discipline: Literal["door", "window", "generic"] = "generic"
     parameters: dict[str, Any] = Field(default_factory=dict)
     catalog_source: FamilyCatalogSourceCmd | None = Field(default=None, alias="catalogSource")
@@ -1627,6 +1629,68 @@ class UpdateLinkDxfCmd(BaseModel):
     last_reload_message: str | None = Field(default=None, alias="lastReloadMessage")
     reload_source: bool = Field(default=False, alias="reloadSource")
     loaded: bool | None = Field(default=None)
+
+
+class CreateExternalLinkCmd(BaseModel):
+    """F-024: create a generic IFC/PDF/image external-link row."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createExternalLink"] = "createExternalLink"
+    id: str | None = None
+    name: str = "External link"
+    external_link_type: Literal["ifc", "pdf", "image"] = Field(alias="externalLinkType")
+    source_path: str = Field(alias="sourcePath")
+    source_name: str | None = Field(default=None, alias="sourceName")
+    source_metadata: dict[str, Any] = Field(default_factory=dict, alias="sourceMetadata")
+    reload_status: Literal["not_reloaded", "ok", "source_missing", "parse_error"] = Field(
+        default="not_reloaded", alias="reloadStatus"
+    )
+    last_reload_message: str | None = Field(default=None, alias="lastReloadMessage")
+    loaded: bool = Field(default=True)
+    hidden: bool = Field(default=False)
+    pinned: bool = Field(default=False)
+    origin_mm: Vec2Mm | None = Field(default=None, alias="originMm")
+    origin_alignment_mode: Literal["origin_to_origin", "project_origin", "shared_coords"] = Field(
+        default="origin_to_origin", alias="originAlignmentMode"
+    )
+    rotation_deg: float = Field(default=0.0, alias="rotationDeg")
+    scale_factor: float = Field(default=1.0, alias="scaleFactor", gt=0)
+    overlay_opacity: float | None = Field(default=None, alias="overlayOpacity", ge=0.0, le=1.0)
+
+
+class UpdateExternalLinkCmd(BaseModel):
+    """F-024: update generic IFC/PDF/image external-link metadata and controls."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["updateExternalLink"] = "updateExternalLink"
+    link_id: str = Field(alias="linkId")
+    name: str | None = None
+    source_path: str | None = Field(default=None, alias="sourcePath")
+    source_name: str | None = Field(default=None, alias="sourceName")
+    source_metadata: dict[str, Any] | None = Field(default=None, alias="sourceMetadata")
+    reload_status: Literal["not_reloaded", "ok", "source_missing", "parse_error"] | None = Field(
+        default=None, alias="reloadStatus"
+    )
+    last_reload_message: str | None = Field(default=None, alias="lastReloadMessage")
+    reload_source: bool = Field(default=False, alias="reloadSource")
+    loaded: bool | None = Field(default=None)
+    hidden: bool | None = Field(default=None)
+    pinned: bool | None = Field(default=None)
+    origin_mm: Vec2Mm | None = Field(default=None, alias="originMm")
+    origin_alignment_mode: Literal["origin_to_origin", "project_origin", "shared_coords"] | None = (
+        Field(default=None, alias="originAlignmentMode")
+    )
+    rotation_deg: float | None = Field(default=None, alias="rotationDeg")
+    scale_factor: float | None = Field(default=None, alias="scaleFactor", gt=0)
+    overlay_opacity: float | None = Field(default=None, alias="overlayOpacity", ge=0.0, le=1.0)
+
+
+class DeleteExternalLinkCmd(BaseModel):
+    """F-024: remove a generic IFC/PDF/image external-link row."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["deleteExternalLink"] = "deleteExternalLink"
+    link_id: str = Field(alias="linkId")
 
 
 # --- FED-02: selection_set + clash_test commands ----------------------------------
@@ -3366,6 +3430,9 @@ Command = Annotated[
     | DeleteLinkModelCmd
     | CreateLinkDxfCmd
     | UpdateLinkDxfCmd
+    | CreateExternalLinkCmd
+    | UpdateExternalLinkCmd
+    | DeleteExternalLinkCmd
     | UpsertSelectionSetCmd
     | UpsertClashTestCmd
     | RunClashTestCmd

@@ -258,6 +258,8 @@ def try_apply_structure_command(doc, cmd, *, source_provider=None) -> bool:
             kwargs: dict[str, Any] = {
                 "kind": "family_type",
                 "id": fid,
+                "name": cmd.name or str(cmd.parameters.get("name") or ""),
+                "familyId": cmd.family_id or str(cmd.parameters.get("familyId") or ""),
                 "discipline": cmd.discipline,
                 "parameters": dict(cmd.parameters),
             }

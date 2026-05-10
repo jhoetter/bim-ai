@@ -1696,6 +1696,52 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
     return out as Element;
   }
 
+  if (kind === 'link_external') {
+    const typeRaw = raw.externalLinkType ?? raw.external_link_type;
+    const externalLinkType: 'ifc' | 'pdf' | 'image' =
+      typeRaw === 'pdf' || typeRaw === 'image' ? typeRaw : 'ifc';
+    const sourcePath = String(raw.sourcePath ?? raw.source_path ?? '');
+    if (!sourcePath) return null;
+    const alignRaw = String(raw.originAlignmentMode ?? raw.origin_alignment_mode ?? '');
+    const align: 'origin_to_origin' | 'project_origin' | 'shared_coords' =
+      alignRaw === 'project_origin' || alignRaw === 'shared_coords' ? alignRaw : 'origin_to_origin';
+    const statusRaw = raw.reloadStatus ?? raw.reload_status;
+    const reloadStatus: 'not_reloaded' | 'ok' | 'source_missing' | 'parse_error' =
+      statusRaw === 'ok' || statusRaw === 'source_missing' || statusRaw === 'parse_error'
+        ? statusRaw
+        : 'not_reloaded';
+    const opacityRaw = raw.overlayOpacity ?? raw.overlay_opacity;
+    const out: Record<string, unknown> = {
+      kind: 'link_external',
+      id,
+      name: name || String(raw.sourceName ?? raw.source_name ?? sourcePath.split('/').pop() ?? ''),
+      externalLinkType,
+      sourcePath,
+      reloadStatus,
+      loaded: raw.loaded == null ? true : Boolean(raw.loaded),
+      hidden: Boolean(raw.hidden ?? false),
+      originAlignmentMode: align,
+      rotationDeg: Number(raw.rotationDeg ?? raw.rotation_deg ?? 0),
+      scaleFactor: Number(raw.scaleFactor ?? raw.scale_factor ?? 1),
+    };
+    if (typeof raw.sourceName === 'string' || typeof raw.source_name === 'string') {
+      out.sourceName = String(raw.sourceName ?? raw.source_name);
+    }
+    if (raw.sourceMetadata != null || raw.source_metadata != null) {
+      const meta = raw.sourceMetadata ?? raw.source_metadata;
+      out.sourceMetadata = meta && typeof meta === 'object' ? meta : {};
+    }
+    if (typeof raw.lastReloadMessage === 'string' || typeof raw.last_reload_message === 'string') {
+      out.lastReloadMessage = String(raw.lastReloadMessage ?? raw.last_reload_message);
+    }
+    if (raw.originMm != null || raw.origin_mm != null) {
+      out.originMm = coerceXY((raw.originMm ?? raw.origin_mm) as Record<string, unknown>);
+    }
+    if (raw.pinned != null) out.pinned = Boolean(raw.pinned);
+    if (opacityRaw != null) out.overlayOpacity = Number(opacityRaw);
+    return out as Element;
+  }
+
   if (kind === 'project_base_point') {
     return {
       kind: 'project_base_point',

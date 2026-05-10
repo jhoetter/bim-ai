@@ -20,7 +20,7 @@ from bim_ai.agent_review_readout_consistency_closure import (
 )
 from bim_ai.db import get_session
 from bim_ai.document import Document
-from bim_ai.elements import LinkDxfElem, LinkModelElem
+from bim_ai.elements import ExternalLinkElem, LinkDxfElem, LinkModelElem
 from bim_ai.engine import (
     bundle_replay_diagnostics,
     clone_document,
@@ -196,6 +196,70 @@ def _expand_dxf_reload_command(doc: Document, command: dict[str, Any]) -> dict[s
     }
 
 
+def _external_source_metadata(path: Any) -> dict[str, Any]:
+    from pathlib import Path
+
+    p = Path(str(path))
+    stat = p.stat()
+    return {
+        "path": str(p),
+        "sourceName": p.name,
+        "sizeBytes": stat.st_size,
+        "mtimeMs": int(stat.st_mtime * 1000),
+    }
+
+
+def _expand_external_link_reload_command(doc: Document, command: dict[str, Any]) -> dict[str, Any]:
+    """Materialise updateExternalLink.reloadSource into status/source metadata."""
+
+    if not isinstance(command, dict):
+        return command
+    if command.get("type") != "updateExternalLink" or command.get("reloadSource") is not True:
+        return command
+
+    link_id = command.get("linkId")
+    link = doc.elements.get(str(link_id)) if link_id is not None else None
+    if not isinstance(link, ExternalLinkElem):
+        return command
+
+    source_path = str(command.get("sourcePath") or link.source_path or "").strip()
+    base: dict[str, Any] = {
+        **{k: v for k, v in command.items() if k != "reloadSource"},
+        "sourcePath": source_path or link.source_path,
+    }
+    if not source_path:
+        return {
+            **base,
+            "reloadStatus": "source_missing",
+            "lastReloadMessage": "External link has no source path",
+            "loaded": False,
+        }
+
+    from pathlib import Path
+
+    path = Path(source_path)
+    if not path.is_file():
+        return {
+            **base,
+            "reloadStatus": "source_missing",
+            "lastReloadMessage": f"External link source file not found: {source_path}",
+            "loaded": False,
+        }
+
+    return {
+        **base,
+        "sourceName": path.name,
+        "sourceMetadata": _external_source_metadata(path),
+        "reloadStatus": "ok",
+        "lastReloadMessage": f"Reloaded from {path}",
+        "loaded": True,
+    }
+
+
+def _expand_link_reload_command(doc: Document, command: dict[str, Any]) -> dict[str, Any]:
+    return _expand_external_link_reload_command(doc, _expand_dxf_reload_command(doc, command))
+
+
 async def _validate_link_model_command_against_db(
     session: AsyncSession,
     host_model_id: UUID,
@@ -369,7 +433,7 @@ async def apply_command(
     uid = body.user_id or "local-dev"
 
     baseline_doc = Document.model_validate(row.document)
-    command_for_commit = _expand_dxf_reload_command(baseline_doc, body.command)
+    command_for_commit = _expand_link_reload_command(baseline_doc, body.command)
 
     await _validate_link_model_command_against_db(session, model_id, command_for_commit)
 
@@ -456,9 +520,10 @@ async def dry_run_command(
 
     baseline_doc = Document.model_validate(row.document)
     baseline_summary = compute_model_summary(baseline_doc)
+    command_for_commit = _expand_link_reload_command(baseline_doc, body.command)
 
     try:
-        ok, new_doc, _cmd_obj, violations, code = try_commit(baseline_doc, body.command)
+        ok, new_doc, _cmd_obj, violations, code = try_commit(baseline_doc, command_for_commit)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Invalid command: {exc}") from exc
 
@@ -473,7 +538,7 @@ async def dry_run_command(
             "summaryBefore": baseline_summary,
             "summaryAfter": None,
             "wouldRevision": None,
-            "appliedCommandPreview": body.command,
+            "appliedCommandPreview": command_for_commit,
         }
 
     return {
@@ -484,7 +549,7 @@ async def dry_run_command(
         "summaryBefore": baseline_summary,
         "summaryAfter": compute_model_summary(new_doc),
         "wouldRevision": new_doc.revision,
-        "appliedCommandPreview": body.command,
+        "appliedCommandPreview": command_for_commit,
     }
 
 
@@ -501,7 +566,7 @@ async def apply_command_bundle(
 
     uid = body.user_id or "local-dev"
     baseline_doc = Document.model_validate(row.document)
-    commands_for_commit = [_expand_dxf_reload_command(baseline_doc, c) for c in body.commands]
+    commands_for_commit = [_expand_link_reload_command(baseline_doc, c) for c in body.commands]
     doc_before = clone_document(baseline_doc)
 
     src_provider: SourceDocProvider | None = None
@@ -612,9 +677,10 @@ async def dry_run_command_bundle(
 
     baseline_doc = Document.model_validate(row.document)
     baseline_summary = compute_model_summary(baseline_doc)
+    commands_for_commit = [_expand_link_reload_command(baseline_doc, c) for c in body.commands]
 
     try:
-        ok, new_doc, _cmds, violations, code = try_commit_bundle(baseline_doc, body.commands)
+        ok, new_doc, _cmds, violations, code = try_commit_bundle(baseline_doc, commands_for_commit)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Invalid bundle: {exc}") from exc
 
@@ -622,7 +688,7 @@ async def dry_run_command_bundle(
 
     brief_proto = agent_brief_command_protocol_v1(
         doc=baseline_doc,
-        proposed_commands=list(body.commands),
+        proposed_commands=list(commands_for_commit),
         validation_violations=viols_wire,
     )
     schedule_rows = [
@@ -665,10 +731,10 @@ async def dry_run_command_bundle(
             "summaryBefore": baseline_summary,
             "summaryAfter": None,
             "wouldRevision": None,
-            "appliedCommandsPreview": body.commands,
+            "appliedCommandsPreview": commands_for_commit,
             "replayDiagnostics": replay_bundle_diagnostics_for_outcome(
                 baseline_doc,
-                body.commands,
+                commands_for_commit,
                 outcome_code=code,
             ),
             "agentBriefCommandProtocol_v1": brief_proto,
@@ -685,8 +751,8 @@ async def dry_run_command_bundle(
         "summaryBefore": baseline_summary,
         "summaryAfter": compute_model_summary(new_doc),
         "wouldRevision": new_doc.revision,
-        "appliedCommandsPreview": body.commands,
-        "replayDiagnostics": bundle_replay_diagnostics(body.commands),
+        "appliedCommandsPreview": commands_for_commit,
+        "replayDiagnostics": bundle_replay_diagnostics(commands_for_commit),
         "agentBriefCommandProtocol_v1": brief_proto,
         "agentGeneratedBundleQaChecklist_v1": qa_checklist,
         "agentBriefAcceptanceReadout_v1": accept_readout,
