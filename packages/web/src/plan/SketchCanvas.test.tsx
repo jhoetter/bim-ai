@@ -9,7 +9,7 @@
  *   - Cancel button calls the cancel API and unmounts
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { createRef, type RefObject } from 'react';
 
@@ -46,10 +46,6 @@ function makeRefs(): {
 }
 
 describe('SKT-01 — SketchCanvas', () => {
-  beforeEach(() => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-  });
-
   it('opens a session on mount and shows the open-loop status', async () => {
     mockFetch(async (url) => {
       if (url === '/api/sketch-sessions') {
