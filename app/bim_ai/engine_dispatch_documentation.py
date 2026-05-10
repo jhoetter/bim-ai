@@ -1,8 +1,6 @@
 # ruff: noqa: I001
 import math
 
-import math
-
 from bim_ai.engine import (
     Any,
     AnnotationSymbolElem,
