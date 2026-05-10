@@ -1,4 +1,5 @@
 import type { Element, EvidenceRef, EvidenceRefKind, Violation, XY } from '@bim-ai/core';
+import type { ViewFilter } from './storeTypes';
 
 export function coerceViolation(v: unknown): Violation {
   const vv = v as Record<string, unknown>;
