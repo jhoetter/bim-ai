@@ -1,0 +1,42 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "75250caa580d",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/ProjectBrowser.tsx",
+    "packages/web/src/workspace/artifactUploadManifestReadout.test.ts",
+    "packages/web/src/workspace/artifactUploadManifestReadout.ts",
+    "packages/web/src/workspace/evidence/artifactUploadManifestReadout.test.ts",
+    "packages/web/src/workspace/evidence/artifactUploadManifestReadout.ts",
+    "packages/web/src/workspace/evidence/evidenceBaselineLifecycleReadout.test.tsx",
+    "packages/web/src/workspace/evidence/evidenceBaselineLifecycleReadout.tsx",
+    "packages/web/src/workspace/evidence/evidencePackageDigestInvariantsReadout.test.tsx",
+    "packages/web/src/workspace/evidence/evidencePackageDigestInvariantsReadout.tsx",
+    "packages/web/src/workspace/evidence/formatStagedArtifactResolutionMode.test.ts",
+    "packages/web/src/workspace/evidence/formatStagedArtifactResolutionMode.ts",
+    "packages/web/src/workspace/evidence/index.ts",
+    "packages/web/src/workspace/evidence/projectBrowserEvidence.test.ts",
+    "packages/web/src/workspace/evidence/projectBrowserEvidence.ts",
+    "packages/web/src/workspace/evidenceBaselineLifecycleReadout.test.tsx",
+    "packages/web/src/workspace/evidenceBaselineLifecycleReadout.tsx",
+    "packages/web/src/workspace/evidencePackageDigestInvariantsReadout.test.tsx",
+    "packages/web/src/workspace/evidencePackageDigestInvariantsReadout.tsx",
+    "packages/web/src/workspace/formatStagedArtifactResolutionMode.test.ts",
+    "packages/web/src/workspace/formatStagedArtifactResolutionMode.ts",
+    "packages/web/src/workspace/projectBrowserEvidence.test.ts",
+    "packages/web/src/workspace/projectBrowserEvidence.ts",
+    "packages/web/src/workspace/review/EvidenceArtifactCorrelationPanel.tsx",
+    "packages/web/src/workspace/review/evidenceArtifactParser.ts",
+    "spec/code-quality-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/75/250caa580d/0/metadata.json",
+      "transcript": "/75/250caa580d/0/full.jsonl",
+      "content_hash": "/75/250caa580d/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
