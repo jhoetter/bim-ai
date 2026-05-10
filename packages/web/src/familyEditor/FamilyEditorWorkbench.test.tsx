@@ -241,6 +241,26 @@ describe('FAM-065/FAM-066 — family category and view range settings', () => {
   });
 });
 
+describe('FAM-067/FAM-071/FAM-072 — symbolic detail line authoring', () => {
+  it('adds symbolic lines with opening and hidden-cut subcategories', () => {
+    const { getByLabelText, getByTestId } = renderWithI18n(<FamilyEditorWorkbench />);
+
+    fireEvent.change(getByLabelText('Symbolic line subcategory'), {
+      target: { value: 'opening_projection' },
+    });
+    fireEvent.change(getByLabelText('symbolic-start-x'), { target: { value: '10' } });
+    fireEvent.change(getByLabelText('symbolic-end-x'), { target: { value: '200' } });
+    fireEvent.click(getByTestId('symbolic-line-add'));
+    expect(getByTestId('symbolic-lines-list').textContent).toContain('opening_projection');
+
+    fireEvent.change(getByLabelText('Symbolic line subcategory'), {
+      target: { value: 'hidden_cut' },
+    });
+    fireEvent.click(getByTestId('symbolic-line-add'));
+    expect(getByTestId('symbolic-lines-list').textContent).toContain('hidden_cut');
+  });
+});
+
 describe('FAM-02 — sweep tool flow', () => {
   it('opens a sketch session when Sweep is clicked', () => {
     const { getByText, queryByLabelText } = renderWithI18n(<FamilyEditorWorkbench />);
