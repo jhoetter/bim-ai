@@ -1,0 +1,46 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "b14b86d2cbb9",
+  "session_id": "019e12a2-e2b7-7121-b7a2-efaa44476317",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T17:18:33.833374Z",
+  "branch": "revit-parity-dxf-alignment-wave",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "9947e4e53225",
+  "checkpoint_transcript_start": 1680,
+  "transcript_lines_at_start": 1680,
+  "token_usage": {
+    "input_tokens": 231135,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 3614848,
+    "output_tokens": 10491,
+    "api_call_count": 21
+  },
+  "session_metrics": {
+    "turn_count": 10
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 207,
+      "user_lines_removed": 3,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/commands.py": 6,
+        "app/bim_ai/elements.py": 3,
+        "app/bim_ai/engine_dispatch_coordination.py": 3,
+        "packages/core/src/index.ts": 7,
+        "packages/web/src/families/FamilyLibraryPanel.test.tsx": 1,
+        "packages/web/src/workspace/library/AssetCard.tsx": 187
+      },
+      "user_removed_per_file": {
+        "packages/web/src/families/FamilyLibraryPanel.test.tsx": 2,
+        "packages/web/src/workspace/library/AssetCard.tsx": 1
+      }
+    }
+  ]
+}

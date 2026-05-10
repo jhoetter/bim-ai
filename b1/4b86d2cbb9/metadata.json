@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "b14b86d2cbb9",
+  "strategy": "manual-commit",
+  "branch": "revit-parity-dxf-alignment-wave",
+  "checkpoints_count": 0,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/b1/4b86d2cbb9/0/metadata.json",
+      "transcript": "/b1/4b86d2cbb9/0/full.jsonl",
+      "content_hash": "/b1/4b86d2cbb9/0/content_hash.txt",
+      "prompt": "/b1/4b86d2cbb9/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 231135,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 3614848,
+    "output_tokens": 10491,
+    "api_call_count": 21
+  }
+}
