@@ -6,8 +6,11 @@ import pytest
 
 from bim_ai.commands import (
     ApplyPlanViewTemplateCmd,
+    ApplyViewTemplateCmd,
+    CreateViewTemplateCmd,
     UpdatePlanViewCropCmd,
     UpdatePlanViewRangeCmd,
+    UpdateViewTemplateCmd,
     UpsertPlanViewCmd,
     UpsertPlanViewTemplateCmd,
 )
@@ -185,6 +188,55 @@ class TestApplyPlanViewTemplate:
         assert isinstance(pv_final, PlanViewElem)
         assert pv_final.crop_min_mm is None
         assert pv_final.crop_max_mm is None
+
+class TestViewTemplateControlMatrix:
+    def test_create_view_template_persists_include_lock_matrix(self) -> None:
+        doc = _base_doc()
+        apply_inplace(
+            doc,
+            CreateViewTemplateCmd(
+                templateId="tpl",
+                name="Controlled",
+                scale=100,
+                templateControlMatrix={"scale": {"included": False, "locked": False}},
+            ),
+        )
+        tpl = doc.elements["tpl"]
+        assert isinstance(tpl, ViewTemplateElem)
+        assert tpl.template_control_matrix["scale"].included is False
+        assert tpl.template_control_matrix["scale"].locked is False
+
+    def test_apply_and_update_skip_excluded_fields_for_bound_views(self) -> None:
+        doc = _base_doc()
+        _add_plan_view(doc)
+        pv_initial = doc.elements["pv"]
+        assert isinstance(pv_initial, PlanViewElem)
+        doc.elements["pv"] = pv_initial.model_copy(
+            update={"scale": 25, "plan_detail_level": "coarse"}
+        )
+        apply_inplace(
+            doc,
+            CreateViewTemplateCmd(
+                templateId="tpl",
+                name="Controlled",
+                scale=100,
+                detailLevel="fine",
+                templateControlMatrix={"scale": {"included": False, "locked": False}},
+            ),
+        )
+
+        apply_inplace(doc, ApplyViewTemplateCmd(viewId="pv", templateId="tpl"))
+        pv_after_apply = doc.elements["pv"]
+        assert isinstance(pv_after_apply, PlanViewElem)
+        assert pv_after_apply.template_id == "tpl"
+        assert pv_after_apply.scale == 25
+        assert pv_after_apply.plan_detail_level == "fine"
+
+        apply_inplace(doc, UpdateViewTemplateCmd(templateId="tpl", scale=50, detailLevel="medium"))
+        pv_after_update = doc.elements["pv"]
+        assert isinstance(pv_after_update, PlanViewElem)
+        assert pv_after_update.scale == 25
+        assert pv_after_update.plan_detail_level == "medium"
 
 
 class TestUpdatePlanViewCrop:

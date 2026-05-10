@@ -9,6 +9,7 @@ import {
   flipDoorSwing,
   flipSectionDepth,
   initialAlignState,
+  initialAreaBoundaryState,
   initialDimensionState,
   initialFloorState,
   initialRoofState,
@@ -27,6 +28,7 @@ import {
   initialWallOpeningState,
   RAILING_DEFAULTS,
   reduceAlign,
+  reduceAreaBoundary,
   reduceShaft,
   reduceSplit,
   reduceTrim,
@@ -40,6 +42,7 @@ import {
   toggleFloorMode,
   WALL_LOCATION_LINE_ORDER,
   WINDOW_DEFAULTS,
+  areaBoundaryRectangleFromDiagonal,
 } from './toolGrammar';
 
 /* ────────────────────────────────────────────────────────────────────── */
@@ -214,6 +217,57 @@ describe('Room marker — §16.4.8', () => {
       { xMm: 1, yMm: 0 },
     ]);
     expect(c.xMm).toBeCloseTo(0.5, 6);
+  });
+});
+
+describe('Area boundary — F-095', () => {
+  it('clicks accumulate arbitrary vertices and click-near-first closes the loop', () => {
+    let state = initialAreaBoundaryState();
+    for (const pointMm of [
+      { xMm: 0, yMm: 0 },
+      { xMm: 4000, yMm: 0 },
+      { xMm: 3500, yMm: 1800 },
+      { xMm: 1200, yMm: 2600 },
+    ]) {
+      const out = reduceAreaBoundary(state, { kind: 'click', pointMm });
+      state = out.state;
+      expect(out.effect.commitBoundaryMm).toBeUndefined();
+    }
+    const closed = reduceAreaBoundary(state, {
+      kind: 'click',
+      pointMm: { xMm: 120, yMm: 80 },
+      closeToleranceMm: 250,
+    });
+    expect(closed.effect.commitBoundaryMm).toEqual([
+      { xMm: 0, yMm: 0 },
+      { xMm: 4000, yMm: 0 },
+      { xMm: 3500, yMm: 1800 },
+      { xMm: 1200, yMm: 2600 },
+    ]);
+    expect(closed.state.verticesMm).toEqual([]);
+  });
+
+  it('Enter commits only loops with at least three vertices', () => {
+    let state = initialAreaBoundaryState();
+    state = reduceAreaBoundary(state, { kind: 'click', pointMm: { xMm: 0, yMm: 0 } }).state;
+    state = reduceAreaBoundary(state, { kind: 'click', pointMm: { xMm: 1000, yMm: 0 } }).state;
+    expect(reduceAreaBoundary(state, { kind: 'commit' }).effect.commitBoundaryMm).toBeUndefined();
+    state = reduceAreaBoundary(state, { kind: 'click', pointMm: { xMm: 1000, yMm: 1000 } }).state;
+    expect(reduceAreaBoundary(state, { kind: 'commit' }).effect.commitBoundaryMm).toHaveLength(3);
+  });
+
+  it('retains the rectangle diagonal helper for the two-click area flow', () => {
+    expect(areaBoundaryRectangleFromDiagonal({ xMm: 4000, yMm: 3000 }, { xMm: 0, yMm: 0 })).toEqual(
+      [
+        { xMm: 0, yMm: 0 },
+        { xMm: 4000, yMm: 0 },
+        { xMm: 4000, yMm: 3000 },
+        { xMm: 0, yMm: 3000 },
+      ],
+    );
+    expect(
+      areaBoundaryRectangleFromDiagonal({ xMm: 0, yMm: 0 }, { xMm: 100, yMm: 3000 }),
+    ).toBeNull();
   });
 });
 

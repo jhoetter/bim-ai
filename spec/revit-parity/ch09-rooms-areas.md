@@ -55,13 +55,14 @@ Source segment: `05:30:00 – 05:39:46`
 **Screenshot:**
 ![Area tool](file:///Users/jhoetter/Desktop/Revit%20Specs/0831_05-37-44.png)
 
-**bim-ai status:** 🟡 Partial — the `area-boundary` sketch tool (hotkey AR) draws area boundary polylines stored as `area` elements. The right-rail inspector shows computed area (m²), rule set (gross/net/no_rules), level, and boundary vertex count. Area and Volume Computations settings are now partially available (see F-096). Missing: auto-snap to closed boundary loop like Revit, VG per-view area visibility toggle.
+**bim-ai status:** 🟡 Partial — the `area-boundary` sketch tool (hotkey AR) draws Area Plan polygons stored as `area` elements. Users can add arbitrary vertices and close the loop by clicking near the first point, pressing Enter, or double-clicking; Shift-click keeps the rectangular diagonal-corner shortcut. Vertices retain wall-face snap, active Area Plan scheme/rules are persisted, and the right-rail inspector shows computed area (m²), rule set (gross/net/no_rules), level, and boundary vertex count. Missing: Revit-style click-inside-existing-boundary placement.
 
 ---
 
 ## F-096 · Area and Volume Computations dialog
 
 **What it does:** Architecture → Room & Area → Area and Volume Computations opens a project-level dialog with two controls:
+
 1. **Volumes are computed at**: Finish Faces or Core Faces.
 2. **Room Area Computation**: At wall finish, At wall centerline, At wall core layer, At wall core center.
 

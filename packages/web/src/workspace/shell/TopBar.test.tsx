@@ -288,6 +288,8 @@ describe('RibbonBar — F-005', () => {
     const { getByTestId, getByRole } = render(<RibbonBar activeToolId="wall" />);
     expect(getByTestId('ribbon-bar')).toBeTruthy();
     expect(getByRole('tab', { name: 'Architecture' }).getAttribute('aria-selected')).toBe('true');
+    expect(getByRole('tab', { name: 'Steel' })).toBeTruthy();
+    expect(getByRole('tab', { name: 'Precast' })).toBeTruthy();
     expect(getByRole('tab', { name: 'Systems' })).toBeTruthy();
     expect(getByRole('tab', { name: 'Insert' })).toBeTruthy();
     expect(getByRole('tab', { name: 'Collaborate' })).toBeTruthy();
@@ -334,6 +336,40 @@ describe('RibbonBar — F-005', () => {
 
     fireEvent.click(getByTestId('ribbon-tab-analyze'));
     expect(getByTestId('ribbon-panels')).toBeTruthy();
+  });
+
+  it('opens panel flyouts and dispatches flyout commands', () => {
+    const onOpenCommandPalette = vi.fn();
+    const onOpenSettings = vi.fn();
+    const { getByTestId, queryByTestId } = render(
+      <RibbonBar onOpenCommandPalette={onOpenCommandPalette} onOpenSettings={onOpenSettings} />,
+    );
+
+    fireEvent.click(getByTestId('ribbon-tab-view'));
+    fireEvent.click(getByTestId('ribbon-panel-flyout-graphics'));
+    expect(getByTestId('ribbon-flyout-menu-graphics')).toBeTruthy();
+
+    fireEvent.click(getByTestId('ribbon-flyout-command-view-more'));
+    expect(onOpenCommandPalette).toHaveBeenCalledTimes(1);
+    expect(queryByTestId('ribbon-flyout-menu-graphics')).toBeNull();
+
+    fireEvent.click(getByTestId('ribbon-panel-flyout-graphics'));
+    fireEvent.click(getByTestId('ribbon-flyout-command-view-gdo'));
+    expect(onOpenSettings).toHaveBeenCalledTimes(1);
+  });
+
+  it('customizes visible ribbon commands and persists the preference', () => {
+    const first = render(<RibbonBar />);
+    fireEvent.click(first.getByTestId('ribbon-toggle-customize'));
+    fireEvent.click(first.getByLabelText('Door'));
+    expect(first.queryByTestId('ribbon-command-door')).toBeNull();
+    first.unmount();
+
+    const second = render(<RibbonBar />);
+    expect(second.queryByTestId('ribbon-command-door')).toBeNull();
+    fireEvent.click(second.getByTestId('ribbon-toggle-customize'));
+    fireEvent.click(second.getByLabelText('Door'));
+    expect(second.getByTestId('ribbon-command-door')).toBeTruthy();
   });
 
   it('adds a contextual Modify tab when an element is selected', () => {

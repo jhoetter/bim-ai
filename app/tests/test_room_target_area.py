@@ -6,7 +6,15 @@ import pytest
 
 from bim_ai.commands import UpdateElementPropertyCmd
 from bim_ai.document import Document
-from bim_ai.elements import LevelElem, RoomElem, RoomSeparationElem, ScheduleElem, Vec2Mm, WallElem
+from bim_ai.elements import (
+    AreaElem,
+    LevelElem,
+    RoomElem,
+    RoomSeparationElem,
+    ScheduleElem,
+    Vec2Mm,
+    WallElem,
+)
 from bim_ai.engine import apply_inplace
 from bim_ai.schedule_derivation import derive_schedule_table
 
@@ -80,6 +88,39 @@ def test_create_room_rectangle_with_target_area_m2() -> None:
     rooms = [e for e in new_doc.elements.values() if isinstance(e, RoomElem)]
     assert len(rooms) == 1
     assert rooms[0].target_area_m2 == 19.5
+
+
+def test_create_area_accepts_arbitrary_closed_loop_with_scheme_and_computed_area() -> None:
+    from bim_ai.engine import try_commit
+
+    lvl = LevelElem(kind="level", id="lvl-1", name="Ground", elevation_mm=0)
+    doc = Document(revision=1, elements={"lvl-1": lvl})
+    ok, new_doc, _, _, code = try_commit(
+        doc,
+        {
+            "type": "createArea",
+            "id": "area-l",
+            "name": "L Area",
+            "levelId": "lvl-1",
+            "boundaryMm": [
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 4000, "yMm": 0},
+                {"xMm": 4000, "yMm": 1000},
+                {"xMm": 1500, "yMm": 1000},
+                {"xMm": 1500, "yMm": 3000},
+                {"xMm": 0, "yMm": 3000},
+            ],
+            "ruleSet": "net",
+            "areaScheme": "rentable",
+            "applyAreaRules": True,
+        },
+    )
+    assert ok is True and code == "ok"
+    area = new_doc.elements["area-l"]
+    assert isinstance(area, AreaElem)
+    assert area.area_scheme == "rentable"
+    assert area.rule_set == "net"
+    assert area.computed_area_sq_mm == pytest.approx(7_000_000.0)
 
 
 def test_derive_room_schedule_includes_target_and_delta() -> None:

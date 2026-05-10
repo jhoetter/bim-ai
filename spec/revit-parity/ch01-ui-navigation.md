@@ -36,7 +36,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Ribbon - Architecture Tab](file:///Users/jhoetter/Desktop/Revit%20Specs/0141_00-16-44.png)
 
-**bim-ai status:** 🟡 Partial — The workspace shell now includes a compact `RibbonBar` below the top bar (`data-testid="ribbon-bar"`). It exposes tabbed Architecture, Structure, Annotate, View, and Manage groups with existing commands wired to the current plan tools, workspace mode switches, command palette, VV/VG dialog, project menu, and family library. When an element is selected it adds a contextual `Modify | <ElementKind>` tab with Select, Move, Copy, Rotate, Mirror, Align, and Trim/Extend commands. Missing: full Revit tab catalogue, deep contextual panel rules, Add-Ins/Systems/Steel/Precast tabs, panel flyouts, and ribbon customization/minimize behavior.
+**bim-ai status:** ✅ Implemented — The workspace shell includes a compact `RibbonBar` below the top bar (`data-testid="ribbon-bar"`). It exposes Architecture, Structure, Steel, Precast, Systems, Insert, Annotate, Analyze, Massing & Site, Collaborate, View, Manage, Add-Ins, and contextual `Modify | <ElementKind>` tabs. Commands are wired to existing plan tools, workspace mode switches, command palette, VV/VG dialog, project menu, family library, and settings surfaces. The ribbon supports minimize/restore, panel flyouts for secondary commands, and persistent command visibility customization.
 
 ---
 

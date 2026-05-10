@@ -29,6 +29,9 @@ import {
   reduceCeiling,
   type CeilingState,
   cycleWallLocationLine,
+  areaBoundaryCanClose,
+  areaBoundaryRectangleFromDiagonal,
+  reduceAreaBoundary,
 } from '../tools/toolGrammar';
 import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
@@ -209,7 +212,7 @@ type Draft =
   | { kind: 'room_rect'; sx: number; sy: number }
   | { kind: 'reference-plane'; sx: number; sy: number }
   | { kind: 'property-line'; sx: number; sy: number }
-  | { kind: 'area-boundary'; sx: number; sy: number }
+  | { kind: 'area-boundary'; verts: Array<{ xMm: number; yMm: number }> }
   | { kind: 'masking-region'; sx: number; sy: number }
   | { kind: 'plan-region'; sx: number; sy: number }
   | {
@@ -1738,7 +1741,9 @@ export function PlanCanvas({
               ? { xMm: draftRef.current.ax, yMm: draftRef.current.ay }
               : draftRef.current?.kind === 'room_rect'
                 ? { xMm: draftRef.current.sx, yMm: draftRef.current.sy }
-                : undefined;
+                : draftRef.current?.kind === 'area-boundary'
+                  ? draftRef.current.verts[draftRef.current.verts.length - 1]
+                  : undefined;
       const hs = orthoExtents(camRef.current.half);
       return snapPlanPoint({
         cursor: rw,
@@ -1785,6 +1790,90 @@ export function PlanCanvas({
         new THREE.LineBasicMaterial({ color: readPlanToken('--cat-room', '#a7f3d0') }),
       );
       grp.add(previewRef.current);
+    };
+
+    const redrawAreaBoundaryPreviewMm = (
+      verts: Array<{ xMm: number; yMm: number }>,
+      cursorMm?: { xMm: number; yMm: number },
+    ) => {
+      if (previewRef.current) {
+        grp.remove(previewRef.current);
+        previewRef.current.geometry.dispose();
+      }
+      const ptsMm = cursorMm ? [...verts, cursorMm] : [...verts];
+      if (ptsMm.length === 0) {
+        previewRef.current = null;
+        return;
+      }
+      if (ptsMm.length >= 3 && cursorMm && areaBoundaryCanClose(verts, cursorMm)) {
+        ptsMm[ptsMm.length - 1] = verts[0]!;
+      }
+      const pts = ptsMm.map((pt) => new THREE.Vector3(pt.xMm / 1000, SLICE_Y, pt.yMm / 1000));
+      const mat = new THREE.LineDashedMaterial({
+        color: readPlanToken('--draft-construction-blue', '#fcd34d'),
+        dashSize: 0.22,
+        gapSize: 0.1,
+      });
+      const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat);
+      line.computeLineDistances();
+      previewRef.current = line;
+      grp.add(line);
+    };
+
+    const clearPreview = () => {
+      if (previewRef.current) {
+        grp.remove(previewRef.current);
+        previewRef.current.geometry.dispose();
+        previewRef.current = null;
+      }
+    };
+
+    const activeAreaPlanContext = () => {
+      const activePv = activePlanViewId ? elementsById[activePlanViewId] : null;
+      if (!activePv || activePv.kind !== 'plan_view' || activePv.planViewSubtype !== 'area_plan') {
+        return null;
+      }
+      const areaScheme = activePv.areaScheme ?? 'gross_building';
+      return {
+        levelId: activePv.levelId || lvlId,
+        areaScheme,
+        ruleSet: areaScheme === 'gross_building' ? ('gross' as const) : ('net' as const),
+      };
+    };
+
+    const areaSnapPoint = (pointMm: { xMm: number; yMm: number }) => {
+      const ctx = activeAreaPlanContext();
+      if (!ctx) return pointMm;
+      const wallsForAreaSnap = Object.values(elementsById)
+        .filter(
+          (el): el is Extract<Element, { kind: 'wall' }> =>
+            el.kind === 'wall' && el.levelId === ctx.levelId,
+        )
+        .map((w) => ({
+          id: w.id,
+          startMm: { xMm: w.start.xMm, yMm: w.start.yMm },
+          endMm: { xMm: w.end.xMm, yMm: w.end.yMm },
+          thicknessMm: w.thicknessMm,
+        }));
+      return snapPointToNearestWallFaceMm(wallsForAreaSnap, pointMm) ?? pointMm;
+    };
+
+    const commitAreaBoundary = (boundaryMm: Array<{ xMm: number; yMm: number }>) => {
+      const ctx = activeAreaPlanContext();
+      if (!ctx || !ctx.levelId || boundaryMm.length < 3) return false;
+      onSemanticCommand({
+        type: 'createArea',
+        name: 'Area',
+        levelId: ctx.levelId,
+        boundaryMm,
+        ruleSet: ctx.ruleSet,
+        areaScheme: ctx.areaScheme,
+        applyAreaRules: useBimStore.getState().applyAreaRules,
+      });
+      draftRef.current = undefined;
+      clearPreview();
+      bumpGeom((x) => x + 1);
+      return true;
     };
 
     const clearMarqueeLine = () => {
@@ -2115,6 +2204,10 @@ export function PlanCanvas({
 
       const p = new THREE.Vector3(v.xMm / 1000, SLICE_Y, v.yMm / 1000);
       const d = draftRef.current;
+      if (planTool === 'area-boundary' && d?.kind === 'area-boundary') {
+        redrawAreaBoundaryPreviewMm(d.verts, areaSnapPoint(v));
+        return;
+      }
       if (planTool === 'room_rectangle' && d?.kind === 'room_rect') {
         redrawPreviewRectMm(d.sx, d.sy, v.xMm, v.yMm);
         return;
@@ -2942,62 +3035,48 @@ export function PlanCanvas({
         return;
       }
       if (planTool === 'area-boundary') {
-        // F-098/KRN-08: area boundaries are authored only in dedicated Area Plan
-        // views and inherit that view's Area Scheme.
-        const activePv = activePlanViewId ? elementsById[activePlanViewId] : null;
-        if (
-          !activePv ||
-          activePv.kind !== 'plan_view' ||
-          activePv.planViewSubtype !== 'area_plan'
-        ) {
+        // F-095/F-098/KRN-08: area boundaries are authored only in Area Plan
+        // views and inherit that view's Area Scheme. Clicks add arbitrary
+        // polygon vertices; click near the first vertex, Enter, or double-click
+        // closes when at least three vertices exist. Shift-click on the second
+        // point preserves the previous two-click rectangle placement flow.
+        if (!activeAreaPlanContext()) {
           draftRef.current = undefined;
           bumpGeom((x) => x + 1);
           return;
         }
-        const activeAreaScheme = activePv.areaScheme ?? 'gross_building';
-        const areaRuleSet = activeAreaScheme === 'gross_building' ? 'gross' : 'net';
-        const wallsForAreaSnap = Object.values(elementsById)
-          .filter(
-            (el): el is Extract<Element, { kind: 'wall' }> =>
-              el.kind === 'wall' && el.levelId === (activePv.levelId || lvlId),
-          )
-          .map((w) => ({
-            id: w.id,
-            startMm: { xMm: w.start.xMm, yMm: w.start.yMm },
-            endMm: { xMm: w.end.xMm, yMm: w.end.yMm },
-            thicknessMm: w.thicknessMm,
-          }));
-        const areaPt = snapPointToNearestWallFaceMm(wallsForAreaSnap, sp) ?? sp;
+        const areaPt = areaSnapPoint(sp);
         const d = draftRef.current;
         if (!d || d.kind !== 'area-boundary') {
-          draftRef.current = { kind: 'area-boundary', sx: areaPt.xMm, sy: areaPt.yMm };
+          draftRef.current = { kind: 'area-boundary', verts: [areaPt] };
+          redrawAreaBoundaryPreviewMm([areaPt]);
           bumpGeom((x) => x + 1);
           return;
         }
-        if (Math.hypot(areaPt.xMm - d.sx, areaPt.yMm - d.sy) < 1) {
-          draftRef.current = undefined;
-          bumpGeom((x) => x + 1);
+        if (d.verts.length === 1 && ev.shiftKey) {
+          const rectBoundary = areaBoundaryRectangleFromDiagonal(d.verts[0]!, areaPt);
+          if (rectBoundary) {
+            commitAreaBoundary(rectBoundary);
+          } else {
+            draftRef.current = undefined;
+            clearPreview();
+            bumpGeom((x) => x + 1);
+          }
           return;
         }
-        const x0 = Math.min(d.sx, areaPt.xMm);
-        const x1 = Math.max(d.sx, areaPt.xMm);
-        const y0 = Math.min(d.sy, areaPt.yMm);
-        const y1 = Math.max(d.sy, areaPt.yMm);
-        onSemanticCommand({
-          type: 'createArea',
-          name: 'Area',
-          levelId: activePv.levelId || lvlId,
-          boundaryMm: [
-            { xMm: x0, yMm: y0 },
-            { xMm: x1, yMm: y0 },
-            { xMm: x1, yMm: y1 },
-            { xMm: x0, yMm: y1 },
-          ],
-          ruleSet: areaRuleSet,
-          areaScheme: activeAreaScheme,
-          applyAreaRules: useBimStore.getState().applyAreaRules,
-        });
-        draftRef.current = undefined;
+        const reduced = reduceAreaBoundary(
+          { verticesMm: d.verts },
+          {
+            kind: 'click',
+            pointMm: areaPt,
+          },
+        );
+        if (reduced.effect.commitBoundaryMm) {
+          commitAreaBoundary(reduced.effect.commitBoundaryMm);
+          return;
+        }
+        draftRef.current = { kind: 'area-boundary', verts: reduced.state.verticesMm };
+        redrawAreaBoundaryPreviewMm(reduced.state.verticesMm);
         bumpGeom((x) => x + 1);
         return;
       }
@@ -3870,6 +3949,7 @@ export function PlanCanvas({
         } else if (planTool === 'ceiling') {
           ceilingStateRef.current = initialCeilingState();
         }
+        if (planTool === 'area-boundary') clearPreview();
         clearMarqueeLine();
         marqueeRef.current = { active: false, sx: 0, sy: 0, ex: 0, ey: 0, direction: null };
         bumpGeom((x) => x + 1);
@@ -3900,6 +3980,21 @@ export function PlanCanvas({
               variant: effect.commitJoin.variant,
             });
           }
+        }
+      }
+      if (planTool === 'area-boundary') {
+        const d = draftRef.current;
+        if (d && d.kind === 'area-boundary' && ev.key === 'Enter') {
+          ev.preventDefault();
+          const reduced = reduceAreaBoundary({ verticesMm: d.verts }, { kind: 'commit' });
+          if (reduced.effect.commitBoundaryMm) {
+            commitAreaBoundary(reduced.effect.commitBoundaryMm);
+          } else {
+            draftRef.current = undefined;
+            clearPreview();
+            bumpGeom((x) => x + 1);
+          }
+          return;
         }
       }
       if (planTool === 'detail-region') {
@@ -4138,6 +4233,17 @@ export function PlanCanvas({
     // the corresponding view. Looks up bimPickId via raycast, then routes to
     // the right activation action based on element kind.
     const onDblClick = (ev: MouseEvent) => {
+      if (planTool === 'area-boundary') {
+        const d = draftRef.current;
+        if (d && d.kind === 'area-boundary' && d.verts.length >= 3) {
+          ev.preventDefault();
+          const reduced = reduceAreaBoundary({ verticesMm: d.verts }, { kind: 'commit' });
+          if (reduced.effect.commitBoundaryMm) {
+            commitAreaBoundary(reduced.effect.commitBoundaryMm);
+          }
+          return;
+        }
+      }
       const rectBox = rnd.domElement.getBoundingClientRect();
       const ray = new THREE.Raycaster();
       ray.setFromCamera(

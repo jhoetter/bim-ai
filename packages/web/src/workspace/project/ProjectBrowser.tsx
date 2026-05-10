@@ -204,7 +204,10 @@ function viewTemplateEvidenceLine(
   const rl = (vt.planShowRoomLabels ?? false) ? 'on' : 'off';
   const oRef = shortTemplateTagRef(elementsById, vt.defaultPlanOpeningTagStyleId, 'opening');
   const rRef = shortTemplateTagRef(elementsById, vt.defaultPlanRoomTagStyleId, 'room');
-  return `${vt.scale} · ${d} · fill ${fill} · tags ${ot}/${rl} · tagDef o:${oRef} r:${rRef}`;
+  const matrix = vt.templateControlMatrix ?? {};
+  const excludedCount = Object.values(matrix).filter((row) => row?.included === false).length;
+  const includedLabel = Object.keys(matrix).length ? ` · included ${5 - excludedCount}/5` : '';
+  return `${vt.scale} · ${d} · fill ${fill} · tags ${ot}/${rl} · tagDef o:${oRef} r:${rRef}${includedLabel}`;
 }
 
 function projectBrowserScheduleCategory(schedule: Extract<Element, { kind: 'schedule' }>): string {

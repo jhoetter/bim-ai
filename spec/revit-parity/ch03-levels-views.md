@@ -55,7 +55,7 @@ Source segment: `00:55:00 – 01:02:00`
 **Screenshot:**
 ![View Template dropdown](file:///Users/jhoetter/Desktop/Revit%20Specs/0279_01-00-19.png)
 
-**bim-ai status:** 🟡 Partial — View Templates are stored as `view_template` elements and listed in `ProjectBrowser.tsx`. Users can create new templates (+ New button → `CreateViewTemplate` command), duplicate, delete, edit properties via the right-rail inspector (`InspectorViewTemplateEditor`), and apply a template to any plan view via the "Apply ▾" dropdown. Plan views also expose a Phase Filter dropdown (All / Existing / Demolition / New Construction) directly in `InspectorPlanViewEditor` (`data-testid="inspector-plan-phase-filter"`), persisted via `updateElementProperty { key: 'phaseFilter' }`. Missing: the full Revit Edit-Type dialog with category visibility / detail level locked by the template. "Save as Template…" button (F-030 partial) now implemented in `InspectorPlanViewEditor` — dispatches `CreateViewTemplate` from the current view's `planDetailLevel` and `phaseFilter`.
+**bim-ai status:** ✅ Implemented — View Templates are stored as `view_template` elements and listed in `ProjectBrowser.tsx`. Users can create templates (+ New button → `CreateViewTemplate`), duplicate, delete, edit properties via the right-rail inspector (`InspectorViewTemplateEditor`), save the current plan view as a template, and apply a template to any plan view via the "Apply ▾" dropdown. Template-controlled fields include a persisted Revit-style include/lock matrix; applying or updating a template propagates only included fields, and excluded fields remain editable on bound plan views.
 
 ---
 

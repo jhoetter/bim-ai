@@ -463,6 +463,103 @@ export function centroidMm(outline: { xMm: number; yMm: number }[]): { xMm: numb
 }
 
 /* ────────────────────────────────────────────────────────────────────── */
+/* Area boundary — F-095                                                    */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export const AREA_BOUNDARY_CLOSE_TOLERANCE_MM = 520;
+
+export interface AreaBoundaryState {
+  verticesMm: { xMm: number; yMm: number }[];
+}
+
+export function initialAreaBoundaryState(): AreaBoundaryState {
+  return { verticesMm: [] };
+}
+
+export type AreaBoundaryEvent =
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number }; closeToleranceMm?: number }
+  | { kind: 'commit' }
+  | { kind: 'cancel' };
+
+export interface AreaBoundaryEffect {
+  commitBoundaryMm?: { xMm: number; yMm: number }[];
+}
+
+function sameAreaBoundaryPoint(
+  a: { xMm: number; yMm: number },
+  b: { xMm: number; yMm: number },
+): boolean {
+  return Math.hypot(a.xMm - b.xMm, a.yMm - b.yMm) < 1;
+}
+
+export function areaBoundaryCanClose(
+  verticesMm: { xMm: number; yMm: number }[],
+  pointMm: { xMm: number; yMm: number },
+  closeToleranceMm = AREA_BOUNDARY_CLOSE_TOLERANCE_MM,
+): boolean {
+  const first = verticesMm[0];
+  return (
+    verticesMm.length >= 3 &&
+    first !== undefined &&
+    Math.hypot(pointMm.xMm - first.xMm, pointMm.yMm - first.yMm) <= closeToleranceMm
+  );
+}
+
+export function areaBoundaryRectangleFromDiagonal(
+  startMm: { xMm: number; yMm: number },
+  endMm: { xMm: number; yMm: number },
+  minEdgeMm = 200,
+): { xMm: number; yMm: number }[] | null {
+  const widthMm = Math.abs(endMm.xMm - startMm.xMm);
+  const depthMm = Math.abs(endMm.yMm - startMm.yMm);
+  if (widthMm < minEdgeMm || depthMm < minEdgeMm) return null;
+  const x0 = Math.min(startMm.xMm, endMm.xMm);
+  const x1 = Math.max(startMm.xMm, endMm.xMm);
+  const y0 = Math.min(startMm.yMm, endMm.yMm);
+  const y1 = Math.max(startMm.yMm, endMm.yMm);
+  return [
+    { xMm: x0, yMm: y0 },
+    { xMm: x1, yMm: y0 },
+    { xMm: x1, yMm: y1 },
+    { xMm: x0, yMm: y1 },
+  ];
+}
+
+export function reduceAreaBoundary(
+  state: AreaBoundaryState,
+  event: AreaBoundaryEvent,
+): { state: AreaBoundaryState; effect: AreaBoundaryEffect } {
+  if (event.kind === 'cancel') {
+    return { state: initialAreaBoundaryState(), effect: {} };
+  }
+  if (event.kind === 'commit') {
+    if (state.verticesMm.length >= 3) {
+      return {
+        state: initialAreaBoundaryState(),
+        effect: { commitBoundaryMm: [...state.verticesMm] },
+      };
+    }
+    return { state: initialAreaBoundaryState(), effect: {} };
+  }
+
+  const point = event.pointMm;
+  if (areaBoundaryCanClose(state.verticesMm, point, event.closeToleranceMm)) {
+    return {
+      state: initialAreaBoundaryState(),
+      effect: { commitBoundaryMm: [...state.verticesMm] },
+    };
+  }
+  const last = state.verticesMm[state.verticesMm.length - 1];
+  if (last && sameAreaBoundaryPoint(last, point)) {
+    return { state, effect: {} };
+  }
+  return {
+    state: { verticesMm: [...state.verticesMm, point] },
+    effect: {},
+  };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
 /* Dimension — §16.4.9                                                      */
 /* ────────────────────────────────────────────────────────────────────── */
 
