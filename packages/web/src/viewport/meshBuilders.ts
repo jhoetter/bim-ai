@@ -1823,99 +1823,21 @@ export function makeSlopedWallMesh(
 
   const dx = ex - sx;
   const dz = ez - sz;
-  const len = Math.max(1, Math.hypot(dx, dz));
-  const ux = dx / len;
-  const uz = dz / len;
-  const nx = -uz;
-  const nz = ux;
-
+  const lenMm = Math.max(1, Math.hypot(dx, dz));
+  const lenM = lenMm / 1000;
   const thick = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2);
-  const halfT = thick / 2;
+  const yBase = elevM + (wall.baseConstraintOffsetMm ?? 0) / 1000;
+  const sampleCount = Math.max(2, Math.min(48, Math.ceil(lenM / 0.25)));
+  const topHeightsRelM: number[] = [];
+  for (let i = 0; i <= sampleCount; i++) {
+    const t = i / sampleCount;
+    const xMm = sx + t * dx;
+    const zMm = sz + t * dz;
+    const roofY = roofHeightAtPoint(roof, elementsById, xMm, zMm);
+    topHeightsRelM.push(Math.max(0.001, roofY - yBase));
+  }
 
-  const hStart = roofHeightAtPoint(roof, elementsById, sx, sz);
-  const hEnd = roofHeightAtPoint(roof, elementsById, ex, ez);
-
-  const yBase = elevM;
-
-  const sxF = sx / 1000 + nx * halfT;
-  const szF = sz / 1000 + nz * halfT;
-  const exF = ex / 1000 + nx * halfT;
-  const ezF = ez / 1000 + nz * halfT;
-  const sxB = sx / 1000 - nx * halfT;
-  const szB = sz / 1000 - nz * halfT;
-  const exB = ex / 1000 - nx * halfT;
-  const ezB = ez / 1000 - nz * halfT;
-
-  const positions = new Float32Array([
-    sxF,
-    yBase,
-    szF, // 0 start-front-base
-    exF,
-    yBase,
-    ezF, // 1 end-front-base
-    exF,
-    hEnd,
-    ezF, // 2 end-front-top
-    sxF,
-    hStart,
-    szF, // 3 start-front-top
-    sxB,
-    yBase,
-    szB, // 4 start-back-base
-    exB,
-    yBase,
-    ezB, // 5 end-back-base
-    exB,
-    hEnd,
-    ezB, // 6 end-back-top
-    sxB,
-    hStart,
-    szB, // 7 start-back-top
-  ]);
-
-  const indices = new Uint16Array([
-    0,
-    1,
-    2,
-    0,
-    2,
-    3, // front face
-    5,
-    4,
-    7,
-    5,
-    7,
-    6, // back face
-    4,
-    0,
-    3,
-    4,
-    3,
-    7, // left cap (start)
-    1,
-    5,
-    6,
-    1,
-    6,
-    2, // right cap (end)
-    4,
-    5,
-    1,
-    4,
-    1,
-    0, // bottom
-    3,
-    2,
-    6,
-    3,
-    6,
-    7, // top (sloped)
-  ]);
-
-  const geom = new THREE.BufferGeometry();
-  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geom.setIndex(new THREE.BufferAttribute(indices, 1));
-  geom.computeVertexNormals();
+  const geom = buildSlopedSegmentGeometry(lenM, thick, topHeightsRelM);
 
   // Sloped walls didn't honour the wall's materialKey — used the neutral
   // category default. Resolve catalog material first; drop env-map for
@@ -1937,6 +1859,8 @@ export function makeSlopedWallMesh(
         : 1.0,
   });
   const mesh = new THREE.Mesh(geom, mat);
+  mesh.position.set((sx + ex) / 2000, yBase, (sz + ez) / 2000);
+  mesh.rotation.y = Math.atan2(dz, dx);
   mesh.userData.bimPickId = wall.id;
   addEdges(mesh);
   return mesh;

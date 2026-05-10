@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Element } from '@bim-ai/core';
 
-import { makeRoofMassMesh } from './meshBuilders';
+import { makeRoofMassMesh, makeSlopedWallMesh } from './meshBuilders';
 import { roofHeightAtPoint } from './roofHeightSampler';
 
 type RoofElem = Extract<Element, { kind: 'roof' }>;
@@ -184,5 +184,25 @@ describe('makeRoofMassMesh — asymmetric_gable', () => {
     }
     expect(sawLeftEaveBottom).toBe(true);
     expect(sawRightEaveBottom).toBe(true);
+  });
+
+  it('samples roof-attached wall tops along the wall so gable ends are not rectangular', () => {
+    const crossRidgeWall: WallElem = {
+      ...wall3m,
+      id: 'wall-cross-ridge',
+      start: { xMm: 4000, yMm: 0 },
+      end: { xMm: 4000, yMm: 6000 },
+      roofAttachmentId: asymmetricRoof.id,
+    };
+    const mesh = makeSlopedWallMesh(crossRidgeWall, asymmetricRoof, 0, null, {
+      ...elementsById,
+      [crossRidgeWall.id]: crossRidgeWall,
+      [asymmetricRoof.id]: asymmetricRoof,
+    });
+    mesh.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(mesh);
+
+    expect(box.min.y).toBeCloseTo(0, 2);
+    expect(box.max.y).toBeCloseTo(7.5, 2);
   });
 });

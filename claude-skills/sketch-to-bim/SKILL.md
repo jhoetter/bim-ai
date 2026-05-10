@@ -25,6 +25,46 @@ For seed work, the loop is not optional: keep the dev app running while authorin
 
 ---
 
+## Non-negotiable operating contract
+
+This skill is for project initiation, not for producing a decorative massing preview. A sketch-to-BIM run is not complete until the model is both visually faithful and software-clean enough that another user can continue design work from it.
+
+The agent must satisfy all of these before calling the initiation successful:
+
+1. **The local app is part of the workflow.** The model must be inspected through the same software the user sees, normally `http://localhost:2000` from `make dev`, plus the CLI/API advisor payload. Offline bundle replay is only a syntax/snapshot check.
+2. **Advisor findings are hard evidence.** Every advisor item with severity `warning` or `error` must be either fixed or listed in an explicit tolerance table with rationale. Do not mentally discount a warning because the 3D view "looks okay".
+3. **No architectural warning may be hidden by a workaround.** A fake closure such as drawing room-separation rectangles around every authored room is a failure if it creates `room_derived_interior_separation_ambiguous`, unreadable wire views, or a plan that no architect would accept.
+4. **Screenshots are required evidence.** The agent must inspect rendered screenshots from multiple saved viewpoints and at least one plan/wire-style diagnostic view. A single attractive perspective is not enough.
+5. **The model must be usable after initiation.** Stairs cannot run into walls, rooms cannot be inaccessible, slabs/openings cannot overlap incoherently, roofs cannot merely carry metadata for a void that does not render, and schedules/sheets must not contain obvious unresolved references.
+6. **If the software says the model is wrong, assume the model is wrong first.** Only accept a warning after reading the rule, the affected `elementIds`, and the model geometry. The burden is on the agent to justify a tolerance.
+
+### Blocking advisor classes for sketch initiation
+
+These findings block phase advancement unless the user explicitly accepts them with a written rationale:
+
+- `room_boundary_open`
+- `room_unenclosed`
+- `room_derived_interior_separation_ambiguous`
+- `room_no_door` for interior rooms, occupied rooms, bathrooms, bedrooms, kitchens, circulation, or terrace rooms that should have access
+- `room_target_area_mismatch` when `targetAreaM2` came from the brief or from a deliberate programme target
+- `floor_overlap`, `wall_overlap`, major host/intersection warnings, or any opening-host warning
+- `stair_comfort_eu_proxy`, stair schedule warnings, or any stair/shaft mismatch
+- roof, roof-opening, dormer, balcony, or material warnings tied to features visible in the sketch
+- schedule/sheet viewport warnings in Phase 7 Documentation
+
+`info` findings are not automatically blockers, but the agent must read them. If an `info` finding explains visible bad output, treat it as blocking.
+
+### Forbidden shortcuts
+
+- Do not use room-separation rectangles as a universal room-closure hack. Use actual walls for real partitions and use room-separation lines only where the intended architectural condition is an open boundary between spaces.
+- Do not leave model categories hidden to make a screenshot look cleaner. Validate with walls, roofs, floors, rooms, doors/windows, and stairs visible; also inspect at least one wire or transparent diagnostic view.
+- Do not call a semantic element done until it renders. For example, `createRoofOpening` is not sufficient unless the rendered checkpoint shows a real cut through the roof.
+- Do not claim "advisor is only advisory" for findings authored in the current phase. Fix them before moving on.
+- Do not add furniture/detail to distract from unresolved shell, stair, room, or roof faults.
+- Do not leave conceptual `mass` placeholders in the final initiation model as if they were walls, roof returns, or façade panels. Masses render as translucent study geometry; replace them with walls, roofs, floors, sweeps, openings, or typed assemblies before handoff.
+
+---
+
 ## Pre-flight (before you touch the engine)
 
 1. **Locate the inputs.** Read every customer-supplied document and image:
@@ -68,6 +108,63 @@ For seed work, the loop is not optional: keep the dev app running while authorin
 5. **Pick the closest archetype, if any** (SKB-09). Today there are none; you start from a blank model. When archetypes ship, use `bim-ai archetype list` and fork the closest one — never start from blank if a 70%-match archetype exists.
 
 6. **Calibrate.** Anchor 2–3 known dimensions from the sketch (typically: overall house width, floor-to-floor, one elevation point). Compute a pixel-to-mm scale factor. When SKB-04 (`bim-ai calibrate`) lands, use it; today, do the math by hand and record in `assumptions.md`.
+
+---
+
+## Project initiation runtime loop
+
+Before authoring the first serious bundle, start and wire the feedback loop:
+
+1. **Start the app:** run `make dev` and verify `http://localhost:2000` loads the workspace. If the server is already running, reuse it and note the URL/port.
+2. **Create or select the working model:** for the canonical seed use `make seed`; for a user project use the project-initiation endpoint/model id. Record `BIM_AI_MODEL_ID`.
+3. **Keep a phase evidence folder:** `nightshift/<sprint>/phase-<n>/` with:
+   - `commands.json` or source bundle pointer;
+   - `advisor-warning.json`;
+   - `advisor-info.json`;
+   - `screenshot-<viewpoint>.png`;
+   - `visual-readout.md`;
+   - `tolerances.md` if anything remains unresolved.
+4. **After every meaningful edit, run all four checks in order:**
+   - replay/dry-run: `node scripts/build-seed-snapshot.mjs` for seed work, or `bim-ai apply-bundle --dry-run --in <commands.json>` for project work;
+   - seed/apply: `make seed` or apply the bundle to the project model;
+   - advisor: `BIM_AI_MODEL_ID=<id> node packages/cli/cli.mjs advisor --output json --severity warning` plus an info pass when diagnosing weird visuals;
+   - render: Playwright checkpoint screenshots or direct browser screenshots from the saved viewpoints.
+5. **Read the screenshots with vision.** Say what is wrong in geometric terms before editing again: roof too generic, cutout not legible, stair collides, room plan messy, facade rhythm wrong, scale too small, etc.
+6. **Read the Advisor panel like a punch list.** For each finding capture `ruleId`, severity, message, recommendation text, perspective/codePreset, and `elementIds`. Corrections must target the named elements unless the rule itself is wrong.
+7. **Patch the source of truth, not the symptoms.** If `room_derived_interior_separation_ambiguous` appears, redesign room boundaries; do not hide room lines. If a stair warning appears, alter the stair footprint/riser/tread/shaft; do not move furniture around it.
+8. **Verify capability, not just intent.** If the sketch needs a gable-cut wall, folded shell, roof void, dormer, or non-rectangular opening, confirm the command/API/render path actually expresses that geometry. A valid command that still renders as a rectangle, box, or uncut surface is a failed phase.
+9. **Repeat until both views and advisor pass the phase gate.**
+
+The agent should keep the browser open while authoring. If screenshots and advisor output disagree, both are evidence: a visually good but advisor-broken model is not accepted; an advisor-clean but visually wrong model is not accepted.
+
+### Minimum checkpoint view set
+
+Every project initiation needs this view set, even if the target sketch has only one perspective:
+
+- main sketch-matched axonometric/perspective;
+- front elevation or frontal perspective;
+- left/right side view showing depth, roof and balcony/loggia conditions;
+- rear/roof axonometric when the sketch contains a roof cutout, terrace, dormer, or courtyard;
+- ground floor plan with room/wall/stair categories visible;
+- upper floor/roof plan with room/wall/stair/roof-opening categories visible;
+- one transparent or wire diagnostic view to catch hidden overlaps, room-separation clutter, stair collisions, and roof/floor artifacts.
+
+If any required view reveals an obvious flaw, the phase fails even if Playwright tests pass.
+
+### Phase acceptance packet
+
+At the end of each phase, produce a short packet:
+
+| Field | Required content |
+| --- | --- |
+| Phase | phase id/name and source bundle revision |
+| Screenshots | paths to actual rendered PNGs |
+| Visual verdict | pass/fail for silhouette, scale, roof, openings, interior, documentation as applicable |
+| Advisor verdict | zero blocking warnings, or explicit tolerance rows |
+| Corrections made | list of element ids changed in the phase |
+| Remaining risk | concrete gaps, not vague optimism |
+
+If the packet cannot be filled honestly, do not advance.
 
 ---
 
@@ -135,9 +232,13 @@ Today, the existing `constraints.evaluate` runs at commit; check the violations 
 
 **Validate:**
 
-- VAL-01 / SKB-19 closure: every room is bounded by walls or room separations.
+- VAL-01 / SKB-19 closure: every room is bounded by walls or deliberately placed room separations.
+- Room separation lines are only allowed for intentional open-plan boundaries, terrace/deck edges, or non-wall symbolic boundaries. If they create `room_derived_interior_separation_ambiguous`, redesign the room/wall layout.
+- Every room outline edge must be explainable: exterior wall, interior wall, glass guard/partition, or a documented open boundary.
+- `room_boundary_open`, `room_unenclosed`, and `room_no_door` are blockers unless explicitly tolerated for an exterior/unoccupied space.
 - Stair runs base/top match the level stack.
 - Slab opening hosted on the correct floor.
+- Stair is architecturally plausible: it has landing/clearance, does not run directly into an exterior wall, does not collide with a door/window/furniture, and satisfies the active stair comfort proxy or has a documented standard-specific reason.
 
 **Checkpoint:** plan view of each level. Compare to the sketch's plan if one is provided; otherwise verify rooms make programmatic sense.
 
@@ -173,21 +274,44 @@ After every commit:
 1. **Render** the phase-relevant viewpoint(s). Use the dev server + Playwright e2e harness today; when SKB-03 lands, use `bim-ai checkpoint`.
 2. **Look** at the rendered PNG with your own multimodal vision. Compare to the sketch.
 3. **Read the Advisor panel / violation payload.** Capture each finding's `code` or `advisoryClass`, severity, message, recommendation, perspective / `codePreset`, and `elementIds`. Use the same filter the user would use in the UI, e.g. residential + Architektur for architectural sketch-to-BIM work.
-4. **Score** the match qualitatively: silhouette ✓/✗, proportions ✓/✗, materials ✓/✗, advisor ✓/✗.
-5. If mismatch: **identify the largest visible or advisor-reported delta** — typically one of: wrong dimension, wrong slope, missing element, wrong material, target-area mismatch, unbounded room, bad stair comfort, unresolved opening / host issue.
-6. **Author 1–2 corrective commands** (`updateElementProperty`, `moveWallEndpoints`, room outline edits, stair tread / riser edits, etc.).
-7. **Re-render. Re-read advisor. Re-look.**
-8. Cap at 5 iterations per phase. If still mismatched, log an assumption and decide whether to escalate to the user or accept a documented gap.
+4. **Classify every advisor finding:** blocker, phase-local fix, later-phase fix, or tolerated. A warning cannot be ignored; it must be in one of those buckets.
+5. **Score** the match qualitatively: silhouette ✓/✗, proportions ✓/✗, materials ✓/✗, advisor ✓/✗.
+6. If mismatch: **identify the largest visible or advisor-reported delta** — typically one of: wrong dimension, wrong slope, missing element, wrong material, target-area mismatch, unbounded room, ambiguous room derivation, bad stair comfort, unresolved opening / host issue.
+7. **Author 1–2 corrective commands/source edits** (`updateElementProperty`, `moveWallEndpoints`, room outline edits, stair tread / riser edits, etc.).
+8. **Re-render. Re-read advisor. Re-look.**
+9. Cap at 5 iterations per phase. If still mismatched, log an assumption and escalate to the user with screenshots and advisor JSON. Do not silently accept a bad model.
 
 ### Advisor findings are first-class input
 
 The software already identifies many issues the sketch-to-BIM agent tends to create. Use those findings as a targeted punch list inside the same refinement loop as visual deltas:
 
 - `room_target_area_mismatch`: compare computed room outline area with `targetAreaM2`; adjust the room boundary when the sketch/program is right, or adjust `targetAreaM2` only when the brief target was an agent guess.
+- `room_derived_interior_separation_ambiguous`: remove or reposition room-separation lines that pierce derived spaces; use real partition walls where a real partition exists. This is a blocker for project initiation because it indicates an unreadable plan.
+- `room_boundary_open` / `room_unenclosed`: add real enclosure geometry or correct the room outline. Do not paper over the issue by drawing a complete room-separation rectangle unless the room truly has no walls.
+- `room_no_door`: add an actual access opening or correct the room outline/centroid. For terraces, add a door from the interior; for bathrooms/bedrooms, verify access from circulation.
 - `stair_comfort_eu_proxy`: revise tread depth, riser height, run count, or stair footprint before leaving Phase 5 Interior.
+- `floor_overlap`: split slab boundaries or change levels; overlapping floors are not acceptable as a hidden artifact.
+- schedule/sheet warnings: fix in Phase 7; they are not acceptable in the final initiation handoff.
 - Any host / opening / room-boundary / material-resolution advisory: fix the named `elementIds` before adding detail that would hide the underlying problem.
 
 Do not advance a phase just because the commit is accepted. If the Advisor panel shows findings tied to elements authored in the current phase, either resolve them, record a deliberate tolerance with rationale, or escalate. The status doc must list unresolved advisor findings next to unresolved visual-fidelity gaps.
+
+### Visual failure classes are also blockers
+
+The agent must explicitly inspect for these in screenshots:
+
+- roof reads as a generic roof instead of the sketch-specific roof form;
+- roof-attached walls remain rectangular where the sketch shows gable-cut, sloped, or folded-envelope tops;
+- roof opening, balcony, dormer, courtyard or loggia exists semantically but not visually;
+- conceptual mass boxes remain visible as translucent finished envelope geometry;
+- upper/lower volumes have wrong proportions or the model looks like a tiny toy house;
+- stairs run into walls, doors, furniture, or an implausibly narrow hall;
+- rooms/furniture are visibly compressed or nonsensical;
+- wire/transparent view shows criss-crossing room lines, duplicate boundaries, z-fighting, or obvious overlaps;
+- facade opening rhythm differs materially from the sketch;
+- material contrast is missing or misleading.
+
+Any one of these resets the current phase to "failed" until fixed or escalated.
 
 ---
 
@@ -198,6 +322,8 @@ These are the failure modes you must avoid; they are the observed behaviour from
 - **Skipping phases.** Author all 87 commands at once → can't tell which phase broke fidelity. Don't.
 - **No visual verification.** Trusted "tests pass + bundle commits" as success. Tests verify code correctness, not silhouette match. Don't.
 - **Ignoring app-identified advisor issues.** The UI may already say `room_target_area_mismatch` for `hf-room-bath` or `stair_comfort_eu_proxy` for `hf-stair-main`. Don't keep refining by eyesight while leaving those named findings open.
+- **Counting warnings instead of reading them.** "Only one warning remains" is not success when that one warning is `room_derived_interior_separation_ambiguous` and the wire view is full of bad room boundaries. Read the rule and inspect the affected elements.
+- **Using advisor hacks that create worse architecture.** Do not satisfy `room_boundary_open` by flooding the model with room-separation rectangles that produce ambiguous derived rooms and unreadable plans.
 - **Eyeballing dimensions** without recording them as assumptions. The "ridge offset 1500 mm" was a guess, not a calibrated measurement. Don't.
 - **Declaring "partial" when the silhouette is wrong.** The honest call is "failed; here's the gap". The sprint prompt warned about this exact mistake and I made it anyway. Don't.
 - **Building geometry without checking the renderer can faithfully render it.** The asymmetric_gable mesh isn't watertight; the dormer CSG cut silently no-ops. The agent had no way to detect this from inside the engine — only the rendered output reveals it. **Look at the render.**
