@@ -1,0 +1,20 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "e467c867ee64",
+  "session_id": "05bf7d92-0567-4a81-a2a2-23d060872fd3",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T13:43:48.069468Z",
+  "branch": "revit-parity-layer-stack-reorder",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "c906c0c535fc",
+  "token_usage": {
+    "input_tokens": 42,
+    "cache_creation_tokens": 76276,
+    "cache_read_tokens": 1896314,
+    "output_tokens": 25450,
+    "api_call_count": 38
+  }
+}
