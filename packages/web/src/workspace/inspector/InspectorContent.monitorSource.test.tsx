@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import type { Element } from '@bim-ai/core';
 import { InspectorPropertiesFor } from './InspectorContent';
-import i18n from '../i18n';
+import i18n from '../../i18n';
 
 const t = i18n.t.bind(i18n);
 

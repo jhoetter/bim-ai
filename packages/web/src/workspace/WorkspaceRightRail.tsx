@@ -7,21 +7,23 @@ import type { Element } from '@bim-ai/core';
 import { AdvisorPanel } from '../advisor/AdvisorPanel';
 import { buildPlanGridDatumInspectorLine } from './planViewDatumGridReadout';
 import { useBimStore } from '../state/store';
-import { SunInspectorPanel } from './SunInspectorPanel';
-import { Inspector, type InspectorApplyScope, type InspectorSelection } from './Inspector';
 import {
+  Inspector,
   InspectorConstraintsFor,
   InspectorDoorEditor,
   InspectorGraphicsFor,
   InspectorIdentityFor,
+  type InspectorApplyScope,
   InspectorPlanViewEditor,
   InspectorProjectSettingsEditor,
   InspectorPropertiesFor,
   InspectorRoomEditor,
+  type InspectorSelection,
   InspectorViewpointEditor,
   InspectorViewTemplateEditor,
   InspectorWindowEditor,
-} from './InspectorContent';
+  SunInspectorPanel,
+} from './inspector';
 import type { DisciplineTag } from '@bim-ai/core';
 import { AuthoringWorkbenchesPanel } from './AuthoringWorkbenchesPanel';
 import { Viewport3DLayersPanel } from './Viewport3DLayersPanel';

@@ -3,14 +3,17 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import type { DisciplineTag, Element } from '@bim-ai/core';
 
-import { BUILT_IN_FAMILIES, getFamilyById, getTypeById } from '../families/familyCatalog';
+import { BUILT_IN_FAMILIES, getFamilyById, getTypeById } from '../../families/familyCatalog';
 
-import { planViewGraphicsMatrixRows, viewTemplateGraphicsMatrixRows } from '../plan/planProjection';
-import { PlanViewGraphicsMatrix } from './PlanViewGraphicsMatrix';
+import {
+  planViewGraphicsMatrixRows,
+  viewTemplateGraphicsMatrixRows,
+} from '../../plan/planProjection';
+import { PlanViewGraphicsMatrix } from '../PlanViewGraphicsMatrix';
 import {
   SavedViewTagGraphicsAuthoring,
   SavedViewTemplateGraphicsAuthoring,
-} from './savedViewTagGraphicsAuthoring';
+} from '../savedViewTagGraphicsAuthoring';
 
 /**
  * Inspector parameter renderers — spec §13.

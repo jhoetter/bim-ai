@@ -13,7 +13,7 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icons, IconLabels, ICON_SIZE, type LucideLikeIcon } from '@bim-ai/ui';
-import { evaluateFormula } from '../lib/expressionEvaluator';
+import { evaluateFormula } from '../../lib/expressionEvaluator';
 
 /**
  * Inspector / Right rail — spec §13 + CHR-V3-06.

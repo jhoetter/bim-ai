@@ -2,7 +2,7 @@
 // Replaces the floating SunOverlay. No hex literals — all colours via CSS tokens.
 import { type JSX, useCallback, useRef } from 'react';
 
-import { useSunStore } from '../sunStore';
+import { useSunStore } from '../../sunStore';
 
 const SEASON_PRESETS = [
   { label: 'Winter', month: 12, day: 21 },

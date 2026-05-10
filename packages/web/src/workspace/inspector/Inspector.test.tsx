@@ -8,7 +8,7 @@ import {
   evaluateExpression,
   type InspectorSelection,
 } from './Inspector';
-import i18n from '../i18n';
+import i18n from '../../i18n';
 
 function renderWithI18n(ui: React.ReactElement) {
   return render(ui, {
