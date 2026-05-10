@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "473dc7f72ac5",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/plan/SheetCanvas.tsx",
+    "packages/web/src/plan/SheetReviewSurface.tsx",
+    "packages/web/src/workspace/ModeShells.tsx",
+    "packages/web/src/workspace/sheets/SectionPlaceholderPane.tsx",
+    "packages/web/src/workspace/sheets/sheetRecommendedViewports.test.ts",
+    "packages/web/src/workspace/sheets/sheetRecommendedViewports.ts",
+    "packages/web/src/workspace/sheets/sheetViewportAuthoring.tsx",
+    "packages/web/src/workspace/viewport/CanvasMount.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/47/3dc7f72ac5/0/metadata.json",
+      "transcript": "/47/3dc7f72ac5/0/full.jsonl",
+      "content_hash": "/47/3dc7f72ac5/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
