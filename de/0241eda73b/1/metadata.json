@@ -1,0 +1,77 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "de0241eda73b",
+  "session_id": "019e1203-761e-75a2-8e71-91fec676dc26",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T15:13:41.854376Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "app/bim_ai/commands.py",
+    "app/bim_ai/elements.py",
+    "app/bim_ai/engine.py",
+    "app/bim_ai/engine_dispatch_documentation.py",
+    "packages/core/src/index.ts",
+    "packages/web/src/plan/AnnotateRibbon.tsx",
+    "packages/web/src/plan/detailComponentsRender.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "60385daf470c",
+  "checkpoint_transcript_start": 2876,
+  "transcript_lines_at_start": 2876,
+  "token_usage": {
+    "input_tokens": 325046,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 16802048,
+    "output_tokens": 19939,
+    "api_call_count": 99
+  },
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-10T15:13:41.744188Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 363,
+    "human_modified": 3,
+    "human_removed": 0,
+    "total_committed": 363,
+    "total_lines_changed": 366,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 392,
+      "user_lines_removed": 5,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/commands.py": 57,
+        "app/bim_ai/elements.py": 58,
+        "app/bim_ai/engine.py": 7,
+        "app/bim_ai/engine_dispatch_documentation.py": 86,
+        "claude-skills/watch-yt/watch_yt.py": 26,
+        "packages/core/src/index.ts": 40,
+        "packages/web/src/plan/AnnotateRibbon.tsx": 59,
+        "packages/web/src/plan/detailComponentsRender.ts": 59
+      },
+      "user_removed_per_file": {
+        "app/bim_ai/elements.py": 1,
+        "app/bim_ai/engine_dispatch_documentation.py": 1,
+        "claude-skills/watch-yt/watch_yt.py": 2,
+        "packages/core/src/index.ts": 1
+      }
+    }
+  ]
+}
