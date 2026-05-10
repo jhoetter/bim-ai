@@ -3,7 +3,7 @@
   "checkpoint_id": "55938094bad5",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "packages/web/src/plan/SheetReviewSurface.tsx",
     "packages/web/src/workspace/ModeShells.test.tsx",
@@ -57,13 +57,19 @@
       "transcript": "/55/938094bad5/0/full.jsonl",
       "content_hash": "/55/938094bad5/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/55/938094bad5/1/metadata.json",
+      "transcript": "/55/938094bad5/1/full.jsonl",
+      "content_hash": "/55/938094bad5/1/content_hash.txt",
+      "prompt": "/55/938094bad5/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 34464,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 1523328,
-    "output_tokens": 6024,
-    "api_call_count": 23
+    "input_tokens": 34779,
+    "cache_creation_tokens": 347272,
+    "cache_read_tokens": 18508451,
+    "output_tokens": 81570,
+    "api_call_count": 201
   }
 }
