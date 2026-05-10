@@ -2,14 +2,13 @@ import { create } from 'zustand';
 
 import type { Element, EvidenceRef, EvidenceRefKind, Violation, XY } from '@bim-ai/core';
 
-import type { PlanPresentationPreset } from '../plan/symbology';
-
-import type { CategoryOverrides, StoreState, ViewFilter } from './storeTypes';
+import type { StoreState, ViewFilter } from './storeTypes';
 import {
   createCollaborationRuntimeSlice,
   createPlanAuthoringRuntimeSlice,
   createWorkspaceUiRuntimeSlice,
 } from './storeRuntimeSlices';
+import { createViewportRuntimeSlice } from './storeViewportRuntimeSlice';
 
 export type {
   PlanRoomSchemeWireReadout,
@@ -1567,29 +1566,10 @@ export const useBimStore = create<StoreState>((set, get) => {
 
     selectedIds: [],
 
-    viewerMode: 'orbit_3d',
-
     ...createPlanAuthoringRuntimeSlice(set),
     ...createCollaborationRuntimeSlice(set, peerSeed),
     ...createWorkspaceUiRuntimeSlice(set),
-
-    viewerClipElevMm: null,
-
-    viewerClipFloorElevMm: null,
-
-    // KRN-06: site/origin markers hidden by default; user toggles via VV.
-    viewerCategoryHidden: { site_origin: true },
-
-    // SKB-23: no phase filter active by default — every element renders.
-    viewerPhaseFilter: null,
-
-    orbitCameraNonce: 0,
-
-    orbitCameraPoseMm: null,
-
-    activePlanViewId: undefined,
-
-    activeViewpointId: undefined,
+    ...createViewportRuntimeSlice(set, get),
 
     planProjectionPrimitives: null,
 
@@ -1715,186 +1695,6 @@ export const useBimStore = create<StoreState>((set, get) => {
         for (const def of defs) next[def.id] = def;
         return { userFamilies: next };
       }),
-
-    activatePlanView: (planViewElementId) => {
-      if (!planViewElementId) {
-        // VIE-04: leaving the plan view also drops any temporary visibility
-        // override (matches Revit's "switching view clears it" behaviour).
-        set({ activePlanViewId: undefined, temporaryVisibility: null });
-        return;
-      }
-      const el = get().elementsById[planViewElementId];
-      if (!el || el.kind !== 'plan_view') return;
-      const preset = el.planPresentation ?? 'default';
-      const normalized: PlanPresentationPreset =
-        preset === 'opening_focus' || preset === 'room_scheme' ? preset : 'default';
-      try {
-        localStorage.setItem('bim.planPresentation', normalized);
-      } catch {
-        /* noop */
-      }
-      const prior = get().temporaryVisibility;
-      // VIE-04: keep the override only when re-entering the same view.
-      const nextTemp = prior && prior.viewId === planViewElementId ? prior : null;
-      set({
-        activePlanViewId: planViewElementId,
-        activeViewpointId: undefined,
-        activeLevelId: el.levelId,
-        planPresentationPreset: normalized,
-        viewerMode: 'plan_canvas',
-        temporaryVisibility: nextTemp,
-      });
-    },
-
-    setActiveViewpointId: (viewpointElementId) => {
-      const prior = get().temporaryVisibility;
-      // VIE-04: same logic for orbit_3d viewpoints.
-      const nextTemp = prior && prior.viewId === viewpointElementId ? prior : null;
-      set({ activeViewpointId: viewpointElementId, temporaryVisibility: nextTemp });
-    },
-
-    // VIE-03: activate an elevation_view as the central canvas's view scope.
-    activateElevationView: (elevationViewElementId) => {
-      if (!elevationViewElementId) {
-        set({ activeElevationViewId: undefined, temporaryVisibility: null });
-        return;
-      }
-      const el = get().elementsById[elevationViewElementId];
-      if (!el || el.kind !== 'elevation_view') return;
-      const prior = get().temporaryVisibility;
-      // VIE-04: keep the override only when re-entering the same view.
-      const nextTemp = prior && prior.viewId === elevationViewElementId ? prior : null;
-      set({
-        activeElevationViewId: elevationViewElementId,
-        activePlanViewId: undefined,
-        activeViewpointId: undefined,
-        viewerMode: 'plan_canvas',
-        temporaryVisibility: nextTemp,
-      });
-    },
-
-    setViewerClipElevMm: (viewerClipElevMm) => set({ viewerClipElevMm }),
-
-    setViewerClipFloorElevMm: (viewerClipFloorElevMm) => set({ viewerClipFloorElevMm }),
-
-    toggleViewerCategoryHidden: (semanticKind) =>
-      set(() => {
-        const prior = get().viewerCategoryHidden[semanticKind];
-        const next = { ...get().viewerCategoryHidden, [semanticKind]: !prior };
-        return { viewerCategoryHidden: next };
-      }),
-
-    applyOrbitViewpointPreset: (opts) =>
-      set((state) => {
-        const LayerKeys = ['wall', 'floor', 'roof', 'stair', 'door', 'window', 'room'] as const;
-        let viewerClipElevMm = state.viewerClipElevMm;
-        if ('capElevMm' in opts) {
-          const v = opts.capElevMm;
-          viewerClipElevMm =
-            v !== undefined && v !== null && typeof v === 'number' && Number.isFinite(v) ? v : null;
-        }
-        let viewerClipFloorElevMm = state.viewerClipFloorElevMm;
-        if ('floorElevMm' in opts) {
-          const v = opts.floorElevMm;
-          viewerClipFloorElevMm =
-            v !== undefined && v !== null && typeof v === 'number' && Number.isFinite(v) ? v : null;
-        }
-        let viewerCategoryHidden = state.viewerCategoryHidden;
-        if (opts.hideSemanticKinds !== undefined) {
-          const hid = new Set(opts.hideSemanticKinds);
-          viewerCategoryHidden = { ...state.viewerCategoryHidden };
-          for (const lk of LayerKeys) {
-            viewerCategoryHidden[lk] = hid.has(lk);
-          }
-        }
-        return {
-          viewerClipElevMm,
-          viewerClipFloorElevMm,
-          viewerCategoryHidden,
-        };
-      }),
-
-    setOrbitCameraFromViewpointMm: ({ position, target, up }) =>
-      set((state) => ({
-        orbitCameraPoseMm: { position, target, up },
-        orbitCameraNonce: state.orbitCameraNonce + 1,
-      })),
-
-    // F-011: default to shaded mode.
-    viewerRenderStyle: 'shaded',
-
-    setViewerRenderStyle: (style) => set({ viewerRenderStyle: style }),
-
-    // F-113: graphic display options.
-    viewerBackground: 'light_grey',
-    viewerEdges: 'normal',
-
-    setViewerBackground: (bg) => set({ viewerBackground: bg }),
-    setViewerEdges: (edges) => set({ viewerEdges: edges }),
-
-    // F-014: reveal hidden elements mode (lightbulb). Off by default.
-    revealHiddenMode: false,
-
-    setRevealHiddenMode: (v) => set({ revealHiddenMode: v }),
-
-    // OSM-V3-02: neighborhood mass layer visible by default.
-    showNeighborhoodMasses: true,
-
-    toggleNeighborhoodMasses: () =>
-      set((s) => ({ showNeighborhoodMasses: !s.showNeighborhoodMasses })),
-
-    vvDialogOpen: false,
-
-    openVVDialog: () => set({ vvDialogOpen: true }),
-
-    closeVVDialog: () => set({ vvDialogOpen: false }),
-
-    setCategoryOverride: (planViewId, categoryKey, override) => {
-      const { elementsById } = get();
-      const pv = elementsById[planViewId];
-      if (!pv || pv.kind !== 'plan_view') return;
-      const prevOverrides = (pv.categoryOverrides as CategoryOverrides) ?? {};
-      const newOverrides = { ...prevOverrides, [categoryKey]: override };
-      set({
-        elementsById: {
-          ...elementsById,
-          [planViewId]: { ...pv, categoryOverrides: newOverrides },
-        },
-      });
-    },
-    addViewFilter: (planViewId, filter) => {
-      const { elementsById } = get();
-      const pv = elementsById[planViewId];
-      if (!pv || pv.kind !== 'plan_view') return;
-      const prevFilters = (pv.viewFilters as ViewFilter[] | undefined) ?? [];
-      const updated = [...prevFilters, filter];
-      set({ elementsById: { ...elementsById, [planViewId]: { ...pv, viewFilters: updated } } });
-    },
-    updateViewFilter: (planViewId, filterId, patch) => {
-      const { elementsById } = get();
-      const pv = elementsById[planViewId];
-      if (!pv || pv.kind !== 'plan_view') return;
-      const prevFilters = (pv.viewFilters as ViewFilter[] | undefined) ?? [];
-      const updated = prevFilters.map((f) => (f.id === filterId ? { ...f, ...patch } : f));
-      set({ elementsById: { ...elementsById, [planViewId]: { ...pv, viewFilters: updated } } });
-    },
-    removeViewFilter: (planViewId, filterId) => {
-      const { elementsById } = get();
-      const pv = elementsById[planViewId];
-      if (!pv || pv.kind !== 'plan_view') return;
-      const prevFilters = (pv.viewFilters as ViewFilter[] | undefined) ?? [];
-      const updated = prevFilters.filter((f) => f.id !== filterId);
-      set({ elementsById: { ...elementsById, [planViewId]: { ...pv, viewFilters: updated } } });
-    },
-
-    // VIE-04 — temporary isolate / hide category. Lives in client memory only;
-    // never round-trips through the engine, never persisted in snapshots.
-    temporaryVisibility: null,
-    setTemporaryVisibility: (next) => set({ temporaryVisibility: next }),
-    clearTemporaryVisibility: () => set({ temporaryVisibility: null }),
-    // SKB-23: per-phase preview filter actions.
-    setViewerPhaseFilter: (next) => set({ viewerPhaseFilter: next }),
-    clearViewerPhaseFilter: () => set({ viewerPhaseFilter: null }),
   };
 });
 
