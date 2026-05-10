@@ -1,0 +1,1 @@
+In /Users/jhoetter/repos/bim-ai, inspect remaining Rooms/Areas/Troubleshoot/Floors partial or not-available rows in spec/revit-parity, especially F-093-F095, F-100, F-104, and any ❌ after F-087. Do not edit files. Return a concise ranked list of quick closure candidates with file paths and tests.
