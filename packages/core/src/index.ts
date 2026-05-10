@@ -2656,6 +2656,10 @@ export type AssetCategory =
 export type AssetDisciplineTag = 'arch' | 'struct' | 'mep';
 
 export type AssetSymbolKind =
+  | 'bed'
+  | 'wardrobe'
+  | 'lamp'
+  | 'rug'
   | 'fridge'
   | 'oven'
   | 'sink'

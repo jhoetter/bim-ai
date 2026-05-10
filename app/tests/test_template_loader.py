@@ -77,6 +77,17 @@ def test_load_residential_eu_snapshot():
     asset_names = {a.name for a in assets}
     assert "Tall Fridge 600x650" in asset_names
     assert "Single Bowl Sink 600" in asset_names
+    assert "Queen Bed 1800x2100" in asset_names
+    assert "Single Bed 900x2000" in asset_names
+    assert "Wardrobe 1800x620" in asset_names
+    assert "Floor Lamp 1700" in asset_names
+    assert "Area Rug 2400x1700" in asset_names
+
+    asset_symbols = {a.id: (a.plan_symbol_kind, a.render_proxy_kind) for a in assets}
+    assert asset_symbols["asset-bedroom-queen-bed-1800"] == ("bed", "bed")
+    assert asset_symbols["asset-bedroom-wardrobe-1800"] == ("wardrobe", "wardrobe")
+    assert asset_symbols["asset-living-floor-lamp"] == ("lamp", "lamp")
+    assert asset_symbols["asset-living-area-rug-2400"] == ("rug", "rug")
 
 
 def test_load_template_unknown_raises():

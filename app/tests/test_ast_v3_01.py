@@ -128,6 +128,26 @@ def test_index_asset_with_explicit_render_kinds():
     assert elem.render_proxy_kind == "fridge"
 
 
+def test_index_asset_accepts_bedroom_and_living_symbol_kinds():
+    doc = _empty_doc()
+    for symbol_kind in ("bed", "wardrobe", "lamp", "rug"):
+        _apply(
+            doc,
+            {
+                "type": "IndexAsset",
+                "id": f"asset-{symbol_kind}",
+                "name": symbol_kind.title(),
+                "category": "casework" if symbol_kind == "wardrobe" else "furniture",
+                "planSymbolKind": symbol_kind,
+                "renderProxyKind": symbol_kind,
+            },
+        )
+        elem = doc.elements[f"asset-{symbol_kind}"]
+        assert isinstance(elem, AssetLibraryEntryElem)
+        assert elem.plan_symbol_kind == symbol_kind
+        assert elem.render_proxy_kind == symbol_kind
+
+
 def test_index_asset_discipline_tags():
     doc = _empty_doc()
     _apply(
@@ -402,6 +422,26 @@ def test_thumbnail_uses_explicit_symbol_kind_over_generic_name():
     svg = render_schematic_thumbnail_svg(entry)
     assert 'x1="30.0" y1="4"' in svg
     assert "var(--draft-cut)" in svg
+
+
+def test_thumbnail_supports_bedroom_and_living_symbol_kinds():
+    for symbol_kind in ("bed", "wardrobe", "lamp", "rug"):
+        entry = AssetLibraryEntryElem(
+            kind="asset_library_entry",
+            id=f"t-{symbol_kind}",
+            assetKind="block_2d",
+            name=symbol_kind.title(),
+            tags=[],
+            category="casework" if symbol_kind == "wardrobe" else "furniture",
+            planSymbolKind=symbol_kind,
+            thumbnailKind="schematic_plan",
+            thumbnailWidthMm=60,
+            thumbnailHeightMm=60,
+        )
+        svg = render_schematic_thumbnail_svg(entry)
+        assert "var(--draft-cut)" in svg
+        assert 'stroke-width="0.5"' in svg
+        assert "#" not in svg
 
 
 # ---------------------------------------------------------------------------

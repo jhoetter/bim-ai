@@ -85,6 +85,47 @@ def render_schematic_thumbnail_svg(entry: AssetLibraryEntryElem) -> str:
     label_text = " ".join([entry.id, entry.name, *entry.tags, cat]).lower()
 
     def _furniture(w: float, h: float) -> str:
+        if symbol_kind == "bed":
+            return (
+                f'<rect x="4" y="4" width="{w - 8:.1f}" height="{h - 8:.1f}" '
+                f'fill="none" stroke="var(--draft-cut)" stroke-width="0.5"/>'
+                f'<rect x="{w * 0.16:.1f}" y="{h * 0.14:.1f}" width="{w * 0.28:.1f}" '
+                f'height="{h * 0.18:.1f}" fill="none" stroke="var(--draft-cut)" '
+                f'stroke-width="0.25"/>'
+                f'<rect x="{w * 0.56:.1f}" y="{h * 0.14:.1f}" width="{w * 0.28:.1f}" '
+                f'height="{h * 0.18:.1f}" fill="none" stroke="var(--draft-cut)" '
+                f'stroke-width="0.25"/>'
+                f'<line x1="{w * 0.12:.1f}" y1="{h * 0.38:.1f}" '
+                f'x2="{w * 0.88:.1f}" y2="{h * 0.86:.1f}" '
+                f'stroke="var(--draft-cut)" stroke-width="0.25"/>'
+            )
+        if symbol_kind == "wardrobe":
+            return (
+                f'<rect x="4" y="4" width="{w - 8:.1f}" height="{h - 8:.1f}" '
+                f'fill="none" stroke="var(--draft-cut)" stroke-width="0.5"/>'
+                f'<line x1="{w / 2:.1f}" y1="4" x2="{w / 2:.1f}" y2="{h - 4:.1f}" '
+                f'stroke="var(--draft-cut)" stroke-width="0.25"/>'
+                f'<circle cx="{w * 0.42:.1f}" cy="{h * 0.62:.1f}" r="{min(w, h) * 0.03:.1f}" '
+                f'fill="none" stroke="var(--draft-cut)" stroke-width="0.25"/>'
+                f'<circle cx="{w * 0.58:.1f}" cy="{h * 0.62:.1f}" r="{min(w, h) * 0.03:.1f}" '
+                f'fill="none" stroke="var(--draft-cut)" stroke-width="0.25"/>'
+            )
+        if symbol_kind == "lamp":
+            return (
+                f'<circle cx="{w / 2:.1f}" cy="{h / 2:.1f}" r="{min(w, h) * 0.34:.1f}" '
+                f'fill="none" stroke="var(--draft-cut)" stroke-width="0.5"/>'
+                f'<circle cx="{w / 2:.1f}" cy="{h / 2:.1f}" r="{min(w, h) * 0.12:.1f}" '
+                f'fill="none" stroke="var(--draft-cut)" stroke-width="0.25"/>'
+            )
+        if symbol_kind == "rug":
+            return (
+                f'<rect x="4" y="4" width="{w - 8:.1f}" height="{h - 8:.1f}" '
+                f'rx="{min(w, h) * 0.05:.1f}" fill="none" stroke="var(--draft-cut)" '
+                f'stroke-width="0.5"/>'
+                f'<rect x="{w * 0.12:.1f}" y="{h * 0.16:.1f}" width="{w * 0.76:.1f}" '
+                f'height="{h * 0.68:.1f}" fill="none" stroke="var(--draft-cut)" '
+                f'stroke-width="0.25"/>'
+            )
         return (
             f'<rect x="4" y="4" width="{w - 8:.1f}" height="{h - 8:.1f}" '
             f'fill="none" stroke="var(--draft-cut)" stroke-width="0.5"/>'
@@ -246,6 +287,10 @@ _ASSET_CATEGORY_ENUM = [
 
 _ASSET_KIND_ENUM = ["family_instance", "block_2d", "kit", "decal", "profile"]
 _ASSET_SYMBOL_KIND_ENUM = [
+    "bed",
+    "wardrobe",
+    "lamp",
+    "rug",
     "fridge",
     "oven",
     "sink",

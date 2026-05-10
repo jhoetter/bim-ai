@@ -133,7 +133,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-084 | Leg_Offset parameter                                 | Param. Furn.  | ❌            |                                                                                                                      |
 | F-085 | Detail Level control (Coarse=2D / Medium+Fine=3D)    | Param. Furn.  | ❌            |                                                                                                                      |
 | F-086 | Backrest Depth parameter                             | Param. Furn.  | ❌            |                                                                                                                      |
-| F-087 | Project Furniture Library (warehouse .rvt)           | Furn. Library | ❌            | family_catalog_format exists but no warehouse UX                                                                     |
+| F-087 | Project Furniture Library (warehouse .rvt)           | Furn. Library | 🟡            | Residential starter template now seeds common furniture/fixture assets with searchable tags, param schemas, and plan/3D proxies; missing warehouse-style visual copy/paste workflow |
 | F-088 | Dimension text repositioning                         | Furn. Library | ✅            | Dimension labels support `textOffsetMm`; inspector X/Y + Reset; on-canvas circular text grip snaps along the dimension axis; double-clicking the text grip resets to default |
 | F-089 | Array parameters (Array_Length_Width)                | Furn. Library | ❌            |                                                                                                                      |
 | F-090 | File Save Options (Max backups)                      | Furn. Library | ❌            | N/A (DB model)                                                                                                       |
@@ -160,13 +160,13 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-111 | 3D View rotation (Shift + Middle Click)              | Floors         | ✅            | cameraRig.ts classifyPointer returns 'orbit' for Shift+MMB; matches Revit convention                                |
 | F-112 | Default {3D} isometric view                          | Floors         | ✅            | 3D canvas with orbit/pan/zoom, ViewCube, H reset; auto-loads vp-main-iso; "3D" button in TopBar opens 3D tab directly |
 | F-113 | Graphic Display Options (shadows, depth cue, etc.)   | Floors         | 🟡            | GDO toggle button in 3D viewport opens panel with Visual Style (Shaded/Consistent Colors/Wireframe/Hidden Line), Background (White/Light Grey/Dark), and Edge display (Normal/None). Missing: silhouette edge width, depth cue, photographic exposure, shadows, ambient occlusion |
-| F-114 | Placing component families in project                | Furn. Place   | 🟡            | Component tool (hotkey CC) places placed_asset elements; asset selector in OptionsBar; live ghost preview follows cursor; Spacebar rotation (0→90→180→270°) works correctly before placement. Missing: interactive parameter editing after placement; built-in furniture asset library |
+| F-114 | Placing component families in project                | Furn. Place   | 🟡            | Component tool (hotkey CC) places placed_asset elements; residential template seeds built-in furniture/fixture assets; symbol-specific plan/3D proxies and live rotated ghost preview are wired. Missing: interactive parameter editing after placement |
 | F-115 | Spacebar rotation during placement                   | Furn. Place   | ✅            | Spacebar cycles pendingComponentRotationDeg by 90° (0→90→180→270); live ghost preview rectangle tracks cursor rotation in real time; passed to PlaceAsset on click |
 | F-116 | Copy (CO) tool                                       | Furn. Place   | ✅            | Two-point CP tool in Modify palette; multi-copy "Multiple" mode (default on) keeps tool active for further copies; Ctrl+C/V clipboard also available. Minor gaps: clipboard persistence across reload, copy to a different level |
-| F-117 | Parametric living room sofa family                   | Furn. Place   | ❌            |                                                                                                                      |
+| F-117 | Parametric living room sofa family                   | Furn. Place   | 🟡            | Built-in sofa asset has parameter schema, searchable tags, schematic plan linework, and 3D proxy; missing on-canvas drag handles/reference-plane constraints |
 | F-118 | Parametric kitchen slab family                       | Furn. Place   | ❌            |                                                                                                                      |
 | F-119 | Parametric bathroom layout family                    | Furn. Place   | ❌            |                                                                                                                      |
-| F-120 | Parametric bed family (2D)                           | Furn. Place   | ❌            |                                                                                                                      |
+| F-120 | Parametric bed family (2D)                           | Furn. Place   | 🟡            | Built-in queen/single bed assets have width/depth/height schemas plus bed-specific plan/3D rendering; missing drag handles/reference-plane constraints |
 | F-121 | Align tool (AL) for furniture-to-wall                | Furn. Place   | 🟡            | Two-click workflow: first click = reference point (shows dashed crosshair SVG + coordinate label), second click snaps nearest wall (≤900 mm) via `alignElementToReference`. Missing: arbitrary face alignment, Lock constraint, non-wall elements |
 | F-122 | Rotate tool (about user-defined center)              | Furn. Place   | 🟡            | General-purpose two-click RO tool: first click = center, second click = snapped end angle; supports wall, column, placed_asset, floor, room, area. Missing: numeric typed-angle dialog and start-angle reference ray |
 
@@ -179,8 +179,8 @@ _Last audited: 2026-05-09 against codebase at commit `docs/tracker-sync-wave-11`
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
 | ✅ Fully available     | 44      | 37%        |
-| 🟡 Partially available | 29      | 24%        |
-| ❌ Not available       | 47      | 39%        |
+| 🟡 Partially available | 32      | 27%        |
+| ❌ Not available       | 44      | 37%        |
 | **Total**              | **120** | **100%**   |
 
 ---
@@ -195,5 +195,5 @@ Based on the frequency and centrality of features in the course. WP cross-refs p
 4. **Rooms & Areas remaining gaps** (F-093–F-095) — room placement and room separation are ✅; remaining work is room fill/per-instance graphics plus area-boundary wall-face snapping and area auto-loop placement polish.
 5. **Levels UX** (F-025–F-026) — data model exists (`datum_levels.py`); needs level head display in elevation views and interactive rename. _**No WP yet.**_
 6. **Temporary Hide/Isolate** (F-047, F-101–F-102) — F-047 and F-101 are ✅: PlanCanvas sunglasses menu supports temporary isolate/hide by category and by selected element, with `TemporaryVisibilityChip` reset. F-102 is ✅ for permanent view-specific hide via VVDialog plus inspector Hide Element/Hide Category. F-014 is ✅ — lightbulb reveal mode shows hidden elements in magenta with unhide actions.
-7. **Family Editor** (F-048–F-062) — major architectural feature gap. v3's approach is a catalog model (`family_catalog_format.py`) rather than an in-app parametric editor. _Out of scope for v3; long-term vision item._
+7. **Family Editor** (F-048–F-062) — major architectural feature gap. v3's approach is a catalog model (`family_catalog_format.py`) plus built-in `asset_library_entry` furniture seeds rather than an in-app parametric editor. _Out of scope for v3; long-term vision item._
 8. **Floor Edit Boundary** (F-107) — common daily operation; sketch-mode edit of slab outlines. _`EDT-V3-13` (sketch-element grips, status: `next`) is the closest WP; full boundary re-sketch is a follow-on._

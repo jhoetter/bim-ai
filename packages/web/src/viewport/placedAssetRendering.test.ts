@@ -6,6 +6,7 @@ import type { Element } from '@bim-ai/core';
 import {
   classifyPlacedAssetSymbol,
   makePlacedAssetMesh,
+  makePlacedAssetPlanSymbol,
   resolvePlacedAssetRenderSpec,
 } from './placedAssetRendering';
 
@@ -61,6 +62,28 @@ describe('placed asset rendering', () => {
     ).toBe('oven');
   });
 
+  it('classifies legacy bedroom and storage asset names without explicit metadata', () => {
+    const bedEntry: Extract<Element, { kind: 'asset_library_entry' }> = {
+      ...fridgeEntry,
+      id: 'asset-bed',
+      name: 'Queen Bed',
+      tags: [],
+      planSymbolKind: undefined,
+      renderProxyKind: undefined,
+    };
+    const wardrobeEntry: Extract<Element, { kind: 'asset_library_entry' }> = {
+      ...fridgeEntry,
+      id: 'asset-wardrobe',
+      name: 'Bedroom Wardrobe',
+      tags: [],
+      planSymbolKind: undefined,
+      renderProxyKind: undefined,
+    };
+
+    expect(classifyPlacedAssetSymbol(bedEntry, placedFridge)).toBe('bed');
+    expect(classifyPlacedAssetSymbol(wardrobeEntry, placedFridge)).toBe('wardrobe');
+  });
+
   it('resolves fridge dimensions from param schema defaults', () => {
     const spec = resolvePlacedAssetRenderSpec(placedFridge, fridgeEntry);
     expect(spec.symbolKind).toBe('fridge');
@@ -84,6 +107,56 @@ describe('placed asset rendering', () => {
     let meshCount = 0;
     group.traverse((o) => {
       if (o instanceof THREE.Mesh && o.userData.bimPickId === 'pa-fridge') meshCount += 1;
+    });
+    expect(meshCount).toBeGreaterThan(1);
+  });
+
+  it.each([
+    ['bed', 'Queen Bed 1800x2100', { widthMm: 1800, depthMm: 2100, heightMm: 600 }],
+    ['wardrobe', 'Wardrobe 1800x620', { widthMm: 1800, depthMm: 620, heightMm: 2200 }],
+    ['lamp', 'Floor Lamp 1700', { diameterMm: 450, heightMm: 1700 }],
+    ['rug', 'Area Rug 2400x1700', { widthMm: 2400, depthMm: 1700, heightMm: 25 }],
+  ] as const)('resolves and renders %s furniture assets', (kind, name, params) => {
+    const entry: Extract<Element, { kind: 'asset_library_entry' }> = {
+      ...fridgeEntry,
+      id: `asset-${kind}`,
+      name,
+      category: kind === 'wardrobe' ? 'casework' : 'furniture',
+      tags: [kind],
+      thumbnailWidthMm: 'diameterMm' in params ? params.diameterMm : params.widthMm,
+      thumbnailHeightMm: 'diameterMm' in params ? params.diameterMm : params.depthMm,
+      planSymbolKind: kind,
+      renderProxyKind: kind,
+      paramSchema: Object.entries(params).map(([key, value]) => ({
+        key,
+        kind: 'mm',
+        default: value,
+      })),
+    };
+    const asset: Extract<Element, { kind: 'placed_asset' }> = {
+      ...placedFridge,
+      id: `pa-${kind}`,
+      name,
+      assetId: entry.id,
+      paramValues: {},
+    };
+
+    const spec = resolvePlacedAssetRenderSpec(asset, entry);
+    const plan = makePlacedAssetPlanSymbol(asset, entry);
+    const mesh = makePlacedAssetMesh(
+      asset,
+      { lvl: level, [entry.id]: entry, [asset.id]: asset },
+      null,
+    );
+
+    expect(classifyPlacedAssetSymbol(entry, asset)).toBe(kind);
+    expect(spec.symbolKind).toBe(kind);
+    expect(plan.userData.assetSymbolKind).toBe(kind);
+    expect(mesh.userData.assetSymbolKind).toBe(kind);
+
+    let meshCount = 0;
+    mesh.traverse((o) => {
+      if (o instanceof THREE.Mesh && o.userData.bimPickId === asset.id) meshCount += 1;
     });
     expect(meshCount).toBeGreaterThan(1);
   });
