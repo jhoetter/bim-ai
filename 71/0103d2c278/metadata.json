@@ -4,7 +4,11 @@
   "strategy": "manual-commit",
   "branch": "revit-parity-wall-radius-wave",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "app/bim_ai/skb/refine_loop.py",
+    "app/tests/test_skb_refine_loop.py",
+    "claude-skills/sketch-to-bim/SKILL.md"
+  ],
   "sessions": [
     {
       "metadata": "/71/0103d2c278/0/metadata.json",
@@ -17,13 +21,19 @@
       "transcript": "/71/0103d2c278/1/full.jsonl",
       "content_hash": "/71/0103d2c278/1/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/71/0103d2c278/2/metadata.json",
+      "transcript": "/71/0103d2c278/2/full.jsonl",
+      "content_hash": "/71/0103d2c278/2/content_hash.txt",
+      "prompt": "/71/0103d2c278/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1777281,
+    "input_tokens": 1849429,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 42075264,
-    "output_tokens": 114229,
-    "api_call_count": 338
+    "cache_read_tokens": 43165568,
+    "output_tokens": 120868,
+    "api_call_count": 360
   }
 }
