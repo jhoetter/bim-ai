@@ -3,8 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import { TopBar, WORKSPACE_MODES } from './TopBar';
-import { TopBarV3 } from './chrome/TopBar';
-import i18n from '../i18n';
+import { TopBarV3 } from '../chrome/TopBar';
+import i18n from '../../i18n';
 
 function renderWithI18n(ui: React.ReactElement) {
   return render(ui, {

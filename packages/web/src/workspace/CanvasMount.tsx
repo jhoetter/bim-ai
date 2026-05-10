@@ -11,7 +11,7 @@ import {
   SectionModeShell,
   SheetModeShell,
 } from './ModeShells';
-import type { WorkspaceMode } from './TopBar';
+import type { WorkspaceMode } from './shell';
 
 export const canvasContainerStyle: CSSProperties = {
   position: 'relative',

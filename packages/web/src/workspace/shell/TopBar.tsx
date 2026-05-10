@@ -13,9 +13,9 @@ import {
 
 import { useTranslation } from 'react-i18next';
 import { Icons, IconLabels, ICON_SIZE, type LucideLikeIcon } from '@bim-ai/ui';
-import { useBimStore } from '../state/store';
+import { useBimStore } from '../../state/store';
 import { SourceViewChip } from './SourceViewChip';
-import { type ViewTab, type TabKind } from './tabsModel';
+import { type ViewTab, type TabKind } from '../tabsModel';
 
 /**
  * TopBar — spec §11.

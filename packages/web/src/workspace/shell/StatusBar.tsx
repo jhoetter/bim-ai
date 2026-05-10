@@ -11,7 +11,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
 import type { LensMode } from '@bim-ai/core';
-import type { CollaborationConflictQueueV1 } from '../lib/collaborationConflictQueue';
+import type { CollaborationConflictQueueV1 } from '../../lib/collaborationConflictQueue';
 import { LensDropdown } from './LensDropdown';
 import { DriftBadge } from './DriftBadge';
 

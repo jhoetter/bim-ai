@@ -7,8 +7,7 @@ import { Icons } from '@bim-ai/ui';
 import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
 import { LevelStack } from '../levels/LevelStack';
 import { useBimStore } from '../state/store';
-import { LeftRail } from './LeftRail';
-import type { TopBarSelectOption, WorkspaceMode } from './TopBar';
+import { LeftRail, type TopBarSelectOption, type WorkspaceMode } from './shell';
 import { buildBrowserSections } from './workspaceUtils';
 
 export function WorkspaceLeftRail({

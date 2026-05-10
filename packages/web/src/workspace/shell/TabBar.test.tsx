@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import { TabBar } from './TabBar';
-import type { ViewTab } from './tabsModel';
-import i18n from '../i18n';
+import type { ViewTab } from '../tabsModel';
+import i18n from '../../i18n';
 
 function renderWithI18n(ui: React.ReactElement) {
   return render(ui, {

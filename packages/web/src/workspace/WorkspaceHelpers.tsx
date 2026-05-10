@@ -4,7 +4,7 @@ import type { Element } from '@bim-ai/core';
 
 import { ToolPalette } from '../tools/ToolPalette';
 import type { ToolDisabledContext, ToolId } from '../tools/toolRegistry';
-import type { WorkspaceMode } from './TopBar';
+import type { WorkspaceMode } from './shell';
 import type { TabKind } from './tabsModel';
 
 export function FloatingPalette({

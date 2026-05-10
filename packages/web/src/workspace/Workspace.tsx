@@ -27,9 +27,14 @@ import type { PerspectiveId } from '@bim-ai/core';
 import { selectDriftedElements } from '../plan/monitorDriftBadge';
 import { modeForHotkey } from '../state/modeController';
 import { patternFor } from '../state/uiStates';
-import { AppShell } from './AppShell';
-import { TopBar, type WorkspaceMode } from './TopBar';
-import { LeftRailCollapsed } from './LeftRail';
+import {
+  AppShell,
+  LeftRailCollapsed,
+  ParticipantStrip,
+  StatusBar,
+  TopBar,
+  type WorkspaceMode,
+} from './shell';
 import {
   getToolRegistry,
   type ToolDefinition,
@@ -74,7 +79,6 @@ import { SharePresentationModal } from '../collab/SharePresentationModal';
 import { useActivityDrawerStore } from '../collab/activityDrawerStore';
 import { LibraryOverlay } from './LibraryOverlay';
 import { useActivityStore } from '../collab/activityStore';
-import { StatusBar } from './StatusBar';
 import { TemporaryVisibilityChip } from './TemporaryVisibilityChip';
 import { CheatsheetModal } from '../cmd/CheatsheetModal';
 import { CommandPalette } from '../cmdPalette/CommandPalette';
@@ -102,7 +106,6 @@ import {
 } from './workspaceUtils';
 import { useToolPrefs } from '../tools/toolPrefsStore';
 import { useOfflineStore } from '../offlineStore';
-import { ParticipantStrip } from './ParticipantStrip';
 import { usePresenceStore } from '../presenceStore';
 
 /**

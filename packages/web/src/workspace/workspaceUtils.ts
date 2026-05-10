@@ -15,7 +15,7 @@ import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
 import type { UxComment } from '../state/store';
 import type { PlanTool } from '../state/storeTypes';
 import type { ToolId } from '../tools/toolRegistry';
-import type { LeftRailSection } from './LeftRail';
+import type { LeftRailSection } from './shell';
 
 export function mapComments(rows: Record<string, unknown>[]): UxComment[] {
   return rows.map((row) => ({

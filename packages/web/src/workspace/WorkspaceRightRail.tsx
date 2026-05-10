@@ -27,7 +27,7 @@ import {
 import type { DisciplineTag } from '@bim-ai/core';
 import { AuthoringWorkbenchesPanel } from './AuthoringWorkbenchesPanel';
 import { Viewport3DLayersPanel } from './Viewport3DLayersPanel';
-import type { WorkspaceMode } from './TopBar';
+import type { WorkspaceMode } from './shell';
 import { humanKindLabel, InspectorEmptyTab } from './WorkspaceHelpers';
 
 const NAVIGABLE_KINDS = new Set<Element['kind']>([
