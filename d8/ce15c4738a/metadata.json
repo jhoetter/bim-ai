@@ -3,7 +3,7 @@
   "checkpoint_id": "d8ce15c4738a",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "packages/web/src/workspace/CanvasMount.tsx",
     "packages/web/src/workspace/Workspace.tsx",
@@ -27,13 +27,19 @@
       "transcript": "/d8/ce15c4738a/0/full.jsonl",
       "content_hash": "/d8/ce15c4738a/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/d8/ce15c4738a/1/metadata.json",
+      "transcript": "/d8/ce15c4738a/1/full.jsonl",
+      "content_hash": "/d8/ce15c4738a/1/content_hash.txt",
+      "prompt": "/d8/ce15c4738a/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 34144,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 2220032,
-    "output_tokens": 7517,
-    "api_call_count": 20
+    "input_tokens": 34459,
+    "cache_creation_tokens": 347272,
+    "cache_read_tokens": 19205155,
+    "output_tokens": 83063,
+    "api_call_count": 198
   }
 }
