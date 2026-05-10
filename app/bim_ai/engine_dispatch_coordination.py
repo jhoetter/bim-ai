@@ -65,6 +65,7 @@ from bim_ai.engine import (
     _canonical_site_boundary_mm,
     _canonical_site_context_rows,
     _no_source_provider,
+    is_element_pinned,
     _supports_pin,
     _validate_wall_lean_taper,
     _validate_wall_stack,
@@ -239,6 +240,15 @@ def try_apply_coordination_command(doc, cmd, *, source_provider=None) -> bool:
             link = els.get(cmd.link_id)
             if not isinstance(link, LinkModelElem):
                 raise ValueError("updateLinkModel.linkId must reference a link_model element")
+            spatial_updates_requested = (
+                cmd.position_mm is not None
+                or cmd.rotation_deg is not None
+                or cmd.origin_alignment_mode is not None
+            )
+            if spatial_updates_requested and is_element_pinned(link):
+                raise ValueError(
+                    f"pinned_element_blocked: '{cmd.link_id}' is pinned; unpin first"
+                )
             updates: dict[str, Any] = {}
             if cmd.name is not None:
                 updates["name"] = cmd.name
@@ -265,6 +275,8 @@ def try_apply_coordination_command(doc, cmd, *, source_provider=None) -> bool:
             link = els.get(cmd.link_id)
             if not isinstance(link, LinkModelElem):
                 raise ValueError("deleteLinkModel.linkId must reference a link_model element")
+            if is_element_pinned(link):
+                raise ValueError(f"pinned_element_blocked: '{cmd.link_id}' is pinned; unpin first")
             del els[cmd.link_id]
 
         case UpdateLinkDxfCmd():

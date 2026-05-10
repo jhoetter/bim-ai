@@ -136,6 +136,8 @@ describe('<FamilyLibraryPanel /> — FL-06', () => {
     expect(svg?.getAttribute('preserveAspectRatio')).toBe('xMidYMid meet');
     expect(svg?.getAttribute('style')).toContain('width: 100%');
     expect(svg?.getAttribute('style')).toContain('overflow: hidden');
+    expect(svg?.querySelector('style')?.textContent).toContain('vector-effect');
+    expect(svg?.querySelector('style')?.textContent).toContain('stroke-width: 1.35px');
   });
 
   it('groups custom wall_type elements under "Wall Types"', () => {

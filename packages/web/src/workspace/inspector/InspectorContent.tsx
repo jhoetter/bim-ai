@@ -1179,6 +1179,8 @@ export function InspectorPinToggle({
     'dimension',
     'room_separation',
     'section_cut',
+    'link_model',
+    'link_dxf',
   ]);
   if (!PINNABLE.has(el.kind)) return null;
   return (

@@ -25,6 +25,27 @@ const wallTypeEl: Element = {
   layers: [],
 };
 
+const linkModel: Element = {
+  kind: 'link_model',
+  id: 'link-1',
+  name: 'Structure',
+  sourceModelId: '11111111-1111-1111-1111-111111111111',
+  positionMm: { xMm: 0, yMm: 0, zMm: 0 },
+  rotationDeg: 0,
+  originAlignmentMode: 'origin_to_origin',
+};
+
+const linkDxf: Element = {
+  kind: 'link_dxf',
+  id: 'dxf-1',
+  name: 'Site DXF',
+  levelId: 'lvl-1',
+  originMm: { xMm: 0, yMm: 0 },
+  rotationDeg: 0,
+  scaleFactor: 1,
+  linework: [],
+};
+
 describe('InspectorPinToggle — VIE-07', () => {
   it('emits pinElement when clicked on an unpinned element', () => {
     const onPin = vi.fn();
@@ -58,5 +79,22 @@ describe('InspectorPinToggle — VIE-07', () => {
       <InspectorPinToggle el={wallTypeEl} onPin={onPin} onUnpin={onUnpin} />,
     );
     expect(container.firstChild).toBeNull();
+  });
+
+  it('supports linked model and DXF rows', () => {
+    const onPin = vi.fn();
+    const onUnpin = vi.fn();
+    const { getAllByRole } = render(
+      <div>
+        <InspectorPinToggle el={linkModel} onPin={onPin} onUnpin={onUnpin} />
+        <InspectorPinToggle el={{ ...linkDxf, pinned: true }} onPin={onPin} onUnpin={onUnpin} />
+      </div>,
+    );
+    const toggles = getAllByRole('switch');
+    expect(toggles).toHaveLength(2);
+    fireEvent.click(toggles[0]!);
+    fireEvent.click(toggles[1]!);
+    expect(onPin).toHaveBeenCalledWith('link-1');
+    expect(onUnpin).toHaveBeenCalledWith('dxf-1');
   });
 });
