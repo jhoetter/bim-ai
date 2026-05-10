@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 
 import { Btn } from '@bim-ai/ui';
 
-import { useBimStore } from '../state/store';
+import { useBimStore } from '../../state/store';
 import {
   AgentBriefAcceptanceReadoutV1Table,
   formatAgentBriefAcceptanceReadoutLines,
@@ -19,17 +19,17 @@ import {
 import {
   buildBrowserRenderingBudgetReadoutV1,
   formatBrowserRenderingBudgetLines,
-} from './browserRenderingBudgetReadout';
+} from '../browserRenderingBudgetReadout';
 import {
   formatAgentReviewReadoutConsistencyClosureLines,
   parseAgentReviewReadoutConsistencyClosureV1,
 } from './agentReviewReadoutConsistencyClosure';
-import { EvidenceArtifactCorrelationPanel } from './review/EvidenceArtifactCorrelationPanel';
+import { EvidenceArtifactCorrelationPanel } from '../review/EvidenceArtifactCorrelationPanel';
 import {
   parseEvidenceArtifact,
   parseRoomCandidates,
   type RoomCand,
-} from './review/evidenceArtifactParser';
+} from '../review/evidenceArtifactParser';
 
 type JsonText = string;
 

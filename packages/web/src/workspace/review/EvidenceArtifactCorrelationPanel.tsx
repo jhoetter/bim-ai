@@ -1,7 +1,7 @@
 import { Btn } from '@bim-ai/ui';
 
 import { collaborationConflictQueueInspectionLinesFromHints } from '../../lib/collaborationConflictQueue';
-import { formatAgentReviewActionDetails } from '../agentReviewActionDetails';
+import { formatAgentReviewActionDetails } from '../agent';
 import { EvidenceBaselineLifecycleReadoutV1Table } from '../evidenceBaselineLifecycleReadout';
 import {
   summarizeBcfIssuePackageExport,

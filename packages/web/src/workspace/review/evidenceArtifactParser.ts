@@ -1,4 +1,4 @@
-import { parseAgentReviewActionsV1, type AgentReviewActionRow } from '../agentReviewActions';
+import { parseAgentReviewActionsV1, type AgentReviewActionRow } from '../agent';
 import { summarizeArtifactUploadManifestV1 } from '../artifactUploadManifestReadout';
 import {
   parseEvidenceBaselineLifecycleReadoutV1,
@@ -7,7 +7,7 @@ import {
 import {
   parseAgentReviewReadoutConsistencyClosureV1,
   type AgentReviewReadoutConsistencyClosureV1,
-} from '../agentReviewReadoutConsistencyClosure';
+} from '../agent';
 import {
   parsePrdCloseoutCrossCorrelationManifestV1,
   type PrdCloseoutCrossCorrelationManifestWire,
