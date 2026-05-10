@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "194422a70833",
+  "session_id": "019e12a2-e2b7-7121-b7a2-efaa44476317",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-10T17:04:51.046207Z",
+  "branch": "revit-parity-wall-join-wave",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "9bf4960f4b99",
+  "token_usage": {
+    "input_tokens": 1112299,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 32098560,
+    "output_tokens": 79774,
+    "api_call_count": 255
+  },
+  "session_metrics": {
+    "turn_count": 9
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 36,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/wall_join_evidence.py": 36
+      }
+    }
+  ]
+}

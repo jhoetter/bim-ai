@@ -3,7 +3,7 @@
   "checkpoint_id": "194422a70833",
   "strategy": "manual-commit",
   "branch": "revit-parity-wall-join-wave",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "packages/web/src/families/FamilyLibraryPanel.test.tsx",
     "packages/web/src/workspace/library/AssetCard.tsx"
@@ -32,6 +32,19 @@
       "transcript": "/19/4422a70833/3/full.jsonl",
       "content_hash": "/19/4422a70833/3/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/19/4422a70833/4/metadata.json",
+      "transcript": "/19/4422a70833/4/full.jsonl",
+      "content_hash": "/19/4422a70833/4/content_hash.txt",
+      "prompt": "/19/4422a70833/4/prompt.txt"
     }
-  ]
+  ],
+  "token_usage": {
+    "input_tokens": 1112299,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 32098560,
+    "output_tokens": 79774,
+    "api_call_count": 255
+  }
 }
