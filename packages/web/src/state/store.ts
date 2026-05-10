@@ -13,7 +13,7 @@ import type {
 
 import type { PlanPresentationPreset } from '../plan/symbology';
 
-import type { StoreState } from './storeTypes';
+import type { CategoryOverrides, StoreState, ViewFilter } from './storeTypes';
 
 export type {
   PlanRoomSchemeWireReadout,
@@ -2076,8 +2076,7 @@ export const useBimStore = create<StoreState>((set, get) => {
       const { elementsById } = get();
       const pv = elementsById[planViewId];
       if (!pv || pv.kind !== 'plan_view') return;
-      const prevOverrides =
-        (pv.categoryOverrides as import('./storeTypes').CategoryOverrides) ?? {};
+      const prevOverrides = (pv.categoryOverrides as CategoryOverrides) ?? {};
       const newOverrides = { ...prevOverrides, [categoryKey]: override };
       set({
         elementsById: {
@@ -2090,7 +2089,7 @@ export const useBimStore = create<StoreState>((set, get) => {
       const { elementsById } = get();
       const pv = elementsById[planViewId];
       if (!pv || pv.kind !== 'plan_view') return;
-      const prevFilters = (pv.viewFilters as import('./storeTypes').ViewFilter[] | undefined) ?? [];
+      const prevFilters = (pv.viewFilters as ViewFilter[] | undefined) ?? [];
       const updated = [...prevFilters, filter];
       set({ elementsById: { ...elementsById, [planViewId]: { ...pv, viewFilters: updated } } });
     },
@@ -2098,7 +2097,7 @@ export const useBimStore = create<StoreState>((set, get) => {
       const { elementsById } = get();
       const pv = elementsById[planViewId];
       if (!pv || pv.kind !== 'plan_view') return;
-      const prevFilters = (pv.viewFilters as import('./storeTypes').ViewFilter[] | undefined) ?? [];
+      const prevFilters = (pv.viewFilters as ViewFilter[] | undefined) ?? [];
       const updated = prevFilters.map((f) => (f.id === filterId ? { ...f, ...patch } : f));
       set({ elementsById: { ...elementsById, [planViewId]: { ...pv, viewFilters: updated } } });
     },
@@ -2106,7 +2105,7 @@ export const useBimStore = create<StoreState>((set, get) => {
       const { elementsById } = get();
       const pv = elementsById[planViewId];
       if (!pv || pv.kind !== 'plan_view') return;
-      const prevFilters = (pv.viewFilters as import('./storeTypes').ViewFilter[] | undefined) ?? [];
+      const prevFilters = (pv.viewFilters as ViewFilter[] | undefined) ?? [];
       const updated = prevFilters.filter((f) => f.id !== filterId);
       set({ elementsById: { ...elementsById, [planViewId]: { ...pv, viewFilters: updated } } });
     },

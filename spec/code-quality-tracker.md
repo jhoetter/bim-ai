@@ -141,7 +141,7 @@ These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (t
 
 ## CQ-05 — Slice the zustand store (`packages/web/src/state/store.ts`, 1,692 LOC)
 
-**Status:** `open`
+**Status:** `partial`
 **Severity:** Medium
 **Blast radius:** Medium. Every selector callsite stays valid if we keep the public hook surface; internal store wiring changes.
 
@@ -159,6 +159,8 @@ These files load slowly, test slowly, and are AI-agent-merge-conflict magnets (t
 - Existing tests pass; add at least one new unit test per new store covering the basic mutations.
 
 **Approach note.** Easiest path: introduce slices using the [zustand "slices" pattern](https://docs.pmnd.rs/zustand/guides/slices-pattern) inside the existing `useBimStore` first (zero callsite churn). Then, in a follow-up PR, extract slices that are genuinely independent (most likely `useCollabStore`) into their own store.
+
+**Progress 2026-05-10.** Added explicit typed slice contracts for the stable `useBimStore` facade: model, viewport, plan authoring, collaboration, and workspace UI. Removed the store's dynamic `import('./storeTypes')` type casts and added regression coverage that exercises each slice's basic mutations through the public hook. Runtime slice extraction is still open.
 
 ---
 

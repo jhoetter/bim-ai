@@ -1,0 +1,142 @@
+import type { StoreState } from './storeTypes';
+
+type StoreKey = keyof StoreState;
+
+export const MODEL_STORE_KEYS = [
+  'modelId',
+  'revision',
+  'elementsById',
+  'violations',
+  'selectedId',
+  'selectedIds',
+  'activeLevelId',
+  'planProjectionPrimitives',
+  'planRoomSchemeWireReadout',
+  'scheduleBudgetHydration',
+  'lastLevelElevationPropagationEvidence',
+  'linkSourceRevisions',
+  'hydrateFromSnapshot',
+  'applyDelta',
+  'select',
+  'toggleSelectedId',
+  'clearSelectedIds',
+  'mergeElements',
+  'importFamilyDefinitions',
+  'userFamilies',
+] as const satisfies readonly StoreKey[];
+
+export const VIEWPORT_STORE_KEYS = [
+  'viewerMode',
+  'activePlanViewId',
+  'activeViewpointId',
+  'activeElevationViewId',
+  'viewerClipElevMm',
+  'viewerClipFloorElevMm',
+  'viewerCategoryHidden',
+  'viewerRenderStyle',
+  'viewerBackground',
+  'viewerEdges',
+  'revealHiddenMode',
+  'viewerPhaseFilter',
+  'orbitCameraNonce',
+  'orbitCameraPoseMm',
+  'activatePlanView',
+  'setActiveViewpointId',
+  'activateElevationView',
+  'setViewerClipElevMm',
+  'setViewerClipFloorElevMm',
+  'toggleViewerCategoryHidden',
+  'setViewerRenderStyle',
+  'setViewerBackground',
+  'setViewerEdges',
+  'setRevealHiddenMode',
+  'applyOrbitViewpointPreset',
+  'setOrbitCameraFromViewpointMm',
+  'showNeighborhoodMasses',
+  'toggleNeighborhoodMasses',
+  'vvDialogOpen',
+  'openVVDialog',
+  'closeVVDialog',
+  'setCategoryOverride',
+  'addViewFilter',
+  'updateViewFilter',
+  'removeViewFilter',
+  'temporaryVisibility',
+  'setTemporaryVisibility',
+  'clearTemporaryVisibility',
+  'setViewerPhaseFilter',
+  'clearViewerPhaseFilter',
+] as const satisfies readonly StoreKey[];
+
+export const PLAN_AUTHORING_STORE_KEYS = [
+  'planTool',
+  'planPresentationPreset',
+  'wallLocationLine',
+  'applyAreaRules',
+  'floorBoundaryOffsetMm',
+  'wallDrawOffsetMm',
+  'wallDrawHeightMm',
+  'activeWallTypeId',
+  'activeFloorTypeId',
+  'orthoSnapHold',
+  'buildingPreset',
+  'planHudMm',
+  'lensMode',
+  'setViewerMode',
+  'setPlanTool',
+  'setActiveLevelId',
+  'setWallLocationLine',
+  'setApplyAreaRules',
+  'setFloorBoundaryOffsetMm',
+  'setWallDrawOffsetMm',
+  'setWallDrawHeightMm',
+  'setActiveWallTypeId',
+  'setActiveFloorTypeId',
+  'setOrthoSnapHold',
+  'setBuildingPreset',
+  'setPlanHud',
+  'setPlanPresentationPreset',
+  'setLensMode',
+  'setPlanProjectionPrimitives',
+  'setPlanRoomSchemeWireReadout',
+  'setScheduleBudgetHydration',
+] as const satisfies readonly StoreKey[];
+
+export const COLLABORATION_STORE_KEYS = [
+  'userId',
+  'userDisplayName',
+  'peerId',
+  'presencePeers',
+  'comments',
+  'activityEvents',
+  'setPresencePeers',
+  'setComments',
+  'mergeComment',
+  'setActivity',
+  'setIdentity',
+] as const satisfies readonly StoreKey[];
+
+export const WORKSPACE_UI_STORE_KEYS = [
+  'workspaceLayoutPreset',
+  'perspectiveId',
+  'thinLinesEnabled',
+  'setWorkspaceLayoutPreset',
+  'setPerspectiveId',
+  'toggleThinLines',
+] as const satisfies readonly StoreKey[];
+
+export const STORE_SLICE_KEYS = {
+  model: MODEL_STORE_KEYS,
+  viewport: VIEWPORT_STORE_KEYS,
+  planAuthoring: PLAN_AUTHORING_STORE_KEYS,
+  collaboration: COLLABORATION_STORE_KEYS,
+  workspaceUi: WORKSPACE_UI_STORE_KEYS,
+} as const;
+
+export type StoreSliceName = keyof typeof STORE_SLICE_KEYS;
+
+export function storeSliceKeyEntries(): Array<{ slice: StoreSliceName; key: StoreKey }> {
+  return Object.entries(STORE_SLICE_KEYS).flatMap(([slice, keys]) =>
+    keys.map((key) => ({ slice: slice as StoreSliceName, key })),
+  );
+}
