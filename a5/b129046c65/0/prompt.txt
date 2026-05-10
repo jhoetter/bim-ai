@@ -15,3 +15,7 @@ i am not sure it really fully implements the ux-revamp.md , e.g. i still have we
 ---
 
 then go ahead and build the stuff :D please really ensure things are so incredibly well designed and intuitive etc... i'd love that.
+
+---
+
+did you commit and push and merge to main?
