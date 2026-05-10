@@ -271,6 +271,20 @@ describe('EDT-01 — dimensionGripProvider', () => {
     expect(next.xMm).toBeCloseTo(0, 6);
     expect(next.yMm).toBeCloseTo(600, 6);
   });
+
+  it('text grip drag snaps label offset to the dimension line axis', () => {
+    const grips = dimensionGripProvider.grips(
+      {
+        ...dim,
+        textOffsetMm: { xMm: 100, yMm: 75 },
+      },
+      {},
+    );
+    const text = grips[2];
+    expect(text.id).toBe('dim-1:text');
+    const cmd = text.onCommit({ xMm: 200, yMm: 300 }) as { value: string };
+    expect(JSON.parse(cmd.value)).toEqual({ xMm: 300, yMm: 0 });
+  });
 });
 
 describe('EDT-01 — referencePlaneGripProvider', () => {

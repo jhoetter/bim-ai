@@ -4024,6 +4024,22 @@ export function PlanCanvas({
     [],
   );
 
+  const handleGripDoubleClick = useCallback(
+    (grip: GripDescriptor) => {
+      if (!grip.id.endsWith(':text')) return;
+      const elementId = grip.id.slice(0, -':text'.length);
+      const el = elementsById[elementId];
+      if (!el || el.kind !== 'dimension') return;
+      void onSemanticCommand({
+        type: 'updateElementProperty',
+        elementId,
+        key: 'textOffsetMm',
+        value: null,
+      });
+    },
+    [elementsById, onSemanticCommand],
+  );
+
   const handleTempDimClick = useCallback(
     (target: TempDimTarget) => {
       void onSemanticCommand(target.onClick());
@@ -4979,6 +4995,7 @@ export function PlanCanvas({
           grips={gripDescriptors}
           worldToScreen={worldToScreen}
           onGripPointerDown={handleGripPointerDown}
+          onGripDoubleClick={handleGripDoubleClick}
           activeGripId={activeGripId}
           draftWall={
             draftMutation && draftMutation.kind === 'wall'

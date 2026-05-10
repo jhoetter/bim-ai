@@ -58,6 +58,23 @@ describe('EDT-01 — GripLayer rendering', () => {
     expect(onDown.mock.calls[0]![0]!.id).toBe('wall-1:end');
   });
 
+  it('fires onGripDoubleClick with the correct grip on double click', () => {
+    const grips = gripsFor(SAMPLE_WALL);
+    const onDoubleClick = vi.fn();
+    const { getByTestId } = render(
+      <GripLayer
+        grips={grips}
+        worldToScreen={identityWorldToScreen}
+        onGripPointerDown={vi.fn()}
+        onGripDoubleClick={onDoubleClick}
+      />,
+    );
+    const moveGrip = getByTestId('grip-wall-1:move');
+    fireEvent.doubleClick(moveGrip);
+    expect(onDoubleClick).toHaveBeenCalledTimes(1);
+    expect(onDoubleClick.mock.calls[0]![0]!.id).toBe('wall-1:move');
+  });
+
   it('renders the live-preview line when a draft wall is supplied', () => {
     const { getByTestId } = render(
       <GripLayer

@@ -25,6 +25,7 @@ export interface GripLayerProps {
     grip: GripDescriptor,
     ev: ReactMouseEvent<HTMLDivElement> | PointerEvent,
   ) => void;
+  onGripDoubleClick?: (grip: GripDescriptor, ev: ReactMouseEvent<HTMLDivElement>) => void;
   /** Live draft preview while a wall grip is being dragged. */
   draftWall?: { start: { xMm: number; yMm: number }; end: { xMm: number; yMm: number } } | null;
   /** Active grip id — paints a slightly emphasised handle so the user
@@ -67,6 +68,7 @@ export function GripLayer({
   grips,
   worldToScreen,
   onGripPointerDown,
+  onGripDoubleClick,
   draftWall,
   activeGripId,
 }: GripLayerProps) {
@@ -99,6 +101,10 @@ export function GripLayer({
             onPointerDown={(ev) => {
               ev.stopPropagation();
               onGripPointerDown(g, ev);
+            }}
+            onDoubleClick={(ev) => {
+              ev.stopPropagation();
+              onGripDoubleClick?.(g, ev);
             }}
           />
         );
