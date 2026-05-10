@@ -102,6 +102,22 @@ export type SpanDirectionPrimitive = {
   colour: string;
 };
 
+export type PipeLegendPrimitive = {
+  kind: 'pipe_legend';
+  id: string;
+  positionMm: XY;
+  title: string;
+  entries: { systemType: string; label: string; colour: string }[];
+};
+
+export type DuctLegendPrimitive = {
+  kind: 'duct_legend';
+  id: string;
+  positionMm: XY;
+  title: string;
+  entries: { systemType: string; label: string; colour: string }[];
+};
+
 export type DetailComponentPrimitive =
   | DetailLinePrimitive
   | DetailRegionPrimitive
@@ -111,7 +127,9 @@ export type DetailComponentPrimitive =
   | MultiCategoryTagPrimitive
   | TreadNumberPrimitive
   | KeynotePrimitive
-  | SpanDirectionPrimitive;
+  | SpanDirectionPrimitive
+  | PipeLegendPrimitive
+  | DuctLegendPrimitive;
 
 /**
  * Walks `elementsById` and returns rendering primitives for every
@@ -213,6 +231,22 @@ export function extractDetailComponentPrimitives(
         directionDeg: el.directionDeg ?? 0,
         lengthMm: el.lengthMm ?? 800,
         colour: el.colour ?? '#202020',
+      });
+    } else if (el.kind === 'pipe_legend' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'pipe_legend',
+        id: el.id,
+        positionMm: el.positionMm,
+        title: el.title ?? 'Pipe Legend',
+        entries: el.entries ?? [],
+      });
+    } else if (el.kind === 'duct_legend' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'duct_legend',
+        id: el.id,
+        positionMm: el.positionMm,
+        title: el.title ?? 'Duct Legend',
+        entries: el.entries ?? [],
       });
     }
   }

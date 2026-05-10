@@ -1832,6 +1832,107 @@ class MaskingRegionElem(BaseModel):
     fill_color: str = Field(default="#ffffff", alias="fillColor")
 
 
+# ---------------------------------------------------------------------------
+# MEP elements — pipe, duct, and their legend annotations (MEP-01..04)
+# ---------------------------------------------------------------------------
+
+PipeSystemType = Literal[
+    "domestic_cold_water",
+    "domestic_hot_water",
+    "sanitary",
+    "storm_drainage",
+    "fire_protection",
+    "chilled_water",
+    "condenser_water",
+    "heating_hot_water",
+    "other",
+]
+
+
+class PipeElem(BaseModel):
+    """MEP-01 — straight pipe segment between two points."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["pipe"] = "pipe"
+    id: str
+    level_id: str = Field(alias="levelId")
+    start_mm: Vec2Mm = Field(alias="startMm")
+    end_mm: Vec2Mm = Field(alias="endMm")
+    elevation_mm: float = Field(default=0.0, alias="elevationMm")
+    diameter_mm: float = Field(default=25.0, alias="diameterMm", gt=0)
+    system_type: PipeSystemType = Field(default="other", alias="systemType")
+    material_key: str | None = Field(default=None, alias="materialKey")
+    colour: str | None = Field(default=None)
+    pinned: bool = Field(default=False)
+
+
+DuctSystemType = Literal[
+    "supply_air",
+    "return_air",
+    "exhaust_air",
+    "outside_air",
+    "other_air",
+    "other",
+]
+DuctShape = Literal["rectangular", "round", "oval"]
+
+
+class DuctElem(BaseModel):
+    """MEP-02 — straight duct segment between two points."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["duct"] = "duct"
+    id: str
+    level_id: str = Field(alias="levelId")
+    start_mm: Vec2Mm = Field(alias="startMm")
+    end_mm: Vec2Mm = Field(alias="endMm")
+    elevation_mm: float = Field(default=0.0, alias="elevationMm")
+    width_mm: float = Field(default=300.0, alias="widthMm", gt=0)
+    height_mm: float = Field(default=200.0, alias="heightMm", gt=0)
+    shape: DuctShape = Field(default="rectangular")
+    system_type: DuctSystemType = Field(default="other", alias="systemType")
+    colour: str | None = Field(default=None)
+    pinned: bool = Field(default=False)
+
+
+class PipeLegendEntrySpec(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    system_type: str = Field(alias="systemType")
+    label: str
+    colour: str
+
+
+class PipeLegendElem(BaseModel):
+    """MEP-03 — view-local pipe legend annotation."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["pipe_legend"] = "pipe_legend"
+    id: str
+    host_view_id: str = Field(alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    entries: list[PipeLegendEntrySpec] = Field(default_factory=list)
+    title: str = Field(default="Pipe Legend")
+
+
+class DuctLegendEntrySpec(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    system_type: str = Field(alias="systemType")
+    label: str
+    colour: str
+
+
+class DuctLegendElem(BaseModel):
+    """MEP-04 — view-local duct legend annotation."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["duct_legend"] = "duct_legend"
+    id: str
+    host_view_id: str = Field(alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    entries: list[DuctLegendEntrySpec] = Field(default_factory=list)
+    title: str = Field(default="Duct Legend")
+
+
 class SelectionSetRuleSpec(BaseModel):
     """FED-02: a single rule in a selection set's filter list.
 
@@ -2801,6 +2902,10 @@ Element = Annotated[
     | FrameElem
     | SavedViewElem
     | PresentationCanvasElem
-    | BrandTemplateElem,
+    | BrandTemplateElem
+    | PipeElem
+    | DuctElem
+    | PipeLegendElem
+    | DuctLegendElem,
     Field(discriminator="kind"),
 ]

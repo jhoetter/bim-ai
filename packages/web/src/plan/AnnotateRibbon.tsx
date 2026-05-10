@@ -176,6 +176,37 @@ export function AnnotateRibbon({
     });
   };
 
+  const placePipeLegend = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createPipeLegend',
+      hostViewId: planViewId,
+      positionMm: { xMm: c.xMm, yMm: c.yMm },
+      title: 'Pipe Legend',
+      entries: [
+        { systemType: 'domestic_cold_water', label: 'Cold Water', colour: '#0066cc' },
+        { systemType: 'domestic_hot_water', label: 'Hot Water', colour: '#cc3300' },
+        { systemType: 'sanitary', label: 'Sanitary', colour: '#996633' },
+        { systemType: 'fire_protection', label: 'Fire Protection', colour: '#cc0000' },
+      ],
+    });
+  };
+
+  const placeDuctLegend = () => {
+    const c = viewCenter(elementsById, cropMinMm, cropMaxMm);
+    onSemanticCommand({
+      type: 'createDuctLegend',
+      hostViewId: planViewId,
+      positionMm: { xMm: c.xMm, yMm: c.yMm },
+      title: 'Duct Legend',
+      entries: [
+        { systemType: 'supply_air', label: 'Supply Air', colour: '#0099cc' },
+        { systemType: 'return_air', label: 'Return Air', colour: '#66aacc' },
+        { systemType: 'exhaust_air', label: 'Exhaust Air', colour: '#999999' },
+      ],
+    });
+  };
+
   const commitTextNote = () => {
     const text = textNoteDraft.trim();
     if (!text) {
@@ -379,6 +410,24 @@ export function AnnotateRibbon({
         title="Place a span direction arrow at the view centre."
       >
         Span Direction
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-pipe-legend"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placePipeLegend}
+        title="Place a pipe system legend at the view centre."
+      >
+        Pipe Legend
+      </button>
+      <button
+        type="button"
+        data-testid="plan-annotate-duct-legend"
+        className="rounded border border-border px-2 py-0.5 text-left hover:bg-accent/20 hover:text-foreground"
+        onClick={placeDuctLegend}
+        title="Place a duct system legend at the view centre."
+      >
+        Duct Legend
       </button>
     </div>
   );

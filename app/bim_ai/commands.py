@@ -2899,6 +2899,85 @@ class ReorderViewCmd(BaseModel):
     new_sort_order: int = Field(alias="newSortOrder")
 
 
+# ---------------------------------------------------------------------------
+# MEP commands — pipe, duct, pipe legend, duct legend (MEP-01..04)
+# ---------------------------------------------------------------------------
+
+
+class CreatePipeCmd(BaseModel):
+    """MEP-01 — create a straight pipe segment."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createPipe"] = "createPipe"
+    id: str | None = None
+    level_id: str = Field(alias="levelId")
+    start_mm: Vec2Mm = Field(alias="startMm")
+    end_mm: Vec2Mm = Field(alias="endMm")
+    elevation_mm: float = Field(default=0.0, alias="elevationMm")
+    diameter_mm: float = Field(default=25.0, alias="diameterMm")
+    system_type: Literal[
+        "domestic_cold_water",
+        "domestic_hot_water",
+        "sanitary",
+        "storm_drainage",
+        "fire_protection",
+        "chilled_water",
+        "condenser_water",
+        "heating_hot_water",
+        "other",
+    ] = Field(default="other", alias="systemType")
+    material_key: str | None = Field(default=None, alias="materialKey")
+    colour: str | None = Field(default=None)
+
+
+class CreateDuctCmd(BaseModel):
+    """MEP-02 — create a straight duct segment."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createDuct"] = "createDuct"
+    id: str | None = None
+    level_id: str = Field(alias="levelId")
+    start_mm: Vec2Mm = Field(alias="startMm")
+    end_mm: Vec2Mm = Field(alias="endMm")
+    elevation_mm: float = Field(default=0.0, alias="elevationMm")
+    width_mm: float = Field(default=300.0, alias="widthMm")
+    height_mm: float = Field(default=200.0, alias="heightMm")
+    shape: Literal["rectangular", "round", "oval"] = Field(default="rectangular")
+    system_type: Literal[
+        "supply_air",
+        "return_air",
+        "exhaust_air",
+        "outside_air",
+        "other_air",
+        "other",
+    ] = Field(default="other", alias="systemType")
+    colour: str | None = Field(default=None)
+
+
+class CreatePipeLegendCmd(BaseModel):
+    """MEP-03 — place a pipe legend in a view."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createPipeLegend"] = "createPipeLegend"
+    id: str | None = None
+    host_view_id: str = Field(alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    entries: list[dict] = Field(default_factory=list)
+    title: str = Field(default="Pipe Legend")
+
+
+class CreateDuctLegendCmd(BaseModel):
+    """MEP-04 — place a duct legend in a view."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createDuctLegend"] = "createDuctLegend"
+    id: str | None = None
+    host_view_id: str = Field(alias="hostViewId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    entries: list[dict] = Field(default_factory=list)
+    title: str = Field(default="Duct Legend")
+
+
 Command = Annotated[
     CreateLevelCmd
     | CreateWallCmd
@@ -3125,6 +3204,10 @@ Command = Annotated[
     | CreateBrandTemplateCmd
     | UpdateBrandTemplateCmd
     | DeleteBrandTemplateCmd
-    | ReorderViewCmd,
+    | ReorderViewCmd
+    | CreatePipeCmd
+    | CreateDuctCmd
+    | CreatePipeLegendCmd
+    | CreateDuctLegendCmd,
     Field(discriminator="type"),
 ]

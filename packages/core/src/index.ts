@@ -281,6 +281,8 @@ export type ElemKind =
   | 'foundation'
   | 'duct'
   | 'pipe'
+  | 'pipe_legend'
+  | 'duct_legend'
   | 'fixture'
   | 'material'
   | 'decal'
@@ -2005,7 +2007,50 @@ export type Element =
   | FrameElem
   | SavedViewElem
   | PresentationCanvasElem
-  | BrandTemplateElem;
+  | BrandTemplateElem
+  | {
+      kind: 'pipe';
+      id: string;
+      levelId: string;
+      startMm: XY;
+      endMm: XY;
+      elevationMm?: number;
+      diameterMm?: number;
+      systemType?: string;
+      materialKey?: string | null;
+      colour?: string | null;
+      pinned?: boolean;
+    }
+  | {
+      kind: 'duct';
+      id: string;
+      levelId: string;
+      startMm: XY;
+      endMm: XY;
+      elevationMm?: number;
+      widthMm?: number;
+      heightMm?: number;
+      shape?: 'rectangular' | 'round' | 'oval';
+      systemType?: string;
+      colour?: string | null;
+      pinned?: boolean;
+    }
+  | {
+      kind: 'pipe_legend';
+      id: string;
+      hostViewId: string;
+      positionMm: XY;
+      title?: string;
+      entries: { systemType: string; label: string; colour: string }[];
+    }
+  | {
+      kind: 'duct_legend';
+      id: string;
+      hostViewId: string;
+      positionMm: XY;
+      title?: string;
+      entries: { systemType: string; label: string; colour: string }[];
+    };
 
 export type Violation = {
   ruleId: string;

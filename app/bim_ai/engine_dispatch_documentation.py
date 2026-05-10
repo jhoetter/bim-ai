@@ -8,6 +8,16 @@ from bim_ai.engine import (
     CreateCalloutCmd,
     CreateDetailLineCmd,
     CreateDetailRegionCmd,
+    CreatePipeCmd,
+    CreateDuctCmd,
+    CreatePipeLegendCmd,
+    CreateDuctLegendCmd,
+    PipeElem,
+    DuctElem,
+    PipeLegendElem,
+    PipeLegendEntrySpec,
+    DuctLegendElem,
+    DuctLegendEntrySpec,
     CreateElevationViewCmd,
     CreateJoinGeometryCmd,
     CreatePlanRegionCmd,
@@ -860,6 +870,96 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
                 parent_sheet_id=cmd.parent_sheet_id,
                 outline_mm=cmd.outline_mm,
             )
+
+        case CreatePipeCmd():
+            pid = cmd.id or new_id()
+            if pid in els:
+                raise ValueError(f"duplicate element id '{pid}'")
+            if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                raise ValueError("createPipe.levelId must reference a Level")
+            import math as _math
+
+            if _math.isclose(cmd.start_mm.x_mm, cmd.end_mm.x_mm) and _math.isclose(
+                cmd.start_mm.y_mm, cmd.end_mm.y_mm
+            ):
+                raise ValueError("createPipe: startMm and endMm must differ")
+            els[pid] = PipeElem(
+                kind="pipe",
+                id=pid,
+                level_id=cmd.level_id,
+                start_mm=cmd.start_mm,
+                end_mm=cmd.end_mm,
+                elevation_mm=cmd.elevation_mm,
+                diameter_mm=cmd.diameter_mm,
+                system_type=cmd.system_type,
+                material_key=cmd.material_key,
+                colour=cmd.colour,
+            )
+
+        case CreateDuctCmd():
+            did = cmd.id or new_id()
+            if did in els:
+                raise ValueError(f"duplicate element id '{did}'")
+            if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                raise ValueError("createDuct.levelId must reference a Level")
+            import math as _math
+
+            if _math.isclose(cmd.start_mm.x_mm, cmd.end_mm.x_mm) and _math.isclose(
+                cmd.start_mm.y_mm, cmd.end_mm.y_mm
+            ):
+                raise ValueError("createDuct: startMm and endMm must differ")
+            els[did] = DuctElem(
+                kind="duct",
+                id=did,
+                level_id=cmd.level_id,
+                start_mm=cmd.start_mm,
+                end_mm=cmd.end_mm,
+                elevation_mm=cmd.elevation_mm,
+                width_mm=cmd.width_mm,
+                height_mm=cmd.height_mm,
+                shape=cmd.shape,
+                system_type=cmd.system_type,
+                colour=cmd.colour,
+            )
+
+        case CreatePipeLegendCmd():
+            plid = cmd.id or new_id()
+            if plid in els:
+                raise ValueError(f"duplicate element id '{plid}'")
+            view = els.get(cmd.host_view_id)
+            if view is None or view.kind not in {"plan_view", "section_cut", "elevation_view"}:
+                raise ValueError(
+                    "createPipeLegend.hostViewId must reference plan_view/section_cut/elevation_view"
+                )
+            parsed_entries = [PipeLegendEntrySpec.model_validate(e) for e in cmd.entries]
+            els[plid] = PipeLegendElem(
+                kind="pipe_legend",
+                id=plid,
+                host_view_id=cmd.host_view_id,
+                position_mm=cmd.position_mm,
+                entries=parsed_entries,
+                title=cmd.title,
+            )
+
+        case CreateDuctLegendCmd():
+            dlid = cmd.id or new_id()
+            if dlid in els:
+                raise ValueError(f"duplicate element id '{dlid}'")
+            view = els.get(cmd.host_view_id)
+            if view is None or view.kind not in {"plan_view", "section_cut", "elevation_view"}:
+                raise ValueError(
+                    "createDuctLegend.hostViewId must reference plan_view/section_cut/elevation_view"
+                )
+            parsed_entries = [DuctLegendEntrySpec.model_validate(e) for e in cmd.entries]
+            els[dlid] = DuctLegendElem(
+                kind="duct_legend",
+                id=dlid,
+                host_view_id=cmd.host_view_id,
+                position_mm=cmd.position_mm,
+                entries=parsed_entries,
+                title=cmd.title,
+            )
+
         case _:
             return False
     return True
