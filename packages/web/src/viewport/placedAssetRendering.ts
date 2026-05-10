@@ -8,6 +8,10 @@ export type PlacedAssetElement = Extract<Element, { kind: 'placed_asset' }>;
 export type AssetLibraryEntryElement = Extract<Element, { kind: 'asset_library_entry' }>;
 
 type AssetSymbolKind =
+  | 'bed'
+  | 'wardrobe'
+  | 'lamp'
+  | 'rug'
   | 'fridge'
   | 'oven'
   | 'sink'
@@ -42,6 +46,10 @@ export function classifyPlacedAssetSymbol(
   if (entry?.planSymbolKind) return entry.planSymbolKind;
   if (entry?.renderProxyKind) return entry.renderProxyKind;
   const text = textFor(entry, asset);
+  if (/\b(bed|mattress|queen|king|single\s+bed|double\s+bed)\b/.test(text)) return 'bed';
+  if (/\b(wardrobe|closet|robe|storage|cupboard)\b/.test(text)) return 'wardrobe';
+  if (/\b(lamp|light|floor\s+lamp|table\s+lamp)\b/.test(text)) return 'lamp';
+  if (/\b(rug|carpet|mat)\b/.test(text)) return 'rug';
   if (/\b(fridge|refrigerator|freezer)\b/.test(text)) return 'fridge';
   if (/\b(oven|cooker|range|hob|cooktop)\b/.test(text)) return 'oven';
   if (/\b(sink|basin|washbasin)\b/.test(text)) return 'sink';
@@ -79,6 +87,14 @@ function defaultsFor(kind: AssetSymbolKind): {
   switch (kind) {
     case 'fridge':
       return { widthMm: 600, depthMm: 650, heightMm: 1850 };
+    case 'bed':
+      return { widthMm: 1800, depthMm: 2100, heightMm: 600 };
+    case 'wardrobe':
+      return { widthMm: 1800, depthMm: 620, heightMm: 2200 };
+    case 'lamp':
+      return { widthMm: 450, depthMm: 450, heightMm: 1700 };
+    case 'rug':
+      return { widthMm: 2400, depthMm: 1700, heightMm: 25 };
     case 'oven':
       return { widthMm: 600, depthMm: 600, heightMm: 900 };
     case 'sink':
@@ -110,6 +126,14 @@ function colorFor(kind: AssetSymbolKind, paint: ViewportPaintBundle | null | und
       return '#3f3f46';
     case 'sink':
       return '#c7d2fe';
+    case 'bed':
+      return '#d6d3d1';
+    case 'wardrobe':
+      return '#d2b48c';
+    case 'lamp':
+      return '#facc15';
+    case 'rug':
+      return '#94a3b8';
     case 'counter':
       return paint?.categories.floor.color ?? '#cfc9be';
     case 'sofa':
@@ -172,13 +196,14 @@ function addPolyline(
   pts: Array<[number, number]>,
   mat: THREE.LineBasicMaterial,
   pickId: string,
+  renderOrder = 995,
 ): void {
   const line = new THREE.Line(
     new THREE.BufferGeometry().setFromPoints(pts.map(([x, z]) => new THREE.Vector3(x, 0, z))),
     mat,
   );
   line.userData.bimPickId = pickId;
-  line.renderOrder = 980;
+  line.renderOrder = renderOrder;
   group.add(line);
 }
 
@@ -226,14 +251,113 @@ function addPlacedAssetSymbolLines(
   pickId: string,
   color: string,
 ): void {
-  const mat = lineMaterial(color, 1.5);
-  const fine = lineMaterial(color, 1);
+  const mat = lineMaterial(color, 2.5);
+  const fine = lineMaterial(color, 1.75);
   const hw = spec.widthM / 2;
   const hd = spec.depthM / 2;
 
   addRect(group, hw, hd, mat, pickId);
 
   switch (spec.symbolKind) {
+    case 'bed':
+      addRect(group, hw * 0.82, hd * 0.78, fine, pickId);
+      addPolyline(
+        group,
+        [
+          [-hw * 0.72, -hd * 0.82],
+          [-hw * 0.12, -hd * 0.82],
+          [-hw * 0.12, -hd * 0.48],
+          [-hw * 0.72, -hd * 0.48],
+          [-hw * 0.72, -hd * 0.82],
+        ],
+        fine,
+        pickId,
+      );
+      addPolyline(
+        group,
+        [
+          [hw * 0.12, -hd * 0.82],
+          [hw * 0.72, -hd * 0.82],
+          [hw * 0.72, -hd * 0.48],
+          [hw * 0.12, -hd * 0.48],
+          [hw * 0.12, -hd * 0.82],
+        ],
+        fine,
+        pickId,
+      );
+      addPolyline(
+        group,
+        [
+          [-hw * 0.82, -hd * 0.34],
+          [hw * 0.82, hd * 0.72],
+        ],
+        fine,
+        pickId,
+      );
+      break;
+    case 'wardrobe': {
+      const bayCount = Math.max(2, Math.min(5, Math.round(spec.widthM / 0.55)));
+      for (let i = 1; i < bayCount; i += 1) {
+        const x = -hw + (spec.widthM * i) / bayCount;
+        addPolyline(
+          group,
+          [
+            [x, -hd],
+            [x, hd],
+          ],
+          fine,
+          pickId,
+        );
+      }
+      for (let i = 0; i < bayCount; i += 1) {
+        const x = -hw + (spec.widthM * (i + 0.5)) / bayCount;
+        addCircle(group, x, hd * 0.58, 0.025, fine, pickId, 12);
+      }
+      break;
+    }
+    case 'lamp':
+      addCircle(group, 0, 0, Math.min(hw, hd) * 0.72, mat, pickId, 36);
+      addCircle(group, 0, 0, Math.min(hw, hd) * 0.22, fine, pickId, 24);
+      addPolyline(
+        group,
+        [
+          [0, -hd * 0.72],
+          [0, hd * 0.72],
+        ],
+        fine,
+        pickId,
+      );
+      addPolyline(
+        group,
+        [
+          [-hw * 0.72, 0],
+          [hw * 0.72, 0],
+        ],
+        fine,
+        pickId,
+      );
+      break;
+    case 'rug':
+      addRect(group, hw * 0.92, hd * 0.88, fine, pickId);
+      addPolyline(
+        group,
+        [
+          [-hw * 0.72, -hd * 0.55],
+          [hw * 0.72, -hd * 0.55],
+        ],
+        fine,
+        pickId,
+      );
+      addPolyline(
+        group,
+        [
+          [-hw * 0.72, hd * 0.55],
+          [hw * 0.72, hd * 0.55],
+        ],
+        fine,
+        pickId,
+      );
+      break;
     case 'fridge':
       addPolyline(
         group,
@@ -427,7 +551,7 @@ export function makePlacedAssetPlanSymbol(
   group.userData.assetSymbolKind = spec.symbolKind;
   group.position.set(asset.positionMm.xMm / 1000, opts.y, asset.positionMm.yMm / 1000);
   group.rotation.y = -(((asset.rotationDeg ?? 0) * Math.PI) / 180);
-  addPlacedAssetSymbolLines(group, spec, asset.id, opts.color ?? '#111827');
+  addPlacedAssetSymbolLines(group, spec, asset.id, opts.color ?? '#020617');
   return group;
 }
 
@@ -487,6 +611,22 @@ function addCylinder(
   return mesh;
 }
 
+function addCone(
+  group: THREE.Group,
+  pickId: string,
+  radius: number,
+  height: number,
+  pos: [number, number, number],
+  color: string,
+): THREE.Mesh {
+  const mesh = new THREE.Mesh(new THREE.ConeGeometry(radius, height, 32), meshMaterial(color));
+  mesh.position.set(...pos);
+  mesh.userData.bimPickId = pickId;
+  addEdges(mesh);
+  group.add(mesh);
+  return mesh;
+}
+
 function addPlacedAssetMeshes(
   group: THREE.Group,
   spec: PlacedAssetRenderSpec,
@@ -498,6 +638,41 @@ function addPlacedAssetMeshes(
   const frontZ = -d / 2 - 0.006;
 
   switch (spec.symbolKind) {
+    case 'bed':
+      addBox(group, pickId, [w, 0.18, d], [0, 0.09, 0], '#a8a29e');
+      addBox(group, pickId, [w * 0.92, 0.18, d * 0.78], [0, 0.28, d * 0.06], '#e7e5e4');
+      addBox(group, pickId, [w * 0.42, 0.12, d * 0.2], [-w * 0.24, 0.45, -d * 0.34], '#f8fafc');
+      addBox(group, pickId, [w * 0.42, 0.12, d * 0.2], [w * 0.24, 0.45, -d * 0.34], '#f8fafc');
+      addBox(group, pickId, [w, 0.85, 0.08], [0, 0.42, -d * 0.48], '#8d6e63');
+      break;
+    case 'wardrobe': {
+      addBox(group, pickId, [w, h, d], [0, h / 2, 0], spec.color, 0.78, 0.02);
+      const bayCount = Math.max(2, Math.min(5, Math.round(w / 0.55)));
+      for (let i = 1; i < bayCount; i += 1) {
+        const x = -w / 2 + (w * i) / bayCount;
+        addBox(group, pickId, [0.012, h * 0.9, 0.018], [x, h * 0.5, frontZ], '#8b7355');
+      }
+      for (let i = 0; i < bayCount; i += 1) {
+        const x = -w / 2 + (w * (i + 0.5)) / bayCount;
+        addBox(group, pickId, [0.035, h * 0.22, 0.022], [x, h * 0.52, frontZ], '#64748b');
+      }
+      break;
+    }
+    case 'lamp':
+      addCylinder(group, pickId, Math.min(w, d) * 0.32, 0.04, [0, 0.02, 0], '#78716c');
+      addCylinder(group, pickId, 0.025, h * 0.72, [0, h * 0.36, 0], '#71717a');
+      addCone(group, pickId, Math.min(w, d) * 0.34, h * 0.26, [0, h * 0.86, 0], '#fde68a');
+      break;
+    case 'rug':
+      addBox(group, pickId, [w, Math.max(h, 0.025), d], [0, Math.max(h, 0.025) / 2, 0], spec.color);
+      addBox(
+        group,
+        pickId,
+        [w * 0.82, Math.max(h, 0.025) + 0.004, d * 0.72],
+        [0, Math.max(h, 0.025) + 0.006, 0],
+        '#cbd5e1',
+      );
+      break;
     case 'fridge':
       addBox(group, pickId, [w, h, d], [0, h / 2, 0], spec.color, 0.45, 0.08);
       addBox(group, pickId, [0.012, h * 0.82, 0.018], [w * 0.18, h * 0.53, frontZ], '#64748b');
@@ -526,6 +701,10 @@ function addPlacedAssetMeshes(
     case 'counter':
       addBox(group, pickId, [w, h * 0.88, d], [0, (h * 0.88) / 2, 0], spec.color);
       addBox(group, pickId, [w, 0.05, d * 1.04], [0, h * 0.9 + 0.025, 0], '#78716c');
+      for (let i = 1; i < Math.max(2, Math.min(6, Math.round(w / 0.6))); i += 1) {
+        const x = -w / 2 + (w * i) / Math.max(2, Math.min(6, Math.round(w / 0.6)));
+        addBox(group, pickId, [0.012, h * 0.66, 0.018], [x, h * 0.43, frontZ], '#a8a29e');
+      }
       break;
     case 'sofa':
       addBox(group, pickId, [w, h * 0.42, d * 0.72], [0, h * 0.21, d * 0.08], spec.color);
@@ -543,6 +722,11 @@ function addPlacedAssetMeshes(
     case 'chair':
       addBox(group, pickId, [w, h * 0.12, d * 0.72], [0, h * 0.46, 0], spec.color);
       addBox(group, pickId, [w, h * 0.55, d * 0.12], [0, h * 0.7, d * 0.38], spec.color);
+      for (const x of [-w * 0.34, w * 0.34]) {
+        for (const z of [-d * 0.24, d * 0.24]) {
+          addBox(group, pickId, [0.045, h * 0.46, 0.045], [x, h * 0.23, z], '#78716c');
+        }
+      }
       break;
     case 'toilet':
       addBox(group, pickId, [w * 0.82, h * 0.28, d * 0.32], [0, h * 0.66, -d * 0.32], spec.color);

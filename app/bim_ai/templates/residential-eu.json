@@ -211,6 +211,150 @@
         ],
         "description": "Lounge chair with recognizable plan and 3D seating proxy."
       },
+      "asset-bedroom-queen-bed-1800": {
+        "kind": "asset_library_entry",
+        "id": "asset-bedroom-queen-bed-1800",
+        "assetKind": "block_2d",
+        "name": "Queen Bed 1800x2100",
+        "category": "furniture",
+        "tags": ["bed", "queen", "bedroom", "furniture"],
+        "disciplineTags": ["arch"],
+        "thumbnailKind": "schematic_plan",
+        "thumbnailWidthMm": 1800,
+        "thumbnailHeightMm": 2100,
+        "planSymbolKind": "bed",
+        "renderProxyKind": "bed",
+        "paramSchema": [
+          {
+            "key": "widthMm",
+            "kind": "mm",
+            "default": 1800,
+            "constraints": { "min": 900, "max": 2200 }
+          },
+          {
+            "key": "depthMm",
+            "kind": "mm",
+            "default": 2100,
+            "constraints": { "min": 1900, "max": 2300 }
+          },
+          { "key": "heightMm", "kind": "mm", "default": 600 }
+        ],
+        "description": "Resizable bedroom bed asset with recognizable pillows, mattress, and headboard plan/3D proxy."
+      },
+      "asset-bedroom-single-bed-900": {
+        "kind": "asset_library_entry",
+        "id": "asset-bedroom-single-bed-900",
+        "assetKind": "block_2d",
+        "name": "Single Bed 900x2000",
+        "category": "furniture",
+        "tags": ["bed", "single", "bedroom", "furniture"],
+        "disciplineTags": ["arch"],
+        "thumbnailKind": "schematic_plan",
+        "thumbnailWidthMm": 900,
+        "thumbnailHeightMm": 2000,
+        "planSymbolKind": "bed",
+        "renderProxyKind": "bed",
+        "paramSchema": [
+          {
+            "key": "widthMm",
+            "kind": "mm",
+            "default": 900,
+            "constraints": { "min": 800, "max": 1400 }
+          },
+          {
+            "key": "depthMm",
+            "kind": "mm",
+            "default": 2000,
+            "constraints": { "min": 1900, "max": 2200 }
+          },
+          { "key": "heightMm", "kind": "mm", "default": 560 }
+        ],
+        "description": "Compact single bed for secondary bedrooms and guestrooms."
+      },
+      "asset-bedroom-wardrobe-1800": {
+        "kind": "asset_library_entry",
+        "id": "asset-bedroom-wardrobe-1800",
+        "assetKind": "block_2d",
+        "name": "Wardrobe 1800x620",
+        "category": "casework",
+        "tags": ["wardrobe", "closet", "storage", "bedroom"],
+        "disciplineTags": ["arch"],
+        "thumbnailKind": "schematic_plan",
+        "thumbnailWidthMm": 1800,
+        "thumbnailHeightMm": 620,
+        "planSymbolKind": "wardrobe",
+        "renderProxyKind": "wardrobe",
+        "paramSchema": [
+          {
+            "key": "widthMm",
+            "kind": "mm",
+            "default": 1800,
+            "constraints": { "min": 900, "max": 3200 }
+          },
+          {
+            "key": "depthMm",
+            "kind": "mm",
+            "default": 620,
+            "constraints": { "min": 550, "max": 700 }
+          },
+          { "key": "heightMm", "kind": "mm", "default": 2200 }
+        ],
+        "description": "Bedroom wardrobe/casework asset with bay divisions and handles in plan and 3D."
+      },
+      "asset-living-floor-lamp": {
+        "kind": "asset_library_entry",
+        "id": "asset-living-floor-lamp",
+        "assetKind": "block_2d",
+        "name": "Floor Lamp 1700",
+        "category": "furniture",
+        "tags": ["lamp", "light", "floor lamp", "living"],
+        "disciplineTags": ["arch"],
+        "thumbnailKind": "schematic_plan",
+        "thumbnailWidthMm": 450,
+        "thumbnailHeightMm": 450,
+        "planSymbolKind": "lamp",
+        "renderProxyKind": "lamp",
+        "paramSchema": [
+          { "key": "diameterMm", "kind": "mm", "default": 450 },
+          {
+            "key": "heightMm",
+            "kind": "mm",
+            "default": 1700,
+            "constraints": { "min": 1200, "max": 2100 }
+          }
+        ],
+        "description": "Freestanding floor lamp with circular plan symbol and lightweight 3D shade proxy."
+      },
+      "asset-living-area-rug-2400": {
+        "kind": "asset_library_entry",
+        "id": "asset-living-area-rug-2400",
+        "assetKind": "block_2d",
+        "name": "Area Rug 2400x1700",
+        "category": "furniture",
+        "tags": ["rug", "carpet", "living", "bedroom"],
+        "disciplineTags": ["arch"],
+        "thumbnailKind": "schematic_plan",
+        "thumbnailWidthMm": 2400,
+        "thumbnailHeightMm": 1700,
+        "planSymbolKind": "rug",
+        "renderProxyKind": "rug",
+        "paramSchema": [
+          {
+            "key": "widthMm",
+            "kind": "mm",
+            "default": 2400,
+            "constraints": { "min": 1200, "max": 4000 }
+          },
+          {
+            "key": "depthMm",
+            "kind": "mm",
+            "default": 1700,
+            "constraints": { "min": 900, "max": 3000 }
+          },
+          { "key": "heightMm", "kind": "mm", "default": 25 }
+        ],
+        "description": "Area rug asset for living and bedroom furniture layouts."
+      },
       "asset-bathroom-shower-900": {
         "kind": "asset_library_entry",
         "id": "asset-bathroom-shower-900",

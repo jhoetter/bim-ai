@@ -2721,6 +2721,10 @@ class AssetParamEntry(BaseModel):
 
 
 AssetSymbolKind = Literal[
+    "bed",
+    "wardrobe",
+    "lamp",
+    "rug",
     "fridge",
     "oven",
     "sink",

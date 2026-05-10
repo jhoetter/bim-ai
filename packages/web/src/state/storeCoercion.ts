@@ -1599,6 +1599,10 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
     const isAssetSymbolKind = (
       v: unknown,
     ): v is Extract<Element, { kind: 'asset_library_entry' }>['planSymbolKind'] =>
+      v === 'bed' ||
+      v === 'wardrobe' ||
+      v === 'lamp' ||
+      v === 'rug' ||
       v === 'fridge' ||
       v === 'oven' ||
       v === 'sink' ||

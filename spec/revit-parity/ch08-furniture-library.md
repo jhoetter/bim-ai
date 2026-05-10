@@ -11,7 +11,7 @@ Source segment: `04:35:00 – 04:38:48`
 **Screenshot:**
 ![Furniture Library project](file:///Users/jhoetter/Desktop/Revit%20Specs/0735_04-36-52.png)
 
-**bim-ai status:** ❌ Not available — bim-ai has a `family_catalog_format.py` and `family_catalogs/` directory suggesting a catalog concept, but no interactive warehouse-style `.rvt` project library workflow.
+**bim-ai status:** 🟡 Partial — bim-ai has a project-local `asset_library_entry` catalog surfaced by the Component tool, plus the `residential-eu` starter template now seeds a built-in furniture/fixture library: sofa, chair, dining table, counters, fridge, sink, toilet, shower, queen bed, single bed, wardrobe, floor lamp, and area rug. These entries carry searchable tags, param schemas, schematic thumbnails, and explicit plan/3D proxy kinds for recognizable placement. Missing: an interactive warehouse-style project view where users visually browse, copy, and paste family configurations between projects; no `.rvt`-style standalone library file workflow.
 
 ---
 

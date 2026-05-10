@@ -908,7 +908,7 @@ function addPlacedAssetPlanSymbols(
 
   for (const asset of placedAssets) {
     const entry = assetEntries[asset.assetId];
-    holder.add(makePlacedAssetPlanSymbol(asset, entry, { y: PLAN_Y + 0.005 }));
+    holder.add(makePlacedAssetPlanSymbol(asset, entry, { y: PLAN_Y + 0.045 }));
   }
 }
 

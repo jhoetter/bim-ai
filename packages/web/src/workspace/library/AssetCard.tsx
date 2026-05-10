@@ -16,7 +16,130 @@ function SchematicThumbnail({ entry }: { entry: AssetLibraryEntry }): ReactEleme
   const symbolKind = entry.planSymbolKind ?? entry.renderProxyKind;
 
   let body: ReactElement;
-  if (symbolKind === 'fridge') {
+  if (symbolKind === 'bed') {
+    body = (
+      <>
+        <rect
+          x={4}
+          y={4}
+          width={w - 8}
+          height={h - 8}
+          fill="none"
+          stroke="var(--draft-cut)"
+          strokeWidth={0.5}
+        />
+        <rect
+          x={w * 0.16}
+          y={h * 0.14}
+          width={w * 0.28}
+          height={h * 0.18}
+          fill="none"
+          stroke="var(--draft-cut)"
+          strokeWidth={0.25}
+        />
+        <rect
+          x={w * 0.56}
+          y={h * 0.14}
+          width={w * 0.28}
+          height={h * 0.18}
+          fill="none"
+          stroke="var(--draft-cut)"
+          strokeWidth={0.25}
+        />
+        <line
+          x1={w * 0.12}
+          y1={h * 0.38}
+          x2={w * 0.88}
+          y2={h * 0.86}
+          stroke="var(--draft-cut)"
+          strokeWidth={0.25}
+        />
+      </>
+    );
+  } else if (symbolKind === 'wardrobe') {
+    body = (
+      <>
+        <rect
+          x={4}
+          y={4}
+          width={w - 8}
+          height={h - 8}
+          fill="none"
+          stroke="var(--draft-cut)"
+          strokeWidth={0.5}
+        />
+        <line
+          x1={w / 2}
+          y1={4}
+          x2={w / 2}
+          y2={h - 4}
+          stroke="var(--draft-cut)"
+          strokeWidth={0.25}
+        />
+        <circle
+          cx={w * 0.42}
+          cy={h * 0.62}
+          r={Math.min(w, h) * 0.03}
+          fill="none"
+          stroke="var(--draft-cut)"
+          strokeWidth={0.25}
+        />
+        <circle
+          cx={w * 0.58}
+          cy={h * 0.62}
+          r={Math.min(w, h) * 0.03}
+          fill="none"
+          stroke="var(--draft-cut)"
+          strokeWidth={0.25}
+        />
+      </>
+    );
+  } else if (symbolKind === 'lamp') {
+    body = (
+      <>
+        <circle
+          cx={w / 2}
+          cy={h / 2}
+          r={Math.min(w, h) * 0.34}
+          fill="none"
+          stroke="var(--draft-cut)"
+          strokeWidth={0.5}
+        />
+        <circle
+          cx={w / 2}
+          cy={h / 2}
+          r={Math.min(w, h) * 0.12}
+          fill="none"
+          stroke="var(--draft-cut)"
+          strokeWidth={0.25}
+        />
+      </>
+    );
+  } else if (symbolKind === 'rug') {
+    body = (
+      <>
+        <rect
+          x={4}
+          y={4}
+          width={w - 8}
+          height={h - 8}
+          rx={Math.min(w, h) * 0.05}
+          fill="none"
+          stroke="var(--draft-cut)"
+          strokeWidth={0.5}
+        />
+        <rect
+          x={w * 0.12}
+          y={h * 0.16}
+          width={w * 0.76}
+          height={h * 0.68}
+          fill="none"
+          stroke="var(--draft-cut)"
+          strokeWidth={0.25}
+        />
+      </>
+    );
+  } else if (symbolKind === 'fridge') {
     body = (
       <>
         <rect
