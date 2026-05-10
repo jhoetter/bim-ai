@@ -57,7 +57,7 @@ The Family Editor is a sub-environment within Revit for creating parametric comp
 **Screenshot:**
 ![Pick Lines with Lock](file:///Users/jhoetter/Desktop/Revit%20Specs/0619_03-49-44.png)
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** 🟡 Partial — external catalog families can now be loaded into the current project from `FamilyLibraryPanel.tsx` via a dedicated Load action. `Workspace.tsx` persists them as project `family_type` elements with `catalogSource` provenance using the existing `upsertFamilyType` command, while the separate Place action still loads and immediately enters placement. Missing: true Family Editor `.rfa` save/load, multi-open-project target selection, and overwrite/parameter-values dialogs.
 
 ---
 
@@ -86,6 +86,7 @@ The Family Editor is a sub-environment within Revit for creating parametric comp
 ## F-055 · Type vs. Instance Parameters
 
 **What it does:** When creating a parameter, "Parameter Data" toggles between **Type** and **Instance**:
+
 - **Type**: same value for all family instances of the same type. Changing it affects every placed instance of that type simultaneously.
 - **Instance**: each placed instance can have a different value, edited individually in the Properties palette.
 
@@ -134,6 +135,7 @@ Example: door Width is a Type parameter; Sill Height is an Instance parameter.
 ## F-059 · Family Element Visibility Settings
 
 **What it does:** Selecting a family element and clicking "Visibility Settings" in the Modify ribbon opens a dialog where you control:
+
 - **Detail Levels**: which levels (Coarse, Medium, Fine) show this element.
 - **View types**: Plan/RCP, Front/Back, Left/Right, 3D Views/Elevations/Sections.
 
