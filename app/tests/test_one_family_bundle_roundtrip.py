@@ -17,7 +17,7 @@ from pathlib import Path
 import pytest
 
 from bim_ai.document import Document
-from bim_ai.elements import LevelElem, ProjectBasePointElem
+from bim_ai.elements import LevelElem, ProjectBasePointElem, RoofOpeningElem
 from bim_ai.engine import apply_inplace, command_adapter
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -53,7 +53,7 @@ def _apply_all(doc: Document, raw_cmds: list[dict]) -> None:
 
 
 def test_one_family_bundle_commits_minimal_scaffolding() -> None:
-    """The cleared bundle should still author the project base point + 2 levels."""
+    """The canonical target-house bundle should author the baseline model spine."""
     cmds = _load_cli_bundle_commands()
     doc = Document(revision=1, elements={})  # type: ignore[arg-type]
     _apply_all(doc, cmds)
@@ -68,3 +68,15 @@ def test_one_family_bundle_commits_minimal_scaffolding() -> None:
     upper = doc.elements.get("hf-lvl-upper")
     assert isinstance(upper, LevelElem)
     assert upper.elevation_mm == 3000
+
+
+def test_one_family_bundle_authors_roof_cutout_semantics() -> None:
+    """The target-house sketch's right-slope roof cutout is a first-class roof opening."""
+    cmds = _load_cli_bundle_commands()
+    doc = Document(revision=1, elements={})  # type: ignore[arg-type]
+    _apply_all(doc, cmds)
+
+    cutout = doc.elements.get("hf-roof-terrace-cutout")
+    assert isinstance(cutout, RoofOpeningElem)
+    assert cutout.host_roof_id == "hf-roof-main"
+    assert len(cutout.boundary_mm) == 4
