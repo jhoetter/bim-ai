@@ -85,8 +85,11 @@ describe('<FamilyLibraryPanel /> — FL-06', () => {
       isBuiltIn: false,
     };
     const { getByTestId } = setup({ [customDoor.id]: customDoor });
-    expect(getByTestId(`family-row-${customDoor.id}`)).toBeTruthy();
+    const row = getByTestId(`family-row-${customDoor.id}`);
+    expect(row).toBeTruthy();
     expect(getByTestId(`family-row-${customDoor.id}-custom-badge`)).toBeTruthy();
+    expect(row.querySelector('[data-testid="family-type-rendered-thumbnail"]')).toBeTruthy();
+    expect(row.querySelector('svg')).toBeNull();
   });
 
   it('shows in-project interior assets as component families', () => {

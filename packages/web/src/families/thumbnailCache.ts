@@ -21,6 +21,7 @@ import { resolveFamilyGeometry, type FamilyCatalogLookup } from './familyResolve
 import type { FamilyDefinition } from './types';
 import { makeLayeredWallMesh } from '../viewport/meshBuilders.layeredWall';
 import { makeFloorSlabMesh, makeRoofMassMesh } from '../viewport/meshBuilders';
+import { makePlacedAssetMesh } from '../viewport/placedAssetRendering';
 
 const SIZE = 128;
 const PLACEHOLDER_DATA_URL =
@@ -58,6 +59,14 @@ export type AssemblyTypeThumbnailInput = {
   id: string;
   name: string;
   layers: WallThumbnailLayerInput[];
+};
+
+export type FamilyTypeThumbnailInput = {
+  id: string;
+  name: string;
+  familyId: string;
+  discipline: Extract<Element, { kind: 'family_type' }>['discipline'];
+  parameters: Record<string, unknown>;
 };
 
 function ensureRenderer(): THREE.WebGLRenderer | null {
@@ -109,10 +118,8 @@ function frameGroup(group: THREE.Object3D, scene: THREE.Scene): THREE.Perspectiv
   return camera;
 }
 
-function buildThumbnailScene(typeId: string): THREE.Group | null {
-  const builtin = getTypeById(typeId);
-  if (!builtin) return null;
-  const family = getFamilyById(builtin.familyId);
+function buildFamilyTypeThumbnailScene(input: FamilyTypeThumbnailInput): THREE.Group | null {
+  const family = getFamilyById(input.familyId);
   if (!family) return null;
 
   const fakeWall = {
@@ -126,33 +133,33 @@ function buildThumbnailScene(typeId: string): THREE.Group | null {
     heightMm: 2400,
   } as Extract<Element, { kind: 'wall' }>;
 
-  if (builtin.discipline === 'door') {
+  if (input.discipline === 'door') {
     const door = {
       kind: 'door',
       id: 'thumb-door',
       name: 'thumb-door',
       wallId: 'thumb-wall',
       alongT: 0.5,
-      widthMm: Number(builtin.parameters.leafWidthMm ?? 900),
-      familyTypeId: builtin.id,
+      widthMm: Number(input.parameters.leafWidthMm ?? 900),
+      familyTypeId: input.id,
     } as Extract<Element, { kind: 'door' }>;
     return buildDoorGeometry({ door, wall: fakeWall, elevM: 0, paint: null, familyDef: family });
   }
-  if (builtin.discipline === 'window') {
+  if (input.discipline === 'window') {
     const win = {
       kind: 'window',
       id: 'thumb-window',
       name: 'thumb-window',
       wallId: 'thumb-wall',
       alongT: 0.5,
-      widthMm: Number(builtin.parameters.widthMm ?? 1200),
-      heightMm: Number(builtin.parameters.heightMm ?? 1500),
-      sillHeightMm: Number(builtin.parameters.sillMm ?? 900),
-      familyTypeId: builtin.id,
+      widthMm: Number(input.parameters.widthMm ?? 1200),
+      heightMm: Number(input.parameters.heightMm ?? 1500),
+      sillHeightMm: Number(input.parameters.sillMm ?? 900),
+      familyTypeId: input.id,
     } as Extract<Element, { kind: 'window' }>;
     return buildWindowGeometry({ win, wall: fakeWall, elevM: 0, paint: null, familyDef: family });
   }
-  if (builtin.discipline === 'stair') {
+  if (input.discipline === 'stair') {
     const stair = {
       kind: 'stair',
       id: 'thumb-stair',
@@ -161,10 +168,10 @@ function buildThumbnailScene(typeId: string): THREE.Group | null {
       topLevelId: 'thumb-top',
       runStartMm: { xMm: 0, yMm: 0 },
       runEndMm: { xMm: 3000, yMm: 0 },
-      widthMm: Number(builtin.parameters.widthMm ?? 1200),
-      riserMm: Number(builtin.parameters.riserMm ?? 175),
-      treadMm: Number(builtin.parameters.treadMm ?? 280),
-      overrideParams: { familyTypeId: builtin.id },
+      widthMm: Number(input.parameters.widthMm ?? 1200),
+      riserMm: Number(input.parameters.riserMm ?? 175),
+      treadMm: Number(input.parameters.treadMm ?? 280),
+      overrideParams: { familyTypeId: input.id },
     } as Extract<Element, { kind: 'stair' }>;
     return buildStairGeometry({
       stair,
@@ -174,7 +181,7 @@ function buildThumbnailScene(typeId: string): THREE.Group | null {
       familyDef: family,
     });
   }
-  if (builtin.discipline === 'railing') {
+  if (input.discipline === 'railing') {
     const railing = {
       kind: 'railing',
       id: 'thumb-railing',
@@ -183,8 +190,8 @@ function buildThumbnailScene(typeId: string): THREE.Group | null {
         { xMm: 0, yMm: 0 },
         { xMm: 2400, yMm: 0 },
       ],
-      guardHeightMm: Number(builtin.parameters.guardHeightMm ?? 1050),
-      overrideParams: { familyTypeId: builtin.id },
+      guardHeightMm: Number(input.parameters.guardHeightMm ?? 1050),
+      overrideParams: { familyTypeId: input.id },
     } as Extract<Element, { kind: 'railing' }>;
     return buildRailingGeometry({
       railing,
@@ -195,6 +202,74 @@ function buildThumbnailScene(typeId: string): THREE.Group | null {
     });
   }
   return null;
+}
+
+function inferAssetProxyKind(input: FamilyTypeThumbnailInput) {
+  const text = `${input.id} ${input.name} ${input.familyId}`.toLowerCase().replace(/[-_:]/g, ' ');
+  if (/\b(bed|mattress|queen|king|single\s+bed|double\s+bed)\b/.test(text)) return 'bed';
+  if (/\b(wardrobe|closet|robe|storage|cupboard)\b/.test(text)) return 'wardrobe';
+  if (/\b(lamp|light|floor\s+lamp|table\s+lamp)\b/.test(text)) return 'lamp';
+  if (/\b(rug|carpet|mat)\b/.test(text)) return 'rug';
+  if (/\b(fridge|refrigerator|freezer)\b/.test(text)) return 'fridge';
+  if (/\b(oven|cooker|range|hob|cooktop)\b/.test(text)) return 'oven';
+  if (/\b(sink|basin|washbasin)\b/.test(text)) return 'sink';
+  if (/\b(counter|cabinet|casework|island|worktop)\b/.test(text)) return 'counter';
+  if (/\b(sofa|couch|settee)\b/.test(text)) return 'sofa';
+  if (/\b(table|desk)\b/.test(text)) return 'table';
+  if (/\b(chair|armchair|lounge\s+chair)\b/.test(text)) return 'chair';
+  if (/\b(toilet|wc)\b/.test(text)) return 'toilet';
+  if (/\b(bath|bathtub|tub)\b/.test(text)) return 'bath';
+  if (/\b(shower)\b/.test(text)) return 'shower';
+  return 'generic';
+}
+
+function buildFamilyTypeFallbackAssetThumbnailScene(input: FamilyTypeThumbnailInput): THREE.Group {
+  const proxyKind = inferAssetProxyKind(input);
+  return makePlacedAssetMesh(
+    {
+      kind: 'placed_asset',
+      id: `thumbnail-${input.id}`,
+      name: input.name,
+      assetId: input.id,
+      levelId: 'thumbnail-level',
+      positionMm: { xMm: 0, yMm: 0 },
+      rotationDeg: -25,
+      paramValues: {},
+    },
+    {
+      'thumbnail-level': {
+        kind: 'level',
+        id: 'thumbnail-level',
+        name: 'Preview',
+        elevationMm: 0,
+      },
+      [input.id]: {
+        kind: 'asset_library_entry',
+        id: input.id,
+        assetKind: 'family_instance',
+        name: input.name,
+        tags: [input.discipline, input.familyId],
+        category: 'furniture',
+        disciplineTags: [],
+        thumbnailKind: 'rendered_3d',
+        planSymbolKind: proxyKind,
+        renderProxyKind: proxyKind,
+      },
+    },
+    null,
+  );
+}
+
+function buildThumbnailScene(typeId: string): THREE.Group | null {
+  const builtin = getTypeById(typeId);
+  if (!builtin) return null;
+  return buildFamilyTypeThumbnailScene({
+    id: builtin.id,
+    name: builtin.name,
+    familyId: builtin.familyId,
+    discipline: builtin.discipline,
+    parameters: builtin.parameters,
+  });
 }
 
 function normalizeWallLayerFunction(
@@ -458,6 +533,32 @@ async function renderAssemblyTypeThumbnail(
   }
 }
 
+async function renderFamilyTypeThumbnail(input: FamilyTypeThumbnailInput): Promise<string> {
+  const r = ensureRenderer();
+  if (!r) return PLACEHOLDER_DATA_URL;
+
+  const group =
+    buildFamilyTypeThumbnailScene(input) ?? buildFamilyTypeFallbackAssetThumbnailScene(input);
+  const scene = new THREE.Scene();
+  scene.add(group);
+  const camera = frameGroup(group, scene);
+  try {
+    r.render(scene, camera);
+    return await blobUrlFromCanvas(r.domElement);
+  } catch {
+    return PLACEHOLDER_DATA_URL;
+  } finally {
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh || obj instanceof THREE.LineSegments) {
+        obj.geometry?.dispose?.();
+        const mat = obj.material;
+        if (Array.isArray(mat)) mat.forEach((m) => m.dispose?.());
+        else mat?.dispose?.();
+      }
+    });
+  }
+}
+
 export async function getThumbnail(typeId: string): Promise<string> {
   const cached = cache.get(typeId);
   if (cached) return cached;
@@ -472,6 +573,30 @@ export async function getThumbnail(typeId: string): Promise<string> {
       return url;
     });
   inFlight.set(typeId, promise);
+  return promise;
+}
+
+function familyTypeThumbnailCacheKey(input: FamilyTypeThumbnailInput): string {
+  return `family_type:${input.id}:${input.familyId}:${input.discipline}:${JSON.stringify(
+    input.parameters,
+  )}`;
+}
+
+export async function getFamilyTypeThumbnail(input: FamilyTypeThumbnailInput): Promise<string> {
+  const cacheKey = familyTypeThumbnailCacheKey(input);
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+  const pending = inFlight.get(cacheKey);
+  if (pending) return pending;
+
+  const promise = renderFamilyTypeThumbnail(input)
+    .catch(() => PLACEHOLDER_DATA_URL)
+    .then((url) => {
+      cache.set(cacheKey, url);
+      inFlight.delete(cacheKey);
+      return url;
+    });
+  inFlight.set(cacheKey, promise);
   return promise;
 }
 

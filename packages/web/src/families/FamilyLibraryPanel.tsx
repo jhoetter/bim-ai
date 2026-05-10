@@ -20,11 +20,13 @@ import type { AssetCategory, AssetLibraryEntry, Element, FamilyDiscipline } from
 import { BUILT_IN_FAMILIES } from './familyCatalog';
 import { BUILT_IN_WALL_TYPES } from './wallTypeCatalog';
 import {
+  getFamilyTypeThumbnail,
   getFloorTypeThumbnail,
   getThumbnail,
   getRoofTypeThumbnail,
   getWallTypeThumbnail,
   PLACEHOLDER_THUMBNAIL,
+  type FamilyTypeThumbnailInput,
   type WallThumbnailLayerInput,
 } from './thumbnailCache';
 import { RenderedAssetThumbnail } from '../workspace/library/AssetCard';
@@ -132,6 +134,7 @@ interface CatalogEntry {
   catalogLabel?: string;
   catalogPlacement?: ExternalCatalogPlacement;
   assetEntry?: AssetLibraryEntry;
+  familyTypeThumbnail?: Omit<FamilyTypeThumbnailInput, 'id' | 'name'>;
   wallThumbnail?: {
     layers: WallThumbnailLayerInput[];
     basisLine?: 'center' | 'face_interior' | 'face_exterior';
@@ -225,6 +228,11 @@ function buildCatalogByDiscipline(
         custom: !cs,
         kind: placeKindForFamilyDiscipline(el.discipline),
         catalogLabel: cs ? cs.catalogId : undefined,
+        familyTypeThumbnail: {
+          familyId: el.familyId,
+          discipline: el.discipline,
+          parameters: el.parameters,
+        },
       });
     } else if (el.kind === 'wall_type') {
       const bucket = (out['wall_type'] ??= []);
@@ -505,6 +513,46 @@ function TypeThumbnail({ typeId, name }: { typeId: string; name: string }): JSX.
   );
 }
 
+function FamilyTypeThumbnail({
+  id,
+  name,
+  thumbnail,
+}: {
+  id: string;
+  name: string;
+  thumbnail: NonNullable<CatalogEntry['familyTypeThumbnail']>;
+}): JSX.Element {
+  const [src, setSrc] = useState<string>(PLACEHOLDER_THUMBNAIL);
+
+  useEffect(() => {
+    let cancelled = false;
+    void getFamilyTypeThumbnail({
+      id,
+      name,
+      familyId: thumbnail.familyId,
+      discipline: thumbnail.discipline,
+      parameters: thumbnail.parameters,
+    }).then((url) => {
+      if (!cancelled) setSrc(url);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, name, thumbnail]);
+
+  return (
+    <img
+      src={src}
+      alt={name}
+      width={64}
+      height={64}
+      data-testid="family-type-rendered-thumbnail"
+      className="rounded border border-border bg-surface-muted"
+      style={{ objectFit: 'cover' }}
+    />
+  );
+}
+
 function WallTypeThumbnail({
   id,
   name,
@@ -592,6 +640,11 @@ function CatalogThumbnail({ entry }: { entry: CatalogEntry }): JSX.Element {
   }
   if (entry.kind === 'wall_type' && entry.wallThumbnail) {
     return <WallTypeThumbnail id={entry.id} name={entry.name} thumbnail={entry.wallThumbnail} />;
+  }
+  if (entry.familyTypeThumbnail) {
+    return (
+      <FamilyTypeThumbnail id={entry.id} name={entry.name} thumbnail={entry.familyTypeThumbnail} />
+    );
   }
   if ((entry.kind === 'floor_type' || entry.kind === 'roof_type') && entry.assemblyThumbnail) {
     return (
