@@ -2,7 +2,7 @@ import type { JSX } from 'react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import type { Element } from '@bim-ai/core';
+import type { Element, ParamSchemaEntry } from '@bim-ai/core';
 
 import { AdvisorPanel } from '../advisor/AdvisorPanel';
 import { buildPlanGridDatumInspectorLine } from './readouts';
@@ -535,6 +535,14 @@ export function WorkspaceRightRail({
                 ) : el.kind === 'placed_asset' ? (
                   <PlacedAssetInspector
                     el={el as Extract<Element, { kind: 'placed_asset' }>}
+                    assetEntry={
+                      elementsById[(el as Extract<Element, { kind: 'placed_asset' }>).assetId]
+                        ?.kind === 'asset_library_entry'
+                        ? (elementsById[
+                            (el as Extract<Element, { kind: 'placed_asset' }>).assetId
+                          ] as Extract<Element, { kind: 'asset_library_entry' }>)
+                        : undefined
+                    }
                     onSemanticCommand={onSemanticCommand}
                   />
                 ) : el.kind === 'column' ? (
@@ -950,13 +958,33 @@ function InspectorEvidenceFor({
 
 function PlacedAssetInspector({
   el,
+  assetEntry,
   onSemanticCommand,
 }: {
   el: Extract<Element, { kind: 'placed_asset' }>;
+  assetEntry?: Extract<Element, { kind: 'asset_library_entry' }>;
   onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
 }): JSX.Element {
   const dxRef = useRef<HTMLInputElement | null>(null);
   const dyRef = useRef<HTMLInputElement | null>(null);
+  const params = assetEntry?.paramSchema ?? [];
+
+  function currentParamValue(param: ParamSchemaEntry): unknown {
+    return el.paramValues && param.key in el.paramValues
+      ? el.paramValues[param.key]
+      : param.default;
+  }
+
+  function commitParamValue(param: ParamSchemaEntry, value: unknown): void {
+    const next = { ...(el.paramValues ?? {}), [param.key]: value };
+    void onSemanticCommand({
+      type: 'updateElementProperty',
+      elementId: el.id,
+      key: 'paramValues',
+      value: next,
+    });
+  }
+
   return (
     <div className="space-y-2">
       <div className="text-[11px] font-semibold text-foreground">{el.name}</div>
@@ -991,6 +1019,24 @@ function PlacedAssetInspector({
           <span>°</span>
         </div>
       </div>
+      {params.length > 0 ? (
+        <div className="border-t border-border pt-2 space-y-2">
+          <div
+            className="text-[10px] font-semibold uppercase text-muted"
+            style={{ letterSpacing: '0.08em', opacity: 0.7 }}
+          >
+            Instance Parameters
+          </div>
+          {params.map((param) => (
+            <PlacedAssetParamField
+              key={param.key}
+              param={param}
+              value={currentParamValue(param)}
+              onCommit={(value) => commitParamValue(param, value)}
+            />
+          ))}
+        </div>
+      ) : null}
       <div className="border-t border-border pt-2 space-y-1">
         <div
           className="text-[10px] font-semibold uppercase text-muted"
@@ -1056,6 +1102,83 @@ function PlacedAssetInspector({
         </button>
       </div>
     </div>
+  );
+}
+
+function PlacedAssetParamField({
+  param,
+  value,
+  onCommit,
+}: {
+  param: ParamSchemaEntry;
+  value: unknown;
+  onCommit: (value: unknown) => void;
+}): JSX.Element {
+  const label = param.kind === 'mm' ? `${param.key} (mm)` : param.key;
+  const fieldId = `inspector-asset-param-${param.key}`;
+
+  if (param.kind === 'bool') {
+    return (
+      <label className="flex items-center gap-2 text-xs text-muted">
+        <input
+          type="checkbox"
+          checked={Boolean(value)}
+          data-testid={fieldId}
+          onChange={(e) => onCommit(e.target.checked)}
+        />
+        {param.key}
+      </label>
+    );
+  }
+
+  if (param.kind === 'enum') {
+    const opts = Array.isArray(param.constraints) ? (param.constraints as string[]) : [];
+    return (
+      <label className="flex flex-col gap-1 text-xs text-muted">
+        {label}
+        <select
+          value={String(value ?? '')}
+          className="rounded border border-border bg-surface px-1 py-0.5 text-xs text-foreground"
+          data-testid={fieldId}
+          onChange={(e) => onCommit(e.target.value)}
+        >
+          {opts.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      </label>
+    );
+  }
+
+  if (param.kind === 'mm') {
+    return (
+      <label className="flex flex-col gap-1 text-xs text-muted">
+        {label}
+        <input
+          type="number"
+          step={25}
+          value={Number.isFinite(Number(value)) ? Number(value) : Number(param.default ?? 0)}
+          className="rounded border border-border bg-surface px-1 py-0.5 text-xs text-foreground"
+          data-testid={fieldId}
+          onChange={(e) => onCommit(Number(e.target.value))}
+        />
+      </label>
+    );
+  }
+
+  return (
+    <label className="flex flex-col gap-1 text-xs text-muted">
+      {label}
+      <input
+        type="text"
+        value={String(value ?? '')}
+        className="rounded border border-border bg-surface px-1 py-0.5 text-xs text-foreground"
+        data-testid={fieldId}
+        onChange={(e) => onCommit(e.target.value)}
+      />
+    </label>
   );
 }
 

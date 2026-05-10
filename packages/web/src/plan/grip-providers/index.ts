@@ -17,6 +17,7 @@ import { dimensionGripProvider } from './dimensionGripProvider';
 import { doorGripProvider } from './doorGripProvider';
 import { floorGripProvider } from './floorGripProvider';
 import { maskingRegionGripProvider } from './maskingRegionGripProvider';
+import { placedAssetGripProvider } from './placedAssetGripProvider';
 import { referencePlaneGripProvider } from './referencePlaneGripProvider';
 import { sectionCutGripProvider } from './sectionCutGripProvider';
 import { windowGripProvider } from './windowGripProvider';
@@ -28,6 +29,7 @@ export {
   doorGripProvider,
   floorGripProvider,
   maskingRegionGripProvider,
+  placedAssetGripProvider,
   referencePlaneGripProvider,
   sectionCutGripProvider,
   windowGripProvider,
@@ -55,6 +57,8 @@ export function gripsFor(element: Element, context: PlanContext = {}): GripDescr
       return dimensionGripProvider.grips(element, context);
     case 'reference_plane':
       return referencePlaneGripProvider.grips(element, context);
+    case 'placed_asset':
+      return placedAssetGripProvider.grips(element, context);
     default:
       return [];
   }

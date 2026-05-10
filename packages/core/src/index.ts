@@ -2670,6 +2670,7 @@ export type AssetSymbolKind =
   | 'toilet'
   | 'bath'
   | 'shower'
+  | 'bathroom_layout'
   | 'generic';
 
 /** One parameter definition in an asset's parametric schema. */

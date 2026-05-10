@@ -35,6 +35,9 @@ export let copyMultipleEnabled = true;
  * Exported so PlanCanvas can read it on click without a Zustand store change.
  */
 export let activeComponentAssetId: string | null = null;
+export function setActiveComponentAssetId(v: string | null): void {
+  activeComponentAssetId = v;
+}
 
 /**
  * Module-level pending rotation for the component placement tool.
@@ -335,9 +338,9 @@ export function OptionsBar(): JSX.Element | null {
           <span className="text-muted">Asset:</span>
           <select
             data-testid="options-bar-component-asset"
-            defaultValue=""
+            defaultValue={activeComponentAssetId ?? ''}
             onChange={(e) => {
-              activeComponentAssetId = e.target.value || null;
+              setActiveComponentAssetId(e.target.value || null);
             }}
             className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
             aria-label="Component asset"

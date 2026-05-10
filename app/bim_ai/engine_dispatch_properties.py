@@ -12,6 +12,7 @@ from bim_ai.engine import (
     LinkDxfElem,
     PlanDetailLevelPlan,
     PlanViewElem,
+    PlacedAssetElem,
     ProjectSettingsElem,
     RoofElem,
     RoofGeometryMode,
@@ -564,6 +565,23 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                 if next_level_id not in els or not isinstance(els[next_level_id], LevelElem):
                     raise ValueError("link_dxf levelId must reference an existing Level")
                 els[cmd.element_id] = el.model_copy(update={"level_id": next_level_id})
+            elif cmd.key == "paramValues" and isinstance(el, PlacedAssetElem):
+                raw_param_values = cmd.value
+                if raw_param_values in (None, ""):
+                    parsed_param_values = {}
+                elif isinstance(raw_param_values, str):
+                    try:
+                        parsed = json.loads(raw_param_values)
+                    except json.JSONDecodeError as exc:
+                        raise ValueError("paramValues must be a JSON object") from exc
+                    if not isinstance(parsed, dict):
+                        raise ValueError("paramValues must be a JSON object")
+                    parsed_param_values = dict(parsed)
+                elif isinstance(raw_param_values, dict):
+                    parsed_param_values = dict(raw_param_values)
+                else:
+                    raise ValueError("paramValues must be a JSON object")
+                els[cmd.element_id] = el.model_copy(update={"param_values": parsed_param_values})
             elif cmd.key == "areaScheme" and isinstance(el, AreaElem):
                 raw_area_scheme = str(cmd.value or "").strip()
                 if raw_area_scheme not in {"gross_building", "net", "rentable"}:
@@ -596,6 +614,7 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     "familyTypeId(door/window) | materialKey(door/window|wall) | "
                     "isCurtainWall(wall) | roofAttachmentId(wall) | wallTypeId(wall) | "
                     "heightMm(wall) | thicknessMm(wall) | "
+                    "paramValues(placed_asset JSON object) | "
                     "roofTypeId(roof) | roofGeometryMode(roof) | "
                     "sheetId(schedule) | titleBlock(sheet) | titleblockParametersPatch(sheet JSON object) supported in v2"
                 )

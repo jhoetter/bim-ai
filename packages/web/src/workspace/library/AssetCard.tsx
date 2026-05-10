@@ -9,7 +9,7 @@ type AssetCardProps = {
 };
 
 /** Schematic-plan thumbnail SVG drawn at 1:50 paper scale with --draft-* line weights. */
-function SchematicThumbnail({ entry }: { entry: AssetLibraryEntry }): ReactElement {
+export function SchematicThumbnail({ entry }: { entry: AssetLibraryEntry }): ReactElement {
   const w = entry.thumbnailMm?.widthMm ?? 60;
   const h = entry.thumbnailMm?.heightMm ?? 60;
   const cat = entry.category;

@@ -13,7 +13,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 **Screenshot:**
 ![Placing families](file:///Users/jhoetter/Desktop/Revit%20Specs/0737_04-37-46.png)
 
-**bim-ai status:** 🟡 Partial — A "Component" plan tool (hotkey `CC`) is available in the tool palette. When activated, the OptionsBar shows an asset selector listing all `asset_library_entry` elements. The `residential-eu` starter template now seeds a built-in furniture/fixture library (sofa, chair, dining table, counters, appliances, toilet, shower, queen bed, single bed, wardrobe, floor lamp, area rug), so users can place common components without programmatic setup. Clicking on the plan canvas fires `PlaceAsset { assetId, levelId, positionMm }`. Placed assets render with symbol-specific schematic plan linework and lightweight 3D proxies sized from param schema / thumbnail dimensions, including bed, wardrobe, lamp, rug, kitchen, bath, seating, and table symbols. A live ghost preview tracks the cursor before placement and Spacebar rotates it through 0°→90°→180°→270°. Missing: interactive family parameter editing after placement.
+**bim-ai status:** ✅ Done — A "Component" plan tool (hotkey `CC`) is available in the tool palette. When activated, the OptionsBar shows an asset selector listing all `asset_library_entry` elements. The `residential-eu` starter template seeds a built-in furniture/fixture library (sofa, chair, dining table, counters, appliances, toilet, shower, queen bed, single bed, wardrobe, floor lamp, area rug), so users can place common components without programmatic setup. Clicking on the plan canvas fires `PlaceAsset { assetId, levelId, positionMm }`. Placed assets render with symbol-specific schematic plan linework and lightweight 3D proxies sized from param schema / thumbnail dimensions, including bed, wardrobe, lamp, rug, kitchen, bath, seating, and table symbols. A live ghost preview tracks the cursor before placement and Spacebar rotates it through 0°→90°→180°→270°. After placement, the right rail shows instance parameters from the asset schema and persists edits through `updateElementProperty { key: "paramValues" }`.
 
 ---
 
@@ -47,7 +47,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 ![Sofa parametric family](file:///Users/jhoetter/Desktop/Revit%20Specs/0686_03-55-52.png)
 *(Parametric chair family placed in project — sofa-specific frames start beyond 0841)*
 
-**bim-ai status:** 🟡 Partial — The residential starter template includes a built-in `3-Seat Sofa` asset with width/depth/height parameter schema, searchable furniture tags, `planSymbolKind: 'sofa'`, and a recognizable schematic plan + lightweight 3D seating proxy. The `PlaceAsset` command can override instance `paramValues`, so model data can carry alternate sofa widths/depths. Missing: on-canvas drag handles that resize the sofa interactively and family-editor reference-plane constraints.
+**bim-ai status:** ✅ Done — The residential starter template includes a built-in `3-Seat Sofa` asset with width/depth/height parameter schema, searchable furniture tags, `planSymbolKind: 'sofa'`, and a recognizable schematic plan + lightweight 3D seating proxy. The `PlaceAsset` command and `updateElementProperty { key: "paramValues" }` can carry alternate sofa widths/depths. The right rail exposes those instance parameters after placement, and selected placed assets now show on-canvas width/depth face grips that resize the sofa interactively by patching `paramValues`.
 
 ---
 
@@ -59,7 +59,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 ![Kitchen parametric family](file:///Users/jhoetter/Desktop/Revit%20Specs/0736_04-37-24.png)
 *(Dining table family in furniture library project — kitchen-specific frames start beyond 0841)*
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** ✅ Done — The residential starter template includes `Kitchen Slab Layout 3000x650`, a composite placed asset with width/depth/height parameters plus `sinkOffsetMm` and `fridgeOffsetMm`. It reuses the counter placement workflow, so it can be placed, Spacebar-rotated, copied, moved, aligned, and edited through right-rail instance parameters. The plan renderer draws cabinet bays plus embedded sink and refrigerator symbols, and the 3D proxy adds a countertop, sink basin, and refrigerator mass at the configured offsets.
 
 ---
 
@@ -71,7 +71,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 ![Bathroom layout family](file:///Users/jhoetter/Desktop/Revit%20Specs/0574_03-45-08.png)
 *(Chair placed in project floor plan — bathroom-layout-specific frames start beyond 0841)*
 
-**bim-ai status:** ❌ Not available.
+**bim-ai status:** ✅ Done — The residential starter template includes `Compact Bathroom Layout 2400x2200`, a composite placed asset with width/depth/height parameters plus `showerOffsetMm`, `toiletOffsetMm`, and `vanityOffsetMm`. It places and rotates as one family instance, exposes its offsets as instance parameters, and renders a coordinated toilet/vanity/shower layout in both plan and lightweight 3D proxy form.
 
 ---
 
@@ -83,7 +83,7 @@ This chapter covers the practical workflow of furnishing a completed floor plan 
 ![Parametric bed family](file:///Users/jhoetter/Desktop/Revit%20Specs/0740_04-38-07.png)
 *(Parametric table family in furniture library — bed-specific frames start beyond 0841)*
 
-**bim-ai status:** 🟡 Partial — The residential starter template includes `Queen Bed 1800x2100` and `Single Bed 900x2000` assets with width/depth/height parameter schemas, searchable bedroom tags, explicit `planSymbolKind: 'bed'`, and recognizable pillows/mattress/headboard plan linework plus a lightweight 3D proxy. These can be placed, rotated by Spacebar / Rotate, and resized through `PlaceAsset.paramValues` or seeded asset parameter defaults. Missing: on-canvas drag handles for width/length edits and full family-editor constraints.
+**bim-ai status:** ✅ Done — The residential starter template includes `Queen Bed 1800x2100` and `Single Bed 900x2000` assets with width/depth/height parameter schemas, searchable bedroom tags, explicit `planSymbolKind: 'bed'`, and recognizable pillows/mattress/headboard plan linework plus a lightweight 3D proxy. These can be placed, rotated by Spacebar / Rotate, edited through right-rail instance parameters, and resized in plan through on-canvas width/depth face grips backed by `paramValues`.
 
 ---
 

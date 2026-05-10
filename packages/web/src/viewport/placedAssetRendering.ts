@@ -22,6 +22,7 @@ type AssetSymbolKind =
   | 'toilet'
   | 'bath'
   | 'shower'
+  | 'bathroom_layout'
   | 'generic';
 
 type PlacedAssetRenderSpec = {
@@ -30,6 +31,12 @@ type PlacedAssetRenderSpec = {
   depthM: number;
   heightM: number;
   color: string;
+  sinkOffsetM?: number;
+  fridgeOffsetM?: number;
+  toiletOffsetM?: number;
+  vanityOffsetM?: number;
+  showerOffsetM?: number;
+  kitchenLayout?: boolean;
 };
 
 function textFor(entry: AssetLibraryEntryElement | undefined, asset: PlacedAssetElement): string {
@@ -59,6 +66,8 @@ export function classifyPlacedAssetSymbol(
   if (/\b(chair|armchair)\b/.test(text)) return 'chair';
   if (/\b(toilet|wc)\b/.test(text)) return 'toilet';
   if (/\b(bath|bathtub|tub)\b/.test(text)) return 'bath';
+  if (/\b(bathroom layout|compact bathroom|toilet sink shower)\b/.test(text))
+    return 'bathroom_layout';
   if (/\b(shower)\b/.test(text)) return 'shower';
   return 'generic';
 }
@@ -113,9 +122,31 @@ function defaultsFor(kind: AssetSymbolKind): {
       return { widthMm: 1700, depthMm: 750, heightMm: 560 };
     case 'shower':
       return { widthMm: 900, depthMm: 900, heightMm: 80 };
+    case 'bathroom_layout':
+      return { widthMm: 2400, depthMm: 2200, heightMm: 2100 };
     default:
       return { widthMm: 1000, depthMm: 600, heightMm: 450 };
   }
+}
+
+function offsetParamM(
+  entry: AssetLibraryEntryElement | undefined,
+  asset: PlacedAssetElement,
+  key: string,
+  defaultMm: number,
+): number {
+  return (numericParam(entry, asset, [key]) ?? defaultMm) / 1000;
+}
+
+function hasParam(
+  entry: AssetLibraryEntryElement | undefined,
+  asset: PlacedAssetElement,
+  key: string,
+): boolean {
+  return (
+    Object.prototype.hasOwnProperty.call(asset.paramValues ?? {}, key) ||
+    !!entry?.paramSchema?.some((p) => p.key === key)
+  );
 }
 
 function colorFor(kind: AssetSymbolKind, paint: ViewportPaintBundle | null | undefined): string {
@@ -144,6 +175,7 @@ function colorFor(kind: AssetSymbolKind, paint: ViewportPaintBundle | null | und
     case 'toilet':
     case 'bath':
     case 'shower':
+    case 'bathroom_layout':
       return '#f8fafc';
     default:
       return '#d6d3d1';
@@ -179,6 +211,13 @@ export function resolvePlacedAssetRenderSpec(
     depthM: THREE.MathUtils.clamp(depthMm / 1000, 0.05, 20),
     heightM: THREE.MathUtils.clamp(heightMm / 1000, 0.03, 8),
     color: colorFor(symbolKind, paint),
+    sinkOffsetM: offsetParamM(entry, asset, 'sinkOffsetMm', 1200),
+    fridgeOffsetM: offsetParamM(entry, asset, 'fridgeOffsetMm', 300),
+    toiletOffsetM: offsetParamM(entry, asset, 'toiletOffsetMm', 1180),
+    vanityOffsetM: offsetParamM(entry, asset, 'vanityOffsetMm', 1900),
+    showerOffsetM: offsetParamM(entry, asset, 'showerOffsetMm', 450),
+    kitchenLayout:
+      hasParam(entry, asset, 'sinkOffsetMm') || hasParam(entry, asset, 'fridgeOffsetMm'),
   };
 }
 
@@ -242,6 +281,12 @@ function addRect(
     ],
     mat,
     pickId,
+  );
+}
+
+function offsetFromLeft(widthM: number, offsetM: number | undefined, fallbackM: number): number {
+  return (
+    THREE.MathUtils.clamp(offsetM ?? fallbackM, 0.08, Math.max(0.08, widthM - 0.08)) - widthM / 2
   );
 }
 
@@ -429,6 +474,29 @@ function addPlacedAssetSymbolLines(
           pickId,
         );
       }
+      if (spec.kitchenLayout) {
+        const sinkX = offsetFromLeft(spec.widthM, spec.sinkOffsetM, spec.widthM * 0.5);
+        const fridgeX = offsetFromLeft(spec.widthM, spec.fridgeOffsetM, 0.35);
+        const sinkHw = Math.min(0.32, spec.widthM * 0.11);
+        const fridgeHw = Math.min(0.34, spec.widthM * 0.12);
+        addRect(group, sinkHw, hd * 0.52, fine, pickId);
+        group.children[group.children.length - 1]!.position.x = sinkX;
+        addCircle(group, sinkX, 0, Math.min(sinkHw, hd * 0.4) * 0.16, fine, pickId, 16);
+        addPolyline(
+          group,
+          [
+            [fridgeX - fridgeHw, -hd],
+            [fridgeX + fridgeHw, -hd],
+            [fridgeX + fridgeHw, hd],
+            [fridgeX - fridgeHw, hd],
+            [fridgeX - fridgeHw, -hd],
+            [fridgeX, -hd],
+            [fridgeX, hd],
+          ],
+          fine,
+          pickId,
+        );
+      }
       break;
     }
     case 'sofa':
@@ -526,6 +594,27 @@ function addPlacedAssetSymbolLines(
       );
       addCircle(group, hw * 0.48, -hd * 0.48, Math.min(hw, hd) * 0.12, fine, pickId, 16);
       break;
+    case 'bathroom_layout': {
+      const showerX = offsetFromLeft(spec.widthM, spec.showerOffsetM, 0.45);
+      const toiletX = offsetFromLeft(spec.widthM, spec.toiletOffsetM, spec.widthM * 0.5);
+      const vanityX = offsetFromLeft(spec.widthM, spec.vanityOffsetM, spec.widthM - 0.45);
+      const showerHalf = Math.min(0.46, hd * 0.42);
+      addRect(group, showerHalf, showerHalf, fine, pickId);
+      group.children[group.children.length - 1]!.position.x = showerX;
+      addPolyline(
+        group,
+        [
+          [showerX - showerHalf, -showerHalf],
+          [showerX + showerHalf, showerHalf],
+        ],
+        fine,
+        pickId,
+      );
+      addCircle(group, toiletX, hd * 0.1, Math.min(hw, hd) * 0.1, fine, pickId, 24);
+      addRect(group, Math.min(0.32, hw * 0.16), hd * 0.18, fine, pickId);
+      group.children[group.children.length - 1]!.position.x = vanityX;
+      break;
+    }
     default:
       addPolyline(
         group,
@@ -705,6 +794,28 @@ function addPlacedAssetMeshes(
         const x = -w / 2 + (w * i) / Math.max(2, Math.min(6, Math.round(w / 0.6)));
         addBox(group, pickId, [0.012, h * 0.66, 0.018], [x, h * 0.43, frontZ], '#a8a29e');
       }
+      if (spec.kitchenLayout) {
+        const sinkX = offsetFromLeft(w, spec.sinkOffsetM, w * 0.5);
+        const fridgeX = offsetFromLeft(w, spec.fridgeOffsetM, 0.35);
+        addBox(
+          group,
+          pickId,
+          [Math.min(0.55, w * 0.18), 0.06, d * 0.62],
+          [sinkX, h * 0.94, 0],
+          '#94a3b8',
+          0.25,
+          0.2,
+        );
+        addBox(
+          group,
+          pickId,
+          [Math.min(0.6, w * 0.18), 1.85, d * 0.95],
+          [fridgeX, 0.925, 0],
+          '#e5e7eb',
+          0.45,
+          0.08,
+        );
+      }
       break;
     case 'sofa':
       addBox(group, pickId, [w, h * 0.42, d * 0.72], [0, h * 0.21, d * 0.08], spec.color);
@@ -748,6 +859,19 @@ function addPlacedAssetMeshes(
       addBox(group, pickId, [0.025, 1.9, d], [-w / 2, 0.95, 0], '#bfdbfe', 0.1, 0);
       addBox(group, pickId, [w, 0.025, 0.025], [0, 1.85, -d / 2], '#64748b');
       break;
+    case 'bathroom_layout': {
+      addBox(group, pickId, [w, 0.06, d], [0, 0.03, 0], '#e5e7eb');
+      const showerX = offsetFromLeft(w, spec.showerOffsetM, 0.45);
+      const toiletX = offsetFromLeft(w, spec.toiletOffsetM, w * 0.5);
+      const vanityX = offsetFromLeft(w, spec.vanityOffsetM, w - 0.45);
+      addBox(group, pickId, [0.86, 0.08, 0.86], [showerX, 0.1, 0], '#dbeafe');
+      addBox(group, pickId, [0.025, 1.9, 0.86], [showerX - 0.43, 0.95, 0], '#bfdbfe', 0.1, 0);
+      addCylinder(group, pickId, 0.18, 0.22, [toiletX, 0.28, d * 0.08], '#f8fafc');
+      addBox(group, pickId, [0.42, 0.28, 0.28], [toiletX, 0.66, -d * 0.26], '#f8fafc');
+      addBox(group, pickId, [0.62, 0.82, 0.48], [vanityX, 0.41, -d * 0.24], '#d6d3d1');
+      addBox(group, pickId, [0.48, 0.055, 0.34], [vanityX, 0.85, -d * 0.24], '#94a3b8', 0.25, 0.2);
+      break;
+    }
     default:
       addBox(group, pickId, [w, h, d], [0, h / 2, 0], spec.color);
       break;

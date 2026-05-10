@@ -1613,6 +1613,7 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
       v === 'toilet' ||
       v === 'bath' ||
       v === 'shower' ||
+      v === 'bathroom_layout' ||
       v === 'generic';
     const thumbnailWidth = raw.thumbnailWidthMm ?? raw.thumbnail_width_mm;
     const thumbnailHeight = raw.thumbnailHeightMm ?? raw.thumbnail_height_mm;

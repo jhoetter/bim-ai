@@ -160,4 +160,79 @@ describe('placed asset rendering', () => {
     });
     expect(meshCount).toBeGreaterThan(1);
   });
+
+  it('renders a composite kitchen slab with sink and fridge offsets', () => {
+    const entry: Extract<Element, { kind: 'asset_library_entry' }> = {
+      ...fridgeEntry,
+      id: 'asset-kitchen-layout',
+      name: 'Kitchen Slab Layout',
+      category: 'kitchen',
+      tags: ['kitchen', 'counter', 'sink', 'fridge', 'layout'],
+      thumbnailWidthMm: 3000,
+      thumbnailHeightMm: 650,
+      planSymbolKind: 'counter',
+      renderProxyKind: 'counter',
+      paramSchema: [
+        { key: 'widthMm', kind: 'mm', default: 3000 },
+        { key: 'depthMm', kind: 'mm', default: 650 },
+        { key: 'heightMm', kind: 'mm', default: 900 },
+        { key: 'sinkOffsetMm', kind: 'mm', default: 1500 },
+        { key: 'fridgeOffsetMm', kind: 'mm', default: 350 },
+      ],
+    };
+    const asset: Extract<Element, { kind: 'placed_asset' }> = {
+      ...placedFridge,
+      id: 'pa-kitchen-layout',
+      assetId: entry.id,
+      paramValues: { sinkOffsetMm: 1700 },
+    };
+
+    const spec = resolvePlacedAssetRenderSpec(asset, entry);
+    const plan = makePlacedAssetPlanSymbol(asset, entry);
+    const mesh = makePlacedAssetMesh(asset, { lvl: level, [entry.id]: entry }, null);
+
+    expect(spec.symbolKind).toBe('counter');
+    expect(spec.kitchenLayout).toBe(true);
+    expect(spec.sinkOffsetM).toBeCloseTo(1.7);
+    expect(plan.children.length).toBeGreaterThan(6);
+    expect(mesh.userData.assetSymbolKind).toBe('counter');
+  });
+
+  it('renders a composite bathroom layout symbol and proxy', () => {
+    const entry: Extract<Element, { kind: 'asset_library_entry' }> = {
+      ...fridgeEntry,
+      id: 'asset-bath-layout',
+      name: 'Compact Bathroom Layout',
+      category: 'bathroom',
+      tags: ['bathroom', 'toilet', 'sink', 'shower', 'layout'],
+      thumbnailWidthMm: 2400,
+      thumbnailHeightMm: 2200,
+      planSymbolKind: 'bathroom_layout',
+      renderProxyKind: 'bathroom_layout',
+      paramSchema: [
+        { key: 'widthMm', kind: 'mm', default: 2400 },
+        { key: 'depthMm', kind: 'mm', default: 2200 },
+        { key: 'heightMm', kind: 'mm', default: 2100 },
+        { key: 'showerOffsetMm', kind: 'mm', default: 450 },
+        { key: 'toiletOffsetMm', kind: 'mm', default: 1180 },
+        { key: 'vanityOffsetMm', kind: 'mm', default: 1900 },
+      ],
+    };
+    const asset: Extract<Element, { kind: 'placed_asset' }> = {
+      ...placedFridge,
+      id: 'pa-bath-layout',
+      assetId: entry.id,
+      paramValues: { vanityOffsetMm: 2000 },
+    };
+
+    const spec = resolvePlacedAssetRenderSpec(asset, entry);
+    const plan = makePlacedAssetPlanSymbol(asset, entry);
+    const mesh = makePlacedAssetMesh(asset, { lvl: level, [entry.id]: entry }, null);
+
+    expect(classifyPlacedAssetSymbol(entry, asset)).toBe('bathroom_layout');
+    expect(spec.symbolKind).toBe('bathroom_layout');
+    expect(spec.vanityOffsetM).toBeCloseTo(2);
+    expect(plan.userData.assetSymbolKind).toBe('bathroom_layout');
+    expect(mesh.userData.assetSymbolKind).toBe('bathroom_layout');
+  });
 });

@@ -16,13 +16,15 @@
 
 import { useEffect, useMemo, useState, type JSX } from 'react';
 
-import type { Element, FamilyDiscipline } from '@bim-ai/core';
+import type { AssetCategory, AssetLibraryEntry, Element, FamilyDiscipline } from '@bim-ai/core';
 
 import { BUILT_IN_FAMILIES } from './familyCatalog';
 import { BUILT_IN_WALL_TYPES } from './wallTypeCatalog';
 import { getThumbnail, PLACEHOLDER_THUMBNAIL } from './thumbnailCache';
+import { SchematicThumbnail } from '../workspace/library/AssetCard';
 
 export type FamilyLibraryPlaceKind =
+  | 'asset'
   | 'door'
   | 'window'
   | 'stair'
@@ -112,6 +114,14 @@ interface CatalogEntry {
   custom: boolean;
   kind: FamilyLibraryPlaceKind;
   catalogLabel?: string;
+  assetEntry?: AssetLibraryEntry;
+  searchText?: string;
+}
+
+interface AssetCatalogGroup {
+  id: `asset-${AssetCategory}`;
+  label: string;
+  entries: CatalogEntry[];
 }
 
 const DISCIPLINE_ORDER: {
@@ -128,6 +138,17 @@ const DISCIPLINE_ORDER: {
   { id: 'roof_type', label: 'Roof Types', placeKind: 'roof_type' },
   // FAM-08 — components loaded from external catalogs default to `generic`.
   { id: 'generic', label: 'Components', placeKind: 'door' },
+];
+
+const ASSET_CATEGORY_ORDER: { id: AssetCategory; label: string }[] = [
+  { id: 'furniture', label: 'Furniture' },
+  { id: 'kitchen', label: 'Appliances' },
+  { id: 'casework', label: 'Casework' },
+  { id: 'bathroom', label: 'Plumbing Fixtures' },
+  { id: 'door', label: 'Door Components' },
+  { id: 'window', label: 'Window Components' },
+  { id: 'decal', label: 'Decals' },
+  { id: 'profile', label: 'Profiles' },
 ];
 
 const DEFAULT_CATALOG_CLIENT: ExternalCatalogClient = {
@@ -217,10 +238,65 @@ function buildCatalogByDiscipline(
   return out as Record<FamilyDiscipline, CatalogEntry[]>;
 }
 
+function assetElementToLibraryEntry(
+  el: Extract<Element, { kind: 'asset_library_entry' }>,
+): AssetLibraryEntry {
+  return {
+    id: el.id,
+    assetKind: el.assetKind,
+    name: el.name,
+    tags: el.tags,
+    category: el.category,
+    disciplineTags: el.disciplineTags,
+    thumbnailKind: el.thumbnailKind,
+    thumbnailMm:
+      el.thumbnailWidthMm != null
+        ? {
+            widthMm: el.thumbnailWidthMm,
+            heightMm: el.thumbnailHeightMm ?? el.thumbnailWidthMm,
+          }
+        : undefined,
+    planSymbolKind: el.planSymbolKind,
+    renderProxyKind: el.renderProxyKind,
+    paramSchema: el.paramSchema,
+    publishedFromOrgId: el.publishedFromOrgId,
+    description: el.description,
+  };
+}
+
+function buildAssetCatalogGroups(elementsById: Record<string, Element>): AssetCatalogGroup[] {
+  const buckets: Partial<Record<AssetCategory, CatalogEntry[]>> = {};
+  for (const el of Object.values(elementsById)) {
+    if (el.kind !== 'asset_library_entry') continue;
+    const entry = assetElementToLibraryEntry(el);
+    const bucket = (buckets[entry.category] ??= []);
+    bucket.push({
+      id: entry.id,
+      name: entry.name,
+      familyName: entry.description ?? (entry.tags.slice(0, 3).join(' · ') || 'Interior family'),
+      custom: false,
+      kind: 'asset',
+      assetEntry: entry,
+      searchText: [entry.category, ...entry.tags, entry.planSymbolKind, entry.renderProxyKind]
+        .filter(Boolean)
+        .join(' '),
+    });
+  }
+  return ASSET_CATEGORY_ORDER.map(({ id, label }) => ({
+    id: `asset-${id}` as const,
+    label,
+    entries: (buckets[id] ?? []).sort((a, b) => a.name.localeCompare(b.name)),
+  })).filter((group) => group.entries.length > 0);
+}
+
 function matchesNeedle(entry: CatalogEntry, needle: string): boolean {
   if (!needle) return true;
   const n = needle.toLowerCase();
-  return entry.name.toLowerCase().includes(n) || entry.familyName.toLowerCase().includes(n);
+  return (
+    entry.name.toLowerCase().includes(n) ||
+    entry.familyName.toLowerCase().includes(n) ||
+    Boolean(entry.searchText?.toLowerCase().includes(n))
+  );
 }
 
 function externalMatchesNeedle(
@@ -262,6 +338,17 @@ function TypeThumbnail({ typeId, name }: { typeId: string; name: string }): JSX.
       style={{ objectFit: 'cover' }}
     />
   );
+}
+
+function CatalogThumbnail({ entry }: { entry: CatalogEntry }): JSX.Element {
+  if (entry.assetEntry) {
+    return (
+      <div className="flex h-16 w-16 items-center justify-center rounded border border-border bg-surface-muted">
+        <SchematicThumbnail entry={entry.assetEntry} />
+      </div>
+    );
+  }
+  return <TypeThumbnail typeId={entry.id} name={entry.name} />;
 }
 
 function ExternalCatalogsTab({
@@ -447,6 +534,7 @@ export function FamilyLibraryPanel({
   const [tab, setTab] = useState<'in-project' | 'external'>(initialTab);
 
   const grouped = useMemo(() => buildCatalogByDiscipline(elementsById), [elementsById]);
+  const assetGroups = useMemo(() => buildAssetCatalogGroups(elementsById), [elementsById]);
 
   useEffect(() => {
     if (!open) return;
@@ -571,7 +659,7 @@ export function FamilyLibraryPanel({
                           data-testid={`family-row-${entry.id}`}
                           className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-accent-soft"
                         >
-                          <TypeThumbnail typeId={entry.id} name={entry.name} />
+                          <CatalogThumbnail entry={entry} />
                           <div className="flex flex-1 flex-col">
                             <span className="text-sm text-foreground">{entry.name}</span>
                             <span className="text-xs text-muted">
@@ -610,9 +698,57 @@ export function FamilyLibraryPanel({
                   </section>
                 );
               })}
+              {assetGroups.map(({ id, label, entries }) => {
+                const visibleEntries = entries.filter((e) => matchesNeedle(e, needle));
+                if (visibleEntries.length === 0) return null;
+                return (
+                  <section
+                    key={id}
+                    aria-label={label}
+                    data-testid={`family-group-${id}`}
+                    className="mb-3"
+                  >
+                    <div
+                      className="px-2 py-1 text-xs uppercase text-muted"
+                      style={{ letterSpacing: 'var(--text-eyebrow-tracking, 0.06em)' }}
+                    >
+                      {label}
+                    </div>
+                    <ul className="flex flex-col">
+                      {visibleEntries.map((entry) => (
+                        <li
+                          key={entry.id}
+                          data-testid={`family-row-${entry.id}`}
+                          className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-accent-soft"
+                        >
+                          <CatalogThumbnail entry={entry} />
+                          <div className="flex flex-1 flex-col">
+                            <span className="text-sm text-foreground">{entry.name}</span>
+                            <span className="text-xs text-muted">{entry.familyName}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onPlaceType(entry.kind, entry.id);
+                              onClose();
+                            }}
+                            className="rounded border border-border bg-surface-strong px-2 py-0.5 text-xs hover:bg-accent-soft"
+                          >
+                            Place
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                );
+              })}
               {DISCIPLINE_ORDER.every(({ id }) => {
                 const entries = (grouped[id] ?? []).filter((e) => matchesNeedle(e, needle));
                 return entries.length === 0;
+              }) &&
+              assetGroups.every(({ entries }) => {
+                const visibleEntries = entries.filter((e) => matchesNeedle(e, needle));
+                return visibleEntries.length === 0;
               }) ? (
                 <div className="px-3 py-6 text-center text-sm text-muted">
                   No matching families.
