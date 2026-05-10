@@ -2,7 +2,7 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "0837d21c2626",
   "strategy": "manual-commit",
-  "branch": "main",
+  "branch": "revit-parity-type-duplicate-wave",
   "checkpoints_count": 0,
   "files_touched": [
     "packages/web/src/families/FamilyLibraryPanel.externalCatalogs.test.tsx",
@@ -47,13 +47,19 @@
       "transcript": "/08/37d21c2626/5/full.jsonl",
       "content_hash": "/08/37d21c2626/5/content_hash.txt",
       "prompt": "/08/37d21c2626/5/prompt.txt"
+    },
+    {
+      "metadata": "/08/37d21c2626/6/metadata.json",
+      "transcript": "/08/37d21c2626/6/full.jsonl",
+      "content_hash": "/08/37d21c2626/6/content_hash.txt",
+      "prompt": "/08/37d21c2626/6/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 20125,
+    "input_tokens": 219289,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 640896,
-    "output_tokens": 1423,
-    "api_call_count": 15
+    "cache_read_tokens": 1546880,
+    "output_tokens": 4935,
+    "api_call_count": 22
   }
 }
