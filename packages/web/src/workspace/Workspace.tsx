@@ -35,6 +35,7 @@ import {
   AppShell,
   LeftRailCollapsed,
   ParticipantStrip,
+  RibbonBar,
   StatusBar,
   TopBar,
   type WorkspaceMode,
@@ -1165,6 +1166,21 @@ export function Workspace(): JSX.Element {
               />
             </div>
           </div>
+        }
+        ribbonBar={
+          <RibbonBar
+            activeToolId={planToolToToolId(planTool)}
+            selectedElementKind={
+              selectedId ? (elementsById[selectedId] as Element | undefined)?.kind : null
+            }
+            onToolSelect={handleToolSelect}
+            onModeChange={handleModeChange}
+            onOpenCommandPalette={() => setPaletteOpen(true)}
+            onOpenVisibilityGraphics={openVVDialog}
+            onOpenFamilyLibrary={() => setFamilyLibraryOpen(true)}
+            onOpenProjectMenu={() => setProjectMenuOpen((v) => !v)}
+            onOpenSettings={() => setCheatsheetOpen(true)}
+          />
         }
         leftRail={
           <WorkspaceLeftRail
