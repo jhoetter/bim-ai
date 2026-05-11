@@ -37,6 +37,7 @@ import {
   ParticipantStrip,
   RibbonBar,
   StatusBar,
+  TabBar,
   TopBar,
   type WorkspaceMode,
 } from './shell';
@@ -279,17 +280,6 @@ export function Workspace(): JSX.Element {
       : null;
   const saveAsMaximumBackups = coerceCheckpointRetentionLimit(
     projectSettings?.checkpointRetentionLimit ?? DEFAULT_CHECKPOINT_RETENTION_LIMIT,
-  );
-
-  // COL-VIS: share presentation modal
-  const [sharePresentationOpen, setSharePresentationOpen] = useState(false);
-
-  const sheetPages = useMemo(
-    () =>
-      (Object.values(elementsById) as Element[])
-        .filter((e): e is Extract<Element, { kind: 'sheet' }> => e.kind === 'sheet')
-        .map((s) => ({ id: s.id, name: (s as unknown as { name?: string }).name ?? 'Sheet' })),
-    [elementsById],
   );
 
   // COL-VIS: share presentation modal
@@ -1622,8 +1612,8 @@ export function Workspace(): JSX.Element {
             />
             <TabBar
               tabs={tabsState.tabs}
-              activeTabId={tabsState.activeId}
-              onTabActivate={(id) => {
+              activeId={tabsState.activeId}
+              onActivate={(id) => {
                 handleTabActivate(id);
                 const t = tabsState.tabs.find((x) => x.id === id);
                 if (t) {
@@ -1632,10 +1622,10 @@ export function Workspace(): JSX.Element {
                   setMode(t.kind as WorkspaceMode);
                 }
               }}
-              onTabClose={handleTabClose}
-              onCloseInactiveTabs={() => setTabsState((s) => closeInactiveTabs(s))}
-              onTabReorder={(from, to) => setTabsState((s) => reorderTab(s, from, to))}
-              onTabAdd={(kind) => {
+              onClose={handleTabClose}
+              onCloseInactive={() => setTabsState((s) => closeInactiveTabs(s))}
+              onReorder={(from, to) => setTabsState((s) => reorderTab(s, from, to))}
+              onAdd={(kind) => {
                 const fallback = defaultTabFallbackForKind(kind, elementsById, activeLevelId);
                 if (!fallback) return;
                 setTabsState((s) => activateOrOpenKind(s, kind, fallback));
