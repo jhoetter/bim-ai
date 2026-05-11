@@ -17,6 +17,7 @@ from bim_ai.constructability_matrix import duplicate_cell_for, hard_clash_cell_f
 from bim_ai.elements import (
     DoorElem,
     Element,
+    FloorElem,
     SlabOpeningElem,
     WallElem,
     WallOpeningElem,
@@ -27,6 +28,7 @@ _CLASH_TOLERANCE_MM = 1.0
 _SUPPORT_TOLERANCE_MM = 300.0
 _LARGE_OPENING_MIN_WIDTH_MM = 1800.0
 _LARGE_OPENING_WALL_RATIO = 0.4
+_FLOOR_SPAN_METADATA_THRESHOLD_MM = 9000.0
 
 
 def constructability_advisory_violations(elements: dict[str, Element]) -> list[Violation]:
@@ -52,6 +54,7 @@ def constructability_advisory_violations(elements: dict[str, Element]) -> list[V
     violations.extend(_large_opening_violations(elements, walls_by_id))
     violations.extend(_load_bearing_wall_removed_violations(walls_by_id))
     violations.extend(_stacked_load_path_violations(participants_by_kind, walls_by_id))
+    violations.extend(_floor_span_metadata_violations(participants_by_kind, elements))
     violations.extend(_unsupported_beam_violations(participants_by_kind, elements, walls_by_id))
     violations.extend(_unsupported_column_violations(participants_by_kind, walls_by_id))
     return violations
@@ -443,6 +446,34 @@ def _stacked_load_path_violations(
     return violations
 
 
+def _floor_span_metadata_violations(
+    participants_by_kind: dict[str, list[PhysicalParticipant]],
+    elements: dict[str, Element],
+) -> list[Violation]:
+    violations: list[Violation] = []
+    for floor_participant in participants_by_kind.get("floor", []):
+        floor = elements.get(floor_participant.element_id)
+        if not isinstance(floor, FloorElem):
+            continue
+        span_mm = max(floor_participant.aabb.width_mm, floor_participant.aabb.depth_mm)
+        if span_mm <= _FLOOR_SPAN_METADATA_THRESHOLD_MM:
+            continue
+        if _floor_has_structural_system_metadata(floor):
+            continue
+        violations.append(
+            Violation(
+                rule_id="floor_span_without_support_metadata",
+                severity="warning",
+                message=(
+                    "Floor span exceeds the default constructability threshold without "
+                    "structural system, beam grid, or engineering review metadata."
+                ),
+                element_ids=[floor.id],
+            )
+        )
+    return violations
+
+
 def _unsupported_beam_violations(
     participants_by_kind: dict[str, list[PhysicalParticipant]],
     elements: dict[str, Element],
@@ -786,6 +817,30 @@ def _wall_has_transfer_resolution(wall: WallElem) -> bool:
         "structuralReviewApproved",
         "loadPathTransferred",
     )
+
+
+def _floor_has_structural_system_metadata(floor: FloorElem) -> bool:
+    props = floor.props or {}
+    if _truthy_prop(
+        props,
+        "spanResolved",
+        "engineeredFloor",
+        "structuralReviewed",
+        "structuralReviewApproved",
+    ):
+        return True
+    for key in (
+        "structuralSystem",
+        "structuralSystemId",
+        "supportSystem",
+        "beamGridId",
+        "joistSpacingMm",
+        "spanDirection",
+    ):
+        value = props.get(key)
+        if value not in (None, "", []):
+            return True
+    return False
 
 
 def _is_load_bearing_wall(wall: WallElem | None) -> bool:

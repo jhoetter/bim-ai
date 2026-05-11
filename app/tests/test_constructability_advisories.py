@@ -366,6 +366,25 @@ def test_removed_load_bearing_wall_without_transfer_metadata_is_reported() -> No
     assert "load_bearing_wall_removed_without_transfer" not in _rule_ids(elements)
 
 
+def test_long_floor_span_without_structural_metadata_is_reported_and_suppressed() -> None:
+    floor = FloorElem(
+        kind="floor",
+        id="floor-long",
+        levelId="lvl-1",
+        boundaryMm=[
+            {"xMm": 0, "yMm": 0},
+            {"xMm": 10000, "yMm": 0},
+            {"xMm": 10000, "yMm": 4000},
+            {"xMm": 0, "yMm": 4000},
+        ],
+    )
+    elements = {"lvl-1": _level(), "floor-long": floor}
+    assert "floor_span_without_support_metadata" in _rule_ids(elements)
+
+    elements["floor-long"] = floor.model_copy(update={"props": {"structuralSystem": "joists"}})
+    assert "floor_span_without_support_metadata" not in _rule_ids(elements)
+
+
 def test_beam_without_two_modeled_supports_is_reported() -> None:
     elements = {
         "lvl-1": _level(),

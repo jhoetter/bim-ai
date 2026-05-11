@@ -71,6 +71,9 @@ describe('advisorViolationContext', () => {
     expect(recommendedContextForRuleId('stacked_load_path_discontinuity')).toMatch(
       /load path|bearing wall|column/i,
     );
+    expect(recommendedContextForRuleId('floor_span_without_support_metadata')).toMatch(
+      /beam grid|joist|structural review/i,
+    );
     expect(recommendedContextForRuleId('beam_without_support')).toMatch(/support/i);
     expect(recommendedContextForRuleId('column_without_foundation_or_support')).toMatch(
       /foundation|load path/i,
@@ -108,6 +111,9 @@ describe('advisorViolationContext', () => {
     );
     expect(humanizeRuleId('stacked_load_path_discontinuity')).toBe(
       'Stacked Load Path Discontinuity',
+    );
+    expect(humanizeRuleId('floor_span_without_support_metadata')).toBe(
+      'Floor Span Without Support Metadata',
     );
     expect(humanizeRuleId('pipe_wall_penetration_without_opening')).toBe(
       'Pipe Wall Penetration Without Opening',

@@ -20,6 +20,8 @@ const RECOMMENDED_CONTEXT_BY_RULE_ID: Record<string, string> = {
     'Recommended: Structural alteration - add transfer beam, temporary works, or structural review metadata for the removed load-bearing wall.',
   stacked_load_path_discontinuity:
     'Recommended: Structural load path - add a modeled bearing wall, column, beam/transfer condition, or revise upper wall load-bearing intent.',
+  floor_span_without_support_metadata:
+    'Recommended: Structural floor system - add beam grid, joist/span direction, engineered floor, or structural review metadata for the long span.',
   beam_without_support:
     'Recommended: Structural framing - add or align supporting wall, column, bearing element, or endpoint support for the beam.',
   column_without_foundation_or_support:
@@ -52,6 +54,7 @@ const READABLE_TITLE_BY_RULE_ID: Record<string, string> = {
   large_opening_in_load_bearing_wall_unresolved: 'Large Opening In Load-Bearing Wall Unresolved',
   load_bearing_wall_removed_without_transfer: 'Load-Bearing Wall Removed Without Transfer',
   stacked_load_path_discontinuity: 'Stacked Load Path Discontinuity',
+  floor_span_without_support_metadata: 'Floor Span Without Support Metadata',
   beam_without_support: 'Beam Without Support',
   column_without_foundation_or_support: 'Column Without Foundation Or Support',
   door_operation_clearance_conflict: 'Door Operation Clearance Conflict',
