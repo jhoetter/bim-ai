@@ -213,6 +213,14 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'navigate.concept',
+  label: 'Go to Concept board',
+  keywords: ['concept', 'moodboard', 'underlay', 'trace'],
+  category: 'navigate',
+  invoke: (ctx) => ctx.navigateMode?.('concept'),
+});
+
+registerCommand({
   id: 'navigate.architecture',
   label: 'Switch to Architecture perspective',
   keywords: ['architecture', 'archi'],

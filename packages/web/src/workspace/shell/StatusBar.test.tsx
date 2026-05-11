@@ -220,6 +220,13 @@ describe('StatusBar — CHR-V3-03 lens dropdown + drift badge', () => {
     fireEvent.click(getByTestId('drift-badge'));
     expect(onDriftClick).toHaveBeenCalled();
   });
+
+  it('LNS-V3-02 applies the active workspace tint stripe', () => {
+    const { getByTestId } = renderWithI18n(
+      <StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} activeWorkspaceId="struct" />,
+    );
+    expect(getByTestId('status-bar').getAttribute('style')).toContain('var(--disc-struct)');
+  });
 });
 
 describe('StatusBar — conflict slot (T-10)', () => {

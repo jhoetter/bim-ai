@@ -153,6 +153,9 @@ export function defaultTabFallbackForKind(
   if (kind === 'agent') {
     return { label: 'Agent review' };
   }
+  if (kind === 'concept') {
+    return { label: 'Concept board' };
+  }
   return null;
 }
 

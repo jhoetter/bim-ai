@@ -4,6 +4,7 @@ import { I18nextProvider } from 'react-i18next';
 import type { Element } from '@bim-ai/core';
 import {
   AgentReviewModeShell,
+  ConceptModeShell,
   ScheduleModeShell,
   SectionModeShell,
   SheetModeShell,
@@ -218,6 +219,39 @@ describe('ScheduleModeShell — spec §20.6', () => {
         filters: { category: 'window' },
       }),
     );
+  });
+});
+
+describe('ConceptModeShell — CON-V3-01 / MDB-V3-01', () => {
+  it('renders a pre-BIM board with image underlays and concept seeds', () => {
+    const conceptElements = {
+      img: {
+        kind: 'image_underlay',
+        id: 'img',
+        src: '/underlays/sketch.png',
+        rectMm: { xMm: 0, yMm: 0, widthMm: 1000, heightMm: 800 },
+        rotationDeg: 0,
+        opacity: 0.8,
+        lockedScale: true,
+      },
+      seed: {
+        kind: 'concept_seed',
+        id: 'seed',
+        modelId: 'm1',
+        envelopeTokens: [],
+        kernelElementDrafts: [],
+        assumptionsLog: [],
+        status: 'draft',
+        schemaVersion: 'con-v3.0',
+      },
+    } satisfies Record<string, Element>;
+
+    const { getByTestId, getByText } = render(<ConceptModeShell elementsById={conceptElements} />);
+    expect(getByTestId('concept-mode-shell')).toBeTruthy();
+    expect(getByTestId('concept-board-underlay-count').textContent).toBe('1 underlays');
+    expect(getByTestId('concept-board-seed-count').textContent).toBe('1 seeds');
+    expect(getByText('/underlays/sketch.png')).toBeTruthy();
+    expect(getByText('draft')).toBeTruthy();
   });
 });
 

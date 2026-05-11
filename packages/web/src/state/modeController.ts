@@ -2,7 +2,7 @@
  * Workspace mode controller — spec §7 + §20.
  *
  * Single source of truth for active workspace mode (Plan, 3D, Plan+3D,
- * Section, Sheet, Schedule, Agent), mapping `1`–`7` hotkeys to the
+ * Section, Sheet, Schedule, Agent, Concept), mapping `1`–`8` hotkeys to the
  * matching mode, and remembering per-mode prior state so a mode switch
  * doesn't destroy the user's tool / selection / camera per §7 ("Modes
  * do not destroy state — switching back returns to the prior tool,
@@ -19,6 +19,7 @@ export const MODE_HOTKEYS: { mode: WorkspaceMode; hotkey: string }[] = [
   { mode: 'sheet', hotkey: '5' },
   { mode: 'schedule', hotkey: '6' },
   { mode: 'agent', hotkey: '7' },
+  { mode: 'concept', hotkey: '8' },
 ];
 
 /** Resolve a key event to a mode jump, or `null` if unrelated. */

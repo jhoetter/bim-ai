@@ -37,6 +37,7 @@ describe('command capability graph', () => {
     for (const commandId of [
       'navigate.plan',
       'navigate.3d',
+      'navigate.concept',
       'theme.toggle',
       'settings.language.toggle',
       'shell.toggle-left-rail',

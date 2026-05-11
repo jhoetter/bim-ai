@@ -30,7 +30,7 @@ export type PaletteContext = {
   activeMode?: CapabilityViewMode;
   /** Navigate through the same tab/mode path as the main workspace chrome. */
   navigateMode?: (
-    mode: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent',
+    mode: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent' | 'concept',
   ) => void;
   /** Start a plan-canvas tool, switching to a valid tool surface if needed. */
   startPlanTool?: (toolId: string) => void;

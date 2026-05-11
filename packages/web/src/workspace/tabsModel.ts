@@ -11,7 +11,15 @@
 
 import type { Element } from '@bim-ai/core';
 
-export type TabKind = 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent';
+export type TabKind =
+  | 'plan'
+  | '3d'
+  | 'plan-3d'
+  | 'section'
+  | 'sheet'
+  | 'schedule'
+  | 'agent'
+  | 'concept';
 
 /** Per-tab viewport state — restored when the tab is reactivated.
  * (T-07.) Plan tabs cache the 2D camera; 3D tabs cache the orbit pose.
@@ -184,4 +192,5 @@ export const TAB_KIND_LABEL: Record<TabKind, string> = {
   sheet: 'Sheet',
   schedule: 'Schedule',
   agent: 'Agent',
+  concept: 'Concept',
 };

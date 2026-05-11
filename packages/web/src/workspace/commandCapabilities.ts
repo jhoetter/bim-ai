@@ -16,6 +16,7 @@ export const CAPABILITY_VIEW_MODES = [
   'sheet',
   'schedule',
   'agent',
+  'concept',
 ] as const satisfies readonly WorkspaceMode[];
 
 export type CapabilityViewMode = (typeof CAPABILITY_VIEW_MODES)[number];
@@ -194,6 +195,8 @@ export function formatCapabilityMode(mode: CapabilityViewMode): string {
       return 'Schedule';
     case 'agent':
       return 'Agent Review';
+    case 'concept':
+      return 'Concept';
   }
 }
 
@@ -356,6 +359,19 @@ const NAVIGATION_CAPABILITIES: CommandCapability[] = [
     scope: 'universal',
     intendedModes: [...CAPABILITY_VIEW_MODES],
     surfaces: ['cmd-k', 'topbar', 'ribbon', 'left-rail'],
+    executionSurface: 'global',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+  },
+  {
+    id: 'navigate.concept',
+    label: 'Go to Concept Board',
+    owner: 'cmdPalette/defaultCommands',
+    group: 'navigate',
+    scope: 'universal',
+    intendedModes: [...CAPABILITY_VIEW_MODES],
+    surfaces: ['cmd-k', 'topbar', 'left-rail'],
     executionSurface: 'global',
     preconditions: [],
     status: 'implemented',

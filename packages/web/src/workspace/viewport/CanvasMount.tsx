@@ -7,6 +7,7 @@ import { ErrorBoundary } from '../../ErrorBoundary';
 import { PlanCanvas, type PlanCameraHandle } from '../../plan/PlanCanvas';
 import {
   AgentReviewModeShell,
+  ConceptModeShell,
   ScheduleModeShell,
   SectionModeShell,
   SheetModeShell,
@@ -139,6 +140,12 @@ export function CanvasMount({
     return (
       <ErrorBoundary label="AgentReviewPane">
         <AgentReviewModeShell onApplyQuickFix={onSemanticCommand} />
+      </ErrorBoundary>
+    );
+  if (mode === 'concept')
+    return (
+      <ErrorBoundary label="ConceptModeShell">
+        <ConceptModeShell elementsById={elementsById} />
       </ErrorBoundary>
     );
   return viewerMode === 'orbit_3d' ? (

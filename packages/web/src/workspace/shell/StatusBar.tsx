@@ -11,6 +11,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
 import type { LensMode } from '@bim-ai/core';
+import type { WorkspaceId } from '../chrome/workspaces';
 import type { CollaborationConflictQueueV1 } from '../../lib/collaborationConflictQueue';
 import { LensDropdown } from './LensDropdown';
 import { DriftBadge } from './DriftBadge';
@@ -86,7 +87,7 @@ export type StatusSaveState = 'saved' | 'saving' | 'unsynced' | 'error';
 export type StatusWsState = 'connected' | 'reconnecting' | 'offline';
 
 export interface StatusBarProps {
-  mode?: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent';
+  mode?: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent' | 'concept';
   viewLabel?: string | null;
   viewDetails?: string[];
   level: { id: string; label: string; elevationMm?: number };
@@ -112,6 +113,8 @@ export interface StatusBarProps {
   /** CHR-V3-03 slot 5 — lens discipline filter. */
   lensMode?: LensMode;
   onLensChange?: (lens: LensMode) => void;
+  /** LNS-V3-02 — active workspace discipline tint for the full-width stripe. */
+  activeWorkspaceId?: WorkspaceId;
   /** CHR-V3-03 slot 6 — federation drift count; hidden when 0. */
   driftCount?: number;
   onDriftClick?: () => void;
@@ -143,6 +146,7 @@ export function StatusBar({
   onClearConflict,
   lensMode = 'all',
   onLensChange,
+  activeWorkspaceId = 'arch',
   driftCount = 0,
   onDriftClick,
   activityUnreadCount = 0,
@@ -153,7 +157,7 @@ export function StatusBar({
     <div
       data-testid="status-bar"
       role="contentinfo"
-      style={statusStyle}
+      style={{ ...statusStyle, ...disciplineStripeStyle(activeWorkspaceId) }}
       className="relative flex w-full items-center gap-2 border-t border-border bg-surface px-4 text-[11px] text-muted"
     >
       {showPlanClusters ? (
@@ -210,6 +214,20 @@ const statusStyle: CSSProperties = {
   height: 'var(--shell-statusbar-height)',
   minHeight: 'var(--shell-statusbar-height)',
 };
+
+function disciplineStripeStyle(id: WorkspaceId): CSSProperties {
+  const token =
+    id === 'struct'
+      ? 'var(--disc-struct)'
+      : id === 'mep'
+        ? 'var(--disc-mep)'
+        : id === 'concept'
+          ? 'var(--color-accent)'
+          : 'var(--disc-arch)';
+  return {
+    borderTop: `2px solid ${token}`,
+  };
+}
 
 function Divider(): JSX.Element {
   return <span aria-hidden="true" className="inline-block h-3 w-px bg-border" />;
@@ -268,6 +286,8 @@ function formatStatusMode(mode: NonNullable<StatusBarProps['mode']>): string {
       return 'Schedule';
     case 'agent':
       return 'Agent Review';
+    case 'concept':
+      return 'Concept';
   }
 }
 

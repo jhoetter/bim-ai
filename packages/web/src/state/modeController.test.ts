@@ -8,7 +8,7 @@ import {
 } from './modeController';
 
 describe('modeForHotkey — spec §7', () => {
-  it('maps 1..7 to the documented modes', () => {
+  it('maps 1..8 to the documented modes', () => {
     expect(modeForHotkey('1')).toBe('plan');
     expect(modeForHotkey('2')).toBe('3d');
     expect(modeForHotkey('3')).toBe('plan-3d');
@@ -16,13 +16,14 @@ describe('modeForHotkey — spec §7', () => {
     expect(modeForHotkey('5')).toBe('sheet');
     expect(modeForHotkey('6')).toBe('schedule');
     expect(modeForHotkey('7')).toBe('agent');
+    expect(modeForHotkey('8')).toBe('concept');
   });
   it('returns null for unrelated keys', () => {
     expect(modeForHotkey('a')).toBeNull();
     expect(modeForHotkey('0')).toBeNull();
   });
-  it('exposes 7 mode hotkeys', () => {
-    expect(MODE_HOTKEYS).toHaveLength(7);
+  it('exposes 8 mode hotkeys', () => {
+    expect(MODE_HOTKEYS).toHaveLength(8);
   });
 });
 

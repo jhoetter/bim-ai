@@ -30,7 +30,7 @@ const viewTabs: ViewTab[] = [
 ];
 
 describe('TopBar — spec §11', () => {
-  it('renders all 7 mode pills with hotkey hints', () => {
+  it('renders all mode pills with hotkey hints', () => {
     const { getAllByRole } = renderWithI18n(
       <TopBar {...baseProps} mode="plan" onModeChange={() => undefined} />,
     );
@@ -72,7 +72,7 @@ describe('TopBar — spec §11', () => {
     fireEvent.keyDown(tablist, { key: 'ArrowRight' });
     expect(onModeChange).toHaveBeenLastCalledWith('3d');
     fireEvent.keyDown(tablist, { key: 'ArrowLeft' });
-    expect(onModeChange).toHaveBeenLastCalledWith('agent'); // wraps backwards from plan
+    expect(onModeChange).toHaveBeenLastCalledWith('concept'); // wraps backwards from plan
   });
 
   it('renders theme toggle in avatar dropdown (light → dark label, dark → light label)', () => {

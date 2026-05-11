@@ -38,6 +38,77 @@ function asArr<T extends Element['kind']>(
 }
 
 /* ────────────────────────────────────────────────────────────────────── */
+/* Concept board mode (T6 CON-V3-01 / MDB-V3-01 surface)                  */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export function ConceptModeShell({
+  elementsById,
+}: {
+  elementsById: Record<string, Element>;
+}): JSX.Element {
+  const underlays = asArr(elementsById, 'image_underlay');
+  const seeds = asArr(elementsById, 'concept_seed');
+
+  return (
+    <div
+      data-testid="concept-mode-shell"
+      className="grid h-full w-full bg-background"
+      style={{ gridTemplateColumns: '220px 1fr' }}
+    >
+      <aside className="flex flex-col gap-3 overflow-y-auto border-r border-border bg-surface px-3 py-3">
+        <div>
+          <div
+            className="text-xs uppercase text-muted"
+            style={{ letterSpacing: 'var(--text-eyebrow-tracking)' }}
+          >
+            Concept
+          </div>
+          <div className="mt-1 text-sm font-medium text-foreground">Pre-BIM board</div>
+        </div>
+        <div className="rounded border border-border bg-background p-2 text-xs text-muted">
+          <div data-testid="concept-board-underlay-count">{underlays.length} underlays</div>
+          <div data-testid="concept-board-seed-count">{seeds.length} seeds</div>
+        </div>
+      </aside>
+      <div className="relative overflow-hidden">
+        <div
+          data-testid="concept-board-canvas"
+          className="absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(90deg, var(--color-border) 1px, transparent 1px), linear-gradient(var(--color-border) 1px, transparent 1px)',
+            backgroundSize: '32px 32px',
+            backgroundColor: 'var(--color-canvas-paper)',
+          }}
+        />
+        <div className="absolute left-4 top-4 flex max-w-[320px] flex-col gap-2">
+          {underlays.map((u) => (
+            <div
+              key={u.id}
+              data-testid="concept-board-underlay-card"
+              className="rounded border border-border bg-surface-strong p-2 text-sm text-foreground"
+            >
+              <span className="block truncate">{u.id}</span>
+              <span className="text-xs text-muted">{u.src}</span>
+            </div>
+          ))}
+          {seeds.map((s) => (
+            <div
+              key={s.id}
+              data-testid="concept-board-seed-card"
+              className="rounded border border-border bg-surface-strong p-2 text-sm text-foreground"
+            >
+              <span className="block truncate">{s.id}</span>
+              <span className="text-xs text-muted">{s.status}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
 /* Section / Elevation mode (§20.4)                                        */
 /* ────────────────────────────────────────────────────────────────────── */
 

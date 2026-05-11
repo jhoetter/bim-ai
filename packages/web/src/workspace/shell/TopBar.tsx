@@ -39,6 +39,7 @@ export const WORKSPACE_MODES = [
   { id: 'sheet', label: 'Sheet', hotkey: '5' },
   { id: 'schedule', label: 'Schedule', hotkey: '6' },
   { id: 'agent', label: 'Agent', hotkey: '7' },
+  { id: 'concept', label: 'Concept', hotkey: '8' },
 ] as const;
 
 export type WorkspaceMode = (typeof WORKSPACE_MODES)[number]['id'];
@@ -562,9 +563,19 @@ const TAB_KIND_ICON: Record<TabKind, LucideLikeIcon> = {
   sheet: Icons.sheet!,
   schedule: Icons.schedule!,
   agent: Icons.agent!,
+  concept: Icons.agent!,
 };
 
-const ADDABLE_KINDS: TabKind[] = ['plan', '3d', 'plan-3d', 'section', 'sheet', 'schedule', 'agent'];
+const ADDABLE_KINDS: TabKind[] = [
+  'plan',
+  '3d',
+  'plan-3d',
+  'section',
+  'sheet',
+  'schedule',
+  'agent',
+  'concept',
+];
 
 function TopBarTabs({
   tabs,
