@@ -62,6 +62,10 @@ function hasActiveSection(ctx: PaletteContext): boolean {
   return Boolean(ctx.activeSectionId);
 }
 
+function hasActiveViewpoint(ctx: PaletteContext): boolean {
+  return Boolean(ctx.activeViewpointId);
+}
+
 function selectedWall(ctx: PaletteContext) {
   const id = ctx.selectedElementIds[0];
   if (!id) return null;
@@ -764,6 +768,24 @@ registerCommand({
     const state = useBimStore.getState();
     state.setViewerSectionBoxActive(!state.viewerSectionBoxActive);
   },
+});
+
+registerCommand({
+  id: 'view.3d.saved-view.reset',
+  label: '3D: Reset to Saved Viewpoint',
+  keywords: ['3d', 'saved view', 'viewpoint', 'reset camera'],
+  category: 'command',
+  isAvailable: (ctx) => is3dContext(ctx) && hasActiveViewpoint(ctx),
+  invoke: (ctx) => ctx.resetActiveSavedViewpoint?.(),
+});
+
+registerCommand({
+  id: 'view.3d.saved-view.update',
+  label: '3D: Update Saved Viewpoint',
+  keywords: ['3d', 'saved view', 'viewpoint', 'update camera', 'save viewpoint'],
+  category: 'command',
+  isAvailable: (ctx) => is3dContext(ctx) && hasActiveViewpoint(ctx),
+  invoke: (ctx) => ctx.updateActiveSavedViewpoint?.(),
 });
 
 registerCommand({

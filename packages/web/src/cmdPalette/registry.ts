@@ -38,6 +38,8 @@ export type PaletteContext = {
   activeSheetId?: string | null;
   /** Active section_cut element id for section-scoped commands. */
   activeSectionId?: string | null;
+  /** Active saved orbit_3d viewpoint id for saved-view commands. */
+  activeViewpointId?: string | null;
   /** Navigate through the same tab/mode path as the main workspace chrome. */
   navigateMode?: (
     mode: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent' | 'concept',
@@ -76,6 +78,8 @@ export type PaletteContext = {
   placeActiveSectionOnSheet?: () => void;
   openActiveSectionSourcePlan?: () => void;
   adjustActiveSectionCropDepth?: (deltaMm: number) => void;
+  resetActiveSavedViewpoint?: () => void;
+  updateActiveSavedViewpoint?: () => void;
   closeInactiveViews?: () => void;
   toggleLeftRail?: () => void;
   toggleRightRail?: () => void;
