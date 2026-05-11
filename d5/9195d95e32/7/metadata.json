@@ -1,0 +1,51 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "d59195d95e32",
+  "session_id": "019e16a0-d3c4-70f0-aa4b-ffef28f22dad",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-11T18:22:24.494814Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "spec/constructability-warning-system-tracker.md",
+    "spec/sketch-to-bim-process-audit-tracker.md",
+    "spec/ux-feature-ledger.json",
+    "spec/ux-reachability-matrix.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "6cf5fb113206",
+  "checkpoint_transcript_start": 1124,
+  "transcript_lines_at_start": 1124,
+  "token_usage": {
+    "input_tokens": 182316,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1235072,
+    "output_tokens": 3457,
+    "api_call_count": 12
+  },
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-11T18:22:24.338251Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 31423,
+    "human_modified": 1652,
+    "human_removed": 0,
+    "total_committed": 31423,
+    "total_lines_changed": 62432,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
