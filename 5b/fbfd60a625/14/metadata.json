@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "5bfbfd60a625",
+  "session_id": "019e16c2-195d-74b3-b7f6-360818efd4ff",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-11T17:02:32.181208Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "spec/stash-integration-tracker-2026-05-11.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "18ccb027680a",
+  "checkpoint_transcript_start": 437,
+  "transcript_lines_at_start": 437,
+  "token_usage": {
+    "input_tokens": 2518,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 152448,
+    "output_tokens": 983,
+    "api_call_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-11T17:02:32.143891Z",
+    "agent_lines": 40,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 40,
+    "total_lines_changed": 40,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
