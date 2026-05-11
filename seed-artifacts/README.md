@@ -10,9 +10,10 @@ seed-artifacts/<name>/
   evidence/
 ```
 
-This directory is intentionally ignored by git except for this README and
-`.gitkeep`, so seed runs do not leak generated houses, screenshots, or advisor
-evidence into unrelated commits.
+This directory is intentionally tracked by git. A checked-in artifact must be
+self-contained and portable: the loader must only need files inside
+`seed-artifacts/<name>/`, and `manifest.json` must not contain machine-local
+absolute paths.
 
 Create an artifact from any source folder and a generated command bundle:
 
@@ -20,7 +21,8 @@ Create an artifact from any source folder and a generated command bundle:
 node scripts/create-seed-artifact.mjs \
   --name target-house-1 \
   --source /path/to/source-folder \
-  --bundle /path/to/bundle.json
+  --bundle /path/to/bundle.json \
+  --force
 ```
 
 Load all artifacts into the local seed project:

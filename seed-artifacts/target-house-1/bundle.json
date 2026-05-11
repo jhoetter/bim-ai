@@ -1,0 +1,1072 @@
+{
+  "schemaVersion": "cmd-v3.0",
+  "commands": [
+    {
+      "type": "createProjectBasePoint",
+      "id": "hf-pbp",
+      "positionMm": {
+        "xMm": 0,
+        "yMm": 0,
+        "zMm": 0
+      },
+      "angleToTrueNorthDeg": 0
+    },
+    {
+      "type": "createLevel",
+      "id": "hf-lvl-ground",
+      "name": "Ground Floor",
+      "elevationMm": 0
+    },
+    {
+      "type": "createLevel",
+      "id": "hf-lvl-upper",
+      "name": "First Floor",
+      "elevationMm": 3000
+    },
+    {
+      "type": "createMass",
+      "id": "hf-mass-gf",
+      "name": "Ground floor mass",
+      "levelId": "hf-lvl-ground",
+      "footprintMm": [
+        {
+          "xMm": 0,
+          "yMm": 0
+        },
+        {
+          "xMm": 7000,
+          "yMm": 0
+        },
+        {
+          "xMm": 7000,
+          "yMm": 8000
+        },
+        {
+          "xMm": 0,
+          "yMm": 8000
+        }
+      ],
+      "heightMm": 3000,
+      "materialKey": "cladding_beige_grey"
+    },
+    {
+      "type": "createMass",
+      "id": "hf-mass-uf",
+      "name": "Upper floor mass (west-aligned)",
+      "levelId": "hf-lvl-upper",
+      "footprintMm": [
+        {
+          "xMm": 0,
+          "yMm": 0
+        },
+        {
+          "xMm": 5000,
+          "yMm": 0
+        },
+        {
+          "xMm": 5000,
+          "yMm": 8000
+        },
+        {
+          "xMm": 0,
+          "yMm": 8000
+        }
+      ],
+      "heightMm": 4500,
+      "materialKey": "white_render"
+    },
+    {
+      "type": "createMass",
+      "id": "hf-mass-parapet",
+      "name": "East deck parapet block",
+      "levelId": "hf-lvl-upper",
+      "footprintMm": [
+        {
+          "xMm": 5000,
+          "yMm": 0
+        },
+        {
+          "xMm": 7000,
+          "yMm": 0
+        },
+        {
+          "xMm": 7000,
+          "yMm": 8000
+        },
+        {
+          "xMm": 5000,
+          "yMm": 8000
+        }
+      ],
+      "heightMm": 200,
+      "materialKey": "cladding_beige_grey"
+    },
+    {
+      "type": "deleteElement",
+      "elementId": "hf-mass-gf"
+    },
+    {
+      "type": "deleteElement",
+      "elementId": "hf-mass-uf"
+    },
+    {
+      "type": "deleteElement",
+      "elementId": "hf-mass-parapet"
+    },
+    {
+      "type": "createWall",
+      "id": "hf-w-gf-s",
+      "name": "GF south wall",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 0,
+        "yMm": 0
+      },
+      "end": {
+        "xMm": 7000,
+        "yMm": 0
+      },
+      "thicknessMm": 250,
+      "heightMm": 3000
+    },
+    {
+      "type": "createWall",
+      "id": "hf-w-gf-e",
+      "name": "GF east wall",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 7000,
+        "yMm": 0
+      },
+      "end": {
+        "xMm": 7000,
+        "yMm": 8000
+      },
+      "thicknessMm": 250,
+      "heightMm": 3000
+    },
+    {
+      "type": "createWall",
+      "id": "hf-w-gf-n",
+      "name": "GF north wall",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 7000,
+        "yMm": 8000
+      },
+      "end": {
+        "xMm": 0,
+        "yMm": 8000
+      },
+      "thicknessMm": 250,
+      "heightMm": 3000
+    },
+    {
+      "type": "createWall",
+      "id": "hf-w-gf-w",
+      "name": "GF west wall",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 0,
+        "yMm": 8000
+      },
+      "end": {
+        "xMm": 0,
+        "yMm": 0
+      },
+      "thicknessMm": 250,
+      "heightMm": 3000
+    },
+    {
+      "type": "createWall",
+      "id": "hf-w-uf-s",
+      "name": "UF south wall",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 0,
+        "yMm": 0
+      },
+      "end": {
+        "xMm": 5000,
+        "yMm": 0
+      },
+      "thicknessMm": 250,
+      "heightMm": 4500
+    },
+    {
+      "type": "createWall",
+      "id": "hf-w-uf-e",
+      "name": "UF east wall",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 5000,
+        "yMm": 0
+      },
+      "end": {
+        "xMm": 5000,
+        "yMm": 8000
+      },
+      "thicknessMm": 250,
+      "heightMm": 4500
+    },
+    {
+      "type": "createWall",
+      "id": "hf-w-uf-n",
+      "name": "UF north wall",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 5000,
+        "yMm": 8000
+      },
+      "end": {
+        "xMm": 0,
+        "yMm": 8000
+      },
+      "thicknessMm": 250,
+      "heightMm": 4500
+    },
+    {
+      "type": "createWall",
+      "id": "hf-w-uf-w",
+      "name": "UF west wall",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 0,
+        "yMm": 8000
+      },
+      "end": {
+        "xMm": 0,
+        "yMm": 0
+      },
+      "thicknessMm": 250,
+      "heightMm": 4500
+    },
+    {
+      "type": "createWall",
+      "id": "hf-w-pa-s",
+      "name": "Deck parapet south",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 5000,
+        "yMm": 0
+      },
+      "end": {
+        "xMm": 7000,
+        "yMm": 0
+      },
+      "thicknessMm": 250,
+      "heightMm": 200
+    },
+    {
+      "type": "createWall",
+      "id": "hf-w-pa-e",
+      "name": "Deck parapet east",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 7000,
+        "yMm": 0
+      },
+      "end": {
+        "xMm": 7000,
+        "yMm": 8000
+      },
+      "thicknessMm": 250,
+      "heightMm": 200
+    },
+    {
+      "type": "createWall",
+      "id": "hf-w-pa-n",
+      "name": "Deck parapet north",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 7000,
+        "yMm": 8000
+      },
+      "end": {
+        "xMm": 5000,
+        "yMm": 8000
+      },
+      "thicknessMm": 250,
+      "heightMm": 200
+    },
+    {
+      "type": "createFloor",
+      "id": "hf-flr-ground",
+      "name": "Ground floor slab",
+      "levelId": "hf-lvl-ground",
+      "boundaryMm": [
+        {
+          "xMm": 0,
+          "yMm": 0
+        },
+        {
+          "xMm": 7000,
+          "yMm": 0
+        },
+        {
+          "xMm": 7000,
+          "yMm": 8000
+        },
+        {
+          "xMm": 0,
+          "yMm": 8000
+        }
+      ]
+    },
+    {
+      "type": "createFloor",
+      "id": "hf-flr-upper",
+      "name": "Upper floor slab (west)",
+      "levelId": "hf-lvl-upper",
+      "boundaryMm": [
+        {
+          "xMm": 0,
+          "yMm": 0
+        },
+        {
+          "xMm": 5000,
+          "yMm": 0
+        },
+        {
+          "xMm": 5000,
+          "yMm": 8000
+        },
+        {
+          "xMm": 0,
+          "yMm": 8000
+        }
+      ]
+    },
+    {
+      "type": "createFloor",
+      "id": "hf-flr-deck",
+      "name": "East roof terrace deck",
+      "levelId": "hf-lvl-upper",
+      "boundaryMm": [
+        {
+          "xMm": 5000,
+          "yMm": 0
+        },
+        {
+          "xMm": 7000,
+          "yMm": 0
+        },
+        {
+          "xMm": 7000,
+          "yMm": 8000
+        },
+        {
+          "xMm": 5000,
+          "yMm": 8000
+        }
+      ]
+    },
+    {
+      "type": "createRoof",
+      "id": "hf-roof-main",
+      "name": "Upper-volume roof",
+      "referenceLevelId": "hf-lvl-upper",
+      "footprintMm": [
+        {
+          "xMm": 0,
+          "yMm": 0
+        },
+        {
+          "xMm": 5000,
+          "yMm": 0
+        },
+        {
+          "xMm": 5000,
+          "yMm": 8000
+        },
+        {
+          "xMm": 0,
+          "yMm": 8000
+        }
+      ],
+      "roofGeometryMode": "flat",
+      "slopeDeg": 0,
+      "eaveHeightLeftMm": 4500,
+      "eaveHeightRightMm": 4500,
+      "overhangMm": 0
+    },
+    {
+      "type": "deleteElement",
+      "elementId": "hf-roof-main"
+    },
+    {
+      "type": "createRoof",
+      "id": "hf-roof-main",
+      "name": "Upper-volume asymmetric gable",
+      "referenceLevelId": "hf-lvl-upper",
+      "footprintMm": [
+        {
+          "xMm": 0,
+          "yMm": 0
+        },
+        {
+          "xMm": 5000,
+          "yMm": 0
+        },
+        {
+          "xMm": 5000,
+          "yMm": 8000
+        },
+        {
+          "xMm": 0,
+          "yMm": 8000
+        }
+      ],
+      "roofGeometryMode": "asymmetric_gable",
+      "ridgeOffsetTransverseMm": 500,
+      "eaveHeightLeftMm": 1500,
+      "eaveHeightRightMm": 2300,
+      "slopeDeg": 30,
+      "overhangMm": 0,
+      "materialKey": "metal_standing_seam_dark_grey"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-w-uf-s",
+      "key": "heightMm",
+      "value": 6000
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-w-uf-n",
+      "key": "heightMm",
+      "value": 6000
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-w-uf-e",
+      "key": "heightMm",
+      "value": 6000
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-w-uf-w",
+      "key": "heightMm",
+      "value": 6000
+    },
+    {
+      "type": "attachWallTopToRoof",
+      "wallId": "hf-w-uf-s",
+      "roofId": "hf-roof-main"
+    },
+    {
+      "type": "attachWallTopToRoof",
+      "wallId": "hf-w-uf-e",
+      "roofId": "hf-roof-main"
+    },
+    {
+      "type": "attachWallTopToRoof",
+      "wallId": "hf-w-uf-n",
+      "roofId": "hf-roof-main"
+    },
+    {
+      "type": "attachWallTopToRoof",
+      "wallId": "hf-w-uf-w",
+      "roofId": "hf-roof-main"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-w-gf-s",
+      "key": "materialKey",
+      "value": "cladding_beige_grey"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-w-gf-e",
+      "key": "materialKey",
+      "value": "cladding_beige_grey"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-w-gf-n",
+      "key": "materialKey",
+      "value": "cladding_beige_grey"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-w-gf-w",
+      "key": "materialKey",
+      "value": "cladding_beige_grey"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-w-uf-s",
+      "key": "materialKey",
+      "value": "cladding_warm_wood"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-w-uf-e",
+      "key": "materialKey",
+      "value": "white_render"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-w-uf-n",
+      "key": "materialKey",
+      "value": "white_render"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-w-uf-w",
+      "key": "materialKey",
+      "value": "white_render"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-w-pa-s",
+      "key": "materialKey",
+      "value": "cladding_beige_grey"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-w-pa-e",
+      "key": "materialKey",
+      "value": "cladding_beige_grey"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-w-pa-n",
+      "key": "materialKey",
+      "value": "cladding_beige_grey"
+    },
+    {
+      "type": "createSweep",
+      "id": "hf-sw-frame",
+      "name": "Picture-frame outline",
+      "levelId": "hf-lvl-ground",
+      "pathMm": [
+        {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 3000
+        },
+        {
+          "xMm": 5000,
+          "yMm": 0,
+          "zMm": 3000
+        },
+        {
+          "xMm": 5000,
+          "yMm": 0,
+          "zMm": 5300
+        },
+        {
+          "xMm": 3000,
+          "yMm": 0,
+          "zMm": 6231
+        },
+        {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 4500
+        },
+        {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 3000
+        }
+      ],
+      "profileMm": [
+        {
+          "uMm": -175,
+          "vMm": -100
+        },
+        {
+          "uMm": 175,
+          "vMm": -100
+        },
+        {
+          "uMm": 175,
+          "vMm": 100
+        },
+        {
+          "uMm": -175,
+          "vMm": 100
+        }
+      ],
+      "profilePlane": "work_plane",
+      "materialKey": "white_render"
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "hf-win-gf-s-1",
+      "name": "GF south window (left)",
+      "wallId": "hf-w-gf-s",
+      "alongT": 0.1,
+      "widthMm": 700,
+      "heightMm": 1800,
+      "sillHeightMm": 200
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "hf-win-gf-s-2",
+      "name": "GF south window (centre-left)",
+      "wallId": "hf-w-gf-s",
+      "alongT": 0.22,
+      "widthMm": 700,
+      "heightMm": 1800,
+      "sillHeightMm": 200
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "hf-door-front",
+      "name": "Front door",
+      "wallId": "hf-w-gf-s",
+      "alongT": 0.55,
+      "widthMm": 900
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "hf-win-gf-s-3",
+      "name": "GF south window (east extension)",
+      "wallId": "hf-w-gf-s",
+      "alongT": 0.85,
+      "widthMm": 600,
+      "heightMm": 1200,
+      "sillHeightMm": 1000
+    },
+    {
+      "type": "setWallRecessZones",
+      "wallId": "hf-w-uf-s",
+      "recessZones": [
+        {
+          "alongTStart": 0,
+          "alongTEnd": 1,
+          "setbackMm": 1500,
+          "floorContinues": true
+        }
+      ]
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "hf-door-loggia",
+      "name": "Loggia sliding door",
+      "wallId": "hf-w-uf-s",
+      "alongT": 0.7,
+      "widthMm": 1800
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-door-loggia",
+      "key": "operationType",
+      "value": "sliding_double"
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "hf-win-loggia-trap",
+      "name": "Loggia trapezoidal window",
+      "wallId": "hf-w-uf-s",
+      "alongT": 0.22,
+      "widthMm": 1800,
+      "heightMm": 2200,
+      "sillHeightMm": 200
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-win-loggia-trap",
+      "key": "outlineKind",
+      "value": "gable_trapezoid"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-win-loggia-trap",
+      "key": "attachedRoofId",
+      "value": "hf-roof-main"
+    },
+    {
+      "type": "createWall",
+      "id": "hf-w-uf-ptn-mid",
+      "name": "UF mid partition (E-W)",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 0,
+        "yMm": 4000
+      },
+      "end": {
+        "xMm": 5000,
+        "yMm": 4000
+      },
+      "thicknessMm": 120,
+      "heightMm": 2700
+    },
+    {
+      "type": "createWall",
+      "id": "hf-w-uf-ptn-back",
+      "name": "UF back partition (N-S, north half)",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 2500,
+        "yMm": 4000
+      },
+      "end": {
+        "xMm": 2500,
+        "yMm": 8000
+      },
+      "thicknessMm": 120,
+      "heightMm": 2700
+    },
+    {
+      "type": "createStair",
+      "id": "hf-stair-main",
+      "name": "Main stair",
+      "baseLevelId": "hf-lvl-ground",
+      "topLevelId": "hf-lvl-upper",
+      "runStartMm": {
+        "xMm": 4000,
+        "yMm": 3000
+      },
+      "runEndMm": {
+        "xMm": 4000,
+        "yMm": 6500
+      },
+      "widthMm": 1000,
+      "riserMm": 175,
+      "treadMm": 220
+    },
+    {
+      "type": "createSlabOpening",
+      "id": "hf-slab-stair",
+      "name": "Stair shaft opening",
+      "hostFloorId": "hf-flr-upper",
+      "boundaryMm": [
+        {
+          "xMm": 3500,
+          "yMm": 3000
+        },
+        {
+          "xMm": 4500,
+          "yMm": 3000
+        },
+        {
+          "xMm": 4500,
+          "yMm": 6500
+        },
+        {
+          "xMm": 3500,
+          "yMm": 6500
+        }
+      ],
+      "isShaft": true
+    },
+    {
+      "type": "createRailing",
+      "id": "hf-rail-stair",
+      "name": "Stair railing",
+      "hostedStairId": "hf-stair-main",
+      "pathMm": [
+        {
+          "xMm": 3500,
+          "yMm": 3000
+        },
+        {
+          "xMm": 3500,
+          "yMm": 6500
+        }
+      ]
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "hf-room-living",
+      "name": "Open-plan kitchen + living",
+      "levelId": "hf-lvl-ground",
+      "outlineMm": [
+        {
+          "xMm": 200,
+          "yMm": 200
+        },
+        {
+          "xMm": 6800,
+          "yMm": 200
+        },
+        {
+          "xMm": 6800,
+          "yMm": 7800
+        },
+        {
+          "xMm": 200,
+          "yMm": 7800
+        }
+      ],
+      "programmeCode": "living",
+      "targetAreaM2": 56
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "hf-room-bed-1",
+      "name": "Bedroom 1 (master)",
+      "levelId": "hf-lvl-upper",
+      "outlineMm": [
+        {
+          "xMm": 200,
+          "yMm": 200
+        },
+        {
+          "xMm": 4800,
+          "yMm": 200
+        },
+        {
+          "xMm": 4800,
+          "yMm": 3900
+        },
+        {
+          "xMm": 200,
+          "yMm": 3900
+        }
+      ],
+      "programmeCode": "bedroom",
+      "targetAreaM2": 18
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "hf-room-bed-2",
+      "name": "Bedroom 2",
+      "levelId": "hf-lvl-upper",
+      "outlineMm": [
+        {
+          "xMm": 200,
+          "yMm": 4100
+        },
+        {
+          "xMm": 2400,
+          "yMm": 4100
+        },
+        {
+          "xMm": 2400,
+          "yMm": 7800
+        },
+        {
+          "xMm": 200,
+          "yMm": 7800
+        }
+      ],
+      "programmeCode": "bedroom",
+      "targetAreaM2": 12
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "hf-room-bath",
+      "name": "Bathroom",
+      "levelId": "hf-lvl-upper",
+      "outlineMm": [
+        {
+          "xMm": 2600,
+          "yMm": 4100
+        },
+        {
+          "xMm": 4800,
+          "yMm": 4100
+        },
+        {
+          "xMm": 4800,
+          "yMm": 7800
+        },
+        {
+          "xMm": 2600,
+          "yMm": 7800
+        }
+      ],
+      "programmeCode": "bathroom",
+      "targetAreaM2": 6
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "hf-room-deck",
+      "name": "East roof terrace",
+      "levelId": "hf-lvl-upper",
+      "outlineMm": [
+        {
+          "xMm": 5200,
+          "yMm": 200
+        },
+        {
+          "xMm": 6800,
+          "yMm": 200
+        },
+        {
+          "xMm": 6800,
+          "yMm": 7800
+        },
+        {
+          "xMm": 5200,
+          "yMm": 7800
+        }
+      ],
+      "programmeCode": "terrace",
+      "targetAreaM2": 16
+    },
+    {
+      "type": "createBalcony",
+      "id": "hf-balcony-loggia",
+      "name": "Loggia balcony",
+      "wallId": "hf-w-uf-s",
+      "elevationMm": 3000,
+      "projectionMm": 700,
+      "slabThicknessMm": 150,
+      "balustradeHeightMm": 1200
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "hf-door-dormer",
+      "name": "Dormer-deck sliding doors",
+      "wallId": "hf-w-uf-e",
+      "alongT": 0.31,
+      "widthMm": 2400
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-door-dormer",
+      "key": "operationType",
+      "value": "sliding_double"
+    },
+    {
+      "type": "saveViewpoint",
+      "id": "vp-main-iso",
+      "name": "Main isometric (SSW)",
+      "mode": "orbit_3d",
+      "camera": {
+        "position": {
+          "xMm": -1500,
+          "yMm": -7500,
+          "zMm": 11000
+        },
+        "target": {
+          "xMm": 3500,
+          "yMm": 4000,
+          "zMm": 4250
+        },
+        "up": {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 1
+        }
+      }
+    },
+    {
+      "type": "saveViewpoint",
+      "id": "vp-front-elev",
+      "name": "Front elevation (south)",
+      "mode": "orbit_3d",
+      "camera": {
+        "position": {
+          "xMm": 3500,
+          "yMm": -12000,
+          "zMm": 4250
+        },
+        "target": {
+          "xMm": 3500,
+          "yMm": 4000,
+          "zMm": 4250
+        },
+        "up": {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 1
+        }
+      }
+    },
+    {
+      "type": "saveViewpoint",
+      "id": "vp-side-elev-east",
+      "name": "Side elevation (east)",
+      "mode": "orbit_3d",
+      "camera": {
+        "position": {
+          "xMm": 18000,
+          "yMm": 4000,
+          "zMm": 4250
+        },
+        "target": {
+          "xMm": 3500,
+          "yMm": 4000,
+          "zMm": 4250
+        },
+        "up": {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 1
+        }
+      }
+    },
+    {
+      "type": "saveViewpoint",
+      "id": "vp-rear-axo",
+      "name": "Rear axonometric (NE)",
+      "mode": "orbit_3d",
+      "camera": {
+        "position": {
+          "xMm": 12000,
+          "yMm": 14000,
+          "zMm": 11000
+        },
+        "target": {
+          "xMm": 3500,
+          "yMm": 4000,
+          "zMm": 4250
+        },
+        "up": {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 1
+        }
+      }
+    },
+    {
+      "type": "upsertPlanView",
+      "id": "hf-pv-ground",
+      "name": "GF plan",
+      "levelId": "hf-lvl-ground"
+    },
+    {
+      "type": "upsertPlanView",
+      "id": "hf-pv-upper",
+      "name": "First-floor plan",
+      "levelId": "hf-lvl-upper"
+    },
+    {
+      "type": "createSectionCut",
+      "id": "hf-sec-loggia",
+      "name": "South-facade section through loggia",
+      "lineStartMm": {
+        "xMm": 0,
+        "yMm": 2000
+      },
+      "lineEndMm": {
+        "xMm": 7000,
+        "yMm": 2000
+      },
+      "cropDepthMm": 8500
+    },
+    {
+      "type": "upsertSheet",
+      "id": "hf-sheet-ga01",
+      "name": "GA-01 General arrangement",
+      "titleBlock": "A2-bim-ai-default",
+      "paperWidthMm": 594,
+      "paperHeightMm": 420
+    },
+    {
+      "type": "upsertSchedule",
+      "id": "hf-sch-rooms",
+      "name": "Room schedule",
+      "sheetId": "hf-sheet-ga01"
+    },
+    {
+      "type": "upsertSchedule",
+      "id": "hf-sch-windows",
+      "name": "Window schedule",
+      "sheetId": "hf-sheet-ga01"
+    },
+    {
+      "type": "upsertSchedule",
+      "id": "hf-sch-doors",
+      "name": "Door schedule",
+      "sheetId": "hf-sheet-ga01"
+    }
+  ]
+}

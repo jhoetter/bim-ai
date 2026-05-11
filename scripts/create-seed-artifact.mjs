@@ -18,7 +18,8 @@ function usage() {
     --name <seed-name> \\
     --source <folder-with-user-inputs> \\
     --bundle <cmd-v3-bundle.json> \\
-    [--title <label>] [--description <text>] [--out <artifact-root>] [--force]
+    [--title <label>] [--description <text>] [--created-at <iso8601>] \\
+    [--out <artifact-root>] [--force]
 `);
   process.exit(2);
 }
@@ -49,6 +50,14 @@ async function sha256File(file) {
     .createHash('sha256')
     .update(await fs.readFile(file))
     .digest('hex');
+}
+
+function portablePath(absPath) {
+  const relative = path.relative(REPO_ROOT, absPath);
+  if (relative && !relative.startsWith('..') && !path.isAbsolute(relative)) {
+    return relative.split(path.sep).join('/');
+  }
+  return path.basename(absPath);
 }
 
 function shouldCopy(src) {
@@ -117,7 +126,7 @@ async function main() {
   await fs.mkdir(path.join(artifactDir, 'evidence'), { recursive: true });
   await fs.writeFile(
     path.join(artifactDir, 'evidence', 'README.md'),
-    '# Evidence\n\nPlace advisor JSON, screenshots, validation output, and acceptance notes here.\n',
+    '# Evidence\n\nPlace advisor JSON, screenshots, validation output, and acceptance notes here. Keep files portable and scoped to this artifact.\n',
     'utf8',
   );
 
@@ -130,9 +139,15 @@ async function main() {
     bundle: 'bundle.json',
     sourceRoot: 'source',
     evidenceRoot: 'evidence',
-    createdAt: new Date().toISOString(),
-    sourcePath: sourceDir,
-    bundleSourcePath: bundlePath,
+    createdAt: args['created-at'] ?? new Date().toISOString(),
+    generatedBy: {
+      tool: 'scripts/create-seed-artifact.mjs',
+      version: 1,
+    },
+    inputPaths: {
+      source: portablePath(sourceDir),
+      bundle: portablePath(bundlePath),
+    },
     bundleSha256: await sha256File(bundlePath),
     commandCount: bundleStats.commandCount,
     commandSchemaVersion: bundleStats.schemaVersion,

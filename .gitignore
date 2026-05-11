@@ -23,8 +23,7 @@ app/.venv/
 *.local
 packages/web/playwright-report/
 packages/web/test-results/
-seed-artifacts/*
-!seed-artifacts/.gitkeep
-!seed-artifacts/README.md
+# Seed artifacts are intentionally versioned. Each checked-in folder must be a
+# self-contained, portable seed package consumable by `make seed name=<name>`.
 .entire/
 .superset/

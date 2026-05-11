@@ -12,6 +12,8 @@ to load without referencing another seed run.
 - Let `make seed name=<seed-name>` load or refresh one artifact.
 - Avoid generated seed data in `packages/cli/lib`, `nightshift`, E2E fixtures, or
   other shared source folders.
+- Keep loadable seed artifacts versioned under `seed-artifacts/<name>/` so a
+  clean checkout can run `make seed name=<name>` without regenerating bundles.
 - Make cleanup trivial: delete an artifact folder and run `make seed`, or run
   `make seed-clear`.
 
@@ -23,9 +25,9 @@ Generated artifacts live under:
 seed-artifacts/<name>/
 ```
 
-`seed-artifacts/*` is ignored by git. Commit source specs and methodology
-separately; commit generated seed artifacts only intentionally in a dedicated
-artifact repository or by changing the ignore rule.
+`seed-artifacts/<name>/` folders are tracked by git. Runtime scratch files,
+temporary captures, and large exploratory evidence should stay out of artifact
+folders until they are part of the accepted, portable artifact package.
 
 ## Layout
 
@@ -56,6 +58,14 @@ Required files:
   "bundle": "bundle.json",
   "sourceRoot": "source",
   "evidenceRoot": "evidence",
+  "generatedBy": {
+    "tool": "scripts/create-seed-artifact.mjs",
+    "version": 1
+  },
+  "inputPaths": {
+    "source": "spec/target-house",
+    "bundle": "target-house-1-bundle.json"
+  },
   "bundleSha256": "...",
   "commandCount": 144,
   "entryComment": {
@@ -79,7 +89,8 @@ node scripts/create-seed-artifact.mjs \
 
 The packer copies the full source folder into `source/`, filters cache/build
 directories, copies the bundle to `bundle.json`, creates `evidence/`, and writes
-the manifest.
+the manifest. Manifest provenance paths are portable labels only; do not commit
+machine-local absolute paths such as `/Users/...`.
 
 ## Loading
 
