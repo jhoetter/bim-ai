@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import { TopBar, WORKSPACE_MODES } from './TopBar';
-import { RibbonBar } from './RibbonBar';
+import { RibbonBar, ribbonCommandReachabilityForMode } from './RibbonBar';
 import { TopBarV3 } from '../chrome/TopBar';
 import type { ViewTab } from '../tabsModel';
 import i18n from '../../i18n';
@@ -345,18 +345,19 @@ describe('TopBar — spec §11', () => {
 });
 
 describe('RibbonBar — F-005', () => {
-  it('renders ribbon tabs and grouped Architecture commands by default', () => {
+  it('renders the plan ribbon schema by default', () => {
     const { getByTestId, getByRole } = render(<RibbonBar activeToolId="wall" />);
     expect(getByTestId('ribbon-bar')).toBeTruthy();
     expect(getByRole('tab', { name: 'Architecture' }).getAttribute('aria-selected')).toBe('true');
-    expect(getByRole('tab', { name: 'Steel' })).toBeTruthy();
-    expect(getByRole('tab', { name: 'Precast' })).toBeTruthy();
-    expect(getByRole('tab', { name: 'Systems' })).toBeTruthy();
+    expect(getByRole('tab', { name: 'Structure' })).toBeTruthy();
     expect(getByRole('tab', { name: 'Insert' })).toBeTruthy();
-    expect(getByRole('tab', { name: 'Collaborate' })).toBeTruthy();
-    expect(getByRole('tab', { name: 'Massing & Site' })).toBeTruthy();
+    expect(getByRole('tab', { name: 'Annotate' })).toBeTruthy();
     expect(getByRole('tab', { name: 'Analyze' })).toBeTruthy();
-    expect(getByRole('tab', { name: 'Add-Ins' })).toBeTruthy();
+    expect(getByRole('tab', { name: 'Massing & Site' })).toBeTruthy();
+    expect(() => getByRole('tab', { name: 'Steel' })).toThrow();
+    expect(() => getByRole('tab', { name: 'Precast' })).toThrow();
+    expect(() => getByRole('tab', { name: 'Systems' })).toThrow();
+    expect(() => getByRole('tab', { name: 'Add-Ins' })).toThrow();
     expect(getByTestId('ribbon-command-wall').getAttribute('aria-pressed')).toBe('true');
     expect(getByTestId('ribbon-command-door')).toBeTruthy();
   });
@@ -369,42 +370,47 @@ describe('RibbonBar — F-005', () => {
     expect(onToolSelect).toHaveBeenCalledWith('dimension');
   });
 
-  it('dispatches view modes and top-level actions from ribbon panels', () => {
-    const onModeChange = vi.fn();
-    const onOpenVisibilityGraphics = vi.fn();
-    const { getByTestId } = render(
-      <RibbonBar onModeChange={onModeChange} onOpenVisibilityGraphics={onOpenVisibilityGraphics} />,
-    );
-    fireEvent.click(getByTestId('ribbon-tab-view'));
-    fireEvent.click(getByTestId('ribbon-command-3d'));
-    fireEvent.click(getByTestId('ribbon-command-visibility-graphics'));
-    expect(onModeChange).toHaveBeenCalledWith('3d');
-    expect(onOpenVisibilityGraphics).toHaveBeenCalledTimes(1);
-  });
-
-  it('disables plan-only ribbon tools and plan VV/VG in pure 3D mode', () => {
-    const onToolSelect = vi.fn();
-    const onOpenVisibilityGraphics = vi.fn();
+  it('switches to direct sheet actions in sheet mode', () => {
+    const onPlaceRecommended = vi.fn();
+    const onOpenViewports = vi.fn();
     const { getByTestId } = render(
       <RibbonBar
-        activeMode="3d"
-        onToolSelect={onToolSelect}
-        onOpenVisibilityGraphics={onOpenVisibilityGraphics}
+        activeMode="sheet"
+        onPlaceRecommendedViewsOnActiveSheet={onPlaceRecommended}
+        onOpenSheetViewportEditor={onOpenViewports}
       />,
     );
 
-    const wallButton = getByTestId('ribbon-command-wall') as HTMLButtonElement;
-    expect(wallButton.disabled).toBe(true);
-    expect(wallButton.getAttribute('data-disabled-reason')).toContain('Plan');
-    fireEvent.click(wallButton);
-    expect(onToolSelect).not.toHaveBeenCalled();
-
     fireEvent.click(getByTestId('ribbon-tab-view'));
-    const vgButton = getByTestId('ribbon-command-visibility-graphics') as HTMLButtonElement;
-    expect(vgButton.disabled).toBe(true);
-    expect(vgButton.getAttribute('data-disabled-reason')).toContain('3D View Controls');
-    fireEvent.click(vgButton);
-    expect(onOpenVisibilityGraphics).not.toHaveBeenCalled();
+    expect(getByTestId('ribbon-command-sheet-place-recommended')).toBeTruthy();
+    expect(() => getByTestId('ribbon-command-wall')).toThrow();
+    fireEvent.click(getByTestId('ribbon-command-sheet-place-recommended'));
+    fireEvent.click(getByTestId('ribbon-command-sheet-edit-viewports'));
+    expect(onPlaceRecommended).toHaveBeenCalledTimes(1);
+    expect(onOpenViewports).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses a 3D ribbon schema with no disabled plan buttons', () => {
+    const onToolSelect = vi.fn();
+    const onSaveCurrentViewpoint = vi.fn();
+    const { getByTestId, getByRole, queryByTestId } = render(
+      <RibbonBar
+        activeMode="3d"
+        onToolSelect={onToolSelect}
+        onSaveCurrentViewpoint={onSaveCurrentViewpoint}
+      />,
+    );
+
+    expect(getByRole('tab', { name: '3D View' }).getAttribute('aria-selected')).toBe('true');
+    expect(queryByTestId('ribbon-command-wall')).toBeNull();
+    expect(queryByTestId('ribbon-command-visibility-graphics')).toBeNull();
+    expect((getByTestId('ribbon-command-select') as HTMLButtonElement).disabled).toBe(false);
+    expect((getByTestId('ribbon-command-3d-save-view') as HTMLButtonElement).disabled).toBe(false);
+
+    fireEvent.click(getByTestId('ribbon-command-select'));
+    fireEvent.click(getByTestId('ribbon-command-3d-save-view'));
+    expect(onToolSelect).toHaveBeenCalledWith('select');
+    expect(onSaveCurrentViewpoint).toHaveBeenCalledTimes(1);
   });
 
   it('opens added catalogue tabs and minimizes ribbon panels', () => {
@@ -424,24 +430,26 @@ describe('RibbonBar — F-005', () => {
     expect(getByTestId('ribbon-panels')).toBeTruthy();
   });
 
-  it('opens panel flyouts and dispatches flyout commands', () => {
+  it('uses a schedule ribbon schema with direct table actions', () => {
     const onOpenCommandPalette = vi.fn();
-    const onOpenSettings = vi.fn();
+    const onOpenScheduleControls = vi.fn();
+    const onDuplicateActiveSchedule = vi.fn();
     const { getByTestId, queryByTestId } = render(
-      <RibbonBar onOpenCommandPalette={onOpenCommandPalette} onOpenSettings={onOpenSettings} />,
+      <RibbonBar
+        activeMode="schedule"
+        onOpenCommandPalette={onOpenCommandPalette}
+        onOpenScheduleControls={onOpenScheduleControls}
+        onDuplicateActiveSchedule={onDuplicateActiveSchedule}
+      />,
     );
 
     fireEvent.click(getByTestId('ribbon-tab-view'));
-    fireEvent.click(getByTestId('ribbon-panel-flyout-graphics'));
-    expect(getByTestId('ribbon-flyout-menu-graphics')).toBeTruthy();
-
-    fireEvent.click(getByTestId('ribbon-flyout-command-view-more'));
-    expect(onOpenCommandPalette).toHaveBeenCalledTimes(1);
-    expect(queryByTestId('ribbon-flyout-menu-graphics')).toBeNull();
-
-    fireEvent.click(getByTestId('ribbon-panel-flyout-graphics'));
-    fireEvent.click(getByTestId('ribbon-flyout-command-view-gdo'));
-    expect(onOpenSettings).toHaveBeenCalledTimes(1);
+    expect(queryByTestId('ribbon-command-door')).toBeNull();
+    fireEvent.click(getByTestId('ribbon-command-schedule-controls'));
+    fireEvent.click(getByTestId('ribbon-command-schedule-duplicate'));
+    expect(onOpenScheduleControls).toHaveBeenCalledTimes(1);
+    expect(onDuplicateActiveSchedule).toHaveBeenCalledTimes(1);
+    expect(onOpenCommandPalette).not.toHaveBeenCalled();
   });
 
   it('customizes visible ribbon commands and persists the preference', () => {
@@ -463,6 +471,23 @@ describe('RibbonBar — F-005', () => {
     const tab = getByTestId('ribbon-tab-modify');
     expect(tab.textContent).toBe('Modify | Wall');
     expect(tab.getAttribute('data-contextual')).toBe('true');
+  });
+
+  it('does not expose disabled ribbon commands in any active view schema — UX-WP-06', () => {
+    for (const mode of [
+      'plan',
+      '3d',
+      'plan-3d',
+      'section',
+      'sheet',
+      'schedule',
+      'agent',
+      'concept',
+    ] as const) {
+      expect(
+        ribbonCommandReachabilityForMode(mode, 'wall').filter((row) => row.behavior === 'disabled'),
+      ).toEqual([]);
+    }
   });
 });
 

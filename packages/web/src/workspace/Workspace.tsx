@@ -1744,10 +1744,27 @@ export function Workspace(): JSX.Element {
             onToolSelect={handleToolSelect}
             onModeChange={handleModeChange}
             onOpenCommandPalette={() => setPaletteOpen(true)}
-            onOpenVisibilityGraphics={openVVDialog}
             onOpenFamilyLibrary={() => setFamilyLibraryOpen(true)}
-            onOpenProjectMenu={() => setProjectMenuOpen((v) => !v)}
             onOpenSettings={() => setCheatsheetOpen(true)}
+            onSaveCurrentViewpoint={saveCurrentViewpoint}
+            onResetActiveSavedViewpoint={resetActiveSavedViewpoint}
+            onUpdateActiveSavedViewpoint={updateActiveSavedViewpoint}
+            onPlaceActiveSectionOnSheet={placeActiveSectionOnSheet}
+            onOpenActiveSectionSourcePlan={openActiveSectionSourcePlan}
+            onIncreaseActiveSectionCropDepth={() => adjustActiveSectionCropDepth(500)}
+            onDecreaseActiveSectionCropDepth={() => adjustActiveSectionCropDepth(-500)}
+            onPlaceRecommendedViewsOnActiveSheet={placeRecommendedViewsOnActiveSheet}
+            onPlaceFirstViewOnActiveSheet={() => {
+              const first = paletteSheetPlaceableViews[0];
+              if (first) placeViewOnActiveSheet(first.id);
+            }}
+            onOpenSheetViewportEditor={() => openActiveSheetAnchor('sheet-viewport-editor')}
+            onOpenSheetTitleblockEditor={() => openActiveSheetAnchor('sheet-titleblock-editor')}
+            onShareActiveSheet={() => setSharePresentationOpen(true)}
+            onOpenSelectedScheduleRow={openSelectedScheduleRow}
+            onPlaceActiveScheduleOnSheet={placeActiveScheduleOnSheet}
+            onDuplicateActiveSchedule={duplicateActiveSchedule}
+            onOpenScheduleControls={openScheduleControls}
           />
         }
         primarySidebar={

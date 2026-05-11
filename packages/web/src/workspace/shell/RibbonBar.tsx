@@ -33,10 +33,24 @@ type RibbonCommand =
 
 type RibbonActionId =
   | 'command-palette'
-  | 'visibility-graphics'
   | 'family-library'
-  | 'project-menu'
-  | 'settings';
+  | 'settings'
+  | '3d-save-view'
+  | '3d-reset-view'
+  | '3d-update-view'
+  | 'section-place-on-sheet'
+  | 'section-source-plan'
+  | 'section-depth-increase'
+  | 'section-depth-decrease'
+  | 'sheet-place-recommended'
+  | 'sheet-place-first-view'
+  | 'sheet-edit-viewports'
+  | 'sheet-edit-titleblock'
+  | 'sheet-publish'
+  | 'schedule-open-row'
+  | 'schedule-place-on-sheet'
+  | 'schedule-duplicate'
+  | 'schedule-controls';
 
 interface RibbonPanel {
   id: string;
@@ -69,10 +83,24 @@ export interface RibbonBarProps {
   onToolSelect?: (id: ToolId) => void;
   onModeChange?: (mode: WorkspaceMode) => void;
   onOpenCommandPalette?: () => void;
-  onOpenVisibilityGraphics?: () => void;
   onOpenFamilyLibrary?: () => void;
-  onOpenProjectMenu?: () => void;
   onOpenSettings?: () => void;
+  onSaveCurrentViewpoint?: () => void;
+  onResetActiveSavedViewpoint?: () => void;
+  onUpdateActiveSavedViewpoint?: () => void;
+  onPlaceActiveSectionOnSheet?: () => void;
+  onOpenActiveSectionSourcePlan?: () => void;
+  onIncreaseActiveSectionCropDepth?: () => void;
+  onDecreaseActiveSectionCropDepth?: () => void;
+  onPlaceRecommendedViewsOnActiveSheet?: () => void;
+  onPlaceFirstViewOnActiveSheet?: () => void;
+  onOpenSheetViewportEditor?: () => void;
+  onOpenSheetTitleblockEditor?: () => void;
+  onShareActiveSheet?: () => void;
+  onOpenSelectedScheduleRow?: () => void;
+  onPlaceActiveScheduleOnSheet?: () => void;
+  onDuplicateActiveSchedule?: () => void;
+  onOpenScheduleControls?: () => void;
 }
 
 const RIBBON_HIDDEN_COMMANDS_STORAGE_KEY = 'bim-ai.ribbon.hiddenCommands.v1';
@@ -84,10 +112,24 @@ export function RibbonBar({
   onToolSelect,
   onModeChange,
   onOpenCommandPalette,
-  onOpenVisibilityGraphics,
   onOpenFamilyLibrary,
-  onOpenProjectMenu,
   onOpenSettings,
+  onSaveCurrentViewpoint,
+  onResetActiveSavedViewpoint,
+  onUpdateActiveSavedViewpoint,
+  onPlaceActiveSectionOnSheet,
+  onOpenActiveSectionSourcePlan,
+  onIncreaseActiveSectionCropDepth,
+  onDecreaseActiveSectionCropDepth,
+  onPlaceRecommendedViewsOnActiveSheet,
+  onPlaceFirstViewOnActiveSheet,
+  onOpenSheetViewportEditor,
+  onOpenSheetTitleblockEditor,
+  onShareActiveSheet,
+  onOpenSelectedScheduleRow,
+  onPlaceActiveScheduleOnSheet,
+  onDuplicateActiveSchedule,
+  onOpenScheduleControls,
 }: RibbonBarProps): JSX.Element {
   const [activeTabId, setActiveTabId] = useState<RibbonTabId>('architecture');
   const [minimized, setMinimized] = useState(false);
@@ -96,9 +138,20 @@ export function RibbonBar({
   const [hiddenCommandKeys, setHiddenCommandKeys] = useState<Set<string>>(
     () => new Set(readHiddenRibbonCommandKeys()),
   );
-  const tabs = useMemo(() => buildRibbonTabs(selectedElementKind), [selectedElementKind]);
+  const tabs = useMemo(
+    () => buildRibbonTabs(activeMode, selectedElementKind),
+    [activeMode, selectedElementKind],
+  );
   const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? tabs[0]!;
   const activeCommands = useMemo(() => collectTabCommands(activeTab), [activeTab]);
+
+  useEffect(() => {
+    if (!tabs.some((tab) => tab.id === activeTabId)) {
+      setActiveTabId(tabs[0]?.id ?? 'architecture');
+      setOpenFlyoutPanelId(null);
+      setCustomizeOpen(false);
+    }
+  }, [activeTabId, tabs]);
 
   useEffect(() => {
     writeHiddenRibbonCommandKeys([...hiddenCommandKeys]);
@@ -116,12 +169,26 @@ export function RibbonBar({
     }
     const actions: Record<RibbonActionId, (() => void) | undefined> = {
       'command-palette': onOpenCommandPalette,
-      'visibility-graphics': onOpenVisibilityGraphics,
       'family-library': onOpenFamilyLibrary,
-      'project-menu': onOpenProjectMenu,
       settings: onOpenSettings,
+      '3d-save-view': onSaveCurrentViewpoint,
+      '3d-reset-view': onResetActiveSavedViewpoint,
+      '3d-update-view': onUpdateActiveSavedViewpoint,
+      'section-place-on-sheet': onPlaceActiveSectionOnSheet,
+      'section-source-plan': onOpenActiveSectionSourcePlan,
+      'section-depth-increase': onIncreaseActiveSectionCropDepth,
+      'section-depth-decrease': onDecreaseActiveSectionCropDepth,
+      'sheet-place-recommended': onPlaceRecommendedViewsOnActiveSheet,
+      'sheet-place-first-view': onPlaceFirstViewOnActiveSheet,
+      'sheet-edit-viewports': onOpenSheetViewportEditor,
+      'sheet-edit-titleblock': onOpenSheetTitleblockEditor,
+      'sheet-publish': onShareActiveSheet,
+      'schedule-open-row': onOpenSelectedScheduleRow,
+      'schedule-place-on-sheet': onPlaceActiveScheduleOnSheet,
+      'schedule-duplicate': onDuplicateActiveSchedule,
+      'schedule-controls': onOpenScheduleControls,
     };
-    actions[command.id]?.();
+    (actions[command.id] ?? onOpenCommandPalette)?.();
   }
 
   function commandVisible(command: RibbonCommand): boolean {
@@ -250,7 +317,7 @@ export function RibbonBar({
               >
                 {visibleCommands.map((command) => (
                   <RibbonButton
-                    key={`${command.type}:${command.id}`}
+                    key={commandKey(command)}
                     command={command}
                     active={command.type === 'tool' && command.id === activeToolId}
                     disabledReason={commandDisabledReason(command, activeMode)}
@@ -282,7 +349,7 @@ export function RibbonBar({
                           const disabledReason = commandDisabledReason(command, activeMode);
                           return (
                             <button
-                              key={`${command.type}:${command.id}`}
+                              key={commandKey(command)}
                               type="button"
                               role="menuitem"
                               data-testid={`ribbon-flyout-command-${command.testId ?? command.id}`}
@@ -327,7 +394,7 @@ export function ribbonCommandReachabilityForMode(
   selectedElementKind?: string | null,
 ): RibbonCommandReachability[] {
   const reachability: RibbonCommandReachability[] = [];
-  for (const tab of buildRibbonTabs(selectedElementKind)) {
+  for (const tab of buildRibbonTabs(mode, selectedElementKind)) {
     for (const panel of tab.panels) {
       for (const command of [...panel.commands, ...(panel.flyoutCommands ?? [])]) {
         const commandId = ribbonCapabilityId(command);
@@ -385,7 +452,57 @@ function RibbonButton({
   );
 }
 
-function buildRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
+function buildRibbonTabs(
+  activeMode: ToolWorkspaceMode | undefined,
+  selectedElementKind?: string | null,
+): RibbonTab[] {
+  const mode = activeMode ?? 'plan';
+  const tabs: RibbonTab[] =
+    mode === '3d'
+      ? build3dRibbonTabs(selectedElementKind)
+      : mode === 'section'
+        ? buildSectionRibbonTabs(selectedElementKind)
+        : mode === 'sheet'
+          ? buildSheetRibbonTabs(selectedElementKind)
+          : mode === 'schedule'
+            ? buildScheduleRibbonTabs(selectedElementKind)
+            : mode === 'concept'
+              ? buildConceptRibbonTabs(selectedElementKind)
+              : mode === 'agent'
+                ? buildAgentRibbonTabs(selectedElementKind)
+                : buildPlanRibbonTabs(mode, selectedElementKind);
+
+  return filterRibbonTabsForMode(tabs, mode);
+}
+
+function filterRibbonTabsForMode(tabs: RibbonTab[], mode: ToolWorkspaceMode): RibbonTab[] {
+  return tabs
+    .map((tab) => ({
+      ...tab,
+      panels: tab.panels
+        .map((panel) => ({
+          ...panel,
+          commands: panel.commands.filter((command) => commandIsDirectInMode(command, mode)),
+          flyoutCommands: panel.flyoutCommands?.filter((command) =>
+            commandIsDirectInMode(command, mode),
+          ),
+        }))
+        .filter((panel) => panel.commands.length > 0 || (panel.flyoutCommands?.length ?? 0) > 0),
+    }))
+    .filter((tab) => tab.panels.length > 0);
+}
+
+function commandIsDirectInMode(command: RibbonCommand, mode: ToolWorkspaceMode): boolean {
+  const commandId = ribbonCapabilityId(command);
+  if (!commandId) return true;
+  const availability = evaluateCommandInMode(commandId, mode as CapabilityViewMode);
+  return !availability || availability.state === 'enabled';
+}
+
+function buildPlanRibbonTabs(
+  activeMode: ToolWorkspaceMode,
+  selectedElementKind?: string | null,
+): RibbonTab[] {
   const tabs: RibbonTab[] = [
     {
       id: 'architecture',
@@ -443,70 +560,6 @@ function buildRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
       ],
     },
     {
-      id: 'steel',
-      label: 'Steel',
-      panels: [
-        {
-          id: 'steel-structure',
-          label: 'Structure',
-          commands: [tool('beam', 'Beam', 'beam'), tool('column', 'Column', 'column')],
-        },
-        {
-          id: 'connections',
-          label: 'Connections',
-          commands: [
-            action('command-palette', 'Connections', 'commandPalette'),
-            action('settings', 'Steel Settings', 'settings'),
-          ],
-        },
-      ],
-    },
-    {
-      id: 'precast',
-      label: 'Precast',
-      panels: [
-        {
-          id: 'precast-elements',
-          label: 'Elements',
-          commands: [
-            tool('wall', 'Wall Panel', 'wall'),
-            tool('floor', 'Slab', 'floor'),
-            tool('beam', 'Beam', 'beam'),
-          ],
-        },
-        {
-          id: 'assemblies',
-          label: 'Assemblies',
-          commands: [
-            action('command-palette', 'Assemblies', 'assembly'),
-            action('settings', 'Precast Settings', 'settings'),
-          ],
-        },
-      ],
-    },
-    {
-      id: 'systems',
-      label: 'Systems',
-      panels: [
-        {
-          id: 'mechanical',
-          label: 'Mechanical',
-          commands: [
-            tool('shaft', 'Shaft', 'shaft'),
-            tool('wall-opening', 'Opening', 'wall-opening'),
-          ],
-        },
-        {
-          id: 'coordination',
-          label: 'Coordination',
-          commands: [
-            action('visibility-graphics', 'System VG', 'layerOn'),
-            action('command-palette', 'Systems Cmd', 'commandPalette'),
-          ],
-        },
-      ],
-    },
-    {
       id: 'insert',
       label: 'Insert',
       panels: [
@@ -520,10 +573,9 @@ function buildRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
         },
         {
           id: 'link',
-          label: 'Link',
+          label: 'Import',
           commands: [
-            action('project-menu', 'Project Files', 'linkedModel'),
-            action('command-palette', 'Import/Link', 'commandPalette'),
+            action('command-palette', 'Import/Link', 'commandPalette', 'plan-import-link'),
           ],
         },
       ],
@@ -556,28 +608,6 @@ function buildRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
       ],
     },
     {
-      id: 'analyze',
-      label: 'Analyze',
-      panels: [
-        {
-          id: 'inquiry',
-          label: 'Inquiry',
-          commands: [
-            tool('measure', 'Measure', 'measure'),
-            action('visibility-graphics', 'Graphics', 'layerOn'),
-          ],
-        },
-        {
-          id: 'coordination',
-          label: 'Coordination',
-          commands: [
-            action('command-palette', 'Checks', 'clash'),
-            action('settings', 'Rules', 'validationRule'),
-          ],
-        },
-      ],
-    },
-    {
       id: 'massing-site',
       label: 'Massing & Site',
       panels: [
@@ -600,92 +630,70 @@ function buildRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
       ],
     },
     {
-      id: 'collaborate',
-      label: 'Collaborate',
+      id: 'analyze',
+      label: 'Analyze',
       panels: [
         {
-          id: 'coordination',
-          label: 'Coordinate',
-          commands: [
-            action('project-menu', 'Project', 'settings'),
-            action('command-palette', 'Issues', 'issue'),
-          ],
+          id: 'inquiry',
+          label: 'Inquiry',
+          commands: [tool('measure', 'Measure', 'measure')],
         },
         {
-          id: 'team',
-          label: 'Team',
-          commands: [
-            action('settings', 'Account', 'collaborators'),
-            action('visibility-graphics', 'Worksets', 'layerOn'),
-          ],
+          id: 'review',
+          label: 'Review',
+          commands: [action('command-palette', 'Checks', 'clash', 'plan-checks')],
         },
       ],
     },
+  ];
+
+  if (selectedElementKind) {
+    tabs.push(
+      activeMode === 'plan'
+        ? buildPlanModifyTab(selectedElementKind)
+        : buildSelectionOnlyModifyTab(selectedElementKind),
+    );
+  }
+
+  return tabs;
+}
+
+function build3dRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
+  const tabs: RibbonTab[] = [
     {
       id: 'view',
-      label: 'View',
+      label: '3D View',
       panels: [
         {
-          id: 'create',
-          label: 'Create',
-          commands: [
-            tool('section', 'Section', 'sectionView'),
-            tool('elevation', 'Elevation', 'elevationView'),
-          ],
+          id: 'select',
+          label: 'Select',
+          commands: [tool('select', 'Select', 'select')],
         },
         {
-          id: 'switch',
-          label: 'Switch',
+          id: 'saved-view',
+          label: 'Saved View',
           commands: [
-            mode('plan', 'Plan', 'planView'),
-            mode('3d', '3D', 'orbitView'),
-            mode('sheet', 'Sheet', 'sheet'),
-            mode('schedule', 'Schedule', 'schedule'),
-          ],
-        },
-        {
-          id: 'graphics',
-          label: 'Graphics',
-          commands: [action('visibility-graphics', 'VV/VG', 'layerOn')],
-          flyoutCommands: [
-            action('command-palette', 'More View Commands', 'commandPalette', 'view-more'),
-            action('settings', 'Graphic Display Options', 'settings', 'view-gdo'),
+            action('3d-save-view', 'Save View', 'saveViewpoint'),
+            action('3d-reset-view', 'Reset', 'viewCubeReset'),
+            action('3d-update-view', 'Update', 'saveViewpoint'),
           ],
         },
       ],
     },
     {
-      id: 'manage',
-      label: 'Manage',
+      id: 'analyze',
+      label: 'Review',
       panels: [
         {
-          id: 'project',
-          label: 'Project',
-          commands: [
-            action('project-menu', 'Project', 'settings'),
-            action('family-library', 'Load Family', 'family'),
-          ],
+          id: 'review',
+          label: 'Review',
+          commands: [action('command-palette', 'Findings', 'issue', '3d-findings')],
         },
         {
-          id: 'tools',
-          label: 'Tools',
+          id: 'documentation',
+          label: 'Documentation',
           commands: [
-            action('command-palette', 'Commands', 'commandPalette'),
-            action('settings', 'Help', 'settings'),
-          ],
-        },
-      ],
-    },
-    {
-      id: 'add-ins',
-      label: 'Add-Ins',
-      panels: [
-        {
-          id: 'automation',
-          label: 'Automation',
-          commands: [
-            action('command-palette', 'Commands', 'commandPalette'),
-            action('settings', 'Add-In Settings', 'settings'),
+            action('command-palette', 'Create Section', 'sectionView', '3d-create-section'),
           ],
         },
       ],
@@ -693,35 +701,287 @@ function buildRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
   ];
 
   if (selectedElementKind) {
-    tabs.push({
-      id: 'modify',
-      label: `Modify | ${formatKind(selectedElementKind)}`,
-      contextual: true,
-      panels: [
-        {
-          id: 'selection',
-          label: 'Selection',
-          commands: [
-            tool('select', 'Select', 'select'),
-            tool('move', 'Move', 'move'),
-            tool('copy', 'Copy', 'copy'),
-          ],
-        },
-        {
-          id: 'edit',
-          label: 'Edit',
-          commands: [
-            tool('rotate', 'Rotate', 'rotate'),
-            tool('mirror', 'Mirror', 'mirror'),
-            tool('align', 'Align', 'align'),
-            tool('trim-extend', 'Trim/Extend', 'trim'),
-          ],
-        },
-      ],
-    });
+    tabs.push(build3dModifyTab(selectedElementKind));
   }
 
   return tabs;
+}
+
+function buildSectionRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
+  const tabs: RibbonTab[] = [
+    {
+      id: 'annotate',
+      label: 'Section',
+      panels: [
+        {
+          id: 'annotate',
+          label: 'Annotate',
+          commands: [
+            tool('dimension', 'Dimension', 'dimension'),
+            tool('section', 'Section', 'sectionView'),
+          ],
+        },
+        {
+          id: 'crop',
+          label: 'Crop / Depth',
+          commands: [
+            action('section-depth-increase', 'Depth +', 'sectionBox'),
+            action('section-depth-decrease', 'Depth -', 'sectionBox'),
+          ],
+        },
+        {
+          id: 'place',
+          label: 'Place',
+          commands: [
+            action('section-place-on-sheet', 'Place on Sheet', 'sheet'),
+            action('section-source-plan', 'Source Plan', 'planView'),
+          ],
+        },
+      ],
+    },
+  ];
+
+  if (selectedElementKind) {
+    tabs.push(buildSelectionOnlyModifyTab(selectedElementKind));
+  }
+
+  return tabs;
+}
+
+function buildSheetRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
+  const tabs: RibbonTab[] = [
+    {
+      id: 'view',
+      label: 'Sheet',
+      panels: [
+        {
+          id: 'place-views',
+          label: 'Place Views',
+          commands: [
+            action('sheet-place-recommended', 'Recommended', 'sheet'),
+            action('sheet-place-first-view', 'Place View', 'planView'),
+          ],
+        },
+        {
+          id: 'viewports',
+          label: 'Viewports',
+          commands: [action('sheet-edit-viewports', 'Edit Viewports', 'select')],
+        },
+        {
+          id: 'titleblock',
+          label: 'Titleblock',
+          commands: [action('sheet-edit-titleblock', 'Titleblock', 'sheet')],
+        },
+        {
+          id: 'publish',
+          label: 'Publish',
+          commands: [action('sheet-publish', 'Publish', 'externalLink')],
+        },
+      ],
+    },
+  ];
+
+  if (selectedElementKind) {
+    tabs.push(buildSelectionOnlyModifyTab(selectedElementKind));
+  }
+
+  return tabs;
+}
+
+function buildScheduleRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
+  const tabs: RibbonTab[] = [
+    {
+      id: 'view',
+      label: 'Schedule',
+      panels: [
+        {
+          id: 'rows',
+          label: 'Rows',
+          commands: [
+            action('schedule-open-row', 'Open Row', 'select'),
+            action('schedule-duplicate', 'Duplicate', 'copy'),
+          ],
+        },
+        {
+          id: 'definition',
+          label: 'Definition',
+          commands: [action('schedule-controls', 'Fields / Sort', 'schedule')],
+        },
+        {
+          id: 'place',
+          label: 'Place',
+          commands: [action('schedule-place-on-sheet', 'Place on Sheet', 'sheet')],
+        },
+      ],
+    },
+  ];
+
+  if (selectedElementKind) {
+    tabs.push(buildSelectionOnlyModifyTab(selectedElementKind));
+  }
+
+  return tabs;
+}
+
+function buildConceptRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
+  const tabs: RibbonTab[] = [
+    {
+      id: 'architecture',
+      label: 'Concept',
+      panels: [
+        {
+          id: 'board',
+          label: 'Board',
+          commands: [
+            tool('select', 'Select', 'select'),
+            action('command-palette', 'New Item', 'commandPalette', 'concept-new-item'),
+          ],
+        },
+        {
+          id: 'place',
+          label: 'Place',
+          commands: [
+            action('family-library', 'Load Asset', 'family'),
+            action(
+              'command-palette',
+              'Attach Reference',
+              'linkedModel',
+              'concept-attach-reference',
+            ),
+          ],
+        },
+        {
+          id: 'markup',
+          label: 'Markup',
+          commands: [action('command-palette', 'Markup', 'tag', 'concept-markup')],
+        },
+      ],
+    },
+  ];
+
+  if (selectedElementKind) {
+    tabs.push(build3dModifyTab(selectedElementKind));
+  }
+
+  return tabs;
+}
+
+function buildAgentRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
+  const tabs: RibbonTab[] = [
+    {
+      id: 'analyze',
+      label: 'Findings',
+      panels: [
+        {
+          id: 'findings',
+          label: 'Findings',
+          commands: [
+            tool('select', 'Select', 'select'),
+            action('command-palette', 'Filter Findings', 'issue', 'agent-filter-findings'),
+          ],
+        },
+        {
+          id: 'actions',
+          label: 'Review Actions',
+          commands: [
+            action('command-palette', 'Apply Fix', 'validationRule', 'agent-apply-fix'),
+            action('command-palette', 'Navigate', 'commandPalette', 'agent-navigate'),
+          ],
+        },
+      ],
+    },
+  ];
+
+  if (selectedElementKind) {
+    tabs.push(build3dModifyTab(selectedElementKind));
+  }
+
+  return tabs;
+}
+
+function buildPlanModifyTab(selectedElementKind: string): RibbonTab {
+  return {
+    id: 'modify',
+    label: `Modify | ${formatKind(selectedElementKind)}`,
+    contextual: true,
+    panels: [
+      {
+        id: 'selection',
+        label: 'Selection',
+        commands: [
+          tool('select', 'Select', 'select'),
+          tool('move', 'Move', 'move'),
+          tool('copy', 'Copy', 'copy'),
+        ],
+      },
+      {
+        id: 'edit',
+        label: 'Edit',
+        commands: [
+          tool('rotate', 'Rotate', 'rotate'),
+          tool('mirror', 'Mirror', 'mirror'),
+          tool('align', 'Align', 'align'),
+          tool('trim-extend', 'Trim/Extend', 'trim'),
+        ],
+      },
+    ],
+  };
+}
+
+function build3dModifyTab(selectedElementKind: string): RibbonTab {
+  return {
+    id: 'modify',
+    label: `Modify | ${formatKind(selectedElementKind)}`,
+    contextual: true,
+    panels: [
+      {
+        id: 'selection',
+        label: 'Selection',
+        commands: [tool('select', 'Select', 'select')],
+      },
+      {
+        id: 'actions',
+        label: 'Actions',
+        commands:
+          selectedElementKind === 'wall'
+            ? [
+                action('command-palette', 'Insert Door', 'door', '3d-insert-door'),
+                action('command-palette', 'Insert Window', 'window', '3d-insert-window'),
+                action('command-palette', 'Opening', 'wall-opening', '3d-insert-opening'),
+              ]
+            : [
+                action(
+                  'command-palette',
+                  'Element Actions',
+                  'commandPalette',
+                  '3d-element-actions',
+                ),
+              ],
+      },
+    ],
+  };
+}
+
+function buildSelectionOnlyModifyTab(selectedElementKind: string): RibbonTab {
+  return {
+    id: 'modify',
+    label: `Modify | ${formatKind(selectedElementKind)}`,
+    contextual: true,
+    panels: [
+      {
+        id: 'selection',
+        label: 'Selection',
+        commands: [tool('select', 'Select', 'select')],
+      },
+      {
+        id: 'actions',
+        label: 'Actions',
+        commands: [
+          action('command-palette', 'Element Actions', 'commandPalette', 'element-actions'),
+        ],
+      },
+    ],
+  };
 }
 
 function collectTabCommands(tab: RibbonTab): RibbonCommand[] {
@@ -743,14 +1003,6 @@ function commandDisabledReason(
   activeMode: ToolWorkspaceMode | undefined,
 ): string | undefined {
   if (!activeMode) return undefined;
-  if (command.type === 'action' && command.id === 'visibility-graphics') {
-    if (activeMode === '3d') {
-      return 'VV/VG edits plan visibility. Use 3D View Controls in the right rail for this view.';
-    }
-    if (activeMode === 'sheet' || activeMode === 'schedule' || activeMode === 'agent') {
-      return `Visibility/Graphics is unavailable in ${formatCapabilityMode(activeMode as CapabilityViewMode)}. Open a plan, section, or 3D view first.`;
-    }
-  }
   const commandId = ribbonCapabilityId(command);
   if (commandId) {
     const availability = evaluateCommandInMode(commandId, activeMode as CapabilityViewMode);
@@ -769,14 +1021,42 @@ function ribbonCapabilityId(command: RibbonCommand): string | null {
   switch (command.id) {
     case 'command-palette':
       return null;
-    case 'visibility-graphics':
-      return 'visibility.plan.graphics';
     case 'family-library':
       return 'library.open-family';
-    case 'project-menu':
-      return 'project.open-menu';
     case 'settings':
       return 'help.keyboard-shortcuts';
+    case '3d-save-view':
+      return 'view.3d.saved-view.save-current';
+    case '3d-reset-view':
+      return 'view.3d.saved-view.reset';
+    case '3d-update-view':
+      return 'view.3d.saved-view.update';
+    case 'section-place-on-sheet':
+      return 'section.place-on-sheet';
+    case 'section-source-plan':
+      return 'section.open-source-plan';
+    case 'section-depth-increase':
+      return 'section.crop-depth.increase';
+    case 'section-depth-decrease':
+      return 'section.crop-depth.decrease';
+    case 'sheet-place-recommended':
+      return 'sheet.place-recommended-views';
+    case 'sheet-place-first-view':
+      return 'sheet.edit-viewports';
+    case 'sheet-edit-viewports':
+      return 'sheet.edit-viewports';
+    case 'sheet-edit-titleblock':
+      return 'sheet.edit-titleblock';
+    case 'sheet-publish':
+      return 'sheet.export-share';
+    case 'schedule-open-row':
+      return 'schedule.open-selected-row';
+    case 'schedule-place-on-sheet':
+      return 'schedule.place-on-sheet';
+    case 'schedule-duplicate':
+      return 'schedule.duplicate';
+    case 'schedule-controls':
+      return 'schedule.open-controls';
   }
   return null;
 }
