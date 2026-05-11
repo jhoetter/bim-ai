@@ -445,6 +445,16 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
   };
 }
 
+const MODE_LOOKUP_T = ((key: string) => key) as unknown as TFunction;
+
+export function getToolModes(toolId: ToolId): WorkspaceMode[] {
+  return getToolRegistry(MODE_LOOKUP_T)[toolId]?.modes ?? [];
+}
+
+export function toolSupportsMode(toolId: ToolId, mode: WorkspaceMode): boolean {
+  return getToolModes(toolId).includes(mode);
+}
+
 const PALETTE_ORDER: ToolId[] = [
   'select',
   'query',

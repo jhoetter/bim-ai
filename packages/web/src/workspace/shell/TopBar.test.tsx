@@ -353,6 +353,31 @@ describe('RibbonBar — F-005', () => {
     expect(onOpenVisibilityGraphics).toHaveBeenCalledTimes(1);
   });
 
+  it('disables plan-only ribbon tools and plan VV/VG in pure 3D mode', () => {
+    const onToolSelect = vi.fn();
+    const onOpenVisibilityGraphics = vi.fn();
+    const { getByTestId } = render(
+      <RibbonBar
+        activeMode="3d"
+        onToolSelect={onToolSelect}
+        onOpenVisibilityGraphics={onOpenVisibilityGraphics}
+      />,
+    );
+
+    const wallButton = getByTestId('ribbon-command-wall') as HTMLButtonElement;
+    expect(wallButton.disabled).toBe(true);
+    expect(wallButton.getAttribute('data-disabled-reason')).toContain('Plan tool');
+    fireEvent.click(wallButton);
+    expect(onToolSelect).not.toHaveBeenCalled();
+
+    fireEvent.click(getByTestId('ribbon-tab-view'));
+    const vgButton = getByTestId('ribbon-command-visibility-graphics') as HTMLButtonElement;
+    expect(vgButton.disabled).toBe(true);
+    expect(vgButton.getAttribute('data-disabled-reason')).toContain('3D View Controls');
+    fireEvent.click(vgButton);
+    expect(onOpenVisibilityGraphics).not.toHaveBeenCalled();
+  });
+
   it('opens added catalogue tabs and minimizes ribbon panels', () => {
     const onOpenFamilyLibrary = vi.fn();
     const { getByTestId, queryByTestId } = render(

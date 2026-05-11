@@ -1,7 +1,12 @@
 import { type JSX, useEffect, useMemo, useState } from 'react';
 import { Icons, ICON_SIZE, type IconName } from '@bim-ai/ui';
 
-import type { ToolId } from '../../tools/toolRegistry';
+import {
+  getToolModes,
+  toolSupportsMode,
+  type ToolId,
+  type WorkspaceMode as ToolWorkspaceMode,
+} from '../../tools/toolRegistry';
 import type { WorkspaceMode } from './TopBar';
 
 type RibbonTabId =
@@ -48,6 +53,7 @@ interface RibbonTab {
 
 export interface RibbonBarProps {
   activeToolId?: ToolId;
+  activeMode?: ToolWorkspaceMode;
   selectedElementKind?: string | null;
   onToolSelect?: (id: ToolId) => void;
   onModeChange?: (mode: WorkspaceMode) => void;
@@ -62,6 +68,7 @@ const RIBBON_HIDDEN_COMMANDS_STORAGE_KEY = 'bim-ai.ribbon.hiddenCommands.v1';
 
 export function RibbonBar({
   activeToolId,
+  activeMode,
   selectedElementKind,
   onToolSelect,
   onModeChange,
@@ -87,6 +94,7 @@ export function RibbonBar({
   }, [hiddenCommandKeys]);
 
   function runCommand(command: RibbonCommand): void {
+    if (commandDisabledReason(command, activeMode)) return;
     if (command.type === 'tool') {
       onToolSelect?.(command.id);
       return;
@@ -234,6 +242,7 @@ export function RibbonBar({
                     key={`${command.type}:${command.id}`}
                     command={command}
                     active={command.type === 'tool' && command.id === activeToolId}
+                    disabledReason={commandDisabledReason(command, activeMode)}
                     onClick={() => runCommand(command)}
                   />
                 ))}
@@ -259,17 +268,27 @@ export function RibbonBar({
                       >
                         {visibleFlyoutCommands.map((command) => {
                           const Icon = Icons[command.icon] ?? Icons.commandPalette;
+                          const disabledReason = commandDisabledReason(command, activeMode);
                           return (
                             <button
                               key={`${command.type}:${command.id}`}
                               type="button"
                               role="menuitem"
                               data-testid={`ribbon-flyout-command-${command.testId ?? command.id}`}
+                              disabled={Boolean(disabledReason)}
+                              title={disabledReason ?? command.label}
+                              data-disabled-reason={disabledReason}
                               onClick={() => {
+                                if (disabledReason) return;
                                 runCommand(command);
                                 setOpenFlyoutPanelId(null);
                               }}
-                              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-foreground hover:bg-background"
+                              className={[
+                                'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs',
+                                disabledReason
+                                  ? 'cursor-not-allowed text-muted opacity-55'
+                                  : 'text-foreground hover:bg-background',
+                              ].join(' ')}
                             >
                               <Icon size={ICON_SIZE.chrome} aria-hidden="true" />
                               <span>{command.label}</span>
@@ -295,25 +314,32 @@ export function RibbonBar({
 function RibbonButton({
   command,
   active,
+  disabledReason,
   onClick,
 }: {
   command: RibbonCommand;
   active: boolean;
+  disabledReason?: string;
   onClick: () => void;
 }): JSX.Element {
   const Icon = Icons[command.icon] ?? Icons.commandPalette;
+  const disabled = Boolean(disabledReason);
   return (
     <button
       type="button"
       data-testid={command.testId ?? `ribbon-command-${command.id}`}
       aria-pressed={command.type === 'tool' ? active : undefined}
-      title={command.label}
+      disabled={disabled}
+      title={disabledReason ?? command.label}
+      data-disabled-reason={disabledReason}
       onClick={onClick}
       className={[
         'flex h-12 min-w-14 flex-col items-center justify-center gap-0.5 rounded-md px-2 text-[11px] font-medium transition-colors',
-        active
-          ? 'bg-accent text-accent-foreground'
-          : 'text-foreground hover:bg-surface hover:text-foreground',
+        disabled
+          ? 'cursor-not-allowed text-muted opacity-55'
+          : active
+            ? 'bg-accent text-accent-foreground'
+            : 'text-foreground hover:bg-surface hover:text-foreground',
       ].join(' ')}
     >
       <Icon size={ICON_SIZE.toolPalette} aria-hidden="true" />
@@ -673,6 +699,49 @@ function collectTabCommands(tab: RibbonTab): RibbonCommand[] {
 
 function commandKey(command: RibbonCommand): string {
   return `${command.type}:${command.id}:${command.testId ?? ''}`;
+}
+
+function commandDisabledReason(
+  command: RibbonCommand,
+  activeMode: ToolWorkspaceMode | undefined,
+): string | undefined {
+  if (!activeMode) return undefined;
+  if (command.type === 'tool' && !toolSupportsMode(command.id, activeMode)) {
+    const toolModes = getToolModes(command.id);
+    const supported = toolModes.map(formatMode).join(', ');
+    if (toolModes.includes('plan') || toolModes.includes('plan-3d')) {
+      return `${command.label} is a Plan tool. Switch to Plan or Plan + 3D to use it.`;
+    }
+    return `${command.label} is unavailable in ${formatMode(activeMode)}. Available in ${supported}.`;
+  }
+  if (command.type === 'action' && command.id === 'visibility-graphics') {
+    if (activeMode === '3d') {
+      return 'VV/VG edits plan visibility. Use 3D View Controls in the right rail for this view.';
+    }
+    if (activeMode === 'sheet' || activeMode === 'schedule' || activeMode === 'agent') {
+      return `Visibility/Graphics is unavailable in ${formatMode(activeMode)}. Open a plan, section, or 3D view first.`;
+    }
+  }
+  return undefined;
+}
+
+function formatMode(mode: ToolWorkspaceMode): string {
+  switch (mode) {
+    case 'plan':
+      return 'Plan';
+    case '3d':
+      return '3D';
+    case 'plan-3d':
+      return 'Plan + 3D';
+    case 'section':
+      return 'Section';
+    case 'sheet':
+      return 'Sheet';
+    case 'schedule':
+      return 'Schedule';
+    case 'agent':
+      return 'Agent Review';
+  }
 }
 
 function readHiddenRibbonCommandKeys(): string[] {

@@ -1387,6 +1387,7 @@ export function Workspace(): JSX.Element {
         ribbonBar={
           <RibbonBar
             activeToolId={planToolToToolId(planTool)}
+            activeMode={effectiveMode}
             selectedElementKind={
               selectedId ? (elementsById[selectedId] as Element | undefined)?.kind : null
             }
