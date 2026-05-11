@@ -45,6 +45,11 @@ export interface ToolPaletteProps {
   disabledContext: ToolDisabledContext;
   /** Tag dropdown trigger; the menu itself is rendered by the parent. */
   onTagSubmenu?: () => void;
+  /**
+   * When provided, only tools whose id appears in this set are rendered.
+   * Derived from the active perspective via planToolsForPerspective.
+   */
+  allowedToolIds?: ReadonlySet<ToolId>;
 }
 
 export function ToolPalette({
@@ -53,9 +58,11 @@ export function ToolPalette({
   onToolSelect,
   disabledContext,
   onTagSubmenu,
+  allowedToolIds,
 }: ToolPaletteProps): JSX.Element {
   const { t } = useTranslation();
-  const tools = paletteForMode(mode, t);
+  const allTools = paletteForMode(mode, t);
+  const tools = allowedToolIds ? allTools.filter((tool) => allowedToolIds.has(tool.id)) : allTools;
   const refs = useRef<Map<ToolId, HTMLButtonElement>>(new Map());
   const setRef = useCallback(
     (id: ToolId) => (el: HTMLButtonElement | null) => {
