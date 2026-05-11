@@ -280,7 +280,7 @@ def _door_clearance_violations(
 ) -> list[Violation]:
     obstructions = [
         participant
-        for kind in ("placed_asset", "family_instance")
+        for kind in ("placed_asset", "family_instance", "wall")
         for participant in participants_by_kind.get(kind, [])
     ]
     if not obstructions:
@@ -300,6 +300,8 @@ def _door_clearance_violations(
         if clearance is None:
             continue
         for obstruction in obstructions:
+            if obstruction.element_id == wall.id:
+                continue
             source = elements.get(obstruction.element_id)
             if getattr(source, "host_element_id", None) == wall.id:
                 continue
@@ -310,7 +312,10 @@ def _door_clearance_violations(
                     Violation(
                         rule_id="door_operation_clearance_conflict",
                         severity="warning",
-                        message="Door operation clearance overlaps a placed object; the door may not open.",
+                        message=(
+                            "Door operation clearance overlaps "
+                            f"{_door_obstruction_label(obstruction)}; the door may not open."
+                        ),
                         element_ids=sorted([element.id, obstruction.element_id]),
                     )
                 )
@@ -666,6 +671,12 @@ def _door_clearance_aabb(door: DoorElem, wall: WallElem) -> AABB | None:
     xs = [point[0] for point in points]
     ys = [point[1] for point in points]
     return AABB(min(xs), min(ys), -1_000_000.0, max(xs), max(ys), 1_000_000.0)
+
+
+def _door_obstruction_label(obstruction: PhysicalParticipant) -> str:
+    if obstruction.kind == "wall":
+        return "a wall"
+    return "a placed object"
 
 
 def _beam_endpoint_boxes(beam: PhysicalParticipant) -> list[AABB]:

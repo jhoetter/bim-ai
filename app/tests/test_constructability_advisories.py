@@ -484,6 +484,21 @@ def test_door_operation_clearance_conflict_is_reported() -> None:
     assert "door_operation_clearance_conflict" in _rule_ids(elements)
 
 
+def test_door_operation_clearance_conflict_is_reported_for_blocking_wall() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "wall-1": _wall(),
+        "door-1": DoorElem(kind="door", id="door-1", wallId="wall-1", alongT=0.5, widthMm=900),
+        "wall-blocking": _wall(
+            id="wall-blocking",
+            start={"xMm": 1600, "yMm": 700},
+            end={"xMm": 2400, "yMm": 700},
+        ),
+    }
+
+    assert "door_operation_clearance_conflict" in _rule_ids(elements)
+
+
 def test_family_instance_without_proxy_dimensions_reports_coverage_gap() -> None:
     elements = {
         "lvl-1": _level(),
