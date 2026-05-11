@@ -4,7 +4,9 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 0,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/plan/planProjection.ts"
+  ],
   "sessions": [
     {
       "metadata": "/d1/e57a26c1c7/0/metadata.json",
@@ -23,6 +25,12 @@
       "transcript": "/d1/e57a26c1c7/2/full.jsonl",
       "content_hash": "/d1/e57a26c1c7/2/content_hash.txt",
       "prompt": "/d1/e57a26c1c7/2/prompt.txt"
+    },
+    {
+      "metadata": "/d1/e57a26c1c7/3/metadata.json",
+      "transcript": "/d1/e57a26c1c7/3/full.jsonl",
+      "content_hash": "/d1/e57a26c1c7/3/content_hash.txt",
+      "prompt": "/d1/e57a26c1c7/3/prompt.txt"
     }
   ]
 }
