@@ -48,16 +48,20 @@
     },
     {
       "idPattern": "view.3d.*",
-      "label": "3D view controls",
+      "label": "3D view controls and selected-wall edit actions",
       "owner": "packages/web/src/workspace/viewport/Viewport3DLayersPanel.tsx",
       "sourceFile": "packages/web/src/workspace/commandCapabilities.ts",
       "intendedViews": ["3d", "plan-3d"],
-      "actualSurfaces": ["cmd-k", "right-rail"],
-      "preconditions": [],
-      "executionHandler": "useBimStore viewer runtime actions",
+      "actualSurfaces": ["cmd-k", "right-rail", "canvas-context"],
+      "preconditions": ["selected-wall for view.3d.wall.*"],
+      "executionHandler": "useBimStore viewer runtime actions and Workspace.onSemanticCommand",
       "status": "implemented",
       "usabilityScore": 8,
-      "tests": ["packages/web/src/workspace/uxAudit.test.ts"]
+      "tests": [
+        "packages/web/src/workspace/uxAudit.test.ts",
+        "packages/web/src/workspace/WorkspaceRightRail.test.tsx",
+        "packages/web/src/cmdPalette/defaultCommands.test.ts"
+      ]
     },
     {
       "idPattern": "visibility.*",

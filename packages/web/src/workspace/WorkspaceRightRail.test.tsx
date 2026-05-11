@@ -64,6 +64,26 @@ describe('WorkspaceRightRail — Properties Palette context', () => {
 });
 
 describe('WorkspaceRightRail — type property commands', () => {
+  it('renders stable right-rail section tabs', () => {
+    useBimStore.setState({
+      selectedId: undefined,
+      elementsById: {},
+    });
+
+    const { getByTestId } = renderWithI18n(
+      <WorkspaceRightRail
+        mode="3d"
+        onSemanticCommand={() => undefined}
+        onModeChange={() => undefined}
+        codePresetIds={[]}
+      />,
+    );
+
+    expect(getByTestId('right-rail-section-tab-properties')).toBeTruthy();
+    expect(getByTestId('right-rail-section-tab-view')).toBeTruthy();
+    expect(getByTestId('right-rail-section-tab-review')).toBeTruthy();
+  });
+
   it('routes wall type property edits through upsertWallType', () => {
     const wallType: Extract<Element, { kind: 'wall_type' }> = {
       kind: 'wall_type',
@@ -174,5 +194,88 @@ describe('WorkspaceRightRail — placed authored family instances', () => {
       key: 'paramValues',
       value: { Seat_Height: 525 },
     });
+  });
+});
+
+describe('WorkspaceRightRail — 3D selected wall actions', () => {
+  const wall: Extract<Element, { kind: 'wall' }> = {
+    kind: 'wall',
+    id: 'wall-3d',
+    name: '3D Wall',
+    wallTypeId: 'wt-1',
+    levelId: 'lvl-1',
+    start: { xMm: 0, yMm: 0 },
+    end: { xMm: 6000, yMm: 0 },
+    thicknessMm: 200,
+    heightMm: 3000,
+  };
+
+  it('shows explicit wall actions in 3D and dispatches hosted insert commands', () => {
+    const onSemanticCommand = vi.fn();
+    useBimStore.setState({
+      selectedId: wall.id,
+      elementsById: { [wall.id]: wall },
+    });
+
+    const { getByTestId } = renderWithI18n(
+      <WorkspaceRightRail
+        mode="3d"
+        onSemanticCommand={onSemanticCommand}
+        onModeChange={() => undefined}
+        codePresetIds={[]}
+      />,
+    );
+
+    expect(getByTestId('selected-wall-3d-actions')).toBeTruthy();
+    fireEvent.click(getByTestId('3d-action-insert-door'));
+    fireEvent.click(getByTestId('3d-action-insert-window'));
+    fireEvent.click(getByTestId('3d-action-insert-opening'));
+
+    expect(onSemanticCommand).toHaveBeenNthCalledWith(1, {
+      type: 'insertDoorOnWall',
+      wallId: wall.id,
+      alongT: 0.5,
+      widthMm: 900,
+    });
+    expect(onSemanticCommand).toHaveBeenNthCalledWith(2, {
+      type: 'insertWindowOnWall',
+      wallId: wall.id,
+      alongT: 0.5,
+      widthMm: 1200,
+      sillHeightMm: 900,
+      heightMm: 1500,
+    });
+    expect(onSemanticCommand).toHaveBeenNthCalledWith(3, {
+      type: 'createWallOpening',
+      hostWallId: wall.id,
+      alongTStart: 0.45,
+      alongTEnd: 0.55,
+      sillHeightMm: 200,
+      headHeightMm: 2400,
+    });
+  });
+
+  it('can isolate and hide wall categories from the 3D action row', () => {
+    useBimStore.setState({
+      selectedId: wall.id,
+      elementsById: { [wall.id]: wall },
+      viewerCategoryHidden: {},
+    });
+
+    const { getByTestId } = renderWithI18n(
+      <WorkspaceRightRail
+        mode="3d"
+        onSemanticCommand={() => undefined}
+        onModeChange={() => undefined}
+        codePresetIds={[]}
+      />,
+    );
+
+    fireEvent.click(getByTestId('3d-action-isolate-walls'));
+    expect(useBimStore.getState().viewerCategoryHidden.wall).toBe(false);
+    expect(useBimStore.getState().viewerCategoryHidden.floor).toBe(true);
+
+    fireEvent.click(getByTestId('3d-action-hide-wall-category'));
+    expect(useBimStore.getState().viewerCategoryHidden.wall).toBe(true);
   });
 });

@@ -40,6 +40,8 @@ export type PaletteContext = {
   toggleTheme?: () => void;
   /** Callback to open a model element (plan view, sheet, schedule, etc.) as a tab. */
   openElement?: (id: string) => void;
+  /** Dispatches semantic model commands from command-palette actions. */
+  dispatchCommand?: (cmd: Record<string, unknown>) => void;
   openProjectMenu?: () => void;
   openFamilyLibrary?: () => void;
   openKeyboardShortcuts?: () => void;
@@ -72,12 +74,18 @@ export function queryPalette(
   const resolvedRegistry = _registry
     .map((entry): PaletteEntry | null => {
       const availability = activeMode ? evaluateCommandInMode(entry.id, activeMode) : null;
+      const locallyUnavailable = entry.isAvailable ? !entry.isAvailable(context) : false;
       if (availability) {
         return {
           ...entry,
           availability,
           badge: commandModeBadge(availability),
-          disabledReason: availability.state === 'disabled' ? availability.reason : undefined,
+          disabledReason:
+            availability.state === 'disabled'
+              ? availability.reason
+              : locallyUnavailable
+                ? 'Requires the right selection or view context.'
+                : undefined,
           bridged: availability.state === 'bridge',
         };
       }

@@ -1,5 +1,6 @@
 import { useBimStore, type PlanTool } from '../state/store';
 import { VIEWER_CATEGORY_KEYS } from '../viewport/sceneUtils';
+import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFromWall';
 import { registerCommand, type PaletteContext } from './registry';
 
 function is3dContext(ctx: PaletteContext): boolean {
@@ -19,6 +20,26 @@ function setAll3dCategoriesHidden(hidden: boolean): void {
   const viewerCategoryHidden = { ...state.viewerCategoryHidden };
   for (const key of VIEWER_CATEGORY_KEYS) viewerCategoryHidden[key] = hidden;
   useBimStore.setState({ viewerCategoryHidden });
+}
+
+function selectedWall(ctx: PaletteContext) {
+  const id = ctx.selectedElementIds[0];
+  if (!id) return null;
+  const el = useBimStore.getState().elementsById[id];
+  return el?.kind === 'wall' ? el : null;
+}
+
+function isSelectedWall3dContext(ctx: PaletteContext): boolean {
+  return is3dContext(ctx) && Boolean(selectedWall(ctx));
+}
+
+function dispatchSelectedWallCommand(
+  ctx: PaletteContext,
+  build: (wall: NonNullable<ReturnType<typeof selectedWall>>) => Record<string, unknown>,
+): void {
+  const wall = selectedWall(ctx);
+  if (!wall) return;
+  ctx.dispatchCommand?.(build(wall));
 }
 
 // Tool commands
@@ -442,6 +463,101 @@ registerCommand({
   category: 'command',
   isAvailable: is3dContext,
   invoke: () => setAll3dCategoriesHidden(true),
+});
+
+registerCommand({
+  id: 'view.3d.wall.insert-door',
+  label: '3D: Insert Door on Selected Wall',
+  keywords: ['3d', 'door', 'wall face', 'selected wall'],
+  category: 'command',
+  isAvailable: isSelectedWall3dContext,
+  invoke: (ctx) =>
+    dispatchSelectedWallCommand(ctx, (wall) => ({
+      type: 'insertDoorOnWall',
+      wallId: wall.id,
+      alongT: 0.5,
+      widthMm: 900,
+    })),
+});
+
+registerCommand({
+  id: 'view.3d.wall.insert-window',
+  label: '3D: Insert Window on Selected Wall',
+  keywords: ['3d', 'window', 'wall face', 'selected wall'],
+  category: 'command',
+  isAvailable: isSelectedWall3dContext,
+  invoke: (ctx) =>
+    dispatchSelectedWallCommand(ctx, (wall) => ({
+      type: 'insertWindowOnWall',
+      wallId: wall.id,
+      alongT: 0.5,
+      widthMm: 1200,
+      sillHeightMm: 900,
+      heightMm: 1500,
+    })),
+});
+
+registerCommand({
+  id: 'view.3d.wall.insert-opening',
+  label: '3D: Insert Opening on Selected Wall',
+  keywords: ['3d', 'opening', 'wall face', 'selected wall'],
+  category: 'command',
+  isAvailable: isSelectedWall3dContext,
+  invoke: (ctx) =>
+    dispatchSelectedWallCommand(ctx, (wall) => ({
+      type: 'createWallOpening',
+      hostWallId: wall.id,
+      alongTStart: 0.45,
+      alongTEnd: 0.55,
+      sillHeightMm: 200,
+      headHeightMm: 2400,
+    })),
+});
+
+registerCommand({
+  id: 'view.3d.wall.generate-section',
+  label: '3D: Generate Section from Selected Wall',
+  keywords: ['3d', 'section', 'wall', 'selected wall'],
+  category: 'command',
+  isAvailable: isSelectedWall3dContext,
+  invoke: (ctx) =>
+    dispatchSelectedWallCommand(ctx, (wall) => {
+      const params = sectionCutFromWall(wall);
+      const id = `sc-${crypto.randomUUID().slice(0, 10)}`;
+      return {
+        type: 'createSectionCut',
+        id,
+        name: params.name,
+        lineStartMm: params.lineStartMm,
+        lineEndMm: params.lineEndMm,
+        cropDepthMm: params.cropDepthMm,
+      };
+    }),
+});
+
+registerCommand({
+  id: 'view.3d.wall.generate-elevation',
+  label: '3D: Generate Elevation from Selected Wall',
+  keywords: ['3d', 'elevation', 'wall', 'selected wall'],
+  category: 'command',
+  isAvailable: isSelectedWall3dContext,
+  invoke: (ctx) =>
+    dispatchSelectedWallCommand(ctx, (wall) => {
+      const params = elevationFromWall(wall);
+      const id = `ev-${crypto.randomUUID().slice(0, 10)}`;
+      const cmd: Record<string, unknown> = {
+        type: 'createElevationView',
+        id,
+        name: params.name,
+        direction: params.direction,
+        cropMinMm: params.cropMinMm,
+        cropMaxMm: params.cropMaxMm,
+      };
+      if (params.direction === 'custom' && params.customAngleDeg !== null) {
+        cmd.customAngleDeg = params.customAngleDeg;
+      }
+      return cmd;
+    }),
 });
 
 registerCommand({

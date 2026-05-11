@@ -52,4 +52,18 @@ describe('UX reachability audit', () => {
       );
     }
   });
+
+  it('registers selected-wall 3D edit commands as 3D-only selection commands', () => {
+    for (const commandId of [
+      'view.3d.wall.insert-door',
+      'view.3d.wall.insert-window',
+      'view.3d.wall.insert-opening',
+      'view.3d.wall.generate-section',
+      'view.3d.wall.generate-elevation',
+    ]) {
+      expect(evaluateCommandInMode(commandId, '3d')?.state).toBe('enabled');
+      expect(evaluateCommandInMode(commandId, 'plan')?.state).toBe('disabled');
+      expect(getCommandCapability(commandId)?.preconditions).toContain('selected-wall');
+    }
+  });
 });

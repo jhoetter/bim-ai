@@ -1184,6 +1184,7 @@ export function Workspace(): JSX.Element {
           toggleTheme: handleThemeToggle,
           views: paletteViews,
           openElement: (id) => navigateTo({ kind: effectiveMode, targetId: id, source: 'cmdk' }),
+          dispatchCommand: (cmd) => void onSemanticCommand(cmd),
           openProjectMenu: () => setProjectMenuOpen((v) => !v),
           openFamilyLibrary: () => setFamilyLibraryOpen(true),
           openKeyboardShortcuts: () => setCheatsheetOpen(true),

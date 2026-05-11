@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { useBimStore } from '../state/store';
 import { VIEWER_CATEGORY_KEYS } from '../viewport/sceneUtils';
@@ -11,9 +11,16 @@ const THREE_D_CTX: PaletteContext = {
   activeViewId: null,
   activeMode: '3d',
 };
+const SELECTED_WALL_CTX: PaletteContext = {
+  selectedElementIds: ['wall-1'],
+  activeViewId: null,
+  activeMode: '3d',
+};
 
 afterEach(() => {
   useBimStore.setState({
+    elementsById: {},
+    selectedId: undefined,
     viewerCameraAction: null,
     viewerProjection: 'perspective',
     viewerSectionBoxActive: false,
@@ -67,5 +74,41 @@ describe('default Cmd+K commands', () => {
     command('view.3d.section-box.toggle').invoke(THREE_D_CTX);
     expect(useBimStore.getState().viewerWalkModeActive).toBe(true);
     expect(useBimStore.getState().viewerSectionBoxActive).toBe(true);
+  });
+
+  it('surfaces selected-wall 3D edit commands and dispatches through palette context', () => {
+    const dispatchCommand = vi.fn();
+    useBimStore.setState({
+      elementsById: {
+        'wall-1': {
+          kind: 'wall',
+          id: 'wall-1',
+          name: 'Wall 1',
+          wallTypeId: 'wt-1',
+          levelId: 'lvl-1',
+          start: { xMm: 0, yMm: 0 },
+          end: { xMm: 6000, yMm: 0 },
+          thicknessMm: 200,
+          heightMm: 3000,
+        },
+      },
+    });
+
+    const withoutWall = queryPalette('selected wall door', THREE_D_CTX, {}).find(
+      (entry) => entry.id === 'view.3d.wall.insert-door',
+    );
+    expect(withoutWall?.disabledReason).toContain('Requires');
+
+    const withWall = queryPalette('selected wall door', SELECTED_WALL_CTX, {}).find(
+      (entry) => entry.id === 'view.3d.wall.insert-door',
+    );
+    expect(withWall?.disabledReason).toBeUndefined();
+    withWall?.invoke({ ...SELECTED_WALL_CTX, dispatchCommand });
+    expect(dispatchCommand).toHaveBeenCalledWith({
+      type: 'insertDoorOnWall',
+      wallId: 'wall-1',
+      alongT: 0.5,
+      widthMm: 900,
+    });
   });
 });

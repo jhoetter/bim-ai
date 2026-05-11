@@ -39,6 +39,8 @@ import { inspectorPropertiesContextForElement } from './WorkspaceRightRailContex
 import type { DisciplineTag } from '@bim-ai/core';
 import { AuthoringWorkbenchesPanel } from './authoring';
 import { Viewport3DLayersPanel } from './viewport';
+import { VIEWER_CATEGORY_KEYS } from '../viewport/sceneUtils';
+import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFromWall';
 import { firstSheetId, placeViewOnSheetCommand } from './sheets/sheetRecommendedViewports';
 import type { WorkspaceMode } from './shell';
 import { humanKindLabel, InspectorEmptyTab } from './WorkspaceHelpers';
@@ -385,9 +387,13 @@ export function WorkspaceRightRail({
           {allScopeToast}
         </div>
       ) : null}
+      <RightRailSectionTabs
+        showView={show3dLayers || Boolean(activePlanViewId)}
+        showWorkbench={showAuthoringWorkbenches}
+      />
       {/* VIS-V3-04: Scene section — visible when no element is selected */}
       {!selectedId ? (
-        <div className="border-b border-border p-3">
+        <div id="right-rail-view-scene" className="border-b border-border p-3">
           <div
             className="mb-2 text-[10px] font-semibold uppercase text-muted"
             style={{ letterSpacing: '0.08em', opacity: 0.7 }}
@@ -440,7 +446,7 @@ export function WorkspaceRightRail({
         </div>
       ) : null}
       {/* CHR-V3-06: key={selectedId} remounts (and re-animates) Inspector on each selection */}
-      <div style={{ position: 'relative' }}>
+      <div id="right-rail-properties" style={{ position: 'relative' }}>
         <Inspector
           key={selectedId ?? 'none'}
           selection={inspectorSelection}
@@ -918,7 +924,22 @@ export function WorkspaceRightRail({
         />
       </div>
       {show3dLayers ? (
-        <div className="border-t border-border">
+        <div id="right-rail-view" className="border-t border-border">
+          {el?.kind === 'wall' ? (
+            <SelectedWall3dActions
+              wall={el}
+              onSemanticCommand={onSemanticCommand}
+              onIsolateWalls={() => {
+                const next = Object.fromEntries(
+                  VIEWER_CATEGORY_KEYS.map((key) => [key, key !== 'wall']),
+                );
+                useBimStore.setState({ viewerCategoryHidden: next });
+              }}
+              onHideWallCategory={() => {
+                if (!viewerCategoryHidden.wall) toggleViewerCategoryHidden('wall');
+              }}
+            />
+          ) : null}
           <Viewport3DLayersPanel
             viewerCategoryHidden={viewerCategoryHidden}
             onToggleCategory={toggleViewerCategoryHidden}
@@ -946,7 +967,7 @@ export function WorkspaceRightRail({
         </div>
       ) : null}
       {showAuthoringWorkbenches ? (
-        <div className="border-t border-border">
+        <div id="right-rail-workbench" className="border-t border-border">
           <AuthoringWorkbenchesPanel
             selected={el}
             elementsById={elementsById}
@@ -955,7 +976,7 @@ export function WorkspaceRightRail({
           />
         </div>
       ) : null}
-      <div className="border-t border-border p-3">
+      <div id="right-rail-review" className="border-t border-border p-3">
         <div
           className="mb-2 text-[10px] font-semibold uppercase text-muted"
           style={{ letterSpacing: '0.08em', opacity: 0.7 }}
@@ -991,6 +1012,211 @@ export function WorkspaceRightRail({
       ) : null}
     </div>
   );
+}
+
+function SelectedWall3dActions({
+  wall,
+  onSemanticCommand,
+  onIsolateWalls,
+  onHideWallCategory,
+}: {
+  wall: Extract<Element, { kind: 'wall' }>;
+  onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
+  onIsolateWalls: () => void;
+  onHideWallCategory: () => void;
+}): JSX.Element {
+  const dispatch = (cmd: Record<string, unknown>): void => {
+    void onSemanticCommand(cmd);
+  };
+  return (
+    <div className="border-b border-border p-3" data-testid="selected-wall-3d-actions">
+      <div
+        className="mb-2 text-[10px] font-semibold uppercase text-muted"
+        style={{ letterSpacing: '0.08em', opacity: 0.7 }}
+      >
+        3D wall actions
+      </div>
+      <div className="grid grid-cols-2 gap-1.5">
+        <ActionButton
+          testId="3d-action-insert-door"
+          label="Insert Door"
+          onClick={() => dispatch(insertDoorOnWallCenterCommand(wall))}
+        />
+        <ActionButton
+          testId="3d-action-insert-window"
+          label="Insert Window"
+          onClick={() => dispatch(insertWindowOnWallCenterCommand(wall))}
+        />
+        <ActionButton
+          testId="3d-action-insert-opening"
+          label="Opening"
+          onClick={() => dispatch(createWallOpeningCenterCommand(wall))}
+        />
+        <ActionButton
+          testId="3d-action-section"
+          label="Section"
+          onClick={() => dispatch(createSectionFromWallCommand(wall).cmd)}
+        />
+        <ActionButton
+          testId="3d-action-elevation"
+          label="Elevation"
+          onClick={() => dispatch(createElevationFromWallCommand(wall).cmd)}
+        />
+        <ActionButton testId="3d-action-isolate-walls" label="Isolate" onClick={onIsolateWalls} />
+        <ActionButton
+          testId="3d-action-hide-wall-category"
+          label="Hide Walls"
+          onClick={onHideWallCategory}
+        />
+      </div>
+    </div>
+  );
+}
+
+function RightRailSectionTabs({
+  showView,
+  showWorkbench,
+}: {
+  showView: boolean;
+  showWorkbench: boolean;
+}): JSX.Element {
+  const tabs = [
+    { id: 'properties', label: 'Properties', target: 'right-rail-properties', visible: true },
+    {
+      id: 'view',
+      label: 'View',
+      target: 'right-rail-view',
+      fallbackTarget: 'right-rail-view-scene',
+      visible: showView,
+    },
+    { id: 'workbench', label: 'Workbench', target: 'right-rail-workbench', visible: showWorkbench },
+    { id: 'review', label: 'Review', target: 'right-rail-review', visible: true },
+  ].filter((tab) => tab.visible);
+
+  return (
+    <div
+      role="tablist"
+      aria-label="Right rail sections"
+      data-testid="right-rail-section-tabs"
+      className="sticky top-0 z-10 flex gap-1 border-b border-border bg-surface px-2 py-2"
+    >
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          role="tab"
+          aria-selected="false"
+          data-testid={`right-rail-section-tab-${tab.id}`}
+          onClick={() => {
+            const target =
+              document.getElementById(tab.target) ??
+              (tab.fallbackTarget ? document.getElementById(tab.fallbackTarget) : null);
+            target?.scrollIntoView({ block: 'start' });
+          }}
+          className="rounded border border-border bg-background px-2 py-1 text-[11px] font-medium text-muted hover:bg-surface-strong hover:text-foreground"
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ActionButton({
+  label,
+  testId,
+  onClick,
+}: {
+  label: string;
+  testId: string;
+  onClick: () => void;
+}): JSX.Element {
+  return (
+    <button
+      type="button"
+      data-testid={testId}
+      onClick={onClick}
+      className="rounded border border-border bg-background px-2 py-1.5 text-left text-[11px] font-medium text-foreground hover:bg-surface-strong"
+    >
+      {label}
+    </button>
+  );
+}
+
+function insertDoorOnWallCenterCommand(
+  wall: Extract<Element, { kind: 'wall' }>,
+): Record<string, unknown> {
+  return {
+    type: 'insertDoorOnWall',
+    wallId: wall.id,
+    alongT: 0.5,
+    widthMm: 900,
+  };
+}
+
+function insertWindowOnWallCenterCommand(
+  wall: Extract<Element, { kind: 'wall' }>,
+): Record<string, unknown> {
+  return {
+    type: 'insertWindowOnWall',
+    wallId: wall.id,
+    alongT: 0.5,
+    widthMm: 1200,
+    sillHeightMm: 900,
+    heightMm: 1500,
+  };
+}
+
+function createWallOpeningCenterCommand(
+  wall: Extract<Element, { kind: 'wall' }>,
+): Record<string, unknown> {
+  return {
+    type: 'createWallOpening',
+    hostWallId: wall.id,
+    alongTStart: 0.45,
+    alongTEnd: 0.55,
+    sillHeightMm: 200,
+    headHeightMm: 2400,
+  };
+}
+
+function createSectionFromWallCommand(wall: Extract<Element, { kind: 'wall' }>): {
+  id: string;
+  cmd: Record<string, unknown>;
+} {
+  const params = sectionCutFromWall(wall);
+  const id = `sc-${crypto.randomUUID().slice(0, 10)}`;
+  return {
+    id,
+    cmd: {
+      type: 'createSectionCut',
+      id,
+      name: params.name,
+      lineStartMm: params.lineStartMm,
+      lineEndMm: params.lineEndMm,
+      cropDepthMm: params.cropDepthMm,
+    },
+  };
+}
+
+function createElevationFromWallCommand(wall: Extract<Element, { kind: 'wall' }>): {
+  id: string;
+  cmd: Record<string, unknown>;
+} {
+  const params = elevationFromWall(wall);
+  const id = `ev-${crypto.randomUUID().slice(0, 10)}`;
+  const cmd: Record<string, unknown> = {
+    type: 'createElevationView',
+    id,
+    name: params.name,
+    direction: params.direction,
+    cropMinMm: params.cropMinMm,
+    cropMaxMm: params.cropMaxMm,
+  };
+  if (params.direction === 'custom' && params.customAngleDeg !== null) {
+    cmd.customAngleDeg = params.customAngleDeg;
+  }
+  return { id, cmd };
 }
 
 function InspectorContextActions({
