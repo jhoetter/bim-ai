@@ -339,10 +339,27 @@ Gate:
 
 - The final handoff must be reproducible from source, advisor-clean at warning
   level, and visually reviewed from all required views.
+- If any warning/error remains, or if strict final acceptance was not run, the
+  artifact status is `draft` or `blocked`; it is not accepted.
 
 ---
 
 ## 5. Acceptance Gates
+
+### Completion Status Gate
+
+Seed authoring has only three valid end states:
+
+| Status | Meaning |
+| --- | --- |
+| `accepted` | Final current-HEAD live acceptance passed, with zero Advisor `warning`/`error` findings, passing phase packets, material checks, screenshots/semantic checks, and current evidence hashes. |
+| `draft` | Files compile/load, but any warning/error, visual issue, missing evidence, stale evidence, or incomplete phase packet remains. A draft may be useful for review, but it is not a successful seed handoff. |
+| `blocked` | The agent cannot continue because of a concrete external blocker: API/web unavailable, dependency missing, verifier defect, or an app crash. The blocker must be reproducible and documented. |
+
+The agent must not stop at `draft` unless explicitly asked to produce a draft.
+For normal project-initiation seed work, it must continue revising the source
+recipe and rerunning the live loop until `accepted`, or report a real `blocked`
+state. Writing unresolved warnings into `status.md` is not completion.
 
 ### Advisor Gate
 

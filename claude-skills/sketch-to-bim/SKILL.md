@@ -135,6 +135,39 @@ The agent must satisfy all of these before calling the initiation successful:
 5. **The model must be usable after initiation.** Stairs cannot run into walls, rooms cannot be inaccessible, slabs/openings cannot overlap incoherently, roofs cannot merely carry metadata for a void that does not render, and schedules/sheets must not contain obvious unresolved references.
 6. **If the software says the model is wrong, assume the model is wrong first.** Only accept a warning after reading the rule, the affected `elementIds`, and the model geometry. The burden is on the agent to justify a tolerance.
 
+### Completion status semantics
+
+The deliverable is not "files were created." The deliverable is an accepted,
+zero-warning project-initiation seed with evidence.
+
+Use these exact status meanings:
+
+- `accepted`: strict final acceptance passed at current `HEAD`; CLI Advisor has
+  zero `warning`/`error` findings; required screenshots/semantic checks passed;
+  `sketch_bim.py accept --seed <seed-name> --clear` passed.
+- `draft`: the artifact compiles or loads, but any Advisor warning/error,
+  semantic visual failure, missing browser evidence, stale evidence, or
+  unresolved phase packet remains.
+- `blocked`: the agent cannot continue because of an external/tooling blocker,
+  such as API/web server unavailable, missing dependency, or a software defect
+  in the verifier. The blocker must be concrete and reproducible.
+
+Do not report `done`, `complete`, `final`, or `accepted` for a `draft`. If
+warnings appear, fix the source recipe and rerun the loop. Do not stop after
+writing unresolved warnings to `status.md`; that is a draft handoff and must be
+named as such.
+
+For seed artifacts, keep iterating until this command succeeds:
+
+```bash
+python3 claude-skills/sketch-to-bim/sketch_bim.py accept \
+  --seed <seed-name> \
+  --clear
+```
+
+Only stop before that if the run is genuinely `blocked`. In that case, leave
+the artifact status as `draft` or `blocked`, not `accepted`.
+
 ### Blocking advisor classes for sketch initiation
 
 These findings block phase advancement unless the user explicitly accepts them with a written rationale:

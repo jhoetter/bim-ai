@@ -211,6 +211,14 @@ HEAD, even when older checked-in evidence says `advisorWarningCount: 0`.
 
 For any seed intended as project-initiation BIM:
 
+- The default deliverable is `accepted`, not `draft`.
+- `accepted` requires strict current-HEAD live acceptance to pass.
+- If files exist but warnings/errors, visual failures, stale evidence, missing
+  browser evidence, or incomplete phase packets remain, the artifact is `draft`.
+- If the agent cannot continue because the API/web/dependency/tooling is broken,
+  the artifact is `blocked` with a concrete reproduced blocker.
+- A worker may not call the task done merely because `bundle.json`,
+  `manifest.json`, or `status.md` exists.
 - `warning` or `error` Advisor findings block acceptance unless the user
   explicitly accepts a tolerance in the artifact.
 - `door_operation_clearance_conflict` is blocking.
@@ -222,6 +230,33 @@ For any seed intended as project-initiation BIM:
 - Screenshots must be captured from the running app, not only generated from an
   offline snapshot.
 - Evidence must be current for the app build that users will run.
+
+## Worker Instruction Template
+
+Use this contract when delegating a new sketch seed:
+
+```text
+Create <seed-name> as an accepted sketch-to-BIM seed, not a draft.
+
+Do not stop when the artifact compiles, loads, or has status notes. Keep
+iterating on the source recipe until strict final acceptance passes:
+
+python3 claude-skills/sketch-to-bim/sketch_bim.py accept --seed <seed-name> --clear
+
+Completion requires:
+- compile passes;
+- material-check passes;
+- seed loads;
+- live Advisor has zero warning/error findings;
+- phase packets pass;
+- browser/right-rail evidence is captured when the web app is available;
+- semantic visual checks pass against the target images;
+- no unresolved warnings are merely documented in status.md.
+
+If warnings appear, fix the source recipe and rerun. No warning tolerance is
+granted by default. If blocked by API/web/dependencies/tooling, report `blocked`
+with the exact failing command and leave the artifact marked draft/blocked.
+```
 
 ## Current Target-House Assessment
 
