@@ -20,6 +20,8 @@ const DEFAULT_SHEET_OPACITY = 0.28;
 const DEFAULT_LINE_OPACITY = 0.86;
 const DEFAULT_FILL_OPACITY = 0.14;
 const OVERLAY_RENDER_ORDER = 1200;
+const PLAN_STROKE_WIDTH_M = 0.055;
+const PLAN_BORDER_WIDTH_M = 0.09;
 
 function clamp01(v: unknown, fallback: number): number {
   const n = Number(v);
@@ -125,23 +127,61 @@ function makeLineSegments(
   points: number[],
   color: string,
   opacity: number,
-): THREE.LineSegments | null {
+  widthM = PLAN_STROKE_WIDTH_M,
+): THREE.Mesh | null {
   if (points.length < 6) return null;
+  const positions: number[] = [];
+  const indices: number[] = [];
+  for (let i = 0; i + 5 < points.length; i += 6) {
+    const ax = points[i]!;
+    const ay = points[i + 1]!;
+    const az = points[i + 2]!;
+    const bx = points[i + 3]!;
+    const by = points[i + 4]!;
+    const bz = points[i + 5]!;
+    const dx = bx - ax;
+    const dz = bz - az;
+    const len = Math.hypot(dx, dz);
+    if (len < 0.0001) continue;
+    const px = (-dz / len) * (widthM / 2);
+    const pz = (dx / len) * (widthM / 2);
+    const base = positions.length / 3;
+    positions.push(
+      ax + px,
+      ay,
+      az + pz,
+      ax - px,
+      ay,
+      az - pz,
+      bx - px,
+      by,
+      bz - pz,
+      bx + px,
+      by,
+      bz + pz,
+    );
+    indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
+  }
+  if (positions.length < 12) return null;
   const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
-  const lines = new THREE.LineSegments(
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  const mesh = new THREE.Mesh(
     geo,
-    new THREE.LineBasicMaterial({
+    new THREE.MeshBasicMaterial({
       color,
-      transparent: opacity < 1,
+      transparent: true,
       opacity,
+      side: THREE.DoubleSide,
       depthTest: false,
       depthWrite: false,
       toneMapped: false,
     }),
   );
-  raiseOverlayObject(lines);
-  return lines;
+  mesh.userData.planOverlayStroke = true;
+  raiseOverlayObject(mesh);
+  return mesh;
 }
 
 function makeDashedLineSegments(
@@ -338,6 +378,15 @@ export function buildPlanOverlay3dGroup(
     ];
     const sheet = makeShapeMesh(cropPts, yM, opts.sheetColor, sheetOpacity);
     if (sheet) group.add(sheet);
+    const borderPts: number[] = [];
+    addPolyline(borderPts, cropPts, yM + 0.035, true);
+    const border = makeLineSegments(
+      borderPts,
+      opts.lineColor,
+      Math.max(lineOpacity, 0.9),
+      PLAN_BORDER_WIDTH_M,
+    );
+    if (border) group.add(border);
   }
 
   const wallPts: number[] = [];
