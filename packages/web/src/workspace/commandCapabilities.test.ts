@@ -57,6 +57,14 @@ describe('command capability graph', () => {
     expect(evaluateCommandInMode('view.3d.fit', 'plan')?.state).toBe('disabled');
   });
 
+  it('tracks active saved-viewpoint commands as 3D-capable only', () => {
+    for (const commandId of ['view.3d.saved-view.reset', 'view.3d.saved-view.update']) {
+      expect(evaluateCommandInMode(commandId, '3d')?.state).toBe('enabled');
+      expect(evaluateCommandInMode(commandId, 'plan-3d')?.state).toBe('enabled');
+      expect(evaluateCommandInMode(commandId, 'plan')?.state).toBe('disabled');
+    }
+  });
+
   it('routes active visibility controls to plan-like and 3D-capable views only', () => {
     expect(evaluateCommandInMode('visibility.active-controls', 'plan')?.state).toBe('enabled');
     expect(evaluateCommandInMode('visibility.active-controls', '3d')?.state).toBe('enabled');
