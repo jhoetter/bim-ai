@@ -36,16 +36,16 @@ loop to refine the model.
 
 The user may provide any of these, but they are not required:
 
-| Input | Why it helps |
-| --- | --- |
-| Dimensions or one known scale | Reduces footprint/height guessing and improves visual proportion. |
-| Site orientation | Makes sun, views, facade labels, and north references meaningful. |
-| Programme | Prevents arbitrary room layout and helps schedules. |
-| Target locale/code package | Chooses advisor preset, stair comfort proxy, door/window defaults. |
-| Must-have features | Makes non-negotiables explicit: roof terrace, dormer, loggia, split levels, etc. |
-| Forbidden outcomes | Useful for avoiding repeated failures, e.g. "not a brown pitched roof". |
-| Additional views | Reduces ambiguity in side/rear/plan conditions. |
-| Desired output level | Massing-only, concept BIM, project-initiation BIM, or documentation-ready. |
+| Input                         | Why it helps                                                                     |
+| ----------------------------- | -------------------------------------------------------------------------------- |
+| Dimensions or one known scale | Reduces footprint/height guessing and improves visual proportion.                |
+| Site orientation              | Makes sun, views, facade labels, and north references meaningful.                |
+| Programme                     | Prevents arbitrary room layout and helps schedules.                              |
+| Target locale/code package    | Chooses advisor preset, stair comfort proxy, door/window defaults.               |
+| Must-have features            | Makes non-negotiables explicit: roof terrace, dormer, loggia, split levels, etc. |
+| Forbidden outcomes            | Useful for avoiding repeated failures, e.g. "not a brown pitched roof".          |
+| Additional views              | Reduces ambiguity in side/rear/plan conditions.                                  |
+| Desired output level          | Massing-only, concept BIM, project-initiation BIM, or documentation-ready.       |
 
 ### Agent Behavior When Inputs Are Missing
 
@@ -65,6 +65,9 @@ The agent should not stop just because the user gave only a sketch. It should:
 ### Strengths
 
 - The seed source is deterministic and reviewable as a command bundle.
+- Generated seed data now has a dedicated artifact contract:
+  `spec/seed-artifacts.md`. Runtime seed artifacts live under
+  `seed-artifacts/<name>/` and are ignored by git by default.
 - The workflow now uses the live app, CLI advisor, screenshots, and evidence
   files instead of trusting successful command replay.
 - `bim-ai initiation-run` now produces `visual-gate.json` and
@@ -88,9 +91,9 @@ The agent should not stop just because the user gave only a sketch. It should:
 
 ### Weaknesses
 
-- The canonical target-house source still uses a large custom JS bundle. The
-  DSL is available, but it needs broader architectural primitives before it can
-  express every high-fidelity target-house detail.
+- The DSL is available, but it needs broader architectural primitives before it
+  can express every high-fidelity target-house detail without custom low-level
+  command authoring inside a seed artifact bundle.
 - Visual comparison is pixel/content based. It catches blank or low-information
   screenshots and large target/reference deltas, but it is not yet a semantic
   computer-vision evaluator for "roof cutout present" or "cladding rhythm
@@ -193,36 +196,55 @@ Example artifact: `spec/examples/sketch-understanding-ir.example.json`.
 Before authoring, every critical feature must be mapped to available software
 capabilities.
 
-| Sketch feature | Required software capability | Failure if missing |
-| --- | --- | --- |
-| Gable-cut wall top | Wall-to-roof attachment must render a sampled roof profile, not endpoint-only slope. | Wall remains rectangular or has wrong triangular profile. |
+| Sketch feature        | Required software capability                                                               | Failure if missing                                        |
+| --------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| Gable-cut wall top    | Wall-to-roof attachment must render a sampled roof profile, not endpoint-only slope.       | Wall remains rectangular or has wrong triangular profile. |
 | Embedded roof terrace | Roof opening, terrace floor, return faces, guard, access door, saved high/checkpoint view. | Roof void exists only as metadata or reads as a skylight. |
-| Folded white wrapper | Solid walls/roof/fascia/sweeps with visible thickness. | Generic roof-on-box or ghost mass. |
-| Recessed loggia | Recessed facade plane, side returns, front rail, bay rhythm, glazing. | Flat balcony stuck on facade. |
-| Vertical cladding | Material plus renderer-supported board rhythm, or documented tolerance. | Detached batten artifacts or flat wrong material. |
-| Usable rooms | Real walls/partitions, doors, room outlines, stair clearance. | Advisor clean but unbuildable interior. |
+| Folded white wrapper  | Solid walls/roof/fascia/sweeps with visible thickness.                                     | Generic roof-on-box or ghost mass.                        |
+| Recessed loggia       | Recessed facade plane, side returns, front rail, bay rhythm, glazing.                      | Flat balcony stuck on facade.                             |
+| Vertical cladding     | Material plus renderer-supported board rhythm, or documented tolerance.                    | Detached batten artifacts or flat wrong material.         |
+| Usable rooms          | Real walls/partitions, doors, room outlines, stair clearance.                              | Advisor clean but unbuildable interior.                   |
 
 If a feature has no reliable command/render path, the run must stop and create a
 capability-gap task instead of faking the feature.
 
 ### Authoring Surface
 
-The current source is a low-level command bundle. Target state is a typed seed
-DSL that compiles to commands while preserving intent:
+The durable source for a generated seed is a named artifact set, documented in
+`spec/seed-artifacts.md`. The ideal authoring path is a typed seed DSL that
+compiles to the artifact's `bundle.json` while preserving intent:
 
 ```ts
 house()
   .levels({ ground: 0, upper: 3000 })
   .volume('groundBase', { material: 'cladding_warm_wood', footprint })
   .wrapperShell('upperWhiteShell', { roof: 'asymmetric_gable', terraceCutout })
-  .facade('front').recessedLoggia({ bays, rail })
+  .facade('front')
+  .recessedLoggia({ bays, rail })
   .rooms(programme)
   .viewpoints(requiredViews)
-  .compile()
+  .compile();
 ```
 
 The DSL should not hide generated commands; it should make architectural intent
 reviewable and generate deterministic command bundles.
+
+### Artifact Set
+
+Every completed seed generation run must package the result as:
+
+```text
+seed-artifacts/<name>/
+  manifest.json
+  bundle.json
+  source/
+  evidence/
+```
+
+Use `scripts/create-seed-artifact.mjs` to package any user source folder and the
+generated bundle. Do not place generated seed output in `nightshift`,
+`packages/cli/lib`, or E2E fixture folders. `nightshift` is temporary working
+evidence; the artifact set is the loadable handoff.
 
 ---
 
@@ -376,44 +398,47 @@ The run must leave evidence:
 
 Use this score after each project-initiation run.
 
-| Dimension | Weight | 0 | 5 | 10 |
-| --- | ---: | --- | --- | --- |
-| Visual fidelity | 30% | Generic building | Major features present, visible gaps | Reads as the sketch from required views |
-| BIM soundness | 25% | Blocking advisor findings | Warnings resolved, some tolerated info | Zero blocking warnings, clean topology |
-| Usability | 20% | Decorative shell only | Rooms/stairs exist but awkward | Plausible project-start model |
-| Reproducibility | 15% | Manual UI state | Bundle replay works | Source, snapshot, evidence all deterministic |
-| Method discipline | 10% | One-shot generation | Some loop evidence | Full phase ledger and defect closure |
+| Dimension         | Weight | 0                         | 5                                      | 10                                           |
+| ----------------- | -----: | ------------------------- | -------------------------------------- | -------------------------------------------- |
+| Visual fidelity   |    30% | Generic building          | Major features present, visible gaps   | Reads as the sketch from required views      |
+| BIM soundness     |    25% | Blocking advisor findings | Warnings resolved, some tolerated info | Zero blocking warnings, clean topology       |
+| Usability         |    20% | Decorative shell only     | Rooms/stairs exist but awkward         | Plausible project-start model                |
+| Reproducibility   |    15% | Manual UI state           | Bundle replay works                    | Source, snapshot, evidence all deterministic |
+| Method discipline |    10% | One-shot generation       | Some loop evidence                     | Full phase ledger and defect closure         |
 
-Current target-house run: **6.5 / 10**. Current methodology/tooling: **8.4 / 10**.
+Current committed seed artifact inventory: **empty by design**. Current
+methodology/tooling: **8.7 / 10**.
 
 Reason:
 
-- strong improvement in advisor use, roof cutout, gable-wall rendering, and
-  evidence;
+- generated target-house evidence and hard-coded source bundles were removed
+  from the repository;
+- `make seed` now loads isolated named artifact sets rather than one canonical
+  baked house;
 - tooling now has IR preflight, capability gaps, visual gates, acceptance gates,
-  quality modes, a seed DSL, and golden preflight cases;
-- the target-house model itself still needs final seam closure and
-  material/detail fidelity work before it scores at the same level as the
-  methodology.
+  quality modes, a seed DSL, golden preflight cases, and the clean artifact
+  contract in `spec/seed-artifacts.md`;
+- the next maturity step is to generate several real artifact sets and add live
+  screenshot/advisor baselines for them without committing ad hoc evidence.
 
 ---
 
 ## 7. Implementation Tracker
 
-| ID | Status | Item | Acceptance criteria |
-| --- | --- | --- | --- |
-| SBM-01 | done | Skill operating contract | `claude-skills/sketch-to-bim/SKILL.md` requires live app, advisor, screenshots, visual gates, acceptance gates, and tolerance table. |
-| SBM-02 | done | Formal Sketch Understanding IR schema | `spec/schemas/sketch-understanding-ir.schema.json` exists for visual read, dimensions, features, programme, assumptions, and required views. |
-| SBM-03 | done | Capability matrix registry | `spec/sketch-to-bim-capability-matrix.json` maps target-house and broader residential features to commands, renderer support, advisor checks, evidence, and known failure modes. |
-| SBM-04 | done | Seed authoring DSL | `seed-dsl.v0` compiles levels, types, volumes, roofs/openings, rooms, viewpoints, and raw commands to deterministic `cmd-v3.0` bundles. |
-| SBM-05 | done | Evidence runner CLI | `bim-ai initiation-run` can run a seed command or apply bundle, then capture snapshot, validate, evidence-package, advisor warning/info, screenshots, screenshot manifest, visual checklist, and status packet. |
-| SBM-06 | done | Visual defect checklist artifact | `visual-checklist.json` is generated from required views and critical features, populated with screenshot paths, and updated from `visual-gate.json` pass/fail/needs-review scoring. |
-| SBM-07 | done | Render-and-compare gate | `bim-ai initiation-compare` and `initiation-run --target-image/--target-map` compare checkpoint screenshots against target/reference PNGs with scored deltas. |
-| SBM-08 | done | Advisor expansion for visual/BIM usability | CLI acceptance gates block coverage errors, advisor warnings in strict modes, final mass placeholders, missing screenshots, and visual-gate failures; backend Advisor can still be deepened with more semantic seam/clearance/gap rules. |
-| SBM-09 | done | Plan/camera diagnostic fit | Initiation screenshots synthesize deterministic saved viewpoints from model bounds when a required view is missing, including plan/diagnostic/top-style views. |
-| SBM-10 | done | Golden seed regression suite | `bim-ai initiation-golden` runs three preflight golden cases with IR, capability matrix, optional DSL bundle, and scored packets; live screenshot/advisor baselines are the next-depth expansion per archetype. |
-| SBM-11 | done | Capability-gap escalation | `capability-gaps.json` is generated when critical features are blocked by missing/gap capabilities or missing required views; the status packet forbids fake decorative fallback geometry. |
-| SBM-12 | done | User-facing initiation modes | `bim-ai initiation-modes` exposes `massing_only`, `concept_bim`, `project_initiation_bim`, and `documentation_ready`; `initiation-check/run --mode` enforces the selected mode. |
+| ID     | Status | Item                                       | Acceptance criteria                                                                                                                                                                                                                      |
+| ------ | ------ | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SBM-01 | done   | Skill operating contract                   | `claude-skills/sketch-to-bim/SKILL.md` requires live app, advisor, screenshots, visual gates, acceptance gates, and tolerance table.                                                                                                     |
+| SBM-02 | done   | Formal Sketch Understanding IR schema      | `spec/schemas/sketch-understanding-ir.schema.json` exists for visual read, dimensions, features, programme, assumptions, and required views.                                                                                             |
+| SBM-03 | done   | Capability matrix registry                 | `spec/sketch-to-bim-capability-matrix.json` maps target-house and broader residential features to commands, renderer support, advisor checks, evidence, and known failure modes.                                                         |
+| SBM-04 | done   | Seed authoring DSL                         | `seed-dsl.v0` compiles levels, types, volumes, roofs/openings, rooms, viewpoints, and raw commands to deterministic `cmd-v3.0` bundles.                                                                                                  |
+| SBM-05 | done   | Evidence runner CLI                        | `bim-ai initiation-run` can run a seed command or apply bundle, then capture snapshot, validate, evidence-package, advisor warning/info, screenshots, screenshot manifest, visual checklist, and status packet.                          |
+| SBM-06 | done   | Visual defect checklist artifact           | `visual-checklist.json` is generated from required views and critical features, populated with screenshot paths, and updated from `visual-gate.json` pass/fail/needs-review scoring.                                                     |
+| SBM-07 | done   | Render-and-compare gate                    | `bim-ai initiation-compare` and `initiation-run --target-image/--target-map` compare checkpoint screenshots against target/reference PNGs with scored deltas.                                                                            |
+| SBM-08 | done   | Advisor expansion for visual/BIM usability | CLI acceptance gates block coverage errors, advisor warnings in strict modes, final mass placeholders, missing screenshots, and visual-gate failures; backend Advisor can still be deepened with more semantic seam/clearance/gap rules. |
+| SBM-09 | done   | Plan/camera diagnostic fit                 | Initiation screenshots synthesize deterministic saved viewpoints from model bounds when a required view is missing, including plan/diagnostic/top-style views.                                                                           |
+| SBM-10 | done   | Golden seed regression suite               | `bim-ai initiation-golden` runs three preflight golden cases with IR, capability matrix, optional DSL bundle, and scored packets; live screenshot/advisor baselines are the next-depth expansion per archetype.                          |
+| SBM-11 | done   | Capability-gap escalation                  | `capability-gaps.json` is generated when critical features are blocked by missing/gap capabilities or missing required views; the status packet forbids fake decorative fallback geometry.                                               |
+| SBM-12 | done   | User-facing initiation modes               | `bim-ai initiation-modes` exposes `massing_only`, `concept_bim`, `project_initiation_bim`, and `documentation_ready`; `initiation-check/run --mode` enforces the selected mode.                                                          |
 
 ---
 
@@ -439,7 +464,7 @@ bim-ai initiation-run \
   --ir spec/examples/sketch-understanding-ir.example.json \
   --capabilities spec/sketch-to-bim-capability-matrix.json \
   --model <id> \
-  --seed-command "make seed" \
+  --seed-command "make seed name=<seed-name>" \
   --out nightshift/<run>
 ```
 

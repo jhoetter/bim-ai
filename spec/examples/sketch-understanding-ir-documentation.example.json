@@ -3,8 +3,8 @@
   "projectType": "single_family_house",
   "qualityTarget": "documentation_ready",
   "sourceInputs": {
-    "images": ["spec/target-house.jpeg"],
-    "briefs": ["spec/target-house-seed.md"],
+    "images": ["spec/target-house/target-house-1.png", "spec/target-house/target-house-2.png"],
+    "briefs": ["spec/target-house/target-house-seed.md"],
     "userInstruction": "Create a documentation-ready seed model with rooms, schedules, and saved evidence views."
   },
   "visualRead": {

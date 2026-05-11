@@ -17,8 +17,11 @@ PNPM := pnpm
 WEB_PORT ?= 2000
 API_PORT ?= 8500
 design ?= default
+SEED_NAME ?= $(name)
+SEED_ROOT ?= $(seed_root)
+SEED_ARGS := $(if $(SEED_NAME),--name "$(SEED_NAME)",) $(if $(SEED_ROOT),--root "$(SEED_ROOT)",)
 
-.PHONY: help install dev dev-api dev-web kill-ports seed \
+.PHONY: help install dev dev-api dev-web kill-ports seed seed-clear seed-artifact \
 	db-up db-down db-reset db-logs \
 	test test-py test-js format format-check python-format-check lint architecture \
 	typecheck verify build clean lockfile-check verify-refinement-reliability
@@ -27,6 +30,8 @@ help:
 	@echo "bim-ai Makefile"
 	@echo "  install   — pnpm + Python venv"
 	@echo "  dev       — db-up + API + Web (:$(API_PORT) / :$(WEB_PORT)); make dev design=conservative|default"
+	@echo "  seed      — load seed-artifacts/*; pass name=<seed-name> to load one"
+	@echo "  seed-clear — delete all seed-managed local models"
 	@echo "  verify    — format-check, lint, architecture, tc, pytest, vite build"
 
 install:
@@ -90,7 +95,13 @@ dev-web:
 	API_PORT=$(API_PORT) VITE_DESIGN_SYSTEM=$(design) $(PNPM) --filter @bim-ai/web dev --port $(WEB_PORT) --host 127.0.0.1 --strictPort
 
 seed:
-	cd $(APP_DIR) && PYTHONPATH=. .venv/bin/python scripts/seed.py
+	cd $(APP_DIR) && PYTHONPATH=. .venv/bin/python scripts/seed.py $(SEED_ARGS)
+
+seed-clear:
+	cd $(APP_DIR) && PYTHONPATH=. .venv/bin/python scripts/seed.py --clear $(if $(SEED_ROOT),--root "$(SEED_ROOT)",)
+
+seed-artifact:
+	node scripts/create-seed-artifact.mjs --name "$(NAME)" --source "$(SOURCE)" --bundle "$(BUNDLE)" $(if $(TITLE),--title "$(TITLE)",) $(if $(DESCRIPTION),--description "$(DESCRIPTION)",) $(if $(OUT),--out "$(OUT)",) $(if $(FORCE),--force,)
 
 test: test-py test-js
 

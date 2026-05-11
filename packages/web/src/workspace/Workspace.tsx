@@ -272,8 +272,17 @@ export function Workspace(): JSX.Element {
   } | null>(null);
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState<boolean>(() => !readOnboardingProgress().completed);
-  const { insertSeedHouse, seedLoading, seedError, setSeedError, wsOn, codePresetIds } =
-    useWorkspaceSnapshot();
+  const {
+    insertSeedHouse,
+    loadSeedModel,
+    seedModels,
+    activeSeedLabel,
+    seedLoading,
+    seedError,
+    setSeedError,
+    wsOn,
+    codePresetIds,
+  } = useWorkspaceSnapshot();
   const [_collaborationConflictQueue, setCollaborationConflictQueue] =
     useState<CollaborationConflictQueueV1 | null>(null);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
@@ -1212,6 +1221,9 @@ export function Workspace(): JSX.Element {
         anchorRef={projectNameRef}
         recent={recentProjects}
         onPickRecent={handlePickRecent}
+        seedModels={seedModels}
+        activeSeedModelId={modelId ?? null}
+        onPickSeedModel={(id) => void loadSeedModel(id)}
         onInsertSeed={() => void insertSeedHouse()}
         onSaveSnapshot={handleSaveSnapshot}
         saveAsMaximumBackups={saveAsMaximumBackups}
@@ -1276,7 +1288,7 @@ export function Workspace(): JSX.Element {
             <TopBar
               mode={effectiveMode}
               onModeChange={handleModeChange}
-              projectName="BIM AI seed"
+              projectName={activeSeedLabel ?? 'BIM AI'}
               projectNameRef={projectNameRef}
               onProjectNameClick={() => setProjectMenuOpen((v) => !v)}
               onHamburgerClick={() => setLeftRailCollapsed((v) => !v)}

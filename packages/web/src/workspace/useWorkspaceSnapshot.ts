@@ -49,8 +49,39 @@ function clearLastSeq(modelId: string): void {
   }
 }
 
+export type SeedModelOption = {
+  id: string;
+  label: string;
+  slug: string;
+  projectTitle: string;
+  revision: number;
+};
+
+function seedModelsFromBootstrap(bx: { projects?: Record<string, unknown>[] }): SeedModelOption[] {
+  const rows: SeedModelOption[] = [];
+  for (const project of bx.projects ?? []) {
+    const projectTitle = String(project.title ?? project.slug ?? 'Seed Library');
+    const models = Array.isArray(project.models) ? project.models : [];
+    for (const model of models as Record<string, unknown>[]) {
+      if (typeof model.id !== 'string') continue;
+      const slug = String(model.slug ?? model.id);
+      rows.push({
+        id: model.id,
+        slug,
+        label: `${projectTitle} / ${slug}`,
+        projectTitle,
+        revision: Number(model.revision ?? 0),
+      });
+    }
+  }
+  return rows;
+}
+
 export function useWorkspaceSnapshot(): {
   insertSeedHouse: () => Promise<void>;
+  loadSeedModel: (modelId: string) => Promise<void>;
+  seedModels: SeedModelOption[];
+  activeSeedLabel: string | null;
   seedLoading: boolean;
   seedError: string | null;
   setSeedError: (err: string | null) => void;
@@ -68,6 +99,8 @@ export function useWorkspaceSnapshot(): {
 
   const [seedLoading, setSeedLoading] = useState(false);
   const [seedError, setSeedError] = useState<string | null>(null);
+  const [seedModels, setSeedModels] = useState<SeedModelOption[]>([]);
+  const [activeSeedLabel, setActiveSeedLabel] = useState<string | null>(null);
   const [wsOn, setWsOn] = useState(false);
   const [codePresetIds, setCodePresetIds] = useState<string[]>([
     'residential',
@@ -183,34 +216,73 @@ export function useWorkspaceSnapshot(): {
     [hydrateFromSnapshot, applyDelta, setPresencePeers, mergeComment],
   );
 
-  const insertSeedHouse = useCallback(async (): Promise<void> => {
-    setSeedLoading(true);
-    setSeedError(null);
-    try {
-      const bx = await bootstrap();
-      const pj = bx.projects as Record<string, unknown>[] | undefined;
-      const m0 = pj?.[0]?.models as Array<{ id?: unknown }> | undefined;
-      const mid = m0?.[0]?.id;
-      if (typeof mid !== 'string') throw new Error('No models — run make seed');
+  const loadModelSnapshot = useCallback(
+    async (mid: string, label: string | null): Promise<void> => {
       const snapRes = await fetch(
         `/api/models/${encodeURIComponent(mid)}/snapshot?expandLinks=true`,
       );
       if (!snapRes.ok) throw new Error(`snapshot ${snapRes.status}`);
       const snap = (await snapRes.json()) as Snapshot;
       hydrateFromSnapshot(snap);
-      // activityEvents/comments are populated by the modelId effect below — they
-      // are model-scoped server state and must invalidate together with modelId.
+      setActiveSeedLabel(label);
+      // activityEvents/comments are populated by the modelId effect below.
+      if (wsRef.current) {
+        wsRef.current.onclose = null;
+        wsRef.current.close();
+      }
+      wsRef.current = null;
       if (!DISABLE_WS) {
         const lastSeq = readLastSeq(mid);
         lastSeqRef.current = lastSeq;
         wsRef.current = connectWs(mid, lastSeq);
       }
+    },
+    [hydrateFromSnapshot, connectWs],
+  );
+
+  const insertSeedHouse = useCallback(async (): Promise<void> => {
+    setSeedLoading(true);
+    setSeedError(null);
+    try {
+      const bx = await bootstrap();
+      const options = seedModelsFromBootstrap(bx);
+      setSeedModels(options);
+      const first = options[0];
+      if (!first) {
+        throw new Error(
+          'No seed artifacts loaded. Create one, then run make seed name=<seed-name>.',
+        );
+      }
+      await loadModelSnapshot(first.id, first.label);
     } catch (err) {
       setSeedError(err instanceof Error ? err.message : 'Failed to load seed');
     } finally {
       setSeedLoading(false);
     }
-  }, [hydrateFromSnapshot, connectWs]);
+  }, [loadModelSnapshot]);
+
+  const loadSeedModel = useCallback(
+    async (mid: string): Promise<void> => {
+      setSeedLoading(true);
+      setSeedError(null);
+      try {
+        let options = seedModels;
+        if (!options.some((option) => option.id === mid)) {
+          const bx = await bootstrap();
+          options = seedModelsFromBootstrap(bx);
+          setSeedModels(options);
+        }
+        const selected = options.find((option) => option.id === mid);
+        if (!selected) throw new Error(`Seed model not found: ${mid}`);
+        await loadModelSnapshot(selected.id, selected.label);
+      } catch (err) {
+        setSeedError(err instanceof Error ? err.message : 'Failed to load seed model');
+      } finally {
+        setSeedLoading(false);
+      }
+    },
+    [loadModelSnapshot, seedModels],
+  );
 
   // modelId is the cache key for server-fetched, model-scoped state. Whenever
   // it changes, prior activity/comments must be cleared (so the previous
@@ -288,5 +360,15 @@ export function useWorkspaceSnapshot(): {
     return () => window.clearInterval(id);
   }, []);
 
-  return { insertSeedHouse, seedLoading, seedError, setSeedError, wsOn, codePresetIds };
+  return {
+    insertSeedHouse,
+    loadSeedModel,
+    seedModels,
+    activeSeedLabel,
+    seedLoading,
+    seedError,
+    setSeedError,
+    wsOn,
+    codePresetIds,
+  };
 }

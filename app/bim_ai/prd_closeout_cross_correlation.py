@@ -55,12 +55,12 @@ _ADVISOR_TO_TRACEABILITY_IDS: dict[str, list[str]] = {
 _ADVISOR_TO_SPECIFIC_READINESS_GATES: dict[str, list[str]] = {
     "prd_s11_sheets": ["pytest_prd_traceability_matrix"],
     "prd_s12_exchange_replay": [
-        "pytest_one_family_bundle_roundtrip",
+        "pytest_seed_artifact_roundtrip",
         "pytest_prd_traceability_matrix",
     ],
     "prd_s14_golden_bundle": [
-        "golden_cli_one_family_commands",
-        "pytest_one_family_bundle_roundtrip",
+        "seed_artifact_contract",
+        "pytest_seed_artifact_roundtrip",
         "pytest_prd_traceability_matrix",
     ],
     "prd_s15_golden_fixture": ["pytest_prd_traceability_matrix"],

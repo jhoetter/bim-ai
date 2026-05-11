@@ -3,8 +3,8 @@
   "projectType": "single_family_house",
   "qualityTarget": "project_initiation_bim",
   "sourceInputs": {
-    "images": ["spec/target-house.jpeg"],
-    "briefs": ["spec/target-house-seed.md"],
+    "images": ["spec/target-house/target-house-1.png", "spec/target-house/target-house-2.png"],
+    "briefs": ["spec/target-house/target-house-seed.md"],
     "userInstruction": "Create a BIM seed model from the sketch."
   },
   "visualRead": {

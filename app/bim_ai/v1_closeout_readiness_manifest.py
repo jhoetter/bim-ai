@@ -64,10 +64,10 @@ def _gate_rows(*, ci_yml_text: str | None) -> list[dict[str, Any]]:
         gates.append(row)
 
     add_path_gate(
-        gate_id="golden_cli_one_family_commands",
-        gate_kind="golden_cli_bundle_anchor",
-        rel_path="packages/cli/lib/one-family-home-commands.mjs",
-        note="CLI golden command list for the one-family house bundle.",
+        gate_id="seed_artifact_contract",
+        gate_kind="seed_artifact_contract",
+        rel_path="spec/seed-artifacts.md",
+        note="Named seed artifact contract for clean sketch-to-BIM seed handoff.",
     )
     add_path_gate(
         gate_id="pytest_evidence_manifest_closure",
@@ -75,10 +75,10 @@ def _gate_rows(*, ci_yml_text: str | None) -> list[dict[str, Any]]:
         rel_path="app/tests/test_evidence_manifest_closure.py",
     )
     add_path_gate(
-        gate_id="pytest_one_family_bundle_roundtrip",
-        gate_kind="golden_bundle_roundtrip",
-        rel_path="app/tests/test_one_family_bundle_roundtrip.py",
-        note="Python engine replay of one-family CLI bundle (roundtrip gate).",
+        gate_id="pytest_seed_artifact_roundtrip",
+        gate_kind="seed_artifact_roundtrip",
+        rel_path="app/tests/test_seed_artifact_roundtrip.py",
+        note="Python engine replay of a named seed artifact bundle.",
     )
     add_path_gate(
         gate_id="pytest_prd_blocking_advisor_matrix",
@@ -191,7 +191,7 @@ def build_v1_closeout_readiness_manifest_v1() -> dict[str, Any]:
         "agentNextActions": sorted(
             [
                 "Do not claim v1 or workpackage done unless tracker Done Rule and evidence match.",
-                "Run focused closeout pytest: test_one_family_bundle_roundtrip.py, "
+                "Run focused closeout pytest: test_seed_artifact_roundtrip.py, "
                 "test_evidence_manifest_closure.py",
                 "Read spec/workpackage-master-tracker.md before closing a backlog item.",
                 "Use GET …/evidence-package field v1CloseoutReadinessManifest_v1 for gate rows; "

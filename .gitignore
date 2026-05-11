@@ -23,5 +23,8 @@ app/.venv/
 *.local
 packages/web/playwright-report/
 packages/web/test-results/
+seed-artifacts/*
+!seed-artifacts/.gitkeep
+!seed-artifacts/README.md
 .entire/
 .superset/

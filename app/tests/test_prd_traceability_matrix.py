@@ -22,17 +22,18 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 _TRACEABILITY_ROWS: list[dict[str, object]] = [
     {
         "id": "phase_a_golden_bundle",
-        "description": "Golden command bundle for the reference two-storey house.",
+        "description": "Seed artifact contract for clean project-initiation bundles.",
         "paths": [
-            "app/tests/test_one_family_bundle_roundtrip.py",
-            "packages/cli/lib/one-family-home-commands.mjs",
+            "app/tests/test_seed_artifact_roundtrip.py",
+            "spec/seed-artifacts.md",
+            "scripts/create-seed-artifact.mjs",
         ],
     },
     {
         "id": "exchange_json_replay",
         "description": "JSON command bundle is the canonical internal replay format.",
         "paths": [
-            "app/tests/test_one_family_bundle_roundtrip.py",
+            "app/tests/test_seed_artifact_roundtrip.py",
             "app/tests/test_undo_replay_constraint.py",
         ],
     },

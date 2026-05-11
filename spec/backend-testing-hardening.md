@@ -21,7 +21,7 @@ Observed result in the feature checkout before this hardening pass:
 2 failed, 2538 passed, 93 skipped, 1 deselected
 ```
 
-The remaining failures in that checkout were stale closeout-manifest assertions caused by drift between traceability gates and the active branch state. Current `origin/main` still uses the one-family golden bundle gates.
+The remaining failures in that checkout were stale closeout-manifest assertions caused by drift between traceability gates and the active branch state. Earlier `origin/main` revisions still used the one-family golden bundle gates; the seed-artifact workflow now owns those closeout gates.
 
 Coverage from the full backend run:
 
@@ -88,7 +88,7 @@ Needed:
 
 ### 3. Closeout / Traceability Gates Must Track Current Architecture
 
-Closeout tests and readiness manifests must use one source of truth. Current `origin/main` still anchors this gate to the one-family golden bundle; feature branches moving to seed artifacts must update the manifest, traceability rows, and tests together.
+Closeout tests and readiness manifests must use one source of truth. Seed-artifact changes must update the manifest, traceability rows, and tests together.
 
 Needed:
 

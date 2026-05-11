@@ -127,7 +127,7 @@
       "key": "scale_from_image",
       "value": "overall depth estimated around 8.2 m",
       "confidence": 0.6,
-      "source": "spec/target-house-seed.md"
+      "source": "spec/target-house/target-house-seed.md"
     }
   ]
 }

@@ -109,7 +109,7 @@ WAVE_4_TOUCHED_FILES: frozenset[str] = frozenset(
         "app/tests/test_layered_assembly_cut_alignment.py",
         "app/tests/test_level_datum_chain.py",
         "app/tests/test_material_assembly_schedule.py",
-        "app/tests/test_one_family_bundle_roundtrip.py",
+        "app/tests/test_seed_artifact_roundtrip.py",
         "app/tests/test_opening_cut_primitives.py",
         "app/tests/test_plan_on_sheet_viewport_evidence.py",
         "app/tests/test_plan_projection_and_evidence_slices.py",

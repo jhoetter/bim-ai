@@ -373,8 +373,8 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
       sealRebateMm: raw.sealRebateMm !== undefined ? Number(raw.sealRebateMm) : undefined,
       lodPlan: raw.lodPlan === 'simple' || raw.lodPlan === 'detailed' ? raw.lodPlan : undefined,
       // KRN-12 — outlineKind allows gable_trapezoid / arched_top / etc.
-      // Was previously stripped by coerceElement so the seed-target-house
-      // trapezoidal slope-following window rendered as a rectangle.
+      // Was previously stripped by coerceElement so seed-artifact
+      // trapezoidal slope-following windows rendered as rectangles.
       ...(typeof raw.outlineKind === 'string' || typeof raw.outline_kind === 'string'
         ? {
             outlineKind: String(raw.outlineKind ?? raw.outline_kind) as

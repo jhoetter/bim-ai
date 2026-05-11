@@ -8,22 +8,19 @@ import path from 'node:path';
 import { stdin } from 'node:process';
 import { execSync } from 'node:child_process';
 
-import { buildOneFamilyHomeCommands } from './lib/one-family-home-commands.mjs';
 import {
   DEFAULT_CAPABILITY_MATRIX_PATH,
   INITIATION_MODES,
   readJsonFile,
   writeInitiationPacket,
 } from './lib/sketch-initiation.mjs';
-import {
-  buildVisualGateReport,
-  comparePngFiles,
-  readTargetMap,
-} from './lib/png-visual-gate.mjs';
+import { buildVisualGateReport, comparePngFiles, readTargetMap } from './lib/png-visual-gate.mjs';
 import { compileSeedDsl } from './lib/seed-dsl.mjs';
 
 const base = (
-  process.env.BIM_AI_BASE_URL ?? process.env.BIM_AI_API_ROOT ?? 'http://127.0.0.1:8500'
+  process.env.BIM_AI_BASE_URL ??
+  process.env.BIM_AI_API_ROOT ??
+  'http://127.0.0.1:8500'
 ).replace(/\/$/, '');
 
 function slurpStdin() {
@@ -101,8 +98,7 @@ async function fetchOkBytes(method, url) {
   const res = await fetch(url, {
     method,
     headers: {
-      accept:
-        'application/octet-stream,model/gltf-binary,*/*;q=0.8',
+      accept: 'application/octet-stream,model/gltf-binary,*/*;q=0.8',
     },
   });
   const buf = Buffer.from(await res.arrayBuffer());
@@ -172,7 +168,9 @@ async function cmdAdvisor(modelId, { output = 'text', severity = null } = {}) {
     return;
   }
 
-  console.log(`advisor model=${summary.modelId} revision=${summary.revision} findings=${summary.total}`);
+  console.log(
+    `advisor model=${summary.modelId} revision=${summary.revision} findings=${summary.total}`,
+  );
   for (const g of summary.groups) {
     const ids = g.elementIds.length ? ` ids=${g.elementIds.join(',')}` : '';
     console.log(`${g.severity}\t${g.code}\t${g.count}${ids}`);
@@ -232,10 +230,7 @@ async function cmdUnlink(modelId, userId, linkId) {
 }
 
 async function cmdLinksList(modelId) {
-  const snap = await fetchJson(
-    'GET',
-    `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`,
-  );
+  const snap = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`);
   const els = snap.elements && typeof snap.elements === 'object' ? snap.elements : {};
   const sourceRevisions =
     snap.linkSourceRevisions && typeof snap.linkSourceRevisions === 'object'
@@ -348,10 +343,7 @@ async function cmdEvidence(modelId) {
   const counts = {};
   for (const id of Object.keys(els)) {
     const row = els[id];
-    const k =
-      row && typeof row === 'object' && typeof row.kind === 'string'
-        ? row.kind
-        : '?';
+    const k = row && typeof row === 'object' && typeof row.kind === 'string' ? row.kind : '?';
     counts[k] = (counts[k] ?? 0) + 1;
   }
   const out = {
@@ -376,7 +368,8 @@ async function cmdEvidencePackage(modelId) {
 async function cmdScheduleTable(modelId, scheduleId, wantCsv, columnsList) {
   const parts = [];
   if (wantCsv) parts.push('format=csv');
-  if (columnsList && String(columnsList).trim()) parts.push(`columns=${encodeURIComponent(columnsList)}`);
+  if (columnsList && String(columnsList).trim())
+    parts.push(`columns=${encodeURIComponent(columnsList)}`);
   const qs = parts.length ? `?${parts.join('&')}` : '';
   const url = `${base}/api/models/${encodeURIComponent(modelId)}/schedules/${encodeURIComponent(scheduleId)}/table${qs}`;
   const res = await fetch(url);
@@ -407,7 +400,10 @@ async function cmdExportManifests(modelId) {
     `${base}/api/models/${encodeURIComponent(modelId)}/exports/gltf-manifest`,
   );
 
-  const ifc = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/exports/ifc-manifest`);
+  const ifc = await fetchJson(
+    'GET',
+    `${base}/api/models/${encodeURIComponent(modelId)}/exports/ifc-manifest`,
+  );
   console.log(JSON.stringify({ gltf, ifc }, null, 2));
 }
 
@@ -468,16 +464,112 @@ function validateHouseBrief(blob) {
 }
 
 function briefToHouseStarterBundle(brief, modelIdPlaceholder) {
-  const commands = buildOneFamilyHomeCommands();
+  const widthMm = Math.round(Number(brief.siteWidthM) * 1000);
+  const depthMm = Math.round(Number(brief.siteDepthM) * 1000);
+  const floors = Math.max(1, Number(brief.floors));
+  const levelIds = Array.from({ length: floors }, (_, index) =>
+    index === 0 ? 'lvl-ground' : `lvl-${index + 1}`,
+  );
+  const levels = levelIds.map((id, index) => ({
+    id,
+    name: index === 0 ? 'Ground Floor' : `Level ${index + 1}`,
+    elevationMm: index * 3000,
+  }));
+  const roomCount = Math.max(1, brief.rooms.length);
+  const bayWidthMm = Math.max(1800, Math.floor(widthMm / roomCount));
+  const roomDepthMm = Math.max(1800, Math.floor(depthMm * 0.55));
+  const rooms = brief.rooms.map((room, index) => {
+    const x0 = Math.min(widthMm - 1200, index * bayWidthMm);
+    const x1 = Math.min(widthMm, x0 + bayWidthMm);
+    const y0 = 0;
+    const y1 = Math.min(depthMm, roomDepthMm);
+    return {
+      id: `room-${index + 1}`,
+      name: room.name,
+      levelId:
+        levelIds[Math.min(levelIds.length - 1, Math.floor(index / Math.ceil(roomCount / floors)))],
+      programmeCode: room.programmeCode ?? null,
+      targetAreaM2: room.areaTargetM2,
+      outlineMm: [
+        { xMm: x0, yMm: y0 },
+        { xMm: x1, yMm: y0 },
+        { xMm: x1, yMm: y1 },
+        { xMm: x0, yMm: y1 },
+      ],
+    };
+  });
+  const recipe = {
+    schemaVersion: 'seed-dsl.v0',
+    id: brief.id ?? 'plan-house-starter',
+    intent:
+      'Neutral plan-house starter bundle. Replace with a named seed artifact for project initiation.',
+    levels,
+    types: {
+      wallTypes: [
+        {
+          id: 'wt-exterior',
+          name: 'Exterior wall',
+          layers: [{ thicknessMm: 220, function: 'structure', materialKey: 'concrete_smooth' }],
+        },
+        {
+          id: 'wt-internal',
+          name: 'Internal partition',
+          layers: [{ thicknessMm: 120, function: 'finish', materialKey: 'plasterboard' }],
+        },
+      ],
+      floorTypes: [
+        {
+          id: 'ft-slab',
+          name: 'Concrete slab',
+          layers: [{ thicknessMm: 220, function: 'structure', materialKey: 'concrete_smooth' }],
+        },
+      ],
+    },
+    volumes: levels.map((level) => ({
+      id: `volume-${level.id}`,
+      name: `${level.name} starter envelope`,
+      levelId: level.id,
+      wallHeightMm: 3000,
+      wallTypeId: 'wt-exterior',
+      floorTypeId: 'ft-slab',
+      footprintMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: widthMm, yMm: 0 },
+        { xMm: widthMm, yMm: depthMm },
+        { xMm: 0, yMm: depthMm },
+      ],
+    })),
+    rooms,
+    viewpoints: [
+      {
+        id: 'view-main',
+        name: 'Main starter view',
+        camera: {
+          position: { xMm: -widthMm, yMm: -depthMm, zMm: 7000 },
+          target: { xMm: widthMm / 2, yMm: depthMm / 2, zMm: 1500 },
+          up: { xMm: 0, yMm: 0, zMm: 1 },
+        },
+      },
+    ],
+    assumptions: [
+      {
+        key: 'plan-house-starter',
+        value:
+          'Generated as a neutral starter only; package real project-initiation seeds as named seed artifacts.',
+        confidence: 1,
+        source: '@bim-ai/cli plan-house',
+      },
+    ],
+  };
+  const bundle = compileSeedDsl(recipe, { modelHint: modelIdPlaceholder });
   return {
+    ...bundle,
     meta: {
+      ...bundle.meta,
       generatedBy: '@bim-ai/cli plan-house',
       modelIdPlaceholder,
-      note:
-        'Fixed one-family footprint (shared with scripts/apply-one-family-home.mjs). Use on empty model — do not prepend deleteElements when applying to a seeded demo.',
       brief,
     },
-    commands,
   };
 }
 
@@ -498,7 +590,9 @@ async function cmdPlanHouse(briefPath, outPath, modelHint) {
   const bundle = briefToHouseStarterBundle(brief, modelHint ?? '${BIM_AI_MODEL_ID}');
   await fs.mkdir(path.dirname(outPath), { recursive: true });
   await fs.writeFile(outPath, `${JSON.stringify(bundle, null, 2)}\n`, 'utf8');
-  console.log(JSON.stringify({ ok: true, out: outPath, commandCount: bundle.commands.length }, null, 2));
+  console.log(
+    JSON.stringify({ ok: true, out: outPath, commandCount: bundle.commands.length }, null, 2),
+  );
 }
 
 async function cmdSeedDslCompile(recipePath, outPath, modelHint) {
@@ -506,17 +600,26 @@ async function cmdSeedDslCompile(recipePath, outPath, modelHint) {
   const bundle = compileSeedDsl(recipe, { modelHint });
   await fs.mkdir(path.dirname(outPath), { recursive: true });
   await fs.writeFile(outPath, `${JSON.stringify(bundle, null, 2)}\n`, 'utf8');
-  console.log(JSON.stringify({
-    ok: true,
-    out: outPath,
-    schemaVersion: bundle.schemaVersion,
-    commandCount: bundle.commands.length,
-  }, null, 2));
+  console.log(
+    JSON.stringify(
+      {
+        ok: true,
+        out: outPath,
+        schemaVersion: bundle.schemaVersion,
+        commandCount: bundle.commands.length,
+      },
+      null,
+      2,
+    ),
+  );
 }
 
 async function cmdInitiationGolden(manifestPath, outDir) {
   const manifest = await readJsonFile(manifestPath);
-  if (manifest.schemaVersion !== 'sketch-to-bim-golden-suite.v0' || !Array.isArray(manifest.cases)) {
+  if (
+    manifest.schemaVersion !== 'sketch-to-bim-golden-suite.v0' ||
+    !Array.isArray(manifest.cases)
+  ) {
     throw new Error('Golden manifest must be sketch-to-bim-golden-suite.v0 with cases[].');
   }
   await fs.mkdir(outDir, { recursive: true });
@@ -550,11 +653,11 @@ async function cmdInitiationGolden(manifestPath, outDir) {
     });
     const expected = goldenCase.expected ?? {};
     const maxErrors = Number.isFinite(expected.maxCoverageErrors) ? expected.maxCoverageErrors : 0;
-    const maxBlocked = Number.isFinite(expected.maxBlockedFeatures) ? expected.maxBlockedFeatures : 0;
-    const pass = (
-      result.summary.errorCount <= maxErrors &&
-      result.summary.blockedCount <= maxBlocked
-    );
+    const maxBlocked = Number.isFinite(expected.maxBlockedFeatures)
+      ? expected.maxBlockedFeatures
+      : 0;
+    const pass =
+      result.summary.errorCount <= maxErrors && result.summary.blockedCount <= maxBlocked;
     rows.push({
       id,
       irPath,
@@ -584,17 +687,33 @@ async function cmdInitiationGolden(manifestPath, outDir) {
 function applyQualityMode(ir, qualityMode) {
   if (!qualityMode) return ir;
   if (!INITIATION_MODES[qualityMode]) {
-    console.error(`Unknown initiation mode '${qualityMode}'. Use: ${Object.keys(INITIATION_MODES).join(', ')}`);
+    console.error(
+      `Unknown initiation mode '${qualityMode}'. Use: ${Object.keys(INITIATION_MODES).join(', ')}`,
+    );
     process.exit(1);
   }
   return { ...ir, qualityTarget: qualityMode };
 }
 
 async function cmdInitiationModes() {
-  console.log(JSON.stringify({ schemaVersion: 'sketch-to-bim-initiation-modes.v0', modes: INITIATION_MODES }, null, 2));
+  console.log(
+    JSON.stringify(
+      { schemaVersion: 'sketch-to-bim-initiation-modes.v0', modes: INITIATION_MODES },
+      null,
+      2,
+    ),
+  );
 }
 
-async function cmdInitiationCheck(irPath, capabilityMatrixPath, outDir, modelId, live, qualityMode, failOnAcceptance) {
+async function cmdInitiationCheck(
+  irPath,
+  capabilityMatrixPath,
+  outDir,
+  modelId,
+  live,
+  qualityMode,
+  failOnAcceptance,
+) {
   const ir = applyQualityMode(await readJsonFile(irPath), qualityMode);
   const matrix = await readJsonFile(capabilityMatrixPath);
   let liveAdvisor = null;
@@ -623,19 +742,22 @@ async function cmdInitiationCheck(irPath, capabilityMatrixPath, outDir, modelId,
 }
 
 function safeArtifactName(value) {
-  return String(value || 'view')
-    .replace(/[^A-Za-z0-9._-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80) || 'view';
+  return (
+    String(value || 'view')
+      .replace(/[^A-Za-z0-9._-]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80) || 'view'
+  );
 }
 
 function modelStatsFromSnapshot(snap) {
   const elements = snap?.elements && typeof snap.elements === 'object' ? snap.elements : {};
   const countsByKind = {};
   for (const element of Object.values(elements)) {
-    const kind = element && typeof element === 'object' && typeof element.kind === 'string'
-      ? element.kind
-      : '?';
+    const kind =
+      element && typeof element === 'object' && typeof element.kind === 'string'
+        ? element.kind
+        : '?';
     countsByKind[kind] = (countsByKind[kind] ?? 0) + 1;
   }
   return {
@@ -658,7 +780,8 @@ async function applyRunnerBundle(modelId, userId, bundlePath, baseRevision, mode
   const blob = JSON.parse(raw);
   const resolvedBaseRevision = Number.isFinite(baseRevision)
     ? baseRevision
-    : (await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`)).revision;
+    : (await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`))
+        .revision;
   let bundle;
   if (blob && typeof blob === 'object' && blob.schemaVersion === 'cmd-v3.0') {
     bundle = { ...blob, parentRevision: resolvedBaseRevision };
@@ -703,7 +826,10 @@ async function writeLiveEvidenceArtifacts(modelId, outDir) {
   const liveDir = path.join(outDir, 'live');
   await fs.mkdir(liveDir, { recursive: true });
   const snap = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`);
-  const validate = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/validate`);
+  const validate = await fetchJson(
+    'GET',
+    `${base}/api/models/${encodeURIComponent(modelId)}/validate`,
+  );
   const evidencePackage = await fetchJson(
     'GET',
     `${base}/api/models/${encodeURIComponent(modelId)}/evidence-package`,
@@ -731,7 +857,14 @@ async function writeLiveEvidenceArtifacts(modelId, outDir) {
 }
 
 function screenshotRequiredViews(ir) {
-  const supportedKinds = new Set(['3d', 'elevation', 'diagnostic', 'plan', 'floor_plan', 'section']);
+  const supportedKinds = new Set([
+    '3d',
+    'elevation',
+    'diagnostic',
+    'plan',
+    'floor_plan',
+    'section',
+  ]);
   return (ir.requiredViews ?? []).filter((view) => supportedKinds.has(view?.kind));
 }
 
@@ -825,7 +958,14 @@ function syntheticCameraForView(view, bounds) {
   return { position, target, up: { xMm: 0, yMm: 0, zMm: 1 } };
 }
 
-async function snapshotPathForView({ view, snap, baseSnapshotPath, screenshotDir, hasSavedViewpoint, bounds }) {
+async function snapshotPathForView({
+  view,
+  snap,
+  baseSnapshotPath,
+  screenshotDir,
+  hasSavedViewpoint,
+  bounds,
+}) {
   if (hasSavedViewpoint) return { path: baseSnapshotPath, syntheticViewpoint: false };
   const elements = snap?.elements && typeof snap.elements === 'object' ? snap.elements : {};
   const syntheticSnapshot = {
@@ -1088,9 +1228,16 @@ async function cmdExport(kind, modelId, outPath, viewId) {
     return;
   }
   // EXP-V3-01 — render-pipeline export formats
-  if (kind === 'render-bundle' || kind === 'gltf-pbr' || kind === 'ifc-bundle' || kind === 'metadata-only') {
+  if (
+    kind === 'render-bundle' ||
+    kind === 'gltf-pbr' ||
+    kind === 'ifc-bundle' ||
+    kind === 'metadata-only'
+  ) {
     if (!modelId) usage();
-    const params = new URLSearchParams({ format: kind === 'render-bundle' ? 'metadata-only' : kind });
+    const params = new URLSearchParams({
+      format: kind === 'render-bundle' ? 'metadata-only' : kind,
+    });
     if (viewId) params.set('viewId', viewId);
     const url = `${base}/api/v3/models/${encodeURIComponent(modelId)}/export?${params}`;
     const json = await fetchJson('GET', url);
@@ -1103,7 +1250,9 @@ async function cmdExport(kind, modelId, outPath, viewId) {
     }
     return;
   }
-  console.error(`export ${kind}: not implemented (see spec/workpackage-master-tracker.md backlog).`);
+  console.error(
+    `export ${kind}: not implemented (see spec/workpackage-master-tracker.md backlog).`,
+  );
   process.exit(2);
 }
 
@@ -1227,8 +1376,14 @@ async function cmdAgentLoop(modelId, goalPath, maxIter, evidenceOut, backendOver
     const iterDir = path.join(evidenceOut, `iter-${String(iter).padStart(2, '0')}`);
     await fs.mkdir(iterDir, { recursive: true });
 
-    const snap = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`);
-    const val = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/validate`);
+    const snap = await fetchJson(
+      'GET',
+      `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`,
+    );
+    const val = await fetchJson(
+      'GET',
+      `${base}/api/models/${encodeURIComponent(modelId)}/validate`,
+    );
     const evidence = {
       revision: snap.revision ?? null,
       elementCount: snap.elements ? Object.keys(snap.elements).length : 0,
@@ -1240,7 +1395,15 @@ async function cmdAgentLoop(modelId, goalPath, maxIter, evidenceOut, backendOver
 
     const baselineScore = progressScore(goalText, snap, val);
 
-    const patchResp = await agentIterate(modelId, goalText, snap, val, evidence, iter, backendOverride);
+    const patchResp = await agentIterate(
+      modelId,
+      goalText,
+      snap,
+      val,
+      evidence,
+      iter,
+      backendOverride,
+    );
     await fs.writeFile(path.join(iterDir, 'patch.json'), JSON.stringify(patchResp, null, 2));
 
     const commands = Array.isArray(patchResp.patch) ? patchResp.patch : [];
@@ -1273,7 +1436,9 @@ async function cmdAgentLoop(modelId, goalPath, maxIter, evidenceOut, backendOver
     if (!dryResp.ok) {
       const status = { status: 'dry-run-failed', iteration: iter, body: dryJson };
       await fs.writeFile(path.join(iterDir, 'status.json'), JSON.stringify(status, null, 2));
-      console.log(JSON.stringify({ ok: false, iteration: iter, status: 'dry-run-failed' }, null, 2));
+      console.log(
+        JSON.stringify({ ok: false, iteration: iter, status: 'dry-run-failed' }, null, 2),
+      );
       return;
     }
 
@@ -1398,7 +1563,9 @@ async function cmdCheckpoint(modelId, targetPath, viewpointId, threshold, outPat
 
   try {
     // 2. Run Playwright headless render
-    console.error(`[skb-03] Rendering snapshot via Playwright (viewpoint: ${viewpointId ?? 'fit'})...`);
+    console.error(
+      `[skb-03] Rendering snapshot via Playwright (viewpoint: ${viewpointId ?? 'fit'})...`,
+    );
     const env = {
       ...process.env,
       SKB_SNAPSHOT_PATH: path.resolve(tmpSnapPath),
@@ -1506,7 +1673,7 @@ Commands:
                                        Exit: 0 ok, 2 revision_conflict, 3 assumption_log_*
   dry-run [file|-]                     POST single command dry-run
   plan-house --brief <path> --out <path> [--model-hint id]
-                                       validate brief JSON → write starter command bundle (one-family preset)
+                                       validate brief JSON → write neutral DSL starter bundle
   seed-dsl compile --recipe <path> --out <path> [--model-hint id]
                                        SKB: compile architectural seed DSL intent into a deterministic cmd-v3.0 bundle.
   initiation-check --ir <path> --out <dir> [--capabilities <path>] [--model <id>] [--live]
@@ -1749,7 +1916,15 @@ async function main() {
         console.error('initiation-check requires --ir <path> --out <dir>.');
         usage();
       }
-      await cmdInitiationCheck(irArg, capabilityArg, outArg, modelId, live, qualityMode, failOnAcceptance);
+      await cmdInitiationCheck(
+        irArg,
+        capabilityArg,
+        outArg,
+        modelId,
+        live,
+        qualityMode,
+        failOnAcceptance,
+      );
       return;
     }
     if (cmd === 'initiation-run' || cmd === 'initiate-run') {
@@ -1895,9 +2070,7 @@ async function main() {
         else if (a === '--backend' && rest[i + 1]) backendOverride = rest[++i];
       }
       if (!goalArg || !evidenceOut || !Number.isFinite(maxIter) || maxIter < 1) {
-        console.error(
-          'agent-loop requires --goal <path|-> --max-iter <n> --evidence-out <dir>',
-        );
+        console.error('agent-loop requires --goal <path|-> --max-iter <n> --evidence-out <dir>');
         process.exit(1);
       }
       await cmdAgentLoop(modelId, goalArg, maxIter, evidenceOut, backendOverride);
@@ -1924,7 +2097,9 @@ async function main() {
         await cmdApiVersion();
         return;
       }
-      console.error(`Unknown api subcommand: ${sub ?? '(none)'}. Use list-tools | inspect | version.`);
+      console.error(
+        `Unknown api subcommand: ${sub ?? '(none)'}. Use list-tools | inspect | version.`,
+      );
       process.exit(1);
     }
 
@@ -1933,7 +2108,7 @@ async function main() {
       if (subCmd === 'query') {
         const rest = argv.slice(2);
         const params = new URLSearchParams();
-        const pick = (flag) => rest.find(a => a.startsWith(`--${flag}=`))?.split('=')[1];
+        const pick = (flag) => rest.find((a) => a.startsWith(`--${flag}=`))?.split('=')[1];
         if (pick('kind')) params.set('kind', pick('kind'));
         if (pick('max-width')) params.set('maxWidthMm', pick('max-width'));
         if (pick('min-width')) params.set('minWidthMm', pick('min-width'));
@@ -1944,15 +2119,25 @@ async function main() {
         const result = await fetchJson('GET', `${base}/api/v3/catalog?${params}`);
         const fmt = pick('output') ?? 'json';
         if (fmt === 'json') console.log(JSON.stringify(result, null, 2));
-        else result.items.forEach(i => console.log(`${i.id}\t${i.kind}\t${i.widthMm ?? ''}`));
+        else result.items.forEach((i) => console.log(`${i.id}\t${i.kind}\t${i.widthMm ?? ''}`));
         return;
       } else {
-        console.error('Usage: bim-ai catalog query [--kind <kind>] [--max-width <mm>] [--tag <name>] [--style <key>] [--output json|table]');
+        console.error(
+          'Usage: bim-ai catalog query [--kind <kind>] [--max-width <mm>] [--tag <name>] [--style <key>] [--output json|table]',
+        );
         process.exit(1);
       }
     }
 
-    if (!modelId && cmd !== 'schema' && cmd !== 'presets' && cmd !== 'plan-house' && cmd !== 'bootstrap' && cmd !== 'init-model' && cmd !== 'publish')
+    if (
+      !modelId &&
+      cmd !== 'schema' &&
+      cmd !== 'presets' &&
+      cmd !== 'plan-house' &&
+      cmd !== 'bootstrap' &&
+      cmd !== 'init-model' &&
+      cmd !== 'publish'
+    )
       usage();
 
     if (cmd === 'snapshot') {
@@ -1964,10 +2149,10 @@ async function main() {
       const rest = argv.slice(1);
       const output = rest.includes('--output')
         ? rest[rest.indexOf('--output') + 1]
-        : rest.find((a) => a.startsWith('--output='))?.split('=')[1] ?? 'text';
+        : (rest.find((a) => a.startsWith('--output='))?.split('=')[1] ?? 'text');
       const severity = rest.includes('--severity')
         ? rest[rest.indexOf('--severity') + 1]
-        : rest.find((a) => a.startsWith('--severity='))?.split('=')[1] ?? null;
+        : (rest.find((a) => a.startsWith('--severity='))?.split('=')[1] ?? null);
       await cmdAdvisor(modelId, { output, severity });
       return;
     }
@@ -2121,7 +2306,11 @@ async function main() {
       const align = parseAlignMode(alignArg);
       const pos = parsePosTriple(posArg ?? '0,0,0');
       const vis =
-        visArg === 'linked_view' ? 'linked_view' : visArg === 'host_view' ? 'host_view' : 'host_view';
+        visArg === 'linked_view'
+          ? 'linked_view'
+          : visArg === 'host_view'
+            ? 'host_view'
+            : 'host_view';
       await cmdLinkCreate(modelId, userId, sourceUuid, pos, align, nameArg, vis);
       return;
     }
@@ -2230,7 +2419,10 @@ async function main() {
       if (sub === 'update') {
         if (!modelId) usage();
         const id = argv[1];
-        if (!id) { console.error('plan-region update: <id> required'); process.exit(1); }
+        if (!id) {
+          console.error('plan-region update: <id> required');
+          process.exit(1);
+        }
         const rest = argv.slice(2);
         const updates = { type: 'updatePlanRegion', id };
         for (let i = 0; i < rest.length; i++) {
@@ -2243,11 +2435,16 @@ async function main() {
       if (sub === 'delete') {
         if (!modelId) usage();
         const id = argv[1];
-        if (!id) { console.error('plan-region delete: <id> required'); process.exit(1); }
+        if (!id) {
+          console.error('plan-region delete: <id> required');
+          process.exit(1);
+        }
         await commit(modelId, { type: 'deletePlanRegion', id });
         return;
       }
-      console.error(`Unknown plan-region subcommand: ${sub ?? '(none)'}. Use create, update, or delete.`);
+      console.error(
+        `Unknown plan-region subcommand: ${sub ?? '(none)'}. Use create, update, or delete.`,
+      );
       process.exit(1);
     }
 
@@ -2277,7 +2474,10 @@ async function main() {
       if (!modelId) usage();
       const name = argv[argv.indexOf('--name') + 1];
       const ordStr = argv[argv.indexOf('--ord') + 1];
-      if (!name || !ordStr) { console.error('phase-create requires --name <name> --ord <n>'); process.exit(1); }
+      if (!name || !ordStr) {
+        console.error('phase-create requires --name <name> --ord <n>');
+        process.exit(1);
+      }
       await postCommand(modelId, userId, { type: 'createPhase', name, ord: Number(ordStr) });
       return;
     }
@@ -2286,7 +2486,10 @@ async function main() {
       if (!modelId) usage();
       const phaseId = argv[argv.indexOf('--phase-id') + 1];
       const name = argv[argv.indexOf('--name') + 1];
-      if (!phaseId || !name) { console.error('phase-rename requires --phase-id <id> --name <name>'); process.exit(1); }
+      if (!phaseId || !name) {
+        console.error('phase-rename requires --phase-id <id> --name <name>');
+        process.exit(1);
+      }
       await postCommand(modelId, userId, { type: 'renamePhase', phaseId, name });
       return;
     }
@@ -2295,7 +2498,10 @@ async function main() {
       if (!modelId) usage();
       const phaseId = argv[argv.indexOf('--phase-id') + 1];
       const ordStr = argv[argv.indexOf('--ord') + 1];
-      if (!phaseId || !ordStr) { console.error('phase-reorder requires --phase-id <id> --ord <n>'); process.exit(1); }
+      if (!phaseId || !ordStr) {
+        console.error('phase-reorder requires --phase-id <id> --ord <n>');
+        process.exit(1);
+      }
       await postCommand(modelId, userId, { type: 'reorderPhase', phaseId, ord: Number(ordStr) });
       return;
     }
@@ -2303,7 +2509,10 @@ async function main() {
     if (cmd === 'phase-delete') {
       if (!modelId) usage();
       const phaseId = argv[argv.indexOf('--phase-id') + 1];
-      if (!phaseId) { console.error('phase-delete requires --phase-id <id>'); process.exit(1); }
+      if (!phaseId) {
+        console.error('phase-delete requires --phase-id <id>');
+        process.exit(1);
+      }
       const payload = { type: 'deletePhase', phaseId };
       const retargetIdx = argv.indexOf('--retarget-to');
       if (retargetIdx !== -1) payload.retargetToPhaseId = argv[retargetIdx + 1];
@@ -2314,7 +2523,10 @@ async function main() {
     if (cmd === 'element-set-phase') {
       if (!modelId) usage();
       const elementId = argv[argv.indexOf('--element-id') + 1];
-      if (!elementId) { console.error('element-set-phase requires --element-id <id>'); process.exit(1); }
+      if (!elementId) {
+        console.error('element-set-phase requires --element-id <id>');
+        process.exit(1);
+      }
       const payload = { type: 'setElementPhase', elementId };
       const pcIdx = argv.indexOf('--phase-created-id');
       if (pcIdx !== -1) payload.phaseCreatedId = argv[pcIdx + 1];
@@ -2329,7 +2541,10 @@ async function main() {
       if (!modelId) usage();
       const viewId = argv[argv.indexOf('--view-id') + 1];
       const phaseId = argv[argv.indexOf('--phase-id') + 1];
-      if (!viewId || !phaseId) { console.error('view-set-phase requires --view-id <id> --phase-id <id>'); process.exit(1); }
+      if (!viewId || !phaseId) {
+        console.error('view-set-phase requires --view-id <id> --phase-id <id>');
+        process.exit(1);
+      }
       await postCommand(modelId, userId, { type: 'setViewPhase', viewId, phaseId });
       return;
     }
@@ -2398,9 +2613,17 @@ async function main() {
           else if (rest[i] === '--thickness') thickness = Number(rest[++i]);
           else if (rest[i] === '--name') name = rest[++i];
         }
-        if (!boundary) { console.error('toposolid create: --boundary <json> required'); process.exit(1); }
+        if (!boundary) {
+          console.error('toposolid create: --boundary <json> required');
+          process.exit(1);
+        }
         const boundaryMm = JSON.parse(boundary);
-        const payload = { type: 'CreateToposolid', toposolidId: `topo-${Date.now()}`, boundaryMm, thicknessMm: thickness ?? 1500 };
+        const payload = {
+          type: 'CreateToposolid',
+          toposolidId: `topo-${Date.now()}`,
+          boundaryMm,
+          thicknessMm: thickness ?? 1500,
+        };
         if (name !== undefined) payload.name = name;
         await commit(modelId, payload);
         return;
@@ -2408,7 +2631,10 @@ async function main() {
       if (sub === 'update') {
         if (!modelId) usage();
         const id = argv[1];
-        if (!id) { console.error('toposolid update: <id> required'); process.exit(1); }
+        if (!id) {
+          console.error('toposolid update: <id> required');
+          process.exit(1);
+        }
         const rest = argv.slice(2);
         const payload = { type: 'UpdateToposolid', toposolidId: id };
         for (let i = 0; i < rest.length; i++) {
@@ -2422,17 +2648,25 @@ async function main() {
       if (sub === 'delete') {
         if (!modelId) usage();
         const id = argv[1];
-        if (!id) { console.error('toposolid delete: <id> required'); process.exit(1); }
+        if (!id) {
+          console.error('toposolid delete: <id> required');
+          process.exit(1);
+        }
         await commit(modelId, { type: 'DeleteToposolid', toposolidId: id });
         return;
       }
-      console.error(`Unknown toposolid subcommand: ${sub ?? '(none)'}. Use create, update, or delete.`);
+      console.error(
+        `Unknown toposolid subcommand: ${sub ?? '(none)'}. Use create, update, or delete.`,
+      );
       process.exit(1);
     }
 
     if (cmd === 'trace') {
       const imageIdx = argv.indexOf('--image');
-      if (imageIdx === -1) { console.error('trace requires --image <path>'); process.exit(1); }
+      if (imageIdx === -1) {
+        console.error('trace requires --image <path>');
+        process.exit(1);
+      }
       const imagePath = argv[imageIdx + 1];
       const briefIdx = argv.indexOf('--brief');
       const briefPath = briefIdx !== -1 ? argv[briefIdx + 1] : null;
@@ -2458,11 +2692,13 @@ async function main() {
         process.exit(1);
       }
       if (data.jobId) {
-        console.error(`Image >2MB — enqueued job ${data.jobId}. Poll with: bim-ai jobs get ${data.jobId}`);
+        console.error(
+          `Image >2MB — enqueued job ${data.jobId}. Poll with: bim-ai jobs get ${data.jobId}`,
+        );
         console.log(JSON.stringify(data, null, 2));
         process.exit(0);
       }
-      const hasNoWalls = (data.advisories ?? []).some(a => a.code === 'no_walls_detected');
+      const hasNoWalls = (data.advisories ?? []).some((a) => a.code === 'no_walls_detected');
       const output = JSON.stringify(data, null, 2);
       if (outPath) {
         await fs.writeFile(outPath, output);
@@ -2559,25 +2795,44 @@ async function main() {
       const sub = argv[1];
       if (sub === 'submit') {
         const kind = argv[2];
-        if (!kind) { console.error('jobs submit requires <kind>'); process.exit(1); }
+        if (!kind) {
+          console.error('jobs submit requires <kind>');
+          process.exit(1);
+        }
         const modelArg = argv[argv.indexOf('--model') + 1] ?? modelId;
-        if (!modelArg) { console.error('jobs submit requires --model <id> or BIM_AI_MODEL_ID'); process.exit(1); }
+        if (!modelArg) {
+          console.error('jobs submit requires --model <id> or BIM_AI_MODEL_ID');
+          process.exit(1);
+        }
         const inputsIdx = argv.indexOf('--inputs');
         const inputs = inputsIdx !== -1 ? JSON.parse(argv[inputsIdx + 1]) : {};
-        const result = await fetchJson('POST', `${base}/api/jobs`, { kind, modelId: modelArg, inputs });
+        const result = await fetchJson('POST', `${base}/api/jobs`, {
+          kind,
+          modelId: modelArg,
+          inputs,
+        });
         console.log(JSON.stringify(result, null, 2));
         return;
       }
       if (sub === 'list') {
         const modelArg = argv[argv.indexOf('--model') + 1] ?? modelId;
-        if (!modelArg) { console.error('jobs list requires --model <id> or BIM_AI_MODEL_ID'); process.exit(1); }
+        if (!modelArg) {
+          console.error('jobs list requires --model <id> or BIM_AI_MODEL_ID');
+          process.exit(1);
+        }
         const doWait = argv.includes('--wait');
-        let jobs = await fetchJson('GET', `${base}/api/jobs?modelId=${encodeURIComponent(modelArg)}`);
+        let jobs = await fetchJson(
+          'GET',
+          `${base}/api/jobs?modelId=${encodeURIComponent(modelArg)}`,
+        );
         if (doWait) {
           const active = (j) => j.status === 'queued' || j.status === 'running';
           while (jobs.some(active)) {
             await new Promise((r) => setTimeout(r, 2000));
-            jobs = await fetchJson('GET', `${base}/api/jobs?modelId=${encodeURIComponent(modelArg)}`);
+            jobs = await fetchJson(
+              'GET',
+              `${base}/api/jobs?modelId=${encodeURIComponent(modelArg)}`,
+            );
           }
         }
         console.log(JSON.stringify(jobs, null, 2));
@@ -2585,19 +2840,30 @@ async function main() {
       }
       if (sub === 'cancel') {
         const jobId = argv[2];
-        if (!jobId) { console.error('jobs cancel requires <job-id>'); process.exit(1); }
-        const result = await fetchJson('POST', `${base}/api/jobs/${encodeURIComponent(jobId)}/cancel`);
+        if (!jobId) {
+          console.error('jobs cancel requires <job-id>');
+          process.exit(1);
+        }
+        const result = await fetchJson(
+          'POST',
+          `${base}/api/jobs/${encodeURIComponent(jobId)}/cancel`,
+        );
         console.log(JSON.stringify(result, null, 2));
         return;
       }
       if (sub === 'status') {
         const jobId = argv[2];
-        if (!jobId) { console.error('jobs status requires <job-id>'); process.exit(1); }
+        if (!jobId) {
+          console.error('jobs status requires <job-id>');
+          process.exit(1);
+        }
         const result = await fetchJson('GET', `${base}/api/jobs/${encodeURIComponent(jobId)}`);
         console.log(JSON.stringify(result, null, 2));
         return;
       }
-      console.error(`Unknown jobs subcommand: ${sub ?? '(none)'}. Use submit | list | cancel | status.`);
+      console.error(
+        `Unknown jobs subcommand: ${sub ?? '(none)'}. Use submit | list | cancel | status.`,
+      );
       process.exit(1);
     }
 
@@ -2625,7 +2891,14 @@ async function main() {
           name,
           category,
           ...(assetKind ? { assetKind } : {}),
-          ...(tagsArg ? { tags: tagsArg.split(',').map((t) => t.trim()).filter(Boolean) } : {}),
+          ...(tagsArg
+            ? {
+                tags: tagsArg
+                  .split(',')
+                  .map((t) => t.trim())
+                  .filter(Boolean),
+              }
+            : {}),
           ...(description ? { description } : {}),
         };
         await postCommand(modelId, userId, command);
@@ -2640,8 +2913,14 @@ async function main() {
         const xArg = rest.find((_, i) => rest[i - 1] === '--x');
         const yArg = rest.find((_, i) => rest[i - 1] === '--y');
         const zArg = rest.find((_, i) => rest[i - 1] === '--z');
-        if (!assetId) { console.error('asset place requires --asset <asset-id>'); process.exit(1); }
-        if (!levelId) { console.error('asset place requires --level <level-id>'); process.exit(1); }
+        if (!assetId) {
+          console.error('asset place requires --asset <asset-id>');
+          process.exit(1);
+        }
+        if (!levelId) {
+          console.error('asset place requires --level <level-id>');
+          process.exit(1);
+        }
         let positionMm;
         if (posArg) {
           positionMm = parsePosTriple(posArg);
@@ -2694,7 +2973,10 @@ async function main() {
     if (cmd === 'import-neighborhood') {
       // OSM-V3-01: fetch OSM buildings and upsert into a model as neighborhood_mass elements
       const rest = argv.slice(1);
-      let lat, lon, radiusM = 200, targetModelId;
+      let lat,
+        lon,
+        radiusM = 200,
+        targetModelId;
       for (let i = 0; i < rest.length; i++) {
         const a = rest[i];
         if (a === '--lat' && rest[i + 1]) lat = parseFloat(rest[++i]);

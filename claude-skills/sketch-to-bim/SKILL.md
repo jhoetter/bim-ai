@@ -17,7 +17,7 @@ Before any substantial sketch-to-BIM run, read `spec/sketch-to-bim-methodology.m
 
 You will fail this task if you treat it as a single translation problem (read sketch → emit one big command bundle → declare done). The previous attempt did exactly that and shipped a featureless box; see `nightshift/seed-fidelity-status.md` for the post-mortem.
 
-You will also fail if you treat `make seed`, `bim-ai plan-house`, or `scripts/build-seed-snapshot.mjs` as generators. They replay the checked-in canonical bundle. To improve a seed house, edit the bundle source itself (usually `packages/cli/lib/one-family-home-commands.mjs` or a replacement project bundle), rebuild the snapshot, render checkpoints, read advisor findings, and feed those findings back into the next bundle edit.
+You will also fail if you treat `make seed` or `bim-ai plan-house` as the design generator. `make seed` only loads named artifact folders from `seed-artifacts/<name>/`; `bim-ai plan-house` only emits a neutral starter. The actual design work is the phased creation of a clean artifact set with `manifest.json`, `bundle.json`, `source/`, and `evidence/` as documented in `spec/seed-artifacts.md`.
 
 The right mental model is **iterative convergence through 5–7 phased passes**, each one visually validated before adding detail. After each phase: render, look, validate, correct. Never advance with a phase that doesn't read.
 
@@ -81,7 +81,6 @@ These findings block phase advancement unless the user explicitly accepts them w
    - Any sketch panels (main perspective, front / side / rear elevations, axonometric).
 
 2. **Perform a visual source-of-truth pass.** The image is not decorative context; it is the primary design evidence. Before authoring commands, write a concise visual readout that names the non-negotiable features visible in the sketch:
-
    - primary silhouette and camera direction;
    - which volume is dominant, which volume supports it, and where any cantilever/void occurs;
    - roof form, roof thickness, cutouts, embedded balconies, parapets, and return faces;
@@ -142,7 +141,7 @@ These findings block phase advancement unless the user explicitly accepts them w
      --fail-on-acceptance
    ```
 
-   Use `--seed-command "make seed"` or `--apply-bundle <path> --commit` when the runner should reseed/apply before capturing evidence. The runner captures snapshot, validate, evidence-package, advisor warning/info, screenshots, screenshot manifest, `visual-gate.json`, `acceptance-gates.json`, visual checklist, and status markdown. `--target-image` expects a PNG reference; if the user supplied a JPG sketch, create/record a PNG reference crop for the checkpoint view or use `--target-map` with per-view PNG references. If a required view has no saved viewpoint, the runner synthesizes a deterministic checkpoint viewpoint instead of relying on the current UI zoom. `--no-screenshots` is only for tests or explicitly documented headless limitations.
+   Use `--seed-command "make seed name=<seed-name>"` or `--apply-bundle <path> --commit` when the runner should reseed/apply before capturing evidence. The runner captures snapshot, validate, evidence-package, advisor warning/info, screenshots, screenshot manifest, `visual-gate.json`, `acceptance-gates.json`, visual checklist, and status markdown. `--target-image` expects a PNG reference; if the user supplied a JPG sketch, create/record a PNG reference crop for the checkpoint view or use `--target-map` with per-view PNG references. If a required view has no saved viewpoint, the runner synthesizes a deterministic checkpoint viewpoint instead of relying on the current UI zoom. `--no-screenshots` is only for tests or explicitly documented headless limitations.
 
    Use explicit quality modes:
 
@@ -157,7 +156,7 @@ These findings block phase advancement unless the user explicitly accepts them w
    ```bash
    node packages/cli/cli.mjs seed-dsl compile \
      --recipe spec/examples/seed-dsl-modern-house.example.json \
-     --out nightshift/<run>/seed-bundle.json
+     --out nightshift/<run>/bundle.json
    ```
 
    Before accepting methodology changes, run the golden preflight suite:
@@ -179,7 +178,7 @@ These findings block phase advancement unless the user explicitly accepts them w
 Before authoring the first serious bundle, start and wire the feedback loop:
 
 1. **Start the app:** run `make dev` and verify `http://localhost:2000` loads the workspace. If the server is already running, reuse it and note the URL/port.
-2. **Create or select the working model:** for the canonical seed use `make seed`; for a user project use the project-initiation endpoint/model id. Record `BIM_AI_MODEL_ID`.
+2. **Create or select the working model:** compile/package a named seed artifact, then use `make seed name=<seed-name>`; for a user project use the project-initiation endpoint/model id. Record `BIM_AI_MODEL_ID`.
 3. **Keep a phase evidence folder:** `nightshift/<sprint>/phase-<n>/` with:
    - `commands.json` or source bundle pointer;
    - `advisor-warning.json`;
@@ -188,8 +187,8 @@ Before authoring the first serious bundle, start and wire the feedback loop:
    - `visual-readout.md`;
    - `tolerances.md` if anything remains unresolved.
 4. **After every meaningful edit, run all four checks in order:**
-   - replay/dry-run: `node scripts/build-seed-snapshot.mjs` for seed work, or `bim-ai apply-bundle --dry-run --in <commands.json>` for project work;
-   - seed/apply: `make seed` or apply the bundle to the project model;
+   - replay/dry-run: apply the artifact `bundle.json` to an empty document or use `bim-ai apply-bundle --dry-run --in <commands.json>` for project work;
+   - seed/apply: `make seed name=<seed-name>` or apply the bundle to the project model;
    - advisor: `BIM_AI_MODEL_ID=<id> node packages/cli/cli.mjs advisor --output json --severity warning` plus an info pass when diagnosing weird visuals;
    - render: Playwright checkpoint screenshots or direct browser screenshots from the saved viewpoints.
 5. **Read the screenshots with vision.** Say what is wrong in geometric terms before editing again: roof too generic, cutout not legible, stair collides, room plan messy, facade rhythm wrong, scale too small, etc.
@@ -218,14 +217,14 @@ If any required view reveals an obvious flaw, the phase fails even if Playwright
 
 At the end of each phase, produce a short packet:
 
-| Field | Required content |
-| --- | --- |
-| Phase | phase id/name and source bundle revision |
-| Screenshots | paths to actual rendered PNGs |
-| Visual verdict | pass/fail for silhouette, scale, roof, openings, interior, documentation as applicable |
-| Advisor verdict | zero blocking warnings, or explicit tolerance rows |
-| Corrections made | list of element ids changed in the phase |
-| Remaining risk | concrete gaps, not vague optimism |
+| Field            | Required content                                                                       |
+| ---------------- | -------------------------------------------------------------------------------------- |
+| Phase            | phase id/name and source bundle revision                                               |
+| Screenshots      | paths to actual rendered PNGs                                                          |
+| Visual verdict   | pass/fail for silhouette, scale, roof, openings, interior, documentation as applicable |
+| Advisor verdict  | zero blocking warnings, or explicit tolerance rows                                     |
+| Corrections made | list of element ids changed in the phase                                               |
+| Remaining risk   | concrete gaps, not vague optimism                                                      |
 
 If the packet cannot be filled honestly, do not advance.
 
@@ -414,9 +413,9 @@ These are the failure modes you must avoid; they are the observed behaviour from
 
 **Golden suite:** `node packages/cli/cli.mjs initiation-golden --manifest spec/sketch-to-bim-golden-seeds.json --out <dir>` runs preflight packets for multiple sketch-to-BIM cases. Use this before changing methodology or capability-matrix behavior.
 
-**Seed snapshot fixture:** `node scripts/build-seed-snapshot.mjs` materialises the current canonical seed bundle into `packages/web/e2e/__fixtures__/seed-target-house-snapshot.json`. Run it after every bundle edit before visual checkpoints.
+**Seed artifact packer:** `node scripts/create-seed-artifact.mjs --name <seed-name> --source <input-folder> --bundle <bundle.json>` creates the loadable artifact folder. Run it only after the bundle and evidence folder are coherent.
 
-**Target-house visual checkpoint:** `pnpm --filter @bim-ai/web exec playwright test e2e/seed-target-house.spec.ts` renders saved target-house viewpoints from the fixture. Inspect the emitted PNGs before declaring progress.
+**Seed loader:** `make seed` loads every artifact under `seed-artifacts/`; `make seed name=<seed-name>` loads one artifact. The generated models appear in the top-left project menu under Seeded projects.
 
 **Material catalog:** `app/bim_ai/material_catalog.py` (Python) and `packages/web/src/viewport/materials.ts` (TS). Every materialKey you author must resolve in both.
 
@@ -449,7 +448,7 @@ All listed in `spec/workpackage-master-tracker.md` under "Sketch-to-BIM agent me
 
 At task end, you produce:
 
-1. **The seed bundle** — code in `packages/cli/lib/one-family-home-commands.mjs` (or a per-project file) that, when applied to an empty model, materialises the house. Authored phase-by-phase as readable JS sections with `// === PHASE N: <name> ===` markers.
+1. **The seed artifact** — a clean `seed-artifacts/<name>/` folder with `manifest.json`, `bundle.json`, copied `source/`, and `evidence/`. The bundle must apply to an empty model and materialise the house without reading any other seed run.
 2. **The brief** — a structured markdown at `nightshift/<sprint>/brief.md` capturing inputs.
 3. **The assumption log** — every judgment call with sketch coordinates.
 4. **Per-phase checkpoint screenshots** — saved alongside the brief, named `phase-N-<name>-vp-<id>.png`.

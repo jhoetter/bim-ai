@@ -45,23 +45,24 @@ def test_required_gate_paths_and_kinds() -> None:
         == "app/tests/test_prd_traceability_matrix.py"
     )
     assert (
-        by_id["pytest_one_family_bundle_roundtrip"]["path"]
-        == "app/tests/test_one_family_bundle_roundtrip.py"
+        by_id["pytest_seed_artifact_roundtrip"]["path"]
+        == "app/tests/test_seed_artifact_roundtrip.py"
     )
+    assert by_id["seed_artifact_contract"]["path"] == "spec/seed-artifacts.md"
     assert (
         by_id["pytest_evidence_manifest_closure"]["path"]
         == "app/tests/test_evidence_manifest_closure.py"
     )
-    assert by_id["golden_cli_one_family_commands"]["gateKind"] == "golden_cli_bundle_anchor"
-    assert by_id["pytest_one_family_bundle_roundtrip"]["gateKind"] == "golden_bundle_roundtrip"
+    assert by_id["seed_artifact_contract"]["gateKind"] == "seed_artifact_contract"
+    assert by_id["pytest_seed_artifact_roundtrip"]["gateKind"] == "seed_artifact_roundtrip"
     gate_ids = [str(g["id"]) for g in gates if isinstance(g, dict)]
     assert gate_ids == sorted(gate_ids)
 
 
-def test_golden_cli_gate_structural_ok_in_repo() -> None:
+def test_seed_artifact_contract_gate_structural_ok_in_repo() -> None:
     m = build_v1_closeout_readiness_manifest_v1()
     gates = {g["id"]: g for g in m["gates"] if isinstance(g, dict)}
-    g = gates["golden_cli_one_family_commands"]
+    g = gates["seed_artifact_contract"]
     assert g["structuralOk"] is True
     p = REPO_ROOT / g["path"]
     assert p.is_file()

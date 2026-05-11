@@ -219,7 +219,7 @@ _PRD_ADVISOR_ROWS: list[dict[str, Any]] = [
             {"kind": "wp_ref", "id": "WP-V01"},
         ],
     },
-    # §11 Sheets — tied to golden bundle one-family home
+    # §11 Sheets — tied to reusable seed artifact contract
     {
         "id": "prd_s11_sheets",
         "prdSection": "§11",
@@ -246,9 +246,9 @@ _PRD_ADVISOR_ROWS: list[dict[str, Any]] = [
                 "path": "app/tests/test_constraints_sheet_documentation_advisory.py",
             },
             {
-                "kind": "golden_cli_bundle",
-                "path": "packages/cli/lib/one-family-home-commands.mjs",
-                "bundleRef": "WP-A01",
+                "kind": "seed_artifact_contract",
+                "path": "spec/seed-artifacts.md",
+                "bundleRef": "SKB",
             },
             {"kind": "wp_ref", "id": "WP-V01"},
         ],
@@ -285,13 +285,13 @@ _PRD_ADVISOR_ROWS: list[dict[str, Any]] = [
         "status": "pass",
         "goldenBundleCoverage": [
             {
-                "kind": "golden_cli_bundle",
-                "path": "packages/cli/lib/one-family-home-commands.mjs",
-                "bundleRef": "WP-A01",
+                "kind": "seed_artifact_contract",
+                "path": "spec/seed-artifacts.md",
+                "bundleRef": "SKB",
             },
             {
                 "kind": "pytest_module",
-                "path": "app/tests/test_one_family_bundle_roundtrip.py",
+                "path": "app/tests/test_seed_artifact_roundtrip.py",
             },
             {
                 "kind": "pytest_module",
@@ -310,13 +310,13 @@ _PRD_ADVISOR_ROWS: list[dict[str, Any]] = [
         "status": "pass",
         "goldenBundleCoverage": [
             {
-                "kind": "golden_cli_bundle",
-                "path": "packages/cli/lib/one-family-home-commands.mjs",
-                "bundleRef": "WP-A01",
+                "kind": "seed_artifact_contract",
+                "path": "spec/seed-artifacts.md",
+                "bundleRef": "SKB",
             },
             {
                 "kind": "pytest_module",
-                "path": "app/tests/test_one_family_bundle_roundtrip.py",
+                "path": "app/tests/test_seed_artifact_roundtrip.py",
             },
             {"kind": "wp_ref", "id": "WP-A01"},
         ],

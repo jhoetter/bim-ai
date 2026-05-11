@@ -62,7 +62,7 @@ function validIr() {
     projectType: 'single_family_house',
     qualityTarget: 'project_initiation_bim',
     sourceInputs: {
-      images: ['spec/target-house.jpeg'],
+      images: ['spec/target-house/target-house-1.png'],
       userInstruction: 'Create a BIM seed model from this sketch.',
     },
     visualRead: {
@@ -163,10 +163,14 @@ test('initiation-check writes coverage and visual checklist for a valid IR', asy
   assert.equal(summary.ok, true);
   assert.equal(summary.summary.errorCount, 0);
 
-  const coverage = JSON.parse(await fs.readFile(path.join(outDir, 'capability-coverage.json'), 'utf8'));
+  const coverage = JSON.parse(
+    await fs.readFile(path.join(outDir, 'capability-coverage.json'), 'utf8'),
+  );
   assert.equal(coverage.features[0].readiness, 'ready');
 
-  const checklist = JSON.parse(await fs.readFile(path.join(outDir, 'visual-checklist.json'), 'utf8'));
+  const checklist = JSON.parse(
+    await fs.readFile(path.join(outDir, 'visual-checklist.json'), 'utf8'),
+  );
   assert.ok(checklist.items.some((item) => item.id === 'roof:roof_terrace'));
 
   const status = await fs.readFile(path.join(outDir, 'status.md'), 'utf8');
@@ -194,7 +198,9 @@ test('initiation-check blocks a critical feature with no capability route', asyn
   ]);
 
   assert.equal(res.code, 2);
-  const coverage = JSON.parse(await fs.readFile(path.join(outDir, 'capability-coverage.json'), 'utf8'));
+  const coverage = JSON.parse(
+    await fs.readFile(path.join(outDir, 'capability-coverage.json'), 'utf8'),
+  );
   assert.equal(coverage.summary.errorCount, 1);
   assert.equal(coverage.features[0].readiness, 'blocked');
   assert.equal(coverage.issues[0].code, 'capability_missing');
@@ -266,9 +272,13 @@ test('initiation-run captures live advisor and evidence artifacts without screen
   assert.equal(out.ok, true);
   assert.equal(out.liveArtifacts.snapshot.endsWith('live/snapshot.json'), true);
 
-  const warning = JSON.parse(await fs.readFile(path.join(outDir, 'live', 'advisor-warning.json'), 'utf8'));
+  const warning = JSON.parse(
+    await fs.readFile(path.join(outDir, 'live', 'advisor-warning.json'), 'utf8'),
+  );
   assert.equal(warning.total, 0);
-  const stats = JSON.parse(await fs.readFile(path.join(outDir, 'live', 'model-stats.json'), 'utf8'));
+  const stats = JSON.parse(
+    await fs.readFile(path.join(outDir, 'live', 'model-stats.json'), 'utf8'),
+  );
   assert.equal(stats.countsByKind.wall, 1);
   const status = await fs.readFile(path.join(outDir, 'status.md'), 'utf8');
   assert.match(status, /Live Artifacts/);
@@ -299,7 +309,10 @@ test('initiation-compare scores identical PNGs as passing', async () => {
 test('seed-dsl compile writes a deterministic command bundle', async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-seed-dsl-'));
   const outPath = path.join(dir, 'bundle.json');
-  const recipePath = path.resolve(__dirname, '../../spec/examples/seed-dsl-modern-house.example.json');
+  const recipePath = path.resolve(
+    __dirname,
+    '../../spec/examples/seed-dsl-modern-house.example.json',
+  );
 
   const res = await runCli(['seed-dsl', 'compile', '--recipe', recipePath, '--out', outPath]);
 

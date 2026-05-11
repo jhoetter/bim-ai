@@ -214,10 +214,12 @@ async def building_presets() -> dict[str, Any]:
 
 @api_router.get("/bootstrap")
 async def bootstrap(session: AsyncSession = Depends(get_session)) -> dict[str, Any]:
-    proj_res = await session.execute(select(ProjectRecord))
+    proj_res = await session.execute(select(ProjectRecord).order_by(ProjectRecord.slug))
     projects_out: list[dict[str, Any]] = []
     for p in proj_res.scalars().all():
-        mres = await session.execute(select(ModelRecord).where(ModelRecord.project_id == p.id))
+        mres = await session.execute(
+            select(ModelRecord).where(ModelRecord.project_id == p.id).order_by(ModelRecord.slug)
+        )
         models = [
             {
                 "id": str(m.id),

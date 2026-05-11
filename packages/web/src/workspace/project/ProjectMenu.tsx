@@ -28,6 +28,13 @@ export interface ProjectMenuItemRecent {
   label: string;
 }
 
+export interface ProjectMenuSeedModel {
+  id: string;
+  label: string;
+  slug: string;
+  revision: number;
+}
+
 export interface ProjectMenuProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -35,6 +42,9 @@ export interface ProjectMenuProps {
   anchorRef: React.RefObject<HTMLElement | null>;
   recent?: ProjectMenuItemRecent[];
   onPickRecent?: (id: string) => void;
+  seedModels?: ProjectMenuSeedModel[];
+  activeSeedModelId?: string | null;
+  onPickSeedModel?: (id: string) => void;
   onInsertSeed?: () => void;
   onSaveSnapshot?: () => void;
   saveAsMaximumBackups?: number;
@@ -57,6 +67,9 @@ export function ProjectMenu({
   anchorRef,
   recent,
   onPickRecent,
+  seedModels,
+  activeSeedModelId,
+  onPickSeedModel,
   onInsertSeed,
   onSaveSnapshot,
   saveAsMaximumBackups,
@@ -186,6 +199,39 @@ export function ProjectMenu({
                 >
                   <Icons.evidence size={ICON_SIZE.chrome} aria-hidden="true" />
                   <span className="truncate">{p.label}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="my-1 border-t border-border" />
+        </>
+      ) : null}
+      {seedModels && seedModels.length > 0 ? (
+        <>
+          <div
+            className="px-3 pb-1 pt-2 text-[10px] uppercase text-muted"
+            style={{ letterSpacing: '0.06em' }}
+          >
+            Seeded projects
+          </div>
+          <ul className="flex flex-col">
+            {seedModels.map((model) => (
+              <li key={model.id}>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    onOpenChange(false);
+                    onPickSeedModel?.(model.id);
+                  }}
+                  data-testid={`project-menu-seed-${model.slug}`}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-foreground hover:bg-surface-strong"
+                >
+                  <Icons.evidence size={ICON_SIZE.chrome} aria-hidden="true" />
+                  <span className="min-w-0 flex-1 truncate">{model.label}</span>
+                  {model.id === activeSeedModelId ? (
+                    <span className="text-[10px] text-muted">active</span>
+                  ) : null}
                 </button>
               </li>
             ))}
