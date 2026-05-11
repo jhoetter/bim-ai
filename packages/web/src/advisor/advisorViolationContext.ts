@@ -26,6 +26,14 @@ const RECOMMENDED_CONTEXT_BY_RULE_ID: Record<string, string> = {
     'Recommended: MEP coordination - add a sleeve/opening or reroute the pipe where it penetrates the wall.',
   duct_wall_penetration_without_opening:
     'Recommended: MEP coordination - add a sleeve/opening or reroute the duct where it penetrates the wall.',
+  pipe_floor_penetration_without_opening:
+    'Recommended: MEP coordination - add a slab sleeve/shaft opening or reroute the pipe where it penetrates the floor.',
+  duct_floor_penetration_without_opening:
+    'Recommended: MEP coordination - add a slab sleeve/shaft opening or reroute the duct where it penetrates the floor.',
+  pipe_ceiling_penetration_without_opening:
+    'Recommended: MEP coordination - add a ceiling route opening, plenum condition, or reroute the pipe.',
+  duct_ceiling_penetration_without_opening:
+    'Recommended: MEP coordination - add a ceiling route opening, plenum condition, or reroute the duct.',
 };
 
 const READABLE_TITLE_BY_RULE_ID: Record<string, string> = {
@@ -41,6 +49,10 @@ const READABLE_TITLE_BY_RULE_ID: Record<string, string> = {
   door_operation_clearance_conflict: 'Door Operation Clearance Conflict',
   pipe_wall_penetration_without_opening: 'Pipe Wall Penetration Without Opening',
   duct_wall_penetration_without_opening: 'Duct Wall Penetration Without Opening',
+  pipe_floor_penetration_without_opening: 'Pipe Floor Penetration Without Opening',
+  duct_floor_penetration_without_opening: 'Duct Floor Penetration Without Opening',
+  pipe_ceiling_penetration_without_opening: 'Pipe Ceiling Penetration Without Opening',
+  duct_ceiling_penetration_without_opening: 'Duct Ceiling Penetration Without Opening',
 };
 
 /** Human-oriented hint for where to look in the authoring UI (no new server fields). */

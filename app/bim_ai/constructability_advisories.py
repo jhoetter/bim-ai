@@ -14,7 +14,14 @@ from bim_ai.constructability_geometry import (
     collect_unsupported_physical_diagnostics,
 )
 from bim_ai.constructability_matrix import duplicate_cell_for, hard_clash_cell_for
-from bim_ai.elements import DoorElem, Element, WallElem, WallOpeningElem, WindowElem
+from bim_ai.elements import (
+    DoorElem,
+    Element,
+    SlabOpeningElem,
+    WallElem,
+    WallOpeningElem,
+    WindowElem,
+)
 
 _CLASH_TOLERANCE_MM = 1.0
 _SUPPORT_TOLERANCE_MM = 300.0
@@ -38,6 +45,7 @@ def constructability_advisory_violations(elements: dict[str, Element]) -> list[V
     violations.extend(_matrix_duplicate_geometry_violations(participants, elements))
     violations.extend(_matrix_hard_clash_violations(participants, elements))
     violations.extend(_mep_wall_penetration_violations(participants_by_kind, openings_by_wall_id))
+    violations.extend(_mep_floor_ceiling_penetration_violations(participants_by_kind, elements))
     violations.extend(_door_clearance_violations(elements, participants_by_kind))
     violations.extend(_load_bearing_metadata_violations(walls_by_id))
     violations.extend(_large_opening_violations(elements, walls_by_id))
@@ -165,6 +173,67 @@ def _mep_wall_penetration_violations(
                             "add a sleeve/opening or reroute the service."
                         ),
                         element_ids=sorted([service.element_id, wall.element_id]),
+                    )
+                )
+    return violations
+
+
+def _mep_floor_ceiling_penetration_violations(
+    participants_by_kind: dict[str, list[PhysicalParticipant]],
+    elements: dict[str, Element],
+) -> list[Violation]:
+    violations: list[Violation] = []
+    slab_openings_by_floor = _slab_openings_by_floor_id(elements)
+    service_specs = (
+        (
+            "pipe",
+            "pipe_floor_penetration_without_opening",
+            "pipe_ceiling_penetration_without_opening",
+            "Pipe",
+        ),
+        (
+            "duct",
+            "duct_floor_penetration_without_opening",
+            "duct_ceiling_penetration_without_opening",
+            "Duct",
+        ),
+    )
+    for service_kind, floor_rule, ceiling_rule, label in service_specs:
+        for service in participants_by_kind.get(service_kind, []):
+            for floor in participants_by_kind.get("floor", []):
+                if not _same_or_unknown_level(service, floor):
+                    continue
+                if not aabb_overlaps(service.aabb, floor.aabb, tolerance_mm=_CLASH_TOLERANCE_MM):
+                    continue
+                if _service_has_slab_opening(
+                    service, slab_openings_by_floor.get(floor.element_id, [])
+                ):
+                    continue
+                violations.append(
+                    Violation(
+                        rule_id=floor_rule,
+                        severity="warning",
+                        message=(
+                            f"{label} crosses a floor collision proxy without a matching slab opening; "
+                            "add a shaft/sleeve opening or reroute the service."
+                        ),
+                        element_ids=sorted([service.element_id, floor.element_id]),
+                    )
+                )
+            for ceiling in participants_by_kind.get("ceiling", []):
+                if not _same_or_unknown_level(service, ceiling):
+                    continue
+                if not aabb_overlaps(service.aabb, ceiling.aabb, tolerance_mm=_CLASH_TOLERANCE_MM):
+                    continue
+                violations.append(
+                    Violation(
+                        rule_id=ceiling_rule,
+                        severity="warning",
+                        message=(
+                            f"{label} crosses a ceiling collision proxy without a modeled route opening; "
+                            "add an opening/plenum condition or reroute the service."
+                        ),
+                        element_ids=sorted([service.element_id, ceiling.element_id]),
                     )
                 )
     return violations
@@ -413,6 +482,46 @@ def _openings_by_wall_id(
             )
         )
     return out
+
+
+def _slab_openings_by_floor_id(elements: dict[str, Element]) -> dict[str, list[SlabOpeningElem]]:
+    out: dict[str, list[SlabOpeningElem]] = defaultdict(list)
+    for element in elements.values():
+        if isinstance(element, SlabOpeningElem):
+            out[element.host_floor_id].append(element)
+    return out
+
+
+def _service_has_slab_opening(
+    service: PhysicalParticipant,
+    openings: list[SlabOpeningElem],
+) -> bool:
+    if not openings:
+        return False
+    x, y = _aabb_center_xy(service.aabb)
+    return any(_point_in_polygon_mm(x, y, opening.boundary_mm) for opening in openings)
+
+
+def _aabb_center_xy(aabb: AABB) -> tuple[float, float]:
+    return ((aabb.min_x + aabb.max_x) / 2.0, (aabb.min_y + aabb.max_y) / 2.0)
+
+
+def _point_in_polygon_mm(x: float, y: float, points: Any) -> bool:
+    polygon = [(float(point.x_mm), float(point.y_mm)) for point in points]
+    if len(polygon) < 3:
+        return False
+
+    inside = False
+    previous_x, previous_y = polygon[-1]
+    for current_x, current_y in polygon:
+        denominator = previous_y - current_y
+        crosses_scanline = (current_y > y) != (previous_y > y)
+        if crosses_scanline and abs(denominator) > 1e-9:
+            x_at_y = (previous_x - current_x) * (y - current_y) / denominator + current_x
+            if x < x_at_y:
+                inside = not inside
+        previous_x, previous_y = current_x, current_y
+    return inside
 
 
 def _penetration_has_opening(

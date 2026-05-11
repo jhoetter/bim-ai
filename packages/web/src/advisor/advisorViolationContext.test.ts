@@ -78,6 +78,12 @@ describe('advisorViolationContext', () => {
     expect(recommendedContextForRuleId('duct_wall_penetration_without_opening')).toMatch(
       /sleeve\/opening|duct/i,
     );
+    expect(recommendedContextForRuleId('pipe_floor_penetration_without_opening')).toMatch(
+      /slab sleeve|floor/i,
+    );
+    expect(recommendedContextForRuleId('duct_ceiling_penetration_without_opening')).toMatch(
+      /ceiling route|plenum/i,
+    );
   });
 
   it('humanizes constructability rule titles with domain wording', () => {
@@ -90,6 +96,12 @@ describe('advisorViolationContext', () => {
     );
     expect(humanizeRuleId('pipe_wall_penetration_without_opening')).toBe(
       'Pipe Wall Penetration Without Opening',
+    );
+    expect(humanizeRuleId('duct_floor_penetration_without_opening')).toBe(
+      'Duct Floor Penetration Without Opening',
+    );
+    expect(humanizeRuleId('pipe_ceiling_penetration_without_opening')).toBe(
+      'Pipe Ceiling Penetration Without Opening',
     );
     expect(humanizeRuleId('custom_rule_id')).toBe('Custom Rule Id');
   });

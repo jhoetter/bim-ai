@@ -120,15 +120,6 @@ DEFAULT_CONSTRUCTABILITY_MATRIX: tuple[ConstructabilityMatrixCell, ...] = (
         tolerance_mm=1.0,
         message="Stair envelope intersects a roof proxy; verify headroom and roof/stair geometry.",
     ),
-    ConstructabilityMatrixCell(
-        group_a="mep_linear",
-        group_b="ceiling",
-        check_type="hard",
-        rule_id="physical_hard_clash",
-        severity="warning",
-        tolerance_mm=1.0,
-        message="MEP run intersects a ceiling proxy; add a route opening, plenum clearance, or reroute.",
-    ),
 )
 
 

@@ -18,6 +18,7 @@ from bim_ai.elements import (
     LevelElem,
     PipeElem,
     PlacedAssetElem,
+    SlabOpeningElem,
     StairElem,
     WallElem,
     WallOpeningElem,
@@ -179,6 +180,76 @@ def test_duct_penetration_without_wall_opening_is_reported() -> None:
     }
 
     assert "duct_wall_penetration_without_opening" in _rule_ids(elements)
+
+
+def test_pipe_floor_penetration_without_slab_opening_is_reported_and_suppressed() -> None:
+    pipe = PipeElem(
+        kind="pipe",
+        id="pipe-1",
+        levelId="lvl-1",
+        startMm={"xMm": 1000, "yMm": 1000},
+        endMm={"xMm": 1000, "yMm": 1000},
+        elevationMm=100,
+        diameterMm=80,
+    )
+    floor = FloorElem(
+        kind="floor",
+        id="floor-1",
+        levelId="lvl-1",
+        boundaryMm=[
+            {"xMm": 0, "yMm": 0},
+            {"xMm": 2000, "yMm": 0},
+            {"xMm": 2000, "yMm": 2000},
+            {"xMm": 0, "yMm": 2000},
+        ],
+        thicknessMm=220,
+    )
+    elements = {"lvl-1": _level(), "floor-1": floor, "pipe-1": pipe}
+    assert "pipe_floor_penetration_without_opening" in _rule_ids(elements)
+
+    elements["opening-1"] = SlabOpeningElem(
+        kind="slab_opening",
+        id="opening-1",
+        hostFloorId="floor-1",
+        boundaryMm=[
+            {"xMm": 900, "yMm": 900},
+            {"xMm": 1100, "yMm": 900},
+            {"xMm": 1100, "yMm": 1100},
+            {"xMm": 900, "yMm": 1100},
+        ],
+    )
+    assert "pipe_floor_penetration_without_opening" not in _rule_ids(elements)
+
+
+def test_duct_ceiling_penetration_without_opening_is_reported() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "ceiling-1": CeilingElem(
+            kind="ceiling",
+            id="ceiling-1",
+            levelId="lvl-1",
+            boundaryMm=[
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 2500, "yMm": 0},
+                {"xMm": 2500, "yMm": 2000},
+                {"xMm": 0, "yMm": 2000},
+            ],
+            heightOffsetMm=2400,
+            thicknessMm=200,
+        ),
+        "duct-1": DuctElem(
+            kind="duct",
+            id="duct-1",
+            levelId="lvl-1",
+            startMm={"xMm": 1200, "yMm": 1000},
+            endMm={"xMm": 1200, "yMm": 1000},
+            elevationMm=2500,
+            widthMm=300,
+            heightMm=200,
+        ),
+    }
+
+    assert "duct_ceiling_penetration_without_opening" in _rule_ids(elements)
 
 
 def test_primary_envelope_wall_without_structural_intent_is_reported() -> None:

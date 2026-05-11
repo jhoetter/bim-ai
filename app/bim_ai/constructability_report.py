@@ -23,6 +23,10 @@ CONSTRUCTABILITY_RULE_IDS = frozenset(
         "door_operation_clearance_conflict",
         "pipe_wall_penetration_without_opening",
         "duct_wall_penetration_without_opening",
+        "pipe_floor_penetration_without_opening",
+        "duct_floor_penetration_without_opening",
+        "pipe_ceiling_penetration_without_opening",
+        "duct_ceiling_penetration_without_opening",
     }
 )
 
@@ -39,6 +43,10 @@ RECOMMENDATION_BY_RULE_ID = {
     "door_operation_clearance_conflict": "Move nearby objects or adjust the door/opening so the operation zone stays clear.",
     "pipe_wall_penetration_without_opening": "Add a sleeve/opening or reroute the pipe where it crosses the wall.",
     "duct_wall_penetration_without_opening": "Add a sleeve/opening or reroute the duct where it crosses the wall.",
+    "pipe_floor_penetration_without_opening": "Add a slab sleeve/shaft opening or reroute the pipe where it crosses the floor.",
+    "duct_floor_penetration_without_opening": "Add a slab sleeve/shaft opening or reroute the duct where it crosses the floor.",
+    "pipe_ceiling_penetration_without_opening": "Add a ceiling route opening/plenum condition or reroute the pipe.",
+    "duct_ceiling_penetration_without_opening": "Add a ceiling route opening/plenum condition or reroute the duct.",
 }
 
 
