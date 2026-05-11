@@ -560,6 +560,8 @@ export function PlanCanvas({
   const clearTemporaryVisibility = useBimStore((s) => s.clearTemporaryVisibility);
   // EDT-V3-05 — loop mode: re-arm chained tools after each segment commit.
   const loopMode = useToolPrefs((s) => s.loopMode);
+  // UX-MC — status-bar Grid switch controls whether the drafting grid is drawn.
+  const draftGridVisible = useToolPrefs((s) => s.draftGridVisible);
   // TOP-V3-03 — active finish category for the subdivision palette.
   const subdivisionDraft = useToolPrefs((s) => s.subdivisionDraft);
   const setSubdivisionDraft = useToolPrefs((s) => s.setSubdivisionDraft);
@@ -1148,9 +1150,9 @@ export function PlanCanvas({
       g.userData.draftingGrid = true;
       grp.add(g);
     };
-    if (gridMajor !== null)
+    if (draftGridVisible && gridMajor !== null)
       addDraftGrid(majorStep, readPlanToken('--draft-grid-major', '#223042'), 0.45);
-    if (gridMinor !== null)
+    if (draftGridVisible && gridMinor !== null)
       addDraftGrid(minorStep, readPlanToken('--draft-grid-minor', '#1a2738'), 0.25);
 
     // FED-04 — render imported DXF linework as a desaturated grey underlay
@@ -1721,6 +1723,7 @@ export function PlanCanvas({
     activePlanViewId,
     showNeighborhoodMasses,
     thinLinesEnabled,
+    draftGridVisible,
     lensMode,
   ]);
 

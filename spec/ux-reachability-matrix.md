@@ -20,6 +20,7 @@ Legend:
 | Plan Visibility/Graphics           | Direct   | Bridge to Plan            | Direct                    | Direct                  | Disabled       | Disabled       | Disabled       |
 | 3D layer controls                  | Disabled | Direct                    | Direct                    | Disabled                | Disabled       | Disabled       | Disabled       |
 | Theme commands                     | Direct   | Direct                    | Direct                    | Direct                  | Direct         | Direct         | Direct         |
+| Drafting grid visibility           | Direct   | Disabled                  | Direct                    | Direct                  | Disabled       | Disabled       | Disabled       |
 | View navigation                    | Direct   | Direct                    | Direct                    | Direct                  | Direct         | Direct         | Direct         |
 | Project/family/help shell commands | Direct   | Direct                    | Direct                    | Direct                  | Direct         | Direct         | Direct         |
 
@@ -33,7 +34,7 @@ Surface policy:
 | Cmd+K            | Shows capability badges and disabled/bridge state for registered commands.                                                                                                     |
 | Left rail        | Browser remains the deterministic navigation source for named views and model hierarchy.                                                                                       |
 | Right rail       | Exposes stable Properties / View / Workbench / Review section tabs; selected 3D walls get explicit Door, Window, Opening, Section, Elevation, Isolate, and Hide Walls actions. |
-| Status bar       | Shows plan clusters in plan-like views and view-mode state in non-plan views.                                                                                                  |
+| Status bar       | Shows plan clusters in plan-like views, wires the Grid switch to actual drafting-grid visibility, and shows view-mode state in non-plan views.                                  |
 
 Regression guards:
 

@@ -30,6 +30,8 @@ export interface ToolPrefsState {
   cycles: Record<string, Record<string, string>>;
   /** EDT-V3-05: when true, chained tools re-arm after each segment commit. */
   loopMode: boolean;
+  /** UX-MC: status-bar Grid switch controls the visible drafting grid. */
+  draftGridVisible: boolean;
   /** TOP-V3-03: in-flight subdivision polygon draft, null when not sketching. */
   subdivisionDraft: SubdivisionDraft | null;
   setToggle: (toolId: string, modifierId: string, value: boolean) => void;
@@ -44,6 +46,9 @@ export interface ToolPrefsState {
   ) => string;
   /** EDT-V3-05: set loop mode on/off. */
   setLoopMode: (v: boolean) => void;
+  /** UX-MC: set or toggle drafting-grid visibility from status chrome. */
+  setDraftGridVisible: (v: boolean) => void;
+  toggleDraftGridVisible: () => void;
   /** TOP-V3-03: update the in-flight subdivision draft (replaces whole object). */
   setSubdivisionDraft: (draft: SubdivisionDraft) => void;
   /** TOP-V3-03: clear the in-flight subdivision draft. */
@@ -54,6 +59,7 @@ export const useToolPrefs = create<ToolPrefsState>((set, get) => ({
   toggles: {},
   cycles: {},
   loopMode: false,
+  draftGridVisible: true,
   subdivisionDraft: null,
 
   setToggle(toolId, modifierId, value) {
@@ -92,6 +98,14 @@ export const useToolPrefs = create<ToolPrefsState>((set, get) => ({
 
   setLoopMode(v) {
     set({ loopMode: v });
+  },
+
+  setDraftGridVisible(v) {
+    set({ draftGridVisible: v });
+  },
+
+  toggleDraftGridVisible() {
+    set((state) => ({ draftGridVisible: !state.draftGridVisible }));
   },
 
   setSubdivisionDraft(draft) {

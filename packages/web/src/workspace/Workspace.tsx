@@ -169,6 +169,8 @@ export function Workspace(): JSX.Element {
   const toggleThinLinesStore = useBimStore((s) => s.toggleThinLines);
   // EDT-V3-05: loop mode state for status bar message.
   const loopMode = useToolPrefs((s) => s.loopMode);
+  const draftGridVisible = useToolPrefs((s) => s.draftGridVisible);
+  const toggleDraftGridVisible = useToolPrefs((s) => s.toggleDraftGridVisible);
   const selectedId = useBimStore((s) => s.selectedId);
   const activeLevelId = useBimStore((s) => s.activeLevelId);
   const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
@@ -1518,7 +1520,8 @@ export function Workspace(): JSX.Element {
                 ? 'Loop mode on — L to toggle, Esc to exit'
                 : (toolRegistry[planToolToToolId(planTool)]?.label ?? null)
             }
-            gridOn={true}
+            gridOn={draftGridVisible}
+            onGridToggle={toggleDraftGridVisible}
             cursorMm={cursorMm}
             undoDepth={undoDepth}
             redoDepth={redoDepth}

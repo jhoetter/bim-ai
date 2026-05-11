@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { useToolPrefs } from './toolPrefsStore';
 
 beforeEach(() => {
-  useToolPrefs.setState({ toggles: {}, cycles: {} });
+  useToolPrefs.setState({ toggles: {}, cycles: {}, draftGridVisible: true });
 });
 
 describe('toggle state', () => {
@@ -79,5 +79,18 @@ describe('advanceCycle', () => {
     const { advanceCycle } = useToolPrefs.getState();
     const next = advanceCycle('wall', 'location-line', values, 'wall-centerline');
     expect(next).toBe('finish-face-exterior');
+  });
+});
+
+describe('drafting grid visibility', () => {
+  it('defaults on and toggles from status chrome', () => {
+    const { toggleDraftGridVisible, setDraftGridVisible } = useToolPrefs.getState();
+    expect(useToolPrefs.getState().draftGridVisible).toBe(true);
+
+    toggleDraftGridVisible();
+    expect(useToolPrefs.getState().draftGridVisible).toBe(false);
+
+    setDraftGridVisible(true);
+    expect(useToolPrefs.getState().draftGridVisible).toBe(true);
   });
 });
