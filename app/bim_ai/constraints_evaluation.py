@@ -45,6 +45,7 @@ from bim_ai.constraints_wall_geometry import (
     wall_unit_dir,
 )
 from bim_ai.constructability_advisories import constructability_advisory_violations
+from bim_ai.constructability_scope import scope_constructability_elements
 from bim_ai.datum_levels import (
     expected_level_elevation_from_parent,
     level_datum_cycle_participant_level_ids,
@@ -241,6 +242,9 @@ def evaluate(
     elements: dict[str, Element],
     *,
     constructability_profile: str = "authoring_default",
+    phase_filter: str = "all",
+    option_locks: dict[str, str] | None = None,
+    design_option_sets: list[Any] | None = None,
 ) -> list[Violation]:
     walls: list[WallElem] = []
     doors: list[DoorElem] = []
@@ -1641,9 +1645,15 @@ def evaluate(
     viols.extend(_monitored_source_drift_advisory_violations(elements))
     viols.extend(_dormer_overflow_advisory_violations(elements))
     viols.extend(_toposolid_pierce_check_violations(elements))
+    constructability_elements = scope_constructability_elements(
+        elements,
+        phase_filter=phase_filter,
+        option_locks=option_locks,
+        design_option_sets=design_option_sets or (),
+    )
     viols.extend(
         constructability_advisory_violations(
-            elements,
+            constructability_elements,
             profile=constructability_profile,
         )
     )

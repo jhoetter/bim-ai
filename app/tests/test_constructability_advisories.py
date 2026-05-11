@@ -90,6 +90,58 @@ def test_shelf_through_wall_is_reported_in_warning_evaluator() -> None:
     assert "furniture_wall_hard_clash" in _rule_ids(elements)
 
 
+def test_evaluate_scopes_constructability_by_phase_filter() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "wall-existing": _wall(id="wall-existing", phaseCreated="existing"),
+        "asset-shelf": _asset_library(),
+        "shelf-new": _shelf(y_mm=0, id="shelf-new").model_copy(
+            update={"phase_created": "new"}
+        ),
+    }
+
+    all_rules = {violation.rule_id for violation in evaluate(elements)}  # type: ignore[arg-type]
+    existing_rules = {
+        violation.rule_id
+        for violation in evaluate(elements, phase_filter="existing")  # type: ignore[arg-type]
+    }
+
+    assert "furniture_wall_hard_clash" in all_rules
+    assert "furniture_wall_hard_clash" not in existing_rules
+
+
+def test_evaluate_scopes_constructability_by_primary_design_option() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "wall-option-b": _wall(id="wall-option-b", optionSetId="scheme", optionId="option-b"),
+        "asset-shelf": _asset_library(),
+        "shelf-option-a": _shelf(y_mm=0, id="shelf-option-a").model_copy(
+            update={"option_set_id": "scheme", "option_id": "option-a"}
+        ),
+    }
+    design_option_sets = [
+        {
+            "id": "scheme",
+            "options": [
+                {"id": "option-a", "isPrimary": True},
+                {"id": "option-b", "isPrimary": False},
+            ],
+        }
+    ]
+
+    unscoped_rules = {violation.rule_id for violation in evaluate(elements)}  # type: ignore[arg-type]
+    primary_rules = {
+        violation.rule_id
+        for violation in evaluate(  # type: ignore[arg-type]
+            elements,
+            design_option_sets=design_option_sets,
+        )
+    }
+
+    assert "furniture_wall_hard_clash" in unscoped_rules
+    assert "furniture_wall_hard_clash" not in primary_rules
+
+
 def test_shelf_near_wall_but_clear_is_not_reported_as_wall_clash() -> None:
     elements = {
         "lvl-1": _level(),
