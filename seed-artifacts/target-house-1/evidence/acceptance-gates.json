@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "sketch-to-bim-acceptance-gates.v0",
+  "generatedAt": "2026-05-11T10:06:01.311Z",
+  "qualityTarget": "project_initiation_bim",
+  "ok": true,
+  "summary": {
+    "blockerCount": 0,
+    "toleranceCount": 1,
+    "advisorWarningCount": 0,
+    "visualFailCount": 0,
+    "visualNeedsReviewCount": 7
+  },
+  "blockers": [],
+  "tolerances": [
+    {
+      "code": "visual_gate_needs_human_review",
+      "message": "7 screenshot view(s) have no target comparison and need human review."
+    }
+  ]
+}

@@ -1,148 +1,130 @@
 {
-  "schemaVersion": "cmd-v3.0",
-  "parentRevision": null,
-  "targetOptionId": null,
-  "assumptions": [
-    {
-      "key": "seed-dsl-recipe",
-      "value": "target-house-1-methodology-rebuild",
-      "confidence": 1,
-      "source": "bim-ai seed-dsl compile"
+  "schemaVersion": "seed-dsl.v0",
+  "id": "target-house-1-methodology-rebuild",
+  "intent": "Methodology-authored target-house seed from the image-locked reference spec and floorplan: white folded upper shell, recessed front loggia, roof-court void, vertical-clad base, stair, rooms, views, and schedules.",
+  "projectBasePoint": {
+    "id": "hf-pbp",
+    "positionMm": {
+      "xMm": 0,
+      "yMm": 0,
+      "zMm": 0
     },
+    "angleToTrueNorthDeg": 0
+  },
+  "levels": [
     {
-      "key": "dimension_source",
-      "value": "Floorplan dimensions 14 m by 10 m override earlier approximate brief dimensions for the rebuild.",
-      "confidence": 0.85,
-      "source": "spec/target-house/floorplan.png"
-    },
-    {
-      "key": "folded_shell_representation",
-      "value": "The folded wrapper is assembled from typed walls, an asymmetric roof, frame sweeps, and return walls until a native folded-shell primitive exists.",
-      "confidence": 0.7,
-      "source": "spec/target-house/target-house-seed.md"
-    }
-  ],
-  "commands": [
-    {
-      "type": "createProjectBasePoint",
-      "id": "hf-pbp",
-      "positionMm": {
-        "xMm": 0,
-        "yMm": 0,
-        "zMm": 0
-      },
-      "angleToTrueNorthDeg": 0
-    },
-    {
-      "type": "upsertWallType",
-      "id": "hf-wt-clad-base",
-      "name": "Vertical clad external wall",
-      "layers": [
-        {
-          "thicknessMm": 50,
-          "function": "finish",
-          "materialKey": "cladding_beige_grey"
-        },
-        {
-          "thicknessMm": 170,
-          "function": "structure",
-          "materialKey": "timber_frame_insulation"
-        },
-        {
-          "thicknessMm": 30,
-          "function": "finish",
-          "materialKey": "plasterboard"
-        }
-      ],
-      "basisLine": "center"
-    },
-    {
-      "type": "upsertWallType",
-      "id": "hf-wt-white-wrapper",
-      "name": "Matte white folded wrapper wall",
-      "layers": [
-        {
-          "thicknessMm": 180,
-          "function": "structure",
-          "materialKey": "concrete"
-        },
-        {
-          "thicknessMm": 70,
-          "function": "finish",
-          "materialKey": "white_render"
-        }
-      ],
-      "basisLine": "center"
-    },
-    {
-      "type": "upsertWallType",
-      "id": "hf-wt-partition",
-      "name": "Light internal partition",
-      "layers": [
-        {
-          "thicknessMm": 120,
-          "function": "structure",
-          "materialKey": "plasterboard"
-        }
-      ],
-      "basisLine": "center"
-    },
-    {
-      "type": "upsertFloorType",
-      "id": "hf-ft-slab",
-      "name": "Concrete slab with light finish",
-      "layers": [
-        {
-          "thicknessMm": 180,
-          "function": "structure",
-          "materialKey": "concrete"
-        },
-        {
-          "thicknessMm": 40,
-          "function": "finish",
-          "materialKey": "render_light_grey"
-        }
-      ]
-    },
-    {
-      "type": "upsertRoofType",
-      "id": "hf-rt-white-shell",
-      "name": "White folded roof shell",
-      "layers": [
-        {
-          "thicknessMm": 180,
-          "function": "structure",
-          "materialKey": "concrete"
-        },
-        {
-          "thicknessMm": 60,
-          "function": "finish",
-          "materialKey": "white_render"
-        }
-      ]
-    },
-    {
-      "type": "createLevel",
       "id": "hf-lvl-ground",
       "name": "Ground Floor",
       "elevationMm": 0,
-      "alsoCreatePlanView": true,
       "planViewId": "hf-lvl-ground-plan"
     },
     {
-      "type": "createLevel",
       "id": "hf-lvl-upper",
       "name": "First Floor",
       "elevationMm": 3000,
-      "alsoCreatePlanView": true,
       "planViewId": "hf-lvl-upper-plan"
-    },
+    }
+  ],
+  "types": {
+    "wallTypes": [
+      {
+        "id": "hf-wt-clad-base",
+        "name": "Vertical clad external wall",
+        "layers": [
+          {
+            "thicknessMm": 50,
+            "function": "finish",
+            "materialKey": "cladding_beige_grey"
+          },
+          {
+            "thicknessMm": 170,
+            "function": "structure",
+            "materialKey": "timber_frame_insulation"
+          },
+          {
+            "thicknessMm": 30,
+            "function": "finish",
+            "materialKey": "plasterboard"
+          }
+        ]
+      },
+      {
+        "id": "hf-wt-white-wrapper",
+        "name": "Matte white folded wrapper wall",
+        "layers": [
+          {
+            "thicknessMm": 180,
+            "function": "structure",
+            "materialKey": "concrete"
+          },
+          {
+            "thicknessMm": 70,
+            "function": "finish",
+            "materialKey": "white_render"
+          }
+        ]
+      },
+      {
+        "id": "hf-wt-partition",
+        "name": "Light internal partition",
+        "layers": [
+          {
+            "thicknessMm": 120,
+            "function": "structure",
+            "materialKey": "plasterboard"
+          }
+        ]
+      }
+    ],
+    "floorTypes": [
+      {
+        "id": "hf-ft-slab",
+        "name": "Concrete slab with light finish",
+        "layers": [
+          {
+            "thicknessMm": 180,
+            "function": "structure",
+            "materialKey": "concrete"
+          },
+          {
+            "thicknessMm": 40,
+            "function": "finish",
+            "materialKey": "render_light_grey"
+          }
+        ]
+      }
+    ],
+    "roofTypes": [
+      {
+        "id": "hf-rt-white-shell",
+        "name": "White folded roof shell",
+        "layers": [
+          {
+            "thicknessMm": 180,
+            "function": "structure",
+            "materialKey": "concrete"
+          },
+          {
+            "thicknessMm": 60,
+            "function": "finish",
+            "materialKey": "white_render"
+          }
+        ]
+      }
+    ]
+  },
+  "volumes": [
     {
-      "type": "createFloor",
-      "id": "hf-gf-floor",
-      "name": "Ground floor vertically clad base floor",
+      "id": "hf-gf",
+      "name": "Ground floor vertically clad base",
       "levelId": "hf-lvl-ground",
-      "boundaryMm": [
+      "wallHeightMm": 3000,
+      "wallThicknessMm": 250,
+      "wallTypeId": "hf-wt-clad-base",
+      "floorTypeId": "hf-ft-slab",
+      "materialKey": "cladding_beige_grey",
+      "roomBounded": true,
+      "footprintMm": [
         {
           "xMm": 0,
           "yMm": 0
@@ -159,166 +141,41 @@
           "xMm": 0,
           "yMm": 10000
         }
-      ],
-      "thicknessMm": 220,
+      ]
+    },
+    {
+      "id": "hf-uf",
+      "name": "Upper white wrapper shell",
+      "levelId": "hf-lvl-upper",
+      "wallHeightMm": 5400,
+      "wallThicknessMm": 250,
+      "wallTypeId": "hf-wt-white-wrapper",
       "floorTypeId": "hf-ft-slab",
-      "materialKey": "cladding_beige_grey",
-      "roomBounded": true
-    },
-    {
-      "type": "createWall",
-      "id": "hf-gf-wall-01",
-      "name": "Ground floor vertically clad base wall 1",
-      "levelId": "hf-lvl-ground",
-      "start": {
-        "xMm": 0,
-        "yMm": 0
-      },
-      "end": {
-        "xMm": 14000,
-        "yMm": 0
-      },
-      "thicknessMm": 250,
-      "heightMm": 3000,
-      "wallTypeId": "hf-wt-clad-base",
-      "materialKey": "cladding_beige_grey",
-      "isCurtainWall": false
-    },
-    {
-      "type": "createWall",
-      "id": "hf-gf-wall-02",
-      "name": "Ground floor vertically clad base wall 2",
-      "levelId": "hf-lvl-ground",
-      "start": {
-        "xMm": 14000,
-        "yMm": 0
-      },
-      "end": {
-        "xMm": 14000,
-        "yMm": 10000
-      },
-      "thicknessMm": 250,
-      "heightMm": 3000,
-      "wallTypeId": "hf-wt-clad-base",
-      "materialKey": "cladding_beige_grey",
-      "isCurtainWall": false
-    },
-    {
-      "type": "createWall",
-      "id": "hf-gf-wall-03",
-      "name": "Ground floor vertically clad base wall 3",
-      "levelId": "hf-lvl-ground",
-      "start": {
-        "xMm": 14000,
-        "yMm": 10000
-      },
-      "end": {
-        "xMm": 0,
-        "yMm": 10000
-      },
-      "thicknessMm": 250,
-      "heightMm": 3000,
-      "wallTypeId": "hf-wt-clad-base",
-      "materialKey": "cladding_beige_grey",
-      "isCurtainWall": false
-    },
-    {
-      "type": "createWall",
-      "id": "hf-gf-wall-04",
-      "name": "Ground floor vertically clad base wall 4",
-      "levelId": "hf-lvl-ground",
-      "start": {
-        "xMm": 0,
-        "yMm": 10000
-      },
-      "end": {
-        "xMm": 0,
-        "yMm": 0
-      },
-      "thicknessMm": 250,
-      "heightMm": 3000,
-      "wallTypeId": "hf-wt-clad-base",
-      "materialKey": "cladding_beige_grey",
-      "isCurtainWall": false
-    },
-    {
-      "type": "createWall",
-      "id": "hf-uf-wall-01",
-      "name": "Upper white wrapper shell wall 1",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 0,
-        "yMm": -350
-      },
-      "end": {
-        "xMm": 14000,
-        "yMm": -350
-      },
-      "thicknessMm": 250,
-      "heightMm": 5400,
-      "wallTypeId": "hf-wt-white-wrapper",
       "materialKey": "white_render",
-      "isCurtainWall": false
-    },
+      "createFloor": false,
+      "roomBounded": true,
+      "footprintMm": [
+        {
+          "xMm": 0,
+          "yMm": -350
+        },
+        {
+          "xMm": 14000,
+          "yMm": -350
+        },
+        {
+          "xMm": 14000,
+          "yMm": 10000
+        },
+        {
+          "xMm": 0,
+          "yMm": 10000
+        }
+      ]
+    }
+  ],
+  "roofs": [
     {
-      "type": "createWall",
-      "id": "hf-uf-wall-02",
-      "name": "Upper white wrapper shell wall 2",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 14000,
-        "yMm": -350
-      },
-      "end": {
-        "xMm": 14000,
-        "yMm": 10000
-      },
-      "thicknessMm": 250,
-      "heightMm": 5400,
-      "wallTypeId": "hf-wt-white-wrapper",
-      "materialKey": "white_render",
-      "isCurtainWall": false
-    },
-    {
-      "type": "createWall",
-      "id": "hf-uf-wall-03",
-      "name": "Upper white wrapper shell wall 3",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 14000,
-        "yMm": 10000
-      },
-      "end": {
-        "xMm": 0,
-        "yMm": 10000
-      },
-      "thicknessMm": 250,
-      "heightMm": 5400,
-      "wallTypeId": "hf-wt-white-wrapper",
-      "materialKey": "white_render",
-      "isCurtainWall": false
-    },
-    {
-      "type": "createWall",
-      "id": "hf-uf-wall-04",
-      "name": "Upper white wrapper shell wall 4",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 0,
-        "yMm": 10000
-      },
-      "end": {
-        "xMm": 0,
-        "yMm": -350
-      },
-      "thicknessMm": 250,
-      "heightMm": 5400,
-      "wallTypeId": "hf-wt-white-wrapper",
-      "materialKey": "white_render",
-      "isCurtainWall": false
-    },
-    {
-      "type": "createRoof",
       "id": "hf-roof-main",
       "name": "White asymmetric folded roof with roof court",
       "referenceLevelId": "hf-lvl-upper",
@@ -341,20 +198,282 @@
         }
       ],
       "roofGeometryMode": "asymmetric_gable",
-      "slopeDeg": 22,
-      "overhangMm": 0,
       "ridgeOffsetTransverseMm": 650,
       "eaveHeightLeftMm": 2300,
       "eaveHeightRightMm": 2600,
+      "slopeDeg": 22,
+      "overhangMm": 0,
       "roofTypeId": "hf-rt-white-shell",
-      "materialKey": "white_render"
+      "materialKey": "white_render",
+      "openings": [
+        {
+          "id": "hf-roof-court-opening",
+          "name": "Open-to-sky roof court void",
+          "boundaryMm": [
+            {
+              "xMm": 8700,
+              "yMm": 1700
+            },
+            {
+              "xMm": 14000,
+              "yMm": 1700
+            },
+            {
+              "xMm": 14000,
+              "yMm": 5900
+            },
+            {
+              "xMm": 8700,
+              "yMm": 5900
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "rooms": [
+    {
+      "id": "hf-room-kitchen-dining",
+      "name": "Kitchen / dining",
+      "levelId": "hf-lvl-ground",
+      "programmeCode": "kitchen_dining",
+      "functionLabel": "Kitchen / dining",
+      "targetAreaM2": 18.4,
+      "outlineMm": [
+        {
+          "xMm": 0,
+          "yMm": 0
+        },
+        {
+          "xMm": 4600,
+          "yMm": 0
+        },
+        {
+          "xMm": 4600,
+          "yMm": 4200
+        },
+        {
+          "xMm": 0,
+          "yMm": 4200
+        }
+      ]
     },
     {
-      "type": "createRoofOpening",
-      "id": "hf-roof-court-opening",
-      "name": "Open-to-sky roof court void",
-      "hostRoofId": "hf-roof-main",
-      "boundaryMm": [
+      "id": "hf-room-living",
+      "name": "Living area",
+      "levelId": "hf-lvl-ground",
+      "programmeCode": "living",
+      "functionLabel": "Living",
+      "targetAreaM2": 19.8,
+      "outlineMm": [
+        {
+          "xMm": 0,
+          "yMm": 4200
+        },
+        {
+          "xMm": 4600,
+          "yMm": 4200
+        },
+        {
+          "xMm": 4600,
+          "yMm": 10000
+        },
+        {
+          "xMm": 0,
+          "yMm": 10000
+        }
+      ]
+    },
+    {
+      "id": "hf-room-entry-stair",
+      "name": "Entry / stair hall",
+      "levelId": "hf-lvl-ground",
+      "programmeCode": "circulation",
+      "functionLabel": "Entry / stair",
+      "targetAreaM2": 20,
+      "outlineMm": [
+        {
+          "xMm": 4600,
+          "yMm": 0
+        },
+        {
+          "xMm": 8800,
+          "yMm": 0
+        },
+        {
+          "xMm": 8800,
+          "yMm": 10000
+        },
+        {
+          "xMm": 4600,
+          "yMm": 10000
+        }
+      ]
+    },
+    {
+      "id": "hf-room-service",
+      "name": "Bath / laundry and utility",
+      "levelId": "hf-lvl-ground",
+      "programmeCode": "bath_laundry",
+      "functionLabel": "Bath / laundry",
+      "targetAreaM2": 8.5,
+      "outlineMm": [
+        {
+          "xMm": 8800,
+          "yMm": 0
+        },
+        {
+          "xMm": 10500,
+          "yMm": 0
+        },
+        {
+          "xMm": 10500,
+          "yMm": 5700
+        },
+        {
+          "xMm": 8800,
+          "yMm": 5700
+        }
+      ]
+    },
+    {
+      "id": "hf-room-carport",
+      "name": "Recessed garage / carport",
+      "levelId": "hf-lvl-ground",
+      "programmeCode": "carport",
+      "functionLabel": "Garage / carport",
+      "targetAreaM2": 19.25,
+      "outlineMm": [
+        {
+          "xMm": 10500,
+          "yMm": 0
+        },
+        {
+          "xMm": 14000,
+          "yMm": 0
+        },
+        {
+          "xMm": 14000,
+          "yMm": 5700
+        },
+        {
+          "xMm": 10500,
+          "yMm": 5700
+        }
+      ]
+    },
+    {
+      "id": "hf-room-primary",
+      "name": "Primary bedroom",
+      "levelId": "hf-lvl-upper",
+      "programmeCode": "bedroom",
+      "functionLabel": "Primary bedroom",
+      "targetAreaM2": 17.6,
+      "outlineMm": [
+        {
+          "xMm": 0,
+          "yMm": -350
+        },
+        {
+          "xMm": 4400,
+          "yMm": -350
+        },
+        {
+          "xMm": 4400,
+          "yMm": 4400
+        },
+        {
+          "xMm": 0,
+          "yMm": 4400
+        }
+      ]
+    },
+    {
+      "id": "hf-room-ensuite",
+      "name": "Ensuite",
+      "levelId": "hf-lvl-upper",
+      "programmeCode": "bathroom",
+      "functionLabel": "Ensuite",
+      "targetAreaM2": 5.2,
+      "outlineMm": [
+        {
+          "xMm": 0,
+          "yMm": 6500
+        },
+        {
+          "xMm": 2800,
+          "yMm": 6500
+        },
+        {
+          "xMm": 2800,
+          "yMm": 10000
+        },
+        {
+          "xMm": 0,
+          "yMm": 10000
+        }
+      ]
+    },
+    {
+      "id": "hf-room-hall",
+      "name": "Hall / landing",
+      "levelId": "hf-lvl-upper",
+      "programmeCode": "circulation",
+      "functionLabel": "Hall / landing",
+      "targetAreaM2": 11.1,
+      "outlineMm": [
+        {
+          "xMm": 4400,
+          "yMm": 1700
+        },
+        {
+          "xMm": 8700,
+          "yMm": 1700
+        },
+        {
+          "xMm": 8700,
+          "yMm": 6500
+        },
+        {
+          "xMm": 4400,
+          "yMm": 6500
+        }
+      ]
+    },
+    {
+      "id": "hf-room-bedroom-2",
+      "name": "Bedroom 2",
+      "levelId": "hf-lvl-upper",
+      "programmeCode": "bedroom",
+      "functionLabel": "Bedroom 2",
+      "targetAreaM2": 12.2,
+      "outlineMm": [
+        {
+          "xMm": 10600,
+          "yMm": 6500
+        },
+        {
+          "xMm": 14000,
+          "yMm": 6500
+        },
+        {
+          "xMm": 14000,
+          "yMm": 10000
+        },
+        {
+          "xMm": 10600,
+          "yMm": 10000
+        }
+      ]
+    },
+    {
+      "id": "hf-room-roof-court",
+      "name": "Open-to-sky roof court / terrace",
+      "levelId": "hf-lvl-upper",
+      "programmeCode": "terrace",
+      "functionLabel": "Roof court",
+      "targetAreaM2": 22.3,
+      "outlineMm": [
         {
           "xMm": 8700,
           "yMm": 1700
@@ -372,289 +491,10 @@
           "yMm": 5900
         }
       ]
-    },
+    }
+  ],
+  "viewpoints": [
     {
-      "type": "createRoomOutline",
-      "id": "hf-room-kitchen-dining",
-      "name": "Kitchen / dining",
-      "levelId": "hf-lvl-ground",
-      "outlineMm": [
-        {
-          "xMm": 0,
-          "yMm": 0
-        },
-        {
-          "xMm": 4600,
-          "yMm": 0
-        },
-        {
-          "xMm": 4600,
-          "yMm": 4200
-        },
-        {
-          "xMm": 0,
-          "yMm": 4200
-        }
-      ],
-      "programmeCode": "kitchen_dining",
-      "functionLabel": "Kitchen / dining",
-      "finishSet": null,
-      "targetAreaM2": 18.4
-    },
-    {
-      "type": "createRoomOutline",
-      "id": "hf-room-living",
-      "name": "Living area",
-      "levelId": "hf-lvl-ground",
-      "outlineMm": [
-        {
-          "xMm": 0,
-          "yMm": 4200
-        },
-        {
-          "xMm": 4600,
-          "yMm": 4200
-        },
-        {
-          "xMm": 4600,
-          "yMm": 10000
-        },
-        {
-          "xMm": 0,
-          "yMm": 10000
-        }
-      ],
-      "programmeCode": "living",
-      "functionLabel": "Living",
-      "finishSet": null,
-      "targetAreaM2": 19.8
-    },
-    {
-      "type": "createRoomOutline",
-      "id": "hf-room-entry-stair",
-      "name": "Entry / stair hall",
-      "levelId": "hf-lvl-ground",
-      "outlineMm": [
-        {
-          "xMm": 4600,
-          "yMm": 0
-        },
-        {
-          "xMm": 8800,
-          "yMm": 0
-        },
-        {
-          "xMm": 8800,
-          "yMm": 10000
-        },
-        {
-          "xMm": 4600,
-          "yMm": 10000
-        }
-      ],
-      "programmeCode": "circulation",
-      "functionLabel": "Entry / stair",
-      "finishSet": null,
-      "targetAreaM2": 20
-    },
-    {
-      "type": "createRoomOutline",
-      "id": "hf-room-service",
-      "name": "Bath / laundry and utility",
-      "levelId": "hf-lvl-ground",
-      "outlineMm": [
-        {
-          "xMm": 8800,
-          "yMm": 0
-        },
-        {
-          "xMm": 10500,
-          "yMm": 0
-        },
-        {
-          "xMm": 10500,
-          "yMm": 5700
-        },
-        {
-          "xMm": 8800,
-          "yMm": 5700
-        }
-      ],
-      "programmeCode": "bath_laundry",
-      "functionLabel": "Bath / laundry",
-      "finishSet": null,
-      "targetAreaM2": 8.5
-    },
-    {
-      "type": "createRoomOutline",
-      "id": "hf-room-carport",
-      "name": "Recessed garage / carport",
-      "levelId": "hf-lvl-ground",
-      "outlineMm": [
-        {
-          "xMm": 10500,
-          "yMm": 0
-        },
-        {
-          "xMm": 14000,
-          "yMm": 0
-        },
-        {
-          "xMm": 14000,
-          "yMm": 5700
-        },
-        {
-          "xMm": 10500,
-          "yMm": 5700
-        }
-      ],
-      "programmeCode": "carport",
-      "functionLabel": "Garage / carport",
-      "finishSet": null,
-      "targetAreaM2": 19.25
-    },
-    {
-      "type": "createRoomOutline",
-      "id": "hf-room-primary",
-      "name": "Primary bedroom",
-      "levelId": "hf-lvl-upper",
-      "outlineMm": [
-        {
-          "xMm": 0,
-          "yMm": -350
-        },
-        {
-          "xMm": 4400,
-          "yMm": -350
-        },
-        {
-          "xMm": 4400,
-          "yMm": 4400
-        },
-        {
-          "xMm": 0,
-          "yMm": 4400
-        }
-      ],
-      "programmeCode": "bedroom",
-      "functionLabel": "Primary bedroom",
-      "finishSet": null,
-      "targetAreaM2": 17.6
-    },
-    {
-      "type": "createRoomOutline",
-      "id": "hf-room-ensuite",
-      "name": "Ensuite",
-      "levelId": "hf-lvl-upper",
-      "outlineMm": [
-        {
-          "xMm": 0,
-          "yMm": 6500
-        },
-        {
-          "xMm": 2800,
-          "yMm": 6500
-        },
-        {
-          "xMm": 2800,
-          "yMm": 10000
-        },
-        {
-          "xMm": 0,
-          "yMm": 10000
-        }
-      ],
-      "programmeCode": "bathroom",
-      "functionLabel": "Ensuite",
-      "finishSet": null,
-      "targetAreaM2": 5.2
-    },
-    {
-      "type": "createRoomOutline",
-      "id": "hf-room-hall",
-      "name": "Hall / landing",
-      "levelId": "hf-lvl-upper",
-      "outlineMm": [
-        {
-          "xMm": 4400,
-          "yMm": 1700
-        },
-        {
-          "xMm": 8700,
-          "yMm": 1700
-        },
-        {
-          "xMm": 8700,
-          "yMm": 6500
-        },
-        {
-          "xMm": 4400,
-          "yMm": 6500
-        }
-      ],
-      "programmeCode": "circulation",
-      "functionLabel": "Hall / landing",
-      "finishSet": null,
-      "targetAreaM2": 11.1
-    },
-    {
-      "type": "createRoomOutline",
-      "id": "hf-room-bedroom-2",
-      "name": "Bedroom 2",
-      "levelId": "hf-lvl-upper",
-      "outlineMm": [
-        {
-          "xMm": 10600,
-          "yMm": 6500
-        },
-        {
-          "xMm": 14000,
-          "yMm": 6500
-        },
-        {
-          "xMm": 14000,
-          "yMm": 10000
-        },
-        {
-          "xMm": 10600,
-          "yMm": 10000
-        }
-      ],
-      "programmeCode": "bedroom",
-      "functionLabel": "Bedroom 2",
-      "finishSet": null,
-      "targetAreaM2": 12.2
-    },
-    {
-      "type": "createRoomOutline",
-      "id": "hf-room-roof-court",
-      "name": "Open-to-sky roof court / terrace",
-      "levelId": "hf-lvl-upper",
-      "outlineMm": [
-        {
-          "xMm": 8700,
-          "yMm": 1700
-        },
-        {
-          "xMm": 14000,
-          "yMm": 1700
-        },
-        {
-          "xMm": 14000,
-          "yMm": 5900
-        },
-        {
-          "xMm": 8700,
-          "yMm": 5900
-        }
-      ],
-      "programmeCode": "terrace",
-      "functionLabel": "Roof court",
-      "finishSet": null,
-      "targetAreaM2": 22.3
-    },
-    {
-      "type": "saveViewpoint",
       "id": "vp-main-iso",
       "name": "Main front-left axonometric",
       "mode": "orbit_3d",
@@ -674,12 +514,9 @@
           "yMm": 0,
           "zMm": 1
         }
-      },
-      "hiddenSemanticKinds3d": [],
-      "cutawayStyle": null
+      }
     },
     {
-      "type": "saveViewpoint",
       "id": "vp-front-elev",
       "name": "Front elevation",
       "mode": "orbit_3d",
@@ -699,12 +536,9 @@
           "yMm": 0,
           "zMm": 1
         }
-      },
-      "hiddenSemanticKinds3d": [],
-      "cutawayStyle": null
+      }
     },
     {
-      "type": "saveViewpoint",
       "id": "vp-roof-court",
       "name": "Roof court high axonometric",
       "mode": "orbit_3d",
@@ -724,12 +558,9 @@
           "yMm": 0,
           "zMm": 1
         }
-      },
-      "hiddenSemanticKinds3d": [],
-      "cutawayStyle": null
+      }
     },
     {
-      "type": "saveViewpoint",
       "id": "vp-rear-axo",
       "name": "Rear/right axonometric",
       "mode": "orbit_3d",
@@ -749,10 +580,24 @@
           "yMm": 0,
           "zMm": 1
         }
-      },
-      "hiddenSemanticKinds3d": [],
-      "cutawayStyle": null
+      }
+    }
+  ],
+  "assumptions": [
+    {
+      "key": "dimension_source",
+      "value": "Floorplan dimensions 14 m by 10 m override earlier approximate brief dimensions for the rebuild.",
+      "confidence": 0.85,
+      "source": "spec/target-house/floorplan.png"
     },
+    {
+      "key": "folded_shell_representation",
+      "value": "The folded wrapper is assembled from typed walls, an asymmetric roof, frame sweeps, and return walls until a native folded-shell primitive exists.",
+      "confidence": 0.7,
+      "source": "spec/target-house/target-house-seed.md"
+    }
+  ],
+  "commands": [
     {
       "type": "createFloor",
       "id": "hf-uf-floor",
@@ -1498,11 +1343,5 @@
         }
       ]
     }
-  ],
-  "meta": {
-    "generatedBy": "@bim-ai/cli seed-dsl compile",
-    "recipeId": "target-house-1-methodology-rebuild",
-    "modelIdPlaceholder": "${BIM_AI_MODEL_ID}",
-    "intent": "Methodology-authored target-house seed from the image-locked reference spec and floorplan: white folded upper shell, recessed front loggia, roof-court void, vertical-clad base, stair, rooms, views, and schedules."
-  }
+  ]
 }

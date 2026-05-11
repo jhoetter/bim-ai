@@ -1,0 +1,92 @@
+{
+  "modelId": "6c3940ae-c0a1-5bc3-a0fa-38c9195b28d2",
+  "revision": 1,
+  "total": 26,
+  "groups": [
+    {
+      "severity": "info",
+      "code": "gltf_export_manifest_expected_extension_missing",
+      "count": 2,
+      "elementIds": [],
+      "messages": [
+        "glTF export manifest: extension 'bim_ai_skew_wall_hosted_openings_v0' not emitted but eligible element kind 'wall' is present (skipReasonCode='no_eligible_elements').",
+        "glTF export manifest: extension 'bim_ai_roof_unsupported_shape_summary_v0' not emitted but eligible element kind 'roof' is present (skipReasonCode='no_eligible_elements')."
+      ]
+    },
+    {
+      "severity": "info",
+      "code": "plan_view_sheet_viewport_crop_missing",
+      "count": 2,
+      "elementIds": [
+        "hf-pv-ground",
+        "hf-pv-upper",
+        "hf-sheet-ga01",
+        "hf-vp-sheet-ground",
+        "hf-vp-sheet-upper"
+      ],
+      "messages": [
+        "Plan view 'hf-pv-ground' placed on sheet 'hf-sheet-ga01' viewport 'hf-vp-sheet-ground' has no crop box (cropMinMm/cropMaxMm absent); the plan-on-sheet boundary is unconstrained.",
+        "Plan view 'hf-pv-upper' placed on sheet 'hf-sheet-ga01' viewport 'hf-vp-sheet-upper' has no crop box (cropMinMm/cropMaxMm absent); the plan-on-sheet boundary is unconstrained."
+      ]
+    },
+    {
+      "severity": "info",
+      "code": "plan_view_tag_style_fallback",
+      "count": 4,
+      "elementIds": ["hf-pv-ground", "hf-pv-upper"],
+      "messages": [
+        "Plan view 'Ground floor plan' has opening tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling.",
+        "Plan view 'Ground floor plan' has room tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling.",
+        "Plan view 'First floor plan' has opening tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling."
+      ]
+    },
+    {
+      "severity": "info",
+      "code": "room_color_scheme_identity_missing",
+      "count": 1,
+      "elementIds": [],
+      "messages": [
+        "No room color scheme element found. Use upsertRoomColorScheme to author overrides."
+      ]
+    },
+    {
+      "severity": "info",
+      "code": "room_finish_metadata_hint",
+      "count": 10,
+      "elementIds": [
+        "hf-room-bedroom-2",
+        "hf-room-carport",
+        "hf-room-ensuite",
+        "hf-room-entry-stair",
+        "hf-room-hall",
+        "hf-room-kitchen-dining",
+        "hf-room-living",
+        "hf-room-primary",
+        "hf-room-roof-court",
+        "hf-room-service"
+      ],
+      "messages": [
+        "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete."
+      ]
+    },
+    {
+      "severity": "info",
+      "code": "room_target_area_mismatch",
+      "count": 7,
+      "elementIds": [
+        "hf-room-ensuite",
+        "hf-room-entry-stair",
+        "hf-room-hall",
+        "hf-room-kitchen-dining",
+        "hf-room-living",
+        "hf-room-primary",
+        "hf-room-service"
+      ],
+      "messages": [
+        "Room outline area (9.800 m²) differs from targetAreaM2 (5.200 m²) beyond the advisory tolerance.",
+        "Room outline area (42.000 m²) differs from targetAreaM2 (20.000 m²) beyond the advisory tolerance.",
+        "Room outline area (20.640 m²) differs from targetAreaM2 (11.100 m²) beyond the advisory tolerance."
+      ]
+    }
+  ]
+}

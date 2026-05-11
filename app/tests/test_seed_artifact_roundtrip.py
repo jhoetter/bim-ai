@@ -72,6 +72,15 @@ def test_checked_in_target_house_seed_artifact_is_portable_and_loadable() -> Non
     assert manifest["bundle"] == "bundle.json"
     assert (artifact_dir / "source" / "target-house-seed.md").is_file()
 
+    bundle = json.loads((artifact_dir / "bundle.json").read_text(encoding="utf8"))
+    commands = bundle["commands"]
+    command_types = {command["type"] for command in commands}
+    assert "createMass" not in command_types
+    assert "deleteElement" not in command_types
+    assert "createRoofOpening" in command_types
+    assert (artifact_dir / "evidence" / "target-house-1.recipe.json").is_file()
+    assert (artifact_dir / "evidence" / "sketch-ir.json").is_file()
+
     doc, wire = _materialize(artifact)
 
     assert manifest["commandCount"] > 0
@@ -79,3 +88,4 @@ def test_checked_in_target_house_seed_artifact_is_portable_and_loadable() -> Non
     assert isinstance(doc.elements.get("hf-pbp"), ProjectBasePointElem)
     assert isinstance(doc.elements.get("hf-lvl-ground"), LevelElem)
     assert "hf-roof-main" in wire["elements"]
+    assert "hf-roof-court-opening" in wire["elements"]

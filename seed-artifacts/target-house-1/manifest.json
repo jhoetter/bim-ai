@@ -3,23 +3,23 @@
   "name": "target-house-1",
   "slug": "target-house-1",
   "title": "Target House 1",
-  "description": "Modern two-level target house seed packaged from spec/target-house.",
+  "description": "Modern two-level target house seed rebuilt from the sketch-to-BIM methodology recipe.",
   "bundle": "bundle.json",
   "sourceRoot": "source",
   "evidenceRoot": "evidence",
   "createdAt": "2026-05-11T00:00:00.000Z",
   "generatedBy": {
-    "tool": "scripts/create-seed-artifact.mjs",
+    "tool": "packages/cli/cli.mjs seed-dsl compile + scripts/create-seed-artifact.mjs",
     "version": 1
   },
   "inputPaths": {
     "source": "spec/target-house",
-    "bundle": "target-house-1-bundle.json"
+    "bundle": "seed-artifacts/target-house-1/evidence/target-house-1.recipe.json"
   },
-  "bundleSha256": "f4e29e269fab7a3d767398460199d84077639185ab9d633cb974ce762976721a",
-  "commandCount": 80,
+  "bundleSha256": "209e41daa4263097199b60c5f3777a1b4f821e4356e4627c7cfcc05a94de8854",
+  "commandCount": 86,
   "commandSchemaVersion": "cmd-v3.0",
   "entryComment": {
-    "body": "Modern two-level target house seed packaged from spec/target-house."
+    "body": "Modern two-level target house seed rebuilt from the sketch-to-BIM methodology recipe."
   }
 }

@@ -1,0 +1,240 @@
+{
+  "schemaVersion": "sketch-understanding-ir.v0",
+  "projectType": "single_family_house",
+  "qualityTarget": "project_initiation_bim",
+  "sourceInputs": {
+    "images": ["source/target-house-1.png", "source/target-house-2.png", "source/floorplan.png"],
+    "briefs": ["source/target-house-seed.md"],
+    "userInstruction": "Create a BIM seed model from this sketch and floorplan that is usable as the project starting point."
+  },
+  "visualRead": {
+    "primaryView": "front-left axonometric",
+    "style": "minimalist",
+    "dominantVolumes": [
+      {
+        "id": "upper-wrapper",
+        "description": "large smooth white upper wrapper shell",
+        "priority": "critical"
+      },
+      {
+        "id": "ground-base",
+        "description": "vertically clad ground-floor base",
+        "priority": "critical"
+      },
+      {
+        "id": "front-loggia",
+        "description": "deep upper-front loggia inside a thick white frame",
+        "priority": "critical"
+      },
+      {
+        "id": "roof-court",
+        "description": "open-to-sky roof court cut into the upper right roof plane",
+        "priority": "critical"
+      }
+    ],
+    "nonNegotiables": [
+      "white roof/wall wrapper must not read as a dark conventional roof",
+      "roof court/terrace must be visible as a cutout with return faces",
+      "front loggia must be recessed behind a thick white frame",
+      "ground floor and central upper pier use vertical cladding",
+      "stairs and occupied rooms must be present enough for project initiation"
+    ],
+    "forbiddenOutcomes": [
+      "generic gable roof on a box",
+      "semantic-only roof opening that does not render",
+      "conceptual mass elements left in the final envelope",
+      "room-separation workaround replacing real partitions and doors"
+    ]
+  },
+  "dimensions": {
+    "confidence": "high",
+    "overallWidthMm": 14000,
+    "overallDepthMm": 10000,
+    "floorToFloorMm": 3000,
+    "frontLoggiaDepthMm": 1200,
+    "roofCourtWidthMm": 5300,
+    "roofCourtDepthMm": 4200
+  },
+  "programme": [
+    {
+      "name": "Kitchen / dining",
+      "level": "ground",
+      "programmeCode": "kitchen_dining",
+      "targetAreaM2": 18.4,
+      "requiredDoor": false
+    },
+    {
+      "name": "Living area",
+      "level": "ground",
+      "programmeCode": "living",
+      "targetAreaM2": 19.8,
+      "requiredDoor": false
+    },
+    {
+      "name": "Entry / stair",
+      "level": "ground",
+      "programmeCode": "circulation",
+      "targetAreaM2": 20,
+      "requiredDoor": true
+    },
+    {
+      "name": "Bath / laundry",
+      "level": "ground",
+      "programmeCode": "bath_laundry",
+      "targetAreaM2": 8.5,
+      "requiredDoor": true
+    },
+    {
+      "name": "Primary bedroom",
+      "level": "upper",
+      "programmeCode": "bedroom",
+      "targetAreaM2": 17.6,
+      "requiredDoor": true
+    },
+    {
+      "name": "Bedroom 2",
+      "level": "upper",
+      "programmeCode": "bedroom",
+      "targetAreaM2": 12.2,
+      "requiredDoor": true
+    },
+    {
+      "name": "Ensuite",
+      "level": "upper",
+      "programmeCode": "bathroom",
+      "targetAreaM2": 5.2,
+      "requiredDoor": true
+    },
+    {
+      "name": "Hall / landing",
+      "level": "upper",
+      "programmeCode": "circulation",
+      "targetAreaM2": 11.1,
+      "requiredDoor": true
+    },
+    {
+      "name": "Roof court / terrace",
+      "level": "upper",
+      "programmeCode": "terrace",
+      "targetAreaM2": 22.3,
+      "requiredDoor": true
+    }
+  ],
+  "features": [
+    {
+      "id": "white_folded_wrapper",
+      "kind": "folded_white_wrapper_shell",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["vp-main-iso", "vp-front-elev", "vp-roof-court"],
+      "capabilityNeeds": [
+        "createWall",
+        "createRoof",
+        "attachWallTopToRoof",
+        "createSweep",
+        "material assignment"
+      ]
+    },
+    {
+      "id": "front_loggia",
+      "kind": "recessed_loggia",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["vp-main-iso", "vp-front-elev", "hf-pv-upper"],
+      "capabilityNeeds": [
+        "setWallRecessZones",
+        "createBalcony",
+        "insertDoorOnWall",
+        "insertWindowOnWall"
+      ]
+    },
+    {
+      "id": "roof_court_void",
+      "kind": "roof_opening_with_occupied_terrace",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["vp-main-iso", "vp-roof-court", "vp-rear-axo"],
+      "capabilityNeeds": [
+        "createRoofOpening",
+        "createFloor",
+        "createWall",
+        "createRailing",
+        "insertDoorOnWall"
+      ]
+    },
+    {
+      "id": "ground_vertical_cladding",
+      "kind": "vertical_cladding",
+      "visualPriority": "medium",
+      "mustRenderInViews": ["vp-main-iso", "vp-front-elev"],
+      "capabilityNeeds": ["material assignment", "wall type layers"]
+    },
+    {
+      "id": "usable_residential_plan",
+      "kind": "room_access_and_enclosure",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["hf-pv-ground", "hf-pv-upper", "vp-main-iso"],
+      "capabilityNeeds": [
+        "createRoomOutline",
+        "createWall",
+        "insertDoorOnWall",
+        "createStair",
+        "createSlabOpening"
+      ]
+    }
+  ],
+  "requiredViews": [
+    {
+      "id": "vp-main-iso",
+      "kind": "3d",
+      "purpose": "Sketch-matched front-left axonometric showing wrapper, loggia, roof court, and ground cladding."
+    },
+    {
+      "id": "vp-front-elev",
+      "kind": "elevation",
+      "purpose": "Front facade evidence for loggia bay rhythm, rail, ground openings, and cladding."
+    },
+    {
+      "id": "vp-roof-court",
+      "kind": "3d",
+      "purpose": "High axonometric proving the roof court reads as an occupied void."
+    },
+    {
+      "id": "vp-rear-axo",
+      "kind": "3d",
+      "purpose": "Rear/right view checking roof-court depth and white return faces."
+    },
+    {
+      "id": "hf-pv-ground",
+      "kind": "plan",
+      "purpose": "Ground-floor plan topology and room/stair/access check."
+    },
+    {
+      "id": "hf-pv-upper",
+      "kind": "plan",
+      "purpose": "Upper-floor plan topology, roof-court access, loggia, and stair opening check."
+    },
+    {
+      "id": "hf-sec-loggia",
+      "kind": "diagnostic",
+      "purpose": "Section/diagnostic view through the front loggia and wrapper frame."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "dimension_source",
+      "statement": "Floorplan dimensions 14 m by 10 m override earlier approximate brief dimensions for this rebuild.",
+      "confidence": "high",
+      "validation": "Cross-check generated exterior footprint and room target areas against source/floorplan.png dimensions."
+    },
+    {
+      "id": "folded_shell_representation",
+      "statement": "The folded wrapper is assembled from typed walls, an asymmetric roof, frame sweeps, and return walls until a native folded-shell primitive exists.",
+      "confidence": "medium",
+      "validation": "Inspect vp-main-iso, vp-front-elev, and vp-roof-court screenshots for a continuous white wrapper silhouette."
+    },
+    {
+      "id": "cladding_grain",
+      "statement": "Vertical cladding intent is carried by material/layer metadata; board grooves need live renderer review and may remain a visual tolerance.",
+      "confidence": "medium",
+      "validation": "Inspect front and side screenshots and material schedule rows for cladding_beige_grey on the ground base and loggia pier."
+    }
+  ]
+}
