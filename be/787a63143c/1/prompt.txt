@@ -1,0 +1,92 @@
+please carefully investigate the warning system of our software; is it 100% feature complete? for instance, i am a bit surprised because i had a shelf going through a wall for instance, and it didnt recognize this. or do we understand load-bearing walls? i want to ensure that the house being designed can also actually be built, and that we have a feature complete system that understands that. please analyze the current state
+
+---
+
+ok, then please create a document tracker that we can use for this under spec , and analyze deeply how systems like navisworks and the likes function, how our system can incorporate this, what kind of gaps you see and so on. your task isn't yet to fully develop everything, but to analyze, to specify, to identify. write a really thorough document for exactly that.
+
+---
+
+ok, then please go ahead and fully implement all of those ; each workpackage, branch out, commit, push and then merge into main; until you are fully done. please ensure that the issues detected also pop up in our warning system (if that is how it should be?), e.g. we have detections for rooms without doors and such -> would any issues also pop up there then as well? 
+
+go ahead and implement; parallelize what you can parallelize via dispatching subagents, as many as possible and how it makes sense. don't stop until you are completely done.
+
+---
+
+all merged with main? please do if not yet
+
+---
+
+can you please see to update accordingly that everything is on main and meged?
+
+---
+
+but i still have this:
+git status
+On branch feature/constructability-warning-system
+Your branch is up to date with 'origin/feature/constructability-warning-system'.
+
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   .gitignore
+	modified:   Makefile
+	modified:   app/bim_ai/prd_blocking_advisor_matrix.py
+	modified:   app/bim_ai/prd_closeout_cross_correlation.py
+	modified:   app/bim_ai/routes_api.py
+	modified:   app/bim_ai/skb/brief.py
+	modified:   app/bim_ai/v1_closeout_readiness_manifest.py
+	modified:   app/scripts/seed.py
+	modified:   app/tests/test_final_hardening_sweep.py
+	deleted:    app/tests/test_one_family_bundle_roundtrip.py
+	modified:   app/tests/test_prd_traceability_matrix.py
+	modified:   claude-skills/sketch-to-bim/SKILL.md
+	deleted:    nightshift/seed-target-house-2026-05-11/advisor-info.json
+	deleted:    nightshift/seed-target-house-2026-05-11/advisor-warning.json
+	deleted:    nightshift/seed-target-house-2026-05-11/assumptions.md
+	deleted:    nightshift/seed-target-house-2026-05-11/capability-plan.md
+	deleted:    nightshift/seed-target-house-2026-05-11/initiation-check/acceptance-gates.json
+	deleted:    nightshift/seed-target-house-2026-05-11/initiation-check/capability-coverage.json
+	deleted:    nightshift/seed-target-house-2026-05-11/initiation-check/sketch-ir.json
+	deleted:    nightshift/seed-target-house-2026-05-11/initiation-check/status.md
+	deleted:    nightshift/seed-target-house-2026-05-11/initiation-check/visual-checklist.json
+	deleted:    nightshift/seed-target-house-2026-05-11/seed-target-house-front-elev-actual.png
+	deleted:    nightshift/seed-target-house-2026-05-11/seed-target-house-main-iso-actual.png
+	deleted:    nightshift/seed-target-house-2026-05-11/seed-target-house-rear-axo-actual.png
+	deleted:    nightshift/seed-target-house-2026-05-11/seed-target-house-side-elev-east-actual.png
+	deleted:    nightshift/seed-target-house-2026-05-11/seed-target-house-terrace-cutout-actual.png
+	deleted:    nightshift/seed-target-house-2026-05-11/sketch-ir.json
+	deleted:    nightshift/seed-target-house-2026-05-11/validate.json
+	deleted:    nightshift/seed-target-house-2026-05-11/visual-readout.md
+	modified:   packages/cli/cli.initiationCheck.test.mjs
+	modified:   packages/cli/cli.mjs
+	deleted:    packages/cli/lib/one-family-home-commands.mjs
+	deleted:    packages/web/e2e/__fixtures__/seed-target-house-snapshot.json
+	deleted:    packages/web/e2e/seed-target-house.spec.ts
+	modified:   packages/web/src/plan/planElementMeshBuilders.ts
+	modified:   packages/web/src/plan/symbology.wirePrimitives.test.ts
+	modified:   packages/web/src/state/storeCoercion.ts
+	modified:   packages/web/src/workspace/Workspace.tsx
+	modified:   packages/web/src/workspace/project/ProjectMenu.test.tsx
+	modified:   packages/web/src/workspace/project/ProjectMenu.tsx
+	modified:   packages/web/src/workspace/project/index.ts
+	modified:   packages/web/src/workspace/useWorkspaceSnapshot.ts
+	deleted:    scripts/apply-one-family-home.mjs
+	deleted:    scripts/build-seed-snapshot.mjs
+	modified:   spec/examples/seed-dsl-modern-house.example.json
+	modified:   spec/examples/sketch-understanding-ir-documentation.example.json
+	modified:   spec/examples/sketch-understanding-ir.example.json
+	modified:   spec/sketch-to-bim-methodology.md
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	app/tests/test_seed_artifact_roundtrip.py
+	scripts/create-seed-artifact.mjs
+	seed-artifacts/
+	spec/seed-artifacts.md
+	spec/ux-masterclass.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+---
+
+can you merge EVERYTHING into main? ...
