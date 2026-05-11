@@ -291,6 +291,13 @@ export type ConstructabilityIssue = {
   discipline?: string | null;
   blockingClass?: string | null;
   recommendation?: string | null;
+  suppression?: {
+    id: string;
+    ruleId?: string | null;
+    elementIds: string[];
+    reason: string;
+    expiresRevision?: number | null;
+  };
 };
 
 export type ConstructabilityReport = {
@@ -301,6 +308,7 @@ export type ConstructabilityReport = {
   summary: {
     findingCount: number;
     issueCount: number;
+    suppressedFindingCount?: number;
     severityCounts: Record<string, number>;
     ruleCounts: Record<string, number>;
     statusCounts: Record<string, number>;

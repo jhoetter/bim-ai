@@ -2046,6 +2046,17 @@ class BcfElem(BaseModel):
     evidence_refs: list[EvidenceRef] = Field(default_factory=list, alias="evidenceRefs")
 
 
+class ConstructabilitySuppressionElem(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["constructability_suppression"] = "constructability_suppression"
+    id: str
+    rule_id: str | None = Field(default=None, alias="ruleId")
+    element_ids: list[str] = Field(default_factory=list, alias="elementIds")
+    reason: str
+    active: bool = True
+    expires_revision: int | None = Field(default=None, alias="expiresRevision")
+
+
 AgentAssumptionSource = Literal["manual", "bundle_dry_run", "evidence_summary"]
 AgentAssumptionClosureStatus = Literal["open", "resolved", "accepted", "deferred"]
 # SKB-08: phaseId values match the SKB-12 cookbook's seven phase tags.
@@ -3248,6 +3259,7 @@ Element = Annotated[
     | ScheduleElem
     | CalloutElem
     | BcfElem
+    | ConstructabilitySuppressionElem
     | AgentAssumptionElem
     | AgentDeviationElem
     | ValidationRuleElem

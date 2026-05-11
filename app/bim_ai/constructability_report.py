@@ -6,7 +6,11 @@ from typing import Any
 
 from bim_ai.constraints import evaluate
 from bim_ai.constraints_core import Violation
-from bim_ai.constructability_issues import ConstructabilityIssue, reconcile_findings
+from bim_ai.constructability_issues import (
+    ConstructabilityIssue,
+    fingerprint_violation,
+    reconcile_findings,
+)
 from bim_ai.elements import Element
 
 CONSTRUCTABILITY_RULE_IDS = frozenset(
@@ -65,11 +69,28 @@ def build_constructability_report(
     previous_issues: Iterable[ConstructabilityIssue | Mapping[str, Any]] = (),
 ) -> dict[str, Any]:
     violations = [v for v in evaluate(elements) if v.rule_id in CONSTRUCTABILITY_RULE_IDS]
-    findings = [_finding_dict(v) for v in violations]
-    issues = reconcile_findings(previous_issues, findings, revision=revision)
+    all_findings = [_finding_dict(v) for v in violations]
+    suppressions = _suppression_records(elements, revision=revision)
+    active_findings: list[dict[str, Any]] = []
+    suppressed_by_fingerprint: dict[str, dict[str, Any]] = {}
+    for finding in all_findings:
+        suppression = _matching_suppression(finding, suppressions)
+        if suppression is None:
+            active_findings.append(finding)
+            continue
+        fingerprint = fingerprint_violation(finding)
+        suppressed_by_fingerprint[fingerprint] = suppression
 
-    severity_counts = Counter(str(f.get("severity") or "unknown") for f in findings)
-    rule_counts = Counter(str(f.get("ruleId") or "unknown") for f in findings)
+    issues = reconcile_findings(previous_issues, all_findings, revision=revision)
+    for issue in issues:
+        suppression = suppressed_by_fingerprint.get(str(issue.get("fingerprint") or ""))
+        if suppression is None:
+            continue
+        issue["status"] = "suppressed"
+        issue["suppression"] = suppression
+
+    severity_counts = Counter(str(f.get("severity") or "unknown") for f in active_findings)
+    rule_counts = Counter(str(f.get("ruleId") or "unknown") for f in active_findings)
     status_counts = Counter(str(i.get("status") or "unknown") for i in issues)
 
     return {
@@ -77,14 +98,15 @@ def build_constructability_report(
         "revision": revision,
         "profile": "authoring_default",
         "summary": {
-            "findingCount": len(findings),
+            "findingCount": len(active_findings),
             "issueCount": len(issues),
+            "suppressedFindingCount": len(suppressed_by_fingerprint),
             "severityCounts": dict(sorted(severity_counts.items())),
             "ruleCounts": dict(sorted(rule_counts.items())),
             "statusCounts": dict(sorted(status_counts.items())),
         },
         "findings": sorted(
-            findings,
+            active_findings,
             key=lambda f: (
                 str(f.get("ruleId") or ""),
                 tuple(str(eid) for eid in f.get("elementIds") or []),
@@ -110,3 +132,54 @@ def _finding_dict(violation: Violation) -> dict[str, Any]:
         "Inspect the affected elements and resolve the constructability condition.",
     )
     return data
+
+
+def _suppression_records(
+    elements: dict[str, Element],
+    *,
+    revision: str | int,
+) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for element in elements.values():
+        if getattr(element, "kind", None) != "constructability_suppression":
+            continue
+        if getattr(element, "active", True) is not True:
+            continue
+        expires_revision = getattr(element, "expires_revision", None)
+        if isinstance(revision, int) and isinstance(expires_revision, int):
+            if revision > expires_revision:
+                continue
+        records.append(
+            {
+                "id": str(element.id),
+                "ruleId": getattr(element, "rule_id", None),
+                "elementIds": sorted(str(eid) for eid in getattr(element, "element_ids", [])),
+                "reason": str(element.reason),
+                "expiresRevision": expires_revision,
+            }
+        )
+    records.sort(
+        key=lambda record: (
+            str(record.get("ruleId") or ""),
+            tuple(record.get("elementIds") or []),
+            str(record.get("id") or ""),
+        )
+    )
+    return records
+
+
+def _matching_suppression(
+    finding: Mapping[str, Any],
+    suppressions: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    finding_rule = str(finding.get("ruleId") or "")
+    finding_elements = {str(eid) for eid in finding.get("elementIds") or []}
+    for suppression in suppressions:
+        suppressed_rule = suppression.get("ruleId")
+        if suppressed_rule and str(suppressed_rule) != finding_rule:
+            continue
+        suppressed_elements = {str(eid) for eid in suppression.get("elementIds") or []}
+        if suppressed_elements and not suppressed_elements.issubset(finding_elements):
+            continue
+        return suppression
+    return None

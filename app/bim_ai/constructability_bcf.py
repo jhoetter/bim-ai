@@ -25,7 +25,7 @@ def build_constructability_bcf_export(
     topics: list[dict[str, Any]] = []
     viewpoints: list[dict[str, Any]] = []
     for issue in report["issues"]:
-        if issue.get("status") == "resolved":
+        if issue.get("status") in {"resolved", "suppressed"}:
             continue
         topic = _topic_for_issue(issue)
         viewpoint = _viewpoint_for_issue(issue, participant_bboxes)
