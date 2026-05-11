@@ -64,6 +64,7 @@ def constructability_advisory_violations(elements: dict[str, Element]) -> list[V
     violations.extend(_stair_headroom_violations(participants_by_kind))
     violations.extend(_room_door_access_violations(elements, walls_by_id))
     violations.extend(_door_clearance_violations(elements, participants_by_kind))
+    violations.extend(_window_operation_clearance_violations(elements, participants_by_kind))
     violations.extend(_load_bearing_metadata_violations(walls_by_id))
     violations.extend(_large_opening_violations(elements, walls_by_id))
     violations.extend(_load_bearing_wall_removed_violations(walls_by_id))
@@ -438,6 +439,55 @@ def _room_door_access_violations(
                 element_ids=[element.id],
             )
         )
+    return violations
+
+
+def _window_operation_clearance_violations(
+    elements: dict[str, Element],
+    participants_by_kind: dict[str, list[PhysicalParticipant]],
+) -> list[Violation]:
+    obstructions = [
+        participant
+        for kind in ("placed_asset", "family_instance", "wall")
+        for participant in participants_by_kind.get(kind, [])
+    ]
+    if not obstructions:
+        return []
+
+    walls_by_id = {
+        element.id: element for element in elements.values() if isinstance(element, WallElem)
+    }
+    violations: list[Violation] = []
+    for element in elements.values():
+        if not isinstance(element, WindowElem):
+            continue
+        wall = walls_by_id.get(element.wall_id)
+        if wall is None:
+            continue
+        clearance = _window_clearance_aabb(element, wall)
+        if clearance is None:
+            continue
+        for obstruction in obstructions:
+            if obstruction.element_id == wall.id:
+                continue
+            source = elements.get(obstruction.element_id)
+            if getattr(source, "host_element_id", None) == wall.id:
+                continue
+            if not _levels_compatible(getattr(source, "level_id", None), wall.level_id):
+                continue
+            if aabb_overlaps(clearance, obstruction.aabb, tolerance_mm=_CLASH_TOLERANCE_MM):
+                violations.append(
+                    Violation(
+                        rule_id="window_operation_clearance_conflict",
+                        severity="warning",
+                        message=(
+                            "Window operation/maintenance clearance overlaps "
+                            f"{_door_obstruction_label(obstruction)}; revise nearby objects "
+                            "or the window/opening."
+                        ),
+                        element_ids=sorted([element.id, obstruction.element_id]),
+                    )
+                )
     return violations
 
 
@@ -911,6 +961,29 @@ def _door_clearance_aabb(door: DoorElem, wall: WallElem) -> AABB | None:
     xs = [point[0] for point in points]
     ys = [point[1] for point in points]
     return AABB(min(xs), min(ys), -1_000_000.0, max(xs), max(ys), 1_000_000.0)
+
+
+def _window_clearance_aabb(window: WindowElem, wall: WallElem) -> AABB | None:
+    wall_len = wall_length_mm(wall)
+    if wall_len <= 0:
+        return None
+    ux, uy = wall_unit_dir(wall)
+    nx, ny = -uy, ux
+    cx = float(wall.start.x_mm) + (float(wall.end.x_mm) - float(wall.start.x_mm)) * window.along_t
+    cy = float(wall.start.y_mm) + (float(wall.end.y_mm) - float(wall.start.y_mm)) * window.along_t
+    half_along = max(float(window.width_mm) / 2.0, 450.0)
+    operation_depth = max(600.0, float(window.width_mm) * 0.35)
+    points = [
+        (cx - ux * half_along - nx * operation_depth, cy - uy * half_along - ny * operation_depth),
+        (cx + ux * half_along - nx * operation_depth, cy + uy * half_along - ny * operation_depth),
+        (cx - ux * half_along + nx * operation_depth, cy - uy * half_along + ny * operation_depth),
+        (cx + ux * half_along + nx * operation_depth, cy + uy * half_along + ny * operation_depth),
+    ]
+    xs = [point[0] for point in points]
+    ys = [point[1] for point in points]
+    base_z = float(window.sill_height_mm)
+    top_z = float(window.sill_height_mm + window.height_mm)
+    return AABB(min(xs), min(ys), base_z, max(xs), max(ys), top_z)
 
 
 def _door_midpoint(door: DoorElem, wall: WallElem) -> tuple[float, float]:

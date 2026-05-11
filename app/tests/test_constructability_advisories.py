@@ -24,6 +24,7 @@ from bim_ai.elements import (
     StairElem,
     WallElem,
     WallOpeningElem,
+    WindowElem,
 )
 
 
@@ -677,6 +678,45 @@ def test_room_without_connected_door_access_is_reported() -> None:
         alongT=0.95,
     )
     assert "room_without_door_access" in _rule_ids(elements)
+
+
+def test_window_operation_clearance_conflict_is_reported() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "wall-1": _wall(),
+        "window-1": WindowElem(
+            kind="window",
+            id="window-1",
+            wallId="wall-1",
+            alongT=0.5,
+            widthMm=1000,
+            sillHeightMm=600,
+            heightMm=1200,
+        ),
+        "asset-shelf": _asset_library(),
+        "shelf-1": PlacedAssetElem(
+            kind="placed_asset",
+            id="shelf-1",
+            name="Shelf",
+            assetId="asset-shelf",
+            levelId="lvl-1",
+            positionMm={"xMm": 2000, "yMm": 350},
+            paramValues={"widthMm": 600, "depthMm": 300, "proxyHeightMm": 1200},
+        ),
+    }
+
+    assert "window_operation_clearance_conflict" in _rule_ids(elements)
+
+    elements["shelf-1"] = PlacedAssetElem(
+        kind="placed_asset",
+        id="shelf-1",
+        name="Shelf",
+        assetId="asset-shelf",
+        levelId="lvl-1",
+        positionMm={"xMm": 2000, "yMm": 1200},
+        paramValues={"widthMm": 600, "depthMm": 300, "proxyHeightMm": 1200},
+    )
+    assert "window_operation_clearance_conflict" not in _rule_ids(elements)
 
 
 def test_family_instance_without_proxy_dimensions_reports_coverage_gap() -> None:
