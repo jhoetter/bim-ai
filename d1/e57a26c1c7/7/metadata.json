@@ -1,0 +1,100 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "d1e57a26c1c7",
+  "session_id": "019e1646-659c-7373-bd65-79cdf02a5180",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-11T11:31:55.512296Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/core/src/index.ts",
+    "spec/revit-parity/README.md",
+    "spec/revit-parity/ch13-3d-plan-presentation.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "3769cdfa8c18",
+  "token_usage": {
+    "input_tokens": 1720557,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 96284672,
+    "output_tokens": 217694,
+    "api_call_count": 723
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-11T11:31:55.397546Z",
+    "agent_lines": 88,
+    "agent_removed": 3,
+    "human_added": 1056,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 1145,
+    "total_lines_changed": 1151,
+    "agent_percentage": 7.90616854908775,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 488,
+      "user_lines_removed": 89,
+      "agent_lines_added": 621,
+      "agent_lines_removed": 66,
+      "user_added_per_file": {
+        "app/bim_ai/img/dimension_inference.py": 76,
+        "app/tests/test_trc_v3_02_dimension_inference.py": 34,
+        "packages/web/src/cmdPalette/defaultCommands.ts": 8,
+        "packages/web/src/cmdPalette/registry.ts": 1,
+        "packages/web/src/design-systems/visualRegressionBaselines.ts": 1,
+        "packages/web/src/state/modeController.test.ts": 4,
+        "packages/web/src/state/modeController.ts": 2,
+        "packages/web/src/tools/toolRegistry.ts": 10,
+        "packages/web/src/workspace/ModeShells.test.tsx": 34,
+        "packages/web/src/workspace/ModeShells.tsx": 71,
+        "packages/web/src/workspace/Workspace.tsx": 10,
+        "packages/web/src/workspace/WorkspaceHelpers.tsx": 3,
+        "packages/web/src/workspace/chrome/WorkspaceSwitcher.test.tsx": 24,
+        "packages/web/src/workspace/chrome/workspaces.ts": 8,
+        "packages/web/src/workspace/commandCapabilities.test.ts": 1,
+        "packages/web/src/workspace/commandCapabilities.ts": 16,
+        "packages/web/src/workspace/shell/AppShell.test.tsx": 34,
+        "packages/web/src/workspace/shell/StatusBar.tsx": 8,
+        "packages/web/src/workspace/shell/TabBar.tsx": 11,
+        "packages/web/src/workspace/shell/TopBar.tsx": 12,
+        "packages/web/src/workspace/tabsModel.ts": 10,
+        "packages/web/src/workspace/viewport/CanvasMount.tsx": 7,
+        "spec/revit-parity/ch13-3d-plan-presentation.md": 3,
+        "spec/ux-feature-ledger.json": 75,
+        "spec/ux-reachability-matrix.md": 25
+      },
+      "user_removed_per_file": {
+        "packages/web/src/cmdPalette/registry.ts": 1,
+        "packages/web/src/design-systems/visualRegressionBaselines.ts": 1,
+        "packages/web/src/state/modeController.test.ts": 3,
+        "packages/web/src/state/modeController.ts": 1,
+        "packages/web/src/tools/toolRegistry.ts": 2,
+        "packages/web/src/workspace/Workspace.tsx": 1,
+        "packages/web/src/workspace/chrome/WorkspaceSwitcher.test.tsx": 2,
+        "packages/web/src/workspace/chrome/WorkspaceSwitcher.tsx": 40,
+        "packages/web/src/workspace/chrome/workspaces.ts": 1,
+        "packages/web/src/workspace/shell/StatusBar.tsx": 2,
+        "packages/web/src/workspace/shell/TabBar.tsx": 1,
+        "packages/web/src/workspace/shell/TopBar.tsx": 1,
+        "packages/web/src/workspace/tabsModel.ts": 1,
+        "spec/revit-parity/ch13-3d-plan-presentation.md": 1,
+        "spec/ux-feature-ledger.json": 8,
+        "spec/ux-reachability-matrix.md": 23
+      }
+    }
+  ]
+}
