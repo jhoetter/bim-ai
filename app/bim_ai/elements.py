@@ -107,6 +107,7 @@ DEFAULT_DISCIPLINE_BY_KIND: dict[str, DisciplineTag] = {
 
 WallLayerFunction = Literal["structure", "insulation", "finish"]
 WallBasisLine = Literal["center", "face_interior", "face_exterior"]
+WallStructuralRole = Literal["unknown", "load_bearing", "non_load_bearing"]
 PlanDetailLevelPlan = Literal["coarse", "medium", "fine"]
 PhaseFilter = Literal["all", "existing", "demolition", "new"]
 ViewTemplateControlledField = Literal[
@@ -377,6 +378,13 @@ class WallElem(BaseModel):
     roof_attachment_id: str | None = Field(default=None, alias="roofAttachmentId")
     insulation_extension_mm: float = Field(default=0, alias="insulationExtensionMm")
     material_key: str | None = Field(default=None, alias="materialKey")
+    load_bearing: bool | None = Field(default=None, alias="loadBearing")
+    structural_role: WallStructuralRole = Field(default="unknown", alias="structuralRole")
+    analytical_participation: bool = Field(default=False, alias="analyticalParticipation")
+    structural_material_key: str | None = Field(default=None, alias="structuralMaterialKey")
+    structural_intent_confidence: float | None = Field(
+        default=None, alias="structuralIntentConfidence", ge=0, le=1
+    )
     # IFC-04: optional OmniClass / Uniclass / NSCC code; emitted via
     # IfcClassificationReference when set.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")

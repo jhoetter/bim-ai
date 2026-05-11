@@ -569,6 +569,7 @@ export type RoomColorSchemeRow = {
 };
 
 export type WallLayerFunction = 'structure' | 'insulation' | 'finish';
+export type WallStructuralRole = 'unknown' | 'load_bearing' | 'non_load_bearing';
 
 export type WallTypeLayer = {
   thicknessMm: number;
@@ -914,6 +915,11 @@ export type Element =
       thicknessMm: number;
       heightMm: number;
       materialKey?: string | null;
+      loadBearing?: boolean | null;
+      structuralRole?: WallStructuralRole;
+      analyticalParticipation?: boolean;
+      structuralMaterialKey?: string | null;
+      structuralIntentConfidence?: number | null;
       wallTypeId?: string | null;
       baseConstraintLevelId?: string | null;
       topConstraintLevelId?: string | null;
