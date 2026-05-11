@@ -54,6 +54,7 @@ CONSTRUCTABILITY_RULE_IDS = frozenset(
         "stair_headroom_clearance_conflict",
         FURNITURE_WALL_CLEARANCE_RULE_ID,
         "roof_wall_coverage_gap",
+        "roof_low_slope_without_drainage_metadata",
         METADATA_REQUIREMENT_RULE_ID,
     }
 )
@@ -79,6 +80,7 @@ CONSTRUCTION_READINESS_ERROR_RULE_IDS = frozenset(
         "stair_headroom_clearance_conflict",
         FURNITURE_WALL_CLEARANCE_RULE_ID,
         "roof_wall_coverage_gap",
+        "roof_low_slope_without_drainage_metadata",
     }
 )
 
@@ -106,6 +108,7 @@ RECOMMENDATION_BY_RULE_ID = {
     "stair_headroom_clearance_conflict": "Raise or trim the overhead element, revise the stair run, or document an approved headroom exception.",
     FURNITURE_WALL_CLEARANCE_RULE_ID: "Move the object farther from the wall or record an approved clearance exception for the active profile.",
     "roof_wall_coverage_gap": "Revise the roof overhang/footprint or align the primary envelope wall under the roof coverage.",
+    "roof_low_slope_without_drainage_metadata": "Add flat-roof drainage/taper metadata, increase the roof slope, or record engineering review approval.",
     METADATA_REQUIREMENT_RULE_ID: "Add the missing IDS-like property data or choose a less strict constructability profile.",
 }
 

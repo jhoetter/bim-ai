@@ -24,6 +24,7 @@ from bim_ai.elements import (
     DoorElem,
     Element,
     FloorElem,
+    RoofElem,
     SlabOpeningElem,
     WallElem,
     WallOpeningElem,
@@ -36,6 +37,7 @@ _LARGE_OPENING_MIN_WIDTH_MM = 1800.0
 _LARGE_OPENING_WALL_RATIO = 0.4
 _FLOOR_SPAN_METADATA_THRESHOLD_MM = 9000.0
 _STAIR_HEADROOM_CLEARANCE_MM = 2050.0
+_LOW_ROOF_SLOPE_DEG = 2.0
 
 
 def constructability_advisory_violations(elements: dict[str, Element]) -> list[Violation]:
@@ -64,6 +66,7 @@ def constructability_advisory_violations(elements: dict[str, Element]) -> list[V
     violations.extend(_stacked_load_path_violations(participants_by_kind, walls_by_id))
     violations.extend(_floor_span_metadata_violations(participants_by_kind, elements))
     violations.extend(_roof_wall_coverage_violations(participants_by_kind, walls_by_id))
+    violations.extend(_roof_low_slope_metadata_violations(elements))
     violations.extend(_unsupported_beam_violations(participants_by_kind, elements, walls_by_id))
     violations.extend(_unsupported_column_violations(participants_by_kind, walls_by_id))
     return violations
@@ -566,6 +569,30 @@ def _roof_wall_coverage_violations(
     return violations
 
 
+def _roof_low_slope_metadata_violations(elements: dict[str, Element]) -> list[Violation]:
+    violations: list[Violation] = []
+    for element in elements.values():
+        if not isinstance(element, RoofElem):
+            continue
+        slope = element.slope_deg
+        if slope is None or float(slope) > _LOW_ROOF_SLOPE_DEG:
+            continue
+        if _roof_has_low_slope_resolution(element):
+            continue
+        violations.append(
+            Violation(
+                rule_id="roof_low_slope_without_drainage_metadata",
+                severity="warning",
+                message=(
+                    f"Roof slope is {float(slope):.1f} degrees without flat-roof/drainage "
+                    "constructability metadata; add tapered insulation, drainage, or review data."
+                ),
+                element_ids=[element.id],
+            )
+        )
+    return violations
+
+
 def _unsupported_beam_violations(
     participants_by_kind: dict[str, list[PhysicalParticipant]],
     elements: dict[str, Element],
@@ -964,6 +991,19 @@ def _floor_has_structural_system_metadata(floor: FloorElem) -> bool:
         if value not in (None, "", []):
             return True
     return False
+
+
+def _roof_has_low_slope_resolution(roof: RoofElem) -> bool:
+    props = roof.props or {}
+    return _truthy_prop(
+        props,
+        "flatRoofSystem",
+        "roofDrainageDesigned",
+        "stormDrainageDesigned",
+        "taperedInsulation",
+        "drainageReviewed",
+        "structuralReviewApproved",
+    )
 
 
 def _is_load_bearing_wall(wall: WallElem | None) -> bool:

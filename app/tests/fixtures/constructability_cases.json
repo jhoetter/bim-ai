@@ -524,6 +524,61 @@
       "absentRuleIds": []
     },
     {
+      "id": "low_slope_roof_without_drainage_metadata",
+      "description": "Nearly flat roof has no modeled drainage or flat-roof system metadata.",
+      "elements": {
+        "lvl-1": {
+          "kind": "level",
+          "id": "lvl-1",
+          "name": "Level 1",
+          "elevationMm": 0
+        },
+        "roof-1": {
+          "kind": "roof",
+          "id": "roof-1",
+          "referenceLevelId": "lvl-1",
+          "footprintMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 4000, "yMm": 0 },
+            { "xMm": 4000, "yMm": 3000 },
+            { "xMm": 0, "yMm": 3000 }
+          ],
+          "overhangMm": 0,
+          "slopeDeg": 1
+        }
+      },
+      "expectedRuleIds": ["roof_low_slope_without_drainage_metadata"],
+      "absentRuleIds": []
+    },
+    {
+      "id": "low_slope_roof_with_drainage_metadata",
+      "description": "Nearly flat roof records drainage design metadata.",
+      "elements": {
+        "lvl-1": {
+          "kind": "level",
+          "id": "lvl-1",
+          "name": "Level 1",
+          "elevationMm": 0
+        },
+        "roof-1": {
+          "kind": "roof",
+          "id": "roof-1",
+          "referenceLevelId": "lvl-1",
+          "footprintMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 4000, "yMm": 0 },
+            { "xMm": 4000, "yMm": 3000 },
+            { "xMm": 0, "yMm": 3000 }
+          ],
+          "overhangMm": 0,
+          "slopeDeg": 1,
+          "props": { "roofDrainageDesigned": true }
+        }
+      },
+      "expectedRuleIds": [],
+      "absentRuleIds": ["roof_low_slope_without_drainage_metadata"]
+    },
+    {
       "id": "unsupported_beam",
       "description": "Beam has no modeled supports.",
       "elements": {

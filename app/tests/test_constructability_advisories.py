@@ -425,6 +425,27 @@ def test_primary_wall_outside_roof_coverage_is_reported() -> None:
     assert "roof_wall_coverage_gap" not in _rule_ids(elements)
 
 
+def test_low_slope_roof_requires_drainage_metadata() -> None:
+    roof = RoofElem(
+        kind="roof",
+        id="roof-1",
+        referenceLevelId="lvl-1",
+        footprintMm=[
+            {"xMm": 0, "yMm": 0},
+            {"xMm": 4000, "yMm": 0},
+            {"xMm": 4000, "yMm": 3000},
+            {"xMm": 0, "yMm": 3000},
+        ],
+        overhangMm=0,
+        slopeDeg=1.0,
+    )
+    elements = {"lvl-1": _level(), "roof-1": roof}
+    assert "roof_low_slope_without_drainage_metadata" in _rule_ids(elements)
+
+    elements["roof-1"] = roof.model_copy(update={"props": {"roofDrainageDesigned": True}})
+    assert "roof_low_slope_without_drainage_metadata" not in _rule_ids(elements)
+
+
 def test_beam_without_two_modeled_supports_is_reported() -> None:
     elements = {
         "lvl-1": _level(),
