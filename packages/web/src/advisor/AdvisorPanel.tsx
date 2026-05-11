@@ -21,13 +21,16 @@ export function AdvisorPanel(props: {
   codePresets?: string[];
   onApplyQuickFix(cmd: Record<string, unknown>): void;
   perspective: PerspectiveId;
+  showAllPerspectives?: boolean;
 }) {
   const { t } = useTranslation();
   const scoped = props.selectionId
     ? props.violations.filter((v) => (v.elementIds ?? []).includes(props.selectionId!))
     : props.violations;
 
-  const filtered = filterViolationsForPerspective(scoped, props.perspective);
+  const filtered = props.showAllPerspectives
+    ? scoped
+    : filterViolationsForPerspective(scoped, props.perspective);
   const sorted = sortViolationsDeterministic(filtered);
   const grouped = groupViolationsBySeverity(sorted);
   const presetKeys = props.codePresets ?? ['residential', 'commercial', 'office'];

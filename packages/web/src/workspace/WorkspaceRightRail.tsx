@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { Element, ParamSchemaEntry } from '@bim-ai/core';
 
 import { AdvisorPanel } from '../advisor/AdvisorPanel';
+import { useUnifiedAdvisorViolations } from '../advisor/unifiedAdvisorViolations';
 import { buildPlanGridDatumInspectorLine } from './readouts';
 import { useBimStore } from '../state/store';
 import { getTypeById } from '../families/familyCatalog';
@@ -232,6 +233,7 @@ export function WorkspaceRightRail({
   const setOrbitCameraFromViewpointMm = useBimStore((s) => s.setOrbitCameraFromViewpointMm);
   const applyOrbitViewpointPreset = useBimStore((s) => s.applyOrbitViewpointPreset);
   const violations = useBimStore((s) => s.violations);
+  const modelId = useBimStore((s) => s.modelId);
   const buildingPreset = useBimStore((s) => s.buildingPreset);
   const setBuildingPreset = useBimStore((s) => s.setBuildingPreset);
   const perspectiveId = useBimStore((s) => s.perspectiveId);
@@ -239,6 +241,11 @@ export function WorkspaceRightRail({
   const setPlanTool = useBimStore((s) => s.setPlanTool);
   const planProjectionPrimitives = useBimStore((s) => s.planProjectionPrimitives);
   const activePlanViewId = useBimStore((s) => s.activePlanViewId);
+  const { violations: unifiedViolations } = useUnifiedAdvisorViolations(
+    violations,
+    modelId,
+    revision,
+  );
 
   const el = selectedId ? (elementsById[selectedId] as Element | undefined) : undefined;
   const activeViewpoint =
@@ -1015,13 +1022,13 @@ export function WorkspaceRightRail({
           {t('advisor.heading')}
         </div>
         <AdvisorPanel
-          violations={violations}
-          selectionId={selectedId ?? undefined}
+          violations={unifiedViolations}
           preset={buildingPreset}
           onPreset={setBuildingPreset}
           codePresets={codePresetIds}
           onApplyQuickFix={(cmd) => void onSemanticCommand(cmd)}
           perspective={perspectiveId}
+          showAllPerspectives
         />
       </div>
       {activityEvents.length > 0 ? (

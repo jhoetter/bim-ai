@@ -5,6 +5,7 @@ import { ScheduleViewHifi } from '@bim-ai/icons';
 
 import { SCHEDULE_DEFAULTS } from './modeSurfaces';
 import { AdvisorPanel } from '../advisor/AdvisorPanel';
+import { useUnifiedAdvisorViolations } from '../advisor/unifiedAdvisorViolations';
 import { useBimStore } from '../state/store';
 import { SheetReviewSurface } from '../plan/SheetReviewSurface';
 import { SheetCanvas, SectionPlaceholderPane } from './sheets';
@@ -601,10 +602,16 @@ export function AgentReviewModeShell({
   onApplyQuickFix: (cmd: Record<string, unknown>) => void;
 }): JSX.Element {
   const violations = useBimStore((s) => s.violations);
-  const selectedId = useBimStore((s) => s.selectedId);
+  const modelId = useBimStore((s) => s.modelId);
+  const revision = useBimStore((s) => s.revision);
   const buildingPreset = useBimStore((s) => s.buildingPreset);
   const setBuildingPreset = useBimStore((s) => s.setBuildingPreset);
   const perspectiveId = useBimStore((s) => s.perspectiveId);
+  const { violations: unifiedViolations } = useUnifiedAdvisorViolations(
+    violations,
+    modelId,
+    revision,
+  );
 
   return (
     <div
@@ -616,12 +623,12 @@ export function AgentReviewModeShell({
         <h2 className="text-md font-medium text-foreground">Advisor</h2>
       </div>
       <AdvisorPanel
-        violations={violations}
-        selectionId={selectedId ?? undefined}
+        violations={unifiedViolations}
         preset={buildingPreset}
         onPreset={setBuildingPreset}
         onApplyQuickFix={onApplyQuickFix}
         perspective={perspectiveId}
+        showAllPerspectives
       />
     </div>
   );
