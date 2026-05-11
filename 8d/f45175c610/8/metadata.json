@@ -1,9 +1,11 @@
 {
   "cli_version": "0.6.0",
   "checkpoint_id": "8df45175c610",
+  "session_id": "019e15f5-49cf-7e80-8bfc-9478e07558ca",
   "strategy": "manual-commit",
+  "created_at": "2026-05-11T09:02:35.277206Z",
   "branch": "main",
-  "checkpoints_count": 8,
+  "checkpoints_count": 4,
   "files_touched": [
     ".gitignore",
     "Makefile",
@@ -58,67 +60,59 @@
     "spec/seed-artifacts.md",
     "spec/sketch-to-bim-methodology.md"
   ],
-  "sessions": [
-    {
-      "metadata": "/8d/f45175c610/0/metadata.json",
-      "transcript": "/8d/f45175c610/0/full.jsonl",
-      "content_hash": "/8d/f45175c610/0/content_hash.txt",
-      "prompt": "/8d/f45175c610/0/prompt.txt"
-    },
-    {
-      "metadata": "/8d/f45175c610/1/metadata.json",
-      "transcript": "/8d/f45175c610/1/full.jsonl",
-      "content_hash": "/8d/f45175c610/1/content_hash.txt",
-      "prompt": "/8d/f45175c610/1/prompt.txt"
-    },
-    {
-      "metadata": "/8d/f45175c610/2/metadata.json",
-      "transcript": "/8d/f45175c610/2/full.jsonl",
-      "content_hash": "/8d/f45175c610/2/content_hash.txt",
-      "prompt": "/8d/f45175c610/2/prompt.txt"
-    },
-    {
-      "metadata": "/8d/f45175c610/3/metadata.json",
-      "transcript": "/8d/f45175c610/3/full.jsonl",
-      "content_hash": "/8d/f45175c610/3/content_hash.txt",
-      "prompt": "/8d/f45175c610/3/prompt.txt"
-    },
-    {
-      "metadata": "/8d/f45175c610/4/metadata.json",
-      "transcript": "/8d/f45175c610/4/full.jsonl",
-      "content_hash": "/8d/f45175c610/4/content_hash.txt",
-      "prompt": "/8d/f45175c610/4/prompt.txt"
-    },
-    {
-      "metadata": "/8d/f45175c610/5/metadata.json",
-      "transcript": "/8d/f45175c610/5/full.jsonl",
-      "content_hash": "/8d/f45175c610/5/content_hash.txt",
-      "prompt": "/8d/f45175c610/5/prompt.txt"
-    },
-    {
-      "metadata": "/8d/f45175c610/6/metadata.json",
-      "transcript": "/8d/f45175c610/6/full.jsonl",
-      "content_hash": "/8d/f45175c610/6/content_hash.txt",
-      "prompt": "/8d/f45175c610/6/prompt.txt"
-    },
-    {
-      "metadata": "/8d/f45175c610/7/metadata.json",
-      "transcript": "/8d/f45175c610/7/full.jsonl",
-      "content_hash": "/8d/f45175c610/7/content_hash.txt",
-      "prompt": "/8d/f45175c610/7/prompt.txt"
-    },
-    {
-      "metadata": "/8d/f45175c610/8/metadata.json",
-      "transcript": "/8d/f45175c610/8/full.jsonl",
-      "content_hash": "/8d/f45175c610/8/content_hash.txt",
-      "prompt": "/8d/f45175c610/8/prompt.txt"
-    }
-  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "b27708f87e1f",
   "token_usage": {
-    "input_tokens": 10018702,
+    "input_tokens": 881385,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 190272128,
-    "output_tokens": 574103,
-    "api_call_count": 1591
-  }
+    "cache_read_tokens": 12268928,
+    "output_tokens": 57371,
+    "api_call_count": 139
+  },
+  "session_metrics": {
+    "turn_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-11T09:02:35.236767Z",
+    "agent_lines": 1436,
+    "agent_removed": 7267,
+    "human_added": 146,
+    "human_modified": 21,
+    "human_removed": 0,
+    "total_committed": 1603,
+    "total_lines_changed": 8878,
+    "agent_percentage": 98.028835323271,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 2586,
+      "agent_lines_removed": 7267
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 2586,
+      "agent_lines_removed": 7267
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
 }
