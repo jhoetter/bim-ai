@@ -112,10 +112,41 @@ describe('<Workspace /> — smoke', () => {
   it('keeps 3D view controls in the secondary sidebar when no element is selected', () => {
     seedTabs('3d');
     const { getByTestId, getByRole } = renderWithProviders(<Workspace />);
+    const secondary = within(getByTestId('app-shell-secondary-sidebar'));
     expect(getByTestId('app-shell').dataset.elementSidebarPresent).toBe('false');
     expect(getByTestId('app-shell-element-sidebar').hidden).toBe(true);
     expect(getByTestId('app-shell-secondary-sidebar').hidden).toBe(false);
+    expect(secondary.getByTestId('secondary-sidebar-3d')).toBeTruthy();
+    expect(secondary.getByTestId('secondary-3d-sun')).toBeTruthy();
+    expect(secondary.getByTestId('viewport3d-layers-panel')).toBeTruthy();
     expect(getByRole('button', { name: /Show material lighting and surface depth/i })).toBeTruthy();
+  });
+
+  it('uses explicit secondary sidebar adapters for every view type — UX-WP-04', () => {
+    const cases: Array<[string, string]> = [
+      ['plan', 'secondary-sidebar-plan'],
+      ['plan-3d', 'secondary-sidebar-plan-3d'],
+      ['section', 'secondary-sidebar-section'],
+      ['sheet', 'secondary-sidebar-sheet'],
+      ['schedule', 'secondary-sidebar-schedule'],
+      ['concept', 'secondary-sidebar-concept'],
+      ['agent', 'secondary-sidebar-agent'],
+    ];
+
+    for (const [kind, testId] of cases) {
+      cleanup();
+      seedTabs(kind, `tab-${kind}`);
+      const rendered = renderWithProviders(<Workspace />);
+      const secondary = within(rendered.getByTestId('app-shell-secondary-sidebar'));
+
+      expect(secondary.getByTestId(testId)).toBeTruthy();
+      expect(secondary.queryByTestId('right-rail-section-tabs')).toBeNull();
+      expect(secondary.queryByTestId('right-rail-workbench')).toBeNull();
+      expect(secondary.queryByTestId('right-rail-review')).toBeNull();
+
+      rendered.unmount();
+      localStorage.removeItem(TABS_KEY);
+    }
   });
 
   it('keeps the element sidebar absent for an empty plan with no selection', () => {

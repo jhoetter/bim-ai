@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import type { JSX, ReactNode } from 'react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -8,6 +8,7 @@ import { AdvisorPanel } from '../advisor/AdvisorPanel';
 import { useUnifiedAdvisorViolations } from '../advisor/unifiedAdvisorViolations';
 import { buildPlanGridDatumInspectorLine } from './readouts';
 import { useBimStore } from '../state/store';
+import type { ViewerRenderStyle } from '../state/storeTypes';
 import { getTypeById } from '../families/familyCatalog';
 import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
 import { familyInstanceProjectCategoryKey } from '../families/familyPlacementRuntime';
@@ -196,6 +197,7 @@ export function WorkspaceRightRail({
   onModeChange,
   codePresetIds,
   onNavigateToElement,
+  activeViewTargetId,
   surface = 'legacy',
 }: {
   mode: WorkspaceMode;
@@ -203,6 +205,7 @@ export function WorkspaceRightRail({
   onModeChange: (mode: WorkspaceMode) => void;
   codePresetIds: string[];
   onNavigateToElement?: (elementId: string) => void;
+  activeViewTargetId?: string;
   surface?: 'legacy' | 'view-context' | 'element';
 }): JSX.Element {
   const { t } = useTranslation();
@@ -211,6 +214,7 @@ export function WorkspaceRightRail({
   const elementsById = useBimStore((s) => s.elementsById);
   const revision = useBimStore((s) => s.revision);
   const activeLevelId = useBimStore((s) => s.activeLevelId);
+  const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
   const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
   const toggleViewerCategoryHidden = useBimStore((s) => s.toggleViewerCategoryHidden);
   const viewerRenderStyle = useBimStore((s) => s.viewerRenderStyle);
@@ -244,6 +248,10 @@ export function WorkspaceRightRail({
   const setPlanTool = useBimStore((s) => s.setPlanTool);
   const planProjectionPrimitives = useBimStore((s) => s.planProjectionPrimitives);
   const activePlanViewId = useBimStore((s) => s.activePlanViewId);
+  const revealHiddenMode = useBimStore((s) => s.revealHiddenMode);
+  const setRevealHiddenMode = useBimStore((s) => s.setRevealHiddenMode);
+  const thinLinesEnabled = useBimStore((s) => s.thinLinesEnabled);
+  const toggleThinLines = useBimStore((s) => s.toggleThinLines);
   const { violations: unifiedViolations } = useUnifiedAdvisorViolations(
     violations,
     modelId,
@@ -251,10 +259,69 @@ export function WorkspaceRightRail({
   );
 
   const el = selectedId ? (elementsById[selectedId] as Element | undefined) : undefined;
+  const activeViewTarget = activeViewTargetId
+    ? (elementsById[activeViewTargetId] as Element | undefined)
+    : undefined;
   const activeViewpoint =
     activeViewpointId && elementsById[activeViewpointId]?.kind === 'viewpoint'
       ? (elementsById[activeViewpointId] as Extract<Element, { kind: 'viewpoint' }>)
-      : undefined;
+      : activeViewTarget?.kind === 'viewpoint'
+        ? (activeViewTarget as Extract<Element, { kind: 'viewpoint' }>)
+        : undefined;
+  const levels = useMemo(
+    () =>
+      (Object.values(elementsById) as Element[])
+        .filter(
+          (candidate): candidate is Extract<Element, { kind: 'level' }> =>
+            candidate.kind === 'level',
+        )
+        .sort((a, b) => a.elevationMm - b.elevationMm),
+    [elementsById],
+  );
+  const planViews = useMemo(
+    () =>
+      (Object.values(elementsById) as Element[])
+        .filter(
+          (candidate): candidate is Extract<Element, { kind: 'plan_view' }> =>
+            candidate.kind === 'plan_view',
+        )
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [elementsById],
+  );
+  const activePlanView =
+    activePlanViewId && elementsById[activePlanViewId]?.kind === 'plan_view'
+      ? (elementsById[activePlanViewId] as Extract<Element, { kind: 'plan_view' }>)
+      : activeViewTarget?.kind === 'plan_view'
+        ? (activeViewTarget as Extract<Element, { kind: 'plan_view' }>)
+        : (planViews.find((view) => view.levelId === activeLevelId) ?? planViews[0]);
+  const activeSection =
+    activeViewTarget?.kind === 'section_cut'
+      ? (activeViewTarget as Extract<Element, { kind: 'section_cut' }>)
+      : (Object.values(elementsById) as Element[]).find(
+          (candidate): candidate is Extract<Element, { kind: 'section_cut' }> =>
+            candidate.kind === 'section_cut',
+        );
+  const activeSheet =
+    activeViewTarget?.kind === 'sheet'
+      ? (activeViewTarget as Extract<Element, { kind: 'sheet' }>)
+      : (Object.values(elementsById) as Element[]).find(
+          (candidate): candidate is Extract<Element, { kind: 'sheet' }> =>
+            candidate.kind === 'sheet',
+        );
+  const activeSchedule =
+    activeViewTarget?.kind === 'schedule'
+      ? (activeViewTarget as Extract<Element, { kind: 'schedule' }>)
+      : (Object.values(elementsById) as Element[]).find(
+          (candidate): candidate is Extract<Element, { kind: 'schedule' }> =>
+            candidate.kind === 'schedule',
+        );
+  const activeConceptBoard =
+    activeViewTarget?.kind === 'view_concept_board'
+      ? (activeViewTarget as Extract<Element, { kind: 'view_concept_board' }>)
+      : (Object.values(elementsById) as Element[]).find(
+          (candidate): candidate is Extract<Element, { kind: 'view_concept_board' }> =>
+            candidate.kind === 'view_concept_board',
+        );
   const viewerCategoryCounts = useMemo(() => {
     const counts: Partial<Record<ViewerCatKey, number>> = {};
     for (const element of Object.values(elementsById) as Element[]) {
@@ -400,6 +467,144 @@ export function WorkspaceRightRail({
     viewerClipElevMm,
     viewerClipFloorElevMm,
   ]);
+
+  const persistPlanViewProperty = useCallback(
+    (planViewId: string, key: string, value: string) => {
+      if (key === '__applyTemplate__') {
+        const p = JSON.parse(value) as { planViewId: string; templateId: string };
+        void onSemanticCommand({ type: 'applyPlanViewTemplate', ...p });
+        return;
+      }
+      if (key === '__saveAsTemplate__') {
+        const p = JSON.parse(value) as {
+          name: string;
+          detailLevel: string | null;
+          phaseFilter: string | null;
+        };
+        const templateId = `tmpl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        void onSemanticCommand({
+          type: 'CreateViewTemplate',
+          templateId,
+          name: p.name,
+          detailLevel: p.detailLevel ?? undefined,
+          phaseFilter: p.phaseFilter ?? undefined,
+        });
+        return;
+      }
+      void onSemanticCommand({
+        type: 'updateElementProperty',
+        elementId: planViewId,
+        key,
+        value,
+      });
+    },
+    [onSemanticCommand],
+  );
+
+  if (surface === 'view-context') {
+    return (
+      <div
+        className="h-full overflow-y-auto bg-surface"
+        data-testid="workspace-secondary-sidebar"
+        data-view-mode={mode}
+      >
+        {mode === '3d' ? (
+          <Secondary3dAdapter
+            activeViewpoint={activeViewpoint}
+            viewerCategoryHidden={viewerCategoryHidden}
+            toggleViewerCategoryHidden={toggleViewerCategoryHidden}
+            setAllViewerCategoriesHidden={setAllViewerCategoriesHidden}
+            viewerCategoryCounts={viewerCategoryCounts}
+            viewerRenderStyle={viewerRenderStyle}
+            setViewerRenderStyle={setViewerRenderStyle}
+            viewerBackground={viewerBackground}
+            setViewerBackground={setViewerBackground}
+            viewerEdges={viewerEdges}
+            setViewerEdges={setViewerEdges}
+            viewerProjection={viewerProjection}
+            setViewerProjection={setViewerProjection}
+            viewerSectionBoxActive={viewerSectionBoxActive}
+            setViewerSectionBoxActive={setViewerSectionBoxActive}
+            viewerWalkModeActive={viewerWalkModeActive}
+            setViewerWalkModeActive={setViewerWalkModeActive}
+            requestViewerCameraAction={requestViewerCameraAction}
+            viewerClipElevMm={viewerClipElevMm}
+            setViewerClipElevMm={setViewerClipElevMm}
+            viewerClipFloorElevMm={viewerClipFloorElevMm}
+            setViewerClipFloorElevMm={setViewerClipFloorElevMm}
+            resetActiveSavedView={activeViewpoint ? resetActiveSavedView : undefined}
+            updateActiveSavedView={activeViewpoint ? updateActiveSavedView : undefined}
+          />
+        ) : mode === 'plan-3d' ? (
+          <SecondarySplitAdapter
+            activePlanView={activePlanView}
+            activeLevelId={activeLevelId}
+            levels={levels}
+            revision={revision}
+            elementsById={elementsById}
+            setActiveLevelId={setActiveLevelId}
+            persistPlanViewProperty={persistPlanViewProperty}
+            revealHiddenMode={revealHiddenMode}
+            setRevealHiddenMode={setRevealHiddenMode}
+            thinLinesEnabled={thinLinesEnabled}
+            toggleThinLines={toggleThinLines}
+            activeViewpoint={activeViewpoint}
+            viewerCategoryHidden={viewerCategoryHidden}
+            toggleViewerCategoryHidden={toggleViewerCategoryHidden}
+            setAllViewerCategoriesHidden={setAllViewerCategoriesHidden}
+            viewerCategoryCounts={viewerCategoryCounts}
+            viewerRenderStyle={viewerRenderStyle}
+            setViewerRenderStyle={setViewerRenderStyle}
+            viewerBackground={viewerBackground}
+            setViewerBackground={setViewerBackground}
+            viewerEdges={viewerEdges}
+            setViewerEdges={setViewerEdges}
+            viewerProjection={viewerProjection}
+            setViewerProjection={setViewerProjection}
+            viewerSectionBoxActive={viewerSectionBoxActive}
+            setViewerSectionBoxActive={setViewerSectionBoxActive}
+            viewerWalkModeActive={viewerWalkModeActive}
+            setViewerWalkModeActive={setViewerWalkModeActive}
+            requestViewerCameraAction={requestViewerCameraAction}
+            viewerClipElevMm={viewerClipElevMm}
+            setViewerClipElevMm={setViewerClipElevMm}
+            viewerClipFloorElevMm={viewerClipFloorElevMm}
+            setViewerClipFloorElevMm={setViewerClipFloorElevMm}
+            resetActiveSavedView={activeViewpoint ? resetActiveSavedView : undefined}
+            updateActiveSavedView={activeViewpoint ? updateActiveSavedView : undefined}
+          />
+        ) : mode === 'section' ? (
+          <SecondarySectionAdapter
+            section={activeSection}
+            firstSheetId={firstSheet}
+            onSemanticCommand={onSemanticCommand}
+          />
+        ) : mode === 'sheet' ? (
+          <SecondarySheetAdapter sheet={activeSheet} elementsById={elementsById} />
+        ) : mode === 'schedule' ? (
+          <SecondaryScheduleAdapter schedule={activeSchedule} elementsById={elementsById} />
+        ) : mode === 'concept' ? (
+          <SecondaryConceptAdapter board={activeConceptBoard} elementsById={elementsById} />
+        ) : mode === 'agent' ? (
+          <SecondaryAgentAdapter violations={unifiedViolations} />
+        ) : (
+          <SecondaryPlanAdapter
+            activePlanView={activePlanView}
+            activeLevelId={activeLevelId}
+            levels={levels}
+            revision={revision}
+            elementsById={elementsById}
+            setActiveLevelId={setActiveLevelId}
+            persistPlanViewProperty={persistPlanViewProperty}
+            revealHiddenMode={revealHiddenMode}
+            setRevealHiddenMode={setRevealHiddenMode}
+            thinLinesEnabled={thinLinesEnabled}
+            toggleThinLines={toggleThinLines}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="h-full overflow-y-auto">
@@ -1065,6 +1270,490 @@ export function WorkspaceRightRail({
           </ul>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function SecondaryHeader({
+  eyebrow,
+  title,
+  subtitle,
+}: {
+  eyebrow: string;
+  title: string;
+  subtitle?: string;
+}): JSX.Element {
+  return (
+    <div className="border-b border-border px-3 py-3">
+      <div
+        className="text-[10px] font-semibold uppercase text-muted"
+        style={{ letterSpacing: '0.08em', opacity: 0.75 }}
+      >
+        {eyebrow}
+      </div>
+      <div className="mt-1 truncate text-sm font-semibold text-foreground">{title}</div>
+      {subtitle ? <div className="mt-0.5 truncate text-[11px] text-muted">{subtitle}</div> : null}
+    </div>
+  );
+}
+
+function SecondarySection({
+  title,
+  children,
+  testId,
+}: {
+  title: string;
+  children: ReactNode;
+  testId?: string;
+}): JSX.Element {
+  return (
+    <section className="border-b border-border px-3 py-3" data-testid={testId}>
+      <div
+        className="mb-2 text-[10px] font-semibold uppercase text-muted"
+        style={{ letterSpacing: '0.08em', opacity: 0.7 }}
+      >
+        {title}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function SecondaryField({ label, value }: { label: string; value: ReactNode }): JSX.Element {
+  return (
+    <div className="flex items-start justify-between gap-2 text-[11px]">
+      <span className="text-muted">{label}</span>
+      <span className="min-w-0 truncate text-right font-medium text-foreground">{value}</span>
+    </div>
+  );
+}
+
+function SecondaryToggle({
+  label,
+  checked,
+  onChange,
+  testId,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  testId?: string;
+}): JSX.Element {
+  return (
+    <label className="flex items-center justify-between gap-3 rounded border border-border bg-background px-2 py-1.5 text-[11px] text-foreground">
+      <span>{label}</span>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        data-testid={testId}
+      />
+    </label>
+  );
+}
+
+function SecondaryPlanAdapter({
+  activePlanView,
+  activeLevelId,
+  levels,
+  revision,
+  elementsById,
+  setActiveLevelId,
+  persistPlanViewProperty,
+  revealHiddenMode,
+  setRevealHiddenMode,
+  thinLinesEnabled,
+  toggleThinLines,
+}: {
+  activePlanView?: Extract<Element, { kind: 'plan_view' }>;
+  activeLevelId: string | undefined;
+  levels: Extract<Element, { kind: 'level' }>[];
+  revision: number;
+  elementsById: Record<string, Element>;
+  setActiveLevelId: (levelId: string) => void;
+  persistPlanViewProperty: (planViewId: string, key: string, value: string) => void;
+  revealHiddenMode: boolean;
+  setRevealHiddenMode: (enabled: boolean) => void;
+  thinLinesEnabled: boolean;
+  toggleThinLines: () => void;
+}): JSX.Element {
+  const activeLevel = levels.find(
+    (level) => level.id === (activePlanView?.levelId ?? activeLevelId),
+  );
+  return (
+    <div data-testid="secondary-sidebar-plan">
+      <SecondaryHeader
+        eyebrow="Floor plan"
+        title={activePlanView?.name ?? activeLevel?.name ?? 'Plan view'}
+        subtitle={activePlanView ? `View id · ${activePlanView.id}` : 'Level-based plan context'}
+      />
+      <SecondarySection title="Level" testId="secondary-plan-level">
+        <label className="flex flex-col gap-1 text-[11px] text-muted">
+          Active level
+          <select
+            value={activeLevel?.id ?? ''}
+            onChange={(event) => setActiveLevelId(event.target.value)}
+            className="rounded border border-border bg-background px-2 py-1 text-xs text-foreground"
+          >
+            {levels.length === 0 ? <option value="">No levels</option> : null}
+            {levels.map((level) => (
+              <option key={level.id} value={level.id}>
+                {level.name} · {(level.elevationMm / 1000).toFixed(2)} m
+              </option>
+            ))}
+          </select>
+        </label>
+        {activePlanView ? (
+          <div className="mt-2 space-y-1">
+            <SecondaryField label="Associated view" value={activePlanView.name} />
+            <SecondaryField
+              label="Reference level"
+              value={activeLevel?.name ?? activePlanView.levelId}
+            />
+          </div>
+        ) : null}
+      </SecondarySection>
+      <SecondarySection title="View State" testId="secondary-plan-view-state">
+        {activePlanView ? (
+          <InspectorPlanViewEditor
+            el={activePlanView}
+            elementsById={elementsById}
+            revision={revision}
+            onPersistProperty={(key, value) =>
+              persistPlanViewProperty(activePlanView.id, key, value)
+            }
+          />
+        ) : (
+          <p className="text-[11px] leading-snug text-muted">
+            Open a named floor plan from the primary navigation to edit range, crop, graphics,
+            underlay, phase, and template settings.
+          </p>
+        )}
+      </SecondarySection>
+      <SecondarySection title="Visibility" testId="secondary-plan-visibility">
+        <div className="space-y-2">
+          <SecondaryToggle
+            label="Reveal hidden elements"
+            checked={revealHiddenMode}
+            onChange={setRevealHiddenMode}
+            testId="secondary-reveal-hidden-toggle"
+          />
+          <SecondaryToggle
+            label="Thin lines"
+            checked={thinLinesEnabled}
+            onChange={() => toggleThinLines()}
+            testId="secondary-thin-lines-toggle"
+          />
+        </div>
+      </SecondarySection>
+    </div>
+  );
+}
+
+type Secondary3dAdapterProps = {
+  activeViewpoint?: Extract<Element, { kind: 'viewpoint' }>;
+  viewerCategoryHidden: Record<string, boolean>;
+  toggleViewerCategoryHidden: (kind: ViewerCatKey) => void;
+  setAllViewerCategoriesHidden: (hidden: boolean) => void;
+  viewerCategoryCounts: Partial<Record<ViewerCatKey, number>>;
+  viewerRenderStyle: ViewerRenderStyle;
+  setViewerRenderStyle: (style: ViewerRenderStyle) => void;
+  viewerBackground: 'white' | 'light_grey' | 'dark';
+  setViewerBackground: (bg: 'white' | 'light_grey' | 'dark') => void;
+  viewerEdges: 'normal' | 'none';
+  setViewerEdges: (edges: 'normal' | 'none') => void;
+  viewerProjection: 'perspective' | 'orthographic';
+  setViewerProjection: (projection: 'perspective' | 'orthographic') => void;
+  viewerSectionBoxActive: boolean;
+  setViewerSectionBoxActive: (active: boolean) => void;
+  viewerWalkModeActive: boolean;
+  setViewerWalkModeActive: (active: boolean) => void;
+  requestViewerCameraAction: (kind: 'fit' | 'reset') => void;
+  viewerClipElevMm: number | null;
+  setViewerClipElevMm: (mm: number | null) => void;
+  viewerClipFloorElevMm: number | null;
+  setViewerClipFloorElevMm: (mm: number | null) => void;
+  resetActiveSavedView?: () => void;
+  updateActiveSavedView?: () => void;
+};
+
+function Secondary3dAdapter(props: Secondary3dAdapterProps): JSX.Element {
+  return (
+    <div data-testid="secondary-sidebar-3d">
+      <SecondaryHeader
+        eyebrow="3D view"
+        title={props.activeViewpoint?.name ?? 'Orbit 3D'}
+        subtitle={
+          props.activeViewpoint ? `Saved viewpoint · ${props.activeViewpoint.id}` : 'Live camera'
+        }
+      />
+      <SecondarySection title="Scene" testId="secondary-3d-sun">
+        <SunInspectorPanel />
+      </SecondarySection>
+      <SecondarySection title="Graphics, Camera, Clipping" testId="secondary-3d-graphics">
+        <Viewport3DLayersPanel
+          viewerCategoryHidden={props.viewerCategoryHidden}
+          onToggleCategory={props.toggleViewerCategoryHidden}
+          onSetAllCategoriesHidden={props.setAllViewerCategoriesHidden}
+          categoryCounts={props.viewerCategoryCounts}
+          viewerRenderStyle={props.viewerRenderStyle}
+          onSetRenderStyle={props.setViewerRenderStyle}
+          viewerBackground={props.viewerBackground}
+          onSetBackground={props.setViewerBackground}
+          viewerEdges={props.viewerEdges}
+          onSetEdges={props.setViewerEdges}
+          viewerProjection={props.viewerProjection}
+          onSetProjection={props.setViewerProjection}
+          sectionBoxActive={props.viewerSectionBoxActive}
+          onSetSectionBoxActive={props.setViewerSectionBoxActive}
+          viewerWalkModeActive={props.viewerWalkModeActive}
+          onSetWalkModeActive={props.setViewerWalkModeActive}
+          onRequestCameraAction={props.requestViewerCameraAction}
+          viewerClipElevMm={props.viewerClipElevMm}
+          onSetClipElevMm={props.setViewerClipElevMm}
+          viewerClipFloorElevMm={props.viewerClipFloorElevMm}
+          onSetClipFloorElevMm={props.setViewerClipFloorElevMm}
+          activeViewpointId={props.activeViewpoint?.id}
+          onResetToSavedView={props.resetActiveSavedView}
+          onUpdateSavedView={props.updateActiveSavedView}
+        />
+      </SecondarySection>
+    </div>
+  );
+}
+
+function SecondarySplitAdapter(
+  props: Parameters<typeof SecondaryPlanAdapter>[0] & Secondary3dAdapterProps,
+): JSX.Element {
+  return (
+    <div data-testid="secondary-sidebar-plan-3d">
+      <SecondaryHeader eyebrow="Plan + 3D" title="Combined view context" />
+      <SecondarySection title="Plan Context">
+        <SecondaryPlanAdapter {...props} />
+      </SecondarySection>
+      <SecondarySection title="3D Context">
+        <Secondary3dAdapter {...props} />
+      </SecondarySection>
+    </div>
+  );
+}
+
+function SecondarySectionAdapter({
+  section,
+  firstSheetId,
+  onSemanticCommand,
+}: {
+  section?: Extract<Element, { kind: 'section_cut' }>;
+  firstSheetId: string | null;
+  onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
+}): JSX.Element {
+  return (
+    <div data-testid="secondary-sidebar-section">
+      <SecondaryHeader
+        eyebrow="Section"
+        title={section?.name ?? 'Section view'}
+        subtitle={section ? `Cut id · ${section.id}` : 'No section selected'}
+      />
+      <SecondarySection title="Cut Context" testId="secondary-section-context">
+        <div className="space-y-1">
+          <SecondaryField
+            label="Depth"
+            value={section?.cropDepthMm ? `${section.cropDepthMm} mm` : 'Default'}
+          />
+          <SecondaryField
+            label="Line start"
+            value={section ? `${section.lineStartMm.xMm}, ${section.lineStartMm.yMm}` : '—'}
+          />
+          <SecondaryField
+            label="Line end"
+            value={section ? `${section.lineEndMm.xMm}, ${section.lineEndMm.yMm}` : '—'}
+          />
+          <SecondaryField
+            label="Sheet placement"
+            value={firstSheetId ? 'Sheet available' : 'No sheet'}
+          />
+        </div>
+      </SecondarySection>
+      {section ? (
+        <SecondarySection title="Crop Depth">
+          <label className="flex flex-col gap-1 text-[11px] text-muted">
+            Depth mm
+            <input
+              className="rounded border border-border bg-background px-2 py-1 text-xs text-foreground"
+              defaultValue={section.cropDepthMm ?? ''}
+              onBlur={(event) => {
+                const raw = event.target.value.trim();
+                void onSemanticCommand({
+                  type: 'updateElementProperty',
+                  elementId: section.id,
+                  key: 'cropDepthMm',
+                  value: raw ? Number(raw) : null,
+                });
+              }}
+            />
+          </label>
+        </SecondarySection>
+      ) : null}
+    </div>
+  );
+}
+
+function SecondarySheetAdapter({
+  sheet,
+  elementsById,
+}: {
+  sheet?: Extract<Element, { kind: 'sheet' }>;
+  elementsById: Record<string, Element>;
+}): JSX.Element {
+  const placements = sheet?.viewPlacements ?? [];
+  const legacyViewports = sheet?.viewportsMm ?? [];
+  return (
+    <div data-testid="secondary-sidebar-sheet">
+      <SecondaryHeader
+        eyebrow="Sheet"
+        title={sheet?.name ?? 'Sheet view'}
+        subtitle={sheet?.number ? `Sheet ${sheet.number}` : 'Documentation sheet'}
+      />
+      <SecondarySection title="Sheet Setup" testId="secondary-sheet-setup">
+        <div className="space-y-1">
+          <SecondaryField label="Size" value={sheet?.size ?? 'Default'} />
+          <SecondaryField label="Orientation" value={sheet?.orientation ?? 'Default'} />
+          <SecondaryField
+            label="Titleblock"
+            value={sheet?.titleblockTypeId ?? sheet?.titleBlock ?? 'None'}
+          />
+          <SecondaryField label="Revision" value={sheet?.revisionId ?? 'None'} />
+        </div>
+      </SecondarySection>
+      <SecondarySection title="Viewports" testId="secondary-sheet-viewports">
+        {placements.length || legacyViewports.length ? (
+          <div className="space-y-1 text-[11px] text-foreground">
+            {placements.map((placement, index) => {
+              const ref = elementsById[placement.viewId];
+              return (
+                <div
+                  key={`${placement.viewId}-${index}`}
+                  className="rounded border border-border bg-background px-2 py-1"
+                >
+                  <span className="block truncate">
+                    {(ref as { name?: string } | undefined)?.name ?? placement.viewId}
+                  </span>
+                  <span className="text-muted">1:{placement.scale ?? 'default'}</span>
+                </div>
+              );
+            })}
+            {legacyViewports.length ? (
+              <div className="rounded border border-border bg-background px-2 py-1 text-muted">
+                {legacyViewports.length} legacy viewport{legacyViewports.length === 1 ? '' : 's'}
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <p className="text-[11px] text-muted">No placed views on this sheet.</p>
+        )}
+      </SecondarySection>
+    </div>
+  );
+}
+
+function SecondaryScheduleAdapter({
+  schedule,
+  elementsById,
+}: {
+  schedule?: Extract<Element, { kind: 'schedule' }>;
+  elementsById: Record<string, Element>;
+}): JSX.Element {
+  const placedCount = schedule
+    ? (Object.values(elementsById) as Element[]).filter(
+        (element) =>
+          element.kind === 'sheet' &&
+          ((element.viewPlacements ?? []).some((placement) => placement.viewId === schedule.id) ||
+            (element.viewportsMm ?? []).some((viewport) =>
+              JSON.stringify(viewport).includes(schedule.id),
+            )),
+      ).length
+    : 0;
+  return (
+    <div data-testid="secondary-sidebar-schedule">
+      <SecondaryHeader
+        eyebrow="Schedule"
+        title={schedule?.name ?? 'Schedule view'}
+        subtitle={schedule?.category ? `Category · ${schedule.category}` : 'Table definition'}
+      />
+      <SecondarySection title="Definition" testId="secondary-schedule-definition">
+        <div className="space-y-1">
+          <SecondaryField label="Fields" value={schedule?.columns?.length ?? 0} />
+          <SecondaryField
+            label="Filter"
+            value={schedule?.filterExpr ?? (schedule?.filters ? 'Configured' : 'None')}
+          />
+          <SecondaryField
+            label="Sort"
+            value={schedule?.sortKey ? `${schedule.sortKey} ${schedule.sortDir ?? ''}` : 'None'}
+          />
+          <SecondaryField label="Grouping" value={schedule?.grouping ? 'Configured' : 'None'} />
+          <SecondaryField label="Placed on sheets" value={placedCount} />
+        </div>
+      </SecondarySection>
+    </div>
+  );
+}
+
+function SecondaryConceptAdapter({
+  board,
+  elementsById,
+}: {
+  board?: Extract<Element, { kind: 'view_concept_board' }>;
+  elementsById: Record<string, Element>;
+}): JSX.Element {
+  const underlayCount = (Object.values(elementsById) as Element[]).filter(
+    (element) => element.kind === 'image_underlay',
+  ).length;
+  const seedCount = (Object.values(elementsById) as Element[]).filter(
+    (element) => element.kind === 'concept_seed',
+  ).length;
+  return (
+    <div data-testid="secondary-sidebar-concept">
+      <SecondaryHeader
+        eyebrow="Concept"
+        title={board?.name ?? 'Concept board'}
+        subtitle={board ? `Board id · ${board.id}` : 'Pre-BIM board context'}
+      />
+      <SecondarySection title="Board Resources" testId="secondary-concept-resources">
+        <div className="space-y-1">
+          <SecondaryField label="Attachments" value={board?.attachments.length ?? 0} />
+          <SecondaryField label="Underlays" value={underlayCount} />
+          <SecondaryField label="Concept seeds" value={seedCount} />
+        </div>
+      </SecondarySection>
+    </div>
+  );
+}
+
+function SecondaryAgentAdapter({
+  violations,
+}: {
+  violations: ReturnType<typeof useUnifiedAdvisorViolations>['violations'];
+}): JSX.Element {
+  const bySeverity = violations.reduce<Record<string, number>>((acc, violation) => {
+    const key = String(violation.severity ?? 'info');
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {});
+  return (
+    <div data-testid="secondary-sidebar-agent">
+      <SecondaryHeader
+        eyebrow="Agent"
+        title="Review context"
+        subtitle={`${violations.length} finding${violations.length === 1 ? '' : 's'}`}
+      />
+      <SecondarySection title="Finding Filters" testId="secondary-agent-filters">
+        <div className="space-y-1">
+          <SecondaryField label="Errors" value={bySeverity.error ?? 0} />
+          <SecondaryField label="Warnings" value={bySeverity.warning ?? 0} />
+          <SecondaryField label="Info" value={bySeverity.info ?? 0} />
+        </div>
+      </SecondarySection>
     </div>
   );
 }

@@ -1770,6 +1770,7 @@ export function Workspace(): JSX.Element {
             onModeChange={handleModeChange}
             codePresetIds={codePresetIds}
             onNavigateToElement={openElementById}
+            activeViewTargetId={activeTab?.targetId}
             surface="view-context"
           />
         }
