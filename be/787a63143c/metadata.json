@@ -4,7 +4,10 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/workspace/shell/StatusBar.test.tsx",
+    "packages/web/src/workspace/shell/StatusBar.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/be/787a63143c/0/metadata.json",
@@ -17,6 +20,12 @@
       "transcript": "/be/787a63143c/1/full.jsonl",
       "content_hash": "/be/787a63143c/1/content_hash.txt",
       "prompt": "/be/787a63143c/1/prompt.txt"
+    },
+    {
+      "metadata": "/be/787a63143c/2/metadata.json",
+      "transcript": "/be/787a63143c/2/full.jsonl",
+      "content_hash": "/be/787a63143c/2/content_hash.txt",
+      "prompt": "/be/787a63143c/2/prompt.txt"
     }
   ],
   "token_usage": {
