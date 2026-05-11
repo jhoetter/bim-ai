@@ -161,7 +161,7 @@ function formatStatusMm(mm: number): string {
 }
 
 export function Workspace(): JSX.Element {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toolRegistry = useMemo(() => getToolRegistry(t), [t]);
   const elementsById = useBimStore((s) => s.elementsById);
   const hydrateFromSnapshot = useBimStore((s) => s.hydrateFromSnapshot);
@@ -980,6 +980,14 @@ export function Workspace(): JSX.Element {
     setTheme(next);
   }, []);
 
+  const handleLanguageSet = useCallback(
+    (next: 'en' | 'de') => {
+      void i18n.changeLanguage(next);
+      localStorage.setItem('bim-ai:lang', next);
+    },
+    [i18n],
+  );
+
   const paletteViews = useMemo(() => {
     const KIND_PREFIX: Partial<Record<Element['kind'], string>> = {
       plan_view: 'Plan',
@@ -1228,6 +1236,7 @@ export function Workspace(): JSX.Element {
           startPlanTool: (toolId) => handleToolSelect(toolId as ToolId),
           setTheme: handleThemeSet,
           toggleTheme: handleThemeToggle,
+          setLanguage: handleLanguageSet,
           views: paletteViews,
           openElement: (id) => navigateTo({ kind: effectiveMode, targetId: id, source: 'cmdk' }),
           dispatchCommand: (cmd) => void onSemanticCommand(cmd),

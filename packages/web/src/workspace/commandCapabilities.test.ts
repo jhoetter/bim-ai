@@ -34,7 +34,12 @@ describe('command capability graph', () => {
   });
 
   it('keeps universal navigation and system commands enabled in every view', () => {
-    for (const commandId of ['navigate.plan', 'navigate.3d', 'theme.toggle']) {
+    for (const commandId of [
+      'navigate.plan',
+      'navigate.3d',
+      'theme.toggle',
+      'settings.language.toggle',
+    ]) {
       for (const mode of ['plan', '3d', 'sheet', 'schedule', 'agent'] as const) {
         expect(evaluateCommandInMode(commandId, mode)?.state).toBe('enabled');
       }

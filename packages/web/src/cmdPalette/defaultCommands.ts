@@ -1,6 +1,7 @@
 import { useBimStore, type PlanTool } from '../state/store';
 import { VIEWER_CATEGORY_KEYS } from '../viewport/sceneUtils';
 import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFromWall';
+import i18n from '../i18n';
 import { registerCommand, type PaletteContext } from './registry';
 
 function is3dContext(ctx: PaletteContext): boolean {
@@ -20,6 +21,19 @@ function setAll3dCategoriesHidden(hidden: boolean): void {
   const viewerCategoryHidden = { ...state.viewerCategoryHidden };
   for (const key of VIEWER_CATEGORY_KEYS) viewerCategoryHidden[key] = hidden;
   useBimStore.setState({ viewerCategoryHidden });
+}
+
+function setLanguage(ctx: PaletteContext, language: 'en' | 'de'): void {
+  if (ctx.setLanguage) {
+    ctx.setLanguage(language);
+    return;
+  }
+  void i18n.changeLanguage(language);
+  localStorage.setItem('bim-ai:lang', language);
+}
+
+function toggleLanguage(ctx: PaletteContext): void {
+  setLanguage(ctx, i18n.language === 'de' ? 'en' : 'de');
 }
 
 function selectedWall(ctx: PaletteContext) {
@@ -325,6 +339,30 @@ registerCommand({
   keywords: ['theme', 'appearance', 'switch theme'],
   category: 'command',
   invoke: (ctx) => ctx.toggleTheme?.(),
+});
+
+registerCommand({
+  id: 'settings.language.toggle',
+  label: 'Toggle Language',
+  keywords: ['language', 'locale', 'sprache', 'deutsch', 'english'],
+  category: 'command',
+  invoke: toggleLanguage,
+});
+
+registerCommand({
+  id: 'settings.language.en',
+  label: 'Language: English',
+  keywords: ['language', 'locale', 'english', 'en'],
+  category: 'command',
+  invoke: (ctx) => setLanguage(ctx, 'en'),
+});
+
+registerCommand({
+  id: 'settings.language.de',
+  label: 'Language: Deutsch',
+  keywords: ['language', 'locale', 'german', 'deutsch', 'de'],
+  category: 'command',
+  invoke: (ctx) => setLanguage(ctx, 'de'),
 });
 
 registerCommand({

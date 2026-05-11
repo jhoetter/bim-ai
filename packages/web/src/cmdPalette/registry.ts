@@ -38,6 +38,8 @@ export type PaletteContext = {
   setTheme?: (theme: 'light' | 'dark') => void;
   /** Toggle the current app theme while keeping host UI state in sync. */
   toggleTheme?: () => void;
+  /** Set the current UI language while keeping host i18n state in sync. */
+  setLanguage?: (language: 'en' | 'de') => void;
   /** Callback to open a model element (plan view, sheet, schedule, etc.) as a tab. */
   openElement?: (id: string) => void;
   /** Dispatches semantic model commands from command-palette actions. */

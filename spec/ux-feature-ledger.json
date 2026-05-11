@@ -80,14 +80,14 @@
       ]
     },
     {
-      "idPattern": "theme.*",
-      "label": "Theme switching",
+      "idPattern": "theme.* / settings.language.*",
+      "label": "Theme and language switching",
       "owner": "packages/web/src/cmdPalette/defaultCommands.ts",
       "sourceFile": "packages/web/src/workspace/commandCapabilities.ts",
       "intendedViews": ["plan", "3d", "plan-3d", "section", "sheet", "schedule", "agent"],
       "actualSurfaces": ["cmd-k", "topbar"],
       "preconditions": [],
-      "executionHandler": "Workspace.handleThemeSet / Workspace.handleThemeToggle",
+      "executionHandler": "Workspace.handleThemeSet / Workspace.handleThemeToggle / Workspace.handleLanguageSet",
       "status": "implemented",
       "usabilityScore": 8,
       "tests": ["packages/web/src/cmdPalette/defaultCommands.test.ts"]

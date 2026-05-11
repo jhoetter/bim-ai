@@ -19,7 +19,7 @@ Legend:
 | 3D selected-wall edit actions      | Disabled | Direct with selected wall | Direct with selected wall | Disabled                | Disabled       | Disabled       | Disabled       |
 | Plan Visibility/Graphics           | Direct   | Bridge to Plan            | Direct                    | Direct                  | Disabled       | Disabled       | Disabled       |
 | 3D layer controls                  | Disabled | Direct                    | Direct                    | Disabled                | Disabled       | Disabled       | Disabled       |
-| Theme commands                     | Direct   | Direct                    | Direct                    | Direct                  | Direct         | Direct         | Direct         |
+| Theme/language commands            | Direct   | Direct                    | Direct                    | Direct                  | Direct         | Direct         | Direct         |
 | Drafting grid visibility           | Direct   | Disabled                  | Direct                    | Direct                  | Disabled       | Disabled       | Disabled       |
 | View navigation                    | Direct   | Direct                    | Direct                    | Direct                  | Direct         | Direct         | Direct         |
 | Project/family/help shell commands | Direct   | Direct                    | Direct                    | Direct                  | Direct         | Direct         | Direct         |

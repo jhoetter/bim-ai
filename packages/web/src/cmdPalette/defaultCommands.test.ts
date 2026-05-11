@@ -111,4 +111,13 @@ describe('default Cmd+K commands', () => {
       widthMm: 900,
     });
   });
+
+  it('routes language commands through the palette host context', () => {
+    const setLanguage = vi.fn();
+    command('settings.language.de').invoke({ ...PLAN_CTX, setLanguage });
+    expect(setLanguage).toHaveBeenCalledWith('de');
+
+    command('settings.language.en').invoke({ ...PLAN_CTX, setLanguage });
+    expect(setLanguage).toHaveBeenCalledWith('en');
+  });
 });
