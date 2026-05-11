@@ -1,0 +1,46 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "8df45175c610",
+  "session_id": "019e142a-3475-7320-883d-ee0d675deca7",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-11T09:02:31.9148Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/workspace/Workspace.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "42ac6cd3d66d",
+  "token_usage": {
+    "input_tokens": 148563,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 4928000,
+    "output_tokens": 25677,
+    "api_call_count": 52
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-11T09:02:31.893717Z",
+    "agent_lines": 55,
+    "agent_removed": 0,
+    "human_added": 910,
+    "human_modified": 24,
+    "human_removed": 0,
+    "total_committed": 989,
+    "total_lines_changed": 7348,
+    "agent_percentage": 0.7485029940119761,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
