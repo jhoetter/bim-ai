@@ -220,6 +220,28 @@
       "status": "implemented",
       "usabilityScore": 8,
       "tests": ["packages/web/src/workspace/shell/AppShell.test.tsx"]
+    },
+    {
+      "idPattern": "topbar.qat.plan-tool-bridges",
+      "label": "Quick Access Toolbar plan-tool bridge labels",
+      "owner": "packages/web/src/workspace/shell/TopBar.tsx",
+      "sourceFile": "packages/web/src/workspace/shell/TopBar.tsx",
+      "intendedViews": [
+        "plan",
+        "3d",
+        "plan-3d",
+        "section",
+        "sheet",
+        "schedule",
+        "agent",
+        "concept"
+      ],
+      "actualSurfaces": ["topbar"],
+      "preconditions": [],
+      "executionHandler": "TopBar QAT shortcut projection queries commandCapabilities for direct/bridge labels",
+      "status": "implemented",
+      "usabilityScore": 8,
+      "tests": ["packages/web/src/workspace/shell/TopBar.test.tsx"]
     }
   ]
 }

@@ -17,6 +17,13 @@ import { useBimStore } from '../../state/store';
 import { AccountStatusMenu, type AccountStatusInfo } from './AccountStatusMenu';
 import { SourceViewChip } from './SourceViewChip';
 import { type ViewTab, type TabKind } from '../tabsModel';
+import type { ToolId } from '../../tools/toolRegistry';
+import {
+  capabilityIdForTool,
+  evaluateCommandInMode,
+  formatCapabilityMode,
+  type CapabilityViewMode,
+} from '../commandCapabilities';
 
 /**
  * TopBar — spec §11.
@@ -210,6 +217,7 @@ export function TopBar({
       className="flex w-full items-center gap-4 border-b border-border bg-background px-4"
     >
       <TopBarLeft
+        mode={mode}
         projectName={projectName}
         onProjectNameClick={onProjectNameClick}
         projectNameRef={projectNameRef}
@@ -275,6 +283,7 @@ const topBarStyle: CSSProperties = {
 };
 
 function TopBarLeft({
+  mode,
   projectName,
   onProjectNameClick,
   projectNameRef,
@@ -291,6 +300,7 @@ function TopBarLeft({
   onToggleThinLines,
   onCloseInactiveTabs,
 }: {
+  mode: WorkspaceMode;
   projectName: string;
   onProjectNameClick?: () => void;
   projectNameRef?: React.RefObject<HTMLButtonElement | null>;
@@ -321,6 +331,10 @@ function TopBarLeft({
   const toggleQatShortcut = (id: QatShortcutId) => {
     setQatVisible((prev) => ({ ...prev, [id]: !prev[id] }));
   };
+  const sectionShortcut = qatToolShortcutProjection('Section', 'section', mode);
+  const measureShortcut = qatToolShortcutProjection(IconLabels.measure, 'measure', mode);
+  const dimensionShortcut = qatToolShortcutProjection('Aligned Dimension', 'dimension', mode);
+  const tagShortcut = qatToolShortcutProjection('Tag by Category', 'tag', mode);
 
   return (
     <div className="relative flex items-center gap-3" style={{ minWidth: 240 }}>
@@ -374,8 +388,9 @@ function TopBarLeft({
         <button
           type="button"
           data-testid="topbar-section-shortcut"
-          title="Section"
-          aria-label="Section"
+          title={sectionShortcut.title}
+          aria-label={sectionShortcut.ariaLabel}
+          data-command-behavior={sectionShortcut.behavior}
           onClick={onSectionShortcut ?? (() => useBimStore.getState().setPlanTool('section'))}
           className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground"
         >
@@ -386,8 +401,9 @@ function TopBarLeft({
         <button
           type="button"
           data-testid="topbar-measure-shortcut"
-          title="Measure"
-          aria-label={IconLabels.measure}
+          title={measureShortcut.title}
+          aria-label={measureShortcut.ariaLabel}
+          data-command-behavior={measureShortcut.behavior}
           onClick={onMeasureShortcut ?? (() => useBimStore.getState().setPlanTool('measure'))}
           className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground"
         >
@@ -398,8 +414,9 @@ function TopBarLeft({
         <button
           type="button"
           data-testid="topbar-dimension-shortcut"
-          title="Aligned Dimension"
-          aria-label="Aligned Dimension"
+          title={dimensionShortcut.title}
+          aria-label={dimensionShortcut.ariaLabel}
+          data-command-behavior={dimensionShortcut.behavior}
           onClick={onDimensionShortcut ?? (() => useBimStore.getState().setPlanTool('dimension'))}
           className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground"
         >
@@ -410,8 +427,9 @@ function TopBarLeft({
         <button
           type="button"
           data-testid="topbar-tag-by-category-shortcut"
-          title="Tag by Category"
-          aria-label="Tag by Category"
+          title={tagShortcut.title}
+          aria-label={tagShortcut.ariaLabel}
+          data-command-behavior={tagShortcut.behavior}
           onClick={onTagByCategoryShortcut ?? (() => useBimStore.getState().setPlanTool('tag'))}
           className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground"
         >
@@ -480,6 +498,33 @@ function TopBarLeft({
       ) : null}
     </div>
   );
+}
+
+function qatToolShortcutProjection(
+  label: string,
+  toolId: ToolId,
+  mode: WorkspaceMode,
+): { title: string; ariaLabel: string; behavior: 'direct' | 'bridge' | 'disabled' } {
+  const availability = evaluateCommandInMode(
+    capabilityIdForTool(toolId),
+    mode as CapabilityViewMode,
+  );
+  if (availability?.state === 'bridge') {
+    const target = formatCapabilityMode(availability.targetMode);
+    return {
+      title: `${label} - switches to ${target}`,
+      ariaLabel: `${label}, switches to ${target}`,
+      behavior: 'bridge',
+    };
+  }
+  if (availability?.state === 'disabled') {
+    return {
+      title: availability.reason,
+      ariaLabel: `${label}, unavailable in ${formatCapabilityMode(mode as CapabilityViewMode)}`,
+      behavior: 'disabled',
+    };
+  }
+  return { title: label, ariaLabel: label, behavior: 'direct' };
 }
 
 function TopBarModePills({

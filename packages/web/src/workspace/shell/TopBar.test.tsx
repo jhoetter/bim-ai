@@ -144,6 +144,35 @@ describe('TopBar — spec §11', () => {
     expect(onCloseInactiveTabs).toHaveBeenCalledTimes(1);
   });
 
+  it('labels QAT plan-tool shortcuts as bridge actions outside plan-capable modes', () => {
+    const { getByTestId } = renderWithI18n(
+      <TopBar {...baseProps} mode="3d" onModeChange={() => undefined} />,
+    );
+
+    const dimension = getByTestId('topbar-dimension-shortcut');
+    const measure = getByTestId('topbar-measure-shortcut');
+    expect(dimension.getAttribute('data-command-behavior')).toBe('bridge');
+    expect(dimension.getAttribute('title')).toContain('Plan');
+    expect(dimension.getAttribute('aria-label')).toContain('switches to Plan');
+    expect(measure.getAttribute('data-command-behavior')).toBe('bridge');
+  });
+
+  it('labels QAT section-compatible shortcuts as direct in section mode', () => {
+    const { getByTestId } = renderWithI18n(
+      <TopBar {...baseProps} mode="section" onModeChange={() => undefined} />,
+    );
+
+    expect(getByTestId('topbar-dimension-shortcut').getAttribute('data-command-behavior')).toBe(
+      'direct',
+    );
+    expect(getByTestId('topbar-section-shortcut').getAttribute('data-command-behavior')).toBe(
+      'direct',
+    );
+    expect(getByTestId('topbar-measure-shortcut').getAttribute('data-command-behavior')).toBe(
+      'bridge',
+    );
+  });
+
   it('customizes visible QAT entries and persists the preference', () => {
     const { getByTestId, queryByTestId, rerender } = renderWithI18n(
       <TopBar {...baseProps} mode="plan" onModeChange={() => undefined} />,
