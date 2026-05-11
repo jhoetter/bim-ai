@@ -141,7 +141,11 @@ Example artifact: `spec/examples/sketch-understanding-ir.example.json`.
 {
   "projectType": "single_family_house",
   "qualityTarget": "project_initiation_bim",
-  "sourceImages": ["spec/target-house.jpeg"],
+  "sourceImages": [
+    "spec/target-house/target-house-1.png",
+    "spec/target-house/target-house-2.png",
+    "spec/target-house/floorplan.png"
+  ],
   "visualRead": {
     "primaryView": "front-left axonometric",
     "dominantVolumes": [

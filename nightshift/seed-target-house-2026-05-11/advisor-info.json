@@ -1,0 +1,17 @@
+{
+  "modelId": "75cd3d5c-f28c-5dd2-b8bf-8cbba71fd10f",
+  "revision": 1,
+  "total": 2,
+  "groups": [
+    {
+      "severity": "info",
+      "code": "gltf_export_manifest_expected_extension_missing",
+      "count": 2,
+      "elementIds": [],
+      "messages": [
+        "glTF export manifest: extension 'bim_ai_skew_wall_hosted_openings_v0' not emitted but eligible element kind 'wall' is present (skipReasonCode='no_eligible_elements').",
+        "glTF export manifest: extension 'bim_ai_roof_unsupported_shape_summary_v0' not emitted but eligible element kind 'roof' is present (skipReasonCode='no_eligible_elements')."
+      ]
+    }
+  ]
+}

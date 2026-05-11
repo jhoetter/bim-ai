@@ -1,0 +1,230 @@
+{
+  "schemaVersion": "sketch-understanding-ir.v0",
+  "projectType": "single_family_house",
+  "qualityTarget": "project_initiation_bim",
+  "sourceInputs": {
+    "images": [
+      "spec/target-house/target-house-1.png",
+      "spec/target-house/target-house-2.png",
+      "spec/target-house/floorplan.png"
+    ],
+    "briefs": ["spec/target-house/target-house-seed.md"],
+    "userInstruction": "Rebuild the demo seed house from scratch using the sketch-to-BIM methodology."
+  },
+  "visualRead": {
+    "primaryView": "front-left and front-right axonometric references with plan dimensions",
+    "style": "minimalist modernist",
+    "dominantVolumes": [
+      {
+        "id": "upper-white-wrapper",
+        "description": "Full-width smooth white folded upper shell with asymmetric gable roof, thick edges, front loggia, and roof-court void.",
+        "priority": "critical"
+      },
+      {
+        "id": "ground-cladded-base",
+        "description": "Vertically clad ground-floor base with a recessed right-front carport/covered bay and large glazing.",
+        "priority": "critical"
+      }
+    ],
+    "nonNegotiables": [
+      "14 m by 10 m plan proportions from floorplan",
+      "upper white shell larger and visually dominant over ground support",
+      "deep recessed front upper loggia with central cladded pier and black rail",
+      "large roof-court void cut into the right/back roof plane",
+      "vertical cladding on ground base and upper central pier",
+      "usable enclosed rooms, doors, and stair circulation"
+    ],
+    "forbiddenOutcomes": [
+      "old generic seedhouse geometry",
+      "dark or brown roof on a box",
+      "metadata-only roof opening with no visible void",
+      "unreachable or unenclosed occupied rooms"
+    ]
+  },
+  "dimensions": {
+    "confidence": "high",
+    "overallWidthMm": 14000,
+    "overallDepthMm": 10000,
+    "floorToFloorMm": 3000,
+    "upperLoggiaDepthMm": 1900,
+    "roofCourtApproxWidthMm": 5300,
+    "roofCourtApproxDepthMm": 4100
+  },
+  "programme": [
+    {
+      "name": "Kitchen / dining",
+      "level": "ground",
+      "programmeCode": "kitchen",
+      "targetAreaM2": 18.4,
+      "requiredDoor": false
+    },
+    {
+      "name": "Living area",
+      "level": "ground",
+      "programmeCode": "living",
+      "targetAreaM2": 19.8,
+      "requiredDoor": false
+    },
+    {
+      "name": "Entry / stair",
+      "level": "ground",
+      "programmeCode": "circulation",
+      "targetAreaM2": 12.6,
+      "requiredDoor": true
+    },
+    {
+      "name": "Bath / laundry",
+      "level": "ground",
+      "programmeCode": "bathroom",
+      "targetAreaM2": 4.8,
+      "requiredDoor": true
+    },
+    {
+      "name": "Utility",
+      "level": "ground",
+      "programmeCode": "utility",
+      "targetAreaM2": 3.4,
+      "requiredDoor": true
+    },
+    {
+      "name": "Primary bedroom",
+      "level": "upper",
+      "programmeCode": "bedroom",
+      "targetAreaM2": 17.6,
+      "requiredDoor": true
+    },
+    {
+      "name": "Walk-in closet",
+      "level": "upper",
+      "programmeCode": "closet",
+      "targetAreaM2": 4.2,
+      "requiredDoor": true
+    },
+    {
+      "name": "Ensuite",
+      "level": "upper",
+      "programmeCode": "bathroom",
+      "targetAreaM2": 5.2,
+      "requiredDoor": true
+    },
+    {
+      "name": "Hall / landing",
+      "level": "upper",
+      "programmeCode": "circulation",
+      "targetAreaM2": 15,
+      "requiredDoor": false
+    },
+    {
+      "name": "Bedroom 2",
+      "level": "upper",
+      "programmeCode": "bedroom",
+      "targetAreaM2": 12.2,
+      "requiredDoor": true
+    },
+    {
+      "name": "Roof court / terrace",
+      "level": "upper",
+      "programmeCode": "terrace",
+      "targetAreaM2": 21.7,
+      "requiredDoor": true
+    },
+    {
+      "name": "Deep balcony / loggia",
+      "level": "upper",
+      "programmeCode": "terrace",
+      "targetAreaM2": 26.6,
+      "requiredDoor": true
+    }
+  ],
+  "features": [
+    {
+      "id": "upper-white-wrapper",
+      "kind": "folded_white_wrapper_shell",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["main", "front", "right", "roof"],
+      "capabilityNeeds": ["cap.folded_white_wrapper_shell", "cap.primary_massing_envelope"]
+    },
+    {
+      "id": "front-loggia",
+      "kind": "recessed_loggia",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["main", "front", "upper_plan"],
+      "capabilityNeeds": ["cap.recessed_loggia"]
+    },
+    {
+      "id": "roof-court-void",
+      "kind": "roof_opening_with_occupied_terrace",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["main", "right", "roof", "upper_plan"],
+      "capabilityNeeds": ["cap.roof_opening_occupied_terrace"]
+    },
+    {
+      "id": "vertical-cladding",
+      "kind": "vertical_cladding",
+      "visualPriority": "high",
+      "mustRenderInViews": ["main", "front"],
+      "capabilityNeeds": ["cap.vertical_cladding"]
+    },
+    {
+      "id": "interior-usability",
+      "kind": "room_access_and_enclosure",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["ground_plan", "upper_plan", "wire"],
+      "capabilityNeeds": ["cap.room_access_and_enclosure"]
+    }
+  ],
+  "requiredViews": [
+    {
+      "id": "main",
+      "kind": "3d",
+      "purpose": "Image-matched axonometric showing wrapper, loggia, cladding, and roof void."
+    },
+    {
+      "id": "front",
+      "kind": "elevation",
+      "purpose": "Three-bay upper loggia and ground glazing."
+    },
+    {
+      "id": "right",
+      "kind": "3d",
+      "purpose": "Recessed carport and roof-court void."
+    },
+    {
+      "id": "roof",
+      "kind": "3d",
+      "purpose": "High view proving roof-court opening and terrace surfaces."
+    },
+    {
+      "id": "ground_plan",
+      "kind": "plan",
+      "purpose": "Ground rooms, partitions, doors, and stair."
+    },
+    {
+      "id": "upper_plan",
+      "kind": "plan",
+      "purpose": "Upper rooms, landing, loggia, roof court, and stair opening."
+    },
+    {
+      "id": "wire",
+      "kind": "diagnostic",
+      "purpose": "Check hidden overlaps, roof/wall seams, and stair clearance."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "front_orientation",
+      "statement": "The long edge with the deep loggia is the south/front side at yMm = 0.",
+      "confidence": "high"
+    },
+    {
+      "id": "roof_court_use",
+      "statement": "The roof court is open-to-sky and also treated as an occupied terrace zone with furniture and access.",
+      "confidence": "medium"
+    },
+    {
+      "id": "cladding_representation",
+      "statement": "Cladding is represented by typed materials and sparse battens instead of exhaustive board geometry.",
+      "confidence": "medium"
+    }
+  ]
+}

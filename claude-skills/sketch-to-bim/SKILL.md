@@ -1,6 +1,6 @@
 ---
 name: sketch-to-bim
-description: Use this skill when the user hands you a customer sketch (line drawing, render, photo, or hand sketch) plus an optional verbal brief, and asks you to author or extend a bim-ai BIM model that matches the sketch. The skill defines a phased architect's workflow (massing → skeleton → envelope → openings → interior → detail → documentation) with per-phase visual checkpoints, soundness validation, and an iteration loop. Trigger phrases include "build a BIM model from this sketch", "seed the house from this sketch", "generate a BIM model that matches this drawing", or any task that anchors on `spec/target-house-seed*.{md,png}` or comparable customer-supplied imagery.
+description: Use this skill when the user hands you a customer sketch (line drawing, render, photo, or hand sketch) plus an optional verbal brief, and asks you to author or extend a bim-ai BIM model that matches the sketch. The skill defines a phased architect's workflow (massing → skeleton → envelope → openings → interior → detail → documentation) with per-phase visual checkpoints, soundness validation, and an iteration loop. Trigger phrases include "build a BIM model from this sketch", "seed the house from this sketch", "generate a BIM model that matches this drawing", or any task that anchors on `spec/target-house/` or comparable customer-supplied imagery.
 ---
 
 # Sketch-to-BIM — the architect's playbook
@@ -76,8 +76,8 @@ These findings block phase advancement unless the user explicitly accepts them w
    - any capability gaps that must be resolved before modelling.
 
 1. **Locate the inputs.** Read every customer-supplied document and image:
-   - The brief (markdown, e.g. `spec/target-house-seed.md`) — read it end-to-end.
-   - The reference imagery (e.g. `spec/target-house-seed-vis.png`, `spec/target-house-vis-colored.png`) — open every image with the Read tool. Look at it with your own vision. Describe back, in writing, what you see.
+   - The brief (markdown, e.g. `spec/target-house/target-house-seed.md`) — read it end-to-end.
+   - The reference imagery (e.g. `spec/target-house/target-house-1.png`, `spec/target-house/target-house-2.png`, `spec/target-house/floorplan.png`) — open every image with the Read tool. Look at it with your own vision. Describe back, in writing, what you see.
    - Any sketch panels (main perspective, front / side / rear elevations, axonometric).
 
 2. **Perform a visual source-of-truth pass.** The image is not decorative context; it is the primary design evidence. Before authoring commands, write a concise visual readout that names the non-negotiable features visible in the sketch:

@@ -1,0 +1,143 @@
+{
+  "modelId": "75cd3d5c-f28c-5dd2-b8bf-8cbba71fd10f",
+  "revision": 1,
+  "violations": [
+    {
+      "ruleId": "gltf_export_manifest_expected_extension_missing",
+      "severity": "info",
+      "message": "glTF export manifest: extension 'bim_ai_skew_wall_hosted_openings_v0' not emitted but eligible element kind 'wall' is present (skipReasonCode='no_eligible_elements').",
+      "elementIds": [],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "gltf_export_manifest_expected_extension_missing",
+      "severity": "info",
+      "message": "glTF export manifest: extension 'bim_ai_roof_unsupported_shape_summary_v0' not emitted but eligible element kind 'roof' is present (skipReasonCode='no_eligible_elements').",
+      "elementIds": [],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    }
+  ],
+  "summary": {
+    "revision": 1,
+    "elementTotal": 144,
+    "scaleWorkload": {
+      "wallCount": 26,
+      "roomCount": 11,
+      "scheduleElementCount": 3
+    },
+    "countsByKind": {
+      "project_base_point": 1,
+      "placed_asset": 18,
+      "level": 3,
+      "plan_view": 4,
+      "plan_tag_style": 1,
+      "viewpoint": 5,
+      "sun_settings": 1,
+      "door": 13,
+      "floor": 5,
+      "family_type": 6,
+      "roof": 1,
+      "schedule": 3,
+      "wall": 26,
+      "asset_library_entry": 14,
+      "floor_type": 1,
+      "sheet": 1,
+      "stair": 1,
+      "wall_type": 4,
+      "room": 11,
+      "room_color_scheme": 1,
+      "window": 8,
+      "internal_origin": 1,
+      "roof_type": 1,
+      "section_cut": 1,
+      "sweep": 11,
+      "roof_opening": 1,
+      "slab_opening": 1
+    },
+    "levelCount": 3,
+    "levels": [
+      {
+        "id": "th-lvl-site",
+        "name": "Plinth / Site",
+        "elevationMm": -180
+      },
+      {
+        "id": "th-lvl-ground",
+        "name": "Ground Floor",
+        "elevationMm": 0
+      },
+      {
+        "id": "th-lvl-upper",
+        "name": "First Floor",
+        "elevationMm": 3000
+      }
+    ],
+    "wallCount": 26,
+    "wallsByLevelId": {
+      "th-lvl-ground": 11,
+      "th-lvl-upper": 15
+    },
+    "roomCount": 11,
+    "roomsByLevelId": {
+      "th-lvl-upper": 7,
+      "th-lvl-ground": 4
+    },
+    "doorCount": 13,
+    "windowCount": 8,
+    "gridLineCount": 0,
+    "openIssueCount": 0,
+    "floorCount": 5,
+    "roofCount": 1,
+    "stairCount": 1,
+    "sheetCount": 1,
+    "railingCount": 0,
+    "slabOpeningCount": 1,
+    "siteCount": 0,
+    "familyTypeCount": 6,
+    "sectionCutCount": 1,
+    "planViewCount": 4,
+    "viewTemplateCount": 0,
+    "viewpointCount": 5,
+    "dimensionCount": 0,
+    "scheduleCount": 3,
+    "saved3dViewClipSummary": {
+      "saved3dViewCount": 5,
+      "clipEnabledCount": 0,
+      "sectionBoxEnabledCount": 0,
+      "totalHiddenCategoryCount": 0
+    },
+    "roomDerivationPreview": {
+      "heuristicVersion": "room_deriv_preview_v4",
+      "axisAlignedRectangleCandidates": [],
+      "candidateCount": 0,
+      "authoritativeCandidateCount": 0,
+      "unboundedRoomIds": [],
+      "diagnostics": [],
+      "warnings": [],
+      "diagnosticCount": 0,
+      "authorityVersion": "axis_aa_authoritative_v2"
+    },
+    "regenerationDiagnostics": {
+      "documentRevision": 1,
+      "roomDerivationHeuristicVersion": "room_deriv_preview_v4",
+      "roomDerivationCandidateCount": 0,
+      "roomDerivationAuthoritativeCount": 0,
+      "roomDerivationDiagnosticCount": 0,
+      "roomDerivationWarningCount": 0,
+      "levelsWithRoomsSorted": ["th-lvl-ground", "th-lvl-upper"],
+      "levelsWithWallsSorted": ["th-lvl-ground", "th-lvl-upper"],
+      "maxRoomsOnSingleLevel": 7,
+      "maxWallsOnSingleLevel": 15
+    }
+  },
+  "checks": {
+    "errorViolationCount": 0,
+    "blockingViolationCount": 0
+  }
+}

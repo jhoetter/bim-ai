@@ -98,13 +98,13 @@ async def seed_async() -> None:
                     model_id=MODEL_ID,
                     user_display="Seed bot",
                     body=(
-                        "Asymmetric two-volume demo house — west-aligned upper volume with "
-                        "off-centre ridge, recessed loggia behind a white frame, east-side "
-                        "single-storey extension with flat roof deck. SSW viewpoint matches "
-                        "spec/target-house-vis-colored.png."
+                        "Target-house demo seed — 14 m by 10 m modern two-level house with a "
+                        "dominant folded white upper wrapper, deep front loggia, recessed "
+                        "right-front carport, and open-to-sky roof court matching "
+                        "spec/target-house/."
                     ),
                     element_id=None,
-                    level_id="hf-lvl-ground",
+                    level_id="th-lvl-ground",
                     anchor_x_mm=3500,
                     anchor_y_mm=4000,
                     resolved=False,
