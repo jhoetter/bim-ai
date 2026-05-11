@@ -140,6 +140,19 @@
         "packages/web/src/cmdPalette/CommandPalette.test.tsx",
         "packages/web/src/workspace/uxAudit.test.ts"
       ]
+    },
+    {
+      "idPattern": "ribbon.command-reachability",
+      "label": "Ribbon no-dead-button reachability audit",
+      "owner": "packages/web/src/workspace/shell/RibbonBar.tsx",
+      "sourceFile": "packages/web/src/workspace/shell/RibbonBar.tsx",
+      "intendedViews": ["plan", "3d", "plan-3d", "section", "sheet", "schedule", "agent"],
+      "actualSurfaces": ["ribbon"],
+      "preconditions": ["selectedElementKind for contextual Modify tab coverage"],
+      "executionHandler": "ribbonCommandReachabilityForMode mirrors RibbonBar disabled-state projection from commandCapabilities",
+      "status": "implemented",
+      "usabilityScore": 8,
+      "tests": ["packages/web/src/workspace/uxAudit.test.ts"]
     }
   ]
 }

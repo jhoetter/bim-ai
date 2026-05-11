@@ -7,10 +7,12 @@ import { describe, expect, it } from 'vitest';
 import '../cmdPalette/defaultCommands';
 import { getRegistry, queryPalette } from '../cmdPalette/registry';
 import {
+  CAPABILITY_VIEW_MODES,
   evaluateCommandInMode,
   getCommandCapability,
   type CapabilityViewMode,
 } from './commandCapabilities';
+import { ribbonCommandReachabilityForMode } from './shell/RibbonBar';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 
@@ -80,5 +82,29 @@ describe('UX reachability audit', () => {
         expect(entry.badge, `${entry.id} in ${activeMode}`).toBeTruthy();
       }
     }
+  });
+
+  it('keeps mounted ribbon commands from becoming enabled dead buttons', () => {
+    const selectedElementKinds = [null, 'wall'];
+    let inspected = 0;
+
+    for (const mode of CAPABILITY_VIEW_MODES) {
+      for (const selectedElementKind of selectedElementKinds) {
+        for (const exposure of ribbonCommandReachabilityForMode(mode, selectedElementKind)) {
+          inspected += 1;
+          const availability = evaluateCommandInMode(exposure.commandId, mode);
+          const context = `${exposure.commandId} (${exposure.label}) in ${mode} via ${exposure.tabId}/${exposure.panelId}`;
+
+          expect(availability, context).not.toBeNull();
+          if (exposure.behavior === 'direct') {
+            expect(availability?.state, context).toBe('enabled');
+          } else {
+            expect(exposure.disabledReason, context).toBeTruthy();
+          }
+        }
+      }
+    }
+
+    expect(inspected).toBeGreaterThan(0);
   });
 });

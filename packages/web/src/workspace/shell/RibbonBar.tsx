@@ -52,6 +52,16 @@ interface RibbonTab {
   panels: RibbonPanel[];
 }
 
+export interface RibbonCommandReachability {
+  commandId: string;
+  mode: CapabilityViewMode;
+  tabId: RibbonTabId;
+  panelId: string;
+  label: string;
+  behavior: 'direct' | 'disabled';
+  disabledReason?: string;
+}
+
 export interface RibbonBarProps {
   activeToolId?: ToolId;
   activeMode?: ToolWorkspaceMode;
@@ -310,6 +320,32 @@ export function RibbonBar({
       ) : null}
     </section>
   );
+}
+
+export function ribbonCommandReachabilityForMode(
+  mode: CapabilityViewMode,
+  selectedElementKind?: string | null,
+): RibbonCommandReachability[] {
+  const reachability: RibbonCommandReachability[] = [];
+  for (const tab of buildRibbonTabs(selectedElementKind)) {
+    for (const panel of tab.panels) {
+      for (const command of [...panel.commands, ...(panel.flyoutCommands ?? [])]) {
+        const commandId = ribbonCapabilityId(command);
+        if (!commandId) continue;
+        const disabledReason = commandDisabledReason(command, mode);
+        reachability.push({
+          commandId,
+          mode,
+          tabId: tab.id,
+          panelId: panel.id,
+          label: command.label,
+          behavior: disabledReason ? 'disabled' : 'direct',
+          disabledReason,
+        });
+      }
+    }
+  }
+  return reachability;
 }
 
 function RibbonButton({

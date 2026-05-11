@@ -30,7 +30,7 @@ Surface policy:
 | Surface          | Projection rule                                                                                                                                                                |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Topbar           | Universal shell commands and QAT shortcuts. Redo/undo expose availability.                                                                                                     |
-| Ribbon           | Uses the capability graph for mode validity and disables invalid direct commands with reasons.                                                                                 |
+| Ribbon           | Uses the capability graph for mode validity, disables invalid direct commands with reasons, and exposes a test projection for mounted command reachability.                    |
 | Floating palette | Shows active-canvas tool definitions and checks capability availability plus tool preconditions.                                                                               |
 | Cmd+K            | Groups results by context badge, shows disabled/bridge state for registered commands, and includes active-view visibility routing plus universal left/right rail toggles.      |
 | Left rail        | Browser remains the deterministic navigation source for named views and model hierarchy.                                                                                       |
@@ -41,6 +41,6 @@ Regression guards:
 
 - `packages/web/src/workspace/commandCapabilities.test.ts`
 - `packages/web/src/workspace/uxAudit.test.ts`
-- `packages/web/src/workspace/shell/RibbonBar.tsx` imports `evaluateCommandInMode`
+- `packages/web/src/workspace/shell/RibbonBar.tsx` imports `evaluateCommandInMode` and exports `ribbonCommandReachabilityForMode`
 - `packages/web/src/cmdPalette/registry.ts` imports `evaluateCommandInMode`
 - `packages/web/src/tools/ToolPalette.tsx` imports `evaluateCommandInMode`
