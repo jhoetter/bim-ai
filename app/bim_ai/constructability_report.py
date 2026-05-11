@@ -8,6 +8,7 @@ from bim_ai.constraints import evaluate
 from bim_ai.constraints_core import Violation
 from bim_ai.constructability_clearance import (
     FURNITURE_WALL_CLEARANCE_RULE_ID,
+    MAINTENANCE_CLEARANCE_RULE_ID,
     constructability_clearance_violations,
 )
 from bim_ai.constructability_geometry import (
@@ -59,6 +60,7 @@ CONSTRUCTABILITY_RULE_IDS = frozenset(
         "stair_guardrail_missing",
         "stair_guardrail_height_insufficient",
         FURNITURE_WALL_CLEARANCE_RULE_ID,
+        MAINTENANCE_CLEARANCE_RULE_ID,
         "roof_wall_coverage_gap",
         "roof_low_slope_without_drainage_metadata",
         "roof_opening_missing_host",
@@ -125,6 +127,7 @@ RECOMMENDATION_BY_RULE_ID = {
     "stair_guardrail_missing": "Add a hosted railing/guardrail for the stair or document an approved exception.",
     "stair_guardrail_height_insufficient": "Raise the hosted guardrail height or use an approved railing type.",
     FURNITURE_WALL_CLEARANCE_RULE_ID: "Move the object farther from the wall or record an approved clearance exception for the active profile.",
+    MAINTENANCE_CLEARANCE_RULE_ID: "Move the obstruction outside the element's required maintenance/operation clearance.",
     "roof_wall_coverage_gap": "Revise the roof overhang/footprint or align the primary envelope wall under the roof coverage.",
     "roof_low_slope_without_drainage_metadata": "Add flat-roof drainage/taper metadata, increase the roof slope, or record engineering review approval.",
     "roof_opening_missing_host": "Attach the roof opening to a valid roof or remove the orphan opening.",

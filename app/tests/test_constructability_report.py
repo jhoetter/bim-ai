@@ -590,3 +590,53 @@ def test_constructability_clearance_rule_is_profile_enabled() -> None:
     }
     assert readiness_report["findings"][0]["severity"] == "error"
     assert clear_report["summary"]["ruleCounts"] == {}
+
+
+def test_constructability_maintenance_clearance_uses_element_requirement() -> None:
+    elements = {
+        "lvl-1": LevelElem(kind="level", id="lvl-1", name="Level 1", elevationMm=0.0),
+        "asset-shelf": AssetLibraryEntryElem(
+            kind="asset_library_entry",
+            id="asset-shelf",
+            assetKind="block_2d",
+            name="Shelf",
+            category="casework",
+            tags=[],
+            thumbnailKind="schematic_plan",
+            thumbnailWidthMm=600,
+            thumbnailHeightMm=300,
+        ),
+        "service-panel": PlacedAssetElem(
+            kind="placed_asset",
+            id="service-panel",
+            name="Service panel",
+            assetId="asset-shelf",
+            levelId="lvl-1",
+            positionMm={"xMm": 0, "yMm": 0},
+            paramValues={
+                "widthMm": 600,
+                "depthMm": 300,
+                "proxyHeightMm": 900,
+                "maintenanceClearanceMm": 900,
+            },
+        ),
+        "cart": PlacedAssetElem(
+            kind="placed_asset",
+            id="cart",
+            name="Cart",
+            assetId="asset-shelf",
+            levelId="lvl-1",
+            positionMm={"xMm": 0, "yMm": 1000},
+            paramValues={"widthMm": 600, "depthMm": 300, "proxyHeightMm": 900},
+        ),
+    }
+
+    authoring_report = build_constructability_report(elements, revision=16)
+    readiness_report = build_constructability_report(
+        elements,
+        revision=16,
+        profile="construction_readiness",
+    )
+
+    assert "maintenance_clearance_conflict" not in authoring_report["summary"]["ruleCounts"]
+    assert readiness_report["summary"]["ruleCounts"]["maintenance_clearance_conflict"] == 1
