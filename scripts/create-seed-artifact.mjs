@@ -18,6 +18,7 @@ function usage() {
     --name <seed-name> \\
     --source <folder-with-user-inputs> \\
     --bundle <cmd-v3-bundle.json> \\
+    [--live-evidence <dir>] [--require-live-evidence] \\
     [--title <label>] [--description <text>] [--created-at <iso8601>] \\
     [--out <artifact-root>] [--force]
 `);
@@ -29,6 +30,7 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--force') out.force = true;
+    else if (arg === '--require-live-evidence') out.requireLiveEvidence = true;
     else if (arg.startsWith('--') && argv[i + 1]) out[arg.slice(2)] = argv[++i];
     else usage();
   }
@@ -50,6 +52,22 @@ async function sha256File(file) {
     .createHash('sha256')
     .update(await fs.readFile(file))
     .digest('hex');
+}
+
+async function pathExists(file) {
+  return fs
+    .stat(file)
+    .then(() => true)
+    .catch(() => false);
+}
+
+async function currentGitHead() {
+  const { spawnSync } = await import('node:child_process');
+  const proc = spawnSync('git', ['rev-parse', 'HEAD'], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+  });
+  return proc.status === 0 ? proc.stdout.trim() : null;
 }
 
 function portablePath(absPath) {
@@ -95,12 +113,46 @@ async function ensureBundle(bundlePath) {
   };
 }
 
+async function ensureLiveEvidence(evidenceDir, bundlePath) {
+  if (!evidenceDir) return null;
+  const dir = path.resolve(evidenceDir);
+  const summaryPath = path.join(dir, 'tool-run-summary.json');
+  const summary = await readJson(summaryPath);
+  if (summary.schemaVersion !== 'sketch-to-bim.tool-run.v1') {
+    throw new Error(`${summaryPath} must use schemaVersion sketch-to-bim.tool-run.v1.`);
+  }
+  const currentHead = await currentGitHead();
+  const bundleHash = await sha256File(bundlePath);
+  const mismatches = {};
+  if (summary.gitHead !== currentHead) mismatches.gitHead = { recorded: summary.gitHead, current: currentHead };
+  if (summary.bundleSha256 !== bundleHash) {
+    mismatches.bundleSha256 = { recorded: summary.bundleSha256, current: bundleHash };
+  }
+  if (Object.keys(mismatches).length) {
+    throw new Error(
+      `Live evidence is stale for ${dir}: ${JSON.stringify(mismatches, null, 2)}`,
+    );
+  }
+  return {
+    directory: dir,
+    summary,
+  };
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const sourceDir = path.resolve(args.source);
   const bundlePath = path.resolve(args.bundle);
   const outRoot = path.resolve(args.out ?? DEFAULT_OUT);
   const artifactDir = path.join(outRoot, args.name);
+  const liveEvidence = args['live-evidence']
+    ? await ensureLiveEvidence(args['live-evidence'], bundlePath)
+    : null;
+  if (args.requireLiveEvidence && !liveEvidence) {
+    throw new Error(
+      'Final live evidence is required. Run sketch_bim.py accept first and pass --live-evidence <dir>.',
+    );
+  }
 
   const sourceStat = await fs.stat(sourceDir).catch(() => null);
   if (!sourceStat?.isDirectory()) throw new Error(`--source must be a directory: ${sourceDir}`);
@@ -124,6 +176,12 @@ async function main() {
   });
   await fs.copyFile(bundlePath, path.join(artifactDir, 'bundle.json'));
   await fs.mkdir(path.join(artifactDir, 'evidence'), { recursive: true });
+  if (liveEvidence) {
+    await fs.cp(liveEvidence.directory, path.join(artifactDir, 'evidence', 'live-run-current'), {
+      recursive: true,
+      filter: (src) => shouldCopy(src),
+    });
+  }
   await fs.writeFile(
     path.join(artifactDir, 'evidence', 'README.md'),
     '# Evidence\n\nPlace advisor JSON, screenshots, validation output, and acceptance notes here. Keep files portable and scoped to this artifact.\n',
@@ -144,6 +202,19 @@ async function main() {
       tool: 'scripts/create-seed-artifact.mjs',
       version: 1,
     },
+    acceptance: liveEvidence
+      ? {
+          status: 'accepted',
+          evidenceRoot: 'evidence/live-run-current',
+          gitHead: liveEvidence.summary.gitHead,
+          bundleSha256: liveEvidence.summary.bundleSha256,
+          irSha256: liveEvidence.summary.irSha256,
+          capabilitiesSha256: liveEvidence.summary.capabilitiesSha256,
+          generatedAtEpochMs: liveEvidence.summary.generatedAtEpochMs,
+        }
+      : {
+          status: args.requireLiveEvidence ? 'missing' : 'not-provided',
+        },
     inputPaths: {
       source: portablePath(sourceDir),
       bundle: portablePath(bundlePath),

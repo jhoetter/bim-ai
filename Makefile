@@ -21,7 +21,7 @@ SEED_NAME ?= $(name)
 SEED_ROOT ?= $(seed_root)
 SEED_ARGS := $(if $(SEED_NAME),--name "$(SEED_NAME)",) $(if $(SEED_ROOT),--root "$(SEED_ROOT)",)
 
-.PHONY: help install dev dev-api dev-web kill-ports seed seed-clear seed-artifact \
+.PHONY: help install dev dev-api dev-web kill-ports seed seed-clear seed-artifact verify-sketch-seeds verify-sketch-seeds-live \
 	db-up db-down db-reset db-logs \
 	test test-py test-js format format-check python-format-check lint architecture \
 	typecheck verify build clean lockfile-check verify-refinement-reliability
@@ -32,6 +32,8 @@ help:
 	@echo "  dev       — db-up + API + Web (:$(API_PORT) / :$(WEB_PORT)); make dev design=conservative|default"
 	@echo "  seed      — load seed-artifacts/*; pass name=<seed-name> to load one"
 	@echo "  seed-clear — delete all seed-managed local models"
+	@echo "  verify-sketch-seeds — validate seed artifact manifests/hashes"
+	@echo "  verify-sketch-seeds-live — strict current-HEAD live sketch-to-BIM acceptance"
 	@echo "  verify    — format-check, lint, architecture, tc, pytest, vite build"
 
 install:
@@ -101,7 +103,13 @@ seed-clear:
 	cd $(APP_DIR) && PYTHONPATH=. .venv/bin/python scripts/seed.py --clear $(if $(SEED_ROOT),--root "$(SEED_ROOT)",)
 
 seed-artifact:
-	node scripts/create-seed-artifact.mjs --name "$(NAME)" --source "$(SOURCE)" --bundle "$(BUNDLE)" $(if $(TITLE),--title "$(TITLE)",) $(if $(DESCRIPTION),--description "$(DESCRIPTION)",) $(if $(OUT),--out "$(OUT)",) $(if $(FORCE),--force,)
+	node scripts/create-seed-artifact.mjs --name "$(NAME)" --source "$(SOURCE)" --bundle "$(BUNDLE)" $(if $(TITLE),--title "$(TITLE)",) $(if $(DESCRIPTION),--description "$(DESCRIPTION)",) $(if $(LIVE_EVIDENCE),--live-evidence "$(LIVE_EVIDENCE)",) $(if $(REQUIRE_LIVE_EVIDENCE),--require-live-evidence,) $(if $(OUT),--out "$(OUT)",) $(if $(FORCE),--force,)
+
+verify-sketch-seeds:
+	node scripts/verify-sketch-seed-artifacts.mjs $(if $(name),--seed "$(name)",)
+
+verify-sketch-seeds-live:
+	node scripts/verify-sketch-seed-artifacts.mjs --require-final-evidence --live $(if $(name),--seed "$(name)",)
 
 test: test-py test-js
 

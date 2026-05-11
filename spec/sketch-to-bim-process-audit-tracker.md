@@ -122,6 +122,18 @@ covered at the right-rail source payload level: the tool compares the CLI Adviso
 grouping with the same snapshot `violations` payload rendered by the right rail
 before client-side perspective filtering.
 
+Artifact packaging and CI-style checks now have a non-interactive gate:
+
+```bash
+node scripts/verify-sketch-seed-artifacts.mjs --require-final-evidence
+make verify-sketch-seeds
+make verify-sketch-seeds-live
+```
+
+`scripts/create-seed-artifact.mjs` also accepts `--live-evidence <dir>` and
+`--require-live-evidence`, so packaging can refuse stale or missing final live
+evidence.
+
 ## Required Seed Authoring Loop
 
 For project-initiation BIM, an AI architect must run the software while creating
@@ -172,8 +184,8 @@ HEAD, even when older checked-in evidence says `advisorWarningCount: 0`.
 
 | ID | Status | Priority | Gap | Acceptance |
 | --- | --- | --- | --- | --- |
-| SKB-AUD-001 | open | P0 | Current-HEAD live Advisor is not a hard packaging gate. | `scripts/create-seed-artifact.mjs` or a companion verifier refuses final packaging unless a fresh `initiation-run --fail-on-warning --fail-on-acceptance` passed at the current git commit. |
-| SKB-AUD-002 | open | P0 | Stale evidence is not invalidated when Advisor rules change. | Artifact evidence records git commit, app build ref, Advisor rule digest, command bundle hash, and generatedAt. Loader/UI flags evidence as stale when any of these drift. |
+| SKB-AUD-001 | done | P0 | Current-HEAD live Advisor is not a hard packaging gate. | `scripts/create-seed-artifact.mjs --require-live-evidence --live-evidence <dir>` and `scripts/verify-sketch-seed-artifacts.mjs --require-final-evidence` refuse missing/stale final acceptance evidence. |
+| SKB-AUD-002 | partial | P0 | Stale evidence is not invalidated when Advisor rules change. | Final evidence records git commit, bundle hash, IR hash, capability hash, and generatedAt; `stale-check` and the verifier fail on drift. Remaining: add explicit Advisor rule digest separate from git HEAD. |
 | SKB-AUD-003 | open | P0 | Door operation clearance is not explicitly listed as a sketch-initiation blocker. | `door_operation_clearance_conflict` is in the sketch-to-BIM blocking class list and final seed acceptance fails on it. |
 | SKB-AUD-004 | partial | P0 | Phase gates are written but not required as files. | `sketch_bim.py phase-accept` now requires Advisor warning/info, screenshot manifest, semantic checklist, visual readout, corrections, and issue ledger files. Remaining: force these packets from seed packaging/CI. |
 | SKB-AUD-005 | open | P0 | Interior assets regressed from the May 10 seed path. | Project-initiation seeds include indexed and placed assets for living, dining, kitchen, bathrooms, bedrooms, stair/landing, and terrace when those spaces exist in the brief. |
@@ -183,7 +195,7 @@ HEAD, even when older checked-in evidence says `advisorWarningCount: 0`.
 | SKB-AUD-009 | partial | P1 | Advisor findings are not forced back into the source recipe. | `sketch_bim.py issue-ledger` maps Advisor groups and element ids to recipe/bundle text occurrences and marks blocking issues pending. Remaining: require human/agent correction notes in CI. |
 | SKB-AUD-010 | partial | P1 | UI Advisor and CLI Advisor can diverge unnoticed. | `sketch_bim.py advisor-parity` compares CLI Advisor output with the right-rail source snapshot payload. Remaining: add browser DOM screenshot capture for final evidence. |
 | SKB-AUD-011 | open | P2 | No reusable archetype baseline for common house types. | Seed authoring can start from a versioned archetype when it matches >=70%, then documents deltas from the user sketch. |
-| SKB-AUD-012 | open | P2 | No live CI baseline for shipped seed artifacts. | CI can load each checked-in seed artifact, run current Advisor, capture screenshots headlessly, and fail on warnings/errors. |
+| SKB-AUD-012 | partial | P2 | No live CI baseline for shipped seed artifacts. | `make verify-sketch-seeds-live` runs strict final acceptance for checked-in artifacts. Remaining: wire it into hosted CI once current seed artifacts have fresh accepted evidence. |
 | SKB-AUD-013 | done | P0 | The skill lacked a `watch-yt`-style executable helper. | `claude-skills/sketch-to-bim/sketch_bim.py` provides `doctor`, `compile`, `seed`, `advisor`, `accept`, and `stale-check`. |
 | SKB-AUD-014 | partial | P0 | Phase packet creation is still mostly documented, not tool-enforced. | `sketch_bim.py phase-accept --phase <id>` exists and fails on missing files, Advisor warnings, pending issue-ledger rows, or pending semantic checks. Remaining: integrate into final packaging and CI. |
 | SKB-AUD-015 | partial | P1 | Browser right-rail Advisor parity is not automatically captured. | `sketch_bim.py advisor-parity` calls the API payload rendered by the right rail and diffs it against CLI Advisor groups. Remaining: browser panel screenshot/DOM capture. |

@@ -77,6 +77,9 @@ python3 claude-skills/sketch-to-bim/sketch_bim.py accept \
 
 # Prove checked-in live evidence still matches current HEAD inputs.
 python3 claude-skills/sketch-to-bim/sketch_bim.py stale-check --seed <seed-name>
+
+# CI/package gate across checked-in seed artifacts.
+node scripts/verify-sketch-seed-artifacts.mjs --require-final-evidence
 ```
 
 The helper is intentionally narrow. If it fails, read the generated stdout/JSON,
