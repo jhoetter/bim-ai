@@ -1115,6 +1115,13 @@ export function Workspace(): JSX.Element {
         })),
     [elementsById],
   );
+  const paletteSectionCuts = useMemo(
+    () =>
+      (Object.values(elementsById) as Element[])
+        .filter((el): el is Extract<Element, { kind: 'section_cut' }> => el.kind === 'section_cut')
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [elementsById],
+  );
 
   const openElementById = useCallback(
     (id: string) => {
@@ -1181,6 +1188,14 @@ export function Workspace(): JSX.Element {
       ? activeTab.targetId
       : effectiveMode === 'sheet'
         ? paletteFirstSheetId
+        : null;
+  const paletteActiveSectionId =
+    activeTab?.kind === 'section' && activeTab.targetId
+      ? activeTab.targetId
+      : effectiveMode === 'section'
+        ? elementsById[selectedId ?? '']?.kind === 'section_cut'
+          ? (selectedId ?? null)
+          : (paletteSectionCuts[0]?.id ?? null)
         : null;
   const paletteSheetPlaceableViews = useMemo(
     () =>
@@ -1250,6 +1265,29 @@ export function Workspace(): JSX.Element {
       if (cmd) void onSemanticCommand(cmd);
     },
     [elementsById, onSemanticCommand, paletteActiveSheetId],
+  );
+  const placeActiveSectionOnSheet = useCallback(() => {
+    if (!paletteActiveSectionId || !paletteFirstSheetId) return;
+    const cmd = placeViewOnSheetCommand(elementsById, paletteFirstSheetId, paletteActiveSectionId);
+    if (cmd) void onSemanticCommand(cmd);
+  }, [elementsById, onSemanticCommand, paletteActiveSectionId, paletteFirstSheetId]);
+  const openActiveSectionSourcePlan = useCallback(() => {
+    navigateTo({ kind: 'plan', source: 'cmdk' });
+  }, [navigateTo]);
+  const adjustActiveSectionCropDepth = useCallback(
+    (deltaMm: number) => {
+      if (!paletteActiveSectionId) return;
+      const section = elementsById[paletteActiveSectionId];
+      if (section?.kind !== 'section_cut') return;
+      const current = typeof section.cropDepthMm === 'number' ? section.cropDepthMm : 9000;
+      void onSemanticCommand({
+        type: 'updateElementProperty',
+        elementId: paletteActiveSectionId,
+        key: 'cropDepthMm',
+        value: Math.max(100, current + deltaMm),
+      });
+    },
+    [elementsById, onSemanticCommand, paletteActiveSectionId],
   );
   const openScheduleControls = useCallback(() => {
     navigateTo({
@@ -1434,6 +1472,7 @@ export function Workspace(): JSX.Element {
           activePlanViewId,
           activeScheduleId: paletteActiveScheduleId,
           activeSheetId: paletteActiveSheetId,
+          activeSectionId: paletteActiveSectionId,
           navigateMode: (kind) => navigateTo({ kind, source: 'cmdk' }),
           startPlanTool: (toolId) => handleToolSelect(toolId as ToolId),
           setTheme: handleThemeSet,
@@ -1463,6 +1502,9 @@ export function Workspace(): JSX.Element {
           openSheetTitleblockEditor: () => openActiveSheetAnchor('sheet-titleblock-editor'),
           openSheetViewportEditor: () => openActiveSheetAnchor('sheet-viewport-editor'),
           shareActiveSheet: () => setSharePresentationOpen(true),
+          placeActiveSectionOnSheet,
+          openActiveSectionSourcePlan,
+          adjustActiveSectionCropDepth,
           closeInactiveViews: () => setTabsState((s) => closeInactiveTabs(s)),
           toggleLeftRail: () => setLeftRailCollapsed((v) => !v),
           toggleRightRail,

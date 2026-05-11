@@ -36,6 +36,8 @@ export type PaletteContext = {
   activeScheduleId?: string | null;
   /** Active sheet element id for sheet-scoped commands. */
   activeSheetId?: string | null;
+  /** Active section_cut element id for section-scoped commands. */
+  activeSectionId?: string | null;
   /** Navigate through the same tab/mode path as the main workspace chrome. */
   navigateMode?: (
     mode: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent' | 'concept',
@@ -71,6 +73,9 @@ export type PaletteContext = {
   openSheetTitleblockEditor?: () => void;
   openSheetViewportEditor?: () => void;
   shareActiveSheet?: () => void;
+  placeActiveSectionOnSheet?: () => void;
+  openActiveSectionSourcePlan?: () => void;
+  adjustActiveSectionCropDepth?: (deltaMm: number) => void;
   closeInactiveViews?: () => void;
   toggleLeftRail?: () => void;
   toggleRightRail?: () => void;

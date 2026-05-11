@@ -28,6 +28,12 @@ const SHEET_CTX: PaletteContext = {
   activeSheetId: 'sheet-1',
   activeMode: 'sheet',
 };
+const SECTION_CTX: PaletteContext = {
+  selectedElementIds: [],
+  activeViewId: 'sec-1',
+  activeSectionId: 'sec-1',
+  activeMode: 'section',
+};
 
 afterEach(() => {
   useBimStore.setState({
@@ -271,6 +277,35 @@ describe('default Cmd+K commands', () => {
       sharePresentation: vi.fn(),
     });
     expect(shareActiveSheet).toHaveBeenCalledOnce();
+  });
+
+  it('routes section workflow commands through the palette host context', () => {
+    const placeActiveSectionOnSheet = vi.fn();
+    const openActiveSectionSourcePlan = vi.fn();
+    const adjustActiveSectionCropDepth = vi.fn();
+
+    const unavailable = queryPalette('section source plan', PLAN_CTX, {}).find(
+      (entry) => entry.id === 'section.open-source-plan',
+    );
+    expect(unavailable?.disabledReason).toContain('unavailable');
+
+    command('section.place-on-sheet').invoke({ ...SECTION_CTX, placeActiveSectionOnSheet });
+    expect(placeActiveSectionOnSheet).toHaveBeenCalledOnce();
+
+    command('section.open-source-plan').invoke({ ...SECTION_CTX, openActiveSectionSourcePlan });
+    expect(openActiveSectionSourcePlan).toHaveBeenCalledOnce();
+
+    command('section.crop-depth.increase').invoke({
+      ...SECTION_CTX,
+      adjustActiveSectionCropDepth,
+    });
+    expect(adjustActiveSectionCropDepth).toHaveBeenCalledWith(500);
+
+    command('section.crop-depth.decrease').invoke({
+      ...SECTION_CTX,
+      adjustActiveSectionCropDepth,
+    });
+    expect(adjustActiveSectionCropDepth).toHaveBeenCalledWith(-500);
   });
 
   it('routes active visibility commands through the palette host context', () => {
