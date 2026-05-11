@@ -21,7 +21,10 @@ import {
   setActiveComponentFamilyTypeId,
   syncLastLevelElevationPropagationFromApplyResponse,
 } from './authoring';
-import { planToolsForPerspective } from './planToolsByPerspective';
+import {
+  paletteToolAllowlistForPerspective,
+  planToolsForPerspective,
+} from './planToolsByPerspective';
 import {
   buildCollaborationConflictQueueV1,
   type CollaborationConflictQueueV1,
@@ -46,6 +49,7 @@ import {
   type ToolDefinition,
   type ToolDisabledContext,
   type ToolId,
+  type WorkspaceMode as ToolWorkspaceMode,
 } from '../tools/toolRegistry';
 import {
   EMPTY_TABS,
@@ -901,24 +905,18 @@ export function Workspace(): JSX.Element {
 
   // Reset to 'select' when the current tool isn't valid for the active perspective
   const visibleTools = useMemo(() => planToolsForPerspective(perspectiveId), [perspectiveId]);
+  const effectiveToolMode = effectiveMode as ToolWorkspaceMode;
   useEffect(() => {
+    if (effectiveToolMode !== 'plan' && effectiveToolMode !== 'plan-3d') return;
     if (!visibleTools.includes(planTool)) setPlanTool('select');
-  }, [planTool, setPlanTool, visibleTools]);
+  }, [effectiveToolMode, planTool, setPlanTool, visibleTools]);
 
-  // Derive the ToolId allowlist from the perspective-filtered legacy tool list.
-  // 'room_rectangle' maps to 'room' and 'grid' maps to 'select' in the palette;
-  // all other PlanTool values are identical to their ToolId counterpart.
   const allowedToolIds = useMemo<ReadonlySet<ToolId>>(
-    () =>
-      new Set(
-        visibleTools.map((t): ToolId => {
-          if (t === 'room_rectangle') return 'room';
-          if (t === 'grid') return 'select';
-          return t as ToolId;
-        }),
-      ),
-    [visibleTools],
+    () => paletteToolAllowlistForPerspective(effectiveToolMode, perspectiveId) ?? new Set<ToolId>(),
+    [effectiveToolMode, perspectiveId],
   );
+  const paletteAllowedToolIds =
+    effectiveToolMode === 'plan' || effectiveToolMode === 'plan-3d' ? allowedToolIds : undefined;
 
   const openMilestoneDialog = useCallback(() => setMilestoneDialogOpen(true), []);
 
@@ -1454,7 +1452,7 @@ export function Workspace(): JSX.Element {
               activeTool={planToolToToolId(planTool)}
               onToolSelect={handleToolSelect}
               disabledContext={toolDisabledContext}
-              allowedToolIds={allowedToolIds}
+              allowedToolIds={paletteAllowedToolIds}
             />
             <CanvasMount
               mode={effectiveMode}

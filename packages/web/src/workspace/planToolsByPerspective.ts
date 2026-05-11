@@ -1,6 +1,7 @@
 import type { PerspectiveId } from '@bim-ai/core';
 
 import type { PlanTool } from '../state/store';
+import type { ToolId, WorkspaceMode } from '../tools/toolRegistry';
 
 const ALL_TOOLS: readonly PlanTool[] = [
   'select',
@@ -44,4 +45,18 @@ export function planToolsForPerspective(p: PerspectiveId): readonly PlanTool[] {
       return _never;
     }
   }
+}
+
+export function paletteToolAllowlistForPerspective(
+  mode: WorkspaceMode,
+  perspective: PerspectiveId,
+): ReadonlySet<ToolId> | undefined {
+  if (mode !== 'plan' && mode !== 'plan-3d') return undefined;
+  return new Set(planToolsForPerspective(perspective).map(planToolToPaletteToolId));
+}
+
+function planToolToPaletteToolId(tool: PlanTool): ToolId {
+  if (tool === 'room_rectangle') return 'room';
+  if (tool === 'grid') return 'select';
+  return tool as ToolId;
 }
