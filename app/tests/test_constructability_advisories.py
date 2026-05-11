@@ -18,6 +18,7 @@ from bim_ai.elements import (
     LevelElem,
     PipeElem,
     PlacedAssetElem,
+    RailingElem,
     RoofElem,
     RoomElem,
     SlabOpeningElem,
@@ -920,6 +921,89 @@ def test_adequate_stair_ceiling_headroom_is_not_reported() -> None:
     }
 
     assert "stair_headroom_clearance_conflict" not in _rule_ids(elements)
+
+
+def test_tall_stair_without_hosted_guardrail_is_reported() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "lvl-2": LevelElem(kind="level", id="lvl-2", name="Level 2", elevationMm=3000.0),
+        "stair-1": StairElem(
+            kind="stair",
+            id="stair-1",
+            baseLevelId="lvl-1",
+            topLevelId="lvl-2",
+            runStartMm={"xMm": 0, "yMm": 0},
+            runEndMm={"xMm": 3000, "yMm": 0},
+            widthMm=1000,
+        ),
+    }
+
+    assert "stair_guardrail_missing" in _rule_ids(elements)
+
+    elements["rail-1"] = RailingElem(
+        kind="railing",
+        id="rail-1",
+        hostedStairId="stair-1",
+        pathMm=[{"xMm": 0, "yMm": -500}, {"xMm": 3000, "yMm": -500}],
+        guardHeightMm=1000,
+    )
+    assert "stair_guardrail_missing" not in _rule_ids(elements)
+
+
+def test_low_stair_guardrail_height_is_reported() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "lvl-2": LevelElem(kind="level", id="lvl-2", name="Level 2", elevationMm=3000.0),
+        "stair-1": StairElem(
+            kind="stair",
+            id="stair-1",
+            baseLevelId="lvl-1",
+            topLevelId="lvl-2",
+            runStartMm={"xMm": 0, "yMm": 0},
+            runEndMm={"xMm": 3000, "yMm": 0},
+            widthMm=1000,
+        ),
+        "rail-low": RailingElem(
+            kind="railing",
+            id="rail-low",
+            hostedStairId="stair-1",
+            pathMm=[{"xMm": 0, "yMm": -500}, {"xMm": 3000, "yMm": -500}],
+            guardHeightMm=800,
+        ),
+    }
+
+    assert "stair_guardrail_height_insufficient" in _rule_ids(elements)
+
+
+def test_l_shape_stair_without_landing_is_reported() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "lvl-2": LevelElem(kind="level", id="lvl-2", name="Level 2", elevationMm=3000.0),
+        "stair-1": StairElem(
+            kind="stair",
+            id="stair-1",
+            baseLevelId="lvl-1",
+            topLevelId="lvl-2",
+            runStartMm={"xMm": 0, "yMm": 0},
+            runEndMm={"xMm": 3000, "yMm": 0},
+            widthMm=1000,
+            shape="l_shape",
+            runs=[
+                {
+                    "id": "run-1",
+                    "startMm": {"xMm": 0, "yMm": 0},
+                    "endMm": {"xMm": 1500, "yMm": 0},
+                },
+                {
+                    "id": "run-2",
+                    "startMm": {"xMm": 1500, "yMm": 0},
+                    "endMm": {"xMm": 1500, "yMm": 1500},
+                },
+            ],
+        ),
+    }
+
+    assert "stair_landing_missing" in _rule_ids(elements)
 
 
 def test_default_constructability_matrix_json_matches_app_default() -> None:

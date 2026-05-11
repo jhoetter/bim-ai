@@ -26,9 +26,11 @@ from bim_ai.elements import (
     DoorElem,
     Element,
     FloorElem,
+    RailingElem,
     RoofElem,
     RoomElem,
     SlabOpeningElem,
+    StairElem,
     WallElem,
     WallOpeningElem,
     WindowElem,
@@ -69,6 +71,7 @@ def constructability_advisory_violations(
     violations.extend(_mep_floor_ceiling_penetration_violations(participants_by_kind, elements))
     violations.extend(_stair_floor_opening_violations(participants_by_kind, elements))
     violations.extend(_stair_headroom_violations(participants_by_kind))
+    violations.extend(_stair_landing_guardrail_violations(elements))
     violations.extend(_room_door_access_violations(elements, walls_by_id))
     violations.extend(_door_clearance_violations(elements, participants_by_kind))
     violations.extend(_window_operation_clearance_violations(elements, participants_by_kind))
@@ -362,6 +365,63 @@ def _stair_headroom_violations(
                         element_ids=sorted([stair.element_id, overhead.element_id]),
                     )
                 )
+    return violations
+
+
+def _stair_landing_guardrail_violations(elements: dict[str, Element]) -> list[Violation]:
+    railings_by_stair_id: dict[str, list[RailingElem]] = defaultdict(list)
+    for element in elements.values():
+        if isinstance(element, RailingElem) and element.hosted_stair_id:
+            railings_by_stair_id[element.hosted_stair_id].append(element)
+
+    violations: list[Violation] = []
+    for element in elements.values():
+        if not isinstance(element, StairElem):
+            continue
+        rise_mm = _stair_rise_mm(element, elements)
+        if _stair_needs_intermediate_landing(element, rise_mm) and not element.landings:
+            violations.append(
+                Violation(
+                    rule_id="stair_landing_missing",
+                    severity="warning",
+                    message=(
+                        "Stair geometry requires an intermediate landing but no landing polygon "
+                        "is modeled."
+                    ),
+                    element_ids=[element.id],
+                )
+            )
+
+        if rise_mm is None or rise_mm <= 600.0:
+            continue
+        hosted_railings = railings_by_stair_id.get(element.id, [])
+        if not hosted_railings:
+            violations.append(
+                Violation(
+                    rule_id="stair_guardrail_missing",
+                    severity="warning",
+                    message=(
+                        "Stair rise exceeds the guardrail threshold without a hosted railing."
+                    ),
+                    element_ids=[element.id],
+                )
+            )
+            continue
+        low_railings = [
+            railing.id for railing in hosted_railings if float(railing.guard_height_mm) < 900.0
+        ]
+        if low_railings:
+            violations.append(
+                Violation(
+                    rule_id="stair_guardrail_height_insufficient",
+                    severity="warning",
+                    message=(
+                        "Hosted stair railing guard height is below the constructability "
+                        "threshold of 900 mm."
+                    ),
+                    element_ids=sorted([element.id, *low_railings]),
+                )
+            )
     return violations
 
 
@@ -907,6 +967,32 @@ def _participant_has_slab_opening(
 
 def _aabb_center_xy(aabb: AABB) -> tuple[float, float]:
     return ((aabb.min_x + aabb.max_x) / 2.0, (aabb.min_y + aabb.max_y) / 2.0)
+
+
+def _stair_rise_mm(stair: StairElem, elements: dict[str, Element]) -> float | None:
+    if stair.total_rise_mm is not None:
+        return float(stair.total_rise_mm)
+    base = _element_level_elevation_mm(elements, stair.base_level_id)
+    top = _element_level_elevation_mm(elements, stair.top_level_id)
+    if base is None or top is None:
+        return None
+    return max(0.0, top - base)
+
+
+def _element_level_elevation_mm(elements: dict[str, Element], level_id: str | None) -> float | None:
+    if not level_id:
+        return None
+    level = elements.get(level_id)
+    elevation = getattr(level, "elevation_mm", None)
+    if elevation is None:
+        return None
+    return float(elevation)
+
+
+def _stair_needs_intermediate_landing(stair: StairElem, rise_mm: float | None) -> bool:
+    if stair.shape in {"l_shape", "u_shape"} and len(stair.runs) > 1:
+        return True
+    return rise_mm is not None and rise_mm > 3700.0
 
 
 def _point_in_polygon_mm(x: float, y: float, points: Any) -> bool:
