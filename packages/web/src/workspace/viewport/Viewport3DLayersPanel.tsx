@@ -8,10 +8,22 @@ export const VIEWER_HIDDEN_KIND_KEYS = [
   'wall',
   'floor',
   'roof',
+  'ceiling',
   'stair',
+  'railing',
+  'column',
+  'beam',
   'door',
   'window',
   'room',
+  'family_instance',
+  'placed_asset',
+  'mass',
+  'site',
+  'reference_plane',
+  'text_3d',
+  'sweep',
+  'dormer',
   'site_origin',
 ] as const;
 
@@ -161,6 +173,29 @@ const CAMERA_OPTIONS: Array<{
   { value: 'orthographic', label: 'Ortho', Icon: Icons.planView },
 ];
 
+const VIEWER_LAYER_LABELS: Record<ViewerHiddenKindKey, string> = {
+  wall: 'Walls',
+  floor: 'Floors',
+  roof: 'Roofs',
+  ceiling: 'Ceilings',
+  stair: 'Stairs',
+  railing: 'Railings',
+  column: 'Columns',
+  beam: 'Beams',
+  door: 'Doors',
+  window: 'Windows',
+  room: 'Rooms',
+  family_instance: 'Loaded families',
+  placed_asset: 'Placed assets',
+  mass: 'Masses',
+  site: 'Site',
+  reference_plane: 'Reference planes',
+  text_3d: '3D text',
+  sweep: 'Sweeps',
+  dormer: 'Dormers',
+  site_origin: 'Origins',
+};
+
 export interface Viewport3DLayersPanelProps {
   viewerCategoryHidden: Record<string, boolean>;
   onToggleCategory: (kind: ViewerHiddenKindKey) => void;
@@ -286,10 +321,22 @@ export function Viewport3DLayersPanel({
     wall: Icons.wall,
     floor: Icons.floor,
     roof: Icons.roof,
+    ceiling: Icons.ceiling,
     stair: Icons.stair,
+    railing: Icons.railing,
+    column: Icons.column,
+    beam: Icons.beam,
     door: Icons.door,
     window: Icons.window,
     room: Icons.room,
+    family_instance: Icons.family,
+    placed_asset: Icons.familyType,
+    mass: Icons.assembly,
+    site: Icons.grid,
+    reference_plane: Icons.gridLine,
+    text_3d: Icons.tag,
+    sweep: Icons.wallLayer,
+    dormer: Icons.roof,
     site_origin: Icons.grid,
   };
   const activeStyleLabel =
@@ -557,7 +604,7 @@ export function Viewport3DLayersPanel({
               const Icon = iconForKind[lk];
               return <Icon size={ICON_SIZE.chrome} aria-hidden="true" className="text-muted" />;
             })()}
-            <span>{t(`tools.${lk}.label`)}</span>
+            <span>{VIEWER_LAYER_LABELS[lk]}</span>
           </label>
         ))}
       </div>

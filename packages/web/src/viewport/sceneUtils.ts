@@ -10,6 +10,16 @@ export type ViewerCatKey =
   | 'window'
   | 'room'
   | 'railing'
+  | 'column'
+  | 'beam'
+  | 'ceiling'
+  | 'family_instance'
+  | 'placed_asset'
+  | 'mass'
+  | 'reference_plane'
+  | 'text_3d'
+  | 'sweep'
+  | 'dormer'
   | 'site'
   | 'site_origin';
 
@@ -31,6 +41,26 @@ export function elemViewerCategory(e: Element): ViewerCatKey | null {
       return 'room';
     case 'railing':
       return 'railing';
+    case 'column':
+      return 'column';
+    case 'beam':
+      return 'beam';
+    case 'ceiling':
+      return 'ceiling';
+    case 'family_instance':
+      return 'family_instance';
+    case 'placed_asset':
+      return 'placed_asset';
+    case 'mass':
+      return 'mass';
+    case 'reference_plane':
+      return 'reference_plane';
+    case 'text_3d':
+      return 'text_3d';
+    case 'sweep':
+      return 'sweep';
+    case 'dormer':
+      return 'dormer';
     case 'balcony':
       return 'floor';
     case 'site':

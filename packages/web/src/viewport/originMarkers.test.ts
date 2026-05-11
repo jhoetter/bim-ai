@@ -84,4 +84,33 @@ describe('KRN-06 origin markers', () => {
     expect(elemViewerCategory(pbp)).toBe('site_origin');
     expect(elemViewerCategory(sp)).toBe('site_origin');
   });
+
+  it('elemViewerCategory covers all semantic kinds rendered by the 3D viewport', () => {
+    const cases: Array<[Element['kind'], string]> = [
+      ['wall', 'wall'],
+      ['floor', 'floor'],
+      ['roof', 'roof'],
+      ['ceiling', 'ceiling'],
+      ['stair', 'stair'],
+      ['railing', 'railing'],
+      ['column', 'column'],
+      ['beam', 'beam'],
+      ['door', 'door'],
+      ['window', 'window'],
+      ['room', 'room'],
+      ['family_instance', 'family_instance'],
+      ['placed_asset', 'placed_asset'],
+      ['mass', 'mass'],
+      ['site', 'site'],
+      ['reference_plane', 'reference_plane'],
+      ['text_3d', 'text_3d'],
+      ['sweep', 'sweep'],
+      ['dormer', 'dormer'],
+      ['balcony', 'floor'],
+    ];
+
+    for (const [kind, category] of cases) {
+      expect(elemViewerCategory({ kind, id: `test-${kind}` } as Element)).toBe(category);
+    }
+  });
 });

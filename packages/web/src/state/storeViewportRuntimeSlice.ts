@@ -143,7 +143,28 @@ export function createViewportRuntimeSlice(set: StoreSet, get: StoreGet): Viewpo
 
     applyOrbitViewpointPreset: (opts) =>
       set((state) => {
-        const layerKeys = ['wall', 'floor', 'roof', 'stair', 'door', 'window', 'room'] as const;
+        const layerKeys = [
+          'wall',
+          'floor',
+          'roof',
+          'ceiling',
+          'stair',
+          'railing',
+          'column',
+          'beam',
+          'door',
+          'window',
+          'room',
+          'family_instance',
+          'placed_asset',
+          'mass',
+          'site',
+          'reference_plane',
+          'text_3d',
+          'sweep',
+          'dormer',
+          'site_origin',
+        ] as const;
         let viewerClipElevMm = state.viewerClipElevMm;
         if ('capElevMm' in opts) {
           const v = opts.capElevMm;
