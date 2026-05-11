@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "188919daaf38",
+  "session_id": "019e12ef-d845-7a73-8ab1-4954b79742bc",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-11T12:00:55.057621Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/viewport/planOverlay3d.test.ts",
+    "packages/web/src/viewport/planOverlay3d.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "f2840cdac20e",
+  "checkpoint_transcript_start": 433,
+  "transcript_lines_at_start": 433,
+  "initial_attribution": {
+    "calculated_at": "2026-05-11T12:00:55.034681Z",
+    "agent_lines": 62,
+    "agent_removed": 3,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 62,
+    "total_lines_changed": 65,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
