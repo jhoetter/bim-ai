@@ -1,0 +1,5 @@
+is our test-suite fully complete? are there things missing? i want that you do a deep analysis of our backend (focusing on that for now), is it really stable and super well tested?
+
+---
+
+exchange/import isnt super relevant, but the application must really work. i must rely on that houses modeled really work and such. go and build a document under spec that really covers in-depth the testing, all gaps that you see, and then go ahead and implement until all are solved; for the actual implementation, you can spawn subagents to parallelize. for each meaningful workpackage, branch out, commit and once done, push and merge into main. dont stop until done.
