@@ -1,0 +1,5 @@
+i kicked off an agent, where are we roughly now? in terms of progress
+
+---
+
+yeah the agent is working on it, but you see it successfully started?
