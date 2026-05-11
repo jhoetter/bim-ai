@@ -102,6 +102,12 @@
       "transcript": "/ca/4268ea46e2/14/full.jsonl",
       "content_hash": "/ca/4268ea46e2/14/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/ca/4268ea46e2/15/metadata.json",
+      "transcript": "/ca/4268ea46e2/15/full.jsonl",
+      "content_hash": "/ca/4268ea46e2/15/content_hash.txt",
+      "prompt": "/ca/4268ea46e2/15/prompt.txt"
     }
   ],
   "token_usage": {
