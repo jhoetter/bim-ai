@@ -16,6 +16,12 @@ const SELECTED_WALL_CTX: PaletteContext = {
   activeViewId: null,
   activeMode: '3d',
 };
+const SCHEDULE_CTX: PaletteContext = {
+  selectedElementIds: [],
+  activeViewId: 'sch-1',
+  activeScheduleId: 'sch-1',
+  activeMode: 'schedule',
+};
 
 afterEach(() => {
   useBimStore.setState({
@@ -194,6 +200,34 @@ describe('default Cmd+K commands', () => {
       key: 'planDetailLevel',
       value: 'fine',
     });
+  });
+
+  it('routes schedule workflow commands through the palette host context', () => {
+    const openSelectedScheduleRow = vi.fn();
+    const placeActiveScheduleOnSheet = vi.fn();
+    const duplicateActiveSchedule = vi.fn();
+    const openScheduleControls = vi.fn();
+
+    const noSelection = queryPalette('open selected schedule row', SCHEDULE_CTX, {}).find(
+      (entry) => entry.id === 'schedule.open-selected-row',
+    );
+    expect(noSelection?.disabledReason).toContain('Requires');
+
+    command('schedule.open-selected-row').invoke({
+      ...SCHEDULE_CTX,
+      selectedElementIds: ['door-1'],
+      openSelectedScheduleRow,
+    });
+    expect(openSelectedScheduleRow).toHaveBeenCalledOnce();
+
+    command('schedule.place-on-sheet').invoke({ ...SCHEDULE_CTX, placeActiveScheduleOnSheet });
+    expect(placeActiveScheduleOnSheet).toHaveBeenCalledOnce();
+
+    command('schedule.duplicate').invoke({ ...SCHEDULE_CTX, duplicateActiveSchedule });
+    expect(duplicateActiveSchedule).toHaveBeenCalledOnce();
+
+    command('schedule.open-controls').invoke({ ...SCHEDULE_CTX, openScheduleControls });
+    expect(openScheduleControls).toHaveBeenCalledOnce();
   });
 
   it('routes active visibility commands through the palette host context', () => {

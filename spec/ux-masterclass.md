@@ -612,6 +612,8 @@ modal and command-line parser utilities that have their own tests.
   Area Boundary in addition to the primary Wall/Door/Window/Room/Grid/Dimension/Tag tools.
 - Active plan-view Cmd+K coverage includes applying a view template and switching plan detail
   style through `updateElementProperty`.
+- Schedule Cmd+K coverage includes open selected row, place active schedule on sheet, duplicate
+  active schedule, and open schedule sort/filter/group/column controls.
 - Navigation commands route through the workspace tab/mode controller.
 - Theme, language, project menu, family library, keyboard shortcuts, active visibility controls,
   3D view controls, save/restore snapshot, share presentation, rail toggles, and inactive-tab close

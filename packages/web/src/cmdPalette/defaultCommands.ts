@@ -50,6 +50,10 @@ function hasActivePlanView(ctx: PaletteContext): boolean {
   return Boolean(ctx.activePlanViewId);
 }
 
+function hasActiveSchedule(ctx: PaletteContext): boolean {
+  return Boolean(ctx.activeScheduleId);
+}
+
 function selectedWall(ctx: PaletteContext) {
   const id = ctx.selectedElementIds[0];
   if (!id) return null;
@@ -283,6 +287,42 @@ registerCommand({
   keywords: ['schedule', 'table', 'rows'],
   category: 'navigate',
   invoke: (ctx) => ctx.navigateMode?.('schedule'),
+});
+
+registerCommand({
+  id: 'schedule.open-selected-row',
+  label: 'Schedule: Open Selected Row',
+  keywords: ['schedule', 'row', 'open', 'selected element'],
+  category: 'command',
+  isAvailable: (ctx) => hasActiveSchedule(ctx) && ctx.selectedElementIds.length > 0,
+  invoke: (ctx) => ctx.openSelectedScheduleRow?.(),
+});
+
+registerCommand({
+  id: 'schedule.place-on-sheet',
+  label: 'Schedule: Place on Sheet',
+  keywords: ['schedule', 'sheet', 'place viewport'],
+  category: 'command',
+  isAvailable: hasActiveSchedule,
+  invoke: (ctx) => ctx.placeActiveScheduleOnSheet?.(),
+});
+
+registerCommand({
+  id: 'schedule.duplicate',
+  label: 'Schedule: Duplicate',
+  keywords: ['schedule', 'duplicate', 'copy definition'],
+  category: 'command',
+  isAvailable: hasActiveSchedule,
+  invoke: (ctx) => ctx.duplicateActiveSchedule?.(),
+});
+
+registerCommand({
+  id: 'schedule.open-controls',
+  label: 'Schedule: Sort, Filter, Group, Columns',
+  keywords: ['schedule', 'sort', 'filter', 'group', 'columns', 'fields'],
+  category: 'command',
+  isAvailable: hasActiveSchedule,
+  invoke: (ctx) => ctx.openScheduleControls?.(),
 });
 
 registerCommand({

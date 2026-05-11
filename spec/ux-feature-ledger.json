@@ -140,6 +140,22 @@
       ]
     },
     {
+      "idPattern": "schedule.*",
+      "label": "Schedule row, placement, duplicate, and controls commands",
+      "owner": "packages/web/src/workspace/ModeShells.tsx",
+      "sourceFile": "packages/web/src/workspace/commandCapabilities.ts",
+      "intendedViews": ["schedule"],
+      "actualSurfaces": ["cmd-k", "schedule-grid"],
+      "preconditions": ["active-schedule", "selected-schedule-row where needed"],
+      "executionHandler": "Workspace Cmd+K context reuses schedule-mode open row, place on sheet, duplicate, and controls routing",
+      "status": "implemented",
+      "usabilityScore": 8,
+      "tests": [
+        "packages/web/src/cmdPalette/defaultCommands.test.ts",
+        "packages/web/src/workspace/uxAudit.test.ts"
+      ]
+    },
+    {
       "idPattern": "statusbar.*",
       "label": "View-aware status readout and plan drafting grid visibility toggle",
       "owner": "packages/web/src/workspace/shell/StatusBar.tsx",

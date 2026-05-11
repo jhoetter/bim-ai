@@ -32,6 +32,8 @@ export type PaletteContext = {
   activeMode?: CapabilityViewMode;
   /** Active plan_view element id for plan-scoped commands such as templates/style. */
   activePlanViewId?: string | null;
+  /** Active schedule element id for schedule-scoped commands. */
+  activeScheduleId?: string | null;
   /** Navigate through the same tab/mode path as the main workspace chrome. */
   navigateMode?: (
     mode: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent' | 'concept',
@@ -58,6 +60,10 @@ export type PaletteContext = {
   openPlanVisibilityGraphics?: () => void;
   open3dViewControls?: () => void;
   openActiveVisibilityControls?: () => void;
+  openSelectedScheduleRow?: () => void;
+  placeActiveScheduleOnSheet?: () => void;
+  duplicateActiveSchedule?: () => void;
+  openScheduleControls?: () => void;
   closeInactiveViews?: () => void;
   toggleLeftRail?: () => void;
   toggleRightRail?: () => void;

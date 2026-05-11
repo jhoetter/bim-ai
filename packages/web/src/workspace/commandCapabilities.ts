@@ -29,6 +29,7 @@ export type CommandSurface =
   | 'left-rail'
   | 'right-rail'
   | 'canvas-context'
+  | 'schedule-grid'
   | 'statusbar';
 
 export type CommandGroup =
@@ -98,6 +99,7 @@ export function getAllCommandCapabilities(): CommandCapability[] {
     ...buildToolCapabilities(),
     ...NAVIGATION_CAPABILITIES,
     ...SYSTEM_CAPABILITIES,
+    ...SCHEDULE_CAPABILITIES,
     ...VIEW_3D_CAPABILITIES,
     ...EDIT_3D_CAPABILITIES,
     ...VISIBILITY_CAPABILITIES,
@@ -689,6 +691,61 @@ const SYSTEM_CAPABILITIES: CommandCapability[] = [
     surfaces: ['cmd-k', 'right-rail'],
     executionSurface: 'global',
     preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+  },
+];
+
+const SCHEDULE_CAPABILITIES: CommandCapability[] = [
+  {
+    id: 'schedule.open-selected-row',
+    label: 'Schedule: Open Selected Row',
+    owner: 'workspace/ModeShells',
+    group: 'document',
+    scope: 'selection',
+    intendedModes: ['schedule'],
+    surfaces: ['cmd-k', 'schedule-grid'],
+    executionSurface: 'schedule-grid',
+    preconditions: ['active-schedule', 'selected-schedule-row'],
+    status: 'implemented',
+    usabilityScore: 8,
+  },
+  {
+    id: 'schedule.place-on-sheet',
+    label: 'Schedule: Place on Sheet',
+    owner: 'workspace/ModeShells',
+    group: 'document',
+    scope: 'view',
+    intendedModes: ['schedule'],
+    surfaces: ['cmd-k', 'schedule-grid'],
+    executionSurface: 'sheet-canvas',
+    preconditions: ['active-schedule', 'available-sheet'],
+    status: 'implemented',
+    usabilityScore: 8,
+  },
+  {
+    id: 'schedule.duplicate',
+    label: 'Schedule: Duplicate',
+    owner: 'workspace/ModeShells',
+    group: 'document',
+    scope: 'view',
+    intendedModes: ['schedule'],
+    surfaces: ['cmd-k', 'schedule-grid'],
+    executionSurface: 'schedule-grid',
+    preconditions: ['active-schedule'],
+    status: 'implemented',
+    usabilityScore: 8,
+  },
+  {
+    id: 'schedule.open-controls',
+    label: 'Schedule: Sort, Filter, Group, Columns',
+    owner: 'schedules/SchedulePanel',
+    group: 'view',
+    scope: 'view',
+    intendedModes: ['schedule'],
+    surfaces: ['cmd-k', 'schedule-grid'],
+    executionSurface: 'schedule-grid',
+    preconditions: ['active-schedule'],
     status: 'implemented',
     usabilityScore: 8,
   },

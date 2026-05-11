@@ -129,6 +129,7 @@ import {
 import { useToolPrefs } from '../tools/toolPrefsStore';
 import { useOfflineStore } from '../offlineStore';
 import { usePresenceStore } from '../presenceStore';
+import { firstSheetId, placeViewOnSheetCommand } from './sheets/sheetRecommendedViewports';
 
 /**
  * Workspace — composition root for the §11–§17 chrome.
@@ -1096,6 +1097,31 @@ export function Workspace(): JSX.Element {
     [activatePlanView, elementsById, openTabFromElement, setActiveLevelId, setViewerMode],
   );
 
+  const paletteActiveScheduleId =
+    activeTab?.kind === 'schedule' && activeTab.targetId ? activeTab.targetId : null;
+  const paletteFirstSheetId = useMemo(() => firstSheetId(elementsById), [elementsById]);
+  const openSelectedScheduleRow = useCallback(() => {
+    if (!selectedId || !elementsById[selectedId]) return;
+    openElementById(selectedId);
+  }, [elementsById, openElementById, selectedId]);
+  const placeActiveScheduleOnSheet = useCallback(() => {
+    if (!paletteActiveScheduleId || !paletteFirstSheetId) return;
+    const cmd = placeViewOnSheetCommand(elementsById, paletteFirstSheetId, paletteActiveScheduleId);
+    if (cmd) void onSemanticCommand(cmd);
+  }, [elementsById, onSemanticCommand, paletteActiveScheduleId, paletteFirstSheetId]);
+  const duplicateActiveSchedule = useCallback(() => {
+    if (!paletteActiveScheduleId) return;
+    const schedule = elementsById[paletteActiveScheduleId];
+    if (schedule?.kind !== 'schedule') return;
+    void onSemanticCommand({
+      type: 'upsertSchedule',
+      id: `${schedule.id}-copy-${Date.now().toString(36)}`,
+      name: `${schedule.name} copy`,
+      filters: { ...(schedule.filters ?? {}) },
+      grouping: { ...(schedule.grouping ?? {}) },
+    });
+  }, [elementsById, onSemanticCommand, paletteActiveScheduleId]);
+
   const navigateTo = useCallback(
     (target: { kind: WorkspaceMode; targetId?: string; source: string }) => {
       if (target.targetId) {
@@ -1106,6 +1132,13 @@ export function Workspace(): JSX.Element {
     },
     [handleModeChange, openElementById],
   );
+  const openScheduleControls = useCallback(() => {
+    navigateTo({
+      kind: 'schedule',
+      ...(paletteActiveScheduleId ? { targetId: paletteActiveScheduleId } : {}),
+      source: 'cmdk',
+    });
+  }, [navigateTo, paletteActiveScheduleId]);
 
   const handlePlaceFamilyType = useCallback(
     (kind: FamilyLibraryPlaceKind, typeId: string) => {
@@ -1280,6 +1313,7 @@ export function Workspace(): JSX.Element {
             null,
           activeMode: effectiveMode,
           activePlanViewId,
+          activeScheduleId: paletteActiveScheduleId,
           navigateMode: (kind) => navigateTo({ kind, source: 'cmdk' }),
           startPlanTool: (toolId) => handleToolSelect(toolId as ToolId),
           setTheme: handleThemeSet,
@@ -1299,6 +1333,10 @@ export function Workspace(): JSX.Element {
           openPlanVisibilityGraphics: openVVDialog,
           open3dViewControls,
           openActiveVisibilityControls,
+          openSelectedScheduleRow,
+          placeActiveScheduleOnSheet,
+          duplicateActiveSchedule,
+          openScheduleControls,
           closeInactiveViews: () => setTabsState((s) => closeInactiveTabs(s)),
           toggleLeftRail: () => setLeftRailCollapsed((v) => !v),
           toggleRightRail,
