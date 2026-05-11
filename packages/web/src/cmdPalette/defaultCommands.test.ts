@@ -11,6 +11,12 @@ const THREE_D_CTX: PaletteContext = {
   activeViewId: null,
   activeMode: '3d',
 };
+const THREE_D_VIEWPOINT_CTX: PaletteContext = {
+  selectedElementIds: [],
+  activeViewId: 'vp-1',
+  activeViewpointId: 'vp-1',
+  activeMode: '3d',
+};
 const SELECTED_WALL_CTX: PaletteContext = {
   selectedElementIds: ['wall-1'],
   activeViewId: null,
@@ -108,6 +114,28 @@ describe('default Cmd+K commands', () => {
     command('view.3d.section-box.toggle').invoke(THREE_D_CTX);
     expect(useBimStore.getState().viewerWalkModeActive).toBe(true);
     expect(useBimStore.getState().viewerSectionBoxActive).toBe(true);
+  });
+
+  it('routes active 3D saved-view commands through the palette host context', () => {
+    const resetActiveSavedViewpoint = vi.fn();
+    const updateActiveSavedViewpoint = vi.fn();
+
+    const unavailable = queryPalette('update saved viewpoint', THREE_D_CTX, {}).find(
+      (entry) => entry.id === 'view.3d.saved-view.update',
+    );
+    expect(unavailable?.disabledReason).toContain('Requires');
+
+    command('view.3d.saved-view.reset').invoke({
+      ...THREE_D_VIEWPOINT_CTX,
+      resetActiveSavedViewpoint,
+    });
+    expect(resetActiveSavedViewpoint).toHaveBeenCalledOnce();
+
+    command('view.3d.saved-view.update').invoke({
+      ...THREE_D_VIEWPOINT_CTX,
+      updateActiveSavedViewpoint,
+    });
+    expect(updateActiveSavedViewpoint).toHaveBeenCalledOnce();
   });
 
   it('surfaces selected-wall 3D edit commands and dispatches through palette context', () => {

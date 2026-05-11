@@ -342,6 +342,10 @@ export function Workspace(): JSX.Element {
   const viewerWalkModeActive = useBimStore((s) => s.viewerWalkModeActive);
   const viewerClipElevMm = useBimStore((s) => s.viewerClipElevMm);
   const viewerClipFloorElevMm = useBimStore((s) => s.viewerClipFloorElevMm);
+  const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
+  const orbitCameraPoseMm = useBimStore((s) => s.orbitCameraPoseMm);
+  const setOrbitCameraFromViewpointMm = useBimStore((s) => s.setOrbitCameraFromViewpointMm);
+  const applyOrbitViewpointPreset = useBimStore((s) => s.applyOrbitViewpointPreset);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [milestoneDialogOpen, setMilestoneDialogOpen] = useState(false);
   const [undoDepth, setUndoDepth] = useState(0);
@@ -1267,6 +1271,64 @@ export function Workspace(): JSX.Element {
     },
     [elementsById, onSemanticCommand, paletteActiveSectionId],
   );
+  const resetActiveSavedViewpoint = useCallback(() => {
+    if (!activeViewpointId) return;
+    const viewpoint = elementsById[activeViewpointId];
+    if (viewpoint?.kind !== 'viewpoint' || viewpoint.mode !== 'orbit_3d' || !viewpoint.camera) {
+      return;
+    }
+    setOrbitCameraFromViewpointMm({
+      position: viewpoint.camera.position,
+      target: viewpoint.camera.target,
+      up: viewpoint.camera.up,
+    });
+    applyOrbitViewpointPreset({
+      capElevMm: viewpoint.viewerClipCapElevMm,
+      floorElevMm: viewpoint.viewerClipFloorElevMm,
+      hideSemanticKinds: viewpoint.hiddenSemanticKinds3d,
+    });
+  }, [activeViewpointId, applyOrbitViewpointPreset, elementsById, setOrbitCameraFromViewpointMm]);
+  const updateActiveSavedViewpoint = useCallback(() => {
+    if (!activeViewpointId) return;
+    const viewpoint = elementsById[activeViewpointId];
+    if (viewpoint?.kind !== 'viewpoint' || viewpoint.mode !== 'orbit_3d') return;
+    if (orbitCameraPoseMm) {
+      void onSemanticCommand({
+        type: 'updateElementProperty',
+        elementId: activeViewpointId,
+        key: 'camera',
+        value: orbitCameraPoseMm,
+      });
+    }
+    void onSemanticCommand({
+      type: 'updateElementProperty',
+      elementId: activeViewpointId,
+      key: 'viewerClipCapElevMm',
+      value: viewerClipElevMm,
+    });
+    void onSemanticCommand({
+      type: 'updateElementProperty',
+      elementId: activeViewpointId,
+      key: 'viewerClipFloorElevMm',
+      value: viewerClipFloorElevMm,
+    });
+    void onSemanticCommand({
+      type: 'updateElementProperty',
+      elementId: activeViewpointId,
+      key: 'hiddenSemanticKinds3d',
+      value: Object.entries(viewerCategoryHidden)
+        .filter(([, hidden]) => hidden)
+        .map(([kind]) => kind),
+    });
+  }, [
+    activeViewpointId,
+    elementsById,
+    onSemanticCommand,
+    orbitCameraPoseMm,
+    viewerCategoryHidden,
+    viewerClipElevMm,
+    viewerClipFloorElevMm,
+  ]);
   const openScheduleControls = useCallback(() => {
     navigateTo({
       kind: 'schedule',
@@ -1451,6 +1513,7 @@ export function Workspace(): JSX.Element {
           activeScheduleId: paletteActiveScheduleId,
           activeSheetId: paletteActiveSheetId,
           activeSectionId: paletteActiveSectionId,
+          activeViewpointId,
           navigateMode: (kind) => navigateTo({ kind, source: 'cmdk' }),
           startPlanTool: (toolId) => handleToolSelect(toolId as ToolId),
           setTheme: handleThemeSet,
@@ -1483,6 +1546,8 @@ export function Workspace(): JSX.Element {
           placeActiveSectionOnSheet,
           openActiveSectionSourcePlan,
           adjustActiveSectionCropDepth,
+          resetActiveSavedViewpoint,
+          updateActiveSavedViewpoint,
           closeInactiveViews: () => setTabsState((s) => closeInactiveTabs(s)),
           toggleLeftRail: () => setLeftRailCollapsed((v) => !v),
           toggleRightRail,
