@@ -3,7 +3,7 @@
   "checkpoint_id": "0adab276b9e1",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     ".coverage",
     "packages/web/src/plan/planElementMeshBuilders.ts",
@@ -39,6 +39,19 @@
       "transcript": "/0a/dab276b9e1/4/full.jsonl",
       "content_hash": "/0a/dab276b9e1/4/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/0a/dab276b9e1/5/metadata.json",
+      "transcript": "/0a/dab276b9e1/5/full.jsonl",
+      "content_hash": "/0a/dab276b9e1/5/content_hash.txt",
+      "prompt": "/0a/dab276b9e1/5/prompt.txt"
     }
-  ]
+  ],
+  "token_usage": {
+    "input_tokens": 881385,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 12268928,
+    "output_tokens": 57371,
+    "api_call_count": 139
+  }
 }
