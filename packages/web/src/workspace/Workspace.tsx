@@ -156,6 +156,10 @@ const PLAN_STYLE_OPTIONS = [
   { id: 'room_scheme', label: 'Room scheme' },
 ];
 
+function formatStatusMm(mm: number): string {
+  return `${(mm / 1000).toFixed(1)} m`;
+}
+
 export function Workspace(): JSX.Element {
   const { t } = useTranslation();
   const toolRegistry = useMemo(() => getToolRegistry(t), [t]);
@@ -286,6 +290,12 @@ export function Workspace(): JSX.Element {
   const [manageLinksOpen, setManageLinksOpen] = useState(false);
   const lensMode = useBimStore((s) => s.lensMode);
   const setLensMode = useBimStore((s) => s.setLensMode);
+  const activeViewpointId = useBimStore((s) => s.activeViewpointId);
+  const viewerProjection = useBimStore((s) => s.viewerProjection);
+  const viewerSectionBoxActive = useBimStore((s) => s.viewerSectionBoxActive);
+  const viewerWalkModeActive = useBimStore((s) => s.viewerWalkModeActive);
+  const viewerClipElevMm = useBimStore((s) => s.viewerClipElevMm);
+  const viewerClipFloorElevMm = useBimStore((s) => s.viewerClipFloorElevMm);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [milestoneDialogOpen, setMilestoneDialogOpen] = useState(false);
   const [undoDepth, setUndoDepth] = useState(0);
@@ -885,6 +895,40 @@ export function Workspace(): JSX.Element {
     levels[0] ?? { id: '', label: '—' };
   const cursorMm = planHudMm ? { xMm: planHudMm.xMm, yMm: planHudMm.yMm } : null;
   const driftCount = useMemo(() => selectDriftedElements(elementsById).length, [elementsById]);
+  const statusViewLabel = activeTab?.label ?? null;
+  const statusViewDetails = useMemo(() => {
+    const selected = selectedId ? (elementsById[selectedId] as Element | undefined) : undefined;
+    const selectedDetail = selected
+      ? `Selected ${selected.kind.replaceAll('_', ' ')}`
+      : selectedId
+        ? 'Selection'
+        : null;
+    if (effectiveMode === '3d') {
+      return [
+        viewerProjection === 'orthographic' ? 'Ortho' : 'Perspective',
+        viewerWalkModeActive ? 'Walk' : 'Orbit',
+        viewerSectionBoxActive ? 'Section box' : null,
+        viewerClipElevMm != null ? `Cap ${formatStatusMm(viewerClipElevMm)}` : null,
+        viewerClipFloorElevMm != null ? `Floor ${formatStatusMm(viewerClipFloorElevMm)}` : null,
+        activeViewpointId ? `Viewpoint ${activeViewpointId}` : null,
+        selectedDetail,
+      ].filter((detail): detail is string => Boolean(detail));
+    }
+    if (effectiveMode === 'sheet') return [selectedDetail ?? 'Paper space'];
+    if (effectiveMode === 'schedule') return [selectedDetail ?? 'Rows'];
+    if (effectiveMode === 'agent') return [selectedDetail ?? 'Review'];
+    return selectedDetail ? [selectedDetail] : [];
+  }, [
+    activeViewpointId,
+    effectiveMode,
+    elementsById,
+    selectedId,
+    viewerClipElevMm,
+    viewerClipFloorElevMm,
+    viewerProjection,
+    viewerSectionBoxActive,
+    viewerWalkModeActive,
+  ]);
 
   const toolDisabledContext = useMemo<ToolDisabledContext>(() => {
     const has = (kind: string): boolean =>
@@ -1512,6 +1556,8 @@ export function Workspace(): JSX.Element {
         statusBar={
           <StatusBar
             mode={effectiveMode}
+            viewLabel={statusViewLabel}
+            viewDetails={statusViewDetails}
             level={activeLevel}
             levels={levels}
             onLevelChange={setActiveLevelId}

@@ -149,6 +149,22 @@ describe('StatusBar — spec §17', () => {
     );
     expect(getByLabelText('Cursor coordinates').textContent).toContain('X —');
   });
+
+  it('renders scoped view label and detail chips outside plan-like modes', () => {
+    const { getByTestId, getByText, queryByLabelText } = renderWithI18n(
+      <StatusBar
+        mode="3d"
+        viewLabel="Default 3D"
+        viewDetails={['Perspective', 'Section box', 'Selected wall']}
+        level={{ id: 'lvl-ground', label: 'Ground' }}
+      />,
+    );
+    expect(getByTestId('statusbar-view-mode').textContent).toContain('3D');
+    expect(getByText('Default 3D')).toBeTruthy();
+    expect(getByText('Perspective')).toBeTruthy();
+    expect(getByText('Section box')).toBeTruthy();
+    expect(queryByLabelText('Cursor coordinates')).toBeNull();
+  });
 });
 
 describe('StatusBar — CHR-V3-03 lens dropdown + drift badge', () => {

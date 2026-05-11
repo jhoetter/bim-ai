@@ -106,14 +106,14 @@
       "tests": ["packages/web/src/workspace/uxAudit.test.ts"]
     },
     {
-      "idPattern": "statusbar.grid",
-      "label": "Plan drafting grid visibility toggle",
+      "idPattern": "statusbar.*",
+      "label": "View-aware status readout and plan drafting grid visibility toggle",
       "owner": "packages/web/src/workspace/shell/StatusBar.tsx",
       "sourceFile": "packages/web/src/tools/toolPrefsStore.ts",
-      "intendedViews": ["plan", "plan-3d", "section"],
+      "intendedViews": ["plan", "3d", "plan-3d", "section", "sheet", "schedule", "agent"],
       "actualSurfaces": ["statusbar"],
       "preconditions": [],
-      "executionHandler": "useToolPrefs.toggleDraftGridVisible / PlanCanvas drafting-grid render pass",
+      "executionHandler": "Workspace status context, useToolPrefs.toggleDraftGridVisible, and PlanCanvas drafting-grid render pass",
       "status": "implemented",
       "usabilityScore": 8,
       "tests": [

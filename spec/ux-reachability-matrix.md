@@ -34,7 +34,7 @@ Surface policy:
 | Cmd+K            | Shows capability badges and disabled/bridge state for registered commands.                                                                                                     |
 | Left rail        | Browser remains the deterministic navigation source for named views and model hierarchy.                                                                                       |
 | Right rail       | Exposes stable Properties / View / Workbench / Review section tabs; selected 3D walls get explicit Door, Window, Opening, Section, Elevation, Isolate, and Hide Walls actions. |
-| Status bar       | Shows plan clusters in plan-like views, wires the Grid switch to actual drafting-grid visibility, and shows view-mode state in non-plan views.                                  |
+| Status bar       | Shows plan clusters in plan-like views, wires the Grid switch to actual drafting-grid visibility, and shows active view labels/detail chips in non-plan views.                 |
 
 Regression guards:
 

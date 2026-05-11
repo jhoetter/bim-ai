@@ -87,6 +87,8 @@ export type StatusWsState = 'connected' | 'reconnecting' | 'offline';
 
 export interface StatusBarProps {
   mode?: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent';
+  viewLabel?: string | null;
+  viewDetails?: string[];
   level: { id: string; label: string; elevationMm?: number };
   levels?: { id: string; label: string; elevationMm?: number }[];
   onLevelChange?: (id: string) => void;
@@ -120,6 +122,8 @@ export interface StatusBarProps {
 
 export function StatusBar({
   mode = 'plan',
+  viewLabel,
+  viewDetails = [],
   level,
   levels = [],
   onLevelChange,
@@ -165,7 +169,7 @@ export function StatusBar({
           <CoordCluster cursorMm={cursorMm ?? null} />
         </>
       ) : (
-        <ViewModeCluster mode={mode} />
+        <ViewModeCluster mode={mode} viewLabel={viewLabel ?? null} viewDetails={viewDetails} />
       )}
       <div className="ml-auto flex items-center gap-3">
         {conflictQueue ? (
@@ -211,11 +215,39 @@ function Divider(): JSX.Element {
   return <span aria-hidden="true" className="inline-block h-3 w-px bg-border" />;
 }
 
-function ViewModeCluster({ mode }: { mode: NonNullable<StatusBarProps['mode']> }): JSX.Element {
+function ViewModeCluster({
+  mode,
+  viewLabel,
+  viewDetails,
+}: {
+  mode: NonNullable<StatusBarProps['mode']>;
+  viewLabel: string | null;
+  viewDetails: string[];
+}): JSX.Element {
   return (
-    <div data-testid="statusbar-view-mode" className="flex items-center gap-1">
+    <div
+      data-testid="statusbar-view-mode"
+      className="flex min-w-0 items-center gap-1.5"
+      title={[formatStatusMode(mode), viewLabel, ...viewDetails].filter(Boolean).join(' · ')}
+    >
       <span className="text-muted">View</span>
       <span className="font-medium text-foreground">{formatStatusMode(mode)}</span>
+      {viewLabel ? (
+        <>
+          <span aria-hidden="true" className="text-muted">
+            ·
+          </span>
+          <span className="max-w-64 truncate font-medium text-foreground">{viewLabel}</span>
+        </>
+      ) : null}
+      {viewDetails.slice(0, 4).map((detail) => (
+        <span
+          key={detail}
+          className="rounded-sm border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted"
+        >
+          {detail}
+        </span>
+      ))}
     </div>
   );
 }
