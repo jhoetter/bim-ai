@@ -10,6 +10,7 @@ from bim_ai.constructability_geometry import (
     candidate_pairs_by_aabb,
     collect_physical_participants,
     collect_unsupported_physical_diagnostics,
+    physical_collision_contract_summary_v1,
 )
 from bim_ai.elements import (
     AssetLibraryEntryElem,
@@ -124,6 +125,50 @@ def test_placed_asset_and_family_instance_infer_sizes_from_parameters() -> None:
     cabinet = participants["cabinet"]
     assert cabinet.aabb == AABB(2700.0, 775.0, 100.0, 3300.0, 1225.0, 2200.0)
     assert not collect_unsupported_physical_diagnostics(elements)
+
+
+def test_physical_collision_contract_summary_reports_supported_and_unsupported() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "wall-1": WallElem(
+            kind="wall",
+            id="wall-1",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 0},
+            thicknessMm=200,
+            heightMm=3000,
+        ),
+        "ft-empty": FamilyTypeElem(
+            kind="family_type",
+            id="ft-empty",
+            familyId="generic",
+            discipline="generic",
+            parameters={},
+        ),
+        "family-unsupported": FamilyInstanceElem(
+            kind="family_instance",
+            id="family-unsupported",
+            familyTypeId="ft-empty",
+            levelId="lvl-1",
+            positionMm={"xMm": 1000, "yMm": 1000},
+        ),
+    }
+
+    summary = physical_collision_contract_summary_v1(elements)
+
+    assert summary["participantCountsByKind"] == {"wall": 1}
+    assert summary["unsupportedCountsByKind"] == {"family_instance": 1}
+    assert summary["unsupportedDiagnostics"] == [
+        {
+            "elementId": "family-unsupported",
+            "kind": "family_instance",
+            "reason": (
+                "missing positive width/depth/height in instance paramValues "
+                "or family_type parameters"
+            ),
+        }
+    ]
 
 
 def test_wall_and_shelf_are_overlap_candidate() -> None:

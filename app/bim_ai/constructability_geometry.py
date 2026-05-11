@@ -164,6 +164,34 @@ def collect_unsupported_physical_diagnostics(
     return diagnostics
 
 
+def physical_collision_contract_summary_v1(elements: dict[str, Element]) -> dict[str, Any]:
+    """Auditable coverage summary for the constructability collision contract."""
+
+    participants = collect_physical_participants(elements)
+    unsupported = collect_unsupported_physical_diagnostics(elements)
+    participant_counts: dict[str, int] = {}
+    unsupported_counts: dict[str, int] = {}
+    for participant in participants:
+        participant_counts[participant.kind] = participant_counts.get(participant.kind, 0) + 1
+    for diagnostic in unsupported:
+        unsupported_counts[diagnostic.kind] = unsupported_counts.get(diagnostic.kind, 0) + 1
+    return {
+        "format": "physicalCollisionContractSummary_v1",
+        "participantCount": len(participants),
+        "unsupportedDiagnosticCount": len(unsupported),
+        "participantCountsByKind": dict(sorted(participant_counts.items())),
+        "unsupportedCountsByKind": dict(sorted(unsupported_counts.items())),
+        "unsupportedDiagnostics": [
+            {
+                "elementId": diagnostic.element_id,
+                "kind": diagnostic.kind,
+                "reason": diagnostic.reason,
+            }
+            for diagnostic in unsupported
+        ],
+    }
+
+
 def physical_participant_for_element(
     elem: Element,
     elements: dict[str, Element],
