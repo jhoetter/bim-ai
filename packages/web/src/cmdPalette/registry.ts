@@ -48,6 +48,8 @@ export type PaletteContext = {
   openFamilyLibrary?: () => void;
   openKeyboardShortcuts?: () => void;
   closeInactiveViews?: () => void;
+  toggleLeftRail?: () => void;
+  toggleRightRail?: () => void;
   /** Dynamic navigable views/sheets/schedules to surface in the palette. */
   views?: Array<{ id: string; label: string; keywords: string }>;
 };

@@ -93,17 +93,20 @@
       "tests": ["packages/web/src/cmdPalette/defaultCommands.test.ts"]
     },
     {
-      "idPattern": "project.* / library.* / help.* / tabs.*",
-      "label": "Universal shell commands",
+      "idPattern": "project.* / library.* / help.* / tabs.* / shell.*",
+      "label": "Universal shell commands and rail toggles",
       "owner": "packages/web/src/workspace/Workspace.tsx",
       "sourceFile": "packages/web/src/workspace/commandCapabilities.ts",
       "intendedViews": ["plan", "3d", "plan-3d", "section", "sheet", "schedule", "agent"],
       "actualSurfaces": ["cmd-k", "topbar", "ribbon", "left-rail"],
       "preconditions": [],
-      "executionHandler": "Workspace shell callbacks",
+      "executionHandler": "Workspace shell callbacks, including left/right rail visibility",
       "status": "implemented",
       "usabilityScore": 8,
-      "tests": ["packages/web/src/workspace/uxAudit.test.ts"]
+      "tests": [
+        "packages/web/src/workspace/uxAudit.test.ts",
+        "packages/web/src/cmdPalette/defaultCommands.test.ts"
+      ]
     },
     {
       "idPattern": "statusbar.*",

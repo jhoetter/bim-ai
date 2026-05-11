@@ -39,6 +39,8 @@ describe('command capability graph', () => {
       'navigate.3d',
       'theme.toggle',
       'settings.language.toggle',
+      'shell.toggle-left-rail',
+      'shell.toggle-right-rail',
     ]) {
       for (const mode of ['plan', '3d', 'sheet', 'schedule', 'agent'] as const) {
         expect(evaluateCommandInMode(commandId, mode)?.state).toBe('enabled');

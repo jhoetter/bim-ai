@@ -572,6 +572,32 @@ const SYSTEM_CAPABILITIES: CommandCapability[] = [
     status: 'implemented',
     usabilityScore: 8,
   },
+  {
+    id: 'shell.toggle-left-rail',
+    label: 'Toggle Left Rail',
+    owner: 'workspace/Workspace',
+    group: 'system',
+    scope: 'universal',
+    intendedModes: [...CAPABILITY_VIEW_MODES],
+    surfaces: ['cmd-k', 'topbar'],
+    executionSurface: 'global',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+  },
+  {
+    id: 'shell.toggle-right-rail',
+    label: 'Toggle Right Rail',
+    owner: 'workspace/Workspace',
+    group: 'system',
+    scope: 'universal',
+    intendedModes: [...CAPABILITY_VIEW_MODES],
+    surfaces: ['cmd-k', 'right-rail'],
+    executionSurface: 'global',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+  },
 ];
 
 const VIEW_3D_CAPABILITIES: CommandCapability[] = [

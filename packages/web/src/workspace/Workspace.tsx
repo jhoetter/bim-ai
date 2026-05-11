@@ -156,6 +156,8 @@ const PLAN_STYLE_OPTIONS = [
   { id: 'room_scheme', label: 'Room scheme' },
 ];
 
+type RailOverride = 'open' | 'collapsed' | null;
+
 function formatStatusMm(mm: number): string {
   return `${(mm / 1000).toFixed(1)} m`;
 }
@@ -265,6 +267,7 @@ export function Workspace(): JSX.Element {
   );
   const [theme, setTheme] = useState<Theme>(() => (getCurrentTheme() as Theme) ?? 'light');
   const [leftRailCollapsed, setLeftRailCollapsed] = useState(false);
+  const [rightRailOverride, setRightRailOverride] = useState<RailOverride>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [familyLibraryOpen, setFamilyLibraryOpen] = useState(false);
   const [_pendingPlacement, setPendingPlacement] = useState<{
@@ -1206,7 +1209,20 @@ export function Workspace(): JSX.Element {
   /* ── VIS-V3-06: right rail driven by task context ────────────────── */
   const hasSelection = !!selectedId;
   const hasViewControlContext = effectiveMode === '3d' || (effectiveMode as string) === 'plan-3d';
-  const rightRailCollapsed = !hasSelection && !hasViewControlContext;
+  const autoRightRailCollapsed = !hasSelection && !hasViewControlContext;
+  const rightRailCollapsed =
+    rightRailOverride === 'open'
+      ? false
+      : rightRailOverride === 'collapsed'
+        ? true
+        : autoRightRailCollapsed;
+  const toggleRightRail = useCallback(() => {
+    setRightRailOverride((current) => {
+      const currentlyCollapsed =
+        current === 'open' ? false : current === 'collapsed' ? true : autoRightRailCollapsed;
+      return currentlyCollapsed ? 'open' : 'collapsed';
+    });
+  }, [autoRightRailCollapsed]);
 
   /* ── Empty-state per §25 ──────────────────────────────────────────── */
   const emptyHint = patternFor(seedLoading ? 'canvas-loading' : 'canvas-empty');
@@ -1244,6 +1260,8 @@ export function Workspace(): JSX.Element {
           openFamilyLibrary: () => setFamilyLibraryOpen(true),
           openKeyboardShortcuts: () => setCheatsheetOpen(true),
           closeInactiveViews: () => setTabsState((s) => closeInactiveTabs(s)),
+          toggleLeftRail: () => setLeftRailCollapsed((v) => !v),
+          toggleRightRail,
         }}
       />
       <FamilyLibraryPanel

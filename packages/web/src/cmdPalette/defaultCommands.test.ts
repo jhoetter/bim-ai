@@ -120,4 +120,15 @@ describe('default Cmd+K commands', () => {
     command('settings.language.en').invoke({ ...PLAN_CTX, setLanguage });
     expect(setLanguage).toHaveBeenCalledWith('en');
   });
+
+  it('routes shell rail toggles through the palette host context', () => {
+    const toggleLeftRail = vi.fn();
+    const toggleRightRail = vi.fn();
+
+    command('shell.toggle-left-rail').invoke({ ...PLAN_CTX, toggleLeftRail });
+    expect(toggleLeftRail).toHaveBeenCalledOnce();
+
+    command('shell.toggle-right-rail').invoke({ ...PLAN_CTX, toggleRightRail });
+    expect(toggleRightRail).toHaveBeenCalledOnce();
+  });
 });

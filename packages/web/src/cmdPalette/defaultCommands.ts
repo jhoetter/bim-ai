@@ -397,6 +397,22 @@ registerCommand({
   invoke: (ctx) => ctx.closeInactiveViews?.(),
 });
 
+registerCommand({
+  id: 'shell.toggle-left-rail',
+  label: 'Toggle Left Rail',
+  keywords: ['left rail', 'project browser', 'browser', 'sidebar', 'collapse', 'expand'],
+  category: 'command',
+  invoke: (ctx) => ctx.toggleLeftRail?.(),
+});
+
+registerCommand({
+  id: 'shell.toggle-right-rail',
+  label: 'Toggle Right Rail',
+  keywords: ['right rail', 'inspector', 'properties', 'sidebar', 'collapse', 'expand'],
+  category: 'command',
+  invoke: (ctx) => ctx.toggleRightRail?.(),
+});
+
 // Display settings
 registerCommand({
   id: 'display.render.shaded',
