@@ -1,0 +1,46 @@
+You are working in /Users/jhoetter/repos/bim-ai on branch main. You are not alone in the codebase: do not revert unrelated edits if you encounter any, and accommodate concurrent changes if they appear.
+
+Task: rebuild the demo seed house completely from scratch using the repository's sketch-to-BIM methodology, not by tweaking or preserving the current/old seedhouse geometry.
+
+Context you may rely on:
+- The target spec and reference images are under spec/target-house/:
+  - spec/target-house/target-house-seed.md
+  - spec/target-house/target-house-1.png
+  - spec/target-house/target-house-2.png
+  - spec/target-house/floorplan.png
+- The methodology to follow and preserve is in:
+  - claude-skills/sketch-to-bim/SKILL.md
+  - spec/sketch-to-bim-methodology.md
+  - spec/schemas/sketch-understanding-ir.schema.json
+  - spec/sketch-to-bim-capability-matrix.json
+  - packages/cli/lib/sketch-initiation.mjs
+  - packages/cli/lib/png-visual-gate.mjs
+  - packages/cli/lib/seed-dsl.mjs
+- `make seed` currently seeds the demo model using packages/cli/lib/one-family-home-commands.mjs via app/scripts/seed.py. Your rebuilt seed must make `make seed` produce the new target house, not the old seedhouse.
+
+First clear stale generated/evidence data from previous target-house seed attempts that is not methodology or user spec. Do not delete the methodology files above and do not delete spec/target-house/*. Replace/regenerate old seed source/fixtures as needed instead of carrying old geometry forward.
+
+Build process requirements:
+1. Read the target spec and inspect all target images visually. Create a fresh architectural interpretation before authoring commands.
+2. Use the sketch-to-BIM methodology end to end: IR/brief, capability-aware modeling, visual checkpoints, advisor feedback loop, and repair iterations.
+3. Spin up or reuse the local app/API as needed. Use `make seed` plus the localhost UI/advisor/CLI/API/screenshots to validate while building.
+4. Treat advisor warnings as first-class feedback. Resolve real architectural issues such as unclosed rooms, rooms without doors, ambiguous room separations, staircases colliding with walls, missing roof type/layer data, and obvious render gaps. If a warning is intentionally tolerated, document why.
+5. The result should resemble the reference: modern two-level house, upper volume larger than ground floor, deep recessed upper front balcony/loggia, large glazing, vertical cladding zones, front/right roof-embedded terrace/courtyard void, clean roof/wall intersections, usable interior circulation.
+6. Add/update focused evidence under nightshift/ only as needed, with screenshots/advisor notes sufficient for review. Avoid stale or misleading evidence.
+7. Update generated seed snapshot/tests if the seed source changes.
+8. Run appropriate checks. At minimum: `make seed`, the seed snapshot generation/check if present, targeted lint/type/test commands you identify, and advisor/visual validation. Record any command you could not run.
+
+Acceptance bar:
+- `make seed` must no longer show the old house.
+- The BIM model must be architecturally coherent, with rooms closed and reachable, usable stair placement, and advisor warnings reduced to none or only documented non-blocking items.
+- Commit your changes locally with a clear message if and only if the rebuild is genuinely complete. Do not push.
+
+Final response: summarize changed files, validation commands, advisor warning status, and the local commit hash if committed.
+
+---
+
+Progress checkpoint request: if you are still working, please include in your final response whether you completed visual/advisor validation or got blocked. If you are blocked, stop after preserving your current changes and explain the blocker, changed files, and next concrete step.
+
+---
+
+Pause now and report status. Do not continue iterating. Finalize with: current changed files, whether you committed, what validation commands completed, what advisor/screenshot validation completed, and exact blocker if incomplete.
