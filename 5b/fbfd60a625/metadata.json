@@ -3,7 +3,7 @@
   "checkpoint_id": "5bfbfd60a625",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "spec/stash-integration-tracker-2026-05-11.md"
   ],
@@ -55,6 +55,19 @@
       "transcript": "/5b/fbfd60a625/7/full.jsonl",
       "content_hash": "/5b/fbfd60a625/7/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/5b/fbfd60a625/8/metadata.json",
+      "transcript": "/5b/fbfd60a625/8/full.jsonl",
+      "content_hash": "/5b/fbfd60a625/8/content_hash.txt",
+      "prompt": "/5b/fbfd60a625/8/prompt.txt"
     }
-  ]
+  ],
+  "token_usage": {
+    "input_tokens": 1150489,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 27327872,
+    "output_tokens": 81727,
+    "api_call_count": 209
+  }
 }
