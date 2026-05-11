@@ -1,0 +1,18 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "5bfbfd60a625",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "spec/stash-integration-tracker-2026-05-11.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/5b/fbfd60a625/0/metadata.json",
+      "transcript": "/5b/fbfd60a625/0/full.jsonl",
+      "content_hash": "/5b/fbfd60a625/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
