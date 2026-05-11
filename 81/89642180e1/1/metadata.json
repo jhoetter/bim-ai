@@ -1,0 +1,78 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "8189642180e1",
+  "session_id": "019e12e6-8567-71d3-bd23-bc42016e1f15",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-11T07:22:50.48303Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/scripts/seed.py",
+    "claude-skills/sketch-to-bim/SKILL.md",
+    "nightshift/seed-target-house-2026-05-11/advisor-info.json",
+    "nightshift/seed-target-house-2026-05-11/advisor-warning.json",
+    "nightshift/seed-target-house-2026-05-11/assumptions.md",
+    "nightshift/seed-target-house-2026-05-11/capability-plan.md",
+    "nightshift/seed-target-house-2026-05-11/initiation-check/acceptance-gates.json",
+    "nightshift/seed-target-house-2026-05-11/initiation-check/capability-coverage.json",
+    "nightshift/seed-target-house-2026-05-11/initiation-check/sketch-ir.json",
+    "nightshift/seed-target-house-2026-05-11/initiation-check/status.md",
+    "nightshift/seed-target-house-2026-05-11/initiation-check/visual-checklist.json",
+    "nightshift/seed-target-house-2026-05-11/seed-target-house-front-elev-actual.png",
+    "nightshift/seed-target-house-2026-05-11/seed-target-house-main-iso-actual.png",
+    "nightshift/seed-target-house-2026-05-11/seed-target-house-rear-axo-actual.png",
+    "nightshift/seed-target-house-2026-05-11/seed-target-house-side-elev-east-actual.png",
+    "nightshift/seed-target-house-2026-05-11/seed-target-house-terrace-cutout-actual.png",
+    "nightshift/seed-target-house-2026-05-11/sketch-ir.json",
+    "nightshift/seed-target-house-2026-05-11/validate.json",
+    "nightshift/seed-target-house-2026-05-11/visual-readout.md",
+    "nightshift/seed-target-house-status.md",
+    "nightshift/seed-target-house/assumptions.md",
+    "nightshift/seed-target-house/brief.md",
+    "nightshift/seed-target-house/flow-retro.md",
+    "nightshift/seedhouse-rebuild-2026-05-10-advisor-info.json",
+    "nightshift/seedhouse-rebuild-2026-05-10-advisor-warning.json",
+    "nightshift/seedhouse-rebuild-2026-05-10-assumptions.md",
+    "nightshift/seedhouse-rebuild-2026-05-10-brief.md",
+    "nightshift/seedhouse-rebuild-2026-05-10-ground-plan-diagnostic.png",
+    "nightshift/seedhouse-rebuild-2026-05-10-status.md",
+    "nightshift/seedhouse-rebuild-2026-05-10-upper-plan-diagnostic.png",
+    "packages/cli/lib/one-family-home-commands.mjs",
+    "packages/web/e2e/__fixtures__/seed-target-house-snapshot.json",
+    "spec/sketch-to-bim-methodology.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "db40ed6c2060",
+  "token_usage": {
+    "input_tokens": 5791189,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 101014656,
+    "output_tokens": 306892,
+    "api_call_count": 847
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-11T07:22:49.629029Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 694,
+    "human_modified": 2861,
+    "human_removed": 0,
+    "total_committed": 694,
+    "total_lines_changed": 3555,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
