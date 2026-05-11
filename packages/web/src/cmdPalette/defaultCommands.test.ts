@@ -174,6 +174,28 @@ describe('default Cmd+K commands', () => {
     expect(sharePresentation).toHaveBeenCalledOnce();
   });
 
+  it('routes plan detail commands to the active plan view', () => {
+    const dispatchCommand = vi.fn();
+    const unavailable = queryPalette('plan detail fine', PLAN_CTX, {}).find(
+      (entry) => entry.id === 'view.plan.detail.fine',
+    );
+    expect(unavailable?.disabledReason).toContain('Requires');
+
+    const entry = queryPalette(
+      'plan detail fine',
+      { ...PLAN_CTX, activePlanViewId: 'pv-1', dispatchCommand },
+      {},
+    ).find((candidate) => candidate.id === 'view.plan.detail.fine');
+    expect(entry?.disabledReason).toBeUndefined();
+    entry?.invoke({ ...PLAN_CTX, activePlanViewId: 'pv-1', dispatchCommand });
+    expect(dispatchCommand).toHaveBeenCalledWith({
+      type: 'updateElementProperty',
+      elementId: 'pv-1',
+      key: 'planDetailLevel',
+      value: 'fine',
+    });
+  });
+
   it('routes active visibility commands through the palette host context', () => {
     const openActiveVisibilityControls = vi.fn();
     const openPlanVisibilityGraphics = vi.fn();

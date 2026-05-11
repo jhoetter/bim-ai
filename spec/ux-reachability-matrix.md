@@ -15,6 +15,7 @@ Legend:
 | Select                                  | Direct   | Direct                    | Direct                    | Direct                  | Direct         | Direct         | Direct         | Direct         |
 | Plan authoring tools                    | Direct   | Bridge to Plan            | Direct                    | Bridge/Disabled by tool | Bridge to Plan | Bridge to Plan | Bridge to Plan | Bridge to Plan |
 | Plan modify tools                       | Direct   | Bridge to Plan            | Bridge/Direct by tool     | Disabled                | Bridge to Plan | Bridge to Plan | Bridge to Plan | Bridge to Plan |
+| Plan template/detail style              | Direct   | Disabled                  | Direct                    | Direct                  | Disabled       | Disabled       | Disabled       | Disabled       |
 | 3D camera/display controls              | Disabled | Direct                    | Direct                    | Disabled                | Disabled       | Disabled       | Disabled       | Disabled       |
 | 3D selected-element edit actions        | Disabled | Direct with selected wall/door/window/floor/roof | Direct with selected wall/door/window/floor/roof | Disabled                | Disabled       | Disabled       | Disabled       | Disabled       |
 | Active-view visibility controls         | Direct   | Direct                    | Direct                    | Direct                  | Disabled       | Disabled       | Disabled       | Disabled       |

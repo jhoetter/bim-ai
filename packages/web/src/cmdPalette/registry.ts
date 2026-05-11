@@ -30,6 +30,8 @@ export type PaletteContext = {
   activeViewId: string | null;
   /** Active workspace mode, if the host shell knows it. */
   activeMode?: CapabilityViewMode;
+  /** Active plan_view element id for plan-scoped commands such as templates/style. */
+  activePlanViewId?: string | null;
   /** Navigate through the same tab/mode path as the main workspace chrome. */
   navigateMode?: (
     mode: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent' | 'concept',
@@ -61,6 +63,8 @@ export type PaletteContext = {
   toggleRightRail?: () => void;
   /** Dynamic navigable views/sheets/schedules to surface in the palette. */
   views?: Array<{ id: string; label: string; keywords: string }>;
+  /** Dynamic plan view templates that can be applied to the active plan view. */
+  planTemplates?: Array<{ id: string; label: string; keywords?: string }>;
 };
 
 const _registry: PaletteEntry[] = [];
@@ -162,7 +166,26 @@ export function queryPalette(
     invoke: (ctx) => ctx.openElement?.(v.id),
   }));
 
-  const all = [...resolvedRegistry, ...viewEntries].filter((entry) =>
+  const planTemplateEntries: PaletteEntry[] = (context.planTemplates ?? []).map((template) => ({
+    id: `view-template.apply.${template.id}`,
+    label: `Apply Plan Template: ${template.label}`,
+    keywords: ['plan template', 'view template', template.keywords ?? ''],
+    category: 'command' as const,
+    sourceKind: 'setting' as const,
+    badge: 'Plan',
+    disabledReason: context.activePlanViewId ? undefined : 'Requires an active plan view.',
+    invoke: (ctx) => {
+      if (!ctx.activePlanViewId) return;
+      ctx.dispatchCommand?.({
+        type: 'updateElementProperty',
+        elementId: ctx.activePlanViewId,
+        key: 'viewTemplateId',
+        value: template.id,
+      });
+    },
+  }));
+
+  const all = [...resolvedRegistry, ...viewEntries, ...planTemplateEntries].filter((entry) =>
     matchesSourceKind(entry, parsed.sourceKind),
   );
 

@@ -1025,6 +1025,20 @@ export function Workspace(): JSX.Element {
       }));
   }, [elementsById]);
 
+  const palettePlanTemplates = useMemo(
+    () =>
+      (Object.values(elementsById) as Element[])
+        .filter(
+          (el): el is Extract<Element, { kind: 'view_template' }> => el.kind === 'view_template',
+        )
+        .map((template) => ({
+          id: template.id,
+          label: template.name,
+          keywords: `${template.name} plan template view template`,
+        })),
+    [elementsById],
+  );
+
   const openElementById = useCallback(
     (id: string) => {
       const el = (elementsById as Record<string, Element>)[id];
@@ -1265,12 +1279,14 @@ export function Workspace(): JSX.Element {
             useBimStore.getState().activeElevationViewId ??
             null,
           activeMode: effectiveMode,
+          activePlanViewId,
           navigateMode: (kind) => navigateTo({ kind, source: 'cmdk' }),
           startPlanTool: (toolId) => handleToolSelect(toolId as ToolId),
           setTheme: handleThemeSet,
           toggleTheme: handleThemeToggle,
           setLanguage: handleLanguageSet,
           views: paletteViews,
+          planTemplates: palettePlanTemplates,
           openElement: (id) => navigateTo({ kind: effectiveMode, targetId: id, source: 'cmdk' }),
           dispatchCommand: (cmd) => void onSemanticCommand(cmd),
           openProjectMenu: () => setProjectMenuOpen((v) => !v),

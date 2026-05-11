@@ -129,6 +129,33 @@ describe('queryPalette', () => {
       'settings.language.toggle',
     ]);
   });
+
+  it('adds dynamic plan template commands scoped to the active plan view', () => {
+    const dispatchCommand = vi.fn();
+    const results = queryPalette(
+      'template reflected',
+      {
+        ...CTX,
+        activePlanViewId: 'pv-1',
+        dispatchCommand,
+        planTemplates: [{ id: 'vt-1', label: 'Reflected Ceiling', keywords: 'rcp' }],
+      },
+      {},
+    );
+    const entry = results.find((candidate) => candidate.id === 'view-template.apply.vt-1');
+    expect(entry?.badge).toBe('Plan');
+    entry?.invoke({
+      ...CTX,
+      activePlanViewId: 'pv-1',
+      dispatchCommand,
+    });
+    expect(dispatchCommand).toHaveBeenCalledWith({
+      type: 'updateElementProperty',
+      elementId: 'pv-1',
+      key: 'viewTemplateId',
+      value: 'vt-1',
+    });
+  });
 });
 
 describe('recency score isolation', () => {

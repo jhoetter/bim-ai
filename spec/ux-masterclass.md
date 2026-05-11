@@ -610,6 +610,8 @@ modal and command-line parser utilities that have their own tests.
   on invalid canvases.
 - Plan authoring Cmd+K coverage includes Area, Floor Sketch, Roof Sketch, Room Separation, and
   Area Boundary in addition to the primary Wall/Door/Window/Room/Grid/Dimension/Tag tools.
+- Active plan-view Cmd+K coverage includes applying a view template and switching plan detail
+  style through `updateElementProperty`.
 - Navigation commands route through the workspace tab/mode controller.
 - Theme, language, project menu, family library, keyboard shortcuts, active visibility controls,
   3D view controls, save/restore snapshot, share presentation, rail toggles, and inactive-tab close

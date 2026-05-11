@@ -68,6 +68,9 @@ export function CommandPalette({
     for (const view of context.views ?? []) {
       ids.add(`view.${view.id}`);
     }
+    for (const template of context.planTemplates ?? []) {
+      ids.add(`view-template.apply.${template.id}`);
+    }
     for (const id of ids) {
       map[id] = getRecencyScore(id, paletteRecencyScopeForCommand(id, context), now);
     }

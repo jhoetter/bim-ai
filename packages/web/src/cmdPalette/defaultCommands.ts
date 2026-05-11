@@ -36,6 +36,20 @@ function toggleLanguage(ctx: PaletteContext): void {
   setLanguage(ctx, i18n.language === 'de' ? 'en' : 'de');
 }
 
+function updateActivePlanViewProperty(ctx: PaletteContext, key: string, value: unknown): void {
+  if (!ctx.activePlanViewId) return;
+  ctx.dispatchCommand?.({
+    type: 'updateElementProperty',
+    elementId: ctx.activePlanViewId,
+    key,
+    value,
+  });
+}
+
+function hasActivePlanView(ctx: PaletteContext): boolean {
+  return Boolean(ctx.activePlanViewId);
+}
+
 function selectedWall(ctx: PaletteContext) {
   const id = ctx.selectedElementIds[0];
   if (!id) return null;
@@ -181,6 +195,33 @@ registerCommand({
   keywords: ['phase', 'new', 'construction'],
   category: 'command',
   invoke: () => useBimStore.getState().setPerspectiveId('construction'),
+});
+
+registerCommand({
+  id: 'view.plan.detail.coarse',
+  label: 'Plan Detail: Coarse',
+  keywords: ['plan', 'detail level', 'coarse', 'style'],
+  category: 'command',
+  isAvailable: hasActivePlanView,
+  invoke: (ctx) => updateActivePlanViewProperty(ctx, 'planDetailLevel', 'coarse'),
+});
+
+registerCommand({
+  id: 'view.plan.detail.medium',
+  label: 'Plan Detail: Medium',
+  keywords: ['plan', 'detail level', 'medium', 'style'],
+  category: 'command',
+  isAvailable: hasActivePlanView,
+  invoke: (ctx) => updateActivePlanViewProperty(ctx, 'planDetailLevel', 'medium'),
+});
+
+registerCommand({
+  id: 'view.plan.detail.fine',
+  label: 'Plan Detail: Fine',
+  keywords: ['plan', 'detail level', 'fine', 'style'],
+  category: 'command',
+  isAvailable: hasActivePlanView,
+  invoke: (ctx) => updateActivePlanViewProperty(ctx, 'planDetailLevel', 'fine'),
 });
 
 // Navigate commands
