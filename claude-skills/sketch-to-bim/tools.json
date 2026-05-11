@@ -1,0 +1,285 @@
+{
+  "schemaVersion": "codex.skill-tools.v1",
+  "skill": "sketch-to-bim",
+  "description": "Typed tool descriptors for driving the sketch-to-BIM live authoring loop.",
+  "entrypoint": "python3 claude-skills/sketch-to-bim/sketch_bim.py",
+  "tools": [
+    {
+      "name": "skb_doctor",
+      "command": "doctor",
+      "description": "Verify repo files plus live API/web availability, optionally including a model Advisor probe.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "model": { "type": "string" },
+          "baseUrl": { "type": "string", "default": "http://127.0.0.1:8500" },
+          "webUrl": { "type": "string", "default": "http://127.0.0.1:2000" },
+          "requireLive": { "type": "boolean", "default": false },
+          "out": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["ok", "repo", "gitHead", "apiHealth", "web", "files"],
+        "properties": {
+          "ok": { "type": "boolean" },
+          "repo": { "type": "string" },
+          "gitHead": { "type": ["string", "null"] },
+          "apiHealth": { "type": "object" },
+          "web": { "type": "object" },
+          "files": { "type": "object" }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
+      "name": "skb_compile_recipe",
+      "command": "compile",
+      "description": "Compile a seed-dsl recipe into a cmd-v3 bundle.",
+      "inputSchema": {
+        "type": "object",
+        "required": ["seed"],
+        "properties": {
+          "seed": { "type": "string" },
+          "recipe": { "type": "string" },
+          "bundle": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["seed", "recipe", "bundle"],
+        "properties": {
+          "seed": { "type": "string" },
+          "recipe": { "type": "string" },
+          "bundle": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
+      "name": "skb_seed_model",
+      "command": "seed",
+      "description": "Load a named seed artifact and return the deterministic BIM model id.",
+      "inputSchema": {
+        "type": "object",
+        "required": ["seed"],
+        "properties": {
+          "seed": { "type": "string" },
+          "clear": { "type": "boolean", "default": false },
+          "out": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["seed", "modelId"],
+        "properties": {
+          "seed": { "type": "string" },
+          "modelId": { "type": ["string", "null"] }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
+      "name": "skb_capture_advisor",
+      "command": "advisor",
+      "description": "Capture warning and info Advisor groups for the live model.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "model": { "type": "string" },
+          "out": { "type": "string" },
+          "baseUrl": { "type": "string", "default": "http://127.0.0.1:8500" },
+          "failOnWarning": { "type": "boolean", "default": false }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["modelId", "warning", "info"],
+        "properties": {
+          "modelId": { "type": "string" },
+          "warning": { "type": "object" },
+          "info": { "type": "object" }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
+      "name": "skb_advisor_parity",
+      "command": "advisor-parity",
+      "description": "Compare CLI Advisor grouping with the snapshot violations payload rendered by the right rail.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "model": { "type": "string" },
+          "out": { "type": "string" },
+          "baseUrl": { "type": "string", "default": "http://127.0.0.1:8500" },
+          "failOnMismatch": { "type": "boolean", "default": false }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["ok", "cli", "rightRailSource"],
+        "properties": {
+          "ok": { "type": "boolean" },
+          "cli": { "type": "object" },
+          "rightRailSource": { "type": "object" }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
+      "name": "skb_semantic_checklist",
+      "command": "semantic-checklist",
+      "description": "Create required per-view semantic review rows from a screenshot manifest.",
+      "inputSchema": {
+        "type": "object",
+        "required": ["phase"],
+        "properties": {
+          "phase": { "type": "string" },
+          "seed": { "type": "string" },
+          "dir": { "type": "string" },
+          "manifest": { "type": "string" },
+          "out": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["semanticChecklist", "checkCount"],
+        "properties": {
+          "semanticChecklist": { "type": "string" },
+          "checkCount": { "type": "integer" }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
+      "name": "skb_issue_ledger",
+      "command": "issue-ledger",
+      "description": "Map Advisor findings to recipe and bundle source references.",
+      "inputSchema": {
+        "type": "object",
+        "required": ["phase"],
+        "properties": {
+          "phase": { "type": "string" },
+          "seed": { "type": "string" },
+          "dir": { "type": "string" },
+          "recipe": { "type": "string" },
+          "bundle": { "type": "string" },
+          "advisorWarning": { "type": "string" },
+          "advisorInfo": { "type": "string" },
+          "out": { "type": "string" },
+          "failOnPending": { "type": "boolean", "default": false }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["issueLedger", "entryCount"],
+        "properties": {
+          "issueLedger": { "type": "string" },
+          "entryCount": { "type": "integer" }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
+      "name": "skb_accept_phase",
+      "command": "phase-accept",
+      "description": "Fail unless a phase evidence packet is complete and clean.",
+      "inputSchema": {
+        "type": "object",
+        "required": ["phase"],
+        "properties": {
+          "phase": { "type": "string" },
+          "seed": { "type": "string" },
+          "dir": { "type": "string" },
+          "out": { "type": "string" },
+          "requireParity": { "type": "boolean", "default": false }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["ok", "phase", "missing", "advisorWarningTotal", "semanticFailures", "pendingIssues"],
+        "properties": {
+          "ok": { "type": "boolean" },
+          "phase": { "type": "string" },
+          "missing": { "type": "object" },
+          "advisorWarningTotal": { "type": "integer" },
+          "semanticFailures": { "type": "array" },
+          "pendingIssues": { "type": "array" }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
+      "name": "skb_accept_final",
+      "command": "accept",
+      "description": "Compile, seed, and run strict current-HEAD initiation acceptance.",
+      "inputSchema": {
+        "type": "object",
+        "required": ["seed"],
+        "properties": {
+          "seed": { "type": "string" },
+          "model": { "type": "string" },
+          "recipe": { "type": "string" },
+          "ir": { "type": "string" },
+          "out": { "type": "string" },
+          "capabilities": { "type": "string", "default": "spec/sketch-to-bim-capability-matrix.json" },
+          "baseUrl": { "type": "string", "default": "http://127.0.0.1:8500" },
+          "mode": { "type": "string", "default": "project_initiation_bim" },
+          "targetImage": { "type": "string" },
+          "targetMap": { "type": "string" },
+          "clear": { "type": "boolean", "default": false },
+          "noCompile": { "type": "boolean", "default": false },
+          "requireLive": { "type": "boolean", "default": true }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["schemaVersion", "seed", "modelId", "gitHead", "bundleSha256", "irSha256"],
+        "properties": {
+          "schemaVersion": { "type": "string" },
+          "seed": { "type": "string" },
+          "modelId": { "type": "string" },
+          "gitHead": { "type": ["string", "null"] },
+          "bundleSha256": { "type": ["string", "null"] },
+          "irSha256": { "type": ["string", "null"] }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
+      "name": "skb_stale_check",
+      "command": "stale-check",
+      "description": "Fail if final evidence was not produced from current HEAD inputs.",
+      "inputSchema": {
+        "type": "object",
+        "required": ["seed"],
+        "properties": {
+          "seed": { "type": "string" },
+          "evidence": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["ok", "seed", "evidence", "stale"],
+        "properties": {
+          "ok": { "type": "boolean" },
+          "seed": { "type": "string" },
+          "evidence": { "type": "string" },
+          "stale": { "type": "object" }
+        },
+        "additionalProperties": true
+      }
+    }
+  ]
+}

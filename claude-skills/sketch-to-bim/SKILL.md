@@ -23,6 +23,13 @@ Use it as the primary operational wrapper for live sketch-to-BIM work. It does
 not replace the bim-ai CLI; it calls `make seed` and `node packages/cli/cli.mjs`
 with the stricter arguments this methodology requires.
 
+Typed tool descriptors live at `claude-skills/sketch-to-bim/tools.json` and can
+be printed for agent adapters with:
+
+```bash
+python3 claude-skills/sketch-to-bim/sketch_bim.py tools
+```
+
 Core commands:
 
 ```bash

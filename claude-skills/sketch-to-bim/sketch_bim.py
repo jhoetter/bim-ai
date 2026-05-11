@@ -25,6 +25,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 CLI = ["node", "packages/cli/cli.mjs"]
 DEFAULT_CAPABILITIES = "spec/sketch-to-bim-capability-matrix.json"
+TOOL_MANIFEST = ROOT / "claude-skills" / "sketch-to-bim" / "tools.json"
 BLOCKING_SEVERITIES = {"warning", "error"}
 UUID_RE = re.compile(
     r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b",
@@ -172,6 +173,10 @@ def cmd_doctor(args: argparse.Namespace) -> None:
     print(json_dump(checks))
     if args.require_live and not checks["ok"]:
         raise SystemExit(2)
+
+
+def cmd_tools(_args: argparse.Namespace) -> None:
+    print(json_dump(read_json(TOOL_MANIFEST)))
 
 
 def parse_optional_json(raw: str) -> Any:
@@ -620,6 +625,9 @@ def cmd_stale_check(args: argparse.Namespace) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Sketch-to-BIM skill operational helper.")
     sub = parser.add_subparsers(dest="command", required=True)
+
+    tools = sub.add_parser("tools", help="Print typed skill tool descriptors.")
+    tools.set_defaults(func=cmd_tools)
 
     doctor = sub.add_parser("doctor", help="Check live app/tool prerequisites.")
     doctor.add_argument("--base-url", default=os.environ.get("BIM_AI_BASE_URL", "http://127.0.0.1:8500"))
