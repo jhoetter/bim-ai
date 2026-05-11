@@ -1,0 +1,420 @@
+{
+  "format": "constructabilityFixtureCorpus_v1",
+  "cases": [
+    {
+      "id": "shelf_through_wall",
+      "description": "Placed casework intersects a wall.",
+      "elements": {
+        "lvl-1": {
+          "kind": "level",
+          "id": "lvl-1",
+          "name": "Level 1",
+          "elevationMm": 0
+        },
+        "wall-1": {
+          "kind": "wall",
+          "id": "wall-1",
+          "levelId": "lvl-1",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 4000, "yMm": 0 },
+          "thicknessMm": 200,
+          "heightMm": 3000
+        },
+        "asset-shelf": {
+          "kind": "asset_library_entry",
+          "id": "asset-shelf",
+          "assetKind": "block_2d",
+          "name": "Shelf",
+          "category": "casework",
+          "tags": [],
+          "thumbnailKind": "schematic_plan",
+          "thumbnailWidthMm": 600,
+          "thumbnailHeightMm": 300
+        },
+        "shelf-1": {
+          "kind": "placed_asset",
+          "id": "shelf-1",
+          "name": "Shelf",
+          "assetId": "asset-shelf",
+          "levelId": "lvl-1",
+          "positionMm": { "xMm": 1200, "yMm": 0 },
+          "paramValues": { "widthMm": 600, "depthMm": 300, "proxyHeightMm": 900 }
+        }
+      },
+      "expectedRuleIds": ["furniture_wall_hard_clash"],
+      "absentRuleIds": []
+    },
+    {
+      "id": "shelf_clear_of_wall",
+      "description": "Placed casework is near a wall but outside the wall body.",
+      "elements": {
+        "lvl-1": {
+          "kind": "level",
+          "id": "lvl-1",
+          "name": "Level 1",
+          "elevationMm": 0
+        },
+        "wall-1": {
+          "kind": "wall",
+          "id": "wall-1",
+          "levelId": "lvl-1",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 4000, "yMm": 0 },
+          "thicknessMm": 200,
+          "heightMm": 3000
+        },
+        "asset-shelf": {
+          "kind": "asset_library_entry",
+          "id": "asset-shelf",
+          "assetKind": "block_2d",
+          "name": "Shelf",
+          "category": "casework",
+          "tags": [],
+          "thumbnailKind": "schematic_plan",
+          "thumbnailWidthMm": 600,
+          "thumbnailHeightMm": 300
+        },
+        "shelf-1": {
+          "kind": "placed_asset",
+          "id": "shelf-1",
+          "name": "Shelf",
+          "assetId": "asset-shelf",
+          "levelId": "lvl-1",
+          "positionMm": { "xMm": 1200, "yMm": 500 },
+          "paramValues": { "widthMm": 600, "depthMm": 300, "proxyHeightMm": 900 }
+        }
+      },
+      "expectedRuleIds": [],
+      "absentRuleIds": ["furniture_wall_hard_clash", "physical_hard_clash"]
+    },
+    {
+      "id": "pipe_through_wall_without_opening",
+      "description": "Pipe crosses a wall with no modeled sleeve/opening.",
+      "elements": {
+        "lvl-1": {
+          "kind": "level",
+          "id": "lvl-1",
+          "name": "Level 1",
+          "elevationMm": 0
+        },
+        "wall-1": {
+          "kind": "wall",
+          "id": "wall-1",
+          "levelId": "lvl-1",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 4000, "yMm": 0 },
+          "thicknessMm": 200,
+          "heightMm": 3000
+        },
+        "pipe-1": {
+          "kind": "pipe",
+          "id": "pipe-1",
+          "levelId": "lvl-1",
+          "startMm": { "xMm": 1000, "yMm": -500 },
+          "endMm": { "xMm": 1000, "yMm": 500 },
+          "elevationMm": 1000,
+          "diameterMm": 50
+        }
+      },
+      "expectedRuleIds": ["pipe_wall_penetration_without_opening"],
+      "absentRuleIds": []
+    },
+    {
+      "id": "pipe_through_wall_with_opening",
+      "description": "Pipe crossing is covered by a matching wall opening.",
+      "elements": {
+        "lvl-1": {
+          "kind": "level",
+          "id": "lvl-1",
+          "name": "Level 1",
+          "elevationMm": 0
+        },
+        "wall-1": {
+          "kind": "wall",
+          "id": "wall-1",
+          "levelId": "lvl-1",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 4000, "yMm": 0 },
+          "thicknessMm": 200,
+          "heightMm": 3000
+        },
+        "pipe-1": {
+          "kind": "pipe",
+          "id": "pipe-1",
+          "levelId": "lvl-1",
+          "startMm": { "xMm": 1000, "yMm": -500 },
+          "endMm": { "xMm": 1000, "yMm": 500 },
+          "elevationMm": 1000,
+          "diameterMm": 50
+        },
+        "opening-1": {
+          "kind": "wall_opening",
+          "id": "opening-1",
+          "hostWallId": "wall-1",
+          "alongTStart": 0.2,
+          "alongTEnd": 0.3,
+          "sillHeightMm": 900,
+          "headHeightMm": 1100
+        }
+      },
+      "expectedRuleIds": [],
+      "absentRuleIds": ["pipe_wall_penetration_without_opening"]
+    },
+    {
+      "id": "stair_missing_upper_slab_opening",
+      "description": "Stair reaches an upper floor without a slab/shaft opening.",
+      "elements": {
+        "lvl-1": {
+          "kind": "level",
+          "id": "lvl-1",
+          "name": "Level 1",
+          "elevationMm": 0
+        },
+        "lvl-2": {
+          "kind": "level",
+          "id": "lvl-2",
+          "name": "Level 2",
+          "elevationMm": 3000
+        },
+        "floor-2": {
+          "kind": "floor",
+          "id": "floor-2",
+          "levelId": "lvl-2",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": -1500 },
+            { "xMm": 2500, "yMm": -1500 },
+            { "xMm": 2500, "yMm": 1500 },
+            { "xMm": 0, "yMm": 1500 }
+          ],
+          "thicknessMm": 220
+        },
+        "stair-1": {
+          "kind": "stair",
+          "id": "stair-1",
+          "baseLevelId": "lvl-1",
+          "topLevelId": "lvl-2",
+          "runStartMm": { "xMm": 1000, "yMm": -500 },
+          "runEndMm": { "xMm": 1000, "yMm": 500 },
+          "widthMm": 1000
+        }
+      },
+      "expectedRuleIds": ["stair_floor_penetration_without_slab_opening"],
+      "absentRuleIds": []
+    },
+    {
+      "id": "stair_with_upper_slab_opening",
+      "description": "Stair reaches an upper floor through a modeled slab opening.",
+      "elements": {
+        "lvl-1": {
+          "kind": "level",
+          "id": "lvl-1",
+          "name": "Level 1",
+          "elevationMm": 0
+        },
+        "lvl-2": {
+          "kind": "level",
+          "id": "lvl-2",
+          "name": "Level 2",
+          "elevationMm": 3000
+        },
+        "floor-2": {
+          "kind": "floor",
+          "id": "floor-2",
+          "levelId": "lvl-2",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": -1500 },
+            { "xMm": 2500, "yMm": -1500 },
+            { "xMm": 2500, "yMm": 1500 },
+            { "xMm": 0, "yMm": 1500 }
+          ],
+          "thicknessMm": 220
+        },
+        "opening-1": {
+          "kind": "slab_opening",
+          "id": "opening-1",
+          "hostFloorId": "floor-2",
+          "boundaryMm": [
+            { "xMm": 400, "yMm": -650 },
+            { "xMm": 1600, "yMm": -650 },
+            { "xMm": 1600, "yMm": 650 },
+            { "xMm": 400, "yMm": 650 }
+          ]
+        },
+        "stair-1": {
+          "kind": "stair",
+          "id": "stair-1",
+          "baseLevelId": "lvl-1",
+          "topLevelId": "lvl-2",
+          "runStartMm": { "xMm": 1000, "yMm": -500 },
+          "runEndMm": { "xMm": 1000, "yMm": 500 },
+          "widthMm": 1000
+        }
+      },
+      "expectedRuleIds": [],
+      "absentRuleIds": ["stair_floor_penetration_without_slab_opening"]
+    },
+    {
+      "id": "duplicate_placed_assets",
+      "description": "Two placed assets share an identical physical proxy.",
+      "elements": {
+        "lvl-1": {
+          "kind": "level",
+          "id": "lvl-1",
+          "name": "Level 1",
+          "elevationMm": 0
+        },
+        "asset-shelf": {
+          "kind": "asset_library_entry",
+          "id": "asset-shelf",
+          "assetKind": "block_2d",
+          "name": "Shelf",
+          "category": "casework",
+          "tags": [],
+          "thumbnailKind": "schematic_plan",
+          "thumbnailWidthMm": 600,
+          "thumbnailHeightMm": 300
+        },
+        "shelf-1": {
+          "kind": "placed_asset",
+          "id": "shelf-1",
+          "name": "Shelf",
+          "assetId": "asset-shelf",
+          "levelId": "lvl-1",
+          "positionMm": { "xMm": 1200, "yMm": 1000 },
+          "paramValues": { "widthMm": 600, "depthMm": 300, "proxyHeightMm": 900 }
+        },
+        "shelf-2": {
+          "kind": "placed_asset",
+          "id": "shelf-2",
+          "name": "Shelf",
+          "assetId": "asset-shelf",
+          "levelId": "lvl-1",
+          "positionMm": { "xMm": 1200, "yMm": 1000 },
+          "paramValues": { "widthMm": 600, "depthMm": 300, "proxyHeightMm": 900 }
+        }
+      },
+      "expectedRuleIds": ["physical_duplicate_geometry"],
+      "absentRuleIds": ["physical_hard_clash"]
+    },
+    {
+      "id": "large_opening_in_load_bearing_wall",
+      "description": "Large door opening in a load-bearing wall lacks structural resolution metadata.",
+      "elements": {
+        "lvl-1": {
+          "kind": "level",
+          "id": "lvl-1",
+          "name": "Level 1",
+          "elevationMm": 0
+        },
+        "wall-1": {
+          "kind": "wall",
+          "id": "wall-1",
+          "levelId": "lvl-1",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 4000, "yMm": 0 },
+          "thicknessMm": 200,
+          "heightMm": 3000,
+          "loadBearing": true
+        },
+        "door-1": {
+          "kind": "door",
+          "id": "door-1",
+          "wallId": "wall-1",
+          "alongT": 0.5,
+          "widthMm": 2200
+        }
+      },
+      "expectedRuleIds": ["large_opening_in_load_bearing_wall_unresolved"],
+      "absentRuleIds": []
+    },
+    {
+      "id": "large_opening_with_lintel_metadata",
+      "description": "Large door opening in a load-bearing wall records lintel design metadata.",
+      "elements": {
+        "lvl-1": {
+          "kind": "level",
+          "id": "lvl-1",
+          "name": "Level 1",
+          "elevationMm": 0
+        },
+        "wall-1": {
+          "kind": "wall",
+          "id": "wall-1",
+          "levelId": "lvl-1",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 4000, "yMm": 0 },
+          "thicknessMm": 200,
+          "heightMm": 3000,
+          "loadBearing": true
+        },
+        "door-1": {
+          "kind": "door",
+          "id": "door-1",
+          "wallId": "wall-1",
+          "alongT": 0.5,
+          "widthMm": 2200,
+          "props": { "lintelDesigned": true }
+        }
+      },
+      "expectedRuleIds": [],
+      "absentRuleIds": ["large_opening_in_load_bearing_wall_unresolved"]
+    },
+    {
+      "id": "roof_too_small_for_primary_wall",
+      "description": "Primary envelope wall falls outside the modeled roof footprint.",
+      "elements": {
+        "lvl-1": {
+          "kind": "level",
+          "id": "lvl-1",
+          "name": "Level 1",
+          "elevationMm": 0
+        },
+        "roof-1": {
+          "kind": "roof",
+          "id": "roof-1",
+          "referenceLevelId": "lvl-1",
+          "footprintMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 3000, "yMm": 0 },
+            { "xMm": 3000, "yMm": 2000 },
+            { "xMm": 0, "yMm": 2000 }
+          ],
+          "overhangMm": 0
+        },
+        "wall-1": {
+          "kind": "wall",
+          "id": "wall-1",
+          "levelId": "lvl-1",
+          "start": { "xMm": 3500, "yMm": 0 },
+          "end": { "xMm": 4500, "yMm": 0 },
+          "thicknessMm": 200,
+          "heightMm": 3000,
+          "props": { "primaryEnvelope": true }
+        }
+      },
+      "expectedRuleIds": ["roof_wall_coverage_gap"],
+      "absentRuleIds": []
+    },
+    {
+      "id": "unsupported_beam",
+      "description": "Beam has no modeled supports.",
+      "elements": {
+        "lvl-1": {
+          "kind": "level",
+          "id": "lvl-1",
+          "name": "Level 1",
+          "elevationMm": 0
+        },
+        "beam-1": {
+          "kind": "beam",
+          "id": "beam-1",
+          "levelId": "lvl-1",
+          "startMm": { "xMm": 0, "yMm": 1000 },
+          "endMm": { "xMm": 4000, "yMm": 1000 }
+        }
+      },
+      "expectedRuleIds": ["beam_without_support"],
+      "absentRuleIds": []
+    }
+  ]
+}

@@ -640,7 +640,7 @@ Status vocabulary:
 | CW-019 | open | Medium | Active design options/phasing not integrated into constructability. | Elements carry option/phase fields in places. | Validation profiles respect phase and design option contexts. |
 | CW-020 | open | Medium | Performance plan missing. | No spatial index for full physical model. | Benchmarked broad phase and incremental invalidation. |
 | CW-021 | open | Medium | User-facing constructability report missing. | Advisor and clash panel are separate. | Unified report with refresh, grouping, isolation, export. |
-| CW-022 | open | Medium | Test corpus missing. | Existing tests cover isolated rules. | Golden constructability fixtures with positive/negative cases. |
+| CW-022 | done | Medium | Test corpus missing. | `app/tests/fixtures/constructability_cases.json` plus `app/tests/test_constructability_fixture_corpus.py` cover positive/negative golden cases for wall/furniture, MEP sleeve, stair slab opening, duplicates, load-bearing openings, roof coverage, and beam support. | Golden constructability fixtures with positive/negative cases. |
 
 ## Roadmap
 
@@ -864,6 +864,11 @@ Every fixture should have:
 - JSON violation snapshot.
 - Optional 3D/plan evidence screenshot once UI support exists.
 - A "no false positive" sibling case.
+
+Current implementation evidence:
+
+- `app/tests/fixtures/constructability_cases.json` stores the golden fixture corpus.
+- `app/tests/test_constructability_fixture_corpus.py` validates each case through the primary evaluator and constructability report snapshot.
 
 ## Performance Requirements
 
