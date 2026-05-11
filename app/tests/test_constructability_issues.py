@@ -40,6 +40,7 @@ def test_reconcile_creates_new_issue_for_new_finding() -> None:
             "fingerprint": fingerprint_violation(_violation()),
             "ruleId": "clearance.headroom",
             "elementIds": ["A", "B"],
+            "pairKey": "A::B",
             "locationBucket": None,
             "message": "Headroom is below target.",
             "severity": "warning",
@@ -96,3 +97,21 @@ def test_reconcile_accepts_existing_violation_model() -> None:
 
     assert issues[0]["ruleId"] == "clearance.headroom"
     assert issues[0]["elementIds"] == ["A", "B"]
+    assert issues[0]["pairKey"] == "A::B"
+
+
+def test_reconcile_carries_constructability_context_fields() -> None:
+    violation = Violation(
+        ruleId="physical_duplicate_geometry",
+        severity="warning",
+        message="Duplicate physical geometry.",
+        elementIds=["asset-b", "asset-a"],
+        discipline="coordination",
+        blockingClass="geometry",
+    )
+
+    issues = reconcile_findings([], [violation], revision=1)
+
+    assert issues[0]["pairKey"] == "asset-a::asset-b"
+    assert issues[0]["discipline"] == "coordination"
+    assert issues[0]["blockingClass"] == "geometry"

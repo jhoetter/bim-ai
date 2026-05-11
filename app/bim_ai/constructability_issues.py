@@ -36,6 +36,7 @@ class ConstructabilityIssue:
     fingerprint: str
     ruleId: str
     elementIds: list[str] = field(default_factory=list)
+    pairKey: str | None = None
     status: str = STATUS_NEW
     firstSeenRevision: str | int | None = None
     lastSeenRevision: str | int | None = None
@@ -43,6 +44,9 @@ class ConstructabilityIssue:
     locationBucket: str | None = None
     message: str | None = None
     severity: str | None = None
+    discipline: str | None = None
+    blockingClass: str | None = None
+    recommendation: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -136,14 +140,31 @@ def _violation_snapshot(fingerprint: str, violation: Any) -> dict[str, Any]:
     element_ids = sorted(
         str(element_id) for element_id in _read(violation, "element_ids", "elementIds", default=[])
     )
-    return {
+    snapshot = {
         "fingerprint": fingerprint,
         "ruleId": rule_id,
         "elementIds": element_ids,
+        "pairKey": _pair_key(element_ids),
         "locationBucket": _location_bucket(violation),
         "message": _read(violation, "message", default=None),
         "severity": _read(violation, "severity", default=None),
     }
+    for source_name, target_name in (
+        ("discipline", "discipline"),
+        ("blocking_class", "blockingClass"),
+        ("blockingClass", "blockingClass"),
+        ("recommendation", "recommendation"),
+    ):
+        value = _read(violation, source_name, default=None)
+        if value is not None:
+            snapshot[target_name] = value
+    return snapshot
+
+
+def _pair_key(element_ids: list[str]) -> str | None:
+    if len(element_ids) < 2:
+        return None
+    return "::".join(element_ids)
 
 
 def _location_bucket(violation: Any, *, bucket_size: float = 100.0) -> str | None:
