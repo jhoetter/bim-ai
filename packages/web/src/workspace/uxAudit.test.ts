@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import '../cmdPalette/defaultCommands';
-import { getRegistry } from '../cmdPalette/registry';
+import { getRegistry, queryPalette } from '../cmdPalette/registry';
 import {
   evaluateCommandInMode,
   getCommandCapability,
@@ -64,6 +64,21 @@ describe('UX reachability audit', () => {
       expect(evaluateCommandInMode(commandId, '3d')?.state).toBe('enabled');
       expect(evaluateCommandInMode(commandId, 'plan')?.state).toBe('disabled');
       expect(getCommandCapability(commandId)?.preconditions).toContain('selected-wall');
+    }
+  });
+
+  it('keeps every mounted capability-backed Cmd+K result labeled with a context badge', () => {
+    for (const activeMode of ['plan', '3d', 'sheet', 'schedule', 'agent'] as CapabilityViewMode[]) {
+      const results = queryPalette(
+        '',
+        { selectedElementIds: [], activeViewId: null, activeMode },
+        {},
+      ).filter((entry) => !entry.id.startsWith('view.'));
+
+      expect(results.length).toBeGreaterThan(0);
+      for (const entry of results) {
+        expect(entry.badge, `${entry.id} in ${activeMode}`).toBeTruthy();
+      }
     }
   });
 });
