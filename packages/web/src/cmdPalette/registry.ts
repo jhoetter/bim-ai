@@ -40,6 +40,8 @@ export type PaletteContext = {
   activeSectionId?: string | null;
   /** Active saved orbit_3d viewpoint id for saved-view commands. */
   activeViewpointId?: string | null;
+  /** True when the host has a current 3D camera pose that can be saved. */
+  canSaveCurrentViewpoint?: boolean;
   /** Navigate through the same tab/mode path as the main workspace chrome. */
   navigateMode?: (
     mode: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent' | 'concept',
@@ -80,6 +82,7 @@ export type PaletteContext = {
   adjustActiveSectionCropDepth?: (deltaMm: number) => void;
   resetActiveSavedViewpoint?: () => void;
   updateActiveSavedViewpoint?: () => void;
+  saveCurrentViewpoint?: () => void;
   closeInactiveViews?: () => void;
   toggleLeftRail?: () => void;
   toggleRightRail?: () => void;

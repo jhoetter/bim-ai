@@ -58,7 +58,11 @@ describe('command capability graph', () => {
   });
 
   it('tracks active saved-viewpoint commands as 3D-capable only', () => {
-    for (const commandId of ['view.3d.saved-view.reset', 'view.3d.saved-view.update']) {
+    for (const commandId of [
+      'view.3d.saved-view.save-current',
+      'view.3d.saved-view.reset',
+      'view.3d.saved-view.update',
+    ]) {
       expect(evaluateCommandInMode(commandId, '3d')?.state).toBe('enabled');
       expect(evaluateCommandInMode(commandId, 'plan-3d')?.state).toBe('enabled');
       expect(evaluateCommandInMode(commandId, 'plan')?.state).toBe('disabled');

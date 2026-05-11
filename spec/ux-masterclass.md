@@ -13,8 +13,8 @@ The editor is already feature-rich, but the UX model is currently inconsistent b
 1. The top bar and ribbon expose tools globally, even when the active canvas cannot execute them.
 2. The floating tool palette is view-aware, but it is also filtered by "perspective" in a way that hides or reveals tools differently from the ribbon.
 3. The command palette is not tied to the active tab/view. Some "Go to" commands only update `viewerMode`, while the rendered canvas is controlled by active tabs and `mode`.
-4. The 3D viewport has partial editing affordances, but pure 3D mode does not receive `onSemanticCommand`, so 3D grips and wall-face commands cannot commit changes from that mode.
-5. Visibility controls are split between plan VG, 3D layer toggles, lens filters, hidden/reveal state, and saved-view hidden categories. The 3D layer panel only exposes a subset of renderable categories, so "hide all" does not hide all visible geometry.
+4. Pure 3D mode now receives `onSemanticCommand`, so 3D grips and wall-face commands have a commit path; remaining 3D work is about explicit command support and interaction quality.
+5. Visibility controls remain split between plan VG, 3D layer toggles, lens filters, hidden/reveal state, and saved-view hidden categories; the 3D model category panel now covers the renderable `elemViewerCategory` set and shows model-content counts.
 
 Current usability score: **3/10**.
 
@@ -328,19 +328,17 @@ Mode mapping:
 - `schedule`: `ScheduleModeShell`.
 - `agent`: `AgentReviewModeShell`.
 
-Critical finding:
+Resolved finding:
 
 - In `plan-3d`, `Viewport` receives `onSemanticCommand`.
-- In pure `3d`, `Viewport` does **not** receive `onSemanticCommand`.
+- In pure `3d`, `Viewport` also receives `onSemanticCommand`.
 
 Impact:
 
 - Pure 3D selection can work because it uses store selection.
-- 3D grips can render, but grip commands early-return when `onSemanticCommand` is missing.
-- 3D wall context menu/radial commands can appear but cannot commit commands in pure 3D.
-- In plan+3D, those commands have a dispatch path.
+- 3D grips, wall context menu, and radial commands now have a dispatch path in pure 3D and plan+3D.
 
-This is the strongest code-level explanation for "3D renderer should allow working on walls, doors, etc., but it seemingly currently is not the case."
+This closes the strongest code-level explanation for "3D renderer should allow working on walls, doors, etc., but it seemingly currently is not the case."
 
 Decision:
 
@@ -545,46 +543,19 @@ This is powerful, but the UX does not clearly separate:
 - Discipline lens ghosting.
 - Phase filtering.
 
-3D category hiding issue:
+Resolved 3D category hiding issue:
 
-- `Viewport3DLayersPanel.VIEWER_HIDDEN_KIND_KEYS` exposes:
-  - wall
-  - floor
-  - roof
-  - stair
-  - door
-  - window
-  - room
-  - site_origin
-- `elemViewerCategory` can also classify:
-  - railing
-  - site
-  - balcony as floor
-- Many rendered 3D elements are not classifiable by current 3D toggles:
-  - column
-  - beam
-  - ceiling
-  - placed_asset
-  - family_instance
-  - text_3d
-  - sweep
-  - dormer
-  - mass
-  - reference_plane
-  - wall_opening has no mesh, but can affect wall CSG
-  - internal generated geometry or linked ghosting may remain
-
-Impact:
-
-- If a user unchecks every visible 3D layer toggle, they can still see geometry. This is expected from the current code but violates the UI promise.
-
-Decision:
-
-- Rename current 3D layer section to "Common categories" until complete, or expand it to all rendered categories.
-- Add "Hide all model geometry" and "Show all" commands.
-- Add category counters: "Walls 12", "Loaded families 8", "Structural framing 6."
-- The 3D visibility list must be generated from actual `elemViewerCategory` coverage and current model content.
-- The plan VV/VG dialog must not be the default 3D visibility control.
+- `Viewport3DLayersPanel.VIEWER_HIDDEN_KIND_KEYS` is sourced from `VIEWER_CATEGORY_KEYS`.
+- `VIEWER_CATEGORY_KEYS` includes walls, floors, roofs, ceilings, stairs, railings, columns, beams,
+  doors, windows, rooms, families, placed assets, masses, site, reference planes, 3D text, sweeps,
+  dormers, and site origins.
+- `WorkspaceRightRail` derives category counters from actual `elemViewerCategory(elementsById)`
+  coverage and passes them into the 3D layer panel.
+- "Show all model categories" / "Hide all model categories" write every registered viewer category
+  key, so the button label now matches the runtime category model.
+- `packages/web/src/viewport/originMarkers.test.ts` covers the semantic-kind-to-category mapping
+  for rendered 3D kinds, and `Viewport3DLayersPanel.test.tsx` covers category counts plus show/hide
+  all callbacks.
 
 ## Command Palette Audit
 
@@ -618,8 +589,9 @@ modal and command-line parser utilities that have their own tests.
   placement, titleblock and viewport editor jumps, and sheet export/share routing.
 - Section Cmd+K coverage includes place active section on sheet, open source plan, and far-clip
   crop-depth increase/decrease commands through `updateElementProperty`.
-- Active 3D saved-viewpoint Cmd+K coverage includes reset to saved camera and update saved
-  viewpoint from the current orbit camera, clip planes, and hidden category state.
+- Active 3D saved-viewpoint Cmd+K coverage includes saving the current 3D camera as a `saved_view`,
+  resetting to saved camera, and updating an active saved viewpoint from the current orbit camera,
+  clip planes, and hidden category state.
 - Navigation commands route through the workspace tab/mode controller.
 - Theme, language, project menu, family library, keyboard shortcuts, active visibility controls,
   3D view controls, save/restore snapshot, share presentation, rail toggles, and inactive-tab close
@@ -755,7 +727,7 @@ Current likely dead/confusing buttons:
 | Cmd+K | Switch theme | Not mounted | Expected basic command absent | Add universal theme command |
 | Status bar | Grid toggle | Visible, no handler | Appears actionable but may do nothing | Wire or hide |
 | Status bar | Active level in sheet/schedule | Changes global active level | Canvas may not reflect | Use per-view status content |
-| 3D layers | Hide all visible listed categories | Some geometry remains | Category list incomplete | Generate from renderable categories |
+| 3D layers | Hide all model categories | Category list generated from renderable coverage | Implemented | Keep `VIEWER_CATEGORY_KEYS` and `elemViewerCategory` covered by tests |
 
 ## Reachability Matrix
 

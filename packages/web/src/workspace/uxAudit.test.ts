@@ -71,6 +71,17 @@ describe('UX reachability audit', () => {
     }
   });
 
+  it('keeps pure 3D viewport edits wired to semantic command dispatch', () => {
+    const canvasMount = readFileSync(
+      resolve(repoRoot, 'packages/web/src/workspace/viewport/CanvasMount.tsx'),
+      'utf8',
+    );
+
+    expect(canvasMount).toMatch(
+      /if \(mode === '3d'\)[\s\S]*<Viewport[\s\S]*onSemanticCommand={onSemanticCommand}/,
+    );
+  });
+
   it('registers selected-wall 3D edit commands as 3D-only selection commands', () => {
     for (const commandId of [
       'view.3d.wall.insert-door',

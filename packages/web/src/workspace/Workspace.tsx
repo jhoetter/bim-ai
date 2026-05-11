@@ -127,7 +127,6 @@ import {
   planToolToToolId,
   validatePlanTool,
 } from './workspaceUtils';
-import { planToolsForPerspective } from './planToolsByPerspective';
 import { useToolPrefs } from '../tools/toolPrefsStore';
 import { useOfflineStore } from '../offlineStore';
 import { usePresenceStore } from '../presenceStore';
@@ -1037,27 +1036,6 @@ export function Workspace(): JSX.Element {
     [effectiveMode, handleModeChange, setPlanTool, toolRegistry],
   );
 
-  // Reset to 'select' when the current tool isn't valid for the active perspective
-  const visibleLegacyTools = useMemo(() => planToolsForPerspective(perspectiveId), [perspectiveId]);
-  useEffect(() => {
-    if (!visibleLegacyTools.includes(planTool)) setPlanTool('select');
-  }, [planTool, setPlanTool, visibleLegacyTools]);
-
-  // Derive the ToolId allowlist from the perspective-filtered legacy tool list.
-  // 'room_rectangle' maps to 'room' and 'grid' maps to 'select' in the palette;
-  // all other PlanTool values are identical to their ToolId counterpart.
-  const allowedToolIds = useMemo<ReadonlySet<ToolId>>(
-    () =>
-      new Set(
-        visibleLegacyTools.map((t): ToolId => {
-          if (t === 'room_rectangle') return 'room';
-          if (t === 'grid') return 'select';
-          return t as ToolId;
-        }),
-      ),
-    [visibleLegacyTools],
-  );
-
   const openMilestoneDialog = useCallback(() => setMilestoneDialogOpen(true), []);
 
   useEffect(() => {
@@ -1293,6 +1271,38 @@ export function Workspace(): JSX.Element {
     },
     [elementsById, onSemanticCommand, paletteActiveSectionId],
   );
+  const saveCurrentViewpoint = useCallback(() => {
+    if (!orbitCameraPoseMm) return;
+    const hiddenSemanticKinds3d = Object.entries(viewerCategoryHidden)
+      .filter(([, hidden]) => hidden)
+      .map(([kind]) => kind);
+    void onSemanticCommand({
+      type: 'create_saved_view',
+      id: `sv-3d-${Date.now().toString(36)}`,
+      baseViewId: activeViewpointId ?? 'orbit_3d',
+      name: `Saved 3D View ${new Date().toLocaleString()}`,
+      cameraState: {
+        positionMm: orbitCameraPoseMm.position,
+        targetMm: orbitCameraPoseMm.target,
+        upMm: orbitCameraPoseMm.up,
+        fovDeg: 60,
+      },
+      visibilityOverrides: {
+        viewerClipCapElevMm: viewerClipElevMm,
+        viewerClipFloorElevMm,
+        hiddenSemanticKinds3d,
+      },
+      detailLevel: viewerProjection,
+    });
+  }, [
+    activeViewpointId,
+    onSemanticCommand,
+    orbitCameraPoseMm,
+    viewerCategoryHidden,
+    viewerClipElevMm,
+    viewerClipFloorElevMm,
+    viewerProjection,
+  ]);
   const resetActiveSavedViewpoint = useCallback(() => {
     if (!activeViewpointId) return;
     const viewpoint = elementsById[activeViewpointId];
@@ -1536,6 +1546,7 @@ export function Workspace(): JSX.Element {
           activeSheetId: paletteActiveSheetId,
           activeSectionId: paletteActiveSectionId,
           activeViewpointId,
+          canSaveCurrentViewpoint: Boolean(orbitCameraPoseMm),
           navigateMode: (kind) => navigateTo({ kind, source: 'cmdk' }),
           startPlanTool: (toolId) => handleToolSelect(toolId as ToolId),
           setTheme: handleThemeSet,
@@ -1568,6 +1579,7 @@ export function Workspace(): JSX.Element {
           placeActiveSectionOnSheet,
           openActiveSectionSourcePlan,
           adjustActiveSectionCropDepth,
+          saveCurrentViewpoint,
           resetActiveSavedViewpoint,
           updateActiveSavedViewpoint,
           closeInactiveViews: () => setTabsState((s) => closeInactiveTabs(s)),
@@ -1859,7 +1871,6 @@ export function Workspace(): JSX.Element {
               activeTool={planToolToToolId(planTool)}
               onToolSelect={handleToolSelect}
               disabledContext={toolDisabledContext}
-              allowedToolIds={allowedToolIds}
             />
             <CanvasMount
               mode={effectiveMode}

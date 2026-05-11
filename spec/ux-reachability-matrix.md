@@ -17,7 +17,7 @@ Legend:
 | Plan modify tools                       | Direct   | Bridge to Plan            | Bridge/Direct by tool     | Disabled                | Bridge to Plan | Bridge to Plan | Bridge to Plan | Bridge to Plan |
 | Plan template/detail style              | Direct   | Disabled                  | Direct                    | Direct                  | Disabled       | Disabled       | Disabled       | Disabled       |
 | 3D camera/display controls              | Disabled | Direct                    | Direct                    | Disabled                | Disabled       | Disabled       | Disabled       | Disabled       |
-| 3D saved-viewpoint reset/update         | Disabled | Direct                    | Direct                    | Disabled                | Disabled       | Disabled       | Disabled       | Disabled       |
+| 3D saved-viewpoint save/reset/update    | Disabled | Direct                    | Direct                    | Disabled                | Disabled       | Disabled       | Disabled       | Disabled       |
 | 3D selected-element edit actions        | Disabled | Direct with selected wall/door/window/floor/roof | Direct with selected wall/door/window/floor/roof | Disabled                | Disabled       | Disabled       | Disabled       | Disabled       |
 | Active-view visibility controls         | Direct   | Direct                    | Direct                    | Direct                  | Disabled       | Disabled       | Disabled       | Disabled       |
 | Plan Visibility/Graphics                | Direct   | Bridge to Plan            | Direct                    | Direct                  | Disabled       | Disabled       | Disabled       | Disabled       |

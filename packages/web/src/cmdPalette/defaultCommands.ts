@@ -771,6 +771,15 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'view.3d.saved-view.save-current',
+  label: '3D: Save Current Viewpoint',
+  keywords: ['3d', 'saved view', 'viewpoint', 'save camera', 'save current view'],
+  category: 'command',
+  isAvailable: (ctx) => is3dContext(ctx) && Boolean(ctx.canSaveCurrentViewpoint),
+  invoke: (ctx) => ctx.saveCurrentViewpoint?.(),
+});
+
+registerCommand({
   id: 'view.3d.saved-view.reset',
   label: '3D: Reset to Saved Viewpoint',
   keywords: ['3d', 'saved view', 'viewpoint', 'reset camera'],
