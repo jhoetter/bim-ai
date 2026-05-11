@@ -2,6 +2,8 @@
 // TOP-V3-01 — Toposolid primitive types
 // ---------------------------------------------------------------------------
 
+export * from './parseDimensionInput';
+
 export type BoundaryPoint = { xMm: number; yMm: number };
 
 export type HeightSample = { xMm: number; yMm: number; zMm: number };
@@ -595,6 +597,15 @@ export type EvidenceRef = {
   pngBasename?: string | null;
 };
 
+export type DimensionAnchor = {
+  kind: 'free' | 'feature';
+  feature?: {
+    elementId: string;
+    anchor: 'start' | 'end' | 'mid' | 'center';
+  };
+  fallbackPositionMm: XY;
+};
+
 export type FamilyDiscipline =
   | 'door'
   | 'window'
@@ -642,6 +653,14 @@ export type WallArcCurve = {
   endAngleDeg: number;
   sweepDeg: number;
 };
+
+export type WallBezierCurve = {
+  kind: 'bezier';
+  /** Four cubic Bezier control points in model XY millimetres. */
+  controlPoints: [XY, XY, XY, XY];
+};
+
+export type WallCurve = WallArcCurve | WallBezierCurve;
 
 /**
  * KRN-09 — kind of substitution applied to a curtain-wall grid cell.
@@ -911,7 +930,7 @@ export type Element =
       start: XY;
       end: XY;
       /** F-043: optional native curved-wall baseline. start/end remain tangent endpoints. */
-      wallCurve?: WallArcCurve | null;
+      wallCurve?: WallCurve | null;
       thicknessMm: number;
       heightMm: number;
       materialKey?: string | null;
@@ -1123,6 +1142,9 @@ export type Element =
        *  When set, the dimension measurement label is shifted by this vector
        *  relative to the midpoint of (aMm → bMm) + offsetMm. */
       textOffsetMm?: { xMm: number; yMm: number } | null;
+      anchorA?: DimensionAnchor | null;
+      anchorB?: DimensionAnchor | null;
+      state?: 'linked' | 'partial' | 'unlinked';
       refElementIdA?: string | null;
       refElementIdB?: string | null;
       tagDefinitionId?: string | null;
@@ -1162,6 +1184,22 @@ export type Element =
       viewerSilhouetteEdgeWidth?: 1 | 2 | 3 | 4;
       /** F-113 — saved 3D photographic exposure value in stops; renderer maps EV to toneMappingExposure. */
       viewerPhotographicExposureEv?: number;
+      /** F-123 — show a plan-view drawing as a registered world-space overlay in orbit 3D. */
+      planOverlayEnabled?: boolean;
+      /** F-123 — source plan_view element rendered as the 3D overlay. */
+      planOverlaySourcePlanViewId?: string | null;
+      /** F-123 — vertical offset above the source level datum in millimetres. */
+      planOverlayOffsetMm?: number | null;
+      /** F-123 — background sheet/fill opacity for the 3D plan overlay. */
+      planOverlayOpacity?: number | null;
+      /** F-123 — linework opacity for the 3D plan overlay. */
+      planOverlayLineOpacity?: number | null;
+      /** F-123 — room/fill opacity for the 3D plan overlay. */
+      planOverlayFillOpacity?: number | null;
+      /** F-123 — when true, labels and supported annotation hints render on the overlay. */
+      planOverlayAnnotationsVisible?: boolean | null;
+      /** F-123 — when true, dashed projection lines connect overlay extents down to model level. */
+      planOverlayWitnessLinesVisible?: boolean | null;
       sectionBoxEnabled?: boolean | null;
       sectionBoxMinMm?: { xMm: number; yMm: number; zMm: number } | null;
       sectionBoxMaxMm?: { xMm: number; yMm: number; zMm: number } | null;
@@ -1770,6 +1808,13 @@ export type Element =
       endMm: XY;
       setbackMm?: number;
       classification?: 'street' | 'rear' | 'side' | 'other';
+      authoringMode?: 'draw' | 'bearing_table';
+      boundaryMm?: XY[];
+      bearingTable?: {
+        rows: Array<{ bearing: string; distanceMm: number }>;
+        closesAt?: XY;
+      };
+      closureErrorMm?: number;
       pinned?: boolean;
     }
   | {

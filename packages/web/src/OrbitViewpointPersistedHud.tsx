@@ -18,6 +18,8 @@ export type OrbitViewpointPersistedHudProps = {
   activeViewpointId?: string;
   /** Resolved persisted orbit_3d viewpoint from `elementsById`, or null when none / wrong kind. */
   viewpoint: Extract<Element, { kind: 'viewpoint' }> | null;
+  /** Source floor plans that can be registered above the 3D model. */
+  planViews?: Array<Extract<Element, { kind: 'plan_view' }>>;
   /** When set, orbit HUD fields commit via `updateElementProperty` through this callback. */
   onPersistField?: (payload: OrbitViewpointPersistFieldPayload) => void | Promise<void>;
 };
@@ -53,11 +55,15 @@ function hiddenKindsToCsv(vp: Extract<Element, { kind: 'viewpoint' }>): string {
  * is omitted; otherwise edits round-trip through `updateElementProperty`.
  */
 export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProps) {
-  const { activeViewpointId, viewpoint, onPersistField } = props;
+  const { activeViewpointId, viewpoint, planViews = [], onPersistField } = props;
 
   const [capDraft, setCapDraft] = useState('');
   const [floorDraft, setFloorDraft] = useState('');
   const [exposureDraft, setExposureDraft] = useState('');
+  const [overlayOffsetDraft, setOverlayOffsetDraft] = useState('');
+  const [overlayOpacityDraft, setOverlayOpacityDraft] = useState('');
+  const [overlayLineOpacityDraft, setOverlayLineOpacityDraft] = useState('');
+  const [overlayFillOpacityDraft, setOverlayFillOpacityDraft] = useState('');
   const [hiddenCsv, setHiddenCsv] = useState('');
   const [cutSelect, setCutSelect] = useState('');
 
@@ -69,6 +75,26 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
     setFloorDraft(fl != null && Number.isFinite(fl) ? String(fl) : '');
     const ev = viewpoint.viewerPhotographicExposureEv;
     setExposureDraft(ev != null && Number.isFinite(ev) ? String(ev) : '');
+    const overlayOffset = viewpoint.planOverlayOffsetMm;
+    setOverlayOffsetDraft(
+      overlayOffset != null && Number.isFinite(overlayOffset) ? String(overlayOffset) : '',
+    );
+    const overlayOpacity = viewpoint.planOverlayOpacity;
+    setOverlayOpacityDraft(
+      overlayOpacity != null && Number.isFinite(overlayOpacity) ? String(overlayOpacity) : '',
+    );
+    const overlayLineOpacity = viewpoint.planOverlayLineOpacity;
+    setOverlayLineOpacityDraft(
+      overlayLineOpacity != null && Number.isFinite(overlayLineOpacity)
+        ? String(overlayLineOpacity)
+        : '',
+    );
+    const overlayFillOpacity = viewpoint.planOverlayFillOpacity;
+    setOverlayFillOpacityDraft(
+      overlayFillOpacity != null && Number.isFinite(overlayFillOpacity)
+        ? String(overlayFillOpacity)
+        : '',
+    );
     setHiddenCsv(hiddenKindsToCsv(viewpoint));
     setCutSelect(isPersistedCutawayStyle(viewpoint.cutawayStyle) ? viewpoint.cutawayStyle : '');
   }, [viewpoint]);
@@ -108,6 +134,11 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
   const styleLabel = viewpointOrbit3dCutawayStyleLabel(viewpoint);
   const hiddenReadout = viewpointOrbit3dHiddenKindsReadout(viewpoint);
   const cardPe = readOnlyUi ? 'pointer-events-none' : 'pointer-events-auto';
+  const overlaySource =
+    planViews.find((pv) => pv.id === viewpoint.planOverlaySourcePlanViewId) ?? planViews[0] ?? null;
+  const overlayReadout = viewpoint.planOverlayEnabled
+    ? `plan overlay ${overlaySource?.name ?? 'unresolved'}`
+    : 'plan overlay off';
 
   const commitCap = () => {
     if (!onPersistField) return;
@@ -165,6 +196,37 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
     void onPersistField({ elementId: viewpoint.id, key: 'viewerPhotographicExposureEv', value });
   };
 
+  const commitPlanOverlayBoolean = (
+    key: 'planOverlayEnabled' | 'planOverlayAnnotationsVisible' | 'planOverlayWitnessLinesVisible',
+    value: boolean,
+  ) => {
+    if (!onPersistField) return;
+    void onPersistField({ elementId: viewpoint.id, key, value: String(value) });
+  };
+
+  const commitPlanOverlaySource = (planViewId: string) => {
+    if (!onPersistField) return;
+    void onPersistField({
+      elementId: viewpoint.id,
+      key: 'planOverlaySourcePlanViewId',
+      value: planViewId,
+    });
+  };
+
+  const commitPlanOverlayNumber = (
+    key:
+      | 'planOverlayOffsetMm'
+      | 'planOverlayOpacity'
+      | 'planOverlayLineOpacity'
+      | 'planOverlayFillOpacity',
+    value: string,
+  ) => {
+    if (!onPersistField) return;
+    const trimmed = value.trim();
+    if (trimmed !== '' && !Number.isFinite(Number(trimmed))) return;
+    void onPersistField({ elementId: viewpoint.id, key, value: trimmed });
+  };
+
   return (
     <div
       data-testid="orbit-viewpoint-persisted-hud"
@@ -188,6 +250,10 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
           {fmtOnOff(viewpoint.viewerDepthCueEnabled)} · edge{' '}
           {viewpoint.viewerSilhouetteEdgeWidth ?? 'inherit'} · EV{' '}
           {fmtExposureEv(viewpoint.viewerPhotographicExposureEv)}
+        </span>
+        <span className="col-span-2 truncate font-sans text-[10px] text-foreground/90">
+          {overlayReadout} · offset {fmtMm(viewpoint.planOverlayOffsetMm ?? undefined)} · witness{' '}
+          {fmtOnOff(viewpoint.planOverlayWitnessLinesVisible)}
         </span>
       </div>
 
@@ -341,6 +407,123 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
                 onBlur={commitPhotographicExposureEv}
               />
             </label>
+            <div className="border-t border-border pt-2">
+              <div className="mb-1 font-medium text-foreground/90">Plan overlay</div>
+              <div className="grid grid-cols-2 gap-1">
+                <button
+                  type="button"
+                  data-testid="orbit-vp-plan-overlay-toggle"
+                  className="rounded border border-border bg-background px-2 py-1 text-[10px] text-foreground"
+                  disabled={planViews.length === 0}
+                  onClick={() =>
+                    commitPlanOverlayBoolean('planOverlayEnabled', !viewpoint.planOverlayEnabled)
+                  }
+                >
+                  Overlay {viewpoint.planOverlayEnabled ? 'on' : 'off'}
+                </button>
+                <button
+                  type="button"
+                  data-testid="orbit-vp-plan-overlay-witness-toggle"
+                  className="rounded border border-border bg-background px-2 py-1 text-[10px] text-foreground"
+                  disabled={planViews.length === 0}
+                  onClick={() =>
+                    commitPlanOverlayBoolean(
+                      'planOverlayWitnessLinesVisible',
+                      viewpoint.planOverlayWitnessLinesVisible === false,
+                    )
+                  }
+                >
+                  Witness {viewpoint.planOverlayWitnessLinesVisible === false ? 'off' : 'on'}
+                </button>
+              </div>
+              <label className="mt-1.5 block">
+                <span className="text-muted">Source plan</span>
+                <select
+                  data-testid="orbit-vp-plan-overlay-source"
+                  className="mt-0.5 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground"
+                  disabled={planViews.length === 0}
+                  value={overlaySource?.id ?? ''}
+                  onChange={(e) => commitPlanOverlaySource(e.target.value)}
+                >
+                  {planViews.length === 0 ? <option value="">No plan views</option> : null}
+                  {planViews.map((pv) => (
+                    <option key={pv.id} value={pv.id}>
+                      {pv.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="mt-1.5 block">
+                <span className="text-muted">Offset above level (mm)</span>
+                <input
+                  data-testid="orbit-vp-plan-overlay-offset"
+                  className="mt-0.5 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground"
+                  inputMode="numeric"
+                  placeholder="default 3500"
+                  value={overlayOffsetDraft}
+                  onChange={(e) => setOverlayOffsetDraft(e.target.value)}
+                  onBlur={() => commitPlanOverlayNumber('planOverlayOffsetMm', overlayOffsetDraft)}
+                />
+              </label>
+              <div className="mt-1.5 grid grid-cols-3 gap-1">
+                <label className="block">
+                  <span className="text-muted">Sheet</span>
+                  <input
+                    data-testid="orbit-vp-plan-overlay-opacity"
+                    className="mt-0.5 w-full rounded border border-border bg-background px-1 py-1 font-mono text-[10px] text-foreground"
+                    inputMode="decimal"
+                    placeholder="0.28"
+                    value={overlayOpacityDraft}
+                    onChange={(e) => setOverlayOpacityDraft(e.target.value)}
+                    onBlur={() =>
+                      commitPlanOverlayNumber('planOverlayOpacity', overlayOpacityDraft)
+                    }
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-muted">Lines</span>
+                  <input
+                    data-testid="orbit-vp-plan-overlay-line-opacity"
+                    className="mt-0.5 w-full rounded border border-border bg-background px-1 py-1 font-mono text-[10px] text-foreground"
+                    inputMode="decimal"
+                    placeholder="0.86"
+                    value={overlayLineOpacityDraft}
+                    onChange={(e) => setOverlayLineOpacityDraft(e.target.value)}
+                    onBlur={() =>
+                      commitPlanOverlayNumber('planOverlayLineOpacity', overlayLineOpacityDraft)
+                    }
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-muted">Fills</span>
+                  <input
+                    data-testid="orbit-vp-plan-overlay-fill-opacity"
+                    className="mt-0.5 w-full rounded border border-border bg-background px-1 py-1 font-mono text-[10px] text-foreground"
+                    inputMode="decimal"
+                    placeholder="0.14"
+                    value={overlayFillOpacityDraft}
+                    onChange={(e) => setOverlayFillOpacityDraft(e.target.value)}
+                    onBlur={() =>
+                      commitPlanOverlayNumber('planOverlayFillOpacity', overlayFillOpacityDraft)
+                    }
+                  />
+                </label>
+              </div>
+              <button
+                type="button"
+                data-testid="orbit-vp-plan-overlay-annotations-toggle"
+                className="mt-1.5 w-full rounded border border-border bg-background px-2 py-1 text-[10px] text-foreground"
+                disabled={planViews.length === 0}
+                onClick={() =>
+                  commitPlanOverlayBoolean(
+                    'planOverlayAnnotationsVisible',
+                    viewpoint.planOverlayAnnotationsVisible === false,
+                  )
+                }
+              >
+                Labels {viewpoint.planOverlayAnnotationsVisible === false ? 'off' : 'on'}
+              </button>
+            </div>
           </div>
         </details>
       )}

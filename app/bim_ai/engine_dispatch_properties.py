@@ -378,12 +378,69 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                             )
                         cut_v = raw_cut
                     els[cmd.element_id] = el.model_copy(update={"cutaway_style": cut_v})
+                elif cmd.key == "planOverlayEnabled":
+                    raw_bool = cmd.value.strip().lower()
+                    if raw_bool not in ("true", "false"):
+                        raise ValueError("planOverlayEnabled must be true|false")
+                    els[cmd.element_id] = el.model_copy(
+                        update={"plan_overlay_enabled": raw_bool == "true"}
+                    )
+                elif cmd.key == "planOverlaySourcePlanViewId":
+                    raw_plan = cmd.value.strip()
+                    if raw_plan and not isinstance(els.get(raw_plan), PlanViewElem):
+                        raise ValueError("planOverlaySourcePlanViewId must reference a plan_view")
+                    els[cmd.element_id] = el.model_copy(
+                        update={"plan_overlay_source_plan_view_id": raw_plan or None}
+                    )
+                elif cmd.key == "planOverlayOffsetMm":
+                    overlay_offset: float | None = None
+                    if raw != "":
+                        overlay_offset = float(raw)
+                        if not (overlay_offset >= 0):
+                            raise ValueError("planOverlayOffsetMm must be non-negative")
+                    els[cmd.element_id] = el.model_copy(
+                        update={"plan_overlay_offset_mm": overlay_offset}
+                    )
+                elif cmd.key in (
+                    "planOverlayOpacity",
+                    "planOverlayLineOpacity",
+                    "planOverlayFillOpacity",
+                ):
+                    opacity: float | None = None
+                    if raw != "":
+                        opacity = float(raw)
+                        if not (0 <= opacity <= 1):
+                            raise ValueError(f"{cmd.key} must be between 0 and 1")
+                    field = {
+                        "planOverlayOpacity": "plan_overlay_opacity",
+                        "planOverlayLineOpacity": "plan_overlay_line_opacity",
+                        "planOverlayFillOpacity": "plan_overlay_fill_opacity",
+                    }[cmd.key]
+                    els[cmd.element_id] = el.model_copy(update={field: opacity})
+                elif cmd.key in (
+                    "planOverlayAnnotationsVisible",
+                    "planOverlayWitnessLinesVisible",
+                ):
+                    raw_bool = cmd.value.strip().lower()
+                    visible: bool | None = None
+                    if raw_bool != "":
+                        if raw_bool not in ("true", "false"):
+                            raise ValueError(f"{cmd.key} must be true|false or empty")
+                        visible = raw_bool == "true"
+                    field = {
+                        "planOverlayAnnotationsVisible": "plan_overlay_annotations_visible",
+                        "planOverlayWitnessLinesVisible": "plan_overlay_witness_lines_visible",
+                    }[cmd.key]
+                    els[cmd.element_id] = el.model_copy(update={field: visible})
                 elif cmd.key == "name" and hasattr(el, "name"):
                     els[cmd.element_id] = el.model_copy(update={"name": cmd.value})
                 else:
                     raise ValueError(
                         "viewpoint updates: key=viewerClipCapElevMm | viewerClipFloorElevMm | "
-                        "hiddenSemanticKinds3d | cutawayStyle | name"
+                        "hiddenSemanticKinds3d | cutawayStyle | planOverlayEnabled | "
+                        "planOverlaySourcePlanViewId | planOverlayOffsetMm | planOverlayOpacity | "
+                        "planOverlayLineOpacity | planOverlayFillOpacity | "
+                        "planOverlayAnnotationsVisible | planOverlayWitnessLinesVisible | name"
                     )
             elif isinstance(el, WallElem):
 
@@ -669,6 +726,14 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                 viewer_clip_floor_elev_mm=cmd.viewer_clip_floor_elev_mm,
                 hidden_semantic_kinds_3d=list(cmd.hidden_semantic_kinds_3d or []),
                 cutaway_style=cmd.cutaway_style,
+                plan_overlay_enabled=cmd.plan_overlay_enabled,
+                plan_overlay_source_plan_view_id=cmd.plan_overlay_source_plan_view_id,
+                plan_overlay_offset_mm=cmd.plan_overlay_offset_mm,
+                plan_overlay_opacity=cmd.plan_overlay_opacity,
+                plan_overlay_line_opacity=cmd.plan_overlay_line_opacity,
+                plan_overlay_fill_opacity=cmd.plan_overlay_fill_opacity,
+                plan_overlay_annotations_visible=cmd.plan_overlay_annotations_visible,
+                plan_overlay_witness_lines_visible=cmd.plan_overlay_witness_lines_visible,
             )
 
         case UpsertProjectSettingsCmd():

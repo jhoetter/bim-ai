@@ -983,6 +983,20 @@ class ViewpointElem(BaseModel):
     viewer_clip_floor_elev_mm: float | None = Field(default=None, alias="viewerClipFloorElevMm")
     hidden_semantic_kinds_3d: list[str] = Field(default_factory=list, alias="hiddenSemanticKinds3d")
     cutaway_style: ViewpointCutawayStyle | None = Field(default=None, alias="cutawayStyle")
+    plan_overlay_enabled: bool = Field(default=False, alias="planOverlayEnabled")
+    plan_overlay_source_plan_view_id: str | None = Field(
+        default=None, alias="planOverlaySourcePlanViewId"
+    )
+    plan_overlay_offset_mm: float | None = Field(default=None, alias="planOverlayOffsetMm")
+    plan_overlay_opacity: float | None = Field(default=None, alias="planOverlayOpacity")
+    plan_overlay_line_opacity: float | None = Field(default=None, alias="planOverlayLineOpacity")
+    plan_overlay_fill_opacity: float | None = Field(default=None, alias="planOverlayFillOpacity")
+    plan_overlay_annotations_visible: bool | None = Field(
+        default=None, alias="planOverlayAnnotationsVisible"
+    )
+    plan_overlay_witness_lines_visible: bool | None = Field(
+        default=None, alias="planOverlayWitnessLinesVisible"
+    )
     section_box_enabled: bool | None = Field(default=None, alias="sectionBoxEnabled")
     section_box_min_mm: Vec3Mm | None = Field(default=None, alias="sectionBoxMinMm")
     section_box_max_mm: Vec3Mm | None = Field(default=None, alias="sectionBoxMaxMm")

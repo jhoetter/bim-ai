@@ -50,6 +50,15 @@ function coerceXY(raw: Record<string, unknown>): { xMm: number; yMm: number } {
 function coerceWallCurve(raw: unknown): Extract<Element, { kind: 'wall' }>['wallCurve'] {
   if (!raw || typeof raw !== 'object') return null;
   const row = raw as Record<string, unknown>;
+  if (row.kind === 'bezier') {
+    const rawPoints = row.controlPoints ?? row.control_points;
+    if (!Array.isArray(rawPoints) || rawPoints.length !== 4) return null;
+    const controlPoints = rawPoints.map((pt) =>
+      pt && typeof pt === 'object' ? coerceXY(pt as Record<string, unknown>) : null,
+    );
+    if (controlPoints.some((pt) => pt == null)) return null;
+    return { kind: 'bezier', controlPoints: controlPoints as [XY, XY, XY, XY] };
+  }
   if (row.kind !== 'arc') return null;
   const centerRaw = row.center;
   const radiusMm = Number(row.radiusMm ?? row.radius_mm);
@@ -83,6 +92,36 @@ function coerceXYZ(raw: Record<string, unknown>): { xMm: number; yMm: number; zM
     yMm: Number(raw.yMm ?? raw.y_mm ?? 0),
     zMm: Number(raw.zMm ?? raw.z_mm ?? 0),
   };
+}
+
+function finiteNumberOrNull(raw: unknown): number | null {
+  if (raw === null || raw === undefined || raw === '') return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+function coerceDimensionAnchor(raw: unknown): Extract<Element, { kind: 'dimension' }>['anchorA'] {
+  if (!raw || typeof raw !== 'object') return null;
+  const row = raw as Record<string, unknown>;
+  const kind = row.kind === 'feature' ? 'feature' : row.kind === 'free' ? 'free' : null;
+  if (!kind) return null;
+  const fallbackRaw = row.fallbackPositionMm ?? row.fallback_position_mm;
+  if (!fallbackRaw || typeof fallbackRaw !== 'object') return null;
+  const fallbackPositionMm = coerceXY(fallbackRaw as Record<string, unknown>);
+  const featureRaw = row.feature;
+  if (kind === 'feature') {
+    if (!featureRaw || typeof featureRaw !== 'object') return null;
+    const feature = featureRaw as Record<string, unknown>;
+    const anchor = feature.anchor;
+    if (
+      typeof feature.elementId !== 'string' ||
+      (anchor !== 'start' && anchor !== 'end' && anchor !== 'mid' && anchor !== 'center')
+    ) {
+      return null;
+    }
+    return { kind, feature: { elementId: feature.elementId, anchor }, fallbackPositionMm };
+  }
+  return { kind, fallbackPositionMm };
 }
 
 function coerceMonitorSource(raw: Record<string, unknown>): {
@@ -509,6 +548,12 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
       aMm: coerceXY((raw.aMm ?? raw.a_mm ?? {}) as Record<string, unknown>),
       bMm: coerceXY((raw.bMm ?? raw.b_mm ?? {}) as Record<string, unknown>),
       offsetMm: coerceXY((raw.offsetMm ?? raw.offset_mm ?? {}) as Record<string, unknown>),
+      anchorA: coerceDimensionAnchor(raw.anchorA ?? raw.anchor_a),
+      anchorB: coerceDimensionAnchor(raw.anchorB ?? raw.anchor_b),
+      state:
+        raw.state === 'linked' || raw.state === 'partial' || raw.state === 'unlinked'
+          ? raw.state
+          : undefined,
       refElementIdA:
         typeof raw.refElementIdA === 'string'
           ? raw.refElementIdA
@@ -575,6 +620,63 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
         if (csRaw !== 'none' && csRaw !== 'cap' && csRaw !== 'floor' && csRaw !== 'box') return {};
         return { cutawayStyle: csRaw };
       })(),
+      ...(raw.planOverlayEnabled !== undefined || raw.plan_overlay_enabled !== undefined
+        ? { planOverlayEnabled: Boolean(raw.planOverlayEnabled ?? raw.plan_overlay_enabled) }
+        : {}),
+      ...(typeof raw.planOverlaySourcePlanViewId === 'string' ||
+      typeof raw.plan_overlay_source_plan_view_id === 'string'
+        ? {
+            planOverlaySourcePlanViewId: String(
+              raw.planOverlaySourcePlanViewId ?? raw.plan_overlay_source_plan_view_id,
+            ),
+          }
+        : raw.planOverlaySourcePlanViewId === null || raw.plan_overlay_source_plan_view_id === null
+          ? { planOverlaySourcePlanViewId: null }
+          : {}),
+      ...(raw.planOverlayOffsetMm !== undefined || raw.plan_overlay_offset_mm !== undefined
+        ? {
+            planOverlayOffsetMm: finiteNumberOrNull(
+              raw.planOverlayOffsetMm ?? raw.plan_overlay_offset_mm,
+            ),
+          }
+        : {}),
+      ...(raw.planOverlayOpacity !== undefined || raw.plan_overlay_opacity !== undefined
+        ? {
+            planOverlayOpacity: finiteNumberOrNull(
+              raw.planOverlayOpacity ?? raw.plan_overlay_opacity,
+            ),
+          }
+        : {}),
+      ...(raw.planOverlayLineOpacity !== undefined || raw.plan_overlay_line_opacity !== undefined
+        ? {
+            planOverlayLineOpacity: finiteNumberOrNull(
+              raw.planOverlayLineOpacity ?? raw.plan_overlay_line_opacity,
+            ),
+          }
+        : {}),
+      ...(raw.planOverlayFillOpacity !== undefined || raw.plan_overlay_fill_opacity !== undefined
+        ? {
+            planOverlayFillOpacity: finiteNumberOrNull(
+              raw.planOverlayFillOpacity ?? raw.plan_overlay_fill_opacity,
+            ),
+          }
+        : {}),
+      ...(raw.planOverlayAnnotationsVisible !== undefined ||
+      raw.plan_overlay_annotations_visible !== undefined
+        ? {
+            planOverlayAnnotationsVisible: Boolean(
+              raw.planOverlayAnnotationsVisible ?? raw.plan_overlay_annotations_visible,
+            ),
+          }
+        : {}),
+      ...(raw.planOverlayWitnessLinesVisible !== undefined ||
+      raw.plan_overlay_witness_lines_visible !== undefined
+        ? {
+            planOverlayWitnessLinesVisible: Boolean(
+              raw.planOverlayWitnessLinesVisible ?? raw.plan_overlay_witness_lines_visible,
+            ),
+          }
+        : {}),
       ...(Array.isArray(raw.hiddenElementIds) || Array.isArray(raw.hidden_element_ids)
         ? {
             hiddenElementIds: (

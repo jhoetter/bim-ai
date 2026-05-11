@@ -468,6 +468,14 @@ def collect_saved_3d_view_clip_evidence_v1(doc: Document) -> dict[str, Any] | No
             "cutawayStyle": vp.cutaway_style,
             "hiddenCategoryCount": len(vp.hidden_semantic_kinds_3d or []),
             "sectionBoxEnabled": vp.section_box_enabled,
+            "planOverlayEnabled": vp.plan_overlay_enabled,
+            "planOverlaySourcePlanViewId": vp.plan_overlay_source_plan_view_id,
+            "planOverlayOffsetMm": vp.plan_overlay_offset_mm,
+            "planOverlayOpacity": vp.plan_overlay_opacity,
+            "planOverlayLineOpacity": vp.plan_overlay_line_opacity,
+            "planOverlayFillOpacity": vp.plan_overlay_fill_opacity,
+            "planOverlayAnnotationsVisible": vp.plan_overlay_annotations_visible,
+            "planOverlayWitnessLinesVisible": vp.plan_overlay_witness_lines_visible,
         }
         if vp.section_box_min_mm is not None:
             row["sectionBoxMinMm"] = {

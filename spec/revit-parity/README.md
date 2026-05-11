@@ -40,6 +40,7 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | [Ch 10](ch10-troubleshooting.md)      | Troubleshooting & Fixes      | F-100 – F-106 |
 | [Ch 11](ch11-floors-parapet.md)       | Floors & Parapet Walls       | F-107 – F-113 |
 | [Ch 12](ch12-furniture-placement.md)  | Furniture Placement          | F-114 – F-122 |
+| [Ch 13](ch13-3d-plan-presentation.md) | 3D Plan Presentation         | F-123         |
 
 ---
 
@@ -169,19 +170,20 @@ Each chapter file documents a set of Revit features as observed in the video. Fo
 | F-120 | Parametric bed family (2D)                            | Furn. Place    | ✅            | Built-in queen/single bed assets have width/depth/height schemas, bed-specific plan/3D rendering, right-rail instance parameters, and on-canvas width/depth resize grips backed by `paramValues`                                                                                                                                                                             |
 | F-121 | Align tool (AL) for furniture-to-wall                 | Furn. Place    | ✅            | Two-click workflow: first click = wall/reference point, second click snaps wall/column/placed_asset targets; placed assets now align the nearest face using family width/depth and instance param overrides                                                                                                                                                                  |
 | F-122 | Rotate tool (about user-defined center)               | Furn. Place    | ✅            | RO supports center pick, explicit start-angle reference ray, end-ray pick, typed numeric angle + Enter, snapped angle math, and rotation of wall, column, placed_asset, floor, room, and area selections.                                                                                                                                                                    |
+| F-123 | 3D floor-plan overlay / exploded plan reference        | 3D Presentation | ✅            | Revit-style presentation view where a selected floor plan is rendered as a world-space 2D plane hovering above the aligned 3D model, rotates with the camera, and optionally shows dashed witness lines down to the model; persisted per saved orbit 3D viewpoint.                                                                                                           |
 
 ---
 
 ## Summary Statistics
 
-_Last audited: 2026-05-10 after revit-parity closure wave 13 final nested-family updates._
+_Last audited: 2026-05-11 after implementing the 3D floor-plan overlay reference._
 
 | Status                 | Count   | % of total |
 | ---------------------- | ------- | ---------- |
-| ✅ Fully available     | 120     | 100%       |
+| ✅ Fully available     | 121     | 100%       |
 | 🟡 Partially available | 0       | 0%         |
 | ❌ Not available       | 0       | 0%         |
-| **Total**              | **120** | **100%**   |
+| **Total**              | **121** | **100%**   |
 
 ---
 

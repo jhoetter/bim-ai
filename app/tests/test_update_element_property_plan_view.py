@@ -244,6 +244,59 @@ def test_viewpoint_clip_and_hidden_categories() -> None:
     assert vp_none_explicit.viewer_clip_floor_elev_mm == 0
 
 
+def test_viewpoint_plan_overlay_properties() -> None:
+    els = {
+        "lv": LevelElem(kind="level", id="lv", name="Level 1", elevationMm=0),
+        "pv": PlanViewElem(kind="plan_view", id="pv", name="Level 1 Plan", levelId="lv"),
+        "vp": ViewpointElem(kind="viewpoint", id="vp", name="Overlay", camera=_CAM, mode="orbit_3d"),
+    }
+    doc = Document(revision=1, elements=els)
+
+    for cmd in (
+        UpdateElementPropertyCmd(elementId="vp", key="planOverlayEnabled", value="true"),
+        UpdateElementPropertyCmd(elementId="vp", key="planOverlaySourcePlanViewId", value="pv"),
+        UpdateElementPropertyCmd(elementId="vp", key="planOverlayOffsetMm", value="4200"),
+        UpdateElementPropertyCmd(elementId="vp", key="planOverlayOpacity", value="0.3"),
+        UpdateElementPropertyCmd(elementId="vp", key="planOverlayLineOpacity", value="0.9"),
+        UpdateElementPropertyCmd(elementId="vp", key="planOverlayFillOpacity", value="0.12"),
+        UpdateElementPropertyCmd(
+            elementId="vp", key="planOverlayAnnotationsVisible", value="false"
+        ),
+        UpdateElementPropertyCmd(
+            elementId="vp", key="planOverlayWitnessLinesVisible", value="true"
+        ),
+    ):
+        apply_inplace(doc, cmd)
+
+    vp = doc.elements["vp"]
+    assert isinstance(vp, ViewpointElem)
+    assert vp.plan_overlay_enabled is True
+    assert vp.plan_overlay_source_plan_view_id == "pv"
+    assert vp.plan_overlay_offset_mm == 4200
+    assert vp.plan_overlay_opacity == 0.3
+    assert vp.plan_overlay_line_opacity == 0.9
+    assert vp.plan_overlay_fill_opacity == 0.12
+    assert vp.plan_overlay_annotations_visible is False
+    assert vp.plan_overlay_witness_lines_visible is True
+
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="vp", key="planOverlayOffsetMm", value=""))
+    apply_inplace(
+        doc, UpdateElementPropertyCmd(elementId="vp", key="planOverlaySourcePlanViewId", value="")
+    )
+    vp_clear = doc.elements["vp"]
+    assert isinstance(vp_clear, ViewpointElem)
+    assert vp_clear.plan_overlay_offset_mm is None
+    assert vp_clear.plan_overlay_source_plan_view_id is None
+
+    with pytest.raises(ValueError, match="planOverlaySourcePlanViewId"):
+        apply_inplace(
+            doc,
+            UpdateElementPropertyCmd(
+                elementId="vp", key="planOverlaySourcePlanViewId", value="missing"
+            ),
+        )
+
+
 def test_plan_view_plan_annotation_flags_and_template_inheritance() -> None:
     vt = ViewTemplateElem(
         kind="view_template",

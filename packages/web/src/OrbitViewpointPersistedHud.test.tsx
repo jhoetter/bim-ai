@@ -13,6 +13,11 @@ function cameraFixture() {
   };
 }
 
+const planViews = [
+  { kind: 'plan_view' as const, id: 'pv-1', name: 'Level 1', levelId: 'lv-1' },
+  { kind: 'plan_view' as const, id: 'pv-2', name: 'Level 2', levelId: 'lv-2' },
+];
+
 describe('OrbitViewpointPersistedHud', () => {
   const containers: HTMLDivElement[] = [];
 
@@ -70,9 +75,17 @@ describe('OrbitViewpointPersistedHud', () => {
       viewerDepthCueEnabled: true,
       viewerSilhouetteEdgeWidth: 3 as const,
       viewerPhotographicExposureEv: 0.75,
+      planOverlayEnabled: true,
+      planOverlaySourcePlanViewId: 'pv-1',
+      planOverlayOffsetMm: 4200,
+      planOverlayWitnessLinesVisible: true,
     };
     const el = renderHud(
-      <OrbitViewpointPersistedHud activeViewpointId="vp-save" viewpoint={viewpoint} />,
+      <OrbitViewpointPersistedHud
+        activeViewpointId="vp-save"
+        viewpoint={viewpoint}
+        planViews={planViews}
+      />,
     );
     expect(el.textContent).toContain('Southwest cutaway');
     expect(el.textContent).toContain('vp-save');
@@ -85,6 +98,8 @@ describe('OrbitViewpointPersistedHud', () => {
     expect(el.textContent).toContain('depth on');
     expect(el.textContent).toContain('edge 3');
     expect(el.textContent).toContain('EV +0.75');
+    expect(el.textContent).toContain('plan overlay Level 1');
+    expect(el.textContent).toContain('offset 4200');
     expect(el.textContent).toContain('saved viewpoint element');
   });
 
@@ -121,11 +136,13 @@ describe('OrbitViewpointPersistedHud', () => {
       viewerDepthCueEnabled: false,
       viewerSilhouetteEdgeWidth: 1 as const,
       viewerPhotographicExposureEv: 0,
+      planOverlayEnabled: false,
     };
     const el = renderHud(
       <OrbitViewpointPersistedHud
         activeViewpointId="vp-auth"
         viewpoint={viewpoint}
+        planViews={planViews}
         onPersistField={onPersistField}
       />,
     );
@@ -177,6 +194,46 @@ describe('OrbitViewpointPersistedHud', () => {
       elementId: 'vp-auth',
       key: 'viewerSilhouetteEdgeWidth',
       value: '4',
+    });
+
+    const overlayToggle = el.querySelector(
+      '[data-testid="orbit-vp-plan-overlay-toggle"]',
+    ) as HTMLButtonElement;
+    act(() => {
+      fireEvent.click(overlayToggle);
+    });
+
+    expect(onPersistField).toHaveBeenCalledWith({
+      elementId: 'vp-auth',
+      key: 'planOverlayEnabled',
+      value: 'true',
+    });
+
+    const source = el.querySelector(
+      '[data-testid="orbit-vp-plan-overlay-source"]',
+    ) as HTMLSelectElement;
+    act(() => {
+      fireEvent.change(source, { target: { value: 'pv-2' } });
+    });
+
+    expect(onPersistField).toHaveBeenCalledWith({
+      elementId: 'vp-auth',
+      key: 'planOverlaySourcePlanViewId',
+      value: 'pv-2',
+    });
+
+    const offset = el.querySelector(
+      '[data-testid="orbit-vp-plan-overlay-offset"]',
+    ) as HTMLInputElement;
+    act(() => {
+      fireEvent.change(offset, { target: { value: '4300' } });
+      fireEvent.blur(offset);
+    });
+
+    expect(onPersistField).toHaveBeenCalledWith({
+      elementId: 'vp-auth',
+      key: 'planOverlayOffsetMm',
+      value: '4300',
     });
 
     const exposure = el.querySelector('[data-testid="orbit-vp-exposure-ev"]') as HTMLInputElement;

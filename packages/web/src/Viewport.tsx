@@ -107,6 +107,7 @@ import {
   type WallFaceRadialMenuOpen,
   type WallFaceRadialCommand,
 } from './viewport/wallFaceRadialMenu';
+import { buildPlanOverlay3dGroup } from './viewport/planOverlay3d';
 
 // KRN-14 — wire the CSG cut into meshBuilders. Side-effect at module load.
 registerDormerCutFn(applyDormerCutsToRoofGeom);
@@ -218,6 +219,26 @@ function applyModelEdgeDisplay(
   });
 }
 
+function disposeObject3D(root: THREE.Object3D): void {
+  root.traverse((node) => {
+    if (
+      node instanceof THREE.Mesh ||
+      node instanceof THREE.LineSegments ||
+      node instanceof THREE.Sprite
+    ) {
+      node.geometry?.dispose();
+      const material = node.material;
+      const materials = Array.isArray(material) ? material : [material];
+      for (const mat of materials) {
+        const spriteMap =
+          mat instanceof THREE.SpriteMaterial && mat.map instanceof THREE.Texture ? mat.map : null;
+        spriteMap?.dispose();
+        mat.dispose();
+      }
+    }
+  });
+}
+
 export function Viewport({
   wsConnected,
   onPersistViewpointField,
@@ -233,6 +254,7 @@ export function Viewport({
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const orthoCameraRef = useRef<THREE.OrthographicCamera | null>(null);
   const rootGroupRef = useRef<THREE.Group | null>(null);
+  const planOverlayGroupRef = useRef<THREE.Group | null>(null);
   const rafRef = useRef<number | null>(null);
   /** Live paint bundle for the rendered scene. Rebuilt on theme change. */
   const paintBundleRef = useRef<ViewportPaintBundle | null>(null);
@@ -433,6 +455,13 @@ export function Viewport({
     if (!el || el.kind !== 'viewpoint' || el.mode !== 'orbit_3d') return null;
     return el;
   }, [activeViewpointId, elementsById]);
+  const planOverlayPlanViews = useMemo(
+    () =>
+      Object.values(elementsById)
+        .filter((e): e is Extract<Element, { kind: 'plan_view' }> => e.kind === 'plan_view')
+        .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)),
+    [elementsById],
+  );
   const viewerShadowsEnabled =
     viewerGdoRuntime.viewerShadowsEnabled ??
     persistedOrbitViewpoint?.viewerShadowsEnabled ??
@@ -1915,6 +1944,35 @@ export function Viewport({
   }, [viewerShadowsEnabled]);
 
   useEffect(() => {
+    const scene = sceneRef.current;
+    const previous = planOverlayGroupRef.current;
+    if (previous) {
+      scene?.remove(previous);
+      disposeObject3D(previous);
+      planOverlayGroupRef.current = null;
+    }
+    if (!scene || !persistedOrbitViewpoint) return;
+    const group = buildPlanOverlay3dGroup(elementsById, persistedOrbitViewpoint, {
+      sheetColor: readToken('--color-surface', '#ffffff'),
+      lineColor: readToken('--color-foreground', '#111827'),
+      roomColor: readToken('--color-accent', '#2563eb'),
+      openingColor: readToken('--color-warning', '#d97706'),
+      assetColor: readToken('--color-success', '#15803d'),
+      stairColor: readToken('--color-danger', '#dc2626'),
+      witnessColor: readToken('--draft-witness', '#64748b'),
+    });
+    if (!group) return;
+    scene.add(group);
+    planOverlayGroupRef.current = group;
+    return () => {
+      if (planOverlayGroupRef.current !== group) return;
+      scene.remove(group);
+      disposeObject3D(group);
+      planOverlayGroupRef.current = null;
+    };
+  }, [elementsById, persistedOrbitViewpoint, theme]);
+
+  useEffect(() => {
     const ssao = ssaoPassRef.current;
     if (!ssao) return;
     const reducedMotion =
@@ -2283,6 +2341,7 @@ export function Viewport({
         <OrbitViewpointPersistedHud
           activeViewpointId={activeViewpointId}
           viewpoint={persistedOrbitViewpoint}
+          planViews={planOverlayPlanViews}
           onPersistField={onPersistViewpointField}
         />
       ) : null}

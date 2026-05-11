@@ -720,6 +720,20 @@ class SaveViewpointCmd(BaseModel):
     cutaway_style: Literal["none", "cap", "floor", "box"] | None = Field(
         default=None, alias="cutawayStyle"
     )
+    plan_overlay_enabled: bool = Field(default=False, alias="planOverlayEnabled")
+    plan_overlay_source_plan_view_id: str | None = Field(
+        default=None, alias="planOverlaySourcePlanViewId"
+    )
+    plan_overlay_offset_mm: float | None = Field(default=None, alias="planOverlayOffsetMm")
+    plan_overlay_opacity: float | None = Field(default=None, alias="planOverlayOpacity")
+    plan_overlay_line_opacity: float | None = Field(default=None, alias="planOverlayLineOpacity")
+    plan_overlay_fill_opacity: float | None = Field(default=None, alias="planOverlayFillOpacity")
+    plan_overlay_annotations_visible: bool | None = Field(
+        default=None, alias="planOverlayAnnotationsVisible"
+    )
+    plan_overlay_witness_lines_visible: bool | None = Field(
+        default=None, alias="planOverlayWitnessLinesVisible"
+    )
 
 
 class UpsertProjectSettingsCmd(BaseModel):

@@ -1107,7 +1107,10 @@ export function viewpointOrbit3dEvidenceLine(vp: Extract<Element, { kind: 'viewp
       sbTok = ` · sbox:${sbEnabled ? 'on' : 'off'}`;
     }
   }
-  return `clip cap ${capS} · floor ${floorS} · ${hid} hid · cut:${cut}${sbTok}`;
+  const overlayTok = vp.planOverlayEnabled
+    ? ` · overlay:${vp.planOverlaySourcePlanViewId ?? 'auto'}@${vp.planOverlayOffsetMm ?? 'auto'}`
+    : '';
+  return `clip cap ${capS} · floor ${floorS} · ${hid} hid · cut:${cut}${sbTok}${overlayTok}`;
 }
 
 /** Deterministic inheritance readout for Workspace Inspector (mirrors resolver math). */

@@ -154,6 +154,43 @@ describe('coerceElement — viewpoint visibility / coordination', () => {
     }
   });
 
+  it('parses plan overlay metadata on viewpoint', () => {
+    const { hydrateFromSnapshot } = useBimStore.getState();
+    hydrateFromSnapshot({
+      modelId: 'm1',
+      revision: 1,
+      elements: {
+        'vp-overlay': {
+          kind: 'viewpoint',
+          name: 'Overlay',
+          camera: {},
+          mode: 'orbit_3d',
+          planOverlayEnabled: true,
+          planOverlaySourcePlanViewId: 'pv-1',
+          planOverlayOffsetMm: 4200,
+          planOverlayOpacity: 0.31,
+          planOverlayLineOpacity: 0.9,
+          planOverlayFillOpacity: 0.12,
+          planOverlayAnnotationsVisible: false,
+          planOverlayWitnessLinesVisible: true,
+        },
+      },
+      violations: [],
+    });
+    const vp = useBimStore.getState().elementsById['vp-overlay'];
+    expect(vp?.kind).toBe('viewpoint');
+    if (vp?.kind === 'viewpoint') {
+      expect(vp.planOverlayEnabled).toBe(true);
+      expect(vp.planOverlaySourcePlanViewId).toBe('pv-1');
+      expect(vp.planOverlayOffsetMm).toBe(4200);
+      expect(vp.planOverlayOpacity).toBe(0.31);
+      expect(vp.planOverlayLineOpacity).toBe(0.9);
+      expect(vp.planOverlayFillOpacity).toBe(0.12);
+      expect(vp.planOverlayAnnotationsVisible).toBe(false);
+      expect(vp.planOverlayWitnessLinesVisible).toBe(true);
+    }
+  });
+
   it('parses selection_set element with filterRules', () => {
     const { hydrateFromSnapshot } = useBimStore.getState();
     hydrateFromSnapshot({
