@@ -3,7 +3,19 @@ from __future__ import annotations
 import hashlib
 import json
 
-from bim_ai.ci_gate_runner import summarize_ci_gate_run_v1
+from bim_ai.ci_gate_runner import (
+    constructability_ci_gate_rows_v1,
+    summarize_ci_gate_run_v1,
+    summarize_constructability_ci_gate_v1,
+)
+from bim_ai.elements import (
+    AssetLibraryEntryElem,
+    ConstructabilitySuppressionElem,
+    Element,
+    LevelElem,
+    PlacedAssetElem,
+    WallElem,
+)
 
 _SAMPLE_ROWS = [
     {"name": "ruff", "result": "ok"},
@@ -94,3 +106,86 @@ def test_empty_rows_gives_pass_verdict() -> None:
     s = summarize_ci_gate_run_v1([])
     assert s["verdict"] == "pass"
     assert s["gates"] == []
+
+
+def _constructability_elements(*, suppressed: bool = False) -> dict[str, Element]:
+    elements: dict[str, Element] = {
+        "lvl-1": LevelElem(kind="level", id="lvl-1", name="Level 1", elevationMm=0.0),
+        "wall-1": WallElem(
+            kind="wall",
+            id="wall-1",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 0},
+            thicknessMm=200,
+            heightMm=3000,
+        ),
+        "asset-shelf": AssetLibraryEntryElem(
+            kind="asset_library_entry",
+            id="asset-shelf",
+            assetKind="block_2d",
+            name="Shelf",
+            category="casework",
+            tags=[],
+            thumbnailKind="schematic_plan",
+            thumbnailWidthMm=600,
+            thumbnailHeightMm=300,
+        ),
+        "shelf-1": PlacedAssetElem(
+            kind="placed_asset",
+            id="shelf-1",
+            name="Shelf",
+            assetId="asset-shelf",
+            levelId="lvl-1",
+            positionMm={"xMm": 1200, "yMm": 0},
+            paramValues={"widthMm": 600, "depthMm": 300, "proxyHeightMm": 900},
+        ),
+    }
+    if suppressed:
+        elements["supp-1"] = ConstructabilitySuppressionElem(
+            kind="constructability_suppression",
+            id="supp-1",
+            ruleId="furniture_wall_hard_clash",
+            elementIds=["shelf-1", "wall-1"],
+            reason="Intentional recessed built-in approved by reviewer.",
+        )
+    return elements
+
+
+def test_constructability_gate_rows_report_errors_without_failing_by_default() -> None:
+    rows = constructability_ci_gate_rows_v1(
+        _constructability_elements(),
+        revision=1,
+    )
+
+    no_open_errors = next(row for row in rows if row["name"] == "constructability_no_open_errors")
+    assert no_open_errors["result"] == "ok"
+    assert no_open_errors["errorCount"] == 1
+
+
+def test_constructability_gate_fails_when_fail_on_error_enabled() -> None:
+    summary = summarize_constructability_ci_gate_v1(
+        _constructability_elements(),
+        revision=1,
+        fail_on_constructability_error=True,
+    )
+
+    assert summary["verdict"] == "fail"
+    row = next(
+        gate for gate in summary["gates"] if gate["name"] == "constructability_no_open_errors"
+    )
+    assert row["result"] == "fail"
+    assert row["errorCount"] == 1
+
+
+def test_constructability_gate_passes_when_error_is_suppressed() -> None:
+    summary = summarize_constructability_ci_gate_v1(
+        _constructability_elements(suppressed=True),
+        revision=1,
+        fail_on_constructability_error=True,
+    )
+
+    assert summary["verdict"] == "pass"
+    rows = {row["name"]: row for row in summary["gates"]}
+    assert rows["constructability_no_open_errors"]["errorCount"] == 0
+    assert rows["constructability_suppression_audit"]["suppressedFindingCount"] == 1
