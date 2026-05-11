@@ -1,0 +1,140 @@
+{
+  "bundle": "seed-artifacts/target-house-3/bundle.json",
+  "entries": [
+    {
+      "bundleMatches": {},
+      "code": "gltf_export_manifest_expected_extension_missing",
+      "count": 2,
+      "elementIds": [],
+      "messages": [
+        "glTF export manifest: extension 'bim_ai_skew_wall_hosted_openings_v0' not emitted but eligible element kind 'wall' is present (skipReasonCode='no_eligible_elements').",
+        "glTF export manifest: extension 'bim_ai_roof_unsupported_shape_summary_v0' not emitted but eligible element kind 'roof' is present (skipReasonCode='no_eligible_elements')."
+      ],
+      "recipeMatches": {},
+      "severity": "info",
+      "sourceEdit": "",
+      "status": "reviewed",
+      "toleranceRationale": ""
+    },
+    {
+      "bundleMatches": {
+        "hf-pv-ground": [2068, 2137, 2320],
+        "hf-pv-upper": [2077, 2145, 2321],
+        "hf-sheet-ga01": [2100, 2117, 2123, 2129, 2133, 2308],
+        "hf-vp-sheet-ground": [2136],
+        "hf-vp-sheet-upper": [2144]
+      },
+      "code": "plan_view_sheet_viewport_crop_missing",
+      "count": 2,
+      "elementIds": [
+        "hf-pv-ground",
+        "hf-pv-upper",
+        "hf-sheet-ga01",
+        "hf-vp-sheet-ground",
+        "hf-vp-sheet-upper"
+      ],
+      "messages": [
+        "Plan view 'hf-pv-ground' placed on sheet 'hf-sheet-ga01' viewport 'hf-vp-sheet-ground' has no crop box (cropMinMm/cropMaxMm absent); the plan-on-sheet boundary is unconstrained.",
+        "Plan view 'hf-pv-upper' placed on sheet 'hf-sheet-ga01' viewport 'hf-vp-sheet-upper' has no crop box (cropMinMm/cropMaxMm absent); the plan-on-sheet boundary is unconstrained."
+      ],
+      "recipeMatches": {
+        "hf-pv-ground": [1248, 1317, 1943],
+        "hf-pv-upper": [1257, 1325, 1944],
+        "hf-sheet-ga01": [1280, 1297, 1303, 1309, 1313, 1936],
+        "hf-vp-sheet-ground": [1316],
+        "hf-vp-sheet-upper": [1324]
+      },
+      "severity": "info",
+      "sourceEdit": "",
+      "status": "reviewed",
+      "toleranceRationale": ""
+    },
+    {
+      "bundleMatches": {
+        "hf-pv-ground": [2068, 2137, 2320],
+        "hf-pv-upper": [2077, 2145, 2321]
+      },
+      "code": "plan_view_tag_style_fallback",
+      "count": 4,
+      "elementIds": ["hf-pv-ground", "hf-pv-upper"],
+      "messages": [
+        "Plan view 'Ground floor plan' has opening tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling.",
+        "Plan view 'Ground floor plan' has room tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling.",
+        "Plan view 'First floor plan' has opening tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling."
+      ],
+      "recipeMatches": {
+        "hf-pv-ground": [1248, 1317, 1943],
+        "hf-pv-upper": [1257, 1325, 1944]
+      },
+      "severity": "info",
+      "sourceEdit": "",
+      "status": "reviewed",
+      "toleranceRationale": ""
+    },
+    {
+      "bundleMatches": {},
+      "code": "room_color_scheme_identity_missing",
+      "count": 1,
+      "elementIds": [],
+      "messages": [
+        "No room color scheme element found. Use upsertRoomColorScheme to author overrides."
+      ],
+      "recipeMatches": {},
+      "severity": "info",
+      "sourceEdit": "",
+      "status": "reviewed",
+      "toleranceRationale": ""
+    },
+    {
+      "bundleMatches": {
+        "hf-room-bedroom-2": [614],
+        "hf-room-carport": [502],
+        "hf-room-ensuite": [558],
+        "hf-room-entry-stair": [446],
+        "hf-room-hall": [586],
+        "hf-room-kitchen-dining": [390],
+        "hf-room-living": [418],
+        "hf-room-primary": [530],
+        "hf-room-roof-court": [642],
+        "hf-room-service": [474]
+      },
+      "code": "room_finish_metadata_hint",
+      "count": 10,
+      "elementIds": [
+        "hf-room-bedroom-2",
+        "hf-room-carport",
+        "hf-room-ensuite",
+        "hf-room-entry-stair",
+        "hf-room-hall",
+        "hf-room-kitchen-dining",
+        "hf-room-living",
+        "hf-room-primary",
+        "hf-room-roof-court",
+        "hf-room-service"
+      ],
+      "messages": [
+        "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete."
+      ],
+      "recipeMatches": {
+        "hf-room-bedroom-2": [444],
+        "hf-room-carport": [340],
+        "hf-room-ensuite": [392],
+        "hf-room-entry-stair": [288],
+        "hf-room-hall": [418],
+        "hf-room-kitchen-dining": [236],
+        "hf-room-living": [262],
+        "hf-room-primary": [366],
+        "hf-room-roof-court": [470],
+        "hf-room-service": [314]
+      },
+      "severity": "info",
+      "sourceEdit": "",
+      "status": "reviewed",
+      "toleranceRationale": ""
+    }
+  ],
+  "phase": "1",
+  "recipe": "seed-artifacts/target-house-3/evidence/target-house-3.recipe.json",
+  "schemaVersion": "sketch-to-bim.issue-ledger.v1",
+  "seed": "target-house-3"
+}

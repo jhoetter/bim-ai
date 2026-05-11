@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sketch-to-bim-screenshot-manifest.v0",
+  "seed": "target-house-3",
+  "phase": "1",
+  "status": "blocked",
+  "blocker": "Browser screenshots unavailable because Vite fails to compile packages/web/src/workspace/Workspace.tsx before the app shell renders.",
+  "screenshots": [
+    {
+      "id": "vp-main-iso",
+      "label": "Main front-right axonometric",
+      "path": null,
+      "status": "unavailable"
+    },
+    {
+      "id": "vp-roof-court",
+      "label": "Roof court high axonometric",
+      "path": null,
+      "status": "unavailable"
+    },
+    {
+      "id": "hf-pv-ground",
+      "label": "Ground-floor plan diagnostic",
+      "path": null,
+      "status": "unavailable"
+    }
+  ]
+}

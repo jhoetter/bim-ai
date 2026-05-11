@@ -9,6 +9,7 @@ export interface CommentsPanelProps {
   onPost: (body: string) => Promise<void>;
   onResolve: (commentId: string, resolved: boolean) => Promise<void>;
   onClose: () => void;
+  outsideScopeNote?: string | null;
 }
 
 export function CommentsPanel({
@@ -17,6 +18,7 @@ export function CommentsPanel({
   onPost,
   onResolve,
   onClose,
+  outsideScopeNote = null,
 }: CommentsPanelProps): JSX.Element {
   const { t } = useTranslation();
   const [text, setText] = useState('');
@@ -50,6 +52,14 @@ export function CommentsPanel({
         </button>
       </div>
       <div className="flex flex-col gap-2">
+        {outsideScopeNote ? (
+          <div
+            className="rounded border border-border bg-surface-strong p-2 text-xs text-muted"
+            data-testid="comment-discipline-scope-note"
+          >
+            {outsideScopeNote}
+          </div>
+        ) : null}
         <textarea
           data-testid="comment-input"
           aria-label={t('workspace.addComment')}

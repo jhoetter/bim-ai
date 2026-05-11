@@ -91,6 +91,9 @@ export function buildBrowserSections(elementsById: Record<string, Element>): Lef
   const schedules = all.filter(
     (e): e is Extract<Element, { kind: 'schedule' }> => e.kind === 'schedule',
   );
+  const conceptBoards = all.filter(
+    (e): e is Extract<Element, { kind: 'view_concept_board' }> => e.kind === 'view_concept_board',
+  );
   const levelNameById = new Map(levels.map((l) => [l.id, l.name]));
   return [
     {
@@ -180,6 +183,20 @@ export function buildBrowserSections(elementsById: Record<string, Element>): Lef
       label: 'Schedules',
       icon: ScheduleViewIcon,
       rows: schedules.map((s) => ({ id: s.id, label: s.name, icon: ScheduleViewIcon })),
+    },
+    {
+      id: 'concept',
+      label: 'Concept',
+      icon: PlanViewIcon,
+      rows: [
+        ...conceptBoards.map((board) => ({
+          id: board.id,
+          label: board.name,
+          icon: PlanViewIcon,
+          hint: `${board.attachments.length} attachments`,
+        })),
+        { id: 'new-concept-board', label: '+ New board', icon: PlanViewIcon },
+      ],
     },
     {
       id: 'types',

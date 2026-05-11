@@ -18,6 +18,8 @@ beforeEach(() => {
     activityEvents: [],
     thinLinesEnabled: false,
     perspectiveId: 'architecture',
+    activeWorkspaceId: 'arch',
+    roofJoinPreview: null,
   });
 });
 
@@ -110,8 +112,16 @@ describe('store slice contracts', () => {
 
     store.toggleThinLines();
     store.setPerspectiveId('coordination');
+    store.setActiveWorkspaceId('struct');
+    store.setRoofJoinPreview({
+      primaryRoofId: 'roof-a',
+      secondaryRoofId: 'roof-b',
+      seamMode: 'clip_secondary_into_primary',
+    });
 
     expect(useBimStore.getState().thinLinesEnabled).toBe(true);
     expect(useBimStore.getState().perspectiveId).toBe('coordination');
+    expect(useBimStore.getState().activeWorkspaceId).toBe('struct');
+    expect(useBimStore.getState().roofJoinPreview?.secondaryRoofId).toBe('roof-b');
   });
 });

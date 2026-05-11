@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "bim-ai.seed-artifact.v1",
+  "name": "target-house-3",
+  "slug": "target-house-3",
+  "title": "Target House 3",
+  "description": "Modern two-storey target house seed from target-house-2.png and floorplan, revised to resolve target-house-2 clearance and clash warnings.",
+  "bundle": "bundle.json",
+  "sourceRoot": "source",
+  "evidenceRoot": "evidence",
+  "createdAt": "2026-05-11T00:00:00.000Z",
+  "generatedBy": {
+    "tool": "claude-skills/sketch-to-bim/sketch_bim.py",
+    "version": 1
+  },
+  "acceptance": {
+    "status": "blocked",
+    "reason": "API seed and Advisor are warning-clean, but strict accept/browser evidence is blocked by an unrelated Vite parse failure in packages/web/src/workspace/Workspace.tsx."
+  },
+  "inputPaths": {
+    "source": "spec/target-house",
+    "bundle": "seed-artifacts/target-house-3/bundle.json"
+  },
+  "bundleSha256": "e816247c3e166022ff9ef241e8c63b84b1b609a476802e2614780521b5aa0b68",
+  "commandCount": 142,
+  "commandSchemaVersion": "cmd-v3.0",
+  "entryComment": {
+    "body": "Seed artifact loaded from target-house-3."
+  }
+}

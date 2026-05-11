@@ -12,7 +12,7 @@ export interface VisualBaselineEntry {
   /** Spec section that drives the surface. */
   specSection: string;
   /** Workspace mode under which the surface is captured. */
-  mode: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent';
+  mode: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent' | 'concept';
   /** Theme variant — both light and dark must baseline per §22 / §23. */
   theme: 'light' | 'dark';
   /** Reference viewport size (px). Spec §8 calls 1440 wide as the

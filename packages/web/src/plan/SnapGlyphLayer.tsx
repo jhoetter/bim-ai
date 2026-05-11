@@ -1,6 +1,5 @@
-/* eslint-disable bim-ai/no-hex-in-chrome -- pre-v3 hex literals; remove when this file is migrated in B4 Phase 2 */
 /**
- * EDT-05 — Snap glyph layer.
+ * EDT-05 / CAN-V3-03 — Snap glyph layer.
  *
  * 2D HTML overlay rendered above the plan canvas. Draws a kind-specific
  * glyph at the active snap point (square / triangle / × / ⊥ / dot+dash)
@@ -23,6 +22,8 @@ export interface SnapGlyphProps {
   /** Render a faint highlight ring around the glyph (e.g. when this is
    *  the actively-selected candidate during Tab-cycle). */
   highlighted?: boolean;
+  /** CAN-V3-03: show closed padlock when the acquired snap is associative. */
+  associative?: boolean;
 }
 
 /** Returns the human label rendered in the lower-left readout. */
@@ -57,7 +58,15 @@ export function snapKindLabel(kind: SnapKind): string {
 
 /** Single glyph at one snap point. */
 export function SnapGlyph(props: SnapGlyphProps) {
-  const { pxX, pxY, kind, extensionFromPxX, extensionFromPxY, highlighted = false } = props;
+  const {
+    pxX,
+    pxY,
+    kind,
+    extensionFromPxX,
+    extensionFromPxY,
+    highlighted = false,
+    associative = false,
+  } = props;
   const half = GLYPH_PX / 2;
   // SVG viewBox is centred at (pxX, pxY); we stretch to include the
   // extension dashed line back to source when present.
@@ -67,7 +76,7 @@ export function SnapGlyph(props: SnapGlyphProps) {
   const maxY = Math.max(pxY + half + 2, extensionFromPxY ?? pxY + half + 2);
   const width = maxX - minX;
   const height = maxY - minY;
-  const stroke = '#fcd34d'; // --draft-construction-blue
+  const stroke = 'var(--color-accent)';
   const ring = highlighted ? (
     <circle
       data-testid={`snap-glyph-ring-${kind}`}
@@ -277,7 +286,31 @@ export function SnapGlyph(props: SnapGlyphProps) {
     >
       {ring}
       {glyph}
+      {associative ? <PadlockGlyph x={pxX + 12} y={pxY - 14} /> : null}
     </svg>
+  );
+}
+
+function PadlockGlyph({ x, y }: { x: number; y: number }) {
+  return (
+    <g data-testid="snap-glyph-padlock" aria-hidden="true">
+      <path
+        d={`M ${x + 3} ${y + 7} V ${y + 5} C ${x + 3} ${y + 1.5} ${x + 9} ${y + 1.5} ${x + 9} ${y + 5} V ${y + 7}`}
+        fill="none"
+        stroke="var(--color-accent)"
+        strokeWidth={1.25}
+        strokeLinecap="round"
+      />
+      <rect
+        x={x + 1.5}
+        y={y + 7}
+        width={9}
+        height={7}
+        rx={1.5}
+        fill="var(--color-accent)"
+        fillOpacity={0.92}
+      />
+    </g>
   );
 }
 
@@ -291,6 +324,7 @@ export interface SnapGlyphLayerProps {
      *  hint back to. */
     extensionFromPxX?: number;
     extensionFromPxY?: number;
+    associative?: boolean;
   }>;
   /** Index into `candidates` selected by Tab-cycle. Clamped silently
    *  so callers don't have to worry about cycle wraparound. */
@@ -320,6 +354,7 @@ export function SnapGlyphLayer({ candidates, activeIndex }: SnapGlyphLayerProps)
         extensionFromPxX={active.extensionFromPxX}
         extensionFromPxY={active.extensionFromPxY}
         highlighted={candidates.length > 1}
+        associative={Boolean(active.associative)}
       />
       {label && (
         <div
@@ -330,12 +365,14 @@ export function SnapGlyphLayer({ candidates, activeIndex }: SnapGlyphLayerProps)
             left: 12,
             fontFamily:
               'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace',
-            fontSize: 10,
-            color: '#fcd34d',
-            background: 'rgba(20,28,42,0.78)',
+            fontSize: 'var(--text-2xs, 10px)',
+            lineHeight: 'var(--text-2xs-line, 14px)',
+            fontFeatureSettings: '"tnum"',
+            color: 'var(--color-accent)',
+            background: 'var(--color-surface-strong)',
             padding: '2px 6px',
             borderRadius: 3,
-            border: '1px solid rgba(255,255,255,0.12)',
+            border: '1px solid var(--color-border)',
           }}
         >
           {label}

@@ -49,6 +49,10 @@ export function ConceptModeShell({
 }): JSX.Element {
   const underlays = asArr(elementsById, 'image_underlay');
   const seeds = asArr(elementsById, 'concept_seed');
+  const boards = asArr(elementsById, 'view_concept_board');
+  const attachments = boards.flatMap((board) =>
+    board.attachments.map((attachment) => ({ board, attachment })),
+  );
 
   return (
     <div
@@ -69,6 +73,7 @@ export function ConceptModeShell({
         <div className="rounded border border-border bg-background p-2 text-xs text-muted">
           <div data-testid="concept-board-underlay-count">{underlays.length} underlays</div>
           <div data-testid="concept-board-seed-count">{seeds.length} seeds</div>
+          <div data-testid="concept-board-attachment-count">{attachments.length} attachments</div>
         </div>
       </aside>
       <div className="relative overflow-hidden">
@@ -101,6 +106,18 @@ export function ConceptModeShell({
             >
               <span className="block truncate">{s.id}</span>
               <span className="text-xs text-muted">{s.status}</span>
+            </div>
+          ))}
+          {attachments.map(({ board, attachment }) => (
+            <div
+              key={`${board.id}:${attachment.id}`}
+              data-testid="concept-board-attachment-card"
+              className="rounded border border-border bg-surface-strong p-2 text-sm text-foreground"
+            >
+              <span className="block truncate">{attachment.id}</span>
+              <span className="text-xs text-muted">
+                {attachment.kind} · {board.name}
+              </span>
             </div>
           ))}
         </div>

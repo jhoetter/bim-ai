@@ -3,7 +3,7 @@ import type { StateCreator } from 'zustand';
 import type { LensMode, PerspectiveId, WorkspaceLayoutPreset } from '@bim-ai/core';
 
 import type { PlanPresentationPreset } from '../plan/symbology';
-import type { StoreState } from './storeTypes';
+import type { DisciplineWorkspaceId, StoreState } from './storeTypes';
 
 type StoreSet = Parameters<StateCreator<StoreState>>[0];
 
@@ -62,10 +62,14 @@ export type PlanAuthoringRuntimeSlice = Pick<
 export type WorkspaceUiRuntimeSlice = Pick<
   StoreState,
   | 'workspaceLayoutPreset'
+  | 'activeWorkspaceId'
   | 'perspectiveId'
+  | 'roofJoinPreview'
   | 'thinLinesEnabled'
   | 'setWorkspaceLayoutPreset'
+  | 'setActiveWorkspaceId'
   | 'setPerspectiveId'
+  | 'setRoofJoinPreview'
   | 'toggleThinLines'
 >;
 
@@ -232,16 +236,27 @@ export function createWorkspaceUiRuntimeSlice(set: StoreSet): WorkspaceUiRuntime
       ['architecture', 'structure', 'mep', 'coordination', 'construction', 'agent'],
       'architecture',
     ),
+    activeWorkspaceId: readLocalStorageChoice<DisciplineWorkspaceId>(
+      'bim.activeWorkspace',
+      ['arch', 'struct', 'mep', 'concept'],
+      'arch',
+    ),
+    roofJoinPreview: null,
     thinLinesEnabled: false,
 
     setWorkspaceLayoutPreset: (workspaceLayoutPreset) => {
       writeLocalStorageString('bim.workspaceLayout', workspaceLayoutPreset);
       set({ workspaceLayoutPreset });
     },
+    setActiveWorkspaceId: (activeWorkspaceId) => {
+      writeLocalStorageString('bim.activeWorkspace', activeWorkspaceId);
+      set({ activeWorkspaceId });
+    },
     setPerspectiveId: (perspectiveId) => {
       writeLocalStorageString('bim.perspective', perspectiveId);
       set({ perspectiveId });
     },
+    setRoofJoinPreview: (roofJoinPreview) => set({ roofJoinPreview }),
     toggleThinLines: () => set((s) => ({ thinLinesEnabled: !s.thinLinesEnabled })),
   };
 }

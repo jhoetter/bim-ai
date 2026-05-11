@@ -18,6 +18,8 @@ import { AccountStatusMenu, type AccountStatusInfo } from './AccountStatusMenu';
 import { SourceViewChip } from './SourceViewChip';
 import { type ViewTab, type TabKind } from '../tabsModel';
 import type { ToolId } from '../../tools/toolRegistry';
+import { WorkspaceSwitcher } from '../chrome/WorkspaceSwitcher';
+import type { WorkspaceId } from '../chrome/workspaces';
 import {
   capabilityIdForTool,
   evaluateCommandInMode,
@@ -161,6 +163,9 @@ export interface TopBarProps {
   onTabAdd?: (kind: TabKind) => void;
   onTabReorder?: (fromIdx: number, toIdx: number) => void;
   onCloseInactiveTabs?: () => void;
+  activeWorkspaceId?: WorkspaceId;
+  userPreferredWorkspace?: WorkspaceId;
+  onWorkspaceChange?: (id: WorkspaceId) => void;
 }
 
 export function TopBar({
@@ -205,6 +210,9 @@ export function TopBar({
   onTabAdd,
   onTabReorder,
   onCloseInactiveTabs,
+  activeWorkspaceId = 'arch',
+  userPreferredWorkspace = activeWorkspaceId,
+  onWorkspaceChange,
 }: TopBarProps): JSX.Element {
   const tablistId = useId();
   // SourceViewChip is only relevant when in a sheet-type view and both IDs are known.
@@ -233,6 +241,9 @@ export function TopBar({
         thinLinesEnabled={thinLinesEnabled}
         onToggleThinLines={onToggleThinLines}
         onCloseInactiveTabs={onCloseInactiveTabs}
+        activeWorkspaceId={activeWorkspaceId}
+        userPreferredWorkspace={userPreferredWorkspace}
+        onWorkspaceChange={onWorkspaceChange}
       />
       {tabs !== undefined ? (
         <TopBarTabs
@@ -299,6 +310,9 @@ function TopBarLeft({
   thinLinesEnabled,
   onToggleThinLines,
   onCloseInactiveTabs,
+  activeWorkspaceId,
+  userPreferredWorkspace,
+  onWorkspaceChange,
 }: {
   mode: WorkspaceMode;
   projectName: string;
@@ -316,6 +330,9 @@ function TopBarLeft({
   thinLinesEnabled?: boolean;
   onToggleThinLines?: () => void;
   onCloseInactiveTabs?: () => void;
+  activeWorkspaceId: WorkspaceId;
+  userPreferredWorkspace: WorkspaceId;
+  onWorkspaceChange?: (id: WorkspaceId) => void;
 }): JSX.Element {
   const { t } = useTranslation();
   const [qatVisible, setQatVisible] = useState<Record<QatShortcutId, boolean>>(() =>
@@ -359,6 +376,11 @@ function TopBarLeft({
         </span>
         <Icons.disclosureOpen size={14} className="text-muted" aria-hidden="true" />
       </button>
+      <WorkspaceSwitcher
+        activeWorkspaceId={activeWorkspaceId}
+        userPreferredWorkspace={userPreferredWorkspace}
+        onSetActiveWorkspace={onWorkspaceChange ?? (() => undefined)}
+      />
       <div className="mx-0.5 h-4 w-px bg-border" aria-hidden="true" />
       <button
         type="button"

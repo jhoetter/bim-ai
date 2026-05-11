@@ -53,6 +53,72 @@ def test_create_property_line_without_optional_fields() -> None:
     assert pl.classification is None
 
 
+def test_create_property_line_from_bearing_table_closes_polygon() -> None:
+    ok, new_doc, _c, _v, code = try_commit(
+        _empty_doc(),
+        {
+            "type": "createPropertyLine",
+            "id": "pl-bearing",
+            "name": "Survey lot",
+            "authoringMode": "bearing_table",
+            "startMm": {"xMm": 0, "yMm": 0},
+            "endMm": {"xMm": 0, "yMm": 0},
+            "bearingTable": {
+                "rows": [
+                    {"bearing": "90°", "distanceMm": 25000},
+                    {"bearing": "S 00°00'00\" E", "distanceMm": 40000},
+                    {"bearing": "270°", "distanceMm": 25000},
+                    {"bearing": "N 0° W", "distanceMm": 40000},
+                ]
+            },
+        },
+    )
+    assert ok, code
+    pl = new_doc.elements["pl-bearing"]
+    assert isinstance(pl, PropertyLineElem)
+    assert pl.authoring_mode == "bearing_table"
+    assert len(pl.boundary_mm) == 5
+    assert pl.boundary_mm[1].x_mm == pytest.approx(25000)
+    assert pl.boundary_mm[2].y_mm == pytest.approx(-40000)
+    assert pl.closure_error_mm == pytest.approx(0, abs=0.001)
+
+
+def test_update_property_line_bearing_table_rewalks_from_start() -> None:
+    _ok, d1, _c, _v, _code = try_commit(
+        _empty_doc(),
+        {
+            "type": "createPropertyLine",
+            "id": "pl1",
+            "startMm": {"xMm": 0, "yMm": 0},
+            "endMm": {"xMm": 10000, "yMm": 0},
+        },
+    )
+    ok, d2, _c, _v, code = try_commit(
+        d1,
+        {
+            "type": "updatePropertyLine",
+            "propertyLineId": "pl1",
+            "authoringMode": "bearing_table",
+            "startMm": {"xMm": 1000, "yMm": 2000},
+            "bearingTable": {
+                "rows": [
+                    {"bearing": "N 90 E", "distanceMm": 10000},
+                    {"bearing": "S 0 E", "distanceMm": 10000},
+                    {"bearing": "S 90 W", "distanceMm": 10000},
+                    {"bearing": "N 0 E", "distanceMm": 10000},
+                ]
+            },
+        },
+    )
+    assert ok, code
+    pl = d2.elements["pl1"]
+    assert isinstance(pl, PropertyLineElem)
+    assert pl.boundary_mm[0].x_mm == 1000
+    assert pl.boundary_mm[0].y_mm == 2000
+    assert pl.boundary_mm[-1].x_mm == pytest.approx(1000)
+    assert pl.boundary_mm[-1].y_mm == pytest.approx(2000)
+
+
 def test_create_property_line_rejects_zero_length() -> None:
     with pytest.raises(ValueError, match="must differ"):
         try_commit(
@@ -104,9 +170,7 @@ def test_delete_property_line_removes_element() -> None:
             "endMm": {"xMm": 1000, "yMm": 0},
         },
     )
-    ok2, d2, _c, _v, _code = try_commit(
-        d1, {"type": "deletePropertyLine", "propertyLineId": "pl1"}
-    )
+    ok2, d2, _c, _v, _code = try_commit(d1, {"type": "deletePropertyLine", "propertyLineId": "pl1"})
     assert ok2
     assert "pl1" not in d2.elements
 

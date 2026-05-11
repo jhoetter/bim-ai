@@ -1,0 +1,416 @@
+{
+  "schemaVersion": "sketch-to-bim-visual-checklist.v0",
+  "generatedAt": "2026-05-11T12:12:15.204Z",
+  "sourceInputs": {
+    "images": ["source/target-house-2.png", "source/floorplan.png", "source/target-house-1.png"],
+    "briefs": ["source/target-house-seed.md"],
+    "userInstruction": "Create a named target-house-3 BIM seed model from target-house-2.png and the supplied floorplan, usable as a project-initiation starting point with the target-house-2 clearance and clash warnings resolved."
+  },
+  "requiredViews": [
+    {
+      "id": "vp-main-iso",
+      "kind": "3d",
+      "purpose": "Target-house-3 front-right axonometric showing wrapper, loggia, roof court, ground cladding, lower glazing, and carport recess."
+    },
+    {
+      "id": "vp-front-elev",
+      "kind": "elevation",
+      "purpose": "Front facade evidence for loggia bay rhythm, rail, ground openings, and cladding."
+    },
+    {
+      "id": "vp-roof-court",
+      "kind": "3d",
+      "purpose": "High axonometric proving the roof court reads as an occupied void."
+    },
+    {
+      "id": "vp-rear-axo",
+      "kind": "3d",
+      "purpose": "Rear/right view checking roof-court depth and white return faces."
+    },
+    {
+      "id": "hf-pv-ground",
+      "kind": "plan",
+      "purpose": "Ground-floor plan topology and room/stair/access check."
+    },
+    {
+      "id": "hf-pv-upper",
+      "kind": "plan",
+      "purpose": "Upper-floor plan topology, roof-court access, loggia, and stair opening check."
+    },
+    {
+      "id": "hf-sec-loggia",
+      "kind": "diagnostic",
+      "purpose": "Section/diagnostic view through the front loggia and wrapper frame."
+    }
+  ],
+  "items": [
+    {
+      "id": "vp-main-iso:white_folded_wrapper",
+      "viewId": "vp-main-iso",
+      "viewKind": "3d",
+      "featureId": "white_folded_wrapper",
+      "featureKind": "folded_white_wrapper_shell",
+      "visualPriority": "critical",
+      "status": "unchecked",
+      "screenshotPath": null,
+      "prompt": "Confirm white_folded_wrapper (folded_white_wrapper_shell) is visibly correct in vp-main-iso.",
+      "knownFailureModes": [
+        "generic roof-on-box silhouette",
+        "translucent mass placeholders left in final model",
+        "thin disconnected roof instead of thick folded frame"
+      ],
+      "requiredEvidence": [
+        "main sketch-matched screenshot",
+        "side screenshot showing upper/lower volume hierarchy",
+        "wire diagnostic screenshot without mass placeholders in final envelope"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "vp-front-elev:white_folded_wrapper",
+      "viewId": "vp-front-elev",
+      "viewKind": "elevation",
+      "featureId": "white_folded_wrapper",
+      "featureKind": "folded_white_wrapper_shell",
+      "visualPriority": "critical",
+      "status": "unchecked",
+      "screenshotPath": null,
+      "prompt": "Confirm white_folded_wrapper (folded_white_wrapper_shell) is visibly correct in vp-front-elev.",
+      "knownFailureModes": [
+        "generic roof-on-box silhouette",
+        "translucent mass placeholders left in final model",
+        "thin disconnected roof instead of thick folded frame"
+      ],
+      "requiredEvidence": [
+        "main sketch-matched screenshot",
+        "side screenshot showing upper/lower volume hierarchy",
+        "wire diagnostic screenshot without mass placeholders in final envelope"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "vp-roof-court:white_folded_wrapper",
+      "viewId": "vp-roof-court",
+      "viewKind": "3d",
+      "featureId": "white_folded_wrapper",
+      "featureKind": "folded_white_wrapper_shell",
+      "visualPriority": "critical",
+      "status": "unchecked",
+      "screenshotPath": null,
+      "prompt": "Confirm white_folded_wrapper (folded_white_wrapper_shell) is visibly correct in vp-roof-court.",
+      "knownFailureModes": [
+        "generic roof-on-box silhouette",
+        "translucent mass placeholders left in final model",
+        "thin disconnected roof instead of thick folded frame"
+      ],
+      "requiredEvidence": [
+        "main sketch-matched screenshot",
+        "side screenshot showing upper/lower volume hierarchy",
+        "wire diagnostic screenshot without mass placeholders in final envelope"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "vp-main-iso:front_loggia",
+      "viewId": "vp-main-iso",
+      "viewKind": "3d",
+      "featureId": "front_loggia",
+      "featureKind": "recessed_loggia",
+      "visualPriority": "critical",
+      "status": "unchecked",
+      "screenshotPath": null,
+      "prompt": "Confirm front_loggia (recessed_loggia) is visibly correct in vp-main-iso.",
+      "knownFailureModes": [
+        "flat balcony is stuck onto facade instead of being recessed",
+        "rail hides the facade rhythm",
+        "room boundary remains open behind the loggia"
+      ],
+      "requiredEvidence": [
+        "main/front screenshot showing depth of the recess",
+        "plan screenshot showing the setback and access",
+        "advisor warning JSON with no room boundary/access blockers"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "vp-front-elev:front_loggia",
+      "viewId": "vp-front-elev",
+      "viewKind": "elevation",
+      "featureId": "front_loggia",
+      "featureKind": "recessed_loggia",
+      "visualPriority": "critical",
+      "status": "unchecked",
+      "screenshotPath": null,
+      "prompt": "Confirm front_loggia (recessed_loggia) is visibly correct in vp-front-elev.",
+      "knownFailureModes": [
+        "flat balcony is stuck onto facade instead of being recessed",
+        "rail hides the facade rhythm",
+        "room boundary remains open behind the loggia"
+      ],
+      "requiredEvidence": [
+        "main/front screenshot showing depth of the recess",
+        "plan screenshot showing the setback and access",
+        "advisor warning JSON with no room boundary/access blockers"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "hf-pv-upper:front_loggia",
+      "viewId": "hf-pv-upper",
+      "viewKind": "plan",
+      "featureId": "front_loggia",
+      "featureKind": "recessed_loggia",
+      "visualPriority": "critical",
+      "status": "unchecked",
+      "screenshotPath": null,
+      "prompt": "Confirm front_loggia (recessed_loggia) is visibly correct in hf-pv-upper.",
+      "knownFailureModes": [
+        "flat balcony is stuck onto facade instead of being recessed",
+        "rail hides the facade rhythm",
+        "room boundary remains open behind the loggia"
+      ],
+      "requiredEvidence": [
+        "main/front screenshot showing depth of the recess",
+        "plan screenshot showing the setback and access",
+        "advisor warning JSON with no room boundary/access blockers"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "vp-main-iso:roof_court_void",
+      "viewId": "vp-main-iso",
+      "viewKind": "3d",
+      "featureId": "roof_court_void",
+      "featureKind": "roof_opening_with_occupied_terrace",
+      "visualPriority": "critical",
+      "status": "unchecked",
+      "screenshotPath": null,
+      "prompt": "Confirm roof_court_void (roof_opening_with_occupied_terrace) is visibly correct in vp-main-iso.",
+      "knownFailureModes": [
+        "opening exists only as metadata and roof remains visually continuous",
+        "terrace reads as a flat skylight slot instead of an occupied balcony",
+        "guard rail floats above or crosses the roof surface",
+        "no door connects the upper floor to the terrace"
+      ],
+      "requiredEvidence": [
+        "high roof screenshot proving a real cutout",
+        "side screenshot showing terrace depth and return faces",
+        "advisor warning JSON with no opening-host or terrace-access blockers"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "vp-roof-court:roof_court_void",
+      "viewId": "vp-roof-court",
+      "viewKind": "3d",
+      "featureId": "roof_court_void",
+      "featureKind": "roof_opening_with_occupied_terrace",
+      "visualPriority": "critical",
+      "status": "unchecked",
+      "screenshotPath": null,
+      "prompt": "Confirm roof_court_void (roof_opening_with_occupied_terrace) is visibly correct in vp-roof-court.",
+      "knownFailureModes": [
+        "opening exists only as metadata and roof remains visually continuous",
+        "terrace reads as a flat skylight slot instead of an occupied balcony",
+        "guard rail floats above or crosses the roof surface",
+        "no door connects the upper floor to the terrace"
+      ],
+      "requiredEvidence": [
+        "high roof screenshot proving a real cutout",
+        "side screenshot showing terrace depth and return faces",
+        "advisor warning JSON with no opening-host or terrace-access blockers"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "vp-rear-axo:roof_court_void",
+      "viewId": "vp-rear-axo",
+      "viewKind": "3d",
+      "featureId": "roof_court_void",
+      "featureKind": "roof_opening_with_occupied_terrace",
+      "visualPriority": "critical",
+      "status": "unchecked",
+      "screenshotPath": null,
+      "prompt": "Confirm roof_court_void (roof_opening_with_occupied_terrace) is visibly correct in vp-rear-axo.",
+      "knownFailureModes": [
+        "opening exists only as metadata and roof remains visually continuous",
+        "terrace reads as a flat skylight slot instead of an occupied balcony",
+        "guard rail floats above or crosses the roof surface",
+        "no door connects the upper floor to the terrace"
+      ],
+      "requiredEvidence": [
+        "high roof screenshot proving a real cutout",
+        "side screenshot showing terrace depth and return faces",
+        "advisor warning JSON with no opening-host or terrace-access blockers"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "vp-main-iso:ground_vertical_cladding",
+      "viewId": "vp-main-iso",
+      "viewKind": "3d",
+      "featureId": "ground_vertical_cladding",
+      "featureKind": "vertical_cladding",
+      "visualPriority": "medium",
+      "status": "unchecked",
+      "screenshotPath": null,
+      "prompt": "Confirm ground_vertical_cladding (vertical_cladding) is visibly correct in vp-main-iso.",
+      "knownFailureModes": [
+        "flat material reads as plain wall",
+        "battens detach or cross openings",
+        "cladding zone starts/stops at the wrong volume"
+      ],
+      "requiredEvidence": [
+        "front and side screenshots showing cladding on ground/base zones",
+        "artifact check for strips crossing doors/windows"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "vp-front-elev:ground_vertical_cladding",
+      "viewId": "vp-front-elev",
+      "viewKind": "elevation",
+      "featureId": "ground_vertical_cladding",
+      "featureKind": "vertical_cladding",
+      "visualPriority": "medium",
+      "status": "unchecked",
+      "screenshotPath": null,
+      "prompt": "Confirm ground_vertical_cladding (vertical_cladding) is visibly correct in vp-front-elev.",
+      "knownFailureModes": [
+        "flat material reads as plain wall",
+        "battens detach or cross openings",
+        "cladding zone starts/stops at the wrong volume"
+      ],
+      "requiredEvidence": [
+        "front and side screenshots showing cladding on ground/base zones",
+        "artifact check for strips crossing doors/windows"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "hf-pv-ground:usable_residential_plan",
+      "viewId": "hf-pv-ground",
+      "viewKind": "plan",
+      "featureId": "usable_residential_plan",
+      "featureKind": "room_access_and_enclosure",
+      "visualPriority": "critical",
+      "status": "unchecked",
+      "screenshotPath": null,
+      "prompt": "Confirm usable_residential_plan (room_access_and_enclosure) is visibly correct in hf-pv-ground.",
+      "knownFailureModes": [
+        "room-separation rectangles hide real enclosure faults",
+        "stair runs into exterior wall or blocks a door",
+        "occupied rooms have no valid door",
+        "toy-scale room programme"
+      ],
+      "requiredEvidence": [
+        "ground plan screenshot",
+        "upper plan screenshot",
+        "advisor warning JSON with zero room/stair blockers"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "hf-pv-upper:usable_residential_plan",
+      "viewId": "hf-pv-upper",
+      "viewKind": "plan",
+      "featureId": "usable_residential_plan",
+      "featureKind": "room_access_and_enclosure",
+      "visualPriority": "critical",
+      "status": "unchecked",
+      "screenshotPath": null,
+      "prompt": "Confirm usable_residential_plan (room_access_and_enclosure) is visibly correct in hf-pv-upper.",
+      "knownFailureModes": [
+        "room-separation rectangles hide real enclosure faults",
+        "stair runs into exterior wall or blocks a door",
+        "occupied rooms have no valid door",
+        "toy-scale room programme"
+      ],
+      "requiredEvidence": [
+        "ground plan screenshot",
+        "upper plan screenshot",
+        "advisor warning JSON with zero room/stair blockers"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "vp-main-iso:usable_residential_plan",
+      "viewId": "vp-main-iso",
+      "viewKind": "3d",
+      "featureId": "usable_residential_plan",
+      "featureKind": "room_access_and_enclosure",
+      "visualPriority": "critical",
+      "status": "unchecked",
+      "screenshotPath": null,
+      "prompt": "Confirm usable_residential_plan (room_access_and_enclosure) is visibly correct in vp-main-iso.",
+      "knownFailureModes": [
+        "room-separation rectangles hide real enclosure faults",
+        "stair runs into exterior wall or blocks a door",
+        "occupied rooms have no valid door",
+        "toy-scale room programme"
+      ],
+      "requiredEvidence": [
+        "ground plan screenshot",
+        "upper plan screenshot",
+        "advisor warning JSON with zero room/stair blockers"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "global:silhouette",
+      "viewId": null,
+      "viewKind": null,
+      "featureId": null,
+      "featureKind": "global_acceptance_gate",
+      "visualPriority": "critical",
+      "status": "unchecked",
+      "screenshotPath": null,
+      "prompt": "All required 3D views read as the sketch silhouette, not a generic building.",
+      "knownFailureModes": [],
+      "requiredEvidence": [],
+      "notes": ""
+    },
+    {
+      "id": "global:advisor",
+      "viewId": null,
+      "viewKind": null,
+      "featureId": null,
+      "featureKind": "global_acceptance_gate",
+      "visualPriority": "critical",
+      "status": "unchecked",
+      "screenshotPath": null,
+      "prompt": "Advisor warning/error findings are fixed or explicitly tolerated with elementIds.",
+      "knownFailureModes": [],
+      "requiredEvidence": [],
+      "notes": ""
+    },
+    {
+      "id": "global:interior",
+      "viewId": null,
+      "viewKind": null,
+      "featureId": null,
+      "featureKind": "global_acceptance_gate",
+      "visualPriority": "critical",
+      "status": "unchecked",
+      "screenshotPath": null,
+      "prompt": "Rooms, doors, stairs, and slab openings are plausible in plan and wire diagnostics.",
+      "knownFailureModes": [],
+      "requiredEvidence": [],
+      "notes": ""
+    },
+    {
+      "id": "global:artifacts",
+      "viewId": null,
+      "viewKind": null,
+      "featureId": null,
+      "featureKind": "global_acceptance_gate",
+      "visualPriority": "critical",
+      "status": "unchecked",
+      "screenshotPath": null,
+      "prompt": "No visible gaps, z-fighting, uncut walls, false masses, or distracting material artifacts remain.",
+      "knownFailureModes": [],
+      "requiredEvidence": [],
+      "notes": ""
+    }
+  ]
+}

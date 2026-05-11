@@ -20,6 +20,7 @@ import { maskingRegionGripProvider } from './maskingRegionGripProvider';
 import { placedAssetGripProvider } from './placedAssetGripProvider';
 import { referencePlaneGripProvider } from './referencePlaneGripProvider';
 import { sectionCutGripProvider } from './sectionCutGripProvider';
+import { sketchElementGripProvider } from './sketchElementGripProvider';
 import { windowGripProvider } from './windowGripProvider';
 
 export {
@@ -32,6 +33,7 @@ export {
   placedAssetGripProvider,
   referencePlaneGripProvider,
   sectionCutGripProvider,
+  sketchElementGripProvider,
   windowGripProvider,
 };
 
@@ -59,6 +61,9 @@ export function gripsFor(element: Element, context: PlanContext = {}): GripDescr
       return referencePlaneGripProvider.grips(element, context);
     case 'placed_asset':
       return placedAssetGripProvider.grips(element, context);
+    case 'plan_region':
+    case 'stair':
+      return sketchElementGripProvider.grips(element, context);
     default:
       return [];
   }

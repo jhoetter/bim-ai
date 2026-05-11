@@ -965,6 +965,25 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
     };
   }
 
+  if (kind === 'roof_join') {
+    const seamModeRaw = String(raw.seamMode ?? raw.seam_mode ?? 'clip_secondary_into_primary');
+    return {
+      kind: 'roof_join',
+      id,
+      name,
+      primaryRoofId: String(raw.primaryRoofId ?? raw.primary_roof_id ?? ''),
+      secondaryRoofId: String(raw.secondaryRoofId ?? raw.secondary_roof_id ?? ''),
+      seamMode: seamModeRaw === 'merge_at_ridge' ? 'merge_at_ridge' : 'clip_secondary_into_primary',
+      pinned: Boolean(raw.pinned),
+      ...(raw.phaseCreated || raw.phase_created
+        ? { phaseCreated: String(raw.phaseCreated ?? raw.phase_created) }
+        : {}),
+      ...(raw.phaseDemolished || raw.phase_demolished
+        ? { phaseDemolished: String(raw.phaseDemolished ?? raw.phase_demolished) }
+        : {}),
+    };
+  }
+
   if (kind === 'railing') {
     return {
       kind: 'railing',
@@ -1497,6 +1516,40 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
         typeof raw.grouping === 'object' && raw.grouping
           ? (raw.grouping as Record<string, unknown>)
           : {},
+    };
+  }
+
+  if (kind === 'view_concept_board') {
+    const rawAttachments = Array.isArray(raw.attachments) ? raw.attachments : [];
+    const attachments = rawAttachments
+      .filter((attachment): attachment is Record<string, unknown> => {
+        if (!attachment || typeof attachment !== 'object') return false;
+        const kind = attachment.kind;
+        return kind === 'image' || kind === 'pdf_page' || kind === 'note' || kind === 'model_link';
+      })
+      .map((attachment) => {
+        const rect = (attachment.rectMm ?? attachment.rect_mm ?? {}) as Record<string, unknown>;
+        const rawThreads = attachment.commentThreadIds ?? attachment.comment_thread_ids;
+        return {
+          id: String(attachment.id ?? ''),
+          kind: attachment.kind as 'image' | 'pdf_page' | 'note' | 'model_link',
+          rectMm: {
+            xMm: Number(rect.xMm ?? rect.x_mm ?? 0),
+            yMm: Number(rect.yMm ?? rect.y_mm ?? 0),
+            widthMm: Number(rect.widthMm ?? rect.width_mm ?? 320),
+            heightMm: Number(rect.heightMm ?? rect.height_mm ?? 220),
+          },
+          payload: attachment.payload ?? {},
+          ...(Array.isArray(rawThreads)
+            ? { commentThreadIds: rawThreads.map(String).filter(Boolean) }
+            : {}),
+        };
+      });
+    return {
+      kind: 'view_concept_board',
+      id,
+      name,
+      attachments,
     };
   }
 

@@ -1,0 +1,38 @@
+{
+  "advisorParityOk": false,
+  "advisorWarningTotal": 0,
+  "files": {
+    "advisor-info": "seed-artifacts/target-house-3/evidence/phase-1/advisor-info.json",
+    "advisor-warning": "seed-artifacts/target-house-3/evidence/phase-1/advisor-warning.json",
+    "corrections": "seed-artifacts/target-house-3/evidence/phase-1/corrections.md",
+    "issue-ledger": "seed-artifacts/target-house-3/evidence/phase-1/issue-ledger.json",
+    "screenshot-manifest": "seed-artifacts/target-house-3/evidence/phase-1/screenshot-manifest.json",
+    "semantic-checklist": "seed-artifacts/target-house-3/evidence/phase-1/semantic-checklist.json",
+    "visual-readout": "seed-artifacts/target-house-3/evidence/phase-1/visual-readout.md"
+  },
+  "generatedAtEpochMs": 1778501706400,
+  "gitHead": "5245cb361dbc6892b389f49f417e31cd5672c8c8",
+  "missing": {},
+  "ok": false,
+  "pendingIssues": [],
+  "phase": "1",
+  "schemaVersion": "sketch-to-bim.phase-packet.v1",
+  "seed": "target-house-3",
+  "semanticFailures": [
+    {
+      "notes": "",
+      "verdict": "pending",
+      "viewId": "vp-main-iso"
+    },
+    {
+      "notes": "",
+      "verdict": "pending",
+      "viewId": "vp-roof-court"
+    },
+    {
+      "notes": "",
+      "verdict": "pending",
+      "viewId": "hf-pv-ground"
+    }
+  ]
+}

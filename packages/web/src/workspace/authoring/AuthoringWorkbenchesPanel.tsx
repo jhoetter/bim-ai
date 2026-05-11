@@ -26,6 +26,7 @@ export function AuthoringWorkbenchesPanel({
   const revision = useBimStore((s) => s.revision);
   const violations = useBimStore((s) => s.violations);
   const wirePrimitives = useBimStore((s) => s.planProjectionPrimitives);
+  const selectedIds = useBimStore((s) => s.selectedIds);
 
   const levels = useMemo(
     () =>
@@ -56,8 +57,10 @@ export function AuthoringWorkbenchesPanel({
       <RoofAuthoringWorkbench
         selected={selected}
         elementsById={elementsById}
+        selectedIds={selectedIds}
         wirePrimitives={wirePrimitives}
         revision={revision}
+        onUpsertSemantic={onUpsertSemantic}
         onPersistProperty={(key, value) => {
           const sid = selected?.id;
           if (!sid) return;

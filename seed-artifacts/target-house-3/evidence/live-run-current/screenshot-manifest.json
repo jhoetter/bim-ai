@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "sketch-to-bim-screenshot-manifest.v0",
+  "generatedAt": "2026-05-11T13:04:28.092Z",
+  "captures": [
+    {
+      "viewId": "vp-main-iso",
+      "viewKind": "3d",
+      "purpose": "Target-house-3 front-right axonometric showing wrapper, loggia, roof court, ground cladding, lower glazing, and carport recess.",
+      "screenshotPath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/vp-main-iso.png",
+      "usedViewpointId": "vp-main-iso",
+      "syntheticViewpoint": false,
+      "fallbackFit": false
+    },
+    {
+      "viewId": "vp-front-elev",
+      "viewKind": "elevation",
+      "purpose": "Front facade evidence for loggia bay rhythm, rail, ground openings, and cladding.",
+      "screenshotPath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/vp-front-elev.png",
+      "usedViewpointId": "vp-front-elev",
+      "syntheticViewpoint": false,
+      "fallbackFit": false
+    },
+    {
+      "viewId": "vp-roof-court",
+      "viewKind": "3d",
+      "purpose": "High axonometric proving the roof court reads as an occupied void.",
+      "screenshotPath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/vp-roof-court.png",
+      "usedViewpointId": "vp-roof-court",
+      "syntheticViewpoint": false,
+      "fallbackFit": false
+    },
+    {
+      "viewId": "vp-rear-axo",
+      "viewKind": "3d",
+      "purpose": "Rear/right view checking roof-court depth and white return faces.",
+      "screenshotPath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/vp-rear-axo.png",
+      "usedViewpointId": "vp-rear-axo",
+      "syntheticViewpoint": false,
+      "fallbackFit": false
+    },
+    {
+      "viewId": "hf-pv-ground",
+      "viewKind": "plan",
+      "purpose": "Ground-floor plan topology and room/stair/access check.",
+      "screenshotPath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/hf-pv-ground.png",
+      "usedViewpointId": "hf-pv-ground",
+      "syntheticViewpoint": true,
+      "fallbackFit": false
+    },
+    {
+      "viewId": "hf-pv-upper",
+      "viewKind": "plan",
+      "purpose": "Upper-floor plan topology, roof-court access, loggia, and stair opening check.",
+      "screenshotPath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/hf-pv-upper.png",
+      "usedViewpointId": "hf-pv-upper",
+      "syntheticViewpoint": true,
+      "fallbackFit": false
+    },
+    {
+      "viewId": "hf-sec-loggia",
+      "viewKind": "diagnostic",
+      "purpose": "Section/diagnostic view through the front loggia and wrapper frame.",
+      "screenshotPath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/hf-sec-loggia.png",
+      "usedViewpointId": "hf-sec-loggia",
+      "syntheticViewpoint": true,
+      "fallbackFit": false
+    }
+  ]
+}

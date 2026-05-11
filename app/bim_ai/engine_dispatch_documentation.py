@@ -116,6 +116,39 @@ from bim_ai.engine import (
     new_id,
     normalize_plan_category_graphics_rows,
 )
+from bim_ai.site.bearing_table import walk_bearing_table
+from bim_ai.elements import Vec2Mm
+
+
+def _property_line_bearing_rows(raw: Any) -> list[tuple[str, float]]:
+    if not isinstance(raw, dict):
+        raise ValueError("bearingTable must be an object")
+    rows = raw.get("rows")
+    if not isinstance(rows, list) or len(rows) < 3:
+        raise ValueError("bearingTable.rows must contain at least 3 rows")
+    parsed: list[tuple[str, float]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError("bearingTable.rows entries must be objects")
+        bearing = row.get("bearing")
+        distance = row.get("distanceMm")
+        if not isinstance(bearing, str) or not bearing.strip():
+            raise ValueError("bearingTable row bearing must be a non-empty string")
+        if not isinstance(distance, int | float):
+            raise ValueError("bearingTable row distanceMm must be numeric")
+        parsed.append((bearing, float(distance)))
+    return parsed
+
+
+def _property_line_closes_at(raw: Any) -> Vec2Mm | None:
+    if not isinstance(raw, dict):
+        return None
+    closes_at = raw.get("closesAt")
+    if closes_at is None:
+        return None
+    if not isinstance(closes_at, dict):
+        raise ValueError("bearingTable.closesAt must be an object")
+    return Vec2Mm.model_validate(closes_at)
 
 
 def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
@@ -658,10 +691,13 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
                     "createRepeatingDetail.hostViewId must reference plan_view/section_cut/elevation_view"
                 )
             import math as _math
+
             if _math.isclose(cmd.start_mm.x_mm, cmd.end_mm.x_mm) and _math.isclose(
                 cmd.start_mm.y_mm, cmd.end_mm.y_mm
             ):
-                raise ValueError("createRepeatingDetail: startMm and endMm must be different points")
+                raise ValueError(
+                    "createRepeatingDetail: startMm and endMm must be different points"
+                )
             els[rdid] = RepeatingDetailElem(
                 kind="repeating_detail",
                 id=rdid,
@@ -709,7 +745,6 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
                 scheme_parameter=cmd.scheme_parameter,
                 title=cmd.title,
             )
-
 
         case CreateReferencePlaneCmd():
             rpid = cmd.id or new_id()
@@ -777,16 +812,39 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
             plid = cmd.id or new_id()
             if plid in els:
                 raise ValueError(f"duplicate element id '{plid}'")
-            if cmd.start_mm.x_mm == cmd.end_mm.x_mm and cmd.start_mm.y_mm == cmd.end_mm.y_mm:
+            authoring_mode = cmd.authoring_mode
+            boundary_mm = []
+            closure_error_mm = None
+            if authoring_mode == "bearing_table":
+                if cmd.bearing_table is None:
+                    raise ValueError(
+                        "createPropertyLine.bearingTable is required in bearing_table mode"
+                    )
+                walk = walk_bearing_table(
+                    cmd.start_mm,
+                    _property_line_bearing_rows(cmd.bearing_table),
+                    _property_line_closes_at(cmd.bearing_table),
+                )
+                boundary_mm = walk.points_mm
+                closure_error_mm = walk.closure_error_mm
+            if (
+                cmd.start_mm.x_mm == cmd.end_mm.x_mm
+                and cmd.start_mm.y_mm == cmd.end_mm.y_mm
+                and authoring_mode != "bearing_table"
+            ):
                 raise ValueError("createPropertyLine.startMm and endMm must differ")
             els[plid] = PropertyLineElem(
                 kind="property_line",
                 id=plid,
                 name=cmd.name,
                 start_mm=cmd.start_mm,
-                end_mm=cmd.end_mm,
+                end_mm=boundary_mm[1] if boundary_mm else cmd.end_mm,
                 setback_mm=cmd.setback_mm,
                 classification=cmd.classification,
+                authoring_mode=authoring_mode,
+                boundary_mm=boundary_mm,
+                bearing_table=cmd.bearing_table,
+                closure_error_mm=closure_error_mm,
             )
 
         case UpdatePropertyLineCmd():
@@ -795,9 +853,46 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
                 raise ValueError("updatePropertyLine.propertyLineId must reference a property_line")
             new_start = cmd.start_mm if cmd.start_mm is not None else pl.start_mm
             new_end = cmd.end_mm if cmd.end_mm is not None else pl.end_mm
-            if new_start.x_mm == new_end.x_mm and new_start.y_mm == new_end.y_mm:
+            authoring_mode = (
+                cmd.authoring_mode if cmd.authoring_mode is not None else pl.authoring_mode
+            )
+            bearing_table = (
+                cmd.bearing_table if "bearing_table" in cmd.model_fields_set else pl.bearing_table
+            )
+            boundary_mm = pl.boundary_mm
+            closure_error_mm = pl.closure_error_mm
+            if authoring_mode == "bearing_table":
+                if bearing_table is None:
+                    raise ValueError(
+                        "updatePropertyLine.bearingTable is required in bearing_table mode"
+                    )
+                walk = walk_bearing_table(
+                    new_start,
+                    _property_line_bearing_rows(bearing_table),
+                    _property_line_closes_at(bearing_table),
+                )
+                boundary_mm = walk.points_mm
+                closure_error_mm = walk.closure_error_mm
+                if len(boundary_mm) > 1 and cmd.end_mm is None:
+                    new_end = boundary_mm[1]
+            else:
+                boundary_mm = []
+                closure_error_mm = None
+                bearing_table = None
+            if (
+                new_start.x_mm == new_end.x_mm
+                and new_start.y_mm == new_end.y_mm
+                and authoring_mode != "bearing_table"
+            ):
                 raise ValueError("updatePropertyLine: startMm and endMm must differ")
-            updates: dict[str, Any] = {"start_mm": new_start, "end_mm": new_end}
+            updates: dict[str, Any] = {
+                "start_mm": new_start,
+                "end_mm": new_end,
+                "authoring_mode": authoring_mode,
+                "boundary_mm": boundary_mm,
+                "bearing_table": bearing_table,
+                "closure_error_mm": closure_error_mm,
+            }
             if cmd.name is not None:
                 updates["name"] = cmd.name
             if "setback_mm" in cmd.model_fields_set:

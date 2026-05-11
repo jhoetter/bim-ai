@@ -68,6 +68,23 @@ export type Grip3dCommitSpec = {
 
 export type Grip3dProvider<E = Record<string, unknown>> = (element: E) => Grip3dDescriptor[];
 
+export type Grip3dProjectionInput = {
+  axis: Grip3dAxis;
+  startMm: { xMm: number; yMm: number; zMm: number };
+  currentMm: { xMm: number; yMm: number; zMm: number };
+  initialDeltaPx?: { x: number; y: number };
+  shiftKey?: boolean;
+};
+
+export type Grip3dProjectionState = {
+  dominantAxis?: 'x' | 'y' | 'z';
+};
+
+export type Grip3dProjectionResult = {
+  deltaMm: { xMm: number; yMm: number; zMm: number };
+  state: Grip3dProjectionState;
+};
+
 const REGISTRY = new Map<string, Grip3dProvider>();
 
 export function register3dGripProvider<E = Record<string, unknown>>(
@@ -90,6 +107,63 @@ export function gripsFor(element: { kind?: string }): Grip3dDescriptor[] {
 
 export function clear3dGripProviders(): void {
   REGISTRY.clear();
+}
+
+function dominantAxisFromDelta(delta: { xMm: number; yMm: number; zMm: number }): 'x' | 'y' | 'z' {
+  const ax = Math.abs(delta.xMm);
+  const ay = Math.abs(delta.yMm);
+  const az = Math.abs(delta.zMm);
+  if (az >= ax && az >= ay) return 'z';
+  return ax >= ay ? 'x' : 'y';
+}
+
+function pixelDeadzonePassed(deltaPx: { x: number; y: number } | undefined): boolean {
+  if (!deltaPx) return true;
+  return Math.hypot(deltaPx.x, deltaPx.y) >= 8;
+}
+
+/**
+ * EDT-V3-08 — project a 3D grip ray intersection into a stable drag delta.
+ *
+ * `xy` keeps horizontal-plane movement only. `xyz` chooses a dominant axis
+ * once the pointer moves past an 8px deadzone, then stays locked until the
+ * caller resets `state`; Shift bypasses that lock for true free 3D motion.
+ */
+export function projectGripDelta(
+  input: Grip3dProjectionInput,
+  prev: Grip3dProjectionState = {},
+): Grip3dProjectionResult {
+  const raw = {
+    xMm: input.currentMm.xMm - input.startMm.xMm,
+    yMm: input.currentMm.yMm - input.startMm.yMm,
+    zMm: input.currentMm.zMm - input.startMm.zMm,
+  };
+
+  switch (input.axis) {
+    case 'x':
+      return { deltaMm: { xMm: raw.xMm, yMm: 0, zMm: 0 }, state: prev };
+    case 'y':
+      return { deltaMm: { xMm: 0, yMm: raw.yMm, zMm: 0 }, state: prev };
+    case 'z':
+      return { deltaMm: { xMm: 0, yMm: 0, zMm: raw.zMm }, state: prev };
+    case 'xy':
+      return { deltaMm: { xMm: raw.xMm, yMm: raw.yMm, zMm: 0 }, state: prev };
+    case 'xyz': {
+      if (input.shiftKey) return { deltaMm: raw, state: prev };
+      const dominant =
+        prev.dominantAxis ??
+        (pixelDeadzonePassed(input.initialDeltaPx) ? dominantAxisFromDelta(raw) : undefined);
+      if (!dominant) return { deltaMm: { xMm: 0, yMm: 0, zMm: 0 }, state: prev };
+      return {
+        deltaMm: {
+          xMm: dominant === 'x' ? raw.xMm : 0,
+          yMm: dominant === 'y' ? raw.yMm : 0,
+          zMm: dominant === 'z' ? raw.zMm : 0,
+        },
+        state: { dominantAxis: dominant },
+      };
+    }
+  }
 }
 
 /**

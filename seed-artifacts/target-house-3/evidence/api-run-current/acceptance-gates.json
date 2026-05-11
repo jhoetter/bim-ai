@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "sketch-to-bim-acceptance-gates.v0",
+  "generatedAt": "2026-05-11T12:12:15.204Z",
+  "qualityTarget": "project_initiation_bim",
+  "ok": false,
+  "summary": {
+    "blockerCount": 1,
+    "toleranceCount": 0,
+    "advisorWarningCount": 0,
+    "visualFailCount": 0,
+    "visualNeedsReviewCount": 0
+  },
+  "blockers": [
+    {
+      "code": "screenshots_missing",
+      "severity": "error",
+      "message": "No screenshot manifest was captured for the initiation packet."
+    }
+  ],
+  "tolerances": []
+}

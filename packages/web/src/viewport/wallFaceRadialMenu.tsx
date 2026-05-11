@@ -26,9 +26,12 @@ export type WallFaceRadialMenuOpen = {
   wallEndMm: { xMm: number; yMm: number };
   /** Pixel position to anchor the menu. */
   screen: { x: number; y: number };
+  /** Optional material element bound to the hit face for UV adjustments. */
+  materialId?: string;
+  currentUvRotationDeg?: number;
 };
 
-type Choice = 'door' | 'window' | 'opening';
+type Choice = 'door' | 'window' | 'opening' | 'uv-rotate';
 
 export type WallFaceRadialCommand =
   | {
@@ -60,6 +63,14 @@ export type WallFaceRadialCommand =
         alongTEnd: number;
         sillHeightMm: number;
         headHeightMm: number;
+      };
+    }
+  | {
+      kind: 'uv-rotate';
+      cmd: {
+        type: 'update_material_pbr';
+        id: string;
+        uvRotationDeg: number;
       };
     };
 
@@ -115,6 +126,16 @@ function buildCommand(choice: Choice, open: WallFaceRadialMenuOpen): WallFaceRad
       },
     };
   }
+  if (choice === 'uv-rotate' && open.materialId) {
+    return {
+      kind: 'uv-rotate',
+      cmd: {
+        type: 'update_material_pbr',
+        id: open.materialId,
+        uvRotationDeg: ((open.currentUvRotationDeg ?? 0) + 15) % 360,
+      },
+    };
+  }
   // Opening — wrap a small range around the click point so the result
   // is visible without further drag.
   const half = 0.05;
@@ -150,13 +171,15 @@ export function WallFaceRadialMenu({ open, onSelect, onDismiss }: Props) {
     return () => window.removeEventListener('keydown', handler);
   }, [open, onDismiss]);
 
+  const materialId = open?.materialId;
   const items: { choice: Choice; label: string }[] = useMemo(
     () => [
       { choice: 'door', label: 'Insert Door' },
       { choice: 'window', label: 'Insert Window' },
       { choice: 'opening', label: 'Insert Opening' },
+      ...(materialId ? ([{ choice: 'uv-rotate', label: 'Rotate UV +15°' }] as const) : []),
     ],
-    [],
+    [materialId],
   );
 
   if (!open) return null;

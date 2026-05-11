@@ -34,6 +34,7 @@ import {
   reduceAreaBoundary,
 } from '../tools/toolGrammar';
 import * as THREE from 'three';
+import { parseDimensionInput } from '@bim-ai/core';
 import type { Element } from '@bim-ai/core';
 
 import { useBimStore } from '../state/store';
@@ -407,6 +408,7 @@ export function PlanCanvas({
       pxY: number;
       extensionFromPxX?: number;
       extensionFromPxY?: number;
+      associative?: boolean;
     }>;
     activeIndex: number;
   }>({ candidates: [], activeIndex: 0 });
@@ -2194,10 +2196,12 @@ export function PlanCanvas({
             pxY: number;
             extensionFromPxX?: number;
             extensionFromPxY?: number;
+            associative?: boolean;
           } = {
             kind: h.kind,
             pxX: screen.pxX,
             pxY: screen.pxY,
+            associative: h.kind !== 'raw' && h.kind !== 'grid',
           };
           if (h.kind === 'extension' && linesScoped.length > 0) {
             // Pick the closer endpoint of any segment that this point
@@ -2471,9 +2475,9 @@ export function PlanCanvas({
         const grip = gripDragRef.current.grip;
         const numeric = numericInputRef.current?.value;
         if (numeric != null && numeric !== '') {
-          const parsed = parseFloat(numeric);
-          if (Number.isFinite(parsed)) {
-            void onSemanticCommand(grip.onNumericOverride(parsed));
+          const parsed = parseDimensionInput(numeric);
+          if (parsed.ok) {
+            void onSemanticCommand(grip.onNumericOverride(parsed.mm));
           }
         } else {
           const rwUp = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
@@ -3851,7 +3855,7 @@ export function PlanCanvas({
           setNumericInput(null);
           return;
         }
-        if (/^[0-9]$/.test(ev.key) || ev.key === '.') {
+        if (/^[0-9a-zA-Z.'"\s]$/.test(ev.key)) {
           ev.preventDefault();
           setNumericInput((prev) => {
             const value = (prev?.value ?? '') + ev.key;
@@ -3868,10 +3872,10 @@ export function PlanCanvas({
         }
         if (ev.key === 'Enter' && numericInputRef.current) {
           ev.preventDefault();
-          const num = parseFloat(numericInputRef.current.value);
+          const parsed = parseDimensionInput(numericInputRef.current.value);
           const grip = gripDragRef.current.grip;
-          if (Number.isFinite(num)) {
-            void onSemanticCommand(grip.onNumericOverride(num));
+          if (parsed.ok) {
+            void onSemanticCommand(grip.onNumericOverride(parsed.mm));
           }
           gripDragRef.current = null;
           setActiveGripId(null);
@@ -5709,12 +5713,14 @@ export function PlanCanvas({
             zIndex: 20,
             pointerEvents: 'none',
             background: 'rgba(20,28,42,0.92)',
-            border: '1px solid #fcd34d',
+            border: '1px solid var(--color-accent)',
             borderRadius: 3,
-            color: '#fcd34d',
+            color: 'var(--color-accent)',
             fontFamily:
               'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace',
-            fontSize: 11,
+            fontSize: 'var(--text-2xs, 10px)',
+            lineHeight: 'var(--text-2xs-line, 14px)',
+            fontFeatureSettings: '"tnum"',
             padding: '2px 6px',
             minWidth: 60,
           }}

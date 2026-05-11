@@ -114,6 +114,48 @@ describe('hydrateFromSnapshot', () => {
     }
   });
 
+  it('coerces curved wall bezier metadata from snapshots', () => {
+    const { hydrateFromSnapshot } = useBimStore.getState();
+    hydrateFromSnapshot({
+      modelId: 'm1',
+      revision: 1,
+      elements: {
+        'wall-bezier': {
+          kind: 'wall',
+          name: 'Bezier',
+          levelId: 'lvl-0',
+          start: { xMm: 0, yMm: 0 },
+          end: { xMm: 6000, yMm: 0 },
+          wall_curve: {
+            kind: 'bezier',
+            control_points: [
+              { x_mm: 0, y_mm: 0 },
+              { x_mm: 2000, y_mm: 2500 },
+              { x_mm: 4000, y_mm: 2500 },
+              { x_mm: 6000, y_mm: 0 },
+            ],
+          },
+          thicknessMm: 200,
+          heightMm: 2800,
+        },
+      },
+      violations: [],
+    });
+    const wall = useBimStore.getState().elementsById['wall-bezier'];
+    expect(wall?.kind).toBe('wall');
+    if (wall?.kind === 'wall') {
+      expect(wall.wallCurve).toEqual({
+        kind: 'bezier',
+        controlPoints: [
+          { xMm: 0, yMm: 0 },
+          { xMm: 2000, yMm: 2500 },
+          { xMm: 4000, yMm: 2500 },
+          { xMm: 6000, yMm: 0 },
+        ],
+      });
+    }
+  });
+
   it('coerces door elements correctly', () => {
     const { hydrateFromSnapshot } = useBimStore.getState();
     hydrateFromSnapshot({
@@ -480,6 +522,40 @@ describe('hydrateFromSnapshot', () => {
         violations: [],
       }),
     ).not.toThrow();
+  });
+
+  it('coerces associative dimension state and anchors from snapshots', () => {
+    const { hydrateFromSnapshot } = useBimStore.getState();
+    hydrateFromSnapshot({
+      modelId: 'm1',
+      revision: 1,
+      elements: {
+        'dim-1': {
+          kind: 'dimension',
+          id: 'dim-1',
+          name: 'D1',
+          levelId: 'lvl-0',
+          aMm: { xMm: 0, yMm: 0 },
+          bMm: { xMm: 3000, yMm: 0 },
+          offsetMm: { xMm: 0, yMm: 500 },
+          state: 'partial',
+          anchor_a: {
+            kind: 'feature',
+            feature: { elementId: 'wall-1', anchor: 'end' },
+            fallback_position_mm: { x_mm: 0, y_mm: 0 },
+          },
+          anchor_b: { kind: 'free', fallback_position_mm: { x_mm: 3000, y_mm: 0 } },
+        },
+      },
+      violations: [],
+    });
+    const dim = useBimStore.getState().elementsById['dim-1'];
+    expect(dim?.kind).toBe('dimension');
+    if (dim?.kind === 'dimension') {
+      expect(dim.state).toBe('partial');
+      expect(dim.anchorA?.kind).toBe('feature');
+      expect(dim.anchorB?.kind).toBe('free');
+    }
   });
 });
 

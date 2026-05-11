@@ -33,7 +33,7 @@ from bim_ai.elements import (
     Text3dFontFamily,
     Vec2Mm,
     Vec3Mm,
-    WallArcCurve,
+    WallCurve,
     WallRecessZone,
     WallStructuralRole,
     WallTypeLayer,
@@ -70,7 +70,7 @@ class CreateWallCmd(BaseModel):
     level_id: str = Field(alias="levelId")
     start: Vec2Mm
     end: Vec2Mm
-    wall_curve: WallArcCurve | None = Field(default=None, alias="wallCurve")
+    wall_curve: WallCurve | None = Field(default=None, alias="wallCurve")
     thickness_mm: float = Field(alias="thicknessMm", default=200)
     height_mm: float = Field(alias="heightMm", default=2800)
     wall_type_id: str | None = Field(default=None, alias="wallTypeId")
@@ -220,6 +220,9 @@ class CreateDimensionCmd(BaseModel):
     a_mm: Vec2Mm = Field(alias="aMm")
     b_mm: Vec2Mm = Field(alias="bMm")
     offset_mm: Vec2Mm = Field(alias="offsetMm")
+    anchor_a: dict[str, Any] | None = Field(default=None, alias="anchorA")
+    anchor_b: dict[str, Any] | None = Field(default=None, alias="anchorB")
+    state: Literal["linked", "partial", "unlinked"] | None = None
     ref_element_id_a: str | None = Field(default=None, alias="refElementIdA")
     ref_element_id_b: str | None = Field(default=None, alias="refElementIdB")
     tag_definition_id: str | None = Field(default=None, alias="tagDefinitionId")
@@ -1846,6 +1849,8 @@ class CreatePropertyLineCmd(BaseModel):
     end_mm: Vec2Mm = Field(alias="endMm")
     setback_mm: float | None = Field(default=None, alias="setbackMm", ge=0)
     classification: PropertyLineClassificationCmd | None = None
+    authoring_mode: Literal["draw", "bearing_table"] = Field(default="draw", alias="authoringMode")
+    bearing_table: dict[str, Any] | None = Field(default=None, alias="bearingTable")
 
 
 class UpdatePropertyLineCmd(BaseModel):
@@ -1857,6 +1862,10 @@ class UpdatePropertyLineCmd(BaseModel):
     end_mm: Vec2Mm | None = Field(default=None, alias="endMm")
     setback_mm: float | None = Field(default=None, alias="setbackMm", ge=0)
     classification: PropertyLineClassificationCmd | None = None
+    authoring_mode: Literal["draw", "bearing_table"] | None = Field(
+        default=None, alias="authoringMode"
+    )
+    bearing_table: dict[str, Any] | None = Field(default=None, alias="bearingTable")
 
 
 class DeletePropertyLineCmd(BaseModel):

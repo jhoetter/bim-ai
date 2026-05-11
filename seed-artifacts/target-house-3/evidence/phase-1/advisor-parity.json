@@ -1,0 +1,153 @@
+{
+  "cli": {
+    "groups": [
+      {
+        "code": "gltf_export_manifest_expected_extension_missing",
+        "count": 2,
+        "elementIds": [],
+        "messages": [
+          "glTF export manifest: extension 'bim_ai_skew_wall_hosted_openings_v0' not emitted but eligible element kind 'wall' is present (skipReasonCode='no_eligible_elements').",
+          "glTF export manifest: extension 'bim_ai_roof_unsupported_shape_summary_v0' not emitted but eligible element kind 'roof' is present (skipReasonCode='no_eligible_elements')."
+        ],
+        "severity": "info"
+      },
+      {
+        "code": "plan_view_sheet_viewport_crop_missing",
+        "count": 2,
+        "elementIds": [
+          "hf-pv-ground",
+          "hf-pv-upper",
+          "hf-sheet-ga01",
+          "hf-vp-sheet-ground",
+          "hf-vp-sheet-upper"
+        ],
+        "messages": [
+          "Plan view 'hf-pv-ground' placed on sheet 'hf-sheet-ga01' viewport 'hf-vp-sheet-ground' has no crop box (cropMinMm/cropMaxMm absent); the plan-on-sheet boundary is unconstrained.",
+          "Plan view 'hf-pv-upper' placed on sheet 'hf-sheet-ga01' viewport 'hf-vp-sheet-upper' has no crop box (cropMinMm/cropMaxMm absent); the plan-on-sheet boundary is unconstrained."
+        ],
+        "severity": "info"
+      },
+      {
+        "code": "plan_view_tag_style_fallback",
+        "count": 4,
+        "elementIds": ["hf-pv-ground", "hf-pv-upper"],
+        "messages": [
+          "Plan view 'Ground floor plan' has opening tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling.",
+          "Plan view 'Ground floor plan' has room tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling.",
+          "Plan view 'First floor plan' has opening tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling."
+        ],
+        "severity": "info"
+      },
+      {
+        "code": "room_color_scheme_identity_missing",
+        "count": 1,
+        "elementIds": [],
+        "messages": [
+          "No room color scheme element found. Use upsertRoomColorScheme to author overrides."
+        ],
+        "severity": "info"
+      },
+      {
+        "code": "room_finish_metadata_hint",
+        "count": 10,
+        "elementIds": [
+          "hf-room-bedroom-2",
+          "hf-room-carport",
+          "hf-room-ensuite",
+          "hf-room-entry-stair",
+          "hf-room-hall",
+          "hf-room-kitchen-dining",
+          "hf-room-living",
+          "hf-room-primary",
+          "hf-room-roof-court",
+          "hf-room-service"
+        ],
+        "messages": [
+          "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete."
+        ],
+        "severity": "info"
+      }
+    ],
+    "modelId": "9bb9a145-d9ce-5a2f-a748-bb5be3301b30",
+    "revision": 1,
+    "total": 19
+  },
+  "modelId": "9bb9a145-d9ce-5a2f-a748-bb5be3301b30",
+  "note": "AdvisorPanel renders snapshot violations after client-side perspective filtering; this compares the unfiltered right-rail source payload with CLI grouping.",
+  "ok": false,
+  "rightRailSource": {
+    "groups": [
+      {
+        "code": "gltf_export_manifest_expected_extension_missing",
+        "count": 2,
+        "elementIds": [],
+        "messages": [
+          "glTF export manifest: extension 'bim_ai_roof_unsupported_shape_summary_v0' not emitted but eligible element kind 'roof' is present (skipReasonCode='no_eligible_elements').",
+          "glTF export manifest: extension 'bim_ai_skew_wall_hosted_openings_v0' not emitted but eligible element kind 'wall' is present (skipReasonCode='no_eligible_elements')."
+        ],
+        "severity": "info"
+      },
+      {
+        "code": "plan_view_sheet_viewport_crop_missing",
+        "count": 2,
+        "elementIds": [
+          "hf-pv-ground",
+          "hf-pv-upper",
+          "hf-sheet-ga01",
+          "hf-vp-sheet-ground",
+          "hf-vp-sheet-upper"
+        ],
+        "messages": [
+          "Plan view 'hf-pv-ground' placed on sheet 'hf-sheet-ga01' viewport 'hf-vp-sheet-ground' has no crop box (cropMinMm/cropMaxMm absent); the plan-on-sheet boundary is unconstrained.",
+          "Plan view 'hf-pv-upper' placed on sheet 'hf-sheet-ga01' viewport 'hf-vp-sheet-upper' has no crop box (cropMinMm/cropMaxMm absent); the plan-on-sheet boundary is unconstrained."
+        ],
+        "severity": "info"
+      },
+      {
+        "code": "plan_view_tag_style_fallback",
+        "count": 4,
+        "elementIds": ["hf-pv-ground", "hf-pv-upper"],
+        "messages": [
+          "Plan view 'First floor plan' has opening tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling.",
+          "Plan view 'First floor plan' has room tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling.",
+          "Plan view 'Ground floor plan' has opening tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling."
+        ],
+        "severity": "info"
+      },
+      {
+        "code": "room_color_scheme_identity_missing",
+        "count": 1,
+        "elementIds": [],
+        "messages": [
+          "No room color scheme element found. Use upsertRoomColorScheme to author overrides."
+        ],
+        "severity": "info"
+      },
+      {
+        "code": "room_finish_metadata_hint",
+        "count": 10,
+        "elementIds": [
+          "hf-room-bedroom-2",
+          "hf-room-carport",
+          "hf-room-ensuite",
+          "hf-room-entry-stair",
+          "hf-room-hall",
+          "hf-room-kitchen-dining",
+          "hf-room-living",
+          "hf-room-primary",
+          "hf-room-roof-court",
+          "hf-room-service"
+        ],
+        "messages": [
+          "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete."
+        ],
+        "severity": "info"
+      }
+    ],
+    "modelId": "9bb9a145-d9ce-5a2f-a748-bb5be3301b30",
+    "revision": 1,
+    "total": 19
+  },
+  "schemaVersion": "sketch-to-bim.advisor-parity.v1",
+  "source": "snapshot-violations-vs-cli-advisor"
+}

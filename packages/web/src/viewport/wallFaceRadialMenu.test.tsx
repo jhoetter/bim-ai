@@ -46,6 +46,25 @@ describe('WallFaceRadialMenu', () => {
     expect(screen.getByTestId('wall-face-radial-menu-opening')).toBeTruthy();
   });
 
+  test('renders UV rotation handle when the wall face has a material element', () => {
+    const onSelect = vi.fn();
+    render(
+      <WallFaceRadialMenu
+        open={{ ...horizontalWall, materialId: 'mat-brick', currentUvRotationDeg: 30 }}
+        onSelect={onSelect}
+        onDismiss={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('wall-face-radial-menu-uv-rotate'));
+    const result = onSelect.mock.calls[0][0];
+    expect(result.kind).toBe('uv-rotate');
+    expect(result.cmd).toEqual({
+      type: 'update_material_pbr',
+      id: 'mat-brick',
+      uvRotationDeg: 45,
+    });
+  });
+
   test('clicking Insert Door dispatches insertDoorOnWall with correct alongT', () => {
     const onSelect = vi.fn();
     const onDismiss = vi.fn();

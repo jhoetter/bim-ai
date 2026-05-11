@@ -20,6 +20,7 @@ const TAB_KIND_ICON: Record<TabKind, LucideLikeIcon> = {
   sheet: Icons.sheet!,
   schedule: Icons.schedule!,
   agent: Icons.agent!,
+  concept: Icons.agent!,
 };
 
 export interface TabBarProps {
@@ -39,7 +40,16 @@ export interface TabBarProps {
   onCloseInactive?: () => void;
 }
 
-const ADDABLE_KINDS: TabKind[] = ['plan', '3d', 'plan-3d', 'section', 'sheet', 'schedule', 'agent'];
+const ADDABLE_KINDS: TabKind[] = [
+  'plan',
+  '3d',
+  'plan-3d',
+  'section',
+  'sheet',
+  'schedule',
+  'agent',
+  'concept',
+];
 
 export function TabBar({
   tabs,

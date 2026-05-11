@@ -285,6 +285,7 @@ export type ElemKind =
   | 'soffit'
   | 'sun_settings'
   | 'view'
+  | 'view_concept_board'
   | 'edge_profile_run'
   | 'roof_join'
   | 'asset_library_entry'
@@ -1580,6 +1581,18 @@ export type Element =
       sortKey?: string | null;
       /** SCH-V3-01: default sort direction. */
       sortDir?: 'asc' | 'desc' | null;
+    }
+  | {
+      kind: 'view_concept_board';
+      id: string;
+      name: string;
+      attachments: Array<{
+        id: string;
+        kind: 'image' | 'pdf_page' | 'note' | 'model_link';
+        rectMm: { xMm: number; yMm: number; widthMm: number; heightMm: number };
+        payload: unknown;
+        commentThreadIds?: string[];
+      }>;
     }
   | {
       kind: 'site';

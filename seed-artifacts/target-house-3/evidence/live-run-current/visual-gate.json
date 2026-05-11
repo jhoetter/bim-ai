@@ -1,0 +1,240 @@
+{
+  "schemaVersion": "sketch-to-bim-visual-gate.v0",
+  "generatedAt": "2026-05-11T13:04:28.164Z",
+  "threshold": 0.62,
+  "targetImagePath": null,
+  "targetMapPath": null,
+  "summary": {
+    "captureCount": 7,
+    "passCount": 0,
+    "needsReviewCount": 7,
+    "failCount": 0,
+    "blockingFailureCount": 0
+  },
+  "captures": [
+    {
+      "viewId": "vp-main-iso",
+      "viewKind": "3d",
+      "purpose": "Target-house-3 front-right axonometric showing wrapper, loggia, roof court, ground cladding, lower glazing, and carport recess.",
+      "screenshotPath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/vp-main-iso.png",
+      "usedViewpointId": "vp-main-iso",
+      "syntheticViewpoint": false,
+      "fallbackFit": false,
+      "analysis": {
+        "filePath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/vp-main-iso.png",
+        "width": 704,
+        "height": 562,
+        "contentCoverage": 0.4892050509543837,
+        "contentBoundingBox": {
+          "minX": 0,
+          "minY": 0,
+          "maxX": 703,
+          "maxY": 561,
+          "width": 704,
+          "height": 562
+        },
+        "meanLuma": 231.8775427600168,
+        "lumaStdDev": 18.666858642993816,
+        "edgeDensity": 0.010722940942553546,
+        "uniqueColorBucketsSampled": 77,
+        "blankLike": false
+      },
+      "comparison": null,
+      "status": "needs_review",
+      "blockers": [],
+      "notes": ["No target image supplied; automated gate covers screenshot quality only."]
+    },
+    {
+      "viewId": "vp-front-elev",
+      "viewKind": "elevation",
+      "purpose": "Front facade evidence for loggia bay rhythm, rail, ground openings, and cladding.",
+      "screenshotPath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/vp-front-elev.png",
+      "usedViewpointId": "vp-front-elev",
+      "syntheticViewpoint": false,
+      "fallbackFit": false,
+      "analysis": {
+        "filePath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/vp-front-elev.png",
+        "width": 704,
+        "height": 562,
+        "contentCoverage": 0.7933668311226141,
+        "contentBoundingBox": {
+          "minX": 0,
+          "minY": 0,
+          "maxX": 703,
+          "maxY": 561,
+          "width": 704,
+          "height": 562
+        },
+        "meanLuma": 229.87535552335714,
+        "lumaStdDev": 19.950286164830118,
+        "edgeDensity": 0.011227960357712247,
+        "uniqueColorBucketsSampled": 77,
+        "blankLike": false
+      },
+      "comparison": null,
+      "status": "needs_review",
+      "blockers": [],
+      "notes": ["No target image supplied; automated gate covers screenshot quality only."]
+    },
+    {
+      "viewId": "vp-roof-court",
+      "viewKind": "3d",
+      "purpose": "High axonometric proving the roof court reads as an occupied void.",
+      "screenshotPath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/vp-roof-court.png",
+      "usedViewpointId": "vp-roof-court",
+      "syntheticViewpoint": false,
+      "fallbackFit": false,
+      "analysis": {
+        "filePath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/vp-roof-court.png",
+        "width": 704,
+        "height": 562,
+        "contentCoverage": 0.7250510554836622,
+        "contentBoundingBox": {
+          "minX": 0,
+          "minY": 0,
+          "maxX": 703,
+          "maxY": 561,
+          "width": 704,
+          "height": 562
+        },
+        "meanLuma": 229.0603975608066,
+        "lumaStdDev": 18.259901993261003,
+        "edgeDensity": 0.010534794584690307,
+        "uniqueColorBucketsSampled": 81,
+        "blankLike": false
+      },
+      "comparison": null,
+      "status": "needs_review",
+      "blockers": [],
+      "notes": ["No target image supplied; automated gate covers screenshot quality only."]
+    },
+    {
+      "viewId": "vp-rear-axo",
+      "viewKind": "3d",
+      "purpose": "Rear/right view checking roof-court depth and white return faces.",
+      "screenshotPath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/vp-rear-axo.png",
+      "usedViewpointId": "vp-rear-axo",
+      "syntheticViewpoint": false,
+      "fallbackFit": false,
+      "analysis": {
+        "filePath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/vp-rear-axo.png",
+        "width": 704,
+        "height": 562,
+        "contentCoverage": 0.8914767672274345,
+        "contentBoundingBox": {
+          "minX": 0,
+          "minY": 0,
+          "maxX": 703,
+          "maxY": 561,
+          "width": 704,
+          "height": 562
+        },
+        "meanLuma": 227.25270418483433,
+        "lumaStdDev": 18.566931598336613,
+        "edgeDensity": 0.00910746235909504,
+        "uniqueColorBucketsSampled": 74,
+        "blankLike": false
+      },
+      "comparison": null,
+      "status": "needs_review",
+      "blockers": [],
+      "notes": ["No target image supplied; automated gate covers screenshot quality only."]
+    },
+    {
+      "viewId": "hf-pv-ground",
+      "viewKind": "plan",
+      "purpose": "Ground-floor plan topology and room/stair/access check.",
+      "screenshotPath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/hf-pv-ground.png",
+      "usedViewpointId": "hf-pv-ground",
+      "syntheticViewpoint": true,
+      "fallbackFit": false,
+      "analysis": {
+        "filePath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/hf-pv-ground.png",
+        "width": 704,
+        "height": 562,
+        "contentCoverage": 0.8864015488515044,
+        "contentBoundingBox": {
+          "minX": 0,
+          "minY": 0,
+          "maxX": 703,
+          "maxY": 561,
+          "width": 704,
+          "height": 562
+        },
+        "meanLuma": 233.13968231206687,
+        "lumaStdDev": 18.344372381712386,
+        "edgeDensity": 0.011324803013652433,
+        "uniqueColorBucketsSampled": 72,
+        "blankLike": false
+      },
+      "comparison": null,
+      "status": "needs_review",
+      "blockers": [],
+      "notes": ["No target image supplied; automated gate covers screenshot quality only."]
+    },
+    {
+      "viewId": "hf-pv-upper",
+      "viewKind": "plan",
+      "purpose": "Upper-floor plan topology, roof-court access, loggia, and stair opening check.",
+      "screenshotPath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/hf-pv-upper.png",
+      "usedViewpointId": "hf-pv-upper",
+      "syntheticViewpoint": true,
+      "fallbackFit": false,
+      "analysis": {
+        "filePath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/hf-pv-upper.png",
+        "width": 704,
+        "height": 562,
+        "contentCoverage": 0.8863206688773859,
+        "contentBoundingBox": {
+          "minX": 0,
+          "minY": 0,
+          "maxX": 703,
+          "maxY": 561,
+          "width": 704,
+          "height": 562
+        },
+        "meanLuma": 233.15215443324988,
+        "lumaStdDev": 18.337904406638234,
+        "edgeDensity": 0.011353784362096072,
+        "uniqueColorBucketsSampled": 75,
+        "blankLike": false
+      },
+      "comparison": null,
+      "status": "needs_review",
+      "blockers": [],
+      "notes": ["No target image supplied; automated gate covers screenshot quality only."]
+    },
+    {
+      "viewId": "hf-sec-loggia",
+      "viewKind": "diagnostic",
+      "purpose": "Section/diagnostic view through the front loggia and wrapper frame.",
+      "screenshotPath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/hf-sec-loggia.png",
+      "usedViewpointId": "hf-sec-loggia",
+      "syntheticViewpoint": true,
+      "fallbackFit": false,
+      "analysis": {
+        "filePath": "seed-artifacts/target-house-3/evidence/live-run-current/screenshots/hf-sec-loggia.png",
+        "width": 704,
+        "height": 562,
+        "contentCoverage": 0.8668892550954383,
+        "contentBoundingBox": {
+          "minX": 0,
+          "minY": 0,
+          "maxX": 703,
+          "maxY": 561,
+          "width": 704,
+          "height": 562
+        },
+        "meanLuma": 234.02250006498204,
+        "lumaStdDev": 19.548536872259234,
+        "edgeDensity": 0.010283245523056327,
+        "uniqueColorBucketsSampled": 83,
+        "blankLike": false
+      },
+      "comparison": null,
+      "status": "needs_review",
+      "blockers": [],
+      "notes": ["No target image supplied; automated gate covers screenshot quality only."]
+    }
+  ]
+}

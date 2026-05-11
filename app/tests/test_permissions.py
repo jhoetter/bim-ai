@@ -14,12 +14,13 @@ from typing import Any
 import pytest
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.testclient import TestClient
+from pydantic import BaseModel
 
 from bim_ai.cmd.apply_bundle import apply_bundle as _apply_bundle
 from bim_ai.cmd.types import CommandBundle
 from bim_ai.document import Document
 from bim_ai.engine import ensure_internal_origin
-from bim_ai.permissions import authorize_command
+from bim_ai.permissions import RoleAssignment, authorize_command, comment_anchor_scope
 
 MODEL_ID = str(uuid.uuid4())
 
@@ -62,6 +63,36 @@ def test_admin_wildcard_covers_unknown_verb() -> None:
 
 def test_public_link_viewer_cannot_create_markup() -> None:
     assert authorize_command("public-link-viewer", "createMarkup") is False
+
+
+def test_role_assignment_accepts_discipline_restriction_alias() -> None:
+    assignment = RoleAssignment.model_validate(
+        {
+            "id": "role-1",
+            "modelId": MODEL_ID,
+            "subjectKind": "user",
+            "subjectId": "struct-reviewer",
+            "role": "viewer",
+            "disciplineRestriction": "struct",
+            "grantedBy": "admin",
+            "grantedAt": 1,
+        }
+    )
+    assert assignment.discipline_restriction == "struct"
+
+
+class _ScopedElement(BaseModel):
+    kind: str
+    discipline: str | None = None
+
+
+def test_discipline_restricted_comment_scope_warns_cross_discipline_anchor() -> None:
+    arch_wall = _ScopedElement(kind="wall", discipline="arch")
+    struct_column = _ScopedElement(kind="column", discipline=None)
+
+    assert comment_anchor_scope("struct", struct_column) == "in_scope"
+    assert comment_anchor_scope("struct", arch_wall) == "cross_discipline_warning"
+    assert comment_anchor_scope(None, arch_wall) == "in_scope"
 
 
 # ---------------------------------------------------------------------------
@@ -175,9 +206,16 @@ def _build_test_app() -> FastAPI:
     @app.post("/api/models/{model_id}/public-link")
     async def create_public_link(model_id: str, body: dict[str, Any]) -> Any:
         import secrets as _secrets
+
         token_val = _secrets.token_urlsafe(32)
         expires_at = body.get("expiresAt")
-        _seed_role(model_id, token_val, "public-link-viewer", subject_kind="public-link", expires_at=expires_at)
+        _seed_role(
+            model_id,
+            token_val,
+            "public-link-viewer",
+            subject_kind="public-link",
+            expires_at=expires_at,
+        )
         return {"token": token_val, "url": f"/api/models/{model_id}/snapshot?token={token_val}"}
 
     return app

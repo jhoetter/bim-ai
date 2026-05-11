@@ -65,6 +65,22 @@ describe('CommentsPanel', () => {
     expect(getByTestId('comments-list').textContent).toContain('No comments yet.');
   });
 
+  it('surfaces a discipline scope note without blocking comment posting', () => {
+    const { getByTestId } = renderWithI18n(
+      <CommentsPanel
+        comments={[]}
+        userDisplay="Alice"
+        outsideScopeNote="This element is outside your discipline scope."
+        onPost={noopPost}
+        onResolve={noopResolve}
+        onClose={noopClose}
+      />,
+    );
+    expect(getByTestId('comment-discipline-scope-note').textContent).toContain(
+      'outside your discipline scope',
+    );
+  });
+
   it('renders comment entries with userDisplay + body', () => {
     const { getByText } = renderWithI18n(
       <CommentsPanel

@@ -51,6 +51,22 @@ class WallArcCurve(BaseModel):
         return self
 
 
+class WallBezierCurve(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["bezier"] = "bezier"
+    control_points: list[Vec2Mm] = Field(alias="controlPoints", min_length=4, max_length=4)
+
+    @model_validator(mode="after")
+    def _validate_bezier(self) -> WallBezierCurve:
+        for pt in self.control_points:
+            if not math.isfinite(pt.x_mm) or not math.isfinite(pt.y_mm):
+                raise ValueError("wallCurve.controlPoints values must be finite")
+        return self
+
+
+WallCurve = Annotated[WallArcCurve | WallBezierCurve, Field(discriminator="kind")]
+
+
 class CameraMm(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     position: Vec3Mm
@@ -367,7 +383,7 @@ class WallElem(BaseModel):
     level_id: str = Field(alias="levelId")
     start: Vec2Mm
     end: Vec2Mm
-    wall_curve: WallArcCurve | None = Field(default=None, alias="wallCurve")
+    wall_curve: WallCurve | None = Field(default=None, alias="wallCurve")
     thickness_mm: float = Field(alias="thicknessMm", default=200)
     height_mm: float = Field(alias="heightMm", default=2800)
     wall_type_id: str | None = Field(default=None, alias="wallTypeId")
@@ -611,6 +627,10 @@ class PropertyLineElem(BaseModel):
     end_mm: Vec2Mm = Field(alias="endMm")
     setback_mm: float | None = Field(default=None, alias="setbackMm", ge=0)
     classification: PropertyLineClassification | None = None
+    authoring_mode: Literal["draw", "bearing_table"] = Field(default="draw", alias="authoringMode")
+    boundary_mm: list[Vec2Mm] = Field(default_factory=list, alias="boundaryMm")
+    bearing_table: dict[str, Any] | None = Field(default=None, alias="bearingTable")
+    closure_error_mm: float | None = Field(default=None, alias="closureErrorMm", ge=0)
     pinned: bool = Field(default=False)
 
 
@@ -624,6 +644,9 @@ class DimensionElem(BaseModel):
     b_mm: Vec2Mm = Field(alias="bMm")
     offset_mm: Vec2Mm = Field(alias="offsetMm")
     text_offset_mm: Vec2Mm | None = Field(default=None, alias="textOffsetMm")
+    anchor_a: dict[str, Any] | None = Field(default=None, alias="anchorA")
+    anchor_b: dict[str, Any] | None = Field(default=None, alias="anchorB")
+    state: Literal["linked", "partial", "unlinked"] = "unlinked"
     ref_element_id_a: str | None = Field(default=None, alias="refElementIdA")
     ref_element_id_b: str | None = Field(default=None, alias="refElementIdB")
     tag_definition_id: str | None = Field(default=None, alias="tagDefinitionId")

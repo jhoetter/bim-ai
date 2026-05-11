@@ -181,6 +181,9 @@ export function tabFromElement(el: Element): Omit<ViewTab, 'id'> | null {
   if (el.kind === 'schedule') {
     return { kind: 'schedule', targetId: el.id, label: `Schedule · ${el.name}` };
   }
+  if (el.kind === 'view_concept_board') {
+    return { kind: 'concept', targetId: el.id, label: `Concept · ${el.name}` };
+  }
   return null;
 }
 

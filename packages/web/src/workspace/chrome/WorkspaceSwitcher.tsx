@@ -132,46 +132,6 @@ export function WorkspaceSwitcher({
               }}
             />
           ))}
-          <li
-            aria-hidden="true"
-            style={{
-              height: 1,
-              backgroundColor: 'var(--color-border)',
-              margin: '2px 0',
-              listStyle: 'none',
-            }}
-          />
-          <li
-            role="option"
-            aria-selected={false}
-            aria-disabled={true}
-            data-testid="workspace-option-concept"
-            title="Coming in T6"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '6px 10px',
-              fontSize: 'var(--text-sm)',
-              lineHeight: 'var(--text-sm-line)',
-              color: 'var(--color-muted-foreground)',
-              cursor: 'default',
-              listStyle: 'none',
-            }}
-          >
-            <span
-              aria-hidden="true"
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 'var(--radius-pill)',
-                backgroundColor: 'var(--disc-arch-soft)',
-                flexShrink: 0,
-                display: 'inline-block',
-              }}
-            />
-            <span>Concept</span>
-          </li>
         </ul>
       )}
     </div>

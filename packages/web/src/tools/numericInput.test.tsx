@@ -10,6 +10,7 @@
 
 import { describe, expect, it } from 'vitest';
 
+import { parseDimensionInput } from '@bim-ai/core';
 import { initialNumericInputState, reduceNumericInput } from './toolGrammar';
 
 interface Vec {
@@ -43,6 +44,16 @@ export function resolveNumericEndpoint(
 }
 
 describe('EDT-06 — numeric input while drawing a wall', () => {
+  it('EDT-V3-12 parses mm, metres, and feet/inches into millimetres', () => {
+    expect(parseDimensionInput('5400')).toEqual({ ok: true, mm: 5400, sourceUnit: 'mm' });
+    expect(parseDimensionInput('5.4')).toEqual({ ok: true, mm: 5400, sourceUnit: 'm' });
+    expect(parseDimensionInput('5.4 m')).toEqual({ ok: true, mm: 5400, sourceUnit: 'm' });
+    expect(parseDimensionInput('5400 mm')).toEqual({ ok: true, mm: 5400, sourceUnit: 'mm' });
+    const feet = parseDimensionInput(`5'4"`);
+    expect(feet.ok && feet.mm).toBeCloseTo(1625.6, 1);
+    expect(parseDimensionInput('not-a-length')).toEqual({ ok: false, reason: 'invalid' });
+  });
+
   it('typing 5000 + Enter commits a 5000mm-long segment in the cursor direction', () => {
     let s = initialNumericInputState();
     s = reduceNumericInput(s, { kind: 'start', firstDigit: '5' });

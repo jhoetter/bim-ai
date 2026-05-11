@@ -52,6 +52,7 @@ import {
   CSG_ENABLED,
   elevationMForLevel,
   makeFloorSlabMesh,
+  makeRoofJoinPreviewMesh,
   makeRoofMassMesh,
   makeStairVolumeMesh,
   addCladdingBoards,
@@ -438,6 +439,7 @@ export function Viewport({
   const viewerProjection = useBimStore((s) => s.viewerProjection);
   const sectionBoxActive = useBimStore((s) => s.viewerSectionBoxActive);
   const walkActive = useBimStore((s) => s.viewerWalkModeActive);
+  const roofJoinPreview = useBimStore((s) => s.roofJoinPreview);
   const viewerCameraAction = useBimStore((s) => s.viewerCameraAction);
   const lensMode = useBimStore((s) => s.lensMode);
   const orthoMode = viewerProjection === 'orthographic';
@@ -1104,6 +1106,10 @@ export function Viewport({
       });
       // Convert raycast hit point from scene metres back to semantic mm.
       const hitPointScene = first?.point ?? new THREE.Vector3(0, 0, 0);
+      const materialElement =
+        el.materialKey && elementsByIdRef.current[el.materialKey]?.kind === 'material'
+          ? (elementsByIdRef.current[el.materialKey] as Extract<Element, { kind: 'material' }>)
+          : null;
       setWallFaceRadialMenu({
         wallId: el.id,
         hitPoint: {
@@ -1114,6 +1120,12 @@ export function Viewport({
         wallStartMm: el.start,
         wallEndMm: el.end,
         screen: { x: me.clientX + 240, y: me.clientY },
+        ...(materialElement
+          ? {
+              materialId: materialElement.id,
+              currentUvRotationDeg: materialElement.uvRotationDeg ?? 0,
+            }
+          : {}),
       });
     };
     renderer.domElement.addEventListener('contextmenu', onContextMenu);
@@ -1475,6 +1487,21 @@ export function Viewport({
       if (e?.kind === 'dormer')
         extraDirty.add((e as Extract<Element, { kind: 'dormer' }>).hostRoofId);
     }
+    const priorRoofJoinPreview = cache.get('roof-join-preview');
+    if (priorRoofJoinPreview) {
+      root.remove(priorRoofJoinPreview);
+      priorRoofJoinPreview.traverse((node) => {
+        const m = node as THREE.Mesh;
+        if (!m.isMesh) return;
+        m.geometry?.dispose();
+        if (Array.isArray(m.material)) {
+          m.material.forEach((mat: THREE.Material) => mat.dispose());
+        } else {
+          (m.material as THREE.Material)?.dispose();
+        }
+      });
+      cache.delete('roof-join-preview');
+    }
     for (const id of extraDirty) {
       if (!addedIds.has(id) && !removedIds.has(id)) changedIds.add(id);
     }
@@ -1639,6 +1666,9 @@ export function Viewport({
         case 'roof':
           obj = makeRoofMassMesh(e, curr, paint);
           break;
+        case 'roof_join':
+          obj = makeRoofJoinPreviewMesh(e, curr, false);
+          break;
         case 'railing':
           obj = makeRailingMesh(e, curr, paint);
           break;
@@ -1749,6 +1779,21 @@ export function Viewport({
       root.add(obj);
     }
 
+    if (roofJoinPreview) {
+      const previewObj = makeRoofJoinPreviewMesh(
+        {
+          id: 'roof-join-preview',
+          primaryRoofId: roofJoinPreview.primaryRoofId,
+          secondaryRoofId: roofJoinPreview.secondaryRoofId,
+        },
+        curr,
+        true,
+      );
+      previewObj.userData.bimTransient = true;
+      cache.set('roof-join-preview', previewObj);
+      root.add(previewObj);
+    }
+
     // Update shadow camera frustum and outline-pass selection after any geometry change.
     if (toRebuild.size > 0 || toRemove.size > 0) {
       const sun = sunRef.current;
@@ -1825,7 +1870,15 @@ export function Viewport({
     }
 
     prevElementsByIdRef.current = curr;
-  }, [elementsById, viewerCategoryHidden, viewerPhaseFilter, lensMode, theme, text3dRebuildTick]);
+  }, [
+    elementsById,
+    roofJoinPreview,
+    viewerCategoryHidden,
+    viewerPhaseFilter,
+    lensMode,
+    theme,
+    text3dRebuildTick,
+  ]);
 
   // ── F-011: visual style (shaded / wireframe / consistent-colors / hidden-line / realistic / ray-trace) ──
   useEffect(() => {

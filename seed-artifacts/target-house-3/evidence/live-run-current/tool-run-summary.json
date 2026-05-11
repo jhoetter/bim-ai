@@ -1,0 +1,22 @@
+{
+  "advisorRuleDigest": "baf7a37460f03aeb91d8b48de36b74099b3ea8c5f7cdec8675b27a5b41b7bc64",
+  "advisorRuleFiles": [
+    "app/bim_ai/constructability_advisories.py",
+    "app/bim_ai/constructability_report.py",
+    "app/bim_ai/constraints_metadata.py",
+    "packages/web/src/advisor/advisorViolationContext.ts",
+    "packages/web/src/advisor/perspectiveFilter.ts"
+  ],
+  "bundlePath": "seed-artifacts/target-house-3/bundle.json",
+  "bundleSha256": "e816247c3e166022ff9ef241e8c63b84b1b609a476802e2614780521b5aa0b68",
+  "capabilitiesPath": "spec/sketch-to-bim-capability-matrix.json",
+  "capabilitiesSha256": "364350c8005efedcdb30737441f79b049d3a95fc8748e5569b6cf4caf10cc9fa",
+  "generatedAtEpochMs": 1778504668183,
+  "gitHead": "5245cb361dbc6892b389f49f417e31cd5672c8c8",
+  "irPath": "seed-artifacts/target-house-3/evidence/sketch-ir.json",
+  "irSha256": "c3247cf72a8470ed51412e88d1a3229e6762e754c54ff1ed4b5308843c4f197f",
+  "mode": "project_initiation_bim",
+  "modelId": "9bb9a145-d9ce-5a2f-a748-bb5be3301b30",
+  "schemaVersion": "sketch-to-bim.tool-run.v1",
+  "seed": "target-house-3"
+}

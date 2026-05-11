@@ -128,10 +128,14 @@ export const COLLABORATION_STORE_KEYS = [
 
 export const WORKSPACE_UI_STORE_KEYS = [
   'workspaceLayoutPreset',
+  'activeWorkspaceId',
   'perspectiveId',
+  'roofJoinPreview',
   'thinLinesEnabled',
   'setWorkspaceLayoutPreset',
+  'setActiveWorkspaceId',
   'setPerspectiveId',
+  'setRoofJoinPreview',
   'toggleThinLines',
 ] as const satisfies readonly StoreKey[];
 

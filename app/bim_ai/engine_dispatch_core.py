@@ -284,6 +284,35 @@ def try_apply_core_command(doc, cmd, *, source_provider=None) -> bool:
                 raise ValueError(f"duplicate element id '{did}'")
             if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
                 raise ValueError("createDimension.levelId must reference an existing Level")
+            anchor_a = cmd.anchor_a
+            anchor_b = cmd.anchor_b
+            if anchor_a is None and cmd.ref_element_id_a:
+                anchor_a = {
+                    "kind": "feature",
+                    "feature": {"elementId": cmd.ref_element_id_a, "anchor": "start"},
+                    "fallbackPositionMm": cmd.a_mm.model_dump(by_alias=True),
+                }
+            if anchor_b is None and cmd.ref_element_id_b:
+                anchor_b = {
+                    "kind": "feature",
+                    "feature": {"elementId": cmd.ref_element_id_b, "anchor": "end"},
+                    "fallbackPositionMm": cmd.b_mm.model_dump(by_alias=True),
+                }
+            if cmd.state is not None:
+                state = cmd.state
+            else:
+                linked_count = sum(
+                    1
+                    for anchor in (anchor_a, anchor_b)
+                    if isinstance(anchor, dict) and anchor.get("kind") == "feature"
+                )
+                state = (
+                    "linked"
+                    if linked_count == 2
+                    else "partial"
+                    if linked_count == 1
+                    else "unlinked"
+                )
             els[did] = DimensionElem(
                 kind="dimension",
                 id=did,
@@ -292,6 +321,9 @@ def try_apply_core_command(doc, cmd, *, source_provider=None) -> bool:
                 a_mm=cmd.a_mm,
                 b_mm=cmd.b_mm,
                 offset_mm=cmd.offset_mm,
+                anchor_a=anchor_a,
+                anchor_b=anchor_b,
+                state=state,
                 ref_element_id_a=cmd.ref_element_id_a,
                 ref_element_id_b=cmd.ref_element_id_b,
                 tag_definition_id=cmd.tag_definition_id,

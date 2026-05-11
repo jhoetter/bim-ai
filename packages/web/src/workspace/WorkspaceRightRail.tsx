@@ -237,6 +237,7 @@ export function WorkspaceRightRail({
   const buildingPreset = useBimStore((s) => s.buildingPreset);
   const setBuildingPreset = useBimStore((s) => s.setBuildingPreset);
   const perspectiveId = useBimStore((s) => s.perspectiveId);
+  const activeWorkspaceId = useBimStore((s) => s.activeWorkspaceId);
   const activityEvents = useBimStore((s) => s.activityEvents);
   const setPlanTool = useBimStore((s) => s.setPlanTool);
   const planProjectionPrimitives = useBimStore((s) => s.planProjectionPrimitives);
@@ -491,6 +492,7 @@ export function WorkspaceRightRail({
                   element={el}
                   context={inspectorPropertiesContext}
                 />
+                <InspectorDisciplineScope element={el} activeWorkspaceId={activeWorkspaceId} />
                 <InspectorContextActions
                   element={el}
                   firstSheetId={firstSheet}
@@ -1522,6 +1524,43 @@ function InspectorSelectionContextBanner({
         Editing {(element as { name?: string }).name ?? element.id} updates this type definition;
         placed instances keep their own instance parameters.
       </p>
+    </div>
+  );
+}
+
+function InspectorDisciplineScope({
+  element,
+  activeWorkspaceId,
+}: {
+  element: Element;
+  activeWorkspaceId: 'arch' | 'struct' | 'mep' | 'concept';
+}): JSX.Element | null {
+  const target =
+    activeWorkspaceId === 'struct'
+      ? 'structure'
+      : activeWorkspaceId === 'mep'
+        ? 'mep'
+        : activeWorkspaceId === 'arch'
+          ? 'architecture'
+          : null;
+  const elementDiscipline =
+    'discipline' in element && typeof element.discipline === 'string' ? element.discipline : null;
+  if (!target || !elementDiscipline) return null;
+  const inScope = elementDiscipline === target;
+  return (
+    <div
+      className="mb-2 rounded border border-border bg-surface-strong p-2 text-[11px]"
+      data-testid="inspector-discipline-scope"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-medium text-foreground">Discipline</span>
+        <span className={inScope ? 'text-foreground' : 'text-muted'}>{elementDiscipline}</span>
+      </div>
+      {!inScope ? (
+        <div className="mt-1 leading-snug text-muted">
+          Outside the active workspace scope; edits remain available to admins.
+        </div>
+      ) : null}
     </div>
   );
 }

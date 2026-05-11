@@ -244,13 +244,29 @@ describe('ConceptModeShell — CON-V3-01 / MDB-V3-01', () => {
         status: 'draft',
         schemaVersion: 'con-v3.0',
       },
+      board: {
+        kind: 'view_concept_board',
+        id: 'board',
+        name: 'Moodboard',
+        attachments: [
+          {
+            id: 'att-kitchen-wall',
+            kind: 'model_link',
+            rectMm: { xMm: 0, yMm: 0, widthMm: 240, heightMm: 120 },
+            payload: { targetElementId: 'wall-kitchen' },
+            commentThreadIds: ['thread-1'],
+          },
+        ],
+      },
     } satisfies Record<string, Element>;
 
     const { getByTestId, getByText } = render(<ConceptModeShell elementsById={conceptElements} />);
     expect(getByTestId('concept-mode-shell')).toBeTruthy();
     expect(getByTestId('concept-board-underlay-count').textContent).toBe('1 underlays');
     expect(getByTestId('concept-board-seed-count').textContent).toBe('1 seeds');
+    expect(getByTestId('concept-board-attachment-count').textContent).toBe('1 attachments');
     expect(getByText('/underlays/sketch.png')).toBeTruthy();
+    expect(getByText('att-kitchen-wall')).toBeTruthy();
     expect(getByText('draft')).toBeTruthy();
   });
 });

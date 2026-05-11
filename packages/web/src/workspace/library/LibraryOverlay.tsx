@@ -17,14 +17,35 @@ const CATEGORIES: { key: AssetCategory | 'all'; label: string }[] = [
   { key: 'profile', label: 'Profiles' },
 ];
 
-type DisciplineFilter = 'all' | 'arch' | 'struct' | 'mep';
+type DisciplineFilter = 'arch' | 'struct' | 'mep';
 
-const DISCIPLINE_FILTERS: { key: DisciplineFilter; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'arch', label: 'Arch' },
-  { key: 'struct', label: 'Struct' },
-  { key: 'mep', label: 'MEP' },
-];
+const DISCIPLINE_FILTERS: { key: DisciplineFilter; label: string; token: string; soft: string }[] =
+  [
+    { key: 'arch', label: 'Arch', token: 'var(--disc-arch)', soft: 'var(--disc-arch-soft)' },
+    {
+      key: 'struct',
+      label: 'Struct',
+      token: 'var(--disc-struct)',
+      soft: 'var(--disc-struct-soft)',
+    },
+    { key: 'mep', label: 'MEP', token: 'var(--disc-mep)', soft: 'var(--disc-mep-soft)' },
+  ];
+
+function disciplineSetFromLens(
+  activeDiscipline?: DisciplineFilter | 'all' | null,
+): Set<DisciplineFilter> {
+  if (!activeDiscipline || activeDiscipline === 'all') return new Set();
+  return new Set([activeDiscipline]);
+}
+
+function entryMatchesDiscipline(
+  entry: AssetLibraryEntry,
+  activeDisciplines: Set<DisciplineFilter>,
+): boolean {
+  if (activeDisciplines.size === 0) return true;
+  const tags = entry.disciplineTags ?? [];
+  return tags.some((tag) => activeDisciplines.has(tag as DisciplineFilter));
+}
 
 /** Token-based client-side fuzzy filter (mirrors the Python backend logic). */
 function tokenize(text: string): string[] {
@@ -50,6 +71,7 @@ type LibraryOverlayProps = {
   isOpen: boolean;
   onClose: () => void;
   entries: AssetLibraryEntry[];
+  activeDiscipline?: DisciplineFilter | 'all' | null;
   /** Called when the user confirms placement (drag or Place button). */
   onPlace: (entry: AssetLibraryEntry, paramValues: Record<string, unknown>) => void;
 };
@@ -58,22 +80,26 @@ export function LibraryOverlay({
   isOpen,
   onClose,
   entries,
+  activeDiscipline,
   onPlace,
 }: LibraryOverlayProps): ReactElement {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<AssetCategory | 'all'>('all');
-  const [discipline, setDiscipline] = useState<DisciplineFilter>('all');
+  const [disciplines, setDisciplines] = useState<Set<DisciplineFilter>>(() =>
+    disciplineSetFromLens(activeDiscipline),
+  );
   const [selected, setSelected] = useState<AssetLibraryEntry | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Focus search field when opened (keyboard flow: Alt+2 → type query → Enter → click)
   useEffect(() => {
     if (isOpen) {
+      setDisciplines(disciplineSetFromLens(activeDiscipline));
       setTimeout(() => searchRef.current?.focus(), 50);
     } else {
       setSelected(null);
     }
-  }, [isOpen]);
+  }, [isOpen, activeDiscipline]);
 
   // Esc closes the drawer without blocking canvas editing
   useEffect(() => {
@@ -93,10 +119,10 @@ export function LibraryOverlay({
   const filtered = useMemo(() => {
     return entries.filter((e) => {
       if (category !== 'all' && e.category !== category) return false;
-      if (discipline !== 'all' && !(e.disciplineTags ?? []).includes(discipline)) return false;
+      if (!entryMatchesDiscipline(e, disciplines)) return false;
       return matchesQuery(e, queryTokens);
     });
-  }, [entries, category, discipline, queryTokens]);
+  }, [entries, category, disciplines, queryTokens]);
 
   const handlePlace = useCallback(
     (entry: AssetLibraryEntry, paramValues: Record<string, unknown>) => {
@@ -202,28 +228,56 @@ export function LibraryOverlay({
           >
             Discipline
           </div>
-          {DISCIPLINE_FILTERS.map(({ key, label }) => (
+          {disciplines.size > 0 ? (
             <button
-              key={key}
               type="button"
-              data-testid={`discipline-filter-${key}`}
-              onClick={() => setDiscipline(key)}
+              data-testid="discipline-filter-clear"
+              onClick={() => setDisciplines(new Set())}
               style={{
                 width: '100%',
                 textAlign: 'left',
                 padding: '5px 12px',
                 fontSize: 'var(--text-xs)',
-                color: discipline === key ? 'var(--color-accent)' : 'var(--color-foreground)',
-                background: discipline === key ? 'var(--color-accent-soft)' : 'transparent',
+                color: 'var(--color-muted-foreground)',
+                background: 'transparent',
                 border: 'none',
                 cursor: 'pointer',
-                borderLeft:
-                  discipline === key ? '2px solid var(--color-accent)' : '2px solid transparent',
               }}
             >
-              {label}
+              Clear
             </button>
-          ))}
+          ) : null}
+          {DISCIPLINE_FILTERS.map(({ key, label, token, soft }) => {
+            const active = disciplines.has(key);
+            return (
+              <button
+                key={key}
+                type="button"
+                data-testid={`discipline-filter-${key}`}
+                onClick={() =>
+                  setDisciplines((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(key)) next.delete(key);
+                    else next.add(key);
+                    return next;
+                  })
+                }
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '5px 12px',
+                  fontSize: 'var(--text-xs)',
+                  color: active ? token : 'var(--color-foreground)',
+                  background: active ? soft : 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  borderLeft: active ? `2px solid ${token}` : '2px solid transparent',
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
 
           {/* Libraries heading + Built-in entry (AST-V3-02 subscription backend is wave-7) */}
           <div

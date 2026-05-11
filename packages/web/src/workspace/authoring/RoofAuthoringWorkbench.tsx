@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 
 import type { Element } from '@bim-ai/core';
 
+import { useBimStore } from '../../state/store';
 import type { PlanProjectionPrimitivesV1Wire } from '../../plan/planProjectionWire';
 import { roofInspectorWireDiagnosticsLines, roofPlanWireRowForElement } from '../readouts';
 
@@ -10,19 +11,25 @@ type RoofEl = Extract<Element, { kind: 'roof' }>;
 type Props = {
   selected: Element | undefined;
   elementsById: Record<string, Element>;
+  selectedIds?: string[];
   wirePrimitives: PlanProjectionPrimitivesV1Wire | null;
   revision: number;
   onPersistProperty: (key: string, value: string) => void;
+  onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
 };
 
 export function RoofAuthoringWorkbench({
   selected,
   elementsById,
+  selectedIds = [],
   wirePrimitives,
   revision,
   onPersistProperty,
+  onUpsertSemantic,
 }: Props) {
   const roof = selected?.kind === 'roof' ? (selected as RoofEl) : undefined;
+  const roofJoinPreview = useBimStore((s) => s.roofJoinPreview);
+  const setRoofJoinPreview = useBimStore((s) => s.setRoofJoinPreview);
 
   const roofTypes = useMemo(() => {
     const rows = Object.values(elementsById).filter((e) => e.kind === 'roof_type');
@@ -36,6 +43,10 @@ export function RoofAuthoringWorkbench({
   );
 
   const diagLines = useMemo(() => roofInspectorWireDiagnosticsLines(wireRow), [wireRow]);
+  const selectedRoofIds = useMemo(() => {
+    const ids = [selected?.id, ...selectedIds].filter(Boolean) as string[];
+    return Array.from(new Set(ids)).filter((id) => elementsById[id]?.kind === 'roof');
+  }, [elementsById, selected?.id, selectedIds]);
 
   if (!roof) return null;
 
@@ -80,6 +91,48 @@ export function RoofAuthoringWorkbench({
           <option value="gable_pitched_rectangle">gable_pitched_rectangle</option>
         </select>
       </label>
+      {selectedRoofIds.length >= 2 ? (
+        <div className="rounded border border-border bg-surface-strong p-2 text-[10px]">
+          <div className="mb-1 font-medium text-foreground">Roof join</div>
+          <div className="mb-2 text-muted">
+            {selectedRoofIds[0]} + {selectedRoofIds[1]}
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="rounded border border-border bg-background px-2 py-1 text-[10px] text-foreground"
+              data-testid="roof-join-preview"
+              onClick={() =>
+                setRoofJoinPreview({
+                  primaryRoofId: selectedRoofIds[0]!,
+                  secondaryRoofId: selectedRoofIds[1]!,
+                  seamMode: 'clip_secondary_into_primary',
+                })
+              }
+            >
+              Preview
+            </button>
+            <button
+              type="button"
+              className="rounded bg-accent px-2 py-1 text-[10px] text-accent-foreground"
+              data-testid="roof-join-commit"
+              onClick={() => {
+                const primaryRoofId = selectedRoofIds[0]!;
+                const secondaryRoofId = selectedRoofIds[1]!;
+                onUpsertSemantic?.({
+                  type: 'createRoofJoin',
+                  primaryRoofId,
+                  secondaryRoofId,
+                  seamMode: roofJoinPreview?.seamMode ?? 'clip_secondary_into_primary',
+                });
+                setRoofJoinPreview(null);
+              }}
+            >
+              Join Roofs
+            </button>
+          </div>
+        </div>
+      ) : null}
       <div className="space-y-0.5 text-[10px] text-muted">
         <div className="font-medium text-foreground">Plan wire diagnostics</div>
         <ul className="list-inside list-disc font-mono leading-snug">

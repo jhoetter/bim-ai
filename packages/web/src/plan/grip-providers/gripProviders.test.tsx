@@ -13,6 +13,7 @@ import {
   placedAssetGripProvider,
   referencePlaneGripProvider,
   sectionCutGripProvider,
+  sketchElementGripProvider,
   windowGripProvider,
 } from './index';
 import { dimensionTextOffsetResetCommand } from './dimensionGripProvider';
@@ -561,6 +562,67 @@ describe('EDT-01 — referencePlaneGripProvider', () => {
   });
 });
 
+describe('EDT-V3-13 — sketchElementGripProvider', () => {
+  it('emits sage sketch grips for plan-region vertices and edge midpoints', () => {
+    const region: Extract<Element, { kind: 'plan_region' }> = {
+      kind: 'plan_region',
+      id: 'pr-1',
+      name: 'Plan region',
+      levelId: 'L1',
+      outlineMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 1000, yMm: 0 },
+        { xMm: 1000, yMm: 1000 },
+        { xMm: 0, yMm: 1000 },
+      ],
+      cutPlaneOffsetMm: 1200,
+    };
+    const grips = sketchElementGripProvider.grips(region, {});
+    expect(grips).toHaveLength(8);
+    expect(grips[0]!.id).toBe('pr-1:sketch-vertex:0');
+    expect(grips[1]!.positionMm).toEqual({ xMm: 500, yMm: 0 });
+    expect(grips[0]!.onCommit({ xMm: 50, yMm: 25 })).toMatchObject({
+      type: 'updatePlanRegion',
+      id: 'pr-1',
+    });
+  });
+
+  it('emits boundary and tread grips for by-sketch stairs', () => {
+    const stair: Extract<Element, { kind: 'stair' }> = {
+      kind: 'stair',
+      id: 'stair-1',
+      name: 'Sketch stair',
+      baseLevelId: 'L1',
+      topLevelId: 'L2',
+      shape: 'straight',
+      widthMm: 1000,
+      runStartMm: { xMm: 0, yMm: 0 },
+      runEndMm: { xMm: 3000, yMm: 0 },
+      riserMm: 175,
+      treadMm: 280,
+      authoringMode: 'by_sketch',
+      boundaryMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 3000, yMm: 0 },
+        { xMm: 3000, yMm: 1000 },
+        { xMm: 0, yMm: 1000 },
+      ],
+      treadLines: [
+        { fromMm: { xMm: 1000, yMm: 0 }, toMm: { xMm: 1000, yMm: 1000 } },
+        { fromMm: { xMm: 2000, yMm: 0 }, toMm: { xMm: 2000, yMm: 1000 } },
+      ],
+      totalRiseMm: 2800,
+    };
+    const grips = sketchElementGripProvider.grips(stair, {});
+    expect(grips.map((g) => g.id)).toContain('stair-1:sketch-boundary:0');
+    expect(grips.map((g) => g.id)).toContain('stair-1:sketch-tread:1');
+    expect(grips.at(-1)!.onCommit({ xMm: 50, yMm: 0 })).toMatchObject({
+      type: 'updateStairTreads',
+      id: 'stair-1',
+    });
+  });
+});
+
 describe('EDT-01 — gripsFor dispatch (propagated)', () => {
   it('dispatches walls', () => {
     expect(gripsFor(SAMPLE_WALL).length).toBe(4);
@@ -592,5 +654,21 @@ describe('EDT-01 — gripsFor dispatch (propagated)', () => {
       thicknessMm: 200,
     };
     expect(gripsFor(floor)).toHaveLength(3);
+  });
+
+  it('dispatches plan regions through the sketch grip provider', () => {
+    const region: Element = {
+      kind: 'plan_region',
+      id: 'pr-1',
+      name: 'Plan region',
+      levelId: 'L1',
+      outlineMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 1000, yMm: 0 },
+        { xMm: 0, yMm: 1000 },
+      ],
+      cutPlaneOffsetMm: 1000,
+    };
+    expect(gripsFor(region)).toHaveLength(6);
   });
 });

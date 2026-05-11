@@ -27,6 +27,12 @@ export type PlanRoomSchemeWireReadout = {
 };
 
 export type ViewerMode = 'plan_canvas' | 'orbit_3d';
+export type DisciplineWorkspaceId = 'arch' | 'struct' | 'mep' | 'concept';
+export type RoofJoinPreview = {
+  primaryRoofId: string;
+  secondaryRoofId: string;
+  seamMode: 'clip_secondary_into_primary' | 'merge_at_ridge';
+} | null;
 
 export type PlanTool =
   | 'select'
@@ -240,7 +246,9 @@ export type StoreState = {
   buildingPreset: string;
   planHudMm?: { xMm: number; yMm: number };
   workspaceLayoutPreset: WorkspaceLayoutPreset;
+  activeWorkspaceId: DisciplineWorkspaceId;
   perspectiveId: PerspectiveId;
+  roofJoinPreview: RoofJoinPreview;
 
   /** Bump to push a saved orbit viewpoint camera into Viewport three.js rig (WP-E02/E03). */
   orbitCameraNonce: number;
@@ -282,7 +290,9 @@ export type StoreState = {
   setBuildingPreset: (preset: string) => void;
   setPlanHud: (mm?: { xMm: number; yMm: number }) => void;
   setWorkspaceLayoutPreset: (p: WorkspaceLayoutPreset) => void;
+  setActiveWorkspaceId: (id: DisciplineWorkspaceId) => void;
   setPerspectiveId: (p: PerspectiveId) => void;
+  setRoofJoinPreview: (preview: RoofJoinPreview) => void;
   setPlanPresentationPreset: (p: PlanPresentationPreset) => void;
   lensMode: LensMode;
   setLensMode: (m: LensMode) => void;

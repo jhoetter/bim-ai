@@ -53,6 +53,13 @@ describe('EDT-05 — SnapGlyph kinds', () => {
     expect(getByTestId('snap-glyph-extension')).toBeTruthy();
   });
 
+  it('renders CAN-V3-03 padlock glyph for associative snaps', () => {
+    const { getByTestId } = render(
+      <SnapGlyph pxX={120} pxY={50} kind="endpoint" associative={true} />,
+    );
+    expect(getByTestId('snap-glyph-padlock')).toBeTruthy();
+  });
+
   it('positions the SVG so the glyph centres on (pxX, pxY)', () => {
     const { getByTestId } = render(<SnapGlyph pxX={200} pxY={150} kind="endpoint" />);
     const svg = getByTestId('snap-glyph-svg');

@@ -1,0 +1,50 @@
+{
+  "checks": [
+    {
+      "criteria": [
+        "Silhouette and volume hierarchy match the sketch.",
+        "Roof, openings, terraces/loggias, stairs, and other visible special features render as real geometry.",
+        "Materials and facade zones match the visual intent.",
+        "Rooms, access, and interior programme are usable for project initiation.",
+        "No visual issue contradicts Advisor acceptance."
+      ],
+      "label": "Main front-right axonometric",
+      "notes": "",
+      "screenshot": null,
+      "verdict": "pending",
+      "viewId": "vp-main-iso"
+    },
+    {
+      "criteria": [
+        "Silhouette and volume hierarchy match the sketch.",
+        "Roof, openings, terraces/loggias, stairs, and other visible special features render as real geometry.",
+        "Materials and facade zones match the visual intent.",
+        "Rooms, access, and interior programme are usable for project initiation.",
+        "No visual issue contradicts Advisor acceptance."
+      ],
+      "label": "Roof court high axonometric",
+      "notes": "",
+      "screenshot": null,
+      "verdict": "pending",
+      "viewId": "vp-roof-court"
+    },
+    {
+      "criteria": [
+        "Silhouette and volume hierarchy match the sketch.",
+        "Roof, openings, terraces/loggias, stairs, and other visible special features render as real geometry.",
+        "Materials and facade zones match the visual intent.",
+        "Rooms, access, and interior programme are usable for project initiation.",
+        "No visual issue contradicts Advisor acceptance."
+      ],
+      "label": "Ground-floor plan diagnostic",
+      "notes": "",
+      "screenshot": null,
+      "verdict": "pending",
+      "viewId": "hf-pv-ground"
+    }
+  ],
+  "manifest": "seed-artifacts/target-house-3/evidence/phase-1/screenshot-manifest.json",
+  "phase": "1",
+  "schemaVersion": "sketch-to-bim.semantic-checklist.v1",
+  "seed": "target-house-3"
+}

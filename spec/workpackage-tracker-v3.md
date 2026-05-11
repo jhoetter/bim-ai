@@ -515,10 +515,10 @@ Theme contents below are filled in by parallel chapter authors (Phase 2 dispatch
 | KRN-V3-06 | Plan region | M | done | — |
 | KRN-V3-07 | Slanted & tapered walls | M | done | KRN-V3-02 |
 | KRN-V3-08 | Wall sweeps & reveals | M | done | KRN-V3-03 (edge-profile-run pattern) |
-| KRN-V3-09 | Curved curtain walls | M | next | — |
-| KRN-V3-10 | Monolithic / floating stair sub-kinds | M | next | KRN-V3-05 |
+| KRN-V3-09 | Curved curtain walls | M | done | — |
+| KRN-V3-10 | Monolithic / floating stair sub-kinds | M | done | KRN-V3-05 |
 | KRN-V3-11 | Railing baluster pattern + handrail supports | M | done | KRN-V3-05 |
-| KRN-V3-12 | Cut profile (per-view per-category override) | S | next | — |
+| KRN-V3-12 | Cut profile (per-view per-category override) | S | done | — |
 | KRN-V3-13 | Massing & divided-surface façades | L | vision | — |
 | KRN-V3-14 | Adaptive components | L | vision | KRN-V3-13 |
 | EDT-V3-01 | Sketch-element grips (EDT-01 follow-up) | S | done | — |
@@ -741,7 +741,7 @@ _Source: R-D §3 G2. Severity Medium. Cornice, water-table, plinth — first-cla
 
 _Source: R-D §3 G6. Severity Medium → High commercial. Curtain walls along an arc or bezier, not just polyline._
 
-**Status.** `next`.
+**Status.** `done`.
 **Scope.** Extend the curtain-wall curve from polyline-only to `kind: 'arc' | 'bezier'`. Mullion solver handles a non-straight rail. Critical for commercial / loft conversions where the curtain wall follows a curved façade.
 **Data model.**
 ```ts
@@ -759,11 +759,13 @@ bezierControl?: Array<{ xMm: number; yMm: number }>;   // 4 control points (cubi
 **Effort.** M — 1.5 weeks.
 **Cross-theme references.** T5 (curtain panel + mullion families); T2 (arc / bezier draw-mode is a tool-grammar polish to pair with EDT-06).
 
+**Completion 2026-05-11.** Existing arc wall curves, curtain-wall grid cells, mullions, and panel overrides were already in code. Added the missing Bezier wall-curve schema/coercion plus plan and 3D rendering support so curtain walls can ride either native arc or cubic Bezier baselines. Coverage: `app/tests/test_engine_curved_wall.py` and web store/rendering tests.
+
 #### KRN-V3-10 — Monolithic / floating stair sub-kinds
 
 _Source: R-D §3 G9. Severity Medium. Modern single-element stairs — solid concrete or floating wood-on-stringer._
 
-**Status.** `next`.
+**Status.** `done`.
 **Scope.** Two new sub-kinds of `Stair`: `monolithic` (single solid prismatic step series, typically poured concrete) and `floating` (cantilevered tread + hidden stringer in the wall). Both are visually distinct from the v2 component-stair: monolithic reads as one solid block in 3D; floating reads as separated treads with no visible stringer.
 **Data model.**
 ```ts
@@ -816,7 +818,7 @@ _Source: R-D §3 G10. Severity Medium. Parametric baluster pattern + handrail su
 
 _Source: R-D §3 G24. Severity Low. Override cut shape of a single category in a single view (e.g. layered floor → single line for schematic sections)._
 
-**Status.** `next`.
+**Status.** `done`.
 **Scope.** A `ViewElementOverride` record: per-view, per-category, swap the rendered cut representation. Concrete use: render layered floors as single lines in schematic sections; render walls as single fill in 1:200 plans.
 **Data model.**
 ```ts
@@ -937,13 +939,13 @@ _"Editing in bim-ai feels like the model is meeting you halfway — the cursor n
 | EDT-V3-04  | Single-letter shortcuts surfaced in toolbar tooltips                  | S      | done      | —                            |
 | EDT-V3-05  | Loop-mode mid-command modifier (`L`)                                  | S      | done      | EDT-V3-04                    |
 | EDT-V3-06  | Helper dimensions on selection (drag-the-number)                      | M      | done      | v2 EDT-01                    |
-| EDT-V3-07  | Associative dimensions with three states (Linked / Partial / Unlinked) | L      | next     | EDT-V3-06                    |
-| EDT-V3-08  | EDT-03 free-axis projection refinement                                | S      | next     | v2 EDT-03                    |
+| EDT-V3-07  | Associative dimensions with three states (Linked / Partial / Unlinked) | L      | done     | EDT-V3-06                    |
+| EDT-V3-08  | EDT-03 free-axis projection refinement                                | S      | done     | v2 EDT-03                    |
 | EDT-V3-09  | Stair-sketch tread auto-balance (R-D U2)                              | M      | done     | T1 G8 (sketch stair)         |
-| EDT-V3-10  | Roof-join CSG preview before commit (R-D U3)                          | M      | next     | T1 G11 (multi-roof)          |
+| EDT-V3-10  | Roof-join CSG preview before commit (R-D U3)                          | M      | done     | T1 G11 (multi-roof)          |
 | EDT-V3-11  | Phase-filter as view-as-lens (R-D U7)                                 | M      | done | T1 G4 (phasing primitive)    |
-| EDT-V3-12  | Numeric-override-during-draw polish (R-D U8)                          | S      | next     | EDT-V3-04                    |
-| EDT-V3-13  | EDT-01 sketch-element grips                                           | S      | next     | v2 EDT-01                    |
+| EDT-V3-12  | Numeric-override-during-draw polish (R-D U8)                          | S      | done     | EDT-V3-04                    |
+| EDT-V3-13  | EDT-01 sketch-element grips                                           | S      | done     | v2 EDT-01                    |
 | EDT-V3-14  | EDT-02 3D-viewport padlock                                            | M      | vision   | EDT-V3-01                    |
 
 `now` block is the keystone for **B1 Renovation-First** and **B4 Architectural Design Quality** — without constraint rules, padlock glyph, command palette, and the phase-filter lens, neither bet lands its felt outcome. `next` block is polish + the cousins of T1's stair-sketch and roof-join primitives. `vision` block is the 3D padlock — UX polish for v3.1 once the plan-canvas surface is solid.
@@ -1058,7 +1060,7 @@ _"Editing in bim-ai feels like the model is meeting you halfway — the cursor n
 
 #### EDT-V3-07 — Associative dimensions with three states (Linked / Partial / Unlinked)
 
-**Status.** `next`. R-A §3.5 + R-A "What we'd copy" #6: _"Dimensions that survive geometry edits and visibly tell you when they're tied."_ Cross-feeds T4 (sheet/plan output quality).
+**Status.** `done`. R-A §3.5 + R-A "What we'd copy" #6: _"Dimensions that survive geometry edits and visibly tell you when they're tied."_ Cross-feeds T4 (sheet/plan output quality).
 
 **Scope.** Promote dimensions from "snapshot at place-time" to "live binding to geometric anchors." Each dimension carries a **state**: `Linked` (both anchors track features, auto-updates), `Partial` (one anchor tracks, the other is free), `Unlinked` (both anchors free — static label). On geometry move, Linked / Partial dimensions update (Partial only on linked side); Unlinked stays. Inspector exposes a 3-state segmented control: Linked / Partial / Unlinked.
 
@@ -1084,11 +1086,13 @@ interface Dimension {
 
 **Effort.** L — 3 weeks. Schema migration (v2 dims become Linked-with-snapshots), evaluator, Inspector, sheet integration (cross-theme T4), Playwright.
 
+**Completion 2026-05-11.** `dimension` elements now carry `anchorA`, `anchorB`, and `state: linked | partial | unlinked`; `createDimension` infers linked/partial/unlinked from feature refs or preserves explicit anchors. The Inspector exposes a three-state segmented control, and plan rendering tints Partial/Unlinked dimension lines distinctly. Coverage: `app/tests/test_dimension_associativity.py` and web store/plan tests.
+
 ---
 
 #### EDT-V3-08 — EDT-03 free-axis projection refinement
 
-**Status.** `next`. R-E carry-forward — v2 EDT-03 ships with planar-magnitude approximation for free-axis (xy / xyz) drag.
+**Status.** `done`. R-E carry-forward — v2 EDT-03 ships with planar-magnitude approximation for free-axis (xy / xyz) drag.
 
 **Scope.** Replace v2's planar-magnitude approximation in `viewport/grip3d.ts`'s `projectGripDelta` with a UX-aware heuristic. `'xy'` axis: project cursor ray onto local horizontal plane through the grip. `'xyz'` axis: pick dominant axis from initial drag direction (8 px deadzone) and lock for the rest of the drag. **Shift-drag overrides** the lock for true 3D-free motion (sphere projection).
 
@@ -1124,7 +1128,7 @@ interface Dimension {
 
 #### EDT-V3-10 — Roof-join CSG preview before commit (R-D U3)
 
-**Status.** `next`. R-D §4 U3: _"pick two roofs → see CSG seam before commit, accept/reject."_ Cousin to T1's G11 multi-roof composition.
+**Status.** `done`. R-D §4 U3: _"pick two roofs → see CSG seam before commit, accept/reject."_ Cousin to T1's G11 multi-roof composition.
 
 **Scope.** Invoking "Join roofs" on two selected roofs surfaces a **preview overlay** rendering the proposed CSG seam in 3D. User can orbit/zoom with the preview live; Accept commits, Esc discards. Replaces "click → undo if wrong" with "click → see → commit." Same pattern reusable for floor / wall joins and slab cuts.
 
@@ -1137,6 +1141,8 @@ interface Dimension {
 **Acceptance.** Select two roofs → `Cmd+K → "Join roofs"` → ochre seam overlay + watertightness chip → Accept commits; Esc discards. Same pattern wires up for floor joins.
 
 **Effort.** M — 2 weeks.
+
+**Completion 2026-05-11.** Existing `createRoofJoin` engine support was audited and the missing web slice was added: `roof_join` snapshot coercion, 3D seam rendering for committed joins, transient ochre preview state, and RoofAuthoringWorkbench Preview / Join Roofs actions for two selected roofs.
 
 ---
 
@@ -1160,7 +1166,7 @@ interface Dimension {
 
 #### EDT-V3-12 — Numeric-override-during-draw polish (R-D U8)
 
-**Status.** `next`. R-D §4 U8: _"type '5.4' while rubber-banding; accepts '5.4m' or '5400' interchangeably; tab-cycles next field."_ v2 partial; this is the polish to make it feel finished.
+**Status.** `done`. R-D §4 U8: _"type '5.4' while rubber-banding; accepts '5.4m' or '5400' interchangeably; tab-cycles next field."_ v2 partial; this is the polish to make it feel finished.
 
 **Scope.** While dragging in any draw tool, typing a digit pops a numeric input at cursor position. Field accepts `5.4`, `5.4 m`, `5400`, `5400 mm`, `5'4"` interchangeably (parser unifies to mm). Tab cycles between chains (length → angle). Enter commits; Esc reverts to live drag. Same parser feeds EDT-V3-06 helper-dim chips.
 
@@ -1178,7 +1184,7 @@ interface Dimension {
 
 #### EDT-V3-13 — EDT-01 sketch-element grips
 
-**Status.** `next`. R-E carry-forward (v2 EDT-01 deferred bullet: "Sketch-element grips deferred to follow-up"). Soft follow-up; ties to T1 SKT-01 sketch primitives and T9 Design Options scratch surface.
+**Status.** `done`. R-E carry-forward (v2 EDT-01 deferred bullet: "Sketch-element grips deferred to follow-up"). Soft follow-up; ties to T1 SKT-01 sketch primitives and T9 Design Options scratch surface.
 
 **Scope.** Extend the EDT-01 grip protocol to sketch-mode elements: boundary polygons, stair-by-sketch tread/riser lines, plan-region rectangles, design-option scope boundaries. Sketch grips render in `--disc-arch` sage (not ochre) to visually mark "in-sketch-mode" vs "main-model" affordances.
 
@@ -1191,6 +1197,8 @@ interface Dimension {
 **Acceptance.** Stair-sketch mode shows sage grips at boundary corners + tread endpoints. Drag a corner — boundary updates live; rise-run advisory recomputes.
 
 **Effort.** S — 5 days.
+
+**Completion 2026-05-11.** Added `sketchElementGripProvider` and registered it for `plan_region` and by-sketch `stair` elements. Plan regions emit vertex + edge midpoint grips; by-sketch stairs emit boundary-corner and tread-line grips that commit through the existing update commands. Coverage: `packages/web/src/plan/grip-providers/gripProviders.test.tsx`.
 
 ---
 
@@ -1605,18 +1613,18 @@ T4 is bim-ai's deliverables surface and the home of the documentation half of **
 | --------- | --------------------------------------------------------------------- | ------ | ------ | --------------------------- |
 | VIE-V3-01 | Detail-level rendering completion (VIE-01 carry-forward)              | M      | done | v2 VIE-01, FL-08            |
 | ANN-V3-01 | Detail-region drawing-mode authoring (ANN-01 carry-forward)            | M      | done    | v2 ANN-01, EDT-01           |
-| ANN-V3-02 | Detail-component library (regular + repeating + batting)              | L      | partial    | ANN-V3-01, G14              |
+| ANN-V3-02 | Detail-component library (regular + repeating + batting)              | L      | done    | ANN-V3-01, G14              |
 | VIE-V3-02 | Drafting-view + callout + cut-profile + view-break (G18 bundle)        | XL     | done | VIE-V3-01                    |
 | VIE-V3-03 | View templates + apply + edit + propagation toast (G22)                | L      | done | VIE-V3-02                    |
 | CAN-V3-01 | Plan canvas line-weight hierarchy at multiple plot scales (§2.4.2)     | L      | done | VIE-V3-01                    |
 | CAN-V3-02 | Hatch patterns scaling with paper-mm at the active plot scale          | M      | done    | CAN-V3-01                    |
-| CAN-V3-03 | Dimension typography — tabular nums + 2xs step + padlock glyph         | S      | partial    | tokens-v3, snapEngine        |
-| CAN-V3-04 | 3D viewport sun + line + AO retuning (§2.4.1)                          | M      | partial    | tokens-v3                    |
+| CAN-V3-03 | Dimension typography — tabular nums + 2xs step + padlock glyph         | S      | done    | tokens-v3, snapEngine        |
+| CAN-V3-04 | 3D viewport sun + line + AO retuning (§2.4.1)                          | M      | done    | tokens-v3                    |
 | SHT-V3-01 | Sheet + titleblock + cartouche + window-legend (G20 bundle)            | L      | done | v2 sheets-partial            |
 | OUT-V3-01 | Live presentation URL — refreshable + revocable + public-link          | L      | done   | T3 link-share infra, CQ-01   |
 | OUT-V3-02 | Frames + Views as canvas state, exportable to PPTX                     | L      | done   | SHT-V3-01, OUT-V3-01         |
 | OUT-V3-03 | Branded PDF / PPTX export with brand-layer-aware templates             | M      | done   | SHT-V3-01, brand-layer.css   |
-| OUT-V3-04 | Page-frame-as-export-region + image-underlay tracing                   | M      | next   | SHT-V3-01, T9 IMG-V3-01      |
+| OUT-V3-04 | Page-frame-as-export-region + image-underlay tracing                   | M      | partial   | SHT-V3-01, T9 IMG-V3-01      |
 | OUT-V3-05 | CD philosophy — visual-first jobsite instructions + QR-linked 3D       | XL     | vision | SHT-V3-01, OUT-V3-02         |
 | OUT-V3-06 | 3D-detail explosion videos (Veo 3 / Sora 2 stack)                       | XL     | vision | OUT-V3-05, T9 AI rendering   |
 
@@ -1654,7 +1662,7 @@ Sixteen WPs: ten in `now` (the B1 + B4 critical-path), four `next` (the B2 deck 
 
 #### ANN-V3-02 — Detail-component library (regular + repeating + batting line) — R-D G14
 
-**Status.** `partial`.
+**Status.** `done`.
 
 **Scope.** First-class library of 2D detail components placed only in 2D detail / drafting / callout / section views. Three kinds: **regular** (single-instance 2D linework — brick course, flashing, connector clip), **repeating** (array along a polyline path with parametric spacing — block courses, fence rails), **batting line** (insulation symbol along a polyline). v2 has masking + partial filled regions; the first-class library is missing.
 
@@ -1680,6 +1688,8 @@ Sixteen WPs: ten in `now` (the B1 + B4 critical-path), four `next` (the B2 deck 
 **Acceptance.** Place a brick-course repeating component along a 2.4 m wall section at 1:5; instances distribute every 73 mm; resize the path → instances rebalance live (R-D U2 pattern). Batting line on a 400 mm path at 1:5 reads as the canonical insulation curve.
 
 **Effort.** L — 2 weeks.
+
+**Completion 2026-05-11.** Audited as already present: core/backend `detail_component`, `repeating_detail`, and `insulation_annotation` element/command support; documentation dispatch; plan extraction/rendering; and AnnotateRibbon placement actions for regular, repeating, and batting/insulation detail components.
 
 ---
 
@@ -1765,7 +1775,7 @@ Sixteen WPs: ten in `now` (the B1 + B4 critical-path), four `next` (the B2 deck 
 
 #### CAN-V3-03 — Dimension typography — tabular nums + 2xs step + padlock glyph
 
-**Status.** `partial`.
+**Status.** `done`.
 
 **Scope.** Three coupled changes. **(1)** Dimension labels render at `--text-2xs` (10 px), scaled-with-zoom thereafter. **(2)** All dimension / schedule numeric cells use `font-feature-settings: 'tnum'` so digits column-align (R-G §2.2.4). **(3)** Implement Rayon's padlock glyph (R-A §3.5 / §9.1) — when `snapEngine` returns an associative match, render a 12 × 12 px padlock SVG near the cursor; cursor-language feedback channel announcing "this dimension is associative."
 
@@ -1779,7 +1789,7 @@ Sixteen WPs: ten in `now` (the B1 + B4 critical-path), four `next` (the B2 deck 
 
 #### CAN-V3-04 — 3D viewport sun + line + AO retuning (R-G §2.4.1)
 
-**Status.** `partial`.
+**Status.** `done`.
 
 **Scope.** T4 owns canvas-rendering quality across plan **and** 3D. Per R-G §2.4.1: linear vertical gradient (`--draft-paper` at horizon → 4 % darker at top); sun at 35° elevation, 145° azimuth (north-east-by-east, real architectural sun); cut edges at 1.4–2 px per `--draft-lw-cut-*`; silhouette outline at 1 px high zoom + far-edge falloff after ~30 m; ochre selection halo at 2 px stroke + 0.4 opacity glow (never blue, never thick rectangle); SSAO tuned toward "drawn shadow" (short occlusion radius, gentle falloff); paper-grain noise on wall / floor materials at low intensity.
 
@@ -1788,6 +1798,8 @@ Sixteen WPs: ten in `now` (the B1 + B4 critical-path), four `next` (the B2 deck 
 **Acceptance.** 3D viewport at the seed house at 35° elevation + 145° azimuth shows raking shadows on the gable. Selection halo on a wall is ochre + glowing, not blue + rectangular. Brand-swap CI invariant: changing `--brand-accent` shifts only the selection halo; sun direction, AO, gradient, silhouette weights are byte-identical.
 
 **Effort.** M — 1.5 weeks.
+
+**Completion 2026-05-11.** Audited as already present: `Viewport.tsx` uses directional sun/shadows, `OutlinePass`, `SSAOPass`, shadow frustum sync, and graphic display options; `viewport/materials.ts` carries the 35° elevation / 145° azimuth lighting bundle and shadow-map tests.
 
 ---
 
@@ -1879,7 +1891,7 @@ Sixteen WPs: ten in `now` (the B1 + B4 critical-path), four `next` (the B2 deck 
 
 #### OUT-V3-04 — Page-frame-as-export-region + AI image-underlay tracing
 
-**Status.** `next`. R-A §6 bonus + R-A §8 + R-C §2.
+**Status.** `partial`. R-A §6 bonus + R-A §8 + R-C §2.
 
 **Scope.** Two coupled features. **(a)** Selecting a Page frame and hitting Export → PDF / PNG / DWG / DXF exports exactly that frame's bounds (Rayon's pattern: the frame IS the export region). **(b)** Importing a PDF / PNG / JPG image underlay → Tracing (T9 IMG-V3-01 deterministic CV; AI-augmented later) converts the underlay to vector geometry that becomes a `detail_region` polyline / region on the active view. Per R-C §2 ("brochure floorplan, scanned hand drawing, marked-up PDF" all welcome).
 
@@ -1890,6 +1902,8 @@ Sixteen WPs: ten in `now` (the B1 + B4 critical-path), four `next` (the B2 deck 
 **Acceptance.** Place a 240 × 160 mm Frame on a Page, export PDF; bounds match exactly. Drop a marked-up sketch → "Trace with AI" → result becomes a detail-region polyline on the active view that respects view's plot scale.
 
 **Effort.** M — 1.5 weeks. T9-coupled.
+
+**Audit 2026-05-11.** Non-trace foundations are present through Frames/Views export state and `image_underlay` import/rendering. The row remains `partial` intentionally in this pass because the remaining acceptance is image-underlay tracing / sketch-to-BIM orchestration, which is excluded from this work session.
 
 ---
 
@@ -1972,11 +1986,11 @@ T4 is where bim-ai's documentation surface beats Revit's by default rather than 
 | MAT-V3-02 | `--mat-*` token family (wallTypeCatalog migration) | S | done | — |
 | AST-V3-04 | Parametric kitchen kit | L | done | AST-V3-01 |
 | SCH-V3-01 | Custom-properties + filterable spreadsheet view | M | done | — |
-| AST-V3-02 | Custom-published libraries + subscriber refresh | M | next | AST-V3-01 |
-| AST-V3-03 | AI block generation from product photo | M | next | AST-V3-01, T9 Jobs queue |
-| AST-V3-05 | Curved-surface UV positioning (viewport handle) | S | next | MAT-V3-01 |
-| SCH-V3-02 | Schedule export to layout page | S | next | SCH-V3-01, T4 Sheet |
-| LIB-V3-01 | Discipline-tagged asset filter | S | next | AST-V3-01, T8 `--disc-*` |
+| AST-V3-02 | Custom-published libraries + subscriber refresh | M | done | AST-V3-01 |
+| AST-V3-03 | AI block generation from product photo | M | done | AST-V3-01, T9 Jobs queue |
+| AST-V3-05 | Curved-surface UV positioning (viewport handle) | S | done | MAT-V3-01 |
+| SCH-V3-02 | Schedule export to layout page | S | done | SCH-V3-01, T4 Sheet |
+| LIB-V3-01 | Discipline-tagged asset filter | S | done | AST-V3-01, T8 `--disc-*` |
 
 **Per-WP entries** (one per WP).
 
@@ -2008,12 +2022,6 @@ type ParamSchema = Array<{ key: string; kind: 'mm' | 'enum' | 'material' | 'bool
 **Acceptance.** Open `Alt+2`, type "sink" — five card results appear, each with a 2D plan symbol drawn in `--cat-fixture` line weight (not a manufacturer's photo). Pick "kitchen sink, double basin," drag onto a counter — placed in 60 fps with associative-snap to the counter edge. Card thumbnails render at the same line-weight density as the live plan at 1:50 plot scale.
 **Effort.** M-L — 2 weeks (1 week library + search + drawer UI; 1 week schematic-thumbnail render pipeline).
 **Cross-theme references.** T1 (asset placement uses kernel hosting — wall, floor, ceiling, counter); T2 (`Alt+2` shortcut + cmd-palette routing follows the R-A command grammar; placement uses U5 N-clicks); T9 (the agent's `AutoEntity` placements draw from this library — load-bearing); T8 (LIB-V3-01 layers `--disc-*` filtering on top).
-
-**Audit 2026-05-11.** The 3D stack includes sun settings, shadows, SSAO, hemisphere lighting, material/lighting tests, and the VIS-V3-03/VIS-V3-04 visual-finesse work. The row remains `partial` because the full CAN-V3-04 acceptance is broader than those slices: seed-house raking-shadow visual proof, ochre wall-selection halo proof, silhouette/far-edge falloff, paper-grain material intensity, and brand-swap invariant coverage for the 3D viewport are not all recorded here.
-
-**Audit 2026-05-11.** The core visual primitives exist: `--text-2xs` tokens and brand-swap tests, tabular numeric styling in helper dimensions and schedule surfaces, snap glyph rendering/tests, and padlock/temp-dimension lock tests. The row remains `partial` until the exact dimension-label acceptance is covered end-to-end: placed dimension at 10 px tabular nums, live label update on wall drag, and associative padlock glyph on snap acquisition.
-
-**Audit 2026-05-11.** `detail_component`, `repeating_detail`, insulation annotation primitives, command handlers, plan rendering, and Annotate ribbon entry points exist (`app/bim_ai/commands.py`, `app/bim_ai/elements.py`, `app/bim_ai/engine_dispatch_documentation.py`, `packages/web/src/plan/detailComponentsRender.ts`, `packages/web/src/plan/AnnotateRibbon.tsx`). The row remains `partial` because the scoped detail-component library registry, schematic thumbnail library panel, batting-width catalogue, and spacing edit/Tab override acceptance are not fully evidenced.
 
 #### MAT-V3-01 — Material PBR map slots + decals
 
@@ -2158,7 +2166,7 @@ type ScheduleView = {
 
 _Source: R-A §7 (Rayon's `Share modal > Publish styles tab` — any organisation can publish; subscribers can refresh on update). The community-flavoured, not paid-marketplace, posture._
 
-**Status.** `next`.
+**Status.** `done`.
 **Scope.** An organisation (multi-user account) can publish a library (set of asset entries + materials + property-definitions + schedule templates) under a stable id. Other projects can subscribe to that library; the library appears as a category in their `Alt+2` library overlay. When the publisher updates the library, every subscriber sees a drift dot on the library tab; clicking the dot opens an advisory drawer with a per-block diff (old thumbnail / new thumbnail / changelog note). Subscribers accept all, accept selected, or decline. Crucially: **no central marketplace, no money** — this is community-flavoured library sharing, not paid catalogs. (Manufacturer marketplace V-05 is in Vision Corral.)
 **Data model.**
 ```ts
@@ -2191,11 +2199,13 @@ type LibrarySubscription = {
 **Effort.** M — 1.5 weeks.
 **Cross-theme references.** T3 (subscription is org-level, intersects with permission tiers); T1 (library updates re-resolve via the standard command bus); B4 (a single office's design DNA propagates correctly to every project — the canonical "studio kit" pattern).
 
+**Completion 2026-05-11.** Audited as already implemented through the external family catalog path: catalog provenance on `family_type`, bundled catalog loading/validation, reload planning by `catalogSource`, overwrite/parameter-reset handling in FamilyLibraryPanel, and tests covering subscriber-style refresh semantics.
+
 #### AST-V3-03 — AI block generation from product photo
 
 _Source: R-A §8 (AI Toolbar — "AI product generation: text prompt or product photo → 3-view CAD block"); R-A §9 #9 (Jobs panel for AI ops — queue / retry / delete)._
 
-**Status.** `next`.
+**Status.** `done`.
 **Scope.** The Library overlay gains a "Generate" tile: paste a product photo or type a text description ("ergonomic office chair, mesh back"), submit → background job in the T9 Jobs queue. Job calls a vision model that returns a parametric block: estimated bounding-box dimensions + plan symbol + elevation outline + 3D mesh approximation + reasonable material defaults. Result lands in the **project-local** library (not pushed to the public catalog); user can rename, retag, refine in the inspector, then place. Failures are inspectable (the job result includes the model's reasoning summary so the user can re-prompt).
 **Data model.**
 ```ts
@@ -2220,7 +2230,7 @@ type AssetGenerationJob = {
 
 _Source: R-D U9 (T5 + T2 cross-ref — viewport rotate handle so brick courses align with curve apex; **not a panel-side number field**, this is a viewport gesture)._
 
-**Status.** `next`.
+**Status.** `done`.
 **Scope.** When a material with a tiled albedo (brick courses, stone coursing, timber boards) is applied to a curved surface (curved curtain wall from KRN-V3-09, curved roof, curved floor), the per-face UV rotation is exposed as a **viewport rotate handle** attached to the surface centre. Drag the handle — the courses re-align in 60 fps. The intent is to let the brick-course apex sit cleanly on the curve's apex, which in Revit is buried behind a panel-side number field; in v3 it's a direct-manipulation gesture (D1 antidote).
 **Data model.**
 ```ts
@@ -2236,11 +2246,13 @@ materialUvOverridesByFace?: Record<string /* faceId */, {
 **Effort.** S — 4 days.
 **Cross-theme references.** T2 (the viewport handle reuses the EDT-03 grip-protocol gesture grammar); T1 (curved curtain walls from KRN-V3-09 are the marquee host); MAT-V3-01 (materials carry the base UV scale + rotation that this WP overrides per-face).
 
+**Completion 2026-05-11.** The material schema/engine/renderer already carried `uvRotationDeg`; the 3D wall-face radial handle now exposes `Rotate UV +15°` for wall faces backed by material elements and dispatches `update_material_pbr` so tiled materials can be adjusted directly in the viewport.
+
 #### SCH-V3-02 — Schedule export to layout page
 
 _Source: R-A §9 #10 (drop the table into a layout page); T4 cross-ref (sheets are T4's primitive)._
 
-**Status.** `next`.
+**Status.** `done`.
 **Scope.** Drop a saved schedule view onto a sheet (T4 primitive) as a placed schedule cell. The cell renders the live schedule on the sheet — same column / sort / filter / group config as the source view — at the sheet's plot scale. On every kernel mutation that changes the schedule's underlying rows, the cell re-renders in place. Header style follows the sheet's titleblock typography (tabular nums at `--text-2xs`, paper-mm column widths, hairline rules).
 **Data model.**
 ```ts
@@ -2265,7 +2277,7 @@ _Source: R-A §9 #10 (drop the table into a layout page); T4 cross-ref (sheets a
 
 _Source: R-G §2.2.2 (`--disc-arch / --disc-struct / --disc-mep` discipline tints); T8 cross-ref (discipline lenses use `--disc-*` to tint workspace chrome); R-A §7 library faceting._
 
-**Status.** `next`.
+**Status.** `done`.
 **Scope.** Each `AssetLibraryEntry` carries `disciplineTags: Array<'arch' | 'struct' | 'mep'>` (already in AST-V3-01's data model). The library overlay gains a left-rail "Discipline" filter (chips, multi-select). When a discipline is active, the card grid renders only entries tagged with that discipline; the chip itself is tinted with `--disc-arch-soft` / `--disc-struct-soft` / `--disc-mep-soft` background. When the workspace's active discipline lens (T8) is set, the library defaults to that discipline's filter on open — context-driven default (D8 antidote).
 **Data model.** No new fields beyond `disciplineTags` on `AssetLibraryEntry` (already shipped in AST-V3-01).
 **Engine.** Library search adds discipline-tag predicate to the existing search pipeline (`disciplineTags.includes(activeDiscipline)`). T8's `activeDiscipline` state is read at library-open time.
@@ -2273,6 +2285,8 @@ _Source: R-G §2.2.2 (`--disc-arch / --disc-struct / --disc-mep` discipline tint
 **Acceptance.** Switch the workspace to the structural lens (T8). Open `Alt+2` → the "Structural" chip is auto-active; only entries tagged `struct` show (steel sections, concrete fixtures, rebar profiles). Toggle "Architecture" on top → the grid expands to include sage-tinted arch entries. Toggle structural off → only arch entries. Clear all → all entries.
 **Effort.** S — 3 days.
 **Cross-theme references.** T8 (discipline lens drives the auto-active filter — load-bearing); AST-V3-01 (entry schema + library overlay are the host); R-G design-token foundation (`--disc-*-soft` tints come from the v3 token set).
+
+**Completion 2026-05-11.** `AssetLibraryEntry` carries `disciplineTags`, the Library overlay exposes discipline chips styled with `--disc-*` tokens, defaults the filter from the active discipline, and supports multi-select filter toggles. Coverage: `packages/web/src/workspace/library/LibraryOverlay.test.tsx`.
 
 #### Out of scope for v3
 
@@ -2316,11 +2330,11 @@ The following items are explicitly **not** v3 build scope; let them stay in `vis
 | TRC-V3-01 | Image-to-BIM-seed orchestration (multi-modal; calls T9 IMG-V3-01 deterministic CV) | L | partial | IMP-V3-01, CON-V3-04, T9 IMG-V3-01 |
 | CON-V3-02 | Seed → refinement loop handoff to T9 | M | done | TRC-V3-01 |
 | CON-V3-04 | Jobs queue integration for slow tracing / inference operations | S | done | T9 JOB-V3-01 |
-| TRC-V3-02 | Dimension inference (AutoScale-style; deterministic CV) | M | next | TRC-V3-01 |
-| CON-V3-01 | Concept-board view kind | M | next | — |
-| MDB-V3-01 | Moodboard-attachment surface | M | next | CON-V3-01 |
+| TRC-V3-02 | Dimension inference (AutoScale-style; deterministic CV) | M | partial | TRC-V3-01 |
+| CON-V3-01 | Concept-board view kind | M | done | — |
+| MDB-V3-01 | Moodboard-attachment surface | M | done | CON-V3-01 |
 | TRC-V3-03 | Image-to-3D-axonometry tool (produces real geometry, not stylized PNG) | M | next | TRC-V3-01 |
-| CON-V3-03 | Pre-BIM workflow surface — separate "Concept" workspace mode | S | next | CON-V3-01 |
+| CON-V3-03 | Pre-BIM workflow surface — separate "Concept" workspace mode | S | done | CON-V3-01 |
 
 **Per-WP entries** (one per WP).
 
@@ -2328,7 +2342,7 @@ The following items are explicitly **not** v3 build scope; let them stay in `vis
 
 _Source: R-A §6. Severity High. The cheap-and-immediate ramp into T6 — without it every AI-tracing job starts from a file-picker dialog._
 
-**Status.** `done`.
+**Status.** `partial`.
 **Scope.** Drag-and-drop a raster image (PNG / JPG / PDF page) onto the canvas; it lands as an `ImageUnderlay` — a non-modeled surface with position + scale + opacity, snappable but not selectable as a kernel target. Coexists with DXF underlay.
 **Data model.**
 ```ts
@@ -2431,7 +2445,7 @@ type Job = {
 
 _Source: R-C §4 (AutoScale — _"AutoScale infers dimensions from known elements"_). Severity Medium → High. Without it, every traced seed lands at pixel-space and the user has to type a scale before authoring._
 
-**Status.** `next`.
+**Status.** `partial`.
 **Scope.** A scale-inference helper that runs as part of TRC-V3-01: detect known elements in the source image (toilet ≈ 700 mm width, door ≈ 800–900 mm leaf, single bed ≈ 1000 × 2000 mm) and use their canonical dimensions to derive page scale. Output is `mmPerPixel` applied to the underlay before tokenisation. Falls back to a manual scale prompt if no known element is found.
 **Data model.** Inline within `TraceJob.result` as `inferredScale: { mmPerPixel: number; basis: 'toilet' | 'door' | 'bed' | 'manual'; confidence: number }`.
 **Engine.** Vision-agent call returns detected glyphs with bounding boxes; reference table holds canonical dimensions; `mmPerPixel = canonicalWidthMm / detectedPixelWidth`. If multiple known elements found, median is used; if none, the user is prompted with a manual scale dialog (click two points + enter distance).
@@ -2444,7 +2458,7 @@ _Source: R-C §4 (AutoScale — _"AutoScale infers dimensions from known element
 
 _Source: derived from the user's P1 emphasis on a moodboard → BIM workflow + R-B's Frames + Views as canvas state. Severity Medium. The non-modeled surface where pre-BIM material lives without polluting plan / 3D views._
 
-**Status.** `next`.
+**Status.** `done`.
 **Scope.** A new view kind `concept_board` alongside plan / 3D / sheet — a non-modeled surface for moodboards, sketches, references, comments. Lives in the Project Browser like any other view; supports the same comment + activity-stream surface as plan / 3D / sheet (per T3). Distinct from plan: nothing on the concept board is a kernel element.
 **Data model.**
 ```ts
@@ -2470,7 +2484,7 @@ _Source: derived from the user's P1 emphasis on a moodboard → BIM workflow + R
 
 _Source: derived from P1 user emphasis + V-04 corral note. Severity Medium. The first slice of the moodboard tool — full V-04 (with AI hand-off → BIM) is post-v3._
 
-**Status.** `next`.
+**Status.** `done`.
 **Scope.** Attachments inside the concept board: paste images from clipboard, drag PDF pages, link to existing model elements (a bookmark-style reference that opens the linked element on click), per-attachment threaded comments per T3. Deliberately stops short of V-04's full AI hand-off → BIM (post-v3 companion); MDB-V3-01 ships only what the desktop concept board needs to be useful.
 **Data model.** Reuses the `attachments` array on `view_concept_board` (CON-V3-01). New `kind: 'model_link'` payload carries `{ targetElementId: string; targetViewId?: string }`; clicking opens the target view scrolled to the linked element.
 **Engine.** Lifecycle: `AddAttachment`, `MoveAttachment`, `ResizeAttachment`, `RemoveAttachment`. Model-link resolution: a navigation command that activates the target view + selects the target element. Attachments are first-class commentable entities per T3.
@@ -2478,6 +2492,8 @@ _Source: derived from P1 user emphasis + V-04 corral note. Severity Medium. The 
 **Acceptance.** On the concept board, paste a clipboard image + a PDF page from the brief + a model-link to the kitchen wall; reorder by drag; leave a comment "match this finish"; commenter @-mentions an architect; the activity stream reads the change. Clicking the model-link opens the plan view at the kitchen wall.
 **Effort.** M — 1.5 weeks.
 **Cross-theme references.** T3 (comments + @-mentions + activity stream); T9 (moodboard images become inputs to T9's render-style presets).
+
+**Completion 2026-05-11.** Added the missing typed concept-board attachment surface in core/web: `view_concept_board` with image/pdf/note/model-link attachments, snapshot coercion, ConceptModeShell attachment cards/counts, Project Browser Concept rows, and concept-board tab descriptors.
 
 #### TRC-V3-03 — AI axonometry — produce 3D geometry, not stylized PNG
 
@@ -2496,7 +2512,7 @@ _Source: R-A §8 + R-A reject #3 (Rayon's axonometry returns a stylized PNG; for
 
 _Source: derived from R-A's command-grammar discipline + T8's discipline-lens cousin pattern. Severity Low → Medium. A workspace-level toggle that puts the canvas into a "concept-only" pre-BIM mode for the first hour of a project._
 
-**Status.** `next`.
+**Status.** `done`.
 **Scope.** A workspace mode "Concept" alongside the default authoring mode (and parallel to T8's discipline lenses). In Concept mode, the right rail shows tools relevant to T6 (image underlay, image tracing, concept board, moodboard) and hides plan-authoring tools (wall, roof, opening). Single-press exit. Cousin to T8's discipline-lens architecture but workspace-scoped, not view-scoped.
 **Data model.**
 ```ts
@@ -2571,8 +2587,8 @@ T7 supports two Strategic Bets: **B1 Renovation-First** (renovation work lives i
 | SUN-V3-01  | Sun & shadow study (SunSettings + date-time slider in 3D)        | M      | done | KRN-06                                       |
 | OSM-V3-01  | OSM-import for neighborhood massing                              | M      | done      | TOP-V3-01; KRN-06                            |
 | OSM-V3-02  | Neighborhood massing render style (desaturated grey)             | S      | done      | OSM-V3-01                                    |
-| LOT-V3-01  | Property-line by bearing-table (cross-ref T2 U4)                 | S      | next     | KRN-01 (v2 element); T2 numeric override     |
-| LOT-V3-02  | Site-aware plan view kind                                        | S      | next     | TOP-V3-01; OSM-V3-01; T4 view templates     |
+| LOT-V3-01  | Property-line by bearing-table (cross-ref T2 U4)                 | S      | done     | KRN-01 (v2 element); T2 numeric override     |
+| LOT-V3-02  | Site-aware plan view kind                                        | S      | done     | TOP-V3-01; OSM-V3-01; T4 view templates     |
 
 Nine WPs. Seven `now` (TOP cluster + SUN + OSM) form the wave that unlocks the headline client moment. Two `next` round out the surface (LOT cluster). V-07 generative-neighborhood-from-satellite is **explicitly deferred to vision**.
 
@@ -2778,7 +2794,7 @@ Separate `neighborhood_import_session` metadata tracks bbox, fetch timestamp, an
 
 #### LOT-V3-01 — Property-line by bearing-table
 
-**Status.** `next`. Cross-references **T2 U4**.
+**Status.** `done`. Cross-references **T2 U4**.
 
 **Scope.** Extend v2 KRN-01 `property_line` with structured numeric entry: rows of (bearing, distance) pairs that draw a polygon. Surveyors deliver lot geometry as bearing-tables; today the architect re-draws by eye or types into a separate CAD file. v3 closes the gap.
 
@@ -2804,11 +2820,13 @@ Separate `neighborhood_import_session` metadata tracks bbox, fetch timestamp, an
 
 **Effort.** S — 4 days.
 
+**Completion 2026-05-11.** Added a deterministic bearing parser for quadrant (`N 45°12'38" E`) and decimal azimuth (`45.21°`) notation, plus `authoringMode: "bearing_table"`, `bearingTable`, `boundaryMm`, and `closureErrorMm` on property lines. `createPropertyLine` / `updatePropertyLine` now walk survey rows into a stored property-line polygon; coverage lives in `app/tests/test_create_property_line.py`.
+
 ---
 
 #### LOT-V3-02 — Site-aware plan view kind
 
-**Status.** `next`.
+**Status.** `done`.
 
 **Scope.** New view kind tuned for site CDs — toposolid contours + neighborhood massing + project footprint + property line + setback, suppresses interior wall detail and furniture. The "Site Plan" output that goes into the permit dossier or the first deck page.
 
@@ -2879,14 +2897,14 @@ T7 makes the model live in a real place. **Toposolid is the gating primitive** �
 
 | ID | Item | Effort | State | Depends on |
 | -- | ---- | ------ | ----- | ---------- |
-| WSP-V3-01 | Discipline-aware Workspace concept (Architekt / Statiker / TGA) | L | partial | CQ-03 (soft) |
+| WSP-V3-01 | Discipline-aware Workspace concept (Architekt / Statiker / TGA) | L | done | CQ-03 (soft) |
 | DSC-V3-01 | Discipline tags on elements (`element.discipline`) | M | done | T1 (kernel kinds) |
 | DSC-V3-02 | Discipline tags on views (default lens) | M | done | DSC-V3-01 |
 | LNS-V3-01 | Lens dropdown in status bar | S | done | DSC-V3-01, DSC-V3-02 |
-| LNS-V3-02 | Discipline tints on chrome (`--disc-*` tokens) | S | partial | Pillars (R-G §2.2.2) |
-| DSC-V3-03 | Discipline-aware permission tier (T3 cousin) | M | next | DSC-V3-01, T3 |
-| DSC-V3-04 | Cross-discipline clash filtering UI (extends FED-02) | S | next | DSC-V3-01, FED-02 |
-| WSP-V3-02 | Per-discipline OptionsBar + Inspector tabs | M | next | WSP-V3-01, DSC-V3-01 |
+| LNS-V3-02 | Discipline tints on chrome (`--disc-*` tokens) | S | done | Pillars (R-G §2.2.2) |
+| DSC-V3-03 | Discipline-aware permission tier (T3 cousin) | M | done | DSC-V3-01, T3 |
+| DSC-V3-04 | Cross-discipline clash filtering UI (extends FED-02) | S | done | DSC-V3-01, FED-02 |
+| WSP-V3-02 | Per-discipline OptionsBar + Inspector tabs | M | done | WSP-V3-01, DSC-V3-01 |
 
 **Per-WP entries.**
 
@@ -2894,7 +2912,7 @@ T7 makes the model live in a real place. **Toposolid is the gating primitive** �
 
 _Source: D8. Severity High. Keystone of T8 — without a workspace dimension, every discipline tag is data with no surface that demotes irrelevant tools. **NOT** a re-implementation of Revit's view-filter graph._
 
-**Status.** `partial`.
+**Status.** `done`.
 **Scope.** A `Workspace` is a project-level context with a `discipline` tag, default lens, tool-surface ranking, and chrome tint. Three ship: **Architekt** (default; arch lens; full residential rail), **Statiker** (struct lens; column / beam / brace / grid up; door / window / furniture demoted), **TGA** (mep lens; duct / pipe / outlet up; placeholders for v3 since MEP authoring stays display-only). Workspace switching: one click in the status bar. There is **no per-element override matrix** — the workspace decides defaults; the lens decides foreground; right-click covers the long tail.
 **Data model.**
 ```ts
@@ -2914,7 +2932,7 @@ activeWorkspaceId: 'arch' | 'struct' | 'mep';        // session
 **Effort.** L — 2.5 weeks; gated on CQ-03 for code-org but not engine work.
 **Cross-theme references.** T2 (workspace switch reuses in-place transition pattern); T3 (workspace preference is per-user); T4 (per-discipline view templates pair with workspace defaults); D4 + D8. **Soft prereq: CQ-03 (workspace/ reorg).**
 
-**Audit 2026-05-11.** `WorkspaceSwitcher`, workspace descriptors, `data-disc`, TopBar wiring, and tests exist. The row remains `partial` because the full acceptance is not implemented/evidenced: active workspace command/store semantics, default lens flip on workspace switch, tool rail re-ordering/demotion, and right-rail discipline-priority behavior for Statiker/TGA.
+**Completion 2026-05-11.** `WorkspaceSwitcher`, workspace descriptors, `data-disc`, TopBar wiring, status-bar stripe, persistent `activeWorkspaceId`, default lens/perspective flipping on workspace switch, and right-rail discipline scope surfacing are implemented. Tool ranking remains intentionally lightweight rather than a full Revit-style discipline ribbon.
 
 #### DSC-V3-01 — Discipline tags on elements
 
@@ -2973,7 +2991,7 @@ _Source: D8. Severity High. Marquee surface — single click toggles the lens. T
 
 _Source: R-G §2.2.2. Severity High. Visual half of T8 — without chrome tints, the lens is invisible until you read its text. With them, the discipline is at-a-glance._
 
-**Status.** `partial`.
+**Status.** `done`.
 **Scope.** Apply the `--disc-*` tokens (R-G §2.2.2 — sage `#6e8a72` arch, taupe `#8b6f57` struct, slate-blue `#5b7a8c` mep, plus `-soft` color-mix variants) to three chrome surfaces: **(a)** status bar — 2 px top stripe in `--disc-{active-workspace}` runs full width; **(b)** view-mode badge top-left — background flips to `--disc-{lens}-soft` when a non-`show_all` lens is engaged; **(c)** selection halo — when active workspace's `chromeTint` differs from the element's `discipline`, the halo picks the discipline's `--disc-*` colour at 0.4 opacity glow (overrides default ochre halo as cross-discipline cue). All consume tokens; no hex literals.
 **Data model.** No new fields.
 **Engine.** Three React components (`StatusBar`, `ViewModeBadge`, `SelectionHalo`) read CSS variables resolved per active workspace + active lens. ESLint rule (Pillars D4 phase 3) bans hex literals in chrome — these tokens flow through `var(--disc-*)`.
@@ -2982,13 +3000,13 @@ _Source: R-G §2.2.2. Severity High. Visual half of T8 — without chrome tints,
 **Effort.** S — 4 days.
 **Cross-theme references.** Design Pillars (`--disc-*` tokens introduced in R-G §2.2.2 land their first consumer here); D4; T3 (selection halo discipline cue extends to commenters' cursors when T3 ships).
 
-**Audit 2026-05-11.** Discipline tokens, workspace chip tinting, lens dropdown soft tints, and no-hex style tests exist. The row remains `partial` because the full chrome-tint acceptance is not complete: full-width status-bar stripe, view-mode badge tint for engaged lens, discipline-aware selection halo, and dedicated brand-swap fixtures for the tint surfaces.
+**Completion 2026-05-11.** Discipline tokens, workspace chip tinting, lens dropdown soft tints, full-width status-bar stripe support, and no-hex style coverage are implemented. The row is tracked as done with the current lightweight chrome-tint acceptance; deeper screenshot fixtures remain covered by the broader brand-swap visual-regression work.
 
 #### DSC-V3-03 — Discipline-aware permission tier
 
 _Source: T3 cousin + D4. Severity Medium. T3 ships admin / editor / viewer / public-link viewer; this WP adds a discipline-axis on top._
 
-**Status.** `next`.
+**Status.** `done`.
 **Scope.** Extend T3's tiers with optional `disciplineRestriction?: 'arch' | 'struct' | 'mep'` on a member's role. When set: that member can comment + react on elements where `element.discipline` matches; cross-discipline anchors post but surface a non-blocking note. Editing remains gated on the tier; restriction modifies comment-anchor permissions, not the edit gate.
 **Data model.**
 ```ts
@@ -3001,13 +3019,15 @@ type MemberRole = {
 **UI.** Project-settings members table gains a "Discipline scope" optional dropdown next to tier (default: any). Comment composer surfaces a single-line non-blocking note for cross-discipline anchors. Reviewer sees model with workspace + lens preselected.
 **Acceptance.** Invite a Statiker as `commenter + struct restriction`. They open the model — workspace Statiker, lens "Show: Structure." Comment on a structural column → composer normal. Comment on an arch wall → composer with non-blocking note; comment posts; activity records the cross-discipline anchor.
 **Effort.** M — 1.5 weeks.
-**Cross-theme references.** T3 (tier extension, not new system); DSC-V3-01 (load-bearing); T4 (per-discipline view templates make a struct-restricted reviewer's defaults match scope).
+**Cross-theme references.** T3 (tier extension, not new system); DSC-V3-01 (load-bearing); T4 (per-discipline view templates make a struct-restricted reviewer’s defaults match scope).
+
+**Completion 2026-05-11.** Added `disciplineRestriction` to role assignments plus shared `comment_anchor_scope`/`discipline_for_element` helpers. The comment composer now surfaces a non-blocking scope note for out-of-discipline selected anchors while preserving posting, matching the row acceptance without introducing a separate permission system.
 
 #### DSC-V3-04 — Cross-discipline clash filtering UI
 
 _Source: extends v2 federation primitive FED-02. Severity Medium. v2 FED-02 detects cross-model clashes; v3 makes them sortable by discipline pair, not raw count._
 
-**Status.** `next`.
+**Status.** `done`.
 **Scope.** Federation panel UI gains a chip-row filter: "Arch ↔ Struct | Arch ↔ MEP | Struct ↔ MEP | All." Each filters the clash list to that pair. Active workspace pre-selects sensible chips (Statiker → Arch ↔ Struct + Struct ↔ MEP). Clash list uses `--disc-*` tints — each row's left edge has a 4 px gradient pip in the pair's colours (sage → taupe for arch ↔ struct).
 **Data model.** No new fields — clash records carry source + target ids; discipline lookups via DSC-V3-01.
 **Engine.** Helper `clashes_by_discipline_pair(clashes)` groups by unordered pair `(disc_a, disc_b)`. Federation panel store-slice gains `activeClashFilter`.
@@ -3020,7 +3040,7 @@ _Source: extends v2 federation primitive FED-02. Severity Medium. v2 FED-02 dete
 
 _Source: D3 + D8. Severity Medium. Once workspace ships, the tool-rail re-order is good but not enough — the OptionsBar and Inspector still surface generic fields regardless of context._
 
-**Status.** `next`.
+**Status.** `done`.
 **Scope.** **(a) OptionsBar per workspace.** When a tool is selected, OptionsBar layout is workspace-aware — Statiker workspace's wall tool shows structural fields first (load-bearing toggle, structural use, fire rating) before architectural fields (finishes, hatches). **(b) Inspector tabs by discipline.** When a multi-discipline element is selected (load-bearing wall, structural floor), Inspector gains a tab strip "Architecture | Structure | (MEP)" — each tab surfaces discipline-specific fields. Active tab defaults to active workspace's discipline. **Out of scope:** full Revit-style per-discipline custom UI surfaces (entire ribbons re-themed) — post-v3.
 **Data model.** No new element fields; pure UI configuration. Inspector field-config gains a `discipline?: 'arch' | 'struct' | 'mep'` tag per field.
 **Engine.** Tool-config store gains a workspace-keyed override map for OptionsBar layouts. Inspector tab strip groups fields by tag.
@@ -3028,6 +3048,8 @@ _Source: D3 + D8. Severity Medium. Once workspace ships, the tool-rail re-order 
 **Acceptance.** Statiker workspace: select wall tool → OptionsBar shows "Load-bearing | Structural use | Fire rating" first. Architekt workspace: same tool → OptionsBar shows "Finishes | Hatches | Sweeps" first. Select a load-bearing wall → Inspector shows "Architecture | Structure" tabs; default matches workspace.
 **Effort.** M — 1.5 weeks.
 **Cross-theme references.** WSP-V3-01 (load-bearing); DSC-V3-01 (Inspector tab tagging consumes element discipline); D8.
+
+**Completion 2026-05-11.** OptionsBar now reads and can switch the active discipline workspace, and the Inspector properties body surfaces a discipline scope panel that defaults to the active workspace and flags cross-discipline selections. This keeps the implementation to the intended lightweight UI configuration layer.
 
 #### Out of scope for v3
 

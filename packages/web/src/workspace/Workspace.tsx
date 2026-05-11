@@ -25,7 +25,7 @@ import {
   buildCollaborationConflictQueueV1,
   type CollaborationConflictQueueV1,
 } from '../lib/collaborationConflictQueue';
-import type { Snapshot, Violation } from '@bim-ai/core';
+import type { LensMode, Snapshot, Violation } from '@bim-ai/core';
 import { useBimStore, applyTheme, toggleTheme, getCurrentTheme, type Theme } from '../state/store';
 import type { PerspectiveId } from '@bim-ai/core';
 import { selectDriftedElements } from '../plan/monitorDriftBadge';
@@ -130,6 +130,40 @@ import { useToolPrefs } from '../tools/toolPrefsStore';
 import { useOfflineStore } from '../offlineStore';
 import { usePresenceStore } from '../presenceStore';
 import { firstSheetId, placeViewOnSheetCommand } from './sheets/sheetRecommendedViewports';
+import type { WorkspaceId } from './chrome/workspaces';
+
+function libraryDisciplineFromLens(lens: LensMode): 'arch' | 'struct' | 'mep' | 'all' {
+  if (lens === 'architecture') return 'arch';
+  if (lens === 'structure') return 'struct';
+  if (lens === 'mep') return 'mep';
+  return 'all';
+}
+
+function lensForWorkspace(id: WorkspaceId): LensMode {
+  if (id === 'struct') return 'structure';
+  if (id === 'mep') return 'mep';
+  return 'all';
+}
+
+function disciplineScopeNote(
+  activeWorkspaceId: WorkspaceId,
+  selected: Element | undefined,
+): string | null {
+  const expected =
+    activeWorkspaceId === 'struct'
+      ? 'structure'
+      : activeWorkspaceId === 'mep'
+        ? 'mep'
+        : activeWorkspaceId === 'arch'
+          ? 'architecture'
+          : null;
+  const actual =
+    selected && 'discipline' in selected && typeof selected.discipline === 'string'
+      ? selected.discipline
+      : null;
+  if (!expected || !actual || expected === actual) return null;
+  return 'This element is outside the active discipline scope; the comment will post with a scope note.';
+}
 
 /**
  * Workspace — composition root for the §11–§17 chrome.
@@ -294,6 +328,8 @@ export function Workspace(): JSX.Element {
   const [manageLinksOpen, setManageLinksOpen] = useState(false);
   const lensMode = useBimStore((s) => s.lensMode);
   const setLensMode = useBimStore((s) => s.setLensMode);
+  const activeWorkspaceId = useBimStore((s) => s.activeWorkspaceId);
+  const setActiveWorkspaceId = useBimStore((s) => s.setActiveWorkspaceId);
   const activeViewpointId = useBimStore((s) => s.activeViewpointId);
   const viewerProjection = useBimStore((s) => s.viewerProjection);
   const viewerSectionBoxActive = useBimStore((s) => s.viewerSectionBoxActive);
@@ -682,6 +718,17 @@ export function Workspace(): JSX.Element {
     [setViewerMode, elementsById, activeLevelId],
   );
 
+  const handleWorkspaceChange = useCallback(
+    (id: WorkspaceId) => {
+      setActiveWorkspaceId(id);
+      setLensMode(lensForWorkspace(id));
+      if (id === 'struct') setPerspectiveId('structure');
+      else if (id === 'mep') setPerspectiveId('mep');
+      else if (id === 'arch') setPerspectiveId('architecture');
+    },
+    [setActiveWorkspaceId, setLensMode, setPerspectiveId],
+  );
+
   /**
    * Sets the mode + viewerMode WITHOUT touching tab state.
    * Used by WorkspaceLeftRail after `openTabFromElement` has already
@@ -938,6 +985,7 @@ export function Workspace(): JSX.Element {
     if (effectiveMode === 'sheet') return [selectedDetail ?? 'Paper space'];
     if (effectiveMode === 'schedule') return [selectedDetail ?? 'Rows'];
     if (effectiveMode === 'agent') return [selectedDetail ?? 'Review'];
+    if (effectiveMode === 'concept') return [selectedDetail ?? 'Pre-BIM board'];
     return selectedDetail ? [selectedDetail] : [];
   }, [
     activeViewpointId,
@@ -1361,6 +1409,10 @@ export function Workspace(): JSX.Element {
           <CommentsPanel
             comments={comments}
             userDisplay={userDisplayName || 'Guest'}
+            outsideScopeNote={disciplineScopeNote(
+              activeWorkspaceId,
+              selectedId ? (elementsById[selectedId] as Element | undefined) : undefined,
+            )}
             onPost={handleCommentPost}
             onResolve={handleCommentResolve}
             onClose={() => setCommentsOpen(false)}
@@ -1476,6 +1528,9 @@ export function Workspace(): JSX.Element {
               onMeasureShortcut={() => handleToolSelect('measure')}
               onDimensionShortcut={() => handleToolSelect('dimension')}
               onTagByCategoryShortcut={() => handleToolSelect('tag')}
+              activeWorkspaceId={activeWorkspaceId}
+              userPreferredWorkspace={activeWorkspaceId}
+              onWorkspaceChange={handleWorkspaceChange}
               tabs={tabsState.tabs}
               activeTabId={tabsState.activeId}
               onTabActivate={(id) => {
@@ -1682,6 +1737,7 @@ export function Workspace(): JSX.Element {
             saveState="saved"
             lensMode={lensMode}
             onLensChange={setLensMode}
+            activeWorkspaceId={activeWorkspaceId}
             driftCount={driftCount}
             onDriftClick={() => setManageLinksOpen(true)}
             activityUnreadCount={activityUnreadCount}
@@ -1698,6 +1754,7 @@ export function Workspace(): JSX.Element {
       <LibraryOverlay
         isOpen={libraryOpen}
         onClose={() => setLibraryOpen(false)}
+        activeDiscipline={libraryDisciplineFromLens(lensMode)}
         entries={Object.values(elementsById)
           .filter((e) => (e as { kind: string }).kind === 'asset_library_entry')
           .map((e) => {

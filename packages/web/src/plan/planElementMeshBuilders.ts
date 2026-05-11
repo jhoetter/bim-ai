@@ -62,8 +62,38 @@ function planLocationLineOffsetFrac(loc: WallLocationLine): number {
 
 function wallCurvePointsMm(
   curve: NonNullable<Extract<Element, { kind: 'wall' }>['wallCurve']>,
-  radiusMm: number,
+  radiusOrOffsetMm: number,
 ): Array<{ xMm: number; yMm: number }> {
+  if (curve.kind === 'bezier') {
+    const pts: Array<{ xMm: number; yMm: number }> = [];
+    const cp = curve.controlPoints;
+    const steps = 32;
+    const pointAt = (t: number) => {
+      const mt = 1 - t;
+      const a = mt * mt * mt;
+      const b = 3 * mt * mt * t;
+      const c = 3 * mt * t * t;
+      const d = t * t * t;
+      return {
+        xMm: a * cp[0].xMm + b * cp[1].xMm + c * cp[2].xMm + d * cp[3].xMm,
+        yMm: a * cp[0].yMm + b * cp[1].yMm + c * cp[2].yMm + d * cp[3].yMm,
+      };
+    };
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const p = pointAt(t);
+      const prev = pointAt(Math.max(0, t - 1 / steps));
+      const next = pointAt(Math.min(1, t + 1 / steps));
+      const dx = next.xMm - prev.xMm;
+      const dy = next.yMm - prev.yMm;
+      const len = Math.hypot(dx, dy) || 1;
+      pts.push({
+        xMm: p.xMm + (-dy / len) * radiusOrOffsetMm,
+        yMm: p.yMm + (dx / len) * radiusOrOffsetMm,
+      });
+    }
+    return pts;
+  }
   const sweepRad = THREE.MathUtils.degToRad(curve.sweepDeg);
   const startRad = THREE.MathUtils.degToRad(curve.startAngleDeg);
   const steps = Math.max(8, Math.ceil(Math.abs(sweepRad) / (Math.PI / 24)));
@@ -71,8 +101,8 @@ function wallCurvePointsMm(
   for (let i = 0; i <= steps; i++) {
     const angle = startRad + (sweepRad * i) / steps;
     pts.push({
-      xMm: curve.center.xMm + Math.cos(angle) * radiusMm,
-      yMm: curve.center.yMm + Math.sin(angle) * radiusMm,
+      xMm: curve.center.xMm + Math.cos(angle) * radiusOrOffsetMm,
+      yMm: curve.center.yMm + Math.sin(angle) * radiusOrOffsetMm,
     });
   }
   return pts;
@@ -84,17 +114,23 @@ function planCurvedWallMesh(
   lineWeightScale = 1,
 ): THREE.Object3D {
   const curve = wall.wallCurve;
-  if (!curve || curve.kind !== 'arc') return new THREE.Group();
+  if (!curve) return new THREE.Group();
 
   const p = getPlanPalette();
   const fillColor = wall.id === selectedId ? p.wallSelected : p.wallFill;
   const thickMm = THREE.MathUtils.clamp(wall.thicknessMm * lineWeightScale, 20, 1800);
   const locFrac = planLocationLineOffsetFrac(wall.locationLine ?? 'wall-centerline');
-  const centerRadiusMm = Math.max(1, curve.radiusMm + locFrac * thickMm);
-  const outerRadiusMm = centerRadiusMm + thickMm / 2;
-  const innerRadiusMm = Math.max(1, centerRadiusMm - thickMm / 2);
-  const outer = wallCurvePointsMm(curve, outerRadiusMm);
-  const inner = wallCurvePointsMm(curve, innerRadiusMm).reverse();
+  const outer =
+    curve.kind === 'arc'
+      ? wallCurvePointsMm(curve, Math.max(1, curve.radiusMm + locFrac * thickMm + thickMm / 2))
+      : wallCurvePointsMm(curve, locFrac * thickMm + thickMm / 2);
+  const inner =
+    curve.kind === 'arc'
+      ? wallCurvePointsMm(
+          curve,
+          Math.max(1, curve.radiusMm + locFrac * thickMm - thickMm / 2),
+        ).reverse()
+      : wallCurvePointsMm(curve, locFrac * thickMm - thickMm / 2).reverse();
   const outline = [...outer, ...inner];
 
   const group = new THREE.Group();
@@ -132,14 +168,21 @@ function planCurvedWallMesh(
   group.add(outlineLine);
 
   if (wall.id !== selectedId && thickMm >= 40) {
-    const centerline = wallCurvePointsMm(curve, centerRadiusMm);
+    const centerline =
+      curve.kind === 'arc'
+        ? wallCurvePointsMm(curve, Math.max(1, curve.radiusMm + locFrac * thickMm))
+        : wallCurvePointsMm(curve, locFrac * thickMm);
     const hatchPositions: number[] = [];
     const stride = Math.max(2, Math.floor(centerline.length / 12));
     for (let i = 1; i < centerline.length - 1; i += stride) {
       const pt = centerline[i]!;
-      const angle = Math.atan2(pt.yMm - curve.center.yMm, pt.xMm - curve.center.xMm);
-      const nx = Math.cos(angle);
-      const ny = Math.sin(angle);
+      const prev = centerline[i - 1]!;
+      const next = centerline[i + 1]!;
+      const dx = next.xMm - prev.xMm;
+      const dy = next.yMm - prev.yMm;
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = -dy / len;
+      const ny = dx / len;
       const half = thickMm * 0.32;
       hatchPositions.push(
         ux(pt.xMm - nx * half),
@@ -181,7 +224,7 @@ export function planWallMesh(
   elementsById?: Record<string, Element>,
   detailLevel: PlanDetailLevel = 'medium',
 ): THREE.Object3D {
-  if (wall.wallCurve?.kind === 'arc') {
+  if (wall.wallCurve) {
     return planCurvedWallMesh(wall, selectedId, lineWeightScale);
   }
 
@@ -1584,7 +1627,14 @@ export function dimensionsThree(d: Extract<Element, { kind: 'dimension' }>): THR
   const ls = new THREE.LineSegments(
     geo,
 
-    new THREE.LineBasicMaterial({ color: getPlanPalette().dimLine }),
+    new THREE.LineBasicMaterial({
+      color:
+        d.state === 'unlinked'
+          ? readToken('--color-drift', '#9b6f1b')
+          : d.state === 'partial'
+            ? readToken('--color-muted-foreground', '#6b7280')
+            : getPlanPalette().dimLine,
+    }),
   );
 
   ls.userData.dimensionSpanMm = dimSpanMm;

@@ -9,6 +9,7 @@ import {
   clampDragDelta,
   clear3dGripProviders,
   gripsFor,
+  projectGripDelta,
   register3dGripProvider,
   wallGripProvider,
 } from './grip3d';
@@ -172,5 +173,60 @@ describe('grip provider registry', () => {
     register3dGripProvider('wall', wallGripProvider as never);
     const grips = gripsFor({ ...baseWall } as Record<string, unknown>);
     expect(grips).toHaveLength(2);
+  });
+});
+
+describe('EDT-V3-08 — projectGripDelta', () => {
+  const startMm = { xMm: 0, yMm: 0, zMm: 0 };
+
+  test('xy axis projects to the horizontal plane', () => {
+    const result = projectGripDelta({
+      axis: 'xy',
+      startMm,
+      currentMm: { xMm: 100, yMm: 200, zMm: 300 },
+    });
+    expect(result.deltaMm).toEqual({ xMm: 100, yMm: 200, zMm: 0 });
+  });
+
+  test('xyz waits for an 8px deadzone before locking dominant axis', () => {
+    const pending = projectGripDelta({
+      axis: 'xyz',
+      startMm,
+      currentMm: { xMm: 100, yMm: 20, zMm: 0 },
+      initialDeltaPx: { x: 3, y: 4 },
+    });
+    expect(pending.deltaMm).toEqual({ xMm: 0, yMm: 0, zMm: 0 });
+
+    const locked = projectGripDelta({
+      axis: 'xyz',
+      startMm,
+      currentMm: { xMm: 100, yMm: 20, zMm: 0 },
+      initialDeltaPx: { x: 8, y: 0 },
+    });
+    expect(locked.state.dominantAxis).toBe('x');
+    expect(locked.deltaMm).toEqual({ xMm: 100, yMm: 0, zMm: 0 });
+  });
+
+  test('xyz preserves dominant lock and shift enables free 3D movement', () => {
+    const locked = projectGripDelta(
+      {
+        axis: 'xyz',
+        startMm,
+        currentMm: { xMm: 10, yMm: 200, zMm: 30 },
+      },
+      { dominantAxis: 'x' },
+    );
+    expect(locked.deltaMm).toEqual({ xMm: 10, yMm: 0, zMm: 0 });
+
+    const free = projectGripDelta(
+      {
+        axis: 'xyz',
+        startMm,
+        currentMm: { xMm: 10, yMm: 200, zMm: 30 },
+        shiftKey: true,
+      },
+      { dominantAxis: 'x' },
+    );
+    expect(free.deltaMm).toEqual({ xMm: 10, yMm: 200, zMm: 30 });
   });
 });

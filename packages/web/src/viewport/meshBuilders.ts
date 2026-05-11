@@ -174,29 +174,63 @@ function makeCurvedWallMesh(
   const curve = wall.wallCurve!;
   const thick = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2);
   const locFrac = locationLineOffsetFrac(wall.locationLine ?? 'wall-centerline');
-  const centerRadius = Math.max(0.001, curve.radiusMm / 1000 + locFrac * thick);
-  const outerRadius = centerRadius + thick / 2;
-  const innerRadius = Math.max(0.001, centerRadius - thick / 2);
-  const sweepRad = THREE.MathUtils.degToRad(curve.sweepDeg);
-  const startRad = THREE.MathUtils.degToRad(curve.startAngleDeg);
-  const steps = Math.max(10, Math.ceil(Math.abs(sweepRad) / (Math.PI / 24)));
-  const pointAt = (radius: number, idx: number) => {
-    const a = startRad + (sweepRad * idx) / steps;
-    return {
-      x: curve.center.xMm / 1000 + Math.cos(a) * radius,
-      y: -(curve.center.yMm / 1000 + Math.sin(a) * radius),
+  const bezierPoints = (offsetM: number) => {
+    if (curve.kind !== 'bezier') return [];
+    const cp = curve.controlPoints.map((p) => ({ x: p.xMm / 1000, y: -p.yMm / 1000 }));
+    const steps = 32;
+    const pointAt = (t: number) => {
+      const mt = 1 - t;
+      const a = mt * mt * mt;
+      const b = 3 * mt * mt * t;
+      const c = 3 * mt * t * t;
+      const d = t * t * t;
+      return {
+        x: a * cp[0]!.x + b * cp[1]!.x + c * cp[2]!.x + d * cp[3]!.x,
+        y: a * cp[0]!.y + b * cp[1]!.y + c * cp[2]!.y + d * cp[3]!.y,
+      };
     };
+    return Array.from({ length: steps + 1 }, (_, i) => {
+      const t = i / steps;
+      const p = pointAt(t);
+      const prev = pointAt(Math.max(0, t - 1 / steps));
+      const next = pointAt(Math.min(1, t + 1 / steps));
+      const dx = next.x - prev.x;
+      const dy = next.y - prev.y;
+      const len = Math.hypot(dx, dy) || 1;
+      return { x: p.x + (-dy / len) * offsetM, y: p.y + (dx / len) * offsetM };
+    });
   };
+  const arcPoints = (radius: number) => {
+    if (curve.kind !== 'arc') return [];
+    const sweepRad = THREE.MathUtils.degToRad(curve.sweepDeg);
+    const startRad = THREE.MathUtils.degToRad(curve.startAngleDeg);
+    const steps = Math.max(10, Math.ceil(Math.abs(sweepRad) / (Math.PI / 24)));
+    return Array.from({ length: steps + 1 }, (_, idx) => {
+      const a = startRad + (sweepRad * idx) / steps;
+      return {
+        x: curve.center.xMm / 1000 + Math.cos(a) * radius,
+        y: -(curve.center.yMm / 1000 + Math.sin(a) * radius),
+      };
+    });
+  };
+  const outer =
+    curve.kind === 'arc'
+      ? arcPoints(Math.max(0.001, curve.radiusMm / 1000 + locFrac * thick + thick / 2))
+      : bezierPoints(locFrac * thick + thick / 2);
+  const inner =
+    curve.kind === 'arc'
+      ? arcPoints(Math.max(0.001, curve.radiusMm / 1000 + locFrac * thick - thick / 2))
+      : bezierPoints(locFrac * thick - thick / 2);
 
   const shape = new THREE.Shape();
-  const first = pointAt(outerRadius, 0);
+  const first = outer[0]!;
   shape.moveTo(first.x, first.y);
-  for (let i = 1; i <= steps; i++) {
-    const p = pointAt(outerRadius, i);
+  for (let i = 1; i < outer.length; i++) {
+    const p = outer[i]!;
     shape.lineTo(p.x, p.y);
   }
-  for (let i = steps; i >= 0; i--) {
-    const p = pointAt(innerRadius, i);
+  for (let i = inner.length - 1; i >= 0; i--) {
+    const p = inner[i]!;
     shape.lineTo(p.x, p.y);
   }
   shape.closePath();
@@ -1536,6 +1570,63 @@ export function makeRoofMassMesh(
   return mesh;
 }
 
+export function makeRoofJoinPreviewMesh(
+  join: Pick<Extract<Element, { kind: 'roof_join' }>, 'id' | 'primaryRoofId' | 'secondaryRoofId'>,
+  elementsById: Record<string, Element>,
+  preview = false,
+): THREE.Group {
+  const primary = elementsById[join.primaryRoofId];
+  const secondary = elementsById[join.secondaryRoofId];
+  const group = new THREE.Group();
+  group.userData.bimPickId = join.id;
+  if (primary?.kind !== 'roof' || secondary?.kind !== 'roof') return group;
+
+  const ab = xzBoundsMm(primary.footprintMm);
+  const bb = xzBoundsMm(secondary.footprintMm);
+  const minX = Math.max(ab.minX, bb.minX) / 1000;
+  const maxX = Math.min(ab.maxX, bb.maxX) / 1000;
+  const minZ = Math.max(ab.minZ, bb.minZ) / 1000;
+  const maxZ = Math.min(ab.maxZ, bb.maxZ) / 1000;
+  if (minX > maxX || minZ > maxZ) return group;
+
+  const longX = maxX - minX >= maxZ - minZ;
+  const y =
+    Math.max(
+      primary.eaveHeightLeftMm ?? 0,
+      primary.eaveHeightRightMm ?? 0,
+      secondary.eaveHeightLeftMm ?? 0,
+      secondary.eaveHeightRightMm ?? 0,
+    ) /
+      1000 +
+    Math.max(
+      elevationMForLevel(primary.referenceLevelId, elementsById),
+      elevationMForLevel(secondary.referenceLevelId, elementsById),
+    ) +
+    0.08;
+  const points = longX
+    ? [new THREE.Vector3(minX, y, (minZ + maxZ) / 2), new THREE.Vector3(maxX, y, (minZ + maxZ) / 2)]
+    : [
+        new THREE.Vector3((minX + maxX) / 2, y, minZ),
+        new THREE.Vector3((minX + maxX) / 2, y, maxZ),
+      ];
+  const seam = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(points),
+    new THREE.LineBasicMaterial({
+      color: readToken(
+        preview ? '--draft-warning' : '--draft-cut',
+        preview ? '#f59e0b' : '#334155',
+      ),
+      linewidth: preview ? 3 : 1,
+      transparent: true,
+      opacity: preview ? 0.95 : 0.75,
+    }),
+  );
+  seam.userData.bimPickId = join.id;
+  seam.renderOrder = 8;
+  group.add(seam);
+  return group;
+}
+
 /**
  * KRN-14 — registration slot for the dormer-cut helper.
  *
@@ -2189,7 +2280,7 @@ export function makeWallMesh(
   paint: ViewportPaintBundle | null,
   elementsById?: Record<string, Element>,
 ): THREE.Mesh | THREE.Group {
-  if (wall.wallCurve?.kind === 'arc') {
+  if (wall.wallCurve) {
     return makeCurvedWallMesh(wall, elevM, paint, elementsById);
   }
 

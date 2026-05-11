@@ -1,0 +1,370 @@
+{
+  "modelId": "9bb9a145-d9ce-5a2f-a748-bb5be3301b30",
+  "revision": 1,
+  "violations": [
+    {
+      "ruleId": "gltf_export_manifest_expected_extension_missing",
+      "severity": "info",
+      "message": "glTF export manifest: extension 'bim_ai_skew_wall_hosted_openings_v0' not emitted but eligible element kind 'wall' is present (skipReasonCode='no_eligible_elements').",
+      "elementIds": [],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "gltf_export_manifest_expected_extension_missing",
+      "severity": "info",
+      "message": "glTF export manifest: extension 'bim_ai_roof_unsupported_shape_summary_v0' not emitted but eligible element kind 'roof' is present (skipReasonCode='no_eligible_elements').",
+      "elementIds": [],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "plan_view_sheet_viewport_crop_missing",
+      "severity": "info",
+      "message": "Plan view 'hf-pv-ground' placed on sheet 'hf-sheet-ga01' viewport 'hf-vp-sheet-ground' has no crop box (cropMinMm/cropMaxMm absent); the plan-on-sheet boundary is unconstrained.",
+      "elementIds": ["hf-sheet-ga01", "hf-vp-sheet-ground", "hf-pv-ground"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "sheet"
+    },
+    {
+      "ruleId": "plan_view_sheet_viewport_crop_missing",
+      "severity": "info",
+      "message": "Plan view 'hf-pv-upper' placed on sheet 'hf-sheet-ga01' viewport 'hf-vp-sheet-upper' has no crop box (cropMinMm/cropMaxMm absent); the plan-on-sheet boundary is unconstrained.",
+      "elementIds": ["hf-sheet-ga01", "hf-vp-sheet-upper", "hf-pv-upper"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "sheet"
+    },
+    {
+      "ruleId": "plan_view_tag_style_fallback",
+      "severity": "info",
+      "message": "Plan view 'Ground floor plan' has opening tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling.",
+      "elementIds": ["hf-pv-ground"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "plan_view_tag_style_fallback",
+      "severity": "info",
+      "message": "Plan view 'Ground floor plan' has room tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling.",
+      "elementIds": ["hf-pv-ground"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "plan_view_tag_style_fallback",
+      "severity": "info",
+      "message": "Plan view 'First floor plan' has opening tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling.",
+      "elementIds": ["hf-pv-upper"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "plan_view_tag_style_fallback",
+      "severity": "info",
+      "message": "Plan view 'First floor plan' has room tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling.",
+      "elementIds": ["hf-pv-upper"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_color_scheme_identity_missing",
+      "severity": "info",
+      "message": "No room color scheme element found. Use upsertRoomColorScheme to author overrides.",
+      "elementIds": [],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["hf-room-bedroom-2"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["hf-room-carport"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["hf-room-ensuite"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["hf-room-entry-stair"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["hf-room-hall"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["hf-room-kitchen-dining"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["hf-room-living"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["hf-room-primary"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["hf-room-roof-court"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["hf-room-service"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    }
+  ],
+  "summary": {
+    "revision": 1,
+    "elementTotal": 118,
+    "scaleWorkload": {
+      "wallCount": 26,
+      "roomCount": 10,
+      "scheduleElementCount": 3
+    },
+    "countsByKind": {
+      "project_base_point": 1,
+      "asset_library_entry": 17,
+      "floor_type": 1,
+      "floor": 3,
+      "plan_view": 4,
+      "viewpoint": 4,
+      "door": 8,
+      "level": 2,
+      "roof": 1,
+      "room": 10,
+      "schedule": 3,
+      "sun_settings": 1,
+      "wall": 26,
+      "railing": 4,
+      "section_cut": 1,
+      "sheet": 1,
+      "slab_opening": 1,
+      "stair": 1,
+      "placed_asset": 18,
+      "window": 5,
+      "wall_type": 3,
+      "internal_origin": 1,
+      "roof_type": 1,
+      "roof_opening": 1
+    },
+    "levelCount": 2,
+    "levels": [
+      {
+        "id": "hf-lvl-ground",
+        "name": "Ground Floor",
+        "elevationMm": 0
+      },
+      {
+        "id": "hf-lvl-upper",
+        "name": "First Floor",
+        "elevationMm": 3000
+      }
+    ],
+    "wallCount": 26,
+    "wallsByLevelId": {
+      "hf-lvl-ground": 10,
+      "hf-lvl-upper": 16
+    },
+    "roomCount": 10,
+    "roomsByLevelId": {
+      "hf-lvl-upper": 5,
+      "hf-lvl-ground": 5
+    },
+    "doorCount": 8,
+    "windowCount": 5,
+    "gridLineCount": 0,
+    "openIssueCount": 0,
+    "floorCount": 3,
+    "roofCount": 1,
+    "stairCount": 1,
+    "sheetCount": 1,
+    "railingCount": 4,
+    "slabOpeningCount": 1,
+    "siteCount": 0,
+    "familyTypeCount": 0,
+    "sectionCutCount": 1,
+    "planViewCount": 4,
+    "viewTemplateCount": 0,
+    "viewpointCount": 4,
+    "dimensionCount": 0,
+    "scheduleCount": 3,
+    "saved3dViewClipSummary": {
+      "saved3dViewCount": 4,
+      "clipEnabledCount": 0,
+      "sectionBoxEnabledCount": 0,
+      "totalHiddenCategoryCount": 0
+    },
+    "roomDerivationPreview": {
+      "heuristicVersion": "room_deriv_preview_v4",
+      "axisAlignedRectangleCandidates": [
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 0,
+              "y": 0
+            },
+            "max": {
+              "x": 14000,
+              "y": 10000
+            }
+          },
+          "wallIds": ["hf-gf-wall-01", "hf-gf-wall-02", "hf-gf-wall-03", "hf-gf-wall-04"],
+          "boundarySeparationIds": [],
+          "perimeterSegmentIdsSorted": [
+            "hf-gf-wall-01",
+            "hf-gf-wall-02",
+            "hf-gf-wall-03",
+            "hf-gf-wall-04"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 140,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-ground",
+          "levelName": "Ground Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0,
+          "approxVolumeM3": 420,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": ["overlaps_authored_room_bbox"]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 0,
+              "y": -350
+            },
+            "max": {
+              "x": 14000,
+              "y": 10000
+            }
+          },
+          "wallIds": ["hf-uf-wall-01", "hf-uf-wall-02", "hf-uf-wall-03", "hf-uf-wall-04"],
+          "boundarySeparationIds": [],
+          "perimeterSegmentIdsSorted": [
+            "hf-uf-wall-01",
+            "hf-uf-wall-02",
+            "hf-uf-wall-03",
+            "hf-uf-wall-04"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 144.9,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-upper",
+          "levelName": "First Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0,
+          "approxVolumeM3": 405.72,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": ["overlaps_authored_room_bbox"]
+        }
+      ],
+      "candidateCount": 2,
+      "authoritativeCandidateCount": 0,
+      "unboundedRoomIds": [],
+      "diagnostics": [],
+      "warnings": [],
+      "diagnosticCount": 0,
+      "authorityVersion": "axis_aa_authoritative_v2"
+    },
+    "regenerationDiagnostics": {
+      "documentRevision": 1,
+      "roomDerivationHeuristicVersion": "room_deriv_preview_v4",
+      "roomDerivationCandidateCount": 2,
+      "roomDerivationAuthoritativeCount": 0,
+      "roomDerivationDiagnosticCount": 0,
+      "roomDerivationWarningCount": 0,
+      "levelsWithRoomsSorted": ["hf-lvl-ground", "hf-lvl-upper"],
+      "levelsWithWallsSorted": ["hf-lvl-ground", "hf-lvl-upper"],
+      "maxRoomsOnSingleLevel": 5,
+      "maxWallsOnSingleLevel": 16
+    }
+  },
+  "checks": {
+    "errorViolationCount": 0,
+    "blockingViolationCount": 0
+  }
+}
