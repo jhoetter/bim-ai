@@ -65,6 +65,9 @@ describe('advisorViolationContext', () => {
     expect(recommendedContextForRuleId('large_opening_in_load_bearing_wall_unresolved')).toMatch(
       /lintel|header|engineering approval/i,
     );
+    expect(recommendedContextForRuleId('stacked_load_path_discontinuity')).toMatch(
+      /load path|bearing wall|column/i,
+    );
     expect(recommendedContextForRuleId('beam_without_support')).toMatch(/support/i);
     expect(recommendedContextForRuleId('column_without_foundation_or_support')).toMatch(
       /foundation|load path/i,
@@ -96,6 +99,9 @@ describe('advisorViolationContext', () => {
     expect(humanizeRuleId('physical_duplicate_geometry')).toBe('Physical Duplicate Geometry');
     expect(humanizeRuleId('wall_load_bearing_unknown_primary_envelope')).toBe(
       'Primary Envelope Wall Missing Load-Bearing Status',
+    );
+    expect(humanizeRuleId('stacked_load_path_discontinuity')).toBe(
+      'Stacked Load Path Discontinuity',
     );
     expect(humanizeRuleId('pipe_wall_penetration_without_opening')).toBe(
       'Pipe Wall Penetration Without Opening',

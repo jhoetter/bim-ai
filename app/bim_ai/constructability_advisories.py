@@ -50,6 +50,7 @@ def constructability_advisory_violations(elements: dict[str, Element]) -> list[V
     violations.extend(_door_clearance_violations(elements, participants_by_kind))
     violations.extend(_load_bearing_metadata_violations(walls_by_id))
     violations.extend(_large_opening_violations(elements, walls_by_id))
+    violations.extend(_stacked_load_path_violations(participants_by_kind, walls_by_id))
     violations.extend(_unsupported_beam_violations(participants_by_kind, elements, walls_by_id))
     violations.extend(_unsupported_column_violations(participants_by_kind, walls_by_id))
     return violations
@@ -376,6 +377,43 @@ def _large_opening_violations(
     return violations
 
 
+def _stacked_load_path_violations(
+    participants_by_kind: dict[str, list[PhysicalParticipant]],
+    walls_by_id: dict[str, WallElem],
+) -> list[Violation]:
+    load_bearing_walls = [
+        wall
+        for wall in participants_by_kind.get("wall", [])
+        if _is_load_bearing_wall(walls_by_id.get(wall.element_id))
+    ]
+    if not load_bearing_walls:
+        return []
+
+    lowest_base_z = min(wall.aabb.min_z for wall in load_bearing_walls)
+    supports = [
+        *load_bearing_walls,
+        *participants_by_kind.get("column", []),
+    ]
+    violations: list[Violation] = []
+    for wall in load_bearing_walls:
+        if wall.aabb.min_z <= lowest_base_z + _SUPPORT_TOLERANCE_MM:
+            continue
+        if any(_support_under_stacked_wall(wall, support) for support in supports):
+            continue
+        violations.append(
+            Violation(
+                rule_id="stacked_load_path_discontinuity",
+                severity="warning",
+                message=(
+                    "Load-bearing wall starts above the lowest bearing level without a modeled "
+                    "wall or column support below it."
+                ),
+                element_ids=[wall.element_id],
+            )
+        )
+    return violations
+
+
 def _unsupported_beam_violations(
     participants_by_kind: dict[str, list[PhysicalParticipant]],
     elements: dict[str, Element],
@@ -629,6 +667,23 @@ def _support_under_column(column: PhysicalParticipant, support: PhysicalParticip
         or support.aabb.max_x < column.aabb.min_x - _SUPPORT_TOLERANCE_MM
         or column.aabb.max_y < support.aabb.min_y - _SUPPORT_TOLERANCE_MM
         or support.aabb.max_y < column.aabb.min_y - _SUPPORT_TOLERANCE_MM
+    )
+
+
+def _support_under_stacked_wall(
+    upper_wall: PhysicalParticipant,
+    support: PhysicalParticipant,
+) -> bool:
+    if upper_wall.element_id == support.element_id:
+        return False
+    vertical_gap = upper_wall.aabb.min_z - support.aabb.max_z
+    if vertical_gap < -_SUPPORT_TOLERANCE_MM or vertical_gap > _SUPPORT_TOLERANCE_MM:
+        return False
+    return not (
+        upper_wall.aabb.max_x < support.aabb.min_x - _SUPPORT_TOLERANCE_MM
+        or support.aabb.max_x < upper_wall.aabb.min_x - _SUPPORT_TOLERANCE_MM
+        or upper_wall.aabb.max_y < support.aabb.min_y - _SUPPORT_TOLERANCE_MM
+        or support.aabb.max_y < upper_wall.aabb.min_y - _SUPPORT_TOLERANCE_MM
     )
 
 

@@ -324,6 +324,39 @@ def test_large_opening_in_load_bearing_wall_requires_structural_resolution() -> 
     assert "large_opening_in_load_bearing_wall_unresolved" not in _rule_ids(elements)
 
 
+def test_upper_load_bearing_wall_without_lower_support_is_reported_and_suppressed() -> None:
+    upper_wall = _wall(
+        id="wall-upper",
+        levelId="lvl-2",
+        loadBearing=True,
+        start={"xMm": 0, "yMm": 1000},
+        end={"xMm": 4000, "yMm": 1000},
+    )
+    elements = {
+        "lvl-1": _level(),
+        "lvl-2": LevelElem(kind="level", id="lvl-2", name="Level 2", elevationMm=3000.0),
+        "wall-upper": upper_wall,
+    }
+
+    assert "stacked_load_path_discontinuity" not in _rule_ids(elements)
+
+    elements["wall-base-offset"] = _wall(
+        id="wall-base-offset",
+        loadBearing=True,
+        start={"xMm": 0, "yMm": -1000},
+        end={"xMm": 4000, "yMm": -1000},
+    )
+    assert "stacked_load_path_discontinuity" in _rule_ids(elements)
+
+    elements["wall-base-aligned"] = _wall(
+        id="wall-base-aligned",
+        loadBearing=True,
+        start={"xMm": 0, "yMm": 1000},
+        end={"xMm": 4000, "yMm": 1000},
+    )
+    assert "stacked_load_path_discontinuity" not in _rule_ids(elements)
+
+
 def test_beam_without_two_modeled_supports_is_reported() -> None:
     elements = {
         "lvl-1": _level(),
