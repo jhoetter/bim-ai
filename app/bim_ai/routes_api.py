@@ -567,10 +567,35 @@ async def validate_model_snapshot(
     }
 
 
+def _parse_option_locks(raw: str | None) -> dict[str, str]:
+    if raw is None or raw.strip() == "":
+        return {}
+    locks: dict[str, str] = {}
+    for chunk in raw.split(","):
+        item = chunk.strip()
+        if not item:
+            continue
+        if "=" not in item:
+            raise HTTPException(
+                status_code=400,
+                detail="optionLocks must use comma-separated optionSetId=optionId pairs",
+            )
+        set_id, option_id = (part.strip() for part in item.split("=", 1))
+        if not set_id or not option_id:
+            raise HTTPException(
+                status_code=400,
+                detail="optionLocks entries must include both optionSetId and optionId",
+            )
+        locks[set_id] = option_id
+    return locks
+
+
 @api_router.get("/models/{model_id}/constructability-report")
 async def constructability_report(
     model_id: UUID,
     profile: str = Query("authoring_default"),
+    phase_filter: str = Query("all", alias="phaseFilter"),
+    option_locks: str | None = Query(None, alias="optionLocks"),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
@@ -579,7 +604,14 @@ async def constructability_report(
     doc = Document.model_validate(row.document)
     return {
         "modelId": str(model_id),
-        **build_constructability_report(doc.elements, revision=doc.revision, profile=profile),
+        **build_constructability_report(
+            doc.elements,
+            revision=doc.revision,
+            profile=profile,
+            phase_filter=phase_filter,
+            option_locks=_parse_option_locks(option_locks),
+            design_option_sets=doc.design_option_sets,
+        ),
     }
 
 
@@ -667,6 +699,7 @@ async def evidence_package(
             doc.elements,
             revision=doc.revision,
             profile="construction_readiness",
+            design_option_sets=doc.design_option_sets,
         ),
         "hint": "Use Playwright to capture PNG alongside this JSON per spec §8.3 / §14 Phase A. CI attaches artifacts alongside this bundle.",
         "sheetRasterNote": (

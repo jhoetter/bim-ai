@@ -9,6 +9,7 @@ from bim_ai.elements import (
     ConstructabilitySuppressionElem,
     LevelElem,
     PlacedAssetElem,
+    StairElem,
     WallElem,
 )
 
@@ -16,6 +17,7 @@ from bim_ai.elements import (
 def test_constructability_report_filters_and_reconciles_findings() -> None:
     elements = {
         "lvl-1": LevelElem(kind="level", id="lvl-1", name="Level 1", elevationMm=0.0),
+        "lvl-2": LevelElem(kind="level", id="lvl-2", name="Level 2", elevationMm=3000.0),
         "wall-1": WallElem(
             kind="wall",
             id="wall-1",
@@ -228,3 +230,106 @@ def test_constructability_summary_reports_counts_coverage_and_open_errors() -> N
     }
     assert len(summary["openIssueIds"]) == 1
     assert summary["openErrorIssueIds"] == summary["openIssueIds"]
+
+
+def test_constructability_report_respects_phase_filter_scope() -> None:
+    elements = {
+        "lvl-1": LevelElem(kind="level", id="lvl-1", name="Level 1", elevationMm=0.0),
+        "wall-1": WallElem(
+            kind="wall",
+            id="wall-1",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 0},
+            thicknessMm=200,
+            heightMm=3000,
+            phaseCreated="new",
+        ),
+        "asset-shelf": AssetLibraryEntryElem(
+            kind="asset_library_entry",
+            id="asset-shelf",
+            assetKind="block_2d",
+            name="Shelf",
+            category="casework",
+            tags=[],
+            thumbnailKind="schematic_plan",
+            thumbnailWidthMm=600,
+            thumbnailHeightMm=300,
+        ),
+        "shelf-1": PlacedAssetElem(
+            kind="placed_asset",
+            id="shelf-1",
+            name="Shelf",
+            assetId="asset-shelf",
+            levelId="lvl-1",
+            positionMm={"xMm": 1200, "yMm": 0},
+            paramValues={"widthMm": 600, "depthMm": 300, "proxyHeightMm": 900},
+        ),
+    }
+
+    all_phase_report = build_constructability_report(elements, revision=10)
+    existing_report = build_constructability_report(
+        elements,
+        revision=10,
+        phase_filter="existing",
+    )
+
+    assert all_phase_report["summary"]["ruleCounts"] == {"furniture_wall_hard_clash": 1}
+    assert existing_report["summary"]["ruleCounts"] == {}
+    assert existing_report["scope"]["phaseFilter"] == "existing"
+
+
+def test_constructability_report_respects_design_option_scope() -> None:
+    elements = {
+        "lvl-1": LevelElem(kind="level", id="lvl-1", name="Level 1", elevationMm=0.0),
+        "wall-1": WallElem(
+            kind="wall",
+            id="wall-1",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 0},
+            thicknessMm=200,
+            heightMm=3000,
+            optionSetId="scheme",
+            optionId="option-b",
+        ),
+        "stair-1": StairElem(
+            kind="stair",
+            id="stair-1",
+            baseLevelId="lvl-1",
+            topLevelId="lvl-2",
+            runStartMm={"xMm": 1200, "yMm": -600},
+            runEndMm={"xMm": 1200, "yMm": 600},
+            widthMm=1000,
+            optionSetId="scheme",
+            optionId="option-a",
+        ),
+    }
+    design_option_sets = [
+        {
+            "id": "scheme",
+            "options": [
+                {"id": "option-a", "isPrimary": True},
+                {"id": "option-b", "isPrimary": False},
+            ],
+        }
+    ]
+
+    unscoped_report = build_constructability_report(elements, revision=11)
+    primary_option_report = build_constructability_report(
+        elements,
+        revision=11,
+        design_option_sets=design_option_sets,
+    )
+    locked_option_report = build_constructability_report(
+        elements,
+        revision=11,
+        option_locks={"scheme": "option-b"},
+        design_option_sets=design_option_sets,
+    )
+
+    assert unscoped_report["summary"]["ruleCounts"] == {"stair_wall_hard_clash": 1}
+    assert primary_option_report["summary"]["ruleCounts"] == {}
+    assert primary_option_report["scope"]["primaryOptionIds"] == {"scheme": "option-a"}
+    assert locked_option_report["summary"]["ruleCounts"] == {}
+    assert locked_option_report["scope"]["optionLocks"] == {"scheme": "option-b"}

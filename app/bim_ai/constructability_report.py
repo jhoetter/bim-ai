@@ -15,6 +15,10 @@ from bim_ai.constructability_issues import (
     fingerprint_violation,
     reconcile_findings,
 )
+from bim_ai.constructability_scope import (
+    constructability_scope_descriptor,
+    scope_constructability_elements,
+)
 from bim_ai.elements import Element
 
 CONSTRUCTABILITY_RULE_IDS = frozenset(
@@ -95,11 +99,20 @@ def build_constructability_report(
     *,
     revision: str | int,
     profile: str = "authoring_default",
+    phase_filter: str = "all",
+    option_locks: Mapping[str, str] | None = None,
+    design_option_sets: Iterable[Any] = (),
     previous_issues: Iterable[ConstructabilityIssue | Mapping[str, Any]] = (),
 ) -> dict[str, Any]:
-    violations = [v for v in evaluate(elements) if v.rule_id in CONSTRUCTABILITY_RULE_IDS]
+    scoped_elements = scope_constructability_elements(
+        elements,
+        phase_filter=phase_filter,
+        option_locks=option_locks,
+        design_option_sets=design_option_sets,
+    )
+    violations = [v for v in evaluate(scoped_elements) if v.rule_id in CONSTRUCTABILITY_RULE_IDS]
     all_findings = [_finding_dict(v, profile=profile) for v in violations]
-    suppressions = _suppression_records(elements, revision=revision)
+    suppressions = _suppression_records(scoped_elements, revision=revision)
     active_findings: list[dict[str, Any]] = []
     suppressed_by_fingerprint: dict[str, dict[str, Any]] = {}
     for finding in all_findings:
@@ -126,6 +139,11 @@ def build_constructability_report(
         "format": "constructabilityReport_v1",
         "revision": revision,
         "profile": profile,
+        "scope": constructability_scope_descriptor(
+            phase_filter=phase_filter,
+            option_locks=option_locks,
+            design_option_sets=design_option_sets,
+        ),
         "summary": {
             "findingCount": len(active_findings),
             "issueCount": len(issues),
@@ -159,16 +177,28 @@ def build_constructability_summary_v1(
     *,
     revision: str | int,
     profile: str = "construction_readiness",
+    phase_filter: str = "all",
+    option_locks: Mapping[str, str] | None = None,
+    design_option_sets: Iterable[Any] = (),
     previous_issues: Iterable[ConstructabilityIssue | Mapping[str, Any]] = (),
 ) -> dict[str, Any]:
+    scoped_elements = scope_constructability_elements(
+        elements,
+        phase_filter=phase_filter,
+        option_locks=option_locks,
+        design_option_sets=design_option_sets,
+    )
     report = build_constructability_report(
         elements,
         revision=revision,
         profile=profile,
+        phase_filter=phase_filter,
+        option_locks=option_locks,
+        design_option_sets=design_option_sets,
         previous_issues=previous_issues,
     )
-    participants = collect_physical_participants(elements)
-    unsupported = collect_unsupported_physical_diagnostics(elements)
+    participants = collect_physical_participants(scoped_elements)
+    unsupported = collect_unsupported_physical_diagnostics(scoped_elements)
     open_issues = [
         issue
         for issue in report["issues"]
@@ -181,6 +211,7 @@ def build_constructability_summary_v1(
         "format": "constructabilitySummary_v1",
         "profileId": report["profile"],
         "modelRevision": revision,
+        "scope": report["scope"],
         "counts": {
             "info": int(report["summary"]["severityCounts"].get("info") or 0),
             "warning": int(report["summary"]["severityCounts"].get("warning") or 0),
