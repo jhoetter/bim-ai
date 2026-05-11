@@ -100,6 +100,14 @@ class TestCreateJob:
         res = client.post("/api/jobs", json={"kind": "nope", "modelId": "m1"})
         assert res.status_code == 422
 
+    def test_image_trace_job_kind_is_supported_for_trace_queue(self, client: TestClient) -> None:
+        res = client.post("/api/jobs", json=_submit_body(kind="image_trace"))
+
+        assert res.status_code == 201
+        body = res.json()
+        assert body["kind"] == "image_trace"
+        assert body["status"] == "queued"
+
 
 class TestListJobs:
     def test_list_returns_submitted_jobs(self, client: TestClient) -> None:

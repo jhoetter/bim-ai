@@ -5,7 +5,9 @@ from uuid import UUID
 
 from fastapi import FastAPI, Query, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 
+from bim_ai.ai_boundary import load_bill_of_rights_markdown
 from bim_ai.config import get_settings
 from bim_ai.db import init_db_schema
 from bim_ai.hub import Hub
@@ -42,6 +44,14 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
+
+
+@app.get("/bill-of-rights", response_class=PlainTextResponse)
+async def public_bill_of_rights() -> PlainTextResponse:
+    return PlainTextResponse(
+        load_bill_of_rights_markdown(),
+        media_type="text/markdown; charset=utf-8",
+    )
 
 
 @app.websocket("/ws/{model_id}")

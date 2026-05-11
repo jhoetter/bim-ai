@@ -2055,3 +2055,39 @@ register(
         ),
     )
 )
+
+# ---------------------------------------------------------------------------
+# AGT-V3-06 — External model-call audit export
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="external-model-call-audit-export",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ExternalModelCallAuditExportInput",
+            "type": "object",
+            "properties": {},
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ExternalModelCallAuditCsv",
+            "type": "string",
+            "description": "CSV with jobId, modelId, modelVersion, trainOnInputFlag, timestamp, agentIdentifier.",
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="External model-call audit CSV returned"),
+            "error": ExitCode(code=1, meaning="Unexpected error"),
+        },
+        cliExample="curl /api/v3/ai/audit-log.csv",
+        restEndpoint=RestEndpoint(method="GET", path="/api/v3/ai/audit-log.csv"),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "AGT-V3-06: v3 has no external AI calls, so this export is header-only. "
+            "Future integrations must validate calls through bim_ai.ai_boundary with "
+            "trainOnInputFlag=false."
+        ),
+    )
+)

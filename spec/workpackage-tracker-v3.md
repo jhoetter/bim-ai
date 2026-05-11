@@ -444,6 +444,11 @@ If you have an hour with this doc, read §1 + §2 + §3 + the headers of §6, pl
 | `open`     | Authored but not started                                                  |
 | `deferred` | Explicitly out of scope for v3                                            |
 
+
+### Tracker sync 2026-05-11
+
+`spec/v3-build-state.md` records the wave-7, wave-8, wave-9A, and wave-9B WPs as merged to `main`. This tracker has been synced for those explicit build-state rows only; unsynced `now` / `next` rows remain active backlog until a matching implementation and test audit is recorded.
+
 ### Done Rule
 
 A WP is `done` when all of: (a) `pnpm exec tsc --noEmit` clean; (b) new logic has vitest / pytest unit coverage; (c) `make verify` passes; (d) merged to main and pushed; (e) any cross-theme acceptance moments named in §X are exercised in an integration test or recorded demo.
@@ -922,12 +927,12 @@ _"Editing in bim-ai feels like the model is meeting you halfway — the cursor n
 | EDT-V3-01  | Constraint rules (parallel / perpendicular / collinear / equal_length) | L      | done | v2 EDT-02 (padlock baseline) |
 | EDT-V3-02  | Padlock-snap cursor glyph + named snap markers + drag arrow           | M      | done | EDT-V3-01                    |
 | EDT-V3-03  | `Ctrl+K` universal command palette                                    | M      | done | —                            |
-| EDT-V3-04  | Single-letter shortcuts surfaced in toolbar tooltips                  | S      | now      | —                            |
-| EDT-V3-05  | Loop-mode mid-command modifier (`L`)                                  | S      | now      | EDT-V3-04                    |
-| EDT-V3-06  | Helper dimensions on selection (drag-the-number)                      | M      | now      | v2 EDT-01                    |
+| EDT-V3-04  | Single-letter shortcuts surfaced in toolbar tooltips                  | S      | done      | —                            |
+| EDT-V3-05  | Loop-mode mid-command modifier (`L`)                                  | S      | done      | EDT-V3-04                    |
+| EDT-V3-06  | Helper dimensions on selection (drag-the-number)                      | M      | done      | v2 EDT-01                    |
 | EDT-V3-07  | Associative dimensions with three states (Linked / Partial / Unlinked) | L      | next     | EDT-V3-06                    |
 | EDT-V3-08  | EDT-03 free-axis projection refinement                                | S      | next     | v2 EDT-03                    |
-| EDT-V3-09  | Stair-sketch tread auto-balance (R-D U2)                              | M      | next     | T1 G8 (sketch stair)         |
+| EDT-V3-09  | Stair-sketch tread auto-balance (R-D U2)                              | M      | done     | T1 G8 (sketch stair)         |
 | EDT-V3-10  | Roof-join CSG preview before commit (R-D U3)                          | M      | next     | T1 G11 (multi-roof)          |
 | EDT-V3-11  | Phase-filter as view-as-lens (R-D U7)                                 | M      | done | T1 G4 (phasing primitive)    |
 | EDT-V3-12  | Numeric-override-during-draw polish (R-D U8)                          | S      | next     | EDT-V3-04                    |
@@ -994,7 +999,7 @@ _"Editing in bim-ai feels like the model is meeting you halfway — the cursor n
 
 #### EDT-V3-04 — Single-letter shortcuts surfaced in toolbar tooltips
 
-**Status.** `now`. R-A "What we'd copy" #2. Tiny WP, big readability win — students learn the keyboard by reading the toolbar.
+**Status.** `done`. R-A "What we'd copy" #2. Tiny WP, big readability win — students learn the keyboard by reading the toolbar.
 
 **Scope.** Every toolbar button shows its single-letter shortcut as a chip in the tooltip _and_ as an 8 px chip in the bottom-right corner of the icon (always visible, no hover). Shortcuts are already wired in code — this WP surfaces them in chrome.
 
@@ -1010,7 +1015,7 @@ _"Editing in bim-ai feels like the model is meeting you halfway — the cursor n
 
 #### EDT-V3-05 — Loop-mode mid-command modifier (`L`)
 
-**Status.** `now`. R-A §3.1 ("Mid-command modifiers: `L` toggles loop mode"); R-A "What we'd copy" #4.
+**Status.** `done`. R-A §3.1 ("Mid-command modifiers: `L` toggles loop mode"); R-A "What we'd copy" #4.
 
 **Scope.** In any chained drawing tool (Wall, Beam, Section line, polyline primitives), pressing `L` mid-command toggles **loop mode** — tool auto-restarts after each completed segment so the user can draw an entire perimeter without re-pressing the tool key. Sticky for the session; cursor shows a small `L` chip until toggled off. `Esc` cancels both the in-flight segment and loop mode.
 
@@ -1028,7 +1033,7 @@ _"Editing in bim-ai feels like the model is meeting you halfway — the cursor n
 
 #### EDT-V3-06 — Helper dimensions on selection (drag-the-number)
 
-**Status.** `now`. R-A "What we'd copy" #5. Direct-manipulation principle D1 in its purest form — the dimension chip _is_ the input.
+**Status.** `done`. R-A "What we'd copy" #5. Direct-manipulation principle D1 in its purest form — the dimension chip _is_ the input.
 
 **Scope.** On single-element selection, render **helper dimension chips** at salient measurements (wall length/thickness, door width, window sill height). Each chip shows its value in `--text-2xs` tabular nums. **Click the chip → it becomes a numeric input → type → Enter commits.** Tab cycles between chains (length → thickness → height). The chip _is_ the input field — no Inspector trip.
 
@@ -1094,7 +1099,7 @@ interface Dimension {
 
 #### EDT-V3-09 — Stair-sketch tread auto-balance (R-D U2)
 
-**Status.** `next`. R-D §4 U2: _"sketch boundary, tread+riser lines auto-distribute by rise-run rule, drag one and others rebalance."_ Cousin to T1's G8 stair-by-sketch primitive — T1 ships the kernel, T2 ships the live editing UX.
+**Status.** `done`. R-D §4 U2: _"sketch boundary, tread+riser lines auto-distribute by rise-run rule, drag one and others rebalance."_ Cousin to T1's G8 stair-by-sketch primitive — T1 ships the kernel, T2 ships the live editing UX.
 
 **Scope.** In stair-sketch mode (T1 G8), the user sees boundary + N tread lines + N+1 riser lines auto-distributed per the rise-run rule (`tread ≥ 260 mm × riser ≤ 190 mm` advisory). Dragging one tread line **auto-rebalances** the others — pulling tread wider narrows the adjacent ones proportionally; total run stays constant. The gold-standard "rebalance-as-you-drag" invariant.
 
@@ -1257,10 +1262,10 @@ The cursor-language + command-grammar + associative-dimensions trio is what make
 | VER-V3-02 | Named milestones (Cmd+S snapshot dialog) | M | done | VER-V3-01 |
 | COL-V3-02 | Permission tiers (admin / editor / viewer / public-link viewer) | M | done | COL-V3-01 |
 | COL-V3-03 | Shareable public link | M | done | COL-V3-02 |
-| COL-V3-05 | Designer's Bill of Rights customer-facing artifact | XS | now | — |
-| COL-V3-04 | Presence avatars + live cursors (v3.1 stretch) | S | next | COL-V3-01 |
-| MRK-V3-03 | Sheet review surface with comment-anchoring | L | next | MRK-V3-02 + T4 sheets |
-| COL-V3-06 | Offline-tolerant authoring with conflict resolution | L | next | COL-V3-01 |
+| COL-V3-05 | Designer's Bill of Rights customer-facing artifact | XS | done | — |
+| COL-V3-04 | Presence avatars + live cursors (v3.1 stretch) | S | done | COL-V3-01 |
+| MRK-V3-03 | Sheet review surface with comment-anchoring | L | done | MRK-V3-02 + T4 sheets |
+| COL-V3-06 | Offline-tolerant authoring with conflict resolution | L | done | COL-V3-01 |
 | VER-V3-03 | Bidirectional Revit sync via IFC + BCF | — | vision | COL-V3-01 + IFC roundtrip |
 
 **Per-WP entries** (one per WP).
@@ -1472,7 +1477,7 @@ type PublicLink = {
 
 _Source: R-B §9 #2 (Motif's nine-right document does real GTM work — copyable in a week, signals trust currency). Severity Medium — small effort, asymmetric brand pay-back._
 
-**Status.** `now`.
+**Status.** `done`.
 **Scope.** A customer-facing essay-grade document published at `bim-ai.com/bill-of-rights`. Nine rights, drawing on Motif's structure but specific to bim-ai's wedge. Concrete clauses: **(1)** your designs are not used to train our AI models; **(2)** you can export your model in IFC or BCF at any time; **(3)** the activity stream is your audit trail — never silently rewritten; **(4)** every AI agent action logs assumptions before applying; **(5)** you can revoke any public link instantly; **(6)** brand customisation never alters drafting palette, line-weights, or motion language; **(7)** your data is encrypted in transit and at rest; **(8)** we never lock you into a proprietary file format; **(9)** you can leave at any time and take your data with you. Cross-references the **§L Locked Decisions** in the v3 tracker and the **§O OpenBIM Stance**.
 **Data model.** No data model — this is a static page + an MDX source + a print-friendly layout for PDF download.
 **Engine.** Static MDX file in the marketing site repo. PDF export via build-time Puppeteer.
@@ -1481,11 +1486,13 @@ _Source: R-B §9 #2 (Motif's nine-right document does real GTM work — copyable
 **Effort.** XS — 4 days writing + 1 day layout.
 **Cross-theme references.** B4 (this is a brand-layer artifact); T9 (clause #4 commits to the assumption-logging discipline that ships with the agent).
 
+**Completion 2026-05-11.** Implemented as `legal/bill-of-rights.md` with nine project-specific rights, including no-training, OpenBIM export, activity-stream audit trail, assumption logging, revocable links, drafting-token invariants, data protection, no proprietary lock-in, and data exit. The document is reachable from the app at `/bill-of-rights` and from the API at `/api/v3/bill-of-rights`; `app/tests/api/test_agt_v3_06.py` asserts the artifact exists and contains the required clauses.
+
 #### COL-V3-04 — Presence avatars + live cursors (v3.1 stretch)
 
 _Source: R-A §5 (avatars top-right) + R-B §6 (Motif's spatial presence). Severity Medium. **Live cursors are explicitly a v3.1 stretch — note this; the v3 tracker §V V-06 reserves live-cursor + voice for post-v3.**_
 
-**Status.** `next`. **Note:** live cursors are **v3.1 stretch** — not v3 ship scope. v3 ships only the participant-strip avatars; live cursors and live selection halos are scoped for v3.1. This is consistent with §V V-06 which keeps real-time multi-user voice + live-cursor for post-v3.
+**Status.** `done`. **Note:** live cursors are **v3.1 stretch** — not v3 ship scope. v3 ships only the participant-strip avatars; live cursors and live selection halos are scoped for v3.1. This is consistent with §V V-06 which keeps real-time multi-user voice + live-cursor for post-v3.
 **Scope.** Two slices: **(a)** participant-strip avatars in v3 ship — top-right strip showing initials + assigned color, max 5 visible with overflow chip; **(b)** live cursors + selection halos painted in each user's color in v3.1 stretch — implemented via yjs awareness, throttled to 30 Hz, color-coded to participant strip. Cursor labels show participant name on hover. Selection halos are visible across users — a wall I select shows my halo color to others.
 **Data model.**
 ```ts
@@ -1508,7 +1515,7 @@ type Awareness = {
 
 _Source: R-B §9 #1 (sheet review with bidirectional Revit comments — the email/PDF chain practices universally hate). Severity High. The Bluebeam-replacement WP._
 
-**Status.** `next`.
+**Status.** `done`.
 **Scope.** Published sheets render in a dedicated review surface inside the canvas. Reviewers (including public-link viewers) can drop comments + markups on sheet detail callouts; the comment back-flows to the source view from which the detail was sliced. Comment chip appears in the source view's chrome: "1 comment on detail B-12 from sheet A-301." Click → jumps to source view with the comment surfaced as a pin. Removes the email/PDF chain that practices universally hate.
 **Data model.** Reuses MRK-V3-01 `Comment` entity with extended anchor:
 ```ts
@@ -1526,7 +1533,7 @@ anchor:
 
 _Source: derived from yjs's CRDT properties (R-B §6 doesn't cover this; it's an architecture-level affordance we get for free with COL-V3-01)._
 
-**Status.** `next`.
+**Status.** `done`.
 **Scope.** A user who loses their network connection can continue editing locally; on reconnect, yjs's CRDT merge converges all participants to a consistent state. No "you're offline — please reconnect" modal. Local edits persist in IndexedDB during the offline window. Conflict resolution is CRDT-deterministic; rare semantic conflicts (e.g. two users delete the same wall) surface as activity-stream entries with a "merge note" chip.
 **Data model.** No new entities; reuses COL-V3-01's Y.Doc structure with persistence to IndexedDB via `y-indexeddb` provider.
 **Engine.** Add `y-indexeddb` provider on the client; the Y.Doc persists to IndexedDB on every transaction. On disconnect, the client switches to "offline mode" — writes accumulate locally. On reconnect, yjs syncs the offline ops with the server-side document; CRDT merge resolves; semantic-conflict detection (e.g. delete-of-deleted-element) surfaces as activity-stream merge notes.
@@ -1590,18 +1597,18 @@ T4 is bim-ai's deliverables surface and the home of the documentation half of **
 | ID        | Item                                                                  | Effort | State  | Depends on                  |
 | --------- | --------------------------------------------------------------------- | ------ | ------ | --------------------------- |
 | VIE-V3-01 | Detail-level rendering completion (VIE-01 carry-forward)              | M      | done | v2 VIE-01, FL-08            |
-| ANN-V3-01 | Detail-region drawing-mode authoring (ANN-01 carry-forward)            | M      | now    | v2 ANN-01, EDT-01           |
+| ANN-V3-01 | Detail-region drawing-mode authoring (ANN-01 carry-forward)            | M      | done    | v2 ANN-01, EDT-01           |
 | ANN-V3-02 | Detail-component library (regular + repeating + batting)              | L      | now    | ANN-V3-01, G14              |
 | VIE-V3-02 | Drafting-view + callout + cut-profile + view-break (G18 bundle)        | XL     | done | VIE-V3-01                    |
 | VIE-V3-03 | View templates + apply + edit + propagation toast (G22)                | L      | done | VIE-V3-02                    |
 | CAN-V3-01 | Plan canvas line-weight hierarchy at multiple plot scales (§2.4.2)     | L      | done | VIE-V3-01                    |
-| CAN-V3-02 | Hatch patterns scaling with paper-mm at the active plot scale          | M      | now    | CAN-V3-01                    |
+| CAN-V3-02 | Hatch patterns scaling with paper-mm at the active plot scale          | M      | done    | CAN-V3-01                    |
 | CAN-V3-03 | Dimension typography — tabular nums + 2xs step + padlock glyph         | S      | now    | tokens-v3, snapEngine        |
 | CAN-V3-04 | 3D viewport sun + line + AO retuning (§2.4.1)                          | M      | now    | tokens-v3                    |
 | SHT-V3-01 | Sheet + titleblock + cartouche + window-legend (G20 bundle)            | L      | done | v2 sheets-partial            |
-| OUT-V3-01 | Live presentation URL — refreshable + revocable + public-link          | L      | next   | T3 link-share infra, CQ-01   |
-| OUT-V3-02 | Frames + Views as canvas state, exportable to PPTX                     | L      | next   | SHT-V3-01, OUT-V3-01         |
-| OUT-V3-03 | Branded PDF / PPTX export with brand-layer-aware templates             | M      | next   | SHT-V3-01, brand-layer.css   |
+| OUT-V3-01 | Live presentation URL — refreshable + revocable + public-link          | L      | done   | T3 link-share infra, CQ-01   |
+| OUT-V3-02 | Frames + Views as canvas state, exportable to PPTX                     | L      | done   | SHT-V3-01, OUT-V3-01         |
+| OUT-V3-03 | Branded PDF / PPTX export with brand-layer-aware templates             | M      | done   | SHT-V3-01, brand-layer.css   |
 | OUT-V3-04 | Page-frame-as-export-region + image-underlay tracing                   | M      | next   | SHT-V3-01, T9 IMG-V3-01      |
 | OUT-V3-05 | CD philosophy — visual-first jobsite instructions + QR-linked 3D       | XL     | vision | SHT-V3-01, OUT-V3-02         |
 | OUT-V3-06 | 3D-detail explosion videos (Veo 3 / Sora 2 stack)                       | XL     | vision | OUT-V3-05, T9 AI rendering   |
@@ -1626,7 +1633,7 @@ Sixteen WPs: ten in `now` (the B1 + B4 critical-path), four `next` (the B2 deck 
 
 #### ANN-V3-01 — Detail-region drawing-mode authoring (ANN-01 carry-forward)
 
-**Status.** `now`. v2 ANN-01 deferred drawing-mode UX; setter + chip exist.
+**Status.** `done`. v2 ANN-01 deferred drawing-mode UX; setter + chip exist.
 
 **Scope.** Click-to-author polyline / region tool that drops a `detail_region` element on a plan, section, drafting view, or callout. Polyline (open path) or region (closed path with hatch). Live preview, escape cancels, return commits.
 
@@ -1733,7 +1740,7 @@ Sixteen WPs: ten in `now` (the B1 + B4 critical-path), four `next` (the B2 deck 
 
 #### CAN-V3-02 — Hatch patterns scaling with paper-mm at the active plot scale
 
-**Status.** `now`.
+**Status.** `done`.
 
 **Scope.** Canon hatches per material — brick at 45° offset, concrete dotted, insulation curve-stroked, plaster cross-hatched, timber grain striped, gypsum dotted-finer, stone irregular-poly. **Hatches scale with paper-mm at the active plot scale, not with screen pixels** — non-negotiable for the "feels like a real plan" goal per R-G.
 
@@ -1811,7 +1818,7 @@ Sixteen WPs: ten in `now` (the B1 + B4 critical-path), four `next` (the B2 deck 
 
 #### OUT-V3-01 — Live presentation URL — refreshable + revocable + public-link viewer
 
-**Status.** `next`. Ships after T3 link-share infra + CQ-01 lands. The B2 marquee output and Rayon copy item #8.
+**Status.** `done`. Ships after T3 link-share infra + CQ-01 lands. The B2 marquee output and Rayon copy item #8.
 
 **Scope.** Hit "Share live presentation" → refreshable, revocable URL on clipboard; public viewer opens in a browser without an account; shows current Pages / Frames / Views state of the canvas; refreshes whenever the source canvas changes (websocket-driven). "Revoke" rotates the URL; existing readers see "presentation revoked." Per R-A §5: 10 000+ presentations published since soft launch — a top-of-funnel growth lever.
 
@@ -1829,7 +1836,7 @@ Sixteen WPs: ten in `now` (the B1 + B4 critical-path), four `next` (the B2 deck 
 
 #### OUT-V3-02 — Frames + Views as canvas state, exportable to PPTX
 
-**Status.** `next`. Motif-inspired (R-B §7 + R-B §9 #7); per the prompt, T4 owns this.
+**Status.** `done`. Motif-inspired (R-B §7 + R-B §9 #7); per the prompt, T4 owns this.
 
 **Scope.** Build the canvas state for a presentation deck out of two primitives: **Frames** (rectangular crops on a presentation canvas, each pointing at a `viewId` + display options) and **Views** (saved camera + visibility state on a 3D / plan / sheet view). The presentation canvas state IS the deck — there is no separate "PowerPoint exporter" team. PPTX export is a pretty-print of the same state. Per R-B §9 #7: _"don't build a separate PowerPoint exporter; make the canvas itself the deliverable; pretty-print on demand."_
 
@@ -1847,7 +1854,7 @@ Sixteen WPs: ten in `now` (the B1 + B4 critical-path), four `next` (the B2 deck 
 
 #### OUT-V3-03 — Branded PDF / PPTX export with brand-layer-aware templates
 
-**Status.** `next`. Locked decision §L (d): brand-layer overrides are CSS-only — no component or kernel changes. PDF / PPTX exporters honour the same constraint.
+**Status.** `done`. Locked decision §L (d): brand-layer overrides are CSS-only — no component or kernel changes. PDF / PPTX exporters honour the same constraint.
 
 **Scope.** PDF + PPTX export accepts a `brandTemplateId`. The template defines a Layer-C override (accent / typeface / logo). Exporter writes the file with that brand applied — chrome accents in titleblocks, font in captions, logo in cartouche — without touching Layer A (drafting palette, line weights, motion).
 
@@ -1954,10 +1961,10 @@ T4 is where bim-ai's documentation surface beats Revit's by default rather than 
 | ID | Item | Effort | State | Depends on |
 | -- | ---- | ------ | ----- | ---------- |
 | AST-V3-01 | Searchable asset library + schematic-2D thumbnails | M-L | done | — |
-| MAT-V3-01 | Material PBR map slots + decals | M | now | — |
-| MAT-V3-02 | `--mat-*` token family (wallTypeCatalog migration) | S | now | — |
-| AST-V3-04 | Parametric kitchen kit | L | now | AST-V3-01 |
-| SCH-V3-01 | Custom-properties + filterable spreadsheet view | M | now | — |
+| MAT-V3-01 | Material PBR map slots + decals | M | done | — |
+| MAT-V3-02 | `--mat-*` token family (wallTypeCatalog migration) | S | done | — |
+| AST-V3-04 | Parametric kitchen kit | L | done | AST-V3-01 |
+| SCH-V3-01 | Custom-properties + filterable spreadsheet view | M | done | — |
 | AST-V3-02 | Custom-published libraries + subscriber refresh | M | next | AST-V3-01 |
 | AST-V3-03 | AI block generation from product photo | M | next | AST-V3-01, T9 Jobs queue |
 | AST-V3-05 | Curved-surface UV positioning (viewport handle) | S | next | MAT-V3-01 |
@@ -1999,7 +2006,7 @@ type ParamSchema = Array<{ key: string; kind: 'mm' | 'enum' | 'material' | 'bool
 
 _Source: R-D G19. Severity Medium → High long-term for T5. Materials carry PBR maps (albedo / normal / roughness / metallic / height), not just flat colour. Decals = non-tiled material applications._
 
-**Status.** `now`.
+**Status.** `done`.
 **Scope.** Extend the v2 `Material` to optional PBR map slots: `albedoMapId`, `normalMapId`, `roughnessMapId`, `metallicMapId`, `heightMapId`. Each map is an ImageAsset (PNG / JPG / EXR) referenced by id, stored in the project. Add a separate `Decal` element kind for non-tiled, location-specific applications (logo on a wall, graffiti, poster, signage decal) — a 2D image hosted to a parent surface with a rectangle of UV space. Materials render in 3D viewport with a tuned PBR shader; in plan + elevation, materials render as their albedo or as a hatch pattern (existing v2 path). Decals render only in 3D and rendered output (T9 AI rendering surface).
 **Data model.**
 ```ts
@@ -2038,7 +2045,7 @@ _Source: R-D G19. Severity Medium → High long-term for T5. Materials carry PBR
 
 _Source: R-G §1.9 (`packages/web/src/families/wallTypeCatalog.ts:127–139` leaks 9 material hex literals — `#7c5b3b` timber cladding, `#a45a3f` brick, etc.). Severity High (T5 surface). R-G §11 explicitly names this as the T5 unlock._
 
-**Status.** `now`.
+**Status.** `done`.
 **Scope.** Migrate the 9 material hex literals from `wallTypeCatalog.ts` into a new `--mat-*` token family in `tokens-drafting.css`, then add an ESLint rule entry that the `wallTypeCatalog.ts` file can no longer carry hex literals. Establishes the **canonical material-token family** that every future material in the library reads from, not just walls. The token family carries 12–16 architectural materials at v3 launch, expandable from there: timber (oak, walnut, pine, cedar), brick (red, buff, grey, hand-made), concrete (smooth, rough, polished), stone (limestone, marble, slate), metal (brushed-steel, copper, blackened-zinc), insulation (mineral-wool, EPS, PIR). Each token has light + dark surface variants so materials read correctly in both chrome modes.
 **Data model.** No new data-model fields; this is purely a token migration.
 ```css
@@ -2064,7 +2071,7 @@ _Source: R-G §1.9 (`packages/web/src/families/wallTypeCatalog.ts:127–139` lea
 
 _Source: R-D G21. Severity Medium standalone, **High as T5 demo** ("fill an empty interior in 5 minutes"). Direct user-moment unlock for B1 daily-architect workflow + B2 sketch-to-deck demo._
 
-**Status.** `now`.
+**Status.** `done`.
 **Scope.** Bundled cabinet kit — 6–10 parametric families that snap together along a kitchen wall, widths auto-adjust to fill the wall. Components: **base cabinet** (parametric `widthMm × depthMm × heightMm`, door style enum), **upper cabinet** (above base, configurable height + door style), **oven housing** (slot for a built-in oven, height clamped to oven height), **sink unit** (cuts a sink hole in the countertop, hosts a sink fixture), **pantry tower** (full-height column, 600 / 800 / 1000 mm wide), **countertop run** (horizontal slab spanning bases, parametric depth + thickness + material), **end panel** (decorative side-cap), **dishwasher slot**, **fridge slot**. Kit is a `kind: 'family_kit'` library entry with a deterministic snap-chain solver.
 **Data model.**
 ```ts
@@ -2100,7 +2107,7 @@ _Source: R-D G21. Severity Medium standalone, **High as T5 demo** ("fill an empt
 
 _Source: R-A §9 #10 ("first-class custom-properties + tables… tagged data on walls/zones/blocks → filterable spreadsheet → drop the table into a layout page. This is what 'light-BIM' actually means in UX terms."); R-D §3 schedule cluster._
 
-**Status.** `now`.
+**Status.** `done`.
 **Scope.** Two coupled primitives. **(a)** First-class **custom-properties** on any element: project-level `PropertyDefinition` ({ key, label, kind, defaultValue }); element-level `props: Record<string, unknown>` arbitrary key → value bag with the project-level definitions providing schema + render hints. **(b)** **Schedule view** — a new view kind that is a filterable spreadsheet over a category (walls, doors, kitchen-kit components, decals, etc.); columns = built-in fields (kernel-derived: `lengthMm`, `areaM2`, `wallTypeId`) + custom-properties; rows = element instances. Filter, sort, group. Edit any cell → mutates the underlying element via the standard command bus. Cross-highlight: hover a row → element pulses in plan / 3D.
 **Data model.**
 ```ts
@@ -2292,10 +2299,10 @@ The following items are explicitly **not** v3 build scope; let them stay in `vis
 
 | ID | Item | Effort | State | Depends on |
 | -- | ---- | ------ | ----- | ---------- |
-| IMP-V3-01 | Image-as-underlay import | S | now | — |
+| IMP-V3-01 | Image-as-underlay import | S | done | — |
 | TRC-V3-01 | Image-to-BIM-seed orchestration (multi-modal; calls T9 IMG-V3-01 deterministic CV) | L | now | IMP-V3-01, CON-V3-04, T9 IMG-V3-01 |
-| CON-V3-02 | Seed → refinement loop handoff to T9 | M | now | TRC-V3-01 |
-| CON-V3-04 | Jobs queue integration for slow tracing / inference operations | S | now | T9 JOB-V3-01 |
+| CON-V3-02 | Seed → refinement loop handoff to T9 | M | done | TRC-V3-01 |
+| CON-V3-04 | Jobs queue integration for slow tracing / inference operations | S | done | T9 JOB-V3-01 |
 | TRC-V3-02 | Dimension inference (AutoScale-style; deterministic CV) | M | next | TRC-V3-01 |
 | CON-V3-01 | Concept-board view kind | M | next | — |
 | MDB-V3-01 | Moodboard-attachment surface | M | next | CON-V3-01 |
@@ -2308,7 +2315,7 @@ The following items are explicitly **not** v3 build scope; let them stay in `vis
 
 _Source: R-A §6. Severity High. The cheap-and-immediate ramp into T6 — without it every AI-tracing job starts from a file-picker dialog._
 
-**Status.** `now`.
+**Status.** `done`.
 **Scope.** Drag-and-drop a raster image (PNG / JPG / PDF page) onto the canvas; it lands as an `ImageUnderlay` — a non-modeled surface with position + scale + opacity, snappable but not selectable as a kernel target. Coexists with DXF underlay.
 **Data model.**
 ```ts
@@ -2331,7 +2338,7 @@ _Source: R-A §6. Severity High. The cheap-and-immediate ramp into T6 — withou
 
 _Source: R-C §2 + R-A §8. Severity Blocker for B2. The marquee T6 operation. **Reframed for v3 per §L "no embedded AI":** T6 owns the **orchestration** (UI, queue, job lifecycle, multi-modal mode hint, ImageUnderlay → seed handoff to T9); the actual tracing is **deterministic CV** in T9 IMG-V3-01. AI-augmentation of the tracing step is post-v3 — when an external agent or future model is wired in, it substitutes IMG-V3-01's implementation while keeping the wire format unchanged._
 
-**Status.** `now`.
+**Status.** `done`.
 **Scope.** Orchestrate the conversion of an `ImageUnderlay` into a sound BIM seed: enqueue a TraceJob (via CON-V3-04 / T9 JOB-V3-01), call T9 IMG-V3-01 (deterministic CV), receive the structured `EnvelopeToken[]` + `KernelElementDraft[]` payload, surface it for user / agent review, hand off to CON-V3-02. Multi-modal — pass a `modeHint` so T9 IMG-V3-01 picks the right CV pipeline for clean brochure floorplan vs noisy scanned hand drawing vs marked-up PDF vs whiteboard photo. Output is _real BIM_ (R-A reject #3 — not a wireframe, not a stylized PNG; geometry the kernel owns). T9 IMG-V3-01 produces the layout JSON deterministically; an external AI agent (Claude Code today) or a future swappable model can substitute the CV step without changing this orchestration.
 **Data model.**
 ```ts
@@ -2358,7 +2365,7 @@ type TraceJob = {
 
 _Source: R-C GBM. Severity High. The contract between T6 and T9 — without it the seam is muddled and T9's agent owns inputs T6 should own._
 
-**Status.** `now`.
+**Status.** `done`.
 **Scope.** Define the typed handoff from T6 to T9: T6 produces structured layout JSON + envelope tokens (GBM `(host, t, δ, s, ρ)` shape) + an assumptions log; T9 owns the refinement loop. The handoff is a typed contract — `ConceptSeed` — that T6 commits and T9 consumes. Once committed, T6 is done.
 **Data model.**
 ```ts
@@ -2402,6 +2409,8 @@ type Job = {
 **Acceptance.** Trigger a `trace_image_to_bim` job → row appears with `queued` chip → progresses through `running` (with progress %) → `succeeded` chip with "Open" link. Force a failure → `failed` chip + Retry button. Cancel a running job → `cancelled` chip; kernel state untouched.
 **Effort.** S — 5 days.
 **Cross-theme references.** T9 (T9's refinement + render jobs land in the same queue — shared infra); T3 (Jobs visible across collaborators per CQ-01 broadcast).
+
+**Completion 2026-05-11.** Implemented through the shared `bim_ai.jobs` queue and `/api/jobs` routes, with `image_trace` as an accepted job kind. `/api/v3/trace` enqueues images over 2 MB and returns HTTP 202 with `{ jobId }`; `packages/web/src/jobs/JobsPanel.tsx` renders queued/running/done/error/cancelled jobs with retry/cancel actions and a human-readable Image Trace label. Coverage: `app/tests/api/test_jobs_routes.py` exercises `image_trace` submission and queue controls; `app/tests/test_img_v3_01.py` asserts large trace uploads return a UUID job id.
 
 #### TRC-V3-02 — Dimension inference (AutoScale-style)
 
@@ -2541,12 +2550,12 @@ T7 supports two Strategic Bets: **B1 Renovation-First** (renovation work lives i
 | ID         | Item                                                            | Effort | State    | Depends on                                  |
 | ---------- | --------------------------------------------------------------- | ------ | -------- | ------------------------------------------- |
 | TOP-V3-01  | Toposolid primitive (terrain solid + heightmap + thickness)      | L      | done | KRN-06 (shared coords carryover)             |
-| TOP-V3-02  | Toposolid subdivisions for paving / lawn / road / planting      | M      | now      | TOP-V3-01                                    |
-| TOP-V3-03  | Subdivide-with-paint UX (cross-ref T2 U10)                       | M      | now      | TOP-V3-02; T2 in-place UX                    |
-| TOP-V3-04  | Site walls + graded regions snapping to toposolid                | M      | now      | TOP-V3-01                                    |
+| TOP-V3-02  | Toposolid subdivisions for paving / lawn / road / planting      | M      | done      | TOP-V3-01                                    |
+| TOP-V3-03  | Subdivide-with-paint UX (cross-ref T2 U10)                       | M      | done      | TOP-V3-02; T2 in-place UX                    |
+| TOP-V3-04  | Site walls + graded regions snapping to toposolid                | M      | done      | TOP-V3-01                                    |
 | SUN-V3-01  | Sun & shadow study (SunSettings + date-time slider in 3D)        | M      | done | KRN-06                                       |
-| OSM-V3-01  | OSM-import for neighborhood massing                              | M      | now      | TOP-V3-01; KRN-06                            |
-| OSM-V3-02  | Neighborhood massing render style (desaturated grey)             | S      | now      | OSM-V3-01                                    |
+| OSM-V3-01  | OSM-import for neighborhood massing                              | M      | done      | TOP-V3-01; KRN-06                            |
+| OSM-V3-02  | Neighborhood massing render style (desaturated grey)             | S      | done      | OSM-V3-01                                    |
 | LOT-V3-01  | Property-line by bearing-table (cross-ref T2 U4)                 | S      | next     | KRN-01 (v2 element); T2 numeric override     |
 | LOT-V3-02  | Site-aware plan view kind                                        | S      | next     | TOP-V3-01; OSM-V3-01; T4 view templates     |
 
@@ -2591,7 +2600,7 @@ Two parametrisations: sparse height samples (surveyor data) or regular grid (DEM
 
 #### TOP-V3-02 — Toposolid subdivisions
 
-**Status.** `now`. Required for paving / lawn / road / planting differentiation.
+**Status.** `done`. Required for paving / lawn / road / planting differentiation.
 
 **Scope.** Sub-regions of a toposolid carrying their own finish material and schedule category. Subdivisions are 2D polygon overlays in plan that drape onto the surface in 3D.
 
@@ -2621,7 +2630,7 @@ Two parametrisations: sparse height samples (surveyor data) or regular grid (DEM
 
 #### TOP-V3-03 — Subdivide-with-paint UX
 
-**Status.** `now`. Cross-references **T2 U10**.
+**Status.** `done`. Cross-references **T2 U10**.
 
 **Scope.** Painterly authoring: pick a toposolid → "Add subdivision" → sketch polygon directly on the surface in 3D or in plan → assign finish from a dropdown → polygon paints onto the slope and follows contour. The feel is **decorating terrain, not editing a CAD object** — closer to Procreate's bucket-fill than to Revit's "Edit Boundary" mode.
 
@@ -2639,7 +2648,7 @@ Two parametrisations: sparse height samples (surveyor data) or regular grid (DEM
 
 #### TOP-V3-04 — Site walls + graded regions
 
-**Status.** `now`. Without snapping, site walls float in air and graded regions don't read.
+**Status.** `done`. Without snapping, site walls float in air and graded regions don't read.
 
 **Scope.** Site walls (retaining, garden) and graded regions (lawn embankment, sloped driveway pad) anchor to the toposolid. Site wall base follows the slope; graded region locally deforms the surface (flat patio) without changing the underlying solid.
 
@@ -2703,7 +2712,7 @@ KRN-06 project base point gains `latitudeDeg` + `longitudeDeg` (existing `angleT
 
 #### OSM-V3-01 — OSM neighborhood massing import
 
-**Status.** `now`. Differentiator vs Revit (which has no built-in OSM path) and the cheap-fast-deterministic answer to V-07.
+**Status.** `done`. Differentiator vs Revit (which has no built-in OSM path) and the cheap-fast-deterministic answer to V-07.
 
 **Scope.** Fetch OpenStreetMap building footprints + heights for a bounding box around the project (default 200 m radius around the project base point) and instantiate them as **neighborhood massing elements** — lightweight prismatic solids, no walls, no openings, no BIM detail. Pure context. Read-only. Toggleable per view.
 
@@ -2736,7 +2745,7 @@ Separate `neighborhood_import_session` metadata tracks bbox, fetch timestamp, an
 
 #### OSM-V3-02 — Neighborhood massing render style
 
-**Status.** `now`. The render style is what makes the import _read as context_ instead of as poor-quality BIM.
+**Status.** `done`. The render style is what makes the import _read as context_ instead of as poor-quality BIM.
 
 **Scope.** Dedicated render path for `neighborhood_mass` — desaturated warm grey (not engineering-50%-grey), no edge wires, optional translucency, suppressed in interior plan views, visible in site plan + 3D + elevation. **Visual rule: neighbors must read as background, never as competing foreground.**
 
@@ -2857,8 +2866,8 @@ T7 makes the model live in a real place. **Toposolid is the gating primitive** �
 | -- | ---- | ------ | ----- | ---------- |
 | WSP-V3-01 | Discipline-aware Workspace concept (Architekt / Statiker / TGA) | L | now | CQ-03 (soft) |
 | DSC-V3-01 | Discipline tags on elements (`element.discipline`) | M | done | T1 (kernel kinds) |
-| DSC-V3-02 | Discipline tags on views (default lens) | M | now | DSC-V3-01 |
-| LNS-V3-01 | Lens dropdown in status bar | S | now | DSC-V3-01, DSC-V3-02 |
+| DSC-V3-02 | Discipline tags on views (default lens) | M | done | DSC-V3-01 |
+| LNS-V3-01 | Lens dropdown in status bar | S | done | DSC-V3-01, DSC-V3-02 |
 | LNS-V3-02 | Discipline tints on chrome (`--disc-*` tokens) | S | now | Pillars (R-G §2.2.2) |
 | DSC-V3-03 | Discipline-aware permission tier (T3 cousin) | M | next | DSC-V3-01, T3 |
 | DSC-V3-04 | Cross-discipline clash filtering UI (extends FED-02) | S | next | DSC-V3-01, FED-02 |
@@ -2917,7 +2926,7 @@ DEFAULT_DISCIPLINE_BY_KIND: Record<ElementKind, 'arch' | 'struct' | 'mep'> = {
 
 _Source: D4 + D8. Severity High. Without view-level lens defaults, every view re-asks "what should I show?" and the lens dropdown becomes per-view configuration — the very anti-pattern we're avoiding._
 
-**Status.** `now`.
+**Status.** `done`.
 **Scope.** Every view gains a `defaultLens: LensMode`. Values: `'show_arch'`, `'show_struct'`, `'show_mep'`, `'show_all'`. Default at view-create inherits from active workspace's `defaultLens`. View templates (T4) bundle the default lens. The lens is a view modifier (T2 vocabulary) — does not mutate the model; changes which elements are foreground vs ghost.
 **Data model.**
 ```ts
@@ -2934,7 +2943,7 @@ defaultLens: LensMode;       // view-level; default = active workspace's default
 
 _Source: D8. Severity High. Marquee surface — single click toggles the lens. The antidote to A8._
 
-**Status.** `now`.
+**Status.** `done`.
 **Scope.** Status-bar dropdown labelled "Show: ▾" — opens a four-item menu: "Architecture | Structure | MEP | All." Click flips `defaultLens` on the **active view only** (not project-wide). Foreground/ghost transition runs `--ease-paper` over 240 ms. The dropdown reads the active view's current lens; opening it shows a check-mark on active. **Negative reference: A8 VG matrix dialog with ~120 toggles** — our antidote is one dropdown that flips a discipline view modifier, plus right-click-on-a-category for the long tail, plus view templates (T4) for "save this lens as a preset." Never a global matrix.
 **Data model.** No new fields; reuses `defaultLens` from DSC-V3-02.
 **Engine.** Click → `SetViewLens(activeViewId, lensMode)` — undoable, activity-stream-aware. Re-render runs the foreground/ghost transition next animation frame.
@@ -3044,11 +3053,11 @@ _The agent-callable tool surface that makes bim-ai 100 %-usable by external AI a
 | OPT-V3-01  | Design Options as agent scratch surface (non-destruction)       | M      | done | T1 KRN-V3-04, CMD-V3-01         |
 | JOB-V3-01  | Long-running-operations Jobs UX                                 | M      | done | CQ-01                           |
 | IMG-V3-01  | Image-input → structured-layout tool (deterministic CV)         | L      | done | API-V3-01                       |
-| VG-V3-01   | Render-and-compare CLI tool                                     | M      | now    | API-V3-01, T4 (canvas render)   |
-| AGT-V3-06  | No-training-on-customer-data clause                             | S      | now    | —                               |
-| CTL-V3-01  | Catalog query API                                               | M      | now    | API-V3-01, T5                   |
+| VG-V3-01   | Render-and-compare CLI tool                                     | M      | done    | API-V3-01, T4 (canvas render)   |
+| AGT-V3-06  | No-training-on-customer-data clause                             | S      | done   | —                               |
+| CTL-V3-01  | Catalog query API                                               | M      | done    | API-V3-01, T5                   |
 | TST-V3-01  | Refinement-reliability CI test pattern                          | S      | done   | CMD-V3-01, OPT-V3-01, VG-V3-01  |
-| EXP-V3-01  | Render-pipeline export tool (glTF / IFC / metadata bundles)     | M      | next   | API-V3-01                       |
+| EXP-V3-01  | Render-pipeline export tool (glTF / IFC / metadata bundles)     | M      | done   | API-V3-01                       |
 | AGT-V3-04  | Conversational refinement UI (in-app chat)                      | M      | vision | external agents own this today  |
 | RND-V3-01  | AI rendering integration (Veo / Sora / Imagen)                  | M      | vision | EXP-V3-01                       |
 | API-V3-02  | MCP server exposing the API-V3-01 surface                       | S      | vision | API-V3-01                       |
@@ -3281,7 +3290,7 @@ type StructuredLayout = {
 
 _Source: v2 SKB-03 lineage (visual checkpoint) + SKB-18 phase fixtures. Reframed from "agent visual gate" to "deterministic CV tool the agent calls." The CV (SSIM / MSE / pixel diff) is reproducible byte-for-byte; the agent decides what threshold to enforce._
 
-**Status.** `now`.
+**Status.** `done`.
 **Scope.** Deterministic CLI: `bim-ai compare <snapshot-a.json> <snapshot-b.json> [--target <png>] [--metric ssim|mse|pixel-diff] [--region <name>] [--threshold <float>]`. Renders both snapshots through the deterministic SKB-03 headless three.js wrapper (T4 cross-link), computes the metric, returns a structured score. The agent decides pass / fail based on its own threshold logic; the kernel only computes the score.
 
 This is the deterministic gate that prevents the 2026-05-07 seed-fidelity failure from recurring by construction: if an agent commits an 87-command bundle without calling `bim-ai compare`, the failure is trivially reproducible in CI; if it _does_ call compare and the score is below 0.7, repairing is cheaper than committing-then-undoing. Sub-100 ms for typical snapshots.
@@ -3309,7 +3318,7 @@ type CompareResult = {
 
 _Source: R-B §8 — _"No-training-on-customer-data is explicit in the Bill of Rights"_; R-B §9 copy item #6. Bill-of-Rights item; applies to **any** AI integration that happens later via vision-corral, not to v3's deterministic surface (which doesn't call models)._
 
-**Status.** `now`.
+**Status.** `done`.
 **Scope.** Operational + customer-facing artifact, not a code primitive. v3 ships an explicit **No-training-on-customer-data clause** in the Designer's Bill of Rights: _"Your designs, prompts, sketches, and authored content are never used to train any AI model — ours or any third party's."_
 
 Mechanically: when external AI integrations land via vision-corral, the contract is enforced at the integration boundary (no `train_on_input: true` ever set). bim-ai's binary doesn't call models in v3, so v3 ships **the wrapper module + audit-log schema** that future integrations must use. Customer-facing artifact: `legal/bill-of-rights.md` in the repo + marketing-page version on the public site.
@@ -3321,11 +3330,13 @@ Mechanically: when external AI integrations land via vision-corral, the contract
 **Effort.** S — 4 days.
 **Cross-theme references.** **R-B §9 + Bill of Rights as customer-facing artifact (cross-theme — sits in the brand layer alongside T3's Bill-of-Rights item).** **§L (the locked decision that the clause operationalises for future integrations).**
 
+**Completion 2026-05-11.** Implemented in `app/bim_ai/ai_boundary.py` with the audit-log row schema `{ jobId, modelId, modelVersion, trainOnInputFlag, timestamp, agentIdentifier }`, a validator that rejects missing or true `trainOnInputFlag`, deterministic CSV generation, `/api/v3/ai/audit-log.csv` returning header-only CSV for v3, and the `external-model-call-audit-export` API tool descriptor. `app/tests/api/test_agt_v3_06.py` covers the enforcement boundary, empty export, and Bill-of-Rights reachability.
+
 #### CTL-V3-01 — Catalog query API
 
 _Source: R-C §8 (catalog-bound generation). Reframed from "catalog-bound agent" to "catalog query tool" — the kernel exposes the catalog as a queryable surface; the agent (or human, or CI) calls the query and decides what to use. The "agent doesn't hallucinate" property comes from CMD-V3-01's enforcement that unresolved `catalogKey` values reject — that enforcement lives in the apply path, not in this WP._
 
-**Status.** `now`.
+**Status.** `done`.
 **Scope.** A query tool over T5's catalog: `bim-ai catalog query --kind <classKey> [--max-width <mm>] [--tag <name>] [--style <key>] --output json`. Returns a paginated list of T5 catalog instances with full metadata (dimensions, tags, style classification, preview asset id).
 
 The "agent picks from catalog" logic lives in the agent — read the query result, score candidates against the prompt's intent, pick one, emit the bundle with the chosen `catalogKey`. The **enforcement** that prevents hallucination is in CMD-V3-01: unresolved `catalogKey` → kernel rejects with `entity_token_unresolved_catalog`. CTL-V3-01 makes the catalog discoverable; CMD-V3-01 makes hallucination structurally impossible. If the catalog has no match, the query returns an empty list and the agent decides the next move (generic placeholder, `block_from_photo` job when integrations land, ask the user). We ship the query; the agent ships the policy.
@@ -3374,7 +3385,7 @@ YAML fixture in `app/tests/agent/refinement_reliability/12_step_refinement.yaml`
 
 _Source: R-B §8 (Motif rendering UX is the simplicity benchmark). Reframed from "in-app AI rendering UX" to "**deterministic export tool** that produces glTF / IFC / structured metadata bundles ready to be consumed by an external rendering pipeline." The rendering UX (Lumion / Twinmotion / Forma / cloud-AI-render) lives downstream; v3 ships the export shape._
 
-**Status.** `next`.
+**Status.** `done`.
 **Scope.** Deterministic export tool: `bim-ai export <format> <model-id> [--view <id>] [--include <metadata-bundle>] -o output.<ext>`. Formats: `gltf`, `gltf-pbr`, `ifc-bundle`, `metadata-only`. Each writes a clean wire format an external rendering pipeline can consume — Lumion, Twinmotion, Forma, cloud-AI render farms. Not AI-specific; a human rendering professional consumes the same files.
 
 v3 ships the **export shape** + metadata bundles (camera paths from saved views, PBR materials, sun positions). Specific external service integrations land via vision-corral. Per §L, no rendering model lives in the binary; our job is to make the export rich enough for any external service to render from without round-tripping through a less-faithful intermediate.

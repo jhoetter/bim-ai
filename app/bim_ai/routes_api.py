@@ -35,6 +35,7 @@ from bim_ai.agent_generated_bundle_qa_checklist import (
 from bim_ai.agent_review_readout_consistency_closure import (
     agent_review_readout_consistency_closure_v1,
 )
+from bim_ai.ai_boundary import empty_external_model_call_audit_csv, load_bill_of_rights_markdown
 from bim_ai.codes import BUILDING_PRESETS
 from bim_ai.commands import Command
 from bim_ai.constructability_bcf import build_constructability_bcf_export
@@ -212,6 +213,23 @@ async def api_schema() -> dict[str, Any]:
 @api_router.get("/building-presets")
 async def building_presets() -> dict[str, Any]:
     return {"presets": BUILDING_PRESETS}
+
+
+@api_router.get("/v3/bill-of-rights", response_class=PlainTextResponse)
+async def bill_of_rights_markdown() -> PlainTextResponse:
+    return PlainTextResponse(
+        load_bill_of_rights_markdown(),
+        media_type="text/markdown; charset=utf-8",
+    )
+
+
+@api_router.get("/v3/ai/audit-log.csv", response_class=PlainTextResponse)
+async def external_ai_audit_log_csv() -> PlainTextResponse:
+    return PlainTextResponse(
+        empty_external_model_call_audit_csv(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="external-model-call-audit.csv"'},
+    )
 
 
 @api_router.get("/bootstrap")
