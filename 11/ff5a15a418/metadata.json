@@ -4,13 +4,28 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 0,
-  "files_touched": null,
+  "files_touched": [
+    "spec/sketch-to-bim-clean-seeding-handover.md"
+  ],
   "sessions": [
     {
       "metadata": "/11/ff5a15a418/0/metadata.json",
       "transcript": "/11/ff5a15a418/0/full.jsonl",
       "content_hash": "/11/ff5a15a418/0/content_hash.txt",
       "prompt": "/11/ff5a15a418/0/prompt.txt"
+    },
+    {
+      "metadata": "/11/ff5a15a418/1/metadata.json",
+      "transcript": "/11/ff5a15a418/1/full.jsonl",
+      "content_hash": "/11/ff5a15a418/1/content_hash.txt",
+      "prompt": "/11/ff5a15a418/1/prompt.txt"
     }
-  ]
+  ],
+  "token_usage": {
+    "input_tokens": 88443,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2112896,
+    "output_tokens": 4352,
+    "api_call_count": 14
+  }
 }

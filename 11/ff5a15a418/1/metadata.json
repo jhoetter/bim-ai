@@ -1,0 +1,39 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "11ff5a15a418",
+  "session_id": "019e12e6-8567-71d3-bd23-bc42016e1f15",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-11T10:25:28.314699Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "spec/sketch-to-bim-clean-seeding-handover.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "c2e0877d1973",
+  "checkpoint_transcript_start": 6541,
+  "transcript_lines_at_start": 6541,
+  "token_usage": {
+    "input_tokens": 88443,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2112896,
+    "output_tokens": 4352,
+    "api_call_count": 14
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-11T10:25:27.3628Z",
+    "agent_lines": 200,
+    "agent_removed": 0,
+    "human_added": 9288,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 9488,
+    "total_lines_changed": 10149,
+    "agent_percentage": 1.9706375012316484,
+    "metric_version": 2
+  }
+}
