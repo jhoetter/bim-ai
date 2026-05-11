@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "ad9b30c70637",
+  "session_id": "019e12e6-8567-71d3-bd23-bc42016e1f15",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-11T08:05:41.025342Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "fe9d2a86a2f1",
+  "checkpoint_transcript_start": 5270,
+  "transcript_lines_at_start": 5270,
+  "token_usage": {
+    "input_tokens": 664025,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 13658496,
+    "output_tokens": 31379,
+    "api_call_count": 86
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 58,
+      "user_lines_removed": 8,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/plan/planElementMeshBuilders.ts": 45,
+        "packages/web/src/plan/symbology.wirePrimitives.test.ts": 13
+      },
+      "user_removed_per_file": {
+        "packages/web/src/plan/planElementMeshBuilders.ts": 8
+      }
+    }
+  ]
+}
