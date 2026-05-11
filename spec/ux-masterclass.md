@@ -618,6 +618,8 @@ modal and command-line parser utilities that have their own tests.
   placement, titleblock and viewport editor jumps, and sheet export/share routing.
 - Section Cmd+K coverage includes place active section on sheet, open source plan, and far-clip
   crop-depth increase/decrease commands through `updateElementProperty`.
+- Active 3D saved-viewpoint Cmd+K coverage includes reset to saved camera and update saved
+  viewpoint from the current orbit camera, clip planes, and hidden category state.
 - Navigation commands route through the workspace tab/mode controller.
 - Theme, language, project menu, family library, keyboard shortcuts, active visibility controls,
   3D view controls, save/restore snapshot, share presentation, rail toggles, and inactive-tab close

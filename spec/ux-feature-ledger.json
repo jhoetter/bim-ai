@@ -64,10 +64,11 @@
       "intendedViews": ["3d", "plan-3d"],
       "actualSurfaces": ["cmd-k", "right-rail", "canvas-context"],
       "preconditions": [
+        "active-viewpoint for saved viewpoint reset/update",
         "selected-wall for view.3d.wall.*",
         "selected door/window/floor/roof for right-rail category, host, and type actions"
       ],
-      "executionHandler": "useBimStore viewer runtime actions, Workspace.onSemanticCommand, and WorkspaceRightRail selected-element 3D actions",
+      "executionHandler": "useBimStore viewer runtime actions, Workspace saved-viewpoint reset/update callbacks, Workspace.onSemanticCommand, and WorkspaceRightRail selected-element 3D actions",
       "status": "implemented",
       "usabilityScore": 8,
       "tests": [
