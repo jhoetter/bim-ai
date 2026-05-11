@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "8df45175c610",
+  "session_id": "019e15ea-e85b-75e3-9a2e-6993c98b7267",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-11T09:02:34.295994Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/plan/planElementMeshBuilders.ts",
+    "packages/web/src/plan/symbology.wirePrimitives.test.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "d6a425dea109",
+  "checkpoint_transcript_start": 157,
+  "transcript_lines_at_start": 157,
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-11T09:02:34.274292Z",
+    "agent_lines": 58,
+    "agent_removed": 8,
+    "human_added": 804,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 862,
+    "total_lines_changed": 7229,
+    "agent_percentage": 0.9129893484576013,
+    "metric_version": 2
+  }
+}

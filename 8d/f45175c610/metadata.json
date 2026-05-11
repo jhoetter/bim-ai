@@ -7,6 +7,8 @@
   "files_touched": [
     "packages/cli/cli.initiationCheck.test.mjs",
     "packages/cli/cli.mjs",
+    "packages/web/src/plan/planElementMeshBuilders.ts",
+    "packages/web/src/plan/symbology.wirePrimitives.test.ts",
     "packages/web/src/state/storeCoercion.ts",
     "packages/web/src/workspace/Workspace.tsx",
     "spec/examples/seed-dsl-modern-house.example.json",
@@ -55,6 +57,12 @@
       "transcript": "/8d/f45175c610/6/full.jsonl",
       "content_hash": "/8d/f45175c610/6/content_hash.txt",
       "prompt": "/8d/f45175c610/6/prompt.txt"
+    },
+    {
+      "metadata": "/8d/f45175c610/7/metadata.json",
+      "transcript": "/8d/f45175c610/7/full.jsonl",
+      "content_hash": "/8d/f45175c610/7/content_hash.txt",
+      "prompt": "/8d/f45175c610/7/prompt.txt"
     }
   ],
   "token_usage": {
