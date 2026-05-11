@@ -298,6 +298,49 @@ def test_ifc_read_back_wall_and_space_psets_expose_reference_ids() -> None:
     assert (s_ps.get("Pset_SpaceCommon") or {}).get("ProgrammeCode") == "READBACK"
 
 
+def test_ifc_wall_common_load_bearing_roundtrips_to_authoritative_replay() -> None:
+    doc = Document(
+        revision=3,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-struct": WallElem(
+                kind="wall",
+                id="w-struct",
+                name="Structural Wall",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+                loadBearing=True,
+                structuralRole="load_bearing",
+                analyticalParticipation=True,
+                structuralMaterialKey="concrete-c30",
+                structuralIntentConfidence=0.75,
+            ),
+        },
+    )
+    step = export_ifc_model_step(doc)
+    import ifcopenshell
+    import ifcopenshell.util.element as elem_util
+
+    model = ifcopenshell.file.from_string(step)
+    wall = (model.by_type("IfcWall") or [])[0]
+    pset = elem_util.get_psets(wall).get("Pset_WallCommon") or {}
+    assert pset.get("Reference") == "w-struct"
+    assert pset.get("LoadBearing") is True
+    assert pset.get("BimAiStructuralRole") == "load_bearing"
+
+    replay = build_kernel_ifc_authoritative_replay_sketch_v0(step)
+    wall_cmd = next(c for c in replay["commands"] if c.get("type") == "createWall")
+    assert wall_cmd["id"] == "w-struct"
+    assert wall_cmd["loadBearing"] is True
+    assert wall_cmd["structuralRole"] == "load_bearing"
+    assert wall_cmd["analyticalParticipation"] is True
+    assert wall_cmd["structuralMaterialKey"] == "concrete-c30"
+    assert wall_cmd["structuralIntentConfidence"] == 0.75
+
+
 def test_export_ifc_wall_encoding_kernel_string():
     assert IFC_ENCODING_KERNEL_V1 == "bim_ai_ifc_kernel_v1"
 

@@ -101,6 +101,45 @@ def _space_pset_programme_json_fields(bucket: dict[str, Any]) -> dict[str, str]:
     return fields
 
 
+def _pset_str(value: Any) -> str | None:
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return None
+
+
+def _pset_float(value: Any) -> float | None:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed == parsed else None
+
+
+def _pset_bool(value: Any) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "t", "yes", "y", "1"}:
+            return True
+        if normalized in {"false", "f", "no", "n", "0"}:
+            return False
+    return None
+
+
+def _wall_structural_role_from_pset(bucket: dict[str, Any], load_bearing: bool | None) -> str:
+    role = _pset_str(bucket.get("BimAiStructuralRole"))
+    if role in {"unknown", "load_bearing", "non_load_bearing"}:
+        return role
+    if load_bearing is True:
+        return "load_bearing"
+    if load_bearing is False:
+        return "non_load_bearing"
+    return "unknown"
+
+
 AUTHORITATIVE_REPLAY_STAIR_TOP_LEVEL_TOL_MM = 1.0
 
 
@@ -436,6 +475,8 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
             continue
 
         wname = str(getattr(wal, "Name", None) or "") or ref_s
+        load_bearing = _pset_bool(bucket.get("LoadBearing"))
+        structural_role = _wall_structural_role_from_pset(bucket, load_bearing)
         wall_cmds.append(
             CreateWallCmd(
                 id=ref_s,
@@ -445,6 +486,16 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
                 end={"xMm": geo["end_x_mm"], "yMm": geo["end_y_mm"]},
                 thickness_mm=geo["thickness_mm"],
                 height_mm=geo["height_mm"],
+                load_bearing=load_bearing,
+                structural_role=structural_role,
+                analytical_participation=_pset_bool(
+                    bucket.get("BimAiAnalyticalParticipation")
+                )
+                is True,
+                structural_material_key=_pset_str(bucket.get("BimAiStructuralMaterialKey")),
+                structural_intent_confidence=_pset_float(
+                    bucket.get("BimAiStructuralIntentConfidence")
+                ),
             ).model_dump(mode="json", by_alias=True)
         )
         wgid = str(getattr(wal, "GlobalId", None) or "")

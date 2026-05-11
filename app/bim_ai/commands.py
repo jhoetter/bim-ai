@@ -35,6 +35,7 @@ from bim_ai.elements import (
     Vec3Mm,
     WallArcCurve,
     WallRecessZone,
+    WallStructuralRole,
     WallTypeLayer,
 )
 from bim_ai.roof_geometry import RoofGeometryMode
@@ -79,6 +80,13 @@ class CreateWallCmd(BaseModel):
     top_constraint_offset_mm: float = Field(default=0, alias="topConstraintOffsetMm")
     insulation_extension_mm: float = Field(default=0, alias="insulationExtensionMm")
     material_key: str | None = Field(default=None, alias="materialKey")
+    load_bearing: bool | None = Field(default=None, alias="loadBearing")
+    structural_role: WallStructuralRole = Field(default="unknown", alias="structuralRole")
+    analytical_participation: bool = Field(default=False, alias="analyticalParticipation")
+    structural_material_key: str | None = Field(default=None, alias="structuralMaterialKey")
+    structural_intent_confidence: float | None = Field(
+        default=None, alias="structuralIntentConfidence", ge=0, le=1
+    )
     is_curtain_wall: bool = Field(default=False, alias="isCurtainWall")
     stack_components: list[WallStackComponentCmd] = Field(
         default_factory=list, alias="stackComponents"

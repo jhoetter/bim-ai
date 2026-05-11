@@ -73,6 +73,25 @@ def _kernel_ifc_space_export_props(rm: RoomElem) -> dict[str, str]:
     return out
 
 
+def _kernel_ifc_wall_common_props(wall: WallElem) -> dict[str, Any]:
+    props: dict[str, Any] = {}
+    if wall.load_bearing is not None:
+        props["LoadBearing"] = bool(wall.load_bearing)
+    elif wall.structural_role == "load_bearing":
+        props["LoadBearing"] = True
+    elif wall.structural_role == "non_load_bearing":
+        props["LoadBearing"] = False
+    if wall.structural_role != "unknown":
+        props["BimAiStructuralRole"] = wall.structural_role
+    if wall.analytical_participation:
+        props["BimAiAnalyticalParticipation"] = True
+    if wall.structural_material_key:
+        props["BimAiStructuralMaterialKey"] = wall.structural_material_key
+    if wall.structural_intent_confidence is not None:
+        props["BimAiStructuralIntentConfidence"] = float(wall.structural_intent_confidence)
+    return props
+
+
 def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
     """Build IFC geometry or return `(None, 0)` to fall back to empty hull."""
 
@@ -208,7 +227,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         ifcopenshell.api.spatial.assign_container(f, products=[wal], relating_structure=st_inst)
         wall_products[wid] = wal
         geo_products += 1
-        attach_kernel_identity_pset(wal, "Pset_WallCommon", wid)
+        attach_kernel_identity_pset(wal, "Pset_WallCommon", wid, **_kernel_ifc_wall_common_props(w))
         _wmat_unused, length_m = wall_local_to_world_m(w, ez)
         # IFC-04: gross side area of the wall + net side area (gross less the
         # area of every door/window hosted on this wall). Falls back to gross

@@ -19,7 +19,7 @@ from bim_ai.elements import (
     WallTypeElem,
     WallTypeLayer,
 )
-from bim_ai.engine import clone_document, try_apply_kernel_ifc_authoritative_replay_v0
+from bim_ai.engine import clone_document, try_apply_kernel_ifc_authoritative_replay_v0, try_commit
 from bim_ai.export_ifc import (
     AUTHORITATIVE_REPLAY_KIND_V0,
     IFC_AVAILABLE,
@@ -529,6 +529,37 @@ def test_try_apply_authoritative_replay_v0_additive_merge_ok() -> None:
     assert new_doc is not None and "w-new" in new_doc.elements
     assert doc.elements == before.elements
     assert len(cmds) == 1
+
+
+def test_create_wall_command_preserves_structural_intent_fields() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+        },
+    )
+
+    ok, new_doc, _cmds, _violations, code = try_commit(
+        doc,
+        {
+            **_minimal_create_wall_cmd(wall_id="w-struct", level_id="lvl-g"),
+            "loadBearing": True,
+            "structuralRole": "load_bearing",
+            "analyticalParticipation": True,
+            "structuralMaterialKey": "concrete-c30",
+            "structuralIntentConfidence": 0.7,
+        },
+    )
+
+    assert ok is True and code == "ok"
+    assert new_doc is not None
+    wall = new_doc.elements["w-struct"]
+    assert isinstance(wall, WallElem)
+    assert wall.load_bearing is True
+    assert wall.structural_role == "load_bearing"
+    assert wall.analytical_participation is True
+    assert wall.structural_material_key == "concrete-c30"
+    assert wall.structural_intent_confidence == 0.7
 
 
 def test_try_apply_authoritative_replay_v0_merge_id_collision() -> None:
