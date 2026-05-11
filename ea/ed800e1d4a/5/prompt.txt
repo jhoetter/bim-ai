@@ -1,0 +1,103 @@
+please look into the "spec/UX bim-ai rework.pdf" ; Basically this document describes an overall design revamp that I need to do because our last design approaches didn't work as they should. You see the overall layout how it currently is like on slide three and four on the example of 3D rendering. And I've decided to cut this down into different kind of layout elements.
+
+So the primary left sidebar, which is like the core element for navigation, which will have at the very top one part for the project selection, at the very bottom the user menu, and then in between the whole navigation, so the very typical, very classical primary left sidebar, so how it is for instance also in Notion.
+
+And there we, this is really basically the core thing for navigation. Yeah, that's where we can decide between the views that we want to look into. So if we want to look into floor plans, if we want to look into 3D views if you want to look into sheets.
+
+So I want that, that's kind of like the level that we're talking about in the navigation. I don't want to see like the that we currently have that it says project levels, that it says that it says types, that it says families. I don't think that belongs there, but I think belongs in a navigation as the search project.
+
+And then the floor plans, 3D views, sections, sheets, schedules, concept. And the concept maybe at the very top, not at the bottom. So that's what I expect for the primary left sidebar. So this is really for the navigation.
+
+The header is all about tabs. Yeah, because I have a tab based approach to the system. So that if I, for instance, click on the ground floor, that is a tab, a 3D. View tab, sorry, the ground floor is a bad example. If I click on main front left, axonometric view, for instance, that is a 3D view, that is a tab.
+
+Then if I go onto floor plans and click onto ground floor, that is a tab. So I want that this is all in the header. The secondary left sidebar is for the specific view type, like for instance the floor plan. Everything that is for any element in that view type relevant.
+
+So this could be for instance for 3D renders where the sun is. Because if I change the position of the sun, then the whole render is affected. Or actually also if it's shaded or if it's a wireframe or if it's colored or those kind of things. So if it affects the whole canvas that we currently can see, that's what I want to have in the secondary left sidebar.
+
+Then we have the ribbon. The ribbon is basically grouping into different ribbon groups. And it's completely for the editing. So I expect there I can select that I, for instance, want to draw walls and so.
+
+But this must be specific also again to the view type. So I don't want to be able to draw walls. In a view type where it's completely silly that I have the wall element as an option there. So look into that.
+
+And don't take the current grouping approach that we have as a good given here. Maybe that was not a good approach yet. So think about how it really makes sense. Then the element side, but the one on the very right, that can disappear if no element is selected.
+
+So for instance, click on the floor plan or wall, then this specific wall is selected and for this specific wall I want to see properties. If I then deselect again and I have no element selected, then don't show the element sidebar. And into the footer we put things that are overall globally interesting.
+
+Like for instance, something like how many warnings there currently are from the advisor. Those kind of things. This is a big revamp, so you potentially need to look into... Into a feature matrix or something like understanding what do we currently have here, just currently put, is it put well there, should it move somewhere else, where should it move?
+
+And so on and so forth. So I don't want that you just blindly go into the revamp, but I need you to really define specifications that go into, okay, this should, this is currently here, it should go there, this is currently here, it should go there. Stuff like this.
+
+And I want that you really understand what kind of consistency you want to achieve, why it makes sense to put certain elements into certain layouts. That's super relevant. And then I have also some layout element specifics. So for instance, I explained to you what should stay in what kind of layout element, for instance.
+
+That's just ideas to give you examples where I want to head. So for instance, into the header shouldn't have anything regarding icons I can select to draw walls or measure. That makes zero sense. Also the 3D Schnittplan, Tabelle and so on, that makes zero sense.
+
+It's all for the primary left sidebar. Why would it be there again? So that gets rid of that. The selection for the project name that is also then no longer in the header but it becomes part of the primary left sidebar.
+
+So certain things are moving. The really focus of the header is the tab. And maybe it will also show at the top right that I can share something or who's currently in the document, in the project, like for the multi-user aspect. And the CMD plus K for search or press and so on.
+
+But the core focus of the header really is tabs. And I want that we have a notion like feeling for resizing the primary left sidebar because if I completely collapse it in the header, I must have a sidebar icon so that I can have it appear again. Because otherwise I might collapse completely the primary left sidebar via resizing.
+
+And then if there's no button in the header to show it again, then it's lost. And it's also not good. And the it must be resizable up to the point of really being completely hidden then you also need to look into what kind of bad patterns there are what kind of good patterns so for each layout element you potentially need to really think about okay what is a bad pattern a bad design and what is a good design and really think this through i gave some examples this by no means is any bad pattern or a good pattern that we can come up with.
+
+Yeah, I think if we have clear patterns, if we have clear guidelines how the design should be, then it's much easier to also come up with a really consistent design. So I want that you really dig into this and think about what would be really good design, what would be bad design.
+
+Make use of our icon set library if that's helpful. I think we can use this quite well, but look into this. So don't make decisions just based on one single element, but really think about, okay, what are good patterns and bad patterns. Something that, for instance, I currently find weird is the behavior of the primary left sidebar at the current state, because if I collapse it, then I see all the hi-fi icons, but it doesn't matter on which I click, it just opens the sidebar again, yeah?
+
+That's completely nonsense. So it makes more sense to really focus on good patterns and bad patterns. And also for the ribbon, really think about, I want the ribbon to be in each view type. Yeah, that should always be there. But which ribbon groups should be there for which view types?
+
+Also think about that. And it should be understandable to the user why a certain ribbon group isn't in a view type. Maybe we... We need to think about this as well, how we can design it in a way, approach. Then I left some comments also for the secondary left side, but this really is for the properties for the overall view type.
+
+It can also be resized, but maybe we cannot make it completely disappear, because Maybe it should be there. And the element sidebar really can disappear if nothing is selected. Again, I also gave examples for why the current design just is bad, because we have in the element sidebar things that shouldn't be there.
+
+It should be in the secondary left sidebar, like for instance the graphics. I think the graphics is a good example of where icons can shine in comparison to text because the icons, even though I also still believe they can be improved, they immediately give an understanding, okay, what will the And what you will find is because of the iteration of development that we had is you will find that there are many, many, many inconsistent layout elements currently.
+
+So for instance, we have in the floor plan, we have, I think, another ribbon set, at least it looks like a command bar, like a very long dock. And I have all the different kind of tools I can select with different shortcuts it seems. That makes no sense.
+
+Also the annotation bar, why is it like that? We have certain elements that make sense, like for instance the view cube in the 3D render, but really so much about it is also about smart consolidation. It maybe makes sense to have certain kind of hints how to navigate within the canvas.
+
+So it still maybe makes sense to have something like if you scroll then you zoom, if you press F then you make it fit for instance. So I'm not saying that There's zero room for such things, but overall we have so many inconsistent layout elements currently and we need to consolidate this into our overall framework.
+
+Otherwise it's just so many elements that the user must learn. And it's confusing also pay attention to this I think we can with a very very high chance fit 98% of the elements into our overall framework of the primary left sidebar, the secondary left sidebar, the header, ribbon, canvas, element sidebar and the footer and exception might be something like the view cube or something but other than that I think everything can belong there another really really extremely positive feature of the application is the advisor which identifies errors of our model or warnings that is something that definitely must be globally So it belongs into the footer.
+
+And if I click on the hint, how many warnings there are, for instance, I want to see in a dialog or model, which errors and so on and so forth there are. And then I wrote down also some further practices I want to look at that you look into them as well.
+
+And then with all of this, my core goal for now is to understand how can we analyze the current status of the application, build an extensive tracker that goes into each each page that we currently have, each UI element and understand, okay, where are we currently? What is our as-is situation?
+
+And how can we derive design principles, design guidelines based on a document that I'm sharing here? Write this into some kind of markdown, this design guidelines, really give good sketches or ideas what this means, what this looks like, and then have an extensive tracker, extensive backlog with information about which which UI element that we currently have, where is it, and what kind of, if it's showing some bad pattern or bad design and where it should belong or if it's good and if it can stay where it is or if it should need to be moved or if it should need to be redesigned whatever so a huge huge huge huge huge tracker and I also want to have that we have a good overall documentation overview of okay which feature belongs where maybe it's a graph to understand okay can we even calculate the usability into a certain extent to ensure is everything reachable how many clicks are needed to get there is it in the right the right layout and so on so forth so the core goal for now really is I share this document with you we are not yet fixing it we are currently really going completely into analysis and specifications understanding where we currently are having the design guidelines, the design principles, and a clear methodology, a clear approach how we can get to a much better usability user experience.
+
+And for this, we also define the whole tracker as mentioned. Once you're done with that, I will later on hand this over to another AI agent. And that AI agent is then going to be tasked to implement the full UI revamp. And I need that this agent must be then completely aware of, okay, why do we do it like this?
+
+Why is this bad design? What would be the good design? And so on and so forth. So that's where we currently are.
+
+Please get started with the analytics and take as long as needed. Don't rush anything. This can be a extremely long task. Just take your time. And really think this through in deepest detail.
+
+---
+
+i expected a much, much bigger tracker document. are you certain it is really complete? did you throughly analyze the whole UI w.r.t. our revamp? ...
+
+---
+
+be ultra critical; is it now sufficiently large enough? should it rather be 1000-ish lines? or is it really full-coverage?
+
+---
+
+do you have some kind of table of content or similar? does it make sense for the revamp to have a master document and then split into subdocuments for different areas? not sure, just thinking about how we can ensure best coverage, best structure etc
+
+---
+
+should we now start with the implementation phase, or is it smart to continue with specifications? are we really, really, really deep in the specifications? how is your judgement?
+
+---
+
+go ahead and do these things; you can spin up the server and get screenshots / renderings etc, it will be on localhost:2000 i think. if that is what you mean.
+
+---
+
+oh did you run make seed name=target-house-3 to spin up the server? because i can see elements and dont have the 500 error then. but also a good finding maybe?
+
+---
+
+ok, where are we now? what would you say
+
+---
+
+ok, can you please write the overall methodology into a methodology-prompt.md, so that during the revamp i can always point at this file and we can be assured that any AI agent has great context and can work on things? ideally i can kickoff the first agent that way? and that agents should not be lazy but only mark a task as successful if really fully done?

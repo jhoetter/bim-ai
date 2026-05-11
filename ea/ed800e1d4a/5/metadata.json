@@ -1,0 +1,114 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "eaed800e1d4a",
+  "session_id": "019e1845-a61e-77c2-ab41-3c5091d10167",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-11T20:53:20.767445Z",
+  "branch": "main",
+  "checkpoints_count": 6,
+  "files_touched": [
+    "spec/methodology-prompt.md",
+    "spec/ux-bim-ai-rework-dynamic-audit.md",
+    "spec/ux-bim-ai-rework-master.md",
+    "spec/ux-bim-ai-rework-spec.md",
+    "spec/ux-bim-ai-rework-tracker.md",
+    "tmp/ux-rework-dynamic-audit-seeded/01-initial-seeded.png",
+    "tmp/ux-rework-dynamic-audit-seeded/02-primary-collapsed-seeded.png",
+    "tmp/ux-rework-dynamic-audit-seeded/03-plan-seeded.png",
+    "tmp/ux-rework-dynamic-audit-seeded/04-3d-seeded.png",
+    "tmp/ux-rework-dynamic-audit-seeded/05-sheet-seeded.png",
+    "tmp/ux-rework-dynamic-audit-seeded/06-schedule-seeded.png",
+    "tmp/ux-rework-dynamic-audit-seeded/07-agent-seeded.png",
+    "tmp/ux-rework-dynamic-audit-seeded/08-concept-seeded.png",
+    "tmp/ux-rework-dynamic-audit-seeded/09-plan-click-selection.png",
+    "tmp/ux-rework-dynamic-audit-seeded/10-3d-click-selection.png",
+    "tmp/ux-rework-dynamic-audit-seeded/11-wall-command-seeded.png",
+    "tmp/ux-rework-dynamic-audit-seeded/12-command-palette-seeded.png",
+    "tmp/ux-rework-dynamic-audit-seeded/dynamic-summary.json"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "0bb2f74579aa",
+  "token_usage": {
+    "input_tokens": 1087017,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 14067584,
+    "output_tokens": 90755,
+    "api_call_count": 135
+  },
+  "session_metrics": {
+    "turn_count": 9
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-11T20:53:20.685218Z",
+    "agent_lines": 21429,
+    "agent_removed": 0,
+    "human_added": 42883,
+    "human_modified": 4,
+    "human_removed": 0,
+    "total_committed": 64316,
+    "total_lines_changed": 64316,
+    "agent_percentage": 33.31830337707569,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 614,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 994,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1386,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 14295,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1540,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "tmp/ux-rework-dynamic-audit/dynamic-summary.json": 14295
+      }
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 14295,
+      "user_lines_removed": 0,
+      "agent_lines_added": 21249,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "tmp/ux-rework-dynamic-audit/dynamic-summary.json": 14295
+      }
+    },
+    {
+      "checkpoint_number": 7,
+      "user_lines_added": 14295,
+      "user_lines_removed": 0,
+      "agent_lines_added": 21433,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "tmp/ux-rework-dynamic-audit/dynamic-summary.json": 14295
+      }
+    }
+  ]
+}
