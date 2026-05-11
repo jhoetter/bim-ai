@@ -379,6 +379,42 @@ def test_upper_load_bearing_wall_without_lower_support_is_reported_and_suppresse
     assert "stacked_load_path_discontinuity" not in _rule_ids(elements)
 
 
+def test_transfer_beam_below_upper_load_bearing_wall_completes_load_path() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "lvl-transfer": LevelElem(
+            kind="level",
+            id="lvl-transfer",
+            name="Transfer",
+            elevationMm=2600.0,
+        ),
+        "lvl-2": LevelElem(kind="level", id="lvl-2", name="Level 2", elevationMm=3000.0),
+        "wall-base-offset": _wall(
+            id="wall-base-offset",
+            loadBearing=True,
+            start={"xMm": 0, "yMm": -1000},
+            end={"xMm": 4000, "yMm": -1000},
+        ),
+        "wall-upper": _wall(
+            id="wall-upper",
+            levelId="lvl-2",
+            loadBearing=True,
+            start={"xMm": 0, "yMm": 1000},
+            end={"xMm": 4000, "yMm": 1000},
+        ),
+        "beam-transfer": BeamElem(
+            kind="beam",
+            id="beam-transfer",
+            levelId="lvl-transfer",
+            startMm={"xMm": 0, "yMm": 1000},
+            endMm={"xMm": 4000, "yMm": 1000},
+            heightMm=400,
+        ),
+    }
+
+    assert "stacked_load_path_discontinuity" not in _rule_ids(elements)
+
+
 def test_removed_load_bearing_wall_without_transfer_metadata_is_reported() -> None:
     wall = _wall(loadBearing=True, phaseDemolished="demo")
     elements = {"lvl-1": _level(), "wall-1": wall}

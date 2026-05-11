@@ -603,6 +603,7 @@ def _stacked_load_path_violations(
     supports = [
         *load_bearing_walls,
         *participants_by_kind.get("column", []),
+        *participants_by_kind.get("beam", []),
     ]
     violations: list[Violation] = []
     for wall in load_bearing_walls:
@@ -616,7 +617,7 @@ def _stacked_load_path_violations(
                 severity="warning",
                 message=(
                     "Load-bearing wall starts above the lowest bearing level without a modeled "
-                    "wall or column support below it."
+                    "wall, column, or beam support below it."
                 ),
                 element_ids=[wall.element_id],
             )
