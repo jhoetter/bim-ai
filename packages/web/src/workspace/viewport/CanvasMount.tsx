@@ -85,7 +85,11 @@ export function CanvasMount({
   if (mode === '3d')
     return (
       <ErrorBoundary label="Viewport3D">
-        <Viewport wsConnected={wsOn ?? false} onPersistViewpointField={onPersistViewpointField} />
+        <Viewport
+          wsConnected={wsOn ?? false}
+          onPersistViewpointField={onPersistViewpointField}
+          onSemanticCommand={onSemanticCommand}
+        />
       </ErrorBoundary>
     );
   if (mode === 'plan')
@@ -138,7 +142,11 @@ export function CanvasMount({
       </ErrorBoundary>
     );
   return viewerMode === 'orbit_3d' ? (
-    <Viewport wsConnected={wsOn ?? false} onPersistViewpointField={onPersistViewpointField} />
+    <Viewport
+      wsConnected={wsOn ?? false}
+      onPersistViewpointField={onPersistViewpointField}
+      onSemanticCommand={onSemanticCommand}
+    />
   ) : (
     <PlanCanvas
       wsConnected={wsOn ?? false}

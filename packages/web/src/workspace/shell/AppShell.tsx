@@ -32,6 +32,8 @@ export interface AppShellProps {
   topBar: ReactNode;
   /** Optional tabbed command ribbon shown below the top bar. */
   ribbonBar?: ReactNode;
+  /** Active workspace mode, used to scope tool option surfaces. */
+  activeMode?: string;
   leftRail: ReactNode;
   /** Compact contents shown when the left rail is collapsed (icon-strip). */
   leftRailCollapsed?: ReactNode;
@@ -55,6 +57,7 @@ export interface AppShellProps {
 export function AppShell({
   topBar,
   ribbonBar,
+  activeMode,
   leftRail,
   leftRailCollapsed,
   canvas,
@@ -128,6 +131,8 @@ export function AppShell({
     background: 'var(--color-background)',
     color: 'var(--color-foreground)',
   };
+  const showToolBars =
+    !activeMode || activeMode === 'plan' || activeMode === 'plan-3d' || activeMode === 'section';
 
   return (
     <div
@@ -144,8 +149,12 @@ export function AppShell({
       </div>
       <div style={{ gridArea: 'optionsbar' }}>
         {ribbonBar}
-        <ToolModifierBar />
-        <OptionsBar />
+        {showToolBars ? (
+          <>
+            <ToolModifierBar />
+            <OptionsBar />
+          </>
+        ) : null}
       </div>
       <aside
         aria-label={t('workspace.projectBrowser')}

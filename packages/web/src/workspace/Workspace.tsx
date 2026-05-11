@@ -27,7 +27,7 @@ import {
   type CollaborationConflictQueueV1,
 } from '../lib/collaborationConflictQueue';
 import type { Snapshot, Violation } from '@bim-ai/core';
-import { useBimStore, toggleTheme, getCurrentTheme, type Theme } from '../state/store';
+import { useBimStore, applyTheme, toggleTheme, getCurrentTheme, type Theme } from '../state/store';
 import type { PerspectiveId } from '@bim-ai/core';
 import { selectDriftedElements } from '../plan/monitorDriftBadge';
 import { modeForHotkey } from '../state/modeController';
@@ -166,6 +166,8 @@ export function Workspace(): JSX.Element {
   const setViewerMode = useBimStore((s) => s.setViewerMode);
   const planTool = useBimStore((s) => s.planTool);
   const setPlanTool = useBimStore((s) => s.setPlanTool);
+  const thinLinesEnabled = useBimStore((s) => s.thinLinesEnabled);
+  const toggleThinLinesStore = useBimStore((s) => s.toggleThinLines);
   // EDT-V3-05: loop mode state for status bar message.
   const loopMode = useToolPrefs((s) => s.loopMode);
   const selectedId = useBimStore((s) => s.selectedId);
@@ -883,9 +885,18 @@ export function Workspace(): JSX.Element {
   const handleToolSelect = useCallback(
     (id: ToolId): void => {
       const tool = validatePlanTool(id);
-      if (tool) setPlanTool(tool);
+      if (!tool) return;
+      const def = toolRegistry[id];
+      if (
+        def &&
+        !def.modes.includes(effectiveMode) &&
+        (def.modes.includes('plan') || def.modes.includes('plan-3d'))
+      ) {
+        handleModeChange('plan');
+      }
+      setPlanTool(tool);
     },
-    [setPlanTool],
+    [effectiveMode, handleModeChange, setPlanTool, toolRegistry],
   );
 
   // Reset to 'select' when the current tool isn't valid for the active perspective
@@ -927,6 +938,11 @@ export function Workspace(): JSX.Element {
     setTheme(next as Theme);
   }, []);
 
+  const handleThemeSet = useCallback((next: Theme) => {
+    applyTheme(next);
+    setTheme(next);
+  }, []);
+
   const paletteViews = useMemo(() => {
     const KIND_PREFIX: Partial<Record<Element['kind'], string>> = {
       plan_view: 'Plan',
@@ -947,9 +963,58 @@ export function Workspace(): JSX.Element {
   const openElementById = useCallback(
     (id: string) => {
       const el = (elementsById as Record<string, Element>)[id];
-      if (el) openTabFromElement(el);
+      if (!el) return;
+      openTabFromElement(el);
+      if (el.kind === 'level') {
+        activatePlanView(undefined);
+        setActiveLevelId(el.id);
+        setViewerMode('plan_canvas');
+        setMode('plan');
+        return;
+      }
+      if (el.kind === 'plan_view') {
+        activatePlanView(el.id);
+        useBimStore.getState().select(el.id);
+        setViewerMode('plan_canvas');
+        setMode('plan');
+        return;
+      }
+      if (el.kind === 'viewpoint') {
+        const store = useBimStore.getState();
+        store.select(el.id);
+        store.setActiveViewpointId(el.id);
+        if (el.mode === 'orbit_3d' && el.camera) {
+          store.setOrbitCameraFromViewpointMm({
+            position: el.camera.position,
+            target: el.camera.target,
+            up: el.camera.up,
+          });
+          store.applyOrbitViewpointPreset({
+            capElevMm: el.viewerClipCapElevMm,
+            floorElevMm: el.viewerClipFloorElevMm,
+            hideSemanticKinds: el.hiddenSemanticKinds3d,
+          });
+        }
+        setViewerMode('orbit_3d');
+        setMode('3d');
+        return;
+      }
+      if (el.kind === 'section_cut') {
+        useBimStore.getState().select(el.id);
+        setMode('section');
+        return;
+      }
+      if (el.kind === 'sheet') {
+        useBimStore.getState().select(el.id);
+        setMode('sheet');
+        return;
+      }
+      if (el.kind === 'schedule') {
+        useBimStore.getState().select(el.id);
+        setMode('schedule');
+      }
     },
-    [elementsById, openTabFromElement],
+    [activatePlanView, elementsById, openTabFromElement, setActiveLevelId, setViewerMode],
   );
 
   const handlePlaceFamilyType = useCallback(
@@ -1103,7 +1168,17 @@ export function Workspace(): JSX.Element {
         onClose={() => setPaletteOpen(false)}
         context={{
           selectedElementIds: selectedId ? [selectedId] : [],
-          activeViewId: null,
+          activeViewId:
+            activeTab?.targetId ??
+            activePlanViewId ??
+            useBimStore.getState().activeViewpointId ??
+            useBimStore.getState().activeElevationViewId ??
+            null,
+          activeMode: effectiveMode,
+          navigateMode: handleModeChange,
+          startPlanTool: (toolId) => handleToolSelect(toolId as ToolId),
+          setTheme: handleThemeSet,
+          toggleTheme: handleThemeToggle,
           views: paletteViews,
           openElement: openElementById,
         }}
@@ -1194,6 +1269,7 @@ export function Workspace(): JSX.Element {
         />
       ) : null}
       <AppShell
+        activeMode={effectiveMode}
         leftCollapsed={leftRailCollapsed}
         onLeftCollapsedChange={setLeftRailCollapsed}
         rightCollapsed={rightRailCollapsed}
@@ -1231,6 +1307,12 @@ export function Workspace(): JSX.Element {
               onUndo={() => void handleUndoRedo(true)}
               onRedo={() => void handleUndoRedo(false)}
               canUndo={undoDepth > 0}
+              thinLinesEnabled={thinLinesEnabled}
+              onToggleThinLines={toggleThinLinesStore}
+              onSectionShortcut={() => handleToolSelect('section')}
+              onMeasureShortcut={() => handleToolSelect('measure')}
+              onDimensionShortcut={() => handleToolSelect('dimension')}
+              onTagByCategoryShortcut={() => handleToolSelect('tag')}
               tabs={tabsState.tabs}
               activeTabId={tabsState.activeId}
               onTabActivate={(id) => {

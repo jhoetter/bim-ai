@@ -15,6 +15,16 @@ export type PaletteEntry = {
 export type PaletteContext = {
   selectedElementIds: string[];
   activeViewId: string | null;
+  /** Active workspace mode, if the host shell knows it. */
+  activeMode?: string;
+  /** Navigate through the same tab/mode path as the main workspace chrome. */
+  navigateMode?: (mode: 'plan' | '3d' | 'section' | 'sheet' | 'schedule' | 'agent') => void;
+  /** Start a plan-canvas tool, switching to a valid tool surface if needed. */
+  startPlanTool?: (toolId: string) => void;
+  /** Set the app theme while keeping host UI state in sync. */
+  setTheme?: (theme: 'light' | 'dark') => void;
+  /** Toggle the current app theme while keeping host UI state in sync. */
+  toggleTheme?: () => void;
   /** Callback to open a model element (plan view, sheet, schedule, etc.) as a tab. */
   openElement?: (id: string) => void;
   /** Dynamic navigable views/sheets/schedules to surface in the palette. */

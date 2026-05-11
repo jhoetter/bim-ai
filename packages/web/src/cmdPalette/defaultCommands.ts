@@ -1,5 +1,13 @@
-import { useBimStore } from '../state/store';
-import { registerCommand } from './registry';
+import { useBimStore, type PlanTool } from '../state/store';
+import { registerCommand, type PaletteContext } from './registry';
+
+function startPlanTool(ctx: PaletteContext, toolId: PlanTool): void {
+  if (ctx.startPlanTool) {
+    ctx.startPlanTool(toolId);
+    return;
+  }
+  useBimStore.getState().setPlanTool(toolId);
+}
 
 // Tool commands
 registerCommand({
@@ -8,7 +16,7 @@ registerCommand({
   shortcut: 'W',
   keywords: ['wall', 'draw'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('wall'),
+  invoke: (ctx) => startPlanTool(ctx, 'wall'),
 });
 
 registerCommand({
@@ -17,7 +25,7 @@ registerCommand({
   shortcut: 'D',
   keywords: ['door', 'opening'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('door'),
+  invoke: (ctx) => startPlanTool(ctx, 'door'),
 });
 
 registerCommand({
@@ -25,7 +33,7 @@ registerCommand({
   label: 'Place Window',
   keywords: ['window', 'opening'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('window'),
+  invoke: (ctx) => startPlanTool(ctx, 'window'),
 });
 
 registerCommand({
@@ -33,7 +41,7 @@ registerCommand({
   label: 'Place Floor',
   keywords: ['floor', 'slab'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('floor'),
+  invoke: (ctx) => startPlanTool(ctx, 'floor'),
 });
 
 registerCommand({
@@ -42,7 +50,7 @@ registerCommand({
   shortcut: 'R',
   keywords: ['room', 'space'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('room'),
+  invoke: (ctx) => startPlanTool(ctx, 'room'),
 });
 
 registerCommand({
@@ -51,7 +59,7 @@ registerCommand({
   shortcut: 'Esc',
   keywords: ['select', 'pointer'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('select'),
+  invoke: (ctx) => startPlanTool(ctx, 'select'),
 });
 
 registerCommand({
@@ -60,7 +68,7 @@ registerCommand({
   shortcut: 'Q',
   keywords: ['query', 'inspect', 'cad', 'dxf', 'layer'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('query'),
+  invoke: (ctx) => startPlanTool(ctx, 'query'),
 });
 
 // Phase / view commands
@@ -94,9 +102,12 @@ registerCommand({
   label: 'Go to plan view',
   keywords: ['plan', '2d', 'floor plan'],
   category: 'navigate',
-  invoke: () => {
-    const st = useBimStore.getState();
-    st.setViewerMode('plan_canvas');
+  invoke: (ctx) => {
+    if (ctx.navigateMode) {
+      ctx.navigateMode('plan');
+      return;
+    }
+    useBimStore.getState().setViewerMode('plan_canvas');
   },
 });
 
@@ -105,7 +116,13 @@ registerCommand({
   label: 'Go to 3D view',
   keywords: ['3d', 'orbit', 'perspective'],
   category: 'navigate',
-  invoke: () => useBimStore.getState().setViewerMode('orbit_3d'),
+  invoke: (ctx) => {
+    if (ctx.navigateMode) {
+      ctx.navigateMode('3d');
+      return;
+    }
+    useBimStore.getState().setViewerMode('orbit_3d');
+  },
 });
 
 registerCommand({
@@ -138,7 +155,7 @@ registerCommand({
   label: 'Place Column',
   keywords: ['column', 'post', 'structural'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('column'),
+  invoke: (ctx) => startPlanTool(ctx, 'column'),
 });
 
 registerCommand({
@@ -146,7 +163,7 @@ registerCommand({
   label: 'Place Beam',
   keywords: ['beam', 'joist', 'structural'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('beam'),
+  invoke: (ctx) => startPlanTool(ctx, 'beam'),
 });
 
 registerCommand({
@@ -154,7 +171,7 @@ registerCommand({
   label: 'Place Ceiling',
   keywords: ['ceiling', 'soffit'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('ceiling'),
+  invoke: (ctx) => startPlanTool(ctx, 'ceiling'),
 });
 
 registerCommand({
@@ -162,7 +179,7 @@ registerCommand({
   label: 'Sketch Roof',
   keywords: ['roof', 'roofing', 'sketch'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('roof-sketch'),
+  invoke: (ctx) => startPlanTool(ctx, 'roof-sketch'),
 });
 
 registerCommand({
@@ -170,7 +187,7 @@ registerCommand({
   label: 'Place Grid Line',
   keywords: ['grid', 'gridline', 'structural grid'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('grid'),
+  invoke: (ctx) => startPlanTool(ctx, 'grid'),
 });
 
 registerCommand({
@@ -178,7 +195,7 @@ registerCommand({
   label: 'Place Dimension',
   keywords: ['dimension', 'measure', 'annotate'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('dimension'),
+  invoke: (ctx) => startPlanTool(ctx, 'dimension'),
 });
 
 registerCommand({
@@ -186,7 +203,7 @@ registerCommand({
   label: 'Tag by Category',
   keywords: ['tag', 'annotation', 'room tag', 'door tag', 'window tag'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('tag'),
+  invoke: (ctx) => startPlanTool(ctx, 'tag'),
 });
 
 registerCommand({
@@ -194,7 +211,7 @@ registerCommand({
   label: 'Place Elevation / Section Marker',
   keywords: ['elevation', 'section', 'cut', 'marker'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('elevation'),
+  invoke: (ctx) => startPlanTool(ctx, 'elevation'),
 });
 
 registerCommand({
@@ -202,7 +219,7 @@ registerCommand({
   label: 'Measure Distance',
   keywords: ['measure', 'tape', 'distance'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('measure'),
+  invoke: (ctx) => startPlanTool(ctx, 'measure'),
 });
 
 registerCommand({
@@ -210,7 +227,31 @@ registerCommand({
   label: 'Mirror Elements',
   keywords: ['mirror', 'flip', 'symmetry'],
   category: 'command',
-  invoke: () => useBimStore.getState().setPlanTool('mirror'),
+  invoke: (ctx) => startPlanTool(ctx, 'mirror'),
+});
+
+registerCommand({
+  id: 'theme.light',
+  label: 'Switch Theme: Light',
+  keywords: ['theme', 'light', 'appearance'],
+  category: 'command',
+  invoke: (ctx) => ctx.setTheme?.('light'),
+});
+
+registerCommand({
+  id: 'theme.dark',
+  label: 'Switch Theme: Dark',
+  keywords: ['theme', 'dark', 'appearance'],
+  category: 'command',
+  invoke: (ctx) => ctx.setTheme?.('dark'),
+});
+
+registerCommand({
+  id: 'theme.toggle',
+  label: 'Toggle Theme',
+  keywords: ['theme', 'appearance', 'switch theme'],
+  category: 'command',
+  invoke: (ctx) => ctx.toggleTheme?.(),
 });
 
 // Display settings
