@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import type { JSX, RefObject } from 'react';
 import { useMemo, useState } from 'react';
 
 import type { Element } from '@bim-ai/core';
@@ -18,6 +18,9 @@ import { LeftRail, type TopBarSelectOption, type WorkspaceMode } from './shell';
 import { buildBrowserSections } from './workspaceUtils';
 
 export function WorkspaceLeftRail({
+  projectName,
+  projectNameRef,
+  onProjectNameClick,
   onSemanticCommand,
   openTabFromElement,
   onModeChange,
@@ -30,6 +33,9 @@ export function WorkspaceLeftRail({
   planStyleValue,
   onPlanStyleChange,
 }: {
+  projectName?: string;
+  projectNameRef?: RefObject<HTMLButtonElement | null>;
+  onProjectNameClick?: () => void;
   onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
   openTabFromElement: (el: Element) => void;
   onModeChange: (mode: WorkspaceMode) => void;
@@ -76,6 +82,29 @@ export function WorkspaceLeftRail({
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
+      {projectName ? (
+        <div className="shrink-0 border-b border-border p-2">
+          <button
+            type="button"
+            ref={projectNameRef}
+            onClick={onProjectNameClick}
+            data-testid="primary-project-selector"
+            className="flex w-full items-center gap-2 rounded border border-border bg-surface-strong px-2 py-1.5 text-left text-xs font-semibold text-foreground hover:bg-accent-soft"
+            aria-haspopup="menu"
+          >
+            <span
+              aria-hidden="true"
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-accent text-[10px] font-bold text-accent-foreground"
+            >
+              BA
+            </span>
+            <span className="min-w-0 flex-1 truncate" title={projectName}>
+              {projectName}
+            </span>
+            <Icons.disclosureOpen size={12} className="shrink-0 text-muted" aria-hidden="true" />
+          </button>
+        </div>
+      ) : null}
       {showDisciplineHeader ? (
         <div className="flex shrink-0 items-center gap-1.5 border-b border-border px-2 py-1.5">
           {perspectiveOptions &&

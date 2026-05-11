@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, render, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '../i18n';
@@ -46,15 +46,33 @@ afterEach(() => {
 });
 
 describe('<Workspace /> — smoke', () => {
-  it('renders the AppShell, TopBar, primary, secondary, and footer slots; inspector absent with no selection — CHR-V3-06', () => {
+  it('renders the AppShell, tab-first header, primary, secondary, and footer slots; inspector absent with no selection — CHR-V3-06', () => {
     const { getByTestId, getByRole, queryByTestId } = renderWithProviders(<Workspace />);
     expect(getByTestId('app-shell')).toBeTruthy();
-    expect(getByTestId('topbar')).toBeTruthy();
+    expect(getByTestId('workspace-header')).toBeTruthy();
+    expect(getByTestId('view-tabs')).toBeTruthy();
+    expect(getByTestId('workspace-header-cmdk')).toBeTruthy();
+    expect(getByTestId('primary-project-selector')).toBeTruthy();
     expect(getByRole('complementary', { name: 'Project browser' })).toBeTruthy();
     expect(getByTestId('app-shell-secondary-sidebar')).toBeTruthy();
     // CHR-V3-06: Inspector is absent from DOM when nothing is selected.
     expect(queryByTestId('inspector')).toBeNull();
     expect(getByTestId('status-bar')).toBeTruthy();
+  });
+
+  it('keeps project, mode navigation, and authoring shortcuts out of the workspace header', () => {
+    const { getByTestId, queryByTestId } = renderWithProviders(<Workspace />);
+    const header = within(getByTestId('workspace-header'));
+
+    expect(queryByTestId('topbar-project-name')).toBeNull();
+    expect(queryByTestId('topbar-measure-shortcut')).toBeNull();
+    expect(queryByTestId('topbar-dimension-shortcut')).toBeNull();
+    expect(queryByTestId('topbar-tag-by-category-shortcut')).toBeNull();
+    expect(queryByTestId('topbar-section-shortcut')).toBeNull();
+    expect(queryByTestId('topbar-thin-lines')).toBeNull();
+    expect(header.queryByRole('button', { name: /^Plan$/i })).toBeNull();
+    expect(header.getByTestId('workspace-header-cmdk')).toBeTruthy();
+    expect(header.getByTestId('workspace-header-share')).toBeTruthy();
   });
 
   it('keeps 3D view controls in the secondary sidebar when no element is selected', () => {

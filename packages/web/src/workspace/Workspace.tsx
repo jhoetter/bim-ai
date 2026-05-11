@@ -2,6 +2,7 @@ import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { useTranslation } from 'react-i18next';
 import type { Element } from '@bim-ai/core';
 import { WallHifi } from '@bim-ai/icons';
+import { Icons } from '@bim-ai/ui';
 
 import { log } from '../logger';
 import { type PlanCameraHandle } from '../plan/PlanCanvas';
@@ -37,7 +38,6 @@ import {
   RibbonBar,
   StatusBar,
   TabBar,
-  TopBar,
   type WorkspaceMode,
 } from './shell';
 import {
@@ -122,7 +122,6 @@ import { WorkspaceRightRail } from './WorkspaceRightRail';
 import { useWorkspaceSnapshot } from './useWorkspaceSnapshot';
 import { mapComments, planToolToToolId, validatePlanTool } from './workspaceUtils';
 import { useToolPrefs } from '../tools/toolPrefsStore';
-import { useOfflineStore } from '../offlineStore';
 import { usePresenceStore } from '../presenceStore';
 import {
   firstSheetId,
@@ -206,8 +205,6 @@ export function Workspace(): JSX.Element {
   const setViewerMode = useBimStore((s) => s.setViewerMode);
   const planTool = useBimStore((s) => s.planTool);
   const setPlanTool = useBimStore((s) => s.setPlanTool);
-  const thinLinesEnabled = useBimStore((s) => s.thinLinesEnabled);
-  const toggleThinLinesStore = useBimStore((s) => s.toggleThinLines);
   // EDT-V3-05: loop mode state for status bar message.
   const loopMode = useToolPrefs((s) => s.loopMode);
   const draftGridVisible = useToolPrefs((s) => s.draftGridVisible);
@@ -218,7 +215,6 @@ export function Workspace(): JSX.Element {
   const activePlanViewId = useBimStore((s) => s.activePlanViewId);
   const activatePlanView = useBimStore((s) => s.activatePlanView);
   const planHudMm = useBimStore((s) => s.planHudMm);
-  const presencePeers = useBimStore((s) => s.presencePeers);
   const userDisplayName = useBimStore((s) => s.userDisplayName);
   const modelId = useBimStore((s) => s.modelId);
   const revision = useBimStore((s) => s.revision);
@@ -234,10 +230,6 @@ export function Workspace(): JSX.Element {
   const closeVVDialog = useBimStore((s) => s.closeVVDialog);
   const setOrthoSnapHold = useBimStore((s) => s.setOrthoSnapHold);
   const userId = useBimStore((s) => s.userId);
-
-  // COL-V3-06 — offline-tolerant authoring: network status + pending queue count
-  const isOnline = useOfflineStore((s) => s.isOnline);
-  const pendingCommandCount = useOfflineStore((s) => s.pendingCommandCount);
 
   // COL-V3-04 — presence strip
   const presenceParticipants = usePresenceStore((s) => s.participants);
@@ -1669,119 +1661,95 @@ export function Workspace(): JSX.Element {
         onLeftCollapsedChange={setLeftRailCollapsed}
         rightCollapsed={rightRailCollapsed}
         header={
-          <div className="relative flex w-full items-center">
-            <TopBar
-              mode={effectiveMode}
-              onModeChange={handleModeChange}
-              projectName={activeSeedLabel ?? 'BIM AI'}
-              projectNameRef={projectNameRef}
-              onProjectNameClick={() => setProjectMenuOpen((v) => !v)}
-              onHamburgerClick={() => setLeftRailCollapsed((v) => !v)}
-              theme={theme}
-              onThemeToggle={handleThemeToggle}
-              onCommandPalette={() => setPaletteOpen(true)}
-              onSettings={() => setCheatsheetOpen(true)}
-              collaboratorsCount={Object.keys(presencePeers).length || undefined}
-              onCollaboratorsClick={() => setCommentsOpen((v) => !v)}
-              peers={Object.values(presencePeers)}
-              avatarInitials={userDisplayName ? userDisplayName.slice(0, 2).toUpperCase() : 'BA'}
-              accountStatus={{
-                displayName: userDisplayName || 'Local user',
-                userId: userId ?? presenceLocalUserId ?? 'local-dev',
-                modelId: modelId ?? null,
-                revision,
-                wsConnected: wsOn,
-                online: isOnline,
-                pendingEdits: pendingCommandCount,
-                appMode: import.meta.env.MODE,
-                planLabel: 'Local authoring',
-                licenseLabel: 'No Autodesk license required',
-              }}
-              hasPages={sheetPages.length > 0}
-              onSharePresentation={() => setSharePresentationOpen(true)}
-              onUndo={() => void handleUndoRedo(true)}
-              onRedo={() => void handleUndoRedo(false)}
-              canUndo={undoDepth > 0}
-              canRedo={redoDepth > 0}
-              thinLinesEnabled={thinLinesEnabled}
-              onToggleThinLines={toggleThinLinesStore}
-              onSectionShortcut={() => handleToolSelect('section')}
-              onMeasureShortcut={() => handleToolSelect('measure')}
-              onDimensionShortcut={() => handleToolSelect('dimension')}
-              onTagByCategoryShortcut={() => handleToolSelect('tag')}
-              activeWorkspaceId={activeWorkspaceId}
-              userPreferredWorkspace={activeWorkspaceId}
-              onWorkspaceChange={handleWorkspaceChange}
-            />
-            <TabBar
-              tabs={tabsState.tabs}
-              activeId={tabsState.activeId}
-              onActivate={(id) => {
-                handleTabActivate(id);
-                const t = tabsState.tabs.find((x) => x.id === id);
-                if (t) {
-                  if (t.kind === 'plan' || t.kind === 'plan-3d') setViewerMode('plan_canvas');
-                  else if (t.kind === '3d') setViewerMode('orbit_3d');
-                  setMode(t.kind as WorkspaceMode);
-                }
-              }}
-              onClose={handleTabClose}
-              onCloseInactive={() => setTabsState((s) => closeInactiveTabs(s))}
-              onReorder={(from, to) => setTabsState((s) => reorderTab(s, from, to))}
-              onAdd={(kind) => {
-                const fallback = defaultTabFallbackForKind(kind, elementsById, activeLevelId);
-                if (!fallback) return;
-                setTabsState((s) => activateOrOpenKind(s, kind, fallback));
-                setMode(kind as WorkspaceMode);
-                if (kind === 'plan' || kind === 'plan-3d') setViewerMode('plan_canvas');
-                else if (kind === '3d') setViewerMode('orbit_3d');
-              }}
-            />
-            {/* COL-V3-06 — offline indicator */}
-            {!isOnline ? (
-              <div
-                data-testid="offline-indicator"
-                style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 8 }}
+          <div
+            data-testid="workspace-header"
+            className="flex min-h-[44px] w-full min-w-0 items-center gap-2 bg-surface px-2"
+          >
+            {!leftRailCollapsed ? (
+              <button
+                type="button"
+                data-testid="workspace-header-primary-toggle"
+                aria-label="Hide primary sidebar"
+                title="Hide primary sidebar"
+                onClick={() => setLeftRailCollapsed(true)}
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border border-border text-muted hover:bg-surface-2 hover:text-foreground"
               >
-                <span
-                  aria-label={
-                    pendingCommandCount > 0
-                      ? `Offline — ${pendingCommandCount} edit${pendingCommandCount === 1 ? '' : 's'} will sync on reconnect`
-                      : 'Offline — edits will sync on reconnect'
-                  }
-                  title={
-                    pendingCommandCount > 0
-                      ? `Offline — ${pendingCommandCount} edit${pendingCommandCount === 1 ? '' : 's'} will sync on reconnect`
-                      : 'Offline — edits will sync on reconnect'
-                  }
-                  style={{
-                    display: 'inline-block',
-                    width: 2,
-                    height: 2,
-                    borderRadius: '50%',
-                    background: 'var(--color-warning)',
-                  }}
-                />
-                {pendingCommandCount > 0 ? (
-                  <span
-                    data-testid="offline-pending-badge"
-                    style={{
-                      fontSize: 'var(--text-3xs)',
-                      fontWeight: 700,
-                      color: 'var(--color-warning)',
-                    }}
-                  >
-                    {pendingCommandCount}
-                  </span>
-                ) : null}
-              </div>
+                <Icons.hamburger size={16} aria-hidden="true" />
+              </button>
             ) : null}
-            {/* COL-V3-04: participant strip — top-right of header */}
-            <div className="absolute right-4 top-2 z-10">
-              <ParticipantStrip
-                participants={presenceParticipants}
-                localUserId={presenceLocalUserId ?? userId ?? ''}
+            <div className="min-w-0 flex-1">
+              <TabBar
+                tabs={tabsState.tabs}
+                activeId={tabsState.activeId}
+                onActivate={(id) => {
+                  handleTabActivate(id);
+                  const t = tabsState.tabs.find((x) => x.id === id);
+                  if (t) {
+                    if (t.kind === 'plan' || t.kind === 'plan-3d') setViewerMode('plan_canvas');
+                    else if (t.kind === '3d') setViewerMode('orbit_3d');
+                    setMode(t.kind as WorkspaceMode);
+                  }
+                }}
+                onClose={handleTabClose}
+                onCloseInactive={() => setTabsState((s) => closeInactiveTabs(s))}
+                onReorder={(from, to) => setTabsState((s) => reorderTab(s, from, to))}
+                onAdd={(kind) => {
+                  const fallback = defaultTabFallbackForKind(kind, elementsById, activeLevelId);
+                  if (!fallback) return;
+                  setTabsState((s) => activateOrOpenKind(s, kind, fallback));
+                  setMode(kind as WorkspaceMode);
+                  if (kind === 'plan' || kind === 'plan-3d') setViewerMode('plan_canvas');
+                  else if (kind === '3d') setViewerMode('orbit_3d');
+                }}
               />
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                data-testid="workspace-header-share"
+                onClick={() => setSharePresentationOpen(true)}
+                disabled={sheetPages.length === 0}
+                className="inline-flex h-8 items-center gap-1.5 rounded border border-border bg-surface px-2 text-xs font-medium text-foreground hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-45"
+                title={
+                  sheetPages.length > 0
+                    ? 'Share presentation'
+                    : 'Create a sheet before sharing a presentation'
+                }
+              >
+                <Icons.externalLink size={14} aria-hidden="true" />
+                <span>Share</span>
+              </button>
+              <button
+                type="button"
+                data-testid="workspace-header-cmdk"
+                onClick={() => setPaletteOpen(true)}
+                className="inline-flex h-8 min-w-[150px] items-center gap-2 rounded border border-border bg-background px-2 text-left text-xs text-muted hover:bg-surface-2 hover:text-foreground"
+                aria-label="Open command palette"
+              >
+                <Icons.commandPalette size={14} aria-hidden="true" />
+                <span className="min-w-0 flex-1 truncate">Search or press</span>
+                <kbd className="rounded border border-border bg-surface px-1 py-0.5 text-[10px]">
+                  ⌘K
+                </kbd>
+              </button>
+              <button
+                type="button"
+                data-testid="workspace-header-participants"
+                onClick={() => setCommentsOpen((v) => !v)}
+                className="inline-flex h-8 items-center justify-center rounded border border-border bg-surface px-1.5 text-muted hover:bg-surface-2 hover:text-foreground"
+                aria-label="Open collaboration comments"
+                title="Open collaboration comments"
+              >
+                {presenceParticipants.length > 0 ? (
+                  <ParticipantStrip
+                    participants={presenceParticipants}
+                    localUserId={presenceLocalUserId ?? userId ?? ''}
+                    maxVisible={3}
+                  />
+                ) : (
+                  <Icons.collaborators size={16} aria-hidden="true" />
+                )}
+              </button>
             </div>
           </div>
         }
@@ -1803,6 +1771,9 @@ export function Workspace(): JSX.Element {
         }
         primarySidebar={
           <WorkspaceLeftRail
+            projectName={activeSeedLabel ?? 'BIM AI'}
+            projectNameRef={projectNameRef}
+            onProjectNameClick={() => setProjectMenuOpen((v) => !v)}
             onSemanticCommand={onSemanticCommand}
             openTabFromElement={openTabFromElement}
             onModeChange={handleModeChange}
