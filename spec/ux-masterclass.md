@@ -608,6 +608,8 @@ modal and command-line parser utilities that have their own tests.
 - Context now includes `activeViewId` from the active tab/view state.
 - Tool commands use capability evaluation and bridge labels instead of blindly setting plan tools
   on invalid canvases.
+- Plan authoring Cmd+K coverage includes Area, Floor Sketch, Roof Sketch, Room Separation, and
+  Area Boundary in addition to the primary Wall/Door/Window/Room/Grid/Dimension/Tag tools.
 - Navigation commands route through the workspace tab/mode controller.
 - Theme, language, project menu, family library, keyboard shortcuts, active visibility controls,
   3D view controls, save/restore snapshot, share presentation, rail toggles, and inactive-tab close

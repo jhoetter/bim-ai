@@ -92,12 +92,52 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'tool.floor-sketch',
+  label: 'Sketch Floor Boundary',
+  keywords: ['floor', 'slab', 'sketch', 'boundary'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'floor-sketch'),
+});
+
+registerCommand({
+  id: 'tool.roof-sketch',
+  label: 'Sketch Roof Footprint',
+  keywords: ['roof', 'roofing', 'sketch', 'footprint'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'roof-sketch'),
+});
+
+registerCommand({
   id: 'tool.room',
   label: 'Place Room',
   shortcut: 'R',
   keywords: ['room', 'space'],
   category: 'command',
   invoke: (ctx) => startPlanTool(ctx, 'room'),
+});
+
+registerCommand({
+  id: 'tool.area',
+  label: 'Place Area',
+  keywords: ['area', 'area plan', 'gross area'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'area'),
+});
+
+registerCommand({
+  id: 'tool.room-separation-sketch',
+  label: 'Sketch Room Separation',
+  keywords: ['room separation', 'separator', 'sketch', 'room boundary'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'room-separation-sketch'),
+});
+
+registerCommand({
+  id: 'tool.area-boundary',
+  label: 'Sketch Area Boundary',
+  keywords: ['area boundary', 'area plan', 'gross area', 'boundary'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'area-boundary'),
 });
 
 registerCommand({

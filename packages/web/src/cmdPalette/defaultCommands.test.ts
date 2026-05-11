@@ -36,6 +36,22 @@ function command(id: string) {
 }
 
 describe('default Cmd+K commands', () => {
+  it('registers required plan authoring sketch commands with host tool routing', () => {
+    const startPlanTool = vi.fn();
+    for (const [commandId, toolId] of [
+      ['tool.area', 'area'],
+      ['tool.floor-sketch', 'floor-sketch'],
+      ['tool.roof-sketch', 'roof-sketch'],
+      ['tool.room-separation-sketch', 'room-separation-sketch'],
+      ['tool.area-boundary', 'area-boundary'],
+    ] as const) {
+      const entry = command(commandId);
+      expect(entry.badge).toBeUndefined();
+      entry.invoke({ ...PLAN_CTX, startPlanTool });
+      expect(startPlanTool).toHaveBeenLastCalledWith(toolId);
+    }
+  });
+
   it('scopes 3D view commands to active 3D contexts', () => {
     const planEntry = queryPalette('fit model', PLAN_CTX, {}).find(
       (entry) => entry.id === 'view.3d.fit',
