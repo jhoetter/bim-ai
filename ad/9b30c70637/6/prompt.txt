@@ -1,0 +1,11 @@
+please carefully investigate the warning system of our software; is it 100% feature complete? for instance, i am a bit surprised because i had a shelf going through a wall for instance, and it didnt recognize this. or do we understand load-bearing walls? i want to ensure that the house being designed can also actually be built, and that we have a feature complete system that understands that. please analyze the current state
+
+---
+
+ok, then please create a document tracker that we can use for this under spec , and analyze deeply how systems like navisworks and the likes function, how our system can incorporate this, what kind of gaps you see and so on. your task isn't yet to fully develop everything, but to analyze, to specify, to identify. write a really thorough document for exactly that.
+
+---
+
+ok, then please go ahead and fully implement all of those ; each workpackage, branch out, commit, push and then merge into main; until you are fully done. please ensure that the issues detected also pop up in our warning system (if that is how it should be?), e.g. we have detections for rooms without doors and such -> would any issues also pop up there then as well? 
+
+go ahead and implement; parallelize what you can parallelize via dispatching subagents, as many as possible and how it makes sense. don't stop until you are completely done.

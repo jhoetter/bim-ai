@@ -1,0 +1,75 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "ad9b30c70637",
+  "session_id": "019e15f5-49cf-7e80-8bfc-9478e07558ca",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-11T08:06:09.891966Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "spec/constructability-warning-system-tracker.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "3d21f8132799",
+  "token_usage": {
+    "input_tokens": 689924,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 7714176,
+    "output_tokens": 45233,
+    "api_call_count": 87
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-11T08:06:09.856604Z",
+    "agent_lines": 989,
+    "agent_removed": 0,
+    "human_added": 2094,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 3083,
+    "total_lines_changed": 3084,
+    "agent_percentage": 32.06874189364462,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 58,
+      "user_lines_removed": 8,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/plan/planElementMeshBuilders.ts": 45,
+        "packages/web/src/plan/symbology.wirePrimitives.test.ts": 13
+      },
+      "user_removed_per_file": {
+        "packages/web/src/plan/planElementMeshBuilders.ts": 8
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 58,
+      "agent_lines_removed": 6843
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 57,
+      "user_lines_removed": 83,
+      "agent_lines_added": 1587,
+      "agent_lines_removed": 6925,
+      "user_added_per_file": {
+        "app/tests/test_seed_artifact_roundtrip.py": 56,
+        "packages/cli/cli.mjs": 1
+      },
+      "user_removed_per_file": {
+        "app/tests/test_one_family_bundle_roundtrip.py": 82,
+        "packages/cli/cli.mjs": 1
+      }
+    }
+  ]
+}
