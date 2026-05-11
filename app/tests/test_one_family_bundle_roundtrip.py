@@ -58,14 +58,14 @@ def test_one_family_bundle_commits_minimal_scaffolding() -> None:
     doc = Document(revision=1, elements={})  # type: ignore[arg-type]
     _apply_all(doc, cmds)
 
-    pbp = doc.elements.get("hf-pbp")
+    pbp = doc.elements.get("th-pbp")
     assert isinstance(pbp, ProjectBasePointElem)
 
-    ground = doc.elements.get("hf-lvl-ground")
+    ground = doc.elements.get("th-lvl-ground")
     assert isinstance(ground, LevelElem)
     assert ground.elevation_mm == 0
 
-    upper = doc.elements.get("hf-lvl-upper")
+    upper = doc.elements.get("th-lvl-upper")
     assert isinstance(upper, LevelElem)
     assert upper.elevation_mm == 3000
 
@@ -76,7 +76,7 @@ def test_one_family_bundle_authors_roof_cutout_semantics() -> None:
     doc = Document(revision=1, elements={})  # type: ignore[arg-type]
     _apply_all(doc, cmds)
 
-    cutout = doc.elements.get("hf-roof-terrace-cutout")
+    cutout = doc.elements.get("th-roof-court-opening")
     assert isinstance(cutout, RoofOpeningElem)
-    assert cutout.host_roof_id == "hf-roof-main"
+    assert cutout.host_roof_id == "th-roof-main"
     assert len(cutout.boundary_mm) == 4
