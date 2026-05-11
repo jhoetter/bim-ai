@@ -16,17 +16,26 @@ type Viewpoint = Extract<Element, { kind: 'viewpoint' }>;
 type Bounds = { minX: number; minY: number; maxX: number; maxY: number };
 
 const DEFAULT_OFFSET_MM = 3500;
-const DEFAULT_SHEET_OPACITY = 0.28;
-const DEFAULT_LINE_OPACITY = 0.86;
+const DEFAULT_SHEET_OPACITY = 0.46;
+const DEFAULT_LINE_OPACITY = 0.96;
 const DEFAULT_FILL_OPACITY = 0.14;
 const OVERLAY_RENDER_ORDER = 1200;
 const PLAN_STROKE_WIDTH_M = 0.055;
 const PLAN_BORDER_WIDTH_M = 0.09;
+const PLAN_BORDER_HALO_WIDTH_M = 0.18;
+const SHEET_BACKDROP_PAD_MM = 180;
 
 function clamp01(v: unknown, fallback: number): number {
   const n = Number(v);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(1, Math.max(0, n));
+}
+
+function clampVisibleOpacity(v: unknown, fallback: number, min: number): number {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  const clamped = Math.min(1, Math.max(0, n));
+  return clamped <= 0 ? 0 : Math.max(clamped, min);
 }
 
 function numericOr(v: unknown, fallback: number): number {
@@ -357,8 +366,16 @@ export function buildPlanOverlay3dGroup(
   const yM =
     level.elevationMm / 1000 + numericOr(viewpoint.planOverlayOffsetMm, DEFAULT_OFFSET_MM) / 1000;
   const sourceYM = level.elevationMm / 1000;
-  const sheetOpacity = clamp01(viewpoint.planOverlayOpacity, DEFAULT_SHEET_OPACITY);
-  const lineOpacity = clamp01(viewpoint.planOverlayLineOpacity, DEFAULT_LINE_OPACITY);
+  const sheetOpacity = clampVisibleOpacity(
+    viewpoint.planOverlayOpacity,
+    DEFAULT_SHEET_OPACITY,
+    0.38,
+  );
+  const lineOpacity = clampVisibleOpacity(
+    viewpoint.planOverlayLineOpacity,
+    DEFAULT_LINE_OPACITY,
+    0.9,
+  );
   const fillOpacity = clamp01(viewpoint.planOverlayFillOpacity, DEFAULT_FILL_OPACITY);
   const annotationsVisible = viewpoint.planOverlayAnnotationsVisible !== false;
   const witnessVisible = viewpoint.planOverlayWitnessLinesVisible !== false;
@@ -376,10 +393,20 @@ export function buildPlanOverlay3dGroup(
       { xMm: bounds.maxX, yMm: bounds.maxY },
       { xMm: bounds.minX, yMm: bounds.maxY },
     ];
+    const backdropPts = [
+      { xMm: bounds.minX - SHEET_BACKDROP_PAD_MM, yMm: bounds.minY - SHEET_BACKDROP_PAD_MM },
+      { xMm: bounds.maxX + SHEET_BACKDROP_PAD_MM, yMm: bounds.minY - SHEET_BACKDROP_PAD_MM },
+      { xMm: bounds.maxX + SHEET_BACKDROP_PAD_MM, yMm: bounds.maxY + SHEET_BACKDROP_PAD_MM },
+      { xMm: bounds.minX - SHEET_BACKDROP_PAD_MM, yMm: bounds.maxY + SHEET_BACKDROP_PAD_MM },
+    ];
+    const backdrop = makeShapeMesh(backdropPts, yM - 0.01, '#0f172a', 0.16);
+    if (backdrop) group.add(backdrop);
     const sheet = makeShapeMesh(cropPts, yM, opts.sheetColor, sheetOpacity);
     if (sheet) group.add(sheet);
     const borderPts: number[] = [];
     addPolyline(borderPts, cropPts, yM + 0.035, true);
+    const borderHalo = makeLineSegments(borderPts, '#ffffff', 0.78, PLAN_BORDER_HALO_WIDTH_M);
+    if (borderHalo) group.add(borderHalo);
     const border = makeLineSegments(
       borderPts,
       opts.lineColor,
