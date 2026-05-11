@@ -8,6 +8,7 @@ import {
 } from '../workspace/commandCapabilities';
 
 export type PaletteCategory = 'command' | 'navigate' | 'select';
+export type PaletteSourceKind = 'command' | 'tool' | 'view' | 'element' | 'setting' | 'agent';
 
 export type PaletteEntry = {
   id: string;
@@ -21,6 +22,7 @@ export type PaletteEntry = {
   badge?: string;
   disabledReason?: string;
   bridged?: boolean;
+  sourceKind?: PaletteSourceKind;
 };
 
 export type PaletteContext = {
@@ -59,6 +61,50 @@ export type PaletteContext = {
 
 const _registry: PaletteEntry[] = [];
 
+type ParsedPaletteInput = {
+  needle: string;
+  sourceKind: PaletteSourceKind | null;
+};
+
+const PREFIX_SOURCE_KIND: Record<string, PaletteSourceKind> = {
+  '>': 'tool',
+  '@': 'view',
+  ':': 'setting',
+};
+
+function parsePaletteInput(input: string): ParsedPaletteInput {
+  const trimmed = input.trim();
+  const sourceKind = trimmed ? (PREFIX_SOURCE_KIND[trimmed[0]!] ?? null) : null;
+  return {
+    needle: sourceKind ? trimmed.slice(1).trim() : input,
+    sourceKind,
+  };
+}
+
+function inferredSourceKind(entry: PaletteEntry): PaletteSourceKind {
+  if (entry.sourceKind) return entry.sourceKind;
+  if (entry.id.startsWith('tool.')) return 'tool';
+  if (entry.id.startsWith('navigate.') || entry.id.startsWith('view.')) return 'view';
+  if (entry.id.startsWith('settings.') || entry.id.startsWith('theme.')) return 'setting';
+  if (
+    entry.id.startsWith('shell.') ||
+    entry.id.startsWith('project.') ||
+    entry.id.startsWith('library.') ||
+    entry.id.startsWith('help.') ||
+    entry.id.startsWith('tabs.') ||
+    entry.id.startsWith('visibility.')
+  ) {
+    return 'setting';
+  }
+  if (entry.category === 'select') return 'element';
+  return 'command';
+}
+
+function matchesSourceKind(entry: PaletteEntry, sourceKind: PaletteSourceKind | null): boolean {
+  if (!sourceKind) return true;
+  return inferredSourceKind(entry) === sourceKind;
+}
+
 export function registerCommand(entry: PaletteEntry): void {
   _registry.push(entry);
 }
@@ -77,6 +123,7 @@ export function queryPalette(
   context: PaletteContext,
   recency: Record<string, number>,
 ): PaletteEntry[] {
+  const parsed = parsePaletteInput(input);
   const activeMode = context.activeMode;
   const resolvedRegistry = _registry
     .map((entry): PaletteEntry | null => {
@@ -106,13 +153,16 @@ export function queryPalette(
     label: v.label,
     keywords: [v.keywords],
     category: 'navigate' as const,
+    sourceKind: 'view' as const,
     badge: 'Open View',
     invoke: (ctx) => ctx.openElement?.(v.id),
   }));
 
-  const all = [...resolvedRegistry, ...viewEntries];
+  const all = [...resolvedRegistry, ...viewEntries].filter((entry) =>
+    matchesSourceKind(entry, parsed.sourceKind),
+  );
 
-  if (!input.trim()) {
+  if (!parsed.needle.trim()) {
     return [...all].sort((a, b) => (recency[b.id] ?? 0) - (recency[a.id] ?? 0));
   }
 
@@ -121,7 +171,7 @@ export function queryPalette(
     searchable: [e.label, ...(e.keywords ?? [])].join(' '),
   }));
 
-  const results = fuzzysort.go(input, targets, {
+  const results = fuzzysort.go(parsed.needle, targets, {
     key: 'searchable',
     threshold: -10000,
     all: false,

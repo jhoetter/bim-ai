@@ -55,6 +55,13 @@ function seed() {
     category: 'navigate',
     invoke: vi.fn(),
   });
+  registerCommand({
+    id: 'settings.language.toggle',
+    label: 'Toggle language',
+    keywords: ['language', 'locale'],
+    category: 'command',
+    invoke: vi.fn(),
+  });
 }
 
 describe('queryPalette', () => {
@@ -107,6 +114,20 @@ describe('queryPalette', () => {
     expect(withBoost[0]!.id).toBe('view.phase.new');
     // Without boost the order may differ.
     expect(noBoost[0]!.id).not.toBe(undefined);
+  });
+
+  it('supports mounted prefix filtering for tools, views, and settings', () => {
+    seed();
+    const contextWithViews: PaletteContext = {
+      ...CTX,
+      views: [{ id: 'plan-a', label: 'Level 1 plan', keywords: 'floor plan level' }],
+    };
+
+    expect(queryPalette('>wall', contextWithViews, {}).map((e) => e.id)).toEqual(['tool.wall']);
+    expect(queryPalette('@level', contextWithViews, {}).map((e) => e.id)).toEqual(['view.plan-a']);
+    expect(queryPalette(':language', contextWithViews, {}).map((e) => e.id)).toEqual([
+      'settings.language.toggle',
+    ]);
   });
 });
 

@@ -590,7 +590,9 @@ Decision:
 
 Mounted implementation: `packages/web/src/cmdPalette`.
 
-Unmounted richer implementation: `packages/web/src/cmd`.
+Retired implementation: the unused `packages/web/src/cmd/CommandPalette.tsx` path and its
+private source/ranker were removed; `packages/web/src/cmd` now only hosts the keyboard shortcuts
+modal and command-line parser utilities that have their own tests.
 
 ### What Works
 
@@ -598,18 +600,20 @@ Unmounted richer implementation: `packages/web/src/cmd`.
 - Static commands exist for tools, render styles, reveal hidden, neighborhood masses, perspective changes.
 - Dynamic view entries are injected from `paletteViews`.
 - Recency ranking exists.
+- Mounted prefix grammar exists: `>` filters tool commands, `@` filters view/navigation entries,
+  and `:` filters settings/shell controls.
 
-### What Does Not Work Well
+### Resolved Cmd+K Gaps
 
-- Context does not include active view. `Workspace` passes `activeViewId: null`.
-- Static tool commands set plan tools without checking whether the current canvas can use them.
-- Navigate commands `navigate.plan` and `navigate.3d` only set `viewerMode`, not tabs/mode/active view. This often does not change the rendered canvas.
-- Dynamic view entries open tabs but do not run project-browser activation side effects.
-- No mounted command for theme switching, despite legacy candidates in `workspaceUtils`.
-- No mounted command for language switching.
-- No mounted command for opening the right rail, left rail, visibility panels, family library, project browser search, sheet placement, schedule open row, or 3D view controls.
-- No command grouping by current view.
-- No prefix grammar in mounted implementation. The richer `cmd/CommandPalette` supports prefixes but is not used in `Workspace`.
+- Context now includes `activeViewId` from the active tab/view state.
+- Tool commands use capability evaluation and bridge labels instead of blindly setting plan tools
+  on invalid canvases.
+- Navigation commands route through the workspace tab/mode controller.
+- Theme, language, project menu, family library, keyboard shortcuts, active visibility controls,
+  3D view controls, rail toggles, and inactive-tab close commands are mounted.
+- Results are grouped by current capability context badges.
+- Legacy prefix grammar has been merged into the mounted `cmdPalette` registry, and the unused
+  `cmd/CommandPalette` implementation has been deleted.
 
 ### Required Cmd+K Behavior
 

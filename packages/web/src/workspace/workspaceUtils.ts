@@ -1,5 +1,3 @@
-import type { TFunction } from 'i18next';
-
 import type { Element } from '@bim-ai/core';
 import {
   FamilyIcon,
@@ -12,7 +10,6 @@ import {
   WallLayerIcon,
 } from '@bim-ai/ui';
 
-import type { CommandCandidate } from '../cmd/commandPaletteSources';
 import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
 import type { UxComment } from '../state/store';
 import type { PlanTool } from '../state/storeTypes';
@@ -253,66 +250,4 @@ export function buildBrowserSections(elementsById: Record<string, Element>): Lef
         .filter((g) => g.children.length > 0),
     },
   ];
-}
-
-export function buildPaletteCandidates(
-  elementsById: Record<string, Element>,
-  toolRegistry: Record<string, { id: ToolId; label: string; tooltip?: string; hotkey: string }>,
-  t: TFunction,
-): CommandCandidate[] {
-  const items: CommandCandidate[] = [];
-  for (const tool of Object.values(toolRegistry)) {
-    items.push({
-      id: `tool.${tool.id}`,
-      kind: 'tool',
-      label: tool.label,
-      keywords: tool.tooltip ?? '',
-      hint: tool.hotkey,
-    });
-  }
-  for (const el of Object.values(elementsById) as Element[]) {
-    if (el.kind === 'plan_view') {
-      items.push({ id: el.id, kind: 'view', label: `Plan: ${el.name}`, keywords: 'plan view' });
-    } else if (el.kind === 'viewpoint') {
-      items.push({ id: el.id, kind: 'view', label: `3D: ${el.name}`, keywords: 'viewpoint orbit' });
-    } else if (el.kind === 'section_cut') {
-      items.push({
-        id: el.id,
-        kind: 'view',
-        label: `Section: ${el.name}`,
-        keywords: 'section cut',
-      });
-    }
-  }
-  let elemCount = 0;
-  for (const el of Object.values(elementsById) as Element[]) {
-    if (el.kind !== 'wall' && el.kind !== 'door' && el.kind !== 'window' && el.kind !== 'room')
-      continue;
-    if (elemCount > 60) break;
-    items.push({
-      id: el.id,
-      kind: 'element',
-      label: `${el.kind}: ${(el as { name?: string }).name ?? el.id}`,
-      keywords: el.kind,
-    });
-    elemCount++;
-  }
-  items.push(
-    { id: 'settings.theme.light', kind: 'setting', label: 'Theme: light', keywords: 'light' },
-    { id: 'settings.theme.dark', kind: 'setting', label: 'Theme: dark', keywords: 'dark' },
-    {
-      id: 'settings.language.toggle',
-      kind: 'setting',
-      label: t('cmd.language'),
-      keywords: 'language lang sprache',
-    },
-  );
-  items.push({
-    id: 'tool.browse-families',
-    kind: 'tool',
-    label: 'Browse families',
-    keywords: 'family library catalog door window stair railing wall type',
-  });
-  items.push({ id: 'agent.review', kind: 'agent', label: 'Run Agent Review' });
-  return items;
 }

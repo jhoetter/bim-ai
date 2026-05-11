@@ -39,6 +39,19 @@ describe('UX reachability audit', () => {
     ).toBe(false);
   });
 
+  it('keeps Cmd+K on the mounted capability-backed implementation only', () => {
+    const workspace = readFileSync(
+      resolve(repoRoot, 'packages/web/src/workspace/Workspace.tsx'),
+      'utf8',
+    );
+
+    expect(workspace).toContain("'../cmdPalette/CommandPalette'");
+    expect(existsSync(resolve(repoRoot, 'packages/web/src/cmd/CommandPalette.tsx'))).toBe(false);
+    expect(existsSync(resolve(repoRoot, 'packages/web/src/cmd/commandPaletteSources.ts'))).toBe(
+      false,
+    );
+  });
+
   it('keeps high-risk plan authoring commands bridged outside plan-capable views', () => {
     const nonPlanModes: CapabilityViewMode[] = ['3d', 'sheet', 'schedule', 'agent'];
 
