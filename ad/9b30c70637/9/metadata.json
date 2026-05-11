@@ -1,0 +1,93 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "ad9b30c70637",
+  "session_id": "019e1603-6a2a-7c70-8e5f-f8b105b22669",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-11T08:06:11.179255Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "app/bim_ai/constraints_metadata.py",
+    "app/bim_ai/elements.py",
+    "app/tests/test_constructability_load_bearing_schema.py",
+    "packages/core/src/index.ts",
+    "packages/web/src/advisor/advisorViolationContext.test.ts",
+    "packages/web/src/advisor/advisorViolationContext.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "5aff70ce67a4",
+  "token_usage": {
+    "input_tokens": 33198,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 299136,
+    "output_tokens": 3436,
+    "api_call_count": 11
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-11T08:06:11.173028Z",
+    "agent_lines": 196,
+    "agent_removed": 1,
+    "human_added": 1934,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 2130,
+    "total_lines_changed": 2131,
+    "agent_percentage": 9.244486156733927,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1783,
+      "user_lines_removed": 7022,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".gitignore": 3,
+        "Makefile": 13,
+        "app/scripts/seed.py": 236,
+        "app/tests/test_seed_artifact_roundtrip.py": 56,
+        "packages/cli/cli.mjs": 98,
+        "packages/web/src/plan/planElementMeshBuilders.ts": 45,
+        "packages/web/src/plan/symbology.wirePrimitives.test.ts": 13,
+        "packages/web/src/workspace/project/ProjectMenu.tsx": 46,
+        "packages/web/src/workspace/project/index.ts": 1,
+        "packages/web/src/workspace/useWorkspaceSnapshot.ts": 92,
+        "scripts/create-seed-artifact.mjs": 148,
+        "seed-artifacts/.gitkeep": 1,
+        "seed-artifacts/README.md": 42,
+        "spec/constructability-warning-system-tracker.md": 989
+      },
+      "user_removed_per_file": {
+        "Makefile": 2,
+        "app/scripts/seed.py": 75,
+        "app/tests/test_one_family_bundle_roundtrip.py": 82,
+        "nightshift/seed-target-house-2026-05-11/advisor-info.json": 17,
+        "nightshift/seed-target-house-2026-05-11/advisor-warning.json": 6,
+        "nightshift/seed-target-house-2026-05-11/assumptions.md": 10,
+        "nightshift/seed-target-house-2026-05-11/capability-plan.md": 11,
+        "nightshift/seed-target-house-2026-05-11/initiation-check/acceptance-gates.json": 21,
+        "nightshift/seed-target-house-2026-05-11/initiation-check/capability-coverage.json": 248,
+        "nightshift/seed-target-house-2026-05-11/initiation-check/sketch-ir.json": 230,
+        "nightshift/seed-target-house-2026-05-11/initiation-check/status.md": 68,
+        "nightshift/seed-target-house-2026-05-11/initiation-check/visual-checklist.json": 465,
+        "nightshift/seed-target-house-2026-05-11/sketch-ir.json": 222,
+        "nightshift/seed-target-house-2026-05-11/validate.json": 143,
+        "nightshift/seed-target-house-2026-05-11/visual-readout.md": 26,
+        "packages/cli/cli.mjs": 6,
+        "packages/cli/lib/one-family-home-commands.mjs": 636,
+        "packages/web/e2e/__fixtures__/seed-target-house-snapshot.json": 4331,
+        "packages/web/e2e/seed-target-house.spec.ts": 216,
+        "packages/web/src/plan/planElementMeshBuilders.ts": 8,
+        "packages/web/src/workspace/project/index.ts": 1,
+        "packages/web/src/workspace/useWorkspaceSnapshot.ts": 13,
+        "scripts/apply-one-family-home.mjs": 87,
+        "scripts/build-seed-snapshot.mjs": 98
+      }
+    }
+  ]
+}
