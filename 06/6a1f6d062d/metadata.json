@@ -1,0 +1,18 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "066a1f6d062d",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/viewport/planOverlay3d.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/06/6a1f6d062d/0/metadata.json",
+      "transcript": "/06/6a1f6d062d/0/full.jsonl",
+      "content_hash": "/06/6a1f6d062d/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
