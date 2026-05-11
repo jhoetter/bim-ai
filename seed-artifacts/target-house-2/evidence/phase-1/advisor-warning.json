@@ -1,0 +1,78 @@
+{
+  "groups": [
+    {
+      "code": "door_operation_clearance_conflict",
+      "count": 5,
+      "elementIds": [
+        "hf-door-bedroom-2",
+        "hf-door-living-opening",
+        "hf-door-loggia-right",
+        "hf-roof-court-return-north",
+        "hf-roof-court-return-south",
+        "placed-dining-table",
+        "placed-kitchen-island",
+        "placed-terrace-table"
+      ],
+      "messages": [
+        "Door operation clearance overlaps a wall; the door may not open.",
+        "Door operation clearance overlaps a placed object; the door may not open."
+      ],
+      "severity": "warning"
+    },
+    {
+      "code": "furniture_wall_hard_clash",
+      "count": 2,
+      "elementIds": [
+        "hf-gf-wall-04",
+        "hf-w-feature-screen",
+        "placed-kitchen-island",
+        "placed-sofa-living"
+      ],
+      "messages": [
+        "Furniture or family collision proxy intersects a wall; move it, host it, or add an intentional recess/opening."
+      ],
+      "severity": "warning"
+    },
+    {
+      "code": "physical_hard_clash",
+      "count": 2,
+      "elementIds": [
+        "placed-bedroom2-bed",
+        "placed-bedroom2-wardrobe",
+        "placed-ground-basin",
+        "placed-laundry"
+      ],
+      "messages": [
+        "Placed objects overlap each other; move or separate duplicate/overlapping assets."
+      ],
+      "severity": "warning"
+    },
+    {
+      "code": "room_without_door_access",
+      "count": 1,
+      "elementIds": ["hf-room-service"],
+      "messages": [
+        "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary."
+      ],
+      "severity": "warning"
+    },
+    {
+      "code": "window_operation_clearance_conflict",
+      "count": 3,
+      "elementIds": [
+        "hf-w-feature-screen",
+        "hf-win-gf-kitchen",
+        "hf-win-gf-living",
+        "placed-kitchen-run"
+      ],
+      "messages": [
+        "Window operation/maintenance clearance overlaps a wall; revise nearby objects or the window/opening.",
+        "Window operation/maintenance clearance overlaps a placed object; revise nearby objects or the window/opening."
+      ],
+      "severity": "warning"
+    }
+  ],
+  "modelId": "b2232151-47ff-5b16-a699-5dde379e906d",
+  "revision": 1,
+  "total": 13
+}

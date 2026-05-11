@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "sketch-to-bim.semantic-checklist.v1",
+  "seed": "target-house-2",
+  "phase": "1",
+  "checks": [
+    {
+      "viewId": "vp-main-iso",
+      "criteria": [
+        "Primary front-right axonometric reads as target-house-2.png.",
+        "White folded upper wrapper dominates over the vertically clad ground floor.",
+        "Deep upper loggia, lower living glazing, and roof-court void are visible."
+      ],
+      "verdict": "pending",
+      "notes": "Browser screenshot capture blocked by unavailable web app."
+    },
+    {
+      "viewId": "vp-roof-court",
+      "criteria": [
+        "Open-to-sky roof court is visible as an occupied void, not metadata only.",
+        "Terrace floor, return faces, guard, and outdoor assets are visible."
+      ],
+      "verdict": "pending",
+      "notes": "Browser screenshot capture blocked by unavailable web app."
+    },
+    {
+      "viewId": "hf-pv-ground",
+      "criteria": [
+        "Ground plan shows living/dining, kitchen, entry/stair, service, carport, and placed programme assets.",
+        "Advisor warnings have been resolved or explicitly accepted."
+      ],
+      "verdict": "pending",
+      "notes": "Live Advisor still reports warnings."
+    }
+  ]
+}

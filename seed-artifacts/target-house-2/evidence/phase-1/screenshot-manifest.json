@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "sketch-to-bim.screenshot-manifest.v1",
+  "seed": "target-house-2",
+  "phase": "1",
+  "ok": false,
+  "generatedAt": "2026-05-11T00:00:00.000Z",
+  "modelId": "b2232151-47ff-5b16-a699-5dde379e906d",
+  "screenshots": [],
+  "blocked": {
+    "reason": "web_unavailable",
+    "details": "sketch_bim.py doctor --require-live reached the API but http://127.0.0.1:2000 returned 404, so browser screenshots/right-rail evidence were not captured."
+  }
+}

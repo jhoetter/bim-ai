@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "bim-ai.seed-artifact.v1",
+  "name": "target-house-2",
+  "slug": "target-house-2",
+  "title": "Target House 2",
+  "description": "Modern two-level target house seed from target-house-2.png with folded white shell, loggia, roof court, interior assets, and material intent.",
+  "bundle": "bundle.json",
+  "sourceRoot": "source",
+  "evidenceRoot": "evidence",
+  "createdAt": "2026-05-11T00:00:00.000Z",
+  "generatedBy": {
+    "tool": "packages/cli/cli.mjs seed-dsl compile + sketch-to-bim worker",
+    "version": 1
+  },
+  "inputPaths": {
+    "source": "spec/target-house",
+    "bundle": "seed-artifacts/target-house-2/evidence/target-house-2.recipe.json"
+  },
+  "bundleSha256": "fc67474b515be6418aaef56bc3d5828ae9e8b929827ba3ae11d83cf8395c43e1",
+  "commandCount": 141,
+  "commandSchemaVersion": "cmd-v3.0",
+  "entryComment": {
+    "body": "Modern target-house-2 seed from target-house-2.png and the target-house floorplan."
+  }
+}

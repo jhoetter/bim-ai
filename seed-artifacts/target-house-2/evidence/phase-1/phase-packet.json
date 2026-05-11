@@ -1,0 +1,93 @@
+{
+  "advisorParityOk": true,
+  "advisorWarningTotal": 13,
+  "files": {
+    "advisor-info": "seed-artifacts/target-house-2/evidence/phase-1/advisor-info.json",
+    "advisor-warning": "seed-artifacts/target-house-2/evidence/phase-1/advisor-warning.json",
+    "corrections": "seed-artifacts/target-house-2/evidence/phase-1/corrections.md",
+    "issue-ledger": "seed-artifacts/target-house-2/evidence/phase-1/issue-ledger.json",
+    "screenshot-manifest": "seed-artifacts/target-house-2/evidence/phase-1/screenshot-manifest.json",
+    "semantic-checklist": "seed-artifacts/target-house-2/evidence/phase-1/semantic-checklist.json",
+    "visual-readout": "seed-artifacts/target-house-2/evidence/phase-1/visual-readout.md"
+  },
+  "generatedAtEpochMs": 1778499316793,
+  "gitHead": "96b9c04d3354afff8d7cdf4df3bcf5b2842f2b2e",
+  "missing": {},
+  "ok": false,
+  "pendingIssues": [
+    {
+      "code": "door_operation_clearance_conflict",
+      "elementIds": [
+        "hf-door-bedroom-2",
+        "hf-door-living-opening",
+        "hf-door-loggia-right",
+        "hf-roof-court-return-north",
+        "hf-roof-court-return-south",
+        "placed-dining-table",
+        "placed-kitchen-island",
+        "placed-terrace-table"
+      ],
+      "severity": "warning",
+      "status": "pending"
+    },
+    {
+      "code": "furniture_wall_hard_clash",
+      "elementIds": [
+        "hf-gf-wall-04",
+        "hf-w-feature-screen",
+        "placed-kitchen-island",
+        "placed-sofa-living"
+      ],
+      "severity": "warning",
+      "status": "pending"
+    },
+    {
+      "code": "physical_hard_clash",
+      "elementIds": [
+        "placed-bedroom2-bed",
+        "placed-bedroom2-wardrobe",
+        "placed-ground-basin",
+        "placed-laundry"
+      ],
+      "severity": "warning",
+      "status": "pending"
+    },
+    {
+      "code": "room_without_door_access",
+      "elementIds": ["hf-room-service"],
+      "severity": "warning",
+      "status": "pending"
+    },
+    {
+      "code": "window_operation_clearance_conflict",
+      "elementIds": [
+        "hf-w-feature-screen",
+        "hf-win-gf-kitchen",
+        "hf-win-gf-living",
+        "placed-kitchen-run"
+      ],
+      "severity": "warning",
+      "status": "pending"
+    }
+  ],
+  "phase": "1",
+  "schemaVersion": "sketch-to-bim.phase-packet.v1",
+  "seed": "target-house-2",
+  "semanticFailures": [
+    {
+      "notes": "Browser screenshot capture blocked by unavailable web app.",
+      "verdict": "pending",
+      "viewId": "vp-main-iso"
+    },
+    {
+      "notes": "Browser screenshot capture blocked by unavailable web app.",
+      "verdict": "pending",
+      "viewId": "vp-roof-court"
+    },
+    {
+      "notes": "Live Advisor still reports warnings.",
+      "verdict": "pending",
+      "viewId": "hf-pv-ground"
+    }
+  ]
+}

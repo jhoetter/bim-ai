@@ -1,0 +1,287 @@
+{
+  "bundle": "seed-artifacts/target-house-2/bundle.json",
+  "entries": [
+    {
+      "bundleMatches": {
+        "hf-door-bedroom-2": [2048, 2240],
+        "hf-door-living-opening": [1740, 2216],
+        "hf-door-loggia-right": [1553, 2174, 2222],
+        "hf-roof-court-return-north": [1598],
+        "hf-roof-court-return-south": [1580],
+        "placed-dining-table": [1057],
+        "placed-kitchen-island": [1043],
+        "placed-terrace-table": [1253]
+      },
+      "code": "door_operation_clearance_conflict",
+      "count": 5,
+      "elementIds": [
+        "hf-door-bedroom-2",
+        "hf-door-living-opening",
+        "hf-door-loggia-right",
+        "hf-roof-court-return-north",
+        "hf-roof-court-return-south",
+        "placed-dining-table",
+        "placed-kitchen-island",
+        "placed-terrace-table"
+      ],
+      "messages": [
+        "Door operation clearance overlaps a wall; the door may not open.",
+        "Door operation clearance overlaps a placed object; the door may not open."
+      ],
+      "recipeMatches": {
+        "hf-door-bedroom-2": [1228, 1420],
+        "hf-door-living-opening": [920, 1396],
+        "hf-door-loggia-right": [733, 1354, 1402],
+        "hf-roof-court-return-north": [778],
+        "hf-roof-court-return-south": [760],
+        "placed-dining-table": [1704],
+        "placed-kitchen-island": [1693],
+        "placed-terrace-table": [1858]
+      },
+      "severity": "warning",
+      "sourceEdit": "",
+      "status": "pending",
+      "toleranceRationale": ""
+    },
+    {
+      "bundleMatches": {
+        "hf-gf-wall-04": [239],
+        "hf-w-feature-screen": [1766],
+        "placed-kitchen-island": [1043],
+        "placed-sofa-living": [1071]
+      },
+      "code": "furniture_wall_hard_clash",
+      "count": 2,
+      "elementIds": [
+        "hf-gf-wall-04",
+        "hf-w-feature-screen",
+        "placed-kitchen-island",
+        "placed-sofa-living"
+      ],
+      "messages": [
+        "Furniture or family collision proxy intersects a wall; move it, host it, or add an intentional recess/opening."
+      ],
+      "recipeMatches": {
+        "hf-w-feature-screen": [946],
+        "placed-kitchen-island": [1693],
+        "placed-sofa-living": [1715]
+      },
+      "severity": "warning",
+      "sourceEdit": "",
+      "status": "pending",
+      "toleranceRationale": ""
+    },
+    {
+      "bundleMatches": {
+        "placed-bedroom2-bed": [1225],
+        "placed-bedroom2-wardrobe": [1239],
+        "placed-ground-basin": [1127],
+        "placed-laundry": [1099]
+      },
+      "code": "physical_hard_clash",
+      "count": 2,
+      "elementIds": [
+        "placed-bedroom2-bed",
+        "placed-bedroom2-wardrobe",
+        "placed-ground-basin",
+        "placed-laundry"
+      ],
+      "messages": [
+        "Placed objects overlap each other; move or separate duplicate/overlapping assets."
+      ],
+      "recipeMatches": {
+        "placed-bedroom2-bed": [1836],
+        "placed-bedroom2-wardrobe": [1847],
+        "placed-ground-basin": [1759],
+        "placed-laundry": [1737]
+      },
+      "severity": "warning",
+      "sourceEdit": "",
+      "status": "pending",
+      "toleranceRationale": ""
+    },
+    {
+      "bundleMatches": {
+        "hf-room-service": [474]
+      },
+      "code": "room_without_door_access",
+      "count": 1,
+      "elementIds": ["hf-room-service"],
+      "messages": [
+        "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary."
+      ],
+      "recipeMatches": {
+        "hf-room-service": [314]
+      },
+      "severity": "warning",
+      "sourceEdit": "",
+      "status": "pending",
+      "toleranceRationale": ""
+    },
+    {
+      "bundleMatches": {
+        "hf-w-feature-screen": [1766],
+        "hf-win-gf-kitchen": [1672],
+        "hf-win-gf-living": [1683, 2186],
+        "placed-kitchen-run": [1027]
+      },
+      "code": "window_operation_clearance_conflict",
+      "count": 3,
+      "elementIds": [
+        "hf-w-feature-screen",
+        "hf-win-gf-kitchen",
+        "hf-win-gf-living",
+        "placed-kitchen-run"
+      ],
+      "messages": [
+        "Window operation/maintenance clearance overlaps a wall; revise nearby objects or the window/opening.",
+        "Window operation/maintenance clearance overlaps a placed object; revise nearby objects or the window/opening."
+      ],
+      "recipeMatches": {
+        "hf-w-feature-screen": [946],
+        "hf-win-gf-kitchen": [852],
+        "hf-win-gf-living": [863, 1366],
+        "placed-kitchen-run": [1679]
+      },
+      "severity": "warning",
+      "sourceEdit": "",
+      "status": "pending",
+      "toleranceRationale": ""
+    },
+    {
+      "bundleMatches": {},
+      "code": "gltf_export_manifest_expected_extension_missing",
+      "count": 2,
+      "elementIds": [],
+      "messages": [
+        "glTF export manifest: extension 'bim_ai_skew_wall_hosted_openings_v0' not emitted but eligible element kind 'wall' is present (skipReasonCode='no_eligible_elements').",
+        "glTF export manifest: extension 'bim_ai_roof_unsupported_shape_summary_v0' not emitted but eligible element kind 'roof' is present (skipReasonCode='no_eligible_elements')."
+      ],
+      "recipeMatches": {},
+      "severity": "info",
+      "sourceEdit": "",
+      "status": "reviewed",
+      "toleranceRationale": ""
+    },
+    {
+      "bundleMatches": {
+        "hf-pv-ground": [2057, 2126, 2309],
+        "hf-pv-upper": [2066, 2134, 2310],
+        "hf-sheet-ga01": [2089, 2106, 2112, 2118, 2122, 2297],
+        "hf-vp-sheet-ground": [2125],
+        "hf-vp-sheet-upper": [2133]
+      },
+      "code": "plan_view_sheet_viewport_crop_missing",
+      "count": 2,
+      "elementIds": [
+        "hf-pv-ground",
+        "hf-pv-upper",
+        "hf-sheet-ga01",
+        "hf-vp-sheet-ground",
+        "hf-vp-sheet-upper"
+      ],
+      "messages": [
+        "Plan view 'hf-pv-ground' placed on sheet 'hf-sheet-ga01' viewport 'hf-vp-sheet-ground' has no crop box (cropMinMm/cropMaxMm absent); the plan-on-sheet boundary is unconstrained.",
+        "Plan view 'hf-pv-upper' placed on sheet 'hf-sheet-ga01' viewport 'hf-vp-sheet-upper' has no crop box (cropMinMm/cropMaxMm absent); the plan-on-sheet boundary is unconstrained."
+      ],
+      "recipeMatches": {
+        "hf-pv-ground": [1237, 1306, 1988],
+        "hf-pv-upper": [1246, 1314, 1989],
+        "hf-sheet-ga01": [1269, 1286, 1292, 1298, 1302, 1976],
+        "hf-vp-sheet-ground": [1305],
+        "hf-vp-sheet-upper": [1313]
+      },
+      "severity": "info",
+      "sourceEdit": "",
+      "status": "reviewed",
+      "toleranceRationale": ""
+    },
+    {
+      "bundleMatches": {
+        "hf-pv-ground": [2057, 2126, 2309],
+        "hf-pv-upper": [2066, 2134, 2310]
+      },
+      "code": "plan_view_tag_style_fallback",
+      "count": 4,
+      "elementIds": ["hf-pv-ground", "hf-pv-upper"],
+      "messages": [
+        "Plan view 'Ground floor plan' has opening tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling.",
+        "Plan view 'Ground floor plan' has room tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling.",
+        "Plan view 'First floor plan' has opening tags visible but no custom tag style is configured on the plan view or its template; the builtin fallback style is active. Assign a plan_tag_style for consistent labelling."
+      ],
+      "recipeMatches": {
+        "hf-pv-ground": [1237, 1306, 1988],
+        "hf-pv-upper": [1246, 1314, 1989]
+      },
+      "severity": "info",
+      "sourceEdit": "",
+      "status": "reviewed",
+      "toleranceRationale": ""
+    },
+    {
+      "bundleMatches": {},
+      "code": "room_color_scheme_identity_missing",
+      "count": 1,
+      "elementIds": [],
+      "messages": [
+        "No room color scheme element found. Use upsertRoomColorScheme to author overrides."
+      ],
+      "recipeMatches": {},
+      "severity": "info",
+      "sourceEdit": "",
+      "status": "reviewed",
+      "toleranceRationale": ""
+    },
+    {
+      "bundleMatches": {
+        "hf-room-bedroom-2": [614],
+        "hf-room-carport": [502],
+        "hf-room-ensuite": [558],
+        "hf-room-entry-stair": [446],
+        "hf-room-hall": [586],
+        "hf-room-kitchen-dining": [390],
+        "hf-room-living": [418],
+        "hf-room-primary": [530],
+        "hf-room-roof-court": [642],
+        "hf-room-service": [474]
+      },
+      "code": "room_finish_metadata_hint",
+      "count": 10,
+      "elementIds": [
+        "hf-room-bedroom-2",
+        "hf-room-carport",
+        "hf-room-ensuite",
+        "hf-room-entry-stair",
+        "hf-room-hall",
+        "hf-room-kitchen-dining",
+        "hf-room-living",
+        "hf-room-primary",
+        "hf-room-roof-court",
+        "hf-room-service"
+      ],
+      "messages": [
+        "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete."
+      ],
+      "recipeMatches": {
+        "hf-room-bedroom-2": [444],
+        "hf-room-carport": [340],
+        "hf-room-ensuite": [392],
+        "hf-room-entry-stair": [288],
+        "hf-room-hall": [418],
+        "hf-room-kitchen-dining": [236],
+        "hf-room-living": [262],
+        "hf-room-primary": [366],
+        "hf-room-roof-court": [470],
+        "hf-room-service": [314]
+      },
+      "severity": "info",
+      "sourceEdit": "",
+      "status": "reviewed",
+      "toleranceRationale": ""
+    }
+  ],
+  "phase": "1",
+  "recipe": "seed-artifacts/target-house-2/evidence/target-house-2.recipe.json",
+  "schemaVersion": "sketch-to-bim.issue-ledger.v1",
+  "seed": "target-house-2"
+}
