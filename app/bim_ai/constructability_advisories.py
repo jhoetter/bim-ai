@@ -11,7 +11,9 @@ from bim_ai.constructability_geometry import (
     PhysicalParticipant,
     aabb_overlaps,
     collect_physical_participants,
+    collect_unsupported_physical_diagnostics,
 )
+from bim_ai.constructability_matrix import hard_clash_cell_for
 from bim_ai.elements import DoorElem, Element, WallElem, WallOpeningElem, WindowElem
 
 _CLASH_TOLERANCE_MM = 1.0
@@ -32,7 +34,8 @@ def constructability_advisory_violations(elements: dict[str, Element]) -> list[V
     openings_by_wall_id = _openings_by_wall_id(elements, walls_by_id)
 
     violations: list[Violation] = []
-    violations.extend(_wall_clash_violations(participants_by_kind, elements))
+    violations.extend(_unsupported_proxy_violations(elements))
+    violations.extend(_matrix_hard_clash_violations(participants, elements))
     violations.extend(_mep_wall_penetration_violations(participants_by_kind, openings_by_wall_id))
     violations.extend(_door_clearance_violations(elements, participants_by_kind))
     violations.extend(_load_bearing_metadata_violations(walls_by_id))
@@ -42,49 +45,53 @@ def constructability_advisory_violations(elements: dict[str, Element]) -> list[V
     return violations
 
 
-def _wall_clash_violations(
-    participants_by_kind: dict[str, list[PhysicalParticipant]],
+def _unsupported_proxy_violations(elements: dict[str, Element]) -> list[Violation]:
+    violations: list[Violation] = []
+    for diagnostic in collect_unsupported_physical_diagnostics(elements):
+        violations.append(
+            Violation(
+                rule_id="constructability_proxy_unsupported",
+                severity="warning",
+                message=(
+                    f"Physical element '{diagnostic.element_id}' ({diagnostic.kind}) has no "
+                    f"constructability collision proxy: {diagnostic.reason}."
+                ),
+                element_ids=[diagnostic.element_id],
+            )
+        )
+    return violations
+
+
+def _matrix_hard_clash_violations(
+    participants: list[PhysicalParticipant],
     elements: dict[str, Element],
 ) -> list[Violation]:
     violations: list[Violation] = []
-    walls = participants_by_kind.get("wall", [])
-    if not walls:
-        return violations
-
-    for kind, rule_id, message in (
-        (
-            "placed_asset",
-            "furniture_wall_hard_clash",
-            "Placed asset collision proxy intersects a wall; move it, host it, or add an intentional recess/opening.",
-        ),
-        (
-            "family_instance",
-            "furniture_wall_hard_clash",
-            "Family instance collision proxy intersects a wall; move it, host it, or add an intentional recess/opening.",
-        ),
-        (
-            "stair",
-            "stair_wall_hard_clash",
-            "Stair collision proxy intersects a wall; revise the stair opening or wall layout.",
-        ),
-    ):
-        for participant in participants_by_kind.get(kind, []):
-            source = elements.get(participant.element_id)
-            host_id = str(getattr(source, "host_element_id", "") or "")
-            for wall in walls:
-                if host_id and host_id == wall.element_id:
-                    continue
-                if not _same_or_unknown_level(participant, wall):
-                    continue
-                if aabb_overlaps(participant.aabb, wall.aabb, tolerance_mm=_CLASH_TOLERANCE_MM):
-                    violations.append(
-                        Violation(
-                            rule_id=rule_id,
-                            severity="warning",
-                            message=message,
-                            element_ids=sorted([participant.element_id, wall.element_id]),
-                        )
-                    )
+    emitted: set[tuple[str, tuple[str, str]]] = set()
+    for i, a in enumerate(participants):
+        for b in participants[i + 1 :]:
+            cell = hard_clash_cell_for(a, b)
+            if cell is None:
+                continue
+            if not _same_or_unknown_level(a, b):
+                continue
+            if _has_allowed_host_relation(a, b, elements):
+                continue
+            if not aabb_overlaps(a.aabb, b.aabb, tolerance_mm=cell.tolerance_mm):
+                continue
+            element_ids = tuple(sorted([a.element_id, b.element_id]))
+            key = (cell.rule_id, element_ids)
+            if key in emitted:
+                continue
+            emitted.add(key)
+            violations.append(
+                Violation(
+                    rule_id=cell.rule_id,
+                    severity=cell.severity,
+                    message=cell.message,
+                    element_ids=list(element_ids),
+                )
+            )
     return violations
 
 
@@ -499,6 +506,27 @@ def _is_load_bearing_wall(wall: WallElem | None) -> bool:
 
 def _same_or_unknown_level(a: PhysicalParticipant, b: PhysicalParticipant) -> bool:
     return _levels_compatible(a.level_id, b.level_id)
+
+
+def _has_allowed_host_relation(
+    a: PhysicalParticipant,
+    b: PhysicalParticipant,
+    elements: dict[str, Element],
+) -> bool:
+    elem_a = elements.get(a.element_id)
+    elem_b = elements.get(b.element_id)
+    return _is_hosted_by(elem_a, b.element_id) or _is_hosted_by(elem_b, a.element_id)
+
+
+def _is_hosted_by(element: Any, host_element_id: str) -> bool:
+    if element is None:
+        return False
+    host_ids = (
+        getattr(element, "host_element_id", None),
+        getattr(element, "host_wall_id", None),
+        getattr(element, "wall_id", None),
+    )
+    return host_element_id in {str(host_id) for host_id in host_ids if host_id}
 
 
 def _levels_compatible(a: Any, b: Any) -> bool:

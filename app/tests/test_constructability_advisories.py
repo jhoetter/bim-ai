@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from bim_ai.constraints_evaluation import evaluate
+from bim_ai.constructability_matrix import default_matrix_as_dict
 from bim_ai.elements import (
     AssetLibraryEntryElem,
     BeamElem,
+    CeilingElem,
     ColumnElem,
     DoorElem,
     DuctElem,
@@ -320,3 +325,81 @@ def test_door_operation_clearance_conflict_is_reported() -> None:
     }
 
     assert "door_operation_clearance_conflict" in _rule_ids(elements)
+
+
+def test_family_instance_without_proxy_dimensions_reports_coverage_gap() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "ft-unknown": FamilyTypeElem(
+            kind="family_type",
+            id="ft-unknown",
+            familyId="generic",
+            discipline="generic",
+            parameters={},
+        ),
+        "instance-1": FamilyInstanceElem(
+            kind="family_instance",
+            id="instance-1",
+            familyTypeId="ft-unknown",
+            levelId="lvl-1",
+            positionMm={"xMm": 0, "yMm": 0},
+        ),
+    }
+
+    assert "constructability_proxy_unsupported" in _rule_ids(elements)
+
+
+def test_matrix_backed_structural_wall_hard_clash_is_reported() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "wall-1": _wall(),
+        "beam-1": BeamElem(
+            kind="beam",
+            id="beam-1",
+            levelId="lvl-1",
+            startMm={"xMm": 1000, "yMm": -500},
+            endMm={"xMm": 1000, "yMm": 500},
+            widthMm=200,
+            heightMm=300,
+        ),
+    }
+
+    assert "physical_hard_clash" in _rule_ids(elements)
+
+
+def test_matrix_backed_stair_ceiling_hard_clash_is_reported() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "lvl-2": LevelElem(kind="level", id="lvl-2", name="Level 2", elevationMm=3000.0),
+        "ceiling-1": CeilingElem(
+            kind="ceiling",
+            id="ceiling-1",
+            levelId="lvl-1",
+            boundaryMm=[
+                {"xMm": 0, "yMm": -800},
+                {"xMm": 1200, "yMm": -800},
+                {"xMm": 1200, "yMm": 800},
+                {"xMm": 0, "yMm": 800},
+            ],
+            heightOffsetMm=2400,
+            thicknessMm=200,
+        ),
+        "stair-1": StairElem(
+            kind="stair",
+            id="stair-1",
+            baseLevelId="lvl-1",
+            topLevelId="lvl-2",
+            runStartMm={"xMm": 500, "yMm": -500},
+            runEndMm={"xMm": 500, "yMm": 500},
+            widthMm=1000,
+        ),
+    }
+
+    assert "physical_hard_clash" in _rule_ids(elements)
+
+
+def test_default_constructability_matrix_json_matches_app_default() -> None:
+    root = Path(__file__).resolve().parents[2]
+    matrix_path = root / "spec" / "schemas" / "constructability-matrix-default.json"
+
+    assert json.loads(matrix_path.read_text()) == default_matrix_as_dict()

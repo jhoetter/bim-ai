@@ -54,22 +54,22 @@ _PHYSICAL_KINDS = {
     "wall",
     "floor",
     "roof",
+    "ceiling",
     "stair",
+    "railing",
     "column",
     "beam",
     "pipe",
     "duct",
     "placed_asset",
     "family_instance",
+    "family_kit_instance",
 }
 
 _DIAGNOSTIC_PHYSICAL_KINDS = _PHYSICAL_KINDS | {
     "balcony",
-    "ceiling",
     "dormer",
-    "family_kit_instance",
     "mass",
-    "railing",
     "soffit",
     "sweep",
     "toposolid",
@@ -146,13 +146,16 @@ def physical_participant_for_element(
         "wall": _aabb_for_wall,
         "floor": _aabb_for_floor,
         "roof": _aabb_for_roof,
+        "ceiling": _aabb_for_ceiling,
         "stair": _aabb_for_stair,
+        "railing": _aabb_for_railing,
         "column": _aabb_for_column,
         "beam": _aabb_for_beam,
         "pipe": _aabb_for_pipe,
         "duct": _aabb_for_duct,
         "placed_asset": _aabb_for_placed_asset,
         "family_instance": _aabb_for_family_instance,
+        "family_kit_instance": _aabb_for_family_kit_instance,
     }
     builder = builders.get(kind)
     if builder is None:
@@ -323,6 +326,15 @@ def _aabb_for_roof(elem: Any, elements: dict[str, Element]) -> AABB | None:
     return AABB(min_x, min_y, base_z, max_x, max_y, base_z + max(300.0, rise + 300.0))
 
 
+def _aabb_for_ceiling(elem: Any, elements: dict[str, Element]) -> AABB | None:
+    base_z = _level_elevation_mm(elements, elem.level_id) + float(elem.height_offset_mm)
+    return _bounds_from_points(
+        [(float(p.x_mm), float(p.y_mm)) for p in elem.boundary_mm],
+        base_z,
+        base_z + float(elem.thickness_mm),
+    )
+
+
 def _aabb_for_stair(elem: Any, elements: dict[str, Element]) -> AABB | None:
     min_z = _level_elevation_mm(elements, elem.base_level_id)
     max_z = _level_elevation_mm(elements, elem.top_level_id)
@@ -391,6 +403,30 @@ def _aabb_for_stair(elem: Any, elements: dict[str, Element]) -> AABB | None:
         if box is not None:
             boxes.append(box)
 
+    boxes = [box for box in boxes if box is not None]
+    if not boxes:
+        return None
+    return AABB(
+        min(box.min_x for box in boxes),
+        min(box.min_y for box in boxes),
+        min_z,
+        max(box.max_x for box in boxes),
+        max(box.max_y for box in boxes),
+        max_z,
+    )
+
+
+def _aabb_for_railing(elem: Any, elements: dict[str, Element]) -> AABB | None:
+    path = list(getattr(elem, "path_mm", []) or [])
+    if len(path) < 2:
+        return None
+    level_id = _hosted_stair_level_id(elem, elements)
+    min_z = _level_elevation_mm(elements, level_id)
+    max_z = min_z + float(getattr(elem, "guard_height_mm", 1040.0))
+    boxes = [
+        _line_box_aabb(start, end, 80.0, min_z, max_z)
+        for start, end in zip(path, path[1:], strict=False)
+    ]
     boxes = [box for box in boxes if box is not None]
     if not boxes:
         return None
@@ -517,6 +553,41 @@ def _aabb_for_family_instance(elem: Any, elements: dict[str, Element]) -> AABB |
     )
 
 
+def _aabb_for_family_kit_instance(elem: Any, elements: dict[str, Element]) -> AABB | None:
+    wall = elements.get(getattr(elem, "host_wall_id", "") or "")
+    if wall is None or getattr(wall, "kind", None) != "wall":
+        return None
+    start_t = float(getattr(elem, "start_mm", 0.0))
+    end_t = float(getattr(elem, "end_mm", 0.0))
+    if end_t <= start_t:
+        return None
+    wall_len = math.hypot(
+        float(wall.end.x_mm) - float(wall.start.x_mm),
+        float(wall.end.y_mm) - float(wall.start.y_mm),
+    )
+    if wall_len <= 1e-6:
+        return None
+    ux = (float(wall.end.x_mm) - float(wall.start.x_mm)) / wall_len
+    uy = (float(wall.end.y_mm) - float(wall.start.y_mm)) / wall_len
+    nx = -uy
+    ny = ux
+    depth = float(getattr(elem, "countertop_depth_mm", 600.0) or 600.0)
+    height = _family_kit_height_mm(elem)
+    base_z = _level_elevation_mm(elements, getattr(wall, "level_id", None))
+    sx = float(wall.start.x_mm) + ux * start_t
+    sy = float(wall.start.y_mm) + uy * start_t
+    ex = float(wall.start.x_mm) + ux * min(end_t, wall_len)
+    ey = float(wall.start.y_mm) + uy * min(end_t, wall_len)
+    half_wall = float(getattr(wall, "thickness_mm", 200.0)) / 2.0
+    points = [
+        (sx + nx * half_wall, sy + ny * half_wall),
+        (ex + nx * half_wall, ey + ny * half_wall),
+        (sx + nx * (half_wall + depth), sy + ny * (half_wall + depth)),
+        (ex + nx * (half_wall + depth), ey + ny * (half_wall + depth)),
+    ]
+    return _bounds_from_points(points, base_z, base_z + height)
+
+
 def _dimension_from_sources(
     instance_values: dict[str, Any] | None,
     type_values: Any,
@@ -594,6 +665,23 @@ def _positive_float(value: Any) -> float | None:
 
 def _normalize_dimension_key(value: str) -> str:
     return re.sub(r"[^a-z0-9]", "", value.lower())
+
+
+def _hosted_stair_level_id(elem: Any, elements: dict[str, Element]) -> str | None:
+    stair_id = getattr(elem, "hosted_stair_id", None)
+    stair = elements.get(stair_id or "")
+    if stair is not None:
+        return getattr(stair, "base_level_id", None)
+    return None
+
+
+def _family_kit_height_mm(elem: Any) -> float:
+    height = 0.0
+    for component in getattr(elem, "components", []) or []:
+        component_height = _positive_float(getattr(component, "height_mm", None))
+        if component_height is not None:
+            height = max(height, component_height)
+    return height or 2400.0
 
 
 def _unsupported_reason(elem: Any, elements: dict[str, Element]) -> str:

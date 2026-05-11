@@ -1,0 +1,75 @@
+{
+  "version": "constructability-matrix-v1",
+  "cells": [
+    {
+      "group_a": "furniture",
+      "group_b": "wall",
+      "check_type": "hard",
+      "rule_id": "furniture_wall_hard_clash",
+      "severity": "warning",
+      "tolerance_mm": 1.0,
+      "enabled": true,
+      "message": "Furniture or family collision proxy intersects a wall; move it, host it, or add an intentional recess/opening."
+    },
+    {
+      "group_a": "stair",
+      "group_b": "wall",
+      "check_type": "hard",
+      "rule_id": "stair_wall_hard_clash",
+      "severity": "warning",
+      "tolerance_mm": 1.0,
+      "enabled": true,
+      "message": "Stair collision proxy intersects a wall; revise the stair opening or wall layout."
+    },
+    {
+      "group_a": "structural_linear",
+      "group_b": "wall",
+      "check_type": "hard",
+      "rule_id": "physical_hard_clash",
+      "severity": "warning",
+      "tolerance_mm": 1.0,
+      "enabled": true,
+      "message": "Structural member collision proxy intersects a wall; add an opening, revise framing, or record an intentional bearing condition."
+    },
+    {
+      "group_a": "furniture",
+      "group_b": "furniture",
+      "check_type": "hard",
+      "rule_id": "physical_hard_clash",
+      "severity": "warning",
+      "tolerance_mm": 1.0,
+      "enabled": true,
+      "message": "Placed objects overlap each other; move or separate duplicate/overlapping assets."
+    },
+    {
+      "group_a": "stair",
+      "group_b": "ceiling",
+      "check_type": "hard",
+      "rule_id": "physical_hard_clash",
+      "severity": "warning",
+      "tolerance_mm": 1.0,
+      "enabled": true,
+      "message": "Stair envelope intersects a ceiling proxy; verify headroom or revise the opening."
+    },
+    {
+      "group_a": "stair",
+      "group_b": "roof",
+      "check_type": "hard",
+      "rule_id": "physical_hard_clash",
+      "severity": "warning",
+      "tolerance_mm": 1.0,
+      "enabled": true,
+      "message": "Stair envelope intersects a roof proxy; verify headroom and roof/stair geometry."
+    },
+    {
+      "group_a": "mep_linear",
+      "group_b": "ceiling",
+      "check_type": "hard",
+      "rule_id": "physical_hard_clash",
+      "severity": "warning",
+      "tolerance_mm": 1.0,
+      "enabled": true,
+      "message": "MEP run intersects a ceiling proxy; add a route opening, plenum clearance, or reroute."
+    }
+  ]
+}

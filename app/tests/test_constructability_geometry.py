@@ -11,12 +11,16 @@ from bim_ai.constructability_geometry import (
 )
 from bim_ai.elements import (
     AssetLibraryEntryElem,
+    CeilingElem,
     DuctElem,
     FamilyInstanceElem,
+    FamilyKitInstanceElem,
     FamilyTypeElem,
     LevelElem,
     PipeElem,
     PlacedAssetElem,
+    RailingElem,
+    StairElem,
     WallElem,
 )
 
@@ -185,3 +189,65 @@ def test_pipe_and_duct_aabbs() -> None:
     assert participants["pipe"].discipline == "mep"
     assert participants["duct"].aabb == AABB(-200.0, 1000.0, 1675.0, 200.0, 2000.0, 1925.0)
     assert participants["duct"].discipline == "mep"
+
+
+def test_ceiling_railing_and_family_kit_aabbs() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "wall": WallElem(
+            kind="wall",
+            id="wall",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 0},
+            thicknessMm=200,
+            heightMm=3000,
+        ),
+        "ceiling": CeilingElem(
+            kind="ceiling",
+            id="ceiling",
+            levelId="lvl-1",
+            boundaryMm=[
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 1000, "yMm": 0},
+                {"xMm": 1000, "yMm": 1000},
+                {"xMm": 0, "yMm": 1000},
+            ],
+            heightOffsetMm=2500,
+            thicknessMm=25,
+        ),
+        "stair": StairElem(
+            kind="stair",
+            id="stair",
+            baseLevelId="lvl-1",
+            topLevelId="lvl-1",
+            runStartMm={"xMm": 0, "yMm": 1000},
+            runEndMm={"xMm": 1000, "yMm": 1000},
+            widthMm=900,
+            totalRiseMm=2800,
+        ),
+        "rail": RailingElem(
+            kind="railing",
+            id="rail",
+            hostedStairId="stair",
+            pathMm=[
+                {"xMm": 0, "yMm": 1000},
+                {"xMm": 1000, "yMm": 1000},
+            ],
+        ),
+        "kit": FamilyKitInstanceElem(
+            kind="family_kit_instance",
+            id="kit",
+            kitId="kitchen_modular",
+            hostWallId="wall",
+            startMm=500,
+            endMm=1500,
+            countertopDepthMm=600,
+        ),
+    }
+
+    participants = _participant_by_id(elements)
+
+    assert participants["ceiling"].aabb == AABB(0.0, 0.0, 2600.0, 1000.0, 1000.0, 2625.0)
+    assert participants["rail"].aabb == AABB(0.0, 960.0, 100.0, 1000.0, 1040.0, 1140.0)
+    assert participants["kit"].aabb == AABB(500.0, 100.0, 100.0, 1500.0, 700.0, 2500.0)
