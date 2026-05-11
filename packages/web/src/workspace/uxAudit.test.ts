@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -34,6 +34,9 @@ describe('UX reachability audit', () => {
 
     expect(workspace).not.toContain('planToolsForPerspective');
     expect(workspace).not.toContain('paletteToolAllowlistForPerspective');
+    expect(
+      existsSync(resolve(repoRoot, 'packages/web/src/workspace/planToolsByPerspective.ts')),
+    ).toBe(false);
   });
 
   it('keeps high-risk plan authoring commands bridged outside plan-capable views', () => {
