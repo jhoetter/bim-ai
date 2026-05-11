@@ -1,0 +1,5 @@
+was everything of the spec/ux-masterclass.md fully implemented?
+
+---
+
+please continue building it until it is FULLY implemented, not just partially. EVERYTHING. always commit and push...
