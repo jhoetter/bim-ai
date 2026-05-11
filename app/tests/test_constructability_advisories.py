@@ -165,6 +165,25 @@ def test_pipe_penetration_without_wall_opening_is_reported_and_opening_suppresse
     assert "pipe_wall_penetration_without_opening" not in _rule_ids(elements)
 
 
+def test_pipe_penetration_approval_metadata_suppresses_wall_warning() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "wall-1": _wall(),
+        "pipe-1": PipeElem(
+            kind="pipe",
+            id="pipe-1",
+            levelId="lvl-1",
+            startMm={"xMm": 1000, "yMm": -500},
+            endMm={"xMm": 1000, "yMm": 500},
+            elevationMm=1000,
+            diameterMm=50,
+            props={"approvedPenetrationHostIds": ["wall-1"]},
+        ),
+    }
+
+    assert "pipe_wall_penetration_without_opening" not in _rule_ids(elements)
+
+
 def test_duct_penetration_without_wall_opening_is_reported() -> None:
     elements = {
         "lvl-1": _level(),

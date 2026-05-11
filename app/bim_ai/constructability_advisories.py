@@ -56,7 +56,9 @@ def constructability_advisory_violations(elements: dict[str, Element]) -> list[V
     violations.extend(_unsupported_proxy_violations(elements))
     violations.extend(_matrix_duplicate_geometry_violations(participants, elements))
     violations.extend(_matrix_hard_clash_violations(participants, elements))
-    violations.extend(_mep_wall_penetration_violations(participants_by_kind, openings_by_wall_id))
+    violations.extend(
+        _mep_wall_penetration_violations(participants_by_kind, openings_by_wall_id, elements)
+    )
     violations.extend(_mep_floor_ceiling_penetration_violations(participants_by_kind, elements))
     violations.extend(_stair_floor_opening_violations(participants_by_kind, elements))
     violations.extend(_stair_headroom_violations(participants_by_kind))
@@ -181,6 +183,7 @@ def _matrix_max_tolerance(check_type: ConstructabilityCheckType) -> float:
 def _mep_wall_penetration_violations(
     participants_by_kind: dict[str, list[PhysicalParticipant]],
     openings_by_wall_id: dict[str, list[_WallOpeningProxy]],
+    elements: dict[str, Element],
 ) -> list[Violation]:
     violations: list[Violation] = []
     walls = participants_by_kind.get("wall", [])
@@ -200,6 +203,8 @@ def _mep_wall_penetration_violations(
                 if _penetration_has_opening(
                     service, wall, openings_by_wall_id.get(wall.element_id, [])
                 ):
+                    continue
+                if _service_penetration_approved(service, wall.element_id, elements):
                     continue
                 violations.append(
                     Violation(
@@ -246,6 +251,8 @@ def _mep_floor_ceiling_penetration_violations(
                     service, slab_openings_by_floor.get(floor.element_id, [])
                 ):
                     continue
+                if _service_penetration_approved(service, floor.element_id, elements):
+                    continue
                 violations.append(
                     Violation(
                         rule_id=floor_rule,
@@ -261,6 +268,8 @@ def _mep_floor_ceiling_penetration_violations(
                 if not _same_or_unknown_level(service, ceiling):
                     continue
                 if not aabb_overlaps(service.aabb, ceiling.aabb, tolerance_mm=_CLASH_TOLERANCE_MM):
+                    continue
+                if _service_penetration_approved(service, ceiling.element_id, elements):
                     continue
                 violations.append(
                     Violation(
@@ -1106,6 +1115,36 @@ def _roof_has_low_slope_resolution(roof: RoofElem) -> bool:
         "drainageReviewed",
         "structuralReviewApproved",
     )
+
+
+def _service_penetration_approved(
+    service: PhysicalParticipant,
+    host_element_id: str,
+    elements: dict[str, Element],
+) -> bool:
+    element = elements.get(service.element_id)
+    props = getattr(element, "props", None) or {}
+    if _truthy_prop(
+        props,
+        "penetrationApproved",
+        "penetrationReviewed",
+        "sleeveApproved",
+        "constructabilityPenetrationApproved",
+    ):
+        return True
+    for key in (
+        "approvedPenetrationHostIds",
+        "approvedWallPenetrationIds",
+        "approvedFloorPenetrationIds",
+        "approvedCeilingPenetrationIds",
+        "sleeveHostIds",
+    ):
+        values = props.get(key)
+        if isinstance(values, str) and values == host_element_id:
+            return True
+        if isinstance(values, list) and host_element_id in {str(value) for value in values}:
+            return True
+    return False
 
 
 def _is_load_bearing_wall(wall: WallElem | None) -> bool:

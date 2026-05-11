@@ -2276,6 +2276,7 @@ class PipeElem(BaseModel):
     system_type: PipeSystemType = Field(default="other", alias="systemType")
     material_key: str | None = Field(default=None, alias="materialKey")
     colour: str | None = Field(default=None)
+    props: dict[str, Any] | None = Field(default=None)
     pinned: bool = Field(default=False)
 
 
@@ -2305,6 +2306,7 @@ class DuctElem(BaseModel):
     shape: DuctShape = Field(default="rectangular")
     system_type: DuctSystemType = Field(default="other", alias="systemType")
     colour: str | None = Field(default=None)
+    props: dict[str, Any] | None = Field(default=None)
     pinned: bool = Field(default=False)
 
 
