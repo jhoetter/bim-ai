@@ -69,6 +69,7 @@ def test_constructability_fixture_corpus_has_positive_and_negative_cases() -> No
         "stair_under_low_ceiling",
         "duplicate_placed_assets",
         "large_opening_in_load_bearing_wall",
+        "room_without_connected_door",
         "roof_too_small_for_primary_wall",
         "low_slope_roof_without_drainage_metadata",
         "unsupported_beam",
@@ -79,5 +80,6 @@ def test_constructability_fixture_corpus_has_positive_and_negative_cases() -> No
         "stair_floor_penetration_without_slab_opening",
         "stair_headroom_clearance_conflict",
         "large_opening_in_load_bearing_wall_unresolved",
+        "room_without_door_access",
         "roof_low_slope_without_drainage_metadata",
     } <= negative_absent_rules

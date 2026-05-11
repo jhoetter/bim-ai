@@ -19,6 +19,7 @@ from bim_ai.elements import (
     PipeElem,
     PlacedAssetElem,
     RoofElem,
+    RoomElem,
     SlabOpeningElem,
     StairElem,
     WallElem,
@@ -577,6 +578,40 @@ def test_door_operation_clearance_conflict_is_reported_for_blocking_wall() -> No
     }
 
     assert "door_operation_clearance_conflict" in _rule_ids(elements)
+
+
+def test_room_without_connected_door_access_is_reported() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "wall-1": _wall(),
+        "room-1": RoomElem(
+            kind="room",
+            id="room-1",
+            levelId="lvl-1",
+            outlineMm=[
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 3000, "yMm": 0},
+                {"xMm": 3000, "yMm": 3000},
+                {"xMm": 0, "yMm": 3000},
+            ],
+        ),
+        "door-1": DoorElem(
+            kind="door",
+            id="door-1",
+            wallId="wall-1",
+            alongT=0.5,
+        ),
+    }
+
+    assert "room_without_door_access" not in _rule_ids(elements)
+
+    elements["door-1"] = DoorElem(
+        kind="door",
+        id="door-1",
+        wallId="wall-1",
+        alongT=0.95,
+    )
+    assert "room_without_door_access" in _rule_ids(elements)
 
 
 def test_family_instance_without_proxy_dimensions_reports_coverage_gap() -> None:

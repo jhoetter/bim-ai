@@ -25,6 +25,7 @@ from bim_ai.elements import (
     Element,
     FloorElem,
     RoofElem,
+    RoomElem,
     SlabOpeningElem,
     WallElem,
     WallOpeningElem,
@@ -59,6 +60,7 @@ def constructability_advisory_violations(elements: dict[str, Element]) -> list[V
     violations.extend(_mep_floor_ceiling_penetration_violations(participants_by_kind, elements))
     violations.extend(_stair_floor_opening_violations(participants_by_kind, elements))
     violations.extend(_stair_headroom_violations(participants_by_kind))
+    violations.extend(_room_door_access_violations(elements, walls_by_id))
     violations.extend(_door_clearance_violations(elements, participants_by_kind))
     violations.extend(_load_bearing_metadata_violations(walls_by_id))
     violations.extend(_large_opening_violations(elements, walls_by_id))
@@ -385,6 +387,47 @@ def _door_clearance_violations(
                         element_ids=sorted([element.id, obstruction.element_id]),
                     )
                 )
+    return violations
+
+
+def _room_door_access_violations(
+    elements: dict[str, Element],
+    walls_by_id: dict[str, WallElem],
+) -> list[Violation]:
+    doors_by_level: dict[str, list[tuple[str, tuple[float, float]]]] = defaultdict(list)
+    for element in elements.values():
+        if not isinstance(element, DoorElem):
+            continue
+        wall = walls_by_id.get(element.wall_id)
+        if wall is None:
+            continue
+        doors_by_level[wall.level_id].append((element.id, _door_midpoint(element, wall)))
+
+    violations: list[Violation] = []
+    for element in elements.values():
+        if not isinstance(element, RoomElem):
+            continue
+        outline = [(float(p.x_mm), float(p.y_mm)) for p in element.outline_mm]
+        if len(outline) < 3:
+            continue
+        accessible_door_ids = [
+            door_id
+            for door_id, midpoint in doors_by_level.get(element.level_id, [])
+            if _point_in_or_near_polygon(midpoint, outline, tolerance_mm=250.0)
+        ]
+        if accessible_door_ids:
+            continue
+        violations.append(
+            Violation(
+                rule_id="room_without_door_access",
+                severity="warning",
+                message=(
+                    "Room has no door midpoint on or inside its boundary; add a connected "
+                    "door opening or revise the room boundary."
+                ),
+                element_ids=[element.id],
+            )
+        )
     return violations
 
 
@@ -823,6 +866,13 @@ def _door_clearance_aabb(door: DoorElem, wall: WallElem) -> AABB | None:
     return AABB(min(xs), min(ys), -1_000_000.0, max(xs), max(ys), 1_000_000.0)
 
 
+def _door_midpoint(door: DoorElem, wall: WallElem) -> tuple[float, float]:
+    t = max(0.0, min(1.0, float(door.along_t)))
+    x = float(wall.start.x_mm) + (float(wall.end.x_mm) - float(wall.start.x_mm)) * t
+    y = float(wall.start.y_mm) + (float(wall.end.y_mm) - float(wall.start.y_mm)) * t
+    return (x, y)
+
+
 def _door_obstruction_label(obstruction: PhysicalParticipant) -> str:
     if obstruction.kind == "wall":
         return "a wall"
@@ -967,6 +1017,58 @@ def _aabb_plan_overlaps(a: AABB, b: AABB, *, tolerance_mm: float) -> bool:
         or a.max_y + tol < b.min_y
         or b.max_y + tol < a.min_y
     )
+
+
+def _point_in_or_near_polygon(
+    point: tuple[float, float],
+    polygon: list[tuple[float, float]],
+    *,
+    tolerance_mm: float,
+) -> bool:
+    if _point_in_polygon(point, polygon):
+        return True
+    return any(
+        _point_segment_distance_mm(point, a, b) <= tolerance_mm
+        for a, b in zip(polygon, polygon[1:] + polygon[:1], strict=False)
+    )
+
+
+def _point_in_polygon(point: tuple[float, float], polygon: list[tuple[float, float]]) -> bool:
+    x, y = point
+    inside = False
+    j = len(polygon) - 1
+    for i, pi in enumerate(polygon):
+        xi, yi = pi
+        xj, yj = polygon[j]
+        denom = yj - yi
+        if abs(denom) < 1e-9:
+            denom = 1e-9
+        intersects = (yi > y) != (yj > y) and (
+            x < (xj - xi) * (y - yi) / denom + xi
+        )
+        if intersects:
+            inside = not inside
+        j = i
+    return inside
+
+
+def _point_segment_distance_mm(
+    point: tuple[float, float],
+    a: tuple[float, float],
+    b: tuple[float, float],
+) -> float:
+    px, py = point
+    ax, ay = a
+    bx, by = b
+    dx = bx - ax
+    dy = by - ay
+    length_sq = dx * dx + dy * dy
+    if length_sq <= 1e-9:
+        return math.hypot(px - ax, py - ay)
+    t = max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / length_sq))
+    closest_x = ax + t * dx
+    closest_y = ay + t * dy
+    return math.hypot(px - closest_x, py - closest_y)
 
 
 def _floor_has_structural_system_metadata(floor: FloorElem) -> bool:
