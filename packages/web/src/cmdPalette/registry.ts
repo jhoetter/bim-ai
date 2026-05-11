@@ -34,6 +34,8 @@ export type PaletteContext = {
   activePlanViewId?: string | null;
   /** Active schedule element id for schedule-scoped commands. */
   activeScheduleId?: string | null;
+  /** Active sheet element id for sheet-scoped commands. */
+  activeSheetId?: string | null;
   /** Navigate through the same tab/mode path as the main workspace chrome. */
   navigateMode?: (
     mode: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent' | 'concept',
@@ -64,6 +66,11 @@ export type PaletteContext = {
   placeActiveScheduleOnSheet?: () => void;
   duplicateActiveSchedule?: () => void;
   openScheduleControls?: () => void;
+  placeRecommendedViewsOnActiveSheet?: () => void;
+  placeViewOnActiveSheet?: (viewId: string) => void;
+  openSheetTitleblockEditor?: () => void;
+  openSheetViewportEditor?: () => void;
+  shareActiveSheet?: () => void;
   closeInactiveViews?: () => void;
   toggleLeftRail?: () => void;
   toggleRightRail?: () => void;
@@ -71,6 +78,8 @@ export type PaletteContext = {
   views?: Array<{ id: string; label: string; keywords: string }>;
   /** Dynamic plan view templates that can be applied to the active plan view. */
   planTemplates?: Array<{ id: string; label: string; keywords?: string }>;
+  /** Dynamic views/schedules/viewpoints that can be placed on the active sheet. */
+  sheetPlaceableViews?: Array<{ id: string; label: string; keywords?: string }>;
 };
 
 const _registry: PaletteEntry[] = [];
@@ -190,10 +199,23 @@ export function queryPalette(
       });
     },
   }));
+  const sheetPlaceableEntries: PaletteEntry[] = (context.sheetPlaceableViews ?? []).map((view) => ({
+    id: `sheet.place-view.${view.id}`,
+    label: `Place on Sheet: ${view.label}`,
+    keywords: ['sheet', 'place view', 'viewport', view.keywords ?? ''],
+    category: 'command' as const,
+    sourceKind: 'command' as const,
+    badge: 'Sheet',
+    disabledReason: context.activeSheetId ? undefined : 'Requires an active sheet.',
+    invoke: (ctx) => ctx.placeViewOnActiveSheet?.(view.id),
+  }));
 
-  const all = [...resolvedRegistry, ...viewEntries, ...planTemplateEntries].filter((entry) =>
-    matchesSourceKind(entry, parsed.sourceKind),
-  );
+  const all = [
+    ...resolvedRegistry,
+    ...viewEntries,
+    ...planTemplateEntries,
+    ...sheetPlaceableEntries,
+  ].filter((entry) => matchesSourceKind(entry, parsed.sourceKind));
 
   if (!parsed.needle.trim()) {
     return [...all].sort((a, b) => (recency[b.id] ?? 0) - (recency[a.id] ?? 0));

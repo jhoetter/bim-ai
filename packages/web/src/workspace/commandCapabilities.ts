@@ -29,6 +29,7 @@ export type CommandSurface =
   | 'left-rail'
   | 'right-rail'
   | 'canvas-context'
+  | 'sheet-canvas'
   | 'schedule-grid'
   | 'statusbar';
 
@@ -100,6 +101,7 @@ export function getAllCommandCapabilities(): CommandCapability[] {
     ...NAVIGATION_CAPABILITIES,
     ...SYSTEM_CAPABILITIES,
     ...SCHEDULE_CAPABILITIES,
+    ...SHEET_CAPABILITIES,
     ...VIEW_3D_CAPABILITIES,
     ...EDIT_3D_CAPABILITIES,
     ...VISIBILITY_CAPABILITIES,
@@ -746,6 +748,61 @@ const SCHEDULE_CAPABILITIES: CommandCapability[] = [
     surfaces: ['cmd-k', 'schedule-grid'],
     executionSurface: 'schedule-grid',
     preconditions: ['active-schedule'],
+    status: 'implemented',
+    usabilityScore: 8,
+  },
+];
+
+const SHEET_CAPABILITIES: CommandCapability[] = [
+  {
+    id: 'sheet.place-recommended-views',
+    label: 'Sheet: Place Recommended Views',
+    owner: 'workspace/sheets/sheetRecommendedViewports',
+    group: 'document',
+    scope: 'view',
+    intendedModes: ['sheet'],
+    surfaces: ['cmd-k', 'sheet-canvas'],
+    executionSurface: 'sheet-canvas',
+    preconditions: ['active-sheet', 'placeable-views'],
+    status: 'implemented',
+    usabilityScore: 8,
+  },
+  {
+    id: 'sheet.edit-titleblock',
+    label: 'Sheet: Edit Titleblock',
+    owner: 'workspace/sheets/sheetTitleblockAuthoring',
+    group: 'document',
+    scope: 'view',
+    intendedModes: ['sheet'],
+    surfaces: ['cmd-k', 'sheet-canvas'],
+    executionSurface: 'sheet-canvas',
+    preconditions: ['active-sheet'],
+    status: 'implemented',
+    usabilityScore: 8,
+  },
+  {
+    id: 'sheet.edit-viewports',
+    label: 'Sheet: Edit Viewports',
+    owner: 'workspace/sheets/sheetViewportAuthoring',
+    group: 'document',
+    scope: 'view',
+    intendedModes: ['sheet'],
+    surfaces: ['cmd-k', 'sheet-canvas'],
+    executionSurface: 'sheet-canvas',
+    preconditions: ['active-sheet'],
+    status: 'implemented',
+    usabilityScore: 8,
+  },
+  {
+    id: 'sheet.export-share',
+    label: 'Sheet: Export / Share',
+    owner: 'workspace/share/SharePresentationModal',
+    group: 'document',
+    scope: 'view',
+    intendedModes: ['sheet'],
+    surfaces: ['cmd-k', 'sheet-canvas'],
+    executionSurface: 'modal',
+    preconditions: ['active-sheet', 'presentation-pages'],
     status: 'implemented',
     usabilityScore: 8,
   },

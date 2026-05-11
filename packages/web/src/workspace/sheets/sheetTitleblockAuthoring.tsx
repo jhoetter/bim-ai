@@ -149,7 +149,7 @@ export function SheetTitleblockEditor(props: {
   );
 
   return (
-    <div className="mt-3 space-y-2 text-[10px]">
+    <div id="sheet-titleblock-editor" className="mt-3 space-y-2 text-[10px]">
       <div className="font-semibold text-muted">Replayable titleblock · upsertSheet</div>
 
       <div className="text-muted">{props.sheetName}</div>

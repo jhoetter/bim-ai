@@ -64,6 +64,18 @@ describe('command capability graph', () => {
     expect(evaluateCommandInMode('visibility.active-controls', 'sheet')?.state).toBe('disabled');
   });
 
+  it('tracks sheet workflow commands as sheet-only document commands', () => {
+    for (const commandId of [
+      'sheet.place-recommended-views',
+      'sheet.edit-titleblock',
+      'sheet.edit-viewports',
+      'sheet.export-share',
+    ]) {
+      expect(evaluateCommandInMode(commandId, 'sheet')?.state).toBe('enabled');
+      expect(evaluateCommandInMode(commandId, 'plan')?.state).toBe('disabled');
+    }
+  });
+
   it('detects dead direct command exposure in invalid views', () => {
     expect(
       auditCommandExposures([

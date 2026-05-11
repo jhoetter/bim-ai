@@ -156,6 +156,29 @@ describe('queryPalette', () => {
       value: 'vt-1',
     });
   });
+
+  it('adds dynamic active-sheet placement commands', () => {
+    const placeViewOnActiveSheet = vi.fn();
+    const results = queryPalette(
+      'place reflected sheet',
+      {
+        ...CTX,
+        activeMode: 'sheet',
+        activeSheetId: 'sheet-1',
+        placeViewOnActiveSheet,
+        sheetPlaceableViews: [{ id: 'plan-rcp', label: 'Reflected Ceiling Plan', keywords: 'rcp' }],
+      },
+      {},
+    );
+    const entry = results.find((candidate) => candidate.id === 'sheet.place-view.plan-rcp');
+    expect(entry?.badge).toBe('Sheet');
+    entry?.invoke({
+      ...CTX,
+      activeSheetId: 'sheet-1',
+      placeViewOnActiveSheet,
+    });
+    expect(placeViewOnActiveSheet).toHaveBeenCalledWith('plan-rcp');
+  });
 });
 
 describe('recency score isolation', () => {

@@ -22,6 +22,12 @@ const SCHEDULE_CTX: PaletteContext = {
   activeScheduleId: 'sch-1',
   activeMode: 'schedule',
 };
+const SHEET_CTX: PaletteContext = {
+  selectedElementIds: [],
+  activeViewId: 'sheet-1',
+  activeSheetId: 'sheet-1',
+  activeMode: 'sheet',
+};
 
 afterEach(() => {
   useBimStore.setState({
@@ -228,6 +234,43 @@ describe('default Cmd+K commands', () => {
 
     command('schedule.open-controls').invoke({ ...SCHEDULE_CTX, openScheduleControls });
     expect(openScheduleControls).toHaveBeenCalledOnce();
+  });
+
+  it('routes sheet workflow commands through the palette host context', () => {
+    const placeRecommendedViewsOnActiveSheet = vi.fn();
+    const openSheetTitleblockEditor = vi.fn();
+    const openSheetViewportEditor = vi.fn();
+    const shareActiveSheet = vi.fn();
+
+    const unavailable = queryPalette('sheet titleblock', PLAN_CTX, {}).find(
+      (entry) => entry.id === 'sheet.edit-titleblock',
+    );
+    expect(unavailable?.disabledReason).toContain('unavailable');
+
+    command('sheet.place-recommended-views').invoke({
+      ...SHEET_CTX,
+      placeRecommendedViewsOnActiveSheet,
+    });
+    expect(placeRecommendedViewsOnActiveSheet).toHaveBeenCalledOnce();
+
+    command('sheet.edit-titleblock').invoke({ ...SHEET_CTX, openSheetTitleblockEditor });
+    expect(openSheetTitleblockEditor).toHaveBeenCalledOnce();
+
+    command('sheet.edit-viewports').invoke({ ...SHEET_CTX, openSheetViewportEditor });
+    expect(openSheetViewportEditor).toHaveBeenCalledOnce();
+
+    const unavailableShare = queryPalette('sheet export share', SHEET_CTX, {}).find(
+      (entry) => entry.id === 'sheet.export-share',
+    );
+    expect(unavailableShare?.disabledReason).toContain('Requires');
+
+    command('sheet.export-share').invoke({
+      ...SHEET_CTX,
+      hasPresentationPages: true,
+      shareActiveSheet,
+      sharePresentation: vi.fn(),
+    });
+    expect(shareActiveSheet).toHaveBeenCalledOnce();
   });
 
   it('routes active visibility commands through the palette host context', () => {
