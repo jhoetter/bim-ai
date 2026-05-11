@@ -5,7 +5,12 @@
   "branch": "main",
   "checkpoints_count": 1,
   "files_touched": [
-    "spec/ux-masterclass.md"
+    "spec/constructability-warning-system-tracker.md",
+    "spec/sketch-to-bim-archetypes.json",
+    "spec/sketch-to-bim-process-audit-tracker.md",
+    "spec/ux-feature-ledger.json",
+    "spec/ux-masterclass.md",
+    "spec/ux-reachability-matrix.md"
   ],
   "sessions": [
     {
@@ -37,6 +42,12 @@
       "transcript": "/d5/9195d95e32/4/full.jsonl",
       "content_hash": "/d5/9195d95e32/4/content_hash.txt",
       "prompt": "/d5/9195d95e32/4/prompt.txt"
+    },
+    {
+      "metadata": "/d5/9195d95e32/5/metadata.json",
+      "transcript": "/d5/9195d95e32/5/full.jsonl",
+      "content_hash": "/d5/9195d95e32/5/content_hash.txt",
+      "prompt": "/d5/9195d95e32/5/prompt.txt"
     }
   ],
   "token_usage": {
