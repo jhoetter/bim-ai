@@ -117,8 +117,21 @@ describe('default Cmd+K commands', () => {
   });
 
   it('routes active 3D saved-view commands through the palette host context', () => {
+    const saveCurrentViewpoint = vi.fn();
     const resetActiveSavedViewpoint = vi.fn();
     const updateActiveSavedViewpoint = vi.fn();
+
+    const unavailableSave = queryPalette('save current viewpoint', THREE_D_CTX, {}).find(
+      (entry) => entry.id === 'view.3d.saved-view.save-current',
+    );
+    expect(unavailableSave?.disabledReason).toContain('Requires');
+
+    command('view.3d.saved-view.save-current').invoke({
+      ...THREE_D_CTX,
+      canSaveCurrentViewpoint: true,
+      saveCurrentViewpoint,
+    });
+    expect(saveCurrentViewpoint).toHaveBeenCalledOnce();
 
     const unavailable = queryPalette('update saved viewpoint', THREE_D_CTX, {}).find(
       (entry) => entry.id === 'view.3d.saved-view.update',

@@ -1271,6 +1271,38 @@ export function Workspace(): JSX.Element {
     },
     [elementsById, onSemanticCommand, paletteActiveSectionId],
   );
+  const saveCurrentViewpoint = useCallback(() => {
+    if (!orbitCameraPoseMm) return;
+    const hiddenSemanticKinds3d = Object.entries(viewerCategoryHidden)
+      .filter(([, hidden]) => hidden)
+      .map(([kind]) => kind);
+    void onSemanticCommand({
+      type: 'create_saved_view',
+      id: `sv-3d-${Date.now().toString(36)}`,
+      baseViewId: activeViewpointId ?? 'orbit_3d',
+      name: `Saved 3D View ${new Date().toLocaleString()}`,
+      cameraState: {
+        positionMm: orbitCameraPoseMm.position,
+        targetMm: orbitCameraPoseMm.target,
+        upMm: orbitCameraPoseMm.up,
+        fovDeg: 60,
+      },
+      visibilityOverrides: {
+        viewerClipCapElevMm: viewerClipElevMm,
+        viewerClipFloorElevMm,
+        hiddenSemanticKinds3d,
+      },
+      detailLevel: viewerProjection,
+    });
+  }, [
+    activeViewpointId,
+    onSemanticCommand,
+    orbitCameraPoseMm,
+    viewerCategoryHidden,
+    viewerClipElevMm,
+    viewerClipFloorElevMm,
+    viewerProjection,
+  ]);
   const resetActiveSavedViewpoint = useCallback(() => {
     if (!activeViewpointId) return;
     const viewpoint = elementsById[activeViewpointId];
@@ -1514,6 +1546,7 @@ export function Workspace(): JSX.Element {
           activeSheetId: paletteActiveSheetId,
           activeSectionId: paletteActiveSectionId,
           activeViewpointId,
+          canSaveCurrentViewpoint: Boolean(orbitCameraPoseMm),
           navigateMode: (kind) => navigateTo({ kind, source: 'cmdk' }),
           startPlanTool: (toolId) => handleToolSelect(toolId as ToolId),
           setTheme: handleThemeSet,
@@ -1546,6 +1579,7 @@ export function Workspace(): JSX.Element {
           placeActiveSectionOnSheet,
           openActiveSectionSourcePlan,
           adjustActiveSectionCropDepth,
+          saveCurrentViewpoint,
           resetActiveSavedViewpoint,
           updateActiveSavedViewpoint,
           closeInactiveViews: () => setTabsState((s) => closeInactiveTabs(s)),
