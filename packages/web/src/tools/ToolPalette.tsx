@@ -43,6 +43,8 @@ export interface ToolPaletteProps {
   onToolSelect: (id: ToolId) => void;
   /** Tool-disablement context (wall / floor / selection presence). */
   disabledContext: ToolDisabledContext;
+  /** Optional caller-provided subset for contextual palette surfaces. */
+  allowedToolIds?: ReadonlySet<ToolId>;
   /** Tag dropdown trigger; the menu itself is rendered by the parent. */
   onTagSubmenu?: () => void;
 }
@@ -52,10 +54,13 @@ export function ToolPalette({
   activeTool,
   onToolSelect,
   disabledContext,
+  allowedToolIds,
   onTagSubmenu,
 }: ToolPaletteProps): JSX.Element {
   const { t } = useTranslation();
-  const tools = paletteForMode(mode, t);
+  const tools = paletteForMode(mode, t).filter(
+    (tool) => !allowedToolIds || allowedToolIds.has(tool.id),
+  );
   const refs = useRef<Map<ToolId, HTMLButtonElement>>(new Map());
   const setRef = useCallback(
     (id: ToolId) => (el: HTMLButtonElement | null) => {
