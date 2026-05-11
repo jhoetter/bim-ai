@@ -6,6 +6,10 @@ from typing import Any
 
 from bim_ai.constraints import evaluate
 from bim_ai.constraints_core import Violation
+from bim_ai.constructability_geometry import (
+    collect_physical_participants,
+    collect_unsupported_physical_diagnostics,
+)
 from bim_ai.constructability_issues import (
     ConstructabilityIssue,
     fingerprint_violation,
@@ -147,6 +151,51 @@ def build_constructability_report(
                 str(i.get("fingerprint") or ""),
             ),
         ),
+    }
+
+
+def build_constructability_summary_v1(
+    elements: dict[str, Element],
+    *,
+    revision: str | int,
+    profile: str = "construction_readiness",
+    previous_issues: Iterable[ConstructabilityIssue | Mapping[str, Any]] = (),
+) -> dict[str, Any]:
+    report = build_constructability_report(
+        elements,
+        revision=revision,
+        profile=profile,
+        previous_issues=previous_issues,
+    )
+    participants = collect_physical_participants(elements)
+    unsupported = collect_unsupported_physical_diagnostics(elements)
+    open_issues = [
+        issue
+        for issue in report["issues"]
+        if issue.get("status") not in {"resolved", "suppressed", "not_an_issue"}
+    ]
+    open_error_issues = [
+        issue for issue in open_issues if str(issue.get("severity") or "") == "error"
+    ]
+    return {
+        "format": "constructabilitySummary_v1",
+        "profileId": report["profile"],
+        "modelRevision": revision,
+        "counts": {
+            "info": int(report["summary"]["severityCounts"].get("info") or 0),
+            "warning": int(report["summary"]["severityCounts"].get("warning") or 0),
+            "error": int(report["summary"]["severityCounts"].get("error") or 0),
+            "blocker": int(report["summary"]["severityCounts"].get("blocker") or 0),
+            "suppressed": int(report["summary"]["statusCounts"].get("suppressed") or 0),
+            "resolved": int(report["summary"]["statusCounts"].get("resolved") or 0),
+        },
+        "coverage": {
+            "physicalElements": len(participants) + len(unsupported),
+            "proxySupported": len(participants),
+            "proxyUnsupported": len(unsupported),
+        },
+        "openIssueIds": [str(issue.get("fingerprint")) for issue in open_issues],
+        "openErrorIssueIds": [str(issue.get("fingerprint")) for issue in open_error_issues],
     }
 
 

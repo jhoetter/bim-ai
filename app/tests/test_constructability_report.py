@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from bim_ai.constructability_report import build_constructability_report
+from bim_ai.constructability_report import (
+    build_constructability_report,
+    build_constructability_summary_v1,
+)
 from bim_ai.elements import (
     AssetLibraryEntryElem,
     ConstructabilitySuppressionElem,
@@ -175,3 +178,53 @@ def test_constructability_report_construction_readiness_promotes_serious_finding
     assert report["findings"][0]["severity"] == "error"
     assert report["findings"][0]["blocking"] is True
     assert report["issues"][0]["severity"] == "error"
+
+
+def test_constructability_summary_reports_counts_coverage_and_open_errors() -> None:
+    elements = {
+        "lvl-1": LevelElem(kind="level", id="lvl-1", name="Level 1", elevationMm=0.0),
+        "wall-1": WallElem(
+            kind="wall",
+            id="wall-1",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 0},
+            thicknessMm=200,
+            heightMm=3000,
+        ),
+        "asset-shelf": AssetLibraryEntryElem(
+            kind="asset_library_entry",
+            id="asset-shelf",
+            assetKind="block_2d",
+            name="Shelf",
+            category="casework",
+            tags=[],
+            thumbnailKind="schematic_plan",
+            thumbnailWidthMm=600,
+            thumbnailHeightMm=300,
+        ),
+        "shelf-1": PlacedAssetElem(
+            kind="placed_asset",
+            id="shelf-1",
+            name="Shelf",
+            assetId="asset-shelf",
+            levelId="lvl-1",
+            positionMm={"xMm": 1200, "yMm": 0},
+            paramValues={"widthMm": 600, "depthMm": 300, "proxyHeightMm": 900},
+        ),
+    }
+
+    summary = build_constructability_summary_v1(elements, revision=9)
+
+    assert summary["format"] == "constructabilitySummary_v1"
+    assert summary["profileId"] == "construction_readiness"
+    assert summary["modelRevision"] == 9
+    assert summary["counts"]["error"] == 1
+    assert summary["counts"]["warning"] == 0
+    assert summary["coverage"] == {
+        "physicalElements": 2,
+        "proxySupported": 2,
+        "proxyUnsupported": 0,
+    }
+    assert len(summary["openIssueIds"]) == 1
+    assert summary["openErrorIssueIds"] == summary["openIssueIds"]

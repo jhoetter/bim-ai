@@ -39,7 +39,10 @@ from bim_ai.ai_boundary import empty_external_model_call_audit_csv, load_bill_of
 from bim_ai.codes import BUILDING_PRESETS
 from bim_ai.commands import Command
 from bim_ai.constructability_bcf import build_constructability_bcf_export
-from bim_ai.constructability_report import build_constructability_report
+from bim_ai.constructability_report import (
+    build_constructability_report,
+    build_constructability_summary_v1,
+)
 from bim_ai.db import SessionMaker, get_session
 from bim_ai.diff_engine import compute_element_diff
 from bim_ai.document import Document
@@ -660,6 +663,11 @@ async def evidence_package(
         "roomDerivationPreview": room_derivation_preview(doc),
         "roomDerivationCandidates": room_derivation_candidates_review(doc),
         "typeMaterialRegistry": merged_registry_payload(doc),
+        "constructabilitySummary_v1": build_constructability_summary_v1(
+            doc.elements,
+            revision=doc.revision,
+            profile="construction_readiness",
+        ),
         "hint": "Use Playwright to capture PNG alongside this JSON per spec §8.3 / §14 Phase A. CI attaches artifacts alongside this bundle.",
         "sheetRasterNote": (
             "Sheet SVG/PDF exports are deterministic server-side. "
