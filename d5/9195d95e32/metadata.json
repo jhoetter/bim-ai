@@ -7,6 +7,7 @@
   "files_touched": [
     "spec/constructability-warning-system-tracker.md",
     "spec/sketch-to-bim-archetypes.json",
+    "spec/sketch-to-bim-methodology.md",
     "spec/sketch-to-bim-process-audit-tracker.md",
     "spec/ux-feature-ledger.json",
     "spec/ux-masterclass.md",
@@ -48,6 +49,12 @@
       "transcript": "/d5/9195d95e32/5/full.jsonl",
       "content_hash": "/d5/9195d95e32/5/content_hash.txt",
       "prompt": "/d5/9195d95e32/5/prompt.txt"
+    },
+    {
+      "metadata": "/d5/9195d95e32/6/metadata.json",
+      "transcript": "/d5/9195d95e32/6/full.jsonl",
+      "content_hash": "/d5/9195d95e32/6/content_hash.txt",
+      "prompt": "/d5/9195d95e32/6/prompt.txt"
     }
   ],
   "token_usage": {
