@@ -39,8 +39,6 @@
     "packages/cli/lib/one-family-home-commands.mjs",
     "packages/web/e2e/__fixtures__/seed-target-house-snapshot.json",
     "packages/web/e2e/seed-target-house.spec.ts",
-    "packages/web/src/plan/planElementMeshBuilders.ts",
-    "packages/web/src/plan/symbology.wirePrimitives.test.ts",
     "packages/web/src/state/storeCoercion.ts",
     "packages/web/src/workspace/Workspace.tsx",
     "packages/web/src/workspace/project/ProjectMenu.test.tsx",

@@ -3,7 +3,7 @@
   "checkpoint_id": "8df45175c610",
   "session_id": "019e15f5-49cf-7e80-8bfc-9478e07558ca",
   "strategy": "manual-commit",
-  "created_at": "2026-05-11T09:02:35.277206Z",
+  "created_at": "2026-05-11T09:04:29.755872Z",
   "branch": "main",
   "checkpoints_count": 4,
   "files_touched": [
@@ -41,8 +41,6 @@
     "packages/cli/lib/one-family-home-commands.mjs",
     "packages/web/e2e/__fixtures__/seed-target-house-snapshot.json",
     "packages/web/e2e/seed-target-house.spec.ts",
-    "packages/web/src/plan/planElementMeshBuilders.ts",
-    "packages/web/src/plan/symbology.wirePrimitives.test.ts",
     "packages/web/src/state/storeCoercion.ts",
     "packages/web/src/workspace/Workspace.tsx",
     "packages/web/src/workspace/project/ProjectMenu.test.tsx",
@@ -74,15 +72,15 @@
     "turn_count": 6
   },
   "initial_attribution": {
-    "calculated_at": "2026-05-11T09:02:35.236767Z",
-    "agent_lines": 1436,
-    "agent_removed": 7267,
-    "human_added": 146,
-    "human_modified": 21,
+    "calculated_at": "2026-05-11T09:04:29.713722Z",
+    "agent_lines": 1501,
+    "agent_removed": 7280,
+    "human_added": 65,
+    "human_modified": 0,
     "human_removed": 0,
-    "total_committed": 1603,
-    "total_lines_changed": 8878,
-    "agent_percentage": 98.028835323271,
+    "total_committed": 1566,
+    "total_lines_changed": 8854,
+    "agent_percentage": 99.1755138920262,
     "metric_version": 2
   },
   "prompt_attributions": [
