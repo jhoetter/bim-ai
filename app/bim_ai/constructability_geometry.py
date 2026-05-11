@@ -104,6 +104,27 @@ def participants_overlap(
     return aabb_overlaps(a.aabb, b.aabb, tolerance_mm=tolerance_mm)
 
 
+def participants_overlap_narrow_phase(
+    a: PhysicalParticipant,
+    b: PhysicalParticipant,
+    *,
+    tolerance_mm: float = 0.0,
+) -> bool:
+    """Confirm participant overlap after broad-phase pruning."""
+
+    if not _z_intervals_overlap(a.aabb, b.aabb, tolerance_mm=tolerance_mm):
+        return False
+    footprint_a = _metadata_footprint(a)
+    footprint_b = _metadata_footprint(b)
+    if footprint_a is None or footprint_b is None:
+        return aabb_overlaps(a.aabb, b.aabb, tolerance_mm=tolerance_mm)
+    return _convex_polygons_overlap_2d(
+        footprint_a,
+        footprint_b,
+        tolerance_mm=tolerance_mm,
+    )
+
+
 def participant_distance_mm(a: PhysicalParticipant, b: PhysicalParticipant) -> float:
     return aabb_distance_mm(a.aabb, b.aabb)
 
@@ -226,7 +247,7 @@ def physical_participant_for_element(
         discipline=_discipline_for(elem),
         level_id=level_id,
         aabb=aabb,
-        metadata=_metadata_for(elem),
+        metadata=_metadata_for(elem, elements, aabb),
     )
 
 
@@ -258,7 +279,7 @@ def _discipline_for(elem: Any) -> str | None:
     return DEFAULT_DISCIPLINE_BY_KIND.get(str(getattr(elem, "kind", "")))
 
 
-def _metadata_for(elem: Any) -> dict[str, Any]:
+def _metadata_for(elem: Any, elements: dict[str, Element], aabb: AABB) -> dict[str, Any]:
     metadata: dict[str, Any] = {}
     for attr in (
         "name",
@@ -273,7 +294,144 @@ def _metadata_for(elem: Any) -> dict[str, Any]:
         value = getattr(elem, attr, None)
         if value is not None:
             metadata[attr] = value
+    footprint = _footprint_for_element(elem, elements, aabb)
+    if footprint is not None:
+        metadata["footprintMm"] = footprint
     return metadata
+
+
+def _metadata_footprint(participant: PhysicalParticipant) -> list[tuple[float, float]] | None:
+    raw = participant.metadata.get("footprintMm")
+    if not isinstance(raw, list) or len(raw) < 3:
+        return None
+    points: list[tuple[float, float]] = []
+    for point in raw:
+        if not isinstance(point, (list, tuple)) or len(point) != 2:
+            return None
+        points.append((float(point[0]), float(point[1])))
+    return points
+
+
+def _z_intervals_overlap(a: AABB, b: AABB, *, tolerance_mm: float) -> bool:
+    tol = max(0.0, float(tolerance_mm))
+    return not (a.max_z + tol < b.min_z or b.max_z + tol < a.min_z)
+
+
+def _convex_polygons_overlap_2d(
+    a: list[tuple[float, float]],
+    b: list[tuple[float, float]],
+    *,
+    tolerance_mm: float,
+) -> bool:
+    for polygon in (a, b):
+        for p0, p1 in zip(polygon, polygon[1:] + polygon[:1], strict=False):
+            axis = (-(p1[1] - p0[1]), p1[0] - p0[0])
+            length = math.hypot(axis[0], axis[1])
+            if length <= 1e-9:
+                continue
+            unit = (axis[0] / length, axis[1] / length)
+            a_min, a_max = _project_polygon(a, unit)
+            b_min, b_max = _project_polygon(b, unit)
+            if a_max + tolerance_mm < b_min or b_max + tolerance_mm < a_min:
+                return False
+    return True
+
+
+def _project_polygon(
+    polygon: list[tuple[float, float]],
+    axis: tuple[float, float],
+) -> tuple[float, float]:
+    values = [point[0] * axis[0] + point[1] * axis[1] for point in polygon]
+    return (min(values), max(values))
+
+
+def _footprint_for_element(
+    elem: Any,
+    elements: dict[str, Element],
+    aabb: AABB,
+) -> list[tuple[float, float]] | None:
+    kind = str(getattr(elem, "kind", ""))
+    if kind == "wall":
+        return _wall_footprint(elem)
+    if kind == "floor":
+        return [(float(point.x_mm), float(point.y_mm)) for point in elem.boundary_mm]
+    if kind == "roof":
+        return [(float(point.x_mm), float(point.y_mm)) for point in elem.footprint_mm]
+    if kind == "placed_asset":
+        entry = elements.get(elem.asset_id)
+        width = _dimension_from_sources(
+            elem.param_values,
+            getattr(entry, "param_schema", None),
+            ("widthMm", "lengthMm", "diameterMm", "bMm"),
+        ) or aabb.width_mm
+        depth = _dimension_from_sources(
+            elem.param_values,
+            getattr(entry, "param_schema", None),
+            ("depthMm", "diameterMm", "hMm"),
+        ) or aabb.depth_mm
+        return _centered_rect_footprint(elem.position_mm, width, depth, float(elem.rotation_deg))
+    if kind == "family_instance":
+        family_type = elements.get(elem.family_type_id)
+        type_params = getattr(family_type, "parameters", None)
+        width = _dimension_from_sources(
+            elem.param_values,
+            type_params,
+            ("widthMm", "lengthMm", "diameterMm", "bMm"),
+        ) or aabb.width_mm
+        depth = _dimension_from_sources(
+            elem.param_values,
+            type_params,
+            ("depthMm", "diameterMm", "hMm"),
+        ) or aabb.depth_mm
+        return _centered_rect_footprint(elem.position_mm, width, depth, float(elem.rotation_deg))
+    return _aabb_plan_footprint(aabb)
+
+
+def _wall_footprint(elem: Any) -> list[tuple[float, float]] | None:
+    sx = float(elem.start.x_mm)
+    sy = float(elem.start.y_mm)
+    ex = float(elem.end.x_mm)
+    ey = float(elem.end.y_mm)
+    dx = ex - sx
+    dy = ey - sy
+    length = math.hypot(dx, dy)
+    if length <= 1e-9:
+        return None
+    nx = -dy / length
+    ny = dx / length
+    half = float(elem.thickness_mm) / 2.0
+    return [
+        (sx + nx * half, sy + ny * half),
+        (ex + nx * half, ey + ny * half),
+        (ex - nx * half, ey - ny * half),
+        (sx - nx * half, sy - ny * half),
+    ]
+
+
+def _centered_rect_footprint(
+    center: Any,
+    width_mm: float,
+    depth_mm: float,
+    rotation_deg: float,
+) -> list[tuple[float, float]]:
+    cx = float(center.x_mm)
+    cy = float(center.y_mm)
+    half_w = float(width_mm) / 2.0
+    half_d = float(depth_mm) / 2.0
+    theta = math.radians(rotation_deg)
+    cos_t = math.cos(theta)
+    sin_t = math.sin(theta)
+    points = [(-half_w, -half_d), (half_w, -half_d), (half_w, half_d), (-half_w, half_d)]
+    return [(cx + x * cos_t - y * sin_t, cy + x * sin_t + y * cos_t) for x, y in points]
+
+
+def _aabb_plan_footprint(aabb: AABB) -> list[tuple[float, float]]:
+    return [
+        (aabb.min_x, aabb.min_y),
+        (aabb.max_x, aabb.min_y),
+        (aabb.max_x, aabb.max_y),
+        (aabb.min_x, aabb.max_y),
+    ]
 
 
 def _bounds_from_points(

@@ -10,6 +10,7 @@ from bim_ai.constructability_geometry import (
     candidate_pairs_by_aabb,
     collect_physical_participants,
     collect_unsupported_physical_diagnostics,
+    participants_overlap_narrow_phase,
     physical_collision_contract_summary_v1,
 )
 from bim_ai.elements import (
@@ -206,6 +207,44 @@ def test_wall_and_shelf_are_overlap_candidate() -> None:
     participants = _participant_by_id(elements)
 
     assert aabb_overlaps(participants["wall"].aabb, participants["shelf"].aabb)
+
+
+def test_narrow_phase_rejects_diagonal_wall_aabb_false_positive() -> None:
+    elements = {
+        "lvl-1": LevelElem(kind="level", id="lvl-1", elevationMm=0.0),
+        "wall": WallElem(
+            kind="wall",
+            id="wall",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 4000},
+            thicknessMm=200,
+            heightMm=2800,
+        ),
+        "asset-shelf": AssetLibraryEntryElem(
+            kind="asset_library_entry",
+            id="asset-shelf",
+            assetKind="block_2d",
+            name="Shelf",
+            category="casework",
+            tags=[],
+            thumbnailKind="schematic_plan",
+        ),
+        "shelf": PlacedAssetElem(
+            kind="placed_asset",
+            id="shelf",
+            name="Shelf",
+            assetId="asset-shelf",
+            levelId="lvl-1",
+            positionMm={"xMm": 3900, "yMm": 100},
+            paramValues={"widthMm": 200, "depthMm": 200, "proxyHeightMm": 900},
+        ),
+    }
+
+    participants = _participant_by_id(elements)
+
+    assert aabb_overlaps(participants["wall"].aabb, participants["shelf"].aabb)
+    assert not participants_overlap_narrow_phase(participants["wall"], participants["shelf"])
 
 
 def test_non_overlap_distance() -> None:

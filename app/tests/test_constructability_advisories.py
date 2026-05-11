@@ -153,6 +153,28 @@ def test_shelf_near_wall_but_clear_is_not_reported_as_wall_clash() -> None:
     assert "furniture_wall_hard_clash" not in _rule_ids(elements)
 
 
+def test_diagonal_wall_aabb_false_positive_is_rejected_by_narrow_phase() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "wall-1": _wall(
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 4000},
+        ),
+        "asset-shelf": _asset_library(),
+        "shelf-1": PlacedAssetElem(
+            kind="placed_asset",
+            id="shelf-1",
+            name="Shelf",
+            assetId="asset-shelf",
+            levelId="lvl-1",
+            positionMm={"xMm": 3900, "yMm": 100},
+            paramValues={"widthMm": 200, "depthMm": 200, "proxyHeightMm": 900},
+        ),
+    }
+
+    assert "furniture_wall_hard_clash" not in _rule_ids(elements)
+
+
 def test_family_instance_through_wall_uses_family_type_proxy() -> None:
     elements = {
         "lvl-1": _level(),

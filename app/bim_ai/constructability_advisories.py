@@ -13,6 +13,7 @@ from bim_ai.constructability_geometry import (
     candidate_pairs_by_aabb,
     collect_physical_participants,
     collect_unsupported_physical_diagnostics,
+    participants_overlap_narrow_phase,
 )
 from bim_ai.constructability_matrix import (
     DEFAULT_CONSTRUCTABILITY_MATRIX,
@@ -130,7 +131,7 @@ def _matrix_hard_clash_violations(
             a.aabb, b.aabb, tolerance_mm=cell.tolerance_mm
         ):
             continue
-        if not aabb_overlaps(a.aabb, b.aabb, tolerance_mm=cell.tolerance_mm):
+        if not participants_overlap_narrow_phase(a, b, tolerance_mm=cell.tolerance_mm):
             continue
         element_ids = tuple(sorted([a.element_id, b.element_id]))
         key = (cell.rule_id, element_ids)
