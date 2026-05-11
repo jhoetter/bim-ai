@@ -2057,6 +2057,40 @@ class ConstructabilitySuppressionElem(BaseModel):
     expires_revision: int | None = Field(default=None, alias="expiresRevision")
 
 
+ConstructabilityIssueStatus = Literal[
+    "new",
+    "active",
+    "reviewed",
+    "approved",
+    "not_an_issue",
+    "resolved",
+    "suppressed",
+]
+
+
+class ConstructabilityIssueElem(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["constructability_issue"] = "constructability_issue"
+    id: str
+    fingerprint: str
+    rule_id: str = Field(alias="ruleId")
+    element_ids: list[str] = Field(default_factory=list, alias="elementIds")
+    pair_key: str | None = Field(default=None, alias="pairKey")
+    status: ConstructabilityIssueStatus = "new"
+    first_seen_revision: str | int | None = Field(default=None, alias="firstSeenRevision")
+    last_seen_revision: str | int | None = Field(default=None, alias="lastSeenRevision")
+    resolved_revision: str | int | None = Field(default=None, alias="resolvedRevision")
+    location_bucket: str | None = Field(default=None, alias="locationBucket")
+    message: str | None = None
+    severity: str | None = None
+    discipline: str | None = None
+    blocking_class: str | None = Field(default=None, alias="blockingClass")
+    recommendation: str | None = None
+    assignee_placeholder: str | None = Field(default=None, alias="assigneePlaceholder")
+    resolution_comment: str | None = Field(default=None, alias="resolutionComment")
+    evidence_refs: list[EvidenceRef] = Field(default_factory=list, alias="evidenceRefs")
+
+
 AgentAssumptionSource = Literal["manual", "bundle_dry_run", "evidence_summary"]
 AgentAssumptionClosureStatus = Literal["open", "resolved", "accepted", "deferred"]
 # SKB-08: phaseId values match the SKB-12 cookbook's seven phase tags.
@@ -3260,6 +3294,7 @@ Element = Annotated[
     | CalloutElem
     | BcfElem
     | ConstructabilitySuppressionElem
+    | ConstructabilityIssueElem
     | AgentAssumptionElem
     | AgentDeviationElem
     | ValidationRuleElem

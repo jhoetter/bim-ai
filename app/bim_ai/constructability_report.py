@@ -146,7 +146,11 @@ def build_constructability_report(
         fingerprint = fingerprint_violation(finding)
         suppressed_by_fingerprint[fingerprint] = suppression
 
-    issues = reconcile_findings(previous_issues, all_findings, revision=revision)
+    issues = reconcile_findings(
+        [*_persisted_issue_records(scoped_elements), *previous_issues],
+        all_findings,
+        revision=revision,
+    )
     for issue in issues:
         suppression = suppressed_by_fingerprint.get(str(issue.get("fingerprint") or ""))
         if suppression is None:
@@ -296,6 +300,15 @@ def _suppression_records(
             str(record.get("id") or ""),
         )
     )
+    return records
+
+
+def _persisted_issue_records(elements: dict[str, Element]) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for element in elements.values():
+        if getattr(element, "kind", None) != "constructability_issue":
+            continue
+        records.append(element.model_dump(by_alias=True, exclude={"kind", "id"}))
     return records
 
 

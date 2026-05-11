@@ -6,6 +6,7 @@ from bim_ai.constructability_report import (
 )
 from bim_ai.elements import (
     AssetLibraryEntryElem,
+    ConstructabilityIssueElem,
     ConstructabilitySuppressionElem,
     LevelElem,
     PlacedAssetElem,
@@ -84,6 +85,64 @@ def test_constructability_report_marks_previous_issue_resolved() -> None:
     assert first["summary"]["findingCount"] == 0
     assert report["issues"][0]["status"] == "resolved"
     assert report["issues"][0]["resolvedRevision"] == "r2"
+
+
+def test_constructability_report_uses_persisted_issue_elements() -> None:
+    initial_elements = {
+        "lvl-1": LevelElem(kind="level", id="lvl-1", name="Level 1", elevationMm=0.0),
+        "wall-1": WallElem(
+            kind="wall",
+            id="wall-1",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 0},
+            thicknessMm=200,
+            heightMm=3000,
+        ),
+        "asset-shelf": AssetLibraryEntryElem(
+            kind="asset_library_entry",
+            id="asset-shelf",
+            assetKind="block_2d",
+            name="Shelf",
+            category="casework",
+            tags=[],
+            thumbnailKind="schematic_plan",
+            thumbnailWidthMm=600,
+            thumbnailHeightMm=300,
+        ),
+        "shelf-1": PlacedAssetElem(
+            kind="placed_asset",
+            id="shelf-1",
+            name="Shelf",
+            assetId="asset-shelf",
+            levelId="lvl-1",
+            positionMm={"xMm": 1200, "yMm": 0},
+            paramValues={"widthMm": 600, "depthMm": 300, "proxyHeightMm": 900},
+        ),
+    }
+    first_report = build_constructability_report(initial_elements, revision="r1")
+    issue = first_report["issues"][0]
+    persisted = ConstructabilityIssueElem.model_validate(
+        {
+            "kind": "constructability_issue",
+            "id": "ci-1",
+            **issue,
+            "status": "approved",
+            "resolutionComment": "Reviewed as intentional built-in recess.",
+        }
+    )
+
+    second_report = build_constructability_report(
+        {**initial_elements, "ci-1": persisted},
+        revision="r2",
+    )
+
+    assert second_report["issues"][0]["status"] == "approved"
+    assert second_report["issues"][0]["firstSeenRevision"] == "r1"
+    assert second_report["issues"][0]["lastSeenRevision"] == "r2"
+    assert second_report["issues"][0]["resolutionComment"] == (
+        "Reviewed as intentional built-in recess."
+    )
 
 
 def test_constructability_report_applies_scoped_suppression_records() -> None:
