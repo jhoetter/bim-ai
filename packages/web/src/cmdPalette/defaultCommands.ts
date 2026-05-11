@@ -58,6 +58,10 @@ function hasActiveSheet(ctx: PaletteContext): boolean {
   return Boolean(ctx.activeSheetId);
 }
 
+function hasActiveSection(ctx: PaletteContext): boolean {
+  return Boolean(ctx.activeSectionId);
+}
+
 function selectedWall(ctx: PaletteContext) {
   const id = ctx.selectedElementIds[0];
   if (!id) return null;
@@ -275,6 +279,42 @@ registerCommand({
   keywords: ['section', 'cut'],
   category: 'navigate',
   invoke: (ctx) => ctx.navigateMode?.('section'),
+});
+
+registerCommand({
+  id: 'section.place-on-sheet',
+  label: 'Section: Place on Sheet',
+  keywords: ['section', 'sheet', 'place viewport', 'documentation'],
+  category: 'command',
+  isAvailable: hasActiveSection,
+  invoke: (ctx) => ctx.placeActiveSectionOnSheet?.(),
+});
+
+registerCommand({
+  id: 'section.open-source-plan',
+  label: 'Section: Open Source Plan',
+  keywords: ['section', 'source plan', 'open plan', 'cut line'],
+  category: 'command',
+  isAvailable: hasActiveSection,
+  invoke: (ctx) => ctx.openActiveSectionSourcePlan?.(),
+});
+
+registerCommand({
+  id: 'section.crop-depth.increase',
+  label: 'Section: Increase Far Clip',
+  keywords: ['section', 'crop', 'far clip', 'depth', 'increase'],
+  category: 'command',
+  isAvailable: hasActiveSection,
+  invoke: (ctx) => ctx.adjustActiveSectionCropDepth?.(500),
+});
+
+registerCommand({
+  id: 'section.crop-depth.decrease',
+  label: 'Section: Decrease Far Clip',
+  keywords: ['section', 'crop', 'far clip', 'depth', 'decrease'],
+  category: 'command',
+  isAvailable: hasActiveSection,
+  invoke: (ctx) => ctx.adjustActiveSectionCropDepth?.(-500),
 });
 
 registerCommand({

@@ -616,6 +616,8 @@ modal and command-line parser utilities that have their own tests.
   active schedule, and open schedule sort/filter/group/column controls.
 - Sheet Cmd+K coverage includes dynamic place-view-on-sheet entries, recommended viewport
   placement, titleblock and viewport editor jumps, and sheet export/share routing.
+- Section Cmd+K coverage includes place active section on sheet, open source plan, and far-clip
+  crop-depth increase/decrease commands through `updateElementProperty`.
 - Navigation commands route through the workspace tab/mode controller.
 - Theme, language, project menu, family library, keyboard shortcuts, active visibility controls,
   3D view controls, save/restore snapshot, share presentation, rail toggles, and inactive-tab close

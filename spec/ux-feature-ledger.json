@@ -175,6 +175,23 @@
       ]
     },
     {
+      "idPattern": "section.*",
+      "label": "Section placement, source plan, and crop commands",
+      "owner": "packages/web/src/workspace/sheets/SectionPlaceholderPane.tsx",
+      "sourceFile": "packages/web/src/workspace/commandCapabilities.ts",
+      "intendedViews": ["section"],
+      "actualSurfaces": ["cmd-k"],
+      "preconditions": ["active-section", "available-sheet where needed"],
+      "executionHandler": "Workspace Cmd+K context reuses section placement on sheet, plan navigation, and cropDepthMm updateElementProperty routing",
+      "status": "implemented",
+      "usabilityScore": 8,
+      "tests": [
+        "packages/web/src/cmdPalette/defaultCommands.test.ts",
+        "packages/web/src/workspace/commandCapabilities.test.ts",
+        "packages/web/src/workspace/uxAudit.test.ts"
+      ]
+    },
+    {
       "idPattern": "statusbar.*",
       "label": "View-aware status readout and plan drafting grid visibility toggle",
       "owner": "packages/web/src/workspace/shell/StatusBar.tsx",

@@ -76,6 +76,18 @@ describe('command capability graph', () => {
     }
   });
 
+  it('tracks section workflow commands as section-only commands', () => {
+    for (const commandId of [
+      'section.place-on-sheet',
+      'section.open-source-plan',
+      'section.crop-depth.increase',
+      'section.crop-depth.decrease',
+    ]) {
+      expect(evaluateCommandInMode(commandId, 'section')?.state).toBe('enabled');
+      expect(evaluateCommandInMode(commandId, 'plan')?.state).toBe('disabled');
+    }
+  });
+
   it('detects dead direct command exposure in invalid views', () => {
     expect(
       auditCommandExposures([

@@ -21,6 +21,7 @@ Legend:
 | Active-view visibility controls         | Direct   | Direct                    | Direct                    | Direct                  | Disabled       | Disabled       | Disabled       | Disabled       |
 | Plan Visibility/Graphics                | Direct   | Bridge to Plan            | Direct                    | Direct                  | Disabled       | Disabled       | Disabled       | Disabled       |
 | 3D layer controls                       | Disabled | Direct                    | Direct                    | Disabled                | Disabled       | Disabled       | Disabled       | Disabled       |
+| Section placement/source/crop controls  | Disabled | Disabled                  | Disabled                  | Direct                  | Disabled       | Disabled       | Disabled       | Disabled       |
 | Theme/language commands                 | Direct   | Direct                    | Direct                    | Direct                  | Direct         | Direct         | Direct         | Direct         |
 | Drafting grid visibility                | Direct   | Disabled                  | Direct                    | Direct                  | Disabled       | Disabled       | Disabled       | Disabled       |
 | Sheet viewport/titleblock/export controls | Disabled | Disabled                  | Disabled                  | Disabled                | Direct         | Disabled       | Disabled       | Disabled       |
