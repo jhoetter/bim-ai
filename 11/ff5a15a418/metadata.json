@@ -3,8 +3,34 @@
   "checkpoint_id": "11ff5a15a418",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
+    "app/tests/test_seed_artifact_roundtrip.py",
+    "seed-artifacts/target-house-1/bundle.json",
+    "seed-artifacts/target-house-1/evidence/README.md",
+    "seed-artifacts/target-house-1/evidence/acceptance-gates.json",
+    "seed-artifacts/target-house-1/evidence/assumptions.md",
+    "seed-artifacts/target-house-1/evidence/capability-coverage.json",
+    "seed-artifacts/target-house-1/evidence/live-advisor.json",
+    "seed-artifacts/target-house-1/evidence/live/advisor-info.json",
+    "seed-artifacts/target-house-1/evidence/live/advisor-warning.json",
+    "seed-artifacts/target-house-1/evidence/live/evidence-package.json",
+    "seed-artifacts/target-house-1/evidence/live/model-stats.json",
+    "seed-artifacts/target-house-1/evidence/live/validate.json",
+    "seed-artifacts/target-house-1/evidence/screenshot-manifest.json",
+    "seed-artifacts/target-house-1/evidence/screenshots/hf-pv-ground.png",
+    "seed-artifacts/target-house-1/evidence/screenshots/hf-pv-upper.png",
+    "seed-artifacts/target-house-1/evidence/screenshots/hf-sec-loggia.png",
+    "seed-artifacts/target-house-1/evidence/screenshots/vp-front-elev.png",
+    "seed-artifacts/target-house-1/evidence/screenshots/vp-main-iso.png",
+    "seed-artifacts/target-house-1/evidence/screenshots/vp-rear-axo.png",
+    "seed-artifacts/target-house-1/evidence/screenshots/vp-roof-court.png",
+    "seed-artifacts/target-house-1/evidence/sketch-ir.json",
+    "seed-artifacts/target-house-1/evidence/status.md",
+    "seed-artifacts/target-house-1/evidence/target-house-1.recipe.json",
+    "seed-artifacts/target-house-1/evidence/visual-checklist.json",
+    "seed-artifacts/target-house-1/evidence/visual-gate.json",
+    "seed-artifacts/target-house-1/manifest.json",
     "spec/sketch-to-bim-clean-seeding-handover.md"
   ],
   "sessions": [
@@ -49,13 +75,19 @@
       "transcript": "/11/ff5a15a418/6/full.jsonl",
       "content_hash": "/11/ff5a15a418/6/content_hash.txt",
       "prompt": "/11/ff5a15a418/6/prompt.txt"
+    },
+    {
+      "metadata": "/11/ff5a15a418/7/metadata.json",
+      "transcript": "/11/ff5a15a418/7/full.jsonl",
+      "content_hash": "/11/ff5a15a418/7/content_hash.txt",
+      "prompt": "/11/ff5a15a418/7/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 88443,
+    "input_tokens": 674668,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 2112896,
-    "output_tokens": 4352,
-    "api_call_count": 14
+    "cache_read_tokens": 26970112,
+    "output_tokens": 45312,
+    "api_call_count": 207
   }
 }
