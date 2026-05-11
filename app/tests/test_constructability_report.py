@@ -8,10 +8,14 @@ from bim_ai.elements import (
     AssetLibraryEntryElem,
     ConstructabilityIssueElem,
     ConstructabilitySuppressionElem,
+    DoorElem,
+    FloorElem,
     LevelElem,
     PlacedAssetElem,
+    RoofElem,
     StairElem,
     WallElem,
+    WindowElem,
 )
 
 
@@ -442,6 +446,83 @@ def test_constructability_readiness_reports_ids_like_metadata_requirements() -> 
     assert "Pset_WallCommon.FireRating" in finding["message"]
     assert "structuralMaterialKey" in finding["message"]
     assert resolved_report["summary"]["ruleCounts"] == {}
+
+
+def test_constructability_readiness_reports_opening_floor_and_roof_metadata_requirements() -> None:
+    elements = {
+        "lvl-1": LevelElem(kind="level", id="lvl-1", name="Level 1", elevationMm=0.0),
+        "wall-1": WallElem(
+            kind="wall",
+            id="wall-1",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 5000, "yMm": 0},
+            thicknessMm=200,
+            heightMm=3000,
+        ),
+        "door-egress": DoorElem(
+            kind="door",
+            id="door-egress",
+            wallId="wall-1",
+            alongT=0.35,
+            widthMm=1000,
+            props={"egressDoor": True, "fireDoor": True},
+        ),
+        "window-egress": WindowElem(
+            kind="window",
+            id="window-egress",
+            wallId="wall-1",
+            alongT=0.7,
+            widthMm=1200,
+            heightMm=1200,
+            props={"egressWindow": True},
+        ),
+        "floor-structural": FloorElem(
+            kind="floor",
+            id="floor-structural",
+            levelId="lvl-1",
+            boundaryMm=[
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 5000, "yMm": 0},
+                {"xMm": 5000, "yMm": 4000},
+                {"xMm": 0, "yMm": 4000},
+            ],
+            props={"requiresStructuralMetadata": True},
+        ),
+        "roof-flat": RoofElem(
+            kind="roof",
+            id="roof-flat",
+            referenceLevelId="lvl-1",
+            footprintMm=[
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 5000, "yMm": 0},
+                {"xMm": 5000, "yMm": 4000},
+                {"xMm": 0, "yMm": 4000},
+            ],
+            slopeDeg=1.0,
+            props={"primaryEnvelope": True},
+        ),
+    }
+
+    report = build_constructability_report(elements, revision=14, profile="permit_readiness")
+
+    metadata_findings = [
+        finding
+        for finding in report["findings"]
+        if finding["ruleId"] == "constructability_metadata_requirement_missing"
+    ]
+    assert {finding["elementIds"][0] for finding in metadata_findings} == {
+        "door-egress",
+        "floor-structural",
+        "roof-flat",
+        "window-egress",
+    }
+    messages = "\n".join(finding["message"] for finding in metadata_findings)
+    assert "Pset_DoorCommon.FireRating" in messages
+    assert "egressClearWidthMm" in messages
+    assert "egressClearOpeningAreaM2" in messages
+    assert "structuralSystem" in messages
+    assert "roofDrainageDesigned" in messages
 
 
 def test_constructability_clearance_rule_is_profile_enabled() -> None:
