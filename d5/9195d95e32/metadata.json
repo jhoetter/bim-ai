@@ -6,6 +6,7 @@
   "checkpoints_count": 1,
   "files_touched": [
     "spec/constructability-warning-system-tracker.md",
+    "spec/revit-parity/ch09-rooms-areas.md",
     "spec/sketch-to-bim-archetypes.json",
     "spec/sketch-to-bim-methodology.md",
     "spec/sketch-to-bim-process-audit-tracker.md",
@@ -61,6 +62,12 @@
       "transcript": "/d5/9195d95e32/7/full.jsonl",
       "content_hash": "/d5/9195d95e32/7/content_hash.txt",
       "prompt": "/d5/9195d95e32/7/prompt.txt"
+    },
+    {
+      "metadata": "/d5/9195d95e32/8/metadata.json",
+      "transcript": "/d5/9195d95e32/8/full.jsonl",
+      "content_hash": "/d5/9195d95e32/8/content_hash.txt",
+      "prompt": "/d5/9195d95e32/8/prompt.txt"
     }
   ],
   "token_usage": {
