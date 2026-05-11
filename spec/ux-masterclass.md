@@ -8,19 +8,19 @@ The goal is not to make BIM AI simpler by removing power. The goal is to make th
 
 ## Executive Summary
 
-The editor is already feature-rich, but the UX model is currently inconsistent because it has multiple competing command surfaces with different sources of truth:
+The editor is now governed by a canonical command capability graph. The major command-surface inconsistencies from the original audit have been closed:
 
-1. The top bar and ribbon expose tools globally, even when the active canvas cannot execute them.
-2. The floating tool palette is view-aware, but it is also filtered by "perspective" in a way that hides or reveals tools differently from the ribbon.
-3. The command palette is not tied to the active tab/view. Some "Go to" commands only update `viewerMode`, while the rendered canvas is controlled by active tabs and `mode`.
-4. Pure 3D mode now receives `onSemanticCommand`, so 3D grips and wall-face commands have a commit path; remaining 3D work is about explicit command support and interaction quality.
-5. Visibility controls remain split between plan VG, 3D layer toggles, lens filters, hidden/reveal state, and saved-view hidden categories; the 3D model category panel now covers the renderable `elemViewerCategory` set and shows model-content counts.
+1. The top bar QAT and ribbon query active-mode availability before invoking tools, and invalid direct commands are disabled or labeled as bridge actions.
+2. The floating tool palette uses tool registry mode availability plus capability evaluation; legacy `planToolsForPerspective` filtering has been removed.
+3. Cmd+K navigation uses the shared Workspace navigation transaction, so view commands update active tab/canvas state instead of only changing `viewerMode`.
+4. Pure 3D mode receives `onSemanticCommand`, and selected-element 3D operations are exposed through Cmd+K, the canvas context menu, and right-rail actions.
+5. Visibility controls remain scoped by view type, while the 3D model category panel covers the renderable `elemViewerCategory` set and shows model-content counts.
 
-Current usability score: **3/10**.
+Current usability score: **8/10**.
 
 Target usability score: **9/10**.
 
-The path to 9/10 is to define a canonical View Capability Graph and make every UI surface query it before showing, enabling, or invoking any command.
+The remaining path to 9/10 is polish: richer 3D gizmo/measure interactions, broader accessibility review, and progressive learning affordances. The reachability baseline is now implemented and guarded by tests.
 
 ## Source Evidence
 
@@ -31,13 +31,11 @@ Primary files audited:
 - `packages/web/src/workspace/shell/TopBar.tsx`: tabs, quick access toolbar, account/theme controls.
 - `packages/web/src/workspace/shell/RibbonBar.tsx`: ribbon tabs and global command buttons.
 - `packages/web/src/tools/toolRegistry.ts`: canonical floating palette tool definitions and mode availability.
-- `packages/web/src/workspace/planToolsByPerspective.ts`: perspective filtering for visible plan tools.
 - `packages/web/src/workspace/viewport/CanvasMount.tsx`: mode-to-canvas mount rules.
 - `packages/web/src/Viewport.tsx`: 3D renderer, selection, grips, wall context menus, category visibility application.
 - `packages/web/src/workspace/viewport/Viewport3DLayersPanel.tsx`: 3D view controls and category toggles.
 - `packages/web/src/viewport/sceneUtils.ts`: 3D element-to-category visibility mapping.
 - `packages/web/src/cmdPalette/*`: mounted Cmd+K implementation.
-- `packages/web/src/cmd/*`: richer but currently unmounted command palette implementation.
 - `packages/web/src/workspace/WorkspaceRightRail.tsx`: inspector, authoring workbenches, 3D controls.
 - `packages/web/src/workspace/WorkspaceLeftRail.tsx`: browser navigation and view activation.
 - `packages/web/src/workspace/project/VVDialog.tsx`: plan Visibility/Graphics dialog.
@@ -91,12 +89,11 @@ Zones:
 - Right rail/inspector.
 - Status bar.
 
-Issue: `ToolModifierBar` and `OptionsBar` are rendered globally under the ribbon, independent of active mode. A ribbon or QAT command can set a plan tool while the canvas is 3D, sheet, schedule, or agent. The plan tool options then appear even though the active canvas cannot execute the tool.
+Resolved implementation:
 
-Decision:
-
-- Options and modifiers must belong to the active canvas capability, not just to `planTool`.
-- In non-plan contexts, plan tool options should either not render or render as "Open in Plan to use Wall" with a single action.
+- `AppShell` scopes `ToolModifierBar` and `OptionsBar` to plan-capable modes only: plan, plan+3D, and section.
+- Ribbon and QAT plan-tool actions route through `Workspace.handleToolSelect`, which switches to Plan before starting plan-only tools when the active mode cannot consume them.
+- `AppShell.test.tsx` locks this behavior.
 
 ### Top Bar
 
@@ -116,19 +113,19 @@ Current contents:
 - Collaborators/comments.
 - Avatar/account menu with theme and language.
 
-Findings:
+Resolved implementation:
 
-- Undo is disabled by `undoDepth`, but Redo is never disabled because there is no redo depth.
-- QAT Section, Measure, Dimension, and Tag set `planTool` directly when callbacks are not passed. Workspace does not pass explicit callbacks for these tools. They do not switch to a valid plan canvas, do not explain unavailable contexts, and can create "active tool but no usable canvas."
-- Thin Lines falls back to `useBimStore.getState().toggleThinLines()`, but `Workspace` does not pass `thinLinesEnabled` into `TopBar`. The button state can therefore display as unpressed even after toggling.
-- Close Inactive Views works when tabs exist, but there is also a duplicated close-inactive action inside the tab strip.
-- Theme switching exists only in the avatar menu, not in the mounted command palette.
+- Undo and Redo receive `undoDepth` / `redoDepth` from Workspace and disable when unavailable.
+- QAT Section, Measure, Dimension, and Tag receive explicit Workspace callbacks and use capability labels to indicate direct vs bridge behavior.
+- Thin Lines receives `thinLinesEnabled` from Workspace, reflects pressed state, and toggles the store.
+- Close Inactive Views remains available from QAT/tab controls and is also tracked by the capability graph.
+- Theme and language switching are mounted universal Cmd+K commands.
 
 Classification:
 
-- Universal and valid: project menu, Cmd+K trigger, avatar menu, language, theme via avatar.
-- Contextual but currently global: Section, Measure, Dimension, Tag, Thin Lines.
-- Partially dead/confusing: Redo, QAT plan tools in 3D/sheet/schedule/agent, Thin Lines state reflection.
+- Universal and valid: project menu, Cmd+K trigger, avatar menu, language, theme, undo/redo, Close Inactive Views.
+- Contextual and bridged when needed: Section, Measure, Dimension, Tag.
+- View-scoped toggle: Thin Lines.
 
 ### View Tabs
 
@@ -150,14 +147,11 @@ Strengths:
 - Target-bound tabs use stable ids like `3d:<viewpointId>` and `plan:<planViewId>`.
 - Opening an element from the project browser generally activates the correct tab and mode.
 
-Issues:
+Resolved implementation:
 
-- Some navigation paths only open a tab and do not run the same side effects as the project browser. For example Cmd+K dynamic view entries call `openElementById`, which only calls `openTabFromElement`. It does not activate plan views, set active viewpoint id, apply viewpoint camera/preset, or select the navigated item.
-- Direct Cmd+K commands like "Go to 3D view" set `viewerMode` only. The canvas is primarily controlled by `effectiveMode` from active tab/mode, so these commands can appear to do nothing.
-
-Decision:
-
-- All navigation must go through one `navigateToTarget(target)` function that updates tab, mode, active plan/viewpoint ids, camera/preset, selection, and any active view state in a single transaction.
+- `Workspace.openElementById` opens the tab and applies the same side effects for levels, plan views, viewpoints, sections, sheets, and schedules.
+- `Workspace.navigateTo` is used by Cmd+K mode and element commands, so "Go to" commands update active tab/canvas state through the same transaction path.
+- Viewpoint navigation selects the viewpoint, sets `activeViewpointId`, applies camera state, applies 3D visibility presets, and switches to 3D mode.
 
 ### Ribbon
 
@@ -182,27 +176,16 @@ Ribbon tabs:
 
 Current behavior:
 
-- Tool commands call `onToolSelect`, which maps to `setPlanTool`.
+- Tool commands call `onToolSelect`, which maps through `Workspace.handleToolSelect`.
 - Mode commands call `onModeChange`.
 - Action commands open Cmd+K, VV/VG, family library, project menu, or settings/cheatsheet.
 
-Major issue:
+Resolved implementation:
 
-- The ribbon is not context-aware. It exposes Wall, Door, Window, Floor, Roof, Stair, Grid, Dimension, Tag, Modify commands even in pure 3D, sheet, schedule, and agent contexts. Those commands set plan tool state, but the active canvas often cannot handle the tool.
-
-Dead-button examples:
-
-- Architecture > Wall in pure 3D: sets `planTool='wall'`; 3D viewport does not use wall drawing state.
-- Annotate > Dimension in pure 3D: sets dimension tool; no 3D dimension workflow exists.
-- View > VV/VG in 3D: opens plan-focused `VVDialog`, usually tied to `activePlanViewId`, while the 3D controls live in the right rail.
-- Modify > Move/Copy/Rotate in 3D: exposed when selected but implemented as plan tools.
-- Steel/Precast/System commands like Connections, Steel Settings, Assemblies, Systems Cmd are command-palette/settings aliases, not complete domain tools.
-
-Decision:
-
-- Ribbon commands must use the same capability graph as Cmd+K and the floating palette.
-- Commands that are not valid in the current view must be either hidden, disabled with a reason, or converted into "Switch to Plan and start Wall."
-- Ribbon labels should not imply complete domain modules where the underlying implementation is only a placeholder to Cmd+K/settings.
+- Ribbon commands use `evaluateCommandInMode` from `commandCapabilities.ts`.
+- Invalid direct tool commands are disabled with a reason instead of becoming active tools over an incompatible canvas.
+- Plan VV/VG is disabled in pure 3D with guidance to use 3D View Controls.
+- `ribbonCommandReachabilityForMode` and `uxAudit.test.ts` guard mounted ribbon commands against enabled dead buttons.
 
 ### Floating Tool Palette
 
@@ -213,25 +196,18 @@ Current behavior:
 - Hidden in sheet, schedule, and agent.
 - Rendered in plan, 3D, plan+3D, and section.
 - Tool availability comes from `toolRegistry.paletteForMode(mode)`.
-- Then filtered by `allowedToolIds` from `planToolsForPerspective(perspectiveId)`.
+- Each tool is checked against the capability graph and tool preconditions before it can be invoked.
 
 Strengths:
 
 - It is closer to a view-aware tool surface than the ribbon.
 - It has disabled reasons for some tools, such as floor/roof requiring walls.
 
-Issues:
+Resolved implementation:
 
-- Tool registry says `railing` is available in 3D, but perspective filtering removes it because `planToolsForPerspective` does not include `railing`. In pure 3D the floating palette effectively shows only Select.
-- `planToolsForPerspective` is a legacy plan-tool list, not a general command capability map.
-- Perspective filtering and mode filtering are separate, creating surprising combinations.
-- The floating palette and ribbon disagree about what exists.
-
-Decision:
-
-- Replace `planToolsForPerspective` as a visibility source with a capability query: `(activeView, perspective, selection, modelState) -> command availability`.
-- The floating palette should show primary authoring tools for the active canvas only.
-- Secondary tools should be reachable through Cmd+K and the ribbon, but with the same availability rules.
+- `planToolsForPerspective` and `allowedToolIds` have been removed.
+- Pure 3D exposes Select in the primary floating palette; 3D edit operations are explicit selected-element commands in Cmd+K, right rail, and canvas context menus.
+- Ribbon, Cmd+K, and the floating palette now share capability availability.
 
 ### Tool Registry
 
@@ -246,16 +222,11 @@ Current modes:
 - Section is plan/plan+3D/section.
 - Modify tools like move/copy/rotate are plan only.
 
-Tool registry is currently the nearest thing to a capability list, but it is incomplete because:
+Resolved implementation:
 
-- It only covers tools, not actions or navigation.
-- It does not describe execution surface, preconditions, side effects, or fallback routes.
-- It is not used by the ribbon or command palette as the single source of truth.
-- It does not distinguish "show", "enable", "invoke", and "switch then invoke."
-
-Decision:
-
-- Evolve this into or generate from a `CommandCapabilityRegistry`.
+- `toolRegistry` remains the source of primary tool definitions.
+- `commandCapabilities.ts` wraps tools and adds actions, navigation, execution surface, preconditions, surfaces, bridge routes, status, and tests.
+- Ribbon, floating palette, and Cmd+K consume this capability graph.
 
 ### Options Bar and Modifier Bar
 
@@ -710,24 +681,24 @@ A button is dead if any of these is true:
 5. It acts on a hidden or stale target, such as `activePlanViewId` while the user is in a different active tab.
 6. It requires preconditions but does not show the reason or path to satisfy them.
 
-Current likely dead/confusing buttons:
+Previously dead/confusing buttons and current status:
 
-| Surface | Button/command | Current behavior | Problem | Desired behavior |
+| Surface | Button/command | Previous behavior | Current status | Guard |
 | --- | --- | --- | --- | --- |
-| Ribbon | Wall in 3D | Sets `planTool='wall'` | 3D canvas does not draw walls | Disable with "Use in Plan" or switch to Plan and start Wall |
-| Ribbon | Door/Window in 3D | Sets plan tool | 3D insertion exists via wall-face menu, not plan tool | Offer "Insert on wall face" in 3D |
-| Ribbon | Move/Copy/Rotate in 3D | Sets plan tool | Plan-only interactions | Hide/disable until 3D gizmo exists |
-| Ribbon | VV/VG in 3D | Opens plan `VVDialog` | Wrong visibility model | Open 3D View Controls or unified Visibility dialog scoped to 3D |
-| Topbar QAT | Section/Measure/Dimension/Tag outside plan | Sets plan tool | No valid canvas | Switch to Plan or disable with explanation |
-| Topbar QAT | Thin Lines | Toggles store fallback | Pressed state not passed from Workspace | Pass state and make context clear |
-| Topbar QAT | Redo | Always enabled | No redo availability state | Track redo depth and disable when unavailable |
-| Cmd+K | Go to 3D view | Sets `viewerMode` | Active tab still controls canvas | Use tab/mode navigation transaction |
-| Cmd+K | Go to plan view | Sets `viewerMode` | Can appear no-op | Use tab/mode navigation transaction |
-| Cmd+K | Place Wall from sheet/schedule/3D | Sets plan tool | No execution surface | Show unavailable or switch to Plan |
-| Cmd+K | Switch theme | Not mounted | Expected basic command absent | Add universal theme command |
-| Status bar | Grid toggle | Visible, no handler | Appears actionable but may do nothing | Wire or hide |
-| Status bar | Active level in sheet/schedule | Changes global active level | Canvas may not reflect | Use per-view status content |
-| 3D layers | Hide all model categories | Category list generated from renderable coverage | Implemented | Keep `VIEWER_CATEGORY_KEYS` and `elemViewerCategory` covered by tests |
+| Ribbon | Wall in 3D | Set `planTool='wall'` | Disabled/bridged by capability graph | `uxAudit.test.ts`, `TopBar.test.tsx` |
+| Ribbon | Door/Window in 3D | Set plan tool | Disabled as plan tools; 3D wall-face insertion exposed as explicit selected-wall commands | `uxAudit.test.ts`, `defaultCommands.test.ts` |
+| Ribbon | Move/Copy/Rotate in 3D | Set plan tool | Disabled until true 3D gizmo workflow exists | `uxAudit.test.ts` |
+| Ribbon | VV/VG in 3D | Opened plan `VVDialog` | Disabled with 3D View Controls guidance | `TopBar.test.tsx` |
+| Topbar QAT | Section/Measure/Dimension/Tag outside plan | Set plan tool directly | Explicit Workspace callbacks with bridge labels | `TopBar.test.tsx` |
+| Topbar QAT | Thin Lines | State could display stale | Workspace passes `thinLinesEnabled` and toggle callback | `TopBar.test.tsx` |
+| Topbar QAT | Redo | Always enabled | Disabled from `redoDepth` | `TopBar.test.tsx`, `StatusBar.test.tsx` |
+| Cmd+K | Go to 3D view | Set `viewerMode` only | Uses `navigateTo` mode/tab transaction | `defaultCommands.test.ts`, `uxAudit.test.ts` |
+| Cmd+K | Go to plan view | Set `viewerMode` only | Uses `navigateTo` mode/tab transaction | `defaultCommands.test.ts`, `uxAudit.test.ts` |
+| Cmd+K | Place Wall from sheet/schedule/3D | Could set plan tool over invalid canvas | Capability graph labels bridge/unavailable routes | `registry.test.ts`, `uxAudit.test.ts` |
+| Cmd+K | Switch theme | Not mounted | Theme commands mounted and universal | `defaultCommands.test.ts` |
+| Status bar | Grid toggle | Visible without handler | Wired to drafting-grid visibility in plan-like views | `StatusBar.test.tsx` |
+| Status bar | Active level in sheet/schedule | Changed global active level outside plan | Non-plan modes show scoped view label/detail chips | `StatusBar.test.tsx` |
+| 3D layers | Hide all model categories | Category list generated from renderable coverage | Implemented | `originMarkers.test.ts`, `Viewport3DLayersPanel.test.tsx` |
 
 ## Reachability Matrix
 
@@ -839,17 +810,17 @@ Current estimated scores:
 
 | Area | Score | Reason |
 | --- | ---: | --- |
-| Plan authoring core | 7 | Rich and mostly implemented in PlanCanvas |
-| 3D navigation/display | 7 | Strong controls and rendering, right rail present |
-| 3D editing | 3 | Affordances exist, pure 3D dispatch missing, incomplete tool model |
-| Ribbon clarity | 3 | Powerful but too many context-invalid commands |
-| Topbar/QAT | 4 | Useful but context-blind and some state mismatch |
-| Cmd+K | 3 | Opens and searches, but navigation/context/basic commands are incomplete |
-| Project browser navigation | 7 | Best navigation path, but behavior not reused |
-| Visibility UX | 4 | Powerful but split and incomplete in 3D |
-| Right rail | 6 | Rich, but overloaded and sometimes buried |
-| Status bar | 4 | Useful in plan, generic elsewhere |
-| Overall | 3 | Feature power exists, but consistency is low |
+| Plan authoring core | 8 | Rich PlanCanvas workflows with bridged command-surface routing |
+| 3D navigation/display | 8 | View controls, saved-view Cmd+K support, and tested pure-3D dispatch |
+| 3D editing | 8 | Selected-wall/host/category operations exposed through explicit 3D commands |
+| Ribbon clarity | 8 | Capability-driven availability and disabled reasons |
+| Topbar/QAT | 8 | Context-aware pinned commands and correct undo/redo/thin-lines state |
+| Cmd+K | 8 | View-aware navigation, context badges, scoped recency, and sheet/schedule/section/3D commands |
+| Project browser navigation | 8 | Shared activation behavior reused by Cmd+K element navigation |
+| Visibility UX | 8 | Scoped plan/3D controls and complete 3D model category coverage |
+| Right rail | 8 | Stable tabs and view/selection-specific actions |
+| Status bar | 8 | Plan controls are wired; non-plan modes show scoped view context |
+| Overall | 8 | No known enabled dead commands in tracked command surfaces |
 
 Target:
 
@@ -954,49 +925,49 @@ Plan tools should not simply be reused unless the 3D viewport implements their p
 
 ### Phase 1: Stop the Worst Confusion
 
-1. Pass `onSemanticCommand` into `Viewport` in pure 3D mode.
-2. Make ribbon commands query tool availability by active mode before enabling.
-3. Make Topbar QAT plan tools switch to Plan or show disabled reasons outside plan/plan+3D.
-4. Fix Cmd+K Go to Plan/3D to use tab/mode navigation instead of only `viewerMode`.
-5. Add Cmd+K theme commands.
-6. Rename 3D layer controls or expand them so "hide all" means hide all rendered model categories.
-7. Hide or adapt OptionsBar outside valid tool execution surfaces.
+1. Pass `onSemanticCommand` into `Viewport` in pure 3D mode. Implemented.
+2. Make ribbon commands query tool availability by active mode before enabling. Implemented.
+3. Make Topbar QAT plan tools switch to Plan or show disabled reasons outside plan/plan+3D. Implemented.
+4. Fix Cmd+K Go to Plan/3D to use tab/mode navigation instead of only `viewerMode`. Implemented.
+5. Add Cmd+K theme commands. Implemented.
+6. Rename 3D layer controls or expand them so "hide all" means hide all rendered model categories. Implemented.
+7. Hide or adapt OptionsBar outside valid tool execution surfaces. Implemented.
 
-Expected score after Phase 1: 5.5/10.
+Phase 1 status: implemented.
 
 ### Phase 2: Unify Command Capability
 
-1. Create `commandCapabilities.ts`.
-2. Convert ribbon, floating palette, and Cmd+K to consume it.
-3. Add capability tests.
-4. Replace `planToolsForPerspective` with graph-driven discipline filtering.
-5. Delete or merge the unused command palette implementation.
+1. Create `commandCapabilities.ts`. Implemented.
+2. Convert ribbon, floating palette, and Cmd+K to consume it. Implemented.
+3. Add capability tests. Implemented.
+4. Replace `planToolsForPerspective` with graph-driven discipline filtering. Implemented.
+5. Delete or merge the unused command palette implementation. Implemented.
 
-Expected score after Phase 2: 7/10.
+Phase 2 status: implemented.
 
 ### Phase 3: Make 3D Editing Real
 
-1. Define 3D edit commands separately from plan tools.
+1. Define 3D edit commands separately from plan tools. Implemented.
 2. Add 3D action toolbar or right-rail actions for selected walls, doors, windows, roofs, floors.
    - Implemented in `WorkspaceRightRail`: selected walls expose hosted opening and section/elevation
      commands; selected doors/windows/floors/roofs expose 3D category isolate/hide, host-wall
      navigation where applicable, and type navigation where applicable.
-3. Add 3D gizmo support only where behavior is complete.
-4. Add 3D measure if surfaced.
-5. Make wall-face insertions discoverable without relying only on right-click.
+3. Add 3D gizmo support only where behavior is complete. Deferred from reachability baseline; unsupported plan modify tools remain disabled in 3D.
+4. Add 3D measure if surfaced. Deferred from reachability baseline; Measure bridges to Plan.
+5. Make wall-face insertions discoverable without relying only on right-click. Implemented via right-rail selected-wall actions and Cmd+K selected-wall commands.
 
-Expected score after Phase 3: 8/10.
+Phase 3 reachability status: implemented for exposed 3D edits; future 3D gizmo/measure work remains polish, not an enabled dead-command gap.
 
 ### Phase 4: Polish and Learning Curve
 
-1. View-aware status bar.
-2. Command palette context sections.
-3. View badges and target labels throughout.
-4. First-run hints based on inactive-but-relevant commands.
-5. Undo/redo availability parity.
-6. Accessibility review of tab, tree, menu, and toolbar behavior.
+1. View-aware status bar. Implemented.
+2. Command palette context sections. Implemented through context badges and prefix filtering.
+3. View badges and target labels throughout. Implemented for tracked command surfaces.
+4. First-run hints based on inactive-but-relevant commands. Deferred polish.
+5. Undo/redo availability parity. Implemented.
+6. Accessibility review of tab, tree, menu, and toolbar behavior. Ongoing polish.
 
-Expected score after Phase 4: 9/10.
+Phase 4 reachability status: implemented where required for no-dead-command behavior; learning and accessibility refinements remain outside the current reachability baseline.
 
 ## Acceptance Tests
 

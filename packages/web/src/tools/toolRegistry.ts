@@ -203,7 +203,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       label: t('tools.railing.label'),
       icon: 'railing',
       hotkey: 'Shift+R',
-      modes: ['plan', 'plan-3d', '3d'],
+      modes: ['plan', 'plan-3d'],
       tooltip: t('tools.railing.tooltip'),
     },
     room: {

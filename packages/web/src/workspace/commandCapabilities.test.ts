@@ -24,6 +24,27 @@ describe('command capability graph', () => {
     expect(unreachableCommandCapabilities()).toEqual([]);
   });
 
+  it('keeps the runtime graph free of partial or low-scored tracked commands', () => {
+    const incomplete = getAllCommandCapabilities()
+      .filter((capability) => capability.status !== 'implemented' || capability.usabilityScore < 8)
+      .map((capability) => ({
+        id: capability.id,
+        status: capability.status,
+        usabilityScore: capability.usabilityScore,
+      }));
+
+    expect(incomplete).toEqual([]);
+  });
+
+  it('does not expose plan-pointer tools as direct pure 3D palette tools', () => {
+    const direct3dToolIds = Object.values(getToolRegistry(tIdentity))
+      .filter((tool) => tool.modes.includes('3d'))
+      .map((tool) => tool.id);
+
+    expect(direct3dToolIds).toEqual(['select']);
+    expect(evaluateCommandInMode('tool.railing', '3d')?.state).toBe('bridge');
+  });
+
   it('marks plan tools as bridge commands outside their execution surface', () => {
     const availability = evaluateCommandInMode('tool.wall', '3d');
     expect(availability?.state).toBe('bridge');
