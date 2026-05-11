@@ -252,6 +252,50 @@ def test_duct_ceiling_penetration_without_opening_is_reported() -> None:
     assert "duct_ceiling_penetration_without_opening" in _rule_ids(elements)
 
 
+def test_stair_reaching_upper_floor_without_slab_opening_is_reported_and_suppressed() -> None:
+    stair = StairElem(
+        kind="stair",
+        id="stair-1",
+        baseLevelId="lvl-1",
+        topLevelId="lvl-2",
+        runStartMm={"xMm": 1000, "yMm": -500},
+        runEndMm={"xMm": 1000, "yMm": 500},
+        widthMm=1000,
+    )
+    upper_floor = FloorElem(
+        kind="floor",
+        id="floor-2",
+        levelId="lvl-2",
+        boundaryMm=[
+            {"xMm": 0, "yMm": -1500},
+            {"xMm": 2500, "yMm": -1500},
+            {"xMm": 2500, "yMm": 1500},
+            {"xMm": 0, "yMm": 1500},
+        ],
+        thicknessMm=220,
+    )
+    elements = {
+        "lvl-1": _level(),
+        "lvl-2": LevelElem(kind="level", id="lvl-2", name="Level 2", elevationMm=3000.0),
+        "floor-2": upper_floor,
+        "stair-1": stair,
+    }
+    assert "stair_floor_penetration_without_slab_opening" in _rule_ids(elements)
+
+    elements["opening-1"] = SlabOpeningElem(
+        kind="slab_opening",
+        id="opening-1",
+        hostFloorId="floor-2",
+        boundaryMm=[
+            {"xMm": 400, "yMm": -650},
+            {"xMm": 1600, "yMm": -650},
+            {"xMm": 1600, "yMm": 650},
+            {"xMm": 400, "yMm": 650},
+        ],
+    )
+    assert "stair_floor_penetration_without_slab_opening" not in _rule_ids(elements)
+
+
 def test_primary_envelope_wall_without_structural_intent_is_reported() -> None:
     elements = {
         "lvl-1": _level(),

@@ -84,6 +84,9 @@ describe('advisorViolationContext', () => {
     expect(recommendedContextForRuleId('duct_ceiling_penetration_without_opening')).toMatch(
       /ceiling route|plenum/i,
     );
+    expect(
+      recommendedContextForRuleId('stair_floor_penetration_without_slab_opening'),
+    ).toMatch(/stair shaft|upper floor/i);
   });
 
   it('humanizes constructability rule titles with domain wording', () => {
@@ -102,6 +105,9 @@ describe('advisorViolationContext', () => {
     );
     expect(humanizeRuleId('pipe_ceiling_penetration_without_opening')).toBe(
       'Pipe Ceiling Penetration Without Opening',
+    );
+    expect(humanizeRuleId('stair_floor_penetration_without_slab_opening')).toBe(
+      'Stair Floor Penetration Without Slab Opening',
     );
     expect(humanizeRuleId('custom_rule_id')).toBe('Custom Rule Id');
   });

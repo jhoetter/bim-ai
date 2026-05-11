@@ -46,6 +46,7 @@ def constructability_advisory_violations(elements: dict[str, Element]) -> list[V
     violations.extend(_matrix_hard_clash_violations(participants, elements))
     violations.extend(_mep_wall_penetration_violations(participants_by_kind, openings_by_wall_id))
     violations.extend(_mep_floor_ceiling_penetration_violations(participants_by_kind, elements))
+    violations.extend(_stair_floor_opening_violations(participants_by_kind, elements))
     violations.extend(_door_clearance_violations(elements, participants_by_kind))
     violations.extend(_load_bearing_metadata_violations(walls_by_id))
     violations.extend(_large_opening_violations(elements, walls_by_id))
@@ -205,7 +206,7 @@ def _mep_floor_ceiling_penetration_violations(
                     continue
                 if not aabb_overlaps(service.aabb, floor.aabb, tolerance_mm=_CLASH_TOLERANCE_MM):
                     continue
-                if _service_has_slab_opening(
+                if _participant_has_slab_opening(
                     service, slab_openings_by_floor.get(floor.element_id, [])
                 ):
                     continue
@@ -236,6 +237,38 @@ def _mep_floor_ceiling_penetration_violations(
                         element_ids=sorted([service.element_id, ceiling.element_id]),
                     )
                 )
+    return violations
+
+
+def _stair_floor_opening_violations(
+    participants_by_kind: dict[str, list[PhysicalParticipant]],
+    elements: dict[str, Element],
+) -> list[Violation]:
+    violations: list[Violation] = []
+    slab_openings_by_floor = _slab_openings_by_floor_id(elements)
+    for stair in participants_by_kind.get("stair", []):
+        for floor in participants_by_kind.get("floor", []):
+            if floor.aabb.min_z <= stair.aabb.min_z + _CLASH_TOLERANCE_MM:
+                continue
+            if floor.aabb.min_z > stair.aabb.max_z + _CLASH_TOLERANCE_MM:
+                continue
+            if not aabb_overlaps(stair.aabb, floor.aabb, tolerance_mm=_CLASH_TOLERANCE_MM):
+                continue
+            if _participant_has_slab_opening(
+                stair, slab_openings_by_floor.get(floor.element_id, [])
+            ):
+                continue
+            violations.append(
+                Violation(
+                    rule_id="stair_floor_penetration_without_slab_opening",
+                    severity="warning",
+                    message=(
+                        "Stair envelope reaches an upper floor without a matching slab/shaft "
+                        "opening; add a stair opening or revise the stair/floor layout."
+                    ),
+                    element_ids=sorted([stair.element_id, floor.element_id]),
+                )
+            )
     return violations
 
 
@@ -492,13 +525,13 @@ def _slab_openings_by_floor_id(elements: dict[str, Element]) -> dict[str, list[S
     return out
 
 
-def _service_has_slab_opening(
-    service: PhysicalParticipant,
+def _participant_has_slab_opening(
+    participant: PhysicalParticipant,
     openings: list[SlabOpeningElem],
 ) -> bool:
     if not openings:
         return False
-    x, y = _aabb_center_xy(service.aabb)
+    x, y = _aabb_center_xy(participant.aabb)
     return any(_point_in_polygon_mm(x, y, opening.boundary_mm) for opening in openings)
 
 
