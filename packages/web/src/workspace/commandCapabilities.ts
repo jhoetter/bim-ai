@@ -432,7 +432,7 @@ const NAVIGATION_CAPABILITIES: CommandCapability[] = [
     executionSurface: 'global',
     preconditions: [],
     status: 'implemented',
-    usabilityScore: 7,
+    usabilityScore: 8,
   },
   {
     id: 'view.phase.existing',
@@ -445,7 +445,7 @@ const NAVIGATION_CAPABILITIES: CommandCapability[] = [
     executionSurface: 'global',
     preconditions: [],
     status: 'implemented',
-    usabilityScore: 7,
+    usabilityScore: 8,
   },
   {
     id: 'view.phase.new',
@@ -458,7 +458,7 @@ const NAVIGATION_CAPABILITIES: CommandCapability[] = [
     executionSurface: 'global',
     preconditions: [],
     status: 'implemented',
-    usabilityScore: 7,
+    usabilityScore: 8,
   },
   {
     id: 'view.plan.detail.coarse',
@@ -1117,7 +1117,7 @@ const VISIBILITY_CAPABILITIES: CommandCapability[] = [
     executionSurface: 'modal',
     preconditions: ['active-plan-view'],
     status: 'implemented',
-    usabilityScore: 7,
+    usabilityScore: 8,
     bridgeToMode: { '3d': 'plan' },
     notes: 'Plan-scoped VV/VG must not be presented as the 3D layer control.',
   },
@@ -1132,7 +1132,7 @@ const VISIBILITY_CAPABILITIES: CommandCapability[] = [
     executionSurface: 'global',
     preconditions: [],
     status: 'implemented',
-    usabilityScore: 7,
+    usabilityScore: 8,
   },
   {
     id: 'display.neighborhood',
@@ -1145,7 +1145,7 @@ const VISIBILITY_CAPABILITIES: CommandCapability[] = [
     executionSurface: 'viewport-3d',
     preconditions: [],
     status: 'implemented',
-    usabilityScore: 7,
+    usabilityScore: 8,
   },
   {
     id: 'visibility.3d.layers',
@@ -1158,7 +1158,7 @@ const VISIBILITY_CAPABILITIES: CommandCapability[] = [
     executionSurface: 'right-rail',
     preconditions: [],
     status: 'implemented',
-    usabilityScore: 7,
+    usabilityScore: 8,
   },
   {
     id: 'visibility.3d.show-all-categories',

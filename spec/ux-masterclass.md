@@ -366,9 +366,10 @@ The plan canvas has the richest active tool handling. It handles:
 
 This is the actual main authoring surface today.
 
-Issue:
+Resolved implementation:
 
-- Other chrome surfaces imply these workflows are available outside plan/plan+3D.
+- Chrome surfaces no longer expose plan authoring as enabled direct commands outside plan-capable modes.
+- Plan tools bridge to Plan or are disabled with a reason when the active canvas cannot consume plan pointer grammar.
 
 Decision:
 
@@ -396,14 +397,13 @@ Current 3D capabilities:
 - Saved viewpoint persistence HUD.
 - 3D category hiding.
 
-Issues:
+Resolved implementation:
 
-- Pure 3D mode misses `onSemanticCommand`.
-- The floating palette does not advertise 3D editing affordances like "Insert hosted opening on wall face" or "Edit selected with grips."
-- Plan tools set from the ribbon do not influence 3D pointer behavior.
-- There is no "3D tool mode" distinct from plan tool mode.
-- Right-click menus may look functional but silently fail if dispatch is missing.
-- The 3D layers panel controls runtime viewer categories, not the plan VV/VG model.
+- Pure 3D mode receives `onSemanticCommand`.
+- 3D editing affordances are explicit selected-element commands in Cmd+K, the right rail, and canvas context menus.
+- Plan tools are not advertised as direct pure-3D palette tools; pure 3D shows Select in the floating palette.
+- Right-click wall-face commands and selected-wall right-rail actions dispatch semantic commands.
+- The 3D layers panel is intentionally scoped to runtime viewer categories, with model-category coverage tested against renderable element kinds.
 
 Decision:
 
@@ -711,14 +711,14 @@ Legend:
 
 | Capability | Plan | 3D | Plan+3D | Section | Sheet | Schedule | Agent |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Select model element | Yes | Yes | Yes | Partial | Partial | Row-based | Evidence/action |
+| Select model element | Yes | Yes | Yes | Yes | Sheet item | Row-based | Evidence/action |
 | Draw wall | Yes | No/Bridge | Plan side only | No | No | No | No |
-| Insert door/window | Yes | Partial via wall face | Yes/Partial | No | No | No | No |
-| Wall opening | Yes | Partial via wall face | Yes/Partial | No | No | No | No |
+| Insert door/window | Yes | Yes via selected wall / wall face | Yes via selected wall / wall face | No | No | No | No |
+| Wall opening | Yes | Yes via selected wall / wall face | Yes via selected wall / wall face | No | No | No | No |
 | Move/copy/rotate | Yes | No until 3D gizmo | Plan side only | No | Sheet viewport only | No | No |
-| 3D grips | No | Partial, dispatch bug | Partial | No | No | No | No |
+| 3D grips | No | Yes where providers exist | Yes where providers exist | No | No | No | No |
 | Measure | Yes | No until 3D measure | Plan side only | Maybe | Sheet measure maybe | No | No |
-| Dimension/tag | Yes | No | Plan side only | Partial dimension | Sheet annotations maybe | No | No |
+| Dimension/tag | Yes | No | Plan side only | Yes for section dimension | Sheet annotations future | No | No |
 | Visibility/Graphics | Plan VG | 3D controls | Both, scoped | Section VG needed | Sheet viewport VG needed | Schedule columns | Review filters |
 | Fit/reset camera | No | Yes | 3D side | No | No | No | No |
 | Walk mode | No | Yes | 3D side | No | No | No | No |
