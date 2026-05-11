@@ -349,6 +349,40 @@ def test_family_instance_without_proxy_dimensions_reports_coverage_gap() -> None
     assert "constructability_proxy_unsupported" in _rule_ids(elements)
 
 
+def test_duplicate_placed_assets_are_reported_as_duplicate_geometry() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "asset-shelf": _asset_library(),
+        "shelf-1": _shelf(y_mm=1000, id="shelf-1"),
+        "shelf-2": _shelf(y_mm=1000, id="shelf-2"),
+    }
+    rule_ids = _rule_ids(elements)
+
+    assert "physical_duplicate_geometry" in rule_ids
+    assert "physical_hard_clash" not in rule_ids
+
+
+def test_overlapping_but_not_duplicate_placed_assets_are_hard_clash() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "asset-shelf": _asset_library(),
+        "shelf-1": _shelf(y_mm=1000, id="shelf-1"),
+        "shelf-2": PlacedAssetElem(
+            kind="placed_asset",
+            id="shelf-2",
+            name="Shelf",
+            assetId="asset-shelf",
+            levelId="lvl-1",
+            positionMm={"xMm": 1300, "yMm": 1000},
+            paramValues={"widthMm": 600, "depthMm": 300, "proxyHeightMm": 900},
+        ),
+    }
+    rule_ids = _rule_ids(elements)
+
+    assert "physical_duplicate_geometry" not in rule_ids
+    assert "physical_hard_clash" in rule_ids
+
+
 def test_matrix_backed_structural_wall_hard_clash_is_reported() -> None:
     elements = {
         "lvl-1": _level(),

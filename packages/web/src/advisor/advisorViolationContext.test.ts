@@ -51,6 +51,9 @@ describe('advisorViolationContext', () => {
 
   it('recommends constructability context for emitted rule ids', () => {
     expect(recommendedContextForRuleId('physical_hard_clash')).toMatch(/clash view/i);
+    expect(recommendedContextForRuleId('physical_duplicate_geometry')).toMatch(
+      /duplicate geometry|coincident/i,
+    );
     expect(recommendedContextForRuleId('furniture_wall_hard_clash')).toMatch(/furniture/i);
     expect(recommendedContextForRuleId('stair_wall_hard_clash')).toMatch(/stair/i);
     expect(recommendedContextForRuleId('constructability_proxy_unsupported')).toMatch(
@@ -81,6 +84,7 @@ describe('advisorViolationContext', () => {
     expect(humanizeRuleId('constructability_proxy_unsupported')).toBe(
       'Unsupported Constructability Proxy',
     );
+    expect(humanizeRuleId('physical_duplicate_geometry')).toBe('Physical Duplicate Geometry');
     expect(humanizeRuleId('wall_load_bearing_unknown_primary_envelope')).toBe(
       'Primary Envelope Wall Missing Load-Bearing Status',
     );

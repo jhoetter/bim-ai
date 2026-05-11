@@ -32,6 +32,36 @@ class ConstructabilityMatrixCell:
 DEFAULT_CONSTRUCTABILITY_MATRIX: tuple[ConstructabilityMatrixCell, ...] = (
     ConstructabilityMatrixCell(
         group_a="furniture",
+        group_b="furniture",
+        check_type="duplicate",
+        rule_id="physical_duplicate_geometry",
+        severity="warning",
+        tolerance_mm=1.0,
+        message=(
+            "Placed objects have coincident collision proxies; delete the duplicate "
+            "or separate intentionally repeated instances."
+        ),
+    ),
+    ConstructabilityMatrixCell(
+        group_a="wall",
+        group_b="wall",
+        check_type="duplicate",
+        rule_id="physical_duplicate_geometry",
+        severity="warning",
+        tolerance_mm=1.0,
+        message="Walls have coincident collision proxies; delete or offset the duplicate wall.",
+    ),
+    ConstructabilityMatrixCell(
+        group_a="floor",
+        group_b="floor",
+        check_type="duplicate",
+        rule_id="physical_duplicate_geometry",
+        severity="warning",
+        tolerance_mm=1.0,
+        message="Floors have coincident collision proxies; delete or offset the duplicate floor.",
+    ),
+    ConstructabilityMatrixCell(
+        group_a="furniture",
         group_b="wall",
         check_type="hard",
         rule_id="furniture_wall_hard_clash",
@@ -118,8 +148,27 @@ def hard_clash_cell_for(
     *,
     matrix: tuple[ConstructabilityMatrixCell, ...] = DEFAULT_CONSTRUCTABILITY_MATRIX,
 ) -> ConstructabilityMatrixCell | None:
+    return matrix_cell_for(a, b, check_type="hard", matrix=matrix)
+
+
+def duplicate_cell_for(
+    a: PhysicalParticipant,
+    b: PhysicalParticipant,
+    *,
+    matrix: tuple[ConstructabilityMatrixCell, ...] = DEFAULT_CONSTRUCTABILITY_MATRIX,
+) -> ConstructabilityMatrixCell | None:
+    return matrix_cell_for(a, b, check_type="duplicate", matrix=matrix)
+
+
+def matrix_cell_for(
+    a: PhysicalParticipant,
+    b: PhysicalParticipant,
+    *,
+    check_type: ConstructabilityCheckType,
+    matrix: tuple[ConstructabilityMatrixCell, ...] = DEFAULT_CONSTRUCTABILITY_MATRIX,
+) -> ConstructabilityMatrixCell | None:
     for cell in matrix:
-        if cell.check_type == "hard" and cell.matches(a, b):
+        if cell.check_type == check_type and cell.matches(a, b):
             return cell
     return None
 

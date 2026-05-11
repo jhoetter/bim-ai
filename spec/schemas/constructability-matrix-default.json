@@ -3,6 +3,36 @@
   "cells": [
     {
       "group_a": "furniture",
+      "group_b": "furniture",
+      "check_type": "duplicate",
+      "rule_id": "physical_duplicate_geometry",
+      "severity": "warning",
+      "tolerance_mm": 1.0,
+      "enabled": true,
+      "message": "Placed objects have coincident collision proxies; delete the duplicate or separate intentionally repeated instances."
+    },
+    {
+      "group_a": "wall",
+      "group_b": "wall",
+      "check_type": "duplicate",
+      "rule_id": "physical_duplicate_geometry",
+      "severity": "warning",
+      "tolerance_mm": 1.0,
+      "enabled": true,
+      "message": "Walls have coincident collision proxies; delete or offset the duplicate wall."
+    },
+    {
+      "group_a": "floor",
+      "group_b": "floor",
+      "check_type": "duplicate",
+      "rule_id": "physical_duplicate_geometry",
+      "severity": "warning",
+      "tolerance_mm": 1.0,
+      "enabled": true,
+      "message": "Floors have coincident collision proxies; delete or offset the duplicate floor."
+    },
+    {
+      "group_a": "furniture",
       "group_b": "wall",
       "check_type": "hard",
       "rule_id": "furniture_wall_hard_clash",

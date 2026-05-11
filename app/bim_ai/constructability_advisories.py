@@ -13,7 +13,7 @@ from bim_ai.constructability_geometry import (
     collect_physical_participants,
     collect_unsupported_physical_diagnostics,
 )
-from bim_ai.constructability_matrix import hard_clash_cell_for
+from bim_ai.constructability_matrix import duplicate_cell_for, hard_clash_cell_for
 from bim_ai.elements import DoorElem, Element, WallElem, WallOpeningElem, WindowElem
 
 _CLASH_TOLERANCE_MM = 1.0
@@ -35,6 +35,7 @@ def constructability_advisory_violations(elements: dict[str, Element]) -> list[V
 
     violations: list[Violation] = []
     violations.extend(_unsupported_proxy_violations(elements))
+    violations.extend(_matrix_duplicate_geometry_violations(participants, elements))
     violations.extend(_matrix_hard_clash_violations(participants, elements))
     violations.extend(_mep_wall_penetration_violations(participants_by_kind, openings_by_wall_id))
     violations.extend(_door_clearance_violations(elements, participants_by_kind))
@@ -77,7 +78,44 @@ def _matrix_hard_clash_violations(
                 continue
             if _has_allowed_host_relation(a, b, elements):
                 continue
+            if duplicate_cell_for(a, b) is not None and _aabb_equivalent(
+                a.aabb, b.aabb, tolerance_mm=cell.tolerance_mm
+            ):
+                continue
             if not aabb_overlaps(a.aabb, b.aabb, tolerance_mm=cell.tolerance_mm):
+                continue
+            element_ids = tuple(sorted([a.element_id, b.element_id]))
+            key = (cell.rule_id, element_ids)
+            if key in emitted:
+                continue
+            emitted.add(key)
+            violations.append(
+                Violation(
+                    rule_id=cell.rule_id,
+                    severity=cell.severity,
+                    message=cell.message,
+                    element_ids=list(element_ids),
+                )
+            )
+    return violations
+
+
+def _matrix_duplicate_geometry_violations(
+    participants: list[PhysicalParticipant],
+    elements: dict[str, Element],
+) -> list[Violation]:
+    violations: list[Violation] = []
+    emitted: set[tuple[str, tuple[str, str]]] = set()
+    for i, a in enumerate(participants):
+        for b in participants[i + 1 :]:
+            cell = duplicate_cell_for(a, b)
+            if cell is None:
+                continue
+            if not _same_or_unknown_level(a, b):
+                continue
+            if _has_allowed_host_relation(a, b, elements):
+                continue
+            if not _aabb_equivalent(a.aabb, b.aabb, tolerance_mm=cell.tolerance_mm):
                 continue
             element_ids = tuple(sorted([a.element_id, b.element_id]))
             key = (cell.rule_id, element_ids)
@@ -527,6 +565,17 @@ def _is_hosted_by(element: Any, host_element_id: str) -> bool:
         getattr(element, "wall_id", None),
     )
     return host_element_id in {str(host_id) for host_id in host_ids if host_id}
+
+
+def _aabb_equivalent(a: AABB, b: AABB, *, tolerance_mm: float) -> bool:
+    return (
+        abs(a.min_x - b.min_x) <= tolerance_mm
+        and abs(a.min_y - b.min_y) <= tolerance_mm
+        and abs(a.min_z - b.min_z) <= tolerance_mm
+        and abs(a.max_x - b.max_x) <= tolerance_mm
+        and abs(a.max_y - b.max_y) <= tolerance_mm
+        and abs(a.max_z - b.max_z) <= tolerance_mm
+    )
 
 
 def _levels_compatible(a: Any, b: Any) -> bool:

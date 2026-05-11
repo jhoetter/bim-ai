@@ -4,6 +4,8 @@ import type { Violation } from '@bim-ai/core';
 const RECOMMENDED_CONTEXT_BY_RULE_ID: Record<string, string> = {
   physical_hard_clash:
     'Recommended: 3D coordination / clash view - inspect intersecting elementIds and move, trim, or route one element clear.',
+  physical_duplicate_geometry:
+    'Recommended: Model cleanup / clash view - inspect coincident elementIds and delete, offset, or intentionally separate the duplicate geometry.',
   furniture_wall_hard_clash:
     'Recommended: Furniture layout / wall coordination - move fixture or furniture clear of the wall, or verify it is intentionally embedded.',
   stair_wall_hard_clash:
@@ -28,6 +30,7 @@ const RECOMMENDED_CONTEXT_BY_RULE_ID: Record<string, string> = {
 
 const READABLE_TITLE_BY_RULE_ID: Record<string, string> = {
   physical_hard_clash: 'Physical Hard Clash',
+  physical_duplicate_geometry: 'Physical Duplicate Geometry',
   furniture_wall_hard_clash: 'Furniture Wall Hard Clash',
   stair_wall_hard_clash: 'Stair Wall Hard Clash',
   constructability_proxy_unsupported: 'Unsupported Constructability Proxy',
