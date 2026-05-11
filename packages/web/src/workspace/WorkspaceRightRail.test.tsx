@@ -19,7 +19,13 @@ function renderWithI18n(ui: ReactElement) {
 
 afterEach(() => {
   cleanup();
-  useBimStore.setState({ selectedId: undefined, elementsById: {}, activityEvents: [] });
+  useBimStore.setState({
+    selectedId: undefined,
+    activePlanViewId: undefined,
+    elementsById: {},
+    activityEvents: [],
+    temporaryVisibility: null,
+  });
 });
 
 describe('WorkspaceRightRail — Properties Palette context', () => {
@@ -311,6 +317,43 @@ describe('WorkspaceRightRail — 3D selected wall actions', () => {
     expect(queryByTestId('right-rail-workbench')).toBeNull();
     expect(queryByTestId('right-rail-review')).toBeNull();
     expect(queryByText(/Activity/i)).toBeNull();
+  });
+
+  it('moves selected-element temporary visibility actions to the element sidebar — UX-WP-07', () => {
+    useBimStore.setState({
+      selectedId: wall.id,
+      activePlanViewId: 'plan-view-1',
+      elementsById: {
+        [wall.id]: wall,
+        'plan-view-1': {
+          kind: 'plan_view',
+          id: 'plan-view-1',
+          name: 'Level 1 Plan',
+          levelId: 'lvl-1',
+        },
+      },
+      temporaryVisibility: null,
+    });
+
+    const { getByTestId } = renderWithI18n(
+      <WorkspaceRightRail
+        mode="plan"
+        onSemanticCommand={() => undefined}
+        onModeChange={() => undefined}
+        codePresetIds={[]}
+        surface="element"
+      />,
+    );
+
+    expect(getByTestId('element-temp-visibility-actions')).toBeTruthy();
+    fireEvent.click(getByTestId('element-temp-isolate-element'));
+
+    expect(useBimStore.getState().temporaryVisibility).toEqual({
+      viewId: 'plan-view-1',
+      mode: 'isolate',
+      categories: [],
+      elementIds: [wall.id],
+    });
   });
 });
 

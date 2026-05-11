@@ -5,6 +5,7 @@ import type { Element } from '@bim-ai/core';
 import { Viewport } from '../../Viewport';
 import { ErrorBoundary } from '../../ErrorBoundary';
 import { PlanCanvas, type PlanCameraHandle } from '../../plan/PlanCanvas';
+import type { SnapSettings } from '../../plan/snapSettings';
 import {
   AgentReviewModeShell,
   ConceptModeShell,
@@ -36,6 +37,7 @@ export function CanvasMount({
   onPersistViewpointField,
   lensMode,
   onNavigateToElement,
+  snapSettings,
 }: {
   mode: WorkspaceMode;
   viewerMode: 'plan_canvas' | 'orbit_3d';
@@ -57,6 +59,7 @@ export function CanvasMount({
   }) => void | Promise<void>;
   lensMode?: string;
   onNavigateToElement?: (elementId: string) => void;
+  snapSettings?: SnapSettings;
 }): JSX.Element {
   if ((mode as string) === 'plan-3d') {
     return (
@@ -71,6 +74,7 @@ export function CanvasMount({
             cameraHandleRef={cameraHandleRef}
             initialCamera={initialCamera}
             lensMode={lensMode}
+            snapSettings={snapSettings}
           />
         </div>
         <div style={{ position: 'relative' }}>
@@ -103,6 +107,7 @@ export function CanvasMount({
         cameraHandleRef={cameraHandleRef}
         initialCamera={initialCamera}
         lensMode={lensMode}
+        snapSettings={snapSettings}
       />
     );
   if (mode === 'section')
@@ -160,6 +165,7 @@ export function CanvasMount({
       activeLevelResolvedId={activeLevelId}
       onSemanticCommand={onSemanticCommand}
       lensMode={lensMode}
+      snapSettings={snapSettings}
     />
   );
 }

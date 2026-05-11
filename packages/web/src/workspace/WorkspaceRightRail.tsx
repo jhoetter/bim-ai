@@ -250,6 +250,9 @@ export function WorkspaceRightRail({
   const activePlanViewId = useBimStore((s) => s.activePlanViewId);
   const revealHiddenMode = useBimStore((s) => s.revealHiddenMode);
   const setRevealHiddenMode = useBimStore((s) => s.setRevealHiddenMode);
+  const temporaryVisibility = useBimStore((s) => s.temporaryVisibility);
+  const setTemporaryVisibility = useBimStore((s) => s.setTemporaryVisibility);
+  const clearTemporaryVisibility = useBimStore((s) => s.clearTemporaryVisibility);
   const thinLinesEnabled = useBimStore((s) => s.thinLinesEnabled);
   const toggleThinLines = useBimStore((s) => s.toggleThinLines);
   const { violations: unifiedViolations } = useUnifiedAdvisorViolations(
@@ -1106,6 +1109,98 @@ export function WorkspaceRightRail({
                       >
                         Hide Category in View
                       </button>
+                      <div
+                        data-testid="element-temp-visibility-actions"
+                        className="mt-1 flex w-full flex-wrap gap-1"
+                      >
+                        {temporaryVisibility ? (
+                          <button
+                            data-testid="element-temp-visibility-reset"
+                            type="button"
+                            onClick={() => clearTemporaryVisibility()}
+                            style={{
+                              fontSize: 11,
+                              padding: '2px 8px',
+                              cursor: 'pointer',
+                              color: 'var(--color-warning-foreground)',
+                              background: 'var(--color-warning)',
+                            }}
+                            title="Reset temporary visibility overrides"
+                          >
+                            Reset Temporary Visibility
+                          </button>
+                        ) : null}
+                        <button
+                          data-testid="element-temp-isolate-element"
+                          type="button"
+                          onClick={() =>
+                            setTemporaryVisibility({
+                              viewId: activePlanViewId,
+                              mode: 'isolate',
+                              categories: [],
+                              elementIds: [el.id],
+                            })
+                          }
+                          style={{
+                            fontSize: 11,
+                            padding: '2px 8px',
+                            cursor: 'pointer',
+                            color: 'var(--color-muted)',
+                          }}
+                          title="Temporarily isolate this element in the active plan view"
+                        >
+                          Temp Isolate Element
+                        </button>
+                        <button
+                          data-testid="element-temp-hide-element"
+                          type="button"
+                          onClick={() =>
+                            setTemporaryVisibility({
+                              viewId: activePlanViewId,
+                              mode: 'hide',
+                              categories: [],
+                              elementIds: [el.id],
+                            })
+                          }
+                          style={{
+                            fontSize: 11,
+                            padding: '2px 8px',
+                            cursor: 'pointer',
+                            color: 'var(--color-muted)',
+                          }}
+                          title="Temporarily hide this element in the active plan view"
+                        >
+                          Temp Hide Element
+                        </button>
+                        <button
+                          data-testid="element-temp-isolate-category"
+                          type="button"
+                          onClick={() => {
+                            const categoryKey =
+                              el.kind === 'family_instance'
+                                ? familyInstanceProjectCategoryKey(
+                                    el as Extract<Element, { kind: 'family_instance' }>,
+                                    elementsById,
+                                  )
+                                : el.kind;
+                            setTemporaryVisibility({
+                              viewId: activePlanViewId,
+                              mode: 'isolate',
+                              categories: [categoryKey],
+                              elementIds: [],
+                            });
+                          }}
+                          style={{
+                            fontSize: 11,
+                            padding: '2px 8px',
+                            cursor: 'pointer',
+                            color: 'var(--color-muted)',
+                          }}
+                          title="Temporarily isolate this category in the active plan view"
+                        >
+                          Temp Isolate Category
+                        </button>
+                      </div>
                     </div>
                   )}
                 </>

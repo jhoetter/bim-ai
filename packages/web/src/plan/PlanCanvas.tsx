@@ -59,7 +59,6 @@ import {
   type SnapCandidate,
 } from './planCanvasState';
 import { SnapGlyphLayer } from './SnapGlyphLayer';
-import { SnapSettingsToolbar } from './SnapSettingsToolbar';
 import {
   applySnapSettings,
   loadSnapSettings,
@@ -99,7 +98,6 @@ import {
   type PlanSemanticKind,
 } from './planProjection';
 import { rebuildPlanMeshes } from './symbology';
-import { AnnotateRibbon } from './AnnotateRibbon';
 import {
   applyCropHandleDrag,
   cropDragCommands,
@@ -136,8 +134,6 @@ import {
 } from './monitorDriftBadge';
 import { elevationFromWall } from '../lib/sectionElevationFromWall';
 import { WallContextMenu, type WallContextMenuCommand } from '../workspace/viewport';
-import { PlanDetailLevelToolbar } from './PlanDetailLevelToolbar';
-import type { PlanDetailLevel } from './planDetailLevelLines';
 import { SketchCanvas, type MmToScreen, type PointerToMm } from './SketchCanvas';
 import { snapPointToNearestWallFaceMm } from './SketchCanvasPickWalls';
 import { moveDeltaMm } from './moveTool';
@@ -302,6 +298,8 @@ type Props = {
   initialCamera?: { centerMm?: { xMm: number; yMm: number }; halfMm?: number };
   /** Global discipline lens from the StatusBar dropdown: 'all' | 'architecture' | 'structure' | 'mep' */
   lensMode?: string;
+  /** Footer-owned snap settings; PlanCanvas only consumes them for candidate filtering. */
+  snapSettings?: SnapSettings;
 };
 
 export function PlanCanvas({
@@ -311,6 +309,7 @@ export function PlanCanvas({
   cameraHandleRef,
   initialCamera,
   lensMode = 'all',
+  snapSettings: controlledSnapSettings,
 }: Props) {
   void wsConnected;
   const theme = useTheme();
@@ -358,7 +357,6 @@ export function PlanCanvas({
   const [rotateAnchorSet, setRotateAnchorSet] = useState(false);
   const rotateReferenceRef = useRef<{ xMm: number; yMm: number } | null>(null);
   const [rotateReferenceSet, setRotateReferenceSet] = useState(false);
-  const [temporaryVisibilityMenuOpen, setTemporaryVisibilityMenuOpen] = useState(false);
   const splitStateRef = useRef<SplitState>(initialSplitState());
   const trimStateRef = useRef<TrimState>(initialTrimState());
   const trimExtendFirstWallRef = useRef<string | null>(null);
@@ -392,7 +390,10 @@ export function PlanCanvas({
   const sketchMmToScreenRef = useRef<MmToScreen | null>(null);
   const [snapLabel, setSnapLabel] = useState<string | null>(null);
   // EDT-05 — snap glyph layer state
-  const [snapSettings, setSnapSettings] = useState<SnapSettings>(() => loadSnapSettings());
+  const [localSnapSettings] = useState<SnapSettings>(
+    () => controlledSnapSettings ?? loadSnapSettings(),
+  );
+  const snapSettings = controlledSnapSettings ?? localSnapSettings;
   const snapTabCycleRef = useRef<SnapTabCycleState>(initialSnapTabCycle());
   // F-104 — Tab cycles to the next endpoint-connected wall in select mode.
   // Tracks which connected-wall candidate to visit next so repeated Tab presses
@@ -555,11 +556,7 @@ export function PlanCanvas({
   const thinLinesEnabled = useBimStore((s) => s.thinLinesEnabled);
   // F-014 — reveal hidden elements mode (lightbulb toggle).
   const revealHiddenMode = useBimStore((s) => s.revealHiddenMode);
-  const setRevealHiddenMode = useBimStore((s) => s.setRevealHiddenMode);
   const setCategoryOverride = useBimStore((s) => s.setCategoryOverride);
-  // VIE-04 — temporary visibility (isolate/hide) trigger.
-  const setTemporaryVisibility = useBimStore((s) => s.setTemporaryVisibility);
-  const clearTemporaryVisibility = useBimStore((s) => s.clearTemporaryVisibility);
   // EDT-V3-05 — loop mode: re-arm chained tools after each segment commit.
   const loopMode = useToolPrefs((s) => s.loopMode);
   // UX-MC — status-bar Grid switch controls whether the drafting grid is drawn.
@@ -610,27 +607,6 @@ export function PlanCanvas({
     if (wireGraphicHints) return wireGraphicHints;
     return resolvePlanGraphicHints(elementsById, activePlanViewId);
   }, [wireGraphicHints, elementsById, activePlanViewId]);
-
-  // VIE-01: derive the active plan view's detail level + a setter that commits
-  // updateElementProperty so the toolbar drives the same field the renderer
-  // reads via mergedGraphicHints.
-  const activeDetailLevel: PlanDetailLevel = (() => {
-    const raw = mergedGraphicHints?.detailLevel;
-    return raw === 'coarse' || raw === 'fine' ? raw : 'medium';
-  })();
-
-  const handleDetailLevelChange = useCallback(
-    (next: PlanDetailLevel) => {
-      if (!activePlanViewId) return;
-      onSemanticCommand({
-        type: 'updateElementProperty',
-        elementId: activePlanViewId,
-        key: 'planDetailLevel',
-        value: next,
-      });
-    },
-    [activePlanViewId, onSemanticCommand],
-  );
 
   const mergedAnnotationHints = useMemo(() => {
     if (wireAnnotationHints !== null) return wireAnnotationHints;
@@ -4901,67 +4877,6 @@ export function PlanCanvas({
           <p className="text-muted text-[10px] mt-1">Use PageUp / PageDown to switch levels.</p>
         </div>
       )}
-      {/* VIE-01 — Coarse / Medium / Fine selector (matches Revit's View
-          Control Bar position at the bottom of the plan canvas). Hidden when
-          no plan_view is active so the toolbar doesn't dispatch dead commands. */}
-      {activePlanViewId ? (
-        <div className="pointer-events-auto absolute left-1/2 bottom-3 z-10 -translate-x-1/2">
-          <PlanDetailLevelToolbar value={activeDetailLevel} onChange={handleDetailLevelChange} />
-        </div>
-      ) : null}
-      {/* PLN-01 / ANN-01 — Annotate ribbon (auto-dim, auto-tag, detail components). */}
-      {activePlanViewId && lvlId ? (
-        <AnnotateRibbon
-          planViewId={activePlanViewId}
-          levelId={lvlId}
-          elementsById={elementsById}
-          cropMinMm={activeCropState?.cropMinMm}
-          cropMaxMm={activeCropState?.cropMaxMm}
-          onSemanticCommand={onSemanticCommand}
-        />
-      ) : null}
-      {/* PLN-02 — view-properties panel for crop bounds (only shown when the
-          active plan_view actually has cropMinMm/cropMaxMm data). */}
-      {activeCropState ? (
-        <div
-          data-testid="plan-crop-view-properties"
-          className="pointer-events-auto absolute right-3 bottom-3 z-10 rounded border border-border bg-surface/90 px-2 py-2 text-[10px] text-muted backdrop-blur"
-        >
-          <div className="mb-1 font-semibold text-foreground">Crop region</div>
-          <label className="flex cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
-              data-testid="plan-crop-view-toggle"
-              checked={activeCropState.cropEnabled}
-              onChange={(ev) =>
-                onSemanticCommand({
-                  type: 'updateElementProperty',
-                  elementId: activeCropState.planViewId,
-                  key: 'cropEnabled',
-                  value: ev.target.checked ? 'true' : 'false',
-                })
-              }
-            />
-            <span>Crop View</span>
-          </label>
-          <label className="mt-1 flex cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
-              data-testid="plan-crop-region-visible-toggle"
-              checked={activeCropState.cropRegionVisible}
-              onChange={(ev) =>
-                onSemanticCommand({
-                  type: 'updateElementProperty',
-                  elementId: activeCropState.planViewId,
-                  key: 'cropRegionVisible',
-                  value: ev.target.checked ? 'true' : 'false',
-                })
-              }
-            />
-            <span>Crop Region Visible</span>
-          </label>
-        </div>
-      ) : null}
       {/* F-014 — Reveal Hidden mode chip: shown while reveal mode is active. */}
       {revealHiddenMode && (
         <div
@@ -5772,152 +5687,6 @@ export function PlanCanvas({
             );
           })()
         : null}
-      {/* VIE-04 — Temporary visibility (isolate / hide) trigger, lower-right corner above reveal-hidden. */}
-      {selectedId ? (
-        <div className="pointer-events-auto absolute right-3 z-10" style={{ bottom: 68 }}>
-          {temporaryVisibility ? (
-            <button
-              type="button"
-              title="Reset Temporary Visibility"
-              data-testid="temp-visibility-toggle"
-              onClick={() => {
-                setTemporaryVisibilityMenuOpen(false);
-                clearTemporaryVisibility();
-              }}
-              style={{
-                padding: '2px 8px',
-                fontSize: 10,
-                background: 'var(--color-warning)',
-                color: 'var(--color-warning-foreground)',
-                border: '1px solid var(--color-border)',
-                borderRadius: 4,
-                cursor: 'pointer',
-              }}
-            >
-              👓 Reset
-            </button>
-          ) : (
-            <div style={{ position: 'relative', display: 'inline-flex' }}>
-              <button
-                type="button"
-                title="Temporary Hide/Isolate"
-                data-testid="temp-visibility-toggle"
-                aria-expanded={temporaryVisibilityMenuOpen}
-                onClick={() => setTemporaryVisibilityMenuOpen((open) => !open)}
-                style={{
-                  padding: '2px 8px',
-                  fontSize: 10,
-                  background: 'var(--color-surface)',
-                  color: 'var(--color-muted)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 4,
-                  cursor: 'pointer',
-                }}
-              >
-                👓
-              </button>
-              {temporaryVisibilityMenuOpen ? (
-                <div
-                  data-testid="temp-visibility-menu"
-                  style={{
-                    position: 'absolute',
-                    right: 0,
-                    bottom: 26,
-                    display: 'grid',
-                    gridTemplateColumns: '1fr',
-                    gap: 2,
-                    minWidth: 132,
-                    padding: 4,
-                    border: '1px solid var(--color-border)',
-                    borderRadius: 6,
-                    background: 'var(--color-surface)',
-                    boxShadow: '0 6px 16px rgba(0,0,0,0.18)',
-                  }}
-                >
-                  {[
-                    {
-                      testId: 'temp-isolate-category-toggle',
-                      label: 'Isolate Category',
-                      mode: 'isolate' as const,
-                      category: true,
-                    },
-                    {
-                      testId: 'temp-isolate-element-toggle',
-                      label: 'Isolate Element',
-                      mode: 'isolate' as const,
-                      category: false,
-                    },
-                    {
-                      testId: 'temp-hide-toggle',
-                      label: 'Hide Category',
-                      mode: 'hide' as const,
-                      category: true,
-                    },
-                    {
-                      testId: 'temp-hide-element-toggle',
-                      label: 'Hide Element',
-                      mode: 'hide' as const,
-                      category: false,
-                    },
-                  ].map((item) => (
-                    <button
-                      key={item.testId}
-                      type="button"
-                      data-testid={item.testId}
-                      onClick={() => {
-                        const el = elementsByIdRaw[selectedId];
-                        setTemporaryVisibility({
-                          viewId: activePlanViewId ?? 'default',
-                          mode: item.mode,
-                          categories: item.category && el ? [el.kind] : [],
-                          elementIds: item.category ? [] : [selectedId],
-                        });
-                        setTemporaryVisibilityMenuOpen(false);
-                      }}
-                      style={{
-                        padding: '3px 6px',
-                        fontSize: 10,
-                        textAlign: 'left',
-                        background: 'transparent',
-                        color: 'var(--color-muted)',
-                        border: 0,
-                        borderRadius: 4,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          )}
-        </div>
-      ) : null}
-      {/* F-014 — Reveal Hidden toggle button, lower-right corner above snap toolbar. */}
-      <div className="pointer-events-auto absolute right-3 bottom-10 z-10">
-        <button
-          type="button"
-          title={revealHiddenMode ? 'Exit Reveal Hidden' : 'Reveal Hidden Elements (lightbulb)'}
-          data-testid="reveal-hidden-toggle"
-          onClick={() => setRevealHiddenMode(!revealHiddenMode)}
-          style={{
-            padding: '2px 8px',
-            fontSize: 10,
-            background: revealHiddenMode ? '#ff00ff' : 'var(--color-surface)',
-            color: revealHiddenMode ? '#fff' : 'var(--color-muted)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 4,
-            cursor: 'pointer',
-          }}
-        >
-          {revealHiddenMode ? '💡 Exit Reveal' : '💡 Reveal Hidden'}
-        </button>
-      </div>
-      {/* EDT-05 — per-snap-type toggle UI, lower-right corner. */}
-      <div className="pointer-events-auto absolute right-3 bottom-3 z-10">
-        <SnapSettingsToolbar value={snapSettings} onChange={setSnapSettings} />
-      </div>
       <div ref={mountRef} className="size-full cursor-crosshair" />
       {/* SKT-01 / SKT-02 / SKT-03 — Sketch authoring overlay. Active when one
           of the *-sketch tools is selected. Commits a Create<Kind> command on

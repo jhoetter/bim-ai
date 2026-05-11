@@ -29,6 +29,13 @@ import {
 import type { LensMode, Snapshot, Violation } from '@bim-ai/core';
 import { useBimStore, applyTheme, toggleTheme, getCurrentTheme, type Theme } from '../state/store';
 import { selectDriftedElements } from '../plan/monitorDriftBadge';
+import {
+  loadSnapSettings,
+  saveSnapSettings,
+  SNAP_KINDS,
+  type SnapSettings,
+  type ToggleableSnapKind,
+} from '../plan/snapSettings';
 import { modeForHotkey } from '../state/modeController';
 import { patternFor } from '../state/uiStates';
 import {
@@ -39,12 +46,7 @@ import {
   TabBar,
   type WorkspaceMode,
 } from './shell';
-import {
-  getToolRegistry,
-  type ToolDefinition,
-  type ToolDisabledContext,
-  type ToolId,
-} from '../tools/toolRegistry';
+import { getToolRegistry, type ToolDefinition, type ToolId } from '../tools/toolRegistry';
 import {
   EMPTY_TABS,
   activateOrOpenKind,
@@ -111,10 +113,9 @@ import { canvasContainerStyle, CanvasMount } from './viewport';
 import {
   defaultTabFallbackForKind,
   EmptyStateOverlay,
-  FloatingPalette,
   resolvePlanTabTarget,
 } from './WorkspaceHelpers';
-import { EmptyStateHint, TemporaryVisibilityChip } from './shell';
+import { EmptyStateHint } from './shell';
 import { MilestoneDialog } from '../collab/MilestoneDialog';
 import { WorkspaceLeftRail } from './WorkspaceLeftRail';
 import { WorkspaceRightRail } from './WorkspaceRightRail';
@@ -938,6 +939,31 @@ export function Workspace(): JSX.Element {
     levels[0] ?? { id: '', label: '—' };
   const cursorMm = planHudMm ? { xMm: planHudMm.xMm, yMm: planHudMm.yMm } : null;
   const driftCount = useMemo(() => selectDriftedElements(elementsById).length, [elementsById]);
+  const [snapSettings, setSnapSettings] = useState<SnapSettings>(() => loadSnapSettings());
+  const snapModes = useMemo(
+    () =>
+      SNAP_KINDS.map((id) => ({
+        id,
+        label: id.replaceAll('_', ' '),
+        on: snapSettings[id],
+      })),
+    [snapSettings],
+  );
+  const handleSnapSettingsChange = useCallback((next: SnapSettings): void => {
+    setSnapSettings(next);
+    saveSnapSettings(next);
+  }, []);
+  const handleSnapToggle = useCallback(
+    (id: string): void => {
+      if (!SNAP_KINDS.includes(id as ToggleableSnapKind)) return;
+      const key = id as ToggleableSnapKind;
+      handleSnapSettingsChange({
+        ...snapSettings,
+        [key]: !snapSettings[key],
+      });
+    },
+    [handleSnapSettingsChange, snapSettings],
+  );
   const statusViewLabel = activeTab?.label ?? null;
   const statusViewDetails = useMemo(() => {
     const selected = selectedId ? (elementsById[selectedId] as Element | undefined) : undefined;
@@ -973,16 +999,6 @@ export function Workspace(): JSX.Element {
     viewerSectionBoxActive,
     viewerWalkModeActive,
   ]);
-
-  const toolDisabledContext = useMemo<ToolDisabledContext>(() => {
-    const has = (kind: string): boolean =>
-      (Object.values(elementsById) as Element[]).some((e) => e.kind === kind);
-    return {
-      hasAnyWall: has('wall'),
-      hasAnyFloor: has('floor'),
-      hasAnySelection: !!selectedId,
-    };
-  }, [elementsById, selectedId]);
 
   const handleToolSelect = useCallback(
     (id: ToolId): void => {
@@ -1817,12 +1833,6 @@ export function Workspace(): JSX.Element {
               />
             ) : null}
             {showCanvasHint && !showEmptyState ? <EmptyStateHint /> : null}
-            <FloatingPalette
-              mode={effectiveMode}
-              activeTool={planToolToToolId(planTool)}
-              onToolSelect={handleToolSelect}
-              disabledContext={toolDisabledContext}
-            />
             <CanvasMount
               mode={effectiveMode}
               activeTabId={activeTab?.id}
@@ -1847,11 +1857,8 @@ export function Workspace(): JSX.Element {
               onPersistViewpointField={persistViewpointField}
               lensMode={lensMode}
               onNavigateToElement={openElementById}
+              snapSettings={snapSettings}
             />
-            {/* VIE-04 — temporary visibility chip overlay, above the status bar */}
-            <div className="pointer-events-auto absolute bottom-10 left-3 z-10">
-              <TemporaryVisibilityChip />
-            </div>
           </div>
         }
         elementSidebar={
@@ -1890,6 +1897,8 @@ export function Workspace(): JSX.Element {
             saveState="saved"
             lensMode={lensMode}
             onLensChange={setLensMode}
+            snapModes={snapModes}
+            onSnapToggle={handleSnapToggle}
             activeWorkspaceId={activeWorkspaceId}
             driftCount={driftCount}
             onDriftClick={() => setManageLinksOpen(true)}

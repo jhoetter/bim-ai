@@ -235,8 +235,14 @@ describe('<Workspace /> — smoke', () => {
     expect(getByText(/Loading model|This level is empty/)).toBeTruthy();
   });
 
-  it('renders the floating tool palette', () => {
-    const { getByTestId } = renderWithProviders(<Workspace />);
-    expect(getByTestId('tool-palette')).toBeTruthy();
+  it('keeps persistent canvas chrome out of the redesign canvas root — UX-WP-07', () => {
+    const { getByTestId, queryByTestId } = renderWithProviders(<Workspace />);
+    const canvas = within(getByTestId('redesign-canvas-root'));
+
+    expect(queryByTestId('tool-palette')).toBeNull();
+    expect(queryByTestId('temporary-visibility-chip')).toBeNull();
+    expect(canvas.queryByTestId('tool-palette')).toBeNull();
+    expect(canvas.queryByTestId('temporary-visibility-chip')).toBeNull();
+    expect(getByTestId('status-bar')).toBeTruthy();
   });
 });

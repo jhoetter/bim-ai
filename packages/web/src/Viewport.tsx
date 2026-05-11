@@ -11,10 +11,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 
 import type { Element } from '@bim-ai/core';
-import {
-  OrbitViewpointPersistedHud,
-  type OrbitViewpointPersistFieldPayload,
-} from './OrbitViewpointPersistedHud';
+import type { OrbitViewpointPersistFieldPayload } from './OrbitViewpointPersistedHud';
 
 import { useBimStore } from './state/store';
 import { useTheme } from './state/useTheme';
@@ -240,12 +237,7 @@ function disposeObject3D(root: THREE.Object3D): void {
   });
 }
 
-export function Viewport({
-  wsConnected,
-  onPersistViewpointField,
-  onSemanticCommand,
-  remoteSelections,
-}: Props) {
+export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: Props) {
   void wsConnected;
   const { t } = useTranslation();
 
@@ -457,13 +449,6 @@ export function Viewport({
     if (!el || el.kind !== 'viewpoint' || el.mode !== 'orbit_3d') return null;
     return el;
   }, [activeViewpointId, elementsById]);
-  const planOverlayPlanViews = useMemo(
-    () =>
-      Object.values(elementsById)
-        .filter((e): e is Extract<Element, { kind: 'plan_view' }> => e.kind === 'plan_view')
-        .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)),
-    [elementsById],
-  );
   const viewerShadowsEnabled =
     viewerGdoRuntime.viewerShadowsEnabled ??
     persistedOrbitViewpoint?.viewerShadowsEnabled ??
@@ -2390,15 +2375,6 @@ export function Viewport({
         onSelect={handleWallFaceRadialCommand}
         onDismiss={() => setWallFaceRadialMenu(null)}
       />
-      {activeViewpointId ? (
-        <OrbitViewpointPersistedHud
-          activeViewpointId={activeViewpointId}
-          viewpoint={persistedOrbitViewpoint}
-          planViews={planOverlayPlanViews}
-          onPersistField={onPersistViewpointField}
-        />
-      ) : null}
-
       <div className="pointer-events-auto absolute right-6 top-6 z-20">
         <ViewCube
           currentAzimuth={currentAzimuth}
