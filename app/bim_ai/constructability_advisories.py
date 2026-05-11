@@ -479,28 +479,33 @@ def _room_door_access_violations(
     elements: dict[str, Element],
     walls_by_id: dict[str, WallElem],
 ) -> list[Violation]:
-    doors_by_level: dict[str, list[tuple[str, tuple[float, float]]]] = defaultdict(list)
+    doors_by_level: dict[str, list[tuple[DoorElem, tuple[float, float]]]] = defaultdict(list)
     for element in elements.values():
         if not isinstance(element, DoorElem):
             continue
         wall = walls_by_id.get(element.wall_id)
         if wall is None:
             continue
-        doors_by_level[wall.level_id].append((element.id, _door_midpoint(element, wall)))
+        doors_by_level[wall.level_id].append((element, _door_midpoint(element, wall)))
 
     violations: list[Violation] = []
+    rooms_by_level: dict[str, list[RoomElem]] = defaultdict(list)
+    door_rooms: dict[str, list[str]] = defaultdict(list)
     for element in elements.values():
         if not isinstance(element, RoomElem):
             continue
+        rooms_by_level[element.level_id].append(element)
         outline = [(float(p.x_mm), float(p.y_mm)) for p in element.outline_mm]
         if len(outline) < 3:
             continue
-        accessible_door_ids = [
-            door_id
-            for door_id, midpoint in doors_by_level.get(element.level_id, [])
+        accessible_doors = [
+            door
+            for door, midpoint in doors_by_level.get(element.level_id, [])
             if _point_in_or_near_polygon(midpoint, outline, tolerance_mm=250.0)
         ]
-        if accessible_door_ids:
+        for door in accessible_doors:
+            door_rooms[door.id].append(element.id)
+        if accessible_doors:
             continue
         violations.append(
             Violation(
@@ -513,7 +518,84 @@ def _room_door_access_violations(
                 element_ids=[element.id],
             )
         )
+    violations.extend(
+        _room_egress_graph_violations(
+            rooms_by_level,
+            doors_by_level,
+            door_rooms,
+            walls_by_id,
+        )
+    )
     return violations
+
+
+def _room_egress_graph_violations(
+    rooms_by_level: dict[str, list[RoomElem]],
+    doors_by_level: dict[str, list[tuple[DoorElem, tuple[float, float]]]],
+    door_rooms: dict[str, list[str]],
+    walls_by_id: dict[str, WallElem],
+) -> list[Violation]:
+    violations: list[Violation] = []
+    for level_id, rooms in rooms_by_level.items():
+        exit_door_ids = {
+            door.id
+            for door, _midpoint in doors_by_level.get(level_id, [])
+            if _is_exit_door(door, walls_by_id)
+        }
+        if not exit_door_ids:
+            continue
+        connected: dict[str, set[str]] = defaultdict(set)
+        exit_rooms: set[str] = set()
+        for door_id, room_ids in door_rooms.items():
+            if door_id in exit_door_ids:
+                exit_rooms.update(room_ids)
+            for a in room_ids:
+                for b in room_ids:
+                    if a != b:
+                        connected[a].add(b)
+        reachable = _reachable_rooms(exit_rooms, connected)
+        for room in rooms:
+            if room.id in reachable:
+                continue
+            if not _door_rooms_for_room(room.id, door_rooms):
+                continue
+            violations.append(
+                Violation(
+                    rule_id="room_without_egress_path",
+                    severity="warning",
+                    message=(
+                        "Room has a connected door but no traversable room-door path to an "
+                        "exit door on the same level."
+                    ),
+                    element_ids=[room.id],
+                )
+            )
+    return violations
+
+
+def _reachable_rooms(start: set[str], connected: dict[str, set[str]]) -> set[str]:
+    reachable: set[str] = set(start)
+    pending = list(start)
+    while pending:
+        room_id = pending.pop()
+        for next_room_id in connected.get(room_id, set()):
+            if next_room_id in reachable:
+                continue
+            reachable.add(next_room_id)
+            pending.append(next_room_id)
+    return reachable
+
+
+def _door_rooms_for_room(room_id: str, door_rooms: dict[str, list[str]]) -> list[str]:
+    return [door_id for door_id, room_ids in door_rooms.items() if room_id in room_ids]
+
+
+def _is_exit_door(door: DoorElem, walls_by_id: dict[str, WallElem]) -> bool:
+    props = door.props or {}
+    if _truthy_prop(props, "egressDoor", "exitDoor", "requiredExit", "exteriorDoor"):
+        return True
+    wall = walls_by_id.get(door.wall_id)
+    return wall is not None and _is_primary_envelope_wall(wall)
 
 
 def _window_operation_clearance_violations(

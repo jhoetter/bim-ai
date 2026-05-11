@@ -839,6 +839,83 @@ def test_room_without_connected_door_access_is_reported() -> None:
     assert "room_without_door_access" in _rule_ids(elements)
 
 
+def test_room_egress_graph_requires_path_to_exit_door() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "wall-exit": _wall(id="wall-exit"),
+        "wall-between": _wall(
+            id="wall-between",
+            start={"xMm": 3000, "yMm": 0},
+            end={"xMm": 3000, "yMm": 3000},
+        ),
+        "wall-isolated": _wall(
+            id="wall-isolated",
+            start={"xMm": 7000, "yMm": 0},
+            end={"xMm": 9000, "yMm": 0},
+        ),
+        "room-a": RoomElem(
+            kind="room",
+            id="room-a",
+            levelId="lvl-1",
+            outlineMm=[
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 3000, "yMm": 0},
+                {"xMm": 3000, "yMm": 3000},
+                {"xMm": 0, "yMm": 3000},
+            ],
+        ),
+        "room-b": RoomElem(
+            kind="room",
+            id="room-b",
+            levelId="lvl-1",
+            outlineMm=[
+                {"xMm": 3000, "yMm": 0},
+                {"xMm": 6000, "yMm": 0},
+                {"xMm": 6000, "yMm": 3000},
+                {"xMm": 3000, "yMm": 3000},
+            ],
+        ),
+        "room-c": RoomElem(
+            kind="room",
+            id="room-c",
+            levelId="lvl-1",
+            outlineMm=[
+                {"xMm": 7000, "yMm": 0},
+                {"xMm": 9000, "yMm": 0},
+                {"xMm": 9000, "yMm": 3000},
+                {"xMm": 7000, "yMm": 3000},
+            ],
+        ),
+        "door-exit": DoorElem(
+            kind="door",
+            id="door-exit",
+            wallId="wall-exit",
+            alongT=0.5,
+            props={"exitDoor": True},
+        ),
+        "door-between": DoorElem(
+            kind="door",
+            id="door-between",
+            wallId="wall-between",
+            alongT=0.5,
+        ),
+        "door-isolated": DoorElem(
+            kind="door",
+            id="door-isolated",
+            wallId="wall-isolated",
+            alongT=0.5,
+        ),
+    }
+
+    violations = [
+        violation
+        for violation in evaluate(elements)  # type: ignore[arg-type]
+        if violation.rule_id == "room_without_egress_path"
+    ]
+
+    assert [violation.element_ids for violation in violations] == [["room-c"]]
+
+
 def test_window_operation_clearance_conflict_is_reported() -> None:
     elements = {
         "lvl-1": _level(),
