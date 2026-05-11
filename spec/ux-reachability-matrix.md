@@ -27,20 +27,22 @@ Legend:
 
 Surface policy:
 
-| Surface          | Projection rule                                                                                                                                                                                                                                       |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Topbar           | Universal shell commands and QAT shortcuts. Redo/undo expose availability.                                                                                                                                                                            |
-| Ribbon           | Uses the capability graph for mode validity, disables invalid direct commands with reasons, and exposes a test projection for mounted command reachability.                                                                                           |
-| Floating palette | Shows active-canvas tool definitions and checks capability availability plus tool preconditions.                                                                                                                                                      |
-| Cmd+K            | Groups results by context badge, shows disabled/bridge state for registered commands, and includes active-view visibility routing plus universal left/right rail toggles.                                                                             |
-| Left rail        | Browser remains the deterministic navigation source for named views and model hierarchy.                                                                                                                                                              |
-| Right rail       | Exposes stable Properties / View / Workbench / Review section tabs; selected 3D walls get explicit Door, Window, Opening, Section, Elevation, Isolate, and Hide Walls actions; 3D View Controls include model-category counts plus show-all/hide-all. |
-| Status bar       | Shows plan clusters in plan-like views, wires the Grid switch to actual drafting-grid visibility, and shows active view labels/detail chips in non-plan views.                                                                                        |
+| Surface               | Projection rule                                                                                                                                                                                                                                       |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Topbar                | Universal shell commands and QAT shortcuts. Redo/undo expose availability.                                                                                                                                                                            |
+| Ribbon                | Uses the capability graph for mode validity, disables invalid direct commands with reasons, and exposes a test projection for mounted command reachability.                                                                                           |
+| Floating palette      | Shows active-canvas tool definitions and checks capability availability plus tool preconditions.                                                                                                                                                      |
+| Options/modifier bars | Render only in plan-capable modes, so plan tool state cannot create active-looking wall/door/dimension controls over 3D, sheet, schedule, or agent canvases.                                                                                          |
+| Cmd+K                 | Groups results by context badge, shows disabled/bridge state for registered commands, and includes active-view visibility routing plus universal left/right rail toggles.                                                                             |
+| Left rail             | Browser remains the deterministic navigation source for named views and model hierarchy.                                                                                                                                                              |
+| Right rail            | Exposes stable Properties / View / Workbench / Review section tabs; selected 3D walls get explicit Door, Window, Opening, Section, Elevation, Isolate, and Hide Walls actions; 3D View Controls include model-category counts plus show-all/hide-all. |
+| Status bar            | Shows plan clusters in plan-like views, wires the Grid switch to actual drafting-grid visibility, and shows active view labels/detail chips in non-plan views.                                                                                        |
 
 Regression guards:
 
 - `packages/web/src/workspace/commandCapabilities.test.ts`
 - `packages/web/src/workspace/uxAudit.test.ts`
 - `packages/web/src/workspace/shell/RibbonBar.tsx` imports `evaluateCommandInMode` and exports `ribbonCommandReachabilityForMode`
+- `packages/web/src/workspace/shell/AppShell.test.tsx` locks active-mode scoping for tool option surfaces
 - `packages/web/src/cmdPalette/registry.ts` imports `evaluateCommandInMode`
 - `packages/web/src/tools/ToolPalette.tsx` imports `evaluateCommandInMode`

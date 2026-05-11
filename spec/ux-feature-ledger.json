@@ -153,6 +153,19 @@
       "status": "implemented",
       "usabilityScore": 8,
       "tests": ["packages/web/src/workspace/uxAudit.test.ts"]
+    },
+    {
+      "idPattern": "chrome.plan-tool-options-scope",
+      "label": "Plan tool options scoped to plan-capable canvases",
+      "owner": "packages/web/src/workspace/shell/AppShell.tsx",
+      "sourceFile": "packages/web/src/workspace/shell/AppShell.tsx",
+      "intendedViews": ["plan", "plan-3d", "section"],
+      "actualSurfaces": ["topbar", "floating-palette"],
+      "preconditions": ["active plan tool with option or modifier descriptors"],
+      "executionHandler": "AppShell activeMode gates ToolModifierBar and OptionsBar rendering",
+      "status": "implemented",
+      "usabilityScore": 8,
+      "tests": ["packages/web/src/workspace/shell/AppShell.test.tsx"]
     }
   ]
 }

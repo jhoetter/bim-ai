@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
 import { AppShell } from './AppShell';
+import { useBimStore } from '../../state/store';
 
 afterEach(() => {
   document.body.innerHTML = '';
+  useBimStore.getState().setPlanTool('select');
 });
 
 describe('AppShell — spec §8', () => {
@@ -129,5 +131,37 @@ describe('AppShell — spec §8', () => {
     );
     expect(queryByText('full-left')).toBeNull();
     expect(getByText('icon-left')).toBeTruthy();
+  });
+
+  it('shows plan tool option surfaces only in plan-capable modes', () => {
+    useBimStore.getState().setPlanTool('wall');
+
+    const { getByTestId, queryByTestId, rerender } = render(
+      <AppShell
+        activeMode="plan"
+        topBar={<span>t</span>}
+        leftRail={<span>l</span>}
+        canvas={<span>c</span>}
+        rightRail={<span>r</span>}
+        statusBar={<span>s</span>}
+      />,
+    );
+
+    expect(getByTestId('tool-modifier-bar')).toBeTruthy();
+    expect(getByTestId('options-bar')).toBeTruthy();
+
+    rerender(
+      <AppShell
+        activeMode="3d"
+        topBar={<span>t</span>}
+        leftRail={<span>l</span>}
+        canvas={<span>c</span>}
+        rightRail={<span>r</span>}
+        statusBar={<span>s</span>}
+      />,
+    );
+
+    expect(queryByTestId('tool-modifier-bar')).toBeNull();
+    expect(queryByTestId('options-bar')).toBeNull();
   });
 });
