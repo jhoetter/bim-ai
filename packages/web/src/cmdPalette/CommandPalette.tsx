@@ -19,7 +19,29 @@ const CATEGORY_LABELS: Record<PaletteCategory, string> = {
   select: 'Select',
 };
 
-const CATEGORY_ORDER: PaletteCategory[] = ['command', 'navigate', 'select'];
+type PaletteSection = {
+  key: string;
+  label: string;
+  items: PaletteEntry[];
+};
+
+function fallbackSectionLabel(category: PaletteCategory): string {
+  return CATEGORY_LABELS[category];
+}
+
+function contextSectionLabel(entry: PaletteEntry): string {
+  if (entry.disabledReason) return 'Unavailable';
+  return entry.badge ?? fallbackSectionLabel(entry.category);
+}
+
+function sectionKey(label: string): string {
+  return (
+    label
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'commands'
+  );
+}
 
 export function CommandPalette({
   isOpen,
@@ -52,17 +74,16 @@ export function CommandPalette({
     [query, context, recencyMap],
   );
 
-  const sections = useMemo(() => {
-    const grouped = new Map<PaletteCategory, PaletteEntry[]>();
+  const sections = useMemo<PaletteSection[]>(() => {
+    const grouped = new Map<string, PaletteSection>();
     for (const entry of results) {
-      const list = grouped.get(entry.category) ?? [];
-      list.push(entry);
-      grouped.set(entry.category, list);
+      const label = contextSectionLabel(entry);
+      const key = sectionKey(label);
+      const section = grouped.get(key) ?? { key, label, items: [] };
+      section.items.push(entry);
+      grouped.set(key, section);
     }
-    return CATEGORY_ORDER.flatMap((cat) => {
-      const items = grouped.get(cat);
-      return items && items.length > 0 ? [{ category: cat, items }] : [];
-    });
+    return Array.from(grouped.values());
   }, [results]);
 
   const flatEntries = useMemo(() => sections.flatMap((s) => s.items), [sections]);
@@ -208,8 +229,8 @@ export function CommandPalette({
               No matches
             </div>
           ) : (
-            sections.map(({ category, items }) => (
-              <div key={category}>
+            sections.map(({ key, label, items }) => (
+              <div key={key} data-testid={`cmd-palette-section-${key}`}>
                 <div
                   style={{
                     padding: '4px 12px 2px',
@@ -219,7 +240,7 @@ export function CommandPalette({
                     color: 'var(--color-muted)',
                   }}
                 >
-                  {CATEGORY_LABELS[category]}
+                  {label}
                 </div>
                 {items.map((entry) => {
                   const idx = globalIdx++;

@@ -32,7 +32,7 @@ Surface policy:
 | Topbar           | Universal shell commands and QAT shortcuts. Redo/undo expose availability.                                                                                                     |
 | Ribbon           | Uses the capability graph for mode validity and disables invalid direct commands with reasons.                                                                                 |
 | Floating palette | Shows active-canvas tool definitions and checks capability availability plus tool preconditions.                                                                               |
-| Cmd+K            | Shows capability badges and disabled/bridge state for registered commands, including active-view visibility routing and universal left/right rail toggles.                     |
+| Cmd+K            | Groups results by context badge, shows disabled/bridge state for registered commands, and includes active-view visibility routing plus universal left/right rail toggles.      |
 | Left rail        | Browser remains the deterministic navigation source for named views and model hierarchy.                                                                                       |
 | Right rail       | Exposes stable Properties / View / Workbench / Review section tabs; selected 3D walls get explicit Door, Window, Opening, Section, Elevation, Isolate, and Hide Walls actions. |
 | Status bar       | Shows plan clusters in plan-like views, wires the Grid switch to actual drafting-grid visibility, and shows active view labels/detail chips in non-plan views.                 |

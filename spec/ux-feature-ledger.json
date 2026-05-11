@@ -124,6 +124,19 @@
         "packages/web/src/tools/toolPrefsStore.test.ts",
         "packages/web/src/workspace/shell/StatusBar.test.tsx"
       ]
+    },
+    {
+      "idPattern": "cmdpalette.context-sections",
+      "label": "Command palette context sections and badges",
+      "owner": "packages/web/src/cmdPalette/CommandPalette.tsx",
+      "sourceFile": "packages/web/src/cmdPalette/registry.ts",
+      "intendedViews": ["plan", "3d", "plan-3d", "section", "sheet", "schedule", "agent"],
+      "actualSurfaces": ["cmd-k"],
+      "preconditions": [],
+      "executionHandler": "queryPalette badges from commandCapabilities grouped into context sections",
+      "status": "implemented",
+      "usabilityScore": 8,
+      "tests": ["packages/web/src/cmdPalette/CommandPalette.test.tsx"]
     }
   ]
 }
