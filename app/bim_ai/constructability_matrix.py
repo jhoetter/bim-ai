@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from typing import Literal
 
 from bim_ai.constructability_geometry import PhysicalParticipant
@@ -121,6 +121,45 @@ DEFAULT_CONSTRUCTABILITY_MATRIX: tuple[ConstructabilityMatrixCell, ...] = (
         message="Stair envelope intersects a roof proxy; verify headroom and roof/stair geometry.",
     ),
 )
+
+_PROFILE_SEVERITY_OVERRIDES: dict[str, dict[str, str]] = {
+    "construction_readiness": {
+        "physical_hard_clash": "error",
+        "furniture_wall_hard_clash": "error",
+        "stair_wall_hard_clash": "error",
+        "physical_duplicate_geometry": "error",
+    },
+    "permit_readiness": {
+        "furniture_wall_hard_clash": "error",
+        "stair_wall_hard_clash": "error",
+    },
+}
+
+_PROFILE_TOLERANCE_OVERRIDES_MM: dict[str, dict[str, float]] = {
+    "design_review": {
+        "physical_duplicate_geometry": 2.0,
+    },
+    "construction_readiness": {
+        "physical_duplicate_geometry": 2.0,
+    },
+}
+
+
+def matrix_for_profile(profile: str) -> tuple[ConstructabilityMatrixCell, ...]:
+    severities = _PROFILE_SEVERITY_OVERRIDES.get(profile, {})
+    tolerances = _PROFILE_TOLERANCE_OVERRIDES_MM.get(profile, {})
+    if not severities and not tolerances:
+        return DEFAULT_CONSTRUCTABILITY_MATRIX
+    cells: list[ConstructabilityMatrixCell] = []
+    for cell in DEFAULT_CONSTRUCTABILITY_MATRIX:
+        cells.append(
+            replace(
+                cell,
+                severity=severities.get(cell.rule_id, cell.severity),
+                tolerance_mm=tolerances.get(cell.rule_id, cell.tolerance_mm),
+            )
+        )
+    return tuple(cells)
 
 
 def participant_matrix_group(participant: PhysicalParticipant) -> str:

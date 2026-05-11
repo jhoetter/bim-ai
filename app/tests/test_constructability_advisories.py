@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from bim_ai.constraints_evaluation import evaluate
-from bim_ai.constructability_matrix import default_matrix_as_dict
+from bim_ai.constructability_matrix import default_matrix_as_dict, matrix_for_profile
 from bim_ai.elements import (
     AssetLibraryEntryElem,
     BeamElem,
@@ -891,3 +891,21 @@ def test_default_constructability_matrix_json_matches_app_default() -> None:
     matrix_path = root / "spec" / "schemas" / "constructability-matrix-default.json"
 
     assert json.loads(matrix_path.read_text()) == default_matrix_as_dict()
+
+
+def test_constructability_matrix_profile_overrides_severity_and_tolerance() -> None:
+    default_duplicate = [
+        cell
+        for cell in matrix_for_profile("authoring_default")
+        if cell.rule_id == "physical_duplicate_geometry" and cell.check_type == "duplicate"
+    ][0]
+    readiness_duplicate = [
+        cell
+        for cell in matrix_for_profile("construction_readiness")
+        if cell.rule_id == "physical_duplicate_geometry" and cell.check_type == "duplicate"
+    ][0]
+
+    assert default_duplicate.severity == "warning"
+    assert default_duplicate.tolerance_mm == 1.0
+    assert readiness_duplicate.severity == "error"
+    assert readiness_duplicate.tolerance_mm == 2.0

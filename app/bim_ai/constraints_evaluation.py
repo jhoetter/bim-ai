@@ -237,7 +237,11 @@ from bim_ai.constraints_advisories import (  # noqa: E402,F401
 )
 
 
-def evaluate(elements: dict[str, Element]) -> list[Violation]:
+def evaluate(
+    elements: dict[str, Element],
+    *,
+    constructability_profile: str = "authoring_default",
+) -> list[Violation]:
     walls: list[WallElem] = []
     doors: list[DoorElem] = []
     windows: list[WindowElem] = []
@@ -1637,7 +1641,12 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
     viols.extend(_monitored_source_drift_advisory_violations(elements))
     viols.extend(_dormer_overflow_advisory_violations(elements))
     viols.extend(_toposolid_pierce_check_violations(elements))
-    viols.extend(constructability_advisory_violations(elements))
+    viols.extend(
+        constructability_advisory_violations(
+            elements,
+            profile=constructability_profile,
+        )
+    )
     viols.sort(key=lambda v: (v.rule_id, tuple(sorted(v.element_ids)), v.severity))
     annotated = annotate_violation_disciplines(viols)
     return annotate_violation_blocking_classes(annotated)

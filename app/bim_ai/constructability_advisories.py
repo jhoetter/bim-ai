@@ -17,8 +17,10 @@ from bim_ai.constructability_geometry import (
 from bim_ai.constructability_matrix import (
     DEFAULT_CONSTRUCTABILITY_MATRIX,
     ConstructabilityCheckType,
+    ConstructabilityMatrixCell,
     duplicate_cell_for,
     hard_clash_cell_for,
+    matrix_for_profile,
 )
 from bim_ai.elements import (
     DoorElem,
@@ -41,7 +43,12 @@ _STAIR_HEADROOM_CLEARANCE_MM = 2050.0
 _LOW_ROOF_SLOPE_DEG = 2.0
 
 
-def constructability_advisory_violations(elements: dict[str, Element]) -> list[Violation]:
+def constructability_advisory_violations(
+    elements: dict[str, Element],
+    *,
+    profile: str = "authoring_default",
+) -> list[Violation]:
+    matrix = matrix_for_profile(profile)
     participants = collect_physical_participants(elements)
     participants_by_kind: dict[str, list[PhysicalParticipant]] = defaultdict(list)
     for participant in participants:
@@ -54,8 +61,8 @@ def constructability_advisory_violations(elements: dict[str, Element]) -> list[V
 
     violations: list[Violation] = []
     violations.extend(_unsupported_proxy_violations(elements))
-    violations.extend(_matrix_duplicate_geometry_violations(participants, elements))
-    violations.extend(_matrix_hard_clash_violations(participants, elements))
+    violations.extend(_matrix_duplicate_geometry_violations(participants, elements, matrix))
+    violations.extend(_matrix_hard_clash_violations(participants, elements, matrix))
     violations.extend(
         _mep_wall_penetration_violations(participants_by_kind, openings_by_wall_id, elements)
     )
@@ -98,22 +105,23 @@ def _unsupported_proxy_violations(elements: dict[str, Element]) -> list[Violatio
 def _matrix_hard_clash_violations(
     participants: list[PhysicalParticipant],
     elements: dict[str, Element],
+    matrix: tuple[ConstructabilityMatrixCell, ...],
 ) -> list[Violation]:
     violations: list[Violation] = []
     emitted: set[tuple[str, tuple[str, str]]] = set()
     candidates = candidate_pairs_by_aabb(
         participants,
-        tolerance_mm=_matrix_max_tolerance("hard"),
+        tolerance_mm=_matrix_max_tolerance("hard", matrix),
     )
     for a, b in candidates:
-        cell = hard_clash_cell_for(a, b)
+        cell = hard_clash_cell_for(a, b, matrix=matrix)
         if cell is None:
             continue
         if not _same_or_unknown_level(a, b):
             continue
         if _has_allowed_host_relation(a, b, elements):
             continue
-        if duplicate_cell_for(a, b) is not None and _aabb_equivalent(
+        if duplicate_cell_for(a, b, matrix=matrix) is not None and _aabb_equivalent(
             a.aabb, b.aabb, tolerance_mm=cell.tolerance_mm
         ):
             continue
@@ -138,15 +146,16 @@ def _matrix_hard_clash_violations(
 def _matrix_duplicate_geometry_violations(
     participants: list[PhysicalParticipant],
     elements: dict[str, Element],
+    matrix: tuple[ConstructabilityMatrixCell, ...],
 ) -> list[Violation]:
     violations: list[Violation] = []
     emitted: set[tuple[str, tuple[str, str]]] = set()
     candidates = candidate_pairs_by_aabb(
         participants,
-        tolerance_mm=_matrix_max_tolerance("duplicate"),
+        tolerance_mm=_matrix_max_tolerance("duplicate", matrix),
     )
     for a, b in candidates:
-        cell = duplicate_cell_for(a, b)
+        cell = duplicate_cell_for(a, b, matrix=matrix)
         if cell is None:
             continue
         if not _same_or_unknown_level(a, b):
@@ -171,11 +180,14 @@ def _matrix_duplicate_geometry_violations(
     return violations
 
 
-def _matrix_max_tolerance(check_type: ConstructabilityCheckType) -> float:
+def _matrix_max_tolerance(
+    check_type: ConstructabilityCheckType,
+    matrix: tuple[ConstructabilityMatrixCell, ...] = DEFAULT_CONSTRUCTABILITY_MATRIX,
+) -> float:
     return max(
         (
             float(cell.tolerance_mm)
-            for cell in DEFAULT_CONSTRUCTABILITY_MATRIX
+            for cell in matrix
             if cell.check_type == check_type
         ),
         default=0.0,

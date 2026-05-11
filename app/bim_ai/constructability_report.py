@@ -138,7 +138,11 @@ def build_constructability_report(
         option_locks=option_locks,
         design_option_sets=design_option_sets,
     )
-    violations = [v for v in evaluate(scoped_elements) if v.rule_id in CONSTRUCTABILITY_RULE_IDS]
+    violations = [
+        v
+        for v in evaluate(scoped_elements, constructability_profile=profile)
+        if v.rule_id in CONSTRUCTABILITY_RULE_IDS
+    ]
     violations.extend(constructability_clearance_violations(scoped_elements, profile=profile))
     violations.extend(
         constructability_metadata_requirement_violations(scoped_elements, profile=profile)
