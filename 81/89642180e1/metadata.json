@@ -3,7 +3,7 @@
   "checkpoint_id": "8189642180e1",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "app/scripts/seed.py",
     "claude-skills/sketch-to-bim/SKILL.md",
@@ -75,13 +75,19 @@
       "transcript": "/81/89642180e1/5/full.jsonl",
       "content_hash": "/81/89642180e1/5/content_hash.txt",
       "prompt": "/81/89642180e1/5/prompt.txt"
+    },
+    {
+      "metadata": "/81/89642180e1/6/metadata.json",
+      "transcript": "/81/89642180e1/6/full.jsonl",
+      "content_hash": "/81/89642180e1/6/content_hash.txt",
+      "prompt": "/81/89642180e1/6/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 7851776,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 147424896,
-    "output_tokens": 443542,
-    "api_call_count": 1232
+    "input_tokens": 7852390,
+    "cache_creation_tokens": 662937,
+    "cache_read_tokens": 173162145,
+    "output_tokens": 757389,
+    "api_call_count": 1501
   }
 }

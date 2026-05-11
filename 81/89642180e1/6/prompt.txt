@@ -1,0 +1,33 @@
+[Image #4] looks like this...
+
+---
+
+commited and pushed to main?
+
+---
+
+make install
+make seed
+make dev
+
+[Image #5] looks like this; is this what you see in @spec/target-house-seed-vis.png ?
+
+---
+
+[Image #6] it should rather look something like this, but it doesnt..
+
+---
+
+/Users/jhoetter/Desktop look here for target-house visualization jpeg
+
+---
+
+committed and pushed on main?
+
+---
+
+btw i think issues are not the colors, but the structure. the building just looks different..
+
+---
+
+commited and pushed to main?
