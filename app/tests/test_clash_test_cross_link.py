@@ -13,9 +13,11 @@ import pytest
 from bim_ai.clash_engine import Aabb, aabb_clash_distance_mm, run_clash_test
 from bim_ai.document import Document
 from bim_ai.elements import (
+    AssetLibraryEntryElem,
     ClashTestElem,
     LevelElem,
     LinkModelElem,
+    PlacedAssetElem,
     SelectionSetElem,
     SelectionSetRuleSpec,
     Vec2Mm,
@@ -169,6 +171,62 @@ def test_run_clash_test_host_only_finds_clash():
     r = ct.results[0]
     assert {r.element_id_a, r.element_id_b} == {"w-arch", "w-other"}
     assert r.link_chain_a == [] and r.link_chain_b == []
+
+
+def test_run_clash_test_includes_placed_assets_from_constructability_proxies():
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-0": _level(),
+            "w-arch": _wall(id="w-arch", sx=0, sy=0, ex=2000, ey=0, name="Arch wall"),
+            "asset-shelf": AssetLibraryEntryElem(
+                kind="asset_library_entry",
+                id="asset-shelf",
+                assetKind="block_2d",
+                name="Shelf type",
+                category="casework",
+                tags=[],
+                thumbnailKind="schematic_plan",
+            ),
+            "shelf-1": PlacedAssetElem(
+                kind="placed_asset",
+                id="shelf-1",
+                name="Shelf",
+                assetId="asset-shelf",
+                levelId="lvl-0",
+                positionMm={"xMm": 1000, "yMm": 0},
+                paramValues={"widthMm": 600, "depthMm": 300, "proxyHeightMm": 900},
+            ),
+            "sset-A": SelectionSetElem(
+                kind="selection_set",
+                id="sset-A",
+                filter_rules=[
+                    SelectionSetRuleSpec(
+                        field="category", operator="equals", value="wall", link_scope="host"
+                    )
+                ],
+            ),
+            "sset-B": SelectionSetElem(
+                kind="selection_set",
+                id="sset-B",
+                filter_rules=[
+                    SelectionSetRuleSpec(
+                        field="category", operator="equals", value="placed_asset", link_scope="host"
+                    )
+                ],
+            ),
+            "ct-1": ClashTestElem(
+                kind="clash_test", id="ct-1", set_a_ids=["sset-A"], set_b_ids=["sset-B"]
+            ),
+        },
+    )
+
+    ct = doc.elements["ct-1"]
+    assert isinstance(ct, ClashTestElem)
+    results = run_clash_test(doc, ct, lambda _uuid, _rev: None)
+
+    assert len(results) == 1
+    assert {results[0].element_id_a, results[0].element_id_b} == {"w-arch", "shelf-1"}
 
 
 def _build_host_with_link(link_id: str = "link-str") -> Document:

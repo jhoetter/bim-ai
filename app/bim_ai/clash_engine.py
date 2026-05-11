@@ -11,9 +11,10 @@ from UUID — the same provider shape used by ``link_expansion.expand_links``.
 This keeps clash testing decoupled from the request/DB layer so it is unit-
 testable in isolation.
 
-Element coverage in v0: walls and family_instance-shaped kinds (door, window,
-beam — anything with ``positionMm`` + size hints) and floors. Other kinds are
-ignored — adding them is a matter of writing one ``_aabb_for_*`` function.
+Element coverage is delegated to the constructability physical-participant
+registry so authoring clash tests and constructability advisor checks share
+the same server-side proxy contract. Grid lines keep a tiny local AABB because
+they are coordination references, not physical constructability participants.
 """
 
 from __future__ import annotations
@@ -22,6 +23,7 @@ import math
 from dataclasses import dataclass
 from typing import Any
 
+from bim_ai.constructability_geometry import physical_participant_for_element
 from bim_ai.document import Document
 from bim_ai.elements import (
     ClashResultSpec,
@@ -177,13 +179,20 @@ def aabb_for_element(elem: Any, host_elements: dict[str, Any]) -> Aabb | None:
     """Return an AABB for any clash-testable element kind, or ``None``."""
 
     kind = getattr(elem, "kind", None)
-    if kind == "wall":
-        return _aabb_for_wall(elem, host_elements)
-    if kind == "floor":
-        return _aabb_for_floor(elem, host_elements)
     if kind == "grid_line":
         return _aabb_for_grid_line(elem, host_elements)
-    return None
+    participant = physical_participant_for_element(elem, host_elements)
+    if participant is None:
+        return None
+    proxy = participant.aabb
+    return Aabb(
+        min_x=proxy.min_x,
+        min_y=proxy.min_y,
+        min_z=proxy.min_z,
+        max_x=proxy.max_x,
+        max_y=proxy.max_y,
+        max_z=proxy.max_z,
+    )
 
 
 # --- Selection-set resolution ----------------------------------------------
