@@ -116,7 +116,7 @@
     },
     {
       "idPattern": "project.* / library.* / help.* / tabs.* / shell.*",
-      "label": "Universal shell commands and rail toggles",
+      "label": "Universal shell, snapshot, presentation, and rail commands",
       "owner": "packages/web/src/workspace/Workspace.tsx",
       "sourceFile": "packages/web/src/workspace/commandCapabilities.ts",
       "intendedViews": [
@@ -131,7 +131,7 @@
       ],
       "actualSurfaces": ["cmd-k", "topbar", "ribbon", "left-rail"],
       "preconditions": [],
-      "executionHandler": "Workspace shell callbacks, including left/right rail visibility",
+      "executionHandler": "Workspace shell callbacks, including save snapshot, restore snapshot/project menu routing, share presentation, and left/right rail visibility",
       "status": "implemented",
       "usabilityScore": 8,
       "tests": [

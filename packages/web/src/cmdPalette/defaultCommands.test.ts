@@ -132,6 +132,32 @@ describe('default Cmd+K commands', () => {
     expect(toggleRightRail).toHaveBeenCalledOnce();
   });
 
+  it('routes project snapshot and presentation commands through the palette host context', () => {
+    const saveSnapshot = vi.fn();
+    const openRestoreSnapshot = vi.fn();
+    const sharePresentation = vi.fn();
+
+    command('project.save-snapshot').invoke({ ...PLAN_CTX, saveSnapshot });
+    expect(saveSnapshot).toHaveBeenCalledOnce();
+
+    command('project.restore-snapshot').invoke({ ...PLAN_CTX, openRestoreSnapshot });
+    expect(openRestoreSnapshot).toHaveBeenCalledOnce();
+
+    const unavailableShare = queryPalette('share presentation', PLAN_CTX, {}).find(
+      (entry) => entry.id === 'project.share-presentation',
+    );
+    expect(unavailableShare?.disabledReason).toContain('Requires');
+
+    const share = queryPalette(
+      'share presentation',
+      { ...PLAN_CTX, hasPresentationPages: true, sharePresentation },
+      {},
+    ).find((entry) => entry.id === 'project.share-presentation');
+    expect(share?.disabledReason).toBeUndefined();
+    share?.invoke({ ...PLAN_CTX, hasPresentationPages: true, sharePresentation });
+    expect(sharePresentation).toHaveBeenCalledOnce();
+  });
+
   it('routes active visibility commands through the palette host context', () => {
     const openActiveVisibilityControls = vi.fn();
     const openPlanVisibilityGraphics = vi.fn();

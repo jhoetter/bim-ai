@@ -382,6 +382,37 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'project.save-snapshot',
+  label: 'Save Snapshot',
+  keywords: ['project', 'snapshot', 'save', 'download', 'backup'],
+  category: 'command',
+  invoke: (ctx) => ctx.saveSnapshot?.(),
+});
+
+registerCommand({
+  id: 'project.restore-snapshot',
+  label: 'Restore Snapshot',
+  keywords: ['project', 'snapshot', 'restore', 'open', 'upload', 'backup'],
+  category: 'command',
+  invoke: (ctx) => {
+    if (ctx.openRestoreSnapshot) {
+      ctx.openRestoreSnapshot();
+      return;
+    }
+    ctx.openProjectMenu?.();
+  },
+});
+
+registerCommand({
+  id: 'project.share-presentation',
+  label: 'Share Presentation',
+  keywords: ['share', 'presentation', 'pages', 'live'],
+  category: 'command',
+  isAvailable: (ctx) => Boolean(ctx.hasPresentationPages && ctx.sharePresentation),
+  invoke: (ctx) => ctx.sharePresentation?.(),
+});
+
+registerCommand({
   id: 'library.open-family',
   label: 'Open Family Library',
   keywords: ['family', 'library', 'load', 'component'],

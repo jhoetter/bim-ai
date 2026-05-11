@@ -610,7 +610,8 @@ modal and command-line parser utilities that have their own tests.
   on invalid canvases.
 - Navigation commands route through the workspace tab/mode controller.
 - Theme, language, project menu, family library, keyboard shortcuts, active visibility controls,
-  3D view controls, rail toggles, and inactive-tab close commands are mounted.
+  3D view controls, save/restore snapshot, share presentation, rail toggles, and inactive-tab close
+  commands are mounted.
 - Results are grouped by current capability context badges.
 - Legacy prefix grammar has been merged into the mounted `cmdPalette` registry, and the unused
   `cmd/CommandPalette` implementation has been deleted.

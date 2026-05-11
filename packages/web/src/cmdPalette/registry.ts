@@ -47,6 +47,10 @@ export type PaletteContext = {
   /** Dispatches semantic model commands from command-palette actions. */
   dispatchCommand?: (cmd: Record<string, unknown>) => void;
   openProjectMenu?: () => void;
+  saveSnapshot?: () => void;
+  openRestoreSnapshot?: () => void;
+  sharePresentation?: () => void;
+  hasPresentationPages?: boolean;
   openFamilyLibrary?: () => void;
   openKeyboardShortcuts?: () => void;
   openPlanVisibilityGraphics?: () => void;
