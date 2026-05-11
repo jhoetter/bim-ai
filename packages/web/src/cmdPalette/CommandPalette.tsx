@@ -1,11 +1,12 @@
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   queryPalette,
+  getRegistry,
   type PaletteCategory,
   type PaletteContext,
   type PaletteEntry,
 } from './registry';
-import { usePaletteRecencyStore } from './paletteRecencyStore';
+import { paletteRecencyScopeForCommand, usePaletteRecencyStore } from './paletteRecencyStore';
 
 export type CommandPaletteProps = {
   isOpen: boolean;
@@ -63,11 +64,15 @@ export function CommandPalette({
   const recencyMap = useMemo<Record<string, number>>(() => {
     const now = nowRef.current;
     const map: Record<string, number> = {};
-    for (const id of Object.keys(invocations)) {
-      map[id] = getRecencyScore(id, now);
+    const ids = new Set<string>(getRegistry().map((entry) => entry.id));
+    for (const view of context.views ?? []) {
+      ids.add(`view.${view.id}`);
+    }
+    for (const id of ids) {
+      map[id] = getRecencyScore(id, paletteRecencyScopeForCommand(id, context), now);
     }
     return map;
-  }, [invocations, getRecencyScore]);
+  }, [context, invocations, getRecencyScore]);
 
   const results = useMemo(
     () => queryPalette(query, context, recencyMap),
@@ -103,7 +108,7 @@ export function CommandPalette({
   const invoke = useCallback(
     (entry: PaletteEntry) => {
       if (entry.disabledReason) return;
-      recordInvocation(entry.id);
+      recordInvocation(entry.id, paletteRecencyScopeForCommand(entry.id, context));
       entry.invoke(context);
       onClose();
     },

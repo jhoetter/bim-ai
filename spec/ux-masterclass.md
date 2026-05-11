@@ -614,6 +614,7 @@ modal and command-line parser utilities that have their own tests.
 - Results are grouped by current capability context badges.
 - Legacy prefix grammar has been merged into the mounted `cmdPalette` registry, and the unused
   `cmd/CommandPalette` implementation has been deleted.
+- Recent non-universal commands are scoped by active view/mode; universal commands remain global.
 
 ### Required Cmd+K Behavior
 

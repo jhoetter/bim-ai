@@ -181,11 +181,12 @@
       ],
       "actualSurfaces": ["cmd-k"],
       "preconditions": [],
-      "executionHandler": "queryPalette badges from commandCapabilities grouped into context sections; mounted prefix filters route > to tools, @ to view/navigation entries, and : to settings/shell controls",
+      "executionHandler": "queryPalette badges from commandCapabilities grouped into context sections; mounted prefix filters route > to tools, @ to view/navigation entries, and : to settings/shell controls; PaletteRecencyStore scopes non-universal recency to active view/mode while keeping universal commands global",
       "status": "implemented",
       "usabilityScore": 8,
       "tests": [
         "packages/web/src/cmdPalette/CommandPalette.test.tsx",
+        "packages/web/src/cmdPalette/paletteRecencyStore.test.ts",
         "packages/web/src/cmdPalette/registry.test.ts",
         "packages/web/src/workspace/uxAudit.test.ts"
       ]
