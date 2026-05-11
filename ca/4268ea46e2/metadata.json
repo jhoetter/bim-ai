@@ -3,7 +3,7 @@
   "checkpoint_id": "ca4268ea46e2",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "app/bim_ai/constructability_advisories.py",
     "app/bim_ai/constructability_geometry.py",
@@ -120,13 +120,19 @@
       "transcript": "/ca/4268ea46e2/17/full.jsonl",
       "content_hash": "/ca/4268ea46e2/17/content_hash.txt",
       "prompt": "/ca/4268ea46e2/17/prompt.txt"
+    },
+    {
+      "metadata": "/ca/4268ea46e2/18/metadata.json",
+      "transcript": "/ca/4268ea46e2/18/full.jsonl",
+      "content_hash": "/ca/4268ea46e2/18/content_hash.txt",
+      "prompt": "/ca/4268ea46e2/18/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 2694402,
+    "input_tokens": 3180078,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 65658240,
-    "output_tokens": 164721,
-    "api_call_count": 538
+    "cache_read_tokens": 69643136,
+    "output_tokens": 181746,
+    "api_call_count": 583
   }
 }
