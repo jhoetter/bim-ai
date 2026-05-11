@@ -1,0 +1,16 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "eaed800e1d4a",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/ea/ed800e1d4a/0/metadata.json",
+      "transcript": "/ea/ed800e1d4a/0/full.jsonl",
+      "content_hash": "/ea/ed800e1d4a/0/content_hash.txt",
+      "prompt": "/ea/ed800e1d4a/0/prompt.txt"
+    }
+  ]
+}
