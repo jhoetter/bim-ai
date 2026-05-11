@@ -1,6 +1,12 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
 
-import { ApiHttpError, applyCommand, applyCommandBundle, uploadDxfFile } from './api';
+import {
+  ApiHttpError,
+  applyCommand,
+  applyCommandBundle,
+  fetchConstructabilityReport,
+  uploadDxfFile,
+} from './api';
 
 function mockFetchOnce(payload: { ok: boolean; status: number; statusText: string; body: string }) {
   vi.stubGlobal(
@@ -179,5 +185,40 @@ describe('uploadDxfFile', () => {
     expect(form.get('customColor')).toBe('#123456');
     expect(form.get('overlayOpacity')).toBe('0.65');
     expect(form.get('hiddenLayerNames')).toBe('A-DEMO');
+  });
+});
+
+describe('fetchConstructabilityReport', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('fetches the model constructability-report endpoint', async () => {
+    mockFetchOnce({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      body: JSON.stringify({
+        format: 'constructabilityReport_v1',
+        modelId: 'model 1',
+        revision: 3,
+        profile: 'authoring_default',
+        summary: {
+          findingCount: 0,
+          issueCount: 0,
+          severityCounts: {},
+          ruleCounts: {},
+          statusCounts: {},
+        },
+        findings: [],
+        issues: [],
+      }),
+    });
+
+    const report = await fetchConstructabilityReport('model 1');
+
+    expect(report.format).toBe('constructabilityReport_v1');
+    expect(fetch).toHaveBeenCalledWith('/api/models/model%201/constructability-report', undefined);
   });
 });

@@ -267,6 +267,56 @@ export async function fetchBuildingPresets(): Promise<string[]> {
   return Object.keys(j.presets ?? {}).sort((a, b) => a.localeCompare(b));
 }
 
+export type ConstructabilityFinding = {
+  ruleId: string;
+  severity: string;
+  message: string;
+  elementIds: string[];
+  discipline?: string;
+  blockingClass?: string;
+  recommendation?: string;
+};
+
+export type ConstructabilityIssue = {
+  fingerprint: string;
+  ruleId: string;
+  elementIds: string[];
+  pairKey?: string | null;
+  status: string;
+  firstSeenRevision?: string | number | null;
+  lastSeenRevision?: string | number | null;
+  resolvedRevision?: string | number | null;
+  severity?: string | null;
+  message?: string | null;
+  discipline?: string | null;
+  blockingClass?: string | null;
+  recommendation?: string | null;
+};
+
+export type ConstructabilityReport = {
+  format: 'constructabilityReport_v1';
+  modelId?: string;
+  revision: string | number;
+  profile: string;
+  summary: {
+    findingCount: number;
+    issueCount: number;
+    severityCounts: Record<string, number>;
+    ruleCounts: Record<string, number>;
+    statusCounts: Record<string, number>;
+  };
+  findings: ConstructabilityFinding[];
+  issues: ConstructabilityIssue[];
+};
+
+export async function fetchConstructabilityReport(
+  modelId: string,
+): Promise<ConstructabilityReport> {
+  return fetchJson<ConstructabilityReport>(
+    `/api/models/${encodeURIComponent(modelId)}/constructability-report`,
+  );
+}
+
 /** FED-04b: upload a DXF file from the browser via multipart form. */
 export type DxfImportOptions = {
   originAlignmentMode?: 'origin_to_origin' | 'project_origin' | 'shared_coords';
