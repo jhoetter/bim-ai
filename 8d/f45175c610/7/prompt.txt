@@ -1,9 +1,0 @@
-[Image #1] labels in the floorplans for e.g. what the rooms are seem cut off
-
----
-
-did you commit and push and merge into main?
-
----
-
-then commit and push and merge please...
