@@ -41,6 +41,28 @@ python3 claude-skills/sketch-to-bim/sketch_bim.py advisor \
   --out seed-artifacts/<seed-name>/evidence/phase-<n> \
   --fail-on-warning
 
+# Prove CLI Advisor matches the unfiltered right-rail source payload.
+python3 claude-skills/sketch-to-bim/sketch_bim.py advisor-parity \
+  --model <model-id> \
+  --out seed-artifacts/<seed-name>/evidence/phase-<n>/advisor-parity.json \
+  --fail-on-mismatch
+
+# Create the required semantic screenshot checklist for a phase.
+python3 claude-skills/sketch-to-bim/sketch_bim.py semantic-checklist \
+  --seed <seed-name> \
+  --phase <n>
+
+# Map Advisor findings back to recipe/bundle source references.
+python3 claude-skills/sketch-to-bim/sketch_bim.py issue-ledger \
+  --seed <seed-name> \
+  --phase <n>
+
+# Refuse phase advancement unless the packet is complete and clean.
+python3 claude-skills/sketch-to-bim/sketch_bim.py phase-accept \
+  --seed <seed-name> \
+  --phase <n> \
+  --require-parity
+
 # Strict final current-HEAD acceptance: compile, seed, live evidence, warnings fail.
 python3 claude-skills/sketch-to-bim/sketch_bim.py accept \
   --seed <seed-name> \

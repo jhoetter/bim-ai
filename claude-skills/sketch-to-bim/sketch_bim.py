@@ -25,6 +25,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 CLI = ["node", "packages/cli/cli.mjs"]
 DEFAULT_CAPABILITIES = "spec/sketch-to-bim-capability-matrix.json"
+BLOCKING_SEVERITIES = {"warning", "error"}
 UUID_RE = re.compile(
     r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b",
     re.IGNORECASE,
@@ -180,6 +181,123 @@ def parse_optional_json(raw: str) -> Any:
         return None
 
 
+def advisory_code(v: dict[str, Any]) -> str:
+    return str(v.get("advisoryClass") or v.get("ruleId") or v.get("code") or "unknown")
+
+
+def advisor_groups_from_violations(violations: list[dict[str, Any]]) -> dict[str, Any]:
+    groups: dict[str, dict[str, Any]] = {}
+    for violation in violations:
+        severity = str(violation.get("severity") or "unknown")
+        code = advisory_code(violation)
+        key = f"{severity}:{code}"
+        row = groups.setdefault(
+            key,
+            {
+                "severity": severity,
+                "code": code,
+                "count": 0,
+                "elementIds": set(),
+                "messages": set(),
+            },
+        )
+        row["count"] += 1
+        for element_id in violation.get("elementIds") or []:
+            row["elementIds"].add(str(element_id))
+        message = violation.get("message")
+        if message:
+            row["messages"].add(str(message))
+
+    severity_rank = {"error": 0, "warning": 1, "info": 2}
+    grouped = [
+        {
+            "severity": row["severity"],
+            "code": row["code"],
+            "count": row["count"],
+            "elementIds": sorted(row["elementIds"]),
+            "messages": sorted(row["messages"])[:3],
+        }
+        for row in groups.values()
+    ]
+    grouped.sort(key=lambda row: (severity_rank.get(row["severity"], 9), row["code"]))
+    return {"total": len(violations), "groups": grouped}
+
+
+def load_advisor_file(path: Path) -> dict[str, Any]:
+    if not path.is_file():
+        return {"total": 0, "groups": []}
+    data = read_json(path)
+    if isinstance(data, dict) and isinstance(data.get("payload"), dict):
+        data = data["payload"]
+    if isinstance(data, dict) and isinstance(data.get("groups"), list):
+        return data
+    if isinstance(data, dict) and isinstance(data.get("violations"), list):
+        return advisor_groups_from_violations(data["violations"])
+    return {"total": 0, "groups": []}
+
+
+def normalized_advisor_groups(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = []
+    for group in payload.get("groups") or []:
+        rows.append(
+            {
+                "severity": str(group.get("severity") or "unknown"),
+                "code": str(group.get("code") or "unknown"),
+                "count": int(group.get("count") or 0),
+                "elementIds": sorted(str(x) for x in (group.get("elementIds") or [])),
+                "messages": sorted(str(x) for x in (group.get("messages") or [])),
+            }
+        )
+    return sorted(rows, key=lambda row: (row["severity"], row["code"], row["elementIds"]))
+
+
+def find_text_occurrences(path: Path, needles: list[str]) -> dict[str, list[int]]:
+    if not path.is_file():
+        return {}
+    lines = path.read_text(encoding="utf8").splitlines()
+    out: dict[str, list[int]] = {}
+    for needle in needles:
+        if not needle:
+            continue
+        hits = [idx + 1 for idx, line in enumerate(lines) if needle in line]
+        if hits:
+            out[needle] = hits[:12]
+    return out
+
+
+def screenshot_rows_from_manifest(path: Path) -> list[dict[str, Any]]:
+    if not path.is_file():
+        return []
+    data = read_json(path)
+    rows = data.get("screenshots") if isinstance(data, dict) else data
+    if not isinstance(rows, list):
+        return []
+    normalized = []
+    for idx, row in enumerate(rows):
+        if not isinstance(row, dict):
+            continue
+        screenshot = row.get("path") or row.get("file") or row.get("screenshotPath")
+        normalized.append(
+            {
+                "id": str(row.get("id") or row.get("viewId") or row.get("name") or f"view-{idx + 1}"),
+                "label": str(row.get("label") or row.get("name") or row.get("viewId") or f"View {idx + 1}"),
+                "screenshot": screenshot,
+            }
+        )
+    return normalized
+
+
+def phase_dir_for(args: argparse.Namespace) -> Path:
+    if args.dir:
+        return Path(args.dir).resolve()
+    if not args.seed:
+        raise SystemExit("--dir or --seed is required.")
+    phase = str(args.phase).strip()
+    if not phase:
+        raise SystemExit("--phase is required.")
+    return (ROOT / "seed-artifacts" / args.seed / "evidence" / f"phase-{phase}").resolve()
+
+
 def cmd_compile(args: argparse.Namespace) -> None:
     paths = seed_paths(args.seed)
     recipe = Path(args.recipe) if args.recipe else paths["recipe"]
@@ -220,6 +338,200 @@ def cmd_advisor(args: argparse.Namespace) -> None:
     warning_total = int(((results.get("warning") or {}).get("payload") or {}).get("total") or 0)
     if args.fail_on_warning and warning_total > 0:
         raise SystemExit(3)
+
+
+def cmd_advisor_parity(args: argparse.Namespace) -> None:
+    model = args.model or os.environ.get("BIM_AI_MODEL_ID")
+    if not model:
+        raise SystemExit("advisor-parity requires --model or BIM_AI_MODEL_ID.")
+    base_url = args.base_url.rstrip("/")
+    env = os.environ.copy()
+    env["BIM_AI_MODEL_ID"] = model
+    env["BIM_AI_BASE_URL"] = base_url
+    cli_proc = run([*CLI, "advisor", "--output", "json"], env=env, check=False)
+    cli_payload = parse_optional_json(cli_proc.stdout) or {"total": 0, "groups": []}
+    snap = http_json(f"{base_url}/api/models/{model}/snapshot")
+    body = snap.get("body") if isinstance(snap, dict) else {}
+    violations = body.get("violations") if isinstance(body, dict) else []
+    if not isinstance(violations, list):
+        violations = []
+    ui_payload = advisor_groups_from_violations([v for v in violations if isinstance(v, dict)])
+    ui_payload["modelId"] = body.get("modelId") if isinstance(body, dict) else model
+    ui_payload["revision"] = body.get("revision") if isinstance(body, dict) else None
+    cli_groups = normalized_advisor_groups(cli_payload)
+    ui_groups = normalized_advisor_groups(ui_payload)
+    result = {
+        "schemaVersion": "sketch-to-bim.advisor-parity.v1",
+        "modelId": model,
+        "source": "snapshot-violations-vs-cli-advisor",
+        "note": "AdvisorPanel renders snapshot violations after client-side perspective filtering; this compares the unfiltered right-rail source payload with CLI grouping.",
+        "ok": cli_groups == ui_groups,
+        "cli": cli_payload,
+        "rightRailSource": ui_payload,
+    }
+    if args.out:
+        write_json(Path(args.out).resolve(), result)
+    print(json_dump(result))
+    if args.fail_on_mismatch and not result["ok"]:
+        raise SystemExit(5)
+
+
+def cmd_semantic_checklist(args: argparse.Namespace) -> None:
+    out_dir = phase_dir_for(args)
+    manifest = Path(args.manifest).resolve() if args.manifest else out_dir / "screenshot-manifest.json"
+    rows = screenshot_rows_from_manifest(manifest)
+    if not rows:
+        rows = [
+            {"id": "main", "label": "Main sketch-matched view", "screenshot": None},
+            {"id": "front", "label": "Front/elevation view", "screenshot": None},
+            {"id": "plan", "label": "Plan diagnostic view", "screenshot": None},
+        ]
+    checks = []
+    default_criteria = [
+        "Silhouette and volume hierarchy match the sketch.",
+        "Roof, openings, terraces/loggias, stairs, and other visible special features render as real geometry.",
+        "Materials and facade zones match the visual intent.",
+        "Rooms, access, and interior programme are usable for project initiation.",
+        "No visual issue contradicts Advisor acceptance.",
+    ]
+    for row in rows:
+        checks.append(
+            {
+                "viewId": row["id"],
+                "label": row["label"],
+                "screenshot": row["screenshot"],
+                "criteria": default_criteria,
+                "verdict": "pending",
+                "notes": "",
+            }
+        )
+    payload = {
+        "schemaVersion": "sketch-to-bim.semantic-checklist.v1",
+        "phase": args.phase,
+        "seed": args.seed,
+        "manifest": rel(manifest),
+        "checks": checks,
+    }
+    output = Path(args.out).resolve() if args.out else out_dir / "semantic-checklist.json"
+    write_json(output, payload)
+    print(json_dump({"semanticChecklist": rel(output), "checkCount": len(checks)}))
+
+
+def cmd_issue_ledger(args: argparse.Namespace) -> None:
+    out_dir = phase_dir_for(args)
+    paths = seed_paths(args.seed) if args.seed else {}
+    recipe = Path(args.recipe).resolve() if args.recipe else paths.get("recipe")
+    bundle = Path(args.bundle).resolve() if args.bundle else paths.get("bundle")
+    warning = load_advisor_file(Path(args.advisor_warning).resolve() if args.advisor_warning else out_dir / "advisor-warning.json")
+    info = load_advisor_file(Path(args.advisor_info).resolve() if args.advisor_info else out_dir / "advisor-info.json")
+    entries = []
+    for severity, payload in (("warning", warning), ("info", info)):
+        for group in payload.get("groups") or []:
+            ids = [str(x) for x in group.get("elementIds") or []]
+            entries.append(
+                {
+                    "severity": severity,
+                    "code": group.get("code"),
+                    "count": group.get("count"),
+                    "elementIds": ids,
+                    "messages": group.get("messages") or [],
+                    "recipeMatches": find_text_occurrences(recipe, ids) if recipe else {},
+                    "bundleMatches": find_text_occurrences(bundle, ids) if bundle else {},
+                    "status": "pending" if severity in BLOCKING_SEVERITIES else "reviewed",
+                    "sourceEdit": "",
+                    "toleranceRationale": "",
+                }
+            )
+    payload = {
+        "schemaVersion": "sketch-to-bim.issue-ledger.v1",
+        "phase": args.phase,
+        "seed": args.seed,
+        "recipe": rel(recipe) if recipe else None,
+        "bundle": rel(bundle) if bundle else None,
+        "entries": entries,
+    }
+    output = Path(args.out).resolve() if args.out else out_dir / "issue-ledger.json"
+    write_json(output, payload)
+    print(json_dump({"issueLedger": rel(output), "entryCount": len(entries)}))
+    pending_blockers = [
+        e for e in entries if e["severity"] in BLOCKING_SEVERITIES and e["status"] == "pending"
+    ]
+    if args.fail_on_pending and pending_blockers:
+        raise SystemExit(6)
+
+
+def cmd_phase_accept(args: argparse.Namespace) -> None:
+    out_dir = phase_dir_for(args)
+    required = {
+        "advisor-warning": out_dir / "advisor-warning.json",
+        "advisor-info": out_dir / "advisor-info.json",
+        "screenshot-manifest": out_dir / "screenshot-manifest.json",
+        "semantic-checklist": out_dir / "semantic-checklist.json",
+        "visual-readout": out_dir / "visual-readout.md",
+        "corrections": out_dir / "corrections.md",
+        "issue-ledger": out_dir / "issue-ledger.json",
+    }
+    missing = {name: rel(path) for name, path in required.items() if not path.is_file()}
+    warning = load_advisor_file(required["advisor-warning"])
+    warnings_total = int(warning.get("total") or 0)
+    semantic_failures: list[dict[str, Any]] = []
+    if required["semantic-checklist"].is_file():
+        checklist = read_json(required["semantic-checklist"])
+        for check in checklist.get("checks") or []:
+            verdict = str(check.get("verdict") or "pending")
+            if verdict not in {"pass", "accepted_tolerance"}:
+                semantic_failures.append(
+                    {
+                        "viewId": check.get("viewId"),
+                        "verdict": verdict,
+                        "notes": check.get("notes") or "",
+                    }
+                )
+    pending_issues: list[dict[str, Any]] = []
+    if required["issue-ledger"].is_file():
+        ledger = read_json(required["issue-ledger"])
+        for entry in ledger.get("entries") or []:
+            if (
+                str(entry.get("severity")) in BLOCKING_SEVERITIES
+                and str(entry.get("status") or "pending") not in {"fixed", "tolerated", "software_rule_defect"}
+            ):
+                pending_issues.append(
+                    {
+                        "severity": entry.get("severity"),
+                        "code": entry.get("code"),
+                        "elementIds": entry.get("elementIds") or [],
+                        "status": entry.get("status") or "pending",
+                    }
+                )
+    parity_path = out_dir / "advisor-parity.json"
+    parity_ok = True
+    if args.require_parity:
+        if not parity_path.is_file():
+            missing["advisor-parity"] = rel(parity_path)
+            parity_ok = False
+        else:
+            parity_ok = bool(read_json(parity_path).get("ok"))
+
+    ok = not missing and warnings_total == 0 and not semantic_failures and not pending_issues and parity_ok
+    packet = {
+        "schemaVersion": "sketch-to-bim.phase-packet.v1",
+        "phase": args.phase,
+        "seed": args.seed,
+        "ok": ok,
+        "generatedAtEpochMs": int(time.time() * 1000),
+        "gitHead": git_head(),
+        "files": {name: rel(path) for name, path in required.items()},
+        "missing": missing,
+        "advisorWarningTotal": warnings_total,
+        "semanticFailures": semantic_failures,
+        "pendingIssues": pending_issues,
+        "advisorParityOk": parity_ok,
+    }
+    output = Path(args.out).resolve() if args.out else out_dir / "phase-packet.json"
+    write_json(output, packet)
+    print(json_dump(packet))
+    if not ok:
+        raise SystemExit(7)
 
 
 def cmd_accept(args: argparse.Namespace) -> None:
@@ -335,6 +647,41 @@ def build_parser() -> argparse.ArgumentParser:
     advisor.add_argument("--base-url", default=os.environ.get("BIM_AI_BASE_URL", "http://127.0.0.1:8500"))
     advisor.add_argument("--fail-on-warning", action="store_true")
     advisor.set_defaults(func=cmd_advisor)
+
+    parity = sub.add_parser("advisor-parity", help="Compare CLI Advisor groups with right-rail source payload.")
+    parity.add_argument("--model")
+    parity.add_argument("--out")
+    parity.add_argument("--base-url", default=os.environ.get("BIM_AI_BASE_URL", "http://127.0.0.1:8500"))
+    parity.add_argument("--fail-on-mismatch", action="store_true")
+    parity.set_defaults(func=cmd_advisor_parity)
+
+    semantic = sub.add_parser("semantic-checklist", help="Create a required semantic screenshot review checklist.")
+    semantic.add_argument("--phase", required=True)
+    semantic.add_argument("--seed")
+    semantic.add_argument("--dir")
+    semantic.add_argument("--manifest")
+    semantic.add_argument("--out")
+    semantic.set_defaults(func=cmd_semantic_checklist)
+
+    ledger = sub.add_parser("issue-ledger", help="Map Advisor findings to recipe/bundle source references.")
+    ledger.add_argument("--phase", required=True)
+    ledger.add_argument("--seed")
+    ledger.add_argument("--dir")
+    ledger.add_argument("--recipe")
+    ledger.add_argument("--bundle")
+    ledger.add_argument("--advisor-warning")
+    ledger.add_argument("--advisor-info")
+    ledger.add_argument("--out")
+    ledger.add_argument("--fail-on-pending", action="store_true")
+    ledger.set_defaults(func=cmd_issue_ledger)
+
+    phase = sub.add_parser("phase-accept", help="Fail unless the phase evidence packet is complete and clean.")
+    phase.add_argument("--phase", required=True)
+    phase.add_argument("--seed")
+    phase.add_argument("--dir")
+    phase.add_argument("--out")
+    phase.add_argument("--require-parity", action="store_true")
+    phase.set_defaults(func=cmd_phase_accept)
 
     accept = sub.add_parser("accept", help="Run strict current-HEAD live acceptance for a seed.")
     accept.add_argument("--seed", required=True)
