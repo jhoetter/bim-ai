@@ -1,5 +1,10 @@
 import { useBimStore, type PlanTool } from '../state/store';
+import { VIEWER_CATEGORY_KEYS } from '../viewport/sceneUtils';
 import { registerCommand, type PaletteContext } from './registry';
+
+function is3dContext(ctx: PaletteContext): boolean {
+  return ctx.activeMode === '3d' || ctx.activeMode === 'plan-3d';
+}
 
 function startPlanTool(ctx: PaletteContext, toolId: PlanTool): void {
   if (ctx.startPlanTool) {
@@ -7,6 +12,13 @@ function startPlanTool(ctx: PaletteContext, toolId: PlanTool): void {
     return;
   }
   useBimStore.getState().setPlanTool(toolId);
+}
+
+function setAll3dCategoriesHidden(hidden: boolean): void {
+  const state = useBimStore.getState();
+  const viewerCategoryHidden = { ...state.viewerCategoryHidden };
+  for (const key of VIEWER_CATEGORY_KEYS) viewerCategoryHidden[key] = hidden;
+  useBimStore.setState({ viewerCategoryHidden });
 }
 
 // Tool commands
@@ -260,6 +272,7 @@ registerCommand({
   label: 'Render: Shaded',
   keywords: ['render', 'shaded', 'display', '3d'],
   category: 'command',
+  isAvailable: is3dContext,
   invoke: () => useBimStore.getState().setViewerRenderStyle('shaded'),
 });
 
@@ -268,6 +281,7 @@ registerCommand({
   label: 'Render: Wireframe',
   keywords: ['wireframe', 'render', 'display', '3d'],
   category: 'command',
+  isAvailable: is3dContext,
   invoke: () => useBimStore.getState().setViewerRenderStyle('wireframe'),
 });
 
@@ -276,7 +290,86 @@ registerCommand({
   label: 'Render: Consistent Colors',
   keywords: ['consistent colors', 'render', 'display'],
   category: 'command',
+  isAvailable: is3dContext,
   invoke: () => useBimStore.getState().setViewerRenderStyle('consistent-colors'),
+});
+
+registerCommand({
+  id: 'view.3d.fit',
+  label: '3D: Fit Model',
+  keywords: ['3d', 'fit', 'zoom extents', 'camera'],
+  category: 'command',
+  isAvailable: is3dContext,
+  invoke: () => useBimStore.getState().requestViewerCameraAction('fit'),
+});
+
+registerCommand({
+  id: 'view.3d.reset-camera',
+  label: '3D: Reset Camera',
+  keywords: ['3d', 'reset', 'home', 'camera'],
+  category: 'command',
+  isAvailable: is3dContext,
+  invoke: () => useBimStore.getState().requestViewerCameraAction('reset'),
+});
+
+registerCommand({
+  id: 'view.3d.projection.perspective',
+  label: '3D: Perspective Projection',
+  keywords: ['3d', 'perspective', 'projection', 'camera'],
+  category: 'command',
+  isAvailable: is3dContext,
+  invoke: () => useBimStore.getState().setViewerProjection('perspective'),
+});
+
+registerCommand({
+  id: 'view.3d.projection.orthographic',
+  label: '3D: Orthographic Projection',
+  keywords: ['3d', 'orthographic', 'ortho', 'projection'],
+  category: 'command',
+  isAvailable: is3dContext,
+  invoke: () => useBimStore.getState().setViewerProjection('orthographic'),
+});
+
+registerCommand({
+  id: 'view.3d.walk.toggle',
+  label: '3D: Toggle Walk Mode',
+  keywords: ['3d', 'walk', 'camera', 'navigate'],
+  category: 'command',
+  isAvailable: is3dContext,
+  invoke: () => {
+    const state = useBimStore.getState();
+    state.setViewerWalkModeActive(!state.viewerWalkModeActive);
+  },
+});
+
+registerCommand({
+  id: 'view.3d.section-box.toggle',
+  label: '3D: Toggle Section Box',
+  keywords: ['3d', 'section box', 'clip', 'cut'],
+  category: 'command',
+  isAvailable: is3dContext,
+  invoke: () => {
+    const state = useBimStore.getState();
+    state.setViewerSectionBoxActive(!state.viewerSectionBoxActive);
+  },
+});
+
+registerCommand({
+  id: 'visibility.3d.show-all-categories',
+  label: '3D: Show All Categories',
+  keywords: ['3d', 'show all', 'visibility', 'layers', 'categories'],
+  category: 'command',
+  isAvailable: is3dContext,
+  invoke: () => setAll3dCategoriesHidden(false),
+});
+
+registerCommand({
+  id: 'visibility.3d.hide-all-categories',
+  label: '3D: Hide All Categories',
+  keywords: ['3d', 'hide all', 'visibility', 'layers', 'categories'],
+  category: 'command',
+  isAvailable: is3dContext,
+  invoke: () => setAll3dCategoriesHidden(true),
 });
 
 registerCommand({

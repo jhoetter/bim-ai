@@ -3,31 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
 import { useBimStore } from '../../state/store';
 import type { ViewerRenderStyle } from '../../state/storeTypes';
+import { VIEWER_CATEGORY_KEYS, type ViewerCatKey } from '../../viewport/sceneUtils';
 
-export const VIEWER_HIDDEN_KIND_KEYS = [
-  'wall',
-  'floor',
-  'roof',
-  'ceiling',
-  'stair',
-  'railing',
-  'column',
-  'beam',
-  'door',
-  'window',
-  'room',
-  'family_instance',
-  'placed_asset',
-  'mass',
-  'site',
-  'reference_plane',
-  'text_3d',
-  'sweep',
-  'dormer',
-  'site_origin',
-] as const;
+export const VIEWER_HIDDEN_KIND_KEYS = VIEWER_CATEGORY_KEYS;
 
-export type ViewerHiddenKindKey = (typeof VIEWER_HIDDEN_KIND_KEYS)[number];
+export type ViewerHiddenKindKey = ViewerCatKey;
 type ViewerEdgeWidth = 1 | 2 | 3 | 4;
 
 type ViewerGdoRuntimeState = {

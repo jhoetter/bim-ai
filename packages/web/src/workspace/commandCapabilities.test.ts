@@ -41,6 +41,14 @@ describe('command capability graph', () => {
     }
   });
 
+  it('tracks 3D view and visibility commands as active only in 3D-capable views', () => {
+    expect(evaluateCommandInMode('view.3d.fit', '3d')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('visibility.3d.hide-all-categories', 'plan-3d')?.state).toBe(
+      'enabled',
+    );
+    expect(evaluateCommandInMode('view.3d.fit', 'plan')?.state).toBe('disabled');
+  });
+
   it('detects dead direct command exposure in invalid views', () => {
     expect(
       auditCommandExposures([

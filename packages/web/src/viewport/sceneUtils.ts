@@ -1,27 +1,30 @@
 import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
 
-export type ViewerCatKey =
-  | 'wall'
-  | 'floor'
-  | 'roof'
-  | 'stair'
-  | 'door'
-  | 'window'
-  | 'room'
-  | 'railing'
-  | 'column'
-  | 'beam'
-  | 'ceiling'
-  | 'family_instance'
-  | 'placed_asset'
-  | 'mass'
-  | 'reference_plane'
-  | 'text_3d'
-  | 'sweep'
-  | 'dormer'
-  | 'site'
-  | 'site_origin';
+export const VIEWER_CATEGORY_KEYS = [
+  'wall',
+  'floor',
+  'roof',
+  'ceiling',
+  'stair',
+  'railing',
+  'column',
+  'beam',
+  'door',
+  'window',
+  'room',
+  'family_instance',
+  'placed_asset',
+  'mass',
+  'site',
+  'reference_plane',
+  'text_3d',
+  'sweep',
+  'dormer',
+  'site_origin',
+] as const;
+
+export type ViewerCatKey = (typeof VIEWER_CATEGORY_KEYS)[number];
 
 export function elemViewerCategory(e: Element): ViewerCatKey | null {
   switch (e.kind) {
