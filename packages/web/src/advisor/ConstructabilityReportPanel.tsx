@@ -69,7 +69,8 @@ export function ConstructabilityReportPanel(props: {
           exportDisabled
         />
         <div className="rounded border border-border bg-surface p-3 text-xs text-muted">
-          {props.error || (props.loading ? 'Loading constructability report.' : 'No report loaded.')}
+          {props.error ||
+            (props.loading ? 'Loading constructability report.' : 'No report loaded.')}
         </div>
       </section>
     );

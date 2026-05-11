@@ -93,9 +93,9 @@ describe('advisorViolationContext', () => {
     expect(recommendedContextForRuleId('duct_ceiling_penetration_without_opening')).toMatch(
       /ceiling route|plenum/i,
     );
-    expect(
-      recommendedContextForRuleId('stair_floor_penetration_without_slab_opening'),
-    ).toMatch(/stair shaft|upper floor/i);
+    expect(recommendedContextForRuleId('stair_floor_penetration_without_slab_opening')).toMatch(
+      /stair shaft|upper floor/i,
+    );
     expect(recommendedContextForRuleId('roof_wall_coverage_gap')).toMatch(
       /roof overhang|footprint|coverage/i,
     );

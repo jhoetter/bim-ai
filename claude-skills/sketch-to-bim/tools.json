@@ -282,7 +282,14 @@
       },
       "outputSchema": {
         "type": "object",
-        "required": ["ok", "phase", "missing", "advisorWarningTotal", "semanticFailures", "pendingIssues"],
+        "required": [
+          "ok",
+          "phase",
+          "missing",
+          "advisorWarningTotal",
+          "semanticFailures",
+          "pendingIssues"
+        ],
         "properties": {
           "ok": { "type": "boolean" },
           "phase": { "type": "string" },
@@ -307,7 +314,10 @@
           "recipe": { "type": "string" },
           "ir": { "type": "string" },
           "out": { "type": "string" },
-          "capabilities": { "type": "string", "default": "spec/sketch-to-bim-capability-matrix.json" },
+          "capabilities": {
+            "type": "string",
+            "default": "spec/sketch-to-bim-capability-matrix.json"
+          },
           "baseUrl": { "type": "string", "default": "http://127.0.0.1:8500" },
           "mode": { "type": "string", "default": "project_initiation_bim" },
           "targetImage": { "type": "string" },

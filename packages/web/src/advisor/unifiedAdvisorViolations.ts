@@ -18,7 +18,9 @@ export function constructabilityFindingToViolation(finding: ConstructabilityFind
   return {
     ruleId: finding.ruleId,
     severity,
-    message: recommendation ? `${finding.message} Recommendation: ${recommendation}` : finding.message,
+    message: recommendation
+      ? `${finding.message} Recommendation: ${recommendation}`
+      : finding.message,
     elementIds: [...(finding.elementIds ?? [])],
     discipline: finding.discipline ?? 'coordination',
     blocking: severity === 'error',
@@ -88,8 +90,5 @@ function normalizeSeverity(value: string): Violation['severity'] {
 }
 
 function violationKey(violation: Violation): string {
-  return [
-    violation.ruleId,
-    [...(violation.elementIds ?? [])].sort().join(','),
-  ].join('|');
+  return [violation.ruleId, [...(violation.elementIds ?? [])].sort().join(',')].join('|');
 }

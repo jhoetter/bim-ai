@@ -66,8 +66,7 @@ const READABLE_TITLE_BY_RULE_ID: Record<string, string> = {
   duct_floor_penetration_without_opening: 'Duct Floor Penetration Without Opening',
   pipe_ceiling_penetration_without_opening: 'Pipe Ceiling Penetration Without Opening',
   duct_ceiling_penetration_without_opening: 'Duct Ceiling Penetration Without Opening',
-  stair_floor_penetration_without_slab_opening:
-    'Stair Floor Penetration Without Slab Opening',
+  stair_floor_penetration_without_slab_opening: 'Stair Floor Penetration Without Slab Opening',
   roof_wall_coverage_gap: 'Roof Wall Coverage Gap',
 };
 

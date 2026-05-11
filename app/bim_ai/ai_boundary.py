@@ -9,12 +9,12 @@ from __future__ import annotations
 
 import csv
 import io
+from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable, Literal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
-
 
 AUDIT_CSV_HEADER: tuple[str, ...] = (
     "jobId",
