@@ -3,8 +3,22 @@
   "checkpoint_id": "b068a1921548",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
-  "files_touched": null,
+  "checkpoints_count": 1,
+  "files_touched": [
+    "app/bim_ai/skb/brief.py",
+    "app/scripts/seed.py",
+    "app/tests/test_one_family_bundle_roundtrip.py",
+    "packages/cli/cli.initiationCheck.test.mjs",
+    "packages/cli/cli.mjs",
+    "packages/cli/lib/one-family-home-commands.mjs",
+    "packages/web/e2e/__fixtures__/seed-target-house-snapshot.json",
+    "packages/web/e2e/seed-target-house.spec.ts",
+    "packages/web/e2e/skb-checkpoint.spec.ts",
+    "spec/examples/seed-dsl-modern-house.example.json",
+    "spec/examples/sketch-understanding-ir-documentation.example.json",
+    "spec/examples/sketch-understanding-ir.example.json",
+    "spec/sketch-to-bim-methodology.md"
+  ],
   "sessions": [
     {
       "metadata": "/b0/68a1921548/0/metadata.json",
@@ -29,6 +43,19 @@
       "transcript": "/b0/68a1921548/3/full.jsonl",
       "content_hash": "/b0/68a1921548/3/content_hash.txt",
       "prompt": "/b0/68a1921548/3/prompt.txt"
+    },
+    {
+      "metadata": "/b0/68a1921548/4/metadata.json",
+      "transcript": "/b0/68a1921548/4/full.jsonl",
+      "content_hash": "/b0/68a1921548/4/content_hash.txt",
+      "prompt": "/b0/68a1921548/4/prompt.txt"
     }
-  ]
+  ],
+  "token_usage": {
+    "input_tokens": 466322,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 17049600,
+    "output_tokens": 28208,
+    "api_call_count": 134
+  }
 }
