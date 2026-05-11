@@ -1,0 +1,30 @@
+You are implementing the BIM AI UX revamp.
+
+  First, read and follow:
+  spec/methodology-prompt.md
+
+  Then implement the first workpackage:
+
+  Implement UX-WP-01 from spec/ux-bim-ai-rework-tracker.md.
+
+  Goal:
+  Create the canonical seven-region workspace shell foundation:
+  - resizable primary sidebar region
+  - persistent secondary sidebar region
+  - tab-first header region
+  - ribbon/options region
+  - canvas region
+  - conditional element-sidebar region
+  - footer region
+
+  Do not migrate all features yet. Do not move random individual buttons. Create the structural foundation that makes correct placement
+  possible.
+
+  Definition of done:
+  - shell can represent the target layout
+  - primary sidebar can collapse to hidden and be restored from the header
+  - element sidebar can be absent when no element is selected
+  - ownership tests prove these behaviors
+  - seeded app still runs with `make dev name=target-house-3`
+  - relevant screenshots are captured
+  - final answer lists tracker rows addressed, files changed, validation run, screenshots checked, and remaining gaps
