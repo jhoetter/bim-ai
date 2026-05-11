@@ -317,6 +317,54 @@ export async function fetchConstructabilityReport(
   );
 }
 
+export type ConstructabilityBcfTopic = {
+  stableTopicId: string;
+  topicKind: 'bcf';
+  topicId: string;
+  title: string;
+  status: string;
+  elementIds: string[];
+  viewpointRef?: string;
+  evidenceRefs: Array<Record<string, unknown>>;
+  violationRuleIds: string[];
+  constructabilityIssueFingerprint: string;
+  severity?: string | null;
+  discipline?: string | null;
+  blockingClass?: string | null;
+  recommendation?: string | null;
+  message?: string | null;
+};
+
+export type ConstructabilityBcfViewpoint = {
+  viewpointId: string;
+  name: string;
+  mode: 'orbit_3d';
+  elementIds: string[];
+  bboxMm: Record<string, number>;
+  camera: Record<string, unknown>;
+  sectionBoxMinMm: Record<string, number>;
+  sectionBoxMaxMm: Record<string, number>;
+};
+
+export type ConstructabilityBcfExport = {
+  format: 'constructabilityBcfExport_v1';
+  modelId?: string;
+  revision: string | number;
+  profile: string;
+  topicCount: number;
+  viewpointCount: number;
+  topics: ConstructabilityBcfTopic[];
+  viewpoints: ConstructabilityBcfViewpoint[];
+};
+
+export async function fetchConstructabilityBcfExport(
+  modelId: string,
+): Promise<ConstructabilityBcfExport> {
+  return fetchJson<ConstructabilityBcfExport>(
+    `/api/models/${encodeURIComponent(modelId)}/constructability-bcf`,
+  );
+}
+
 /** FED-04b: upload a DXF file from the browser via multipart form. */
 export type DxfImportOptions = {
   originAlignmentMode?: 'origin_to_origin' | 'project_origin' | 'shared_coords';

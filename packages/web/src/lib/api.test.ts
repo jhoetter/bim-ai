@@ -4,6 +4,7 @@ import {
   ApiHttpError,
   applyCommand,
   applyCommandBundle,
+  fetchConstructabilityBcfExport,
   fetchConstructabilityReport,
   uploadDxfFile,
 } from './api';
@@ -220,5 +221,60 @@ describe('fetchConstructabilityReport', () => {
 
     expect(report.format).toBe('constructabilityReport_v1');
     expect(fetch).toHaveBeenCalledWith('/api/models/model%201/constructability-report', undefined);
+  });
+});
+
+describe('fetchConstructabilityBcfExport', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('fetches the model constructability-bcf endpoint', async () => {
+    mockFetchOnce({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      body: JSON.stringify({
+        format: 'constructabilityBcfExport_v1',
+        modelId: 'model 1',
+        revision: 3,
+        profile: 'authoring_default',
+        topicCount: 1,
+        viewpointCount: 1,
+        topics: [
+          {
+            stableTopicId: 'bcf:bcf-constructability-abc',
+            topicKind: 'bcf',
+            topicId: 'bcf-constructability-abc',
+            title: 'Furniture Wall Hard Clash',
+            status: 'open',
+            elementIds: ['shelf-1', 'wall-1'],
+            viewpointRef: 'vp-constructability-abc',
+            evidenceRefs: [{ kind: 'viewpoint', viewpointId: 'vp-constructability-abc' }],
+            violationRuleIds: ['furniture_wall_hard_clash'],
+            constructabilityIssueFingerprint: 'abc',
+          },
+        ],
+        viewpoints: [
+          {
+            viewpointId: 'vp-constructability-abc',
+            name: 'Furniture Wall Hard Clash',
+            mode: 'orbit_3d',
+            elementIds: ['shelf-1', 'wall-1'],
+            bboxMm: { minX: 0, minY: -100, minZ: 0, maxX: 4000, maxY: 150, maxZ: 3000 },
+            camera: {},
+            sectionBoxMinMm: { xMm: 0, yMm: -100, zMm: 0 },
+            sectionBoxMaxMm: { xMm: 4000, yMm: 150, zMm: 3000 },
+          },
+        ],
+      }),
+    });
+
+    const exportPayload = await fetchConstructabilityBcfExport('model 1');
+
+    expect(exportPayload.format).toBe('constructabilityBcfExport_v1');
+    expect(exportPayload.topics[0]?.violationRuleIds).toEqual(['furniture_wall_hard_clash']);
+    expect(fetch).toHaveBeenCalledWith('/api/models/model%201/constructability-bcf', undefined);
   });
 });
