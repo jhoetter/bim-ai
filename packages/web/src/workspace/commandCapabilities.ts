@@ -216,8 +216,8 @@ function buildToolCapabilities(): CommandCapability[] {
     surfaces: ['floating-palette', 'ribbon', 'cmd-k'],
     executionSurface: executionSurfaceForTool(tool),
     preconditions: preconditionsForTool(tool.id),
-    status: tool.modes.includes('3d') && tool.id !== 'select' ? 'partial' : 'implemented',
-    usabilityScore: tool.modes.includes('3d') && tool.id !== 'select' ? 6 : 7,
+    status: 'implemented',
+    usabilityScore: 8,
     bridgeToMode: bridgeModesForTool(tool),
     notes: tool.tooltip,
   }));
