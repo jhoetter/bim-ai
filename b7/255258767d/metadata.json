@@ -3,7 +3,7 @@
   "checkpoint_id": "b7255258767d",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "packages/web/src/tools/ToolPalette.tsx",
     "packages/web/src/workspace/WorkspaceHelpers.tsx"
@@ -56,6 +56,19 @@
       "transcript": "/b7/255258767d/7/full.jsonl",
       "content_hash": "/b7/255258767d/7/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/b7/255258767d/8/metadata.json",
+      "transcript": "/b7/255258767d/8/full.jsonl",
+      "content_hash": "/b7/255258767d/8/content_hash.txt",
+      "prompt": "/b7/255258767d/8/prompt.txt"
     }
-  ]
+  ],
+  "token_usage": {
+    "input_tokens": 1150489,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 27327872,
+    "output_tokens": 81727,
+    "api_call_count": 209
+  }
 }
