@@ -1,0 +1,83 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "714884ae4c15",
+  "session_id": "019e1646-659c-7373-bd65-79cdf02a5180",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-11T11:38:08.666792Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "seed-artifacts/target-house-2/bundle.json",
+    "seed-artifacts/target-house-2/evidence/assumptions.md",
+    "seed-artifacts/target-house-2/evidence/material-check.json",
+    "seed-artifacts/target-house-2/evidence/phase-1/advisor-info.json",
+    "seed-artifacts/target-house-2/evidence/phase-1/advisor-warning.json",
+    "seed-artifacts/target-house-2/evidence/phase-1/corrections.md",
+    "seed-artifacts/target-house-2/evidence/phase-1/phase-packet.json",
+    "seed-artifacts/target-house-2/evidence/phase-1/screenshot-manifest.json",
+    "seed-artifacts/target-house-2/evidence/phase-1/semantic-checklist.json",
+    "seed-artifacts/target-house-2/evidence/phase-1/visual-readout.md",
+    "seed-artifacts/target-house-2/evidence/sketch-ir.json",
+    "seed-artifacts/target-house-2/evidence/status.md",
+    "seed-artifacts/target-house-2/evidence/target-house-2.recipe.json",
+    "seed-artifacts/target-house-2/manifest.json",
+    "seed-artifacts/target-house-2/source/floorplan.png",
+    "seed-artifacts/target-house-2/source/target-house-1.png",
+    "seed-artifacts/target-house-2/source/target-house-2.png",
+    "seed-artifacts/target-house-2/source/target-house-seed.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "af4735980d44",
+  "checkpoint_transcript_start": 4012,
+  "transcript_lines_at_start": 4012,
+  "token_usage": {
+    "input_tokens": 192395,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 3546112,
+    "output_tokens": 3315,
+    "api_call_count": 21
+  },
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-11T11:38:08.550194Z",
+    "agent_lines": 4995,
+    "agent_removed": 0,
+    "human_added": 295,
+    "human_modified": 249,
+    "human_removed": 0,
+    "total_committed": 5539,
+    "total_lines_changed": 5539,
+    "agent_percentage": 90.17873262321719,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 637,
+      "user_lines_removed": 8,
+      "agent_lines_added": 7081,
+      "agent_lines_removed": 199,
+      "user_added_per_file": {
+        "packages/web/src/Viewport.tsx": 10,
+        "packages/web/src/viewport/wallFaceRadialMenu.test.tsx": 19,
+        "packages/web/src/viewport/wallFaceRadialMenu.tsx": 24,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 106,
+        "seed-artifacts/target-house-2/evidence/phase-1/issue-ledger.json": 478
+      },
+      "user_removed_per_file": {
+        "packages/web/src/viewport/wallFaceRadialMenu.tsx": 2,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 6
+      }
+    }
+  ]
+}

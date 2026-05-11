@@ -3,8 +3,27 @@
   "checkpoint_id": "714884ae4c15",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 4,
-  "files_touched": null,
+  "checkpoints_count": 6,
+  "files_touched": [
+    "seed-artifacts/target-house-2/bundle.json",
+    "seed-artifacts/target-house-2/evidence/assumptions.md",
+    "seed-artifacts/target-house-2/evidence/material-check.json",
+    "seed-artifacts/target-house-2/evidence/phase-1/advisor-info.json",
+    "seed-artifacts/target-house-2/evidence/phase-1/advisor-warning.json",
+    "seed-artifacts/target-house-2/evidence/phase-1/corrections.md",
+    "seed-artifacts/target-house-2/evidence/phase-1/phase-packet.json",
+    "seed-artifacts/target-house-2/evidence/phase-1/screenshot-manifest.json",
+    "seed-artifacts/target-house-2/evidence/phase-1/semantic-checklist.json",
+    "seed-artifacts/target-house-2/evidence/phase-1/visual-readout.md",
+    "seed-artifacts/target-house-2/evidence/sketch-ir.json",
+    "seed-artifacts/target-house-2/evidence/status.md",
+    "seed-artifacts/target-house-2/evidence/target-house-2.recipe.json",
+    "seed-artifacts/target-house-2/manifest.json",
+    "seed-artifacts/target-house-2/source/floorplan.png",
+    "seed-artifacts/target-house-2/source/target-house-1.png",
+    "seed-artifacts/target-house-2/source/target-house-2.png",
+    "seed-artifacts/target-house-2/source/target-house-seed.md"
+  ],
   "sessions": [
     {
       "metadata": "/71/4884ae4c15/0/metadata.json",
@@ -47,13 +66,19 @@
       "transcript": "/71/4884ae4c15/6/full.jsonl",
       "content_hash": "/71/4884ae4c15/6/content_hash.txt",
       "prompt": "/71/4884ae4c15/6/prompt.txt"
+    },
+    {
+      "metadata": "/71/4884ae4c15/7/metadata.json",
+      "transcript": "/71/4884ae4c15/7/full.jsonl",
+      "content_hash": "/71/4884ae4c15/7/content_hash.txt",
+      "prompt": "/71/4884ae4c15/7/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 4510017,
+    "input_tokens": 4702412,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 139336576,
-    "output_tokens": 321726,
-    "api_call_count": 1112
+    "cache_read_tokens": 142882688,
+    "output_tokens": 325041,
+    "api_call_count": 1133
   }
 }
