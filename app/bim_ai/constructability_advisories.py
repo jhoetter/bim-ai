@@ -69,6 +69,7 @@ def constructability_advisory_violations(elements: dict[str, Element]) -> list[V
     violations.extend(_load_bearing_wall_removed_violations(walls_by_id))
     violations.extend(_stacked_load_path_violations(participants_by_kind, walls_by_id))
     violations.extend(_floor_span_metadata_violations(participants_by_kind, elements))
+    violations.extend(_floor_boundary_support_violations(participants_by_kind, elements))
     violations.extend(_roof_wall_coverage_violations(participants_by_kind, walls_by_id))
     violations.extend(_roof_low_slope_metadata_violations(elements))
     violations.extend(_unsupported_beam_violations(participants_by_kind, elements, walls_by_id))
@@ -621,6 +622,43 @@ def _roof_wall_coverage_violations(
     return violations
 
 
+def _floor_boundary_support_violations(
+    participants_by_kind: dict[str, list[PhysicalParticipant]],
+    elements: dict[str, Element],
+) -> list[Violation]:
+    walls = participants_by_kind.get("wall", [])
+    if not walls:
+        return []
+    violations: list[Violation] = []
+    for floor_participant in participants_by_kind.get("floor", []):
+        floor = elements.get(floor_participant.element_id)
+        if not isinstance(floor, FloorElem):
+            continue
+        props = floor.props or {}
+        if not _truthy_prop(props, "requiresBoundaryWallSupport", "requiresPerimeterSupport"):
+            continue
+        boundary = [(float(p.x_mm), float(p.y_mm)) for p in floor.boundary_mm]
+        unsupported_edges = [
+            index
+            for index, (a, b) in enumerate(zip(boundary, boundary[1:] + boundary[:1], strict=False))
+            if not _floor_edge_has_wall_support(a, b, floor_participant, walls)
+        ]
+        if not unsupported_edges:
+            continue
+        violations.append(
+            Violation(
+                rule_id="floor_boundary_without_wall_support",
+                severity="warning",
+                message=(
+                    "Floor requires perimeter wall support but has unsupported boundary "
+                    f"edge(s): {unsupported_edges}."
+                ),
+                element_ids=[floor.id],
+            )
+        )
+    return violations
+
+
 def _roof_low_slope_metadata_violations(elements: dict[str, Element]) -> list[Violation]:
     violations: list[Violation] = []
     for element in elements.values():
@@ -1078,6 +1116,40 @@ def _point_segment_distance_mm(
     closest_x = ax + t * dx
     closest_y = ay + t * dy
     return math.hypot(px - closest_x, py - closest_y)
+
+
+def _floor_edge_has_wall_support(
+    a: tuple[float, float],
+    b: tuple[float, float],
+    floor: PhysicalParticipant,
+    walls: list[PhysicalParticipant],
+) -> bool:
+    mid = ((a[0] + b[0]) / 2.0, (a[1] + b[1]) / 2.0)
+    for wall in walls:
+        if not _levels_compatible(floor.level_id, wall.level_id):
+            continue
+        if _point_in_aabb_plan(mid, wall.aabb, tolerance_mm=250.0):
+            return True
+        wall_mid = (
+            (wall.aabb.min_x + wall.aabb.max_x) / 2.0,
+            (wall.aabb.min_y + wall.aabb.max_y) / 2.0,
+        )
+        if _point_segment_distance_mm(wall_mid, a, b) <= 250.0:
+            return True
+    return False
+
+
+def _point_in_aabb_plan(
+    point: tuple[float, float],
+    aabb: AABB,
+    *,
+    tolerance_mm: float,
+) -> bool:
+    x, y = point
+    return (
+        aabb.min_x - tolerance_mm <= x <= aabb.max_x + tolerance_mm
+        and aabb.min_y - tolerance_mm <= y <= aabb.max_y + tolerance_mm
+    )
 
 
 def _floor_has_structural_system_metadata(floor: FloorElem) -> bool:

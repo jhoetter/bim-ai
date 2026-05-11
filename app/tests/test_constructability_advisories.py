@@ -406,6 +406,52 @@ def test_long_floor_span_without_structural_metadata_is_reported_and_suppressed(
     assert "floor_span_without_support_metadata" not in _rule_ids(elements)
 
 
+def test_floor_boundary_wall_support_requirement_is_reported() -> None:
+    floor = FloorElem(
+        kind="floor",
+        id="floor-supported",
+        levelId="lvl-1",
+        boundaryMm=[
+            {"xMm": 0, "yMm": 0},
+            {"xMm": 4000, "yMm": 0},
+            {"xMm": 4000, "yMm": 3000},
+            {"xMm": 0, "yMm": 3000},
+        ],
+        props={"requiresBoundaryWallSupport": True},
+    )
+    elements = {
+        "lvl-1": _level(),
+        "floor-supported": floor,
+        "wall-1": _wall(
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 0},
+        ),
+    }
+
+    assert "floor_boundary_without_wall_support" in _rule_ids(elements)
+
+    elements.update(
+        {
+            "wall-2": _wall(
+                id="wall-2",
+                start={"xMm": 4000, "yMm": 0},
+                end={"xMm": 4000, "yMm": 3000},
+            ),
+            "wall-3": _wall(
+                id="wall-3",
+                start={"xMm": 4000, "yMm": 3000},
+                end={"xMm": 0, "yMm": 3000},
+            ),
+            "wall-4": _wall(
+                id="wall-4",
+                start={"xMm": 0, "yMm": 3000},
+                end={"xMm": 0, "yMm": 0},
+            ),
+        }
+    )
+    assert "floor_boundary_without_wall_support" not in _rule_ids(elements)
+
+
 def test_primary_wall_outside_roof_coverage_is_reported() -> None:
     elements = {
         "lvl-1": _level(),
