@@ -13,7 +13,7 @@ The editor is already feature-rich, but the UX model is currently inconsistent b
 1. The top bar and ribbon expose tools globally, even when the active canvas cannot execute them.
 2. The floating tool palette is view-aware, but it is also filtered by "perspective" in a way that hides or reveals tools differently from the ribbon.
 3. The command palette is not tied to the active tab/view. Some "Go to" commands only update `viewerMode`, while the rendered canvas is controlled by active tabs and `mode`.
-4. The 3D viewport has partial editing affordances, but pure 3D mode does not receive `onSemanticCommand`, so 3D grips and wall-face commands cannot commit changes from that mode.
+4. Pure 3D mode now receives `onSemanticCommand`, so 3D grips and wall-face commands have a commit path; remaining 3D work is about explicit command support and interaction quality.
 5. Visibility controls are split between plan VG, 3D layer toggles, lens filters, hidden/reveal state, and saved-view hidden categories. The 3D layer panel only exposes a subset of renderable categories, so "hide all" does not hide all visible geometry.
 
 Current usability score: **3/10**.
@@ -328,19 +328,17 @@ Mode mapping:
 - `schedule`: `ScheduleModeShell`.
 - `agent`: `AgentReviewModeShell`.
 
-Critical finding:
+Resolved finding:
 
 - In `plan-3d`, `Viewport` receives `onSemanticCommand`.
-- In pure `3d`, `Viewport` does **not** receive `onSemanticCommand`.
+- In pure `3d`, `Viewport` also receives `onSemanticCommand`.
 
 Impact:
 
 - Pure 3D selection can work because it uses store selection.
-- 3D grips can render, but grip commands early-return when `onSemanticCommand` is missing.
-- 3D wall context menu/radial commands can appear but cannot commit commands in pure 3D.
-- In plan+3D, those commands have a dispatch path.
+- 3D grips, wall context menu, and radial commands now have a dispatch path in pure 3D and plan+3D.
 
-This is the strongest code-level explanation for "3D renderer should allow working on walls, doors, etc., but it seemingly currently is not the case."
+This closes the strongest code-level explanation for "3D renderer should allow working on walls, doors, etc., but it seemingly currently is not the case."
 
 Decision:
 
