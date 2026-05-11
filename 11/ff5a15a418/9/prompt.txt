@@ -1,0 +1,17 @@
+please look into the spec/sketch-to-bim-clean-seeding-handover.md and implement; where are we currently?
+
+---
+
+so how do i run make seed?
+make install
+make seed name=target-house-1
+make dev
+like that?
+
+---
+
+[Image #1] but there are e.g. still warnings that the software produces; please look into our methodology, is it still step-wise that it looks whether it is getting the fundamentals right and then incrementally builds and sees if the warnings pop up and resolves them? also chooses right materials etc?
+
+again, the AI generating this is in a prompt like here, using the software to create the seeding data; but the softwarae does detect issues when running, so the process of creating the seed data itself (the actual artifacts) potentially should have a server running with the software to get the warnings etc, so the AI can resolve them?
+
+also i am a bit surprised there are e.g. no interior artifacts used at all in the seeding etc.; not just if we went a step back in our methodology. look into our commit history, specifically yesterday (or entire.io), how our mechanism worked for creating seed artifacts; it did a lot of the stuff i mentioned. please overall score our methdology claude-skills/sketch-to-bim but also how the AI then is instructed to use the actual software, if we get everything right. build a tracker for this (if non exists yet, look into spec )
