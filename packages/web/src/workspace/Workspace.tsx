@@ -28,7 +28,6 @@ import {
 } from '../lib/collaborationConflictQueue';
 import type { LensMode, Snapshot, Violation } from '@bim-ai/core';
 import { useBimStore, applyTheme, toggleTheme, getCurrentTheme, type Theme } from '../state/store';
-import type { PerspectiveId } from '@bim-ai/core';
 import { selectDriftedElements } from '../plan/monitorDriftBadge';
 import { modeForHotkey } from '../state/modeController';
 import { patternFor } from '../state/uiStates';
@@ -175,21 +174,6 @@ function disciplineScopeNote(
  * §12 Project Browser, §13 Inspector, §16 Tool palette, §17 StatusBar.
  */
 
-const PERSPECTIVE_OPTIONS: { id: PerspectiveId; label: string }[] = [
-  { id: 'architecture', label: 'Architecture' },
-  { id: 'structure', label: 'Structure' },
-  { id: 'mep', label: 'MEP' },
-  { id: 'coordination', label: 'Coordination' },
-  { id: 'construction', label: 'Construction' },
-  { id: 'agent', label: 'Agent' },
-];
-
-const PLAN_STYLE_OPTIONS = [
-  { id: 'default', label: 'Neutral' },
-  { id: 'opening_focus', label: 'Opening focus' },
-  { id: 'room_scheme', label: 'Room scheme' },
-];
-
 type RailOverride = 'open' | 'collapsed' | null;
 
 function formatStatusMm(mm: number): string {
@@ -220,10 +204,7 @@ export function Workspace(): JSX.Element {
   const revision = useBimStore((s) => s.revision);
   const comments = useBimStore((s) => s.comments);
   const setComments = useBimStore((s) => s.setComments);
-  const perspectiveId = useBimStore((s) => s.perspectiveId);
   const setPerspectiveId = useBimStore((s) => s.setPerspectiveId);
-  const planPresentationPreset = useBimStore((s) => s.planPresentationPreset);
-  const setPlanPresentationPreset = useBimStore((s) => s.setPlanPresentationPreset);
   const setActivity = useBimStore((s) => s.setActivity);
   const vvDialogOpen = useBimStore((s) => s.vvDialogOpen);
   const openVVDialog = useBimStore((s) => s.openVVDialog);
@@ -1774,19 +1755,12 @@ export function Workspace(): JSX.Element {
             projectName={activeSeedLabel ?? 'BIM AI'}
             projectNameRef={projectNameRef}
             onProjectNameClick={() => setProjectMenuOpen((v) => !v)}
-            onSemanticCommand={onSemanticCommand}
             openTabFromElement={openTabFromElement}
-            onModeChange={handleModeChange}
             onSetModeOnly={handleSetModeOnly}
-            onOpenFamilyLibrary={() => setFamilyLibraryOpen(true)}
-            perspectiveOptions={PERSPECTIVE_OPTIONS}
-            perspectiveValue={perspectiveId}
-            onPerspectiveChange={(v) => setPerspectiveId(v as PerspectiveId)}
-            planStyleOptions={PLAN_STYLE_OPTIONS}
-            planStyleValue={planPresentationPreset}
-            onPlanStyleChange={(v) =>
-              setPlanPresentationPreset(v as 'default' | 'opening_focus' | 'room_scheme')
-            }
+            userDisplayName={userDisplayName}
+            userId={userId}
+            modelId={modelId}
+            revision={revision}
           />
         }
         secondarySidebar={

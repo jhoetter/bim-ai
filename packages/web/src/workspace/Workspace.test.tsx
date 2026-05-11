@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '../i18n';
@@ -73,6 +73,40 @@ describe('<Workspace /> — smoke', () => {
     expect(header.queryByRole('button', { name: /^Plan$/i })).toBeNull();
     expect(header.getByTestId('workspace-header-cmdk')).toBeTruthy();
     expect(header.getByTestId('workspace-header-share')).toBeTruthy();
+  });
+
+  it('keeps the primary sidebar navigation-only — UX-TEST-001', () => {
+    const { getByTestId, getByRole, queryByTestId } = renderWithProviders(<Workspace />);
+    const primary = within(getByTestId('app-shell-primary-sidebar'));
+
+    expect(primary.getByTestId('primary-project-selector')).toBeTruthy();
+    expect(primary.getByLabelText('Search')).toBeTruthy();
+    expect(primary.getByText('Concept')).toBeTruthy();
+    expect(primary.getByText('Floor Plans')).toBeTruthy();
+    expect(primary.getByText('3D Views')).toBeTruthy();
+    expect(primary.getByText('Sections')).toBeTruthy();
+    expect(primary.getByText('Sheets')).toBeTruthy();
+    expect(primary.getByText('Schedules')).toBeTruthy();
+    expect(primary.getByTestId('primary-user-menu')).toBeTruthy();
+
+    expect(primary.queryByText('Levels')).toBeNull();
+    expect(primary.queryByText('Browser legend')).toBeNull();
+    expect(primary.queryByText('Families…')).toBeNull();
+    expect(primary.queryByText('Types')).toBeNull();
+    expect(primary.queryByText('Wall Types')).toBeNull();
+    expect(primary.queryByText('Architecture')).toBeNull();
+    expect(primary.queryByText('Neutral')).toBeNull();
+    expect(queryByTestId('left-rail-open-family-library')).toBeNull();
+    expect(getByRole('complementary', { name: 'Project browser' })).toBeTruthy();
+  });
+
+  it('scopes primary sidebar search to navigation rows', () => {
+    const { getByTestId } = renderWithProviders(<Workspace />);
+    const primary = within(getByTestId('app-shell-primary-sidebar'));
+    fireEvent.change(primary.getByLabelText('Search'), { target: { value: 'family' } });
+
+    expect(primary.queryByText('Families')).toBeNull();
+    expect(primary.queryByText('Wall Types')).toBeNull();
   });
 
   it('keeps 3D view controls in the secondary sidebar when no element is selected', () => {
