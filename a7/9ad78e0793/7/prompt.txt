@@ -1,0 +1,29 @@
+[Image #1] i have seen this extremely interesting yt short, which shows a tool where the floorplan level can be shown in the 3d axis and i can see exactly when e.g. rotating how it also rotates etc, e.g. [Image #2]; is that a common revit feature? i need that as well, can you analyse it and write specifications into spec ?
+
+---
+
+the important part is that i can overlay them like here: [Image #1]; this way, i can see how the floorplan translates into the 3d model and vice versa. is that reflected in the tracker?
+
+---
+
+ok, now please implement it fully and commit and then push and merge to main
+
+---
+
+so the tracker is 100% implemented?
+
+---
+
+also merged with main? where can i use it?
+
+---
+
+[Image #1] like this? because i dont see it yet here..
+
+---
+
+[Image #1]dont see it...
+
+---
+
+[Image #1]dont yet see anything...

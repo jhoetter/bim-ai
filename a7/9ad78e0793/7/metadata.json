@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "a79ad78e0793",
+  "session_id": "019e16a0-d3c4-70f0-aa4b-ffef28f22dad",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-11T13:45:31.43699Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "0bf124ecc8e9",
+  "checkpoint_transcript_start": 988,
+  "transcript_lines_at_start": 988,
+  "token_usage": {
+    "input_tokens": 216666,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2239360,
+    "output_tokens": 7276,
+    "api_call_count": 22
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1461,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/workspace/InspectorContent.tsx": 1461
+      }
+    }
+  ]
+}
