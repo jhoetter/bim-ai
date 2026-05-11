@@ -1,0 +1,61 @@
+please look into the spec/sketch-to-bim-clean-seeding-handover.md and implement; where are we currently?
+
+---
+
+so how do i run make seed?
+make install
+make seed name=target-house-1
+make dev
+like that?
+
+---
+
+[Image #1] but there are e.g. still warnings that the software produces; please look into our methodology, is it still step-wise that it looks whether it is getting the fundamentals right and then incrementally builds and sees if the warnings pop up and resolves them? also chooses right materials etc?
+
+again, the AI generating this is in a prompt like here, using the software to create the seeding data; but the softwarae does detect issues when running, so the process of creating the seed data itself (the actual artifacts) potentially should have a server running with the software to get the warnings etc, so the AI can resolve them?
+
+also i am a bit surprised there are e.g. no interior artifacts used at all in the seeding etc.; not just if we went a step back in our methodology. look into our commit history, specifically yesterday (or entire.io), how our mechanism worked for creating seed artifacts; it did a lot of the stuff i mentioned. please overall score our methdology claude-skills/sketch-to-bim but also how the AI then is instructed to use the actual software, if we get everything right. build a tracker for this (if non exists yet, look into spec )
+
+---
+
+yeah ignore the current seed, but go and build an approach such that if i tell the AI to use that, it has access to the right tools to really get to a 10/10 everywhere; for instance see how the watch_yt skill als has watch_yt tools. consider that, look into it; how can we achieve that an AI being instructed to turn a sketch into BIM has the written methodology , but also the right tool set etc?
+
+---
+
+do you have put these kind of findings into a tracker in spec btw? similar to e.g. spec/rayon-design-tracker.md or such? (of course not raayon-design, but as an example)
+
+---
+
+is it fully implemented?
+
+---
+
+please go and build everything for this, don'T stop until dont. always commit after each workpackage, upload and then merge into main
+
+---
+
+ok now create target-house-2 seed via a subagent based on spec/target-house; give it the instructions so it can kick-off
+
+---
+
+is it done?
+
+---
+
+how about now?
+
+---
+
+what will be the name of the seeded artifact? will it be target-house-2?
+
+---
+
+but that looks exactly like target-house-1, right? i am confused.. also none of the warnings have been solved that the software identified... i am not sure it really is working so well..
+
+---
+
+or to clearly tell the AI not to stop until there are no more warnings, and everything is correctly modeled etc?
+
+---
+
+yep, exactly - make that change in the methodology and tracker etc. then try target-house-3 as a subagent with that..
