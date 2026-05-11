@@ -58,7 +58,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Multi-tab workspace](file:///Users/jhoetter/Desktop/Revit%20Specs/0131_00-14-26.png)
 
-**bim-ai status:** 🟡 Partial — `workspace/tabsModel.ts` (spec §11.3) implements a full multi-tab system with tab kinds: `plan`, `3d`, `plan-3d`, `section`, `sheet`, `schedule`, and `agent`. `TabBar.tsx` renders the tab strip; tabs are opened from `ProjectBrowser.tsx` (double-click a view), closed individually, and their viewport state (camera pose / orbit) is cached and restored on reactivation. Tab order is drag-reorderable and state persists via `tabsPersistence.ts`. Missing: a "Close Inactive Views" button equivalent; no tile/cascade window arrangement.
+**bim-ai status:** ✅ Available — `workspace/tabsModel.ts` (spec §11.3) implements a full multi-tab system with tab kinds: `plan`, `3d`, `plan-3d`, `section`, `sheet`, `schedule`, and `agent`. `TabBar.tsx` renders the tab strip; tabs are opened from `ProjectBrowser.tsx` (double-click a view), closed individually, and their viewport state (camera pose / orbit) is cached and restored on reactivation. Tab order is drag-reorderable and state persists via `tabsPersistence.ts`. A "Close Inactive Views" button (`data-testid="close-inactive-tabs"`) appears in the trailing area of the tab bar (visible when ≥ 2 tabs are open) and calls the `closeInactiveTabs` reducer to keep only the active tab. Note: tile/cascade window arrangement is not applicable in a SaaS single-canvas model.
 
 ---
 
@@ -80,7 +80,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Language Settings](file:///Users/jhoetter/Desktop/Revit%20Specs/0175_00-24-47.png)
 
-**bim-ai status:** 🟡 Partial — bim-ai has full i18n support with English and German translations (`packages/web/src/i18n.ts`). Language persists via `localStorage` and is togglable via the command palette (`settings.language.toggle`). Missing: a visible language selector in Settings UI (not command palette), and additional language options beyond en/de.
+**bim-ai status:** ✅ Available — bim-ai has full i18n support with English and German translations (`packages/web/src/i18n.ts`). Language persists via `localStorage` (`bim-ai:lang`) and is togglable via: (a) the `EN`/`DE` toggle button in `TopBar.tsx` (`data-testid="topbar-language-toggle"`) — visible at all times in the top bar — and (b) the command palette (`settings.language.toggle`). Missing: additional language options beyond en/de.
 
 ---
 
@@ -102,7 +102,7 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Visual Style](file:///Users/jhoetter/Desktop/Revit%20Specs/0332_01-07-40.png)
 
-**bim-ai status:** 🟡 Partial — for plan views: `PlanDetailLevelToolbar` (coarse/medium/fine) is shown in the canvas footer, and a plan style selector (default/opening_focus/room_scheme) is available in the TopBar. For 3D views: bim-ai now has a **Shaded/Wireframe toggle button** in the bottom-left of the 3D viewport (F-011 / `data-testid="viewport-wireframe-toggle"`); clicking it toggles all mesh materials between MeshStandard shaded and wireframe modes via the `viewerRenderStyle` Zustand state. Missing: hidden-line, consistent-colors, realistic, and ray-trace modes from Revit's full Visual Style catalogue.
+**bim-ai status:** 🟡 Partial — for plan views: `PlanDetailLevelToolbar` (coarse/medium/fine) is shown in the canvas footer, and a plan style selector (default/opening_focus/room_scheme) is available in the TopBar. For 3D views: bim-ai now supports **Shaded, Consistent Colors, Wireframe, and Hidden Line** visual styles via the GDO panel (`data-testid="gdo-panel"`) Visual Style dropdown and a cycle button (`data-testid="viewport-wireframe-toggle"`). Shaded uses `MeshStandardMaterial` (PBR). Consistent Colors replaces materials with `MeshBasicMaterial` (flat, no specular). Hidden Line renders white opaque surfaces (back-faces occluded) via `MeshBasicMaterial`. The `viewerRenderStyle` Zustand state now accepts `'shaded' | 'wireframe' | 'consistent-colors' | 'hidden-line'`. Missing: realistic, ray-trace, photographic exposure, ambient occlusion, and silhouettes.
 
 ---
 
@@ -135,4 +135,4 @@ Source segment: `00:00:00 – 00:32:00`
 **Screenshot:**
 ![Reveal Hidden Elements](file:///Users/jhoetter/Desktop/Revit%20Specs/0219_00-55-06.png)
 
-**bim-ai status:** 🟡 Partial — a "Reveal Hidden" toggle (💡 button) in the plan canvas footer activates Reveal Hidden mode. A magenta status chip is shown while active. Full element-level magenta highlight of hidden elements is a follow-up. Missing: element-level magenta overlay on hidden elements, per-element "Make Visible" right-click action, and "Close" button to exit the mode.
+**bim-ai status:** ✅ Done — the Reveal Hidden Elements mode (💡 lightbulb button in plan canvas footer, `data-testid="plan-reveal-hidden"`) shows all VG-hidden elements in magenta (#ff00ff at 55% opacity) — walls, floors, roofs, doors, windows, columns, beams, area boundaries, detail lines, and text notes. A magenta status chip is shown while active (`data-testid="reveal-hidden-chip"`). Missing vs Revit: right-click "Unhide in View" → "Category" or "Element" contextual action; no per-element selective unhide while in reveal mode.
