@@ -39,6 +39,28 @@ CONSTRUCTABILITY_RULE_IDS = frozenset(
     }
 )
 
+CONSTRUCTION_READINESS_ERROR_RULE_IDS = frozenset(
+    {
+        "physical_hard_clash",
+        "furniture_wall_hard_clash",
+        "stair_wall_hard_clash",
+        "large_opening_in_load_bearing_wall_unresolved",
+        "load_bearing_wall_removed_without_transfer",
+        "stacked_load_path_discontinuity",
+        "beam_without_support",
+        "column_without_foundation_or_support",
+        "door_operation_clearance_conflict",
+        "pipe_wall_penetration_without_opening",
+        "duct_wall_penetration_without_opening",
+        "pipe_floor_penetration_without_opening",
+        "duct_floor_penetration_without_opening",
+        "pipe_ceiling_penetration_without_opening",
+        "duct_ceiling_penetration_without_opening",
+        "stair_floor_penetration_without_slab_opening",
+        "roof_wall_coverage_gap",
+    }
+)
+
 RECOMMENDATION_BY_RULE_ID = {
     "physical_hard_clash": "Inspect the affected elements in 3D and move, trim, reroute, or add an intentional opening/support condition.",
     "physical_duplicate_geometry": "Delete the duplicate element or offset intentionally repeated instances so they no longer share the same physical proxy.",
@@ -68,10 +90,11 @@ def build_constructability_report(
     elements: dict[str, Element],
     *,
     revision: str | int,
+    profile: str = "authoring_default",
     previous_issues: Iterable[ConstructabilityIssue | Mapping[str, Any]] = (),
 ) -> dict[str, Any]:
     violations = [v for v in evaluate(elements) if v.rule_id in CONSTRUCTABILITY_RULE_IDS]
-    all_findings = [_finding_dict(v) for v in violations]
+    all_findings = [_finding_dict(v, profile=profile) for v in violations]
     suppressions = _suppression_records(elements, revision=revision)
     active_findings: list[dict[str, Any]] = []
     suppressed_by_fingerprint: dict[str, dict[str, Any]] = {}
@@ -98,7 +121,7 @@ def build_constructability_report(
     return {
         "format": "constructabilityReport_v1",
         "revision": revision,
-        "profile": "authoring_default",
+        "profile": profile,
         "summary": {
             "findingCount": len(active_findings),
             "issueCount": len(issues),
@@ -127,8 +150,11 @@ def build_constructability_report(
     }
 
 
-def _finding_dict(violation: Violation) -> dict[str, Any]:
+def _finding_dict(violation: Violation, *, profile: str) -> dict[str, Any]:
     data = violation.model_dump(by_alias=True)
+    if profile == "construction_readiness" and violation.rule_id in CONSTRUCTION_READINESS_ERROR_RULE_IDS:
+        data["severity"] = "error"
+        data["blocking"] = True
     data["recommendation"] = RECOMMENDATION_BY_RULE_ID.get(
         violation.rule_id,
         "Inspect the affected elements and resolve the constructability condition.",

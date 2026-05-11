@@ -222,6 +222,36 @@ describe('fetchConstructabilityReport', () => {
     expect(report.format).toBe('constructabilityReport_v1');
     expect(fetch).toHaveBeenCalledWith('/api/models/model%201/constructability-report', undefined);
   });
+
+  it('passes an optional constructability report profile', async () => {
+    mockFetchOnce({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      body: JSON.stringify({
+        format: 'constructabilityReport_v1',
+        modelId: 'model 1',
+        revision: 3,
+        profile: 'construction_readiness',
+        summary: {
+          findingCount: 0,
+          issueCount: 0,
+          severityCounts: {},
+          ruleCounts: {},
+          statusCounts: {},
+        },
+        findings: [],
+        issues: [],
+      }),
+    });
+
+    await fetchConstructabilityReport('model 1', 'construction_readiness');
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/models/model%201/constructability-report?profile=construction_readiness',
+      undefined,
+    );
+  });
 });
 
 describe('fetchConstructabilityBcfExport', () => {
@@ -271,10 +301,13 @@ describe('fetchConstructabilityBcfExport', () => {
       }),
     });
 
-    const exportPayload = await fetchConstructabilityBcfExport('model 1');
+    const exportPayload = await fetchConstructabilityBcfExport('model 1', 'coordination');
 
     expect(exportPayload.format).toBe('constructabilityBcfExport_v1');
     expect(exportPayload.topics[0]?.violationRuleIds).toEqual(['furniture_wall_hard_clash']);
-    expect(fetch).toHaveBeenCalledWith('/api/models/model%201/constructability-bcf', undefined);
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/models/model%201/constructability-bcf?profile=coordination',
+      undefined,
+    );
   });
 });

@@ -132,3 +132,46 @@ def test_constructability_report_applies_scoped_suppression_records() -> None:
     assert report["issues"][0]["suppression"]["reason"] == (
         "Intentional recessed built-in approved by reviewer."
     )
+
+
+def test_constructability_report_construction_readiness_promotes_serious_findings() -> None:
+    elements = {
+        "lvl-1": LevelElem(kind="level", id="lvl-1", name="Level 1", elevationMm=0.0),
+        "wall-1": WallElem(
+            kind="wall",
+            id="wall-1",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 0},
+            thicknessMm=200,
+            heightMm=3000,
+        ),
+        "asset-shelf": AssetLibraryEntryElem(
+            kind="asset_library_entry",
+            id="asset-shelf",
+            assetKind="block_2d",
+            name="Shelf",
+            category="casework",
+            tags=[],
+            thumbnailKind="schematic_plan",
+            thumbnailWidthMm=600,
+            thumbnailHeightMm=300,
+        ),
+        "shelf-1": PlacedAssetElem(
+            kind="placed_asset",
+            id="shelf-1",
+            name="Shelf",
+            assetId="asset-shelf",
+            levelId="lvl-1",
+            positionMm={"xMm": 1200, "yMm": 0},
+            paramValues={"widthMm": 600, "depthMm": 300, "proxyHeightMm": 900},
+        ),
+    }
+
+    report = build_constructability_report(elements, revision=7, profile="construction_readiness")
+
+    assert report["profile"] == "construction_readiness"
+    assert report["summary"]["severityCounts"] == {"error": 1}
+    assert report["findings"][0]["severity"] == "error"
+    assert report["findings"][0]["blocking"] is True
+    assert report["issues"][0]["severity"] == "error"

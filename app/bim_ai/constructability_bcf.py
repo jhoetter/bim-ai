@@ -13,11 +13,13 @@ def build_constructability_bcf_export(
     elements: dict[str, Element],
     *,
     revision: str | int,
+    profile: str = "authoring_default",
     previous_issues: Iterable[ConstructabilityIssue | Mapping[str, Any]] = (),
 ) -> dict[str, Any]:
     report = build_constructability_report(
         elements,
         revision=revision,
+        profile=profile,
         previous_issues=previous_issues,
     )
     participant_bboxes = _participant_bboxes(elements)

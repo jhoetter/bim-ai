@@ -567,6 +567,7 @@ async def validate_model_snapshot(
 @api_router.get("/models/{model_id}/constructability-report")
 async def constructability_report(
     model_id: UUID,
+    profile: str = Query("authoring_default"),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
@@ -575,13 +576,14 @@ async def constructability_report(
     doc = Document.model_validate(row.document)
     return {
         "modelId": str(model_id),
-        **build_constructability_report(doc.elements, revision=doc.revision),
+        **build_constructability_report(doc.elements, revision=doc.revision, profile=profile),
     }
 
 
 @api_router.get("/models/{model_id}/constructability-bcf")
 async def constructability_bcf_export(
     model_id: UUID,
+    profile: str = Query("authoring_default"),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
@@ -590,7 +592,7 @@ async def constructability_bcf_export(
     doc = Document.model_validate(row.document)
     return {
         "modelId": str(model_id),
-        **build_constructability_bcf_export(doc.elements, revision=doc.revision),
+        **build_constructability_bcf_export(doc.elements, revision=doc.revision, profile=profile),
     }
 
 

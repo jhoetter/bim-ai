@@ -319,9 +319,11 @@ export type ConstructabilityReport = {
 
 export async function fetchConstructabilityReport(
   modelId: string,
+  profile?: string,
 ): Promise<ConstructabilityReport> {
+  const suffix = profile ? `?profile=${encodeURIComponent(profile)}` : '';
   return fetchJson<ConstructabilityReport>(
-    `/api/models/${encodeURIComponent(modelId)}/constructability-report`,
+    `/api/models/${encodeURIComponent(modelId)}/constructability-report${suffix}`,
   );
 }
 
@@ -367,9 +369,11 @@ export type ConstructabilityBcfExport = {
 
 export async function fetchConstructabilityBcfExport(
   modelId: string,
+  profile?: string,
 ): Promise<ConstructabilityBcfExport> {
+  const suffix = profile ? `?profile=${encodeURIComponent(profile)}` : '';
   return fetchJson<ConstructabilityBcfExport>(
-    `/api/models/${encodeURIComponent(modelId)}/constructability-bcf`,
+    `/api/models/${encodeURIComponent(modelId)}/constructability-bcf${suffix}`,
   );
 }
 
