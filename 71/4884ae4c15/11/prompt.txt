@@ -1,0 +1,54 @@
+You are Worker for creating the new `target-house-2` sketch-to-BIM seed artifact in `/Users/jhoetter/repos/bim-ai`. You are not alone in the codebase: there are many unrelated dirty files and concurrent edits. Do not revert or modify unrelated files. Your write ownership is limited to `seed-artifacts/target-house-2/**` and any narrowly necessary generated evidence for that artifact. If you believe a shared script or test must change, stop and report instead of editing it.
+
+Task: create a new named seed artifact `target-house-2` based on `spec/target-house/`, especially `spec/target-house/target-house-2.png`, `spec/target-house/floorplan.png`, and `spec/target-house/target-house-seed.md`. Use the sketch-to-BIM skill methodology and the tool-enabled workflow present in the repo.
+
+Required reading before edits:
+- `claude-skills/sketch-to-bim/SKILL.md`
+- `spec/sketch-to-bim-methodology.md`
+- `spec/sketch-to-bim-process-audit-tracker.md`
+- `spec/seed-artifacts.md`
+- `spec/target-house/target-house-seed.md`
+- Inspect all images in `spec/target-house/` with image perception, but treat `target-house-2.png` as the primary visual target for this artifact.
+- Use `seed-artifacts/target-house-1/` as a reference for artifact structure, but do not overwrite it.
+
+Deliverable structure:
+- `seed-artifacts/target-house-2/manifest.json`
+- `seed-artifacts/target-house-2/bundle.json`
+- `seed-artifacts/target-house-2/source/` with copied portable source inputs from `spec/target-house/`
+- `seed-artifacts/target-house-2/evidence/target-house-2.recipe.json`
+- `seed-artifacts/target-house-2/evidence/sketch-ir.json`
+- `seed-artifacts/target-house-2/evidence/assumptions.md`
+- `seed-artifacts/target-house-2/evidence/status.md`
+- `seed-artifacts/target-house-2/evidence/material-check.json`
+- At least one phase packet folder such as `evidence/phase-1/` with the files expected by `sketch_bim.py phase-accept` where feasible. If live app is unavailable, create honest status/assumptions and note what could not be captured.
+
+Quality bar:
+- Produce a reviewable `seed-dsl.v0` recipe, not only raw command blocks.
+- Use first-class DSL support for levels/types/volumes/roofs/rooms/viewpoints/assets/placedAssets/materialIntent/materialAssignments/features where appropriate.
+- Include interior programme assets: living/dining, kitchen, bedrooms, bathrooms, terrace/outdoor if those spaces exist.
+- Include material intent: white wrapper, ground cladding/base material, glass, railings/terrace treatment as visible in the target.
+- Avoid final `createMass` placeholders unless explicitly marked non-final in evidence. Prefer typed walls/floors/roofs/openings/railings/assets.
+- Avoid known bad shortcuts: no universal fake room-separation rectangles, no hiding categories to make screenshots pass, no metadata-only roof openings.
+
+Tooling to run:
+1. `python3 claude-skills/sketch-to-bim/sketch_bim.py archetypes --query "modern two storey"`
+2. Author `seed-artifacts/target-house-2/evidence/target-house-2.recipe.json` and `sketch-ir.json`.
+3. `python3 claude-skills/sketch-to-bim/sketch_bim.py compile --seed target-house-2`
+4. `python3 claude-skills/sketch-to-bim/sketch_bim.py material-check --seed target-house-2 --out seed-artifacts/target-house-2/evidence/material-check.json --fail-on-missing`
+5. `node scripts/verify-sketch-seed-artifacts.mjs --seed target-house-2`
+6. If dev API/web are available, run live seed/advisor/evidence:
+   - `python3 claude-skills/sketch-to-bim/sketch_bim.py seed --seed target-house-2 --clear`
+   - capture Advisor and browser evidence using the helper
+   - if strict acceptance can pass, run `python3 claude-skills/sketch-to-bim/sketch_bim.py accept --seed target-house-2 --clear`
+   If not available, do not fake live evidence; document the blocker in status.
+
+Commit requirements:
+- Commit your work as one focused commit on your branch/fork if your environment allows it, e.g. `Add target-house-2 seed artifact`.
+- Do not stage unrelated dirty files.
+
+Final response back to parent:
+- Summarize what you created.
+- List exact files changed.
+- List commands/tests run and results.
+- State whether live app acceptance was run or blocked, with reason.
+- Include any warnings/tolerances that remain.
