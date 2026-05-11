@@ -33,7 +33,6 @@ import { modeForHotkey } from '../state/modeController';
 import { patternFor } from '../state/uiStates';
 import {
   AppShell,
-  LeftRailCollapsed,
   ParticipantStrip,
   RibbonBar,
   StatusBar,
@@ -121,12 +120,7 @@ import { MilestoneDialog } from '../collab/MilestoneDialog';
 import { WorkspaceLeftRail } from './WorkspaceLeftRail';
 import { WorkspaceRightRail } from './WorkspaceRightRail';
 import { useWorkspaceSnapshot } from './useWorkspaceSnapshot';
-import {
-  buildBrowserSections,
-  mapComments,
-  planToolToToolId,
-  validatePlanTool,
-} from './workspaceUtils';
+import { mapComments, planToolToToolId, validatePlanTool } from './workspaceUtils';
 import { useToolPrefs } from '../tools/toolPrefsStore';
 import { useOfflineStore } from '../offlineStore';
 import { usePresenceStore } from '../presenceStore';
@@ -921,8 +915,6 @@ export function Workspace(): JSX.Element {
     setLibraryOpen,
   ]);
 
-  const browserSections = useMemo(() => buildBrowserSections(elementsById), [elementsById]);
-
   const planProjectionPrimitives = useBimStore((s) => s.planProjectionPrimitives);
 
   /* ── Debug: browser rendering budget (debounced, threshold warnings) ─ */
@@ -1501,21 +1493,13 @@ export function Workspace(): JSX.Element {
 
   /* ── VIS-V3-06: right rail driven by task context ────────────────── */
   const hasSelection = !!selectedId;
-  const hasViewControlContext = effectiveMode === '3d' || (effectiveMode as string) === 'plan-3d';
-  const autoRightRailCollapsed = !hasSelection && !hasViewControlContext;
-  const rightRailCollapsed =
-    rightRailOverride === 'open'
-      ? false
-      : rightRailOverride === 'collapsed'
-        ? true
-        : autoRightRailCollapsed;
+  const rightRailCollapsed = !hasSelection || rightRailOverride === 'collapsed';
   const toggleRightRail = useCallback(() => {
     setRightRailOverride((current) => {
-      const currentlyCollapsed =
-        current === 'open' ? false : current === 'collapsed' ? true : autoRightRailCollapsed;
+      const currentlyCollapsed = !hasSelection || current === 'collapsed';
       return currentlyCollapsed ? 'open' : 'collapsed';
     });
-  }, [autoRightRailCollapsed]);
+  }, [hasSelection]);
 
   /* ── Empty-state per §25 ──────────────────────────────────────────── */
   const emptyHint = patternFor(seedLoading ? 'canvas-loading' : 'canvas-empty');
@@ -1684,7 +1668,7 @@ export function Workspace(): JSX.Element {
         leftCollapsed={leftRailCollapsed}
         onLeftCollapsedChange={setLeftRailCollapsed}
         rightCollapsed={rightRailCollapsed}
-        topBar={
+        header={
           <div className="relative flex w-full items-center">
             <TopBar
               mode={effectiveMode}
@@ -1801,7 +1785,7 @@ export function Workspace(): JSX.Element {
             </div>
           </div>
         }
-        ribbonBar={
+        ribbon={
           <RibbonBar
             activeToolId={planToolToToolId(planTool)}
             activeMode={effectiveMode}
@@ -1817,7 +1801,7 @@ export function Workspace(): JSX.Element {
             onOpenSettings={() => setCheatsheetOpen(true)}
           />
         }
-        leftRail={
+        primarySidebar={
           <WorkspaceLeftRail
             onSemanticCommand={onSemanticCommand}
             openTabFromElement={openTabFromElement}
@@ -1834,11 +1818,14 @@ export function Workspace(): JSX.Element {
             }
           />
         }
-        leftRailCollapsed={
-          <LeftRailCollapsed
-            sections={browserSections}
-            activeRowId={activePlanViewId ?? selectedId ?? activeLevelId ?? undefined}
-            onExpand={() => setLeftRailCollapsed(false)}
+        secondarySidebar={
+          <WorkspaceRightRail
+            mode={effectiveMode}
+            onSemanticCommand={onSemanticCommand}
+            onModeChange={handleModeChange}
+            codePresetIds={codePresetIds}
+            onNavigateToElement={openElementById}
+            surface="view-context"
           />
         }
         canvas={
@@ -1903,16 +1890,19 @@ export function Workspace(): JSX.Element {
             </div>
           </div>
         }
-        rightRail={
-          <WorkspaceRightRail
-            mode={effectiveMode}
-            onSemanticCommand={onSemanticCommand}
-            onModeChange={handleModeChange}
-            codePresetIds={codePresetIds}
-            onNavigateToElement={openElementById}
-          />
+        elementSidebar={
+          hasSelection ? (
+            <WorkspaceRightRail
+              mode={effectiveMode}
+              onSemanticCommand={onSemanticCommand}
+              onModeChange={handleModeChange}
+              codePresetIds={codePresetIds}
+              onNavigateToElement={openElementById}
+              surface="element"
+            />
+          ) : null
         }
-        statusBar={
+        footer={
           <StatusBar
             mode={effectiveMode}
             viewLabel={statusViewLabel}

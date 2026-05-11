@@ -196,12 +196,14 @@ export function WorkspaceRightRail({
   onModeChange,
   codePresetIds,
   onNavigateToElement,
+  surface = 'legacy',
 }: {
   mode: WorkspaceMode;
   onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
   onModeChange: (mode: WorkspaceMode) => void;
   codePresetIds: string[];
   onNavigateToElement?: (elementId: string) => void;
+  surface?: 'legacy' | 'view-context' | 'element';
 }): JSX.Element {
   const { t } = useTranslation();
   const selectedId = useBimStore((s) => s.selectedId);
@@ -278,6 +280,9 @@ export function WorkspaceRightRail({
     mode === 'plan' ||
     (mode as string) === 'plan-3d' ||
     (el ? !NAVIGABLE_KINDS.has(el.kind) : false);
+  const showViewContextSurface = surface === 'legacy' || surface === 'view-context';
+  const showElementSurface = surface === 'legacy' || surface === 'element';
+  const showReviewSurface = surface === 'legacy' || surface === 'view-context';
   const inspectorPropertiesContext = inspectorPropertiesContextForElement(el);
 
   // CHR-V3-06: sibling count for the applies-to radio.
@@ -420,11 +425,13 @@ export function WorkspaceRightRail({
         </div>
       ) : null}
       <RightRailSectionTabs
-        showView={show3dLayers || Boolean(activePlanViewId)}
-        showWorkbench={showAuthoringWorkbenches}
+        showProperties={showElementSurface}
+        showView={showViewContextSurface && (show3dLayers || Boolean(activePlanViewId))}
+        showWorkbench={showViewContextSurface && showAuthoringWorkbenches}
+        showReview={showReviewSurface}
       />
       {/* VIS-V3-04: Scene section — visible when no element is selected */}
-      {!selectedId ? (
+      {showViewContextSurface ? (
         <div id="right-rail-view-scene" className="border-b border-border p-3">
           <div
             className="mb-2 text-[10px] font-semibold uppercase text-muted"
@@ -478,82 +485,138 @@ export function WorkspaceRightRail({
         </div>
       ) : null}
       {/* CHR-V3-06: key={selectedId} remounts (and re-animates) Inspector on each selection */}
-      <div id="right-rail-properties" style={{ position: 'relative' }}>
-        <Inspector
-          key={selectedId ?? 'none'}
-          selection={inspectorSelection}
-          propertiesContext={inspectorPropertiesContext}
-          siblingCount={inspectorPropertiesContext === 'type' ? 1 : siblingCount}
-          onApplyScopeChange={handleApplyScopeChange}
-          tabs={{
-            properties: el ? (
-              <>
-                <InspectorSelectionContextBanner
-                  element={el}
-                  context={inspectorPropertiesContext}
-                />
-                <InspectorDisciplineScope element={el} activeWorkspaceId={activeWorkspaceId} />
-                <InspectorContextActions
-                  element={el}
-                  firstSheetId={firstSheet}
-                  onNavigateToElement={onNavigateToElement}
-                  onPlaceRecommendedViews={(sheetId) => {
-                    const cmd = placeViewOnSheetCommand(elementsById, sheetId, el.id);
-                    if (cmd) void onSemanticCommand(cmd);
-                  }}
-                  onDuplicatePlanView={(planView) => {
-                    void onSemanticCommand({
-                      type: 'upsertPlanView',
-                      id: `pv-${crypto.randomUUID()}`,
-                      name: `${planView.name} copy`,
-                      levelId: planView.levelId,
-                      discipline: planView.discipline,
-                      viewTemplateId: planView.viewTemplateId,
-                      cropMinMm: planView.cropMinMm,
-                      cropMaxMm: planView.cropMaxMm,
-                    });
-                  }}
-                  onDuplicateType={(typeElement) => {
-                    const defaultName = `${typeElement.name} Copy`;
-                    const nextName = duplicateTypePromptName(defaultName);
-                    if (nextName == null) return;
-                    const cmd = duplicateTypePropertiesCommand(typeElement, undefined, nextName);
-                    void Promise.resolve(onSemanticCommand(cmd)).then(() => select(cmd.id));
-                  }}
-                  onResetSavedView={resetActiveSavedView}
-                  onUpdateSavedView={updateActiveSavedView}
-                />
-                {el.kind === 'plan_view' ? (
-                  <>
-                    {planGridDatumLine ? (
-                      <p className="mb-2 break-all font-mono text-[10px] leading-snug text-muted">
-                        {planGridDatumLine}
-                      </p>
-                    ) : null}
-                    <InspectorPlanViewEditor
+      {showElementSurface ? (
+        <div id="right-rail-properties" style={{ position: 'relative' }}>
+          <Inspector
+            key={selectedId ?? 'none'}
+            selection={inspectorSelection}
+            propertiesContext={inspectorPropertiesContext}
+            siblingCount={inspectorPropertiesContext === 'type' ? 1 : siblingCount}
+            onApplyScopeChange={handleApplyScopeChange}
+            tabs={{
+              properties: el ? (
+                <>
+                  <InspectorSelectionContextBanner
+                    element={el}
+                    context={inspectorPropertiesContext}
+                  />
+                  <InspectorDisciplineScope element={el} activeWorkspaceId={activeWorkspaceId} />
+                  <InspectorContextActions
+                    element={el}
+                    firstSheetId={firstSheet}
+                    onNavigateToElement={onNavigateToElement}
+                    onPlaceRecommendedViews={(sheetId) => {
+                      const cmd = placeViewOnSheetCommand(elementsById, sheetId, el.id);
+                      if (cmd) void onSemanticCommand(cmd);
+                    }}
+                    onDuplicatePlanView={(planView) => {
+                      void onSemanticCommand({
+                        type: 'upsertPlanView',
+                        id: `pv-${crypto.randomUUID()}`,
+                        name: `${planView.name} copy`,
+                        levelId: planView.levelId,
+                        discipline: planView.discipline,
+                        viewTemplateId: planView.viewTemplateId,
+                        cropMinMm: planView.cropMinMm,
+                        cropMaxMm: planView.cropMaxMm,
+                      });
+                    }}
+                    onDuplicateType={(typeElement) => {
+                      const defaultName = `${typeElement.name} Copy`;
+                      const nextName = duplicateTypePromptName(defaultName);
+                      if (nextName == null) return;
+                      const cmd = duplicateTypePropertiesCommand(typeElement, undefined, nextName);
+                      void Promise.resolve(onSemanticCommand(cmd)).then(() => select(cmd.id));
+                    }}
+                    onResetSavedView={resetActiveSavedView}
+                    onUpdateSavedView={updateActiveSavedView}
+                  />
+                  {el.kind === 'plan_view' ? (
+                    <>
+                      {planGridDatumLine ? (
+                        <p className="mb-2 break-all font-mono text-[10px] leading-snug text-muted">
+                          {planGridDatumLine}
+                        </p>
+                      ) : null}
+                      <InspectorPlanViewEditor
+                        el={el}
+                        elementsById={elementsById}
+                        revision={revision}
+                        onPersistProperty={(key, value) => {
+                          if (key === '__applyTemplate__') {
+                            const p = JSON.parse(value) as {
+                              planViewId: string;
+                              templateId: string;
+                            };
+                            void onSemanticCommand({ type: 'applyPlanViewTemplate', ...p });
+                          } else if (key === '__saveAsTemplate__') {
+                            const p = JSON.parse(value) as {
+                              name: string;
+                              detailLevel: string | null;
+                              phaseFilter: string | null;
+                            };
+                            const templateId = `tmpl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+                            void onSemanticCommand({
+                              type: 'CreateViewTemplate',
+                              templateId,
+                              name: p.name,
+                              detailLevel: p.detailLevel ?? undefined,
+                              phaseFilter: p.phaseFilter ?? undefined,
+                            });
+                          } else {
+                            void onSemanticCommand({
+                              type: 'updateElementProperty',
+                              elementId: el.id,
+                              key,
+                              value,
+                            });
+                          }
+                        }}
+                      />
+                    </>
+                  ) : el.kind === 'room' ? (
+                    <InspectorRoomEditor
+                      el={el}
+                      revision={revision}
+                      onPersistProperty={(key, value) =>
+                        void onSemanticCommand({
+                          type: 'updateElementProperty',
+                          elementId: el.id,
+                          key,
+                          value,
+                        })
+                      }
+                    />
+                  ) : el.kind === 'viewpoint' ? (
+                    <InspectorViewpointEditor
+                      el={el}
+                      revision={revision}
+                      onPersistProperty={(key, value) =>
+                        void onSemanticCommand({
+                          type: 'updateElementProperty',
+                          elementId: el.id,
+                          key,
+                          value,
+                        })
+                      }
+                    />
+                  ) : el.kind === 'view_template' ? (
+                    <InspectorViewTemplateEditor
                       el={el}
                       elementsById={elementsById}
                       revision={revision}
                       onPersistProperty={(key, value) => {
-                        if (key === '__applyTemplate__') {
-                          const p = JSON.parse(value) as {
-                            planViewId: string;
-                            templateId: string;
+                        if (key === '__updateViewTemplate__') {
+                          const patch = JSON.parse(value) as {
+                            scale?: number | null;
+                            detailLevel?: string | null;
+                            phase?: string | null;
+                            phaseFilter?: string | null;
                           };
-                          void onSemanticCommand({ type: 'applyPlanViewTemplate', ...p });
-                        } else if (key === '__saveAsTemplate__') {
-                          const p = JSON.parse(value) as {
-                            name: string;
-                            detailLevel: string | null;
-                            phaseFilter: string | null;
-                          };
-                          const templateId = `tmpl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
                           void onSemanticCommand({
-                            type: 'CreateViewTemplate',
-                            templateId,
-                            name: p.name,
-                            detailLevel: p.detailLevel ?? undefined,
-                            phaseFilter: p.phaseFilter ?? undefined,
+                            type: 'UpdateViewTemplate',
+                            templateId: el.id,
+                            ...patch,
                           });
                         } else {
                           void onSemanticCommand({
@@ -565,400 +628,348 @@ export function WorkspaceRightRail({
                         }
                       }}
                     />
-                  </>
-                ) : el.kind === 'room' ? (
-                  <InspectorRoomEditor
-                    el={el}
-                    revision={revision}
-                    onPersistProperty={(key, value) =>
-                      void onSemanticCommand({
-                        type: 'updateElementProperty',
-                        elementId: el.id,
-                        key,
-                        value,
-                      })
-                    }
-                  />
-                ) : el.kind === 'viewpoint' ? (
-                  <InspectorViewpointEditor
-                    el={el}
-                    revision={revision}
-                    onPersistProperty={(key, value) =>
-                      void onSemanticCommand({
-                        type: 'updateElementProperty',
-                        elementId: el.id,
-                        key,
-                        value,
-                      })
-                    }
-                  />
-                ) : el.kind === 'view_template' ? (
-                  <InspectorViewTemplateEditor
-                    el={el}
-                    elementsById={elementsById}
-                    revision={revision}
-                    onPersistProperty={(key, value) => {
-                      if (key === '__updateViewTemplate__') {
-                        const patch = JSON.parse(value) as {
-                          scale?: number | null;
-                          detailLevel?: string | null;
-                          phase?: string | null;
-                          phaseFilter?: string | null;
-                        };
-                        void onSemanticCommand({
-                          type: 'UpdateViewTemplate',
-                          templateId: el.id,
-                          ...patch,
-                        });
-                      } else {
+                  ) : el.kind === 'door' ? (
+                    <InspectorDoorEditor
+                      el={el}
+                      revision={revision}
+                      elementsById={elementsById}
+                      onPersistProperty={(key, value) =>
                         void onSemanticCommand({
                           type: 'updateElementProperty',
                           elementId: el.id,
                           key,
                           value,
-                        });
+                        })
                       }
-                    }}
-                  />
-                ) : el.kind === 'door' ? (
-                  <InspectorDoorEditor
-                    el={el}
-                    revision={revision}
-                    elementsById={elementsById}
-                    onPersistProperty={(key, value) =>
-                      void onSemanticCommand({
-                        type: 'updateElementProperty',
-                        elementId: el.id,
-                        key,
-                        value,
-                      })
-                    }
-                    onCreateType={(_baseFamilyId, _name, params) =>
-                      void onSemanticCommand({
-                        type: 'upsertFamilyType',
-                        discipline: 'door',
-                        parameters: params,
-                      })
-                    }
-                    onDuplicateType={(familyTypeId) => {
-                      const existing = familyTypeId ? elementsById[familyTypeId] : undefined;
-                      const builtIn = getTypeById(familyTypeId ?? '');
-                      const defaultName = `${
-                        existing?.kind === 'family_type' ? existing.name : (builtIn?.name ?? 'Door')
-                      } Copy`;
-                      const nextName = duplicateTypePromptName(defaultName);
-                      if (nextName == null) return;
-                      const cmd = duplicateOpeningFamilyTypeCommand(
-                        familyTypeId,
-                        'door',
-                        elementsById,
-                        undefined,
-                        nextName,
-                      );
-                      if (!cmd) return;
-                      void Promise.resolve(onSemanticCommand(cmd)).then(() =>
-                        onSemanticCommand({
+                      onCreateType={(_baseFamilyId, _name, params) =>
+                        void onSemanticCommand({
+                          type: 'upsertFamilyType',
+                          discipline: 'door',
+                          parameters: params,
+                        })
+                      }
+                      onDuplicateType={(familyTypeId) => {
+                        const existing = familyTypeId ? elementsById[familyTypeId] : undefined;
+                        const builtIn = getTypeById(familyTypeId ?? '');
+                        const defaultName = `${
+                          existing?.kind === 'family_type'
+                            ? existing.name
+                            : (builtIn?.name ?? 'Door')
+                        } Copy`;
+                        const nextName = duplicateTypePromptName(defaultName);
+                        if (nextName == null) return;
+                        const cmd = duplicateOpeningFamilyTypeCommand(
+                          familyTypeId,
+                          'door',
+                          elementsById,
+                          undefined,
+                          nextName,
+                        );
+                        if (!cmd) return;
+                        void Promise.resolve(onSemanticCommand(cmd)).then(() =>
+                          onSemanticCommand({
+                            type: 'updateElementProperty',
+                            elementId: el.id,
+                            key: 'familyTypeId',
+                            value: cmd.id,
+                          }),
+                        );
+                      }}
+                      onDisciplineChange={handleDisciplineChange}
+                    />
+                  ) : el.kind === 'window' ? (
+                    <InspectorWindowEditor
+                      el={el}
+                      revision={revision}
+                      elementsById={elementsById}
+                      onPersistProperty={(key, value) =>
+                        void onSemanticCommand({
                           type: 'updateElementProperty',
                           elementId: el.id,
-                          key: 'familyTypeId',
-                          value: cmd.id,
-                        }),
-                      );
-                    }}
-                    onDisciplineChange={handleDisciplineChange}
-                  />
-                ) : el.kind === 'window' ? (
-                  <InspectorWindowEditor
-                    el={el}
-                    revision={revision}
-                    elementsById={elementsById}
-                    onPersistProperty={(key, value) =>
-                      void onSemanticCommand({
-                        type: 'updateElementProperty',
-                        elementId: el.id,
-                        key,
-                        value,
-                      })
-                    }
-                    onCreateType={(_baseFamilyId, _name, params) =>
-                      void onSemanticCommand({
-                        type: 'upsertFamilyType',
-                        discipline: 'window',
-                        parameters: params,
-                      })
-                    }
-                    onDuplicateType={(familyTypeId) => {
-                      const existing = familyTypeId ? elementsById[familyTypeId] : undefined;
-                      const builtIn = getTypeById(familyTypeId ?? '');
-                      const defaultName = `${
-                        existing?.kind === 'family_type'
-                          ? existing.name
-                          : (builtIn?.name ?? 'Window')
-                      } Copy`;
-                      const nextName = duplicateTypePromptName(defaultName);
-                      if (nextName == null) return;
-                      const cmd = duplicateOpeningFamilyTypeCommand(
-                        familyTypeId,
-                        'window',
-                        elementsById,
-                        undefined,
-                        nextName,
-                      );
-                      if (!cmd) return;
-                      void Promise.resolve(onSemanticCommand(cmd)).then(() =>
-                        onSemanticCommand({
+                          key,
+                          value,
+                        })
+                      }
+                      onCreateType={(_baseFamilyId, _name, params) =>
+                        void onSemanticCommand({
+                          type: 'upsertFamilyType',
+                          discipline: 'window',
+                          parameters: params,
+                        })
+                      }
+                      onDuplicateType={(familyTypeId) => {
+                        const existing = familyTypeId ? elementsById[familyTypeId] : undefined;
+                        const builtIn = getTypeById(familyTypeId ?? '');
+                        const defaultName = `${
+                          existing?.kind === 'family_type'
+                            ? existing.name
+                            : (builtIn?.name ?? 'Window')
+                        } Copy`;
+                        const nextName = duplicateTypePromptName(defaultName);
+                        if (nextName == null) return;
+                        const cmd = duplicateOpeningFamilyTypeCommand(
+                          familyTypeId,
+                          'window',
+                          elementsById,
+                          undefined,
+                          nextName,
+                        );
+                        if (!cmd) return;
+                        void Promise.resolve(onSemanticCommand(cmd)).then(() =>
+                          onSemanticCommand({
+                            type: 'updateElementProperty',
+                            elementId: el.id,
+                            key: 'familyTypeId',
+                            value: cmd.id,
+                          }),
+                        );
+                      }}
+                      onDisciplineChange={handleDisciplineChange}
+                    />
+                  ) : el.kind === 'project_settings' ? (
+                    <InspectorProjectSettingsEditor
+                      el={el}
+                      onPersistProperty={(key, value) =>
+                        void onSemanticCommand({
                           type: 'updateElementProperty',
                           elementId: el.id,
-                          key: 'familyTypeId',
-                          value: cmd.id,
-                        }),
-                      );
-                    }}
-                    onDisciplineChange={handleDisciplineChange}
-                  />
-                ) : el.kind === 'project_settings' ? (
-                  <InspectorProjectSettingsEditor
-                    el={el}
-                    onPersistProperty={(key, value) =>
-                      void onSemanticCommand({
-                        type: 'updateElementProperty',
-                        elementId: el.id,
-                        key,
-                        value,
-                      })
-                    }
-                  />
-                ) : el.kind === 'wall' ? (
-                  <>
-                    {InspectorPropertiesFor(el, t, {
+                          key,
+                          value,
+                        })
+                      }
+                    />
+                  ) : el.kind === 'wall' ? (
+                    <>
+                      {InspectorPropertiesFor(el, t, {
+                        elementsById,
+                        onPropertyChange: (property, value) =>
+                          void onSemanticCommand({
+                            type: 'updateElementProperty',
+                            elementId: el.id,
+                            key: property,
+                            value,
+                          }),
+                        onDisciplineChange: handleDisciplineChange,
+                        onEditType: (typeId) => select(typeId),
+                      })}
+                      <WallJoinDisallowSection
+                        wall={el}
+                        onToggle={(endpoint, disallow) =>
+                          void onSemanticCommand({
+                            type: 'setWallJoinDisallow',
+                            wallId: el.id,
+                            endpoint,
+                            disallow,
+                          })
+                        }
+                      />
+                      <WallMoveSection
+                        onMove={(dx, dy) =>
+                          void onSemanticCommand({
+                            type: 'moveWallDelta',
+                            wallId: el.id,
+                            dxMm: dx,
+                            dyMm: dy,
+                          })
+                        }
+                      />
+                    </>
+                  ) : el.kind === 'project_base_point' || el.kind === 'survey_point' ? (
+                    <CoordinatePointInspector
+                      key={el.id}
+                      el={el as Extract<Element, { kind: 'project_base_point' | 'survey_point' }>}
+                      onSemanticCommand={onSemanticCommand}
+                    />
+                  ) : el.kind === 'masking_region' ? (
+                    InspectorPropertiesFor(el, t, {
                       elementsById,
                       onPropertyChange: (property, value) =>
+                        void onSemanticCommand({
+                          type: 'updateMaskingRegion',
+                          maskingRegionId: el.id,
+                          [property]: value,
+                        }),
+                    })
+                  ) : el.kind === 'placed_asset' ? (
+                    <PlacedAssetInspector
+                      el={el as Extract<Element, { kind: 'placed_asset' }>}
+                      assetEntry={
+                        elementsById[(el as Extract<Element, { kind: 'placed_asset' }>).assetId]
+                          ?.kind === 'asset_library_entry'
+                          ? (elementsById[
+                              (el as Extract<Element, { kind: 'placed_asset' }>).assetId
+                            ] as Extract<Element, { kind: 'asset_library_entry' }>)
+                          : undefined
+                      }
+                      onSemanticCommand={onSemanticCommand}
+                    />
+                  ) : el.kind === 'family_instance' ? (
+                    <FamilyInstanceInspector
+                      el={el as Extract<Element, { kind: 'family_instance' }>}
+                      familyType={
+                        elementsById[
+                          (el as Extract<Element, { kind: 'family_instance' }>).familyTypeId
+                        ]?.kind === 'family_type'
+                          ? (elementsById[
+                              (el as Extract<Element, { kind: 'family_instance' }>).familyTypeId
+                            ] as FamilyTypeElement)
+                          : undefined
+                      }
+                      elementsById={elementsById}
+                      onSemanticCommand={onSemanticCommand}
+                    />
+                  ) : el.kind === 'column' ? (
+                    <ColumnInspector
+                      el={el as Extract<Element, { kind: 'column' }>}
+                      onSemanticCommand={onSemanticCommand}
+                      t={t}
+                    />
+                  ) : (
+                    InspectorPropertiesFor(el, t, {
+                      elementsById,
+                      onPropertyChange: (property, value) => {
+                        if (isDuplicableTypeElement(el)) {
+                          void onSemanticCommand(typePropertyUpdateCommand(el, property, value));
+                          return;
+                        }
                         void onSemanticCommand({
                           type: 'updateElementProperty',
                           elementId: el.id,
                           key: property,
                           value,
-                        }),
+                        });
+                      },
                       onDisciplineChange: handleDisciplineChange,
                       onEditType: (typeId) => select(typeId),
-                    })}
-                    <WallJoinDisallowSection
-                      wall={el}
-                      onToggle={(endpoint, disallow) =>
-                        void onSemanticCommand({
-                          type: 'setWallJoinDisallow',
-                          wallId: el.id,
-                          endpoint,
-                          disallow,
-                        })
-                      }
-                    />
-                    <WallMoveSection
-                      onMove={(dx, dy) =>
-                        void onSemanticCommand({
-                          type: 'moveWallDelta',
-                          wallId: el.id,
-                          dxMm: dx,
-                          dyMm: dy,
-                        })
-                      }
-                    />
-                  </>
-                ) : el.kind === 'project_base_point' || el.kind === 'survey_point' ? (
-                  <CoordinatePointInspector
-                    key={el.id}
-                    el={el as Extract<Element, { kind: 'project_base_point' | 'survey_point' }>}
-                    onSemanticCommand={onSemanticCommand}
-                  />
-                ) : el.kind === 'masking_region' ? (
-                  InspectorPropertiesFor(el, t, {
-                    elementsById,
-                    onPropertyChange: (property, value) =>
-                      void onSemanticCommand({
-                        type: 'updateMaskingRegion',
-                        maskingRegionId: el.id,
-                        [property]: value,
-                      }),
-                  })
-                ) : el.kind === 'placed_asset' ? (
-                  <PlacedAssetInspector
-                    el={el as Extract<Element, { kind: 'placed_asset' }>}
-                    assetEntry={
-                      elementsById[(el as Extract<Element, { kind: 'placed_asset' }>).assetId]
-                        ?.kind === 'asset_library_entry'
-                        ? (elementsById[
-                            (el as Extract<Element, { kind: 'placed_asset' }>).assetId
-                          ] as Extract<Element, { kind: 'asset_library_entry' }>)
-                        : undefined
-                    }
-                    onSemanticCommand={onSemanticCommand}
-                  />
-                ) : el.kind === 'family_instance' ? (
-                  <FamilyInstanceInspector
-                    el={el as Extract<Element, { kind: 'family_instance' }>}
-                    familyType={
-                      elementsById[
-                        (el as Extract<Element, { kind: 'family_instance' }>).familyTypeId
-                      ]?.kind === 'family_type'
-                        ? (elementsById[
-                            (el as Extract<Element, { kind: 'family_instance' }>).familyTypeId
-                          ] as FamilyTypeElement)
-                        : undefined
-                    }
+                    })
+                  )}
+                  {activePlanViewId && (
+                    <div
+                      style={{
+                        borderTop: '1px solid var(--color-border)',
+                        paddingTop: 6,
+                        marginTop: 8,
+                        display: 'flex',
+                        gap: 4,
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      <button
+                        data-testid="inspector-hide-element"
+                        type="button"
+                        onClick={() => {
+                          void onSemanticCommand({
+                            type: 'hideElementInView',
+                            planViewId: activePlanViewId,
+                            elementId: el.id,
+                          });
+                        }}
+                        style={{
+                          fontSize: 11,
+                          padding: '2px 8px',
+                          cursor: 'pointer',
+                          color: 'var(--color-muted)',
+                        }}
+                        title={`Hide this element in the active plan view`}
+                      >
+                        Hide Element in View
+                      </button>
+                      <button
+                        data-testid="inspector-hide-category"
+                        type="button"
+                        onClick={() => {
+                          const categoryKey =
+                            el.kind === 'family_instance'
+                              ? familyInstanceProjectCategoryKey(
+                                  el as Extract<Element, { kind: 'family_instance' }>,
+                                  elementsById,
+                                )
+                              : el.kind;
+                          useBimStore
+                            .getState()
+                            .setCategoryOverride(activePlanViewId, categoryKey, { visible: false });
+                        }}
+                        style={{
+                          fontSize: 11,
+                          padding: '2px 8px',
+                          cursor: 'pointer',
+                          color: 'var(--color-muted)',
+                        }}
+                        title={`Hide all ${el.kind} elements in this view`}
+                      >
+                        Hide Category in View
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                emptySelectionPanel
+              ),
+              constraints: el ? (
+                InspectorConstraintsFor(el, t)
+              ) : (
+                <InspectorEmptyTab message="Select a model element to inspect constraints and hosts." />
+              ),
+              identity: el ? (
+                InspectorIdentityFor(el, t)
+              ) : (
+                <InspectorEmptyTab message="Select a view, sheet, schedule, or model element to inspect identity." />
+              ),
+              graphics:
+                el && (el.kind === 'plan_view' || el.kind === 'view_template') ? (
+                  <InspectorGraphicsFor
+                    el={el}
                     elementsById={elementsById}
-                    onSemanticCommand={onSemanticCommand}
-                  />
-                ) : el.kind === 'column' ? (
-                  <ColumnInspector
-                    el={el as Extract<Element, { kind: 'column' }>}
-                    onSemanticCommand={onSemanticCommand}
-                    t={t}
-                  />
-                ) : (
-                  InspectorPropertiesFor(el, t, {
-                    elementsById,
-                    onPropertyChange: (property, value) => {
-                      if (isDuplicableTypeElement(el)) {
-                        void onSemanticCommand(typePropertyUpdateCommand(el, property, value));
-                        return;
-                      }
+                    revision={revision}
+                    onPersistProperty={(key, value) =>
                       void onSemanticCommand({
                         type: 'updateElementProperty',
                         elementId: el.id,
-                        key: property,
+                        key,
                         value,
-                      });
-                    },
-                    onDisciplineChange: handleDisciplineChange,
-                    onEditType: (typeId) => select(typeId),
-                  })
-                )}
-                {activePlanViewId && (
-                  <div
-                    style={{
-                      borderTop: '1px solid var(--color-border)',
-                      paddingTop: 6,
-                      marginTop: 8,
-                      display: 'flex',
-                      gap: 4,
-                      flexWrap: 'wrap',
-                    }}
-                  >
-                    <button
-                      data-testid="inspector-hide-element"
-                      type="button"
-                      onClick={() => {
-                        void onSemanticCommand({
-                          type: 'hideElementInView',
-                          planViewId: activePlanViewId,
-                          elementId: el.id,
-                        });
-                      }}
-                      style={{
-                        fontSize: 11,
-                        padding: '2px 8px',
-                        cursor: 'pointer',
-                        color: 'var(--color-muted)',
-                      }}
-                      title={`Hide this element in the active plan view`}
-                    >
-                      Hide Element in View
-                    </button>
-                    <button
-                      data-testid="inspector-hide-category"
-                      type="button"
-                      onClick={() => {
-                        const categoryKey =
-                          el.kind === 'family_instance'
-                            ? familyInstanceProjectCategoryKey(
-                                el as Extract<Element, { kind: 'family_instance' }>,
-                                elementsById,
-                              )
-                            : el.kind;
-                        useBimStore
-                          .getState()
-                          .setCategoryOverride(activePlanViewId, categoryKey, { visible: false });
-                      }}
-                      style={{
-                        fontSize: 11,
-                        padding: '2px 8px',
-                        cursor: 'pointer',
-                        color: 'var(--color-muted)',
-                      }}
-                      title={`Hide all ${el.kind} elements in this view`}
-                    >
-                      Hide Category in View
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              emptySelectionPanel
-            ),
-            constraints: el ? (
-              InspectorConstraintsFor(el, t)
-            ) : (
-              <InspectorEmptyTab message="Select a model element to inspect constraints and hosts." />
-            ),
-            identity: el ? (
-              InspectorIdentityFor(el, t)
-            ) : (
-              <InspectorEmptyTab message="Select a view, sheet, schedule, or model element to inspect identity." />
-            ),
-            graphics:
-              el && (el.kind === 'plan_view' || el.kind === 'view_template') ? (
-                <InspectorGraphicsFor
-                  el={el}
-                  elementsById={elementsById}
-                  revision={revision}
-                  onPersistProperty={(key, value) =>
-                    void onSemanticCommand({
-                      type: 'updateElementProperty',
-                      elementId: el.id,
-                      key,
-                      value,
-                    })
-                  }
-                />
-              ) : undefined,
-            evidence: el ? (
-              <InspectorEvidenceFor element={el} elementsById={elementsById} />
-            ) : (
-              <InspectorEmptyTab message="Select a documented item to inspect provenance and evidence." />
-            ),
-          }}
-          emptyStateActions={[
-            {
-              hotkey: 'W',
-              label: 'Draw a wall',
-              onTrigger: () => {
-                if (mode !== 'plan' && (mode as string) !== 'plan-3d') onModeChange('plan');
-                setPlanTool('wall');
+                      })
+                    }
+                  />
+                ) : undefined,
+              evidence: el ? (
+                <InspectorEvidenceFor element={el} elementsById={elementsById} />
+              ) : (
+                <InspectorEmptyTab message="Select a documented item to inspect provenance and evidence." />
+              ),
+            }}
+            emptyStateActions={[
+              {
+                hotkey: 'W',
+                label: 'Draw a wall',
+                onTrigger: () => {
+                  if (mode !== 'plan' && (mode as string) !== 'plan-3d') onModeChange('plan');
+                  setPlanTool('wall');
+                },
               },
-            },
-            {
-              hotkey: 'D',
-              label: 'Insert a door',
-              onTrigger: () => {
-                if (mode !== 'plan' && (mode as string) !== 'plan-3d') onModeChange('plan');
-                setPlanTool('door');
+              {
+                hotkey: 'D',
+                label: 'Insert a door',
+                onTrigger: () => {
+                  if (mode !== 'plan' && (mode as string) !== 'plan-3d') onModeChange('plan');
+                  setPlanTool('door');
+                },
               },
-            },
-            {
-              hotkey: 'M',
-              label: 'Drop a room marker',
-              onTrigger: () => {
-                if (mode !== 'plan' && (mode as string) !== 'plan-3d') onModeChange('plan');
-                setPlanTool('room');
+              {
+                hotkey: 'M',
+                label: 'Drop a room marker',
+                onTrigger: () => {
+                  if (mode !== 'plan' && (mode as string) !== 'plan-3d') onModeChange('plan');
+                  setPlanTool('room');
+                },
               },
-            },
-          ]}
-          onClearSelection={() => useBimStore.getState().select(undefined)}
-        />
-      </div>
-      {show3dLayers ? (
+            ]}
+            onClearSelection={() => useBimStore.getState().select(undefined)}
+          />
+        </div>
+      ) : null}
+      {show3dLayers && (showViewContextSurface || (showElementSurface && el)) ? (
         <div id="right-rail-view" className="border-t border-border">
-          {el?.kind === 'wall' ? (
+          {showElementSurface && el?.kind === 'wall' ? (
             <SelectedWall3dActions
               wall={el}
               onSemanticCommand={onSemanticCommand}
@@ -967,7 +978,7 @@ export function WorkspaceRightRail({
                 if (!viewerCategoryHidden.wall) toggleViewerCategoryHidden('wall');
               }}
             />
-          ) : isSelected3dActionElement(el) ? (
+          ) : showElementSurface && isSelected3dActionElement(el) ? (
             <Selected3dElementActions
               element={el}
               elementsById={elementsById}
@@ -978,35 +989,37 @@ export function WorkspaceRightRail({
               }}
             />
           ) : null}
-          <Viewport3DLayersPanel
-            viewerCategoryHidden={viewerCategoryHidden}
-            onToggleCategory={toggleViewerCategoryHidden}
-            onSetAllCategoriesHidden={setAllViewerCategoriesHidden}
-            categoryCounts={viewerCategoryCounts}
-            viewerRenderStyle={viewerRenderStyle}
-            onSetRenderStyle={setViewerRenderStyle}
-            viewerBackground={viewerBackground}
-            onSetBackground={setViewerBackground}
-            viewerEdges={viewerEdges}
-            onSetEdges={setViewerEdges}
-            viewerProjection={viewerProjection}
-            onSetProjection={setViewerProjection}
-            sectionBoxActive={viewerSectionBoxActive}
-            onSetSectionBoxActive={setViewerSectionBoxActive}
-            viewerWalkModeActive={viewerWalkModeActive}
-            onSetWalkModeActive={setViewerWalkModeActive}
-            onRequestCameraAction={requestViewerCameraAction}
-            viewerClipElevMm={viewerClipElevMm}
-            onSetClipElevMm={setViewerClipElevMm}
-            viewerClipFloorElevMm={viewerClipFloorElevMm}
-            onSetClipFloorElevMm={setViewerClipFloorElevMm}
-            activeViewpointId={activeViewpointId ?? undefined}
-            onResetToSavedView={activeViewpoint ? resetActiveSavedView : undefined}
-            onUpdateSavedView={activeViewpoint ? updateActiveSavedView : undefined}
-          />
+          {showViewContextSurface ? (
+            <Viewport3DLayersPanel
+              viewerCategoryHidden={viewerCategoryHidden}
+              onToggleCategory={toggleViewerCategoryHidden}
+              onSetAllCategoriesHidden={setAllViewerCategoriesHidden}
+              categoryCounts={viewerCategoryCounts}
+              viewerRenderStyle={viewerRenderStyle}
+              onSetRenderStyle={setViewerRenderStyle}
+              viewerBackground={viewerBackground}
+              onSetBackground={setViewerBackground}
+              viewerEdges={viewerEdges}
+              onSetEdges={setViewerEdges}
+              viewerProjection={viewerProjection}
+              onSetProjection={setViewerProjection}
+              sectionBoxActive={viewerSectionBoxActive}
+              onSetSectionBoxActive={setViewerSectionBoxActive}
+              viewerWalkModeActive={viewerWalkModeActive}
+              onSetWalkModeActive={setViewerWalkModeActive}
+              onRequestCameraAction={requestViewerCameraAction}
+              viewerClipElevMm={viewerClipElevMm}
+              onSetClipElevMm={setViewerClipElevMm}
+              viewerClipFloorElevMm={viewerClipFloorElevMm}
+              onSetClipFloorElevMm={setViewerClipFloorElevMm}
+              activeViewpointId={activeViewpointId ?? undefined}
+              onResetToSavedView={activeViewpoint ? resetActiveSavedView : undefined}
+              onUpdateSavedView={activeViewpoint ? updateActiveSavedView : undefined}
+            />
+          ) : null}
         </div>
       ) : null}
-      {showAuthoringWorkbenches ? (
+      {showViewContextSurface && showAuthoringWorkbenches ? (
         <div id="right-rail-workbench" className="border-t border-border">
           <AuthoringWorkbenchesPanel
             selected={el}
@@ -1016,23 +1029,25 @@ export function WorkspaceRightRail({
           />
         </div>
       ) : null}
-      <div id="right-rail-review" className="border-t border-border p-3">
-        <div
-          className="mb-2 text-[10px] font-semibold uppercase text-muted"
-          style={{ letterSpacing: '0.08em', opacity: 0.7 }}
-        >
-          {t('advisor.heading')}
+      {showReviewSurface ? (
+        <div id="right-rail-review" className="border-t border-border p-3">
+          <div
+            className="mb-2 text-[10px] font-semibold uppercase text-muted"
+            style={{ letterSpacing: '0.08em', opacity: 0.7 }}
+          >
+            {t('advisor.heading')}
+          </div>
+          <AdvisorPanel
+            violations={unifiedViolations}
+            preset={buildingPreset}
+            onPreset={setBuildingPreset}
+            codePresets={codePresetIds}
+            onApplyQuickFix={(cmd) => void onSemanticCommand(cmd)}
+            perspective={perspectiveId}
+            showAllPerspectives
+          />
         </div>
-        <AdvisorPanel
-          violations={unifiedViolations}
-          preset={buildingPreset}
-          onPreset={setBuildingPreset}
-          codePresets={codePresetIds}
-          onApplyQuickFix={(cmd) => void onSemanticCommand(cmd)}
-          perspective={perspectiveId}
-          showAllPerspectives
-        />
-      </div>
+      ) : null}
       {activityEvents.length > 0 ? (
         <div className="border-t border-border p-3">
           <div
@@ -1204,14 +1219,23 @@ function Selected3dElementActions({
 }
 
 function RightRailSectionTabs({
+  showProperties,
   showView,
   showWorkbench,
+  showReview,
 }: {
+  showProperties: boolean;
   showView: boolean;
   showWorkbench: boolean;
+  showReview: boolean;
 }): JSX.Element {
   const tabs = [
-    { id: 'properties', label: 'Properties', target: 'right-rail-properties', visible: true },
+    {
+      id: 'properties',
+      label: 'Properties',
+      target: 'right-rail-properties',
+      visible: showProperties,
+    },
     {
       id: 'view',
       label: 'View',
@@ -1220,7 +1244,7 @@ function RightRailSectionTabs({
       visible: showView,
     },
     { id: 'workbench', label: 'Workbench', target: 'right-rail-workbench', visible: showWorkbench },
-    { id: 'review', label: 'Review', target: 'right-rail-review', visible: true },
+    { id: 'review', label: 'Review', target: 'right-rail-review', visible: showReview },
   ].filter((tab) => tab.visible);
 
   return (

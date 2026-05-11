@@ -46,28 +46,32 @@ afterEach(() => {
 });
 
 describe('<Workspace /> — smoke', () => {
-  it('renders the AppShell, TopBar, LeftRail, StatusBar slots; inspector absent with no selection — CHR-V3-06', () => {
+  it('renders the AppShell, TopBar, primary, secondary, and footer slots; inspector absent with no selection — CHR-V3-06', () => {
     const { getByTestId, getByRole, queryByTestId } = renderWithProviders(<Workspace />);
     expect(getByTestId('app-shell')).toBeTruthy();
     expect(getByTestId('topbar')).toBeTruthy();
     expect(getByRole('complementary', { name: 'Project browser' })).toBeTruthy();
+    expect(getByTestId('app-shell-secondary-sidebar')).toBeTruthy();
     // CHR-V3-06: Inspector is absent from DOM when nothing is selected.
     expect(queryByTestId('inspector')).toBeNull();
     expect(getByTestId('status-bar')).toBeTruthy();
   });
 
-  it('keeps the right rail open for 3D view controls when nothing is selected', () => {
+  it('keeps 3D view controls in the secondary sidebar when no element is selected', () => {
     seedTabs('3d');
     const { getByTestId, getByRole } = renderWithProviders(<Workspace />);
-    expect(getByTestId('app-shell').dataset.rightCollapsed).toBe('false');
+    expect(getByTestId('app-shell').dataset.elementSidebarPresent).toBe('false');
+    expect(getByTestId('app-shell-element-sidebar').hidden).toBe(true);
+    expect(getByTestId('app-shell-secondary-sidebar').hidden).toBe(false);
     expect(getByRole('button', { name: /Show material lighting and surface depth/i })).toBeTruthy();
   });
 
-  it('still collapses the right rail for an empty plan with no selection', () => {
+  it('keeps the element sidebar absent for an empty plan with no selection', () => {
     seedTabs('plan');
     const { getByTestId, queryByTestId } = renderWithProviders(<Workspace />);
     expect(queryByTestId('inspector')).toBeNull();
-    expect(getByTestId('app-shell').dataset.rightCollapsed).toBe('true');
+    expect(getByTestId('app-shell').dataset.elementSidebarPresent).toBe('false');
+    expect(getByTestId('app-shell-element-sidebar').hidden).toBe(true);
   });
 
   it('mounts the redesign canvas root', () => {

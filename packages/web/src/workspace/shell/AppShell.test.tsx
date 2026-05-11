@@ -9,49 +9,57 @@ afterEach(() => {
 });
 
 describe('AppShell — spec §8', () => {
-  it('renders all five named slots', () => {
+  it('renders the canonical seven workspace regions', () => {
     const { getByText } = render(
       <AppShell
-        topBar={<span>top</span>}
-        leftRail={<span>left</span>}
+        header={<span>header</span>}
+        ribbon={<span>ribbon</span>}
+        primarySidebar={<span>primary</span>}
+        secondarySidebar={<span>secondary</span>}
         canvas={<span>canvas</span>}
-        rightRail={<span>right</span>}
-        statusBar={<span>status</span>}
+        elementSidebar={<span>element</span>}
+        footer={<span>footer</span>}
       />,
     );
-    expect(getByText('top')).toBeTruthy();
-    expect(getByText('left')).toBeTruthy();
+    expect(getByText('header')).toBeTruthy();
+    expect(getByText('ribbon')).toBeTruthy();
+    expect(getByText('primary')).toBeTruthy();
+    expect(getByText('secondary')).toBeTruthy();
     expect(getByText('canvas')).toBeTruthy();
-    expect(getByText('right')).toBeTruthy();
-    expect(getByText('status')).toBeTruthy();
+    expect(getByText('element')).toBeTruthy();
+    expect(getByText('footer')).toBeTruthy();
   });
 
   it('uses CSS-grid template areas for layout', () => {
     const { getByTestId } = render(
       <AppShell
-        topBar={<span>t</span>}
-        leftRail={<span>l</span>}
+        header={<span>t</span>}
+        primarySidebar={<span>l</span>}
+        secondarySidebar={<span>sec</span>}
         canvas={<span>c</span>}
-        rightRail={<span>r</span>}
-        statusBar={<span>s</span>}
+        elementSidebar={<span>r</span>}
+        footer={<span>s</span>}
       />,
     );
     const shell = getByTestId('app-shell') as HTMLElement;
     expect(shell.style.display).toBe('grid');
-    expect(shell.style.gridTemplateAreas).toContain('topbar');
+    expect(shell.style.gridTemplateAreas).toContain('header');
+    expect(shell.style.gridTemplateAreas).toContain('primarySidebar');
+    expect(shell.style.gridTemplateAreas).toContain('secondarySidebar');
     expect(shell.style.gridTemplateAreas).toContain('canvas');
-    expect(shell.style.gridTemplateAreas).toContain('statusbar');
+    expect(shell.style.gridTemplateAreas).toContain('elementSidebar');
+    expect(shell.style.gridTemplateAreas).toContain('footer');
   });
 
-  it('responds to `[` to toggle the left rail collapsed-state', () => {
+  it('responds to `[` to hide and restore the primary sidebar', () => {
     const { getByTestId } = render(
       <AppShell
-        topBar={<span>t</span>}
-        leftRail={<span>full-left</span>}
-        leftRailCollapsed={<span>icon-left</span>}
+        header={<span>t</span>}
+        primarySidebar={<span>full-left</span>}
+        secondarySidebar={<span>sec</span>}
         canvas={<span>c</span>}
-        rightRail={<span>r</span>}
-        statusBar={<span>s</span>}
+        elementSidebar={<span>r</span>}
+        footer={<span>s</span>}
         defaultLeftCollapsed
       />,
     );
@@ -66,11 +74,12 @@ describe('AppShell — spec §8', () => {
   it('responds to `]` to toggle the right rail collapsed-state', () => {
     const { getByTestId } = render(
       <AppShell
-        topBar={<span>t</span>}
-        leftRail={<span>l</span>}
+        header={<span>t</span>}
+        primarySidebar={<span>l</span>}
+        secondarySidebar={<span>sec</span>}
         canvas={<span>c</span>}
-        rightRail={<span>full-right</span>}
-        statusBar={<span>s</span>}
+        elementSidebar={<span>full-right</span>}
+        footer={<span>s</span>}
       />,
     );
     const shell = getByTestId('app-shell') as HTMLElement;
@@ -84,11 +93,12 @@ describe('AppShell — spec §8', () => {
   it('does not toggle while user is typing in an input', () => {
     const { getByTestId } = render(
       <AppShell
-        topBar={<input data-testid="probe-input" defaultValue="" />}
-        leftRail={<span>l</span>}
+        header={<input data-testid="probe-input" defaultValue="" />}
+        primarySidebar={<span>l</span>}
+        secondarySidebar={<span>sec</span>}
         canvas={<span>c</span>}
-        rightRail={<span>r</span>}
-        statusBar={<span>s</span>}
+        elementSidebar={<span>r</span>}
+        footer={<span>s</span>}
       />,
     );
     const shell = getByTestId('app-shell') as HTMLElement;
@@ -103,11 +113,12 @@ describe('AppShell — spec §8', () => {
   it('honors defaultLeftCollapsed and defaultRightCollapsed', () => {
     const { getByTestId } = render(
       <AppShell
-        topBar={<span>t</span>}
-        leftRail={<span>l</span>}
+        header={<span>t</span>}
+        primarySidebar={<span>l</span>}
+        secondarySidebar={<span>sec</span>}
         canvas={<span>c</span>}
-        rightRail={<span>r</span>}
-        statusBar={<span>s</span>}
+        elementSidebar={<span>r</span>}
+        footer={<span>s</span>}
         defaultLeftCollapsed
         defaultRightCollapsed
       />,
@@ -117,20 +128,61 @@ describe('AppShell — spec §8', () => {
     expect(shell.dataset.rightCollapsed).toBe('true');
   });
 
-  it('renders the collapsed left rail node when collapsed', () => {
-    const { getByText, queryByText } = render(
+  it('restores a hidden primary sidebar from the header reveal button', () => {
+    const { getByTestId, queryByTestId } = render(
       <AppShell
-        topBar={<span>t</span>}
-        leftRail={<span>full-left</span>}
-        leftRailCollapsed={<span>icon-left</span>}
+        header={<span>t</span>}
+        primarySidebar={<span>full-left</span>}
+        secondarySidebar={<span>sec</span>}
         canvas={<span>c</span>}
-        rightRail={<span>r</span>}
-        statusBar={<span>s</span>}
+        elementSidebar={<span>r</span>}
+        footer={<span>s</span>}
         defaultLeftCollapsed
       />,
     );
-    expect(queryByText('full-left')).toBeNull();
-    expect(getByText('icon-left')).toBeTruthy();
+    const shell = getByTestId('app-shell') as HTMLElement;
+    expect(shell.dataset.primaryHidden).toBe('true');
+    expect(getByTestId('app-shell-primary-sidebar').hidden).toBe(true);
+    fireEvent.click(getByTestId('app-shell-primary-reveal'));
+    expect(shell.dataset.primaryHidden).toBe('false');
+    expect(queryByTestId('app-shell-primary-reveal')).toBeNull();
+    expect(getByTestId('app-shell-primary-sidebar').hidden).toBe(false);
+  });
+
+  it('allows the primary sidebar to resize to zero using the resize handle', () => {
+    const { getByTestId } = render(
+      <AppShell
+        header={<span>t</span>}
+        primarySidebar={<span>full-left</span>}
+        secondarySidebar={<span>sec</span>}
+        canvas={<span>c</span>}
+        elementSidebar={<span>r</span>}
+        footer={<span>s</span>}
+      />,
+    );
+    const shell = getByTestId('app-shell') as HTMLElement;
+    expect(shell.dataset.primaryHidden).toBe('false');
+    fireEvent.keyDown(getByTestId('app-shell-primary-resize-handle'), { key: 'End' });
+    expect(shell.dataset.primaryHidden).toBe('true');
+    fireEvent.click(getByTestId('app-shell-primary-reveal'));
+    expect(shell.dataset.primaryHidden).toBe('false');
+  });
+
+  it('keeps the secondary sidebar mounted while the element sidebar can be absent', () => {
+    const { getByTestId, queryByText } = render(
+      <AppShell
+        header={<span>t</span>}
+        primarySidebar={<span>primary</span>}
+        secondarySidebar={<span>view-wide settings</span>}
+        canvas={<span>canvas</span>}
+        elementSidebar={null}
+        footer={<span>footer</span>}
+      />,
+    );
+    expect(getByTestId('app-shell-secondary-sidebar').hidden).toBe(false);
+    expect(getByTestId('app-shell-element-sidebar').hidden).toBe(true);
+    expect(getByTestId('app-shell').dataset.elementSidebarPresent).toBe('false');
+    expect(queryByText('view-wide settings')).toBeTruthy();
   });
 
   it('shows plan tool option surfaces only in plan-capable modes', () => {
@@ -139,11 +191,12 @@ describe('AppShell — spec §8', () => {
     const { getByTestId, queryByTestId, rerender } = render(
       <AppShell
         activeMode="plan"
-        topBar={<span>t</span>}
-        leftRail={<span>l</span>}
+        header={<span>t</span>}
+        primarySidebar={<span>l</span>}
+        secondarySidebar={<span>sec</span>}
         canvas={<span>c</span>}
-        rightRail={<span>r</span>}
-        statusBar={<span>s</span>}
+        elementSidebar={<span>r</span>}
+        footer={<span>s</span>}
       />,
     );
 
@@ -153,11 +206,12 @@ describe('AppShell — spec §8', () => {
     rerender(
       <AppShell
         activeMode="3d"
-        topBar={<span>t</span>}
-        leftRail={<span>l</span>}
+        header={<span>t</span>}
+        primarySidebar={<span>l</span>}
+        secondarySidebar={<span>sec</span>}
         canvas={<span>c</span>}
-        rightRail={<span>r</span>}
-        statusBar={<span>s</span>}
+        elementSidebar={<span>r</span>}
+        footer={<span>s</span>}
       />,
     );
 
