@@ -2,160 +2,274 @@
 # This fixture is the canonical reliability target for bim-ai's kernel.
 # CI runs the deterministic harness (no AI) on every PR touching:
 #   app/bim_ai/cmd/, app/bim_ai/tkn/, app/bim_ai/vg/, app/bim_ai/api/
-# When an AI-integration follow-up lands (post-v3), this same fixture
-# becomes the agent reliability test (agent passes if it solves the
-# 12-step task using only API-V3-01 calls within the property bounds).
+# The main Python CI job also runs this cheap gate on every PR/push, which is
+# stricter than the path-filtered minimum above.
+# When an AI-integration follow-up lands (post-v3), this same fixture becomes
+# the agent reliability test (agent passes if it solves the 12-step task using
+# only API-V3-01 calls within the property bounds).
 
-# 12-step refinement reliability fixture
-# Each step: a command bundle + expected invariants
 schema_version: 'tst-v3.0'
 model_id: 'test-model-refinement'
+compare:
+  metric: 'ssim'
+  threshold: 0.7
 steps:
   - step: 1
-    description: 'Create base wall'
+    description: 'Create base level and wall'
     bundle:
+      assumptions:
+        - key: 'step_01_base_wall'
+          value: true
+          confidence: 0.95
+          source: 'tst-v3-01-fixture'
       commands:
-        - type: create_wall
-          id: wall-1
-          startMm: { xMm: 0, yMm: 0 }
-          endMm: { xMm: 5000, yMm: 0 }
+        - type: 'createLevel'
+          id: 'level-0'
+          name: 'Level 1'
+          elevationMm: 0
+          alsoCreatePlanView: false
+        - type: 'createWall'
+          id: 'wall-1'
+          name: 'Base wall'
+          levelId: 'level-0'
+          start: { xMm: 0, yMm: 0 }
+          end: { xMm: 5000, yMm: 0 }
           heightMm: 2800
-          wallTypeId: wt-default
+          thicknessMm: 200
+          wallTypeId: 'wt-default'
     invariants:
-      element_count_gte: 1
-      element_kinds_include: ['wall']
+      element_count_gte: 4
+      element_kinds_include: ['level', 'wall']
+      element_ids_include:
+        level-0: 'level'
+        wall-1: 'wall'
 
   - step: 2
     description: 'Add door'
     bundle:
+      assumptions:
+        - key: 'step_02_door_width'
+          value: 900
+          confidence: 0.9
+          source: 'tst-v3-01-fixture'
       commands:
-        - type: create_door
-          id: door-1
-          wallId: wall-1
-          tMm: 1000
+        - type: 'insertDoorOnWall'
+          id: 'door-1'
+          name: 'Entry door'
+          wallId: 'wall-1'
+          alongT: 0.2
           widthMm: 900
-          heightMm: 2100
+          familyTypeId: 'door-res-900'
     invariants:
-      element_count_gte: 2
+      element_count_gte: 5
       element_kinds_include: ['door']
+      element_ids_include:
+        door-1: 'door'
 
   - step: 3
     description: 'Add second wall'
     bundle:
+      assumptions:
+        - key: 'step_03_corner_wall'
+          value: true
+          confidence: 0.92
+          source: 'tst-v3-01-fixture'
       commands:
-        - type: create_wall
-          id: wall-2
-          startMm: { xMm: 5000, yMm: 0 }
-          endMm: { xMm: 5000, yMm: 4000 }
+        - type: 'createWall'
+          id: 'wall-2'
+          name: 'Return wall'
+          levelId: 'level-0'
+          start: { xMm: 5000, yMm: 0 }
+          end: { xMm: 5000, yMm: 4000 }
           heightMm: 2800
-          wallTypeId: wt-default
+          thicknessMm: 200
+          wallTypeId: 'wt-default'
     invariants:
-      element_count_gte: 3
+      element_count_gte: 6
+      element_ids_include:
+        wall-2: 'wall'
 
   - step: 4
     description: 'Add floor'
     bundle:
+      assumptions:
+        - key: 'step_04_floor_boundary'
+          value: 'rectangular footprint'
+          confidence: 0.93
+          source: 'tst-v3-01-fixture'
       commands:
-        - type: create_floor
-          id: floor-1
+        - type: 'createFloor'
+          id: 'floor-1'
+          name: 'Ground floor'
+          levelId: 'level-0'
           boundaryMm:
             - { xMm: 0, yMm: 0 }
             - { xMm: 5000, yMm: 0 }
             - { xMm: 5000, yMm: 4000 }
             - { xMm: 0, yMm: 4000 }
-          floorTypeId: ft-default
-          levelId: level-0
+          floorTypeId: 'ft-default'
     invariants:
       element_kinds_include: ['floor']
+      element_ids_include:
+        floor-1: 'floor'
 
   - step: 5
-    description: 'Add level'
+    description: 'Add upper level'
     bundle:
+      assumptions:
+        - key: 'step_05_upper_level'
+          value: 3000
+          confidence: 0.95
+          source: 'tst-v3-01-fixture'
       commands:
-        - type: create_level
-          id: level-1
+        - type: 'createLevel'
+          id: 'level-1'
           name: 'Level 2'
           elevationMm: 3000
+          alsoCreatePlanView: false
     invariants:
       element_kinds_include: ['level']
+      element_ids_include:
+        level-1: 'level'
 
   - step: 6
-    description: 'Update wall height'
+    description: 'Update wall length'
     bundle:
+      assumptions:
+        - key: 'step_06_wall_length'
+          value: 5200
+          confidence: 0.88
+          source: 'tst-v3-01-fixture'
       commands:
-        - type: update_wall
-          id: wall-1
-          heightMm: 3000
+        - type: 'updateWall'
+          id: 'wall-1'
+          lengthMm: 5200
     invariants:
-      element_kinds_include: ['wall']
+      element_ids_include:
+        wall-1: 'wall'
+      wall_lengths_mm:
+        wall-1: 5200
 
   - step: 7
     description: 'Add window'
     bundle:
+      assumptions:
+        - key: 'step_07_window_position'
+          value: 0.375
+          confidence: 0.9
+          source: 'tst-v3-01-fixture'
       commands:
-        - type: create_window
-          id: window-1
-          wallId: wall-2
-          tMm: 1500
+        - type: 'insertWindowOnWall'
+          id: 'window-1'
+          name: 'Living room window'
+          wallId: 'wall-2'
+          alongT: 0.375
           widthMm: 1200
           heightMm: 1000
           sillHeightMm: 900
+          familyTypeId: 'window-res-1200'
     invariants:
       element_kinds_include: ['window']
+      element_ids_include:
+        window-1: 'window'
 
   - step: 8
-    description: 'Add room'
+    description: 'Add room outline'
     bundle:
+      assumptions:
+        - key: 'step_08_living_room_outline'
+          value: 'inside rectangular footprint'
+          confidence: 0.87
+          source: 'tst-v3-01-fixture'
       commands:
-        - type: create_room
-          id: room-1
+        - type: 'createRoomOutline'
+          id: 'room-1'
           name: 'Living Room'
-          levelId: level-0
-          boundaryMm:
+          levelId: 'level-0'
+          outlineMm:
             - { xMm: 100, yMm: 100 }
             - { xMm: 4900, yMm: 100 }
             - { xMm: 4900, yMm: 3900 }
             - { xMm: 100, yMm: 3900 }
+          programmeCode: 'living'
+          targetAreaM2: 18.24
     invariants:
       element_kinds_include: ['room']
+      element_ids_include:
+        room-1: 'room'
 
   - step: 9
-    description: 'Create design option'
+    description: 'Create explicit design option set'
     bundle:
+      assumptions:
+        - key: 'step_09_option_set'
+          value: 'Option A'
+          confidence: 0.9
+          source: 'tst-v3-01-fixture'
       commands:
-        - type: create_design_option
-          id: opt-1
+        - type: 'createOptionSet'
+          id: 'study-options'
+          name: 'Study Options'
+        - type: 'addOption'
+          optionSetId: 'study-options'
+          optionId: 'opt-a'
           name: 'Option A'
+          isPrimary: true
     invariants:
-      element_count_gte: 8
+      design_option_sets_include:
+        study-options: 'Study Options'
 
   - step: 10
-    description: 'Add assumption log entry'
+    description: 'Add assumption log element'
     bundle:
-      commands:
-        - type: log_assumption
-          assumption: 'Door width matches typical residential standard'
+      assumptions:
+        - key: 'step_10_agent_assumption'
+          value: 'Door width matches typical residential standard'
           confidence: 0.9
-          source: 'agent'
+          source: 'tst-v3-01-fixture'
+      commands:
+        - type: 'createAgentAssumption'
+          id: 'assumption-1'
+          statement: 'Door width matches typical residential standard'
+          source: 'manual'
+          closureStatus: 'accepted'
+          relatedElementIds: ['door-1']
     invariants:
-      assumption_log_count_gte: 1
+      element_ids_include:
+        assumption-1: 'agent_assumption'
+      agent_assumption_count_gte: 1
 
   - step: 11
     description: 'Add grid line'
     bundle:
+      assumptions:
+        - key: 'step_11_grid_a'
+          value: 'primary datum'
+          confidence: 0.91
+          source: 'tst-v3-01-fixture'
       commands:
-        - type: create_grid_line
-          id: grid-1
-          name: 'A'
-          startMm: { xMm: 0, yMm: -500 }
-          endMm: { xMm: 0, yMm: 4500 }
+        - type: 'createGridLine'
+          id: 'grid-1'
+          name: 'Grid A'
+          label: 'A'
+          levelId: 'level-0'
+          start: { xMm: 0, yMm: -500 }
+          end: { xMm: 0, yMm: 4500 }
     invariants:
       element_kinds_include: ['grid_line']
+      element_ids_include:
+        grid-1: 'grid_line'
 
   - step: 12
     description: 'Final: tokenise round-trip'
     bundle:
-      commands: [] # no-op — just verify state is stable
+      assumptions:
+        - key: 'step_12_token_round_trip'
+          value: true
+          confidence: 1.0
+          source: 'tst-v3-01-fixture'
+      commands: []
     invariants:
-      element_count_gte: 9
+      element_count_gte: 11
       no_divergence: true
+      tkn_round_trip_byte_identical: true

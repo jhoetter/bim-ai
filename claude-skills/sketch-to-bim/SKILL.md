@@ -343,6 +343,8 @@ After every commit:
 8. **Re-render. Re-read advisor. Re-look.**
 9. Cap at 5 iterations per phase. If still mismatched, log an assumption and escalate to the user with screenshots and advisor JSON. Do not silently accept a bad model.
 
+Canonical reliability target: `app/tests/agent/refinement_reliability/12_step_refinement.yaml` is the TST-V3-01 fixture for deterministic 12-step agent refinement. When changing the command-bundle, token, visual-compare, or agent-callable API surfaces, run `make verify-refinement-reliability` and treat failures as blockers for sketch-to-BIM refinement work.
+
 ### Advisor findings are first-class input
 
 The software already identifies many issues the sketch-to-BIM agent tends to create. Use those findings as a targeted punch list inside the same refinement loop as visual deltas:

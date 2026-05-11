@@ -138,7 +138,7 @@ verify: format-check python-format-check lint architecture typecheck test build 
 	@echo "verify: PASS"
 
 verify-refinement-reliability:
-	cd app && .venv/bin/python -m pytest tests/agent/refinement_reliability/ -v --no-cov -m "not integration"
+	cd app && .venv/bin/python -m pytest tests/agent/refinement_reliability/ -v --no-cov
 
 clean:
 	$(PNPM) -w turbo clean || true

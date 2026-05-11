@@ -3047,7 +3047,7 @@ _The agent-callable tool surface that makes bim-ai 100 %-usable by external AI a
 | VG-V3-01   | Render-and-compare CLI tool                                     | M      | now    | API-V3-01, T4 (canvas render)   |
 | AGT-V3-06  | No-training-on-customer-data clause                             | S      | now    | —                               |
 | CTL-V3-01  | Catalog query API                                               | M      | now    | API-V3-01, T5                   |
-| TST-V3-01  | Refinement-reliability CI test pattern                          | S      | next   | CMD-V3-01, OPT-V3-01, VG-V3-01  |
+| TST-V3-01  | Refinement-reliability CI test pattern                          | S      | done   | CMD-V3-01, OPT-V3-01, VG-V3-01  |
 | EXP-V3-01  | Render-pipeline export tool (glTF / IFC / metadata bundles)     | M      | next   | API-V3-01                       |
 | AGT-V3-04  | Conversational refinement UI (in-app chat)                      | M      | vision | external agents own this today  |
 | RND-V3-01  | AI rendering integration (Veo / Sora / Imagen)                  | M      | vision | EXP-V3-01                       |
@@ -3355,7 +3355,7 @@ type CatalogQueryResult = {
 
 _Source: v3 §6 T9 anchor — _"Refinement reliability gate: 12-step refinement on existing model without divergence."_ Reframed from "in-app feature" to "documented CI test pattern + fixtures" — TST-V3-01 ships test fixtures + a pattern in `app/tests/agent/` that anchors whoever later writes agent test suites._
 
-**Status.** `next`.
+**Status.** `done`.
 **Scope.** A CI test pattern + reusable fixtures + property-test harness in `app/tests/agent/refinement_reliability/` that asserts the **deterministic kernel + tool surface is reliable enough for an external agent to drive a 12-step refinement chain without divergence.** No AI in the test; a Python script emits canned bundles — the property under test is the kernel's behaviour.
 
 Asserts: (1) every step lands as a new option (OPT-V3-01); (2) `bim-ai compare` returns ≥ 0.7 score vs. expected post-step PNG (VG-V3-01); (3) every assumption log validates structurally (CMD-V3-02); (4) 12th step's TKN-V3-01 round-trip is byte-identical; (5) revert to step 5 restores kernel state byte-equal to step 5's commit (float epsilon).
@@ -3363,9 +3363,10 @@ Asserts: (1) every step lands as a new option (OPT-V3-01); (2) `bim-ai compare` 
 YAML fixture in `app/tests/agent/refinement_reliability/12_step_refinement.yaml`. The pattern is documented so when an actual AI agent harness ships (post-v3), the same fixtures become the agent reliability test — the agent passes if it solves the 12-step task using only API-V3-01 calls within the same property bounds. This WP is the **anchor** for later agent test suites.
 
 **Data model.** YAML fixtures + existing `BundleResult` + `CompareResult` shapes.
-**Engine.** New CI step `make verify-refinement-reliability`; runs the deterministic harness (no AI) against the 12-step fixture; asserts each step's invariants. Hooked into CI on every PR touching `app/bim_ai/cmd/`, `app/bim_ai/tkn/`, `app/bim_ai/vg/`, or `app/bim_ai/api/`.
+**Engine.** New CI step `make verify-refinement-reliability`; runs the deterministic harness (no AI) against the 12-step fixture; asserts each step's invariants. Hooked into CI on every PR touching `app/bim_ai/cmd/`, `app/bim_ai/tkn/`, `app/bim_ai/vg/`, or `app/bim_ai/api/` (the main Python job also runs the cheap gate on every PR/push, which is stricter than the path-filtered minimum).
 **UI.** None.
 **Acceptance.** All 12 steps pass with the deterministic harness; total wall-clock < 2 min in CI; the fixture is referenced from `claude-skills/sketch-to-bim/SKILL.md` as the canonical reliability target. When an AI-integration follow-up lands (post-v3), the same fixture runs as the agent reliability test.
+**Completion 2026-05-11.** Implemented in `app/tests/agent/refinement_reliability/`: the YAML fixture now uses real CMD-V3-01 command shapes and per-step assumption logs; the pytest harness exercises `apply_bundle`, OPT-V3-01 auto-option routing, VG-V3-01 compare determinism/thresholds, CMD-V3-02 structural assumptions, TKN-V3-01 byte-identical round-trip, and undo replay from step 12 back to step 5. CI runs the gate through `make verify-refinement-reliability`, and `claude-skills/sketch-to-bim/SKILL.md` references the fixture as the canonical reliability target.
 **Effort.** S — 1 week. Hard work is in API-V3-01 + CMD-V3-01 + OPT-V3-01 + VG-V3-01; this WP is the gate that proves they hold together.
 **Cross-theme references.** **API-V3-01.** **CMD-V3-01.** **OPT-V3-01.** **VG-V3-01.** **§L (operational verification of the locked decision).**
 

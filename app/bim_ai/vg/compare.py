@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 VG_SCHEMA = "vg-v3.0"
@@ -70,7 +71,8 @@ def _render_snapshot(snapshot: dict, region: str | None = None) -> list[list[tup
     pixels = [[(240, 240, 240)] * size for _ in range(size)]
     for elem_id, elem in elements.items():
         kind = elem.get("kind", "") if isinstance(elem, dict) else ""
-        h = hash(elem_id) % (size * size)
+        h = int(hashlib.sha256(str(elem_id).encode("utf-8")).hexdigest()[:12], 16)
+        h %= size * size
         x, y = h % size, h // size
         color = _kind_color(kind)
         pixels[y][x] = color

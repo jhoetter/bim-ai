@@ -129,6 +129,9 @@ jobs:
 
       - run: uv run pytest
 
+      - name: TST-V3-01 refinement reliability gate
+        run: cd .. && make verify-refinement-reliability
+
       - name: Optional evidence-package staging probe
         env:
           BIM_AI_EVIDENCE_PROBE_BASE_URL: ${{ vars.BIM_AI_EVIDENCE_PROBE_BASE_URL }}
