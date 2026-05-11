@@ -16,6 +16,8 @@ const RECOMMENDED_CONTEXT_BY_RULE_ID: Record<string, string> = {
     'Recommended: Wall properties / structural review - set load-bearing status for primary exterior envelope walls.',
   large_opening_in_load_bearing_wall_unresolved:
     'Recommended: Structural openings - add lintel/header/support metadata or engineering approval for the large opening in the load-bearing wall.',
+  load_bearing_wall_removed_without_transfer:
+    'Recommended: Structural alteration - add transfer beam, temporary works, or structural review metadata for the removed load-bearing wall.',
   stacked_load_path_discontinuity:
     'Recommended: Structural load path - add a modeled bearing wall, column, beam/transfer condition, or revise upper wall load-bearing intent.',
   beam_without_support:
@@ -48,6 +50,7 @@ const READABLE_TITLE_BY_RULE_ID: Record<string, string> = {
   constructability_proxy_unsupported: 'Unsupported Constructability Proxy',
   wall_load_bearing_unknown_primary_envelope: 'Primary Envelope Wall Missing Load-Bearing Status',
   large_opening_in_load_bearing_wall_unresolved: 'Large Opening In Load-Bearing Wall Unresolved',
+  load_bearing_wall_removed_without_transfer: 'Load-Bearing Wall Removed Without Transfer',
   stacked_load_path_discontinuity: 'Stacked Load Path Discontinuity',
   beam_without_support: 'Beam Without Support',
   column_without_foundation_or_support: 'Column Without Foundation Or Support',

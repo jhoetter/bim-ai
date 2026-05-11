@@ -357,6 +357,15 @@ def test_upper_load_bearing_wall_without_lower_support_is_reported_and_suppresse
     assert "stacked_load_path_discontinuity" not in _rule_ids(elements)
 
 
+def test_removed_load_bearing_wall_without_transfer_metadata_is_reported() -> None:
+    wall = _wall(loadBearing=True, phaseDemolished="demo")
+    elements = {"lvl-1": _level(), "wall-1": wall}
+    assert "load_bearing_wall_removed_without_transfer" in _rule_ids(elements)
+
+    elements["wall-1"] = wall.model_copy(update={"props": {"transferBeamDesigned": True}})
+    assert "load_bearing_wall_removed_without_transfer" not in _rule_ids(elements)
+
+
 def test_beam_without_two_modeled_supports_is_reported() -> None:
     elements = {
         "lvl-1": _level(),

@@ -50,6 +50,7 @@ def constructability_advisory_violations(elements: dict[str, Element]) -> list[V
     violations.extend(_door_clearance_violations(elements, participants_by_kind))
     violations.extend(_load_bearing_metadata_violations(walls_by_id))
     violations.extend(_large_opening_violations(elements, walls_by_id))
+    violations.extend(_load_bearing_wall_removed_violations(walls_by_id))
     violations.extend(_stacked_load_path_violations(participants_by_kind, walls_by_id))
     violations.extend(_unsupported_beam_violations(participants_by_kind, elements, walls_by_id))
     violations.extend(_unsupported_column_violations(participants_by_kind, walls_by_id))
@@ -372,6 +373,29 @@ def _large_opening_violations(
                     "or structural review metadata."
                 ),
                 element_ids=sorted([wall.id, str(element.id)]),
+            )
+        )
+    return violations
+
+
+def _load_bearing_wall_removed_violations(walls_by_id: dict[str, WallElem]) -> list[Violation]:
+    violations: list[Violation] = []
+    for wall in walls_by_id.values():
+        if not _is_load_bearing_wall(wall):
+            continue
+        if not _wall_marked_removed(wall):
+            continue
+        if _wall_has_transfer_resolution(wall):
+            continue
+        violations.append(
+            Violation(
+                rule_id="load_bearing_wall_removed_without_transfer",
+                severity="warning",
+                message=(
+                    "Load-bearing wall is marked demolished/removed without transfer beam, "
+                    "temporary works, or structural review metadata."
+                ),
+                element_ids=[wall.id],
             )
         )
     return violations
@@ -730,6 +754,26 @@ def _opening_has_structural_resolution(element: Any) -> bool:
         "structuralReviewed",
         "structuralReviewApproved",
         "openingReinforced",
+    )
+
+
+def _wall_marked_removed(wall: WallElem) -> bool:
+    if getattr(wall, "phase_demolished", None):
+        return True
+    props = wall.props or {}
+    return _truthy_prop(props, "demolished", "removed", "toBeRemoved", "phaseDemolished")
+
+
+def _wall_has_transfer_resolution(wall: WallElem) -> bool:
+    props = wall.props or {}
+    return _truthy_prop(
+        props,
+        "transferDesigned",
+        "transferBeamDesigned",
+        "temporaryWorksDesigned",
+        "structuralReviewed",
+        "structuralReviewApproved",
+        "loadPathTransferred",
     )
 
 

@@ -65,6 +65,9 @@ describe('advisorViolationContext', () => {
     expect(recommendedContextForRuleId('large_opening_in_load_bearing_wall_unresolved')).toMatch(
       /lintel|header|engineering approval/i,
     );
+    expect(recommendedContextForRuleId('load_bearing_wall_removed_without_transfer')).toMatch(
+      /transfer beam|temporary works|structural review/i,
+    );
     expect(recommendedContextForRuleId('stacked_load_path_discontinuity')).toMatch(
       /load path|bearing wall|column/i,
     );
@@ -99,6 +102,9 @@ describe('advisorViolationContext', () => {
     expect(humanizeRuleId('physical_duplicate_geometry')).toBe('Physical Duplicate Geometry');
     expect(humanizeRuleId('wall_load_bearing_unknown_primary_envelope')).toBe(
       'Primary Envelope Wall Missing Load-Bearing Status',
+    );
+    expect(humanizeRuleId('load_bearing_wall_removed_without_transfer')).toBe(
+      'Load-Bearing Wall Removed Without Transfer',
     );
     expect(humanizeRuleId('stacked_load_path_discontinuity')).toBe(
       'Stacked Load Path Discontinuity',
