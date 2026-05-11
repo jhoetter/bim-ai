@@ -29,6 +29,12 @@
       "transcript": "/ea/ed800e1d4a/3/full.jsonl",
       "content_hash": "/ea/ed800e1d4a/3/content_hash.txt",
       "prompt": "/ea/ed800e1d4a/3/prompt.txt"
+    },
+    {
+      "metadata": "/ea/ed800e1d4a/4/metadata.json",
+      "transcript": "/ea/ed800e1d4a/4/full.jsonl",
+      "content_hash": "/ea/ed800e1d4a/4/content_hash.txt",
+      "prompt": "/ea/ed800e1d4a/4/prompt.txt"
     }
   ]
 }
