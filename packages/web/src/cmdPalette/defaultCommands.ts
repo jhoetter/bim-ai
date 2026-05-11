@@ -398,6 +398,30 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'visibility.active-controls',
+  label: 'Open Active View Visibility Controls',
+  keywords: ['visibility', 'graphics', 'vg', 'layers', 'active view'],
+  category: 'command',
+  invoke: (ctx) => ctx.openActiveVisibilityControls?.(),
+});
+
+registerCommand({
+  id: 'visibility.plan.graphics',
+  label: 'Open Plan Visibility/Graphics',
+  keywords: ['visibility', 'graphics', 'vv', 'vg', 'plan'],
+  category: 'command',
+  invoke: (ctx) => ctx.openPlanVisibilityGraphics?.(),
+});
+
+registerCommand({
+  id: 'visibility.3d.layers',
+  label: 'Open 3D View Controls',
+  keywords: ['3d', 'visibility', 'layers', 'view controls', 'graphics'],
+  category: 'command',
+  invoke: (ctx) => ctx.open3dViewControls?.(),
+});
+
+registerCommand({
   id: 'shell.toggle-left-rail',
   label: 'Toggle Left Rail',
   keywords: ['left rail', 'project browser', 'browser', 'sidebar', 'collapse', 'expand'],

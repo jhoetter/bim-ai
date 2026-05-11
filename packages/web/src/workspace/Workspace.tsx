@@ -697,6 +697,23 @@ export function Workspace(): JSX.Element {
     [setViewerMode],
   );
 
+  const open3dViewControls = useCallback(() => {
+    setRightRailOverride('open');
+    window.setTimeout(() => {
+      document.getElementById('right-rail-view')?.scrollIntoView({ block: 'start' });
+    }, 0);
+  }, []);
+
+  const openActiveVisibilityControls = useCallback(() => {
+    if (effectiveMode === '3d' || effectiveMode === 'plan-3d') {
+      open3dViewControls();
+      return;
+    }
+    if (effectiveMode === 'plan' || effectiveMode === 'section') {
+      openVVDialog();
+    }
+  }, [effectiveMode, open3dViewControls, openVVDialog]);
+
   /* ── Global hotkeys: 1–7 modes, ?, V/W/D/M/S/etc tools ─────────────── */
   useEffect(() => {
     const onKey = (event: globalThis.KeyboardEvent): void => {
@@ -752,11 +769,11 @@ export function Workspace(): JSX.Element {
         void handleUndoRedo(event.shiftKey ? false : true);
         return;
       }
-      // V opens VV (Visibility/Graphics) dialog
+      // V opens active-view visibility controls: plan VV/VG or 3D View Controls.
       if (event.key === 'v' || event.key === 'V') {
         if (!event.metaKey && !event.ctrlKey && !event.altKey) {
           event.preventDefault();
-          openVVDialog();
+          openActiveVisibilityControls();
           return;
         }
       }
@@ -840,7 +857,7 @@ export function Workspace(): JSX.Element {
     handleUndoRedo,
     setPlanTool,
     setOrthoSnapHold,
-    openVVDialog,
+    openActiveVisibilityControls,
     toolRegistry,
     toggleActivityDrawer,
     setLibraryOpen,
@@ -1259,6 +1276,9 @@ export function Workspace(): JSX.Element {
           openProjectMenu: () => setProjectMenuOpen((v) => !v),
           openFamilyLibrary: () => setFamilyLibraryOpen(true),
           openKeyboardShortcuts: () => setCheatsheetOpen(true),
+          openPlanVisibilityGraphics: openVVDialog,
+          open3dViewControls,
+          openActiveVisibilityControls,
           closeInactiveViews: () => setTabsState((s) => closeInactiveTabs(s)),
           toggleLeftRail: () => setLeftRailCollapsed((v) => !v),
           toggleRightRail,

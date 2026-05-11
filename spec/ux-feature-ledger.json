@@ -65,17 +65,18 @@
     },
     {
       "idPattern": "visibility.*",
-      "label": "Scoped visibility controls",
+      "label": "Scoped and active-view visibility controls",
       "owner": "packages/web/src/workspace/project/VVDialog.tsx and packages/web/src/workspace/viewport/Viewport3DLayersPanel.tsx",
       "sourceFile": "packages/web/src/workspace/commandCapabilities.ts",
       "intendedViews": "Plan VV/VG for plan/section; 3D layers for 3d/plan-3d",
       "actualSurfaces": ["ribbon", "right-rail", "cmd-k"],
       "preconditions": ["active-plan-view where needed"],
-      "executionHandler": "VVDialog or viewerCategoryHidden store updates",
+      "executionHandler": "VVDialog, right-rail 3D View Controls, or viewerCategoryHidden store updates",
       "status": "implemented with scoped controls",
       "usabilityScore": 8,
       "tests": [
         "packages/web/src/workspace/commandCapabilities.test.ts",
+        "packages/web/src/cmdPalette/defaultCommands.test.ts",
         "packages/web/src/viewport/sceneUtils.ts"
       ]
     },

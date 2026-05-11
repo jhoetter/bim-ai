@@ -131,4 +131,19 @@ describe('default Cmd+K commands', () => {
     command('shell.toggle-right-rail').invoke({ ...PLAN_CTX, toggleRightRail });
     expect(toggleRightRail).toHaveBeenCalledOnce();
   });
+
+  it('routes active visibility commands through the palette host context', () => {
+    const openActiveVisibilityControls = vi.fn();
+    const openPlanVisibilityGraphics = vi.fn();
+    const open3dViewControls = vi.fn();
+
+    command('visibility.active-controls').invoke({ ...PLAN_CTX, openActiveVisibilityControls });
+    expect(openActiveVisibilityControls).toHaveBeenCalledOnce();
+
+    command('visibility.plan.graphics').invoke({ ...PLAN_CTX, openPlanVisibilityGraphics });
+    expect(openPlanVisibilityGraphics).toHaveBeenCalledOnce();
+
+    command('visibility.3d.layers').invoke({ ...THREE_D_CTX, open3dViewControls });
+    expect(open3dViewControls).toHaveBeenCalledOnce();
+  });
 });

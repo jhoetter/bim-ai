@@ -56,6 +56,13 @@ describe('command capability graph', () => {
     expect(evaluateCommandInMode('view.3d.fit', 'plan')?.state).toBe('disabled');
   });
 
+  it('routes active visibility controls to plan-like and 3D-capable views only', () => {
+    expect(evaluateCommandInMode('visibility.active-controls', 'plan')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('visibility.active-controls', '3d')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('visibility.active-controls', 'section')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('visibility.active-controls', 'sheet')?.state).toBe('disabled');
+  });
+
   it('detects dead direct command exposure in invalid views', () => {
     expect(
       auditCommandExposures([
