@@ -196,7 +196,7 @@ class TestRefinementReliability:
         fixture = load_fixture()
         assert json.dumps(fixture)
 
-    def test_12_step_kernel_tool_surface_reliability(self) -> None:
+    def test_12_step_kernel_tool_surface_reliability(self, tmp_path: Path) -> None:
         """Run the full TST-V3-01 property gate against real CMD/TKN/VG modules."""
         started = time.perf_counter()
         fixture = load_fixture()
@@ -247,21 +247,27 @@ class TestRefinementReliability:
             if expected_ids:
                 expected = _expected_snapshot(expected_ids)
                 actual = _snapshot_for_compare(new_doc, expected_ids)
+                compare_output_dir = tmp_path / f"step-{step_num:02d}"
                 comparison = compare_snapshots(
                     expected,
                     actual,
                     metric=compare_cfg["metric"],
                     threshold=float(compare_cfg["threshold"]),
+                    output_dir=compare_output_dir,
                 )
                 comparison_again = compare_snapshots(
                     expected,
                     actual,
                     metric=compare_cfg["metric"],
                     threshold=float(compare_cfg["threshold"]),
+                    output_dir=compare_output_dir,
                 )
                 assert _stable_json(comparison) == _stable_json(comparison_again)
                 assert comparison["thresholdPassed"] is True
                 assert comparison["score"] >= float(compare_cfg["threshold"])
+                assert Path(comparison["prePngPath"]).is_file()
+                assert Path(comparison["postPngPath"]).is_file()
+                assert Path(comparison["diffPngPath"]).is_file()
 
             if step["invariants"].get("tkn_round_trip_byte_identical"):
                 _assert_tkn_round_trip_byte_identical(new_doc)
