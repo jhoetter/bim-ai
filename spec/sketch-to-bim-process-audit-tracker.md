@@ -88,6 +88,7 @@ python3 claude-skills/sketch-to-bim/sketch_bim.py compile --seed <seed-name>
 python3 claude-skills/sketch-to-bim/sketch_bim.py seed --seed <seed-name> --clear
 python3 claude-skills/sketch-to-bim/sketch_bim.py advisor --model <model-id> --out <dir> --fail-on-warning
 python3 claude-skills/sketch-to-bim/sketch_bim.py advisor-parity --model <model-id> --out <dir>/advisor-parity.json --fail-on-mismatch
+python3 claude-skills/sketch-to-bim/sketch_bim.py browser-evidence --seed <seed-name> --phase <n> --model <model-id>
 python3 claude-skills/sketch-to-bim/sketch_bim.py semantic-checklist --seed <seed-name> --phase <n>
 python3 claude-skills/sketch-to-bim/sketch_bim.py issue-ledger --seed <seed-name> --phase <n>
 python3 claude-skills/sketch-to-bim/sketch_bim.py phase-accept --seed <seed-name> --phase <n> --require-parity
@@ -114,8 +115,9 @@ surface as well, so the agent can call typed operations directly:
 | `skb_accept_final` | Run strict current-HEAD acceptance before packaging. | Final evidence packet, git/app/build/rule digests. |
 | `skb_stale_check` | Refuse old evidence after command, renderer, or Advisor drift. | Drift report and exact rerun command. |
 
-The current Python helper covers all rows at CLI-wrapper level except true
-browser screenshot capture. Typed descriptors now exist in
+The current Python helper covers all rows at CLI-wrapper level, including
+browser/right-rail screenshot capture through
+`packages/web/scripts/capture-skb-browser-evidence.mjs`. Typed descriptors now exist in
 `claude-skills/sketch-to-bim/tools.json`; a future MCP server can translate that
 manifest into `tools/list` and `tools/call`. Browser/right-rail parity is
 covered at the right-rail source payload level: the tool compares the CLI Advisor
@@ -193,12 +195,12 @@ HEAD, even when older checked-in evidence says `advisorWarningCount: 0`.
 | SKB-AUD-007 | open | P1 | Visual gate can pass with only nonblank screenshots and no semantic comparison. | Target-house artifact includes a target-image map or checklist that requires human/AI semantic verdicts for roof cutout, loggia depth, material zones, and interior usability. |
 | SKB-AUD-008 | open | P1 | Materials are not scored as first-class acceptance criteria. | Material intent is explicit in IR and recipe; final evidence proves white wrapper, vertical cladding, glass, black rails, and terrace floor materials are assigned and visible. |
 | SKB-AUD-009 | partial | P1 | Advisor findings are not forced back into the source recipe. | `sketch_bim.py issue-ledger` maps Advisor groups and element ids to recipe/bundle text occurrences and marks blocking issues pending. Remaining: require human/agent correction notes in CI. |
-| SKB-AUD-010 | partial | P1 | UI Advisor and CLI Advisor can diverge unnoticed. | `sketch_bim.py advisor-parity` compares CLI Advisor output with the right-rail source snapshot payload. Remaining: add browser DOM screenshot capture for final evidence. |
+| SKB-AUD-010 | done | P1 | UI Advisor and CLI Advisor can diverge unnoticed. | `sketch_bim.py advisor-parity` compares CLI Advisor output with the right-rail source snapshot payload, and `browser-evidence` captures right-rail screenshots/text from the running app. |
 | SKB-AUD-011 | open | P2 | No reusable archetype baseline for common house types. | Seed authoring can start from a versioned archetype when it matches >=70%, then documents deltas from the user sketch. |
 | SKB-AUD-012 | partial | P2 | No live CI baseline for shipped seed artifacts. | `make verify-sketch-seeds-live` runs strict final acceptance for checked-in artifacts. Remaining: wire it into hosted CI once current seed artifacts have fresh accepted evidence. |
 | SKB-AUD-013 | done | P0 | The skill lacked a `watch-yt`-style executable helper. | `claude-skills/sketch-to-bim/sketch_bim.py` provides `doctor`, `compile`, `seed`, `advisor`, `accept`, and `stale-check`. |
 | SKB-AUD-014 | partial | P0 | Phase packet creation is still mostly documented, not tool-enforced. | `sketch_bim.py phase-accept --phase <id>` exists and fails on missing files, Advisor warnings, pending issue-ledger rows, or pending semantic checks. Remaining: integrate into final packaging and CI. |
-| SKB-AUD-015 | partial | P1 | Browser right-rail Advisor parity is not automatically captured. | `sketch_bim.py advisor-parity` calls the API payload rendered by the right rail and diffs it against CLI Advisor groups. Remaining: browser panel screenshot/DOM capture. |
+| SKB-AUD-015 | done | P1 | Browser right-rail Advisor parity is not automatically captured. | `sketch_bim.py advisor-parity` calls the API payload rendered by the right rail and diffs it against CLI Advisor groups; `browser-evidence` stores full-page/right-rail PNGs and right-rail review text. |
 | SKB-AUD-016 | done | P1 | Skill tools are CLI wrappers, not typed agent tools. | `claude-skills/sketch-to-bim/tools.json` exposes typed descriptors with JSON schemas and `sketch_bim.py tools` prints the manifest for adapters/future MCP wiring. |
 | SKB-AUD-017 | partial | P1 | Semantic visual review is still dependent on the agent manually reading screenshots. | `sketch_bim.py semantic-checklist` emits per-view checklist rows from the screenshot manifest; `phase-accept` fails until verdicts are `pass` or `accepted_tolerance`. |
 | SKB-AUD-018 | partial | P2 | No automatic source-patch trace from Advisor element ids back to recipe sections. | `sketch_bim.py issue-ledger` maps `elementIds` to recipe/bundle line occurrences and creates required correction/tolerance fields. |

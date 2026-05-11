@@ -133,6 +133,33 @@
       }
     },
     {
+      "name": "skb_browser_evidence",
+      "command": "browser-evidence",
+      "description": "Capture full-page and right-rail screenshots plus right-rail review text from the running web app.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "phase": { "type": "string" },
+          "seed": { "type": "string" },
+          "dir": { "type": "string" },
+          "out": { "type": "string" },
+          "model": { "type": "string" },
+          "webUrl": { "type": "string", "default": "http://127.0.0.1:2000" },
+          "timeoutMs": { "type": "integer", "default": 30000 }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["ok", "evidence"],
+        "properties": {
+          "ok": { "type": "boolean" },
+          "evidence": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
       "name": "skb_semantic_checklist",
       "command": "semantic-checklist",
       "description": "Create required per-view semantic review rows from a screenshot manifest.",

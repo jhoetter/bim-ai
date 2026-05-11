@@ -381,6 +381,24 @@ def cmd_advisor_parity(args: argparse.Namespace) -> None:
         raise SystemExit(5)
 
 
+def cmd_browser_evidence(args: argparse.Namespace) -> None:
+    out_dir = Path(args.out).resolve() if args.out else phase_dir_for(args)
+    command = [
+        "node",
+        "packages/web/scripts/capture-skb-browser-evidence.mjs",
+        "--url",
+        args.web_url.rstrip("/"),
+        "--out",
+        rel(out_dir),
+    ]
+    model = args.model or os.environ.get("BIM_AI_MODEL_ID")
+    if model:
+        command.extend(["--model", model])
+    if args.timeout_ms:
+        command.extend(["--timeout-ms", str(args.timeout_ms)])
+    run(command)
+
+
 def cmd_semantic_checklist(args: argparse.Namespace) -> None:
     out_dir = phase_dir_for(args)
     manifest = Path(args.manifest).resolve() if args.manifest else out_dir / "screenshot-manifest.json"
@@ -662,6 +680,16 @@ def build_parser() -> argparse.ArgumentParser:
     parity.add_argument("--base-url", default=os.environ.get("BIM_AI_BASE_URL", "http://127.0.0.1:8500"))
     parity.add_argument("--fail-on-mismatch", action="store_true")
     parity.set_defaults(func=cmd_advisor_parity)
+
+    browser = sub.add_parser("browser-evidence", help="Capture browser/right-rail screenshots and review text.")
+    browser.add_argument("--phase")
+    browser.add_argument("--seed")
+    browser.add_argument("--dir")
+    browser.add_argument("--out")
+    browser.add_argument("--model")
+    browser.add_argument("--web-url", default=os.environ.get("BIM_AI_WEB_URL", "http://127.0.0.1:2000"))
+    browser.add_argument("--timeout-ms", type=int, default=30000)
+    browser.set_defaults(func=cmd_browser_evidence)
 
     semantic = sub.add_parser("semantic-checklist", help="Create a required semantic screenshot review checklist.")
     semantic.add_argument("--phase", required=True)

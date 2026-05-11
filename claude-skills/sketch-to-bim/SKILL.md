@@ -54,6 +54,12 @@ python3 claude-skills/sketch-to-bim/sketch_bim.py advisor-parity \
   --out seed-artifacts/<seed-name>/evidence/phase-<n>/advisor-parity.json \
   --fail-on-mismatch
 
+# Capture browser screenshots and right-rail review text from the running app.
+python3 claude-skills/sketch-to-bim/sketch_bim.py browser-evidence \
+  --seed <seed-name> \
+  --phase <n> \
+  --model <model-id>
+
 # Create the required semantic screenshot checklist for a phase.
 python3 claude-skills/sketch-to-bim/sketch_bim.py semantic-checklist \
   --seed <seed-name> \
