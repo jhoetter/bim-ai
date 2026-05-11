@@ -148,6 +148,7 @@ RULE_DISCIPLINE: dict[str, str] = {
     "pipe_ceiling_penetration_without_opening": "mep",
     "duct_ceiling_penetration_without_opening": "mep",
     "stair_floor_penetration_without_slab_opening": "architecture",
+    "roof_wall_coverage_gap": "architecture",
 }
 
 RULE_BLOCKING_CLASS: dict[str, str] = {
@@ -193,6 +194,7 @@ RULE_BLOCKING_CLASS: dict[str, str] = {
     "pipe_ceiling_penetration_without_opening": "geometry",
     "duct_ceiling_penetration_without_opening": "geometry",
     "stair_floor_penetration_without_slab_opening": "geometry",
+    "roof_wall_coverage_gap": "geometry",
     "level_duplicate_elevation": "documentation",
     "level_datum_parent_cycle": "documentation",
     "level_datum_parent_offset_mismatch": "documentation",

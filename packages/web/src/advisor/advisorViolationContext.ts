@@ -42,6 +42,8 @@ const RECOMMENDED_CONTEXT_BY_RULE_ID: Record<string, string> = {
     'Recommended: MEP coordination - add a ceiling route opening, plenum condition, or reroute the duct.',
   stair_floor_penetration_without_slab_opening:
     'Recommended: Stair coordination - add a stair shaft/slab opening or revise the stair and upper floor layout.',
+  roof_wall_coverage_gap:
+    'Recommended: Envelope coordination - revise roof overhang/footprint or align the primary wall under roof coverage.',
 };
 
 const READABLE_TITLE_BY_RULE_ID: Record<string, string> = {
@@ -66,6 +68,7 @@ const READABLE_TITLE_BY_RULE_ID: Record<string, string> = {
   duct_ceiling_penetration_without_opening: 'Duct Ceiling Penetration Without Opening',
   stair_floor_penetration_without_slab_opening:
     'Stair Floor Penetration Without Slab Opening',
+  roof_wall_coverage_gap: 'Roof Wall Coverage Gap',
 };
 
 /** Human-oriented hint for where to look in the authoring UI (no new server fields). */

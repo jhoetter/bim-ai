@@ -96,6 +96,9 @@ describe('advisorViolationContext', () => {
     expect(
       recommendedContextForRuleId('stair_floor_penetration_without_slab_opening'),
     ).toMatch(/stair shaft|upper floor/i);
+    expect(recommendedContextForRuleId('roof_wall_coverage_gap')).toMatch(
+      /roof overhang|footprint|coverage/i,
+    );
   });
 
   it('humanizes constructability rule titles with domain wording', () => {
@@ -127,6 +130,7 @@ describe('advisorViolationContext', () => {
     expect(humanizeRuleId('stair_floor_penetration_without_slab_opening')).toBe(
       'Stair Floor Penetration Without Slab Opening',
     );
+    expect(humanizeRuleId('roof_wall_coverage_gap')).toBe('Roof Wall Coverage Gap');
     expect(humanizeRuleId('custom_rule_id')).toBe('Custom Rule Id');
   });
 

@@ -35,6 +35,7 @@ CONSTRUCTABILITY_RULE_IDS = frozenset(
         "pipe_ceiling_penetration_without_opening",
         "duct_ceiling_penetration_without_opening",
         "stair_floor_penetration_without_slab_opening",
+        "roof_wall_coverage_gap",
     }
 )
 
@@ -59,6 +60,7 @@ RECOMMENDATION_BY_RULE_ID = {
     "pipe_ceiling_penetration_without_opening": "Add a ceiling route opening/plenum condition or reroute the pipe.",
     "duct_ceiling_penetration_without_opening": "Add a ceiling route opening/plenum condition or reroute the duct.",
     "stair_floor_penetration_without_slab_opening": "Add a stair shaft/slab opening or revise the stair and upper floor layout.",
+    "roof_wall_coverage_gap": "Revise the roof overhang/footprint or align the primary envelope wall under the roof coverage.",
 }
 
 

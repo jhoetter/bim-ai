@@ -61,6 +61,7 @@ def constructability_advisory_violations(elements: dict[str, Element]) -> list[V
     violations.extend(_load_bearing_wall_removed_violations(walls_by_id))
     violations.extend(_stacked_load_path_violations(participants_by_kind, walls_by_id))
     violations.extend(_floor_span_metadata_violations(participants_by_kind, elements))
+    violations.extend(_roof_wall_coverage_violations(participants_by_kind, walls_by_id))
     violations.extend(_unsupported_beam_violations(participants_by_kind, elements, walls_by_id))
     violations.extend(_unsupported_column_violations(participants_by_kind, walls_by_id))
     return violations
@@ -497,6 +498,38 @@ def _floor_span_metadata_violations(
     return violations
 
 
+def _roof_wall_coverage_violations(
+    participants_by_kind: dict[str, list[PhysicalParticipant]],
+    walls_by_id: dict[str, WallElem],
+) -> list[Violation]:
+    roofs = participants_by_kind.get("roof", [])
+    if not roofs:
+        return []
+
+    violations: list[Violation] = []
+    for wall_participant in participants_by_kind.get("wall", []):
+        wall = walls_by_id.get(wall_participant.element_id)
+        if wall is None or not _is_primary_envelope_wall(wall):
+            continue
+        if any(
+            _aabb_plan_covers(roof.aabb, wall_participant.aabb, tolerance_mm=100.0)
+            for roof in roofs
+        ):
+            continue
+        violations.append(
+            Violation(
+                rule_id="roof_wall_coverage_gap",
+                severity="warning",
+                message=(
+                    "Primary/envelope wall is outside the modeled roof footprint; revise the "
+                    "roof overhang/footprint or wall envelope alignment."
+                ),
+                element_ids=[wall.id],
+            )
+        )
+    return violations
+
+
 def _unsupported_beam_violations(
     participants_by_kind: dict[str, list[PhysicalParticipant]],
     elements: dict[str, Element],
@@ -839,6 +872,27 @@ def _wall_has_transfer_resolution(wall: WallElem) -> bool:
         "structuralReviewed",
         "structuralReviewApproved",
         "loadPathTransferred",
+    )
+
+
+def _is_primary_envelope_wall(wall: WallElem) -> bool:
+    props = wall.props or {}
+    return _truthy_prop(
+        props,
+        "primaryEnvelope",
+        "isExternal",
+        "exterior",
+        "requiresEnvelopeAlignment",
+    )
+
+
+def _aabb_plan_covers(container: AABB, contained: AABB, *, tolerance_mm: float) -> bool:
+    tol = max(0.0, float(tolerance_mm))
+    return (
+        container.min_x <= contained.min_x + tol
+        and container.max_x >= contained.max_x - tol
+        and container.min_y <= contained.min_y + tol
+        and container.max_y >= contained.max_y - tol
     )
 
 

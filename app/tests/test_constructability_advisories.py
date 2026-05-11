@@ -18,6 +18,7 @@ from bim_ai.elements import (
     LevelElem,
     PipeElem,
     PlacedAssetElem,
+    RoofElem,
     SlabOpeningElem,
     StairElem,
     WallElem,
@@ -383,6 +384,45 @@ def test_long_floor_span_without_structural_metadata_is_reported_and_suppressed(
 
     elements["floor-long"] = floor.model_copy(update={"props": {"structuralSystem": "joists"}})
     assert "floor_span_without_support_metadata" not in _rule_ids(elements)
+
+
+def test_primary_wall_outside_roof_coverage_is_reported() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "roof-1": RoofElem(
+            kind="roof",
+            id="roof-1",
+            referenceLevelId="lvl-1",
+            footprintMm=[
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 3000, "yMm": 0},
+                {"xMm": 3000, "yMm": 2000},
+                {"xMm": 0, "yMm": 2000},
+            ],
+            overhangMm=0,
+        ),
+        "wall-1": _wall(
+            props={"primaryEnvelope": True},
+            start={"xMm": 3500, "yMm": 0},
+            end={"xMm": 4500, "yMm": 0},
+        ),
+    }
+
+    assert "roof_wall_coverage_gap" in _rule_ids(elements)
+
+    elements["roof-1"] = RoofElem(
+        kind="roof",
+        id="roof-1",
+        referenceLevelId="lvl-1",
+        footprintMm=[
+            {"xMm": 0, "yMm": -500},
+            {"xMm": 5000, "yMm": -500},
+            {"xMm": 5000, "yMm": 500},
+            {"xMm": 0, "yMm": 500},
+        ],
+        overhangMm=0,
+    )
+    assert "roof_wall_coverage_gap" not in _rule_ids(elements)
 
 
 def test_beam_without_two_modeled_supports_is_reported() -> None:
