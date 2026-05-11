@@ -15,6 +15,10 @@ from bim_ai.constructability_issues import (
     fingerprint_violation,
     reconcile_findings,
 )
+from bim_ai.constructability_metadata import (
+    METADATA_REQUIREMENT_RULE_ID,
+    constructability_metadata_requirement_violations,
+)
 from bim_ai.constructability_scope import (
     constructability_scope_descriptor,
     scope_constructability_elements,
@@ -44,6 +48,7 @@ CONSTRUCTABILITY_RULE_IDS = frozenset(
         "duct_ceiling_penetration_without_opening",
         "stair_floor_penetration_without_slab_opening",
         "roof_wall_coverage_gap",
+        METADATA_REQUIREMENT_RULE_ID,
     }
 )
 
@@ -91,6 +96,7 @@ RECOMMENDATION_BY_RULE_ID = {
     "duct_ceiling_penetration_without_opening": "Add a ceiling route opening/plenum condition or reroute the duct.",
     "stair_floor_penetration_without_slab_opening": "Add a stair shaft/slab opening or revise the stair and upper floor layout.",
     "roof_wall_coverage_gap": "Revise the roof overhang/footprint or align the primary envelope wall under the roof coverage.",
+    METADATA_REQUIREMENT_RULE_ID: "Add the missing IDS-like property data or choose a less strict constructability profile.",
 }
 
 
@@ -111,6 +117,9 @@ def build_constructability_report(
         design_option_sets=design_option_sets,
     )
     violations = [v for v in evaluate(scoped_elements) if v.rule_id in CONSTRUCTABILITY_RULE_IDS]
+    violations.extend(
+        constructability_metadata_requirement_violations(scoped_elements, profile=profile)
+    )
     all_findings = [_finding_dict(v, profile=profile) for v in violations]
     suppressions = _suppression_records(scoped_elements, revision=revision)
     active_findings: list[dict[str, Any]] = []

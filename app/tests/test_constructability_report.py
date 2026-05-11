@@ -333,3 +333,53 @@ def test_constructability_report_respects_design_option_scope() -> None:
     assert primary_option_report["scope"]["primaryOptionIds"] == {"scheme": "option-a"}
     assert locked_option_report["summary"]["ruleCounts"] == {}
     assert locked_option_report["scope"]["optionLocks"] == {"scheme": "option-b"}
+
+
+def test_constructability_readiness_reports_ids_like_metadata_requirements() -> None:
+    wall = WallElem(
+        kind="wall",
+        id="wall-1",
+        levelId="lvl-1",
+        start={"xMm": 0, "yMm": 0},
+        end={"xMm": 4000, "yMm": 0},
+        thicknessMm=200,
+        heightMm=3000,
+        loadBearing=True,
+        props={"primaryEnvelope": True},
+    )
+    elements = {
+        "lvl-1": LevelElem(kind="level", id="lvl-1", name="Level 1", elevationMm=0.0),
+        "wall-1": wall,
+    }
+
+    authoring_report = build_constructability_report(elements, revision=12)
+    readiness_report = build_constructability_report(
+        elements,
+        revision=12,
+        profile="construction_readiness",
+    )
+    resolved_report = build_constructability_report(
+        {
+            **elements,
+            "wall-1": wall.model_copy(
+                update={
+                    "props": {"primaryEnvelope": True, "fireRating": "REI 60"},
+                    "structural_material_key": "timber",
+                }
+            ),
+        },
+        revision=13,
+        profile="construction_readiness",
+    )
+
+    assert "constructability_metadata_requirement_missing" not in authoring_report[
+        "summary"
+    ]["ruleCounts"]
+    assert readiness_report["summary"]["ruleCounts"] == {
+        "constructability_metadata_requirement_missing": 1
+    }
+    finding = readiness_report["findings"][0]
+    assert finding["blockingClass"] == "metadata"
+    assert "Pset_WallCommon.FireRating" in finding["message"]
+    assert "structuralMaterialKey" in finding["message"]
+    assert resolved_report["summary"]["ruleCounts"] == {}
