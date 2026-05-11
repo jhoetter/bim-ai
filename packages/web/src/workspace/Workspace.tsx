@@ -127,7 +127,6 @@ import {
   planToolToToolId,
   validatePlanTool,
 } from './workspaceUtils';
-import { planToolsForPerspective } from './planToolsByPerspective';
 import { useToolPrefs } from '../tools/toolPrefsStore';
 import { useOfflineStore } from '../offlineStore';
 import { usePresenceStore } from '../presenceStore';
@@ -1037,23 +1036,6 @@ export function Workspace(): JSX.Element {
     [effectiveMode, handleModeChange, setPlanTool, toolRegistry],
   );
 
-  const visibleLegacyTools = useMemo(() => planToolsForPerspective(perspectiveId), [perspectiveId]);
-  useEffect(() => {
-    if (!visibleLegacyTools.includes(planTool)) setPlanTool('select');
-  }, [planTool, setPlanTool, visibleLegacyTools]);
-
-  const allowedToolIds = useMemo<ReadonlySet<ToolId>>(
-    () =>
-      new Set(
-        visibleLegacyTools.map((tool): ToolId => {
-          if (tool === 'room_rectangle') return 'room';
-          if (tool === 'grid') return 'select';
-          return tool as ToolId;
-        }),
-      ),
-    [visibleLegacyTools],
-  );
-
   const openMilestoneDialog = useCallback(() => setMilestoneDialogOpen(true), []);
 
   useEffect(() => {
@@ -1889,7 +1871,6 @@ export function Workspace(): JSX.Element {
               activeTool={planToolToToolId(planTool)}
               onToolSelect={handleToolSelect}
               disabledContext={toolDisabledContext}
-              allowedToolIds={allowedToolIds}
             />
             <CanvasMount
               mode={effectiveMode}
