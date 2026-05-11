@@ -1,8 +1,50 @@
 import type { TFunction } from 'i18next';
 import type { Violation } from '@bim-ai/core';
 
+const RECOMMENDED_CONTEXT_BY_RULE_ID: Record<string, string> = {
+  physical_hard_clash:
+    'Recommended: 3D coordination / clash view - inspect intersecting elementIds and move, trim, or route one element clear.',
+  furniture_wall_hard_clash:
+    'Recommended: Furniture layout / wall coordination - move fixture or furniture clear of the wall, or verify it is intentionally embedded.',
+  stair_wall_hard_clash:
+    'Recommended: Stair layout / wall coordination - revise stair run, landing, or wall position so required stair geometry is unobstructed.',
+  constructability_proxy_unsupported:
+    'Recommended: Constructability model setup - replace unsupported proxy geometry with a typed wall, stair, beam, column, pipe, duct, door, or opening.',
+  wall_load_bearing_unknown_primary_envelope:
+    'Recommended: Wall properties / structural review - set load-bearing status for primary exterior envelope walls.',
+  large_opening_in_load_bearing_wall_unresolved:
+    'Recommended: Structural openings - add lintel/header/support metadata or engineering approval for the large opening in the load-bearing wall.',
+  beam_without_support:
+    'Recommended: Structural framing - add or align supporting wall, column, bearing element, or endpoint support for the beam.',
+  column_without_foundation_or_support:
+    'Recommended: Structural load path - add a foundation, lower column, slab, or bearing support under the column.',
+  door_operation_clearance_conflict:
+    'Recommended: Door clearance / operations - adjust swing, opening side, nearby elements, or door placement to keep the operation zone clear.',
+  pipe_wall_penetration_without_opening:
+    'Recommended: MEP coordination - add a sleeve/opening or reroute the pipe where it penetrates the wall.',
+  duct_wall_penetration_without_opening:
+    'Recommended: MEP coordination - add a sleeve/opening or reroute the duct where it penetrates the wall.',
+};
+
+const READABLE_TITLE_BY_RULE_ID: Record<string, string> = {
+  physical_hard_clash: 'Physical Hard Clash',
+  furniture_wall_hard_clash: 'Furniture Wall Hard Clash',
+  stair_wall_hard_clash: 'Stair Wall Hard Clash',
+  constructability_proxy_unsupported: 'Unsupported Constructability Proxy',
+  wall_load_bearing_unknown_primary_envelope: 'Primary Envelope Wall Missing Load-Bearing Status',
+  large_opening_in_load_bearing_wall_unresolved: 'Large Opening In Load-Bearing Wall Unresolved',
+  beam_without_support: 'Beam Without Support',
+  column_without_foundation_or_support: 'Column Without Foundation Or Support',
+  door_operation_clearance_conflict: 'Door Operation Clearance Conflict',
+  pipe_wall_penetration_without_opening: 'Pipe Wall Penetration Without Opening',
+  duct_wall_penetration_without_opening: 'Duct Wall Penetration Without Opening',
+};
+
 /** Human-oriented hint for where to look in the authoring UI (no new server fields). */
 export function recommendedContextForRuleId(ruleId: string): string {
+  const constructabilityContext = RECOMMENDED_CONTEXT_BY_RULE_ID[ruleId];
+  if (constructabilityContext) return constructabilityContext;
+
   switch (ruleId) {
     case 'schedule_sheet_viewport_missing':
       return 'Recommended: open the linked sheet, add or fix a schedule viewport (viewRef schedule:…).';
@@ -67,6 +109,9 @@ export function translatedContextForRuleId(ruleId: string, t: TFunction): string
 
 /** Snake_case ruleId → readable title fallback when no i18n key is defined. */
 export function humanizeRuleId(ruleId: string): string {
+  const readableTitle = READABLE_TITLE_BY_RULE_ID[ruleId];
+  if (readableTitle) return readableTitle;
+
   return ruleId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 

@@ -44,6 +44,7 @@ from bim_ai.constraints_wall_geometry import (
     wall_length_mm,
     wall_unit_dir,
 )
+from bim_ai.constructability_advisories import constructability_advisory_violations
 from bim_ai.datum_levels import (
     expected_level_elevation_from_parent,
     level_datum_cycle_participant_level_ids,
@@ -1636,6 +1637,7 @@ def evaluate(elements: dict[str, Element]) -> list[Violation]:
     viols.extend(_monitored_source_drift_advisory_violations(elements))
     viols.extend(_dormer_overflow_advisory_violations(elements))
     viols.extend(_toposolid_pierce_check_violations(elements))
+    viols.extend(constructability_advisory_violations(elements))
     viols.sort(key=lambda v: (v.rule_id, tuple(sorted(v.element_ids)), v.severity))
     annotated = annotate_violation_disciplines(viols)
     return annotate_violation_blocking_classes(annotated)
