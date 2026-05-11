@@ -3,8 +3,9 @@
   "checkpoint_id": "d29974706a52",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 5,
+  "checkpoints_count": 6,
   "files_touched": [
+    "app/tests/test_house_model_reliability.py",
     "app/tests/test_v1_closeout_readiness_manifest.py"
   ],
   "sessions": [
@@ -61,13 +62,19 @@
       "transcript": "/d2/9974706a52/8/full.jsonl",
       "content_hash": "/d2/9974706a52/8/content_hash.txt",
       "prompt": "/d2/9974706a52/8/prompt.txt"
+    },
+    {
+      "metadata": "/d2/9974706a52/9/metadata.json",
+      "transcript": "/d2/9974706a52/9/full.jsonl",
+      "content_hash": "/d2/9974706a52/9/content_hash.txt",
+      "prompt": "/d2/9974706a52/9/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 8460090,
+    "input_tokens": 8552112,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 156139904,
-    "output_tokens": 476483,
-    "api_call_count": 1279
+    "cache_read_tokens": 158996864,
+    "output_tokens": 489438,
+    "api_call_count": 1320
   }
 }

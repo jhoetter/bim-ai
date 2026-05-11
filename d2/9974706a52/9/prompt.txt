@@ -1,0 +1,9 @@
+You are working in a forked workspace for /Users/jhoetter/repos/bim-ai. The user wants backend reliability hardening focused on modeled houses actually working; exchange/import is lower priority. You are not alone in the codebase: do not revert edits made by others, and adjust your implementation to accommodate existing changes.
+
+Worker WP: add focused backend reliability tests for actual modeled houses. Ownership: create a new app/tests/test_house_model_reliability.py, and avoid touching production unless a test uncovers a small clear bug. Use existing backend engine/apply_bundle helpers and commands. The goal is to prove a realistic house bundle materializes into valid levels/walls/floors/roof/rooms/openings, rejects impossible geometry, and supports undo/replay/serialization if practical. Prefer existing patterns in app/tests/test_materialize_mass_to_walls.py, app/tests/test_golden_exchange_fixture.py, app/tests/cmd/test_apply_bundle_engine.py, and app/tests/test_undo_replay_constraint.py. Run the new test file with --no-cov.
+
+Final response: list changed files and exact test results. Do not edit documentation; another workpackage owns that.
+
+---
+
+Status check: please finish with whatever focused reliability tests you have working. Avoid production changes unless already necessary. If you are blocked, report the blocker and changed files.
