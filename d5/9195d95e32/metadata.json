@@ -4,7 +4,9 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 1,
-  "files_touched": null,
+  "files_touched": [
+    "spec/ux-masterclass.md"
+  ],
   "sessions": [
     {
       "metadata": "/d5/9195d95e32/0/metadata.json",
@@ -29,6 +31,12 @@
       "transcript": "/d5/9195d95e32/3/full.jsonl",
       "content_hash": "/d5/9195d95e32/3/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/d5/9195d95e32/4/metadata.json",
+      "transcript": "/d5/9195d95e32/4/full.jsonl",
+      "content_hash": "/d5/9195d95e32/4/content_hash.txt",
+      "prompt": "/d5/9195d95e32/4/prompt.txt"
     }
   ],
   "token_usage": {
