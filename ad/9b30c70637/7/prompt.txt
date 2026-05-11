@@ -1,0 +1,25 @@
+the UX is still super confusing when it comes to what i can do on which "view" (2d floorplan, 3d render, ...); i e.g. see something like wall tooling on the 3d axis, but i can't use it; it only is usable on the floorplan. or the tools in the topbar are completely unusabel it seems to me.
+
+the UX is messy right now. we have good features and i can craft good houses from sketches via our AI claude-skills , but i can't really work well with the editor in the actual UX, because it is always unclear what i can use when for e.g. thigns in the topbar etc.
+
+think this through, really from first principle designing. which buttons and functions do we currently have in the UX where, how are they usable, where should they be usable, what is a "dead button", ...?
+
+i want that you do a super deep, thorough analysis. for isntance, i do think the 3d renderer should allow working on walls, doors, etc; but it seemingly currently isnt the case. look into this further; same goes e.g. for the cmd+k, the whole navigation aspect isnt working well. "go to" often doesn't work
+
+than there are also other aspects like for instance when i try to hide doors, walls etc that works. but even if i click "dont shown" on all element types (doors, walls, roofs, ...), i still see some elements in 3d.
+
+the UX is overall already impressive, because it shows that the system can do SO much. but it really breaks in its inconsistency, lack of clarity; ...
+
+i want that you thoroughly go through each sidebar, each topbar, each element, each panel, each canvas, ... basically each element, and reason about: is this placed well here? is it functioning? is it complete? 
+
+also it should understand where best placements are. and ensure that the cmd+k works soooo well; for instance, it should be aware on which type of view we currently are; it should always allow things like "go to" or "switch theme" and so on (the basic thigns), but e.g. on a 3d view it likely should have other commands than on a 2d floorplan and so on.
+
+think about ways that can help us best understand usability; is it creating a graph that keeps track of what is shown where, and if it is positioned there well? or is it something else?
+
+i want that you come up with some kind of way that allows us to track if all features are reachable via our UX, if they work in our editor completely, and then allow us to rate usability. i.e. going from e.g. a bad score like 3/10 to a 9/10 or something, w.r.t simplicity, ease of use, but still powerful. i want a super steep learning curve but no limittions.
+
+do this super thorough analysis, and then write into spec  a file for ux-masterclass.md, where we put in all our findings. really make this super, super thorough; and identify good ways to keep track of everything
+
+---
+
+nice, then go ahead and implement this step by step; branch out, and then after each meaningful part, commit and push and merge into main. don'T stop until you are completely done
