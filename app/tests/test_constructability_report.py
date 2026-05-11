@@ -383,3 +383,70 @@ def test_constructability_readiness_reports_ids_like_metadata_requirements() -> 
     assert "Pset_WallCommon.FireRating" in finding["message"]
     assert "structuralMaterialKey" in finding["message"]
     assert resolved_report["summary"]["ruleCounts"] == {}
+
+
+def test_constructability_clearance_rule_is_profile_enabled() -> None:
+    elements = {
+        "lvl-1": LevelElem(kind="level", id="lvl-1", name="Level 1", elevationMm=0.0),
+        "wall-1": WallElem(
+            kind="wall",
+            id="wall-1",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 0},
+            thicknessMm=200,
+            heightMm=3000,
+        ),
+        "asset-shelf": AssetLibraryEntryElem(
+            kind="asset_library_entry",
+            id="asset-shelf",
+            assetKind="block_2d",
+            name="Shelf",
+            category="casework",
+            tags=[],
+            thumbnailKind="schematic_plan",
+            thumbnailWidthMm=600,
+            thumbnailHeightMm=300,
+        ),
+        "shelf-1": PlacedAssetElem(
+            kind="placed_asset",
+            id="shelf-1",
+            name="Shelf",
+            assetId="asset-shelf",
+            levelId="lvl-1",
+            positionMm={"xMm": 1200, "yMm": 400},
+            paramValues={"widthMm": 600, "depthMm": 300, "proxyHeightMm": 900},
+        ),
+    }
+
+    authoring_report = build_constructability_report(elements, revision=14)
+    readiness_report = build_constructability_report(
+        elements,
+        revision=14,
+        profile="construction_readiness",
+    )
+    clear_report = build_constructability_report(
+        {
+            **elements,
+            "shelf-1": PlacedAssetElem(
+                kind="placed_asset",
+                id="shelf-1",
+                name="Shelf",
+                assetId="asset-shelf",
+                levelId="lvl-1",
+                positionMm={"xMm": 1200, "yMm": 900},
+                paramValues={"widthMm": 600, "depthMm": 300, "proxyHeightMm": 900},
+            ),
+        },
+        revision=15,
+        profile="construction_readiness",
+    )
+
+    assert "furniture_wall_clearance_conflict" not in authoring_report["summary"][
+        "ruleCounts"
+    ]
+    assert readiness_report["summary"]["ruleCounts"] == {
+        "furniture_wall_clearance_conflict": 1
+    }
+    assert readiness_report["findings"][0]["severity"] == "error"
+    assert clear_report["summary"]["ruleCounts"] == {}

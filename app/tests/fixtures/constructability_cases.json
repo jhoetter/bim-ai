@@ -88,6 +88,50 @@
       "absentRuleIds": ["furniture_wall_hard_clash", "physical_hard_clash"]
     },
     {
+      "id": "shelf_inside_readiness_clearance_zone",
+      "description": "Placed casework is clear of the wall body but inside the construction-readiness wall clearance zone.",
+      "elements": {
+        "lvl-1": {
+          "kind": "level",
+          "id": "lvl-1",
+          "name": "Level 1",
+          "elevationMm": 0
+        },
+        "wall-1": {
+          "kind": "wall",
+          "id": "wall-1",
+          "levelId": "lvl-1",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 4000, "yMm": 0 },
+          "thicknessMm": 200,
+          "heightMm": 3000
+        },
+        "asset-shelf": {
+          "kind": "asset_library_entry",
+          "id": "asset-shelf",
+          "assetKind": "block_2d",
+          "name": "Shelf",
+          "category": "casework",
+          "tags": [],
+          "thumbnailKind": "schematic_plan",
+          "thumbnailWidthMm": 600,
+          "thumbnailHeightMm": 300
+        },
+        "shelf-1": {
+          "kind": "placed_asset",
+          "id": "shelf-1",
+          "name": "Shelf",
+          "assetId": "asset-shelf",
+          "levelId": "lvl-1",
+          "positionMm": { "xMm": 1200, "yMm": 400 },
+          "paramValues": { "widthMm": 600, "depthMm": 300, "proxyHeightMm": 900 }
+        }
+      },
+      "expectedEvaluatorRuleIds": [],
+      "expectedRuleIds": ["furniture_wall_clearance_conflict"],
+      "absentRuleIds": ["furniture_wall_hard_clash"]
+    },
+    {
       "id": "pipe_through_wall_without_opening",
       "description": "Pipe crosses a wall with no modeled sleeve/opening.",
       "elements": {

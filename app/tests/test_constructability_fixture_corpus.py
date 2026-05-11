@@ -29,6 +29,7 @@ def test_constructability_fixture_corpus_matches_expected_rules(
 ) -> None:
     elements = _ELEMENTS_ADAPTER.validate_python(case["elements"])
     expected_rule_ids = set(case["expectedRuleIds"])
+    expected_evaluator_rule_ids = set(case.get("expectedEvaluatorRuleIds", expected_rule_ids))
     absent_rule_ids = set(case["absentRuleIds"])
 
     evaluator_rule_ids = {violation.rule_id for violation in evaluate(elements)}
@@ -40,7 +41,7 @@ def test_constructability_fixture_corpus_matches_expected_rules(
     report_rule_counts = report["summary"]["ruleCounts"]
     report_rule_ids = set(report_rule_counts)
 
-    assert expected_rule_ids <= evaluator_rule_ids
+    assert expected_evaluator_rule_ids <= evaluator_rule_ids
     assert expected_rule_ids <= report_rule_ids
     assert absent_rule_ids.isdisjoint(evaluator_rule_ids)
     assert absent_rule_ids.isdisjoint(report_rule_ids)
@@ -62,6 +63,7 @@ def test_constructability_fixture_corpus_has_positive_and_negative_cases() -> No
 
     assert {
         "shelf_through_wall",
+        "shelf_inside_readiness_clearance_zone",
         "pipe_through_wall_without_opening",
         "stair_missing_upper_slab_opening",
         "stair_under_low_ceiling",

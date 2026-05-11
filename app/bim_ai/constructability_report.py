@@ -6,6 +6,10 @@ from typing import Any
 
 from bim_ai.constraints import evaluate
 from bim_ai.constraints_core import Violation
+from bim_ai.constructability_clearance import (
+    FURNITURE_WALL_CLEARANCE_RULE_ID,
+    constructability_clearance_violations,
+)
 from bim_ai.constructability_geometry import (
     collect_physical_participants,
     collect_unsupported_physical_diagnostics,
@@ -48,6 +52,7 @@ CONSTRUCTABILITY_RULE_IDS = frozenset(
         "duct_ceiling_penetration_without_opening",
         "stair_floor_penetration_without_slab_opening",
         "stair_headroom_clearance_conflict",
+        FURNITURE_WALL_CLEARANCE_RULE_ID,
         "roof_wall_coverage_gap",
         METADATA_REQUIREMENT_RULE_ID,
     }
@@ -72,6 +77,7 @@ CONSTRUCTION_READINESS_ERROR_RULE_IDS = frozenset(
         "duct_ceiling_penetration_without_opening",
         "stair_floor_penetration_without_slab_opening",
         "stair_headroom_clearance_conflict",
+        FURNITURE_WALL_CLEARANCE_RULE_ID,
         "roof_wall_coverage_gap",
     }
 )
@@ -98,6 +104,7 @@ RECOMMENDATION_BY_RULE_ID = {
     "duct_ceiling_penetration_without_opening": "Add a ceiling route opening/plenum condition or reroute the duct.",
     "stair_floor_penetration_without_slab_opening": "Add a stair shaft/slab opening or revise the stair and upper floor layout.",
     "stair_headroom_clearance_conflict": "Raise or trim the overhead element, revise the stair run, or document an approved headroom exception.",
+    FURNITURE_WALL_CLEARANCE_RULE_ID: "Move the object farther from the wall or record an approved clearance exception for the active profile.",
     "roof_wall_coverage_gap": "Revise the roof overhang/footprint or align the primary envelope wall under the roof coverage.",
     METADATA_REQUIREMENT_RULE_ID: "Add the missing IDS-like property data or choose a less strict constructability profile.",
 }
@@ -120,6 +127,7 @@ def build_constructability_report(
         design_option_sets=design_option_sets,
     )
     violations = [v for v in evaluate(scoped_elements) if v.rule_id in CONSTRUCTABILITY_RULE_IDS]
+    violations.extend(constructability_clearance_violations(scoped_elements, profile=profile))
     violations.extend(
         constructability_metadata_requirement_violations(scoped_elements, profile=profile)
     )
