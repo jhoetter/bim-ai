@@ -22,6 +22,7 @@ export function AdvisorPanel(props: {
   onApplyQuickFix(cmd: Record<string, unknown>): void;
   perspective: PerspectiveId;
   showAllPerspectives?: boolean;
+  onNavigateToElement?: (elementId: string) => void;
 }) {
   const { t } = useTranslation();
   const scoped = props.selectionId
@@ -71,6 +72,22 @@ export function AdvisorPanel(props: {
           <div className="mt-1 text-[10px]">
             <span className="text-muted">elementIds: </span>
             <code className="break-all text-[10px]">{(v.elementIds ?? []).join(', ')}</code>
+            {props.onNavigateToElement ? (
+              <div className="mt-1 flex flex-wrap gap-1">
+                {(v.elementIds ?? []).map((elementId) => (
+                  <Btn
+                    key={elementId}
+                    type="button"
+                    className="px-2 py-0.5 text-[10px]"
+                    variant="quiet"
+                    data-testid={`advisor-navigate-${elementId}`}
+                    onClick={() => props.onNavigateToElement?.(elementId)}
+                  >
+                    Open {elementId}
+                  </Btn>
+                ))}
+              </div>
+            ) : null}
           </div>
         ) : null}
 

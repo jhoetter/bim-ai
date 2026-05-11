@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 
 import type { Element, ParamSchemaEntry } from '@bim-ai/core';
 
-import { AdvisorPanel } from '../advisor/AdvisorPanel';
 import { useUnifiedAdvisorViolations } from '../advisor/unifiedAdvisorViolations';
 import { buildPlanGridDatumInspectorLine } from './readouts';
 import { useBimStore } from '../state/store';
@@ -195,7 +194,6 @@ export function WorkspaceRightRail({
   mode,
   onSemanticCommand,
   onModeChange,
-  codePresetIds,
   onNavigateToElement,
   activeViewTargetId,
   surface = 'legacy',
@@ -203,7 +201,6 @@ export function WorkspaceRightRail({
   mode: WorkspaceMode;
   onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
   onModeChange: (mode: WorkspaceMode) => void;
-  codePresetIds: string[];
   onNavigateToElement?: (elementId: string) => void;
   activeViewTargetId?: string;
   surface?: 'legacy' | 'view-context' | 'element';
@@ -240,9 +237,6 @@ export function WorkspaceRightRail({
   const applyOrbitViewpointPreset = useBimStore((s) => s.applyOrbitViewpointPreset);
   const violations = useBimStore((s) => s.violations);
   const modelId = useBimStore((s) => s.modelId);
-  const buildingPreset = useBimStore((s) => s.buildingPreset);
-  const setBuildingPreset = useBimStore((s) => s.setBuildingPreset);
-  const perspectiveId = useBimStore((s) => s.perspectiveId);
   const activeWorkspaceId = useBimStore((s) => s.activeWorkspaceId);
   const activityEvents = useBimStore((s) => s.activityEvents);
   const setPlanTool = useBimStore((s) => s.setPlanTool);
@@ -352,7 +346,6 @@ export function WorkspaceRightRail({
     (el ? !NAVIGABLE_KINDS.has(el.kind) : false);
   const showViewContextSurface = surface === 'legacy' || surface === 'view-context';
   const showElementSurface = surface === 'legacy' || surface === 'element';
-  const showReviewSurface = surface === 'legacy' || surface === 'view-context';
   const inspectorPropertiesContext = inspectorPropertiesContextForElement(el);
 
   // CHR-V3-06: sibling count for the applies-to radio.
@@ -637,7 +630,7 @@ export function WorkspaceRightRail({
           showProperties={showElementSurface}
           showView={showViewContextSurface && (show3dLayers || Boolean(activePlanViewId))}
           showWorkbench={showViewContextSurface && showAuthoringWorkbenches}
-          showReview={showReviewSurface}
+          showReview={false}
         />
       ) : null}
       {/* VIS-V3-04: Scene section — visible when no element is selected */}
@@ -1328,25 +1321,6 @@ export function WorkspaceRightRail({
             elementsById={elementsById}
             activeLevelId={activeLevelId ?? ''}
             onUpsertSemantic={(cmd) => void onSemanticCommand(cmd)}
-          />
-        </div>
-      ) : null}
-      {showReviewSurface ? (
-        <div id="right-rail-review" className="border-t border-border p-3">
-          <div
-            className="mb-2 text-[10px] font-semibold uppercase text-muted"
-            style={{ letterSpacing: '0.08em', opacity: 0.7 }}
-          >
-            {t('advisor.heading')}
-          </div>
-          <AdvisorPanel
-            violations={unifiedViolations}
-            preset={buildingPreset}
-            onPreset={setBuildingPreset}
-            codePresets={codePresetIds}
-            onApplyQuickFix={(cmd) => void onSemanticCommand(cmd)}
-            perspective={perspectiveId}
-            showAllPerspectives
           />
         </div>
       ) : null}

@@ -94,6 +94,22 @@ describe('StatusBar — spec §17', () => {
     expect(onSnapToggle).toHaveBeenCalledWith('midpoint');
   });
 
+  it('shows advisor severity count and opens the footer advisor entry — UX-WP-08', () => {
+    const onAdvisorClick = vi.fn();
+    const { getByTestId, getByLabelText } = renderWithI18n(
+      <StatusBar
+        level={{ id: 'lvl-ground', label: 'Ground' }}
+        advisorCounts={{ error: 1, warning: 2, info: 3 }}
+        onAdvisorClick={onAdvisorClick}
+      />,
+    );
+
+    expect(getByTestId('status-bar-advisor-entry').textContent).toContain('1 error');
+    expect(getByTestId('status-bar-advisor-badge').textContent).toBe('6');
+    fireEvent.click(getByLabelText('Advisor: 1 errors, 2 warnings, 3 info'));
+    expect(onAdvisorClick).toHaveBeenCalledTimes(1);
+  });
+
   it('grid switch reflects state and emits onGridToggle', () => {
     const onGridToggle = vi.fn();
     const { getByTitle } = renderWithI18n(

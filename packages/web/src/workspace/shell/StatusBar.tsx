@@ -85,6 +85,11 @@ function fmtM(mm: number | null | undefined): string {
 
 export type StatusSaveState = 'saved' | 'saving' | 'unsynced' | 'error';
 export type StatusWsState = 'connected' | 'reconnecting' | 'offline';
+export type AdvisorSeverityCounts = {
+  error: number;
+  warning: number;
+  info: number;
+};
 
 export interface StatusBarProps {
   mode?: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent' | 'concept';
@@ -121,6 +126,9 @@ export interface StatusBarProps {
   /** CHR-V3-05 slot 7 — activity-stream entry. */
   activityUnreadCount?: number;
   onActivityClick?: () => void;
+  /** UX-WP-08 — global model-health advisor entry. */
+  advisorCounts?: AdvisorSeverityCounts;
+  onAdvisorClick?: () => void;
 }
 
 export function StatusBar({
@@ -151,6 +159,8 @@ export function StatusBar({
   onDriftClick,
   activityUnreadCount = 0,
   onActivityClick,
+  advisorCounts,
+  onAdvisorClick,
 }: StatusBarProps): JSX.Element {
   const showPlanClusters = mode === 'plan' || mode === 'plan-3d' || mode === 'section';
   return (
@@ -202,6 +212,11 @@ export function StatusBar({
             <DriftBadge driftCount={driftCount} onClick={onDriftClick ?? (() => {})} />
           </>
         ) : null}
+        <Divider />
+        <AdvisorEntry
+          counts={advisorCounts ?? { error: 0, warning: 0, info: 0 }}
+          onClick={onAdvisorClick}
+        />
         {/* Slot 7 — CHR-V3-05 activity-stream entry */}
         <Divider />
         <ActivityEntry count={activityUnreadCount} onClick={onActivityClick} />
@@ -670,6 +685,53 @@ function SaveCluster({ state }: { state: StatusSaveState }): JSX.Element {
     >
       {label}
     </div>
+  );
+}
+
+function AdvisorEntry({
+  counts,
+  onClick,
+}: {
+  counts: AdvisorSeverityCounts;
+  onClick?: () => void;
+}): JSX.Element {
+  const total = counts.error + counts.warning + counts.info;
+  const primary =
+    counts.error > 0
+      ? `${counts.error} error${counts.error === 1 ? '' : 's'}`
+      : counts.warning > 0
+        ? `${counts.warning} warning${counts.warning === 1 ? '' : 's'}`
+        : counts.info > 0
+          ? `${counts.info} info`
+          : 'No findings';
+  const title =
+    total > 0
+      ? `Advisor: ${counts.error} errors, ${counts.warning} warnings, ${counts.info} info`
+      : 'Advisor: no findings';
+
+  return (
+    <button
+      type="button"
+      data-testid="status-bar-advisor-entry"
+      aria-label={title}
+      title={title}
+      onClick={onClick}
+      className={[
+        'status-bar__slot relative flex items-center gap-1 rounded-sm px-1.5 py-0.5 hover:bg-surface-strong',
+        counts.error > 0 ? 'text-danger' : counts.warning > 0 ? 'text-warning' : 'text-muted',
+      ].join(' ')}
+    >
+      <Icons.advisorWarning size={ICON_SIZE.chrome} aria-hidden="true" />
+      <span>{primary}</span>
+      {total > 0 ? (
+        <span
+          data-testid="status-bar-advisor-badge"
+          className="rounded-sm bg-surface-strong px-1 font-mono text-[10px] text-foreground"
+        >
+          {total}
+        </span>
+      ) : null}
+    </button>
   );
 }
 

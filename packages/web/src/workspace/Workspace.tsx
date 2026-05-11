@@ -27,6 +27,8 @@ import {
   type CollaborationConflictQueueV1,
 } from '../lib/collaborationConflictQueue';
 import type { LensMode, Snapshot, Violation } from '@bim-ai/core';
+import { AdvisorPanel } from '../advisor/AdvisorPanel';
+import { useUnifiedAdvisorViolations } from '../advisor/unifiedAdvisorViolations';
 import { useBimStore, applyTheme, toggleTheme, getCurrentTheme, type Theme } from '../state/store';
 import { selectDriftedElements } from '../plan/monitorDriftBadge';
 import {
@@ -203,6 +205,10 @@ export function Workspace(): JSX.Element {
   const userDisplayName = useBimStore((s) => s.userDisplayName);
   const modelId = useBimStore((s) => s.modelId);
   const revision = useBimStore((s) => s.revision);
+  const violations = useBimStore((s) => s.violations);
+  const buildingPreset = useBimStore((s) => s.buildingPreset);
+  const setBuildingPreset = useBimStore((s) => s.setBuildingPreset);
+  const perspectiveId = useBimStore((s) => s.perspectiveId);
   const comments = useBimStore((s) => s.comments);
   const setComments = useBimStore((s) => s.setComments);
   const setPerspectiveId = useBimStore((s) => s.setPerspectiveId);
@@ -218,6 +224,22 @@ export function Workspace(): JSX.Element {
   const presenceLocalUserId = usePresenceStore((s) => s.localUserId);
   const presenceSetParticipants = usePresenceStore((s) => s.setParticipants);
   const presenceSetLocalUserId = usePresenceStore((s) => s.setLocalUserId);
+  const { violations: unifiedAdvisorViolations } = useUnifiedAdvisorViolations(
+    violations,
+    modelId,
+    revision,
+  );
+  const advisorCounts = useMemo(
+    () =>
+      unifiedAdvisorViolations.reduce(
+        (acc, violation) => {
+          acc[violation.severity] += 1;
+          return acc;
+        },
+        { error: 0, warning: 0, info: 0 },
+      ),
+    [unifiedAdvisorViolations],
+  );
 
   useEffect(() => {
     if (import.meta.env.DEV && presenceParticipants.length === 0) {
@@ -241,6 +263,7 @@ export function Workspace(): JSX.Element {
 
   // AST-V3-01 — library overlay (Alt+2)
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [advisorOpen, setAdvisorOpen] = useState(false);
   const projectSettings =
     elementsById.project_settings?.kind === 'project_settings'
       ? elementsById.project_settings
@@ -1571,6 +1594,59 @@ export function Workspace(): JSX.Element {
       />
       <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
       <VVDialog open={vvDialogOpen} onClose={closeVVDialog} />
+      {advisorOpen ? (
+        <div
+          data-testid="advisor-dialog-backdrop"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/20 p-4 sm:items-center"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setAdvisorOpen(false);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="advisor-dialog-title"
+            data-testid="advisor-dialog"
+            className="flex max-h-[min(760px,calc(100vh-32px))] w-full max-w-3xl flex-col rounded border border-border bg-surface shadow-xl"
+          >
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <div>
+                <h2 id="advisor-dialog-title" className="text-sm font-semibold text-foreground">
+                  Advisor
+                </h2>
+                <p className="text-[11px] text-muted">
+                  {advisorCounts.error} errors · {advisorCounts.warning} warnings ·{' '}
+                  {advisorCounts.info} info
+                </p>
+              </div>
+              <button
+                type="button"
+                data-testid="advisor-dialog-close"
+                onClick={() => setAdvisorOpen(false)}
+                className="inline-flex h-8 w-8 items-center justify-center rounded border border-border text-muted hover:bg-surface-2 hover:text-foreground"
+                aria-label="Close advisor"
+              >
+                ×
+              </button>
+            </div>
+            <div className="min-h-0 overflow-auto p-4">
+              <AdvisorPanel
+                violations={unifiedAdvisorViolations}
+                preset={buildingPreset}
+                onPreset={setBuildingPreset}
+                codePresets={codePresetIds}
+                onApplyQuickFix={(cmd) => void onSemanticCommand(cmd)}
+                perspective={perspectiveId}
+                showAllPerspectives
+                onNavigateToElement={(elementId) => {
+                  openElementById(elementId);
+                  setAdvisorOpen(false);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
       {commentsOpen ? (
         <div
           data-testid="comments-overlay"
@@ -1802,7 +1878,6 @@ export function Workspace(): JSX.Element {
             mode={effectiveMode}
             onSemanticCommand={onSemanticCommand}
             onModeChange={handleModeChange}
-            codePresetIds={codePresetIds}
             onNavigateToElement={openElementById}
             activeViewTargetId={activeTab?.targetId}
             surface="view-context"
@@ -1867,7 +1942,6 @@ export function Workspace(): JSX.Element {
               mode={effectiveMode}
               onSemanticCommand={onSemanticCommand}
               onModeChange={handleModeChange}
-              codePresetIds={codePresetIds}
               onNavigateToElement={openElementById}
               surface="element"
             />
@@ -1899,6 +1973,8 @@ export function Workspace(): JSX.Element {
             onLensChange={setLensMode}
             snapModes={snapModes}
             onSnapToggle={handleSnapToggle}
+            advisorCounts={advisorCounts}
+            onAdvisorClick={() => setAdvisorOpen(true)}
             activeWorkspaceId={activeWorkspaceId}
             driftCount={driftCount}
             onDriftClick={() => setManageLinksOpen(true)}

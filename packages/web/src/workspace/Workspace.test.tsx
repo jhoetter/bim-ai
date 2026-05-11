@@ -43,6 +43,7 @@ beforeEach(() => {
     selectedId: undefined,
     selectedIds: [],
     elementsById: {},
+    violations: [],
     activeLevelId: undefined,
     activePlanViewId: undefined,
     activeViewpointId: undefined,
@@ -57,6 +58,7 @@ afterEach(() => {
     selectedId: undefined,
     selectedIds: [],
     elementsById: {},
+    violations: [],
     activeLevelId: undefined,
     activePlanViewId: undefined,
     activeViewpointId: undefined,
@@ -244,5 +246,29 @@ describe('<Workspace /> — smoke', () => {
     expect(canvas.queryByTestId('tool-palette')).toBeNull();
     expect(canvas.queryByTestId('temporary-visibility-chip')).toBeNull();
     expect(getByTestId('status-bar')).toBeTruthy();
+  });
+
+  it('opens advisor findings from the footer and keeps advisor out of sidebars — UX-WP-08', () => {
+    useBimStore.setState({
+      violations: [
+        {
+          ruleId: 'wall_missing_type',
+          severity: 'error',
+          message: 'Wall needs a type.',
+          elementIds: ['wall-1'],
+          blocking: true,
+        },
+      ],
+    });
+
+    const { getByTestId, queryByTestId, getByText } = renderWithProviders(<Workspace />);
+
+    expect(queryByTestId('right-rail-review')).toBeNull();
+    expect(getByTestId('status-bar-advisor-entry').textContent).toContain('1 error');
+    fireEvent.click(getByTestId('status-bar-advisor-entry'));
+
+    expect(getByTestId('advisor-dialog')).toBeTruthy();
+    expect(getByText('Wall needs a type.')).toBeTruthy();
+    expect(getByTestId('advisor-navigate-wall-1')).toBeTruthy();
   });
 });

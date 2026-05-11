@@ -70,24 +70,24 @@ describe('WorkspaceRightRail — Properties Palette context', () => {
 });
 
 describe('WorkspaceRightRail — type property commands', () => {
-  it('renders stable right-rail section tabs', () => {
+  it('renders stable right-rail section tabs without advisor review chrome — UX-WP-08', () => {
     useBimStore.setState({
       selectedId: undefined,
       elementsById: {},
     });
 
-    const { getByTestId } = renderWithI18n(
+    const { getByTestId, queryByTestId } = renderWithI18n(
       <WorkspaceRightRail
         mode="3d"
         onSemanticCommand={() => undefined}
         onModeChange={() => undefined}
-        codePresetIds={[]}
       />,
     );
 
     expect(getByTestId('right-rail-section-tab-properties')).toBeTruthy();
     expect(getByTestId('right-rail-section-tab-view')).toBeTruthy();
-    expect(getByTestId('right-rail-section-tab-review')).toBeTruthy();
+    expect(queryByTestId('right-rail-section-tab-review')).toBeNull();
+    expect(queryByTestId('right-rail-review')).toBeNull();
   });
 
   it('routes wall type property edits through upsertWallType', () => {
@@ -186,7 +186,6 @@ describe('WorkspaceRightRail — placed authored family instances', () => {
         mode="plan"
         onSemanticCommand={onSemanticCommand}
         onModeChange={() => undefined}
-        codePresetIds={[]}
       />,
     );
 
@@ -228,7 +227,6 @@ describe('WorkspaceRightRail — 3D selected wall actions', () => {
         mode="3d"
         onSemanticCommand={onSemanticCommand}
         onModeChange={() => undefined}
-        codePresetIds={[]}
       />,
     );
 
@@ -273,7 +271,6 @@ describe('WorkspaceRightRail — 3D selected wall actions', () => {
         mode="3d"
         onSemanticCommand={() => undefined}
         onModeChange={() => undefined}
-        codePresetIds={[]}
       />,
     );
 
@@ -305,7 +302,6 @@ describe('WorkspaceRightRail — 3D selected wall actions', () => {
         mode="3d"
         onSemanticCommand={() => undefined}
         onModeChange={() => undefined}
-        codePresetIds={[]}
         surface="element"
       />,
     );
@@ -340,7 +336,6 @@ describe('WorkspaceRightRail — 3D selected wall actions', () => {
         mode="plan"
         onSemanticCommand={() => undefined}
         onModeChange={() => undefined}
-        codePresetIds={[]}
         surface="element"
       />,
     );
@@ -441,7 +436,6 @@ describe('WorkspaceRightRail — 3D selected door/window/floor/roof actions', ()
         mode="3d"
         onSemanticCommand={() => undefined}
         onModeChange={() => undefined}
-        codePresetIds={[]}
       />,
     );
 
@@ -465,7 +459,6 @@ describe('WorkspaceRightRail — 3D selected door/window/floor/roof actions', ()
         mode="3d"
         onSemanticCommand={() => undefined}
         onModeChange={() => undefined}
-        codePresetIds={[]}
       />,
     );
 
@@ -490,7 +483,6 @@ describe('WorkspaceRightRail — 3D selected door/window/floor/roof actions', ()
         mode="3d"
         onSemanticCommand={() => undefined}
         onModeChange={() => undefined}
-        codePresetIds={[]}
       />,
     );
 
@@ -505,7 +497,6 @@ describe('WorkspaceRightRail — 3D selected door/window/floor/roof actions', ()
           mode="3d"
           onSemanticCommand={() => undefined}
           onModeChange={() => undefined}
-          codePresetIds={[]}
         />
       </I18nextProvider>,
     );
