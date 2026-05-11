@@ -16,7 +16,7 @@ Legend:
 | Plan authoring tools                    | Direct   | Bridge to Plan            | Direct                    | Bridge/Disabled by tool | Bridge to Plan | Bridge to Plan | Bridge to Plan | Bridge to Plan |
 | Plan modify tools                       | Direct   | Bridge to Plan            | Bridge/Direct by tool     | Disabled                | Bridge to Plan | Bridge to Plan | Bridge to Plan | Bridge to Plan |
 | 3D camera/display controls              | Disabled | Direct                    | Direct                    | Disabled                | Disabled       | Disabled       | Disabled       | Disabled       |
-| 3D selected-wall edit actions           | Disabled | Direct with selected wall | Direct with selected wall | Disabled                | Disabled       | Disabled       | Disabled       | Disabled       |
+| 3D selected-element edit actions        | Disabled | Direct with selected wall/door/window/floor/roof | Direct with selected wall/door/window/floor/roof | Disabled                | Disabled       | Disabled       | Disabled       | Disabled       |
 | Active-view visibility controls         | Direct   | Direct                    | Direct                    | Direct                  | Disabled       | Disabled       | Disabled       | Disabled       |
 | Plan Visibility/Graphics                | Direct   | Bridge to Plan            | Direct                    | Direct                  | Disabled       | Disabled       | Disabled       | Disabled       |
 | 3D layer controls                       | Disabled | Direct                    | Direct                    | Disabled                | Disabled       | Disabled       | Disabled       | Disabled       |
@@ -35,7 +35,7 @@ Surface policy:
 | Options/modifier bars | Render only in plan-capable modes, so plan tool state cannot create active-looking wall/door/dimension controls over 3D, sheet, schedule, or agent canvases.                                                                                          |
 | Cmd+K                 | Groups results by context badge, shows disabled/bridge state for registered commands, supports `>` tool / `@` view / `:` settings prefixes, and includes active-view visibility routing plus universal left/right rail toggles.                     |
 | Left rail             | Browser remains the deterministic navigation source for named views and model hierarchy.                                                                                                                                                              |
-| Right rail            | Exposes stable Properties / View / Workbench / Review section tabs; selected 3D walls get explicit Door, Window, Opening, Section, Elevation, Isolate, and Hide Walls actions; 3D View Controls include model-category counts plus show-all/hide-all. |
+| Right rail            | Exposes stable Properties / View / Workbench / Review section tabs; selected 3D walls get explicit Door, Window, Opening, Section, Elevation, Isolate, and Hide Walls actions; selected 3D doors/windows/floors/roofs get category, host, and type actions; 3D View Controls include model-category counts plus show-all/hide-all. |
 | Status bar            | Shows plan clusters in plan-like views, wires the Grid switch to actual drafting-grid visibility, and shows active view labels/detail chips in non-plan views.                                                                                        |
 
 Regression guards:

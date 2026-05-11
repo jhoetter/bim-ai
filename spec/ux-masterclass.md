@@ -992,6 +992,9 @@ Expected score after Phase 2: 7/10.
 
 1. Define 3D edit commands separately from plan tools.
 2. Add 3D action toolbar or right-rail actions for selected walls, doors, windows, roofs, floors.
+   - Implemented in `WorkspaceRightRail`: selected walls expose hosted opening and section/elevation
+     commands; selected doors/windows/floors/roofs expose 3D category isolate/hide, host-wall
+     navigation where applicable, and type navigation where applicable.
 3. Add 3D gizmo support only where behavior is complete.
 4. Add 3D measure if surfaced.
 5. Make wall-face insertions discoverable without relying only on right-click.

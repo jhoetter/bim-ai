@@ -258,6 +258,13 @@ export function WorkspaceRightRail({
       viewerCategoryHidden: Object.fromEntries(VIEWER_CATEGORY_KEYS.map((key) => [key, hidden])),
     });
   }, []);
+  const isolateViewerCategory = useCallback((category: ViewerCatKey): void => {
+    useBimStore.setState({
+      viewerCategoryHidden: Object.fromEntries(
+        VIEWER_CATEGORY_KEYS.map((key) => [key, key !== category]),
+      ),
+    });
+  }, []);
   const show3dLayers = mode === '3d' || (mode as string) === 'plan-3d';
   const showAuthoringWorkbenches =
     mode === 'plan' ||
@@ -946,14 +953,19 @@ export function WorkspaceRightRail({
             <SelectedWall3dActions
               wall={el}
               onSemanticCommand={onSemanticCommand}
-              onIsolateWalls={() => {
-                const next = Object.fromEntries(
-                  VIEWER_CATEGORY_KEYS.map((key) => [key, key !== 'wall']),
-                );
-                useBimStore.setState({ viewerCategoryHidden: next });
-              }}
+              onIsolateWalls={() => isolateViewerCategory('wall')}
               onHideWallCategory={() => {
                 if (!viewerCategoryHidden.wall) toggleViewerCategoryHidden('wall');
+              }}
+            />
+          ) : isSelected3dActionElement(el) ? (
+            <Selected3dElementActions
+              element={el}
+              elementsById={elementsById}
+              onSelect={select}
+              onIsolateCategory={isolateViewerCategory}
+              onHideCategory={(category) => {
+                if (!viewerCategoryHidden[category]) toggleViewerCategoryHidden(category);
               }}
             />
           ) : null}
@@ -1087,6 +1099,96 @@ function SelectedWall3dActions({
           label="Hide Walls"
           onClick={onHideWallCategory}
         />
+      </div>
+    </div>
+  );
+}
+
+type Selected3dActionElement =
+  | Extract<Element, { kind: 'door' }>
+  | Extract<Element, { kind: 'window' }>
+  | Extract<Element, { kind: 'floor' }>
+  | Extract<Element, { kind: 'roof' }>;
+
+function isSelected3dActionElement(
+  element: Element | undefined,
+): element is Selected3dActionElement {
+  return (
+    element?.kind === 'door' ||
+    element?.kind === 'window' ||
+    element?.kind === 'floor' ||
+    element?.kind === 'roof'
+  );
+}
+
+const VIEWER_CATEGORY_LABEL: Partial<Record<ViewerCatKey, string>> = {
+  door: 'Doors',
+  window: 'Windows',
+  floor: 'Floors',
+  roof: 'Roofs',
+};
+
+function selected3dTypeId(element: Selected3dActionElement): string | null {
+  if (element.kind === 'door' || element.kind === 'window') return element.familyTypeId ?? null;
+  if (element.kind === 'floor') return element.floorTypeId ?? null;
+  return element.roofTypeId ?? null;
+}
+
+function Selected3dElementActions({
+  element,
+  elementsById,
+  onSelect,
+  onIsolateCategory,
+  onHideCategory,
+}: {
+  element: Selected3dActionElement;
+  elementsById: Record<string, Element>;
+  onSelect: (id: string | undefined) => void;
+  onIsolateCategory: (category: ViewerCatKey) => void;
+  onHideCategory: (category: ViewerCatKey) => void;
+}): JSX.Element | null {
+  const category = elemViewerCategory(element);
+  if (!category) return null;
+
+  const categoryLabel = VIEWER_CATEGORY_LABEL[category] ?? category;
+  const typeId = selected3dTypeId(element);
+  const hostWallId = element.kind === 'door' || element.kind === 'window' ? element.wallId : null;
+  const canSelectHost = Boolean(hostWallId && elementsById[hostWallId]?.kind === 'wall');
+  const canEditType = Boolean(typeId && elementsById[typeId]);
+
+  return (
+    <div className="border-b border-border p-3" data-testid="selected-3d-element-actions">
+      <div
+        className="mb-2 text-[10px] font-semibold uppercase text-muted"
+        style={{ letterSpacing: '0.08em', opacity: 0.7 }}
+      >
+        3D {element.kind} actions
+      </div>
+      <div className="grid grid-cols-2 gap-1.5">
+        <ActionButton
+          testId={`3d-action-${element.kind}-isolate-category`}
+          label={`Isolate ${categoryLabel}`}
+          onClick={() => onIsolateCategory(category)}
+        />
+        <ActionButton
+          testId={`3d-action-${element.kind}-hide-category`}
+          label={`Hide ${categoryLabel}`}
+          onClick={() => onHideCategory(category)}
+        />
+        {canSelectHost ? (
+          <ActionButton
+            testId={`3d-action-${element.kind}-select-host`}
+            label="Select Host"
+            onClick={() => onSelect(hostWallId ?? undefined)}
+          />
+        ) : null}
+        {canEditType ? (
+          <ActionButton
+            testId={`3d-action-${element.kind}-edit-type`}
+            label="Edit Type"
+            onClick={() => onSelect(typeId ?? undefined)}
+          />
+        ) : null}
       </div>
     </div>
   );

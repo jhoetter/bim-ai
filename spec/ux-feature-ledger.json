@@ -57,13 +57,16 @@
     },
     {
       "idPattern": "view.3d.*",
-      "label": "3D view controls and selected-wall edit actions",
+      "label": "3D view controls and selected-element edit actions",
       "owner": "packages/web/src/workspace/viewport/Viewport3DLayersPanel.tsx",
       "sourceFile": "packages/web/src/workspace/commandCapabilities.ts",
       "intendedViews": ["3d", "plan-3d"],
       "actualSurfaces": ["cmd-k", "right-rail", "canvas-context"],
-      "preconditions": ["selected-wall for view.3d.wall.*"],
-      "executionHandler": "useBimStore viewer runtime actions and Workspace.onSemanticCommand",
+      "preconditions": [
+        "selected-wall for view.3d.wall.*",
+        "selected door/window/floor/roof for right-rail category, host, and type actions"
+      ],
+      "executionHandler": "useBimStore viewer runtime actions, Workspace.onSemanticCommand, and WorkspaceRightRail selected-element 3D actions",
       "status": "implemented",
       "usabilityScore": 8,
       "tests": [

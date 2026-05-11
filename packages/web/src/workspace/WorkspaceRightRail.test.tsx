@@ -279,3 +279,163 @@ describe('WorkspaceRightRail — 3D selected wall actions', () => {
     expect(useBimStore.getState().viewerCategoryHidden.wall).toBe(true);
   });
 });
+
+describe('WorkspaceRightRail — 3D selected door/window/floor/roof actions', () => {
+  const hostWall: Extract<Element, { kind: 'wall' }> = {
+    kind: 'wall',
+    id: 'host-wall',
+    name: 'Host Wall',
+    wallTypeId: 'wt-1',
+    levelId: 'lvl-1',
+    start: { xMm: 0, yMm: 0 },
+    end: { xMm: 6000, yMm: 0 },
+    thicknessMm: 200,
+    heightMm: 3000,
+  };
+  const doorType: Extract<Element, { kind: 'family_type' }> = {
+    kind: 'family_type',
+    id: 'ft-door',
+    name: 'Door Type',
+    familyId: 'fam-door',
+    discipline: 'door',
+    parameters: { name: 'Door Type' },
+  };
+  const door: Extract<Element, { kind: 'door' }> = {
+    kind: 'door',
+    id: 'door-3d',
+    name: 'Door 3D',
+    wallId: hostWall.id,
+    alongT: 0.5,
+    widthMm: 900,
+    familyTypeId: doorType.id,
+  };
+  const floorType: Extract<Element, { kind: 'floor_type' }> = {
+    kind: 'floor_type',
+    id: 'ft-floor',
+    name: 'Floor Type',
+    layers: [],
+  };
+  const floor: Extract<Element, { kind: 'floor' }> = {
+    kind: 'floor',
+    id: 'floor-3d',
+    name: 'Floor 3D',
+    levelId: 'lvl-1',
+    boundaryMm: [
+      { xMm: 0, yMm: 0 },
+      { xMm: 1000, yMm: 0 },
+      { xMm: 1000, yMm: 1000 },
+      { xMm: 0, yMm: 1000 },
+    ],
+    thicknessMm: 250,
+    floorTypeId: floorType.id,
+  };
+  const roofType: Extract<Element, { kind: 'roof_type' }> = {
+    kind: 'roof_type',
+    id: 'rt-roof',
+    name: 'Roof Type',
+    layers: [],
+  };
+  const roof: Extract<Element, { kind: 'roof' }> = {
+    kind: 'roof',
+    id: 'roof-3d',
+    name: 'Roof 3D',
+    referenceLevelId: 'lvl-1',
+    footprintMm: [
+      { xMm: 0, yMm: 0 },
+      { xMm: 1200, yMm: 0 },
+      { xMm: 1200, yMm: 1200 },
+      { xMm: 0, yMm: 1200 },
+    ],
+    roofTypeId: roofType.id,
+  };
+
+  it('lets selected hosted openings jump to host wall and type from 3D', () => {
+    useBimStore.setState({
+      selectedId: door.id,
+      elementsById: {
+        [hostWall.id]: hostWall,
+        [door.id]: door,
+        [doorType.id]: doorType,
+      },
+    });
+
+    const { getByTestId } = renderWithI18n(
+      <WorkspaceRightRail
+        mode="3d"
+        onSemanticCommand={() => undefined}
+        onModeChange={() => undefined}
+        codePresetIds={[]}
+      />,
+    );
+
+    expect(getByTestId('selected-3d-element-actions')).toBeTruthy();
+    fireEvent.click(getByTestId('3d-action-door-edit-type'));
+    expect(useBimStore.getState().selectedId).toBe(doorType.id);
+  });
+
+  it('lets selected hosted openings jump to their wall host from 3D', () => {
+    useBimStore.setState({
+      selectedId: door.id,
+      elementsById: {
+        [hostWall.id]: hostWall,
+        [door.id]: door,
+        [doorType.id]: doorType,
+      },
+    });
+
+    const { getByTestId } = renderWithI18n(
+      <WorkspaceRightRail
+        mode="3d"
+        onSemanticCommand={() => undefined}
+        onModeChange={() => undefined}
+        codePresetIds={[]}
+      />,
+    );
+
+    fireEvent.click(getByTestId('3d-action-door-select-host'));
+    expect(useBimStore.getState().selectedId).toBe(hostWall.id);
+  });
+
+  it('adds 3D category and type actions for selected floors and roofs', () => {
+    useBimStore.setState({
+      selectedId: floor.id,
+      elementsById: {
+        [floor.id]: floor,
+        [floorType.id]: floorType,
+        [roof.id]: roof,
+        [roofType.id]: roofType,
+      },
+      viewerCategoryHidden: {},
+    });
+
+    const { getByTestId, rerender } = renderWithI18n(
+      <WorkspaceRightRail
+        mode="3d"
+        onSemanticCommand={() => undefined}
+        onModeChange={() => undefined}
+        codePresetIds={[]}
+      />,
+    );
+
+    fireEvent.click(getByTestId('3d-action-floor-isolate-category'));
+    expect(useBimStore.getState().viewerCategoryHidden.floor).toBe(false);
+    expect(useBimStore.getState().viewerCategoryHidden.wall).toBe(true);
+
+    useBimStore.setState({ selectedId: roof.id, viewerCategoryHidden: {} });
+    rerender(
+      <I18nextProvider i18n={i18n}>
+        <WorkspaceRightRail
+          mode="3d"
+          onSemanticCommand={() => undefined}
+          onModeChange={() => undefined}
+          codePresetIds={[]}
+        />
+      </I18nextProvider>,
+    );
+
+    fireEvent.click(getByTestId('3d-action-roof-hide-category'));
+    expect(useBimStore.getState().viewerCategoryHidden.roof).toBe(true);
+    fireEvent.click(getByTestId('3d-action-roof-edit-type'));
+    expect(useBimStore.getState().selectedId).toBe(roofType.id);
+  });
+});
