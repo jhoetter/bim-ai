@@ -179,6 +179,8 @@ const VIEWER_LAYER_LABELS: Record<ViewerHiddenKindKey, string> = {
 export interface Viewport3DLayersPanelProps {
   viewerCategoryHidden: Record<string, boolean>;
   onToggleCategory: (kind: ViewerHiddenKindKey) => void;
+  onSetAllCategoriesHidden?: (hidden: boolean) => void;
+  categoryCounts?: Partial<Record<ViewerHiddenKindKey, number>>;
   viewerRenderStyle: ViewerRenderStyle;
   onSetRenderStyle: (style: ViewerRenderStyle) => void;
   viewerBackground: 'white' | 'light_grey' | 'dark';
@@ -216,6 +218,8 @@ export interface Viewport3DLayersPanelProps {
 export function Viewport3DLayersPanel({
   viewerCategoryHidden,
   onToggleCategory,
+  onSetAllCategoriesHidden,
+  categoryCounts,
   viewerRenderStyle,
   onSetRenderStyle,
   viewerBackground,
@@ -324,6 +328,9 @@ export function Viewport3DLayersPanel({
   const hiddenLayerCount = VIEWER_HIDDEN_KIND_KEYS.filter(
     (key) => viewerCategoryHidden[key],
   ).length;
+  const allLayerCount = VIEWER_HIDDEN_KIND_KEYS.length;
+  const allCategoriesHidden = hiddenLayerCount === allLayerCount;
+  const allCategoriesShown = hiddenLayerCount === 0;
   return (
     <div data-testid="viewport3d-layers-panel" className="flex flex-col gap-3 px-3 py-3">
       <div className="space-y-1">
@@ -571,23 +578,65 @@ export function Viewport3DLayersPanel({
         </div>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-x-2 gap-y-1">
-        {VIEWER_HIDDEN_KIND_KEYS.map((lk) => (
-          <label key={lk} className="flex cursor-pointer items-center gap-2 text-[11px]">
-            <input
-              type="checkbox"
-              data-testid={`layer-toggle-${lk}`}
-              checked={!viewerCategoryHidden[lk]}
-              onChange={() => onToggleCategory(lk)}
-            />
-            {(() => {
-              const Icon = iconForKind[lk];
-              return <Icon size={ICON_SIZE.chrome} aria-hidden="true" className="text-muted" />;
-            })()}
-            <span>{VIEWER_LAYER_LABELS[lk]}</span>
-          </label>
-        ))}
-      </div>
+      <section className="rounded border border-border bg-surface-strong p-2">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <div>
+            <div className="text-[10px] font-semibold uppercase text-muted">Model categories</div>
+            <div className="text-[10px] text-muted">
+              {allLayerCount - hiddenLayerCount} shown / {hiddenLayerCount} hidden
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              data-testid="layer-show-all"
+              aria-label="Show all model categories"
+              title="Show all model categories"
+              disabled={!onSetAllCategoriesHidden || allCategoriesShown}
+              onClick={() => onSetAllCategoriesHidden?.(false)}
+              className="flex h-7 w-7 items-center justify-center rounded border border-border bg-background text-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Icons.layerOn size={ICON_SIZE.chrome} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              data-testid="layer-hide-all"
+              aria-label="Hide all model categories"
+              title="Hide all model categories"
+              disabled={!onSetAllCategoriesHidden || allCategoriesHidden}
+              onClick={() => onSetAllCategoriesHidden?.(true)}
+              className="flex h-7 w-7 items-center justify-center rounded border border-border bg-background text-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Icons.layerOff size={ICON_SIZE.chrome} aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+          {VIEWER_HIDDEN_KIND_KEYS.map((lk) => (
+            <label key={lk} className="flex min-w-0 cursor-pointer items-center gap-2 text-[11px]">
+              <input
+                type="checkbox"
+                data-testid={`layer-toggle-${lk}`}
+                checked={!viewerCategoryHidden[lk]}
+                onChange={() => onToggleCategory(lk)}
+              />
+              {(() => {
+                const Icon = iconForKind[lk];
+                return <Icon size={ICON_SIZE.chrome} aria-hidden="true" className="text-muted" />;
+              })()}
+              <span className="min-w-0 truncate">{VIEWER_LAYER_LABELS[lk]}</span>
+              {categoryCounts?.[lk] ? (
+                <span
+                  data-testid={`layer-count-${lk}`}
+                  className="ml-auto rounded bg-background px-1 font-mono text-[10px] text-muted"
+                >
+                  {categoryCounts[lk]}
+                </span>
+              ) : null}
+            </label>
+          ))}
+        </div>
+      </section>
 
       <details className="rounded border border-border bg-surface-strong px-2 py-1.5" open>
         <summary className="cursor-pointer text-[10px] font-semibold uppercase text-muted">

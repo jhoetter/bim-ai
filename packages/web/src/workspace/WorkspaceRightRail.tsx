@@ -39,7 +39,11 @@ import { inspectorPropertiesContextForElement } from './WorkspaceRightRailContex
 import type { DisciplineTag } from '@bim-ai/core';
 import { AuthoringWorkbenchesPanel } from './authoring';
 import { Viewport3DLayersPanel } from './viewport';
-import { VIEWER_CATEGORY_KEYS } from '../viewport/sceneUtils';
+import {
+  elemViewerCategory,
+  VIEWER_CATEGORY_KEYS,
+  type ViewerCatKey,
+} from '../viewport/sceneUtils';
 import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFromWall';
 import { firstSheetId, placeViewOnSheetCommand } from './sheets/sheetRecommendedViewports';
 import type { WorkspaceMode } from './shell';
@@ -241,6 +245,19 @@ export function WorkspaceRightRail({
     activeViewpointId && elementsById[activeViewpointId]?.kind === 'viewpoint'
       ? (elementsById[activeViewpointId] as Extract<Element, { kind: 'viewpoint' }>)
       : undefined;
+  const viewerCategoryCounts = useMemo(() => {
+    const counts: Partial<Record<ViewerCatKey, number>> = {};
+    for (const element of Object.values(elementsById) as Element[]) {
+      const key = elemViewerCategory(element);
+      if (key) counts[key] = (counts[key] ?? 0) + 1;
+    }
+    return counts;
+  }, [elementsById]);
+  const setAllViewerCategoriesHidden = useCallback((hidden: boolean): void => {
+    useBimStore.setState({
+      viewerCategoryHidden: Object.fromEntries(VIEWER_CATEGORY_KEYS.map((key) => [key, hidden])),
+    });
+  }, []);
   const show3dLayers = mode === '3d' || (mode as string) === 'plan-3d';
   const showAuthoringWorkbenches =
     mode === 'plan' ||
@@ -943,6 +960,8 @@ export function WorkspaceRightRail({
           <Viewport3DLayersPanel
             viewerCategoryHidden={viewerCategoryHidden}
             onToggleCategory={toggleViewerCategoryHidden}
+            onSetAllCategoriesHidden={setAllViewerCategoriesHidden}
+            categoryCounts={viewerCategoryCounts}
             viewerRenderStyle={viewerRenderStyle}
             onSetRenderStyle={setViewerRenderStyle}
             viewerBackground={viewerBackground}

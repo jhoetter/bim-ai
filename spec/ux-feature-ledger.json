@@ -71,7 +71,7 @@
       "intendedViews": "Plan VV/VG for plan/section; 3D layers for 3d/plan-3d",
       "actualSurfaces": ["ribbon", "right-rail", "cmd-k"],
       "preconditions": ["active-plan-view where needed"],
-      "executionHandler": "VVDialog, right-rail 3D View Controls, or viewerCategoryHidden store updates",
+      "executionHandler": "VVDialog, right-rail 3D View Controls with category counts/show-all/hide-all, or viewerCategoryHidden store updates",
       "status": "implemented with scoped controls",
       "usabilityScore": 8,
       "tests": [

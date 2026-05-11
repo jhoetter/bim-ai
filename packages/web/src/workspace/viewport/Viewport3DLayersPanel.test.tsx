@@ -22,6 +22,7 @@ function makeProps(
   return {
     viewerCategoryHidden: {},
     onToggleCategory: vi.fn(),
+    onSetAllCategoriesHidden: vi.fn(),
     viewerRenderStyle: 'shaded',
     onSetRenderStyle: vi.fn(),
     viewerBackground: 'light_grey',
@@ -186,6 +187,32 @@ describe('<Viewport3DLayersPanel />', () => {
     fireEvent.click(getByTestId('layer-toggle-roof'));
     expect(onToggleCategory).toHaveBeenCalledOnce();
     expect(onToggleCategory).toHaveBeenCalledWith('roof');
+  });
+
+  it('shows and hides all model categories from the view panel', () => {
+    const onSetAllCategoriesHidden = vi.fn();
+    const { getByTestId } = render(
+      <Viewport3DLayersPanel
+        {...makeProps({
+          viewerCategoryHidden: { wall: true, floor: true },
+          onSetAllCategoriesHidden,
+        })}
+      />,
+    );
+    fireEvent.click(getByTestId('layer-show-all'));
+    fireEvent.click(getByTestId('layer-hide-all'));
+    expect(onSetAllCategoriesHidden).toHaveBeenCalledWith(false);
+    expect(onSetAllCategoriesHidden).toHaveBeenCalledWith(true);
+  });
+
+  it('renders model category counts beside visible categories', () => {
+    const { getByTestId } = render(
+      <Viewport3DLayersPanel
+        {...makeProps({ categoryCounts: { wall: 12, family_instance: 3 } })}
+      />,
+    );
+    expect(getByTestId('layer-count-wall').textContent).toBe('12');
+    expect(getByTestId('layer-count-family_instance').textContent).toBe('3');
   });
 
   it('renders clip elevation inputs', () => {
