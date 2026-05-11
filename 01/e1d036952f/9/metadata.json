@@ -1,0 +1,49 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "01e1d036952f",
+  "session_id": "019e1649-e2ea-7a21-ad6d-ab659d9cab6a",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-11T09:36:16.207482Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "d78538d51cda",
+  "token_usage": {
+    "input_tokens": 505836,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 6957056,
+    "output_tokens": 21134,
+    "api_call_count": 65
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 286,
+      "user_lines_removed": 18,
+      "agent_lines_added": 310,
+      "agent_lines_removed": 22,
+      "user_added_per_file": {
+        "app/bim_ai/constructability_matrix.py": 131,
+        "packages/web/src/cmdPalette/defaultCommands.ts": 72,
+        "packages/web/src/cmdPalette/registry.ts": 4,
+        "packages/web/src/workspace/Workspace.tsx": 4,
+        "spec/schemas/constructability-matrix-default.json": 75
+      },
+      "user_removed_per_file": {
+        "packages/web/src/workspace/Workspace.tsx": 18
+      }
+    }
+  ]
+}

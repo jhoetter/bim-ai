@@ -1,0 +1,5 @@
+we have in spec as testing tracker, is it FULLY implemented and on main?
+
+---
+
+please continue building it until it is FULLY implemented, not just partially. EVERYTHING. always commit and push...
