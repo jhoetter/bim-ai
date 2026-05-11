@@ -366,7 +366,7 @@ describe('RibbonBar — F-005', () => {
 
     const wallButton = getByTestId('ribbon-command-wall') as HTMLButtonElement;
     expect(wallButton.disabled).toBe(true);
-    expect(wallButton.getAttribute('data-disabled-reason')).toContain('Plan tool');
+    expect(wallButton.getAttribute('data-disabled-reason')).toContain('Plan');
     fireEvent.click(wallButton);
     expect(onToolSelect).not.toHaveBeenCalled();
 

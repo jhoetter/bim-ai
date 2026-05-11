@@ -1,5 +1,12 @@
 import fuzzysort from 'fuzzysort';
 
+import {
+  commandModeBadge,
+  evaluateCommandInMode,
+  type CapabilityViewMode,
+  type CommandAvailability,
+} from '../workspace/commandCapabilities';
+
 export type PaletteCategory = 'command' | 'navigate' | 'select';
 
 export type PaletteEntry = {
@@ -10,15 +17,21 @@ export type PaletteEntry = {
   category: PaletteCategory;
   invoke: (context: PaletteContext) => void;
   isAvailable?: (context: PaletteContext) => boolean;
+  availability?: CommandAvailability;
+  badge?: string;
+  disabledReason?: string;
+  bridged?: boolean;
 };
 
 export type PaletteContext = {
   selectedElementIds: string[];
   activeViewId: string | null;
   /** Active workspace mode, if the host shell knows it. */
-  activeMode?: string;
+  activeMode?: CapabilityViewMode;
   /** Navigate through the same tab/mode path as the main workspace chrome. */
-  navigateMode?: (mode: 'plan' | '3d' | 'section' | 'sheet' | 'schedule' | 'agent') => void;
+  navigateMode?: (
+    mode: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent',
+  ) => void;
   /** Start a plan-canvas tool, switching to a valid tool surface if needed. */
   startPlanTool?: (toolId: string) => void;
   /** Set the app theme while keeping host UI state in sync. */
@@ -27,6 +40,10 @@ export type PaletteContext = {
   toggleTheme?: () => void;
   /** Callback to open a model element (plan view, sheet, schedule, etc.) as a tab. */
   openElement?: (id: string) => void;
+  openProjectMenu?: () => void;
+  openFamilyLibrary?: () => void;
+  openKeyboardShortcuts?: () => void;
+  closeInactiveViews?: () => void;
   /** Dynamic navigable views/sheets/schedules to surface in the palette. */
   views?: Array<{ id: string; label: string; keywords: string }>;
 };
@@ -51,17 +68,34 @@ export function queryPalette(
   context: PaletteContext,
   recency: Record<string, number>,
 ): PaletteEntry[] {
-  const available = _registry.filter((e) => !e.isAvailable || e.isAvailable(context));
+  const activeMode = context.activeMode;
+  const resolvedRegistry = _registry
+    .map((entry): PaletteEntry | null => {
+      const availability = activeMode ? evaluateCommandInMode(entry.id, activeMode) : null;
+      if (availability) {
+        return {
+          ...entry,
+          availability,
+          badge: commandModeBadge(availability),
+          disabledReason: availability.state === 'disabled' ? availability.reason : undefined,
+          bridged: availability.state === 'bridge',
+        };
+      }
+      if (entry.isAvailable && !entry.isAvailable(context)) return null;
+      return entry;
+    })
+    .filter((entry): entry is PaletteEntry => Boolean(entry));
 
   const viewEntries: PaletteEntry[] = (context.views ?? []).map((v) => ({
     id: `view.${v.id}`,
     label: v.label,
     keywords: [v.keywords],
     category: 'navigate' as const,
+    badge: 'Open View',
     invoke: (ctx) => ctx.openElement?.(v.id),
   }));
 
-  const all = [...available, ...viewEntries];
+  const all = [...resolvedRegistry, ...viewEntries];
 
   if (!input.trim()) {
     return [...all].sort((a, b) => (recency[b.id] ?? 0) - (recency[a.id] ?? 0));

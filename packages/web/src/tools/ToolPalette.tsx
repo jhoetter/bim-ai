@@ -17,6 +17,11 @@ import {
   type WorkspaceMode,
 } from './toolRegistry';
 import { ShortcutChip } from '../ui/ShortcutChip';
+import {
+  capabilityIdForTool,
+  evaluateCommandInMode,
+  type CapabilityViewMode,
+} from '../workspace/commandCapabilities';
 
 /**
  * ToolPalette — spec §16.
@@ -93,6 +98,15 @@ export function ToolPalette({
       {tools.map((tool, idx) => {
         const Icon = Icons[tool.icon]!;
         const enablement = isToolDisabled(tool.id, disabledContext, t);
+        const capabilityAvailability = evaluateCommandInMode(
+          capabilityIdForTool(tool.id),
+          mode as CapabilityViewMode,
+        );
+        const disabledReason =
+          capabilityAvailability?.state === 'disabled'
+            ? capabilityAvailability.reason
+            : enablement.reason;
+        const disabled = Boolean(disabledReason) || enablement.disabled;
         const isActive = tool.id === activeTool;
         const isFirstModify =
           MODIFY_TOOL_IDS.has(tool.id) && (idx === 0 || !MODIFY_TOOL_IDS.has(tools[idx - 1]!.id));
@@ -107,12 +121,12 @@ export function ToolPalette({
               aria-label={`${tool.label} (${tool.hotkey})`}
               aria-pressed={isActive}
               aria-keyshortcuts={tool.hotkey}
-              aria-disabled={enablement.disabled}
+              aria-disabled={disabled}
               tabIndex={isActive ? 0 : -1}
-              disabled={enablement.disabled}
+              disabled={disabled}
               title={
-                enablement.disabled
-                  ? enablement.reason
+                disabledReason
+                  ? disabledReason
                   : tool.shortcut
                     ? `${tool.label} (${tool.shortcut})`
                     : tool.label
@@ -120,7 +134,7 @@ export function ToolPalette({
               data-tool={tool.id}
               data-active={isActive ? 'true' : 'false'}
               onClick={() => {
-                if (enablement.disabled) return;
+                if (disabled) return;
                 if (tool.id === 'tag') onTagSubmenu?.();
                 else onToolSelect(tool.id);
               }}
@@ -129,7 +143,7 @@ export function ToolPalette({
                 isActive
                   ? 'bg-accent text-accent-foreground shadow-sm'
                   : 'text-muted hover:bg-surface hover:text-foreground',
-                enablement.disabled ? 'opacity-40' : '',
+                disabled ? 'opacity-40' : '',
               ].join(' ')}
             >
               <Icon size={16} aria-hidden="true" />

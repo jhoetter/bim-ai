@@ -30,9 +30,10 @@ function command(id: string) {
 
 describe('default Cmd+K commands', () => {
   it('scopes 3D view commands to active 3D contexts', () => {
-    expect(
-      queryPalette('fit model', PLAN_CTX, {}).some((entry) => entry.id === 'view.3d.fit'),
-    ).toBe(false);
+    const planEntry = queryPalette('fit model', PLAN_CTX, {}).find(
+      (entry) => entry.id === 'view.3d.fit',
+    );
+    expect(planEntry?.disabledReason).toContain('unavailable');
     expect(
       queryPalette('fit model', THREE_D_CTX, {}).some((entry) => entry.id === 'view.3d.fit'),
     ).toBe(true);

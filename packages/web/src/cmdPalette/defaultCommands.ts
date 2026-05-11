@@ -138,6 +138,46 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'navigate.plan-3d',
+  label: 'Go to Plan + 3D view',
+  keywords: ['plan', '3d', 'split', 'side by side'],
+  category: 'navigate',
+  invoke: (ctx) => ctx.navigateMode?.('plan-3d'),
+});
+
+registerCommand({
+  id: 'navigate.section',
+  label: 'Go to Section view',
+  keywords: ['section', 'cut'],
+  category: 'navigate',
+  invoke: (ctx) => ctx.navigateMode?.('section'),
+});
+
+registerCommand({
+  id: 'navigate.sheet',
+  label: 'Go to Sheet view',
+  keywords: ['sheet', 'paper', 'layout'],
+  category: 'navigate',
+  invoke: (ctx) => ctx.navigateMode?.('sheet'),
+});
+
+registerCommand({
+  id: 'navigate.schedule',
+  label: 'Go to Schedule view',
+  keywords: ['schedule', 'table', 'rows'],
+  category: 'navigate',
+  invoke: (ctx) => ctx.navigateMode?.('schedule'),
+});
+
+registerCommand({
+  id: 'navigate.agent',
+  label: 'Go to Agent Review',
+  keywords: ['agent', 'review', 'issues'],
+  category: 'navigate',
+  invoke: (ctx) => ctx.navigateMode?.('agent'),
+});
+
+registerCommand({
   id: 'navigate.architecture',
   label: 'Switch to Architecture perspective',
   keywords: ['architecture', 'archi'],
@@ -211,7 +251,7 @@ registerCommand({
 });
 
 registerCommand({
-  id: 'tool.tag-by-category',
+  id: 'tool.tag',
   label: 'Tag by Category',
   keywords: ['tag', 'annotation', 'room tag', 'door tag', 'window tag'],
   category: 'command',
@@ -264,6 +304,38 @@ registerCommand({
   keywords: ['theme', 'appearance', 'switch theme'],
   category: 'command',
   invoke: (ctx) => ctx.toggleTheme?.(),
+});
+
+registerCommand({
+  id: 'project.open-menu',
+  label: 'Open Project Menu',
+  keywords: ['project', 'files', 'snapshot', 'open'],
+  category: 'command',
+  invoke: (ctx) => ctx.openProjectMenu?.(),
+});
+
+registerCommand({
+  id: 'library.open-family',
+  label: 'Open Family Library',
+  keywords: ['family', 'library', 'load', 'component'],
+  category: 'command',
+  invoke: (ctx) => ctx.openFamilyLibrary?.(),
+});
+
+registerCommand({
+  id: 'help.keyboard-shortcuts',
+  label: 'Open Keyboard Shortcuts',
+  keywords: ['help', 'shortcuts', 'keyboard', 'cheatsheet'],
+  category: 'command',
+  invoke: (ctx) => ctx.openKeyboardShortcuts?.(),
+});
+
+registerCommand({
+  id: 'tabs.close-inactive',
+  label: 'Close Inactive Views',
+  keywords: ['tabs', 'views', 'close inactive'],
+  category: 'command',
+  invoke: (ctx) => ctx.closeInactiveViews?.(),
 });
 
 // Display settings

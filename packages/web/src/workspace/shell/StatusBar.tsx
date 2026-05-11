@@ -86,6 +86,7 @@ export type StatusSaveState = 'saved' | 'saving' | 'unsynced' | 'error';
 export type StatusWsState = 'connected' | 'reconnecting' | 'offline';
 
 export interface StatusBarProps {
+  mode?: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent';
   level: { id: string; label: string; elevationMm?: number };
   levels?: { id: string; label: string; elevationMm?: number }[];
   onLevelChange?: (id: string) => void;
@@ -99,6 +100,7 @@ export interface StatusBarProps {
   cursorMm?: { xMm: number; yMm: number } | null;
   /** Undo depth; clicking the cluster invokes undo / redo. */
   undoDepth?: number;
+  redoDepth?: number;
   onUndo?: () => void;
   onRedo?: () => void;
   wsState?: StatusWsState;
@@ -117,6 +119,7 @@ export interface StatusBarProps {
 }
 
 export function StatusBar({
+  mode = 'plan',
   level,
   levels = [],
   onLevelChange,
@@ -127,6 +130,7 @@ export function StatusBar({
   onGridToggle,
   cursorMm,
   undoDepth,
+  redoDepth,
   onUndo,
   onRedo,
   wsState = 'connected',
@@ -140,6 +144,7 @@ export function StatusBar({
   activityUnreadCount = 0,
   onActivityClick,
 }: StatusBarProps): JSX.Element {
+  const showPlanClusters = mode === 'plan' || mode === 'plan-3d' || mode === 'section';
   return (
     <div
       data-testid="status-bar"
@@ -147,15 +152,21 @@ export function StatusBar({
       style={statusStyle}
       className="relative flex w-full items-center gap-2 border-t border-border bg-surface px-4 text-[11px] text-muted"
     >
-      <LevelCluster level={level} levels={levels} onLevelChange={onLevelChange} />
-      <Divider />
-      <ToolCluster toolLabel={toolLabel ?? null} />
-      <Divider />
-      <SnapCluster snapModes={snapModes} onSnapToggle={onSnapToggle} />
-      <Divider />
-      <GridCluster gridOn={gridOn} onGridToggle={onGridToggle} />
-      <Divider />
-      <CoordCluster cursorMm={cursorMm ?? null} />
+      {showPlanClusters ? (
+        <>
+          <LevelCluster level={level} levels={levels} onLevelChange={onLevelChange} />
+          <Divider />
+          <ToolCluster toolLabel={toolLabel ?? null} />
+          <Divider />
+          <SnapCluster snapModes={snapModes} onSnapToggle={onSnapToggle} />
+          <Divider />
+          <GridCluster gridOn={gridOn} onGridToggle={onGridToggle} />
+          <Divider />
+          <CoordCluster cursorMm={cursorMm ?? null} />
+        </>
+      ) : (
+        <ViewModeCluster mode={mode} />
+      )}
       <div className="ml-auto flex items-center gap-3">
         {conflictQueue ? (
           <>
@@ -163,7 +174,12 @@ export function StatusBar({
             <Divider />
           </>
         ) : null}
-        <UndoCluster depth={undoDepth ?? 0} onUndo={onUndo} onRedo={onRedo} />
+        <UndoCluster
+          undoDepth={undoDepth ?? 0}
+          redoDepth={redoDepth ?? 0}
+          onUndo={onUndo}
+          onRedo={onRedo}
+        />
         <Divider />
         <WsCluster state={wsState} />
         <Divider />
@@ -193,6 +209,34 @@ const statusStyle: CSSProperties = {
 
 function Divider(): JSX.Element {
   return <span aria-hidden="true" className="inline-block h-3 w-px bg-border" />;
+}
+
+function ViewModeCluster({ mode }: { mode: NonNullable<StatusBarProps['mode']> }): JSX.Element {
+  return (
+    <div data-testid="statusbar-view-mode" className="flex items-center gap-1">
+      <span className="text-muted">View</span>
+      <span className="font-medium text-foreground">{formatStatusMode(mode)}</span>
+    </div>
+  );
+}
+
+function formatStatusMode(mode: NonNullable<StatusBarProps['mode']>): string {
+  switch (mode) {
+    case 'plan':
+      return 'Plan';
+    case '3d':
+      return '3D';
+    case 'plan-3d':
+      return 'Plan + 3D';
+    case 'section':
+      return 'Section';
+    case 'sheet':
+      return 'Sheet';
+    case 'schedule':
+      return 'Schedule';
+    case 'agent':
+      return 'Agent Review';
+  }
 }
 
 function ConflictSlot({
@@ -496,11 +540,13 @@ function CoordCluster({
 }
 
 function UndoCluster({
-  depth,
+  undoDepth,
+  redoDepth,
   onUndo,
   onRedo,
 }: {
-  depth: number;
+  undoDepth: number;
+  redoDepth: number;
   onUndo?: () => void;
   onRedo?: () => void;
 }): JSX.Element {
@@ -510,19 +556,21 @@ function UndoCluster({
       <button
         type="button"
         onClick={onUndo}
+        disabled={undoDepth <= 0}
         title={t('statusbar.undoTitle')}
         aria-label={t('statusbar.undoLabel')}
-        className="inline-flex h-5 w-5 items-center justify-center rounded-sm text-muted hover:bg-surface-strong"
+        className="inline-flex h-5 w-5 items-center justify-center rounded-sm text-muted hover:bg-surface-strong disabled:cursor-not-allowed disabled:opacity-40"
       >
         <Icons.undo size={ICON_SIZE.chrome} aria-hidden="true" />
       </button>
-      <span className="text-muted">{depth}</span>
+      <span className="text-muted">{undoDepth}</span>
       <button
         type="button"
         onClick={onRedo}
+        disabled={redoDepth <= 0}
         title={t('statusbar.redoTitle')}
         aria-label={t('statusbar.redoLabel')}
-        className="inline-flex h-5 w-5 items-center justify-center rounded-sm text-muted hover:bg-surface-strong"
+        className="inline-flex h-5 w-5 items-center justify-center rounded-sm text-muted hover:bg-surface-strong disabled:cursor-not-allowed disabled:opacity-40"
       >
         <Icons.redo size={ICON_SIZE.chrome} aria-hidden="true" />
       </button>

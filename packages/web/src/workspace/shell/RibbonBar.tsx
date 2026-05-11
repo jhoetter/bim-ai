@@ -1,12 +1,13 @@
 import { type JSX, useEffect, useMemo, useState } from 'react';
 import { Icons, ICON_SIZE, type IconName } from '@bim-ai/ui';
 
+import { type ToolId, type WorkspaceMode as ToolWorkspaceMode } from '../../tools/toolRegistry';
 import {
-  getToolModes,
-  toolSupportsMode,
-  type ToolId,
-  type WorkspaceMode as ToolWorkspaceMode,
-} from '../../tools/toolRegistry';
+  capabilityIdForTool,
+  evaluateCommandInMode,
+  formatCapabilityMode,
+  type CapabilityViewMode,
+} from '../commandCapabilities';
 import type { WorkspaceMode } from './TopBar';
 
 type RibbonTabId =
@@ -706,42 +707,42 @@ function commandDisabledReason(
   activeMode: ToolWorkspaceMode | undefined,
 ): string | undefined {
   if (!activeMode) return undefined;
-  if (command.type === 'tool' && !toolSupportsMode(command.id, activeMode)) {
-    const toolModes = getToolModes(command.id);
-    const supported = toolModes.map(formatMode).join(', ');
-    if (toolModes.includes('plan') || toolModes.includes('plan-3d')) {
-      return `${command.label} is a Plan tool. Switch to Plan or Plan + 3D to use it.`;
-    }
-    return `${command.label} is unavailable in ${formatMode(activeMode)}. Available in ${supported}.`;
-  }
   if (command.type === 'action' && command.id === 'visibility-graphics') {
     if (activeMode === '3d') {
       return 'VV/VG edits plan visibility. Use 3D View Controls in the right rail for this view.';
     }
     if (activeMode === 'sheet' || activeMode === 'schedule' || activeMode === 'agent') {
-      return `Visibility/Graphics is unavailable in ${formatMode(activeMode)}. Open a plan, section, or 3D view first.`;
+      return `Visibility/Graphics is unavailable in ${formatCapabilityMode(activeMode as CapabilityViewMode)}. Open a plan, section, or 3D view first.`;
+    }
+  }
+  const commandId = ribbonCapabilityId(command);
+  if (commandId) {
+    const availability = evaluateCommandInMode(commandId, activeMode as CapabilityViewMode);
+    if (availability?.state === 'disabled' || availability?.state === 'bridge') {
+      return availability.reason;
     }
   }
   return undefined;
 }
 
-function formatMode(mode: ToolWorkspaceMode): string {
-  switch (mode) {
-    case 'plan':
-      return 'Plan';
-    case '3d':
-      return '3D';
-    case 'plan-3d':
-      return 'Plan + 3D';
-    case 'section':
-      return 'Section';
-    case 'sheet':
-      return 'Sheet';
-    case 'schedule':
-      return 'Schedule';
-    case 'agent':
-      return 'Agent Review';
+function ribbonCapabilityId(command: RibbonCommand): string | null {
+  if (command.type === 'tool') return capabilityIdForTool(command.id);
+  if (command.type === 'mode') {
+    return command.id === '3d' ? 'navigate.3d' : `navigate.${command.id}`;
   }
+  switch (command.id) {
+    case 'command-palette':
+      return null;
+    case 'visibility-graphics':
+      return 'visibility.plan.graphics';
+    case 'family-library':
+      return 'library.open-family';
+    case 'project-menu':
+      return 'project.open-menu';
+    case 'settings':
+      return 'help.keyboard-shortcuts';
+  }
+  return null;
 }
 
 function readHiddenRibbonCommandKeys(): string[] {

@@ -132,6 +132,7 @@ describe('StatusBar — spec §17', () => {
       <StatusBar
         level={{ id: 'lvl-ground', label: 'Ground' }}
         undoDepth={2}
+        redoDepth={1}
         onUndo={onUndo}
         onRedo={onRedo}
       />,

@@ -14,10 +14,11 @@ import type { WorkspaceMode } from '../tools/toolRegistry';
 export const MODE_HOTKEYS: { mode: WorkspaceMode; hotkey: string }[] = [
   { mode: 'plan', hotkey: '1' },
   { mode: '3d', hotkey: '2' },
-  { mode: 'section', hotkey: '3' },
-  { mode: 'sheet', hotkey: '4' },
-  { mode: 'schedule', hotkey: '5' },
-  { mode: 'agent', hotkey: '6' },
+  { mode: 'plan-3d', hotkey: '3' },
+  { mode: 'section', hotkey: '4' },
+  { mode: 'sheet', hotkey: '5' },
+  { mode: 'schedule', hotkey: '6' },
+  { mode: 'agent', hotkey: '7' },
 ];
 
 /** Resolve a key event to a mode jump, or `null` if unrelated. */

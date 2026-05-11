@@ -34,10 +34,11 @@ import { type ViewTab, type TabKind } from '../tabsModel';
 export const WORKSPACE_MODES = [
   { id: 'plan', label: 'Plan', hotkey: '1' },
   { id: '3d', label: '3D', hotkey: '2' },
-  { id: 'section', label: 'Section', hotkey: '3' },
-  { id: 'sheet', label: 'Sheet', hotkey: '4' },
-  { id: 'schedule', label: 'Schedule', hotkey: '5' },
-  { id: 'agent', label: 'Agent', hotkey: '6' },
+  { id: 'plan-3d', label: 'Plan + 3D', hotkey: '3' },
+  { id: 'section', label: 'Section', hotkey: '4' },
+  { id: 'sheet', label: 'Sheet', hotkey: '5' },
+  { id: 'schedule', label: 'Schedule', hotkey: '6' },
+  { id: 'agent', label: 'Agent', hotkey: '7' },
 ] as const;
 
 export type WorkspaceMode = (typeof WORKSPACE_MODES)[number]['id'];
@@ -130,6 +131,8 @@ export interface TopBarProps {
   onRedo?: () => void;
   /** F-006: true when there is at least one undo step available. */
   canUndo?: boolean;
+  /** F-006: true when there is at least one redo step available. */
+  canRedo?: boolean;
   /** F-006: QAT Section shortcut — activates the section tool. */
   onSectionShortcut?: () => void;
   /** F-006: QAT Measure shortcut — activates the measure tool. */
@@ -180,6 +183,7 @@ export function TopBar({
   onUndo,
   onRedo,
   canUndo,
+  canRedo,
   onSectionShortcut,
   onMeasureShortcut,
   onDimensionShortcut,
@@ -212,6 +216,7 @@ export function TopBar({
         onUndo={onUndo}
         onRedo={onRedo}
         canUndo={canUndo}
+        canRedo={canRedo}
         onSectionShortcut={onSectionShortcut}
         onMeasureShortcut={onMeasureShortcut}
         onDimensionShortcut={onDimensionShortcut}
@@ -276,6 +281,7 @@ function TopBarLeft({
   onUndo,
   onRedo,
   canUndo,
+  canRedo,
   onSectionShortcut,
   onMeasureShortcut,
   onDimensionShortcut,
@@ -291,6 +297,7 @@ function TopBarLeft({
   onUndo?: () => void;
   onRedo?: () => void;
   canUndo?: boolean;
+  canRedo?: boolean;
   onSectionShortcut?: () => void;
   onMeasureShortcut?: () => void;
   onDimensionShortcut?: () => void;
@@ -356,8 +363,9 @@ function TopBarLeft({
         title="Redo (Ctrl+Y)"
         aria-label={IconLabels.redo}
         aria-keyshortcuts="Control+Y Meta+Shift+Z"
+        disabled={!canRedo}
         onClick={onRedo}
-        className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground"
+        className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
       >
         <Icons.redo size={ICON_SIZE.topbar} aria-hidden="true" />
       </button>

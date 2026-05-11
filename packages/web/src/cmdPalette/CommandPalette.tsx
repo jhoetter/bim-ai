@@ -81,6 +81,7 @@ export function CommandPalette({
 
   const invoke = useCallback(
     (entry: PaletteEntry) => {
+      if (entry.disabledReason) return;
       recordInvocation(entry.id);
       entry.invoke(context);
       onClose();
@@ -230,6 +231,8 @@ export function CommandPalette({
                       role="option"
                       aria-selected={isActive}
                       data-testid={`palette-entry-${entry.id}`}
+                      disabled={Boolean(entry.disabledReason)}
+                      title={entry.disabledReason ?? entry.label}
                       onClick={() => invoke(entry)}
                       onMouseEnter={() => setActiveIndex(idx)}
                       style={{
@@ -239,30 +242,65 @@ export function CommandPalette({
                         justifyContent: 'space-between',
                         padding: '6px 12px',
                         fontSize: 'var(--text-sm, 12px)',
-                        color: 'var(--color-foreground)',
+                        color: entry.disabledReason
+                          ? 'var(--color-muted)'
+                          : 'var(--color-foreground)',
                         background: isActive ? 'var(--color-accent-soft)' : 'transparent',
                         border: 'none',
-                        cursor: 'pointer',
+                        cursor: entry.disabledReason ? 'not-allowed' : 'pointer',
                         textAlign: 'left',
+                        opacity: entry.disabledReason ? 0.6 : 1,
                       }}
                     >
-                      <span>{entry.label}</span>
-                      {entry.shortcut ? (
-                        <kbd
-                          style={{
-                            padding: '1px 5px',
-                            borderRadius: 'var(--radius-card, 4px)',
-                            border: '1px solid var(--color-border)',
-                            background: 'var(--color-background)',
-                            fontFamily: 'monospace',
-                            fontSize: 10,
-                            color: 'var(--color-muted)',
-                            flexShrink: 0,
-                          }}
-                        >
-                          {entry.shortcut}
-                        </kbd>
-                      ) : null}
+                      <span style={{ minWidth: 0 }}>
+                        <span>{entry.label}</span>
+                        {entry.disabledReason ? (
+                          <span
+                            style={{
+                              display: 'block',
+                              marginTop: 2,
+                              fontSize: 10,
+                              color: 'var(--color-muted)',
+                            }}
+                          >
+                            {entry.disabledReason}
+                          </span>
+                        ) : null}
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {entry.badge ? (
+                          <span
+                            data-testid={`palette-entry-badge-${entry.id}`}
+                            style={{
+                              borderRadius: 'var(--radius-card, 4px)',
+                              border: '1px solid var(--color-border)',
+                              padding: '1px 5px',
+                              fontSize: 10,
+                              color: entry.bridged ? 'var(--color-accent)' : 'var(--color-muted)',
+                              background: 'var(--color-background)',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {entry.badge}
+                          </span>
+                        ) : null}
+                        {entry.shortcut ? (
+                          <kbd
+                            style={{
+                              padding: '1px 5px',
+                              borderRadius: 'var(--radius-card, 4px)',
+                              border: '1px solid var(--color-border)',
+                              background: 'var(--color-background)',
+                              fontFamily: 'monospace',
+                              fontSize: 10,
+                              color: 'var(--color-muted)',
+                              flexShrink: 0,
+                            }}
+                          >
+                            {entry.shortcut}
+                          </kbd>
+                        ) : null}
+                      </span>
                     </button>
                   );
                 })}

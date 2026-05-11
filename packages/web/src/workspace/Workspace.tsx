@@ -22,10 +22,6 @@ import {
   syncLastLevelElevationPropagationFromApplyResponse,
 } from './authoring';
 import {
-  paletteToolAllowlistForPerspective,
-  planToolsForPerspective,
-} from './planToolsByPerspective';
-import {
   buildCollaborationConflictQueueV1,
   type CollaborationConflictQueueV1,
 } from '../lib/collaborationConflictQueue';
@@ -49,7 +45,6 @@ import {
   type ToolDefinition,
   type ToolDisabledContext,
   type ToolId,
-  type WorkspaceMode as ToolWorkspaceMode,
 } from '../tools/toolRegistry';
 import {
   EMPTY_TABS,
@@ -292,6 +287,7 @@ export function Workspace(): JSX.Element {
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [milestoneDialogOpen, setMilestoneDialogOpen] = useState(false);
   const [undoDepth, setUndoDepth] = useState(0);
+  const [redoDepth, setRedoDepth] = useState(0);
   const [recentProjects, setRecentProjects] = useState<ProjectMenuItemRecent[]>(() =>
     readRecentProjects().map((r) => ({ id: r.id, label: r.label })),
   );
@@ -499,6 +495,7 @@ export function Workspace(): JSX.Element {
             r as Parameters<typeof syncLastLevelElevationPropagationFromApplyResponse>[0],
           );
           setUndoDepth((d) => d + 1);
+          setRedoDepth(0);
         }
         setCollaborationConflictQueue(null);
       } catch (err) {
@@ -559,6 +556,7 @@ export function Workspace(): JSX.Element {
             violations: (r.violations ?? []) as Violation[],
           });
           setUndoDepth((d) => d + 1);
+          setRedoDepth(0);
         }
       } catch {
         // Placement failure is non-blocking — the overlay stays open
@@ -586,6 +584,7 @@ export function Workspace(): JSX.Element {
             r as Parameters<typeof syncLastLevelElevationPropagationFromApplyResponse>[0],
           );
           setUndoDepth((d) => Math.max(0, d + (isUndo ? -1 : 1)));
+          setRedoDepth((d) => Math.max(0, d + (isUndo ? 1 : -1)));
         }
         // Refresh activity after undo/redo
         fetchActivity(mid)
@@ -912,21 +911,6 @@ export function Workspace(): JSX.Element {
     [effectiveMode, handleModeChange, setPlanTool, toolRegistry],
   );
 
-  // Reset to 'select' when the current tool isn't valid for the active perspective
-  const visibleTools = useMemo(() => planToolsForPerspective(perspectiveId), [perspectiveId]);
-  const effectiveToolMode = effectiveMode as ToolWorkspaceMode;
-  useEffect(() => {
-    if (effectiveToolMode !== 'plan' && effectiveToolMode !== 'plan-3d') return;
-    if (!visibleTools.includes(planTool)) setPlanTool('select');
-  }, [effectiveToolMode, planTool, setPlanTool, visibleTools]);
-
-  const allowedToolIds = useMemo<ReadonlySet<ToolId>>(
-    () => paletteToolAllowlistForPerspective(effectiveToolMode, perspectiveId) ?? new Set<ToolId>(),
-    [effectiveToolMode, perspectiveId],
-  );
-  const paletteAllowedToolIds =
-    effectiveToolMode === 'plan' || effectiveToolMode === 'plan-3d' ? allowedToolIds : undefined;
-
   const openMilestoneDialog = useCallback(() => setMilestoneDialogOpen(true), []);
 
   useEffect(() => {
@@ -1022,6 +1006,17 @@ export function Workspace(): JSX.Element {
       }
     },
     [activatePlanView, elementsById, openTabFromElement, setActiveLevelId, setViewerMode],
+  );
+
+  const navigateTo = useCallback(
+    (target: { kind: WorkspaceMode; targetId?: string; source: string }) => {
+      if (target.targetId) {
+        openElementById(target.targetId);
+        return;
+      }
+      handleModeChange(target.kind);
+    },
+    [handleModeChange, openElementById],
   );
 
   const handlePlaceFamilyType = useCallback(
@@ -1144,6 +1139,7 @@ export function Workspace(): JSX.Element {
             violations: (r.violations ?? []) as Violation[],
           });
           setUndoDepth((d) => d + 1);
+          setRedoDepth(0);
         }
       } catch (err) {
         log.error('component-tool', 'array formula update failed', err);
@@ -1182,12 +1178,16 @@ export function Workspace(): JSX.Element {
             useBimStore.getState().activeElevationViewId ??
             null,
           activeMode: effectiveMode,
-          navigateMode: handleModeChange,
+          navigateMode: (kind) => navigateTo({ kind, source: 'cmdk' }),
           startPlanTool: (toolId) => handleToolSelect(toolId as ToolId),
           setTheme: handleThemeSet,
           toggleTheme: handleThemeToggle,
           views: paletteViews,
-          openElement: openElementById,
+          openElement: (id) => navigateTo({ kind: effectiveMode, targetId: id, source: 'cmdk' }),
+          openProjectMenu: () => setProjectMenuOpen((v) => !v),
+          openFamilyLibrary: () => setFamilyLibraryOpen(true),
+          openKeyboardShortcuts: () => setCheatsheetOpen(true),
+          closeInactiveViews: () => setTabsState((s) => closeInactiveTabs(s)),
         }}
       />
       <FamilyLibraryPanel
@@ -1317,6 +1317,7 @@ export function Workspace(): JSX.Element {
               onUndo={() => void handleUndoRedo(true)}
               onRedo={() => void handleUndoRedo(false)}
               canUndo={undoDepth > 0}
+              canRedo={redoDepth > 0}
               thinLinesEnabled={thinLinesEnabled}
               onToggleThinLines={toggleThinLinesStore}
               onSectionShortcut={() => handleToolSelect('section')}
@@ -1464,7 +1465,6 @@ export function Workspace(): JSX.Element {
               activeTool={planToolToToolId(planTool)}
               onToolSelect={handleToolSelect}
               disabledContext={toolDisabledContext}
-              allowedToolIds={paletteAllowedToolIds}
             />
             <CanvasMount
               mode={effectiveMode}
@@ -1508,6 +1508,7 @@ export function Workspace(): JSX.Element {
         }
         statusBar={
           <StatusBar
+            mode={effectiveMode}
             level={activeLevel}
             levels={levels}
             onLevelChange={setActiveLevelId}
@@ -1519,6 +1520,7 @@ export function Workspace(): JSX.Element {
             gridOn={true}
             cursorMm={cursorMm}
             undoDepth={undoDepth}
+            redoDepth={redoDepth}
             onUndo={() => void handleUndoRedo(true)}
             onRedo={() => void handleUndoRedo(false)}
             wsState={wsOn ? 'connected' : 'offline'}
