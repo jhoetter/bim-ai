@@ -16,7 +16,7 @@
     "source": "spec/target-house",
     "bundle": "seed-artifacts/target-house-2/evidence/target-house-2.recipe.json"
   },
-  "bundleSha256": "fc67474b515be6418aaef56bc3d5828ae9e8b929827ba3ae11d83cf8395c43e1",
+  "bundleSha256": "a4d19d34bcb05b1b2945091beff7dbe865f81b49ac06eae3190075a3968f628c",
   "commandCount": 141,
   "commandSchemaVersion": "cmd-v3.0",
   "entryComment": {
