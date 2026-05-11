@@ -663,6 +663,68 @@ def test_matrix_backed_stair_ceiling_hard_clash_is_reported() -> None:
     assert "physical_hard_clash" in _rule_ids(elements)
 
 
+def test_low_ceiling_over_stair_reports_headroom_conflict() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "lvl-2": LevelElem(kind="level", id="lvl-2", name="Level 2", elevationMm=3000.0),
+        "ceiling-1": CeilingElem(
+            kind="ceiling",
+            id="ceiling-1",
+            levelId="lvl-1",
+            boundaryMm=[
+                {"xMm": 0, "yMm": -800},
+                {"xMm": 1200, "yMm": -800},
+                {"xMm": 1200, "yMm": 800},
+                {"xMm": 0, "yMm": 800},
+            ],
+            heightOffsetMm=1800,
+            thicknessMm=100,
+        ),
+        "stair-1": StairElem(
+            kind="stair",
+            id="stair-1",
+            baseLevelId="lvl-1",
+            topLevelId="lvl-2",
+            runStartMm={"xMm": 500, "yMm": -500},
+            runEndMm={"xMm": 500, "yMm": 500},
+            widthMm=1000,
+        ),
+    }
+
+    assert "stair_headroom_clearance_conflict" in _rule_ids(elements)
+
+
+def test_adequate_stair_ceiling_headroom_is_not_reported() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "lvl-2": LevelElem(kind="level", id="lvl-2", name="Level 2", elevationMm=3000.0),
+        "ceiling-1": CeilingElem(
+            kind="ceiling",
+            id="ceiling-1",
+            levelId="lvl-1",
+            boundaryMm=[
+                {"xMm": 0, "yMm": -800},
+                {"xMm": 1200, "yMm": -800},
+                {"xMm": 1200, "yMm": 800},
+                {"xMm": 0, "yMm": 800},
+            ],
+            heightOffsetMm=2300,
+            thicknessMm=100,
+        ),
+        "stair-1": StairElem(
+            kind="stair",
+            id="stair-1",
+            baseLevelId="lvl-1",
+            topLevelId="lvl-2",
+            runStartMm={"xMm": 500, "yMm": -500},
+            runEndMm={"xMm": 500, "yMm": 500},
+            widthMm=1000,
+        ),
+    }
+
+    assert "stair_headroom_clearance_conflict" not in _rule_ids(elements)
+
+
 def test_default_constructability_matrix_json_matches_app_default() -> None:
     root = Path(__file__).resolve().parents[2]
     matrix_path = root / "spec" / "schemas" / "constructability-matrix-default.json"

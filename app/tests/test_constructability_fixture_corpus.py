@@ -64,6 +64,7 @@ def test_constructability_fixture_corpus_has_positive_and_negative_cases() -> No
         "shelf_through_wall",
         "pipe_through_wall_without_opening",
         "stair_missing_upper_slab_opening",
+        "stair_under_low_ceiling",
         "duplicate_placed_assets",
         "large_opening_in_load_bearing_wall",
         "roof_too_small_for_primary_wall",
@@ -73,5 +74,6 @@ def test_constructability_fixture_corpus_has_positive_and_negative_cases() -> No
         "furniture_wall_hard_clash",
         "pipe_wall_penetration_without_opening",
         "stair_floor_penetration_without_slab_opening",
+        "stair_headroom_clearance_conflict",
         "large_opening_in_load_bearing_wall_unresolved",
     } <= negative_absent_rules

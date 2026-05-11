@@ -35,6 +35,7 @@ _SUPPORT_TOLERANCE_MM = 300.0
 _LARGE_OPENING_MIN_WIDTH_MM = 1800.0
 _LARGE_OPENING_WALL_RATIO = 0.4
 _FLOOR_SPAN_METADATA_THRESHOLD_MM = 9000.0
+_STAIR_HEADROOM_CLEARANCE_MM = 2050.0
 
 
 def constructability_advisory_violations(elements: dict[str, Element]) -> list[Violation]:
@@ -55,6 +56,7 @@ def constructability_advisory_violations(elements: dict[str, Element]) -> list[V
     violations.extend(_mep_wall_penetration_violations(participants_by_kind, openings_by_wall_id))
     violations.extend(_mep_floor_ceiling_penetration_violations(participants_by_kind, elements))
     violations.extend(_stair_floor_opening_violations(participants_by_kind, elements))
+    violations.extend(_stair_headroom_violations(participants_by_kind))
     violations.extend(_door_clearance_violations(elements, participants_by_kind))
     violations.extend(_load_bearing_metadata_violations(walls_by_id))
     violations.extend(_large_opening_violations(elements, walls_by_id))
@@ -298,6 +300,40 @@ def _stair_floor_opening_violations(
                     element_ids=sorted([stair.element_id, floor.element_id]),
                 )
             )
+    return violations
+
+
+def _stair_headroom_violations(
+    participants_by_kind: dict[str, list[PhysicalParticipant]],
+) -> list[Violation]:
+    violations: list[Violation] = []
+    for stair in participants_by_kind.get("stair", []):
+        for obstruction_kind, label in (("ceiling", "ceiling"), ("roof", "roof")):
+            for overhead in participants_by_kind.get(obstruction_kind, []):
+                if overhead.aabb.max_z <= stair.aabb.min_z:
+                    continue
+                if not _aabb_plan_overlaps(
+                    stair.aabb,
+                    overhead.aabb,
+                    tolerance_mm=_CLASH_TOLERANCE_MM,
+                ):
+                    continue
+                available_mm = overhead.aabb.min_z - stair.aabb.min_z
+                if available_mm >= _STAIR_HEADROOM_CLEARANCE_MM:
+                    continue
+                violations.append(
+                    Violation(
+                        rule_id="stair_headroom_clearance_conflict",
+                        severity="warning",
+                        message=(
+                            f"Stair headroom below the {label} is approximately "
+                            f"{available_mm:.0f} mm; provide at least "
+                            f"{_STAIR_HEADROOM_CLEARANCE_MM:.0f} mm clear headroom or revise "
+                            "the stair/overhead geometry."
+                        ),
+                        element_ids=sorted([stair.element_id, overhead.element_id]),
+                    )
+                )
     return violations
 
 
@@ -893,6 +929,16 @@ def _aabb_plan_covers(container: AABB, contained: AABB, *, tolerance_mm: float) 
         and container.max_x >= contained.max_x - tol
         and container.min_y <= contained.min_y + tol
         and container.max_y >= contained.max_y - tol
+    )
+
+
+def _aabb_plan_overlaps(a: AABB, b: AABB, *, tolerance_mm: float) -> bool:
+    tol = max(0.0, float(tolerance_mm))
+    return not (
+        a.max_x + tol < b.min_x
+        or b.max_x + tol < a.min_x
+        or a.max_y + tol < b.min_y
+        or b.max_y + tol < a.min_y
     )
 
 
