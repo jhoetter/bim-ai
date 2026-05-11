@@ -111,6 +111,62 @@
       ]
     }
   ],
+  "materialIntent": [
+    {
+      "surface": "upper wrapper and roof",
+      "materialKey": "white_render",
+      "evidence": "Sketch reads as one continuous white folded shell."
+    },
+    {
+      "surface": "ground floor base",
+      "materialKey": "cladding_warm_wood",
+      "evidence": "Lower storey is visually warmer and materially distinct."
+    }
+  ],
+  "assets": [
+    {
+      "id": "asset-sofa",
+      "name": "Sofa marker",
+      "category": "furniture",
+      "symbolKind": "sofa",
+      "tags": ["living", "interior"],
+      "thumbnailWidthMm": 2200,
+      "thumbnailHeightMm": 900
+    },
+    {
+      "id": "asset-bed",
+      "name": "Bed marker",
+      "category": "furniture",
+      "symbolKind": "bed",
+      "tags": ["bedroom", "interior"],
+      "thumbnailWidthMm": 1600,
+      "thumbnailHeightMm": 2100
+    }
+  ],
+  "placedAssets": [
+    {
+      "id": "placed-sofa-living",
+      "assetId": "asset-sofa",
+      "name": "Living sofa",
+      "levelId": "lvl-ground",
+      "positionMm": { "xMm": 4700, "yMm": 2300 },
+      "rotationDeg": 0
+    },
+    {
+      "id": "placed-bed-upper",
+      "assetId": "asset-bed",
+      "name": "Upper bedroom bed",
+      "levelId": "lvl-upper",
+      "positionMm": { "xMm": 1850, "yMm": 2800 },
+      "rotationDeg": 90
+    }
+  ],
+  "materialAssignments": [
+    {
+      "elementId": "ground-base-floor",
+      "materialKey": "cladding_warm_wood"
+    }
+  ],
   "viewpoints": [
     {
       "id": "main-front-left",

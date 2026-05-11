@@ -174,6 +174,59 @@ function compileRooms(recipe) {
   });
 }
 
+function compileAssets(recipe) {
+  const commands = [];
+  for (const asset of recipe.assets ?? []) {
+    const id = assertString(asset.id, '$.assets[].id');
+    commands.push({
+      type: 'IndexAsset',
+      id,
+      name: asset.name ?? id,
+      assetKind: asset.assetKind ?? 'block_2d',
+      category: assertString(asset.category, `$.assets.${id}.category`),
+      tags: Array.isArray(asset.tags) ? asset.tags : [],
+      disciplineTags: Array.isArray(asset.disciplineTags) ? asset.disciplineTags : ['arch'],
+      thumbnailKind: asset.thumbnailKind ?? 'schematic_plan',
+      thumbnailWidthMm: asset.thumbnailWidthMm ?? null,
+      thumbnailHeightMm: asset.thumbnailHeightMm ?? null,
+      planSymbolKind: asset.planSymbolKind ?? asset.symbolKind ?? 'generic',
+      renderProxyKind: asset.renderProxyKind ?? asset.symbolKind ?? 'generic',
+      paramSchema: asset.paramSchema ?? null,
+      description: asset.description ?? null,
+    });
+  }
+  for (const placement of recipe.placedAssets ?? []) {
+    const id = placement.id ?? null;
+    const assetId = assertString(placement.assetId, `$.placedAssets.${id ?? 'item'}.assetId`);
+    commands.push({
+      type: 'PlaceAsset',
+      id,
+      name: placement.name ?? null,
+      assetId,
+      levelId: assertString(placement.levelId, `$.placedAssets.${assetId}.levelId`),
+      positionMm: assertPoint(placement.positionMm, `$.placedAssets.${assetId}.positionMm`),
+      rotationDeg: Number.isFinite(placement.rotationDeg) ? placement.rotationDeg : 0,
+      paramValues: isObject(placement.paramValues) ? placement.paramValues : {},
+      hostElementId: placement.hostElementId ?? null,
+    });
+  }
+  return commands;
+}
+
+function compileMaterialAssignments(recipe) {
+  const commands = [];
+  for (const assignment of recipe.materialAssignments ?? []) {
+    const elementId = assertString(assignment.elementId, '$.materialAssignments[].elementId');
+    commands.push({
+      type: 'updateElementProperty',
+      elementId,
+      key: 'materialKey',
+      value: assertString(assignment.materialKey, `$.materialAssignments.${elementId}.materialKey`),
+    });
+  }
+  return commands;
+}
+
 function compileViewpoints(recipe) {
   return (recipe.viewpoints ?? []).map((viewpoint, index) => ({
     type: 'saveViewpoint',
@@ -204,6 +257,8 @@ export function compileSeedDsl(recipe, options = {}) {
     ...compileVolumes(recipe),
     ...compileRoofs(recipe),
     ...compileRooms(recipe),
+    ...compileAssets(recipe),
+    ...compileMaterialAssignments(recipe),
     ...compileViewpoints(recipe),
     ...(recipe.commands ?? []),
   );
@@ -227,6 +282,8 @@ export function compileSeedDsl(recipe, options = {}) {
       recipeId: recipe.id ?? null,
       modelIdPlaceholder: options.modelHint ?? '${BIM_AI_MODEL_ID}',
       intent: recipe.intent ?? null,
+      materialIntent: recipe.materialIntent ?? [],
+      documentationIntent: recipe.documentation ?? null,
     },
   };
 }

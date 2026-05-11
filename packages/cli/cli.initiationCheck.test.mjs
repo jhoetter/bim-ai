@@ -323,6 +323,17 @@ test('seed-dsl compile writes a deterministic command bundle', async () => {
   assert.equal(bundle.schemaVersion, 'cmd-v3.0');
   assert.ok(bundle.commands.some((command) => command.type === 'createRoofOpening'));
   assert.ok(bundle.commands.some((command) => command.type === 'saveViewpoint'));
+  assert.ok(bundle.commands.some((command) => command.type === 'IndexAsset'));
+  assert.ok(bundle.commands.some((command) => command.type === 'PlaceAsset'));
+  assert.ok(
+    bundle.commands.some(
+      (command) =>
+        command.type === 'updateElementProperty' &&
+        command.key === 'materialKey' &&
+        command.elementId === 'ground-base-floor',
+    ),
+  );
+  assert.ok(Array.isArray(bundle.meta.materialIntent));
 });
 
 test('initiation-golden runs the preflight golden suite', async () => {
