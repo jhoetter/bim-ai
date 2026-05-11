@@ -1,0 +1,9 @@
+was everything from the spec/constructability-warning-system-tracker.md implemented? is eveything on main?
+
+---
+
+please continue building it until it is FULLY implemented, not just partially. EVERYTHING. always commit and push...
+
+---
+
+i might accidentally interrupted, continue as planned...
