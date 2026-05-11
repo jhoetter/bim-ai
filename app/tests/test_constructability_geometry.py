@@ -4,8 +4,10 @@ import pytest
 
 from bim_ai.constructability_geometry import (
     AABB,
+    PhysicalParticipant,
     aabb_distance_mm,
     aabb_overlaps,
+    candidate_pairs_by_aabb,
     collect_physical_participants,
     collect_unsupported_physical_diagnostics,
 )
@@ -31,6 +33,17 @@ def _level() -> LevelElem:
 
 def _participant_by_id(elements):
     return {p.element_id: p for p in collect_physical_participants(elements)}
+
+
+def _participant(element_id: str, aabb: AABB) -> PhysicalParticipant:
+    return PhysicalParticipant(
+        element_id=element_id,
+        kind="test",
+        category="test",
+        discipline=None,
+        level_id=None,
+        aabb=aabb,
+    )
 
 
 def test_wall_aabb_dimensions() -> None:
@@ -156,6 +169,28 @@ def test_non_overlap_distance() -> None:
 
     assert not aabb_overlaps(left, right)
     assert aabb_distance_mm(left, right) == 300.0
+
+
+def test_candidate_pairs_by_aabb_is_deterministic_and_respects_tolerance() -> None:
+    participants = [
+        _participant("far", AABB(400, 0, 0, 500, 100, 100)),
+        _participant("near", AABB(105, 0, 0, 205, 100, 100)),
+        _participant("base", AABB(0, 0, 0, 100, 100, 100)),
+        _participant("overlap", AABB(50, 0, 0, 150, 100, 100)),
+    ]
+
+    strict_pairs = candidate_pairs_by_aabb(participants)
+    tolerant_pairs = candidate_pairs_by_aabb(participants, tolerance_mm=5)
+
+    assert [(a.element_id, b.element_id) for a, b in strict_pairs] == [
+        ("base", "overlap"),
+        ("overlap", "near"),
+    ]
+    assert [(a.element_id, b.element_id) for a, b in tolerant_pairs] == [
+        ("base", "overlap"),
+        ("base", "near"),
+        ("overlap", "near"),
+    ]
 
 
 def test_pipe_and_duct_aabbs() -> None:

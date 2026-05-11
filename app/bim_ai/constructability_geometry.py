@@ -108,6 +108,33 @@ def participant_distance_mm(a: PhysicalParticipant, b: PhysicalParticipant) -> f
     return aabb_distance_mm(a.aabb, b.aabb)
 
 
+def candidate_pairs_by_aabb(
+    participants: list[PhysicalParticipant],
+    *,
+    tolerance_mm: float = 0.0,
+) -> list[tuple[PhysicalParticipant, PhysicalParticipant]]:
+    """Deterministic sweep-and-prune broad phase for overlapping participant AABBs."""
+
+    tol = max(0.0, float(tolerance_mm))
+    ordered = sorted(
+        participants,
+        key=lambda participant: (
+            participant.aabb.min_x,
+            participant.aabb.min_y,
+            participant.aabb.min_z,
+            participant.element_id,
+        ),
+    )
+    pairs: list[tuple[PhysicalParticipant, PhysicalParticipant]] = []
+    for index, a in enumerate(ordered):
+        for b in ordered[index + 1 :]:
+            if b.aabb.min_x > a.aabb.max_x + tol:
+                break
+            if aabb_overlaps(a.aabb, b.aabb, tolerance_mm=tol):
+                pairs.append((a, b))
+    return pairs
+
+
 def collect_physical_participants(elements: dict[str, Element]) -> list[PhysicalParticipant]:
     participants: list[PhysicalParticipant] = []
     for eid in sorted(elements):
