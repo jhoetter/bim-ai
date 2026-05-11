@@ -5,12 +5,18 @@
 > replaying an existing bundle; it is about how the seed data is created,
 > validated, refined, and accepted.
 >
-> **Current maturity:** 8.4 / 10 after the 2026-05-11 methodology tooling pass.
+> **Current maturity:** 7.2 / 10 after the 2026-05-11 process audit. The
+> methodology is directionally right, but the final packaging path does not yet
+> force fresh current-HEAD live Advisor and screenshot evidence.
 > **Target maturity:** 9 / 10: an external AI architect can start from a sketch,
 > converge through live app feedback, and hand off an advisor-clean,
 > visually-faithful, usable BIM model with evidence.
 >
 > **Operational skill:** `claude-skills/sketch-to-bim/SKILL.md`.
+> **Operational helper:** `claude-skills/sketch-to-bim/sketch_bim.py`, the
+> skill-local tool wrapper for live doctor, compile, seed, Advisor, acceptance,
+> and stale-evidence checks.
+> **Process audit:** `spec/sketch-to-bim-process-audit-tracker.md`.
 
 ---
 
@@ -348,6 +354,7 @@ accepts a tolerance. Known blockers:
 - `room_derived_interior_separation_ambiguous`
 - `room_no_door` for occupied/interior rooms
 - `room_target_area_mismatch` when targets came from the brief
+- `door_operation_clearance_conflict` and other operation/clearance conflicts
 - stair comfort / stair-shaft mismatch
 - roof/opening/host warnings tied to visible sketch features
 - floor/wall overlap and major intersection warnings
@@ -406,8 +413,8 @@ Use this score after each project-initiation run.
 | Reproducibility   |    15% | Manual UI state           | Bundle replay works                    | Source, snapshot, evidence all deterministic |
 | Method discipline |    10% | One-shot generation       | Some loop evidence                     | Full phase ledger and defect closure         |
 
-Current committed seed artifact inventory: **empty by design**. Current
-methodology/tooling: **8.7 / 10**.
+Current committed seed artifact inventory: **target-house-1 exists, but remains
+under process audit**. Current methodology/tooling: **7.2 / 10**.
 
 Reason:
 

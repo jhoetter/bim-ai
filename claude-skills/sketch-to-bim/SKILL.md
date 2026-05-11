@@ -11,6 +11,49 @@ This skill is the methodology a world-class architect would use, encoded as a de
 
 Before any substantial sketch-to-BIM run, read `spec/sketch-to-bim-methodology.md`. Treat it as the product/engineering tracker for this workflow: it defines the user input contract, Sketch Understanding IR, capability matrix, acceptance gates, scoring rubric, and implementation backlog. This skill is the operational checklist; the spec is the durable methodology source.
 
+## Tooling contract
+
+This skill has a skill-local helper, mirroring the `watch-yt` pattern:
+
+```bash
+python3 claude-skills/sketch-to-bim/sketch_bim.py <command> [args]
+```
+
+Use it as the primary operational wrapper for live sketch-to-BIM work. It does
+not replace the bim-ai CLI; it calls `make seed` and `node packages/cli/cli.mjs`
+with the stricter arguments this methodology requires.
+
+Core commands:
+
+```bash
+# Confirm the live feedback loop is available.
+python3 claude-skills/sketch-to-bim/sketch_bim.py doctor --require-live
+
+# Compile a reviewable seed recipe into the actual command bundle.
+python3 claude-skills/sketch-to-bim/sketch_bim.py compile --seed <seed-name>
+
+# Load the seed and print the BIM_AI_MODEL_ID.
+python3 claude-skills/sketch-to-bim/sketch_bim.py seed --seed <seed-name> --clear
+
+# Capture current Advisor warning/info payloads.
+python3 claude-skills/sketch-to-bim/sketch_bim.py advisor \
+  --model <model-id> \
+  --out seed-artifacts/<seed-name>/evidence/phase-<n> \
+  --fail-on-warning
+
+# Strict final current-HEAD acceptance: compile, seed, live evidence, warnings fail.
+python3 claude-skills/sketch-to-bim/sketch_bim.py accept \
+  --seed <seed-name> \
+  --clear
+
+# Prove checked-in live evidence still matches current HEAD inputs.
+python3 claude-skills/sketch-to-bim/sketch_bim.py stale-check --seed <seed-name>
+```
+
+The helper is intentionally narrow. If it fails, read the generated stdout/JSON,
+fix the source recipe or model, and rerun the same command. Do not bypass it
+with a hand-run weaker command unless you document why in the phase packet.
+
 ---
 
 ## The mindset shift
@@ -22,6 +65,11 @@ You will also fail if you treat `make seed` or `bim-ai plan-house` as the design
 The right mental model is **iterative convergence through 5–7 phased passes**, each one visually validated before adding detail. After each phase: render, look, validate, correct. Never advance with a phase that doesn't read.
 
 For seed work, the loop is not optional: keep the dev app running while authoring, reseed after each meaningful bundle edit, inspect the same UI Advisor panel the user sees, capture/check screenshots from saved viewpoints, and revise the source bundle until visible geometry and advisor findings converge. Do not rely only on offline snapshot generation, unit tests, or successful command replay.
+
+Seed evidence is valid only for the app/Advisor build that produced it. If
+Advisor rules, constructability checks, renderer behavior, or seed commands
+change after evidence capture, rerun the live loop at current `HEAD` before
+calling the artifact accepted.
 
 > **Every phase is committed independently. Every phase is verified independently. You do not move to phase N+1 until phase N's silhouette matches the target.**
 
@@ -50,6 +98,7 @@ These findings block phase advancement unless the user explicitly accepts them w
 - `room_no_door` for interior rooms, occupied rooms, bathrooms, bedrooms, kitchens, circulation, or terrace rooms that should have access
 - `room_target_area_mismatch` when `targetAreaM2` came from the brief or from a deliberate programme target
 - `floor_overlap`, `wall_overlap`, major host/intersection warnings, or any opening-host warning
+- `door_operation_clearance_conflict` or any operation/clearance conflict for a door, window, stair, fixture, or circulation path
 - `stair_comfort_eu_proxy`, stair schedule warnings, or any stair/shaft mismatch
 - roof, roof-opening, dormer, balcony, or material warnings tied to features visible in the sketch
 - schedule/sheet viewport warnings in Phase 7 Documentation
@@ -197,6 +246,22 @@ Before authoring the first serious bundle, start and wire the feedback loop:
 8. **Verify capability, not just intent.** If the sketch needs a gable-cut wall, folded shell, roof void, dormer, or non-rectangular opening, confirm the command/API/render path actually expresses that geometry. A valid command that still renders as a rectangle, box, or uncut surface is a failed phase.
 9. **Repeat until both views and advisor pass the phase gate.**
 
+Final seed packaging must use a fresh current-HEAD live run, normally:
+
+```bash
+BIM_AI_MODEL_ID=<id> node packages/cli/cli.mjs initiation-run \
+  --ir seed-artifacts/<seed-name>/evidence/sketch-ir.json \
+  --capabilities spec/sketch-to-bim-capability-matrix.json \
+  --model <id> \
+  --mode project_initiation_bim \
+  --fail-on-warning \
+  --fail-on-acceptance \
+  --out seed-artifacts/<seed-name>/evidence/live-run-current
+```
+
+If the live UI right rail shows warnings that the checked-in evidence does not
+show, treat the checked-in evidence as stale and fix the seed source.
+
 The agent should keep the browser open while authoring. If screenshots and advisor output disagree, both are evidence: a visually good but advisor-broken model is not accepted; an advisor-clean but visually wrong model is not accepted.
 
 ### Minimum checkpoint view set
@@ -290,7 +355,7 @@ Today, the existing `constraints.evaluate` runs at commit; check the violations 
 
 ### Phase 5 — Interior
 
-**Author:** room separations, partition walls, stairs, slab openings (stair shafts), railings, room outlines + programme codes.
+**Author:** room separations, partition walls, stairs, slab openings (stair shafts), railings, room outlines + programme codes. For project-initiation BIM, also index and place interior assets that make the programme legible: living/dining seating and table, kitchen casework/island/appliance markers, beds/storage, bathroom fixtures, and terrace furniture where those spaces exist in the brief.
 
 **Validate:**
 
@@ -298,6 +363,7 @@ Today, the existing `constraints.evaluate` runs at commit; check the violations 
 - Room separation lines are only allowed for intentional open-plan boundaries, terrace/deck edges, or non-wall symbolic boundaries. If they create `room_derived_interior_separation_ambiguous`, redesign the room/wall layout.
 - Every room outline edge must be explainable: exterior wall, interior wall, glass guard/partition, or a documented open boundary.
 - `room_boundary_open`, `room_unenclosed`, and `room_no_door` are blockers unless explicitly tolerated for an exterior/unoccupied space.
+- Door operation and circulation clearances are blockers; a door swing/operation zone that overlaps a wall, fixture, stair, or placed asset must be fixed before advancing.
 - Stair runs base/top match the level stack.
 - Slab opening hosted on the correct floor.
 - Stair is architecturally plausible: it has landing/clearance, does not run directly into an exterior wall, does not collide with a door/window/furniture, and satisfies the active stair comfort proxy or has a documented standard-specific reason.
