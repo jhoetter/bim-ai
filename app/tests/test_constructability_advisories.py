@@ -913,6 +913,62 @@ def test_duplicate_placed_assets_are_reported_as_duplicate_geometry() -> None:
     assert "physical_hard_clash" not in rule_ids
 
 
+def test_duplicate_walls_are_reported_as_duplicate_geometry() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "wall-1": _wall(id="wall-1"),
+        "wall-2": _wall(id="wall-2"),
+    }
+
+    assert "physical_duplicate_geometry" in _rule_ids(elements)
+
+
+def test_duplicate_floors_are_reported_as_duplicate_geometry() -> None:
+    floor = FloorElem(
+        kind="floor",
+        id="floor-1",
+        levelId="lvl-1",
+        boundaryMm=[
+            {"xMm": 0, "yMm": 0},
+            {"xMm": 3000, "yMm": 0},
+            {"xMm": 3000, "yMm": 3000},
+            {"xMm": 0, "yMm": 3000},
+        ],
+    )
+    elements = {
+        "lvl-1": _level(),
+        "floor-1": floor,
+        "floor-2": floor.model_copy(update={"id": "floor-2"}),
+    }
+
+    assert "physical_duplicate_geometry" in _rule_ids(elements)
+
+
+def test_duplicate_family_instances_are_reported_as_duplicate_geometry() -> None:
+    family_type = FamilyTypeElem(
+        kind="family_type",
+        id="ft-cabinet",
+        familyId="casework",
+        discipline="generic",
+        parameters={"widthMm": 700, "depthMm": 500, "heightMm": 2100},
+    )
+    family_instance = FamilyInstanceElem(
+        kind="family_instance",
+        id="cabinet-1",
+        familyTypeId="ft-cabinet",
+        levelId="lvl-1",
+        positionMm={"xMm": 1000, "yMm": 1000},
+    )
+    elements = {
+        "lvl-1": _level(),
+        "ft-cabinet": family_type,
+        "cabinet-1": family_instance,
+        "cabinet-2": family_instance.model_copy(update={"id": "cabinet-2"}),
+    }
+
+    assert "physical_duplicate_geometry" in _rule_ids(elements)
+
+
 def test_overlapping_but_not_duplicate_placed_assets_are_hard_clash() -> None:
     elements = {
         "lvl-1": _level(),
