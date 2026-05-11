@@ -1,0 +1,25 @@
+we have in spec as testing tracker, is it FULLY implemented and on main?
+
+---
+
+please continue building it until it is FULLY implemented, not just partially. EVERYTHING. always commit and push...
+
+---
+
+anything else to be implemented according to the tracker?
+
+---
+
+look into it please and update or implement accordingly
+
+---
+
+is everything from you merged with main?
+
+---
+
+and are your tests now 100% complete according to the tracker?
+
+---
+
+please check the v3 tracker if it is potentialyl just not updated or really missing something

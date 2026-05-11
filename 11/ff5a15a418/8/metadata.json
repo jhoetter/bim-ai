@@ -1,0 +1,146 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "11ff5a15a418",
+  "session_id": "019e1649-e2ea-7a21-ad6d-ab659d9cab6a",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-11T10:26:00.638438Z",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "app/tests/test_seed_artifact_roundtrip.py",
+    "seed-artifacts/target-house-1/bundle.json",
+    "seed-artifacts/target-house-1/evidence/README.md",
+    "seed-artifacts/target-house-1/evidence/acceptance-gates.json",
+    "seed-artifacts/target-house-1/evidence/assumptions.md",
+    "seed-artifacts/target-house-1/evidence/capability-coverage.json",
+    "seed-artifacts/target-house-1/evidence/live-advisor.json",
+    "seed-artifacts/target-house-1/evidence/live/advisor-info.json",
+    "seed-artifacts/target-house-1/evidence/live/advisor-warning.json",
+    "seed-artifacts/target-house-1/evidence/live/evidence-package.json",
+    "seed-artifacts/target-house-1/evidence/live/model-stats.json",
+    "seed-artifacts/target-house-1/evidence/live/validate.json",
+    "seed-artifacts/target-house-1/evidence/screenshot-manifest.json",
+    "seed-artifacts/target-house-1/evidence/screenshots/hf-pv-ground.png",
+    "seed-artifacts/target-house-1/evidence/screenshots/hf-pv-upper.png",
+    "seed-artifacts/target-house-1/evidence/screenshots/hf-sec-loggia.png",
+    "seed-artifacts/target-house-1/evidence/screenshots/vp-front-elev.png",
+    "seed-artifacts/target-house-1/evidence/screenshots/vp-main-iso.png",
+    "seed-artifacts/target-house-1/evidence/screenshots/vp-rear-axo.png",
+    "seed-artifacts/target-house-1/evidence/screenshots/vp-roof-court.png",
+    "seed-artifacts/target-house-1/evidence/sketch-ir.json",
+    "seed-artifacts/target-house-1/evidence/status.md",
+    "seed-artifacts/target-house-1/evidence/target-house-1.recipe.json",
+    "seed-artifacts/target-house-1/evidence/visual-checklist.json",
+    "seed-artifacts/target-house-1/evidence/visual-gate.json",
+    "seed-artifacts/target-house-1/manifest.json",
+    "spec/sketch-to-bim-clean-seeding-handover.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "e46e6440a4a1",
+  "checkpoint_transcript_start": 402,
+  "transcript_lines_at_start": 402,
+  "token_usage": {
+    "input_tokens": 603149,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 16744448,
+    "output_tokens": 38547,
+    "api_call_count": 126
+  },
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-11T10:26:00.585804Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 9695,
+    "human_modified": 661,
+    "human_removed": 0,
+    "total_committed": 9695,
+    "total_lines_changed": 10356,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 200,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "spec/sketch-to-bim-clean-seeding-handover.md": 200
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 934,
+      "user_lines_removed": 29,
+      "agent_lines_added": 2,
+      "agent_lines_removed": 130,
+      "user_added_per_file": {
+        "app/bim_ai/constructability_advisories.py": 103,
+        "app/bim_ai/constructability_matrix.py": 50,
+        "packages/web/src/cmdPalette/defaultCommands.test.ts": 44,
+        "packages/web/src/cmdPalette/defaultCommands.ts": 116,
+        "packages/web/src/cmdPalette/registry.ts": 9,
+        "packages/web/src/workspace/Workspace.tsx": 1,
+        "packages/web/src/workspace/WorkspaceRightRail.test.tsx": 83,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 229,
+        "packages/web/src/workspace/commandCapabilities.ts": 69,
+        "spec/schemas/constructability-matrix-default.json": 30,
+        "spec/sketch-to-bim-clean-seeding-handover.md": 200
+      },
+      "user_removed_per_file": {
+        "app/bim_ai/constructability_advisories.py": 2,
+        "app/bim_ai/constructability_matrix.py": 10,
+        "packages/web/src/cmdPalette/defaultCommands.test.ts": 1,
+        "packages/web/src/cmdPalette/registry.ts": 1,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 5,
+        "spec/schemas/constructability-matrix-default.json": 10
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 9956,
+      "user_lines_removed": 661,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/tests/test_seed_artifact_roundtrip.py": 10,
+        "seed-artifacts/target-house-1/bundle.json": 1090,
+        "seed-artifacts/target-house-1/evidence/README.md": 14,
+        "seed-artifacts/target-house-1/evidence/acceptance-gates.json": 20,
+        "seed-artifacts/target-house-1/evidence/assumptions.md": 7,
+        "seed-artifacts/target-house-1/evidence/capability-coverage.json": 258,
+        "seed-artifacts/target-house-1/evidence/live-advisor.json": 103,
+        "seed-artifacts/target-house-1/evidence/live/advisor-info.json": 95,
+        "seed-artifacts/target-house-1/evidence/live/advisor-warning.json": 6,
+        "seed-artifacts/target-house-1/evidence/live/evidence-package.json": 5321,
+        "seed-artifacts/target-house-1/evidence/live/model-stats.json": 30,
+        "seed-artifacts/target-house-1/evidence/live/validate.json": 508,
+        "seed-artifacts/target-house-1/evidence/screenshot-manifest.json": 69,
+        "seed-artifacts/target-house-1/evidence/sketch-ir.json": 167,
+        "seed-artifacts/target-house-1/evidence/status.md": 29,
+        "seed-artifacts/target-house-1/evidence/target-house-1.recipe.json": 1347,
+        "seed-artifacts/target-house-1/evidence/visual-checklist.json": 422,
+        "seed-artifacts/target-house-1/evidence/visual-gate.json": 254,
+        "seed-artifacts/target-house-1/manifest.json": 6,
+        "spec/sketch-to-bim-clean-seeding-handover.md": 200
+      },
+      "user_removed_per_file": {
+        "seed-artifacts/target-house-1/bundle.json": 654,
+        "seed-artifacts/target-house-1/evidence/README.md": 1,
+        "seed-artifacts/target-house-1/manifest.json": 6
+      }
+    }
+  ]
+}

@@ -3,7 +3,7 @@
   "checkpoint_id": "11ff5a15a418",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 4,
   "files_touched": [
     "app/tests/test_seed_artifact_roundtrip.py",
     "seed-artifacts/target-house-1/bundle.json",
@@ -81,13 +81,19 @@
       "transcript": "/11/ff5a15a418/7/full.jsonl",
       "content_hash": "/11/ff5a15a418/7/content_hash.txt",
       "prompt": "/11/ff5a15a418/7/prompt.txt"
+    },
+    {
+      "metadata": "/11/ff5a15a418/8/metadata.json",
+      "transcript": "/11/ff5a15a418/8/full.jsonl",
+      "content_hash": "/11/ff5a15a418/8/content_hash.txt",
+      "prompt": "/11/ff5a15a418/8/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 674668,
+    "input_tokens": 1277817,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 26970112,
-    "output_tokens": 45312,
-    "api_call_count": 207
+    "cache_read_tokens": 43714560,
+    "output_tokens": 83859,
+    "api_call_count": 333
   }
 }
