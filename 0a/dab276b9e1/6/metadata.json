@@ -1,0 +1,61 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "0adab276b9e1",
+  "session_id": "019e1646-12c4-7641-b8dc-24edda9adabf",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-11T13:26:59.26888Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".coverage",
+    "app/bim_ai/img/dimension_inference.py",
+    "app/tests/test_trc_v3_02_dimension_inference.py",
+    "packages/core/src/parseDimensionInput.ts",
+    "packages/web/src/coordination/ClashTestPanel.test.tsx",
+    "packages/web/src/coordination/ClashTestPanel.tsx",
+    "packages/web/src/design-systems/visualRegressionBaselines.ts",
+    "packages/web/src/i18n.ts",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/SnapGlyphLayer.test.tsx",
+    "packages/web/src/plan/SnapGlyphLayer.tsx",
+    "packages/web/src/tools/numericInput.test.tsx",
+    "packages/web/src/viewport/grip3d.test.ts",
+    "packages/web/src/viewport/grip3d.ts",
+    "packages/web/src/workspace/ModeShells.test.tsx",
+    "packages/web/src/workspace/ModeShells.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/chrome/WorkspaceSwitcher.test.tsx",
+    "packages/web/src/workspace/chrome/WorkspaceSwitcher.tsx",
+    "packages/web/src/workspace/chrome/workspaces.ts",
+    "packages/web/src/workspace/library/LibraryOverlay.test.tsx",
+    "packages/web/src/workspace/library/LibraryOverlay.tsx",
+    "packages/web/src/workspace/shell/TabBar.tsx",
+    "packages/web/src/workspace/shell/TopBar.tsx",
+    "packages/web/src/workspace/tabsModel.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "3e4585ba35e3",
+  "token_usage": {
+    "input_tokens": 1791450,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 101785856,
+    "output_tokens": 177618,
+    "api_call_count": 726
+  },
+  "session_metrics": {
+    "turn_count": 5
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-11T13:26:59.163098Z",
+    "agent_lines": 826,
+    "agent_removed": 107,
+    "human_added": 39374,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 40200,
+    "total_lines_changed": 40406,
+    "agent_percentage": 2.3090630104439933,
+    "metric_version": 2
+  }
+}
