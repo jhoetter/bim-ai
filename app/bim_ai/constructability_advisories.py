@@ -28,6 +28,7 @@ from bim_ai.elements import (
     FloorElem,
     RailingElem,
     RoofElem,
+    RoofOpeningElem,
     RoomElem,
     SlabOpeningElem,
     StairElem,
@@ -83,6 +84,7 @@ def constructability_advisory_violations(
     violations.extend(_floor_boundary_support_violations(participants_by_kind, elements))
     violations.extend(_roof_wall_coverage_violations(participants_by_kind, walls_by_id))
     violations.extend(_roof_low_slope_metadata_violations(elements))
+    violations.extend(_roof_opening_violations(elements))
     violations.extend(_unsupported_beam_violations(participants_by_kind, elements, walls_by_id))
     violations.extend(_unsupported_column_violations(participants_by_kind, walls_by_id))
     return violations
@@ -806,6 +808,103 @@ def _roof_low_slope_metadata_violations(elements: dict[str, Element]) -> list[Vi
     return violations
 
 
+def _roof_opening_violations(elements: dict[str, Element]) -> list[Violation]:
+    violations: list[Violation] = []
+    for element in elements.values():
+        if not isinstance(element, RoofOpeningElem):
+            continue
+        host = elements.get(element.host_roof_id)
+        if not isinstance(host, RoofElem):
+            violations.append(
+                Violation(
+                    rule_id="roof_opening_missing_host",
+                    severity="warning",
+                    message="Roof opening references a missing or non-roof host.",
+                    element_ids=[element.id],
+                )
+            )
+            continue
+        roof_polygon = [(float(point.x_mm), float(point.y_mm)) for point in host.footprint_mm]
+        opening_polygon = [
+            (float(point.x_mm), float(point.y_mm)) for point in element.boundary_mm
+        ]
+        outside_vertices = [
+            point
+            for point in opening_polygon
+            if not _point_in_or_near_polygon(point, roof_polygon, tolerance_mm=50.0)
+        ]
+        if outside_vertices:
+            violations.append(
+                Violation(
+                    rule_id="roof_opening_outside_host_footprint",
+                    severity="warning",
+                    message=(
+                        "Roof opening footprint extends outside the host roof footprint; revise "
+                        "the void boundary or host roof."
+                    ),
+                    element_ids=sorted([element.id, host.id]),
+                )
+            )
+        roof_area = _polygon_area_abs_mm2(roof_polygon)
+        opening_area = _polygon_area_abs_mm2(opening_polygon)
+        if (
+            roof_area > 0.0
+            and opening_area / roof_area > 0.25
+            and not _roof_opening_has_structural_review(element, host)
+        ):
+            violations.append(
+                Violation(
+                    rule_id="roof_opening_large_void_without_review",
+                    severity="warning",
+                    message=(
+                        "Roof opening removes more than 25% of the host roof footprint without "
+                        "structural/curb framing review metadata."
+                    ),
+                    element_ids=sorted([element.id, host.id]),
+                )
+            )
+    return violations
+
+
+def _roof_opening_has_structural_review(opening: RoofOpeningElem, host: RoofElem) -> bool:
+    opening_props = getattr(opening, "props", None) or {}
+    if _truthy_prop(
+        opening_props,
+        "structuralReviewed",
+        "structuralReviewApproved",
+        "curbFramingDesigned",
+        "trimmerFramingDesigned",
+    ):
+        return True
+    host_props = host.props or {}
+    if _truthy_prop(
+        host_props,
+        "roofOpeningsStructurallyReviewed",
+        "roofVoidFramingDesigned",
+        "curbFramingDesigned",
+        "trimmerFramingDesigned",
+    ):
+        return True
+    approved_ids = {
+        str(value)
+        for key in (
+            "approvedRoofOpeningIds",
+            "structurallyReviewedRoofOpeningIds",
+            "curbFramedRoofOpeningIds",
+        )
+        for value in _coerce_sequence(host_props.get(key))
+    }
+    return opening.id in approved_ids
+
+
+def _coerce_sequence(value: Any) -> list[Any]:
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple, set)):
+        return list(value)
+    return [value]
+
+
 def _unsupported_beam_violations(
     participants_by_kind: dict[str, list[PhysicalParticipant]],
     elements: dict[str, Element],
@@ -1288,6 +1387,15 @@ def _point_segment_distance_mm(
     closest_x = ax + t * dx
     closest_y = ay + t * dy
     return math.hypot(px - closest_x, py - closest_y)
+
+
+def _polygon_area_abs_mm2(polygon: list[tuple[float, float]]) -> float:
+    if len(polygon) < 3:
+        return 0.0
+    total = 0.0
+    for a, b in zip(polygon, polygon[1:] + polygon[:1], strict=False):
+        total += a[0] * b[1] - b[0] * a[1]
+    return abs(total) / 2.0
 
 
 def _floor_edge_has_wall_support(

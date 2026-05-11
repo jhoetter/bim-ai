@@ -20,6 +20,7 @@ from bim_ai.elements import (
     PlacedAssetElem,
     RailingElem,
     RoofElem,
+    RoofOpeningElem,
     RoomElem,
     SlabOpeningElem,
     StairElem,
@@ -548,6 +549,75 @@ def test_low_slope_roof_requires_drainage_metadata() -> None:
 
     elements["roof-1"] = roof.model_copy(update={"props": {"roofDrainageDesigned": True}})
     assert "roof_low_slope_without_drainage_metadata" not in _rule_ids(elements)
+
+
+def test_roof_opening_outside_host_footprint_is_reported() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "roof-1": RoofElem(
+            kind="roof",
+            id="roof-1",
+            referenceLevelId="lvl-1",
+            footprintMm=[
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 4000, "yMm": 0},
+                {"xMm": 4000, "yMm": 3000},
+                {"xMm": 0, "yMm": 3000},
+            ],
+            overhangMm=0,
+        ),
+        "roof-opening-1": RoofOpeningElem(
+            kind="roof_opening",
+            id="roof-opening-1",
+            hostRoofId="roof-1",
+            boundaryMm=[
+                {"xMm": 3500, "yMm": 1000},
+                {"xMm": 4500, "yMm": 1000},
+                {"xMm": 4500, "yMm": 2000},
+                {"xMm": 3500, "yMm": 2000},
+            ],
+        ),
+    }
+
+    assert "roof_opening_outside_host_footprint" in _rule_ids(elements)
+
+
+def test_large_roof_opening_without_review_is_reported() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "roof-1": RoofElem(
+            kind="roof",
+            id="roof-1",
+            referenceLevelId="lvl-1",
+            footprintMm=[
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 4000, "yMm": 0},
+                {"xMm": 4000, "yMm": 3000},
+                {"xMm": 0, "yMm": 3000},
+            ],
+            overhangMm=0,
+        ),
+        "roof-opening-1": RoofOpeningElem(
+            kind="roof_opening",
+            id="roof-opening-1",
+            hostRoofId="roof-1",
+            boundaryMm=[
+                {"xMm": 500, "yMm": 500},
+                {"xMm": 3500, "yMm": 500},
+                {"xMm": 3500, "yMm": 2000},
+                {"xMm": 500, "yMm": 2000},
+            ],
+        ),
+    }
+
+    assert "roof_opening_large_void_without_review" in _rule_ids(elements)
+
+    roof = elements["roof-1"]
+    assert isinstance(roof, RoofElem)
+    elements["roof-1"] = roof.model_copy(
+        update={"props": {"approvedRoofOpeningIds": ["roof-opening-1"]}}
+    )
+    assert "roof_opening_large_void_without_review" not in _rule_ids(elements)
 
 
 def test_beam_without_two_modeled_supports_is_reported() -> None:

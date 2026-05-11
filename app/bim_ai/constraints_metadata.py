@@ -158,6 +158,9 @@ RULE_DISCIPLINE: dict[str, str] = {
     "furniture_wall_clearance_conflict": "architecture",
     "roof_wall_coverage_gap": "architecture",
     "roof_low_slope_without_drainage_metadata": "architecture",
+    "roof_opening_missing_host": "architecture",
+    "roof_opening_outside_host_footprint": "architecture",
+    "roof_opening_large_void_without_review": "architecture",
     "constructability_metadata_requirement_missing": "coordination",
 }
 
@@ -214,6 +217,9 @@ RULE_BLOCKING_CLASS: dict[str, str] = {
     "furniture_wall_clearance_conflict": "geometry",
     "roof_wall_coverage_gap": "geometry",
     "roof_low_slope_without_drainage_metadata": "documentation",
+    "roof_opening_missing_host": "geometry",
+    "roof_opening_outside_host_footprint": "geometry",
+    "roof_opening_large_void_without_review": "geometry",
     "constructability_metadata_requirement_missing": "documentation",
     "level_duplicate_elevation": "documentation",
     "level_datum_parent_cycle": "documentation",

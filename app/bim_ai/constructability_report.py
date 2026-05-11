@@ -61,6 +61,9 @@ CONSTRUCTABILITY_RULE_IDS = frozenset(
         FURNITURE_WALL_CLEARANCE_RULE_ID,
         "roof_wall_coverage_gap",
         "roof_low_slope_without_drainage_metadata",
+        "roof_opening_missing_host",
+        "roof_opening_outside_host_footprint",
+        "roof_opening_large_void_without_review",
         METADATA_REQUIREMENT_RULE_ID,
     }
 )
@@ -124,6 +127,9 @@ RECOMMENDATION_BY_RULE_ID = {
     FURNITURE_WALL_CLEARANCE_RULE_ID: "Move the object farther from the wall or record an approved clearance exception for the active profile.",
     "roof_wall_coverage_gap": "Revise the roof overhang/footprint or align the primary envelope wall under the roof coverage.",
     "roof_low_slope_without_drainage_metadata": "Add flat-roof drainage/taper metadata, increase the roof slope, or record engineering review approval.",
+    "roof_opening_missing_host": "Attach the roof opening to a valid roof or remove the orphan opening.",
+    "roof_opening_outside_host_footprint": "Move the roof opening fully inside the host roof footprint or revise the roof boundary.",
+    "roof_opening_large_void_without_review": "Add curb/trimmer framing or structural review metadata for the large roof void.",
     METADATA_REQUIREMENT_RULE_ID: "Add the missing IDS-like property data or choose a less strict constructability profile.",
 }
 
