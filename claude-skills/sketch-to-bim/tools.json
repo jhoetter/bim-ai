@@ -34,6 +34,28 @@
       }
     },
     {
+      "name": "skb_list_archetypes",
+      "command": "archetypes",
+      "description": "List reusable sketch-to-BIM archetype baselines and optional query matches.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "manifest": { "type": "string", "default": "spec/sketch-to-bim-archetypes.json" },
+          "query": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["schemaVersion", "archetypes"],
+        "properties": {
+          "schemaVersion": { "type": "string" },
+          "archetypes": { "type": "array" }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
       "name": "skb_compile_recipe",
       "command": "compile",
       "description": "Compile a seed-dsl recipe into a cmd-v3 bundle.",
@@ -211,6 +233,33 @@
         "properties": {
           "issueLedger": { "type": "string" },
           "entryCount": { "type": "integer" }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
+      "name": "skb_material_check",
+      "command": "material-check",
+      "description": "Verify recipe material intent and assignments are represented in the compiled bundle.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "seed": { "type": "string" },
+          "recipe": { "type": "string" },
+          "bundle": { "type": "string" },
+          "out": { "type": "string" },
+          "failOnMissing": { "type": "boolean", "default": false }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["ok", "intentCount", "assignmentCount", "missing"],
+        "properties": {
+          "ok": { "type": "boolean" },
+          "intentCount": { "type": "integer" },
+          "assignmentCount": { "type": "integer" },
+          "missing": { "type": "array" }
         },
         "additionalProperties": true
       }

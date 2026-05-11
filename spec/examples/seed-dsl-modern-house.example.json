@@ -167,6 +167,26 @@
       "materialKey": "cladding_warm_wood"
     }
   ],
+  "features": {
+    "loggias": [
+      {
+        "id": "upper-terrace-loggia",
+        "name": "Upper recessed terrace",
+        "levelId": "lvl-upper",
+        "materialKey": "white_render",
+        "boundaryMm": [
+          { "xMm": 5400, "yMm": 3300 },
+          { "xMm": 8000, "yMm": 3300 },
+          { "xMm": 8000, "yMm": 6500 },
+          { "xMm": 5400, "yMm": 6500 }
+        ],
+        "railingPathMm": [
+          { "xMm": 5480, "yMm": 3380 },
+          { "xMm": 7920, "yMm": 3380 }
+        ]
+      }
+    ]
+  },
   "viewpoints": [
     {
       "id": "main-front-left",

@@ -325,6 +325,8 @@ test('seed-dsl compile writes a deterministic command bundle', async () => {
   assert.ok(bundle.commands.some((command) => command.type === 'saveViewpoint'));
   assert.ok(bundle.commands.some((command) => command.type === 'IndexAsset'));
   assert.ok(bundle.commands.some((command) => command.type === 'PlaceAsset'));
+  assert.ok(bundle.commands.some((command) => command.type === 'createRailing'));
+  assert.ok(bundle.commands.some((command) => command.id === 'upper-terrace-loggia-floor'));
   assert.ok(
     bundle.commands.some(
       (command) =>

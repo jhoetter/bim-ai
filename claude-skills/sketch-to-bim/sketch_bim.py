@@ -25,8 +25,16 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 CLI = ["node", "packages/cli/cli.mjs"]
 DEFAULT_CAPABILITIES = "spec/sketch-to-bim-capability-matrix.json"
+DEFAULT_ARCHETYPES = "spec/sketch-to-bim-archetypes.json"
 TOOL_MANIFEST = ROOT / "claude-skills" / "sketch-to-bim" / "tools.json"
 BLOCKING_SEVERITIES = {"warning", "error"}
+ADVISOR_RULE_FILES = [
+    "app/bim_ai/constructability_advisories.py",
+    "app/bim_ai/constructability_report.py",
+    "app/bim_ai/constraints_metadata.py",
+    "packages/web/src/advisor/advisorViolationContext.ts",
+    "packages/web/src/advisor/perspectiveFilter.ts",
+]
 UUID_RE = re.compile(
     r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b",
     re.IGNORECASE,
@@ -51,6 +59,20 @@ def file_sha256(path: Path) -> str | None:
     with path.open("rb") as fh:
         for chunk in iter(lambda: fh.read(1024 * 1024), b""):
             h.update(chunk)
+    return h.hexdigest()
+
+
+def digest_files(paths: list[str]) -> str:
+    h = hashlib.sha256()
+    for rel_path in sorted(paths):
+        path = ROOT / rel_path
+        h.update(rel_path.encode("utf8"))
+        h.update(b"\0")
+        if path.is_file():
+            h.update((file_sha256(path) or "").encode("utf8"))
+        else:
+            h.update(b"missing")
+        h.update(b"\0")
     return h.hexdigest()
 
 
@@ -177,6 +199,25 @@ def cmd_doctor(args: argparse.Namespace) -> None:
 
 def cmd_tools(_args: argparse.Namespace) -> None:
     print(json_dump(read_json(TOOL_MANIFEST)))
+
+
+def cmd_archetypes(args: argparse.Namespace) -> None:
+    archetypes = read_json(ROOT / args.manifest)
+    if args.query:
+        q = args.query.lower()
+        rows = []
+        for row in archetypes.get("archetypes") or []:
+            haystack = " ".join(
+                [
+                    str(row.get("id") or ""),
+                    str(row.get("title") or ""),
+                    " ".join(str(x) for x in (row.get("matchHints") or [])),
+                ]
+            ).lower()
+            if q in haystack:
+                rows.append(row)
+        archetypes = {**archetypes, "archetypes": rows}
+    print(json_dump(archetypes))
 
 
 def parse_optional_json(raw: str) -> Any:
@@ -483,6 +524,47 @@ def cmd_issue_ledger(args: argparse.Namespace) -> None:
         raise SystemExit(6)
 
 
+def cmd_material_check(args: argparse.Namespace) -> None:
+    paths = seed_paths(args.seed) if args.seed else {}
+    recipe_path = Path(args.recipe).resolve() if args.recipe else paths.get("recipe")
+    bundle_path = Path(args.bundle).resolve() if args.bundle else paths.get("bundle")
+    if not recipe_path or not recipe_path.is_file():
+        raise SystemExit("material-check requires --recipe or --seed with evidence/<seed>.recipe.json.")
+    if not bundle_path or not bundle_path.is_file():
+        raise SystemExit("material-check requires --bundle or --seed with bundle.json.")
+    recipe = read_json(recipe_path)
+    bundle = read_json(bundle_path)
+    commands = bundle if isinstance(bundle, list) else bundle.get("commands") or []
+    bundle_text = json_dump(commands)
+    intents = recipe.get("materialIntent") or []
+    assignments = recipe.get("materialAssignments") or []
+    missing = []
+    for row in intents:
+        material_key = row.get("materialKey")
+        if material_key and material_key not in bundle_text:
+            missing.append({"kind": "intent_not_represented", "materialKey": material_key, "surface": row.get("surface")})
+    for row in assignments:
+        element_id = row.get("elementId")
+        material_key = row.get("materialKey")
+        if element_id and material_key and (element_id not in bundle_text or material_key not in bundle_text):
+            missing.append({"kind": "assignment_not_represented", "elementId": element_id, "materialKey": material_key})
+    payload = {
+        "schemaVersion": "sketch-to-bim.material-check.v1",
+        "seed": args.seed,
+        "recipe": rel(recipe_path),
+        "bundle": rel(bundle_path),
+        "ok": not missing,
+        "intentCount": len(intents),
+        "assignmentCount": len(assignments),
+        "missing": missing,
+    }
+    if args.out:
+        write_json(Path(args.out).resolve(), payload)
+    print(json_dump(payload))
+    if args.fail_on_missing and missing:
+        raise SystemExit(8)
+
+
 def cmd_phase_accept(args: argparse.Namespace) -> None:
     out_dir = phase_dir_for(args)
     required = {
@@ -609,6 +691,8 @@ def cmd_accept(args: argparse.Namespace) -> None:
         "irSha256": file_sha256(paths["ir"]),
         "capabilitiesPath": args.capabilities,
         "capabilitiesSha256": file_sha256(ROOT / args.capabilities),
+        "advisorRuleDigest": digest_files(ADVISOR_RULE_FILES),
+        "advisorRuleFiles": ADVISOR_RULE_FILES,
         "mode": args.mode,
         "generatedAtEpochMs": int(time.time() * 1000),
     }
@@ -628,6 +712,7 @@ def cmd_stale_check(args: argparse.Namespace) -> None:
         "bundleSha256": file_sha256(paths["bundle"]),
         "irSha256": file_sha256(paths["ir"]),
         "capabilitiesSha256": file_sha256(ROOT / summary.get("capabilitiesPath", DEFAULT_CAPABILITIES)),
+        "advisorRuleDigest": digest_files(summary.get("advisorRuleFiles") or ADVISOR_RULE_FILES),
     }
     stale = {
         key: {"recorded": summary.get(key), "current": value}
@@ -646,6 +731,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     tools = sub.add_parser("tools", help="Print typed skill tool descriptors.")
     tools.set_defaults(func=cmd_tools)
+
+    archetypes = sub.add_parser("archetypes", help="Print reusable sketch-to-BIM archetype baselines.")
+    archetypes.add_argument("--manifest", default=DEFAULT_ARCHETYPES)
+    archetypes.add_argument("--query")
+    archetypes.set_defaults(func=cmd_archetypes)
 
     doctor = sub.add_parser("doctor", help="Check live app/tool prerequisites.")
     doctor.add_argument("--base-url", default=os.environ.get("BIM_AI_BASE_URL", "http://127.0.0.1:8500"))
@@ -710,6 +800,14 @@ def build_parser() -> argparse.ArgumentParser:
     ledger.add_argument("--out")
     ledger.add_argument("--fail-on-pending", action="store_true")
     ledger.set_defaults(func=cmd_issue_ledger)
+
+    materials = sub.add_parser("material-check", help="Verify recipe material intent is represented in the bundle.")
+    materials.add_argument("--seed")
+    materials.add_argument("--recipe")
+    materials.add_argument("--bundle")
+    materials.add_argument("--out")
+    materials.add_argument("--fail-on-missing", action="store_true")
+    materials.set_defaults(func=cmd_material_check)
 
     phase = sub.add_parser("phase-accept", help="Fail unless the phase evidence packet is complete and clean.")
     phase.add_argument("--phase", required=True)

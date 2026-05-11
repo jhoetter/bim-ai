@@ -109,7 +109,7 @@ verify-sketch-seeds:
 	node scripts/verify-sketch-seed-artifacts.mjs $(if $(name),--seed "$(name)",)
 
 verify-sketch-seeds-live:
-	node scripts/verify-sketch-seed-artifacts.mjs --require-final-evidence --live $(if $(name),--seed "$(name)",)
+	node scripts/verify-sketch-seed-artifacts.mjs --require-final-evidence --require-phase-packets --require-material-check --live $(if $(name),--seed "$(name)",)
 
 test: test-py test-js
 

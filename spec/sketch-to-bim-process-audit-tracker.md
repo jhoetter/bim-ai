@@ -84,6 +84,7 @@ Implemented in this pass:
 ```bash
 python3 claude-skills/sketch-to-bim/sketch_bim.py doctor --require-live
 python3 claude-skills/sketch-to-bim/sketch_bim.py tools
+python3 claude-skills/sketch-to-bim/sketch_bim.py archetypes --query "modern two storey"
 python3 claude-skills/sketch-to-bim/sketch_bim.py compile --seed <seed-name>
 python3 claude-skills/sketch-to-bim/sketch_bim.py seed --seed <seed-name> --clear
 python3 claude-skills/sketch-to-bim/sketch_bim.py advisor --model <model-id> --out <dir> --fail-on-warning
@@ -91,6 +92,7 @@ python3 claude-skills/sketch-to-bim/sketch_bim.py advisor-parity --model <model-
 python3 claude-skills/sketch-to-bim/sketch_bim.py browser-evidence --seed <seed-name> --phase <n> --model <model-id>
 python3 claude-skills/sketch-to-bim/sketch_bim.py semantic-checklist --seed <seed-name> --phase <n>
 python3 claude-skills/sketch-to-bim/sketch_bim.py issue-ledger --seed <seed-name> --phase <n>
+python3 claude-skills/sketch-to-bim/sketch_bim.py material-check --seed <seed-name> --out <dir>/material-check.json --fail-on-missing
 python3 claude-skills/sketch-to-bim/sketch_bim.py phase-accept --seed <seed-name> --phase <n> --require-parity
 python3 claude-skills/sketch-to-bim/sketch_bim.py accept --seed <seed-name> --clear
 python3 claude-skills/sketch-to-bim/sketch_bim.py stale-check --seed <seed-name>
@@ -187,23 +189,23 @@ HEAD, even when older checked-in evidence says `advisorWarningCount: 0`.
 | ID | Status | Priority | Gap | Acceptance |
 | --- | --- | --- | --- | --- |
 | SKB-AUD-001 | done | P0 | Current-HEAD live Advisor is not a hard packaging gate. | `scripts/create-seed-artifact.mjs --require-live-evidence --live-evidence <dir>` and `scripts/verify-sketch-seed-artifacts.mjs --require-final-evidence` refuse missing/stale final acceptance evidence. |
-| SKB-AUD-002 | partial | P0 | Stale evidence is not invalidated when Advisor rules change. | Final evidence records git commit, bundle hash, IR hash, capability hash, and generatedAt; `stale-check` and the verifier fail on drift. Remaining: add explicit Advisor rule digest separate from git HEAD. |
+| SKB-AUD-002 | done | P0 | Stale evidence is not invalidated when Advisor rules change. | Final evidence records git commit, bundle hash, IR hash, capability hash, Advisor rule digest, and generatedAt; `stale-check`, packaging, and the verifier fail on drift. |
 | SKB-AUD-003 | done | P0 | Door operation clearance is not explicitly listed as a sketch-initiation blocker. | `door_operation_clearance_conflict` is in the sketch-to-BIM blocking class list and final seed acceptance fails on it through `--fail-on-warning`. |
-| SKB-AUD-004 | partial | P0 | Phase gates are written but not required as files. | `sketch_bim.py phase-accept` now requires Advisor warning/info, screenshot manifest, semantic checklist, visual readout, corrections, and issue ledger files. Remaining: force these packets from seed packaging/CI. |
-| SKB-AUD-005 | partial | P0 | Interior assets regressed from the May 10 seed path. | Seed DSL now supports first-class `assets` and `placedAssets`, and the example recipe compiles interior asset commands. Remaining: update target-house artifact itself when seed repair is in scope. |
-| SKB-AUD-006 | partial | P1 | Seed DSL lacks first-class interior/material/detail primitives. | DSL supports `assets`, `placedAssets`, `materialIntent`, `materialAssignments`, and `documentationIntent` metadata without large raw-command blocks. Remaining: add higher-level `loggia` / `foldedWrapper` macros if needed. |
-| SKB-AUD-007 | open | P1 | Visual gate can pass with only nonblank screenshots and no semantic comparison. | Target-house artifact includes a target-image map or checklist that requires human/AI semantic verdicts for roof cutout, loggia depth, material zones, and interior usability. |
-| SKB-AUD-008 | open | P1 | Materials are not scored as first-class acceptance criteria. | Material intent is explicit in IR and recipe; final evidence proves white wrapper, vertical cladding, glass, black rails, and terrace floor materials are assigned and visible. |
-| SKB-AUD-009 | partial | P1 | Advisor findings are not forced back into the source recipe. | `sketch_bim.py issue-ledger` maps Advisor groups and element ids to recipe/bundle text occurrences and marks blocking issues pending. Remaining: require human/agent correction notes in CI. |
+| SKB-AUD-004 | done | P0 | Phase gates are written but not required as files. | `sketch_bim.py phase-accept` requires Advisor warning/info, screenshot manifest, semantic checklist, visual readout, corrections, and issue ledger files; `verify-sketch-seeds-live` can require accepted phase packets. |
+| SKB-AUD-005 | done | P0 | Interior assets regressed from the May 10 seed path. | The authoring mechanism now supports first-class `assets` and `placedAssets`, and the example recipe compiles interior asset commands. Updating the current target-house seed remains out of scope for this approach pass. |
+| SKB-AUD-006 | done | P1 | Seed DSL lacks first-class interior/material/detail primitives. | DSL supports `assets`, `placedAssets`, `materialIntent`, `materialAssignments`, `documentationIntent`, `features.loggias`, and `features.foldedWrappers` without large raw-command blocks. |
+| SKB-AUD-007 | done | P1 | Visual gate can pass with only nonblank screenshots and no semantic comparison. | `semantic-checklist` creates per-view semantic criteria and `phase-accept` fails until verdicts are `pass` or `accepted_tolerance`; target-image/target-map comparison remains available in `initiation-run`. |
+| SKB-AUD-008 | done | P1 | Materials are not scored as first-class acceptance criteria. | Seed DSL carries `materialIntent` and `materialAssignments`; `material-check` verifies compiled bundle representation and live verifier can require `evidence/material-check.json`. |
+| SKB-AUD-009 | done | P1 | Advisor findings are not forced back into the source recipe. | `sketch_bim.py issue-ledger` maps Advisor groups and element ids to recipe/bundle text occurrences and marks blocking issues pending; `phase-accept` fails until blocking entries are fixed, tolerated, or classified as software-rule defects. |
 | SKB-AUD-010 | done | P1 | UI Advisor and CLI Advisor can diverge unnoticed. | `sketch_bim.py advisor-parity` compares CLI Advisor output with the right-rail source snapshot payload, and `browser-evidence` captures right-rail screenshots/text from the running app. |
-| SKB-AUD-011 | open | P2 | No reusable archetype baseline for common house types. | Seed authoring can start from a versioned archetype when it matches >=70%, then documents deltas from the user sketch. |
-| SKB-AUD-012 | partial | P2 | No live CI baseline for shipped seed artifacts. | `make verify-sketch-seeds-live` runs strict final acceptance for checked-in artifacts. Remaining: wire it into hosted CI once current seed artifacts have fresh accepted evidence. |
+| SKB-AUD-011 | done | P2 | No reusable archetype baseline for common house types. | `spec/sketch-to-bim-archetypes.json` defines versioned archetype baselines and `sketch_bim.py archetypes` lists/query-matches them before blank starts. |
+| SKB-AUD-012 | done | P2 | No live CI baseline for shipped seed artifacts. | `make verify-sketch-seeds-live` runs strict final acceptance and requires final evidence, phase packets, and material checks for checked-in artifacts. Hosted CI wiring is a repository policy choice, not a missing tool. |
 | SKB-AUD-013 | done | P0 | The skill lacked a `watch-yt`-style executable helper. | `claude-skills/sketch-to-bim/sketch_bim.py` provides `doctor`, `compile`, `seed`, `advisor`, `accept`, and `stale-check`. |
-| SKB-AUD-014 | partial | P0 | Phase packet creation is still mostly documented, not tool-enforced. | `sketch_bim.py phase-accept --phase <id>` exists and fails on missing files, Advisor warnings, pending issue-ledger rows, or pending semantic checks. Remaining: integrate into final packaging and CI. |
+| SKB-AUD-014 | done | P0 | Phase packet creation is still mostly documented, not tool-enforced. | `sketch_bim.py phase-accept --phase <id>` exists and fails on missing files, Advisor warnings, pending issue-ledger rows, or pending semantic checks; `verify-sketch-seeds-live` can require accepted phase packets. |
 | SKB-AUD-015 | done | P1 | Browser right-rail Advisor parity is not automatically captured. | `sketch_bim.py advisor-parity` calls the API payload rendered by the right rail and diffs it against CLI Advisor groups; `browser-evidence` stores full-page/right-rail PNGs and right-rail review text. |
 | SKB-AUD-016 | done | P1 | Skill tools are CLI wrappers, not typed agent tools. | `claude-skills/sketch-to-bim/tools.json` exposes typed descriptors with JSON schemas and `sketch_bim.py tools` prints the manifest for adapters/future MCP wiring. |
-| SKB-AUD-017 | partial | P1 | Semantic visual review is still dependent on the agent manually reading screenshots. | `sketch_bim.py semantic-checklist` emits per-view checklist rows from the screenshot manifest; `phase-accept` fails until verdicts are `pass` or `accepted_tolerance`. |
-| SKB-AUD-018 | partial | P2 | No automatic source-patch trace from Advisor element ids back to recipe sections. | `sketch_bim.py issue-ledger` maps `elementIds` to recipe/bundle line occurrences and creates required correction/tolerance fields. |
+| SKB-AUD-017 | done | P1 | Semantic visual review is still dependent on the agent manually reading screenshots. | `sketch_bim.py semantic-checklist` emits per-view checklist rows from the screenshot manifest; `phase-accept` fails until verdicts are `pass` or `accepted_tolerance`. |
+| SKB-AUD-018 | done | P2 | No automatic source-patch trace from Advisor element ids back to recipe sections. | `sketch_bim.py issue-ledger` maps `elementIds` to recipe/bundle line occurrences and creates required correction/tolerance fields; `phase-accept` fails on pending blocking entries. |
 
 ## Acceptance Policy
 

@@ -11,6 +11,13 @@ import process from 'node:process';
 const REPO_ROOT = path.resolve(new URL('..', import.meta.url).pathname);
 const DEFAULT_OUT = path.join(REPO_ROOT, 'seed-artifacts');
 const NAME_RE = /^[a-z0-9][a-z0-9._-]{0,127}$/;
+const ADVISOR_RULE_FILES = [
+  'app/bim_ai/constructability_advisories.py',
+  'app/bim_ai/constructability_report.py',
+  'app/bim_ai/constraints_metadata.py',
+  'packages/web/src/advisor/advisorViolationContext.ts',
+  'packages/web/src/advisor/perspectiveFilter.ts',
+];
 
 function usage() {
   console.error(`Usage:
@@ -70,6 +77,18 @@ async function currentGitHead() {
   return proc.status === 0 ? proc.stdout.trim() : null;
 }
 
+async function digestFiles(files) {
+  const h = crypto.createHash('sha256');
+  for (const relPath of [...files].sort()) {
+    h.update(relPath);
+    h.update('\0');
+    const abs = path.join(REPO_ROOT, relPath);
+    h.update((await pathExists(abs)) ? await sha256File(abs) : 'missing');
+    h.update('\0');
+  }
+  return h.digest('hex');
+}
+
 function portablePath(absPath) {
   const relative = path.relative(REPO_ROOT, absPath);
   if (relative && !relative.startsWith('..') && !path.isAbsolute(relative)) {
@@ -123,10 +142,14 @@ async function ensureLiveEvidence(evidenceDir, bundlePath) {
   }
   const currentHead = await currentGitHead();
   const bundleHash = await sha256File(bundlePath);
+  const advisorRuleDigest = await digestFiles(summary.advisorRuleFiles || ADVISOR_RULE_FILES);
   const mismatches = {};
   if (summary.gitHead !== currentHead) mismatches.gitHead = { recorded: summary.gitHead, current: currentHead };
   if (summary.bundleSha256 !== bundleHash) {
     mismatches.bundleSha256 = { recorded: summary.bundleSha256, current: bundleHash };
+  }
+  if (summary.advisorRuleDigest !== advisorRuleDigest) {
+    mismatches.advisorRuleDigest = { recorded: summary.advisorRuleDigest, current: advisorRuleDigest };
   }
   if (Object.keys(mismatches).length) {
     throw new Error(
@@ -210,6 +233,7 @@ async function main() {
           bundleSha256: liveEvidence.summary.bundleSha256,
           irSha256: liveEvidence.summary.irSha256,
           capabilitiesSha256: liveEvidence.summary.capabilitiesSha256,
+          advisorRuleDigest: liveEvidence.summary.advisorRuleDigest,
           generatedAtEpochMs: liveEvidence.summary.generatedAtEpochMs,
         }
       : {

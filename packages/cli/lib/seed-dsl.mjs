@@ -227,6 +227,60 @@ function compileMaterialAssignments(recipe) {
   return commands;
 }
 
+function compileFeatureMacros(recipe) {
+  const commands = [];
+  for (const loggia of recipe.features?.loggias ?? []) {
+    const id = assertString(loggia.id, '$.features.loggias[].id');
+    const boundary = assertFootprint(loggia.boundaryMm, `$.features.loggias.${id}.boundaryMm`);
+    if (loggia.createFloor !== false) {
+      commands.push({
+        type: 'createFloor',
+        id: `${id}-floor`,
+        name: loggia.name ?? `${id} floor`,
+        levelId: assertString(loggia.levelId, `$.features.loggias.${id}.levelId`),
+        boundaryMm: boundary,
+        thicknessMm: Number.isFinite(loggia.floorThicknessMm) ? loggia.floorThicknessMm : 180,
+        floorTypeId: loggia.floorTypeId ?? null,
+        materialKey: loggia.materialKey ?? null,
+        roomBounded: loggia.roomBounded === true,
+      });
+    }
+    if (Array.isArray(loggia.railingPathMm) && loggia.railingPathMm.length >= 2) {
+      commands.push({
+        type: 'createRailing',
+        id: `${id}-railing`,
+        name: loggia.railingName ?? `${id} railing`,
+        pathMm: loggia.railingPathMm.map((point, index) =>
+          assertPoint(point, `$.features.loggias.${id}.railingPathMm[${index}]`),
+        ),
+      });
+    }
+  }
+  for (const wrapper of recipe.features?.foldedWrappers ?? []) {
+    const id = assertString(wrapper.id, '$.features.foldedWrappers[].id');
+    const footprint = assertFootprint(wrapper.footprintMm, `$.features.foldedWrappers.${id}.footprintMm`);
+    commands.push(...wallCommandsForVolume(wrapper, footprint));
+    if (wrapper.createRoof === true) {
+      commands.push({
+        type: 'createRoof',
+        id: `${id}-roof`,
+        name: wrapper.roofName ?? `${id} roof`,
+        referenceLevelId: assertString(
+          wrapper.referenceLevelId ?? wrapper.levelId,
+          `$.features.foldedWrappers.${id}.referenceLevelId`,
+        ),
+        footprintMm: footprint,
+        roofGeometryMode: wrapper.roofGeometryMode ?? 'flat',
+        slopeDeg: Number.isFinite(wrapper.slopeDeg) ? wrapper.slopeDeg : 0,
+        overhangMm: Number.isFinite(wrapper.overhangMm) ? wrapper.overhangMm : 0,
+        roofTypeId: wrapper.roofTypeId ?? null,
+        materialKey: wrapper.materialKey ?? null,
+      });
+    }
+  }
+  return commands;
+}
+
 function compileViewpoints(recipe) {
   return (recipe.viewpoints ?? []).map((viewpoint, index) => ({
     type: 'saveViewpoint',
@@ -259,6 +313,7 @@ export function compileSeedDsl(recipe, options = {}) {
     ...compileRooms(recipe),
     ...compileAssets(recipe),
     ...compileMaterialAssignments(recipe),
+    ...compileFeatureMacros(recipe),
     ...compileViewpoints(recipe),
     ...(recipe.commands ?? []),
   );

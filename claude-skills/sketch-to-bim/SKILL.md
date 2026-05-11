@@ -36,6 +36,9 @@ Core commands:
 # Confirm the live feedback loop is available.
 python3 claude-skills/sketch-to-bim/sketch_bim.py doctor --require-live
 
+# List reusable archetype baselines before starting from blank.
+python3 claude-skills/sketch-to-bim/sketch_bim.py archetypes --query "modern two storey"
+
 # Compile a reviewable seed recipe into the actual command bundle.
 python3 claude-skills/sketch-to-bim/sketch_bim.py compile --seed <seed-name>
 
@@ -69,6 +72,12 @@ python3 claude-skills/sketch-to-bim/sketch_bim.py semantic-checklist \
 python3 claude-skills/sketch-to-bim/sketch_bim.py issue-ledger \
   --seed <seed-name> \
   --phase <n>
+
+# Verify material intent from the recipe is represented in the compiled bundle.
+python3 claude-skills/sketch-to-bim/sketch_bim.py material-check \
+  --seed <seed-name> \
+  --out seed-artifacts/<seed-name>/evidence/material-check.json \
+  --fail-on-missing
 
 # Refuse phase advancement unless the packet is complete and clean.
 python3 claude-skills/sketch-to-bim/sketch_bim.py phase-accept \

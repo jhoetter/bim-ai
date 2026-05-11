@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "sketch-to-bim.archetypes.v1",
+  "archetypes": [
+    {
+      "id": "modern-two-storey-wrapper-house",
+      "title": "Modern Two-Storey Wrapper House",
+      "matchHints": [
+        "two storeys",
+        "modern white wrapper",
+        "recessed loggia or terrace",
+        "large glazed openings",
+        "flat or low/asymmetric roof expression"
+      ],
+      "seedDslRecipe": "spec/examples/seed-dsl-modern-house.example.json",
+      "defaultMode": "project_initiation_bim",
+      "minimumMatchPercent": 70,
+      "expectedFeatures": [
+        "massing hierarchy",
+        "typed walls/floors/roof",
+        "roof or terrace opening",
+        "rooms",
+        "interior asset markers",
+        "material intent",
+        "saved evidence viewpoint"
+      ]
+    }
+  ]
+}

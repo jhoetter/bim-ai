@@ -16,11 +16,19 @@ import { spawnSync } from 'node:child_process';
 const REPO_ROOT = path.resolve(new URL('..', import.meta.url).pathname);
 const DEFAULT_ROOT = path.join(REPO_ROOT, 'seed-artifacts');
 const DEFAULT_CAPABILITIES = 'spec/sketch-to-bim-capability-matrix.json';
+const ADVISOR_RULE_FILES = [
+  'app/bim_ai/constructability_advisories.py',
+  'app/bim_ai/constructability_report.py',
+  'app/bim_ai/constraints_metadata.py',
+  'packages/web/src/advisor/advisorViolationContext.ts',
+  'packages/web/src/advisor/perspectiveFilter.ts',
+];
 
 function usage() {
   console.error(`Usage:
   node scripts/verify-sketch-seed-artifacts.mjs [--root seed-artifacts] [--seed <name>]
     [--require-final-evidence] [--live] [--base-url <url>]
+    [--require-phase-packets] [--require-material-check]
 
 Checks manifest/bundle consistency for seed artifacts. With
 --require-final-evidence, also requires evidence/live-run-current/tool-run-summary.json
@@ -36,11 +44,15 @@ function parseArgs(argv) {
     seed: null,
     requireFinalEvidence: false,
     live: false,
+    requirePhasePackets: false,
+    requireMaterialCheck: false,
     baseUrl: process.env.BIM_AI_BASE_URL || 'http://127.0.0.1:8500',
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--require-final-evidence') args.requireFinalEvidence = true;
+    else if (arg === '--require-phase-packets') args.requirePhasePackets = true;
+    else if (arg === '--require-material-check') args.requireMaterialCheck = true;
     else if (arg === '--live') {
       args.live = true;
       args.requireFinalEvidence = true;
@@ -68,6 +80,18 @@ async function sha256File(file) {
     .createHash('sha256')
     .update(await fs.readFile(file))
     .digest('hex');
+}
+
+async function digestFiles(files) {
+  const h = crypto.createHash('sha256');
+  for (const relPath of [...files].sort()) {
+    h.update(relPath);
+    h.update('\0');
+    const abs = path.join(REPO_ROOT, relPath);
+    h.update((await exists(abs)) ? await sha256File(abs) : 'missing');
+    h.update('\0');
+  }
+  return h.digest('hex');
 }
 
 function gitHead() {
@@ -158,12 +182,49 @@ async function verifyArtifact(artifactDir, args, currentHead) {
       capabilitiesSha256: await sha256File(path.join(REPO_ROOT, summary.capabilitiesPath || DEFAULT_CAPABILITIES)).catch(
         () => null,
       ),
+      advisorRuleDigest: await digestFiles(summary.advisorRuleFiles || ADVISOR_RULE_FILES),
     };
     for (const [key, current] of Object.entries(checks)) {
       if (summary[key] !== current) {
         addFinding(findings, 'error', `${key}_stale`, `Final evidence ${key} does not match current input.`, {
           recorded: summary[key],
           current,
+        });
+      }
+    }
+  }
+
+  if (args.requirePhasePackets) {
+    const evidenceRoot = path.join(artifactDir, 'evidence');
+    const entries = await fs.readdir(evidenceRoot, { withFileTypes: true }).catch(() => []);
+    const phaseDirs = entries.filter((entry) => entry.isDirectory() && entry.name.startsWith('phase-'));
+    if (!phaseDirs.length) {
+      addFinding(findings, 'error', 'phase_packets_missing', 'No evidence/phase-* packets found.');
+    }
+    for (const entry of phaseDirs) {
+      const packetPath = path.join(evidenceRoot, entry.name, 'phase-packet.json');
+      if (!(await exists(packetPath))) {
+        addFinding(findings, 'error', 'phase_packet_missing', `Missing ${entry.name}/phase-packet.json.`);
+      } else {
+        const packet = await readJson(packetPath);
+        if (!packet.ok) {
+          addFinding(findings, 'error', 'phase_packet_failed', `${entry.name} is not accepted.`, {
+            packet: portable(packetPath),
+          });
+        }
+      }
+    }
+  }
+
+  if (args.requireMaterialCheck) {
+    const materialPath = path.join(artifactDir, 'evidence', 'material-check.json');
+    if (!(await exists(materialPath))) {
+      addFinding(findings, 'error', 'material_check_missing', 'Missing evidence/material-check.json.');
+    } else {
+      const materialCheck = await readJson(materialPath);
+      if (!materialCheck.ok) {
+        addFinding(findings, 'error', 'material_check_failed', 'Material intent check failed.', {
+          materialCheck: portable(materialPath),
         });
       }
     }
