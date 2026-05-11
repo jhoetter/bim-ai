@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from bim_ai.constructability_bcf import build_constructability_bcf_export
+from bim_ai.constructability_bcf import (
+    build_constructability_bcf_export,
+    constructability_issue_elements_from_bcf_topics,
+)
 from bim_ai.elements import (
     AssetLibraryEntryElem,
     ConstructabilitySuppressionElem,
@@ -106,3 +109,39 @@ def test_constructability_bcf_export_skips_suppressed_findings() -> None:
 
     assert export["topicCount"] == 0
     assert export["viewpointCount"] == 0
+
+
+def test_constructability_bcf_topics_import_as_persisted_issues() -> None:
+    payload = {
+        "format": "constructabilityBcfExport_v1",
+        "topics": [
+            {
+                "topicId": "bcf-constructability-abc123",
+                "title": "Furniture intersects wall.",
+                "status": "approved",
+                "elementIds": ["shelf-1", "wall-1"],
+                "violationRuleIds": ["furniture_wall_hard_clash"],
+                "constructabilityIssueFingerprint": "abc123def456",
+                "severity": "error",
+                "discipline": "coordination",
+                "blockingClass": "geometry",
+                "recommendation": "Move the shelf.",
+                "message": "Shelf intersects wall.",
+                "evidenceRefs": [{"kind": "viewpoint", "viewpointId": "vp-1"}],
+            }
+        ],
+    }
+
+    issues = constructability_issue_elements_from_bcf_topics(payload, revision="r7")
+
+    assert len(issues) == 1
+    issue = issues[0]
+    assert issue.kind == "constructability_issue"
+    assert issue.id == "ci-abc123def456"
+    assert issue.fingerprint == "abc123def456"
+    assert issue.rule_id == "furniture_wall_hard_clash"
+    assert issue.status == "approved"
+    assert issue.first_seen_revision == "r7"
+    assert issue.last_seen_revision == "r7"
+    assert issue.element_ids == ["shelf-1", "wall-1"]
+    assert issue.evidence_refs[0].viewpoint_id == "vp-1"

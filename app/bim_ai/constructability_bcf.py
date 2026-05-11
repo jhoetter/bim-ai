@@ -6,7 +6,7 @@ from typing import Any
 from bim_ai.constructability_geometry import AABB, physical_participant_for_element
 from bim_ai.constructability_issues import ConstructabilityIssue
 from bim_ai.constructability_report import build_constructability_report
-from bim_ai.elements import Element
+from bim_ai.elements import ConstructabilityIssueElem, Element
 
 
 def build_constructability_bcf_export(
@@ -50,6 +50,45 @@ def build_constructability_bcf_export(
         "topics": topics,
         "viewpoints": viewpoints,
     }
+
+
+def constructability_issue_elements_from_bcf_topics(
+    payload: Mapping[str, Any],
+    *,
+    revision: str | int,
+) -> list[ConstructabilityIssueElem]:
+    """Convert constructability BCF topic payloads back into persisted issue records."""
+
+    issues: list[ConstructabilityIssueElem] = []
+    for topic in payload.get("topics") or []:
+        fingerprint = str(topic.get("constructabilityIssueFingerprint") or "").strip()
+        if not fingerprint:
+            topic_id = str(topic.get("topicId") or topic.get("stableTopicId") or "")
+            if not topic_id:
+                continue
+            fingerprint = topic_id.removeprefix("bcf-constructability-")
+        rule_ids = [str(rule_id) for rule_id in topic.get("violationRuleIds") or []]
+        rule_id = rule_ids[0] if rule_ids else "constructability_bcf_topic"
+        issues.append(
+            ConstructabilityIssueElem(
+                kind="constructability_issue",
+                id=f"ci-{fingerprint[:16]}",
+                fingerprint=fingerprint,
+                ruleId=rule_id,
+                elementIds=[str(eid) for eid in topic.get("elementIds") or []],
+                status=_issue_status_from_bcf(topic),
+                firstSeenRevision=revision,
+                lastSeenRevision=revision,
+                message=topic.get("message") or topic.get("title"),
+                severity=topic.get("severity"),
+                discipline=topic.get("discipline"),
+                blockingClass=topic.get("blockingClass"),
+                recommendation=topic.get("recommendation"),
+                evidenceRefs=list(topic.get("evidenceRefs") or []),
+            )
+        )
+    issues.sort(key=lambda issue: issue.id)
+    return issues
 
 
 def _participant_bboxes(elements: dict[str, Element]) -> dict[str, AABB]:
@@ -166,3 +205,10 @@ def _bcf_status(issue: Mapping[str, Any]) -> str:
     if status in {"reviewed", "approved", "not_an_issue", "suppressed"}:
         return status
     return "open"
+
+
+def _issue_status_from_bcf(topic: Mapping[str, Any]) -> str:
+    status = str(topic.get("status") or "active")
+    if status in {"reviewed", "approved", "not_an_issue", "suppressed"}:
+        return status
+    return "active"
