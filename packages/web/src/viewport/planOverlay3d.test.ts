@@ -121,6 +121,28 @@ describe('planOverlay3d', () => {
     expect(group?.children.some((child) => child.userData.bimPickId)).toBe(false);
   });
 
+  it('renders above translucent model geometry and falls back to model footprint for sparse levels', () => {
+    const elements = fixtureElements();
+    elements.lv2 = { kind: 'level', id: 'lv2', name: 'Level 2', elevationMm: 3000 };
+    elements.pv2 = { kind: 'plan_view', id: 'pv2', name: 'Sparse upper plan', levelId: 'lv2' };
+    const vp = {
+      ...(elements.vp1 as Extract<Element, { kind: 'viewpoint' }>),
+      planOverlaySourcePlanViewId: 'pv2',
+    };
+    const group = buildPlanOverlay3dGroup(elements, vp, COLORS);
+
+    expect(group).toBeTruthy();
+    expect(group?.children.length).toBeGreaterThan(0);
+    group?.traverse((child) => {
+      expect(child.renderOrder).toBeGreaterThanOrEqual(1200);
+      const material = (child as THREE.Mesh | THREE.LineSegments | THREE.Sprite).material;
+      if (material instanceof THREE.Material) {
+        expect(material.depthTest).toBe(false);
+        expect(material.depthWrite).toBe(false);
+      }
+    });
+  });
+
   it('returns null when the saved viewpoint has the overlay disabled', () => {
     const elements = fixtureElements();
     const vp = elements.vp1 as Extract<Element, { kind: 'viewpoint' }>;

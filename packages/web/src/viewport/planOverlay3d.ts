@@ -19,6 +19,7 @@ const DEFAULT_OFFSET_MM = 3500;
 const DEFAULT_SHEET_OPACITY = 0.28;
 const DEFAULT_LINE_OPACITY = 0.86;
 const DEFAULT_FILL_OPACITY = 0.14;
+const OVERLAY_RENDER_ORDER = 1200;
 
 function clamp01(v: unknown, fallback: number): number {
   const n = Number(v);
@@ -84,10 +85,31 @@ function planViewBounds(planView: PlanView, elements: Element[], levelId: string
       if (e.boundaryMm) pts.push(...e.boundaryMm);
     }
   }
-  const b = boundsFromPoints(pts);
+  let b = boundsFromPoints(pts);
+  if (!b) {
+    const fallbackPts: XY[] = [];
+    for (const e of elements) {
+      if (e.kind === 'wall') fallbackPts.push(e.start, e.end);
+      if (e.kind === 'floor') fallbackPts.push(...e.boundaryMm);
+      if (e.kind === 'room') fallbackPts.push(...e.outlineMm);
+      if (e.kind === 'placed_asset' || e.kind === 'family_instance') fallbackPts.push(e.positionMm);
+      if (e.kind === 'stair') {
+        fallbackPts.push(e.runStartMm, e.runEndMm);
+        if (e.boundaryMm) fallbackPts.push(...e.boundaryMm);
+      }
+    }
+    b = boundsFromPoints(fallbackPts);
+  }
   if (!b) return null;
   const pad = 900;
   return { minX: b.minX - pad, minY: b.minY - pad, maxX: b.maxX + pad, maxY: b.maxY + pad };
+}
+
+function raiseOverlayObject(obj: THREE.Object3D): void {
+  obj.renderOrder = OVERLAY_RENDER_ORDER;
+  obj.traverse((child) => {
+    child.renderOrder = OVERLAY_RENDER_ORDER;
+  });
 }
 
 function addSegment(points: number[], a: XY, b: XY, yM: number): void {
@@ -107,7 +129,7 @@ function makeLineSegments(
   if (points.length < 6) return null;
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
-  return new THREE.LineSegments(
+  const lines = new THREE.LineSegments(
     geo,
     new THREE.LineBasicMaterial({
       color,
@@ -115,8 +137,11 @@ function makeLineSegments(
       opacity,
       depthTest: false,
       depthWrite: false,
+      toneMapped: false,
     }),
   );
+  raiseOverlayObject(lines);
+  return lines;
 }
 
 function makeDashedLineSegments(
@@ -135,11 +160,13 @@ function makeDashedLineSegments(
       opacity,
       depthTest: false,
       depthWrite: false,
+      toneMapped: false,
       dashSize: 0.22,
       gapSize: 0.16,
     }),
   );
   lines.computeLineDistances();
+  raiseOverlayObject(lines);
   return lines;
 }
 
@@ -158,10 +185,12 @@ function makeShapeMesh(pts: XY[], yM: number, color: string, opacity: number): T
       side: THREE.DoubleSide,
       depthTest: false,
       depthWrite: false,
+      toneMapped: false,
     }),
   );
   mesh.rotation.x = -Math.PI / 2;
   mesh.position.y = yM - 0.002;
+  raiseOverlayObject(mesh);
   return mesh;
 }
 
@@ -216,10 +245,17 @@ function labelSprite(text: string, xMm: number, yMm: number, yM: number): THREE.
   const tex = new THREE.CanvasTexture(canvas);
   tex.needsUpdate = true;
   const sprite = new THREE.Sprite(
-    new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, depthWrite: false }),
+    new THREE.SpriteMaterial({
+      map: tex,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+      toneMapped: false,
+    }),
   );
   sprite.position.set(xMm / 1000, yM + 0.025, yMm / 1000);
   sprite.scale.set(1.9, 0.48, 1);
+  raiseOverlayObject(sprite);
   return sprite;
 }
 
@@ -289,6 +325,7 @@ export function buildPlanOverlay3dGroup(
   const hidden = new Set(planView.categoriesHidden ?? []);
   const group = new THREE.Group();
   group.name = `plan-overlay:${planView.id}`;
+  group.renderOrder = OVERLAY_RENDER_ORDER;
   group.userData.planOverlay3d = true;
   group.userData.sourcePlanViewId = planView.id;
 
