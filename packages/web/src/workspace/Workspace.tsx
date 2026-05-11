@@ -129,7 +129,12 @@ import {
 import { useToolPrefs } from '../tools/toolPrefsStore';
 import { useOfflineStore } from '../offlineStore';
 import { usePresenceStore } from '../presenceStore';
-import { firstSheetId, placeViewOnSheetCommand } from './sheets/sheetRecommendedViewports';
+import {
+  firstSheetId,
+  placeViewOnSheetCommand,
+  recommendedSheetViewportsCommand,
+  recommendedViewsForSheet,
+} from './sheets/sheetRecommendedViewports';
 import type { WorkspaceId } from './chrome/workspaces';
 
 function libraryDisciplineFromLens(lens: LensMode): 'arch' | 'struct' | 'mep' | 'all' {
@@ -1148,6 +1153,23 @@ export function Workspace(): JSX.Element {
   const paletteActiveScheduleId =
     activeTab?.kind === 'schedule' && activeTab.targetId ? activeTab.targetId : null;
   const paletteFirstSheetId = useMemo(() => firstSheetId(elementsById), [elementsById]);
+  const paletteActiveSheetId =
+    activeTab?.kind === 'sheet' && activeTab.targetId
+      ? activeTab.targetId
+      : effectiveMode === 'sheet'
+        ? paletteFirstSheetId
+        : null;
+  const paletteSheetPlaceableViews = useMemo(
+    () =>
+      paletteActiveSheetId
+        ? recommendedViewsForSheet(elementsById, paletteActiveSheetId).map((el) => ({
+            id: el.id,
+            label: el.name,
+            keywords: [el.kind, 'sheet viewport', 'place on sheet'].join(' '),
+          }))
+        : [],
+    [elementsById, paletteActiveSheetId],
+  );
   const openSelectedScheduleRow = useCallback(() => {
     if (!selectedId || !elementsById[selectedId]) return;
     openElementById(selectedId);
@@ -1179,6 +1201,32 @@ export function Workspace(): JSX.Element {
       handleModeChange(target.kind);
     },
     [handleModeChange, openElementById],
+  );
+  const openActiveSheetAnchor = useCallback(
+    (anchorId: string) => {
+      navigateTo({
+        kind: 'sheet',
+        ...(paletteActiveSheetId ? { targetId: paletteActiveSheetId } : {}),
+        source: 'cmdk',
+      });
+      window.setTimeout(() => {
+        document.getElementById(anchorId)?.scrollIntoView({ block: 'start' });
+      }, 0);
+    },
+    [navigateTo, paletteActiveSheetId],
+  );
+  const placeRecommendedViewsOnActiveSheet = useCallback(() => {
+    if (!paletteActiveSheetId) return;
+    const cmd = recommendedSheetViewportsCommand(elementsById, paletteActiveSheetId);
+    if (cmd) void onSemanticCommand(cmd);
+  }, [elementsById, onSemanticCommand, paletteActiveSheetId]);
+  const placeViewOnActiveSheet = useCallback(
+    (viewId: string) => {
+      if (!paletteActiveSheetId) return;
+      const cmd = placeViewOnSheetCommand(elementsById, paletteActiveSheetId, viewId);
+      if (cmd) void onSemanticCommand(cmd);
+    },
+    [elementsById, onSemanticCommand, paletteActiveSheetId],
   );
   const openScheduleControls = useCallback(() => {
     navigateTo({
@@ -1362,6 +1410,7 @@ export function Workspace(): JSX.Element {
           activeMode: effectiveMode,
           activePlanViewId,
           activeScheduleId: paletteActiveScheduleId,
+          activeSheetId: paletteActiveSheetId,
           navigateMode: (kind) => navigateTo({ kind, source: 'cmdk' }),
           startPlanTool: (toolId) => handleToolSelect(toolId as ToolId),
           setTheme: handleThemeSet,
@@ -1369,6 +1418,7 @@ export function Workspace(): JSX.Element {
           setLanguage: handleLanguageSet,
           views: paletteViews,
           planTemplates: palettePlanTemplates,
+          sheetPlaceableViews: paletteSheetPlaceableViews,
           openElement: (id) => navigateTo({ kind: effectiveMode, targetId: id, source: 'cmdk' }),
           dispatchCommand: (cmd) => void onSemanticCommand(cmd),
           openProjectMenu: () => setProjectMenuOpen((v) => !v),
@@ -1385,6 +1435,11 @@ export function Workspace(): JSX.Element {
           placeActiveScheduleOnSheet,
           duplicateActiveSchedule,
           openScheduleControls,
+          placeRecommendedViewsOnActiveSheet,
+          placeViewOnActiveSheet,
+          openSheetTitleblockEditor: () => openActiveSheetAnchor('sheet-titleblock-editor'),
+          openSheetViewportEditor: () => openActiveSheetAnchor('sheet-viewport-editor'),
+          shareActiveSheet: () => setSharePresentationOpen(true),
           closeInactiveViews: () => setTabsState((s) => closeInactiveTabs(s)),
           toggleLeftRail: () => setLeftRailCollapsed((v) => !v),
           toggleRightRail,

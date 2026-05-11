@@ -11,6 +11,7 @@
       "left-rail",
       "right-rail",
       "canvas-context",
+      "sheet-canvas",
       "statusbar"
     ],
     "validModes": ["plan", "3d", "plan-3d", "section", "sheet", "schedule", "agent", "concept"],
@@ -152,6 +153,24 @@
       "usabilityScore": 8,
       "tests": [
         "packages/web/src/cmdPalette/defaultCommands.test.ts",
+        "packages/web/src/workspace/uxAudit.test.ts"
+      ]
+    },
+    {
+      "idPattern": "sheet.*",
+      "label": "Sheet viewport, titleblock, and export commands",
+      "owner": "packages/web/src/workspace/sheets",
+      "sourceFile": "packages/web/src/workspace/commandCapabilities.ts",
+      "intendedViews": ["sheet"],
+      "actualSurfaces": ["cmd-k", "sheet-canvas"],
+      "preconditions": ["active-sheet", "placeable-views or presentation pages where needed"],
+      "executionHandler": "Workspace Cmd+K context reuses sheet recommended viewport placement, dynamic place-view-on-sheet routing, titleblock/viewport editor anchors, and presentation share routing",
+      "status": "implemented",
+      "usabilityScore": 8,
+      "tests": [
+        "packages/web/src/cmdPalette/defaultCommands.test.ts",
+        "packages/web/src/cmdPalette/registry.test.ts",
+        "packages/web/src/workspace/commandCapabilities.test.ts",
         "packages/web/src/workspace/uxAudit.test.ts"
       ]
     },

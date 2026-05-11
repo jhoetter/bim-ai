@@ -54,6 +54,10 @@ function hasActiveSchedule(ctx: PaletteContext): boolean {
   return Boolean(ctx.activeScheduleId);
 }
 
+function hasActiveSheet(ctx: PaletteContext): boolean {
+  return Boolean(ctx.activeSheetId);
+}
+
 function selectedWall(ctx: PaletteContext) {
   const id = ctx.selectedElementIds[0];
   if (!id) return null;
@@ -323,6 +327,43 @@ registerCommand({
   category: 'command',
   isAvailable: hasActiveSchedule,
   invoke: (ctx) => ctx.openScheduleControls?.(),
+});
+
+registerCommand({
+  id: 'sheet.place-recommended-views',
+  label: 'Sheet: Place Recommended Views',
+  keywords: ['sheet', 'recommended views', 'viewport', 'place views'],
+  category: 'command',
+  isAvailable: hasActiveSheet,
+  invoke: (ctx) => ctx.placeRecommendedViewsOnActiveSheet?.(),
+});
+
+registerCommand({
+  id: 'sheet.edit-titleblock',
+  label: 'Sheet: Edit Titleblock',
+  keywords: ['sheet', 'titleblock', 'title block', 'revision', 'issue'],
+  category: 'command',
+  isAvailable: hasActiveSheet,
+  invoke: (ctx) => ctx.openSheetTitleblockEditor?.(),
+});
+
+registerCommand({
+  id: 'sheet.edit-viewports',
+  label: 'Sheet: Edit Viewports',
+  keywords: ['sheet', 'viewports', 'crop', 'scale', 'viewport selection'],
+  category: 'command',
+  isAvailable: hasActiveSheet,
+  invoke: (ctx) => ctx.openSheetViewportEditor?.(),
+});
+
+registerCommand({
+  id: 'sheet.export-share',
+  label: 'Sheet: Export / Share',
+  keywords: ['sheet', 'export', 'share', 'presentation', 'pdf', 'svg'],
+  category: 'command',
+  isAvailable: (ctx) =>
+    hasActiveSheet(ctx) && Boolean(ctx.hasPresentationPages && ctx.shareActiveSheet),
+  invoke: (ctx) => ctx.shareActiveSheet?.(),
 });
 
 registerCommand({

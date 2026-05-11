@@ -375,7 +375,7 @@ export function SheetViewportEditor(props: {
     '`plan:<plan_view id>` · `schedule:<schedule id>` · `section:<section_cut id>` · `viewpoint:<viewpoint id>`';
 
   return (
-    <div className="mt-3 space-y-2 text-[10px]">
+    <div id="sheet-viewport-editor" className="mt-3 space-y-2 text-[10px]">
       <div className="font-semibold text-muted">
         Replayable viewport placement ({props.sheetId})
       </div>
