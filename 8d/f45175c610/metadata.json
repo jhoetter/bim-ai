@@ -3,11 +3,12 @@
   "checkpoint_id": "8df45175c610",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "packages/cli/cli.initiationCheck.test.mjs",
     "packages/cli/cli.mjs",
     "packages/web/src/state/storeCoercion.ts",
+    "packages/web/src/workspace/Workspace.tsx",
     "spec/examples/seed-dsl-modern-house.example.json",
     "spec/examples/sketch-understanding-ir-documentation.example.json",
     "spec/examples/sketch-understanding-ir.example.json"
@@ -30,13 +31,19 @@
       "transcript": "/8d/f45175c610/2/full.jsonl",
       "content_hash": "/8d/f45175c610/2/content_hash.txt",
       "prompt": "/8d/f45175c610/2/prompt.txt"
+    },
+    {
+      "metadata": "/8d/f45175c610/3/metadata.json",
+      "transcript": "/8d/f45175c610/3/full.jsonl",
+      "content_hash": "/8d/f45175c610/3/content_hash.txt",
+      "prompt": "/8d/f45175c610/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 8827125,
+    "input_tokens": 8988754,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 164971904,
-    "output_tokens": 464610,
-    "api_call_count": 1323
+    "cache_read_tokens": 173075200,
+    "output_tokens": 491055,
+    "api_call_count": 1400
   }
 }
