@@ -1757,6 +1757,7 @@ export function Workspace(): JSX.Element {
             onProjectNameClick={() => setProjectMenuOpen((v) => !v)}
             openTabFromElement={openTabFromElement}
             onSetModeOnly={handleSetModeOnly}
+            activeViewTargetId={activeTab?.targetId}
             userDisplayName={userDisplayName}
             userId={userId}
             modelId={modelId}

@@ -14,6 +14,7 @@ export function WorkspaceLeftRail({
   onProjectNameClick,
   openTabFromElement,
   onSetModeOnly,
+  activeViewTargetId,
   userDisplayName,
   userId,
   modelId,
@@ -27,6 +28,7 @@ export function WorkspaceLeftRail({
    * `openTabFromElement` has already activated the correct tab, so that
    * `onModeChange` (which calls activateOrOpenKind) doesn't override it. */
   onSetModeOnly?: (mode: WorkspaceMode) => void;
+  activeViewTargetId?: string | null;
   userDisplayName?: string;
   userId?: string | null;
   modelId?: string | null;
@@ -35,7 +37,7 @@ export function WorkspaceLeftRail({
   const elementsById = useBimStore((s) => s.elementsById);
   const activatePlanView = useBimStore((s) => s.activatePlanView);
   const activePlanViewId = useBimStore((s) => s.activePlanViewId);
-  const selectedId = useBimStore((s) => s.selectedId);
+  const activeViewpointId = useBimStore((s) => s.activeViewpointId);
   const select = useBimStore((s) => s.select);
   const setOrbitCameraFromViewpointMm = useBimStore((s) => s.setOrbitCameraFromViewpointMm);
   const setActiveViewpointId = useBimStore((s) => s.setActiveViewpointId);
@@ -75,7 +77,7 @@ export function WorkspaceLeftRail({
       <div className="min-h-0 flex-1 overflow-y-auto">
         <LeftRail
           sections={browserSections}
-          activeRowId={activePlanViewId ?? selectedId ?? undefined}
+          activeRowId={activeViewTargetId ?? activePlanViewId ?? activeViewpointId ?? undefined}
           onRowActivate={(id) => {
             const el = elementsById[id];
             if (!el) return;
@@ -83,13 +85,13 @@ export function WorkspaceLeftRail({
               activatePlanView(id);
               openTabFromElement(el);
               onSetModeOnly?.('plan'); // change mode without overriding the active tab
-              select(id);
+              select(undefined);
               return;
             }
             if (el.kind === 'viewpoint') {
               openTabFromElement(el);
               onSetModeOnly?.('3d'); // change mode without overriding the active tab
-              select(id);
+              select(undefined);
               if (el.mode === 'orbit_3d' && el.camera) {
                 setOrbitCameraFromViewpointMm({
                   position: el.camera.position,
@@ -103,25 +105,25 @@ export function WorkspaceLeftRail({
             if (el.kind === 'section_cut') {
               openTabFromElement(el);
               onSetModeOnly?.('section'); // change mode without overriding the active tab
-              select(id);
+              select(undefined);
               return;
             }
             if (el.kind === 'sheet') {
               openTabFromElement(el);
               onSetModeOnly?.('sheet'); // change mode without overriding the active tab
-              select(id);
+              select(undefined);
               return;
             }
             if (el.kind === 'schedule') {
               openTabFromElement(el);
               onSetModeOnly?.('schedule'); // change mode without overriding the active tab
-              select(id);
+              select(undefined);
               return;
             }
             if (el.kind === 'view_concept_board') {
               openTabFromElement(el);
               onSetModeOnly?.('concept'); // change mode without overriding the active tab
-              select(id);
+              select(undefined);
             }
           }}
         />

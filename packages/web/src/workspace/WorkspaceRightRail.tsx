@@ -629,12 +629,14 @@ export function WorkspaceRightRail({
           {allScopeToast}
         </div>
       ) : null}
-      <RightRailSectionTabs
-        showProperties={showElementSurface}
-        showView={showViewContextSurface && (show3dLayers || Boolean(activePlanViewId))}
-        showWorkbench={showViewContextSurface && showAuthoringWorkbenches}
-        showReview={showReviewSurface}
-      />
+      {surface === 'legacy' ? (
+        <RightRailSectionTabs
+          showProperties={showElementSurface}
+          showView={showViewContextSurface && (show3dLayers || Boolean(activePlanViewId))}
+          showWorkbench={showViewContextSurface && showAuthoringWorkbenches}
+          showReview={showReviewSurface}
+        />
+      ) : null}
       {/* VIS-V3-04: Scene section — visible when no element is selected */}
       {showViewContextSurface ? (
         <div id="right-rail-view-scene" className="border-b border-border p-3">
@@ -1253,7 +1255,7 @@ export function WorkspaceRightRail({
           />
         </div>
       ) : null}
-      {activityEvents.length > 0 ? (
+      {surface === 'legacy' && activityEvents.length > 0 ? (
         <div className="border-t border-border p-3">
           <div
             className="mb-2 text-[10px] font-semibold uppercase text-muted"

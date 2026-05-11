@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { I18nextProvider } from 'react-i18next';
+import type { Element } from '@bim-ai/core';
 import i18n from '../i18n';
+import { useBimStore } from '../state/store';
 
 function renderWithProviders(ui: React.ReactElement) {
   return render(ui, {
@@ -37,12 +39,28 @@ beforeEach(() => {
   localStorage.removeItem(TABS_KEY);
   // Suppress the OnboardingTour dialog so aria-modal doesn't hide canvas content.
   localStorage.setItem('bim.onboarding-completed', 'true');
+  useBimStore.setState({
+    selectedId: undefined,
+    selectedIds: [],
+    elementsById: {},
+    activeLevelId: undefined,
+    activePlanViewId: undefined,
+    activeViewpointId: undefined,
+  });
 });
 
 afterEach(() => {
   cleanup();
   localStorage.removeItem('bim.onboarding-completed');
   localStorage.removeItem(TABS_KEY);
+  useBimStore.setState({
+    selectedId: undefined,
+    selectedIds: [],
+    elementsById: {},
+    activeLevelId: undefined,
+    activePlanViewId: undefined,
+    activeViewpointId: undefined,
+  });
 });
 
 describe('<Workspace /> — smoke', () => {
@@ -155,6 +173,54 @@ describe('<Workspace /> — smoke', () => {
     expect(queryByTestId('inspector')).toBeNull();
     expect(getByTestId('app-shell').dataset.elementSidebarPresent).toBe('false');
     expect(getByTestId('app-shell-element-sidebar').hidden).toBe(true);
+  });
+
+  it('opens primary navigation views without occupying the element sidebar — UX-TEST-005', () => {
+    const level: Extract<Element, { kind: 'level' }> = {
+      kind: 'level',
+      id: 'level-1',
+      name: 'Level 1',
+      elevationMm: 0,
+    };
+    const planView: Extract<Element, { kind: 'plan_view' }> = {
+      kind: 'plan_view',
+      id: 'plan-view-1',
+      name: 'Level 1 Plan',
+      levelId: level.id,
+    };
+    const wall: Extract<Element, { kind: 'wall' }> = {
+      kind: 'wall',
+      id: 'wall-1',
+      name: 'Wall 1',
+      wallTypeId: 'wt-1',
+      levelId: level.id,
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 6000, yMm: 0 },
+      thicknessMm: 200,
+      heightMm: 3000,
+    };
+
+    useBimStore.setState({
+      activeLevelId: level.id,
+      selectedId: wall.id,
+      elementsById: {
+        [level.id]: level,
+        [planView.id]: planView,
+        [wall.id]: wall,
+      },
+    });
+
+    const { getByTestId, queryByTestId } = renderWithProviders(<Workspace />);
+
+    fireEvent.click(getByTestId(`left-rail-row-${planView.id}`));
+
+    expect(useBimStore.getState().selectedId).toBeUndefined();
+    expect(getByTestId('app-shell').dataset.elementSidebarPresent).toBe('false');
+    expect(getByTestId('app-shell-element-sidebar').hidden).toBe(true);
+    expect(queryByTestId('inspector')).toBeNull();
+    expect(
+      within(getByTestId('app-shell-secondary-sidebar')).getByTestId('secondary-sidebar-plan'),
+    ).toBeTruthy();
   });
 
   it('mounts the redesign canvas root', () => {

@@ -10,7 +10,7 @@ import { inspectorPropertiesContextForElement } from './WorkspaceRightRailContex
 import { typePropertyUpdateCommand } from './WorkspaceRightRailTypeCommands';
 
 vi.mock('./viewport', () => ({
-  Viewport3DLayersPanel: () => null,
+  Viewport3DLayersPanel: () => <div data-testid="viewport3d-layers-panel" />,
 }));
 
 function renderWithI18n(ui: ReactElement) {
@@ -19,7 +19,7 @@ function renderWithI18n(ui: ReactElement) {
 
 afterEach(() => {
   cleanup();
-  useBimStore.setState({ selectedId: undefined, elementsById: {} });
+  useBimStore.setState({ selectedId: undefined, elementsById: {}, activityEvents: [] });
 });
 
 describe('WorkspaceRightRail — Properties Palette context', () => {
@@ -277,6 +277,40 @@ describe('WorkspaceRightRail — 3D selected wall actions', () => {
 
     fireEvent.click(getByTestId('3d-action-hide-wall-category'));
     expect(useBimStore.getState().viewerCategoryHidden.wall).toBe(true);
+  });
+
+  it('keeps the element surface selected-element-only — UX-WP-05', () => {
+    useBimStore.setState({
+      selectedId: wall.id,
+      elementsById: { [wall.id]: wall },
+      activityEvents: [
+        {
+          id: 1,
+          userId: 'test-user',
+          revisionAfter: 2,
+          commandTypes: ['updateElementProperty'],
+          createdAt: '2026-05-11T10:00:00.000Z',
+        },
+      ],
+    });
+
+    const { getByTestId, queryByTestId, queryByText } = renderWithI18n(
+      <WorkspaceRightRail
+        mode="3d"
+        onSemanticCommand={() => undefined}
+        onModeChange={() => undefined}
+        codePresetIds={[]}
+        surface="element"
+      />,
+    );
+
+    expect(getByTestId('inspector')).toBeTruthy();
+    expect(getByTestId('selected-wall-3d-actions')).toBeTruthy();
+    expect(queryByTestId('right-rail-section-tabs')).toBeNull();
+    expect(queryByTestId('viewport3d-layers-panel')).toBeNull();
+    expect(queryByTestId('right-rail-workbench')).toBeNull();
+    expect(queryByTestId('right-rail-review')).toBeNull();
+    expect(queryByText(/Activity/i)).toBeNull();
   });
 });
 
