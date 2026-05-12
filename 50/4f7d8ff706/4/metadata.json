@@ -1,0 +1,39 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "504f7d8ff706",
+  "session_id": "019e16c2-195d-74b3-b7f6-360818efd4ff",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-12T05:23:31.013437Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/e2e/ux-revamp-regression.spec.ts",
+    "spec/ux-bim-ai-rework-tracker.md",
+    "tmp/ux-risk-014-advisor-severity/01-plan.png",
+    "tmp/ux-risk-014-advisor-severity/02-3d.png",
+    "tmp/ux-risk-014-advisor-severity/03-section.png",
+    "tmp/ux-risk-014-advisor-severity/04-sheet.png",
+    "tmp/ux-risk-014-advisor-severity/05-schedule.png",
+    "tmp/ux-risk-014-advisor-severity/06-concept.png",
+    "tmp/ux-risk-014-advisor-severity/07-agent.png",
+    "tmp/ux-risk-014-advisor-severity/08-live-footer-advisor-severity.png",
+    "tmp/ux-risk-014-advisor-severity/09-live-advisor-dialog-severity.png"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "18ccb027680a",
+  "checkpoint_transcript_start": 441,
+  "transcript_lines_at_start": 441,
+  "initial_attribution": {
+    "calculated_at": "2026-05-12T05:23:30.972312Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 653,
+    "human_modified": 34,
+    "human_removed": 0,
+    "total_committed": 653,
+    "total_lines_changed": 687,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}
