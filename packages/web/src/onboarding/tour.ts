@@ -17,32 +17,30 @@ export interface OnboardingStep {
 
 export const ONBOARDING_STEPS: OnboardingStep[] = [
   {
-    target: '[data-testid="app-shell-canvas"]',
-    title: 'This is your canvas.',
-    body: 'Press W to draw a wall, or pick another tool from the floating palette above.',
-    hint: 'W',
+    target: '[data-testid="workspace-header"]',
+    title: 'Tabs are your view switcher.',
+    body: 'Use tabs to move between plan, 3D, sheet, schedule, and review contexts.',
+    hint: 'Cmd+K',
+  },
+  {
+    target: '[data-testid="app-shell-primary-sidebar"]',
+    title: 'Primary sidebar is navigation-only.',
+    body: 'Project, views, sheets, and schedules are organized here. Use it to open and manage tabs.',
+  },
+  {
+    target: '[data-testid="ribbon-bar"]',
+    title: 'Ribbon owns editing commands.',
+    body: 'Authoring and modify tools are grouped by active view and command context.',
+  },
+  {
+    target: '[data-testid="app-shell-secondary-sidebar"]',
+    title: 'Secondary sidebar owns view settings.',
+    body: 'View-wide graphics, visibility, and mode options live here. Element properties appear separately only when selected.',
   },
   {
     target: '[data-testid="status-bar"]',
-    title: 'Snap modes live in the status bar.',
-    body: 'Endpoint, midpoint, intersection — toggle individually or cycle them with F3.',
-    hint: 'F3',
-  },
-  {
-    target: '[data-testid="topbar"]',
-    title: 'Switch to 3D with `2`.',
-    body: 'The ViewCube top-right orients the camera.',
-    hint: '2',
-  },
-  {
-    target: '[data-testid="app-shell-left-rail"]',
-    title: 'Open the Project Browser on the left.',
-    body: 'Levels, views, sheets, schedules — every model artifact lives here.',
-  },
-  {
-    target: 'body',
-    title: 'Press ? any time to see all shortcuts.',
-    body: 'The keyboard cheatsheet covers tool hotkeys, mode jumps, and pointer modifiers.',
+    title: 'Footer tracks global status.',
+    body: 'Advisor, activity, jobs, snaps, grid, and undo/redo stay visible across every view.',
     hint: '?',
   },
 ];

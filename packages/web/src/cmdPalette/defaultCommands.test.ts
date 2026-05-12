@@ -230,10 +230,11 @@ describe('default Cmd+K commands', () => {
     expect(toggleElementSidebar).toHaveBeenCalledOnce();
   });
 
-  it('routes project snapshot, milestone, and presentation commands through the palette host context', () => {
+  it('routes project snapshot, milestone, help, and presentation commands through the palette host context', () => {
     const saveSnapshot = vi.fn();
     const openRestoreSnapshot = vi.fn();
     const openMilestone = vi.fn();
+    const replayOnboardingTour = vi.fn();
     const sharePresentation = vi.fn();
 
     command('project.save-snapshot').invoke({ ...PLAN_CTX, saveSnapshot });
@@ -244,6 +245,9 @@ describe('default Cmd+K commands', () => {
 
     command('milestone.open').invoke({ ...PLAN_CTX, openMilestone });
     expect(openMilestone).toHaveBeenCalledOnce();
+
+    command('help.replay-onboarding-tour').invoke({ ...PLAN_CTX, replayOnboardingTour });
+    expect(replayOnboardingTour).toHaveBeenCalledOnce();
 
     const openManageLinks = vi.fn();
     command('project.manage-links').invoke({ ...PLAN_CTX, openManageLinks });

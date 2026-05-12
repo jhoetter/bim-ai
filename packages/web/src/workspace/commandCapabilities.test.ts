@@ -72,6 +72,7 @@ describe('command capability graph', () => {
       ['project.manage-links', ['cmd-k', 'primary-sidebar']],
       ['library.open-family', ['cmd-k', 'ribbon', 'secondary-sidebar']],
       ['help.keyboard-shortcuts', ['cmd-k']],
+      ['help.replay-onboarding-tour', ['cmd-k', 'primary-sidebar']],
       ['advisor.open', ['cmd-k', 'footer']],
       ['jobs.open', ['cmd-k', 'footer']],
       ['milestone.open', ['cmd-k', 'primary-sidebar']],
@@ -122,6 +123,7 @@ describe('command capability graph', () => {
       'settings.language.toggle',
       'shell.toggle-primary-sidebar',
       'project.manage-links',
+      'help.replay-onboarding-tour',
       'advisor.open',
       'jobs.open',
       'milestone.open',
@@ -200,6 +202,10 @@ describe('command capability graph', () => {
       'header',
     ]);
     expect(getCommandCapability('help.keyboard-shortcuts')?.surfaces).toEqual(['cmd-k']);
+    expect(getCommandCapability('help.replay-onboarding-tour')?.surfaces).toEqual([
+      'cmd-k',
+      'primary-sidebar',
+    ]);
   });
 
   it('tracks sheet workflow commands as sheet-only document commands', () => {

@@ -36,6 +36,15 @@ export function OnboardingTour({
 
   useEffect(() => {
     if (!open) return;
+    const progress = readOnboardingProgress();
+    const nextIndex = progress.completed
+      ? 0
+      : Math.min(progress.currentIndex, ONBOARDING_STEPS.length - 1);
+    setIndex(nextIndex);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
     const step = ONBOARDING_STEPS[index];
     if (!step) return;
     const el = document.querySelector(step.target);

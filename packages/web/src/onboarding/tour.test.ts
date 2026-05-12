@@ -17,11 +17,21 @@ afterEach(() => {
 describe('Onboarding tour — spec §24', () => {
   it('exposes 5 steps in spec order', () => {
     expect(ONBOARDING_STEPS).toHaveLength(5);
-    expect(ONBOARDING_STEPS[0]!.title).toMatch(/canvas/i);
-    expect(ONBOARDING_STEPS[1]!.title).toMatch(/snap modes/i);
-    expect(ONBOARDING_STEPS[2]!.title).toMatch(/switch to 3D/i);
-    expect(ONBOARDING_STEPS[3]!.title).toMatch(/Project Browser/i);
-    expect(ONBOARDING_STEPS[4]!.title).toMatch(/all shortcuts/i);
+    expect(ONBOARDING_STEPS[0]!.title).toMatch(/tabs/i);
+    expect(ONBOARDING_STEPS[1]!.title).toMatch(/primary sidebar/i);
+    expect(ONBOARDING_STEPS[2]!.title).toMatch(/ribbon/i);
+    expect(ONBOARDING_STEPS[3]!.title).toMatch(/secondary sidebar/i);
+    expect(ONBOARDING_STEPS[4]!.title).toMatch(/footer/i);
+  });
+
+  it('targets canonical seven-region shell selectors', () => {
+    expect(ONBOARDING_STEPS.map((step) => step.target)).toEqual([
+      '[data-testid="workspace-header"]',
+      '[data-testid="app-shell-primary-sidebar"]',
+      '[data-testid="ribbon-bar"]',
+      '[data-testid="app-shell-secondary-sidebar"]',
+      '[data-testid="status-bar"]',
+    ]);
   });
 
   it('readOnboardingProgress defaults to incomplete', () => {

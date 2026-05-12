@@ -486,7 +486,7 @@ Evidence (2026-05-12): `Workspace.test.tsx` now proves `UX-ELE-020` close/reopen
 | UX-DIA-010 | Share presentation modal        | Header/share workflow       | Header                        | Keep     | Presentation-specific sharing remains header/share workflow                                                                           |
 | UX-DIA-011 | Activity drawer                 | Collaboration/activity      | Header or footer              | Fixed    | Activity stream is launched from footer entry (`status-bar-activity-entry`) and not owned by header                                   |
 | UX-DIA-012 | Milestone dialog                | Project/version workflows   | Project resources/footer      | Fixed    | Milestones are project-global; owned by primary project resources menu with Cmd+K reachability                                        |
-| UX-DIA-013 | Onboarding tour                 | App overlay                 | Help/onboarding               | Audit    | Must be updated after revamp to avoid explaining removed UI                                                                           |
+| UX-DIA-013 | Onboarding tour                 | App overlay                 | Help/onboarding               | Fixed    | Tour steps now describe canonical header/primary/ribbon/secondary/footer ownership and replay from Cmd+K/project resources            |
 | UX-DIA-014 | Cheatsheet/keyboard help        | Help overlay                | Cmd+K/help                    | Keep     | Keep as global help, but shortcuts must reflect new ownership                                                                         |
 | UX-DIA-015 | Recent clipboard tray           | Clipboard workflow          | Footer or Cmd+K               | Audit    | If global state, footer; if command, Cmd+K                                                                                            |
 | UX-DIA-016 | Import wizard                   | Project/import surfaces     | Project selector or Insert    | Audit    | Classify per import type: project resource versus active view placement                                                               |
@@ -497,6 +497,7 @@ Evidence (2026-05-12): `Workspace.test.tsx` now proves `UX-ELE-020` close/reopen
 
 Evidence (2026-05-12): seeded live capture `packages/web/tmp/ux-primary-resource-reconcile-20260512/03-live-family-library-wall-types.png` confirms family/type resources launch from Insert ribbon dialog ownership, and `04-live-project-menu-manage-links.png` confirms link management is project-resource owned from the primary project selector menu.
 Additional evidence (2026-05-12): `ProjectMenu.test.tsx`, `Workspace.test.tsx`, and `defaultCommands.test.ts` now prove milestone ownership and reachability (`project-menu-save-milestone`, `palette-entry-milestone.open`) and `commandCapabilities` metadata tracks canonical surfaces (`cmd-k`, `primary-sidebar`).
+Additional evidence (2026-05-12): onboarding copy/targets are rewritten in `onboarding/tour.ts` and validated by `tour.test.ts`; `Workspace.test.tsx` plus UX regression e2e now verify replay via `palette-entry-help.replay-onboarding-tour`; seeded live capture `packages/web/tmp/ux-dia-013-onboarding-live-20260512/summary.json` reports `initialTourCount: 0`, `paletteReplayCount: 1`, `replayTourCount: 1`.
 
 ## Expanded View-Mode Surface Tracker
 

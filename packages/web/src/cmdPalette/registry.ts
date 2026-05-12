@@ -69,6 +69,7 @@ export type PaletteContext = {
   hasPresentationPages?: boolean;
   openFamilyLibrary?: () => void;
   openKeyboardShortcuts?: () => void;
+  replayOnboardingTour?: () => void;
   openAdvisor?: () => void;
   openJobs?: () => void;
   openMilestone?: () => void;

@@ -738,6 +738,15 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'help.replay-onboarding-tour',
+  label: 'Replay Onboarding Tour',
+  keywords: ['help', 'onboarding', 'tour', 'guidance', 'workspace walkthrough'],
+  category: 'command',
+  sourceKind: 'setting',
+  invoke: (ctx) => ctx.replayOnboardingTour?.(),
+});
+
+registerCommand({
   id: 'tabs.close-inactive',
   label: 'Close Inactive Views',
   keywords: ['tabs', 'views', 'close inactive'],

@@ -543,6 +543,21 @@ describe('<Workspace /> — smoke', () => {
     expect(getByRole('dialog', { name: 'Save milestone' })).toBeTruthy();
   });
 
+  it('replays onboarding tour through Cmd+K help reachability', async () => {
+    const { getByTestId, getByLabelText, queryByTestId, findByTestId } = renderWithProviders(
+      <Workspace />,
+    );
+    expect(queryByTestId('onboarding-tour')).toBeNull();
+
+    fireEvent.click(getByTestId('workspace-header-cmdk'));
+    fireEvent.change(getByLabelText('Command palette search'), {
+      target: { value: 'replay onboarding tour' },
+    });
+
+    fireEvent.click(getByTestId('palette-entry-help.replay-onboarding-tour'));
+    expect(await findByTestId('onboarding-tour')).toBeTruthy();
+  });
+
   it('owns activity stream entry in footer and opens the activity drawer from there', () => {
     const { getByTestId, queryByTestId } = renderWithProviders(<Workspace />);
 

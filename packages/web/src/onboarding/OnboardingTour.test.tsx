@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { OnboardingTour } from './OnboardingTour';
-import { ONBOARDING_STEPS, resetOnboarding } from './tour';
+import { markOnboardingCompleted, ONBOARDING_STEPS, resetOnboarding } from './tour';
 
 beforeEach(() => {
   resetOnboarding();
@@ -56,5 +56,16 @@ describe('<OnboardingTour /> — spec §24', () => {
     const { getByTestId } = render(<OnboardingTour open={true} onClose={onClose} />);
     fireEvent.keyDown(getByTestId('onboarding-tour'), { key: 'Escape' });
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('restarts from the first step when replaying after completion', () => {
+    markOnboardingCompleted();
+    const { rerender, getByText } = render(
+      <OnboardingTour open={false} onClose={() => undefined} />,
+    );
+
+    resetOnboarding();
+    rerender(<OnboardingTour open={true} onClose={() => undefined} />);
+    expect(getByText(ONBOARDING_STEPS[0]!.title)).toBeTruthy();
   });
 });

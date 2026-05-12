@@ -1105,6 +1105,10 @@ export function Workspace(): JSX.Element {
   );
 
   const openMilestoneDialog = useCallback(() => setMilestoneDialogOpen(true), []);
+  const replayOnboardingTour = useCallback(() => {
+    resetOnboarding();
+    setTourOpen(true);
+  }, []);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -1638,6 +1642,7 @@ export function Workspace(): JSX.Element {
           hasPresentationPages: sheetPages.length > 0,
           openFamilyLibrary: () => setFamilyLibraryOpen(true),
           openKeyboardShortcuts: () => setCheatsheetOpen(true),
+          replayOnboardingTour,
           openAdvisor: () => setAdvisorOpen(true),
           openJobs: () => setJobsOpen(true),
           openMilestone: openMilestoneDialog,
@@ -1804,10 +1809,7 @@ export function Workspace(): JSX.Element {
         onRestoreSnapshot={(f) => void handleRestoreSnapshot(f)}
         onOpenMilestone={openMilestoneDialog}
         onNewClear={handleNewClear}
-        onReplayTour={() => {
-          resetOnboarding();
-          setTourOpen(true);
-        }}
+        onReplayTour={replayOnboardingTour}
         onManageLinks={() => setManageLinksOpen(true)}
         onLinkIfc={(file) => {
           // FED-04: the workspace doesn't know its host model id at this

@@ -565,6 +565,7 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await page.getByTestId('primary-project-selector').click();
     await expect(page.getByTestId('project-menu')).toBeVisible();
     await expect(page.getByTestId('project-menu-save-milestone')).toBeVisible();
+    await expect(page.getByTestId('project-menu-replay-tour')).toBeVisible();
     await capture(page, testInfo, '13-project-menu.png');
     await page.getByTestId('project-menu-save-milestone').click();
     await expect(page.getByRole('dialog', { name: 'Save milestone' })).toBeVisible();
@@ -602,6 +603,18 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await page.getByTestId('status-bar-activity-entry').click();
     await expect(page.getByTestId('activity-drawer')).toBeVisible();
     await capture(page, testInfo, '17-activity-drawer.png');
+  });
+
+  test('replays onboarding tour from Cmd+K help owner', async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 1280, height: 820 });
+    await bootWorkspace(page);
+
+    await page.getByTestId('workspace-header-cmdk').click();
+    await page.getByLabel('Command palette search').fill('replay onboarding tour');
+    await expect(page.getByTestId('palette-entry-help.replay-onboarding-tour')).toBeVisible();
+    await page.getByTestId('palette-entry-help.replay-onboarding-tour').click();
+    await expect(page.getByTestId('onboarding-tour')).toBeVisible();
+    await capture(page, testInfo, '17a-cmdk-replay-onboarding-tour.png');
   });
 
   test('captures active command modifier ownership', async ({ page }, testInfo) => {
