@@ -417,7 +417,6 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await bootWorkspace(page);
 
-    await page.getByTestId('workspace-header-primary-toggle').click();
     await expect(page.getByTestId('app-shell')).toHaveAttribute('data-primary-hidden', 'true');
     await expect(page.getByTestId('app-shell-primary-sidebar')).toBeHidden();
     await expect(page.getByTestId('app-shell-primary-reveal')).toBeVisible();
@@ -427,6 +426,24 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await expect(page.getByTestId('app-shell')).toHaveAttribute('data-primary-hidden', 'false');
     await expect(page.getByTestId('app-shell-primary-sidebar')).toBeVisible();
     await capture(page, testInfo, '09-narrow-primary-restored.png');
+  });
+
+  test('captures tablet shell region stability', async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 768, height: 900 });
+    await bootWorkspace(page);
+
+    await assertSevenRegionOwnership(page);
+    const primary = await page.getByTestId('app-shell-primary-sidebar').boundingBox();
+    const secondary = await page.getByTestId('app-shell-secondary-sidebar').boundingBox();
+    const canvas = await page.getByTestId('app-shell-canvas').boundingBox();
+    const footer = await page.getByTestId('app-shell-footer').boundingBox();
+    expect(primary?.width).toBeGreaterThan(180);
+    expect(secondary?.width).toBeGreaterThan(150);
+    expect(canvas?.width).toBeGreaterThan(180);
+    expect(primary && secondary && primary.x + primary.width <= secondary.x + 1).toBeTruthy();
+    expect(secondary && canvas && secondary.x + secondary.width <= canvas.x + 1).toBeTruthy();
+    expect(footer?.y).toBeGreaterThan((canvas?.y ?? 0) + 1);
+    await capture(page, testInfo, '31-tablet-responsive-shell.png');
   });
 
   test('captures footer advisor and Cmd+K resource dialog reachability', async ({

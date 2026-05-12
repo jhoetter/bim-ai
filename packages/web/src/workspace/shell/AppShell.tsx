@@ -111,6 +111,7 @@ export function AppShell({
   const [rightCollapsedInternal, setRightCollapsedInternal] = useState(defaultRightCollapsed);
   const [primaryWidth, setPrimaryWidth] = useState(defaultPrimarySidebarWidth);
   const lastVisiblePrimaryWidthRef = useRef(defaultPrimarySidebarWidth);
+  const narrowAutoCollapsedRef = useRef(false);
   const resizeStateRef = useRef<{ startX: number; startWidth: number } | null>(null);
 
   const isRightControlled = rightCollapsedProp !== undefined;
@@ -175,6 +176,22 @@ export function AppShell({
     target.addEventListener('keydown', listener as EventListener);
     return () => target.removeEventListener('keydown', listener as EventListener);
   }, [handleKey, hotkeyTarget]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const applyNarrowDefault = (): void => {
+      if (window.innerWidth < 640 && !narrowAutoCollapsedRef.current) {
+        narrowAutoCollapsedRef.current = true;
+        setLeftCollapsed(true);
+      }
+      if (window.innerWidth >= 900) {
+        narrowAutoCollapsedRef.current = false;
+      }
+    };
+    applyNarrowDefault();
+    window.addEventListener('resize', applyNarrowDefault);
+    return () => window.removeEventListener('resize', applyNarrowDefault);
+  }, [setLeftCollapsed]);
 
   useEffect(() => {
     if (!leftCollapsed && primaryWidth <= 0) {
