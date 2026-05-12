@@ -1,0 +1,38 @@
+You are implementing the BIM AI UX revamp.
+
+  First, read and follow:
+  spec/methodology-prompt.md
+
+  Then implement the first workpackage:
+
+  Implement UX-WP-01 from spec/ux-bim-ai-rework-tracker.md.
+
+  Goal:
+  Create the canonical seven-region workspace shell foundation:
+  - resizable primary sidebar region
+  - persistent secondary sidebar region
+  - tab-first header region
+  - ribbon/options region
+  - canvas region
+  - conditional element-sidebar region
+  - footer region
+
+  Do not migrate all features yet. Do not move random individual buttons. Create the structural foundation that makes correct placement
+  possible.
+
+  Definition of done:
+  - shell can represent the target layout
+  - primary sidebar can collapse to hidden and be restored from the header
+  - element sidebar can be absent when no element is selected
+  - ownership tests prove these behaviors
+  - seeded app still runs with `make dev name=target-house-3`
+  - relevant screenshots are captured
+  - final answer lists tracker rows addressed, files changed, validation run, screenshots checked, and remaining gaps
+
+---
+
+please continue in a loop until 100% solved across the full tracker; i know this will take a very long time, but don't become lazy, continue implementing, committing and pushing. it is perfectly fine if this takes you a very, very,very long time. always focus on the current aspect, the current workpackage, impelment it, write down any relevant notes and findings and track them as well that would be helpful for future documentation (if none it is also fine), and commit and push once done with a workpackage, and then continue with the next one.
+
+---
+
+also please always do a short inspection after each workpackage via the terminal and renderings of the actual software (run make seed with e.g. name=target-house-3 and the make dev to get it up and running) and check, e.g. on localhost:2000; this is likely helpful to see if your work is actually working. this is more likely needed in the earlier checks rather than the later ones.
