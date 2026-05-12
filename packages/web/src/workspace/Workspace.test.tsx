@@ -230,6 +230,7 @@ describe('<Workspace /> — smoke', () => {
     expect(getByTestId('layer-hide-all')).toBeTruthy();
     expect(getByTestId('app-shell-element-sidebar').hidden).toBe(true);
     expect(queryByTestId('orbit-viewpoint-persisted-hud')).toBeNull();
+    expect(queryByTestId('viewport-walk-hints')).toBeNull();
   });
 
   it('uses explicit secondary sidebar adapters for every view type — UX-WP-04', () => {

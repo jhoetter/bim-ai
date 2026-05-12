@@ -2386,7 +2386,10 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
 
       {/* Walk mode controls bar — shown while pointer is locked */}
       {walkActive ? (
-        <div className="pointer-events-none absolute bottom-12 left-1/2 z-20 -translate-x-1/2">
+        <div
+          data-testid="viewport-walk-hints"
+          className="pointer-events-none absolute bottom-12 left-1/2 z-20 -translate-x-1/2"
+        >
           <div className="flex items-center gap-2 rounded-full border border-border bg-surface/90 px-4 py-1.5 text-[11px] text-muted shadow-md backdrop-blur-sm">
             <NavHint k="WASD" label={t('viewport.walkHints.move')} />
             <Sep />
@@ -2401,23 +2404,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             <NavHint k="Esc" label={t('viewport.walkHints.exit')} />
           </div>
         </div>
-      ) : (
-        <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2">
-          <div className="flex items-center gap-1.5 rounded-full border border-border/60 bg-surface/70 px-3 py-1 text-[10px] text-muted/80 backdrop-blur-sm">
-            <NavHint k="LMB" label={t('viewport.walkHints.orbit')} />
-            <Sep />
-            <NavHint k="RMB/Shift" label={t('viewport.walkHints.pan')} />
-            <Sep />
-            <NavHint k="Scroll" label={t('viewport.walkHints.zoom')} />
-            <Sep />
-            <NavHint k="F" label={t('viewport.walkHints.fit')} />
-            <Sep />
-            <NavHint k="H" label={t('viewport.walkHints.reset')} />
-            <Sep />
-            <span className="opacity-70">{t('viewport.shortcutsHint')}</span>
-          </div>
-        </div>
-      )}
+      ) : null}
 
       {sectionBoxActive && sectionBoxRef.current ? (
         <div className="pointer-events-none absolute left-3 bottom-3 z-20">
