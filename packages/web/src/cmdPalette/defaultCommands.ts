@@ -670,6 +670,15 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'jobs.open',
+  label: 'Open Jobs',
+  keywords: ['jobs', 'background', 'progress', 'queue', 'import', 'export'],
+  category: 'command',
+  sourceKind: 'setting',
+  invoke: (ctx) => ctx.openJobs?.(),
+});
+
+registerCommand({
   id: 'advisor.apply-first-fix',
   label: 'Apply First Advisor Fix',
   keywords: ['advisor', 'fix', 'quick fix', 'apply fix', 'review'],

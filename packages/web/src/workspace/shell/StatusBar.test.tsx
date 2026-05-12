@@ -115,6 +115,7 @@ describe('StatusBar — spec §17', () => {
       <StatusBar
         level={{ id: 'lvl-ground', label: 'Ground' }}
         advisorCounts={{ error: 0, warning: 1, info: 0 }}
+        jobsCounts={{ queued: 1, running: 1, errored: 0 }}
         activityUnreadCount={2}
       />,
     );
@@ -124,7 +125,24 @@ describe('StatusBar — spec §17', () => {
     expect(getByTestId('status-bar-context-cluster').className).toContain('md:flex');
     expect(getByTestId('status-bar-priority-cluster')).toBeTruthy();
     expect(getByTestId('status-bar-advisor-entry').textContent).toContain('1 warning');
+    expect(getByTestId('status-bar-jobs-entry').textContent).toContain('Jobs 2 active');
     expect(getByTestId('status-bar-activity-entry')).toBeTruthy();
+  });
+
+  it('shows jobs status summary and opens the footer jobs entry', () => {
+    const onJobsClick = vi.fn();
+    const { getByTestId, getByLabelText } = renderWithI18n(
+      <StatusBar
+        level={{ id: 'lvl-ground', label: 'Ground' }}
+        jobsCounts={{ queued: 1, running: 2, errored: 1 }}
+        onJobsClick={onJobsClick}
+      />,
+    );
+
+    expect(getByTestId('status-bar-jobs-entry').textContent).toContain('Jobs 1 failed');
+    expect(getByTestId('status-bar-jobs-badge').textContent).toBe('4');
+    fireEvent.click(getByLabelText('Jobs: 2 running, 1 queued, 1 failed'));
+    expect(onJobsClick).toHaveBeenCalledTimes(1);
   });
 
   it('grid switch reflects state and emits onGridToggle', () => {

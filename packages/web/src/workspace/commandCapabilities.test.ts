@@ -73,6 +73,7 @@ describe('command capability graph', () => {
       ['library.open-family', ['cmd-k', 'ribbon', 'secondary-sidebar']],
       ['help.keyboard-shortcuts', ['cmd-k']],
       ['advisor.open', ['cmd-k', 'footer']],
+      ['jobs.open', ['cmd-k', 'footer']],
       ['advisor.apply-first-fix', ['cmd-k', 'dialog']],
       ['sheet.export-share', ['cmd-k', 'ribbon', 'header']],
       ['visibility.plan.graphics', ['cmd-k', 'ribbon', 'secondary-sidebar']],
@@ -118,6 +119,7 @@ describe('command capability graph', () => {
       'shell.toggle-primary-sidebar',
       'project.manage-links',
       'advisor.open',
+      'jobs.open',
     ]) {
       for (const mode of ['plan', '3d', 'sheet', 'schedule', 'agent'] as const) {
         expect(evaluateCommandInMode(commandId, mode)?.state).toBe('enabled');
@@ -178,6 +180,7 @@ describe('command capability graph', () => {
       'primary-sidebar',
     ]);
     expect(getCommandCapability('advisor.open')?.surfaces).toEqual(['cmd-k', 'footer']);
+    expect(getCommandCapability('jobs.open')?.surfaces).toEqual(['cmd-k', 'footer']);
     expect(getCommandCapability('advisor.apply-first-fix')?.preconditions).toEqual([
       'advisor-finding-with-quick-fix',
     ]);

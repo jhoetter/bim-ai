@@ -382,10 +382,13 @@ describe('default Cmd+K commands', () => {
 
   it('routes advisor entry and quick-fix bridge through the palette host context', () => {
     const openAdvisor = vi.fn();
+    const openJobs = vi.fn();
     const applyFirstAdvisorFix = vi.fn();
 
     command('advisor.open').invoke({ ...PLAN_CTX, openAdvisor });
     expect(openAdvisor).toHaveBeenCalledOnce();
+    command('jobs.open').invoke({ ...PLAN_CTX, openJobs });
+    expect(openJobs).toHaveBeenCalledOnce();
 
     const unavailable = queryPalette('advisor fix', PLAN_CTX, {}).find(
       (entry) => entry.id === 'advisor.apply-first-fix',

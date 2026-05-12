@@ -93,6 +93,7 @@ import { SharePresentationModal } from '../collab/SharePresentationModal';
 import { useActivityDrawerStore } from '../collab/activityDrawerStore';
 import { LibraryOverlay } from './library';
 import { useActivityStore } from '../collab/activityStore';
+import { JobsPanel } from '../jobs/JobsPanel';
 import { CheatsheetModal } from '../cmd/CheatsheetModal';
 import { CommandPalette } from '../cmdPalette/CommandPalette';
 import '../cmdPalette/defaultCommands';
@@ -183,6 +184,26 @@ function formatStatusMm(mm: number): string {
   return `${(mm / 1000).toFixed(1)} m`;
 }
 
+const EMPTY_JOBS_COUNTS = {
+  queued: 0,
+  running: 0,
+  errored: 0,
+} as const;
+
+function summarizeJobsCounts(rows: unknown[]): typeof EMPTY_JOBS_COUNTS {
+  const counts = { ...EMPTY_JOBS_COUNTS };
+  for (const row of rows) {
+    const status =
+      row && typeof row === 'object' && 'status' in row
+        ? String((row as { status?: unknown }).status ?? '')
+        : '';
+    if (status === 'queued') counts.queued += 1;
+    else if (status === 'running') counts.running += 1;
+    else if (status === 'errored') counts.errored += 1;
+  }
+  return counts;
+}
+
 export function Workspace(): JSX.Element {
   const { t, i18n } = useTranslation();
   const toolRegistry = useMemo(() => getToolRegistry(t), [t]);
@@ -271,6 +292,8 @@ export function Workspace(): JSX.Element {
   // AST-V3-01 — library overlay (Alt+2)
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [advisorOpen, setAdvisorOpen] = useState(false);
+  const [jobsOpen, setJobsOpen] = useState(false);
+  const [jobsCounts, setJobsCounts] = useState(EMPTY_JOBS_COUNTS);
   const projectSettings =
     elementsById.project_settings?.kind === 'project_settings'
       ? elementsById.project_settings
@@ -300,6 +323,36 @@ export function Workspace(): JSX.Element {
     () => activityRows.filter((r) => r.ts > activityLastSeenAt).length,
     [activityRows, activityLastSeenAt],
   );
+
+  useEffect(() => {
+    if (!modelId || modelId === 'empty') {
+      setJobsCounts(EMPTY_JOBS_COUNTS);
+      return;
+    }
+    let cancelled = false;
+
+    const refreshJobs = async (): Promise<void> => {
+      try {
+        const response = await fetch(`/api/jobs?modelId=${encodeURIComponent(modelId)}`);
+        if (!response.ok) return;
+        const payload = (await response.json()) as unknown;
+        if (cancelled) return;
+        setJobsCounts(summarizeJobsCounts(Array.isArray(payload) ? payload : []));
+      } catch {
+        // best-effort readout; keep the last successful summary
+      }
+    };
+
+    void refreshJobs();
+    const timer = window.setInterval(() => {
+      void refreshJobs();
+    }, 15000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [modelId]);
 
   const [mode, setMode] = useState<WorkspaceMode>(() =>
     viewerMode === 'orbit_3d' ? '3d' : 'plan',
@@ -1569,6 +1622,7 @@ export function Workspace(): JSX.Element {
           openFamilyLibrary: () => setFamilyLibraryOpen(true),
           openKeyboardShortcuts: () => setCheatsheetOpen(true),
           openAdvisor: () => setAdvisorOpen(true),
+          openJobs: () => setJobsOpen(true),
           hasAdvisorQuickFix: Boolean(firstAdvisorQuickFix),
           applyFirstAdvisorFix: firstAdvisorQuickFix
             ? () => void onSemanticCommand(firstAdvisorQuickFix)
@@ -1656,6 +1710,41 @@ export function Workspace(): JSX.Element {
                   setAdvisorOpen(false);
                 }}
               />
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {jobsOpen ? (
+        <div
+          data-testid="jobs-dialog-backdrop"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/20 p-4 sm:items-center"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setJobsOpen(false);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="jobs-dialog-title"
+            data-testid="jobs-dialog"
+            className="relative flex h-[min(760px,calc(100vh-32px))] w-full max-w-sm flex-col overflow-hidden rounded border border-border bg-surface shadow-xl"
+          >
+            <div className="flex items-center justify-between border-b border-border px-3 py-2">
+              <h2 id="jobs-dialog-title" className="text-sm font-semibold text-foreground">
+                Jobs
+              </h2>
+              <button
+                type="button"
+                data-testid="jobs-dialog-close"
+                onClick={() => setJobsOpen(false)}
+                className="inline-flex h-7 w-7 items-center justify-center rounded border border-border text-muted hover:bg-surface-2 hover:text-foreground"
+                aria-label="Close jobs"
+              >
+                ×
+              </button>
+            </div>
+            <div className="min-h-0 flex-1">
+              <JobsPanel />
             </div>
           </div>
         </div>
@@ -1989,6 +2078,8 @@ export function Workspace(): JSX.Element {
             onSnapToggle={handleSnapToggle}
             advisorCounts={advisorCounts}
             onAdvisorClick={() => setAdvisorOpen(true)}
+            jobsCounts={jobsCounts}
+            onJobsClick={() => setJobsOpen(true)}
             activeWorkspaceId={activeWorkspaceId}
             driftCount={driftCount}
             onDriftClick={() => setManageLinksOpen(true)}

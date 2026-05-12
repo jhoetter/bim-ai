@@ -144,8 +144,8 @@ Evidence (2026-05-12): seeded capture at `packages/web/tmp/ux-canvas-secondary-r
 | UX-E-005 | 3D view controls                      | Right rail                                | Secondary sidebar 3D                                          | Fixed     | Whole-canvas controls                                                          | Move to 3D secondary sidebar                                                       |
 | UX-E-006 | Selected 3D wall actions              | Right rail view section                   | Element sidebar contextual actions or ribbon contextual group | Keep/Move | Selection-scoped actions are valid, but should not be mixed with view controls | Put selection actions in element sidebar; repeated edit tools in contextual ribbon |
 | UX-E-007 | Authoring workbenches                 | Right rail workbench                      | Secondary sidebar/ribbon/modals                               | Redesign  | Workbenches mix resources, authoring, and selected state                       | Split by scope: resource managers secondary/modal, edit commands ribbon            |
-| UX-E-008 | AdvisorPanel                          | Right rail review section                 | Footer count + advisor dialog                                 | Move      | Advisor is global and should be always visible                                 | Footer severity badge opens dialog                                                 |
-| UX-E-009 | Activity events                       | Right rail lower section                  | Footer/dialog/activity panel                                  | Move      | Global activity is not selected-element state                                  | Footer activity count opens activity drawer                                        |
+| UX-E-008 | AdvisorPanel                          | Right rail review section                 | Footer count + advisor dialog                                 | Fixed     | Advisor is global and should be always visible                                 | Footer severity badge opens dialog                                                 |
+| UX-E-009 | Activity events                       | Right rail lower section                  | Footer/dialog/activity panel                                  | Fixed     | Global activity is not selected-element state                                  | Footer activity count opens activity drawer                                        |
 | UX-E-010 | Hide Element in View                  | Inspector properties area                 | Element sidebar action                                        | Keep      | Selection-specific                                                             | Keep in element sidebar, near visibility actions                                   |
 | UX-E-011 | Hide Category in View                 | Inspector properties area                 | Secondary sidebar view visibility or element sidebar shortcut | Fixed     | Category visibility is view-level; selected element can provide shortcut       | Primary owner secondary; optional shortcut in element sidebar                      |
 
@@ -153,7 +153,7 @@ Evidence (2026-05-12): seeded capture at `packages/web/tmp/ux-canvas-secondary-r
 
 | ID       | Current UI element          | Current location/source                       | Target location             | Status    | Problem                                                                   | Target behavior                                           |
 | -------- | --------------------------- | --------------------------------------------- | --------------------------- | --------- | ------------------------------------------------------------------------- | --------------------------------------------------------- |
-| UX-F-001 | Advisor warning/error count | Right rail advisor list                       | Footer                      | Move      | Global model health should be visible in all views                        | Footer badge by severity opens advisor dialog             |
+| UX-F-001 | Advisor warning/error count | Right rail advisor list                       | Footer                      | Fixed     | Global model health should be visible in all views                        | Footer badge by severity opens advisor dialog             |
 | UX-F-002 | Save/sync/offline           | Footer/status bar and header tiny offline dot | Footer                      | Keep/Move | Footer is correct; header dot can be redundant                            | Keep in footer; header only for severe offline if needed  |
 | UX-F-003 | View label                  | Footer/status bar                             | Footer                      | Keep      | Good global context                                                       | Keep compact                                              |
 | UX-F-004 | Coordinates                 | Footer/status bar                             | Footer                      | Keep      | Correct for plan-like views                                               | Keep                                                      |
@@ -161,6 +161,8 @@ Evidence (2026-05-12): seeded capture at `packages/web/tmp/ux-canvas-secondary-r
 | UX-F-006 | Undo/redo depth             | Footer/status bar                             | Footer                      | Keep      | Good global status                                                        | Keep; decide whether header undo buttons remain           |
 | UX-F-007 | Lens dropdown               | Footer/status bar                             | Secondary sidebar or footer | Audit     | If lens affects active view, secondary sidebar; if project-global, footer | Decide single scope and remove duplicates                 |
 | UX-F-008 | Drift/activity counts       | Footer/status bar                             | Footer                      | Keep      | Global counts fit footer                                                  | Keep and open dialogs/drawers                             |
+
+Evidence (2026-05-12): seeded footer capture at `packages/web/tmp/ux-footer-jobs-20260512/` confirms canonical footer ownership for global advisor + jobs + activity entries. Screenshots `01-footer-jobs-entry.png` and `02-footer-jobs-dialog.png` prove the new jobs status entry opens a dedicated jobs dialog, and `03-cmdk-open-jobs-dialog.png` proves Cmd+K reaches the same footer-owned jobs surface.
 
 ## View-Type Ribbon Matrix
 
@@ -442,20 +444,20 @@ Evidence (2026-05-12): seeded capture at `packages/web/tmp/ux-canvas-secondary-r
 
 ## Expanded Footer And Global Status Tracker
 
-| ID         | Current/global feature          | Current location/source             | Target owner             | Status   | Required action                                                                  |
-| ---------- | ------------------------------- | ----------------------------------- | ------------------------ | -------- | -------------------------------------------------------------------------------- |
-| UX-FOO-001 | Advisor warning count           | Advisor panel/right rail/agent mode | Footer                   | Move     | Show global severity count in footer                                             |
-| UX-FOO-002 | Advisor errors dialog           | Advisor panel                       | Footer-triggered dialog  | Move     | Clicking footer count opens grouped findings with navigation                     |
-| UX-FOO-003 | Sync/offline status             | Header overlay                      | Footer                   | Move     | Footer owns persistent global status                                             |
-| UX-FOO-004 | Active command status           | Canvas/ribbon                       | Footer                   | Keep     | Footer can show current command and prompt                                       |
-| UX-FOO-005 | Coordinates/scale/readout       | Canvas/status                       | Footer                   | Audit    | Put global readouts in footer if useful across views                             |
-| UX-FOO-006 | Selection count                 | Inspector/canvas                    | Footer                   | Audit    | Footer can show lightweight count; properties remain in element sidebar          |
-| UX-FOO-007 | Undo stack status               | Header                              | Footer or compact header | Audit    | Prefer footer if header tabs become crowded                                      |
-| UX-FOO-008 | Background jobs/import progress | Toasts/dialogs                      | Footer                   | Keep     | Global long-running job status belongs in footer                                 |
-| UX-FOO-009 | Permissions/role status         | Header/account                      | Footer/account           | Audit    | Persistent project permission indicator can live footer; management in user menu |
-| UX-FOO-010 | Model health                    | Advisor/status                      | Footer                   | Keep     | Footer global model-health capsule with details dialog                           |
-| UX-FOO-011 | Footer click targets            | New target                          | Footer                   | Redesign | Each item opens a specific dialog/panel, not a vague drawer                      |
-| UX-FOO-012 | Footer density                  | New target                          | Footer                   | Redesign | Keep one-line and stable; no large explanatory text                              |
+| ID         | Current/global feature          | Current location/source             | Target owner             | Status | Required action                                                                  |
+| ---------- | ------------------------------- | ----------------------------------- | ------------------------ | ------ | -------------------------------------------------------------------------------- |
+| UX-FOO-001 | Advisor warning count           | Advisor panel/right rail/agent mode | Footer                   | Fixed  | Show global severity count in footer                                             |
+| UX-FOO-002 | Advisor errors dialog           | Advisor panel                       | Footer-triggered dialog  | Fixed  | Clicking footer count opens grouped findings with navigation                     |
+| UX-FOO-003 | Sync/offline status             | Header overlay                      | Footer                   | Fixed  | Footer owns persistent global status                                             |
+| UX-FOO-004 | Active command status           | Canvas/ribbon                       | Footer                   | Keep   | Footer can show current command and prompt                                       |
+| UX-FOO-005 | Coordinates/scale/readout       | Canvas/status                       | Footer                   | Audit  | Put global readouts in footer if useful across views                             |
+| UX-FOO-006 | Selection count                 | Inspector/canvas                    | Footer                   | Audit  | Footer can show lightweight count; properties remain in element sidebar          |
+| UX-FOO-007 | Undo stack status               | Header                              | Footer or compact header | Audit  | Prefer footer if header tabs become crowded                                      |
+| UX-FOO-008 | Background jobs/import progress | Toasts/dialogs                      | Footer                   | Keep   | Global long-running job status belongs in footer                                 |
+| UX-FOO-009 | Permissions/role status         | Header/account                      | Footer/account           | Audit  | Persistent project permission indicator can live footer; management in user menu |
+| UX-FOO-010 | Model health                    | Advisor/status                      | Footer                   | Keep   | Footer global model-health capsule with details dialog                           |
+| UX-FOO-011 | Footer click targets            | New target                          | Footer                   | Fixed  | Each item opens a specific dialog/panel, not a vague drawer                      |
+| UX-FOO-012 | Footer density                  | New target                          | Footer                   | Fixed  | Keep one-line and stable; no large explanatory text                              |
 
 ## Expanded Dialog And Modal Tracker
 
@@ -679,8 +681,8 @@ This addendum exists because a full revamp handoff should not depend on only bro
 | UX-STAT-015 | Conflict pill                 | `conflict-pill`                        | Keep                     | Footer status dialog is appropriate                                            |
 | UX-STAT-016 | Conflict queue dialog         | `collaboration-conflict-queue-readout` | Keep                     | Footer-triggered global dialog                                                 |
 | UX-STAT-017 | Temporary visibility chip     | `TemporaryVisibilityChip.tsx`          | Move to footer/secondary | If global temporary mode, footer; if view graphics mode, secondary             |
-| UX-STAT-018 | Advisor status count          | New footer target                      | Add                      | Add severity counts and click-through                                          |
-| UX-STAT-019 | Jobs/progress status          | `JobsPanel.tsx`                        | Add                      | Footer entry for running/failed jobs                                           |
+| UX-STAT-018 | Advisor status count          | New footer target                      | Fixed                    | Add severity counts and click-through                                          |
+| UX-STAT-019 | Jobs/progress status          | `JobsPanel.tsx`                        | Fixed                    | Footer entry for running/failed jobs                                           |
 | UX-STAT-020 | Footer overflow               | New target                             | Redesign                 | Low-priority readouts collapse before critical advisor/sync states             |
 
 ## Tool And Active Command Tracker

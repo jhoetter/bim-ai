@@ -364,4 +364,23 @@ describe('<Workspace /> — smoke', () => {
 
     expect(getByTestId('advisor-dialog')).toBeTruthy();
   });
+
+  it('opens jobs from the footer and keeps jobs out of sidebars — UX-STAT-019', () => {
+    const { getByTestId, queryByTestId } = renderWithProviders(<Workspace />);
+
+    expect(queryByTestId('right-rail-review')).toBeNull();
+    fireEvent.click(getByTestId('status-bar-jobs-entry'));
+    expect(getByTestId('jobs-dialog')).toBeTruthy();
+  });
+
+  it('opens footer jobs through Cmd+K reachability', () => {
+    const { getByTestId, getByLabelText } = renderWithProviders(<Workspace />);
+    fireEvent.click(getByTestId('workspace-header-cmdk'));
+    fireEvent.change(getByLabelText('Command palette search'), {
+      target: { value: 'open jobs' },
+    });
+
+    fireEvent.click(getByTestId('palette-entry-jobs.open'));
+    expect(getByTestId('jobs-dialog')).toBeTruthy();
+  });
 });

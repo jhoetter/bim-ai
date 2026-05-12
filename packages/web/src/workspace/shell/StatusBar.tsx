@@ -91,6 +91,12 @@ export type AdvisorSeverityCounts = {
   info: number;
 };
 
+export type JobsStatusCounts = {
+  queued: number;
+  running: number;
+  errored: number;
+};
+
 export interface StatusBarProps {
   mode?: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent' | 'concept';
   viewLabel?: string | null;
@@ -129,6 +135,8 @@ export interface StatusBarProps {
   /** UX-WP-08 — global model-health advisor entry. */
   advisorCounts?: AdvisorSeverityCounts;
   onAdvisorClick?: () => void;
+  jobsCounts?: JobsStatusCounts;
+  onJobsClick?: () => void;
 }
 
 export function StatusBar({
@@ -161,6 +169,8 @@ export function StatusBar({
   onActivityClick,
   advisorCounts,
   onAdvisorClick,
+  jobsCounts,
+  onJobsClick,
 }: StatusBarProps): JSX.Element {
   const showPlanClusters = mode === 'plan' || mode === 'plan-3d' || mode === 'section';
   return (
@@ -232,6 +242,11 @@ export function StatusBar({
         <AdvisorEntry
           counts={advisorCounts ?? { error: 0, warning: 0, info: 0 }}
           onClick={onAdvisorClick}
+        />
+        <Divider />
+        <JobsEntry
+          counts={jobsCounts ?? { queued: 0, running: 0, errored: 0 }}
+          onClick={onJobsClick}
         />
         {/* Slot 7 — CHR-V3-05 activity-stream entry */}
         <Divider />
@@ -786,6 +801,45 @@ function ActivityEntry({ count, onClick }: { count: number; onClick?: () => void
           {count}
         </span>
       )}
+    </button>
+  );
+}
+
+function JobsEntry({
+  counts,
+  onClick,
+}: {
+  counts: JobsStatusCounts;
+  onClick?: () => void;
+}): JSX.Element {
+  const active = counts.queued + counts.running;
+  const totalAttention = active + counts.errored;
+  const label =
+    counts.errored > 0 ? `${counts.errored} failed` : active > 0 ? `${active} active` : 'Idle';
+  const title = `Jobs: ${counts.running} running, ${counts.queued} queued, ${counts.errored} failed`;
+
+  return (
+    <button
+      type="button"
+      data-testid="status-bar-jobs-entry"
+      aria-label={title}
+      title={title}
+      onClick={onClick}
+      className={[
+        'status-bar__slot relative flex items-center gap-1 rounded-sm px-1.5 py-0.5 hover:bg-surface-strong',
+        counts.errored > 0 ? 'text-danger' : active > 0 ? 'text-warning' : 'text-muted',
+      ].join(' ')}
+    >
+      <Icons.evidence size={ICON_SIZE.chrome} aria-hidden="true" />
+      <span>Jobs {label}</span>
+      {totalAttention > 0 ? (
+        <span
+          data-testid="status-bar-jobs-badge"
+          className="rounded-sm bg-surface-strong px-1 font-mono text-[10px] text-foreground"
+        >
+          {totalAttention}
+        </span>
+      ) : null}
     </button>
   );
 }
