@@ -168,6 +168,30 @@ describe('AppShell — spec §8', () => {
     expect(shell.dataset.primaryHidden).toBe('false');
   });
 
+  it('allows the element sidebar to resize and collapse using its resize handle', () => {
+    const { getByTestId } = render(
+      <AppShell
+        header={<span>t</span>}
+        primarySidebar={<span>full-left</span>}
+        secondarySidebar={<span>sec</span>}
+        canvas={<span>c</span>}
+        elementSidebar={<span>full-right</span>}
+        footer={<span>s</span>}
+      />,
+    );
+    const shell = getByTestId('app-shell') as HTMLElement;
+    const before = shell.style.gridTemplateColumns;
+    fireEvent.keyDown(getByTestId('app-shell-element-resize-handle'), { key: 'ArrowLeft' });
+    expect(shell.style.gridTemplateColumns).not.toBe(before);
+
+    fireEvent.keyDown(getByTestId('app-shell-element-resize-handle'), { key: 'End' });
+    expect(shell.dataset.rightCollapsed).toBe('true');
+
+    fireEvent.keyDown(document, { key: ']' });
+    expect(shell.dataset.rightCollapsed).toBe('false');
+    expect(getByTestId('app-shell-element-resize-handle')).toBeTruthy();
+  });
+
   it('keeps the secondary sidebar mounted while the element sidebar can be absent', () => {
     const { getByTestId, queryByText } = render(
       <AppShell

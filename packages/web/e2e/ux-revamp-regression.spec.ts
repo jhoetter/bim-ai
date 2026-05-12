@@ -520,6 +520,40 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await capture(page, testInfo, '42-schedule-ribbon-row-column.png');
   });
 
+  test('captures element-sidebar resize/collapse interaction when selection exists', async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await bootWorkspace(page, 'schedule:sched-doors');
+    await activateTab(page, 'schedule:sched-doors');
+
+    await expect(page.getByTestId('app-shell-element-sidebar')).toBeHidden();
+    await page.waitForFunction(() => {
+      const store = (
+        window as unknown as { __bimStore?: { getState: () => Record<string, unknown> } }
+      ).__bimStore;
+      if (!store) return false;
+      const state = store.getState();
+      return Boolean((state.elementsById as Record<string, unknown> | undefined)?.['wall-main']);
+    });
+    await page.evaluate(() => {
+      const store = (
+        window as unknown as {
+          __bimStore?: { getState: () => { select: (id?: string) => void } };
+        }
+      ).__bimStore;
+      store?.getState().select('wall-main');
+    });
+
+    await expect(page.getByTestId('app-shell')).toHaveAttribute(
+      'data-element-sidebar-present',
+      'true',
+    );
+    const handle = page.getByTestId('app-shell-element-resize-handle');
+    await expect(handle).toBeVisible();
+    await capture(page, testInfo, '43-element-sidebar-resize.png');
+  });
+
   test('keeps narrow footer one-line with advisor priority', async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await bootWorkspace(page);

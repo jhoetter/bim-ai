@@ -393,6 +393,38 @@ describe('<Workspace /> — smoke', () => {
     expect(queryByTestId('inspector')).toBeNull();
     expect(getByTestId('app-shell').dataset.elementSidebarPresent).toBe('false');
     expect(getByTestId('app-shell-element-sidebar').hidden).toBe(true);
+    expect(queryByTestId('app-shell-element-resize-handle')).toBeNull();
+  });
+
+  it('shows a dedicated element-sidebar resize handle only when selection exists — UX-ELE-021', () => {
+    seedTabs('plan');
+    useBimStore.setState({
+      selectedId: 'wall-1',
+      elementsById: {
+        'wall-1': {
+          kind: 'wall',
+          id: 'wall-1',
+          name: 'Wall 1',
+          wallTypeId: 'wt-1',
+          levelId: 'lvl-1',
+          start: { xMm: 0, yMm: 0 },
+          end: { xMm: 3000, yMm: 0 },
+          thicknessMm: 200,
+          heightMm: 3000,
+          baseOffsetMm: 0,
+          unconnectedHeightMm: 3000,
+          roomBounding: true,
+          structural: false,
+        } as Extract<Element, { kind: 'wall' }>,
+      },
+    });
+
+    const { getByTestId } = renderWithProviders(<Workspace />);
+    const shell = getByTestId('app-shell');
+    const before = shell.style.gridTemplateColumns;
+    const handle = getByTestId('app-shell-element-resize-handle');
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    expect(shell.style.gridTemplateColumns).not.toBe(before);
   });
 
   it('keeps sheet review controls in the ribbon and out of canvas chrome — UX-CAN-023', () => {

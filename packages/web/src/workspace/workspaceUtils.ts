@@ -1,11 +1,11 @@
 import type { Element } from '@bim-ai/core';
 import {
-  PlanViewIcon,
-  ScheduleViewIcon,
-  SectionViewIcon,
-  SheetIcon,
-  OrbitViewIcon,
-} from '@bim-ai/ui';
+  OrbitViewHifi,
+  PlanViewHifi,
+  ScheduleViewHifi,
+  SectionViewHifi,
+  SheetHifi,
+} from '@bim-ai/icons';
 
 import type { UxComment } from '../state/store';
 import type { PlanTool } from '../state/storeTypes';
@@ -96,63 +96,63 @@ export function buildPrimaryNavigationSections(
     {
       id: 'concept',
       label: 'Concept',
-      icon: PlanViewIcon,
+      icon: PlanViewHifi,
       rows: conceptBoards.map((board) => ({
         id: board.id,
         label: board.name,
-        icon: PlanViewIcon,
+        icon: PlanViewHifi,
         hint: `${board.attachments.length} attachments`,
       })),
     },
     {
       id: 'floor-plans',
       label: 'Floor Plans',
-      icon: PlanViewIcon,
+      icon: PlanViewHifi,
       rows: planViews.map((p) => ({
         id: p.id,
         label: p.name,
-        icon: PlanViewIcon,
+        icon: PlanViewHifi,
         hint: `${levelNameById.get(p.levelId) ?? p.levelId}`,
       })),
     },
     {
       id: '3d-views',
       label: '3D Views',
-      icon: OrbitViewIcon,
+      icon: OrbitViewHifi,
       rows: viewpoints.map((v) => ({
         id: v.id,
         label: v.name,
-        icon: OrbitViewIcon,
+        icon: OrbitViewHifi,
         hint: 'saved camera',
       })),
     },
     {
       id: 'sections',
       label: 'Sections',
-      icon: SectionViewIcon,
+      icon: SectionViewHifi,
       rows: sections.map((s) => ({
         id: s.id,
         label: s.name,
-        icon: SectionViewIcon,
+        icon: SectionViewHifi,
         hint: 'cut view',
       })),
     },
     {
       id: 'sheets',
       label: 'Sheets',
-      icon: SheetIcon,
+      icon: SheetHifi,
       rows: sheets.map((s) => ({
         id: s.id,
         label: s.name,
-        icon: SheetIcon,
+        icon: SheetHifi,
         hint: `${s.viewportsMm?.length ?? 0} viewports`,
       })),
     },
     {
       id: 'schedules',
       label: 'Schedules',
-      icon: ScheduleViewIcon,
-      rows: schedules.map((s) => ({ id: s.id, label: s.name, icon: ScheduleViewIcon })),
+      icon: ScheduleViewHifi,
+      rows: schedules.map((s) => ({ id: s.id, label: s.name, icon: ScheduleViewHifi })),
     },
   ];
 }

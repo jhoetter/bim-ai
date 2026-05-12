@@ -61,6 +61,8 @@ export interface AppShellProps {
   defaultPrimarySidebarWidth?: number;
   /** Initial secondary-sidebar width in pixels. */
   secondarySidebarWidth?: number;
+  /** Initial element-sidebar width in pixels. */
+  defaultElementSidebarWidth?: number;
   /** Override the document target for the global `[` / `]` hotkeys.
    * Used by tests to scope the listeners. */
   hotkeyTarget?: Document | HTMLElement;
@@ -71,6 +73,10 @@ const PRIMARY_SIDEBAR_MAX_WIDTH = 420;
 const PRIMARY_SIDEBAR_HIDE_THRESHOLD = 32;
 const DEFAULT_PRIMARY_SIDEBAR_WIDTH = 256;
 const DEFAULT_SECONDARY_SIDEBAR_WIDTH = 280;
+const ELEMENT_SIDEBAR_MIN_WIDTH = 272;
+const ELEMENT_SIDEBAR_MAX_WIDTH = 520;
+const ELEMENT_SIDEBAR_HIDE_THRESHOLD = 40;
+const DEFAULT_ELEMENT_SIDEBAR_WIDTH = 340;
 
 export function AppShell({
   header,
@@ -93,15 +99,19 @@ export function AppShell({
   rightCollapsed: rightCollapsedProp,
   defaultPrimarySidebarWidth = DEFAULT_PRIMARY_SIDEBAR_WIDTH,
   secondarySidebarWidth = DEFAULT_SECONDARY_SIDEBAR_WIDTH,
+  defaultElementSidebarWidth = DEFAULT_ELEMENT_SIDEBAR_WIDTH,
   hotkeyTarget,
 }: AppShellProps): JSX.Element {
   const { t } = useTranslation();
   const [leftCollapsedInternal, setLeftCollapsedInternal] = useState(defaultLeftCollapsed);
   const [rightCollapsedInternal, setRightCollapsedInternal] = useState(defaultRightCollapsed);
   const [primaryWidth, setPrimaryWidth] = useState(defaultPrimarySidebarWidth);
+  const [elementWidth, setElementWidth] = useState(defaultElementSidebarWidth);
   const lastVisiblePrimaryWidthRef = useRef(defaultPrimarySidebarWidth);
+  const lastVisibleElementWidthRef = useRef(defaultElementSidebarWidth);
   const narrowAutoCollapsedRef = useRef(false);
   const resizeStateRef = useRef<{ startX: number; startWidth: number } | null>(null);
+  const elementResizeStateRef = useRef<{ startX: number; startWidth: number } | null>(null);
 
   const isRightControlled = rightCollapsedProp !== undefined;
   const rightCollapsed = isRightControlled ? rightCollapsedProp : rightCollapsedInternal;
@@ -142,6 +152,21 @@ export function AppShell({
     setLeftCollapsed(true);
   }, [primaryWidth, setLeftCollapsed]);
 
+  const hideElementSidebar = useCallback(() => {
+    if (elementWidth > 0) lastVisibleElementWidthRef.current = elementWidth;
+    if (isRightControlled) return;
+    setRightCollapsedInternal(true);
+  }, [elementWidth, isRightControlled]);
+
+  const restoreElementSidebar = useCallback(() => {
+    const restoredWidth = clampElementWidth(
+      lastVisibleElementWidthRef.current || defaultElementSidebarWidth,
+    );
+    setElementWidth(restoredWidth);
+    if (isRightControlled) return;
+    setRightCollapsedInternal(false);
+  }, [defaultElementSidebarWidth, isRightControlled]);
+
   const handleKey = useCallback(
     (event: KeyboardEvent | globalThis.KeyboardEvent) => {
       if (shouldIgnoreKey(event)) return;
@@ -151,10 +176,18 @@ export function AppShell({
         else hidePrimarySidebar();
       } else if (event.key === ']') {
         event.preventDefault();
-        setRightCollapsedInternal((v) => !v);
+        if (rightCollapsed) restoreElementSidebar();
+        else hideElementSidebar();
       }
     },
-    [hidePrimarySidebar, primaryHidden, restorePrimarySidebar],
+    [
+      hideElementSidebar,
+      hidePrimarySidebar,
+      primaryHidden,
+      restoreElementSidebar,
+      restorePrimarySidebar,
+      rightCollapsed,
+    ],
   );
 
   useEffect(() => {
@@ -205,6 +238,21 @@ export function AppShell({
     [hidePrimarySidebar, setLeftCollapsed],
   );
 
+  const updateElementWidth = useCallback(
+    (nextWidth: number) => {
+      if (nextWidth <= ELEMENT_SIDEBAR_HIDE_THRESHOLD) {
+        hideElementSidebar();
+        return;
+      }
+      const clamped = clampElementWidth(nextWidth);
+      lastVisibleElementWidthRef.current = clamped;
+      setElementWidth(clamped);
+      if (isRightControlled) return;
+      setRightCollapsedInternal(false);
+    },
+    [hideElementSidebar, isRightControlled],
+  );
+
   const handlePrimaryResizeStart = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
       event.preventDefault();
@@ -253,12 +301,61 @@ export function AppShell({
     [hidePrimarySidebar, primaryHidden, primaryWidth, restorePrimarySidebar, updatePrimaryWidth],
   );
 
+  const handleElementResizeStart = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      elementResizeStateRef.current = {
+        startX: event.clientX,
+        startWidth: rightCollapsed
+          ? lastVisibleElementWidthRef.current || defaultElementSidebarWidth
+          : elementWidth,
+      };
+
+      const ownerDocument = event.currentTarget.ownerDocument;
+      const handlePointerMove = (moveEvent: globalThis.PointerEvent): void => {
+        const state = elementResizeStateRef.current;
+        if (!state) return;
+        updateElementWidth(state.startWidth + state.startX - moveEvent.clientX);
+      };
+      const handlePointerUp = (): void => {
+        elementResizeStateRef.current = null;
+        ownerDocument.removeEventListener('pointermove', handlePointerMove);
+        ownerDocument.removeEventListener('pointerup', handlePointerUp);
+      };
+      ownerDocument.addEventListener('pointermove', handlePointerMove);
+      ownerDocument.addEventListener('pointerup', handlePointerUp);
+    },
+    [defaultElementSidebarWidth, elementWidth, rightCollapsed, updateElementWidth],
+  );
+
+  const handleElementResizeKey = useCallback(
+    (event: KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === 'Home') {
+        event.preventDefault();
+        restoreElementSidebar();
+      } else if (event.key === 'End') {
+        event.preventDefault();
+        hideElementSidebar();
+      } else if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        updateElementWidth(
+          (rightCollapsed ? lastVisibleElementWidthRef.current : elementWidth) + 24,
+        );
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        updateElementWidth(elementWidth - 24);
+      }
+    },
+    [elementWidth, hideElementSidebar, restoreElementSidebar, rightCollapsed, updateElementWidth],
+  );
+
   const style: CSSProperties = {
     display: 'grid',
     gridTemplateRows: 'auto auto minmax(0, 1fr) var(--shell-statusbar-height)',
     gridTemplateColumns: gridColumnsForState(
       primaryHidden ? 0 : primaryWidth,
       secondarySidebarWidth,
+      elementWidth,
       elementSidebarPresent,
     ),
     gridTemplateAreas: `
@@ -379,6 +476,25 @@ export function AppShell({
       >
         {elementSidebarNode}
       </aside>
+      {elementSidebarPresent ? (
+        <div
+          aria-label="Resize element sidebar"
+          aria-orientation="vertical"
+          className="z-20 cursor-col-resize"
+          data-testid="app-shell-element-resize-handle"
+          role="separator"
+          tabIndex={0}
+          onPointerDown={handleElementResizeStart}
+          onKeyDown={handleElementResizeKey}
+          style={{
+            gridColumn: 4,
+            gridRow: 3,
+            justifySelf: 'start',
+            width: 8,
+            marginLeft: -4,
+          }}
+        />
+      ) : null}
       <footer
         data-testid="app-shell-footer"
         aria-label="Global status footer"
@@ -394,15 +510,20 @@ export function AppShell({
 function gridColumnsForState(
   primarySidebarWidth: number,
   secondarySidebarWidth: number,
+  elementSidebarWidth: number,
   elementSidebarPresent: boolean,
 ): string {
   const secondary = `${Math.max(160, secondarySidebarWidth)}px`;
-  const element = elementSidebarPresent ? 'var(--shell-rail-right-width)' : '0';
+  const element = `${elementSidebarPresent ? clampElementWidth(elementSidebarWidth) : 0}px`;
   return `${primarySidebarWidth}px ${secondary} minmax(0, 1fr) ${element}`;
 }
 
 function clampPrimaryWidth(width: number): number {
   return Math.max(PRIMARY_SIDEBAR_MIN_WIDTH, Math.min(PRIMARY_SIDEBAR_MAX_WIDTH, width));
+}
+
+function clampElementWidth(width: number): number {
+  return Math.max(ELEMENT_SIDEBAR_MIN_WIDTH, Math.min(ELEMENT_SIDEBAR_MAX_WIDTH, width));
 }
 
 function shouldIgnoreKey(event: KeyboardEvent | globalThis.KeyboardEvent): boolean {
