@@ -327,6 +327,13 @@ async function installWorkspaceRoutes(page: Page, activeTabId = 'plan:pv-ground'
       body: JSON.stringify({ catalogs: [] }),
     });
   });
+  await page.route('**/api/models/*/presentations', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ presentations: [] }),
+    });
+  });
   await page.route('**/api/models/*/evidence-package', async (route) => {
     await route.fulfill({
       status: 200,
@@ -441,5 +448,39 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await page.getByTestId('palette-entry-project.manage-links').click();
     await expect(page.getByTestId('manage-links-dialog')).toBeVisible();
     await capture(page, testInfo, '12-manage-links-dialog.png');
+  });
+
+  test('captures canonical dialog and resource triggers', async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 1280, height: 820 });
+    await bootWorkspace(page);
+
+    await page.getByTestId('primary-project-selector').click();
+    await expect(page.getByTestId('project-menu')).toBeVisible();
+    await capture(page, testInfo, '13-project-menu.png');
+    await page.keyboard.press('Escape');
+
+    await page.getByTestId('ribbon-tab-insert').click();
+    await page.getByTestId('ribbon-command-family-library').click();
+    await expect(page.getByTestId('family-library-panel')).toBeVisible();
+    await capture(page, testInfo, '14-family-library.png');
+    await page.getByRole('button', { name: 'Close family library' }).click();
+
+    await page.getByTestId('workspace-header-cmdk').click();
+    await page.getByLabel('Command palette search').fill('plan visibility');
+    await expect(page.getByTestId('palette-entry-visibility.plan.graphics')).toBeVisible();
+    await page.getByTestId('palette-entry-visibility.plan.graphics').click();
+    await expect(page.getByRole('dialog', { name: 'Visibility/Graphics Overrides' })).toBeVisible();
+    await capture(page, testInfo, '15-visibility-graphics-dialog.png');
+    await page.keyboard.press('Escape');
+
+    await expect(page.getByTestId('workspace-header-share')).toBeEnabled();
+    await page.getByTestId('workspace-header-share').click();
+    await expect(page.getByRole('dialog', { name: 'Share live presentation' })).toBeVisible();
+    await capture(page, testInfo, '16-share-presentation-dialog.png');
+    await page.keyboard.press('Escape');
+
+    await page.getByTestId('status-bar-activity-entry').click();
+    await expect(page.getByTestId('activity-drawer')).toBeVisible();
+    await capture(page, testInfo, '17-activity-drawer.png');
   });
 });
