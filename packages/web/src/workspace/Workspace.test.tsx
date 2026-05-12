@@ -138,6 +138,15 @@ describe('<Workspace /> — smoke', () => {
     expect(statusBar.textContent).not.toContain('Show:');
   });
 
+  it('opens plan Visibility/Graphics from the secondary advanced owner — UX-DIA-004', () => {
+    seedTabs('plan');
+    const { getByTestId, getByRole } = renderWithProviders(<Workspace />);
+    const secondary = within(getByTestId('app-shell-secondary-sidebar'));
+
+    fireEvent.click(secondary.getByTestId('secondary-plan-open-vv-dialog'));
+    expect(getByRole('dialog', { name: 'Visibility/Graphics Overrides' })).toBeTruthy();
+  });
+
   it('keeps undo/redo global controls in the footer and out of the header', () => {
     const { getByTestId, queryByTestId } = renderWithProviders(<Workspace />);
     const header = within(getByTestId('workspace-header'));

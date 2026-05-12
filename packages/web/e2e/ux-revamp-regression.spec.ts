@@ -578,10 +578,7 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await capture(page, testInfo, '14-family-library.png');
     await page.getByRole('button', { name: 'Close family library' }).click();
 
-    await page.getByTestId('workspace-header-cmdk').click();
-    await page.getByLabel('Command palette search').fill('plan visibility');
-    await expect(page.getByTestId('palette-entry-visibility.plan.graphics')).toBeVisible();
-    await page.getByTestId('palette-entry-visibility.plan.graphics').click();
+    await page.getByTestId('secondary-plan-open-vv-dialog').click();
     await expect(page.getByRole('dialog', { name: 'Visibility/Graphics Overrides' })).toBeVisible();
     await capture(page, testInfo, '15-visibility-graphics-dialog.png');
     await page.keyboard.press('Escape');

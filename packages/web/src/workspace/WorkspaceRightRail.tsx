@@ -247,6 +247,7 @@ export function WorkspaceRightRail({
   const activePlanViewId = useBimStore((s) => s.activePlanViewId);
   const revealHiddenMode = useBimStore((s) => s.revealHiddenMode);
   const setRevealHiddenMode = useBimStore((s) => s.setRevealHiddenMode);
+  const openVVDialog = useBimStore((s) => s.openVVDialog);
   const temporaryVisibility = useBimStore((s) => s.temporaryVisibility);
   const setTemporaryVisibility = useBimStore((s) => s.setTemporaryVisibility);
   const clearTemporaryVisibility = useBimStore((s) => s.clearTemporaryVisibility);
@@ -546,6 +547,7 @@ export function WorkspaceRightRail({
             persistPlanViewProperty={persistPlanViewProperty}
             revealHiddenMode={revealHiddenMode}
             setRevealHiddenMode={setRevealHiddenMode}
+            openPlanVisibilityGraphics={openVVDialog}
             thinLinesEnabled={thinLinesEnabled}
             toggleThinLines={toggleThinLines}
             activeViewpoint={activeViewpoint}
@@ -598,6 +600,7 @@ export function WorkspaceRightRail({
             persistPlanViewProperty={persistPlanViewProperty}
             revealHiddenMode={revealHiddenMode}
             setRevealHiddenMode={setRevealHiddenMode}
+            openPlanVisibilityGraphics={openVVDialog}
             thinLinesEnabled={thinLinesEnabled}
             toggleThinLines={toggleThinLines}
           />
@@ -1481,6 +1484,7 @@ function SecondaryPlanAdapter({
   persistPlanViewProperty,
   revealHiddenMode,
   setRevealHiddenMode,
+  openPlanVisibilityGraphics,
   thinLinesEnabled,
   toggleThinLines,
 }: {
@@ -1493,6 +1497,7 @@ function SecondaryPlanAdapter({
   persistPlanViewProperty: (planViewId: string, key: string, value: string) => void;
   revealHiddenMode: boolean;
   setRevealHiddenMode: (enabled: boolean) => void;
+  openPlanVisibilityGraphics: () => void;
   thinLinesEnabled: boolean;
   toggleThinLines: () => void;
 }): JSX.Element {
@@ -1568,6 +1573,14 @@ function SecondaryPlanAdapter({
             onChange={() => toggleThinLines()}
             testId="secondary-thin-lines-toggle"
           />
+          <button
+            type="button"
+            data-testid="secondary-plan-open-vv-dialog"
+            onClick={openPlanVisibilityGraphics}
+            className="w-full rounded border border-border bg-background px-2 py-1.5 text-left text-xs text-foreground hover:bg-surface-strong"
+          >
+            Open Visibility/Graphics Overrides…
+          </button>
         </div>
       </SecondarySection>
     </div>
