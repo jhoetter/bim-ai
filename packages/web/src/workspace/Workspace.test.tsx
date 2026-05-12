@@ -115,6 +115,7 @@ describe('<Workspace /> — smoke', () => {
     expect(queryByTestId('topbar-tag-by-category-shortcut')).toBeNull();
     expect(queryByTestId('topbar-section-shortcut')).toBeNull();
     expect(queryByTestId('topbar-thin-lines')).toBeNull();
+    expect(queryByTestId('source-view-chip')).toBeNull();
     expect(header.queryByRole('button', { name: /^Plan$/i })).toBeNull();
     expect(header.getByTestId('workspace-header-cmdk')).toBeTruthy();
     expect(header.getByTestId('workspace-header-share')).toBeTruthy();
