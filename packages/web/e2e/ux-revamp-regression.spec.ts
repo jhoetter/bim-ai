@@ -441,9 +441,16 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
       }
       if (scenario.name === 'plan') {
         await expect(page.getByTestId('plan-scale-readout')).toBeVisible();
+        await expect(page.getByTestId('inspector-plan-detail-level')).toBeVisible();
+        await expect(page.getByTestId('snap-settings-toolbar')).toHaveCount(0);
+        await expect(page.getByTestId('plan-detail-level-toolbar')).toHaveCount(0);
         await expect(
           page.getByTitle('Click for zoom presets · scroll to zoom · Space+drag to pan'),
         ).toHaveCount(0);
+      }
+      if (scenario.name === 'schedule') {
+        await expect(page.getByTestId('ribbon-command-schedule-controls')).toBeVisible();
+        await expect(page.getByTestId('ribbon-command-schedule-duplicate')).toBeVisible();
       }
 
       await capture(page, testInfo, scenario.screenshot);
