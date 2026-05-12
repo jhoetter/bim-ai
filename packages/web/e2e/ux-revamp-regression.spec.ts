@@ -459,6 +459,32 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await capture(page, testInfo, '09-narrow-primary-restored.png');
   });
 
+  test('collapses primary sidebar to zero width and restores from header', async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width: 1280, height: 820 });
+    await bootWorkspace(page);
+
+    const handle = page.getByTestId('app-shell-primary-resize-handle');
+    const handleBox = await handle.boundingBox();
+    expect(handleBox).not.toBeNull();
+    await page.mouse.move(handleBox!.x + handleBox!.width / 2, handleBox!.y + 12);
+    await page.mouse.down();
+    await page.mouse.move(0, handleBox!.y + 12);
+    await page.mouse.up();
+
+    await expect(page.getByTestId('app-shell')).toHaveAttribute('data-primary-hidden', 'true');
+    await expect(page.getByRole('complementary', { name: 'Project browser' })).toHaveCount(0);
+    await expect(page.getByTestId('app-shell-primary-reveal')).toBeVisible();
+    await capture(page, testInfo, '36-primary-dragged-to-zero.png');
+
+    await page.getByTestId('app-shell-primary-reveal').click();
+    await expect(page.getByTestId('app-shell')).toHaveAttribute('data-primary-hidden', 'false');
+    await expect(page.getByRole('complementary', { name: 'Project browser' })).toBeVisible();
+    await expect(page.getByTestId('app-shell-primary-reveal')).toHaveCount(0);
+    await capture(page, testInfo, '37-primary-restored-from-zero.png');
+  });
+
   test('captures tablet shell region stability', async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 768, height: 900 });
     await bootWorkspace(page);
