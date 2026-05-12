@@ -443,7 +443,6 @@ export function PlanCanvas({
   const hudMmRef = useRef<{ xMm: number; yMm: number } | undefined>(undefined);
   hudMmRef.current = hudMm;
   const [halfUi, setHalfUi] = useState(22);
-  const [showZoomMenu, setShowZoomMenu] = useState(false);
   // ANN-02: state for the right-click "Generate Section / Elevation" menu.
   const [wallContextMenu, setWallContextMenu] = useState<{
     wall: Extract<Element, { kind: 'wall' }>;
@@ -818,7 +817,6 @@ export function PlanCanvas({
     camRef.current.camZ = cz;
     camRef.current.half = THREE.MathUtils.clamp(half, HALF_MIN, HALF_MAX);
     resizeCam();
-    setShowZoomMenu(false);
   }, [resizeCam]);
 
   useEffect(() => {
@@ -4590,14 +4588,6 @@ export function PlanCanvas({
 
   const sb = THREE.MathUtils.clamp(halfUi * 0.25, 0.2, 6);
   const plotScaleN = Math.round(halfUi * 2);
-  const zoomPresets = [
-    { label: '1:25   — detail', half: 12.5 },
-    { label: '1:50   — room', half: 25 },
-    { label: '1:100  — floor', half: 50 },
-    { label: '1:200  — building', half: 100 },
-    { label: '1:500  — site', half: 250 },
-    { label: '1:1000 — master', half: 500 },
-  ] as const;
   const handleWallContextMenuCommand = useCallback(
     (next: WallContextMenuCommand) => {
       onSemanticCommand(next.cmd);
@@ -5469,39 +5459,12 @@ export function PlanCanvas({
           </span>
         </div>
       ) : null}
-      {/* Zoom control — scale bar + preset menu */}
+      {/* Scale readout — canvas-local status only (no command toolbar behavior). */}
       <div className="pointer-events-auto absolute left-3 bottom-3 z-10">
-        {showZoomMenu && (
-          <div className="mb-1 flex flex-col overflow-hidden rounded border border-border bg-surface/95 shadow-md backdrop-blur">
-            {zoomPresets.map(({ label, half }) => (
-              <button
-                key={label}
-                type="button"
-                className="px-3 py-1 text-left font-mono text-[10px] text-muted hover:bg-accent/20 hover:text-foreground"
-                onClick={() => {
-                  camRef.current.half = half;
-                  resizeCam();
-                  setShowZoomMenu(false);
-                }}
-              >
-                {label}
-              </button>
-            ))}
-            <div className="mx-2 border-t border-border" />
-            <button
-              type="button"
-              className="px-3 py-1 text-left font-mono text-[10px] text-muted hover:bg-accent/20 hover:text-foreground"
-              onClick={handleFitToView}
-            >
-              Fit to view
-            </button>
-          </div>
-        )}
-        <button
-          type="button"
-          title="Click for zoom presets · scroll to zoom · Space+drag to pan"
-          className="flex items-center gap-1.5 rounded border border-border bg-surface/80 px-2 py-1 font-mono text-[10px] text-muted backdrop-blur hover:bg-surface hover:text-foreground"
-          onClick={() => setShowZoomMenu((v) => !v)}
+        <div
+          data-testid="plan-scale-readout"
+          title="Scale readout · scroll to zoom · Space+drag to pan"
+          className="flex items-center gap-1.5 rounded border border-border bg-surface/80 px-2 py-1 font-mono text-[10px] text-muted backdrop-blur"
         >
           {/* Graphical scale bar: a horizontal rule + dimension text */}
           <span aria-hidden="true" className="flex flex-col items-center gap-0.5">
@@ -5512,7 +5475,7 @@ export function PlanCanvas({
             <span>{`${(sb * 100).toFixed(0)} cm`}</span>
           </span>
           <span className="ml-1 text-foreground/70">1:{plotScaleN}</span>
-        </button>
+        </div>
       </div>
       {/* F-025: Revit-style active level datum line across the plan canvas. */}
       {activeLevelElem && (

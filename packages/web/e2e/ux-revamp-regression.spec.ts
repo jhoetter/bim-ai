@@ -439,6 +439,12 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
         await expect(page.getByTestId('view-cube')).toBeVisible({ timeout: 15_000 });
         await expect(page.getByTestId('orbit-viewpoint-persisted-hud')).toHaveCount(0);
       }
+      if (scenario.name === 'plan') {
+        await expect(page.getByTestId('plan-scale-readout')).toBeVisible();
+        await expect(
+          page.getByTitle('Click for zoom presets · scroll to zoom · Space+drag to pan'),
+        ).toHaveCount(0);
+      }
 
       await capture(page, testInfo, scenario.screenshot);
     }
