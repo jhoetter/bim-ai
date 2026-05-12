@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
+from uuid import UUID
 
 from bim_ai.elements import LevelElem, ProjectBasePointElem
-from scripts.seed import _load_artifact, _materialize
+from scripts import seed
+from scripts.seed import SEED_PROJECT_ID, _load_artifact, _materialize, seed_async
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
@@ -56,6 +59,92 @@ def test_seed_artifact_bundle_commits_minimal_model(tmp_path: Path) -> None:
     assert isinstance(doc.elements.get("seed-lvl-ground"), LevelElem)
     assert wire["revision"] == 1
     assert set(wire["elements"]) >= {"seed-pbp", "seed-lvl-ground"}
+
+
+def test_targeted_seed_rebuilds_seed_project(monkeypatch, tmp_path: Path) -> None:
+    artifact_dir = tmp_path / "target-house-3"
+    artifact_dir.mkdir()
+    (artifact_dir / "manifest.json").write_text(
+        json.dumps(
+            {
+                "schemaVersion": "bim-ai.seed-artifact.v1",
+                "name": "target-house-3",
+                "title": "Target House 3",
+                "bundle": "bundle.json",
+            }
+        ),
+        encoding="utf8",
+    )
+    (artifact_dir / "bundle.json").write_text(
+        json.dumps(
+            {
+                "schemaVersion": "cmd-v3.0",
+                "commands": [
+                    {
+                        "type": "createProjectBasePoint",
+                        "id": "seed-pbp",
+                        "positionMm": {"xMm": 0, "yMm": 0, "zMm": 0},
+                        "angleToTrueNorthDeg": 0,
+                    },
+                    {
+                        "type": "createLevel",
+                        "id": "seed-lvl-ground",
+                        "name": "Ground Floor",
+                        "elevationMm": 0,
+                    },
+                ],
+            }
+        ),
+        encoding="utf8",
+    )
+
+    calls: list[tuple[str, UUID]] = []
+
+    async def init_db_schema_stub() -> None:
+        calls.append(("init", SEED_PROJECT_ID))
+
+    async def clear_legacy_seed_stub(session) -> int:
+        calls.append(("clear_legacy", SEED_PROJECT_ID))
+        return 0
+
+    async def clear_project_stub(session, project_id: UUID) -> int:
+        calls.append(("clear_project", project_id))
+        return 2
+
+    async def delete_model_records_stub(session, model_ids) -> None:
+        calls.append(("delete_model", model_ids[0]))
+
+    class FakeSession:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def get(self, model, record_id):
+            return None
+
+        def add(self, row) -> None:
+            pass
+
+        async def flush(self) -> None:
+            pass
+
+        async def commit(self) -> None:
+            calls.append(("commit", SEED_PROJECT_ID))
+
+    monkeypatch.setattr(seed, "init_db_schema", init_db_schema_stub)
+    monkeypatch.setattr(seed, "_clear_legacy_seed", clear_legacy_seed_stub)
+    monkeypatch.setattr(seed, "_clear_project", clear_project_stub)
+    monkeypatch.setattr(seed, "_delete_model_records", delete_model_records_stub)
+    monkeypatch.setattr(seed, "SessionMaker", lambda: FakeSession())
+
+    asyncio.run(seed_async(name="target-house-3", root=tmp_path, clear_only=False))
+
+    assert ("clear_project", SEED_PROJECT_ID) in calls
+    assert calls.index(("clear_project", SEED_PROJECT_ID)) < calls.index(
+        ("delete_model", _load_artifact(artifact_dir).model_id)
+    )
 
 
 def test_checked_in_target_house_seed_artifact_is_portable_and_loadable() -> None:

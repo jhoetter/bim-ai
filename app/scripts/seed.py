@@ -240,8 +240,7 @@ async def seed_async(name: str | None, root: Path, clear_only: bool) -> None:
             print(f"seed: cleared {removed + legacy_removed} seed model(s)")
             return
 
-        if name is None:
-            await _clear_project(session, SEED_PROJECT_ID)
+        await _clear_project(session, SEED_PROJECT_ID)
 
         if not materialized:
             await session.commit()
