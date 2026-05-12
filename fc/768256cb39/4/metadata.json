@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "fc768256cb39",
+  "session_id": "019e16c2-195d-74b3-b7f6-360818efd4ff",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-12T06:00:32.282603Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/Workspace.test.tsx",
+    "packages/web/src/workspace/WorkspaceRightRail.tsx",
+    "spec/ux-bim-ai-rework-tracker.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "18ccb027680a",
+  "checkpoint_transcript_start": 441,
+  "transcript_lines_at_start": 441,
+  "initial_attribution": {
+    "calculated_at": "2026-05-12T06:00:32.239856Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 70,
+    "human_modified": 28,
+    "human_removed": 0,
+    "total_committed": 70,
+    "total_lines_changed": 98,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}

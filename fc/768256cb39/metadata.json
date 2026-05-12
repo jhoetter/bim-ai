@@ -33,6 +33,12 @@
       "transcript": "/fc/768256cb39/3/full.jsonl",
       "content_hash": "/fc/768256cb39/3/content_hash.txt",
       "prompt": "/fc/768256cb39/3/prompt.txt"
+    },
+    {
+      "metadata": "/fc/768256cb39/4/metadata.json",
+      "transcript": "/fc/768256cb39/4/full.jsonl",
+      "content_hash": "/fc/768256cb39/4/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
