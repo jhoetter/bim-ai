@@ -1,6 +1,6 @@
 # BIM AI UX Rework Dynamic Audit
 
-Last updated: 2026-05-11
+Last updated: 2026-05-12
 
 Master index: [`spec/ux-bim-ai-rework-master.md`](./ux-bim-ai-rework-master.md)
 
@@ -38,6 +38,8 @@ Important correction: the first live audit was run against the Vite frontend wit
 
 ## High-Confidence Live Findings
 
+Historical baseline note (2026-05-12): this table documents the original seeded findings before implementation. Each item is now reconciled in tracker closure rows and regression coverage.
+
 | ID         | Finding                                                                                                              | Evidence                                                                                                                                                                                       | Revamp implication                                                                                                                       |
 | ---------- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | UX-DYN-001 | Header remains heavily overloaded in every captured mode.                                                            | Topbar consistently contains project selector, workspace switcher, undo/redo, QAT authoring shortcuts, mode buttons, share, Cmd+K, presence, account, and open-tab affordances.                | Header cleanup is a first-order workpackage, not cosmetic cleanup.                                                                       |
@@ -56,45 +58,44 @@ Important correction: the first live audit was run against the Vite frontend wit
 | UX-DYN-014 | The project label after seeding is potentially confusing.                                                            | `make seed name=target-house-3` succeeded, but the header label in captures reads `Seed Library / target-house-1`.                                                                             | Verify seed/project naming so audits and user context are not misleading.                                                                |
 | UX-DYN-015 | The failed unseeded run should become a regression scenario, not the main design state.                              | Bare Vite run produced 500s for presets/family catalogs and empty level fallbacks.                                                                                                             | Add degraded-state acceptance: empty/error states should not break layout ownership or bury recovery actions.                            |
 
-## Dynamic Coverage Gaps
+Status (2026-05-12): the above findings are now reconciled in implementation and tracker evidence. The remaining content below is retained as historical pre-rework baseline context.
 
-| Gap                           | Why it remains                                                                                      | Required follow-up                                                                                                             |
-| ----------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Plan element selection        | A single coordinate click did not reliably select a plan element in the automated audit.            | Add a deterministic Playwright helper that clicks a known seeded element by SVG/data-testid or selects from store/URL state.   |
-| Context menus                 | Right-click/radial menus were not captured in the seeded pass.                                      | Capture wall context menu, wall-face radial menu, browser row context menu, sheet viewport context menu.                       |
-| Dialogs after seeded state    | Project menu/family library were captured earlier but not fully recaptured after seed in this pass. | Capture project menu, family library, visibility/graphics, manage links, share, jobs/activity/advisor dialogs in seeded state. |
-| Narrow responsive states      | Only desktop `1440x900` was captured.                                                               | Capture tablet/narrow widths after shell layout is implemented.                                                                |
-| Full command registry mapping | Static command scan counted current commands and stale surfaces but did not rewrite the registry.   | Add implementation task to rewrite command capability surfaces after new regions exist.                                        |
+## Dynamic Coverage Follow-Ups (Closed)
+
+| Gap area                      | Resolution status | Evidence                                                                                                                                        |
+| ----------------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Plan element selection        | Fixed             | Playwright and workspace tests now select deterministic seeded elements (`window.__bimStore` helper path used in e2e coverage).                 |
+| Context menus                 | Fixed             | Primary navigation context menu ownership is captured in `ux-revamp-regression.spec.ts` (`captures primary navigation context menu ownership`). |
+| Dialogs after seeded state    | Fixed             | Seeded dialog ownership captures now cover project/resources/family/visibility/advisor/jobs/activity flows.                                     |
+| Narrow responsive states      | Fixed             | Narrow and tablet shell states are covered by dedicated Playwright regressions and seeded captures.                                             |
+| Full command registry mapping | Fixed             | `commandCapabilities.ts` canonical surfaces are enforced by tests and Cmd+K reachability coverage.                                              |
 
 ## Command Registry Findings
 
-Current command data confirms that the old surface model is encoded, not just visually present.
+Current command data now reflects canonical revamp surfaces; this section records the historical issue and current closure.
 
-| Finding                                                                                   | Evidence                                                                                                                                                        | Required change                                                                                                             |
-| ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Cmd+K is broad and valuable.                                                              | `defaultCommands.ts` registers 90 command IDs in the current static scan.                                                                                       | Preserve Cmd+K as the global escape hatch.                                                                                  |
-| Capability metadata still names old regions.                                              | `commandCapabilities.ts` uses surfaces such as `topbar`, `left-rail`, `right-rail`, `floating-palette`, `ribbon`, `sheet-canvas`, `schedule-grid`, `statusbar`. | Replace surfaces with canonical revamp regions and direct/bridge/unavailable metadata.                                      |
-| Topbar is currently treated as a command surface.                                         | Static scan found navigation, theme/language, project, help, tabs, and shell commands assigned to `topbar`.                                                     | Header should expose only tabs, sidebar reveal, share/presence, Cmd+K, and maybe compact global status if proven necessary. |
-| Left rail is currently a command surface beyond project navigation.                       | Static scan found mode navigation, workspace/lens navigation, and family library in `left-rail`.                                                                | Primary sidebar should expose only project/search/view navigation/user menu; resource commands move out.                    |
-| Right rail is currently a command surface for view controls and selected-wall 3D actions. | Static scan found 3D fit/reset/projection/walk/section-box/render/layers plus selected wall commands in `right-rail`.                                           | Split to secondary sidebar for view controls, element sidebar/context menu for selected-element actions.                    |
-| Tool capabilities are still advertised through floating palette, ribbon, and Cmd+K.       | `buildToolCapabilities()` assigns tool commands to `floating-palette`, `ribbon`, and `cmd-k`.                                                                   | Remove persistent floating palette from canonical command exposure; ribbon plus Cmd+K should remain.                        |
+| Finding                                                                                   | Evidence                                                                  | Required change                                                                                                                       |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Cmd+K is broad and valuable.                                                              | `defaultCommands.ts` registers 90 command IDs in the current static scan. | Preserve Cmd+K as the global escape hatch.                                                                                            |
+| Capability metadata still names old regions.                                              | Historical finding from initial scan.                                     | Closed: capability surfaces now map to canonical regions (`cmd-k`, `primary-sidebar`, `secondary-sidebar`, `ribbon`, `footer`, etc.). |
+| Topbar is currently treated as a command surface.                                         | Historical finding from initial scan.                                     | Closed: header ownership now remains tab-first with global actions only.                                                              |
+| Left rail is currently a command surface beyond project navigation.                       | Historical finding from initial scan.                                     | Closed: primary sidebar is navigation-only with project/search/views/user menu.                                                       |
+| Right rail is currently a command surface for view controls and selected-wall 3D actions. | Historical finding from initial scan.                                     | Closed: view-wide controls moved to secondary; selected-element controls remain in element sidebar.                                   |
+| Tool capabilities are still advertised through floating palette, ribbon, and Cmd+K.       | Historical finding from initial scan.                                     | Closed: persistent floating palette ownership removed; ribbon + Cmd+K remain canonical.                                               |
 
-## Implementation Readiness Judgment
+## Implementation Closeout Judgment
 
-The specification set is now strong enough to start implementation only if the first implementation work is structural and test-backed. It is not appropriate to start by manually moving isolated buttons.
+As of 2026-05-12, the implementation sequence above is completed and validated through:
 
-Start implementation with:
+1. Canonical shell + ownership tests.
+2. Primary navigation-only sidebar.
+3. Tab-first header cleanup.
+4. Secondary sidebar per-view adapters.
+5. Conditional selected-element sidebar behavior.
+6. View-type ribbon schemas.
+7. Canvas persistent-chrome cleanup.
+8. Footer advisor/jobs/activity/status consolidation.
+9. Command capability surface reconciliation.
+10. Broad Playwright regression and seeded runtime checks.
 
-1. Region shell and ownership tests.
-2. Primary sidebar navigation-only rebuild.
-3. Header tab-first cleanup.
-4. Secondary sidebar destination components.
-5. Right rail split into selected-element-only behavior.
-6. Ribbon schema by active view type.
-
-Do not start implementation with:
-
-- restyling the current right rail,
-- adding more ribbon tabs to the current generic ribbon,
-- polishing current canvas toolbars,
-- or moving individual commands without updating command capability metadata.
+Future work should be incremental enhancements on top of the canonical ownership model, not re-introductions of mixed-scope chrome.
