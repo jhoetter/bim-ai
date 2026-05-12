@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "f745411abd3f",
+  "session_id": "019e18cf-8c84-7a33-b5c8-062af2087937",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-12T09:27:00.276076Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.3-codex",
+  "turn_id": "b8da4bd6fc8d",
+  "checkpoint_transcript_start": 8651,
+  "transcript_lines_at_start": 8651,
+  "token_usage": {
+    "input_tokens": 695358,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 37935744,
+    "output_tokens": 62991,
+    "api_call_count": 247
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 56,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/tmp/ux-3d-secondary-reconcile-20260512/summary.json": 7,
+        "packages/web/tmp/ux-canvas-secondary-reconcile-20260512/summary.json": 21,
+        "packages/web/tmp/ux-footer-jobs-20260512/summary.json": 9,
+        "packages/web/tmp/ux-ribbon-per-view-20260512/summary.json": 19
+      }
+    }
+  ]
+}
