@@ -21,6 +21,12 @@
       "transcript": "/fc/768256cb39/1/full.jsonl",
       "content_hash": "/fc/768256cb39/1/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/fc/768256cb39/2/metadata.json",
+      "transcript": "/fc/768256cb39/2/full.jsonl",
+      "content_hash": "/fc/768256cb39/2/content_hash.txt",
+      "prompt": "/fc/768256cb39/2/prompt.txt"
     }
   ],
   "token_usage": {
