@@ -30,7 +30,6 @@ describe('StatusBar — spec §17', () => {
         undoDepth={4}
       />,
     );
-    expect(getByText('Ground')).toBeTruthy();
     expect(getByText('Drawing wall')).toBeTruthy();
     // Snap chips now render single-character glyphs (E = endpoint, G = grid)
     expect(getByTitle('Endpoint snap (on)')).toBeTruthy();
@@ -41,40 +40,19 @@ describe('StatusBar — spec §17', () => {
     expect(getByTitle('Connection: connected')).toBeTruthy();
   });
 
-  it('opens level popover and emits onLevelChange', () => {
-    const onLevelChange = vi.fn();
-    const { getByText, getByRole } = renderWithI18n(
+  it('does not expose level controls in the footer', () => {
+    const { queryByRole, queryByTestId, queryByText } = renderWithI18n(
       <StatusBar
         level={{ id: 'lvl-ground', label: 'Ground' }}
         levels={[
           { id: 'lvl-ground', label: 'Ground' },
           { id: 'lvl-upper', label: 'Upper' },
         ]}
-        onLevelChange={onLevelChange}
       />,
     );
-    fireEvent.click(getByText('Ground'));
-    expect(getByRole('menu', { name: 'Levels' })).toBeTruthy();
-    fireEvent.click(getByText('Upper'));
-    expect(onLevelChange).toHaveBeenCalledWith('lvl-upper');
-  });
-
-  it('cycles levels with PageUp / PageDown', () => {
-    const onLevelChange = vi.fn();
-    const { getByText } = renderWithI18n(
-      <StatusBar
-        level={{ id: 'lvl-ground', label: 'Ground' }}
-        levels={[
-          { id: 'lvl-ground', label: 'Ground' },
-          { id: 'lvl-upper', label: 'Upper' },
-        ]}
-        onLevelChange={onLevelChange}
-      />,
-    );
-    fireEvent.keyDown(getByText('Ground').parentElement!, { key: 'PageDown' });
-    expect(onLevelChange).toHaveBeenLastCalledWith('lvl-upper');
-    fireEvent.keyDown(getByText('Ground').parentElement!, { key: 'PageUp' });
-    expect(onLevelChange).toHaveBeenLastCalledWith('lvl-upper'); // wraps from idx=0
+    expect(queryByRole('menu', { name: 'Levels' })).toBeNull();
+    expect(queryByTestId('statusbar-level-elevation')).toBeNull();
+    expect(queryByText(/^Ground$/)).toBeNull();
   });
 
   it('toggles snap modes via switch buttons', () => {

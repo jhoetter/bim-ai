@@ -179,8 +179,6 @@ export function StatusBar({
       >
         {showPlanClusters ? (
           <>
-            <LevelCluster level={level} levels={levels} onLevelChange={onLevelChange} />
-            <Divider />
             <ToolCluster toolLabel={toolLabel ?? null} />
             <Divider />
             <SnapCluster snapModes={snapModes} onSnapToggle={onSnapToggle} />
