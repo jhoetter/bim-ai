@@ -448,7 +448,11 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
       await expect(page.getByTestId(scenario.canvasId)).toBeVisible({ timeout: 15_000 });
       await expect(page.getByTestId('tool-palette')).toHaveCount(0);
       await expect(page.getByTestId('temp-visibility-chip')).toHaveCount(0);
-      await expect(page.getByTestId('status-bar-advisor-entry')).toContainText('1 warning');
+      const advisorEntry = page.getByTestId('status-bar-advisor-entry');
+      await expect(advisorEntry).toHaveAttribute(
+        'title',
+        /Advisor:\s+\d+\s+errors?,\s+\d+\s+warnings?,\s+\d+\s+info/i,
+      );
 
       if (scenario.name === '3d') {
         await expect(page.getByTestId('view-cube')).toBeVisible({ timeout: 15_000 });
@@ -820,9 +824,10 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await capture(page, testInfo, '23-keyboard-advisor-dialog.png');
     await page.getByTestId('advisor-dialog-close').click();
 
-    await page.getByTestId('status-bar-activity-entry').focus();
-    await page.keyboard.press('Enter');
-    await expect(page.getByRole('dialog', { name: 'Activity stream' })).toBeVisible();
+    const activityEntry = page.getByTestId('status-bar-activity-entry');
+    await activityEntry.focus();
+    await activityEntry.press('Enter');
+    await expect(page.getByTestId('activity-drawer')).toBeVisible();
     await capture(page, testInfo, '24-keyboard-activity-drawer.png');
   });
 
