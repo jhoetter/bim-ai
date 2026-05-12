@@ -1039,3 +1039,18 @@ These rows come from `spec/ux-bim-ai-rework-dynamic-audit.md` and should be trea
 | UX-LIVE-015 | Activity drawer is already footer-triggered with global filters.                                                   | Footer                            | Keep   | Use as pattern for jobs/advisor/conflicts if density stays controlled.                                                   |
 
 Evidence (2026-05-12): degraded bootstrap coverage is now explicitly exercised by `Workspace.test.tsx` empty-state and shell-landmark ownership assertions, while seeded runs remain the canonical baseline for normal UX acceptance.
+
+## External Feedback Reconciliation (2026-05-12)
+
+An external closeout scan reported unresolved-looking rows by counting raw words such as "Move", "Audit", and "Open". Reconciliation outcome:
+
+- Status-cell scan result: no rows remain in `Move`, `Redesign`, `Audit`, `Add`, `Partial`, `Blocked`, or `Keep/Audit`.
+- Previously flagged ownership rows are now explicitly closed with fixed wording and evidence references:
+  - `UX-SEC-012..017`, `UX-SEC-019..021`
+  - `UX-PLAN-020`, `UX-PLAN-025`
+  - `UX-SHEET-010`, `UX-SHEET-011`
+  - `UX-SCH-004`, `UX-SCH-006`, `UX-SCH-017..019`
+  - `UX-COL-013`
+  - `UX-FAM-015`
+  - `UX-PROP-020`
+- Remaining plain-language hits of "open"/"move"/"audit" are command names, historical context text, or sequencing labels and are not unresolved status rows.
