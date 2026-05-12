@@ -597,3 +597,39 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await expect(page.getByTestId('primary-nav-context-menu')).toHaveCount(0);
   });
 });
+
+test.describe('UX-RISK-009 public presentation shell', () => {
+  test('keeps public presentation outside authoring workspace chrome', async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width: 1280, height: 820 });
+    await page.route('**/api/p/public-ux-risk-009', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: 'ok',
+          modelId: MODEL_ID,
+          revision: 11,
+          elements: {},
+          presentation: {
+            id: 'presentation-risk-009',
+            displayName: 'Stakeholder Review',
+            openCount: 1,
+          },
+        }),
+      });
+    });
+
+    await page.goto('/p/public-ux-risk-009');
+    await expect(page.getByTestId('public-presentation-viewport')).toBeVisible();
+    await expect(page.getByText('Shared by Stakeholder Review')).toBeVisible();
+    await expect(page.getByText('This presentation has no visible model elements.')).toBeVisible();
+    await expect(page.getByTestId('app-shell')).toHaveCount(0);
+    await expect(page.getByTestId('workspace-header')).toHaveCount(0);
+    await expect(page.getByTestId('app-shell-primary-sidebar')).toHaveCount(0);
+    await expect(page.getByTestId('ribbon-bar')).toHaveCount(0);
+    await expect(page.getByTestId('app-shell-footer')).toHaveCount(0);
+    await capture(page, testInfo, '29-public-presentation-shell.png');
+  });
+});
