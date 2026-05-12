@@ -120,6 +120,19 @@ describe('<Workspace /> — smoke', () => {
     expect(header.getByTestId('workspace-header-share')).toBeTruthy();
   });
 
+  it('keeps undo/redo global controls in the footer and out of the header', () => {
+    const { getByTestId, queryByTestId } = renderWithProviders(<Workspace />);
+    const header = within(getByTestId('workspace-header'));
+    const footer = within(getByTestId('status-bar'));
+
+    expect(queryByTestId('topbar-undo')).toBeNull();
+    expect(queryByTestId('topbar-redo')).toBeNull();
+    expect(header.queryByRole('button', { name: /undo|rückgängig/i })).toBeNull();
+    expect(header.queryByRole('button', { name: /redo|wiederholen/i })).toBeNull();
+    expect(footer.getByRole('button', { name: /undo|rückgängig/i })).toBeTruthy();
+    expect(footer.getByRole('button', { name: /redo|wiederholen/i })).toBeTruthy();
+  });
+
   it('keeps the primary sidebar navigation-only — UX-TEST-001', () => {
     const { getByTestId, getByRole, queryByTestId } = renderWithProviders(<Workspace />);
     const primary = within(getByTestId('app-shell-primary-sidebar'));
