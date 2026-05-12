@@ -48,6 +48,8 @@ export interface ProjectMenuProps {
   onInsertSeed?: () => void;
   onSaveSnapshot?: () => void;
   onOpenMilestone?: () => void;
+  onOpenMaterialBrowser?: () => void;
+  onOpenAppearanceAssetBrowser?: () => void;
   saveAsMaximumBackups?: number;
   onSaveAsMaximumBackupsChange?: (maximumBackups: number) => void;
   onRestoreSnapshot?: (file: File) => void;
@@ -74,6 +76,8 @@ export function ProjectMenu({
   onInsertSeed,
   onSaveSnapshot,
   onOpenMilestone,
+  onOpenMaterialBrowser,
+  onOpenAppearanceAssetBrowser,
   saveAsMaximumBackups,
   onSaveAsMaximumBackupsChange,
   onRestoreSnapshot,
@@ -269,6 +273,33 @@ export function ProjectMenu({
             onOpenMilestone?.();
           }}
         />
+        {onOpenMaterialBrowser || onOpenAppearanceAssetBrowser ? (
+          <>
+            <div className="my-1 border-t border-border" />
+            {onOpenMaterialBrowser ? (
+              <MenuItem
+                label="Resources → Materials…"
+                icon="settings"
+                testId="project-menu-open-material-browser"
+                onClick={() => {
+                  onOpenChange(false);
+                  onOpenMaterialBrowser();
+                }}
+              />
+            ) : null}
+            {onOpenAppearanceAssetBrowser ? (
+              <MenuItem
+                label="Resources → Appearance Assets…"
+                icon="settings"
+                testId="project-menu-open-appearance-asset-browser"
+                onClick={() => {
+                  onOpenChange(false);
+                  onOpenAppearanceAssetBrowser();
+                }}
+              />
+            ) : null}
+          </>
+        ) : null}
         <MenuItem
           label="Save As Options…"
           icon="settings"

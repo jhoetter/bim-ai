@@ -730,6 +730,22 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'library.open-material-browser',
+  label: 'Open Material Browser',
+  keywords: ['material', 'library', 'resource', 'appearance'],
+  category: 'command',
+  invoke: (ctx) => ctx.openMaterialBrowser?.(),
+});
+
+registerCommand({
+  id: 'library.open-appearance-asset-browser',
+  label: 'Open Appearance Asset Browser',
+  keywords: ['appearance asset', 'material asset', 'texture', 'library', 'resource'],
+  category: 'command',
+  invoke: (ctx) => ctx.openAppearanceAssetBrowser?.(),
+});
+
+registerCommand({
   id: 'help.keyboard-shortcuts',
   label: 'Open Keyboard Shortcuts',
   keywords: ['help', 'shortcuts', 'keyboard', 'cheatsheet'],

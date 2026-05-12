@@ -68,6 +68,8 @@ export type PaletteContext = {
   sharePresentation?: () => void;
   hasPresentationPages?: boolean;
   openFamilyLibrary?: () => void;
+  openMaterialBrowser?: () => void;
+  openAppearanceAssetBrowser?: () => void;
   openKeyboardShortcuts?: () => void;
   replayOnboardingTour?: () => void;
   openAdvisor?: () => void;

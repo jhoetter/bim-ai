@@ -191,6 +191,38 @@ function familyInstanceSiblingTypes(
     );
 }
 
+function resolveMaterialEditableType(
+  element: Element,
+  elementsById: Record<string, Element>,
+): Extract<Element, { kind: 'wall_type' | 'floor_type' | 'roof_type' }> | null {
+  if (
+    element.kind === 'wall_type' ||
+    element.kind === 'floor_type' ||
+    element.kind === 'roof_type'
+  ) {
+    return element;
+  }
+  if (element.kind === 'wall') {
+    const typeId = element.wallTypeId;
+    if (!typeId) return null;
+    const type = elementsById[typeId];
+    return type?.kind === 'wall_type' ? type : null;
+  }
+  if (element.kind === 'floor') {
+    const typeId = element.floorTypeId;
+    if (!typeId) return null;
+    const type = elementsById[typeId];
+    return type?.kind === 'floor_type' ? type : null;
+  }
+  if (element.kind === 'roof') {
+    const typeId = element.roofTypeId;
+    if (!typeId) return null;
+    const type = elementsById[typeId];
+    return type?.kind === 'roof_type' ? type : null;
+  }
+  return null;
+}
+
 export function WorkspaceRightRail({
   mode,
   onSemanticCommand,
@@ -198,6 +230,8 @@ export function WorkspaceRightRail({
   onNavigateToElement,
   activeViewTargetId,
   surface = 'legacy',
+  onOpenMaterialBrowser,
+  onOpenAppearanceAssetBrowser,
 }: {
   mode: WorkspaceMode;
   onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
@@ -205,6 +239,8 @@ export function WorkspaceRightRail({
   onNavigateToElement?: (elementId: string) => void;
   activeViewTargetId?: string;
   surface?: 'legacy' | 'view-context' | 'element';
+  onOpenMaterialBrowser?: () => void;
+  onOpenAppearanceAssetBrowser?: () => void;
 }): JSX.Element {
   const { t } = useTranslation();
   const selectedId = useBimStore((s) => s.selectedId);
@@ -713,6 +749,7 @@ export function WorkspaceRightRail({
                   <InspectorDisciplineScope element={el} activeWorkspaceId={activeWorkspaceId} />
                   <InspectorContextActions
                     element={el}
+                    elementsById={elementsById}
                     firstSheetId={firstSheet}
                     onNavigateToElement={onNavigateToElement}
                     onPlaceRecommendedViews={(sheetId) => {
@@ -740,6 +777,8 @@ export function WorkspaceRightRail({
                     }}
                     onResetSavedView={resetActiveSavedView}
                     onUpdateSavedView={updateActiveSavedView}
+                    onOpenMaterialBrowser={onOpenMaterialBrowser}
+                    onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
                   />
                   {el.kind === 'plan_view' ? (
                     <>
@@ -2206,6 +2245,7 @@ function createElevationFromWallCommand(wall: Extract<Element, { kind: 'wall' }>
 
 function InspectorContextActions({
   element,
+  elementsById,
   firstSheetId,
   onNavigateToElement,
   onPlaceRecommendedViews,
@@ -2213,8 +2253,11 @@ function InspectorContextActions({
   onDuplicateType,
   onResetSavedView,
   onUpdateSavedView,
+  onOpenMaterialBrowser,
+  onOpenAppearanceAssetBrowser,
 }: {
   element: Element;
+  elementsById: Record<string, Element>;
   firstSheetId: string | null;
   onNavigateToElement?: (elementId: string) => void;
   onPlaceRecommendedViews: (sheetId: string) => void;
@@ -2222,8 +2265,11 @@ function InspectorContextActions({
   onDuplicateType: (element: DuplicableTypeElement) => void;
   onResetSavedView: () => void;
   onUpdateSavedView: () => void;
+  onOpenMaterialBrowser?: () => void;
+  onOpenAppearanceAssetBrowser?: () => void;
 }): JSX.Element | null {
   const buttons: JSX.Element[] = [];
+  const materialType = resolveMaterialEditableType(element, elementsById);
 
   if (onNavigateToElement && NAVIGABLE_KINDS.has(element.kind)) {
     buttons.push(
@@ -2262,6 +2308,34 @@ function InspectorContextActions({
         onClick={() => onDuplicateType(element)}
       >
         Duplicate type
+      </button>,
+    );
+  }
+
+  if (materialType && onOpenMaterialBrowser) {
+    buttons.push(
+      <button
+        key="open-material-browser"
+        type="button"
+        data-testid="inspector-open-material-browser"
+        className="rounded border border-border bg-background px-2 py-1 text-[11px] text-foreground hover:bg-surface"
+        onClick={onOpenMaterialBrowser}
+      >
+        Materials…
+      </button>,
+    );
+  }
+
+  if (materialType && onOpenAppearanceAssetBrowser) {
+    buttons.push(
+      <button
+        key="open-appearance-asset-browser"
+        type="button"
+        data-testid="inspector-open-appearance-asset-browser"
+        className="rounded border border-border bg-background px-2 py-1 text-[11px] text-foreground hover:bg-surface"
+        onClick={onOpenAppearanceAssetBrowser}
+      >
+        Appearance Assets…
       </button>,
     );
   }

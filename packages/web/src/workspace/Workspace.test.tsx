@@ -209,6 +209,20 @@ describe('<Workspace /> — smoke', () => {
     expect(getByRole('dialog', { name: 'Save milestone' })).toBeTruthy();
   });
 
+  it('opens material and appearance resource dialogs from the primary project menu owner', () => {
+    const { getByTestId, getByRole } = renderWithProviders(<Workspace />);
+    const primary = within(getByTestId('app-shell-primary-sidebar'));
+
+    fireEvent.click(primary.getByTestId('primary-project-selector'));
+    fireEvent.click(getByTestId('project-menu-open-material-browser'));
+    expect(getByRole('dialog', { name: 'Material Browser' })).toBeTruthy();
+
+    fireEvent.click(within(getByRole('dialog', { name: 'Material Browser' })).getByText('Close'));
+    fireEvent.click(primary.getByTestId('primary-project-selector'));
+    fireEvent.click(getByTestId('project-menu-open-appearance-asset-browser'));
+    expect(getByRole('dialog', { name: 'Appearance Asset Browser' })).toBeTruthy();
+  });
+
   it('scopes primary sidebar search to navigation rows', () => {
     const { getByTestId } = renderWithProviders(<Workspace />);
     const primary = within(getByTestId('app-shell-primary-sidebar'));
@@ -451,6 +465,43 @@ describe('<Workspace /> — smoke', () => {
     expect(getByTestId('app-shell').dataset.elementSidebarPresent).toBe('true');
   });
 
+  it('opens material and appearance dialogs from element-sidebar actions for selected model context', () => {
+    const wallType: Extract<Element, { kind: 'wall_type' }> = {
+      kind: 'wall_type',
+      id: 'wt-1',
+      name: 'Generic - 200mm',
+      basisLine: 'center',
+      layers: [{ function: 'structure', materialKey: 'Concrete', thicknessMm: 200 }],
+    };
+    const wall: Extract<Element, { kind: 'wall' }> = {
+      kind: 'wall',
+      id: 'wall-1',
+      name: 'Wall 1',
+      wallTypeId: wallType.id,
+      levelId: 'lvl-1',
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 4000, yMm: 0 },
+      thicknessMm: 200,
+      heightMm: 3000,
+    };
+    useBimStore.setState({
+      selectedId: wall.id,
+      selectedIds: [wall.id],
+      elementsById: {
+        [wall.id]: wall,
+        [wallType.id]: wallType,
+      },
+    });
+
+    const { getByTestId, getByRole } = renderWithProviders(<Workspace />);
+    fireEvent.click(getByTestId('inspector-open-material-browser'));
+    expect(getByRole('dialog', { name: 'Material Browser' })).toBeTruthy();
+
+    fireEvent.click(within(getByRole('dialog', { name: 'Material Browser' })).getByText('Close'));
+    fireEvent.click(getByTestId('inspector-open-appearance-asset-browser'));
+    expect(getByRole('dialog', { name: 'Appearance Asset Browser' })).toBeTruthy();
+  });
+
   it('mounts the redesign canvas root', () => {
     const { getByTestId } = renderWithProviders(<Workspace />);
     expect(getByTestId('redesign-canvas-root')).toBeTruthy();
@@ -550,6 +601,25 @@ describe('<Workspace /> — smoke', () => {
 
     fireEvent.click(getByTestId('palette-entry-milestone.open'));
     expect(getByRole('dialog', { name: 'Save milestone' })).toBeTruthy();
+  });
+
+  it('opens material and appearance dialogs through Cmd+K reachability', () => {
+    const { getByTestId, getByLabelText, getByRole } = renderWithProviders(<Workspace />);
+    fireEvent.click(getByTestId('workspace-header-cmdk'));
+    fireEvent.change(getByLabelText('Command palette search'), {
+      target: { value: 'material browser' },
+    });
+
+    fireEvent.click(getByTestId('palette-entry-library.open-material-browser'));
+    expect(getByRole('dialog', { name: 'Material Browser' })).toBeTruthy();
+
+    fireEvent.click(within(getByRole('dialog', { name: 'Material Browser' })).getByText('Close'));
+    fireEvent.click(getByTestId('workspace-header-cmdk'));
+    fireEvent.change(getByLabelText('Command palette search'), {
+      target: { value: 'appearance asset browser' },
+    });
+    fireEvent.click(getByTestId('palette-entry-library.open-appearance-asset-browser'));
+    expect(getByRole('dialog', { name: 'Appearance Asset Browser' })).toBeTruthy();
   });
 
   it('replays onboarding tour through Cmd+K help reachability', async () => {

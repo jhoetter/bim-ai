@@ -566,11 +566,19 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await expect(page.getByTestId('project-menu')).toBeVisible();
     await expect(page.getByTestId('project-menu-save-milestone')).toBeVisible();
     await expect(page.getByTestId('project-menu-replay-tour')).toBeVisible();
+    await expect(page.getByTestId('project-menu-open-material-browser')).toBeVisible();
+    await expect(page.getByTestId('project-menu-open-appearance-asset-browser')).toBeVisible();
     await capture(page, testInfo, '13-project-menu.png');
     await page.getByTestId('project-menu-save-milestone').click();
     await expect(page.getByRole('dialog', { name: 'Save milestone' })).toBeVisible();
     await capture(page, testInfo, '13a-milestone-dialog.png');
     await page.keyboard.press('Escape');
+
+    await page.getByTestId('primary-project-selector').click();
+    await page.getByTestId('project-menu-open-material-browser').click();
+    await expect(page.getByRole('dialog', { name: 'Material Browser' })).toBeVisible();
+    await capture(page, testInfo, '13b-material-browser-dialog.png');
+    await page.getByRole('dialog', { name: 'Material Browser' }).getByText('Close').click();
 
     await page.getByTestId('ribbon-tab-insert').click();
     await page.getByTestId('ribbon-command-family-library').click();
@@ -590,6 +598,16 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await expect(page.getByRole('dialog', { name: 'Save milestone' })).toBeVisible();
     await capture(page, testInfo, '15a-cmdk-milestone-dialog.png');
     await page.keyboard.press('Escape');
+
+    await page.getByTestId('workspace-header-cmdk').click();
+    await page.getByLabel('Command palette search').fill('appearance asset browser');
+    await expect(
+      page.getByTestId('palette-entry-library.open-appearance-asset-browser'),
+    ).toBeVisible();
+    await page.getByTestId('palette-entry-library.open-appearance-asset-browser').click();
+    await expect(page.getByRole('dialog', { name: 'Appearance Asset Browser' })).toBeVisible();
+    await capture(page, testInfo, '15b-cmdk-appearance-asset-dialog.png');
+    await page.getByRole('dialog', { name: 'Appearance Asset Browser' }).getByText('Close').click();
 
     await expect(page.getByTestId('workspace-header-share')).toBeEnabled();
     await page.getByTestId('workspace-header-share').click();

@@ -33,11 +33,20 @@ describe('<ProjectMenu /> — T-03', () => {
   });
 
   it('renders the standard menu items when open', () => {
-    const { getByTestId } = render(<Harness open={true} onOpenChange={() => {}} />);
+    const { getByTestId } = render(
+      <Harness
+        open={true}
+        onOpenChange={() => {}}
+        onOpenMaterialBrowser={() => {}}
+        onOpenAppearanceAssetBrowser={() => {}}
+      />,
+    );
     expect(getByTestId('project-menu')).toBeTruthy();
     expect(getByTestId('project-menu-insert-seed')).toBeTruthy();
     expect(getByTestId('project-menu-save-snapshot')).toBeTruthy();
     expect(getByTestId('project-menu-save-milestone')).toBeTruthy();
+    expect(getByTestId('project-menu-open-material-browser')).toBeTruthy();
+    expect(getByTestId('project-menu-open-appearance-asset-browser')).toBeTruthy();
     expect(getByTestId('project-menu-save-as-options')).toBeTruthy();
     expect(getByTestId('project-menu-open-snapshot')).toBeTruthy();
     expect(getByTestId('project-menu-new-clear')).toBeTruthy();
@@ -100,6 +109,28 @@ describe('<ProjectMenu /> — T-03', () => {
 
     fireEvent.click(getByTestId('project-menu-save-milestone'));
     expect(onOpenMilestone).toHaveBeenCalledTimes(1);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('routes material and appearance resources through the project menu owner', () => {
+    const onOpenChange = vi.fn();
+    const onOpenMaterialBrowser = vi.fn();
+    const onOpenAppearanceAssetBrowser = vi.fn();
+    const { getByTestId } = render(
+      <Harness
+        open={true}
+        onOpenChange={onOpenChange}
+        onOpenMaterialBrowser={onOpenMaterialBrowser}
+        onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+      />,
+    );
+
+    fireEvent.click(getByTestId('project-menu-open-material-browser'));
+    expect(onOpenMaterialBrowser).toHaveBeenCalledTimes(1);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+
+    fireEvent.click(getByTestId('project-menu-open-appearance-asset-browser'));
+    expect(onOpenAppearanceAssetBrowser).toHaveBeenCalledTimes(1);
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 

@@ -71,6 +71,8 @@ describe('command capability graph', () => {
       ['project.share-presentation', ['cmd-k', 'header']],
       ['project.manage-links', ['cmd-k', 'primary-sidebar']],
       ['library.open-family', ['cmd-k', 'ribbon', 'secondary-sidebar']],
+      ['library.open-material-browser', ['cmd-k', 'primary-sidebar', 'element-sidebar']],
+      ['library.open-appearance-asset-browser', ['cmd-k', 'primary-sidebar', 'element-sidebar']],
       ['help.keyboard-shortcuts', ['cmd-k']],
       ['help.replay-onboarding-tour', ['cmd-k', 'primary-sidebar']],
       ['advisor.open', ['cmd-k', 'footer']],
@@ -123,6 +125,8 @@ describe('command capability graph', () => {
       'settings.language.toggle',
       'shell.toggle-primary-sidebar',
       'project.manage-links',
+      'library.open-material-browser',
+      'library.open-appearance-asset-browser',
       'help.replay-onboarding-tour',
       'advisor.open',
       'jobs.open',
@@ -185,6 +189,16 @@ describe('command capability graph', () => {
     expect(getCommandCapability('project.manage-links')?.surfaces).toEqual([
       'cmd-k',
       'primary-sidebar',
+    ]);
+    expect(getCommandCapability('library.open-material-browser')?.surfaces).toEqual([
+      'cmd-k',
+      'primary-sidebar',
+      'element-sidebar',
+    ]);
+    expect(getCommandCapability('library.open-appearance-asset-browser')?.surfaces).toEqual([
+      'cmd-k',
+      'primary-sidebar',
+      'element-sidebar',
     ]);
     expect(getCommandCapability('advisor.open')?.surfaces).toEqual(['cmd-k', 'footer']);
     expect(getCommandCapability('jobs.open')?.surfaces).toEqual(['cmd-k', 'footer']);

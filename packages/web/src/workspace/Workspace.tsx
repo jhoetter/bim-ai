@@ -103,6 +103,8 @@ import {
   type FamilyLibraryArrayFormulaUpdate,
   type FamilyLibraryPlaceKind,
 } from '../families/FamilyLibraryPanel';
+import { MaterialBrowserDialog } from '../familyEditor/MaterialBrowserDialog';
+import { AppearanceAssetBrowserDialog } from '../familyEditor/AppearanceAssetBrowserDialog';
 import {
   findLoadedCatalogFamilyType,
   planCatalogFamilyLoad,
@@ -190,6 +192,41 @@ const EMPTY_JOBS_COUNTS = {
   running: 0,
   errored: 0,
 } as const;
+
+type MaterialEditableType = Extract<Element, { kind: 'wall_type' | 'floor_type' | 'roof_type' }>;
+
+function resolveMaterialEditableType(
+  selected: Element | undefined,
+  elementsById: Record<string, Element>,
+): MaterialEditableType | null {
+  if (!selected) return null;
+  if (
+    selected.kind === 'wall_type' ||
+    selected.kind === 'floor_type' ||
+    selected.kind === 'roof_type'
+  ) {
+    return selected;
+  }
+  if (selected.kind === 'wall') {
+    const typeId = selected.wallTypeId;
+    if (!typeId) return null;
+    const type = elementsById[typeId];
+    return type?.kind === 'wall_type' ? type : null;
+  }
+  if (selected.kind === 'floor') {
+    const typeId = selected.floorTypeId;
+    if (!typeId) return null;
+    const type = elementsById[typeId];
+    return type?.kind === 'floor_type' ? type : null;
+  }
+  if (selected.kind === 'roof') {
+    const typeId = selected.roofTypeId;
+    if (!typeId) return null;
+    const type = elementsById[typeId];
+    return type?.kind === 'roof_type' ? type : null;
+  }
+  return null;
+}
 
 function summarizeJobsCounts(rows: unknown[]): typeof EMPTY_JOBS_COUNTS {
   const counts = { ...EMPTY_JOBS_COUNTS };
@@ -363,6 +400,8 @@ export function Workspace(): JSX.Element {
   const [rightRailOverride, setRightRailOverride] = useState<RailOverride>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [familyLibraryOpen, setFamilyLibraryOpen] = useState(false);
+  const [materialBrowserOpen, setMaterialBrowserOpen] = useState(false);
+  const [appearanceAssetBrowserOpen, setAppearanceAssetBrowserOpen] = useState(false);
   const [sheetReviewMode, setSheetReviewMode] = useState<SheetReviewMode>('cm');
   const [sheetMarkupShape, setSheetMarkupShape] = useState<SheetMarkupShape>('freehand');
   const [_pendingPlacement, setPendingPlacement] = useState<{
@@ -1104,6 +1143,32 @@ export function Workspace(): JSX.Element {
     [effectiveMode, handleModeChange, setPlanTool, toolRegistry],
   );
 
+  const selectedElement = useMemo(
+    () => (selectedId ? (elementsById[selectedId] as Element | undefined) : undefined),
+    [elementsById, selectedId],
+  );
+  const materialEditableType = useMemo(
+    () => resolveMaterialEditableType(selectedElement, elementsById),
+    [selectedElement, elementsById],
+  );
+  const selectedMaterialKey = materialEditableType?.layers[0]?.materialKey ?? null;
+
+  const assignMaterialToSelection = useCallback(
+    (materialKey: string) => {
+      if (!materialEditableType) return;
+      const [first, ...rest] = materialEditableType.layers;
+      if (!first) return;
+      const nextLayers = [{ ...first, materialKey }, ...rest.map((layer) => ({ ...layer }))];
+      void onSemanticCommand({
+        type: 'updateElementProperty',
+        elementId: materialEditableType.id,
+        key: 'layers',
+        value: nextLayers,
+      });
+    },
+    [materialEditableType, onSemanticCommand],
+  );
+
   const openMilestoneDialog = useCallback(() => setMilestoneDialogOpen(true), []);
   const replayOnboardingTour = useCallback(() => {
     resetOnboarding();
@@ -1641,6 +1706,8 @@ export function Workspace(): JSX.Element {
           sharePresentation: () => setSharePresentationOpen(true),
           hasPresentationPages: sheetPages.length > 0,
           openFamilyLibrary: () => setFamilyLibraryOpen(true),
+          openMaterialBrowser: () => setMaterialBrowserOpen(true),
+          openAppearanceAssetBrowser: () => setAppearanceAssetBrowserOpen(true),
           openKeyboardShortcuts: () => setCheatsheetOpen(true),
           replayOnboardingTour,
           openAdvisor: () => setAdvisorOpen(true),
@@ -1685,6 +1752,26 @@ export function Workspace(): JSX.Element {
         onLoadCatalogFamily={handleLoadCatalogFamily}
         onUpdateArrayFormula={handleUpdateArrayFormula}
       />
+      {materialBrowserOpen ? (
+        <MaterialBrowserDialog
+          currentKey={selectedMaterialKey}
+          onAssign={(materialKey) => {
+            assignMaterialToSelection(materialKey);
+            setMaterialBrowserOpen(false);
+          }}
+          onClose={() => setMaterialBrowserOpen(false)}
+        />
+      ) : null}
+      {appearanceAssetBrowserOpen ? (
+        <AppearanceAssetBrowserDialog
+          currentKey={selectedMaterialKey}
+          onReplace={(materialKey) => {
+            assignMaterialToSelection(materialKey);
+            setAppearanceAssetBrowserOpen(false);
+          }}
+          onClose={() => setAppearanceAssetBrowserOpen(false)}
+        />
+      ) : null}
       <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
       <VVDialog open={vvDialogOpen} onClose={closeVVDialog} />
       {advisorOpen ? (
@@ -1808,6 +1895,8 @@ export function Workspace(): JSX.Element {
         onSaveAsMaximumBackupsChange={handleSaveAsMaximumBackupsChange}
         onRestoreSnapshot={(f) => void handleRestoreSnapshot(f)}
         onOpenMilestone={openMilestoneDialog}
+        onOpenMaterialBrowser={() => setMaterialBrowserOpen(true)}
+        onOpenAppearanceAssetBrowser={() => setAppearanceAssetBrowserOpen(true)}
         onNewClear={handleNewClear}
         onReplayTour={replayOnboardingTour}
         onManageLinks={() => setManageLinksOpen(true)}
@@ -2012,6 +2101,8 @@ export function Workspace(): JSX.Element {
             onNavigateToElement={openElementById}
             activeViewTargetId={activeTab?.targetId}
             surface="view-context"
+            onOpenMaterialBrowser={() => setMaterialBrowserOpen(true)}
+            onOpenAppearanceAssetBrowser={() => setAppearanceAssetBrowserOpen(true)}
           />
         }
         canvas={
@@ -2077,6 +2168,8 @@ export function Workspace(): JSX.Element {
               onModeChange={handleModeChange}
               onNavigateToElement={openElementById}
               surface="element"
+              onOpenMaterialBrowser={() => setMaterialBrowserOpen(true)}
+              onOpenAppearanceAssetBrowser={() => setAppearanceAssetBrowserOpen(true)}
             />
           ) : null
         }

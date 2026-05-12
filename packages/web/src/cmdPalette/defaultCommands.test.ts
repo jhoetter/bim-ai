@@ -234,6 +234,8 @@ describe('default Cmd+K commands', () => {
     const saveSnapshot = vi.fn();
     const openRestoreSnapshot = vi.fn();
     const openMilestone = vi.fn();
+    const openMaterialBrowser = vi.fn();
+    const openAppearanceAssetBrowser = vi.fn();
     const replayOnboardingTour = vi.fn();
     const sharePresentation = vi.fn();
 
@@ -252,6 +254,15 @@ describe('default Cmd+K commands', () => {
     const openManageLinks = vi.fn();
     command('project.manage-links').invoke({ ...PLAN_CTX, openManageLinks });
     expect(openManageLinks).toHaveBeenCalledOnce();
+
+    command('library.open-material-browser').invoke({ ...PLAN_CTX, openMaterialBrowser });
+    expect(openMaterialBrowser).toHaveBeenCalledOnce();
+
+    command('library.open-appearance-asset-browser').invoke({
+      ...PLAN_CTX,
+      openAppearanceAssetBrowser,
+    });
+    expect(openAppearanceAssetBrowser).toHaveBeenCalledOnce();
 
     const unavailableShare = queryPalette('share presentation', PLAN_CTX, {}).find(
       (entry) => entry.id === 'project.share-presentation',
