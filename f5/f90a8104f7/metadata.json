@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "f5f90a8104f7",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/cmd/CommandBar.tsx",
+    "spec/ux-bim-ai-rework-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f5/f90a8104f7/0/metadata.json",
+      "transcript": "/f5/f90a8104f7/0/full.jsonl",
+      "content_hash": "/f5/f90a8104f7/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 4219,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 107264,
+    "output_tokens": 309,
+    "api_call_count": 2
+  }
+}
