@@ -483,4 +483,43 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await expect(page.getByTestId('activity-drawer')).toBeVisible();
     await capture(page, testInfo, '17-activity-drawer.png');
   });
+
+  test('captures element-sidebar selection and deselection behavior', async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await bootWorkspace(page);
+
+    await expect(page.getByTestId('app-shell')).toHaveAttribute(
+      'data-element-sidebar-present',
+      'false',
+    );
+    await page.evaluate(() => {
+      const win = window as unknown as {
+        __bimStore?: { getState: () => { select?: (id?: string) => void } };
+      };
+      win.__bimStore?.getState().select?.('wall-main');
+    });
+    await expect(page.getByTestId('app-shell')).toHaveAttribute(
+      'data-element-sidebar-present',
+      'true',
+    );
+    await expect(page.getByTestId('app-shell-element-sidebar')).toBeVisible();
+    await expect(page.getByTestId('inspector')).toBeVisible();
+    await expect(page.getByTestId('inspector-wall-move-apply')).toBeVisible();
+    await capture(page, testInfo, '18-element-sidebar-selected-wall.png');
+
+    await page.evaluate(() => {
+      const win = window as unknown as {
+        __bimStore?: { getState: () => { select?: (id?: string) => void } };
+      };
+      win.__bimStore?.getState().select?.(undefined);
+    });
+    await expect(page.getByTestId('app-shell')).toHaveAttribute(
+      'data-element-sidebar-present',
+      'false',
+    );
+    await expect(page.getByTestId('app-shell-element-sidebar')).toBeHidden();
+    await capture(page, testInfo, '19-element-sidebar-deselected.png');
+  });
 });
