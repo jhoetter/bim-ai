@@ -303,8 +303,8 @@ describe('AgentReviewModeShell — spec §20.7 / WP-UI-E01–E04', () => {
 
   it('dispatches preset change via onPreset', () => {
     useBimStore.setState({ buildingPreset: 'residential' });
-    const { getByRole } = renderWithI18n(<AgentReviewModeShell onApplyQuickFix={() => {}} />);
-    const select = getByRole('combobox');
+    const { getByLabelText } = renderWithI18n(<AgentReviewModeShell onApplyQuickFix={() => {}} />);
+    const select = getByLabelText('Code preset');
     fireEvent.change(select, { target: { value: 'commercial' } });
     expect(useBimStore.getState().buildingPreset).toBe('commercial');
   });
