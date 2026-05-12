@@ -1,6 +1,6 @@
 # BIM AI UX Rework Master Index
 
-Last updated: 2026-05-11
+Last updated: 2026-05-12
 
 Source artifact: `spec/UX bim-ai rework.pdf`
 
@@ -93,14 +93,14 @@ This is the navigation and coverage document for the BIM AI workspace UX revamp.
 
 ### Dynamic Audit
 
-| Section                           | Link                                                                                     | Why it matters                                                        |
-| --------------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| Audit Setup                       | [`dynamic audit`](./ux-bim-ai-rework-dynamic-audit.md#audit-setup)                       | Documents the required seeded environment                             |
-| Captured States                   | [`dynamic audit`](./ux-bim-ai-rework-dynamic-audit.md#captured-states)                   | Lists the generated screenshots and covered modes                     |
-| High-Confidence Live Findings     | [`dynamic audit`](./ux-bim-ai-rework-dynamic-audit.md#high-confidence-live-findings)     | Confirms the biggest current UI ownership failures in the running app |
-| Dynamic Coverage Gaps             | [`dynamic audit`](./ux-bim-ai-rework-dynamic-audit.md#dynamic-coverage-gaps)             | Names the remaining states that still require focused capture         |
-| Command Registry Findings         | [`dynamic audit`](./ux-bim-ai-rework-dynamic-audit.md#command-registry-findings)         | Shows how old surface ownership is encoded in command metadata        |
-| Implementation Readiness Judgment | [`dynamic audit`](./ux-bim-ai-rework-dynamic-audit.md#implementation-readiness-judgment) | Defines what kind of implementation can safely start                  |
+| Section                           | Link                                                                                      | Why it matters                                                        |
+| --------------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Audit Setup                       | [`dynamic audit`](./ux-bim-ai-rework-dynamic-audit.md#audit-setup)                        | Documents the required seeded environment                             |
+| Captured States                   | [`dynamic audit`](./ux-bim-ai-rework-dynamic-audit.md#captured-states)                    | Lists the generated screenshots and covered modes                     |
+| High-Confidence Live Findings     | [`dynamic audit`](./ux-bim-ai-rework-dynamic-audit.md#high-confidence-live-findings)      | Confirms the biggest current UI ownership failures in the running app |
+| Dynamic Coverage Follow-Ups       | [`dynamic audit`](./ux-bim-ai-rework-dynamic-audit.md#dynamic-coverage-follow-ups-closed) | Records formerly open dynamic gaps and their closure evidence         |
+| Command Registry Findings         | [`dynamic audit`](./ux-bim-ai-rework-dynamic-audit.md#command-registry-findings)          | Shows how old surface ownership is encoded in command metadata        |
+| Implementation Readiness Judgment | [`dynamic audit`](./ux-bim-ai-rework-dynamic-audit.md#implementation-readiness-judgment)  | Defines what kind of implementation can safely start                  |
 
 ## Recommended Future Split
 
