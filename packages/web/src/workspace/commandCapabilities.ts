@@ -675,7 +675,7 @@ const SYSTEM_CAPABILITIES: CommandCapability[] = [
   {
     id: 'tabs.close-inactive',
     label: 'Close Inactive Views',
-    owner: 'workspace/shell/TopBar',
+    owner: 'workspace/shell/TabBar',
     group: 'system',
     scope: 'universal',
     intendedModes: [...CAPABILITY_VIEW_MODES],
@@ -684,6 +684,7 @@ const SYSTEM_CAPABILITIES: CommandCapability[] = [
     preconditions: [],
     status: 'implemented',
     usabilityScore: 8,
+    notes: 'Header tab overflow menu plus Cmd+K fallback.',
   },
   {
     id: 'shell.toggle-primary-sidebar',

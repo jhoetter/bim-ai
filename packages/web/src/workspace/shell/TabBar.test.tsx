@@ -114,4 +114,25 @@ describe('TabBar — spec §11.3', () => {
     fireEvent.click(getByTestId('tab-add-section'));
     expect(onAdd).toHaveBeenCalledWith('section');
   });
+
+  it('keeps close-inactive views in tab overflow, not as persistent header chrome', () => {
+    const onCloseInactive = vi.fn();
+    const { getByTestId, queryByTestId } = renderWithI18n(
+      <TabBar
+        tabs={tabs}
+        activeId="plan:l0"
+        onActivate={() => {}}
+        onClose={() => {}}
+        onCloseInactive={onCloseInactive}
+      />,
+    );
+
+    expect(queryByTestId('close-inactive-tabs')).toBeNull();
+    fireEvent.click(getByTestId('tab-overflow-button'));
+    expect(getByTestId('tab-overflow-menu')).toBeTruthy();
+    fireEvent.click(getByTestId('close-inactive-tabs'));
+
+    expect(onCloseInactive).toHaveBeenCalledTimes(1);
+    expect(queryByTestId('tab-overflow-menu')).toBeNull();
+  });
 });

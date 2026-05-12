@@ -1,4 +1,5 @@
 import { type JSX, useEffect, useRef, useState } from 'react';
+import { MoreHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ICON_SIZE, Icons, type LucideLikeIcon } from '@bim-ai/ui';
 
@@ -62,9 +63,14 @@ export function TabBar({
 }: TabBarProps): JSX.Element {
   const { t } = useTranslation();
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const [overflowOpen, setOverflowOpen] = useState(false);
+  const [overflowPosition, setOverflowPosition] = useState<{ left: number; top: number } | null>(
+    null,
+  );
   const [dragSrc, setDragSrc] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
+  const overflowRef = useRef<HTMLDivElement | null>(null);
   const tabBarRef = useRef<HTMLDivElement>(null);
 
   // Click-outside closes the popover.
@@ -78,6 +84,17 @@ export function TabBar({
     document.addEventListener('mousedown', onDoc);
     return () => document.removeEventListener('mousedown', onDoc);
   }, [popoverOpen]);
+
+  useEffect(() => {
+    if (!overflowOpen) return;
+    const onDoc = (e: MouseEvent): void => {
+      if (overflowRef.current && !overflowRef.current.contains(e.target as Node)) {
+        setOverflowOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [overflowOpen]);
 
   // Convert vertical scroll to horizontal scroll on the tab bar so a
   // regular mouse wheel (or two-finger vertical swipe) scrolls tabs.
@@ -288,17 +305,55 @@ export function TabBar({
         ) : null}
       </div>
       {onCloseInactive && tabs.length > 1 ? (
-        <button
-          type="button"
-          data-testid="close-inactive-tabs"
-          title="Close Inactive Views"
-          onClick={onCloseInactive}
-          className="mb-1.5 ml-1 flex items-center gap-1 rounded px-1.5 py-0.5 text-muted hover:bg-surface-strong hover:text-foreground"
-          style={{ fontSize: 11, whiteSpace: 'nowrap' }}
-        >
-          <Icons.close size={10} aria-hidden="true" />
-          <span>Close Inactive</span>
-        </button>
+        <div className="relative ml-0.5 mb-1.5" ref={overflowRef}>
+          <button
+            type="button"
+            data-testid="tab-overflow-button"
+            aria-label="Tab options"
+            aria-expanded={overflowOpen}
+            aria-haspopup="menu"
+            title="Tab options"
+            onClick={(event) => {
+              const nextOpen = !overflowOpen;
+              if (nextOpen) {
+                const rect = event.currentTarget.getBoundingClientRect();
+                setOverflowPosition({
+                  left: Math.max(8, rect.right - 170),
+                  top: rect.bottom + 4,
+                });
+              }
+              setOverflowOpen(nextOpen);
+            }}
+            className="flex h-6 w-6 items-center justify-center rounded text-muted hover:bg-surface-strong hover:text-foreground"
+          >
+            <MoreHorizontal size={14} aria-hidden="true" />
+          </button>
+          {overflowOpen ? (
+            <div
+              role="menu"
+              data-testid="tab-overflow-menu"
+              className="fixed z-50 flex min-w-[170px] flex-col rounded-md border border-border bg-surface py-1 shadow-elev-2"
+              style={{
+                left: overflowPosition?.left ?? 8,
+                top: overflowPosition?.top ?? 42,
+              }}
+            >
+              <button
+                type="button"
+                role="menuitem"
+                data-testid="close-inactive-tabs"
+                onClick={() => {
+                  setOverflowOpen(false);
+                  onCloseInactive();
+                }}
+                className="flex items-center gap-2 px-3 py-1.5 text-left text-xs text-foreground hover:bg-surface-strong"
+              >
+                <Icons.close size={ICON_SIZE.chrome} aria-hidden="true" />
+                <span>Close inactive views</span>
+              </button>
+            </div>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
