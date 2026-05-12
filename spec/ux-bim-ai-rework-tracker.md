@@ -167,6 +167,7 @@ Additional seeded check (2026-05-12): `packages/web/tmp/ux-canvas-scale-readout-
 
 Evidence (2026-05-12): seeded footer capture at `packages/web/tmp/ux-footer-jobs-20260512/` confirms canonical footer ownership for global advisor + jobs + activity entries. Screenshots `01-footer-jobs-entry.png` and `02-footer-jobs-dialog.png` prove the new jobs status entry opens a dedicated jobs dialog, and `03-cmdk-open-jobs-dialog.png` proves Cmd+K reaches the same footer-owned jobs surface. Remaining gap: seeded runtime currently returns `404 /api/jobs`, so live running/failed count population is not yet provable.
 Additional seeded live check (2026-05-12): `packages/web/tmp/ux-snap-footer-reconcile-live-20260512/01-live-footer-snap-grid-no-canvas-toolbar.png` plus `summary.json` confirm footer snap group remains present (`statusbarSnapGroup: 1`) while legacy canvas toolbars are absent (`snap-settings-toolbar: 0`, `plan-detail-level-toolbar: 0`).
+Footer activity ownership is also covered by `Workspace.test.tsx` (`status-bar-activity-entry` opens `activity-drawer` while header activity ownership remains absent).
 
 ## View-Type Ribbon Matrix
 
@@ -483,7 +484,7 @@ Evidence (2026-05-12): `Workspace.test.tsx` now proves `UX-ELE-020` close/reopen
 | UX-DIA-008 | New sheet dialog                | Sheet workflows             | Sheet ribbon/add tab          | Keep     | Creating a sheet can be launched from nav add or sheet ribbon                                                                         |
 | UX-DIA-009 | Share modal                     | Header share                | Header                        | Keep     | Keep header-triggered                                                                                                                 |
 | UX-DIA-010 | Share presentation modal        | Header/share workflow       | Header                        | Keep     | Presentation-specific sharing remains header/share workflow                                                                           |
-| UX-DIA-011 | Activity drawer                 | Collaboration/activity      | Header or footer              | Audit    | Split live collaboration from system/job events                                                                                       |
+| UX-DIA-011 | Activity drawer                 | Collaboration/activity      | Header or footer              | Fixed    | Activity stream is launched from footer entry (`status-bar-activity-entry`) and not owned by header                                   |
 | UX-DIA-012 | Milestone dialog                | Project/version workflows   | Project resources/footer      | Audit    | Milestones are project-global; do not put in ribbon unless tied to publish workflow                                                   |
 | UX-DIA-013 | Onboarding tour                 | App overlay                 | Help/onboarding               | Audit    | Must be updated after revamp to avoid explaining removed UI                                                                           |
 | UX-DIA-014 | Cheatsheet/keyboard help        | Help overlay                | Cmd+K/help                    | Keep     | Keep as global help, but shortcuts must reflect new ownership                                                                         |

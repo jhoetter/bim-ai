@@ -515,4 +515,12 @@ describe('<Workspace /> — smoke', () => {
     fireEvent.click(getByTestId('palette-entry-jobs.open'));
     expect(getByTestId('jobs-dialog')).toBeTruthy();
   });
+
+  it('owns activity stream entry in footer and opens the activity drawer from there', () => {
+    const { getByTestId, queryByTestId } = renderWithProviders(<Workspace />);
+
+    expect(queryByTestId('workspace-header-activity')).toBeNull();
+    fireEvent.click(getByTestId('status-bar-activity-entry'));
+    expect(getByTestId('activity-drawer')).toBeTruthy();
+  });
 });
