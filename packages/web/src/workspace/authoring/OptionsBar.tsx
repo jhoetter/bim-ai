@@ -3,7 +3,6 @@ import type { Element } from '@bim-ai/core';
 import { useBimStore } from '../../state/store';
 import { applyCommand } from '../../lib/api';
 import { WALL_LOCATION_LINE_ORDER, type WallLocationLine } from '../../tools/toolGrammar';
-import type { DisciplineWorkspaceId } from '../../state/storeTypes';
 
 const LOCATION_LINE_LABELS: Record<WallLocationLine, string> = {
   'wall-centerline': 'Wall Centerline',
@@ -15,35 +14,6 @@ const LOCATION_LINE_LABELS: Record<WallLocationLine, string> = {
 };
 
 const BAR_CLASS = 'flex items-center gap-4 border-b border-border bg-surface py-1 px-3 text-xs';
-
-const WORKSPACE_OPTIONS: Array<{ id: DisciplineWorkspaceId; label: string }> = [
-  { id: 'arch', label: 'Architekt' },
-  { id: 'struct', label: 'Statiker' },
-  { id: 'mep', label: 'TGA' },
-  { id: 'concept', label: 'Concept' },
-];
-
-function DisciplineWorkspaceScope(): JSX.Element {
-  const activeWorkspaceId = useBimStore((s) => s.activeWorkspaceId);
-  const setActiveWorkspaceId = useBimStore((s) => s.setActiveWorkspaceId);
-  return (
-    <label className="flex items-center gap-2" data-testid="options-bar-discipline-scope">
-      <span className="text-muted">Workspace:</span>
-      <select
-        value={activeWorkspaceId}
-        onChange={(e) => setActiveWorkspaceId(e.target.value as DisciplineWorkspaceId)}
-        className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
-        aria-label="Discipline workspace"
-      >
-        {WORKSPACE_OPTIONS.map((option) => (
-          <option key={option.id} value={option.id}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
 
 /**
  * Module-level flag for the mirror tool "Copy" option.
@@ -124,7 +94,6 @@ export function OptionsBar(): JSX.Element | null {
   if (planTool === 'wall') {
     return (
       <div data-testid="options-bar" className={BAR_CLASS}>
-        <DisciplineWorkspaceScope />
         <label className="flex items-center gap-2">
           <span className="text-muted">Type:</span>
           <select
@@ -214,7 +183,6 @@ export function OptionsBar(): JSX.Element | null {
   if (planTool === 'floor') {
     return (
       <div data-testid="options-bar" className={BAR_CLASS}>
-        <DisciplineWorkspaceScope />
         <label className="flex items-center gap-2">
           <span className="text-muted">Type:</span>
           <select
@@ -275,7 +243,6 @@ export function OptionsBar(): JSX.Element | null {
 
     return (
       <div data-testid="options-bar" className={BAR_CLASS}>
-        <DisciplineWorkspaceScope />
         <label className="flex items-center gap-1 text-[11px]">
           <input
             type="checkbox"
@@ -344,7 +311,6 @@ export function OptionsBar(): JSX.Element | null {
   if (planTool === 'mirror') {
     return (
       <div data-testid="options-bar" className={BAR_CLASS}>
-        <DisciplineWorkspaceScope />
         <label className="flex items-center gap-1 text-[11px]">
           <input
             type="checkbox"
@@ -367,7 +333,6 @@ export function OptionsBar(): JSX.Element | null {
   if (planTool === 'copy') {
     return (
       <div data-testid="options-bar" className={BAR_CLASS}>
-        <DisciplineWorkspaceScope />
         <label className="flex items-center gap-1 text-[11px]">
           <input
             type="checkbox"
@@ -390,7 +355,6 @@ export function OptionsBar(): JSX.Element | null {
   if (planTool === 'move') {
     return (
       <div data-testid="options-bar" className={BAR_CLASS}>
-        <DisciplineWorkspaceScope />
         <span className="text-muted opacity-60">
           Click reference point, click destination to move selection
         </span>
@@ -413,7 +377,6 @@ export function OptionsBar(): JSX.Element | null {
       );
     return (
       <div data-testid="options-bar" className={BAR_CLASS}>
-        <DisciplineWorkspaceScope />
         <label className="flex items-center gap-2">
           <span className="text-muted">Asset:</span>
           <select

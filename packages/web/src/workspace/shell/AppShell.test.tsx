@@ -188,7 +188,7 @@ describe('AppShell — spec §8', () => {
   it('shows plan tool option surfaces only in plan-capable modes', () => {
     useBimStore.getState().setPlanTool('wall');
 
-    const { getByTestId, queryByTestId, rerender } = render(
+    const { getByTestId, queryByTestId, queryByRole, rerender } = render(
       <AppShell
         activeMode="plan"
         header={<span>t</span>}
@@ -202,6 +202,8 @@ describe('AppShell — spec §8', () => {
 
     expect(getByTestId('tool-modifier-bar')).toBeTruthy();
     expect(getByTestId('options-bar')).toBeTruthy();
+    expect(queryByTestId('options-bar-discipline-scope')).toBeNull();
+    expect(queryByRole('combobox', { name: /discipline workspace/i })).toBeNull();
 
     rerender(
       <AppShell

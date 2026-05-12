@@ -38,6 +38,15 @@ describe('OptionsBar', () => {
     expect(getByText('Wall Centerline')).toBeTruthy();
   });
 
+  it('keeps discipline workspace switching out of tool options rows — UX-R-011', () => {
+    act(() => {
+      useBimStore.setState({ planTool: 'wall' });
+    });
+    const { queryByTestId, queryByRole } = render(<OptionsBar />);
+    expect(queryByTestId('options-bar-discipline-scope')).toBeNull();
+    expect(queryByRole('combobox', { name: /discipline workspace/i })).toBeNull();
+  });
+
   it('clicking Finish Face: Exterior calls setWallLocationLine', () => {
     act(() => {
       useBimStore.setState({ planTool: 'wall', wallLocationLine: 'wall-centerline' });

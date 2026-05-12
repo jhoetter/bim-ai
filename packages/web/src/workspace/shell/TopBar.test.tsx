@@ -409,6 +409,10 @@ describe('RibbonBar — F-005', () => {
     expect(getByRole('tab', { name: '3D View' }).getAttribute('aria-selected')).toBe('true');
     expect(getByRole('tab', { name: 'Insert' })).toBeTruthy();
     expect(queryByTestId('ribbon-command-wall')).toBeNull();
+    expect(queryByTestId('ribbon-command-column')).toBeNull();
+    expect(queryByTestId('ribbon-command-beam')).toBeNull();
+    expect(queryByTestId('ribbon-command-floor')).toBeNull();
+    expect(queryByTestId('ribbon-command-roof')).toBeNull();
     expect(queryByTestId('ribbon-command-visibility-graphics')).toBeNull();
     expect((getByTestId('ribbon-command-select') as HTMLButtonElement).disabled).toBe(false);
     expect((getByTestId('ribbon-command-3d-save-view') as HTMLButtonElement).disabled).toBe(false);
@@ -420,6 +424,20 @@ describe('RibbonBar — F-005', () => {
     expect(onToolSelect).toHaveBeenCalledWith('select');
     expect(onSaveCurrentViewpoint).toHaveBeenCalledTimes(1);
     expect(onOpenFamilyLibrary).toHaveBeenCalledTimes(1);
+  });
+
+  it('scopes 3D contextual modify actions by selection kind — UX-R-003', () => {
+    const wallSelection = render(<RibbonBar activeMode="3d" selectedElementKind="wall" />);
+    fireEvent.click(wallSelection.getByTestId('ribbon-tab-modify'));
+    expect(wallSelection.getByTestId('3d-insert-door')).toBeTruthy();
+    expect(wallSelection.getByTestId('3d-insert-window')).toBeTruthy();
+    wallSelection.unmount();
+
+    const beamSelection = render(<RibbonBar activeMode="3d" selectedElementKind="beam" />);
+    fireEvent.click(beamSelection.getByTestId('ribbon-tab-modify'));
+    expect(beamSelection.getByTestId('3d-element-actions')).toBeTruthy();
+    expect(beamSelection.queryByTestId('3d-insert-door')).toBeNull();
+    expect(beamSelection.queryByTestId('3d-insert-window')).toBeNull();
   });
 
   it('opens added catalogue tabs and minimizes ribbon panels', () => {
