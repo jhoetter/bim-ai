@@ -3,8 +3,10 @@
   "checkpoint_id": "f2370355453d",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
-  "files_touched": null,
+  "checkpoints_count": 2,
+  "files_touched": [
+    "packages/web/src/workspace/shell/AppShell.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/f2/370355453d/0/metadata.json",
@@ -23,13 +25,19 @@
       "transcript": "/f2/370355453d/2/full.jsonl",
       "content_hash": "/f2/370355453d/2/content_hash.txt",
       "prompt": "/f2/370355453d/2/prompt.txt"
+    },
+    {
+      "metadata": "/f2/370355453d/3/metadata.json",
+      "transcript": "/f2/370355453d/3/full.jsonl",
+      "content_hash": "/f2/370355453d/3/content_hash.txt",
+      "prompt": "/f2/370355453d/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 210314,
+    "input_tokens": 4292878,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 1175424,
-    "output_tokens": 6370,
-    "api_call_count": 19
+    "cache_read_tokens": 157654272,
+    "output_tokens": 291633,
+    "api_call_count": 1117
   }
 }
