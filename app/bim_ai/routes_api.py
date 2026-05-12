@@ -93,6 +93,8 @@ from bim_ai.evidence_manifest import (
 )
 from bim_ai.collab.orchestrator import get_orchestrator
 from bim_ai.hub import Hub
+from bim_ai.jobs.queue import JobQueue, get_queue
+from bim_ai.jobs.types import CreateJobRequest, Job
 from bim_ai.link_expansion import expand_links
 from bim_ai.model_summary import compute_model_summary
 from bim_ai.plan_projection_wire import (
@@ -149,6 +151,10 @@ api_router.include_router(exports_router)
 api_router.include_router(commands_router)
 api_router.include_router(activity_router)
 api_router.include_router(sketch_router)
+
+
+def _get_job_queue() -> JobQueue:
+    return get_queue()
 
 
 # ---------------------------------------------------------------------------
@@ -216,6 +222,73 @@ async def api_schema() -> dict[str, Any]:
 @api_router.get("/building-presets")
 async def building_presets() -> dict[str, Any]:
     return {"presets": BUILDING_PRESETS}
+
+
+@api_router.post("/jobs", status_code=201)
+async def create_job(
+    body: CreateJobRequest,
+    queue: JobQueue = Depends(_get_job_queue),
+) -> dict[str, Any]:
+    job = Job(
+        model_id=body.model_id,
+        kind=body.kind,
+        inputs=body.inputs,
+        created_at=datetime.now(UTC).isoformat(),
+    )
+    submitted = await queue.submit(job)
+    return submitted.model_dump(by_alias=True)
+
+
+@api_router.get("/jobs")
+async def list_jobs(
+    model_id: str = Query(alias="modelId"),
+    queue: JobQueue = Depends(_get_job_queue),
+) -> list[dict[str, Any]]:
+    return [job.model_dump(by_alias=True) for job in queue.list_for_model(model_id)]
+
+
+@api_router.get("/jobs/{job_id}")
+async def get_job(
+    job_id: str,
+    queue: JobQueue = Depends(_get_job_queue),
+) -> dict[str, Any]:
+    job = queue.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="job not found")
+    return job.model_dump(by_alias=True)
+
+
+@api_router.post("/jobs/{job_id}/cancel")
+async def cancel_job(
+    job_id: str,
+    queue: JobQueue = Depends(_get_job_queue),
+) -> dict[str, Any]:
+    job = queue.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="job not found")
+    if job.status not in ("queued", "running"):
+        raise HTTPException(status_code=409, detail="job cannot be cancelled")
+    updated = await queue.update_status(job_id, "cancelled")
+    return updated.model_dump(by_alias=True)
+
+
+@api_router.post("/jobs/{job_id}/retry")
+async def retry_job(
+    job_id: str,
+    queue: JobQueue = Depends(_get_job_queue),
+) -> dict[str, Any]:
+    parent = queue.get(job_id)
+    if parent is None:
+        raise HTTPException(status_code=404, detail="job not found")
+    retry = Job(
+        model_id=parent.model_id,
+        kind=parent.kind,
+        inputs=parent.inputs,
+        parent_job_id=parent.id,
+        created_at=datetime.now(UTC).isoformat(),
+    )
+    submitted = await queue.submit(retry)
+    return submitted.model_dump(by_alias=True)
 
 
 @api_router.get("/v3/bill-of-rights", response_class=PlainTextResponse)
@@ -2364,9 +2437,6 @@ async def v3_trace_image(
 
     _SIZE_LIMIT = 2 * 1024 * 1024  # 2 MB
     if len(image_bytes) > _SIZE_LIMIT:
-        from bim_ai.jobs.queue import get_queue
-        from bim_ai.jobs.types import Job
-
         now = datetime.now(UTC).isoformat()
         model_id_hint = str(form.get("modelId") or "unassigned")
         job = Job(
