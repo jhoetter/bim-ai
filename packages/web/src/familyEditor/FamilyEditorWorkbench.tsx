@@ -2094,7 +2094,23 @@ export function FamilyEditorWorkbench({
   }
 
   return (
-    <div className="p-4 space-y-6">
+    <main
+      data-testid="family-editor-shell"
+      aria-label="Family editor workbench"
+      className="space-y-6 p-4"
+    >
+      <header
+        data-testid="family-editor-header"
+        className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-3"
+      >
+        <div>
+          <h1 className="text-lg font-semibold text-foreground">Family editor</h1>
+          <p className="text-sm text-muted">
+            Author reusable parametric families outside the main workspace shell.
+          </p>
+        </div>
+      </header>
+
       <section className="rounded border p-3 space-y-3" aria-label="Family template browser">
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <label className="flex items-center gap-2">
@@ -2163,10 +2179,14 @@ export function FamilyEditorWorkbench({
         </ul>
       </section>
 
-      <div className="flex gap-2">
+      <section
+        data-testid="family-editor-ribbon"
+        className="flex flex-wrap gap-2 rounded border border-border bg-surface p-2"
+        aria-label="Family editor ribbon"
+      >
         <button
           type="button"
-          className="px-3 py-1 rounded border ml-auto"
+          className="px-3 py-1 rounded border"
           onClick={startSweep}
           disabled={sweepDraft !== null}
           aria-label={t('familyEditor.sweepToggle')}
@@ -2202,7 +2222,7 @@ export function FamilyEditorWorkbench({
         >
           Family Types
         </button>
-      </div>
+      </section>
 
       <section className="rounded border p-3" aria-label="Preview visibility controls">
         <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -3529,7 +3549,7 @@ export function FamilyEditorWorkbench({
           {lastNestedAction.type}:{lastNestedAction.familyId}
         </span>
       )}
-    </div>
+    </main>
   );
 }
 

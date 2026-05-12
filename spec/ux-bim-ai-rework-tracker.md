@@ -888,26 +888,26 @@ This addendum exists because a full revamp handoff should not depend on only bro
 
 ## Family Material And Standalone Editor Tracker
 
-| ID         | Surface/workflow                | Current location/source            | Target owner                  | Required action                                        |
-| ---------- | ------------------------------- | ---------------------------------- | ----------------------------- | ------------------------------------------------------ |
-| UX-FAM-001 | Family library dialog           | `FamilyLibraryPanel.tsx`           | Insert ribbon/resource dialog | Remove primary rail shortcut as persistent nav         |
-| UX-FAM-002 | Family search                   | Family library                     | Dialog                        | Keep in dialog                                         |
-| UX-FAM-003 | Family groups                   | Family library                     | Dialog                        | Keep, with icons/previews                              |
-| UX-FAM-004 | Family rendered thumbnails      | Family library                     | Dialog                        | Keep visual previews                                   |
-| UX-FAM-005 | Custom/catalog badges           | Family library                     | Dialog                        | Keep                                                   |
-| UX-FAM-006 | Load catalog family             | Family library                     | Dialog command                | Keep                                                   |
-| UX-FAM-007 | Place loaded family             | Family library/ribbon              | Insert ribbon plus dialog     | Ribbon starts placement, dialog selects asset          |
-| UX-FAM-008 | Wall type thumbnails            | Family library                     | Resource/type dialog          | Keep in type/library dialog                            |
-| UX-FAM-009 | Array formula editor            | Family library                     | Type/family editor            | Not primary nav                                        |
-| UX-FAM-010 | Family editor workbench         | `/family-editor` route             | Standalone shell              | Separate route, later align to seven-region principles |
-| UX-FAM-011 | Nested instance inspector       | Family editor                      | Family editor element sidebar | Keep selected nested instance properties               |
-| UX-FAM-012 | Family editor detail visibility | Family editor                      | Family secondary equivalent   | Align with view-wide visibility principle              |
-| UX-FAM-013 | Family editor material browser  | `MaterialBrowserDialog.tsx`        | Material dialog               | Keep modal, trigger from selected material/type        |
-| UX-FAM-014 | Appearance asset browser        | `AppearanceAssetBrowserDialog.tsx` | Asset dialog                  | Keep modal, trigger from selected material/type        |
-| UX-FAM-015 | Material layer stack workbench  | Authoring workbench                | Element/type sidebar          | Move out of generic right rail unless selected context |
-| UX-FAM-016 | Room color scheme panel         | Authoring panel                    | Plan secondary                | View-wide graphics/classification                      |
-| UX-FAM-017 | Site authoring panel            | Authoring panel                    | Ribbon/secondary split        | Commands to ribbon, site context to secondary          |
-| UX-FAM-018 | Subdivision palette             | Authoring panel                    | Ribbon modifier               | Command-specific, not persistent panel                 |
+| ID         | Surface/workflow                | Current location/source            | Target owner                  | Required action                                                                                          |
+| ---------- | ------------------------------- | ---------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------- |
+| UX-FAM-001 | Family library dialog           | `FamilyLibraryPanel.tsx`           | Insert ribbon/resource dialog | Remove primary rail shortcut as persistent nav                                                           |
+| UX-FAM-002 | Family search                   | Family library                     | Dialog                        | Keep in dialog                                                                                           |
+| UX-FAM-003 | Family groups                   | Family library                     | Dialog                        | Keep, with icons/previews                                                                                |
+| UX-FAM-004 | Family rendered thumbnails      | Family library                     | Dialog                        | Keep visual previews                                                                                     |
+| UX-FAM-005 | Custom/catalog badges           | Family library                     | Dialog                        | Keep                                                                                                     |
+| UX-FAM-006 | Load catalog family             | Family library                     | Dialog command                | Keep                                                                                                     |
+| UX-FAM-007 | Place loaded family             | Family library/ribbon              | Insert ribbon plus dialog     | Ribbon starts placement, dialog selects asset                                                            |
+| UX-FAM-008 | Wall type thumbnails            | Family library                     | Resource/type dialog          | Keep in type/library dialog                                                                              |
+| UX-FAM-009 | Array formula editor            | Family library                     | Type/family editor            | Not primary nav                                                                                          |
+| UX-FAM-010 | Family editor workbench         | `/family-editor` route             | Standalone shell              | Fixed standalone route landmarks and isolation coverage; deeper family-editor parity remains future work |
+| UX-FAM-011 | Nested instance inspector       | Family editor                      | Family editor element sidebar | Keep selected nested instance properties                                                                 |
+| UX-FAM-012 | Family editor detail visibility | Family editor                      | Family secondary equivalent   | Align with view-wide visibility principle                                                                |
+| UX-FAM-013 | Family editor material browser  | `MaterialBrowserDialog.tsx`        | Material dialog               | Keep modal, trigger from selected material/type                                                          |
+| UX-FAM-014 | Appearance asset browser        | `AppearanceAssetBrowserDialog.tsx` | Asset dialog                  | Keep modal, trigger from selected material/type                                                          |
+| UX-FAM-015 | Material layer stack workbench  | Authoring workbench                | Element/type sidebar          | Move out of generic right rail unless selected context                                                   |
+| UX-FAM-016 | Room color scheme panel         | Authoring panel                    | Plan secondary                | View-wide graphics/classification                                                                        |
+| UX-FAM-017 | Site authoring panel            | Authoring panel                    | Ribbon/secondary split        | Commands to ribbon, site context to secondary                                                            |
+| UX-FAM-018 | Subdivision palette             | Authoring panel                    | Ribbon modifier               | Command-specific, not persistent panel                                                                   |
 
 ## Inspector And Property Taxonomy Tracker
 
@@ -936,23 +936,23 @@ This addendum exists because a full revamp handoff should not depend on only bro
 
 ## Full-Coverage Risk Register
 
-| ID          | Risk                                | Why it matters                                                | Mitigation                                                                                                            |
-| ----------- | ----------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| UX-RISK-001 | Line count mistaken for quality     | A 1000-line tracker can still miss key behavior               | Use source coverage, screenshot coverage, and command registry coverage as criteria                                   |
-| UX-RISK-002 | Legacy code mistaken for live UI    | Some components may be unused or conditionally mounted        | Future agent must verify route/state reachability before deleting                                                     |
-| UX-RISK-003 | Hidden mode state missed            | Some UI appears only during active commands or selections     | Add Playwright scripts that enter representative command states                                                       |
-| UX-RISK-004 | Context menus missed                | Right-click/radial menus are not visible in static screenshot | Fixed for primary browser entries with mouse and keyboard tests; wall/radial menus retain existing component coverage |
-| UX-RISK-005 | Dialog trigger regressions          | Moving controls can orphan dialogs                            | Command reachability test must cover every dialog trigger                                                             |
-| UX-RISK-006 | Ribbon over-pruning                 | Hiding invalid tools can accidentally remove real workflows   | Pair each removed visible command with Cmd+K entry and availability reason                                            |
-| UX-RISK-007 | Secondary sidebar overload          | Moving all view controls left can create a new junk drawer    | Group by view-wide state, advanced dialogs, and progressive disclosure                                                |
-| UX-RISK-008 | Footer overload                     | Advisor/jobs/sync/conflicts can crowd a small strip           | Fixed with responsive footer density rules, advisor/activity priority, and narrow overflow screenshots                |
-| UX-RISK-009 | Public viewer polluted              | Authoring chrome should not leak into shared presentation     | Fixed with public presentation regression proving authoring shell regions are absent                                  |
-| UX-RISK-010 | Family editor ignored               | Standalone editor can remain inconsistent                     | Track as follow-up revamp after workspace shell                                                                       |
-| UX-RISK-011 | Mobile/narrow layout forgotten      | Resizable sidebars and tabs can overlap                       | Fixed with narrow auto-hide, recovery, and tablet region-stability screenshots                                        |
-| UX-RISK-012 | Cmd+K stale metadata                | Command palette can point users to old surfaces               | Fixed with command capability guards for canonical surfaces and universal Cmd+K fallback                              |
-| UX-RISK-013 | Test IDs tied to old chrome         | Tests may pass while UI ownership is wrong                    | Fixed with named landmark semantics and role/name-based ownership regressions                                         |
-| UX-RISK-014 | Advisor severity not globally clear | Advisor is a core differentiator                              | Fixed with footer severity unit coverage and cross-view Playwright visibility checks                                  |
-| UX-RISK-015 | Primary sidebar collapse trap       | User explicitly called out current bad behavior               | Fixed with unit, Playwright drag-to-zero, header restore, narrow restore, and live recovery screenshots               |
+| ID          | Risk                                | Why it matters                                                | Mitigation                                                                                                                   |
+| ----------- | ----------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| UX-RISK-001 | Line count mistaken for quality     | A 1000-line tracker can still miss key behavior               | Use source coverage, screenshot coverage, and command registry coverage as criteria                                          |
+| UX-RISK-002 | Legacy code mistaken for live UI    | Some components may be unused or conditionally mounted        | Future agent must verify route/state reachability before deleting                                                            |
+| UX-RISK-003 | Hidden mode state missed            | Some UI appears only during active commands or selections     | Add Playwright scripts that enter representative command states                                                              |
+| UX-RISK-004 | Context menus missed                | Right-click/radial menus are not visible in static screenshot | Fixed for primary browser entries with mouse and keyboard tests; wall/radial menus retain existing component coverage        |
+| UX-RISK-005 | Dialog trigger regressions          | Moving controls can orphan dialogs                            | Command reachability test must cover every dialog trigger                                                                    |
+| UX-RISK-006 | Ribbon over-pruning                 | Hiding invalid tools can accidentally remove real workflows   | Pair each removed visible command with Cmd+K entry and availability reason                                                   |
+| UX-RISK-007 | Secondary sidebar overload          | Moving all view controls left can create a new junk drawer    | Group by view-wide state, advanced dialogs, and progressive disclosure                                                       |
+| UX-RISK-008 | Footer overload                     | Advisor/jobs/sync/conflicts can crowd a small strip           | Fixed with responsive footer density rules, advisor/activity priority, and narrow overflow screenshots                       |
+| UX-RISK-009 | Public viewer polluted              | Authoring chrome should not leak into shared presentation     | Fixed with public presentation regression proving authoring shell regions are absent                                         |
+| UX-RISK-010 | Family editor ignored               | Standalone editor can remain inconsistent                     | Fixed route isolation with standalone shell landmarks; deeper family-editor ownership parity stays tracked under UX-FAM rows |
+| UX-RISK-011 | Mobile/narrow layout forgotten      | Resizable sidebars and tabs can overlap                       | Fixed with narrow auto-hide, recovery, and tablet region-stability screenshots                                               |
+| UX-RISK-012 | Cmd+K stale metadata                | Command palette can point users to old surfaces               | Fixed with command capability guards for canonical surfaces and universal Cmd+K fallback                                     |
+| UX-RISK-013 | Test IDs tied to old chrome         | Tests may pass while UI ownership is wrong                    | Fixed with named landmark semantics and role/name-based ownership regressions                                                |
+| UX-RISK-014 | Advisor severity not globally clear | Advisor is a core differentiator                              | Fixed with footer severity unit coverage and cross-view Playwright visibility checks                                         |
+| UX-RISK-015 | Primary sidebar collapse trap       | User explicitly called out current bad behavior               | Fixed with unit, Playwright drag-to-zero, header restore, narrow restore, and live recovery screenshots                      |
 
 ## Definition Of Full Coverage
 

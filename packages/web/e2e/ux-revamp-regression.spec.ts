@@ -736,3 +736,23 @@ test.describe('UX-RISK-009 public presentation shell', () => {
     await capture(page, testInfo, '29-public-presentation-shell.png');
   });
 });
+
+test.describe('UX-RISK-010 family editor standalone shell', () => {
+  test('keeps family editor outside workspace chrome with its own landmarks', async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width: 1280, height: 820 });
+    await page.goto('/family-editor');
+
+    await expect(page.getByRole('main', { name: 'Family editor workbench' })).toBeVisible();
+    await expect(page.getByTestId('family-editor-header')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Family editor ribbon' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Family template browser' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Family editor canvas' })).toBeVisible();
+    await expect(page.getByTestId('app-shell')).toHaveCount(0);
+    await expect(page.getByTestId('workspace-header')).toHaveCount(0);
+    await expect(page.getByTestId('ribbon-bar')).toHaveCount(0);
+    await expect(page.getByTestId('status-bar')).toHaveCount(0);
+    await capture(page, testInfo, '42-family-editor-standalone-shell.png');
+  });
+});

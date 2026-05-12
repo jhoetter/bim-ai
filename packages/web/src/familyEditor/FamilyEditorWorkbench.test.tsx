@@ -35,6 +35,19 @@ afterEach(() => {
 });
 
 describe('<FamilyEditorWorkbench />', () => {
+  it('exposes standalone shell ownership landmarks — UX-RISK-010', () => {
+    const { getByRole, getByTestId, queryByTestId } = renderWithI18n(<FamilyEditorWorkbench />);
+
+    expect(getByRole('main', { name: 'Family editor workbench' })).toBeTruthy();
+    expect(getByTestId('family-editor-header').textContent).toContain('Family editor');
+    expect(getByRole('region', { name: 'Family editor ribbon' })).toBeTruthy();
+    expect(getByRole('region', { name: 'Family template browser' })).toBeTruthy();
+    expect(getByRole('region', { name: 'Family editor canvas' })).toBeTruthy();
+    expect(queryByTestId('app-shell')).toBeNull();
+    expect(queryByTestId('workspace-header')).toBeNull();
+    expect(queryByTestId('ribbon-bar')).toBeNull();
+  });
+
   it('renders template chooser', () => {
     const { getByLabelText, getByTestId, getByText } = renderWithI18n(<FamilyEditorWorkbench />);
     expect(getByLabelText('Search family templates')).toBeTruthy();
