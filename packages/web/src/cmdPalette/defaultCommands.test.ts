@@ -34,6 +34,10 @@ const SHEET_CTX: PaletteContext = {
   activeSheetId: 'sheet-1',
   activeMode: 'sheet',
 };
+const SHEET_MARKUP_CTX: PaletteContext = {
+  ...SHEET_CTX,
+  sheetReviewMode: 'an',
+};
 const SECTION_CTX: PaletteContext = {
   selectedElementIds: [],
   activeViewId: 'sec-1',
@@ -301,6 +305,8 @@ describe('default Cmd+K commands', () => {
     const openSheetTitleblockEditor = vi.fn();
     const openSheetViewportEditor = vi.fn();
     const shareActiveSheet = vi.fn();
+    const setSheetReviewMode = vi.fn();
+    const setSheetMarkupShape = vi.fn();
 
     const unavailable = queryPalette('sheet titleblock', PLAN_CTX, {}).find(
       (entry) => entry.id === 'sheet.edit-titleblock',
@@ -331,6 +337,39 @@ describe('default Cmd+K commands', () => {
       sharePresentation: vi.fn(),
     });
     expect(shareActiveSheet).toHaveBeenCalledOnce();
+
+    command('sheet.review.comment-mode').invoke({ ...SHEET_CTX, setSheetReviewMode });
+    command('sheet.review.markup-mode').invoke({ ...SHEET_CTX, setSheetReviewMode });
+    command('sheet.review.resolve-mode').invoke({ ...SHEET_CTX, setSheetReviewMode });
+    expect(setSheetReviewMode).toHaveBeenNthCalledWith(1, 'cm');
+    expect(setSheetReviewMode).toHaveBeenNthCalledWith(2, 'an');
+    expect(setSheetReviewMode).toHaveBeenNthCalledWith(3, 'mr');
+
+    const noMarkupShape = queryPalette('markup shape cloud', SHEET_CTX, {}).find(
+      (entry) => entry.id === 'sheet.review.markup-shape.cloud',
+    );
+    expect(noMarkupShape?.disabledReason).toContain('Requires');
+
+    command('sheet.review.markup-shape.freehand').invoke({
+      ...SHEET_MARKUP_CTX,
+      setSheetMarkupShape,
+    });
+    command('sheet.review.markup-shape.arrow').invoke({
+      ...SHEET_MARKUP_CTX,
+      setSheetMarkupShape,
+    });
+    command('sheet.review.markup-shape.cloud').invoke({
+      ...SHEET_MARKUP_CTX,
+      setSheetMarkupShape,
+    });
+    command('sheet.review.markup-shape.text').invoke({
+      ...SHEET_MARKUP_CTX,
+      setSheetMarkupShape,
+    });
+    expect(setSheetMarkupShape).toHaveBeenNthCalledWith(1, 'freehand');
+    expect(setSheetMarkupShape).toHaveBeenNthCalledWith(2, 'arrow');
+    expect(setSheetMarkupShape).toHaveBeenNthCalledWith(3, 'cloud');
+    expect(setSheetMarkupShape).toHaveBeenNthCalledWith(4, 'text');
   });
 
   it('routes section workflow commands through the palette host context', () => {

@@ -202,6 +202,13 @@ describe('command capability graph', () => {
       'sheet.edit-titleblock',
       'sheet.edit-viewports',
       'sheet.export-share',
+      'sheet.review.comment-mode',
+      'sheet.review.markup-mode',
+      'sheet.review.resolve-mode',
+      'sheet.review.markup-shape.freehand',
+      'sheet.review.markup-shape.arrow',
+      'sheet.review.markup-shape.cloud',
+      'sheet.review.markup-shape.text',
     ]) {
       expect(evaluateCommandInMode(commandId, 'sheet')?.state).toBe('enabled');
       expect(evaluateCommandInMode(commandId, 'plan')?.state).toBe('disabled');

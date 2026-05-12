@@ -6,6 +6,7 @@ import { Viewport } from '../../Viewport';
 import { ErrorBoundary } from '../../ErrorBoundary';
 import { PlanCanvas, type PlanCameraHandle } from '../../plan/PlanCanvas';
 import type { SnapSettings } from '../../plan/snapSettings';
+import type { SheetMarkupShape, SheetReviewMode } from '../sheets/sheetReviewUi';
 import {
   AgentReviewModeShell,
   ConceptModeShell,
@@ -38,6 +39,8 @@ export function CanvasMount({
   lensMode,
   onNavigateToElement,
   snapSettings,
+  sheetReviewMode,
+  sheetMarkupShape,
 }: {
   mode: WorkspaceMode;
   viewerMode: 'plan_canvas' | 'orbit_3d';
@@ -60,6 +63,8 @@ export function CanvasMount({
   lensMode?: string;
   onNavigateToElement?: (elementId: string) => void;
   snapSettings?: SnapSettings;
+  sheetReviewMode?: SheetReviewMode;
+  sheetMarkupShape?: SheetMarkupShape;
 }): JSX.Element {
   if ((mode as string) === 'plan-3d') {
     return (
@@ -127,6 +132,8 @@ export function CanvasMount({
         preferredSheetId={preferredSheetId}
         modelId={modelId}
         onUpsertSemantic={onSemanticCommand}
+        reviewMode={sheetReviewMode}
+        markupShape={sheetMarkupShape}
       />
     );
   if (mode === 'schedule')

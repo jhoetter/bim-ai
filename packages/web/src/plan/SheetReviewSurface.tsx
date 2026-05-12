@@ -6,14 +6,7 @@ import { SheetCanvas } from '../workspace/sheets';
 import { CommentsPanel } from '../workspace/comments';
 import { MarkupCanvas } from '../collab/MarkupCanvas';
 import { useBimStore, type UxComment } from '../state/store';
-
-type ReviewMode = 'cm' | 'an' | 'mr';
-
-const REVIEW_TOOLS: Array<{ mode: ReviewMode; label: string; title: string }> = [
-  { mode: 'cm', label: 'Comment', title: 'Click on the sheet to place a comment pin (CM)' },
-  { mode: 'an', label: 'Markup', title: 'Draw freehand markup annotations (AN)' },
-  { mode: 'mr', label: 'Resolve', title: 'Click comment pins to mark them resolved (MR)' },
-];
+import type { SheetMarkupShape, SheetReviewMode } from '../workspace/sheets/sheetReviewUi';
 
 type PixelMapEntry = { sourceViewId: string; sourceElementId?: string };
 type PixelMapCache = { map: Record<string, PixelMapEntry>; expiresAt: number };
@@ -26,6 +19,8 @@ export type SheetReviewSurfaceProps = {
   readOnly?: boolean;
   elementsById: Record<string, Element>;
   onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
+  reviewMode?: SheetReviewMode;
+  markupShape?: SheetMarkupShape;
 };
 
 export function SheetReviewSurface({
@@ -34,20 +29,20 @@ export function SheetReviewSurface({
   readOnly = false,
   elementsById,
   onUpsertSemantic,
+  reviewMode,
+  markupShape,
 }: SheetReviewSurfaceProps): JSX.Element {
   const userId = useBimStore((s) => s.userId);
   const userDisplayName = useBimStore((s) => s.userDisplayName);
-  const [mode, setMode] = useState<ReviewMode>('cm');
   const [comments, setComments] = useState<Comment[]>([]);
   const [markups, setMarkups] = useState<Markup[]>([]);
   const [canvasDims, setCanvasDims] = useState({ width: 0, height: 0 });
-  const [markupShape, setMarkupShape] = useState<'freehand' | 'arrow' | 'cloud' | 'text'>(
-    'freehand',
-  );
   const [activePinId, setActivePinId] = useState<string | null>(null);
   const [pendingPin, setPendingPin] = useState<{ xPx: number; yPx: number } | null>(null);
   const pixelMapCacheRef = useRef<PixelMapCache | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const activeMode = reviewMode ?? 'cm';
+  const activeMarkupShape = markupShape ?? 'freehand';
 
   useEffect(() => {
     const el = canvasRef.current;
@@ -65,7 +60,7 @@ export function SheetReviewSurface({
   const handleStrokeComplete = useCallback(
     (pathPx: Array<{ xPx: number; yPx: number }>) => {
       const shape =
-        markupShape === 'cloud'
+        activeMarkupShape === 'cloud'
           ? { kind: 'cloud' as const, pointsMm: pathPx.map((p) => ({ xMm: p.xPx, yMm: p.yPx })) }
           : {
               kind: 'freehand' as const,
@@ -89,7 +84,7 @@ export function SheetReviewSurface({
       };
       setMarkups((prev) => [...prev, newMarkup]);
     },
-    [modelId, sheetId, userId, markupShape],
+    [activeMarkupShape, modelId, sheetId, userId],
   );
 
   const handleArrowComplete = useCallback(
@@ -184,14 +179,14 @@ export function SheetReviewSurface({
 
   const handleCanvasClick = useCallback(
     (e: MouseEvent<HTMLDivElement>) => {
-      if (mode !== 'cm' || readOnly) return;
+      if (activeMode !== 'cm' || readOnly) return;
       const rect = e.currentTarget.getBoundingClientRect();
       const xPx = e.clientX - rect.left;
       const yPx = e.clientY - rect.top;
       setPendingPin({ xPx, yPx });
       setActivePinId(null);
     },
-    [mode, readOnly],
+    [activeMode, readOnly],
   );
 
   const handlePost = useCallback(
@@ -257,12 +252,7 @@ export function SheetReviewSurface({
       className="relative flex h-full w-full flex-col"
       style={{ background: 'var(--color-surface-strong)' }}
     >
-      <div
-        className="relative flex-1 overflow-auto"
-        style={{ paddingBottom: 40 }}
-        onClick={handleCanvasClick}
-        ref={canvasRef}
-      >
+      <div className="relative flex-1 overflow-auto" onClick={handleCanvasClick} ref={canvasRef}>
         <SheetCanvas
           elementsById={elementsById}
           preferredSheetId={sheetId}
@@ -302,8 +292,8 @@ export function SheetReviewSurface({
           <MarkupCanvas
             markups={markups}
             viewId={sheetId}
-            drawingActive={mode === 'an' && !readOnly}
-            activeShape={markupShape}
+            drawingActive={activeMode === 'an' && !readOnly}
+            activeShape={activeMarkupShape}
             onStrokeComplete={handleStrokeComplete}
             onArrowComplete={handleArrowComplete}
             onTextPlace={handleTextPlace}
@@ -348,14 +338,6 @@ export function SheetReviewSurface({
           />
         </div>
       )}
-
-      <ReviewToolbar
-        mode={mode}
-        onModeChange={setMode}
-        readOnly={readOnly}
-        markupShape={markupShape}
-        onMarkupShapeChange={setMarkupShape}
-      />
     </div>
   );
 }
@@ -396,94 +378,5 @@ function CommentPinOverlay({
         padding: 0,
       }}
     />
-  );
-}
-
-const MARKUP_SHAPES: Array<{
-  id: 'freehand' | 'arrow' | 'cloud' | 'text';
-  label: string;
-  title: string;
-}> = [
-  { id: 'freehand', label: '✏️ Free', title: 'Freehand pen stroke' },
-  { id: 'arrow', label: '→ Arrow', title: 'Arrow annotation (drag)' },
-  { id: 'cloud', label: '☁ Cloud', title: 'Cloud revision cloud (stroke)' },
-  { id: 'text', label: 'T Text', title: 'Text note (click to place)' },
-];
-
-function ReviewToolbar({
-  mode,
-  onModeChange,
-  readOnly,
-  markupShape,
-  onMarkupShapeChange,
-}: {
-  mode: ReviewMode;
-  onModeChange: (m: ReviewMode) => void;
-  readOnly: boolean;
-  markupShape: 'freehand' | 'arrow' | 'cloud' | 'text';
-  onMarkupShapeChange: (s: 'freehand' | 'arrow' | 'cloud' | 'text') => void;
-}): JSX.Element {
-  return (
-    <div
-      data-testid="sheet-review-toolbar"
-      className="flex items-center gap-2 border-t border-border px-4"
-      style={{
-        height: 40,
-        background: 'var(--color-surface-strong)',
-        borderRadius: 0,
-      }}
-    >
-      {REVIEW_TOOLS.map(({ mode: m, label, title }) => (
-        <button
-          key={m}
-          type="button"
-          data-testid={`review-tool-${m}`}
-          disabled={readOnly && m !== 'mr'}
-          aria-pressed={mode === m}
-          title={title}
-          onClick={() => onModeChange(m)}
-          className={[
-            'rounded px-3 py-1 text-xs font-semibold transition-colors',
-            mode === m
-              ? 'bg-accent text-accent-foreground'
-              : 'text-muted hover:bg-surface hover:text-foreground',
-            readOnly && m !== 'mr' ? 'cursor-not-allowed opacity-40' : '',
-          ]
-            .join(' ')
-            .trim()}
-        >
-          {label}
-        </button>
-      ))}
-
-      {mode === 'an' && !readOnly && (
-        <>
-          <div
-            aria-hidden="true"
-            style={{ width: 1, height: 20, background: 'var(--color-border)', marginInline: 4 }}
-          />
-          {MARKUP_SHAPES.map(({ id, label, title }) => (
-            <button
-              key={id}
-              type="button"
-              data-testid={`markup-shape-${id}`}
-              aria-pressed={markupShape === id}
-              title={title}
-              onClick={() => onMarkupShapeChange(id)}
-              className={[
-                'rounded px-2 py-1 text-[11px] transition-colors',
-                markupShape === id
-                  ? 'bg-accent text-accent-foreground font-semibold'
-                  : 'text-muted hover:bg-surface hover:text-foreground',
-              ]
-                .join(' ')
-                .trim()}
-            >
-              {label}
-            </button>
-          ))}
-        </>
-      )}
-    </div>
   );
 }

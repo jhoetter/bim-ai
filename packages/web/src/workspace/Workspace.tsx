@@ -133,6 +133,7 @@ import {
   recommendedViewsForSheet,
 } from './sheets/sheetRecommendedViewports';
 import type { WorkspaceId } from './chrome/workspaces';
+import type { SheetMarkupShape, SheetReviewMode } from './sheets/sheetReviewUi';
 
 function libraryDisciplineFromLens(lens: LensMode): 'arch' | 'struct' | 'mep' | 'all' {
   if (lens === 'architecture') return 'arch';
@@ -362,6 +363,8 @@ export function Workspace(): JSX.Element {
   const [rightRailOverride, setRightRailOverride] = useState<RailOverride>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [familyLibraryOpen, setFamilyLibraryOpen] = useState(false);
+  const [sheetReviewMode, setSheetReviewMode] = useState<SheetReviewMode>('cm');
+  const [sheetMarkupShape, setSheetMarkupShape] = useState<SheetMarkupShape>('freehand');
   const [_pendingPlacement, setPendingPlacement] = useState<{
     kind: FamilyLibraryPlaceKind;
     typeId: string;
@@ -1652,6 +1655,9 @@ export function Workspace(): JSX.Element {
           openSheetTitleblockEditor: () => openActiveSheetAnchor('sheet-titleblock-editor'),
           openSheetViewportEditor: () => openActiveSheetAnchor('sheet-viewport-editor'),
           shareActiveSheet: () => setSharePresentationOpen(true),
+          setSheetReviewMode,
+          setSheetMarkupShape,
+          sheetReviewMode,
           placeActiveSectionOnSheet,
           openActiveSectionSourcePlan,
           adjustActiveSectionCropDepth,
@@ -1972,6 +1978,10 @@ export function Workspace(): JSX.Element {
             onPlaceActiveScheduleOnSheet={placeActiveScheduleOnSheet}
             onDuplicateActiveSchedule={duplicateActiveSchedule}
             onOpenScheduleControls={openScheduleControls}
+            sheetReviewMode={sheetReviewMode}
+            onSheetReviewModeChange={setSheetReviewMode}
+            sheetMarkupShape={sheetMarkupShape}
+            onSheetMarkupShapeChange={setSheetMarkupShape}
           />
         }
         primarySidebar={
@@ -2049,6 +2059,8 @@ export function Workspace(): JSX.Element {
               lensMode={lensMode}
               onNavigateToElement={openElementById}
               snapSettings={snapSettings}
+              sheetReviewMode={sheetReviewMode}
+              sheetMarkupShape={sheetMarkupShape}
             />
           </div>
         }

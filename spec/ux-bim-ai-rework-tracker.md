@@ -405,7 +405,7 @@ Evidence (2026-05-12): seeded footer capture at `packages/web/tmp/ux-footer-jobs
 | UX-CAN-020 | Empty state hint             | Workspace canvas                       | Canvas                   | Keep   | Keep concise and action-oriented; do not replace navigation/ribbon                 |
 | UX-CAN-021 | Canvas local command dock    | Floor plan long dock described by user | Ribbon                   | Fixed  | Consolidate into view-specific ribbon                                              |
 | UX-CAN-022 | Sheet markup pins            | `SheetReviewSurface`                   | Canvas spatial           | Keep   | Pins are spatial annotations; properties go to element sidebar                     |
-| UX-CAN-023 | Sheet review toolbar         | `SheetReviewSurface`                   | Ribbon                   | Move   | Persistent review commands belong in sheet/markup ribbon                           |
+| UX-CAN-023 | Sheet review toolbar         | `SheetReviewSurface`                   | Ribbon                   | Fixed  | Persistent review commands belong in sheet/markup ribbon                           |
 | UX-CAN-024 | Sheet viewport handles       | `SheetCanvas`                          | Canvas direct edit       | Keep   | Direct manipulation stays on canvas; properties in element sidebar                 |
 | UX-CAN-025 | Concept board items          | `ConceptModeShell` canvas              | Canvas                   | Keep   | Board content stays on canvas; board tools in ribbon                               |
 | UX-CAN-026 | Agent finding list in canvas | Agent review mode                      | Agent secondary/dialog   | Move   | Findings workflow should not pollute normal canvas layout                          |
@@ -837,7 +837,7 @@ Evidence (2026-05-12): 3D secondary ownership coverage now proves scene/graphics
 | UX-SHEET-018 | Sheet review surface                 | `SheetReviewSurface.tsx`         | Sheet/markup mode              | Keep focused review mode, align chrome                                |
 | UX-SHEET-019 | Review markup pins                   | Sheet review surface             | Canvas spatial                 | Keep                                                                  |
 | UX-SHEET-020 | Review comment panel                 | Sheet review surface/comments    | Collaboration dialog/element   | Comments drawer/detail, not arbitrary canvas panel                    |
-| UX-SHEET-021 | Review toolbar                       | Sheet review surface             | Sheet markup ribbon            | Move                                                                  |
+| UX-SHEET-021 | Review toolbar                       | Sheet review surface             | Sheet markup ribbon            | Fixed                                                                 |
 | UX-SHEET-022 | New sheet dialog                     | `NewSheetDialog.tsx`             | Sheet ribbon/tab add           | Keep modal trigger from sheet context                                 |
 | UX-SHEET-023 | Titleblock editing                   | Sheet canvas                     | Sheet ribbon/element sidebar   | Ribbon command and selected titleblock properties                     |
 | UX-SHEET-024 | Place schedule on sheet              | Schedule/sheet surfaces          | Sheet ribbon                   | Sheet-specific placement command                                      |

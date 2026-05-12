@@ -9,6 +9,7 @@ import { useUnifiedAdvisorViolations } from '../advisor/unifiedAdvisorViolations
 import { useBimStore } from '../state/store';
 import { SheetReviewSurface } from '../plan/SheetReviewSurface';
 import { SheetCanvas, SectionPlaceholderPane } from './sheets';
+import type { SheetMarkupShape, SheetReviewMode } from './sheets/sheetReviewUi';
 import {
   buildScheduleTableModelV1,
   type ScheduleTableModelV1,
@@ -159,11 +160,15 @@ export function SheetModeShell({
   preferredSheetId,
   modelId,
   onUpsertSemantic,
+  reviewMode,
+  markupShape,
 }: {
   elementsById: Record<string, Element>;
   preferredSheetId?: string;
   modelId?: string;
   onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
+  reviewMode?: SheetReviewMode;
+  markupShape?: SheetMarkupShape;
 }): JSX.Element {
   const evidenceFullBleed = new URLSearchParams(window.location.search).has('evidenceSheetFull');
 
@@ -184,6 +189,8 @@ export function SheetModeShell({
           modelId={modelId}
           elementsById={elementsById}
           onUpsertSemantic={onUpsertSemantic}
+          reviewMode={reviewMode}
+          markupShape={markupShape}
         />
       </div>
     );

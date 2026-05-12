@@ -273,6 +273,31 @@ describe('<Workspace /> — smoke', () => {
     expect(getByTestId('app-shell-element-sidebar').hidden).toBe(true);
   });
 
+  it('keeps sheet review controls in the ribbon and out of canvas chrome — UX-CAN-023', () => {
+    seedTabs('sheet');
+    const { getByTestId, queryByTestId, getByLabelText } = renderWithProviders(<Workspace />);
+
+    expect(queryByTestId('sheet-review-toolbar')).toBeNull();
+
+    const reviewComment = getByTestId('ribbon-command-sheet-review-comment');
+    const reviewMarkup = getByTestId('ribbon-command-sheet-review-markup');
+    const shapeFreehand = getByTestId('ribbon-command-sheet-markup-freehand');
+    const shapeText = getByTestId('ribbon-command-sheet-markup-text');
+
+    expect(reviewComment.className).toContain('bg-accent');
+    fireEvent.click(reviewMarkup);
+    expect(reviewMarkup.className).toContain('bg-accent');
+    expect(reviewComment.className).not.toContain('bg-accent');
+
+    expect(shapeFreehand.className).toContain('bg-accent');
+    fireEvent.click(shapeText);
+    expect(shapeText.className).toContain('bg-accent');
+    expect(shapeFreehand.className).not.toContain('bg-accent');
+
+    fireEvent.click(getByTestId('ribbon-command-sheet-review-comment'));
+    expect(getByTestId('ribbon-command-sheet-review-comment').className).toContain('bg-accent');
+  });
+
   it('opens primary navigation views without occupying the element sidebar — UX-TEST-005', () => {
     const level: Extract<Element, { kind: 'level' }> = {
       kind: 'level',

@@ -58,6 +58,10 @@ function hasActiveSheet(ctx: PaletteContext): boolean {
   return Boolean(ctx.activeSheetId);
 }
 
+function hasActiveSheetAndMarkupMode(ctx: PaletteContext): boolean {
+  return hasActiveSheet(ctx) && ctx.sheetReviewMode === 'an';
+}
+
 function hasActiveSection(ctx: PaletteContext): boolean {
   return Boolean(ctx.activeSectionId);
 }
@@ -418,6 +422,69 @@ registerCommand({
   isAvailable: (ctx) =>
     hasActiveSheet(ctx) && Boolean(ctx.hasPresentationPages && ctx.shareActiveSheet),
   invoke: (ctx) => ctx.shareActiveSheet?.(),
+});
+
+registerCommand({
+  id: 'sheet.review.comment-mode',
+  label: 'Sheet Review: Comment Mode',
+  keywords: ['sheet', 'review', 'comment', 'pin'],
+  category: 'command',
+  isAvailable: hasActiveSheet,
+  invoke: (ctx) => ctx.setSheetReviewMode?.('cm'),
+});
+
+registerCommand({
+  id: 'sheet.review.markup-mode',
+  label: 'Sheet Review: Markup Mode',
+  keywords: ['sheet', 'review', 'markup', 'annotate'],
+  category: 'command',
+  isAvailable: hasActiveSheet,
+  invoke: (ctx) => ctx.setSheetReviewMode?.('an'),
+});
+
+registerCommand({
+  id: 'sheet.review.resolve-mode',
+  label: 'Sheet Review: Resolve Mode',
+  keywords: ['sheet', 'review', 'resolve', 'comments'],
+  category: 'command',
+  isAvailable: hasActiveSheet,
+  invoke: (ctx) => ctx.setSheetReviewMode?.('mr'),
+});
+
+registerCommand({
+  id: 'sheet.review.markup-shape.freehand',
+  label: 'Sheet Review: Markup Shape Freehand',
+  keywords: ['sheet', 'review', 'markup', 'shape', 'freehand', 'pen'],
+  category: 'command',
+  isAvailable: hasActiveSheetAndMarkupMode,
+  invoke: (ctx) => ctx.setSheetMarkupShape?.('freehand'),
+});
+
+registerCommand({
+  id: 'sheet.review.markup-shape.arrow',
+  label: 'Sheet Review: Markup Shape Arrow',
+  keywords: ['sheet', 'review', 'markup', 'shape', 'arrow'],
+  category: 'command',
+  isAvailable: hasActiveSheetAndMarkupMode,
+  invoke: (ctx) => ctx.setSheetMarkupShape?.('arrow'),
+});
+
+registerCommand({
+  id: 'sheet.review.markup-shape.cloud',
+  label: 'Sheet Review: Markup Shape Cloud',
+  keywords: ['sheet', 'review', 'markup', 'shape', 'cloud'],
+  category: 'command',
+  isAvailable: hasActiveSheetAndMarkupMode,
+  invoke: (ctx) => ctx.setSheetMarkupShape?.('cloud'),
+});
+
+registerCommand({
+  id: 'sheet.review.markup-shape.text',
+  label: 'Sheet Review: Markup Shape Text',
+  keywords: ['sheet', 'review', 'markup', 'shape', 'text'],
+  category: 'command',
+  isAvailable: hasActiveSheetAndMarkupMode,
+  invoke: (ctx) => ctx.setSheetMarkupShape?.('text'),
 });
 
 registerCommand({

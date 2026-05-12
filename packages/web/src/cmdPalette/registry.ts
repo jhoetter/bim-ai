@@ -83,6 +83,9 @@ export type PaletteContext = {
   openSheetTitleblockEditor?: () => void;
   openSheetViewportEditor?: () => void;
   shareActiveSheet?: () => void;
+  setSheetReviewMode?: (mode: 'cm' | 'an' | 'mr') => void;
+  setSheetMarkupShape?: (shape: 'freehand' | 'arrow' | 'cloud' | 'text') => void;
+  sheetReviewMode?: 'cm' | 'an' | 'mr';
   placeActiveSectionOnSheet?: () => void;
   openActiveSectionSourcePlan?: () => void;
   adjustActiveSectionCropDepth?: (deltaMm: number) => void;

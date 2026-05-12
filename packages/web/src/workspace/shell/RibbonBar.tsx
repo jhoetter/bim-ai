@@ -9,6 +9,7 @@ import {
   type CapabilityViewMode,
 } from '../commandCapabilities';
 import type { WorkspaceMode } from './TopBar';
+import type { SheetMarkupShape, SheetReviewMode } from '../sheets/sheetReviewUi';
 
 type RibbonTabId =
   | 'create'
@@ -52,6 +53,13 @@ type RibbonActionId =
   | 'sheet-edit-viewports'
   | 'sheet-edit-titleblock'
   | 'sheet-publish'
+  | 'sheet-review-comment'
+  | 'sheet-review-markup'
+  | 'sheet-review-resolve'
+  | 'sheet-markup-freehand'
+  | 'sheet-markup-arrow'
+  | 'sheet-markup-cloud'
+  | 'sheet-markup-text'
   | 'schedule-open-row'
   | 'schedule-place-on-sheet'
   | 'schedule-duplicate'
@@ -106,6 +114,10 @@ export interface RibbonBarProps {
   onPlaceActiveScheduleOnSheet?: () => void;
   onDuplicateActiveSchedule?: () => void;
   onOpenScheduleControls?: () => void;
+  sheetReviewMode?: SheetReviewMode;
+  onSheetReviewModeChange?: (mode: SheetReviewMode) => void;
+  sheetMarkupShape?: SheetMarkupShape;
+  onSheetMarkupShapeChange?: (shape: SheetMarkupShape) => void;
 }
 
 const RIBBON_HIDDEN_COMMANDS_STORAGE_KEY = 'bim-ai.ribbon.hiddenCommands.v1';
@@ -135,6 +147,10 @@ export function RibbonBar({
   onPlaceActiveScheduleOnSheet,
   onDuplicateActiveSchedule,
   onOpenScheduleControls,
+  sheetReviewMode = 'cm',
+  onSheetReviewModeChange,
+  sheetMarkupShape = 'freehand',
+  onSheetMarkupShapeChange,
 }: RibbonBarProps): JSX.Element {
   const [activeTabId, setActiveTabId] = useState<RibbonTabId>('create');
   const [minimized, setMinimized] = useState(false);
@@ -188,6 +204,13 @@ export function RibbonBar({
       'sheet-edit-viewports': onOpenSheetViewportEditor,
       'sheet-edit-titleblock': onOpenSheetTitleblockEditor,
       'sheet-publish': onShareActiveSheet,
+      'sheet-review-comment': () => onSheetReviewModeChange?.('cm'),
+      'sheet-review-markup': () => onSheetReviewModeChange?.('an'),
+      'sheet-review-resolve': () => onSheetReviewModeChange?.('mr'),
+      'sheet-markup-freehand': () => onSheetMarkupShapeChange?.('freehand'),
+      'sheet-markup-arrow': () => onSheetMarkupShapeChange?.('arrow'),
+      'sheet-markup-cloud': () => onSheetMarkupShapeChange?.('cloud'),
+      'sheet-markup-text': () => onSheetMarkupShapeChange?.('text'),
       'schedule-open-row': onOpenSelectedScheduleRow,
       'schedule-place-on-sheet': onPlaceActiveScheduleOnSheet,
       'schedule-duplicate': onDuplicateActiveSchedule,
@@ -324,7 +347,7 @@ export function RibbonBar({
                   <RibbonButton
                     key={commandKey(command)}
                     command={command}
-                    active={command.type === 'tool' && command.id === activeToolId}
+                    active={commandActive(command, activeToolId, sheetReviewMode, sheetMarkupShape)}
                     disabledReason={commandDisabledReason(command, activeMode)}
                     onClick={() => runCommand(command)}
                   />
@@ -813,6 +836,25 @@ function buildSheetRibbonTabs(selectedElementKind?: string | null): RibbonTab[] 
           label: 'Publish',
           commands: [action('sheet-publish', 'Publish', 'externalLink')],
         },
+        {
+          id: 'review',
+          label: 'Review',
+          commands: [
+            action('sheet-review-comment', 'Comment', 'comment'),
+            action('sheet-review-markup', 'Markup', 'annotation'),
+            action('sheet-review-resolve', 'Resolve', 'check'),
+          ],
+        },
+        {
+          id: 'markup-shape',
+          label: 'Markup Shape',
+          commands: [
+            action('sheet-markup-freehand', 'Freehand', 'pen'),
+            action('sheet-markup-arrow', 'Arrow', 'arrowRight'),
+            action('sheet-markup-cloud', 'Cloud', 'draftingCloud'),
+            action('sheet-markup-text', 'Text', 'text'),
+          ],
+        },
       ],
     },
   ];
@@ -1034,6 +1076,34 @@ function commandKey(command: RibbonCommand): string {
   return `${command.type}:${command.id}:${command.testId ?? ''}`;
 }
 
+function commandActive(
+  command: RibbonCommand,
+  activeToolId: ToolId | undefined,
+  sheetReviewMode: SheetReviewMode,
+  sheetMarkupShape: SheetMarkupShape,
+): boolean {
+  if (command.type === 'tool') return command.id === activeToolId;
+  if (command.type !== 'action') return false;
+  switch (command.id) {
+    case 'sheet-review-comment':
+      return sheetReviewMode === 'cm';
+    case 'sheet-review-markup':
+      return sheetReviewMode === 'an';
+    case 'sheet-review-resolve':
+      return sheetReviewMode === 'mr';
+    case 'sheet-markup-freehand':
+      return sheetMarkupShape === 'freehand';
+    case 'sheet-markup-arrow':
+      return sheetMarkupShape === 'arrow';
+    case 'sheet-markup-cloud':
+      return sheetMarkupShape === 'cloud';
+    case 'sheet-markup-text':
+      return sheetMarkupShape === 'text';
+    default:
+      return false;
+  }
+}
+
 function commandDisabledReason(
   command: RibbonCommand,
   activeMode: ToolWorkspaceMode | undefined,
@@ -1085,6 +1155,20 @@ function ribbonCapabilityId(command: RibbonCommand): string | null {
       return 'sheet.edit-titleblock';
     case 'sheet-publish':
       return 'sheet.export-share';
+    case 'sheet-review-comment':
+      return 'sheet.review.comment-mode';
+    case 'sheet-review-markup':
+      return 'sheet.review.markup-mode';
+    case 'sheet-review-resolve':
+      return 'sheet.review.resolve-mode';
+    case 'sheet-markup-freehand':
+      return 'sheet.review.markup-shape.freehand';
+    case 'sheet-markup-arrow':
+      return 'sheet.review.markup-shape.arrow';
+    case 'sheet-markup-cloud':
+      return 'sheet.review.markup-shape.cloud';
+    case 'sheet-markup-text':
+      return 'sheet.review.markup-shape.text';
     case 'schedule-open-row':
       return 'schedule.open-selected-row';
     case 'schedule-place-on-sheet':
