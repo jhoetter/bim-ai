@@ -706,6 +706,17 @@ function build3dRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
       ],
     },
     {
+      id: 'insert',
+      label: 'Insert',
+      panels: [
+        {
+          id: 'load',
+          label: 'Load',
+          commands: [action('family-library', 'Load Family', 'family')],
+        },
+      ],
+    },
+    {
       id: 'analyze',
       label: 'Review',
       panels: [

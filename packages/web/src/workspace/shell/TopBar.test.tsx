@@ -396,15 +396,18 @@ describe('RibbonBar — F-005', () => {
   it('uses a 3D ribbon schema with no disabled plan buttons', () => {
     const onToolSelect = vi.fn();
     const onSaveCurrentViewpoint = vi.fn();
+    const onOpenFamilyLibrary = vi.fn();
     const { getByTestId, getByRole, queryByTestId } = render(
       <RibbonBar
         activeMode="3d"
         onToolSelect={onToolSelect}
         onSaveCurrentViewpoint={onSaveCurrentViewpoint}
+        onOpenFamilyLibrary={onOpenFamilyLibrary}
       />,
     );
 
     expect(getByRole('tab', { name: '3D View' }).getAttribute('aria-selected')).toBe('true');
+    expect(getByRole('tab', { name: 'Insert' })).toBeTruthy();
     expect(queryByTestId('ribbon-command-wall')).toBeNull();
     expect(queryByTestId('ribbon-command-visibility-graphics')).toBeNull();
     expect((getByTestId('ribbon-command-select') as HTMLButtonElement).disabled).toBe(false);
@@ -412,8 +415,11 @@ describe('RibbonBar — F-005', () => {
 
     fireEvent.click(getByTestId('ribbon-command-select'));
     fireEvent.click(getByTestId('ribbon-command-3d-save-view'));
+    fireEvent.click(getByTestId('ribbon-tab-insert'));
+    fireEvent.click(getByTestId('ribbon-command-family-library'));
     expect(onToolSelect).toHaveBeenCalledWith('select');
     expect(onSaveCurrentViewpoint).toHaveBeenCalledTimes(1);
+    expect(onOpenFamilyLibrary).toHaveBeenCalledTimes(1);
   });
 
   it('opens added catalogue tabs and minimizes ribbon panels', () => {
