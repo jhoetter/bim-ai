@@ -1,0 +1,20 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "b8bb854f16cc",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/shell/RibbonBar.tsx",
+    "packages/web/src/workspace/shell/TopBar.test.tsx",
+    "spec/ux-bim-ai-rework-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b8/bb854f16cc/0/metadata.json",
+      "transcript": "/b8/bb854f16cc/0/full.jsonl",
+      "content_hash": "/b8/bb854f16cc/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
