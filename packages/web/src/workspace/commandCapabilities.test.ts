@@ -57,6 +57,14 @@ describe('command capability graph', () => {
     expect(getCommandCapability('tool.wall')?.surfaces).toEqual(['ribbon', 'cmd-k']);
   });
 
+  it('keeps Cmd+K as the global fallback for every tracked command — UX-RISK-012', () => {
+    const withoutCmdK = getAllCommandCapabilities()
+      .filter((capability) => !capability.surfaces.includes('cmd-k'))
+      .map((capability) => capability.id);
+
+    expect(withoutCmdK).toEqual([]);
+  });
+
   it('does not expose plan-pointer tools as direct pure 3D palette tools', () => {
     const direct3dToolIds = Object.values(getToolRegistry(tIdentity))
       .filter((tool) => tool.modes.includes('3d'))
