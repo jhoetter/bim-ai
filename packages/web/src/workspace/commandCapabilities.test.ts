@@ -65,6 +65,31 @@ describe('command capability graph', () => {
     expect(withoutCmdK).toEqual([]);
   });
 
+  it('covers every modal/dialog command with canonical trigger ownership — UX-RISK-005', () => {
+    const dialogTriggers = new Map<string, readonly string[]>([
+      ['project.restore-snapshot', ['cmd-k', 'primary-sidebar']],
+      ['project.share-presentation', ['cmd-k', 'header']],
+      ['project.manage-links', ['cmd-k', 'primary-sidebar']],
+      ['library.open-family', ['cmd-k', 'ribbon', 'secondary-sidebar']],
+      ['help.keyboard-shortcuts', ['cmd-k']],
+      ['advisor.open', ['cmd-k', 'footer']],
+      ['advisor.apply-first-fix', ['cmd-k', 'dialog']],
+      ['sheet.export-share', ['cmd-k', 'ribbon', 'header']],
+      ['visibility.plan.graphics', ['cmd-k', 'ribbon', 'secondary-sidebar']],
+    ] as const);
+    const modalCapabilities = getAllCommandCapabilities()
+      .filter((capability) => capability.executionSurface === 'modal')
+      .sort((a, b) => a.id.localeCompare(b.id));
+
+    expect(modalCapabilities.map((capability) => capability.id)).toEqual(
+      [...dialogTriggers.keys()].sort(),
+    );
+    for (const capability of modalCapabilities) {
+      expect(capability.surfaces, capability.id).toEqual(dialogTriggers.get(capability.id));
+      expect(capability.surfaces, capability.id).toContain('cmd-k');
+    }
+  });
+
   it('does not expose plan-pointer tools as direct pure 3D palette tools', () => {
     const direct3dToolIds = Object.values(getToolRegistry(tIdentity))
       .filter((tool) => tool.modes.includes('3d'))
