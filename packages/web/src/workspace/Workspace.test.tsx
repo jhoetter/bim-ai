@@ -549,6 +549,42 @@ describe('<Workspace /> — smoke', () => {
     expect(getByTestId('advisor-navigate-wall-1')).toBeTruthy();
   });
 
+  it('supports advisor grouping and ignore/restore workflow in the footer dialog — UX-DIA-019', () => {
+    useBimStore.setState({
+      violations: [
+        {
+          ruleId: 'physical_hard_clash',
+          severity: 'error',
+          message: 'Physical clash detected.',
+          elementIds: ['wall-1'],
+          blocking: true,
+        },
+        {
+          ruleId: 'schedule_sheet_viewport_missing',
+          severity: 'warning',
+          message: 'Schedule viewport is missing.',
+          elementIds: ['sheet-a101'],
+        },
+      ],
+    });
+
+    const { getByTestId, getByText, queryByText } = renderWithProviders(<Workspace />);
+
+    fireEvent.click(getByTestId('status-bar-advisor-entry'));
+    const advisorDialog = getByTestId('advisor-dialog');
+    const dialog = within(advisorDialog);
+    expect(dialog.getByText('Physical clash detected.')).toBeTruthy();
+    expect(dialog.getByText('Schedule viewport is missing.')).toBeTruthy();
+    fireEvent.change(dialog.getByTestId('advisor-group-by'), { target: { value: 'category' } });
+    expect(dialog.getByTestId('advisor-group-physical').textContent).toContain('Physical');
+    expect(dialog.getByTestId('advisor-group-schedule').textContent).toContain('Schedule');
+    fireEvent.click(dialog.getAllByRole('button', { name: 'Ignore' })[0]!);
+    expect(queryByText('Physical clash detected.')).toBeNull();
+    expect(dialog.getByTestId('advisor-ignored-summary').textContent).toContain('Ignored 1');
+    fireEvent.click(dialog.getByTestId('advisor-reset-ignored'));
+    expect(getByText('Physical clash detected.')).toBeTruthy();
+  });
+
   it('opens footer advisor through Cmd+K reachability — UX-WP-09', () => {
     useBimStore.setState({
       violations: [

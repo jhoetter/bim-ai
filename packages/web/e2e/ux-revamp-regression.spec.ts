@@ -226,10 +226,18 @@ async function installWorkspaceRoutes(page: Page, activeTabId = 'plan:pv-ground'
         },
         violations: [
           {
-            ruleId: 'ux_wp_10_seeded_advisor',
+            ruleId: 'physical_hard_clash',
+            severity: 'error',
+            message: 'Seeded advisor hard clash for footer/dialog ownership regression.',
+            elementIds: ['wall-main'],
+            blocking: true,
+            discipline: 'architecture',
+          },
+          {
+            ruleId: 'schedule_sheet_viewport_missing',
             severity: 'warning',
-            message: 'Seeded advisor warning for footer/dialog ownership regression.',
-            elementId: 'wall-main',
+            message: 'Seeded advisor schedule warning for grouped findings coverage.',
+            elementIds: ['sheet-a101'],
             discipline: 'architecture',
           },
         ],
@@ -546,6 +554,18 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await page.getByTestId('status-bar-advisor-entry').click();
     await expect(page.getByTestId('advisor-dialog')).toBeVisible();
     await capture(page, testInfo, '10-advisor-dialog.png');
+    await page.getByTestId('advisor-group-by').selectOption('category');
+    await capture(page, testInfo, '10a-advisor-group-category.png');
+    await page.getByTestId('advisor-group-by').selectOption('view');
+    await capture(page, testInfo, '10b-advisor-group-view.png');
+    await page
+      .getByTestId('advisor-dialog')
+      .getByRole('button', { name: 'Ignore' })
+      .first()
+      .click();
+    await expect(page.getByTestId('advisor-ignored-summary')).toBeVisible();
+    await capture(page, testInfo, '10c-advisor-ignore.png');
+    await page.getByTestId('advisor-reset-ignored').click();
     await page.getByTestId('advisor-dialog-close').click();
 
     await page.getByTestId('workspace-header-cmdk').click();
