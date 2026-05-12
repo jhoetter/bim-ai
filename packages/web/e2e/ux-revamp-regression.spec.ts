@@ -770,3 +770,19 @@ test.describe('UX-RISK-010 family editor standalone shell', () => {
     await capture(page, testInfo, '42-family-editor-standalone-shell.png');
   });
 });
+
+test.describe('UX-RISK-002 mounted standalone routes', () => {
+  test('keeps icon gallery reachable outside authoring workspace chrome', async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width: 1280, height: 820 });
+    await page.goto('/icons');
+
+    await expect(page.getByRole('heading', { name: '@bim-ai/icons' })).toBeVisible();
+    await expect(page.getByPlaceholder('Search icons…')).toBeVisible();
+    await expect(page.getByTestId('app-shell')).toHaveCount(0);
+    await expect(page.getByTestId('workspace-header')).toHaveCount(0);
+    await expect(page.getByTestId('ribbon-bar')).toHaveCount(0);
+    await capture(page, testInfo, '53-icon-gallery-route.png');
+  });
+});

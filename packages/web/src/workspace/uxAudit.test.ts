@@ -9,8 +9,10 @@ import { getRegistry, queryPalette } from '../cmdPalette/registry';
 import {
   CAPABILITY_VIEW_MODES,
   evaluateCommandInMode,
+  getAllCommandCapabilities,
   getCommandCapability,
   type CapabilityViewMode,
+  unreachableCommandCapabilities,
 } from './commandCapabilities';
 import {
   prunedRibbonCommandReachabilityForMode,
@@ -20,6 +22,45 @@ import {
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 
 describe('UX reachability audit', () => {
+  it('uses source, screenshot, and command coverage as revamp quality gates — UX-RISK-001', () => {
+    const tracker = readFileSync(resolve(repoRoot, 'spec/ux-bim-ai-rework-tracker.md'), 'utf8');
+    const e2e = readFileSync(
+      resolve(repoRoot, 'packages/web/e2e/ux-revamp-regression.spec.ts'),
+      'utf8',
+    );
+    const auditRows = [...tracker.matchAll(/\| UX-AUD-\d{3} \|/g)].map((match) => match[0]);
+    const requiredScreenshots = [
+      '01-plan.png',
+      '10-advisor-dialog.png',
+      '18-element-sidebar-selected-wall.png',
+      '20-keyboard-command-palette.png',
+      '36-primary-dragged-to-zero.png',
+      '44-active-wall-command-ownership.png',
+    ];
+
+    expect(auditRows.length).toBeGreaterThanOrEqual(20);
+    for (const screenshot of requiredScreenshots) {
+      expect(e2e).toContain(screenshot);
+    }
+    expect(getAllCommandCapabilities().length).toBeGreaterThan(20);
+    expect(unreachableCommandCapabilities()).toEqual([]);
+  });
+
+  it('keeps mounted routes tied to route-state checks before legacy deletion — UX-RISK-002', () => {
+    const app = readFileSync(resolve(repoRoot, 'packages/web/src/App.tsx'), 'utf8');
+    const e2e = readFileSync(
+      resolve(repoRoot, 'packages/web/e2e/ux-revamp-regression.spec.ts'),
+      'utf8',
+    );
+    const routes = [...app.matchAll(/<Route path="([^"]+)"/g)].map((match) => match[1]).sort();
+
+    expect(routes).toEqual(['/', '/family-editor', '/icons', '/p/:token'].sort());
+    expect(e2e).toContain('bootWorkspace(page)');
+    expect(e2e).toContain("page.goto('/p/public-ux-risk-009')");
+    expect(e2e).toContain("page.goto('/family-editor')");
+    expect(e2e).toContain("page.goto('/icons')");
+  });
+
   it('keeps mounted Cmd+K commands registered in the capability graph', () => {
     const missing = getRegistry()
       .filter((entry) => !entry.id.startsWith('view.'))
