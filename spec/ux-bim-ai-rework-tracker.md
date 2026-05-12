@@ -882,14 +882,16 @@ Follow-up evidence (2026-05-12): Saved-view persistence controls were re-homed f
 | UX-SCH-010 | Field selection              | Schedule panel                       | Schedule secondary           | View-wide table definition                                        |
 | UX-SCH-011 | Column visibility            | Schedule panel                       | Schedule secondary           | View-wide table definition                                        |
 | UX-SCH-012 | Cell editing                 | Schedule table                       | Table inline/element sidebar | Inline for simple edit; element sidebar for rich selected row     |
-| UX-SCH-013 | Row operations               | Schedule toolbar                     | Schedule ribbon              | Move                                                              |
-| UX-SCH-014 | Column operations            | Schedule toolbar                     | Schedule ribbon              | Move                                                              |
+| UX-SCH-013 | Row operations               | Schedule toolbar                     | Schedule ribbon              | Fixed                                                             |
+| UX-SCH-014 | Column operations            | Schedule toolbar                     | Schedule ribbon              | Fixed                                                             |
 | UX-SCH-015 | Place on sheet               | Schedule/sheet UI                    | Schedule or sheet ribbon     | Available where placement context exists                          |
 | UX-SCH-016 | Export parity readout        | Schedule readout                     | Advisor/sheet secondary      | Validation readout, not main toolbar                              |
 | UX-SCH-017 | Opening advisories readout   | Schedule readout                     | Advisor workflow             | Move to advisor/details                                           |
 | UX-SCH-018 | Room finish evidence readout | Schedule readout                     | Advisor/details              | Move to advisor/details                                           |
 | UX-SCH-019 | Stair evidence readout       | Schedule readout                     | Advisor/details              | Move to advisor/details                                           |
 | UX-SCH-020 | Plans/sheets schedule UI     | Schedule tests/UI                    | Schedule secondary/sheet     | Split by active context                                           |
+
+Evidence (2026-05-12): Schedule row/column operation ownership now exposes explicit ribbon commands (`ribbon-command-schedule-row-ops`, `ribbon-command-schedule-column-ops`) in schedule mode, with command routing through canonical schedule controls. Coverage: `Workspace.test.tsx` (`UX-SCH-013/014` case) and command-surface wiring in `RibbonBar.tsx`.
 
 ## Collaboration Jobs Advisor Coordination Tracker
 

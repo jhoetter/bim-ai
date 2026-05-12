@@ -420,6 +420,24 @@ describe('<Workspace /> — smoke', () => {
     expect(getByTestId('ribbon-command-sheet-review-comment').className).toContain('bg-accent');
   });
 
+  it('keeps schedule row and column operations in the schedule ribbon — UX-SCH-013/014', () => {
+    seedTabs('schedule', 'schedule:sched-doors');
+    useBimStore.setState({
+      elementsById: {
+        'sched-doors': {
+          kind: 'schedule',
+          id: 'sched-doors',
+          name: 'Door schedule',
+          filters: { category: 'door' },
+        },
+      },
+    });
+
+    const { getByTestId } = renderWithProviders(<Workspace />);
+    expect(getByTestId('ribbon-command-schedule-row-ops')).toBeTruthy();
+    expect(getByTestId('ribbon-command-schedule-column-ops')).toBeTruthy();
+  });
+
   it('opens primary navigation views without occupying the element sidebar — UX-TEST-005', () => {
     const level: Extract<Element, { kind: 'level' }> = {
       kind: 'level',

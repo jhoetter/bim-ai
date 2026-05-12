@@ -509,6 +509,17 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await capture(page, testInfo, '41a-3d-ribbon-measure-bridge.png');
   });
 
+  test('captures schedule ribbon row/column ownership commands', async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await bootWorkspace(page, 'schedule:sched-doors');
+    await activateTab(page, 'schedule:sched-doors');
+
+    await expect(page.getByTestId('secondary-sidebar-schedule')).toBeVisible();
+    await expect(page.getByTestId('ribbon-command-schedule-row-ops')).toBeVisible();
+    await expect(page.getByTestId('ribbon-command-schedule-column-ops')).toBeVisible();
+    await capture(page, testInfo, '42-schedule-ribbon-row-column.png');
+  });
+
   test('keeps narrow footer one-line with advisor priority', async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await bootWorkspace(page);

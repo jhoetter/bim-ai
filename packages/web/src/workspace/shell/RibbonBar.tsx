@@ -62,6 +62,8 @@ type RibbonActionId =
   | 'sheet-markup-text'
   | '3d-measure'
   | 'schedule-open-row'
+  | 'schedule-row-ops'
+  | 'schedule-column-ops'
   | 'schedule-place-on-sheet'
   | 'schedule-duplicate'
   | 'schedule-controls';
@@ -213,6 +215,8 @@ export function RibbonBar({
       'sheet-markup-cloud': () => onSheetMarkupShapeChange?.('cloud'),
       'sheet-markup-text': () => onSheetMarkupShapeChange?.('text'),
       'schedule-open-row': onOpenSelectedScheduleRow,
+      'schedule-row-ops': onOpenScheduleControls,
+      'schedule-column-ops': onOpenScheduleControls,
       'schedule-place-on-sheet': onPlaceActiveScheduleOnSheet,
       'schedule-duplicate': onDuplicateActiveSchedule,
       'schedule-controls': onOpenScheduleControls,
@@ -884,8 +888,14 @@ function buildScheduleRibbonTabs(selectedElementKind?: string | null): RibbonTab
           label: 'Rows',
           commands: [
             action('schedule-open-row', 'Open Row', 'select'),
+            action('schedule-row-ops', 'Row Ops', 'tableRows'),
             action('schedule-duplicate', 'Duplicate', 'copy'),
           ],
+        },
+        {
+          id: 'columns',
+          label: 'Columns',
+          commands: [action('schedule-column-ops', 'Columns', 'tableColumns')],
         },
         {
           id: 'definition',
@@ -1178,6 +1188,10 @@ function ribbonCapabilityId(command: RibbonCommand): string | null {
       return 'sheet.review.markup-shape.text';
     case 'schedule-open-row':
       return 'schedule.open-selected-row';
+    case 'schedule-row-ops':
+      return 'schedule.open-controls';
+    case 'schedule-column-ops':
+      return 'schedule.open-controls';
     case 'schedule-place-on-sheet':
       return 'schedule.place-on-sheet';
     case 'schedule-duplicate':
