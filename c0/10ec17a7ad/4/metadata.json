@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "c010ec17a7ad",
+  "session_id": "019e18cf-8c84-7a33-b5c8-062af2087937",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-12T08:21:16.404081Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.3-codex",
+  "turn_id": "6f1a5b3ac419",
+  "checkpoint_transcript_start": 8471,
+  "transcript_lines_at_start": 8471,
+  "token_usage": {
+    "input_tokens": 225148,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 5727616,
+    "output_tokens": 9966,
+    "api_call_count": 30
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 19,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/tmp/ux-ribbon-per-view-20260512/summary.json": 19
+      }
+    }
+  ]
+}
