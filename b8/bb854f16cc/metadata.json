@@ -3,7 +3,7 @@
   "checkpoint_id": "b8bb854f16cc",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "packages/web/src/workspace/shell/RibbonBar.tsx",
     "packages/web/src/workspace/shell/TopBar.test.tsx",
@@ -15,6 +15,19 @@
       "transcript": "/b8/bb854f16cc/0/full.jsonl",
       "content_hash": "/b8/bb854f16cc/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/b8/bb854f16cc/1/metadata.json",
+      "transcript": "/b8/bb854f16cc/1/full.jsonl",
+      "content_hash": "/b8/bb854f16cc/1/content_hash.txt",
+      "prompt": ""
     }
-  ]
+  ],
+  "token_usage": {
+    "input_tokens": 210314,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1175424,
+    "output_tokens": 6370,
+    "api_call_count": 19
+  }
 }
