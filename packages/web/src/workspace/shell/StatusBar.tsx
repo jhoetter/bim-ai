@@ -168,51 +168,67 @@ export function StatusBar({
       data-testid="status-bar"
       role="contentinfo"
       style={{ ...statusStyle, ...disciplineStripeStyle(activeWorkspaceId) }}
-      className="relative flex w-full items-center gap-2 border-t border-border bg-surface px-4 text-[11px] text-muted"
+      className="relative flex w-full items-center gap-2 overflow-hidden whitespace-nowrap border-t border-border bg-surface px-2 text-[11px] text-muted sm:px-4"
     >
-      {showPlanClusters ? (
-        <>
-          <LevelCluster level={level} levels={levels} onLevelChange={onLevelChange} />
-          <Divider />
-          <ToolCluster toolLabel={toolLabel ?? null} />
-          <Divider />
-          <SnapCluster snapModes={snapModes} onSnapToggle={onSnapToggle} />
-          <Divider />
-          <GridCluster gridOn={gridOn} onGridToggle={onGridToggle} />
-          <Divider />
-          <CoordCluster cursorMm={cursorMm ?? null} />
-        </>
-      ) : (
-        <ViewModeCluster mode={mode} viewLabel={viewLabel ?? null} viewDetails={viewDetails} />
-      )}
-      <div className="ml-auto flex items-center gap-3">
+      <div
+        data-testid="status-bar-context-cluster"
+        className="hidden min-w-0 items-center gap-2 overflow-hidden md:flex"
+      >
+        {showPlanClusters ? (
+          <>
+            <LevelCluster level={level} levels={levels} onLevelChange={onLevelChange} />
+            <Divider />
+            <ToolCluster toolLabel={toolLabel ?? null} />
+            <Divider />
+            <SnapCluster snapModes={snapModes} onSnapToggle={onSnapToggle} />
+            <Divider />
+            <GridCluster gridOn={gridOn} onGridToggle={onGridToggle} />
+            <Divider />
+            <CoordCluster cursorMm={cursorMm ?? null} />
+          </>
+        ) : (
+          <ViewModeCluster mode={mode} viewLabel={viewLabel ?? null} viewDetails={viewDetails} />
+        )}
+      </div>
+      <div
+        data-testid="status-bar-priority-cluster"
+        className="ml-auto flex min-w-0 shrink-0 items-center gap-1 sm:gap-3"
+      >
         {conflictQueue ? (
           <>
             <ConflictSlot queue={conflictQueue} onClear={onClearConflict} />
             <Divider />
           </>
         ) : null}
-        <UndoCluster
-          undoDepth={undoDepth ?? 0}
-          redoDepth={redoDepth ?? 0}
-          onUndo={onUndo}
-          onRedo={onRedo}
-        />
-        <Divider />
-        <WsCluster state={wsState} />
-        <Divider />
-        <SaveCluster state={saveState} />
-        <Divider />
-        {/* Slot 5 — lens dropdown (CHR-V3-03 keystone, A8 antidote) */}
-        <LensDropdown currentLens={lensMode} onLensChange={onLensChange ?? (() => {})} />
+        <div className="hidden items-center gap-3 sm:flex">
+          <UndoCluster
+            undoDepth={undoDepth ?? 0}
+            redoDepth={redoDepth ?? 0}
+            onUndo={onUndo}
+            onRedo={onRedo}
+          />
+          <Divider />
+        </div>
+        <div className="hidden items-center gap-3 sm:flex">
+          <WsCluster state={wsState} />
+          <Divider />
+        </div>
+        <div className="hidden items-center gap-3 sm:flex">
+          <SaveCluster state={saveState} />
+          <Divider />
+        </div>
+        <div className="hidden items-center gap-3 lg:flex">
+          {/* Slot 5 — lens dropdown (CHR-V3-03 keystone, A8 antidote) */}
+          <LensDropdown currentLens={lensMode} onLensChange={onLensChange ?? (() => {})} />
+          <Divider />
+        </div>
         {/* Slot 6 — drift badge; hidden when driftCount = 0 */}
         {driftCount > 0 ? (
-          <>
+          <div className="hidden items-center gap-3 md:flex">
             <Divider />
             <DriftBadge driftCount={driftCount} onClick={onDriftClick ?? (() => {})} />
-          </>
+          </div>
         ) : null}
-        <Divider />
         <AdvisorEntry
           counts={advisorCounts ?? { error: 0, warning: 0, info: 0 }}
           onClick={onAdvisorClick}

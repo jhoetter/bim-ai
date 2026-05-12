@@ -459,6 +459,27 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await capture(page, testInfo, '09-narrow-primary-restored.png');
   });
 
+  test('keeps narrow footer one-line with advisor priority', async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await bootWorkspace(page);
+
+    const footerMetrics = await page.getByTestId('status-bar').evaluate((node) => {
+      const el = node as HTMLElement;
+      return {
+        clientHeight: el.clientHeight,
+        scrollHeight: el.scrollHeight,
+        clientWidth: el.clientWidth,
+        scrollWidth: el.scrollWidth,
+      };
+    });
+    expect(footerMetrics.scrollHeight).toBeLessThanOrEqual(footerMetrics.clientHeight + 1);
+    expect(footerMetrics.scrollWidth).toBeLessThanOrEqual(footerMetrics.clientWidth + 1);
+    await expect(page.getByTestId('status-bar-advisor-entry')).toBeVisible();
+    await expect(page.getByTestId('status-bar-activity-entry')).toBeVisible();
+    await expect(page.getByTestId('status-bar-context-cluster')).toBeHidden();
+    await capture(page, testInfo, '40-narrow-footer-density.png');
+  });
+
   test('collapses primary sidebar to zero width and restores from header', async ({
     page,
   }, testInfo) => {

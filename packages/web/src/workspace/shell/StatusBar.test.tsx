@@ -110,6 +110,23 @@ describe('StatusBar — spec §17', () => {
     expect(onAdvisorClick).toHaveBeenCalledTimes(1);
   });
 
+  it('prioritizes advisor and activity while making context readouts collapsible — UX-RISK-008', () => {
+    const { getByTestId } = renderWithI18n(
+      <StatusBar
+        level={{ id: 'lvl-ground', label: 'Ground' }}
+        advisorCounts={{ error: 0, warning: 1, info: 0 }}
+        activityUnreadCount={2}
+      />,
+    );
+
+    expect(getByTestId('status-bar').className).toContain('overflow-hidden');
+    expect(getByTestId('status-bar-context-cluster').className).toContain('hidden');
+    expect(getByTestId('status-bar-context-cluster').className).toContain('md:flex');
+    expect(getByTestId('status-bar-priority-cluster')).toBeTruthy();
+    expect(getByTestId('status-bar-advisor-entry').textContent).toContain('1 warning');
+    expect(getByTestId('status-bar-activity-entry')).toBeTruthy();
+  });
+
   it('grid switch reflects state and emits onGridToggle', () => {
     const onGridToggle = vi.fn();
     const { getByTitle } = renderWithI18n(
