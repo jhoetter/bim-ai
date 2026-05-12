@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "504f7d8ff706",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/e2e/ux-revamp-regression.spec.ts",
+    "spec/ux-bim-ai-rework-tracker.md",
+    "tmp/ux-risk-014-advisor-severity/01-plan.png",
+    "tmp/ux-risk-014-advisor-severity/02-3d.png",
+    "tmp/ux-risk-014-advisor-severity/03-section.png",
+    "tmp/ux-risk-014-advisor-severity/04-sheet.png",
+    "tmp/ux-risk-014-advisor-severity/05-schedule.png",
+    "tmp/ux-risk-014-advisor-severity/06-concept.png",
+    "tmp/ux-risk-014-advisor-severity/07-agent.png",
+    "tmp/ux-risk-014-advisor-severity/08-live-footer-advisor-severity.png",
+    "tmp/ux-risk-014-advisor-severity/09-live-advisor-dialog-severity.png"
+  ],
+  "sessions": [
+    {
+      "metadata": "/50/4f7d8ff706/0/metadata.json",
+      "transcript": "/50/4f7d8ff706/0/full.jsonl",
+      "content_hash": "/50/4f7d8ff706/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
