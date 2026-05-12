@@ -3,7 +3,7 @@
   "checkpoint_id": "90c360347456",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "packages/web/e2e/ux-revamp-regression.spec.ts",
     "spec/ux-bim-ai-rework-tracker.md",
@@ -47,6 +47,19 @@
       "transcript": "/90/c360347456/0/full.jsonl",
       "content_hash": "/90/c360347456/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/90/c360347456/1/metadata.json",
+      "transcript": "/90/c360347456/1/full.jsonl",
+      "content_hash": "/90/c360347456/1/content_hash.txt",
+      "prompt": ""
     }
-  ]
+  ],
+  "token_usage": {
+    "input_tokens": 210314,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1175424,
+    "output_tokens": 6370,
+    "api_call_count": 19
+  }
 }
