@@ -1,0 +1,445 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
+
+const MODEL_ID = '00000000-0000-4000-a000-00000000e2e';
+
+type SeedTab = {
+  id: string;
+  kind: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent' | 'concept';
+  targetId?: string;
+  label: string;
+};
+
+const VIEW_TABS: SeedTab[] = [
+  { id: 'plan:pv-ground', kind: 'plan', targetId: 'pv-ground', label: 'Ground plan' },
+  { id: '3d:vp-main', kind: '3d', targetId: 'vp-main', label: 'Main 3D' },
+  {
+    id: 'section:sec-south',
+    kind: 'section',
+    targetId: 'sec-south',
+    label: 'South section',
+  },
+  { id: 'sheet:sheet-a101', kind: 'sheet', targetId: 'sheet-a101', label: 'A101' },
+  { id: 'schedule:sched-doors', kind: 'schedule', targetId: 'sched-doors', label: 'Doors' },
+  { id: 'concept', kind: 'concept', label: 'Concept board' },
+  { id: 'agent', kind: 'agent', label: 'Advisor review' },
+];
+
+const VIEW_SCENARIOS = [
+  {
+    name: 'plan',
+    tabId: 'plan:pv-ground',
+    secondaryId: 'secondary-sidebar-plan',
+    canvasId: 'plan-canvas',
+    screenshot: '01-plan.png',
+  },
+  {
+    name: '3d',
+    tabId: '3d:vp-main',
+    secondaryId: 'secondary-sidebar-3d',
+    canvasId: 'orbit-3d-viewport',
+    screenshot: '02-3d.png',
+  },
+  {
+    name: 'section',
+    tabId: 'section:sec-south',
+    secondaryId: 'secondary-sidebar-section',
+    canvasId: 'section-mode-shell',
+    screenshot: '03-section.png',
+  },
+  {
+    name: 'sheet',
+    tabId: 'sheet:sheet-a101',
+    secondaryId: 'secondary-sidebar-sheet',
+    canvasId: 'sheet-mode-shell',
+    screenshot: '04-sheet.png',
+  },
+  {
+    name: 'schedule',
+    tabId: 'schedule:sched-doors',
+    secondaryId: 'secondary-sidebar-schedule',
+    canvasId: 'schedule-mode-shell',
+    screenshot: '05-schedule.png',
+  },
+  {
+    name: 'concept',
+    tabId: 'concept',
+    secondaryId: 'secondary-sidebar-concept',
+    canvasId: 'concept-mode-shell',
+    screenshot: '06-concept.png',
+  },
+  {
+    name: 'agent',
+    tabId: 'agent',
+    secondaryId: 'secondary-sidebar-agent',
+    canvasId: 'agent-review-mode-shell',
+    screenshot: '07-agent.png',
+  },
+];
+
+async function installWorkspaceRoutes(page: Page, activeTabId = 'plan:pv-ground') {
+  await page.addInitScript(
+    ({ tabs, activeId }: { tabs: SeedTab[]; activeId: string }) => {
+      localStorage.setItem('bim.welcome.dismissed', '1');
+      localStorage.setItem('bim.onboarding-completed', 'true');
+      localStorage.setItem('bim.workspaceLayout', 'plan');
+      localStorage.setItem('bim-ai:tabs-v1', JSON.stringify({ v: 1, tabs, activeId }));
+    },
+    { tabs: VIEW_TABS, activeId: activeTabId },
+  );
+
+  await page.route('**/api/bootstrap', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        projects: [
+          {
+            id: 'p-ux-wp-10',
+            slug: 'ux-wp-10',
+            title: 'UX WP-10',
+            models: [{ id: MODEL_ID, slug: 'canonical-shell', revision: 10 }],
+          },
+        ],
+      }),
+    });
+  });
+
+  await page.route(`**/api/models/${encodeURIComponent(MODEL_ID)}/snapshot**`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        modelId: MODEL_ID,
+        revision: 10,
+        elements: {
+          'lvl-ground': { kind: 'level', id: 'lvl-ground', name: 'Ground', elevationMm: 0 },
+          'lvl-upper': { kind: 'level', id: 'lvl-upper', name: 'Upper', elevationMm: 3000 },
+          'pv-ground': {
+            kind: 'plan_view',
+            id: 'pv-ground',
+            name: 'Ground plan',
+            levelId: 'lvl-ground',
+            planPresentation: 'opening_focus',
+          },
+          'vp-main': {
+            kind: 'viewpoint',
+            id: 'vp-main',
+            name: 'Main 3D',
+            camera: {
+              position: { xMm: 9000, yMm: -8500, zMm: 6200 },
+              target: { xMm: 2500, yMm: 1800, zMm: 1400 },
+              up: { xMm: 0, yMm: 0, zMm: 1 },
+            },
+          },
+          'sec-south': {
+            kind: 'section_cut',
+            id: 'sec-south',
+            name: 'South section',
+            lineStartMm: { xMm: -500, yMm: 5000 },
+            lineEndMm: { xMm: 8000, yMm: 5000 },
+            cropDepthMm: 9000,
+          },
+          'sheet-a101': {
+            kind: 'sheet',
+            id: 'sheet-a101',
+            name: 'A101 - Plans',
+            titleBlock: 'A1',
+            paperWidthMm: 42000,
+            paperHeightMm: 29700,
+            titleblockParameters: {
+              sheetNumber: 'A101',
+              revision: 'P01',
+              projectName: 'UX regression',
+              drawnBy: 'AI',
+              checkedBy: 'UX',
+              issueDate: '2026-05-11',
+            },
+            viewportsMm: [
+              {
+                viewportId: 'vp-plan',
+                label: 'Ground plan',
+                viewRef: 'plan:pv-ground',
+                xMm: 1800,
+                yMm: 1800,
+                widthMm: 9000,
+                heightMm: 6800,
+              },
+              {
+                viewportId: 'vp-section',
+                label: 'South section',
+                viewRef: 'section:sec-south',
+                xMm: 1800,
+                yMm: 9400,
+                widthMm: 9000,
+                heightMm: 4200,
+              },
+            ],
+          },
+          'sched-doors': {
+            kind: 'schedule',
+            id: 'sched-doors',
+            name: 'Door schedule',
+            sheetId: 'sheet-a101',
+            filters: { category: 'door' },
+          },
+          'wall-main': {
+            kind: 'wall',
+            id: 'wall-main',
+            name: 'South wall',
+            levelId: 'lvl-ground',
+            start: { xMm: 0, yMm: 0 },
+            end: { xMm: 7200, yMm: 0 },
+            thicknessMm: 240,
+            heightMm: 3000,
+          },
+          'door-main': {
+            kind: 'door',
+            id: 'door-main',
+            name: 'Entry door',
+            wallId: 'wall-main',
+            alongT: 0.5,
+            widthMm: 1000,
+          },
+          'room-main': {
+            kind: 'room',
+            id: 'room-main',
+            name: 'Living',
+            levelId: 'lvl-ground',
+            outlineMm: [
+              { xMm: 0, yMm: 0 },
+              { xMm: 7200, yMm: 0 },
+              { xMm: 7200, yMm: 4600 },
+              { xMm: 0, yMm: 4600 },
+            ],
+          },
+          'grid-a': {
+            kind: 'grid_line',
+            id: 'grid-a',
+            name: 'A',
+            levelId: 'lvl-ground',
+            start: { xMm: 0, yMm: -1200 },
+            end: { xMm: 0, yMm: 5600 },
+          },
+        },
+        violations: [
+          {
+            ruleId: 'ux_wp_10_seeded_advisor',
+            severity: 'warning',
+            message: 'Seeded advisor warning for footer/dialog ownership regression.',
+            elementId: 'wall-main',
+            discipline: 'architecture',
+          },
+        ],
+      }),
+    });
+  });
+
+  await page.route('**/api/models/*/projection/plan**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        format: 'planProjectionWire_v1',
+        primitives: {
+          format: 'planProjectionPrimitives_v1',
+          walls: [],
+          floors: [],
+          rooms: [],
+          doors: [],
+          windows: [],
+          stairs: [],
+          roofs: [],
+          gridLines: [],
+          dimensions: [],
+        },
+      }),
+    });
+  });
+
+  await page.route('**/api/models/*/projection/section/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        format: 'sectionProjectionWire_v1',
+        primitives: {
+          format: 'sectionProjectionPrimitives_v1',
+          walls: [{ uStartMm: 600, uEndMm: 7200, zBottomMm: 0, zTopMm: 3000 }],
+          levelMarkers: [
+            { id: 'lvl-ground', name: 'Ground', elevationMm: 0 },
+            { id: 'lvl-upper', name: 'Upper', elevationMm: 3000 },
+          ],
+        },
+      }),
+    });
+  });
+
+  await page.route('**/api/models/*/schedules/*/table', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        scheduleId: 'sched-doors',
+        name: 'Door schedule',
+        category: 'door',
+        rows: [
+          {
+            elementId: 'door-main',
+            name: 'Entry door',
+            level: 'Ground',
+            widthMm: 1000,
+            familyTypeId: 'door-single',
+          },
+        ],
+        totals: { kind: 'door', rowCount: 1 },
+      }),
+    });
+  });
+
+  await page.route('**/api/models/*/comments**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ comments: [] }),
+    });
+  });
+  await page.route('**/api/models/*/activity**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ events: [] }),
+    });
+  });
+  await page.route('**/api/building-presets**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ presets: { residential: {} } }),
+    });
+  });
+  await page.route('**/api/family-catalogs**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ catalogs: [] }),
+    });
+  });
+  await page.route('**/api/models/*/evidence-package', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        format: 'evidencePackage_v1',
+        modelId: MODEL_ID,
+        revision: 10,
+        elementCount: 10,
+        countsByKind: { level: 2, wall: 1, sheet: 1, schedule: 1 },
+        validate: { violations: [] },
+        exportLinks: {},
+        deterministicSheetEvidence: [],
+      }),
+    });
+  });
+}
+
+async function bootWorkspace(page: Page, activeTabId = 'plan:pv-ground') {
+  await installWorkspaceRoutes(page, activeTabId);
+  await page.goto('/');
+  await expect(page.getByTestId('app-shell')).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId('workspace-header')).toBeVisible();
+  await expect(page.getByTestId('ribbon-bar')).toBeVisible();
+}
+
+async function capture(page: Page, testInfo: TestInfo, filename: string) {
+  const outDir = process.env.UX_SCREENSHOT_DIR;
+  if (!outDir) {
+    await testInfo.attach(filename, { body: await page.screenshot(), contentType: 'image/png' });
+    return;
+  }
+
+  fs.mkdirSync(outDir, { recursive: true });
+  await page.screenshot({ path: path.join(outDir, filename), fullPage: false });
+}
+
+async function assertSevenRegionOwnership(page: Page) {
+  const shell = page.getByTestId('app-shell');
+  await expect(shell).toHaveAttribute('data-element-sidebar-present', 'false');
+  await expect(shell).toHaveAttribute('data-primary-hidden', 'false');
+  await expect(page.getByTestId('workspace-header')).toBeVisible();
+  await expect(page.getByTestId('view-tabs')).toBeVisible();
+  await expect(page.getByTestId('ribbon-bar')).toBeVisible();
+  await expect(page.getByTestId('app-shell-primary-sidebar')).toBeVisible();
+  await expect(page.getByTestId('app-shell-secondary-sidebar')).toBeVisible();
+  await expect(page.getByTestId('app-shell-canvas')).toBeVisible();
+  await expect(page.getByTestId('app-shell-footer')).toBeVisible();
+  await expect(page.getByTestId('status-bar')).toBeVisible();
+  await expect(page.getByTestId('app-shell-element-sidebar')).toBeHidden();
+}
+
+async function activateTab(page: Page, tabId: string) {
+  await page.getByTestId(`tab-activate-${tabId}`).click();
+  await expect(page.locator(`[data-tab-id="${tabId}"]`)).toHaveAttribute('data-active', 'true');
+}
+
+test.describe('UX-WP-10 visual and interaction regression suite', () => {
+  test('captures main view types and enforces canonical ownership', async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await bootWorkspace(page);
+
+    for (const scenario of VIEW_SCENARIOS) {
+      await activateTab(page, scenario.tabId);
+      await assertSevenRegionOwnership(page);
+      await expect(page.getByTestId(scenario.secondaryId)).toBeVisible();
+      await expect(page.getByTestId(scenario.canvasId)).toBeVisible({ timeout: 15_000 });
+      await expect(page.getByTestId('tool-palette')).toHaveCount(0);
+      await expect(page.getByTestId('temp-visibility-chip')).toHaveCount(0);
+
+      if (scenario.name === '3d') {
+        await expect(page.getByTestId('view-cube')).toBeVisible({ timeout: 15_000 });
+        await expect(page.getByTestId('orbit-viewpoint-persisted-hud')).toHaveCount(0);
+      }
+
+      await capture(page, testInfo, scenario.screenshot);
+    }
+  });
+
+  test('captures narrow primary-sidebar recovery interaction', async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await bootWorkspace(page);
+
+    await page.getByTestId('workspace-header-primary-toggle').click();
+    await expect(page.getByTestId('app-shell')).toHaveAttribute('data-primary-hidden', 'true');
+    await expect(page.getByTestId('app-shell-primary-sidebar')).toBeHidden();
+    await expect(page.getByTestId('app-shell-primary-reveal')).toBeVisible();
+    await capture(page, testInfo, '08-narrow-primary-hidden.png');
+
+    await page.getByTestId('app-shell-primary-reveal').click();
+    await expect(page.getByTestId('app-shell')).toHaveAttribute('data-primary-hidden', 'false');
+    await expect(page.getByTestId('app-shell-primary-sidebar')).toBeVisible();
+    await capture(page, testInfo, '09-narrow-primary-restored.png');
+  });
+
+  test('captures footer advisor and Cmd+K resource dialog reachability', async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width: 1280, height: 820 });
+    await bootWorkspace(page);
+
+    await page.getByTestId('status-bar-advisor-entry').click();
+    await expect(page.getByTestId('advisor-dialog')).toBeVisible();
+    await capture(page, testInfo, '10-advisor-dialog.png');
+    await page.getByTestId('advisor-dialog-close').click();
+
+    await page.getByTestId('workspace-header-cmdk').click();
+    await expect(page.getByTestId('cmd-palette-v3')).toBeVisible();
+    await page.getByLabel('Command palette search').fill('manage links');
+    await expect(page.getByTestId('palette-entry-project.manage-links')).toBeVisible();
+    await capture(page, testInfo, '11-cmdk-manage-links.png');
+    await page.getByTestId('palette-entry-project.manage-links').click();
+    await expect(page.getByTestId('manage-links-dialog')).toBeVisible();
+    await capture(page, testInfo, '12-manage-links-dialog.png');
+  });
+});
