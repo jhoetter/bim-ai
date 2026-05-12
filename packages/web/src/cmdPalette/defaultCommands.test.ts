@@ -200,6 +200,16 @@ describe('default Cmd+K commands', () => {
     expect(setLanguage).toHaveBeenCalledWith('en');
   });
 
+  it('routes lens discipline commands through the palette host context', () => {
+    const setLensMode = vi.fn();
+    command('navigate.architecture').invoke({ ...PLAN_CTX, setLensMode });
+    command('navigate.structure').invoke({ ...PLAN_CTX, setLensMode });
+    command('navigate.mep').invoke({ ...PLAN_CTX, setLensMode });
+    expect(setLensMode).toHaveBeenNthCalledWith(1, 'architecture');
+    expect(setLensMode).toHaveBeenNthCalledWith(2, 'structure');
+    expect(setLensMode).toHaveBeenNthCalledWith(3, 'mep');
+  });
+
   it('routes canonical sidebar toggles through the palette host context', () => {
     const togglePrimarySidebar = vi.fn();
     const toggleElementSidebar = vi.fn();

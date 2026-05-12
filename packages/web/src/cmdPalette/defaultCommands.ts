@@ -505,26 +505,44 @@ registerCommand({
 
 registerCommand({
   id: 'navigate.architecture',
-  label: 'Switch to Architecture perspective',
-  keywords: ['architecture', 'archi'],
+  label: 'Switch lens: Architecture',
+  keywords: ['architecture', 'archi', 'lens', 'discipline'],
   category: 'navigate',
-  invoke: () => useBimStore.getState().setPerspectiveId('architecture'),
+  invoke: (ctx) => {
+    if (ctx.setLensMode) {
+      ctx.setLensMode('architecture');
+      return;
+    }
+    useBimStore.getState().setLensMode('architecture');
+  },
 });
 
 registerCommand({
   id: 'navigate.structure',
-  label: 'Switch to Structure perspective',
-  keywords: ['structure', 'structural'],
+  label: 'Switch lens: Structure',
+  keywords: ['structure', 'structural', 'lens', 'discipline'],
   category: 'navigate',
-  invoke: () => useBimStore.getState().setPerspectiveId('structure'),
+  invoke: (ctx) => {
+    if (ctx.setLensMode) {
+      ctx.setLensMode('structure');
+      return;
+    }
+    useBimStore.getState().setLensMode('structure');
+  },
 });
 
 registerCommand({
   id: 'navigate.mep',
-  label: 'Switch to MEP perspective',
-  keywords: ['mep', 'mechanical', 'electrical', 'plumbing'],
+  label: 'Switch lens: MEP',
+  keywords: ['mep', 'mechanical', 'electrical', 'plumbing', 'lens', 'discipline'],
   category: 'navigate',
-  invoke: () => useBimStore.getState().setPerspectiveId('mep'),
+  invoke: (ctx) => {
+    if (ctx.setLensMode) {
+      ctx.setLensMode('mep');
+      return;
+    }
+    useBimStore.getState().setLensMode('mep');
+  },
 });
 
 // Additional tools

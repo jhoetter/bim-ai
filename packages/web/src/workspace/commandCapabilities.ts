@@ -385,7 +385,7 @@ const NAVIGATION_CAPABILITIES: CommandCapability[] = [
   },
   {
     id: 'navigate.architecture',
-    label: 'Switch to Architecture perspective',
+    label: 'Switch lens: Architecture',
     owner: 'cmdPalette/defaultCommands',
     group: 'navigate',
     scope: 'universal',
@@ -398,7 +398,7 @@ const NAVIGATION_CAPABILITIES: CommandCapability[] = [
   },
   {
     id: 'navigate.structure',
-    label: 'Switch to Structure perspective',
+    label: 'Switch lens: Structure',
     owner: 'cmdPalette/defaultCommands',
     group: 'navigate',
     scope: 'universal',
@@ -411,7 +411,7 @@ const NAVIGATION_CAPABILITIES: CommandCapability[] = [
   },
   {
     id: 'navigate.mep',
-    label: 'Switch to MEP perspective',
+    label: 'Switch lens: MEP',
     owner: 'cmdPalette/defaultCommands',
     group: 'navigate',
     scope: 'universal',

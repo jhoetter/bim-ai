@@ -10,10 +10,8 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
-import type { LensMode } from '@bim-ai/core';
 import type { WorkspaceId } from '../chrome/workspaces';
 import type { CollaborationConflictQueueV1 } from '../../lib/collaborationConflictQueue';
-import { LensDropdown } from './LensDropdown';
 import { DriftBadge } from './DriftBadge';
 
 const TOOL_VERB: Record<string, string> = {
@@ -121,9 +119,6 @@ export interface StatusBarProps {
   saveState?: StatusSaveState;
   conflictQueue?: CollaborationConflictQueueV1 | null;
   onClearConflict?: () => void;
-  /** CHR-V3-03 slot 5 — lens discipline filter. */
-  lensMode?: LensMode;
-  onLensChange?: (lens: LensMode) => void;
   /** LNS-V3-02 — active workspace discipline tint for the full-width stripe. */
   activeWorkspaceId?: WorkspaceId;
   /** CHR-V3-03 slot 6 — federation drift count; hidden when 0. */
@@ -160,8 +155,6 @@ export function StatusBar({
   saveState = 'saved',
   conflictQueue,
   onClearConflict,
-  lensMode = 'all',
-  onLensChange,
   activeWorkspaceId = 'arch',
   driftCount = 0,
   onDriftClick,
@@ -225,11 +218,6 @@ export function StatusBar({
         </div>
         <div className="hidden items-center gap-3 sm:flex">
           <SaveCluster state={saveState} />
-          <Divider />
-        </div>
-        <div className="hidden items-center gap-3 lg:flex">
-          {/* Slot 5 — lens dropdown (CHR-V3-03 keystone, A8 antidote) */}
-          <LensDropdown currentLens={lensMode} onLensChange={onLensChange ?? (() => {})} />
           <Divider />
         </div>
         {/* Slot 6 — drift badge; hidden when driftCount = 0 */}

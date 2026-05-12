@@ -218,31 +218,12 @@ describe('StatusBar — spec §17', () => {
   });
 });
 
-describe('StatusBar — CHR-V3-03 lens dropdown + drift badge', () => {
-  it('shows "Show: All" by default', () => {
-    const { getByTestId } = renderWithI18n(
+describe('StatusBar — drift badge + workspace tint stripe', () => {
+  it('does not expose the lens dropdown in the footer', () => {
+    const { queryByTestId } = renderWithI18n(
       <StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} />,
     );
-    expect(getByTestId('lens-dropdown-trigger').textContent).toContain('Show:');
-    expect(getByTestId('lens-dropdown-trigger').textContent).toContain('All');
-  });
-
-  it('opens the lens menu on click', () => {
-    const { getByTestId } = renderWithI18n(
-      <StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} />,
-    );
-    fireEvent.click(getByTestId('lens-dropdown-trigger'));
-    expect(getByTestId('lens-menu')).toBeTruthy();
-  });
-
-  it('calls onLensChange with "structure" when Structure is selected', () => {
-    const onLensChange = vi.fn();
-    const { getByTestId } = renderWithI18n(
-      <StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} onLensChange={onLensChange} />,
-    );
-    fireEvent.click(getByTestId('lens-dropdown-trigger'));
-    fireEvent.click(getByTestId('lens-option-structure'));
-    expect(onLensChange).toHaveBeenCalledWith('structure');
+    expect(queryByTestId('lens-dropdown-trigger')).toBeNull();
   });
 
   it('hides DriftBadge when driftCount is 0', () => {

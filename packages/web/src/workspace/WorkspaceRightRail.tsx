@@ -2,7 +2,7 @@ import type { JSX, ReactNode } from 'react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import type { Element, ParamSchemaEntry } from '@bim-ai/core';
+import type { Element, LensMode, ParamSchemaEntry } from '@bim-ai/core';
 
 import { useUnifiedAdvisorViolations } from '../advisor/unifiedAdvisorViolations';
 import { buildPlanGridDatumInspectorLine } from './readouts';
@@ -48,6 +48,7 @@ import {
 import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFromWall';
 import { firstSheetId, placeViewOnSheetCommand } from './sheets/sheetRecommendedViewports';
 import type { WorkspaceMode } from './shell';
+import { LensDropdown } from './shell/LensDropdown';
 import { humanKindLabel, InspectorEmptyTab } from './WorkspaceHelpers';
 import {
   isDuplicableTypeElement,
@@ -238,6 +239,8 @@ export function WorkspaceRightRail({
   const violations = useBimStore((s) => s.violations);
   const modelId = useBimStore((s) => s.modelId);
   const activeWorkspaceId = useBimStore((s) => s.activeWorkspaceId);
+  const lensMode = useBimStore((s) => s.lensMode);
+  const setLensMode = useBimStore((s) => s.setLensMode);
   const activityEvents = useBimStore((s) => s.activityEvents);
   const setPlanTool = useBimStore((s) => s.setPlanTool);
   const planProjectionPrimitives = useBimStore((s) => s.planProjectionPrimitives);
@@ -504,6 +507,7 @@ export function WorkspaceRightRail({
         data-testid="workspace-secondary-sidebar"
         data-view-mode={mode}
       >
+        <SecondaryLensSection lensMode={lensMode} onLensChange={setLensMode} />
         {mode === '3d' ? (
           <Secondary3dAdapter
             activeViewpoint={activeViewpoint}
@@ -1424,6 +1428,22 @@ function SecondaryField({ label, value }: { label: string; value: ReactNode }): 
       <span className="text-muted">{label}</span>
       <span className="min-w-0 truncate text-right font-medium text-foreground">{value}</span>
     </div>
+  );
+}
+
+function SecondaryLensSection({
+  lensMode,
+  onLensChange,
+}: {
+  lensMode: LensMode;
+  onLensChange: (lens: LensMode) => void;
+}): JSX.Element {
+  return (
+    <SecondarySection title="Discipline Lens" testId="secondary-lens-filter" scope="view-summary">
+      <div data-testid="secondary-lens-dropdown">
+        <LensDropdown currentLens={lensMode} onLensChange={onLensChange} />
+      </div>
+    </SecondarySection>
   );
 }
 

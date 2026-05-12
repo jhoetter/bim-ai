@@ -51,6 +51,8 @@ export type PaletteContext = {
   startPlanTool?: (toolId: string) => void;
   /** Set the app theme while keeping host UI state in sync. */
   setTheme?: (theme: 'light' | 'dark') => void;
+  /** Set the active discipline lens/filter. */
+  setLensMode?: (lens: 'all' | 'architecture' | 'structure' | 'mep') => void;
   /** Toggle the current app theme while keeping host UI state in sync. */
   toggleTheme?: () => void;
   /** Set the current UI language while keeping host i18n state in sync. */

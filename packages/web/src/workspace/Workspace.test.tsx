@@ -120,6 +120,19 @@ describe('<Workspace /> — smoke', () => {
     expect(header.getByTestId('workspace-header-share')).toBeTruthy();
   });
 
+  it('owns discipline lens in secondary sidebar, not footer', () => {
+    const { getByTestId } = renderWithProviders(<Workspace />);
+    const secondary = within(getByTestId('app-shell-secondary-sidebar'));
+    const statusBar = getByTestId('status-bar');
+    const footer = within(statusBar);
+
+    expect(secondary.getByTestId('secondary-lens-filter')).toBeTruthy();
+    expect(secondary.getByTestId('secondary-lens-dropdown')).toBeTruthy();
+    expect(secondary.getByTestId('lens-dropdown-trigger')).toBeTruthy();
+    expect(footer.queryByTestId('lens-dropdown-trigger')).toBeNull();
+    expect(statusBar.textContent).not.toContain('Show:');
+  });
+
   it('keeps undo/redo global controls in the footer and out of the header', () => {
     const { getByTestId, queryByTestId } = renderWithProviders(<Workspace />);
     const header = within(getByTestId('workspace-header'));

@@ -1622,6 +1622,7 @@ export function Workspace(): JSX.Element {
           navigateMode: (kind) => navigateTo({ kind, source: 'cmdk' }),
           startPlanTool: (toolId) => handleToolSelect(toolId as ToolId),
           setTheme: handleThemeSet,
+          setLensMode,
           toggleTheme: handleThemeToggle,
           setLanguage: handleLanguageSet,
           views: paletteViews,
@@ -2097,8 +2098,6 @@ export function Workspace(): JSX.Element {
             onRedo={() => void handleUndoRedo(false)}
             wsState={wsOn ? 'connected' : 'offline'}
             saveState="saved"
-            lensMode={lensMode}
-            onLensChange={setLensMode}
             snapModes={snapModes}
             onSnapToggle={handleSnapToggle}
             advisorCounts={advisorCounts}
