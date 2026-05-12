@@ -522,4 +522,49 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await expect(page.getByTestId('app-shell-element-sidebar')).toBeHidden();
     await capture(page, testInfo, '19-element-sidebar-deselected.png');
   });
+
+  test('proves keyboard reachability for canonical regions and dialogs', async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width: 1280, height: 820 });
+    await bootWorkspace(page);
+
+    await expect(page.getByTestId('app-shell-primary-resize-handle')).toHaveAttribute(
+      'role',
+      'separator',
+    );
+
+    await page.getByTestId('workspace-header-cmdk').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible();
+    await expect(page.getByLabel('Command palette search')).toBeFocused();
+    await capture(page, testInfo, '20-keyboard-command-palette.png');
+    await page.keyboard.press('Escape');
+
+    await page.getByTestId('primary-project-selector').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('menu', { name: 'Project menu' })).toBeVisible();
+    await capture(page, testInfo, '21-keyboard-project-menu.png');
+    await page.keyboard.press('Escape');
+
+    await page.getByTestId('ribbon-tab-insert').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('ribbon-tab-insert')).toHaveAttribute('aria-selected', 'true');
+    await page.getByTestId('ribbon-command-family-library').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('dialog', { name: 'Family library' })).toBeVisible();
+    await capture(page, testInfo, '22-keyboard-family-library.png');
+    await page.getByRole('button', { name: 'Close family library' }).click();
+
+    await page.getByTestId('status-bar-advisor-entry').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('advisor-dialog')).toBeVisible();
+    await capture(page, testInfo, '23-keyboard-advisor-dialog.png');
+    await page.getByTestId('advisor-dialog-close').click();
+
+    await page.getByTestId('status-bar-activity-entry').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('dialog', { name: 'Activity stream' })).toBeVisible();
+    await capture(page, testInfo, '24-keyboard-activity-drawer.png');
+  });
 });
