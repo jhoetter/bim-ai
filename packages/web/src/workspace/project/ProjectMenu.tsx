@@ -47,6 +47,7 @@ export interface ProjectMenuProps {
   onPickSeedModel?: (id: string) => void;
   onInsertSeed?: () => void;
   onSaveSnapshot?: () => void;
+  onOpenMilestone?: () => void;
   saveAsMaximumBackups?: number;
   onSaveAsMaximumBackupsChange?: (maximumBackups: number) => void;
   onRestoreSnapshot?: (file: File) => void;
@@ -72,6 +73,7 @@ export function ProjectMenu({
   onPickSeedModel,
   onInsertSeed,
   onSaveSnapshot,
+  onOpenMilestone,
   saveAsMaximumBackups,
   onSaveAsMaximumBackupsChange,
   onRestoreSnapshot,
@@ -256,6 +258,15 @@ export function ProjectMenu({
           onClick={() => {
             onOpenChange(false);
             onSaveSnapshot?.();
+          }}
+        />
+        <MenuItem
+          label="Save milestone…"
+          icon="saveViewpoint"
+          testId="project-menu-save-milestone"
+          onClick={() => {
+            onOpenChange(false);
+            onOpenMilestone?.();
           }}
         />
         <MenuItem

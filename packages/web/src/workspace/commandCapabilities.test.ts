@@ -74,6 +74,7 @@ describe('command capability graph', () => {
       ['help.keyboard-shortcuts', ['cmd-k']],
       ['advisor.open', ['cmd-k', 'footer']],
       ['jobs.open', ['cmd-k', 'footer']],
+      ['milestone.open', ['cmd-k', 'primary-sidebar']],
       ['advisor.apply-first-fix', ['cmd-k', 'dialog']],
       ['sheet.export-share', ['cmd-k', 'ribbon', 'header']],
       ['visibility.plan.graphics', ['cmd-k', 'ribbon', 'secondary-sidebar']],
@@ -123,6 +124,7 @@ describe('command capability graph', () => {
       'project.manage-links',
       'advisor.open',
       'jobs.open',
+      'milestone.open',
     ]) {
       for (const mode of ['plan', '3d', 'sheet', 'schedule', 'agent'] as const) {
         expect(evaluateCommandInMode(commandId, mode)?.state).toBe('enabled');
@@ -184,6 +186,7 @@ describe('command capability graph', () => {
     ]);
     expect(getCommandCapability('advisor.open')?.surfaces).toEqual(['cmd-k', 'footer']);
     expect(getCommandCapability('jobs.open')?.surfaces).toEqual(['cmd-k', 'footer']);
+    expect(getCommandCapability('milestone.open')?.surfaces).toEqual(['cmd-k', 'primary-sidebar']);
     expect(getCommandCapability('advisor.apply-first-fix')?.preconditions).toEqual([
       'advisor-finding-with-quick-fix',
     ]);

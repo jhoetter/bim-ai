@@ -37,6 +37,7 @@ describe('<ProjectMenu /> — T-03', () => {
     expect(getByTestId('project-menu')).toBeTruthy();
     expect(getByTestId('project-menu-insert-seed')).toBeTruthy();
     expect(getByTestId('project-menu-save-snapshot')).toBeTruthy();
+    expect(getByTestId('project-menu-save-milestone')).toBeTruthy();
     expect(getByTestId('project-menu-save-as-options')).toBeTruthy();
     expect(getByTestId('project-menu-open-snapshot')).toBeTruthy();
     expect(getByTestId('project-menu-new-clear')).toBeTruthy();
@@ -87,6 +88,18 @@ describe('<ProjectMenu /> — T-03', () => {
     );
     fireEvent.click(getByTestId('project-menu-insert-seed'));
     expect(onInsertSeed).toHaveBeenCalledTimes(1);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('routes Save milestone through the project resources menu', () => {
+    const onOpenChange = vi.fn();
+    const onOpenMilestone = vi.fn();
+    const { getByTestId } = render(
+      <Harness open={true} onOpenChange={onOpenChange} onOpenMilestone={onOpenMilestone} />,
+    );
+
+    fireEvent.click(getByTestId('project-menu-save-milestone'));
+    expect(onOpenMilestone).toHaveBeenCalledTimes(1);
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 

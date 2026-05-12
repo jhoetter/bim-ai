@@ -564,7 +564,11 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
 
     await page.getByTestId('primary-project-selector').click();
     await expect(page.getByTestId('project-menu')).toBeVisible();
+    await expect(page.getByTestId('project-menu-save-milestone')).toBeVisible();
     await capture(page, testInfo, '13-project-menu.png');
+    await page.getByTestId('project-menu-save-milestone').click();
+    await expect(page.getByRole('dialog', { name: 'Save milestone' })).toBeVisible();
+    await capture(page, testInfo, '13a-milestone-dialog.png');
     await page.keyboard.press('Escape');
 
     await page.getByTestId('ribbon-tab-insert').click();
@@ -579,6 +583,14 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await page.getByTestId('palette-entry-visibility.plan.graphics').click();
     await expect(page.getByRole('dialog', { name: 'Visibility/Graphics Overrides' })).toBeVisible();
     await capture(page, testInfo, '15-visibility-graphics-dialog.png');
+    await page.keyboard.press('Escape');
+
+    await page.getByTestId('workspace-header-cmdk').click();
+    await page.getByLabel('Command palette search').fill('milestone dialog');
+    await expect(page.getByTestId('palette-entry-milestone.open')).toBeVisible();
+    await page.getByTestId('palette-entry-milestone.open').click();
+    await expect(page.getByRole('dialog', { name: 'Save milestone' })).toBeVisible();
+    await capture(page, testInfo, '15a-cmdk-milestone-dialog.png');
     await page.keyboard.press('Escape');
 
     await expect(page.getByTestId('workspace-header-share')).toBeEnabled();

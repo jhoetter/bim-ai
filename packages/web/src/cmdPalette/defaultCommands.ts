@@ -764,6 +764,15 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'milestone.open',
+  label: 'Open Milestone Dialog',
+  keywords: ['milestone', 'checkpoint', 'save point', 'publish snapshot'],
+  category: 'command',
+  sourceKind: 'setting',
+  invoke: (ctx) => ctx.openMilestone?.(),
+});
+
+registerCommand({
   id: 'advisor.apply-first-fix',
   label: 'Apply First Advisor Fix',
   keywords: ['advisor', 'fix', 'quick fix', 'apply fix', 'review'],

@@ -40,6 +40,8 @@ beforeEach(() => {
   // Suppress the OnboardingTour dialog so aria-modal doesn't hide canvas content.
   localStorage.setItem('bim.onboarding-completed', 'true');
   useBimStore.setState({
+    modelId: undefined,
+    revision: undefined,
     selectedId: undefined,
     selectedIds: [],
     elementsById: {},
@@ -55,6 +57,8 @@ afterEach(() => {
   localStorage.removeItem('bim.onboarding-completed');
   localStorage.removeItem(TABS_KEY);
   useBimStore.setState({
+    modelId: undefined,
+    revision: undefined,
     selectedId: undefined,
     selectedIds: [],
     elementsById: {},
@@ -183,6 +187,17 @@ describe('<Workspace /> — smoke', () => {
     fireEvent.click(primary.getByTestId('primary-project-selector'));
 
     expect(getByTestId('project-menu')).toBeTruthy();
+  });
+
+  it('opens the milestone dialog from the primary project menu owner', () => {
+    useBimStore.setState({ modelId: 'model-milestone', revision: 7 });
+    const { getByTestId, getByRole } = renderWithProviders(<Workspace />);
+    const primary = within(getByTestId('app-shell-primary-sidebar'));
+
+    fireEvent.click(primary.getByTestId('primary-project-selector'));
+    fireEvent.click(getByTestId('project-menu-save-milestone'));
+
+    expect(getByRole('dialog', { name: 'Save milestone' })).toBeTruthy();
   });
 
   it('scopes primary sidebar search to navigation rows', () => {
@@ -514,6 +529,18 @@ describe('<Workspace /> — smoke', () => {
 
     fireEvent.click(getByTestId('palette-entry-jobs.open'));
     expect(getByTestId('jobs-dialog')).toBeTruthy();
+  });
+
+  it('opens the milestone dialog through Cmd+K reachability', () => {
+    useBimStore.setState({ modelId: 'model-milestone', revision: 7 });
+    const { getByTestId, getByLabelText, getByRole } = renderWithProviders(<Workspace />);
+    fireEvent.click(getByTestId('workspace-header-cmdk'));
+    fireEvent.change(getByLabelText('Command palette search'), {
+      target: { value: 'milestone dialog' },
+    });
+
+    fireEvent.click(getByTestId('palette-entry-milestone.open'));
+    expect(getByRole('dialog', { name: 'Save milestone' })).toBeTruthy();
   });
 
   it('owns activity stream entry in footer and opens the activity drawer from there', () => {

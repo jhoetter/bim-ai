@@ -71,6 +71,7 @@ export type PaletteContext = {
   openKeyboardShortcuts?: () => void;
   openAdvisor?: () => void;
   openJobs?: () => void;
+  openMilestone?: () => void;
   hasAdvisorQuickFix?: boolean;
   applyFirstAdvisorFix?: () => void;
   openPlanVisibilityGraphics?: () => void;

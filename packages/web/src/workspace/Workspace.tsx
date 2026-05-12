@@ -1640,6 +1640,7 @@ export function Workspace(): JSX.Element {
           openKeyboardShortcuts: () => setCheatsheetOpen(true),
           openAdvisor: () => setAdvisorOpen(true),
           openJobs: () => setJobsOpen(true),
+          openMilestone: openMilestoneDialog,
           hasAdvisorQuickFix: Boolean(firstAdvisorQuickFix),
           applyFirstAdvisorFix: firstAdvisorQuickFix
             ? () => void onSemanticCommand(firstAdvisorQuickFix)
@@ -1801,6 +1802,7 @@ export function Workspace(): JSX.Element {
         saveAsMaximumBackups={saveAsMaximumBackups}
         onSaveAsMaximumBackupsChange={handleSaveAsMaximumBackupsChange}
         onRestoreSnapshot={(f) => void handleRestoreSnapshot(f)}
+        onOpenMilestone={openMilestoneDialog}
         onNewClear={handleNewClear}
         onReplayTour={() => {
           resetOnboarding();
