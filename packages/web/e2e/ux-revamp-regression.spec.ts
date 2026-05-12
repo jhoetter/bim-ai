@@ -579,6 +579,20 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await capture(page, testInfo, '17-activity-drawer.png');
   });
 
+  test('captures active command modifier ownership', async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 1280, height: 820 });
+    await bootWorkspace(page);
+
+    await page.getByTestId('ribbon-command-wall').click();
+    await expect(page.getByTestId('ribbon-command-wall')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByTestId('tool-modifier-bar')).toBeVisible();
+    await expect(page.getByTestId('options-bar')).toBeVisible();
+    await expect(page.getByTestId('status-bar')).toContainText('Drawing wall');
+    await expect(page.getByTestId('tool-palette')).toHaveCount(0);
+    await expect(page.getByTestId('app-shell-ribbon')).toContainText('Wall');
+    await capture(page, testInfo, '44-active-wall-command-ownership.png');
+  });
+
   test('captures element-sidebar selection and deselection behavior', async ({
     page,
   }, testInfo) => {
