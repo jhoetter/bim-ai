@@ -194,6 +194,38 @@ describe('<Workspace /> — smoke', () => {
     }
   });
 
+  it('groups secondary sidebar controls as view-wide state with advanced disclosure — UX-RISK-007', () => {
+    for (const [kind, testId] of [
+      ['plan', 'secondary-sidebar-plan'],
+      ['3d', 'secondary-sidebar-3d'],
+    ] as const) {
+      cleanup();
+      seedTabs(kind, `tab-${kind}`);
+      const rendered = renderWithProviders(<Workspace />);
+      const secondary = rendered.getByTestId('app-shell-secondary-sidebar');
+      const adapter = within(secondary).getByTestId(testId);
+      const sectionScopes = Array.from(adapter.querySelectorAll('[data-secondary-scope]')).map(
+        (section) => section.getAttribute('data-secondary-scope'),
+      );
+      const advancedSections = Array.from(
+        adapter.querySelectorAll('[data-secondary-scope="advanced"]'),
+      );
+
+      expect(sectionScopes).toContain('view-state');
+      expect(sectionScopes).toContain('advanced');
+      expect(advancedSections.length).toBeGreaterThan(0);
+      for (const section of advancedSections) {
+        expect(section.getAttribute('data-secondary-disclosure')).toBe('true');
+      }
+      expect(within(secondary).queryByTestId('inspector')).toBeNull();
+      expect(within(secondary).queryByTestId('right-rail-review')).toBeNull();
+      expect(within(secondary).queryByTestId('primary-user-menu')).toBeNull();
+
+      rendered.unmount();
+      localStorage.removeItem(TABS_KEY);
+    }
+  });
+
   it('keeps the element sidebar absent for an empty plan with no selection', () => {
     seedTabs('plan');
     const { getByTestId, queryByTestId } = renderWithProviders(<Workspace />);

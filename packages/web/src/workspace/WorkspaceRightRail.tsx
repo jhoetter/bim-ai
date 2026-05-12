@@ -1372,19 +1372,47 @@ function SecondarySection({
   title,
   children,
   testId,
+  scope = 'view-state',
+  collapsible = false,
 }: {
   title: string;
   children: ReactNode;
   testId?: string;
+  scope?: 'view-summary' | 'view-state' | 'advanced';
+  collapsible?: boolean;
 }): JSX.Element {
-  return (
-    <section className="border-b border-border px-3 py-3" data-testid={testId}>
-      <div
-        className="mb-2 text-[10px] font-semibold uppercase text-muted"
-        style={{ letterSpacing: '0.08em', opacity: 0.7 }}
+  const titleNode = (
+    <div
+      className="mb-2 text-[10px] font-semibold uppercase text-muted"
+      style={{ letterSpacing: '0.08em', opacity: 0.7 }}
+    >
+      {title}
+    </div>
+  );
+
+  if (collapsible) {
+    return (
+      <details
+        open
+        className="border-b border-border px-3 py-3"
+        data-testid={testId}
+        data-secondary-scope={scope}
+        data-secondary-disclosure="true"
       >
-        {title}
-      </div>
+        <summary className="cursor-pointer">{titleNode}</summary>
+        {children}
+      </details>
+    );
+  }
+
+  return (
+    <section
+      className="border-b border-border px-3 py-3"
+      data-testid={testId}
+      data-secondary-scope={scope}
+      data-secondary-disclosure="false"
+    >
+      {titleNode}
       {children}
     </section>
   );
@@ -1458,7 +1486,7 @@ function SecondaryPlanAdapter({
         title={activePlanView?.name ?? activeLevel?.name ?? 'Plan view'}
         subtitle={activePlanView ? `View id · ${activePlanView.id}` : 'Level-based plan context'}
       />
-      <SecondarySection title="Level" testId="secondary-plan-level">
+      <SecondarySection title="Level" testId="secondary-plan-level" scope="view-summary">
         <label className="flex flex-col gap-1 text-[11px] text-muted">
           Active level
           <select
@@ -1501,7 +1529,12 @@ function SecondaryPlanAdapter({
           </p>
         )}
       </SecondarySection>
-      <SecondarySection title="Visibility" testId="secondary-plan-visibility">
+      <SecondarySection
+        title="Visibility"
+        testId="secondary-plan-visibility"
+        scope="advanced"
+        collapsible
+      >
         <div className="space-y-2">
           <SecondaryToggle
             label="Reveal hidden elements"
@@ -1561,7 +1594,12 @@ function Secondary3dAdapter(props: Secondary3dAdapterProps): JSX.Element {
       <SecondarySection title="Scene" testId="secondary-3d-sun">
         <SunInspectorPanel />
       </SecondarySection>
-      <SecondarySection title="Graphics, Camera, Clipping" testId="secondary-3d-graphics">
+      <SecondarySection
+        title="Graphics, Camera, Clipping"
+        testId="secondary-3d-graphics"
+        scope="advanced"
+        collapsible
+      >
         <Viewport3DLayersPanel
           viewerCategoryHidden={props.viewerCategoryHidden}
           onToggleCategory={props.toggleViewerCategoryHidden}
@@ -1646,7 +1684,7 @@ function SecondarySectionAdapter({
         </div>
       </SecondarySection>
       {section ? (
-        <SecondarySection title="Crop Depth">
+        <SecondarySection title="Crop Depth" scope="advanced" collapsible>
           <label className="flex flex-col gap-1 text-[11px] text-muted">
             Depth mm
             <input
