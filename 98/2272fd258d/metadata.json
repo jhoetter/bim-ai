@@ -3,7 +3,7 @@
   "checkpoint_id": "982272fd258d",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "spec/ux-bim-ai-rework-tracker.md"
   ],
@@ -13,6 +13,19 @@
       "transcript": "/98/2272fd258d/0/full.jsonl",
       "content_hash": "/98/2272fd258d/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/98/2272fd258d/1/metadata.json",
+      "transcript": "/98/2272fd258d/1/full.jsonl",
+      "content_hash": "/98/2272fd258d/1/content_hash.txt",
+      "prompt": "/98/2272fd258d/1/prompt.txt"
     }
-  ]
+  ],
+  "token_usage": {
+    "input_tokens": 11947761,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 452083712,
+    "output_tokens": 803517,
+    "api_call_count": 5374
+  }
 }
