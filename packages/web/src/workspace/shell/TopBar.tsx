@@ -15,7 +15,6 @@ import { useTranslation } from 'react-i18next';
 import { Icons, IconLabels, ICON_SIZE, type LucideLikeIcon } from '@bim-ai/ui';
 import { useBimStore } from '../../state/store';
 import { AccountStatusMenu, type AccountStatusInfo } from './AccountStatusMenu';
-import { SourceViewChip } from './SourceViewChip';
 import { type ViewTab, type TabKind } from '../tabsModel';
 import type { ToolId } from '../../tools/toolRegistry';
 import { WorkspaceSwitcher } from '../chrome/WorkspaceSwitcher';
@@ -129,12 +128,6 @@ export interface TopBarProps {
   hasPages?: boolean;
   /** OUT-V3-01: callback to open the SharePresentationModal. */
   onSharePresentation?: () => void;
-  /** MRK-V3-03: modelId used to construct the SourceViewChip WS connection. */
-  modelId?: string;
-  /** MRK-V3-03: active view id forwarded to SourceViewChip for sheet-comment back-flow. */
-  activeViewId?: string;
-  /** MRK-V3-03: callback from SourceViewChip to navigate to a sheet comment. */
-  onNavigateToSheet?: (sheetId: string, commentId: string) => void;
   /** F-006: QAT Undo button. */
   onUndo?: () => void;
   /** F-006: QAT Redo button. */
@@ -190,9 +183,6 @@ export function TopBar({
   peers,
   hasPages,
   onSharePresentation,
-  modelId,
-  activeViewId,
-  onNavigateToSheet,
   onUndo,
   onRedo,
   canUndo,
@@ -215,8 +205,6 @@ export function TopBar({
   onWorkspaceChange,
 }: TopBarProps): JSX.Element {
   const tablistId = useId();
-  // SourceViewChip is only relevant when in a sheet-type view and both IDs are known.
-  const showSourceViewChip = mode === 'sheet' && !!modelId && !!activeViewId;
   return (
     <div
       data-testid="topbar"
@@ -274,15 +262,6 @@ export function TopBar({
         peers={peers}
         hasPages={hasPages}
         onSharePresentation={onSharePresentation}
-        sourceViewChip={
-          showSourceViewChip ? (
-            <SourceViewChip
-              viewId={activeViewId!}
-              modelId={modelId!}
-              onNavigateToSheet={onNavigateToSheet}
-            />
-          ) : null
-        }
       />
     </div>
   );
@@ -904,7 +883,6 @@ function TopBarRight({
   peers,
   hasPages,
   onSharePresentation,
-  sourceViewChip,
 }: {
   theme: 'light' | 'dark';
   onThemeToggle?: () => void;
@@ -921,8 +899,6 @@ function TopBarRight({
   peers?: Array<{ name?: string; color?: string }>;
   hasPages?: boolean;
   onSharePresentation?: () => void;
-  /** MRK-V3-03: pre-rendered SourceViewChip node (null when not in sheet view). */
-  sourceViewChip?: JSX.Element | null;
 }): JSX.Element {
   const { t, i18n } = useTranslation();
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
@@ -953,7 +929,6 @@ function TopBarRight({
       >
         <span style={{ fontSize: 'var(--text-sm)' }}>Share</span>
       </button>
-      {sourceViewChip ?? null}
       <button
         type="button"
         onClick={onCommandPalette}
