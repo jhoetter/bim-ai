@@ -1,0 +1,20 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "62751ef26bc2",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/shell/SourceViewChip.tsx",
+    "packages/web/src/workspace/shell/TopBar.tsx",
+    "spec/ux-bim-ai-rework-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/62/751ef26bc2/0/metadata.json",
+      "transcript": "/62/751ef26bc2/0/full.jsonl",
+      "content_hash": "/62/751ef26bc2/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
