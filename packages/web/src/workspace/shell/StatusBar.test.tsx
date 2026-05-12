@@ -132,6 +132,29 @@ describe('StatusBar — spec §17', () => {
     expect(queryByTestId('statusbar-level-elevation')).toBeNull();
   });
 
+  it('shows temporary visibility override in footer and allows reset — UX-STAT-017', () => {
+    const onClearTemporaryVisibility = vi.fn();
+    const { getByTestId } = renderWithI18n(
+      <StatusBar
+        level={{ id: 'lvl-ground', label: 'Ground' }}
+        temporaryVisibility={{
+          viewId: 'pv-ground',
+          mode: 'isolate',
+          categories: ['wall'],
+          elementIds: ['wall-main'],
+        }}
+        onClearTemporaryVisibility={onClearTemporaryVisibility}
+      />,
+    );
+
+    const chip = getByTestId('temp-visibility-chip');
+    expect(chip.textContent).toContain('Isolate');
+    expect(chip.textContent).toContain('wall');
+    expect(chip.textContent).toContain('#wall-main');
+    fireEvent.click(chip);
+    expect(onClearTemporaryVisibility).toHaveBeenCalledTimes(1);
+  });
+
   it('grid switch reflects state and emits onGridToggle', () => {
     const onGridToggle = vi.fn();
     const { getByTitle } = renderWithI18n(

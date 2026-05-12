@@ -256,6 +256,8 @@ export function Workspace(): JSX.Element {
   const draftGridVisible = useToolPrefs((s) => s.draftGridVisible);
   const toggleDraftGridVisible = useToolPrefs((s) => s.toggleDraftGridVisible);
   const selectedId = useBimStore((s) => s.selectedId);
+  const temporaryVisibility = useBimStore((s) => s.temporaryVisibility);
+  const clearTemporaryVisibility = useBimStore((s) => s.clearTemporaryVisibility);
   const activeLevelId = useBimStore((s) => s.activeLevelId);
   const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
   const activePlanViewId = useBimStore((s) => s.activePlanViewId);
@@ -2202,6 +2204,8 @@ export function Workspace(): JSX.Element {
             jobsCounts={jobsCounts}
             onJobsClick={() => setJobsOpen(true)}
             selectionCount={selectedId ? 1 : 0}
+            temporaryVisibility={temporaryVisibility}
+            onClearTemporaryVisibility={clearTemporaryVisibility}
             activeWorkspaceId={activeWorkspaceId}
             driftCount={driftCount}
             onDriftClick={() => setManageLinksOpen(true)}

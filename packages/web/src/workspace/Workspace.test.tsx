@@ -171,6 +171,23 @@ describe('<Workspace /> — smoke', () => {
     expect(getByTestId('status-bar-selection-count').textContent).toContain('1 selected');
   });
 
+  it('owns temporary visibility override reset in footer status bar — UX-STAT-017', () => {
+    useBimStore.setState({
+      temporaryVisibility: {
+        viewId: 'pv-ground',
+        mode: 'isolate',
+        categories: ['wall'],
+        elementIds: ['wall-1'],
+      },
+    });
+    const { getByTestId } = renderWithProviders(<Workspace />);
+    const chip = getByTestId('temp-visibility-chip');
+    expect(chip.textContent).toContain('Isolate');
+    expect(chip.textContent).toContain('#wall-1');
+    fireEvent.click(chip);
+    expect(useBimStore.getState().temporaryVisibility).toBeNull();
+  });
+
   it('keeps the primary sidebar navigation-only — UX-TEST-001', () => {
     const { getByTestId, getByRole, queryByTestId } = renderWithProviders(<Workspace />);
     const primary = within(getByTestId('app-shell-primary-sidebar'));

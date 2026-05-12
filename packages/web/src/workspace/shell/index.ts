@@ -6,5 +6,4 @@ export * from './ParticipantStrip';
 export * from './RibbonBar';
 export * from './StatusBar';
 export * from './TabBar';
-export * from './TemporaryVisibilityChip';
 export * from './TopBar';

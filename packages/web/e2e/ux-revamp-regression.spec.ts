@@ -770,6 +770,30 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await expect(page.getByTestId('inspector')).toBeVisible();
     await expect(page.getByTestId('inspector-wall-move-apply')).toBeVisible();
     await capture(page, testInfo, '18-element-sidebar-selected-wall.png');
+    await page.evaluate(() => {
+      const win = window as unknown as {
+        __bimStore?: {
+          getState: () => {
+            setTemporaryVisibility?: (next: {
+              viewId: string;
+              mode: 'isolate' | 'hide';
+              categories: string[];
+              elementIds?: string[];
+            }) => void;
+          };
+        };
+      };
+      win.__bimStore?.getState().setTemporaryVisibility?.({
+        viewId: 'pv-ground',
+        mode: 'isolate',
+        categories: ['wall'],
+        elementIds: ['wall-main'],
+      });
+    });
+    await expect(page.getByTestId('temp-visibility-chip')).toBeVisible();
+    await capture(page, testInfo, '18a-footer-temp-visibility-chip.png');
+    await page.getByTestId('temp-visibility-chip').click();
+    await expect(page.getByTestId('temp-visibility-chip')).toHaveCount(0);
 
     await page.evaluate(() => {
       const win = window as unknown as {

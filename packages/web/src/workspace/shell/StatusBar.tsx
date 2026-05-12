@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
 import type { WorkspaceId } from '../chrome/workspaces';
 import type { CollaborationConflictQueueV1 } from '../../lib/collaborationConflictQueue';
+import type { TemporaryVisibility } from '../../state/storeTypes';
 import { DriftBadge } from './DriftBadge';
 
 const TOOL_VERB: Record<string, string> = {
@@ -133,6 +134,8 @@ export interface StatusBarProps {
   jobsCounts?: JobsStatusCounts;
   onJobsClick?: () => void;
   selectionCount?: number;
+  temporaryVisibility?: TemporaryVisibility | null;
+  onClearTemporaryVisibility?: () => void;
 }
 
 export function StatusBar({
@@ -166,6 +169,8 @@ export function StatusBar({
   jobsCounts,
   onJobsClick,
   selectionCount = 0,
+  temporaryVisibility = null,
+  onClearTemporaryVisibility,
 }: StatusBarProps): JSX.Element {
   const showPlanClusters = mode === 'plan' || mode === 'plan-3d' || mode === 'section';
   return (
@@ -232,6 +237,15 @@ export function StatusBar({
             <Divider />
             <DriftBadge driftCount={driftCount} onClick={onDriftClick ?? (() => {})} />
           </div>
+        ) : null}
+        {temporaryVisibility ? (
+          <>
+            <Divider />
+            <TemporaryVisibilityEntry
+              override={temporaryVisibility}
+              onClear={onClearTemporaryVisibility}
+            />
+          </>
         ) : null}
         <AdvisorEntry
           counts={advisorCounts ?? { error: 0, warning: 0, info: 0 }}
@@ -834,6 +848,33 @@ function JobsEntry({
           {totalAttention}
         </span>
       ) : null}
+    </button>
+  );
+}
+
+function TemporaryVisibilityEntry({
+  override,
+  onClear,
+}: {
+  override: TemporaryVisibility;
+  onClear?: () => void;
+}): JSX.Element {
+  const modeLabel = override.mode === 'isolate' ? 'Isolate' : 'Hide';
+  const targets = [...override.categories, ...(override.elementIds ?? []).map((id) => `#${id}`)];
+  const targetLabel = targets.length > 0 ? targets.join(', ') : 'current selection';
+  return (
+    <button
+      type="button"
+      data-testid="temp-visibility-chip"
+      aria-label={`Reset temporary visibility: ${modeLabel} ${targetLabel}`}
+      title="Reset temporary visibility overrides"
+      onClick={onClear}
+      className="status-bar__slot inline-flex max-w-64 items-center gap-1 rounded border border-amber-500 bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-900 hover:bg-amber-200"
+    >
+      <span className="truncate">
+        {modeLabel}: {targetLabel}
+      </span>
+      <Icons.close size={ICON_SIZE.chrome} aria-hidden="true" className="opacity-70" />
     </button>
   );
 }
