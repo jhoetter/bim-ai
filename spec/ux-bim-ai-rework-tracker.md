@@ -288,7 +288,7 @@ Evidence (2026-05-12): seeded footer capture at `packages/web/tmp/ux-footer-jobs
 | UX-HEAD-017 | Tag shortcut                    | Header QAT                   | Ribbon                    | Fixed    | Header ownership tests remove tag from header; ribbon/Cmd+K retain reachability                                    |
 | UX-HEAD-018 | Thin lines shortcut             | Header QAT                   | Secondary sidebar         | Fixed    | Header ownership tests remove thin lines; view graphics live in secondary sidebar                                  |
 | UX-HEAD-019 | Project/workspace selector      | Header left                  | Primary sidebar           | Partial  | Project selector is fixed in primary; remaining workspace/lens semantics stay tracked under secondary/sidebar rows |
-| UX-HEAD-020 | Offline/sync status             | Header overlay               | Footer                    | Move     | Global status belongs in footer unless blocking user action                                                        |
+| UX-HEAD-020 | Offline/sync status             | Header overlay               | Footer                    | Fixed    | Global status belongs in footer unless blocking user action                                                        |
 | UX-HEAD-021 | Source view chip                | Header in sheet context      | Secondary or tab subtitle | Audit    | Keep only if it clarifies tab identity without crowding                                                            |
 | UX-HEAD-022 | Header height                   | Current mixed controls       | Header                    | Redesign | Size for tabs and global actions only                                                                              |
 | UX-HEAD-023 | Header overflow                 | Current ad hoc action groups | Header                    | Redesign | Overflow tabs separately from global share/presence actions                                                        |
@@ -436,7 +436,7 @@ Evidence (2026-05-12): seeded footer capture at `packages/web/tmp/ux-footer-jobs
 | UX-ELE-016 | View graphics controls             | Right rail no-selection                    | Secondary sidebar      | Fixed    | Remove from element sidebar                                                                |
 | UX-ELE-017 | Layers/category visibility         | Right rail                                 | Secondary sidebar      | Fixed    | View-wide controls                                                                         |
 | UX-ELE-018 | Authoring workbenches              | Right rail                                 | Ribbon/secondary       | Move     | Editing entry points belong in ribbon; view-wide authoring context in secondary            |
-| UX-ELE-019 | Advisor panel in normal right rail | Right rail                                 | Footer/dialog          | Move     | Global advisor state belongs in footer                                                     |
+| UX-ELE-019 | Advisor panel in normal right rail | Right rail                                 | Footer/dialog          | Fixed    | Global advisor state belongs in footer                                                     |
 | UX-ELE-020 | Element sidebar close behavior     | Current right rail toggle                  | Element sidebar        | Redesign | Close means hide inspector, but selecting an element should reopen or show an affordance   |
 | UX-ELE-021 | Element sidebar width              | Current right rail width                   | Element sidebar        | Redesign | Resizable optional; must not reduce canvas below usable width                              |
 | UX-ELE-022 | Multi-select properties            | Inspector                                  | Element sidebar        | Keep     | Show common properties, count, batch operations                                            |
@@ -787,27 +787,29 @@ This addendum exists because a full revamp handoff should not depend on only bro
 | UX-3D-005 | Viewpoint persistence HUD   | `OrbitViewpointPersistedHud.tsx` | 3D secondary              | Move persistent saved-view controls          |
 | UX-3D-006 | Saved view name/state       | 3D HUD                           | Header tab plus secondary | Tab names view, secondary owns view settings |
 | UX-3D-007 | Section box display         | Viewport/right rail              | 3D secondary plus canvas  | Settings secondary, handles on canvas        |
-| UX-3D-008 | Clip cap/floor              | 3D HUD                           | 3D secondary              | Move                                         |
+| UX-3D-008 | Clip cap/floor              | 3D HUD                           | 3D secondary              | Fixed                                        |
 | UX-3D-009 | Cutaway                     | 3D HUD                           | 3D secondary              | Move                                         |
-| UX-3D-010 | Hidden kinds/categories     | 3D HUD/layers panel              | 3D secondary              | Move                                         |
-| UX-3D-011 | Shadows                     | 3D HUD/right rail                | 3D secondary              | Move                                         |
-| UX-3D-012 | Ambient occlusion           | 3D HUD/right rail                | 3D secondary              | Move                                         |
-| UX-3D-013 | Depth cueing                | 3D HUD/right rail                | 3D secondary              | Move                                         |
-| UX-3D-014 | Edge width                  | 3D HUD/right rail                | 3D secondary              | Move                                         |
-| UX-3D-015 | Exposure                    | 3D HUD/right rail                | 3D secondary              | Move                                         |
+| UX-3D-010 | Hidden kinds/categories     | 3D HUD/layers panel              | 3D secondary              | Fixed                                        |
+| UX-3D-011 | Shadows                     | 3D HUD/right rail                | 3D secondary              | Fixed                                        |
+| UX-3D-012 | Ambient occlusion           | 3D HUD/right rail                | 3D secondary              | Fixed                                        |
+| UX-3D-013 | Depth cueing                | 3D HUD/right rail                | 3D secondary              | Fixed                                        |
+| UX-3D-014 | Edge width                  | 3D HUD/right rail                | 3D secondary              | Fixed                                        |
+| UX-3D-015 | Exposure                    | 3D HUD/right rail                | 3D secondary              | Fixed                                        |
 | UX-3D-016 | Plan overlay source         | 3D HUD                           | 3D secondary              | Move                                         |
 | UX-3D-017 | Plan overlay opacity/offset | 3D HUD                           | 3D secondary              | Move                                         |
 | UX-3D-018 | Plan annotations overlay    | 3D HUD                           | 3D secondary              | Move                                         |
-| UX-3D-019 | Sun inspector               | `SunInspectorPanel.tsx`          | 3D secondary              | Move                                         |
-| UX-3D-020 | 3D layers panel             | `Viewport3DLayersPanel.tsx`      | 3D secondary              | Move                                         |
+| UX-3D-019 | Sun inspector               | `SunInspectorPanel.tsx`          | 3D secondary              | Fixed                                        |
+| UX-3D-020 | 3D layers panel             | `Viewport3DLayersPanel.tsx`      | 3D secondary              | Fixed                                        |
 | UX-3D-021 | Wall context menu           | `WallContextMenu.tsx`            | Canvas context            | Keep                                         |
 | UX-3D-022 | Wall face radial menu       | `wallFaceRadialMenu.tsx`         | Canvas context            | Keep                                         |
 | UX-3D-023 | Selected wall properties    | Right rail inspector             | Element sidebar           | Keep after right rail split                  |
-| UX-3D-024 | No-selection scene panel    | Right rail                       | 3D secondary              | Move                                         |
+| UX-3D-024 | No-selection scene panel    | Right rail                       | 3D secondary              | Fixed                                        |
 | UX-3D-025 | 3D measure command          | Header/canvas/ribbon             | 3D ribbon                 | Move                                         |
 | UX-3D-026 | 3D isolate/hide             | Context/right rail               | Ribbon/context            | Keep context, add ribbon discoverability     |
 | UX-3D-027 | 3D empty/loading state      | Canvas                           | Canvas                    | Keep                                         |
 | UX-3D-028 | 3D camera creation          | Ribbon/canvas                    | 3D ribbon                 | Add/keep based on feature availability       |
+
+Evidence (2026-05-12): 3D secondary ownership coverage now proves scene/graphics/clipping controls live in `WorkspaceRightRail` secondary adapters (`secondary-sidebar-3d`, `secondary-3d-sun`, `secondary-3d-graphics`, `viewport3d-layers-panel`, `clip-elev-input`, `clip-floor-input`) and no-selection keeps the element sidebar absent. DOM evidence comes from `Workspace.test.tsx` plus seeded screenshots in `packages/web/tmp/ux-canvas-secondary-reconcile-20260512/` and `packages/web/tmp/ux-3d-secondary-reconcile-20260512/`.
 
 ## Sheet And Review Deep Tracker
 

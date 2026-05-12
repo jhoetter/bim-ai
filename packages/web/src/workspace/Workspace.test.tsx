@@ -180,6 +180,32 @@ describe('<Workspace /> — smoke', () => {
     expect(getByRole('button', { name: /Show material lighting and surface depth/i })).toBeTruthy();
   });
 
+  it('keeps deep 3D scene/graphics/clipping ownership in the secondary sidebar', () => {
+    seedTabs('3d');
+    const { getByTestId, queryByTestId, getByRole, getByLabelText } = renderWithProviders(
+      <Workspace />,
+    );
+    const secondary = within(getByTestId('app-shell-secondary-sidebar'));
+
+    expect(secondary.getByTestId('secondary-sidebar-3d')).toBeTruthy();
+    expect(secondary.getByTestId('secondary-3d-sun')).toBeTruthy();
+    expect(secondary.getByTestId('secondary-3d-graphics')).toBeTruthy();
+    expect(secondary.getByTestId('viewport3d-layers-panel')).toBeTruthy();
+    expect(secondary.getByTestId('clip-elev-input')).toBeTruthy();
+    expect(secondary.getByTestId('clip-floor-input')).toBeTruthy();
+    expect(getByRole('button', { name: /Disable Shadows|Enable Shadows/i })).toBeTruthy();
+    expect(
+      getByRole('button', { name: /Disable Ambient occlusion|Enable Ambient occlusion/i }),
+    ).toBeTruthy();
+    expect(getByRole('button', { name: /Disable Depth cue|Enable Depth cue/i })).toBeTruthy();
+    expect(getByLabelText('Photographic exposure')).toBeTruthy();
+    expect(getByLabelText('Silhouette edge width')).toBeTruthy();
+    expect(getByTestId('layer-show-all')).toBeTruthy();
+    expect(getByTestId('layer-hide-all')).toBeTruthy();
+    expect(getByTestId('app-shell-element-sidebar').hidden).toBe(true);
+    expect(queryByTestId('orbit-viewpoint-persisted-hud')).toBeNull();
+  });
+
   it('uses explicit secondary sidebar adapters for every view type — UX-WP-04', () => {
     const cases: Array<[string, string]> = [
       ['plan', 'secondary-sidebar-plan'],
