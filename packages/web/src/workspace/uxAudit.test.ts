@@ -61,6 +61,44 @@ describe('UX reachability audit', () => {
     expect(e2e).toContain("page.goto('/icons')");
   });
 
+  it('keeps seeded live findings synchronized with regression evidence', () => {
+    const tracker = readFileSync(resolve(repoRoot, 'spec/ux-bim-ai-rework-tracker.md'), 'utf8');
+    const e2e = readFileSync(
+      resolve(repoRoot, 'packages/web/e2e/ux-revamp-regression.spec.ts'),
+      'utf8',
+    );
+    const fixedLiveRows = [
+      'UX-LIVE-003',
+      'UX-LIVE-004',
+      'UX-LIVE-005',
+      'UX-LIVE-006',
+      'UX-LIVE-007',
+      'UX-LIVE-008',
+      'UX-LIVE-009',
+      'UX-LIVE-010',
+      'UX-LIVE-011',
+      'UX-LIVE-012',
+    ];
+    const requiredEvidence = [
+      'assertSemanticRegionOwnership(page)',
+      '36-primary-dragged-to-zero.png',
+      '01-plan.png',
+      '02-3d.png',
+      '04-sheet.png',
+      '05-schedule.png',
+      '07-agent.png',
+      '18-element-sidebar-selected-wall.png',
+      '10-advisor-dialog.png',
+    ];
+
+    for (const rowId of fixedLiveRows) {
+      expect(tracker).toMatch(new RegExp(`\\| ${rowId} \\|.*\\| Fixed\\s+\\|`));
+    }
+    for (const evidence of requiredEvidence) {
+      expect(e2e).toContain(evidence);
+    }
+  });
+
   it('keeps mounted Cmd+K commands registered in the capability graph', () => {
     const missing = getRegistry()
       .filter((entry) => !entry.id.startsWith('view.'))
