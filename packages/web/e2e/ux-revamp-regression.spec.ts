@@ -403,6 +403,7 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
       await expect(page.getByTestId(scenario.canvasId)).toBeVisible({ timeout: 15_000 });
       await expect(page.getByTestId('tool-palette')).toHaveCount(0);
       await expect(page.getByTestId('temp-visibility-chip')).toHaveCount(0);
+      await expect(page.getByTestId('status-bar-advisor-entry')).toContainText('1 warning');
 
       if (scenario.name === '3d') {
         await expect(page.getByTestId('view-cube')).toBeVisible({ timeout: 15_000 });
