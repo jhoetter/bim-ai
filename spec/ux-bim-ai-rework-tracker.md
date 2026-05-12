@@ -683,7 +683,7 @@ This addendum exists because a full revamp handoff should not depend on only bro
 | UX-SRC-063 | `collaboration/PurgeUnusedPanel.tsx`              | Purge unused                                               | Project resources/management dialog, not normal view chrome                          |
 | UX-SRC-064 | `workspace/comments/CommentsPanel.tsx`            | Comments                                                   | Collaboration drawer/dialog, with spatial pins on canvas where applicable            |
 | UX-SRC-065 | `cmd/CheatsheetModal.tsx`                         | Shortcut help                                              | Cmd+K/help                                                                           |
-| UX-SRC-066 | `cmd/CommandBar.tsx`                              | Command bar                                                | Audit against Cmd+K and ribbon; avoid second global command surface                  |
+| UX-SRC-066 | `cmd/CommandBar.tsx`                              | Command bar                                                | Fixed: retired standalone command bar; Cmd+K remains the single global command entry |
 | UX-SRC-067 | `onboarding/OnboardingTour.tsx`                   | Guided tour                                                | Rewrite after revamp only                                                            |
 | UX-SRC-068 | `workspace/project/ProjectBrowser.tsx`            | Project browser/resource tree                              | Split nav entries from resources/editors                                             |
 
@@ -719,7 +719,7 @@ Additional evidence (2026-05-12): footer temporary visibility ownership is now c
 
 | ID          | Tool/control                  | Current location/source      | Target owner             | Required action                                                                 |
 | ----------- | ----------------------------- | ---------------------------- | ------------------------ | ------------------------------------------------------------------------------- |
-| UX-TOOL-001 | Global command bar            | `cmd/CommandBar.tsx`         | Cmd+K or ribbon          | Avoid a second always-visible command entry unless explicitly scoped            |
+| UX-TOOL-001 | Global command bar            | `cmd/CommandBar.tsx`         | Cmd+K or ribbon          | Fixed: standalone command bar is removed; global command entry is header Cmd+K  |
 | UX-TOOL-002 | Tool palette                  | `ToolPalette.tsx`            | Ribbon                   | Retire persistent floating palette                                              |
 | UX-TOOL-003 | Options bar                   | `OptionsBar.tsx`             | Active ribbon modifier   | Show only while a command needs options                                         |
 | UX-TOOL-004 | Tool modifier bar             | `ToolModifierBar.tsx`        | Active ribbon modifier   | Attach to ribbon area, not canvas                                               |
@@ -740,9 +740,11 @@ Additional evidence (2026-05-12): footer temporary visibility ownership is now c
 | UX-TOOL-019 | Markup toolbar                | `MarkupToolbar.tsx`          | Markup ribbon            | Consolidate plan/sheet markup commands                                          |
 | UX-TOOL-020 | Design option chip            | `DesignOptionChip.tsx`       | Plan secondary           | Active design option is view/model context                                      |
 | UX-TOOL-021 | Promote design option dialog  | `DesignOptionChip.tsx`       | Contextual modal         | Keep modal, launched from secondary/context command                             |
-| UX-TOOL-022 | Active command prompts        | Status bar/canvas            | Footer plus canvas cue   | Footer owns text prompt; canvas may show spatial cue                            |
-| UX-TOOL-023 | Cancel active command         | Escape/buttons scattered     | Ribbon modifier/footer   | Provide one visible command-state cancel affordance                             |
-| UX-TOOL-024 | Tool keyboard shortcuts       | Toolbars/help                | Cmd+K/help               | Update shortcut docs after command migration                                    |
+
+Additional evidence (2026-05-12): `packages/web/src/cmd/CommandBar.tsx` is removed, and workspace ownership tests plus UX regression captures keep the header Cmd+K trigger (`workspace-header-cmdk`) as the sole global command entry (`UX-SRC-066`, `UX-TOOL-001`).
+| UX-TOOL-022 | Active command prompts | Status bar/canvas | Footer plus canvas cue | Footer owns text prompt; canvas may show spatial cue |
+| UX-TOOL-023 | Cancel active command | Escape/buttons scattered | Ribbon modifier/footer | Provide one visible command-state cancel affordance |
+| UX-TOOL-024 | Tool keyboard shortcuts | Toolbars/help | Cmd+K/help | Update shortcut docs after command migration |
 
 ## Project Resource And Browser Deep Tracker
 
