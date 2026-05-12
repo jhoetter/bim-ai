@@ -12,7 +12,10 @@ import {
   getCommandCapability,
   type CapabilityViewMode,
 } from './commandCapabilities';
-import { ribbonCommandReachabilityForMode } from './shell/RibbonBar';
+import {
+  prunedRibbonCommandReachabilityForMode,
+  ribbonCommandReachabilityForMode,
+} from './shell/RibbonBar';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 
@@ -133,5 +136,32 @@ describe('UX reachability audit', () => {
     }
 
     expect(inspected).toBeGreaterThan(0);
+  });
+
+  it('pairs pruned ribbon commands with Cmd+K reachability and availability reasons — UX-RISK-006', () => {
+    const selectedElementKinds = [null, 'wall'];
+    const inspectedCommandIds = new Set<string>();
+
+    for (const mode of CAPABILITY_VIEW_MODES) {
+      for (const selectedElementKind of selectedElementKinds) {
+        for (const exposure of prunedRibbonCommandReachabilityForMode(mode, selectedElementKind)) {
+          const capability = getCommandCapability(exposure.commandId);
+          const availability = evaluateCommandInMode(exposure.commandId, mode);
+          const context = `${exposure.commandId} (${exposure.label}) pruned from ${mode} via ${exposure.tabId}/${exposure.panelId}`;
+
+          inspectedCommandIds.add(`${mode}:${exposure.commandId}`);
+          expect(capability, context).toBeTruthy();
+          expect(capability?.surfaces, context).toContain('cmd-k');
+          expect(availability?.state, context).toBe(exposure.behavior);
+          expect(exposure.behavior, context).not.toBe('direct');
+          expect(exposure.disabledReason, context).toBeTruthy();
+        }
+      }
+    }
+
+    expect(inspectedCommandIds.size).toBeGreaterThan(0);
+    expect(inspectedCommandIds).toContain('3d:tool.wall');
+    expect(inspectedCommandIds).toContain('schedule:tool.dimension');
+    expect(inspectedCommandIds).toContain('plan:view.3d.saved-view.save-current');
   });
 });

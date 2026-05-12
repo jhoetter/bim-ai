@@ -72,7 +72,7 @@ export interface RibbonCommandReachability {
   tabId: RibbonTabId;
   panelId: string;
   label: string;
-  behavior: 'direct' | 'disabled';
+  behavior: 'direct' | 'bridge' | 'disabled';
   disabledReason?: string;
 }
 
@@ -415,6 +415,46 @@ export function ribbonCommandReachabilityForMode(
   return reachability;
 }
 
+export function prunedRibbonCommandReachabilityForMode(
+  mode: CapabilityViewMode,
+  selectedElementKind?: string | null,
+): RibbonCommandReachability[] {
+  const reachabilityByCommand = new Map<string, RibbonCommandReachability>();
+
+  for (const sourceMode of [
+    'plan',
+    '3d',
+    'plan-3d',
+    'section',
+    'sheet',
+    'schedule',
+    'agent',
+    'concept',
+  ] as const satisfies readonly ToolWorkspaceMode[]) {
+    for (const tab of buildUnfilteredRibbonTabs(sourceMode, selectedElementKind)) {
+      for (const panel of tab.panels) {
+        for (const command of [...panel.commands, ...(panel.flyoutCommands ?? [])]) {
+          const commandId = ribbonCapabilityId(command);
+          if (!commandId || reachabilityByCommand.has(commandId)) continue;
+          const availability = evaluateCommandInMode(commandId, mode);
+          if (!availability || availability.state === 'enabled') continue;
+          reachabilityByCommand.set(commandId, {
+            commandId,
+            mode,
+            tabId: tab.id,
+            panelId: panel.id,
+            label: command.label,
+            behavior: availability.state,
+            disabledReason: availability.reason,
+          });
+        }
+      }
+    }
+  }
+
+  return [...reachabilityByCommand.values()].sort((a, b) => a.commandId.localeCompare(b.commandId));
+}
+
 function RibbonButton({
   command,
   active,
@@ -457,6 +497,13 @@ function buildRibbonTabs(
   selectedElementKind?: string | null,
 ): RibbonTab[] {
   const mode = activeMode ?? 'plan';
+  return filterRibbonTabsForMode(buildUnfilteredRibbonTabs(mode, selectedElementKind), mode);
+}
+
+function buildUnfilteredRibbonTabs(
+  mode: ToolWorkspaceMode,
+  selectedElementKind?: string | null,
+): RibbonTab[] {
   const tabs: RibbonTab[] =
     mode === '3d'
       ? build3dRibbonTabs(selectedElementKind)
@@ -472,7 +519,7 @@ function buildRibbonTabs(
                 ? buildAgentRibbonTabs(selectedElementKind)
                 : buildPlanRibbonTabs(mode, selectedElementKind);
 
-  return filterRibbonTabsForMode(tabs, mode);
+  return tabs;
 }
 
 function filterRibbonTabsForMode(tabs: RibbonTab[], mode: ToolWorkspaceMode): RibbonTab[] {
