@@ -11,6 +11,11 @@ import {
 import type { WorkspaceMode } from './TopBar';
 
 type RibbonTabId =
+  | 'create'
+  | 'openings'
+  | 'rooms-areas'
+  | 'sketch'
+  | 'review'
   | 'architecture'
   | 'structure'
   | 'steel'
@@ -131,7 +136,7 @@ export function RibbonBar({
   onDuplicateActiveSchedule,
   onOpenScheduleControls,
 }: RibbonBarProps): JSX.Element {
-  const [activeTabId, setActiveTabId] = useState<RibbonTabId>('architecture');
+  const [activeTabId, setActiveTabId] = useState<RibbonTabId>('create');
   const [minimized, setMinimized] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [openFlyoutPanelId, setOpenFlyoutPanelId] = useState<string | null>(null);
@@ -147,7 +152,7 @@ export function RibbonBar({
 
   useEffect(() => {
     if (!tabs.some((tab) => tab.id === activeTabId)) {
-      setActiveTabId(tabs[0]?.id ?? 'architecture');
+      setActiveTabId(tabs[0]?.id ?? 'create');
       setOpenFlyoutPanelId(null);
       setCustomizeOpen(false);
     }
@@ -552,27 +557,36 @@ function buildPlanRibbonTabs(
 ): RibbonTab[] {
   const tabs: RibbonTab[] = [
     {
-      id: 'architecture',
-      label: 'Architecture',
+      id: 'create',
+      label: 'Create',
       panels: [
         {
           id: 'build',
           label: 'Build',
           commands: [
             tool('wall', 'Wall', 'wall'),
-            tool('door', 'Door', 'door'),
-            tool('window', 'Window', 'window'),
-            tool('component', 'Component', 'family'),
+            tool('ceiling', 'Ceiling', 'ceiling'),
+            tool('column', 'Column', 'column'),
+            tool('beam', 'Beam', 'beam'),
           ],
         },
         {
-          id: 'room',
-          label: 'Room',
+          id: 'openings',
+          label: 'Openings',
+          commands: [
+            tool('door', 'Door', 'door'),
+            tool('window', 'Window', 'window'),
+            tool('wall-opening', 'Opening', 'wall-opening'),
+            tool('shaft', 'Shaft', 'shaft'),
+          ],
+        },
+        {
+          id: 'rooms-areas',
+          label: 'Rooms / Areas',
           commands: [
             tool('room', 'Room', 'room'),
             tool('area', 'Area', 'room'),
             tool('area-boundary', 'Area Boundary', 'gridLine'),
-            tool('ceiling', 'Ceiling', 'ceiling'),
           ],
         },
         {
@@ -583,25 +597,20 @@ function buildPlanRibbonTabs(
       ],
     },
     {
-      id: 'structure',
-      label: 'Structure',
+      id: 'sketch',
+      label: 'Sketch',
       panels: [
         {
-          id: 'structure',
-          label: 'Structure',
-          commands: [
-            tool('column', 'Column', 'column'),
-            tool('beam', 'Beam', 'beam'),
-            tool('floor', 'Floor', 'floor'),
-            tool('roof', 'Roof', 'roof'),
-          ],
+          id: 'sketch',
+          label: 'Sketch',
+          commands: [tool('floor', 'Floor', 'floor'), tool('roof', 'Roof', 'roof')],
         },
         {
-          id: 'openings',
-          label: 'Openings',
+          id: 'site',
+          label: 'Site',
           commands: [
-            tool('wall-opening', 'Opening', 'wall-opening'),
-            tool('shaft', 'Shaft', 'shaft'),
+            tool('property-line', 'Property Line', 'detailLine'),
+            tool('toposolid_subdivision', 'Topo Subdivision', 'grid'),
           ],
         },
       ],
@@ -632,17 +641,13 @@ function buildPlanRibbonTabs(
       label: 'Annotate',
       panels: [
         {
-          id: 'dimension',
-          label: 'Dimension',
+          id: 'annotate',
+          label: 'Annotate',
           commands: [
-            tool('dimension', 'Aligned', 'dimension'),
+            tool('dimension', 'Dimension', 'dimension'),
+            tool('tag', 'Tag by Category', 'tag'),
             tool('measure', 'Measure', 'measure'),
           ],
-        },
-        {
-          id: 'tags',
-          label: 'Tags',
-          commands: [tool('tag', 'Tag by Category', 'tag')],
         },
         {
           id: 'datum',
@@ -655,36 +660,9 @@ function buildPlanRibbonTabs(
       ],
     },
     {
-      id: 'massing-site',
-      label: 'Massing & Site',
+      id: 'review',
+      label: 'Review',
       panels: [
-        {
-          id: 'site',
-          label: 'Site',
-          commands: [
-            tool('property-line', 'Property Line', 'detailLine'),
-            tool('toposolid_subdivision', 'Topo Subdivision', 'grid'),
-          ],
-        },
-        {
-          id: 'datum',
-          label: 'Datum',
-          commands: [
-            tool('reference-plane', 'Ref Plane', 'level'),
-            tool('grid', 'Grid', 'gridLine'),
-          ],
-        },
-      ],
-    },
-    {
-      id: 'analyze',
-      label: 'Analyze',
-      panels: [
-        {
-          id: 'inquiry',
-          label: 'Inquiry',
-          commands: [tool('measure', 'Measure', 'measure')],
-        },
         {
           id: 'review',
           label: 'Review',

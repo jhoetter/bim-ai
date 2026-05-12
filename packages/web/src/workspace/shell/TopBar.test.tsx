@@ -348,12 +348,15 @@ describe('RibbonBar — F-005', () => {
   it('renders the plan ribbon schema by default', () => {
     const { getByTestId, getByRole } = render(<RibbonBar activeToolId="wall" />);
     expect(getByTestId('ribbon-bar')).toBeTruthy();
-    expect(getByRole('tab', { name: 'Architecture' }).getAttribute('aria-selected')).toBe('true');
-    expect(getByRole('tab', { name: 'Structure' })).toBeTruthy();
+    expect(getByRole('tab', { name: 'Create' }).getAttribute('aria-selected')).toBe('true');
+    expect(getByRole('tab', { name: 'Sketch' })).toBeTruthy();
     expect(getByRole('tab', { name: 'Insert' })).toBeTruthy();
     expect(getByRole('tab', { name: 'Annotate' })).toBeTruthy();
-    expect(getByRole('tab', { name: 'Analyze' })).toBeTruthy();
-    expect(getByRole('tab', { name: 'Massing & Site' })).toBeTruthy();
+    expect(getByRole('tab', { name: 'Review' })).toBeTruthy();
+    expect(() => getByRole('tab', { name: 'Architecture' })).toThrow();
+    expect(() => getByRole('tab', { name: 'Structure' })).toThrow();
+    expect(() => getByRole('tab', { name: 'Massing & Site' })).toThrow();
+    expect(() => getByRole('tab', { name: 'Analyze' })).toThrow();
     expect(() => getByRole('tab', { name: 'Steel' })).toThrow();
     expect(() => getByRole('tab', { name: 'Precast' })).toThrow();
     expect(() => getByRole('tab', { name: 'Systems' })).toThrow();
@@ -426,7 +429,7 @@ describe('RibbonBar — F-005', () => {
     expect(queryByTestId('ribbon-panels')).toBeNull();
     expect(getByTestId('ribbon-toggle-minimize').getAttribute('aria-expanded')).toBe('false');
 
-    fireEvent.click(getByTestId('ribbon-tab-analyze'));
+    fireEvent.click(getByTestId('ribbon-tab-review'));
     expect(getByTestId('ribbon-panels')).toBeTruthy();
   });
 
