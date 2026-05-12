@@ -1,0 +1,20 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "fc768256cb39",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/Workspace.test.tsx",
+    "packages/web/src/workspace/WorkspaceRightRail.tsx",
+    "spec/ux-bim-ai-rework-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/fc/768256cb39/0/metadata.json",
+      "transcript": "/fc/768256cb39/0/full.jsonl",
+      "content_hash": "/fc/768256cb39/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
