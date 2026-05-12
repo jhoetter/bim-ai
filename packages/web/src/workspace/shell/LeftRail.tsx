@@ -197,9 +197,14 @@ export function LeftRail({
         if (!focusedId) return;
         event.preventDefault();
         onRowRename?.(focusedId);
+      } else if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
+        if (!focusedId) return;
+        event.preventDefault();
+        const rect = event.currentTarget.getBoundingClientRect();
+        onRowContextMenu?.(focusedId, { x: rect.left + 32, y: rect.top + 32 });
       }
     },
-    [focusedId, moveFocus, onRowActivate, onRowRename],
+    [focusedId, moveFocus, onRowActivate, onRowContextMenu, onRowRename],
   );
 
   return (
@@ -440,6 +445,7 @@ function Row({
         aria-expanded={hasChildren ? isOpen : undefined}
         aria-selected={isActive}
         tabIndex={isFocused ? 0 : -1}
+        onFocus={() => setFocused(row.id)}
         onClick={() => {
           setFocused(row.id);
           if (hasChildren) onToggle(row.id);

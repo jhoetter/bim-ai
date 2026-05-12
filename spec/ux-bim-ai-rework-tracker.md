@@ -936,23 +936,23 @@ This addendum exists because a full revamp handoff should not depend on only bro
 
 ## Full-Coverage Risk Register
 
-| ID          | Risk                                | Why it matters                                                | Mitigation                                                                          |
-| ----------- | ----------------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| UX-RISK-001 | Line count mistaken for quality     | A 1000-line tracker can still miss key behavior               | Use source coverage, screenshot coverage, and command registry coverage as criteria |
-| UX-RISK-002 | Legacy code mistaken for live UI    | Some components may be unused or conditionally mounted        | Future agent must verify route/state reachability before deleting                   |
-| UX-RISK-003 | Hidden mode state missed            | Some UI appears only during active commands or selections     | Add Playwright scripts that enter representative command states                     |
-| UX-RISK-004 | Context menus missed                | Right-click/radial menus are not visible in static screenshot | Include context menu tests for wall, sheet viewport, browser entries                |
-| UX-RISK-005 | Dialog trigger regressions          | Moving controls can orphan dialogs                            | Command reachability test must cover every dialog trigger                           |
-| UX-RISK-006 | Ribbon over-pruning                 | Hiding invalid tools can accidentally remove real workflows   | Pair each removed visible command with Cmd+K entry and availability reason          |
-| UX-RISK-007 | Secondary sidebar overload          | Moving all view controls left can create a new junk drawer    | Group by view-wide state, advanced dialogs, and progressive disclosure              |
-| UX-RISK-008 | Footer overload                     | Advisor/jobs/sync/conflicts can crowd a small strip           | Prioritize severity and collapse low-priority readouts                              |
-| UX-RISK-009 | Public viewer polluted              | Authoring chrome should not leak into shared presentation     | Keep public route separately tested                                                 |
-| UX-RISK-010 | Family editor ignored               | Standalone editor can remain inconsistent                     | Track as follow-up revamp after workspace shell                                     |
-| UX-RISK-011 | Mobile/narrow layout forgotten      | Resizable sidebars and tabs can overlap                       | Add desktop, tablet, and narrow screenshots                                         |
-| UX-RISK-012 | Cmd+K stale metadata                | Command palette can point users to old surfaces               | Rewrite `commandCapabilities.ts` as part of revamp                                  |
-| UX-RISK-013 | Test IDs tied to old chrome         | Tests may pass while UI ownership is wrong                    | Add semantic ownership tests, not only presence tests                               |
-| UX-RISK-014 | Advisor severity not globally clear | Advisor is a core differentiator                              | Footer severity count is release blocker                                            |
-| UX-RISK-015 | Primary sidebar collapse trap       | User explicitly called out current bad behavior               | Zero-width recovery button is release blocker                                       |
+| ID          | Risk                                | Why it matters                                                | Mitigation                                                                                                            |
+| ----------- | ----------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| UX-RISK-001 | Line count mistaken for quality     | A 1000-line tracker can still miss key behavior               | Use source coverage, screenshot coverage, and command registry coverage as criteria                                   |
+| UX-RISK-002 | Legacy code mistaken for live UI    | Some components may be unused or conditionally mounted        | Future agent must verify route/state reachability before deleting                                                     |
+| UX-RISK-003 | Hidden mode state missed            | Some UI appears only during active commands or selections     | Add Playwright scripts that enter representative command states                                                       |
+| UX-RISK-004 | Context menus missed                | Right-click/radial menus are not visible in static screenshot | Fixed for primary browser entries with mouse and keyboard tests; wall/radial menus retain existing component coverage |
+| UX-RISK-005 | Dialog trigger regressions          | Moving controls can orphan dialogs                            | Command reachability test must cover every dialog trigger                                                             |
+| UX-RISK-006 | Ribbon over-pruning                 | Hiding invalid tools can accidentally remove real workflows   | Pair each removed visible command with Cmd+K entry and availability reason                                            |
+| UX-RISK-007 | Secondary sidebar overload          | Moving all view controls left can create a new junk drawer    | Group by view-wide state, advanced dialogs, and progressive disclosure                                                |
+| UX-RISK-008 | Footer overload                     | Advisor/jobs/sync/conflicts can crowd a small strip           | Prioritize severity and collapse low-priority readouts                                                                |
+| UX-RISK-009 | Public viewer polluted              | Authoring chrome should not leak into shared presentation     | Keep public route separately tested                                                                                   |
+| UX-RISK-010 | Family editor ignored               | Standalone editor can remain inconsistent                     | Track as follow-up revamp after workspace shell                                                                       |
+| UX-RISK-011 | Mobile/narrow layout forgotten      | Resizable sidebars and tabs can overlap                       | Add desktop, tablet, and narrow screenshots                                                                           |
+| UX-RISK-012 | Cmd+K stale metadata                | Command palette can point users to old surfaces               | Rewrite `commandCapabilities.ts` as part of revamp                                                                    |
+| UX-RISK-013 | Test IDs tied to old chrome         | Tests may pass while UI ownership is wrong                    | Add semantic ownership tests, not only presence tests                                                                 |
+| UX-RISK-014 | Advisor severity not globally clear | Advisor is a core differentiator                              | Footer severity count is release blocker                                                                              |
+| UX-RISK-015 | Primary sidebar collapse trap       | User explicitly called out current bad behavior               | Zero-width recovery button is release blocker                                                                         |
 
 ## Definition Of Full Coverage
 

@@ -567,4 +567,33 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await expect(page.getByRole('dialog', { name: 'Activity stream' })).toBeVisible();
     await capture(page, testInfo, '24-keyboard-activity-drawer.png');
   });
+
+  test('captures primary navigation context menu ownership', async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 1280, height: 820 });
+    await bootWorkspace(page);
+
+    const planRow = page.getByTestId('left-rail-row-pv-ground');
+    await planRow.click({ button: 'right' });
+    await expect(page.getByTestId('primary-nav-context-menu')).toBeVisible();
+    await expect(page.getByTestId('primary-nav-context-open')).toBeVisible();
+    await expect(page.getByTestId('primary-nav-context-rename')).toBeEnabled();
+    await expect(page.getByTestId('primary-nav-context-duplicate')).toBeEnabled();
+    await expect(page.getByTestId('primary-nav-context-delete')).toBeEnabled();
+    await capture(page, testInfo, '25-primary-nav-context-menu.png');
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('primary-nav-context-menu')).toHaveCount(0);
+
+    await planRow.focus();
+    await page.keyboard.press('Shift+F10');
+    await expect(page.getByTestId('primary-nav-context-menu')).toBeVisible();
+    await capture(page, testInfo, '26-keyboard-primary-nav-context-menu.png');
+
+    await page.getByTestId('primary-nav-context-open').click();
+    await expect(page.locator('[data-tab-id="plan:pv-ground"]')).toHaveAttribute(
+      'data-active',
+      'true',
+    );
+    await expect(page.getByTestId('primary-nav-context-menu')).toHaveCount(0);
+  });
 });

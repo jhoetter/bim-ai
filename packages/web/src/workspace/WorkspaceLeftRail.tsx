@@ -1,5 +1,5 @@
 import type { JSX, RefObject } from 'react';
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { Element } from '@bim-ai/core';
 import { Icons } from '@bim-ai/ui';
@@ -8,12 +8,71 @@ import { useBimStore } from '../state/store';
 import { LeftRail, type WorkspaceMode } from './shell';
 import { buildPrimaryNavigationSections } from './workspaceUtils';
 
+type PrimaryNavContextMenuState = {
+  rowId: string;
+  x: number;
+  y: number;
+};
+
+function duplicatePlanViewCommand(
+  planView: Extract<Element, { kind: 'plan_view' }>,
+  elementsById: Record<string, Element>,
+): Record<string, unknown> {
+  const baseId = `${planView.id}-copy`;
+  let id = baseId;
+  let suffix = 2;
+  while (elementsById[id]) {
+    id = `${baseId}-${suffix}`;
+    suffix += 1;
+  }
+
+  const cmd: Record<string, unknown> = {
+    type: 'upsertPlanView',
+    id,
+    name: `${planView.name} (copy)`,
+    levelId: planView.levelId,
+    planPresentation: planView.planPresentation ?? 'default',
+    discipline: planView.discipline ?? 'architecture',
+  };
+  if (planView.viewTemplateId) cmd.viewTemplateId = planView.viewTemplateId;
+  if (planView.planDetailLevel) cmd.planDetailLevel = planView.planDetailLevel;
+  if (planView.planRoomFillOpacityScale != null) {
+    cmd.planRoomFillOpacityScale = planView.planRoomFillOpacityScale;
+  }
+  if (planView.planShowOpeningTags !== undefined) {
+    cmd.planShowOpeningTags = planView.planShowOpeningTags;
+  }
+  if (planView.planShowRoomLabels !== undefined) {
+    cmd.planShowRoomLabels = planView.planShowRoomLabels;
+  }
+  if (planView.planOpeningTagStyleId) cmd.planOpeningTagStyleId = planView.planOpeningTagStyleId;
+  if (planView.planRoomTagStyleId) cmd.planRoomTagStyleId = planView.planRoomTagStyleId;
+  if (planView.viewSubdiscipline) cmd.viewSubdiscipline = planView.viewSubdiscipline;
+  if (planView.planViewSubtype) cmd.planViewSubtype = planView.planViewSubtype;
+  if (planView.areaScheme) cmd.areaScheme = planView.areaScheme;
+  if (planView.underlayLevelId) cmd.underlayLevelId = planView.underlayLevelId;
+  if (planView.phaseId) cmd.phaseId = planView.phaseId;
+  if (planView.categoriesHidden?.length) cmd.categoriesHidden = [...planView.categoriesHidden];
+  if (planView.cropMinMm) cmd.cropMinMm = planView.cropMinMm;
+  if (planView.cropMaxMm) cmd.cropMaxMm = planView.cropMaxMm;
+  if (planView.viewRangeBottomMm != null) cmd.viewRangeBottomMm = planView.viewRangeBottomMm;
+  if (planView.viewRangeTopMm != null) cmd.viewRangeTopMm = planView.viewRangeTopMm;
+  if (planView.cutPlaneOffsetMm != null) cmd.cutPlaneOffsetMm = planView.cutPlaneOffsetMm;
+  return cmd;
+}
+
+function elementDisplayName(element: Element | undefined): string | undefined {
+  if (!element || !('name' in element) || typeof element.name !== 'string') return undefined;
+  return element.name;
+}
+
 export function WorkspaceLeftRail({
   projectName,
   projectNameRef,
   onProjectNameClick,
   openTabFromElement,
   onSetModeOnly,
+  onSemanticCommand,
   activeViewTargetId,
   userDisplayName,
   userId,
@@ -28,6 +87,7 @@ export function WorkspaceLeftRail({
    * `openTabFromElement` has already activated the correct tab, so that
    * `onModeChange` (which calls activateOrOpenKind) doesn't override it. */
   onSetModeOnly?: (mode: WorkspaceMode) => void;
+  onSemanticCommand?: (cmd: Record<string, unknown>) => void | Promise<void>;
   activeViewTargetId?: string | null;
   userDisplayName?: string;
   userId?: string | null;
@@ -41,6 +101,7 @@ export function WorkspaceLeftRail({
   const select = useBimStore((s) => s.select);
   const setOrbitCameraFromViewpointMm = useBimStore((s) => s.setOrbitCameraFromViewpointMm);
   const setActiveViewpointId = useBimStore((s) => s.setActiveViewpointId);
+  const [contextMenu, setContextMenu] = useState<PrimaryNavContextMenuState | null>(null);
 
   const browserSections = useMemo(
     () => buildPrimaryNavigationSections(elementsById),
@@ -48,6 +109,85 @@ export function WorkspaceLeftRail({
   );
   const initials = (userDisplayName || userId || 'User').slice(0, 2).toUpperCase();
   const accountStatus = modelId ? `Model ${modelId} · Rev ${revision ?? 0}` : 'No model loaded';
+
+  const activateRow = useCallback(
+    (id: string) => {
+      const el = elementsById[id];
+      if (!el) return;
+      if (el.kind === 'plan_view') {
+        activatePlanView(id);
+        openTabFromElement(el);
+        onSetModeOnly?.('plan'); // change mode without overriding the active tab
+        select(undefined);
+        return;
+      }
+      if (el.kind === 'viewpoint') {
+        openTabFromElement(el);
+        onSetModeOnly?.('3d'); // change mode without overriding the active tab
+        select(undefined);
+        if (el.mode === 'orbit_3d' && el.camera) {
+          setOrbitCameraFromViewpointMm({
+            position: el.camera.position,
+            target: el.camera.target,
+            up: el.camera.up,
+          });
+          setActiveViewpointId(el.id);
+        }
+        return;
+      }
+      if (el.kind === 'section_cut') {
+        openTabFromElement(el);
+        onSetModeOnly?.('section'); // change mode without overriding the active tab
+        select(undefined);
+        return;
+      }
+      if (el.kind === 'sheet') {
+        openTabFromElement(el);
+        onSetModeOnly?.('sheet'); // change mode without overriding the active tab
+        select(undefined);
+        return;
+      }
+      if (el.kind === 'schedule') {
+        openTabFromElement(el);
+        onSetModeOnly?.('schedule'); // change mode without overriding the active tab
+        select(undefined);
+        return;
+      }
+      if (el.kind === 'view_concept_board') {
+        openTabFromElement(el);
+        onSetModeOnly?.('concept'); // change mode without overriding the active tab
+        select(undefined);
+      }
+    },
+    [
+      activatePlanView,
+      elementsById,
+      onSetModeOnly,
+      openTabFromElement,
+      select,
+      setActiveViewpointId,
+      setOrbitCameraFromViewpointMm,
+    ],
+  );
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    const close = () => setContextMenu(null);
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setContextMenu(null);
+    };
+    window.addEventListener('click', close);
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      window.removeEventListener('click', close);
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [contextMenu]);
+
+  const contextElement = contextMenu ? elementsById[contextMenu.rowId] : undefined;
+  const contextElementName = elementDisplayName(contextElement);
+  const canEditContextElement = !!contextElementName;
+  const canDuplicateContextElement = contextElement?.kind === 'plan_view';
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
@@ -78,56 +218,94 @@ export function WorkspaceLeftRail({
         <LeftRail
           sections={browserSections}
           activeRowId={activeViewTargetId ?? activePlanViewId ?? activeViewpointId ?? undefined}
-          onRowActivate={(id) => {
-            const el = elementsById[id];
-            if (!el) return;
-            if (el.kind === 'plan_view') {
-              activatePlanView(id);
-              openTabFromElement(el);
-              onSetModeOnly?.('plan'); // change mode without overriding the active tab
-              select(undefined);
-              return;
-            }
-            if (el.kind === 'viewpoint') {
-              openTabFromElement(el);
-              onSetModeOnly?.('3d'); // change mode without overriding the active tab
-              select(undefined);
-              if (el.mode === 'orbit_3d' && el.camera) {
-                setOrbitCameraFromViewpointMm({
-                  position: el.camera.position,
-                  target: el.camera.target,
-                  up: el.camera.up,
-                });
-                setActiveViewpointId(el.id);
-              }
-              return;
-            }
-            if (el.kind === 'section_cut') {
-              openTabFromElement(el);
-              onSetModeOnly?.('section'); // change mode without overriding the active tab
-              select(undefined);
-              return;
-            }
-            if (el.kind === 'sheet') {
-              openTabFromElement(el);
-              onSetModeOnly?.('sheet'); // change mode without overriding the active tab
-              select(undefined);
-              return;
-            }
-            if (el.kind === 'schedule') {
-              openTabFromElement(el);
-              onSetModeOnly?.('schedule'); // change mode without overriding the active tab
-              select(undefined);
-              return;
-            }
-            if (el.kind === 'view_concept_board') {
-              openTabFromElement(el);
-              onSetModeOnly?.('concept'); // change mode without overriding the active tab
-              select(undefined);
-            }
+          onRowActivate={activateRow}
+          onRowContextMenu={(rowId, position) => {
+            if (!elementsById[rowId]) return;
+            setContextMenu({ rowId, x: position.x, y: position.y });
           }}
         />
       </div>
+      {contextMenu && contextElement ? (
+        <div
+          role="menu"
+          aria-label={`Navigation actions for ${contextElementName ?? contextElement.id}`}
+          data-testid="primary-nav-context-menu"
+          className="fixed z-50 min-w-40 rounded border border-border bg-surface py-1 text-xs text-foreground shadow-lg"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            role="menuitem"
+            data-testid="primary-nav-context-open"
+            className="block w-full px-3 py-1.5 text-left hover:bg-surface-strong"
+            onClick={() => {
+              activateRow(contextElement.id);
+              setContextMenu(null);
+            }}
+          >
+            Open
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            data-testid="primary-nav-context-rename"
+            disabled={!canEditContextElement || !onSemanticCommand}
+            className="block w-full px-3 py-1.5 text-left hover:bg-surface-strong disabled:text-muted disabled:hover:bg-transparent"
+            onClick={() => {
+              if (!canEditContextElement || !onSemanticCommand) return;
+              const nextName = window.prompt('Rename view', contextElementName);
+              const trimmed = nextName?.trim();
+              if (trimmed && trimmed !== contextElementName) {
+                void onSemanticCommand({
+                  type: 'updateElementProperty',
+                  elementId: contextElement.id,
+                  key: 'name',
+                  value: trimmed,
+                });
+              }
+              setContextMenu(null);
+            }}
+          >
+            Rename
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            data-testid="primary-nav-context-duplicate"
+            disabled={!canDuplicateContextElement || !onSemanticCommand}
+            title={
+              canDuplicateContextElement
+                ? 'Duplicate this plan view'
+                : 'Duplicate is available for plan views in this shell slice'
+            }
+            className="block w-full px-3 py-1.5 text-left hover:bg-surface-strong disabled:text-muted disabled:hover:bg-transparent"
+            onClick={() => {
+              if (contextElement?.kind !== 'plan_view' || !onSemanticCommand) return;
+              void onSemanticCommand(duplicatePlanViewCommand(contextElement, elementsById));
+              setContextMenu(null);
+            }}
+          >
+            Duplicate
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            data-testid="primary-nav-context-delete"
+            disabled={!canEditContextElement || !onSemanticCommand}
+            className="block w-full px-3 py-1.5 text-left text-danger hover:bg-surface-strong disabled:text-muted disabled:hover:bg-transparent"
+            onClick={() => {
+              if (!canEditContextElement || !onSemanticCommand) return;
+              if (window.confirm(`Delete ${contextElementName}?`)) {
+                void onSemanticCommand({ type: 'deleteElement', elementId: contextElement.id });
+              }
+              setContextMenu(null);
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      ) : null}
       <div className="shrink-0 border-t border-border p-2">
         <details
           data-testid="primary-user-menu"

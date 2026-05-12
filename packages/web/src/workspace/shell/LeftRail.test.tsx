@@ -81,6 +81,22 @@ describe('LeftRail — spec §12', () => {
     expect(onRowRename).toHaveBeenCalledWith('site');
   });
 
+  it('emits onRowContextMenu on right click and keyboard context menu', () => {
+    const onRowContextMenu = vi.fn();
+    const { getByTestId, getByRole } = render(
+      <LeftRail sections={sections} onRowContextMenu={onRowContextMenu} />,
+    );
+
+    fireEvent.contextMenu(getByTestId('left-rail-row-site'), { clientX: 44, clientY: 55 });
+    expect(onRowContextMenu).toHaveBeenCalledWith('site', { x: 44, y: 55 });
+
+    fireEvent.keyDown(getByRole('tree'), { key: 'ContextMenu' });
+    expect(onRowContextMenu).toHaveBeenCalledWith(
+      'site',
+      expect.objectContaining({ x: expect.any(Number), y: expect.any(Number) }),
+    );
+  });
+
   it('navigates with ArrowDown / ArrowUp / ArrowRight / ArrowLeft', () => {
     const onRowActivate = vi.fn();
     const { getByRole } = render(
