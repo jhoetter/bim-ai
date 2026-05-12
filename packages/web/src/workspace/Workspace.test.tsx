@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { I18nextProvider } from 'react-i18next';
 import type { Element } from '@bim-ai/core';
@@ -319,6 +319,59 @@ describe('<Workspace /> — smoke', () => {
     expect(
       within(getByTestId('app-shell-secondary-sidebar')).getByTestId('secondary-sidebar-plan'),
     ).toBeTruthy();
+  });
+
+  it('reopens the element sidebar after a new element selection when it was manually collapsed — UX-ELE-020', () => {
+    const wallA: Extract<Element, { kind: 'wall' }> = {
+      kind: 'wall',
+      id: 'wall-a',
+      name: 'Wall A',
+      wallTypeId: 'wt-1',
+      levelId: 'lvl-1',
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 4000, yMm: 0 },
+      thicknessMm: 200,
+      heightMm: 3000,
+    };
+    const wallB: Extract<Element, { kind: 'wall' }> = {
+      kind: 'wall',
+      id: 'wall-b',
+      name: 'Wall B',
+      wallTypeId: 'wt-1',
+      levelId: 'lvl-1',
+      start: { xMm: 0, yMm: 1200 },
+      end: { xMm: 4000, yMm: 1200 },
+      thicknessMm: 200,
+      heightMm: 3000,
+    };
+
+    useBimStore.setState({
+      selectedId: wallA.id,
+      selectedIds: [wallA.id],
+      elementsById: {
+        [wallA.id]: wallA,
+        [wallB.id]: wallB,
+      },
+    });
+
+    const { getByTestId, getByLabelText } = renderWithProviders(<Workspace />);
+    expect(getByTestId('app-shell').dataset.elementSidebarPresent).toBe('true');
+
+    fireEvent.click(getByTestId('workspace-header-cmdk'));
+    fireEvent.change(getByLabelText('Command palette search'), {
+      target: { value: 'toggle element sidebar' },
+    });
+    fireEvent.click(getByTestId('palette-entry-shell.toggle-element-sidebar'));
+    expect(getByTestId('app-shell').dataset.elementSidebarPresent).toBe('false');
+
+    act(() => {
+      useBimStore.setState({
+        selectedId: wallB.id,
+        selectedIds: [wallB.id],
+      });
+    });
+
+    expect(getByTestId('app-shell').dataset.elementSidebarPresent).toBe('true');
   });
 
   it('mounts the redesign canvas root', () => {

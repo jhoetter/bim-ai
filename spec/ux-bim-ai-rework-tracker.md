@@ -437,10 +437,12 @@ Evidence (2026-05-12): seeded footer capture at `packages/web/tmp/ux-footer-jobs
 | UX-ELE-017 | Layers/category visibility         | Right rail                                 | Secondary sidebar      | Fixed    | View-wide controls                                                                         |
 | UX-ELE-018 | Authoring workbenches              | Right rail                                 | Ribbon/secondary       | Move     | Editing entry points belong in ribbon; view-wide authoring context in secondary            |
 | UX-ELE-019 | Advisor panel in normal right rail | Right rail                                 | Footer/dialog          | Fixed    | Global advisor state belongs in footer                                                     |
-| UX-ELE-020 | Element sidebar close behavior     | Current right rail toggle                  | Element sidebar        | Redesign | Close means hide inspector, but selecting an element should reopen or show an affordance   |
+| UX-ELE-020 | Element sidebar close behavior     | Current right rail toggle                  | Element sidebar        | Fixed    | Close means hide inspector, but selecting an element should reopen or show an affordance   |
 | UX-ELE-021 | Element sidebar width              | Current right rail width                   | Element sidebar        | Redesign | Resizable optional; must not reduce canvas below usable width                              |
 | UX-ELE-022 | Multi-select properties            | Inspector                                  | Element sidebar        | Keep     | Show common properties, count, batch operations                                            |
 | UX-ELE-023 | Invalid selection/no properties    | Inspector                                  | Element sidebar        | Redesign | Show minimal selected entity identity and actions, not unrelated view controls             |
+
+Evidence (2026-05-12): `Workspace.test.tsx` now proves `UX-ELE-020` close/reopen behavior: Cmd+K can collapse the element sidebar and selecting a different element reopens the inspector automatically.
 
 ## Expanded Footer And Global Status Tracker
 

@@ -406,6 +406,7 @@ export function Workspace(): JSX.Element {
   );
   const projectNameRef = useRef<HTMLButtonElement | null>(null);
   const planCameraHandleRef = useRef<PlanCameraHandle | null>(null);
+  const previousSelectedIdRef = useRef<string | undefined>(selectedId);
   const budgetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingChordRef = useRef<string | null>(null);
   const pendingChordTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1572,6 +1573,18 @@ export function Workspace(): JSX.Element {
       return currentlyCollapsed ? 'open' : 'collapsed';
     });
   }, [hasSelection]);
+
+  useEffect(() => {
+    const previousSelectedId = previousSelectedIdRef.current;
+    if (!selectedId) {
+      previousSelectedIdRef.current = selectedId;
+      return;
+    }
+    if (selectedId !== previousSelectedId) {
+      setRightRailOverride('open');
+    }
+    previousSelectedIdRef.current = selectedId;
+  }, [selectedId]);
 
   /* ── Empty-state per §25 ──────────────────────────────────────────── */
   const emptyHint = patternFor(seedLoading ? 'canvas-loading' : 'canvas-empty');
