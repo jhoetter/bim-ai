@@ -1,0 +1,19 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "3451da5a11e3",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/Workspace.test.tsx",
+    "spec/ux-bim-ai-rework-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/34/51da5a11e3/0/metadata.json",
+      "transcript": "/34/51da5a11e3/0/full.jsonl",
+      "content_hash": "/34/51da5a11e3/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
