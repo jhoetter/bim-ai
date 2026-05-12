@@ -950,7 +950,7 @@ This addendum exists because a full revamp handoff should not depend on only bro
 | UX-RISK-010 | Family editor ignored               | Standalone editor can remain inconsistent                     | Track as follow-up revamp after workspace shell                                                                       |
 | UX-RISK-011 | Mobile/narrow layout forgotten      | Resizable sidebars and tabs can overlap                       | Fixed with narrow auto-hide, recovery, and tablet region-stability screenshots                                        |
 | UX-RISK-012 | Cmd+K stale metadata                | Command palette can point users to old surfaces               | Fixed with command capability guards for canonical surfaces and universal Cmd+K fallback                              |
-| UX-RISK-013 | Test IDs tied to old chrome         | Tests may pass while UI ownership is wrong                    | Add semantic ownership tests, not only presence tests                                                                 |
+| UX-RISK-013 | Test IDs tied to old chrome         | Tests may pass while UI ownership is wrong                    | Fixed with named landmark semantics and role/name-based ownership regressions                                         |
 | UX-RISK-014 | Advisor severity not globally clear | Advisor is a core differentiator                              | Fixed with footer severity unit coverage and cross-view Playwright visibility checks                                  |
 | UX-RISK-015 | Primary sidebar collapse trap       | User explicitly called out current bad behavior               | Zero-width recovery button is release blocker                                                                         |
 

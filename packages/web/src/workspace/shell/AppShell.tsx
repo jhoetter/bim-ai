@@ -14,21 +14,10 @@ import { Icons } from '@bim-ai/ui';
 import { OptionsBar, ToolModifierBar } from '../authoring';
 
 /**
- * AppShell — the canonical layout grid for the BIM AI workspace.
+ * AppShell — the canonical seven-region layout grid for the BIM AI workspace.
  *
- * Responsibilities (spec §8):
- *   - Five-zone CSS grid: topbar (48 px) / left rail / canvas / right rail
- *     / status bar (28 px).
- *   - Three documented breakpoints driven by tokens: `>= 1600` (full
- *     rails), `1280–1599` (slim rails), `1024–1279` (left rail collapses
- *     to a 56 px icon strip), `< 1024` (rails become overlays toggled by
- *     `[` / `]`).
- *   - Keyboard hotkeys: `[` toggles left rail collapsed-vs-expanded; `]`
- *     toggles right rail.
- *
- * Slot props are pure render functions. AppShell does not own canvas /
- * rail content — composed surfaces (TopBar, ProjectBrowser, Inspector,
- * StatusBar) are wired in by their owning workpackages (A03–A06).
+ * Slot props are pure render functions. AppShell owns region placement and
+ * landmark semantics, not the concrete controls inside each region.
  */
 
 export interface AppShellProps {
@@ -299,6 +288,8 @@ export function AppShell({
     >
       <div
         data-testid="app-shell-header"
+        role="banner"
+        aria-label="Workspace header"
         style={{ gridArea: 'header' }}
         className="flex min-w-0 items-center border-b border-border bg-surface"
       >
@@ -390,6 +381,7 @@ export function AppShell({
       </aside>
       <footer
         data-testid="app-shell-footer"
+        aria-label="Global status footer"
         style={{ gridArea: 'footer' }}
         className="flex items-center border-t border-border bg-surface text-xs"
       >

@@ -386,6 +386,36 @@ async function assertSevenRegionOwnership(page: Page) {
   await expect(page.getByTestId('app-shell-element-sidebar')).toBeHidden();
 }
 
+async function assertSemanticRegionOwnership(page: Page) {
+  const header = page.getByRole('banner', { name: 'Workspace header' });
+  await expect(header).toBeVisible();
+  await expect(header.getByRole('tablist', { name: 'Open views' })).toBeVisible();
+  await expect(header.getByRole('button', { name: 'Open command palette' })).toBeVisible();
+  await expect(header.getByRole('button', { name: /share/i })).toBeVisible();
+  await expect(header.getByRole('button', { name: /wall|measure|dimension|tag/i })).toHaveCount(0);
+
+  const primary = page.getByRole('complementary', { name: 'Project browser' });
+  await expect(primary).toBeVisible();
+  await expect(primary.getByRole('tree', { name: 'Project browser' })).toBeVisible();
+  await expect(primary.getByRole('button', { name: /ux wp-10/i })).toBeVisible();
+  for (const group of ['Concept', 'Floor Plans', '3D Views', 'Sections', 'Sheets', 'Schedules']) {
+    await expect(primary.getByText(group, { exact: true })).toBeVisible();
+  }
+  for (const misplaced of ['Browser legend', 'Wall Types', 'Families...', 'Levels']) {
+    await expect(primary.getByText(misplaced, { exact: true })).toHaveCount(0);
+  }
+
+  const secondary = page.getByRole('complementary', { name: 'Active view settings' });
+  await expect(secondary).toBeVisible();
+  await expect(secondary.getByText('Floor plan', { exact: true })).toBeVisible();
+  await expect(secondary.getByText('View State', { exact: true })).toBeVisible();
+
+  await expect(page.getByRole('region', { name: 'Ribbon' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Canvas' })).toBeVisible();
+  await expect(page.getByRole('contentinfo', { name: 'Global status footer' })).toBeVisible();
+  await expect(page.getByRole('complementary', { name: 'Inspector' })).toHaveCount(0);
+}
+
 async function activateTab(page: Page, tabId: string) {
   await page.getByTestId(`tab-activate-${tabId}`).click();
   await expect(page.locator(`[data-tab-id="${tabId}"]`)).toHaveAttribute('data-active', 'true');
@@ -613,6 +643,14 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
       'true',
     );
     await expect(page.getByTestId('primary-nav-context-menu')).toHaveCount(0);
+  });
+
+  test('proves semantic region ownership without legacy chrome IDs', async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 1280, height: 820 });
+    await bootWorkspace(page);
+
+    await assertSemanticRegionOwnership(page);
+    await capture(page, testInfo, '34-semantic-region-ownership.png');
   });
 });
 

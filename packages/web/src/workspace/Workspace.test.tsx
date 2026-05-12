@@ -66,6 +66,31 @@ afterEach(() => {
 });
 
 describe('<Workspace /> — smoke', () => {
+  it('exposes semantic seven-region ownership landmarks — UX-RISK-013', () => {
+    const { getByRole, queryByRole } = renderWithProviders(<Workspace />);
+
+    const header = getByRole('banner', { name: 'Workspace header' });
+    expect(within(header).getByRole('tablist', { name: 'Open views' })).toBeTruthy();
+    expect(within(header).getByRole('button', { name: 'Open command palette' })).toBeTruthy();
+
+    const primary = getByRole('complementary', { name: 'Project browser' });
+    expect(within(primary).getByRole('tree', { name: 'Project browser' })).toBeTruthy();
+    expect(within(primary).getByLabelText('Account menu')).toBeTruthy();
+
+    const secondary = getByRole('complementary', { name: 'Active view settings' });
+    expect(
+      within(secondary).queryByText('Floor plan') ?? within(secondary).queryByText('3D view'),
+    ).toBeTruthy();
+    expect(
+      within(secondary).queryByText('View State') ?? within(secondary).queryByText('Scene'),
+    ).toBeTruthy();
+
+    expect(getByRole('region', { name: 'Ribbon' })).toBeTruthy();
+    expect(getByRole('main', { name: 'Canvas' })).toBeTruthy();
+    expect(getByRole('contentinfo', { name: 'Global status footer' })).toBeTruthy();
+    expect(queryByRole('complementary', { name: 'Inspector' })).toBeNull();
+  });
+
   it('renders the AppShell, tab-first header, primary, secondary, and footer slots; inspector absent with no selection — CHR-V3-06', () => {
     const { getByTestId, getByRole, queryByTestId } = renderWithProviders(<Workspace />);
     expect(getByTestId('app-shell')).toBeTruthy();
