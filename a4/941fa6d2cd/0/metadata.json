@@ -1,0 +1,49 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "a4941fa6d2cd",
+  "session_id": "019e18cf-8c84-7a33-b5c8-062af2087937",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-12T20:25:15.986114Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.3-codex",
+  "turn_id": "e4e619aa170c",
+  "checkpoint_transcript_start": 18477,
+  "transcript_lines_at_start": 18477,
+  "token_usage": {
+    "input_tokens": 183396,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 9566464,
+    "output_tokens": 17015,
+    "api_call_count": 198
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 133,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/packages/web/tmp/ux-footer-activity-reconcile-live-20260512/summary.json": 5,
+        "packages/web/tmp/ux-3d-secondary-reconcile-20260512/summary.json": 7,
+        "packages/web/tmp/ux-canvas-scale-readout-20260512/summary.json": 6,
+        "packages/web/tmp/ux-canvas-secondary-reconcile-20260512/summary.json": 21,
+        "packages/web/tmp/ux-dia-006-007-live-20260512/summary.json": 5,
+        "packages/web/tmp/ux-dia-012-milestone-live-20260512/summary.json": 8,
+        "packages/web/tmp/ux-dia-013-onboarding-live-20260512/summary.json": 8,
+        "packages/web/tmp/ux-footer-jobs-20260512/summary.json": 9,
+        "packages/web/tmp/ux-live-closeout-20260512/summary.json": 12,
+        "packages/web/tmp/ux-ribbon-per-view-20260512/summary.json": 19,
+        "packages/web/tmp/ux-sheet-review-ribbon-20260512/summary.json": 14,
+        "packages/web/tmp/ux-shell-reconcile-20260512/summary.json": 12,
+        "packages/web/tmp/ux-snap-footer-reconcile-live-20260512/summary.json": 7
+      }
+    }
+  ]
+}
