@@ -994,6 +994,8 @@ Evidence (2026-05-12): Schedule row/column operation ownership now exposes expli
 | UX-RISK-014 | Advisor severity not globally clear | Advisor is a core differentiator                              | Fixed with footer severity unit coverage and cross-view Playwright visibility checks                                               |
 | UX-RISK-015 | Primary sidebar collapse trap       | User explicitly called out current bad behavior               | Fixed with unit, Playwright drag-to-zero, header restore, narrow restore, and live recovery screenshots                            |
 
+Evidence update (2026-05-12): `WorkspaceRightRail` no longer supports the legacy mixed-surface mode (`surface="legacy"`), and the old `right-rail-section-tabs`/activity strip branches are removed from live codepaths. Canonical surfaces are now explicit (`view-context` and `element`) and covered by `WorkspaceRightRail.test.tsx` plus seeded Playwright captures in `packages/web/tmp/ux-right-rail-legacy-cleanup-20260512/` (`01-plan.png`, `02-3d.png`, `18-element-sidebar-selected-wall.png`, `19-element-sidebar-deselected.png`, `34-semantic-region-ownership.png`).
+
 ## Definition Of Full Coverage
 
 The tracker should be considered full enough for implementation only when all of these are true:

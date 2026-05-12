@@ -233,7 +233,7 @@ export function WorkspaceRightRail({
   onModeChange,
   onNavigateToElement,
   activeViewTargetId,
-  surface = 'legacy',
+  surface,
   onOpenMaterialBrowser,
   onOpenAppearanceAssetBrowser,
 }: {
@@ -242,7 +242,7 @@ export function WorkspaceRightRail({
   onModeChange: (mode: WorkspaceMode) => void;
   onNavigateToElement?: (elementId: string) => void;
   activeViewTargetId?: string;
-  surface?: 'legacy' | 'view-context' | 'element';
+  surface: 'view-context' | 'element';
   onOpenMaterialBrowser?: () => void;
   onOpenAppearanceAssetBrowser?: () => void;
 }): JSX.Element {
@@ -281,7 +281,6 @@ export function WorkspaceRightRail({
   const activeWorkspaceId = useBimStore((s) => s.activeWorkspaceId);
   const lensMode = useBimStore((s) => s.lensMode);
   const setLensMode = useBimStore((s) => s.setLensMode);
-  const activityEvents = useBimStore((s) => s.activityEvents);
   const setPlanTool = useBimStore((s) => s.setPlanTool);
   const planProjectionPrimitives = useBimStore((s) => s.planProjectionPrimitives);
   const activePlanViewId = useBimStore((s) => s.activePlanViewId);
@@ -388,8 +387,8 @@ export function WorkspaceRightRail({
     mode === 'plan' ||
     (mode as string) === 'plan-3d' ||
     (el ? !NAVIGABLE_KINDS.has(el.kind) : false);
-  const showViewContextSurface = surface === 'legacy' || surface === 'view-context';
-  const showElementSurface = surface === 'legacy' || surface === 'element';
+  const showViewContextSurface = surface === 'view-context';
+  const showElementSurface = surface === 'element';
   const inspectorPropertiesContext = inspectorPropertiesContextForElement(el);
 
   // CHR-V3-06: sibling count for the applies-to radio.
@@ -683,14 +682,6 @@ export function WorkspaceRightRail({
         >
           {allScopeToast}
         </div>
-      ) : null}
-      {surface === 'legacy' ? (
-        <RightRailSectionTabs
-          showProperties={showElementSurface}
-          showView={showViewContextSurface && (show3dLayers || Boolean(activePlanViewId))}
-          showWorkbench={showViewContextSurface && showAuthoringWorkbenches}
-          showReview={false}
-        />
       ) : null}
       {/* VIS-V3-04: Scene section — visible when no element is selected */}
       {showViewContextSurface ? (
@@ -1384,23 +1375,6 @@ export function WorkspaceRightRail({
             activeLevelId={activeLevelId ?? ''}
             onUpsertSemantic={(cmd) => void onSemanticCommand(cmd)}
           />
-        </div>
-      ) : null}
-      {surface === 'legacy' && activityEvents.length > 0 ? (
-        <div className="border-t border-border p-3">
-          <div
-            className="mb-2 text-[10px] font-semibold uppercase text-muted"
-            style={{ letterSpacing: '0.08em', opacity: 0.7 }}
-          >
-            {t('activity.heading')}
-          </div>
-          <ul className="space-y-1 text-[11px] text-muted">
-            {activityEvents.map((a) => (
-              <li key={a.id}>
-                r{a.revisionAfter} · {a.commandTypes[0] ?? '?'}
-              </li>
-            ))}
-          </ul>
         </div>
       ) : null}
     </div>
@@ -2113,64 +2087,6 @@ function Selected3dElementActions({
           />
         ) : null}
       </div>
-    </div>
-  );
-}
-
-function RightRailSectionTabs({
-  showProperties,
-  showView,
-  showWorkbench,
-  showReview,
-}: {
-  showProperties: boolean;
-  showView: boolean;
-  showWorkbench: boolean;
-  showReview: boolean;
-}): JSX.Element {
-  const tabs = [
-    {
-      id: 'properties',
-      label: 'Properties',
-      target: 'right-rail-properties',
-      visible: showProperties,
-    },
-    {
-      id: 'view',
-      label: 'View',
-      target: 'right-rail-view',
-      fallbackTarget: 'right-rail-view-scene',
-      visible: showView,
-    },
-    { id: 'workbench', label: 'Workbench', target: 'right-rail-workbench', visible: showWorkbench },
-    { id: 'review', label: 'Review', target: 'right-rail-review', visible: showReview },
-  ].filter((tab) => tab.visible);
-
-  return (
-    <div
-      role="tablist"
-      aria-label="Right rail sections"
-      data-testid="right-rail-section-tabs"
-      className="sticky top-0 z-10 flex gap-1 border-b border-border bg-surface px-2 py-2"
-    >
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          type="button"
-          role="tab"
-          aria-selected="false"
-          data-testid={`right-rail-section-tab-${tab.id}`}
-          onClick={() => {
-            const target =
-              document.getElementById(tab.target) ??
-              (tab.fallbackTarget ? document.getElementById(tab.fallbackTarget) : null);
-            target?.scrollIntoView({ block: 'start' });
-          }}
-          className="rounded border border-border bg-background px-2 py-1 text-[11px] font-medium text-muted hover:bg-surface-strong hover:text-foreground"
-        >
-          {tab.label}
-        </button>
-      ))}
     </div>
   );
 }
