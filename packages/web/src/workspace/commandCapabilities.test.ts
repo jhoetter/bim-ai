@@ -70,6 +70,8 @@ describe('command capability graph', () => {
       ['project.restore-snapshot', ['cmd-k', 'primary-sidebar']],
       ['project.share-presentation', ['cmd-k', 'header']],
       ['project.manage-links', ['cmd-k', 'primary-sidebar']],
+      ['project.import.ifc', ['cmd-k', 'primary-sidebar']],
+      ['project.import.dxf', ['cmd-k', 'primary-sidebar']],
       ['library.open-family', ['cmd-k', 'ribbon', 'secondary-sidebar']],
       ['library.open-material-browser', ['cmd-k', 'primary-sidebar', 'element-sidebar']],
       ['library.open-appearance-asset-browser', ['cmd-k', 'primary-sidebar', 'element-sidebar']],
@@ -125,6 +127,8 @@ describe('command capability graph', () => {
       'settings.language.toggle',
       'shell.toggle-primary-sidebar',
       'project.manage-links',
+      'project.import.ifc',
+      'project.import.dxf',
       'library.open-material-browser',
       'library.open-appearance-asset-browser',
       'help.replay-onboarding-tour',
@@ -187,6 +191,14 @@ describe('command capability graph', () => {
       'canvas-context',
     ]);
     expect(getCommandCapability('project.manage-links')?.surfaces).toEqual([
+      'cmd-k',
+      'primary-sidebar',
+    ]);
+    expect(getCommandCapability('project.import.ifc')?.surfaces).toEqual([
+      'cmd-k',
+      'primary-sidebar',
+    ]);
+    expect(getCommandCapability('project.import.dxf')?.surfaces).toEqual([
       'cmd-k',
       'primary-sidebar',
     ]);

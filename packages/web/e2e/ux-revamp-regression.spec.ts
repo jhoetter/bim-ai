@@ -568,6 +568,8 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await expect(page.getByTestId('project-menu-replay-tour')).toBeVisible();
     await expect(page.getByTestId('project-menu-open-material-browser')).toBeVisible();
     await expect(page.getByTestId('project-menu-open-appearance-asset-browser')).toBeVisible();
+    await expect(page.getByTestId('project-menu-link-ifc')).toBeVisible();
+    await expect(page.getByTestId('project-menu-link-dxf')).toBeVisible();
     await capture(page, testInfo, '13-project-menu.png');
     await page.getByTestId('project-menu-save-milestone').click();
     await expect(page.getByRole('dialog', { name: 'Save milestone' })).toBeVisible();

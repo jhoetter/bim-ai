@@ -622,6 +622,24 @@ describe('<Workspace /> — smoke', () => {
     expect(getByRole('dialog', { name: 'Appearance Asset Browser' })).toBeTruthy();
   });
 
+  it('routes import IFC/DXF commands to the primary project resources owner', () => {
+    const { getByTestId, getByLabelText } = renderWithProviders(<Workspace />);
+    fireEvent.click(getByTestId('workspace-header-cmdk'));
+    fireEvent.change(getByLabelText('Command palette search'), {
+      target: { value: 'import ifc link' },
+    });
+    fireEvent.click(getByTestId('palette-entry-project.import.ifc'));
+    expect(getByTestId('project-menu')).toBeTruthy();
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    fireEvent.click(getByTestId('workspace-header-cmdk'));
+    fireEvent.change(getByLabelText('Command palette search'), {
+      target: { value: 'import dxf underlay' },
+    });
+    fireEvent.click(getByTestId('palette-entry-project.import.dxf'));
+    expect(getByTestId('project-menu')).toBeTruthy();
+  });
+
   it('replays onboarding tour through Cmd+K help reachability', async () => {
     const { getByTestId, getByLabelText, queryByTestId, findByTestId } = renderWithProviders(
       <Workspace />,

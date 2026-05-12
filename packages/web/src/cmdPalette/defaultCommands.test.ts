@@ -238,6 +238,7 @@ describe('default Cmd+K commands', () => {
     const openAppearanceAssetBrowser = vi.fn();
     const replayOnboardingTour = vi.fn();
     const sharePresentation = vi.fn();
+    const openProjectMenu = vi.fn();
 
     command('project.save-snapshot').invoke({ ...PLAN_CTX, saveSnapshot });
     expect(saveSnapshot).toHaveBeenCalledOnce();
@@ -254,6 +255,10 @@ describe('default Cmd+K commands', () => {
     const openManageLinks = vi.fn();
     command('project.manage-links').invoke({ ...PLAN_CTX, openManageLinks });
     expect(openManageLinks).toHaveBeenCalledOnce();
+
+    command('project.import.ifc').invoke({ ...PLAN_CTX, openProjectMenu });
+    command('project.import.dxf').invoke({ ...PLAN_CTX, openProjectMenu });
+    expect(openProjectMenu).toHaveBeenCalledTimes(2);
 
     command('library.open-material-browser').invoke({ ...PLAN_CTX, openMaterialBrowser });
     expect(openMaterialBrowser).toHaveBeenCalledOnce();

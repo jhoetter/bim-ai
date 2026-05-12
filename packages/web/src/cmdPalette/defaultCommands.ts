@@ -713,6 +713,34 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'project.import.ifc',
+  label: 'Import IFC Link',
+  keywords: ['import', 'ifc', 'link model', 'project resource'],
+  category: 'command',
+  invoke: (ctx) => {
+    if (ctx.openProjectMenu) {
+      ctx.openProjectMenu();
+      return;
+    }
+    ctx.openManageLinks?.();
+  },
+});
+
+registerCommand({
+  id: 'project.import.dxf',
+  label: 'Import DXF Underlay',
+  keywords: ['import', 'dxf', 'underlay', 'project resource'],
+  category: 'command',
+  invoke: (ctx) => {
+    if (ctx.openProjectMenu) {
+      ctx.openProjectMenu();
+      return;
+    }
+    ctx.openManageLinks?.();
+  },
+});
+
+registerCommand({
   id: 'project.share-presentation',
   label: 'Share Project',
   keywords: ['share', 'presentation', 'project', 'pages', 'live'],
