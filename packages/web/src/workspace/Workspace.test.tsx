@@ -27,6 +27,7 @@ vi.mock('../plan/PlanCanvas', () => ({
 import { Workspace } from './Workspace';
 
 const TABS_KEY = 'bim-ai:tabs-v1';
+const RIBBON_HIDDEN_KEY = 'bim-ai.ribbon.hiddenCommands.v1';
 
 function seedTabs(kind: string, id = 'tab-test-1') {
   localStorage.setItem(
@@ -37,6 +38,7 @@ function seedTabs(kind: string, id = 'tab-test-1') {
 
 beforeEach(() => {
   localStorage.removeItem(TABS_KEY);
+  localStorage.removeItem(RIBBON_HIDDEN_KEY);
   // Suppress the OnboardingTour dialog so aria-modal doesn't hide canvas content.
   localStorage.setItem('bim.onboarding-completed', 'true');
   useBimStore.setState({
@@ -49,6 +51,7 @@ beforeEach(() => {
     activeLevelId: undefined,
     activePlanViewId: undefined,
     activeViewpointId: undefined,
+    vvDialogOpen: false,
   });
 });
 
@@ -56,6 +59,7 @@ afterEach(() => {
   cleanup();
   localStorage.removeItem('bim.onboarding-completed');
   localStorage.removeItem(TABS_KEY);
+  localStorage.removeItem(RIBBON_HIDDEN_KEY);
   useBimStore.setState({
     modelId: undefined,
     revision: undefined,
@@ -66,6 +70,7 @@ afterEach(() => {
     activeLevelId: undefined,
     activePlanViewId: undefined,
     activeViewpointId: undefined,
+    vvDialogOpen: false,
   });
 });
 
@@ -276,6 +281,51 @@ describe('<Workspace /> — smoke', () => {
     expect(getByTestId('app-shell-element-sidebar').hidden).toBe(true);
     expect(queryByTestId('orbit-viewpoint-persisted-hud')).toBeNull();
     expect(queryByTestId('viewport-walk-hints')).toBeNull();
+  });
+
+  it('keeps saved-view cutaway/overlay controls in secondary and exposes Measure in 3D ribbon — UX-3D-009/016/017/018/025', () => {
+    seedTabs('3d');
+    useBimStore.setState({
+      activeViewpointId: 'vp-main',
+      elementsById: {
+        'pv-level-1': {
+          kind: 'plan_view',
+          id: 'pv-level-1',
+          name: 'Level 1',
+          levelId: 'lvl-1',
+        },
+        'vp-main': {
+          kind: 'viewpoint',
+          id: 'vp-main',
+          name: 'Main saved view',
+          mode: 'orbit_3d',
+          camera: {
+            position: { xMm: 0, yMm: 0, zMm: 5000 },
+            target: { xMm: 0, yMm: 0, zMm: 0 },
+            up: { xMm: 0, yMm: 0, zMm: 1 },
+          },
+          planOverlayEnabled: true,
+          planOverlaySourcePlanViewId: 'pv-level-1',
+          planOverlayOffsetMm: 4200,
+          planOverlayAnnotationsVisible: true,
+          hiddenSemanticKinds3d: [],
+        },
+      },
+    });
+    const { getByTestId } = renderWithProviders(<Workspace />);
+    const secondary = within(getByTestId('app-shell-secondary-sidebar'));
+
+    expect(secondary.getByTestId('secondary-3d-saved-view')).toBeTruthy();
+    expect(secondary.getByTestId('orbit-viewpoint-persisted-hud')).toBeTruthy();
+
+    fireEvent.click(secondary.getByText('Edit saved view'));
+    expect(secondary.getByTestId('orbit-vp-cutaway-select')).toBeTruthy();
+    expect(secondary.getByTestId('orbit-vp-plan-overlay-source')).toBeTruthy();
+    expect(secondary.getByTestId('orbit-vp-plan-overlay-offset')).toBeTruthy();
+    expect(secondary.getByTestId('orbit-vp-plan-overlay-annotations-toggle')).toBeTruthy();
+
+    fireEvent.click(getByTestId('ribbon-tab-analyze'));
+    expect(getByTestId('ribbon-command-3d-measure')).toBeTruthy();
   });
 
   it('uses explicit secondary sidebar adapters for every view type — UX-WP-04', () => {

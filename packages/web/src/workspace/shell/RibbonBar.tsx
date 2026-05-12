@@ -60,6 +60,7 @@ type RibbonActionId =
   | 'sheet-markup-arrow'
   | 'sheet-markup-cloud'
   | 'sheet-markup-text'
+  | '3d-measure'
   | 'schedule-open-row'
   | 'schedule-place-on-sheet'
   | 'schedule-duplicate'
@@ -215,6 +216,7 @@ export function RibbonBar({
       'schedule-place-on-sheet': onPlaceActiveScheduleOnSheet,
       'schedule-duplicate': onDuplicateActiveSchedule,
       'schedule-controls': onOpenScheduleControls,
+      '3d-measure': () => onToolSelect?.('measure'),
     };
     (actions[command.id] ?? onOpenCommandPalette)?.();
   }
@@ -744,6 +746,11 @@ function build3dRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
       label: 'Review',
       panels: [
         {
+          id: 'annotate',
+          label: 'Annotate',
+          commands: [action('3d-measure', 'Measure', 'measure')],
+        },
+        {
           id: 'review',
           label: 'Review',
           commands: [action('command-palette', 'Findings', 'issue', '3d-findings')],
@@ -1177,6 +1184,8 @@ function ribbonCapabilityId(command: RibbonCommand): string | null {
       return 'schedule.duplicate';
     case 'schedule-controls':
       return 'schedule.open-controls';
+    case '3d-measure':
+      return 'view.3d.measure.ribbon-bridge';
   }
   return null;
 }

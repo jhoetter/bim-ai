@@ -128,11 +128,18 @@ async function installWorkspaceRoutes(page: Page, activeTabId = 'plan:pv-ground'
             kind: 'viewpoint',
             id: 'vp-main',
             name: 'Main 3D',
+            mode: 'orbit_3d',
             camera: {
               position: { xMm: 9000, yMm: -8500, zMm: 6200 },
               target: { xMm: 2500, yMm: 1800, zMm: 1400 },
               up: { xMm: 0, yMm: 0, zMm: 1 },
             },
+            cutawayStyle: 'box',
+            planOverlayEnabled: true,
+            planOverlaySourcePlanViewId: 'pv-ground',
+            planOverlayOffsetMm: 3500,
+            planOverlayAnnotationsVisible: true,
+            hiddenSemanticKinds3d: [],
           },
           'sec-south': {
             kind: 'section_cut',
@@ -445,7 +452,8 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
 
       if (scenario.name === '3d') {
         await expect(page.getByTestId('view-cube')).toBeVisible({ timeout: 15_000 });
-        await expect(page.getByTestId('orbit-viewpoint-persisted-hud')).toHaveCount(0);
+        await expect(page.getByTestId('secondary-3d-saved-view')).toBeVisible();
+        await expect(page.getByTestId('orbit-viewpoint-persisted-hud')).toBeVisible();
       }
       if (scenario.name === 'plan') {
         await expect(page.getByTestId('plan-scale-readout')).toBeVisible();
@@ -478,6 +486,27 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await expect(page.getByTestId('app-shell')).toHaveAttribute('data-primary-hidden', 'false');
     await expect(page.getByTestId('app-shell-primary-sidebar')).toBeVisible();
     await capture(page, testInfo, '09-narrow-primary-restored.png');
+  });
+
+  test('captures 3D saved-view overrides ownership and measure bridge command', async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await bootWorkspace(page, '3d:vp-main');
+    await activateTab(page, '3d:vp-main');
+
+    await expect(page.getByTestId('secondary-sidebar-3d')).toBeVisible();
+    await expect(page.getByTestId('secondary-3d-saved-view')).toBeVisible();
+    await expect(page.getByTestId('orbit-viewpoint-persisted-hud')).toBeVisible();
+    await page.getByText('Edit saved view').click();
+    await expect(page.getByTestId('orbit-vp-cutaway-select')).toBeVisible();
+    await expect(page.getByTestId('orbit-vp-plan-overlay-source')).toBeVisible();
+    await expect(page.getByTestId('orbit-vp-plan-overlay-offset')).toBeVisible();
+    await capture(page, testInfo, '41-3d-saved-view-overrides.png');
+
+    await page.getByTestId('ribbon-tab-analyze').click();
+    await expect(page.getByTestId('ribbon-command-3d-measure')).toBeVisible();
+    await capture(page, testInfo, '41a-3d-ribbon-measure-bridge.png');
   });
 
   test('keeps narrow footer one-line with advisor priority', async ({ page }, testInfo) => {

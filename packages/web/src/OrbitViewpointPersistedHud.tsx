@@ -22,6 +22,8 @@ export type OrbitViewpointPersistedHudProps = {
   planViews?: Array<Extract<Element, { kind: 'plan_view' }>>;
   /** When set, orbit HUD fields commit via `updateElementProperty` through this callback. */
   onPersistField?: (payload: OrbitViewpointPersistFieldPayload) => void | Promise<void>;
+  /** Where the control renders: canvas overlay HUD or docked panel section. */
+  layout?: 'overlay' | 'panel';
 };
 
 function fmtMm(n: number | null | undefined): string {
@@ -55,7 +57,13 @@ function hiddenKindsToCsv(vp: Extract<Element, { kind: 'viewpoint' }>): string {
  * is omitted; otherwise edits round-trip through `updateElementProperty`.
  */
 export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProps) {
-  const { activeViewpointId, viewpoint, planViews = [], onPersistField } = props;
+  const {
+    activeViewpointId,
+    viewpoint,
+    planViews = [],
+    onPersistField,
+    layout = 'overlay',
+  } = props;
 
   const [capDraft, setCapDraft] = useState('');
   const [floorDraft, setFloorDraft] = useState('');
@@ -105,7 +113,11 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
     return (
       <div
         data-testid="orbit-viewpoint-persisted-hud"
-        className="pointer-events-none absolute bottom-3 right-3 z-10 max-w-[min(340px,calc(100%-24px))] rounded-lg border border-border bg-surface/80 px-3 py-2 text-[10px] text-muted backdrop-blur"
+        className={
+          layout === 'panel'
+            ? 'w-full rounded border border-border bg-surface px-3 py-2 text-[10px] text-muted'
+            : 'pointer-events-none absolute bottom-3 right-3 z-10 max-w-[min(340px,calc(100%-24px))] rounded-lg border border-border bg-surface/80 px-3 py-2 text-[10px] text-muted backdrop-blur'
+        }
       >
         <div className="font-semibold text-foreground/90">Saved 3D viewpoint</div>
         <p className="mt-1 leading-snug">
@@ -120,7 +132,11 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
     return (
       <div
         data-testid="orbit-viewpoint-persisted-hud"
-        className="pointer-events-none absolute bottom-3 right-3 z-10 max-w-[min(340px,calc(100%-24px))] rounded-lg border border-border bg-surface/80 px-3 py-2 text-[10px] text-muted backdrop-blur"
+        className={
+          layout === 'panel'
+            ? 'w-full rounded border border-border bg-surface px-3 py-2 text-[10px] text-muted'
+            : 'pointer-events-none absolute bottom-3 right-3 z-10 max-w-[min(340px,calc(100%-24px))] rounded-lg border border-border bg-surface/80 px-3 py-2 text-[10px] text-muted backdrop-blur'
+        }
       >
         <div className="font-semibold text-foreground/90">Saved 3D viewpoint</div>
         <p className="mt-1 leading-snug">
@@ -133,7 +149,12 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
 
   const styleLabel = viewpointOrbit3dCutawayStyleLabel(viewpoint);
   const hiddenReadout = viewpointOrbit3dHiddenKindsReadout(viewpoint);
-  const cardPe = readOnlyUi ? 'pointer-events-none' : 'pointer-events-auto';
+  const cardPe =
+    layout === 'overlay'
+      ? readOnlyUi
+        ? 'pointer-events-none'
+        : 'pointer-events-auto'
+      : 'pointer-events-auto';
   const overlaySource =
     planViews.find((pv) => pv.id === viewpoint.planOverlaySourcePlanViewId) ?? planViews[0] ?? null;
   const overlayReadout = viewpoint.planOverlayEnabled
@@ -230,7 +251,11 @@ export function OrbitViewpointPersistedHud(props: OrbitViewpointPersistedHudProp
   return (
     <div
       data-testid="orbit-viewpoint-persisted-hud"
-      className={`absolute bottom-3 right-3 z-10 max-w-[min(300px,calc(100%-24px))] rounded-md border border-border bg-surface/85 px-2.5 py-2 text-[10px] text-muted shadow-elev-1 backdrop-blur ${cardPe}`}
+      className={
+        layout === 'panel'
+          ? `w-full rounded-md border border-border bg-surface px-2.5 py-2 text-[10px] text-muted ${cardPe}`
+          : `absolute bottom-3 right-3 z-10 max-w-[min(300px,calc(100%-24px))] rounded-md border border-border bg-surface/85 px-2.5 py-2 text-[10px] text-muted shadow-elev-1 backdrop-blur ${cardPe}`
+      }
     >
       <div className="font-semibold text-foreground/90">Saved 3D view</div>
       <div className="mt-0.5 truncate font-mono text-[9px] text-foreground/80">

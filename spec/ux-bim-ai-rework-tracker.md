@@ -807,32 +807,33 @@ Evidence (2026-05-12): seeded run (`make seed name=target-house-3`, `make dev na
 | UX-3D-002 | View cube                   | `Viewport.tsx`                   | Canvas exception          | Keep                                         |
 | UX-3D-003 | Orbit/pan/zoom hints        | `Viewport.tsx`                   | Canvas transient/help     | Keep minimal                                 |
 | UX-3D-004 | Walk mode controls          | `Viewport.tsx`/right rail        | 3D secondary plus canvas  | Secondary owns mode; canvas owns live hint   |
-| UX-3D-005 | Viewpoint persistence HUD   | `OrbitViewpointPersistedHud.tsx` | 3D secondary              | Move persistent saved-view controls          |
+| UX-3D-005 | Viewpoint persistence HUD   | `OrbitViewpointPersistedHud.tsx` | 3D secondary              | Fixed                                        |
 | UX-3D-006 | Saved view name/state       | 3D HUD                           | Header tab plus secondary | Tab names view, secondary owns view settings |
 | UX-3D-007 | Section box display         | Viewport/right rail              | 3D secondary plus canvas  | Settings secondary, handles on canvas        |
 | UX-3D-008 | Clip cap/floor              | 3D HUD                           | 3D secondary              | Fixed                                        |
-| UX-3D-009 | Cutaway                     | 3D HUD                           | 3D secondary              | Move                                         |
+| UX-3D-009 | Cutaway                     | 3D HUD                           | 3D secondary              | Fixed                                        |
 | UX-3D-010 | Hidden kinds/categories     | 3D HUD/layers panel              | 3D secondary              | Fixed                                        |
 | UX-3D-011 | Shadows                     | 3D HUD/right rail                | 3D secondary              | Fixed                                        |
 | UX-3D-012 | Ambient occlusion           | 3D HUD/right rail                | 3D secondary              | Fixed                                        |
 | UX-3D-013 | Depth cueing                | 3D HUD/right rail                | 3D secondary              | Fixed                                        |
 | UX-3D-014 | Edge width                  | 3D HUD/right rail                | 3D secondary              | Fixed                                        |
 | UX-3D-015 | Exposure                    | 3D HUD/right rail                | 3D secondary              | Fixed                                        |
-| UX-3D-016 | Plan overlay source         | 3D HUD                           | 3D secondary              | Move                                         |
-| UX-3D-017 | Plan overlay opacity/offset | 3D HUD                           | 3D secondary              | Move                                         |
-| UX-3D-018 | Plan annotations overlay    | 3D HUD                           | 3D secondary              | Move                                         |
+| UX-3D-016 | Plan overlay source         | 3D HUD                           | 3D secondary              | Fixed                                        |
+| UX-3D-017 | Plan overlay opacity/offset | 3D HUD                           | 3D secondary              | Fixed                                        |
+| UX-3D-018 | Plan annotations overlay    | 3D HUD                           | 3D secondary              | Fixed                                        |
 | UX-3D-019 | Sun inspector               | `SunInspectorPanel.tsx`          | 3D secondary              | Fixed                                        |
 | UX-3D-020 | 3D layers panel             | `Viewport3DLayersPanel.tsx`      | 3D secondary              | Fixed                                        |
 | UX-3D-021 | Wall context menu           | `WallContextMenu.tsx`            | Canvas context            | Keep                                         |
 | UX-3D-022 | Wall face radial menu       | `wallFaceRadialMenu.tsx`         | Canvas context            | Keep                                         |
 | UX-3D-023 | Selected wall properties    | Right rail inspector             | Element sidebar           | Keep after right rail split                  |
 | UX-3D-024 | No-selection scene panel    | Right rail                       | 3D secondary              | Fixed                                        |
-| UX-3D-025 | 3D measure command          | Header/canvas/ribbon             | 3D ribbon                 | Move                                         |
+| UX-3D-025 | 3D measure command          | Header/canvas/ribbon             | 3D ribbon                 | Fixed                                        |
 | UX-3D-026 | 3D isolate/hide             | Context/right rail               | Ribbon/context            | Keep context, add ribbon discoverability     |
 | UX-3D-027 | 3D empty/loading state      | Canvas                           | Canvas                    | Keep                                         |
 | UX-3D-028 | 3D camera creation          | Ribbon/canvas                    | 3D ribbon                 | Add/keep based on feature availability       |
 
 Evidence (2026-05-12): 3D secondary ownership coverage now proves scene/graphics/clipping controls live in `WorkspaceRightRail` secondary adapters (`secondary-sidebar-3d`, `secondary-3d-sun`, `secondary-3d-graphics`, `viewport3d-layers-panel`, `clip-elev-input`, `clip-floor-input`) and no-selection keeps the element sidebar absent. DOM evidence comes from `Workspace.test.tsx` plus seeded screenshots in `packages/web/tmp/ux-canvas-secondary-reconcile-20260512/` and `packages/web/tmp/ux-3d-secondary-reconcile-20260512/`.
+Follow-up evidence (2026-05-12): Saved-view persistence controls were re-homed from canvas HUD layout into secondary 3D ownership (`secondary-3d-saved-view` + `orbit-viewpoint-persisted-hud` in panel layout) and now own cutaway + plan-overlay source/opacity/annotation toggles. 3D ribbon now exposes a dedicated Measure bridge command (`ribbon-command-3d-measure`) that routes to measurement workflow without restoring canvas chrome. Coverage: `Workspace.test.tsx`, `commandCapabilities.test.ts`, Playwright `ux-revamp-regression.spec.ts` (`captures 3D saved-view overrides ownership and measure bridge command`), screenshots `packages/web/tmp/ux-3d-secondary-ownership-20260512/41-3d-saved-view-overrides.png` and `41a-3d-ribbon-measure-bridge.png`.
 
 ## Sheet And Review Deep Tracker
 

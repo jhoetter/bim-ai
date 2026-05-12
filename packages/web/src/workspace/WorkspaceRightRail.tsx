@@ -8,6 +8,10 @@ import { useUnifiedAdvisorViolations } from '../advisor/unifiedAdvisorViolations
 import { buildPlanGridDatumInspectorLine } from './readouts';
 import { useBimStore } from '../state/store';
 import type { ViewerRenderStyle } from '../state/storeTypes';
+import {
+  OrbitViewpointPersistedHud,
+  type OrbitViewpointPersistFieldPayload,
+} from '../OrbitViewpointPersistedHud';
 import { getTypeById } from '../families/familyCatalog';
 import { BUILT_IN_FAMILIES } from '../families/familyCatalog';
 import { familyInstanceProjectCategoryKey } from '../families/familyPlacementRuntime';
@@ -503,6 +507,14 @@ export function WorkspaceRightRail({
     viewerClipElevMm,
     viewerClipFloorElevMm,
   ]);
+  const persistActiveViewpointField = useCallback(
+    (payload: OrbitViewpointPersistFieldPayload) => {
+      if (!activeViewpoint || activeViewpoint.mode !== 'orbit_3d') return;
+      if (payload.elementId !== activeViewpoint.id) return;
+      void onSemanticCommand({ type: 'updateElementProperty', ...payload });
+    },
+    [activeViewpoint, onSemanticCommand],
+  );
 
   const persistPlanViewProperty = useCallback(
     (planViewId: string, key: string, value: string) => {
@@ -548,6 +560,8 @@ export function WorkspaceRightRail({
         {mode === '3d' ? (
           <Secondary3dAdapter
             activeViewpoint={activeViewpoint}
+            planViews={planViews}
+            persistViewpointField={persistActiveViewpointField}
             viewerCategoryHidden={viewerCategoryHidden}
             toggleViewerCategoryHidden={toggleViewerCategoryHidden}
             setAllViewerCategoriesHidden={setAllViewerCategoriesHidden}
@@ -587,6 +601,8 @@ export function WorkspaceRightRail({
             thinLinesEnabled={thinLinesEnabled}
             toggleThinLines={toggleThinLines}
             activeViewpoint={activeViewpoint}
+            planViews={planViews}
+            persistViewpointField={persistActiveViewpointField}
             viewerCategoryHidden={viewerCategoryHidden}
             toggleViewerCategoryHidden={toggleViewerCategoryHidden}
             setAllViewerCategoriesHidden={setAllViewerCategoriesHidden}
@@ -1628,6 +1644,8 @@ function SecondaryPlanAdapter({
 
 type Secondary3dAdapterProps = {
   activeViewpoint?: Extract<Element, { kind: 'viewpoint' }>;
+  planViews: Array<Extract<Element, { kind: 'plan_view' }>>;
+  persistViewpointField: (payload: OrbitViewpointPersistFieldPayload) => void;
   viewerCategoryHidden: Record<string, boolean>;
   toggleViewerCategoryHidden: (kind: ViewerCatKey) => void;
   setAllViewerCategoriesHidden: (hidden: boolean) => void;
@@ -1699,6 +1717,17 @@ function Secondary3dAdapter(props: Secondary3dAdapterProps): JSX.Element {
           onUpdateSavedView={props.updateActiveSavedView}
         />
       </SecondarySection>
+      {props.activeViewpoint?.mode === 'orbit_3d' ? (
+        <SecondarySection title="Saved Viewpoint Overrides" testId="secondary-3d-saved-view">
+          <OrbitViewpointPersistedHud
+            layout="panel"
+            activeViewpointId={props.activeViewpoint.id}
+            viewpoint={props.activeViewpoint}
+            planViews={props.planViews}
+            onPersistField={props.persistViewpointField}
+          />
+        </SecondarySection>
+      ) : null}
     </div>
   );
 }
