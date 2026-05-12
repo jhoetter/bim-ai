@@ -1,0 +1,177 @@
+You are implementing the BIM AI UX revamp.
+
+  First, read and follow:
+  spec/methodology-prompt.md
+
+  Then implement the first workpackage:
+
+  Implement UX-WP-01 from spec/ux-bim-ai-rework-tracker.md.
+
+  Goal:
+  Create the canonical seven-region workspace shell foundation:
+  - resizable primary sidebar region
+  - persistent secondary sidebar region
+  - tab-first header region
+  - ribbon/options region
+  - canvas region
+  - conditional element-sidebar region
+  - footer region
+
+  Do not migrate all features yet. Do not move random individual buttons. Create the structural foundation that makes correct placement
+  possible.
+
+  Definition of done:
+  - shell can represent the target layout
+  - primary sidebar can collapse to hidden and be restored from the header
+  - element sidebar can be absent when no element is selected
+  - ownership tests prove these behaviors
+  - seeded app still runs with `make dev name=target-house-3`
+  - relevant screenshots are captured
+  - final answer lists tracker rows addressed, files changed, validation run, screenshots checked, and remaining gaps
+
+---
+
+please continue in a loop until 100% solved across the full tracker; i know this will take a very long time, but don't become lazy, continue implementing, committing and pushing. it is perfectly fine if this takes you a very, very,very long time. always focus on the current aspect, the current workpackage, impelment it, write down any relevant notes and findings and track them as well that would be helpful for future documentation (if none it is also fine), and commit and push once done with a workpackage, and then continue with the next one.
+
+---
+
+also please always do a short inspection after each workpackage via the terminal and renderings of the actual software (run make seed with e.g. name=target-house-3 and the make dev to get it up and running) and check, e.g. on localhost:2000; this is likely helpful to see if your work is actually working. this is more likely needed in the earlier checks rather than the later ones.
+
+---
+
+You are continuing the BIM AI UX revamp. This is a long-running implementation phase, not a quick cleanup.
+
+  First read:
+
+  1. spec/methodology-prompt.md
+  2. spec/ux-bim-ai-rework-master.md
+  3. spec/ux-bim-ai-rework-spec.md
+  4. spec/ux-bim-ai-rework-tracker.md
+  5. spec/ux-bim-ai-rework-dynamic-audit.md
+
+  Current state:
+  The previous agent pushed foundational/risk-coverage work through commit `24635a0ff Close seeded UX live findings`.
+
+  Do not assume the whole revamp is complete. The current milestone closed several risk and live-finding rows, but the detailed tracker still
+  has many `Move`, `Audit`, and `Redesign` rows that need reconciliation and implementation.
+
+  Your mission:
+  Continue the remaining UX revamp until the tracker is genuinely reconciled and the running seeded app matches the seven-region ownership
+  model.
+
+  Primary rule:
+  Only mark a tracker row as fixed when the old incorrect UI placement is gone, the new canonical owner works in the seeded app, command
+  reachability is preserved, and tests/screenshots prove it.
+
+  Start by doing a reconciliation pass:
+
+  1. Read every row in `spec/ux-bim-ai-rework-tracker.md`.
+  2. Build a short working list of all rows still marked `Move`, `Redesign`, `Audit`, `Add`, or mixed status.
+  3. Group them into implementation slices:
+     - primary sidebar/resources
+     - header/tabs/collaboration
+     - secondary sidebar completeness
+     - element sidebar purity
+     - ribbon per-view completeness
+     - canvas overlay cleanup
+     - footer/advisor/jobs/status
+     - dialogs/resource triggers
+     - command capability metadata
+     - responsive/manual screenshot QA
+  4. Pick the highest-impact incomplete slice and implement it end to end.
+  5. After each slice, update the tracker row statuses and evidence notes.
+
+  Expected local setup:
+
+  ```bash
+
+  Validate against:
+
+  Web: http://127.0.0.1:2000/
+  API: http://127.0.0.1:8500/
+
+  Do not use an unseeded empty/500 state as the normal UX baseline.
+
+  Definition of done for each slice:
+
+  - relevant tracker rows are identified before coding
+  - old bad placement is removed or intentionally documented as transitional
+  - new placement follows the seven-region ownership model
+  - Cmd+K still reaches hidden/moved functionality
+  - command capability metadata is updated if surfaces changed
+  - unit/DOM tests cover ownership rules
+  - Playwright screenshots cover affected visible states
+  - seeded app is checked manually or by Playwright
+  - pnpm --filter @bim-ai/web typecheck passes
+  - relevant tests pass
+  - pnpm exec prettier --check <changed files> passes
+  - git diff --check passes
+  - final response lists tracker rows, files changed, validations, screenshots, and remaining gaps
+
+  Do not claim completion if only tests pass. The UI must be correct in the seeded app.
+
+  Important current focus areas likely still remaining:
+
+  - Reconcile all older tracker inventory rows still marked Move, Audit, Redesign, Add, or mixed.
+  - Ensure primary sidebar is truly navigation-only, not merely test-compliant.
+  - Ensure header remains tab-first under crowded/open-tab states.
+  - Ensure secondary sidebars are useful and not becoming a new junk drawer.
+  - Ensure element sidebar is absent with no selection and never contains view-wide controls.
+  - Ensure each view type has a sensible ribbon, not just a pruned generic ribbon.
+  - Continue moving persistent canvas chrome into ribbon, secondary sidebar, or footer.
+  - Finish footer/advisor/jobs/status consolidation.
+  - Verify dialogs and resource managers launch from canonical owners.
+  - Run broad seeded screenshots across desktop, tablet, narrow, selected element, active command, dialogs, and context menus.
+
+  Use these status terms in your final report:
+
+  - Done: all definition-of-done criteria met.
+  - Partial: implementation started but any criterion remains.
+  - Blocked: cannot proceed without missing input, failing setup, or product decision.
+
+  Do not be lazy. Do not close tracker rows based on intent. Close them only based on implemented behavior, seeded-app evidence, and regression
+  coverage.
+
+---
+
+continue with everything until you are 100% fully done across EVERYTHING
+
+---
+
+please continue
+
+---
+
+continue with the remaining gaps ...
+
+---
+
+continue running until ALL tasks are fully done in the tracker.
+
+---
+
+is everything so far committed and pushed to main?
+
+---
+
+continue with the tracker until fully done..
+
+---
+
+then continue
+
+---
+
+i think there was a connection error, can you now continue?
+
+---
+
+please continue..
+
+---
+
+please continue
+
+---
+
+continue...
