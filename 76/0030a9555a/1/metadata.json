@@ -1,0 +1,64 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "760030a9555a",
+  "session_id": "019e1845-a61e-77c2-ab41-3c5091d10167",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-12T11:16:25.775075Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/e2e/ux-revamp-regression.spec.ts",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "spec/ux-bim-ai-rework-tracker.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "b71439f130ce",
+  "checkpoint_transcript_start": 863,
+  "transcript_lines_at_start": 863,
+  "token_usage": {
+    "input_tokens": 854600,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 4142592,
+    "output_tokens": 12381,
+    "api_call_count": 43
+  },
+  "session_metrics": {
+    "turn_count": 16
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-12T11:16:25.668065Z",
+    "agent_lines": 0,
+    "agent_removed": 116,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 175,
+    "total_committed": 126,
+    "total_lines_changed": 291,
+    "agent_percentage": 39.86254295532646,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 223,
+      "user_lines_removed": 175,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/e2e/ux-revamp-regression.spec.ts": 6,
+        "packages/web/src/plan/PlanCanvas.tsx": 6,
+        "packages/web/tmp/ux-3d-secondary-reconcile-20260512/summary.json": 7,
+        "packages/web/tmp/ux-canvas-secondary-reconcile-20260512/summary.json": 21,
+        "packages/web/tmp/ux-footer-jobs-20260512/summary.json": 9,
+        "packages/web/tmp/ux-ribbon-per-view-20260512/summary.json": 19,
+        "packages/web/tmp/ux-sheet-review-ribbon-20260512/summary.json": 14,
+        "spec/ux-bim-ai-rework-tracker.md": 141
+      },
+      "user_removed_per_file": {
+        "packages/web/src/plan/PlanCanvas.tsx": 42,
+        "spec/ux-bim-ai-rework-tracker.md": 133
+      }
+    }
+  ]
+}
