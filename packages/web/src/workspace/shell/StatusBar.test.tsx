@@ -123,6 +123,15 @@ describe('StatusBar — spec §17', () => {
     expect(onJobsClick).toHaveBeenCalledTimes(1);
   });
 
+  it('shows a compact footer selection count when elements are selected — UX-FOO-006', () => {
+    const { getByTestId, queryByTestId } = renderWithI18n(
+      <StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} selectionCount={2} />,
+    );
+
+    expect(getByTestId('status-bar-selection-count').textContent).toContain('2 selected');
+    expect(queryByTestId('statusbar-level-elevation')).toBeNull();
+  });
+
   it('grid switch reflects state and emits onGridToggle', () => {
     const onGridToggle = vi.fn();
     const { getByTitle } = renderWithI18n(

@@ -160,6 +160,12 @@ describe('<Workspace /> — smoke', () => {
     expect(footer.getByRole('button', { name: /redo|wiederholen/i })).toBeTruthy();
   });
 
+  it('shows footer selection count when an element is selected — UX-FOO-006', () => {
+    useBimStore.setState({ selectedId: 'wall-1' });
+    const { getByTestId } = renderWithProviders(<Workspace />);
+    expect(getByTestId('status-bar-selection-count').textContent).toContain('1 selected');
+  });
+
   it('keeps the primary sidebar navigation-only — UX-TEST-001', () => {
     const { getByTestId, getByRole, queryByTestId } = renderWithProviders(<Workspace />);
     const primary = within(getByTestId('app-shell-primary-sidebar'));

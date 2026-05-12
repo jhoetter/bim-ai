@@ -2201,6 +2201,7 @@ export function Workspace(): JSX.Element {
             onAdvisorClick={() => setAdvisorOpen(true)}
             jobsCounts={jobsCounts}
             onJobsClick={() => setJobsOpen(true)}
+            selectionCount={selectedId ? 1 : 0}
             activeWorkspaceId={activeWorkspaceId}
             driftCount={driftCount}
             onDriftClick={() => setManageLinksOpen(true)}

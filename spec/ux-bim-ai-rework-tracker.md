@@ -455,20 +455,22 @@ Evidence (2026-05-12): `Workspace.test.tsx` now proves `UX-ELE-020` close/reopen
 
 ## Expanded Footer And Global Status Tracker
 
-| ID         | Current/global feature          | Current location/source             | Target owner             | Status | Required action                                                                  |
-| ---------- | ------------------------------- | ----------------------------------- | ------------------------ | ------ | -------------------------------------------------------------------------------- |
-| UX-FOO-001 | Advisor warning count           | Advisor panel/right rail/agent mode | Footer                   | Fixed  | Show global severity count in footer                                             |
-| UX-FOO-002 | Advisor errors dialog           | Advisor panel                       | Footer-triggered dialog  | Fixed  | Clicking footer count opens grouped findings with navigation                     |
-| UX-FOO-003 | Sync/offline status             | Header overlay                      | Footer                   | Fixed  | Footer owns persistent global status                                             |
-| UX-FOO-004 | Active command status           | Canvas/ribbon                       | Footer                   | Keep   | Footer can show current command and prompt                                       |
-| UX-FOO-005 | Coordinates/scale/readout       | Canvas/status                       | Footer                   | Audit  | Put global readouts in footer if useful across views                             |
-| UX-FOO-006 | Selection count                 | Inspector/canvas                    | Footer                   | Audit  | Footer can show lightweight count; properties remain in element sidebar          |
-| UX-FOO-007 | Undo stack status               | Header                              | Footer or compact header | Fixed  | Prefer footer if header tabs become crowded                                      |
-| UX-FOO-008 | Background jobs/import progress | Toasts/dialogs                      | Footer                   | Keep   | Global long-running job status belongs in footer                                 |
-| UX-FOO-009 | Permissions/role status         | Header/account                      | Footer/account           | Audit  | Persistent project permission indicator can live footer; management in user menu |
-| UX-FOO-010 | Model health                    | Advisor/status                      | Footer                   | Keep   | Footer global model-health capsule with details dialog                           |
-| UX-FOO-011 | Footer click targets            | New target                          | Footer                   | Fixed  | Each item opens a specific dialog/panel, not a vague drawer                      |
-| UX-FOO-012 | Footer density                  | New target                          | Footer                   | Fixed  | Keep one-line and stable; no large explanatory text                              |
+| ID         | Current/global feature          | Current location/source             | Target owner             | Status | Required action                                                                                                                 |
+| ---------- | ------------------------------- | ----------------------------------- | ------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| UX-FOO-001 | Advisor warning count           | Advisor panel/right rail/agent mode | Footer                   | Fixed  | Show global severity count in footer                                                                                            |
+| UX-FOO-002 | Advisor errors dialog           | Advisor panel                       | Footer-triggered dialog  | Fixed  | Clicking footer count opens grouped findings with navigation                                                                    |
+| UX-FOO-003 | Sync/offline status             | Header overlay                      | Footer                   | Fixed  | Footer owns persistent global status                                                                                            |
+| UX-FOO-004 | Active command status           | Canvas/ribbon                       | Footer                   | Keep   | Footer can show current command and prompt                                                                                      |
+| UX-FOO-005 | Coordinates/scale/readout       | Canvas/status                       | Footer                   | Audit  | Put global readouts in footer if useful across views                                                                            |
+| UX-FOO-006 | Selection count                 | Inspector/canvas                    | Footer                   | Fixed  | Footer now shows compact selection count (`status-bar-selection-count`) while detailed properties remain in the element sidebar |
+| UX-FOO-007 | Undo stack status               | Header                              | Footer or compact header | Fixed  | Prefer footer if header tabs become crowded                                                                                     |
+| UX-FOO-008 | Background jobs/import progress | Toasts/dialogs                      | Footer                   | Keep   | Global long-running job status belongs in footer                                                                                |
+| UX-FOO-009 | Permissions/role status         | Header/account                      | Footer/account           | Audit  | Persistent project permission indicator can live footer; management in user menu                                                |
+| UX-FOO-010 | Model health                    | Advisor/status                      | Footer                   | Keep   | Footer global model-health capsule with details dialog                                                                          |
+| UX-FOO-011 | Footer click targets            | New target                          | Footer                   | Fixed  | Each item opens a specific dialog/panel, not a vague drawer                                                                     |
+| UX-FOO-012 | Footer density                  | New target                          | Footer                   | Fixed  | Keep one-line and stable; no large explanatory text                                                                             |
+
+Evidence (2026-05-12): `StatusBar.test.tsx` and `Workspace.test.tsx` now cover the compact footer selection readout (`status-bar-selection-count`) so selection state is visible globally while editing remains in the element sidebar.
 
 ## Expanded Dialog And Modal Tracker
 

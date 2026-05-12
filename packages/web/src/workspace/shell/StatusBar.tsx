@@ -132,6 +132,7 @@ export interface StatusBarProps {
   onAdvisorClick?: () => void;
   jobsCounts?: JobsStatusCounts;
   onJobsClick?: () => void;
+  selectionCount?: number;
 }
 
 export function StatusBar({
@@ -164,6 +165,7 @@ export function StatusBar({
   onAdvisorClick,
   jobsCounts,
   onJobsClick,
+  selectionCount = 0,
 }: StatusBarProps): JSX.Element {
   const showPlanClusters = mode === 'plan' || mode === 'plan-3d' || mode === 'section';
   return (
@@ -195,6 +197,12 @@ export function StatusBar({
         data-testid="status-bar-priority-cluster"
         className="ml-auto flex min-w-0 shrink-0 items-center gap-1 sm:gap-3"
       >
+        {selectionCount > 0 ? (
+          <>
+            <SelectionEntry count={selectionCount} />
+            <Divider />
+          </>
+        ) : null}
         {conflictQueue ? (
           <>
             <ConflictSlot queue={conflictQueue} onClear={onClearConflict} />
@@ -827,6 +835,19 @@ function JobsEntry({
         </span>
       ) : null}
     </button>
+  );
+}
+
+function SelectionEntry({ count }: { count: number }): JSX.Element {
+  const noun = count === 1 ? 'selected' : 'selected';
+  return (
+    <div
+      data-testid="status-bar-selection-count"
+      title={`Selection count: ${count}`}
+      className="hidden items-center text-muted md:flex"
+    >
+      {count} {noun}
+    </div>
   );
 }
 
