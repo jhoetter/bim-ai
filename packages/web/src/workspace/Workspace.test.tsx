@@ -145,6 +145,19 @@ describe('<Workspace /> — smoke', () => {
     expect(getByRole('complementary', { name: 'Project browser' })).toBeTruthy();
   });
 
+  it('anchors the project menu to the primary sidebar selector — UX-DIA-002', () => {
+    const { getByTestId, queryByTestId } = renderWithProviders(<Workspace />);
+    const header = within(getByTestId('workspace-header'));
+    const primary = within(getByTestId('app-shell-primary-sidebar'));
+
+    expect(header.queryByTestId('project-menu')).toBeNull();
+    expect(queryByTestId('project-menu')).toBeNull();
+
+    fireEvent.click(primary.getByTestId('primary-project-selector'));
+
+    expect(getByTestId('project-menu')).toBeTruthy();
+  });
+
   it('scopes primary sidebar search to navigation rows', () => {
     const { getByTestId } = renderWithProviders(<Workspace />);
     const primary = within(getByTestId('app-shell-primary-sidebar'));
