@@ -66,6 +66,14 @@ function hasActiveViewpoint(ctx: PaletteContext): boolean {
   return Boolean(ctx.activeViewpointId);
 }
 
+function hasSelection(ctx: PaletteContext): boolean {
+  return ctx.selectedElementIds.length > 0;
+}
+
+function modelHasWall(): boolean {
+  return Object.values(useBimStore.getState().elementsById).some((el) => el?.kind === 'wall');
+}
+
 function selectedWall(ctx: PaletteContext) {
   const id = ctx.selectedElementIds[0];
   if (!id) return null;
@@ -102,6 +110,7 @@ registerCommand({
   shortcut: 'D',
   keywords: ['door', 'opening'],
   category: 'command',
+  isAvailable: modelHasWall,
   invoke: (ctx) => startPlanTool(ctx, 'door'),
 });
 
@@ -110,6 +119,7 @@ registerCommand({
   label: 'Place Window',
   keywords: ['window', 'opening'],
   category: 'command',
+  isAvailable: modelHasWall,
   invoke: (ctx) => startPlanTool(ctx, 'window'),
 });
 
@@ -610,9 +620,17 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'project.manage-links',
+  label: 'Manage Project Links',
+  keywords: ['project', 'links', 'ifc', 'dxf', 'external', 'resources'],
+  category: 'command',
+  invoke: (ctx) => ctx.openManageLinks?.(),
+});
+
+registerCommand({
   id: 'project.share-presentation',
-  label: 'Share Presentation',
-  keywords: ['share', 'presentation', 'pages', 'live'],
+  label: 'Share Project',
+  keywords: ['share', 'presentation', 'project', 'pages', 'live'],
   category: 'command',
   isAvailable: (ctx) => Boolean(ctx.hasPresentationPages && ctx.sharePresentation),
   invoke: (ctx) => ctx.sharePresentation?.(),
@@ -643,6 +661,25 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'advisor.open',
+  label: 'Open Advisor',
+  keywords: ['advisor', 'issues', 'warnings', 'errors', 'review', 'health'],
+  category: 'command',
+  sourceKind: 'agent',
+  invoke: (ctx) => ctx.openAdvisor?.(),
+});
+
+registerCommand({
+  id: 'advisor.apply-first-fix',
+  label: 'Apply First Advisor Fix',
+  keywords: ['advisor', 'fix', 'quick fix', 'apply fix', 'review'],
+  category: 'command',
+  sourceKind: 'agent',
+  isAvailable: (ctx) => Boolean(ctx.hasAdvisorQuickFix && ctx.applyFirstAdvisorFix),
+  invoke: (ctx) => ctx.applyFirstAdvisorFix?.(),
+});
+
+registerCommand({
   id: 'visibility.active-controls',
   label: 'Open Active View Visibility Controls',
   keywords: ['visibility', 'graphics', 'vg', 'layers', 'active view'],
@@ -667,19 +704,20 @@ registerCommand({
 });
 
 registerCommand({
-  id: 'shell.toggle-left-rail',
-  label: 'Toggle Left Rail',
-  keywords: ['left rail', 'project browser', 'browser', 'sidebar', 'collapse', 'expand'],
+  id: 'shell.toggle-primary-sidebar',
+  label: 'Toggle Primary Sidebar',
+  keywords: ['primary sidebar', 'left sidebar', 'project browser', 'browser', 'collapse', 'expand'],
   category: 'command',
-  invoke: (ctx) => ctx.toggleLeftRail?.(),
+  invoke: (ctx) => ctx.togglePrimarySidebar?.(),
 });
 
 registerCommand({
-  id: 'shell.toggle-right-rail',
-  label: 'Toggle Right Rail',
-  keywords: ['right rail', 'inspector', 'properties', 'sidebar', 'collapse', 'expand'],
+  id: 'shell.toggle-element-sidebar',
+  label: 'Toggle Element Sidebar',
+  keywords: ['element sidebar', 'properties', 'inspector', 'selection', 'collapse', 'expand'],
   category: 'command',
-  invoke: (ctx) => ctx.toggleRightRail?.(),
+  isAvailable: hasSelection,
+  invoke: (ctx) => ctx.toggleElementSidebar?.(),
 });
 
 // Display settings
@@ -795,6 +833,15 @@ registerCommand({
   category: 'command',
   isAvailable: (ctx) => is3dContext(ctx) && hasActiveViewpoint(ctx),
   invoke: (ctx) => ctx.updateActiveSavedViewpoint?.(),
+});
+
+registerCommand({
+  id: 'view.3d.sun-settings',
+  label: '3D: Sun Settings',
+  keywords: ['3d', 'sun', 'shadows', 'solar', 'time of day'],
+  category: 'command',
+  isAvailable: is3dContext,
+  invoke: (ctx) => ctx.open3dViewControls?.(),
 });
 
 registerCommand({

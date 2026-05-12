@@ -21,6 +21,7 @@ export type PaletteEntry = {
   availability?: CommandAvailability;
   badge?: string;
   disabledReason?: string;
+  bridgeReason?: string;
   bridged?: boolean;
   sourceKind?: PaletteSourceKind;
 };
@@ -61,10 +62,14 @@ export type PaletteContext = {
   openProjectMenu?: () => void;
   saveSnapshot?: () => void;
   openRestoreSnapshot?: () => void;
+  openManageLinks?: () => void;
   sharePresentation?: () => void;
   hasPresentationPages?: boolean;
   openFamilyLibrary?: () => void;
   openKeyboardShortcuts?: () => void;
+  openAdvisor?: () => void;
+  hasAdvisorQuickFix?: boolean;
+  applyFirstAdvisorFix?: () => void;
   openPlanVisibilityGraphics?: () => void;
   open3dViewControls?: () => void;
   openActiveVisibilityControls?: () => void;
@@ -84,8 +89,8 @@ export type PaletteContext = {
   updateActiveSavedViewpoint?: () => void;
   saveCurrentViewpoint?: () => void;
   closeInactiveViews?: () => void;
-  toggleLeftRail?: () => void;
-  toggleRightRail?: () => void;
+  togglePrimarySidebar?: () => void;
+  toggleElementSidebar?: () => void;
   /** Dynamic navigable views/sheets/schedules to surface in the palette. */
   views?: Array<{ id: string; label: string; keywords: string }>;
   /** Dynamic plan view templates that can be applied to the active plan view. */
@@ -131,6 +136,7 @@ function inferredSourceKind(entry: PaletteEntry): PaletteSourceKind {
   ) {
     return 'setting';
   }
+  if (entry.id.startsWith('advisor.')) return 'agent';
   if (entry.category === 'select') return 'element';
   return 'command';
 }
@@ -175,6 +181,7 @@ export function queryPalette(
               : locallyUnavailable
                 ? 'Requires the right selection or view context.'
                 : undefined,
+          bridgeReason: availability.state === 'bridge' ? availability.reason : undefined,
           bridged: availability.state === 'bridge',
         };
       }

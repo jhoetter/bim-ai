@@ -240,6 +240,13 @@ export function Workspace(): JSX.Element {
       ),
     [unifiedAdvisorViolations],
   );
+  const firstAdvisorQuickFix = useMemo(
+    () =>
+      unifiedAdvisorViolations.find(
+        (violation) => violation.quickFixCommand && typeof violation.quickFixCommand === 'object',
+      )?.quickFixCommand as Record<string, unknown> | undefined,
+    [unifiedAdvisorViolations],
+  );
 
   useEffect(() => {
     if (import.meta.env.DEV && presenceParticipants.length === 0) {
@@ -1556,10 +1563,16 @@ export function Workspace(): JSX.Element {
           openProjectMenu: () => setProjectMenuOpen((v) => !v),
           saveSnapshot: handleSaveSnapshot,
           openRestoreSnapshot: () => setProjectMenuOpen(true),
+          openManageLinks: () => setManageLinksOpen(true),
           sharePresentation: () => setSharePresentationOpen(true),
           hasPresentationPages: sheetPages.length > 0,
           openFamilyLibrary: () => setFamilyLibraryOpen(true),
           openKeyboardShortcuts: () => setCheatsheetOpen(true),
+          openAdvisor: () => setAdvisorOpen(true),
+          hasAdvisorQuickFix: Boolean(firstAdvisorQuickFix),
+          applyFirstAdvisorFix: firstAdvisorQuickFix
+            ? () => void onSemanticCommand(firstAdvisorQuickFix)
+            : undefined,
           openPlanVisibilityGraphics: openVVDialog,
           open3dViewControls,
           openActiveVisibilityControls,
@@ -1579,8 +1592,8 @@ export function Workspace(): JSX.Element {
           resetActiveSavedViewpoint,
           updateActiveSavedViewpoint,
           closeInactiveViews: () => setTabsState((s) => closeInactiveTabs(s)),
-          toggleLeftRail: () => setLeftRailCollapsed((v) => !v),
-          toggleRightRail,
+          togglePrimarySidebar: () => setLeftRailCollapsed((v) => !v),
+          toggleElementSidebar: toggleRightRail,
         }}
       />
       <FamilyLibraryPanel

@@ -196,15 +196,24 @@ describe('default Cmd+K commands', () => {
     expect(setLanguage).toHaveBeenCalledWith('en');
   });
 
-  it('routes shell rail toggles through the palette host context', () => {
-    const toggleLeftRail = vi.fn();
-    const toggleRightRail = vi.fn();
+  it('routes canonical sidebar toggles through the palette host context', () => {
+    const togglePrimarySidebar = vi.fn();
+    const toggleElementSidebar = vi.fn();
 
-    command('shell.toggle-left-rail').invoke({ ...PLAN_CTX, toggleLeftRail });
-    expect(toggleLeftRail).toHaveBeenCalledOnce();
+    command('shell.toggle-primary-sidebar').invoke({ ...PLAN_CTX, togglePrimarySidebar });
+    expect(togglePrimarySidebar).toHaveBeenCalledOnce();
 
-    command('shell.toggle-right-rail').invoke({ ...PLAN_CTX, toggleRightRail });
-    expect(toggleRightRail).toHaveBeenCalledOnce();
+    const unavailableElementSidebar = queryPalette('element sidebar', PLAN_CTX, {}).find(
+      (entry) => entry.id === 'shell.toggle-element-sidebar',
+    );
+    expect(unavailableElementSidebar?.disabledReason).toContain('Requires');
+
+    command('shell.toggle-element-sidebar').invoke({
+      ...PLAN_CTX,
+      selectedElementIds: ['wall-1'],
+      toggleElementSidebar,
+    });
+    expect(toggleElementSidebar).toHaveBeenCalledOnce();
   });
 
   it('routes project snapshot and presentation commands through the palette host context', () => {
@@ -217,6 +226,10 @@ describe('default Cmd+K commands', () => {
 
     command('project.restore-snapshot').invoke({ ...PLAN_CTX, openRestoreSnapshot });
     expect(openRestoreSnapshot).toHaveBeenCalledOnce();
+
+    const openManageLinks = vi.fn();
+    command('project.manage-links').invoke({ ...PLAN_CTX, openManageLinks });
+    expect(openManageLinks).toHaveBeenCalledOnce();
 
     const unavailableShare = queryPalette('share presentation', PLAN_CTX, {}).find(
       (entry) => entry.id === 'project.share-presentation',
@@ -362,5 +375,28 @@ describe('default Cmd+K commands', () => {
 
     command('visibility.3d.layers').invoke({ ...THREE_D_CTX, open3dViewControls });
     expect(open3dViewControls).toHaveBeenCalledOnce();
+
+    command('view.3d.sun-settings').invoke({ ...THREE_D_CTX, open3dViewControls });
+    expect(open3dViewControls).toHaveBeenCalledTimes(2);
+  });
+
+  it('routes advisor entry and quick-fix bridge through the palette host context', () => {
+    const openAdvisor = vi.fn();
+    const applyFirstAdvisorFix = vi.fn();
+
+    command('advisor.open').invoke({ ...PLAN_CTX, openAdvisor });
+    expect(openAdvisor).toHaveBeenCalledOnce();
+
+    const unavailable = queryPalette('advisor fix', PLAN_CTX, {}).find(
+      (entry) => entry.id === 'advisor.apply-first-fix',
+    );
+    expect(unavailable?.disabledReason).toContain('Requires');
+
+    command('advisor.apply-first-fix').invoke({
+      ...PLAN_CTX,
+      hasAdvisorQuickFix: true,
+      applyFirstAdvisorFix,
+    });
+    expect(applyFirstAdvisorFix).toHaveBeenCalledOnce();
   });
 });

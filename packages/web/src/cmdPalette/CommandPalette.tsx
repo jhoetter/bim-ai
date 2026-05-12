@@ -286,7 +286,7 @@ export function CommandPalette({
                     >
                       <span style={{ minWidth: 0 }}>
                         <span>{entry.label}</span>
-                        {entry.disabledReason ? (
+                        {entry.disabledReason || entry.bridgeReason ? (
                           <span
                             style={{
                               display: 'block',
@@ -295,7 +295,7 @@ export function CommandPalette({
                               color: 'var(--color-muted)',
                             }}
                           >
-                            {entry.disabledReason}
+                            {entry.disabledReason ?? entry.bridgeReason}
                           </span>
                         ) : null}
                       </span>

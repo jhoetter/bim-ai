@@ -5,6 +5,7 @@ import {
   auditCommandExposures,
   evaluateCommandInMode,
   getAllCommandCapabilities,
+  getCommandCapability,
   unreachableCommandCapabilities,
 } from './commandCapabilities';
 
@@ -36,6 +37,26 @@ describe('command capability graph', () => {
     expect(incomplete).toEqual([]);
   });
 
+  it('uses only canonical revamp command surfaces — UX-WP-09', () => {
+    const legacySurfaces = new Set([
+      'topbar',
+      'left-rail',
+      'right-rail',
+      'floating-palette',
+      'sheet-canvas',
+      'schedule-grid',
+      'statusbar',
+    ]);
+    const stale = getAllCommandCapabilities().flatMap((capability) =>
+      capability.surfaces
+        .filter((surface) => legacySurfaces.has(surface))
+        .map((surface) => ({ id: capability.id, surface })),
+    );
+
+    expect(stale).toEqual([]);
+    expect(getCommandCapability('tool.wall')?.surfaces).toEqual(['ribbon', 'cmd-k']);
+  });
+
   it('does not expose plan-pointer tools as direct pure 3D palette tools', () => {
     const direct3dToolIds = Object.values(getToolRegistry(tIdentity))
       .filter((tool) => tool.modes.includes('3d'))
@@ -61,8 +82,9 @@ describe('command capability graph', () => {
       'navigate.concept',
       'theme.toggle',
       'settings.language.toggle',
-      'shell.toggle-left-rail',
-      'shell.toggle-right-rail',
+      'shell.toggle-primary-sidebar',
+      'project.manage-links',
+      'advisor.open',
     ]) {
       for (const mode of ['plan', '3d', 'sheet', 'schedule', 'agent'] as const) {
         expect(evaluateCommandInMode(commandId, mode)?.state).toBe('enabled');
@@ -72,10 +94,12 @@ describe('command capability graph', () => {
 
   it('tracks 3D view and visibility commands as active only in 3D-capable views', () => {
     expect(evaluateCommandInMode('view.3d.fit', '3d')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('view.3d.sun-settings', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('visibility.3d.hide-all-categories', 'plan-3d')?.state).toBe(
       'enabled',
     );
     expect(evaluateCommandInMode('view.3d.fit', 'plan')?.state).toBe('disabled');
+    expect(evaluateCommandInMode('view.3d.sun-settings', 'plan')?.state).toBe('disabled');
   });
 
   it('tracks active saved-viewpoint commands as 3D-capable only', () => {
@@ -95,6 +119,45 @@ describe('command capability graph', () => {
     expect(evaluateCommandInMode('visibility.active-controls', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('visibility.active-controls', 'section')?.state).toBe('enabled');
     expect(evaluateCommandInMode('visibility.active-controls', 'sheet')?.state).toBe('disabled');
+  });
+
+  it('maps expanded command reachability rows to canonical owners — UX-CMD-001 through UX-CMD-020', () => {
+    expect(getCommandCapability('navigate.plan')?.surfaces).toEqual(['cmd-k', 'primary-sidebar']);
+    expect(getCommandCapability('tool.wall')?.surfaces).toEqual(['ribbon', 'cmd-k']);
+    expect(getCommandCapability('tool.door')?.preconditions).toContain('has-wall');
+    expect(getCommandCapability('tool.dimension')?.surfaces).toEqual(['ribbon', 'cmd-k']);
+    expect(getCommandCapability('view.3d.sun-settings')?.surfaces).toEqual([
+      'cmd-k',
+      'secondary-sidebar',
+    ]);
+    expect(getCommandCapability('visibility.plan.graphics')?.surfaces).toEqual([
+      'cmd-k',
+      'ribbon',
+      'secondary-sidebar',
+    ]);
+    expect(getCommandCapability('view.3d.wall.insert-door')?.surfaces).toEqual([
+      'cmd-k',
+      'element-sidebar',
+      'canvas-context',
+    ]);
+    expect(getCommandCapability('project.manage-links')?.surfaces).toEqual([
+      'cmd-k',
+      'primary-sidebar',
+    ]);
+    expect(getCommandCapability('advisor.open')?.surfaces).toEqual(['cmd-k', 'footer']);
+    expect(getCommandCapability('advisor.apply-first-fix')?.preconditions).toEqual([
+      'advisor-finding-with-quick-fix',
+    ]);
+    expect(getCommandCapability('project.share-presentation')?.surfaces).toEqual([
+      'cmd-k',
+      'header',
+    ]);
+    expect(getCommandCapability('tabs.close-inactive')?.surfaces).toEqual(['cmd-k', 'header']);
+    expect(getCommandCapability('shell.toggle-primary-sidebar')?.surfaces).toEqual([
+      'cmd-k',
+      'header',
+    ]);
+    expect(getCommandCapability('help.keyboard-shortcuts')?.surfaces).toEqual(['cmd-k']);
   });
 
   it('tracks sheet workflow commands as sheet-only document commands', () => {

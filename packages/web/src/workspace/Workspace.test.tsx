@@ -271,4 +271,27 @@ describe('<Workspace /> — smoke', () => {
     expect(getByText('Wall needs a type.')).toBeTruthy();
     expect(getByTestId('advisor-navigate-wall-1')).toBeTruthy();
   });
+
+  it('opens footer advisor through Cmd+K reachability — UX-WP-09', () => {
+    useBimStore.setState({
+      violations: [
+        {
+          ruleId: 'wall_missing_type',
+          severity: 'warning',
+          message: 'Wall needs a type.',
+          elementIds: ['wall-1'],
+        },
+      ],
+    });
+
+    const { getByTestId, getByLabelText } = renderWithProviders(<Workspace />);
+    fireEvent.click(getByTestId('workspace-header-cmdk'));
+    fireEvent.change(getByLabelText('Command palette search'), {
+      target: { value: 'open advisor' },
+    });
+
+    fireEvent.click(getByTestId('palette-entry-advisor.open'));
+
+    expect(getByTestId('advisor-dialog')).toBeTruthy();
+  });
 });
