@@ -1,0 +1,18 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "c010ec17a7ad",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "spec/ux-bim-ai-rework-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/c0/10ec17a7ad/0/metadata.json",
+      "transcript": "/c0/10ec17a7ad/0/full.jsonl",
+      "content_hash": "/c0/10ec17a7ad/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
