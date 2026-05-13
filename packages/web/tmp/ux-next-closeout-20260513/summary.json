@@ -1,0 +1,10 @@
+{
+  "base": "http://127.0.0.1:2000/",
+  "initialTabCount": 1,
+  "tabsAfterPlan": 2,
+  "tabsAfter3d": 3,
+  "activePlanTab": "tab-badge-active-plan:hf-pv-upper",
+  "active3dTab": "tab-badge-active-3d:vp-front-elev",
+  "planClicked": "first floor plan\nfirst floor",
+  "view3dClicked": "front elevation\nsaved camera"
+}

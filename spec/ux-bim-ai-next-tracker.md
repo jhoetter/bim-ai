@@ -1111,3 +1111,19 @@ Evidence (2026-05-13):
       - `columnHoverPreviewVisible: true`
       - `selectPressed: "true"`
       - `firstTabSelected: "true"`
+  - Closure validation follow-up (2026-05-13):
+    - Full web suite green after tab-aware onboarding regression hardening:
+      - `pnpm --filter @bim-ai/web test`
+      - `pnpm --filter @bim-ai/web typecheck`
+      - `pnpm exec prettier --check packages/web/src/workspace/Workspace.semanticCommand.test.tsx packages/web/src/cmdPalette/CommandPalette.test.tsx`
+      - `git diff --check`
+    - Seeded tab-lifecycle smoke proof:
+      - `packages/web/tmp/ux-next-closeout-20260513/01-initial.png`
+      - `packages/web/tmp/ux-next-closeout-20260513/02-after-plan-click.png`
+      - `packages/web/tmp/ux-next-closeout-20260513/03-after-3d-click.png`
+      - `packages/web/tmp/ux-next-closeout-20260513/summary.json`
+        - `initialTabCount: 1`
+        - `tabsAfterPlan: 2`
+        - `tabsAfter3d: 3`
+        - `activePlanTab: tab-badge-active-plan:hf-pv-upper`
+        - `active3dTab: tab-badge-active-3d:vp-front-elev`

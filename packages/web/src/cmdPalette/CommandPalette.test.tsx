@@ -43,7 +43,7 @@ describe('<CommandPalette /> context sections', () => {
     render(<CommandPalette isOpen onClose={vi.fn()} context={PLAN_CONTEXT} />);
 
     expect(screen.getByTestId('cmd-palette-section-universal')).toBeTruthy();
-    expect(screen.getByTestId('cmd-palette-section-plan-plan-3d')).toBeTruthy();
+    expect(screen.getByTestId('cmd-palette-section-plan-3d')).toBeTruthy();
     expect(screen.getByTestId('cmd-palette-section-unavailable')).toBeTruthy();
     expect(screen.getByTestId('palette-entry-badge-theme.toggle').textContent).toBe('Universal');
     expect(screen.getByTestId('palette-entry-badge-view.3d.fit').textContent).toBe('Unavailable');

@@ -35,10 +35,42 @@ vi.mock('../lib/api', async (importOriginal) => {
 import { Workspace } from './Workspace';
 import { useBimStore } from '../state/store';
 
+const TABS_KEY = 'bim-ai:tabs-v1';
+const PANE_LAYOUT_KEY = 'bim-ai:pane-layout-v1';
+
+function seedPlanCanvasTab(): void {
+  localStorage.setItem(
+    TABS_KEY,
+    JSON.stringify({
+      v: 1,
+      tabs: [{ id: 'plan:l0', kind: 'plan', targetId: 'l0', label: 'Plan · Ground Floor' }],
+      activeId: 'plan:l0',
+    }),
+  );
+  localStorage.setItem(
+    PANE_LAYOUT_KEY,
+    JSON.stringify({
+      v: 1,
+      layout: {
+        focusedLeafId: 'pane-root',
+        root: { kind: 'leaf', id: 'pane-root', tabId: 'plan:l0' },
+      },
+    }),
+  );
+}
+
 beforeEach(() => {
   planCanvasProps.current = null;
   mockApplyCommand.mockReset();
   mockBootstrap.mockReset();
+  localStorage.removeItem(TABS_KEY);
+  localStorage.removeItem(PANE_LAYOUT_KEY);
+  // Keep semantic-command tests deterministic by suppressing onboarding
+  // overlay, which otherwise takes over initial canvas mount in jsdom.
+  localStorage.setItem('bim.onboarding-completed', 'true');
+  // Seed an explicit plan tab + pane assignment so Workspace mounts
+  // PlanCanvas under the tab-aware empty-state contract.
+  seedPlanCanvasTab();
   // Seed the store with a model id so onSemanticCommand can dispatch +
   // force plan_canvas viewer mode so the canvas mounts PlanCanvas (default
   // viewerMode in the store is 'orbit_3d', which would mount Viewport).
@@ -50,6 +82,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  localStorage.removeItem('bim.onboarding-completed');
+  localStorage.removeItem(TABS_KEY);
+  localStorage.removeItem(PANE_LAYOUT_KEY);
   cleanup();
 });
 
