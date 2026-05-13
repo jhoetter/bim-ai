@@ -180,6 +180,8 @@ export function RibbonBar({
   );
   const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? tabs[0]!;
   const activeCommands = useMemo(() => collectTabCommands(activeTab), [activeTab]);
+  const identity = ribbonModeIdentity(activeMode ?? 'plan');
+  const ModeIdentityIcon = Icons[identity.icon] ?? Icons.planView;
 
   useEffect(() => {
     if (!tabs.some((tab) => tab.id === activeTabId)) {
@@ -261,6 +263,13 @@ export function RibbonBar({
       className="border-b border-border bg-surface"
     >
       <div className="flex items-end gap-2 px-3 pt-1">
+        <div
+          className="mb-0.5 inline-flex h-6 shrink-0 items-center gap-1 rounded border border-border bg-background px-2 text-[11px] text-muted"
+          data-testid="ribbon-mode-identity"
+        >
+          <ModeIdentityIcon size={ICON_SIZE.chrome} aria-hidden="true" />
+          <span>{identity.label}</span>
+        </div>
         <div
           role="tablist"
           aria-label="Ribbon tabs"
@@ -522,6 +531,7 @@ function RibbonButton({
   onClick: () => void;
 }): JSX.Element {
   const Icon = Icons[command.icon] ?? Icons.commandPalette;
+  const isBridge = command.type === 'action' && command.id === 'command-palette';
   const disabled = Boolean(disabledReason);
   return (
     <button
@@ -543,6 +553,14 @@ function RibbonButton({
     >
       <Icon size={ICON_SIZE.toolPalette} aria-hidden="true" />
       <span className="max-w-20 truncate">{command.label}</span>
+      {isBridge ? (
+        <span
+          data-testid={command.testId ? `ribbon-bridge-${command.testId}` : undefined}
+          className="text-[9px] uppercase tracking-wide text-muted"
+        >
+          Cmd+K
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -712,6 +730,14 @@ function buildPlanRibbonTabs(
             tool('dimension', 'Dimension', 'dimension'),
             tool('tag', 'Tag by Category', 'tag'),
             tool('measure', 'Measure', 'measure'),
+          ],
+        },
+        {
+          id: 'views',
+          label: 'Views',
+          commands: [
+            tool('section', 'Section', 'sectionView'),
+            tool('elevation', 'Elevation', 'elevationView'),
           ],
         },
         {
@@ -1266,6 +1292,28 @@ function readHiddenRibbonCommandKeys(): string[] {
 function writeHiddenRibbonCommandKeys(keys: string[]): void {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(RIBBON_HIDDEN_COMMANDS_STORAGE_KEY, JSON.stringify(keys.sort()));
+}
+
+function ribbonModeIdentity(mode: ToolWorkspaceMode): { label: string; icon: IconName } {
+  switch (mode) {
+    case '3d':
+      return { label: '3D', icon: 'orbitView' };
+    case 'plan-3d':
+      return { label: 'Plan + 3D', icon: 'orbitView' };
+    case 'section':
+      return { label: 'Section', icon: 'sectionView' };
+    case 'sheet':
+      return { label: 'Sheet', icon: 'sheet' };
+    case 'schedule':
+      return { label: 'Schedule', icon: 'schedule' };
+    case 'agent':
+      return { label: 'Findings', icon: 'issue' };
+    case 'concept':
+      return { label: 'Concept', icon: 'linkedModel' };
+    case 'plan':
+    default:
+      return { label: 'Plan', icon: 'planView' };
+  }
 }
 
 function tool(id: ToolId, label: string, icon: IconName, testId?: string): RibbonCommand {

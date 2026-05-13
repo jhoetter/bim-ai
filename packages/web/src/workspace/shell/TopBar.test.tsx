@@ -348,6 +348,7 @@ describe('RibbonBar — F-005', () => {
   it('renders the plan ribbon schema by default', () => {
     const { getByTestId, getByRole } = render(<RibbonBar activeToolId="wall" />);
     expect(getByTestId('ribbon-bar')).toBeTruthy();
+    expect(getByTestId('ribbon-mode-identity').textContent).toContain('Plan');
     expect(getByRole('tab', { name: 'Create' }).getAttribute('aria-selected')).toBe('true');
     expect(getByRole('tab', { name: 'Sketch' })).toBeTruthy();
     expect(getByRole('tab', { name: 'Insert' })).toBeTruthy();
@@ -369,6 +370,8 @@ describe('RibbonBar — F-005', () => {
     const onToolSelect = vi.fn();
     const { getByTestId } = render(<RibbonBar onToolSelect={onToolSelect} />);
     fireEvent.click(getByTestId('ribbon-tab-annotate'));
+    expect(getByTestId('ribbon-command-section')).toBeTruthy();
+    expect(getByTestId('ribbon-command-elevation')).toBeTruthy();
     fireEvent.click(getByTestId('ribbon-command-dimension'));
     expect(onToolSelect).toHaveBeenCalledWith('dimension');
   });
@@ -407,6 +410,7 @@ describe('RibbonBar — F-005', () => {
     );
 
     expect(getByRole('tab', { name: '3D View' }).getAttribute('aria-selected')).toBe('true');
+    expect(getByTestId('ribbon-mode-identity').textContent).toContain('3D');
     expect(getByRole('tab', { name: 'Insert' })).toBeTruthy();
     expect(queryByTestId('ribbon-command-wall')).toBeNull();
     expect(queryByTestId('ribbon-command-column')).toBeNull();
@@ -472,6 +476,7 @@ describe('RibbonBar — F-005', () => {
 
     fireEvent.click(getByTestId('ribbon-tab-review'));
     expect(getByTestId('ribbon-panels')).toBeTruthy();
+    expect(getByTestId('ribbon-bridge-plan-checks').textContent).toContain('Cmd+K');
   });
 
   it('uses a schedule ribbon schema with direct table actions', () => {

@@ -1,0 +1,22 @@
+{
+  "runAt": "2026-05-13T05:41:03.065Z",
+  "checks": {
+    "planIdentity": "Plan",
+    "planAnnotateHasSection": true,
+    "planAnnotateHasElevation": true,
+    "planChecksBridgeBadge": "CMD+K",
+    "view3dIdentity": "3D",
+    "sheetIdentity": "Sheet",
+    "scheduleIdentity": "Schedule",
+    "cmdkSectionPlaceOnSheetPresent": true
+  },
+  "screenshots": [
+    "01-plan-ribbon-identity.png",
+    "02-plan-annotate-section-elevation.png",
+    "03-plan-review-bridge-cmdk.png",
+    "04-3d-ribbon-identity.png",
+    "05-sheet-ribbon-identity.png",
+    "06-schedule-ribbon-identity.png",
+    "07-cmdk-section-query.png"
+  ]
+}

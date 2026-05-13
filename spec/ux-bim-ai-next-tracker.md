@@ -50,7 +50,7 @@ The foundational seven-region ownership model is in place, but real usage still 
 | NEXT-GAP-007 | 3D edit affordances are inconsistent (insert window/opening workflows not robust in-context).                      | `workspace/shell/RibbonBar.tsx`, `workspace/WorkspaceRightRail.tsx`, commands/capabilities   | P0       | Done   |
 | NEXT-GAP-008 | Missing explicit per-level visibility controls in 3D.                                                              | `workspace/viewport/Viewport3DLayersPanel.tsx`, level/view state                             | P1       | Done   |
 | NEXT-GAP-009 | Room labels can be clipped/illegible.                                                                              | `plan/planElementMeshBuilders.ts`, plan symbology/text sizing                                | P1       | Open   |
-| NEXT-GAP-010 | Ribbon information architecture still feels uneven by view (annotate parity, icon consistency, dead/weak actions). | `workspace/shell/RibbonBar.tsx`, command metadata                                            | P1       | Open   |
+| NEXT-GAP-010 | Ribbon information architecture still feels uneven by view (annotate parity, icon consistency, dead/weak actions). | `workspace/shell/RibbonBar.tsx`, command metadata                                            | P1       | Done   |
 | NEXT-GAP-011 | Discipline/lens switching does not consistently change ribbon + secondary + element + canvas semantics.            | lens state, mode surfaces, command gating                                                    | P0       | Done   |
 | NEXT-GAP-012 | Creation of new floor plans/3D/sections/sheets/schedules is not obvious enough.                                    | primary nav, project browser, commands                                                       | P1       | Open   |
 | NEXT-GAP-013 | Sheets show heavy metadata block directly in main user reading flow.                                               | `workspace/sheets/SheetCanvas.tsx`                                                           | P1       | Open   |
@@ -295,7 +295,7 @@ Evidence (2026-05-13):
 ### WP-NEXT-09 — Ribbon IA And Per-View Coherence Pass
 
 - Priority: `P1`
-- Status: `Open`
+- Status: `Done`
 - Covers: `NEXT-GAP-010`
 - Goal: align ribbon sets by view type and remove remaining inconsistency (especially annotate parity and icon hierarchy).
 - Source ownership:
@@ -305,6 +305,26 @@ Evidence (2026-05-13):
   - floorplan annotate includes expected authoring set (comparable intent to sheets where applicable),
   - per-view left icon/identity treatment standardized,
   - commands with no implementation are clearly marked bridge/unavailable, not silently inert.
+
+Evidence (2026-05-13):
+
+- Plan annotate parity expanded with direct section/elevation authoring actions in the Annotate tab:
+  - `packages/web/src/workspace/shell/RibbonBar.tsx`
+- Per-view ribbon identity is now explicit and standardized via a mode identity chip (`Plan`, `3D`, `Sheet`, `Schedule`, etc.):
+  - `packages/web/src/workspace/shell/RibbonBar.tsx`
+- Ribbon bridge semantics are now explicit for command-palette bridge actions via in-button `Cmd+K` labels (instead of visually ambiguous generic actions):
+  - `packages/web/src/workspace/shell/RibbonBar.tsx`
+- Regression coverage updated for identity + annotate parity + bridge signaling:
+  - `packages/web/src/workspace/shell/TopBar.test.tsx`
+- Seeded live proof (`make seed name=target-house-3`, `make dev name=target-house-3`) captured in:
+  - `packages/web/tmp/ux-next-wp09-20260513/01-plan-ribbon-identity.png`
+  - `packages/web/tmp/ux-next-wp09-20260513/02-plan-annotate-section-elevation.png`
+  - `packages/web/tmp/ux-next-wp09-20260513/03-plan-review-bridge-cmdk.png`
+  - `packages/web/tmp/ux-next-wp09-20260513/04-3d-ribbon-identity.png`
+  - `packages/web/tmp/ux-next-wp09-20260513/05-sheet-ribbon-identity.png`
+  - `packages/web/tmp/ux-next-wp09-20260513/06-schedule-ribbon-identity.png`
+  - `packages/web/tmp/ux-next-wp09-20260513/07-cmdk-section-query.png`
+  - `packages/web/tmp/ux-next-wp09-20260513/summary.json`
 
 ### WP-NEXT-10 — Discipline Lens Contract Enforcement
 
