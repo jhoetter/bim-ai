@@ -115,6 +115,23 @@ describe('command capability graph', () => {
     }
   });
 
+  it('applies lens-specific gating reasons for discipline-scoped authoring commands', () => {
+    const structureRoom = evaluateCommandInMode('tool.room', 'plan', 'structure');
+    expect(structureRoom?.state).toBe('disabled');
+    if (structureRoom?.state === 'disabled') {
+      expect(structureRoom.reason).toContain('Structure lens');
+    }
+
+    const mepWall = evaluateCommandInMode('tool.wall', 'plan', 'mep');
+    expect(mepWall?.state).toBe('disabled');
+    if (mepWall?.state === 'disabled') {
+      expect(mepWall.reason).toContain('MEP lens');
+    }
+
+    expect(evaluateCommandInMode('tool.wall', 'plan', 'architecture')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('tool.wall', 'plan', 'all')?.state).toBe('enabled');
+  });
+
   it('keeps universal navigation and system commands enabled in every view', () => {
     for (const commandId of [
       'navigate.plan',

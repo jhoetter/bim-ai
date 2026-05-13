@@ -5,6 +5,7 @@ import { type ToolId, type WorkspaceMode as ToolWorkspaceMode } from '../../tool
 import {
   capabilityIdForTool,
   evaluateCommandInMode,
+  type CapabilityLensMode,
   formatCapabilityMode,
   type CapabilityViewMode,
 } from '../commandCapabilities';
@@ -99,6 +100,7 @@ export interface RibbonBarProps {
   activeToolId?: ToolId;
   activeMode?: ToolWorkspaceMode;
   selectedElementKind?: string | null;
+  lensMode?: CapabilityLensMode;
   onToolSelect?: (id: ToolId) => void;
   onModeChange?: (mode: WorkspaceMode) => void;
   onOpenCommandPalette?: () => void;
@@ -135,6 +137,7 @@ export function RibbonBar({
   activeToolId,
   activeMode,
   selectedElementKind,
+  lensMode = 'all',
   onToolSelect,
   onModeChange,
   onOpenCommandPalette,
@@ -172,8 +175,8 @@ export function RibbonBar({
     () => new Set(readHiddenRibbonCommandKeys()),
   );
   const tabs = useMemo(
-    () => buildRibbonTabs(activeMode, selectedElementKind),
-    [activeMode, selectedElementKind],
+    () => buildRibbonTabs(activeMode, selectedElementKind, lensMode),
+    [activeMode, lensMode, selectedElementKind],
   );
   const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? tabs[0]!;
   const activeCommands = useMemo(() => collectTabCommands(activeTab), [activeTab]);
@@ -191,7 +194,7 @@ export function RibbonBar({
   }, [hiddenCommandKeys]);
 
   function runCommand(command: RibbonCommand): void {
-    if (commandDisabledReason(command, activeMode)) return;
+    if (commandDisabledReason(command, activeMode, lensMode)) return;
     if (command.type === 'tool') {
       onToolSelect?.(command.id);
       return;
@@ -366,7 +369,7 @@ export function RibbonBar({
                     key={commandKey(command)}
                     command={command}
                     active={commandActive(command, activeToolId, sheetReviewMode, sheetMarkupShape)}
-                    disabledReason={commandDisabledReason(command, activeMode)}
+                    disabledReason={commandDisabledReason(command, activeMode, lensMode)}
                     onClick={() => runCommand(command)}
                   />
                 ))}
@@ -392,7 +395,11 @@ export function RibbonBar({
                       >
                         {visibleFlyoutCommands.map((command) => {
                           const Icon = Icons[command.icon] ?? Icons.commandPalette;
-                          const disabledReason = commandDisabledReason(command, activeMode);
+                          const disabledReason = commandDisabledReason(
+                            command,
+                            activeMode,
+                            lensMode,
+                          );
                           return (
                             <button
                               key={commandKey(command)}
@@ -438,14 +445,15 @@ export function RibbonBar({
 export function ribbonCommandReachabilityForMode(
   mode: CapabilityViewMode,
   selectedElementKind?: string | null,
+  lensMode: CapabilityLensMode = 'all',
 ): RibbonCommandReachability[] {
   const reachability: RibbonCommandReachability[] = [];
-  for (const tab of buildRibbonTabs(mode, selectedElementKind)) {
+  for (const tab of buildRibbonTabs(mode, selectedElementKind, lensMode)) {
     for (const panel of tab.panels) {
       for (const command of [...panel.commands, ...(panel.flyoutCommands ?? [])]) {
         const commandId = ribbonCapabilityId(command);
         if (!commandId) continue;
-        const disabledReason = commandDisabledReason(command, mode);
+        const disabledReason = commandDisabledReason(command, mode, lensMode);
         reachability.push({
           commandId,
           mode,
@@ -464,6 +472,7 @@ export function ribbonCommandReachabilityForMode(
 export function prunedRibbonCommandReachabilityForMode(
   mode: CapabilityViewMode,
   selectedElementKind?: string | null,
+  lensMode: CapabilityLensMode = 'all',
 ): RibbonCommandReachability[] {
   const reachabilityByCommand = new Map<string, RibbonCommandReachability>();
 
@@ -482,7 +491,7 @@ export function prunedRibbonCommandReachabilityForMode(
         for (const command of [...panel.commands, ...(panel.flyoutCommands ?? [])]) {
           const commandId = ribbonCapabilityId(command);
           if (!commandId || reachabilityByCommand.has(commandId)) continue;
-          const availability = evaluateCommandInMode(commandId, mode);
+          const availability = evaluateCommandInMode(commandId, mode, lensMode);
           if (!availability || availability.state === 'enabled') continue;
           reachabilityByCommand.set(commandId, {
             commandId,
@@ -541,9 +550,14 @@ function RibbonButton({
 function buildRibbonTabs(
   activeMode: ToolWorkspaceMode | undefined,
   selectedElementKind?: string | null,
+  lensMode: CapabilityLensMode = 'all',
 ): RibbonTab[] {
   const mode = activeMode ?? 'plan';
-  return filterRibbonTabsForMode(buildUnfilteredRibbonTabs(mode, selectedElementKind), mode);
+  return filterRibbonTabsForMode(
+    buildUnfilteredRibbonTabs(mode, selectedElementKind),
+    mode,
+    lensMode,
+  );
 }
 
 function buildUnfilteredRibbonTabs(
@@ -568,16 +582,22 @@ function buildUnfilteredRibbonTabs(
   return tabs;
 }
 
-function filterRibbonTabsForMode(tabs: RibbonTab[], mode: ToolWorkspaceMode): RibbonTab[] {
+function filterRibbonTabsForMode(
+  tabs: RibbonTab[],
+  mode: ToolWorkspaceMode,
+  lensMode: CapabilityLensMode,
+): RibbonTab[] {
   return tabs
     .map((tab) => ({
       ...tab,
       panels: tab.panels
         .map((panel) => ({
           ...panel,
-          commands: panel.commands.filter((command) => commandIsDirectInMode(command, mode)),
+          commands: panel.commands.filter((command) =>
+            commandIsDirectInMode(command, mode, lensMode),
+          ),
           flyoutCommands: panel.flyoutCommands?.filter((command) =>
-            commandIsDirectInMode(command, mode),
+            commandIsDirectInMode(command, mode, lensMode),
           ),
         }))
         .filter((panel) => panel.commands.length > 0 || (panel.flyoutCommands?.length ?? 0) > 0),
@@ -585,10 +605,14 @@ function filterRibbonTabsForMode(tabs: RibbonTab[], mode: ToolWorkspaceMode): Ri
     .filter((tab) => tab.panels.length > 0);
 }
 
-function commandIsDirectInMode(command: RibbonCommand, mode: ToolWorkspaceMode): boolean {
+function commandIsDirectInMode(
+  command: RibbonCommand,
+  mode: ToolWorkspaceMode,
+  lensMode: CapabilityLensMode,
+): boolean {
   const commandId = ribbonCapabilityId(command);
   if (!commandId) return true;
-  const availability = evaluateCommandInMode(commandId, mode as CapabilityViewMode);
+  const availability = evaluateCommandInMode(commandId, mode as CapabilityViewMode, lensMode);
   return !availability || availability.state === 'enabled';
 }
 
@@ -1136,11 +1160,16 @@ function commandActive(
 function commandDisabledReason(
   command: RibbonCommand,
   activeMode: ToolWorkspaceMode | undefined,
+  lensMode: CapabilityLensMode,
 ): string | undefined {
   if (!activeMode) return undefined;
   const commandId = ribbonCapabilityId(command);
   if (commandId) {
-    const availability = evaluateCommandInMode(commandId, activeMode as CapabilityViewMode);
+    const availability = evaluateCommandInMode(
+      commandId,
+      activeMode as CapabilityViewMode,
+      lensMode,
+    );
     if (availability?.state === 'disabled' || availability?.state === 'bridge') {
       return availability.reason;
     }

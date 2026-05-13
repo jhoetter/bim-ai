@@ -1,0 +1,168 @@
+{
+  "captures": [
+    "01-lens-architecture-plan-ribbon.png",
+    "02-lens-structure-plan-ribbon.png",
+    "03-lens-mep-plan-ribbon.png",
+    "04-cmdk-room-disabled-by-lens.png",
+    "05-element-lens-scope-notice.png"
+  ],
+  "ribbon": {
+    "architectureCount": 13,
+    "structureCount": 9,
+    "mepCount": 1,
+    "architectureCommands": [
+      {
+        "testId": "ribbon-command-wall",
+        "text": "Wall",
+        "disabled": false
+      },
+      {
+        "testId": "ribbon-command-ceiling",
+        "text": "Ceiling",
+        "disabled": false
+      },
+      {
+        "testId": "ribbon-command-column",
+        "text": "Column",
+        "disabled": false
+      },
+      {
+        "testId": "ribbon-command-beam",
+        "text": "Beam",
+        "disabled": false
+      },
+      {
+        "testId": "ribbon-command-door",
+        "text": "Door",
+        "disabled": false
+      },
+      {
+        "testId": "ribbon-command-window",
+        "text": "Window",
+        "disabled": false
+      },
+      {
+        "testId": "ribbon-command-wall-opening",
+        "text": "Opening",
+        "disabled": false
+      },
+      {
+        "testId": "ribbon-command-shaft",
+        "text": "Shaft",
+        "disabled": false
+      },
+      {
+        "testId": "ribbon-command-room",
+        "text": "Room",
+        "disabled": false
+      },
+      {
+        "testId": "ribbon-command-area",
+        "text": "Area",
+        "disabled": false
+      },
+      {
+        "testId": "ribbon-command-area-boundary",
+        "text": "Area Boundary",
+        "disabled": false
+      },
+      {
+        "testId": "ribbon-command-stair",
+        "text": "Stair",
+        "disabled": false
+      },
+      {
+        "testId": "ribbon-command-railing",
+        "text": "Railing",
+        "disabled": false
+      }
+    ],
+    "structureCommands": [
+      {
+        "testId": "ribbon-command-wall",
+        "text": "Wall",
+        "disabled": false
+      },
+      {
+        "testId": "ribbon-command-ceiling",
+        "text": "Ceiling",
+        "disabled": false
+      },
+      {
+        "testId": "ribbon-command-column",
+        "text": "Column",
+        "disabled": false
+      },
+      {
+        "testId": "ribbon-command-beam",
+        "text": "Beam",
+        "disabled": false
+      },
+      {
+        "testId": "ribbon-command-wall-opening",
+        "text": "Opening",
+        "disabled": false
+      },
+      {
+        "testId": "ribbon-command-shaft",
+        "text": "Shaft",
+        "disabled": false
+      },
+      {
+        "testId": "ribbon-command-area-boundary",
+        "text": "Area Boundary",
+        "disabled": false
+      },
+      {
+        "testId": "ribbon-command-stair",
+        "text": "Stair",
+        "disabled": false
+      },
+      {
+        "testId": "ribbon-command-railing",
+        "text": "Railing",
+        "disabled": false
+      }
+    ],
+    "mepCommands": [
+      {
+        "testId": "ribbon-command-family-library",
+        "text": "Load Family",
+        "disabled": false
+      }
+    ]
+  },
+  "cmdkRoom": {
+    "disabled": true,
+    "title": "Unavailable in MEP lens: switch to Architecture or Structure lens for envelope/structural authoring.",
+    "text": "Place RoomUnavailable in MEP lens: switch to Architecture or Structure lens for envelope/structural authoring.UnavailableR"
+  },
+  "selectedArchElement": {
+    "id": "hf-pbp",
+    "kind": "project_base_point",
+    "discipline": "arch"
+  },
+  "lensNotice": "Structure lens is active. Out-of-scope elements remain inspectable, but editing commands may be unavailable.",
+  "state": {
+    "lensMode": "structure",
+    "selectedId": "hf-pbp"
+  },
+  "canvasLensClassification": {
+    "all": {
+      "foreground": 116,
+      "ghost": 0
+    },
+    "architecture": {
+      "foreground": 112,
+      "ghost": 4
+    },
+    "structure": {
+      "foreground": 0,
+      "ghost": 116
+    },
+    "mep": {
+      "foreground": 0,
+      "ghost": 116
+    }
+  }
+}

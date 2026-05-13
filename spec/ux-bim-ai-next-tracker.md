@@ -51,7 +51,7 @@ The foundational seven-region ownership model is in place, but real usage still 
 | NEXT-GAP-008 | Missing explicit per-level visibility controls in 3D.                                                              | `workspace/viewport/Viewport3DLayersPanel.tsx`, level/view state                             | P1       | Done   |
 | NEXT-GAP-009 | Room labels can be clipped/illegible.                                                                              | `plan/planElementMeshBuilders.ts`, plan symbology/text sizing                                | P1       | Open   |
 | NEXT-GAP-010 | Ribbon information architecture still feels uneven by view (annotate parity, icon consistency, dead/weak actions). | `workspace/shell/RibbonBar.tsx`, command metadata                                            | P1       | Open   |
-| NEXT-GAP-011 | Discipline/lens switching does not consistently change ribbon + secondary + element + canvas semantics.            | lens state, mode surfaces, command gating                                                    | P0       | Open   |
+| NEXT-GAP-011 | Discipline/lens switching does not consistently change ribbon + secondary + element + canvas semantics.            | lens state, mode surfaces, command gating                                                    | P0       | Done   |
 | NEXT-GAP-012 | Creation of new floor plans/3D/sections/sheets/schedules is not obvious enough.                                    | primary nav, project browser, commands                                                       | P1       | Open   |
 | NEXT-GAP-013 | Sheets show heavy metadata block directly in main user reading flow.                                               | `workspace/sheets/SheetCanvas.tsx`                                                           | P1       | Open   |
 | NEXT-GAP-014 | Moodboard vs documentation sheet intent is not modeled/taggable.                                                   | sheet model + UI filters + commands                                                          | P1       | Open   |
@@ -284,7 +284,7 @@ Evidence (2026-05-13):
 ### WP-NEXT-10 — Discipline Lens Contract Enforcement
 
 - Priority: `P0`
-- Status: `Open`
+- Status: `Done`
 - Covers: `NEXT-GAP-011`
 - Goal: discipline lens must drive what appears in ribbon, secondary sidebar, element sidebar, and canvas overlays.
 - Source ownership:
@@ -294,6 +294,29 @@ Evidence (2026-05-13):
   - switching Architecture/Structure/MEP changes visible toolsets and contextual panels,
   - lens-specific hidden/ghosted elements in canvas are deterministic and documented,
   - command capabilities reflect lens gating reasons.
+
+Evidence (2026-05-13):
+
+- Lens-aware command availability is now evaluated in command capability metadata (including explicit disabled reasons) and consumed by both ribbon and Cmd+K registry resolution:
+  - `packages/web/src/workspace/commandCapabilities.ts`
+  - `packages/web/src/workspace/commandCapabilities.test.ts`
+  - `packages/web/src/cmdPalette/registry.ts`
+- Ribbon now receives `lensMode` and prunes toolsets by active lens, while Workspace passes lens context to both ribbon and command palette:
+  - `packages/web/src/workspace/shell/RibbonBar.tsx`
+  - `packages/web/src/workspace/Workspace.tsx`
+- Secondary and element sidebars now render explicit lens-scope notices to make contextual ownership visible when non-`all` lenses are active:
+  - `packages/web/src/workspace/WorkspaceRightRail.tsx`
+- Seeded live proof (`make seed name=target-house-3`, `make dev name=target-house-3`) captured in:
+  - `packages/web/tmp/ux-next-wp10-20260513/01-lens-architecture-plan-ribbon.png`
+  - `packages/web/tmp/ux-next-wp10-20260513/02-lens-structure-plan-ribbon.png`
+  - `packages/web/tmp/ux-next-wp10-20260513/03-lens-mep-plan-ribbon.png`
+  - `packages/web/tmp/ux-next-wp10-20260513/04-cmdk-room-disabled-by-lens.png`
+  - `packages/web/tmp/ux-next-wp10-20260513/05-element-lens-scope-notice.png`
+  - `packages/web/tmp/ux-next-wp10-20260513/summary.json`
+- Runtime summary confirms:
+  - ribbon command count changes by lens (`architecture: 13`, `structure: 9`, `mep: 1`),
+  - Cmd+K `tool.room` entry is disabled in MEP lens with explicit gating reason,
+  - deterministic canvas lens classification is recorded for `all/architecture/structure/mep`.
 
 ### WP-NEXT-11 — View Creation Discoverability
 

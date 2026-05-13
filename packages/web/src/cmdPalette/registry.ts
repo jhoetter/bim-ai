@@ -3,6 +3,7 @@ import fuzzysort from 'fuzzysort';
 import {
   commandModeBadge,
   evaluateCommandInMode,
+  type CapabilityLensMode,
   type CapabilityViewMode,
   type CommandAvailability,
 } from '../workspace/commandCapabilities';
@@ -31,6 +32,8 @@ export type PaletteContext = {
   activeViewId: string | null;
   /** Active workspace mode, if the host shell knows it. */
   activeMode?: CapabilityViewMode;
+  /** Active discipline lens used for mode-surface gating reasons. */
+  activeLensMode?: CapabilityLensMode;
   /** Active plan_view element id for plan-scoped commands such as templates/style. */
   activePlanViewId?: string | null;
   /** Active schedule element id for schedule-scoped commands. */
@@ -179,20 +182,25 @@ export function queryPalette(
   const resolvedRegistry = _registry
     .map((entry): PaletteEntry | null => {
       const availability = activeMode ? evaluateCommandInMode(entry.id, activeMode) : null;
+      const lensAwareAvailability =
+        activeMode && context.activeLensMode
+          ? evaluateCommandInMode(entry.id, activeMode, context.activeLensMode)
+          : availability;
       const locallyUnavailable = entry.isAvailable ? !entry.isAvailable(context) : false;
-      if (availability) {
+      if (lensAwareAvailability) {
         return {
           ...entry,
-          availability,
-          badge: commandModeBadge(availability),
+          availability: lensAwareAvailability,
+          badge: commandModeBadge(lensAwareAvailability),
           disabledReason:
-            availability.state === 'disabled'
-              ? availability.reason
+            lensAwareAvailability.state === 'disabled'
+              ? lensAwareAvailability.reason
               : locallyUnavailable
                 ? 'Requires the right selection or view context.'
                 : undefined,
-          bridgeReason: availability.state === 'bridge' ? availability.reason : undefined,
-          bridged: availability.state === 'bridge',
+          bridgeReason:
+            lensAwareAvailability.state === 'bridge' ? lensAwareAvailability.reason : undefined,
+          bridged: lensAwareAvailability.state === 'bridge',
         };
       }
       if (entry.isAvailable && !entry.isAvailable(context)) return null;

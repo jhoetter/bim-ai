@@ -1722,6 +1722,7 @@ export function Workspace(): JSX.Element {
             useBimStore.getState().activeElevationViewId ??
             null,
           activeMode: effectiveMode,
+          activeLensMode: lensMode,
           activePlanViewId,
           activeScheduleId: paletteActiveScheduleId,
           activeSheetId: paletteActiveSheetId,
@@ -2088,6 +2089,7 @@ export function Workspace(): JSX.Element {
             selectedElementKind={
               selectedId ? (elementsById[selectedId] as Element | undefined)?.kind : null
             }
+            lensMode={lensMode}
             onToolSelect={handleToolSelect}
             onModeChange={handleModeChange}
             onOpenCommandPalette={() => setPaletteOpen(true)}

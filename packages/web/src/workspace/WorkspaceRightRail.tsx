@@ -675,6 +675,9 @@ export function WorkspaceRightRail({
         data-testid="workspace-secondary-sidebar"
         data-view-mode={mode}
       >
+        {lensMode !== 'all' ? (
+          <LensScopeNotice testId="secondary-lens-scope-notice" lensMode={lensMode} scope="view" />
+        ) : null}
         <SecondaryLensSection lensMode={lensMode} onLensChange={setLensMode} />
         {mode === '3d' ? (
           <Secondary3dAdapter
@@ -788,6 +791,9 @@ export function WorkspaceRightRail({
 
   return (
     <div className="h-full overflow-y-auto">
+      {showElementSurface && lensMode !== 'all' ? (
+        <LensScopeNotice testId="element-lens-scope-notice" lensMode={lensMode} scope="element" />
+      ) : null}
       {/* CHR-V3-06: non-blocking scope toast */}
       {allScopeToast ? (
         <div
@@ -1605,6 +1611,31 @@ function SecondaryLensSection({
         <LensDropdown currentLens={lensMode} onLensChange={onLensChange} />
       </div>
     </SecondarySection>
+  );
+}
+
+function LensScopeNotice({
+  lensMode,
+  scope,
+  testId,
+}: {
+  lensMode: LensMode;
+  scope: 'view' | 'element';
+  testId: string;
+}): JSX.Element {
+  const lensLabel =
+    lensMode === 'structure' ? 'Structure' : lensMode === 'mep' ? 'MEP' : 'Architecture';
+  const body =
+    scope === 'view'
+      ? `${lensLabel} lens is active. View controls and command availability are filtered for this discipline.`
+      : `${lensLabel} lens is active. Out-of-scope elements remain inspectable, but editing commands may be unavailable.`;
+  return (
+    <div
+      data-testid={testId}
+      className="mx-3 mt-3 rounded border border-border bg-surface-strong px-2 py-1.5 text-[11px] text-muted"
+    >
+      {body}
+    </div>
   );
 }
 

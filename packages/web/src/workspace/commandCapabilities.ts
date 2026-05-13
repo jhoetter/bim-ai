@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next';
+import type { LensMode } from '@bim-ai/core';
 
 import {
   MODIFY_TOOL_IDS,
@@ -20,6 +21,7 @@ export const CAPABILITY_VIEW_MODES = [
 ] as const satisfies readonly WorkspaceMode[];
 
 export type CapabilityViewMode = (typeof CAPABILITY_VIEW_MODES)[number];
+export type CapabilityLensMode = LensMode;
 
 export type CommandSurface =
   | 'header'
@@ -132,10 +134,19 @@ export function commandModeBadge(availability: CommandAvailability): string {
 export function evaluateCommandInMode(
   commandId: string,
   mode: CapabilityViewMode,
+  lensMode: CapabilityLensMode = 'all',
 ): CommandAvailability | null {
   const capability = getCommandCapability(commandId);
   if (!capability) return null;
   if (capability.intendedModes.includes(mode)) {
+    const lensDisabledReason = lensDisabledReasonForCommand(commandId, lensMode);
+    if (lensDisabledReason) {
+      return {
+        state: 'disabled',
+        capability,
+        reason: lensDisabledReason,
+      };
+    }
     return { state: 'enabled', capability };
   }
   const targetMode = capability.bridgeToMode?.[mode];
@@ -152,6 +163,61 @@ export function evaluateCommandInMode(
     capability,
     reason: `${capability.label} is unavailable in ${formatCapabilityMode(mode)}.`,
   };
+}
+
+const LENS_DISABLED_COMMANDS: Record<'structure' | 'mep', { ids: Set<string>; reason: string }> = {
+  structure: {
+    ids: new Set([
+      'tool.room',
+      'tool.area',
+      'tool.component',
+      'tool.door',
+      'tool.window',
+      'view.3d.wall.insert-door',
+      'view.3d.wall.insert-window',
+    ]),
+    reason:
+      'Unavailable in Structure lens: switch to Architecture lens for architectural room/opening authoring.',
+  },
+  mep: {
+    ids: new Set([
+      'tool.wall',
+      'tool.door',
+      'tool.window',
+      'tool.floor',
+      'tool.roof',
+      'tool.room',
+      'tool.area',
+      'tool.stair',
+      'tool.railing',
+      'tool.component',
+      'tool.wall-opening',
+      'tool.shaft',
+      'tool.column',
+      'tool.beam',
+      'tool.ceiling',
+      'tool.grid',
+      'tool.reference-plane',
+      'tool.property-line',
+      'tool.area-boundary',
+      'tool.toposolid_subdivision',
+      'view.3d.wall.insert-door',
+      'view.3d.wall.insert-window',
+      'view.3d.wall.insert-opening',
+    ]),
+    reason:
+      'Unavailable in MEP lens: switch to Architecture or Structure lens for envelope/structural authoring.',
+  },
+};
+
+function lensDisabledReasonForCommand(
+  commandId: string,
+  lensMode: CapabilityLensMode,
+): string | undefined {
+  if (lensMode !== 'structure' && lensMode !== 'mep') return undefined;
+  const lensRules = LENS_DISABLED_COMMANDS[lensMode];
+  if (!lensRules) return undefined;
+  return lensRules.ids.has(commandId) ? lensRules.reason : undefined;
 }
 
 export function auditCommandExposures(
