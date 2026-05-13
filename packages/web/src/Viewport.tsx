@@ -188,6 +188,8 @@ type Authoring3dOverlayState = {
   previewHostValid?: boolean;
   previewHostWallId?: string;
   previewHostAlongT?: number;
+  previewAuxLines?: Array<{ start: ScreenPoint; end: ScreenPoint }>;
+  previewAuxArcPath?: string;
   wallPreviewOutlineScreen?: ScreenPoint[];
   wallPreviewDirectionStartScreen?: ScreenPoint;
   wallPreviewDirectionEndScreen?: ScreenPoint;
@@ -969,36 +971,71 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
     function pickWallAtPointer(
       cx: number,
       cy: number,
+      options?: {
+        tool?: 'door' | 'window' | 'wall-opening';
+        preferWallId?: string;
+      },
     ): {
       wall: Extract<Element, { kind: 'wall' }>;
       hitPointMm: { xMm: number; yMm: number; zMm: number };
+      alongT: number;
     } | null {
       const rect = renderer.domElement.getBoundingClientRect();
       ndc.x = ((cx - rect.left) / rect.width) * 2 - 1;
       ndc.y = -(((cy - rect.top) / rect.height) * 2 - 1);
       raycaster.setFromCamera(ndc, camera);
       const hits = raycaster.intersectObjects(root.children, true);
-      const wallHit = hits.find((h) => {
+      const candidates = new Map<
+        string,
+        {
+          wall: Extract<Element, { kind: 'wall' }>;
+          hitPointMm: { xMm: number; yMm: number; zMm: number };
+          alongT: number;
+          score: number;
+        }
+      >();
+      for (const h of hits) {
         const id = h.object.userData.bimPickId as string | undefined;
-        if (!id) return false;
-        if (isLinkedElementId(id)) return false;
+        if (!id) continue;
+        if (isLinkedElementId(id)) continue;
         const el = elementsByIdRef.current[id];
-        if (el?.kind !== 'wall') return false;
+        if (el?.kind !== 'wall') continue;
         if (isBackfacingWallHit(h.face?.normal, h.object.matrixWorld, raycaster.ray.direction))
-          return false;
-        return true;
-      });
-      if (!wallHit) return null;
-      const wallId = wallHit.object.userData.bimPickId as string;
-      const wall = elementsByIdRef.current[wallId];
-      if (!wall || wall.kind !== 'wall') return null;
+          continue;
+        const wall = el;
+        const hitPointMm = {
+          xMm: h.point.x * 1000,
+          yMm: h.point.z * 1000,
+          zMm: h.point.y * 1000,
+        };
+        const alongT = projectAlongT(hitPointMm, wall.start, wall.end);
+        const edgeProximity = Math.min(alongT, 1 - alongT);
+        const edgePenalty =
+          options?.tool && edgeProximity < 0.04 ? (0.04 - Math.max(0, edgeProximity)) * 12 : 0;
+        const frontness = Math.max(
+          0,
+          -(h.face?.normal?.clone() ?? new THREE.Vector3(0, 0, 1))
+            .transformDirection(h.object.matrixWorld)
+            .dot(raycaster.ray.direction),
+        );
+        const grazingPenalty = (1 - Math.min(1, frontness)) * 0.25;
+        const score = h.distance + edgePenalty + grazingPenalty;
+        const prior = candidates.get(id);
+        if (!prior || score < prior.score) {
+          candidates.set(id, { wall, hitPointMm, alongT, score });
+        }
+      }
+      if (candidates.size === 0) return null;
+      const sorted = [...candidates.values()].sort((a, b) => a.score - b.score);
+      let picked = sorted[0]!;
+      if (options?.preferWallId) {
+        const preferred = candidates.get(options.preferWallId);
+        if (preferred && preferred.score <= picked.score + 0.08) picked = preferred;
+      }
       return {
-        wall,
-        hitPointMm: {
-          xMm: wallHit.point.x * 1000,
-          yMm: wallHit.point.z * 1000,
-          zMm: wallHit.point.y * 1000,
-        },
+        wall: picked.wall,
+        hitPointMm: picked.hitPointMm,
+        alongT: Math.max(0, Math.min(1, picked.alongT)),
       };
     }
 
@@ -1101,6 +1138,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       hit: {
         wall: Extract<Element, { kind: 'wall' }>;
         hitPointMm: { xMm: number; yMm: number; zMm: number };
+        alongT: number;
       },
       rect: DOMRect,
     ): {
@@ -1108,6 +1146,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       start?: ScreenPoint;
       end?: ScreenPoint;
       outline?: ScreenPoint[];
+      auxLines?: Array<{ start: ScreenPoint; end: ScreenPoint }>;
+      auxArcPath?: string;
       valid: boolean;
     } | null {
       const center = projectSemanticPointToScreen(hit.hitPointMm, rect);
@@ -1130,7 +1170,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       const headMm = tool === 'window' ? 2400 : tool === 'wall-opening' ? 2400 : 2100;
       const openingBottomMm = Math.min(topZMm - 50, baseZMm + sillMm);
       const openingTopMm = Math.max(openingBottomMm + 50, Math.min(topZMm, baseZMm + headMm));
-      const centerT = projectAlongT(hit.hitPointMm, hit.wall.start, hit.wall.end);
+      const centerT = hit.alongT;
       const halfDeltaT = previewWidthMm / 2 / wallLenMm;
       const startT = Math.max(0, centerT - halfDeltaT);
       const endT = Math.min(1, centerT + halfDeltaT);
@@ -1152,11 +1192,33 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         lowerStart && lowerEnd && upperEnd && upperStart
           ? [lowerStart, lowerEnd, upperEnd, upperStart]
           : undefined;
+      const auxLines: Array<{ start: ScreenPoint; end: ScreenPoint }> = [];
+      let auxArcPath: string | undefined;
+      if (tool === 'window' && lowerStart && lowerEnd && upperStart && upperEnd) {
+        const midL = { x: (lowerStart.x + upperStart.x) / 2, y: (lowerStart.y + upperStart.y) / 2 };
+        const midR = { x: (lowerEnd.x + upperEnd.x) / 2, y: (lowerEnd.y + upperEnd.y) / 2 };
+        auxLines.push({ start: midL, end: midR });
+      } else if (tool === 'door' && lowerStart && lowerEnd) {
+        const mx = (lowerStart.x + lowerEnd.x) / 2;
+        const my = (lowerStart.y + lowerEnd.y) / 2;
+        const dx = lowerEnd.x - lowerStart.x;
+        const dy = lowerEnd.y - lowerStart.y;
+        const len = Math.max(1, Math.hypot(dx, dy));
+        const nx = -dy / len;
+        const ny = dx / len;
+        const lift = Math.min(56, len * 0.45);
+        const cx2 = mx + nx * lift;
+        const cy2 = my + ny * lift;
+        auxLines.push({ start: lowerStart, end: { x: mx, y: my } });
+        auxArcPath = `M ${lowerStart.x} ${lowerStart.y} Q ${cx2} ${cy2} ${lowerEnd.x} ${lowerEnd.y}`;
+      }
       return {
         center,
         start: projectSemanticPointToScreen(startMm, rect) ?? undefined,
         end: projectSemanticPointToScreen(endMm, rect) ?? undefined,
         outline,
+        auxLines,
+        auxArcPath,
         valid: true,
       };
     }
@@ -1172,13 +1234,15 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       if (!POLYGON_3D_AUTHORING_TOOLS.has(tool)) polygonDraft = null;
       if (!LINE_3D_AUTHORING_TOOLS.has(tool)) lineDraftStart = null;
       if (tool === 'door' || tool === 'window' || tool === 'wall-opening') {
-        const hit = pickWallAtPointer(cx, cy);
+        const overlay = authoringOverlayRef.current;
+        const hit = pickWallAtPointer(cx, cy, {
+          tool,
+          preferWallId: overlay?.tool === tool ? overlay.previewHostWallId : undefined,
+        });
         const rect = renderer.domElement.getBoundingClientRect();
         const clickScreen = { x: cx - rect.left, y: cy - rect.top };
         let hostWall = hit?.wall ?? null;
-        let alongT =
-          hit !== null ? projectAlongT(hit.hitPointMm, hit.wall.start, hit.wall.end) : undefined;
-        const overlay = authoringOverlayRef.current;
+        let alongT = hit?.alongT;
         if (
           overlay?.tool === tool &&
           overlay.previewHostWallId &&
@@ -1210,6 +1274,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                   previewHostValid: false,
                   previewHostWallId: undefined,
                   previewHostAlongT: undefined,
+                  previewAuxLines: undefined,
+                  previewAuxArcPath: undefined,
                 }
               : prev,
           );
@@ -1236,6 +1302,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                   ...prev,
                   previewOutlineScreen: undefined,
                   previewHostValid: true,
+                  previewAuxLines: undefined,
+                  previewAuxArcPath: undefined,
                 }
               : prev,
           );
@@ -1256,6 +1324,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                   ...prev,
                   previewOutlineScreen: undefined,
                   previewHostValid: true,
+                  previewAuxLines: undefined,
+                  previewAuxArcPath: undefined,
                 }
               : prev,
           );
@@ -1275,6 +1345,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                 ...prev,
                 previewOutlineScreen: undefined,
                 previewHostValid: true,
+                previewAuxLines: undefined,
+                previewAuxArcPath: undefined,
               }
             : prev,
         );
@@ -1805,7 +1877,13 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       }
       if (directTool === 'door' || directTool === 'window' || directTool === 'wall-opening') {
         const rect = renderer.domElement.getBoundingClientRect();
-        const hit = pickWallAtPointer(ev.clientX, ev.clientY);
+        const hit = pickWallAtPointer(ev.clientX, ev.clientY, {
+          tool: directTool,
+          preferWallId:
+            authoringOverlayRef.current?.tool === directTool
+              ? authoringOverlayRef.current.previewHostWallId
+              : undefined,
+        });
         if (!hit) {
           setAuthoringOverlay((prev) =>
             prev?.tool === directTool
@@ -1821,6 +1899,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                   previewHostValid: false,
                   previewHostWallId: undefined,
                   previewHostAlongT: undefined,
+                  previewAuxLines: undefined,
+                  previewAuxArcPath: undefined,
                 }
               : prev,
           );
@@ -1837,7 +1917,9 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                     previewEndScreen: preview.end,
                     previewHostValid: preview.valid,
                     previewHostWallId: hit.wall.id,
-                    previewHostAlongT: projectAlongT(hit.hitPointMm, hit.wall.start, hit.wall.end),
+                    previewHostAlongT: hit.alongT,
+                    previewAuxLines: preview.auxLines,
+                    previewAuxArcPath: preview.auxArcPath,
                   }
                 : prev,
             );
@@ -3692,6 +3774,27 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                 opacity="0.95"
               />
             ) : null}
+            {authoringOverlay.previewAuxArcPath ? (
+              <path
+                d={authoringOverlay.previewAuxArcPath}
+                fill="none"
+                stroke="var(--color-accent)"
+                strokeWidth="2"
+                opacity="0.9"
+              />
+            ) : null}
+            {authoringOverlay.previewAuxLines?.map((seg, idx) => (
+              <line
+                key={`host-preview-aux-${idx}`}
+                x1={seg.start.x}
+                y1={seg.start.y}
+                x2={seg.end.x}
+                y2={seg.end.y}
+                stroke="var(--color-accent)"
+                strokeWidth="2"
+                opacity="0.9"
+              />
+            ))}
             <circle
               cx={authoringOverlay.currentScreen.x}
               cy={authoringOverlay.currentScreen.y}

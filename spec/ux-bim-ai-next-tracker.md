@@ -268,6 +268,12 @@ Evidence (2026-05-13):
   - code: `packages/web/src/Viewport.tsx`
   - seeded captures: `packages/web/tmp/ux-wall-draft-ux-20260513/01-wall-preview-default.png`, `02-wall-preview-flipped.png`, `03-wall-after-commit.png`
   - command trace: `packages/web/tmp/ux-wall-draft-ux-20260513/summary.json` (single `createWall` commit from the previewed segment state).
+- Follow-up hosted insertion UX pass adds richer pre-placement 3D previews (door swing arc + window mullion glyph) and tighter wall-host snapping under overlap via scored host picking + stickiness:
+  - code: `packages/web/src/Viewport.tsx`
+  - seeded captures: `packages/web/tmp/ux-hosted-preview-snap-20260513/01-door-preview-glyph.png`, `02-window-preview-glyph.png`, `03-after-hosted-place.png`
+  - command traces:
+    - `packages/web/tmp/ux-hosted-preview-snap-20260513/summary.json` (door double-click emits one `insertDoorOnWall`; window emits one `insertWindowOnWall`)
+    - `packages/web/tmp/ux-door-wall-guard-20260513/summary.json` (regression re-check still emits one `insertDoorOnWall` + one `createWall`).
 
 ### WP-NEXT-07 — 3D Level Visibility Controls
 

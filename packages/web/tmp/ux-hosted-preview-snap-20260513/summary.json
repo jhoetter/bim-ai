@@ -1,0 +1,20 @@
+{
+  "commandCount": 2,
+  "commandTypes": ["insertDoorOnWall", "insertWindowOnWall"],
+  "commands": [
+    {
+      "type": "insertDoorOnWall",
+      "wallId": "hf-uf-wall-04",
+      "alongT": 0.9779301739993802,
+      "widthMm": 900
+    },
+    {
+      "type": "insertWindowOnWall",
+      "wallId": "hf-gf-wall-04",
+      "alongT": 0.20447544404988438,
+      "widthMm": 1200,
+      "sillHeightMm": 900,
+      "heightMm": 1500
+    }
+  ]
+}
