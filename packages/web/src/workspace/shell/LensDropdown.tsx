@@ -97,7 +97,7 @@ export function LensDropdown({ currentLens, onLensChange }: LensDropdownProps): 
           role="menu"
           aria-label="Lens"
           data-testid="lens-menu"
-          className="absolute bottom-full left-0 z-50 mb-1 w-44 rounded-md border border-border bg-surface shadow-elev-2"
+          className="absolute left-0 top-full z-50 mt-1 w-44 rounded-md border border-border bg-surface shadow-elev-2"
           style={{ fontSize: 'var(--text-sm)' }}
           ref={(el) => {
             const active = el?.querySelector<HTMLElement>('[aria-current="true"]');

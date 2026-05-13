@@ -2552,6 +2552,8 @@ export function Workspace(): JSX.Element {
             onCreateSchedule={() => void createScheduleView()}
             onOpenProjectSettings={openProjectSettings}
             onOpenSavedView={openElementById}
+            lensMode={lensMode}
+            onLensChange={setLensMode}
             activeViewTargetId={activeTab?.targetId}
             userDisplayName={userDisplayName}
             userId={userId}

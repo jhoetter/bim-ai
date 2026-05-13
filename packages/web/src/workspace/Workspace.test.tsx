@@ -130,17 +130,30 @@ describe('<Workspace /> — smoke', () => {
     expect(header.getByTestId('workspace-header-share')).toBeTruthy();
   });
 
-  it('owns discipline lens in secondary sidebar, not footer', () => {
+  it('owns discipline lens in primary sidebar, not secondary or footer', () => {
     const { getByTestId } = renderWithProviders(<Workspace />);
+    const primary = within(getByTestId('app-shell-primary-sidebar'));
     const secondary = within(getByTestId('app-shell-secondary-sidebar'));
     const statusBar = getByTestId('status-bar');
     const footer = within(statusBar);
 
-    expect(secondary.getByTestId('secondary-lens-filter')).toBeTruthy();
-    expect(secondary.getByTestId('secondary-lens-dropdown')).toBeTruthy();
-    expect(secondary.getByTestId('lens-dropdown-trigger')).toBeTruthy();
+    expect(primary.getByTestId('primary-lens-filter')).toBeTruthy();
+    expect(primary.getByTestId('primary-lens-dropdown')).toBeTruthy();
+    expect(primary.getByTestId('lens-dropdown-trigger')).toBeTruthy();
+    expect(secondary.queryByTestId('secondary-lens-filter')).toBeNull();
+    expect(secondary.queryByTestId('secondary-lens-dropdown')).toBeNull();
+    expect(secondary.queryByTestId('lens-dropdown-trigger')).toBeNull();
     expect(footer.queryByTestId('lens-dropdown-trigger')).toBeNull();
     expect(statusBar.textContent).not.toContain('Show:');
+  });
+
+  it('activates ceiling tool directly from ribbon create panel', () => {
+    seedTabs('plan');
+    const { getByTestId } = renderWithProviders(<Workspace />);
+    const button = getByTestId('ribbon-command-ceiling');
+    fireEvent.click(button);
+    expect(useBimStore.getState().planTool).toBe('ceiling');
+    expect(button.getAttribute('aria-pressed')).toBe('true');
   });
 
   it('opens plan Visibility/Graphics from the secondary advanced owner — UX-DIA-004', () => {

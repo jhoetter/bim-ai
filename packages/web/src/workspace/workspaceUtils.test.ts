@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Element } from '@bim-ai/core';
 
-import { buildPrimaryNavigationSections } from './workspaceUtils';
+import { buildPrimaryNavigationSections, validatePlanTool } from './workspaceUtils';
 
 describe('buildPrimaryNavigationSections', () => {
   it('orders primary navigation groups and excludes resources/editing surfaces', () => {
@@ -93,5 +93,16 @@ describe('buildPrimaryNavigationSections', () => {
     const serialized = JSON.stringify(sections);
     expect(serialized).not.toContain('"level_1"');
     expect(serialized).not.toMatch(/Generic Wall|Window Type|Types|Families/);
+  });
+});
+
+describe('validatePlanTool', () => {
+  it('accepts plan-ribbon tools that can be activated in PlanCanvas', () => {
+    expect(validatePlanTool('ceiling')).toBe('ceiling');
+    expect(validatePlanTool('column')).toBe('column');
+    expect(validatePlanTool('beam')).toBe('beam');
+    expect(validatePlanTool('shaft')).toBe('shaft');
+    expect(validatePlanTool('stair')).toBe('stair');
+    expect(validatePlanTool('railing')).toBe('railing');
   });
 });

@@ -651,3 +651,122 @@ Each package can be marked `Done` only if all apply:
 ## Immediate Next Slice Recommendation
 
 Start with `WP-NEXT-04` (wall draft lifecycle and off-plan guardrails) after a quick `WP-NEXT-01` shell geometry correction pass. Reason: the wall placement bug is a direct trust breaker in core authoring and should be fixed before deeper polish.
+
+## Reopened Tracker (2026-05-13, feedback round 2)
+
+The seeded review on 2026-05-13 surfaced new hard failures after prior closeout:
+
+- ribbon commands looked available but did not activate executable tools,
+- lens ownership and dropdown ergonomics were still incorrect for the desired layout,
+- split panes need to become tab-aware sub-canvases (not only single-tab leaves with global chrome).
+
+### Reopened Gap Inventory
+
+| ID            | Gap                                                                                                    | Evidence / owner hotspots                                                          | Priority | Status |
+| ------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- | -------- | ------ |
+| NEXT2-GAP-001 | Ribbon command appears clickable but no executable state transition occurs for several plan tools.     | `workspace/workspaceUtils.ts`, `workspace/shell/RibbonBar.tsx`, `Workspace.tsx`    | P0       | Done   |
+| NEXT2-GAP-002 | Lens owner must be primary sidebar; dropdown must not clip at the top edge.                            | `WorkspaceLeftRail.tsx`, `WorkspaceRightRail.tsx`, `shell/LensDropdown.tsx`        | P0       | Done   |
+| NEXT2-GAP-003 | Split panes are not full tab-aware work areas (local tab lifecycle and tab reassignment are missing).  | `workspace/paneLayout.ts`, `workspace/Workspace.tsx`, `workspace/shell/TabBar.tsx` | P0       | Open   |
+| NEXT2-GAP-004 | Pane split architecture needs explicit contract for ribbon/secondary/element ownership per pane focus. | shell layout + mode surface ownership contracts                                    | P1       | Open   |
+
+### Reopened Workpackages
+
+### WP-NEXT-17 — Ribbon Command Liveness Recovery
+
+- Priority: `P0`
+- Status: `Done`
+- Covers: `NEXT2-GAP-001`
+- Goal: remove no-op ribbon clicks by ensuring plan ribbon tools map to executable `planTool` states.
+- Source ownership:
+  - `packages/web/src/workspace/workspaceUtils.ts`
+  - `packages/web/src/workspace/Workspace.tsx`
+  - `packages/web/src/workspace/Workspace.test.tsx`
+  - `packages/web/src/workspace/workspaceUtils.test.ts`
+- Acceptance:
+  - ribbon command click changes active tool state for each exposed plan tool,
+  - tool active state is reflected in ribbon selection styling (`aria-pressed`),
+  - no exposed plan ribbon tool is silently ignored.
+
+Evidence (2026-05-13):
+
+- Expanded `KNOWN_PLAN_TOOLS` to include exposed plan ribbon commands (`ceiling`, `column`, `beam`, `shaft`, `stair`, `railing`, plus modify/support tools) so `validatePlanTool` no longer rejects valid ribbon actions.
+- Added regression tests:
+  - `packages/web/src/workspace/workspaceUtils.test.ts`
+  - `packages/web/src/workspace/Workspace.test.tsx` (`activates ceiling tool directly from ribbon create panel`)
+- Seeded screenshot proof:
+  - `packages/web/tmp/ux-next-wp17-wp18-20260513/01-ribbon-ceiling-active.png`
+  - `packages/web/tmp/ux-next-wp17-wp18-20260513/summary.json` (`ceilingPressed: true`)
+
+### WP-NEXT-18 — Lens Ownership + Overflow Hygiene Relocation
+
+- Priority: `P0`
+- Status: `Done`
+- Covers: `NEXT2-GAP-002`
+- Goal: move discipline lens ownership into primary sidebar and prevent clipped dropdown rendering.
+- Source ownership:
+  - `packages/web/src/workspace/WorkspaceLeftRail.tsx`
+  - `packages/web/src/workspace/WorkspaceRightRail.tsx`
+  - `packages/web/src/workspace/shell/LensDropdown.tsx`
+  - `packages/web/src/workspace/commandCapabilities.ts`
+  - tests in workspace + capabilities suites
+- Acceptance:
+  - primary sidebar owns lens control (`primary-lens-filter`),
+  - secondary sidebar no longer renders legacy lens section,
+  - dropdown expands fully within visible viewport and does not clip at top,
+  - command capability metadata reflects `primary-sidebar` lens ownership while preserving Cmd+K.
+
+Evidence (2026-05-13):
+
+- Lens moved from secondary to primary sidebar (`primary-lens-filter`, `primary-lens-dropdown`).
+- Secondary lens section removed from `WorkspaceRightRail`.
+- Lens menu placement changed from upward expansion (`bottom-full`) to downward expansion (`top-full`) in `LensDropdown`.
+- Capability ownership updated:
+  - `navigate.architecture`, `navigate.structure`, `navigate.mep` surfaces now `['cmd-k', 'primary-sidebar']`.
+- Regression + ownership tests updated:
+  - `packages/web/src/workspace/Workspace.test.tsx`
+  - `packages/web/src/workspace/commandCapabilities.test.ts`
+- Seeded screenshot proof:
+  - `packages/web/tmp/ux-next-wp17-wp18-20260513/02-primary-lens-dropdown-open.png`
+  - `packages/web/tmp/ux-next-wp17-wp18-20260513/03-secondary-no-lens-block.png`
+  - `packages/web/tmp/ux-next-wp17-wp18-20260513/summary.json`
+    - `lensMenuVisible: true`
+    - `lensMenuNotClippedTop: true`
+    - `secondaryLensAbsent: true`
+
+### WP-NEXT-19 — Pane-Local Tab-Aware Split Surfaces
+
+- Priority: `P0`
+- Status: `Open`
+- Covers: `NEXT2-GAP-003`
+- Goal: convert split panes from single-tab leaf projections to true tab-aware sub-canvases with local lifecycle controls.
+- Source ownership:
+  - `packages/web/src/workspace/paneLayout.ts`
+  - `packages/web/src/workspace/Workspace.tsx`
+  - `packages/web/src/workspace/shell/TabBar.tsx`
+- Acceptance:
+  - each pane can host a tab stack and an active tab,
+  - tab can be moved into a target pane (not only split-left/right/top/bottom),
+  - pane-local close works and preserves global tab invariants,
+  - pane-local tab strip supports activation and drag-entry into pane.
+
+### WP-NEXT-20 — Focused-Pane Chrome Contract (Ribbon + Secondary + Element)
+
+- Priority: `P1`
+- Status: `Open`
+- Covers: `NEXT2-GAP-004`
+- Goal: formalize how global ribbon/secondary/element surfaces follow focused pane context without duplicating entire chrome per pane.
+- Source ownership:
+  - `packages/web/src/workspace/Workspace.tsx`
+  - `packages/web/src/workspace/modeSurfaces.ts`
+  - shell ownership tests
+- Acceptance:
+  - focused pane drives ribbon + secondary + element context deterministically,
+  - pane focus switch updates these surfaces without stale data,
+  - Cmd+K context follows focused pane target/mode.
+
+### Reopened Dependency Sequence
+
+1. `WP-NEXT-17` ribbon liveness.
+2. `WP-NEXT-18` lens relocation/overflow.
+3. `WP-NEXT-19` pane-local tab-aware split surfaces.
+4. `WP-NEXT-20` focused-pane chrome contract.

@@ -196,6 +196,15 @@ describe('command capability graph', () => {
 
   it('maps expanded command reachability rows to canonical owners — UX-CMD-001 through UX-CMD-020', () => {
     expect(getCommandCapability('navigate.plan')?.surfaces).toEqual(['cmd-k', 'primary-sidebar']);
+    expect(getCommandCapability('navigate.architecture')?.surfaces).toEqual([
+      'cmd-k',
+      'primary-sidebar',
+    ]);
+    expect(getCommandCapability('navigate.structure')?.surfaces).toEqual([
+      'cmd-k',
+      'primary-sidebar',
+    ]);
+    expect(getCommandCapability('navigate.mep')?.surfaces).toEqual(['cmd-k', 'primary-sidebar']);
     expect(getCommandCapability('tool.wall')?.surfaces).toEqual(['ribbon', 'cmd-k']);
     expect(getCommandCapability('tool.door')?.preconditions).toContain('has-wall');
     expect(getCommandCapability('tool.dimension')?.surfaces).toEqual(['ribbon', 'cmd-k']);
