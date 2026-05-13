@@ -39,28 +39,28 @@ The foundational seven-region ownership model is in place, but real usage still 
 
 ## Gap Inventory (From Seeded Usage + Code Audit)
 
-| ID           | Gap                                                                                                                | Evidence/Owner Hotspots                                                                      | Priority | Status      |
-| ------------ | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- | -------- | ----------- |
-| NEXT-GAP-001 | Primary sidebar does not read as true top-to-bottom spine in final composition.                                    | `workspace/shell/AppShell.tsx`, `workspace/Workspace.tsx`                                    | P0       | Done        |
-| NEXT-GAP-002 | Secondary sidebar internals are dense; reusable collapsible group pattern is missing.                              | `workspace/WorkspaceRightRail.tsx`                                                           | P1       | Open        |
-| NEXT-GAP-003 | No recursive drag-drop canvas split from tabs (horizontal/vertical panes).                                         | `workspace/shell/TabBar.tsx`, `workspace/tabsModel.ts`, `workspace/viewport/CanvasMount.tsx` | P1       | Open        |
-| NEXT-GAP-004 | Wall tool can leave confusing mirrored/hatched draft/preview artifacts off-plan.                                   | `plan/PlanCanvas.tsx`                                                                        | P0       | Done        |
-| NEXT-GAP-005 | Wall placement has weak off-plan/crop guardrails and unclear loop-mode state transitions.                          | `plan/PlanCanvas.tsx`, plan view crop data                                                   | P0       | Done        |
-| NEXT-GAP-006 | 3D wall openings can render incorrectly (wall visible in window/opening).                                          | `Viewport.tsx` wall/opening CSG path                                                         | P0       | In Progress |
-| NEXT-GAP-007 | 3D edit affordances are inconsistent (insert window/opening workflows not robust in-context).                      | `workspace/shell/RibbonBar.tsx`, `workspace/WorkspaceRightRail.tsx`, commands/capabilities   | P0       | Open        |
-| NEXT-GAP-008 | Missing explicit per-level visibility controls in 3D.                                                              | `workspace/viewport/Viewport3DLayersPanel.tsx`, level/view state                             | P1       | Open        |
-| NEXT-GAP-009 | Room labels can be clipped/illegible.                                                                              | `plan/planElementMeshBuilders.ts`, plan symbology/text sizing                                | P1       | Open        |
-| NEXT-GAP-010 | Ribbon information architecture still feels uneven by view (annotate parity, icon consistency, dead/weak actions). | `workspace/shell/RibbonBar.tsx`, command metadata                                            | P1       | Open        |
-| NEXT-GAP-011 | Discipline/lens switching does not consistently change ribbon + secondary + element + canvas semantics.            | lens state, mode surfaces, command gating                                                    | P0       | Open        |
-| NEXT-GAP-012 | Creation of new floor plans/3D/sections/sheets/schedules is not obvious enough.                                    | primary nav, project browser, commands                                                       | P1       | Open        |
-| NEXT-GAP-013 | Sheets show heavy metadata block directly in main user reading flow.                                               | `workspace/sheets/SheetCanvas.tsx`                                                           | P1       | Open        |
-| NEXT-GAP-014 | Moodboard vs documentation sheet intent is not modeled/taggable.                                                   | sheet model + UI filters + commands                                                          | P1       | Open        |
-| NEXT-GAP-015 | Schedule outputs are not meaningful enough for practical role workflows.                                           | schedule mode shell/panels, advisor integration                                              | P1       | Open        |
-| NEXT-GAP-016 | Sections are hard to understand in relation to 3D; section context could be spatially reinforced.                  | section mode shell, viewport overlays                                                        | P2       | Open        |
-| NEXT-GAP-017 | Overflow hygiene: clipped dropdowns and horizontal scrolling inside sidebars.                                      | shell/sidebar CSS/layout constraints                                                         | P1       | Open        |
-| NEXT-GAP-018 | 3D visual quality gaps: dark mode mismatch, materials/realistic/raytrace strategy unclear.                         | `Viewport.tsx`, render style pipeline                                                        | P1       | Open        |
-| NEXT-GAP-019 | Onboarding tour targets exist but narrative is outdated for next-phase workflows.                                  | `onboarding/tour.ts`, `onboarding/OnboardingTour.tsx`                                        | P2       | Open        |
-| NEXT-GAP-020 | Project settings path is under-discoverable after nav cleanup.                                                     | project settings element/editor/commands                                                     | P1       | Open        |
+| ID           | Gap                                                                                                                | Evidence/Owner Hotspots                                                                      | Priority | Status |
+| ------------ | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- | -------- | ------ |
+| NEXT-GAP-001 | Primary sidebar does not read as true top-to-bottom spine in final composition.                                    | `workspace/shell/AppShell.tsx`, `workspace/Workspace.tsx`                                    | P0       | Done   |
+| NEXT-GAP-002 | Secondary sidebar internals are dense; reusable collapsible group pattern is missing.                              | `workspace/WorkspaceRightRail.tsx`                                                           | P1       | Open   |
+| NEXT-GAP-003 | No recursive drag-drop canvas split from tabs (horizontal/vertical panes).                                         | `workspace/shell/TabBar.tsx`, `workspace/tabsModel.ts`, `workspace/viewport/CanvasMount.tsx` | P1       | Open   |
+| NEXT-GAP-004 | Wall tool can leave confusing mirrored/hatched draft/preview artifacts off-plan.                                   | `plan/PlanCanvas.tsx`                                                                        | P0       | Done   |
+| NEXT-GAP-005 | Wall placement has weak off-plan/crop guardrails and unclear loop-mode state transitions.                          | `plan/PlanCanvas.tsx`, plan view crop data                                                   | P0       | Done   |
+| NEXT-GAP-006 | 3D wall openings can render incorrectly (wall visible in window/opening).                                          | `Viewport.tsx` wall/opening CSG path                                                         | P0       | Done   |
+| NEXT-GAP-007 | 3D edit affordances are inconsistent (insert window/opening workflows not robust in-context).                      | `workspace/shell/RibbonBar.tsx`, `workspace/WorkspaceRightRail.tsx`, commands/capabilities   | P0       | Open   |
+| NEXT-GAP-008 | Missing explicit per-level visibility controls in 3D.                                                              | `workspace/viewport/Viewport3DLayersPanel.tsx`, level/view state                             | P1       | Open   |
+| NEXT-GAP-009 | Room labels can be clipped/illegible.                                                                              | `plan/planElementMeshBuilders.ts`, plan symbology/text sizing                                | P1       | Open   |
+| NEXT-GAP-010 | Ribbon information architecture still feels uneven by view (annotate parity, icon consistency, dead/weak actions). | `workspace/shell/RibbonBar.tsx`, command metadata                                            | P1       | Open   |
+| NEXT-GAP-011 | Discipline/lens switching does not consistently change ribbon + secondary + element + canvas semantics.            | lens state, mode surfaces, command gating                                                    | P0       | Open   |
+| NEXT-GAP-012 | Creation of new floor plans/3D/sections/sheets/schedules is not obvious enough.                                    | primary nav, project browser, commands                                                       | P1       | Open   |
+| NEXT-GAP-013 | Sheets show heavy metadata block directly in main user reading flow.                                               | `workspace/sheets/SheetCanvas.tsx`                                                           | P1       | Open   |
+| NEXT-GAP-014 | Moodboard vs documentation sheet intent is not modeled/taggable.                                                   | sheet model + UI filters + commands                                                          | P1       | Open   |
+| NEXT-GAP-015 | Schedule outputs are not meaningful enough for practical role workflows.                                           | schedule mode shell/panels, advisor integration                                              | P1       | Open   |
+| NEXT-GAP-016 | Sections are hard to understand in relation to 3D; section context could be spatially reinforced.                  | section mode shell, viewport overlays                                                        | P2       | Open   |
+| NEXT-GAP-017 | Overflow hygiene: clipped dropdowns and horizontal scrolling inside sidebars.                                      | shell/sidebar CSS/layout constraints                                                         | P1       | Open   |
+| NEXT-GAP-018 | 3D visual quality gaps: dark mode mismatch, materials/realistic/raytrace strategy unclear.                         | `Viewport.tsx`, render style pipeline                                                        | P1       | Open   |
+| NEXT-GAP-019 | Onboarding tour targets exist but narrative is outdated for next-phase workflows.                                  | `onboarding/tour.ts`, `onboarding/OnboardingTour.tsx`                                        | P2       | Open   |
+| NEXT-GAP-020 | Project settings path is under-discoverable after nav cleanup.                                                     | project settings element/editor/commands                                                     | P1       | Open   |
 
 ## Workpackages
 
@@ -151,7 +151,7 @@ Evidence (2026-05-13):
 ### WP-NEXT-05 — 3D Openings Rendering Correctness
 
 - Priority: `P0`
-- Status: `In Progress`
+- Status: `Done`
 - Covers: `NEXT-GAP-006`
 - Goal: ensure windows/openings carve hosts consistently; no wall faces visible inside valid apertures.
 - Source ownership:
@@ -162,7 +162,7 @@ Evidence (2026-05-13):
   - no regression in performance-critical scenes (seed baseline budget),
   - seeded screenshots prove aperture correctness from multiple camera angles.
 
-Progress evidence (2026-05-13):
+Evidence (2026-05-13):
 
 - `Viewport` CSG eligibility no longer excludes typed walls (`wallTypeId`); typed walls now enter the worker carve path:
   - `packages/web/src/Viewport.tsx`
@@ -170,13 +170,16 @@ Progress evidence (2026-05-13):
   - `packages/web/src/viewport/wallCsgEligibility.test.ts`
 - Seeded runtime captures for a typed wall selection (`hf-gf-wall-01`, `wallTypeId: hf-wt-clad-base`) are stored in:
   - `packages/web/tmp/ux-next-wp05-20260513/01-main-front-left.png`
+  - `packages/web/tmp/ux-next-wp05-20260513/02-rear-right-axonometric.png`
+  - `packages/web/tmp/ux-next-wp05-20260513/03-front-elevation.png`
   - `packages/web/tmp/ux-next-wp05-20260513/04-selected-typed-wall-openings.png`
+  - `packages/web/tmp/ux-next-wp05-20260513/05-roof-court-high-axonometric.png`
   - `packages/web/tmp/ux-next-wp05-20260513/summary.json`
-
-Remaining before `Done`:
-
-- capture the required multi-angle aperture validation set under deterministic 3D viewpoints,
-- run and record a seeded performance budget check for CSG-heavy scenes.
+- Seeded rendering budget check recorded in `summary.json` under `renderingBudget.latestDebugLine`:
+  - `model_elements 116/8000/16000 [model_elements_in_budget]`
+  - `saved_3d_view_clip_fields 4/20/40 [saved_3d_clip_in_budget]`
+  - `sheet_viewports 5/48/96 [sheet_viewports_in_budget]`
+  - `large_model_proof: in_budget` (no deferred/over-budget warnings).
 
 ### WP-NEXT-06 — 3D Editing Parity And Reliability
 

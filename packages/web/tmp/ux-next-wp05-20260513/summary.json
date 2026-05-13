@@ -1,10 +1,35 @@
 {
-  "captures": ["01-main-front-left.png", "04-selected-typed-wall-openings.png"],
+  "captures": [
+    "01-main-front-left.png",
+    "04-selected-typed-wall-openings.png",
+    "02-rear-right-axonometric.png",
+    "03-front-elevation.png",
+    "05-roof-court-high-axonometric.png"
+  ],
   "summary": {
     "selectedId": "hf-gf-wall-01",
     "wallKind": "wall",
     "wallTypeId": "hf-wt-clad-base",
     "activeViewpointId": null,
     "activePlanViewId": null
+  },
+  "renderingBudget": {
+    "debugLines": [
+      "[bim] rendering budget: browserRenderingBudgetReadout_v1 | stale plan_wire_primitives —/25000/50000 [plan_wire_stale_no_projection] · No planProjectionPrimitives_v1 in client store (open a plan_view or wait for projection). | stale schedule_table_rows —/5000/10000 [schedule_stale_not_hydrated] · Not hydrated (Schedules panel idle, loading, or no model). | in_budget model_elements 116/8000/16000 [model_elements_in_budget] | in_budget saved_3d_view_clip_fields 4/20/40 [saved_3d_clip_in_budget] | in_budget sheet_viewports 5/48/96 [sheet_viewports_in_budget] | large_model_proof: Large-model proof: in_budget — all metrics below warn thresholds. | route: Browser rendering budget: all tracked metrics within nominal thresholds."
+    ],
+    "warnLines": [],
+    "latestDebugLine": "[bim] rendering budget: browserRenderingBudgetReadout_v1 | stale plan_wire_primitives —/25000/50000 [plan_wire_stale_no_projection] · No planProjectionPrimitives_v1 in client store (open a plan_view or wait for projection). | stale schedule_table_rows —/5000/10000 [schedule_stale_not_hydrated] · Not hydrated (Schedules panel idle, loading, or no model). | in_budget model_elements 116/8000/16000 [model_elements_in_budget] | in_budget saved_3d_view_clip_fields 4/20/40 [saved_3d_clip_in_budget] | in_budget sheet_viewports 5/48/96 [sheet_viewports_in_budget] | large_model_proof: Large-model proof: in_budget — all metrics below warn thresholds. | route: Browser rendering budget: all tracked metrics within nominal thresholds.",
+    "latestWarnLine": null
+  },
+  "uiMeta": {
+    "tabLabels": [
+      "Plan · Ground Floor",
+      "3D · Target-house-3 p…",
+      "3D · Rear/right axono…",
+      "3D · Front elevation",
+      "3D · Roof court high …"
+    ],
+    "selectedCount": null,
+    "status": null
   }
 }
