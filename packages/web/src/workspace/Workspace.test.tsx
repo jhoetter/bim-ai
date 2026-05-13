@@ -213,6 +213,12 @@ describe('<Workspace /> — smoke', () => {
     expect(queryByTestId('tab-activate-3d:vp-b')).toBeNull();
   });
 
+  it('renders a real empty pane state when no tabs are open', () => {
+    localStorage.setItem(TABS_KEY, JSON.stringify({ v: 1, tabs: [], activeId: null }));
+    const { getByText } = renderWithProviders(<Workspace />);
+    expect(getByText('No view open in this pane')).toBeTruthy();
+  });
+
   it('updates ribbon/secondary context when focus moves between split panes', () => {
     localStorage.setItem(
       TABS_KEY,
@@ -287,13 +293,11 @@ describe('<Workspace /> — smoke', () => {
     const primary = within(getByTestId('app-shell-primary-sidebar'));
 
     expect(primary.getByTestId('primary-project-selector')).toBeTruthy();
-    expect(primary.getByTestId('primary-create-panel')).toBeTruthy();
     expect(primary.getByTestId('primary-create-floor-plan')).toBeTruthy();
     expect(primary.getByTestId('primary-create-3d-view')).toBeTruthy();
     expect(primary.getByTestId('primary-create-section')).toBeTruthy();
     expect(primary.getByTestId('primary-create-sheet')).toBeTruthy();
     expect(primary.getByTestId('primary-create-schedule')).toBeTruthy();
-    expect(primary.getByTestId('primary-open-project-settings')).toBeTruthy();
     expect(primary.getByLabelText('Search')).toBeTruthy();
     expect(primary.getByText('Concept')).toBeTruthy();
     expect(primary.getByText('Floor Plans')).toBeTruthy();
@@ -449,12 +453,11 @@ describe('<Workspace /> — smoke', () => {
   it('uses explicit secondary sidebar adapters for every view type — UX-WP-04', () => {
     const cases: Array<[string, string]> = [
       ['plan', 'secondary-sidebar-plan'],
-      ['plan-3d', 'secondary-sidebar-plan-3d'],
+      ['3d', 'secondary-sidebar-3d'],
       ['section', 'secondary-sidebar-section'],
       ['sheet', 'secondary-sidebar-sheet'],
       ['schedule', 'secondary-sidebar-schedule'],
       ['concept', 'secondary-sidebar-concept'],
-      ['agent', 'secondary-sidebar-agent'],
     ];
 
     for (const [kind, testId] of cases) {
@@ -912,7 +915,7 @@ describe('<Workspace /> — smoke', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
 
     const primary = within(getByTestId('app-shell-primary-sidebar'));
-    fireEvent.click(primary.getByTestId('primary-open-project-settings'));
+    fireEvent.click(primary.getByTestId('primary-project-selector'));
     expect(getByTestId('project-menu')).toBeTruthy();
   });
 

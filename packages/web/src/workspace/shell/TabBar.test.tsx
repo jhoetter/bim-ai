@@ -34,6 +34,23 @@ describe('TabBar — spec §11.3', () => {
     expect(activeTab?.getAttribute('aria-selected')).toBe('true');
   });
 
+  it('shows clear active/focused/shown state badges', () => {
+    const { getByTestId } = renderWithI18n(
+      <TabBar
+        tabs={tabs}
+        activeId="3d:vp1"
+        focusedPaneTabId="plan:l0"
+        tabPaneAssignments={{ 'plan:l0': ['pane-a'], '3d:vp1': ['pane-b', 'pane-c'] }}
+        onActivate={() => {}}
+        onClose={() => {}}
+      />,
+    );
+    expect(getByTestId('tab-badge-active-3d:vp1').textContent).toContain('Active');
+    expect(getByTestId('tab-badge-shown-3d:vp1').textContent).toContain('2 panes');
+    expect(getByTestId('tab-badge-focused-plan:l0').textContent).toContain('Focused pane');
+    expect(getByTestId('tab-badge-shown-plan:l0').textContent).toContain('Shown');
+  });
+
   it('clicking a tab fires onActivate with the id', () => {
     const onActivate = vi.fn();
     const { getByTestId } = renderWithI18n(

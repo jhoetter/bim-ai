@@ -16,17 +16,19 @@ import { type TabKind, type ViewTab } from '../tabsModel';
 const TAB_KIND_ICON: Record<TabKind, LucideLikeIcon> = {
   plan: Icons.floor!,
   '3d': Icons.family!, // Component (cube) — used for 3D views
-  'plan-3d': Icons.floor!,
   section: Icons.section!,
   sheet: Icons.sheet!,
   schedule: Icons.schedule!,
-  agent: Icons.agent!,
   concept: Icons.agent!,
 };
 
 export interface TabBarProps {
   tabs: ViewTab[];
   activeId: string | null;
+  /** Tab id currently bound to the focused pane leaf. */
+  focusedPaneTabId?: string | null;
+  /** Map of tab id -> pane ids currently displaying that tab. */
+  tabPaneAssignments?: Record<string, string[]>;
   onActivate: (id: string) => void;
   onClose: (id: string) => void;
   /** Called when the user clicks a "+ {kind}" entry in the trailing
@@ -49,6 +51,8 @@ const ADDABLE_KINDS: TabKind[] = ['plan', '3d', 'section', 'sheet', 'schedule', 
 export function TabBar({
   tabs,
   activeId,
+  focusedPaneTabId = null,
+  tabPaneAssignments,
   onActivate,
   onClose,
   onAdd,
@@ -140,6 +144,11 @@ export function TabBar({
       {tabs.map((tab, idx) => {
         const Icon = TAB_KIND_ICON[tab.kind] ?? Icons.floor!;
         const isActive = tab.id === activeId;
+        const paneIds = tabPaneAssignments?.[tab.id] ?? [];
+        const paneCount = paneIds.length;
+        const isShownInPane = paneCount > 0;
+        const isFocusedPaneTab = focusedPaneTabId === tab.id;
+        const isDragSource = dragSrc === idx;
         const isDragOver = dragOverIdx === idx && dragSrc !== null && dragSrc !== idx;
         const truncated = tab.label.length > 22 ? tab.label.slice(0, 21) + '…' : tab.label;
         return (
@@ -151,6 +160,8 @@ export function TabBar({
             data-tab-id={tab.id}
             data-tab-index={idx}
             data-active={isActive ? 'true' : 'false'}
+            data-focused-pane-tab={isFocusedPaneTab ? 'true' : 'false'}
+            data-visible-in-pane={isShownInPane ? 'true' : 'false'}
             data-drag-over={isDragOver ? 'true' : 'false'}
             draggable={Boolean(onReorder || onTabDragStart)}
             onClick={() => onActivate(tab.id)}
@@ -193,10 +204,15 @@ export function TabBar({
               onTabDragEnd?.();
             }}
             className={[
-              'group flex items-center gap-1.5 rounded-t-md border border-b-0 px-3 py-1.5 text-[12px] font-medium transition-colors',
+              'group relative flex items-center gap-1.5 rounded-t-md border border-b-0 px-3 py-1.5 text-[12px] font-medium transition-colors',
               isActive
-                ? 'border-border/60 bg-background text-foreground'
-                : 'border-transparent text-muted/70 hover:bg-background/40 hover:text-foreground',
+                ? 'border-accent/60 bg-accent/10 text-foreground'
+                : isFocusedPaneTab
+                  ? 'border-border/60 bg-surface-2 text-foreground'
+                  : isShownInPane
+                    ? 'border-border/40 bg-background/70 text-foreground/90'
+                    : 'border-transparent text-muted/70 hover:bg-background/40 hover:text-foreground',
+              isDragSource ? 'opacity-60' : '',
               isDragOver ? 'ring-2 ring-accent ring-offset-0' : '',
             ].join(' ')}
             style={
@@ -207,6 +223,13 @@ export function TabBar({
                 : undefined
             }
           >
+            <span
+              aria-hidden="true"
+              className={[
+                'absolute left-0 top-0 h-full w-0.5 rounded-tl-md',
+                isActive ? 'bg-accent' : isShownInPane ? 'bg-sky-500/70' : 'bg-transparent',
+              ].join(' ')}
+            />
             <button
               type="button"
               onClick={(e) => {
@@ -225,6 +248,32 @@ export function TabBar({
               />
               <span className="whitespace-nowrap">{truncated}</span>
             </button>
+            <div className="ml-0.5 hidden items-center gap-1 md:flex">
+              {isActive ? (
+                <span
+                  data-testid={`tab-badge-active-${tab.id}`}
+                  className="rounded border border-accent/60 bg-accent/10 px-1 py-0.5 text-[10px] leading-none text-accent"
+                >
+                  Active
+                </span>
+              ) : null}
+              {isFocusedPaneTab && !isActive ? (
+                <span
+                  data-testid={`tab-badge-focused-${tab.id}`}
+                  className="rounded border border-border px-1 py-0.5 text-[10px] leading-none text-foreground/90"
+                >
+                  Focused pane
+                </span>
+              ) : null}
+              {isShownInPane ? (
+                <span
+                  data-testid={`tab-badge-shown-${tab.id}`}
+                  className="rounded border border-sky-500/40 bg-sky-500/10 px-1 py-0.5 text-[10px] leading-none text-sky-700"
+                >
+                  {paneCount === 1 ? 'Shown' : `${paneCount} panes`}
+                </span>
+              ) : null}
+            </div>
             <button
               type="button"
               onClick={(e) => {

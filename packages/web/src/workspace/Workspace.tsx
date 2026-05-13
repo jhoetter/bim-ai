@@ -254,6 +254,29 @@ function summarizeJobsCounts(rows: unknown[]): typeof EMPTY_JOBS_COUNTS {
   return counts;
 }
 
+function collectPaneTabAssignments(root: PaneNode): Record<string, string[]> {
+  const assignments: Record<string, string[]> = {};
+  const walk = (node: PaneNode): void => {
+    if (node.kind === 'leaf') {
+      if (node.tabId) {
+        const slots = assignments[node.tabId] ?? [];
+        slots.push(node.id);
+        assignments[node.tabId] = slots;
+      }
+      return;
+    }
+    walk(node.first);
+    walk(node.second);
+  };
+  walk(root);
+  return assignments;
+}
+
+function tabIdForLeaf(root: PaneNode, leafId: string): string | null {
+  if (root.kind === 'leaf') return root.id === leafId ? root.tabId : null;
+  return tabIdForLeaf(root.first, leafId) ?? tabIdForLeaf(root.second, leafId);
+}
+
 function slugToken(label: string): string {
   const slug = label
     .trim()
@@ -518,7 +541,7 @@ export function Workspace(): JSX.Element {
 
   const activePlanTarget = useMemo(
     () =>
-      activeTab?.kind === 'plan' || activeTab?.kind === 'plan-3d'
+      activeTab?.kind === 'plan'
         ? resolvePlanTabTarget(elementsById, activeTab.targetId, activeLevelId)
         : { activeLevelId: activeLevelId ?? '' },
     [activeTab, activeLevelId, elementsById],
@@ -536,7 +559,7 @@ export function Workspace(): JSX.Element {
         if (s.activeId) {
           const outgoing = s.tabs.find((x) => x.id === s.activeId);
           if (outgoing) {
-            if (outgoing.kind === '3d' || outgoing.kind === 'plan-3d') {
+            if (outgoing.kind === '3d') {
               const pose = useBimStore.getState().orbitCameraPoseMm;
               if (pose) {
                 snapshotted = snapshotViewport(snapshotted, s.activeId, {
@@ -546,7 +569,7 @@ export function Workspace(): JSX.Element {
               }
             }
             // Snapshot the 2D plan camera for plan tabs (T-07 follow-up).
-            if (outgoing.kind === 'plan' || outgoing.kind === 'plan-3d') {
+            if (outgoing.kind === 'plan') {
               const planSnap = planCameraHandleRef.current?.getSnapshot();
               if (planSnap) {
                 snapshotted = snapshotViewport(snapshotted, s.activeId, {
@@ -561,7 +584,7 @@ export function Workspace(): JSX.Element {
         const t = next.tabs.find((x) => x.id === id);
         if (!t) return next;
         // Keep the store's active plan state in sync with the active tab's target.
-        if ((t.kind === 'plan' || t.kind === 'plan-3d') && t.targetId) {
+        if (t.kind === 'plan' && t.targetId) {
           const target = useBimStore.getState().elementsById[t.targetId];
           if (target?.kind === 'plan_view') {
             activatePlanView(target.id);
@@ -580,7 +603,7 @@ export function Workspace(): JSX.Element {
           });
         }
         // Capture the incoming plan camera for post-setState apply (plan-to-plan case).
-        if (t.kind === 'plan' || t.kind === 'plan-3d') {
+        if (t.kind === 'plan') {
           pendingPlanCamera = t.viewportState?.planCamera;
         }
         return next;
@@ -906,7 +929,7 @@ export function Workspace(): JSX.Element {
   }, []);
 
   const openActiveVisibilityControls = useCallback(() => {
-    if (effectiveMode === '3d' || effectiveMode === 'plan-3d') {
+    if (effectiveMode === '3d') {
       open3dViewControls();
       return;
     }
@@ -1160,7 +1183,6 @@ export function Workspace(): JSX.Element {
     }
     if (effectiveMode === 'sheet') return [selectedDetail ?? 'Paper space'];
     if (effectiveMode === 'schedule') return [selectedDetail ?? 'Rows'];
-    if (effectiveMode === 'agent') return [selectedDetail ?? 'Review'];
     if (effectiveMode === 'concept') return [selectedDetail ?? 'Pre-BIM board'];
     return selectedDetail ? [selectedDetail] : [];
   }, [
@@ -1180,11 +1202,7 @@ export function Workspace(): JSX.Element {
       const tool = validatePlanTool(id);
       if (!tool) return;
       const def = toolRegistry[id];
-      if (
-        def &&
-        !def.modes.includes(effectiveMode) &&
-        (def.modes.includes('plan') || def.modes.includes('plan-3d'))
-      ) {
+      if (def && !def.modes.includes(effectiveMode) && def.modes.includes('plan')) {
         handleModeChange('plan');
       }
       setPlanTool(tool);
@@ -1962,6 +1980,14 @@ export function Workspace(): JSX.Element {
     () => Object.fromEntries(tabsState.tabs.map((tab) => [tab.id, tab])),
     [tabsState.tabs],
   );
+  const tabPaneAssignments = useMemo(
+    () => collectPaneTabAssignments(paneLayout.root),
+    [paneLayout],
+  );
+  const focusedPaneTabId = useMemo(
+    () => tabIdForLeaf(paneLayout.root, paneLayout.focusedLeafId),
+    [paneLayout],
+  );
   const focusedPaneLeafId = paneLayout.focusedLeafId;
 
   const renderPaneNode = useCallback(
@@ -1991,14 +2017,13 @@ export function Workspace(): JSX.Element {
           </div>
         );
       }
-      const paneTab = (node.tabId ? tabsById[node.tabId] : null) ?? activeTab;
+      const paneTab = node.tabId ? (tabsById[node.tabId] ?? null) : null;
       const paneMode = (paneTab?.kind as WorkspaceMode | undefined) ?? effectiveMode;
-      const paneIsPlan = paneTab?.kind === 'plan' || paneTab?.kind === 'plan-3d';
+      const paneIsPlan = paneTab?.kind === 'plan';
       const panePlanTarget = paneIsPlan
         ? resolvePlanTabTarget(elementsById, paneTab?.targetId, activeLevelId)
         : { activeLevelId: activeLevelId ?? '' };
-      const paneViewerMode =
-        paneTab?.kind === '3d' || paneTab?.kind === 'plan-3d' ? 'orbit_3d' : 'plan_canvas';
+      const paneViewerMode = paneTab?.kind === '3d' ? 'orbit_3d' : 'plan_canvas';
       const focused = focusedPaneLeafId === node.id;
       const paneLabel = paneTab?.label ?? 'Empty pane';
       const paneCanAcceptDrop = Boolean(draggingTabId && draggingTabId !== paneTab?.id);
@@ -2064,32 +2089,43 @@ export function Workspace(): JSX.Element {
             </div>
           </div>
           <div className="min-h-0 min-w-0 flex-1">
-            <CanvasMount
-              mode={paneMode}
-              activeTabId={paneTab?.id}
-              viewerMode={paneViewerMode}
-              activeLevelId={panePlanTarget.activeLevelId}
-              elementsById={elementsById}
-              onSemanticCommand={(cmd) => void onSemanticCommand(cmd)}
-              cameraHandleRef={planCameraHandleRef}
-              initialCamera={paneTab?.viewportState?.planCamera}
-              preferredSheetId={
-                paneTab?.kind === 'sheet' ? (paneTab.targetId ?? undefined) : undefined
-              }
-              preferredScheduleId={
-                paneTab?.kind === 'schedule' ? (paneTab.targetId ?? undefined) : undefined
-              }
-              modelId={modelId ?? undefined}
-              wsOn={wsOn}
-              onPersistViewpointField={persistViewpointField}
-              lensMode={lensMode}
-              onNavigateToElement={openElementById}
-              snapSettings={snapSettings}
-              sheetReviewMode={sheetReviewMode}
-              sheetMarkupShape={sheetMarkupShape}
-              onOpenSectionSourcePlan={openActiveSectionSourcePlan}
-              onOpenSection3dContext={openActiveSection3dContext}
-            />
+            {paneTab ? (
+              <CanvasMount
+                mode={paneMode}
+                activeTabId={paneTab.id}
+                viewerMode={paneViewerMode}
+                activeLevelId={panePlanTarget.activeLevelId}
+                elementsById={elementsById}
+                onSemanticCommand={(cmd) => void onSemanticCommand(cmd)}
+                cameraHandleRef={planCameraHandleRef}
+                initialCamera={paneTab.viewportState?.planCamera}
+                preferredSheetId={
+                  paneTab.kind === 'sheet' ? (paneTab.targetId ?? undefined) : undefined
+                }
+                preferredScheduleId={
+                  paneTab.kind === 'schedule' ? (paneTab.targetId ?? undefined) : undefined
+                }
+                modelId={modelId ?? undefined}
+                wsOn={wsOn}
+                onPersistViewpointField={persistViewpointField}
+                lensMode={lensMode}
+                onNavigateToElement={openElementById}
+                snapSettings={snapSettings}
+                sheetReviewMode={sheetReviewMode}
+                sheetMarkupShape={sheetMarkupShape}
+                onOpenSectionSourcePlan={openActiveSectionSourcePlan}
+                onOpenSection3dContext={openActiveSection3dContext}
+              />
+            ) : (
+              <div
+                data-testid={`canvas-pane-empty-${node.id}`}
+                className="flex h-full w-full items-center justify-center bg-background/80"
+              >
+                <div className="rounded border border-border/70 bg-surface px-3 py-2 text-xs text-muted">
+                  No view open in this pane
+                </div>
+              </div>
+            )}
           </div>
         </div>
       );
@@ -2124,7 +2160,7 @@ export function Workspace(): JSX.Element {
       if (!selectedId) return;
       const selected = elementsById[selectedId];
       if (!selected || selected.kind !== 'wall') return;
-      if (effectiveMode !== '3d' && effectiveMode !== 'plan-3d') return;
+      if (effectiveMode !== '3d') return;
       if (kind === 'door') {
         void onSemanticCommand({
           type: 'insertDoorOnWall',
@@ -2472,12 +2508,14 @@ export function Workspace(): JSX.Element {
               <TabBar
                 tabs={tabsState.tabs}
                 activeId={tabsState.activeId}
+                focusedPaneTabId={focusedPaneTabId}
+                tabPaneAssignments={tabPaneAssignments}
                 onActivate={(id) => {
                   handleTabActivate(id);
                   setPaneLayout((layout) => assignTabToFocusedPane(layout, id));
                   const t = tabsState.tabs.find((x) => x.id === id);
                   if (t) {
-                    if (t.kind === 'plan' || t.kind === 'plan-3d') setViewerMode('plan_canvas');
+                    if (t.kind === 'plan') setViewerMode('plan_canvas');
                     else if (t.kind === '3d') setViewerMode('orbit_3d');
                     setMode(t.kind as WorkspaceMode);
                   }
@@ -2492,7 +2530,7 @@ export function Workspace(): JSX.Element {
                   const id = fallback.targetId ? `${kind}:${fallback.targetId}` : kind;
                   setPaneLayout((layout) => assignTabToFocusedPane(layout, id));
                   setMode(kind as WorkspaceMode);
-                  if (kind === 'plan' || kind === 'plan-3d') setViewerMode('plan_canvas');
+                  if (kind === 'plan') setViewerMode('plan_canvas');
                   else if (kind === '3d') setViewerMode('orbit_3d');
                 }}
                 onTabDragStart={(tabId) => setDraggingTabId(tabId)}
@@ -2631,7 +2669,7 @@ export function Workspace(): JSX.Element {
             style={{
               ...canvasContainerStyle,
               // VIS-V3-08: paper background for 2D views; 3D viewport keeps dark background.
-              background: ['plan', 'section', 'plan-3d'].includes(activeTab?.kind ?? '')
+              background: ['plan', 'section'].includes(activeTab?.kind ?? '')
                 ? 'var(--color-canvas-paper)'
                 : 'var(--color-background)',
               transition: 'background 120ms var(--ease-paper)',

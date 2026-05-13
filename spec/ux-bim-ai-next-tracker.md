@@ -793,3 +793,48 @@ Evidence (2026-05-13):
 2. `WP-NEXT-18` lens relocation/overflow.
 3. `WP-NEXT-19` pane-local tab-aware split surfaces.
 4. `WP-NEXT-20` focused-pane chrome contract.
+
+## Reopened Tracker (2026-05-13, feedback round 3)
+
+| Gap ID        | Problem Statement                                                                                         | Canonical Surfaces / Files                                | Priority | Status |
+| ------------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | -------- | ------ |
+| NEXT3-GAP-001 | Multi-tab readability is ambiguous (active vs focused-pane vs merely shown).                              | `workspace/shell/TabBar.tsx`, `workspace/Workspace.tsx`   | P0       | Done   |
+| NEXT3-GAP-002 | Pane with no assigned tab must render a true empty state instead of falling back to unrelated tab canvas. | `workspace/Workspace.tsx`, `workspace/Workspace.test.tsx` | P0       | Done   |
+
+### WP-NEXT-21 — Tab State Clarity + Truthful Empty Pane Rendering
+
+- Priority: `P0`
+- Status: `Done`
+- Covers: `NEXT3-GAP-001`, `NEXT3-GAP-002`
+- Goal: make tab state immediately legible and ensure no-tab panes never display stale/foreign canvas content.
+- Source ownership:
+  - `packages/web/src/workspace/shell/TabBar.tsx`
+  - `packages/web/src/workspace/Workspace.tsx`
+  - `packages/web/src/workspace/shell/TabBar.test.tsx`
+  - `packages/web/src/workspace/Workspace.test.tsx`
+- Acceptance:
+  - active tab has distinct tone + explicit label;
+  - focused-pane tab and shown-in-pane tabs have distinct badges/tones;
+  - no-tab pane renders explicit empty-state copy;
+  - tab lifecycle remains reachable (tab activate/close/drag + Cmd+K unaffected).
+- Implementation + evidence:
+  - Added tab badges + tones in `TabBar`:
+    - `Active`
+    - `Focused pane`
+    - `Shown` / `N panes`
+  - Added pane assignment metadata pass-through from `Workspace` to `TabBar` via:
+    - `focusedPaneTabId`
+    - `tabPaneAssignments`
+  - Removed implicit leaf fallback-to-active-tab rendering so null `tabId` renders true empty pane UI.
+  - Added regression tests:
+    - `TabBar.test.tsx` (`shows clear active/focused/shown state badges`)
+    - `Workspace.test.tsx` (`renders a real empty pane state when no tabs are open`)
+  - Seeded screenshot proof:
+    - `packages/web/tmp/ux-next-wp21-20260513/01-tab-clarity-states.png`
+    - `packages/web/tmp/ux-next-wp21-20260513/02-no-tabs-real-empty-state.png`
+    - `packages/web/tmp/ux-next-wp21-20260513/summary.json`
+      - `activeBadgeVisible: true`
+      - `focusedBadgeVisible: true`
+      - `shownBadgeVisible: true`
+      - `emptyPaneMessagePresent: true`
+      - `paneEmptyStateCount: 1`
