@@ -1209,37 +1209,35 @@ Evidence (2026-05-13):
       - `packages/web/tmp/ux-wall-debug-oblique-20260513/summary.json`
       - `projectionModes: ["plane"]`
       - `createWallCount: 1`
-    - 2026-05-13 closure rerun with visible model anchoring:
-      - `packages/web/tmp/ux-wall-debug-input-20260513/01-drag-preview-console-debug.png`
-      - `packages/web/tmp/ux-wall-debug-input-20260513/02-drag-release-wall-commit.png`
-      - `packages/web/tmp/ux-wall-debug-input-20260513/03-grid-level-plane-fallback.png`
-      - `packages/web/tmp/ux-wall-debug-input-20260513/04-sky-start-blocked.png`
-      - `packages/web/tmp/ux-wall-debug-input-20260513/05-after-escape-navigation-drag.png`
+    - 2026-05-13 closure rerun with deterministic plane-readable authoring:
+      - `packages/web/tmp/ux-wall-debug-input-20260513/01-front-elevation-wall-blocked.png`
+      - `packages/web/tmp/ux-wall-debug-input-20260513/02-oblique-wall-preview.png`
+      - `packages/web/tmp/ux-wall-debug-input-20260513/03-oblique-wall-commit.png`
+      - `packages/web/tmp/ux-wall-debug-input-20260513/04-after-escape-navigation-drag.png`
       - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
-      - `firstTrace.anchor.elementId: "hf-roof-main"`
-      - `firstTrace.point == firstTrace.anchor.point == command.start`
-      - `wallStartWithoutAnchorCount: 1`
-      - `blockedNoVisibleAnchorCount: 0`
-      - `blockedNoDraftPlaneCount: 1`
+      - `commandsAfterFront: 0`
+      - `blockedUnreadablePlaneCount: 1`
+      - `createWallCount: 1`
+      - `projectionModes: ["elevation-axis", "plane"]`
   - Closure decision:
-    - front/elevation wall authoring prefers visible model geometry when the cursor resolves to a model face, but valid level-plane/grid starts remain allowed; only clicks with no draft-plane intersection are blocked with explicit guidance.
+    - front/elevation wall authoring is intentionally blocked when the active level plane is not readable. Wall creation is allowed in oblique/top-readable 3D views using exact level-plane projection only.
 
 ## Reopened Tracker (2026-05-13, feedback round 11)
 
-| Gap ID         | Problem Statement                                                                                                                   | Canonical Surfaces / Files                                                    | Priority | Status |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | -------- | ------ |
-| NEXT11-GAP-001 | 3D wall debug trace was invisible in DevTools console unless inspecting globals/custom events manually.                             | `Viewport.tsx` debug trace, wall debug Playwright capture                     | P0       | Done   |
-| NEXT11-GAP-002 | Direct 3D wall left-drag could be captured as authoring input but produce no wall, leaving the interaction feeling cursor-trapped.  | `Viewport.tsx` direct 3D pointer lifecycle, wall debug Playwright capture     | P0       | Done   |
-| NEXT11-GAP-003 | Wall debug screenshots could silently run on the default seed when multiple seeded models existed.                                  | `packages/web/tmp/ux-wall-debug-*/capture.mjs`, seeded project selector usage | P0       | Done   |
-| NEXT11-GAP-004 | In front/elevation-like 3D views, wall starts used a far level-plane ray hit instead of the visible model surface under the cursor. | `Viewport.tsx` 3D wall projection basis and visible model raycast anchor      | P0       | Done   |
-| NEXT11-GAP-005 | Empty-sky wall clicks in 3D could silently no-op with no prompt and duplicate debug attempts on pointer up.                         | `Viewport.tsx` wall blocked-state overlay, pointer down/up draft lifecycle    | P0       | Done   |
+| Gap ID         | Problem Statement                                                                                                                              | Canonical Surfaces / Files                                                    | Priority | Status |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | -------- | ------ |
+| NEXT11-GAP-001 | 3D wall debug trace was invisible in DevTools console unless inspecting globals/custom events manually.                                        | `Viewport.tsx` debug trace, wall debug Playwright capture                     | P0       | Done   |
+| NEXT11-GAP-002 | Direct 3D wall left-drag could be captured as authoring input but produce no wall, leaving the interaction feeling cursor-trapped.             | `Viewport.tsx` direct 3D pointer lifecycle, wall debug Playwright capture     | P0       | Done   |
+| NEXT11-GAP-003 | Wall debug screenshots could silently run on the default seed when multiple seeded models existed.                                             | `packages/web/tmp/ux-wall-debug-*/capture.mjs`, seeded project selector usage | P0       | Done   |
+| NEXT11-GAP-004 | In front/elevation-like 3D views, wall starts used unstable level-plane/elevation-axis projections that could look plausible but commit wrong. | `Viewport.tsx` 3D wall projection gating and exact plane-readable authoring   | P0       | Done   |
+| NEXT11-GAP-005 | Empty-sky or unreadable-plane wall clicks in 3D could silently no-op or appear to accept input without reliable geometry.                      | `Viewport.tsx` wall blocked-state overlay, pointer down/up draft lifecycle    | P0       | Done   |
 
 ### WP-NEXT-29 — 3D Wall Debug Visibility + Drag Input Recovery
 
 - Priority: `P0`
 - Status: `Done`
 - Covers: `NEXT11-GAP-001`, `NEXT11-GAP-002`, `NEXT11-GAP-003`, `NEXT11-GAP-004`, `NEXT11-GAP-005`
-- Goal: make the wall debug path observable in the browser console, remove the no-op direct-drag trap in 3D wall authoring, and anchor front/elevation wall starts to visible model geometry instead of unstable sky/level-plane intersections.
+- Goal: make the wall debug path observable in the browser console, remove the no-op direct-drag trap in 3D wall authoring, and prevent front/elevation-like views from committing synthetic wall geometry.
 - Source ownership:
   - `packages/web/src/Viewport.tsx`
   - `packages/web/tmp/ux-wall-debug-pipeline-20260513/capture.mjs`
@@ -1247,34 +1245,29 @@ Evidence (2026-05-13):
 - Acceptance:
   - in local dev, or when `localStorage["bim.debug.3dWall"] = "true"`, wall debug records appear as browser console entries and remain available in `window.__BIM_AI_3D_WALL_DEBUG__`;
   - direct 3D line tools, including `Wall`, support press-drag-release as a real draft gesture instead of swallowing the drag;
-  - front/elevation-style wall placement uses the visible model hit under the cursor when available, while valid grid/level-plane starts remain accepted in `elevation-axis` mode;
-  - empty-sky clicks that cannot resolve a draft plane are blocked with an explicit prompt and do not emit a wall command;
+  - front/elevation-style wall placement is blocked when the active level plane is not readable;
+  - top/oblique 3D placement uses exact ray-to-level-plane projection for both preview and commit;
   - pointer cancel / lost capture clears transient drag state so navigation is not left stuck;
   - seeded UI proof explicitly selects `target-house-3` before validating.
 - Implementation + evidence:
   - `emitWallDebug` now writes compact JSON `[bim:3d-wall]` console info entries in local dev / explicit debug mode in addition to global trace storage and custom events, so DevTools shows actual coordinates instead of only collapsed object previews.
   - Direct 3D line tools seed the start point on pointer-down, update preview during drag, and commit on pointer-up when the drag exceeds threshold.
-  - Wall start in `elevation-axis` projection now raycasts visible model geometry and stores the hit as the canonical `lineDraftStart.point` when the cursor is over model geometry; otherwise a valid level-plane/grid point remains a legal start.
-  - Wall clicks with no draft-plane hit emit `wall-blocked-no-draft-plane`, keep the tool in `pick-start`, and show the explicit “Empty sky is not a valid 3D wall anchor” instruction.
+  - Wall start in `elevation-axis` projection now emits `wall-blocked-unreadable-plane`, keeps the tool in `pick-start`, and shows an explicit rotate/open-plan instruction instead of committing synthetic geometry.
+  - Wall starts in `plane` projection use exact level-plane raycasting for start, preview, and commit.
   - Pointer-up now suppresses duplicate blocked attempts when pointer-down already consumed a direct line-tool click.
   - Added pointer-cancel and lost-pointer-capture cleanup for tool draft and grip drag state.
   - Updated wall debug capture scripts to select `Seed Library / target-house-3` explicitly through the project selector.
   - Seeded proof (`make seed name=target-house-3`, `make dev name=target-house-3`):
-    - `packages/web/tmp/ux-wall-debug-input-20260513/01-drag-preview-console-debug.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/02-drag-release-wall-commit.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/03-grid-level-plane-fallback.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/04-sky-start-blocked.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/05-after-escape-navigation-drag.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/01-front-elevation-wall-blocked.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/02-oblique-wall-preview.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/03-oblique-wall-commit.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/04-after-escape-navigation-drag.png`
     - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
-      - `createWallCount: 2`
-      - `projectionModes: ["elevation-axis"]`
-      - `console3dWallCount: 9`
-      - `wallStartWithoutAnchorCount: 1`
-      - `blockedNoVisibleAnchorCount: 0`
-      - `blockedNoDraftPlaneCount: 1`
-      - `firstTrace.point == firstTrace.anchor.point == command.start`
-      - first command uses visible model anchoring and second command proves level-plane/grid fallback is draw-able
-      - `wallLengthsMm: [7173.603, 2078.073]`
+      - `commandsAfterFront: 0`
+      - `createWallCount: 1`
+      - `projectionModes: ["elevation-axis", "plane"]`
+      - `blockedUnreadablePlaneCount: 1`
+      - `wallLengthsMm: [5819.760]`
     - `packages/web/tmp/ux-wall-debug-pipeline-20260513/01-front-elevation-preview.png`
     - `packages/web/tmp/ux-wall-debug-pipeline-20260513/02-front-elevation-after-commit.png`
     - `packages/web/tmp/ux-wall-debug-pipeline-20260513/summary.json`
@@ -1285,35 +1278,37 @@ Evidence (2026-05-13):
 
 ## Reopened Tracker (2026-05-13, feedback round 12)
 
-| Gap ID         | Problem Statement                                                                                                   | Canonical Surfaces / Files                                                   | Priority | Status |
-| -------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------- | ------ |
-| NEXT12-GAP-001 | `wall-blocked-no-visible-anchor` blocked ordinary grid/work-plane starts in front/elevation-like 3D wall authoring. | `Viewport.tsx` 3D wall start logic, wall debug input Playwright capture      | P0       | Done   |
-| NEXT12-GAP-002 | Wall evidence did not distinguish visible-model anchoring from grid/level-plane fallback authoring.                 | `packages/web/tmp/ux-wall-debug-input-20260513/capture.mjs`, tracker summary | P0       | Done   |
+| Gap ID         | Problem Statement                                                                                                                  | Canonical Surfaces / Files                                                   | Priority | Status |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------- | ------ |
+| NEXT12-GAP-001 | Front/elevation-like 3D wall authoring kept accepting or previewing ambiguous gestures that did not map reliably to plan geometry. | `Viewport.tsx` 3D wall start logic, wall debug input Playwright capture      | P0       | Done   |
+| NEXT12-GAP-002 | Wall evidence needed to prove both rejection of unreadable views and successful authoring in a readable 3D view.                   | `packages/web/tmp/ux-wall-debug-input-20260513/capture.mjs`, tracker summary | P0       | Done   |
 
-### WP-NEXT-30 — 3D Wall Grid Start Recovery
+### WP-NEXT-30 — Plane-Readable 3D Wall Authoring
 
 - Priority: `P0`
 - Status: `Done`
 - Covers: `NEXT12-GAP-001`, `NEXT12-GAP-002`
-- Goal: restore draw-ability for 3D wall starts on the visible grid/work plane while preserving the explicit block for true empty-sky clicks.
+- Goal: make 3D wall authoring deterministic by allowing commits only when the active level plane is readable from the current camera.
 - Source ownership:
   - `packages/web/src/Viewport.tsx`
   - `packages/web/tmp/ux-wall-debug-input-20260513/capture.mjs`
   - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
 - Acceptance:
-  - `elevation-axis` wall starts over model geometry still use visible model anchoring;
-  - `elevation-axis` wall starts over valid grid/level-plane space no longer emit `wall-blocked-no-visible-anchor`;
-  - true sky/no-plane clicks remain blocked with `wall-blocked-no-draft-plane`;
-  - seeded evidence proves two wall commands: one visible-model start and one level-plane fallback start.
+  - front/elevation-like 3D wall gestures produce no wall command and show rotate/open-plan guidance;
+  - oblique/top-readable 3D views create walls with exact level-plane projection;
+  - preview and committed wall share the same projection mode and endpoint source;
+  - seeded evidence proves rejection first, then one successful wall command.
 - Implementation + evidence:
-  - Removed the hard requirement for visible model anchors when the level/work-plane projection is valid.
-  - Hover prompt now shows a usable point for valid grid/work-plane starts instead of the invalid-anchor instruction.
-  - Seeded proof (`target-house-3`, `Front elevation`):
-    - `packages/web/tmp/ux-wall-debug-input-20260513/03-grid-level-plane-fallback.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/04-sky-start-blocked.png`
+  - Removed synthetic `elevation-axis` wall commits from the authoring path.
+  - `wall-blocked-unreadable-plane` now handles edge-on/front views explicitly.
+  - Seeded proof (`target-house-3`, `Front elevation` then `Roof court high axonometric`):
+    - `packages/web/tmp/ux-wall-debug-input-20260513/01-front-elevation-wall-blocked.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/02-oblique-wall-preview.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/03-oblique-wall-commit.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/04-after-escape-navigation-drag.png`
     - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
-      - `createWallCount: 2`
-      - `wallStartWithoutAnchorCount: 1`
-      - `blockedNoVisibleAnchorCount: 0`
-      - `blockedNoDraftPlaneCount: 1`
-      - `wallLengthsMm: [7173.603, 2078.073]`
+      - `commandsAfterFront: 0`
+      - `blockedUnreadablePlaneCount: 1`
+      - `createWallCount: 1`
+      - `projectionModes: ["elevation-axis", "plane"]`
+      - `wallLengthsMm: [5819.760]`

@@ -1,10 +1,11 @@
 {
-  "commandTypes": ["createWall", "createWall"],
-  "createWallCount": 2,
-  "wallLengthsMm": [7173.6029052734375, 2078.0731636211763],
-  "wallLengthMm": 7173.6029052734375,
-  "projectionModes": ["elevation-axis"],
+  "commandTypes": ["createWall"],
+  "commandsAfterFront": 0,
+  "createWallCount": 1,
+  "wallLengthsMm": [5819.7599158959965],
+  "projectionModes": ["elevation-axis", "plane"],
   "tracePhases": [
+    "wall-blocked-unreadable-plane",
     "wall-start",
     "wall-preview",
     "wall-preview",
@@ -34,52 +35,32 @@
     "wall-preview",
     "wall-preview",
     "wall-preview",
-    "wall-commit",
-    "wall-start",
-    "wall-preview",
-    "wall-preview",
-    "wall-preview",
-    "wall-preview",
-    "wall-preview",
-    "wall-preview",
-    "wall-preview",
-    "wall-preview",
-    "wall-preview",
-    "wall-preview",
-    "wall-preview",
-    "wall-preview",
-    "wall-preview",
-    "wall-preview",
-    "wall-preview",
-    "wall-preview",
-    "wall-preview",
-    "wall-preview",
-    "wall-preview",
-    "wall-preview",
-    "wall-commit",
-    "wall-blocked-no-draft-plane"
+    "wall-commit"
   ],
-  "wallStartWithoutAnchorCount": 1,
-  "blockedNoVisibleAnchorCount": 0,
-  "blockedNoDraftPlaneCount": 1,
-  "console3dWallCount": 9,
+  "blockedUnreadablePlaneCount": 1,
+  "blockedNoDraftPlaneCount": 0,
+  "console3dWallCount": 5,
   "consoleSamples": [
     {
       "type": "info",
-      "text": "[bim:3d-wall] {\"phase\":\"wall-start\",\"mode\":\"elevation-axis\",\"point\":{\"xMm\":6490.944202215072,\"yMm\":6246.418025330606},\"planePoint\":{\"xMm\":-12231.443008340148,\"yMm\":29963.598873675273},\"anchor\":{\"point\":{\"xMm\":6490.944202215072,\"yMm\":6246.418025330606},\"screen\":{\"x\":702.719970703125,\"y\":513.239990234375},\"elementId\":\"hf-roof-main\"}}"
+      "text": "[bim:3d-wall] {\"phase\":\"wall-blocked-unreadable-plane\",\"mode\":\"elevation-axis\",\"planePoint\":{\"xMm\":3515.9975529484627,\"yMm\":4993.956069399114}}"
     },
     {
       "type": "info",
-      "text": "[bim:3d-wall] {\"phase\":\"wall-preview\",\"mode\":\"elevation-axis\",\"lengthMm\":3074.403076171875,\"start\":{\"xMm\":6490.944202215072,\"yMm\":6246.418025330606},\"end\":{\"xMm\":4126.70174630819,\"yMm\":4281.141483858011},\"startScreen\":{\"x\":702.719970703125,\"y\":513.239990234375},\"endScreen\":{\"x\":790.56005859375,\"y\":597.0343017578125}}"
+      "text": "[bim:3d-wall] {\"phase\":\"wall-start\",\"mode\":\"plane\",\"point\":{\"xMm\":12202.200064934339,\"yMm\":11228.222806932516}}"
     },
     {
       "type": "info",
-      "text": "[bim:3d-wall] {\"phase\":\"wall-preview\",\"mode\":\"elevation-axis\",\"lengthMm\":6148.8018798828125,\"start\":{\"xMm\":6490.944202215072,\"yMm\":6246.418025330606},\"end\":{\"xMm\":1762.4625759605833,\"yMm\":2315.8676735065633},\"startScreen\":{\"x\":702.719970703125,\"y\":513.239990234375},\"endScreen\":{\"x\":878.4000244140625,\"y\":680.8285522460938}}"
+      "text": "[bim:3d-wall] {\"phase\":\"wall-preview\",\"mode\":\"plane\",\"lengthMm\":2165.2233986116826,\"start\":{\"xMm\":12202.200064934339,\"yMm\":11228.222806932516},\"end\":{\"xMm\":10619.318854208299,\"yMm\":9750.833407137732},\"startScreen\":{\"x\":497.760009765625,\"y\":708.760009765625},\"endScreen\":{\"x\":602.3314208984375,\"y\":726.2171630859375}}"
+    },
+    {
+      "type": "info",
+      "text": "[bim:3d-wall] {\"phase\":\"wall-preview\",\"mode\":\"plane\",\"lengthMm\":4634.553731590865,\"start\":{\"xMm\":12202.200064934339,\"yMm\":11228.222806932516},\"end\":{\"xMm\":8814.120175339378,\"yMm\":8065.944679897354},\"startScreen\":{\"x\":497.760009765625,\"y\":708.760009765625},\"endScreen\":{\"x\":727.817138671875,\"y\":747.1657104492188}}"
     }
   ],
   "firstTrace": {
-    "phase": "wall-start",
-    "atMs": 6000.699999988079,
+    "phase": "wall-blocked-unreadable-plane",
+    "atMs": 5437.300000011921,
     "camera": {
       "position": {
         "x": 20.499999999999996,
@@ -106,27 +87,12 @@
       "radius": 21.54646142641524
     },
     "screen": {
-      "x": 702.719970703125,
-      "y": 513.239990234375
-    },
-    "point": {
-      "xMm": 6490.944202215072,
-      "yMm": 6246.418025330606
+      "x": 849.1199951171875,
+      "y": 757.6400146484375
     },
     "planePoint": {
-      "xMm": -12231.443008340148,
-      "yMm": 29963.598873675273
-    },
-    "anchor": {
-      "point": {
-        "xMm": 6490.944202215072,
-        "yMm": 6246.418025330606
-      },
-      "screen": {
-        "x": 702.719970703125,
-        "y": 513.239990234375
-      },
-      "elementId": "hf-roof-main"
+      "xMm": 3515.9975529484627,
+      "yMm": 4993.956069399114
     },
     "levelInfo": {
       "id": "hf-lvl-ground",
@@ -135,53 +101,26 @@
     },
     "projection": {
       "mode": "elevation-axis",
-      "scaleXMmPerPx": 45.5724754080458,
-      "scaleYMmPerPx": 240.7513761278124,
-      "anisotropyRatio": 5.2828242041315105,
+      "scaleXMmPerPx": 21.49311847698678,
+      "scaleYMmPerPx": 55.30643742294886,
+      "anisotropyRatio": 2.5732160496936194,
       "verticalLook": 0.2599034657790531
     },
-    "basis": {
-      "mode": "elevation-axis",
-      "originScreen": {
-        "x": 702.719970703125,
-        "y": 513.239990234375
-      },
-      "originPointMm": {
-        "xMm": 6490.944202215072,
-        "yMm": 6246.418025330606
-      },
-      "xPerPx": {
-        "xMm": -26.915301574501417,
-        "yMm": -22.37334443380429
-      },
-      "yPerPx": {
-        "xMm": 0,
-        "yMm": 0
-      },
-      "scaleMmPerPx": 35,
-      "projection": {
-        "mode": "elevation-axis",
-        "scaleXMmPerPx": 45.5724754080458,
-        "scaleYMmPerPx": 240.7513761278124,
-        "anisotropyRatio": 5.2828242041315105,
-        "verticalLook": 0.2599034657790531
-      }
-    },
-    "rawMmPerPx": 242.86183916400324
+    "rawMmPerPx": 55.54051381996153
   },
   "lastTrace": {
-    "phase": "wall-blocked-no-draft-plane",
-    "atMs": 9581.100000023842,
+    "phase": "wall-commit",
+    "atMs": 9856.800000011921,
     "camera": {
       "position": {
-        "x": 20.499999999999996,
-        "y": 9.600000000000001,
-        "z": -11.5
+        "x": 16.8,
+        "y": 12.5,
+        "z": -7.8000000000000025
       },
       "target": {
-        "x": 7.2,
-        "y": 4,
-        "z": 4.5
+        "x": 11,
+        "y": 5.55,
+        "z": 3.6
       },
       "up": {
         "x": 0,
@@ -189,23 +128,44 @@
         "z": 0
       },
       "direction": {
-        "x": -0.6172707312252508,
-        "y": -0.2599034657790531,
-        "z": 0.7425813307972944
+        "x": -0.3984372677653401,
+        "y": -0.47743776051191605,
+        "z": 0.7831353194008408
       },
-      "azimuth": 2.4480851460024065,
-      "elevation": 0.26292223184335634,
-      "radius": 21.54646142641524
+      "azimuth": 2.670952151583654,
+      "elevation": 0.49773633667500494,
+      "radius": 14.556871229766376
     },
-    "screen": {
-      "x": 175.67999267578125,
-      "y": 183.29998779296875
+    "command": {
+      "type": "createWall",
+      "id": "wall-3d-mp4jrxoz-4hpn",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 12202.200064934339,
+        "yMm": 11228.222806932516
+      },
+      "end": {
+        "xMm": 7947.678136329152,
+        "yMm": 7257.247027896917
+      },
+      "locationLine": "wall-centerline",
+      "heightMm": 2800
     },
-    "levelInfo": {
-      "id": "hf-lvl-ground",
-      "elevationMm": 0,
-      "name": "Ground Floor"
+    "startScreen": {
+      "x": 497.760009765625,
+      "y": 708.760009765625
     },
-    "rawMmPerPx": null
+    "endScreen": {
+      "x": 790.56005859375,
+      "y": 757.6400146484375
+    },
+    "projection": {
+      "mode": "plane",
+      "scaleXMmPerPx": 19.34156243106001,
+      "scaleYMmPerPx": 35.090204848203626,
+      "anisotropyRatio": 1.8142383777565647,
+      "verticalLook": 0.47743776051191605
+    },
+    "lengthMm": 5819.7599158959965
   }
 }

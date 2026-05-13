@@ -26,6 +26,24 @@ page.on('console', (message) => {
   });
 });
 
+async function activate3dView(viewpointId) {
+  await page.click(`[data-testid="left-rail-row-${viewpointId}"]`);
+  await page.waitForTimeout(500);
+  const tab = page.getByTestId(`tab-activate-3d:${viewpointId}`);
+  if ((await tab.count()) > 0) await tab.first().click();
+  await page.getByTestId('orbit-3d-viewport').waitFor({ timeout: 30000 });
+  await page.waitForTimeout(1200);
+}
+
+async function dragWall(box, start, end) {
+  await page.click('[data-testid="ribbon-command-wall"]');
+  await page.waitForTimeout(250);
+  await page.mouse.move(box.x + box.width * start.x, box.y + box.height * start.y);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * end.x, box.y + box.height * end.y, { steps: 14 });
+  await page.waitForTimeout(250);
+}
+
 await page.goto('http://127.0.0.1:2000/', { waitUntil: 'domcontentloaded' });
 await page.waitForSelector('[data-testid="view-tabs"]', { timeout: 30000 });
 await page.waitForTimeout(1200);
@@ -37,47 +55,29 @@ await page
   .waitFor({ timeout: 30000 });
 await page.waitForTimeout(1200);
 
-await page.click('[data-testid="left-rail-row-vp-front-elev"]');
+await activate3dView('vp-front-elev');
+let vp = page.locator('[data-testid="orbit-3d-viewport"]');
+let box = await vp.boundingBox();
+if (!box) throw new Error('no front 3D viewport');
+
+await dragWall(box, { x: 0.58, y: 0.62 }, { x: 0.7, y: 0.66 });
+await page.screenshot({ path: `${outDir}01-front-elevation-wall-blocked.png`, fullPage: true });
+await page.mouse.up();
 await page.waitForTimeout(500);
-await page.click('[data-testid="tab-activate-3d:vp-front-elev"]');
-await page.waitForTimeout(1800);
+const commandsAfterFront = commands.filter((command) => command?.type === 'createWall').length;
 
-const vp = page.locator('[data-testid="orbit-3d-viewport"]');
-await vp.waitFor({ timeout: 30000 });
-const box = await vp.boundingBox();
-if (!box) throw new Error('no 3D viewport');
+await page.keyboard.press('Escape');
+await page.waitForTimeout(300);
+await activate3dView('vp-roof-court');
+vp = page.locator('[data-testid="orbit-3d-viewport"]');
+box = await vp.boundingBox();
+if (!box) throw new Error('no oblique 3D viewport');
 
-await page.click('[data-testid="ribbon-command-wall"]');
-await page.waitForTimeout(250);
-
-const start = { x: box.x + box.width * 0.48, y: box.y + box.height * 0.42 };
-const end = { x: box.x + box.width * 0.62, y: box.y + box.height * 0.58 };
-await page.mouse.move(start.x, start.y);
-await page.mouse.down();
-await page.mouse.move(end.x, end.y, { steps: 14 });
-await page.waitForTimeout(250);
-await page.screenshot({ path: `${outDir}01-drag-preview-console-debug.png`, fullPage: true });
+await dragWall(box, { x: 0.34, y: 0.58 }, { x: 0.54, y: 0.62 });
+await page.screenshot({ path: `${outDir}02-oblique-wall-preview.png`, fullPage: true });
 await page.mouse.up();
 await page.waitForTimeout(900);
-await page.screenshot({ path: `${outDir}02-drag-release-wall-commit.png`, fullPage: true });
-
-await page.click('[data-testid="ribbon-command-wall"]');
-await page.waitForTimeout(250);
-const gridStart = { x: box.x + box.width * 0.88, y: box.y + box.height * 0.7 };
-const gridEnd = { x: box.x + box.width * 0.8, y: box.y + box.height * 0.64 };
-await page.mouse.move(gridStart.x, gridStart.y);
-await page.mouse.down();
-await page.mouse.move(gridEnd.x, gridEnd.y, { steps: 10 });
-await page.waitForTimeout(250);
-await page.screenshot({ path: `${outDir}03-grid-level-plane-fallback.png`, fullPage: true });
-await page.mouse.up();
-await page.waitForTimeout(700);
-
-await page.click('[data-testid="ribbon-command-wall"]');
-await page.waitForTimeout(250);
-await page.mouse.click(box.x + box.width * 0.12, box.y + box.height * 0.15);
-await page.waitForTimeout(400);
-await page.screenshot({ path: `${outDir}04-sky-start-blocked.png`, fullPage: true });
+await page.screenshot({ path: `${outDir}03-oblique-wall-commit.png`, fullPage: true });
 
 await page.keyboard.press('Escape');
 await page.waitForTimeout(200);
@@ -86,32 +86,21 @@ await page.mouse.down();
 await page.mouse.move(box.x + box.width * 0.72, box.y + box.height * 0.47, { steps: 10 });
 await page.mouse.up();
 await page.waitForTimeout(500);
-await page.screenshot({ path: `${outDir}05-after-escape-navigation-drag.png`, fullPage: true });
+await page.screenshot({ path: `${outDir}04-after-escape-navigation-drag.png`, fullPage: true });
 
 const wallTrace = await page.evaluate(() => window.__BIM_AI_3D_WALL_DEBUG__ ?? []);
-const wallCommand = commands.find((command) => command?.type === 'createWall') ?? null;
-const wallLengthMm = wallCommand
-  ? Math.hypot(
-      wallCommand.end.xMm - wallCommand.start.xMm,
-      wallCommand.end.yMm - wallCommand.start.yMm,
-    )
-  : null;
+const wallCommands = commands.filter((command) => command?.type === 'createWall');
 const summary = {
   commandTypes: commands.map((command) => command?.type ?? null),
-  createWallCount: commands.filter((command) => command?.type === 'createWall').length,
-  wallLengthsMm: commands
-    .filter((command) => command?.type === 'createWall')
-    .map((command) =>
-      Math.hypot(command.end.xMm - command.start.xMm, command.end.yMm - command.start.yMm),
-    ),
-  wallLengthMm,
+  commandsAfterFront,
+  createWallCount: wallCommands.length,
+  wallLengthsMm: wallCommands.map((command) =>
+    Math.hypot(command.end.xMm - command.start.xMm, command.end.yMm - command.start.yMm),
+  ),
   projectionModes: [...new Set(wallTrace.map((entry) => entry.projection?.mode).filter(Boolean))],
   tracePhases: wallTrace.map((entry) => entry.phase),
-  wallStartWithoutAnchorCount: wallTrace.filter(
-    (entry) => entry.phase === 'wall-start' && !entry.anchor,
-  ).length,
-  blockedNoVisibleAnchorCount: wallTrace.filter(
-    (entry) => entry.phase === 'wall-blocked-no-visible-anchor',
+  blockedUnreadablePlaneCount: wallTrace.filter(
+    (entry) => entry.phase === 'wall-blocked-unreadable-plane',
   ).length,
   blockedNoDraftPlaneCount: wallTrace.filter(
     (entry) => entry.phase === 'wall-blocked-no-draft-plane',
@@ -120,7 +109,7 @@ const summary = {
     .length,
   consoleSamples: consoleMessages
     .filter((entry) => entry.text.includes('[bim:3d-wall]'))
-    .slice(0, 3),
+    .slice(0, 4),
   firstTrace: wallTrace[0] ?? null,
   lastTrace: wallTrace.at(-1) ?? null,
 };
