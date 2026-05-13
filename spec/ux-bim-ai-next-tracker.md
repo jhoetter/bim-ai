@@ -1154,14 +1154,14 @@ Evidence (2026-05-13):
 
 ## Reopened Tracker (2026-05-13, feedback round 10)
 
-| Gap ID         | Problem Statement                                                                                                                               | Canonical Surfaces / Files                                   | Priority | Status  |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | -------- | ------- |
-| NEXT10-GAP-001 | 3D wall placement can still read as directionally wrong in front/elevation-like camera poses (preview vector vs committed wall interpretation). | `Viewport.tsx` direct wall draft projection + overlay guards | P0       | Partial |
+| Gap ID         | Problem Statement                                                                                                                               | Canonical Surfaces / Files                                   | Priority | Status |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | -------- | ------ |
+| NEXT10-GAP-001 | 3D wall placement can still read as directionally wrong in front/elevation-like camera poses (preview vector vs committed wall interpretation). | `Viewport.tsx` direct wall draft projection + overlay guards | P0       | Done   |
 
 ### WP-NEXT-28 — 3D Wall Direction Fidelity In Edge-On Poses
 
 - Priority: `P0`
-- Status: `Partial`
+- Status: `Done`
 - Covers: `NEXT10-GAP-001`
 - Goal: remove ambiguous 3D wall commits in edge-on views and keep draft direction fidelity explicit before commit.
 - Source ownership:
@@ -1175,7 +1175,7 @@ Evidence (2026-05-13):
   - edge-on/unstable level-plane projection blocks commit with explicit placement guidance instead of committing ambiguous geometry,
   - wall preview must be screen-readable before commit (non-collapsed outline + direction),
   - seeded front/elevation repro no longer yields misleading commit behavior.
-- Implementation + current evidence (partial):
+- Implementation + evidence:
   - Endpoint fidelity path changed to commit line tools from direct click projection (`end = projected.point`) so commit cannot reuse stale hover point.
   - Added projection stability guard (`mm/px` sensitivity only) for non-wall plane-based 3D tools before accepting clicks; the earlier camera-component threshold was removed because it blocked valid wall drafting in normal 3D/elevation-like views.
   - Replaced wall end-point re-projection with a first-click screen-to-level draft basis. Preview and commit now use the same basis.
@@ -1209,8 +1209,17 @@ Evidence (2026-05-13):
       - `packages/web/tmp/ux-wall-debug-oblique-20260513/summary.json`
       - `projectionModes: ["plane"]`
       - `createWallCount: 1`
-  - Remaining closure work:
-    - decide whether front/elevation wall authoring should remain constrained placement or offer an explicit “open associated plan / choose work plane” branch for clicks that visually land in sky/behind the model.
+    - 2026-05-13 closure rerun with visible model anchoring:
+      - `packages/web/tmp/ux-wall-debug-input-20260513/01-drag-preview-console-debug.png`
+      - `packages/web/tmp/ux-wall-debug-input-20260513/02-drag-release-wall-commit.png`
+      - `packages/web/tmp/ux-wall-debug-input-20260513/03-sky-start-blocked.png`
+      - `packages/web/tmp/ux-wall-debug-input-20260513/04-after-escape-navigation-drag.png`
+      - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
+      - `firstTrace.anchor.elementId: "hf-roof-main"`
+      - `firstTrace.point == firstTrace.anchor.point == command.start`
+      - `blockedNoDraftPlaneCount: 1`
+  - Closure decision:
+    - front/elevation wall authoring remains constrained 3D placement: clicks must resolve to visible model geometry for the start anchor, and empty sky is explicitly blocked with guidance instead of opening an implicit work-plane branch.
 
 ## Reopened Tracker (2026-05-13, feedback round 11)
 
