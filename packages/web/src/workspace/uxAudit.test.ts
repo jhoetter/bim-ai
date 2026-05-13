@@ -138,9 +138,15 @@ describe('UX reachability audit', () => {
     const nonPlanModes: CapabilityViewMode[] = ['3d', 'sheet', 'schedule', 'concept'];
 
     for (const mode of nonPlanModes) {
-      for (const commandId of ['tool.door', 'tool.window', 'tool.dimension']) {
+      for (const commandId of ['tool.dimension']) {
         expect(evaluateCommandInMode(commandId, mode)?.state).toBe('bridge');
       }
+    }
+    expect(evaluateCommandInMode('tool.door', '3d')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('tool.window', '3d')?.state).toBe('enabled');
+    for (const mode of ['sheet', 'schedule', 'concept'] as CapabilityViewMode[]) {
+      expect(evaluateCommandInMode('tool.door', mode)?.state).toBe('bridge');
+      expect(evaluateCommandInMode('tool.window', mode)?.state).toBe('bridge');
     }
     expect(evaluateCommandInMode('tool.wall', '3d')?.state).toBe('enabled');
     for (const mode of ['sheet', 'schedule', 'concept'] as CapabilityViewMode[]) {
@@ -249,7 +255,7 @@ describe('UX reachability audit', () => {
     }
 
     expect(inspectedCommandIds.size).toBeGreaterThan(0);
-    expect(inspectedCommandIds).toContain('3d:tool.door');
+    expect(inspectedCommandIds).toContain('3d:tool.property-line');
     expect(inspectedCommandIds).toContain('schedule:tool.dimension');
     expect(inspectedCommandIds).toContain('plan:view.3d.saved-view.save-current');
   });

@@ -1,0 +1,17 @@
+{
+  "modeIdentity": "3D",
+  "commandCounts": {
+    "createFloor": 1,
+    "createRoof": 1,
+    "createSlabOpening": 1,
+    "createStair": 1,
+    "createRailing": 1,
+    "createGridLine": 1,
+    "createReferencePlane": 1
+  },
+  "floorBridgeBadgeMissing": true,
+  "roofBridgeBadgeMissing": true,
+  "shaftBridgeBadgeMissing": true,
+  "stairBridgeBadgeMissing": true,
+  "railingBridgeBadgeMissing": true
+}

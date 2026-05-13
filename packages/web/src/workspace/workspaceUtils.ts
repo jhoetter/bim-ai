@@ -42,6 +42,7 @@ export const KNOWN_PLAN_TOOLS = new Set<ToolId>([
   'query',
   'wall',
   'floor',
+  'roof',
   'door',
   'window',
   'stair',

@@ -102,6 +102,7 @@ import { makeFamilyInstanceMesh } from './viewport/familyInstance3d';
 import './viewport/grip3dProviders';
 import {
   WallFaceRadialMenu,
+  projectAlongT,
   type WallFaceRadialMenuOpen,
   type WallFaceRadialCommand,
 } from './viewport/wallFaceRadialMenu';
@@ -150,12 +151,68 @@ type ViewerGdoRuntimeState = {
   viewerPhotographicExposureEv?: number;
 };
 
-type WallDraftOverlayState = {
-  phase: 'pick-start' | 'pick-end';
-  levelName: string;
-  startScreen?: { x: number; y: number };
-  currentScreen?: { x: number; y: number };
+type ScreenPoint = { x: number; y: number };
+type Direct3dAuthoringTool =
+  | 'wall'
+  | 'floor'
+  | 'roof'
+  | 'shaft'
+  | 'stair'
+  | 'railing'
+  | 'column'
+  | 'beam'
+  | 'ceiling'
+  | 'room'
+  | 'area'
+  | 'grid'
+  | 'reference-plane'
+  | 'door'
+  | 'window'
+  | 'wall-opening';
+type Authoring3dOverlayState = {
+  tool: Direct3dAuthoringTool;
+  phase: 'pick-start' | 'pick-end' | 'pick-point' | 'pick-wall' | 'pick-vertex' | 'pick-next';
+  levelName?: string;
+  startScreen?: ScreenPoint;
+  currentScreen?: ScreenPoint;
+  pointsScreen?: ScreenPoint[];
 };
+
+const DIRECT_3D_AUTHORING_TOOLS = new Set<Direct3dAuthoringTool>([
+  'wall',
+  'floor',
+  'roof',
+  'shaft',
+  'stair',
+  'railing',
+  'column',
+  'beam',
+  'ceiling',
+  'room',
+  'area',
+  'grid',
+  'reference-plane',
+  'door',
+  'window',
+  'wall-opening',
+]);
+
+const LINE_3D_AUTHORING_TOOLS = new Set<Direct3dAuthoringTool>([
+  'wall',
+  'beam',
+  'stair',
+  'railing',
+  'grid',
+  'reference-plane',
+]);
+
+const POLYGON_3D_AUTHORING_TOOLS = new Set<Direct3dAuthoringTool>([
+  'floor',
+  'roof',
+  'shaft',
+  'ceiling',
+  'area',
+]);
 
 const GDO_STORAGE_KEYS = {
   shadows: 'bim.viewer.shadowsEnabled',
@@ -339,13 +396,13 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
   selectedIdRef.current = selectedId;
   const planTool = useBimStore((s) => s.planTool);
   const activeLevelId = useBimStore((s) => s.activeLevelId);
-  const [wallDraftOverlay, setWallDraftOverlay] = useState<WallDraftOverlayState | null>(null);
+  const [authoringOverlay, setAuthoringOverlay] = useState<Authoring3dOverlayState | null>(null);
   const planToolRef = useRef(planTool);
   const activeLevelIdRef = useRef(activeLevelId);
   planToolRef.current = planTool;
   activeLevelIdRef.current = activeLevelId;
-  const wallDraftOverlayRef = useRef<WallDraftOverlayState | null>(null);
-  wallDraftOverlayRef.current = wallDraftOverlay;
+  const authoringOverlayRef = useRef<Authoring3dOverlayState | null>(null);
+  authoringOverlayRef.current = authoringOverlay;
   // ANN-02: store actions for the wall context menu's command flow.
   const activateElevationView = useBimStore((s) => s.activateElevationView);
   const selectStoreEl = useBimStore((s) => s.select);
@@ -409,7 +466,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
     [onSemanticCommand],
   );
 
-  const wallDraftDefaultLevelName = useMemo(() => {
+  const direct3dDraftLevelName = useMemo(() => {
     const levels = Object.values(elementsById)
       .filter((el): el is Extract<Element, { kind: 'level' }> => el.kind === 'level')
       .map((level) => ({ id: level.id, elevationMm: level.elevationMm, name: level.name }));
@@ -419,16 +476,33 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
   }, [activeLevelId, elementsById]);
 
   useEffect(() => {
-    if (planTool !== 'wall') {
-      setWallDraftOverlay(null);
+    if (!DIRECT_3D_AUTHORING_TOOLS.has(planTool as Direct3dAuthoringTool)) {
+      setAuthoringOverlay(null);
       return;
     }
-    setWallDraftOverlay((prev) =>
-      prev
-        ? { ...prev, levelName: wallDraftDefaultLevelName }
-        : { phase: 'pick-start', levelName: wallDraftDefaultLevelName },
-    );
-  }, [planTool, wallDraftDefaultLevelName]);
+    const tool = planTool as Direct3dAuthoringTool;
+    setAuthoringOverlay((prev) => {
+      if (prev?.tool === tool) {
+        return {
+          ...prev,
+          levelName:
+            tool === 'door' || tool === 'window' || tool === 'wall-opening'
+              ? undefined
+              : direct3dDraftLevelName,
+        };
+      }
+      if (LINE_3D_AUTHORING_TOOLS.has(tool)) {
+        return { tool, phase: 'pick-start', levelName: direct3dDraftLevelName };
+      }
+      if (tool === 'column' || tool === 'room') {
+        return { tool, phase: 'pick-point', levelName: direct3dDraftLevelName };
+      }
+      if (POLYGON_3D_AUTHORING_TOOLS.has(tool)) {
+        return { tool, phase: 'pick-vertex', levelName: direct3dDraftLevelName, pointsScreen: [] };
+      }
+      return { tool, phase: 'pick-wall' };
+    });
+  }, [planTool, direct3dDraftLevelName]);
 
   // VIS-V3-04: sync sun_settings element → sunStore
   useEffect(() => {
@@ -740,7 +814,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       maxRadius: 80,
     });
     cameraRigRef.current = rig;
-    let dragging: 'orbit' | 'pan' | 'grip' | 'wall-draft' | null = null;
+    let dragging: 'orbit' | 'pan' | 'grip' | 'tool-draft' | null = null;
     let dragMoved = false;
     let cumulativeDragPx = 0;
     let inertiaVx = 0;
@@ -758,9 +832,15 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       indicator: AxisIndicatorHandle | null;
       lastDeltaMm: number;
     } | null = null;
-    let wallDraftStart: {
+    let lineDraftStart: {
+      tool: 'wall' | 'beam' | 'stair' | 'railing' | 'grid' | 'reference-plane';
       levelId: string;
       point: { xMm: number; yMm: number };
+    } | null = null;
+    let polygonDraft: {
+      tool: 'ceiling' | 'floor' | 'roof' | 'shaft' | 'area';
+      levelId: string;
+      points: Array<{ xMm: number; yMm: number }>;
     } | null = null;
 
     function placeCamera(): void {
@@ -815,24 +895,43 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       useBimStore.getState().select(first?.object.userData.bimPickId as string | undefined);
     }
 
-    function clearWallDraftOverlay(levelName: string): void {
-      setWallDraftOverlay({ phase: 'pick-start', levelName });
+    function activeDirect3dTool(): Direct3dAuthoringTool | null {
+      const tool = planToolRef.current as Direct3dAuthoringTool;
+      return DIRECT_3D_AUTHORING_TOOLS.has(tool) ? tool : null;
     }
 
-    function handle3dWallDraftClick(cx: number, cy: number): boolean {
-      if (planToolRef.current !== 'wall') {
-        wallDraftStart = null;
-        setWallDraftOverlay(null);
-        return false;
-      }
+    function resolveDraftLevelInfo(): {
+      id: string;
+      elevationMm: number;
+      name: string;
+    } | null {
       const levels = Object.values(elementsByIdRef.current).filter(
         (el): el is Extract<Element, { kind: 'level' }> => el.kind === 'level',
       );
-      const draftLevelLabelMap = new Map(levels.map((level) => [level.id, level.name]));
-      const fallbackLevelName = wallDraftOverlayRef.current?.levelName ?? 'Active level';
       const draftLevel = resolve3dDraftLevel(levels, activeLevelIdRef.current);
-      if (!draftLevel) return false;
-      const draftLevelName = draftLevelLabelMap.get(draftLevel.id) ?? fallbackLevelName;
+      if (!draftLevel) return null;
+      const levelName =
+        levels.find((level) => level.id === draftLevel.id)?.name ??
+        authoringOverlayRef.current?.levelName ??
+        'Active level';
+      return { id: draftLevel.id, elevationMm: draftLevel.elevationMm, name: levelName };
+    }
+
+    function resolveDraftLevels(): Array<{ id: string; elevationMm: number; name: string }> {
+      return Object.values(elementsByIdRef.current)
+        .filter((el): el is Extract<Element, { kind: 'level' }> => el.kind === 'level')
+        .map((level) => ({ id: level.id, elevationMm: level.elevationMm, name: level.name }))
+        .sort((a, b) => a.elevationMm - b.elevationMm);
+    }
+
+    function projectPointerToDraftPlane(
+      cx: number,
+      cy: number,
+      elevationMm: number,
+    ): {
+      point: { xMm: number; yMm: number };
+      screen: ScreenPoint;
+    } | null {
       const rect = renderer.domElement.getBoundingClientRect();
       ndc.x = ((cx - rect.left) / rect.width) * 2 - 1;
       ndc.y = -(((cy - rect.top) / rect.height) * 2 - 1);
@@ -840,41 +939,286 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       const hit = projectSceneRayToLevelPlaneMm(
         raycaster.ray.origin,
         raycaster.ray.direction,
-        draftLevel.elevationMm,
+        elevationMm,
       );
-      if (!hit) return false;
-      if (!wallDraftStart) {
-        const startScreen = { x: cx - rect.left, y: cy - rect.top };
-        wallDraftStart = { levelId: draftLevel.id, point: hit };
-        useBimStore.getState().select(undefined);
-        setWallDraftOverlay({
-          phase: 'pick-end',
-          levelName: draftLevelName,
-          startScreen,
-          currentScreen: startScreen,
+      if (!hit) return null;
+      return {
+        point: hit,
+        screen: { x: cx - rect.left, y: cy - rect.top },
+      };
+    }
+
+    function pickWallAtPointer(
+      cx: number,
+      cy: number,
+    ): {
+      wall: Extract<Element, { kind: 'wall' }>;
+      hitPointMm: { xMm: number; yMm: number; zMm: number };
+    } | null {
+      const rect = renderer.domElement.getBoundingClientRect();
+      ndc.x = ((cx - rect.left) / rect.width) * 2 - 1;
+      ndc.y = -(((cy - rect.top) / rect.height) * 2 - 1);
+      raycaster.setFromCamera(ndc, camera);
+      const hits = raycaster.intersectObjects(root.children, true);
+      const wallHit = hits.find((h) => {
+        const id = h.object.userData.bimPickId as string | undefined;
+        if (!id) return false;
+        const el = elementsByIdRef.current[id];
+        return el?.kind === 'wall';
+      });
+      if (!wallHit) return null;
+      const wallId = wallHit.object.userData.bimPickId as string;
+      const wall = elementsByIdRef.current[wallId];
+      if (!wall || wall.kind !== 'wall') return null;
+      return {
+        wall,
+        hitPointMm: {
+          xMm: wallHit.point.x * 1000,
+          yMm: wallHit.point.z * 1000,
+          zMm: wallHit.point.y * 1000,
+        },
+      };
+    }
+
+    function handle3dDirectToolClick(cx: number, cy: number): boolean {
+      const tool = activeDirect3dTool();
+      if (!tool) {
+        lineDraftStart = null;
+        polygonDraft = null;
+        setAuthoringOverlay(null);
+        return false;
+      }
+      if (!POLYGON_3D_AUTHORING_TOOLS.has(tool)) polygonDraft = null;
+      if (!LINE_3D_AUTHORING_TOOLS.has(tool)) lineDraftStart = null;
+      if (tool === 'door' || tool === 'window' || tool === 'wall-opening') {
+        const hit = pickWallAtPointer(cx, cy);
+        if (!hit) return false;
+        const alongT = projectAlongT(hit.hitPointMm, hit.wall.start, hit.wall.end);
+        useBimStore.getState().select(hit.wall.id);
+        if (tool === 'door') {
+          onSemanticCommand?.({
+            type: 'insertDoorOnWall',
+            wallId: hit.wall.id,
+            alongT,
+            widthMm: 900,
+          });
+          return true;
+        }
+        if (tool === 'window') {
+          onSemanticCommand?.({
+            type: 'insertWindowOnWall',
+            wallId: hit.wall.id,
+            alongT,
+            widthMm: 1200,
+            sillHeightMm: 900,
+            heightMm: 1500,
+          });
+          return true;
+        }
+        onSemanticCommand?.({
+          type: 'createWallOpening',
+          hostWallId: hit.wall.id,
+          alongTStart: Math.max(0, alongT - 0.05),
+          alongTEnd: Math.min(1, alongT + 0.05),
+          sillHeightMm: 200,
+          headHeightMm: 2400,
         });
         return true;
       }
-      const start = wallDraftStart.point;
-      const end = hit;
-      const levelId = wallDraftStart.levelId;
-      wallDraftStart = null;
-      if (Math.hypot(end.xMm - start.xMm, end.yMm - start.yMm) < 10) {
-        clearWallDraftOverlay(draftLevelName);
+      const levelInfo = resolveDraftLevelInfo();
+      if (!levelInfo) return false;
+      const projected = projectPointerToDraftPlane(cx, cy, levelInfo.elevationMm);
+      if (!projected) return false;
+      if (tool === 'room') {
+        onSemanticCommand?.({
+          type: 'placeRoomAtPoint',
+          id: crypto.randomUUID(),
+          levelId: levelInfo.id,
+          clickXMm: projected.point.xMm,
+          clickYMm: projected.point.yMm,
+          name: 'Room',
+        });
         return true;
       }
-      const runtime = useBimStore.getState();
-      onSemanticCommand?.({
-        type: 'createWall',
-        id: `wall-3d-${Date.now().toString(36)}-${Math.round(Math.random() * 1_000_000).toString(36)}`,
-        levelId,
-        start,
-        end,
-        locationLine: runtime.wallLocationLine,
-        wallTypeId: runtime.activeWallTypeId ?? undefined,
-        heightMm: runtime.wallDrawHeightMm,
-      });
-      clearWallDraftOverlay(draftLevelName);
+      if (tool === 'column') {
+        onSemanticCommand?.({
+          type: 'createColumn',
+          levelId: levelInfo.id,
+          positionMm: projected.point,
+        });
+        return true;
+      }
+      if (LINE_3D_AUTHORING_TOOLS.has(tool)) {
+        if (!lineDraftStart || lineDraftStart.tool !== tool) {
+          lineDraftStart = {
+            tool: tool as 'wall' | 'beam' | 'stair' | 'railing' | 'grid' | 'reference-plane',
+            levelId: levelInfo.id,
+            point: projected.point,
+          };
+          useBimStore.getState().select(undefined);
+          setAuthoringOverlay({
+            tool,
+            phase: 'pick-end',
+            levelName: levelInfo.name,
+            startScreen: projected.screen,
+            currentScreen: projected.screen,
+          });
+          return true;
+        }
+        const start = lineDraftStart.point;
+        const end = projected.point;
+        const levelId = lineDraftStart.levelId;
+        lineDraftStart = null;
+        if (Math.hypot(end.xMm - start.xMm, end.yMm - start.yMm) < 10) {
+          setAuthoringOverlay({ tool, phase: 'pick-start', levelName: levelInfo.name });
+          return true;
+        }
+        if (tool === 'wall') {
+          const runtime = useBimStore.getState();
+          onSemanticCommand?.({
+            type: 'createWall',
+            id: `wall-3d-${Date.now().toString(36)}-${Math.round(Math.random() * 1_000_000).toString(36)}`,
+            levelId,
+            start,
+            end,
+            locationLine: runtime.wallLocationLine,
+            wallTypeId: runtime.activeWallTypeId ?? undefined,
+            heightMm: runtime.wallDrawHeightMm,
+          });
+        } else {
+          if (tool === 'beam') {
+            onSemanticCommand?.({
+              type: 'createBeam',
+              levelId,
+              startMm: start,
+              endMm: end,
+            });
+          } else if (tool === 'stair') {
+            const levels = resolveDraftLevels();
+            const baseIndex = levels.findIndex((level) => level.id === levelId);
+            const topLevel = baseIndex >= 0 ? levels[baseIndex + 1] : undefined;
+            onSemanticCommand?.({
+              type: 'createStair',
+              baseLevelId: levelId,
+              topLevelId: topLevel?.id ?? levelId,
+              runStartMm: start,
+              runEndMm: end,
+              widthMm: 1100,
+              riserMm: 175,
+              treadMm: 275,
+            });
+          } else if (tool === 'railing') {
+            onSemanticCommand?.({
+              type: 'createRailing',
+              pathMm: [
+                { xMm: start.xMm, yMm: start.yMm },
+                { xMm: end.xMm, yMm: end.yMm },
+              ],
+            });
+          } else if (tool === 'grid') {
+            onSemanticCommand?.({
+              type: 'createGridLine',
+              levelId,
+              start: { xMm: start.xMm, yMm: start.yMm },
+              end: { xMm: end.xMm, yMm: end.yMm },
+            });
+          } else if (tool === 'reference-plane') {
+            onSemanticCommand?.({
+              type: 'createReferencePlane',
+              levelId,
+              startMm: { xMm: start.xMm, yMm: start.yMm },
+              endMm: { xMm: end.xMm, yMm: end.yMm },
+            });
+          }
+        }
+        setAuthoringOverlay({ tool, phase: 'pick-start', levelName: levelInfo.name });
+        return true;
+      }
+      if (POLYGON_3D_AUTHORING_TOOLS.has(tool)) {
+        if (!polygonDraft || polygonDraft.tool !== tool) {
+          polygonDraft = {
+            tool: tool as 'ceiling' | 'floor' | 'roof' | 'shaft' | 'area',
+            levelId: levelInfo.id,
+            points: [projected.point],
+          };
+          setAuthoringOverlay({
+            tool,
+            phase: 'pick-next',
+            levelName: levelInfo.name,
+            pointsScreen: [projected.screen],
+            currentScreen: projected.screen,
+          });
+          return true;
+        }
+        const priorPoints = authoringOverlayRef.current?.pointsScreen ?? [];
+        if (polygonDraft.points.length >= 3 && priorPoints[0]) {
+          const closeDistancePx = Math.hypot(
+            projected.screen.x - priorPoints[0].x,
+            projected.screen.y - priorPoints[0].y,
+          );
+          if (closeDistancePx <= 14) {
+            if (tool === 'ceiling') {
+              onSemanticCommand?.({
+                type: 'createCeiling',
+                levelId: polygonDraft.levelId,
+                boundaryMm: polygonDraft.points.map((p) => ({ xMm: p.xMm, yMm: p.yMm })),
+              });
+            } else if (tool === 'floor') {
+              onSemanticCommand?.({
+                type: 'createFloor',
+                levelId: polygonDraft.levelId,
+                boundaryMm: polygonDraft.points.map((p) => ({ xMm: p.xMm, yMm: p.yMm })),
+              });
+            } else if (tool === 'roof') {
+              onSemanticCommand?.({
+                type: 'createRoof',
+                referenceLevelId: polygonDraft.levelId,
+                footprintMm: polygonDraft.points.map((p) => ({ xMm: p.xMm, yMm: p.yMm })),
+              });
+            } else if (tool === 'area') {
+              onSemanticCommand?.({
+                type: 'createArea',
+                levelId: polygonDraft.levelId,
+                boundaryMm: polygonDraft.points.map((p) => ({ xMm: p.xMm, yMm: p.yMm })),
+                ruleSet: 'no_rules',
+                areaScheme: 'gross_building',
+                applyAreaRules: true,
+              });
+            } else if (tool === 'shaft') {
+              const boundaryMm = polygonDraft.points.map((p) => ({ xMm: p.xMm, yMm: p.yMm }));
+              const draftLevelId = polygonDraft.levelId;
+              const floors = Object.values(elementsByIdRef.current).filter(
+                (el): el is Extract<Element, { kind: 'floor' }> => el.kind === 'floor',
+              );
+              const hostFloor = floors.find((floor) => floor.levelId === draftLevelId) ?? floors[0];
+              if (hostFloor) {
+                onSemanticCommand?.({
+                  type: 'createSlabOpening',
+                  hostFloorId: hostFloor.id,
+                  boundaryMm,
+                  isShaft: true,
+                });
+              }
+            }
+            polygonDraft = null;
+            setAuthoringOverlay({
+              tool,
+              phase: 'pick-vertex',
+              levelName: levelInfo.name,
+              pointsScreen: [],
+            });
+            return true;
+          }
+        }
+        polygonDraft.points.push(projected.point);
+        setAuthoringOverlay({
+          tool,
+          phase: 'pick-next',
+          levelName: levelInfo.name,
+          pointsScreen: [...priorPoints, projected.screen],
+          currentScreen: projected.screen,
+        });
+      }
       return true;
     }
 
@@ -983,8 +1327,13 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         host.requestPointerLock();
         return;
       }
-      if (planToolRef.current === 'wall' && ev.button === 0 && !ev.altKey && !ev.shiftKey) {
-        dragging = 'wall-draft';
+      if (
+        DIRECT_3D_AUTHORING_TOOLS.has(planToolRef.current as Direct3dAuthoringTool) &&
+        ev.button === 0 &&
+        !ev.altKey &&
+        !ev.shiftKey
+      ) {
+        dragging = 'tool-draft';
         dragMoved = false;
         cumulativeDragPx = 0;
         lastX = ev.clientX;
@@ -1056,25 +1405,47 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         activeGrip = null;
         return;
       }
-      if (!dragMoved && wasDragging === 'wall-draft') {
-        handle3dWallDraftClick(ev.clientX, ev.clientY);
+      if (!dragMoved && wasDragging === 'tool-draft') {
+        handle3dDirectToolClick(ev.clientX, ev.clientY);
         return;
       }
       if (!dragMoved && wasDragging === 'orbit') {
-        if (handle3dWallDraftClick(ev.clientX, ev.clientY)) return;
         pick(ev.clientX, ev.clientY);
       }
     }
 
     function onMove(ev: PointerEvent): void {
+      const directTool = activeDirect3dTool();
       if (
-        planToolRef.current === 'wall' &&
-        wallDraftStart &&
-        wallDraftOverlayRef.current?.phase === 'pick-end'
+        directTool &&
+        lineDraftStart &&
+        authoringOverlayRef.current?.tool === lineDraftStart.tool &&
+        authoringOverlayRef.current?.phase === 'pick-end'
       ) {
         const rect = renderer.domElement.getBoundingClientRect();
-        setWallDraftOverlay((prev) =>
+        setAuthoringOverlay((prev) =>
           prev?.phase === 'pick-end'
+            ? {
+                ...prev,
+                currentScreen: {
+                  x: ev.clientX - rect.left,
+                  y: ev.clientY - rect.top,
+                },
+              }
+            : prev,
+        );
+      }
+      if (
+        directTool &&
+        POLYGON_3D_AUTHORING_TOOLS.has(directTool) &&
+        polygonDraft &&
+        polygonDraft.tool === directTool &&
+        polygonDraft.points.length > 0 &&
+        authoringOverlayRef.current?.tool === directTool
+      ) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        setAuthoringOverlay((prev) =>
+          prev?.tool === directTool
             ? {
                 ...prev,
                 currentScreen: {
@@ -1093,7 +1464,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       cumulativeDragPx += Math.hypot(dx, dy);
       if (cumulativeDragPx > DRAG_THRESHOLD_PX) dragMoved = true;
       if (!dragMoved) return;
-      if (dragging === 'wall-draft') return;
+      if (dragging === 'tool-draft') return;
       if (dragging === 'grip' && activeGrip) {
         const deltaMm = projectGripDelta(
           activeGrip.descriptor,
@@ -1172,13 +1543,30 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
         if (target.isContentEditable) return;
       }
-      if (ev.key === 'Escape' && planToolRef.current === 'wall' && wallDraftStart) {
-        wallDraftStart = null;
-        setWallDraftOverlay((prev) =>
-          prev ? { phase: 'pick-start', levelName: prev.levelName } : null,
-        );
+      if (ev.key === 'Escape') {
+        const tool = activeDirect3dTool();
+        if (tool && LINE_3D_AUTHORING_TOOLS.has(tool)) {
+          if (lineDraftStart && lineDraftStart.tool === tool) {
+            lineDraftStart = null;
+            setAuthoringOverlay((prev) =>
+              prev ? { tool, phase: 'pick-start', levelName: prev.levelName } : prev,
+            );
+            ev.preventDefault();
+            return;
+          }
+        } else if (tool && POLYGON_3D_AUTHORING_TOOLS.has(tool) && polygonDraft) {
+          polygonDraft = null;
+          setAuthoringOverlay((prev) =>
+            prev
+              ? { tool, phase: 'pick-vertex', levelName: prev.levelName, pointsScreen: [] }
+              : prev,
+          );
+          ev.preventDefault();
+          return;
+        }
+      }
+      if (ev.key === 'Escape' && walkController.snapshot().active) {
         ev.preventDefault();
-        return;
       }
       const hk = classifyHotkey({ key: ev.key, ctrlKey: ev.ctrlKey, metaKey: ev.metaKey });
       if (!hk) return;
@@ -2538,7 +2926,139 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
     setCurrentElevation(snap.elevation);
   }, []);
 
-  const wallToolActiveIn3d = planTool === 'wall' && !walkActive;
+  const direct3dAuthoringActive =
+    !walkActive && DIRECT_3D_AUTHORING_TOOLS.has(planTool as Direct3dAuthoringTool);
+
+  const overlayTitleInstruction = useMemo((): { title: string; instruction: string } | null => {
+    if (!direct3dAuthoringActive || !authoringOverlay) return null;
+    if (authoringOverlay.tool === 'floor') {
+      return {
+        title: `Floor boundary · ${authoringOverlay.levelName ?? 'Active level'}`,
+        instruction:
+          authoringOverlay.phase === 'pick-vertex'
+            ? 'Click first floor boundary point.'
+            : 'Click next boundary points. Click near first point to close. Esc cancels sketch.',
+      };
+    }
+    if (authoringOverlay.tool === 'roof') {
+      return {
+        title: `Roof footprint · ${authoringOverlay.levelName ?? 'Active level'}`,
+        instruction:
+          authoringOverlay.phase === 'pick-vertex'
+            ? 'Click first roof footprint point.'
+            : 'Click next footprint points. Click near first point to close. Esc cancels sketch.',
+      };
+    }
+    if (authoringOverlay.tool === 'shaft') {
+      return {
+        title: `Shaft opening · ${authoringOverlay.levelName ?? 'Active level'}`,
+        instruction:
+          authoringOverlay.phase === 'pick-vertex'
+            ? 'Click first shaft boundary point.'
+            : 'Click next boundary points. Click near first point to close. Esc cancels sketch.',
+      };
+    }
+    if (authoringOverlay.tool === 'area') {
+      return {
+        title: `Area boundary · ${authoringOverlay.levelName ?? 'Active level'}`,
+        instruction:
+          authoringOverlay.phase === 'pick-vertex'
+            ? 'Click first area boundary point.'
+            : 'Click next boundary points. Click near first point to close. Esc cancels sketch.',
+      };
+    }
+    if (authoringOverlay.tool === 'wall') {
+      return {
+        title: `Wall placement · ${authoringOverlay.levelName ?? 'Active level'}`,
+        instruction:
+          authoringOverlay.phase === 'pick-start'
+            ? 'Click start point. Alt+drag or middle mouse to orbit/pan.'
+            : 'Click end point. Esc cancels segment.',
+      };
+    }
+    if (authoringOverlay.tool === 'beam') {
+      return {
+        title: `Beam placement · ${authoringOverlay.levelName ?? 'Active level'}`,
+        instruction:
+          authoringOverlay.phase === 'pick-start'
+            ? 'Click beam start point. Alt+drag or middle mouse to orbit/pan.'
+            : 'Click beam end point. Esc cancels segment.',
+      };
+    }
+    if (authoringOverlay.tool === 'stair') {
+      return {
+        title: `Stair run · ${authoringOverlay.levelName ?? 'Active level'}`,
+        instruction:
+          authoringOverlay.phase === 'pick-start'
+            ? 'Click stair run start. Alt+drag or middle mouse to orbit/pan.'
+            : 'Click stair run end. Esc cancels segment.',
+      };
+    }
+    if (authoringOverlay.tool === 'railing') {
+      return {
+        title: `Railing path · ${authoringOverlay.levelName ?? 'Active level'}`,
+        instruction:
+          authoringOverlay.phase === 'pick-start'
+            ? 'Click railing path start. Alt+drag or middle mouse to orbit/pan.'
+            : 'Click railing path end. Esc cancels segment.',
+      };
+    }
+    if (authoringOverlay.tool === 'grid') {
+      return {
+        title: `Grid line · ${authoringOverlay.levelName ?? 'Active level'}`,
+        instruction:
+          authoringOverlay.phase === 'pick-start'
+            ? 'Click grid start point. Alt+drag or middle mouse to orbit/pan.'
+            : 'Click grid end point. Esc cancels segment.',
+      };
+    }
+    if (authoringOverlay.tool === 'reference-plane') {
+      return {
+        title: `Reference plane · ${authoringOverlay.levelName ?? 'Active level'}`,
+        instruction:
+          authoringOverlay.phase === 'pick-start'
+            ? 'Click reference plane start point. Alt+drag or middle mouse to orbit/pan.'
+            : 'Click reference plane end point. Esc cancels segment.',
+      };
+    }
+    if (authoringOverlay.tool === 'column') {
+      return {
+        title: `Column placement · ${authoringOverlay.levelName ?? 'Active level'}`,
+        instruction: 'Click a point to place a column. Alt+drag or middle mouse to orbit/pan.',
+      };
+    }
+    if (authoringOverlay.tool === 'room') {
+      return {
+        title: `Room placement · ${authoringOverlay.levelName ?? 'Active level'}`,
+        instruction: 'Click inside a closed boundary to place a room.',
+      };
+    }
+    if (authoringOverlay.tool === 'ceiling') {
+      return {
+        title: `Ceiling boundary · ${authoringOverlay.levelName ?? 'Active level'}`,
+        instruction:
+          authoringOverlay.phase === 'pick-vertex'
+            ? 'Click first ceiling boundary point.'
+            : 'Click next boundary points. Click near first point to close. Esc cancels sketch.',
+      };
+    }
+    if (authoringOverlay.tool === 'door') {
+      return {
+        title: 'Door placement',
+        instruction: 'Click a wall face to insert a door.',
+      };
+    }
+    if (authoringOverlay.tool === 'window') {
+      return {
+        title: 'Window placement',
+        instruction: 'Click a wall face to insert a window.',
+      };
+    }
+    return {
+      title: 'Opening placement',
+      instruction: 'Click a wall face to insert an opening.',
+    };
+  }, [authoringOverlay, direct3dAuthoringActive]);
 
   return (
     <div
@@ -2567,45 +3087,72 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         />
       </div>
 
-      {wallToolActiveIn3d && wallDraftOverlay ? (
+      {overlayTitleInstruction ? (
         <div className="pointer-events-none absolute left-3 top-3 z-20">
           <div className="rounded border border-accent/60 bg-surface/95 px-3 py-2 text-xs text-foreground shadow-sm">
-            <div className="font-medium text-accent">
-              Wall placement · {wallDraftOverlay.levelName}
-            </div>
-            <div className="text-muted">
-              {wallDraftOverlay.phase === 'pick-start'
-                ? 'Click start point. Alt+drag or middle mouse to orbit/pan.'
-                : 'Click end point. Esc cancels segment.'}
-            </div>
+            <div className="font-medium text-accent">{overlayTitleInstruction.title}</div>
+            <div className="text-muted">{overlayTitleInstruction.instruction}</div>
           </div>
         </div>
       ) : null}
 
-      {wallToolActiveIn3d &&
-      wallDraftOverlay?.phase === 'pick-end' &&
-      wallDraftOverlay.startScreen &&
-      wallDraftOverlay.currentScreen ? (
-        <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full">
-          <line
-            x1={wallDraftOverlay.startScreen.x}
-            y1={wallDraftOverlay.startScreen.y}
-            x2={wallDraftOverlay.currentScreen.x}
-            y2={wallDraftOverlay.currentScreen.y}
-            stroke="var(--color-accent)"
-            strokeWidth="2"
-            strokeDasharray="6 4"
-            opacity="0.95"
-          />
-          <circle
-            cx={wallDraftOverlay.startScreen.x}
-            cy={wallDraftOverlay.startScreen.y}
-            r="6"
-            fill="var(--color-accent)"
-            opacity="0.95"
-          />
-        </svg>
-      ) : null}
+      {direct3dAuthoringActive &&
+        authoringOverlay &&
+        (LINE_3D_AUTHORING_TOOLS.has(authoringOverlay.tool) &&
+        authoringOverlay.phase === 'pick-end' &&
+        authoringOverlay.startScreen &&
+        authoringOverlay.currentScreen ? (
+          <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full">
+            <line
+              x1={authoringOverlay.startScreen.x}
+              y1={authoringOverlay.startScreen.y}
+              x2={authoringOverlay.currentScreen.x}
+              y2={authoringOverlay.currentScreen.y}
+              stroke="var(--color-accent)"
+              strokeWidth="2"
+              strokeDasharray="6 4"
+              opacity="0.95"
+            />
+            <circle
+              cx={authoringOverlay.startScreen.x}
+              cy={authoringOverlay.startScreen.y}
+              r="6"
+              fill="var(--color-accent)"
+              opacity="0.95"
+            />
+          </svg>
+        ) : POLYGON_3D_AUTHORING_TOOLS.has(authoringOverlay.tool) &&
+          authoringOverlay.pointsScreen &&
+          authoringOverlay.pointsScreen.length > 0 ? (
+          <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full">
+            <polyline
+              points={authoringOverlay.pointsScreen.map((p) => `${p.x},${p.y}`).join(' ')}
+              fill="none"
+              stroke="var(--color-accent)"
+              strokeWidth="2"
+              opacity="0.95"
+            />
+            {authoringOverlay.currentScreen ? (
+              <line
+                x1={authoringOverlay.pointsScreen[authoringOverlay.pointsScreen.length - 1]!.x}
+                y1={authoringOverlay.pointsScreen[authoringOverlay.pointsScreen.length - 1]!.y}
+                x2={authoringOverlay.currentScreen.x}
+                y2={authoringOverlay.currentScreen.y}
+                stroke="var(--color-accent)"
+                strokeWidth="2"
+                strokeDasharray="6 4"
+                opacity="0.95"
+              />
+            ) : null}
+            <circle
+              cx={authoringOverlay.pointsScreen[0]!.x}
+              cy={authoringOverlay.pointsScreen[0]!.y}
+              r="6"
+              fill="var(--color-accent)"
+              opacity="0.95"
+            />
+          </svg>
+        ) : null)}
 
       {/* Walk mode controls bar — shown while pointer is locked */}
       {walkActive ? (
@@ -2652,7 +3199,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       <div
         ref={mountRef}
         className={`relative z-[1] size-full ${
-          wallToolActiveIn3d ? 'cursor-crosshair' : 'cursor-grab active:cursor-grabbing'
+          direct3dAuthoringActive ? 'cursor-crosshair' : 'cursor-grab active:cursor-grabbing'
         }`}
       />
     </div>

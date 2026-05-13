@@ -127,7 +127,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       icon: 'door',
       hotkey: 'D',
       shortcut: 'D',
-      modes: ['plan'],
+      modes: ['plan', '3d'],
       tooltip: t('tools.door.tooltip'),
     },
     window: {
@@ -136,7 +136,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       icon: 'window',
       hotkey: 'Shift+W',
       shortcut: 'WI',
-      modes: ['plan'],
+      modes: ['plan', '3d'],
       tooltip: t('tools.window.tooltip'),
     },
     floor: {
@@ -145,7 +145,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       icon: 'floor',
       hotkey: 'F',
       shortcut: 'F',
-      modes: ['plan'],
+      modes: ['plan', '3d'],
       tooltip: t('tools.floor.tooltip'),
     },
     'floor-sketch': {
@@ -178,7 +178,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       icon: 'roof',
       hotkey: 'R',
       shortcut: 'R',
-      modes: ['plan'],
+      modes: ['plan', '3d'],
       tooltip: t('tools.roof.tooltip'),
     },
     stair: {
@@ -187,7 +187,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       icon: 'stair',
       hotkey: 'S',
       shortcut: 'S',
-      modes: ['plan'],
+      modes: ['plan', '3d'],
       tooltip: t('tools.stair.tooltip'),
     },
     railing: {
@@ -195,7 +195,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       label: t('tools.railing.label'),
       icon: 'railing',
       hotkey: 'Shift+R',
-      modes: ['plan'],
+      modes: ['plan', '3d'],
       tooltip: t('tools.railing.tooltip'),
     },
     room: {
@@ -204,7 +204,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       icon: 'room',
       hotkey: 'M',
       shortcut: 'M',
-      modes: ['plan'],
+      modes: ['plan', '3d'],
       tooltip: t('tools.room.tooltip'),
     },
     area: {
@@ -213,7 +213,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       icon: 'room',
       hotkey: 'AA',
       shortcut: 'AA',
-      modes: ['plan'],
+      modes: ['plan', '3d'],
       tooltip: t('tools.area.tooltip'),
     },
     dimension: {
@@ -264,7 +264,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       icon: 'gridLine',
       hotkey: 'GR',
       shortcut: 'GR',
-      modes: ['plan'],
+      modes: ['plan', '3d'],
       tooltip: 'Place a grid line (two-click start → end)',
     },
     'reference-plane': {
@@ -272,7 +272,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       label: t('tools.referencePlane.label'),
       icon: 'gridLine',
       hotkey: 'RP',
-      modes: ['plan'],
+      modes: ['plan', '3d'],
       tooltip: t('tools.referencePlane.tooltip'),
     },
     'property-line': {
@@ -361,7 +361,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       label: t('tools.wallOpening.label'),
       icon: 'wall-opening',
       hotkey: 'WO',
-      modes: ['plan'],
+      modes: ['plan', '3d'],
       tooltip: t('tools.wallOpening.tooltip'),
     },
     shaft: {
@@ -369,7 +369,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       label: t('tools.shaft.label'),
       icon: 'shaft',
       hotkey: 'SH',
-      modes: ['plan'],
+      modes: ['plan', '3d'],
       tooltip: t('tools.shaft.tooltip'),
     },
     column: {
@@ -378,7 +378,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       icon: 'column',
       hotkey: 'CO',
       shortcut: 'C',
-      modes: ['plan'],
+      modes: ['plan', '3d'],
       tooltip: t('tools.column.tooltip'),
     },
     beam: {
@@ -386,7 +386,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       label: t('tools.beam.label'),
       icon: 'beam',
       hotkey: 'BM',
-      modes: ['plan'],
+      modes: ['plan', '3d'],
       tooltip: t('tools.beam.tooltip'),
     },
     ceiling: {
@@ -394,7 +394,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       label: t('tools.ceiling.label'),
       icon: 'ceiling',
       hotkey: 'CL',
-      modes: ['plan'],
+      modes: ['plan', '3d'],
       tooltip: t('tools.ceiling.tooltip'),
     },
     mirror: {

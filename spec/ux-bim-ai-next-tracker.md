@@ -956,3 +956,115 @@ Evidence (2026-05-13):
       - `modeIdentity: "3D"`
       - `startPromptVisible: true`
       - `createWallCommandCount: 1`
+
+## Reopened Tracker (2026-05-13, feedback round 7)
+
+| Gap ID        | Problem Statement                                                                                                                                               | Canonical Surfaces / Files                                                                  | Priority | Status |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | -------- | ------ |
+| NEXT7-GAP-001 | Revit-style 3D authoring clarity existed only for walls; other core modeling tools remained ambiguous or bridge-only, causing “grab” feel and no-op perception. | `Viewport.tsx`, `tools/toolRegistry.ts`, command capability/ribbon reachability test suites | P0       | Done   |
+
+### WP-NEXT-25 — Direct 3D Authoring Expansion (Element-Specific UX)
+
+- Priority: `P0`
+- Status: `Done`
+- Covers: `NEXT7-GAP-001`
+- Goal: extend direct, legible 3D authoring beyond walls with per-element interaction models that match element semantics.
+- Source ownership:
+  - `packages/web/src/Viewport.tsx`
+  - `packages/web/src/tools/toolRegistry.ts`
+  - `packages/web/src/workspace/commandCapabilities.test.ts`
+  - `packages/web/src/workspace/shell/TopBar.test.tsx`
+  - `packages/web/src/workspace/uxAudit.test.ts`
+  - `packages/web/tmp/ux-next-wp25-20260513/capture.mjs`
+- Acceptance:
+  - `Column` in 3D places on click with explicit prompt;
+  - `Beam` in 3D uses two-click start/end with preview segment + prompt;
+  - `Ceiling` in 3D uses boundary sketch (vertex clicks + close near first point) with preview cues;
+  - `Door` / `Window` / `Opening` in 3D place directly by clicking a wall face;
+  - direct tools are not shown as plan-bridge in 3D ribbon;
+  - camera controls remain reachable (`Alt+drag` or middle mouse), and `Esc` cancels in-flight drafts.
+- Implementation + evidence:
+  - Expanded direct 3D tool handling in `Viewport`:
+    - unified direct-tool pointer ownership (`tool-draft`) to avoid accidental orbit-grab;
+    - per-tool command dispatch:
+      - `createColumn`
+      - `createBeam`
+      - `createCeiling`
+      - `insertDoorOnWall`
+      - `insertWindowOnWall`
+      - `createWallOpening`
+    - wall-face pick path for hosted tools uses parametric `alongT` projection;
+    - element-specific in-canvas HUD instructions and preview overlays (line/polyline + start marker).
+  - Promoted `door`, `window`, `wall-opening`, `column`, `beam`, `ceiling` to direct 3D tool modes in `toolRegistry`.
+  - Updated reachability/regression tests for capability and ribbon behavior.
+  - Seeded screenshot + live command capture proof:
+    - `packages/web/tmp/ux-next-wp25-20260513/01-3d-column-prompt.png`
+    - `packages/web/tmp/ux-next-wp25-20260513/02-3d-beam-preview.png`
+    - `packages/web/tmp/ux-next-wp25-20260513/03-3d-ceiling-sketch-preview.png`
+    - `packages/web/tmp/ux-next-wp25-20260513/04-3d-door-pick-wall-prompt.png`
+    - `packages/web/tmp/ux-next-wp25-20260513/05-3d-hosted-openings-placed.png`
+    - `packages/web/tmp/ux-next-wp25-20260513/summary.json`
+      - `modeIdentity: "3D"`
+      - `commandCounts.createColumn: 1`
+      - `commandCounts.createBeam: 1`
+      - `commandCounts.createCeiling: 1`
+      - `commandCounts.insertDoorOnWall: 1`
+      - `commandCounts.insertWindowOnWall: 1`
+      - `commandCounts.createWallOpening: 1`
+
+## Reopened Tracker (2026-05-13, feedback round 8)
+
+| Gap ID        | Problem Statement                                                                                                                | Canonical Surfaces / Files                                                     | Priority | Status |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | -------- | ------ |
+| NEXT8-GAP-001 | Revit-style direct 3D authoring still did not cover the rest of 3D ribbon modeling/datum tools, and `Roof` click remained inert. | `Viewport.tsx`, `toolRegistry.ts`, `workspace/workspaceUtils.ts`, ribbon tests | P0       | Done   |
+
+### WP-NEXT-26 — Direct 3D Authoring Completion For Remaining Ribbon Tools
+
+- Priority: `P0`
+- Status: `Done`
+- Covers: `NEXT8-GAP-001`
+- Goal: complete direct 3D authoring for the remaining high-value ribbon tools with element-specific interaction models and remove no-op selection behavior.
+- Source ownership:
+  - `packages/web/src/Viewport.tsx`
+  - `packages/web/src/tools/toolRegistry.ts`
+  - `packages/web/src/workspace/workspaceUtils.ts`
+  - `packages/web/src/workspace/commandCapabilities.test.ts`
+  - `packages/web/src/workspace/shell/TopBar.test.tsx`
+  - `packages/web/src/workspace/uxAudit.test.ts`
+  - `packages/web/tmp/ux-next-wp26-20260513/capture.mjs`
+- Acceptance:
+  - 3D `Floor` / `Roof` / `Shaft` support boundary sketch + close behavior with preview cues;
+  - 3D `Stair` / `Railing` / `Grid` / `Reference Plane` support two-click start/end flow with clear preview segment;
+  - exposed 3D ribbon commands no longer appear direct-but-inert;
+  - command reachability remains valid via ribbon + Cmd+K.
+- Implementation + evidence:
+  - Expanded direct 3D tool set and per-tool command dispatch in `Viewport`:
+    - sketch tools: `createFloor`, `createRoof`, `createSlabOpening (isShaft=true)`
+    - line tools: `createStair`, `createRailing`, `createGridLine`, `createReferencePlane`
+    - existing hosted/structural tools preserved with direct execution.
+  - Added explicit line/polygon tool classification (`LINE_3D_AUTHORING_TOOLS`, `POLYGON_3D_AUTHORING_TOOLS`) for prompt, preview, and `Esc` cancel lifecycle.
+  - Promoted remaining tool modes to direct 3D where applicable in `toolRegistry` (`floor`, `roof`, `shaft`, `stair`, `railing`, `grid`, `reference-plane`, plus room/area parity via command surface).
+  - Removed inert `Roof` activation path by adding `roof` to canonical plan-tool validation set in `workspaceUtils`.
+  - Regression coverage updates:
+    - `packages/web/src/workspace/commandCapabilities.test.ts`
+    - `packages/web/src/workspace/shell/TopBar.test.tsx`
+    - `packages/web/src/workspace/uxAudit.test.ts`
+    - `packages/web/src/workspace/workspaceUtils.test.ts`
+  - Seeded screenshot + command proof (`make seed name=target-house-3`, `http://127.0.0.1:2000/`):
+    - `packages/web/tmp/ux-next-wp26-20260513/01-3d-floor-boundary-preview.png`
+    - `packages/web/tmp/ux-next-wp26-20260513/02-3d-roof-footprint-preview.png`
+    - `packages/web/tmp/ux-next-wp26-20260513/03-3d-shaft-preview.png`
+    - `packages/web/tmp/ux-next-wp26-20260513/04-3d-stair-run-preview.png`
+    - `packages/web/tmp/ux-next-wp26-20260513/05-3d-railing-path-preview.png`
+    - `packages/web/tmp/ux-next-wp26-20260513/06-3d-grid-reference-preview.png`
+    - `packages/web/tmp/ux-next-wp26-20260513/07-3d-reference-plane-placed.png`
+    - `packages/web/tmp/ux-next-wp26-20260513/summary.json`
+      - `modeIdentity: "3D"`
+      - `commandCounts.createFloor: 1`
+      - `commandCounts.createRoof: 1`
+      - `commandCounts.createSlabOpening: 1`
+      - `commandCounts.createStair: 1`
+      - `commandCounts.createRailing: 1`
+      - `commandCounts.createGridLine: 1`
+      - `commandCounts.createReferencePlane: 1`
+      - no 3D bridge badges for floor/roof/shaft/stair/railing.
