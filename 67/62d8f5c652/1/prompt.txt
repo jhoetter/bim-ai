@@ -1,0 +1,5 @@
+can you also please check that all tabs work? i had now many times that i clicked on a tab or tried to create a new view, but it just didnt load correctly
+
+---
+
+did you fix all the other parts mentioned above earlier?
