@@ -1,61 +1,8 @@
-You are continuing the BIM AI UX next-phase implementation in `/Users/jhoetter/repos/bim-ai`.
+<image name=[Image #1]>
 
-  First read, in order:
-  1) spec/methodology-prompt.md
-  2) spec/ux-bim-ai-rework-master.md
-  3) spec/ux-bim-ai-rework-spec.md
-  4) spec/ux-bim-ai-rework-tracker.md
-  5) spec/ux-bim-ai-rework-dynamic-audit.md
-  Mission:
-  Execute the new tracker to closure, starting with the highest-impact open workpackage.
-  Current priority order:
-  - WP-NEXT-01 (Shell Geometry Precision) quick pass if needed
-  - WP-NEXT-04 (Floor Plan Wall Draft Lifecycle Fix) as first major implementation
-  Then continue through dependencies in `spec/ux-bim-ai-next-tracker.md`.
+---
 
-  Non-negotiable rule:
-  Only mark a row/workpackage as Done when:
-  - old incorrect behavior is removed,
-  - new canonical behavior works in seeded app,
-  - command reachability (including Cmd+K) is preserved,
-  - tests + screenshots prove it.
-
-  Required local setup before UI validation:
-  - make seed name=target-house-3
-  - make dev name=target-house-3
-  Validate at:
-  - http://127.0.0.1:2000/
-  - http://127.0.0.1:8500/
-
-  Execution loop for each workpackage:
-  1) Identify exact tracker rows and acceptance criteria.
-  2) Implement end-to-end (not cosmetic partials).
-  3) Update command capability metadata if surfaces/availability changed.
-  4) Add/update unit/DOM tests.
-  5) Capture Playwright screenshots for affected states.
-  6) Validate:
-     - pnpm --filter @bim-ai/web typecheck
-     - pnpm --filter @bim-ai/web test -- <relevant tests>
-     - pnpm exec prettier --check <changed files>
-     - git diff --check
-  7) Update tracker row status + evidence notes.
-  8) Commit with clear message and push to main.
-  9) Continue with next open workpackage.
-
-  Status vocabulary in reports:
-  - Done
-  - Partial
-  - Blocked
-
-  Do not claim completion based only on compiling/tests. Seeded UI behavior must match expected ownership and workflow.
-
-  For every response, include:
-  - Workpackage(s) handled
-  - Tracker rows updated
-  - Files changed
-  - Validations run (with pass/fail)
-  - Screenshots captured
-  - Remaining gaps / next workpackage
+</image>
 
 ---
 
