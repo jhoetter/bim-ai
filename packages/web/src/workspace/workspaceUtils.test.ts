@@ -40,6 +40,9 @@ describe('buildPrimaryNavigationSections', () => {
         kind: 'sheet',
         id: 'sheet_1',
         name: 'A101',
+        titleblockParameters: {
+          sheetIntent: 'moodboard',
+        },
       },
       schedule_1: {
         kind: 'schedule',
@@ -84,6 +87,9 @@ describe('buildPrimaryNavigationSections', () => {
       'A101',
       'Door Schedule',
     ]);
+    expect(sections.find((section) => section.id === 'sheets')?.rows[0]?.hint).toContain(
+      'Moodboard',
+    );
     const serialized = JSON.stringify(sections);
     expect(serialized).not.toContain('"level_1"');
     expect(serialized).not.toMatch(/Generic Wall|Window Type|Types|Families/);

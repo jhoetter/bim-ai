@@ -53,8 +53,8 @@ The foundational seven-region ownership model is in place, but real usage still 
 | NEXT-GAP-010 | Ribbon information architecture still feels uneven by view (annotate parity, icon consistency, dead/weak actions). | `workspace/shell/RibbonBar.tsx`, command metadata                                            | P1       | Done   |
 | NEXT-GAP-011 | Discipline/lens switching does not consistently change ribbon + secondary + element + canvas semantics.            | lens state, mode surfaces, command gating                                                    | P0       | Done   |
 | NEXT-GAP-012 | Creation of new floor plans/3D/sections/sheets/schedules is not obvious enough.                                    | primary nav, project browser, commands                                                       | P1       | Done   |
-| NEXT-GAP-013 | Sheets show heavy metadata block directly in main user reading flow.                                               | `workspace/sheets/SheetCanvas.tsx`                                                           | P1       | Open   |
-| NEXT-GAP-014 | Moodboard vs documentation sheet intent is not modeled/taggable.                                                   | sheet model + UI filters + commands                                                          | P1       | Open   |
+| NEXT-GAP-013 | Sheets show heavy metadata block directly in main user reading flow.                                               | `workspace/sheets/SheetCanvas.tsx`                                                           | P1       | Done   |
+| NEXT-GAP-014 | Moodboard vs documentation sheet intent is not modeled/taggable.                                                   | sheet model + UI filters + commands                                                          | P1       | Done   |
 | NEXT-GAP-015 | Schedule outputs are not meaningful enough for practical role workflows.                                           | schedule mode shell/panels, advisor integration                                              | P1       | Open   |
 | NEXT-GAP-016 | Sections are hard to understand in relation to 3D; section context could be spatially reinforced.                  | section mode shell, viewport overlays                                                        | P2       | Open   |
 | NEXT-GAP-017 | Overflow hygiene: clipped dropdowns and horizontal scrolling inside sidebars.                                      | shell/sidebar CSS/layout constraints                                                         | P1       | Done   |
@@ -433,7 +433,7 @@ Evidence (2026-05-13):
 ### WP-NEXT-12 — Sheet UX Semantics
 
 - Priority: `P1`
-- Status: `Open`
+- Status: `Done`
 - Covers: `NEXT-GAP-013`, `NEXT-GAP-014`
 - Goal: make sheet canvas user-facing first; move verbose machine metadata out of main reading path; add sheet intent tagging (e.g. moodboard/documentation).
 - Source ownership:
@@ -443,6 +443,29 @@ Evidence (2026-05-13):
   - default sheet view prioritizes sheet content, not long manifest text blocks,
   - metadata remains available in dedicated detail panel/export dialog,
   - sheet tags can be assigned, filtered, and surfaced in primary navigation/search.
+
+Evidence (2026-05-13):
+
+- Sheet canvas now renders canonical sheet content first and moves verbose manifest output behind a collapsed details owner (`Documentation details`) so metadata remains reachable without dominating first-read flow:
+  - `packages/web/src/workspace/sheets/SheetCanvas.tsx`
+- Sheet intent tagging is now explicit and replay-safe:
+  - intent selector (`Documentation`/`Moodboard`/`Hybrid`) in sheet authoring toolbar,
+  - canonical sheet patch command for kernel compatibility (`updateElementProperty key=titleblockParametersPatch`),
+  - source:
+    - `packages/web/src/workspace/sheets/SheetCanvas.tsx`
+    - `packages/web/src/workspace/sheets/sheetIntent.ts`
+- Primary navigation/search now surfaces intent hints from sheet metadata, enabling direct filter-by-intent workflows:
+  - `packages/web/src/workspace/workspaceUtils.ts`
+- Regression coverage:
+  - `packages/web/src/workspace/sheets/SheetCanvas.test.tsx`
+  - `packages/web/src/workspace/sheets/sheetIntent.test.ts`
+  - `packages/web/src/workspace/workspaceUtils.test.ts`
+- Seeded live proof (`make seed name=target-house-3`, `make dev name=target-house-3`) captured in:
+  - `packages/web/tmp/ux-next-wp12-20260513/01-sheet-default-collapsed-details.png`
+  - `packages/web/tmp/ux-next-wp12-20260513/02-sheet-details-expanded.png`
+  - `packages/web/tmp/ux-next-wp12-20260513/03-sheet-intent-moodboard.png`
+  - `packages/web/tmp/ux-next-wp12-20260513/04-primary-search-moodboard-filter.png`
+  - `packages/web/tmp/ux-next-wp12-20260513/summary.json`
 
 ### WP-NEXT-13 — Schedule Meaningfulness Upgrade
 

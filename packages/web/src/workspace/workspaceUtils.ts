@@ -11,6 +11,7 @@ import type { UxComment } from '../state/store';
 import type { PlanTool } from '../state/storeTypes';
 import type { ToolId } from '../tools/toolRegistry';
 import type { LeftRailSection } from './shell';
+import { readSheetIntent, sheetIntentLabel } from './sheets/sheetIntent';
 
 export function mapComments(rows: Record<string, unknown>[]): UxComment[] {
   return rows.map((row) => ({
@@ -170,7 +171,7 @@ export function buildPrimaryNavigationSections(
         id: s.id,
         label: s.name,
         icon: SheetHifi,
-        hint: `${s.viewportsMm?.length ?? 0} viewports`,
+        hint: `${sheetIntentLabel(readSheetIntent(s))} · ${s.viewportsMm?.length ?? 0} viewports`,
       })),
     },
     {

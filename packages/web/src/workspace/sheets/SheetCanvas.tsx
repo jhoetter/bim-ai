@@ -39,6 +39,12 @@ import {
   formatSheetRevIssTitleblockDisplaySegmentV1,
   normalizeTitleblockRevisionIssueV1,
 } from './sheetRevisionIssueManifestV1';
+import {
+  readSheetIntent,
+  sheetIntentPatchJson,
+  sheetIntentLabel,
+  type SheetIntentTag,
+} from './sheetIntent';
 
 type SheetEl = Extract<Element, { kind: 'sheet' }>;
 
@@ -237,6 +243,7 @@ function SheetCanvasWithSheet(props: {
   const revIssSeg = formatSheetRevIssTitleblockDisplaySegmentV1(
     normalizeTitleblockRevisionIssueV1(tp as Record<string, string>),
   );
+  const sheetIntent = readSheetIntent(sh);
 
   const footerY0 = Math.max(2800, hMm - 5200);
   const xRight = wMm - 2600;
@@ -466,6 +473,38 @@ function SheetCanvasWithSheet(props: {
       data-testid="sheet-canvas"
       className={`overflow-auto rounded border border-border bg-background p-2${scrollCls}`}
     >
+      {authoring ? (
+        <div
+          data-testid="sheet-intent-toolbar"
+          className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded border border-border bg-surface px-2 py-1.5"
+        >
+          <label className="flex items-center gap-2 text-xs text-foreground">
+            <span className="font-medium">Sheet intent</span>
+            <select
+              data-testid="sheet-intent-select"
+              value={sheetIntent}
+              onChange={(event) => {
+                const intent = event.currentTarget.value as SheetIntentTag;
+                props.onUpsertSemantic?.({
+                  type: 'updateElementProperty',
+                  elementId: sh.id,
+                  key: 'titleblockParametersPatch',
+                  value: sheetIntentPatchJson(intent),
+                });
+              }}
+              className="rounded border border-border bg-background px-2 py-0.5 text-xs text-foreground"
+            >
+              <option value="documentation">Documentation</option>
+              <option value="moodboard">Moodboard</option>
+              <option value="hybrid">Hybrid</option>
+            </select>
+          </label>
+          <div className="text-[11px] text-muted">
+            Current tag:{' '}
+            <span className="font-medium text-foreground">{sheetIntentLabel(sheetIntent)}</span>
+          </div>
+        </div>
+      ) : null}
       {paintRows.length === 0 && authoring ? (
         <div className="mb-2 flex items-center justify-between gap-2 rounded border border-border bg-surface-strong px-3 py-2">
           <div className="min-w-0">
@@ -794,14 +833,24 @@ function SheetCanvasWithSheet(props: {
         </svg>
       </div>
 
-      <SheetDocumentationManifest
-        sheet={sh}
-        modelId={modelId}
-        elementsById={elementsById}
-        authoring={authoring}
-        tbDraft={tbDraft}
-        vpDrafts={vpDrafts}
-      />
+      <details
+        data-testid="sheet-documentation-details"
+        className="mt-2 rounded border border-border bg-surface"
+      >
+        <summary className="cursor-pointer px-2 py-1.5 text-xs font-medium text-foreground">
+          Documentation details
+        </summary>
+        <div className="border-t border-border px-2 py-2">
+          <SheetDocumentationManifest
+            sheet={sh}
+            modelId={modelId}
+            elementsById={elementsById}
+            authoring={authoring}
+            tbDraft={tbDraft}
+            vpDrafts={vpDrafts}
+          />
+        </div>
+      </details>
 
       {props.onUpsertSemantic ? (
         <>
