@@ -359,10 +359,10 @@ export function AppShell({
       elementSidebarPresent,
     ),
     gridTemplateAreas: `
-      "header header header header"
+      "primarySidebar header header header"
       "primarySidebar secondarySidebar ribbon ribbon"
       "primarySidebar secondarySidebar canvas elementSidebar"
-      "footer footer footer footer"
+      "primarySidebar footer footer footer"
     `,
     transition: 'grid-template-columns 200ms var(--ease-paper, ease)',
     height: '100dvh',
@@ -438,7 +438,7 @@ export function AppShell({
           onKeyDown={handlePrimaryResizeKey}
           style={{
             gridColumn: 1,
-            gridRow: '2 / 4',
+            gridRow: '1 / 5',
             justifySelf: 'end',
             width: 8,
             marginRight: -4,

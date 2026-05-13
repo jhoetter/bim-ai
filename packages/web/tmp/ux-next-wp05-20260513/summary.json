@@ -1,0 +1,10 @@
+{
+  "captures": ["01-main-front-left.png", "04-selected-typed-wall-openings.png"],
+  "summary": {
+    "selectedId": "hf-gf-wall-01",
+    "wallKind": "wall",
+    "wallTypeId": "hf-wt-clad-base",
+    "activeViewpointId": null,
+    "activePlanViewId": null
+  }
+}

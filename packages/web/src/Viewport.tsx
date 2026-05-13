@@ -106,6 +106,7 @@ import {
   type WallFaceRadialCommand,
 } from './viewport/wallFaceRadialMenu';
 import { buildPlanOverlay3dGroup } from './viewport/planOverlay3d';
+import { shouldRunWallOpeningCsg } from './viewport/wallCsgEligibility';
 
 // KRN-14 — wire the CSG cut into meshBuilders. Side-effect at module load.
 registerDormerCutFn(applyDormerCutsToRoofGeom);
@@ -1562,11 +1563,14 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
           const wins = winsByWall.get(id) ?? [];
           const wallOps = wallOpeningsByWall.get(id) ?? [];
           if (
-            CSG_ENABLED &&
-            (doors.length > 0 || wins.length > 0 || wallOps.length > 0) &&
-            !e.roofAttachmentId &&
-            !e.isCurtainWall &&
-            !e.wallTypeId
+            shouldRunWallOpeningCsg({
+              csgEnabled: CSG_ENABLED,
+              hostedDoorCount: doors.length,
+              hostedWindowCount: wins.length,
+              hostedWallOpeningCount: wallOps.length,
+              roofAttachmentId: e.roofAttachmentId,
+              isCurtainWall: e.isCurtainWall,
+            })
           ) {
             // Dispatch CSG to the worker; show a solid-wall placeholder immediately.
             const sx = e.start.xMm / 1000;
