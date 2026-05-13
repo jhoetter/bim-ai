@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "46cdebfd2021",
+  "session_id": "019e20b9-4c2e-7f23-b0cb-83851863009d",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-13T11:17:12.165904Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/workspace/shell/RibbonBar.tsx",
+    "packages/web/src/workspace/shell/TopBar.test.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.3-codex",
+  "turn_id": "7bf677fdbee8",
+  "token_usage": {
+    "input_tokens": 634376,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 21144704,
+    "output_tokens": 44778,
+    "api_call_count": 159
+  },
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-13T11:17:12.125049Z",
+    "agent_lines": 0,
+    "agent_removed": 45,
+    "human_added": 228,
+    "human_modified": 52,
+    "human_removed": 0,
+    "total_committed": 230,
+    "total_lines_changed": 325,
+    "agent_percentage": 13.846153846153847,
+    "metric_version": 2
+  }
+}
