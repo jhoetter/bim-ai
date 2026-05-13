@@ -1,0 +1,16 @@
+continue until you are 100% done with spec/ux-bim-ai-next-tracker.md; don't stop after workpackages but continue...
+
+---
+
+are you 100% done?
+
+---
+
+[Image #1] i am still very unhappy with the ribbon, e.g. you can see that the ribbon (e.g. now on group "insert") doesnt have any real functionaltiy. or when i look at the floorplan, i see many icons, but most of them i cant even select; e.g. if i click on wall, the icon gets blue and i can really use it, but e.g. ceiling: i click on it but nothing happens, it doesnt turn blue and i cant draw ceilings.
+
+also, i do believe that the display lense must be in the primary left sidebar. pay attention that the dropdown is really visible, because right now, it is cut off: [Image #2]
+
+also the recursive split of the canvas is generally working nicely, but it must be that the split opens an actual subcanvas aware of tabs, i.e. so i can also close them again or drag another tab into that subcanvas etc; this means another change to the layout, because a split into two subcanvases potentially means also two secondary sidebars, two ribbons, ...
+-> how can we best solve this?
+
+look into these things, write down a new tracker (in detail!), and continue building. always after each workpackage commit and push
