@@ -134,18 +134,22 @@ describe('UX reachability audit', () => {
     );
   });
 
-  it('keeps high-risk plan authoring commands bridged outside plan-capable views', () => {
-    const nonPlanModes: CapabilityViewMode[] = ['3d', 'sheet', 'schedule', 'agent'];
+  it('keeps high-risk plan authoring commands reachable across views without dead states', () => {
+    const nonPlanModes: CapabilityViewMode[] = ['3d', 'sheet', 'schedule', 'concept'];
 
     for (const mode of nonPlanModes) {
-      for (const commandId of ['tool.wall', 'tool.door', 'tool.window', 'tool.dimension']) {
+      for (const commandId of ['tool.door', 'tool.window', 'tool.dimension']) {
         expect(evaluateCommandInMode(commandId, mode)?.state).toBe('bridge');
       }
+    }
+    expect(evaluateCommandInMode('tool.wall', '3d')?.state).toBe('enabled');
+    for (const mode of ['sheet', 'schedule', 'concept'] as CapabilityViewMode[]) {
+      expect(evaluateCommandInMode('tool.wall', mode)?.state).toBe('bridge');
     }
   });
 
   it('keeps 3D controls unavailable in non-3D-only views instead of silently invoking them', () => {
-    for (const mode of ['plan', 'sheet', 'schedule', 'agent'] as CapabilityViewMode[]) {
+    for (const mode of ['plan', 'sheet', 'schedule', 'concept'] as CapabilityViewMode[]) {
       expect(evaluateCommandInMode('view.3d.fit', mode)?.state).toBe('disabled');
       expect(evaluateCommandInMode('visibility.3d.hide-all-categories', mode)?.state).toBe(
         'disabled',
@@ -179,7 +183,13 @@ describe('UX reachability audit', () => {
   });
 
   it('keeps every mounted capability-backed Cmd+K result labeled with a context badge', () => {
-    for (const activeMode of ['plan', '3d', 'sheet', 'schedule', 'agent'] as CapabilityViewMode[]) {
+    for (const activeMode of [
+      'plan',
+      '3d',
+      'sheet',
+      'schedule',
+      'concept',
+    ] as CapabilityViewMode[]) {
       const results = queryPalette(
         '',
         { selectedElementIds: [], activeViewId: null, activeMode },
@@ -239,7 +249,7 @@ describe('UX reachability audit', () => {
     }
 
     expect(inspectedCommandIds.size).toBeGreaterThan(0);
-    expect(inspectedCommandIds).toContain('3d:tool.wall');
+    expect(inspectedCommandIds).toContain('3d:tool.door');
     expect(inspectedCommandIds).toContain('schedule:tool.dimension');
     expect(inspectedCommandIds).toContain('plan:view.3d.saved-view.save-current');
   });

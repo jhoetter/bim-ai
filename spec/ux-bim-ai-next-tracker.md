@@ -875,3 +875,45 @@ Evidence (2026-05-13):
       - `bridgeBadgePlanPresent: true`
       - `modeIdentityAfterWallClick: "Plan"`
       - `wallPressedAfterBridge: "true"`
+
+## Reopened Tracker (2026-05-13, feedback round 5)
+
+| Gap ID        | Problem Statement                                                                                                   | Canonical Surfaces / Files                                          | Priority | Status |
+| ------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | -------- | ------ |
+| NEXT5-GAP-001 | In 3D, selecting `Wall` from ribbon activates selection-state but does not allow click-to-draw authoring on canvas. | `Viewport.tsx`, `tools/toolRegistry.ts`, command capability mapping | P0       | Done   |
+
+### WP-NEXT-23 — Direct 3D Wall Draft Commit Path
+
+- Priority: `P0`
+- Status: `Done`
+- Covers: `NEXT5-GAP-001`
+- Goal: make `Wall` in 3D genuinely drawable (two-click draft commit) instead of only mode/highlight state.
+- Source ownership:
+  - `packages/web/src/Viewport.tsx`
+  - `packages/web/src/viewport/authoring3d.ts`
+  - `packages/web/src/tools/toolRegistry.ts`
+  - `packages/web/src/workspace/commandCapabilities.test.ts`
+  - `packages/web/src/workspace/shell/TopBar.test.tsx`
+  - `packages/web/src/workspace/Workspace.test.tsx`
+- Acceptance:
+  - 3D `Wall` stays in 3D mode when activated from ribbon;
+  - first click on 3D canvas stores draft start on active level plane;
+  - second click commits `createWall`;
+  - command remains reachable through ribbon/Cmd+K metadata.
+- Implementation + evidence:
+  - Added 3D authoring helpers:
+    - `resolve3dDraftLevel` (preferred active level, fallback to lowest level),
+    - `projectSceneRayToLevelPlaneMm` (ray -> level plane projection).
+  - Added two-click 3D wall draft flow in `Viewport` pointer-up logic:
+    - when `planTool === wall`, orbit click is consumed for drafting,
+    - first click captures start point,
+    - second click dispatches `createWall` with `levelId`, `locationLine`, `wallTypeId`, `heightMm`.
+  - Updated tool metadata so `wall` is a direct 3D tool (`modes: ['plan','3d']`) rather than forced plan bridge.
+  - Updated command/ribbon regression tests to assert direct 3D wall activation.
+  - Seeded screenshot + live request-capture proof:
+    - `packages/web/tmp/ux-next-wp23-20260513/01-3d-wall-tool-active.png`
+    - `packages/web/tmp/ux-next-wp23-20260513/02-3d-wall-draft-committed.png`
+    - `packages/web/tmp/ux-next-wp23-20260513/summary.json`
+      - `modeIdentityBeforeWallDraw: "3D"`
+      - `modeIdentityAfterWallDraw: "3D"`
+      - `createWallCommandCount: 1`

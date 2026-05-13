@@ -107,6 +107,7 @@ import {
 } from './viewport/wallFaceRadialMenu';
 import { buildPlanOverlay3dGroup } from './viewport/planOverlay3d';
 import { shouldRunWallOpeningCsg } from './viewport/wallCsgEligibility';
+import { projectSceneRayToLevelPlaneMm, resolve3dDraftLevel } from './viewport/authoring3d';
 
 // KRN-14 — wire the CSG cut into meshBuilders. Side-effect at module load.
 registerDormerCutFn(applyDormerCutsToRoofGeom);
@@ -329,6 +330,12 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
 
   const selectedId = useBimStore((s) => s.selectedId);
   selectedIdRef.current = selectedId;
+  const planTool = useBimStore((s) => s.planTool);
+  const activeLevelId = useBimStore((s) => s.activeLevelId);
+  const planToolRef = useRef(planTool);
+  const activeLevelIdRef = useRef(activeLevelId);
+  planToolRef.current = planTool;
+  activeLevelIdRef.current = activeLevelId;
   // ANN-02: store actions for the wall context menu's command flow.
   const activateElevationView = useBimStore((s) => s.activateElevationView);
   const selectStoreEl = useBimStore((s) => s.select);
@@ -720,6 +727,10 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       indicator: AxisIndicatorHandle | null;
       lastDeltaMm: number;
     } | null = null;
+    let wallDraftStart: {
+      levelId: string;
+      point: { xMm: number; yMm: number };
+    } | null = null;
 
     function placeCamera(): void {
       const snap = rig.snapshot();
@@ -771,6 +782,50 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
 
       const first = hits.find((h) => typeof h.object.userData.bimPickId === 'string');
       useBimStore.getState().select(first?.object.userData.bimPickId as string | undefined);
+    }
+
+    function handle3dWallDraftClick(cx: number, cy: number): boolean {
+      if (planToolRef.current !== 'wall') {
+        wallDraftStart = null;
+        return false;
+      }
+      const levels = Object.values(elementsByIdRef.current)
+        .filter((el): el is Extract<Element, { kind: 'level' }> => el.kind === 'level')
+        .map((level) => ({ id: level.id, elevationMm: level.elevationMm }));
+      const draftLevel = resolve3dDraftLevel(levels, activeLevelIdRef.current);
+      if (!draftLevel) return false;
+      const rect = renderer.domElement.getBoundingClientRect();
+      ndc.x = ((cx - rect.left) / rect.width) * 2 - 1;
+      ndc.y = -(((cy - rect.top) / rect.height) * 2 - 1);
+      raycaster.setFromCamera(ndc, camera);
+      const hit = projectSceneRayToLevelPlaneMm(
+        raycaster.ray.origin,
+        raycaster.ray.direction,
+        draftLevel.elevationMm,
+      );
+      if (!hit) return false;
+      if (!wallDraftStart) {
+        wallDraftStart = { levelId: draftLevel.id, point: hit };
+        useBimStore.getState().select(undefined);
+        return true;
+      }
+      const start = wallDraftStart.point;
+      const end = hit;
+      const levelId = wallDraftStart.levelId;
+      wallDraftStart = null;
+      if (Math.hypot(end.xMm - start.xMm, end.yMm - start.yMm) < 10) return true;
+      const runtime = useBimStore.getState();
+      onSemanticCommand?.({
+        type: 'createWall',
+        id: `wall-3d-${Date.now().toString(36)}-${Math.round(Math.random() * 1_000_000).toString(36)}`,
+        levelId,
+        start,
+        end,
+        locationLine: runtime.wallLocationLine,
+        wallTypeId: runtime.activeWallTypeId ?? undefined,
+        heightMm: runtime.wallDrawHeightMm,
+      });
+      return true;
     }
 
     /** EDT-03 — raycast against the current selection's grip pickables. */
@@ -942,7 +997,10 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         activeGrip = null;
         return;
       }
-      if (!dragMoved && wasDragging === 'orbit') pick(ev.clientX, ev.clientY);
+      if (!dragMoved && wasDragging === 'orbit') {
+        if (handle3dWallDraftClick(ev.clientX, ev.clientY)) return;
+        pick(ev.clientX, ev.clientY);
+      }
     }
 
     function onMove(ev: PointerEvent): void {

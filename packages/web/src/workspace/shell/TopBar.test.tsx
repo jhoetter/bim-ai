@@ -396,7 +396,7 @@ describe('RibbonBar — F-005', () => {
     expect(onOpenViewports).toHaveBeenCalledTimes(1);
   });
 
-  it('uses a 3D ribbon schema with bridged modeling commands and active 3D view controls', () => {
+  it('uses a 3D ribbon schema with direct wall drafting and active 3D view controls', () => {
     const onToolSelect = vi.fn();
     const onSaveCurrentViewpoint = vi.fn();
     const onOpenFamilyLibrary = vi.fn();
@@ -420,10 +420,10 @@ describe('RibbonBar — F-005', () => {
     expect(getByTestId('ribbon-command-beam')).toBeTruthy();
     expect(getByTestId('ribbon-command-floor')).toBeTruthy();
     expect(getByTestId('ribbon-command-roof')).toBeTruthy();
-    expect(getByTestId('ribbon-bridge-wall').textContent).toContain('Plan');
+    expect(queryByTestId('ribbon-bridge-wall')).toBeNull();
     expect(queryByTestId('ribbon-command-visibility-graphics')).toBeNull();
     fireEvent.click(getByTestId('ribbon-command-wall'));
-    expect(onModeChange).toHaveBeenCalledWith('plan');
+    expect(onModeChange).not.toHaveBeenCalledWith('plan');
     expect(onToolSelect).toHaveBeenCalledWith('wall');
 
     fireEvent.click(getByTestId('ribbon-tab-view'));

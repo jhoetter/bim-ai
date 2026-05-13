@@ -97,22 +97,23 @@ describe('command capability graph', () => {
     }
   });
 
-  it('does not expose plan-pointer tools as direct pure 3D palette tools', () => {
+  it('supports direct 3D wall drafting while keeping other plan-pointer tools bridged', () => {
     const direct3dToolIds = Object.values(getToolRegistry(tIdentity))
       .filter((tool) => tool.modes.includes('3d'))
       .map((tool) => tool.id);
 
-    expect(direct3dToolIds).toEqual(['select']);
+    expect(direct3dToolIds).toEqual(['select', 'wall']);
     expect(evaluateCommandInMode('tool.railing', '3d')?.state).toBe('bridge');
   });
 
-  it('marks plan tools as bridge commands outside their execution surface', () => {
-    const availability = evaluateCommandInMode('tool.wall', '3d');
+  it('marks non-3D plan tools as bridge commands outside their execution surface', () => {
+    const availability = evaluateCommandInMode('tool.railing', '3d');
     expect(availability?.state).toBe('bridge');
     if (availability?.state === 'bridge') {
       expect(availability.targetMode).toBe('plan');
       expect(availability.reason).toContain('Plan');
     }
+    expect(evaluateCommandInMode('tool.wall', '3d')?.state).toBe('enabled');
   });
 
   it('applies lens-specific gating reasons for discipline-scoped authoring commands', () => {
@@ -159,7 +160,7 @@ describe('command capability graph', () => {
       'jobs.open',
       'milestone.open',
     ]) {
-      for (const mode of ['plan', '3d', 'sheet', 'schedule', 'agent'] as const) {
+      for (const mode of ['plan', '3d', 'sheet', 'schedule', 'concept'] as const) {
         expect(evaluateCommandInMode(commandId, mode)?.state).toBe('enabled');
       }
     }
@@ -168,9 +169,7 @@ describe('command capability graph', () => {
   it('tracks 3D view and visibility commands as active only in 3D-capable views', () => {
     expect(evaluateCommandInMode('view.3d.fit', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('view.3d.sun-settings', '3d')?.state).toBe('enabled');
-    expect(evaluateCommandInMode('visibility.3d.hide-all-categories', 'plan-3d')?.state).toBe(
-      'enabled',
-    );
+    expect(evaluateCommandInMode('visibility.3d.hide-all-categories', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('view.3d.fit', 'plan')?.state).toBe('disabled');
     expect(evaluateCommandInMode('view.3d.sun-settings', 'plan')?.state).toBe('disabled');
   });
@@ -182,7 +181,6 @@ describe('command capability graph', () => {
       'view.3d.saved-view.update',
     ]) {
       expect(evaluateCommandInMode(commandId, '3d')?.state).toBe('enabled');
-      expect(evaluateCommandInMode(commandId, 'plan-3d')?.state).toBe('enabled');
       expect(evaluateCommandInMode(commandId, 'plan')?.state).toBe('disabled');
     }
   });
@@ -310,13 +308,13 @@ describe('command capability graph', () => {
   it('detects dead direct command exposure in invalid views', () => {
     expect(
       auditCommandExposures([
-        { commandId: 'tool.wall', mode: '3d', surface: 'ribbon', behavior: 'direct' },
+        { commandId: 'tool.railing', mode: '3d', surface: 'ribbon', behavior: 'direct' },
       ]),
     ).toHaveLength(1);
 
     expect(
       auditCommandExposures([
-        { commandId: 'tool.wall', mode: '3d', surface: 'ribbon', behavior: 'bridge' },
+        { commandId: 'tool.railing', mode: '3d', surface: 'ribbon', behavior: 'bridge' },
         {
           commandId: 'visibility.plan.graphics',
           mode: 'sheet',

@@ -450,7 +450,7 @@ describe('<Workspace /> — smoke', () => {
     expect(getByTestId('ribbon-command-3d-measure')).toBeTruthy();
   });
 
-  it('exposes full 3D modeling ribbon actions with plan-bridge cues and activation', () => {
+  it('exposes full 3D modeling ribbon actions with direct wall activation', () => {
     seedTabs('3d');
     const { getByTestId } = renderWithProviders(<Workspace />);
 
@@ -461,10 +461,10 @@ describe('<Workspace /> — smoke', () => {
     expect(getByTestId('ribbon-command-ceiling')).toBeTruthy();
     expect(getByTestId('ribbon-command-door')).toBeTruthy();
     expect(getByTestId('ribbon-command-window')).toBeTruthy();
-    expect(getByTestId('ribbon-bridge-wall').textContent).toContain('Plan');
+    expect(getByTestId('ribbon-mode-identity').textContent).toContain('3D');
 
     fireEvent.click(getByTestId('ribbon-command-wall'));
-    expect(getByTestId('ribbon-mode-identity').textContent).toContain('Plan');
+    expect(getByTestId('ribbon-mode-identity').textContent).toContain('3D');
     expect(getByTestId('ribbon-command-wall').getAttribute('aria-pressed')).toBe('true');
   });
 

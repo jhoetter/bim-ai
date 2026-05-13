@@ -1,0 +1,20 @@
+{
+  "modeIdentityBeforeWallDraw": "3D",
+  "modeIdentityAfterWallDraw": "3D",
+  "createWallCommandCount": 1,
+  "lastCreateWallCommand": {
+    "type": "createWall",
+    "id": "wall-3d-mp3z5xgr-dllv",
+    "levelId": "hf-lvl-ground",
+    "start": {
+      "xMm": 8081.371721842256,
+      "yMm": 12803.102054938448
+    },
+    "end": {
+      "xMm": 4422.6901334615395,
+      "yMm": 5747.645168206873
+    },
+    "locationLine": "wall-centerline",
+    "heightMm": 2800
+  }
+}
