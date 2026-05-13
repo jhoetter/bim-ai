@@ -1,0 +1,1 @@
+[Image #1] we currently have the "new floor plan", "new section" etc buttons in the primary left sidebar, i just want them as "+" buttons next to the respective groups

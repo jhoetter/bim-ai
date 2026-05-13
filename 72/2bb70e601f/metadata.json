@@ -3,7 +3,7 @@
   "checkpoint_id": "722bb70e601f",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "packages/web/src/workspace/Workspace.test.tsx",
     "packages/web/src/workspace/Workspace.tsx",
@@ -27,13 +27,19 @@
       "transcript": "/72/2bb70e601f/1/full.jsonl",
       "content_hash": "/72/2bb70e601f/1/content_hash.txt",
       "prompt": "/72/2bb70e601f/1/prompt.txt"
+    },
+    {
+      "metadata": "/72/2bb70e601f/2/metadata.json",
+      "transcript": "/72/2bb70e601f/2/full.jsonl",
+      "content_hash": "/72/2bb70e601f/2/content_hash.txt",
+      "prompt": "/72/2bb70e601f/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 781282,
+    "input_tokens": 862355,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 24936192,
-    "output_tokens": 55987,
-    "api_call_count": 193
+    "cache_read_tokens": 26023040,
+    "output_tokens": 62415,
+    "api_call_count": 214
   }
 }
