@@ -838,3 +838,40 @@ Evidence (2026-05-13):
       - `shownBadgeVisible: true`
       - `emptyPaneMessagePresent: true`
       - `paneEmptyStateCount: 1`
+
+## Reopened Tracker (2026-05-13, feedback round 4)
+
+| Gap ID        | Problem Statement                                                                 | Canonical Surfaces / Files                           | Priority | Status |
+| ------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------- | -------- | ------ |
+| NEXT4-GAP-001 | 3D ribbon appears almost empty compared with expected authoring workflow density. | `workspace/shell/RibbonBar.tsx`, 3D mode bridge flow | P0       | Done   |
+
+### WP-NEXT-22 — 3D Ribbon Density + Bridge Activation
+
+- Priority: `P0`
+- Status: `Done`
+- Covers: `NEXT4-GAP-001`
+- Goal: expose a fuller authoring command surface in 3D while keeping behavior explicit and reachable.
+- Source ownership:
+  - `packages/web/src/workspace/shell/RibbonBar.tsx`
+  - `packages/web/src/workspace/Workspace.test.tsx`
+- Acceptance:
+  - 3D ribbon exposes rich modeling commands (build/openings/circulation/annotate/datum);
+  - commands unavailable as direct 3D operations remain visible as bridge commands instead of being stripped;
+  - clicking a bridge command switches to target mode and activates the command.
+- Implementation + evidence:
+  - Expanded 3D ribbon tabs with `Model` + `Annotate` panels (wall/floor/roof/ceiling/doors/windows/shaft/stair/railing/dimension/tag/section/elevation/grid/reference plane).
+  - Ribbon filtering updated to keep `bridge` commands visible (only `disabled` commands hidden).
+  - Ribbon run behavior updated:
+    - `bridge` command click auto-switches to target mode (e.g. Plan),
+    - then executes the selected tool/action.
+  - Added bridge badge rendering on bridged commands (`Plan`).
+  - Regression test added in `Workspace.test.tsx`:
+    - `exposes full 3D modeling ribbon actions with plan-bridge cues and activation`
+  - Seeded screenshot proof:
+    - `packages/web/tmp/ux-next-wp22-20260513/01-3d-ribbon-model-tools.png`
+    - `packages/web/tmp/ux-next-wp22-20260513/02-3d-wall-bridges-to-plan.png`
+    - `packages/web/tmp/ux-next-wp22-20260513/summary.json`
+      - `modelToolsPresent: true`
+      - `bridgeBadgePlanPresent: true`
+      - `modeIdentityAfterWallClick: "Plan"`
+      - `wallPressedAfterBridge: "true"`

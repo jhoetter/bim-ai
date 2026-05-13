@@ -1,0 +1,6 @@
+{
+  "modelToolsPresent": true,
+  "bridgeBadgePlanPresent": true,
+  "modeIdentityAfterWallClick": "Plan",
+  "wallPressedAfterBridge": "true"
+}

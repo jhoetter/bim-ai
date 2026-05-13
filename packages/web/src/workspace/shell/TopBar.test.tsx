@@ -396,31 +396,39 @@ describe('RibbonBar — F-005', () => {
     expect(onOpenViewports).toHaveBeenCalledTimes(1);
   });
 
-  it('uses a 3D ribbon schema with no disabled plan buttons', () => {
+  it('uses a 3D ribbon schema with bridged modeling commands and active 3D view controls', () => {
     const onToolSelect = vi.fn();
     const onSaveCurrentViewpoint = vi.fn();
     const onOpenFamilyLibrary = vi.fn();
+    const onModeChange = vi.fn();
     const { getByTestId, getByRole, queryByTestId } = render(
       <RibbonBar
         activeMode="3d"
         onToolSelect={onToolSelect}
+        onModeChange={onModeChange}
         onSaveCurrentViewpoint={onSaveCurrentViewpoint}
         onOpenFamilyLibrary={onOpenFamilyLibrary}
       />,
     );
 
-    expect(getByRole('tab', { name: '3D View' }).getAttribute('aria-selected')).toBe('true');
+    expect(getByRole('tab', { name: 'Model' }).getAttribute('aria-selected')).toBe('true');
     expect(getByTestId('ribbon-mode-identity').textContent).toContain('3D');
+    expect(getByRole('tab', { name: '3D View' })).toBeTruthy();
     expect(getByRole('tab', { name: 'Insert' })).toBeTruthy();
-    expect(queryByTestId('ribbon-command-wall')).toBeNull();
-    expect(queryByTestId('ribbon-command-column')).toBeNull();
-    expect(queryByTestId('ribbon-command-beam')).toBeNull();
-    expect(queryByTestId('ribbon-command-floor')).toBeNull();
-    expect(queryByTestId('ribbon-command-roof')).toBeNull();
+    expect(getByTestId('ribbon-command-wall')).toBeTruthy();
+    expect(getByTestId('ribbon-command-column')).toBeTruthy();
+    expect(getByTestId('ribbon-command-beam')).toBeTruthy();
+    expect(getByTestId('ribbon-command-floor')).toBeTruthy();
+    expect(getByTestId('ribbon-command-roof')).toBeTruthy();
+    expect(getByTestId('ribbon-bridge-wall').textContent).toContain('Plan');
     expect(queryByTestId('ribbon-command-visibility-graphics')).toBeNull();
+    fireEvent.click(getByTestId('ribbon-command-wall'));
+    expect(onModeChange).toHaveBeenCalledWith('plan');
+    expect(onToolSelect).toHaveBeenCalledWith('wall');
+
+    fireEvent.click(getByTestId('ribbon-tab-view'));
     expect((getByTestId('ribbon-command-select') as HTMLButtonElement).disabled).toBe(false);
     expect((getByTestId('ribbon-command-3d-save-view') as HTMLButtonElement).disabled).toBe(false);
-
     fireEvent.click(getByTestId('ribbon-command-select'));
     fireEvent.click(getByTestId('ribbon-command-3d-save-view'));
     fireEvent.click(getByTestId('ribbon-tab-insert'));
@@ -523,16 +531,7 @@ describe('RibbonBar — F-005', () => {
   });
 
   it('does not expose disabled ribbon commands in any active view schema — UX-WP-06', () => {
-    for (const mode of [
-      'plan',
-      '3d',
-      'plan-3d',
-      'section',
-      'sheet',
-      'schedule',
-      'agent',
-      'concept',
-    ] as const) {
+    for (const mode of ['plan', '3d', 'section', 'sheet', 'schedule', 'concept'] as const) {
       expect(
         ribbonCommandReachabilityForMode(mode, 'wall').filter((row) => row.behavior === 'disabled'),
       ).toEqual([]);

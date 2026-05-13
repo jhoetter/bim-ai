@@ -4,6 +4,7 @@ import { Icons, ICON_SIZE, type IconName } from '@bim-ai/ui';
 import { type ToolId, type WorkspaceMode as ToolWorkspaceMode } from '../../tools/toolRegistry';
 import {
   capabilityIdForTool,
+  type CommandAvailability,
   evaluateCommandInMode,
   type CapabilityLensMode,
   formatCapabilityMode,
@@ -196,7 +197,11 @@ export function RibbonBar({
   }, [hiddenCommandKeys]);
 
   function runCommand(command: RibbonCommand): void {
-    if (commandDisabledReason(command, activeMode, lensMode)) return;
+    const availability = activeMode ? commandAvailability(command, activeMode, lensMode) : null;
+    if (availability?.state === 'disabled') return;
+    if (availability?.state === 'bridge') {
+      onModeChange?.(availability.targetMode as WorkspaceMode);
+    }
     if (command.type === 'tool') {
       onToolSelect?.(command.id);
       return;
@@ -373,15 +378,28 @@ export function RibbonBar({
                 aria-label={panel.label}
                 className="relative flex min-w-fit items-stretch gap-1 border-r border-border pr-2 last:border-r-0"
               >
-                {visibleCommands.map((command) => (
-                  <RibbonButton
-                    key={commandKey(command)}
-                    command={command}
-                    active={commandActive(command, activeToolId, sheetReviewMode, sheetMarkupShape)}
-                    disabledReason={commandDisabledReason(command, activeMode, lensMode)}
-                    onClick={() => runCommand(command)}
-                  />
-                ))}
+                {visibleCommands.map((command) => {
+                  const availability = activeMode
+                    ? commandAvailability(command, activeMode, lensMode)
+                    : null;
+                  const bridgeTargetMode =
+                    availability?.state === 'bridge' ? availability.targetMode : undefined;
+                  return (
+                    <RibbonButton
+                      key={commandKey(command)}
+                      command={command}
+                      active={commandActive(
+                        command,
+                        activeToolId,
+                        sheetReviewMode,
+                        sheetMarkupShape,
+                      )}
+                      bridgeTargetMode={bridgeTargetMode}
+                      disabledReason={commandDisabledReason(command, activeMode, lensMode)}
+                      onClick={() => runCommand(command)}
+                    />
+                  );
+                })}
                 {visibleFlyoutCommands.length > 0 ? (
                   <div className="relative flex items-center">
                     <button
@@ -462,15 +480,21 @@ export function ribbonCommandReachabilityForMode(
       for (const command of [...panel.commands, ...(panel.flyoutCommands ?? [])]) {
         const commandId = ribbonCapabilityId(command);
         if (!commandId) continue;
-        const disabledReason = commandDisabledReason(command, mode, lensMode);
+        const availability = commandAvailability(command, mode, lensMode);
+        const behavior =
+          availability?.state === 'bridge'
+            ? 'bridge'
+            : availability?.state === 'disabled'
+              ? 'disabled'
+              : 'direct';
         reachability.push({
           commandId,
           mode,
           tabId: tab.id,
           panelId: panel.id,
           label: command.label,
-          behavior: disabledReason ? 'disabled' : 'direct',
-          disabledReason,
+          behavior,
+          disabledReason: availability?.state === 'enabled' ? undefined : availability?.reason,
         });
       }
     }
@@ -488,11 +512,9 @@ export function prunedRibbonCommandReachabilityForMode(
   for (const sourceMode of [
     'plan',
     '3d',
-    'plan-3d',
     'section',
     'sheet',
     'schedule',
-    'agent',
     'concept',
   ] as const satisfies readonly ToolWorkspaceMode[]) {
     for (const tab of buildUnfilteredRibbonTabs(sourceMode, selectedElementKind)) {
@@ -522,16 +544,19 @@ export function prunedRibbonCommandReachabilityForMode(
 function RibbonButton({
   command,
   active,
+  bridgeTargetMode,
   disabledReason,
   onClick,
 }: {
   command: RibbonCommand;
   active: boolean;
+  bridgeTargetMode?: CapabilityViewMode;
   disabledReason?: string;
   onClick: () => void;
 }): JSX.Element {
   const Icon = Icons[command.icon] ?? Icons.commandPalette;
-  const isBridge = command.type === 'action' && command.id === 'command-palette';
+  const isPaletteBridge = command.type === 'action' && command.id === 'command-palette';
+  const isBridge = Boolean(bridgeTargetMode) || isPaletteBridge;
   const disabled = Boolean(disabledReason);
   return (
     <button
@@ -555,10 +580,12 @@ function RibbonButton({
       <span className="max-w-20 truncate">{command.label}</span>
       {isBridge ? (
         <span
-          data-testid={command.testId ? `ribbon-bridge-${command.testId}` : undefined}
+          data-testid={
+            command.testId ? `ribbon-bridge-${command.testId}` : `ribbon-bridge-${command.id}`
+          }
           className="text-[9px] uppercase tracking-wide text-muted"
         >
-          Cmd+K
+          {bridgeTargetMode ? formatCapabilityMode(bridgeTargetMode) : 'Cmd+K'}
         </span>
       ) : null}
     </button>
@@ -593,9 +620,7 @@ function buildUnfilteredRibbonTabs(
             ? buildScheduleRibbonTabs(selectedElementKind)
             : mode === 'concept'
               ? buildConceptRibbonTabs(selectedElementKind)
-              : mode === 'agent'
-                ? buildAgentRibbonTabs(selectedElementKind)
-                : buildPlanRibbonTabs(mode, selectedElementKind);
+              : buildPlanRibbonTabs(mode, selectedElementKind);
 
   return tabs;
 }
@@ -612,10 +637,10 @@ function filterRibbonTabsForMode(
         .map((panel) => ({
           ...panel,
           commands: panel.commands.filter((command) =>
-            commandIsDirectInMode(command, mode, lensMode),
+            commandIsVisibleInMode(command, mode, lensMode),
           ),
           flyoutCommands: panel.flyoutCommands?.filter((command) =>
-            commandIsDirectInMode(command, mode, lensMode),
+            commandIsVisibleInMode(command, mode, lensMode),
           ),
         }))
         .filter((panel) => panel.commands.length > 0 || (panel.flyoutCommands?.length ?? 0) > 0),
@@ -623,15 +648,13 @@ function filterRibbonTabsForMode(
     .filter((tab) => tab.panels.length > 0);
 }
 
-function commandIsDirectInMode(
+function commandIsVisibleInMode(
   command: RibbonCommand,
   mode: ToolWorkspaceMode,
   lensMode: CapabilityLensMode,
 ): boolean {
-  const commandId = ribbonCapabilityId(command);
-  if (!commandId) return true;
-  const availability = evaluateCommandInMode(commandId, mode as CapabilityViewMode, lensMode);
-  return !availability || availability.state === 'enabled';
+  const availability = commandAvailability(command, mode, lensMode);
+  return !availability || availability.state !== 'disabled';
 }
 
 function buildPlanRibbonTabs(
@@ -777,6 +800,39 @@ function buildPlanRibbonTabs(
 function build3dRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
   const tabs: RibbonTab[] = [
     {
+      id: 'create',
+      label: 'Model',
+      panels: [
+        {
+          id: 'build',
+          label: 'Build',
+          commands: [
+            tool('wall', 'Wall', 'wall'),
+            tool('floor', 'Floor', 'floor'),
+            tool('roof', 'Roof', 'roof'),
+            tool('ceiling', 'Ceiling', 'ceiling'),
+            tool('column', 'Column', 'column'),
+            tool('beam', 'Beam', 'beam'),
+          ],
+        },
+        {
+          id: 'openings',
+          label: 'Openings',
+          commands: [
+            tool('door', 'Door', 'door'),
+            tool('window', 'Window', 'window'),
+            tool('wall-opening', 'Opening', 'wall-opening'),
+            tool('shaft', 'Shaft', 'shaft'),
+          ],
+        },
+        {
+          id: 'circulation',
+          label: 'Circulation',
+          commands: [tool('stair', 'Stair', 'stair'), tool('railing', 'Railing', 'railing')],
+        },
+      ],
+    },
+    {
       id: 'view',
       label: '3D View',
       panels: [
@@ -826,6 +882,33 @@ function build3dRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
           label: 'Documentation',
           commands: [
             action('command-palette', 'Create Section', 'sectionView', '3d-create-section'),
+          ],
+        },
+      ],
+    },
+    {
+      id: 'annotate',
+      label: 'Annotate',
+      panels: [
+        {
+          id: 'annotate',
+          label: 'Annotate',
+          commands: [tool('dimension', 'Dimension', 'dimension'), tool('tag', 'Tag', 'tag')],
+        },
+        {
+          id: 'views',
+          label: 'Views',
+          commands: [
+            tool('section', 'Section', 'sectionView'),
+            tool('elevation', 'Elevation', 'elevationView'),
+          ],
+        },
+        {
+          id: 'datum',
+          label: 'Datum',
+          commands: [
+            tool('grid', 'Grid', 'gridLine'),
+            tool('reference-plane', 'Ref Plane', 'gridLine'),
           ],
         },
       ],
@@ -1023,39 +1106,6 @@ function buildConceptRibbonTabs(selectedElementKind?: string | null): RibbonTab[
   return tabs;
 }
 
-function buildAgentRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
-  const tabs: RibbonTab[] = [
-    {
-      id: 'analyze',
-      label: 'Findings',
-      panels: [
-        {
-          id: 'findings',
-          label: 'Findings',
-          commands: [
-            tool('select', 'Select', 'select'),
-            action('command-palette', 'Filter Findings', 'issue', 'agent-filter-findings'),
-          ],
-        },
-        {
-          id: 'actions',
-          label: 'Review Actions',
-          commands: [
-            action('command-palette', 'Apply Fix', 'validationRule', 'agent-apply-fix'),
-            action('command-palette', 'Navigate', 'commandPalette', 'agent-navigate'),
-          ],
-        },
-      ],
-    },
-  ];
-
-  if (selectedElementKind) {
-    tabs.push(build3dModifyTab(selectedElementKind));
-  }
-
-  return tabs;
-}
-
 function buildPlanModifyTab(selectedElementKind: string): RibbonTab {
   return {
     id: 'modify',
@@ -1189,18 +1239,21 @@ function commandDisabledReason(
   lensMode: CapabilityLensMode,
 ): string | undefined {
   if (!activeMode) return undefined;
-  const commandId = ribbonCapabilityId(command);
-  if (commandId) {
-    const availability = evaluateCommandInMode(
-      commandId,
-      activeMode as CapabilityViewMode,
-      lensMode,
-    );
-    if (availability?.state === 'disabled' || availability?.state === 'bridge') {
-      return availability.reason;
-    }
+  const availability = commandAvailability(command, activeMode, lensMode);
+  if (availability?.state === 'disabled') {
+    return availability.reason;
   }
   return undefined;
+}
+
+function commandAvailability(
+  command: RibbonCommand,
+  mode: ToolWorkspaceMode,
+  lensMode: CapabilityLensMode,
+): CommandAvailability | null {
+  const commandId = ribbonCapabilityId(command);
+  if (!commandId) return null;
+  return evaluateCommandInMode(commandId, mode as CapabilityViewMode, lensMode);
 }
 
 function ribbonCapabilityId(command: RibbonCommand): string | null {
@@ -1298,16 +1351,12 @@ function ribbonModeIdentity(mode: ToolWorkspaceMode): { label: string; icon: Ico
   switch (mode) {
     case '3d':
       return { label: '3D', icon: 'orbitView' };
-    case 'plan-3d':
-      return { label: 'Plan + 3D', icon: 'orbitView' };
     case 'section':
       return { label: 'Section', icon: 'sectionView' };
     case 'sheet':
       return { label: 'Sheet', icon: 'sheet' };
     case 'schedule':
       return { label: 'Schedule', icon: 'schedule' };
-    case 'agent':
-      return { label: 'Findings', icon: 'issue' };
     case 'concept':
       return { label: 'Concept', icon: 'linkedModel' };
     case 'plan':

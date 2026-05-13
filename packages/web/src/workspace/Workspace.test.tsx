@@ -450,6 +450,24 @@ describe('<Workspace /> — smoke', () => {
     expect(getByTestId('ribbon-command-3d-measure')).toBeTruthy();
   });
 
+  it('exposes full 3D modeling ribbon actions with plan-bridge cues and activation', () => {
+    seedTabs('3d');
+    const { getByTestId } = renderWithProviders(<Workspace />);
+
+    fireEvent.click(getByTestId('ribbon-tab-create'));
+    expect(getByTestId('ribbon-command-wall')).toBeTruthy();
+    expect(getByTestId('ribbon-command-floor')).toBeTruthy();
+    expect(getByTestId('ribbon-command-roof')).toBeTruthy();
+    expect(getByTestId('ribbon-command-ceiling')).toBeTruthy();
+    expect(getByTestId('ribbon-command-door')).toBeTruthy();
+    expect(getByTestId('ribbon-command-window')).toBeTruthy();
+    expect(getByTestId('ribbon-bridge-wall').textContent).toContain('Plan');
+
+    fireEvent.click(getByTestId('ribbon-command-wall'));
+    expect(getByTestId('ribbon-mode-identity').textContent).toContain('Plan');
+    expect(getByTestId('ribbon-command-wall').getAttribute('aria-pressed')).toBe('true');
+  });
+
   it('uses explicit secondary sidebar adapters for every view type — UX-WP-04', () => {
     const cases: Array<[string, string]> = [
       ['plan', 'secondary-sidebar-plan'],
