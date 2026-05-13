@@ -1199,8 +1199,8 @@ Evidence (2026-05-13):
       - `packages/web/tmp/ux-wall-debug-pipeline-20260513/02-front-elevation-after-commit.png`
       - `packages/web/tmp/ux-wall-debug-pipeline-20260513/summary.json`
       - `projectionModes: ["elevation-axis"]`
-      - `firstTrace.projection.anisotropyRatio: 5.126`
-      - `firstTrace.projection.verticalLook: 0.266`
+      - `firstTrace.projection.anisotropyRatio: 5.283`
+      - `firstTrace.projection.verticalLook: 0.260`
       - `createWallCount: 1`
       - same drag now commits a 7174 mm horizontal-axis wall instead of the prior 12375 mm screenY-depth wall.
     - 2026-05-13 oblique/top-readable control rerun:
