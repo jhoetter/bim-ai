@@ -1,0 +1,164 @@
+{
+  "metrics": {
+    "desktop": {
+      "app-shell": {
+        "present": true,
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "clientHeight": 900,
+        "scrollHeight": 901
+      },
+      "app-shell-header": {
+        "present": true,
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "clientHeight": 44,
+        "scrollHeight": 44
+      },
+      "app-shell-ribbon": {
+        "present": true,
+        "clientWidth": 904,
+        "scrollWidth": 904,
+        "clientHeight": 81,
+        "scrollHeight": 81
+      },
+      "app-shell-primary-sidebar": {
+        "present": true,
+        "clientWidth": 255,
+        "scrollWidth": 255,
+        "clientHeight": 827,
+        "scrollHeight": 827
+      },
+      "app-shell-secondary-sidebar": {
+        "present": true,
+        "clientWidth": 279,
+        "scrollWidth": 279,
+        "clientHeight": 827,
+        "scrollHeight": 827
+      },
+      "app-shell-canvas": {
+        "present": true,
+        "clientWidth": 904,
+        "scrollWidth": 904,
+        "clientHeight": 746,
+        "scrollHeight": 746
+      },
+      "app-shell-footer": {
+        "present": true,
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "clientHeight": 27,
+        "scrollHeight": 28
+      }
+    },
+    "tablet": {
+      "app-shell": {
+        "present": true,
+        "clientWidth": 768,
+        "scrollWidth": 768,
+        "clientHeight": 900,
+        "scrollHeight": 901
+      },
+      "app-shell-header": {
+        "present": true,
+        "clientWidth": 768,
+        "scrollWidth": 768,
+        "clientHeight": 44,
+        "scrollHeight": 44
+      },
+      "app-shell-ribbon": {
+        "present": true,
+        "clientWidth": 232,
+        "scrollWidth": 232,
+        "clientHeight": 81,
+        "scrollHeight": 81
+      },
+      "app-shell-primary-sidebar": {
+        "present": true,
+        "clientWidth": 255,
+        "scrollWidth": 255,
+        "clientHeight": 827,
+        "scrollHeight": 827
+      },
+      "app-shell-secondary-sidebar": {
+        "present": true,
+        "clientWidth": 279,
+        "scrollWidth": 279,
+        "clientHeight": 827,
+        "scrollHeight": 827
+      },
+      "app-shell-canvas": {
+        "present": true,
+        "clientWidth": 232,
+        "scrollWidth": 232,
+        "clientHeight": 746,
+        "scrollHeight": 746
+      },
+      "app-shell-footer": {
+        "present": true,
+        "clientWidth": 768,
+        "scrollWidth": 768,
+        "clientHeight": 27,
+        "scrollHeight": 28
+      }
+    },
+    "narrow": {
+      "app-shell": {
+        "present": true,
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "clientHeight": 844,
+        "scrollHeight": 845
+      },
+      "app-shell-header": {
+        "present": true,
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "clientHeight": 44,
+        "scrollHeight": 44
+      },
+      "app-shell-ribbon": {
+        "present": true,
+        "clientWidth": 110,
+        "scrollWidth": 110,
+        "clientHeight": 81,
+        "scrollHeight": 81
+      },
+      "app-shell-primary-sidebar": {
+        "present": true,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "clientHeight": 0,
+        "scrollHeight": 0
+      },
+      "app-shell-secondary-sidebar": {
+        "present": true,
+        "clientWidth": 279,
+        "scrollWidth": 279,
+        "clientHeight": 771,
+        "scrollHeight": 771
+      },
+      "app-shell-canvas": {
+        "present": true,
+        "clientWidth": 110,
+        "scrollWidth": 110,
+        "clientHeight": 690,
+        "scrollHeight": 690
+      },
+      "app-shell-footer": {
+        "present": true,
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "clientHeight": 27,
+        "scrollHeight": 28
+      }
+    }
+  },
+  "assertions": {
+    "nonLoopResetsToStartPrompt": true,
+    "loopChipVisible": true,
+    "loopCommitKeepsEndpointPrompt": true,
+    "loopChipHiddenAfterEsc": true,
+    "offPlanWarningVisible": true
+  }
+}

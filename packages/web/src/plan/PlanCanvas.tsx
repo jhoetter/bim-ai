@@ -140,6 +140,11 @@ import { moveDeltaMm } from './moveTool';
 import { parseTypedRotateAngle, rotateDeltaAngleFromReference } from './rotateTool';
 import { selectNextConnectedWallByTab } from './wallChainSelection';
 import { buildWallRadiusFillet, type MmPoint } from './wallRadiusFillet';
+import {
+  nextWallDraftAfterCommit,
+  shouldBlockWallCommitOutsideCrop,
+  WALL_CROP_BLOCK_MESSAGE,
+} from './wallDraftLifecycle';
 import { getFamilyById as getBuiltInFamilyById } from '../families/familyCatalog';
 import {
   familyTypePlacesAsDetailComponent,
@@ -469,6 +474,7 @@ export function PlanCanvas({
   } | null>(null);
   const [geomEpoch, bumpGeom] = useState(0);
   const [measureReadout, setMeasureReadout] = useState<{ distMm: number } | null>(null);
+  const [wallDraftNotice, setWallDraftNotice] = useState<string | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [pendingPlanRegion, setPendingPlanRegion] = useState<{
     x0: number;
@@ -2787,6 +2793,7 @@ export function PlanCanvas({
       if (planTool === 'wall') {
         const d = draftRef.current;
         if (!d || d.kind !== 'wall') {
+          setWallDraftNotice(null);
           draftRef.current = { kind: 'wall', sx: sp.xMm, sy: sp.yMm };
           bumpGeom((x) => x + 1);
           return;
@@ -2819,6 +2826,12 @@ export function PlanCanvas({
         wallFlipRef.current = false;
         const pathStart = { xMm: startX, yMm: startY };
         const pathEnd = { xMm: endX, yMm: endY };
+        if (shouldBlockWallCommitOutsideCrop(activeCropState, pathStart, pathEnd)) {
+          setWallDraftNotice(WALL_CROP_BLOCK_MESSAGE);
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        setWallDraftNotice(null);
         const createWallCommand = (
           id: string,
           start: MmPoint,
@@ -2923,9 +2936,13 @@ export function PlanCanvas({
           }
         })();
         // EDT-V3-05: re-arm from endpoint when loop mode is on.
-        draftRef.current = useToolPrefs.getState().loopMode
-          ? { kind: 'wall', sx: sp.xMm, sy: sp.yMm, previousWall: previousWallForChain }
-          : undefined;
+        draftRef.current =
+          nextWallDraftAfterCommit({
+            loopMode: useToolPrefs.getState().loopMode,
+            endpoint: { xMm: sp.xMm, yMm: sp.yMm },
+            previousWallForChain,
+          }) ?? undefined;
+        clearPreview();
         bumpGeom((x) => x + 1);
         return;
       }
@@ -3988,7 +4005,9 @@ export function PlanCanvas({
         // Cancel any active snap override.
         snapOverrideRef.current = null;
         setSnapOverrideDisplay(null);
+        const hadDraft = Boolean(draftRef.current);
         draftRef.current = undefined;
+        setWallDraftNotice(null);
         // EDT-V3-05: Esc exits loop mode as well as cancelling the in-flight segment.
         useToolPrefs.getState().setLoopMode(false);
         // TOP-V3-03: Esc clears the in-flight subdivision polygon.
@@ -4056,7 +4075,16 @@ export function PlanCanvas({
         } else if (planTool === 'ceiling') {
           ceilingStateRef.current = initialCeilingState();
         }
-        if (planTool === 'area-boundary') clearPreview();
+        if (
+          hadDraft ||
+          planTool === 'wall' ||
+          planTool === 'grid' ||
+          planTool === 'dimension' ||
+          planTool === 'measure' ||
+          planTool === 'area-boundary'
+        ) {
+          clearPreview();
+        }
         clearMarqueeLine();
         marqueeRef.current = { active: false, sx: 0, sy: 0, ex: 0, ey: 0, direction: null };
         bumpGeom((x) => x + 1);
@@ -4493,6 +4521,10 @@ export function PlanCanvas({
   }, [planTool]);
 
   useEffect(() => {
+    if (planTool !== 'wall') setWallDraftNotice(null);
+  }, [planTool]);
+
+  useEffect(() => {
     if (planTool !== 'query') {
       setDxfQueryHover(null);
       setDxfQueryDialog(null);
@@ -4819,6 +4851,14 @@ export function PlanCanvas({
             </span>
           </div>
           <div className="mt-0.5 text-[9px] text-muted">Tab cycles location line · Esc cancels</div>
+          {wallDraftNotice ? (
+            <div
+              data-testid="wall-draft-notice"
+              className="mt-1 rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-1 text-[9px] text-amber-200"
+            >
+              {wallDraftNotice}
+            </div>
+          ) : null}
         </div>
       ) : null}
       {snapLabel && (

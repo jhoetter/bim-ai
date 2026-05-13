@@ -62,6 +62,25 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
     expect(SRC).toMatch(/buildWallRadiusFillet\(/);
   });
 
+  it('blocks wall commit outside an enabled crop region with explicit user warning', () => {
+    expect(SRC).toMatch(
+      /shouldBlockWallCommitOutsideCrop\(\s*activeCropState,\s*pathStart,\s*pathEnd\s*\)/,
+    );
+    expect(SRC).toMatch(/setWallDraftNotice\(\s*WALL_CROP_BLOCK_MESSAGE\s*\)/);
+    expect(SRC).toContain('data-testid="wall-draft-notice"');
+  });
+
+  it('re-arms wall loop continuation through deterministic helper state', () => {
+    expect(SRC).toMatch(/nextWallDraftAfterCommit\(\s*\{/);
+    expect(SRC).toMatch(/loopMode:\s*useToolPrefs\.getState\(\)\.loopMode/);
+  });
+
+  it('clears draft preview artifacts on Escape for wall lifecycle stability', () => {
+    expect(SRC).toMatch(
+      /if\s*\(\s*hadDraft[\s\S]{0,300}planTool === ['"]wall['"][\s\S]{0,240}clearPreview\(\)/,
+    );
+  });
+
   it('cycles the visible wall location-line setting with Tab while the wall tool is active', () => {
     expect(SRC).toMatch(/ev\.key\s*===\s*['"]Tab['"][\s\S]{0,80}planTool\s*===\s*['"]wall['"]/);
     expect(SRC).toMatch(/setWallLocationLine\(cycleWallLocationLine\(st\.wallLocationLine\)\)/);

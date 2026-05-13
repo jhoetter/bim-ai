@@ -360,7 +360,7 @@ export function AppShell({
     ),
     gridTemplateAreas: `
       "header header header header"
-      "ribbon ribbon ribbon ribbon"
+      "primarySidebar secondarySidebar ribbon ribbon"
       "primarySidebar secondarySidebar canvas elementSidebar"
       "footer footer footer footer"
     `,
@@ -438,7 +438,7 @@ export function AppShell({
           onKeyDown={handlePrimaryResizeKey}
           style={{
             gridColumn: 1,
-            gridRow: 3,
+            gridRow: '2 / 4',
             justifySelf: 'end',
             width: 8,
             marginRight: -4,

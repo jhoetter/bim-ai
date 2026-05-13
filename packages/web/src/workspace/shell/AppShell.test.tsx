@@ -51,6 +51,25 @@ describe('AppShell — spec §8', () => {
     expect(shell.style.gridTemplateAreas).toContain('footer');
   });
 
+  it('keeps the primary/secondary stack spanning ribbon+canvas rows while ribbon stays over canvas lanes', () => {
+    const { getByTestId } = render(
+      <AppShell
+        header={<span>t</span>}
+        ribbon={<span>ribbon</span>}
+        primarySidebar={<span>l</span>}
+        secondarySidebar={<span>sec</span>}
+        canvas={<span>c</span>}
+        elementSidebar={<span>r</span>}
+        footer={<span>s</span>}
+      />,
+    );
+    const shell = getByTestId('app-shell') as HTMLElement;
+    const areas = shell.style.gridTemplateAreas.replace(/\s+/g, ' ');
+    expect(areas).toContain('"primarySidebar secondarySidebar ribbon ribbon"');
+    expect(areas).toContain('"primarySidebar secondarySidebar canvas elementSidebar"');
+    expect(getByTestId('app-shell-primary-resize-handle').style.gridRow).toBe('2 / 4');
+  });
+
   it('responds to `[` to hide and restore the primary sidebar', () => {
     const { getByTestId } = render(
       <AppShell
