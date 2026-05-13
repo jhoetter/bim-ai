@@ -1,0 +1,21 @@
+{
+  "createWallCount": 1,
+  "commandTypes": ["createWall"],
+  "commands": [
+    {
+      "type": "createWall",
+      "id": "wall-3d-mp49lobq-dfnd",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 5700.018707744463,
+        "yMm": 3927.6358770195193
+      },
+      "end": {
+        "xMm": 9681.284048002875,
+        "yMm": 7895.351256811896
+      },
+      "locationLine": "wall-centerline",
+      "heightMm": 2800
+    }
+  ]
+}

@@ -417,6 +417,9 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
   const planTool = useBimStore((s) => s.planTool);
   const activeLevelId = useBimStore((s) => s.activeLevelId);
   const [authoringOverlay, setAuthoringOverlay] = useState<Authoring3dOverlayState | null>(null);
+  const [draftPlaneAngleWarning, setDraftPlaneAngleWarning] = useState(false);
+  const draftPlaneAngleWarningRef = useRef(draftPlaneAngleWarning);
+  draftPlaneAngleWarningRef.current = draftPlaneAngleWarning;
   const planToolRef = useRef(planTool);
   const activeLevelIdRef = useRef(activeLevelId);
   planToolRef.current = planTool;
@@ -498,6 +501,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
   useEffect(() => {
     if (!DIRECT_3D_AUTHORING_TOOLS.has(planTool as Direct3dAuthoringTool)) {
       setAuthoringOverlay(null);
+      setDraftPlaneAngleWarning(false);
       return;
     }
     const tool = planTool as Direct3dAuthoringTool;
@@ -529,6 +533,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         previewAuxArcPath: undefined,
       };
     });
+    setDraftPlaneAngleWarning(false);
   }, [planTool, direct3dDraftLevelName]);
 
   // VIS-V3-04: sync sun_settings element → sunStore
@@ -874,6 +879,39 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
     let wallFlipNextSegment = false;
     let hostPreviewLock = false;
 
+    function measureDraftPlaneProjectionMmPerPx(
+      cx: number,
+      cy: number,
+      elevationMm: number,
+    ): number | null {
+      const samplePx = 10;
+      const origin = projectPointerToDraftPlane(cx, cy, elevationMm);
+      const sampleX = projectPointerToDraftPlane(cx + samplePx, cy, elevationMm);
+      const sampleY = projectPointerToDraftPlane(cx, cy + samplePx, elevationMm);
+      if (!origin || !sampleX || !sampleY) return null;
+      const deltaX = Math.hypot(
+        sampleX.point.xMm - origin.point.xMm,
+        sampleX.point.yMm - origin.point.yMm,
+      );
+      const deltaY = Math.hypot(
+        sampleY.point.xMm - origin.point.xMm,
+        sampleY.point.yMm - origin.point.yMm,
+      );
+      return Math.max(deltaX, deltaY) / samplePx;
+    }
+
+    function isDraftPlaneProjectionStable(cx: number, cy: number, elevationMm: number): boolean {
+      const mmPerPx = measureDraftPlaneProjectionMmPerPx(cx, cy, elevationMm);
+      // Past this range, one pixel of cursor motion can jump the draft point
+      // by multiple wall thicknesses, which causes direction/orientation drift.
+      if (mmPerPx === null || mmPerPx > 320) return false;
+      const dir = new THREE.Vector3();
+      camera.getWorldDirection(dir);
+      // Keep line/polygon drafting in camera poses with enough top-down component
+      // to avoid edge-on ambiguity in front/elevation-like views.
+      return Math.abs(dir.y) >= 0.48;
+    }
+
     function placeCamera(): void {
       const snap = rig.snapshot();
       camera.position.set(snap.position.x, snap.position.y, snap.position.z);
@@ -1166,6 +1204,17 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       return { outline, directionStart, directionEnd };
     }
 
+    function polygonScreenArea(points: ScreenPoint[]): number {
+      if (points.length < 3) return 0;
+      let twiceArea = 0;
+      for (let i = 0; i < points.length; i += 1) {
+        const a = points[i]!;
+        const b = points[(i + 1) % points.length]!;
+        twiceArea += a.x * b.y - b.x * a.y;
+      }
+      return Math.abs(twiceArea) * 0.5;
+    }
+
     function hostedPreviewSegment(
       tool: 'door' | 'window' | 'wall-opening',
       hit: {
@@ -1285,6 +1334,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       if (!POLYGON_3D_AUTHORING_TOOLS.has(tool)) polygonDraft = null;
       if (!LINE_3D_AUTHORING_TOOLS.has(tool)) lineDraftStart = null;
       if (tool === 'door' || tool === 'window' || tool === 'wall-opening') {
+        setDraftPlaneAngleWarning(false);
         const overlay = authoringOverlayRef.current;
         const hit = pickWallAtPointer(cx, cy, {
           tool,
@@ -1417,6 +1467,17 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       }
       const levelInfo = resolveDraftLevelInfo();
       if (!levelInfo) return false;
+      if (
+        (LINE_3D_AUTHORING_TOOLS.has(tool) ||
+          POLYGON_3D_AUTHORING_TOOLS.has(tool) ||
+          tool === 'column' ||
+          tool === 'room') &&
+        !isDraftPlaneProjectionStable(cx, cy, levelInfo.elevationMm)
+      ) {
+        setDraftPlaneAngleWarning(true);
+        return true;
+      }
+      setDraftPlaneAngleWarning(false);
       const projected = projectPointerToDraftPlane(cx, cy, levelInfo.elevationMm);
       if (!projected) return false;
       if (tool === 'room') {
@@ -1458,27 +1519,47 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
           return true;
         }
         const start = lineDraftStart.point;
-        const overlay = authoringOverlayRef.current;
-        const clickRect = renderer.domElement.getBoundingClientRect();
-        const clickScreen = { x: cx - clickRect.left, y: cy - clickRect.top };
-        const end =
-          overlay?.tool === tool &&
-          overlay.phase === 'pick-end' &&
-          overlay.currentPointMm &&
-          overlay.currentScreen &&
-          Math.hypot(
-            clickScreen.x - overlay.currentScreen.x,
-            clickScreen.y - overlay.currentScreen.y,
-          ) <= 20
-            ? overlay.currentPointMm
-            : projected.point;
+        const end = projected.point;
         const levelId = lineDraftStart.levelId;
-        lineDraftStart = null;
         if (Math.hypot(end.xMm - start.xMm, end.yMm - start.yMm) < 10) {
           setAuthoringOverlay({ tool, phase: 'pick-start', levelName: levelInfo.name });
           return true;
         }
         if (tool === 'wall') {
+          const clickRect = renderer.domElement.getBoundingClientRect();
+          const preview = wallDraftPreview(
+            start,
+            end,
+            levelInfo.elevationMm,
+            wallFlipNextSegment,
+            useBimStore.getState().wallLocationLine,
+            resolveDraftWallThicknessMm(),
+            clickRect,
+          );
+          const directionPx = preview
+            ? Math.hypot(
+                preview.directionEnd.x - preview.directionStart.x,
+                preview.directionEnd.y - preview.directionStart.y,
+              )
+            : 0;
+          const previewReadable =
+            !!preview && polygonScreenArea(preview.outline) >= 90 && directionPx >= 24;
+          if (!previewReadable) {
+            setDraftPlaneAngleWarning(true);
+            setAuthoringOverlay({
+              tool,
+              phase: 'pick-end',
+              levelName: levelInfo.name,
+              startScreen: preview?.directionStart,
+              currentScreen: preview?.directionEnd ?? projected.screen,
+              currentPointMm: projected.point,
+              wallFlipActive: wallFlipNextSegment,
+              wallPreviewOutlineScreen: preview?.outline,
+              wallPreviewDirectionStartScreen: preview?.directionStart,
+              wallPreviewDirectionEndScreen: preview?.directionEnd,
+            });
+            return true;
+          }
           const runtime = useBimStore.getState();
           const flip = wallFlipNextSegment;
           const effectiveLocationLine = flip
@@ -1486,6 +1567,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             : runtime.wallLocationLine;
           const actualStart = start;
           const actualEnd = end;
+          lineDraftStart = null;
           wallFlipNextSegment = false;
           onSemanticCommand?.({
             type: 'createWall',
@@ -1498,6 +1580,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             heightMm: runtime.wallDrawHeightMm,
           });
         } else {
+          lineDraftStart = null;
           if (tool === 'beam') {
             onSemanticCommand?.({
               type: 'createBeam',
@@ -1842,6 +1925,26 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       ) {
         const levelInfo = resolveDraftLevelInfo();
         if (levelInfo) {
+          const stable = isDraftPlaneProjectionStable(
+            ev.clientX,
+            ev.clientY,
+            levelInfo.elevationMm,
+          );
+          if (stable === draftPlaneAngleWarningRef.current) setDraftPlaneAngleWarning(!stable);
+          if (!stable) {
+            setAuthoringOverlay((prev) =>
+              prev?.tool === directTool
+                ? {
+                    ...prev,
+                    currentPointMm: undefined,
+                    wallPreviewOutlineScreen: undefined,
+                    wallPreviewDirectionStartScreen: undefined,
+                    wallPreviewDirectionEndScreen: undefined,
+                  }
+                : prev,
+            );
+            return;
+          }
           const projected = projectPointerToDraftPlane(
             ev.clientX,
             ev.clientY,
@@ -3536,6 +3639,19 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
 
   const overlayTitleInstruction = useMemo((): { title: string; instruction: string } | null => {
     if (!direct3dAuthoringActive || !authoringOverlay) return null;
+    if (
+      draftPlaneAngleWarning &&
+      (LINE_3D_AUTHORING_TOOLS.has(authoringOverlay.tool) ||
+        POLYGON_3D_AUTHORING_TOOLS.has(authoringOverlay.tool) ||
+        authoringOverlay.tool === 'column' ||
+        authoringOverlay.tool === 'room')
+    ) {
+      return {
+        title: `${authoringOverlay.tool.replace('-', ' ')} placement`,
+        instruction:
+          'View is too edge-on to the active level plane. Orbit slightly toward top/plan before placing.',
+      };
+    }
     if (authoringOverlay.tool === 'floor') {
       return {
         title: `Floor boundary · ${authoringOverlay.levelName ?? 'Active level'}`,
@@ -3686,7 +3802,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
               authoringOverlay.previewHostLock ? 'unlocks' : 'locks'
             } host.`,
     };
-  }, [authoringOverlay, direct3dAuthoringActive]);
+  }, [authoringOverlay, direct3dAuthoringActive, draftPlaneAngleWarning]);
 
   return (
     <div

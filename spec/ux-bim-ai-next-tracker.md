@@ -1151,3 +1151,34 @@ Evidence (2026-05-13):
         - `tabsAfter3d: 3`
         - `activePlanTab: tab-badge-active-plan:hf-pv-upper`
         - `active3dTab: tab-badge-active-3d:vp-front-elev`
+
+## Reopened Tracker (2026-05-13, feedback round 10)
+
+| Gap ID         | Problem Statement                                                                                                                               | Canonical Surfaces / Files                                   | Priority | Status      |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | -------- | ----------- |
+| NEXT10-GAP-001 | 3D wall placement can still read as directionally wrong in front/elevation-like camera poses (preview vector vs committed wall interpretation). | `Viewport.tsx` direct wall draft projection + overlay guards | P0       | In Progress |
+
+### WP-NEXT-28 — 3D Wall Direction Fidelity In Edge-On Poses
+
+- Priority: `P0`
+- Status: `In Progress`
+- Covers: `NEXT10-GAP-001`
+- Goal: remove ambiguous 3D wall commits in edge-on views and keep draft direction fidelity explicit before commit.
+- Source ownership:
+  - `packages/web/src/Viewport.tsx`
+  - `packages/web/tmp/ux-wall-edgeon-repro-20260513/capture.mjs`
+- Acceptance:
+  - wall commit endpoint always uses active click projection (no stale hover endpoint reuse),
+  - edge-on/unstable level-plane projection blocks commit with explicit placement guidance instead of committing ambiguous geometry,
+  - wall preview must be screen-readable before commit (non-collapsed outline + direction),
+  - seeded front/elevation repro no longer yields misleading commit behavior.
+- Implementation + current evidence (partial):
+  - Endpoint fidelity path changed to commit line tools from direct click projection (`end = projected.point`) so commit cannot reuse stale hover point.
+  - Added projection stability guard (`mm/px` sensitivity + minimum top-down camera component) for plane-based 3D tools before accepting clicks.
+  - Added wall-preview readability guard (minimum projected outline area + direction length) that blocks unreadable/edge-on wall commits and keeps user in `pick-end` with warning.
+  - Seeded repro artifacts:
+    - `packages/web/tmp/ux-wall-edgeon-repro-20260513/01-before-commit.png`
+    - `packages/web/tmp/ux-wall-edgeon-repro-20260513/02-after-commit-attempt.png`
+    - `packages/web/tmp/ux-wall-edgeon-repro-20260513/summary.json`
+  - Remaining closure work:
+    - tighten camera-pose detection against exact `Front elevation` tab behavior and capture final seeded proof with blocked ambiguous commit + valid oblique commit.
