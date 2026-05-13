@@ -264,6 +264,10 @@ Evidence (2026-05-13):
   - code: `packages/web/src/Viewport.tsx`, `packages/web/src/viewport/directAuthoringGuards.ts`, `packages/web/src/viewport/directAuthoringGuards.test.ts`
   - seeded captures: `packages/web/tmp/ux-door-wall-guard-20260513/01-before.png`, `02-after-door-double-click.png`, `03-after-wall-segment.png`
   - command trace: `packages/web/tmp/ux-door-wall-guard-20260513/summary.json` now records one `insertDoorOnWall` (no second mirrored insert) plus one `createWall` for the wall draft step.
+- Follow-up wall draft UX parity pass makes 3D wall orientation deterministic at author time (wall-body preview + direction arrow + `Space` flip state in instruction overlay) so draw intent matches committed geometry:
+  - code: `packages/web/src/Viewport.tsx`
+  - seeded captures: `packages/web/tmp/ux-wall-draft-ux-20260513/01-wall-preview-default.png`, `02-wall-preview-flipped.png`, `03-wall-after-commit.png`
+  - command trace: `packages/web/tmp/ux-wall-draft-ux-20260513/summary.json` (single `createWall` commit from the previewed segment state).
 
 ### WP-NEXT-07 — 3D Level Visibility Controls
 

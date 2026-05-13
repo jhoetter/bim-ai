@@ -1,0 +1,21 @@
+{
+  "commandCount": 1,
+  "commandTypes": ["createWall"],
+  "commands": [
+    {
+      "type": "createWall",
+      "id": "wall-3d-mp46trhy-e6a",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 10119.954113197924,
+        "yMm": 9343.381266393944
+      },
+      "end": {
+        "xMm": 13357.088500867263,
+        "yMm": 4377.955040873145
+      },
+      "locationLine": "wall-centerline",
+      "heightMm": 2800
+    }
+  ]
+}
