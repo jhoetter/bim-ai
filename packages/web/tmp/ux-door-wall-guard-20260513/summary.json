@@ -1,0 +1,27 @@
+{
+  "commandCount": 2,
+  "commandTypes": ["insertDoorOnWall", "createWall"],
+  "commands": [
+    {
+      "type": "insertDoorOnWall",
+      "wallId": "hf-w-feature-screen",
+      "alongT": 0.18500310864222058,
+      "widthMm": 900
+    },
+    {
+      "type": "createWall",
+      "id": "wall-3d-mp46enkz-j5ns",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 3766.121972897718,
+        "yMm": 5201.874041019163
+      },
+      "end": {
+        "xMm": 4921.555138163956,
+        "yMm": 6162.327859646709
+      },
+      "locationLine": "wall-centerline",
+      "heightMm": 2800
+    }
+  ]
+}

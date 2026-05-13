@@ -109,6 +109,12 @@ import {
 import { buildPlanOverlay3dGroup } from './viewport/planOverlay3d';
 import { shouldRunWallOpeningCsg } from './viewport/wallCsgEligibility';
 import { projectSceneRayToLevelPlaneMm, resolve3dDraftLevel } from './viewport/authoring3d';
+import {
+  isBackfacingWallHit,
+  isDuplicateHostedPlacement,
+  isLinkedElementId,
+  type HostedPlacementDedupeState,
+} from './viewport/directAuthoringGuards';
 
 // KRN-14 — wire the CSG cut into meshBuilders. Side-effect at module load.
 registerDormerCutFn(applyDormerCutsToRoofGeom);
@@ -180,6 +186,8 @@ type Authoring3dOverlayState = {
   previewEndScreen?: ScreenPoint;
   previewOutlineScreen?: ScreenPoint[];
   previewHostValid?: boolean;
+  previewHostWallId?: string;
+  previewHostAlongT?: number;
 };
 
 const DIRECT_3D_AUTHORING_TOOLS = new Set<Direct3dAuthoringTool>([
@@ -846,6 +854,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       levelId: string;
       points: Array<{ xMm: number; yMm: number }>;
     } | null = null;
+    let lastHostedPlacement: HostedPlacementDedupeState | null = null;
 
     function placeCamera(): void {
       const snap = rig.snapshot();
@@ -967,8 +976,12 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       const wallHit = hits.find((h) => {
         const id = h.object.userData.bimPickId as string | undefined;
         if (!id) return false;
+        if (isLinkedElementId(id)) return false;
         const el = elementsByIdRef.current[id];
-        return el?.kind === 'wall';
+        if (el?.kind !== 'wall') return false;
+        if (isBackfacingWallHit(h.face?.normal, h.object.matrixWorld, raycaster.ray.direction))
+          return false;
+        return true;
       });
       if (!wallHit) return null;
       const wallId = wallHit.object.userData.bimPickId as string;
@@ -1078,7 +1091,33 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       if (!LINE_3D_AUTHORING_TOOLS.has(tool)) lineDraftStart = null;
       if (tool === 'door' || tool === 'window' || tool === 'wall-opening') {
         const hit = pickWallAtPointer(cx, cy);
-        if (!hit) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        const clickScreen = { x: cx - rect.left, y: cy - rect.top };
+        let hostWall = hit?.wall ?? null;
+        let alongT =
+          hit !== null ? projectAlongT(hit.hitPointMm, hit.wall.start, hit.wall.end) : undefined;
+        const overlay = authoringOverlayRef.current;
+        if (
+          overlay?.tool === tool &&
+          overlay.previewHostWallId &&
+          typeof overlay.previewHostAlongT === 'number' &&
+          overlay.currentScreen
+        ) {
+          const distPx = Math.hypot(
+            clickScreen.x - overlay.currentScreen.x,
+            clickScreen.y - overlay.currentScreen.y,
+          );
+          const overlayHost = elementsByIdRef.current[overlay.previewHostWallId];
+          if (
+            distPx <= 20 &&
+            overlayHost?.kind === 'wall' &&
+            (!hostWall || hostWall.id !== overlayHost.id)
+          ) {
+            hostWall = overlayHost;
+            alongT = overlay.previewHostAlongT;
+          }
+        }
+        if (!hostWall || alongT === undefined) {
           setAuthoringOverlay((prev) =>
             prev?.tool === tool
               ? {
@@ -1087,17 +1126,25 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                   previewStartScreen: undefined,
                   previewEndScreen: undefined,
                   previewHostValid: false,
+                  previewHostWallId: undefined,
+                  previewHostAlongT: undefined,
                 }
               : prev,
           );
           return true;
         }
-        const alongT = projectAlongT(hit.hitPointMm, hit.wall.start, hit.wall.end);
-        useBimStore.getState().select(hit.wall.id);
+        alongT = Math.max(0, Math.min(1, alongT));
+        const nextPlacement: HostedPlacementDedupeState = {
+          key: `${tool}:${Math.round(clickScreen.x / 8)}:${Math.round(clickScreen.y / 8)}`,
+          atMs: performance.now(),
+        };
+        if (isDuplicateHostedPlacement(lastHostedPlacement, nextPlacement)) return true;
+        lastHostedPlacement = nextPlacement;
+        useBimStore.getState().select(hostWall.id);
         if (tool === 'door') {
           onSemanticCommand?.({
             type: 'insertDoorOnWall',
-            wallId: hit.wall.id,
+            wallId: hostWall.id,
             alongT,
             widthMm: 900,
           });
@@ -1115,7 +1162,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         if (tool === 'window') {
           onSemanticCommand?.({
             type: 'insertWindowOnWall',
-            wallId: hit.wall.id,
+            wallId: hostWall.id,
             alongT,
             widthMm: 1200,
             sillHeightMm: 900,
@@ -1134,7 +1181,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         }
         onSemanticCommand?.({
           type: 'createWallOpening',
-          hostWallId: hit.wall.id,
+          hostWallId: hostWall.id,
           alongTStart: Math.max(0, alongT - 0.05),
           alongTEnd: Math.min(1, alongT + 0.05),
           sillHeightMm: 200,
@@ -1653,6 +1700,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                   previewStartScreen: undefined,
                   previewEndScreen: undefined,
                   previewHostValid: false,
+                  previewHostWallId: undefined,
+                  previewHostAlongT: undefined,
                 }
               : prev,
           );
@@ -1668,6 +1717,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                     previewStartScreen: preview.start,
                     previewEndScreen: preview.end,
                     previewHostValid: preview.valid,
+                    previewHostWallId: hit.wall.id,
+                    previewHostAlongT: projectAlongT(hit.hitPointMm, hit.wall.start, hit.wall.end),
                   }
                 : prev,
             );

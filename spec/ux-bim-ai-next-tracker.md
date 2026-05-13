@@ -260,6 +260,10 @@ Evidence (2026-05-13):
   - `packages/web/tmp/ux-next-wp06-20260513/04-cmdk-3d-insert-reachability.png`
   - `packages/web/tmp/ux-next-wp06-20260513/summary.json`
 - Runtime summary confirms command POST `200` for all three direct actions (`insertDoorOnWall`, `insertWindowOnWall`, `createWallOpening`) and Cmd+K discoverability for each command id.
+- Follow-up host-pick hardening (same-day seeded repro) removes mirrored duplicate door placement from rapid repeat clicks and rejects linked/backface wall hits in direct 3D hosted insertion:
+  - code: `packages/web/src/Viewport.tsx`, `packages/web/src/viewport/directAuthoringGuards.ts`, `packages/web/src/viewport/directAuthoringGuards.test.ts`
+  - seeded captures: `packages/web/tmp/ux-door-wall-guard-20260513/01-before.png`, `02-after-door-double-click.png`, `03-after-wall-segment.png`
+  - command trace: `packages/web/tmp/ux-door-wall-guard-20260513/summary.json` now records one `insertDoorOnWall` (no second mirrored insert) plus one `createWall` for the wall draft step.
 
 ### WP-NEXT-07 — 3D Level Visibility Controls
 
