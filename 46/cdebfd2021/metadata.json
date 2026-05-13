@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "46cdebfd2021",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/Workspace.test.tsx",
+    "packages/web/src/workspace/shell/RibbonBar.tsx",
+    "packages/web/src/workspace/shell/TopBar.test.tsx",
+    "packages/web/tmp/ux-next-wp22-20260513/01-3d-ribbon-model-tools.png",
+    "packages/web/tmp/ux-next-wp22-20260513/02-3d-wall-bridges-to-plan.png",
+    "packages/web/tmp/ux-next-wp22-20260513/capture.mjs",
+    "packages/web/tmp/ux-next-wp22-20260513/summary.json",
+    "spec/ux-bim-ai-next-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/46/cdebfd2021/0/metadata.json",
+      "transcript": "/46/cdebfd2021/0/full.jsonl",
+      "content_hash": "/46/cdebfd2021/0/content_hash.txt",
+      "prompt": "/46/cdebfd2021/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 336868,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 10673920,
+    "output_tokens": 22483,
+    "api_call_count": 76
+  }
+}
