@@ -1,0 +1,17 @@
+did you fix all the other parts mentioned above earlier?
+
+---
+
+the multi-tab layout is actually quite nice, but it is difficult to understand which is the currently active tab, which i am switching, which of the above tabs are already shown; think about this, e.g. add color tones for the tabs or a way to flag the active one etc
+
+---
+
+overall i think the multi-tab approach is great, but it must be super super clear and intuitive
+
+---
+
+[Image #1]also if it says "no tab opened", then it really must show an empty state
+
+---
+
+i think i interrupted you ealier with the "› overall i think the multi-tab approach is great, but it must be super super clear and intuitive", with the color tones and such; please ensure that all the points we mentioned earlier throughout the conversation are applied
