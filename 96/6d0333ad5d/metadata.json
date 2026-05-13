@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "966d0333ad5d",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/commandCapabilities.test.ts",
+    "packages/web/src/workspace/commandCapabilities.ts",
+    "packages/web/src/workspace/shell/RibbonBar.tsx",
+    "packages/web/src/workspace/shell/TopBar.test.tsx",
+    "spec/ux-bim-ai-next-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/96/6d0333ad5d/0/metadata.json",
+      "transcript": "/96/6d0333ad5d/0/full.jsonl",
+      "content_hash": "/96/6d0333ad5d/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 115094,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 6370304,
+    "output_tokens": 21601,
+    "api_call_count": 48
+  }
+}

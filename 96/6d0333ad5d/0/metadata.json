@@ -1,0 +1,44 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "966d0333ad5d",
+  "session_id": "019e1f88-adaf-7791-baf4-f7e0bc958757",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-13T04:59:27.833646Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/shell/RibbonBar.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/commandCapabilities.ts",
+    "packages/web/src/workspace/commandCapabilities.test.ts",
+    "packages/web/src/workspace/shell/TopBar.test.tsx",
+    "spec/ux-bim-ai-next-tracker.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.3-codex",
+  "turn_id": "4260371ecd91",
+  "checkpoint_transcript_start": 953,
+  "transcript_lines_at_start": 953,
+  "token_usage": {
+    "input_tokens": 115094,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 6370304,
+    "output_tokens": 21601,
+    "api_call_count": 48
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-13T04:59:27.763866Z",
+    "agent_lines": 107,
+    "agent_removed": 12,
+    "human_added": 69,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 176,
+    "total_lines_changed": 188,
+    "agent_percentage": 63.297872340425535,
+    "metric_version": 2
+  }
+}
