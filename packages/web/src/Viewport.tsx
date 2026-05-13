@@ -904,12 +904,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       const mmPerPx = measureDraftPlaneProjectionMmPerPx(cx, cy, elevationMm);
       // Past this range, one pixel of cursor motion can jump the draft point
       // by multiple wall thicknesses, which causes direction/orientation drift.
-      if (mmPerPx === null || mmPerPx > 320) return false;
-      const dir = new THREE.Vector3();
-      camera.getWorldDirection(dir);
-      // Keep line/polygon drafting in camera poses with enough top-down component
-      // to avoid edge-on ambiguity in front/elevation-like views.
-      return Math.abs(dir.y) >= 0.48;
+      return mmPerPx !== null && mmPerPx <= 320;
     }
 
     function placeCamera(): void {

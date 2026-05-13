@@ -1174,11 +1174,12 @@ Evidence (2026-05-13):
   - seeded front/elevation repro no longer yields misleading commit behavior.
 - Implementation + current evidence (partial):
   - Endpoint fidelity path changed to commit line tools from direct click projection (`end = projected.point`) so commit cannot reuse stale hover point.
-  - Added projection stability guard (`mm/px` sensitivity + minimum top-down camera component) for plane-based 3D tools before accepting clicks.
+  - Added projection stability guard (`mm/px` sensitivity only) for plane-based 3D tools before accepting clicks; the earlier camera-component threshold was removed because it blocked valid wall drafting in normal 3D/elevation-like views.
   - Added wall-preview readability guard (minimum projected outline area + direction length) that blocks unreadable/edge-on wall commits and keeps user in `pick-end` with warning.
   - Seeded repro artifacts:
     - `packages/web/tmp/ux-wall-edgeon-repro-20260513/01-before-commit.png`
     - `packages/web/tmp/ux-wall-edgeon-repro-20260513/02-after-commit-attempt.png`
     - `packages/web/tmp/ux-wall-edgeon-repro-20260513/summary.json`
+    - 2026-05-13 hotfix rerun confirms wall drafting is reachable again (`createWallCount: 1`).
   - Remaining closure work:
     - tighten camera-pose detection against exact `Front elevation` tab behavior and capture final seeded proof with blocked ambiguous commit + valid oblique commit.
