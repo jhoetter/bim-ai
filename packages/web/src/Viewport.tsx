@@ -181,6 +181,7 @@ type Authoring3dOverlayState = {
   levelName?: string;
   startScreen?: ScreenPoint;
   currentScreen?: ScreenPoint;
+  currentPointMm?: { xMm: number; yMm: number };
   pointsScreen?: ScreenPoint[];
   previewStartScreen?: ScreenPoint;
   previewEndScreen?: ScreenPoint;
@@ -1435,12 +1436,26 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             levelName: levelInfo.name,
             startScreen: projected.screen,
             currentScreen: projected.screen,
+            currentPointMm: projected.point,
             wallFlipActive: tool === 'wall' ? wallFlipNextSegment : undefined,
           });
           return true;
         }
         const start = lineDraftStart.point;
-        const end = projected.point;
+        const overlay = authoringOverlayRef.current;
+        const clickRect = renderer.domElement.getBoundingClientRect();
+        const clickScreen = { x: cx - clickRect.left, y: cy - clickRect.top };
+        const end =
+          overlay?.tool === tool &&
+          overlay.phase === 'pick-end' &&
+          overlay.currentPointMm &&
+          overlay.currentScreen &&
+          Math.hypot(
+            clickScreen.x - overlay.currentScreen.x,
+            clickScreen.y - overlay.currentScreen.y,
+          ) <= 20
+            ? overlay.currentPointMm
+            : projected.point;
         const levelId = lineDraftStart.levelId;
         lineDraftStart = null;
         if (Math.hypot(end.xMm - start.xMm, end.yMm - start.yMm) < 10) {
@@ -1822,6 +1837,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                       phase: 'pick-start',
                       levelName: levelInfo.name,
                       currentScreen: projected.screen,
+                      currentPointMm: projected.point,
                       wallPreviewOutlineScreen: undefined,
                       wallPreviewDirectionStartScreen: undefined,
                       wallPreviewDirectionEndScreen: undefined,
@@ -1836,6 +1852,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                       phase: 'pick-point',
                       levelName: levelInfo.name,
                       currentScreen: projected.screen,
+                      currentPointMm: projected.point,
                     }
                   : prev,
               );
@@ -1850,6 +1867,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                       phase: 'pick-vertex',
                       levelName: levelInfo.name,
                       currentScreen: projected.screen,
+                      currentPointMm: projected.point,
                     }
                   : prev,
               );
@@ -1884,6 +1902,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                   return {
                     ...prev,
                     currentScreen: projected.screen,
+                    currentPointMm: projected.point,
                     wallFlipActive: wallFlipNextSegment,
                     wallPreviewOutlineScreen: preview?.outline,
                     wallPreviewDirectionStartScreen: preview?.directionStart,
@@ -1896,6 +1915,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                     x: ev.clientX - rect.left,
                     y: ev.clientY - rect.top,
                   },
+                  currentPointMm: projected?.point,
                 }
             : prev,
         );

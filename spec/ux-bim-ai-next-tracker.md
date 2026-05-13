@@ -278,6 +278,9 @@ Evidence (2026-05-13):
   - code: `packages/web/src/Viewport.tsx`
   - seeded captures: `packages/web/tmp/ux-host-lock-20260513/01-host-preview-unlocked.png`, `02-host-preview-locked.png`, `03-host-unlocked-second-place.png`
   - command trace: `packages/web/tmp/ux-host-lock-20260513/summary.json` (`countAfterLockedAttempt: 1`, so lock phase suppresses unintended second placement; unlock allows the intentional second wall-host placement).
+- Follow-up wall endpoint fidelity pass commits line-based 3D tools from the current preview point (when click lands near the preview marker) instead of re-sampling a new end point on pointer-up, reducing “placed not where drawn” drift:
+  - code: `packages/web/src/Viewport.tsx`
+  - seeded trace: `packages/web/tmp/ux-wall-draft-ux-20260513/summary.json` (single `createWall` command from the draft workflow with endpoint fidelity path active).
 
 ### WP-NEXT-07 — 3D Level Visibility Controls
 
