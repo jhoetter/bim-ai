@@ -1,0 +1,217 @@
+{
+  "commandTypes": ["createWall"],
+  "createWallCount": 1,
+  "wallLengthMm": 7173.6029052734375,
+  "tracePhases": [
+    "wall-start",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-commit"
+  ],
+  "projectionModes": ["elevation-axis"],
+  "firstTrace": {
+    "phase": "wall-start",
+    "atMs": 4603.5,
+    "camera": {
+      "position": {
+        "x": -6.5000000000000036,
+        "y": 9.5,
+        "z": -10.5
+      },
+      "target": {
+        "x": 7,
+        "y": 3.9,
+        "z": 4.7
+      },
+      "up": {
+        "x": 0,
+        "y": 1,
+        "z": 0
+      },
+      "direction": {
+        "x": 0.6402131939972281,
+        "y": -0.2655699175099612,
+        "z": 0.7208326332413233
+      },
+      "azimuth": -2.4153588096173717,
+      "elevation": 0.2687950187954491,
+      "radius": 21.086725682286474
+    },
+    "screen": {
+      "x": 702.719970703125,
+      "y": 513.239990234375
+    },
+    "point": {
+      "xMm": 28037.485658798243,
+      "yMm": 26460.371855231755
+    },
+    "levelInfo": {
+      "id": "hf-lvl-ground",
+      "elevationMm": 0,
+      "name": "Ground Floor"
+    },
+    "projection": {
+      "mode": "elevation-axis",
+      "scaleXMmPerPx": 43.687171485523926,
+      "scaleYMmPerPx": 223.95593716933666,
+      "anisotropyRatio": 5.126354706748322,
+      "verticalLook": 0.2655699175099612
+    },
+    "basis": {
+      "mode": "elevation-axis",
+      "originScreen": {
+        "x": 702.719970703125,
+        "y": 513.239990234375
+      },
+      "originPointMm": {
+        "xMm": 28037.485658798243,
+        "yMm": 26460.371855231755
+      },
+      "xPerPx": {
+        "xMm": -26.168822636534294,
+        "yMm": 23.242046420606126
+      },
+      "yPerPx": {
+        "xMm": 0,
+        "yMm": 0
+      },
+      "scaleMmPerPx": 35,
+      "projection": {
+        "mode": "elevation-axis",
+        "scaleXMmPerPx": 43.687171485523926,
+        "scaleYMmPerPx": 223.95593716933666,
+        "anisotropyRatio": 5.126354706748322,
+        "verticalLook": 0.2655699175099612
+      }
+    },
+    "rawMmPerPx": 225.85745886060835
+  },
+  "lastTrace": {
+    "phase": "wall-commit",
+    "atMs": 5207.800000011921,
+    "camera": {
+      "position": {
+        "x": -6.5000000000000036,
+        "y": 9.5,
+        "z": -10.5
+      },
+      "target": {
+        "x": 7,
+        "y": 3.9,
+        "z": 4.7
+      },
+      "up": {
+        "x": 0,
+        "y": 1,
+        "z": 0
+      },
+      "direction": {
+        "x": 0.6402131939972281,
+        "y": -0.2655699175099612,
+        "z": 0.7208326332413233
+      },
+      "azimuth": -2.4153588096173717,
+      "elevation": 0.2687950187954491,
+      "radius": 21.086725682286474
+    },
+    "command": {
+      "type": "createWall",
+      "id": "wall-3d-mp4co3l9-5ju0",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 28037.485658798243,
+        "yMm": 26460.371855231755
+      },
+      "end": {
+        "xMm": 22673.92159899745,
+        "yMm": 31224.06361887062
+      },
+      "locationLine": "wall-centerline",
+      "heightMm": 2800
+    },
+    "startScreen": {
+      "x": 702.719970703125,
+      "y": 513.239990234375
+    },
+    "endScreen": {
+      "x": 907.6800537109375,
+      "y": 708.760009765625
+    },
+    "projection": {
+      "mode": "elevation-axis",
+      "scaleXMmPerPx": 43.687171485523926,
+      "scaleYMmPerPx": 223.95593716933666,
+      "anisotropyRatio": 5.126354706748322,
+      "verticalLook": 0.2655699175099612
+    },
+    "basis": {
+      "mode": "elevation-axis",
+      "originScreen": {
+        "x": 702.719970703125,
+        "y": 513.239990234375
+      },
+      "originPointMm": {
+        "xMm": 28037.485658798243,
+        "yMm": 26460.371855231755
+      },
+      "xPerPx": {
+        "xMm": -26.168822636534294,
+        "yMm": 23.242046420606126
+      },
+      "yPerPx": {
+        "xMm": 0,
+        "yMm": 0
+      },
+      "scaleMmPerPx": 35,
+      "projection": {
+        "mode": "elevation-axis",
+        "scaleXMmPerPx": 43.687171485523926,
+        "scaleYMmPerPx": 223.95593716933666,
+        "anisotropyRatio": 5.126354706748322,
+        "verticalLook": 0.2655699175099612
+      }
+    },
+    "lengthMm": 7173.6029052734375
+  },
+  "commands": [
+    {
+      "type": "createWall",
+      "id": "wall-3d-mp4co3l9-5ju0",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 28037.485658798243,
+        "yMm": 26460.371855231755
+      },
+      "end": {
+        "xMm": 22673.92159899745,
+        "yMm": 31224.06361887062
+      },
+      "locationLine": "wall-centerline",
+      "heightMm": 2800
+    }
+  ]
+}

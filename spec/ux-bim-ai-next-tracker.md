@@ -1154,19 +1154,22 @@ Evidence (2026-05-13):
 
 ## Reopened Tracker (2026-05-13, feedback round 10)
 
-| Gap ID         | Problem Statement                                                                                                                               | Canonical Surfaces / Files                                   | Priority | Status      |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | -------- | ----------- |
-| NEXT10-GAP-001 | 3D wall placement can still read as directionally wrong in front/elevation-like camera poses (preview vector vs committed wall interpretation). | `Viewport.tsx` direct wall draft projection + overlay guards | P0       | In Progress |
+| Gap ID         | Problem Statement                                                                                                                               | Canonical Surfaces / Files                                   | Priority | Status  |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | -------- | ------- |
+| NEXT10-GAP-001 | 3D wall placement can still read as directionally wrong in front/elevation-like camera poses (preview vector vs committed wall interpretation). | `Viewport.tsx` direct wall draft projection + overlay guards | P0       | Partial |
 
 ### WP-NEXT-28 — 3D Wall Direction Fidelity In Edge-On Poses
 
 - Priority: `P0`
-- Status: `In Progress`
+- Status: `Partial`
 - Covers: `NEXT10-GAP-001`
 - Goal: remove ambiguous 3D wall commits in edge-on views and keep draft direction fidelity explicit before commit.
 - Source ownership:
   - `packages/web/src/Viewport.tsx`
+  - `packages/web/src/viewport/authoring3d.ts`
+  - `packages/web/src/viewport/authoring3d.test.ts`
   - `packages/web/tmp/ux-wall-edgeon-repro-20260513/capture.mjs`
+  - `packages/web/tmp/ux-wall-debug-pipeline-20260513/capture.mjs`
 - Acceptance:
   - wall commit endpoint always uses active click projection (no stale hover endpoint reuse),
   - edge-on/unstable level-plane projection blocks commit with explicit placement guidance instead of committing ambiguous geometry,
@@ -1181,11 +1184,30 @@ Evidence (2026-05-13):
   - Removed the generic 2D line from wall previews because it could imply a screen direction that the final full-height wall volume would not visually have.
   - Removed the wall-preview readability blocker because it blocked valid elevation-like placement instead of fixing endpoint fidelity.
   - Short wall attempts now clear the stored 3D line draft before returning to `pick-start`.
+  - Added a gated 3D wall debug trace (`localStorage["bim.debug.3dWall"] = "true"`) that records camera pose, projection mode, screen points, draft basis, preview endpoint, and committed command into `window.__BIM_AI_3D_WALL_DEBUG__`.
+  - Added wall draft projection classification:
+    - readable top/plan-like poses use exact ray-to-level-plane projection, so cursor and committed footprint stay geometrically aligned;
+    - front/elevation-like anisotropic poses switch to `elevation-axis` mode, cap horizontal drafting scale, ignore unstable screen-Y depth, and show explicit HUD guidance.
   - Seeded repro artifacts:
     - `packages/web/tmp/ux-wall-edgeon-repro-20260513/01-before-commit.png`
     - `packages/web/tmp/ux-wall-edgeon-repro-20260513/02-after-commit-attempt.png`
     - `packages/web/tmp/ux-wall-edgeon-repro-20260513/summary.json`
     - 2026-05-13 hotfix rerun confirms wall drafting is reachable again (`createWallCount: 1`).
     - 2026-05-13 perspective/elevation-basis rerun confirms wall drafting remains reachable (`createWallCount: 1`), the pre-commit wall-volume preview is visible (`wallVolumePreviewVisible: true`), and the sampled 249 px drag creates a bounded 5517 mm wall instead of an oversized perspective-projection slab.
+    - 2026-05-13 exact `Front elevation` debug rerun:
+      - `packages/web/tmp/ux-wall-debug-pipeline-20260513/01-front-elevation-preview.png`
+      - `packages/web/tmp/ux-wall-debug-pipeline-20260513/02-front-elevation-after-commit.png`
+      - `packages/web/tmp/ux-wall-debug-pipeline-20260513/summary.json`
+      - `projectionModes: ["elevation-axis"]`
+      - `firstTrace.projection.anisotropyRatio: 5.126`
+      - `firstTrace.projection.verticalLook: 0.266`
+      - `createWallCount: 1`
+      - same drag now commits a 7174 mm horizontal-axis wall instead of the prior 12375 mm screenY-depth wall.
+    - 2026-05-13 oblique/top-readable control rerun:
+      - `packages/web/tmp/ux-wall-debug-oblique-20260513/01-oblique-preview.png`
+      - `packages/web/tmp/ux-wall-debug-oblique-20260513/02-oblique-after.png`
+      - `packages/web/tmp/ux-wall-debug-oblique-20260513/summary.json`
+      - `projectionModes: ["plane"]`
+      - `createWallCount: 1`
   - Remaining closure work:
-    - tighten camera-pose detection against exact `Front elevation` tab behavior and capture final seeded proof with blocked ambiguous commit + valid oblique commit.
+    - decide whether front/elevation wall authoring should remain constrained placement or offer an explicit “open associated plan / choose work plane” branch for clicks that visually land in sky/behind the model.

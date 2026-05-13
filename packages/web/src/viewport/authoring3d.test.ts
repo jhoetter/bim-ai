@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { projectSceneRayToLevelPlaneMm, resolve3dDraftLevel } from './authoring3d';
+import {
+  classifyWallDraftProjection,
+  projectSceneRayToLevelPlaneMm,
+  resolve3dDraftLevel,
+} from './authoring3d';
 
 describe('resolve3dDraftLevel', () => {
   const levels = [
@@ -39,5 +43,27 @@ describe('projectSceneRayToLevelPlaneMm', () => {
     expect(
       projectSceneRayToLevelPlaneMm({ x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }, -1000),
     ).toBeNull();
+  });
+});
+
+describe('classifyWallDraftProjection', () => {
+  it('keeps exact level-plane placement when both screen axes are readable', () => {
+    expect(classifyWallDraftProjection(24, 27, -0.7)).toMatchObject({
+      mode: 'plane',
+      anisotropyRatio: 27 / 24,
+      verticalLook: 0.7,
+    });
+  });
+
+  it('switches front/elevation-like camera poses to horizontal elevation-axis drafting', () => {
+    const classification = classifyWallDraftProjection(43.7, 225.8, -0.265);
+
+    expect(classification.mode).toBe('elevation-axis');
+    expect(classification.anisotropyRatio).toBeGreaterThan(5);
+    expect(classification.verticalLook).toBeCloseTo(0.265);
+  });
+
+  it('rejects numerically explosive level-plane projection even in top-ish poses', () => {
+    expect(classifyWallDraftProjection(42, 220, -0.8).mode).toBe('elevation-axis');
   });
 });

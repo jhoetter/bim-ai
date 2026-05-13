@@ -1,0 +1,115 @@
+{
+  "wallLengthMm": 5049.15763938396,
+  "commandTypes": ["createWall"],
+  "projectionModes": ["plane"],
+  "first": {
+    "phase": "wall-start",
+    "atMs": 4078.5,
+    "camera": {
+      "position": {
+        "x": 8.651772588793811,
+        "y": 24.91928414043842,
+        "z": 4.3663212047145645
+      },
+      "target": {
+        "x": 7,
+        "y": 3.9,
+        "z": 4.7
+      },
+      "up": {
+        "x": 0,
+        "y": 1,
+        "z": 0
+      },
+      "direction": {
+        "x": -0.07833234109842635,
+        "y": -0.9968017063026194,
+        "z": 0.01582411609621026
+      },
+      "azimuth": 1.7701262813100564,
+      "elevation": 1.4907963267948965,
+      "radius": 21.086725682286474
+    },
+    "screen": {
+      "x": 614.8800048828125,
+      "y": 672.0999755859375
+    },
+    "point": {
+      "xMm": 8459.808144253875,
+      "yMm": 6939.470926463644
+    },
+    "levelInfo": {
+      "id": "hf-lvl-ground",
+      "elevationMm": 0,
+      "name": "Ground Floor"
+    },
+    "projection": {
+      "mode": "plane",
+      "scaleXMmPerPx": 21.21062783916165,
+      "scaleYMmPerPx": 21.173637695205592,
+      "anisotropyRatio": 1.00174699050246,
+      "verticalLook": 0.9968017063026194
+    },
+    "rawMmPerPx": 21.210627839161667
+  },
+  "last": {
+    "phase": "wall-commit",
+    "atMs": 4652.900000035763,
+    "camera": {
+      "position": {
+        "x": 8.614599451757735,
+        "y": 24.91928414043842,
+        "z": 4.217544992877714
+      },
+      "target": {
+        "x": 7,
+        "y": 3.9,
+        "z": 4.7
+      },
+      "up": {
+        "x": 0,
+        "y": 1,
+        "z": 0
+      },
+      "direction": {
+        "x": -0.07656947200266628,
+        "y": -0.9968017063026193,
+        "z": 0.022879560079238193
+      },
+      "azimuth": 1.8611590564167704,
+      "elevation": 1.4907963267948965,
+      "radius": 21.086725682286474
+    },
+    "command": {
+      "type": "createWall",
+      "id": "wall-3d-mp4corrr-id9m",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 8459.808144253875,
+        "yMm": 6939.470926463644
+      },
+      "end": {
+        "xMm": 8808.138476097805,
+        "yMm": 1902.3428908398819
+      },
+      "locationLine": "wall-centerline",
+      "heightMm": 2800
+    },
+    "startScreen": {
+      "x": 614.8800048828125,
+      "y": 672.0999755859375
+    },
+    "endScreen": {
+      "x": 834.47998046875,
+      "y": 745.4199829101562
+    },
+    "projection": {
+      "mode": "plane",
+      "scaleXMmPerPx": 21.21062783916165,
+      "scaleYMmPerPx": 21.173637695205592,
+      "anisotropyRatio": 1.00174699050246,
+      "verticalLook": 0.9968017063026194
+    },
+    "lengthMm": 5049.15763938396
+  }
+}

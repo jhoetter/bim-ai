@@ -108,7 +108,13 @@ import {
 } from './viewport/wallFaceRadialMenu';
 import { buildPlanOverlay3dGroup } from './viewport/planOverlay3d';
 import { shouldRunWallOpeningCsg } from './viewport/wallCsgEligibility';
-import { projectSceneRayToLevelPlaneMm, resolve3dDraftLevel } from './viewport/authoring3d';
+import {
+  classifyWallDraftProjection,
+  projectSceneRayToLevelPlaneMm,
+  resolve3dDraftLevel,
+  type WallDraftProjectionClassification,
+  type WallDraftProjectionMode,
+} from './viewport/authoring3d';
 import {
   isBackfacingWallHit,
   isDuplicateHostedPlacement,
@@ -196,6 +202,7 @@ type Authoring3dOverlayState = {
   wallPreviewDirectionStartScreen?: ScreenPoint;
   wallPreviewDirectionEndScreen?: ScreenPoint;
   wallFlipActive?: boolean;
+  wallProjectionMode?: WallDraftProjectionMode;
 };
 
 const DIRECT_3D_AUTHORING_TOOLS = new Set<Direct3dAuthoringTool>([
@@ -865,10 +872,13 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       lastDeltaMm: number;
     } | null = null;
     type WallDraftScreenBasis = {
+      mode: 'elevation-axis';
       originScreen: ScreenPoint;
       originPointMm: { xMm: number; yMm: number };
       xPerPx: { xMm: number; yMm: number };
       yPerPx: { xMm: number; yMm: number };
+      scaleMmPerPx: number;
+      projection: WallDraftProjectionClassification;
     };
     let lineDraftStart: {
       tool: 'wall' | 'beam' | 'stair' | 'railing' | 'grid' | 'reference-plane';
@@ -876,6 +886,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       point: { xMm: number; yMm: number };
       screen?: ScreenPoint;
       wallBasis?: WallDraftScreenBasis;
+      wallProjection?: WallDraftProjectionClassification;
     } | null = null;
     let polygonDraft: {
       tool: 'ceiling' | 'floor' | 'roof' | 'shaft' | 'area';
@@ -913,6 +924,43 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       // Past this range, one pixel of cursor motion can jump the draft point
       // by multiple wall thicknesses, which causes direction/orientation drift.
       return mmPerPx !== null && mmPerPx <= 320;
+    }
+
+    function wallDebugCameraSnapshot(): Record<string, unknown> {
+      const direction = new THREE.Vector3();
+      camera.getWorldDirection(direction);
+      const snap = rig.snapshot();
+      return {
+        position: snap.position,
+        target: snap.target,
+        up: snap.up,
+        direction: { x: direction.x, y: direction.y, z: direction.z },
+        azimuth: snap.azimuth,
+        elevation: snap.elevation,
+        radius: snap.radius,
+      };
+    }
+
+    function emitWallDebug(phase: string, payload: Record<string, unknown>): void {
+      try {
+        if (window.localStorage.getItem('bim.debug.3dWall') !== 'true') return;
+        const record = {
+          phase,
+          atMs: performance.now(),
+          camera: wallDebugCameraSnapshot(),
+          ...payload,
+        };
+        const debugWindow = window as Window & {
+          __BIM_AI_3D_WALL_DEBUG__?: Array<Record<string, unknown>>;
+        };
+        const log = debugWindow.__BIM_AI_3D_WALL_DEBUG__ ?? [];
+        log.push(record);
+        if (log.length > 300) log.splice(0, log.length - 300);
+        debugWindow.__BIM_AI_3D_WALL_DEBUG__ = log;
+        window.dispatchEvent(new CustomEvent('bim:debug:3d-wall', { detail: record }));
+      } catch {
+        /* debug-only path */
+      }
     }
 
     function placeCamera(): void {
@@ -1031,16 +1079,28 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       cy: number,
       elevationMm: number,
       origin: { point: { xMm: number; yMm: number }; screen: ScreenPoint },
-    ): WallDraftScreenBasis {
+    ): { basis?: WallDraftScreenBasis; projection: WallDraftProjectionClassification } {
       const samplePx = 12;
       const sampleX = projectPointerToDraftPlane(cx + samplePx, cy, elevationMm);
-      const rawScale = sampleX
+      const sampleY = projectPointerToDraftPlane(cx, cy + samplePx, elevationMm);
+      const scaleX = sampleX
         ? Math.hypot(
             (sampleX.point.xMm - origin.point.xMm) / samplePx,
             (sampleX.point.yMm - origin.point.yMm) / samplePx,
           )
         : 40;
-      const scaleMmPerPx = THREE.MathUtils.clamp(rawScale, 5, 60);
+      const scaleY = sampleY
+        ? Math.hypot(
+            (sampleY.point.xMm - origin.point.xMm) / samplePx,
+            (sampleY.point.yMm - origin.point.yMm) / samplePx,
+          )
+        : scaleX;
+      const cameraDirection = new THREE.Vector3();
+      camera.getWorldDirection(cameraDirection);
+      const projection = classifyWallDraftProjection(scaleX, scaleY, cameraDirection.y);
+      if (projection.mode === 'plane') return { projection };
+
+      const scaleMmPerPx = THREE.MathUtils.clamp(scaleX, 5, 35);
       const cameraRight = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
       const projectedRight = horizontalCameraVector(cameraRight) ??
         (sampleX
@@ -1052,25 +1112,21 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
               ),
             )
           : null) ?? { xMm: 1, yMm: 0 };
-      const cameraUp = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
-      const upHorizontalLen = Math.hypot(cameraUp.x, cameraUp.z);
-      const projectedUp = upHorizontalLen >= 0.25 ? horizontalCameraVector(cameraUp) : null;
       const xPerPx = {
         xMm: projectedRight.xMm * scaleMmPerPx,
         yMm: projectedRight.yMm * scaleMmPerPx,
       };
-      let yPerPx = { xMm: 0, yMm: 0 };
-      if (projectedUp) {
-        yPerPx = {
-          xMm: -projectedUp.xMm * scaleMmPerPx,
-          yMm: -projectedUp.yMm * scaleMmPerPx,
-        };
-      }
       return {
-        originScreen: origin.screen,
-        originPointMm: origin.point,
-        xPerPx,
-        yPerPx,
+        projection,
+        basis: {
+          mode: 'elevation-axis',
+          originScreen: origin.screen,
+          originPointMm: origin.point,
+          xPerPx,
+          yPerPx: { xMm: 0, yMm: 0 },
+          scaleMmPerPx,
+          projection,
+        },
       };
     }
 
@@ -1576,6 +1632,12 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         tool !== 'wall' &&
         !isDraftPlaneProjectionStable(cx, cy, levelInfo.elevationMm)
       ) {
+        emitWallDebug('blocked-unstable-plane', {
+          tool,
+          screen: { x: cx, y: cy },
+          levelInfo,
+          mmPerPx: measureDraftPlaneProjectionMmPerPx(cx, cy, levelInfo.elevationMm),
+        });
         setDraftPlaneAngleWarning(true);
         return true;
       }
@@ -1603,17 +1665,28 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       }
       if (LINE_3D_AUTHORING_TOOLS.has(tool)) {
         if (!lineDraftStart || lineDraftStart.tool !== tool) {
-          const wallBasis =
+          const wallDraft =
             tool === 'wall'
               ? createWallDraftScreenBasis(cx, cy, levelInfo.elevationMm, projected)
-              : undefined;
+              : null;
           lineDraftStart = {
             tool: tool as 'wall' | 'beam' | 'stair' | 'railing' | 'grid' | 'reference-plane',
             levelId: levelInfo.id,
             point: projected.point,
             screen: projected.screen,
-            wallBasis,
+            wallBasis: wallDraft?.basis,
+            wallProjection: wallDraft?.projection,
           };
+          if (tool === 'wall') {
+            emitWallDebug('wall-start', {
+              screen: projected.screen,
+              point: projected.point,
+              levelInfo,
+              projection: wallDraft?.projection,
+              basis: wallDraft?.basis,
+              rawMmPerPx: measureDraftPlaneProjectionMmPerPx(cx, cy, levelInfo.elevationMm),
+            });
+          }
           useBimStore.getState().select(undefined);
           setAuthoringOverlay({
             tool,
@@ -1623,6 +1696,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             currentScreen: projected.screen,
             currentPointMm: projected.point,
             wallFlipActive: tool === 'wall' ? wallFlipNextSegment : undefined,
+            wallProjectionMode: tool === 'wall' ? wallDraft?.projection.mode : undefined,
           });
           return true;
         }
@@ -1634,6 +1708,15 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         const end = lineProjected.point;
         const levelId = lineDraftStart.levelId;
         if (Math.hypot(end.xMm - start.xMm, end.yMm - start.yMm) < 10) {
+          if (tool === 'wall') {
+            emitWallDebug('wall-short-segment-reset', {
+              start,
+              end,
+              startScreen: lineDraftStart.screen,
+              endScreen: lineProjected.screen,
+              lengthMm: Math.hypot(end.xMm - start.xMm, end.yMm - start.yMm),
+            });
+          }
           lineDraftStart = null;
           setAuthoringOverlay({ tool, phase: 'pick-start', levelName: levelInfo.name });
           return true;
@@ -1646,10 +1729,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             : runtime.wallLocationLine;
           const actualStart = start;
           const actualEnd = end;
-          lineDraftStart = null;
-          wallFlipNextSegment = false;
-          onSemanticCommand?.({
-            type: 'createWall',
+          const command = {
+            type: 'createWall' as const,
             id: `wall-3d-${Date.now().toString(36)}-${Math.round(Math.random() * 1_000_000).toString(36)}`,
             levelId,
             start: actualStart,
@@ -1657,7 +1738,18 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             locationLine: effectiveLocationLine,
             wallTypeId: runtime.activeWallTypeId ?? undefined,
             heightMm: runtime.wallDrawHeightMm,
+          };
+          emitWallDebug('wall-commit', {
+            command,
+            startScreen: lineDraftStart.screen,
+            endScreen: lineProjected.screen,
+            projection: lineDraftStart.wallProjection,
+            basis: lineDraftStart.wallBasis,
+            lengthMm: Math.hypot(actualEnd.xMm - actualStart.xMm, actualEnd.yMm - actualStart.yMm),
           });
+          lineDraftStart = null;
+          wallFlipNextSegment = false;
+          onSemanticCommand?.(command);
         } else {
           lineDraftStart = null;
           if (tool === 'beam') {
@@ -1710,6 +1802,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
           phase: 'pick-start',
           levelName: levelInfo.name,
           wallFlipActive: tool === 'wall' ? wallFlipNextSegment : undefined,
+          wallProjectionMode: undefined,
         });
         return true;
       }
@@ -2105,11 +2198,25 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                     resolveDraftWallThicknessMm(),
                     rect,
                   );
+                  emitWallDebug('wall-preview', {
+                    start: lineDraftStart.point,
+                    end: projected.point,
+                    startScreen: lineDraftStart.screen,
+                    endScreen: projected.screen,
+                    projection: lineDraftStart.wallProjection,
+                    basis: lineDraftStart.wallBasis,
+                    lengthMm: Math.hypot(
+                      projected.point.xMm - lineDraftStart.point.xMm,
+                      projected.point.yMm - lineDraftStart.point.yMm,
+                    ),
+                    preview,
+                  });
                   return {
                     ...prev,
                     currentScreen: projected.screen,
                     currentPointMm: projected.point,
                     wallFlipActive: wallFlipNextSegment,
+                    wallProjectionMode: lineDraftStart.wallProjection?.mode,
                     wallPreviewOutlineScreen: preview?.outline,
                     wallPreviewDirectionStartScreen: preview?.directionStart,
                     wallPreviewDirectionEndScreen: preview?.directionEnd,
@@ -3773,14 +3880,19 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       };
     }
     if (authoringOverlay.tool === 'wall') {
+      const elevationAxisMode = authoringOverlay.wallProjectionMode === 'elevation-axis';
       return {
         title: `Wall placement · ${authoringOverlay.levelName ?? 'Active level'}`,
         instruction:
           authoringOverlay.phase === 'pick-start'
             ? 'Click start point. Alt+drag or middle mouse to orbit/pan.'
-            : `Click end point. Space flips side (${
-                authoringOverlay.wallFlipActive ? 'flipped' : 'default'
-              }). Esc cancels segment.`,
+            : elevationAxisMode
+              ? `Elevation-axis mode: click end point horizontally; vertical cursor movement is ignored. Space flips side (${
+                  authoringOverlay.wallFlipActive ? 'flipped' : 'default'
+                }). Esc cancels segment.`
+              : `Click end point. Space flips side (${
+                  authoringOverlay.wallFlipActive ? 'flipped' : 'default'
+                }). Esc cancels segment.`,
       };
     }
     if (authoringOverlay.tool === 'beam') {
