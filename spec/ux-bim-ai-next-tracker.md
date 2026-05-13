@@ -666,8 +666,8 @@ The seeded review on 2026-05-13 surfaced new hard failures after prior closeout:
 | ------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- | -------- | ------ |
 | NEXT2-GAP-001 | Ribbon command appears clickable but no executable state transition occurs for several plan tools.     | `workspace/workspaceUtils.ts`, `workspace/shell/RibbonBar.tsx`, `Workspace.tsx`    | P0       | Done   |
 | NEXT2-GAP-002 | Lens owner must be primary sidebar; dropdown must not clip at the top edge.                            | `WorkspaceLeftRail.tsx`, `WorkspaceRightRail.tsx`, `shell/LensDropdown.tsx`        | P0       | Done   |
-| NEXT2-GAP-003 | Split panes are not full tab-aware work areas (local tab lifecycle and tab reassignment are missing).  | `workspace/paneLayout.ts`, `workspace/Workspace.tsx`, `workspace/shell/TabBar.tsx` | P0       | Open   |
-| NEXT2-GAP-004 | Pane split architecture needs explicit contract for ribbon/secondary/element ownership per pane focus. | shell layout + mode surface ownership contracts                                    | P1       | Open   |
+| NEXT2-GAP-003 | Split panes are not full tab-aware work areas (local tab lifecycle and tab reassignment are missing).  | `workspace/paneLayout.ts`, `workspace/Workspace.tsx`, `workspace/shell/TabBar.tsx` | P0       | Done   |
+| NEXT2-GAP-004 | Pane split architecture needs explicit contract for ribbon/secondary/element ownership per pane focus. | shell layout + mode surface ownership contracts                                    | P1       | Done   |
 
 ### Reopened Workpackages
 
@@ -736,7 +736,7 @@ Evidence (2026-05-13):
 ### WP-NEXT-19 — Pane-Local Tab-Aware Split Surfaces
 
 - Priority: `P0`
-- Status: `Open`
+- Status: `Done`
 - Covers: `NEXT2-GAP-003`
 - Goal: convert split panes from single-tab leaf projections to true tab-aware sub-canvases with local lifecycle controls.
 - Source ownership:
@@ -748,11 +748,24 @@ Evidence (2026-05-13):
   - tab can be moved into a target pane (not only split-left/right/top/bottom),
   - pane-local close works and preserves global tab invariants,
   - pane-local tab strip supports activation and drag-entry into pane.
+- Implementation + evidence:
+  - Added explicit pane-target assignment primitive `assignTabToPane(...)` in `paneLayout.ts`; reused by focused pane assignment.
+  - Each split leaf now renders pane-local tab chrome (`canvas-pane-tabstrip-*`) with active tab label and pane-local close action.
+  - Dragging a tab over a pane-local strip now accepts direct drop/reassignment into that pane.
+  - Added regression tests:
+    - `packages/web/src/workspace/paneLayout.test.ts` (`assignTabToPane` behavior)
+    - `packages/web/src/workspace/Workspace.test.tsx` (drop-assign into pane + pane-local close lifecycle)
+  - Seeded screenshot proof:
+    - `packages/web/tmp/ux-next-wp19-20260513/03-pane-local-tabstrip-and-close.png`
+    - `packages/web/tmp/ux-next-wp19-20260513/summary.json`
+      - `paneTabStripCount: 2`
+      - `paneLocalTabChromeVisible: true`
+      - `paneCloseRemovesTab: true`
 
 ### WP-NEXT-20 — Focused-Pane Chrome Contract (Ribbon + Secondary + Element)
 
 - Priority: `P1`
-- Status: `Open`
+- Status: `Done`
 - Covers: `NEXT2-GAP-004`
 - Goal: formalize how global ribbon/secondary/element surfaces follow focused pane context without duplicating entire chrome per pane.
 - Source ownership:
@@ -763,6 +776,16 @@ Evidence (2026-05-13):
   - focused pane drives ribbon + secondary + element context deterministically,
   - pane focus switch updates these surfaces without stale data,
   - Cmd+K context follows focused pane target/mode.
+- Implementation + evidence:
+  - Pane focus switching now deterministically rebinds shell ownership context using focused leaf's active tab target/mode.
+  - Added stale lookup hardening for newly created/opened tabs (`openElementById` resolves against live store state first), fixing intermittent "click tab/new view does not load" failures.
+  - Added regression coverage in `Workspace.test.tsx` verifying focus move from sheet pane to plan pane updates ribbon identity and secondary sidebar surfaces.
+  - Seeded screenshot proof:
+    - `packages/web/tmp/ux-next-wp19-20260513/01-tab-click-mode-switch.png`
+    - `packages/web/tmp/ux-next-wp19-20260513/02-create-views-new-tabs.png`
+    - `packages/web/tmp/ux-next-wp19-20260513/summary.json`
+      - `allTabClicksLoadMode: true`
+      - `newViewCreatesTabs: true`
 
 ### Reopened Dependency Sequence
 

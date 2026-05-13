@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  assignTabToPane,
   assignTabToFocusedPane,
   clearPersistedPaneLayout,
   createPaneLayout,
@@ -36,6 +37,17 @@ describe('paneLayout', () => {
     const split = splitPaneWithTab(base, base.focusedLeafId, 'left', 'tab-b');
     const reassigned = assignTabToFocusedPane(split, 'tab-c');
     expect(findPaneForTab(reassigned.root, 'tab-c')).toBe(reassigned.focusedLeafId);
+  });
+
+  it('assigns a tab to a specific pane leaf', () => {
+    const base = createPaneLayout('tab-a');
+    const split = splitPaneWithTab(base, base.focusedLeafId, 'right', 'tab-b');
+    if (split.root.kind !== 'split' || split.root.first.kind !== 'leaf') {
+      throw new Error('expected split with first leaf');
+    }
+    const firstLeafId = split.root.first.id;
+    const reassigned = assignTabToPane(split, firstLeafId, 'tab-z');
+    expect(findPaneForTab(reassigned.root, 'tab-z')).toBe(firstLeafId);
   });
 
   it('normalizes closed tabs and collapses empty splits', () => {

@@ -80,11 +80,18 @@ export function assignTabToFocusedPane(
   state: PaneLayoutState,
   tabId: string | null,
 ): PaneLayoutState {
+  return assignTabToPane(state, state.focusedLeafId, tabId);
+}
+
+export function assignTabToPane(
+  state: PaneLayoutState,
+  leafId: string,
+  tabId: string | null,
+): PaneLayoutState {
+  if (!findLeaf(state.root, leafId)) return state;
   return {
     ...state,
-    root: mapLeaves(state.root, (leaf) =>
-      leaf.id === state.focusedLeafId ? { ...leaf, tabId } : leaf,
-    ),
+    root: mapLeaves(state.root, (leaf) => (leaf.id === leafId ? { ...leaf, tabId } : leaf)),
   };
 }
 

@@ -1,0 +1,16 @@
+{
+  "tabModeSwitchChecks": [
+    {
+      "tabId": "plan:hf-lvl-ground",
+      "modeVisible": true
+    }
+  ],
+  "allTabClicksLoadMode": true,
+  "newViewCreatesTabs": true,
+  "tabCountBefore": 1,
+  "tabCountAfterFloor": 2,
+  "tabCountAfterSheet": 3,
+  "paneTabStripCount": 2,
+  "paneLocalTabChromeVisible": true,
+  "paneCloseRemovesTab": true
+}

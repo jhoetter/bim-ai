@@ -284,14 +284,6 @@ registerCommand({
 });
 
 registerCommand({
-  id: 'navigate.plan-3d',
-  label: 'Go to Plan + 3D view',
-  keywords: ['plan', '3d', 'split', 'side by side'],
-  category: 'navigate',
-  invoke: (ctx) => ctx.navigateMode?.('plan-3d'),
-});
-
-registerCommand({
   id: 'navigate.section',
   label: 'Go to Section view',
   keywords: ['section', 'cut'],
@@ -494,14 +486,6 @@ registerCommand({
   category: 'command',
   isAvailable: hasActiveSheetAndMarkupMode,
   invoke: (ctx) => ctx.setSheetMarkupShape?.('text'),
-});
-
-registerCommand({
-  id: 'navigate.agent',
-  label: 'Go to Agent Review',
-  keywords: ['agent', 'review', 'issues'],
-  category: 'navigate',
-  invoke: (ctx) => ctx.navigateMode?.('agent'),
 });
 
 registerCommand({

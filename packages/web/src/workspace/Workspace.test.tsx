@@ -28,6 +28,7 @@ import { Workspace } from './Workspace';
 
 const TABS_KEY = 'bim-ai:tabs-v1';
 const RIBBON_HIDDEN_KEY = 'bim-ai.ribbon.hiddenCommands.v1';
+const PANE_LAYOUT_KEY = 'bim-ai:pane-layout-v1';
 
 function seedTabs(kind: string, id = 'tab-test-1') {
   localStorage.setItem(
@@ -36,9 +37,29 @@ function seedTabs(kind: string, id = 'tab-test-1') {
   );
 }
 
+function seedSplitPaneLayout(leftTabId: string, rightTabId: string) {
+  localStorage.setItem(
+    PANE_LAYOUT_KEY,
+    JSON.stringify({
+      v: 1,
+      layout: {
+        focusedLeafId: 'pane-right',
+        root: {
+          kind: 'split',
+          id: 'pane-root',
+          axis: 'horizontal',
+          first: { kind: 'leaf', id: 'pane-left', tabId: leftTabId },
+          second: { kind: 'leaf', id: 'pane-right', tabId: rightTabId },
+        },
+      },
+    }),
+  );
+}
+
 beforeEach(() => {
   localStorage.removeItem(TABS_KEY);
   localStorage.removeItem(RIBBON_HIDDEN_KEY);
+  localStorage.removeItem(PANE_LAYOUT_KEY);
   // Suppress the OnboardingTour dialog so aria-modal doesn't hide canvas content.
   localStorage.setItem('bim.onboarding-completed', 'true');
   useBimStore.setState({
@@ -60,6 +81,7 @@ afterEach(() => {
   localStorage.removeItem('bim.onboarding-completed');
   localStorage.removeItem(TABS_KEY);
   localStorage.removeItem(RIBBON_HIDDEN_KEY);
+  localStorage.removeItem(PANE_LAYOUT_KEY);
   useBimStore.setState({
     modelId: undefined,
     revision: undefined,
@@ -154,6 +176,65 @@ describe('<Workspace /> — smoke', () => {
     fireEvent.click(button);
     expect(useBimStore.getState().planTool).toBe('ceiling');
     expect(button.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('renders pane-local tab strips and supports drop-assign + close from pane chrome', () => {
+    localStorage.setItem(
+      TABS_KEY,
+      JSON.stringify({
+        v: 1,
+        tabs: [
+          { id: 'plan:pv-a', kind: 'plan', label: 'Plan A', targetId: 'pv-a' },
+          { id: '3d:vp-b', kind: '3d', label: '3D B', targetId: 'vp-b' },
+        ],
+        activeId: '3d:vp-b',
+      }),
+    );
+    seedSplitPaneLayout('plan:pv-a', '3d:vp-b');
+
+    const { getByTestId, container, queryByTestId } = renderWithProviders(<Workspace />);
+    expect(getByTestId('canvas-pane-tabstrip-pane-left').textContent).toContain('Plan A');
+    expect(getByTestId('canvas-pane-tabstrip-pane-right').textContent).toContain('3D B');
+
+    const draggedTab = container.querySelector('[data-tab-id=\"3d:vp-b\"]');
+    expect(draggedTab).toBeTruthy();
+    fireEvent.dragStart(draggedTab!, {
+      dataTransfer: {
+        effectAllowed: 'move',
+        setData: () => {},
+      },
+    });
+    const leftStrip = getByTestId('canvas-pane-tabstrip-pane-left');
+    fireEvent.dragOver(leftStrip);
+    fireEvent.drop(leftStrip);
+    expect(leftStrip.textContent).toContain('3D B');
+
+    fireEvent.click(getByTestId('canvas-pane-close-tab-pane-left'));
+    expect(queryByTestId('tab-activate-3d:vp-b')).toBeNull();
+  });
+
+  it('updates ribbon/secondary context when focus moves between split panes', () => {
+    localStorage.setItem(
+      TABS_KEY,
+      JSON.stringify({
+        v: 1,
+        tabs: [
+          { id: 'plan:pv-a', kind: 'plan', label: 'Plan A', targetId: 'pv-a' },
+          { id: 'sheet:sheet-b', kind: 'sheet', label: 'Sheet B', targetId: 'sheet-b' },
+        ],
+        activeId: 'sheet:sheet-b',
+      }),
+    );
+    seedSplitPaneLayout('plan:pv-a', 'sheet:sheet-b');
+
+    const { getByTestId } = renderWithProviders(<Workspace />);
+    expect(getByTestId('secondary-sidebar-sheet')).toBeTruthy();
+    expect(getByTestId('ribbon-mode-identity').textContent).toContain('Sheet');
+
+    fireEvent.pointerDown(getByTestId('canvas-pane-pane-left'));
+
+    expect(getByTestId('secondary-sidebar-plan')).toBeTruthy();
+    expect(getByTestId('ribbon-mode-identity').textContent).toContain('Plan');
   });
 
   it('opens plan Visibility/Graphics from the secondary advanced owner — UX-DIA-004', () => {

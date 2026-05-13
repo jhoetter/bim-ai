@@ -44,16 +44,7 @@ export interface TabBarProps {
   onTabDragEnd?: () => void;
 }
 
-const ADDABLE_KINDS: TabKind[] = [
-  'plan',
-  '3d',
-  'plan-3d',
-  'section',
-  'sheet',
-  'schedule',
-  'agent',
-  'concept',
-];
+const ADDABLE_KINDS: TabKind[] = ['plan', '3d', 'section', 'sheet', 'schedule', 'concept'];
 
 export function TabBar({
   tabs,

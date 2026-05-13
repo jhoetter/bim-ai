@@ -67,6 +67,7 @@ import {
 } from './tabsModel';
 import { persistTabs, pruneTabsAgainstElements, readPersistedTabs } from './tabsPersistence';
 import {
+  assignTabToPane,
   assignTabToFocusedPane,
   createPaneLayout,
   focusPane,
@@ -1293,7 +1294,8 @@ export function Workspace(): JSX.Element {
 
   const openElementById = useCallback(
     (id: string) => {
-      const el = (elementsById as Record<string, Element>)[id];
+      const liveElements = useBimStore.getState().elementsById as Record<string, Element>;
+      const el = liveElements[id] ?? (elementsById as Record<string, Element>)[id];
       if (!el) return;
       openTabFromElement(el);
       if (el.kind === 'level') {
@@ -1998,13 +2000,15 @@ export function Workspace(): JSX.Element {
       const paneViewerMode =
         paneTab?.kind === '3d' || paneTab?.kind === 'plan-3d' ? 'orbit_3d' : 'plan_canvas';
       const focused = focusedPaneLeafId === node.id;
+      const paneLabel = paneTab?.label ?? 'Empty pane';
+      const paneCanAcceptDrop = Boolean(draggingTabId && draggingTabId !== paneTab?.id);
       return (
         <div
           key={node.id}
           data-testid={`canvas-pane-${node.id}`}
           data-focused={focused ? 'true' : 'false'}
           className={[
-            'relative h-full w-full min-h-0 min-w-0 overflow-hidden',
+            'relative flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden',
             focused ? 'ring-1 ring-accent/70 ring-inset' : '',
           ].join(' ')}
           onPointerDown={() => {
@@ -2014,42 +2018,91 @@ export function Workspace(): JSX.Element {
             }
           }}
         >
-          <CanvasMount
-            mode={paneMode}
-            activeTabId={paneTab?.id}
-            viewerMode={paneViewerMode}
-            activeLevelId={panePlanTarget.activeLevelId}
-            elementsById={elementsById}
-            onSemanticCommand={(cmd) => void onSemanticCommand(cmd)}
-            cameraHandleRef={planCameraHandleRef}
-            initialCamera={paneTab?.viewportState?.planCamera}
-            preferredSheetId={
-              paneTab?.kind === 'sheet' ? (paneTab.targetId ?? undefined) : undefined
-            }
-            preferredScheduleId={
-              paneTab?.kind === 'schedule' ? (paneTab.targetId ?? undefined) : undefined
-            }
-            modelId={modelId ?? undefined}
-            wsOn={wsOn}
-            onPersistViewpointField={persistViewpointField}
-            lensMode={lensMode}
-            onNavigateToElement={openElementById}
-            snapSettings={snapSettings}
-            sheetReviewMode={sheetReviewMode}
-            sheetMarkupShape={sheetMarkupShape}
-            onOpenSectionSourcePlan={openActiveSectionSourcePlan}
-            onOpenSection3dContext={openActiveSection3dContext}
-          />
+          <div
+            data-testid={`canvas-pane-tabstrip-${node.id}`}
+            className={[
+              'flex h-8 shrink-0 items-center justify-between border-b border-border/70 bg-surface px-2 text-xs',
+              paneCanAcceptDrop ? 'border-accent/80 bg-accent/10' : '',
+            ].join(' ')}
+            onDragOver={(event) => {
+              if (!paneCanAcceptDrop) return;
+              event.preventDefault();
+            }}
+            onDrop={(event) => {
+              if (!paneCanAcceptDrop || !draggingTabId) return;
+              event.preventDefault();
+              setPaneLayout((layout) =>
+                focusPane(assignTabToPane(layout, node.id, draggingTabId), node.id),
+              );
+              handleTabActivate(draggingTabId);
+              setDraggingTabId(null);
+            }}
+          >
+            <div className="min-w-0 truncate font-medium text-foreground" title={paneLabel}>
+              {paneLabel}
+            </div>
+            <div className="flex items-center gap-1">
+              {paneCanAcceptDrop ? (
+                <span className="rounded border border-accent/60 px-1 py-0.5 text-[10px] text-accent">
+                  Drop tab
+                </span>
+              ) : null}
+              {paneTab?.id ? (
+                <button
+                  type="button"
+                  data-testid={`canvas-pane-close-tab-${node.id}`}
+                  className="inline-flex h-5 w-5 items-center justify-center rounded border border-border text-muted hover:bg-surface-2 hover:text-foreground"
+                  aria-label={`Close ${paneLabel}`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleTabClose(paneTab.id);
+                  }}
+                >
+                  <Icons.close size={12} aria-hidden="true" />
+                </button>
+              ) : null}
+            </div>
+          </div>
+          <div className="min-h-0 min-w-0 flex-1">
+            <CanvasMount
+              mode={paneMode}
+              activeTabId={paneTab?.id}
+              viewerMode={paneViewerMode}
+              activeLevelId={panePlanTarget.activeLevelId}
+              elementsById={elementsById}
+              onSemanticCommand={(cmd) => void onSemanticCommand(cmd)}
+              cameraHandleRef={planCameraHandleRef}
+              initialCamera={paneTab?.viewportState?.planCamera}
+              preferredSheetId={
+                paneTab?.kind === 'sheet' ? (paneTab.targetId ?? undefined) : undefined
+              }
+              preferredScheduleId={
+                paneTab?.kind === 'schedule' ? (paneTab.targetId ?? undefined) : undefined
+              }
+              modelId={modelId ?? undefined}
+              wsOn={wsOn}
+              onPersistViewpointField={persistViewpointField}
+              lensMode={lensMode}
+              onNavigateToElement={openElementById}
+              snapSettings={snapSettings}
+              sheetReviewMode={sheetReviewMode}
+              sheetMarkupShape={sheetMarkupShape}
+              onOpenSectionSourcePlan={openActiveSectionSourcePlan}
+              onOpenSection3dContext={openActiveSection3dContext}
+            />
+          </div>
         </div>
       );
     },
     [
       activeLevelId,
       activeTab,
+      draggingTabId,
       effectiveMode,
       elementsById,
       focusedPaneLeafId,
       handleTabActivate,
+      handleTabClose,
       lensMode,
       modelId,
       onSemanticCommand,
