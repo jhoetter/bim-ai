@@ -41,5 +41,17 @@
     "cache_read_tokens": 26023040,
     "output_tokens": 62415,
     "api_call_count": 214
+  },
+  "combined_attribution": {
+    "calculated_at": "2026-05-13T10:51:06.884791Z",
+    "agent_lines": 302,
+    "agent_removed": 56,
+    "human_added": 45,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 347,
+    "total_lines_changed": 403,
+    "agent_percentage": 88.83374689826302,
+    "metric_version": 2
   }
 }
