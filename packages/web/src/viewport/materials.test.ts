@@ -119,6 +119,12 @@ describe('resolveLighting', () => {
     expect(light.hemi.skyColor).toBe('#cce8f4');
     expect(light.hemi.groundColor).toBe('#d4c9a8');
   });
+  it('uses a dimmer but legible dark-theme lighting profile', () => {
+    const dark = resolveLighting('dark');
+    expect(dark.sun.elevationDeg).toBe(35);
+    expect(dark.sun.intensity).toBeLessThan(light.sun.intensity);
+    expect(dark.hemi.intensity).toBeLessThan(light.hemi.intensity);
+  });
 });
 
 describe('resolveSelection', () => {
@@ -148,6 +154,11 @@ describe('resolveViewportPaintBundle', () => {
     expect(Object.keys(bundle.categories).length).toBe(ALL_CATS.length);
     expect(bundle.lighting.sun.elevationDeg).toBe(35);
     expect(bundle.selection.selectedLineWidth).toBe(2);
+  });
+  it('threads theme through to lighting resolution', () => {
+    const reader = fakeReader({});
+    const bundle = resolveViewportPaintBundle({ reader, theme: 'dark' });
+    expect(bundle.lighting.sun.intensity).toBe(0.72);
   });
 });
 

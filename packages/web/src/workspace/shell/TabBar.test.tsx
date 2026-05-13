@@ -98,6 +98,32 @@ describe('TabBar — spec §11.3', () => {
     expect(onReorder).toHaveBeenCalledWith(0, 2);
   });
 
+  it('emits tab drag lifecycle callbacks for canvas split dropzones', () => {
+    const onTabDragStart = vi.fn();
+    const onTabDragEnd = vi.fn();
+    const { getByTestId } = renderWithI18n(
+      <TabBar
+        tabs={tabs}
+        activeId="plan:l0"
+        onActivate={() => {}}
+        onClose={() => {}}
+        onTabDragStart={onTabDragStart}
+        onTabDragEnd={onTabDragEnd}
+      />,
+    );
+    const src = getByTestId('tab-activate-plan:l0').closest('[role="tab"]') as HTMLElement;
+    const dt = {
+      effectAllowed: 'all',
+      dropEffect: 'none',
+      setData: () => {},
+      getData: () => '',
+    };
+    fireEvent.dragStart(src, { dataTransfer: dt });
+    fireEvent.dragEnd(src);
+    expect(onTabDragStart).toHaveBeenCalledWith('plan:l0');
+    expect(onTabDragEnd).toHaveBeenCalledOnce();
+  });
+
   it('+ button opens add-view popover', () => {
     const onAdd = vi.fn();
     const { getByTestId } = renderWithI18n(

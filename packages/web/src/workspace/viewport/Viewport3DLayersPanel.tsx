@@ -382,6 +382,16 @@ export function Viewport3DLayersPanel({
             </button>
           ))}
         </div>
+        {viewerRenderStyle === 'realistic' || viewerRenderStyle === 'ray-trace' ? (
+          <div
+            data-testid="graphic-style-fidelity-note"
+            className="mt-2 rounded border border-border/70 bg-background px-2 py-1 text-[10px] text-muted"
+          >
+            {viewerRenderStyle === 'ray-trace'
+              ? 'Ray trace mode is a high-fidelity raster fallback (PBR + SSAO + shadows), not realtime path tracing.'
+              : 'Realistic mode preserves authored material colors and uses photographic exposure controls for review.'}
+          </div>
+        ) : null}
         <div className="mt-2 space-y-2">
           <div>
             <div className="mb-1 text-[10px] text-muted">Background</div>

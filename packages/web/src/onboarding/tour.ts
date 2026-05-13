@@ -18,29 +18,29 @@ export interface OnboardingStep {
 export const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     target: '[data-testid="workspace-header"]',
-    title: 'Tabs are your view switcher.',
-    body: 'Use tabs to move between plan, 3D, sheet, schedule, and review contexts.',
-    hint: 'Cmd+K',
+    title: 'Tabs + Cmd+K are your fastest view switcher.',
+    body: 'Open plan, 3D, section, sheet, and schedule contexts from tabs, then use Cmd+K for direct command jumps.',
+    hint: 'Cmd+K / ⌘K',
   },
   {
     target: '[data-testid="app-shell-primary-sidebar"]',
-    title: 'Primary sidebar is navigation-only.',
-    body: 'Project, views, sheets, and schedules are organized here. Use it to open and manage tabs.',
+    title: 'Primary sidebar is full-height navigation.',
+    body: 'Project browser, new-view creation, and settings discovery live here. Use it to open canonical tabs and seed workflows.',
   },
   {
     target: '[data-testid="ribbon-bar"]',
-    title: 'Ribbon owns editing commands.',
-    body: 'Authoring and modify tools are grouped by active view and command context.',
+    title: 'Ribbon owns edit commands by active context.',
+    body: 'Tool groups change with plan, 3D, section, sheet, and schedule modes so command ownership stays explicit.',
   },
   {
     target: '[data-testid="app-shell-secondary-sidebar"]',
-    title: 'Secondary sidebar owns view settings.',
-    body: 'View-wide graphics, visibility, and mode options live here. Element properties appear separately only when selected.',
+    title: 'Secondary sidebar owns view semantics.',
+    body: 'Use this rail for graphics, discipline lens, section crop/context, and schedule/sheet controls; element properties stay isolated on selection.',
   },
   {
     target: '[data-testid="status-bar"]',
-    title: 'Footer tracks global status.',
-    body: 'Advisor, activity, jobs, snaps, grid, and undo/redo stay visible across every view.',
+    title: 'Footer tracks global status and QA.',
+    body: 'Advisor counts, jobs, snaps, undo/redo, and connection state stay visible while you move between authoring and documentation flows.',
     hint: '?',
   },
 ];

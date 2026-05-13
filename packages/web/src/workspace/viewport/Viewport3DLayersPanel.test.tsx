@@ -174,6 +174,20 @@ describe('<Viewport3DLayersPanel />', () => {
     expect(getByText('2 hidden')).toBeTruthy();
   });
 
+  it('shows explicit realistic/ray-trace fidelity notes', () => {
+    const { getByTestId, rerender } = render(
+      <Viewport3DLayersPanel {...makeProps({ viewerRenderStyle: 'realistic' })} />,
+    );
+    expect(getByTestId('graphic-style-fidelity-note').textContent).toContain(
+      'preserves authored material colors',
+    );
+
+    rerender(<Viewport3DLayersPanel {...makeProps({ viewerRenderStyle: 'ray-trace' })} />);
+    expect(getByTestId('graphic-style-fidelity-note').textContent).toContain(
+      'not realtime path tracing',
+    );
+  });
+
   it('shows checkboxes as checked when category is NOT hidden', () => {
     const { getByTestId } = render(
       <Viewport3DLayersPanel

@@ -67,6 +67,17 @@ import {
 } from './tabsModel';
 import { persistTabs, pruneTabsAgainstElements, readPersistedTabs } from './tabsPersistence';
 import {
+  assignTabToFocusedPane,
+  createPaneLayout,
+  focusPane,
+  normalizePaneLayout,
+  persistPaneLayout,
+  readPersistedPaneLayout,
+  splitPaneWithTab,
+  type PaneNode,
+  type PaneSplitDirection,
+} from './paneLayout';
+import {
   buildSnapshotPayload,
   downloadSnapshot,
   findRecentProject,
@@ -474,11 +485,27 @@ export function Workspace(): JSX.Element {
   const pendingChordRef = useRef<string | null>(null);
   const pendingChordTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [tabsState, setTabsState] = useState<TabsState>(() => readPersistedTabs() ?? EMPTY_TABS);
+  const [draggingTabId, setDraggingTabId] = useState<string | null>(null);
+  const [paneLayout, setPaneLayout] = useState(
+    () => readPersistedPaneLayout() ?? createPaneLayout(null),
+  );
 
   /** Persist tabs on every change (T-06). */
   useEffect(() => {
     persistTabs(tabsState);
   }, [tabsState]);
+  useEffect(() => {
+    setPaneLayout((layout) =>
+      normalizePaneLayout(
+        layout,
+        tabsState.tabs.map((tab) => tab.id),
+        tabsState.activeId,
+      ),
+    );
+  }, [tabsState.activeId, tabsState.tabs]);
+  useEffect(() => {
+    persistPaneLayout(paneLayout);
+  }, [paneLayout]);
 
   /* ── Tab helpers (§11.3) ──────────────────────────────────────────── */
   const activeTab: ViewTab | null = useMemo(
@@ -1609,8 +1636,44 @@ export function Workspace(): JSX.Element {
     if (cmd) void onSemanticCommand(cmd);
   }, [elementsById, onSemanticCommand, paletteActiveSectionId, paletteFirstSheetId]);
   const openActiveSectionSourcePlan = useCallback(() => {
+    if (paletteActiveSectionId) {
+      useBimStore.getState().select(paletteActiveSectionId);
+    }
     navigateTo({ kind: 'plan', source: 'cmdk' });
-  }, [navigateTo]);
+  }, [navigateTo, paletteActiveSectionId]);
+  const openActiveSection3dContext = useCallback(() => {
+    if (!paletteActiveSectionId) return;
+    const section = elementsById[paletteActiveSectionId];
+    if (section?.kind !== 'section_cut') return;
+    const dx = section.lineEndMm.xMm - section.lineStartMm.xMm;
+    const dy = section.lineEndMm.yMm - section.lineStartMm.yMm;
+    const len = Math.hypot(dx, dy);
+    if (len <= 1e-6) {
+      navigateTo({ kind: '3d', source: 'section-context' });
+      return;
+    }
+    const centerX = (section.lineStartMm.xMm + section.lineEndMm.xMm) * 0.5;
+    const centerY = (section.lineStartMm.yMm + section.lineEndMm.yMm) * 0.5;
+    const nx = -dy / len;
+    const ny = dx / len;
+    const depth = Math.max(2500, Math.min(9000, (section.cropDepthMm ?? 6000) * 0.65));
+    const targetZ = 1600;
+    useBimStore.getState().select(paletteActiveSectionId);
+    setOrbitCameraFromViewpointMm({
+      position: {
+        xMm: centerX - nx * depth,
+        yMm: centerY - ny * depth,
+        zMm: targetZ + 500,
+      },
+      target: {
+        xMm: centerX,
+        yMm: centerY,
+        zMm: targetZ,
+      },
+      up: { xMm: 0, yMm: 0, zMm: 1 },
+    });
+    navigateTo({ kind: '3d', source: 'section-context' });
+  }, [elementsById, navigateTo, paletteActiveSectionId, setOrbitCameraFromViewpointMm]);
   const adjustActiveSectionCropDepth = useCallback(
     (deltaMm: number) => {
       if (!paletteActiveSectionId) return;
@@ -1723,6 +1786,16 @@ export function Workspace(): JSX.Element {
       source: 'cmdk',
     });
   }, [navigateTo, paletteActiveScheduleId]);
+  const splitActiveTab = useCallback(
+    (direction: PaneSplitDirection) => {
+      const activeId = tabsState.activeId;
+      if (!activeId) return;
+      setPaneLayout((layout) =>
+        splitPaneWithTab(layout, layout.focusedLeafId, direction, activeId),
+      );
+    },
+    [tabsState.activeId],
+  );
 
   const handlePlaceFamilyType = useCallback(
     (kind: FamilyLibraryPlaceKind, typeId: string) => {
@@ -1883,6 +1956,115 @@ export function Workspace(): JSX.Element {
 
   /* ── CHR-V3-10: canvas hint (select/tool idle) ────────────────────── */
   const showCanvasHint = !selectedId && planTool === 'select';
+  const tabsById = useMemo(
+    () => Object.fromEntries(tabsState.tabs.map((tab) => [tab.id, tab])),
+    [tabsState.tabs],
+  );
+  const focusedPaneLeafId = paneLayout.focusedLeafId;
+
+  const renderPaneNode = useCallback(
+    (node: PaneNode): JSX.Element => {
+      if (node.kind === 'split') {
+        return (
+          <div
+            key={node.id}
+            className="grid h-full w-full min-h-0 min-w-0"
+            style={
+              node.axis === 'horizontal'
+                ? { gridTemplateColumns: '1fr 1fr' }
+                : { gridTemplateRows: '1fr 1fr' }
+            }
+          >
+            <div
+              className={[
+                'min-h-0 min-w-0 overflow-hidden',
+                node.axis === 'horizontal'
+                  ? 'border-r border-border/60'
+                  : 'border-b border-border/60',
+              ].join(' ')}
+            >
+              {renderPaneNode(node.first)}
+            </div>
+            <div className="min-h-0 min-w-0 overflow-hidden">{renderPaneNode(node.second)}</div>
+          </div>
+        );
+      }
+      const paneTab = (node.tabId ? tabsById[node.tabId] : null) ?? activeTab;
+      const paneMode = (paneTab?.kind as WorkspaceMode | undefined) ?? effectiveMode;
+      const paneIsPlan = paneTab?.kind === 'plan' || paneTab?.kind === 'plan-3d';
+      const panePlanTarget = paneIsPlan
+        ? resolvePlanTabTarget(elementsById, paneTab?.targetId, activeLevelId)
+        : { activeLevelId: activeLevelId ?? '' };
+      const paneViewerMode =
+        paneTab?.kind === '3d' || paneTab?.kind === 'plan-3d' ? 'orbit_3d' : 'plan_canvas';
+      const focused = focusedPaneLeafId === node.id;
+      return (
+        <div
+          key={node.id}
+          data-testid={`canvas-pane-${node.id}`}
+          data-focused={focused ? 'true' : 'false'}
+          className={[
+            'relative h-full w-full min-h-0 min-w-0 overflow-hidden',
+            focused ? 'ring-1 ring-accent/70 ring-inset' : '',
+          ].join(' ')}
+          onPointerDown={() => {
+            setPaneLayout((layout) => focusPane(layout, node.id));
+            if (paneTab?.id && paneTab.id !== tabsState.activeId) {
+              handleTabActivate(paneTab.id);
+            }
+          }}
+        >
+          <CanvasMount
+            mode={paneMode}
+            activeTabId={paneTab?.id}
+            viewerMode={paneViewerMode}
+            activeLevelId={panePlanTarget.activeLevelId}
+            elementsById={elementsById}
+            onSemanticCommand={(cmd) => void onSemanticCommand(cmd)}
+            cameraHandleRef={planCameraHandleRef}
+            initialCamera={paneTab?.viewportState?.planCamera}
+            preferredSheetId={
+              paneTab?.kind === 'sheet' ? (paneTab.targetId ?? undefined) : undefined
+            }
+            preferredScheduleId={
+              paneTab?.kind === 'schedule' ? (paneTab.targetId ?? undefined) : undefined
+            }
+            modelId={modelId ?? undefined}
+            wsOn={wsOn}
+            onPersistViewpointField={persistViewpointField}
+            lensMode={lensMode}
+            onNavigateToElement={openElementById}
+            snapSettings={snapSettings}
+            sheetReviewMode={sheetReviewMode}
+            sheetMarkupShape={sheetMarkupShape}
+            onOpenSectionSourcePlan={openActiveSectionSourcePlan}
+            onOpenSection3dContext={openActiveSection3dContext}
+          />
+        </div>
+      );
+    },
+    [
+      activeLevelId,
+      activeTab,
+      effectiveMode,
+      elementsById,
+      focusedPaneLeafId,
+      handleTabActivate,
+      lensMode,
+      modelId,
+      onSemanticCommand,
+      openActiveSection3dContext,
+      openActiveSectionSourcePlan,
+      openElementById,
+      persistViewpointField,
+      sheetMarkupShape,
+      sheetReviewMode,
+      snapSettings,
+      tabsById,
+      tabsState.activeId,
+      wsOn,
+    ],
+  );
 
   const runSelectedWall3dInsert = useCallback(
     (kind: 'door' | 'window' | 'opening') => {
@@ -1992,6 +2174,7 @@ export function Workspace(): JSX.Element {
           sheetReviewMode,
           placeActiveSectionOnSheet,
           openActiveSectionSourcePlan,
+          openActiveSection3dContext,
           adjustActiveSectionCropDepth,
           saveCurrentViewpoint,
           createFloorPlan: () => void createFloorPlanView(),
@@ -2004,6 +2187,10 @@ export function Workspace(): JSX.Element {
           closeInactiveViews: () => setTabsState((s) => closeInactiveTabs(s)),
           togglePrimarySidebar: () => setLeftRailCollapsed((v) => !v),
           toggleElementSidebar: toggleRightRail,
+          splitActiveTabLeft: () => splitActiveTab('left'),
+          splitActiveTabRight: () => splitActiveTab('right'),
+          splitActiveTabTop: () => splitActiveTab('top'),
+          splitActiveTabBottom: () => splitActiveTab('bottom'),
         }}
       />
       <FamilyLibraryPanel
@@ -2234,6 +2421,7 @@ export function Workspace(): JSX.Element {
                 activeId={tabsState.activeId}
                 onActivate={(id) => {
                   handleTabActivate(id);
+                  setPaneLayout((layout) => assignTabToFocusedPane(layout, id));
                   const t = tabsState.tabs.find((x) => x.id === id);
                   if (t) {
                     if (t.kind === 'plan' || t.kind === 'plan-3d') setViewerMode('plan_canvas');
@@ -2248,10 +2436,14 @@ export function Workspace(): JSX.Element {
                   const fallback = defaultTabFallbackForKind(kind, elementsById, activeLevelId);
                   if (!fallback) return;
                   setTabsState((s) => activateOrOpenKind(s, kind, fallback));
+                  const id = fallback.targetId ? `${kind}:${fallback.targetId}` : kind;
+                  setPaneLayout((layout) => assignTabToFocusedPane(layout, id));
                   setMode(kind as WorkspaceMode);
                   if (kind === 'plan' || kind === 'plan-3d') setViewerMode('plan_canvas');
                   else if (kind === '3d') setViewerMode('orbit_3d');
                 }}
+                onTabDragStart={(tabId) => setDraggingTabId(tabId)}
+                onTabDragEnd={() => setDraggingTabId(null)}
               />
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -2404,34 +2596,41 @@ export function Workspace(): JSX.Element {
               />
             ) : null}
             {showCanvasHint && !showEmptyState ? <EmptyStateHint /> : null}
-            <CanvasMount
-              mode={effectiveMode}
-              activeTabId={activeTab?.id}
-              viewerMode={viewerMode}
-              activeLevelId={
-                activeTab?.kind === 'plan' || activeTab?.kind === 'plan-3d'
-                  ? activePlanTarget.activeLevelId
-                  : (activeLevelId ?? '')
-              }
-              elementsById={elementsById}
-              onSemanticCommand={(cmd) => void onSemanticCommand(cmd)}
-              cameraHandleRef={planCameraHandleRef}
-              initialCamera={activeTab?.viewportState?.planCamera}
-              preferredSheetId={
-                activeTab?.kind === 'sheet' ? (activeTab.targetId ?? undefined) : undefined
-              }
-              preferredScheduleId={
-                activeTab?.kind === 'schedule' ? (activeTab.targetId ?? undefined) : undefined
-              }
-              modelId={modelId ?? undefined}
-              wsOn={wsOn}
-              onPersistViewpointField={persistViewpointField}
-              lensMode={lensMode}
-              onNavigateToElement={openElementById}
-              snapSettings={snapSettings}
-              sheetReviewMode={sheetReviewMode}
-              sheetMarkupShape={sheetMarkupShape}
-            />
+            {renderPaneNode(paneLayout.root)}
+            {draggingTabId ? (
+              <div className="pointer-events-none absolute inset-0 z-20">
+                {(
+                  [
+                    ['left', { left: '5%', top: '28%', width: '16%', height: '44%' }],
+                    ['right', { right: '5%', top: '28%', width: '16%', height: '44%' }],
+                    ['top', { left: '30%', top: '5%', width: '40%', height: '18%' }],
+                    ['bottom', { left: '30%', bottom: '5%', width: '40%', height: '18%' }],
+                  ] as const
+                ).map(([direction, style]) => (
+                  <button
+                    key={direction}
+                    type="button"
+                    data-testid={`canvas-split-dropzone-${direction}`}
+                    className="pointer-events-auto absolute rounded border border-accent/80 bg-accent/20 text-[11px] font-medium text-foreground backdrop-blur-sm"
+                    style={style}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      if (!draggingTabId) return;
+                      setPaneLayout((layout) =>
+                        splitPaneWithTab(layout, layout.focusedLeafId, direction, draggingTabId),
+                      );
+                      handleTabActivate(draggingTabId);
+                      setDraggingTabId(null);
+                    }}
+                  >
+                    Split {direction}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
         }
         elementSidebar={

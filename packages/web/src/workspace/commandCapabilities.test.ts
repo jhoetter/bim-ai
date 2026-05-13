@@ -289,6 +289,7 @@ describe('command capability graph', () => {
     for (const commandId of [
       'section.place-on-sheet',
       'section.open-source-plan',
+      'section.open-3d-context',
       'section.crop-depth.increase',
       'section.crop-depth.decrease',
     ]) {

@@ -98,6 +98,42 @@ describe('SectionPlaceholderPane', () => {
     const wrap = el.querySelector('[data-testid="section-workbench-preview-svg"]');
     expect(wrap).toBeTruthy();
     expect(wrap?.querySelector('[data-mock-section-viewport]')?.textContent).toBe('sc-a');
+    expect(el.querySelector('[data-testid="section-spatial-context"]')?.textContent).toContain(
+      'Cut run 3,000 mm',
+    );
+  });
+
+  it('routes section context jump actions', () => {
+    const onOpenSourcePlan = vi.fn();
+    const onOpen3dContext = vi.fn();
+    act(() => {
+      useBimStore.getState().hydrateFromSnapshot({
+        modelId: 'm1',
+        revision: 1,
+        elements: { 'sc-a': cutA },
+        violations: [],
+      });
+    });
+    const el = renderPane(
+      <SectionPlaceholderPane
+        activeLevelLabel="L1"
+        modelId="m1"
+        onOpenSourcePlan={onOpenSourcePlan}
+        onOpen3dContext={onOpen3dContext}
+      />,
+    );
+    const sourceBtn = el.querySelector(
+      '[data-testid="section-open-source-plan"]',
+    ) as HTMLButtonElement | null;
+    const contextBtn = el.querySelector(
+      '[data-testid="section-open-3d-context"]',
+    ) as HTMLButtonElement | null;
+    expect(sourceBtn).toBeTruthy();
+    expect(contextBtn).toBeTruthy();
+    act(() => sourceBtn?.click());
+    act(() => contextBtn?.click());
+    expect(onOpenSourcePlan).toHaveBeenCalledOnce();
+    expect(onOpen3dContext).toHaveBeenCalledOnce();
   });
 
   it('preview follows selected section_cut', () => {

@@ -119,6 +119,8 @@ export function liveTokenReader(): TokenReader {
 
 export interface ResolveOptions {
   reader?: TokenReader;
+  /** Active app theme, used to keep lighting physically plausible in dark UI mode. */
+  theme?: 'light' | 'dark';
   /** Override the spec'd PBR defaults (used by tests). */
   roughness?: number;
   metalness?: number;
@@ -180,7 +182,28 @@ export function resolveAllCategoryMaterials(
 }
 
 /** §15.5 sun + hemisphere lighting spec. */
-export function resolveLighting(): LightingSpec {
+export function resolveLighting(theme: 'light' | 'dark' = 'light'): LightingSpec {
+  if (theme === 'dark') {
+    return {
+      sun: {
+        intensity: 0.72,
+        azimuthDeg: 145,
+        elevationDeg: 35,
+        color: '#f4f1e7',
+        shadowMapSize: 2048,
+      },
+      hemi: {
+        intensity: 0.42,
+        skyColor: '#8ca8b6',
+        groundColor: '#5b5547',
+      },
+      ssao: {
+        kernelRadius: 0.14,
+        minDistance: 0.001,
+        maxDistance: 0.14,
+      },
+    };
+  }
   return {
     sun: {
       // 35° elevation per spec; project-north azimuth handled by caller.
@@ -227,9 +250,10 @@ export interface ViewportPaintBundle {
 }
 
 export function resolveViewportPaintBundle(options: ResolveOptions = {}): ViewportPaintBundle {
+  const theme = options.theme ?? 'light';
   return {
     categories: resolveAllCategoryMaterials(options),
-    lighting: resolveLighting(),
+    lighting: resolveLighting(theme),
     selection: resolveSelection(options),
   };
 }

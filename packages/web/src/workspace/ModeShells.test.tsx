@@ -26,15 +26,30 @@ vi.mock('./sheets', () => ({
   SectionPlaceholderPane: ({
     activeLevelLabel,
     modelId,
+    onOpenSourcePlan,
+    onOpen3dContext,
   }: {
     activeLevelLabel: string;
     modelId?: string;
+    onOpenSourcePlan?: () => void;
+    onOpen3dContext?: () => void;
   }) => (
     <div
       data-testid="section-placeholder-pane"
       data-level={activeLevelLabel}
       data-model-id={modelId ?? ''}
-    />
+    >
+      <button
+        type="button"
+        data-testid="mock-open-source-plan"
+        onClick={() => onOpenSourcePlan?.()}
+      >
+        open source
+      </button>
+      <button type="button" data-testid="mock-open-3d-context" onClick={() => onOpen3dContext?.()}>
+        open 3d
+      </button>
+    </div>
   ),
 }));
 
@@ -97,6 +112,23 @@ describe('SectionModeShell — spec §20.4', () => {
     const pane = getByTestId('section-placeholder-pane');
     expect(pane.getAttribute('data-level')).toBe('L2');
     expect(pane.getAttribute('data-model-id')).toBe('model-abc');
+  });
+
+  it('passes section navigation callbacks through to SectionPlaceholderPane', () => {
+    const onOpenSourcePlan = vi.fn();
+    const onOpen3dContext = vi.fn();
+    const { getByTestId } = render(
+      <SectionModeShell
+        activeLevelLabel="L2"
+        modelId="model-abc"
+        onOpenSourcePlan={onOpenSourcePlan}
+        onOpen3dContext={onOpen3dContext}
+      />,
+    );
+    fireEvent.click(getByTestId('mock-open-source-plan'));
+    fireEvent.click(getByTestId('mock-open-3d-context'));
+    expect(onOpenSourcePlan).toHaveBeenCalledOnce();
+    expect(onOpen3dContext).toHaveBeenCalledOnce();
   });
 });
 

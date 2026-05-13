@@ -145,10 +145,14 @@ export function SectionModeShell({
   activeLevelLabel = '',
   modelId,
   onUpsertSemantic,
+  onOpenSourcePlan,
+  onOpen3dContext,
 }: {
   activeLevelLabel?: string;
   modelId?: string;
   onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
+  onOpenSourcePlan?: () => void;
+  onOpen3dContext?: () => void;
 }): JSX.Element {
   return (
     <div data-testid="section-mode-shell" className="h-full w-full overflow-auto">
@@ -156,6 +160,8 @@ export function SectionModeShell({
         activeLevelLabel={activeLevelLabel}
         modelId={modelId}
         onUpsertSemantic={onUpsertSemantic}
+        onOpenSourcePlan={onOpenSourcePlan}
+        onOpen3dContext={onOpen3dContext}
       />
     </div>
   );

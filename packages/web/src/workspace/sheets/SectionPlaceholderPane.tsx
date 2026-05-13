@@ -25,6 +25,33 @@ function segmentLengthMm(a: { xMm: number; yMm: number }, b: { xMm: number; yMm:
   return Math.round(Math.hypot(dx, dy));
 }
 
+function axisLabelFromSegment(
+  a: { xMm: number; yMm: number },
+  b: { xMm: number; yMm: number },
+): string {
+  const dx = Math.abs(b.xMm - a.xMm);
+  const dy = Math.abs(b.yMm - a.yMm);
+  if (dx > dy * 1.35) return 'east-west';
+  if (dy > dx * 1.35) return 'north-south';
+  return 'diagonal';
+}
+
+function headingLabelFromNormal(nx: number, ny: number): string {
+  const angle = ((((Math.atan2(ny, nx) * 180) / Math.PI) % 360) + 360) % 360;
+  const octants = [
+    'east',
+    'north-east',
+    'north',
+    'north-west',
+    'west',
+    'south-west',
+    'south',
+    'south-east',
+  ] as const;
+  const index = Math.round(angle / 45) % octants.length;
+  return octants[index] ?? 'east';
+}
+
 function SectionDatumElevationEvidenceLine(props: { modelId: string; sectionCutId: string }) {
   const [line, setLine] = useState('');
 
@@ -96,6 +123,8 @@ export function SectionPlaceholderPane(props: {
   activeLevelLabel: string;
   modelId?: string;
   onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
+  onOpenSourcePlan?: () => void;
+  onOpen3dContext?: () => void;
 }) {
   const elementsById = useBimStore((s) => s.elementsById);
   const selectedId = useBimStore((s) => s.selectedId);
@@ -141,6 +170,22 @@ export function SectionPlaceholderPane(props: {
       }),
     };
   }, [previewCut]);
+  const sectionSpatialContext = useMemo(() => {
+    if (!previewCut) {
+      return { runMm: 0, axisLabel: '—', headingLabel: '—' };
+    }
+    const runMm = segmentLengthMm(previewCut.lineStartMm, previewCut.lineEndMm);
+    const dx = previewCut.lineEndMm.xMm - previewCut.lineStartMm.xMm;
+    const dy = previewCut.lineEndMm.yMm - previewCut.lineStartMm.yMm;
+    const len = Math.hypot(dx, dy);
+    const nx = len > 1e-6 ? -dy / len : 1;
+    const ny = len > 1e-6 ? dx / len : 0;
+    return {
+      runMm,
+      axisLabel: axisLabelFromSegment(previewCut.lineStartMm, previewCut.lineEndMm),
+      headingLabel: headingLabelFromNormal(nx, ny),
+    };
+  }, [previewCut]);
 
   return (
     <Panel title={`Sections (${props.activeLevelLabel})`}>
@@ -160,6 +205,33 @@ export function SectionPlaceholderPane(props: {
         <>
           {props.modelId && previewSectionId && previewCut ? (
             <>
+              <div
+                data-testid="section-spatial-context"
+                className="mt-2 rounded border border-border/70 bg-surface px-2 py-1 text-[10px] text-muted"
+              >
+                Cut run {sectionSpatialContext.runMm.toLocaleString()} mm · axis{' '}
+                {sectionSpatialContext.axisLabel} · looking {sectionSpatialContext.headingLabel}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  data-testid="section-open-source-plan"
+                  className="h-7 rounded border border-border bg-surface px-2 text-[11px] text-foreground hover:bg-surface-strong disabled:cursor-not-allowed disabled:opacity-45"
+                  onClick={() => props.onOpenSourcePlan?.()}
+                  disabled={!props.onOpenSourcePlan}
+                >
+                  Open source plan
+                </button>
+                <button
+                  type="button"
+                  data-testid="section-open-3d-context"
+                  className="h-7 rounded border border-accent bg-accent/15 px-2 text-[11px] font-medium text-foreground hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-45"
+                  onClick={() => props.onOpen3dContext?.()}
+                  disabled={!props.onOpen3dContext}
+                >
+                  Open 3D context
+                </button>
+              </div>
               <SectionWorkbenchLivePreview
                 key={previewSectionId}
                 modelId={props.modelId}

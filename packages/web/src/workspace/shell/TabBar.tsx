@@ -39,6 +39,9 @@ export interface TabBarProps {
   /** Called when the user clicks "Close Inactive Views" — closes all
    * tabs except the currently active one. */
   onCloseInactive?: () => void;
+  /** Emits when a tab drag starts/ends so the canvas can expose split drop zones. */
+  onTabDragStart?: (tabId: string) => void;
+  onTabDragEnd?: () => void;
 }
 
 const ADDABLE_KINDS: TabKind[] = [
@@ -60,6 +63,8 @@ export function TabBar({
   onAdd,
   onReorder,
   onCloseInactive,
+  onTabDragStart,
+  onTabDragEnd,
 }: TabBarProps): JSX.Element {
   const { t } = useTranslation();
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -156,7 +161,7 @@ export function TabBar({
             data-tab-index={idx}
             data-active={isActive ? 'true' : 'false'}
             data-drag-over={isDragOver ? 'true' : 'false'}
-            draggable={Boolean(onReorder)}
+            draggable={Boolean(onReorder || onTabDragStart)}
             onClick={() => onActivate(tab.id)}
             onKeyDown={(e) => {
               if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -164,14 +169,16 @@ export function TabBar({
               onActivate(tab.id);
             }}
             onDragStart={(e) => {
-              if (!onReorder) return;
+              if (!onReorder && !onTabDragStart) return;
               setDragSrc(idx);
               e.dataTransfer.effectAllowed = 'move';
               try {
                 e.dataTransfer.setData('text/plain', String(idx));
+                e.dataTransfer.setData('application/x-bim-tab-id', tab.id);
               } catch {
                 /* some browsers throw on setData inside synthetic events */
               }
+              onTabDragStart?.(tab.id);
             }}
             onDragOver={(e) => {
               if (!onReorder || dragSrc === null) return;
@@ -192,6 +199,7 @@ export function TabBar({
             onDragEnd={() => {
               setDragSrc(null);
               setDragOverIdx(null);
+              onTabDragEnd?.();
             }}
             className={[
               'group flex items-center gap-1.5 rounded-t-md border border-b-0 px-3 py-1.5 text-[12px] font-medium transition-colors',

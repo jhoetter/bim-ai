@@ -41,6 +41,8 @@ export function CanvasMount({
   snapSettings,
   sheetReviewMode,
   sheetMarkupShape,
+  onOpenSectionSourcePlan,
+  onOpenSection3dContext,
 }: {
   mode: WorkspaceMode;
   viewerMode: 'plan_canvas' | 'orbit_3d';
@@ -65,6 +67,8 @@ export function CanvasMount({
   snapSettings?: SnapSettings;
   sheetReviewMode?: SheetReviewMode;
   sheetMarkupShape?: SheetMarkupShape;
+  onOpenSectionSourcePlan?: () => void;
+  onOpenSection3dContext?: () => void;
 }): JSX.Element {
   if ((mode as string) === 'plan-3d') {
     return (
@@ -122,6 +126,8 @@ export function CanvasMount({
         activeLevelLabel={activeLevelId}
         modelId={modelId}
         onUpsertSemantic={onSemanticCommand}
+        onOpenSourcePlan={onOpenSectionSourcePlan}
+        onOpen3dContext={onOpenSection3dContext}
       />
     );
   if (mode === 'sheet')

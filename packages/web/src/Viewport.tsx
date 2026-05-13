@@ -485,7 +485,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
 
     /** Resolve drafting + lighting tokens once at mount; theme switches will
      * trigger a rebuild via the dependency on `elementsById` etc. */
-    const paint = resolveViewportPaintBundle();
+    const paint = resolveViewportPaintBundle({ theme: theme === 'dark' ? 'dark' : 'light' });
     paintBundleRef.current = paint;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, stencil: true });

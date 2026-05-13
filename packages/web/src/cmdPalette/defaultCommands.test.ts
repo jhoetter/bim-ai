@@ -230,6 +230,38 @@ describe('default Cmd+K commands', () => {
     expect(toggleElementSidebar).toHaveBeenCalledOnce();
   });
 
+  it('routes tab split commands through the palette host context', () => {
+    const splitActiveTabLeft = vi.fn();
+    const splitActiveTabRight = vi.fn();
+    const splitActiveTabTop = vi.fn();
+    const splitActiveTabBottom = vi.fn();
+    const ctx = {
+      ...PLAN_CTX,
+      activeViewId: 'pv-1',
+      splitActiveTabLeft,
+      splitActiveTabRight,
+      splitActiveTabTop,
+      splitActiveTabBottom,
+    };
+    command('tabs.split.left').invoke(ctx);
+    command('tabs.split.right').invoke(ctx);
+    command('tabs.split.top').invoke(ctx);
+    command('tabs.split.bottom').invoke(ctx);
+    expect(splitActiveTabLeft).toHaveBeenCalledOnce();
+    expect(splitActiveTabRight).toHaveBeenCalledOnce();
+    expect(splitActiveTabTop).toHaveBeenCalledOnce();
+    expect(splitActiveTabBottom).toHaveBeenCalledOnce();
+  });
+
+  it('routes section context jump commands through the palette host context', () => {
+    const openActiveSectionSourcePlan = vi.fn();
+    const openActiveSection3dContext = vi.fn();
+    command('section.open-source-plan').invoke({ ...SECTION_CTX, openActiveSectionSourcePlan });
+    command('section.open-3d-context').invoke({ ...SECTION_CTX, openActiveSection3dContext });
+    expect(openActiveSectionSourcePlan).toHaveBeenCalledOnce();
+    expect(openActiveSection3dContext).toHaveBeenCalledOnce();
+  });
+
   it('routes project snapshot, milestone, help, and presentation commands through the palette host context', () => {
     const saveSnapshot = vi.fn();
     const openRestoreSnapshot = vi.fn();

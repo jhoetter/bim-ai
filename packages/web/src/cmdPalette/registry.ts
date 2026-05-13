@@ -98,6 +98,7 @@ export type PaletteContext = {
   sheetReviewMode?: 'cm' | 'an' | 'mr';
   placeActiveSectionOnSheet?: () => void;
   openActiveSectionSourcePlan?: () => void;
+  openActiveSection3dContext?: () => void;
   adjustActiveSectionCropDepth?: (deltaMm: number) => void;
   resetActiveSavedViewpoint?: () => void;
   updateActiveSavedViewpoint?: () => void;
@@ -110,6 +111,10 @@ export type PaletteContext = {
   closeInactiveViews?: () => void;
   togglePrimarySidebar?: () => void;
   toggleElementSidebar?: () => void;
+  splitActiveTabLeft?: () => void;
+  splitActiveTabRight?: () => void;
+  splitActiveTabTop?: () => void;
+  splitActiveTabBottom?: () => void;
   /** Dynamic navigable views/sheets/schedules to surface in the palette. */
   views?: Array<{ id: string; label: string; keywords: string }>;
   /** Dynamic plan view templates that can be applied to the active plan view. */

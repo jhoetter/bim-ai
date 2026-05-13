@@ -318,6 +318,15 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'section.open-3d-context',
+  label: 'Section: Open 3D Context',
+  keywords: ['section', '3d', 'context', 'jump', 'cut orientation'],
+  category: 'command',
+  isAvailable: hasActiveSection,
+  invoke: (ctx) => ctx.openActiveSection3dContext?.(),
+});
+
+registerCommand({
   id: 'section.crop-depth.increase',
   label: 'Section: Increase Far Clip',
   keywords: ['section', 'crop', 'far clip', 'depth', 'increase'],
@@ -844,6 +853,42 @@ registerCommand({
   keywords: ['tabs', 'views', 'close inactive'],
   category: 'command',
   invoke: (ctx) => ctx.closeInactiveViews?.(),
+});
+
+registerCommand({
+  id: 'tabs.split.left',
+  label: 'Split Active View Left',
+  keywords: ['split', 'pane', 'left', 'tab layout'],
+  category: 'command',
+  isAvailable: (ctx) => Boolean(ctx.activeViewId),
+  invoke: (ctx) => ctx.splitActiveTabLeft?.(),
+});
+
+registerCommand({
+  id: 'tabs.split.right',
+  label: 'Split Active View Right',
+  keywords: ['split', 'pane', 'right', 'tab layout'],
+  category: 'command',
+  isAvailable: (ctx) => Boolean(ctx.activeViewId),
+  invoke: (ctx) => ctx.splitActiveTabRight?.(),
+});
+
+registerCommand({
+  id: 'tabs.split.top',
+  label: 'Split Active View Top',
+  keywords: ['split', 'pane', 'top', 'tab layout'],
+  category: 'command',
+  isAvailable: (ctx) => Boolean(ctx.activeViewId),
+  invoke: (ctx) => ctx.splitActiveTabTop?.(),
+});
+
+registerCommand({
+  id: 'tabs.split.bottom',
+  label: 'Split Active View Bottom',
+  keywords: ['split', 'pane', 'bottom', 'tab layout'],
+  category: 'command',
+  isAvailable: (ctx) => Boolean(ctx.activeViewId),
+  invoke: (ctx) => ctx.splitActiveTabBottom?.(),
 });
 
 registerCommand({

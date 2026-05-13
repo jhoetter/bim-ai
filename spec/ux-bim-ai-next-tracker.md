@@ -1,6 +1,6 @@
 # BIM AI UX Next-Phase Tracker
 
-Last updated: 2026-05-12
+Last updated: 2026-05-13
 
 Related baseline:
 
@@ -43,7 +43,7 @@ The foundational seven-region ownership model is in place, but real usage still 
 | ------------ | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- | -------- | ------ |
 | NEXT-GAP-001 | Primary sidebar does not read as true top-to-bottom spine in final composition.                                    | `workspace/shell/AppShell.tsx`, `workspace/Workspace.tsx`                                    | P0       | Done   |
 | NEXT-GAP-002 | Secondary sidebar internals are dense; reusable collapsible group pattern is missing.                              | `workspace/WorkspaceRightRail.tsx`                                                           | P1       | Done   |
-| NEXT-GAP-003 | No recursive drag-drop canvas split from tabs (horizontal/vertical panes).                                         | `workspace/shell/TabBar.tsx`, `workspace/tabsModel.ts`, `workspace/viewport/CanvasMount.tsx` | P1       | Open   |
+| NEXT-GAP-003 | No recursive drag-drop canvas split from tabs (horizontal/vertical panes).                                         | `workspace/shell/TabBar.tsx`, `workspace/tabsModel.ts`, `workspace/viewport/CanvasMount.tsx` | P1       | Done   |
 | NEXT-GAP-004 | Wall tool can leave confusing mirrored/hatched draft/preview artifacts off-plan.                                   | `plan/PlanCanvas.tsx`                                                                        | P0       | Done   |
 | NEXT-GAP-005 | Wall placement has weak off-plan/crop guardrails and unclear loop-mode state transitions.                          | `plan/PlanCanvas.tsx`, plan view crop data                                                   | P0       | Done   |
 | NEXT-GAP-006 | 3D wall openings can render incorrectly (wall visible in window/opening).                                          | `Viewport.tsx` wall/opening CSG path                                                         | P0       | Done   |
@@ -56,10 +56,10 @@ The foundational seven-region ownership model is in place, but real usage still 
 | NEXT-GAP-013 | Sheets show heavy metadata block directly in main user reading flow.                                               | `workspace/sheets/SheetCanvas.tsx`                                                           | P1       | Done   |
 | NEXT-GAP-014 | Moodboard vs documentation sheet intent is not modeled/taggable.                                                   | sheet model + UI filters + commands                                                          | P1       | Done   |
 | NEXT-GAP-015 | Schedule outputs are not meaningful enough for practical role workflows.                                           | schedule mode shell/panels, advisor integration                                              | P1       | Done   |
-| NEXT-GAP-016 | Sections are hard to understand in relation to 3D; section context could be spatially reinforced.                  | section mode shell, viewport overlays                                                        | P2       | Open   |
+| NEXT-GAP-016 | Sections are hard to understand in relation to 3D; section context could be spatially reinforced.                  | section mode shell, viewport overlays                                                        | P2       | Done   |
 | NEXT-GAP-017 | Overflow hygiene: clipped dropdowns and horizontal scrolling inside sidebars.                                      | shell/sidebar CSS/layout constraints                                                         | P1       | Done   |
-| NEXT-GAP-018 | 3D visual quality gaps: dark mode mismatch, materials/realistic/raytrace strategy unclear.                         | `Viewport.tsx`, render style pipeline                                                        | P1       | Open   |
-| NEXT-GAP-019 | Onboarding tour targets exist but narrative is outdated for next-phase workflows.                                  | `onboarding/tour.ts`, `onboarding/OnboardingTour.tsx`                                        | P2       | Open   |
+| NEXT-GAP-018 | 3D visual quality gaps: dark mode mismatch, materials/realistic/raytrace strategy unclear.                         | `Viewport.tsx`, render style pipeline                                                        | P1       | Done   |
+| NEXT-GAP-019 | Onboarding tour targets exist but narrative is outdated for next-phase workflows.                                  | `onboarding/tour.ts`, `onboarding/OnboardingTour.tsx`                                        | P2       | Done   |
 | NEXT-GAP-020 | Project settings path is under-discoverable after nav cleanup.                                                     | project settings element/editor/commands                                                     | P1       | Done   |
 
 ## Workpackages
@@ -131,7 +131,7 @@ Evidence (2026-05-13):
 ### WP-NEXT-03 — Recursive Canvas Split Tabs
 
 - Priority: `P1`
-- Status: `Open`
+- Status: `Done`
 - Covers: `NEXT-GAP-003`
 - Goal: enable tab drag-and-drop into canvas to create recursive horizontal/vertical pane splits.
 - Source ownership:
@@ -145,6 +145,25 @@ Evidence (2026-05-13):
   - tab move/close preserves pane invariants,
   - keyboard fallback exists for splitting without drag,
   - Playwright coverage for pane creation and restore from saved state.
+
+Evidence (2026-05-13):
+
+- Added recursive pane tree model + persistence with invariants:
+  - `packages/web/src/workspace/paneLayout.ts`
+  - `packages/web/src/workspace/paneLayout.test.ts`
+- Workspace now renders recursive split canvases, keeps focused-pane tab ownership, normalizes pane state on tab close/reorder, and persists/restores pane layout:
+  - `packages/web/src/workspace/Workspace.tsx`
+- Tab drag lifecycle now exposes canvas split drop-zones; keyboard fallback is available through Cmd+K split commands:
+  - `packages/web/src/workspace/shell/TabBar.tsx`
+  - `packages/web/src/workspace/shell/TabBar.test.tsx`
+  - `packages/web/src/cmdPalette/defaultCommands.ts`
+  - `packages/web/src/cmdPalette/defaultCommands.test.ts`
+  - `packages/web/src/workspace/commandCapabilities.ts`
+- Seeded Playwright proof:
+  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/01-wp03-split-created.png`
+  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/02-wp03-nested-split.png`
+  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/03-wp03-reload-persisted.png`
+  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/summary.json` (`wp03SplitCreated=true`, `wp03NestedSplitCreated=true`, `wp03PersistedAfterReload=true`).
 
 ### WP-NEXT-04 — Floor Plan Wall Draft Lifecycle Fix
 
@@ -506,7 +525,7 @@ Evidence (2026-05-13):
 ### WP-NEXT-14 — Section Context Reinforcement
 
 - Priority: `P2`
-- Status: `Open`
+- Status: `Done`
 - Covers: `NEXT-GAP-016`
 - Goal: improve section comprehension by tying section markers/planes between plan and 3D contexts.
 - Source ownership:
@@ -516,10 +535,28 @@ Evidence (2026-05-13):
   - section source and cut orientation are clear in both plan and 3D,
   - user can jump between section marker and 3D context consistently.
 
+Evidence (2026-05-13):
+
+- Section workbench now shows explicit spatial context (run/axis/look heading) and direct jump actions:
+  - `packages/web/src/workspace/sheets/SectionPlaceholderPane.tsx`
+  - `packages/web/src/workspace/sheets/SectionPlaceholderPane.test.tsx`
+- Added canonical section navigation callback wiring through mode/canvas/workspace:
+  - `packages/web/src/workspace/ModeShells.tsx`
+  - `packages/web/src/workspace/ModeShells.test.tsx`
+  - `packages/web/src/workspace/viewport/CanvasMount.tsx`
+  - `packages/web/src/workspace/Workspace.tsx`
+- Added Cmd+K section context jump command + capability metadata:
+  - `section.open-3d-context` in `packages/web/src/cmdPalette/defaultCommands.ts`
+  - `packages/web/src/workspace/commandCapabilities.ts`
+- Seeded Playwright proof:
+  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/04-wp14-section-context.png`
+  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/05-wp14-section-jump-3d.png`
+  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/summary.json` (`wp14SectionContextVisible=true`, `wp14Section3dJump=true`, `wp14CmdkReachable=true`).
+
 ### WP-NEXT-15 — 3D Visual Fidelity Track
 
 - Priority: `P1`
-- Status: `Open`
+- Status: `Done`
 - Covers: `NEXT-GAP-018`
 - Goal: harden rendering quality for dark mode, materials, and realistic/raytrace-style modes.
 - Source ownership:
@@ -530,10 +567,24 @@ Evidence (2026-05-13):
   - materials render consistently across standard/realistic modes,
   - explicit capability note for raytrace mode (true realtime/path-trace/fallback) and constraints.
 
+Evidence (2026-05-13):
+
+- Added explicit realistic/ray-trace capability/fallback note directly in 3D graphics controls:
+  - `packages/web/src/workspace/viewport/Viewport3DLayersPanel.tsx`
+  - `packages/web/src/workspace/viewport/Viewport3DLayersPanel.test.tsx`
+- Hardened theme-aware viewport lighting profile for dark mode while preserving material consistency:
+  - `packages/web/src/viewport/materials.ts`
+  - `packages/web/src/viewport/materials.test.ts`
+  - `packages/web/src/Viewport.tsx`
+- Seeded Playwright proof:
+  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/06-wp15-raytrace-note.png`
+  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/07-wp15-dark-raytrace.png`
+  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/summary.json` (`wp15RaytraceNoteVisible=true`, `wp15DarkRaytraceCaptured=true`).
+
 ### WP-NEXT-16 — Onboarding + QA Closeout
 
 - Priority: `P2`
-- Status: `Open`
+- Status: `Done`
 - Covers: `NEXT-GAP-019` plus global regression closure
 - Goal: align onboarding narrative with final layout/workflows and close with robust seeded QA.
 - Source ownership:
@@ -544,6 +595,19 @@ Evidence (2026-05-13):
   - onboarding steps match canonical regions and top workflows,
   - screenshot matrix covers desktop/tablet/narrow, no-selection/selection/active-command/dialog states,
   - seeded validation script is documented and repeatable.
+
+Evidence (2026-05-13):
+
+- Updated onboarding narrative to match final next-phase workflows and ownership language:
+  - `packages/web/src/onboarding/tour.ts`
+- Added repeatable seeded Playwright capture script and matrix artifacts:
+  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/capture.mjs`
+  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/08-wp16-onboarding-desktop.png`
+  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/09-wp16-onboarding-tablet.png`
+  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/10-wp16-onboarding-narrow.png`
+  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/11-wp16-active-command-wall.png`
+  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/12-wp16-dialog-shortcuts.png`
+  - `packages/web/tmp/ux-next-wp03-14-15-16-20260513/summary.json` (`wp16OnboardingReplayVisible=true`, `wp16TabletCaptured=true`, `wp16NarrowCaptured=true`, `wp16ActiveCommandCaptured=true`, `wp16DialogCaptured=true`).
 
 ## Dependency Sequence
 
