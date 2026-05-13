@@ -63,9 +63,21 @@ await page.screenshot({ path: `${outDir}02-drag-release-wall-commit.png`, fullPa
 
 await page.click('[data-testid="ribbon-command-wall"]');
 await page.waitForTimeout(250);
+const gridStart = { x: box.x + box.width * 0.88, y: box.y + box.height * 0.7 };
+const gridEnd = { x: box.x + box.width * 0.8, y: box.y + box.height * 0.64 };
+await page.mouse.move(gridStart.x, gridStart.y);
+await page.mouse.down();
+await page.mouse.move(gridEnd.x, gridEnd.y, { steps: 10 });
+await page.waitForTimeout(250);
+await page.screenshot({ path: `${outDir}03-grid-level-plane-fallback.png`, fullPage: true });
+await page.mouse.up();
+await page.waitForTimeout(700);
+
+await page.click('[data-testid="ribbon-command-wall"]');
+await page.waitForTimeout(250);
 await page.mouse.click(box.x + box.width * 0.12, box.y + box.height * 0.15);
 await page.waitForTimeout(400);
-await page.screenshot({ path: `${outDir}03-sky-start-blocked.png`, fullPage: true });
+await page.screenshot({ path: `${outDir}04-sky-start-blocked.png`, fullPage: true });
 
 await page.keyboard.press('Escape');
 await page.waitForTimeout(200);
@@ -74,7 +86,7 @@ await page.mouse.down();
 await page.mouse.move(box.x + box.width * 0.72, box.y + box.height * 0.47, { steps: 10 });
 await page.mouse.up();
 await page.waitForTimeout(500);
-await page.screenshot({ path: `${outDir}04-after-escape-navigation-drag.png`, fullPage: true });
+await page.screenshot({ path: `${outDir}05-after-escape-navigation-drag.png`, fullPage: true });
 
 const wallTrace = await page.evaluate(() => window.__BIM_AI_3D_WALL_DEBUG__ ?? []);
 const wallCommand = commands.find((command) => command?.type === 'createWall') ?? null;
@@ -87,9 +99,17 @@ const wallLengthMm = wallCommand
 const summary = {
   commandTypes: commands.map((command) => command?.type ?? null),
   createWallCount: commands.filter((command) => command?.type === 'createWall').length,
+  wallLengthsMm: commands
+    .filter((command) => command?.type === 'createWall')
+    .map((command) =>
+      Math.hypot(command.end.xMm - command.start.xMm, command.end.yMm - command.start.yMm),
+    ),
   wallLengthMm,
   projectionModes: [...new Set(wallTrace.map((entry) => entry.projection?.mode).filter(Boolean))],
   tracePhases: wallTrace.map((entry) => entry.phase),
+  wallStartWithoutAnchorCount: wallTrace.filter(
+    (entry) => entry.phase === 'wall-start' && !entry.anchor,
+  ).length,
   blockedNoVisibleAnchorCount: wallTrace.filter(
     (entry) => entry.phase === 'wall-blocked-no-visible-anchor',
   ).length,

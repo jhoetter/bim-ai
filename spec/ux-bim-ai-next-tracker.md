@@ -1212,14 +1212,17 @@ Evidence (2026-05-13):
     - 2026-05-13 closure rerun with visible model anchoring:
       - `packages/web/tmp/ux-wall-debug-input-20260513/01-drag-preview-console-debug.png`
       - `packages/web/tmp/ux-wall-debug-input-20260513/02-drag-release-wall-commit.png`
-      - `packages/web/tmp/ux-wall-debug-input-20260513/03-sky-start-blocked.png`
-      - `packages/web/tmp/ux-wall-debug-input-20260513/04-after-escape-navigation-drag.png`
+      - `packages/web/tmp/ux-wall-debug-input-20260513/03-grid-level-plane-fallback.png`
+      - `packages/web/tmp/ux-wall-debug-input-20260513/04-sky-start-blocked.png`
+      - `packages/web/tmp/ux-wall-debug-input-20260513/05-after-escape-navigation-drag.png`
       - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
       - `firstTrace.anchor.elementId: "hf-roof-main"`
       - `firstTrace.point == firstTrace.anchor.point == command.start`
+      - `wallStartWithoutAnchorCount: 1`
+      - `blockedNoVisibleAnchorCount: 0`
       - `blockedNoDraftPlaneCount: 1`
   - Closure decision:
-    - front/elevation wall authoring remains constrained 3D placement: clicks must resolve to visible model geometry for the start anchor, and empty sky is explicitly blocked with guidance instead of opening an implicit work-plane branch.
+    - front/elevation wall authoring prefers visible model geometry when the cursor resolves to a model face, but valid level-plane/grid starts remain allowed; only clicks with no draft-plane intersection are blocked with explicit guidance.
 
 ## Reopened Tracker (2026-05-13, feedback round 11)
 
@@ -1244,31 +1247,34 @@ Evidence (2026-05-13):
 - Acceptance:
   - in local dev, or when `localStorage["bim.debug.3dWall"] = "true"`, wall debug records appear as browser console entries and remain available in `window.__BIM_AI_3D_WALL_DEBUG__`;
   - direct 3D line tools, including `Wall`, support press-drag-release as a real draft gesture instead of swallowing the drag;
-  - front/elevation-style wall placement uses the visible model hit under the cursor as the wall start anchor while retaining the old level-plane point only as diagnostic `planePoint`;
-  - empty-sky clicks that cannot resolve a visible anchor or draft plane are blocked with an explicit prompt and do not emit a wall command;
+  - front/elevation-style wall placement uses the visible model hit under the cursor when available, while valid grid/level-plane starts remain accepted in `elevation-axis` mode;
+  - empty-sky clicks that cannot resolve a draft plane are blocked with an explicit prompt and do not emit a wall command;
   - pointer cancel / lost capture clears transient drag state so navigation is not left stuck;
   - seeded UI proof explicitly selects `target-house-3` before validating.
 - Implementation + evidence:
   - `emitWallDebug` now writes compact JSON `[bim:3d-wall]` console info entries in local dev / explicit debug mode in addition to global trace storage and custom events, so DevTools shows actual coordinates instead of only collapsed object previews.
   - Direct 3D line tools seed the start point on pointer-down, update preview during drag, and commit on pointer-up when the drag exceeds threshold.
-  - Wall start in `elevation-axis` projection now raycasts visible model geometry and stores the hit as the canonical `lineDraftStart.point`; the former far level-plane ray hit is kept as `planePoint` in diagnostics only.
-  - Wall clicks with no draft-plane hit and no visible model anchor emit `wall-blocked-no-draft-plane`, keep the tool in `pick-start`, and show the explicit “Empty sky is not a valid 3D wall anchor” instruction.
+  - Wall start in `elevation-axis` projection now raycasts visible model geometry and stores the hit as the canonical `lineDraftStart.point` when the cursor is over model geometry; otherwise a valid level-plane/grid point remains a legal start.
+  - Wall clicks with no draft-plane hit emit `wall-blocked-no-draft-plane`, keep the tool in `pick-start`, and show the explicit “Empty sky is not a valid 3D wall anchor” instruction.
   - Pointer-up now suppresses duplicate blocked attempts when pointer-down already consumed a direct line-tool click.
   - Added pointer-cancel and lost-pointer-capture cleanup for tool draft and grip drag state.
   - Updated wall debug capture scripts to select `Seed Library / target-house-3` explicitly through the project selector.
   - Seeded proof (`make seed name=target-house-3`, `make dev name=target-house-3`):
     - `packages/web/tmp/ux-wall-debug-input-20260513/01-drag-preview-console-debug.png`
     - `packages/web/tmp/ux-wall-debug-input-20260513/02-drag-release-wall-commit.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/03-sky-start-blocked.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/04-after-escape-navigation-drag.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/03-grid-level-plane-fallback.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/04-sky-start-blocked.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/05-after-escape-navigation-drag.png`
     - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
-      - `createWallCount: 1`
+      - `createWallCount: 2`
       - `projectionModes: ["elevation-axis"]`
-      - `console3dWallCount: 5`
+      - `console3dWallCount: 9`
+      - `wallStartWithoutAnchorCount: 1`
+      - `blockedNoVisibleAnchorCount: 0`
       - `blockedNoDraftPlaneCount: 1`
       - `firstTrace.point == firstTrace.anchor.point == command.start`
-      - `firstTrace.planePoint` retained as diagnostics and no longer used as the canonical wall start
-      - `wallLengthMm: 7173.603`
+      - first command uses visible model anchoring and second command proves level-plane/grid fallback is draw-able
+      - `wallLengthsMm: [7173.603, 2078.073]`
     - `packages/web/tmp/ux-wall-debug-pipeline-20260513/01-front-elevation-preview.png`
     - `packages/web/tmp/ux-wall-debug-pipeline-20260513/02-front-elevation-after-commit.png`
     - `packages/web/tmp/ux-wall-debug-pipeline-20260513/summary.json`
@@ -1276,3 +1282,38 @@ Evidence (2026-05-13):
       - `projectionModes: ["elevation-axis"]`
       - `firstTrace.anchor.elementId: "hf-roof-main"`
       - committed wall start matches the visible roof anchor, not the old far `planePoint`.
+
+## Reopened Tracker (2026-05-13, feedback round 12)
+
+| Gap ID         | Problem Statement                                                                                                   | Canonical Surfaces / Files                                                   | Priority | Status |
+| -------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------- | ------ |
+| NEXT12-GAP-001 | `wall-blocked-no-visible-anchor` blocked ordinary grid/work-plane starts in front/elevation-like 3D wall authoring. | `Viewport.tsx` 3D wall start logic, wall debug input Playwright capture      | P0       | Done   |
+| NEXT12-GAP-002 | Wall evidence did not distinguish visible-model anchoring from grid/level-plane fallback authoring.                 | `packages/web/tmp/ux-wall-debug-input-20260513/capture.mjs`, tracker summary | P0       | Done   |
+
+### WP-NEXT-30 — 3D Wall Grid Start Recovery
+
+- Priority: `P0`
+- Status: `Done`
+- Covers: `NEXT12-GAP-001`, `NEXT12-GAP-002`
+- Goal: restore draw-ability for 3D wall starts on the visible grid/work plane while preserving the explicit block for true empty-sky clicks.
+- Source ownership:
+  - `packages/web/src/Viewport.tsx`
+  - `packages/web/tmp/ux-wall-debug-input-20260513/capture.mjs`
+  - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
+- Acceptance:
+  - `elevation-axis` wall starts over model geometry still use visible model anchoring;
+  - `elevation-axis` wall starts over valid grid/level-plane space no longer emit `wall-blocked-no-visible-anchor`;
+  - true sky/no-plane clicks remain blocked with `wall-blocked-no-draft-plane`;
+  - seeded evidence proves two wall commands: one visible-model start and one level-plane fallback start.
+- Implementation + evidence:
+  - Removed the hard requirement for visible model anchors when the level/work-plane projection is valid.
+  - Hover prompt now shows a usable point for valid grid/work-plane starts instead of the invalid-anchor instruction.
+  - Seeded proof (`target-house-3`, `Front elevation`):
+    - `packages/web/tmp/ux-wall-debug-input-20260513/03-grid-level-plane-fallback.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/04-sky-start-blocked.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
+      - `createWallCount: 2`
+      - `wallStartWithoutAnchorCount: 1`
+      - `blockedNoVisibleAnchorCount: 0`
+      - `blockedNoDraftPlaneCount: 1`
+      - `wallLengthsMm: [7173.603, 2078.073]`

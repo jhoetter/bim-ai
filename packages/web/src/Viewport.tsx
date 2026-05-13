@@ -1762,32 +1762,15 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
               : null;
           if (tool === 'wall' && wallDraft?.projection.mode === 'elevation-axis') {
             wallAnchor = pickVisibleModelDraftAnchor(cx, cy);
-            if (!wallAnchor) {
-              emitWallDebug('wall-blocked-no-visible-anchor', {
-                screen: projected.screen,
-                planePoint: projected.point,
-                levelInfo,
-                projection: wallDraft.projection,
-                rawMmPerPx: measureDraftPlaneProjectionMmPerPx(cx, cy, levelInfo.elevationMm),
-              });
-              setAuthoringOverlay({
-                tool,
-                phase: 'pick-start',
-                levelName: levelInfo.name,
-                currentScreen: projected.screen,
-                currentPointMm: undefined,
-                wallProjectionMode: wallDraft.projection.mode,
-                wallAnchorRequired: true,
-              });
-              return true;
+            if (wallAnchor) {
+              wallDraft = createWallDraftScreenBasis(
+                cx,
+                cy,
+                levelInfo.elevationMm,
+                projected,
+                wallAnchor.point,
+              );
             }
-            wallDraft = createWallDraftScreenBasis(
-              cx,
-              cy,
-              levelInfo.elevationMm,
-              projected,
-              wallAnchor.point,
-            );
           }
           const startPoint = wallDraft?.basis?.originPointMm ?? projected.point;
           lineDraftStart = {
@@ -2308,9 +2291,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                 wallProjectionMode = wallDraft.projection.mode;
                 if (wallDraft.projection.mode === 'elevation-axis') {
                   const anchor = pickVisibleModelDraftAnchor(ev.clientX, ev.clientY);
-                  wallAnchorRequired = !anchor;
                   currentScreen = anchor?.screen ?? projected.screen;
-                  currentPointMm = anchor?.point;
+                  currentPointMm = anchor?.point ?? projected.point;
                 }
               }
               setAuthoringOverlay((prev) =>

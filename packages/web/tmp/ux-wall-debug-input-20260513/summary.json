@@ -1,6 +1,7 @@
 {
-  "commandTypes": ["createWall"],
-  "createWallCount": 1,
+  "commandTypes": ["createWall", "createWall"],
+  "createWallCount": 2,
+  "wallLengthsMm": [7173.6029052734375, 2078.0731636211763],
   "wallLengthMm": 7173.6029052734375,
   "projectionModes": ["elevation-axis"],
   "tracePhases": [
@@ -34,11 +35,34 @@
     "wall-preview",
     "wall-preview",
     "wall-commit",
+    "wall-start",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-commit",
     "wall-blocked-no-draft-plane"
   ],
+  "wallStartWithoutAnchorCount": 1,
   "blockedNoVisibleAnchorCount": 0,
   "blockedNoDraftPlaneCount": 1,
-  "console3dWallCount": 5,
+  "console3dWallCount": 9,
   "consoleSamples": [
     {
       "type": "info",
@@ -55,7 +79,7 @@
   ],
   "firstTrace": {
     "phase": "wall-start",
-    "atMs": 8387.5,
+    "atMs": 6000.699999988079,
     "camera": {
       "position": {
         "x": 20.499999999999996,
@@ -147,7 +171,7 @@
   },
   "lastTrace": {
     "phase": "wall-blocked-no-draft-plane",
-    "atMs": 10402.799999952316,
+    "atMs": 9581.100000023842,
     "camera": {
       "position": {
         "x": 20.499999999999996,
