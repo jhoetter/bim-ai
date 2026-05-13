@@ -1,0 +1,68 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "8ae64244f675",
+  "session_id": "019e1f88-adaf-7791-baf4-f7e0bc958757",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-13T04:48:54.375107Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/tmp/ux-next-wp05-20260513/02-rear-right-axonometric.png",
+    "packages/web/tmp/ux-next-wp05-20260513/03-front-elevation.png",
+    "packages/web/tmp/ux-next-wp05-20260513/05-roof-court-high-axonometric.png",
+    "packages/web/tmp/ux-next-wp05-20260513/summary.json",
+    "spec/ux-bim-ai-next-tracker.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.3-codex",
+  "turn_id": "4260371ecd91",
+  "checkpoint_transcript_start": 715,
+  "transcript_lines_at_start": 715,
+  "token_usage": {
+    "input_tokens": 118698,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2264192,
+    "output_tokens": 15580,
+    "api_call_count": 38
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-13T04:48:54.308636Z",
+    "agent_lines": 0,
+    "agent_removed": 30,
+    "human_added": 418,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 418,
+    "total_lines_changed": 448,
+    "agent_percentage": 6.696428571428571,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 137,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/packages/web/tmp/ux-footer-activity-reconcile-live-20260512/summary.json": 5,
+        "packages/web/tmp/ux-3d-secondary-reconcile-20260512/summary.json": 7,
+        "packages/web/tmp/ux-canvas-scale-readout-20260512/summary.json": 6,
+        "packages/web/tmp/ux-canvas-secondary-reconcile-20260512/summary.json": 21,
+        "packages/web/tmp/ux-dia-006-007-live-20260512/summary.json": 5,
+        "packages/web/tmp/ux-dia-012-milestone-live-20260512/summary.json": 8,
+        "packages/web/tmp/ux-dia-013-onboarding-live-20260512/summary.json": 8,
+        "packages/web/tmp/ux-footer-jobs-20260512/summary.json": 9,
+        "packages/web/tmp/ux-live-closeout-20260512/summary.json": 12,
+        "packages/web/tmp/ux-ribbon-per-view-20260512/summary.json": 19,
+        "packages/web/tmp/ux-sheet-review-ribbon-20260512/summary.json": 14,
+        "packages/web/tmp/ux-shell-reconcile-20260512/summary.json": 12,
+        "packages/web/tmp/ux-snap-footer-reconcile-live-20260512/summary.json": 7,
+        "packages/web/tmp/ux-stat-017-temp-visibility-20260512/summary.json": 4
+      }
+    }
+  ]
+}

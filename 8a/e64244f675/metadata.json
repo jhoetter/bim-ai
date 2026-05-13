@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "8ae64244f675",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/tmp/ux-next-wp05-20260513/02-rear-right-axonometric.png",
+    "packages/web/tmp/ux-next-wp05-20260513/03-front-elevation.png",
+    "packages/web/tmp/ux-next-wp05-20260513/05-roof-court-high-axonometric.png",
+    "packages/web/tmp/ux-next-wp05-20260513/summary.json",
+    "spec/ux-bim-ai-next-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/8a/e64244f675/0/metadata.json",
+      "transcript": "/8a/e64244f675/0/full.jsonl",
+      "content_hash": "/8a/e64244f675/0/content_hash.txt",
+      "prompt": "/8a/e64244f675/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 118698,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2264192,
+    "output_tokens": 15580,
+    "api_call_count": 38
+  }
+}

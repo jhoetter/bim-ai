@@ -1,0 +1,17 @@
+<image name=[Image #1]>
+
+---
+
+</image>
+
+---
+
+[Image #1] i see you changed the layout as discussed, but there are still flaws: the primary left sidebar is supposed to go 100% of the height; the header and footer are NOT over/below the primary left sidebar, it really goes from full top to full bottom. make that change and then continue with the rest
+
+---
+
+continue
+
+---
+
+continue until you are 100% done with spec/ux-bim-ai-next-tracker.md; don't stop after workpackages but continue...
