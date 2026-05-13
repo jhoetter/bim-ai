@@ -49,7 +49,7 @@ The foundational seven-region ownership model is in place, but real usage still 
 | NEXT-GAP-006 | 3D wall openings can render incorrectly (wall visible in window/opening).                                          | `Viewport.tsx` wall/opening CSG path                                                         | P0       | Done   |
 | NEXT-GAP-007 | 3D edit affordances are inconsistent (insert window/opening workflows not robust in-context).                      | `workspace/shell/RibbonBar.tsx`, `workspace/WorkspaceRightRail.tsx`, commands/capabilities   | P0       | Done   |
 | NEXT-GAP-008 | Missing explicit per-level visibility controls in 3D.                                                              | `workspace/viewport/Viewport3DLayersPanel.tsx`, level/view state                             | P1       | Done   |
-| NEXT-GAP-009 | Room labels can be clipped/illegible.                                                                              | `plan/planElementMeshBuilders.ts`, plan symbology/text sizing                                | P1       | Open   |
+| NEXT-GAP-009 | Room labels can be clipped/illegible.                                                                              | `plan/planElementMeshBuilders.ts`, plan symbology/text sizing                                | P1       | Done   |
 | NEXT-GAP-010 | Ribbon information architecture still feels uneven by view (annotate parity, icon consistency, dead/weak actions). | `workspace/shell/RibbonBar.tsx`, command metadata                                            | P1       | Done   |
 | NEXT-GAP-011 | Discipline/lens switching does not consistently change ribbon + secondary + element + canvas semantics.            | lens state, mode surfaces, command gating                                                    | P0       | Done   |
 | NEXT-GAP-012 | Creation of new floor plans/3D/sections/sheets/schedules is not obvious enough.                                    | primary nav, project browser, commands                                                       | P1       | Open   |
@@ -281,7 +281,7 @@ Evidence (2026-05-13):
 ### WP-NEXT-08 — Plan Label Legibility Pass
 
 - Priority: `P1`
-- Status: `Open`
+- Status: `Done`
 - Covers: `NEXT-GAP-009`
 - Goal: fix room label clipping and improve readable width handling.
 - Source ownership:
@@ -291,6 +291,19 @@ Evidence (2026-05-13):
   - room labels display full text per selected annotation scale rules,
   - no single-character clipping in seeded floorplan states,
   - screenshot + unit snapshot coverage for long labels.
+
+Evidence (2026-05-13):
+
+- `planAnnotationLabelSprite` now uses dynamic multi-line label layout with width-aware canvas sizing and width-aware sprite scale, replacing the fixed-width label pill that clipped long room labels:
+  - `packages/web/src/plan/planElementMeshBuilders.ts`
+- Added deterministic unit coverage for room label line wrapping and overflow handling:
+  - `packages/web/src/plan/planRoomLabelLayout.test.ts`
+- Seeded runtime proof (`make seed name=target-house-3`, `make dev name=target-house-3`) captured in:
+  - `packages/web/tmp/ux-next-wp08-20260513/01-plan-room-label-baseline.png`
+  - `packages/web/tmp/ux-next-wp08-20260513/02-plan-room-label-long-name.png`
+  - `packages/web/tmp/ux-next-wp08-20260513/03-plan-room-label-very-long-name.png`
+  - `packages/web/tmp/ux-next-wp08-20260513/summary.json`
+- Summary includes seeded store mutation evidence for long and very-long room names on `hf-room-hall` with the active plan view id (`hf-pv-upper`), validating runtime long-label layout behavior in the seeded app.
 
 ### WP-NEXT-09 — Ribbon IA And Per-View Coherence Pass
 

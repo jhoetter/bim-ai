@@ -1,0 +1,28 @@
+{
+  "runAt": "2026-05-13T05:47:22.108Z",
+  "checks": {
+    "baseline": {
+      "ok": true,
+      "activePlanViewId": "hf-pv-upper",
+      "roomId": "hf-room-hall",
+      "roomName": "Hall / landing",
+      "roomCount": 10
+    },
+    "longLabelMutation": {
+      "ok": true,
+      "roomId": "hf-room-hall",
+      "longName": "Compact Bathroom Layout Type A with Shower Niche and Storage Wall",
+      "activePlanViewId": "hf-pv-upper"
+    },
+    "veryLongLabelMutation": {
+      "ok": true,
+      "roomId": "hf-room-hall",
+      "veryLongName": "Northwest Family Living and Dining Room with Extended Built-In Media and Library Partition"
+    }
+  },
+  "screenshots": [
+    "01-plan-room-label-baseline.png",
+    "02-plan-room-label-long-name.png",
+    "03-plan-room-label-very-long-name.png"
+  ]
+}

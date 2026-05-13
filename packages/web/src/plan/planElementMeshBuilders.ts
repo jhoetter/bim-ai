@@ -1477,7 +1477,7 @@ export function planAnnotationLabelSprite(
   fontScale = 1,
 ): THREE.Sprite {
   const scaleMul = Number.isFinite(fontScale) && fontScale > 0 ? fontScale : 1;
-  const trimmed = text.trim().slice(0, 96);
+  const trimmed = text.trim().slice(0, 160);
   const safe = trimmed.length ? trimmed : '—';
 
   const doc = typeof globalThis.document !== 'undefined' ? globalThis.document : null;
@@ -1509,12 +1509,13 @@ export function planAnnotationLabelSprite(
       ? (globalThis as { devicePixelRatio: number }).devicePixelRatio
       : 1;
   const fontPx = Math.round(64 * Math.min(Math.max(dpr, 1), 2));
-  const size = Math.max(Math.floor(fontPx * 1.125), 32);
-  const ch = Math.max(Math.floor(fontPx * 1.5625), 36);
+  const baselineSize = Math.max(Math.floor(fontPx * 1.125), 32);
+  const lines = planAnnotationLabelLines(safe);
+  const lineHeight = Math.max(Math.floor(fontPx * 1.18), Math.floor(fontPx * 0.95));
 
   const canvas = doc.createElement('canvas');
-  canvas.width = size;
-  canvas.height = ch;
+  canvas.width = baselineSize;
+  canvas.height = Math.max(Math.floor(fontPx * 1.5625), 36);
   let ctx: CanvasRenderingContext2D | null = null;
   try {
     ctx = canvas.getContext('2d');
@@ -1523,11 +1524,21 @@ export function planAnnotationLabelSprite(
   }
   if (!ctx) return emptySprite();
 
+  ctx.font = `500 ${fontPx}px Inter,system-ui,sans-serif`;
+  const pad = Math.max(12, Math.floor(fontPx / 16));
+  const measuredTextWidth = Math.max(...lines.map((line) => ctx!.measureText(line).width), fontPx);
+  canvas.width = Math.max(baselineSize, Math.ceil(measuredTextWidth + pad * 3));
+  canvas.height = Math.max(
+    Math.floor(fontPx * 1.5625),
+    Math.ceil(lines.length * lineHeight + pad * 2),
+  );
+  ctx = canvas.getContext('2d');
+  if (!ctx) return emptySprite();
+
   ctx.globalAlpha = 0.92;
   ctx.strokeStyle = 'rgba(255,255,255,0.78)';
   ctx.fillStyle = getPlanPalette().tagBg;
   ctx.lineWidth = 4;
-  const pad = Math.max(12, Math.floor(fontPx / 16));
   const r = pad * 1.05;
   const wBox = canvas.width - pad * 2;
   ctx.beginPath();
@@ -1548,14 +1559,19 @@ export function planAnnotationLabelSprite(
   ctx.fillStyle = getPlanPalette().tagText;
   ctx.strokeStyle = 'rgba(255,255,255,0.35)';
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  try {
-    ctx.lineWidth = 3;
-    ctx.strokeText(safe, canvas.width / 2, canvas.height / 2);
-  } catch {
-    /* strokeText unsupported in some canvas implementations */
+  ctx.textBaseline = 'alphabetic';
+  const totalTextHeight = lines.length * lineHeight;
+  let baselineY = (canvas.height - totalTextHeight) / 2 + lineHeight * 0.8;
+  for (const line of lines) {
+    try {
+      ctx.lineWidth = 3;
+      ctx.strokeText(line, canvas.width / 2, baselineY);
+    } catch {
+      /* strokeText unsupported in some canvas implementations */
+    }
+    ctx.fillText(line, canvas.width / 2, baselineY);
+    baselineY += lineHeight;
   }
-  ctx.fillText(safe, canvas.width / 2, canvas.height / 2);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.needsUpdate = true;
@@ -1567,11 +1583,65 @@ export function planAnnotationLabelSprite(
   });
   const sprite = new THREE.Sprite(mat);
   sprite.position.set(cxM, PLAN_Y + 0.003, czM);
-  sprite.scale.set(0.22 * scaleMul, 0.22 * (canvas.height / canvas.width) * scaleMul, 1);
+  sprite.scale.set(
+    0.22 * (canvas.width / baselineSize) * scaleMul,
+    0.22 * (canvas.height / baselineSize) * scaleMul,
+    1,
+  );
   sprite.renderOrder = 10;
   sprite.userData.planAnnotationOverlay = true;
   if (pickId) sprite.userData.bimPickId = pickId;
   return sprite;
+}
+
+export function planAnnotationLabelLines(
+  rawText: string,
+  maxCharsPerLine = 28,
+  maxLines = 3,
+): string[] {
+  const text = rawText.replace(/\s+/g, ' ').trim();
+  if (!text) return ['—'];
+  if (text.length <= maxCharsPerLine) return [text];
+
+  const lines: string[] = [];
+  let current = '';
+  const tokens = text.split(' ');
+
+  const pushToken = (token: string): void => {
+    if (token.length <= maxCharsPerLine) {
+      lines.push(token);
+      return;
+    }
+    let rest = token;
+    while (rest.length > maxCharsPerLine) {
+      lines.push(rest.slice(0, maxCharsPerLine));
+      rest = rest.slice(maxCharsPerLine);
+    }
+    if (rest) lines.push(rest);
+  };
+
+  for (const token of tokens) {
+    if (!token) continue;
+    if (!current) {
+      current = token;
+      continue;
+    }
+    const candidate = `${current} ${token}`;
+    if (candidate.length <= maxCharsPerLine) {
+      current = candidate;
+      continue;
+    }
+    pushToken(current);
+    current = token;
+  }
+  if (current) pushToken(current);
+
+  if (lines.length <= maxLines) return lines;
+  const clipped = lines.slice(0, maxLines);
+  const tailLimit = Math.max(3, maxCharsPerLine - 3);
+  const tail = clipped[maxLines - 1]!;
+  clipped[maxLines - 1] = `${tail.slice(0, tailLimit).trimEnd()}...`;
+  return clipped;
 }
 
 export function gridLineThree(g: Extract<Element, { kind: 'grid_line' }>): THREE.Group {
