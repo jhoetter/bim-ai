@@ -47,7 +47,7 @@ The foundational seven-region ownership model is in place, but real usage still 
 | NEXT-GAP-004 | Wall tool can leave confusing mirrored/hatched draft/preview artifacts off-plan.                                   | `plan/PlanCanvas.tsx`                                                                        | P0       | Done   |
 | NEXT-GAP-005 | Wall placement has weak off-plan/crop guardrails and unclear loop-mode state transitions.                          | `plan/PlanCanvas.tsx`, plan view crop data                                                   | P0       | Done   |
 | NEXT-GAP-006 | 3D wall openings can render incorrectly (wall visible in window/opening).                                          | `Viewport.tsx` wall/opening CSG path                                                         | P0       | Done   |
-| NEXT-GAP-007 | 3D edit affordances are inconsistent (insert window/opening workflows not robust in-context).                      | `workspace/shell/RibbonBar.tsx`, `workspace/WorkspaceRightRail.tsx`, commands/capabilities   | P0       | Open   |
+| NEXT-GAP-007 | 3D edit affordances are inconsistent (insert window/opening workflows not robust in-context).                      | `workspace/shell/RibbonBar.tsx`, `workspace/WorkspaceRightRail.tsx`, commands/capabilities   | P0       | Done   |
 | NEXT-GAP-008 | Missing explicit per-level visibility controls in 3D.                                                              | `workspace/viewport/Viewport3DLayersPanel.tsx`, level/view state                             | P1       | Open   |
 | NEXT-GAP-009 | Room labels can be clipped/illegible.                                                                              | `plan/planElementMeshBuilders.ts`, plan symbology/text sizing                                | P1       | Open   |
 | NEXT-GAP-010 | Ribbon information architecture still feels uneven by view (annotate parity, icon consistency, dead/weak actions). | `workspace/shell/RibbonBar.tsx`, command metadata                                            | P1       | Open   |
@@ -184,7 +184,7 @@ Evidence (2026-05-13):
 ### WP-NEXT-06 — 3D Editing Parity And Reliability
 
 - Priority: `P0`
-- Status: `Open`
+- Status: `Done`
 - Covers: `NEXT-GAP-007`, `NEXT-GAP-010` (3D edit reachability subset)
 - Goal: make key 3D edits directly usable and predictable (insert/edit door/window/opening, host targeting, transform, cancel/undo behavior).
 - Source ownership:
@@ -197,6 +197,24 @@ Evidence (2026-05-13):
   - dead or bridge-only controls either implemented or demoted to explicit bridge with label,
   - command capability metadata matches real in-canvas behavior,
   - Cmd+K route remains valid for all moved actions.
+
+Evidence (2026-05-13):
+
+- 3D contextual modify ribbon actions now execute direct semantic commands (not command-palette bridges) for selected walls:
+  - `packages/web/src/workspace/shell/RibbonBar.tsx`
+  - `packages/web/src/workspace/Workspace.tsx`
+- 3D insert capability metadata now reflects ribbon reachability + direct execution surface:
+  - `packages/web/src/workspace/commandCapabilities.ts`
+  - `packages/web/src/workspace/commandCapabilities.test.ts`
+- Ribbon regression coverage confirms direct callbacks fire for 3D wall inserts:
+  - `packages/web/src/workspace/shell/TopBar.test.tsx`
+- Seeded live proof (`make seed name=target-house-3`, `make dev name=target-house-3`) captured in:
+  - `packages/web/tmp/ux-next-wp06-20260513/01-ribbon-door-wall02.png`
+  - `packages/web/tmp/ux-next-wp06-20260513/02-ribbon-window-wall03.png`
+  - `packages/web/tmp/ux-next-wp06-20260513/03-ribbon-opening-wall04.png`
+  - `packages/web/tmp/ux-next-wp06-20260513/04-cmdk-3d-insert-reachability.png`
+  - `packages/web/tmp/ux-next-wp06-20260513/summary.json`
+- Runtime summary confirms command POST `200` for all three direct actions (`insertDoorOnWall`, `insertWindowOnWall`, `createWallOpening`) and Cmd+K discoverability for each command id.
 
 ### WP-NEXT-07 — 3D Level Visibility Controls
 

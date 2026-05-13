@@ -41,6 +41,9 @@ type RibbonActionId =
   | 'command-palette'
   | 'family-library'
   | 'settings'
+  | '3d-insert-door'
+  | '3d-insert-window'
+  | '3d-insert-opening'
   | '3d-save-view'
   | '3d-reset-view'
   | '3d-update-view'
@@ -104,6 +107,9 @@ export interface RibbonBarProps {
   onSaveCurrentViewpoint?: () => void;
   onResetActiveSavedViewpoint?: () => void;
   onUpdateActiveSavedViewpoint?: () => void;
+  onInsertDoorOnSelectedWall3d?: () => void;
+  onInsertWindowOnSelectedWall3d?: () => void;
+  onInsertOpeningOnSelectedWall3d?: () => void;
   onPlaceActiveSectionOnSheet?: () => void;
   onOpenActiveSectionSourcePlan?: () => void;
   onIncreaseActiveSectionCropDepth?: () => void;
@@ -137,6 +143,9 @@ export function RibbonBar({
   onSaveCurrentViewpoint,
   onResetActiveSavedViewpoint,
   onUpdateActiveSavedViewpoint,
+  onInsertDoorOnSelectedWall3d,
+  onInsertWindowOnSelectedWall3d,
+  onInsertOpeningOnSelectedWall3d,
   onPlaceActiveSectionOnSheet,
   onOpenActiveSectionSourcePlan,
   onIncreaseActiveSectionCropDepth,
@@ -195,6 +204,9 @@ export function RibbonBar({
       'command-palette': onOpenCommandPalette,
       'family-library': onOpenFamilyLibrary,
       settings: onOpenSettings,
+      '3d-insert-door': onInsertDoorOnSelectedWall3d,
+      '3d-insert-window': onInsertWindowOnSelectedWall3d,
+      '3d-insert-opening': onInsertOpeningOnSelectedWall3d,
       '3d-save-view': onSaveCurrentViewpoint,
       '3d-reset-view': onResetActiveSavedViewpoint,
       '3d-update-view': onUpdateActiveSavedViewpoint,
@@ -1040,9 +1052,9 @@ function build3dModifyTab(selectedElementKind: string): RibbonTab {
         commands:
           selectedElementKind === 'wall'
             ? [
-                action('command-palette', 'Insert Door', 'door', '3d-insert-door'),
-                action('command-palette', 'Insert Window', 'window', '3d-insert-window'),
-                action('command-palette', 'Opening', 'wall-opening', '3d-insert-opening'),
+                action('3d-insert-door', 'Insert Door', 'door', '3d-insert-door'),
+                action('3d-insert-window', 'Insert Window', 'window', '3d-insert-window'),
+                action('3d-insert-opening', 'Opening', 'wall-opening', '3d-insert-opening'),
               ]
             : [
                 action(
@@ -1148,6 +1160,12 @@ function ribbonCapabilityId(command: RibbonCommand): string | null {
       return 'library.open-family';
     case 'settings':
       return 'help.keyboard-shortcuts';
+    case '3d-insert-door':
+      return 'view.3d.wall.insert-door';
+    case '3d-insert-window':
+      return 'view.3d.wall.insert-window';
+    case '3d-insert-opening':
+      return 'view.3d.wall.insert-opening';
     case '3d-save-view':
       return 'view.3d.saved-view.save-current';
     case '3d-reset-view':

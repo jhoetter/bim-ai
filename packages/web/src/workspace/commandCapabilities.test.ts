@@ -187,6 +187,7 @@ describe('command capability graph', () => {
     ]);
     expect(getCommandCapability('view.3d.wall.insert-door')?.surfaces).toEqual([
       'cmd-k',
+      'ribbon',
       'element-sidebar',
       'canvas-context',
     ]);

@@ -427,10 +427,27 @@ describe('RibbonBar — F-005', () => {
   });
 
   it('scopes 3D contextual modify actions by selection kind — UX-R-003', () => {
-    const wallSelection = render(<RibbonBar activeMode="3d" selectedElementKind="wall" />);
+    const onInsertDoorOnSelectedWall3d = vi.fn();
+    const onInsertWindowOnSelectedWall3d = vi.fn();
+    const onInsertOpeningOnSelectedWall3d = vi.fn();
+    const wallSelection = render(
+      <RibbonBar
+        activeMode="3d"
+        selectedElementKind="wall"
+        onInsertDoorOnSelectedWall3d={onInsertDoorOnSelectedWall3d}
+        onInsertWindowOnSelectedWall3d={onInsertWindowOnSelectedWall3d}
+        onInsertOpeningOnSelectedWall3d={onInsertOpeningOnSelectedWall3d}
+      />,
+    );
     fireEvent.click(wallSelection.getByTestId('ribbon-tab-modify'));
     expect(wallSelection.getByTestId('3d-insert-door')).toBeTruthy();
     expect(wallSelection.getByTestId('3d-insert-window')).toBeTruthy();
+    fireEvent.click(wallSelection.getByTestId('3d-insert-door'));
+    fireEvent.click(wallSelection.getByTestId('3d-insert-window'));
+    fireEvent.click(wallSelection.getByTestId('3d-insert-opening'));
+    expect(onInsertDoorOnSelectedWall3d).toHaveBeenCalledTimes(1);
+    expect(onInsertWindowOnSelectedWall3d).toHaveBeenCalledTimes(1);
+    expect(onInsertOpeningOnSelectedWall3d).toHaveBeenCalledTimes(1);
     wallSelection.unmount();
 
     const beamSelection = render(<RibbonBar activeMode="3d" selectedElementKind="beam" />);

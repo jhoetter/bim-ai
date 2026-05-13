@@ -1668,6 +1668,44 @@ export function Workspace(): JSX.Element {
   /* ── CHR-V3-10: canvas hint (select/tool idle) ────────────────────── */
   const showCanvasHint = !selectedId && planTool === 'select';
 
+  const runSelectedWall3dInsert = useCallback(
+    (kind: 'door' | 'window' | 'opening') => {
+      if (!selectedId) return;
+      const selected = elementsById[selectedId];
+      if (!selected || selected.kind !== 'wall') return;
+      if (effectiveMode !== '3d' && effectiveMode !== 'plan-3d') return;
+      if (kind === 'door') {
+        void onSemanticCommand({
+          type: 'insertDoorOnWall',
+          wallId: selected.id,
+          alongT: 0.5,
+          widthMm: 900,
+        });
+        return;
+      }
+      if (kind === 'window') {
+        void onSemanticCommand({
+          type: 'insertWindowOnWall',
+          wallId: selected.id,
+          alongT: 0.5,
+          widthMm: 1200,
+          sillHeightMm: 900,
+          heightMm: 1500,
+        });
+        return;
+      }
+      void onSemanticCommand({
+        type: 'createWallOpening',
+        hostWallId: selected.id,
+        alongTStart: 0.45,
+        alongTEnd: 0.55,
+        sillHeightMm: 200,
+        headHeightMm: 2400,
+      });
+    },
+    [effectiveMode, elementsById, onSemanticCommand, selectedId],
+  );
+
   /* ── Compose AppShell slots ───────────────────────────────────────── */
   return (
     <>
@@ -2058,6 +2096,9 @@ export function Workspace(): JSX.Element {
             onSaveCurrentViewpoint={saveCurrentViewpoint}
             onResetActiveSavedViewpoint={resetActiveSavedViewpoint}
             onUpdateActiveSavedViewpoint={updateActiveSavedViewpoint}
+            onInsertDoorOnSelectedWall3d={() => runSelectedWall3dInsert('door')}
+            onInsertWindowOnSelectedWall3d={() => runSelectedWall3dInsert('window')}
+            onInsertOpeningOnSelectedWall3d={() => runSelectedWall3dInsert('opening')}
             onPlaceActiveSectionOnSheet={placeActiveSectionOnSheet}
             onOpenActiveSectionSourcePlan={openActiveSectionSourcePlan}
             onIncreaseActiveSectionCropDepth={() => adjustActiveSectionCropDepth(500)}

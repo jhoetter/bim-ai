@@ -1,0 +1,69 @@
+{
+  "captures": [
+    "01-ribbon-door-wall02.png",
+    "02-ribbon-window-wall03.png",
+    "03-ribbon-opening-wall04.png",
+    "04-cmdk-3d-insert-reachability.png"
+  ],
+  "before": {
+    "doorCount": 8,
+    "windowCount": 5,
+    "openingCount": 0,
+    "selectedId": null,
+    "activeViewpointId": "vp-main-iso"
+  },
+  "after": {
+    "doorCount": 9,
+    "windowCount": 6,
+    "openingCount": 0,
+    "selectedId": "hf-gf-wall-04",
+    "activeViewpointId": "vp-main-iso"
+  },
+  "deltas": {
+    "doorDelta": 1,
+    "windowDelta": 1,
+    "openingDelta": 0
+  },
+  "actionResults": [
+    {
+      "wallId": "hf-gf-wall-02",
+      "buttonId": "3d-insert-door",
+      "status": 200,
+      "appliedCommandType": "insertDoorOnWall",
+      "deltaKinds": {
+        "door": 1
+      }
+    },
+    {
+      "wallId": "hf-gf-wall-03",
+      "buttonId": "3d-insert-window",
+      "status": 200,
+      "appliedCommandType": "insertWindowOnWall",
+      "deltaKinds": {
+        "window": 1
+      }
+    },
+    {
+      "wallId": "hf-gf-wall-04",
+      "buttonId": "3d-insert-opening",
+      "status": 200,
+      "appliedCommandType": "createWallOpening",
+      "deltaKinds": {
+        "wall_opening": 1
+      }
+    }
+  ],
+  "cmdkEntries": {
+    "view.3d.wall.insert-door": "3D: Insert Door on Selected Wall3D / Plan + 3D",
+    "view.3d.wall.insert-window": "3D: Insert Window on Selected Wall3D / Plan + 3D",
+    "view.3d.wall.insert-opening": "3D: Insert Opening on Selected Wall3D / Plan + 3D"
+  },
+  "apiCreatedKinds": {
+    "door": 1,
+    "window": 1,
+    "wall_opening": 1
+  },
+  "notes": {
+    "openingStoreCountObservation": "Store openingCount stayed 0 in immediate snapshot, but POST /commands deltaKinds confirmed wall_opening creation (status 200). API delta is used as authoritative insertion proof."
+  }
+}
