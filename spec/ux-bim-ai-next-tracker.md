@@ -1211,3 +1211,59 @@ Evidence (2026-05-13):
       - `createWallCount: 1`
   - Remaining closure work:
     - decide whether front/elevation wall authoring should remain constrained placement or offer an explicit “open associated plan / choose work plane” branch for clicks that visually land in sky/behind the model.
+
+## Reopened Tracker (2026-05-13, feedback round 11)
+
+| Gap ID         | Problem Statement                                                                                                                   | Canonical Surfaces / Files                                                    | Priority | Status |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | -------- | ------ |
+| NEXT11-GAP-001 | 3D wall debug trace was invisible in DevTools console unless inspecting globals/custom events manually.                             | `Viewport.tsx` debug trace, wall debug Playwright capture                     | P0       | Done   |
+| NEXT11-GAP-002 | Direct 3D wall left-drag could be captured as authoring input but produce no wall, leaving the interaction feeling cursor-trapped.  | `Viewport.tsx` direct 3D pointer lifecycle, wall debug Playwright capture     | P0       | Done   |
+| NEXT11-GAP-003 | Wall debug screenshots could silently run on the default seed when multiple seeded models existed.                                  | `packages/web/tmp/ux-wall-debug-*/capture.mjs`, seeded project selector usage | P0       | Done   |
+| NEXT11-GAP-004 | In front/elevation-like 3D views, wall starts used a far level-plane ray hit instead of the visible model surface under the cursor. | `Viewport.tsx` 3D wall projection basis and visible model raycast anchor      | P0       | Done   |
+| NEXT11-GAP-005 | Empty-sky wall clicks in 3D could silently no-op with no prompt and duplicate debug attempts on pointer up.                         | `Viewport.tsx` wall blocked-state overlay, pointer down/up draft lifecycle    | P0       | Done   |
+
+### WP-NEXT-29 — 3D Wall Debug Visibility + Drag Input Recovery
+
+- Priority: `P0`
+- Status: `Done`
+- Covers: `NEXT11-GAP-001`, `NEXT11-GAP-002`, `NEXT11-GAP-003`, `NEXT11-GAP-004`, `NEXT11-GAP-005`
+- Goal: make the wall debug path observable in the browser console, remove the no-op direct-drag trap in 3D wall authoring, and anchor front/elevation wall starts to visible model geometry instead of unstable sky/level-plane intersections.
+- Source ownership:
+  - `packages/web/src/Viewport.tsx`
+  - `packages/web/tmp/ux-wall-debug-pipeline-20260513/capture.mjs`
+  - `packages/web/tmp/ux-wall-debug-input-20260513/capture.mjs`
+- Acceptance:
+  - in local dev, or when `localStorage["bim.debug.3dWall"] = "true"`, wall debug records appear as browser console entries and remain available in `window.__BIM_AI_3D_WALL_DEBUG__`;
+  - direct 3D line tools, including `Wall`, support press-drag-release as a real draft gesture instead of swallowing the drag;
+  - front/elevation-style wall placement uses the visible model hit under the cursor as the wall start anchor while retaining the old level-plane point only as diagnostic `planePoint`;
+  - empty-sky clicks that cannot resolve a visible anchor or draft plane are blocked with an explicit prompt and do not emit a wall command;
+  - pointer cancel / lost capture clears transient drag state so navigation is not left stuck;
+  - seeded UI proof explicitly selects `target-house-3` before validating.
+- Implementation + evidence:
+  - `emitWallDebug` now writes compact JSON `[bim:3d-wall]` console info entries in local dev / explicit debug mode in addition to global trace storage and custom events, so DevTools shows actual coordinates instead of only collapsed object previews.
+  - Direct 3D line tools seed the start point on pointer-down, update preview during drag, and commit on pointer-up when the drag exceeds threshold.
+  - Wall start in `elevation-axis` projection now raycasts visible model geometry and stores the hit as the canonical `lineDraftStart.point`; the former far level-plane ray hit is kept as `planePoint` in diagnostics only.
+  - Wall clicks with no draft-plane hit and no visible model anchor emit `wall-blocked-no-draft-plane`, keep the tool in `pick-start`, and show the explicit “Empty sky is not a valid 3D wall anchor” instruction.
+  - Pointer-up now suppresses duplicate blocked attempts when pointer-down already consumed a direct line-tool click.
+  - Added pointer-cancel and lost-pointer-capture cleanup for tool draft and grip drag state.
+  - Updated wall debug capture scripts to select `Seed Library / target-house-3` explicitly through the project selector.
+  - Seeded proof (`make seed name=target-house-3`, `make dev name=target-house-3`):
+    - `packages/web/tmp/ux-wall-debug-input-20260513/01-drag-preview-console-debug.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/02-drag-release-wall-commit.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/03-sky-start-blocked.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/04-after-escape-navigation-drag.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
+      - `createWallCount: 1`
+      - `projectionModes: ["elevation-axis"]`
+      - `console3dWallCount: 5`
+      - `blockedNoDraftPlaneCount: 1`
+      - `firstTrace.point == firstTrace.anchor.point == command.start`
+      - `firstTrace.planePoint` retained as diagnostics and no longer used as the canonical wall start
+      - `wallLengthMm: 7173.603`
+    - `packages/web/tmp/ux-wall-debug-pipeline-20260513/01-front-elevation-preview.png`
+    - `packages/web/tmp/ux-wall-debug-pipeline-20260513/02-front-elevation-after-commit.png`
+    - `packages/web/tmp/ux-wall-debug-pipeline-20260513/summary.json`
+      - `createWallCount: 1`
+      - `projectionModes: ["elevation-axis"]`
+      - `firstTrace.anchor.elementId: "hf-roof-main"`
+      - committed wall start matches the visible roof anchor, not the old far `planePoint`.

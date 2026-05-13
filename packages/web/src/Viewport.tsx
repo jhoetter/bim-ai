@@ -203,6 +203,7 @@ type Authoring3dOverlayState = {
   wallPreviewDirectionEndScreen?: ScreenPoint;
   wallFlipActive?: boolean;
   wallProjectionMode?: WallDraftProjectionMode;
+  wallAnchorRequired?: boolean;
 };
 
 const DIRECT_3D_AUTHORING_TOOLS = new Set<Direct3dAuthoringTool>([
@@ -862,6 +863,9 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
     const DRAG_THRESHOLD_PX = 5;
     let lastX = 0;
     let lastY = 0;
+    let toolDraftTool: Direct3dAuthoringTool | null = null;
+    let toolDraftStartedLineOnDown = false;
+    let toolDraftConsumedOnDown = false;
     const raycaster = new THREE.Raycaster();
     const ndc = new THREE.Vector2();
     /** EDT-03 — active grip drag state, set on grip-pointer-down and cleared on up. */
@@ -887,6 +891,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       screen?: ScreenPoint;
       wallBasis?: WallDraftScreenBasis;
       wallProjection?: WallDraftProjectionClassification;
+      wallAnchorElementId?: string;
     } | null = null;
     let polygonDraft: {
       tool: 'ceiling' | 'floor' | 'roof' | 'shaft' | 'area';
@@ -943,8 +948,10 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
 
     function emitWallDebug(phase: string, payload: Record<string, unknown>): void {
       try {
-        if (window.localStorage.getItem('bim.debug.3dWall') !== 'true') return;
-        const record = {
+        const debugEnabled =
+          import.meta.env.DEV || window.localStorage.getItem('bim.debug.3dWall') === 'true';
+        if (!debugEnabled) return;
+        const record: Record<string, unknown> = {
           phase,
           atMs: performance.now(),
           camera: wallDebugCameraSnapshot(),
@@ -957,6 +964,27 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         log.push(record);
         if (log.length > 300) log.splice(0, log.length - 300);
         debugWindow.__BIM_AI_3D_WALL_DEBUG__ = log;
+        const command = record.command as
+          | { type?: string; start?: unknown; end?: unknown }
+          | undefined;
+        const consoleRecord = {
+          phase: record.phase,
+          mode: (record.projection as { mode?: string } | undefined)?.mode,
+          lengthMm: record.lengthMm,
+          point: record.point,
+          planePoint: record.planePoint,
+          anchor: record.anchor,
+          start: record.start,
+          end: record.end,
+          startScreen: record.startScreen,
+          endScreen: record.endScreen,
+          command: command?.type
+            ? { type: command.type, start: command.start, end: command.end }
+            : undefined,
+        };
+        if (phase !== 'wall-preview' || log.length % 12 === 0) {
+          console.info('[bim:3d-wall]', JSON.stringify(consoleRecord));
+        }
         window.dispatchEvent(new CustomEvent('bim:debug:3d-wall', { detail: record }));
       } catch {
         /* debug-only path */
@@ -1064,7 +1092,38 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       if (!hit) return null;
       return {
         point: hit,
-        screen: { x: cx - rect.left, y: cy - rect.top },
+        screen: clientToCanvasScreen(cx, cy),
+      };
+    }
+
+    function clientToCanvasScreen(cx: number, cy: number): ScreenPoint {
+      const rect = renderer.domElement.getBoundingClientRect();
+      return { x: cx - rect.left, y: cy - rect.top };
+    }
+
+    function pickVisibleModelDraftAnchor(
+      cx: number,
+      cy: number,
+    ): {
+      point: { xMm: number; yMm: number };
+      screen: ScreenPoint;
+      elementId: string;
+    } | null {
+      const rect = renderer.domElement.getBoundingClientRect();
+      ndc.x = ((cx - rect.left) / rect.width) * 2 - 1;
+      ndc.y = -(((cy - rect.top) / rect.height) * 2 - 1);
+      raycaster.setFromCamera(ndc, camera);
+      const hits = raycaster.intersectObjects(root.children, true);
+      const hit = hits.find((candidate) => {
+        const id = candidate.object.userData.bimPickId as string | undefined;
+        return Boolean(id && !isLinkedElementId(id) && elementsByIdRef.current[id]);
+      });
+      const elementId = hit?.object.userData.bimPickId as string | undefined;
+      if (!hit || !elementId) return null;
+      return {
+        point: { xMm: hit.point.x * 1000, yMm: hit.point.z * 1000 },
+        screen: clientToCanvasScreen(cx, cy),
+        elementId,
       };
     }
 
@@ -1079,6 +1138,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       cy: number,
       elevationMm: number,
       origin: { point: { xMm: number; yMm: number }; screen: ScreenPoint },
+      basisOriginPoint?: { xMm: number; yMm: number },
     ): { basis?: WallDraftScreenBasis; projection: WallDraftProjectionClassification } {
       const samplePx = 12;
       const sampleX = projectPointerToDraftPlane(cx + samplePx, cy, elevationMm);
@@ -1121,7 +1181,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         basis: {
           mode: 'elevation-axis',
           originScreen: origin.screen,
-          originPointMm: origin.point,
+          originPointMm: basisOriginPoint ?? origin.point,
           xPerPx,
           yPerPx: { xMm: 0, yMm: 0 },
           scaleMmPerPx,
@@ -1642,7 +1702,37 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         return true;
       }
       setDraftPlaneAngleWarning(false);
-      const projected = projectPointerToDraftPlane(cx, cy, levelInfo.elevationMm);
+      let projected = projectPointerToDraftPlane(cx, cy, levelInfo.elevationMm);
+      if (
+        !projected &&
+        tool === 'wall' &&
+        lineDraftStart?.tool === 'wall' &&
+        lineDraftStart.wallBasis
+      ) {
+        projected = pointFromWallDraftScreenBasis(cx, cy, lineDraftStart.wallBasis);
+      }
+      if (!projected && tool === 'wall' && (!lineDraftStart || lineDraftStart.tool !== tool)) {
+        const wallAnchor = pickVisibleModelDraftAnchor(cx, cy);
+        if (wallAnchor) {
+          projected = { point: wallAnchor.point, screen: wallAnchor.screen };
+        } else {
+          emitWallDebug('wall-blocked-no-draft-plane', {
+            screen: clientToCanvasScreen(cx, cy),
+            levelInfo,
+            rawMmPerPx: measureDraftPlaneProjectionMmPerPx(cx, cy, levelInfo.elevationMm),
+          });
+          setAuthoringOverlay({
+            tool,
+            phase: 'pick-start',
+            levelName: levelInfo.name,
+            currentScreen: clientToCanvasScreen(cx, cy),
+            currentPointMm: undefined,
+            wallProjectionMode: 'elevation-axis',
+            wallAnchorRequired: true,
+          });
+          return true;
+        }
+      }
       if (!projected) return false;
       if (tool === 'room') {
         onSemanticCommand?.({
@@ -1665,22 +1755,56 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       }
       if (LINE_3D_AUTHORING_TOOLS.has(tool)) {
         if (!lineDraftStart || lineDraftStart.tool !== tool) {
-          const wallDraft =
+          let wallAnchor: ReturnType<typeof pickVisibleModelDraftAnchor> = null;
+          let wallDraft =
             tool === 'wall'
               ? createWallDraftScreenBasis(cx, cy, levelInfo.elevationMm, projected)
               : null;
+          if (tool === 'wall' && wallDraft?.projection.mode === 'elevation-axis') {
+            wallAnchor = pickVisibleModelDraftAnchor(cx, cy);
+            if (!wallAnchor) {
+              emitWallDebug('wall-blocked-no-visible-anchor', {
+                screen: projected.screen,
+                planePoint: projected.point,
+                levelInfo,
+                projection: wallDraft.projection,
+                rawMmPerPx: measureDraftPlaneProjectionMmPerPx(cx, cy, levelInfo.elevationMm),
+              });
+              setAuthoringOverlay({
+                tool,
+                phase: 'pick-start',
+                levelName: levelInfo.name,
+                currentScreen: projected.screen,
+                currentPointMm: undefined,
+                wallProjectionMode: wallDraft.projection.mode,
+                wallAnchorRequired: true,
+              });
+              return true;
+            }
+            wallDraft = createWallDraftScreenBasis(
+              cx,
+              cy,
+              levelInfo.elevationMm,
+              projected,
+              wallAnchor.point,
+            );
+          }
+          const startPoint = wallDraft?.basis?.originPointMm ?? projected.point;
           lineDraftStart = {
             tool: tool as 'wall' | 'beam' | 'stair' | 'railing' | 'grid' | 'reference-plane',
             levelId: levelInfo.id,
-            point: projected.point,
+            point: startPoint,
             screen: projected.screen,
             wallBasis: wallDraft?.basis,
             wallProjection: wallDraft?.projection,
+            wallAnchorElementId: wallAnchor?.elementId,
           };
           if (tool === 'wall') {
             emitWallDebug('wall-start', {
               screen: projected.screen,
-              point: projected.point,
+              point: startPoint,
+              planePoint: projected.point,
+              anchor: wallAnchor,
               levelInfo,
               projection: wallDraft?.projection,
               basis: wallDraft?.basis,
@@ -1694,9 +1818,10 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             levelName: levelInfo.name,
             startScreen: projected.screen,
             currentScreen: projected.screen,
-            currentPointMm: projected.point,
+            currentPointMm: startPoint,
             wallFlipActive: tool === 'wall' ? wallFlipNextSegment : undefined,
             wallProjectionMode: tool === 'wall' ? wallDraft?.projection.mode : undefined,
+            wallAnchorRequired: false,
           });
           return true;
         }
@@ -2005,12 +2130,21 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         !ev.altKey &&
         !ev.shiftKey
       ) {
+        const directTool = planToolRef.current as Direct3dAuthoringTool;
         dragging = 'tool-draft';
+        toolDraftTool = directTool;
+        toolDraftStartedLineOnDown = false;
+        toolDraftConsumedOnDown = false;
         dragMoved = false;
         cumulativeDragPx = 0;
         lastX = ev.clientX;
         lastY = ev.clientY;
         (ev.target as HTMLElement).setPointerCapture(ev.pointerId);
+        if (LINE_3D_AUTHORING_TOOLS.has(directTool) && !lineDraftStart) {
+          toolDraftConsumedOnDown = handle3dDirectToolClick(ev.clientX, ev.clientY);
+          const currentDraft = lineDraftStart as { tool: Direct3dAuthoringTool } | null;
+          toolDraftStartedLineOnDown = currentDraft?.tool === directTool;
+        }
         return;
       }
       // EDT-03 — grip pre-pass. If the pointer is over a grip pickable,
@@ -2060,7 +2194,13 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
 
     function onUp(ev: PointerEvent): void {
       const wasDragging = dragging;
+      const draftTool = toolDraftTool;
+      const startedLineOnDown = toolDraftStartedLineOnDown;
+      const consumedOnDown = toolDraftConsumedOnDown;
       dragging = null;
+      toolDraftTool = null;
+      toolDraftStartedLineOnDown = false;
+      toolDraftConsumedOnDown = false;
       try {
         (ev.target as HTMLElement).releasePointerCapture(ev.pointerId);
       } catch {
@@ -2077,13 +2217,41 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         activeGrip = null;
         return;
       }
-      if (!dragMoved && wasDragging === 'tool-draft') {
+      if (
+        wasDragging === 'tool-draft' &&
+        dragMoved &&
+        draftTool &&
+        LINE_3D_AUTHORING_TOOLS.has(draftTool) &&
+        lineDraftStart?.tool === draftTool
+      ) {
+        handle3dDirectToolClick(ev.clientX, ev.clientY);
+        return;
+      }
+      if (!dragMoved && wasDragging === 'tool-draft' && !startedLineOnDown && !consumedOnDown) {
         handle3dDirectToolClick(ev.clientX, ev.clientY);
         return;
       }
       if (!dragMoved && wasDragging === 'orbit') {
         pick(ev.clientX, ev.clientY);
       }
+    }
+
+    function onPointerCancel(ev: PointerEvent): void {
+      try {
+        (ev.target as HTMLElement).releasePointerCapture(ev.pointerId);
+      } catch {
+        /* noop */
+      }
+      if (dragging === 'grip' && activeGrip) {
+        activeGrip.indicator?.dispose();
+        activeGrip = null;
+      }
+      dragging = null;
+      toolDraftTool = null;
+      toolDraftStartedLineOnDown = false;
+      toolDraftConsumedOnDown = false;
+      dragMoved = false;
+      cumulativeDragPx = 0;
     }
 
     function onMove(ev: PointerEvent): void {
@@ -2126,14 +2294,35 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
           );
           if (projected) {
             if (LINE_3D_AUTHORING_TOOLS.has(directTool) && !lineDraftStart) {
+              let currentScreen = projected.screen;
+              let currentPointMm: { xMm: number; yMm: number } | undefined = projected.point;
+              let wallProjectionMode: WallDraftProjectionMode | undefined;
+              let wallAnchorRequired = false;
+              if (directTool === 'wall') {
+                const wallDraft = createWallDraftScreenBasis(
+                  ev.clientX,
+                  ev.clientY,
+                  levelInfo.elevationMm,
+                  projected,
+                );
+                wallProjectionMode = wallDraft.projection.mode;
+                if (wallDraft.projection.mode === 'elevation-axis') {
+                  const anchor = pickVisibleModelDraftAnchor(ev.clientX, ev.clientY);
+                  wallAnchorRequired = !anchor;
+                  currentScreen = anchor?.screen ?? projected.screen;
+                  currentPointMm = anchor?.point;
+                }
+              }
               setAuthoringOverlay((prev) =>
                 prev?.tool === directTool
                   ? {
                       ...prev,
                       phase: 'pick-start',
                       levelName: levelInfo.name,
-                      currentScreen: projected.screen,
-                      currentPointMm: projected.point,
+                      currentScreen,
+                      currentPointMm,
+                      wallProjectionMode,
+                      wallAnchorRequired,
                       wallPreviewOutlineScreen: undefined,
                       wallPreviewDirectionStartScreen: undefined,
                       wallPreviewDirectionEndScreen: undefined,
@@ -2168,6 +2357,23 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                   : prev,
               );
             }
+          } else if (directTool === 'wall' && !lineDraftStart) {
+            setAuthoringOverlay((prev) =>
+              prev?.tool === directTool
+                ? {
+                    ...prev,
+                    phase: 'pick-start',
+                    levelName: levelInfo.name,
+                    currentScreen: clientToCanvasScreen(ev.clientX, ev.clientY),
+                    currentPointMm: undefined,
+                    wallProjectionMode: 'elevation-axis',
+                    wallAnchorRequired: true,
+                    wallPreviewOutlineScreen: undefined,
+                    wallPreviewDirectionStartScreen: undefined,
+                    wallPreviewDirectionEndScreen: undefined,
+                  }
+                : prev,
+            );
           }
         }
       }
@@ -2553,6 +2759,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
     };
     renderer.domElement.addEventListener('contextmenu', onContextMenu);
     renderer.domElement.addEventListener('pointerup', onUp);
+    renderer.domElement.addEventListener('pointercancel', onPointerCancel);
+    renderer.domElement.addEventListener('lostpointercapture', onPointerCancel);
     renderer.domElement.addEventListener('pointermove', onMove);
     renderer.domElement.addEventListener('wheel', onWheel, { passive: false });
     document.addEventListener('keydown', onKey);
@@ -2653,6 +2861,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       renderer.domElement.removeEventListener('pointerdown', onDown);
       renderer.domElement.removeEventListener('contextmenu', onContextMenu);
       renderer.domElement.removeEventListener('pointerup', onUp);
+      renderer.domElement.removeEventListener('pointercancel', onPointerCancel);
+      renderer.domElement.removeEventListener('lostpointercapture', onPointerCancel);
       renderer.domElement.removeEventListener('pointermove', onMove);
       renderer.domElement.removeEventListener('wheel', onWheel);
       document.removeEventListener('keydown', onKey);
@@ -3885,7 +4095,9 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         title: `Wall placement · ${authoringOverlay.levelName ?? 'Active level'}`,
         instruction:
           authoringOverlay.phase === 'pick-start'
-            ? 'Click start point. Alt+drag or middle mouse to orbit/pan.'
+            ? authoringOverlay.wallAnchorRequired
+              ? 'Move over visible model geometry to start. Empty sky is not a valid 3D wall anchor.'
+              : 'Click start point. Alt+drag or middle mouse to orbit/pan.'
             : elevationAxisMode
               ? `Elevation-axis mode: click end point horizontally; vertical cursor movement is ignored. Space flips side (${
                   authoringOverlay.wallFlipActive ? 'flipped' : 'default'
