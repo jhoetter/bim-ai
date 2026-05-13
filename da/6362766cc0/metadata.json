@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "da6362766cc0",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/viewport/wallCsgEligibility.test.ts",
+    "packages/web/src/viewport/wallCsgEligibility.ts",
+    "packages/web/src/workspace/shell/AppShell.test.tsx",
+    "packages/web/src/workspace/shell/AppShell.tsx",
+    "spec/ux-bim-ai-next-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/da/6362766cc0/0/metadata.json",
+      "transcript": "/da/6362766cc0/0/full.jsonl",
+      "content_hash": "/da/6362766cc0/0/content_hash.txt",
+      "prompt": "/da/6362766cc0/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 243247,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 5648256,
+    "output_tokens": 10361,
+    "api_call_count": 30
+  }
+}
