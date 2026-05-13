@@ -61,10 +61,12 @@ let box = await vp.boundingBox();
 if (!box) throw new Error('no front 3D viewport');
 
 await dragWall(box, { x: 0.58, y: 0.62 }, { x: 0.7, y: 0.66 });
-await page.screenshot({ path: `${outDir}01-front-elevation-wall-blocked.png`, fullPage: true });
+await page.screenshot({ path: `${outDir}01-front-elevation-exact-preview.png`, fullPage: true });
 await page.mouse.up();
-await page.waitForTimeout(500);
+await page.waitForTimeout(900);
+await page.screenshot({ path: `${outDir}02-front-elevation-exact-commit.png`, fullPage: true });
 const commandsAfterFront = commands.filter((command) => command?.type === 'createWall').length;
+const traceAfterFront = await page.evaluate(() => window.__BIM_AI_3D_WALL_DEBUG__ ?? []);
 
 await page.keyboard.press('Escape');
 await page.waitForTimeout(300);
@@ -74,10 +76,10 @@ box = await vp.boundingBox();
 if (!box) throw new Error('no oblique 3D viewport');
 
 await dragWall(box, { x: 0.34, y: 0.58 }, { x: 0.54, y: 0.62 });
-await page.screenshot({ path: `${outDir}02-oblique-wall-preview.png`, fullPage: true });
+await page.screenshot({ path: `${outDir}03-oblique-wall-preview.png`, fullPage: true });
 await page.mouse.up();
 await page.waitForTimeout(900);
-await page.screenshot({ path: `${outDir}03-oblique-wall-commit.png`, fullPage: true });
+await page.screenshot({ path: `${outDir}04-oblique-wall-commit.png`, fullPage: true });
 
 await page.keyboard.press('Escape');
 await page.waitForTimeout(200);
@@ -86,7 +88,7 @@ await page.mouse.down();
 await page.mouse.move(box.x + box.width * 0.72, box.y + box.height * 0.47, { steps: 10 });
 await page.mouse.up();
 await page.waitForTimeout(500);
-await page.screenshot({ path: `${outDir}04-after-escape-navigation-drag.png`, fullPage: true });
+await page.screenshot({ path: `${outDir}05-after-escape-navigation-drag.png`, fullPage: true });
 
 const wallTrace = await page.evaluate(() => window.__BIM_AI_3D_WALL_DEBUG__ ?? []);
 const wallCommands = commands.filter((command) => command?.type === 'createWall');
@@ -98,6 +100,9 @@ const summary = {
     Math.hypot(command.end.xMm - command.start.xMm, command.end.yMm - command.start.yMm),
   ),
   projectionModes: [...new Set(wallTrace.map((entry) => entry.projection?.mode).filter(Boolean))],
+  frontProjectionModes: [
+    ...new Set(traceAfterFront.map((entry) => entry.projection?.mode).filter(Boolean)),
+  ],
   tracePhases: wallTrace.map((entry) => entry.phase),
   blockedUnreadablePlaneCount: wallTrace.filter(
     (entry) => entry.phase === 'wall-blocked-unreadable-plane',

@@ -55,12 +55,19 @@ describe('classifyWallDraftProjection', () => {
     });
   });
 
-  it('switches front/elevation-like camera poses to horizontal elevation-axis drafting', () => {
+  it('switches shallow views with unstable anisotropic projection to horizontal elevation-axis drafting', () => {
     const classification = classifyWallDraftProjection(43.7, 225.8, -0.265);
 
     expect(classification.mode).toBe('elevation-axis');
     expect(classification.anisotropyRatio).toBeGreaterThan(5);
     expect(classification.verticalLook).toBeCloseTo(0.265);
+  });
+
+  it('does not force stable front-like views into synthetic screen-axis drafting', () => {
+    const classification = classifyWallDraftProjection(21.5, 55.3, -0.26);
+
+    expect(classification.mode).toBe('plane');
+    expect(classification.anisotropyRatio).toBeLessThan(3.25);
   });
 
   it('rejects numerically explosive level-plane projection even in top-ish poses', () => {

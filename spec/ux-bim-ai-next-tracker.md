@@ -1287,6 +1287,7 @@ Evidence (2026-05-13):
 
 - Priority: `P0`
 - Status: `Done`
+- Superseded correction: feedback round 13 rejected the blanket front/elevation blocking behavior. See `WP-NEXT-31` for the current canonical behavior: stable visible level planes create exact 3D walls even from shallow front-like camera poses.
 - Covers: `NEXT12-GAP-001`, `NEXT12-GAP-002`
 - Goal: make 3D wall authoring deterministic by allowing commits only when the active level plane is readable from the current camera.
 - Source ownership:
@@ -1301,14 +1302,49 @@ Evidence (2026-05-13):
 - Implementation + evidence:
   - Removed synthetic `elevation-axis` wall commits from the authoring path.
   - `wall-blocked-unreadable-plane` now handles edge-on/front views explicitly.
-  - Seeded proof (`target-house-3`, `Front elevation` then `Roof court high axonometric`):
-    - `packages/web/tmp/ux-wall-debug-input-20260513/01-front-elevation-wall-blocked.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/02-oblique-wall-preview.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/03-oblique-wall-commit.png`
-    - `packages/web/tmp/ux-wall-debug-input-20260513/04-after-escape-navigation-drag.png`
+  - Superseded seeded proof: the blocked-front artifact set from this package was removed after feedback round 13. Current canonical wall-placement evidence is recorded under `WP-NEXT-31`.
+
+## Reopened Tracker (2026-05-13, feedback round 13)
+
+| Gap ID         | Problem Statement                                                                                                                                               | Canonical Surfaces / Files                                                   | Priority | Status |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------- | ------ |
+| NEXT13-GAP-001 | The wall tool over-treated shallow/front-like 3D views as unreadable even when the level plane grid was numerically stable and visible.                         | `packages/web/src/viewport/authoring3d.ts`, `Viewport.tsx` 3D wall authoring | P0       | Done   |
+| NEXT13-GAP-002 | Synthetic `elevation-axis` placement was used too often, so wall footprints could feel detached from the cursor path and appear to land in the wrong direction. | `Viewport.tsx` wall basis selection, wall debug Playwright capture           | P0       | Done   |
+| NEXT13-GAP-003 | Evidence still encoded the old blocked-front behavior instead of proving exact front/elevation placement and oblique placement in the seeded app.               | `packages/web/tmp/ux-wall-debug-input-20260513/*`, tracker evidence          | P0       | Done   |
+
+### WP-NEXT-31 — Exact 3D Wall Plane Priority
+
+- Priority: `P0`
+- Status: `Done`
+- Covers: `NEXT13-GAP-001`, `NEXT13-GAP-002`, `NEXT13-GAP-003`
+- Goal: restore trustworthy 3D wall authoring by using exact ray-to-level-plane placement whenever the active level plane is numerically stable, including shallow/front-like seeded 3D views.
+- Source ownership:
+  - `packages/web/src/Viewport.tsx`
+  - `packages/web/src/viewport/authoring3d.ts`
+  - `packages/web/src/viewport/authoring3d.test.ts`
+  - `packages/web/tmp/ux-wall-debug-input-20260513/capture.mjs`
+  - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
+- Acceptance:
+  - stable visible 3D level-plane hits use exact ray-to-level-plane projection, not synthetic screen-axis placement, regardless of shallow camera angle;
+  - the seeded `Front elevation` wall drag creates one wall with `projection.mode === "plane"`;
+  - the seeded `Roof court high axonometric` wall drag creates one additional wall with `projection.mode === "plane"`;
+  - preview and commit share the same projection path and endpoint source;
+  - blocked wall-start counts are zero for the seeded front + oblique proof;
+  - Escape after wall placement restores navigation drag.
+- Implementation + evidence:
+  - Removed the hard `verticalLook >= 0.35` requirement from wall draft projection classification. Plane readability is now determined by measured level-plane screen scale and anisotropy.
+  - Kept constrained `elevation-axis` as a fallback only for genuinely unstable/unreadable projections instead of using it for stable front-like views.
+  - Replaced stale blocked-front evidence with exact-placement proof:
+    - `packages/web/tmp/ux-wall-debug-input-20260513/01-front-elevation-exact-preview.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/02-front-elevation-exact-commit.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/03-oblique-wall-preview.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/04-oblique-wall-commit.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/05-after-escape-navigation-drag.png`
     - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
-      - `commandsAfterFront: 0`
-      - `blockedUnreadablePlaneCount: 1`
-      - `createWallCount: 1`
-      - `projectionModes: ["elevation-axis", "plane"]`
-      - `wallLengthsMm: [5819.760]`
+      - `commandsAfterFront: 1`
+      - `createWallCount: 2`
+      - `projectionModes: ["plane"]`
+      - `frontProjectionModes: ["plane"]`
+      - `blockedUnreadablePlaneCount: 0`
+      - `blockedNoDraftPlaneCount: 0`
+      - `wallLengthsMm: [4038.741, 5819.760]`

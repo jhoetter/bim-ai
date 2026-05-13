@@ -1135,16 +1135,20 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
 
       const scaleMmPerPx = THREE.MathUtils.clamp(scaleX, 5, 35);
       const cameraRight = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-      const projectedRight = horizontalCameraVector(cameraRight) ??
-        (sampleX
-          ? horizontalCameraVector(
-              new THREE.Vector3(
-                sampleX.point.xMm - origin.point.xMm,
-                0,
-                sampleX.point.yMm - origin.point.yMm,
-              ),
-            )
-          : null) ?? { xMm: 1, yMm: 0 };
+      const sampledScreenRight = sampleX
+        ? horizontalCameraVector(
+            new THREE.Vector3(
+              sampleX.point.xMm - origin.point.xMm,
+              0,
+              sampleX.point.yMm - origin.point.yMm,
+            ),
+          )
+        : null;
+      const projectedRight = sampledScreenRight ??
+        horizontalCameraVector(cameraRight) ?? {
+          xMm: 1,
+          yMm: 0,
+        };
       const xPerPx = {
         xMm: projectedRight.xMm * scaleMmPerPx,
         yMm: projectedRight.yMm * scaleMmPerPx,
@@ -1728,26 +1732,6 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             tool === 'wall'
               ? createWallDraftScreenBasis(cx, cy, levelInfo.elevationMm, projected)
               : null;
-          if (tool === 'wall' && wallDraft && wallDraft.projection.mode !== 'plane') {
-            emitWallDebug('wall-blocked-unreadable-plane', {
-              screen: projected.screen,
-              planePoint: projected.point,
-              levelInfo,
-              projection: wallDraft.projection,
-              rawMmPerPx: measureDraftPlaneProjectionMmPerPx(cx, cy, levelInfo.elevationMm),
-            });
-            setAuthoringOverlay({
-              tool,
-              phase: 'pick-start',
-              levelName: levelInfo.name,
-              currentScreen: projected.screen,
-              currentPointMm: undefined,
-              wallProjectionMode: wallDraft.projection.mode,
-              wallAnchorRequired: false,
-              wallPlaneUnreadable: true,
-            });
-            return true;
-          }
           lineDraftStart = {
             tool: tool as 'wall' | 'beam' | 'stair' | 'railing' | 'grid' | 'reference-plane',
             levelId: levelInfo.id,
@@ -2265,8 +2249,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                 wallProjectionMode = wallDraft.projection.mode;
                 if (wallDraft.projection.mode !== 'plane') {
                   currentScreen = projected.screen;
-                  currentPointMm = undefined;
-                  wallPlaneUnreadable = true;
+                  currentPointMm = projected.point;
+                  wallPlaneUnreadable = false;
                 }
               }
               setAuthoringOverlay((prev) =>
@@ -4059,7 +4043,9 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                 ? 'Move over the active level plane. Empty sky is not a valid 3D wall start.'
                 : 'Click start point. Alt+drag or middle mouse to orbit/pan.'
             : elevationAxisMode
-              ? `Rotate to a more top-down 3D view or open the associated plan. This view cannot place walls accurately.`
+              ? `Constrained 3D wall: drag left/right on screen. Rotate toward top/plan for depth. Space flips side (${
+                  authoringOverlay.wallFlipActive ? 'flipped' : 'default'
+                }). Esc cancels segment.`
               : `Click end point. Space flips side (${
                   authoringOverlay.wallFlipActive ? 'flipped' : 'default'
                 }). Esc cancels segment.`,
