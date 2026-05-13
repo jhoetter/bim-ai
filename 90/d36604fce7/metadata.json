@@ -1,0 +1,47 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "90d36604fce7",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/cmdPalette/defaultCommands.test.ts",
+    "packages/web/src/cmdPalette/defaultCommands.ts",
+    "packages/web/src/cmdPalette/registry.ts",
+    "packages/web/src/onboarding/tour.ts",
+    "packages/web/src/viewport/materials.test.ts",
+    "packages/web/src/viewport/materials.ts",
+    "packages/web/src/workspace/ModeShells.test.tsx",
+    "packages/web/src/workspace/ModeShells.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/commandCapabilities.test.ts",
+    "packages/web/src/workspace/commandCapabilities.ts",
+    "packages/web/src/workspace/paneLayout.test.ts",
+    "packages/web/src/workspace/paneLayout.ts",
+    "packages/web/src/workspace/sheets/SectionPlaceholderPane.test.tsx",
+    "packages/web/src/workspace/sheets/SectionPlaceholderPane.tsx",
+    "packages/web/src/workspace/shell/TabBar.test.tsx",
+    "packages/web/src/workspace/shell/TabBar.tsx",
+    "packages/web/src/workspace/viewport/CanvasMount.tsx",
+    "packages/web/src/workspace/viewport/Viewport3DLayersPanel.test.tsx",
+    "packages/web/src/workspace/viewport/Viewport3DLayersPanel.tsx",
+    "packages/web/tmp/ux-next-wp03-14-15-16-20260513/capture.mjs",
+    "spec/ux-bim-ai-next-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/90/d36604fce7/0/metadata.json",
+      "transcript": "/90/d36604fce7/0/full.jsonl",
+      "content_hash": "/90/d36604fce7/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 496817,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 20578816,
+    "output_tokens": 43787,
+    "api_call_count": 133
+  }
+}
