@@ -57,6 +57,10 @@ await page.screenshot({
 const summary = {
   createWallCount: commands.filter((c) => c?.type === 'createWall').length,
   commandTypes: commands.map((c) => c?.type ?? null),
+  screenDrag: { start, end },
+  rightwardDragPreserved:
+    commands.find((c) => c?.type === 'createWall')?.end?.xMm >
+    commands.find((c) => c?.type === 'createWall')?.start?.xMm,
   commands,
 };
 await fs.writeFile(

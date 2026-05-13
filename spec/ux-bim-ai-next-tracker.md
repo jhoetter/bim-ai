@@ -1174,12 +1174,15 @@ Evidence (2026-05-13):
   - seeded front/elevation repro no longer yields misleading commit behavior.
 - Implementation + current evidence (partial):
   - Endpoint fidelity path changed to commit line tools from direct click projection (`end = projected.point`) so commit cannot reuse stale hover point.
-  - Added projection stability guard (`mm/px` sensitivity only) for plane-based 3D tools before accepting clicks; the earlier camera-component threshold was removed because it blocked valid wall drafting in normal 3D/elevation-like views.
-  - Added wall-preview readability guard (minimum projected outline area + direction length) that blocks unreadable/edge-on wall commits and keeps user in `pick-end` with warning.
+  - Added projection stability guard (`mm/px` sensitivity only) for non-wall plane-based 3D tools before accepting clicks; the earlier camera-component threshold was removed because it blocked valid wall drafting in normal 3D/elevation-like views.
+  - Replaced wall end-point re-projection with a first-click screen-to-level draft basis. Preview and commit now use the same basis, so screen-right cannot become the opposite committed endpoint direction in elevation-like camera poses.
+  - Removed the wall-preview readability blocker because it blocked valid elevation-like placement instead of fixing endpoint fidelity.
+  - Short wall attempts now clear the stored 3D line draft before returning to `pick-start`.
   - Seeded repro artifacts:
     - `packages/web/tmp/ux-wall-edgeon-repro-20260513/01-before-commit.png`
     - `packages/web/tmp/ux-wall-edgeon-repro-20260513/02-after-commit-attempt.png`
     - `packages/web/tmp/ux-wall-edgeon-repro-20260513/summary.json`
     - 2026-05-13 hotfix rerun confirms wall drafting is reachable again (`createWallCount: 1`).
+    - 2026-05-13 screen-basis rerun confirms a rightward edge-on drag preserves endpoint direction (`rightwardDragPreserved: true`).
   - Remaining closure work:
     - tighten camera-pose detection against exact `Front elevation` tab behavior and capture final seeded proof with blocked ambiguous commit + valid oblique commit.

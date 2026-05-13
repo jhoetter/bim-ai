@@ -1,18 +1,29 @@
 {
   "createWallCount": 1,
   "commandTypes": ["createWall"],
+  "screenDrag": {
+    "start": {
+      "x": 1194.8000000000002,
+      "y": 785.44
+    },
+    "end": {
+      "x": 1443.6799999999998,
+      "y": 858.76
+    }
+  },
+  "rightwardDragPreserved": true,
   "commands": [
     {
       "type": "createWall",
-      "id": "wall-3d-mp49u85l-biyz",
+      "id": "wall-3d-mp4adhsl-8sd5",
       "levelId": "hf-lvl-ground",
       "start": {
         "xMm": 6226.568714831564,
         "yMm": 6066.762573844527
       },
       "end": {
-        "xMm": 10649.130311128609,
-        "yMm": 2801.0602403286302
+        "xMm": 10670.220625705,
+        "yMm": 2783.966664015092
       },
       "locationLine": "wall-centerline",
       "heightMm": 2800
