@@ -1,0 +1,49 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "330c1a78b3ab",
+  "session_id": "019e1f88-adaf-7791-baf4-f7e0bc958757",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-13T05:19:08.846435Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/state/storeTypes.ts",
+    "packages/web/src/state/storeViewportRuntimeSlice.ts",
+    "packages/web/src/state/storeSliceContracts.ts",
+    "packages/web/src/state/storeSliceContracts.test.ts",
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/workspace/WorkspaceRightRail.tsx",
+    "packages/web/src/workspace/shell/AppShell.tsx",
+    "packages/web/src/workspace/shell/AppShell.test.tsx",
+    "packages/web/src/workspace/viewport/Viewport3DLayersPanel.tsx",
+    "packages/web/src/workspace/viewport/Viewport3DLayersPanel.test.tsx",
+    "spec/ux-bim-ai-next-tracker.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.3-codex",
+  "turn_id": "4260371ecd91",
+  "checkpoint_transcript_start": 1211,
+  "transcript_lines_at_start": 1211,
+  "token_usage": {
+    "input_tokens": 368461,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 15305728,
+    "output_tokens": 35693,
+    "api_call_count": 101
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-13T05:19:08.737344Z",
+    "agent_lines": 338,
+    "agent_removed": 17,
+    "human_added": 149,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 487,
+    "total_lines_changed": 504,
+    "agent_percentage": 70.43650793650794,
+    "metric_version": 2
+  }
+}
