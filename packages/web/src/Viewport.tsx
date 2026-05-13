@@ -188,6 +188,7 @@ type Authoring3dOverlayState = {
   previewHostValid?: boolean;
   previewHostWallId?: string;
   previewHostAlongT?: number;
+  previewHostLock?: boolean;
   previewAuxLines?: Array<{ start: ScreenPoint; end: ScreenPoint }>;
   previewAuxArcPath?: string;
   wallPreviewOutlineScreen?: ScreenPoint[];
@@ -518,7 +519,14 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       if (POLYGON_3D_AUTHORING_TOOLS.has(tool)) {
         return { tool, phase: 'pick-vertex', levelName: direct3dDraftLevelName, pointsScreen: [] };
       }
-      return { tool, phase: 'pick-wall', previewHostValid: false };
+      return {
+        tool,
+        phase: 'pick-wall',
+        previewHostValid: false,
+        previewHostLock: false,
+        previewAuxLines: undefined,
+        previewAuxArcPath: undefined,
+      };
     });
   }, [planTool, direct3dDraftLevelName]);
 
@@ -860,8 +868,10 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       levelId: string;
       points: Array<{ xMm: number; yMm: number }>;
     } | null = null;
-    let lastHostedPlacement: HostedPlacementDedupeState | null = null;
+    let lastHostedPlacementScreen: HostedPlacementDedupeState | null = null;
+    let lastHostedPlacementHost: HostedPlacementDedupeState | null = null;
     let wallFlipNextSegment = false;
+    let hostPreviewLock = false;
 
     function placeCamera(): void {
       const snap = rig.snapshot();
@@ -974,6 +984,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       options?: {
         tool?: 'door' | 'window' | 'wall-opening';
         preferWallId?: string;
+        lockToPreferred?: boolean;
       },
     ): {
       wall: Extract<Element, { kind: 'wall' }>;
@@ -1030,7 +1041,12 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       let picked = sorted[0]!;
       if (options?.preferWallId) {
         const preferred = candidates.get(options.preferWallId);
-        if (preferred && preferred.score <= picked.score + 0.08) picked = preferred;
+        if (options.lockToPreferred) {
+          if (!preferred) return null;
+          picked = preferred;
+        } else if (preferred && preferred.score <= picked.score + 0.08) {
+          picked = preferred;
+        }
       }
       return {
         wall: picked.wall,
@@ -1170,7 +1186,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       const headMm = tool === 'window' ? 2400 : tool === 'wall-opening' ? 2400 : 2100;
       const openingBottomMm = Math.min(topZMm - 50, baseZMm + sillMm);
       const openingTopMm = Math.max(openingBottomMm + 50, Math.min(topZMm, baseZMm + headMm));
-      const centerT = hit.alongT;
+      const centerT = clampHostedAlongT(tool, hit.wall, hit.alongT);
       const halfDeltaT = previewWidthMm / 2 / wallLenMm;
       const startT = Math.max(0, centerT - halfDeltaT);
       const endT = Math.min(1, centerT + halfDeltaT);
@@ -1223,13 +1239,31 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       };
     }
 
+    function clampHostedAlongT(
+      tool: 'door' | 'window' | 'wall-opening',
+      wall: Extract<Element, { kind: 'wall' }>,
+      alongT: number,
+    ): number {
+      const dx = wall.end.xMm - wall.start.xMm;
+      const dy = wall.end.yMm - wall.start.yMm;
+      const wallLenMm = Math.max(1, Math.hypot(dx, dy));
+      const nominalWidthMm = tool === 'door' ? 900 : tool === 'window' ? 1200 : 1000;
+      const edgeClearanceMm = nominalWidthMm / 2 + 80;
+      const margin = Math.max(0.02, Math.min(0.18, edgeClearanceMm / wallLenMm));
+      return Math.max(margin, Math.min(1 - margin, alongT));
+    }
+
     function handle3dDirectToolClick(cx: number, cy: number): boolean {
       const tool = activeDirect3dTool();
       if (!tool) {
         lineDraftStart = null;
         polygonDraft = null;
+        hostPreviewLock = false;
         setAuthoringOverlay(null);
         return false;
+      }
+      if (tool !== 'door' && tool !== 'window' && tool !== 'wall-opening') {
+        hostPreviewLock = false;
       }
       if (!POLYGON_3D_AUTHORING_TOOLS.has(tool)) polygonDraft = null;
       if (!LINE_3D_AUTHORING_TOOLS.has(tool)) lineDraftStart = null;
@@ -1238,6 +1272,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         const hit = pickWallAtPointer(cx, cy, {
           tool,
           preferWallId: overlay?.tool === tool ? overlay.previewHostWallId : undefined,
+          lockToPreferred: hostPreviewLock,
         });
         const rect = renderer.domElement.getBoundingClientRect();
         const clickScreen = { x: cx - rect.left, y: cy - rect.top };
@@ -1272,8 +1307,9 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                   previewStartScreen: undefined,
                   previewEndScreen: undefined,
                   previewHostValid: false,
-                  previewHostWallId: undefined,
-                  previewHostAlongT: undefined,
+                  previewHostWallId: hostPreviewLock ? prev.previewHostWallId : undefined,
+                  previewHostAlongT: hostPreviewLock ? prev.previewHostAlongT : undefined,
+                  previewHostLock: hostPreviewLock,
                   previewAuxLines: undefined,
                   previewAuxArcPath: undefined,
                 }
@@ -1281,13 +1317,23 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
           );
           return true;
         }
-        alongT = Math.max(0, Math.min(1, alongT));
-        const nextPlacement: HostedPlacementDedupeState = {
+        alongT = clampHostedAlongT(tool, hostWall, Math.max(0, Math.min(1, alongT)));
+        const nextPlacementScreen: HostedPlacementDedupeState = {
           key: `${tool}:${Math.round(clickScreen.x / 8)}:${Math.round(clickScreen.y / 8)}`,
           atMs: performance.now(),
         };
-        if (isDuplicateHostedPlacement(lastHostedPlacement, nextPlacement)) return true;
-        lastHostedPlacement = nextPlacement;
+        const nextPlacementHost: HostedPlacementDedupeState = {
+          key: `${tool}:${hostWall.id}:${Math.round(alongT * 1000)}`,
+          atMs: performance.now(),
+        };
+        if (
+          isDuplicateHostedPlacement(lastHostedPlacementScreen, nextPlacementScreen, 900) ||
+          isDuplicateHostedPlacement(lastHostedPlacementHost, nextPlacementHost, 1500)
+        ) {
+          return true;
+        }
+        lastHostedPlacementScreen = nextPlacementScreen;
+        lastHostedPlacementHost = nextPlacementHost;
         useBimStore.getState().select(hostWall.id);
         if (tool === 'door') {
           onSemanticCommand?.({
@@ -1883,6 +1929,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             authoringOverlayRef.current?.tool === directTool
               ? authoringOverlayRef.current.previewHostWallId
               : undefined,
+          lockToPreferred: hostPreviewLock,
         });
         if (!hit) {
           setAuthoringOverlay((prev) =>
@@ -1897,8 +1944,9 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                   previewStartScreen: undefined,
                   previewEndScreen: undefined,
                   previewHostValid: false,
-                  previewHostWallId: undefined,
-                  previewHostAlongT: undefined,
+                  previewHostWallId: hostPreviewLock ? prev.previewHostWallId : undefined,
+                  previewHostAlongT: hostPreviewLock ? prev.previewHostAlongT : undefined,
+                  previewHostLock: hostPreviewLock,
                   previewAuxLines: undefined,
                   previewAuxArcPath: undefined,
                 }
@@ -1918,6 +1966,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                     previewHostValid: preview.valid,
                     previewHostWallId: hit.wall.id,
                     previewHostAlongT: hit.alongT,
+                    previewHostLock: hostPreviewLock,
                     previewAuxLines: preview.auxLines,
                     previewAuxArcPath: preview.auxArcPath,
                   }
@@ -2038,6 +2087,36 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       }
       if (ev.key === 'Escape' && walkController.snapshot().active) {
         ev.preventDefault();
+      }
+      if (ev.key === 'Escape') {
+        const tool = activeDirect3dTool();
+        if (tool === 'door' || tool === 'window' || tool === 'wall-opening') {
+          hostPreviewLock = false;
+          setAuthoringOverlay((prev) =>
+            prev?.tool === tool
+              ? {
+                  ...prev,
+                  previewHostLock: false,
+                }
+              : prev,
+          );
+        }
+      }
+      if (ev.key === 'Tab' || ev.key.toLowerCase() === 'l') {
+        const tool = activeDirect3dTool();
+        if (tool === 'door' || tool === 'window' || tool === 'wall-opening') {
+          hostPreviewLock = !hostPreviewLock;
+          setAuthoringOverlay((prev) =>
+            prev?.tool === tool
+              ? {
+                  ...prev,
+                  previewHostLock: hostPreviewLock,
+                }
+              : prev,
+          );
+          ev.preventDefault();
+          return;
+        }
       }
       if (ev.code === 'Space') {
         const tool = activeDirect3dTool();
@@ -3536,8 +3615,12 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         title: 'Door placement',
         instruction:
           authoringOverlay.previewHostValid === false
-            ? 'Move over a wall to see a valid host preview, then click to place.'
-            : 'Hover a wall to preview, then click to insert a door.',
+            ? `Move over a wall to see a valid host preview, then click to place. L ${
+                authoringOverlay.previewHostLock ? 'unlocks' : 'locks'
+              } host.`
+            : `Hover a wall to preview, then click to insert a door. L ${
+                authoringOverlay.previewHostLock ? 'unlocks' : 'locks'
+              } host.`,
       };
     }
     if (authoringOverlay.tool === 'window') {
@@ -3545,16 +3628,24 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         title: 'Window placement',
         instruction:
           authoringOverlay.previewHostValid === false
-            ? 'Move over a wall to see a valid host preview, then click to place.'
-            : 'Hover a wall to preview, then click to insert a window.',
+            ? `Move over a wall to see a valid host preview, then click to place. L ${
+                authoringOverlay.previewHostLock ? 'unlocks' : 'locks'
+              } host.`
+            : `Hover a wall to preview, then click to insert a window. L ${
+                authoringOverlay.previewHostLock ? 'unlocks' : 'locks'
+              } host.`,
       };
     }
     return {
       title: 'Opening placement',
       instruction:
         authoringOverlay.previewHostValid === false
-          ? 'Move over a wall to see a valid host preview, then click to place.'
-          : 'Hover a wall to preview, then click to insert an opening.',
+          ? `Move over a wall to see a valid host preview, then click to place. L ${
+              authoringOverlay.previewHostLock ? 'unlocks' : 'locks'
+            } host.`
+          : `Hover a wall to preview, then click to insert an opening. L ${
+              authoringOverlay.previewHostLock ? 'unlocks' : 'locks'
+            } host.`,
     };
   }, [authoringOverlay, direct3dAuthoringActive]);
 
@@ -3795,6 +3886,31 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                 opacity="0.9"
               />
             ))}
+            {authoringOverlay.previewHostLock ? (
+              <>
+                <rect
+                  x={authoringOverlay.currentScreen.x + 12}
+                  y={authoringOverlay.currentScreen.y - 26}
+                  width={72}
+                  height={18}
+                  rx={9}
+                  fill="color-mix(in srgb, var(--color-accent) 22%, var(--color-surface))"
+                  stroke="var(--color-accent)"
+                  strokeWidth="1"
+                  opacity="0.95"
+                />
+                <text
+                  x={authoringOverlay.currentScreen.x + 48}
+                  y={authoringOverlay.currentScreen.y - 14}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fontWeight="600"
+                  fill="var(--color-accent)"
+                >
+                  HOST LOCK
+                </text>
+              </>
+            ) : null}
             <circle
               cx={authoringOverlay.currentScreen.x}
               cy={authoringOverlay.currentScreen.y}

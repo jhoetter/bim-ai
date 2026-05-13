@@ -1,0 +1,19 @@
+{
+  "commandCount": 2,
+  "countAfterLockedAttempt": 1,
+  "commandTypes": ["insertDoorOnWall", "insertDoorOnWall"],
+  "commands": [
+    {
+      "type": "insertDoorOnWall",
+      "wallId": "hf-uf-wall-04",
+      "alongT": 0.9487922705314009,
+      "widthMm": 900
+    },
+    {
+      "type": "insertDoorOnWall",
+      "wallId": "hf-uf-wall-01",
+      "alongT": 0.03785714285714286,
+      "widthMm": 900
+    }
+  ]
+}

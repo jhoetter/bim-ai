@@ -274,6 +274,10 @@ Evidence (2026-05-13):
   - command traces:
     - `packages/web/tmp/ux-hosted-preview-snap-20260513/summary.json` (door double-click emits one `insertDoorOnWall`; window emits one `insertWindowOnWall`)
     - `packages/web/tmp/ux-door-wall-guard-20260513/summary.json` (regression re-check still emits one `insertDoorOnWall` + one `createWall`).
+- Follow-up dense-junction host control adds explicit host lock UX (`L` to lock/unlock + `HOST LOCK` badge), keeps lock on the selected host during overlap ambiguity, and clamps hosted `alongT` away from wall-end slivers to avoid unstable flips:
+  - code: `packages/web/src/Viewport.tsx`
+  - seeded captures: `packages/web/tmp/ux-host-lock-20260513/01-host-preview-unlocked.png`, `02-host-preview-locked.png`, `03-host-unlocked-second-place.png`
+  - command trace: `packages/web/tmp/ux-host-lock-20260513/summary.json` (`countAfterLockedAttempt: 1`, so lock phase suppresses unintended second placement; unlock allows the intentional second wall-host placement).
 
 ### WP-NEXT-07 — 3D Level Visibility Controls
 
