@@ -1,0 +1,78 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "6762d8f5c652",
+  "session_id": "019e20b9-4c2e-7f23-b0cb-83851863009d",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-13T10:09:40.548751Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/cmdPalette/defaultCommands.ts",
+    "packages/web/src/state/modeController.test.ts",
+    "packages/web/src/state/modeController.ts",
+    "packages/web/src/workspace/Workspace.test.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/commandCapabilities.ts",
+    "packages/web/src/workspace/paneLayout.test.ts",
+    "packages/web/src/workspace/paneLayout.ts",
+    "packages/web/src/workspace/shell/TabBar.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.3-codex",
+  "turn_id": "ef101ecd4b26",
+  "token_usage": {
+    "input_tokens": 317691,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 6220032,
+    "output_tokens": 15295,
+    "api_call_count": 51
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-13T10:09:40.527577Z",
+    "agent_lines": 129,
+    "agent_removed": 79,
+    "human_added": 180,
+    "human_modified": 14,
+    "human_removed": 0,
+    "total_committed": 319,
+    "total_lines_changed": 406,
+    "agent_percentage": 51.231527093596064,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 219,
+      "user_lines_removed": 1,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/packages/web/tmp/ux-footer-activity-reconcile-live-20260512/summary.json": 5,
+        "packages/web/packages/web/tmp/ux-next-wp05-20260513/summary.json": 29,
+        "packages/web/packages/web/tmp/ux-next-wp06-20260513/summary.json": 30,
+        "packages/web/src/workspace/Workspace.tsx": 1,
+        "packages/web/src/workspace/paneLayout.test.ts": 12,
+        "packages/web/src/workspace/paneLayout.ts": 10,
+        "packages/web/tmp/ux-3d-secondary-reconcile-20260512/summary.json": 7,
+        "packages/web/tmp/ux-canvas-scale-readout-20260512/summary.json": 6,
+        "packages/web/tmp/ux-canvas-secondary-reconcile-20260512/summary.json": 21,
+        "packages/web/tmp/ux-dia-006-007-live-20260512/summary.json": 5,
+        "packages/web/tmp/ux-dia-012-milestone-live-20260512/summary.json": 8,
+        "packages/web/tmp/ux-dia-013-onboarding-live-20260512/summary.json": 8,
+        "packages/web/tmp/ux-footer-jobs-20260512/summary.json": 9,
+        "packages/web/tmp/ux-live-closeout-20260512/summary.json": 12,
+        "packages/web/tmp/ux-ribbon-per-view-20260512/summary.json": 19,
+        "packages/web/tmp/ux-sheet-review-ribbon-20260512/summary.json": 14,
+        "packages/web/tmp/ux-shell-reconcile-20260512/summary.json": 12,
+        "packages/web/tmp/ux-snap-footer-reconcile-live-20260512/summary.json": 7,
+        "packages/web/tmp/ux-stat-017-temp-visibility-20260512/summary.json": 4
+      },
+      "user_removed_per_file": {
+        "packages/web/src/workspace/paneLayout.ts": 1
+      }
+    }
+  ]
+}

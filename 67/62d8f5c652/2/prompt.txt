@@ -1,0 +1,5 @@
+it seems to me we currently have a few "dead" viewtypes still in the application that exist after refactoring still but shouldnt, e.g. the dedicated "2d + 3d" or the "agent" view (which is solved via the global dialog in the footer); can you analyze this and list such instances, so i can decide whether we should remove them?
+
+---
+
+do a second pass and then safe remove please
