@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "534cdf346000",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/sheets/SheetCanvas.test.tsx",
+    "packages/web/src/workspace/sheets/SheetCanvas.tsx",
+    "packages/web/src/workspace/sheets/sheetIntent.test.ts",
+    "packages/web/src/workspace/sheets/sheetIntent.ts",
+    "packages/web/src/workspace/workspaceUtils.test.ts",
+    "packages/web/src/workspace/workspaceUtils.ts",
+    "spec/ux-bim-ai-next-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/53/4cdf346000/0/metadata.json",
+      "transcript": "/53/4cdf346000/0/full.jsonl",
+      "content_hash": "/53/4cdf346000/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 326538,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 8938752,
+    "output_tokens": 24978,
+    "api_call_count": 87
+  }
+}
