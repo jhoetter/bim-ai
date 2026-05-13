@@ -55,7 +55,7 @@ The foundational seven-region ownership model is in place, but real usage still 
 | NEXT-GAP-012 | Creation of new floor plans/3D/sections/sheets/schedules is not obvious enough.                                    | primary nav, project browser, commands                                                       | P1       | Done   |
 | NEXT-GAP-013 | Sheets show heavy metadata block directly in main user reading flow.                                               | `workspace/sheets/SheetCanvas.tsx`                                                           | P1       | Done   |
 | NEXT-GAP-014 | Moodboard vs documentation sheet intent is not modeled/taggable.                                                   | sheet model + UI filters + commands                                                          | P1       | Done   |
-| NEXT-GAP-015 | Schedule outputs are not meaningful enough for practical role workflows.                                           | schedule mode shell/panels, advisor integration                                              | P1       | Open   |
+| NEXT-GAP-015 | Schedule outputs are not meaningful enough for practical role workflows.                                           | schedule mode shell/panels, advisor integration                                              | P1       | Done   |
 | NEXT-GAP-016 | Sections are hard to understand in relation to 3D; section context could be spatially reinforced.                  | section mode shell, viewport overlays                                                        | P2       | Open   |
 | NEXT-GAP-017 | Overflow hygiene: clipped dropdowns and horizontal scrolling inside sidebars.                                      | shell/sidebar CSS/layout constraints                                                         | P1       | Done   |
 | NEXT-GAP-018 | 3D visual quality gaps: dark mode mismatch, materials/realistic/raytrace strategy unclear.                         | `Viewport.tsx`, render style pipeline                                                        | P1       | Open   |
@@ -470,7 +470,7 @@ Evidence (2026-05-13):
 ### WP-NEXT-13 — Schedule Meaningfulness Upgrade
 
 - Priority: `P1`
-- Status: `Open`
+- Status: `Done`
 - Covers: `NEXT-GAP-015`
 - Goal: make schedules useful as practical quantity/specification artifacts for roles.
 - Source ownership:
@@ -480,6 +480,28 @@ Evidence (2026-05-13):
   - role-appropriate default schedule presets (architect, energy advisor, etc.),
   - meaningful columns/units/aggregation with clear provenance,
   - place-on-sheet and export flows remain intact.
+
+Evidence (2026-05-13):
+
+- Schedule canvas now exposes explicit workflow profiles by schedule category + workspace context (architectural, MEP load-zoning, energy/opening, quantity takeoff) with one-click profile application that writes canonical `upsertSchedule` payloads:
+  - profile metadata includes preset columns, sort/group strategy, and expected aggregation intent
+  - source: `packages/web/src/workspace/ModeShells.tsx`
+- Workflow profile diagnostics now surface meaning/provenance inline:
+  - required-field availability against server-returned columns,
+  - units and aggregation cues derived from canonical preset metadata,
+  - server derivation provenance line (`scheduleEngine` + schedule id)
+  - source: `packages/web/src/workspace/ModeShells.tsx`
+- Export and place-on-sheet flows remain first-class in schedule mode:
+  - explicit `Export CSV` action (server schedule table endpoint + totals),
+  - existing `Place on sheet` action preserved,
+  - Cmd+K reachability preserved for schedule placement.
+- Regression coverage:
+  - `packages/web/src/workspace/ModeShells.test.tsx` (new workflow-profile apply assertion including `displayColumnKeys` + grouping/sort payload)
+- Seeded live proof (`make seed name=target-house-3`, `make dev name=target-house-3`) captured in:
+  - `packages/web/tmp/ux-next-wp13-20260513/01-schedule-workflow-panel.png`
+  - `packages/web/tmp/ux-next-wp13-20260513/02-schedule-profile-applied.png`
+  - `packages/web/tmp/ux-next-wp13-20260513/03-cmdk-schedule-place-on-sheet.png`
+  - `packages/web/tmp/ux-next-wp13-20260513/summary.json`
 
 ### WP-NEXT-14 — Section Context Reinforcement
 

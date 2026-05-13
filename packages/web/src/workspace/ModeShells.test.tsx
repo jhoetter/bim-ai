@@ -220,6 +220,85 @@ describe('ScheduleModeShell — spec §20.6', () => {
       }),
     );
   });
+
+  it('applies workflow profile presets with meaningful fields/grouping and keeps export reachable', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          scheduleId: 'seed-sch-window',
+          name: 'Window schedule',
+          category: 'window',
+          scheduleEngine: {
+            format: 'scheduleEngine_v1',
+            category: 'window',
+            sortBy: 'name',
+            supportsCsv: true,
+          },
+          columns: [
+            'elementId',
+            'name',
+            'level',
+            'widthMm',
+            'heightMm',
+            'roughOpeningAreaM2',
+            'openingAreaM2',
+            'sillMm',
+            'aspectRatio',
+            'headHeightMm',
+            'hostWallTypeDisplay',
+            'materialDisplay',
+            'familyTypeDisplay',
+          ],
+          columnMetadata: {
+            fields: {
+              elementId: { label: 'Element id', role: 'id' },
+              name: { label: 'Name', role: 'text' },
+              openingAreaM2: { label: 'Opening area (m²)', role: 'number' },
+            },
+          },
+          rows: [{ elementId: 'win-1', name: 'W-01', openingAreaM2: 1.2 }],
+          totals: { rows: 1 },
+        }),
+        { status: 200 },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchSpy);
+    const onUpsertSemantic = vi.fn();
+
+    const { getByTestId, getByRole, getByText } = render(
+      <ScheduleModeShell
+        elementsById={elementsById}
+        preferredScheduleId="seed-sch-window"
+        modelId="model-1"
+        onUpsertSemantic={onUpsertSemantic}
+      />,
+    );
+
+    await waitFor(() => expect(getByText('W-01')).toBeTruthy());
+    expect(getByRole('button', { name: 'Export CSV' })).toBeTruthy();
+
+    fireEvent.change(getByTestId('schedule-workflow-profile-select'), {
+      target: { value: 'window-energy-opening' },
+    });
+    fireEvent.click(getByTestId('schedule-workflow-profile-apply'));
+
+    expect(onUpsertSemantic).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'upsertSchedule',
+        id: 'seed-sch-window',
+        filters: expect.objectContaining({
+          sortBy: 'openingAreaM2',
+          sortDescending: true,
+          displayColumnKeys: expect.arrayContaining(['openingAreaM2', 'roughOpeningAreaM2']),
+        }),
+        grouping: expect.objectContaining({
+          sortBy: 'openingAreaM2',
+          sortDescending: true,
+          groupKeys: ['levelId'],
+        }),
+      }),
+    );
+  });
 });
 
 describe('ConceptModeShell — CON-V3-01 / MDB-V3-01', () => {

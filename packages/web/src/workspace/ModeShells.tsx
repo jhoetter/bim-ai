@@ -15,6 +15,16 @@ import {
   type ScheduleTableModelV1,
 } from '../schedules/scheduleTableRenderer';
 import { formatScheduleCell } from '../schedules/scheduleUtils';
+import {
+  missingRequiredFieldKeys,
+  presetById,
+  resolvePresetColumnsForExport,
+  type ScheduleAggregation,
+} from '../schedules/scheduleDefinitionPresets';
+import {
+  buildScheduleTableCsvUrl,
+  scheduleRegistryEngineReadoutParts,
+} from '../schedules/schedulePanelRegistryChrome';
 import { firstSheetId, placeViewOnSheetCommand } from './sheets/sheetRecommendedViewports';
 
 /**
@@ -334,7 +344,9 @@ function ScheduleGrid({
 }): JSX.Element {
   const [state, setState] = useState<ScheduleGridState>({ status: 'idle' });
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+  const [workflowProfileId, setWorkflowProfileId] = useState<string>('');
   const select = useBimStore((s) => s.select);
+  const activeWorkspaceId = useBimStore((s) => s.activeWorkspaceId);
   const firstSheet = useMemo(() => firstSheetId(elementsById), [elementsById]);
   const sheetViewportCount = useMemo(
     () => scheduleSheetPlacementStats(elementsById).get(schedule.id) ?? 0,
@@ -384,6 +396,55 @@ function ScheduleGrid({
       ? String(state.payload.category ?? '').trim()
       : String((schedule.filters as Record<string, unknown> | undefined)?.category ?? '').trim();
   const selectedRowIsElement = Boolean(selectedRowId && elementsById[selectedRowId]);
+  const workflowProfiles = useMemo(
+    () => scheduleWorkflowProfiles(category, activeWorkspaceId),
+    [category, activeWorkspaceId],
+  );
+  const activeProfile =
+    workflowProfiles.find((profile) => profile.id === workflowProfileId) ?? workflowProfiles[0];
+  const payloadColumns = useMemo(() => {
+    if (state.status !== 'ready') return [] as string[];
+    const cols = state.payload.columns;
+    return Array.isArray(cols) ? (cols as string[]) : [];
+  }, [state]);
+  const activePreset = activeProfile ? presetById(activeProfile.presetId) : undefined;
+  const presetColumnKeys = useMemo(() => {
+    if (!activePreset) return [] as string[];
+    return resolvePresetColumnsForExport(
+      activePreset.fields.map((field) => field.fieldKey),
+      payloadColumns,
+    );
+  }, [activePreset, payloadColumns]);
+  const missingPresetRequiredFields = useMemo(() => {
+    if (!activePreset) return [] as string[];
+    return missingRequiredFieldKeys(activePreset, payloadColumns);
+  }, [activePreset, payloadColumns]);
+  const presetUnitHints = useMemo(() => {
+    if (!activePreset) return [] as string[];
+    const units = new Set<string>();
+    for (const field of activePreset.fields) {
+      if (typeof field.unitHint === 'string' && field.unitHint.trim()) {
+        units.add(field.unitHint.trim());
+      }
+    }
+    return [...units].sort((a, b) => a.localeCompare(b));
+  }, [activePreset]);
+  const presetAggregations = useMemo(() => {
+    if (!activePreset) return [] as Array<{ key: string; aggregation: ScheduleAggregation }>;
+    return activePreset.fields
+      .filter(
+        (
+          field,
+        ): field is (typeof activePreset.fields)[number] & { aggregation: ScheduleAggregation } =>
+          Boolean(field.aggregation),
+      )
+      .map((field) => ({ key: field.fieldKey, aggregation: field.aggregation }));
+  }, [activePreset]);
+  const provenanceParts = useMemo(() => {
+    if (state.status !== 'ready') return [] as string[];
+    const parts = [`schedule ${schedule.id}`, ...scheduleRegistryEngineReadoutParts(state.payload)];
+    return parts.filter((part) => part.trim().length > 0);
+  }, [schedule.id, state]);
 
   const placeOnSheet = () => {
     if (!firstSheet || !onUpsertSemantic) return;
@@ -407,6 +468,58 @@ function ScheduleGrid({
     select(selectedRowId);
     onNavigateToElement?.(selectedRowId);
   };
+
+  const applyWorkflowProfile = () => {
+    if (!onUpsertSemantic || !activeProfile || !activePreset) return;
+    const sortBy = activeProfile.sortBy ?? 'name';
+    const nextFilters = {
+      ...(schedule.filters ?? {}),
+      displayColumnKeys: presetColumnKeys,
+      sortBy,
+      sortDescending: activeProfile.sortDescending ?? false,
+      groupingHint: activeProfile.groupKeys ?? [],
+    };
+    const nextGrouping = {
+      ...(schedule.grouping ?? {}),
+      sortBy,
+      sortDescending: activeProfile.sortDescending ?? false,
+      groupKeys: activeProfile.groupKeys ?? [],
+    };
+    onUpsertSemantic({
+      type: 'upsertSchedule',
+      id: schedule.id,
+      name: schedule.name,
+      category: category || undefined,
+      filters: nextFilters,
+      grouping: nextGrouping,
+    });
+  };
+
+  const exportScheduleCsv = async () => {
+    if (!modelId) return;
+    const cols = presetColumnKeys.length > 0 ? presetColumnKeys : undefined;
+    const csvUrl = buildScheduleTableCsvUrl(modelId, schedule.id, {
+      columns: cols,
+      includeScheduleTotalsCsv: true,
+    });
+    const response = await fetch(csvUrl);
+    const body = await response.text();
+    if (!response.ok) {
+      alert(body);
+      return;
+    }
+    const blob = new Blob([body], { type: 'text/csv;charset=utf-8' });
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = objectUrl;
+    anchor.download = `bim-ai-schedule-${schedule.id}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(objectUrl);
+  };
+
+  useEffect(() => {
+    setWorkflowProfileId(workflowProfiles[0]?.id ?? '');
+  }, [schedule.id, workflowProfiles]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -459,8 +572,71 @@ function ScheduleGrid({
             <Icons.copy size={ICON_SIZE.chrome} aria-hidden="true" />
             Duplicate
           </button>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 rounded border border-border bg-surface px-2 py-1 text-xs text-foreground hover:bg-surface-strong disabled:cursor-not-allowed disabled:opacity-45"
+            disabled={!modelId}
+            title={modelId ? 'Export this schedule as CSV' : 'Open a model to export CSV'}
+            onClick={() => void exportScheduleCsv()}
+          >
+            <Icons.externalLink size={ICON_SIZE.chrome} aria-hidden="true" />
+            Export CSV
+          </button>
         </div>
       </div>
+      {activeProfile && activePreset ? (
+        <div
+          data-testid="schedule-workflow-profile"
+          className="rounded border border-border/60 bg-surface px-2 py-2 text-xs"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0">
+              <div className="font-semibold text-foreground">Workflow profile</div>
+              <div className="text-muted">{activeProfile.description}</div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                data-testid="schedule-workflow-profile-select"
+                className="rounded border border-border bg-background px-2 py-0.5 text-xs text-foreground"
+                value={activeProfile.id}
+                onChange={(event) => setWorkflowProfileId(event.currentTarget.value)}
+              >
+                {workflowProfiles.map((profile) => (
+                  <option key={profile.id} value={profile.id}>
+                    {profile.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                data-testid="schedule-workflow-profile-apply"
+                className="rounded border border-border bg-surface px-2 py-0.5 text-xs text-foreground hover:bg-surface-strong disabled:cursor-not-allowed disabled:opacity-45"
+                disabled={!onUpsertSemantic || presetColumnKeys.length === 0}
+                onClick={applyWorkflowProfile}
+              >
+                Apply profile
+              </button>
+            </div>
+          </div>
+          <div className="mt-1 text-[11px] text-muted">
+            Columns {presetColumnKeys.length}/{payloadColumns.length}
+            {missingPresetRequiredFields.length > 0
+              ? ` · missing required: ${missingPresetRequiredFields.join(', ')}`
+              : ' · all required fields available'}
+            {presetUnitHints.length > 0 ? ` · units: ${presetUnitHints.join(', ')}` : ''}
+            {presetAggregations.length > 0
+              ? ` · totals: ${presetAggregations
+                  .map((entry) => `${entry.aggregation}(${entry.key})`)
+                  .join(', ')}`
+              : ''}
+          </div>
+          {provenanceParts.length > 0 ? (
+            <div className="mt-1 font-mono text-[10px] text-muted">
+              provenance: {provenanceParts.join(' · ')}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       {state.status === 'idle' ? (
         <div className="rounded border border-border bg-surface px-3 py-2 text-sm text-muted">
           Open a saved model to derive schedule rows.
@@ -593,6 +769,129 @@ function DerivedScheduleTable({
       ) : null}
     </div>
   );
+}
+
+type ScheduleWorkflowProfile = {
+  id: string;
+  label: string;
+  description: string;
+  presetId: string;
+  sortBy?: string;
+  sortDescending?: boolean;
+  groupKeys?: string[];
+};
+
+function scheduleWorkflowProfiles(
+  category: string,
+  workspaceId: 'arch' | 'struct' | 'mep' | 'concept',
+): ScheduleWorkflowProfile[] {
+  switch (category) {
+    case 'room':
+      return workspaceId === 'mep'
+        ? [
+            {
+              id: 'room-mep-loads',
+              label: 'MEP load zoning',
+              description: 'Sort rooms by programme and area for HVAC and electrical zone review.',
+              presetId: 'room-programme',
+              sortBy: 'areaM2',
+              sortDescending: true,
+              groupKeys: ['programmeCode'],
+            },
+            {
+              id: 'room-core-quantity',
+              label: 'Area takeoff',
+              description: 'Core room area and perimeter quantities for quick gross checks.',
+              presetId: 'room-core-area',
+              sortBy: 'name',
+              sortDescending: false,
+              groupKeys: ['levelId'],
+            },
+          ]
+        : [
+            {
+              id: 'room-architect-programme',
+              label: 'Architect programme',
+              description:
+                'Room programme and department metadata for documentation and QA ownership.',
+              presetId: 'room-programme',
+              sortBy: 'name',
+              sortDescending: false,
+              groupKeys: ['levelId', 'department'],
+            },
+            {
+              id: 'room-energy-envelope',
+              label: 'Energy advisor area',
+              description:
+                'Area-focused room schedule with target deltas for quick energy-area reconciliation.',
+              presetId: 'room-core-area',
+              sortBy: 'areaDeltaM2',
+              sortDescending: true,
+              groupKeys: ['levelId'],
+            },
+          ];
+    case 'door':
+      return [
+        {
+          id: 'door-host-spec',
+          label: 'Host and type spec',
+          description:
+            'Door host/type identity for architectural documentation and coordination handoff.',
+          presetId: 'door-host-identity',
+          sortBy: 'hostWallTypeDisplay',
+          sortDescending: false,
+          groupKeys: ['levelId', 'hostWallTypeDisplay'],
+        },
+        {
+          id: 'door-opening-qto',
+          label: 'Opening quantity',
+          description:
+            'Rough opening geometry grouped by level for quantity takeoff and fabrication prep.',
+          presetId: 'door-opening-qto',
+          sortBy: 'roughOpeningAreaM2',
+          sortDescending: true,
+          groupKeys: ['levelId'],
+        },
+      ];
+    case 'window':
+      return [
+        {
+          id: 'window-glazing-host',
+          label: 'Glazing and host',
+          description:
+            'Window host/type/material context for envelope coordination and specification checks.',
+          presetId: 'window-glazing-host',
+          sortBy: 'hostWallTypeDisplay',
+          sortDescending: false,
+          groupKeys: ['levelId', 'hostWallTypeDisplay'],
+        },
+        {
+          id: 'window-energy-opening',
+          label: 'Energy opening area',
+          description:
+            'Opening-area oriented profile for daylight and envelope performance review.',
+          presetId: 'window-opening-qto',
+          sortBy: 'openingAreaM2',
+          sortDescending: true,
+          groupKeys: ['levelId'],
+        },
+      ];
+    case 'material_assembly':
+      return [
+        {
+          id: 'assembly-layer-qto',
+          label: 'Layer takeoff',
+          description:
+            'Layer-by-layer assembly quantities and thicknesses for estimator and consultant workflows.',
+          presetId: 'assembly-layer-takeoff',
+          sortBy: 'grossVolumeM3',
+          sortDescending: true,
+          groupKeys: ['hostKind', 'materialKey'],
+        },
+      ];
+    default:
+      return [];
+  }
 }
 
 function scheduleCategoryLabel(schedule: Extract<Element, { kind: 'schedule' }>): string {
