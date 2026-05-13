@@ -11,11 +11,11 @@
       "y": 858.76
     }
   },
-  "rightwardDragPreserved": true,
+  "wallVolumePreviewVisible": true,
   "commands": [
     {
       "type": "createWall",
-      "id": "wall-3d-mp4adhsl-8sd5",
+      "id": "wall-3d-mp4aqqd6-8iz2",
       "levelId": "hf-lvl-ground",
       "start": {
         "xMm": 6226.568714831564,

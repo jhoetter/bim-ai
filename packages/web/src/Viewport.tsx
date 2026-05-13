@@ -1226,6 +1226,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       start: { xMm: number; yMm: number },
       end: { xMm: number; yMm: number },
       levelElevationMm: number,
+      heightMm: number,
       flip: boolean,
       locationLine: string | null | undefined,
       thicknessMm: number,
@@ -1248,27 +1249,63 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       const offsetMm = wallLocationLineOffsetFrac(effectiveLocationLine) * thickMm;
       const plus = offsetMm + thickMm / 2;
       const minus = offsetMm - thickMm / 2;
-      const zMm = levelElevationMm + 10;
-      const corners = [
-        { xMm: actualStart.xMm + nx * plus, yMm: actualStart.yMm + ny * plus, zMm },
-        { xMm: actualEnd.xMm + nx * plus, yMm: actualEnd.yMm + ny * plus, zMm },
-        { xMm: actualEnd.xMm + nx * minus, yMm: actualEnd.yMm + ny * minus, zMm },
-        { xMm: actualStart.xMm + nx * minus, yMm: actualStart.yMm + ny * minus, zMm },
+      const bottomZMm = levelElevationMm;
+      const topZMm = levelElevationMm + Math.max(250, heightMm);
+      const footprint = [
+        { xMm: actualStart.xMm + nx * plus, yMm: actualStart.yMm + ny * plus },
+        { xMm: actualEnd.xMm + nx * plus, yMm: actualEnd.yMm + ny * plus },
+        { xMm: actualEnd.xMm + nx * minus, yMm: actualEnd.yMm + ny * minus },
+        { xMm: actualStart.xMm + nx * minus, yMm: actualStart.yMm + ny * minus },
       ];
-      const outline = corners
+      const volumePoints = [
+        ...footprint.map((point) => ({ ...point, zMm: bottomZMm })),
+        ...footprint.map((point) => ({ ...point, zMm: topZMm })),
+      ];
+      const projectedVolume = volumePoints
         .map((point) => projectSemanticPointToScreen(point, rect))
         .filter((point): point is ScreenPoint => point !== null);
-      if (outline.length !== 4) return null;
+      if (projectedVolume.length < 3) return null;
+      const outline = convexHullScreenPoints(projectedVolume);
+      if (outline.length < 3) return null;
+      const directionZMm = bottomZMm + Math.min(Math.max(800, heightMm * 0.45), heightMm);
       const directionStart = projectSemanticPointToScreen(
-        { xMm: actualStart.xMm, yMm: actualStart.yMm, zMm },
+        { xMm: actualStart.xMm, yMm: actualStart.yMm, zMm: directionZMm },
         rect,
       );
       const directionEnd = projectSemanticPointToScreen(
-        { xMm: actualEnd.xMm, yMm: actualEnd.yMm, zMm },
+        { xMm: actualEnd.xMm, yMm: actualEnd.yMm, zMm: directionZMm },
         rect,
       );
       if (!directionStart || !directionEnd) return null;
       return { outline, directionStart, directionEnd };
+    }
+
+    function convexHullScreenPoints(points: ScreenPoint[]): ScreenPoint[] {
+      const sorted = [...points].sort((a, b) => (a.x === b.x ? a.y - b.y : a.x - b.x));
+      const cross = (origin: ScreenPoint, a: ScreenPoint, b: ScreenPoint) =>
+        (a.x - origin.x) * (b.y - origin.y) - (a.y - origin.y) * (b.x - origin.x);
+      const lower: ScreenPoint[] = [];
+      for (const point of sorted) {
+        while (
+          lower.length >= 2 &&
+          cross(lower[lower.length - 2]!, lower[lower.length - 1]!, point) <= 0
+        )
+          lower.pop();
+        lower.push(point);
+      }
+      const upper: ScreenPoint[] = [];
+      for (let i = sorted.length - 1; i >= 0; i -= 1) {
+        const point = sorted[i]!;
+        while (
+          upper.length >= 2 &&
+          cross(upper[upper.length - 2]!, upper[upper.length - 1]!, point) <= 0
+        )
+          upper.pop();
+        upper.push(point);
+      }
+      lower.pop();
+      upper.pop();
+      return [...lower, ...upper];
     }
 
     function hostedPreviewSegment(
@@ -1594,16 +1631,6 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
           return true;
         }
         if (tool === 'wall') {
-          const clickRect = renderer.domElement.getBoundingClientRect();
-          const preview = wallDraftPreview(
-            start,
-            end,
-            levelInfo.elevationMm,
-            wallFlipNextSegment,
-            useBimStore.getState().wallLocationLine,
-            resolveDraftWallThicknessMm(),
-            clickRect,
-          );
           const runtime = useBimStore.getState();
           const flip = wallFlipNextSegment;
           const effectiveLocationLine = flip
@@ -2064,6 +2091,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                     lineDraftStart.point,
                     projected.point,
                     levelInfo.elevationMm,
+                    useBimStore.getState().wallDrawHeightMm,
                     wallFlipNextSegment,
                     useBimStore.getState().wallLocationLine,
                     resolveDraftWallThicknessMm(),
@@ -3895,16 +3923,18 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         authoringOverlay.startScreen &&
         authoringOverlay.currentScreen ? (
           <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full">
-            <line
-              x1={authoringOverlay.startScreen.x}
-              y1={authoringOverlay.startScreen.y}
-              x2={authoringOverlay.currentScreen.x}
-              y2={authoringOverlay.currentScreen.y}
-              stroke="var(--color-accent)"
-              strokeWidth="2"
-              strokeDasharray="6 4"
-              opacity="0.95"
-            />
+            {authoringOverlay.tool !== 'wall' ? (
+              <line
+                x1={authoringOverlay.startScreen.x}
+                y1={authoringOverlay.startScreen.y}
+                x2={authoringOverlay.currentScreen.x}
+                y2={authoringOverlay.currentScreen.y}
+                stroke="var(--color-accent)"
+                strokeWidth="2"
+                strokeDasharray="6 4"
+                opacity="0.95"
+              />
+            ) : null}
             {authoringOverlay.tool === 'wall' &&
             authoringOverlay.wallPreviewOutlineScreen &&
             authoringOverlay.wallPreviewOutlineScreen.length >= 4 ? (

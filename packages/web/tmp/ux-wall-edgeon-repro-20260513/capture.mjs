@@ -43,6 +43,7 @@ const end = { x: box.x + box.width * 0.62, y: box.y + box.height * 0.58 };
 await page.mouse.click(start.x, start.y);
 await page.mouse.move(end.x, end.y, { steps: 8 });
 await page.waitForTimeout(250);
+const wallVolumePreviewVisible = (await page.locator('svg polygon').count()) > 0;
 await page.screenshot({
   path: 'tmp/ux-wall-edgeon-repro-20260513/01-before-commit.png',
   fullPage: true,
@@ -58,9 +59,7 @@ const summary = {
   createWallCount: commands.filter((c) => c?.type === 'createWall').length,
   commandTypes: commands.map((c) => c?.type ?? null),
   screenDrag: { start, end },
-  rightwardDragPreserved:
-    commands.find((c) => c?.type === 'createWall')?.end?.xMm >
-    commands.find((c) => c?.type === 'createWall')?.start?.xMm,
+  wallVolumePreviewVisible,
   commands,
 };
 await fs.writeFile(
