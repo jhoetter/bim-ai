@@ -26,6 +26,12 @@
       "transcript": "/46/cdebfd2021/1/full.jsonl",
       "content_hash": "/46/cdebfd2021/1/content_hash.txt",
       "prompt": "/46/cdebfd2021/1/prompt.txt"
+    },
+    {
+      "metadata": "/46/cdebfd2021/2/metadata.json",
+      "transcript": "/46/cdebfd2021/2/full.jsonl",
+      "content_hash": "/46/cdebfd2021/2/content_hash.txt",
+      "prompt": "/46/cdebfd2021/2/prompt.txt"
     }
   ],
   "token_usage": {
