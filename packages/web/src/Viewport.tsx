@@ -150,6 +150,13 @@ type ViewerGdoRuntimeState = {
   viewerPhotographicExposureEv?: number;
 };
 
+type WallDraftOverlayState = {
+  phase: 'pick-start' | 'pick-end';
+  levelName: string;
+  startScreen?: { x: number; y: number };
+  currentScreen?: { x: number; y: number };
+};
+
 const GDO_STORAGE_KEYS = {
   shadows: 'bim.viewer.shadowsEnabled',
   ambientOcclusion: 'bim.viewer.ambientOcclusionEnabled',
@@ -332,10 +339,13 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
   selectedIdRef.current = selectedId;
   const planTool = useBimStore((s) => s.planTool);
   const activeLevelId = useBimStore((s) => s.activeLevelId);
+  const [wallDraftOverlay, setWallDraftOverlay] = useState<WallDraftOverlayState | null>(null);
   const planToolRef = useRef(planTool);
   const activeLevelIdRef = useRef(activeLevelId);
   planToolRef.current = planTool;
   activeLevelIdRef.current = activeLevelId;
+  const wallDraftOverlayRef = useRef<WallDraftOverlayState | null>(null);
+  wallDraftOverlayRef.current = wallDraftOverlay;
   // ANN-02: store actions for the wall context menu's command flow.
   const activateElevationView = useBimStore((s) => s.activateElevationView);
   const selectStoreEl = useBimStore((s) => s.select);
@@ -398,6 +408,27 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
     },
     [onSemanticCommand],
   );
+
+  const wallDraftDefaultLevelName = useMemo(() => {
+    const levels = Object.values(elementsById)
+      .filter((el): el is Extract<Element, { kind: 'level' }> => el.kind === 'level')
+      .map((level) => ({ id: level.id, elevationMm: level.elevationMm, name: level.name }));
+    const resolved = resolve3dDraftLevel(levels, activeLevelId);
+    const resolvedName = resolved ? levels.find((level) => level.id === resolved.id)?.name : null;
+    return resolvedName ?? 'Active level';
+  }, [activeLevelId, elementsById]);
+
+  useEffect(() => {
+    if (planTool !== 'wall') {
+      setWallDraftOverlay(null);
+      return;
+    }
+    setWallDraftOverlay((prev) =>
+      prev
+        ? { ...prev, levelName: wallDraftDefaultLevelName }
+        : { phase: 'pick-start', levelName: wallDraftDefaultLevelName },
+    );
+  }, [planTool, wallDraftDefaultLevelName]);
 
   // VIS-V3-04: sync sun_settings element → sunStore
   useEffect(() => {
@@ -709,7 +740,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       maxRadius: 80,
     });
     cameraRigRef.current = rig;
-    let dragging: 'orbit' | 'pan' | 'grip' | null = null;
+    let dragging: 'orbit' | 'pan' | 'grip' | 'wall-draft' | null = null;
     let dragMoved = false;
     let cumulativeDragPx = 0;
     let inertiaVx = 0;
@@ -784,16 +815,24 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       useBimStore.getState().select(first?.object.userData.bimPickId as string | undefined);
     }
 
+    function clearWallDraftOverlay(levelName: string): void {
+      setWallDraftOverlay({ phase: 'pick-start', levelName });
+    }
+
     function handle3dWallDraftClick(cx: number, cy: number): boolean {
       if (planToolRef.current !== 'wall') {
         wallDraftStart = null;
+        setWallDraftOverlay(null);
         return false;
       }
-      const levels = Object.values(elementsByIdRef.current)
-        .filter((el): el is Extract<Element, { kind: 'level' }> => el.kind === 'level')
-        .map((level) => ({ id: level.id, elevationMm: level.elevationMm }));
+      const levels = Object.values(elementsByIdRef.current).filter(
+        (el): el is Extract<Element, { kind: 'level' }> => el.kind === 'level',
+      );
+      const draftLevelLabelMap = new Map(levels.map((level) => [level.id, level.name]));
+      const fallbackLevelName = wallDraftOverlayRef.current?.levelName ?? 'Active level';
       const draftLevel = resolve3dDraftLevel(levels, activeLevelIdRef.current);
       if (!draftLevel) return false;
+      const draftLevelName = draftLevelLabelMap.get(draftLevel.id) ?? fallbackLevelName;
       const rect = renderer.domElement.getBoundingClientRect();
       ndc.x = ((cx - rect.left) / rect.width) * 2 - 1;
       ndc.y = -(((cy - rect.top) / rect.height) * 2 - 1);
@@ -805,15 +844,25 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       );
       if (!hit) return false;
       if (!wallDraftStart) {
+        const startScreen = { x: cx - rect.left, y: cy - rect.top };
         wallDraftStart = { levelId: draftLevel.id, point: hit };
         useBimStore.getState().select(undefined);
+        setWallDraftOverlay({
+          phase: 'pick-end',
+          levelName: draftLevelName,
+          startScreen,
+          currentScreen: startScreen,
+        });
         return true;
       }
       const start = wallDraftStart.point;
       const end = hit;
       const levelId = wallDraftStart.levelId;
       wallDraftStart = null;
-      if (Math.hypot(end.xMm - start.xMm, end.yMm - start.yMm) < 10) return true;
+      if (Math.hypot(end.xMm - start.xMm, end.yMm - start.yMm) < 10) {
+        clearWallDraftOverlay(draftLevelName);
+        return true;
+      }
       const runtime = useBimStore.getState();
       onSemanticCommand?.({
         type: 'createWall',
@@ -825,6 +874,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         wallTypeId: runtime.activeWallTypeId ?? undefined,
         heightMm: runtime.wallDrawHeightMm,
       });
+      clearWallDraftOverlay(draftLevelName);
       return true;
     }
 
@@ -933,6 +983,15 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         host.requestPointerLock();
         return;
       }
+      if (planToolRef.current === 'wall' && ev.button === 0 && !ev.altKey && !ev.shiftKey) {
+        dragging = 'wall-draft';
+        dragMoved = false;
+        cumulativeDragPx = 0;
+        lastX = ev.clientX;
+        lastY = ev.clientY;
+        (ev.target as HTMLElement).setPointerCapture(ev.pointerId);
+        return;
+      }
       // EDT-03 — grip pre-pass. If the pointer is over a grip pickable,
       // start a grip drag instead of an orbit/pan.
       if (ev.button === 0) {
@@ -997,6 +1056,10 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         activeGrip = null;
         return;
       }
+      if (!dragMoved && wasDragging === 'wall-draft') {
+        handle3dWallDraftClick(ev.clientX, ev.clientY);
+        return;
+      }
       if (!dragMoved && wasDragging === 'orbit') {
         if (handle3dWallDraftClick(ev.clientX, ev.clientY)) return;
         pick(ev.clientX, ev.clientY);
@@ -1004,6 +1067,24 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
     }
 
     function onMove(ev: PointerEvent): void {
+      if (
+        planToolRef.current === 'wall' &&
+        wallDraftStart &&
+        wallDraftOverlayRef.current?.phase === 'pick-end'
+      ) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        setWallDraftOverlay((prev) =>
+          prev?.phase === 'pick-end'
+            ? {
+                ...prev,
+                currentScreen: {
+                  x: ev.clientX - rect.left,
+                  y: ev.clientY - rect.top,
+                },
+              }
+            : prev,
+        );
+      }
       if (!dragging) return;
       const dx = ev.clientX - lastX;
       const dy = ev.clientY - lastY;
@@ -1012,6 +1093,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       cumulativeDragPx += Math.hypot(dx, dy);
       if (cumulativeDragPx > DRAG_THRESHOLD_PX) dragMoved = true;
       if (!dragMoved) return;
+      if (dragging === 'wall-draft') return;
       if (dragging === 'grip' && activeGrip) {
         const deltaMm = projectGripDelta(
           activeGrip.descriptor,
@@ -1089,6 +1171,14 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         const tag = target.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
         if (target.isContentEditable) return;
+      }
+      if (ev.key === 'Escape' && planToolRef.current === 'wall' && wallDraftStart) {
+        wallDraftStart = null;
+        setWallDraftOverlay((prev) =>
+          prev ? { phase: 'pick-start', levelName: prev.levelName } : null,
+        );
+        ev.preventDefault();
+        return;
       }
       const hk = classifyHotkey({ key: ev.key, ctrlKey: ev.ctrlKey, metaKey: ev.metaKey });
       if (!hk) return;
@@ -2448,6 +2538,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
     setCurrentElevation(snap.elevation);
   }, []);
 
+  const wallToolActiveIn3d = planTool === 'wall' && !walkActive;
+
   return (
     <div
       data-testid="orbit-3d-viewport"
@@ -2474,6 +2566,46 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
           onDrag={handleViewCubeDrag}
         />
       </div>
+
+      {wallToolActiveIn3d && wallDraftOverlay ? (
+        <div className="pointer-events-none absolute left-3 top-3 z-20">
+          <div className="rounded border border-accent/60 bg-surface/95 px-3 py-2 text-xs text-foreground shadow-sm">
+            <div className="font-medium text-accent">
+              Wall placement · {wallDraftOverlay.levelName}
+            </div>
+            <div className="text-muted">
+              {wallDraftOverlay.phase === 'pick-start'
+                ? 'Click start point. Alt+drag or middle mouse to orbit/pan.'
+                : 'Click end point. Esc cancels segment.'}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {wallToolActiveIn3d &&
+      wallDraftOverlay?.phase === 'pick-end' &&
+      wallDraftOverlay.startScreen &&
+      wallDraftOverlay.currentScreen ? (
+        <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full">
+          <line
+            x1={wallDraftOverlay.startScreen.x}
+            y1={wallDraftOverlay.startScreen.y}
+            x2={wallDraftOverlay.currentScreen.x}
+            y2={wallDraftOverlay.currentScreen.y}
+            stroke="var(--color-accent)"
+            strokeWidth="2"
+            strokeDasharray="6 4"
+            opacity="0.95"
+          />
+          <circle
+            cx={wallDraftOverlay.startScreen.x}
+            cy={wallDraftOverlay.startScreen.y}
+            r="6"
+            fill="var(--color-accent)"
+            opacity="0.95"
+          />
+        </svg>
+      ) : null}
 
       {/* Walk mode controls bar — shown while pointer is locked */}
       {walkActive ? (
@@ -2517,7 +2649,12 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             'linear-gradient(to bottom, #cce8f4 0%, #e8f4fd 40%, #f5f9fc 75%, #e8e4d8 100%)',
         }}
       />
-      <div ref={mountRef} className="relative z-[1] size-full cursor-grab active:cursor-grabbing" />
+      <div
+        ref={mountRef}
+        className={`relative z-[1] size-full ${
+          wallToolActiveIn3d ? 'cursor-crosshair' : 'cursor-grab active:cursor-grabbing'
+        }`}
+      />
     </div>
   );
 }

@@ -917,3 +917,42 @@ Evidence (2026-05-13):
       - `modeIdentityBeforeWallDraw: "3D"`
       - `modeIdentityAfterWallDraw: "3D"`
       - `createWallCommandCount: 1`
+
+## Reopened Tracker (2026-05-13, feedback round 6)
+
+| Gap ID        | Problem Statement                                                                                                             | Canonical Surfaces / Files                          | Priority | Status |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- | -------- | ------ |
+| NEXT6-GAP-001 | 3D wall authoring is technically possible but UX is unclear: start point not visible, prompts missing, feels like orbit-grab. | `Viewport.tsx` interaction + in-canvas guidance HUD | P0       | Done   |
+
+### WP-NEXT-24 — 3D Wall Placement UX Clarity Pass (Revit-style Cues)
+
+- Priority: `P0`
+- Status: `Done`
+- Covers: `NEXT6-GAP-001`
+- Goal: make 3D wall authoring legible and predictable using explicit placement cues and clear camera-vs-authoring input ownership.
+- Source ownership:
+  - `packages/web/src/Viewport.tsx`
+  - `packages/web/tmp/ux-next-wp24-20260513/capture.mjs`
+- Acceptance:
+  - wall tool in 3D shows explicit prompt (`pick start` / `pick end`);
+  - first click creates visible start marker + dashed preview segment;
+  - plain left-click is wall placement while camera orbit/pan uses modifier/middle mouse;
+  - `Esc` cancels in-flight wall segment.
+- Implementation + evidence:
+  - Added 3D wall-placement overlay state (`pick-start` / `pick-end`) with level context.
+  - Added in-canvas placement HUD text:
+    - `Click start point. Alt+drag or middle mouse to orbit/pan.`
+    - `Click end point. Esc cancels segment.`
+  - Added visible SVG start marker + dashed preview line between start and live cursor position.
+  - Updated pointer ownership:
+    - plain LMB in wall tool uses `wall-draft` mode (no accidental orbit-grab),
+    - orbit/pan still reachable via modifier/middle mouse.
+  - Added `Esc` handling to cancel current wall segment and reset prompt state.
+  - Seeded screenshot + live command capture proof:
+    - `packages/web/tmp/ux-next-wp24-20260513/01-3d-wall-pick-start-prompt.png`
+    - `packages/web/tmp/ux-next-wp24-20260513/02-3d-wall-pick-end-preview.png`
+    - `packages/web/tmp/ux-next-wp24-20260513/03-3d-wall-commit-stays-3d.png`
+    - `packages/web/tmp/ux-next-wp24-20260513/summary.json`
+      - `modeIdentity: "3D"`
+      - `startPromptVisible: true`
+      - `createWallCommandCount: 1`
