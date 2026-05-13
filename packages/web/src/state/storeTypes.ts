@@ -196,6 +196,8 @@ export type StoreState = {
   viewerClipFloorElevMm: number | null;
   /** When true for a semantic kind (`wall`, `roof`, …), that category is hidden in 3D. */
   viewerCategoryHidden: Record<string, boolean>;
+  /** When true for a level id, model elements hosted on that level are hidden in 3D. */
+  viewerLevelHidden: Record<string, boolean>;
   /** F-011: current 3D render style. */
   viewerRenderStyle: ViewerRenderStyle;
   /** F-113: 3D viewport background colour. */
@@ -307,6 +309,8 @@ export type StoreState = {
   setPlanRoomSchemeWireReadout: (readout: PlanRoomSchemeWireReadout | null) => void;
   setScheduleBudgetHydration: (v: { tab: string; rowCount: number } | null) => void;
   toggleViewerCategoryHidden: (semanticKind: string) => void;
+  toggleViewerLevelHidden: (levelId: string) => void;
+  setViewerLevelVisibilityMap: (next: Record<string, boolean>) => void;
   /** F-011: switch between 3D visual styles. */
   setViewerRenderStyle: (style: ViewerRenderStyle) => void;
   /** F-113: set 3D viewport background colour. */

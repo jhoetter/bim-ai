@@ -1,5 +1,5 @@
 import type { JSX, ReactNode } from 'react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { Element, LensMode, ParamSchemaEntry } from '@bim-ai/core';
@@ -67,6 +67,73 @@ const NAVIGABLE_KINDS = new Set<Element['kind']>([
   'sheet',
   'schedule',
 ]);
+
+const VIEWPOINT_LEVEL_VISIBILITY_STORAGE_KEY = 'bim.viewer.levelHiddenByViewpoint.v1';
+
+function readViewpointLevelVisibility(): Record<string, Record<string, boolean>> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const parsed = JSON.parse(
+      window.localStorage.getItem(VIEWPOINT_LEVEL_VISIBILITY_STORAGE_KEY) ?? '{}',
+    );
+    if (!parsed || typeof parsed !== 'object') return {};
+    const out: Record<string, Record<string, boolean>> = {};
+    for (const [viewId, rawMap] of Object.entries(parsed as Record<string, unknown>)) {
+      if (!rawMap || typeof rawMap !== 'object') continue;
+      out[viewId] = Object.fromEntries(
+        Object.entries(rawMap as Record<string, unknown>).map(([levelId, hidden]) => [
+          levelId,
+          Boolean(hidden),
+        ]),
+      );
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+function writeViewpointLevelVisibility(map: Record<string, Record<string, boolean>>): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(VIEWPOINT_LEVEL_VISIBILITY_STORAGE_KEY, JSON.stringify(map));
+  } catch {
+    /* noop */
+  }
+}
+
+function buildDefaultLevelVisibilityMapForLens(
+  levels: Array<Extract<Element, { kind: 'level' }>>,
+  elementsById: Record<string, Element>,
+  lensMode: LensMode,
+): Record<string, boolean> {
+  if (lensMode !== 'structure') return {};
+  const structuralKinds = new Set<Element['kind']>([
+    'wall',
+    'floor',
+    'roof',
+    'column',
+    'beam',
+    'stair',
+    'railing',
+  ]);
+  const structuralLevelIds = new Set<string>();
+  for (const element of Object.values(elementsById) as Element[]) {
+    if (!structuralKinds.has(element.kind)) continue;
+    if ('levelId' in element && typeof element.levelId === 'string') {
+      structuralLevelIds.add(element.levelId);
+    }
+    if (
+      element.kind === 'stair' &&
+      typeof element.baseLevelId === 'string' &&
+      typeof element.topLevelId === 'string'
+    ) {
+      structuralLevelIds.add(element.baseLevelId);
+      structuralLevelIds.add(element.topLevelId);
+    }
+  }
+  return Object.fromEntries(levels.map((level) => [level.id, !structuralLevelIds.has(level.id)]));
+}
 
 function newDuplicateTypeId(prefix: string): string {
   try {
@@ -254,7 +321,10 @@ export function WorkspaceRightRail({
   const activeLevelId = useBimStore((s) => s.activeLevelId);
   const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
   const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
+  const viewerLevelHidden = useBimStore((s) => s.viewerLevelHidden);
   const toggleViewerCategoryHidden = useBimStore((s) => s.toggleViewerCategoryHidden);
+  const toggleViewerLevelHidden = useBimStore((s) => s.toggleViewerLevelHidden);
+  const setViewerLevelVisibilityMap = useBimStore((s) => s.setViewerLevelVisibilityMap);
   const viewerRenderStyle = useBimStore((s) => s.viewerRenderStyle);
   const setViewerRenderStyle = useBimStore((s) => s.setViewerRenderStyle);
   const viewerBackground = useBimStore((s) => s.viewerBackground);
@@ -382,6 +452,21 @@ export function WorkspaceRightRail({
       ),
     });
   }, []);
+  const levelVisibilityOptions = useMemo(
+    () =>
+      levels.map((level) => ({
+        id: level.id,
+        hidden: Boolean(viewerLevelHidden[level.id]),
+        label: `${level.name} · ${(level.elevationMm / 1000).toFixed(2)} m`,
+      })),
+    [levels, viewerLevelHidden],
+  );
+  const setAllViewerLevelsHidden = useCallback(
+    (hidden: boolean): void => {
+      setViewerLevelVisibilityMap(Object.fromEntries(levels.map((level) => [level.id, hidden])));
+    },
+    [levels, setViewerLevelVisibilityMap],
+  );
   const show3dLayers = mode === '3d' || (mode as string) === 'plan-3d';
   const showAuthoringWorkbenches =
     mode === 'plan' ||
@@ -548,6 +633,41 @@ export function WorkspaceRightRail({
     [onSemanticCommand],
   );
 
+  useEffect(() => {
+    if (!show3dLayers) return;
+    const viewpointId = activeViewpoint?.id ?? activeViewpointId ?? null;
+    if (!viewpointId) {
+      setViewerLevelVisibilityMap({});
+      return;
+    }
+    const perViewpointMap = readViewpointLevelVisibility();
+    const saved = perViewpointMap[viewpointId];
+    if (saved && Object.keys(saved).length > 0) {
+      setViewerLevelVisibilityMap(saved);
+      return;
+    }
+    setViewerLevelVisibilityMap(
+      buildDefaultLevelVisibilityMapForLens(levels, elementsById, lensMode),
+    );
+  }, [
+    activeViewpoint?.id,
+    activeViewpointId,
+    elementsById,
+    lensMode,
+    levels,
+    setViewerLevelVisibilityMap,
+    show3dLayers,
+  ]);
+
+  useEffect(() => {
+    if (!show3dLayers) return;
+    const viewpointId = activeViewpoint?.id ?? activeViewpointId ?? null;
+    if (!viewpointId) return;
+    const perViewpointMap = readViewpointLevelVisibility();
+    perViewpointMap[viewpointId] = { ...viewerLevelHidden };
+    writeViewpointLevelVisibility(perViewpointMap);
+  }, [activeViewpoint?.id, activeViewpointId, show3dLayers, viewerLevelHidden]);
+
   if (surface === 'view-context') {
     return (
       <div
@@ -565,6 +685,9 @@ export function WorkspaceRightRail({
             toggleViewerCategoryHidden={toggleViewerCategoryHidden}
             setAllViewerCategoriesHidden={setAllViewerCategoriesHidden}
             viewerCategoryCounts={viewerCategoryCounts}
+            levelVisibilityOptions={levelVisibilityOptions}
+            toggleViewerLevelHidden={toggleViewerLevelHidden}
+            setAllViewerLevelsHidden={setAllViewerLevelsHidden}
             viewerRenderStyle={viewerRenderStyle}
             setViewerRenderStyle={setViewerRenderStyle}
             viewerBackground={viewerBackground}
@@ -606,6 +729,9 @@ export function WorkspaceRightRail({
             toggleViewerCategoryHidden={toggleViewerCategoryHidden}
             setAllViewerCategoriesHidden={setAllViewerCategoriesHidden}
             viewerCategoryCounts={viewerCategoryCounts}
+            levelVisibilityOptions={levelVisibilityOptions}
+            toggleViewerLevelHidden={toggleViewerLevelHidden}
+            setAllViewerLevelsHidden={setAllViewerLevelsHidden}
             viewerRenderStyle={viewerRenderStyle}
             setViewerRenderStyle={setViewerRenderStyle}
             viewerBackground={viewerBackground}
@@ -1343,6 +1469,9 @@ export function WorkspaceRightRail({
               onToggleCategory={toggleViewerCategoryHidden}
               onSetAllCategoriesHidden={setAllViewerCategoriesHidden}
               categoryCounts={viewerCategoryCounts}
+              levelVisibilityOptions={levelVisibilityOptions}
+              onToggleLevelVisibility={toggleViewerLevelHidden}
+              onSetAllLevelsHidden={setAllViewerLevelsHidden}
               viewerRenderStyle={viewerRenderStyle}
               onSetRenderStyle={setViewerRenderStyle}
               viewerBackground={viewerBackground}
@@ -1624,6 +1753,9 @@ type Secondary3dAdapterProps = {
   toggleViewerCategoryHidden: (kind: ViewerCatKey) => void;
   setAllViewerCategoriesHidden: (hidden: boolean) => void;
   viewerCategoryCounts: Partial<Record<ViewerCatKey, number>>;
+  levelVisibilityOptions: Array<{ id: string; label: string; hidden: boolean }>;
+  toggleViewerLevelHidden: (levelId: string) => void;
+  setAllViewerLevelsHidden: (hidden: boolean) => void;
   viewerRenderStyle: ViewerRenderStyle;
   setViewerRenderStyle: (style: ViewerRenderStyle) => void;
   viewerBackground: 'white' | 'light_grey' | 'dark';
@@ -1669,6 +1801,9 @@ function Secondary3dAdapter(props: Secondary3dAdapterProps): JSX.Element {
           onToggleCategory={props.toggleViewerCategoryHidden}
           onSetAllCategoriesHidden={props.setAllViewerCategoriesHidden}
           categoryCounts={props.viewerCategoryCounts}
+          levelVisibilityOptions={props.levelVisibilityOptions}
+          onToggleLevelVisibility={props.toggleViewerLevelHidden}
+          onSetAllLevelsHidden={props.setAllViewerLevelsHidden}
           viewerRenderStyle={props.viewerRenderStyle}
           onSetRenderStyle={props.setViewerRenderStyle}
           viewerBackground={props.viewerBackground}

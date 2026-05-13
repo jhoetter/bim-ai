@@ -48,7 +48,7 @@ The foundational seven-region ownership model is in place, but real usage still 
 | NEXT-GAP-005 | Wall placement has weak off-plan/crop guardrails and unclear loop-mode state transitions.                          | `plan/PlanCanvas.tsx`, plan view crop data                                                   | P0       | Done   |
 | NEXT-GAP-006 | 3D wall openings can render incorrectly (wall visible in window/opening).                                          | `Viewport.tsx` wall/opening CSG path                                                         | P0       | Done   |
 | NEXT-GAP-007 | 3D edit affordances are inconsistent (insert window/opening workflows not robust in-context).                      | `workspace/shell/RibbonBar.tsx`, `workspace/WorkspaceRightRail.tsx`, commands/capabilities   | P0       | Done   |
-| NEXT-GAP-008 | Missing explicit per-level visibility controls in 3D.                                                              | `workspace/viewport/Viewport3DLayersPanel.tsx`, level/view state                             | P1       | Open   |
+| NEXT-GAP-008 | Missing explicit per-level visibility controls in 3D.                                                              | `workspace/viewport/Viewport3DLayersPanel.tsx`, level/view state                             | P1       | Done   |
 | NEXT-GAP-009 | Room labels can be clipped/illegible.                                                                              | `plan/planElementMeshBuilders.ts`, plan symbology/text sizing                                | P1       | Open   |
 | NEXT-GAP-010 | Ribbon information architecture still feels uneven by view (annotate parity, icon consistency, dead/weak actions). | `workspace/shell/RibbonBar.tsx`, command metadata                                            | P1       | Open   |
 | NEXT-GAP-011 | Discipline/lens switching does not consistently change ribbon + secondary + element + canvas semantics.            | lens state, mode surfaces, command gating                                                    | P0       | Open   |
@@ -86,6 +86,7 @@ Evidence (2026-05-13):
 - Ownership geometry test added in `packages/web/src/workspace/shell/AppShell.test.tsx`.
 - Seeded screenshots + metrics (desktop/tablet/narrow + collapse/restore): `packages/web/tmp/ux-next-wp01-wp04-20260513/01-shell-desktop.png` to `05-shell-narrow.png` with `summary.json` proving no horizontal overflow in shell regions.
 - Full-height spine confirmation after follow-up correction: `packages/web/tmp/ux-next-wp01-wp04-20260513/10-shell-fullheight-desktop.png` to `12-shell-fullheight-narrow.png` with `fullheight-summary.json` (`primary.top == shell.top`, `primary.bottom == shell.bottom` on desktop/tablet).
+- Full-height spine hardening after layout follow-up (header/footer no longer claim primary column grid cells): `packages/web/tmp/ux-next-wp01-wp04-20260513/13-shell-fullheight-desktop.png` to `15-shell-fullheight-narrow.png` with `fullheight-summary-v2.json` (`gridTemplateAreas` starts with `"."` in column 1 and `primaryGridRow: 1 / 5`).
 
 ### WP-NEXT-02 — Secondary Sidebar Design System
 
@@ -219,7 +220,7 @@ Evidence (2026-05-13):
 ### WP-NEXT-07 — 3D Level Visibility Controls
 
 - Priority: `P1`
-- Status: `Open`
+- Status: `Done`
 - Covers: `NEXT-GAP-008`
 - Goal: support per-level visibility toggles in 3D (e.g., ground floor only).
 - Source ownership:
@@ -229,6 +230,28 @@ Evidence (2026-05-13):
   - levels can be toggled independently in 3D,
   - state persists with saved views/templates,
   - toggles are role-aware (architect vs engineering lens defaults may differ).
+
+Evidence (2026-05-13):
+
+- 3D viewport runtime/state now tracks per-level visibility with dedicated store fields and toggles:
+  - `packages/web/src/state/storeTypes.ts`
+  - `packages/web/src/state/storeViewportRuntimeSlice.ts`
+  - `packages/web/src/state/storeSliceContracts.ts`
+  - `packages/web/src/state/storeSliceContracts.test.ts`
+  - `packages/web/src/Viewport.tsx`
+- `Viewport3DLayersPanel` now exposes a dedicated `Levels` section with per-level toggles and show-all/hide-all controls, and `WorkspaceRightRail` wires viewpoint-aware persistence plus lens defaults:
+  - `packages/web/src/workspace/viewport/Viewport3DLayersPanel.tsx`
+  - `packages/web/src/workspace/viewport/Viewport3DLayersPanel.test.tsx`
+  - `packages/web/src/workspace/WorkspaceRightRail.tsx`
+- Seeded live proof (`make seed name=target-house-3`, `make dev name=target-house-3`) captured in:
+  - `packages/web/tmp/ux-next-wp07-20260513/01-3d-levels-baseline.png`
+  - `packages/web/tmp/ux-next-wp07-20260513/02-3d-level-hidden-toggle.png`
+  - `packages/web/tmp/ux-next-wp07-20260513/03-3d-level-persisted-main-viewpoint.png`
+  - `packages/web/tmp/ux-next-wp07-20260513/summary.json`
+- Runtime summary confirms:
+  - independent level toggle changed `hf-lvl-ground` from checked to unchecked,
+  - round-trip viewpoint switch (`vp-main-iso` -> `vp-rear-axo` -> `vp-main-iso`) retained the level-hidden state,
+  - store + localStorage persistence key `bim.viewer.levelHiddenByViewpoint.v1` captured the same hidden map.
 
 ### WP-NEXT-08 — Plan Label Legibility Pass
 

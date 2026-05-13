@@ -44,11 +44,13 @@ describe('AppShell — spec §8', () => {
     const shell = getByTestId('app-shell') as HTMLElement;
     expect(shell.style.display).toBe('grid');
     expect(shell.style.gridTemplateAreas).toContain('header');
-    expect(shell.style.gridTemplateAreas).toContain('primarySidebar');
     expect(shell.style.gridTemplateAreas).toContain('secondarySidebar');
     expect(shell.style.gridTemplateAreas).toContain('canvas');
     expect(shell.style.gridTemplateAreas).toContain('elementSidebar');
     expect(shell.style.gridTemplateAreas).toContain('footer');
+    const primary = getByTestId('app-shell-primary-sidebar');
+    expect(primary.style.gridColumn).toBe('1');
+    expect(primary.style.gridRow).toBe('1 / 5');
   });
 
   it('keeps the primary rail as a full-height spine while ribbon stays over canvas lanes', () => {
@@ -65,10 +67,12 @@ describe('AppShell — spec §8', () => {
     );
     const shell = getByTestId('app-shell') as HTMLElement;
     const areas = shell.style.gridTemplateAreas.replace(/\s+/g, ' ');
-    expect(areas).toContain('"primarySidebar header header header"');
-    expect(areas).toContain('"primarySidebar secondarySidebar ribbon ribbon"');
-    expect(areas).toContain('"primarySidebar secondarySidebar canvas elementSidebar"');
-    expect(areas).toContain('"primarySidebar footer footer footer"');
+    expect(areas).toContain('". header header header"');
+    expect(areas).toContain('". secondarySidebar ribbon ribbon"');
+    expect(areas).toContain('". secondarySidebar canvas elementSidebar"');
+    expect(areas).toContain('". footer footer footer"');
+    expect(getByTestId('app-shell-primary-sidebar').style.gridRow).toBe('1 / 5');
+    expect(getByTestId('app-shell-primary-sidebar').style.gridColumn).toBe('1');
     expect(getByTestId('app-shell-primary-resize-handle').style.gridRow).toBe('1 / 5');
   });
 

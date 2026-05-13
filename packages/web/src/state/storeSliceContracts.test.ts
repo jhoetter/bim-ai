@@ -9,6 +9,7 @@ beforeEach(() => {
     selectedIds: [],
     viewerMode: 'orbit_3d',
     viewerCategoryHidden: { site_origin: true },
+    viewerLevelHidden: {},
     viewerClipElevMm: null,
     planTool: 'select',
     wallDrawHeightMm: 2800,
@@ -61,10 +62,12 @@ describe('store slice contracts', () => {
     store.setViewerMode('plan_canvas');
     store.setViewerClipElevMm(3200);
     store.toggleViewerCategoryHidden('wall');
+    store.toggleViewerLevelHidden('lvl-1');
 
     expect(useBimStore.getState().viewerMode).toBe('plan_canvas');
     expect(useBimStore.getState().viewerClipElevMm).toBe(3200);
     expect(useBimStore.getState().viewerCategoryHidden.wall).toBe(true);
+    expect(useBimStore.getState().viewerLevelHidden['lvl-1']).toBe(true);
   });
 
   it('keeps plan-authoring mutations isolated', () => {

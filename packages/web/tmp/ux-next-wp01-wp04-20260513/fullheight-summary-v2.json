@@ -1,0 +1,95 @@
+{
+  "captures": [
+    "13-shell-fullheight-desktop.png",
+    "14-shell-fullheight-tablet.png",
+    "15-shell-fullheight-narrow.png"
+  ],
+  "rects": [
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1200
+      },
+      "shell": {
+        "top": 0,
+        "bottom": 1200,
+        "left": 0,
+        "right": 1920
+      },
+      "primary": {
+        "top": 0,
+        "bottom": 1200,
+        "left": 0,
+        "right": 256
+      },
+      "gridTemplateAreas": "\". header header header\" \". secondarySidebar ribbon ribbon\" \". secondarySidebar canvas elementSidebar\" \". footer footer footer\"",
+      "primaryGridRow": "1 / 5",
+      "primaryGridColumn": "1 / auto"
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "shell": {
+        "top": 0,
+        "bottom": 900,
+        "left": 0,
+        "right": 1280
+      },
+      "primary": {
+        "top": 0,
+        "bottom": 900,
+        "left": 0,
+        "right": 256
+      },
+      "gridTemplateAreas": "\". header header header\" \". secondarySidebar ribbon ribbon\" \". secondarySidebar canvas elementSidebar\" \". footer footer footer\"",
+      "primaryGridRow": "1 / 5",
+      "primaryGridColumn": "1 / auto"
+    },
+    {
+      "viewport": {
+        "width": 960,
+        "height": 900
+      },
+      "shell": {
+        "top": 0,
+        "bottom": 900,
+        "left": 0,
+        "right": 960
+      },
+      "primary": {
+        "top": 0,
+        "bottom": 900,
+        "left": 0,
+        "right": 256
+      },
+      "gridTemplateAreas": "\". header header header\" \". secondarySidebar ribbon ribbon\" \". secondarySidebar canvas elementSidebar\" \". footer footer footer\"",
+      "primaryGridRow": "1 / 5",
+      "primaryGridColumn": "1 / auto"
+    }
+  ],
+  "assertion": [
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1200
+      },
+      "fullHeight": true
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "fullHeight": true
+    },
+    {
+      "viewport": {
+        "width": 960,
+        "height": 900
+      },
+      "fullHeight": true
+    }
+  ]
+}

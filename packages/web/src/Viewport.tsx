@@ -266,6 +266,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
   /** Ref-copy of selectedId so the geometry effect can read it without adding it to deps. */
   const selectedIdRef = useRef<string | undefined>(undefined);
   const prevCatHiddenRef = useRef<Record<string, boolean>>({});
+  const prevLevelHiddenRef = useRef<Record<string, boolean>>({});
   const csgWorkerRef = useRef<Worker | null>(null);
   /** Maps wallId → active CSG job nonce; responses with a mismatched nonce are stale and discarded. */
   const pendingCsgRef = useRef<Map<string, number>>(new Map());
@@ -424,6 +425,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
   }, [sunOverlayValues]);
 
   const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
+  const viewerLevelHidden = useBimStore((s) => s.viewerLevelHidden);
   const viewerPhaseFilter = useBimStore((s) => s.viewerPhaseFilter);
   const viewerRenderStyle = useBimStore((s) => s.viewerRenderStyle);
   const viewerBackground = useBimStore((s) => s.viewerBackground);
@@ -1538,9 +1540,34 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
 
     // Build and insert new meshes.
     const catHidden = viewerCategoryHidden;
+    const levelHidden = viewerLevelHidden;
     const skipCat = (e: Element) => {
       const ck = elemViewerCategory(e);
       return ck != null && Boolean(catHidden[ck]);
+    };
+    const skipLevel = (e: Element): boolean => {
+      if ('levelId' in e && typeof e.levelId === 'string') return Boolean(levelHidden[e.levelId]);
+      if ('referenceLevelId' in e && typeof e.referenceLevelId === 'string') {
+        return Boolean(levelHidden[e.referenceLevelId]);
+      }
+      if (e.kind === 'door' || e.kind === 'window') {
+        const host = curr[e.wallId];
+        return host?.kind === 'wall' ? Boolean(levelHidden[host.levelId]) : false;
+      }
+      if (e.kind === 'wall_opening') {
+        const host = curr[e.hostWallId];
+        return host?.kind === 'wall' ? Boolean(levelHidden[host.levelId]) : false;
+      }
+      if (e.kind === 'stair') {
+        return Boolean(levelHidden[e.baseLevelId]) && Boolean(levelHidden[e.topLevelId]);
+      }
+      if (e.kind === 'railing' && e.hostedStairId) {
+        const stair = curr[e.hostedStairId];
+        if (stair?.kind === 'stair') {
+          return Boolean(levelHidden[stair.baseLevelId]) && Boolean(levelHidden[stair.topLevelId]);
+        }
+      }
+      return false;
     };
     const planes = clippingPlanesRef.current;
 
@@ -1738,7 +1765,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       if (!obj) continue;
 
       if (!obj.userData.bimPickId) obj.userData.bimPickId = id;
-      obj.visible = !skipCat(e);
+      obj.visible = !skipCat(e) && !skipLevel(e);
 
       // FED-01: ghost any element resolved through a `link_model` link.
       // Linked element ids are prefixed `<linkId>::<sourceElemId>` by the
@@ -1839,13 +1866,14 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       }
     }
 
-    // When category visibility changes, sweep all cached meshes to update visible flags.
-    if (prevCatHiddenRef.current !== catHidden) {
+    // When category or level visibility changes, sweep all cached meshes to update visible flags.
+    if (prevCatHiddenRef.current !== catHidden || prevLevelHiddenRef.current !== levelHidden) {
       for (const [id, obj] of cache) {
         const e = curr[id];
-        if (e) obj.visible = !skipCat(e);
+        if (e) obj.visible = !skipCat(e) && !skipLevel(e);
       }
       prevCatHiddenRef.current = catHidden;
+      prevLevelHiddenRef.current = levelHidden;
     }
 
     // Re-sync outline pass in case the selected element's mesh was just replaced.
@@ -1863,6 +1891,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
     elementsById,
     roofJoinPreview,
     viewerCategoryHidden,
+    viewerLevelHidden,
     viewerPhaseFilter,
     lensMode,
     theme,

@@ -12,6 +12,7 @@ export type ViewportRuntimeSlice = Pick<
   | 'viewerClipElevMm'
   | 'viewerClipFloorElevMm'
   | 'viewerCategoryHidden'
+  | 'viewerLevelHidden'
   | 'viewerPhaseFilter'
   | 'orbitCameraNonce'
   | 'orbitCameraPoseMm'
@@ -24,6 +25,8 @@ export type ViewportRuntimeSlice = Pick<
   | 'setViewerClipElevMm'
   | 'setViewerClipFloorElevMm'
   | 'toggleViewerCategoryHidden'
+  | 'toggleViewerLevelHidden'
+  | 'setViewerLevelVisibilityMap'
   | 'applyOrbitViewpointPreset'
   | 'setOrbitCameraFromViewpointMm'
   | 'viewerRenderStyle'
@@ -77,6 +80,7 @@ export function createViewportRuntimeSlice(set: StoreSet, get: StoreGet): Viewpo
     viewerClipElevMm: null,
     viewerClipFloorElevMm: null,
     viewerCategoryHidden: { site_origin: true },
+    viewerLevelHidden: {},
     viewerPhaseFilter: null,
     orbitCameraNonce: 0,
     orbitCameraPoseMm: null,
@@ -140,6 +144,14 @@ export function createViewportRuntimeSlice(set: StoreSet, get: StoreGet): Viewpo
         const next = { ...state.viewerCategoryHidden, [semanticKind]: !prior };
         return { viewerCategoryHidden: next };
       }),
+    toggleViewerLevelHidden: (levelId) =>
+      set((state) => {
+        const prior = state.viewerLevelHidden[levelId];
+        return {
+          viewerLevelHidden: { ...state.viewerLevelHidden, [levelId]: !prior },
+        };
+      }),
+    setViewerLevelVisibilityMap: (next) => set({ viewerLevelHidden: { ...next } }),
 
     applyOrbitViewpointPreset: (opts) =>
       set((state) => {

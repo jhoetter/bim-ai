@@ -23,6 +23,9 @@ function makeProps(
     viewerCategoryHidden: {},
     onToggleCategory: vi.fn(),
     onSetAllCategoriesHidden: vi.fn(),
+    levelVisibilityOptions: [],
+    onToggleLevelVisibility: vi.fn(),
+    onSetAllLevelsHidden: vi.fn(),
     viewerRenderStyle: 'shaded',
     onSetRenderStyle: vi.fn(),
     viewerBackground: 'light_grey',
@@ -203,6 +206,44 @@ describe('<Viewport3DLayersPanel />', () => {
     fireEvent.click(getByTestId('layer-hide-all'));
     expect(onSetAllCategoriesHidden).toHaveBeenCalledWith(false);
     expect(onSetAllCategoriesHidden).toHaveBeenCalledWith(true);
+  });
+
+  it('renders per-level visibility toggles when levels are provided', () => {
+    const { getByTestId } = render(
+      <Viewport3DLayersPanel
+        {...makeProps({
+          levelVisibilityOptions: [
+            { id: 'lvl-gf', label: 'Ground floor · 0.00 m', hidden: false },
+            { id: 'lvl-ff', label: 'First floor · 3.00 m', hidden: true },
+          ],
+        })}
+      />,
+    );
+    expect((getByTestId('level-toggle-lvl-gf') as HTMLInputElement).checked).toBe(true);
+    expect((getByTestId('level-toggle-lvl-ff') as HTMLInputElement).checked).toBe(false);
+  });
+
+  it('calls level toggle and show/hide all level callbacks', () => {
+    const onToggleLevelVisibility = vi.fn();
+    const onSetAllLevelsHidden = vi.fn();
+    const { getByTestId } = render(
+      <Viewport3DLayersPanel
+        {...makeProps({
+          levelVisibilityOptions: [
+            { id: 'lvl-gf', label: 'Ground floor · 0.00 m', hidden: false },
+            { id: 'lvl-ff', label: 'First floor · 3.00 m', hidden: true },
+          ],
+          onToggleLevelVisibility,
+          onSetAllLevelsHidden,
+        })}
+      />,
+    );
+    fireEvent.click(getByTestId('level-toggle-lvl-gf'));
+    fireEvent.click(getByTestId('level-show-all'));
+    fireEvent.click(getByTestId('level-hide-all'));
+    expect(onToggleLevelVisibility).toHaveBeenCalledWith('lvl-gf');
+    expect(onSetAllLevelsHidden).toHaveBeenCalledWith(false);
+    expect(onSetAllLevelsHidden).toHaveBeenCalledWith(true);
   });
 
   it('renders model category counts beside visible categories', () => {

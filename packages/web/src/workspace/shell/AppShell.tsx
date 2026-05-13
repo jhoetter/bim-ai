@@ -359,10 +359,10 @@ export function AppShell({
       elementSidebarPresent,
     ),
     gridTemplateAreas: `
-      "primarySidebar header header header"
-      "primarySidebar secondarySidebar ribbon ribbon"
-      "primarySidebar secondarySidebar canvas elementSidebar"
-      "primarySidebar footer footer footer"
+      ". header header header"
+      ". secondarySidebar ribbon ribbon"
+      ". secondarySidebar canvas elementSidebar"
+      ". footer footer footer"
     `,
     transition: 'grid-template-columns 200ms var(--ease-paper, ease)',
     height: '100dvh',
@@ -417,7 +417,8 @@ export function AppShell({
         aria-label={t('workspace.projectBrowser')}
         data-testid="app-shell-primary-sidebar"
         style={{
-          gridArea: 'primarySidebar',
+          gridColumn: 1,
+          gridRow: '1 / 5',
           minWidth: 0,
           display: primaryHidden ? 'none' : undefined,
         }}

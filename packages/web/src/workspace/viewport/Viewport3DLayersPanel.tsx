@@ -181,6 +181,9 @@ export interface Viewport3DLayersPanelProps {
   onToggleCategory: (kind: ViewerHiddenKindKey) => void;
   onSetAllCategoriesHidden?: (hidden: boolean) => void;
   categoryCounts?: Partial<Record<ViewerHiddenKindKey, number>>;
+  levelVisibilityOptions?: Array<{ id: string; label: string; hidden: boolean }>;
+  onToggleLevelVisibility?: (levelId: string) => void;
+  onSetAllLevelsHidden?: (hidden: boolean) => void;
   viewerRenderStyle: ViewerRenderStyle;
   onSetRenderStyle: (style: ViewerRenderStyle) => void;
   viewerBackground: 'white' | 'light_grey' | 'dark';
@@ -220,6 +223,9 @@ export function Viewport3DLayersPanel({
   onToggleCategory,
   onSetAllCategoriesHidden,
   categoryCounts,
+  levelVisibilityOptions,
+  onToggleLevelVisibility,
+  onSetAllLevelsHidden,
   viewerRenderStyle,
   onSetRenderStyle,
   viewerBackground,
@@ -331,6 +337,10 @@ export function Viewport3DLayersPanel({
   const allLayerCount = VIEWER_HIDDEN_KIND_KEYS.length;
   const allCategoriesHidden = hiddenLayerCount === allLayerCount;
   const allCategoriesShown = hiddenLayerCount === 0;
+  const levelOptions = levelVisibilityOptions ?? [];
+  const hiddenLevelCount = levelOptions.filter((option) => option.hidden).length;
+  const allLevelsHidden = levelOptions.length > 0 && hiddenLevelCount === levelOptions.length;
+  const allLevelsShown = hiddenLevelCount === 0;
   return (
     <div data-testid="viewport3d-layers-panel" className="flex flex-col gap-3 px-3 py-3">
       <div className="space-y-1">
@@ -342,6 +352,9 @@ export function Viewport3DLayersPanel({
           <ViewStatePill label={`EV ${formatExposureEv(resolvedPhotographicExposureEv)}`} />
           {resolvedDepthCueEnabled ? <ViewStatePill label="Depth cue" /> : null}
           <ViewStatePill label={sectionBoxActive ? 'Section box' : 'No section box'} />
+          {levelOptions.length > 0 ? (
+            <ViewStatePill label={`${levelOptions.length - hiddenLevelCount} levels shown`} />
+          ) : null}
           {hiddenLayerCount > 0 ? <ViewStatePill label={`${hiddenLayerCount} hidden`} /> : null}
         </div>
       </div>
@@ -576,6 +589,59 @@ export function Viewport3DLayersPanel({
             </button>
           </div>
         </div>
+      ) : null}
+
+      {levelOptions.length > 0 ? (
+        <section className="rounded border border-border bg-surface-strong p-2">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div>
+              <div className="text-[10px] font-semibold uppercase text-muted">Levels</div>
+              <div className="text-[10px] text-muted">
+                {levelOptions.length - hiddenLevelCount} shown / {hiddenLevelCount} hidden
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                data-testid="level-show-all"
+                aria-label="Show all levels"
+                title="Show all levels"
+                disabled={!onSetAllLevelsHidden || allLevelsShown}
+                onClick={() => onSetAllLevelsHidden?.(false)}
+                className="flex h-7 w-7 items-center justify-center rounded border border-border bg-background text-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Icons.layerOn size={ICON_SIZE.chrome} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                data-testid="level-hide-all"
+                aria-label="Hide all levels"
+                title="Hide all levels"
+                disabled={!onSetAllLevelsHidden || allLevelsHidden}
+                onClick={() => onSetAllLevelsHidden?.(true)}
+                className="flex h-7 w-7 items-center justify-center rounded border border-border bg-background text-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Icons.layerOff size={ICON_SIZE.chrome} aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-y-1">
+            {levelOptions.map((levelOption) => (
+              <label
+                key={levelOption.id}
+                className="flex min-w-0 cursor-pointer items-center gap-2 text-[11px]"
+              >
+                <input
+                  type="checkbox"
+                  data-testid={`level-toggle-${levelOption.id}`}
+                  checked={!levelOption.hidden}
+                  onChange={() => onToggleLevelVisibility?.(levelOption.id)}
+                />
+                <span className="min-w-0 truncate">{levelOption.label}</span>
+              </label>
+            ))}
+          </div>
+        </section>
       ) : null}
 
       <section className="rounded border border-border bg-surface-strong p-2">

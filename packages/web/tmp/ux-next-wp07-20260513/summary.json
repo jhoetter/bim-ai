@@ -1,0 +1,54 @@
+{
+  "captures": [
+    "01-3d-levels-baseline.png",
+    "02-3d-level-hidden-toggle.png",
+    "03-3d-level-persisted-main-viewpoint.png"
+  ],
+  "viewpointRows": [
+    {
+      "testId": "left-rail-row-vp-main-iso",
+      "text": "Target-house-3 primary front-right axonometricsaved camera"
+    },
+    {
+      "testId": "left-rail-row-vp-rear-axo",
+      "text": "Rear/right axonometricsaved camera"
+    },
+    {
+      "testId": "left-rail-row-vp-front-elev",
+      "text": "Front elevationsaved camera"
+    },
+    {
+      "testId": "left-rail-row-vp-roof-court",
+      "text": "Roof court high axonometricsaved camera"
+    }
+  ],
+  "activeMainViewpointRow": {
+    "testId": "left-rail-row-vp-main-iso",
+    "text": "Target-house-3 primary front-right axonometricsaved camera"
+  },
+  "switchedSecondaryViewpointRow": {
+    "testId": "left-rail-row-vp-rear-axo",
+    "text": "Rear/right axonometricsaved camera"
+  },
+  "firstLevelToggle": {
+    "levelId": "hf-lvl-ground",
+    "checkedBeforeClick": true,
+    "checkedAfterClick": false,
+    "checkedAfterViewpointRoundtrip": false
+  },
+  "state": {
+    "activeViewpointId": "vp-main-iso",
+    "viewerLevelHidden": {
+      "hf-lvl-ground": true
+    },
+    "firstLevelId": "hf-lvl-ground",
+    "firstLevelHiddenInStore": true,
+    "persistedLocalStorageKey": "bim.viewer.levelHiddenByViewpoint.v1",
+    "persistedLocalStorage": {
+      "vp-main-iso": {
+        "hf-lvl-ground": true
+      },
+      "vp-rear-axo": {}
+    }
+  }
+}
