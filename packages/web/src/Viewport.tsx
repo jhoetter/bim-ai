@@ -1086,6 +1086,21 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       }
     }
 
+    function flipWallLocationLine(loc: string | null | undefined): string | null | undefined {
+      switch (loc) {
+        case 'finish-face-exterior':
+          return 'finish-face-interior';
+        case 'finish-face-interior':
+          return 'finish-face-exterior';
+        case 'core-face-exterior':
+          return 'core-face-interior';
+        case 'core-face-interior':
+          return 'core-face-exterior';
+        default:
+          return loc;
+      }
+    }
+
     function resolveDraftWallThicknessMm(): number {
       const runtime = useBimStore.getState();
       const activeTypeId = runtime.activeWallTypeId;
@@ -1115,8 +1130,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       directionStart: ScreenPoint;
       directionEnd: ScreenPoint;
     } | null {
-      const actualStart = flip ? end : start;
-      const actualEnd = flip ? start : end;
+      const actualStart = start;
+      const actualEnd = end;
       const dx = actualEnd.xMm - actualStart.xMm;
       const dy = actualEnd.yMm - actualStart.yMm;
       const len = Math.hypot(dx, dy);
@@ -1124,7 +1139,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       const nx = -dy / len;
       const ny = dx / len;
       const thickMm = Math.max(50, thicknessMm);
-      const offsetMm = wallLocationLineOffsetFrac(locationLine) * thickMm;
+      const effectiveLocationLine = flip ? flipWallLocationLine(locationLine) : locationLine;
+      const offsetMm = wallLocationLineOffsetFrac(effectiveLocationLine) * thickMm;
       const plus = offsetMm + thickMm / 2;
       const minus = offsetMm - thickMm / 2;
       const zMm = levelElevationMm + 10;
@@ -1464,9 +1480,12 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         }
         if (tool === 'wall') {
           const runtime = useBimStore.getState();
-          const reverse = wallFlipNextSegment;
-          const actualStart = reverse ? end : start;
-          const actualEnd = reverse ? start : end;
+          const flip = wallFlipNextSegment;
+          const effectiveLocationLine = flip
+            ? flipWallLocationLine(runtime.wallLocationLine)
+            : runtime.wallLocationLine;
+          const actualStart = start;
+          const actualEnd = end;
           wallFlipNextSegment = false;
           onSemanticCommand?.({
             type: 'createWall',
@@ -1474,7 +1493,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             levelId,
             start: actualStart,
             end: actualEnd,
-            locationLine: runtime.wallLocationLine,
+            locationLine: effectiveLocationLine,
             wallTypeId: runtime.activeWallTypeId ?? undefined,
             heightMm: runtime.wallDrawHeightMm,
           });

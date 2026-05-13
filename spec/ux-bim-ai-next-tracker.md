@@ -281,6 +281,9 @@ Evidence (2026-05-13):
 - Follow-up wall endpoint fidelity pass commits line-based 3D tools from the current preview point (when click lands near the preview marker) instead of re-sampling a new end point on pointer-up, reducing “placed not where drawn” drift:
   - code: `packages/web/src/Viewport.tsx`
   - seeded trace: `packages/web/tmp/ux-wall-draft-ux-20260513/summary.json` (single `createWall` command from the draft workflow with endpoint fidelity path active).
+- Follow-up wall-direction correction changes 3D wall flip behavior to preserve draw direction (start→end stays exactly as drawn) while flipping location-line side instead of reversing endpoints:
+  - code: `packages/web/src/Viewport.tsx`
+  - seeded traces: `packages/web/tmp/ux-door-wall-guard-20260513/summary.json`, `packages/web/tmp/ux-wall-draft-ux-20260513/summary.json`.
 
 ### WP-NEXT-07 — 3D Level Visibility Controls
 
