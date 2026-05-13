@@ -42,7 +42,7 @@ The foundational seven-region ownership model is in place, but real usage still 
 | ID           | Gap                                                                                                                | Evidence/Owner Hotspots                                                                      | Priority | Status |
 | ------------ | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- | -------- | ------ |
 | NEXT-GAP-001 | Primary sidebar does not read as true top-to-bottom spine in final composition.                                    | `workspace/shell/AppShell.tsx`, `workspace/Workspace.tsx`                                    | P0       | Done   |
-| NEXT-GAP-002 | Secondary sidebar internals are dense; reusable collapsible group pattern is missing.                              | `workspace/WorkspaceRightRail.tsx`                                                           | P1       | Open   |
+| NEXT-GAP-002 | Secondary sidebar internals are dense; reusable collapsible group pattern is missing.                              | `workspace/WorkspaceRightRail.tsx`                                                           | P1       | Done   |
 | NEXT-GAP-003 | No recursive drag-drop canvas split from tabs (horizontal/vertical panes).                                         | `workspace/shell/TabBar.tsx`, `workspace/tabsModel.ts`, `workspace/viewport/CanvasMount.tsx` | P1       | Open   |
 | NEXT-GAP-004 | Wall tool can leave confusing mirrored/hatched draft/preview artifacts off-plan.                                   | `plan/PlanCanvas.tsx`                                                                        | P0       | Done   |
 | NEXT-GAP-005 | Wall placement has weak off-plan/crop guardrails and unclear loop-mode state transitions.                          | `plan/PlanCanvas.tsx`, plan view crop data                                                   | P0       | Done   |
@@ -57,7 +57,7 @@ The foundational seven-region ownership model is in place, but real usage still 
 | NEXT-GAP-014 | Moodboard vs documentation sheet intent is not modeled/taggable.                                                   | sheet model + UI filters + commands                                                          | P1       | Open   |
 | NEXT-GAP-015 | Schedule outputs are not meaningful enough for practical role workflows.                                           | schedule mode shell/panels, advisor integration                                              | P1       | Open   |
 | NEXT-GAP-016 | Sections are hard to understand in relation to 3D; section context could be spatially reinforced.                  | section mode shell, viewport overlays                                                        | P2       | Open   |
-| NEXT-GAP-017 | Overflow hygiene: clipped dropdowns and horizontal scrolling inside sidebars.                                      | shell/sidebar CSS/layout constraints                                                         | P1       | Open   |
+| NEXT-GAP-017 | Overflow hygiene: clipped dropdowns and horizontal scrolling inside sidebars.                                      | shell/sidebar CSS/layout constraints                                                         | P1       | Done   |
 | NEXT-GAP-018 | 3D visual quality gaps: dark mode mismatch, materials/realistic/raytrace strategy unclear.                         | `Viewport.tsx`, render style pipeline                                                        | P1       | Open   |
 | NEXT-GAP-019 | Onboarding tour targets exist but narrative is outdated for next-phase workflows.                                  | `onboarding/tour.ts`, `onboarding/OnboardingTour.tsx`                                        | P2       | Open   |
 | NEXT-GAP-020 | Project settings path is under-discoverable after nav cleanup.                                                     | project settings element/editor/commands                                                     | P1       | Open   |
@@ -91,7 +91,7 @@ Evidence (2026-05-13):
 ### WP-NEXT-02 — Secondary Sidebar Design System
 
 - Priority: `P1`
-- Status: `Open`
+- Status: `Done`
 - Covers: `NEXT-GAP-002`, `NEXT-GAP-017` (sidebar ergonomics)
 - Goal: introduce reusable collapsible section-group component for secondary sidebar panels (headline + body + persisted collapsed state).
 - Source ownership:
@@ -102,6 +102,31 @@ Evidence (2026-05-13):
   - group collapse state persisted per view type/tab where appropriate,
   - no clipping/overflow regression in narrow widths,
   - tests for keyboard and pointer accessibility.
+
+Evidence (2026-05-13):
+
+- Added reusable persisted disclosure primitive with localStorage persistence and explicit keyboard/pointer a11y behavior:
+  - `packages/web/src/workspace/shell/components/PersistedDisclosureSection.tsx`
+  - `packages/web/src/workspace/shell/components/PersistedDisclosureSection.test.tsx`
+- Migrated three secondary sidebar groups to the common primitive with scoped persistence keys:
+  - plan `Visibility` (`plan.visibility.<view-id>`)
+  - 3D `Graphics, Camera, Clipping` (`3d.graphics.<viewpoint-id>`)
+  - section `Crop Depth` (`section.crop-depth.<section-id>`)
+  - source wiring in `packages/web/src/workspace/WorkspaceRightRail.tsx`
+- Runtime seeded proof (`make seed name=target-house-3`, `make dev name=target-house-3`) captured in:
+  - `packages/web/tmp/ux-next-wp02-20260513/01-plan-visibility-expanded.png`
+  - `packages/web/tmp/ux-next-wp02-20260513/02-plan-visibility-collapsed.png`
+  - `packages/web/tmp/ux-next-wp02-20260513/03-ground-plan-disclosure-default.png`
+  - `packages/web/tmp/ux-next-wp02-20260513/04-3d-graphics-collapsed.png`
+  - `packages/web/tmp/ux-next-wp02-20260513/05-narrow-1120.png`
+  - `packages/web/tmp/ux-next-wp02-20260513/06-narrow-860.png`
+  - `packages/web/tmp/ux-next-wp02-20260513/07-narrow-700.png`
+  - `packages/web/tmp/ux-next-wp02-20260513/08-plan-collapse-persisted-after-3d-roundtrip.png`
+  - `packages/web/tmp/ux-next-wp02-20260513/summary.json`
+- Summary checks confirm:
+  - plan disclosure toggles and persists across plan↔3D roundtrip (`before:false`, `after:false`),
+  - plan and 3D disclosures persist independently,
+  - sidebar narrow-width overflow hygiene (`scrollWidth === clientWidth` at 1120/860/700 widths).
 
 ### WP-NEXT-03 — Recursive Canvas Split Tabs
 

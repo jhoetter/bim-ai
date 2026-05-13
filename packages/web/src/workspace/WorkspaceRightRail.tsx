@@ -53,6 +53,7 @@ import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFr
 import { firstSheetId, placeViewOnSheetCommand } from './sheets/sheetRecommendedViewports';
 import type { WorkspaceMode } from './shell';
 import { LensDropdown } from './shell/LensDropdown';
+import { PersistedDisclosureSection } from './shell/components/PersistedDisclosureSection';
 import { humanKindLabel, InspectorEmptyTab } from './WorkspaceHelpers';
 import {
   isDuplicableTypeElement,
@@ -1544,38 +1545,12 @@ function SecondarySection({
   children,
   testId,
   scope = 'view-state',
-  collapsible = false,
 }: {
   title: string;
   children: ReactNode;
   testId?: string;
   scope?: 'view-summary' | 'view-state' | 'advanced';
-  collapsible?: boolean;
 }): JSX.Element {
-  const titleNode = (
-    <div
-      className="mb-2 text-[10px] font-semibold uppercase text-muted"
-      style={{ letterSpacing: '0.08em', opacity: 0.7 }}
-    >
-      {title}
-    </div>
-  );
-
-  if (collapsible) {
-    return (
-      <details
-        open
-        className="border-b border-border px-3 py-3"
-        data-testid={testId}
-        data-secondary-scope={scope}
-        data-secondary-disclosure="true"
-      >
-        <summary className="cursor-pointer">{titleNode}</summary>
-        {children}
-      </details>
-    );
-  }
-
   return (
     <section
       className="border-b border-border px-3 py-3"
@@ -1583,7 +1558,12 @@ function SecondarySection({
       data-secondary-scope={scope}
       data-secondary-disclosure="false"
     >
-      {titleNode}
+      <div
+        className="mb-2 text-[10px] font-semibold uppercase text-muted"
+        style={{ letterSpacing: '0.08em', opacity: 0.7 }}
+      >
+        {title}
+      </div>
       {children}
     </section>
   );
@@ -1693,6 +1673,7 @@ function SecondaryPlanAdapter({
   const activeLevel = levels.find(
     (level) => level.id === (activePlanView?.levelId ?? activeLevelId),
   );
+  const visibilityDisclosureId = `plan.visibility.${activePlanView?.id ?? activeLevel?.id ?? 'default'}`;
   return (
     <div data-testid="secondary-sidebar-plan">
       <SecondaryHeader
@@ -1743,11 +1724,11 @@ function SecondaryPlanAdapter({
           </p>
         )}
       </SecondarySection>
-      <SecondarySection
+      <PersistedDisclosureSection
         title="Visibility"
+        disclosureId={visibilityDisclosureId}
         testId="secondary-plan-visibility"
         scope="advanced"
-        collapsible
       >
         <div className="space-y-2">
           <SecondaryToggle
@@ -1771,7 +1752,7 @@ function SecondaryPlanAdapter({
             Open Visibility/Graphics Overrides…
           </button>
         </div>
-      </SecondarySection>
+      </PersistedDisclosureSection>
     </div>
   );
 }
@@ -1809,6 +1790,7 @@ type Secondary3dAdapterProps = {
 };
 
 function Secondary3dAdapter(props: Secondary3dAdapterProps): JSX.Element {
+  const graphicsDisclosureId = `3d.graphics.${props.activeViewpoint?.id ?? 'live-camera'}`;
   return (
     <div data-testid="secondary-sidebar-3d">
       <SecondaryHeader
@@ -1821,11 +1803,11 @@ function Secondary3dAdapter(props: Secondary3dAdapterProps): JSX.Element {
       <SecondarySection title="Scene" testId="secondary-3d-sun">
         <SunInspectorPanel />
       </SecondarySection>
-      <SecondarySection
+      <PersistedDisclosureSection
         title="Graphics, Camera, Clipping"
+        disclosureId={graphicsDisclosureId}
         testId="secondary-3d-graphics"
         scope="advanced"
-        collapsible
       >
         <Viewport3DLayersPanel
           viewerCategoryHidden={props.viewerCategoryHidden}
@@ -1856,7 +1838,7 @@ function Secondary3dAdapter(props: Secondary3dAdapterProps): JSX.Element {
           onResetToSavedView={props.resetActiveSavedView}
           onUpdateSavedView={props.updateActiveSavedView}
         />
-      </SecondarySection>
+      </PersistedDisclosureSection>
       {props.activeViewpoint?.mode === 'orbit_3d' ? (
         <SecondarySection title="Saved Viewpoint Overrides" testId="secondary-3d-saved-view">
           <OrbitViewpointPersistedHud
@@ -1925,7 +1907,12 @@ function SecondarySectionAdapter({
         </div>
       </SecondarySection>
       {section ? (
-        <SecondarySection title="Crop Depth" scope="advanced" collapsible>
+        <PersistedDisclosureSection
+          title="Crop Depth"
+          disclosureId={`section.crop-depth.${section.id}`}
+          scope="advanced"
+          testId="secondary-section-crop-depth"
+        >
           <label className="flex flex-col gap-1 text-[11px] text-muted">
             Depth mm
             <input
@@ -1942,7 +1929,7 @@ function SecondarySectionAdapter({
               }}
             />
           </label>
-        </SecondarySection>
+        </PersistedDisclosureSection>
       ) : null}
     </div>
   );

@@ -1,0 +1,41 @@
+{
+  "runAt": "2026-05-13T05:34:21.601Z",
+  "checks": {
+    "planBefore": "true",
+    "planAfterCollapse": "false",
+    "groundPlanDefault": "true",
+    "firstPlanRestored": "true",
+    "graphicsBefore": "true",
+    "graphicsAfterCollapse": "false",
+    "overflow1120": {
+      "scrollWidth": 279,
+      "clientWidth": 279,
+      "overflowX": "auto"
+    },
+    "overflow860": {
+      "scrollWidth": 279,
+      "clientWidth": 279,
+      "overflowX": "auto"
+    },
+    "overflow700": {
+      "scrollWidth": 279,
+      "clientWidth": 279,
+      "overflowX": "auto"
+    },
+    "planCollapsePersistAfter3dRoundTrip": {
+      "plan": "Ground Floor",
+      "before": "false",
+      "after": "false"
+    }
+  },
+  "screenshots": [
+    "01-plan-visibility-expanded.png",
+    "02-plan-visibility-collapsed.png",
+    "03-ground-plan-disclosure-default.png",
+    "04-3d-graphics-collapsed.png",
+    "05-narrow-1120.png",
+    "06-narrow-860.png",
+    "07-narrow-700.png",
+    "08-plan-collapse-persisted-after-3d-roundtrip.png"
+  ]
+}
