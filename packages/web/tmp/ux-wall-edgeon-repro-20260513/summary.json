@@ -12,18 +12,19 @@
     }
   },
   "wallVolumePreviewVisible": true,
+  "wallLengthMm": 5516.96836530216,
   "commands": [
     {
       "type": "createWall",
-      "id": "wall-3d-mp4aqqd6-8iz2",
+      "id": "wall-3d-mp4bwd66-7afr",
       "levelId": "hf-lvl-ground",
       "start": {
         "xMm": 6226.568714831564,
         "yMm": 6066.762573844527
       },
       "end": {
-        "xMm": 10670.220625705,
-        "yMm": 2783.966664015092
+        "xMm": 10664.63375634215,
+        "yMm": 2789.48952585685
       },
       "locationLine": "wall-centerline",
       "heightMm": 2800

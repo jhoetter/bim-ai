@@ -1176,6 +1176,7 @@ Evidence (2026-05-13):
   - Endpoint fidelity path changed to commit line tools from direct click projection (`end = projected.point`) so commit cannot reuse stale hover point.
   - Added projection stability guard (`mm/px` sensitivity only) for non-wall plane-based 3D tools before accepting clicks; the earlier camera-component threshold was removed because it blocked valid wall drafting in normal 3D/elevation-like views.
   - Replaced wall end-point re-projection with a first-click screen-to-level draft basis. Preview and commit now use the same basis.
+  - Hardened that basis for perspective/elevation views: wall screen-X maps to horizontal camera-right, screen-Y only contributes when camera-up has a meaningful horizontal component, and mm-per-pixel is capped to prevent small drags creating giant walls.
   - Replaced flat footprint wall preview with a full-height projected wall-volume silhouette, so elevation-like views show the same visual form that will be committed.
   - Removed the generic 2D line from wall previews because it could imply a screen direction that the final full-height wall volume would not visually have.
   - Removed the wall-preview readability blocker because it blocked valid elevation-like placement instead of fixing endpoint fidelity.
@@ -1185,6 +1186,6 @@ Evidence (2026-05-13):
     - `packages/web/tmp/ux-wall-edgeon-repro-20260513/02-after-commit-attempt.png`
     - `packages/web/tmp/ux-wall-edgeon-repro-20260513/summary.json`
     - 2026-05-13 hotfix rerun confirms wall drafting is reachable again (`createWallCount: 1`).
-    - 2026-05-13 volume-preview rerun confirms wall drafting remains reachable (`createWallCount: 1`) and the pre-commit wall-volume preview is visible (`wallVolumePreviewVisible: true`).
+    - 2026-05-13 perspective/elevation-basis rerun confirms wall drafting remains reachable (`createWallCount: 1`), the pre-commit wall-volume preview is visible (`wallVolumePreviewVisible: true`), and the sampled 249 px drag creates a bounded 5517 mm wall instead of an oversized perspective-projection slab.
   - Remaining closure work:
     - tighten camera-pose detection against exact `Front elevation` tab behavior and capture final seeded proof with blocked ambiguous commit + valid oblique commit.

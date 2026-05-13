@@ -60,6 +60,14 @@ const summary = {
   commandTypes: commands.map((c) => c?.type ?? null),
   screenDrag: { start, end },
   wallVolumePreviewVisible,
+  wallLengthMm: commands.find((c) => c?.type === 'createWall')
+    ? Math.hypot(
+        commands.find((c) => c?.type === 'createWall').end.xMm -
+          commands.find((c) => c?.type === 'createWall').start.xMm,
+        commands.find((c) => c?.type === 'createWall').end.yMm -
+          commands.find((c) => c?.type === 'createWall').start.yMm,
+      )
+    : null,
   commands,
 };
 await fs.writeFile(

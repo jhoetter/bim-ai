@@ -1034,29 +1034,37 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
     ): WallDraftScreenBasis {
       const samplePx = 12;
       const sampleX = projectPointerToDraftPlane(cx + samplePx, cy, elevationMm);
-      const sampleY = projectPointerToDraftPlane(cx, cy + samplePx, elevationMm);
-      const xPerPx = sampleX
-        ? {
-            xMm: (sampleX.point.xMm - origin.point.xMm) / samplePx,
-            yMm: (sampleX.point.yMm - origin.point.yMm) / samplePx,
-          }
-        : { xMm: 40, yMm: 0 };
-      const xScale = Math.max(1, Math.hypot(xPerPx.xMm, xPerPx.yMm));
-      const rawYPerPx = sampleY
-        ? {
-            xMm: (sampleY.point.xMm - origin.point.xMm) / samplePx,
-            yMm: (sampleY.point.yMm - origin.point.yMm) / samplePx,
-          }
-        : null;
-      const rawYScale = rawYPerPx ? Math.hypot(rawYPerPx.xMm, rawYPerPx.yMm) : Infinity;
-      let yPerPx =
-        rawYPerPx && rawYScale <= Math.max(320, xScale * 5) ? rawYPerPx : { xMm: 0, yMm: 0 };
-      if (yPerPx.xMm === 0 && yPerPx.yMm === 0) {
-        const cameraUp = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
-        const projectedUp = horizontalCameraVector(cameraUp);
-        if (projectedUp) {
-          yPerPx = { xMm: -projectedUp.xMm * xScale, yMm: -projectedUp.yMm * xScale };
-        }
+      const rawScale = sampleX
+        ? Math.hypot(
+            (sampleX.point.xMm - origin.point.xMm) / samplePx,
+            (sampleX.point.yMm - origin.point.yMm) / samplePx,
+          )
+        : 40;
+      const scaleMmPerPx = THREE.MathUtils.clamp(rawScale, 5, 60);
+      const cameraRight = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+      const projectedRight = horizontalCameraVector(cameraRight) ??
+        (sampleX
+          ? horizontalCameraVector(
+              new THREE.Vector3(
+                sampleX.point.xMm - origin.point.xMm,
+                0,
+                sampleX.point.yMm - origin.point.yMm,
+              ),
+            )
+          : null) ?? { xMm: 1, yMm: 0 };
+      const cameraUp = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+      const upHorizontalLen = Math.hypot(cameraUp.x, cameraUp.z);
+      const projectedUp = upHorizontalLen >= 0.25 ? horizontalCameraVector(cameraUp) : null;
+      const xPerPx = {
+        xMm: projectedRight.xMm * scaleMmPerPx,
+        yMm: projectedRight.yMm * scaleMmPerPx,
+      };
+      let yPerPx = { xMm: 0, yMm: 0 };
+      if (projectedUp) {
+        yPerPx = {
+          xMm: -projectedUp.xMm * scaleMmPerPx,
+          yMm: -projectedUp.yMm * scaleMmPerPx,
+        };
       }
       return {
         originScreen: origin.screen,
