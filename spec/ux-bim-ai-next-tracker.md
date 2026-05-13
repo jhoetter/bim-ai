@@ -1068,3 +1068,46 @@ Evidence (2026-05-13):
       - `commandCounts.createGridLine: 1`
       - `commandCounts.createReferencePlane: 1`
       - no 3D bridge badges for floor/roof/shaft/stair/railing.
+
+## Reopened Tracker (2026-05-13, feedback round 9)
+
+| Gap ID        | Problem Statement                                                                                                                                       | Canonical Surfaces / Files                | Priority | Status |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | -------- | ------ |
+| NEXT9-GAP-001 | Hosted 3D inserts (especially `Window`) needed pre-placement preview that reads like a true opening footprint before click, not only a generic hint.    | `Viewport.tsx` authoring overlays         | P0       | Done   |
+| NEXT9-GAP-002 | Default authoring contract needed stronger clarity: `Select` must remain the explicit default mode and first ribbon group focus when returning via Esc. | `Workspace.tsx`, `RibbonBar.tsx`          | P0       | Done   |
+| NEXT9-GAP-003 | Several direct 3D tools lacked pre-click hover anchors, so first click still felt like camera-grab in practice.                                         | `Viewport.tsx` tool-specific hover states | P0       | Done   |
+
+### WP-NEXT-27 — Per-Tool 3D Preview Clarity + Select-Default Contract Hardening
+
+- Priority: `P0`
+- Status: `Done`
+- Covers: `NEXT9-GAP-001`, `NEXT9-GAP-002`, `NEXT9-GAP-003`
+- Goal: make every direct 3D ribbon tool legible before first click and make `Select` the unambiguous default state after `Esc`.
+- Source ownership:
+  - `packages/web/src/Viewport.tsx`
+  - `packages/web/src/workspace/shell/RibbonBar.tsx`
+  - `packages/web/src/workspace/Workspace.tsx`
+  - `packages/web/tmp/ux-next-wp27-20260513/capture.mjs`
+- Acceptance:
+  - hosted `Door`/`Window`/`Opening` tools show wall-host preview before placement, with valid vs invalid host cueing;
+  - line/point/polygon 3D tools show pre-click hover anchors so first click target is visible;
+  - `Escape` returns to `Select`, and ribbon focus returns to first group/tab when `Select` becomes active;
+  - reachability remains intact via ribbon + Cmd+K without dead/no-op commands.
+- Implementation + evidence:
+  - Extended 3D overlay state with hosted footprint outline support and added semantic hosted preview geometry (width + sill/head preview) in `Viewport`.
+  - Added hover-anchor rendering for line tools (`pick-start`), point tools (`column`/`room`), and polygon tools before first vertex click.
+  - Preserved direct tool pointer ownership while removing ambiguous “grab” feel by always showing a visible pre-click anchor in direct tool states.
+  - Hardened ribbon select-default behavior by resetting to first tab whenever tool state transitions back to `select` (including Esc path).
+  - Focused regression validation:
+    - `pnpm --filter @bim-ai/web typecheck`
+    - `pnpm --filter @bim-ai/web exec vitest run src/workspace/shell/TopBar.test.tsx src/workspace/Workspace.test.tsx src/workspace/commandCapabilities.test.ts src/workspace/uxAudit.test.ts`
+  - Seeded runtime proof (`make seed name=target-house-3`, `make dev name=target-house-3`, `http://127.0.0.1:2000/`):
+    - `packages/web/tmp/ux-next-wp27-20260513/01-3d-window-host-preview-before-place.png`
+    - `packages/web/tmp/ux-next-wp27-20260513/02-3d-column-hover-preview.png`
+    - `packages/web/tmp/ux-next-wp27-20260513/03-escape-returns-select-first-group.png`
+    - `packages/web/tmp/ux-next-wp27-20260513/summary.json`
+      - `windowPreview.found: true`
+      - `windowPreview.invalid: false`
+      - `columnHoverPreviewVisible: true`
+      - `selectPressed: "true"`
+      - `firstTabSelected: "true"`

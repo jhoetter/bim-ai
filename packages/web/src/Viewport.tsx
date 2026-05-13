@@ -176,6 +176,10 @@ type Authoring3dOverlayState = {
   startScreen?: ScreenPoint;
   currentScreen?: ScreenPoint;
   pointsScreen?: ScreenPoint[];
+  previewStartScreen?: ScreenPoint;
+  previewEndScreen?: ScreenPoint;
+  previewOutlineScreen?: ScreenPoint[];
+  previewHostValid?: boolean;
 };
 
 const DIRECT_3D_AUTHORING_TOOLS = new Set<Direct3dAuthoringTool>([
@@ -500,7 +504,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       if (POLYGON_3D_AUTHORING_TOOLS.has(tool)) {
         return { tool, phase: 'pick-vertex', levelName: direct3dDraftLevelName, pointsScreen: [] };
       }
-      return { tool, phase: 'pick-wall' };
+      return { tool, phase: 'pick-wall', previewHostValid: false };
     });
   }, [planTool, direct3dDraftLevelName]);
 
@@ -980,6 +984,88 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       };
     }
 
+    function projectSemanticPointToScreen(
+      pointMm: { xMm: number; yMm: number; zMm: number },
+      rect: DOMRect,
+    ): ScreenPoint | null {
+      const worldPoint = new THREE.Vector3(
+        pointMm.xMm / 1000,
+        pointMm.zMm / 1000,
+        pointMm.yMm / 1000,
+      );
+      worldPoint.project(camera);
+      if (!Number.isFinite(worldPoint.x) || !Number.isFinite(worldPoint.y)) return null;
+      return {
+        x: (worldPoint.x + 1) * 0.5 * rect.width,
+        y: (-worldPoint.y + 1) * 0.5 * rect.height,
+      };
+    }
+
+    function hostedPreviewSegment(
+      tool: 'door' | 'window' | 'wall-opening',
+      hit: {
+        wall: Extract<Element, { kind: 'wall' }>;
+        hitPointMm: { xMm: number; yMm: number; zMm: number };
+      },
+      rect: DOMRect,
+    ): {
+      center: ScreenPoint;
+      start?: ScreenPoint;
+      end?: ScreenPoint;
+      outline?: ScreenPoint[];
+      valid: boolean;
+    } | null {
+      const center = projectSemanticPointToScreen(hit.hitPointMm, rect);
+      if (!center) return null;
+      const previewWidthMm = tool === 'door' ? 900 : tool === 'window' ? 1200 : 1000;
+      const dx = hit.wall.end.xMm - hit.wall.start.xMm;
+      const dy = hit.wall.end.yMm - hit.wall.start.yMm;
+      const wallLenMm = Math.hypot(dx, dy);
+      if (wallLenMm < 1) return { center, valid: false };
+      const levelsById = new Map(
+        Object.values(elementsByIdRef.current)
+          .filter((el): el is Extract<Element, { kind: 'level' }> => el.kind === 'level')
+          .map((level) => [level.id, level.elevationMm]),
+      );
+      const baseLevelId = hit.wall.baseConstraintLevelId ?? hit.wall.levelId;
+      const baseElevationMm = levelsById.get(baseLevelId) ?? 0;
+      const baseZMm = baseElevationMm + (hit.wall.baseConstraintOffsetMm ?? 0);
+      const topZMm = Math.max(baseZMm + 100, baseZMm + hit.wall.heightMm);
+      const sillMm = tool === 'window' ? 900 : tool === 'wall-opening' ? 200 : 0;
+      const headMm = tool === 'window' ? 2400 : tool === 'wall-opening' ? 2400 : 2100;
+      const openingBottomMm = Math.min(topZMm - 50, baseZMm + sillMm);
+      const openingTopMm = Math.max(openingBottomMm + 50, Math.min(topZMm, baseZMm + headMm));
+      const centerT = projectAlongT(hit.hitPointMm, hit.wall.start, hit.wall.end);
+      const halfDeltaT = previewWidthMm / 2 / wallLenMm;
+      const startT = Math.max(0, centerT - halfDeltaT);
+      const endT = Math.min(1, centerT + halfDeltaT);
+      const startMm = {
+        xMm: hit.wall.start.xMm + (hit.wall.end.xMm - hit.wall.start.xMm) * startT,
+        yMm: hit.wall.start.yMm + (hit.wall.end.yMm - hit.wall.start.yMm) * startT,
+        zMm: hit.hitPointMm.zMm,
+      };
+      const endMm = {
+        xMm: hit.wall.start.xMm + (hit.wall.end.xMm - hit.wall.start.xMm) * endT,
+        yMm: hit.wall.start.yMm + (hit.wall.end.yMm - hit.wall.start.yMm) * endT,
+        zMm: hit.hitPointMm.zMm,
+      };
+      const lowerStart = projectSemanticPointToScreen({ ...startMm, zMm: openingBottomMm }, rect);
+      const lowerEnd = projectSemanticPointToScreen({ ...endMm, zMm: openingBottomMm }, rect);
+      const upperEnd = projectSemanticPointToScreen({ ...endMm, zMm: openingTopMm }, rect);
+      const upperStart = projectSemanticPointToScreen({ ...startMm, zMm: openingTopMm }, rect);
+      const outline =
+        lowerStart && lowerEnd && upperEnd && upperStart
+          ? [lowerStart, lowerEnd, upperEnd, upperStart]
+          : undefined;
+      return {
+        center,
+        start: projectSemanticPointToScreen(startMm, rect) ?? undefined,
+        end: projectSemanticPointToScreen(endMm, rect) ?? undefined,
+        outline,
+        valid: true,
+      };
+    }
+
     function handle3dDirectToolClick(cx: number, cy: number): boolean {
       const tool = activeDirect3dTool();
       if (!tool) {
@@ -992,7 +1078,20 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       if (!LINE_3D_AUTHORING_TOOLS.has(tool)) lineDraftStart = null;
       if (tool === 'door' || tool === 'window' || tool === 'wall-opening') {
         const hit = pickWallAtPointer(cx, cy);
-        if (!hit) return false;
+        if (!hit) {
+          setAuthoringOverlay((prev) =>
+            prev?.tool === tool
+              ? {
+                  ...prev,
+                  previewOutlineScreen: undefined,
+                  previewStartScreen: undefined,
+                  previewEndScreen: undefined,
+                  previewHostValid: false,
+                }
+              : prev,
+          );
+          return true;
+        }
         const alongT = projectAlongT(hit.hitPointMm, hit.wall.start, hit.wall.end);
         useBimStore.getState().select(hit.wall.id);
         if (tool === 'door') {
@@ -1002,6 +1101,15 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             alongT,
             widthMm: 900,
           });
+          setAuthoringOverlay((prev) =>
+            prev?.tool === 'door'
+              ? {
+                  ...prev,
+                  previewOutlineScreen: undefined,
+                  previewHostValid: true,
+                }
+              : prev,
+          );
           return true;
         }
         if (tool === 'window') {
@@ -1013,6 +1121,15 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             sillHeightMm: 900,
             heightMm: 1500,
           });
+          setAuthoringOverlay((prev) =>
+            prev?.tool === 'window'
+              ? {
+                  ...prev,
+                  previewOutlineScreen: undefined,
+                  previewHostValid: true,
+                }
+              : prev,
+          );
           return true;
         }
         onSemanticCommand?.({
@@ -1023,6 +1140,15 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
           sillHeightMm: 200,
           headHeightMm: 2400,
         });
+        setAuthoringOverlay((prev) =>
+          prev?.tool === 'wall-opening'
+            ? {
+                ...prev,
+                previewOutlineScreen: undefined,
+                previewHostValid: true,
+              }
+            : prev,
+        );
         return true;
       }
       const levelInfo = resolveDraftLevelInfo();
@@ -1418,6 +1544,61 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       const directTool = activeDirect3dTool();
       if (
         directTool &&
+        (LINE_3D_AUTHORING_TOOLS.has(directTool) ||
+          POLYGON_3D_AUTHORING_TOOLS.has(directTool) ||
+          directTool === 'column' ||
+          directTool === 'room')
+      ) {
+        const levelInfo = resolveDraftLevelInfo();
+        if (levelInfo) {
+          const projected = projectPointerToDraftPlane(
+            ev.clientX,
+            ev.clientY,
+            levelInfo.elevationMm,
+          );
+          if (projected) {
+            if (LINE_3D_AUTHORING_TOOLS.has(directTool) && !lineDraftStart) {
+              setAuthoringOverlay((prev) =>
+                prev?.tool === directTool
+                  ? {
+                      ...prev,
+                      phase: 'pick-start',
+                      levelName: levelInfo.name,
+                      currentScreen: projected.screen,
+                    }
+                  : prev,
+              );
+            } else if ((directTool === 'column' || directTool === 'room') && !lineDraftStart) {
+              setAuthoringOverlay((prev) =>
+                prev?.tool === directTool
+                  ? {
+                      ...prev,
+                      phase: 'pick-point',
+                      levelName: levelInfo.name,
+                      currentScreen: projected.screen,
+                    }
+                  : prev,
+              );
+            } else if (
+              POLYGON_3D_AUTHORING_TOOLS.has(directTool) &&
+              (!polygonDraft || polygonDraft.points.length === 0)
+            ) {
+              setAuthoringOverlay((prev) =>
+                prev?.tool === directTool
+                  ? {
+                      ...prev,
+                      phase: 'pick-vertex',
+                      levelName: levelInfo.name,
+                      currentScreen: projected.screen,
+                    }
+                  : prev,
+              );
+            }
+          }
+        }
+      }
+      if (
+        directTool &&
         lineDraftStart &&
         authoringOverlayRef.current?.tool === lineDraftStart.tool &&
         authoringOverlayRef.current?.phase === 'pick-end'
@@ -1455,6 +1636,43 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
               }
             : prev,
         );
+      }
+      if (directTool === 'door' || directTool === 'window' || directTool === 'wall-opening') {
+        const rect = renderer.domElement.getBoundingClientRect();
+        const hit = pickWallAtPointer(ev.clientX, ev.clientY);
+        if (!hit) {
+          setAuthoringOverlay((prev) =>
+            prev?.tool === directTool
+              ? {
+                  ...prev,
+                  currentScreen: {
+                    x: ev.clientX - rect.left,
+                    y: ev.clientY - rect.top,
+                  },
+                  previewOutlineScreen: undefined,
+                  previewStartScreen: undefined,
+                  previewEndScreen: undefined,
+                  previewHostValid: false,
+                }
+              : prev,
+          );
+        } else {
+          const preview = hostedPreviewSegment(directTool, hit, rect);
+          if (preview) {
+            setAuthoringOverlay((prev) =>
+              prev?.tool === directTool
+                ? {
+                    ...prev,
+                    currentScreen: preview.center,
+                    previewOutlineScreen: preview.outline,
+                    previewStartScreen: preview.start,
+                    previewEndScreen: preview.end,
+                    previewHostValid: preview.valid,
+                  }
+                : prev,
+            );
+          }
+        }
       }
       if (!dragging) return;
       const dx = ev.clientX - lastX;
@@ -3045,18 +3263,27 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
     if (authoringOverlay.tool === 'door') {
       return {
         title: 'Door placement',
-        instruction: 'Click a wall face to insert a door.',
+        instruction:
+          authoringOverlay.previewHostValid === false
+            ? 'Move over a wall to see a valid host preview, then click to place.'
+            : 'Hover a wall to preview, then click to insert a door.',
       };
     }
     if (authoringOverlay.tool === 'window') {
       return {
         title: 'Window placement',
-        instruction: 'Click a wall face to insert a window.',
+        instruction:
+          authoringOverlay.previewHostValid === false
+            ? 'Move over a wall to see a valid host preview, then click to place.'
+            : 'Hover a wall to preview, then click to insert a window.',
       };
     }
     return {
       title: 'Opening placement',
-      instruction: 'Click a wall face to insert an opening.',
+      instruction:
+        authoringOverlay.previewHostValid === false
+          ? 'Move over a wall to see a valid host preview, then click to place.'
+          : 'Hover a wall to preview, then click to insert an opening.',
     };
   }, [authoringOverlay, direct3dAuthoringActive]);
 
@@ -3121,6 +3348,18 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
               opacity="0.95"
             />
           </svg>
+        ) : LINE_3D_AUTHORING_TOOLS.has(authoringOverlay.tool) && authoringOverlay.currentScreen ? (
+          <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full">
+            <circle
+              cx={authoringOverlay.currentScreen.x}
+              cy={authoringOverlay.currentScreen.y}
+              r="6"
+              fill="transparent"
+              stroke="var(--color-accent)"
+              strokeWidth="2"
+              opacity="0.95"
+            />
+          </svg>
         ) : POLYGON_3D_AUTHORING_TOOLS.has(authoringOverlay.tool) &&
           authoringOverlay.pointsScreen &&
           authoringOverlay.pointsScreen.length > 0 ? (
@@ -3149,6 +3388,92 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
               cy={authoringOverlay.pointsScreen[0]!.y}
               r="6"
               fill="var(--color-accent)"
+              opacity="0.95"
+            />
+          </svg>
+        ) : POLYGON_3D_AUTHORING_TOOLS.has(authoringOverlay.tool) &&
+          authoringOverlay.currentScreen ? (
+          <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full">
+            <circle
+              cx={authoringOverlay.currentScreen.x}
+              cy={authoringOverlay.currentScreen.y}
+              r="6"
+              fill="transparent"
+              stroke="var(--color-accent)"
+              strokeWidth="2"
+              opacity="0.95"
+            />
+          </svg>
+        ) : (authoringOverlay.tool === 'column' || authoringOverlay.tool === 'room') &&
+          authoringOverlay.currentScreen ? (
+          <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full">
+            <circle
+              cx={authoringOverlay.currentScreen.x}
+              cy={authoringOverlay.currentScreen.y}
+              r="9"
+              fill="transparent"
+              stroke="var(--color-accent)"
+              strokeWidth="2"
+              opacity="0.95"
+            />
+            <circle
+              cx={authoringOverlay.currentScreen.x}
+              cy={authoringOverlay.currentScreen.y}
+              r="3"
+              fill="var(--color-accent)"
+              opacity="0.95"
+            />
+          </svg>
+        ) : (authoringOverlay.tool === 'door' ||
+            authoringOverlay.tool === 'window' ||
+            authoringOverlay.tool === 'wall-opening') &&
+          authoringOverlay.currentScreen ? (
+          <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full">
+            {authoringOverlay.previewOutlineScreen &&
+            authoringOverlay.previewOutlineScreen.length >= 4 ? (
+              <polygon
+                points={authoringOverlay.previewOutlineScreen.map((p) => `${p.x},${p.y}`).join(' ')}
+                fill={
+                  authoringOverlay.previewHostValid === false
+                    ? 'color-mix(in srgb, var(--color-danger-500, #dc2626) 18%, transparent)'
+                    : 'color-mix(in srgb, var(--color-accent) 16%, transparent)'
+                }
+                stroke={
+                  authoringOverlay.previewHostValid === false
+                    ? 'var(--color-danger-500, #dc2626)'
+                    : 'var(--color-accent)'
+                }
+                strokeWidth="2"
+                opacity="0.95"
+              />
+            ) : null}
+            {authoringOverlay.previewStartScreen && authoringOverlay.previewEndScreen ? (
+              <line
+                x1={authoringOverlay.previewStartScreen.x}
+                y1={authoringOverlay.previewStartScreen.y}
+                x2={authoringOverlay.previewEndScreen.x}
+                y2={authoringOverlay.previewEndScreen.y}
+                stroke={
+                  authoringOverlay.previewHostValid === false
+                    ? 'var(--color-danger-500, #dc2626)'
+                    : 'var(--color-accent)'
+                }
+                strokeWidth="3"
+                strokeDasharray="6 4"
+                opacity="0.95"
+              />
+            ) : null}
+            <circle
+              cx={authoringOverlay.currentScreen.x}
+              cy={authoringOverlay.currentScreen.y}
+              r="8"
+              fill="transparent"
+              stroke={
+                authoringOverlay.previewHostValid === false
+                  ? 'var(--color-danger-500, #dc2626)'
+                  : 'var(--color-accent)'
+              }
+              strokeWidth="2"
               opacity="0.95"
             />
           </svg>

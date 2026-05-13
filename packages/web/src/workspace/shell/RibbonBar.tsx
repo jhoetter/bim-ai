@@ -1,4 +1,4 @@
-import { type JSX, useEffect, useMemo, useState } from 'react';
+import { type JSX, useEffect, useMemo, useRef, useState } from 'react';
 import { Icons, ICON_SIZE, type IconName } from '@bim-ai/ui';
 
 import { type ToolId, type WorkspaceMode as ToolWorkspaceMode } from '../../tools/toolRegistry';
@@ -183,6 +183,7 @@ export function RibbonBar({
   const activeCommands = useMemo(() => collectTabCommands(activeTab), [activeTab]);
   const identity = ribbonModeIdentity(activeMode ?? 'plan');
   const ModeIdentityIcon = Icons[identity.icon] ?? Icons.planView;
+  const prevActiveToolIdRef = useRef<ToolId | undefined>(activeToolId);
 
   useEffect(() => {
     if (!tabs.some((tab) => tab.id === activeTabId)) {
@@ -191,6 +192,19 @@ export function RibbonBar({
       setCustomizeOpen(false);
     }
   }, [activeTabId, tabs]);
+
+  useEffect(() => {
+    const prevToolId = prevActiveToolIdRef.current;
+    if (
+      activeToolId === 'select' &&
+      prevToolId !== 'select' &&
+      tabs[0] &&
+      activeTabId !== tabs[0].id
+    ) {
+      setActiveTabId(tabs[0].id);
+    }
+    prevActiveToolIdRef.current = activeToolId;
+  }, [activeTabId, activeToolId, tabs]);
 
   useEffect(() => {
     writeHiddenRibbonCommandKeys([...hiddenCommandKeys]);
@@ -667,6 +681,11 @@ function buildPlanRibbonTabs(
       label: 'Create',
       panels: [
         {
+          id: 'selection',
+          label: 'Selection',
+          commands: [tool('select', 'Select', 'select')],
+        },
+        {
           id: 'build',
           label: 'Build',
           commands: [
@@ -804,6 +823,11 @@ function build3dRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
       label: 'Model',
       panels: [
         {
+          id: 'selection',
+          label: 'Selection',
+          commands: [tool('select', 'Select', 'select')],
+        },
+        {
           id: 'build',
           label: 'Build',
           commands: [
@@ -929,6 +953,11 @@ function buildSectionRibbonTabs(selectedElementKind?: string | null): RibbonTab[
       label: 'Section',
       panels: [
         {
+          id: 'selection',
+          label: 'Selection',
+          commands: [tool('select', 'Select', 'select')],
+        },
+        {
           id: 'annotate',
           label: 'Annotate',
           commands: [
@@ -969,6 +998,11 @@ function buildSheetRibbonTabs(selectedElementKind?: string | null): RibbonTab[] 
       id: 'view',
       label: 'Sheet',
       panels: [
+        {
+          id: 'selection',
+          label: 'Selection',
+          commands: [tool('select', 'Select', 'select')],
+        },
         {
           id: 'place-views',
           label: 'Place Views',
@@ -1029,6 +1063,11 @@ function buildScheduleRibbonTabs(selectedElementKind?: string | null): RibbonTab
       label: 'Schedule',
       panels: [
         {
+          id: 'selection',
+          label: 'Selection',
+          commands: [tool('select', 'Select', 'select')],
+        },
+        {
           id: 'rows',
           label: 'Rows',
           commands: [
@@ -1070,12 +1109,14 @@ function buildConceptRibbonTabs(selectedElementKind?: string | null): RibbonTab[
       label: 'Concept',
       panels: [
         {
+          id: 'selection',
+          label: 'Selection',
+          commands: [tool('select', 'Select', 'select')],
+        },
+        {
           id: 'board',
           label: 'Board',
-          commands: [
-            tool('select', 'Select', 'select'),
-            action('command-palette', 'New Item', 'commandPalette', 'concept-new-item'),
-          ],
+          commands: [action('command-palette', 'New Item', 'commandPalette', 'concept-new-item')],
         },
         {
           id: 'place',
