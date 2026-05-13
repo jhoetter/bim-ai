@@ -172,6 +172,9 @@ export function tabFromElement(el: Element): Omit<ViewTab, 'id'> | null {
   if (el.kind === 'viewpoint') {
     return { kind: '3d', targetId: el.id, label: `3D · ${el.name}` };
   }
+  if (el.kind === 'saved_view') {
+    return { kind: '3d', targetId: el.id, label: `3D · ${el.name}` };
+  }
   if (el.kind === 'section_cut') {
     return { kind: 'section', targetId: el.id, label: `Section · ${el.name}` };
   }

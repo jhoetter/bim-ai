@@ -52,7 +52,7 @@ The foundational seven-region ownership model is in place, but real usage still 
 | NEXT-GAP-009 | Room labels can be clipped/illegible.                                                                              | `plan/planElementMeshBuilders.ts`, plan symbology/text sizing                                | P1       | Done   |
 | NEXT-GAP-010 | Ribbon information architecture still feels uneven by view (annotate parity, icon consistency, dead/weak actions). | `workspace/shell/RibbonBar.tsx`, command metadata                                            | P1       | Done   |
 | NEXT-GAP-011 | Discipline/lens switching does not consistently change ribbon + secondary + element + canvas semantics.            | lens state, mode surfaces, command gating                                                    | P0       | Done   |
-| NEXT-GAP-012 | Creation of new floor plans/3D/sections/sheets/schedules is not obvious enough.                                    | primary nav, project browser, commands                                                       | P1       | Open   |
+| NEXT-GAP-012 | Creation of new floor plans/3D/sections/sheets/schedules is not obvious enough.                                    | primary nav, project browser, commands                                                       | P1       | Done   |
 | NEXT-GAP-013 | Sheets show heavy metadata block directly in main user reading flow.                                               | `workspace/sheets/SheetCanvas.tsx`                                                           | P1       | Open   |
 | NEXT-GAP-014 | Moodboard vs documentation sheet intent is not modeled/taggable.                                                   | sheet model + UI filters + commands                                                          | P1       | Open   |
 | NEXT-GAP-015 | Schedule outputs are not meaningful enough for practical role workflows.                                           | schedule mode shell/panels, advisor integration                                              | P1       | Open   |
@@ -60,7 +60,7 @@ The foundational seven-region ownership model is in place, but real usage still 
 | NEXT-GAP-017 | Overflow hygiene: clipped dropdowns and horizontal scrolling inside sidebars.                                      | shell/sidebar CSS/layout constraints                                                         | P1       | Done   |
 | NEXT-GAP-018 | 3D visual quality gaps: dark mode mismatch, materials/realistic/raytrace strategy unclear.                         | `Viewport.tsx`, render style pipeline                                                        | P1       | Open   |
 | NEXT-GAP-019 | Onboarding tour targets exist but narrative is outdated for next-phase workflows.                                  | `onboarding/tour.ts`, `onboarding/OnboardingTour.tsx`                                        | P2       | Open   |
-| NEXT-GAP-020 | Project settings path is under-discoverable after nav cleanup.                                                     | project settings element/editor/commands                                                     | P1       | Open   |
+| NEXT-GAP-020 | Project settings path is under-discoverable after nav cleanup.                                                     | project settings element/editor/commands                                                     | P1       | Done   |
 
 ## Workpackages
 
@@ -379,7 +379,7 @@ Evidence (2026-05-13):
 ### WP-NEXT-11 — View Creation Discoverability
 
 - Priority: `P1`
-- Status: `Open`
+- Status: `Done`
 - Covers: `NEXT-GAP-012`, `NEXT-GAP-020`
 - Goal: expose obvious creation entry points for floor plans/3D/sections/sheets/schedules and project settings.
 - Source ownership:
@@ -390,6 +390,45 @@ Evidence (2026-05-13):
   - clear create actions are present in canonical owners (primary nav/project menu/ribbon as defined),
   - project settings is reachable through explicit primary/project path plus Cmd+K,
   - tests verify discoverability in seeded baseline.
+
+Evidence (2026-05-13):
+
+- Added explicit primary-sidebar `Create` owner panel with direct actions for floor plan / 3D view / section / sheet / schedule and a dedicated project-settings entrypoint:
+  - `packages/web/src/workspace/WorkspaceLeftRail.tsx`
+- Wired creation + settings actions to canonical workspace semantics (no dead buttons):
+  - floor plans via `upsertPlanView`
+  - 3D saved views via `create_saved_view`
+  - sections via plan section authoring tool activation
+  - sheets via `CreateSheet`
+  - schedules via `upsertSchedule`
+  - project settings routes to `project_settings` when present, otherwise opens the project menu settings owner
+  - source wiring in `packages/web/src/workspace/Workspace.tsx`
+- Expanded primary navigation discoverability model:
+  - 3D rows now include saved views and support opening `saved_view` targets in tabs
+  - project-settings row support when `project_settings` exists
+  - `packages/web/src/workspace/workspaceUtils.ts`
+  - `packages/web/src/workspace/tabsModel.ts`
+- Cmd+K discoverability parity + metadata alignment:
+  - new commands:
+    - `project.open-settings`
+    - `view.create.floor-plan`
+    - `view.create.3d-view`
+    - `view.create.section`
+    - `view.create.sheet`
+    - `view.create.schedule`
+  - `packages/web/src/cmdPalette/defaultCommands.ts`
+  - `packages/web/src/workspace/commandCapabilities.ts`
+- Regression coverage updated:
+  - `packages/web/src/cmdPalette/defaultCommands.test.ts`
+  - `packages/web/src/workspace/commandCapabilities.test.ts`
+  - `packages/web/src/workspace/Workspace.test.tsx`
+- Seeded live proof (`make seed name=target-house-3`, `make dev name=target-house-3`) captured in:
+  - `packages/web/tmp/ux-next-wp11-20260513/01-primary-create-panel.png`
+  - `packages/web/tmp/ux-next-wp11-20260513/02-cmdk-create-sheet.png`
+  - `packages/web/tmp/ux-next-wp11-20260513/03-cmdk-project-settings.png`
+  - `packages/web/tmp/ux-next-wp11-20260513/04-cmdk-project-settings-opens-menu.png`
+  - `packages/web/tmp/ux-next-wp11-20260513/05-primary-project-settings-opens-menu.png`
+  - `packages/web/tmp/ux-next-wp11-20260513/summary.json`
 
 ### WP-NEXT-12 — Sheet UX Semantics
 

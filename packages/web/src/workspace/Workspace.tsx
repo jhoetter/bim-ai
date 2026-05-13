@@ -242,6 +242,25 @@ function summarizeJobsCounts(rows: unknown[]): typeof EMPTY_JOBS_COUNTS {
   return counts;
 }
 
+function slugToken(label: string): string {
+  const slug = label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || 'item';
+}
+
+function firstMmVector(value: unknown): { xMm: number; yMm: number; zMm: number } | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const row = value as Record<string, unknown>;
+  const xMm = Number(row.xMm);
+  const yMm = Number(row.yMm);
+  const zMm = Number(row.zMm);
+  if (!Number.isFinite(xMm) || !Number.isFinite(yMm) || !Number.isFinite(zMm)) return undefined;
+  return { xMm, yMm, zMm };
+}
+
 export function Workspace(): JSX.Element {
   const { t, i18n } = useTranslation();
   const toolRegistry = useMemo(() => getToolRegistry(t), [t]);
@@ -1210,6 +1229,7 @@ export function Workspace(): JSX.Element {
     const KIND_PREFIX: Partial<Record<Element['kind'], string>> = {
       plan_view: 'Plan',
       viewpoint: '3D',
+      saved_view: '3D',
       section_cut: 'Section',
       sheet: 'Sheet',
       schedule: 'Schedule',
@@ -1283,6 +1303,45 @@ export function Workspace(): JSX.Element {
         setMode('3d');
         return;
       }
+      if (el.kind === 'saved_view') {
+        const cameraState =
+          el.cameraState && typeof el.cameraState === 'object'
+            ? (el.cameraState as Record<string, unknown>)
+            : null;
+        const position = firstMmVector(cameraState?.positionMm);
+        const target = firstMmVector(cameraState?.targetMm);
+        const up = firstMmVector(cameraState?.upMm) ?? { xMm: 0, yMm: 1, zMm: 0 };
+        if (position && target) {
+          useBimStore.getState().setOrbitCameraFromViewpointMm({
+            position,
+            target,
+            up,
+          });
+        }
+        const visibility =
+          el.visibilityOverrides && typeof el.visibilityOverrides === 'object'
+            ? (el.visibilityOverrides as Record<string, unknown>)
+            : null;
+        if (visibility) {
+          const capElevMm = Number(visibility.viewerClipCapElevMm);
+          const floorElevMm = Number(visibility.viewerClipFloorElevMm);
+          const hideSemanticKinds = Array.isArray(visibility.hiddenSemanticKinds3d)
+            ? visibility.hiddenSemanticKinds3d.filter(
+                (value): value is string => typeof value === 'string',
+              )
+            : undefined;
+          useBimStore.getState().applyOrbitViewpointPreset({
+            capElevMm: Number.isFinite(capElevMm) ? capElevMm : undefined,
+            floorElevMm: Number.isFinite(floorElevMm) ? floorElevMm : undefined,
+            hideSemanticKinds,
+          });
+        }
+        useBimStore.getState().setActiveViewpointId(undefined);
+        useBimStore.getState().select(el.id);
+        setViewerMode('orbit_3d');
+        setMode('3d');
+        return;
+      }
       if (el.kind === 'section_cut') {
         useBimStore.getState().select(el.id);
         setMode('section');
@@ -1296,10 +1355,167 @@ export function Workspace(): JSX.Element {
       if (el.kind === 'schedule') {
         useBimStore.getState().select(el.id);
         setMode('schedule');
+        return;
+      }
+      if (el.kind === 'project_settings') {
+        useBimStore.getState().select(el.id);
+        setRightRailOverride('open');
       }
     },
     [activatePlanView, elementsById, openTabFromElement, setActiveLevelId, setViewerMode],
   );
+
+  const openProjectSettings = useCallback(() => {
+    const settings = elementsById.project_settings;
+    if (settings?.kind === 'project_settings') {
+      openElementById(settings.id);
+      return;
+    }
+    setProjectMenuOpen(true);
+  }, [elementsById, openElementById]);
+
+  const createFloorPlanView = useCallback(async () => {
+    const activePlan = activePlanViewId ? elementsById[activePlanViewId] : undefined;
+    const activePlanLevelId = activePlan?.kind === 'plan_view' ? activePlan.levelId : undefined;
+    const levels = (Object.values(elementsById) as Element[])
+      .filter((element): element is Extract<Element, { kind: 'level' }> => element.kind === 'level')
+      .sort((a, b) => a.elevationMm - b.elevationMm);
+    const selectedLevel =
+      (activePlanLevelId && levels.find((level) => level.id === activePlanLevelId)) || levels[0];
+    if (!selectedLevel) {
+      setSeedError('No level is available to host a new floor plan.');
+      return;
+    }
+    const existingNames = new Set(
+      (Object.values(elementsById) as Element[])
+        .filter(
+          (element): element is Extract<Element, { kind: 'plan_view' }> =>
+            element.kind === 'plan_view',
+        )
+        .map((element) => element.name),
+    );
+    let seq = 1;
+    let name = `${selectedLevel.name} plan`;
+    while (existingNames.has(name)) {
+      seq += 1;
+      name = `${selectedLevel.name} plan ${seq}`;
+    }
+    const id = `pv-${slugToken(selectedLevel.name)}-${Date.now().toString(36)}`;
+    await onSemanticCommand({
+      type: 'upsertPlanView',
+      id,
+      name,
+      levelId: selectedLevel.id,
+      planViewSubtype: 'floor_plan',
+      discipline: 'architecture',
+    });
+    openElementById(id);
+  }, [activePlanViewId, elementsById, onSemanticCommand, openElementById, setSeedError]);
+
+  const create3dSavedView = useCallback(async () => {
+    const activeViewpoint =
+      activeViewpointId && elementsById[activeViewpointId]?.kind === 'viewpoint'
+        ? elementsById[activeViewpointId]
+        : null;
+    const pose =
+      orbitCameraPoseMm ??
+      (activeViewpoint?.mode === 'orbit_3d' && activeViewpoint.camera
+        ? {
+            position: activeViewpoint.camera.position,
+            target: activeViewpoint.camera.target,
+            up: activeViewpoint.camera.up,
+          }
+        : null);
+    if (!pose) {
+      setSeedError('Open a 3D view first so a camera can be saved.');
+      return;
+    }
+    const index =
+      (Object.values(elementsById) as Element[]).filter((element) => element.kind === 'saved_view')
+        .length + 1;
+    const id = `sv-3d-${Date.now().toString(36)}`;
+    await onSemanticCommand({
+      type: 'create_saved_view',
+      id,
+      baseViewId: activeViewpointId ?? 'orbit_3d',
+      name: `Saved 3D View ${index}`,
+      cameraState: {
+        positionMm: pose.position,
+        targetMm: pose.target,
+        upMm: pose.up,
+        fovDeg: 60,
+      },
+      visibilityOverrides: {
+        viewerClipCapElevMm: viewerClipElevMm,
+        viewerClipFloorElevMm,
+        hiddenSemanticKinds3d: Object.entries(viewerCategoryHidden)
+          .filter(([, hidden]) => hidden)
+          .map(([kind]) => kind),
+      },
+      detailLevel: viewerProjection,
+    });
+    openElementById(id);
+  }, [
+    activeViewpointId,
+    elementsById,
+    onSemanticCommand,
+    openElementById,
+    orbitCameraPoseMm,
+    setSeedError,
+    viewerCategoryHidden,
+    viewerClipElevMm,
+    viewerClipFloorElevMm,
+    viewerProjection,
+  ]);
+
+  const createSectionView = useCallback(() => {
+    setMode('plan');
+    setViewerMode('plan_canvas');
+    setPlanTool('section');
+  }, [setPlanTool, setViewerMode]);
+
+  const createSheetView = useCallback(async () => {
+    const existingNumbers = new Set(
+      (Object.values(elementsById) as Element[])
+        .filter(
+          (element): element is Extract<Element, { kind: 'sheet' }> => element.kind === 'sheet',
+        )
+        .map((element) => String((element as { number?: string }).number ?? '').trim())
+        .filter(Boolean),
+    );
+    let seq = 101;
+    let sheetNumber = `A-${seq}`;
+    while (existingNumbers.has(sheetNumber)) {
+      seq += 1;
+      sheetNumber = `A-${seq}`;
+    }
+    const sheetId = `sheet-${slugToken(sheetNumber)}-${Date.now().toString(36)}`;
+    await onSemanticCommand({
+      type: 'CreateSheet',
+      sheetId,
+      name: `Documentation ${sheetNumber}`,
+      number: sheetNumber,
+      size: 'A1',
+      orientation: 'landscape',
+    });
+    openElementById(sheetId);
+  }, [elementsById, onSemanticCommand, openElementById]);
+
+  const createScheduleView = useCallback(async () => {
+    const index =
+      (Object.values(elementsById) as Element[]).filter((element) => element.kind === 'schedule')
+        .length + 1;
+    const id = `sch-${Date.now().toString(36)}`;
+    await onSemanticCommand({
+      type: 'upsertSchedule',
+      id,
+      name: `Room schedule ${index}`,
+      category: 'room',
+      filters: { category: 'room' },
+      grouping: {},
+    });
+    openElementById(id);
+  }, [elementsById, onSemanticCommand, openElementById]);
 
   const paletteActiveScheduleId =
     activeTab?.kind === 'schedule' && activeTab.targetId ? activeTab.targetId : null;
@@ -1741,6 +1957,7 @@ export function Workspace(): JSX.Element {
           openElement: (id) => navigateTo({ kind: effectiveMode, targetId: id, source: 'cmdk' }),
           dispatchCommand: (cmd) => void onSemanticCommand(cmd),
           openProjectMenu: () => setProjectMenuOpen((v) => !v),
+          openProjectSettings,
           saveSnapshot: handleSaveSnapshot,
           openRestoreSnapshot: () => setProjectMenuOpen(true),
           openManageLinks: () => setManageLinksOpen(true),
@@ -1777,6 +1994,11 @@ export function Workspace(): JSX.Element {
           openActiveSectionSourcePlan,
           adjustActiveSectionCropDepth,
           saveCurrentViewpoint,
+          createFloorPlan: () => void createFloorPlanView(),
+          create3dView: () => void create3dSavedView(),
+          createSectionView,
+          createSheet: () => void createSheetView(),
+          createSchedule: () => void createScheduleView(),
           resetActiveSavedViewpoint,
           updateActiveSavedViewpoint,
           closeInactiveViews: () => setTabsState((s) => closeInactiveTabs(s)),
@@ -2131,6 +2353,13 @@ export function Workspace(): JSX.Element {
             openTabFromElement={openTabFromElement}
             onSetModeOnly={handleSetModeOnly}
             onSemanticCommand={onSemanticCommand}
+            onCreateFloorPlan={() => void createFloorPlanView()}
+            onCreate3dView={() => void create3dSavedView()}
+            onCreateSectionView={createSectionView}
+            onCreateSheet={() => void createSheetView()}
+            onCreateSchedule={() => void createScheduleView()}
+            onOpenProjectSettings={openProjectSettings}
+            onOpenSavedView={openElementById}
             activeViewTargetId={activeTab?.targetId}
             userDisplayName={userDisplayName}
             userId={userId}

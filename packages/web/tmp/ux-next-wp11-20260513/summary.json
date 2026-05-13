@@ -1,0 +1,24 @@
+{
+  "base": "http://127.0.0.1:2000/",
+  "captures": [
+    "01-primary-create-panel.png",
+    "02-cmdk-create-sheet.png",
+    "03-cmdk-project-settings.png",
+    "04-cmdk-project-settings-opens-menu.png",
+    "05-primary-project-settings-opens-menu.png"
+  ],
+  "checks": {
+    "createButtons": {
+      "floorPlan": true,
+      "view3d": true,
+      "section": true,
+      "sheet": true,
+      "schedule": true,
+      "projectSettings": true
+    },
+    "cmdkCreateSheetVisible": true,
+    "cmdkProjectSettingsVisible": true,
+    "cmdkProjectSettingsOpensProjectMenu": true,
+    "primaryProjectSettingsOpensProjectMenu": true
+  }
+}

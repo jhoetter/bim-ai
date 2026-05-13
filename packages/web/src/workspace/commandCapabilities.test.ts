@@ -143,6 +143,12 @@ describe('command capability graph', () => {
       'theme.toggle',
       'settings.language.toggle',
       'shell.toggle-primary-sidebar',
+      'project.open-settings',
+      'view.create.floor-plan',
+      'view.create.3d-view',
+      'view.create.section',
+      'view.create.sheet',
+      'view.create.schedule',
       'project.manage-links',
       'project.import.ifc',
       'project.import.dxf',
@@ -209,6 +215,14 @@ describe('command capability graph', () => {
       'canvas-context',
     ]);
     expect(getCommandCapability('project.manage-links')?.surfaces).toEqual([
+      'cmd-k',
+      'primary-sidebar',
+    ]);
+    expect(getCommandCapability('project.open-settings')?.surfaces).toEqual([
+      'cmd-k',
+      'primary-sidebar',
+    ]);
+    expect(getCommandCapability('view.create.floor-plan')?.surfaces).toEqual([
       'cmd-k',
       'primary-sidebar',
     ]);

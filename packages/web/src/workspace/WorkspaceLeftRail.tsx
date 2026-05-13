@@ -73,6 +73,13 @@ export function WorkspaceLeftRail({
   openTabFromElement,
   onSetModeOnly,
   onSemanticCommand,
+  onCreateFloorPlan,
+  onCreate3dView,
+  onCreateSectionView,
+  onCreateSheet,
+  onCreateSchedule,
+  onOpenProjectSettings,
+  onOpenSavedView,
   activeViewTargetId,
   userDisplayName,
   userId,
@@ -88,6 +95,13 @@ export function WorkspaceLeftRail({
    * `onModeChange` (which calls activateOrOpenKind) doesn't override it. */
   onSetModeOnly?: (mode: WorkspaceMode) => void;
   onSemanticCommand?: (cmd: Record<string, unknown>) => void | Promise<void>;
+  onCreateFloorPlan?: () => void;
+  onCreate3dView?: () => void;
+  onCreateSectionView?: () => void;
+  onCreateSheet?: () => void;
+  onCreateSchedule?: () => void;
+  onOpenProjectSettings?: () => void;
+  onOpenSavedView?: (savedViewId: string) => void;
   activeViewTargetId?: string | null;
   userDisplayName?: string;
   userId?: string | null;
@@ -98,6 +112,7 @@ export function WorkspaceLeftRail({
   const activatePlanView = useBimStore((s) => s.activatePlanView);
   const activePlanViewId = useBimStore((s) => s.activePlanViewId);
   const activeViewpointId = useBimStore((s) => s.activeViewpointId);
+  const selectedId = useBimStore((s) => s.selectedId);
   const select = useBimStore((s) => s.select);
   const setOrbitCameraFromViewpointMm = useBimStore((s) => s.setOrbitCameraFromViewpointMm);
   const setActiveViewpointId = useBimStore((s) => s.setActiveViewpointId);
@@ -141,6 +156,10 @@ export function WorkspaceLeftRail({
         select(undefined);
         return;
       }
+      if (el.kind === 'saved_view') {
+        onOpenSavedView?.(el.id);
+        return;
+      }
       if (el.kind === 'sheet') {
         openTabFromElement(el);
         onSetModeOnly?.('sheet'); // change mode without overriding the active tab
@@ -157,13 +176,21 @@ export function WorkspaceLeftRail({
         openTabFromElement(el);
         onSetModeOnly?.('concept'); // change mode without overriding the active tab
         select(undefined);
+        return;
+      }
+      if (el.kind === 'project_settings') {
+        select(el.id);
+        onOpenProjectSettings?.();
       }
     },
     [
       activatePlanView,
       elementsById,
       onSetModeOnly,
+      onOpenProjectSettings,
+      onOpenSavedView,
       openTabFromElement,
+      selectedId,
       select,
       setActiveViewpointId,
       setOrbitCameraFromViewpointMm,
@@ -215,9 +242,64 @@ export function WorkspaceLeftRail({
         </div>
       ) : null}
       <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="border-b border-border p-2" data-testid="primary-create-panel">
+          <div className="pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
+            Create
+          </div>
+          <div className="grid grid-cols-2 gap-1">
+            <button
+              type="button"
+              data-testid="primary-create-floor-plan"
+              className="rounded border border-border bg-surface px-2 py-1 text-left text-[11px] text-foreground hover:bg-surface-strong"
+              onClick={onCreateFloorPlan}
+            >
+              New floor plan
+            </button>
+            <button
+              type="button"
+              data-testid="primary-create-3d-view"
+              className="rounded border border-border bg-surface px-2 py-1 text-left text-[11px] text-foreground hover:bg-surface-strong"
+              onClick={onCreate3dView}
+            >
+              New 3D view
+            </button>
+            <button
+              type="button"
+              data-testid="primary-create-section"
+              className="rounded border border-border bg-surface px-2 py-1 text-left text-[11px] text-foreground hover:bg-surface-strong"
+              onClick={onCreateSectionView}
+            >
+              New section
+            </button>
+            <button
+              type="button"
+              data-testid="primary-create-sheet"
+              className="rounded border border-border bg-surface px-2 py-1 text-left text-[11px] text-foreground hover:bg-surface-strong"
+              onClick={onCreateSheet}
+            >
+              New sheet
+            </button>
+            <button
+              type="button"
+              data-testid="primary-create-schedule"
+              className="rounded border border-border bg-surface px-2 py-1 text-left text-[11px] text-foreground hover:bg-surface-strong"
+              onClick={onCreateSchedule}
+            >
+              New schedule
+            </button>
+            <button
+              type="button"
+              data-testid="primary-open-project-settings"
+              className="rounded border border-border bg-surface px-2 py-1 text-left text-[11px] text-foreground hover:bg-surface-strong"
+              onClick={onOpenProjectSettings}
+            >
+              Project settings
+            </button>
+          </div>
+        </div>
         <LeftRail
           sections={browserSections}
-          activeRowId={activeViewTargetId ?? activePlanViewId ?? activeViewpointId ?? undefined}
+          activeRowId={activeViewTargetId ?? activePlanViewId ?? activeViewpointId ?? selectedId}
           onRowActivate={activateRow}
           onRowContextMenu={(rowId, position) => {
             if (!elementsById[rowId]) return;

@@ -239,6 +239,12 @@ describe('default Cmd+K commands', () => {
     const replayOnboardingTour = vi.fn();
     const sharePresentation = vi.fn();
     const openProjectMenu = vi.fn();
+    const openProjectSettings = vi.fn();
+    const createFloorPlan = vi.fn();
+    const create3dView = vi.fn();
+    const createSectionView = vi.fn();
+    const createSheet = vi.fn();
+    const createSchedule = vi.fn();
 
     command('project.save-snapshot').invoke({ ...PLAN_CTX, saveSnapshot });
     expect(saveSnapshot).toHaveBeenCalledOnce();
@@ -259,6 +265,19 @@ describe('default Cmd+K commands', () => {
     command('project.import.ifc').invoke({ ...PLAN_CTX, openProjectMenu });
     command('project.import.dxf').invoke({ ...PLAN_CTX, openProjectMenu });
     expect(openProjectMenu).toHaveBeenCalledTimes(2);
+    command('project.open-settings').invoke({ ...PLAN_CTX, openProjectSettings });
+    expect(openProjectSettings).toHaveBeenCalledOnce();
+
+    command('view.create.floor-plan').invoke({ ...PLAN_CTX, createFloorPlan });
+    command('view.create.3d-view').invoke({ ...PLAN_CTX, create3dView });
+    command('view.create.section').invoke({ ...PLAN_CTX, createSectionView });
+    command('view.create.sheet').invoke({ ...PLAN_CTX, createSheet });
+    command('view.create.schedule').invoke({ ...PLAN_CTX, createSchedule });
+    expect(createFloorPlan).toHaveBeenCalledOnce();
+    expect(create3dView).toHaveBeenCalledOnce();
+    expect(createSectionView).toHaveBeenCalledOnce();
+    expect(createSheet).toHaveBeenCalledOnce();
+    expect(createSchedule).toHaveBeenCalledOnce();
 
     command('library.open-material-browser').invoke({ ...PLAN_CTX, openMaterialBrowser });
     expect(openMaterialBrowser).toHaveBeenCalledOnce();

@@ -193,6 +193,13 @@ describe('<Workspace /> — smoke', () => {
     const primary = within(getByTestId('app-shell-primary-sidebar'));
 
     expect(primary.getByTestId('primary-project-selector')).toBeTruthy();
+    expect(primary.getByTestId('primary-create-panel')).toBeTruthy();
+    expect(primary.getByTestId('primary-create-floor-plan')).toBeTruthy();
+    expect(primary.getByTestId('primary-create-3d-view')).toBeTruthy();
+    expect(primary.getByTestId('primary-create-section')).toBeTruthy();
+    expect(primary.getByTestId('primary-create-sheet')).toBeTruthy();
+    expect(primary.getByTestId('primary-create-schedule')).toBeTruthy();
+    expect(primary.getByTestId('primary-open-project-settings')).toBeTruthy();
     expect(primary.getByLabelText('Search')).toBeTruthy();
     expect(primary.getByText('Concept')).toBeTruthy();
     expect(primary.getByText('Floor Plans')).toBeTruthy();
@@ -796,6 +803,22 @@ describe('<Workspace /> — smoke', () => {
       target: { value: 'import dxf underlay' },
     });
     fireEvent.click(getByTestId('palette-entry-project.import.dxf'));
+    expect(getByTestId('project-menu')).toBeTruthy();
+  });
+
+  it('opens project settings through Cmd+K and primary sidebar reachability', () => {
+    const { getByTestId, getByLabelText } = renderWithProviders(<Workspace />);
+
+    fireEvent.click(getByTestId('workspace-header-cmdk'));
+    fireEvent.change(getByLabelText('Command palette search'), {
+      target: { value: 'project settings' },
+    });
+    fireEvent.click(getByTestId('palette-entry-project.open-settings'));
+    expect(getByTestId('project-menu')).toBeTruthy();
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    const primary = within(getByTestId('app-shell-primary-sidebar'));
+    fireEvent.click(primary.getByTestId('primary-open-project-settings'));
     expect(getByTestId('project-menu')).toBeTruthy();
   });
 

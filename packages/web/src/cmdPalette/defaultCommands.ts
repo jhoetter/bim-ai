@@ -683,6 +683,54 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'project.open-settings',
+  label: 'Open Project Settings',
+  keywords: ['project', 'settings', 'units', 'levels', 'standards'],
+  category: 'command',
+  invoke: (ctx) => ctx.openProjectSettings?.(),
+});
+
+registerCommand({
+  id: 'view.create.floor-plan',
+  label: 'Create Floor Plan',
+  keywords: ['create', 'new', 'floor plan', 'plan view'],
+  category: 'command',
+  invoke: (ctx) => ctx.createFloorPlan?.(),
+});
+
+registerCommand({
+  id: 'view.create.3d-view',
+  label: 'Create 3D Saved View',
+  keywords: ['create', 'new', '3d', 'saved view', 'viewpoint'],
+  category: 'command',
+  invoke: (ctx) => ctx.create3dView?.(),
+});
+
+registerCommand({
+  id: 'view.create.section',
+  label: 'Create Section View',
+  keywords: ['create', 'new', 'section', 'cut', 'marker'],
+  category: 'command',
+  invoke: (ctx) => ctx.createSectionView?.(),
+});
+
+registerCommand({
+  id: 'view.create.sheet',
+  label: 'Create Sheet',
+  keywords: ['create', 'new', 'sheet', 'documentation'],
+  category: 'command',
+  invoke: (ctx) => ctx.createSheet?.(),
+});
+
+registerCommand({
+  id: 'view.create.schedule',
+  label: 'Create Schedule',
+  keywords: ['create', 'new', 'schedule', 'table'],
+  category: 'command',
+  invoke: (ctx) => ctx.createSchedule?.(),
+});
+
+registerCommand({
   id: 'project.save-snapshot',
   label: 'Save Snapshot',
   keywords: ['project', 'snapshot', 'save', 'download', 'backup'],

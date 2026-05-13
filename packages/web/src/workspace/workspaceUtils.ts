@@ -81,6 +81,9 @@ export function buildPrimaryNavigationSections(
   const viewpoints = all.filter(
     (e): e is Extract<Element, { kind: 'viewpoint' }> => e.kind === 'viewpoint',
   );
+  const savedViews = all.filter(
+    (e): e is Extract<Element, { kind: 'saved_view' }> => e.kind === 'saved_view',
+  );
   const sections = all.filter(
     (e): e is Extract<Element, { kind: 'section_cut' }> => e.kind === 'section_cut',
   );
@@ -91,8 +94,28 @@ export function buildPrimaryNavigationSections(
   const conceptBoards = all.filter(
     (e): e is Extract<Element, { kind: 'view_concept_board' }> => e.kind === 'view_concept_board',
   );
+  const projectSettings = all.find(
+    (e): e is Extract<Element, { kind: 'project_settings' }> => e.kind === 'project_settings',
+  );
   const levelNameById = new Map(levels.map((l) => [l.id, l.name]));
   return [
+    ...(projectSettings
+      ? [
+          {
+            id: 'project',
+            label: 'Project',
+            icon: PlanViewHifi,
+            rows: [
+              {
+                id: projectSettings.id,
+                label: 'Project settings',
+                icon: PlanViewHifi,
+                hint: projectSettings.displayLocale ?? 'global settings',
+              },
+            ],
+          },
+        ]
+      : []),
     {
       id: 'concept',
       label: 'Concept',
@@ -119,12 +142,14 @@ export function buildPrimaryNavigationSections(
       id: '3d-views',
       label: '3D Views',
       icon: OrbitViewHifi,
-      rows: viewpoints.map((v) => ({
-        id: v.id,
-        label: v.name,
-        icon: OrbitViewHifi,
-        hint: 'saved camera',
-      })),
+      rows: [...viewpoints, ...savedViews]
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((v) => ({
+          id: v.id,
+          label: v.name,
+          icon: OrbitViewHifi,
+          hint: v.kind === 'saved_view' ? 'saved 3D snapshot' : 'saved camera',
+        })),
     },
     {
       id: 'sections',
