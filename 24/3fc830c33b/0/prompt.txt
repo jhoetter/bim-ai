@@ -1,0 +1,23 @@
+please look into the ribbon of 3d, why are there soooo few elements? i thought i can also e.g. fully edit exactly as in 2d with 3d, but the ribbon is almost compltely empty...
+
+---
+
+Warning: apply_patch was requested via exec_command. Use the apply_patch tool instead of exec_command.
+
+---
+
+but i still cant e.g. create a wall in the 3d view, i can select the wall element but then cant draw; i think it is trying to select the empty space or such? 
+look into this please; of course, it is a bit more difficult in 3d than in 2d
+
+---
+
+i can now technically place them, but the UX is terrible; i don't see where i start, it still looks like "grabbing", ...
+-> how does revit handle this?
+
+---
+
+yes, exactly. do that
+
+---
+
+that is working, but now i need that for the whole rest... always in an approach that makes perfect sense for the respective element. go ahead and build this fully..
