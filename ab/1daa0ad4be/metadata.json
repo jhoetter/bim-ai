@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "ab1daa0ad4be",
+  "strategy": "manual-commit",
+  "branch": "codex/sustainability-lens-workpackages-20260514",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/workspace/commandCapabilities.test.ts",
+    "packages/web/src/workspace/commandCapabilities.ts",
+    "packages/web/src/workspace/shell/LensDropdown.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ab/1daa0ad4be/0/metadata.json",
+      "transcript": "/ab/1daa0ad4be/0/full.jsonl",
+      "content_hash": "/ab/1daa0ad4be/0/content_hash.txt",
+      "prompt": "/ab/1daa0ad4be/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1816064,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 39688704,
+    "output_tokens": 97756,
+    "api_call_count": 318
+  }
+}
