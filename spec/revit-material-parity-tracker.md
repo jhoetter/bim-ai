@@ -160,6 +160,23 @@ Commit rule:
 
 - Commit and push after helper adoption and focused renderer tests pass.
 
+Evidence:
+
+- Added `packages/web/src/viewport/effectiveHostMaterials.ts`.
+- Added `packages/web/src/viewport/effectiveHostMaterials.test.ts`.
+- `packages/web/src/viewport/meshBuilders.ts` now uses shared effective host material helpers for:
+  - curved wall meshes,
+  - sloped wall meshes,
+  - recessed wall meshes,
+  - simple wall base materials,
+  - floor slab top materials,
+  - roof mass top materials,
+  - roof standing seam material.
+- Removed remaining direct `wall.materialKey` / `roof.materialKey` render lookups from `meshBuilders.ts`.
+- Verification:
+  - `pnpm --filter @bim-ai/web exec vitest run src/viewport/effectiveHostMaterials.test.ts src/viewport/materialCoverageAudit.test.ts src/viewport/meshBuilders.standingSeam.test.ts src/viewport/meshBuilders.layeredWall.test.ts src/viewport/meshBuilders.faceOverrides.test.ts src/viewport/csgWallMaterial.test.ts`
+  - `pnpm --filter @bim-ai/web typecheck`
+
 ## RMP-03 — Opening And Host Cut Visual Correctness
 
 Priority: `P0`

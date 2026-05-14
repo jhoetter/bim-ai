@@ -35,6 +35,13 @@ import { makeMultiRunStairMesh } from './meshBuilders.multiRunStair';
 import { localPlanOffsetToWorld, yawForPlanSegment } from './planSegmentOrientation';
 import { resolveWindowCutDimensions } from './hostedOpeningDimensions';
 import { wallWith3dJoinDisallowGaps } from './wallJoinDisplay';
+import {
+  effectiveWallBaseMaterialKey,
+  effectiveFloorTopMaterialKey,
+  effectiveRoofTopMaterialKey,
+  effectiveWallFaceMaterialKey,
+  isWhiteRenderLikeMaterial,
+} from './effectiveHostMaterials';
 
 /** Resolve a wall's `wallTypeId` to a renderable assembly. Built-in catalog
  * entries take precedence over user-authored `wall_type` elements. */
@@ -401,24 +408,23 @@ function makeCurvedWallMesh(
   shape.closePath();
 
   const { yBase, height } = wallVerticalSpanM(wall, elevM, elementsById);
+  const wallMaterialKey = effectiveWallFaceMaterialKey(wall, 'exterior', elementsById);
 
   const mesh = new THREE.Mesh(
     new THREE.ExtrudeGeometry(shape, { depth: height, bevelEnabled: false }),
-    makeThreeMaterialForKey(wall.materialKey, {
+    makeThreeMaterialForKey(wallMaterialKey, {
       elementsById,
       usage: 'wallExterior',
-      uvTransform: materialUvTransformForExtent(wall.materialKey, {
+      uvTransform: materialUvTransformForExtent(wallMaterialKey, {
         elementsById,
         extentMm: { uMm: Math.max(1, uvLengthM * 1000), vMm: height * 1000 },
       }),
-      fallbackColor:
-        wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
-          ? '#f4f4f0'
-          : categoryColorOr(paint, 'wall'),
-      fallbackRoughness:
-        wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
-          ? 0.92
-          : (paint?.categories.wall.roughness ?? 0.85),
+      fallbackColor: isWhiteRenderLikeMaterial(wallMaterialKey)
+        ? '#f4f4f0'
+        : categoryColorOr(paint, 'wall'),
+      fallbackRoughness: isWhiteRenderLikeMaterial(wallMaterialKey)
+        ? 0.92
+        : (paint?.categories.wall.roughness ?? 0.85),
       fallbackMetalness: paint?.categories.wall.metalness ?? 0,
     }),
   );
@@ -520,9 +526,7 @@ export function makeFloorSlabMesh(
   const elev = elevationMForLevel(floor.levelId, elementsById);
   const th = THREE.MathUtils.clamp(floor.thicknessMm / 1000, 0.05, 1.8);
   const boundary = floor.boundaryMm ?? [];
-  const floorType = floor.floorTypeId ? elementsById[floor.floorTypeId] : undefined;
-  const floorMaterialKey =
-    floorType?.kind === 'floor_type' ? floorType.layers[0]?.materialKey : undefined;
+  const floorMaterialKey = effectiveFloorTopMaterialKey(floor, elementsById);
 
   // Build shape in shape-XY (plan X→shape X, plan Y negated→shape Y).
   // After ExtrudeGeometry + rotateX(-π/2): shape X→world X, extrude depth→world Y, −shapeY→world Z.
@@ -573,15 +577,6 @@ export function makeFloorSlabMesh(
 }
 
 // ─── Roof geometry helpers ────────────────────────────────────────────────────
-
-function roofSurfaceMaterialKey(
-  roof: Extract<Element, { kind: 'roof' }>,
-  elementsById: Record<string, Element>,
-): string | null | undefined {
-  const roofType = roof.roofTypeId ? elementsById[roof.roofTypeId] : undefined;
-  if (roofType?.kind === 'roof_type') return roofType.layers[0]?.materialKey ?? roof.materialKey;
-  return roof.materialKey;
-}
 
 export type XYPt = { xMm: number; yMm: number };
 
@@ -1701,7 +1696,7 @@ export function makeRoofMassMesh(
     geom = _dormerCutFn(geom, roof, elementsById, refElev);
   }
 
-  const roofMaterialKey = roofSurfaceMaterialKey(roof, elementsById);
+  const roofMaterialKey = effectiveRoofTopMaterialKey(roof, elementsById);
   const mesh = new THREE.Mesh(
     geom,
     makeThreeMaterialForKey(roofMaterialKey, {
@@ -1974,7 +1969,8 @@ export function addStandingSeamPattern(
   const spanZ = oz1 - oz0;
   if (spanX <= 0 || spanZ <= 0) return;
 
-  const seamMat = makeThreeMaterialForKey(roof.materialKey, {
+  const roofMaterialKey = effectiveRoofTopMaterialKey(roof, elementsById);
+  const seamMat = makeThreeMaterialForKey(roofMaterialKey, {
     elementsById,
     usage: 'roofTop',
     fallbackColor: '#3a3d3f',
@@ -2175,22 +2171,22 @@ export function makeSlopedWallMesh(
   const maxTopHeightM = Math.max(...topHeightsRelM);
 
   const geom = buildSlopedSegmentGeometry(lenM, thick, topHeightsRelM);
+  const wallMaterialKey = effectiveWallFaceMaterialKey(wall, 'exterior', elementsById);
 
-  const mat = makeThreeMaterialForKey(wall.materialKey, {
+  const mat = makeThreeMaterialForKey(wallMaterialKey, {
     elementsById,
     usage: 'wallExterior',
-    uvTransform: materialUvTransformForExtent(wall.materialKey, {
+    uvTransform: materialUvTransformForExtent(wallMaterialKey, {
       elementsById,
       extentMm: { uMm: lenM * 1000, vMm: maxTopHeightM * 1000 },
     }),
-    fallbackColor:
-      wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
-        ? '#f4f4f0'
-        : categoryColorOr(paint, 'wall'),
+    fallbackColor: isWhiteRenderLikeMaterial(wallMaterialKey)
+      ? '#f4f4f0'
+      : categoryColorOr(paint, 'wall'),
     fallbackRoughness: paint?.categories.wall.roughness ?? 0.85,
     fallbackMetalness: paint?.categories.wall.metalness ?? 0.0,
   });
-  const wallMatSpec = resolveMaterial(wall.materialKey, elementsById);
+  const wallMatSpec = resolveMaterial(wallMaterialKey, elementsById);
   const mesh = new THREE.Mesh(geom, mat);
   mesh.position.set((sx + ex) / 2000, yBase, (sz + ez) / 2000);
   mesh.rotation.y = yawForPlanSegment(dx, dz);
@@ -2307,31 +2303,30 @@ export function makeRecessedWallMesh(
   const yBase = elevM + baseOff;
   const height = THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40);
   const wallLenM = Math.hypot(wall.end.xMm - wall.start.xMm, wall.end.yMm - wall.start.yMm) / 1000;
+  const wallMaterialKey = effectiveWallFaceMaterialKey(wall, 'exterior', elementsById);
 
-  const mat = makeThreeMaterialForKey(wall.materialKey, {
+  const mat = makeThreeMaterialForKey(wallMaterialKey, {
     elementsById,
     usage: 'wallExterior',
-    uvTransform: materialUvTransformForExtent(wall.materialKey, {
+    uvTransform: materialUvTransformForExtent(wallMaterialKey, {
       elementsById,
       extentMm: { uMm: wallLenM * 1000, vMm: height * 1000 },
     }),
-    fallbackColor:
-      wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
-        ? '#f4f4f0'
-        : categoryColorOr(paint, 'wall'),
-    fallbackRoughness:
-      wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
-        ? 0.92
-        : (paint?.categories.wall.roughness ?? 0.85),
+    fallbackColor: isWhiteRenderLikeMaterial(wallMaterialKey)
+      ? '#f4f4f0'
+      : categoryColorOr(paint, 'wall'),
+    fallbackRoughness: isWhiteRenderLikeMaterial(wallMaterialKey)
+      ? 0.92
+      : (paint?.categories.wall.roughness ?? 0.85),
     fallbackMetalness: paint?.categories.wall.metalness ?? 0.0,
   });
-  const wallMatSpec = resolveMaterial(wall.materialKey, elementsById);
+  const wallMatSpec = resolveMaterial(wallMaterialKey, elementsById);
 
   // White-render variant for end caps when the wall's primary materialKey
   // is the recess back finish (cladding_warm_wood). Approximates the
   // architectural "white frame around a wood-clad recess" pattern.
   const capMat =
-    wall.materialKey === 'cladding_warm_wood'
+    wallMaterialKey === 'cladding_warm_wood'
       ? makeThreeMaterialForKey('white_render', {
           elementsById,
           usage: 'wallExterior',
@@ -2486,23 +2481,26 @@ export function makeWallMesh(
   const { yBase, height } = wallVerticalSpanM(displayWall, elevM, elementsById);
 
   const wallOffset = wallPlanOffsetM(displayWall);
-  const wallMatSpec = resolveMaterial(displayWall.materialKey, elementsById);
+  const displayWallMaterialKey = effectiveWallBaseMaterialKey(
+    displayWall,
+    'exterior',
+    elementsById,
+  );
+  const wallMatSpec = resolveMaterial(displayWallMaterialKey, elementsById);
   const wallFaceExtentMm = { uMm: len * 1000, vMm: height * 1000 };
-  const baseMaterial = makeThreeMaterialForKey(displayWall.materialKey, {
+  const baseMaterial = makeThreeMaterialForKey(displayWallMaterialKey, {
     elementsById,
     usage: 'wallExterior',
-    uvTransform: materialUvTransformForExtent(displayWall.materialKey, {
+    uvTransform: materialUvTransformForExtent(displayWallMaterialKey, {
       elementsById,
       extentMm: wallFaceExtentMm,
     }),
-    fallbackColor:
-      displayWall.materialKey === 'white_cladding' || displayWall.materialKey === 'white_render'
-        ? '#f4f4f0'
-        : categoryColorOr(paint, 'wall'),
-    fallbackRoughness:
-      displayWall.materialKey === 'white_cladding' || displayWall.materialKey === 'white_render'
-        ? 0.92
-        : (paint?.categories.wall.roughness ?? 0.85),
+    fallbackColor: isWhiteRenderLikeMaterial(displayWallMaterialKey)
+      ? '#f4f4f0'
+      : categoryColorOr(paint, 'wall'),
+    fallbackRoughness: isWhiteRenderLikeMaterial(displayWallMaterialKey)
+      ? 0.92
+      : (paint?.categories.wall.roughness ?? 0.85),
     fallbackMetalness: paint?.categories.wall.metalness ?? 0.0,
   });
   const wallMaterial: THREE.Material | THREE.Material[] =
@@ -2543,8 +2541,8 @@ export function makeWallMesh(
   mesh.userData.faceMaterialOverrides = displayWall.faceMaterialOverrides ?? null;
   mesh.userData.wallFaceMaterialSlots = WALL_BOX_FACE_MATERIAL_INDEX;
   addEdges(mesh);
-  if (displayWall.materialKey === 'timber_cladding') addCladdingBoards(mesh, len, height, thick);
-  else if (displayWall.materialKey === 'white_cladding')
+  if (displayWallMaterialKey === 'timber_cladding') addCladdingBoards(mesh, len, height, thick);
+  else if (displayWallMaterialKey === 'white_cladding')
     addCladdingBoards(mesh, len, height, thick, 120, 10, '#f4f4f0');
   else if (wallMatSpec?.category === 'cladding')
     // Pitch bumped 150 -> 250 mm so vertical board seams are visible
