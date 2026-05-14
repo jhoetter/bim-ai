@@ -311,6 +311,9 @@ export type ElemKind =
   | 'saved_view'
   | 'presentation_canvas'
   | 'brand_template'
+  | 'thermal_bridge_marker'
+  | 'renovation_scenario'
+  | 'building_services_handoff'
   | 'radial_dimension'
   | 'diameter_dimension'
   | 'arc_length_dimension';
@@ -573,6 +576,88 @@ export type RoomColorSchemeRow = {
 
 export type WallLayerFunction = 'structure' | 'insulation' | 'finish';
 export type WallStructuralRole = 'unknown' | 'load_bearing' | 'non_load_bearing';
+
+export type ThermalEnvelopeClassification =
+  | 'exterior_wall_outside_air'
+  | 'wall_against_ground'
+  | 'wall_against_unheated_space'
+  | 'roof_or_top_floor_ceiling_outside_air'
+  | 'floor_slab_against_ground'
+  | 'floor_against_unheated_basement'
+  | 'window_or_door_thermal_envelope'
+  | 'internal_outside_thermal_envelope';
+
+export type ThermalClassificationSource = 'auto' | 'manual' | 'batch' | 'imported';
+
+export type EnergyHeatingStatus = 'heated' | 'low_heated' | 'unheated';
+export type EnergyUsageProfile = 'residential' | 'office' | 'school' | 'retail' | 'other';
+
+export type ThermalBridgeMarkerType =
+  | 'balcony_slab'
+  | 'window_reveal'
+  | 'roof_wall_junction'
+  | 'floor_wall_junction'
+  | 'basement_transition'
+  | 'cantilever'
+  | 'user_defined';
+
+export type RenovationScenarioStatus = 'as_is' | 'scenario_a' | 'scenario_b' | 'target';
+
+export type EnergyCarrier =
+  | 'gas'
+  | 'oil'
+  | 'district_heat'
+  | 'electricity'
+  | 'biomass'
+  | 'heat_pump'
+  | 'solar_thermal'
+  | 'other';
+
+export type EnergyServicesHandoff = {
+  heatingGeneratorType?: string | null;
+  energyCarrier?: EnergyCarrier | null;
+  distributionType?: string | null;
+  domesticHotWaterSystem?: string | null;
+  ventilationSystem?: string | null;
+  renewableEnergyNotes?: string | null;
+  knownSystemAge?: string | null;
+  measureCandidateNotes?: string | null;
+};
+
+export type ThermalBridgeMarkerElem = {
+  kind: 'thermal_bridge_marker';
+  id: string;
+  name?: string;
+  markerType: ThermalBridgeMarkerType;
+  locationMm: XYZ;
+  hostElementIds?: string[];
+  description?: string | null;
+  suggestedMitigation?: string | null;
+  handoffNote?: string | null;
+  psiValueReference?: string | null;
+};
+
+export type RenovationScenarioElem = {
+  kind: 'renovation_scenario';
+  id: string;
+  name: string;
+  scenarioStatus: RenovationScenarioStatus;
+  baseScenarioId?: string | null;
+  typeLayerOverrides?: Record<string, unknown>;
+  openingTypeOverrides?: Record<string, unknown>;
+  heatingStatusOverrides?: Record<string, EnergyHeatingStatus>;
+  systemsNotes?: string | null;
+  measurePackages?: Array<{ id: string; name: string; notes?: string; costPlaceholder?: number }>;
+};
+
+export type BuildingServicesHandoffElem = {
+  kind: 'building_services_handoff';
+  id: string;
+  name: string;
+  scenarioId?: string | null;
+  services: EnergyServicesHandoff;
+  handoffNote?: string | null;
+};
 
 export type WallTypeLayer = {
   thicknessMm: number;
@@ -1031,6 +1116,9 @@ export type Element =
       discipline?: DisciplineTag | null;
       /** SCH-V3-01: custom property values. */
       props?: Record<string, unknown>;
+      thermalClassification?: ThermalEnvelopeClassification | null;
+      thermalClassificationSource?: ThermalClassificationSource | null;
+      energyScenarioId?: string | null;
       /** TOP-V3-04: site wall binding — base elevation per-segment follows the toposolid surface. */
       siteHostId?: string | null;
       /** F-040: per-endpoint Allow/Disallow Join flag (mirrors Revit right-click → Allow/Disallow Join). */
@@ -1069,6 +1157,15 @@ export type Element =
       discipline?: DisciplineTag | null;
       /** SCH-V3-01: custom property values. */
       props?: Record<string, unknown>;
+      thermalClassification?: ThermalEnvelopeClassification | null;
+      thermalClassificationSource?: ThermalClassificationSource | null;
+      uValue?: number | null;
+      gValue?: number | null;
+      frameFraction?: number | null;
+      airTightnessClass?: string | null;
+      installationThermalBridgeNote?: string | null;
+      shadingDevice?: string | null;
+      annualShadingFactorEstimate?: number | null;
     }
   | {
       kind: 'window';
@@ -1105,6 +1202,15 @@ export type Element =
       discipline?: DisciplineTag | null;
       /** SCH-V3-01: custom property values. */
       props?: Record<string, unknown>;
+      thermalClassification?: ThermalEnvelopeClassification | null;
+      thermalClassificationSource?: ThermalClassificationSource | null;
+      uValue?: number | null;
+      gValue?: number | null;
+      frameFraction?: number | null;
+      airTightnessClass?: string | null;
+      installationThermalBridgeNote?: string | null;
+      shadingDevice?: string | null;
+      annualShadingFactorEstimate?: number | null;
     }
   | {
       kind: 'wall_opening';
@@ -1143,6 +1249,12 @@ export type Element =
       phaseDemolished?: string | null;
       /** SCH-V3-01: custom property values. */
       props?: Record<string, unknown>;
+      heatingStatus?: EnergyHeatingStatus | null;
+      usageProfile?: EnergyUsageProfile | null;
+      setpointC?: number | null;
+      airChangeRate?: number | null;
+      zoneId?: string | null;
+      conditionedVolumeIncluded?: boolean | null;
     }
   | {
       kind: 'grid_line';
@@ -1274,6 +1386,9 @@ export type Element =
       discipline?: DisciplineTag | null;
       /** SCH-V3-01: custom property values. */
       props?: Record<string, unknown>;
+      thermalClassification?: ThermalEnvelopeClassification | null;
+      thermalClassificationSource?: ThermalClassificationSource | null;
+      energyScenarioId?: string | null;
     }
   | {
       kind: 'roof';
@@ -1313,6 +1428,9 @@ export type Element =
       discipline?: DisciplineTag | null;
       /** SCH-V3-01: custom property values. */
       props?: Record<string, unknown>;
+      thermalClassification?: ThermalEnvelopeClassification | null;
+      thermalClassificationSource?: ThermalClassificationSource | null;
+      energyScenarioId?: string | null;
     }
   | {
       kind: 'stair';
@@ -2408,6 +2526,9 @@ export type Element =
   | SavedViewElem
   | PresentationCanvasElem
   | BrandTemplateElem
+  | ThermalBridgeMarkerElem
+  | RenovationScenarioElem
+  | BuildingServicesHandoffElem
   | {
       kind: 'pipe';
       id: string;
@@ -3126,9 +3247,15 @@ export type MaterialPhysicalAsset = {
 };
 
 export type MaterialThermalAsset = {
+  /** Energy Lens source field name for thermal conductivity, W/(m*K). */
+  lambdaWPerMK?: number;
+  /** Legacy/rendering alias for lambdaWPerMK. */
   conductivityWPerMK?: number;
+  rhoKgPerM3?: number;
   specificHeatJPerKgK?: number;
+  mu?: number;
   thermalResistanceM2KPerW?: number;
+  sourceReference?: string;
 };
 
 export type MaterialElem = {

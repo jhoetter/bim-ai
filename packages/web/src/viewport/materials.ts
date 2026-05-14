@@ -346,9 +346,13 @@ export interface MaterialPbrSpec {
     comments?: string;
   };
   thermal?: {
+    lambdaWPerMK?: number;
     conductivityWPerMK?: number;
+    rhoKgPerM3?: number;
     specificHeatJPerKgK?: number;
+    mu?: number;
     thermalResistanceM2KPerW?: number;
+    sourceReference?: string;
   };
 }
 
@@ -380,9 +384,13 @@ const DEFAULT_MATERIAL_METADATA = {
     densityKgPerM3: 1200,
   },
   thermal: {
+    lambdaWPerMK: 0.35,
     conductivityWPerMK: 0.35,
+    rhoKgPerM3: 1200,
     specificHeatJPerKgK: 900,
+    mu: 10,
     thermalResistanceM2KPerW: 0.12,
+    sourceReference: 'Default project material assumption',
   },
 } satisfies Pick<MaterialPbrSpec, 'graphics' | 'physical' | 'thermal'>;
 
@@ -500,9 +508,13 @@ function materialElementToPbrSpec(
       : undefined,
     thermal: thermal
       ? {
+          lambdaWPerMK: thermal.lambdaWPerMK,
           conductivityWPerMK: thermal.conductivityWPerMK,
+          rhoKgPerM3: thermal.rhoKgPerM3,
           specificHeatJPerKgK: thermal.specificHeatJPerKgK,
+          mu: thermal.mu,
           thermalResistanceM2KPerW: thermal.thermalResistanceM2KPerW,
+          sourceReference: thermal.sourceReference,
         }
       : undefined,
   });

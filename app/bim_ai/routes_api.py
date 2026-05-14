@@ -1124,6 +1124,21 @@ async def schedule_derived_table(
     return out
 
 
+@api_router.get("/models/{model_id}/energy/handoff")
+async def energy_handoff_route(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+    scenario_id: Annotated[str | None, Query(alias="scenarioId")] = None,
+) -> dict[str, Any]:
+    from bim_ai.energy_lens import build_energy_handoff_payload
+
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return build_energy_handoff_payload(doc, scenario_id=scenario_id)
+
+
 # ---------------------------------------------------------------------------
 # SCH-V3-01 — Schedule view rows endpoint
 # ---------------------------------------------------------------------------

@@ -82,6 +82,25 @@ describe('scheduleDefinitionPresets', () => {
     ).toEqual([]);
   });
 
+  it('registers Energy Lens presets for required handoff schedules', () => {
+    const energyCategories = [
+      'energy_envelope',
+      'energy_thermal_materials',
+      'energy_u_value_summary',
+      'energy_windows_solar_gains',
+      'energy_thermal_bridges',
+      'energy_thermal_zones',
+      'energy_building_services',
+      'energy_renovation_measures',
+      'energy_export_qa',
+    ] as const;
+    for (const category of energyCategories) {
+      const presets = presetsForCategory(category);
+      expect(presets.length).toBeGreaterThan(0);
+      expect(presets[0]?.fields.some((field) => field.token === 'required')).toBe(true);
+    }
+  });
+
   it('presetFieldReadoutRows merges labels and roles from payload metadata', () => {
     const preset: ScheduleDefinitionPreset = {
       id: 'test',

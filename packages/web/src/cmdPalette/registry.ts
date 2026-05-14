@@ -1,3 +1,4 @@
+import type { LensMode } from '@bim-ai/core';
 import fuzzysort from 'fuzzysort';
 
 import {
@@ -53,7 +54,7 @@ export type PaletteContext = {
   /** Set the app theme while keeping host UI state in sync. */
   setTheme?: (theme: 'light' | 'dark') => void;
   /** Set the active discipline lens/filter. */
-  setLensMode?: (lens: CapabilityLensMode) => void;
+  setLensMode?: (lens: LensMode) => void;
   /** Toggle the current app theme while keeping host UI state in sync. */
   toggleTheme?: () => void;
   /** Set the current UI language while keeping host i18n state in sync. */

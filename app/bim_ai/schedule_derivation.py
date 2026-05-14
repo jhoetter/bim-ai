@@ -8,12 +8,14 @@ from typing import Any
 from bim_ai.document import Document
 from bim_ai.elements import (
     AreaElem,
+    BuildingServicesHandoffElem,
     DoorElem,
     FloorElem,
     FloorTypeElem,
     LevelElem,
     MaterialElem,
     PlanViewElem,
+    RenovationScenarioElem,
     RoofElem,
     RoofTypeElem,
     RoomElem,
@@ -21,9 +23,21 @@ from bim_ai.elements import (
     SectionCutElem,
     SheetElem,
     StairElem,
+    ThermalBridgeMarkerElem,
     WallElem,
     WallTypeElem,
     WindowElem,
+)
+from bim_ai.energy_lens import (
+    build_energy_handoff_payload,
+    energy_qa_rows,
+    envelope_surface_area_m2,
+    material_thermal_spec,
+    opening_energy_value,
+    resolved_layers_for_envelope_element,
+    thermal_classification,
+    type_u_value_summary_rows,
+    u_value_for_layers,
 )
 from bim_ai.fire_safety_lens import (
     FIRE_SAFETY_SCHEDULE_CATEGORIES,
@@ -230,6 +244,18 @@ _NUMERIC_SCHEDULE_FIELDS: frozenset[str] = frozenset(
         "volumeM3",
         "travelDistanceM",
         "exitWidthMm",
+        "uValueWPerM2K",
+        "rTotalM2KPerW",
+        "surfaceAreaM2",
+        "lambdaWPerMK",
+        "rhoKgPerM3",
+        "specificHeatJPerKgK",
+        "mu",
+        "gValue",
+        "frameFraction",
+        "annualShadingFactorEstimate",
+        "setpointC",
+        "airChangeRate",
     }
 )
 
@@ -559,6 +585,24 @@ def _infer_schedule_category_from_name(name: str) -> str | None:
         return "plan_view"
     if "assembly" in lowered or "assemblies" in lowered:
         return "material_assembly"
+    if "envelope" in lowered or "thermal envelope" in lowered:
+        return "energy_envelope"
+    if "u-value" in lowered or "u value" in lowered:
+        return "energy_u_value_summary"
+    if "solar" in lowered or "shading" in lowered:
+        return "energy_windows_solar_gains"
+    if "thermal bridge" in lowered:
+        return "energy_thermal_bridges"
+    if "thermal zone" in lowered:
+        return "energy_thermal_zones"
+    if "building services" in lowered:
+        return "energy_building_services"
+    if "renovation" in lowered:
+        return "energy_renovation_measures"
+    if "export qa" in lowered or "energy qa" in lowered:
+        return "energy_export_qa"
+    if "thermal material" in lowered:
+        return "energy_thermal_materials"
     return None
 
 
@@ -1018,6 +1062,256 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     rows.append(row_r)
                     offset_mm += th_mm
 
+    elif cat == "energy_envelope":
+        for e in doc.elements.values():
+            if isinstance(e, (WallElem, FloorElem, RoofElem)):
+                type_id = ""
+                type_name = ""
+                if isinstance(e, WallElem):
+                    type_id = (e.wall_type_id or "").strip()
+                    type_name = _wall_type_name(doc, type_id or None)
+                elif isinstance(e, FloorElem):
+                    type_id = (e.floor_type_id or "").strip()
+                    type_name = _floor_type_name(doc, type_id or None)
+                else:
+                    type_id = (e.roof_type_id or "").strip()
+                    type_name = _roof_type_name(doc, type_id or None)
+                uv = u_value_for_layers(doc, resolved_layers_for_envelope_element(doc, e))
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "hostKind": e.kind,
+                        "typeId": type_id,
+                        "typeName": type_name,
+                        "thermalClassification": thermal_classification(e),
+                        "classificationSource": getattr(
+                            e, "thermal_classification_source", None
+                        )
+                        or "",
+                        "surfaceAreaM2": envelope_surface_area_m2(doc, e),
+                        "uValueWPerM2K": uv["uValueWPerM2K"],
+                        "missingMaterialKeys": "; ".join(uv["missingMaterialKeys"]),
+                        "sourceReferences": "; ".join(uv["sourceReferences"]),
+                        "scenarioId": getattr(e, "energy_scenario_id", None) or "",
+                        "familyTypeId": "",
+                    }
+                )
+            elif isinstance(e, (DoorElem, WindowElem)):
+                wall = doc.elements.get(e.wall_id)
+                lid = wall.level_id if isinstance(wall, WallElem) else ""
+                area_m2 = (
+                    float(e.width_mm)
+                    * float(getattr(e, "height_mm", getattr(wall, "height_mm", 2100.0)))
+                    / 1_000_000.0
+                )
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "hostKind": e.kind,
+                        "typeId": getattr(e, "family_type_id", None) or "",
+                        "typeName": family_type_display_label(
+                            doc, getattr(e, "family_type_id", None)
+                        ),
+                        "levelId": lid,
+                        "level": lvl_lab.get(lid, lid),
+                        "wallId": e.wall_id,
+                        "thermalClassification": thermal_classification(e),
+                        "classificationSource": getattr(
+                            e, "thermal_classification_source", None
+                        )
+                        or "",
+                        "surfaceAreaM2": round(area_m2, 6),
+                        "uValueWPerM2K": opening_energy_value(e, "uValue"),
+                        "gValue": opening_energy_value(e, "gValue"),
+                        "frameFraction": opening_energy_value(e, "frameFraction"),
+                        "annualShadingFactorEstimate": opening_energy_value(
+                            e, "annualShadingFactorEstimate"
+                        ),
+                        "familyTypeId": getattr(e, "family_type_id", "") or "",
+                    }
+                )
+
+    elif cat == "energy_thermal_materials":
+        material_keys: set[str] = set()
+        for e in doc.elements.values():
+            if isinstance(e, (WallElem, FloorElem, RoofElem)):
+                for layer in resolved_layers_for_envelope_element(doc, e):
+                    key = str(layer.get("materialKey") or "").strip()
+                    if key:
+                        material_keys.add(key)
+        for key in sorted(material_keys):
+            spec = material_thermal_spec(doc, key)
+            rows.append(
+                {
+                    "elementId": key,
+                    "materialKey": key,
+                    "materialDisplay": spec.display_name if spec else material_display_label(doc, key),
+                    "lambdaWPerMK": spec.lambda_w_per_mk if spec else "",
+                    "rhoKgPerM3": spec.rho_kg_per_m3 if spec else "",
+                    "specificHeatJPerKgK": spec.specific_heat_j_per_kgk if spec else "",
+                    "mu": spec.mu if spec else "",
+                    "sourceReference": spec.source_reference if spec else "",
+                    "thermalDataStatus": "complete" if spec and spec.lambda_w_per_mk else "missing_lambda",
+                    "familyTypeId": "",
+                }
+            )
+
+    elif cat == "energy_u_value_summary":
+        for row in type_u_value_summary_rows(doc):
+            rows.append(
+                {
+                    "elementId": row["typeId"],
+                    "typeId": row["typeId"],
+                    "typeName": row["typeName"],
+                    "hostKind": row["typeKind"].replace("_type", ""),
+                    "uValueWPerM2K": row["uValueWPerM2K"],
+                    "rTotalM2KPerW": row["rTotalM2KPerW"],
+                    "layerCount": len(row["layers"]),
+                    "missingMaterialKeys": "; ".join(row["missingMaterialKeys"]),
+                    "sourceReferences": "; ".join(row["sourceReferences"]),
+                    "calculationScope": row["calculationScope"],
+                    "familyTypeId": "",
+                }
+            )
+
+    elif cat == "energy_windows_solar_gains":
+        for e in doc.elements.values():
+            if isinstance(e, WindowElem):
+                wall = doc.elements.get(e.wall_id)
+                area_m2 = float(e.width_mm) * float(e.height_mm) / 1_000_000.0
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "wallId": e.wall_id,
+                        "hostWallTypeId": wall.wall_type_id if isinstance(wall, WallElem) else "",
+                        "widthMm": round(float(e.width_mm), 3),
+                        "heightMm": round(float(e.height_mm), 3),
+                        "openingAreaM2": round(area_m2, 6),
+                        "uValueWPerM2K": opening_energy_value(e, "uValue"),
+                        "gValue": opening_energy_value(e, "gValue"),
+                        "frameFraction": opening_energy_value(e, "frameFraction"),
+                        "shadingDevice": getattr(e, "shading_device", None) or "",
+                        "annualShadingFactorEstimate": opening_energy_value(
+                            e, "annualShadingFactorEstimate"
+                        ),
+                        "installationThermalBridgeNote": getattr(
+                            e, "installation_thermal_bridge_note", None
+                        )
+                        or "",
+                        "familyTypeId": getattr(e, "family_type_id", "") or "",
+                    }
+                )
+
+    elif cat == "energy_thermal_bridges":
+        for e in doc.elements.values():
+            if isinstance(e, ThermalBridgeMarkerElem):
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name or e.id,
+                        "markerType": e.marker_type,
+                        "hostElementIds": "; ".join(e.host_element_ids),
+                        "description": e.description or "",
+                        "suggestedMitigation": e.suggested_mitigation or "",
+                        "handoffNote": e.handoff_note or "",
+                        "psiValueReference": e.psi_value_reference or "",
+                        "familyTypeId": "",
+                    }
+                )
+
+    elif cat == "energy_thermal_zones":
+        for e in doc.elements.values():
+            if isinstance(e, RoomElem):
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "levelId": e.level_id,
+                        "level": lvl_lab.get(e.level_id, e.level_id),
+                        "heatingStatus": getattr(e, "heating_status", None) or "",
+                        "usageProfile": getattr(e, "usage_profile", None) or "",
+                        "setpointC": getattr(e, "setpoint_c", None) or "",
+                        "airChangeRate": getattr(e, "air_change_rate", None) or "",
+                        "zoneId": getattr(e, "zone_id", None) or "",
+                        "conditionedVolumeIncluded": getattr(
+                            e, "conditioned_volume_included", None
+                        ),
+                        "familyTypeId": "",
+                    }
+                )
+
+    elif cat == "energy_building_services":
+        for e in doc.elements.values():
+            if isinstance(e, BuildingServicesHandoffElem):
+                services = e.services or {}
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "scenarioId": e.scenario_id or "",
+                        "heatingGeneratorType": services.get("heatingGeneratorType", ""),
+                        "energyCarrier": services.get("energyCarrier", ""),
+                        "distributionType": services.get("distributionType", ""),
+                        "domesticHotWaterSystem": services.get("domesticHotWaterSystem", ""),
+                        "ventilationSystem": services.get("ventilationSystem", ""),
+                        "renewableEnergyNotes": services.get("renewableEnergyNotes", ""),
+                        "knownSystemAge": services.get("knownSystemAge", ""),
+                        "measureCandidateNotes": services.get("measureCandidateNotes", ""),
+                        "handoffNote": e.handoff_note or "",
+                        "familyTypeId": "",
+                    }
+                )
+
+    elif cat == "energy_renovation_measures":
+        for e in doc.elements.values():
+            if isinstance(e, RenovationScenarioElem):
+                if e.measure_packages:
+                    for measure in e.measure_packages:
+                        rows.append(
+                            {
+                                "elementId": f"{e.id}:{measure.id}",
+                                "scenarioId": e.id,
+                                "scenarioName": e.name,
+                                "scenarioStatus": e.scenario_status,
+                                "measureId": measure.id,
+                                "measureName": measure.name,
+                                "measureNotes": measure.notes or "",
+                                "costPlaceholder": measure.cost_placeholder or "",
+                                "systemsNotes": e.systems_notes or "",
+                                "familyTypeId": "",
+                            }
+                        )
+                else:
+                    rows.append(
+                        {
+                            "elementId": e.id,
+                            "scenarioId": e.id,
+                            "scenarioName": e.name,
+                            "scenarioStatus": e.scenario_status,
+                            "measureId": "",
+                            "measureName": "",
+                            "measureNotes": "",
+                            "systemsNotes": e.systems_notes or "",
+                            "familyTypeId": "",
+                        }
+                    )
+
+    elif cat == "energy_export_qa":
+        rows = [
+            {
+                "elementId": row.get("elementId", ""),
+                "issueCode": row.get("issueCode", ""),
+                "severity": row.get("severity", ""),
+                "message": row.get("message", ""),
+                "missingMaterialKeys": "; ".join(row.get("missingMaterialKeys", []) or []),
+                "familyTypeId": "",
+            }
+            for row in energy_qa_rows(doc)
+        ]
+
     elif cat == "area":
         # KRN-08 — area schedule. Lists name + level + perimeter + computed
         # area + ruleSet for each `area` element.
@@ -1204,6 +1498,15 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             "rowCount": len(leaf_rows),
             "grossVolumeM3": round(sum(float(r.get("grossVolumeM3") or 0.0) for r in leaf_rows), 8),
         }
+    elif cat.startswith("energy_") and leaf_rows:
+        totals = {
+            "kind": cat,
+            "rowCount": len(leaf_rows),
+        }
+        if any("surfaceAreaM2" in r for r in leaf_rows):
+            totals["surfaceAreaM2"] = round(
+                sum(float(r.get("surfaceAreaM2") or 0.0) for r in leaf_rows), 6
+            )
 
     out: dict[str, Any] = {
         "scheduleId": schedule_id,
@@ -1233,6 +1536,8 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             out["schedulePlacement"] = {"sheetId": placement_sid, "sheetName": pel.name or ""}
     if totals:
         out["totals"] = totals
+    if cat.startswith("energy_"):
+        out["energyHandoff"] = build_energy_handoff_payload(doc)
     if cat == "room":
         lvl_allow = _allowed_levels_from_schedule_filter_equals(filter_equals)
         rb = compute_room_boundary_derivation(doc)
