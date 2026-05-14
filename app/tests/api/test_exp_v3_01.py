@@ -188,7 +188,11 @@ class TestBuildExportBundleUnit:
         model_state = {
             "elements": [
                 {"kind": "material", "id": "mat-wood", "pbr": {"roughness": 0.8, "metalness": 0.0}},
-                {"kind": "material", "id": "mat-steel", "pbr": {"roughness": 0.2, "metalness": 1.0}},
+                {
+                    "kind": "material",
+                    "id": "mat-steel",
+                    "pbr": {"roughness": 0.2, "metalness": 1.0},
+                },
             ]
         }
         bundle = build_export_bundle(model_state, "metadata-only")
@@ -197,6 +201,33 @@ class TestBuildExportBundleUnit:
         ids = {m["id"] for m in materials}
         assert "mat-wood" in ids
         assert "mat-steel" in ids
+
+    def test_gltf_material_manifest_includes_texture_maps_and_missing_assets(self) -> None:
+        model_state = {
+            "elements": [
+                {
+                    "kind": "material",
+                    "id": "mat-brick",
+                    "appearance": {"albedoMapId": "img-albedo", "normalMapId": "img-missing"},
+                },
+                {
+                    "kind": "image_asset",
+                    "id": "img-albedo",
+                    "filename": "brick.png",
+                    "mimeType": "image/png",
+                    "byteSize": 1,
+                    "contentHash": "sha256:a",
+                    "mapUsageHint": "albedo",
+                },
+            ]
+        }
+        bundle = build_export_bundle(model_state, "gltf-pbr")
+        material = bundle.metadata["materials"][0]
+        assert material["textureMaps"]["albedo"] == "img-albedo"
+        assert material["textureMaps"]["normal"] == "img-missing"
+        assert bundle.metadata["missingMaterialAssets"] == [
+            {"materialId": "mat-brick", "usage": "normal", "imageAssetId": "img-missing"}
+        ]
 
     def test_project_settings_sun_overrides(self) -> None:
         model_state = {

@@ -12,6 +12,7 @@ from bim_ai.elements import (
     FloorElem,
     FloorTypeElem,
     LevelElem,
+    MaterialElem,
     PlanViewElem,
     RoofElem,
     RoofTypeElem,
@@ -30,6 +31,7 @@ from bim_ai.material_assembly_resolve import (
     resolved_layers_for_roof,
     resolved_layers_for_wall,
 )
+from bim_ai.material_catalog import resolve_material
 from bim_ai.opening_cut_primitives import hosted_opening_half_span_mm
 from bim_ai.room_derivation import (
     HEURISTIC_VERSION as ROOM_BOUNDARY_HEURISTIC_VERSION,
@@ -59,6 +61,73 @@ from bim_ai.type_material_registry import (
     material_display_label,
     wall_type_display_label,
 )
+
+
+def _material_contract_fields(doc: Document, material_key: str | None) -> dict[str, Any]:
+    key = (material_key or "").strip()
+    if not key:
+        return {
+            "materialClass": "",
+            "materialSurfacePattern": "",
+            "materialCutPattern": "",
+            "materialAppearanceStatus": "none",
+            "materialTextureScale": "",
+            "materialDensityKgPerM3": "",
+            "materialThermalConductivityWPerMK": "",
+        }
+    material_el = doc.elements.get(key)
+    if isinstance(material_el, MaterialElem):
+        graphics = material_el.graphics or {}
+        appearance = material_el.appearance or {}
+        physical = material_el.physical or {}
+        thermal = material_el.thermal or {}
+        scale = appearance.get("uvScaleMm") or material_el.uv_scale_mm
+        has_map = any(
+            [
+                appearance.get("albedoMapId") or material_el.albedo_map_id,
+                appearance.get("normalMapId") or material_el.normal_map_id,
+                appearance.get("roughnessMapId") or material_el.roughness_map_id,
+                appearance.get("metallicMapId") or material_el.metallic_map_id,
+                appearance.get("heightMapId") or material_el.height_map_id,
+            ]
+        )
+        return {
+            "materialClass": str(physical.get("materialClass") or ""),
+            "materialSurfacePattern": str(
+                graphics.get("surfacePatternId") or material_el.hatch_pattern_id or ""
+            ),
+            "materialCutPattern": str(
+                graphics.get("cutPatternId") or material_el.hatch_pattern_id or ""
+            ),
+            "materialAppearanceStatus": "mapped" if has_map else "color",
+            "materialTextureScale": (
+                f"{scale.get('uMm', '')}x{scale.get('vMm', '')}mm"
+                if isinstance(scale, dict)
+                else ""
+            ),
+            "materialDensityKgPerM3": physical.get("densityKgPerM3", ""),
+            "materialThermalConductivityWPerMK": thermal.get("conductivityWPerMK", ""),
+        }
+    builtin = resolve_material(key)
+    if builtin:
+        return {
+            "materialClass": builtin.category,
+            "materialSurfacePattern": builtin.hatch_pattern or "",
+            "materialCutPattern": builtin.hatch_pattern or "",
+            "materialAppearanceStatus": "mapped" if builtin.normal_map_url else "catalog",
+            "materialTextureScale": "",
+            "materialDensityKgPerM3": "",
+            "materialThermalConductivityWPerMK": "",
+        }
+    return {
+        "materialClass": "",
+        "materialSurfacePattern": "",
+        "materialCutPattern": "",
+        "materialAppearanceStatus": "missing",
+        "materialTextureScale": "",
+        "materialDensityKgPerM3": "",
+        "materialThermalConductivityWPerMK": "",
+    }
 
 
 def _plan_view_id_to_owning_sheet(doc: Document) -> dict[str, tuple[str, str]]:
@@ -555,6 +624,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                             doc,
                             getattr(e, "material_key", None),
                         ),
+                        **_material_contract_fields(doc, getattr(e, "material_key", None)),
                         "familyTypeDisplay": family_type_display_label(
                             doc, getattr(e, "family_type_id", None)
                         ),
@@ -601,6 +671,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                             doc,
                             getattr(e, "material_key", None),
                         ),
+                        **_material_contract_fields(doc, getattr(e, "material_key", None)),
                         "familyTypeDisplay": family_type_display_label(
                             doc, getattr(e, "family_type_id", None)
                         ),
@@ -789,6 +860,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "layerFunction": fn,
                         "materialKey": tk,
                         "materialDisplay": material_display_label(doc, tk or None),
+                        **_material_contract_fields(doc, tk or None),
                         "thicknessMm": round(th_mm, 6),
                         "grossAreaM2": round(gross_face_m2, 8),
                         "grossVolumeM3": round(vol, 12),
@@ -832,6 +904,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "layerFunction": fn,
                         "materialKey": tk,
                         "materialDisplay": material_display_label(doc, tk or None),
+                        **_material_contract_fields(doc, tk or None),
                         "thicknessMm": round(th_mm, 6),
                         "grossAreaM2": round(slab_m2, 8),
                         "grossVolumeM3": round(vol, 12),
@@ -878,6 +951,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "layerFunction": fn,
                         "materialKey": tk,
                         "materialDisplay": material_display_label(doc, tk or None),
+                        **_material_contract_fields(doc, tk or None),
                         "thicknessMm": round(th_mm, 6),
                         "grossAreaM2": round(footprint_m2, 8),
                         "grossVolumeM3": round(vol, 12),

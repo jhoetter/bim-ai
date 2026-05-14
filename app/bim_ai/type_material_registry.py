@@ -133,6 +133,12 @@ def material_display_label(_doc: Document, material_key: str | None) -> str:
     if not key:
         return ""
 
+    material_el = _doc.elements.get(key)
+    if getattr(material_el, "kind", None) == "material":
+        name = str(getattr(material_el, "name", "") or "").strip()
+        if name:
+            return name
+
     for seed in builtin_type_material_registry().get("materialSeeds") or []:
         if not isinstance(seed, dict):
             continue

@@ -76,7 +76,7 @@ The material assignment model should support:
 | MAT-GAP-007 | Layered assemblies do not expose exterior/interior finish appearance clearly. | Revit-like wall/floor/roof types are underpowered.             | P1       | Done        |
 | MAT-GAP-008 | Per-face paint/finish overrides are not modeled.                              | Users cannot paint one wall face or one floor zone.            | P1       | Done        |
 | MAT-GAP-009 | Material previews are not representative.                                     | Browser choice is guesswork.                                   | P1       | Done        |
-| MAT-GAP-010 | Exports/schedules do not preserve the full material asset contract.           | IFC/GLTF/readback can diverge from viewport behavior.          | P1       | Open        |
+| MAT-GAP-010 | Exports/schedules do not preserve the full material asset contract.           | IFC/GLTF/readback can diverge from viewport behavior.          | P1       | Done        |
 | MAT-GAP-011 | Texture performance and caching strategy is undefined.                        | Real textures could degrade 3D interaction.                    | P1       | Done        |
 | MAT-GAP-012 | Visual QA does not catch material regressions.                                | Textures/bump/patterns can silently disappear.                 | P1       | In Progress |
 | MAT-GAP-013 | Assets and licensing/provenance are not tracked.                              | Curated texture libraries can create legal/product risk.       | P2       | Done        |
@@ -612,7 +612,7 @@ Evidence (2026-05-14):
 ### WP-MAT-12 — Export, Import, And Schedule Fidelity
 
 - Priority: `P1`
-- Status: `Open`
+- Status: `Done`
 - Covers: `MAT-GAP-010`
 - Goal: material behavior must survive schedules and major exchange/export paths.
 - Source ownership:
@@ -641,6 +641,14 @@ Evidence (2026-05-14):
   - Existing IFC material tests extended for appearance/identity.
   - GLTF manifest tests for texture map inclusion.
   - Schedule derivation tests for material display names and diagnostics.
+- Evidence:
+  - Schedule derivation now emits material class, surface/cut pattern, appearance status, texture scale, density, and conductivity for door/window material rows and material assembly layer rows.
+  - Project `material` elements resolve their human names into schedule `materialDisplay`, not just built-in catalog seeds.
+  - GLTF/render export metadata now includes material texture map ids and a `missingMaterialAssets` diagnostic list for unresolved project image asset references.
+  - Verification:
+    - `PYTEST_ADDOPTS=--no-cov python -m pytest app/tests/test_schedule_door_material_key_column.py app/tests/test_schedule_category_field_coverage.py`
+    - `PYTEST_ADDOPTS=--no-cov python -m pytest app/tests/api/test_exp_v3_01.py`
+    - `python -m ruff check app/bim_ai/schedule_derivation.py app/bim_ai/schedule_field_registry.py app/bim_ai/type_material_registry.py app/bim_ai/exp/render_export.py app/tests/test_schedule_door_material_key_column.py app/tests/api/test_exp_v3_01.py`
 
 ### WP-MAT-13 — Material QA And Visual Regression Suite
 

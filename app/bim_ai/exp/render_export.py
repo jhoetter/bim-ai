@@ -63,11 +63,38 @@ def build_export_bundle(
     if view_id:
         cameras = [c for c in cameras if c["viewId"] == view_id]
 
-    materials = [
-        {"id": el.get("id", ""), "pbr": el.get("pbr", {})}
-        for el in elements
-        if el.get("kind") == "material"
-    ]
+    image_assets = {el.get("id"): el for el in elements if el.get("kind") == "image_asset"}
+    materials = []
+    missing_assets: list[dict] = []
+    for el in elements:
+        if el.get("kind") != "material":
+            continue
+        pbr = dict(el.get("pbr", {}) or {})
+        appearance = dict(el.get("appearance", {}) or {})
+        maps = {
+            "albedo": appearance.get("albedoMapId")
+            or el.get("albedoMapId")
+            or pbr.get("albedoMapId"),
+            "normal": appearance.get("normalMapId")
+            or el.get("normalMapId")
+            or pbr.get("normalMapId"),
+            "roughness": appearance.get("roughnessMapId") or pbr.get("roughnessMapId"),
+            "metalness": appearance.get("metallicMapId") or pbr.get("metallicMapId"),
+            "height": appearance.get("heightMapId")
+            or el.get("heightMapId")
+            or pbr.get("heightMapId"),
+        }
+        material_row = {"id": el.get("id", ""), "pbr": pbr, "textureMaps": maps}
+        materials.append(material_row)
+        for usage, asset_id in maps.items():
+            if (
+                isinstance(asset_id, str)
+                and asset_id.startswith("img-")
+                and asset_id not in image_assets
+            ):
+                missing_assets.append(
+                    {"materialId": el.get("id", ""), "usage": usage, "imageAssetId": asset_id}
+                )
 
     sun = {"azimuthDeg": 180.0, "elevationDeg": 45.0, "intensity": 1.0}
     for el in elements:
@@ -88,6 +115,7 @@ def build_export_bundle(
         "cameras": cameras,
         "sunSettings": sun,
         "materials": materials,
+        "missingMaterialAssets": missing_assets,
         "annotations": [],
     }
     return bundle
