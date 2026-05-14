@@ -1,0 +1,5 @@
+i can't delete selected elements easily (e.g. via backspace), please allow that (across every view type)
+
+---
+
+please commit and push YOUR changes
