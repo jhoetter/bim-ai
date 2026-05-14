@@ -1,0 +1,213 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "8a598cb79db5",
+  "session_id": "019e27c7-36dc-7f40-8503-c4f65bf5af56",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T19:44:54.661587Z",
+  "branch": "main",
+  "checkpoints_count": 6,
+  "files_touched": [
+    "packages/web/src/families/FamilyLibraryPanel.tsx",
+    "packages/web/src/families/catalogFamilyReload.ts",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/familyInstancePlanRendering.test.ts",
+    "packages/web/src/plan/familyInstancePlanRendering.ts",
+    "packages/web/src/viewport/placedAssetRendering.ts",
+    "packages/web/src/workspace/Workspace.familyLibraryArrayFormula.test.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/authoring/OptionsBar.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "50fc6066bf21",
+  "token_usage": {
+    "input_tokens": 1463543,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 39638656,
+    "output_tokens": 84900,
+    "api_call_count": 299
+  },
+  "session_metrics": {
+    "turn_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-14T19:44:54.567628Z",
+    "agent_lines": 123,
+    "agent_removed": 21,
+    "human_added": 642,
+    "human_modified": 90,
+    "human_removed": 0,
+    "total_committed": 851,
+    "total_lines_changed": 876,
+    "agent_percentage": 16.43835616438356,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 2911,
+      "user_lines_removed": 448,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/packages/web/tmp/viewcube-revit-check-20260514/summary.json": 209,
+        "packages/web/src/Viewport.tsx": 11,
+        "packages/web/src/viewport/ViewCube.tsx": 677,
+        "packages/web/src/viewport/visualStyleMaterials.test.ts": 36,
+        "packages/web/src/viewport/visualStyleMaterials.ts": 52,
+        "packages/web/src/workspace/Workspace.test.tsx": 20,
+        "packages/web/src/workspace/Workspace.tsx": 38,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 66,
+        "packages/web/src/workspace/paneLayout.test.ts": 9,
+        "packages/web/src/workspace/paneLayout.ts": 55,
+        "packages/web/src/workspace/shell/AppShell.test.tsx": 15,
+        "packages/web/src/workspace/shell/AppShell.tsx": 1,
+        "packages/web/src/workspace/shell/RibbonBar.tsx": 103,
+        "packages/web/src/workspace/shell/TopBar.test.tsx": 8,
+        "packages/web/tmp/viewcube-label-transform-20260514/summary.json": 238,
+        "packages/web/tmp/viewcube-revit-check-20260514-final/summary.json": 390,
+        "packages/web/tmp/viewcube-revit-check-20260514-real/summary.json": 367,
+        "packages/web/tmp/viewcube-revit-check-20260514/summary.json": 342,
+        "packages/web/tmp/viewcube-stable-labels-20260514/summary.json": 274
+      },
+      "user_removed_per_file": {
+        "packages/web/src/Viewport.tsx": 5,
+        "packages/web/src/viewport/ViewCube.tsx": 152,
+        "packages/web/src/workspace/Workspace.test.tsx": 11,
+        "packages/web/src/workspace/Workspace.tsx": 20,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 21,
+        "packages/web/src/workspace/shell/AppShell.tsx": 1,
+        "packages/web/src/workspace/shell/RibbonBar.tsx": 221,
+        "packages/web/src/workspace/shell/TopBar.test.tsx": 17
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 27,
+      "user_lines_removed": 1,
+      "agent_lines_added": 3781,
+      "agent_lines_removed": 460,
+      "user_added_per_file": {
+        "packages/web/e2e/ux-revamp-regression.spec.ts": 1,
+        "packages/web/src/Viewport.tsx": 15,
+        "packages/web/src/workspace/Workspace.test.tsx": 11
+      },
+      "user_removed_per_file": {
+        "packages/web/e2e/ux-revamp-regression.spec.ts": 1
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 14,
+      "user_lines_removed": 5,
+      "agent_lines_added": 4637,
+      "agent_lines_removed": 518,
+      "user_added_per_file": {
+        "packages/web/src/Viewport.tsx": 14
+      },
+      "user_removed_per_file": {
+        "packages/web/src/Viewport.tsx": 5
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 6875,
+      "user_lines_removed": 561,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/e2e/ux-revamp-regression.spec.ts": 11,
+        "packages/web/packages/web/tmp/viewcube-revit-check-20260514/summary.json": 209,
+        "packages/web/src/Viewport.tsx": 333,
+        "packages/web/src/families/FamilyLibraryPanel.tsx": 19,
+        "packages/web/src/families/catalogFamilyReload.test.ts": 46,
+        "packages/web/src/families/catalogFamilyReload.ts": 142,
+        "packages/web/src/plan/PlanCanvas.tsx": 4,
+        "packages/web/src/plan/familyInstancePlanRendering.test.ts": 42,
+        "packages/web/src/plan/familyInstancePlanRendering.ts": 63,
+        "packages/web/src/plan/planCanvasState.test.ts": 4,
+        "packages/web/src/plan/planCanvasState.ts": 1,
+        "packages/web/src/state/storeModelRuntimeSlice.ts": 13,
+        "packages/web/src/state/storeSliceContracts.test.ts": 4,
+        "packages/web/src/viewport/ViewCube.tsx": 901,
+        "packages/web/src/viewport/authoring3d.test.ts": 41,
+        "packages/web/src/viewport/authoring3d.ts": 53,
+        "packages/web/src/viewport/viewcube/orientation.test.ts": 38,
+        "packages/web/src/viewport/viewcube/orientation.ts": 135,
+        "packages/web/src/workspace/Workspace.familyLibraryArrayFormula.test.tsx": 284,
+        "packages/web/src/workspace/Workspace.test.tsx": 34,
+        "packages/web/src/workspace/Workspace.tsx": 175,
+        "packages/web/src/workspace/WorkspaceRightRail.test.tsx": 39,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 170,
+        "packages/web/src/workspace/paneLayout.test.ts": 9,
+        "packages/web/src/workspace/paneLayout.ts": 55,
+        "packages/web/src/workspace/shell/AppShell.test.tsx": 54,
+        "packages/web/src/workspace/shell/AppShell.tsx": 10,
+        "packages/web/src/workspace/shell/RibbonBar.tsx": 103,
+        "packages/web/src/workspace/shell/TopBar.test.tsx": 8,
+        "packages/web/src/workspace/viewport/CanvasMount.tsx": 2,
+        "packages/web/tmp/viewcube-hit-test-20260514/edge-corner-summary.json": 6,
+        "packages/web/tmp/viewcube-hit-test-20260514/summary.json": 332,
+        "packages/web/tmp/viewcube-label-transform-20260514/summary.json": 238,
+        "packages/web/tmp/viewcube-parity-progress-20260514/summary.json": 499,
+        "packages/web/tmp/viewcube-parity-progress-20260514b/summary.json": 551,
+        "packages/web/tmp/viewcube-parity-progress-20260514c/summary.json": 194,
+        "packages/web/tmp/viewcube-parity-progress-20260514d/summary.json": 197,
+        "packages/web/tmp/viewcube-revit-check-20260514-final/summary.json": 390,
+        "packages/web/tmp/viewcube-revit-check-20260514-real/summary.json": 367,
+        "packages/web/tmp/viewcube-revit-check-20260514/summary.json": 342,
+        "packages/web/tmp/viewcube-stable-labels-20260514/summary.json": 274,
+        "spec/viewcube-revit-parity-tracker.md": 483
+      },
+      "user_removed_per_file": {
+        "packages/web/e2e/ux-revamp-regression.spec.ts": 4,
+        "packages/web/src/Viewport.tsx": 72,
+        "packages/web/src/families/FamilyLibraryPanel.tsx": 8,
+        "packages/web/src/plan/PlanCanvas.tsx": 13,
+        "packages/web/src/plan/familyInstancePlanRendering.ts": 1,
+        "packages/web/src/state/storeModelRuntimeSlice.ts": 5,
+        "packages/web/src/viewport/ViewCube.tsx": 148,
+        "packages/web/src/viewport/authoring3d.ts": 1,
+        "packages/web/src/workspace/Workspace.familyLibraryArrayFormula.test.tsx": 1,
+        "packages/web/src/workspace/Workspace.test.tsx": 12,
+        "packages/web/src/workspace/Workspace.tsx": 31,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 21,
+        "packages/web/src/workspace/shell/AppShell.test.tsx": 1,
+        "packages/web/src/workspace/shell/AppShell.tsx": 5,
+        "packages/web/src/workspace/shell/RibbonBar.tsx": 221,
+        "packages/web/src/workspace/shell/TopBar.test.tsx": 17
+      }
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 47,
+      "user_lines_removed": 42,
+      "agent_lines_added": 7009,
+      "agent_lines_removed": 583,
+      "user_added_per_file": {
+        "packages/web/src/Viewport.tsx": 47
+      },
+      "user_removed_per_file": {
+        "packages/web/src/Viewport.tsx": 42
+      }
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 7,
+      "user_lines_added": 42,
+      "user_lines_removed": 0,
+      "agent_lines_added": 8957,
+      "agent_lines_removed": 613,
+      "user_added_per_file": {
+        "packages/web/tmp/viewcube-right-fix-20260514-rig-final/summary.json": 28,
+        "packages/web/tmp/viewcube-three-interaction-20260514b/summary.json": 14
+      }
+    }
+  ]
+}
