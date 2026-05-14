@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "bef90cd09f27",
+  "session_id": "019e261c-97b9-7312-a136-ffc52959148b",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T20:03:33.198958Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/workspace/viewport/CanvasMount.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "92ebac3cae05",
+  "token_usage": {
+    "input_tokens": 1816064,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 39688704,
+    "output_tokens": 97756,
+    "api_call_count": 318
+  },
+  "session_metrics": {
+    "turn_count": 7
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-14T20:03:33.0088Z",
+    "agent_lines": 2,
+    "agent_removed": 0,
+    "human_added": 139,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 141,
+    "total_lines_changed": 149,
+    "agent_percentage": 1.342281879194631,
+    "metric_version": 2
+  }
+}
