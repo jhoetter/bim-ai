@@ -10,6 +10,8 @@
  * renderer (jsdom has no WebGL).
  */
 
+import type { Element, MaterialElem } from '@bim-ai/core';
+
 export type ElementCategoryToken =
   | 'wall'
   | 'floor'
@@ -338,6 +340,8 @@ export type MaterialUpdatePatch = Partial<
 
 export const DEFAULT_PROJECT_MATERIAL_COLOR = '#b8b2a8';
 
+export type MaterialElementLookup = Record<string, Element> | null | undefined;
+
 const DEFAULT_MATERIAL_METADATA = {
   graphics: {
     useRenderAppearance: true,
@@ -363,6 +367,106 @@ function withDefaultMetadata(spec: MaterialPbrSpec): MaterialPbrSpec {
     graphics: { ...DEFAULT_MATERIAL_METADATA.graphics, ...spec.graphics },
     physical: { ...DEFAULT_MATERIAL_METADATA.physical, ...spec.physical },
     thermal: { ...DEFAULT_MATERIAL_METADATA.thermal, ...spec.thermal },
+  };
+}
+
+const MATERIAL_CATEGORY_KINDS = new Set<MaterialCategoryKind>([
+  'cladding',
+  'render',
+  'metal',
+  'metal_roof',
+  'brick',
+  'stone',
+  'concrete',
+  'glass',
+  'timber',
+  'membrane',
+  'plaster',
+  'placeholder',
+  'air',
+]);
+
+function coerceMaterialCategory(category: string | null | undefined): MaterialCategoryKind {
+  return category && MATERIAL_CATEGORY_KINDS.has(category as MaterialCategoryKind)
+    ? (category as MaterialCategoryKind)
+    : 'placeholder';
+}
+
+function materialElementToPbrSpec(material: MaterialElem): MaterialPbrSpec {
+  const appearance = material.appearance;
+  const graphics = material.graphics;
+  const physical = material.physical;
+  const thermal = material.thermal;
+  const baseColor =
+    appearance?.baseColor ??
+    material.albedoColor ??
+    graphics?.shadedColor ??
+    DEFAULT_PROJECT_MATERIAL_COLOR;
+  const roughness =
+    typeof appearance?.roughness === 'number'
+      ? Math.max(0, Math.min(1, appearance.roughness))
+      : 0.72;
+  const metalness =
+    typeof appearance?.metalness === 'number' ? Math.max(0, Math.min(1, appearance.metalness)) : 0;
+
+  return withDefaultMetadata({
+    key: material.id,
+    displayName: material.name || material.id,
+    source: material.source ?? 'project',
+    category: coerceMaterialCategory(material.category),
+    baseColor,
+    roughness,
+    metalness,
+    textureMapUrl: appearance?.albedoMapId ?? material.albedoMapId,
+    normalMapUrl: appearance?.normalMapId ?? material.normalMapId,
+    bumpMapUrl: appearance?.heightMapId ?? material.heightMapId,
+    reflectance: appearance?.reflectance,
+    hatchPattern: material.hatchPatternId,
+    graphics: {
+      useRenderAppearance: graphics?.useRenderAppearance,
+      shadedColor: graphics?.shadedColor ?? material.albedoColor ?? baseColor,
+      surfacePattern: graphics?.surfacePatternId ?? material.hatchPatternId ?? undefined,
+      cutPattern: graphics?.cutPatternId ?? material.hatchPatternId ?? undefined,
+    },
+    physical: physical
+      ? {
+          materialClass: physical.materialClass,
+          densityKgPerM3: physical.densityKgPerM3,
+          compressiveStrengthMpa: physical.compressiveStrengthMpa,
+          manufacturer: physical.manufacturer,
+          comments: physical.comments,
+        }
+      : undefined,
+    thermal: thermal
+      ? {
+          conductivityWPerMK: thermal.conductivityWPerMK,
+          specificHeatJPerKgK: thermal.specificHeatJPerKgK,
+          thermalResistanceM2KPerW: thermal.thermalResistanceM2KPerW,
+        }
+      : undefined,
+  });
+}
+
+function resolveMaterialElement(
+  materialKey: string | null | undefined,
+  elementsById?: MaterialElementLookup,
+): MaterialElem | null {
+  if (!materialKey || !elementsById) return null;
+  const element = elementsById[materialKey];
+  return element?.kind === 'material' ? element : null;
+}
+
+export function materialDefinitionToThreeSpec(definition: MaterialPbrSpec): MaterialPbrSpec {
+  return withDefaultMetadata(definition);
+}
+
+export function materialDefinitionToGraphicsSpec(
+  definition: MaterialPbrSpec,
+): NonNullable<MaterialPbrSpec['graphics']> & { hatchPattern?: string } {
+  const spec = withDefaultMetadata(definition);
+  return {
+    ...spec.graphics,
+    hatchPattern: spec.hatchPattern,
   };
 }
 
@@ -998,21 +1102,103 @@ export function updateMaterialDefinition(
   return MATERIAL_REGISTRY[materialKey];
 }
 
-/** Resolve a `materialKey` to its PBR spec, or null if unknown. */
-export function resolveMaterial(materialKey: string | null | undefined): MaterialPbrSpec | null {
+/** Resolve a `materialKey` to its canonical material definition, or null if unknown. */
+export function resolveMaterialDefinition(
+  materialKey: string | null | undefined,
+  elementsById?: MaterialElementLookup,
+): MaterialPbrSpec | null {
   if (!materialKey) return null;
+  const materialElement = resolveMaterialElement(materialKey, elementsById);
+  if (materialElement) return materialElementToPbrSpec(materialElement);
   const spec = MATERIAL_REGISTRY[materialKey];
   return spec ? withDefaultMetadata(spec) : null;
 }
 
+/** Resolve a `materialKey` to its PBR spec, or null if unknown. */
+export function resolveMaterial(
+  materialKey: string | null | undefined,
+  elementsById?: MaterialElementLookup,
+): MaterialPbrSpec | null {
+  return resolveMaterialDefinition(materialKey, elementsById);
+}
+
 /** Read-only view of every registered material spec. */
-export function listMaterials(): MaterialPbrSpec[] {
-  return Object.values(MATERIAL_REGISTRY).map(withDefaultMetadata);
+export function listMaterialDefinitions(elementsById?: MaterialElementLookup): MaterialPbrSpec[] {
+  const materialMap = new Map<string, MaterialPbrSpec>();
+  for (const material of Object.values(MATERIAL_REGISTRY)) {
+    materialMap.set(material.key, withDefaultMetadata(material));
+  }
+  if (elementsById) {
+    for (const element of Object.values(elementsById)) {
+      if (element.kind === 'material') {
+        const spec = materialElementToPbrSpec(element);
+        materialMap.set(spec.key, spec);
+      }
+    }
+  }
+  return [...materialMap.values()];
+}
+
+/** Read-only view of every registered material spec. */
+export function listMaterials(elementsById?: MaterialElementLookup): MaterialPbrSpec[] {
+  return listMaterialDefinitions(elementsById);
 }
 
 /** Cheap base-colour lookup (legacy callers); falls back to neutral grey. */
-export function materialBaseColor(materialKey: string | null | undefined): string {
-  return resolveMaterial(materialKey)?.baseColor ?? '#cccccc';
+export function materialBaseColor(
+  materialKey: string | null | undefined,
+  elementsById?: MaterialElementLookup,
+): string {
+  return resolveMaterial(materialKey, elementsById)?.baseColor ?? '#cccccc';
+}
+
+export interface ResolvedWallSurfaceMaterial {
+  baseColor: string;
+  roughness: number;
+  metalness: number;
+  envMapIntensity: number;
+  claddingBoards: {
+    color: string;
+    boardWidthMm: number;
+    gapMm: number;
+  } | null;
+}
+
+/**
+ * Shared wall material appearance for direct wall meshes and async CSG
+ * replacement meshes. Keep render/cladding env intensity low so authored
+ * base colours are not washed out by the sky environment.
+ */
+export function resolveWallSurfaceMaterial(
+  materialKey: string | null | undefined,
+  paint: ViewportPaintBundle | null | undefined,
+  elementsById?: MaterialElementLookup,
+): ResolvedWallSurfaceMaterial {
+  const spec = resolveMaterial(materialKey, elementsById);
+  const isWhite = materialKey === 'white_cladding' || materialKey === 'white_render';
+  const isRenderOrCladding = spec?.category === 'render' || spec?.category === 'cladding';
+  const baseColor =
+    spec?.baseColor ?? (isWhite ? '#f4f4f0' : (paint?.categories.wall.color ?? '#ddd8d0'));
+  const roughness =
+    spec?.roughness ?? (isWhite ? 0.92 : (paint?.categories.wall.roughness ?? 0.85));
+  const metalness = spec?.metalness ?? paint?.categories.wall.metalness ?? 0.0;
+
+  let claddingBoards: ResolvedWallSurfaceMaterial['claddingBoards'] = null;
+  if (materialKey === 'white_cladding') {
+    claddingBoards = { color: '#f4f4f0', boardWidthMm: 120, gapMm: 10 };
+  } else if (materialKey === 'timber_cladding') {
+    claddingBoards = { color: spec?.baseColor ?? '#8B6340', boardWidthMm: 120, gapMm: 10 };
+  } else if (spec?.category === 'cladding') {
+    claddingBoards = { color: spec.baseColor, boardWidthMm: 250, gapMm: 12 };
+  }
+
+  return {
+    baseColor,
+    roughness,
+    metalness,
+    envMapIntensity: isWhite || isRenderOrCladding ? 0.15 : 1.0,
+    claddingBoards,
+  };
 }
 
 /** True when a `materialKey` is a standing-seam metal roof variant. */

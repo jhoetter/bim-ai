@@ -1,4 +1,5 @@
 import { useState, type JSX } from 'react';
+import type { Element } from '@bim-ai/core';
 
 import {
   createProjectMaterial,
@@ -38,6 +39,7 @@ export type MaterialBrowserDialogProps = {
   actionLabel?: string;
   currentKey?: string | null;
   mode?: 'material' | 'appearanceAsset';
+  elementsById?: Record<string, Element>;
   onAssign: (materialKey: string) => void;
   onClose: () => void;
 };
@@ -47,11 +49,12 @@ export function MaterialBrowserDialog({
   actionLabel = 'Assign',
   currentKey,
   mode = 'material',
+  elementsById,
   onAssign,
   onClose,
 }: MaterialBrowserDialogProps): JSX.Element {
   const [, setRevision] = useState(0);
-  const materials = listMaterials();
+  const materials = listMaterials(elementsById);
   const categories = Array.from(new Set(materials.map((material) => material.category))).sort();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');

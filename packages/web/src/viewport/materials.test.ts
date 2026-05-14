@@ -1,16 +1,21 @@
 import { describe, expect, it } from 'vitest';
+import type { Element } from '@bim-ai/core';
 import {
   createProjectMaterial,
   isStandingSeamMetalKey,
+  listMaterialDefinitions,
   listMaterials,
   materialBaseColor,
+  materialDefinitionToGraphicsSpec,
   renameMaterial,
   resolveAllCategoryMaterials,
   resolveCategoryMaterial,
   resolveLighting,
   resolveMaterial,
+  resolveMaterialDefinition,
   resolveSelection,
   resolveViewportPaintBundle,
+  resolveWallSurfaceMaterial,
   updateMaterialDefinition,
   type ElementCategoryToken,
   type TokenReader,
@@ -223,6 +228,23 @@ describe('MAT-01 — material registry', () => {
     expect(resolveMaterial('')).toBeNull();
   });
 
+  it('resolves wall surface appearance from materialKey for CSG replacement meshes', () => {
+    const paint = resolveViewportPaintBundle({ reader: fakeReader({}) });
+    const cladding = resolveWallSurfaceMaterial('cladding_warm_wood', paint);
+    expect(cladding.baseColor).toBe('#a87a44');
+    expect(cladding.envMapIntensity).toBeLessThan(0.2);
+    expect(cladding.claddingBoards).toMatchObject({
+      color: '#a87a44',
+      boardWidthMm: 250,
+      gapMm: 12,
+    });
+
+    const render = resolveWallSurfaceMaterial('white_render', paint);
+    expect(render.baseColor).toBe('#f4f4f0');
+    expect(render.claddingBoards).toBeNull();
+    expect(render.roughness).toBe(0.92);
+  });
+
   it('falls back to neutral grey for unknown keys via materialBaseColor', () => {
     expect(materialBaseColor('definitely_not_a_real_key')).toBe('#cccccc');
     expect(materialBaseColor(null)).toBe('#cccccc');
@@ -305,6 +327,81 @@ describe('MAT-01 — material registry', () => {
       textureMapUrl: expect.stringContaining('oak'),
       bumpMapUrl: expect.stringContaining('bump'),
       category: 'timber',
+    });
+  });
+
+  it('resolves project material elements through the canonical material definition bridge', () => {
+    const projectMaterial: Extract<Element, { kind: 'material' }> = {
+      kind: 'material',
+      id: 'mat-project-brick',
+      name: 'Project Brick Blend',
+      source: 'project',
+      category: 'brick',
+      appearance: {
+        baseColor: '#7f3f2d',
+        roughness: 0.86,
+        metalness: 0.02,
+        albedoMapId: 'asset-brick-albedo',
+        normalMapId: 'asset-brick-normal',
+      },
+      graphics: {
+        shadedColor: '#81422e',
+        surfacePatternId: 'hatch-brick-surface',
+        cutPatternId: 'hatch-brick-cut',
+      },
+      physical: { materialClass: 'Masonry', densityKgPerM3: 1820 },
+      thermal: { conductivityWPerMK: 0.72 },
+      hatchPatternId: 'hatch-brick-cut',
+    };
+    const elementsById: Record<string, Element> = { [projectMaterial.id]: projectMaterial };
+    const resolved = resolveMaterialDefinition(projectMaterial.id, elementsById);
+
+    expect(resolved).toMatchObject({
+      key: projectMaterial.id,
+      displayName: 'Project Brick Blend',
+      source: 'project',
+      category: 'brick',
+      baseColor: '#7f3f2d',
+      roughness: 0.86,
+      metalness: 0.02,
+      textureMapUrl: 'asset-brick-albedo',
+      normalMapUrl: 'asset-brick-normal',
+      graphics: {
+        shadedColor: '#81422e',
+        surfacePattern: 'hatch-brick-surface',
+        cutPattern: 'hatch-brick-cut',
+      },
+      physical: { materialClass: 'Masonry', densityKgPerM3: 1820 },
+      thermal: { conductivityWPerMK: 0.72 },
+    });
+    expect(resolveMaterial(projectMaterial.id, elementsById)?.baseColor).toBe('#7f3f2d');
+    expect(materialBaseColor(projectMaterial.id, elementsById)).toBe('#7f3f2d');
+    expect(materialDefinitionToGraphicsSpec(resolved!)).toMatchObject({
+      shadedColor: '#81422e',
+      surfacePattern: 'hatch-brick-surface',
+      cutPattern: 'hatch-brick-cut',
+      hatchPattern: 'hatch-brick-cut',
+    });
+    expect(listMaterialDefinitions(elementsById).some((m) => m.key === projectMaterial.id)).toBe(
+      true,
+    );
+  });
+
+  it('uses project material elements for wall surface appearance', () => {
+    const material: Extract<Element, { kind: 'material' }> = {
+      kind: 'material',
+      id: 'mat-local-render',
+      name: 'Local Render',
+      category: 'render',
+      appearance: { baseColor: '#d7c8ad', roughness: 0.91, metalness: 0 },
+    };
+    const wallSurface = resolveWallSurfaceMaterial(material.id, null, { [material.id]: material });
+
+    expect(wallSurface).toMatchObject({
+      baseColor: '#d7c8ad',
+      roughness: 0.91,
+      metalness: 0,
+      envMapIntensity: 0.15,
     });
   });
 });

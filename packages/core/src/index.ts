@@ -3020,10 +3020,59 @@ export type UpdateKitComponentCmd = {
 // MAT-V3-01 — Material PBR map slots + Decals
 // ---------------------------------------------------------------------------
 
+export type MaterialAssetSource = 'builtin' | 'curated_asset' | 'project' | 'family';
+
+export type MaterialGraphicsAsset = {
+  useRenderAppearance?: boolean;
+  shadedColor?: string;
+  transparency?: number;
+  surfacePatternId?: string | null;
+  surfacePatternColor?: string;
+  cutPatternId?: string | null;
+  cutPatternColor?: string;
+};
+
+export type MaterialAppearanceAsset = {
+  baseColor?: string;
+  albedoMapId?: string | null;
+  normalMapId?: string | null;
+  roughnessMapId?: string | null;
+  metallicMapId?: string | null;
+  heightMapId?: string | null;
+  roughness?: number;
+  metalness?: number;
+  opacity?: number;
+  transmission?: number;
+  reflectance?: number;
+  uvScaleMm?: { uMm: number; vMm: number };
+  uvRotationDeg?: number;
+  uvOffsetMm?: { uMm: number; vMm: number };
+};
+
+export type MaterialPhysicalAsset = {
+  materialClass?: string;
+  densityKgPerM3?: number;
+  compressiveStrengthMpa?: number;
+  manufacturer?: string;
+  comments?: string;
+};
+
+export type MaterialThermalAsset = {
+  conductivityWPerMK?: number;
+  specificHeatJPerKgK?: number;
+  thermalResistanceM2KPerW?: number;
+};
+
 export type MaterialElem = {
   kind: 'material';
   id: string;
   name: string;
+  source?: MaterialAssetSource;
+  category?: string;
+  graphics?: MaterialGraphicsAsset;
+  appearance?: MaterialAppearanceAsset;
+  physical?: MaterialPhysicalAsset;
+  thermal?: MaterialThermalAsset;
   albedoColor?: string;
   albedoMapId?: string;
   normalMapId?: string;

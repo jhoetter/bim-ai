@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
+import type { Element } from '@bim-ai/core';
 
 import { listMaterials, resolveMaterial } from '../viewport/materials';
 import { AppearanceAssetBrowserDialog } from './AppearanceAssetBrowserDialog';
@@ -32,6 +33,28 @@ describe('<MaterialBrowserDialog />', () => {
     fireEvent.change(getByLabelText('Search materials'), { target: { value: glass.displayName } });
     expect(getByText(glass.displayName)).toBeTruthy();
     expect(queryByText(timber.displayName)).toBeNull();
+  });
+
+  it('lists project material elements supplied by the current document', () => {
+    const material: Extract<Element, { kind: 'material' }> = {
+      kind: 'material',
+      id: 'mat-project-limewash',
+      name: 'Project Limewash',
+      category: 'plaster',
+      appearance: { baseColor: '#e8dfc8', roughness: 0.94 },
+    };
+    const onAssign = vi.fn();
+    const { getByText, getByTestId } = render(
+      <MaterialBrowserDialog
+        elementsById={{ [material.id]: material }}
+        onAssign={onAssign}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(getByText('Project Limewash')).toBeTruthy();
+    fireEvent.click(getByTestId(`material-assign-${material.id}`));
+    expect(onAssign).toHaveBeenCalledWith(material.id);
   });
 
   it('creates and renames family/project materials with editable metadata tabs', () => {
