@@ -50,6 +50,7 @@ export interface ProjectMenuProps {
   onOpenMilestone?: () => void;
   onOpenMaterialBrowser?: () => void;
   onOpenAppearanceAssetBrowser?: () => void;
+  onOpenProjectSetup?: () => void;
   saveAsMaximumBackups?: number;
   onSaveAsMaximumBackupsChange?: (maximumBackups: number) => void;
   onRestoreSnapshot?: (file: File) => void;
@@ -78,6 +79,7 @@ export function ProjectMenu({
   onOpenMilestone,
   onOpenMaterialBrowser,
   onOpenAppearanceAssetBrowser,
+  onOpenProjectSetup,
   saveAsMaximumBackups,
   onSaveAsMaximumBackupsChange,
   onRestoreSnapshot,
@@ -299,6 +301,17 @@ export function ProjectMenu({
               />
             ) : null}
           </>
+        ) : null}
+        {onOpenProjectSetup ? (
+          <MenuItem
+            label="Project Setup..."
+            icon="settings"
+            testId="project-menu-open-project-setup"
+            onClick={() => {
+              onOpenChange(false);
+              onOpenProjectSetup();
+            }}
+          />
         ) : null}
         <MenuItem
           label="Save As Options…"

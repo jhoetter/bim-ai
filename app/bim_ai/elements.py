@@ -191,6 +191,11 @@ class ProjectSettingsElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["project_settings"] = "project_settings"
     id: str
+    name: str | None = None
+    project_number: str | None = Field(default=None, alias="projectNumber")
+    client_name: str | None = Field(default=None, alias="clientName")
+    project_address: str | None = Field(default=None, alias="projectAddress")
+    project_status: str | None = Field(default=None, alias="projectStatus")
     length_unit: str = Field(default="millimeter", alias="lengthUnit")
     angular_unit_deg: str = Field(default="degree", alias="angularUnitDeg")
 

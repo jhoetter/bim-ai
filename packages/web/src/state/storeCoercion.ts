@@ -723,10 +723,18 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
   };
 
   if (kind === 'project_settings') {
+    const projectNumber = raw.projectNumber ?? raw.project_number;
+    const clientName = raw.clientName ?? raw.client_name;
+    const projectAddress = raw.projectAddress ?? raw.project_address;
+    const projectStatus = raw.projectStatus ?? raw.project_status;
     return {
       kind: 'project_settings',
       id,
       name,
+      projectNumber: projectNumber ? String(projectNumber) : null,
+      clientName: clientName ? String(clientName) : null,
+      projectAddress: projectAddress ? String(projectAddress) : null,
+      projectStatus: projectStatus ? String(projectStatus) : null,
       lengthUnit: String(raw.lengthUnit ?? raw.length_unit ?? 'millimeter'),
       angularUnitDeg: String(raw.angularUnitDeg ?? raw.angular_unit_deg ?? 'degree'),
       displayLocale: String(raw.displayLocale ?? raw.display_locale ?? 'en-US'),

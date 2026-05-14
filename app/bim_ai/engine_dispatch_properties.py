@@ -696,6 +696,46 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                 els[cmd.element_id] = el.model_copy(
                     update={"checkpoint_retention_limit": checkpoint_limit}
                 )
+            elif isinstance(el, ProjectSettingsElem) and cmd.key in {
+                "lengthUnit",
+                "angularUnitDeg",
+                "displayLocale",
+                "projectNumber",
+                "clientName",
+                "projectAddress",
+                "projectStatus",
+                "volumeComputedAt",
+                "roomAreaComputationBasis",
+            }:
+                value = str(cmd.value or "").strip()
+                if cmd.key == "volumeComputedAt":
+                    if value not in {"finish_faces", "core_faces"}:
+                        raise ValueError("volumeComputedAt must be finish_faces|core_faces")
+                    els[cmd.element_id] = el.model_copy(update={"volume_computed_at": value})
+                elif cmd.key == "roomAreaComputationBasis":
+                    if value not in {
+                        "wall_finish",
+                        "wall_centerline",
+                        "wall_core_layer",
+                        "wall_core_center",
+                    }:
+                        raise ValueError(
+                            "roomAreaComputationBasis must be wall_finish|wall_centerline|wall_core_layer|wall_core_center"
+                        )
+                    els[cmd.element_id] = el.model_copy(
+                        update={"room_area_computation_basis": value}
+                    )
+                else:
+                    key_map = {
+                        "lengthUnit": "length_unit",
+                        "angularUnitDeg": "angular_unit_deg",
+                        "displayLocale": "display_locale",
+                        "projectNumber": "project_number",
+                        "clientName": "client_name",
+                        "projectAddress": "project_address",
+                        "projectStatus": "project_status",
+                    }
+                    els[cmd.element_id] = el.model_copy(update={key_map[cmd.key]: value or None})
             else:
                 raise ValueError(
                     "Only updateElementProperty key=name | label(grid) | title(issue) | "
@@ -725,6 +765,8 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     "heightMm(wall) | thicknessMm(wall) | "
                     "paramValues(placed_asset JSON object) | "
                     "checkpointRetentionLimit(project_settings integer 1..99) | "
+                    "lengthUnit/angularUnitDeg/displayLocale/project info(project_settings) | "
+                    "volumeComputedAt/roomAreaComputationBasis(project_settings) | "
                     "roofTypeId(roof) | roofGeometryMode(roof) | "
                     "sheetId(schedule) | titleBlock(sheet) | titleblockParametersPatch(sheet JSON object) supported in v2"
                 )
@@ -758,6 +800,11 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
             els[sid] = ProjectSettingsElem(
                 kind="project_settings",
                 id=sid,
+                name=cmd.name,
+                project_number=cmd.project_number,
+                client_name=cmd.client_name,
+                project_address=cmd.project_address,
+                project_status=cmd.project_status,
                 length_unit=cmd.length_unit,
                 angular_unit_deg=cmd.angular_unit_deg,
                 display_locale=cmd.display_locale,

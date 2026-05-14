@@ -834,8 +834,8 @@ registerCommand({
 
 registerCommand({
   id: 'project.open-settings',
-  label: 'Open Project Settings',
-  keywords: ['project', 'settings', 'units', 'levels', 'standards'],
+  label: 'Open Project Setup',
+  keywords: ['project', 'setup', 'settings', 'units', 'levels', 'storeys', 'standards'],
   category: 'command',
   invoke: (ctx) => ctx.openProjectSettings?.(),
 });

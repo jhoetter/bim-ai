@@ -888,6 +888,10 @@ export type Element =
       angularUnitDeg?: string;
       displayLocale?: string;
       name?: string;
+      projectNumber?: string | null;
+      clientName?: string | null;
+      projectAddress?: string | null;
+      projectStatus?: string | null;
       worksetId?: string | null;
       startingViewId?: string | null;
       checkpointRetentionLimit?: number;

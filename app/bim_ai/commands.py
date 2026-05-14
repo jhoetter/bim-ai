@@ -744,7 +744,12 @@ class SaveViewpointCmd(BaseModel):
 class UpsertProjectSettingsCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["upsertProjectSettings"] = "upsertProjectSettings"
-    id: str = "bim-project-settings"
+    id: str = "project_settings"
+    name: str | None = None
+    project_number: str | None = Field(default=None, alias="projectNumber")
+    client_name: str | None = Field(default=None, alias="clientName")
+    project_address: str | None = Field(default=None, alias="projectAddress")
+    project_status: str | None = Field(default=None, alias="projectStatus")
     length_unit: str = Field(alias="lengthUnit", default="millimeter")
     angular_unit_deg: str = Field(alias="angularUnitDeg", default="degree")
     display_locale: str = Field(alias="displayLocale", default="en-US")

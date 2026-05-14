@@ -95,6 +95,7 @@ import {
   findRecentProject,
   ManageLinksDialog,
   ProjectMenu,
+  ProjectSetupDialog,
   type ProjectMenuItemRecent,
   pushRollingSnapshotBackup,
   pushRecentProject,
@@ -896,6 +897,7 @@ export function Workspace(): JSX.Element {
     useState<CollaborationConflictQueueV1 | null>(null);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
   const [manageLinksOpen, setManageLinksOpen] = useState(false);
+  const [projectSetupOpen, setProjectSetupOpen] = useState(false);
   const lensMode = useBimStore((s) => s.lensMode);
   const setLensMode = useBimStore((s) => s.setLensMode);
   const activeWorkspaceId = useBimStore((s) => s.activeWorkspaceId);
@@ -2194,13 +2196,8 @@ export function Workspace(): JSX.Element {
   );
 
   const openProjectSettings = useCallback(() => {
-    const settings = elementsById.project_settings;
-    if (settings?.kind === 'project_settings') {
-      openElementById(settings.id);
-      return;
-    }
-    setProjectMenuOpen(true);
-  }, [elementsById, openElementById]);
+    setProjectSetupOpen(true);
+  }, []);
 
   const createFloorPlanView = useCallback(async () => {
     const activePlan = activePlanViewId ? elementsById[activePlanViewId] : undefined;
@@ -3715,6 +3712,7 @@ export function Workspace(): JSX.Element {
         onOpenMilestone={openMilestoneDialog}
         onOpenMaterialBrowser={() => setMaterialBrowserOpen(true)}
         onOpenAppearanceAssetBrowser={() => setAppearanceAssetBrowserOpen(true)}
+        onOpenProjectSetup={() => setProjectSetupOpen(true)}
         onNewClear={handleNewClear}
         onReplayTour={replayOnboardingTour}
         onManageLinks={() => setManageLinksOpen(true)}
@@ -3741,6 +3739,18 @@ export function Workspace(): JSX.Element {
               setManageLinksOpen(true);
             }
           })();
+        }}
+      />
+      <ProjectSetupDialog
+        open={projectSetupOpen}
+        onClose={() => setProjectSetupOpen(false)}
+        elementsById={elementsById}
+        modelId={modelId}
+        revision={revision}
+        onSemanticCommand={onSemanticCommand}
+        onOpenManageLinks={() => {
+          setProjectSetupOpen(false);
+          setManageLinksOpen(true);
         }}
       />
       <ManageLinksDialog open={manageLinksOpen} onClose={() => setManageLinksOpen(false)} />
