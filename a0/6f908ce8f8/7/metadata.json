@@ -1,0 +1,68 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "a06f908ce8f8",
+  "session_id": "019e26f8-1df6-7b00-93f2-d5b1f1465e44",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T15:54:22.299003Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/workspace/Workspace.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "ca21dde83004",
+  "checkpoint_transcript_start": 661,
+  "transcript_lines_at_start": 661,
+  "token_usage": {
+    "input_tokens": 98711,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 7822336,
+    "output_tokens": 17188,
+    "api_call_count": 71
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-14T15:54:22.257908Z",
+    "agent_lines": 3,
+    "agent_removed": 4,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 3,
+    "total_lines_changed": 7,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 301,
+      "user_lines_removed": 140,
+      "agent_lines_added": 2610,
+      "agent_lines_removed": 524,
+      "user_added_per_file": {
+        "packages/web/src/viewport/ViewCube.tsx": 8,
+        "packages/web/src/viewport/proceduralMaterials.test.ts": 53,
+        "packages/web/src/viewport/proceduralMaterials.ts": 7,
+        "packages/web/tmp/ux-next-wp41-20260514/summary.json": 94,
+        "packages/web/tmp/viewcube-revit-check-20260514-real/summary.json": 95,
+        "spec/material-appearance-system-tracker.md": 44
+      },
+      "user_removed_per_file": {
+        "packages/web/src/viewport/proceduralMaterials.ts": 2,
+        "packages/web/tmp/viewcube-revit-check-20260514-real/summary.json": 130,
+        "spec/material-appearance-system-tracker.md": 8
+      }
+    }
+  ]
+}
