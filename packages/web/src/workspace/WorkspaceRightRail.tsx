@@ -1681,7 +1681,17 @@ function LensScopeNotice({
   testId: string;
 }): JSX.Element {
   const lensLabel =
-    lensMode === 'structure' ? 'Structure' : lensMode === 'mep' ? 'MEP' : 'Architecture';
+    lensMode === 'structure'
+      ? 'Structure'
+      : lensMode === 'mep'
+        ? 'MEP'
+        : lensMode === 'fire-safety'
+          ? 'Fire Safety'
+          : lensMode === 'energy'
+            ? 'Energieberatung'
+            : lensMode === 'construction'
+              ? 'Bauausfuehrung'
+              : 'Architecture';
   const body =
     scope === 'view'
       ? `${lensLabel} lens is active. View controls and command availability are filtered for this discipline.`

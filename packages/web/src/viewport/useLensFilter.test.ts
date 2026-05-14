@@ -7,7 +7,7 @@ import {
   resolveLensFilter,
 } from './useLensFilter';
 
-describe('fire-safety lens filter', () => {
+describe('lensFilterFromMode', () => {
   it('foregrounds shared architectural and MEP fire-safety hosts', () => {
     expect(
       elementPassesFireSafetyLens({
@@ -51,5 +51,37 @@ describe('fire-safety lens filter', () => {
 
     expect(lensFilterFromMode('fire-safety')(column)).toBe('ghost');
     expect(resolveLensFilter({ defaultLens: 'show_fire_safety' })(column)).toBe('ghost');
+  });
+
+  it('foregrounds construction metadata and temporary works in construction lens', () => {
+    const filter = lensFilterFromMode('construction');
+    const wall = {
+      kind: 'wall',
+      id: 'wall-1',
+      name: 'Wall',
+      levelId: 'lvl',
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 1000, yMm: 0 },
+      thicknessMm: 200,
+      heightMm: 3000,
+      props: { construction: { progressStatus: 'installed' } },
+    } satisfies Element;
+    const logistics = {
+      kind: 'construction_logistics',
+      id: 'log-1',
+      name: 'Crane',
+      logisticsKind: 'crane_lift_zone',
+    } satisfies Element;
+    const room = {
+      kind: 'room',
+      id: 'room-1',
+      name: 'Room',
+      levelId: 'lvl',
+      outlineMm: [],
+    } satisfies Element;
+
+    expect(filter(wall)).toBe('foreground');
+    expect(filter(logistics)).toBe('foreground');
+    expect(filter(room)).toBe('ghost');
   });
 });

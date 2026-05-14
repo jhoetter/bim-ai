@@ -9,12 +9,18 @@ from bim_ai.document import Document
 from bim_ai.elements import (
     AreaElem,
     BuildingServicesHandoffElem,
+    ConstructionLogisticsElem,
+    ConstructionPackageElem,
+    ConstructionQaChecklistElem,
+    ConstructabilityIssueElem,
     DoorElem,
     ElevationViewElem,
     FloorElem,
     FloorTypeElem,
+    IssueElem,
     LevelElem,
     MaterialElem,
+    PhaseElem,
     PlanViewElem,
     RenovationScenarioElem,
     RoofElem,
@@ -30,6 +36,7 @@ from bim_ai.elements import (
     WallTypeElem,
     WindowElem,
 )
+from bim_ai.construction_lens import construction_progress_rows
 from bim_ai.energy_lens import (
     build_energy_handoff_payload,
     energy_qa_rows,
@@ -632,6 +639,18 @@ def _infer_schedule_category_from_name(name: str) -> str | None:
         return "energy_export_qa"
     if "thermal material" in lowered:
         return "energy_thermal_materials"
+    if "package" in lowered:
+        return "construction_package"
+    if "phase" in lowered:
+        return "phase"
+    if "progress" in lowered:
+        return "progress"
+    if "punch" in lowered:
+        return "punch"
+    if "logistics" in lowered:
+        return "site_logistics"
+    if "qa" in lowered or "checklist" in lowered:
+        return "qa_checklist"
     return None
 
 
@@ -1432,6 +1451,128 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
     elif cat in FIRE_SAFETY_SCHEDULE_CATEGORIES:
         rows = derive_fire_safety_schedule_rows(doc, cat)
 
+    elif cat == "construction_package":
+        for e in doc.elements.values():
+            if isinstance(e, ConstructionPackageElem):
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "code": e.code or "",
+                        "phaseId": e.phase_id or "",
+                        "plannedStart": e.planned_start or "",
+                        "plannedEnd": e.planned_end or "",
+                        "actualStart": e.actual_start or "",
+                        "actualEnd": e.actual_end or "",
+                        "responsibleCompany": e.responsible_company or "",
+                        "dependencies": "; ".join(e.dependencies),
+                    }
+                )
+
+    elif cat == "phase":
+        for e in doc.elements.values():
+            if isinstance(e, PhaseElem):
+                created_count = sum(
+                    1
+                    for other in doc.elements.values()
+                    if getattr(other, "phase_created", None) == e.id
+                )
+                demolished_count = sum(
+                    1
+                    for other in doc.elements.values()
+                    if getattr(other, "phase_demolished", None) == e.id
+                )
+                package_count = sum(
+                    1
+                    for other in doc.elements.values()
+                    if isinstance(other, ConstructionPackageElem) and other.phase_id == e.id
+                )
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "ord": e.ord,
+                        "createdCount": created_count,
+                        "demolishedCount": demolished_count,
+                        "packageCount": package_count,
+                    }
+                )
+
+    elif cat == "progress":
+        rows = construction_progress_rows(doc)
+
+    elif cat == "punch":
+        for e in doc.elements.values():
+            if isinstance(e, IssueElem):
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "title": e.title,
+                        "status": e.status,
+                        "elementIds": "; ".join(e.element_ids),
+                        "viewpointId": e.viewpoint_id or "",
+                        "evidenceCount": len(e.evidence_refs),
+                        "issueKind": "issue",
+                    }
+                )
+            elif isinstance(e, ConstructabilityIssueElem):
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "title": e.message or e.rule_id,
+                        "status": e.status,
+                        "elementIds": "; ".join(e.element_ids),
+                        "viewpointId": "",
+                        "evidenceCount": len(e.evidence_refs),
+                        "issueKind": "constructability_issue",
+                    }
+                )
+
+    elif cat == "site_logistics":
+        for e in doc.elements.values():
+            if isinstance(e, ConstructionLogisticsElem):
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "logisticsKind": e.logistics_kind,
+                        "phaseId": e.phase_id or "",
+                        "constructionPackageId": e.construction_package_id or "",
+                        "plannedStart": e.planned_start or "",
+                        "plannedEnd": e.planned_end or "",
+                        "actualStart": e.actual_start or "",
+                        "actualEnd": e.actual_end or "",
+                        "progressStatus": e.progress_status,
+                        "responsibleCompany": e.responsible_company or "",
+                        "boundaryPointCount": len(e.boundary_mm),
+                        "pathPointCount": len(e.path_mm),
+                        "evidenceCount": len(e.evidence_refs),
+                        "issueCount": len(e.issue_ids),
+                    }
+                )
+
+    elif cat == "qa_checklist":
+        for e in doc.elements.values():
+            if isinstance(e, ConstructionQaChecklistElem):
+                statuses = [item.status for item in e.checklist]
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "targetElementIds": "; ".join(e.target_element_ids),
+                        "constructionPackageId": e.construction_package_id or "",
+                        "phaseId": e.phase_id or "",
+                        "responsibleCompany": e.responsible_company or "",
+                        "progressStatus": e.progress_status,
+                        "checklistItemCount": len(e.checklist),
+                        "passedCount": statuses.count("pass"),
+                        "failedCount": statuses.count("fail"),
+                        "openCount": statuses.count("open"),
+                        "evidenceCount": len(e.evidence_refs),
+                        "issueCount": len(e.issue_ids),
+                    }
+                )
+
     else:
         rows = []
 
@@ -1597,6 +1738,15 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             totals["surfaceAreaM2"] = round(
                 sum(float(r.get("surfaceAreaM2") or 0.0) for r in leaf_rows), 6
             )
+    elif cat in {
+        "construction_package",
+        "phase",
+        "progress",
+        "punch",
+        "site_logistics",
+        "qa_checklist",
+    } and leaf_rows:
+        totals = {"kind": cat, "rowCount": len(leaf_rows)}
 
     out: dict[str, Any] = {
         "scheduleId": schedule_id,

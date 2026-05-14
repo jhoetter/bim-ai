@@ -842,6 +842,128 @@ register(
 )
 
 # ---------------------------------------------------------------------------
+# Construction lens — Bauausfuehrung workflow layer
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="construction-lens-report",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ConstructionLensReportInput",
+            "type": "object",
+            "required": ["model_id"],
+            "properties": {"model_id": {"type": "string"}},
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ConstructionLensReport",
+            "type": "object",
+            "required": ["modelId", "revision", "lens", "summary"],
+            "properties": {
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "lens": {"type": "object"},
+                "phases": {"type": "array", "items": {"type": "object"}},
+                "packages": {"type": "array", "items": {"type": "object"}},
+                "progress": {"type": "array", "items": {"type": "object"}},
+                "logistics": {"type": "array", "items": {"type": "object"}},
+                "qaChecklists": {"type": "array", "items": {"type": "object"}},
+                "issues": {"type": "array", "items": {"type": "object"}},
+                "summary": {"type": "object"},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Construction lens report returned"),
+            "not_found": ExitCode(code=1, meaning="modelId not found"),
+            "error": ExitCode(code=1, meaning="Unexpected error"),
+        },
+        cliExample="curl /api/models/<model-id>/construction-lens",
+        restEndpoint=RestEndpoint(method="GET", path="/api/models/{model_id}/construction-lens"),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only field-app payload exposing construction package membership, progress, "
+            "phase data, issue references, evidence references, logistics, and QA checklists."
+        ),
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="set-element-construction",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "SetElementConstructionInput",
+            "type": "object",
+            "required": ["model_id", "element_id", "metadata"],
+            "properties": {
+                "model_id": {"type": "string"},
+                "element_id": {"type": "string"},
+                "phaseCreatedId": {"type": "string"},
+                "phaseDemolishedId": {"type": "string"},
+                "clearDemolished": {"type": "boolean"},
+                "metadata": {
+                    "type": "object",
+                    "properties": {
+                        "constructionPackageId": {"type": "string"},
+                        "plannedStart": {"type": "string"},
+                        "plannedEnd": {"type": "string"},
+                        "actualStart": {"type": "string"},
+                        "actualEnd": {"type": "string"},
+                        "installationSequence": {"type": "integer"},
+                        "dependencies": {"type": "array", "items": {"type": "string"}},
+                        "progressStatus": {
+                            "type": "string",
+                            "enum": [
+                                "not_started",
+                                "in_progress",
+                                "installed",
+                                "inspected",
+                                "accepted",
+                            ],
+                        },
+                        "responsibleCompany": {"type": "string"},
+                        "evidenceRefs": {"type": "array", "items": {"type": "object"}},
+                        "issueIds": {"type": "array", "items": {"type": "string"}},
+                        "punchItemIds": {"type": "array", "items": {"type": "string"}},
+                        "inspectionChecklist": {"type": "array", "items": {"type": "object"}},
+                    },
+                    "additionalProperties": False,
+                },
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "BundleResult",
+            "type": "object",
+            "properties": {
+                "applied": {"type": "boolean"},
+                "newRevision": {"type": "integer"},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Construction metadata attached"),
+            "not_found": ExitCode(code=1, meaning="elementId/modelId not found"),
+            "error": ExitCode(code=1, meaning="Unexpected error"),
+        },
+        cliExample=(
+            'bim-ai apply-bundle \'{"commands":[{"type":"setElementConstruction",'
+            '"elementId":"wall-1","metadata":{"progressStatus":"installed"}}],...}\''
+        ),
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/bundles"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes=(
+            "Mutates only construction metadata under element props plus optional phaseCreated/"
+            "phaseDemolished ids. It does not reclassify design elements as temporary works."
+        ),
+    )
+)
+
+# ---------------------------------------------------------------------------
 # OUT-V3-01 — Live presentation URL tools
 # ---------------------------------------------------------------------------
 

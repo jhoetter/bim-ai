@@ -702,6 +702,28 @@ export type EvidenceRef = {
   pngBasename?: string | null;
 };
 
+export type ConstructionProgressStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'installed'
+  | 'inspected'
+  | 'accepted';
+
+export type ConstructionLogisticsKind =
+  | 'temporary_partition'
+  | 'scaffolding_zone'
+  | 'crane_lift_zone'
+  | 'laydown_area'
+  | 'access_route'
+  | 'site_safety_zone';
+
+export type ConstructionChecklistItem = {
+  id: string;
+  label: string;
+  status: 'open' | 'pass' | 'fail' | 'na';
+  evidenceRefs?: EvidenceRef[];
+};
+
 export type DimensionAnchor = {
   kind: 'free' | 'feature';
   feature?: {
@@ -1356,6 +1378,50 @@ export type Element =
       elementIds?: string[];
       viewpointId?: string | null;
       evidenceRefs?: EvidenceRef[];
+    }
+  | {
+      kind: 'construction_package';
+      id: string;
+      name: string;
+      code?: string | null;
+      phaseId?: string | null;
+      plannedStart?: string | null;
+      plannedEnd?: string | null;
+      actualStart?: string | null;
+      actualEnd?: string | null;
+      responsibleCompany?: string | null;
+      dependencies?: string[];
+    }
+  | {
+      kind: 'construction_logistics';
+      id: string;
+      name: string;
+      logisticsKind: ConstructionLogisticsKind;
+      boundaryMm?: XY[];
+      pathMm?: XY[];
+      phaseId?: string | null;
+      constructionPackageId?: string | null;
+      plannedStart?: string | null;
+      plannedEnd?: string | null;
+      actualStart?: string | null;
+      actualEnd?: string | null;
+      progressStatus?: ConstructionProgressStatus;
+      responsibleCompany?: string | null;
+      evidenceRefs?: EvidenceRef[];
+      issueIds?: string[];
+    }
+  | {
+      kind: 'construction_qa_checklist';
+      id: string;
+      name: string;
+      targetElementIds?: string[];
+      constructionPackageId?: string | null;
+      phaseId?: string | null;
+      responsibleCompany?: string | null;
+      progressStatus?: ConstructionProgressStatus;
+      checklist?: ConstructionChecklistItem[];
+      evidenceRefs?: EvidenceRef[];
+      issueIds?: string[];
     }
   | {
       kind: 'floor';
@@ -2873,7 +2939,8 @@ export type LensMode =
   | 'mep'
   | 'fire-safety'
   | 'energy'
-  | 'coordination';
+  | 'coordination'
+  | 'construction';
 
 /** DSC-V3-02 — per-view discipline lens stored on view elements. */
 export type ViewLensMode =
