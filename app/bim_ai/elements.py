@@ -1067,10 +1067,24 @@ class IssueElem(BaseModel):
     kind: Literal["issue"] = "issue"
     id: str
     title: str
-    status: Literal["open", "in_progress", "done"] = "open"
+    issue_type: str = Field(default="coordination_issue", alias="issueType")
+    severity: str = "warning"
+    responsible_discipline: str = Field(default="coordination", alias="responsibleDiscipline")
+    responsible_team: str | None = Field(default=None, alias="responsibleTeam")
+    status: Literal[
+        "open",
+        "in_progress",
+        "reviewed",
+        "resolved",
+        "closed",
+        "done",
+        "not_an_issue",
+    ] = "open"
     element_ids: list[str] = Field(default_factory=list, alias="elementIds")
     viewpoint_id: str | None = Field(default=None, alias="viewpointId")
     assignee_placeholder: str | None = Field(default=None, alias="assigneePlaceholder")
+    due_date: str | None = Field(default=None, alias="dueDate")
+    resolution_history: list[dict[str, Any]] = Field(default_factory=list, alias="resolutionHistory")
     evidence_refs: list[EvidenceRef] = Field(default_factory=list, alias="evidenceRefs")
 
 
