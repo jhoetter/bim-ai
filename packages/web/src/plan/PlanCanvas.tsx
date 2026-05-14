@@ -137,6 +137,7 @@ import { WallContextMenu, type WallContextMenuCommand } from '../workspace/viewp
 import { SketchCanvas, type MmToScreen, type PointerToMm } from './SketchCanvas';
 import { snapPointToNearestWallFaceMm } from './SketchCanvasPickWalls';
 import { moveDeltaMm } from './moveTool';
+import { wallOffsetMoveCommandFromPoint } from './wallOffsetTool';
 import { parseTypedRotateAngle, rotateDeltaAngleFromReference } from './rotateTool';
 import { selectNextConnectedWallByTab } from './wallChainSelection';
 import { buildWallRadiusFillet, type MmPoint } from './wallRadiusFillet';
@@ -3450,6 +3451,17 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      if (planTool === 'offset') {
+        const selected = selectedId ? elementsById[selectedId] : undefined;
+        if (selected?.kind !== 'wall') return;
+        const command = wallOffsetMoveCommandFromPoint(selected, sp, selectedIds);
+        if (command) {
+          onSemanticCommand(command);
+          setPlanTool('select');
+          bumpGeom((x) => x + 1);
+        }
+        return;
+      }
       if (planTool === 'rotate') {
         if (!rotateAnchorRef.current) {
           // First click: store center of rotation
@@ -4153,6 +4165,8 @@ export function PlanCanvas({
             // Second Escape: exit to select.
             setPlanTool('select');
           }
+        } else if (planTool === 'offset') {
+          setPlanTool('select');
         } else if (planTool === 'rotate') {
           rotateAnchorRef.current = null;
           setRotateAnchorSet(false);
@@ -5421,6 +5435,22 @@ export function PlanCanvas({
           data-testid="move-tool-chip"
         >
           <span>Click reference point</span>
+        </div>
+      ) : null}
+      {planTool === 'offset' ? (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 48,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            pointerEvents: 'none',
+            zIndex: 20,
+          }}
+          className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
+          data-testid="offset-tool-chip"
+        >
+          <span>Click the target side/distance for the selected wall</span>
         </div>
       ) : null}
       {/* F-122 — Rotate tool overlay: shown after the first click (center set), waiting for angle click. */}

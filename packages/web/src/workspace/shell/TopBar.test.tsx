@@ -592,8 +592,14 @@ describe('RibbonBar — F-005', () => {
     );
 
     fireEvent.click(getByTestId('ribbon-tab-modify'));
+    fireEvent.click(getByTestId('ribbon-command-offset'));
+    fireEvent.click(getByTestId('ribbon-command-split'));
+    fireEvent.click(getByTestId('ribbon-command-trim'));
     fireEvent.click(getByTestId('ribbon-command-wall-join'));
 
+    expect(onToolSelect).toHaveBeenCalledWith('offset');
+    expect(onToolSelect).toHaveBeenCalledWith('split');
+    expect(onToolSelect).toHaveBeenCalledWith('trim');
     expect(onToolSelect).toHaveBeenCalledWith('wall-join');
   });
 

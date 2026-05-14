@@ -27,6 +27,8 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
     'splitWallAt',
     'alignElementToReference',
     'trimElementToReference',
+    'trimExtendToCorner',
+    'moveElementsDelta',
     'setWallJoinVariant',
     'createWallOpening',
     'createColumn',
@@ -67,6 +69,12 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
     expect(SRC).toContain('flipWallLocationLineSide(wallLocationLine)');
     expect(SRC).not.toMatch(/const\s+actualStart\s*=\s*reverse\s*\?\s*end\s*:\s*start/);
     expect(SRC).not.toMatch(/const\s+actualEnd\s*=\s*reverse\s*\?\s*start\s*:\s*end/);
+  });
+
+  it('wires the Offset modify tool through a selected-wall moveElementsDelta command', () => {
+    expect(SRC).toContain("planTool === 'offset'");
+    expect(SRC).toContain('wallOffsetMoveCommandFromPoint(');
+    expect(SRC).toContain('data-testid="offset-tool-chip"');
   });
 
   it('snaps wall authoring points to shared wall connectivity before generic plan snaps', () => {

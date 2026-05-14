@@ -708,6 +708,14 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'tool.offset',
+  label: 'Offset Element',
+  keywords: ['offset', 'parallel', 'modify', 'wall'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'offset'),
+});
+
+registerCommand({
   id: 'tool.wall-join',
   label: 'Edit Wall Join',
   keywords: ['wall join', 'join', 'disallow join', 'cleanup'],

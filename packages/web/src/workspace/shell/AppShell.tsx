@@ -48,6 +48,8 @@ export interface AppShellProps {
   footer?: ReactNode;
   /** Back-compat alias for footer. */
   statusBar?: ReactNode;
+  /** Optional content inset when a pane-local sidebar occupies the footer span. */
+  footerInsetLeft?: number | string;
   /** Initial collapsed state for the left rail. Defaults to false. */
   defaultLeftCollapsed?: boolean;
   /** Initial collapsed state for the right rail. Defaults to false. */
@@ -94,6 +96,7 @@ export function AppShell({
   rightRail,
   footer,
   statusBar,
+  footerInsetLeft,
   defaultLeftCollapsed = false,
   defaultRightCollapsed = false,
   leftCollapsed: leftCollapsedProp,
@@ -509,7 +512,11 @@ export function AppShell({
       <footer
         data-testid="app-shell-footer"
         aria-label="Global status footer"
-        style={{ gridArea: 'footer' }}
+        style={{
+          gridArea: 'footer',
+          paddingLeft:
+            typeof footerInsetLeft === 'number' ? `${footerInsetLeft}px` : footerInsetLeft,
+        }}
         className="flex items-center border-t border-border bg-surface text-xs"
       >
         {footerNode}

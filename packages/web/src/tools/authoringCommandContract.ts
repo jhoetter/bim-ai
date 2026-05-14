@@ -297,6 +297,14 @@ export const AUTHORING_COMMAND_CONTRACTS = {
     'select-after-commit',
     ['two-trimmable-elements'],
   ),
+  offset: contract(
+    'offset',
+    'modify',
+    ['plan'],
+    'Selected-wall parallel offset preview from original centerline to clicked target line.',
+    'select-after-commit',
+    ['has-selection', 'wall'],
+  ),
   mirror: contract(
     'mirror',
     'modify',

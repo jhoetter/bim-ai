@@ -70,6 +70,7 @@ export const TOOL_CAPABILITIES: Record<string, ToolCapabilities> = {
   align: { chainable: false, multipleable: false, tagOnPlace: false, numericInput: false },
   split: { chainable: false, multipleable: true, tagOnPlace: false, numericInput: false },
   trim: { chainable: false, multipleable: true, tagOnPlace: false, numericInput: false },
+  offset: { chainable: false, multipleable: false, tagOnPlace: false, numericInput: false },
   'wall-join': { chainable: false, multipleable: false, tagOnPlace: false, numericInput: false },
   'wall-opening': {
     chainable: false,
@@ -142,6 +143,7 @@ export type ToolGrammarKind =
   | 'align'
   | 'split'
   | 'trim'
+  | 'offset'
   | 'wall-join';
 
 export const WALL_LOCATION_LINE_ORDER: WallLocationLine[] = [

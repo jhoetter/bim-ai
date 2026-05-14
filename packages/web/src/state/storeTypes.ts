@@ -63,6 +63,7 @@ export type PlanTool =
   | 'split'
   | 'trim'
   | 'trim-extend'
+  | 'offset'
   | 'wall-join'
   | 'wall-opening'
   | 'shaft'

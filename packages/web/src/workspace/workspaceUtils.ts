@@ -64,6 +64,7 @@ export const KNOWN_PLAN_TOOLS = new Set<ToolId>([
   'split',
   'trim',
   'trim-extend',
+  'offset',
   'wall-join',
   'wall-opening',
   'shaft',
