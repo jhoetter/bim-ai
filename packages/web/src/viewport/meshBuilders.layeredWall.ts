@@ -21,6 +21,7 @@ import {
 import type { ViewportPaintBundle } from './materials';
 import { yawForPlanSegment } from './planSegmentOrientation';
 import { addEdges, readToken } from './sceneHelpers';
+import { makeThreeMaterialForKey } from './threeMaterialFactory';
 
 type WallElem = Extract<Element, { kind: 'wall' }>;
 
@@ -98,7 +99,7 @@ export function makeLayeredWallMesh(
   assembly: WallTypeAssembly,
   elevM: number,
   paint: ViewportPaintBundle | null,
-  _elementsById?: Record<string, Element>,
+  elementsById?: Record<string, Element>,
 ): THREE.Group {
   void paint;
   const sx = wall.start.xMm / 1000;
@@ -142,11 +143,12 @@ export function makeLayeredWallMesh(
     const px = cx + nx * layerCenterOff;
     const pz = cz + nz * layerCenterOff;
 
-    const colorHex = materialHexFor(layer.materialKey);
-    const mat = new THREE.MeshStandardMaterial({
-      color: colorHex,
-      roughness: roughnessFor(layer),
-      metalness: 0,
+    const mat = makeThreeMaterialForKey(layer.materialKey, {
+      elementsById,
+      usage: 'wallExterior',
+      fallbackColor: materialHexFor(layer.materialKey),
+      fallbackRoughness: roughnessFor(layer),
+      fallbackMetalness: 0,
     });
     const geom = new THREE.BoxGeometry(len, heightM, thickM);
     const mesh = new THREE.Mesh(geom, mat);

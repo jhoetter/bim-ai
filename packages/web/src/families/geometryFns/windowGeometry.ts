@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import type { Element, XY } from '@bim-ai/core';
-import { resolveMaterial, type ViewportPaintBundle } from '../../viewport/materials';
+import { type ViewportPaintBundle } from '../../viewport/materials';
 import { resolveWindowCutDimensions } from '../../viewport/hostedOpeningDimensions';
+import { makeThreeMaterialForKey } from '../../viewport/threeMaterialFactory';
 import { meshFromSweep } from '../sweepGeometry';
 import { resolveParam, type FamilyDefinition, type SketchLine } from '../types';
 import { resolveWindowOutline, resolveWindowOutlineKind } from './windowOutline';
@@ -68,27 +69,26 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
   const depth = THREE.MathUtils.clamp(rawDepthMm / 1000, 0.06, 0.5);
   const frameSect = frameSectMm / 1000;
 
-  const materialSpec = resolveMaterial(win.materialKey);
-  const frameColor = materialSpec?.baseColor ?? paint?.categories.window.color ?? FALLBACK_COLOR;
-  const frameMat = new THREE.MeshStandardMaterial({
-    color: frameColor,
-    roughness: materialSpec?.roughness ?? paint?.categories.window.roughness ?? 0.6,
-    metalness: materialSpec?.metalness ?? paint?.categories.window.metalness ?? 0.05,
-    envMapIntensity: materialSpec ? 0.45 : 1,
+  const frameMat = makeThreeMaterialForKey(win.materialKey, {
+    elementsById,
+    usage: 'openingFrame',
+    fallbackColor: paint?.categories.window.color ?? FALLBACK_COLOR,
+    fallbackRoughness: paint?.categories.window.roughness ?? 0.6,
+    fallbackMetalness: paint?.categories.window.metalness ?? 0.05,
   });
 
   const group = new THREE.Group();
   group.userData.bimPickId = win.id;
 
-  const glazingMat = new THREE.MeshStandardMaterial({
-    color: readGlazingColor(),
-    roughness: 0.05,
-    metalness: 0.0,
+  const glazingMat = makeThreeMaterialForKey('asset_clear_glass_double', {
+    elementsById,
+    usage: 'generic',
+    fallbackColor: readGlazingColor(),
+    fallbackRoughness: 0.05,
+    fallbackMetalness: 0.0,
     opacity: glazingAlpha,
-    transparent: true,
     depthWrite: false,
     side: THREE.DoubleSide,
-    envMapIntensity: 1.2,
   });
 
   const outlineKind = resolveWindowOutlineKind(win);

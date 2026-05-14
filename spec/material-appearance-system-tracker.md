@@ -68,16 +68,16 @@ The material assignment model should support:
 | ID          | Gap                                                                           | Impact                                                         | Priority | Status      |
 | ----------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------- | -------- | ----------- |
 | MAT-GAP-001 | Registry and first-class `material` elements are not unified.                 | Project-authored materials cannot fully behave like built-ins. | P0       | Done        |
-| MAT-GAP-002 | General texture map loading is missing.                                       | Materials look like flat colors.                               | P0       | Open        |
+| MAT-GAP-002 | General texture map loading is missing.                                       | Materials look like flat colors.                               | P0       | Done        |
 | MAT-GAP-003 | UV scale/rotation/offset is not applied consistently.                         | Brick/tile/wood textures cannot be dimensionally credible.     | P0       | Open        |
-| MAT-GAP-004 | Normal/bump/height relief is metadata only.                                   | Brick, stone, concrete, wood grain lack surface relief.        | P0       | Open        |
+| MAT-GAP-004 | Normal/bump/height relief is metadata only.                                   | Brick, stone, concrete, wood grain lack surface relief.        | P0       | Done        |
 | MAT-GAP-005 | Plan/section surface and cut patterns are not material-driven.                | Architectural drafting views do not match material identity.   | P0       | Open        |
 | MAT-GAP-006 | Material browser edits assignment, but not appearance/graphics assets.        | Users cannot tune material behavior after assignment.          | P1       | Open        |
 | MAT-GAP-007 | Layered assemblies do not expose exterior/interior finish appearance clearly. | Revit-like wall/floor/roof types are underpowered.             | P1       | In Progress |
 | MAT-GAP-008 | Per-face paint/finish overrides are not modeled.                              | Users cannot paint one wall face or one floor zone.            | P1       | Open        |
 | MAT-GAP-009 | Material previews are not representative.                                     | Browser choice is guesswork.                                   | P1       | Open        |
 | MAT-GAP-010 | Exports/schedules do not preserve the full material asset contract.           | IFC/GLTF/readback can diverge from viewport behavior.          | P1       | Open        |
-| MAT-GAP-011 | Texture performance and caching strategy is undefined.                        | Real textures could degrade 3D interaction.                    | P1       | Open        |
+| MAT-GAP-011 | Texture performance and caching strategy is undefined.                        | Real textures could degrade 3D interaction.                    | P1       | Done        |
 | MAT-GAP-012 | Visual QA does not catch material regressions.                                | Textures/bump/patterns can silently disappear.                 | P1       | Open        |
 | MAT-GAP-013 | Assets and licensing/provenance are not tracked.                              | Curated texture libraries can create legal/product risk.       | P2       | Open        |
 
@@ -140,7 +140,7 @@ Evidence (2026-05-14):
 ### WP-MAT-02 — Universal Three.js Material Factory
 
 - Priority: `P0`
-- Status: `Open`
+- Status: `Done`
 - Covers: `MAT-GAP-002`, `MAT-GAP-004`, `MAT-GAP-011`
 - Goal: all 3D mesh builders obtain materials through one factory that handles color, maps, relief, glass/transparency, side/depth settings, and caching.
 - Source ownership:
@@ -187,6 +187,21 @@ Evidence (2026-05-14):
   - Default max texture size: 1024 or 2048 px depending on renderer budget.
   - Use compressed or downsampled assets where available.
   - Never block first model render on texture loading; render color first, update material when maps resolve.
+
+Evidence (2026-05-14):
+
+- Expanded `packages/web/src/viewport/threeMaterialFactory.ts` with:
+  - `MaterialTextureManager` using `THREE.TextureLoader`,
+  - cache keys by map kind, resolved asset URL, and UV transform,
+  - `SRGBColorSpace` for albedo and `NoColorSpace` for normal/bump/roughness/metalness maps,
+  - anisotropy, transform, and disposal support,
+  - glass/translucent `MeshPhysicalMaterial` handling.
+- Extended `MaterialPbrSpec` to carry roughness, metalness, and height map URLs from project material appearance assets.
+- Migrated factory usage into wall, layered wall, floor, roof, curtain panel, door, window, column, beam, sweep, family instance, and mass rendering paths.
+- Added `packages/web/src/viewport/threeMaterialFactory.test.ts` covering color fallback, glass, textured brick albedo+bump maps, project material normal-map preference, texture cache reuse, and cache disposal.
+- Verification:
+  - `pnpm --filter @bim-ai/web exec vitest run src/viewport/threeMaterialFactory.test.ts src/viewport/materials.test.ts src/viewport/meshBuilders.mass.test.ts src/viewport/sweepMesh.test.ts`
+  - `pnpm --filter @bim-ai/web typecheck`
 
 ### WP-MAT-03 — UV Mapping And Texture Transform Pipeline
 

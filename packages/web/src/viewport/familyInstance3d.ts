@@ -55,7 +55,11 @@ export function makeFamilyInstanceMesh(
     if (!(node instanceof THREE.Mesh)) return;
     const materialKey = node.userData.materialKey;
     if (typeof materialKey !== 'string' || materialKey.trim() === '') return;
-    node.material = makeThreeMaterialForKey(materialKey, '#cbd5e1');
+    node.material = makeThreeMaterialForKey(materialKey, {
+      elementsById,
+      usage: 'generic',
+      fallbackColor: '#cbd5e1',
+    });
     node.castShadow = materialKey.includes('glass') ? false : node.castShadow;
     node.receiveShadow = true;
   });

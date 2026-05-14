@@ -20,6 +20,7 @@ import {
 import type { FamilyDefinition } from '../families/types';
 import { getBuiltInWallType, type WallTypeAssembly } from '../families/wallTypeCatalog';
 import { isStandingSeamMetalKey, resolveMaterial, type ViewportPaintBundle } from './materials';
+import { makeThreeMaterialForKey } from './threeMaterialFactory';
 import { categoryColorOr, addEdges, readToken } from './sceneHelpers';
 import { roofHeightAtPoint } from './roofHeightSampler';
 import { makeLayeredWallMesh } from './meshBuilders.layeredWall';
@@ -131,25 +132,25 @@ function tryResolveFamilyInstancePanel(
 function resolveCurtainPanelMaterial(
   override: CurtainPanelOverride | null,
   defaultGlassMat: THREE.Material,
+  elementsById?: Record<string, Element>,
 ): THREE.Material | null {
   if (!override) return defaultGlassMat;
   if (override.kind === 'empty') return null;
   if (override.kind === 'family_instance') {
-    const placeholder = resolveMaterial('placeholder_unloaded');
-    return new THREE.MeshStandardMaterial({
-      color: placeholder?.baseColor ?? '#ff66cc',
-      roughness: placeholder?.roughness ?? 0.6,
-      metalness: placeholder?.metalness ?? 0,
+    return makeThreeMaterialForKey('placeholder_unloaded', {
+      elementsById,
+      usage: 'generic',
+      fallbackColor: '#ff66cc',
+      fallbackRoughness: 0.6,
       side: THREE.DoubleSide,
     });
   }
   // `system` override
-  const matSpec = resolveMaterial(override.materialKey);
-  if (!matSpec) return defaultGlassMat;
-  return new THREE.MeshStandardMaterial({
-    color: matSpec.baseColor,
-    roughness: matSpec.roughness,
-    metalness: matSpec.metalness,
+  if (!resolveMaterial(override.materialKey, elementsById)) return defaultGlassMat;
+  return makeThreeMaterialForKey(override.materialKey, {
+    elementsById,
+    usage: 'generic',
+    fallbackColor: '#b8d6e6',
     side: THREE.DoubleSide,
   });
 }
@@ -275,21 +276,20 @@ function makeCurvedWallMesh(
 
   const { yBase, height } = wallVerticalSpanM(wall, elevM, elementsById);
 
-  const wallMatSpec = resolveMaterial(wall.materialKey, elementsById);
-  const isWhite = wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render';
-  const wallBaseColor =
-    wallMatSpec?.baseColor ?? (isWhite ? '#f4f4f0' : categoryColorOr(paint, 'wall'));
   const mesh = new THREE.Mesh(
     new THREE.ExtrudeGeometry(shape, { depth: height, bevelEnabled: false }),
-    new THREE.MeshStandardMaterial({
-      color: wallBaseColor,
-      roughness:
-        wallMatSpec?.roughness ?? (isWhite ? 0.92 : (paint?.categories.wall.roughness ?? 0.85)),
-      metalness: wallMatSpec?.metalness ?? paint?.categories.wall.metalness ?? 0,
-      envMapIntensity:
-        isWhite || wallMatSpec?.category === 'render' || wallMatSpec?.category === 'cladding'
-          ? 0.15
-          : 1.0,
+    makeThreeMaterialForKey(wall.materialKey, {
+      elementsById,
+      usage: 'wallExterior',
+      fallbackColor:
+        wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
+          ? '#f4f4f0'
+          : categoryColorOr(paint, 'wall'),
+      fallbackRoughness:
+        wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
+          ? 0.92
+          : (paint?.categories.wall.roughness ?? 0.85),
+      fallbackMetalness: paint?.categories.wall.metalness ?? 0,
     }),
   );
   mesh.rotation.x = -Math.PI / 2;
@@ -391,10 +391,8 @@ export function makeFloorSlabMesh(
   const th = THREE.MathUtils.clamp(floor.thicknessMm / 1000, 0.05, 1.8);
   const boundary = floor.boundaryMm ?? [];
   const floorType = floor.floorTypeId ? elementsById[floor.floorTypeId] : undefined;
-  const floorMatSpec =
-    floorType?.kind === 'floor_type'
-      ? resolveMaterial(floorType.layers[0]?.materialKey, elementsById)
-      : null;
+  const floorMaterialKey =
+    floorType?.kind === 'floor_type' ? floorType.layers[0]?.materialKey : undefined;
 
   // Build shape in shape-XY (plan X→shape X, plan Y negated→shape Y).
   // After ExtrudeGeometry + rotateX(-π/2): shape X→world X, extrude depth→world Y, −shapeY→world Z.
@@ -424,13 +422,12 @@ export function makeFloorSlabMesh(
 
   const mesh = new THREE.Mesh(
     geom,
-    new THREE.MeshStandardMaterial({
-      color: floorMatSpec?.baseColor ?? categoryColorOr(paint, 'floor'),
-      roughness: floorMatSpec?.roughness ?? paint?.categories.floor.roughness ?? 0.9,
-      metalness: floorMatSpec?.metalness ?? 0,
-      // Floor slabs are diffuse; sky env-map reflections wash the catalog
-      // colour pale-blue. Drop to 0.15 so the warm-tone floors read true.
-      envMapIntensity: 0.15,
+    makeThreeMaterialForKey(floorMaterialKey, {
+      elementsById,
+      usage: 'floorTop',
+      fallbackColor: categoryColorOr(paint, 'floor'),
+      fallbackRoughness: paint?.categories.floor.roughness ?? 0.9,
+      fallbackMetalness: 0,
     }),
   );
   mesh.position.set(0, elev, 0);
@@ -1561,26 +1558,16 @@ export function makeRoofMassMesh(
     geom = _dormerCutFn(geom, roof, elementsById, refElev);
   }
 
-  const roofMatSpec = resolveMaterial(roof.materialKey, elementsById);
-  const roofColor =
-    roofMatSpec?.baseColor ??
-    roof.materialKey ??
-    (roof.roofGeometryMode === 'flat' ? '#d8d8d4' : categoryColorOr(paint, 'roof'));
-  const roofIsCustom = !!roof.materialKey;
-
   const mesh = new THREE.Mesh(
     geom,
-    new THREE.MeshStandardMaterial({
-      color: roofColor,
-      roughness:
-        roofMatSpec?.roughness ?? (roofIsCustom ? 0.9 : (paint?.categories.roof.roughness ?? 0.74)),
-      metalness: roofMatSpec?.metalness ?? paint?.categories.roof.metalness ?? 0.0,
-      envMapIntensity:
-        roofMatSpec?.category === 'render' || roofMatSpec?.category === 'cladding'
-          ? 0.15
-          : roofIsCustom && !roofMatSpec
-            ? 0.1
-            : 1.0,
+    makeThreeMaterialForKey(roof.materialKey, {
+      elementsById,
+      usage: 'roofTop',
+      fallbackColor:
+        roof.materialKey ??
+        (roof.roofGeometryMode === 'flat' ? '#d8d8d4' : categoryColorOr(paint, 'roof')),
+      fallbackRoughness: roof.materialKey ? 0.9 : (paint?.categories.roof.roughness ?? 0.74),
+      fallbackMetalness: paint?.categories.roof.metalness ?? 0.0,
       side: THREE.DoubleSide,
     }),
   );
@@ -1836,13 +1823,13 @@ export function addStandingSeamPattern(
   const spanZ = oz1 - oz0;
   if (spanX <= 0 || spanZ <= 0) return;
 
-  const matSpec = resolveMaterial(roof.materialKey, elementsById);
-  const seamColor = matSpec?.baseColor ?? '#3a3d3f';
-  const seamMat = new THREE.MeshStandardMaterial({
-    color: seamColor,
-    roughness: matSpec?.roughness ?? 0.35,
-    metalness: matSpec?.metalness ?? 0.7,
-  });
+  const seamMat = makeThreeMaterialForKey(roof.materialKey, {
+    elementsById,
+    usage: 'roofTop',
+    fallbackColor: '#3a3d3f',
+    fallbackRoughness: 0.35,
+    fallbackMetalness: 0.7,
+  }) as THREE.MeshStandardMaterial;
 
   const flatSlabThick = 0.15; // mirror the value used in makeRoofMassMesh
   if (roof.roofGeometryMode === 'flat') {
@@ -2037,25 +2024,17 @@ export function makeSlopedWallMesh(
 
   const geom = buildSlopedSegmentGeometry(lenM, thick, topHeightsRelM);
 
-  // Sloped walls didn't honour the wall's materialKey — used the neutral
-  // category default. Resolve catalog material first; drop env-map for
-  // cladding / render so the color reads true.
-  const slopedMatSpec = resolveMaterial(wall.materialKey, elementsById);
-  const slopedIsWhite =
-    wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render';
-  const slopedColor =
-    slopedMatSpec?.baseColor ?? (slopedIsWhite ? '#f4f4f0' : categoryColorOr(paint, 'wall'));
-  const mat = new THREE.MeshStandardMaterial({
-    color: slopedColor,
-    roughness: slopedMatSpec?.roughness ?? paint?.categories.wall.roughness ?? 0.85,
-    metalness: slopedMatSpec?.metalness ?? paint?.categories.wall.metalness ?? 0.0,
-    envMapIntensity:
-      slopedIsWhite ||
-      slopedMatSpec?.category === 'render' ||
-      slopedMatSpec?.category === 'cladding'
-        ? 0.15
-        : 1.0,
+  const mat = makeThreeMaterialForKey(wall.materialKey, {
+    elementsById,
+    usage: 'wallExterior',
+    fallbackColor:
+      wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
+        ? '#f4f4f0'
+        : categoryColorOr(paint, 'wall'),
+    fallbackRoughness: paint?.categories.wall.roughness ?? 0.85,
+    fallbackMetalness: paint?.categories.wall.metalness ?? 0.0,
   });
+  const wallMatSpec = resolveMaterial(wall.materialKey, elementsById);
   const mesh = new THREE.Mesh(geom, mat);
   mesh.position.set((sx + ex) / 2000, yBase, (sz + ez) / 2000);
   mesh.rotation.y = yawForPlanSegment(dx, dz);
@@ -2172,33 +2151,32 @@ export function makeRecessedWallMesh(
   const yBase = elevM + baseOff;
   const height = THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40);
 
-  const wallMatSpec = resolveMaterial(wall.materialKey, elementsById);
-  const isWhite = wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render';
-  const wallBaseColor =
-    wallMatSpec?.baseColor ?? (isWhite ? '#f4f4f0' : categoryColorOr(paint, 'wall'));
-  const mat = new THREE.MeshStandardMaterial({
-    color: wallBaseColor,
-    roughness:
-      wallMatSpec?.roughness ?? (isWhite ? 0.92 : (paint?.categories.wall.roughness ?? 0.85)),
-    metalness: wallMatSpec?.metalness ?? paint?.categories.wall.metalness ?? 0.0,
-    // Cladding / render walls drop sky-reflection so the catalog colour
-    // reads true (warm wood as warm wood, not pale-blue from sky env map).
-    envMapIntensity:
-      isWhite || wallMatSpec?.category === 'render' || wallMatSpec?.category === 'cladding'
-        ? 0.15
-        : 1.0,
+  const mat = makeThreeMaterialForKey(wall.materialKey, {
+    elementsById,
+    usage: 'wallExterior',
+    fallbackColor:
+      wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
+        ? '#f4f4f0'
+        : categoryColorOr(paint, 'wall'),
+    fallbackRoughness:
+      wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
+        ? 0.92
+        : (paint?.categories.wall.roughness ?? 0.85),
+    fallbackMetalness: paint?.categories.wall.metalness ?? 0.0,
   });
+  const wallMatSpec = resolveMaterial(wall.materialKey, elementsById);
 
   // White-render variant for end caps when the wall's primary materialKey
   // is the recess back finish (cladding_warm_wood). Approximates the
   // architectural "white frame around a wood-clad recess" pattern.
   const capMat =
     wall.materialKey === 'cladding_warm_wood'
-      ? new THREE.MeshStandardMaterial({
-          color: '#f4f4f0',
-          roughness: 0.92,
-          metalness: 0,
-          envMapIntensity: 0.15,
+      ? makeThreeMaterialForKey('white_render', {
+          elementsById,
+          usage: 'wallExterior',
+          fallbackColor: '#f4f4f0',
+          fallbackRoughness: 0.92,
+          fallbackMetalness: 0,
         })
       : mat;
 
@@ -2347,26 +2325,22 @@ export function makeWallMesh(
   const { yBase, height } = wallVerticalSpanM(wall, elevM, elementsById);
 
   const wallOffset = wallPlanOffsetM(wall);
-
   const wallMatSpec = resolveMaterial(wall.materialKey, elementsById);
-  const isWhite = wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render';
-  const wallBaseColor =
-    wallMatSpec?.baseColor ?? (isWhite ? '#f4f4f0' : categoryColorOr(paint, 'wall'));
+
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(len, height, thick),
-    new THREE.MeshStandardMaterial({
-      color: wallBaseColor,
-      roughness:
-        wallMatSpec?.roughness ?? (isWhite ? 0.92 : (paint?.categories.wall.roughness ?? 0.85)),
-      metalness: wallMatSpec?.metalness ?? paint?.categories.wall.metalness ?? 0.0,
-      // Render + cladding categories drop sky reflection so the catalog
-      // base color reads true (cladding_beige_grey as warm beige, not
-      // washed-blue under default env map). Other materials keep full
-      // env-map for metal/glass realism.
-      envMapIntensity:
-        isWhite || wallMatSpec?.category === 'render' || wallMatSpec?.category === 'cladding'
-          ? 0.15
-          : 1.0,
+    makeThreeMaterialForKey(wall.materialKey, {
+      elementsById,
+      usage: 'wallExterior',
+      fallbackColor:
+        wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
+          ? '#f4f4f0'
+          : categoryColorOr(paint, 'wall'),
+      fallbackRoughness:
+        wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
+          ? 0.92
+          : (paint?.categories.wall.roughness ?? 0.85),
+      fallbackMetalness: paint?.categories.wall.metalness ?? 0.0,
     }),
   );
   mesh.position.set(sx + dx / 2 + wallOffset.xM, yBase + height / 2, sz + dz / 2 + wallOffset.zM);
@@ -2434,22 +2408,21 @@ export function makeCurtainWallMesh(
   // the fragment is "transparent". transmission/roughness/thickness give the
   // panel its physical lensing so the interior is visibly framed by the
   // glazing rather than tinted-over.
-  const glassMat = new THREE.MeshPhysicalMaterial({
-    color: 0xb8d6e6,
-    transparent: true,
+  const glassMat = makeThreeMaterialForKey('asset_clear_glass_double', {
+    elementsById,
+    usage: 'generic',
+    fallbackColor: '#b8d6e6',
+    fallbackRoughness: 0.05,
     opacity: 0.4,
-    transmission: 0.95,
-    roughness: 0.05,
-    metalness: 0,
-    thickness: 0.005,
-    ior: 1.5,
     side: THREE.DoubleSide,
     depthWrite: false,
   });
-  const mullionMat = new THREE.MeshStandardMaterial({
-    color: categoryColorOr(paint, 'wall'),
-    roughness: paint?.categories.wall.roughness ?? 0.8,
-    metalness: paint?.categories.wall.metalness ?? 0.0,
+  const mullionMat = makeThreeMaterialForKey(null, {
+    elementsById,
+    usage: 'structural',
+    fallbackColor: categoryColorOr(paint, 'wall'),
+    fallbackRoughness: paint?.categories.wall.roughness ?? 0.8,
+    fallbackMetalness: paint?.categories.wall.metalness ?? 0.0,
   });
 
   const PANEL_W = 1.5;
@@ -2498,7 +2471,7 @@ export function makeCurtainWallMesh(
         // Fall through to placeholder pane below.
       }
 
-      const cellMat = resolveCurtainPanelMaterial(override, glassMat);
+      const cellMat = resolveCurtainPanelMaterial(override, glassMat, elementsById);
       if (cellMat === null) continue; // 'empty' override — leave the bay open
       const pane = new THREE.Mesh(new THREE.PlaneGeometry(cellW, cellH), cellMat);
       pane.position.copy(cellPos);
@@ -2960,12 +2933,11 @@ export function makeColumnMesh(
   const heightM = col.heightMm != null ? THREE.MathUtils.clamp(col.heightMm / 1000, 0.25, 40) : 3.0;
   const yBase = elevM + baseOff;
   const geo = new THREE.BoxGeometry(bM, heightM, hM);
-  const matSpec = resolveMaterial(col.materialKey);
-  const mat = new THREE.MeshStandardMaterial({
-    color: matSpec?.baseColor ?? categoryColorOr(paint, 'wall'),
-    roughness: matSpec?.roughness ?? paint?.categories.wall.roughness ?? 0.8,
-    metalness: matSpec?.metalness ?? paint?.categories.wall.metalness ?? 0,
-    envMapIntensity: matSpec ? 0.45 : 1,
+  const mat = makeThreeMaterialForKey(col.materialKey, {
+    usage: 'structural',
+    fallbackColor: categoryColorOr(paint, 'wall'),
+    fallbackRoughness: paint?.categories.wall.roughness ?? 0.8,
+    fallbackMetalness: paint?.categories.wall.metalness ?? 0,
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.set(
@@ -2993,12 +2965,11 @@ export function makeBeamMesh(
   const wM = THREE.MathUtils.clamp((beam.widthMm ?? 200) / 1000, 0.05, 1);
   const hM = THREE.MathUtils.clamp((beam.heightMm ?? 400) / 1000, 0.05, 1);
   const geo = new THREE.BoxGeometry(len, hM, wM);
-  const matSpec = resolveMaterial(beam.materialKey);
-  const mat = new THREE.MeshStandardMaterial({
-    color: matSpec?.baseColor ?? categoryColorOr(paint, 'wall'),
-    roughness: matSpec?.roughness ?? paint?.categories.wall.roughness ?? 0.8,
-    metalness: matSpec?.metalness ?? paint?.categories.wall.metalness ?? 0,
-    envMapIntensity: matSpec ? 0.45 : 1,
+  const mat = makeThreeMaterialForKey(beam.materialKey, {
+    usage: 'structural',
+    fallbackColor: categoryColorOr(paint, 'wall'),
+    fallbackRoughness: paint?.categories.wall.roughness ?? 0.8,
+    fallbackMetalness: paint?.categories.wall.metalness ?? 0,
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.set(sx + dx / 2, elevM - hM / 2, sz + dz / 2);

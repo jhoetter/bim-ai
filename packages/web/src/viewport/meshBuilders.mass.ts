@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
-import { materialBaseColor } from './materials';
 import { readToken } from './sceneHelpers';
+import { makeThreeMaterialForKey } from './threeMaterialFactory';
 
 export type MassElem = Extract<Element, { kind: 'mass' }>;
 export type LevelElem = Extract<Element, { kind: 'level' }>;
@@ -21,6 +21,7 @@ export type LevelElem = Extract<Element, { kind: 'level' }>;
 export function buildMassMesh(
   mass: MassElem,
   level: LevelElem,
+  elementsById?: Record<string, Element>,
 ): { mesh: THREE.Mesh; outline: THREE.LineSegments } {
   const fp = mass.footprintMm.length >= 3 ? mass.footprintMm : DEFAULT_FOOTPRINT;
   const heightM = Math.max(mass.heightMm / 1000, 1e-3);
@@ -29,12 +30,12 @@ export function buildMassMesh(
   const geom = new THREE.ExtrudeGeometry(shape, { depth: heightM, bevelEnabled: false });
   geom.rotateX(-Math.PI / 2);
 
-  const baseColor = materialBaseColor(mass.materialKey ?? null);
-  const mat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(baseColor),
-    roughness: 0.85,
-    metalness: 0,
-    transparent: true,
+  const mat = makeThreeMaterialForKey(mass.materialKey ?? null, {
+    elementsById,
+    usage: 'mass',
+    fallbackColor: '#cccccc',
+    fallbackRoughness: 0.85,
+    fallbackMetalness: 0,
     opacity: 0.35,
     side: THREE.DoubleSide,
     depthWrite: false,

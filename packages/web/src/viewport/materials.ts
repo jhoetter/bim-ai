@@ -296,8 +296,14 @@ export interface MaterialPbrSpec {
   normalMapUrl?: string;
   /** Appearance asset texture metadata, kept authorable even before texture loading. */
   textureMapUrl?: string;
+  /** Optional URL to a roughness map texture. */
+  roughnessMapUrl?: string;
+  /** Optional URL to a metalness map texture. */
+  metalnessMapUrl?: string;
   /** Appearance asset bump/normal metadata shown by the Asset Browser. */
   bumpMapUrl?: string;
+  /** Optional high-detail height/displacement map texture. */
+  heightMapUrl?: string;
   /** Approximate appearance reflectance for browser editing/readback. */
   reflectance?: number;
   /** Optional plan/section hatch pattern label. */
@@ -419,7 +425,10 @@ function materialElementToPbrSpec(material: MaterialElem): MaterialPbrSpec {
     metalness,
     textureMapUrl: appearance?.albedoMapId ?? material.albedoMapId,
     normalMapUrl: appearance?.normalMapId ?? material.normalMapId,
+    roughnessMapUrl: appearance?.roughnessMapId ?? undefined,
+    metalnessMapUrl: appearance?.metallicMapId ?? undefined,
     bumpMapUrl: appearance?.heightMapId ?? material.heightMapId,
+    heightMapUrl: appearance?.heightMapId ?? material.heightMapId,
     reflectance: appearance?.reflectance,
     hatchPattern: material.hatchPatternId,
     graphics: {

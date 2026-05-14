@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import type { Element, DoorOperationType } from '@bim-ai/core';
-import { resolveMaterial, type ViewportPaintBundle } from '../../viewport/materials';
+import { type ViewportPaintBundle } from '../../viewport/materials';
 import { resolveDoorCutDimensions } from '../../viewport/hostedOpeningDimensions';
+import { makeThreeMaterialForKey } from '../../viewport/threeMaterialFactory';
 import { resolveParam, type FamilyDefinition } from '../types';
 
 export type DoorGeomInput = {
@@ -367,20 +368,20 @@ export function buildDoorGeometry(input: DoorGeomInput): THREE.Group {
     panelThick: panelThickMm / 1000,
   };
 
-  const materialSpec = resolveMaterial(door.materialKey);
-  const frameColor = materialSpec?.baseColor ?? paint?.categories.door.color ?? FALLBACK_COLOR;
-  const frameMat = new THREE.MeshStandardMaterial({
-    color: frameColor,
-    roughness: materialSpec?.roughness ?? paint?.categories.door.roughness ?? 0.7,
-    metalness: materialSpec?.metalness ?? paint?.categories.door.metalness ?? 0.0,
-    envMapIntensity: materialSpec ? 0.45 : 1,
-  });
-  const panelMat = new THREE.MeshStandardMaterial({
-    color: frameColor,
-    roughness: materialSpec?.roughness ?? paint?.categories.door.roughness ?? 0.7,
-    metalness: materialSpec?.metalness ?? 0,
-    envMapIntensity: materialSpec ? 0.45 : 1,
-  });
+  const frameMat = makeThreeMaterialForKey(door.materialKey, {
+    elementsById,
+    usage: 'openingFrame',
+    fallbackColor: paint?.categories.door.color ?? FALLBACK_COLOR,
+    fallbackRoughness: paint?.categories.door.roughness ?? 0.7,
+    fallbackMetalness: paint?.categories.door.metalness ?? 0.0,
+  }) as THREE.MeshStandardMaterial;
+  const panelMat = makeThreeMaterialForKey(door.materialKey, {
+    elementsById,
+    usage: 'openingFrame',
+    fallbackColor: paint?.categories.door.color ?? FALLBACK_COLOR,
+    fallbackRoughness: paint?.categories.door.roughness ?? 0.7,
+    fallbackMetalness: 0,
+  }) as THREE.MeshStandardMaterial;
 
   const op = resolveDoorOperationType(door);
   const slidingSide = door.slidingTrackSide ?? 'wall_face';

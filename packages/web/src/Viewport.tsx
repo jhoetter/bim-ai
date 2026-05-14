@@ -3989,7 +3989,7 @@ export function Viewport({
           if (!isElementVisibleUnderPhaseFilter(viewerPhaseFilter, e)) break;
           const lvl = curr[e.levelId];
           if (!lvl || lvl.kind !== 'level') break;
-          const { mesh } = buildMassMesh(e, lvl);
+          const { mesh } = buildMassMesh(e, lvl, curr);
           obj = mesh;
           break;
         }

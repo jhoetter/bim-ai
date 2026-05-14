@@ -303,13 +303,13 @@ export function makeSweepMesh(
     return new THREE.Group();
   }
 
-  const material = makeThreeMaterialForKey(
-    sweep.materialKey ?? null,
-    categoryColorOr(paint, 'wall'),
-    {
-      fallbackRoughness: paint?.categories.wall.roughness ?? 0.7,
-    },
-  );
+  const material = makeThreeMaterialForKey(sweep.materialKey ?? null, {
+    elementsById,
+    usage: 'generic',
+    fallbackColor: categoryColorOr(paint, 'wall'),
+    fallbackRoughness: paint?.categories.wall.roughness ?? 0.7,
+    fallbackMetalness: paint?.categories.wall.metalness ?? 0,
+  });
 
   const mesh = new THREE.Mesh(geom, material);
   mesh.scale.setScalar(0.001);
