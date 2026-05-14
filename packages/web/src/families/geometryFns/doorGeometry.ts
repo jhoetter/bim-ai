@@ -16,6 +16,15 @@ export type DoorGeomInput = {
 
 const FALLBACK_COLOR = '#cbd5e1';
 
+function materialSlot(
+  slots: Record<string, string | null> | null | undefined,
+  slot: string,
+): string | null | undefined {
+  const value = slots?.[slot];
+  if (typeof value === 'string') return value.trim() ? value : null;
+  return value;
+}
+
 function addEdges(mesh: THREE.Mesh): void {
   const edges = new THREE.EdgesGeometry(mesh.geometry, 15);
   const lines = new THREE.LineSegments(
@@ -368,14 +377,17 @@ export function buildDoorGeometry(input: DoorGeomInput): THREE.Group {
     panelThick: panelThickMm / 1000,
   };
 
-  const frameMat = makeThreeMaterialForKey(door.materialKey, {
+  const frameMaterialKey = materialSlot(door.materialSlots, 'frame') ?? door.materialKey;
+  const panelMaterialKey = materialSlot(door.materialSlots, 'panel') ?? door.materialKey;
+
+  const frameMat = makeThreeMaterialForKey(frameMaterialKey, {
     elementsById,
     usage: 'openingFrame',
     fallbackColor: paint?.categories.door.color ?? FALLBACK_COLOR,
     fallbackRoughness: paint?.categories.door.roughness ?? 0.7,
     fallbackMetalness: paint?.categories.door.metalness ?? 0.0,
   }) as THREE.MeshStandardMaterial;
-  const panelMat = makeThreeMaterialForKey(door.materialKey, {
+  const panelMat = makeThreeMaterialForKey(panelMaterialKey, {
     elementsById,
     usage: 'openingFrame',
     fallbackColor: paint?.categories.door.color ?? FALLBACK_COLOR,

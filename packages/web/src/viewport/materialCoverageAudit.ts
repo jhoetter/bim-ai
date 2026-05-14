@@ -143,6 +143,15 @@ function subcomponentFact(
   };
 }
 
+function materialSlot(
+  slots: Record<string, string | null> | null | undefined,
+  slot: string,
+): string | null | undefined {
+  const value = slots?.[slot];
+  if (typeof value === 'string') return value.trim() ? value : null;
+  return value;
+}
+
 function categoryFallback(element: Element): MaterialCoverageEntry {
   return {
     elementId: element.id,
@@ -280,31 +289,31 @@ export function auditElementMaterialCoverage(
       }
 
       case 'door': {
+        const frameKey = materialSlot(element.materialSlots, 'frame') ?? element.materialKey;
+        const panelKey = materialSlot(element.materialSlots, 'panel') ?? element.materialKey;
         const source = element.materialKey ? 'instance' : 'family-default';
-        const fact = materialFact(element.materialKey, source, elementsById);
+        const fact = materialFact(frameKey, source, elementsById);
         return [
-          entryForMaterial(element, fact, true, ['no-subcomponent-slots'], {
+          entryForMaterial(element, fact, true, [], {
             subcomponents: [
-              subcomponentFact('frame', element.materialKey, source, elementsById),
-              subcomponentFact('panel', element.materialKey, source, elementsById),
+              subcomponentFact('frame', frameKey, source, elementsById),
+              subcomponentFact('panel', panelKey, source, elementsById),
             ],
           }),
         ];
       }
 
       case 'window': {
+        const frameKey = materialSlot(element.materialSlots, 'frame') ?? element.materialKey;
+        const glassKey =
+          materialSlot(element.materialSlots, 'glass') ?? 'asset_clear_glass_double';
         const frameSource = element.materialKey ? 'instance' : 'family-default';
-        const fact = materialFact(element.materialKey, frameSource, elementsById);
+        const fact = materialFact(frameKey, frameSource, elementsById);
         return [
-          entryForMaterial(element, fact, true, ['no-subcomponent-slots'], {
+          entryForMaterial(element, fact, true, [], {
             subcomponents: [
-              subcomponentFact('frame', element.materialKey, frameSource, elementsById),
-              subcomponentFact(
-                'glass',
-                'asset_clear_glass_double',
-                'subcomponent-default',
-                elementsById,
-              ),
+              subcomponentFact('frame', frameKey, frameSource, elementsById),
+              subcomponentFact('glass', glassKey, 'subcomponent-default', elementsById),
             ],
           }),
         ];
@@ -422,4 +431,3 @@ export function summarizeMaterialCoverage(
     flags,
   };
 }
-

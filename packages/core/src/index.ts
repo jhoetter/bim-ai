@@ -1047,6 +1047,7 @@ export type Element =
       widthMm: number;
       familyTypeId?: string | null;
       materialKey?: string | null;
+      materialSlots?: Record<string, string | null>;
       hostCutDepthMm?: number | null;
       revealInteriorMm?: number | null;
       interlockGrade?: string | null;
@@ -1080,6 +1081,7 @@ export type Element =
       heightMm: number;
       familyTypeId?: string | null;
       materialKey?: string | null;
+      materialSlots?: Record<string, string | null>;
       hostCutDepthMm?: number | null;
       revealInteriorMm?: number | null;
       interlockGrade?: string | null;

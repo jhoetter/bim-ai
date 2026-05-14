@@ -149,7 +149,6 @@ describe('material coverage audit — RMP-01', () => {
 
     expect(entry?.source).toBe('instance');
     expect(entry?.materialKey).toBe('aluminium_dark_grey');
-    expect(entry?.flags).toContain('no-subcomponent-slots');
     expect(entry?.subcomponents).toEqual([
       expect.objectContaining({
         slot: 'frame',
@@ -162,6 +161,51 @@ describe('material coverage audit — RMP-01', () => {
         source: 'subcomponent-default',
         category: 'glass',
       }),
+    ]);
+  });
+
+  it('reports authored door and window material slots independently', () => {
+    const door: Extract<Element, { kind: 'door' }> = {
+      kind: 'door',
+      id: 'door1',
+      name: 'Door',
+      wallId: 'w1',
+      alongT: 0.4,
+      widthMm: 900,
+      materialKey: 'aluminium_dark_grey',
+      materialSlots: {
+        frame: 'aluminium_black',
+        panel: 'cladding_warm_wood',
+      },
+    };
+    const win: Extract<Element, { kind: 'window' }> = {
+      kind: 'window',
+      id: 'win1',
+      name: 'Window',
+      wallId: 'w1',
+      alongT: 0.6,
+      widthMm: 1200,
+      sillHeightMm: 900,
+      heightMm: 1400,
+      materialKey: 'aluminium_dark_grey',
+      materialSlots: {
+        frame: 'aluminium_natural',
+        glass: 'glass_obscured',
+      },
+    };
+
+    const audit = auditElementMaterialCoverage({ [door.id]: door, [win.id]: win });
+    const entries = byId(audit.entries);
+
+    expect(entries.door1?.materialKey).toBe('aluminium_black');
+    expect(entries.door1?.subcomponents).toEqual([
+      expect.objectContaining({ slot: 'frame', materialKey: 'aluminium_black' }),
+      expect.objectContaining({ slot: 'panel', materialKey: 'cladding_warm_wood' }),
+    ]);
+    expect(entries.win1?.materialKey).toBe('aluminium_natural');
+    expect(entries.win1?.subcomponents).toEqual([
+      expect.objectContaining({ slot: 'frame', materialKey: 'aluminium_natural' }),
+      expect.objectContaining({ slot: 'glass', materialKey: 'glass_obscured' }),
     ]);
   });
 
@@ -197,4 +241,3 @@ describe('material coverage audit — RMP-01', () => {
     expect(audit.summary.flags['non-rendered-by-design']).toBe(1);
   });
 });
-

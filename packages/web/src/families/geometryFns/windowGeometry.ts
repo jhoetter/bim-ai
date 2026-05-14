@@ -20,6 +20,15 @@ export type WindowGeomInput = {
 const FALLBACK_COLOR = '#cbd5e1';
 const FALLBACK_GLAZING = '#9fcbe2';
 
+function materialSlot(
+  slots: Record<string, string | null> | null | undefined,
+  slot: string,
+): string | null | undefined {
+  const value = slots?.[slot];
+  if (typeof value === 'string') return value.trim() ? value : null;
+  return value;
+}
+
 function readGlazingColor(): string {
   if (typeof document === 'undefined') return FALLBACK_GLAZING;
   try {
@@ -69,7 +78,10 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
   const depth = THREE.MathUtils.clamp(rawDepthMm / 1000, 0.06, 0.5);
   const frameSect = frameSectMm / 1000;
 
-  const frameMat = makeThreeMaterialForKey(win.materialKey, {
+  const frameMaterialKey = materialSlot(win.materialSlots, 'frame') ?? win.materialKey;
+  const glassMaterialKey = materialSlot(win.materialSlots, 'glass') ?? 'asset_clear_glass_double';
+
+  const frameMat = makeThreeMaterialForKey(frameMaterialKey, {
     elementsById,
     usage: 'openingFrame',
     fallbackColor: paint?.categories.window.color ?? FALLBACK_COLOR,
@@ -80,7 +92,7 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
   const group = new THREE.Group();
   group.userData.bimPickId = win.id;
 
-  const glazingMat = makeThreeMaterialForKey('asset_clear_glass_double', {
+  const glazingMat = makeThreeMaterialForKey(glassMaterialKey, {
     elementsById,
     usage: 'generic',
     fallbackColor: readGlazingColor(),

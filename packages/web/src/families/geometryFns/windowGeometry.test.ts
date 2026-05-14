@@ -127,6 +127,30 @@ describe('buildWindowGeometry — rectangular regression', () => {
     expect(glass!.children.some((child) => child instanceof THREE.LineSegments)).toBe(true);
   });
 
+  it('uses separate frame and glass material slots when authored', () => {
+    const grp = buildWindowGeometry({
+      win: win({
+        materialKey: 'aluminium_dark_grey',
+        materialSlots: {
+          frame: 'cladding_warm_wood',
+          glass: 'glass_obscured',
+        },
+      }),
+      wall: baseWall,
+      elevM: 0,
+      paint: null,
+      familyDef: undefined,
+      elementsById: els(),
+    });
+    const materialKeys = new Set(
+      meshes(grp).map((mesh) => (mesh.material as THREE.Material).userData.materialKey),
+    );
+
+    expect(materialKeys.has('cladding_warm_wood')).toBe(true);
+    expect(materialKeys.has('glass_obscured')).toBe(true);
+    expect(materialKeys.has('aluminium_dark_grey')).toBe(false);
+  });
+
   it('default (no outlineKind) renders the rectangular path', () => {
     const grpA = buildWindowGeometry({
       win: win(),

@@ -56,6 +56,32 @@ describe('resolveDoorOperationType', () => {
 });
 
 describe('buildDoorGeometry — KRN-13 operationType branching', () => {
+  it('uses separate frame and panel material slots when authored', () => {
+    const grp = buildDoorGeometry({
+      door: door({
+        materialKey: 'aluminium_dark_grey',
+        materialSlots: {
+          frame: 'aluminium_black',
+          panel: 'cladding_warm_wood',
+        },
+      }),
+      wall: baseWall,
+      elevM: 0,
+      paint: null,
+      familyDef: undefined,
+    });
+    const materialKeys = new Set<string | null>();
+    grp.traverse((node) => {
+      if (node instanceof THREE.Mesh) {
+        materialKeys.add((node.material as THREE.Material).userData.materialKey ?? null);
+      }
+    });
+
+    expect(materialKeys.has('aluminium_black')).toBe(true);
+    expect(materialKeys.has('cladding_warm_wood')).toBe(true);
+    expect(materialKeys.has('aluminium_dark_grey')).toBe(false);
+  });
+
   it('default (no operationType) renders identically to swing_single', () => {
     const def = buildDoorGeometry({
       door: door(),

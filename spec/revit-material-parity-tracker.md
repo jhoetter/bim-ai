@@ -315,6 +315,17 @@ Commit rule:
 
 - Split by element category: windows/doors first, then stairs/railings, then generic family instances.
 
+Evidence:
+
+- Added `materialSlots?: Record<string, string | null>` to door and window core element contracts.
+- Added `material_slots` / `materialSlots` persistence fields to Python `DoorElem` and `WindowElem`.
+- Window geometry now resolves `materialSlots.frame` and `materialSlots.glass` independently before falling back to legacy `materialKey` and default glass.
+- Door geometry now resolves `materialSlots.frame` and `materialSlots.panel` independently before falling back to legacy `materialKey`.
+- Material coverage audit now reports authored door/window frame, panel, and glass slots independently.
+- Verification:
+  - `pnpm --filter @bim-ai/web exec vitest run src/families/geometryFns/windowGeometry.test.ts src/families/geometryFns/doorGeometry.test.ts src/viewport/materialCoverageAudit.test.ts src/viewport/glassMaterial.test.ts`
+  - `pnpm --filter @bim-ai/web typecheck` was attempted but blocked by unrelated dirty `src/viewport/ViewCube.tsx` errors in the workspace.
+
 ## RMP-06 — Material Assignment UI Parity
 
 Priority: `P1`
