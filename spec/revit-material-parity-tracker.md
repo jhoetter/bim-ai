@@ -57,7 +57,7 @@ The current repo has strong foundations but incomplete parity:
 | RMP-03 | Opening And Host Cut Visual Correctness | Open | P0 | Windows/doors/openings show real holes, glass remains transparent, and no wall skin fills the pane. |
 | RMP-04 | Procedural Appearance Calibration | Open | P0 | Common materials look credible in Realistic without external maps. |
 | RMP-05 | Subcomponent Material Model | In Progress | P0 | Doors/windows/stairs/railings/families expose frame, panel, glass, tread, rail, baluster, hardware material slots. |
-| RMP-06 | Material Assignment UI Parity | Open | P1 | Inspector and browser explain exactly what target will change before assignment. |
+| RMP-06 | Material Assignment UI Parity | Done | P1 | Inspector and browser explain exactly what target will change before assignment. |
 | RMP-07 | Graphics Asset Binding | Open | P1 | Plans, elevations, sections, and schedules use material graphics assets consistently. |
 | RMP-08 | Appearance Asset Editing And Preview | Open | P1 | Users can edit color, maps, relief, scale, opacity, roughness, and see representative previews. |
 | RMP-09 | Texture Alignment And Paint Tools | Open | P1 | Per-face paint and texture alignment behave like finish overrides, not type mutation. |
@@ -232,7 +232,7 @@ Evidence:
 
 Priority: `P0`
 
-Status: `Open`
+Status: `Done`
 
 Problem:
 
@@ -366,6 +366,18 @@ Acceptance:
 - A user can tell why a wall shows type exterior material instead of instance material.
 - A room selection does not mislead users into thinking rooms own wall materials.
 - Multi-selection does not accidentally mutate unrelated types.
+
+Evidence:
+
+- Material Browser and Appearance Asset Browser now show an explicit `Target: ...` chip before assignment.
+- Workspace material assignment now preserves a concrete active target through browser open/assign/close instead of re-resolving only the selected element at click time.
+- Inspector material slot rows now expose door frame/panel/hardware/threshold, window frame/sash/glass/spacer/hardware/shading, stair tread/riser/stringer/landing/support/nosing, and railing topRail/handrail/post/baluster/panel/cable/bracket targets.
+- Slot assignment writes `materialSlots` through `updateElementProperty`, preserving existing slots and updating only the selected slot.
+- Kernel property dispatch now accepts `materialSlots` updates for doors, windows, stairs, and railings.
+- Verification:
+  - `pnpm --filter @bim-ai/web exec vitest run src/workspace/inspector/InspectorContent.test.tsx src/familyEditor/MaterialBrowserDialog.test.tsx src/viewport/materialCoverageAudit.test.ts src/viewport/meshBuilders.multiRunStair.test.ts src/viewport/meshBuilders.railingMaterials.test.ts`
+  - `pnpm --filter @bim-ai/web typecheck`
+  - `PYTEST_ADDOPTS=--no-cov pytest -q app/tests/test_update_element_property_door_material.py`
 
 ## RMP-07 — Graphics Asset Binding
 

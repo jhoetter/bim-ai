@@ -17,6 +17,7 @@ from bim_ai.engine import (
     PlanViewElem,
     PlacedAssetElem,
     ProjectSettingsElem,
+    RailingElem,
     RoofElem,
     RoofGeometryMode,
     RoofTypeElem,
@@ -25,6 +26,7 @@ from bim_ai.engine import (
     SaveViewpointCmd,
     ScheduleElem,
     SheetElem,
+    StairElem,
     UpdateElementPropertyCmd,
     UpsertFloorTypeCmd,
     UpsertProjectSettingsCmd,
@@ -53,6 +55,20 @@ from bim_ai.engine import (
     parse_plan_category_graphics_property_json,
 )
 from bim_ai.elements import ProjectBasePointElem, SurveyPointElem, Vec3Mm
+
+
+def _material_slots_val(v: object) -> dict[str, str | None] | None:
+    if v in (None, ""):
+        return None
+    if not isinstance(v, dict):
+        raise ValueError("materialSlots must be a JSON object or empty")
+    out: dict[str, str | None] = {}
+    for raw_key, raw_value in v.items():
+        key = str(raw_key).strip()
+        if not key:
+            continue
+        out[key] = str(raw_value).strip() if raw_value is not None else None
+    return out
 
 
 def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
@@ -504,6 +520,10 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     els[cmd.element_id] = el.model_copy(update={"family_type_id": raw_v or None})
                 elif cmd.key == "materialKey":
                     els[cmd.element_id] = el.model_copy(update={"material_key": raw_v or None})
+                elif cmd.key == "materialSlots":
+                    els[cmd.element_id] = el.model_copy(
+                        update={"material_slots": _material_slots_val(cmd.value)}
+                    )
                 elif cmd.key == "operationType" and isinstance(el, DoorElem):
                     if not raw_v:
                         els[cmd.element_id] = el.model_copy(update={"operation_type": None})
@@ -557,12 +577,26 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                         els[cmd.element_id] = el.model_copy(update={"attached_roof_id": raw_v})
                 elif isinstance(el, DoorElem):
                     raise ValueError(
-                        "door updates: key=familyTypeId | materialKey | operationType | slidingTrackSide | name"
+                        "door updates: key=familyTypeId | materialKey | materialSlots | operationType | slidingTrackSide | name"
                     )
                 else:
                     raise ValueError(
-                        "window updates: key=familyTypeId | materialKey | outlineKind | attachedRoofId | name"
+                        "window updates: key=familyTypeId | materialKey | materialSlots | outlineKind | attachedRoofId | name"
                     )
+            elif isinstance(el, StairElem):
+                if cmd.key == "materialSlots":
+                    els[cmd.element_id] = el.model_copy(
+                        update={"material_slots": _material_slots_val(cmd.value)}
+                    )
+                else:
+                    raise ValueError("stair updates: key=materialSlots")
+            elif isinstance(el, RailingElem):
+                if cmd.key == "materialSlots":
+                    els[cmd.element_id] = el.model_copy(
+                        update={"material_slots": _material_slots_val(cmd.value)}
+                    )
+                else:
+                    raise ValueError("railing updates: key=materialSlots")
             elif isinstance(el, ScheduleElem):
                 raw_s = cmd.value.strip()
                 if cmd.key == "sheetId":

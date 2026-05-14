@@ -38,6 +38,16 @@ interface FieldRowProps {
   mono?: boolean;
 }
 
+export type MaterialBrowserTargetRequest = {
+  kind: 'material-slot';
+  elementId: string;
+  slot: string;
+  label: string;
+  currentKey?: string | null;
+};
+
+type OpenMaterialBrowser = (target?: MaterialBrowserTargetRequest) => void;
+
 export function FieldRow({ label, value, mono }: FieldRowProps): JSX.Element {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-border py-1.5 last:border-b-0">
@@ -83,6 +93,7 @@ function MaterialAssignmentRow({
   materialKey,
   fallback,
   elementsById,
+  assignmentTarget,
   onOpenMaterialBrowser,
   onOpenAppearanceAssetBrowser,
 }: {
@@ -90,8 +101,9 @@ function MaterialAssignmentRow({
   materialKey: string | null | undefined;
   fallback: string;
   elementsById?: Record<string, Element>;
-  onOpenMaterialBrowser?: () => void;
-  onOpenAppearanceAssetBrowser?: () => void;
+  assignmentTarget?: MaterialBrowserTargetRequest;
+  onOpenMaterialBrowser?: OpenMaterialBrowser;
+  onOpenAppearanceAssetBrowser?: OpenMaterialBrowser;
 }): JSX.Element {
   return (
     <div className="flex items-center justify-between gap-2 border-b border-border py-1.5 last:border-b-0">
@@ -105,7 +117,7 @@ function MaterialAssignmentRow({
             type="button"
             data-testid="inspector-material-row-browser"
             className="shrink-0 rounded border border-border px-2 py-0.5 text-[10px] text-muted hover:text-foreground"
-            onClick={onOpenMaterialBrowser}
+            onClick={() => onOpenMaterialBrowser(assignmentTarget)}
           >
             Materials...
           </button>
@@ -115,7 +127,7 @@ function MaterialAssignmentRow({
             type="button"
             data-testid="inspector-material-row-appearance"
             className="shrink-0 rounded border border-border px-2 py-0.5 text-[10px] text-muted hover:text-foreground"
-            onClick={onOpenAppearanceAssetBrowser}
+            onClick={() => onOpenAppearanceAssetBrowser(assignmentTarget)}
           >
             Assets...
           </button>
@@ -133,8 +145,8 @@ function GenericMaterialAssignmentFor({
 }: {
   el: Element;
   elementsById?: Record<string, Element>;
-  onOpenMaterialBrowser?: () => void;
-  onOpenAppearanceAssetBrowser?: () => void;
+  onOpenMaterialBrowser?: OpenMaterialBrowser;
+  onOpenAppearanceAssetBrowser?: OpenMaterialBrowser;
 }): JSX.Element | null {
   switch (el.kind) {
     case 'toposolid':
@@ -166,6 +178,62 @@ function GenericMaterialAssignmentFor({
     default:
       return null;
   }
+}
+
+function slotMaterialKey(
+  slots: Record<string, string | null> | null | undefined,
+  slot: string,
+): string | null {
+  const value = slots?.[slot];
+  return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function MaterialSlotsSection({
+  title = 'Material Slots',
+  elementId,
+  slots,
+  rows,
+  elementsById,
+  onOpenMaterialBrowser,
+  onOpenAppearanceAssetBrowser,
+}: {
+  title?: string;
+  elementId: string;
+  slots: Record<string, string | null> | null | undefined;
+  rows: { slot: string; label: string; fallback?: string }[];
+  elementsById?: Record<string, Element>;
+  onOpenMaterialBrowser?: OpenMaterialBrowser;
+  onOpenAppearanceAssetBrowser?: OpenMaterialBrowser;
+}): JSX.Element {
+  return (
+    <div className="border-t border-border pt-1">
+      <div className="px-0 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
+        {title}
+      </div>
+      {rows.map((row) => {
+        const materialKey = slotMaterialKey(slots, row.slot);
+        const target: MaterialBrowserTargetRequest = {
+          kind: 'material-slot',
+          elementId,
+          slot: row.slot,
+          label: row.label,
+          currentKey: materialKey,
+        };
+        return (
+          <MaterialAssignmentRow
+            key={row.slot}
+            label={row.label}
+            materialKey={materialKey}
+            fallback={row.fallback ?? 'By family/category'}
+            elementsById={elementsById}
+            assignmentTarget={target}
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
+        );
+      })}
+    </div>
+  );
 }
 
 function wallTypeExteriorMaterialKey(
@@ -454,8 +522,8 @@ export function InspectorPropertiesFor(
     onMonitorReconcile?: (elementId: string, mode: 'accept_source' | 'keep_host') => void;
     onDisciplineChange?: (discipline: DisciplineTag | null) => void;
     onEditType?: (typeId: string) => void;
-    onOpenMaterialBrowser?: () => void;
-    onOpenAppearanceAssetBrowser?: () => void;
+    onOpenMaterialBrowser?: OpenMaterialBrowser;
+    onOpenAppearanceAssetBrowser?: OpenMaterialBrowser;
   },
 ): JSX.Element {
   const elementsById = options?.elementsById ?? {};
@@ -660,6 +728,19 @@ export function InspectorPropertiesFor(
             onOpenMaterialBrowser={onOpenMaterialBrowser}
             onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
           />
+          <MaterialSlotsSection
+            elementId={el.id}
+            slots={el.materialSlots}
+            rows={[
+              { slot: 'frame', label: 'Frame' },
+              { slot: 'panel', label: 'Panel' },
+              { slot: 'hardware', label: 'Hardware' },
+              { slot: 'threshold', label: 'Threshold' },
+            ]}
+            elementsById={elementsById}
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
           <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
           <FieldRow label={f('wall')} value={resolveElName(el.wallId, elementsById)} />
           <FieldRow label={f('alongT')} value={el.alongT.toFixed(3)} mono />
@@ -673,6 +754,21 @@ export function InspectorPropertiesFor(
             label="Material"
             materialKey={el.materialKey ?? null}
             fallback="By family/category"
+            elementsById={elementsById}
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
+          <MaterialSlotsSection
+            elementId={el.id}
+            slots={el.materialSlots}
+            rows={[
+              { slot: 'frame', label: 'Frame' },
+              { slot: 'sash', label: 'Sash' },
+              { slot: 'glass', label: 'Glass', fallback: 'Default clear glass' },
+              { slot: 'spacer', label: 'Spacer' },
+              { slot: 'hardware', label: 'Hardware' },
+              { slot: 'shading', label: 'Shading' },
+            ]}
             elementsById={elementsById}
             onOpenMaterialBrowser={onOpenMaterialBrowser}
             onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
@@ -871,6 +967,21 @@ export function InspectorPropertiesFor(
           </div>
           <FieldRow label={f('baseLevel')} value={resolveElName(el.baseLevelId, elementsById)} />
           <FieldRow label={f('topLevel')} value={resolveElName(el.topLevelId, elementsById)} />
+          <MaterialSlotsSection
+            elementId={el.id}
+            slots={el.materialSlots}
+            rows={[
+              { slot: 'tread', label: 'Tread' },
+              { slot: 'riser', label: 'Riser' },
+              { slot: 'stringer', label: 'Stringer' },
+              { slot: 'landing', label: 'Landing' },
+              { slot: 'support', label: 'Support' },
+              { slot: 'nosing', label: 'Nosing' },
+            ]}
+            elementsById={elementsById}
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
           {onDisciplineChange ? (
             <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
           ) : null}
@@ -1185,6 +1296,22 @@ export function InspectorPropertiesFor(
             />
           </div>
           <FieldRow label="Path Vertices" value={String(el.pathMm.length)} mono />
+          <MaterialSlotsSection
+            elementId={el.id}
+            slots={el.materialSlots}
+            rows={[
+              { slot: 'topRail', label: 'Top rail' },
+              { slot: 'handrail', label: 'Handrail' },
+              { slot: 'post', label: 'Post' },
+              { slot: 'baluster', label: 'Baluster' },
+              { slot: 'panel', label: 'Panel' },
+              { slot: 'cable', label: 'Cable' },
+              { slot: 'bracket', label: 'Bracket' },
+            ]}
+            elementsById={elementsById}
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
         </div>
       );
     }
@@ -2415,8 +2542,8 @@ export function InspectorDoorEditor({
   onCreateType?: (baseFamilyId: string, name: string, params: Record<string, unknown>) => void;
   onDuplicateType?: (familyTypeId: string | null | undefined) => void;
   onDisciplineChange?: (discipline: DisciplineTag | null) => void;
-  onOpenMaterialBrowser?: () => void;
-  onOpenAppearanceAssetBrowser?: () => void;
+  onOpenMaterialBrowser?: OpenMaterialBrowser;
+  onOpenAppearanceAssetBrowser?: OpenMaterialBrowser;
 }): JSX.Element {
   const { t } = useTranslation();
   const f = (key: string) => t(`inspector.fields.${key}`);
@@ -2501,6 +2628,20 @@ export function InspectorDoorEditor({
         label="Material"
         materialKey={el.materialKey ?? null}
         fallback="By family/category"
+        elementsById={elementsById}
+        onOpenMaterialBrowser={onOpenMaterialBrowser}
+        onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+      />
+      <MaterialSlotsSection
+        elementId={el.id}
+        slots={el.materialSlots}
+        rows={[
+          { slot: 'frame', label: 'Frame' },
+          { slot: 'panel', label: 'Panel' },
+          { slot: 'hardware', label: 'Hardware' },
+          { slot: 'threshold', label: 'Threshold' },
+        ]}
+        elementsById={elementsById}
         onOpenMaterialBrowser={onOpenMaterialBrowser}
         onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
       />
@@ -2533,8 +2674,8 @@ export function InspectorWindowEditor({
   onCreateType?: (baseFamilyId: string, name: string, params: Record<string, unknown>) => void;
   onDuplicateType?: (familyTypeId: string | null | undefined) => void;
   onDisciplineChange?: (discipline: DisciplineTag | null) => void;
-  onOpenMaterialBrowser?: () => void;
-  onOpenAppearanceAssetBrowser?: () => void;
+  onOpenMaterialBrowser?: OpenMaterialBrowser;
+  onOpenAppearanceAssetBrowser?: OpenMaterialBrowser;
 }): JSX.Element {
   const { t } = useTranslation();
   const f = (key: string) => t(`inspector.fields.${key}`);
@@ -2610,6 +2751,22 @@ export function InspectorWindowEditor({
         label="Material"
         materialKey={el.materialKey ?? null}
         fallback="By family/category"
+        elementsById={elementsById}
+        onOpenMaterialBrowser={onOpenMaterialBrowser}
+        onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+      />
+      <MaterialSlotsSection
+        elementId={el.id}
+        slots={el.materialSlots}
+        rows={[
+          { slot: 'frame', label: 'Frame' },
+          { slot: 'sash', label: 'Sash' },
+          { slot: 'glass', label: 'Glass', fallback: 'Default clear glass' },
+          { slot: 'spacer', label: 'Spacer' },
+          { slot: 'hardware', label: 'Hardware' },
+          { slot: 'shading', label: 'Shading' },
+        ]}
+        elementsById={elementsById}
         onOpenMaterialBrowser={onOpenMaterialBrowser}
         onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
       />

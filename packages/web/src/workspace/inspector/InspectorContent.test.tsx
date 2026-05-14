@@ -91,6 +91,30 @@ describe('InspectorPropertiesFor — spec §13', () => {
     expect(getByText('0.500')).toBeTruthy();
   });
 
+  it('opens material browser with an explicit door slot target', () => {
+    const onOpenMaterialBrowser = vi.fn();
+    const { getByText, getAllByTestId } = render(
+      InspectorPropertiesFor(
+        {
+          ...door,
+          materialSlots: { frame: 'aluminium_black' },
+        } as Extract<Element, { kind: 'door' }>,
+        t,
+        { onOpenMaterialBrowser },
+      ),
+    );
+
+    expect(getByText('Material Slots')).toBeTruthy();
+    fireEvent.click(getAllByTestId('inspector-material-row-browser')[1]!);
+    expect(onOpenMaterialBrowser).toHaveBeenCalledWith({
+      kind: 'material-slot',
+      elementId: 'seed-d-1',
+      slot: 'frame',
+      label: 'Frame',
+      currentKey: 'aluminium_black',
+    });
+  });
+
   it('renders stair risers/treads', () => {
     const { getByLabelText } = render(InspectorPropertiesFor(stair, t));
     expect((getByLabelText('Stair riser height in millimetres') as HTMLInputElement).value).toBe(

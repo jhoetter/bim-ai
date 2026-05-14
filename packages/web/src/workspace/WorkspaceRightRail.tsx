@@ -34,6 +34,7 @@ import {
   InspectorPropertiesFor,
   InspectorRoomEditor,
   type InspectorSelection,
+  type MaterialBrowserTargetRequest,
   InspectorViewpointEditor,
   InspectorViewTemplateEditor,
   InspectorWindowEditor,
@@ -261,36 +262,71 @@ function familyInstanceSiblingTypes(
     );
 }
 
-function resolveMaterialEditableType(
+type MaterialEditableType = Extract<Element, { kind: 'wall_type' | 'floor_type' | 'roof_type' }>;
+type MaterialEditableInstance = Extract<
+  Element,
+  {
+    kind:
+      | 'toposolid'
+      | 'toposolid_subdivision'
+      | 'wall'
+      | 'door'
+      | 'window'
+      | 'roof'
+      | 'column'
+      | 'beam'
+      | 'text_3d'
+      | 'sweep'
+      | 'mass'
+      | 'pipe';
+  }
+>;
+
+function hasInstanceMaterialKey(element: Element): element is MaterialEditableInstance {
+  switch (element.kind) {
+    case 'toposolid':
+    case 'toposolid_subdivision':
+    case 'wall':
+    case 'door':
+    case 'window':
+    case 'roof':
+    case 'column':
+    case 'beam':
+    case 'text_3d':
+    case 'sweep':
+    case 'mass':
+    case 'pipe':
+      return true;
+    default:
+      return false;
+  }
+}
+
+function hasMaterialEditableTarget(
   element: Element,
   elementsById: Record<string, Element>,
-): Extract<Element, { kind: 'wall_type' | 'floor_type' | 'roof_type' }> | null {
+): boolean {
   if (
     element.kind === 'wall_type' ||
     element.kind === 'floor_type' ||
     element.kind === 'roof_type'
   ) {
-    return element;
+    return true;
   }
-  if (element.kind === 'wall') {
-    const typeId = element.wallTypeId;
-    if (!typeId) return null;
-    const type = elementsById[typeId];
-    return type?.kind === 'wall_type' ? type : null;
+  if (element.kind === 'wall' && element.wallTypeId) {
+    return elementsById[element.wallTypeId]?.kind === 'wall_type';
   }
+  if (element.kind === 'roof' && element.roofTypeId) {
+    return elementsById[element.roofTypeId]?.kind === 'roof_type';
+  }
+  if (hasInstanceMaterialKey(element)) return true;
   if (element.kind === 'floor') {
     const typeId = element.floorTypeId;
-    if (!typeId) return null;
+    if (!typeId) return false;
     const type = elementsById[typeId];
-    return type?.kind === 'floor_type' ? type : null;
+    return type?.kind === 'floor_type';
   }
-  if (element.kind === 'roof') {
-    const typeId = element.roofTypeId;
-    if (!typeId) return null;
-    const type = elementsById[typeId];
-    return type?.kind === 'roof_type' ? type : null;
-  }
-  return null;
+  return false;
 }
 
 export function WorkspaceRightRail({
@@ -311,8 +347,8 @@ export function WorkspaceRightRail({
   activeViewTargetId?: string;
   lensMode?: LensMode;
   surface: 'view-context' | 'element';
-  onOpenMaterialBrowser?: () => void;
-  onOpenAppearanceAssetBrowser?: () => void;
+  onOpenMaterialBrowser?: (target?: MaterialBrowserTargetRequest) => void;
+  onOpenAppearanceAssetBrowser?: (target?: MaterialBrowserTargetRequest) => void;
 }): JSX.Element {
   const { t } = useTranslation();
   const selectedId = useBimStore((s) => s.selectedId);
@@ -1053,6 +1089,8 @@ export function WorkspaceRightRail({
                         );
                       }}
                       onDisciplineChange={handleDisciplineChange}
+                      onOpenMaterialBrowser={onOpenMaterialBrowser}
+                      onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
                     />
                   ) : el.kind === 'window' ? (
                     <InspectorWindowEditor
@@ -1102,6 +1140,8 @@ export function WorkspaceRightRail({
                         );
                       }}
                       onDisciplineChange={handleDisciplineChange}
+                      onOpenMaterialBrowser={onOpenMaterialBrowser}
+                      onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
                     />
                   ) : el.kind === 'project_settings' ? (
                     <InspectorProjectSettingsEditor
@@ -1128,6 +1168,8 @@ export function WorkspaceRightRail({
                           }),
                         onDisciplineChange: handleDisciplineChange,
                         onEditType: (typeId) => select(typeId),
+                        onOpenMaterialBrowser,
+                        onOpenAppearanceAssetBrowser,
                       })}
                       <WallJoinDisallowSection
                         wall={el}
@@ -1200,6 +1242,8 @@ export function WorkspaceRightRail({
                       el={el as Extract<Element, { kind: 'column' }>}
                       onSemanticCommand={onSemanticCommand}
                       t={t}
+                      onOpenMaterialBrowser={onOpenMaterialBrowser}
+                      onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
                     />
                   ) : (
                     InspectorPropertiesFor(el, t, {
@@ -1218,6 +1262,8 @@ export function WorkspaceRightRail({
                       },
                       onDisciplineChange: handleDisciplineChange,
                       onEditType: (typeId) => select(typeId),
+                      onOpenMaterialBrowser,
+                      onOpenAppearanceAssetBrowser,
                     })
                   )}
                   {activePlanViewId && (
@@ -1520,9 +1566,7 @@ function SelectionTabs({
   return (
     <div className="border-b border-border bg-surface" data-testid="element-selection-tabs">
       <div className="flex items-center justify-between gap-2 px-3 pt-2">
-        <div className="min-w-0 text-[11px] font-medium text-muted">
-          {elements.length} selected
-        </div>
+        <div className="min-w-0 text-[11px] font-medium text-muted">{elements.length} selected</div>
         <button
           type="button"
           className="shrink-0 rounded border border-border px-2 py-1 text-[11px] text-muted hover:text-foreground"
@@ -2323,11 +2367,11 @@ function InspectorContextActions({
   onDuplicateType: (element: DuplicableTypeElement) => void;
   onResetSavedView: () => void;
   onUpdateSavedView: () => void;
-  onOpenMaterialBrowser?: () => void;
-  onOpenAppearanceAssetBrowser?: () => void;
+  onOpenMaterialBrowser?: (target?: MaterialBrowserTargetRequest) => void;
+  onOpenAppearanceAssetBrowser?: (target?: MaterialBrowserTargetRequest) => void;
 }): JSX.Element | null {
   const buttons: JSX.Element[] = [];
-  const materialType = resolveMaterialEditableType(element, elementsById);
+  const hasMaterialTarget = hasMaterialEditableTarget(element, elementsById);
 
   if (onNavigateToElement && NAVIGABLE_KINDS.has(element.kind)) {
     buttons.push(
@@ -2370,28 +2414,28 @@ function InspectorContextActions({
     );
   }
 
-  if (materialType && onOpenMaterialBrowser) {
+  if (hasMaterialTarget && onOpenMaterialBrowser) {
     buttons.push(
       <button
         key="open-material-browser"
         type="button"
         data-testid="inspector-open-material-browser"
         className="rounded border border-border bg-background px-2 py-1 text-[11px] text-foreground hover:bg-surface"
-        onClick={onOpenMaterialBrowser}
+        onClick={() => onOpenMaterialBrowser()}
       >
         Materials…
       </button>,
     );
   }
 
-  if (materialType && onOpenAppearanceAssetBrowser) {
+  if (hasMaterialTarget && onOpenAppearanceAssetBrowser) {
     buttons.push(
       <button
         key="open-appearance-asset-browser"
         type="button"
         data-testid="inspector-open-appearance-asset-browser"
         className="rounded border border-border bg-background px-2 py-1 text-[11px] text-foreground hover:bg-surface"
-        onClick={onOpenAppearanceAssetBrowser}
+        onClick={() => onOpenAppearanceAssetBrowser()}
       >
         Appearance Assets…
       </button>,
@@ -3016,10 +3060,14 @@ function ColumnInspector({
   el,
   onSemanticCommand,
   t,
+  onOpenMaterialBrowser,
+  onOpenAppearanceAssetBrowser,
 }: {
   el: Extract<Element, { kind: 'column' }>;
   onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
   t: ReturnType<typeof useTranslation>['t'];
+  onOpenMaterialBrowser?: (target?: MaterialBrowserTargetRequest) => void;
+  onOpenAppearanceAssetBrowser?: (target?: MaterialBrowserTargetRequest) => void;
 }): JSX.Element {
   const dxRef = useRef<HTMLInputElement | null>(null);
   const dyRef = useRef<HTMLInputElement | null>(null);
@@ -3033,6 +3081,8 @@ function ColumnInspector({
             key: property,
             value,
           }),
+        onOpenMaterialBrowser,
+        onOpenAppearanceAssetBrowser,
       })}
       <div
         className="border-t border-border pt-2 space-y-1"
