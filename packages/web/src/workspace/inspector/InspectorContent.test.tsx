@@ -59,6 +59,32 @@ describe('InspectorPropertiesFor — spec §13', () => {
     expect(getByText('2.80 m')).toBeTruthy();
   });
 
+  it('shows the type exterior material for typed walls instead of stale instance material', () => {
+    const wallType: Extract<Element, { kind: 'wall_type' }> = {
+      kind: 'wall_type',
+      id: 'wall-type-clad',
+      name: 'Vertical clad external wall',
+      layers: [
+        { function: 'finish', materialKey: 'cladding_dark_grey', thicknessMm: 18 },
+        { function: 'structure', materialKey: 'timber_frame_insulation', thicknessMm: 140 },
+      ],
+    };
+    const typedWall: Extract<Element, { kind: 'wall' }> = {
+      ...wall,
+      wallTypeId: wallType.id,
+      materialKey: 'timber_frame_insulation',
+    };
+    const { getByText, queryByText } = render(
+      InspectorPropertiesFor(typedWall, t, {
+        elementsById: { [wallType.id]: wallType },
+      }),
+    );
+
+    expect(getByText('Type Exterior Material')).toBeTruthy();
+    expect(getByText('Dark-grey cladding')).toBeTruthy();
+    expect(queryByText('Instance Material')).toBeNull();
+  });
+
   it('renders door alongT and width', () => {
     const { getByText } = render(InspectorPropertiesFor(door, t));
     expect(getByText('900 mm')).toBeTruthy();

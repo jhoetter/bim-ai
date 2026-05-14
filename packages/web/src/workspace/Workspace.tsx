@@ -414,6 +414,14 @@ function resolveMaterialEditableTarget(
   ) {
     return { kind: 'type-layer', element: selected };
   }
+  if (selected.kind === 'wall' && selected.wallTypeId) {
+    const type = elementsById[selected.wallTypeId];
+    return type?.kind === 'wall_type' ? { kind: 'type-layer', element: type } : null;
+  }
+  if (selected.kind === 'roof' && selected.roofTypeId) {
+    const type = elementsById[selected.roofTypeId];
+    return type?.kind === 'roof_type' ? { kind: 'type-layer', element: type } : null;
+  }
   if (hasInstanceMaterialTarget(selected)) {
     return {
       kind: 'instance',

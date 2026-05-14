@@ -574,6 +574,15 @@ export function makeFloorSlabMesh(
 
 // ─── Roof geometry helpers ────────────────────────────────────────────────────
 
+function roofSurfaceMaterialKey(
+  roof: Extract<Element, { kind: 'roof' }>,
+  elementsById: Record<string, Element>,
+): string | null | undefined {
+  const roofType = roof.roofTypeId ? elementsById[roof.roofTypeId] : undefined;
+  if (roofType?.kind === 'roof_type') return roofType.layers[0]?.materialKey ?? roof.materialKey;
+  return roof.materialKey;
+}
+
 export type XYPt = { xMm: number; yMm: number };
 
 /**
@@ -1692,12 +1701,13 @@ export function makeRoofMassMesh(
     geom = _dormerCutFn(geom, roof, elementsById, refElev);
   }
 
+  const roofMaterialKey = roofSurfaceMaterialKey(roof, elementsById);
   const mesh = new THREE.Mesh(
     geom,
-    makeThreeMaterialForKey(roof.materialKey, {
+    makeThreeMaterialForKey(roofMaterialKey, {
       elementsById,
       usage: 'roofTop',
-      uvTransform: materialUvTransformForExtent(roof.materialKey, {
+      uvTransform: materialUvTransformForExtent(roofMaterialKey, {
         elementsById,
         extentMm: {
           uMm: Math.max(b.maxX - b.minX, b.maxZ - b.minZ) * 1000,
@@ -1705,9 +1715,9 @@ export function makeRoofMassMesh(
         },
       }),
       fallbackColor:
-        roof.materialKey ??
+        roofMaterialKey ??
         (roof.roofGeometryMode === 'flat' ? '#d8d8d4' : categoryColorOr(paint, 'roof')),
-      fallbackRoughness: roof.materialKey ? 0.9 : (paint?.categories.roof.roughness ?? 0.74),
+      fallbackRoughness: roofMaterialKey ? 0.9 : (paint?.categories.roof.roughness ?? 0.74),
       fallbackMetalness: paint?.categories.roof.metalness ?? 0.0,
       side: THREE.DoubleSide,
     }),
@@ -1721,7 +1731,7 @@ export function makeRoofMassMesh(
   // gable-end vertices) get edge lines.
   addEdges(mesh, 30);
 
-  if (isStandingSeamMetalKey(roof.materialKey)) {
+  if (isStandingSeamMetalKey(roofMaterialKey)) {
     addStandingSeamPattern(mesh, roof, b, eaveY, undefined, undefined, elementsById);
   }
   return mesh;

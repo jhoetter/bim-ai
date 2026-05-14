@@ -392,7 +392,6 @@ function csgWallSurfaceMaterialKey(
 ): string | null | undefined {
   const exteriorOverride = resolveFaceMaterialOverride(wall.faceMaterialOverrides, 'exterior');
   if (exteriorOverride?.materialKey) return exteriorOverride.materialKey;
-  if (wall.materialKey) return wall.materialKey;
   if (!wall.wallTypeId) return wall.materialKey;
   const assembly = resolveWallTypeAssembly(wall.wallTypeId, elementsById);
   if (!assembly) return wall.materialKey;

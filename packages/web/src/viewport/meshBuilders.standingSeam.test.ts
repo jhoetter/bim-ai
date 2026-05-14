@@ -112,6 +112,33 @@ describe('addStandingSeamPattern — flat roof', () => {
     expect(seamChildCount(mesh)).toBe(0);
   });
 
+  it('uses the roof type top-layer material when a roofTypeId is assigned', () => {
+    const roofType: Extract<Element, { kind: 'roof_type' }> = {
+      kind: 'roof_type',
+      id: 'roof-type-standing-seam',
+      name: 'Standing seam roof type',
+      layers: [
+        { function: 'finish', materialKey: 'metal_standing_seam_dark_grey', thicknessMm: 45 },
+        { function: 'structure', materialKey: 'timber_stud', thicknessMm: 160 },
+      ],
+    };
+    const typedRoof: RoofElem = {
+      ...baseRoof,
+      materialKey: null,
+      roofTypeId: roofType.id,
+    };
+    const els: Record<string, Element> = {
+      [level.id]: level,
+      [typedRoof.id]: typedRoof,
+      [roofType.id]: roofType,
+    };
+    const mesh = makeRoofMassMesh(typedRoof, els, null);
+    const mat = mesh.material as THREE.MeshStandardMaterial;
+
+    expect(mat.userData.materialKey).toBe('metal_standing_seam_dark_grey');
+    expect(seamChildCount(mesh)).toBeGreaterThan(0);
+  });
+
   it('flat roof with longer Z runs seams along Z', () => {
     const tallRoof: RoofElem = {
       ...baseRoof,
