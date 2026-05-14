@@ -121,13 +121,14 @@ function ParticipantAvatar({
 
 const onlineDotStyle: CSSProperties = {
   position: 'absolute',
-  bottom: 1,
-  right: 1,
+  bottom: 2,
+  right: 2,
   width: 7,
   height: 7,
   borderRadius: 'var(--radius-pill)',
   background: 'var(--color-success)',
-  border: '2px solid var(--color-background)',
+  border: '1px solid var(--color-background)',
+  boxSizing: 'border-box',
 };
 
 function OverflowChip({ count, avatarSize }: { count: number; avatarSize: number }): JSX.Element {

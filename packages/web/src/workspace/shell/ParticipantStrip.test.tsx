@@ -161,6 +161,22 @@ describe('ParticipantStrip — COL-V3-04', () => {
     expect(dots).toHaveLength(2);
   });
 
+  it('keeps the online indicator inside the avatar paint box', () => {
+    const { getAllByTestId } = render(
+      <ParticipantStrip
+        participants={THREE_PARTICIPANTS}
+        localUserId={LOCAL_USER_ID}
+        maxVisible={5}
+        avatarSize={24}
+      />,
+    );
+    const dot = getAllByTestId('online-dot')[0] as HTMLElement;
+    expect(dot.style.boxSizing).toBe('border-box');
+    expect(dot.style.bottom).toBe('2px');
+    expect(dot.style.right).toBe('2px');
+    expect(dot.style.border).toContain('1px');
+  });
+
   it('zero hex literals in rendered DOM inline styles', () => {
     const { getByTestId } = render(
       <ParticipantStrip
