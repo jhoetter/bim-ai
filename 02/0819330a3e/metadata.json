@@ -3,9 +3,21 @@
   "checkpoint_id": "020819330a3e",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 4,
   "files_touched": [
-    "packages/web/src/Viewport.tsx"
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/families/geometryFns/doorGeometry.ts",
+    "packages/web/src/families/geometryFns/windowGeometry.ts",
+    "packages/web/src/viewport/csgCutterGeometry.ts",
+    "packages/web/src/viewport/csgWorker.wallOpening.test.ts",
+    "packages/web/src/viewport/familyInstance3d.test.ts",
+    "packages/web/src/viewport/familyInstance3d.ts",
+    "packages/web/src/viewport/hostedOpeningDimensions.test.ts",
+    "packages/web/src/viewport/meshBuilders.locationLine.test.ts",
+    "packages/web/src/viewport/meshBuilders.ts",
+    "packages/web/src/viewport/sweepMesh.test.ts",
+    "packages/web/src/viewport/sweepMesh.ts",
+    "packages/web/src/viewport/threeMaterialFactory.ts"
   ],
   "sessions": [
     {
@@ -19,13 +31,19 @@
       "transcript": "/02/0819330a3e/1/full.jsonl",
       "content_hash": "/02/0819330a3e/1/content_hash.txt",
       "prompt": "/02/0819330a3e/1/prompt.txt"
+    },
+    {
+      "metadata": "/02/0819330a3e/2/metadata.json",
+      "transcript": "/02/0819330a3e/2/full.jsonl",
+      "content_hash": "/02/0819330a3e/2/content_hash.txt",
+      "prompt": "/02/0819330a3e/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 30151843,
+    "input_tokens": 30844372,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 555305600,
-    "output_tokens": 1297565,
-    "api_call_count": 4500
+    "cache_read_tokens": 575442432,
+    "output_tokens": 1362369,
+    "api_call_count": 4727
   }
 }
