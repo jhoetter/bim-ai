@@ -779,6 +779,62 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'tool.duct',
+  label: 'Route Duct',
+  keywords: ['duct', 'hvac', 'air', 'supply', 'return', 'mep'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'duct'),
+});
+
+registerCommand({
+  id: 'tool.pipe',
+  label: 'Route Pipe',
+  keywords: ['pipe', 'plumbing', 'heating', 'cooling', 'sprinkler', 'mep'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'pipe'),
+});
+
+registerCommand({
+  id: 'tool.cable-tray',
+  label: 'Route Cable Tray',
+  keywords: ['cable tray', 'electrical', 'containment', 'mep'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'cable-tray'),
+});
+
+registerCommand({
+  id: 'tool.mep-equipment',
+  label: 'Place MEP Equipment',
+  keywords: ['equipment', 'mechanical equipment', 'electrical equipment', 'mep'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'mep-equipment'),
+});
+
+registerCommand({
+  id: 'tool.fixture',
+  label: 'Place Fixture',
+  keywords: ['fixture', 'plumbing fixture', 'electrical fixture', 'mep'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'fixture'),
+});
+
+registerCommand({
+  id: 'tool.mep-terminal',
+  label: 'Place MEP Terminal',
+  keywords: ['terminal', 'diffuser', 'air terminal', 'sprinkler', 'device', 'mep'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'mep-terminal'),
+});
+
+registerCommand({
+  id: 'tool.mep-opening-request',
+  label: 'Request MEP Opening',
+  keywords: ['opening request', 'sleeve', 'penetration', 'coordination', 'mep'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'mep-opening-request'),
+});
+
+registerCommand({
   id: 'tool.toposolid_subdivision',
   label: 'Subdivide Toposolid',
   keywords: ['toposolid', 'subdivision', 'site finish'],

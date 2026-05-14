@@ -263,6 +263,50 @@ function fmtMm(value: number | null | undefined): string {
   return `${value.toFixed(0)} mm`;
 }
 
+function fmtWatts(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return '—';
+  if (Math.abs(value) >= 1000) return `${(value / 1000).toFixed(2)} kW`;
+  return `${value.toFixed(0)} W`;
+}
+
+function fmtMepRecord(value: Record<string, unknown> | null | undefined): string {
+  if (!value || Object.keys(value).length === 0) return '—';
+  return Object.entries(value)
+    .map(([key, row]) => `${key}: ${String(row)}`)
+    .join(' · ');
+}
+
+function MepCommonRows({
+  el,
+}: {
+  el: Extract<
+    Element,
+    {
+      kind:
+        | 'pipe'
+        | 'duct'
+        | 'cable_tray'
+        | 'mep_equipment'
+        | 'fixture'
+        | 'mep_terminal'
+        | 'mep_opening_request';
+    }
+  >;
+}): JSX.Element {
+  return (
+    <>
+      <FieldRow label="System Type" value={el.systemType ?? '—'} />
+      <FieldRow label="System Name" value={el.systemName ?? '—'} />
+      <FieldRow label="Flow Direction" value={el.flowDirection ?? '—'} />
+      <FieldRow label="Service Level" value={el.serviceLevel ?? '—'} />
+      <FieldRow label="Insulation" value={el.insulation ?? '—'} />
+      <FieldRow label="Connectors" value={String(el.connectors?.length ?? 0)} mono />
+      {el.clearanceZone ? <FieldRow label="Clearance Zone" value="Defined" /> : null}
+      {el.maintainAccessZone ? <FieldRow label="Access Zone" value="Defined" /> : null}
+    </>
+  );
+}
+
 function parseTypeParameterDraft(value: string, prior: unknown): unknown {
   if (typeof prior === 'number') {
     const n = Number(value);
@@ -1104,6 +1148,132 @@ export function InspectorPropertiesFor(
           {el.volumeM3 != null ? (
             <FieldRow label={f('volume')} value={`${el.volumeM3.toFixed(3)} m³`} />
           ) : null}
+          <FieldRow label="Ventilation Zone" value={el.ventilationZone ?? '—'} />
+          <FieldRow label="Heating/Cooling Zone" value={el.heatingCoolingZone ?? '—'} />
+          <FieldRow
+            label="Design ACH"
+            value={
+              el.designAirChangeRate != null ? `${el.designAirChangeRate.toFixed(2)} 1/h` : '—'
+            }
+          />
+          <FieldRow
+            label="Fixture/Equipment Loads"
+            value={fmtMepRecord(el.fixtureEquipmentLoads)}
+          />
+          <FieldRow label="Electrical Loads" value={fmtMepRecord(el.electricalLoadSummary)} />
+          <FieldRow
+            label="Service Requirements"
+            value={el.serviceRequirements?.join(', ') || '—'}
+          />
+        </div>
+      );
+    case 'duct':
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
+          <FieldRow label="Shape" value={el.shape ?? 'rectangular'} />
+          <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
+          <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
+          <FieldRow label="Elevation" value={fmtMm(el.elevationMm)} />
+          <FieldRow
+            label="Start"
+            value={`${fmtMm(el.startMm.xMm)} · ${fmtMm(el.startMm.yMm)}`}
+            mono
+          />
+          <FieldRow label="End" value={`${fmtMm(el.endMm.xMm)} · ${fmtMm(el.endMm.yMm)}`} mono />
+          <MepCommonRows el={el} />
+        </div>
+      );
+    case 'pipe':
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
+          <FieldRow label="Diameter" value={fmtMm(el.diameterMm)} />
+          <FieldRow label="Elevation" value={fmtMm(el.elevationMm)} />
+          <FieldRow
+            label="Start"
+            value={`${fmtMm(el.startMm.xMm)} · ${fmtMm(el.startMm.yMm)}`}
+            mono
+          />
+          <FieldRow label="End" value={`${fmtMm(el.endMm.xMm)} · ${fmtMm(el.endMm.yMm)}`} mono />
+          <MepCommonRows el={el} />
+        </div>
+      );
+    case 'cable_tray':
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
+          <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
+          <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
+          <FieldRow label="Elevation" value={fmtMm(el.elevationMm)} />
+          <FieldRow
+            label="Start"
+            value={`${fmtMm(el.startMm.xMm)} · ${fmtMm(el.startMm.yMm)}`}
+            mono
+          />
+          <FieldRow label="End" value={`${fmtMm(el.endMm.xMm)} · ${fmtMm(el.endMm.yMm)}`} mono />
+          <MepCommonRows el={el} />
+        </div>
+      );
+    case 'mep_equipment':
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
+          <FieldRow label="Equipment Type" value={el.equipmentType ?? '—'} />
+          <FieldRow label={f('family')} value={el.familyTypeId ?? '—'} mono />
+          <FieldRow
+            label="Position"
+            value={`${fmtMm(el.positionMm.xMm)} · ${fmtMm(el.positionMm.yMm)}`}
+            mono
+          />
+          <FieldRow label="Elevation" value={fmtMm(el.elevationMm)} />
+          <FieldRow label="Electrical Load" value={fmtWatts(el.electricalLoadW)} />
+          <MepCommonRows el={el} />
+        </div>
+      );
+    case 'fixture':
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
+          <FieldRow label="Fixture Type" value={el.fixtureType ?? '—'} />
+          <FieldRow label="Room" value={resolveElName(el.roomId ?? null, elementsById)} />
+          <FieldRow
+            label="Position"
+            value={`${fmtMm(el.positionMm.xMm)} · ${fmtMm(el.positionMm.yMm)}`}
+            mono
+          />
+          <FieldRow label="Electrical Load" value={fmtWatts(el.electricalLoadW)} />
+          <MepCommonRows el={el} />
+        </div>
+      );
+    case 'mep_terminal':
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
+          <FieldRow label="Terminal Kind" value={el.terminalKind ?? 'terminal'} />
+          <FieldRow label="Room" value={resolveElName(el.roomId ?? null, elementsById)} />
+          <FieldRow
+            label="Position"
+            value={`${fmtMm(el.positionMm.xMm)} · ${fmtMm(el.positionMm.yMm)}`}
+            mono
+          />
+          <MepCommonRows el={el} />
+        </div>
+      );
+    case 'mep_opening_request':
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label="Host" value={resolveElName(el.hostElementId, elementsById)} />
+          <FieldRow label={f('level')} value={resolveElName(el.levelId ?? null, elementsById)} />
+          <FieldRow label="Opening Kind" value={el.openingKind ?? 'wall'} />
+          <FieldRow label="Status" value={el.status ?? 'requested'} />
+          <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
+          <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
+          <FieldRow label="Diameter" value={fmtMm(el.diameterMm)} />
+          <FieldRow label="Clearance" value={fmtMm(el.clearanceMm)} />
+          <FieldRow label="Requesters" value={el.requesterElementIds?.join(', ') || '—'} mono />
+          <FieldRow label="Approval Note" value={el.approvalNote ?? '—'} />
+          <MepCommonRows el={el} />
         </div>
       );
     case 'level': {

@@ -181,6 +181,13 @@ describe('command capability graph', () => {
         'reference-plane',
         'wall-opening',
         'shaft',
+        'duct',
+        'pipe',
+        'cable-tray',
+        'mep-equipment',
+        'fixture',
+        'mep-terminal',
+        'mep-opening-request',
         'column',
         'beam',
         'ceiling',
@@ -199,6 +206,13 @@ describe('command capability graph', () => {
     expect(evaluateCommandInMode('tool.beam', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('tool.ceiling', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('tool.shaft', '3d')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('tool.duct', '3d')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('tool.pipe', '3d')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('tool.cable-tray', '3d')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('tool.mep-equipment', '3d')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('tool.fixture', '3d')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('tool.mep-terminal', '3d')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('tool.mep-opening-request', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('tool.door', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('tool.window', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('tool.wall-opening', '3d')?.state).toBe('enabled');
@@ -232,6 +246,28 @@ describe('command capability graph', () => {
 
     expect(evaluateCommandInMode('tool.wall', 'plan', 'architecture')?.state).toBe('enabled');
     expect(evaluateCommandInMode('tool.wall', 'plan', 'all')?.state).toBe('enabled');
+  });
+
+  it('keeps MEP authoring and coordination commands available in the MEP lens', () => {
+    for (const commandId of [
+      'tool.duct',
+      'tool.pipe',
+      'tool.cable-tray',
+      'tool.mep-equipment',
+      'tool.fixture',
+      'tool.mep-terminal',
+      'tool.mep-opening-request',
+      'tool.shaft',
+    ]) {
+      expect(evaluateCommandInMode(commandId, 'plan', 'mep')?.state, commandId).toBe('enabled');
+    }
+
+    const mepRibbonCommands = ribbonCommandMetadataForMode('plan', null, 'mep').map(
+      (row) => row.commandId,
+    );
+    expect(mepRibbonCommands).toContain('tool.duct');
+    expect(mepRibbonCommands).toContain('tool.mep-opening-request');
+    expect(mepRibbonCommands).toContain('tool.shaft');
   });
 
   it('keeps universal navigation and system commands enabled in every view', () => {

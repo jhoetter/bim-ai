@@ -125,6 +125,61 @@ describe('InspectorPropertiesFor — spec §13', () => {
     );
   });
 
+  it('renders MEP route metadata and connectors', () => {
+    const pipe: Extract<Element, { kind: 'pipe' }> = {
+      kind: 'pipe',
+      id: 'pipe-1',
+      name: 'CHW Supply',
+      levelId: 'lvl-1',
+      startMm: { xMm: 0, yMm: 0 },
+      endMm: { xMm: 4200, yMm: 0 },
+      elevationMm: 2800,
+      diameterMm: 80,
+      systemType: 'cooling',
+      systemName: 'CHW-S',
+      flowDirection: 'supply',
+      insulation: '25 mm phenolic',
+      serviceLevel: 'L02',
+      connectors: [
+        { id: 'c1', flowDirection: 'supply', diameterMm: 80 },
+        { id: 'c2', flowDirection: 'supply', diameterMm: 80 },
+      ],
+    };
+
+    const { getByText } = render(InspectorPropertiesFor(pipe, t));
+    expect(getByText('CHW-S')).toBeTruthy();
+    expect(getByText('80 mm')).toBeTruthy();
+    expect(getByText('25 mm phenolic')).toBeTruthy();
+    expect(getByText('2')).toBeTruthy();
+  });
+
+  it('renders MEP room zones and load summaries', () => {
+    const room: Extract<Element, { kind: 'room' }> = {
+      kind: 'room',
+      id: 'room-mep',
+      name: 'Exam',
+      levelId: 'lvl-1',
+      outlineMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 3000, yMm: 0 },
+        { xMm: 3000, yMm: 3000 },
+        { xMm: 0, yMm: 3000 },
+      ],
+      ventilationZone: 'VAV-2A',
+      heatingCoolingZone: 'HC-2A',
+      designAirChangeRate: 6,
+      electricalLoadSummary: { receptacles: '1.2 kVA' },
+      fixtureEquipmentLoads: { sink: 'cold+hot' },
+      serviceRequirements: ['medical gas', 'exhaust'],
+    };
+
+    const { getByText } = render(InspectorPropertiesFor(room, t));
+    expect(getByText('VAV-2A')).toBeTruthy();
+    expect(getByText('HC-2A')).toBeTruthy();
+    expect(getByText('6.00 1/h')).toBeTruthy();
+    expect(getByText('medical gas, exhaust')).toBeTruthy();
+  });
+
   it('persists room fill pattern override', () => {
     const room: Extract<Element, { kind: 'room' }> = {
       kind: 'room',
