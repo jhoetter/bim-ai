@@ -1,0 +1,2 @@
+build according to the spec/lenses/construction-lens.md; create your own branch, and then there implement each individual workpackage; always commit and push. don't ask questions, i am going to sleep; try
+    avoiding rm commands, only at the very end, because i need to approve them otherwise. once you are done with all, merge into main.
