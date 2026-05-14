@@ -123,7 +123,21 @@ DEFAULT_DISCIPLINE_BY_KIND: dict[str, DisciplineTag] = {
 
 WallLayerFunction = Literal["structure", "insulation", "finish"]
 WallBasisLine = Literal["center", "face_interior", "face_exterior"]
-WallStructuralRole = Literal["unknown", "load_bearing", "non_load_bearing"]
+StructuralRole = Literal[
+    "unknown",
+    "load_bearing",
+    "non_load_bearing",
+    "bearing_wall",
+    "shear_wall",
+    "slab",
+    "beam",
+    "column",
+    "foundation",
+    "brace",
+]
+WallStructuralRole = StructuralRole
+StructuralMaterial = Literal["concrete", "steel", "timber", "masonry", "composite", "other"]
+StructuralAnalysisStatus = Literal["not_modeled", "ready_for_export", "needs_review"]
 WallLocationLine = Literal[
     "wall-centerline",
     "finish-face-exterior",
@@ -430,11 +444,18 @@ class WallElem(BaseModel):
     )
     load_bearing: bool | None = Field(default=None, alias="loadBearing")
     structural_role: WallStructuralRole = Field(default="unknown", alias="structuralRole")
+    structural_material: StructuralMaterial | str | None = Field(
+        default=None, alias="structuralMaterial"
+    )
     analytical_participation: bool = Field(default=False, alias="analyticalParticipation")
+    analysis_status: StructuralAnalysisStatus = Field(
+        default="not_modeled", alias="analysisStatus"
+    )
     structural_material_key: str | None = Field(default=None, alias="structuralMaterialKey")
     structural_intent_confidence: float | None = Field(
         default=None, alias="structuralIntentConfidence", ge=0, le=1
     )
+    fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
     # IFC-04: optional OmniClass / Uniclass / NSCC code; emitted via
     # IfcClassificationReference when set.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
@@ -1087,6 +1108,15 @@ class FloorElem(BaseModel):
     floor_type_id: str | None = Field(default=None, alias="floorTypeId")
     insulation_extension_mm: float = Field(default=0, alias="insulationExtensionMm")
     room_bounded: bool = Field(default=False, alias="roomBounded")
+    load_bearing: bool | None = Field(default=None, alias="loadBearing")
+    structural_role: StructuralRole = Field(default="slab", alias="structuralRole")
+    structural_material: StructuralMaterial | str | None = Field(
+        default=None, alias="structuralMaterial"
+    )
+    analysis_status: StructuralAnalysisStatus = Field(
+        default="not_modeled", alias="analysisStatus"
+    )
+    fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
     # IFC-04: optional classification code emitted as IfcClassificationReference.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)
@@ -1122,6 +1152,15 @@ class RoofElem(BaseModel):
     eave_height_right_mm: float | None = Field(default=None, alias="eaveHeightRightMm")
     roof_type_id: str | None = Field(default=None, alias="roofTypeId")
     material_key: str | None = Field(default=None, alias="materialKey")
+    load_bearing: bool | None = Field(default=None, alias="loadBearing")
+    structural_role: StructuralRole = Field(default="unknown", alias="structuralRole")
+    structural_material: StructuralMaterial | str | None = Field(
+        default=None, alias="structuralMaterial"
+    )
+    analysis_status: StructuralAnalysisStatus = Field(
+        default="not_modeled", alias="analysisStatus"
+    )
+    fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
     # IFC-04: optional classification code emitted as IfcClassificationReference.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)
@@ -1325,6 +1364,10 @@ class RailingElem(BaseModel):
     baluster_pattern: BalusterPattern | None = Field(default=None, alias="balusterPattern")
     handrail_supports: list[HandrailSupport] | None = Field(default=None, alias="handrailSupports")
     material_slots: dict[str, str | None] | None = Field(default=None, alias="materialSlots")
+    structural_role: StructuralRole = Field(default="unknown", alias="structuralRole")
+    analysis_status: StructuralAnalysisStatus = Field(
+        default="not_modeled", alias="analysisStatus"
+    )
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
@@ -1535,6 +1578,15 @@ class Text3dElem(BaseModel):
     position_mm: Vec3Mm = Field(alias="positionMm")
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
     material_key: str | None = Field(default=None, alias="materialKey")
+    load_bearing: bool | None = Field(default=True, alias="loadBearing")
+    structural_role: StructuralRole = Field(default="column", alias="structuralRole")
+    structural_material: StructuralMaterial | str | None = Field(
+        default=None, alias="structuralMaterial"
+    )
+    analysis_status: StructuralAnalysisStatus = Field(
+        default="not_modeled", alias="analysisStatus"
+    )
+    fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
 
 
 # --- KRN-06: Origin elements (project base point, survey point, internal origin) ---
@@ -2713,6 +2765,15 @@ class BeamElem(BaseModel):
     width_mm: float = Field(alias="widthMm", default=200, gt=0)
     height_mm: float = Field(alias="heightMm", default=400, gt=0)
     material_key: str | None = Field(default=None, alias="materialKey")
+    load_bearing: bool | None = Field(default=True, alias="loadBearing")
+    structural_role: StructuralRole = Field(default="beam", alias="structuralRole")
+    structural_material: StructuralMaterial | str | None = Field(
+        default=None, alias="structuralMaterial"
+    )
+    analysis_status: StructuralAnalysisStatus = Field(
+        default="not_modeled", alias="analysisStatus"
+    )
+    fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
     start_column_id: str | None = Field(default=None, alias="startColumnId")
     end_column_id: str | None = Field(default=None, alias="endColumnId")
     # IFC-04: optional classification code emitted as IfcClassificationReference.

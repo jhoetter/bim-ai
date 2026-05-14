@@ -572,7 +572,26 @@ export type RoomColorSchemeRow = {
 };
 
 export type WallLayerFunction = 'structure' | 'insulation' | 'finish';
-export type WallStructuralRole = 'unknown' | 'load_bearing' | 'non_load_bearing';
+export type StructuralRole =
+  | 'unknown'
+  | 'load_bearing'
+  | 'non_load_bearing'
+  | 'bearing_wall'
+  | 'shear_wall'
+  | 'slab'
+  | 'beam'
+  | 'column'
+  | 'foundation'
+  | 'brace';
+export type WallStructuralRole = StructuralRole;
+export type StructuralMaterial =
+  | 'concrete'
+  | 'steel'
+  | 'timber'
+  | 'masonry'
+  | 'composite'
+  | 'other';
+export type StructuralAnalysisStatus = 'not_modeled' | 'ready_for_export' | 'needs_review';
 
 export type WallTypeLayer = {
   thicknessMm: number;
@@ -962,9 +981,12 @@ export type Element =
       faceMaterialOverrides?: MaterialFaceOverride[] | null;
       loadBearing?: boolean | null;
       structuralRole?: WallStructuralRole;
+      structuralMaterial?: StructuralMaterial | string | null;
       analyticalParticipation?: boolean;
+      analysisStatus?: StructuralAnalysisStatus;
       structuralMaterialKey?: string | null;
       structuralIntentConfidence?: number | null;
+      fireResistanceRating?: string | null;
       wallTypeId?: string | null;
       baseConstraintLevelId?: string | null;
       topConstraintLevelId?: string | null;
@@ -1257,6 +1279,11 @@ export type Element =
       floorTypeId?: string | null;
       insulationExtensionMm?: number;
       roomBounded?: boolean;
+      loadBearing?: boolean | null;
+      structuralRole?: StructuralRole;
+      structuralMaterial?: StructuralMaterial | string | null;
+      analysisStatus?: StructuralAnalysisStatus;
+      fireResistanceRating?: string | null;
       worksetId?: string | null;
       /** IFC-04: optional classification code; emitted as IfcClassificationReference. */
       ifcClassificationCode?: string | null;
@@ -1297,6 +1324,11 @@ export type Element =
       eaveHeightRightMm?: number;
       roofTypeId?: string | null;
       materialKey?: string | null;
+      loadBearing?: boolean | null;
+      structuralRole?: StructuralRole;
+      structuralMaterial?: StructuralMaterial | string | null;
+      analysisStatus?: StructuralAnalysisStatus;
+      fireResistanceRating?: string | null;
       /** IFC-04: optional classification code; emitted as IfcClassificationReference. */
       ifcClassificationCode?: string | null;
       pinned?: boolean;
@@ -1404,6 +1436,8 @@ export type Element =
       handrailSupports?: HandrailSupport[];
       /** RMP-05: subcomponent materials, e.g. topRail, post, baluster, panel, cable, bracket. */
       materialSlots?: Record<string, string | null>;
+      structuralRole?: StructuralRole;
+      analysisStatus?: StructuralAnalysisStatus;
       overrideParams?: Record<string, unknown>;
       pinned?: boolean;
       phaseCreated?: string | null;
@@ -1745,6 +1779,11 @@ export type Element =
       heightMm: number;
       rotationDeg?: number;
       materialKey?: string | null;
+      loadBearing?: boolean | null;
+      structuralRole?: StructuralRole;
+      structuralMaterial?: StructuralMaterial | string | null;
+      analysisStatus?: StructuralAnalysisStatus;
+      fireResistanceRating?: string | null;
       baseConstraintOffsetMm?: number;
       topConstraintLevelId?: string | null;
       topConstraintOffsetMm?: number;
@@ -1767,6 +1806,11 @@ export type Element =
       widthMm: number;
       heightMm: number;
       materialKey?: string | null;
+      loadBearing?: boolean | null;
+      structuralRole?: StructuralRole;
+      structuralMaterial?: StructuralMaterial | string | null;
+      analysisStatus?: StructuralAnalysisStatus;
+      fireResistanceRating?: string | null;
       startColumnId?: string | null;
       endColumnId?: string | null;
       /** IFC-04: optional OmniClass / Uniclass / NSCC code emitted as IfcClassificationReference. */
