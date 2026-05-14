@@ -103,6 +103,30 @@ def test_update_element_property_room_fill_pattern_override_validates() -> None:
         )
 
 
+def test_update_element_property_room_architecture_props_roundtrip() -> None:
+    lv = LevelElem(kind="level", id="lv", name="L1", elevation_mm=0)
+    rm = RoomElem(
+        kind="room",
+        id="rm-1",
+        name="R",
+        level_id="lv",
+        outline_mm=_sq(((0.0, 0.0), (2000.0, 0.0), (2000.0, 1000.0), (0.0, 1000.0))),
+        props={"fireRating": "F30"},
+    )
+    doc = Document(revision=1, elements={"lv": lv, "rm-1": rm})
+    apply_inplace(
+        doc, UpdateElementPropertyCmd(elementId="rm-1", key="roomFunction", value="Office")
+    )
+    r = doc.elements["rm-1"]
+    assert isinstance(r, RoomElem)
+    assert r.props == {"fireRating": "F30", "roomFunction": "Office"}
+
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="rm-1", key="roomFunction", value=""))
+    r2 = doc.elements["rm-1"]
+    assert isinstance(r2, RoomElem)
+    assert r2.props == {"fireRating": "F30"}
+
+
 def test_create_room_rectangle_with_target_area_m2() -> None:
     from bim_ai.engine import try_commit
 

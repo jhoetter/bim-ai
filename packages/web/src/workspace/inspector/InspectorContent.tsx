@@ -2199,6 +2199,11 @@ export function InspectorRoomEditor({
   const { t } = useTranslation();
   const f = (key: string) => t(`inspector.fields.${key}`);
   const r = (key: string) => t(`inspector.room.${key}`);
+  const roomPropString = (key: string): string => {
+    const value = el.props?.[key];
+    if (value == null) return '';
+    return typeof value === 'string' ? value : String(value);
+  };
   const fields: {
     key: string;
     label: string;
@@ -2211,6 +2216,28 @@ export function InspectorRoomEditor({
     { key: 'functionLabel', label: r('functionLabel'), val: el.functionLabel },
     { key: 'finishSet', label: f('finishSet'), val: el.finishSet },
   ];
+  const architectureFields: {
+    key: string;
+    label: string;
+    val: string;
+  }[] = [
+    { key: 'roomFunction', label: r('roomFunction'), val: roomPropString('roomFunction') },
+    { key: 'finishSetId', label: r('finishSetId'), val: roomPropString('finishSetId') },
+    { key: 'designIntent', label: r('designIntent'), val: roomPropString('designIntent') },
+    {
+      key: 'documentationStatus',
+      label: r('documentationStatus'),
+      val: roomPropString('documentationStatus'),
+    },
+    { key: 'occupancyNotes', label: r('occupancyNotes'), val: roomPropString('occupancyNotes') },
+    { key: 'roomBounding', label: r('roomBounding'), val: roomPropString('roomBounding') },
+  ];
+  const consultantBadges = [
+    ['Fire', roomPropString('fireRating') || roomPropString('fireResistanceRating')],
+    ['Acoustic', roomPropString('acousticRating') || roomPropString('stcRating')],
+    ['Energy', roomPropString('energyZone') || roomPropString('heatingStatus')],
+    ['Cost', roomPropString('costCode') || roomPropString('costGroup')],
+  ].filter((entry): entry is [string, string] => Boolean(entry[1]));
 
   return (
     <div className="space-y-2 text-[11px]">
@@ -2226,6 +2253,18 @@ export function InspectorRoomEditor({
               if (key === 'name' && (!v || v === val)) return;
               onPersistProperty(key, v);
             }}
+          />
+        </label>
+      ))}
+      {architectureFields.map(({ key, label, val }) => (
+        <label key={key} className={LABEL_CLS}>
+          {label}
+          <input
+            className={INPUT_CLS}
+            defaultValue={val}
+            key={`rm-prop-${key}-${el.id}-${val}-${revision}`}
+            data-testid={`inspector-room-${key.replace(/[A-Z]/g, (ch) => `-${ch.toLowerCase()}`)}`}
+            onBlur={(e) => onPersistProperty(key, e.target.value.trim())}
           />
         </label>
       ))}
@@ -2269,6 +2308,29 @@ export function InspectorRoomEditor({
           <option value="dots">Dots</option>
         </select>
       </label>
+      {consultantBadges.length ? (
+        <div
+          className="flex flex-wrap gap-1.5 border-b border-border py-1.5"
+          data-testid="inspector-room-consultant-badges"
+        >
+          {consultantBadges.map(([label, value]) => (
+            <span
+              key={label}
+              className="rounded border border-border bg-surface px-1.5 py-0.5 text-[10px] text-muted"
+              title={`${label}: ${value}`}
+            >
+              <span className="font-medium text-foreground">{label}</span> {value}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {el.volumeM3 != null ? (
+        <FieldRow label={f('volume')} value={`${el.volumeM3.toFixed(3)} m³`} />
+      ) : null}
+      {el.phaseCreated ? <FieldRow label={f('phaseCreated')} value={el.phaseCreated} /> : null}
+      {el.phaseDemolished ? (
+        <FieldRow label={f('phaseDemolished')} value={el.phaseDemolished} />
+      ) : null}
       <FieldRow label={f('level')} value={el.levelId} mono />
       <FieldRow label={f('outlinePoints')} value={String(el.outlineMm.length)} />
     </div>
