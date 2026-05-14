@@ -6,6 +6,35 @@ const LENS_MODE_TO_DISCIPLINE: Record<string, string> = {
   mep: 'mep',
 };
 
+const STRUCTURE_FOREGROUND_KINDS = new Set([
+  'column',
+  'beam',
+  'grid_line',
+  'level',
+  'reference_plane',
+]);
+
+const STRUCTURAL_ROLES = new Set([
+  'load_bearing',
+  'bearing_wall',
+  'shear_wall',
+  'slab',
+  'beam',
+  'column',
+  'foundation',
+  'brace',
+]);
+
+function isStructureLensForeground(elem: Element): boolean {
+  if (STRUCTURE_FOREGROUND_KINDS.has(elem.kind)) return true;
+  const record = elem as Record<string, unknown>;
+  if (record.loadBearing === true) return true;
+  const role = typeof record.structuralRole === 'string' ? record.structuralRole : '';
+  if (STRUCTURAL_ROLES.has(role)) return true;
+  if (elem.kind === 'floor') return record.structuralRole !== 'non_load_bearing';
+  return false;
+}
+
 /**
  * DSC-V3-02 — resolve the discipline-lens pass from a UI LensMode value.
  *
@@ -18,6 +47,10 @@ export function lensFilterFromMode(mode: LensMode): (elem: Element) => 'foregrou
     return () => 'foreground';
   }
   const expected = LENS_MODE_TO_DISCIPLINE[mode];
+  if (mode === 'structure') {
+    return (elem: Element): 'foreground' | 'ghost' =>
+      isStructureLensForeground(elem) ? 'foreground' : 'ghost';
+  }
   return (elem: Element): 'foreground' | 'ghost' => {
     const disc =
       ('discipline' in elem ? (elem.discipline as string | null | undefined) : null) ?? 'arch';
@@ -52,6 +85,9 @@ export function resolveLensFilter(
   const expected = LENS_TO_DISCIPLINE[lens];
 
   return (elem: Element): 'foreground' | 'ghost' => {
+    if (lens === 'show_struct') {
+      return isStructureLensForeground(elem) ? 'foreground' : 'ghost';
+    }
     const disc =
       ('discipline' in elem ? (elem.discipline as string | null | undefined) : null) ?? 'arch';
     return disc === expected ? 'foreground' : 'ghost';
