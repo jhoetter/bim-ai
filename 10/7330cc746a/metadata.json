@@ -3,7 +3,7 @@
   "checkpoint_id": "107330cc746a",
   "strategy": "manual-commit",
   "branch": "codex/architecture-lens-workpackages-20260514",
-  "checkpoints_count": 8,
+  "checkpoints_count": 9,
   "files_touched": [
     "app/bim_ai/commands.py",
     "app/bim_ai/engine.py",
@@ -96,13 +96,19 @@
       "transcript": "/10/7330cc746a/13/full.jsonl",
       "content_hash": "/10/7330cc746a/13/content_hash.txt",
       "prompt": "/10/7330cc746a/13/prompt.txt"
+    },
+    {
+      "metadata": "/10/7330cc746a/14/metadata.json",
+      "transcript": "/10/7330cc746a/14/full.jsonl",
+      "content_hash": "/10/7330cc746a/14/content_hash.txt",
+      "prompt": "/10/7330cc746a/14/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 14264333,
+    "input_tokens": 14483054,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 377306752,
-    "output_tokens": 1034886,
-    "api_call_count": 2893
+    "cache_read_tokens": 388306688,
+    "output_tokens": 1063761,
+    "api_call_count": 2964
   }
 }
