@@ -37,6 +37,7 @@ import { useBimStore } from '../state/store';
 
 const TABS_KEY = 'bim-ai:tabs-v1';
 const PANE_LAYOUT_KEY = 'bim-ai:pane-layout-v1';
+const COMPOSITIONS_KEY = 'bim-ai:workspace-compositions-v1';
 
 function seedPlanCanvasTab(): void {
   localStorage.setItem(
@@ -59,12 +60,34 @@ function seedPlanCanvasTab(): void {
   );
 }
 
+function seed3dTab(): void {
+  localStorage.setItem(
+    TABS_KEY,
+    JSON.stringify({
+      v: 1,
+      tabs: [{ id: '3d:view-1', kind: '3d', targetId: 'view-1', label: '3D · View 1' }],
+      activeId: '3d:view-1',
+    }),
+  );
+  localStorage.setItem(
+    PANE_LAYOUT_KEY,
+    JSON.stringify({
+      v: 1,
+      layout: {
+        focusedLeafId: 'pane-root',
+        root: { kind: 'leaf', id: 'pane-root', tabId: '3d:view-1' },
+      },
+    }),
+  );
+}
+
 beforeEach(() => {
   planCanvasProps.current = null;
   mockApplyCommand.mockReset();
   mockBootstrap.mockReset();
   localStorage.removeItem(TABS_KEY);
   localStorage.removeItem(PANE_LAYOUT_KEY);
+  localStorage.removeItem(COMPOSITIONS_KEY);
   // Keep semantic-command tests deterministic by suppressing onboarding
   // overlay, which otherwise takes over initial canvas mount in jsdom.
   localStorage.setItem('bim.onboarding-completed', 'true');
@@ -85,6 +108,7 @@ afterEach(() => {
   localStorage.removeItem('bim.onboarding-completed');
   localStorage.removeItem(TABS_KEY);
   localStorage.removeItem(PANE_LAYOUT_KEY);
+  localStorage.removeItem(COMPOSITIONS_KEY);
   cleanup();
 });
 
@@ -162,6 +186,44 @@ describe('<Workspace /> — semantic command wiring (T-01)', () => {
       expect(els['wall-new']).toBeDefined();
       expect(useBimStore.getState().revision).toBe(12);
     });
+  });
+
+  it('deletes the selected element with Backspace outside plan views', async () => {
+    seed3dTab();
+    mockApplyCommand.mockResolvedValue({ revision: 2, elements: {}, violations: [] });
+    useBimStore.setState({
+      viewerMode: 'orbit_3d',
+      elementsById: {
+        'wall-existing': {
+          kind: 'wall',
+          id: 'wall-existing',
+          name: 'wall-existing',
+          levelId: 'l0',
+          start: { xMm: 0, yMm: 0 },
+          end: { xMm: 1000, yMm: 0 },
+          thicknessMm: 200,
+          heightMm: 2800,
+        },
+      } as never,
+      selectedId: 'wall-existing',
+      selectedIds: [],
+    });
+    render(
+      <MemoryRouter initialEntries={['/redesign']}>
+        <Workspace />
+      </MemoryRouter>,
+    );
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
+
+    await waitFor(() => {
+      expect(mockApplyCommand).toHaveBeenCalledWith(
+        'test-model',
+        { type: 'deleteElement', elementId: 'wall-existing' },
+        expect.objectContaining({ userId: 'user-1' }),
+      );
+    });
+    expect(useBimStore.getState().selectedId).toBeUndefined();
   });
 
   it('applies response deltas without replacing unchanged element references', async () => {
