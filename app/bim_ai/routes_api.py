@@ -128,6 +128,7 @@ from bim_ai.routes_sketch import sketch_router
 from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_column_subset
 from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
 from bim_ai.sheet_preview_svg import SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2
+from bim_ai.sustainability_lca import sustainability_lens_manifest_v1
 from bim_ai.permissions import authorize_command
 from bim_ai.milestones import CreateMilestoneBody
 from bim_ai.tables import (
@@ -716,6 +717,18 @@ async def mep_lens_projection(
         raise HTTPException(status_code=404, detail="Model not found")
     doc = Document.model_validate(row.document)
     return {"modelId": str(model_id), "revision": doc.revision, **build_mep_lens_payload(doc)}
+
+
+@api_router.get("/models/{model_id}/sustainability")
+async def sustainability_lens_projection(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return {"modelId": str(model_id), "revision": doc.revision, **sustainability_lens_manifest_v1(doc)}
 
 
 @api_router.get("/models/{model_id}/evidence-package")

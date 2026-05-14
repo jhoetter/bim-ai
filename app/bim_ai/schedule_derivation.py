@@ -5,10 +5,18 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any
 
+from bim_ai.cost_quantity import (
+    DEFAULT_SCENARIO_ID,
+    cost_quantity_totals,
+    derive_cost_estimate_rows,
+    derive_quantity_takeoff_rows,
+    derive_scenario_delta_rows,
+)
 from bim_ai.document import Document
 from bim_ai.elements import (
     AreaElem,
     DoorElem,
+    ElevationViewElem,
     FloorElem,
     FloorTypeElem,
     LevelElem,
@@ -21,6 +29,7 @@ from bim_ai.elements import (
     SectionCutElem,
     SheetElem,
     StairElem,
+    ViewpointElem,
     WallElem,
     WallTypeElem,
     WindowElem,
@@ -56,6 +65,7 @@ from bim_ai.schedule_sheet_export_parity import (
     build_schedule_sheet_export_parity_evidence_v1_for_schedule,
 )
 from bim_ai.stair_plan_proxy import stair_schedule_row_extensions_v1
+from bim_ai.sustainability_lca import sustainability_rows_for_category
 from bim_ai.type_material_registry import (
     family_type_display_label,
     material_display_label,
@@ -130,6 +140,16 @@ def _material_contract_fields(doc: Document, material_key: str | None) -> dict[s
     }
 
 
+def _primary_exposed_layer_material_key(layers: list[dict[str, Any]]) -> str:
+    for layer in layers:
+        if str(layer.get("function") or "") == "air":
+            continue
+        key = str(layer.get("materialKey") or "").strip()
+        if key:
+            return key
+    return ""
+
+
 def _plan_view_id_to_owning_sheet(doc: Document) -> dict[str, tuple[str, str]]:
     """Map plan_view id -> (sheet_id, sheet_name); first sheet wins by sorted sheet id."""
 
@@ -147,6 +167,29 @@ def _plan_view_id_to_owning_sheet(doc: Document) -> dict[str, tuple[str, str]]:
             if not pv_id or pv_id in out:
                 continue
             out[pv_id] = (sh.id, sh.name or "")
+    return out
+
+
+def _view_ref_id_to_owning_sheet(doc: Document) -> dict[str, tuple[str, str]]:
+    """Map any sheet viewport ref id -> (sheet_id, sheet_name); first sheet wins."""
+
+    out: dict[str, tuple[str, str]] = {}
+    sheet_ids = sorted(eid for eid, el in doc.elements.items() if isinstance(el, SheetElem))
+    for sid in sheet_ids:
+        sh = doc.elements[sid]
+        if not isinstance(sh, SheetElem):
+            continue
+        for vp in sh.viewports_mm or ():
+            ref = str(vp.get("viewRef") or "")
+            if ":" not in ref:
+                continue
+            prefix, raw_id = ref.split(":", 1)
+            if prefix not in {"plan", "section", "sec", "viewpoint", "vp"}:
+                continue
+            view_id = raw_id.strip()
+            if not view_id or view_id in out:
+                continue
+            out[view_id] = (sh.id, sh.name or "")
     return out
 
 
@@ -212,6 +255,29 @@ _NUMERIC_SCHEDULE_FIELDS: frozenset[str] = frozenset(
         "headHeightMm",
         "assemblyTotalThicknessMm",
         "layerOffsetFromExteriorMm",
+        "lengthM",
+        "netAreaM2",
+        "quantity",
+        "unitRate",
+        "totalCost",
+        "scenarioCost",
+        "baselineCost",
+        "deltaCost",
+        "openingCount",
+        "layerQuantityCount",
+        "rowCount",
+        "gwpPerUnit",
+        "recycledContentPercent",
+        "serviceLifeYears",
+        "embodiedCarbonKgCO2e",
+        "embodiedCarbonIntensityKgCO2ePerM2",
+        "missingImpactLayerCount",
+        "hostCount",
+        "layerCount",
+        "materialKeyCount",
+        "scenarioDeltaKgCO2e",
+        "scenarioDeltaPercent",
+        "elementCount",
     }
 )
 
@@ -515,6 +581,8 @@ def _infer_schedule_category_from_name(name: str) -> str | None:
         return "window"
     if "door" in lowered:
         return "door"
+    if "finish" in lowered:
+        return "finish"
     if "room" in lowered:
         return "room"
     if "floor" in lowered:
@@ -525,10 +593,30 @@ def _infer_schedule_category_from_name(name: str) -> str | None:
         return "stair"
     if "sheet" in lowered:
         return "sheet"
+    if "view list" in lowered or lowered == "views" or lowered == "view schedule":
+        return "view"
     if "plan" in lowered:
         return "plan_view"
+    if "material impact" in lowered:
+        return "material_impact"
+    if "element carbon" in lowered:
+        return "element_carbon"
+    if "assembly carbon" in lowered:
+        return "assembly_carbon"
+    if "reuse" in lowered or "circularity" in lowered or "material passport" in lowered:
+        return "circularity"
+    if "scenario impact" in lowered or "scenario comparison" in lowered:
+        return "scenario_impact_comparison"
+    if "missing epd" in lowered or "data-quality" in lowered or "data quality" in lowered:
+        return "missing_sustainability_data"
     if "assembly" in lowered or "assemblies" in lowered:
         return "material_assembly"
+    if "scenario" in lowered and "delta" in lowered:
+        return "scenario_delta"
+    if "cost" in lowered or "kosten" in lowered:
+        return "cost_estimate"
+    if "quantity" in lowered or "takeoff" in lowered or "mengen" in lowered:
+        return "quantity_takeoff"
     return None
 
 
@@ -558,7 +646,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
 
     rows: list[dict[str, Any]] = []
 
-    if cat == "room":
+    if cat in {"room", "finish"}:
         room_peer_finish = peer_finish_set_by_level(
             e for e in doc.elements.values() if isinstance(e, RoomElem)
         )
@@ -691,6 +779,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     if flayers
                     else round(float(e.thickness_mm), 3)
                 )
+                primary_material_key = _primary_exposed_layer_material_key(flayers)
                 rows.append(
                     {
                         "elementId": e.id,
@@ -701,6 +790,14 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "typeName": _floor_type_name(doc, ftid or None),
                         "thicknessMm": round(float(e.thickness_mm), 3),
                         "materialAssemblyLayers": len(flayers),
+                        "materialKey": primary_material_key,
+                        "materialDisplay": material_display_label(
+                            doc, primary_material_key or None
+                        ),
+                        "effectiveMaterialSource": "type-layer"
+                        if ftid and primary_material_key
+                        else "category-fallback",
+                        **_material_contract_fields(doc, primary_material_key or None),
                         "totalThicknessMm": total_thk,
                         "areaM2": round(area, 3),
                         "perimeterM": round(perimeter, 3),
@@ -726,6 +823,12 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 )
                 rtid = (e.roof_type_id or "").strip()
                 slope = round(float(e.slope_deg or 0.0), 3)
+                primary_material_key = _primary_exposed_layer_material_key(rlayers)
+                effective_material_source = (
+                    "type-layer"
+                    if rtid and primary_material_key
+                    else ("instance" if primary_material_key else "category-fallback")
+                )
                 row_root: dict[str, Any] = {
                     "elementId": e.id,
                     "name": e.name,
@@ -734,6 +837,10 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     "roofTypeId": rtid,
                     "typeName": _roof_type_name(doc, rtid or None),
                     "materialAssemblyLayers": len(rlayers),
+                    "materialKey": primary_material_key,
+                    "materialDisplay": material_display_label(doc, primary_material_key or None),
+                    "effectiveMaterialSource": effective_material_source,
+                    **_material_contract_fields(doc, primary_material_key or None),
                     "overhangMm": round(float(e.overhang_mm or 0.0), 3),
                     "slopeDeg": slope,
                     "pitchDeg": slope,
@@ -825,6 +932,67 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "familyTypeId": "",
                     }
                 )
+
+    elif cat in {"view", "view_list", "viewlist"}:
+        owning = _view_ref_id_to_owning_sheet(doc)
+        for e in doc.elements.values():
+            if isinstance(e, PlanViewElem):
+                lev = lvl_lab.get(e.level_id, e.level_id)
+                row_v: dict[str, Any] = {
+                    "elementId": e.id,
+                    "name": e.name,
+                    "viewKind": "plan_view",
+                    "viewType": e.plan_view_subtype or "floor_plan",
+                    "levelId": e.level_id,
+                    "level": lev,
+                    "discipline": getattr(e, "discipline", "") or "",
+                    "viewTemplateId": e.view_template_id or "",
+                    "defaultLens": e.default_lens,
+                    "cropEnabled": e.crop_enabled,
+                    "scale": e.scale or "",
+                    "familyTypeId": "",
+                }
+                own = owning.get(e.id)
+                if own:
+                    row_v["sheetId"], row_v["sheetName"] = own
+                rows.append(row_v)
+            elif isinstance(e, SectionCutElem):
+                row_sec: dict[str, Any] = {
+                    "elementId": e.id,
+                    "name": e.name,
+                    "viewKind": "section_cut",
+                    "viewType": "section",
+                    "cropDepthMm": round(float(e.crop_depth_mm), 3),
+                    "familyTypeId": "",
+                }
+                own = owning.get(e.id)
+                if own:
+                    row_sec["sheetId"], row_sec["sheetName"] = own
+                rows.append(row_sec)
+            elif isinstance(e, ElevationViewElem):
+                row_el: dict[str, Any] = {
+                    "elementId": e.id,
+                    "name": e.name,
+                    "viewKind": "elevation_view",
+                    "viewType": e.direction,
+                    "familyTypeId": "",
+                }
+                own = owning.get(e.id)
+                if own:
+                    row_el["sheetId"], row_el["sheetName"] = own
+                rows.append(row_el)
+            elif isinstance(e, ViewpointElem):
+                row_vp: dict[str, Any] = {
+                    "elementId": e.id,
+                    "name": e.name,
+                    "viewKind": "viewpoint",
+                    "viewType": e.mode,
+                    "familyTypeId": "",
+                }
+                own = owning.get(e.id)
+                if own:
+                    row_vp["sheetId"], row_vp["sheetName"] = own
+                rows.append(row_vp)
 
     elif cat == "material_assembly":
         audit_by_host = {str(r["hostElementId"]): r for r in material_catalog_audit_rows(doc)}
@@ -969,6 +1137,37 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     rows.append(row_r)
                     offset_mm += th_mm
 
+    elif cat == "quantity_takeoff":
+        rows = derive_quantity_takeoff_rows(doc)
+
+    elif cat == "cost_estimate":
+        rows = derive_cost_estimate_rows(doc)
+
+    elif cat == "element_cost_group":
+        rows = derive_cost_estimate_rows(doc)
+
+    elif cat in {
+        "material_impact",
+        "element_carbon",
+        "assembly_carbon",
+        "circularity",
+        "scenario_impact_comparison",
+        "missing_sustainability_data",
+    }:
+        rows = sustainability_rows_for_category(doc, cat)
+
+    elif cat == "scenario_delta":
+        baseline_scenario_id = str(
+            filt.get("baselineScenarioId")
+            or filt.get("baseScenarioId")
+            or filt.get("baseline_scenario_id")
+            or DEFAULT_SCENARIO_ID
+        ).strip()
+        rows = derive_scenario_delta_rows(
+            doc,
+            baseline_scenario_id=baseline_scenario_id or DEFAULT_SCENARIO_ID,
+        )
+
     elif cat == "area":
         # KRN-08 — area schedule. Lists name + level + perimeter + computed
         # area + ruleSet for each `area` element.
@@ -1066,12 +1265,12 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 columns = narrowed
 
     totals: dict[str, Any] = {}
-    if cat == "room" and leaf_rows:
+    if cat in {"room", "finish"} and leaf_rows:
         tgt_vals = [
             float(r["targetAreaM2"]) for r in leaf_rows if r.get("targetAreaM2") is not None
         ]
         totals = {
-            "kind": "room",
+            "kind": cat,
             "rowCount": len(leaf_rows),
             "areaM2": round(sum(float(r.get("areaM2") or 0.0) for r in leaf_rows), 4),
             "perimeterM": round(sum(float(r.get("perimeterM") or 0.0) for r in leaf_rows), 4),
@@ -1152,6 +1351,32 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             "rowCount": len(leaf_rows),
             "grossVolumeM3": round(sum(float(r.get("grossVolumeM3") or 0.0) for r in leaf_rows), 8),
         }
+    elif cat in {
+        "material_impact",
+        "element_carbon",
+        "assembly_carbon",
+        "circularity",
+        "scenario_impact_comparison",
+        "missing_sustainability_data",
+    } and leaf_rows:
+        totals = {
+            "kind": cat,
+            "rowCount": len(leaf_rows),
+            "embodiedCarbonKgCO2e": round(
+                sum(float(r.get("embodiedCarbonKgCO2e") or 0.0) for r in leaf_rows),
+                8,
+            ),
+        }
+        missing_count = sum(1 for r in leaf_rows if r.get("impactStatus") not in {"calculated", ""})
+        if missing_count:
+            totals["missingDataCount"] = missing_count
+    elif cat in {
+        "quantity_takeoff",
+        "cost_estimate",
+        "element_cost_group",
+        "scenario_delta",
+    } and leaf_rows:
+        totals = cost_quantity_totals(leaf_rows, kind=cat)
 
     out: dict[str, Any] = {
         "scheduleId": schedule_id,
@@ -1166,6 +1391,23 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             "sortBy": ssf,
             "sortTieBreak": "elementId",
             "supportsCsv": True,
+            **(
+                {
+                    "lensId": "cost-quantity",
+                    "traceability": "elementId/typeId/scenarioId",
+                    "snapshotKind": "exportable_cost_snapshot"
+                    if cat in {"cost_estimate", "scenario_delta"}
+                    else "model_derived_quantity_takeoff",
+                }
+                if cat
+                in {
+                    "quantity_takeoff",
+                    "cost_estimate",
+                    "element_cost_group",
+                    "scenario_delta",
+                }
+                else {}
+            ),
             **({"sortDescending": True} if sort_descending else {}),
             **({"filterEquals": filter_equals} if filter_equals else {}),
             **({"filterRules": filter_rules_norm} if filter_rules_norm else {}),
@@ -1181,7 +1423,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             out["schedulePlacement"] = {"sheetId": placement_sid, "sheetName": pel.name or ""}
     if totals:
         out["totals"] = totals
-    if cat == "room":
+    if cat in {"room", "finish"}:
         lvl_allow = _allowed_levels_from_schedule_filter_equals(filter_equals)
         rb = compute_room_boundary_derivation(doc)
         vacant_m2, vacant_n = vacant_derived_metrics_for_authority(

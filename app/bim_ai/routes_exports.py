@@ -44,6 +44,7 @@ from bim_ai.sheet_preview_svg import (
     sheet_print_raster_print_surrogate_png_bytes_v2,
     sheet_svg_utf8_sha256,
 )
+from bim_ai.sustainability_lca import sustainability_lca_export_v1
 from bim_ai.tables import UndoStackRecord
 
 exports_router = APIRouter()
@@ -193,6 +194,22 @@ async def export_ifc_manifest_route(
         raise HTTPException(status_code=404, detail="Model not found")
     doc = Document.model_validate(row.document)
     return build_ifc_exchange_manifest_payload(doc)
+
+
+@exports_router.get("/models/{model_id}/exports/sustainability-lca.json")
+async def export_sustainability_lca_json(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> JSONResponse:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return JSONResponse(
+        content=sustainability_lca_export_v1(doc),
+        media_type="application/json",
+        headers={"Content-Disposition": 'attachment; filename="sustainability-lca.json"'},
+    )
 
 
 @exports_router.get("/models/{model_id}/exports/ifc-empty-skeleton.ifc")
