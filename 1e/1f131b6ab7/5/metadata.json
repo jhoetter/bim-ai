@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "1e1f131b6ab7",
+  "session_id": "019e26f8-1df6-7b00-93f2-d5b1f1465e44",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T19:16:03.168457Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/workspace/Workspace.test.tsx",
+    "packages/web/src/workspace/WorkspaceRightRail.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "ca21dde83004",
+  "token_usage": {
+    "input_tokens": 544287,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 25347456,
+    "output_tokens": 42449,
+    "api_call_count": 181
+  },
+  "session_metrics": {
+    "turn_count": 2
+  }
+}
