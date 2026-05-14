@@ -24,9 +24,12 @@ from bim_ai.constructability_matrix import (
     matrix_for_profile,
 )
 from bim_ai.elements import (
+    BeamElem,
+    ColumnElem,
     DoorElem,
     Element,
     FloorElem,
+    GridLineElem,
     RailingElem,
     RoofElem,
     RoofOpeningElem,
@@ -86,6 +89,8 @@ def constructability_advisory_violations(
     violations.extend(_roof_wall_coverage_violations(participants_by_kind, walls_by_id))
     violations.extend(_roof_low_slope_metadata_violations(elements))
     violations.extend(_roof_opening_violations(elements))
+    violations.extend(_structural_material_by_type_violations(elements))
+    violations.extend(_structural_bays_missing_grid_violations(elements))
     violations.extend(_unsupported_beam_violations(participants_by_kind, elements, walls_by_id))
     violations.extend(_unsupported_column_violations(participants_by_kind, walls_by_id))
     return violations
@@ -191,11 +196,7 @@ def _matrix_max_tolerance(
     matrix: tuple[ConstructabilityMatrixCell, ...] = DEFAULT_CONSTRUCTABILITY_MATRIX,
 ) -> float:
     return max(
-        (
-            float(cell.tolerance_mm)
-            for cell in matrix
-            if cell.check_type == check_type
-        ),
+        (float(cell.tolerance_mm) for cell in matrix if cell.check_type == check_type),
         default=0.0,
     )
 
@@ -908,9 +909,7 @@ def _roof_opening_violations(elements: dict[str, Element]) -> list[Violation]:
             )
             continue
         roof_polygon = [(float(point.x_mm), float(point.y_mm)) for point in host.footprint_mm]
-        opening_polygon = [
-            (float(point.x_mm), float(point.y_mm)) for point in element.boundary_mm
-        ]
+        opening_polygon = [(float(point.x_mm), float(point.y_mm)) for point in element.boundary_mm]
         outside_vertices = [
             point
             for point in opening_polygon
@@ -1444,9 +1443,7 @@ def _point_in_polygon(point: tuple[float, float], polygon: list[tuple[float, flo
         denom = yj - yi
         if abs(denom) < 1e-9:
             denom = 1e-9
-        intersects = (yi > y) != (yj > y) and (
-            x < (xj - xi) * (y - yi) / denom + xi
-        )
+        intersects = (yi > y) != (yj > y) and (x < (xj - xi) * (y - yi) / denom + xi)
         if intersects:
             inside = not inside
         j = i
@@ -1582,10 +1579,85 @@ def _service_penetration_approved(
     return False
 
 
+def _structural_material_by_type_violations(elements: dict[str, Element]) -> list[Violation]:
+    grouped: dict[str, list[Element]] = defaultdict(list)
+    for element in elements.values():
+        key = _structural_type_key(element)
+        if key:
+            grouped[key].append(element)
+
+    violations: list[Violation] = []
+    for type_key, group in grouped.items():
+        by_material: dict[str, list[str]] = defaultdict(list)
+        for element in group:
+            material = _structural_material_token(element)
+            if material:
+                by_material[material].append(element.id)
+        if len(by_material) <= 1:
+            continue
+        violations.append(
+            Violation(
+                rule_id="structural_material_inconsistent_by_type",
+                severity="warning",
+                message=(
+                    "Structural elements sharing the same type have inconsistent structural "
+                    f"materials ({type_key}); align the type material or split the type."
+                ),
+                element_ids=sorted(element.id for element in group),
+            )
+        )
+    return violations
+
+
+def _structural_bays_missing_grid_violations(elements: dict[str, Element]) -> list[Violation]:
+    framing_ids = sorted(
+        element.id for element in elements.values() if isinstance(element, (BeamElem, ColumnElem))
+    )
+    if len(framing_ids) < 4:
+        return []
+    grid_count = sum(1 for element in elements.values() if isinstance(element, GridLineElem))
+    if grid_count >= 2:
+        return []
+    return [
+        Violation(
+            rule_id="structural_bays_missing_grids",
+            severity="warning",
+            message=(
+                "Repeated structural beams/columns are modeled without enough grid lines; "
+                "add grids to document the bay layout and support coordination."
+            ),
+            element_ids=framing_ids,
+        )
+    ]
+
+
+def _structural_type_key(element: Element) -> str:
+    if isinstance(element, WallElem) and element.wall_type_id:
+        return f"wall:{element.wall_type_id}"
+    if isinstance(element, FloorElem) and element.floor_type_id:
+        return f"floor:{element.floor_type_id}"
+    if isinstance(element, RoofElem) and element.roof_type_id:
+        return f"roof:{element.roof_type_id}"
+    return ""
+
+
+def _structural_material_token(element: Element) -> str:
+    for attr in ("structural_material", "structural_material_key", "material_key"):
+        value = getattr(element, attr, None)
+        token = str(value or "").strip()
+        if token:
+            return token
+    return ""
+
+
 def _is_load_bearing_wall(wall: WallElem | None) -> bool:
     if wall is None:
         return False
-    return wall.load_bearing is True or wall.structural_role == "load_bearing"
+    return wall.load_bearing is True or wall.structural_role in {
+        "load_bearing",
+        "bearing_wall",
+        "shear_wall",
+    }
 
 
 def _same_or_unknown_level(a: PhysicalParticipant, b: PhysicalParticipant) -> bool:

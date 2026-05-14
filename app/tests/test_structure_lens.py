@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from bim_ai.constructability_advisories import constructability_advisory_violations
 from bim_ai.document import Document
 from bim_ai.elements import ColumnElem, WallElem
 from bim_ai.schedule_derivation import derive_schedule_table
@@ -216,3 +217,69 @@ def test_structural_fields_roundtrip_on_wall_and_column() -> None:
     assert exported_column["structuralRole"] == "column"
     assert exported_column["structuralMaterial"] == "steel"
     assert exported_column["analysisStatus"] == "ready_for_export"
+
+
+def test_constructability_flags_inconsistent_structural_material_by_type() -> None:
+    doc = Document.model_validate(
+        {
+            "revision": 1,
+            "elements": {
+                "wall-a": {
+                    "kind": "wall",
+                    "id": "wall-a",
+                    "name": "Wall A",
+                    "levelId": "lvl-1",
+                    "start": {"xMm": 0, "yMm": 0},
+                    "end": {"xMm": 3000, "yMm": 0},
+                    "wallTypeId": "wt-bearing",
+                    "loadBearing": True,
+                    "structuralRole": "bearing_wall",
+                    "structuralMaterial": "concrete",
+                },
+                "wall-b": {
+                    "kind": "wall",
+                    "id": "wall-b",
+                    "name": "Wall B",
+                    "levelId": "lvl-1",
+                    "start": {"xMm": 0, "yMm": 1000},
+                    "end": {"xMm": 3000, "yMm": 1000},
+                    "wallTypeId": "wt-bearing",
+                    "loadBearing": True,
+                    "structuralRole": "bearing_wall",
+                    "structuralMaterial": "masonry",
+                },
+            },
+        }
+    )
+
+    rule_ids = {v.rule_id for v in constructability_advisory_violations(doc.elements)}
+
+    assert "structural_material_inconsistent_by_type" in rule_ids
+
+
+def test_constructability_flags_repeated_structural_bays_without_grids() -> None:
+    doc = Document.model_validate(
+        {
+            "revision": 1,
+            "elements": {
+                f"col-{index}": {
+                    "kind": "column",
+                    "id": f"col-{index}",
+                    "name": f"C{index}",
+                    "levelId": "lvl-1",
+                    "positionMm": {
+                        "xMm": (index % 2) * 4000,
+                        "yMm": (index // 2) * 4000,
+                    },
+                    "bMm": 300,
+                    "hMm": 300,
+                    "heightMm": 3000,
+                }
+                for index in range(4)
+            },
+        }
+    )
+
+    rule_ids = {v.rule_id for v in constructability_advisory_violations(doc.elements)}
+
+    assert "structural_bays_missing_grids" in rule_ids
