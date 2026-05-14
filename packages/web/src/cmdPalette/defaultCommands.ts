@@ -568,6 +568,20 @@ registerCommand({
   },
 });
 
+registerCommand({
+  id: 'navigate.construction-lens',
+  label: 'Switch lens: Bauausfuehrung',
+  keywords: ['construction', 'execution', 'bauausfuehrung', 'ausfuehrung', 'baustelle', 'lens'],
+  category: 'navigate',
+  invoke: (ctx) => {
+    if (ctx.setLensMode) {
+      ctx.setLensMode('construction');
+      return;
+    }
+    useBimStore.getState().setLensMode('construction');
+  },
+});
+
 // Additional tools
 registerCommand({
   id: 'tool.column',

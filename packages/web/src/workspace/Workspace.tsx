@@ -464,7 +464,9 @@ function materialSlotTargetLabel(
 ): string {
   const element = elementsById[target.elementId];
   const name =
-    element && 'name' in element && typeof element.name === 'string' ? element.name : target.elementId;
+    element && 'name' in element && typeof element.name === 'string'
+      ? element.name
+      : target.elementId;
   return `${name} · ${target.label}`;
 }
 

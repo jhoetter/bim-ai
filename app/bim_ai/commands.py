@@ -2357,6 +2357,81 @@ class SetViewLensCmd(BaseModel):
     lens: LensMode
 
 
+class ConstructionMetadata(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    construction_package_id: str | None = Field(default=None, alias="constructionPackageId")
+    planned_start: str | None = Field(default=None, alias="plannedStart")
+    planned_end: str | None = Field(default=None, alias="plannedEnd")
+    actual_start: str | None = Field(default=None, alias="actualStart")
+    actual_end: str | None = Field(default=None, alias="actualEnd")
+    installation_sequence: int | None = Field(default=None, alias="installationSequence")
+    dependencies: list[str] = Field(default_factory=list)
+    progress_status: str | None = Field(default=None, alias="progressStatus")
+    responsible_company: str | None = Field(default=None, alias="responsibleCompany")
+    evidence_refs: list[EvidenceRef] = Field(default_factory=list, alias="evidenceRefs")
+    issue_ids: list[str] = Field(default_factory=list, alias="issueIds")
+    punch_item_ids: list[str] = Field(default_factory=list, alias="punchItemIds")
+    inspection_checklist: list[dict[str, Any]] = Field(
+        default_factory=list, alias="inspectionChecklist"
+    )
+
+
+class SetElementConstructionCmd(BaseModel):
+    """Construction lens — attach execution metadata without changing design intent."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["setElementConstruction"] = "setElementConstruction"
+    element_id: str = Field(alias="elementId")
+    metadata: ConstructionMetadata
+    phase_created_id: str | None = Field(default=None, alias="phaseCreatedId")
+    phase_demolished_id: str | None = Field(default=None, alias="phaseDemolishedId")
+    clear_demolished: bool = Field(default=False, alias="clearDemolished")
+
+
+class CreateConstructionPackageCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createConstructionPackage"] = "createConstructionPackage"
+    id: str | None = None
+    name: str
+    code: str | None = None
+    phase_id: str | None = Field(default=None, alias="phaseId")
+    planned_start: str | None = Field(default=None, alias="plannedStart")
+    planned_end: str | None = Field(default=None, alias="plannedEnd")
+    actual_start: str | None = Field(default=None, alias="actualStart")
+    actual_end: str | None = Field(default=None, alias="actualEnd")
+    responsible_company: str | None = Field(default=None, alias="responsibleCompany")
+    dependencies: list[str] = Field(default_factory=list)
+
+
+class CreateConstructionLogisticsCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["createConstructionLogistics"] = "createConstructionLogistics"
+    id: str | None = None
+    name: str
+    logistics_kind: str = Field(alias="logisticsKind")
+    boundary_mm: list[Vec2Mm] = Field(default_factory=list, alias="boundaryMm")
+    path_mm: list[Vec2Mm] = Field(default_factory=list, alias="pathMm")
+    phase_id: str | None = Field(default=None, alias="phaseId")
+    construction_package_id: str | None = Field(default=None, alias="constructionPackageId")
+    planned_start: str | None = Field(default=None, alias="plannedStart")
+    planned_end: str | None = Field(default=None, alias="plannedEnd")
+    progress_status: str = Field(default="not_started", alias="progressStatus")
+    responsible_company: str | None = Field(default=None, alias="responsibleCompany")
+
+
+class UpsertConstructionQaChecklistCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["upsertConstructionQaChecklist"] = "upsertConstructionQaChecklist"
+    id: str | None = None
+    name: str
+    target_element_ids: list[str] = Field(default_factory=list, alias="targetElementIds")
+    construction_package_id: str | None = Field(default=None, alias="constructionPackageId")
+    phase_id: str | None = Field(default=None, alias="phaseId")
+    responsible_company: str | None = Field(default=None, alias="responsibleCompany")
+    progress_status: str = Field(default="not_started", alias="progressStatus")
+    checklist: list[dict[str, Any]] = Field(default_factory=list)
+
+
 class MoveElementCmd(BaseModel):
     """TKN-V3-01 — move a wall-hosted element (door/window) to a new tAlongHost position."""
 
@@ -3580,6 +3655,10 @@ Command = Annotated[
     | SetViewPhaseCmd
     | SetViewPhaseFilterCmd
     | SetViewLensCmd
+    | SetElementConstructionCmd
+    | CreateConstructionPackageCmd
+    | CreateConstructionLogisticsCmd
+    | UpsertConstructionQaChecklistCmd
     | CreateSunSettingsCmd
     | UpdateSunSettingsCmd
     | MoveElementCmd

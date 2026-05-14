@@ -13,6 +13,8 @@ from bim_ai.engine import (
     CreateAgentAssumptionCmd,
     CreateAgentDeviationCmd,
     CreateBcfTopicCmd,
+    CreateConstructionLogisticsCmd,
+    CreateConstructionPackageCmd,
     CreateExternalLinkCmd,
     CreateLinkDxfCmd,
     CreateLinkModelCmd,
@@ -23,6 +25,9 @@ from bim_ai.engine import (
     DeleteExternalLinkCmd,
     DeletePhaseCmd,
     DoorElem,
+    ConstructionLogisticsElem,
+    ConstructionPackageElem,
+    ConstructionQaChecklistElem,
     LINKED_ID_SEPARATOR,
     LevelElem,
     ExternalLinkElem,
@@ -43,6 +48,7 @@ from bim_ai.engine import (
     SelectionSetElem,
     SelectionSetRuleSpec,
     SetElementDisciplineCmd,
+    SetElementConstructionCmd,
     SetElementPhaseCmd,
     SetPrimaryOptionCmd,
     SetViewLensCmd,
@@ -57,6 +63,7 @@ from bim_ai.engine import (
     UpdateLinkDxfCmd,
     UpdateLinkModelCmd,
     UpsertClashTestCmd,
+    UpsertConstructionQaChecklistCmd,
     UpsertSelectionSetCmd,
     UpsertSiteCmd,
     UpsertValidationRuleCmd,
@@ -78,6 +85,11 @@ from bim_ai.engine import (
     new_id,
     reconcile_monitored_element,
     run_clash_test,
+)
+from bim_ai.construction_lens import (
+    CONSTRUCTION_LOGISTICS_KINDS,
+    CONSTRUCTION_PROGRESS_STATUSES,
+    set_element_construction_metadata,
 )
 from bim_ai.elements import DxfLayerMeta
 
@@ -675,6 +687,117 @@ def try_apply_coordination_command(doc, cmd, *, source_provider=None) -> bool:
             if view is None:
                 raise ValueError(f"setViewLens: viewId {cmd.view_id!r} not found")
             els[cmd.view_id] = view.model_copy(update={"default_lens": cmd.lens})
+
+        case SetElementConstructionCmd():
+            el = els.get(cmd.element_id)
+            if el is None:
+                raise ValueError("setElementConstruction.elementId unknown")
+            if not hasattr(el, "props"):
+                raise ValueError(
+                    "setElementConstruction target must support custom props for construction metadata"
+                )
+            meta = cmd.metadata.model_dump(by_alias=True, exclude_none=True)
+            updated = set_element_construction_metadata(el, meta)
+            patch: dict[str, object] = {}
+            if cmd.phase_created_id is not None:
+                if not isinstance(els.get(cmd.phase_created_id), PhaseElem):
+                    raise ValueError("phaseCreatedId must reference a Phase element")
+                patch["phase_created"] = cmd.phase_created_id
+            if cmd.clear_demolished:
+                patch["phase_demolished"] = None
+            elif cmd.phase_demolished_id is not None:
+                if not isinstance(els.get(cmd.phase_demolished_id), PhaseElem):
+                    raise ValueError("phaseDemolishedId must reference a Phase element")
+                patch["phase_demolished"] = cmd.phase_demolished_id
+            if patch:
+                updated = updated.model_copy(update=patch)  # type: ignore[attr-defined]
+            els[cmd.element_id] = updated
+
+        case CreateConstructionPackageCmd():
+            pid = cmd.id or new_id()
+            if pid in els:
+                raise ValueError(f"duplicate element id '{pid}'")
+            if cmd.phase_id is not None and not isinstance(els.get(cmd.phase_id), PhaseElem):
+                raise ValueError("createConstructionPackage.phaseId must reference a Phase element")
+            els[pid] = ConstructionPackageElem(
+                kind="construction_package",
+                id=pid,
+                name=cmd.name,
+                code=cmd.code,
+                phase_id=cmd.phase_id,
+                planned_start=cmd.planned_start,
+                planned_end=cmd.planned_end,
+                actual_start=cmd.actual_start,
+                actual_end=cmd.actual_end,
+                responsible_company=cmd.responsible_company,
+                dependencies=list(cmd.dependencies),
+            )
+
+        case CreateConstructionLogisticsCmd():
+            lid = cmd.id or new_id()
+            if lid in els:
+                raise ValueError(f"duplicate element id '{lid}'")
+            if cmd.logistics_kind not in CONSTRUCTION_LOGISTICS_KINDS:
+                raise ValueError(
+                    "logisticsKind must be temporary_partition|scaffolding_zone|crane_lift_zone|laydown_area|access_route|site_safety_zone"
+                )
+            if cmd.progress_status not in CONSTRUCTION_PROGRESS_STATUSES:
+                raise ValueError(
+                    "progressStatus must be not_started|in_progress|installed|inspected|accepted"
+                )
+            if cmd.phase_id is not None and not isinstance(els.get(cmd.phase_id), PhaseElem):
+                raise ValueError("createConstructionLogistics.phaseId must reference a Phase element")
+            if cmd.construction_package_id is not None and not isinstance(
+                els.get(cmd.construction_package_id), ConstructionPackageElem
+            ):
+                raise ValueError(
+                    "createConstructionLogistics.constructionPackageId must reference a construction_package"
+                )
+            els[lid] = ConstructionLogisticsElem(
+                kind="construction_logistics",
+                id=lid,
+                name=cmd.name,
+                logistics_kind=cmd.logistics_kind,  # type: ignore[arg-type]
+                boundary_mm=list(cmd.boundary_mm),
+                path_mm=list(cmd.path_mm),
+                phase_id=cmd.phase_id,
+                construction_package_id=cmd.construction_package_id,
+                planned_start=cmd.planned_start,
+                planned_end=cmd.planned_end,
+                progress_status=cmd.progress_status,  # type: ignore[arg-type]
+                responsible_company=cmd.responsible_company,
+            )
+
+        case UpsertConstructionQaChecklistCmd():
+            qid = cmd.id or new_id()
+            if cmd.progress_status not in CONSTRUCTION_PROGRESS_STATUSES:
+                raise ValueError(
+                    "progressStatus must be not_started|in_progress|installed|inspected|accepted"
+                )
+            if cmd.phase_id is not None and not isinstance(els.get(cmd.phase_id), PhaseElem):
+                raise ValueError("upsertConstructionQaChecklist.phaseId must reference a Phase element")
+            if cmd.construction_package_id is not None and not isinstance(
+                els.get(cmd.construction_package_id), ConstructionPackageElem
+            ):
+                raise ValueError(
+                    "upsertConstructionQaChecklist.constructionPackageId must reference a construction_package"
+                )
+            for eid in cmd.target_element_ids:
+                if eid not in els:
+                    raise ValueError(f"targetElementIds contains unknown element {eid!r}")
+            els[qid] = ConstructionQaChecklistElem.model_validate(
+                {
+                    "kind": "construction_qa_checklist",
+                    "id": qid,
+                    "name": cmd.name,
+                    "targetElementIds": list(cmd.target_element_ids),
+                    "constructionPackageId": cmd.construction_package_id,
+                    "phaseId": cmd.phase_id,
+                    "responsibleCompany": cmd.responsible_company,
+                    "progressStatus": cmd.progress_status,
+                    "checklist": list(cmd.checklist),
+                }
+            )
 
         case MoveElementCmd():
             el = els.get(cmd.element_id)

@@ -1699,7 +1699,13 @@ function LensScopeNotice({
         ? 'MEP'
         : lensMode === 'coordination'
           ? 'Coordination'
-          : 'Architecture';
+          : lensMode === 'fire-safety'
+            ? 'Fire Safety'
+            : lensMode === 'energy'
+              ? 'Energieberatung'
+              : lensMode === 'construction'
+                ? 'Bauausfuehrung'
+                : 'Architecture';
   const body =
     lensMode === 'coordination'
       ? 'Coordination lens is active. Review, issue, link, and model-health workflows remain foregrounded while authoring commands are filtered.'
