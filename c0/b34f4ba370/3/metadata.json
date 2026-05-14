@@ -1,0 +1,50 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "c0b34f4ba370",
+  "session_id": "019e26e7-7be1-7fb1-9247-365853491ba6",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T21:15:11.192349Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "7ba6f1ac6b66",
+  "token_usage": {
+    "input_tokens": 3477851,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 83003008,
+    "output_tokens": 305773,
+    "api_call_count": 694
+  },
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 2356,
+      "user_lines_removed": 125,
+      "agent_lines_added": 6113,
+      "agent_lines_removed": 461,
+      "user_added_per_file": {
+        "packages/web/packages/web/tmp/viewcube-revit-check-20260514/summary.json": 209,
+        "packages/web/src/Viewport.tsx": 540,
+        "packages/web/tmp/viewcube-css3d-20260514/summary.json": 27,
+        "packages/web/tmp/viewcube-final-small-raycast-20260514/summary.json": 19,
+        "packages/web/tmp/viewcube-label-transform-20260514/summary.json": 238,
+        "packages/web/tmp/viewcube-parity-progress-20260514c/summary.json": 194,
+        "packages/web/tmp/viewcube-persistent-three-20260514/summary.json": 19,
+        "packages/web/tmp/viewcube-raycast-shrink-20260514/summary.json": 37,
+        "packages/web/tmp/viewcube-revit-check-20260514-final/summary.json": 390,
+        "packages/web/tmp/viewcube-revit-check-20260514-real/summary.json": 367,
+        "packages/web/tmp/viewcube-right-fix-20260514-rig-final/summary.json": 28,
+        "packages/web/tmp/viewcube-stable-labels-20260514/summary.json": 274,
+        "packages/web/tmp/viewcube-three-interaction-20260514b/summary.json": 14
+      },
+      "user_removed_per_file": {
+        "packages/web/src/Viewport.tsx": 125
+      }
+    }
+  ]
+}
