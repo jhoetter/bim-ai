@@ -6,6 +6,50 @@ const LENS_MODE_TO_DISCIPLINE: Record<string, string> = {
   mep: 'mep',
 };
 
+const FIRE_SAFETY_KIND_SET = new Set<string>([
+  'room',
+  'wall',
+  'floor',
+  'ceiling',
+  'door',
+  'stair',
+  'wall_opening',
+  'slab_opening',
+  'roof_opening',
+  'pipe',
+  'duct',
+  'fixture',
+]);
+
+const FIRE_SAFETY_PROP_KEYS = new Set<string>([
+  'fireSafety',
+  'fireCompartmentId',
+  'smokeCompartmentId',
+  'fireResistanceRating',
+  'fireRating',
+  'smokeControlRating',
+  'selfClosingRequired',
+  'escapeRouteId',
+  'travelDistanceM',
+  'exitWidthMm',
+  'doorSwingCompliant',
+  'firestopStatus',
+  'penetrationStatus',
+]);
+
+function fireSafetyProps(elem: Element): Record<string, unknown> {
+  const raw = (elem as { props?: unknown }).props;
+  return raw && typeof raw === 'object' && !Array.isArray(raw)
+    ? (raw as Record<string, unknown>)
+    : {};
+}
+
+export function elementPassesFireSafetyLens(elem: Element): boolean {
+  if (FIRE_SAFETY_KIND_SET.has(elem.kind)) return true;
+  const props = fireSafetyProps(elem);
+  return Object.keys(props).some((key) => FIRE_SAFETY_PROP_KEYS.has(key));
+}
+
 /**
  * DSC-V3-02 — resolve the discipline-lens pass from a UI LensMode value.
  *
@@ -16,6 +60,10 @@ const LENS_MODE_TO_DISCIPLINE: Record<string, string> = {
 export function lensFilterFromMode(mode: LensMode): (elem: Element) => 'foreground' | 'ghost' {
   if (mode === 'all' || mode === 'energy' || mode === 'coordination') {
     return () => 'foreground';
+  }
+  if (mode === 'fire-safety') {
+    return (elem: Element): 'foreground' | 'ghost' =>
+      elementPassesFireSafetyLens(elem) ? 'foreground' : 'ghost';
   }
   const expected = LENS_MODE_TO_DISCIPLINE[mode];
   return (elem: Element): 'foreground' | 'ghost' => {
@@ -47,6 +95,11 @@ export function resolveLensFilter(
 
   if (lens === 'show_all') {
     return () => 'foreground';
+  }
+
+  if (lens === 'show_fire_safety') {
+    return (elem: Element): 'foreground' | 'ghost' =>
+      elementPassesFireSafetyLens(elem) ? 'foreground' : 'ghost';
   }
 
   const expected = LENS_TO_DISCIPLINE[lens];

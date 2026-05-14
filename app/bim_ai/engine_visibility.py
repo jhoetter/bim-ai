@@ -51,11 +51,65 @@ _LENS_TO_DISCIPLINE: dict[str, str] = {
     "show_mep": "mep",
 }
 
+_FIRE_SAFETY_KINDS: frozenset[str] = frozenset(
+    {
+        "room",
+        "wall",
+        "floor",
+        "ceiling",
+        "door",
+        "stair",
+        "wall_opening",
+        "slab_opening",
+        "roof_opening",
+        "pipe",
+        "duct",
+        "fixture",
+    }
+)
 
-def element_passes_lens(elem_discipline: str | None, lens: str) -> bool:
+_FIRE_SAFETY_PROP_KEYS: frozenset[str] = frozenset(
+    {
+        "fireSafety",
+        "fireCompartmentId",
+        "smokeCompartmentId",
+        "fireResistanceRating",
+        "fireRating",
+        "smokeControlRating",
+        "selfClosingRequired",
+        "escapeRouteId",
+        "travelDistanceM",
+        "exitWidthMm",
+        "doorSwingCompliant",
+        "firestopStatus",
+        "penetrationStatus",
+    }
+)
+
+
+def _passes_fire_safety_lens(
+    elem_discipline: str | None,
+    elem_kind: str | None,
+    props: dict[str, Any] | None,
+) -> bool:
+    if elem_kind in _FIRE_SAFETY_KINDS:
+        return True
+    if props and any(k in _FIRE_SAFETY_PROP_KEYS for k in props):
+        return True
+    return (elem_discipline or "arch") in {"arch", "mep"}
+
+
+def element_passes_lens(
+    elem_discipline: str | None,
+    lens: str,
+    elem_kind: str | None = None,
+    props: dict[str, Any] | None = None,
+) -> bool:
     """Return True if the element should be foreground under the given lens."""
     if lens == "show_all":
         return True
+    if lens == "show_fire_safety":
+        return _passes_fire_safety_lens(elem_discipline, elem_kind, props)
     expected = _LENS_TO_DISCIPLINE.get(lens)
     resolved = elem_discipline if elem_discipline is not None else "arch"
     return resolved == expected

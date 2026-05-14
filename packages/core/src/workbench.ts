@@ -19,6 +19,7 @@ export type PerspectiveId =
   | 'structure'
   | 'mep'
   | 'coordination'
+  | 'fire-safety'
   | 'construction'
   /** Show all advisory rows */
   | 'agent';

@@ -25,6 +25,10 @@ from bim_ai.elements import (
     WallTypeElem,
     WindowElem,
 )
+from bim_ai.fire_safety_lens import (
+    FIRE_SAFETY_SCHEDULE_CATEGORIES,
+    derive_fire_safety_schedule_rows,
+)
 from bim_ai.material_assembly_resolve import (
     material_catalog_audit_rows,
     resolved_layers_for_floor,
@@ -222,6 +226,10 @@ _NUMERIC_SCHEDULE_FIELDS: frozenset[str] = frozenset(
         "headHeightMm",
         "assemblyTotalThicknessMm",
         "layerOffsetFromExteriorMm",
+        "roomCount",
+        "volumeM3",
+        "travelDistanceM",
+        "exitWidthMm",
     }
 )
 
@@ -521,6 +529,18 @@ def _allowed_levels_from_schedule_filter_equals(feq: dict[str, Any]) -> frozense
 
 def _infer_schedule_category_from_name(name: str) -> str | None:
     lowered = name.strip().lower()
+    if "fire compartment" in lowered or "brandschutzabschnitt" in lowered:
+        return "fire_compartment"
+    if "rated wall" in lowered or "rated floor" in lowered or "rated element" in lowered:
+        return "rated_element"
+    if "fire door" in lowered or "brandschutztuer" in lowered or "brandschutztür" in lowered:
+        return "fire_door"
+    if "escape route" in lowered or "egress" in lowered or "fluchtweg" in lowered:
+        return "escape_route"
+    if "firestop" in lowered or "penetration" in lowered or "abschottung" in lowered:
+        return "firestop_penetration"
+    if "smoke control" in lowered or "rauchschutz" in lowered:
+        return "smoke_control_equipment"
     if "window" in lowered:
         return "window"
     if "door" in lowered:
@@ -1024,6 +1044,9 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "familyTypeId": "",
                     }
                 )
+
+    elif cat in FIRE_SAFETY_SCHEDULE_CATEGORIES:
+        rows = derive_fire_safety_schedule_rows(doc, cat)
 
     else:
         rows = []

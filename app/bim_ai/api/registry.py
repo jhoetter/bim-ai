@@ -493,6 +493,63 @@ register(
     )
 )
 
+register(
+    ToolDescriptor(
+        name="fire-safety-lens-review-status",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "FireSafetyLensReviewStatusInput",
+            "type": "object",
+            "required": ["modelId"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "FireSafetyLensReviewStatus",
+            "type": "object",
+            "required": [
+                "modelId",
+                "format",
+                "lensId",
+                "scheduleDefaults",
+                "viewDefaults",
+                "sheetDefaults",
+                "counts",
+                "schedules",
+            ],
+            "properties": {
+                "modelId": {"type": "string"},
+                "format": {"const": "fireSafetyLensReviewStatus_v1"},
+                "lensId": {"const": "fire-safety"},
+                "germanName": {"const": "Brandschutz"},
+                "scheduleDefaults": {"type": "array", "items": {"type": "object"}},
+                "viewDefaults": {"type": "array", "items": {"type": "object"}},
+                "sheetDefaults": {"type": "array", "items": {"type": "object"}},
+                "nonGoals": {"type": "array", "items": {"type": "string"}},
+                "counts": {"type": "object"},
+                "schedules": {"type": "object"},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Fire Safety Lens readout generated"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai fire-safety-lens-review-status --model-id <id>",
+        restEndpoint=RestEndpoint(
+            method="GET", path="/api/models/{model_id}/fire-safety-lens"
+        ),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only Brandschutz review payload. It exposes consultant-review "
+            "schedules and statuses, but does not claim jurisdictional fire-code approval."
+        ),
+    )
+)
+
 # ---------------------------------------------------------------------------
 # TOP-V3-01 — Toposolid tool descriptors
 # ---------------------------------------------------------------------------
@@ -738,7 +795,13 @@ register(
                 "view_id": {"type": "string"},
                 "lens": {
                     "type": "string",
-                    "enum": ["show_arch", "show_struct", "show_mep", "show_all"],
+                    "enum": [
+                        "show_arch",
+                        "show_struct",
+                        "show_mep",
+                        "show_fire_safety",
+                        "show_all",
+                    ],
                 },
             },
             "additionalProperties": False,
@@ -770,7 +833,8 @@ register(
         sideEffects="mutates-kernel",
         agentSafetyNotes=(
             "Wrap in a CommandBundle via apply-bundle. "
-            "lens must be one of: show_arch, show_struct, show_mep, show_all. "
+            "lens must be one of: show_arch, show_struct, show_mep, "
+            "show_fire_safety, show_all. "
             "show_all renders all elements at full opacity (default). "
             "Does not mutate element discipline fields — view-only modifier."
         ),

@@ -90,7 +90,7 @@ class EvidenceRef(BaseModel):
 
 
 DisciplineTag = Literal["arch", "struct", "mep"]
-LensMode = Literal["show_arch", "show_struct", "show_mep", "show_all"]
+LensMode = Literal["show_arch", "show_struct", "show_mep", "show_fire_safety", "show_all"]
 DEFAULT_DISCIPLINE_BY_KIND: dict[str, DisciplineTag] = {
     "beam": "struct",
     "column": "struct",
