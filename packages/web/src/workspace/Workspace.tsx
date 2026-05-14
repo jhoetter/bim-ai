@@ -170,6 +170,7 @@ function libraryDisciplineFromLens(lens: LensMode): 'arch' | 'struct' | 'mep' | 
 }
 
 function lensForWorkspace(id: WorkspaceId): LensMode {
+  if (id === 'arch') return 'architecture';
   if (id === 'struct') return 'structure';
   if (id === 'mep') return 'mep';
   return 'all';
@@ -464,7 +465,9 @@ function materialSlotTargetLabel(
 ): string {
   const element = elementsById[target.elementId];
   const name =
-    element && 'name' in element && typeof element.name === 'string' ? element.name : target.elementId;
+    element && 'name' in element && typeof element.name === 'string'
+      ? element.name
+      : target.elementId;
   return `${name} · ${target.label}`;
 }
 

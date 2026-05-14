@@ -7,19 +7,23 @@ export type TabKey =
   | 'rooms'
   | 'doors'
   | 'windows'
+  | 'finishes'
   | 'floors'
   | 'roofs'
   | 'stairs'
   | 'plans'
+  | 'views'
   | 'sheets'
   | 'assemblies';
 
 export function registryScheduleTab(tab: TabKey): tab is RegistryModelTab {
   return (
     tab === 'floors' ||
+    tab === 'finishes' ||
     tab === 'roofs' ||
     tab === 'stairs' ||
     tab === 'plans' ||
+    tab === 'views' ||
     tab === 'sheets' ||
     tab === 'assemblies'
   );
@@ -33,6 +37,8 @@ export function tabToPresetCategory(tab: TabKey): SchedulePresetCategory | null 
       return 'door';
     case 'windows':
       return 'window';
+    case 'finishes':
+      return 'finish';
     case 'assemblies':
       return 'material_assembly';
     default:
@@ -76,6 +82,10 @@ export function scheduleGroupingKeyChoices(tab: TabKey): readonly string[] {
       return ['levelId', 'programmeCode', 'department'];
     }
 
+    case 'finishes': {
+      return ['levelId', 'department', 'finishState', 'finishSet'];
+    }
+
     case 'floors': {
       return ['levelId', 'name'];
     }
@@ -90,6 +100,10 @@ export function scheduleGroupingKeyChoices(tab: TabKey): readonly string[] {
 
     case 'plans': {
       return ['levelId', 'planPresentation', 'discipline', 'sheetId'];
+    }
+
+    case 'views': {
+      return ['viewKind', 'viewType', 'levelId', 'discipline', 'sheetId'];
     }
 
     case 'sheets': {
@@ -171,6 +185,19 @@ export function scheduleSortKeyChoices(tab: TabKey): readonly string[] {
       ];
     }
 
+    case 'finishes': {
+      return [
+        'name',
+        'elementId',
+        'level',
+        'department',
+        'programmeCode',
+        'finishSet',
+        'finishState',
+        'areaM2',
+      ];
+    }
+
     case 'floors': {
       return ['name', 'elementId', 'level', 'thicknessMm', 'areaM2', 'perimeterM'];
     }
@@ -190,6 +217,20 @@ export function scheduleSortKeyChoices(tab: TabKey): readonly string[] {
         'level',
         'planPresentation',
         'discipline',
+        'sheetId',
+        'sheetName',
+      ];
+    }
+
+    case 'views': {
+      return [
+        'name',
+        'elementId',
+        'viewKind',
+        'viewType',
+        'level',
+        'discipline',
+        'viewTemplateId',
         'sheetId',
         'sheetName',
       ];
@@ -235,7 +276,9 @@ export function levelFilterFieldForTab(
     case 'doors':
     case 'windows':
     case 'floors':
+    case 'finishes':
     case 'plans':
+    case 'views':
     case 'assemblies':
       return 'levelId';
     case 'roofs':

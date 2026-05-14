@@ -35,6 +35,7 @@ from bim_ai.agent_generated_bundle_qa_checklist import (
 from bim_ai.agent_review_readout_consistency_closure import (
     agent_review_readout_consistency_closure_v1,
 )
+from bim_ai.architecture_lens_query import build_architecture_lens_query
 from bim_ai.ai_boundary import empty_external_model_call_audit_csv, load_bill_of_rights_markdown
 from bim_ai.codes import BUILDING_PRESETS
 from bim_ai.commands import Command
@@ -1032,6 +1033,23 @@ async def projection_section_wire_route(
         raise HTTPException(status_code=404, detail="Model not found")
     doc = Document.model_validate(row.document)
     return section_cut_projection_wire(doc, section_cut_id)
+
+
+# ---------------------------------------------------------------------------
+# Architecture Lens query route
+# ---------------------------------------------------------------------------
+
+
+@api_router.get("/models/{model_id}/architecture/query")
+async def architecture_lens_query(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return build_architecture_lens_query(doc)
 
 
 # ---------------------------------------------------------------------------

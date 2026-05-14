@@ -1,6 +1,14 @@
 /** Pure helpers for registry schedule panel (plans/sheets tabs) — testable empty-state routing. */
 
-export type RegistryModelTab = 'floors' | 'roofs' | 'stairs' | 'plans' | 'sheets' | 'assemblies';
+export type RegistryModelTab =
+  | 'finishes'
+  | 'floors'
+  | 'roofs'
+  | 'stairs'
+  | 'plans'
+  | 'views'
+  | 'sheets'
+  | 'assemblies';
 
 export const MSG_OPEN_SAVED_MODEL = 'Open a saved model to load server schedules.';
 
@@ -12,8 +20,16 @@ export const MSG_NO_SHEET_ELEMENTS = 'No sheet elements yet.';
 
 export function scheduleCategoryScheduleNoun(tab: RegistryModelTab): string {
   switch (tab) {
+    case 'finishes': {
+      return 'finish';
+    }
+
     case 'plans': {
       return 'plan view';
+    }
+
+    case 'views': {
+      return 'view list';
     }
 
     case 'floors': {

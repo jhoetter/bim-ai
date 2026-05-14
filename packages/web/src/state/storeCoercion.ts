@@ -480,6 +480,23 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
       typeof raw.room_fill_override_hex === 'string'
         ? { roomFillOverrideHex: String(raw.roomFillOverrideHex ?? raw.room_fill_override_hex) }
         : {}),
+      ...(typeof raw.roomFillPatternOverride === 'string' ||
+      typeof raw.room_fill_pattern_override === 'string'
+        ? {
+            roomFillPatternOverride: String(
+              raw.roomFillPatternOverride ?? raw.room_fill_pattern_override,
+            ) as Extract<Element, { kind: 'room' }>['roomFillPatternOverride'],
+          }
+        : {}),
+      ...(raw.phaseCreated || raw.phase_created
+        ? { phaseCreated: String(raw.phaseCreated ?? raw.phase_created) }
+        : {}),
+      ...(raw.phaseDemolished || raw.phase_demolished
+        ? { phaseDemolished: String(raw.phaseDemolished ?? raw.phase_demolished) }
+        : {}),
+      ...(raw.props && typeof raw.props === 'object' && !Array.isArray(raw.props)
+        ? { props: raw.props as Record<string, unknown> }
+        : {}),
     };
   }
 

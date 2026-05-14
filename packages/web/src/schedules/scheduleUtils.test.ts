@@ -67,8 +67,11 @@ describe('levelFilterFieldForTab', () => {
   it('returns levelId for doors', () => expect(levelFilterFieldForTab('doors')).toBe('levelId'));
   it('returns levelId for windows', () =>
     expect(levelFilterFieldForTab('windows')).toBe('levelId'));
+  it('returns levelId for finishes', () =>
+    expect(levelFilterFieldForTab('finishes')).toBe('levelId'));
   it('returns levelId for floors', () => expect(levelFilterFieldForTab('floors')).toBe('levelId'));
   it('returns levelId for plans', () => expect(levelFilterFieldForTab('plans')).toBe('levelId'));
+  it('returns levelId for views', () => expect(levelFilterFieldForTab('views')).toBe('levelId'));
   it('returns levelId for assemblies', () =>
     expect(levelFilterFieldForTab('assemblies')).toBe('levelId'));
   it('returns referenceLevelId for roofs', () =>
@@ -83,10 +86,12 @@ describe('scheduleSortKeyChoices', () => {
     'rooms',
     'doors',
     'windows',
+    'finishes',
     'floors',
     'roofs',
     'stairs',
     'plans',
+    'views',
     'sheets',
     'assemblies',
   ] as const;
@@ -107,6 +112,9 @@ describe('scheduleSortKeyChoices', () => {
   it('windows include heightMm', () =>
     expect(scheduleSortKeyChoices('windows')).toContain('heightMm'));
   it('rooms include areaM2', () => expect(scheduleSortKeyChoices('rooms')).toContain('areaM2'));
+  it('finishes include finishSet', () =>
+    expect(scheduleSortKeyChoices('finishes')).toContain('finishSet'));
+  it('views include viewKind', () => expect(scheduleSortKeyChoices('views')).toContain('viewKind'));
 });
 
 describe('scheduleGroupingKeyChoices', () => {
@@ -125,10 +133,12 @@ describe('scheduleGroupingKeyChoices', () => {
       'rooms',
       'doors',
       'windows',
+      'finishes',
       'floors',
       'roofs',
       'stairs',
       'plans',
+      'views',
       'sheets',
       'assemblies',
     ] as const;
@@ -142,6 +152,7 @@ describe('tabToPresetCategory', () => {
   it('maps rooms to room', () => expect(tabToPresetCategory('rooms')).toBe('room'));
   it('maps doors to door', () => expect(tabToPresetCategory('doors')).toBe('door'));
   it('maps windows to window', () => expect(tabToPresetCategory('windows')).toBe('window'));
+  it('maps finishes to finish', () => expect(tabToPresetCategory('finishes')).toBe('finish'));
   it('maps assemblies to material_assembly', () =>
     expect(tabToPresetCategory('assemblies')).toBe('material_assembly'));
   it('returns null for floors', () => expect(tabToPresetCategory('floors')).toBeNull());
@@ -149,11 +160,21 @@ describe('tabToPresetCategory', () => {
   it('returns null for stairs', () => expect(tabToPresetCategory('stairs')).toBeNull());
   it('returns null for sheets', () => expect(tabToPresetCategory('sheets')).toBeNull());
   it('returns null for plans', () => expect(tabToPresetCategory('plans')).toBeNull());
+  it('returns null for views', () => expect(tabToPresetCategory('views')).toBeNull());
 });
 
 describe('registryScheduleTab', () => {
   it('returns true for registry tabs', () => {
-    for (const tab of ['floors', 'roofs', 'stairs', 'plans', 'sheets', 'assemblies'] as const) {
+    for (const tab of [
+      'finishes',
+      'floors',
+      'roofs',
+      'stairs',
+      'plans',
+      'views',
+      'sheets',
+      'assemblies',
+    ] as const) {
       expect(registryScheduleTab(tab)).toBe(true);
     }
   });
