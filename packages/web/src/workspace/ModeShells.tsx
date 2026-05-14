@@ -805,6 +805,54 @@ function scheduleWorkflowProfiles(
           groupKeys: ['hostKind', 'materialKey'],
         },
       ];
+    case 'quantity_takeoff':
+      return [
+        {
+          id: 'cost-quantity-takeoff',
+          label: 'Quantity takeoff',
+          description: 'Model-derived length, area, volume, opening, and layer quantities.',
+          presetId: 'cost-quantity-takeoff',
+          sortBy: 'elementKind',
+          sortDescending: false,
+          groupKeys: ['elementKind', 'costGroup'],
+        },
+      ];
+    case 'cost_estimate':
+      return [
+        {
+          id: 'cost-estimate-source',
+          label: 'Estimate source',
+          description: 'Cost rows with unit rates, source references, confidence, and totals.',
+          presetId: 'cost-estimate-source',
+          sortBy: 'totalCost',
+          sortDescending: true,
+          groupKeys: ['costGroup', 'workPackage'],
+        },
+      ];
+    case 'element_cost_group':
+      return [
+        {
+          id: 'cost-element-groups',
+          label: 'Element cost groups',
+          description: 'Traceable element rows grouped by cost group, work package, and trade.',
+          presetId: 'cost-element-groups',
+          sortBy: 'costGroup',
+          sortDescending: false,
+          groupKeys: ['costGroup', 'workPackage', 'trade'],
+        },
+      ];
+    case 'scenario_delta':
+      return [
+        {
+          id: 'cost-scenario-delta',
+          label: 'Scenario delta',
+          description: 'Package-level scenario totals compared against the baseline scenario.',
+          presetId: 'cost-scenario-delta',
+          sortBy: 'deltaCost',
+          sortDescending: true,
+          groupKeys: ['scenarioId', 'costGroup', 'workPackage'],
+        },
+      ];
     default:
       return [];
   }
