@@ -1,0 +1,18 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "a900b5831553",
+  "session_id": "019e26f6-583d-7971-a103-487ff9fac0da",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T21:40:03.858053Z",
+  "branch": "codex/architecture-lens-workpackages-20260514",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "42603d58884d",
+  "checkpoint_transcript_start": 1247,
+  "transcript_lines_at_start": 1247,
+  "session_metrics": {
+    "turn_count": 2
+  }
+}
