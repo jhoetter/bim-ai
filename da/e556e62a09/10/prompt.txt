@@ -1,0 +1,13 @@
+when editing in 3d, it must be clear which level i am on (ground floor, first, ...); check how revit does this and implement accordingly
+
+---
+
+but how can i select the level in editing? ...
+
+---
+
+[Image #1] i see it, but that can be very difficult to miss...
+
+---
+
+please commit and push YOUR changes
