@@ -1297,6 +1297,12 @@ export type Element =
       functionLabel?: string | null;
       finishSet?: string | null;
       targetAreaM2?: number | null;
+      ventilationZone?: string | null;
+      heatingCoolingZone?: string | null;
+      designAirChangeRate?: number | null;
+      fixtureEquipmentLoads?: Record<string, unknown> | null;
+      electricalLoadSummary?: Record<string, unknown> | null;
+      serviceRequirements?: string[];
       volumeM3?: number | null;
       /** F-093: per-room plan fill override, matching Revit's by-element graphics override. */
       roomFillOverrideHex?: string | null;
