@@ -44,7 +44,9 @@ from bim_ai.constructability_report import (
     build_constructability_report,
     build_constructability_summary_v1,
 )
+from bim_ai.coordination_lens import build_coordination_lens_snapshot
 from bim_ai.construction_lens import build_construction_lens_payload
+from bim_ai.cost_quantity import cost_quantity_lens_review_status
 from bim_ai.db import SessionMaker, get_session
 from bim_ai.diff_engine import compute_element_diff
 from bim_ai.document import Document
@@ -706,6 +708,18 @@ async def fire_safety_lens_status(
     return {"modelId": str(model_id), **fire_safety_lens_review_status(doc)}
 
 
+@api_router.get("/models/{model_id}/cost-quantity-lens")
+async def cost_quantity_lens_status(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return {"modelId": str(model_id), **cost_quantity_lens_review_status(doc)}
+
+
 @api_router.get("/models/{model_id}/constructability-bcf")
 async def constructability_bcf_export(
     model_id: UUID,
@@ -720,6 +734,42 @@ async def constructability_bcf_export(
         "modelId": str(model_id),
         **build_constructability_bcf_export(doc.elements, revision=doc.revision, profile=profile),
     }
+
+
+@api_router.get("/models/{model_id}/coordination-lens")
+async def coordination_lens_snapshot(
+    model_id: UUID,
+    from_revision: int | None = Query(None, alias="fromRevision"),
+    to_revision: int | None = Query(None, alias="toRevision"),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    current = Document.model_validate(row.document)
+    target_revision = to_revision if to_revision is not None else current.revision
+    target_doc = (
+        await _document_at_revision(session, model_id, current, target_revision)
+        if to_revision is not None
+        else current
+    )
+
+    change_diff: dict[str, Any] | None = None
+    if from_revision is not None:
+        from_doc = await _document_at_revision(session, model_id, current, from_revision)
+        elements_from = {k: v.model_dump(by_alias=True) for k, v in from_doc.elements.items()}
+        elements_to = {k: v.model_dump(by_alias=True) for k, v in target_doc.elements.items()}
+        change_diff = {
+            "fromRevision": from_revision,
+            "toRevision": target_revision,
+            **compute_element_diff(elements_from, elements_to),
+        }
+
+    return build_coordination_lens_snapshot(
+        target_doc,
+        model_id=str(model_id),
+        change_diff=change_diff,
+    )
 
 
 @api_router.get("/models/{model_id}/construction-lens")
@@ -748,7 +798,6 @@ async def mep_lens_projection(
         raise HTTPException(status_code=404, detail="Model not found")
     doc = Document.model_validate(row.document)
     return {"modelId": str(model_id), "revision": doc.revision, **build_mep_lens_payload(doc)}
-
 
 @api_router.get("/models/{model_id}/sustainability")
 async def sustainability_lens_projection(

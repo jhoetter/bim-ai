@@ -7,6 +7,7 @@ from typing import Any
 
 from bim_ai.construction_lens import construction_progress_rows
 from bim_ai.cost_quantity import (
+    COST_QUANTITY_LENS_ID,
     DEFAULT_SCENARIO_ID,
     cost_quantity_totals,
     derive_cost_estimate_rows,
@@ -298,14 +299,17 @@ _NUMERIC_SCHEDULE_FIELDS: frozenset[str] = frozenset(
         "airChangeRate",
         "lengthM",
         "netAreaM2",
+        "netVolumeM3",
+        "grossOpeningAreaM2",
+        "netOpeningAreaM2",
+        "openingCount",
+        "layerQuantityCount",
         "quantity",
         "unitRate",
         "totalCost",
         "scenarioCost",
         "baselineCost",
         "deltaCost",
-        "openingCount",
-        "layerQuantityCount",
         "rowCount",
         "gwpPerUnit",
         "recycledContentPercent",
@@ -618,6 +622,14 @@ def _allowed_levels_from_schedule_filter_equals(feq: dict[str, Any]) -> frozense
 
 def _infer_schedule_category_from_name(name: str) -> str | None:
     lowered = name.strip().lower()
+    if "scenario delta" in lowered or "scenario comparison" in lowered or "szenario" in lowered:
+        return "scenario_delta"
+    if "element cost group" in lowered or "kostengruppe" in lowered:
+        return "element_cost_group"
+    if "cost estimate" in lowered or "kosten" in lowered:
+        return "cost_estimate"
+    if "quantity takeoff" in lowered or "takeoff" in lowered or "mengen" in lowered:
+        return "quantity_takeoff"
     if "fire compartment" in lowered or "brandschutzabschnitt" in lowered:
         return "fire_compartment"
     if "rated wall" in lowered or "rated floor" in lowered or "rated element" in lowered:
@@ -729,7 +741,22 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
 
     rows: list[dict[str, Any]] = []
 
-    if cat in {"room", "finish"}:
+    if cat == "quantity_takeoff":
+        rows = derive_quantity_takeoff_rows(doc)
+
+    elif cat in {"cost_estimate", "element_cost_group"}:
+        rows = derive_cost_estimate_rows(doc)
+
+    elif cat == "scenario_delta":
+        baseline = str(
+            filt.get("baselineScenarioId")
+            or filt.get("baseScenarioId")
+            or filt.get("baseline_scenario_id")
+            or "as-is"
+        )
+        rows = derive_scenario_delta_rows(doc, baseline_scenario_id=baseline)
+
+    elif cat in {"room", "finish"}:
         room_peer_finish = peer_finish_set_by_level(
             e for e in doc.elements.values() if isinstance(e, RoomElem)
         )
@@ -1845,12 +1872,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         missing_count = sum(1 for r in leaf_rows if r.get("impactStatus") not in {"calculated", ""})
         if missing_count:
             totals["missingDataCount"] = missing_count
-    elif cat in {
-        "quantity_takeoff",
-        "cost_estimate",
-        "element_cost_group",
-        "scenario_delta",
-    } and leaf_rows:
+    elif cat in {"quantity_takeoff", "cost_estimate", "element_cost_group", "scenario_delta"}:
         totals = cost_quantity_totals(leaf_rows, kind=cat)
 
     out: dict[str, Any] = {
@@ -1891,6 +1913,16 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         "groupKeys": group_keys,
         **({"groupedSections": grouped} if grouped else {"rows": rows}),
     }
+    if cat in {"quantity_takeoff", "cost_estimate", "element_cost_group", "scenario_delta"}:
+        out["scheduleEngine"].update(
+            {
+                "lensId": COST_QUANTITY_LENS_ID,
+                "traceability": "elementId/typeId/scenarioId",
+                "snapshotKind": "exportable_cost_snapshot"
+                if cat in {"cost_estimate", "element_cost_group", "scenario_delta"}
+                else "model_derived_quantity_takeoff",
+            }
+        )
     placement_sid = (sch.sheet_id or "").strip()
     if placement_sid:
         pel = doc.elements.get(placement_sid)

@@ -13,7 +13,7 @@ describe('LensDropdown — LNS-V3-01', () => {
     expect(getByTestId('lens-dropdown-trigger').textContent).toContain('▾');
   });
 
-  it('click opens the lens menu including specialist lenses', () => {
+  it('click opens the lens menu including specialized lenses', () => {
     const { getByTestId, queryByTestId } = render(
       <LensDropdown currentLens="all" onLensChange={() => {}} />,
     );
@@ -21,10 +21,13 @@ describe('LensDropdown — LNS-V3-01', () => {
     fireEvent.click(getByTestId('lens-dropdown-trigger'));
     const menu = queryByTestId('lens-menu');
     expect(menu).toBeTruthy();
-    expect(menu!.querySelectorAll('[role="menuitem"]').length).toBe(8);
+    expect(menu!.querySelectorAll('[role="menuitem"]').length).toBe(10);
+    expect(getByTestId('lens-option-coordination').textContent).toContain('Coordination');
     expect(getByTestId('lens-option-fire-safety').textContent).toContain('Fire Safety');
     expect(getByTestId('lens-option-energy').textContent).toContain('Energieberatung');
+    expect(getByTestId('lens-option-construction').textContent).toContain('Bauausfuehrung');
     expect(getByTestId('lens-option-sustainability').textContent).toContain('Sustainability');
+    expect(getByTestId('lens-option-cost-quantity').textContent).toContain('Cost and Quantity');
   });
 
   it('click "Structure" calls onLensChange("structure")', () => {
@@ -49,6 +52,11 @@ describe('LensDropdown — LNS-V3-01', () => {
     onLensChange.mockClear();
     render(<LensDropdown currentLens="mep" onLensChange={onLensChange} />);
     fireEvent.keyDown(window, { key: 'L' });
+    expect(onLensChange).toHaveBeenCalledWith('coordination');
+
+    onLensChange.mockClear();
+    render(<LensDropdown currentLens="coordination" onLensChange={onLensChange} />);
+    fireEvent.keyDown(window, { key: 'L' });
     expect(onLensChange).toHaveBeenCalledWith('fire-safety');
 
     onLensChange.mockClear();
@@ -69,12 +77,24 @@ describe('LensDropdown — LNS-V3-01', () => {
     onLensChange.mockClear();
     render(<LensDropdown currentLens="sustainability" onLensChange={onLensChange} />);
     fireEvent.keyDown(window, { key: 'L' });
+    expect(onLensChange).toHaveBeenCalledWith('cost-quantity');
+
+    onLensChange.mockClear();
+    render(<LensDropdown currentLens="cost-quantity" onLensChange={onLensChange} />);
+    fireEvent.keyDown(window, { key: 'L' });
     expect(onLensChange).toHaveBeenCalledWith('all');
   });
 
-  it('surfaces the Fire Safety lens option', () => {
+  it('surfaces the Coordination lens option', () => {
+    const { getByTestId } = render(<LensDropdown currentLens="all" onLensChange={() => {}} />);
+    fireEvent.click(getByTestId('lens-dropdown-trigger'));
+    expect(getByTestId('lens-option-coordination').textContent).toContain('Coordination');
+  });
+
+  it('surfaces the Fire Safety and Cost Quantity lens options', () => {
     const { getByTestId } = render(<LensDropdown currentLens="all" onLensChange={() => {}} />);
     fireEvent.click(getByTestId('lens-dropdown-trigger'));
     expect(getByTestId('lens-option-fire-safety').textContent).toContain('Fire Safety');
+    expect(getByTestId('lens-option-cost-quantity').textContent).toContain('Cost and Quantity');
   });
 });
