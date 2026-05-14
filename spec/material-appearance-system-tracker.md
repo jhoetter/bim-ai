@@ -73,7 +73,7 @@ The material assignment model should support:
 | MAT-GAP-004 | Normal/bump/height relief is metadata only.                                   | Brick, stone, concrete, wood grain lack surface relief.        | P0       | Done        |
 | MAT-GAP-005 | Plan/section surface and cut patterns are not material-driven.                | Architectural drafting views do not match material identity.   | P0       | Done        |
 | MAT-GAP-006 | Material browser edits assignment, but not appearance/graphics assets.        | Users cannot tune material behavior after assignment.          | P1       | Done        |
-| MAT-GAP-007 | Layered assemblies do not expose exterior/interior finish appearance clearly. | Revit-like wall/floor/roof types are underpowered.             | P1       | In Progress |
+| MAT-GAP-007 | Layered assemblies do not expose exterior/interior finish appearance clearly. | Revit-like wall/floor/roof types are underpowered.             | P1       | Done        |
 | MAT-GAP-008 | Per-face paint/finish overrides are not modeled.                              | Users cannot paint one wall face or one floor zone.            | P1       | Open        |
 | MAT-GAP-009 | Material previews are not representative.                                     | Browser choice is guesswork.                                   | P1       | Done        |
 | MAT-GAP-010 | Exports/schedules do not preserve the full material asset contract.           | IFC/GLTF/readback can diverge from viewport behavior.          | P1       | Open        |
@@ -439,7 +439,7 @@ Evidence (2026-05-14):
 ### WP-MAT-08 — Layered Assembly Material Semantics
 
 - Priority: `P1`
-- Status: `In Progress`
+- Status: `Done`
 - Covers: `MAT-GAP-007`
 - Goal: wall/floor/roof type layers should behave like compound assemblies, not just one color on the outer mesh.
 - Source ownership:
@@ -471,6 +471,17 @@ Evidence (2026-05-14):
   - Layer resolver tests for face-to-layer mapping.
   - 3D mesh tests for exterior/interior material assignment.
   - Section/render tests for layer cut pattern output.
+
+Evidence (2026-05-14):
+
+- Added `resolveWallAssemblyExposedLayers()` to the wall type catalog to identify exterior, interior, and cut layer material exposure.
+- Added `materialExposure` group metadata and per-layer `faceExposure`, `layerFunction`, and `materialKey` metadata in layered wall meshes.
+- Added kernel `exposedFaces` witness fields for wall, floor, and roof layered assembly rows.
+- Added tests for cavity wall exterior/interior/cut mapping and layered wall mesh exposure metadata.
+- Verification:
+  - `pnpm --filter @bim-ai/web exec vitest run src/families/wallTypeCatalog.test.ts src/viewport/meshBuilders.layeredWall.test.ts`
+  - `PYTEST_ADDOPTS=--no-cov python -m pytest app/tests/test_section_material_hatch_and_scale_evidence.py`
+  - `pnpm --filter @bim-ai/web typecheck`
 
 ### WP-MAT-09 — Per-Face Paint And Finish Overrides
 

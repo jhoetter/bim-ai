@@ -31,6 +31,12 @@ export interface WallTypeAssembly {
   layers: WallAssemblyLayer[];
 }
 
+export type WallAssemblyExposedLayers = {
+  exterior: WallAssemblyLayer | null;
+  interior: WallAssemblyLayer | null;
+  cut: WallAssemblyLayer[];
+};
+
 const EXT_TIMBER: WallTypeAssembly = {
   id: 'wall.ext-timber',
   name: 'Ext. Timber Frame',
@@ -117,6 +123,27 @@ export function totalThicknessMm(assembly: WallTypeAssembly): number {
 
 export function visibleLayerCount(assembly: WallTypeAssembly): number {
   return assembly.layers.filter((l) => l.function !== 'air').length;
+}
+
+export function resolveWallAssemblyExposedLayers(
+  assembly: WallTypeAssembly,
+): WallAssemblyExposedLayers {
+  const visible = assembly.layers.filter((layer) => layer.function !== 'air');
+  const exterior =
+    visible.find((layer) => layer.exterior && layer.function === 'finish') ??
+    visible.find((layer) => layer.exterior) ??
+    visible[0] ??
+    null;
+  const interior =
+    [...visible].reverse().find((layer) => layer !== exterior && layer.function === 'finish') ??
+    [...visible].reverse().find((layer) => layer !== exterior) ??
+    exterior ??
+    null;
+  return {
+    exterior,
+    interior,
+    cut: visible,
+  };
 }
 
 /**

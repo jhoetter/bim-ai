@@ -5,6 +5,7 @@ import {
   getBuiltInWallType,
   totalThicknessMm,
   visibleLayerCount,
+  resolveWallAssemblyExposedLayers,
 } from './wallTypeCatalog';
 
 describe('BUILT_IN_WALL_TYPES — FL-08', () => {
@@ -41,5 +42,18 @@ describe('BUILT_IN_WALL_TYPES — FL-08', () => {
     expect(t.layers[0]?.exterior).toBe(true);
     const m = getBuiltInWallType('wall.ext-masonry')!;
     expect(m.layers[0]?.exterior).toBe(true);
+  });
+
+  it('resolves exterior, interior, and cut layer exposure for cavity walls', () => {
+    const assembly = getBuiltInWallType('wall.ext-masonry')!;
+    const exposed = resolveWallAssemblyExposedLayers(assembly);
+
+    expect(exposed.exterior?.materialKey).toBe('masonry_brick');
+    expect(exposed.interior?.materialKey).toBe('plaster');
+    expect(exposed.cut.map((layer) => layer.materialKey)).toEqual([
+      'masonry_brick',
+      'masonry_block',
+      'plaster',
+    ]);
   });
 });

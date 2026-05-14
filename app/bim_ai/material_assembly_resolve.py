@@ -279,6 +279,30 @@ def _normalize_layer_summaries(layers: list[dict[str, Any]]) -> list[dict[str, A
     ]
 
 
+def _exposed_faces_for_layers(host_kind: str, summaries: list[dict[str, Any]]) -> dict[str, Any]:
+    visible = [s for s in summaries if str(s.get("function") or "") != "air"]
+    keys = [str(s.get("materialKey") or "").strip() for s in visible]
+    if host_kind == "wall":
+        return {
+            "exterior": keys[0] if keys else "",
+            "interior": keys[-1] if keys else "",
+            "cut": keys,
+        }
+    if host_kind == "floor":
+        return {
+            "top": keys[0] if keys else "",
+            "bottom": keys[-1] if keys else "",
+            "cut": keys,
+        }
+    if host_kind == "roof":
+        return {
+            "top": keys[0] if keys else "",
+            "bottom": keys[-1] if keys else "",
+            "cut": keys,
+        }
+    return {"cut": keys}
+
+
 def assembly_material_keys_digest(material_keys: list[str]) -> str:
     joined = "|".join(material_keys)
     return hashlib.sha256(joined.encode("utf-8")).hexdigest()
@@ -422,6 +446,7 @@ def layered_assembly_witness_row_for_wall(doc: Document, wall: WallElem) -> dict
         "cutProxyThicknessMm": round(float(wall.thickness_mm), 3),
         "layerStackMatchesCutThickness": m["layerStackMatchesCutThickness"],
         "layerSource": layer_src,
+        "exposedFaces": _exposed_faces_for_layers("wall", summaries),
         "skipReason": None,
     }
 
@@ -444,6 +469,7 @@ def layered_assembly_witness_row_for_floor(doc: Document, floor: FloorElem) -> d
         "cutProxyThicknessMm": round(float(floor.thickness_mm), 3),
         "layerStackMatchesCutThickness": m["layerStackMatchesCutThickness"],
         "layerSource": layer_src,
+        "exposedFaces": _exposed_faces_for_layers("floor", summaries),
         "skipReason": None,
     }
 
@@ -476,6 +502,7 @@ def layered_assembly_witness_row_for_roof(doc: Document, roof: RoofElem) -> dict
         "cutProxyThicknessMm": None,
         "layerStackMatchesCutThickness": m["layerStackMatchesCutThickness"],
         "layerSource": layer_src,
+        "exposedFaces": _exposed_faces_for_layers("roof", summaries),
         "skipReason": skip_reason,
     }
 

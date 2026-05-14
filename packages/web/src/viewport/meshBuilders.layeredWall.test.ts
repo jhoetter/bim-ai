@@ -38,6 +38,23 @@ describe('makeLayeredWallMesh — FL-08', () => {
     expect(meshes.length).toBe(4);
   });
 
+  it('stores face exposure metadata for exterior, interior, and cut layers', () => {
+    const assembly = getBuiltInWallType('wall.ext-masonry')!;
+    const group = makeLayeredWallMesh(baseWall, assembly, 0, null);
+    const meshes = visibleMeshes(group);
+
+    expect(group.userData.materialExposure).toEqual({
+      exteriorMaterialKey: 'masonry_brick',
+      interiorMaterialKey: 'plaster',
+      cutMaterialKeys: ['masonry_brick', 'masonry_block', 'plaster'],
+    });
+    expect(meshes.map((mesh) => [mesh.userData.materialKey, mesh.userData.faceExposure])).toEqual([
+      ['masonry_brick', 'exterior'],
+      ['masonry_block', 'cut'],
+      ['plaster', 'interior'],
+    ]);
+  });
+
   it('aggregate bounding box thickness matches the spec total within 0.5 mm', () => {
     const assembly = getBuiltInWallType('wall.ext-timber')!;
     const group = makeLayeredWallMesh(baseWall, assembly, 0, null);

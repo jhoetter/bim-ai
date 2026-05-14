@@ -17,6 +17,7 @@ import {
   type WallTypeAssembly,
   type WallAssemblyLayer,
   materialHexFor,
+  resolveWallAssemblyExposedLayers,
 } from '../families/wallTypeCatalog';
 import type { ViewportPaintBundle } from './materials';
 import { yawForPlanSegment } from './planSegmentOrientation';
@@ -124,6 +125,12 @@ export function makeLayeredWallMesh(
 
   const group = new THREE.Group();
   group.userData.bimPickId = wall.id;
+  const exposed = resolveWallAssemblyExposedLayers(assembly);
+  group.userData.materialExposure = {
+    exteriorMaterialKey: exposed.exterior?.materialKey ?? null,
+    interiorMaterialKey: exposed.interior?.materialKey ?? null,
+    cutMaterialKeys: exposed.cut.map((layer) => layer.materialKey),
+  };
 
   // Start offset along normal at the interior face of the stack.
   const startNormalOffM = offsetForBasis(assembly.basisLine, totalThickM);
@@ -158,6 +165,10 @@ export function makeLayeredWallMesh(
     mesh.receiveShadow = true;
     mesh.userData.bimPickId = wall.id;
     mesh.userData.layerName = layer.name;
+    mesh.userData.layerFunction = layer.function;
+    mesh.userData.materialKey = layer.materialKey;
+    mesh.userData.faceExposure =
+      layer === exposed.exterior ? 'exterior' : layer === exposed.interior ? 'interior' : 'cut';
     addEdges(mesh);
 
     if (
