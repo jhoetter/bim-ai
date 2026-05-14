@@ -464,6 +464,7 @@ function firstMmVector(value: unknown): { xMm: number; yMm: number; zMm: number 
 function CompositionBar({
   compositions,
   activeId,
+  loadingId,
   onActivate,
   onCreate,
   onReorder,
@@ -471,6 +472,7 @@ function CompositionBar({
 }: {
   compositions: WorkspaceComposition[];
   activeId: string;
+  loadingId?: string | null;
   onActivate: (id: string) => void;
   onCreate: () => void;
   onReorder: (from: number, to: number) => void;
@@ -509,6 +511,7 @@ function CompositionBar({
         const active = composition.id === activeId;
         const isDragOver = dragOverIdx === idx && dragSrc !== null && dragSrc !== idx;
         const isRenaming = renaming?.id === composition.id;
+        const isLoading = composition.id === loadingId;
         return (
           <div
             key={composition.id}
@@ -563,16 +566,20 @@ function CompositionBar({
               'group relative flex h-8 max-w-52 shrink-0 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-colors',
               active
                 ? 'border-accent/60 bg-accent/10 text-foreground'
-                : 'border-transparent text-muted/70 hover:bg-background/40 hover:text-foreground',
+                : 'border-transparent text-muted/70 hover:border-border hover:bg-background/40 hover:text-foreground',
               isDragOver ? 'ring-2 ring-accent ring-offset-0' : '',
             ].join(' ')}
             title={composition.label}
           >
-            <Icons.grid
-              size={13}
-              aria-hidden="true"
-              className={active ? 'text-accent' : 'text-muted'}
-            />
+            {isLoading ? (
+              <LoadingSpinner className={active ? 'text-accent' : 'text-muted'} />
+            ) : (
+              <Icons.grid
+                size={13}
+                aria-hidden="true"
+                className={active ? 'text-accent' : 'text-muted'}
+              />
+            )}
             {isRenaming ? (
               <input
                 ref={inputRef}
@@ -611,6 +618,18 @@ function CompositionBar({
         +
       </button>
     </div>
+  );
+}
+
+function LoadingSpinner({ className = 'text-accent' }: { className?: string }): JSX.Element {
+  return (
+    <span
+      aria-hidden="true"
+      className={[
+        'inline-block h-[13px] w-[13px] shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent',
+        className,
+      ].join(' ')}
+    />
   );
 }
 
@@ -839,6 +858,8 @@ export function Workspace(): JSX.Element {
       readPersistedPaneLayout() ?? createPaneLayout(null),
     ),
   );
+  const [loadingCompositionId, setLoadingCompositionId] = useState<string | null>(null);
+  const loadingCompositionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [tabsState, setTabsState] = useState<TabsState>(() => {
     const activeComposition =
       compositionState.compositions.find(
@@ -862,6 +883,26 @@ export function Workspace(): JSX.Element {
   });
   const [panePlanToolsById, setPanePlanToolsById] = useState<Record<string, PlanTool>>({});
   const previousFocusedPaneLeafIdRef = useRef(paneLayout.focusedLeafId);
+
+  const markCompositionLoading = useCallback((id: string): void => {
+    if (loadingCompositionTimerRef.current) {
+      clearTimeout(loadingCompositionTimerRef.current);
+    }
+    setLoadingCompositionId(id);
+    loadingCompositionTimerRef.current = setTimeout(() => {
+      setLoadingCompositionId((current) => (current === id ? null : current));
+      loadingCompositionTimerRef.current = null;
+    }, 850);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (loadingCompositionTimerRef.current) {
+        clearTimeout(loadingCompositionTimerRef.current);
+      }
+    },
+    [],
+  );
 
   const setPanePlanTool = useCallback(
     (leafId: string, tool: PlanTool): void => {
@@ -1039,6 +1080,7 @@ export function Workspace(): JSX.Element {
     (el: Element) => {
       const partial = tabFromElement(el);
       if (!partial) return;
+      markCompositionLoading(compositionState.activeId);
       const focusedTabId = tabIdForLeaf(paneLayout.root, paneLayout.focusedLeafId);
       const focusedTab = focusedTabId
         ? tabsState.tabs.find((tab) => tab.id === focusedTabId)
@@ -1059,7 +1101,7 @@ export function Workspace(): JSX.Element {
         focusPane(assignTabToPane(layout, layout.focusedLeafId, tabId), layout.focusedLeafId),
       );
     },
-    [lensMode, paneLayout, tabsState],
+    [compositionState.activeId, lensMode, markCompositionLoading, paneLayout, tabsState],
   );
 
   const activateDroppedView = useCallback(
@@ -1138,6 +1180,7 @@ export function Workspace(): JSX.Element {
     (id: string) => {
       const next = compositionState.compositions.find((composition) => composition.id === id);
       if (!next || id === compositionState.activeId) return;
+      markCompositionLoading(id);
       setCompositionState((state) => ({
         activeId: id,
         compositions: state.compositions.map((composition) =>
@@ -1149,13 +1192,20 @@ export function Workspace(): JSX.Element {
       setTabsState(next.tabsState);
       setPaneLayout(next.paneLayout);
     },
-    [compositionState.activeId, compositionState.compositions, paneLayout, tabsState],
+    [
+      compositionState.activeId,
+      compositionState.compositions,
+      markCompositionLoading,
+      paneLayout,
+      tabsState,
+    ],
   );
 
   const handleCompositionCreate = useCallback(() => {
     const id = nextCompositionId();
     const pane = createPaneLayout(null);
     const label = `Composition ${compositionState.compositions.length + 1}`;
+    markCompositionLoading(id);
     setCompositionState((state) => ({
       activeId: id,
       compositions: [
@@ -1171,7 +1221,13 @@ export function Workspace(): JSX.Element {
     setPaneLayout(pane);
     setMode('plan');
     setViewerMode('plan_canvas');
-  }, [compositionState.compositions.length, paneLayout, setViewerMode, tabsState]);
+  }, [
+    compositionState.compositions.length,
+    markCompositionLoading,
+    paneLayout,
+    setViewerMode,
+    tabsState,
+  ]);
 
   const handleCompositionReorder = useCallback((fromIdx: number, toIdx: number) => {
     setCompositionState((state) => {
@@ -3503,6 +3559,7 @@ export function Workspace(): JSX.Element {
               <CompositionBar
                 compositions={compositionState.compositions}
                 activeId={compositionState.activeId}
+                loadingId={loadingCompositionId}
                 onActivate={handleCompositionActivate}
                 onCreate={handleCompositionCreate}
                 onReorder={handleCompositionReorder}
