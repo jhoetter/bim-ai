@@ -15,6 +15,7 @@ import {
   type WallOpeningCutParams,
   type WindowCutParams,
 } from './csgCutterGeometry';
+import { wallBaseGeometryForCsg, type CsgBaseFootprintPoint } from './csgWallBaseGeometry';
 
 export {
   doorCutterGeometry,
@@ -22,6 +23,7 @@ export {
   windowCutterGeometry,
 } from './csgCutterGeometry';
 export type { DoorCutParams, WallOpeningCutParams, WindowCutParams } from './csgCutterGeometry';
+export type { CsgBaseFootprintPoint } from './csgWallBaseGeometry';
 
 // ── Shared types (imported by Viewport.tsx via `import type`) ──────────────
 
@@ -32,6 +34,8 @@ export type CsgRequest = {
   len: number;
   height: number;
   thick: number;
+  /** Optional cleaned wall footprint(s) in wall-local metres. */
+  baseFootprints?: CsgBaseFootprintPoint[][];
   /** World pose echoed back so the main thread can position the mesh. */
   wcx: number;
   wcy: number;
@@ -69,11 +73,24 @@ const ctx = self as unknown as {
 const evaluator = new Evaluator();
 
 ctx.onmessage = (evt: MessageEvent<CsgRequest>) => {
-  const { jobId, nonce, len, height, thick, wcx, wcy, wcz, yaw, doors, windows, wallOpenings } =
-    evt.data;
+  const {
+    jobId,
+    nonce,
+    len,
+    height,
+    thick,
+    baseFootprints,
+    wcx,
+    wcy,
+    wcz,
+    yaw,
+    doors,
+    windows,
+    wallOpenings,
+  } = evt.data;
 
   try {
-    let wallBrush = new Brush(new THREE.BoxGeometry(len, height, thick));
+    let wallBrush = new Brush(wallBaseGeometryForCsg(len, height, thick, baseFootprints));
     wallBrush.updateMatrixWorld();
 
     for (const door of doors) {

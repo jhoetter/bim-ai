@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import * as THREE from 'three';
+
 import { wallOpeningCutterGeometry, doorCutterGeometry } from './csgCutterGeometry';
+import { wallBaseGeometryForCsg } from './csgWallBaseGeometry';
 
 const wallLen = 6.0;
 const wallHeight = 2.8;
@@ -153,5 +156,25 @@ describe('wallOpeningCutterGeometry — KRN-04', () => {
 
     expect(out.cutW).toBeCloseTo(1.84, 5);
     expect(out.cutH).toBeCloseTo(2.11, 5);
+  });
+
+  it('builds an opening-cut base from cleaned local wall footprints', () => {
+    const geom = wallBaseGeometryForCsg(wallLen, wallHeight, wallThick, [
+      [
+        { xM: -3, zM: -0.1 },
+        { xM: 2.8, zM: -0.1 },
+        { xM: 3, zM: 0.1 },
+        { xM: -3, zM: 0.1 },
+      ],
+    ]);
+
+    const box = new THREE.Box3().setFromBufferAttribute(
+      geom.getAttribute('position') as THREE.BufferAttribute,
+    );
+    expect(box.min.x).toBeCloseTo(-3, 5);
+    expect(box.max.x).toBeCloseTo(3, 5);
+    expect(box.min.y).toBeCloseTo(-wallHeight / 2, 5);
+    expect(box.max.y).toBeCloseTo(wallHeight / 2, 5);
+    expect(box.max.z - box.min.z).toBeCloseTo(wallThick, 5);
   });
 });

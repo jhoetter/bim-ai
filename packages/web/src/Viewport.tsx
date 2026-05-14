@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import * as THREE from 'three';
-import type { CsgRequest, CsgResponse } from './viewport/csgWorker';
+import type { CsgBaseFootprintPoint, CsgRequest, CsgResponse } from './viewport/csgWorker';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
@@ -140,7 +140,11 @@ import {
 } from './viewport/wallFaceRadialMenu';
 import { buildPlanOverlay3dGroup } from './viewport/planOverlay3d';
 import { shouldRunWallOpeningCsg } from './viewport/wallCsgEligibility';
-import { wallWith3dJoinDisallowGaps } from './viewport/wallJoinDisplay';
+import {
+  wall3dCleanupFootprintMm,
+  wall3dXJoinCleanupFootprintsMm,
+  wallWith3dJoinDisallowGaps,
+} from './viewport/wallJoinDisplay';
 import {
   buildLinePreviewPayload,
   buildPolygonPreviewPayload,
@@ -406,6 +410,38 @@ function csgWallSurfaceMaterialKey(
   const assembly = resolveWallTypeAssembly(wall.wallTypeId, elementsById);
   if (!assembly) return wall.materialKey;
   return resolveWallAssemblyExposedLayers(assembly).exterior?.materialKey ?? wall.materialKey;
+}
+
+function csgBaseFootprintsForWall(
+  wall: WallElem,
+  elementsById: Record<string, Element>,
+  originXM: number,
+  originZM: number,
+  dxM: number,
+  dzM: number,
+  lenM: number,
+): CsgBaseFootprintPoint[][] | undefined {
+  const xCleanup = wall3dXJoinCleanupFootprintsMm(wall, elementsById);
+  const endpointCleanup = xCleanup ? null : wall3dCleanupFootprintMm(wall, elementsById);
+  const footprints = xCleanup ?? (endpointCleanup ? [endpointCleanup] : null);
+  if (!footprints || lenM <= 1e-6) return undefined;
+
+  const ux = dxM / lenM;
+  const uz = dzM / lenM;
+  const nx = -uz;
+  const nz = ux;
+  return footprints
+    .map((footprint) =>
+      footprint.map((point) => {
+        const wx = point.xMm / 1000 - originXM;
+        const wz = point.yMm / 1000 - originZM;
+        return {
+          xM: wx * ux + wz * uz,
+          zM: wx * nx + wz * nz,
+        };
+      }),
+    )
+    .filter((footprint) => footprint.length >= 3);
 }
 
 export function Viewport({
@@ -3957,6 +3993,8 @@ export function Viewport({
             const { yBase, height } = wallVerticalSpanM(displayWall, elev, curr);
             const thick = THREE.MathUtils.clamp(displayWall.thicknessMm / 1000, 0.05, 2);
             const wallOffset = wallPlanOffsetM(displayWall);
+            const wcx = sx + dx / 2 + wallOffset.xM;
+            const wcz = sz + dz / 2 + wallOffset.zM;
             const wallHeightMm = height * 1000;
             const retainExisting = retainPendingCsgWallIds.has(id);
             const nonce = ++csgNonceRef.current;
@@ -3974,9 +4012,10 @@ export function Viewport({
               len,
               height,
               thick,
-              wcx: sx + dx / 2 + wallOffset.xM,
+              baseFootprints: csgBaseFootprintsForWall(displayWall, curr, wcx, wcz, dx, dz, len),
+              wcx,
               wcy: yBase + height / 2,
-              wcz: sz + dz / 2 + wallOffset.zM,
+              wcz,
               yaw: yawForPlanSegment(dx, dz),
               doors: doors.map((d) => {
                 const doorDims = resolveDoorCutDimensions(d, curr, wallHeightMm);
