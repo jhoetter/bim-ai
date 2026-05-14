@@ -50,7 +50,7 @@ describe('three material factory', () => {
     expect((material as THREE.MeshPhysicalMaterial).transmission).toBeGreaterThan(0.8);
   });
 
-  it('loads albedo and bump maps through a shared texture cache', () => {
+  it('uses procedural fallback instead of loading virtual curated texture ids', () => {
     const loads: string[] = [];
     const textureManager = stubTextureManager(loads);
     const first = makeThreeMaterialForKey('asset_brick_running_red', { textureManager });
@@ -61,15 +61,14 @@ describe('three material factory', () => {
     expect(firstStandard.map).toBeTruthy();
     expect(firstStandard.bumpMap).toBeTruthy();
     expect(firstStandard.normalMap).toBeFalsy();
-    expect(firstStandard.map?.colorSpace).toBe(THREE.SRGBColorSpace);
-    expect(firstStandard.bumpMap?.colorSpace).toBe(THREE.NoColorSpace);
+    expect(firstStandard.map?.name).toBe('asset_brick_running_red:procedural:albedo');
+    expect(firstStandard.bumpMap?.name).toBe('asset_brick_running_red:procedural:bump');
     expect(firstStandard.map).toBe(secondStandard.map);
     expect(firstStandard.bumpMap).toBe(secondStandard.bumpMap);
-    expect(loads).toEqual([
-      'asset://library/masonry/brick-running-red-albedo',
-      'asset://library/masonry/brick-running-red-bump',
-    ]);
-    expect(textureManager.size()).toBe(2);
+    expect(firstStandard.map?.colorSpace).toBe(THREE.SRGBColorSpace);
+    expect(firstStandard.bumpMap?.colorSpace).toBe(THREE.NoColorSpace);
+    expect(loads).toEqual([]);
+    expect(textureManager.size()).toBe(0);
   });
 
   it('prefers normal maps over bump maps for project material elements', () => {
@@ -105,7 +104,20 @@ describe('three material factory', () => {
 
   it('disposes cached textures', () => {
     const textureManager = stubTextureManager();
-    const material = makeThreeMaterialForKey('asset_oak_plank_satin', { textureManager });
+    const materialElement: Extract<Element, { kind: 'material' }> = {
+      kind: 'material',
+      id: 'mat-cache-test',
+      name: 'Cache Test',
+      category: 'timber',
+      appearance: {
+        baseColor: '#885522',
+        albedoMapId: 'data:image/png;base64,abc',
+      },
+    };
+    const material = makeThreeMaterialForKey(materialElement.id, {
+      elementsById: { [materialElement.id]: materialElement },
+      textureManager,
+    });
     const map = (material as THREE.MeshStandardMaterial).map!;
     const dispose = vi.spyOn(map, 'dispose');
 

@@ -81,6 +81,10 @@ function defaultAssetUrlResolver(assetIdOrUrl: string): string {
   return `/materials/${assetIdOrUrl}`;
 }
 
+function isVirtualLibraryTexture(assetIdOrUrl: string): boolean {
+  return assetIdOrUrl.startsWith('library/');
+}
+
 function defaultUvScaleFor(spec: MaterialPbrSpec | null): MaterialUvExtent | null {
   switch (spec?.category) {
     case 'brick':
@@ -159,6 +163,7 @@ export class MaterialTextureManager {
     transform?: MaterialUvTransform,
   ): THREE.Texture | null {
     if (!assetIdOrUrl) return null;
+    if (isVirtualLibraryTexture(assetIdOrUrl)) return null;
     const url = this.assetUrlResolver(assetIdOrUrl);
     const key = `${kind}:${url}:${stableTransformKey(transform)}`;
     const cached = this.cache.get(key);
@@ -229,8 +234,7 @@ export function makeThreeMaterialForKey(
   const depthWrite = opts.depthWrite ?? !(spec?.category === 'glass' || opacity < 1);
   const transparent = (opts.transparent ?? spec?.category === 'glass') || opacity < 1;
   const color = new THREE.Color(spec?.baseColor ?? fallbackColor);
-  const proceduralMaps =
-    spec && !spec.textureMapUrl ? createProceduralMaterialMaps(spec, opts.uvTransform) : null;
+  const proceduralMaps = createProceduralMaterialMaps(spec, opts.uvTransform);
   const map = manager.load(spec?.textureMapUrl, 'albedo', opts.uvTransform) ?? proceduralMaps?.map;
   const normalMap = manager.load(spec?.normalMapUrl, 'normal', opts.uvTransform);
   const bumpMap = normalMap

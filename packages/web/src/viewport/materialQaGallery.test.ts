@@ -45,7 +45,7 @@ describe('material QA gallery evidence — MAT-13', () => {
     expect(byId['glass-window']?.renderPath).toBe('transparent');
     expect(byId['glass-window']?.transparent).toBe(true);
     expect(byId['glass-window']?.opacity).toBeLessThan(1);
-    expect(byId['floor-tile']?.renderPath).toBe('texture');
+    expect(byId['floor-tile']?.renderPath).toBe('procedural');
     expect(byId['floor-tile']?.hasAlbedoMap).toBe(true);
   });
 });
