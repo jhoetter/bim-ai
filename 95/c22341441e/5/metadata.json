@@ -1,0 +1,80 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "95c22341441e",
+  "session_id": "019e26e7-7be1-7fb1-9247-365853491ba6",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T15:42:45.484509Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "ac5043f98870",
+  "checkpoint_transcript_start": 989,
+  "transcript_lines_at_start": 989,
+  "token_usage": {
+    "input_tokens": 133057,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 3157504,
+    "output_tokens": 24805,
+    "api_call_count": 38
+  },
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 2911,
+      "user_lines_removed": 467,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/packages/web/tmp/viewcube-revit-check-20260514/summary.json": 209,
+        "packages/web/src/Viewport.tsx": 1,
+        "packages/web/src/families/geometryFns/doorGeometry.ts": 16,
+        "packages/web/src/families/geometryFns/windowGeometry.ts": 14,
+        "packages/web/src/plan/PlanCanvas.tsx": 3,
+        "packages/web/src/viewport/ViewCube.tsx": 436,
+        "packages/web/src/viewport/authoring3d.test.ts": 92,
+        "packages/web/src/viewport/authoring3d.ts": 274,
+        "packages/web/src/viewport/familyInstance3d.ts": 5,
+        "packages/web/src/viewport/materials.ts": 9,
+        "packages/web/src/viewport/meshBuilders.layeredWall.ts": 8,
+        "packages/web/src/viewport/meshBuilders.mass.ts": 8,
+        "packages/web/src/viewport/meshBuilders.ts": 108,
+        "packages/web/src/viewport/sweepMesh.ts": 7,
+        "packages/web/src/viewport/threeMaterialFactory.test.ts": 112,
+        "packages/web/src/viewport/threeMaterialFactory.ts": 200,
+        "packages/web/src/workspace/Workspace.test.tsx": 13,
+        "packages/web/src/workspace/Workspace.tsx": 66,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 66,
+        "packages/web/src/workspace/inspector/InspectorContent.tsx": 200,
+        "packages/web/src/workspace/shell/AppShell.test.tsx": 15,
+        "packages/web/src/workspace/shell/AppShell.tsx": 1,
+        "packages/web/src/workspace/shell/RibbonBar.tsx": 11,
+        "packages/web/tmp/viewcube-revit-check-20260514/summary.json": 342,
+        "spec/material-appearance-system-tracker.md": 695
+      },
+      "user_removed_per_file": {
+        "packages/web/src/Viewport.tsx": 1,
+        "packages/web/src/families/geometryFns/doorGeometry.ts": 15,
+        "packages/web/src/families/geometryFns/windowGeometry.ts": 14,
+        "packages/web/src/plan/PlanCanvas.tsx": 1,
+        "packages/web/src/viewport/ViewCube.tsx": 138,
+        "packages/web/src/viewport/familyInstance3d.ts": 1,
+        "packages/web/src/viewport/meshBuilders.layeredWall.ts": 6,
+        "packages/web/src/viewport/meshBuilders.mass.ts": 7,
+        "packages/web/src/viewport/meshBuilders.ts": 140,
+        "packages/web/src/viewport/sweepMesh.ts": 7,
+        "packages/web/src/viewport/threeMaterialFactory.ts": 26,
+        "packages/web/src/workspace/Workspace.test.tsx": 6,
+        "packages/web/src/workspace/Workspace.tsx": 67,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 21,
+        "packages/web/src/workspace/inspector/InspectorContent.tsx": 2,
+        "packages/web/src/workspace/shell/AppShell.tsx": 1,
+        "packages/web/src/workspace/shell/RibbonBar.tsx": 14
+      }
+    }
+  ]
+}

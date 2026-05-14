@@ -1,0 +1,40 @@
+[Image #1] the view cube can be further improved, it doesnt look like in revit (see [Image #2], [Image #3]); see also https://mashyo.com/navigate-in-revit/
+
+---
+
+[Image #1] not a qube anymore...
+
+---
+
+[Image #1] still looks like this. please validate by taking screenshots and only think you are done when you can confirm it is really a cube
+
+---
+
+[Image #1] looks super weird though...
+i.e. the texts are weird af
+
+---
+
+[Image #1] no, the labels are still extremely weird!! please compare again against the revit one... don't stop until that is really fixed and great-looking
+
+---
+
+[Image #1] also this isn incorrect (the blue boxes..)
+
+---
+
+[Image #1] dude it is wrong, it doesnt have the blue actions AND it isnt even rotatable ... THAT IS ABSOLUTELY BAD!!!
+
+---
+
+[Image #1] still weird AF, and there seems a big text behind the cube ... this can be done much better. honestly, the first version you had was best, but it had this plane-like shape, not a cube... think this really deeply through, i want revit-like UX here
+
+---
+
+it looks terrible... and it is also terrible to use ...
+
+---
+
+i think rather than overlaying the labels as text, maybe you need to really have them as part of the cube itself or something? i don't know, but it really doesnt look good. also the North south west etc is confusing; really dig again in the docs: https://support.acadgraph.de/help/de-de/65-revit/836-revit-2024-die-versteckten-moglichkeiten-des-viewcubes
+
+please ensure it is working super, super well. it is a crucial navigation element...
