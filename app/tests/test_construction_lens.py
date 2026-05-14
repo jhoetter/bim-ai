@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from bim_ai.api.registry import get_catalog
 from bim_ai.commands import (
     CreateConstructionLogisticsCmd,
     CreateConstructionPackageCmd,
@@ -11,7 +12,6 @@ from bim_ai.document import Document
 from bim_ai.elements import LevelElem, PhaseElem, ScheduleElem, Vec2Mm, WallElem
 from bim_ai.engine import apply_inplace
 from bim_ai.schedule_derivation import derive_schedule_table
-from bim_ai.api.registry import get_catalog
 
 
 def _doc() -> Document:

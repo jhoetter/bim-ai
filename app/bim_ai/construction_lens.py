@@ -4,10 +4,10 @@ from typing import Any
 
 from bim_ai.document import Document
 from bim_ai.elements import (
+    ConstructabilityIssueElem,
     ConstructionLogisticsElem,
     ConstructionPackageElem,
     ConstructionQaChecklistElem,
-    ConstructabilityIssueElem,
     EvidenceRef,
     IssueElem,
     PhaseElem,
@@ -192,9 +192,9 @@ def build_construction_lens_payload(doc: Document) -> dict[str, Any]:
         if isinstance(p, ConstructionPackageElem)
     ]
     logistics = [
-        l.model_dump(by_alias=True, exclude_none=True)
-        for l in doc.elements.values()
-        if isinstance(l, ConstructionLogisticsElem)
+        logistics_elem.model_dump(by_alias=True, exclude_none=True)
+        for logistics_elem in doc.elements.values()
+        if isinstance(logistics_elem, ConstructionLogisticsElem)
     ]
     qa = [
         q.model_dump(by_alias=True, exclude_none=True)

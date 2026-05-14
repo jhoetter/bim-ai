@@ -93,6 +93,38 @@ describe('WorkspaceRightRail — type property commands', () => {
     expect(queryByTestId('right-rail-review')).toBeNull();
   });
 
+  it('foregrounds the coordination readout when the coordination lens is active', () => {
+    useBimStore.setState({
+      selectedId: undefined,
+      elementsById: {
+        issue: {
+          kind: 'issue',
+          id: 'issue',
+          title: 'Missing host',
+          status: 'open',
+          severity: 'error',
+          responsibleDiscipline: 'architecture',
+          elementIds: ['door-missing'],
+        },
+      } as unknown as Record<string, Element>,
+    });
+
+    const { getByTestId, getByText } = renderWithI18n(
+      <WorkspaceRightRail
+        mode="3d"
+        lensMode="coordination"
+        onSemanticCommand={() => undefined}
+        onModeChange={() => undefined}
+        surface="view-context"
+      />,
+    );
+
+    expect(getByTestId('coordination-lens-panel')).toBeTruthy();
+    expect(getByText('Coordination')).toBeTruthy();
+    expect(getByText('Issue list')).toBeTruthy();
+    expect(getByText('Missing host')).toBeTruthy();
+  });
+
   it('routes wall type property edits through upsertWallType', () => {
     const wallType: Extract<Element, { kind: 'wall_type' }> = {
       kind: 'wall_type',

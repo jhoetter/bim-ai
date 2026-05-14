@@ -21,7 +21,8 @@ describe('LensDropdown — LNS-V3-01', () => {
     fireEvent.click(getByTestId('lens-dropdown-trigger'));
     const menu = queryByTestId('lens-menu');
     expect(menu).toBeTruthy();
-    expect(menu!.querySelectorAll('[role="menuitem"]').length).toBe(8);
+    expect(menu!.querySelectorAll('[role="menuitem"]').length).toBe(9);
+    expect(getByTestId('lens-option-coordination').textContent).toContain('Coordination');
     expect(getByTestId('lens-option-fire-safety').textContent).toContain('Fire Safety');
     expect(getByTestId('lens-option-energy').textContent).toContain('Energieberatung');
     expect(getByTestId('lens-option-construction').textContent).toContain('Bauausfuehrung');
@@ -50,6 +51,11 @@ describe('LensDropdown — LNS-V3-01', () => {
     onLensChange.mockClear();
     render(<LensDropdown currentLens="mep" onLensChange={onLensChange} />);
     fireEvent.keyDown(window, { key: 'L' });
+    expect(onLensChange).toHaveBeenCalledWith('coordination');
+
+    onLensChange.mockClear();
+    render(<LensDropdown currentLens="coordination" onLensChange={onLensChange} />);
+    fireEvent.keyDown(window, { key: 'L' });
     expect(onLensChange).toHaveBeenCalledWith('fire-safety');
 
     onLensChange.mockClear();
@@ -71,6 +77,12 @@ describe('LensDropdown — LNS-V3-01', () => {
     render(<LensDropdown currentLens="cost-quantity" onLensChange={onLensChange} />);
     fireEvent.keyDown(window, { key: 'L' });
     expect(onLensChange).toHaveBeenCalledWith('all');
+  });
+
+  it('surfaces the Coordination lens option', () => {
+    const { getByTestId } = render(<LensDropdown currentLens="all" onLensChange={() => {}} />);
+    fireEvent.click(getByTestId('lens-dropdown-trigger'));
+    expect(getByTestId('lens-option-coordination').textContent).toContain('Coordination');
   });
 
   it('surfaces the Fire Safety and Cost Quantity lens options', () => {
