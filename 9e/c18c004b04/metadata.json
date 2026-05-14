@@ -3,7 +3,7 @@
   "checkpoint_id": "9ec18c004b04",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 4,
+  "checkpoints_count": 6,
   "files_touched": [
     "packages/web/src/workspace/WorkspaceLeftRail.tsx",
     "packages/web/src/workspace/shell/LeftRail.test.tsx",
@@ -29,13 +29,19 @@
       "transcript": "/9e/c18c004b04/2/full.jsonl",
       "content_hash": "/9e/c18c004b04/2/content_hash.txt",
       "prompt": "/9e/c18c004b04/2/prompt.txt"
+    },
+    {
+      "metadata": "/9e/c18c004b04/3/metadata.json",
+      "transcript": "/9e/c18c004b04/3/full.jsonl",
+      "content_hash": "/9e/c18c004b04/3/content_hash.txt",
+      "prompt": "/9e/c18c004b04/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 30518857,
+    "input_tokens": 31605349,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 570970880,
-    "output_tokens": 1346363,
-    "api_call_count": 4636
+    "cache_read_tokens": 595835776,
+    "output_tokens": 1418778,
+    "api_call_count": 4832
   }
 }
