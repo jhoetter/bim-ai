@@ -7,8 +7,9 @@ BEG, or BAFA compliance calculations.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any, Iterable
+from typing import Any
 
 from bim_ai.document import Document
 from bim_ai.elements import (
