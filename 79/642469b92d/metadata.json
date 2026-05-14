@@ -3,7 +3,7 @@
   "checkpoint_id": "79642469b92d",
   "strategy": "manual-commit",
   "branch": "codex/sustainability-lens-workpackages-20260514",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": null,
   "sessions": [
     {
@@ -17,13 +17,19 @@
       "transcript": "/79/642469b92d/1/full.jsonl",
       "content_hash": "/79/642469b92d/1/content_hash.txt",
       "prompt": "/79/642469b92d/1/prompt.txt"
+    },
+    {
+      "metadata": "/79/642469b92d/2/metadata.json",
+      "transcript": "/79/642469b92d/2/full.jsonl",
+      "content_hash": "/79/642469b92d/2/content_hash.txt",
+      "prompt": "/79/642469b92d/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 3002111,
+    "input_tokens": 8944704,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 67446784,
-    "output_tokens": 174313,
-    "api_call_count": 533
+    "cache_read_tokens": 218873344,
+    "output_tokens": 535455,
+    "api_call_count": 1669
   }
 }
