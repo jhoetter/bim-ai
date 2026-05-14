@@ -5,6 +5,8 @@
   "branch": "codex/sustainability-lens-workpackages-20260514",
   "checkpoints_count": 3,
   "files_touched": [
+    "packages/core/src/index.ts",
+    "packages/web/src/viewport/useLensFilter.ts",
     "packages/web/src/workspace/commandCapabilities.test.ts",
     "packages/web/src/workspace/commandCapabilities.ts",
     "packages/web/src/workspace/shell/LensDropdown.tsx"
@@ -69,13 +71,19 @@
       "transcript": "/ab/1daa0ad4be/9/full.jsonl",
       "content_hash": "/ab/1daa0ad4be/9/content_hash.txt",
       "prompt": "/ab/1daa0ad4be/9/prompt.txt"
+    },
+    {
+      "metadata": "/ab/1daa0ad4be/10/metadata.json",
+      "transcript": "/ab/1daa0ad4be/10/full.jsonl",
+      "content_hash": "/ab/1daa0ad4be/10/content_hash.txt",
+      "prompt": "/ab/1daa0ad4be/10/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 9035111,
+    "input_tokens": 9134570,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 222654848,
-    "output_tokens": 546152,
-    "api_call_count": 1722
+    "cache_read_tokens": 227136384,
+    "output_tokens": 558319,
+    "api_call_count": 1770
   }
 }
