@@ -33,6 +33,7 @@ from bim_ai.engine import (
     ToposolidElem,
     Vec2Mm,
     WallElem,
+    WallOpeningElem,
     WallStack,
     WallStackComponent,
     WindowElem,
@@ -47,6 +48,21 @@ from bim_ai.engine import (
     new_id,
     propagate_dependent_level_elevations,
 )
+
+
+def _expand_delete_with_wall_hosted_children(els: dict[str, object], element_ids: list[str]) -> list[str]:
+    delete_ids = set(element_ids)
+    deleted_wall_ids = {eid for eid in delete_ids if isinstance(els.get(eid), WallElem)}
+    if not deleted_wall_ids:
+        return element_ids
+
+    for eid, el in els.items():
+        if isinstance(el, (DoorElem, WindowElem)) and el.wall_id in deleted_wall_ids:
+            delete_ids.add(eid)
+        elif isinstance(el, WallOpeningElem) and el.host_wall_id in deleted_wall_ids:
+            delete_ids.add(eid)
+
+    return [eid for eid in els if eid in delete_ids]
 
 
 def try_apply_core_command(doc, cmd, *, source_provider=None) -> bool:
@@ -334,13 +350,14 @@ def try_apply_core_command(doc, cmd, *, source_provider=None) -> bool:
         case DeleteElementCmd():
             if cmd.element_id not in els:
                 raise ValueError("deleteElement.elementId unknown")
-            del els[cmd.element_id]
+            for eid in _expand_delete_with_wall_hosted_children(els, [cmd.element_id]):
+                del els[eid]
 
         case DeleteElementsCmd():
             missing = [eid for eid in cmd.element_ids if eid not in els]
             if missing:
                 raise ValueError(f"deleteElements: unknown ids {sorted(missing)}")
-            for eid in cmd.element_ids:
+            for eid in _expand_delete_with_wall_hosted_children(els, cmd.element_ids):
                 del els[eid]
 
         case RestoreElementCmd():
