@@ -1,0 +1,399 @@
+please look into the ribbon of 3d, why are there soooo few elements? i thought i can also e.g. fully edit exactly as in 2d with 3d, but the ribbon is almost compltely empty...
+
+---
+
+Warning: apply_patch was requested via exec_command. Use the apply_patch tool instead of exec_command.
+
+---
+
+but i still cant e.g. create a wall in the 3d view, i can select the wall element but then cant draw; i think it is trying to select the empty space or such? 
+look into this please; of course, it is a bit more difficult in 3d than in 2d
+
+---
+
+i can now technically place them, but the UX is terrible; i don't see where i start, it still looks like "grabbing", ...
+-> how does revit handle this?
+
+---
+
+yes, exactly. do that
+
+---
+
+that is working, but now i need that for the whole rest... always in an approach that makes perfect sense for the respective element. go ahead and build this fully..
+
+---
+
+this must be sooo much better solved UX-wise; e.g. if i want to place a window into a wall, i need to be able to see it in preview before i even place it. think about exactly each element of the ribbon, how does it need to work?
+also, the select cursor must definitely be on the first ribbon group always; it is always the "default" mode, e.g. also when i press escape.
+
+think about what the top top top UX would be like for each individual ribbon element and then go build it accordingly.
+
+---
+
+all fully done?
+
+---
+
+continue until fully done everywhere
+
+---
+
+fully 100% done?
+
+---
+
+it overall works nicely, but e.g. when i try to place doors, it places a "mirrored" door also somewhere else as well - look into that. also it seems to me that e.g. placing walls can be super buggy, e.g. when i place them they are flipped in exactly the other directione tc
+
+---
+
+argh, overall it still isnt working that well. can you look into it further?
+
+---
+
+yeah go ahead do that
+
+---
+
+yes
+
+---
+
+please really pay attention to wall placements; i too often have that they are not placed where i drew them..
+
+---
+
+i notice with the walls that it goes in the wrong direction; if i draw a straight line on the grid, it works; but what i am pointing to the right, it actually goes to the left and such
+
+---
+
+[Image #1][Image #2]do you see what i mean?
+
+---
+
+now i cant draw a wall at all
+
+---
+
+still not correct...
+
+---
+
+still happens.... please really hink this through in deepest detail, what is going on, what is wrong? ...
+
+---
+
+[Image #1][Image #2] walls are still super irritating... i think the perspective is maybe an issue?
+
+please go super deep into detail, and then fix
+
+---
+
+it is still wrong... how can we debug this?
+
+---
+
+i have no console logs at all and i can now no longer go anywhere with the cursor...
+
+---
+
+react-dom_client.js?v=5d26f57b:20103 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+favicon.ico:1 
+ GET http://localhost:2000/favicon.ico 404 (Not Found)
+useWorkspaceSnapshot.ts:231 WebSocket connection to 'ws://localhost:2000/ws/6c3940ae-c0a1-5bc3-a0fa-38c9195b28d2?resumeFrom=14' failed: WebSocket is closed before the connection is established.
+logger.ts:15 [bim:ws] replay_done received
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-start', atMs: 9948, camera: {…}, screen: {…}, point: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10143.599999964237, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10144, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10151.399999976158, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10151.399999976158, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10161.899999976158, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10162.199999988079, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10167.699999988079, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10167.899999976158, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10176.800000011921, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10177, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10183.699999988079, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10183.899999976158, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10191.899999976158, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10192, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10199.899999976158, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10200.099999964237, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10208.300000011921, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10208.5, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10216.399999976158, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10216.5, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10224.099999964237, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10224.199999988079, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10232.300000011921, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10232.399999976158, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10240.300000011921, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10240.399999976158, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10248.199999988079, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10248.199999988079, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10256.199999988079, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10256.300000011921, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10264.5, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10264.599999964237, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10275.199999988079, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10275.300000011921, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10280.199999988079, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10280.300000011921, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10288.099999964237, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10288.199999988079, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10312.800000011921, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10313, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10329, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10329.199999988079, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10345.199999988079, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10345.399999976158, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10355.199999988079, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10355.399999976158, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10361.5, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10361.599999964237, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10385.099999964237, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10385.199999988079, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10410, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 10410.199999988079, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11057.899999976158, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11058.099999964237, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11088.099999964237, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11088.399999976158, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11100.5, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11100.800000011921, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11104.399999976158, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11104.5, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11111.800000011921, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11112, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11120, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11120.099999964237, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11131, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11131.099999964237, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11136.099999964237, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11136.199999988079, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11144.300000011921, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11144.5, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11154.199999988079, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11154.300000011921, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11162.5, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11162.699999988079, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11168.300000011921, camera: {…}, start: {…}, end: {…}, …}
+Viewport.tsx:964 [bim:3d-wall] 
+{phase: 'wall-preview', atMs: 11168.399999976158, camera: {…}, start: {…}, end: {…}, …}
+
+---
+
+can you see the actual content or just {...}?
+
+---
+
+undefined
+
+---
+
+[Image #1]
+
+---
+
+[bim:3d-wall] {"phase":"wall-blocked-no-visible-anchor","mode":"elevation-axis","planePoint":{"xMm":7382.879799602677,"yMm":-3387.660454120095}}
+2Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-blocked-no-visible-anchor","mode":"elevation-axis","planePoint":{"xMm":2318.6147912390725,"yMm":-2853.910583647231}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-blocked-no-visible-anchor","mode":"elevation-axis","planePoint":{"xMm":6519.493518002907,"yMm":-3957.605203694799}}
+
+i dont see anything to draw walls at all; also please run git status, there are SOOOO many new changes, but i dont think we are doing any better...
+
+---
+
+the wall drawing isnt working, nothing we are doing is going in the right diretion ....
+
+---
+
+[bim:3d-wall] {"phase":"wall-blocked-unreadable-plane","mode":"elevation-axis","planePoint":{"xMm":10641.719585186403,"yMm":-5068.168475672272}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-blocked-unreadable-plane","mode":"elevation-axis","planePoint":{"xMm":4618.419674990005,"yMm":-5225.680317862393}}
+
+i just cant add walls anywhere man ...
+
+we were so much better waaaaay earlier, but seem super stuck
+
+---
+
+better again, but still the weird flips:
+[bim:3d-wall] {"phase":"wall-start","mode":"plane","point":{"xMm":10494.235310843433,"yMm":-2269.0825730127385}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":537.9524721457277,"start":{"xMm":10494.235310843433,"yMm":-2269.0825730127385},"end":{"xMm":9956.337572725686,"yMm":-2276.756269352326},"startScreen":{"x":54.0859375,"y":653.859375},"endScreen":{"x":66.2265625,"y":661.99609375}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":2250.6023258871937,"start":{"xMm":10494.235310843433,"yMm":-2269.0825730127385},"end":{"xMm":8245.830462241307,"yMm":-2368.5132829131435},"startScreen":{"x":54.0859375,"y":653.859375},"endScreen":{"x":105.08203125,"y":691.2890625}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":3744.581469632043,"start":{"xMm":10494.235310843433,"yMm":-2269.0825730127385},"end":{"xMm":6750.672627219224,"yMm":-2356.42566940842},"startScreen":{"x":54.0859375,"y":653.859375},"endScreen":{"x":147.515625,"y":718.20703125}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":4934.655103726092,"start":{"xMm":10494.235310843433,"yMm":-2269.0825730127385},"end":{"xMm":5561.906027536495,"yMm":-2420.571297883077},"startScreen":{"x":54.0859375,"y":653.859375},"endScreen":{"x":181.53515625,"y":743.62109375}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":5618.41793581089,"start":{"xMm":10494.235310843433,"yMm":-2269.0825730127385},"end":{"xMm":4879.684530529453,"yMm":-2477.5043490275957},"startScreen":{"x":54.0859375,"y":653.859375},"endScreen":{"x":201.7421875,"y":759.90234375}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":5924.516057037055,"start":{"xMm":10494.235310843433,"yMm":-2269.0825730127385},"end":{"xMm":4573.499622962636,"yMm":-2480.6940668985967},"startScreen":{"x":54.0859375,"y":653.859375},"endScreen":{"x":212.23046875,"y":766.95703125}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":5978.507140933662,"start":{"xMm":10494.235310843433,"yMm":-2269.0825730127385},"end":{"xMm":4519.647493445241,"yMm":-2485.5266683165896},"startScreen":{"x":54.0859375,"y":653.859375},"endScreen":{"x":213.91015625,"y":768.328125}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-commit","mode":"plane","lengthMm":5978.507140933662,"startScreen":{"x":54.0859375,"y":653.859375},"endScreen":{"x":213.91015625,"y":768.328125},"command":{"type":"createWall","start":{"xMm":10494.235310843433,"yMm":-2269.0825730127385},"end":{"xMm":4519.647493445241,"yMm":-2485.5266683165896}}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-start","mode":"plane","point":{"xMm":15600.789810158909,"yMm":-62.56035302951446}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":220.22126958472148,"start":{"xMm":15600.789810158909,"yMm":-62.56035302951446},"end":{"xMm":15425.399673360953,"yMm":-195.73582934366485},"startScreen":{"x":69.046875,"y":744.28125},"endScreen":{"x":74.6484375,"y":746.74609375}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":757.884024967282,"start":{"xMm":15600.789810158909,"yMm":-62.56035302951446},"end":{"xMm":15083.623021466468,"yMm":-616.5700171818252},"startScreen":{"x":69.046875,"y":744.28125},"endScreen":{"x":84.2578125,"y":755.13671875}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":1547.1601071290197,"start":{"xMm":15600.789810158909,"yMm":-62.56035302951446},"end":{"xMm":14673.194414462912,"yMm":-1300.8136304227414},"startScreen":{"x":69.046875,"y":744.28125},"endScreen":{"x":94.64453125,"y":769.71875}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":2152.442258338646,"start":{"xMm":15600.789810158909,"yMm":-62.56035302951446},"end":{"xMm":14395.994858733602,"yMm":-1846.2298292784246},"startScreen":{"x":69.046875,"y":744.28125},"endScreen":{"x":101.26953125,"y":782.07421875}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":2595.4229289253954,"start":{"xMm":15600.789810158909,"yMm":-62.56035302951446},"end":{"xMm":14187.264396662642,"yMm":-2239.2932455525915},"startScreen":{"x":69.046875,"y":744.28125},"endScreen":{"x":106.625,"y":791.328125}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":2847.88927349416,"start":{"xMm":15600.789810158909,"yMm":-62.56035302951446},"end":{"xMm":14063.298710040077,"yMm":-2459.7658993142877},"startScreen":{"x":69.046875,"y":744.28125},"endScreen":{"x":110.0078125,"y":796.64453125}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":2997.322239379961,"start":{"xMm":15600.789810158909,"yMm":-62.56035302951446},"end":{"xMm":13985.422357581969,"yMm":-2587.3432347515823},"startScreen":{"x":69.046875,"y":744.28125},"endScreen":{"x":112.26171875,"y":799.75390625}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":3180.6282988258376,"start":{"xMm":15600.789810158909,"yMm":-62.56035302951446},"end":{"xMm":13905.175055304777,"yMm":-2753.524302697496},"startScreen":{"x":69.046875,"y":744.28125},"endScreen":{"x":114.3125,"y":803.91015625}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":3497.6947349405064,"start":{"xMm":15600.789810158909,"yMm":-62.56035302951446},"end":{"xMm":13766.28301958316,"yMm":-3040.5551975787794},"startScreen":{"x":69.046875,"y":744.28125},"endScreen":{"x":117.94140625,"y":811.23828125}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":3887.3602703440856,"start":{"xMm":15600.789810158909,"yMm":-62.56035302951446},"end":{"xMm":13595.119049662886,"yMm":-3392.5535470076866},"startScreen":{"x":69.046875,"y":744.28125},"endScreen":{"x":122.5625,"y":820.4921875}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":4163.7564385194,"start":{"xMm":15600.789810158909,"yMm":-62.56035302951446},"end":{"xMm":13448.783219758285,"yMm":-3627.070882426789},"startScreen":{"x":69.046875,"y":744.28125},"endScreen":{"x":127.19140625,"y":826.7421875}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":4288.6205340618835,"start":{"xMm":15600.789810158909,"yMm":-62.56035302951446},"end":{"xMm":13367.752115452497,"yMm":-3723.9547239212243},"startScreen":{"x":69.046875,"y":744.28125},"endScreen":{"x":130.0703125,"y":829.30859375}}
+Viewport.tsx:986 [bim:3d-wall] {"phase":"wall-commit","mode":"plane","lengthMm":4307.6183244395625,"startScreen":{"x":69.046875,"y":744.28125},"endScreen":{"x":130.84375,"y":829.56640625},"command":{"type":"createWall","start":{"xMm":15600.789810158909,"yMm":-62.56035302951446},"end":{"xMm":13348.836255402455,"yMm":-3734.655234193028}}}
+please run in the browser and test and continue until working perfectly
+
+---
+
+i think the error/bug happens after i rotate the 3d axis and then draw a wall; before that, the walls are placed correctly
+
+---
+
+sadly realized that it still also sometimes happens without the camera rotation.. e.g. here: [bim:3d-wall] {"phase":"wall-start","mode":"plane","point":{"xMm":11974.845492838585,"yMm":-2006.5844616146328}}
+Viewport.tsx:990 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":221.9163394546031,"start":{"xMm":11974.845492838585,"yMm":-2006.5844616146328},"end":{"xMm":11804.189915674873,"yMm":-2148.441910131977},"screenDelta":{"x":12.984375,"y":0},"modelDelta":{"xMm":-170.65557716371222,"yMm":-141.85744851734398},"startScreen":{"x":407.015625,"y":799.50390625},"endScreen":{"x":420,"y":799.50390625}}
+Viewport.tsx:990 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":815.5665796791009,"start":{"xMm":11974.845492838585,"yMm":-2006.5844616146328},"end":{"xMm":11373.543878913148,"yMm":-2557.57013745397},"screenDelta":{"x":47.859375,"y":1.49609375},"modelDelta":{"xMm":-601.3016139254378,"yMm":-550.9856758393371},"startScreen":{"x":407.015625,"y":799.50390625},"endScreen":{"x":454.875,"y":801}}
+Viewport.tsx:990 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":1271.371421746348,"start":{"xMm":11974.845492838585,"yMm":-2006.5844616146328},"end":{"xMm":11022.764159047088,"yMm":-2849.1557795926033},"screenDelta":{"x":74.6171875,"y":1.49609375},"modelDelta":{"xMm":-952.081333791497,"yMm":-842.5713179779705},"startScreen":{"x":407.015625,"y":799.50390625},"endScreen":{"x":481.6328125,"y":801}}
+Viewport.tsx:990 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":1633.6888207680247,"start":{"xMm":11974.845492838585,"yMm":-2006.5844616146328},"end":{"xMm":10744.035105728748,"yMm":-3080.8493051634437},"screenDelta":{"x":95.87890625,"y":1.49609375},"modelDelta":{"xMm":-1230.8103871098374,"yMm":-1074.2648435488109},"startScreen":{"x":407.015625,"y":799.50390625},"endScreen":{"x":502.89453125,"y":801}}
+Viewport.tsx:990 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":1854.4941462088404,"start":{"xMm":11974.845492838585,"yMm":-2006.5844616146328},"end":{"xMm":10568.762014758999,"yMm":-3215.7485493192207},"screenDelta":{"x":108.76953125,"y":1.1796875},"modelDelta":{"xMm":-1406.0834780795867,"yMm":-1209.164087704588},"startScreen":{"x":407.015625,"y":799.50390625},"endScreen":{"x":515.78515625,"y":800.68359375}}
+Viewport.tsx:990 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":2003.6072139564008,"start":{"xMm":11974.845492838585,"yMm":-2006.5844616146328},"end":{"xMm":10418.86902461445,"yMm":-3268.875671340375},"screenDelta":{"x":116.99609375,"y":-0.90625},"modelDelta":{"xMm":-1555.9764682241348,"yMm":-1262.2912097257422},"startScreen":{"x":407.015625,"y":799.50390625},"endScreen":{"x":524.01171875,"y":798.59765625}}
+Viewport.tsx:990 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":2082.2182216285178,"start":{"xMm":11974.845492838585,"yMm":-2006.5844616146328},"end":{"xMm":10333.634734633775,"yMm":-3288.013339716972},"screenDelta":{"x":121.15234375,"y":-2.40625},"modelDelta":{"xMm":-1641.2107582048102,"yMm":-1281.4288781023392},"startScreen":{"x":407.015625,"y":799.50390625},"endScreen":{"x":528.16796875,"y":797.09765625}}
+Viewport.tsx:990 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":2148.9212584685656,"start":{"xMm":11974.845492838585,"yMm":-2006.5844616146328},"end":{"xMm":10277.141718925643,"yMm":-3324.0306544968607},"screenDelta":{"x":124.94140625,"y":-2.72265625},"modelDelta":{"xMm":-1697.7037739129428,"yMm":-1317.446192882228},"startScreen":{"x":407.015625,"y":799.50390625},"endScreen":{"x":531.95703125,"y":796.78125}}
+Viewport.tsx:990 [bim:3d-wall] {"phase":"wall-preview","mode":"plane","lengthMm":2189.270484146446,"start":{"xMm":11974.845492838585,"yMm":-2006.5844616146328},"end":{"xMm":10237.127628619583,"yMm":-3338.2157458404736},"screenDelta":{"x":127.11328125,"y":-3.2734375},"modelDelta":{"xMm":-1737.7178642190029,"yMm":-1331.6312842258408},"startScreen":{"x":407.015625,"y":799.50390625},"endScreen":{"x":534.12890625,"y":796.23046875}}
+Viewport.tsx:990 [bim:3d-wall] {"phase":"wall-commit","mode":"plane","lengthMm":2201.01265905571,"screenDelta":{"x":127.62890625,"y":-3.7734375},"modelDelta":{"xMm":-1754.8473023796032,"yMm":-1328.5208581932457},"startScreen":{"x":407.015625,"y":799.50390625},"endScreen":{"x":534.64453125,"y":795.73046875},"command":{"type":"createWall","start":{"xMm":11974.845492838585,"yMm":-2006.5844616146328},"end":{"xMm":10219.998190458982,"yMm":-3335.1053198078785}}}
+
+---
+
+it is still absolutely wrong... it seems we are really stuck in a loop with no progress, think again from scratch for this...
+
+---
+
+[Image #1][Image #2] what do you see on the images?
+
+---
+
+yeah i have been talking about 3d the whole time... fix this
+
+---
+
+[Image #1] now the preview works, i.e. it shows where the wall is actually placed - that is GREAT progress! but of course i need that the preview AND actual wall are drawn according to the blue line, because that is the line i am trying to draw. how can we get there?
+
+---
+
+it wooooorks!!! i am so happy :D can you commit and push and see that we clean up tmp stuff? run git status, i think a lot is actually tmp; also look into that again things like window placements, doors etc work perfectly with this [Image #1]
+
+---
+
+[Image #1]good but not yet perfect. also it seems the page is refreshing which is bad for UX while i am working on it
+
+---
+
+[Image #1] still issues, can you check again? and please ensure 100% safety that we have really good test cases
+
+---
+
+looks good, can you commit and push?
+
+---
+
+[Image #1] i weirdly cant place a window here, do you know why? i also dont have a warning or such, so i dont understand why
+
+---
+
+also please see how the rest of the elements in the ribbon can be extended; e.g. load families (where i can choose from the assets etc), and so on. i want that they all are fully usable
+
+---
+
+also can you please look that cmd+r is not for roof but remains for refreshing the browser?
+
+---
+
+i generally need that we have waaaaay better editing when it comes to building the structures; e.g. i can draw a wall line, but connecting walls is super weird in 3d; same goes with floors. if i draw a floor, i want to easily build the walls attached to it, a roof on top, and so on.
+
+think about how revit does this; this is super likely a long-running task, so please sketch out in a tracker everything needed for this in great detail. i want for the whole ribbon tasks across view types extremely well working and intuitive UX, and this includes things as mentioned above.
+
+---
+
+implement everything (!) in the spec tracker; do NOT stop until you are 100% done
+
+---
+
+internet was gone, please continue
+
+---
+
+the status bar changes are likely another ai agent currently working
