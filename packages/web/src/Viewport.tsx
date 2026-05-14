@@ -123,6 +123,7 @@ import {
 } from './viewport/grip3dRenderer';
 import { makePlacedAssetMesh } from './viewport/placedAssetRendering';
 import { makeFamilyInstanceMesh } from './viewport/familyInstance3d';
+import { applyTextureVisibilityToMesh } from './viewport/visualStyleMaterials';
 // Side-effect import: registers floor/roof/column/beam/door/window 3D grip providers.
 import './viewport/grip3dProviders';
 import {
@@ -4202,7 +4203,6 @@ export function Viewport({
             }
             child.material = new THREE.MeshBasicMaterial({
               color: origStd.color.clone(),
-              map: origStd.map,
               side: origStd.side,
               transparent: origStd.transparent,
               opacity: origStd.opacity,
@@ -4231,17 +4231,22 @@ export function Viewport({
             child.material = child.userData.originalMaterial as THREE.Material;
             delete child.userData.originalMaterial;
           }
-          if (child.material instanceof THREE.MeshStandardMaterial) {
-            child.material.wireframe = false;
+          const textureMapsVisible =
+            viewerRenderStyle === 'realistic' || viewerRenderStyle === 'ray-trace';
+          applyTextureVisibilityToMesh(child, textureMapsVisible);
+          const materials = Array.isArray(child.material) ? child.material : [child.material];
+          for (const material of materials) {
+            if (!(material instanceof THREE.MeshStandardMaterial)) continue;
+            material.wireframe = false;
             if (viewerRenderStyle === 'realistic' || viewerRenderStyle === 'ray-trace') {
-              child.material.flatShading = false;
+              material.flatShading = false;
             }
-            child.material.needsUpdate = true;
+            material.needsUpdate = true;
           }
         }
       });
     }
-  }, [viewerRenderStyle]);
+  }, [elementsById, viewerRenderStyle]);
 
   useEffect(() => {
     const renderer = rendererRef.current;
