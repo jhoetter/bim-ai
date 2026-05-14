@@ -1,0 +1,17 @@
+i want to be able to select multiple elements e.g. while pressing select; the element sidebar then must be tab-based. this is e.g. to delete multiple walls at once or such
+
+---
+
+not working at all (in 3d)
+
+---
+
+yeah that works; please have that the showing of the sidebar doesnt rerender or reposition the canvas; it needs to overlay, otherwise i constantly have flickers
+
+---
+
+now selecting two elements makes the sidebar disappear... i said i need it tab-based then... (i.e. the element sidebar but i can switch between elements)
+
+---
+
+please commit and push YOUR changes 8all of them)
