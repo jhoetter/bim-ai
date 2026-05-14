@@ -58,7 +58,7 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
   const rawHeightMm = Number(resolveParam('heightMm', ip, tp, familyDef, resolvedDims.heightMm));
   const rawDepthMm = Number(resolveParam('frameDepthMm', ip, tp, familyDef, wall.thicknessMm + 20));
   const frameSectMm = Number(resolveParam('frameSectMm', ip, tp, familyDef, 60));
-  const glazingAlpha = Number(resolveParam('glazingAlpha', ip, tp, familyDef, 0.52));
+  const glazingAlpha = Number(resolveParam('glazingAlpha', ip, tp, familyDef, 0.72));
 
   const outerW = THREE.MathUtils.clamp(rawWidthMm / 1000, 0.14, 4.0);
   const outerH = THREE.MathUtils.clamp(
@@ -90,11 +90,11 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
     depthWrite: false,
     side: THREE.DoubleSide,
   });
-  glazingMat.opacity = Math.max(glazingMat.opacity, 0.5);
+  glazingMat.opacity = Math.max(glazingMat.opacity, 0.68);
   glazingMat.transparent = true;
   glazingMat.depthWrite = false;
   if (glazingMat instanceof THREE.MeshPhysicalMaterial) {
-    glazingMat.transmission = Math.min(glazingMat.transmission, 0.35);
+    glazingMat.transmission = Math.min(glazingMat.transmission, 0.18);
     glazingMat.thickness = Math.max(glazingMat.thickness, 0.02);
   }
 

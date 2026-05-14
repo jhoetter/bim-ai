@@ -122,8 +122,8 @@ describe('buildWindowGeometry — rectangular regression', () => {
     const material = glass!.material as THREE.MeshPhysicalMaterial;
     expect(material.transparent).toBe(true);
     expect(material.depthWrite).toBe(false);
-    expect(material.opacity).toBeGreaterThanOrEqual(0.5);
-    expect(material.transmission).toBeLessThanOrEqual(0.35);
+    expect(material.opacity).toBeGreaterThanOrEqual(0.68);
+    expect(material.transmission).toBeLessThanOrEqual(0.18);
     expect(glass!.children.some((child) => child instanceof THREE.LineSegments)).toBe(true);
   });
 
