@@ -1772,3 +1772,330 @@ Evidence (2026-05-13):
       - `responseStatuses: [200]`
       - `mainFrameNavigations: 0`
       - `consoleErrors: []`
+
+## Reopened Tracker (2026-05-14, feedback round 22 — Structural Authoring UX)
+
+This round is a deliberate reset from isolated tool fixes to a coherent BIM authoring model. The target is not "make every ribbon button clickable"; the target is that building a small structure feels predictable across plan and 3D:
+
+- choose a command in the active view-type ribbon;
+- set type/level/constraint/options in the ribbon modifier row;
+- draw, pick, or host on the canvas with a preview that exactly matches the future committed element;
+- finish/cancel explicitly for sketch commands;
+- keep relationships visible: level, work plane, host, joins, top/base constraints, openings, and generated dependents;
+- preserve `Select` as the default command after `Esc`, command completion, or invalid placement;
+- keep Cmd+K as the searchable bridge with executable/disabled/opens-view reasons.
+
+Revit behavior to emulate where it maps cleanly:
+
+- Linear model tools (`Wall`, `Beam`, `Railing`) support chain placement, snap, temporary dimensions, flip side without reversing endpoints, automatic join cleanup, and explicit disallow-join handles.
+- Sketch tools (`Floor`, `Roof`, `Ceiling`, `Shaft`, `Stair`) enter a bounded sketch mode with `Finish`, `Cancel`, boundary validation, pick-lines/pick-walls, and in-canvas invalid-loop feedback before commit.
+- Host-based tools (`Door`, `Window`, `Opening`, hosted components) preview on the actual host face before placement, reject ambiguous/occupied hosts with a visible reason, and do not steal selection/layout while the command remains active.
+- Relationship tools (`Attach Top/Base`, `Join/Unjoin`, `Align`, `Trim/Extend`, `Offset`, `Array`) are explicit modify commands, not hidden side effects.
+- View type controls command validity: plan and 3D can author model elements where valid; sections mostly detail/annotate/modify visible elements; sheets/schedules never show dead model-authoring chrome.
+
+### Structural Authoring Gap Inventory
+
+| Gap ID         | Problem Statement                                                                                                                                      | Canonical Surfaces / Files                                                                                                                                              | Priority | Status |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------ |
+| NEXT22-GAP-001 | Ribbon commands still lack one canonical executable lifecycle across plan/3D/sketch/hosted tools, making each tool feel custom and brittle.            | `packages/web/src/tools/toolRegistry.ts`, `packages/web/src/workspace/workspaceUtils.ts`, `packages/web/src/workspace/shell/RibbonBar.tsx`, command capability metadata | P0       | Open   |
+| NEXT22-GAP-002 | The canvas lacks one shared "authoring transaction" state machine for start/preview/commit/cancel/error across line, sketch, host, and modify tools.   | `packages/web/src/plan/PlanCanvas.tsx`, `packages/web/src/Viewport.tsx`, `packages/web/src/workspace/authoring/*`, shared authoring state module                        | P0       | Open   |
+| NEXT22-GAP-003 | Wall connections in 3D do not feel like BIM joins: endpoints, intersections, cleanup, flip side, and join/disallow-join handles are not unified.       | wall command path, `viewport/meshBuilders*`, `plan/planElementMeshBuilders.ts`, backend wall/join commands                                                              | P0       | Open   |
+| NEXT22-GAP-004 | Wall joins in plan and 3D can diverge visually/semantically, so a trustworthy join in one view may not read correctly in the other.                    | plan projection, 3D mesh builders, wall join solver, wall join tests                                                                                                    | P0       | Open   |
+| NEXT22-GAP-005 | Floor creation is still a standalone sketch command instead of a structural host workflow that can drive walls, rooms, shafts, ceilings, and roofs.    | floor sketch UI, backend floor/slab elements, plan/3D preview, command metadata                                                                                         | P0       | Open   |
+| NEXT22-GAP-006 | There is no "build walls from this floor/boundary/room" workflow, so users redraw obvious geometry instead of deriving structure from existing loops.  | floor/room boundary extraction, wall creation command batch, ribbon create/modify groups                                                                                | P0       | Open   |
+| NEXT22-GAP-007 | Roof and ceiling authoring are not connected to the wall/floor stack; attach/top constraints and roof-by-footprint behavior are not clear.             | roof/ceiling sketch tools, wall top constraints, attach top/base commands, 3D preview                                                                                   | P0       | Open   |
+| NEXT22-GAP-008 | Work plane, level, host face, and pick mode are not visible enough during 3D structure creation, so users cannot predict where structure will land.    | `viewport/authoring3d.ts`, `Viewport.tsx`, secondary 3D level/work-plane controls, ribbon modifier row                                                                  | P0       | Open   |
+| NEXT22-GAP-009 | `Floor`, `Roof`, `Ceiling`, `Column`, `Beam`, `Shaft`, `Stair`, and `Railing` need tool-specific 3D previews, not generic click acceptance.            | `Viewport.tsx`, mesh preview factories, backend commands/elements, ribbon command callbacks                                                                             | P0       | Open   |
+| NEXT22-GAP-010 | Modify commands are not a coherent cross-view set, especially `Align`, `Offset`, `Trim/Extend`, `Split`, `Join/Unjoin`, `Attach`, `Move`, and `Copy`.  | ribbon modify group, canvas grips, selected-element sidebar actions, command palette                                                                                    | P1       | Open   |
+| NEXT22-GAP-011 | Hosted placement is improved for doors/windows, but needs the same host-lock, preview, conflict, and family-type fidelity for openings and components. | `Viewport.tsx`, `families/hostedFamilySelection.ts`, hosted opening guards, family library                                                                              | P1       | Open   |
+| NEXT22-GAP-012 | Load Family / component placement does not yet operate as a full authoring resource workflow across plan, 3D, sheet, and family-editor boundaries.     | `FamilyLibraryPanel`, `familyPlacementRuntime`, ribbon Insert tab, project asset catalog, command capabilities                                                          | P1       | Open   |
+| NEXT22-GAP-013 | Sketch mode finish/cancel/error affordances are not standardized for floors, roofs, ceilings, shafts, stairs, areas, rooms, and detail boundaries.     | sketch canvases, `ToolModifierBar`, `OptionsBar`, Cmd+K, status footer                                                                                                  | P0       | Open   |
+| NEXT22-GAP-014 | Temporary dimensions, snaps, constraints, and numeric entry are inconsistent across plan/3D, making precise construction hard.                         | snap engine, temp dimensions, plan/3D authoring overlays, numeric input components                                                                                      | P1       | Open   |
+| NEXT22-GAP-015 | Selection and grips after placement do not expose the next obvious structural edits: stretch, flip, attach, join cleanup, type swap, and host repair.  | `viewport/grip3d*`, plan grip providers, element sidebar, contextual ribbon modify group                                                                                | P1       | Open   |
+| NEXT22-GAP-016 | Structural validation is reactive/opaque; bad loops, orphan hosts, overlapping walls, detached doors/windows, and unattached tops need live feedback.  | advisor/violations pipeline, authoring guards, footer status, canvas transient notices                                                                                  | P1       | Open   |
+| NEXT22-GAP-017 | The command registry does not yet prove every ribbon command is either executable in-view, disabled with a reason, or bridged through Cmd+K/open view. | `commandCapabilities.ts`, `defaultCommands.ts`, ribbon tests, Cmd+K tests                                                                                               | P0       | Open   |
+| NEXT22-GAP-018 | Multi-pane tabs need per-pane authoring context: active command, lens, work plane, ribbon, and secondary sidebar must not bleed into another pane.     | `Workspace.tsx`, `tabsModel.ts`, `paneLayout.ts`, `CanvasMount.tsx`, per-pane state persistence                                                                         | P0       | Open   |
+| NEXT22-GAP-019 | Seeded proof coverage is too command-specific; there is no end-to-end proof of "floor -> walls -> openings -> roof -> edits" in one stable session.    | Playwright evidence folder, seeded app capture scripts, `target-house-3`                                                                                                | P0       | Open   |
+| NEXT22-GAP-020 | The current tracker lacks a command-by-command ribbon UX contract for every view type, including sheet/schedule non-model commands.                    | `RibbonBar.tsx`, view mode shells, sheet/schedule/concept commands, docs/tests                                                                                          | P1       | Open   |
+
+### WP-NEXT-40 — Canonical Authoring Command Contract
+
+- Priority: `P0`
+- Status: `Open`
+- Covers: `NEXT22-GAP-001`, `NEXT22-GAP-002`, `NEXT22-GAP-013`, `NEXT22-GAP-017`
+- Goal: define and implement one lifecycle contract for every active authoring command before adding more geometry-specific behavior.
+- Source ownership:
+  - `packages/web/src/tools/toolRegistry.ts`
+  - `packages/web/src/workspace/workspaceUtils.ts`
+  - `packages/web/src/workspace/shell/RibbonBar.tsx`
+  - `packages/web/src/workspace/authoring/OptionsBar.tsx`
+  - `packages/web/src/workspace/authoring/ToolModifierBar.tsx`
+  - command capability metadata and Cmd+K registry/tests
+  - new shared authoring lifecycle module if needed
+- Required UX contract:
+  - `Select` is always first in each model-authoring ribbon group and is the default after `Esc`, cancelled commands, and successful one-shot placement unless loop mode is explicitly on.
+  - Each command declares `kind`: `line`, `sketch`, `hosted`, `point`, `modify`, `review`, `document`, or `resource`.
+  - Each command declares valid view types, required context, disabled reason, Cmd+K reachability, active options, preview semantics, and completion behavior.
+  - Every ribbon item has exactly one of: executable callback, disabled state with visible reason, or bridge action that opens the required view/context.
+  - `Finish`, `Cancel`, `Back`, `Pick Lines`, `Pick Walls`, `Chain`, `Multiple`, `Flip`, `Lock Host`, and type/level fields use common modifier components.
+- Acceptance:
+  - unit tests fail if a visible ribbon command has no executable/disabled/bridge metadata;
+  - Cmd+K exposes the same command with matching executable/disabled/bridge reason;
+  - `Cmd/Ctrl+R`, browser-native shortcuts, text input shortcuts, and tab shortcuts are not captured by model tools;
+  - active command state is pane-local when the workspace is split;
+  - seeded screenshots cover plan wall, 3D wall, floor sketch, hosted window, and sheet command states;
+  - old ad hoc active-command messages remain only where adapted into the new lifecycle.
+- Dependencies: none. This is the foundation for every following package.
+
+### WP-NEXT-41 — Shared Work Plane, Snapping, Preview, And Numeric Input Kernel
+
+- Priority: `P0`
+- Status: `Open`
+- Covers: `NEXT22-GAP-002`, `NEXT22-GAP-008`, `NEXT22-GAP-014`, `NEXT22-GAP-018`
+- Goal: make "where am I drawing?" and "what will be committed?" identical in plan and 3D.
+- Source ownership:
+  - `packages/web/src/plan/PlanCanvas.tsx`
+  - `packages/web/src/Viewport.tsx`
+  - `packages/web/src/viewport/authoring3d.ts`
+  - snap engine and temporary dimension modules
+  - secondary plan/3D level/work-plane controls
+- Required UX:
+  - visible active work plane with level/name badge in 3D and plan;
+  - snap glyphs for endpoint, midpoint, intersection, perpendicular, parallel, nearest, face, host centerline, grid, and level plane;
+  - numeric length/angle/offset entry at cursor or modifier row;
+  - preview object uses the exact semantic command payload that will be committed;
+  - invalid hover/click states explain the reason in the canvas overlay and footer command prompt;
+  - camera orbit/pan never accidentally commits geometry; model tools use explicit click phases and `Alt`/middle-mouse navigation escape.
+- Acceptance:
+  - tests prove screen-to-model projection is stable after ViewCube rotation and pane resize;
+  - preview payload equals committed payload for walls, beams, floors, and roof sketch segments;
+  - seeded proof shows work-plane badge, snap glyph, numeric input, preview, commit, cancel, and no page refresh;
+  - per-pane split proof shows each pane keeps its own work plane and active command.
+- Dependencies: `WP-NEXT-40`.
+
+### WP-NEXT-42 — Wall Connectivity, Joins, Cleanup, And Join Controls
+
+- Priority: `P0`
+- Status: `Open`
+- Covers: `NEXT22-GAP-003`, `NEXT22-GAP-004`, `NEXT22-GAP-010`, `NEXT22-GAP-015`, `NEXT22-GAP-016`
+- Goal: make wall drawing feel like BIM topology rather than disconnected slabs.
+- Revit-like behavior to emulate:
+  - wall endpoints snap and auto-join at endpoints/intersections;
+  - T/L/X joins clean up in plan and 3D consistently;
+  - `Space` flips location-line side without reversing authored start/end;
+  - selected wall exposes start/end join handles and `Disallow Join` toggles;
+  - `Trim/Extend`, `Split`, `Join`, `Unjoin`, `Align`, and `Offset` work as modify commands, not hidden special cases.
+- Source ownership:
+  - wall creation/update backend commands;
+  - wall join data model;
+  - plan projection and wall hatch rendering;
+  - 3D wall mesh builders and CSG cut refresh;
+  - selected wall element sidebar and contextual ribbon modify group.
+- Acceptance:
+  - plan and 3D wall joins share the same topology model and tests;
+  - drawing a rectangle in plan creates four joined walls with clean corners and no mirrored artifacts;
+  - drawing the same in 3D creates the same semantic topology and clean 3D corners;
+  - selecting a joined wall exposes join controls in element sidebar/contextual ribbon;
+  - disallowing a join visibly separates the end in plan and 3D;
+  - seeded proof covers endpoint join, T join, trim/extend, disallow join, flip side, and undo/redo.
+- Dependencies: `WP-NEXT-40`, `WP-NEXT-41`.
+
+### WP-NEXT-43 — Floor Sketch Lifecycle And Floor-As-Host Semantics
+
+- Priority: `P0`
+- Status: `Open`
+- Covers: `NEXT22-GAP-005`, `NEXT22-GAP-013`, `NEXT22-GAP-014`, `NEXT22-GAP-016`
+- Goal: make floors a trustworthy structural base for walls, rooms, shafts, ceilings, and roofs.
+- Revit-like behavior to emulate:
+  - `Floor` starts sketch mode with boundary line tools, pick-lines, pick-walls, and explicit `Finish`/`Cancel`;
+  - boundary validation finds open loops, self-intersections, too-small edges, duplicate edges, and overlapping floor slabs before commit;
+  - selected floor exposes boundary edit, thickness/type, level, slope, openings/shafts, and generate/host actions;
+  - floor preview shows true thickness/elevation in 3D and true boundary/filled region in plan.
+- Source ownership:
+  - floor element/command model;
+  - plan sketch canvas;
+  - 3D floor/slab mesh preview;
+  - element sidebar floor properties;
+  - ribbon `Model/Create/Floor` and contextual `Modify/Floor` groups.
+- Acceptance:
+  - old one-click/ambiguous floor behavior is removed or bridged into sketch mode;
+  - `Finish` is disabled with visible reasons until a valid closed loop exists;
+  - seeded proof creates a floor from drawn boundary and from picked walls;
+  - floor remains selected after commit with edit-boundary action available;
+  - Cmd+K can start floor sketch and reports disabled reason in invalid view types.
+- Dependencies: `WP-NEXT-40`, `WP-NEXT-41`.
+
+### WP-NEXT-44 — Generate Walls From Floors, Rooms, And Picked Boundaries
+
+- Priority: `P0`
+- Status: `Open`
+- Covers: `NEXT22-GAP-006`, `NEXT22-GAP-003`, `NEXT22-GAP-005`, `NEXT22-GAP-016`
+- Goal: allow users to build obvious vertical structure from existing horizontal/room boundaries instead of redrawing geometry.
+- Required workflows:
+  - `Create Walls from Floor Boundary`;
+  - `Create Walls from Room Boundary`;
+  - `Pick Floor Edge` while Wall command is active;
+  - `Pick Lines` from imported CAD/reference geometry;
+  - options for wall type, height/top constraint, location line, exterior/interior side, chain, and skip existing overlapping wall.
+- Acceptance:
+  - generated walls are joined and have deterministic ids/undo grouping;
+  - preview shows every wall segment before commit with conflict markers where a wall already exists;
+  - command produces a single undoable batch command;
+  - seeded proof starts with a floor and generates walls, then inserts a door/window into the generated walls without layout refresh;
+  - overlapping/duplicate walls are not silently created.
+- Dependencies: `WP-NEXT-42`, `WP-NEXT-43`.
+
+### WP-NEXT-45 — Roof, Ceiling, Shaft, And Structural Stack Completion
+
+- Priority: `P0`
+- Status: `Open`
+- Covers: `NEXT22-GAP-007`, `NEXT22-GAP-009`, `NEXT22-GAP-013`, `NEXT22-GAP-016`
+- Goal: complete the vertical building stack: floor -> walls -> ceiling/roof/shaft with explicit constraints and previews.
+- Required workflows:
+  - `Roof by Footprint` from selected walls/floor boundary with overhang and slope arrows;
+  - `Ceiling by Room/Boundary`;
+  - `Shaft Opening` through floors/roofs;
+  - `Attach Top/Base` walls to roof/floor/level;
+  - selected roof/ceiling/floor exposes edit-boundary and attach/detach actions.
+- Acceptance:
+  - roof/ceiling/shaft use shared sketch lifecycle and validation;
+  - selected walls can attach top to roof and update if the roof changes;
+  - roof preview shows slope/overhang before commit;
+  - shaft preview shows affected floors/roof and blocks invalid partial spans;
+  - seeded proof builds floor, generated walls, roof, ceiling, shaft, and validates no orphaned top/base constraints.
+- Dependencies: `WP-NEXT-43`, `WP-NEXT-44`.
+
+### WP-NEXT-46 — Full 3D Direct Authoring Parity For Model Ribbon Tools
+
+- Priority: `P0`
+- Status: `Open`
+- Covers: `NEXT22-GAP-008`, `NEXT22-GAP-009`, `NEXT22-GAP-011`, `NEXT22-GAP-012`, `NEXT22-GAP-017`
+- Goal: every model-building command visible in the 3D ribbon must have a specific 3D interaction model or be hidden/disabled with a reason.
+- Tool contracts:
+  - `Wall`: active work-plane line tool with joined endpoints.
+  - `Floor`: sketch on level plane or pick visible wall loop/floor face.
+  - `Roof`: pick wall loop/floor footprint; show slope/overhang preview.
+  - `Ceiling`: pick room/closed wall loop at active level.
+  - `Column`: point placement on level/work plane with height/top constraint preview.
+  - `Beam`: line placement between supports/levels with snap and roll/offset.
+  - `Door/Window/Opening`: host-face preview, host lock, conflict guard, type dimensions.
+  - `Shaft`: sketch footprint plus vertical extent.
+  - `Stair/Railing`: sketch/path mode with finish/cancel and generated dependencies.
+  - `Load Family/Component`: category-specific placement adapter with host requirements.
+- Acceptance:
+  - no 3D ribbon command is visually clickable without executable behavior or disabled reason;
+  - each 3D model command has a unit/DOM test for activation and a seeded screenshot for preview state;
+  - active 3D model commands do not trigger page refresh, full canvas width jump, or selection-sidebar takeover;
+  - invalid hosts/work planes show red preview and explanation before click;
+  - Cmd+K mirrors all 3D command states.
+- Dependencies: `WP-NEXT-40`, `WP-NEXT-41`, then tool-specific dependencies above.
+
+### WP-NEXT-47 — Universal Modify Toolkit Across View Types
+
+- Priority: `P1`
+- Status: `Open`
+- Covers: `NEXT22-GAP-010`, `NEXT22-GAP-015`, `NEXT22-GAP-017`
+- Goal: provide the basic editing verbs users expect after creating structure.
+- Commands:
+  - `Move`, `Copy`, `Rotate`, `Mirror`, `Align`, `Offset`, `Trim/Extend`, `Split`, `Join/Unjoin`, `Attach/Detach`, `Pin/Unpin`, `Delete`, `Array`;
+  - view-aware availability in plan, 3D, section, sheet, and schedule;
+  - common preview + numeric input + constraints.
+- Acceptance:
+  - selected element contextual ribbon shows supported modify commands with disabled reasons for unsupported categories;
+  - plan and 3D previews match the committed transform;
+  - `Esc` cancels modify preview and returns to `Select`;
+  - multi-select batch operations work where semantically valid;
+  - seeded proof edits the generated floor/wall/roof stack without orphaning hosted elements.
+- Dependencies: `WP-NEXT-42` through `WP-NEXT-46` for structural targets.
+
+### WP-NEXT-48 — Ribbon Command Matrix Completion Across All View Types
+
+- Priority: `P1`
+- Status: `Open`
+- Covers: `NEXT22-GAP-017`, `NEXT22-GAP-020`, `NEXT22-GAP-012`
+- Goal: make the whole ribbon feel intentionally complete, not sparse or fake, for every active view type.
+- Required matrix:
+  - Plan: Select, Wall, Door, Window, Opening, Floor, Roof, Ceiling, Column, Beam, Room/Area, Shaft, Stair, Railing, Component/Load Family, Annotate, Dimension, Tag, Measure, Modify.
+  - 3D: Select, Wall, Door, Window, Opening, Floor, Roof, Ceiling, Column, Beam, Shaft, Stair, Railing, Component/Load Family, Measure/Review, Section/Elevation, Modify.
+  - Section: Detail Line, Dimension, Tag, Text, Component/Detail Item, Crop/Far Clip, Place on Sheet, Modify visible element.
+  - Sheet: Place Views, Edit Viewports, Titleblock, Revisions, Publish, Markup/Review.
+  - Schedule: Rows, Columns, Fields, Filters, Sort/Group, Formatting, Place on Sheet, Export/Publish.
+  - Concept: Board, Place, Arrange, Markup, Attachments.
+- Acceptance:
+  - every visible command has command capability metadata, Cmd+K parity, keyboard shortcut policy, and tests;
+  - commands that bridge to another view clearly say so and open/focus the right tab/pane;
+  - commands invalid in a view are not persistent dead chrome;
+  - seeded screenshots capture each view type ribbon with no fake/inert commands.
+- Dependencies: can run after `WP-NEXT-40`, but model commands should close only after `WP-NEXT-46`.
+
+### WP-NEXT-49 — Live Structural Validation And Repair UX
+
+- Priority: `P1`
+- Status: `Open`
+- Covers: `NEXT22-GAP-016`, `NEXT22-GAP-015`
+- Goal: make bad structural states understandable and repairable while authoring, not after a mysterious backend rejection.
+- Required checks:
+  - open sketch loops;
+  - self-intersecting floor/roof boundaries;
+  - overlapping duplicate walls;
+  - joined-wall cleanup failures;
+  - orphaned hosted elements;
+  - door/window outside host span;
+  - unattached wall tops below/through roofs;
+  - shaft/floor/roof conflicts;
+  - invalid level/work-plane constraints.
+- Acceptance:
+  - live canvas notice appears before commit where possible;
+  - footer/advisor records persisted model problems after commit;
+  - repair actions are available through contextual ribbon, element sidebar, and Cmd+K;
+  - seeded proof creates, detects, and fixes at least one problem per category group.
+- Dependencies: `WP-NEXT-42` through `WP-NEXT-47`.
+
+### WP-NEXT-50 — End-To-End Structure Builder Proof Suite
+
+- Priority: `P0`
+- Status: `Open`
+- Covers: `NEXT22-GAP-019`
+- Goal: prove the authoring system works as a workflow, not only as independent commands.
+- Required seeded scenarios:
+  - Plan workflow: draw floor boundary -> finish floor -> generate walls from floor -> insert door/window -> roof by footprint -> attach walls -> place on sheet.
+  - 3D workflow: open 3D -> set level/work plane -> draw/join walls -> add floor/roof/hosted elements -> modify/attach -> no refresh/sidebar takeover.
+  - Split-pane workflow: plan and 3D side by side with independent ribbons/secondary sidebars but shared model updates.
+  - Invalid workflow: try open floor loop, duplicate wall, occupied window span, invalid roof footprint, and verify readable blocking feedback.
+  - Cmd+K workflow: start/bridge/disable every major structural command with correct reason.
+- Evidence requirements:
+  - Playwright screenshots for each stage;
+  - command trace summary with command types, payloads, response statuses, navigation count, canvas bounds stability, active command state, and console errors;
+  - tests for core geometry/lifecycle helpers;
+  - `pnpm --filter @bim-ai/web typecheck`;
+  - relevant web tests;
+  - prettier check for changed files;
+  - `git diff --check`.
+- Done gate:
+  - no row in this feedback round can be marked `Done` unless the seeded workflow proves the canonical behavior and the old dead/inert behavior is removed.
+- Dependencies: all preceding P0 packages, then selected P1 packages as needed.
+
+### Recommended Execution Order
+
+1. `WP-NEXT-40` first: without a canonical command lifecycle, later tool work will keep producing one-off fixes.
+2. `WP-NEXT-41` second: shared work-plane/snap/preview fidelity is the base for reliable 3D and plan structure tools.
+3. `WP-NEXT-42` third: walls are the trust anchor for everything the user called out.
+4. `WP-NEXT-43` and `WP-NEXT-44`: floor sketch and wall generation from floor/boundaries.
+5. `WP-NEXT-45`: roof/ceiling/shaft and attach top/base stack semantics.
+6. `WP-NEXT-46`: complete 3D direct authoring parity for visible model commands.
+7. `WP-NEXT-47` and `WP-NEXT-49`: modify toolkit plus validation/repair.
+8. `WP-NEXT-48`: full cross-view ribbon command matrix completion, closing sheet/schedule/concept parity at the same quality bar.
+9. `WP-NEXT-50`: end-to-end seeded proof suite and closeout.
+
+### Non-Negotiable Completion Rule For This Round
+
+Do not mark any `NEXT22-*` row or `WP-NEXT-40+` workpackage as `Done` unless all of these are true:
+
+- the old inert/dead/fake command path is removed or disabled with a visible reason;
+- the new canonical behavior works in the seeded app;
+- the command is reachable through the correct ribbon surface and Cmd+K;
+- `Esc`/Select/default command behavior is correct;
+- plan and 3D behavior match where both views support the command;
+- tests cover lifecycle/geometry/capability metadata;
+- Playwright screenshots prove the affected states;
+- command trace proves no main-frame navigation, no full refresh, and no selected-element/sidebar takeover unless selection is intentional.
