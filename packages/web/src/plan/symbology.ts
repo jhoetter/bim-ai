@@ -382,12 +382,14 @@ function planFloorRoofOutlineWireGroup(
     Number.isFinite(opts.lineWeightHint) && opts.lineWeightHint > 0 ? opts.lineWeightHint : 1;
   const fillOpacity = Math.min(0.65, Math.max(0.12, baseOp * Math.min(1.35, lwh / 1.12)));
   const showFill = opts.showFill !== false;
-  const showHatch = opts.showHatch !== false;
+  const showHatch = opts.showHatch === true;
   if (showFill) {
     grp.add(horizontalOutlineMesh(outlineMm, fillY, color, fillOpacity, opts.pickId));
   }
 
-  // Floor hatch — 45° diagonal lines at 500 mm spacing, subtle overlay.
+  // Explicit floor hatch only. Normal plan projection should not synthesize
+  // slab hatching; it competes with room schemes and can reappear during
+  // projection refetches after authoring commands.
   if (showHatch && opts.kind === 'floor' && outlineMm.length >= 3) {
     const hatch = hatchPolygon2D(
       outlineMm,
@@ -737,7 +739,7 @@ function rebuildPlanMeshesFromWire(
           lineWeightHint: lwh,
           linePatternToken: typeof patRaw === 'string' ? patRaw : undefined,
           showFill: showFloorSurface,
-          showHatch: showFloorSurface,
+          showHatch: false,
         }),
       );
     }
@@ -1382,7 +1384,7 @@ export function rebuildPlanMeshes(
             pickId: f.id,
             lineWeightHint: 1,
             showFill: showFloorSurface,
-            showHatch: showFloorSurface,
+            showHatch: false,
           }),
         );
       }

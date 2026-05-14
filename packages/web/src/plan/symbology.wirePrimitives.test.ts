@@ -131,15 +131,13 @@ function countRoomPatternSegments(root: THREE.Object3D, pattern: string): number
   return n;
 }
 
-function lineSegmentZValues(root: THREE.Object3D): number[] {
-  const out: number[] = [];
+function countLineSegmentNodes(root: THREE.Object3D): number {
+  let count = 0;
   root.traverse((o) => {
     if (!(o instanceof THREE.LineSegments)) return;
-    const pos = o.geometry.getAttribute('position');
-    if (!pos) return;
-    for (let i = 0; i < pos.count; i++) out.push(pos.getZ(i));
+    count += 1;
   });
-  return out;
+  return count;
 }
 
 describe('PlanCanvas server wire primitives path (WP-C03)', () => {
@@ -545,7 +543,7 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
     expect(someLineHasDashedMaterial(grp)).toBe(false);
   });
 
-  it('draws wire floor hatch on the same plan side as the floor outline', () => {
+  it('does not synthesize wire floor hatch in normal plan presentation', () => {
     const primitives = {
       format: 'planProjectionPrimitives_v1',
       walls: [],
@@ -583,10 +581,38 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
       },
     );
 
-    const hatchZ = lineSegmentZValues(grp);
-    expect(hatchZ.length).toBeGreaterThan(0);
-    expect(Math.min(...hatchZ)).toBeGreaterThan(0.9);
-    expect(Math.max(...hatchZ)).toBeLessThan(3.1);
+    expect(hasMeshNode(grp)).toBe(true);
+    expect(countLineLoopNodes(grp)).toBe(1);
+    expect(countLineSegmentNodes(grp)).toBe(0);
+  });
+
+  it('does not synthesize fallback floor hatch while projection wire data is unavailable', () => {
+    const floor: Extract<Element, { kind: 'floor' }> = {
+      kind: 'floor',
+      id: 'f-fallback-default',
+      name: 'Floor',
+      levelId: 'lvl',
+      boundaryMm: [
+        { xMm: 0, yMm: 1000 },
+        { xMm: 3000, yMm: 1000 },
+        { xMm: 3000, yMm: 3000 },
+        { xMm: 0, yMm: 3000 },
+      ],
+      thicknessMm: 200,
+    };
+
+    const grp = new THREE.Group();
+    rebuildPlanMeshes(
+      grp,
+      { [floor.id]: floor },
+      {
+        activeLevelId: 'lvl',
+      },
+    );
+
+    expect(hasMeshNode(grp)).toBe(true);
+    expect(countLineLoopNodes(grp)).toBe(1);
+    expect(countLineSegmentNodes(grp)).toBe(0);
   });
 
   it('uses level rise for stair tread divisions when levels are in elementsById', () => {
