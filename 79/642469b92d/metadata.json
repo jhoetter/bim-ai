@@ -3,10 +3,15 @@
   "checkpoint_id": "79642469b92d",
   "strategy": "manual-commit",
   "branch": "codex/sustainability-lens-workpackages-20260514",
-  "checkpoints_count": 8,
+  "checkpoints_count": 9,
   "files_touched": [
+    "app/bim_ai/engine_dispatch_properties.py",
+    "app/bim_ai/routes_api.py",
+    "app/bim_ai/routes_exports.py",
     "app/bim_ai/schedule_derivation.py",
-    "app/bim_ai/schedule_field_registry.py"
+    "app/bim_ai/schedule_field_registry.py",
+    "app/bim_ai/sustainability_lca.py",
+    "app/tests/test_sustainability_lens.py"
   ],
   "sessions": [
     {
@@ -80,13 +85,19 @@
       "transcript": "/79/642469b92d/11/full.jsonl",
       "content_hash": "/79/642469b92d/11/content_hash.txt",
       "prompt": "/79/642469b92d/11/prompt.txt"
+    },
+    {
+      "metadata": "/79/642469b92d/12/metadata.json",
+      "transcript": "/79/642469b92d/12/full.jsonl",
+      "content_hash": "/79/642469b92d/12/content_hash.txt",
+      "prompt": "/79/642469b92d/12/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 15953397,
+    "input_tokens": 16179862,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 418661760,
-    "output_tokens": 1125958,
-    "api_call_count": 3238
+    "cache_read_tokens": 430744320,
+    "output_tokens": 1160928,
+    "api_call_count": 3327
   }
 }
