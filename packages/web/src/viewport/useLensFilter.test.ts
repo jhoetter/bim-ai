@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { Element } from '@bim-ai/core';
+import { describe, expect, it } from 'vitest';
 
 import {
   elementPassesCostQuantityLens,
@@ -86,10 +86,8 @@ describe('lensFilterFromMode', () => {
     const filter = lensFilterFromMode('sustainability');
     expect(filter(baseWall)).toBe('foreground');
   });
-});
 
-describe('Structure lens filtering', () => {
-  it('foregrounds load-bearing shared architectural walls', () => {
+  it('foregrounds load-bearing shared architectural walls for Structure lens', () => {
     const filter = lensFilterFromMode('structure');
     expect(filter({ ...baseWall, loadBearing: true })).toBe('foreground');
     expect(filter({ ...baseWall, structuralRole: 'shear_wall' })).toBe('foreground');

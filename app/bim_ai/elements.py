@@ -718,6 +718,7 @@ class WallOpeningElem(BaseModel):
     head_height_mm: float = Field(alias="headHeightMm", ge=0)
     pinned: bool = Field(default=False)
     discipline: DisciplineTag | None = Field(default=None)
+    props: dict[str, Any] | None = Field(default=None)
 
     @model_validator(mode="after")
     def _check_bounds(self) -> WallOpeningElem:
@@ -1240,7 +1241,9 @@ class IssueElem(BaseModel):
     viewpoint_id: str | None = Field(default=None, alias="viewpointId")
     assignee_placeholder: str | None = Field(default=None, alias="assigneePlaceholder")
     due_date: str | None = Field(default=None, alias="dueDate")
-    resolution_history: list[dict[str, Any]] = Field(default_factory=list, alias="resolutionHistory")
+    resolution_history: list[dict[str, Any]] = Field(
+        default_factory=list, alias="resolutionHistory"
+    )
     evidence_refs: list[EvidenceRef] = Field(default_factory=list, alias="evidenceRefs")
 
 
@@ -1533,6 +1536,8 @@ class RailingElem(BaseModel):
     baluster_pattern: BalusterPattern | None = Field(default=None, alias="balusterPattern")
     handrail_supports: list[HandrailSupport] | None = Field(default=None, alias="handrailSupports")
     material_slots: dict[str, str | None] | None = Field(default=None, alias="materialSlots")
+    structural_role: StructuralRole = Field(default="unknown", alias="structuralRole")
+    analysis_status: StructuralAnalysisStatus = Field(default="not_modeled", alias="analysisStatus")
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
@@ -3161,6 +3166,13 @@ class ColumnElem(BaseModel):
     height_mm: float = Field(alias="heightMm", default=2800, gt=0)
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
     material_key: str | None = Field(default=None, alias="materialKey")
+    load_bearing: bool | None = Field(default=True, alias="loadBearing")
+    structural_role: StructuralRole = Field(default="column", alias="structuralRole")
+    structural_material: StructuralMaterial | str | None = Field(
+        default=None, alias="structuralMaterial"
+    )
+    analysis_status: StructuralAnalysisStatus = Field(default="not_modeled", alias="analysisStatus")
+    fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
     base_constraint_offset_mm: float = Field(default=0, alias="baseConstraintOffsetMm")
     top_constraint_level_id: str | None = Field(default=None, alias="topConstraintLevelId")
     top_constraint_offset_mm: float = Field(default=0, alias="topConstraintOffsetMm")
@@ -3190,6 +3202,13 @@ class BeamElem(BaseModel):
     width_mm: float = Field(alias="widthMm", default=200, gt=0)
     height_mm: float = Field(alias="heightMm", default=400, gt=0)
     material_key: str | None = Field(default=None, alias="materialKey")
+    load_bearing: bool | None = Field(default=True, alias="loadBearing")
+    structural_role: StructuralRole = Field(default="beam", alias="structuralRole")
+    structural_material: StructuralMaterial | str | None = Field(
+        default=None, alias="structuralMaterial"
+    )
+    analysis_status: StructuralAnalysisStatus = Field(default="not_modeled", alias="analysisStatus")
+    fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
     start_column_id: str | None = Field(default=None, alias="startColumnId")
     end_column_id: str | None = Field(default=None, alias="endColumnId")
     # IFC-04: optional classification code emitted as IfcClassificationReference.

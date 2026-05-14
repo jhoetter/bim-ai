@@ -23,6 +23,18 @@ describe('scheduleDefinitionPresets', () => {
     const asm = presetsForCategory('material_assembly').map((p) => p.id);
     expect(asm).toEqual(['assembly-layer-takeoff']);
 
+    expect(presetsForCategory('structural_element').map((p) => p.id)).toEqual([
+      'structure-elements-handoff',
+    ]);
+    expect(presetsForCategory('structural_wall').map((p) => p.id)).toEqual([
+      'structure-bearing-walls',
+    ]);
+    expect(presetsForCategory('column').map((p) => p.id)).toEqual(['structure-columns']);
+    expect(presetsForCategory('beam').map((p) => p.id)).toEqual(['structure-beams']);
+    expect(presetsForCategory('foundation').map((p) => p.id)).toEqual(['structure-foundations']);
+    expect(presetsForCategory('opening_load_bearing_wall').map((p) => p.id)).toEqual([
+      'structure-openings-review',
+    ]);
     expect(presetsForCategory('quantity_takeoff').map((p) => p.id)).toEqual([
       'cost-quantity-takeoff',
     ]);
@@ -108,6 +120,13 @@ describe('scheduleDefinitionPresets', () => {
       expect(presets.length).toBeGreaterThan(0);
       expect(presets[0]?.fields.some((field) => field.token === 'required')).toBe(true);
     }
+  });
+
+  it('missingRequiredFieldKeys (structure handoff)', () => {
+    const preset = presetsForCategory('structural_element')[0]!;
+    expect(
+      missingRequiredFieldKeys(preset, ['elementId', 'name', 'category', 'level', 'loadBearing']),
+    ).toEqual(['structuralRole', 'structuralMaterial', 'analysisStatus']);
   });
 
   it('missingRequiredFieldKeys (cost estimate source)', () => {

@@ -9,6 +9,12 @@ export type SchedulePresetCategory =
   | 'window'
   | 'finish'
   | 'material_assembly'
+  | 'structural_element'
+  | 'structural_wall'
+  | 'column'
+  | 'beam'
+  | 'foundation'
+  | 'opening_load_bearing_wall'
   | 'quantity_takeoff'
   | 'cost_estimate'
   | 'element_cost_group'
@@ -306,6 +312,99 @@ const PRESETS: ScheduleDefinitionPreset[] = [
       { fieldKey: 'severity', token: 'required' },
       { fieldKey: 'message', token: 'required' },
       { fieldKey: 'missingMaterialKeys', token: 'optional' },
+    ],
+  },
+  {
+    id: 'structure-elements-handoff',
+    name: 'Structure · element handoff',
+    category: 'structural_element',
+    fields: [
+      { fieldKey: 'elementId', token: 'required', csvExportHint: 'Stable row id' },
+      { fieldKey: 'name', token: 'required' },
+      { fieldKey: 'category', token: 'required' },
+      { fieldKey: 'level', token: 'required' },
+      { fieldKey: 'loadBearing', token: 'required' },
+      { fieldKey: 'structuralRole', token: 'required' },
+      { fieldKey: 'structuralMaterial', token: 'required' },
+      {
+        fieldKey: 'analysisStatus',
+        token: 'required',
+        csvExportHint: 'External-analysis handoff status',
+      },
+      { fieldKey: 'fireResistanceRating', token: 'optional' },
+    ],
+  },
+  {
+    id: 'structure-bearing-walls',
+    name: 'Structure · bearing walls',
+    category: 'structural_wall',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'name', token: 'required' },
+      { fieldKey: 'wallTypeId', token: 'required' },
+      { fieldKey: 'level', token: 'required' },
+      { fieldKey: 'heightMm', token: 'optional', unitHint: 'mm' },
+      { fieldKey: 'structuralMaterial', token: 'required' },
+      { fieldKey: 'analysisStatus', token: 'required' },
+      { fieldKey: 'fireResistanceRating', token: 'optional' },
+    ],
+  },
+  {
+    id: 'structure-columns',
+    name: 'Structure · columns',
+    category: 'column',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'name', token: 'required' },
+      { fieldKey: 'level', token: 'required' },
+      { fieldKey: 'bMm', token: 'required', unitHint: 'mm' },
+      { fieldKey: 'hMm', token: 'required', unitHint: 'mm' },
+      { fieldKey: 'heightMm', token: 'required', unitHint: 'mm' },
+      { fieldKey: 'structuralMaterial', token: 'required' },
+      { fieldKey: 'analysisStatus', token: 'required' },
+    ],
+  },
+  {
+    id: 'structure-beams',
+    name: 'Structure · beams',
+    category: 'beam',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'name', token: 'required' },
+      { fieldKey: 'level', token: 'required' },
+      { fieldKey: 'widthMm', token: 'required', unitHint: 'mm' },
+      { fieldKey: 'heightMm', token: 'required', unitHint: 'mm' },
+      { fieldKey: 'structuralMaterial', token: 'required' },
+      { fieldKey: 'analysisStatus', token: 'required' },
+    ],
+  },
+  {
+    id: 'structure-foundations',
+    name: 'Structure · foundations',
+    category: 'foundation',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'name', token: 'required' },
+      { fieldKey: 'category', token: 'required' },
+      { fieldKey: 'level', token: 'required' },
+      { fieldKey: 'structuralRole', token: 'required' },
+      { fieldKey: 'structuralMaterial', token: 'required' },
+      { fieldKey: 'analysisStatus', token: 'optional' },
+    ],
+  },
+  {
+    id: 'structure-openings-review',
+    name: 'Structure · opening review',
+    category: 'opening_load_bearing_wall',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'name', token: 'required' },
+      { fieldKey: 'wallId', token: 'required' },
+      { fieldKey: 'wallName', token: 'required' },
+      { fieldKey: 'level', token: 'required' },
+      { fieldKey: 'openingWidthMm', token: 'required', unitHint: 'mm' },
+      { fieldKey: 'hostLoadBearing', token: 'required' },
+      { fieldKey: 'reviewStatus', token: 'required', csvExportHint: 'needs_review or resolved' },
     ],
   },
   {

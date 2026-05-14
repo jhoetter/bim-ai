@@ -1313,6 +1313,8 @@ export type Element =
       headHeightMm: number;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom property values. */
+      props?: Record<string, unknown>;
     }
   | {
       kind: 'room';
