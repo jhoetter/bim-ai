@@ -1,0 +1,13 @@
+i want to be able to rename composition tabs by double clicking on them and renaming; same for views in the navigation primary left sidebar (single click: open; double click: rename)
+
+---
+
+did you commit and push and merge with main?
+
+---
+
+do that for your changes
+
+---
+
+[Image #1] compositions have this weird extra border b, remove that; [Image #2] also i want that the border b of the primary left sidebar and the border b of the header are on the same height to be visually pleasing
