@@ -10,6 +10,7 @@ import {
   type MaterialCategoryKind,
   type MaterialPbrSpec,
 } from '../viewport/materials';
+import { MaterialPreview } from './MaterialPreview';
 
 type MaterialTab = 'identity' | 'appearance' | 'graphics' | 'physical' | 'thermal';
 
@@ -263,10 +264,11 @@ export function MaterialBrowserDialog({
                   <button
                     type="button"
                     aria-label={`Select ${material.displayName}`}
-                    className="h-8 w-8 shrink-0 rounded border border-border"
-                    style={{ backgroundColor: material.baseColor }}
+                    className="shrink-0 rounded"
                     onClick={() => setSelectedKey(material.key)}
-                  />
+                  >
+                    <MaterialPreview material={material} />
+                  </button>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium">
                       {material.displayName}

@@ -75,10 +75,10 @@ The material assignment model should support:
 | MAT-GAP-006 | Material browser edits assignment, but not appearance/graphics assets.        | Users cannot tune material behavior after assignment.          | P1       | Done        |
 | MAT-GAP-007 | Layered assemblies do not expose exterior/interior finish appearance clearly. | Revit-like wall/floor/roof types are underpowered.             | P1       | In Progress |
 | MAT-GAP-008 | Per-face paint/finish overrides are not modeled.                              | Users cannot paint one wall face or one floor zone.            | P1       | Open        |
-| MAT-GAP-009 | Material previews are not representative.                                     | Browser choice is guesswork.                                   | P1       | In Progress |
+| MAT-GAP-009 | Material previews are not representative.                                     | Browser choice is guesswork.                                   | P1       | Done        |
 | MAT-GAP-010 | Exports/schedules do not preserve the full material asset contract.           | IFC/GLTF/readback can diverge from viewport behavior.          | P1       | Open        |
 | MAT-GAP-011 | Texture performance and caching strategy is undefined.                        | Real textures could degrade 3D interaction.                    | P1       | Done        |
-| MAT-GAP-012 | Visual QA does not catch material regressions.                                | Textures/bump/patterns can silently disappear.                 | P1       | Open        |
+| MAT-GAP-012 | Visual QA does not catch material regressions.                                | Textures/bump/patterns can silently disappear.                 | P1       | In Progress |
 | MAT-GAP-013 | Assets and licensing/provenance are not tracked.                              | Curated texture libraries can create legal/product risk.       | P2       | Open        |
 
 ## Workpackages
@@ -402,7 +402,7 @@ Evidence (2026-05-14):
 ### WP-MAT-07 — Material Preview Renderer
 
 - Priority: `P1`
-- Status: `Open`
+- Status: `Done`
 - Covers: `MAT-GAP-009`, `MAT-GAP-012`
 - Goal: material browser previews should show more than a swatch; they should reveal texture scale, relief, roughness, transparency, and pattern identity.
 - Source ownership:
@@ -426,6 +426,15 @@ Evidence (2026-05-14):
 - Tests:
   - Component tests for preview mode selection by material category.
   - Playwright screenshot matrix of preview thumbnails.
+
+Evidence (2026-05-14):
+
+- Added `packages/web/src/familyEditor/MaterialPreview.tsx` with deterministic static preview modes for glass, metal, brick, timber/cladding, concrete/render, stone, hatch, and color-only materials.
+- Added thumbnails to material and appearance browser rows, including a relief marker when normal/bump/height maps exist.
+- Added component tests for preview mode selection and static relief thumbnail rendering.
+- Verification:
+  - `pnpm --filter @bim-ai/web exec vitest run src/familyEditor/MaterialPreview.test.tsx src/familyEditor/MaterialBrowserDialog.test.tsx`
+  - `pnpm --filter @bim-ai/web typecheck`
 
 ### WP-MAT-08 — Layered Assembly Material Semantics
 
