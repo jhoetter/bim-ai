@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "ab1daa0ad4be",
+  "session_id": "019e27ff-8329-7342-9f63-d72741557b1a",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T21:58:44.733594Z",
+  "branch": "codex/sustainability-lens-workpackages-20260514",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/commandCapabilities.test.ts",
+    "packages/web/src/workspace/commandCapabilities.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "6e45fcfe2512",
+  "checkpoint_transcript_start": 954,
+  "transcript_lines_at_start": 954,
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-14T21:58:44.66206Z",
+    "agent_lines": 20,
+    "agent_removed": 7,
+    "human_added": 16,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 36,
+    "total_lines_changed": 48,
+    "agent_percentage": 56.25,
+    "metric_version": 2
+  }
+}
