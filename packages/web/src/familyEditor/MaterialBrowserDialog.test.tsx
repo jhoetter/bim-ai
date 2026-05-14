@@ -14,11 +14,9 @@ describe('<MaterialBrowserDialog />', () => {
   it('lists material swatches and assigns a selected material key', () => {
     const material = listMaterials()[0]!;
     const onAssign = vi.fn();
-    const { getByText, getByTestId } = render(
-      <MaterialBrowserDialog onAssign={onAssign} onClose={vi.fn()} />,
-    );
+    const { getByTestId } = render(<MaterialBrowserDialog onAssign={onAssign} onClose={vi.fn()} />);
 
-    expect(getByText(material.displayName)).toBeTruthy();
+    expect(getByTestId(`material-row-${material.key}`)).toBeTruthy();
     fireEvent.click(getByTestId(`material-assign-${material.key}`));
     expect(onAssign).toHaveBeenCalledWith(material.key);
   });
@@ -26,12 +24,12 @@ describe('<MaterialBrowserDialog />', () => {
   it('filters materials by search text', () => {
     const glass = listMaterials().find((material) => material.category === 'glass')!;
     const timber = listMaterials().find((material) => material.category === 'timber')!;
-    const { getByLabelText, getByText, queryByText } = render(
+    const { getByLabelText, getByTestId, queryByText } = render(
       <MaterialBrowserDialog onAssign={vi.fn()} onClose={vi.fn()} />,
     );
 
     fireEvent.change(getByLabelText('Search materials'), { target: { value: glass.displayName } });
-    expect(getByText(glass.displayName)).toBeTruthy();
+    expect(getByTestId(`material-row-${glass.key}`)).toBeTruthy();
     expect(queryByText(timber.displayName)).toBeNull();
   });
 
@@ -84,6 +82,31 @@ describe('<MaterialBrowserDialog />', () => {
     fireEvent.click(getByText('Save'));
     expect(resolveMaterial(created.key)?.displayName).toBe('Dialog Renamed Finish 905');
 
+    fireEvent.click(getByText('Graphics'));
+    fireEvent.change(getByLabelText('Shaded color'), { target: { value: '#445566' } });
+    fireEvent.change(getByLabelText('Graphics transparency'), { target: { value: '0.22' } });
+    fireEvent.change(getByLabelText('Surface pattern'), { target: { value: 'running-bond' } });
+    fireEvent.change(getByLabelText('Cut pattern'), { target: { value: 'masonry-cut' } });
+    expect(resolveMaterial(created.key)?.graphics).toMatchObject({
+      shadedColor: '#445566',
+      transparency: 0.22,
+      surfacePattern: 'running-bond',
+      cutPattern: 'masonry-cut',
+    });
+
+    fireEvent.click(getByText('Appearance'));
+    fireEvent.change(getByLabelText('Texture map metadata'), {
+      target: { value: 'project/dialog/albedo' },
+    });
+    fireEvent.change(getByLabelText('UV scale U mm'), { target: { value: '215' } });
+    fireEvent.change(getByLabelText('UV scale V mm'), { target: { value: '75' } });
+    fireEvent.change(getByLabelText('UV rotation deg'), { target: { value: '90' } });
+    expect(resolveMaterial(created.key)).toMatchObject({
+      textureMapUrl: 'project/dialog/albedo',
+      uvScaleMm: { uMm: 215, vMm: 75 },
+      uvRotationDeg: 90,
+    });
+
     fireEvent.click(getByText('Physical'));
     fireEvent.change(getByLabelText('Density kg/m3'), { target: { value: '1440' } });
     expect(resolveMaterial(created.key)?.physical?.densityKgPerM3).toBe(1440);
@@ -92,13 +115,28 @@ describe('<MaterialBrowserDialog />', () => {
     fireEvent.change(getByLabelText('Conductivity W/mK'), { target: { value: '0.21' } });
     expect(resolveMaterial(created.key)?.thermal?.conductivityWPerMK).toBe(0.21);
   });
+
+  it('duplicates built-in materials into editable project materials with status badges', () => {
+    const source = listMaterials().find((material) => material.key === 'masonry_brick')!;
+    const { getByTestId } = render(<MaterialBrowserDialog onAssign={vi.fn()} onClose={vi.fn()} />);
+
+    expect(getByTestId(`material-status-${source.key}`).textContent).toBe('Color only');
+    fireEvent.click(getByTestId(`material-duplicate-${source.key}`));
+
+    const duplicate = listMaterials().find(
+      (material) => material.displayName === `${source.displayName} copy`,
+    )!;
+    expect(duplicate.source).toBe('project');
+    expect(duplicate.baseColor).toBe(source.baseColor);
+    expect(resolveMaterial(source.key)?.displayName).toBe(source.displayName);
+  });
 });
 
 describe('<AppearanceAssetBrowserDialog />', () => {
   it('uses a distinct Replace action for appearance assets', () => {
     const material = listMaterials()[0]!;
     const onReplace = vi.fn();
-    const { getByLabelText, getByTestId } = render(
+    const { getByLabelText, getByTestId, getByText } = render(
       <AppearanceAssetBrowserDialog onReplace={onReplace} onClose={vi.fn()} />,
     );
 
@@ -110,13 +148,14 @@ describe('<AppearanceAssetBrowserDialog />', () => {
   it('exposes curated asset metadata and reflectance editing', () => {
     const asset = listMaterials().find((material) => material.key === 'asset_stainless_brushed')!;
     const onReplace = vi.fn();
-    const { getByLabelText, getByTestId } = render(
+    const { getByLabelText, getByTestId, getByText } = render(
       <AppearanceAssetBrowserDialog onReplace={onReplace} onClose={vi.fn()} />,
     );
 
     expect(
       listMaterials().filter((material) => material.source === 'curated_asset').length,
     ).toBeGreaterThan(12);
+    fireEvent.click(getByText('Appearance'));
     fireEvent.change(getByLabelText('Search materials'), {
       target: { value: asset.displayName },
     });

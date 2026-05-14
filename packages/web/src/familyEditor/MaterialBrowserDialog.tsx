@@ -11,9 +11,9 @@ import {
   type MaterialPbrSpec,
 } from '../viewport/materials';
 
-type MaterialTab = 'appearance' | 'graphics' | 'physical' | 'thermal';
+type MaterialTab = 'identity' | 'appearance' | 'graphics' | 'physical' | 'thermal';
 
-const MATERIAL_TABS: MaterialTab[] = ['appearance', 'graphics', 'physical', 'thermal'];
+const MATERIAL_TABS: MaterialTab[] = ['identity', 'appearance', 'graphics', 'physical', 'thermal'];
 
 function materialMatches(material: MaterialPbrSpec, query: string, category: string): boolean {
   const q = query.trim().toLowerCase();
@@ -32,6 +32,23 @@ function materialMatches(material: MaterialPbrSpec, query: string, category: str
 function parseNumber(value: string, fallback: number): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function assetStatus(material: MaterialPbrSpec): string {
+  const hasTexture = Boolean(material.textureMapUrl);
+  const hasRelief = Boolean(material.normalMapUrl || material.bumpMapUrl || material.heightMapUrl);
+  if (material.source === 'project' || material.source === 'family') return 'Project material';
+  if (hasTexture && hasRelief) return 'Texture + relief';
+  if (hasTexture) return 'Texture';
+  if (
+    material.textureMapUrl === '' ||
+    material.normalMapUrl === '' ||
+    material.bumpMapUrl === '' ||
+    material.heightMapUrl === ''
+  ) {
+    return 'Missing map';
+  }
+  return 'Color only';
 }
 
 export type MaterialBrowserDialogProps = {
@@ -58,7 +75,7 @@ export function MaterialBrowserDialog({
   const categories = Array.from(new Set(materials.map((material) => material.category))).sort();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
-  const [activeTab, setActiveTab] = useState<MaterialTab>('appearance');
+  const [activeTab, setActiveTab] = useState<MaterialTab>('identity');
   const [selectedKey, setSelectedKey] = useState<string | null>(currentKey ?? null);
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('New Material');
@@ -104,6 +121,36 @@ export function MaterialBrowserDialog({
     if (!selected) return;
     updateMaterialDefinition(selected.key, patch);
     refresh(selected.key);
+  }
+
+  function duplicateSelected(material: MaterialPbrSpec) {
+    const duplicate = createProjectMaterial({
+      displayName: `${material.displayName} copy`,
+      baseColor: material.baseColor,
+      category: material.category,
+      source: 'project',
+    });
+    updateMaterialDefinition(duplicate.key, {
+      roughness: material.roughness,
+      metalness: material.metalness,
+      textureMapUrl: material.textureMapUrl,
+      normalMapUrl: material.normalMapUrl,
+      bumpMapUrl: material.bumpMapUrl,
+      roughnessMapUrl: material.roughnessMapUrl,
+      metalnessMapUrl: material.metalnessMapUrl,
+      heightMapUrl: material.heightMapUrl,
+      reflectance: material.reflectance,
+      opacity: material.opacity,
+      transmission: material.transmission,
+      uvScaleMm: material.uvScaleMm,
+      uvRotationDeg: material.uvRotationDeg,
+      uvOffsetMm: material.uvOffsetMm,
+      projection: material.projection,
+      graphics: material.graphics,
+      physical: material.physical,
+      thermal: material.thermal,
+    });
+    refresh(duplicate.key);
   }
 
   return (
@@ -232,6 +279,12 @@ export function MaterialBrowserDialog({
                     <span className="block truncate font-mono text-[10px] text-muted">
                       {material.key}
                     </span>
+                    <span
+                      className="mt-1 inline-flex rounded border border-border px-1.5 py-0.5 text-[10px]"
+                      data-testid={`material-status-${material.key}`}
+                    >
+                      {assetStatus(material)}
+                    </span>
                     {mode === 'appearanceAsset' ? (
                       <span className="block truncate text-[10px] text-muted">
                         texture {material.textureMapUrl ?? 'none'} · bump{' '}
@@ -278,6 +331,14 @@ export function MaterialBrowserDialog({
                     >
                       Rename
                     </button>
+                    <button
+                      type="button"
+                      data-testid={`material-duplicate-${material.key}`}
+                      className="rounded border border-border px-2 py-1 text-xs hover:bg-surface-strong"
+                      onClick={() => duplicateSelected(material)}
+                    >
+                      Duplicate
+                    </button>
                   </span>
                 </li>
               ))}
@@ -318,6 +379,28 @@ function MaterialMetadataPanel({
         aria-label={`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} material metadata`}
       >
         <div className="mb-2 font-mono text-[10px] text-muted">{material.key}</div>
+        {activeTab === 'identity' ? (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <span className="text-muted">Name</span>
+              <span>{material.displayName}</span>
+              <span className="text-muted">Source</span>
+              <span>{material.source ?? 'builtin'}</span>
+              <span className="text-muted">Category</span>
+              <span>{material.category}</span>
+              <span className="text-muted">Status</span>
+              <span>{assetStatus(material)}</span>
+            </div>
+            <label className="grid gap-1">
+              <span>Category</span>
+              <input
+                aria-label="Material identity category"
+                value={material.category}
+                onChange={(e) => onPatch({ category: e.target.value as MaterialCategoryKind })}
+              />
+            </label>
+          </div>
+        ) : null}
         {activeTab === 'appearance' ? (
           <div className="space-y-2">
             <label className="grid gap-1">
@@ -357,46 +440,142 @@ function MaterialMetadataPanel({
                 }
               />
             </label>
-            {mode === 'appearanceAsset' ? (
-              <>
-                <label className="grid gap-1">
-                  <span>Texture map metadata</span>
-                  <input
-                    aria-label="Texture map metadata"
-                    value={material.textureMapUrl ?? ''}
-                    onChange={(e) => onPatch({ textureMapUrl: e.target.value })}
-                  />
-                </label>
-                <label className="grid gap-1">
-                  <span>Bump map metadata</span>
-                  <input
-                    aria-label="Bump map metadata"
-                    value={material.bumpMapUrl ?? material.normalMapUrl ?? ''}
-                    onChange={(e) => onPatch({ bumpMapUrl: e.target.value })}
-                  />
-                </label>
-                <label className="grid gap-1">
-                  <span>Reflectance</span>
-                  <input
-                    aria-label="Reflectance"
-                    type="number"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={material.reflectance ?? 0}
-                    onChange={(e) =>
-                      onPatch({
-                        reflectance: parseNumber(e.target.value, material.reflectance ?? 0),
-                      })
-                    }
-                  />
-                </label>
-              </>
-            ) : null}
+            <label className="grid gap-1">
+              <span>Texture map metadata</span>
+              <input
+                aria-label="Texture map metadata"
+                value={material.textureMapUrl ?? ''}
+                onChange={(e) => onPatch({ textureMapUrl: e.target.value })}
+              />
+            </label>
+            <label className="grid gap-1">
+              <span>Normal map metadata</span>
+              <input
+                aria-label="Normal map metadata"
+                value={material.normalMapUrl ?? ''}
+                onChange={(e) => onPatch({ normalMapUrl: e.target.value })}
+              />
+            </label>
+            <label className="grid gap-1">
+              <span>Bump map metadata</span>
+              <input
+                aria-label="Bump map metadata"
+                value={material.bumpMapUrl ?? ''}
+                onChange={(e) => onPatch({ bumpMapUrl: e.target.value })}
+              />
+            </label>
+            <label className="grid gap-1">
+              <span>Opacity</span>
+              <input
+                aria-label="Opacity"
+                type="number"
+                min={0}
+                max={1}
+                step={0.01}
+                value={material.opacity ?? 1}
+                onChange={(e) =>
+                  onPatch({ opacity: parseNumber(e.target.value, material.opacity ?? 1) })
+                }
+              />
+            </label>
+            <label className="grid gap-1">
+              <span>UV scale U mm</span>
+              <input
+                aria-label="UV scale U mm"
+                type="number"
+                value={material.uvScaleMm?.uMm ?? 0}
+                onChange={(e) =>
+                  onPatch({
+                    uvScaleMm: {
+                      uMm: parseNumber(e.target.value, material.uvScaleMm?.uMm ?? 0),
+                      vMm: material.uvScaleMm?.vMm ?? 0,
+                    },
+                  })
+                }
+              />
+            </label>
+            <label className="grid gap-1">
+              <span>UV scale V mm</span>
+              <input
+                aria-label="UV scale V mm"
+                type="number"
+                value={material.uvScaleMm?.vMm ?? 0}
+                onChange={(e) =>
+                  onPatch({
+                    uvScaleMm: {
+                      uMm: material.uvScaleMm?.uMm ?? 0,
+                      vMm: parseNumber(e.target.value, material.uvScaleMm?.vMm ?? 0),
+                    },
+                  })
+                }
+              />
+            </label>
+            <label className="grid gap-1">
+              <span>UV rotation deg</span>
+              <input
+                aria-label="UV rotation deg"
+                type="number"
+                value={material.uvRotationDeg ?? 0}
+                onChange={(e) =>
+                  onPatch({
+                    uvRotationDeg: parseNumber(e.target.value, material.uvRotationDeg ?? 0),
+                  })
+                }
+              />
+            </label>
+            <label className="grid gap-1">
+              <span>Reflectance</span>
+              <input
+                aria-label="Reflectance"
+                type="number"
+                min={0}
+                max={1}
+                step={0.01}
+                value={material.reflectance ?? 0}
+                onChange={(e) =>
+                  onPatch({
+                    reflectance: parseNumber(e.target.value, material.reflectance ?? 0),
+                  })
+                }
+              />
+            </label>
           </div>
         ) : null}
         {activeTab === 'graphics' ? (
           <div className="space-y-2">
+            <label className="grid gap-1">
+              <span>Shaded color</span>
+              <input
+                aria-label="Shaded color"
+                type="color"
+                value={material.graphics?.shadedColor ?? material.baseColor}
+                onChange={(e) =>
+                  onPatch({ graphics: { ...material.graphics, shadedColor: e.target.value } })
+                }
+              />
+            </label>
+            <label className="grid gap-1">
+              <span>Graphics transparency</span>
+              <input
+                aria-label="Graphics transparency"
+                type="number"
+                min={0}
+                max={1}
+                step={0.01}
+                value={material.graphics?.transparency ?? 0}
+                onChange={(e) =>
+                  onPatch({
+                    graphics: {
+                      ...material.graphics,
+                      transparency: parseNumber(
+                        e.target.value,
+                        material.graphics?.transparency ?? 0,
+                      ),
+                    },
+                  })
+                }
+              />
+            </label>
             <label className="flex items-center gap-2">
               <input
                 aria-label="Use render appearance"
@@ -424,12 +603,36 @@ function MaterialMetadataPanel({
               />
             </label>
             <label className="grid gap-1">
+              <span>Surface pattern color</span>
+              <input
+                aria-label="Surface pattern color"
+                type="color"
+                value={material.graphics?.surfacePatternColor ?? '#222222'}
+                onChange={(e) =>
+                  onPatch({
+                    graphics: { ...material.graphics, surfacePatternColor: e.target.value },
+                  })
+                }
+              />
+            </label>
+            <label className="grid gap-1">
               <span>Cut pattern</span>
               <input
                 aria-label="Cut pattern"
                 value={material.graphics?.cutPattern ?? ''}
                 onChange={(e) =>
                   onPatch({ graphics: { ...material.graphics, cutPattern: e.target.value } })
+                }
+              />
+            </label>
+            <label className="grid gap-1">
+              <span>Cut pattern color</span>
+              <input
+                aria-label="Cut pattern color"
+                type="color"
+                value={material.graphics?.cutPatternColor ?? '#111111'}
+                onChange={(e) =>
+                  onPatch({ graphics: { ...material.graphics, cutPatternColor: e.target.value } })
                 }
               />
             </label>

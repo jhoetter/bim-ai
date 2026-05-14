@@ -312,6 +312,8 @@ export interface MaterialPbrSpec {
   bumpMapUrl?: string;
   /** Optional high-detail height/displacement map texture. */
   heightMapUrl?: string;
+  opacity?: number;
+  transmission?: number;
   /** Real-world texture tile size in millimetres. */
   uvScaleMm?: { uMm: number; vMm: number };
   /** Texture rotation applied after projection. */
@@ -453,6 +455,8 @@ function materialElementToPbrSpec(material: MaterialElem): MaterialPbrSpec {
     uvOffsetMm: appearance?.uvOffsetMm,
     projection: appearance?.projection,
     reflectance: appearance?.reflectance,
+    opacity: appearance?.opacity,
+    transmission: appearance?.transmission,
     hatchPattern: material.hatchPatternId,
     graphics: {
       useRenderAppearance: graphics?.useRenderAppearance,
