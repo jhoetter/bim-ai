@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
-import { makeWallMesh } from './meshBuilders';
+import { makeDoorMesh, makeWallMesh, makeWindowMesh, wallPlanOffsetM } from './meshBuilders';
 
 type WallElem = Extract<Element, { kind: 'wall' }>;
 
@@ -97,5 +97,52 @@ describe('makeWallMesh — locationLine offset', () => {
     expect(localX.z).toBeCloseTo(0.8, 5);
     expect(localZ.x).toBeCloseTo(-0.8, 5);
     expect(localZ.z).toBeCloseTo(0.6, 5);
+  });
+
+  it('hosted door and window use the same diagonal frame as their host wall', () => {
+    const wall: WallElem = {
+      ...baseWall,
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 3000, yMm: 4000 },
+      thicknessMm: 300,
+      locationLine: 'finish-face-exterior',
+    };
+    const door: Extract<Element, { kind: 'door' }> = {
+      kind: 'door',
+      id: 'door-1',
+      name: 'Door',
+      wallId: wall.id,
+      alongT: 0.25,
+      widthMm: 900,
+    };
+    const win: Extract<Element, { kind: 'window' }> = {
+      kind: 'window',
+      id: 'window-1',
+      name: 'Window',
+      wallId: wall.id,
+      alongT: 0.75,
+      widthMm: 1200,
+      heightMm: 1500,
+      sillHeightMm: 900,
+    };
+    const wallMesh = makeWallMesh(wall, 0, null) as THREE.Mesh;
+    const doorMesh = makeDoorMesh(door, wall, 0, null);
+    const windowMesh = makeWindowMesh(win, wall, 0, null);
+    const offset = wallPlanOffsetM(wall);
+
+    for (const hosted of [doorMesh, windowMesh]) {
+      expect(hosted.rotation.y).toBeCloseTo(wallMesh.rotation.y, 5);
+      const localX = new THREE.Vector3(1, 0, 0).applyQuaternion(hosted.quaternion);
+      const localZ = new THREE.Vector3(0, 0, 1).applyQuaternion(hosted.quaternion);
+      expect(localX.x).toBeCloseTo(0.6, 5);
+      expect(localX.z).toBeCloseTo(0.8, 5);
+      expect(localZ.x).toBeCloseTo(-0.8, 5);
+      expect(localZ.z).toBeCloseTo(0.6, 5);
+    }
+
+    expect(doorMesh.position.x).toBeCloseTo(0.75 + offset.xM, 5);
+    expect(doorMesh.position.z).toBeCloseTo(1 + offset.zM, 5);
+    expect(windowMesh.position.x).toBeCloseTo(2.25 + offset.xM, 5);
+    expect(windowMesh.position.z).toBeCloseTo(3 + offset.zM, 5);
   });
 });

@@ -66,6 +66,7 @@ import {
   makeColumnMesh,
   makeBeamMesh,
   makeCeilingMesh,
+  wallPlanOffsetM,
 } from './viewport/meshBuilders';
 import { resolveWindowOutline } from './families/geometryFns/windowOutline';
 import {
@@ -377,7 +378,16 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
   /** Maps wallId → active CSG job nonce; responses with a mismatched nonce are stale and discarded. */
   const pendingCsgRef = useRef<Map<string, number>>(new Map());
   const pendingCsgMetaRef = useRef<
-    Map<string, { len: number; height: number; thick: number; materialKey?: string | null }>
+    Map<
+      string,
+      {
+        len: number;
+        height: number;
+        thick: number;
+        materialKey?: string | null;
+        retainExisting?: boolean;
+      }
+    >
   >(new Map());
   const csgNonceRef = useRef(0);
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
@@ -794,24 +804,24 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       const cacheNow = bimPickMapRef.current;
       if (!rootNow) return;
 
-      // Remove the solid-wall placeholder that was shown while CSG ran.
-      const placeholder = cacheNow.get(data.jobId);
-      if (placeholder) {
-        rootNow.remove(placeholder);
-        placeholder.traverse((node) => {
-          const m = node as THREE.Mesh;
-          if (!m.isMesh) return;
-          m.geometry?.dispose();
-          if (Array.isArray(m.material)) {
-            m.material.forEach((mat: THREE.Material) => mat.dispose());
-          } else {
-            (m.material as THREE.Material)?.dispose();
-          }
-        });
-        cacheNow.delete(data.jobId);
+      const existing = cacheNow.get(data.jobId);
+      if (!data.ok) {
+        if (!csgMeta?.retainExisting && existing) {
+          rootNow.remove(existing);
+          existing.traverse((node) => {
+            const m = node as THREE.Mesh;
+            if (!m.isMesh) return;
+            m.geometry?.dispose();
+            if (Array.isArray(m.material)) {
+              m.material.forEach((mat: THREE.Material) => mat.dispose());
+            } else {
+              (m.material as THREE.Material)?.dispose();
+            }
+          });
+          cacheNow.delete(data.jobId);
+        }
+        return;
       }
-
-      if (!data.ok) return; // CSG failed; no mesh to insert, done.
 
       // Reconstruct BufferGeometry from transferable arrays.
       const geom = new THREE.BufferGeometry();
@@ -845,6 +855,19 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         addCladdingBoards(mesh, csgMeta.len, csgMeta.height, csgMeta.thick, 120, 10, '#f4f4f0');
       applyClippingPlanesToMeshes(mesh, clippingPlanesRef.current);
 
+      if (existing) {
+        rootNow.remove(existing);
+        existing.traverse((node) => {
+          const m = node as THREE.Mesh;
+          if (!m.isMesh) return;
+          m.geometry?.dispose();
+          if (Array.isArray(m.material)) {
+            m.material.forEach((mat: THREE.Material) => mat.dispose());
+          } else {
+            (m.material as THREE.Material)?.dispose();
+          }
+        });
+      }
       cacheNow.set(data.jobId, mesh);
       rootNow.add(mesh);
 
@@ -3304,25 +3327,6 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       }
     }
 
-    // Remove stale meshes — dispose GPU resources to avoid leaks.
-    for (const id of toRemove) {
-      const obj = cache.get(id);
-      if (!obj) continue;
-      root.remove(obj);
-      obj.traverse((node) => {
-        const m = node as THREE.Mesh;
-        if (!m.isMesh) return;
-        m.geometry?.dispose();
-        if (Array.isArray(m.material)) {
-          m.material.forEach((mat: THREE.Material) => mat.dispose());
-        } else {
-          (m.material as THREE.Material)?.dispose();
-        }
-      });
-      cache.delete(id);
-    }
-
-    // Build and insert new meshes.
     const catHidden = viewerCategoryHidden;
     const levelHidden = viewerLevelHidden;
     const skipCat = (e: Element) => {
@@ -3353,6 +3357,44 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       }
       return false;
     };
+    const retainPendingCsgWallIds = new Set<string>();
+    for (const id of toRemove) {
+      const e = curr[id];
+      if (e?.kind !== 'wall' || !cache.has(id) || skipCat(e) || skipLevel(e)) continue;
+      if (
+        shouldRunWallOpeningCsg({
+          csgEnabled: CSG_ENABLED,
+          hostedDoorCount: doorsByWall.get(id)?.length ?? 0,
+          hostedWindowCount: winsByWall.get(id)?.length ?? 0,
+          hostedWallOpeningCount: wallOpeningsByWall.get(id)?.length ?? 0,
+          roofAttachmentId: e.roofAttachmentId,
+          isCurtainWall: e.isCurtainWall,
+        })
+      ) {
+        retainPendingCsgWallIds.add(id);
+      }
+    }
+
+    // Remove stale meshes — dispose GPU resources to avoid leaks.
+    for (const id of toRemove) {
+      if (retainPendingCsgWallIds.has(id)) continue;
+      const obj = cache.get(id);
+      if (!obj) continue;
+      root.remove(obj);
+      obj.traverse((node) => {
+        const m = node as THREE.Mesh;
+        if (!m.isMesh) return;
+        m.geometry?.dispose();
+        if (Array.isArray(m.material)) {
+          m.material.forEach((mat: THREE.Material) => mat.dispose());
+        } else {
+          (m.material as THREE.Material)?.dispose();
+        }
+      });
+      cache.delete(id);
+    }
+
+    // Build and insert new meshes.
     const planes = clippingPlanesRef.current;
 
     // DSC-V3-02 — resolve lens filter from the UI dropdown stored in global state.
@@ -3391,18 +3433,26 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             const len = Math.max(0.001, Math.hypot(dx, dz));
             const height = THREE.MathUtils.clamp(e.heightMm / 1000, 0.25, 40);
             const thick = THREE.MathUtils.clamp(e.thicknessMm / 1000, 0.05, 2);
+            const wallOffset = wallPlanOffsetM(e);
+            const retainExisting = retainPendingCsgWallIds.has(id);
             const nonce = ++csgNonceRef.current;
             pendingCsgRef.current.set(id, nonce);
-            pendingCsgMetaRef.current.set(id, { len, height, thick, materialKey: e.materialKey });
+            pendingCsgMetaRef.current.set(id, {
+              len,
+              height,
+              thick,
+              materialKey: e.materialKey,
+              retainExisting,
+            });
             const job: CsgRequest = {
               jobId: id,
               nonce,
               len,
               height,
               thick,
-              wcx: sx + dx / 2,
+              wcx: sx + dx / 2 + wallOffset.xM,
               wcy: elev + height / 2,
-              wcz: sz + dz / 2,
+              wcz: sz + dz / 2 + wallOffset.zM,
               yaw: yawForPlanSegment(dx, dz),
               doors: doors.map((d) => ({
                 widthMm: d.widthMm,
@@ -3434,6 +3484,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
               })),
             };
             csgWorkerRef.current?.postMessage(job);
+            if (retainExisting) break;
           }
           if (e.isCurtainWall) {
             obj = makeCurtainWallMesh(e, elev, paint, curr);

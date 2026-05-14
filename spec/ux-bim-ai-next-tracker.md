@@ -1667,3 +1667,50 @@ Evidence (2026-05-13):
       - `canvasBoxStable: true`
       - `selectedElementActionsVisible: false`
       - `consoleErrors: []`
+
+## Reopened Tracker (2026-05-14, feedback round 20)
+
+| Gap ID         | Problem Statement                                                                                                                                                               | Canonical Surfaces / Files                                                                                                             | Priority | Status |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------ |
+| NEXT20-GAP-001 | 3D hosted door/window meshes on diagonal walls used the opposite signed yaw from wall bodies and CSG cuts, so the placed family could look detached or rotated off the opening. | `packages/web/src/viewport/meshBuilders.ts`, `packages/web/src/viewport/meshBuilders.locationLine.test.ts`                             | P0       | Done   |
+| NEXT20-GAP-002 | Door/window placement still produced a visual wall refresh because the dirty host wall was removed and replaced by a solid placeholder while the CSG worker recalculated cuts.  | `packages/web/src/Viewport.tsx`                                                                                                        | P0       | Done   |
+| NEXT20-GAP-003 | Seeded proof needed to cover a diagonal 3D wall with hosted door and window through the actual 3D ribbon, including stable canvas bounds and no navigation/console regressions. | `packages/web/tmp/ux-hosted-diagonal-alignment-20260514/*`, seeded browser at `http://127.0.0.1:2000/` + `http://127.0.0.1:8500/api/*` | P0       | Done   |
+
+### WP-NEXT-38 — 3D Hosted Diagonal Alignment + No-Flicker CSG
+
+- Priority: `P0`
+- Status: `Done`
+- Supersedes/extends: `WP-NEXT-37` no-refresh flow remains valid; this package closes the follow-up geometry defect visible on diagonal 3D-hosted door/window placement.
+- Covers: `NEXT20-GAP-001`, `NEXT20-GAP-002`, `NEXT20-GAP-003`
+- Goal: make hosted doors/windows on diagonal 3D walls align exactly with the wall body and the CSG cut, while preserving a stable active 3D canvas during the worker cut update.
+- Source ownership:
+  - `packages/web/src/viewport/meshBuilders.ts`
+  - `packages/web/src/viewport/meshBuilders.locationLine.test.ts`
+  - `packages/web/src/Viewport.tsx`
+  - `packages/web/tmp/ux-hosted-diagonal-alignment-20260514/summary.json`
+- Acceptance:
+  - hosted door/window mesh rotation uses the same signed wall yaw as wall meshes and CSG wall bodies;
+  - hosted door/window mesh positions include the same single-body location-line offset as the wall body;
+  - host wall geometry is retained while a replacement CSG wall cut is pending, preventing a solid-wall placeholder flicker;
+  - seeded browser proof emits `createWall`, `insertDoorOnWall`, and `insertWindowOnWall` from the actual 3D ribbon on `target-house-3`;
+  - seeded proof records both hosted elements on the newly drawn wall, no main-frame navigation, stable canvas bounds, no selected-element sidebar takeover, and no console errors.
+- Implementation + evidence:
+  - Replaced the old positive `wallYaw` with the shared `yawForPlanSegment` convention.
+  - Added `wallPlanOffsetM` so standard-wall body, hosted mesh, and CSG wall body share the same location-line offset.
+  - Retained the existing wall object during pending CSG work and swapped it only when the worker returns a successful cut mesh.
+  - Added a diagonal hosted alignment regression that verifies door/window local axes and positions against the host wall.
+  - Seeded proof (`make seed-clear && make seed name=target-house-3`, `make dev name=target-house-3`):
+    - `packages/web/tmp/ux-hosted-diagonal-alignment-20260514/00-initial-3d.png`
+    - `packages/web/tmp/ux-hosted-diagonal-alignment-20260514/01-wall-preview.png`
+    - `packages/web/tmp/ux-hosted-diagonal-alignment-20260514/02-wall-committed.png`
+    - `packages/web/tmp/ux-hosted-diagonal-alignment-20260514/03-door-preview.png`
+    - `packages/web/tmp/ux-hosted-diagonal-alignment-20260514/04-door-placed.png`
+    - `packages/web/tmp/ux-hosted-diagonal-alignment-20260514/05-window-preview.png`
+    - `packages/web/tmp/ux-hosted-diagonal-alignment-20260514/06-window-placed.png`
+    - `packages/web/tmp/ux-hosted-diagonal-alignment-20260514/summary.json`
+      - `commandTypes: ["createWall", "insertDoorOnWall", "insertWindowOnWall"]`
+      - hosted door/window `wallId` equals the new diagonal wall id
+      - `mainFrameNavigations: 0`
+      - `canvasStable: true`
+      - `selectedElementActionsVisible: false`
+      - `consoleErrors: []`

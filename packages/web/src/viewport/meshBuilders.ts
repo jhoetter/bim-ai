@@ -166,6 +166,23 @@ function locationLineOffsetFrac(loc: WallLocationLine): number {
   }
 }
 
+export function wallPlanOffsetM(wall: WallElem): { xM: number; zM: number } {
+  if (wall.wallTypeId) return { xM: 0, zM: 0 };
+  const sx = wall.start.xMm / 1000;
+  const sz = wall.start.yMm / 1000;
+  const ex = wall.end.xMm / 1000;
+  const ez = wall.end.yMm / 1000;
+  const dx = ex - sx;
+  const dz = ez - sz;
+  const len = Math.max(0.001, Math.hypot(dx, dz));
+  const thick = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2);
+  const locFrac = locationLineOffsetFrac(wall.locationLine ?? 'wall-centerline');
+  return {
+    xM: (-dz / len) * locFrac * thick,
+    zM: (dx / len) * locFrac * thick,
+  };
+}
+
 function makeCurvedWallMesh(
   wall: WallElem,
   elevM: number,
@@ -357,7 +374,7 @@ export function wallYaw(wall: WallElem) {
   const sz = wall.start.yMm / 1000;
   const ex = wall.end.xMm / 1000;
   const ez = wall.end.yMm / 1000;
-  return Math.atan2(ez - sz, ex - sx);
+  return yawForPlanSegment(ex - sx, ez - sz);
 }
 
 export function makeFloorSlabMesh(
@@ -2327,9 +2344,7 @@ export function makeWallMesh(
     height = THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40);
   }
 
-  const locFrac = locationLineOffsetFrac(wall.locationLine ?? 'wall-centerline');
-  const perpX = (-dz / len) * locFrac * thick;
-  const perpZ = (dx / len) * locFrac * thick;
+  const wallOffset = wallPlanOffsetM(wall);
 
   const wallMatSpec = resolveMaterial(wall.materialKey);
   const isWhite = wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render';
@@ -2352,7 +2367,7 @@ export function makeWallMesh(
           : 1.0,
     }),
   );
-  mesh.position.set(sx + dx / 2 + perpX, yBase + height / 2, sz + dz / 2 + perpZ);
+  mesh.position.set(sx + dx / 2 + wallOffset.xM, yBase + height / 2, sz + dz / 2 + wallOffset.zM);
   mesh.rotation.y = yawForPlanSegment(dx, dz);
   mesh.userData.bimPickId = wall.id;
   addEdges(mesh);
@@ -2636,8 +2651,9 @@ export function makeDoorMesh(
   const familyDef = typeEntry ? getFamilyById(typeEntry.familyId) : undefined;
   const group = buildDoorGeometry({ door, wall, elevM, paint, familyDef });
   const { px, pz } = hostedXZ(door, wall);
+  const wallOffset = wallPlanOffsetM(wall);
   const off = recessOffsetForOpening(wall, door.alongT);
-  group.position.set(px + off.dx, elevM, pz + off.dz);
+  group.position.set(px + wallOffset.xM + off.dx, elevM, pz + wallOffset.zM + off.dz);
   group.rotation.y = wallYaw(wall);
   return group;
 }
@@ -2659,13 +2675,18 @@ export function makeWindowMesh(
   // Non-rectangular outlines anchor at sill — group origin sits at sill level
   // (matches outline-space origin). Rectangular path keeps the original
   // centred-on-rect behaviour for backwards compatibility.
+  const wallOffset = wallPlanOffsetM(wall);
   const off = recessOffsetForOpening(wall, win.alongT);
   if (outlineKind !== 'rectangle') {
-    group.position.set(px + off.dx, elevM + sillM, pz + off.dz);
+    group.position.set(px + wallOffset.xM + off.dx, elevM + sillM, pz + wallOffset.zM + off.dz);
   } else {
     const rawH = Number(win.heightMm);
     const outerH = Math.max(0.05, Math.min(rawH / 1000, (wall.heightMm - rawSill - 60) / 1000));
-    group.position.set(px + off.dx, elevM + sillM + outerH / 2, pz + off.dz);
+    group.position.set(
+      px + wallOffset.xM + off.dx,
+      elevM + sillM + outerH / 2,
+      pz + wallOffset.zM + off.dz,
+    );
   }
   group.rotation.y = wallYaw(wall);
   return group;
