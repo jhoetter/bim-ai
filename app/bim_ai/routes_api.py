@@ -45,6 +45,7 @@ from bim_ai.constructability_report import (
     build_constructability_summary_v1,
 )
 from bim_ai.construction_lens import build_construction_lens_payload
+from bim_ai.cost_quantity import cost_quantity_lens_review_status
 from bim_ai.db import SessionMaker, get_session
 from bim_ai.diff_engine import compute_element_diff
 from bim_ai.document import Document
@@ -702,6 +703,18 @@ async def fire_safety_lens_status(
         raise HTTPException(status_code=404, detail="Model not found")
     doc = Document.model_validate(row.document)
     return {"modelId": str(model_id), **fire_safety_lens_review_status(doc)}
+
+
+@api_router.get("/models/{model_id}/cost-quantity-lens")
+async def cost_quantity_lens_status(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return {"modelId": str(model_id), **cost_quantity_lens_review_status(doc)}
 
 
 @api_router.get("/models/{model_id}/constructability-bcf")

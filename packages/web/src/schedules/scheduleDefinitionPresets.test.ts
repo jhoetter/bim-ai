@@ -22,6 +22,15 @@ describe('scheduleDefinitionPresets', () => {
 
     const asm = presetsForCategory('material_assembly').map((p) => p.id);
     expect(asm).toEqual(['assembly-layer-takeoff']);
+
+    expect(presetsForCategory('quantity_takeoff').map((p) => p.id)).toEqual([
+      'cost-quantity-takeoff',
+    ]);
+    expect(presetsForCategory('cost_estimate').map((p) => p.id)).toEqual(['cost-estimate-source']);
+    expect(presetsForCategory('element_cost_group').map((p) => p.id)).toEqual([
+      'cost-element-groups',
+    ]);
+    expect(presetsForCategory('scenario_delta').map((p) => p.id)).toEqual(['cost-scenario-delta']);
   });
 
   it('resolvePresetColumnsForExport preserves preset order and ignores unknown keys', () => {
@@ -99,6 +108,21 @@ describe('scheduleDefinitionPresets', () => {
       expect(presets.length).toBeGreaterThan(0);
       expect(presets[0]?.fields.some((field) => field.token === 'required')).toBe(true);
     }
+  });
+
+  it('missingRequiredFieldKeys (cost estimate source)', () => {
+    const preset = presetsForCategory('cost_estimate')[0]!;
+    expect(
+      missingRequiredFieldKeys(preset, [
+        'rowId',
+        'elementId',
+        'scenarioId',
+        'costGroup',
+        'unit',
+        'quantity',
+        'costDataStatus',
+      ]),
+    ).toEqual(['costSource']);
   });
 
   it('presetFieldReadoutRows merges labels and roles from payload metadata', () => {
