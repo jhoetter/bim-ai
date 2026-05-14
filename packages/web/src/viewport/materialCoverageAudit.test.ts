@@ -75,9 +75,7 @@ describe('material coverage audit — RMP-01', () => {
       thicknessMm: 250,
       heightMm: 3000,
       wallTypeId: wallType.id,
-      faceMaterialOverrides: [
-        { faceKind: 'exterior', materialKey: 'brick_red', source: 'paint' },
-      ],
+      faceMaterialOverrides: [{ faceKind: 'exterior', materialKey: 'brick_red', source: 'paint' }],
     };
 
     const audit = auditElementMaterialCoverage({ [wallType.id]: wallType, [wall.id]: wall });
@@ -149,19 +147,26 @@ describe('material coverage audit — RMP-01', () => {
 
     expect(entry?.source).toBe('instance');
     expect(entry?.materialKey).toBe('aluminium_dark_grey');
-    expect(entry?.subcomponents).toEqual([
-      expect.objectContaining({
-        slot: 'frame',
-        materialKey: 'aluminium_dark_grey',
-        source: 'instance',
-      }),
-      expect.objectContaining({
-        slot: 'glass',
-        materialKey: 'asset_clear_glass_double',
-        source: 'subcomponent-default',
-        category: 'glass',
-      }),
-    ]);
+    expect(entry?.subcomponents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          slot: 'frame',
+          materialKey: 'aluminium_dark_grey',
+          source: 'instance',
+        }),
+        expect.objectContaining({
+          slot: 'glass',
+          materialKey: 'asset_clear_glass_double',
+          source: 'subcomponent-default',
+          category: 'glass',
+        }),
+        expect.objectContaining({
+          slot: 'sash',
+          materialKey: 'aluminium_dark_grey',
+          source: 'instance',
+        }),
+      ]),
+    );
   });
 
   it('reports authored door and window material slots independently', () => {
@@ -176,6 +181,8 @@ describe('material coverage audit — RMP-01', () => {
       materialSlots: {
         frame: 'aluminium_black',
         panel: 'cladding_warm_wood',
+        threshold: 'concrete_smooth',
+        hardware: 'asset_stainless_brushed',
       },
     };
     const win: Extract<Element, { kind: 'window' }> = {
@@ -190,7 +197,11 @@ describe('material coverage audit — RMP-01', () => {
       materialKey: 'aluminium_dark_grey',
       materialSlots: {
         frame: 'aluminium_natural',
+        sash: 'aluminium_black',
         glass: 'glass_obscured',
+        spacer: 'asset_stainless_brushed',
+        hardware: 'aluminium_dark_grey',
+        shading: 'cladding_warm_wood',
       },
     };
 
@@ -198,15 +209,25 @@ describe('material coverage audit — RMP-01', () => {
     const entries = byId(audit.entries);
 
     expect(entries.door1?.materialKey).toBe('aluminium_black');
-    expect(entries.door1?.subcomponents).toEqual([
-      expect.objectContaining({ slot: 'frame', materialKey: 'aluminium_black' }),
-      expect.objectContaining({ slot: 'panel', materialKey: 'cladding_warm_wood' }),
-    ]);
+    expect(entries.door1?.subcomponents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ slot: 'frame', materialKey: 'aluminium_black' }),
+        expect.objectContaining({ slot: 'panel', materialKey: 'cladding_warm_wood' }),
+        expect.objectContaining({ slot: 'threshold', materialKey: 'concrete_smooth' }),
+        expect.objectContaining({ slot: 'hardware', materialKey: 'asset_stainless_brushed' }),
+      ]),
+    );
     expect(entries.win1?.materialKey).toBe('aluminium_natural');
-    expect(entries.win1?.subcomponents).toEqual([
-      expect.objectContaining({ slot: 'frame', materialKey: 'aluminium_natural' }),
-      expect.objectContaining({ slot: 'glass', materialKey: 'glass_obscured' }),
-    ]);
+    expect(entries.win1?.subcomponents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ slot: 'frame', materialKey: 'aluminium_natural' }),
+        expect.objectContaining({ slot: 'sash', materialKey: 'aluminium_black' }),
+        expect.objectContaining({ slot: 'glass', materialKey: 'glass_obscured' }),
+        expect.objectContaining({ slot: 'spacer', materialKey: 'asset_stainless_brushed' }),
+        expect.objectContaining({ slot: 'hardware', materialKey: 'aluminium_dark_grey' }),
+        expect.objectContaining({ slot: 'shading', materialKey: 'cladding_warm_wood' }),
+      ]),
+    );
   });
 
   it('reports stair and railing subcomponent material slots', () => {

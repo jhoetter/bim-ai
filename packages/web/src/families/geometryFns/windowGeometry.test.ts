@@ -127,13 +127,17 @@ describe('buildWindowGeometry — rectangular regression', () => {
     expect(glass!.children.some((child) => child instanceof THREE.LineSegments)).toBe(true);
   });
 
-  it('uses separate frame and glass material slots when authored', () => {
+  it('uses separate frame, sash, glass, spacer, hardware, and shading slots when authored', () => {
     const grp = buildWindowGeometry({
       win: win({
         materialKey: 'aluminium_dark_grey',
         materialSlots: {
           frame: 'cladding_warm_wood',
+          sash: 'aluminium_black',
           glass: 'glass_obscured',
+          spacer: 'asset_stainless_brushed',
+          hardware: 'aluminium_natural',
+          shading: 'white_render',
         },
       }),
       wall: baseWall,
@@ -147,7 +151,11 @@ describe('buildWindowGeometry — rectangular regression', () => {
     );
 
     expect(materialKeys.has('cladding_warm_wood')).toBe(true);
+    expect(materialKeys.has('aluminium_black')).toBe(true);
     expect(materialKeys.has('glass_obscured')).toBe(true);
+    expect(materialKeys.has('asset_stainless_brushed')).toBe(true);
+    expect(materialKeys.has('aluminium_natural')).toBe(true);
+    expect(materialKeys.has('white_render')).toBe(true);
     expect(materialKeys.has('aluminium_dark_grey')).toBe(false);
   });
 

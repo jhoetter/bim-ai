@@ -50,20 +50,20 @@ The current repo has strong foundations but incomplete parity:
 
 ## Workpackage Overview
 
-| WP | Title | Status | Priority | Primary Outcome |
-| --- | --- | --- | --- | --- |
-| RMP-01 | Material Authority And Coverage Audit | Done | P0 | Every element reports its effective material source and unresolved/missing gaps. |
-| RMP-02 | Typed Host Source Of Truth | Done | P0 | Walls/floors/roofs consistently render, display, assign, schedule, and export exposed type layers. |
-| RMP-03 | Opening And Host Cut Visual Correctness | Open | P0 | Windows/doors/openings show real holes, glass remains transparent, and no wall skin fills the pane. |
-| RMP-04 | Procedural Appearance Calibration | Open | P0 | Common materials look credible in Realistic without external maps. |
-| RMP-05 | Subcomponent Material Model | In Progress | P0 | Doors/windows/stairs/railings/families expose frame, panel, glass, tread, rail, baluster, hardware material slots. |
-| RMP-06 | Material Assignment UI Parity | Done | P1 | Inspector and browser explain exactly what target will change before assignment. |
-| RMP-07 | Graphics Asset Binding | Open | P1 | Plans, elevations, sections, and schedules use material graphics assets consistently. |
-| RMP-08 | Appearance Asset Editing And Preview | Open | P1 | Users can edit color, maps, relief, scale, opacity, roughness, and see representative previews. |
-| RMP-09 | Texture Alignment And Paint Tools | Open | P1 | Per-face paint and texture alignment behave like finish overrides, not type mutation. |
-| RMP-10 | Export, Import, Schedule Fidelity | Open | P1 | IFC/GLTF/schedules preserve material identity, layers, appearance status, and missing asset diagnostics. |
-| RMP-11 | Visual Regression Harness | Open | P1 | Browser screenshots and material evidence catch flat-color and transparency regressions. |
-| RMP-12 | Performance And Asset Lifecycle | Open | P2 | Texture caching, disposal, LOD, and provenance are controlled at production scale. |
+| WP     | Title                                   | Status | Priority | Primary Outcome                                                                                                    |
+| ------ | --------------------------------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------ |
+| RMP-01 | Material Authority And Coverage Audit   | Done   | P0       | Every element reports its effective material source and unresolved/missing gaps.                                   |
+| RMP-02 | Typed Host Source Of Truth              | Done   | P0       | Walls/floors/roofs consistently render, display, assign, schedule, and export exposed type layers.                 |
+| RMP-03 | Opening And Host Cut Visual Correctness | Done   | P0       | Windows/doors/openings show real holes, glass remains transparent, and no wall skin fills the pane.                |
+| RMP-04 | Procedural Appearance Calibration       | Done   | P0       | Common materials look credible in Realistic without external maps.                                                 |
+| RMP-05 | Subcomponent Material Model             | Done   | P0       | Doors/windows/stairs/railings/families expose frame, panel, glass, tread, rail, baluster, hardware material slots. |
+| RMP-06 | Material Assignment UI Parity           | Done   | P1       | Inspector and browser explain exactly what target will change before assignment.                                   |
+| RMP-07 | Graphics Asset Binding                  | Open   | P1       | Plans, elevations, sections, and schedules use material graphics assets consistently.                              |
+| RMP-08 | Appearance Asset Editing And Preview    | Open   | P1       | Users can edit color, maps, relief, scale, opacity, roughness, and see representative previews.                    |
+| RMP-09 | Texture Alignment And Paint Tools       | Open   | P1       | Per-face paint and texture alignment behave like finish overrides, not type mutation.                              |
+| RMP-10 | Export, Import, Schedule Fidelity       | Open   | P1       | IFC/GLTF/schedules preserve material identity, layers, appearance status, and missing asset diagnostics.           |
+| RMP-11 | Visual Regression Harness               | Open   | P1       | Browser screenshots and material evidence catch flat-color and transparency regressions.                           |
+| RMP-12 | Performance And Asset Lifecycle         | Open   | P2       | Texture caching, disposal, LOD, and provenance are controlled at production scale.                                 |
 
 ## RMP-01 — Material Authority And Coverage Audit
 
@@ -187,7 +187,7 @@ Evidence:
 
 Priority: `P0`
 
-Status: `In Progress`
+Status: `Done`
 
 Problem:
 
@@ -230,8 +230,11 @@ Evidence:
 - Changed `packages/web/src/viewport/wallCsgEligibility.ts` so roof-attached walls with hosted doors/windows/openings remain eligible for worker CSG cutting.
 - Updated `packages/web/src/viewport/wallCsgEligibility.test.ts` to lock the regression: roof-attached walls with hosted windows must still cut through the wall skin.
 - This directly targets the observed failure mode where a sloped or roof-attached host wall rendered solid behind transparent window glass.
+- Added `packages/web/src/viewport/openingClearance.ts` and `packages/web/src/viewport/openingClearance.test.ts` as a deterministic regression harness for the exact visual fault: front/back host-wall triangles occupying a hosted window aperture.
+- The clearance harness fails on an uncut wall panel and passes when wall panels are split around the aperture, proving the check catches "wall skin behind glass" regressions without importing the worker-only CSG runtime into Vitest.
 - Verification:
   - `pnpm --filter @bim-ai/web exec vitest run src/viewport/wallCsgEligibility.test.ts src/viewport/csgWorker.wallOpening.test.ts src/viewport/glassMaterial.test.ts src/viewport/hostedOpeningDimensions.test.ts src/viewport/meshBuilders.locationLine.test.ts`
+  - `pnpm --filter @bim-ai/web exec vitest run src/viewport/openingClearance.test.ts src/viewport/wallCsgEligibility.test.ts src/viewport/glassMaterial.test.ts`
   - `pnpm --filter @bim-ai/web typecheck`
 
 ## RMP-04 — Procedural Appearance Calibration
@@ -286,7 +289,7 @@ Evidence:
 
 Priority: `P0`
 
-Status: `Open`
+Status: `Done`
 
 Problem:
 
@@ -327,7 +330,10 @@ Evidence:
 - Added `material_slots` / `materialSlots` persistence fields to Python `DoorElem` and `WindowElem`.
 - Window geometry now resolves `materialSlots.frame` and `materialSlots.glass` independently before falling back to legacy `materialKey` and default glass.
 - Door geometry now resolves `materialSlots.frame` and `materialSlots.panel` independently before falling back to legacy `materialKey`.
+- Door geometry now resolves `materialSlots.threshold` and `materialSlots.hardware`; thresholds, sliding tracks, pulls, pivot hardware, and automatic sensors no longer share the coarse door material.
+- Window geometry now resolves `materialSlots.sash`, `materialSlots.spacer`, `materialSlots.hardware`, and `materialSlots.shading`; rectangular windows render separate inner sash/bead, spacer, handle, and optional shading slats instead of only frame/glass.
 - Material coverage audit now reports authored door/window frame, panel, and glass slots independently.
+- Material coverage audit now reports the complete door/window slot sets: door frame/panel/threshold/hardware/glass and window frame/sash/glass/spacer/hardware/shading.
 - Added `materialSlots?: Record<string, string | null>` to stair and railing core element contracts.
 - Added `material_slots` / `materialSlots` persistence fields to Python `StairElem` and `RailingElem`.
 - Stair 3D rendering now resolves `tread`, `stringer`, and multi-run `landing` material slots, with monolithic stairs falling back to `monolithicMaterial`.
@@ -336,13 +342,14 @@ Evidence:
 - Verification:
   - `pnpm --filter @bim-ai/web exec vitest run src/families/geometryFns/windowGeometry.test.ts src/families/geometryFns/doorGeometry.test.ts src/viewport/materialCoverageAudit.test.ts src/viewport/glassMaterial.test.ts`
   - `pnpm --filter @bim-ai/web exec vitest run src/viewport/materialCoverageAudit.test.ts src/viewport/meshBuilders.multiRunStair.test.ts src/viewport/meshBuilders.railingMaterials.test.ts`
-  - `pnpm --filter @bim-ai/web typecheck` was attempted but blocked by unrelated dirty `src/viewport/ViewCube.tsx` errors in the workspace.
+  - `pnpm --filter @bim-ai/web exec vitest run src/families/geometryFns/windowGeometry.test.ts src/families/geometryFns/doorGeometry.test.ts src/viewport/materialCoverageAudit.test.ts src/viewport/openingClearance.test.ts src/viewport/wallCsgEligibility.test.ts src/viewport/glassMaterial.test.ts`
+  - `pnpm --filter @bim-ai/web typecheck`
 
 ## RMP-06 — Material Assignment UI Parity
 
 Priority: `P1`
 
-Status: `Open`
+Status: `Done`
 
 Problem:
 
