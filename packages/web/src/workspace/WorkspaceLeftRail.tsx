@@ -298,7 +298,7 @@ export function WorkspaceLeftRail({
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
       {projectName ? (
-        <div className="flex min-h-[44px] shrink-0 items-center border-b border-border px-2">
+        <div className="flex min-h-[45px] shrink-0 items-center border-b border-border px-2">
           <button
             type="button"
             ref={projectNameRef}
