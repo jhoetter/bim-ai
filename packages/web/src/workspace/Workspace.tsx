@@ -172,7 +172,6 @@ function libraryDisciplineFromLens(lens: LensMode): 'arch' | 'struct' | 'mep' | 
 function lensForWorkspace(id: WorkspaceId): LensMode {
   if (id === 'struct') return 'structure';
   if (id === 'mep') return 'mep';
-  if (id === 'construction') return 'construction';
   return 'all';
 }
 
