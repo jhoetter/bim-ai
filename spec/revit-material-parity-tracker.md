@@ -52,7 +52,7 @@ The current repo has strong foundations but incomplete parity:
 
 | WP | Title | Status | Priority | Primary Outcome |
 | --- | --- | --- | --- | --- |
-| RMP-01 | Material Authority And Coverage Audit | In Progress | P0 | Every element reports its effective material source and unresolved/missing gaps. |
+| RMP-01 | Material Authority And Coverage Audit | Done | P0 | Every element reports its effective material source and unresolved/missing gaps. |
 | RMP-02 | Typed Host Source Of Truth | In Progress | P0 | Walls/floors/roofs consistently render, display, assign, schedule, and export exposed type layers. |
 | RMP-03 | Opening And Host Cut Visual Correctness | Open | P0 | Windows/doors/openings show real holes, glass remains transparent, and no wall skin fills the pane. |
 | RMP-04 | Procedural Appearance Calibration | Open | P0 | Common materials look credible in Realistic without external maps. |
@@ -69,7 +69,7 @@ The current repo has strong foundations but incomplete parity:
 
 Priority: `P0`
 
-Status: `In Progress`
+Status: `Done`
 
 Problem:
 
@@ -113,6 +113,19 @@ Tests:
 Commit rule:
 
 - Commit and push this workpackage by itself.
+
+Evidence:
+
+- Added `packages/web/src/viewport/materialCoverageAudit.ts`.
+- Added `packages/web/src/viewport/materialCoverageAudit.test.ts`.
+- Audit now reports effective material source, source category, display name, editable status, shadowed stale instance material, subcomponent facts, and missing capability flags.
+- Typed wall exterior layer wins over stale internal instance material.
+- Typed roof top layer wins over stale roof instance material.
+- Window frame and glass are reported as separate facts, with glass using `asset_clear_glass_double`.
+- Stairs/railings/ceilings/etc. are distinguishable as category fallback gaps, while rooms/material/type/image elements are non-rendered by design.
+- Verification:
+  - `pnpm --filter @bim-ai/web exec vitest run src/viewport/materialCoverageAudit.test.ts`
+  - `pnpm --filter @bim-ai/web typecheck`
 
 ## RMP-02 — Typed Host Source Of Truth
 
@@ -483,4 +496,3 @@ Material parity is acceptable when:
 - Material Browser assignment says exactly what will be changed.
 - Schedules/exports preserve material identity and layer assignments.
 - Screenshot evidence catches regressions before users do.
-
