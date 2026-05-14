@@ -1,0 +1,21 @@
+<image name=[Image #1]>
+
+---
+
+</image>
+
+---
+
+[Image #1] i want that the left secondary sidebar goes all the way to the tab-level bar, i.e. that the ribbon doesnt interrupt it. if the secondary sidebar is collapsed, the ribbon can of course go to the left boundary.
+
+---
+
+i have the feeling we can even further improve this; i.e. that the top section of the secondary left sidebar with same height as the ribbon is reserved for the things like the lens and such, and we more more of such things like the name there; it would be the width of the secondary sidebar and height of the ribbon; that way, e.g. the icon could also be larger (which is good for hifi) etc...
+
+---
+
+[Image #1] why the name twice? also i think you can move the display lense there. [Image #2] and when collapsed, i think you can find a great way to still make it more consistent, maybe by still showing the large icon and some ideas with the breadcrumbing or such; think about how we can achieve an absolute outstanding design for great consisntency and intuition, but looking also really great
+
+---
+
+oh boy, that laayout is really not pretty. i like if things are condense, think this through how it can be saving space but not being cramped, how things are intuitive; e.g. the icon should maybe remain in place if collapsed or not, but activating it gives the rest of the width back to it so we can display the name and the lense for instance, these kind of things.
