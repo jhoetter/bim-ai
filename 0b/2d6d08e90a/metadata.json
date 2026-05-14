@@ -3,7 +3,7 @@
   "checkpoint_id": "0b2d6d08e90a",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "packages/web/src/workspace/project/ProjectSetupDialog.test.tsx",
     "packages/web/src/workspace/project/ProjectSetupDialog.tsx"
@@ -14,13 +14,19 @@
       "transcript": "/0b/2d6d08e90a/0/full.jsonl",
       "content_hash": "/0b/2d6d08e90a/0/content_hash.txt",
       "prompt": "/0b/2d6d08e90a/0/prompt.txt"
+    },
+    {
+      "metadata": "/0b/2d6d08e90a/1/metadata.json",
+      "transcript": "/0b/2d6d08e90a/1/full.jsonl",
+      "content_hash": "/0b/2d6d08e90a/1/content_hash.txt",
+      "prompt": "/0b/2d6d08e90a/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 3290527,
+    "input_tokens": 5106591,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 49678464,
-    "output_tokens": 100754,
-    "api_call_count": 1009
+    "cache_read_tokens": 89367168,
+    "output_tokens": 198510,
+    "api_call_count": 1327
   }
 }
