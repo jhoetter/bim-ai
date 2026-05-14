@@ -11,6 +11,7 @@ from bim_ai.document import Document
 from bim_ai.elements import LevelElem, PhaseElem, ScheduleElem, Vec2Mm, WallElem
 from bim_ai.engine import apply_inplace
 from bim_ai.schedule_derivation import derive_schedule_table
+from bim_ai.api.registry import get_catalog
 
 
 def _doc() -> Document:
@@ -140,3 +141,9 @@ def test_construction_schedule_defaults_cover_package_phase_progress_logistics_a
     assert payload["lens"]["id"] == "construction"
     assert payload["summary"]["progressElementCount"] == 1
     assert payload["summary"]["logisticsElementCount"] == 1
+
+
+def test_construction_lens_tools_are_registered() -> None:
+    names = {tool.name for tool in get_catalog().tools}
+    assert "construction-lens-report" in names
+    assert "set-element-construction" in names
