@@ -51,6 +51,38 @@
         "name": "Roof — Plan",
         "levelId": "tmpl-lvl-roof"
       },
+      "tmpl-plan-structure-ground": {
+        "kind": "plan_view",
+        "id": "tmpl-plan-structure-ground",
+        "name": "Ground Floor — Structure",
+        "levelId": "tmpl-lvl-ground",
+        "discipline": "struct",
+        "viewSubdiscipline": "structure",
+        "planViewSubtype": "coordination_plan",
+        "defaultLens": "show_struct",
+        "planDetailLevel": "medium",
+        "categoriesHidden": ["room"]
+      },
+      "tmpl-section-structure": {
+        "kind": "section_cut",
+        "id": "tmpl-section-structure",
+        "name": "Structure — Long Section",
+        "lineStartMm": { "xMm": -1000, "yMm": 2500 },
+        "lineEndMm": { "xMm": 11000, "yMm": 2500 },
+        "cropDepthMm": 9000
+      },
+      "tmpl-schedule-structural-elements": {
+        "kind": "schedule",
+        "id": "tmpl-schedule-structural-elements",
+        "name": "Structural Elements",
+        "category": "structural_element"
+      },
+      "tmpl-schedule-bearing-wall-openings": {
+        "kind": "schedule",
+        "id": "tmpl-schedule-bearing-wall-openings",
+        "name": "Openings in Load-Bearing Walls",
+        "category": "opening_load_bearing_wall"
+      },
       "asset-kitchen-fridge-tall": {
         "kind": "asset_library_entry",
         "id": "asset-kitchen-fridge-tall",

@@ -45,6 +45,8 @@ CONSTRUCTABILITY_RULE_IDS = frozenset(
         "floor_boundary_without_wall_support",
         "beam_without_support",
         "column_without_foundation_or_support",
+        "structural_material_inconsistent_by_type",
+        "structural_bays_missing_grids",
         "door_operation_clearance_conflict",
         "window_operation_clearance_conflict",
         "room_without_door_access",
@@ -113,6 +115,8 @@ RECOMMENDATION_BY_RULE_ID = {
     "floor_boundary_without_wall_support": "Add perimeter wall/support geometry, revise the floor boundary, or clear the perimeter-support requirement metadata.",
     "beam_without_support": "Add, align, or explicitly link columns/load-bearing walls at the beam supports.",
     "column_without_foundation_or_support": "Add a foundation, lower column, slab, or other modeled support below the column.",
+    "structural_material_inconsistent_by_type": "Align structural material assignments for elements sharing the same type, or split the type when different materials are intentional.",
+    "structural_bays_missing_grids": "Add structural grid lines for the repeated beam/column bay layout before coordination or external analysis handoff.",
     "door_operation_clearance_conflict": "Move nearby objects or adjust the door/opening so the operation zone stays clear.",
     "window_operation_clearance_conflict": "Move nearby objects or adjust the window/opening so operation and maintenance clearance stays clear.",
     "room_without_door_access": "Add a connected door opening or revise the room boundary so the room is accessible.",
@@ -289,7 +293,10 @@ def build_constructability_summary_v1(
 
 def _finding_dict(violation: Violation, *, profile: str) -> dict[str, Any]:
     data = violation.model_dump(by_alias=True)
-    if profile == "construction_readiness" and violation.rule_id in CONSTRUCTION_READINESS_ERROR_RULE_IDS:
+    if (
+        profile == "construction_readiness"
+        and violation.rule_id in CONSTRUCTION_READINESS_ERROR_RULE_IDS
+    ):
         data["severity"] = "error"
         data["blocking"] = True
     data["recommendation"] = RECOMMENDATION_BY_RULE_ID.get(

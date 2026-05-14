@@ -81,6 +81,19 @@ ARCHITECTURE_ROOM_PROP_KEYS = {
 }
 
 
+def _parse_structural_bool(value: object) -> bool | None:
+    if value is None or value == "":
+        return None
+    if isinstance(value, bool):
+        return value
+    raw = str(value).strip().lower()
+    if raw in {"1", "true", "yes", "on"}:
+        return True
+    if raw in {"0", "false", "no", "off"}:
+        return False
+    raise ValueError("loadBearing must be true, false, or empty")
+
+
 def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
     els = doc.elements
     match cmd:
@@ -92,6 +105,53 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                 if cmd.key != "title":
                     raise ValueError("Issues only support updateElementProperty.key=title (v2)")
                 els[cmd.element_id] = el.model_copy(update={"title": cmd.value})
+            elif cmd.key == "loadBearing" and hasattr(el, "load_bearing"):
+                els[cmd.element_id] = el.model_copy(
+                    update={"load_bearing": _parse_structural_bool(cmd.value)}
+                )
+            elif cmd.key == "structuralRole" and hasattr(el, "structural_role"):
+                role = str(cmd.value or "").strip()
+                if role not in {
+                    "unknown",
+                    "load_bearing",
+                    "non_load_bearing",
+                    "bearing_wall",
+                    "shear_wall",
+                    "slab",
+                    "beam",
+                    "column",
+                    "foundation",
+                    "brace",
+                }:
+                    raise ValueError(
+                        "structuralRole must be unknown|load_bearing|non_load_bearing|bearing_wall|shear_wall|slab|beam|column|foundation|brace"
+                    )
+                els[cmd.element_id] = el.model_copy(update={"structural_role": role})
+            elif cmd.key == "structuralMaterial" and hasattr(el, "structural_material"):
+                material = str(cmd.value or "").strip() or None
+                if material not in {
+                    None,
+                    "concrete",
+                    "steel",
+                    "timber",
+                    "masonry",
+                    "composite",
+                    "other",
+                }:
+                    raise ValueError(
+                        "structuralMaterial must be concrete|steel|timber|masonry|composite|other or empty"
+                    )
+                els[cmd.element_id] = el.model_copy(update={"structural_material": material})
+            elif cmd.key == "analysisStatus" and hasattr(el, "analysis_status"):
+                status = str(cmd.value or "").strip() or "not_modeled"
+                if status not in {"not_modeled", "ready_for_export", "needs_review"}:
+                    raise ValueError(
+                        "analysisStatus must be not_modeled|ready_for_export|needs_review"
+                    )
+                els[cmd.element_id] = el.model_copy(update={"analysis_status": status})
+            elif cmd.key == "fireResistanceRating" and hasattr(el, "fire_resistance_rating"):
+                rating = str(cmd.value or "").strip() or None
+                els[cmd.element_id] = el.model_copy(update={"fire_resistance_rating": rating})
             elif cmd.key == "name" and hasattr(el, "name"):
                 els[cmd.element_id] = el.model_copy(update={"name": cmd.value})
             elif cmd.key == "programmeCode" and isinstance(el, RoomElem):
@@ -813,6 +873,7 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     "viewerClipCapElevMm(viewpoint) | viewerClipFloorElevMm(viewpoint) | "
                     "hiddenSemanticKinds3d(viewpoint JSON array) | cutawayStyle(viewpoint) | "
                     "familyTypeId(door/window) | materialKey(door/window|wall) | "
+                    "loadBearing/structuralRole/structuralMaterial/analysisStatus/fireResistanceRating(structural elements) | "
                     "isCurtainWall(wall) | roofAttachmentId(wall) | wallTypeId(wall) | "
                     "heightMm(wall) | thicknessMm(wall) | "
                     "paramValues(placed_asset JSON object) | "

@@ -22,6 +22,16 @@ const SELECTED_WALL_CTX: PaletteContext = {
   activeViewId: null,
   activeMode: '3d',
 };
+const SELECTED_FLOOR_CTX: PaletteContext = {
+  selectedElementIds: ['floor-1'],
+  activeViewId: null,
+  activeMode: 'plan',
+};
+const SELECTED_OPENING_CTX: PaletteContext = {
+  selectedElementIds: ['door-1'],
+  activeViewId: null,
+  activeMode: 'plan',
+};
 const SCHEDULE_CTX: PaletteContext = {
   selectedElementIds: [],
   activeViewId: 'sch-1',
@@ -214,6 +224,82 @@ describe('default Cmd+K commands', () => {
     expect(setLensMode).toHaveBeenNthCalledWith(4, 'coordination');
     expect(setLensMode).toHaveBeenNthCalledWith(5, 'energy');
     expect(setLensMode).toHaveBeenNthCalledWith(6, 'construction');
+  });
+
+  it('dispatches Structure lens property authoring commands', () => {
+    const dispatchCommand = vi.fn();
+    useBimStore.setState({
+      elementsById: {
+        'wall-1': {
+          kind: 'wall',
+          id: 'wall-1',
+          name: 'Wall 1',
+          levelId: 'lvl-1',
+          start: { xMm: 0, yMm: 0 },
+          end: { xMm: 6000, yMm: 0 },
+          loadBearing: false,
+        },
+        'floor-1': {
+          kind: 'floor',
+          id: 'floor-1',
+          name: 'Floor 1',
+          levelId: 'lvl-1',
+          boundaryMm: [
+            { xMm: 0, yMm: 0 },
+            { xMm: 1000, yMm: 0 },
+            { xMm: 1000, yMm: 1000 },
+            { xMm: 0, yMm: 1000 },
+          ],
+        },
+        'door-1': {
+          kind: 'door',
+          id: 'door-1',
+          name: 'Door',
+          wallId: 'wall-1',
+          alongT: 0.5,
+          widthMm: 900,
+        },
+      },
+    });
+
+    command('structure.wall.toggle-load-bearing').invoke({
+      ...SELECTED_WALL_CTX,
+      dispatchCommand,
+    });
+    expect(dispatchCommand).toHaveBeenCalledWith({
+      type: 'updateElementProperty',
+      elementId: 'wall-1',
+      key: 'loadBearing',
+      value: true,
+    });
+    expect(dispatchCommand).toHaveBeenCalledWith({
+      type: 'updateElementProperty',
+      elementId: 'wall-1',
+      key: 'structuralRole',
+      value: 'bearing_wall',
+    });
+
+    command('structure.foundation.mark-selected-floor').invoke({
+      ...SELECTED_FLOOR_CTX,
+      dispatchCommand,
+    });
+    expect(dispatchCommand).toHaveBeenCalledWith({
+      type: 'updateElementProperty',
+      elementId: 'floor-1',
+      key: 'structuralRole',
+      value: 'foundation',
+    });
+
+    command('structure.opening.mark-reviewed').invoke({
+      ...SELECTED_OPENING_CTX,
+      dispatchCommand,
+    });
+    expect(dispatchCommand).toHaveBeenCalledWith({
+      type: 'set_element_prop',
+      elementId: 'door-1',
+      key: 'structuralReviewApproved',
+      value: true,
+    });
   });
 
   it('routes canonical sidebar toggles through the palette host context', () => {
