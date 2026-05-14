@@ -472,6 +472,7 @@ describe('RibbonBar — F-005', () => {
     const onInsertDoorOnSelectedWall3d = vi.fn();
     const onInsertWindowOnSelectedWall3d = vi.fn();
     const onInsertOpeningOnSelectedWall3d = vi.fn();
+    const onToggleElementSidebar = vi.fn();
     const wallSelection = render(
       <RibbonBar
         activeMode="3d"
@@ -479,17 +480,21 @@ describe('RibbonBar — F-005', () => {
         onInsertDoorOnSelectedWall3d={onInsertDoorOnSelectedWall3d}
         onInsertWindowOnSelectedWall3d={onInsertWindowOnSelectedWall3d}
         onInsertOpeningOnSelectedWall3d={onInsertOpeningOnSelectedWall3d}
+        onToggleElementSidebar={onToggleElementSidebar}
       />,
     );
     fireEvent.click(wallSelection.getByTestId('ribbon-tab-modify'));
     expect(wallSelection.getByTestId('3d-insert-door')).toBeTruthy();
     expect(wallSelection.getByTestId('3d-insert-window')).toBeTruthy();
+    expect(wallSelection.getByTestId('3d-wall-join-controls')).toBeTruthy();
     fireEvent.click(wallSelection.getByTestId('3d-insert-door'));
     fireEvent.click(wallSelection.getByTestId('3d-insert-window'));
     fireEvent.click(wallSelection.getByTestId('3d-insert-opening'));
+    fireEvent.click(wallSelection.getByTestId('3d-wall-join-controls'));
     expect(onInsertDoorOnSelectedWall3d).toHaveBeenCalledTimes(1);
     expect(onInsertWindowOnSelectedWall3d).toHaveBeenCalledTimes(1);
     expect(onInsertOpeningOnSelectedWall3d).toHaveBeenCalledTimes(1);
+    expect(onToggleElementSidebar).toHaveBeenCalledTimes(1);
     wallSelection.unmount();
 
     const beamSelection = render(<RibbonBar activeMode="3d" selectedElementKind="beam" />);
@@ -578,6 +583,18 @@ describe('RibbonBar — F-005', () => {
     const tab = getByTestId('ribbon-tab-modify');
     expect(tab.textContent).toBe('Modify | Wall');
     expect(tab.getAttribute('data-contextual')).toBe('true');
+  });
+
+  it('exposes wall join from the plan contextual Modify ribbon', () => {
+    const onToolSelect = vi.fn();
+    const { getByTestId } = render(
+      <RibbonBar activeMode="plan" selectedElementKind="wall" onToolSelect={onToolSelect} />,
+    );
+
+    fireEvent.click(getByTestId('ribbon-tab-modify'));
+    fireEvent.click(getByTestId('ribbon-command-wall-join'));
+
+    expect(onToolSelect).toHaveBeenCalledWith('wall-join');
   });
 
   it('does not expose disabled ribbon commands in any active view schema — UX-WP-06', () => {

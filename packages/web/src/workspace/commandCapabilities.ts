@@ -935,7 +935,7 @@ const SYSTEM_CAPABILITIES: CommandCapability[] = [
     group: 'system',
     scope: 'universal',
     intendedModes: [...CAPABILITY_VIEW_MODES],
-    surfaces: ['cmd-k', 'element-sidebar'],
+    surfaces: ['cmd-k', 'ribbon', 'element-sidebar'],
     executionSurface: 'element-sidebar',
     preconditions: ['has-selection'],
     status: 'implemented',

@@ -1375,6 +1375,7 @@ function buildPlanModifyTab(selectedElementKind: string): RibbonTab {
           tool('mirror', 'Mirror', 'mirror'),
           tool('align', 'Align', 'align'),
           tool('trim-extend', 'Trim/Extend', 'trim'),
+          ...(selectedElementKind === 'wall' ? [tool('wall-join', 'Wall Join', 'wall-join')] : []),
         ],
       },
     ],
@@ -1401,6 +1402,12 @@ function build3dModifyTab(selectedElementKind: string): RibbonTab {
                 action('3d-insert-door', 'Insert Door', 'door', '3d-insert-door'),
                 action('3d-insert-window', 'Insert Window', 'window', '3d-insert-window'),
                 action('3d-insert-opening', 'Opening', 'wall-opening', '3d-insert-opening'),
+                action(
+                  'element-sidebar-toggle',
+                  'Join Controls',
+                  'wall-join',
+                  '3d-wall-join-controls',
+                ),
               ]
             : [action('element-sidebar-toggle', 'Element Actions', 'select', '3d-element-actions')],
       },

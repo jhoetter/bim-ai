@@ -315,6 +315,11 @@ describe('command capability graph', () => {
       'ribbon',
       'secondary-sidebar',
     ]);
+    expect(getCommandCapability('shell.toggle-element-sidebar')?.surfaces).toEqual([
+      'cmd-k',
+      'ribbon',
+      'element-sidebar',
+    ]);
     expect(getCommandCapability('view.3d.wall.insert-door')?.surfaces).toEqual([
       'cmd-k',
       'ribbon',
