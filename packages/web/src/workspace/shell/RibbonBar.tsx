@@ -330,17 +330,17 @@ export function RibbonBar({
     <section
       aria-label="Ribbon"
       data-testid="ribbon-bar"
-      className="border-b border-border bg-surface"
+      className="border-b border-border bg-surface shadow-[0_1px_0_rgba(0,0,0,0.03)]"
     >
-      <div className="flex min-h-8 items-end gap-2 px-3 pt-1">
-        <div className="mb-0.5 flex min-w-0 shrink-0 items-center gap-1">
+      <div className="flex min-h-9 items-end gap-2 px-2.5 pt-1">
+        <div className="mb-1 flex min-w-0 max-w-[36rem] shrink-0 items-center gap-1.5 border-r border-border/70 pr-2">
           {inlineViewTitle ? (
             onToggleViewSettings ? (
               <button
                 type="button"
                 className={[
-                  'inline-flex h-6 min-w-0 shrink-0 items-center gap-1 rounded border border-border bg-background px-2 text-[11px] text-muted hover:bg-surface-2 hover:text-foreground',
-                  viewSettingsOpen ? 'border-accent/60 bg-accent/10 text-accent' : '',
+                  'group inline-flex h-7 min-w-0 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-xs font-semibold text-foreground hover:bg-surface-strong',
+                  viewSettingsOpen ? 'bg-accent-soft text-accent' : '',
                 ].join(' ')}
                 data-testid="ribbon-mode-identity"
                 aria-label={
@@ -354,7 +354,12 @@ export function RibbonBar({
               >
                 <span
                   data-testid={inlineViewTitle.viewIconTestId}
-                  className="inline-flex h-4 w-4 shrink-0 items-center justify-center"
+                  className={[
+                    'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border',
+                    viewSettingsOpen
+                      ? 'border-accent/50 bg-background text-accent'
+                      : 'border-border bg-background text-muted group-hover:text-foreground',
+                  ].join(' ')}
                 >
                   <InlineViewIcon size={ICON_SIZE.chrome} aria-hidden="true" />
                 </span>
@@ -362,13 +367,13 @@ export function RibbonBar({
               </button>
             ) : (
               <div
-                className="inline-flex h-6 min-w-0 shrink-0 items-center gap-1 rounded border border-border bg-background px-2 text-[11px] text-muted"
+                className="inline-flex h-7 min-w-0 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-xs font-semibold text-foreground"
                 data-testid="ribbon-mode-identity"
                 title={inlineViewTitle.title}
               >
                 <span
                   data-testid={inlineViewTitle.viewIconTestId}
-                  className="inline-flex h-4 w-4 shrink-0 items-center justify-center"
+                  className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-border bg-background text-muted"
                 >
                   <InlineViewIcon size={ICON_SIZE.chrome} aria-hidden="true" />
                 </span>
@@ -379,8 +384,8 @@ export function RibbonBar({
             <button
               type="button"
               className={[
-                'inline-flex h-6 shrink-0 items-center gap-1 rounded border border-border bg-background px-2 text-[11px] text-muted hover:bg-surface-2 hover:text-foreground',
-                viewSettingsOpen ? 'border-accent/60 bg-accent/10 text-accent' : '',
+                'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-xs font-semibold text-foreground hover:bg-surface-strong',
+                viewSettingsOpen ? 'bg-accent-soft text-accent' : '',
               ].join(' ')}
               data-testid="ribbon-mode-identity"
               aria-label={viewSettingsToggleLabel ?? `Toggle ${identity.label} view settings`}
@@ -388,22 +393,26 @@ export function RibbonBar({
               title={viewSettingsToggleLabel ?? `Toggle ${identity.label} view settings`}
               onClick={onToggleViewSettings}
             >
-              <ModeIdentityIcon size={ICON_SIZE.chrome} aria-hidden="true" />
+              <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-border bg-background text-muted">
+                <ModeIdentityIcon size={ICON_SIZE.chrome} aria-hidden="true" />
+              </span>
               <span>{identity.label}</span>
             </button>
           ) : (
             <div
-              className="inline-flex h-6 shrink-0 items-center gap-1 rounded border border-border bg-background px-2 text-[11px] text-muted"
+              className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-xs font-semibold text-foreground"
               data-testid="ribbon-mode-identity"
             >
-              <ModeIdentityIcon size={ICON_SIZE.chrome} aria-hidden="true" />
+              <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-border bg-background text-muted">
+                <ModeIdentityIcon size={ICON_SIZE.chrome} aria-hidden="true" />
+              </span>
               <span>{identity.label}</span>
             </div>
           )}
           {onLensChange ? (
             <div
               data-testid="ribbon-lens-dropdown"
-              className="h-6 rounded border border-border bg-background px-1 text-[11px] text-muted"
+              className="h-7 rounded-md border border-border bg-background/80 px-1 text-[11px] text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
             >
               <LensDropdown
                 currentLens={lensMode}
@@ -414,7 +423,7 @@ export function RibbonBar({
           ) : null}
           {inlineViewTitle?.viewName ? (
             <div
-              className="min-w-0 max-w-[24rem] truncate text-xs font-medium text-foreground"
+              className="min-w-0 truncate text-xs font-medium text-foreground"
               title={inlineViewTitle.title}
             >
               {inlineViewTitle.viewName}
@@ -425,7 +434,7 @@ export function RibbonBar({
           role="tablist"
           aria-label="Ribbon tabs"
           data-testid="ribbon-tabs"
-          className="flex min-w-0 flex-1 items-end gap-0.5 overflow-x-auto"
+          className="flex min-w-0 flex-1 items-end gap-0.5 overflow-x-auto rounded-t-md"
         >
           {tabs.map((tab) => {
             const active = tab.id === activeTab.id;
@@ -444,12 +453,12 @@ export function RibbonBar({
                   setOpenFlyoutPanelId(null);
                 }}
                 className={[
-                  'h-7 whitespace-nowrap rounded-t-md px-3 text-xs font-semibold transition-colors',
+                  'relative h-8 whitespace-nowrap rounded-t-md px-3 text-xs font-semibold transition-colors',
                   active
-                    ? 'bg-background text-foreground shadow-[inset_0_2px_0_0_var(--color-accent)]'
+                    ? 'bg-background text-foreground shadow-[inset_0_2px_0_0_var(--color-accent),0_-1px_0_0_var(--color-border),1px_0_0_0_var(--color-border),-1px_0_0_0_var(--color-border)]'
                     : tab.contextual
-                      ? 'text-accent hover:bg-background'
-                      : 'text-muted hover:bg-background hover:text-foreground',
+                      ? 'text-accent hover:bg-background/80'
+                      : 'text-muted hover:bg-background/80 hover:text-foreground',
                 ].join(' ')}
               >
                 {tab.label}
@@ -462,11 +471,15 @@ export function RibbonBar({
           aria-label="Customize ribbon"
           aria-expanded={customizeOpen}
           data-testid="ribbon-toggle-customize"
+          title="Customize ribbon"
           onClick={() => {
             setCustomizeOpen((v) => !v);
             setOpenFlyoutPanelId(null);
           }}
-          className="mb-0.5 flex h-6 w-6 items-center justify-center rounded border border-border bg-background text-muted hover:text-foreground"
+          className={[
+            'mb-1 flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-surface-strong hover:text-foreground',
+            customizeOpen ? 'bg-accent-soft text-accent' : '',
+          ].join(' ')}
         >
           <Icons.settings size={ICON_SIZE.chrome} aria-hidden="true" />
         </button>
@@ -475,8 +488,9 @@ export function RibbonBar({
           aria-label={minimized ? 'Restore ribbon panels' : 'Minimize ribbon panels'}
           aria-expanded={!minimized}
           data-testid="ribbon-toggle-minimize"
+          title={minimized ? 'Restore ribbon panels' : 'Minimize ribbon panels'}
           onClick={() => setMinimized((v) => !v)}
-          className="mb-0.5 flex h-6 w-6 items-center justify-center rounded border border-border bg-background text-muted hover:text-foreground"
+          className="mb-1 flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-surface-strong hover:text-foreground"
         >
           {minimized ? (
             <Icons.disclosureOpen size={ICON_SIZE.chrome} aria-hidden="true" />
@@ -485,7 +499,9 @@ export function RibbonBar({
           )}
         </button>
         {trailingControls ? (
-          <div className="mb-0.5 flex shrink-0 items-center gap-1">{trailingControls}</div>
+          <div className="mb-1 flex shrink-0 items-center gap-1 border-l border-border/70 pl-1">
+            {trailingControls}
+          </div>
         ) : null}
       </div>
       {customizeOpen ? (

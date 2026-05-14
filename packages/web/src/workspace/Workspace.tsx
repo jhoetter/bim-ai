@@ -2638,14 +2638,15 @@ export function Workspace(): JSX.Element {
                 trailingControls={
                   <>
                     {paneCanAcceptDrop ? (
-                      <span className="rounded border border-accent/60 px-1 py-0.5 text-[10px] text-accent">
+                      <span className="rounded-md border border-accent/60 bg-accent-soft px-1.5 py-0.5 text-[10px] font-medium text-accent">
                         Drop view
                       </span>
                     ) : null}
                     <button
                       type="button"
                       data-testid={`canvas-pane-close-tab-${node.id}`}
-                      className="inline-flex h-6 w-6 items-center justify-center rounded border border-border bg-background text-muted hover:bg-surface-2 hover:text-foreground"
+                      title={`Close ${paneLabel}`}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-surface-strong hover:text-foreground"
                       aria-label={`Close ${paneLabel}`}
                       onClick={(event) => {
                         event.stopPropagation();

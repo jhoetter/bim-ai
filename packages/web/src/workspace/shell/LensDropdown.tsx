@@ -22,6 +22,12 @@ const DISC_SOFT: Partial<Record<LensMode, string>> = {
   mep: 'var(--disc-mep-soft)',
 };
 
+const DISC_SOLID: Partial<Record<LensMode, string>> = {
+  architecture: 'var(--disc-arch)',
+  structure: 'var(--disc-struct)',
+  mep: 'var(--disc-mep)',
+};
+
 export interface LensDropdownProps {
   currentLens: LensMode;
   onLensChange: (lens: LensMode) => void;
@@ -68,6 +74,7 @@ export function LensDropdown({
   }, [open, close]);
 
   const softColor = DISC_SOFT[currentLens];
+  const solidColor = DISC_SOLID[currentLens] ?? 'var(--color-muted-foreground)';
 
   return (
     <div ref={containerRef} className="relative flex items-center">
@@ -81,21 +88,27 @@ export function LensDropdown({
         style={
           softColor
             ? {
-                borderLeft: `3px solid ${softColor}`,
-                paddingLeft: '0.375rem',
+                boxShadow: `inset 0 -2px 0 ${softColor}`,
               }
             : undefined
         }
-        className="rounded-sm px-1.5 py-0.5 hover:bg-surface-strong"
+        className="inline-flex h-6 items-center gap-1 rounded px-1.5 text-[11px] hover:bg-surface-strong"
         onKeyDown={(e) => {
           if (e.key === 'Escape') close();
         }}
       >
-        Show:{' '}
+        <span
+          aria-hidden="true"
+          className="h-1.5 w-1.5 rounded-full"
+          style={{ background: solidColor }}
+        />
+        <span className="text-muted">Show</span>
         <span className="font-medium" style={{ color: 'var(--color-foreground)' }}>
           {LENS_LABELS[activeLensInCycle]}
         </span>
-        {' ▾'}
+        <span aria-hidden="true" className="text-muted">
+          ▾
+        </span>
       </button>
       {open ? (
         <div
