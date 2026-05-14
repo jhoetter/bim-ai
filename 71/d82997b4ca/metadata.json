@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "71d82997b4ca",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/plan/symbology.wirePrimitives.test.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/71/d82997b4ca/0/metadata.json",
+      "transcript": "/71/d82997b4ca/0/full.jsonl",
+      "content_hash": "/71/d82997b4ca/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 210314,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1175424,
+    "output_tokens": 6370,
+    "api_call_count": 19
+  }
+}
