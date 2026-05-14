@@ -530,6 +530,30 @@ registerCommand({
   },
 });
 
+registerCommand({
+  id: 'navigate.energy',
+  label: 'Switch lens: Energieberatung',
+  keywords: [
+    'energy',
+    'energieberatung',
+    'energielinse',
+    'energieberater',
+    'geg',
+    'bafa',
+    'isfp',
+    'beg',
+    'lens',
+  ],
+  category: 'navigate',
+  invoke: (ctx) => {
+    if (ctx.setLensMode) {
+      ctx.setLensMode('energy');
+      return;
+    }
+    useBimStore.getState().setLensMode('energy');
+  },
+});
+
 // Additional tools
 registerCommand({
   id: 'tool.column',
