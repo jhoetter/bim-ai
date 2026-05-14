@@ -1,3 +1,11 @@
+import {
+  snapPlanCandidates,
+  type SegmentLine,
+  type SnapAnchor,
+  type SnapKind,
+} from '../plan/snapEngine';
+import { applySnapSettings, DEFAULT_SNAP_SETTINGS, type SnapSettings } from '../plan/snapSettings';
+
 export interface DraftLevel {
   id: string;
   elevationMm: number;
@@ -15,12 +23,7 @@ export interface PlanPointMm {
 }
 
 export type WallDraftProjectionMode = 'plane' | 'elevation-axis';
-export type Authoring3dSnapKind =
-  | 'level-plane'
-  | 'grid'
-  | 'wall-endpoint'
-  | 'wall-intersection'
-  | 'wall-segment';
+export type Authoring3dSnapKind = 'level-plane' | SnapKind;
 
 export interface Authoring3dSnap {
   point: PlanPointMm;
@@ -140,6 +143,46 @@ export function snapDraftPointToGrid(
     return { point: gridPoint, kind: 'grid' };
   }
   return { point: { xMm: point.xMm, yMm: point.yMm }, kind: 'level-plane' };
+}
+
+export function snapDraftPointToPlanSnaps(
+  point: PlanPointMm,
+  options: {
+    anchors: SnapAnchor[];
+    centers?: SnapAnchor[];
+    lines?: SegmentLine[];
+    gridStepMm: number;
+    snapMm: number;
+    draftAnchor?: PlanPointMm;
+    snapSettings?: SnapSettings;
+  },
+): Authoring3dSnap {
+  const snapMm = Number.isFinite(options.snapMm) ? Math.max(0, options.snapMm) : 0;
+  const hits = snapPlanCandidates({
+    cursor: point,
+    anchors: options.anchors,
+    centers: options.centers,
+    lines: options.lines,
+    gridStepMm: options.gridStepMm,
+    chainAnchor: options.draftAnchor,
+    draftAnchor: options.draftAnchor,
+    snapMm,
+    orthoHold: false,
+  });
+  const filtered = applySnapSettings(
+    hits.filter((hit) => {
+      if (hit.kind === 'raw') return false;
+      if (hit.kind !== 'grid') return true;
+      return Math.hypot(hit.point.xMm - point.xMm, hit.point.yMm - point.yMm) <= snapMm;
+    }),
+    options.snapSettings ?? DEFAULT_SNAP_SETTINGS,
+  );
+  const active = filtered[0];
+  if (!active) return { point: { xMm: point.xMm, yMm: point.yMm }, kind: 'level-plane' };
+  return {
+    point: { xMm: active.point.xMm, yMm: active.point.yMm },
+    kind: active.kind,
+  };
 }
 
 export function buildLinePreviewPayload(

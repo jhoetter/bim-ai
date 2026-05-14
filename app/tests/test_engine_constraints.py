@@ -107,6 +107,73 @@ def test_try_commit_overlap_rejected():
     assert any(v.rule_id == "wall_overlap" for v in viols)
 
 
+def test_connected_oblique_wall_endpoint_is_join_not_overlap():
+    doc = _minimal_doc()
+    ok, new_doc, _cmd, viols, code = try_commit(
+        doc,
+        {
+            "type": "createWall",
+            "id": "w_joined",
+            "name": "Joined oblique wall",
+            "levelId": "lvl-1",
+            "start": {"xMm": 4000, "yMm": 0},
+            "end": {"xMm": 6000, "yMm": 1100},
+            "thicknessMm": 200,
+            "heightMm": 2800,
+        },
+    )
+
+    assert ok is True
+    assert new_doc is not None
+    assert code == "ok"
+    assert not any(v.rule_id == "wall_overlap" for v in viols)
+
+
+def test_preexisting_blocking_violation_does_not_block_independent_wall_edit():
+    lvl = LevelElem(kind="level", id="lvl-1", name="Ground", elevationMm=0)
+    w1 = WallElem(
+        kind="wall",
+        id="w1",
+        name="Wall 1",
+        levelId="lvl-1",
+        start=Vec2Mm(xMm=0, yMm=0),
+        end=Vec2Mm(xMm=4000, yMm=0),
+        thicknessMm=200,
+        heightMm=2800,
+    )
+    w2 = WallElem(
+        kind="wall",
+        id="w2",
+        name="Existing overlap",
+        levelId="lvl-1",
+        start=Vec2Mm(xMm=2000, yMm=0),
+        end=Vec2Mm(xMm=6000, yMm=0),
+        thicknessMm=200,
+        heightMm=2800,
+    )
+    doc = Document(revision=1, elements={"lvl-1": lvl, "w1": w1, "w2": w2})
+
+    ok, new_doc, _cmd, viols, code = try_commit(
+        doc,
+        {
+            "type": "createWall",
+            "id": "w_independent",
+            "name": "Independent wall",
+            "levelId": "lvl-1",
+            "start": {"xMm": 0, "yMm": 5000},
+            "end": {"xMm": 3000, "yMm": 5000},
+            "thicknessMm": 200,
+            "heightMm": 2800,
+        },
+    )
+
+    assert ok is True
+    assert new_doc is not None
+    assert code == "ok"
+    assert "w_independent" in new_doc.elements
+    assert any(v.rule_id == "wall_overlap" for v in viols)
+
+
 def test_door_width_greater_than_wall_rejected():
     doc = _minimal_doc()
     ok, _new_doc, _cmd, viols, code = try_commit(

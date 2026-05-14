@@ -139,6 +139,25 @@ def replay_bundle_diagnostics_for_outcome(
     return base
 
 
+def _blocking_violation_signature(v: Violation) -> tuple[str, tuple[str, ...]]:
+    return (v.rule_id, tuple(sorted(v.element_ids)))
+
+
+def _new_blocking_violations(
+    before: list[Violation],
+    after: list[Violation],
+) -> list[Violation]:
+    before_blocking = {
+        _blocking_violation_signature(v) for v in before if v.blocking or v.severity == "error"
+    }
+    return [
+        v
+        for v in after
+        if (v.blocking or v.severity == "error")
+        and _blocking_violation_signature(v) not in before_blocking
+    ]
+
+
 def try_apply_kernel_ifc_authoritative_replay_v0(
     doc: Document,
     sketch: dict[str, Any],
@@ -277,6 +296,7 @@ def try_commit_bundle(
         return False, None, cmds, [], str(exc)
 
     ensure_sun_settings(cand)
+    before_violations = evaluate(doc.elements)
     violations = evaluate(cand.elements)
 
     # EDT-02 — reject bundles that break an error-severity locked constraint.
@@ -285,7 +305,7 @@ def try_commit_bundle(
     edt_violations = _evaluate_edt_constraint_violations(cand.elements)
     violations = violations + edt_violations
 
-    blocking = [v for v in violations if v.blocking or v.severity == "error"]
+    blocking = _new_blocking_violations(before_violations, violations)
     if blocking:
         return False, None, cmds, violations, "constraint_error"
 
@@ -324,9 +344,10 @@ def try_commit(
     apply_inplace(cand, cmds, source_provider=source_provider)
     ensure_sun_settings(cand)
 
+    before_violations = evaluate(doc.elements)
     violations = evaluate(cand.elements)
 
-    blocking = [v for v in violations if v.blocking or v.severity == "error"]
+    blocking = _new_blocking_violations(before_violations, violations)
     if blocking:
         return False, None, cmds, violations, "constraint_error"
 

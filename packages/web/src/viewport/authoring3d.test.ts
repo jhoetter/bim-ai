@@ -13,6 +13,7 @@ import {
   resolve3dDraftLevel,
   resizeLinePreviewToLength,
   snapDraftPointToGrid,
+  snapDraftPointToPlanSnaps,
 } from './authoring3d';
 
 describe('resolve3dDraftLevel', () => {
@@ -115,6 +116,40 @@ describe('WP-NEXT-41 authoring3d shared kernel', () => {
     });
 
     expect(snapDraftPointToGrid({ xMm: 1080, yMm: 690 }, { gridStepMm: 500, snapMm: 24 })).toEqual({
+      point: { xMm: 1080, yMm: 690 },
+      kind: 'level-plane',
+    });
+  });
+
+  it('snaps 3D draft points to the same wall endpoints and midpoints as plan drafting', () => {
+    const anchors = [
+      { xMm: 0, yMm: 0, snapKind: 'endpoint' as const },
+      { xMm: 4000, yMm: 0, snapKind: 'endpoint' as const },
+      { xMm: 2000, yMm: 0, snapKind: 'midpoint' as const },
+    ];
+
+    expect(
+      snapDraftPointToPlanSnaps({ xMm: 3970, yMm: 42 }, { anchors, gridStepMm: 250, snapMm: 85 }),
+    ).toEqual({
+      point: { xMm: 4000, yMm: 0 },
+      kind: 'endpoint',
+    });
+
+    expect(
+      snapDraftPointToPlanSnaps({ xMm: 2018, yMm: 35 }, { anchors, gridStepMm: 250, snapMm: 85 }),
+    ).toEqual({
+      point: { xMm: 2000, yMm: 0 },
+      kind: 'midpoint',
+    });
+  });
+
+  it('keeps free 3D draft placement when only the grid is outside tolerance', () => {
+    expect(
+      snapDraftPointToPlanSnaps(
+        { xMm: 1080, yMm: 690 },
+        { anchors: [], gridStepMm: 500, snapMm: 24 },
+      ),
+    ).toEqual({
       point: { xMm: 1080, yMm: 690 },
       kind: 'level-plane',
     });

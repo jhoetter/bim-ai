@@ -82,6 +82,7 @@ export function CanvasMount({
           onSemanticCommand={onSemanticCommand}
           lensMode={lensMode}
           activePlanTool={activePlanTool}
+          snapSettings={snapSettings}
           viewOverlayRightInset={viewOverlayRightInset}
         />
       </ErrorBoundary>
@@ -144,6 +145,7 @@ export function CanvasMount({
       onSemanticCommand={onSemanticCommand}
       lensMode={lensMode}
       activePlanTool={activePlanTool}
+      snapSettings={snapSettings}
       viewOverlayRightInset={viewOverlayRightInset}
     />
   ) : (

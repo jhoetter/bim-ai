@@ -162,13 +162,16 @@ def wall_corner_or_t_overlap_exempt(a: WallElem, b: WallElem, eps_mm: float = 1.
         return False
     if abs(db[0]) < 1e-9 and abs(db[1]) < 1e-9:
         return False
-    if abs(da[0] * db[0] + da[1] * db[1]) > 0.05:
-        return False
 
     pts_a = wall_endpoints_rounded(a, eps_mm)
     pts_b = wall_endpoints_rounded(b, eps_mm)
     if len(pts_a & pts_b) == 1:
         return True
+
+    # T-joins can overlap because wall bodies have thickness. Parallel or
+    # near-parallel walls with tip clearance are still real overlaps, not joins.
+    if abs(da[0] * db[0] + da[1] * db[1]) > 0.985:
+        return False
 
     tip_lim = max(a.thickness_mm, b.thickness_mm) * 1.8 + 150
     return min_endpoint_tip_clearance_between(a, b) <= tip_lim
