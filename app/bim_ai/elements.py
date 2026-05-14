@@ -448,9 +448,7 @@ class WallElem(BaseModel):
         default=None, alias="structuralMaterial"
     )
     analytical_participation: bool = Field(default=False, alias="analyticalParticipation")
-    analysis_status: StructuralAnalysisStatus = Field(
-        default="not_modeled", alias="analysisStatus"
-    )
+    analysis_status: StructuralAnalysisStatus = Field(default="not_modeled", alias="analysisStatus")
     structural_material_key: str | None = Field(default=None, alias="structuralMaterialKey")
     structural_intent_confidence: float | None = Field(
         default=None, alias="structuralIntentConfidence", ge=0, le=1
@@ -1113,9 +1111,7 @@ class FloorElem(BaseModel):
     structural_material: StructuralMaterial | str | None = Field(
         default=None, alias="structuralMaterial"
     )
-    analysis_status: StructuralAnalysisStatus = Field(
-        default="not_modeled", alias="analysisStatus"
-    )
+    analysis_status: StructuralAnalysisStatus = Field(default="not_modeled", alias="analysisStatus")
     fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
     # IFC-04: optional classification code emitted as IfcClassificationReference.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
@@ -1157,9 +1153,7 @@ class RoofElem(BaseModel):
     structural_material: StructuralMaterial | str | None = Field(
         default=None, alias="structuralMaterial"
     )
-    analysis_status: StructuralAnalysisStatus = Field(
-        default="not_modeled", alias="analysisStatus"
-    )
+    analysis_status: StructuralAnalysisStatus = Field(default="not_modeled", alias="analysisStatus")
     fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
     # IFC-04: optional classification code emitted as IfcClassificationReference.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
@@ -1365,9 +1359,7 @@ class RailingElem(BaseModel):
     handrail_supports: list[HandrailSupport] | None = Field(default=None, alias="handrailSupports")
     material_slots: dict[str, str | None] | None = Field(default=None, alias="materialSlots")
     structural_role: StructuralRole = Field(default="unknown", alias="structuralRole")
-    analysis_status: StructuralAnalysisStatus = Field(
-        default="not_modeled", alias="analysisStatus"
-    )
+    analysis_status: StructuralAnalysisStatus = Field(default="not_modeled", alias="analysisStatus")
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
@@ -1578,15 +1570,6 @@ class Text3dElem(BaseModel):
     position_mm: Vec3Mm = Field(alias="positionMm")
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
     material_key: str | None = Field(default=None, alias="materialKey")
-    load_bearing: bool | None = Field(default=True, alias="loadBearing")
-    structural_role: StructuralRole = Field(default="column", alias="structuralRole")
-    structural_material: StructuralMaterial | str | None = Field(
-        default=None, alias="structuralMaterial"
-    )
-    analysis_status: StructuralAnalysisStatus = Field(
-        default="not_modeled", alias="analysisStatus"
-    )
-    fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
 
 
 # --- KRN-06: Origin elements (project base point, survey point, internal origin) ---
@@ -2736,6 +2719,13 @@ class ColumnElem(BaseModel):
     height_mm: float = Field(alias="heightMm", default=2800, gt=0)
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
     material_key: str | None = Field(default=None, alias="materialKey")
+    load_bearing: bool | None = Field(default=True, alias="loadBearing")
+    structural_role: StructuralRole = Field(default="column", alias="structuralRole")
+    structural_material: StructuralMaterial | str | None = Field(
+        default=None, alias="structuralMaterial"
+    )
+    analysis_status: StructuralAnalysisStatus = Field(default="not_modeled", alias="analysisStatus")
+    fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
     base_constraint_offset_mm: float = Field(default=0, alias="baseConstraintOffsetMm")
     top_constraint_level_id: str | None = Field(default=None, alias="topConstraintLevelId")
     top_constraint_offset_mm: float = Field(default=0, alias="topConstraintOffsetMm")
@@ -2770,9 +2760,7 @@ class BeamElem(BaseModel):
     structural_material: StructuralMaterial | str | None = Field(
         default=None, alias="structuralMaterial"
     )
-    analysis_status: StructuralAnalysisStatus = Field(
-        default="not_modeled", alias="analysisStatus"
-    )
+    analysis_status: StructuralAnalysisStatus = Field(default="not_modeled", alias="analysisStatus")
     fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
     start_column_id: str | None = Field(default=None, alias="startColumnId")
     end_column_id: str | None = Field(default=None, alias="endColumnId")

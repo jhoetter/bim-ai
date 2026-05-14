@@ -56,6 +56,7 @@ from bim_ai.schedule_sheet_export_parity import (
     build_schedule_sheet_export_parity_evidence_v1_for_schedule,
 )
 from bim_ai.stair_plan_proxy import stair_schedule_row_extensions_v1
+from bim_ai.structure_lens import structural_schedule_rows
 from bim_ai.type_material_registry import (
     family_type_display_label,
     material_display_label,
@@ -776,6 +777,20 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 row_st.update(stair_schedule_row_extensions_v1(doc, e))
                 rows.append(row_st)
 
+    elif cat in {
+        "structural_element",
+        "structural_elements",
+        "structure",
+        "structural_wall",
+        "structural_walls",
+        "column",
+        "beam",
+        "foundation",
+        "opening_load_bearing_wall",
+        "opening_in_load_bearing_wall",
+    }:
+        rows = structural_schedule_rows(doc, cat)
+
     elif cat == "sheet":
         for e in doc.elements.values():
             if isinstance(e, SheetElem):
@@ -1139,6 +1154,28 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             "kind": "stair",
             "rowCount": len(leaf_rows),
             "totalRunMm": round(sum(float(r.get("runMm") or 0.0) for r in leaf_rows), 4),
+        }
+    elif (
+        cat
+        in {
+            "structural_element",
+            "structural_elements",
+            "structure",
+            "structural_wall",
+            "structural_walls",
+            "column",
+            "beam",
+            "foundation",
+            "opening_load_bearing_wall",
+            "opening_in_load_bearing_wall",
+        }
+        and leaf_rows
+    ):
+        needs_review = sum(1 for r in leaf_rows if r.get("analysisStatus") == "needs_review")
+        totals = {
+            "kind": cat,
+            "rowCount": len(leaf_rows),
+            "needsReviewCount": needs_review,
         }
     elif cat == "sheet" and leaf_rows:
         totals = {

@@ -127,6 +127,7 @@ from bim_ai.routes_sketch import sketch_router
 from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_column_subset
 from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
 from bim_ai.sheet_preview_svg import SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2
+from bim_ai.structure_lens import structure_analysis_export
 from bim_ai.permissions import authorize_command
 from bim_ai.milestones import CreateMilestoneBody
 from bim_ai.tables import (
@@ -1019,6 +1020,23 @@ async def projection_section_wire_route(
         raise HTTPException(status_code=404, detail="Model not found")
     doc = Document.model_validate(row.document)
     return section_cut_projection_wire(doc, section_cut_id)
+
+
+# ---------------------------------------------------------------------------
+# Structure lens handoff route
+# ---------------------------------------------------------------------------
+
+
+@api_router.get("/models/{model_id}/structure/analysis-export")
+async def structure_analysis_export_route(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return structure_analysis_export(doc)
 
 
 # ---------------------------------------------------------------------------
