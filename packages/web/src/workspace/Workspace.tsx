@@ -516,8 +516,7 @@ function CompositionBar({
       data-testid="composition-bar"
       role="tablist"
       aria-label="Compositions"
-      className="flex min-w-0 flex-1 items-end gap-0.5 overflow-x-auto bg-surface pt-1.5"
-      style={{ height: 38 }}
+      className="flex min-h-[44px] min-w-0 flex-1 self-stretch items-end gap-0.5 overflow-x-auto bg-surface pt-1.5"
     >
       {compositions.map((composition, idx) => {
         const active = composition.id === activeId;
