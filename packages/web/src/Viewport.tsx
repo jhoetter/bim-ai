@@ -22,11 +22,7 @@ import {
   createCameraRig,
   wheelDelta,
 } from './viewport/cameraRig';
-import {
-  resolveViewportPaintBundle,
-  resolveWallSurfaceMaterial,
-  type ViewportPaintBundle,
-} from './viewport/materials';
+import { resolveViewportPaintBundle, type ViewportPaintBundle } from './viewport/materials';
 import { ViewCube } from './viewport/ViewCube';
 import { applyLinkedGhosting } from './viewport/linkedGhosting';
 import { applyLensGhosting } from './viewport/applyLensGhosting';
@@ -72,7 +68,10 @@ import {
   wallPlanOffsetM,
   wallVerticalSpanM,
   wallFaceKindForMaterialIndex,
+  resolveFaceMaterialOverride,
+  resolveWallTypeAssembly,
 } from './viewport/meshBuilders';
+import { resolveWallAssemblyExposedLayers } from './families/wallTypeCatalog';
 import { resolveWindowOutline } from './families/geometryFns/windowOutline';
 import {
   resolveDoorCutDimensions,
@@ -123,6 +122,7 @@ import {
 } from './viewport/grip3dRenderer';
 import { makePlacedAssetMesh } from './viewport/placedAssetRendering';
 import { makeFamilyInstanceMesh } from './viewport/familyInstance3d';
+import { makeCsgWallMaterial } from './viewport/csgWallMaterial';
 import { applyTextureVisibilityToMesh } from './viewport/visualStyleMaterials';
 // Side-effect import: registers floor/roof/column/beam/door/window 3D grip providers.
 import './viewport/grip3dProviders';
@@ -381,6 +381,19 @@ function disposeObject3D(root: THREE.Object3D): void {
       }
     }
   });
+}
+
+function csgWallSurfaceMaterialKey(
+  wall: WallElem,
+  elementsById: Record<string, Element>,
+): string | null | undefined {
+  const exteriorOverride = resolveFaceMaterialOverride(wall.faceMaterialOverrides, 'exterior');
+  if (exteriorOverride?.materialKey) return exteriorOverride.materialKey;
+  if (wall.materialKey) return wall.materialKey;
+  if (!wall.wallTypeId) return wall.materialKey;
+  const assembly = resolveWallTypeAssembly(wall.wallTypeId, elementsById);
+  if (!assembly) return wall.materialKey;
+  return resolveWallAssemblyExposedLayers(assembly).exterior?.materialKey ?? wall.materialKey;
 }
 
 export function Viewport({
@@ -707,8 +720,10 @@ export function Viewport({
   );
   const viewerEdgesRef = useRef(viewerEdges);
   const viewerSilhouetteEdgeWidthRef = useRef(viewerSilhouetteEdgeWidth);
+  const viewerRenderStyleRef = useRef(viewerRenderStyle);
   viewerEdgesRef.current = viewerEdges;
   viewerSilhouetteEdgeWidthRef.current = viewerSilhouetteEdgeWidth;
+  viewerRenderStyleRef.current = viewerRenderStyle;
 
   useEffect(() => {
     const el = mountRef.current;
@@ -885,17 +900,14 @@ export function Viewport({
       if (data.uv) geom.setAttribute('uv', new THREE.BufferAttribute(data.uv, 2));
       if (data.index) geom.setIndex(new THREE.BufferAttribute(data.index, 1));
 
-      const paintNow = paintBundleRef.current;
-      const csgWallMaterial = resolveWallSurfaceMaterial(
-        csgMeta?.materialKey,
-        paintNow,
-        elementsByIdRef.current,
-      );
-      const wallMat = new THREE.MeshStandardMaterial({
-        color: csgWallMaterial.baseColor,
-        roughness: csgWallMaterial.roughness,
-        metalness: csgWallMaterial.metalness,
-        envMapIntensity: csgWallMaterial.envMapIntensity,
+      const renderStyleNow = viewerRenderStyleRef.current;
+      const { material: wallMat, surface: csgWallMaterial } = makeCsgWallMaterial({
+        materialKey: csgMeta?.materialKey,
+        paint: paintBundleRef.current,
+        elementsById: elementsByIdRef.current,
+        lenM: csgMeta?.len ?? 1,
+        heightM: csgMeta?.height ?? 1,
+        textureMapsVisible: renderStyleNow === 'realistic' || renderStyleNow === 'ray-trace',
       });
 
       const mesh = new THREE.Mesh(geom, wallMat);
@@ -3871,7 +3883,7 @@ export function Viewport({
               len,
               height,
               thick,
-              materialKey: e.materialKey,
+              materialKey: csgWallSurfaceMaterialKey(e, curr),
               retainExisting,
             });
             const job: CsgRequest = {
