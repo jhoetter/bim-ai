@@ -272,6 +272,72 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
     expect(sectionFillActualMaxYForPick(grp, 'w-butt')).toBeCloseTo(0, 6);
   });
 
+  it('falls back to shared wall topology for wire wall join cleanup when no server join summary exists', () => {
+    const butt: Extract<Element, { kind: 'wall' }> = {
+      kind: 'wall',
+      id: 'w-butt',
+      name: 'Butt',
+      levelId: 'lvl',
+      start: { xMm: 0, yMm: -1000 },
+      end: { xMm: 0, yMm: 0 },
+      thicknessMm: 200,
+      heightMm: 2800,
+    };
+    const host: Extract<Element, { kind: 'wall' }> = {
+      kind: 'wall',
+      id: 'w-host',
+      name: 'Host',
+      levelId: 'lvl',
+      start: { xMm: -1000, yMm: 0 },
+      end: { xMm: 1000, yMm: 0 },
+      thicknessMm: 200,
+      heightMm: 2800,
+    };
+
+    const primitives = {
+      format: 'planProjectionPrimitives_v1',
+      walls: [
+        {
+          id: 'w-butt',
+          levelId: 'lvl',
+          startMm: { x: 0, y: -1000 },
+          endMm: { x: 0, y: 0 },
+          thicknessMm: 200,
+          heightMm: 2800,
+        },
+        {
+          id: 'w-host',
+          levelId: 'lvl',
+          startMm: { x: -1000, y: 0 },
+          endMm: { x: 1000, y: 0 },
+          thicknessMm: 200,
+          heightMm: 2800,
+        },
+      ],
+      floors: [],
+      rooms: [],
+      doors: [],
+      windows: [],
+      stairs: [],
+      roofs: [],
+      gridLines: [],
+      roomSeparations: [],
+      dimensions: [],
+    } as const;
+
+    const grp = new THREE.Group();
+    rebuildPlanMeshes(
+      grp,
+      { [butt.id]: butt, [host.id]: host },
+      {
+        activeLevelId: 'lvl',
+        wirePrimitives: primitives as unknown as PlanProjectionPrimitivesV1Wire,
+      },
+    );
+
+    expect(sectionFillActualMaxYForPick(grp, 'w-butt')).toBeCloseTo(-100, 5);
+  });
+
   it('exposes bimAiRoofGeometrySupportToken on roof outline group userData when server sends roofGeometrySupportToken', () => {
     const primitives = {
       format: 'planProjectionPrimitives_v1',

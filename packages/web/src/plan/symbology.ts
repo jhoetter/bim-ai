@@ -2,6 +2,10 @@ import * as THREE from 'three';
 
 import type { Element, PlanLinePatternToken } from '@bim-ai/core';
 
+import {
+  collectWallConnectivity,
+  wallConnectivityToPlanJoinRecords,
+} from '../geometry/wallConnectivity';
 import { liveTokenReader } from '../viewport/materials';
 import {
   makePlacedAssetPlanSymbol,
@@ -621,7 +625,7 @@ function rebuildPlanMeshesFromWire(
   }
 
   const rawJoinSummary = (opts.wirePrimitives as Record<string, unknown>)?.wallCornerJoinSummary_v1;
-  const joinRecords: WallJoinRecord[] = Array.isArray(
+  const rawJoinRecords: WallJoinRecord[] = Array.isArray(
     (rawJoinSummary as Record<string, unknown>)?.joins,
   )
     ? ((rawJoinSummary as { joins: unknown[] }).joins as WallJoinRecord[])
@@ -770,6 +774,17 @@ function rebuildPlanMeshesFromWire(
   const elementsWithWireWalls: Record<string, Element> = { ...elementsById };
   for (const [id, w] of wallsByWireId.entries()) {
     elementsWithWireWalls[id] = mergeWireWallWithLiveState(w, elementsById);
+  }
+  let joinRecords: WallJoinRecord[] = rawJoinRecords;
+  if (joinRecords.length === 0 && wallsByWireId.size > 1) {
+    const liveWalls = Array.from(wallsByWireId.keys())
+      .map((id) => elementsWithWireWalls[id])
+      .filter((entry): entry is Extract<Element, { kind: 'wall' }> => entry?.kind === 'wall');
+    const liveWallsById = Object.fromEntries(liveWalls.map((wall) => [wall.id, wall]));
+    joinRecords = wallConnectivityToPlanJoinRecords(
+      collectWallConnectivity(liveWalls, { toleranceMm: 35 }),
+      liveWallsById,
+    );
   }
 
   for (const w of wallsByWireId.values()) {

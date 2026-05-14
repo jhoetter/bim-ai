@@ -1914,6 +1914,7 @@ Revit behavior to emulate where it maps cleanly:
   - seeded proof covers endpoint join, T join, trim/extend, disallow join, flip side, and undo/redo.
 - Evidence 2026-05-14:
   - `packages/web/src/geometry/wallConnectivity.ts` adds the first shared topology kernel for endpoint, T, and X wall joins plus endpoint/segment/intersection snap candidates and disallow-join metadata.
+  - `wallConnectivityToPlanJoinRecords` now maps that shared topology into plan wall cleanup records, and `packages/web/src/plan/symbology.ts` uses it as a live fallback when the server projection has no `wallCornerJoinSummary_v1`; tests prove rectangle/T/disallow conversion and wire-plan cleanup from topology alone.
   - `packages/web/src/plan/PlanCanvas.tsx` and `packages/web/src/Viewport.tsx` now both snap wall placement through that same kernel before generic grid snapping, so plan and 3D wall authoring use the same semantic join targets.
   - Wall side flipping now uses the shared `flipWallLocationLineSide` helper in plan and 3D and no longer reverses authored start/end points, preserving the user-drawn wall direction.
   - `packages/web/src/geometry/wallConnectivity.test.ts`, `packages/web/src/plan/PlanCanvas.toolDestubs.test.ts`, and `packages/web/src/viewport/Viewport.authoringSource.test.ts` prove the shared join/snap kernel is wired into plan and 3D authoring paths.

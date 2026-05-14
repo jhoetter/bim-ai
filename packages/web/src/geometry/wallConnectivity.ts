@@ -31,6 +31,17 @@ export interface WallConnectivitySnap {
   distanceMm: number;
 }
 
+export interface WallPlanJoinRecord {
+  joinId: string;
+  wallIds: [string, string];
+  vertexMm: { xMm: number; yMm: number };
+  levelId: string;
+  joinKind: 'butt' | 'miter_candidate' | 'unsupported_skew' | 'proxy_overlap';
+  planDisplayToken: string;
+  affectedOpeningIds: string[];
+  skipReason: string | null;
+}
+
 const DEFAULT_TOLERANCE_MM = 35;
 
 function roundKey(point: { xMm: number; yMm: number }, toleranceMm: number): string {
@@ -129,6 +140,21 @@ function uniqueJoinId(
     Math.round(point.yMm * 1000) / 1000,
     ...wallIds.slice().sort(),
   ].join(':');
+}
+
+function wallDirection(wall: WallConnectivityWall): { x: number; y: number } | null {
+  const dx = wall.end.xMm - wall.start.xMm;
+  const dy = wall.end.yMm - wall.start.yMm;
+  const len = Math.hypot(dx, dy);
+  if (len <= 1e-6) return null;
+  return { x: dx / len, y: dy / len };
+}
+
+function isParallel(a: WallConnectivityWall, b: WallConnectivityWall): boolean {
+  const da = wallDirection(a);
+  const db = wallDirection(b);
+  if (!da || !db) return true;
+  return Math.abs(da.x * db.y - da.y * db.x) < 1e-4;
 }
 
 function makeJoin(
@@ -267,6 +293,49 @@ export function snapWallPointToConnectivity(
     return rank[a.kind] - rank[b.kind] || a.distanceMm - b.distanceMm;
   });
   return candidates[0] ?? null;
+}
+
+export function wallConnectivityToPlanJoinRecords(
+  joins: WallConnectivityJoin[],
+  wallsById: Record<string, WallConnectivityWall>,
+): WallPlanJoinRecord[] {
+  const records: WallPlanJoinRecord[] = [];
+
+  for (const join of joins) {
+    for (let i = 0; i < join.wallIds.length; i += 1) {
+      for (let j = i + 1; j < join.wallIds.length; j += 1) {
+        const wallIdA = join.wallIds[i]!;
+        const wallIdB = join.wallIds[j]!;
+        const wallA = wallsById[wallIdA];
+        const wallB = wallsById[wallIdB];
+        if (!wallA || !wallB) continue;
+
+        const disallowed =
+          join.disallowedByWallId[wallIdA] === true || join.disallowedByWallId[wallIdB] === true;
+        const aEndpoint = join.endpointByWallId[wallIdA];
+        const bEndpoint = join.endpointByWallId[wallIdB];
+        const joinKind: WallPlanJoinRecord['joinKind'] =
+          join.kind === 't'
+            ? 'butt'
+            : join.kind === 'endpoint' && aEndpoint && bEndpoint && !isParallel(wallA, wallB)
+              ? 'miter_candidate'
+              : 'unsupported_skew';
+
+        records.push({
+          joinId: `${join.id}:plan:${wallIdA}:${wallIdB}`,
+          wallIds: [wallIdA, wallIdB],
+          vertexMm: join.point,
+          levelId: join.levelId,
+          joinKind,
+          planDisplayToken: 'wall_join',
+          affectedOpeningIds: [],
+          skipReason: disallowed ? 'join_disallowed' : null,
+        });
+      }
+    }
+  }
+
+  return records.sort((a, b) => a.joinId.localeCompare(b.joinId));
 }
 
 export function flipWallLocationLineSide(locationLine: WallLocationLine): WallLocationLine {

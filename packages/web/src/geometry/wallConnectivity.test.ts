@@ -4,6 +4,7 @@ import {
   collectWallConnectivity,
   flipWallLocationLineSide,
   snapWallPointToConnectivity,
+  wallConnectivityToPlanJoinRecords,
   type WallConnectivityWall,
 } from './wallConnectivity';
 
@@ -104,6 +105,62 @@ describe('WP-NEXT-42 wall connectivity kernel', () => {
       kind: 'segment',
       wallIds: ['host'],
     });
+  });
+
+  it('converts rectangle endpoint joins into plan miter records', () => {
+    const walls = [
+      wall('south', { xMm: 0, yMm: 0 }, { xMm: 4000, yMm: 0 }),
+      wall('east', { xMm: 4000, yMm: 0 }, { xMm: 4000, yMm: 3000 }),
+      wall('north', { xMm: 4000, yMm: 3000 }, { xMm: 0, yMm: 3000 }),
+      wall('west', { xMm: 0, yMm: 3000 }, { xMm: 0, yMm: 0 }),
+    ];
+
+    const records = wallConnectivityToPlanJoinRecords(
+      collectWallConnectivity(walls, { toleranceMm: 5 }),
+      Object.fromEntries(walls.map((entry) => [entry.id, entry])),
+    );
+
+    expect(records).toHaveLength(4);
+    expect(records.map((record) => record.joinKind)).toEqual([
+      'miter_candidate',
+      'miter_candidate',
+      'miter_candidate',
+      'miter_candidate',
+    ]);
+  });
+
+  it('converts T joins into plan butt records', () => {
+    const walls = [
+      wall('host', { xMm: 0, yMm: 0 }, { xMm: 5000, yMm: 0 }),
+      wall('branch', { xMm: 2500, yMm: 0 }, { xMm: 2500, yMm: 2000 }),
+    ];
+
+    const records = wallConnectivityToPlanJoinRecords(
+      collectWallConnectivity(walls, { toleranceMm: 5 }),
+      Object.fromEntries(walls.map((entry) => [entry.id, entry])),
+    );
+
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({
+      wallIds: ['branch', 'host'],
+      joinKind: 'butt',
+      vertexMm: { xMm: 2500, yMm: 0 },
+    });
+  });
+
+  it('carries disallowed joins into plan records as explicit skip reasons', () => {
+    const walls = [
+      wall('south', { xMm: 0, yMm: 0 }, { xMm: 4000, yMm: 0 }, { joinDisallowEnd: true }),
+      wall('east', { xMm: 4000, yMm: 0 }, { xMm: 4000, yMm: 3000 }),
+    ];
+
+    const records = wallConnectivityToPlanJoinRecords(
+      collectWallConnectivity(walls, { toleranceMm: 5 }),
+      Object.fromEntries(walls.map((entry) => [entry.id, entry])),
+    );
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.skipReason).toBe('join_disallowed');
   });
 
   it('flips wall side without implying endpoint reversal', () => {
