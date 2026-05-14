@@ -71,6 +71,19 @@ describe('three material factory', () => {
     expect(textureManager.size()).toBe(0);
   });
 
+  it('calibrates procedural bump strength by material category', () => {
+    const brick = makeThreeMaterialForKey('masonry_brick') as THREE.MeshStandardMaterial;
+    const cladding = makeThreeMaterialForKey('cladding_beige_grey') as THREE.MeshStandardMaterial;
+    const render = makeThreeMaterialForKey('white_render') as THREE.MeshStandardMaterial;
+
+    expect(brick.bumpMap).toBeTruthy();
+    expect(brick.bumpScale).toBeCloseTo(0.035);
+    expect(cladding.bumpMap).toBeTruthy();
+    expect(cladding.bumpScale).toBeCloseTo(0.014);
+    expect(render.bumpMap).toBeTruthy();
+    expect(render.bumpScale).toBeCloseTo(0.004);
+  });
+
   it('prefers normal maps over bump maps for project material elements', () => {
     const loads: string[] = [];
     const textureManager = stubTextureManager(loads);

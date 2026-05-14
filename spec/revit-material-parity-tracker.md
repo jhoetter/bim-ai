@@ -257,6 +257,16 @@ Commit rule:
 
 - Commit and push after unit tests and one screenshot evidence folder are generated.
 
+Evidence:
+
+- Added category-specific bump-scale calibration in `packages/web/src/viewport/threeMaterialFactory.ts`.
+- Increased default procedural map resolution in `packages/web/src/viewport/proceduralMaterials.ts`.
+- Reduced cladding albedo/bump noise and emphasized board-edge relief so cladding reads as board courses rather than muddy texture noise.
+- Added factory tests for brick, cladding, and render bump strength.
+- Verification:
+  - `pnpm --filter @bim-ai/web exec vitest run src/viewport/threeMaterialFactory.test.ts src/viewport/proceduralMaterials.test.ts src/viewport/materialQaGallery.test.ts`
+  - `pnpm --filter @bim-ai/web typecheck`
+
 ## RMP-05 — Subcomponent Material Model
 
 Priority: `P0`

@@ -204,6 +204,28 @@ function isPhysicalMaterial(spec: MaterialPbrSpec | null, opacity: number): bool
   return !!spec && (spec.category === 'glass' || opacity < 1);
 }
 
+function bumpScaleFor(spec: MaterialPbrSpec | null): number {
+  switch (spec?.category) {
+    case 'brick':
+      return 0.035;
+    case 'stone':
+      return 0.025;
+    case 'cladding':
+      return 0.014;
+    case 'timber':
+      return 0.01;
+    case 'metal_roof':
+      return 0.012;
+    case 'concrete':
+      return 0.008;
+    case 'render':
+    case 'plaster':
+      return 0.004;
+    default:
+      return 0.01;
+  }
+}
+
 function normalizeOptions(
   fallbackColorOrOptions: string | ThreeMaterialFactoryOptions | undefined,
   maybeOptions: LegacyFactoryOptions | ThreeMaterialFactoryOptions,
@@ -261,7 +283,10 @@ export function makeThreeMaterialForKey(
   if (roughnessMap) common.roughnessMap = roughnessMap;
   if (metalnessMap) common.metalnessMap = metalnessMap;
   if (normalMap) common.normalMap = normalMap;
-  if (bumpMap) common.bumpMap = bumpMap;
+  if (bumpMap) {
+    common.bumpMap = bumpMap;
+    common.bumpScale = bumpScaleFor(spec);
+  }
 
   const material = isPhysicalMaterial(spec, opacity)
     ? new THREE.MeshPhysicalMaterial({

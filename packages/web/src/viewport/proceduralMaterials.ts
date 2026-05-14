@@ -82,7 +82,7 @@ function makeTexture(
 export function createProceduralMaterialMaps(
   spec: MaterialPbrSpec | null,
   transform?: MaterialUvTransform,
-  size = 128,
+  size = 256,
 ): ProceduralMaterialMaps | null {
   if (!spec || spec.category === 'glass' || spec.category === 'air') return null;
   const key = cacheKey(spec, size, transform);
@@ -120,11 +120,12 @@ export function createProceduralMaterialMaps(
         height = 132 + grain * 34;
         rough = 170 + Math.abs(grain) * 24;
       } else if (spec.category === 'cladding') {
-        const boardEdge = x < 2 || x >= size - 2;
-        const grain = Math.sin((ny * 10 + hash2(x >> 3, 0, seed) * 2) * Math.PI);
-        variation += (hash2(x >> 3, y >> 4, seed) - 0.5) * 8 + grain * 4;
-        height = boardEdge ? 104 : 136 + grain * 10;
-        rough = boardEdge ? 230 : 205 + Math.abs(grain) * 10;
+        const boardEdge = x < 3 || x >= size - 3;
+        const grain = Math.sin((ny * 18 + hash2(x >> 4, 0, seed) * 1.5) * Math.PI);
+        const slowTone = (hash2(x >> 5, y >> 5, seed) - 0.5) * 5;
+        variation += boardEdge ? -16 : slowTone + grain * 3;
+        height = boardEdge ? 88 : 136 + grain * 5;
+        rough = boardEdge ? 236 : 208 + Math.abs(grain) * 8;
       } else if (spec.category === 'concrete' || spec.category === 'render') {
         variation += (hash2(x >> 1, y >> 1, seed) - 0.5) * 14;
         height = 124 + (hash2(x, y, seed) - 0.5) * 18;
