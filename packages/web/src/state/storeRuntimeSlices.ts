@@ -184,7 +184,7 @@ export function createPlanAuthoringRuntimeSlice(set: StoreSet): PlanAuthoringRun
       ['default', 'opening_focus', 'room_scheme'],
       'default',
     ),
-    lensMode: 'all' as LensMode,
+    lensMode: 'architecture' as LensMode,
 
     setViewerMode: (m) => set({ viewerMode: m }),
     setPlanTool: (t) => set({ planTool: t }),
