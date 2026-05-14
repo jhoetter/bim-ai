@@ -83,7 +83,6 @@ import {
   normalizePaneLayout,
   persistPaneLayout,
   readPersistedPaneLayout,
-  removePaneLeaf,
   splitPaneWithTab,
   type PaneLayoutState,
   type PaneNode,
@@ -2826,7 +2825,9 @@ export function Workspace(): JSX.Element {
       if (!paneTab) return;
       const nextTabs = closeTab(tabsState, paneTab.id);
       setTabsState(nextTabs);
-      setPaneLayout((layout) => removePaneLeaf(layout, node.id));
+      setPaneLayout((layout) =>
+        focusPane(assignTabToPane(layout, node.id, nextTabs.activeId), node.id),
+      );
     };
     const handlePaneLensChange = (nextLensMode: LensMode): void => {
       activatePaneForControls();
@@ -2899,14 +2900,9 @@ export function Workspace(): JSX.Element {
           <>
             <div className="h-8" />
             <div className="flex min-h-0 flex-1 items-center justify-center bg-background/55 px-1">
-              <button
-                type="button"
-                data-testid="ribbon-mode-identity"
-                aria-label={`Show ${paneLabelParts.viewType} view settings for ${paneLabel}`}
-                aria-pressed={paneSecondarySidebarOpen}
-                title={`Show ${paneLabelParts.viewType} view settings for ${paneLabel}`}
-                onClick={togglePaneViewSettings}
-                className="group relative inline-flex h-11 min-w-12 shrink-0 flex-col items-center justify-center gap-0 rounded-md border border-border bg-surface px-1.5 text-[11px] font-medium text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:bg-accent-soft"
+              <div
+                title={`${paneLabelParts.viewType} view settings hidden`}
+                className="relative inline-flex h-11 min-w-12 shrink-0 flex-col items-center justify-center gap-0 rounded-md border border-border bg-surface px-1.5 text-[11px] font-medium text-muted"
               >
                 <PaneIcon size={24} aria-hidden="true" />
                 <span className="max-w-12 truncate">{paneLabelParts.viewType}</span>
@@ -2914,7 +2910,7 @@ export function Workspace(): JSX.Element {
                   aria-hidden="true"
                   className="absolute bottom-1 right-1 h-1.5 w-1.5 rounded-full bg-accent"
                 />
-              </button>
+              </div>
             </div>
           </>
         )}
@@ -2934,7 +2930,7 @@ export function Workspace(): JSX.Element {
             title: paneLabel,
             viewIconTestId: `canvas-pane-view-icon-${node.id}`,
           }}
-          showViewControls={false}
+          showViewControls={!paneSecondarySidebarOpen}
           trailingControls={paneTrailingControls}
           onLensChange={handlePaneLensChange}
           onToolSelect={handlePaneToolSelect}

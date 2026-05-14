@@ -160,6 +160,7 @@ import {
   type HostedOpeningLike,
   type HostedPlacementDedupeState,
 } from './viewport/directAuthoringGuards';
+import { flipWallLocationLineSide, snapWallPointToConnectivity } from './geometry/wallConnectivity';
 
 // KRN-14 — wire the CSG cut into meshBuilders. Side-effect at module load.
 registerDormerCutFn(applyDormerCutsToRoofGeom);
@@ -1447,8 +1448,42 @@ export function Viewport({
 
     function snapDraftProjectionToActiveWorkPlane(
       projected: DraftPlaneProjection,
-      levelInfo: { elevationMm: number },
+      levelInfo: { id: string; elevationMm: number },
+      options: { preferWallConnectivity?: boolean } = {},
     ): DraftPlaneProjection {
+      if (options.preferWallConnectivity) {
+        const wallSnap = snapWallPointToConnectivity(
+          projected.point,
+          Object.values(elementsByIdRef.current).filter(
+            (element): element is WallElem =>
+              element.kind === 'wall' && element.levelId === levelInfo.id,
+          ),
+          {
+            levelId: levelInfo.id,
+            toleranceMm: 160,
+          },
+        );
+        if (wallSnap) {
+          const screen =
+            projectSemanticPointToScreen(
+              { ...wallSnap.point, zMm: levelInfo.elevationMm },
+              renderer.domElement.getBoundingClientRect(),
+            ) ?? projected.screen;
+          const snapKind: Authoring3dSnapKind =
+            wallSnap.kind === 'endpoint'
+              ? 'wall-endpoint'
+              : wallSnap.kind === 'intersection'
+                ? 'wall-intersection'
+                : 'wall-segment';
+          return {
+            ...projected,
+            point: wallSnap.point,
+            screen,
+            snapKind,
+            snapScreen: screen,
+          };
+        }
+      }
       const snapped = snapDraftPointToGrid(projected.point, {
         gridStepMm: 250,
         snapMm: 85,
@@ -1468,21 +1503,6 @@ export function Viewport({
         snapKind: snapped.kind,
         snapScreen: screen,
       };
-    }
-
-    function flipWallLocationLine(loc: string | null | undefined): string | null | undefined {
-      switch (loc) {
-        case 'finish-face-exterior':
-          return 'finish-face-interior';
-        case 'finish-face-interior':
-          return 'finish-face-exterior';
-        case 'core-face-exterior':
-          return 'core-face-interior';
-        case 'core-face-interior':
-          return 'core-face-exterior';
-        default:
-          return loc;
-      }
     }
 
     function resolveDraftWallThicknessMm(): number {
@@ -1554,7 +1574,7 @@ export function Viewport({
       clearWallDraftPreviewGroup();
       if (!Number.isFinite(lengthMm) || lengthMm < 10) return null;
       const effectiveLocationLine = flip
-        ? flipWallLocationLine(runtime.wallLocationLine)
+        ? flipWallLocationLineSide(runtime.wallLocationLine)
         : runtime.wallLocationLine;
       const wall: WallElem = {
         kind: 'wall',
@@ -2036,7 +2056,9 @@ export function Viewport({
         return true;
       }
       if (!projected) return false;
-      projected = snapDraftProjectionToActiveWorkPlane(projected, levelInfo);
+      projected = snapDraftProjectionToActiveWorkPlane(projected, levelInfo, {
+        preferWallConnectivity: tool === 'wall',
+      });
       if (tool === 'room') {
         onSemanticCommand?.({
           type: 'placeRoomAtPoint',
@@ -2232,7 +2254,7 @@ export function Viewport({
           const runtime = useBimStore.getState();
           const flip = wallFlipNextSegment;
           const effectiveLocationLine = flip
-            ? flipWallLocationLine(runtime.wallLocationLine)
+            ? flipWallLocationLineSide(runtime.wallLocationLine)
             : runtime.wallLocationLine;
           const actualStart = start;
           const actualEnd = end;
@@ -2715,7 +2737,9 @@ export function Viewport({
               );
               return;
             }
-            const snappedProjection = snapDraftProjectionToActiveWorkPlane(projected, levelInfo);
+            const snappedProjection = snapDraftProjectionToActiveWorkPlane(projected, levelInfo, {
+              preferWallConnectivity: directTool === 'wall',
+            });
             if (!snappedProjection) return;
             projected = snappedProjection;
             const activeProjection = projected;
@@ -2836,7 +2860,9 @@ export function Viewport({
           clearWallDraftPreviewGroup();
         }
         if (projected && levelInfo && !projected.blocker) {
-          projected = snapDraftProjectionToActiveWorkPlane(projected, levelInfo);
+          projected = snapDraftProjectionToActiveWorkPlane(projected, levelInfo, {
+            preferWallConnectivity: lineDraftStart.tool === 'wall',
+          });
         }
         setAuthoringOverlay((prev) =>
           prev?.phase === 'pick-end'
@@ -3126,7 +3152,7 @@ export function Viewport({
             const runtime = useBimStore.getState();
             const effectiveLocationLine =
               activeLineTool === 'wall' && wallFlipNextSegment
-                ? flipWallLocationLine(runtime.wallLocationLine)
+                ? flipWallLocationLineSide(runtime.wallLocationLine)
                 : runtime.wallLocationLine;
             const basePayload = buildLinePreviewPayload({
               tool: lineDraftStart.tool,

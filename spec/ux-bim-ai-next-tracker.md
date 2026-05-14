@@ -1799,8 +1799,8 @@ Revit behavior to emulate where it maps cleanly:
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------- |
 | NEXT22-GAP-001 | Ribbon commands still lack one canonical executable lifecycle across plan/3D/sketch/hosted tools, making each tool feel custom and brittle.            | `packages/web/src/tools/toolRegistry.ts`, `packages/web/src/workspace/workspaceUtils.ts`, `packages/web/src/workspace/shell/RibbonBar.tsx`, command capability metadata | P0       | Partial |
 | NEXT22-GAP-002 | The canvas lacks one shared "authoring transaction" state machine for start/preview/commit/cancel/error across line, sketch, host, and modify tools.   | `packages/web/src/plan/PlanCanvas.tsx`, `packages/web/src/Viewport.tsx`, `packages/web/src/workspace/authoring/*`, shared authoring state module                        | P0       | Partial |
-| NEXT22-GAP-003 | Wall connections in 3D do not feel like BIM joins: endpoints, intersections, cleanup, flip side, and join/disallow-join handles are not unified.       | wall command path, `viewport/meshBuilders*`, `plan/planElementMeshBuilders.ts`, backend wall/join commands                                                              | P0       | Open    |
-| NEXT22-GAP-004 | Wall joins in plan and 3D can diverge visually/semantically, so a trustworthy join in one view may not read correctly in the other.                    | plan projection, 3D mesh builders, wall join solver, wall join tests                                                                                                    | P0       | Open    |
+| NEXT22-GAP-003 | Wall connections in 3D do not feel like BIM joins: endpoints, intersections, cleanup, flip side, and join/disallow-join handles are not unified.       | wall command path, `viewport/meshBuilders*`, `plan/planElementMeshBuilders.ts`, backend wall/join commands                                                              | P0       | Partial |
+| NEXT22-GAP-004 | Wall joins in plan and 3D can diverge visually/semantically, so a trustworthy join in one view may not read correctly in the other.                    | plan projection, 3D mesh builders, wall join solver, wall join tests                                                                                                    | P0       | Partial |
 | NEXT22-GAP-005 | Floor creation is still a standalone sketch command instead of a structural host workflow that can drive walls, rooms, shafts, ceilings, and roofs.    | floor sketch UI, backend floor/slab elements, plan/3D preview, command metadata                                                                                         | P0       | Open    |
 | NEXT22-GAP-006 | There is no "build walls from this floor/boundary/room" workflow, so users redraw obvious geometry instead of deriving structure from existing loops.  | floor/room boundary extraction, wall creation command batch, ribbon create/modify groups                                                                                | P0       | Open    |
 | NEXT22-GAP-007 | Roof and ceiling authoring are not connected to the wall/floor stack; attach/top constraints and roof-by-footprint behavior are not clear.             | roof/ceiling sketch tools, wall top constraints, attach top/base commands, 3D preview                                                                                   | P0       | Open    |
@@ -1890,7 +1890,7 @@ Revit behavior to emulate where it maps cleanly:
 ### WP-NEXT-42 — Wall Connectivity, Joins, Cleanup, And Join Controls
 
 - Priority: `P0`
-- Status: `Open`
+- Status: `Partial`
 - Covers: `NEXT22-GAP-003`, `NEXT22-GAP-004`, `NEXT22-GAP-010`, `NEXT22-GAP-015`, `NEXT22-GAP-016`
 - Goal: make wall drawing feel like BIM topology rather than disconnected slabs.
 - Revit-like behavior to emulate:
@@ -1912,6 +1912,13 @@ Revit behavior to emulate where it maps cleanly:
   - selecting a joined wall exposes join controls in element sidebar/contextual ribbon;
   - disallowing a join visibly separates the end in plan and 3D;
   - seeded proof covers endpoint join, T join, trim/extend, disallow join, flip side, and undo/redo.
+- Evidence 2026-05-14:
+  - `packages/web/src/geometry/wallConnectivity.ts` adds the first shared topology kernel for endpoint, T, and X wall joins plus endpoint/segment/intersection snap candidates and disallow-join metadata.
+  - `packages/web/src/plan/PlanCanvas.tsx` and `packages/web/src/Viewport.tsx` now both snap wall placement through that same kernel before generic grid snapping, so plan and 3D wall authoring use the same semantic join targets.
+  - Wall side flipping now uses the shared `flipWallLocationLineSide` helper in plan and 3D and no longer reverses authored start/end points, preserving the user-drawn wall direction.
+  - `packages/web/src/geometry/wallConnectivity.test.ts`, `packages/web/src/plan/PlanCanvas.toolDestubs.test.ts`, and `packages/web/src/viewport/Viewport.authoringSource.test.ts` prove the shared join/snap kernel is wired into plan and 3D authoring paths.
+  - Baseline split-pane close behavior was restored by exporting and testing `removePaneLeaf`, because the current workspace shell imports it during typecheck.
+  - Remaining before `Done`: actual wall mesh cleanup for L/T/X joins in 3D, rectangle semantic topology command proof, selected-wall join controls, visible disallow-join separation in plan/3D, modify commands for trim/extend/join/unjoin/align/offset, seeded screenshots for endpoint join/T join/trim/disallow/flip/undo/redo.
 - Dependencies: `WP-NEXT-40`, `WP-NEXT-41`.
 
 ### WP-NEXT-43 — Floor Sketch Lifecycle And Floor-As-Host Semantics

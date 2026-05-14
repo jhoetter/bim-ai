@@ -10,6 +10,7 @@ import {
   normalizePaneLayout,
   persistPaneLayout,
   readPersistedPaneLayout,
+  removePaneLeaf,
   splitPaneWithTab,
 } from './paneLayout';
 
@@ -50,12 +51,23 @@ describe('paneLayout', () => {
     expect(findPaneForTab(reassigned.root, 'tab-z')).toBe(firstLeafId);
   });
 
-  it('normalizes closed tabs and collapses empty splits', () => {
+  it('normalizes closed tabs while preserving empty split panes for reuse', () => {
     const base = createPaneLayout('tab-a');
     const split = splitPaneWithTab(base, base.focusedLeafId, 'right', 'tab-b');
     const normalized = normalizePaneLayout(split, ['tab-a'], 'tab-a');
-    expect(leafCount(normalized.root)).toBe(1);
-    expect(findPaneForTab(normalized.root, 'tab-a')).toBe(normalized.focusedLeafId);
+    expect(leafCount(normalized.root)).toBe(2);
+    expect(findPaneForTab(normalized.root, 'tab-a')).toBeTruthy();
+    expect(findPaneForTab(normalized.root, 'tab-b')).toBeNull();
+  });
+
+  it('closes a pane leaf tab but keeps the pane available as an empty target', () => {
+    const base = createPaneLayout('tab-a');
+    const split = splitPaneWithTab(base, base.focusedLeafId, 'right', 'tab-b');
+    const removed = removePaneLeaf(split, split.focusedLeafId);
+    expect(leafCount(removed.root)).toBe(2);
+    expect(removed.focusedLeafId).toBe(split.focusedLeafId);
+    expect(findPaneForTab(removed.root, 'tab-a')).toBeTruthy();
+    expect(findPaneForTab(removed.root, 'tab-b')).toBeNull();
   });
 
   it('persists and restores pane layout state', () => {

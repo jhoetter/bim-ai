@@ -58,8 +58,20 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
     expect(SRC).toMatch(
       /const\s+\{[\s\S]*wallLocationLine[\s\S]*wallDrawOffsetMm[\s\S]*wallDrawRadiusMm[\s\S]*\}\s*=\s*useBimStore\.getState\(\)/,
     );
-    expect(SRC).toMatch(/locationLine:\s*wallLocationLine/);
+    expect(SRC).toMatch(/const\s+effectiveLocationLine\s*=/);
+    expect(SRC).toMatch(/locationLine:\s*effectiveLocationLine/);
     expect(SRC).toMatch(/buildWallRadiusFillet\(/);
+  });
+
+  it('flips wall side without reversing authored wall endpoints', () => {
+    expect(SRC).toContain('flipWallLocationLineSide(wallLocationLine)');
+    expect(SRC).not.toMatch(/const\s+actualStart\s*=\s*reverse\s*\?\s*end\s*:\s*start/);
+    expect(SRC).not.toMatch(/const\s+actualEnd\s*=\s*reverse\s*\?\s*start\s*:\s*end/);
+  });
+
+  it('snaps wall authoring points to shared wall connectivity before generic plan snaps', () => {
+    expect(SRC).toContain('snapWallPointToConnectivity(');
+    expect(SRC).toMatch(/planTool\s*===\s*['"]wall['"][\s\S]{0,280}snapWallPointToConnectivity/);
   });
 
   it('blocks wall commit outside an enabled crop region with explicit user warning', () => {

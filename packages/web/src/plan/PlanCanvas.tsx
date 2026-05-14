@@ -145,6 +145,10 @@ import {
   shouldBlockWallCommitOutsideCrop,
   WALL_CROP_BLOCK_MESSAGE,
 } from './wallDraftLifecycle';
+import {
+  flipWallLocationLineSide,
+  snapWallPointToConnectivity,
+} from '../geometry/wallConnectivity';
 import { getFamilyById as getBuiltInFamilyById } from '../families/familyCatalog';
 import {
   familyTypePlacesAsDetailComponent,
@@ -1762,6 +1766,21 @@ export function PlanCanvas({
                   ? draftRef.current.verts[draftRef.current.verts.length - 1]
                   : undefined;
       const hs = orthoExtents(camRef.current.half);
+      const topologySnap =
+        planTool === 'wall'
+          ? snapWallPointToConnectivity(
+              rw,
+              Object.values(elementsById).filter(
+                (el): el is Extract<Element, { kind: 'wall' }> =>
+                  el.kind === 'wall' && (!displayLevelId || el.levelId === displayLevelId),
+              ),
+              {
+                levelId: displayLevelId || undefined,
+                toleranceMm: hs.snapMm,
+              },
+            )
+          : null;
+      if (topologySnap) return topologySnap.point;
       return snapPlanPoint({
         cursor: rw,
         anchors,
@@ -2838,6 +2857,9 @@ export function PlanCanvas({
         }
         const flipped = wallFlipRef.current;
         wallFlipRef.current = false;
+        const effectiveLocationLine = flipped
+          ? flipWallLocationLineSide(wallLocationLine)
+          : wallLocationLine;
         const pathStart = { xMm: startX, yMm: startY };
         const pathEnd = { xMm: endX, yMm: endY };
         if (shouldBlockWallCommitOutsideCrop(activeCropState, pathStart, pathEnd)) {
@@ -2858,14 +2880,14 @@ export function PlanCanvas({
           start,
           end,
           ...(wallCurve ? { wallCurve } : {}),
-          locationLine: wallLocationLine,
+          locationLine: effectiveLocationLine,
           wallTypeId: activeWallTypeId ?? undefined,
           heightMm: wallDrawHeightMm,
         });
         const pendingWallCommands: Record<string, unknown>[] = [];
-        const dispatchWallCommand = (id: string, start: MmPoint, end: MmPoint, reverse = false) => {
-          const actualStart = reverse ? end : start;
-          const actualEnd = reverse ? start : end;
+        const dispatchWallCommand = (id: string, start: MmPoint, end: MmPoint) => {
+          const actualStart = start;
+          const actualEnd = end;
           pendingWallCommands.push(createWallCommand(id, actualStart, actualEnd));
           return {
             id,
@@ -2873,7 +2895,7 @@ export function PlanCanvas({
             pathEnd: end,
             actualStart,
             actualEnd,
-            cornerEndpoint: reverse ? ('start' as const) : ('end' as const),
+            cornerEndpoint: 'end' as const,
           };
         };
         let previousWallForChain:
@@ -2931,18 +2953,12 @@ export function PlanCanvas({
               crypto.randomUUID(),
               fillet.currentStart,
               pathEnd,
-              flipped,
             );
           } else {
             previousWallForChain = arcWallForChain;
           }
         } else {
-          previousWallForChain = dispatchWallCommand(
-            crypto.randomUUID(),
-            pathStart,
-            pathEnd,
-            flipped,
-          );
+          previousWallForChain = dispatchWallCommand(crypto.randomUUID(), pathStart, pathEnd);
         }
         void (async () => {
           for (const cmd of pendingWallCommands) {
