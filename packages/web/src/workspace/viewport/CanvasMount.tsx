@@ -20,6 +20,7 @@ export function CanvasMount({
   mode,
   viewerMode,
   activeLevelId,
+  activePlanViewId,
   activeTabId,
   elementsById,
   onSemanticCommand,
@@ -41,6 +42,7 @@ export function CanvasMount({
   mode: WorkspaceMode;
   viewerMode: 'plan_canvas' | 'orbit_3d';
   activeLevelId: string;
+  activePlanViewId?: string | null;
   /** Used to key same-kind canvases so switching tabs forces a fresh mount. */
   activeTabId?: string;
   elementsById: Record<string, Element>;
@@ -80,6 +82,7 @@ export function CanvasMount({
         key={activeTabId}
         wsConnected={wsOn ?? false}
         activeLevelResolvedId={activeLevelId}
+        activePlanViewId={activePlanViewId}
         onSemanticCommand={onSemanticCommand}
         cameraHandleRef={cameraHandleRef}
         initialCamera={initialCamera}
@@ -132,6 +135,7 @@ export function CanvasMount({
     <PlanCanvas
       wsConnected={wsOn ?? false}
       activeLevelResolvedId={activeLevelId}
+      activePlanViewId={activePlanViewId}
       onSemanticCommand={onSemanticCommand}
       lensMode={lensMode}
       snapSettings={snapSettings}

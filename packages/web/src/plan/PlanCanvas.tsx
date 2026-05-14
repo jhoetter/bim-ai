@@ -296,6 +296,8 @@ export interface PlanCameraHandle {
 type Props = {
   wsConnected: boolean;
   activeLevelResolvedId: string;
+  /** Pane-pinned plan view. null means this pane is a level plan, not a saved plan_view. */
+  activePlanViewId?: string | null;
   onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
   /** Ref filled with the imperative camera handle once the canvas mounts. */
   cameraHandleRef?: RefObject<PlanCameraHandle | null>;
@@ -310,6 +312,7 @@ type Props = {
 export function PlanCanvas({
   wsConnected,
   activeLevelResolvedId,
+  activePlanViewId: activePlanViewIdProp,
   onSemanticCommand,
   cameraHandleRef,
   initialCamera,
@@ -541,7 +544,11 @@ export function PlanCanvas({
   const planProjectionPrimitives = useBimStore((s) => s.planProjectionPrimitives);
   const setPlanProjectionPrimitives = useBimStore((s) => s.setPlanProjectionPrimitives);
   const setPlanRoomSchemeWireReadout = useBimStore((s) => s.setPlanRoomSchemeWireReadout);
-  const activePlanViewId = useBimStore((s) => s.activePlanViewId);
+  const storeActivePlanViewId = useBimStore((s) => s.activePlanViewId);
+  const activePlanViewId =
+    activePlanViewIdProp === undefined
+      ? storeActivePlanViewId
+      : (activePlanViewIdProp ?? undefined);
   const planPresentation = useBimStore((s) => s.planPresentationPreset);
   const planTool = useBimStore((s) => s.planTool);
   const wallLocationLine = useBimStore((s) => s.wallLocationLine);

@@ -2414,6 +2414,7 @@ export function Workspace(): JSX.Element {
                 activeTabId={paneTab.id}
                 viewerMode={paneViewerMode}
                 activeLevelId={panePlanTarget.activeLevelId}
+                activePlanViewId={panePlanTarget.activePlanViewId ?? null}
                 elementsById={elementsById}
                 onSemanticCommand={(cmd) => void onSemanticCommand(cmd)}
                 cameraHandleRef={planCameraHandleRef}
