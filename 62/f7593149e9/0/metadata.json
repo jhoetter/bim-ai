@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "62f7593149e9",
+  "session_id": "019e1f88-adaf-7791-baf4-f7e0bc958757",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T14:37:47.268626Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "34017dab2c49",
+  "token_usage": {
+    "input_tokens": 27312985,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 499247616,
+    "output_tokens": 1169534,
+    "api_call_count": 3858
+  },
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 420,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1165,
+      "agent_lines_removed": 281,
+      "user_added_per_file": {
+        "packages/web/src/tools/authoringCommandContract.ts": 420
+      }
+    }
+  ]
+}
