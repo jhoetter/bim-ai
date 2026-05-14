@@ -360,36 +360,83 @@ const EMPTY_JOBS_COUNTS = {
 } as const;
 
 type MaterialEditableType = Extract<Element, { kind: 'wall_type' | 'floor_type' | 'roof_type' }>;
+type MaterialEditableInstance = Extract<
+  Element,
+  {
+    kind:
+      | 'toposolid'
+      | 'toposolid_subdivision'
+      | 'wall'
+      | 'door'
+      | 'window'
+      | 'roof'
+      | 'column'
+      | 'beam'
+      | 'text_3d'
+      | 'sweep'
+      | 'mass'
+      | 'pipe';
+  }
+>;
+type MaterialEditableTarget =
+  | { kind: 'type-layer'; element: MaterialEditableType }
+  | {
+      kind: 'instance';
+      element: MaterialEditableInstance;
+      property: 'materialKey' | 'defaultMaterialKey';
+    };
 
-function resolveMaterialEditableType(
+function hasInstanceMaterialTarget(selected: Element): selected is MaterialEditableInstance {
+  switch (selected.kind) {
+    case 'toposolid':
+    case 'toposolid_subdivision':
+    case 'wall':
+    case 'door':
+    case 'window':
+    case 'roof':
+    case 'column':
+    case 'beam':
+    case 'text_3d':
+    case 'sweep':
+    case 'mass':
+    case 'pipe':
+      return true;
+    default:
+      return false;
+  }
+}
+
+function materialKeyForInstanceTarget(
+  target: Extract<MaterialEditableTarget, { kind: 'instance' }>,
+): string | null {
+  if (target.element.kind === 'toposolid') return target.element.defaultMaterialKey ?? null;
+  return 'materialKey' in target.element ? (target.element.materialKey ?? null) : null;
+}
+
+function resolveMaterialEditableTarget(
   selected: Element | undefined,
   elementsById: Record<string, Element>,
-): MaterialEditableType | null {
+): MaterialEditableTarget | null {
   if (!selected) return null;
   if (
     selected.kind === 'wall_type' ||
     selected.kind === 'floor_type' ||
     selected.kind === 'roof_type'
   ) {
-    return selected;
+    return { kind: 'type-layer', element: selected };
   }
-  if (selected.kind === 'wall') {
-    const typeId = selected.wallTypeId;
-    if (!typeId) return null;
-    const type = elementsById[typeId];
-    return type?.kind === 'wall_type' ? type : null;
+  if (hasInstanceMaterialTarget(selected)) {
+    return {
+      kind: 'instance',
+      element: selected,
+      property: selected.kind === 'toposolid' ? 'defaultMaterialKey' : 'materialKey',
+    };
   }
   if (selected.kind === 'floor') {
     const typeId = selected.floorTypeId;
     if (!typeId) return null;
     const type = elementsById[typeId];
-    return type?.kind === 'floor_type' ? type : null;
-  }
-  if (selected.kind === 'roof') {
-    const typeId = selected.roofTypeId;
-    if (!typeId) return null;
-    const type = elementsById[typeId];
-    return type?.kind === 'roof_type' ? type : null;
+    return type?.kind === 'floor_type' ? { kind: 'type-layer', element: type } : null;
   }
   return null;
 }
@@ -433,15 +480,37 @@ function CompositionBar({
   onActivate,
   onCreate,
   onReorder,
+  onRename,
 }: {
   compositions: WorkspaceComposition[];
   activeId: string;
   onActivate: (id: string) => void;
   onCreate: () => void;
   onReorder: (from: number, to: number) => void;
+  onRename: (id: string, label: string) => void;
 }): JSX.Element {
   const [dragSrc, setDragSrc] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [renaming, setRenaming] = useState<{ id: string; label: string } | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!renaming) return;
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, [renaming]);
+
+  const commitRename = useCallback(
+    (id: string, nextLabel: string) => {
+      const trimmed = nextLabel.trim();
+      const previous = renaming?.id === id ? renaming.label : '';
+      setRenaming(null);
+      if (!trimmed || trimmed === previous) return;
+      onRename(id, trimmed);
+    },
+    [onRename, renaming],
+  );
+
   return (
     <div
       data-testid="composition-bar"
@@ -453,17 +522,33 @@ function CompositionBar({
       {compositions.map((composition, idx) => {
         const active = composition.id === activeId;
         const isDragOver = dragOverIdx === idx && dragSrc !== null && dragSrc !== idx;
+        const isRenaming = renaming?.id === composition.id;
         return (
-          <button
+          <div
             key={composition.id}
-            type="button"
             role="tab"
             data-testid={`composition-tab-${composition.id}`}
             aria-selected={active}
             tabIndex={active ? 0 : -1}
             draggable
             onClick={() => onActivate(composition.id)}
+            onDoubleClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              setRenaming({ id: composition.id, label: composition.label });
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'F2') {
+                event.preventDefault();
+                setRenaming({ id: composition.id, label: composition.label });
+                return;
+              }
+              if (event.key !== 'Enter' && event.key !== ' ') return;
+              event.preventDefault();
+              onActivate(composition.id);
+            }}
             onDragStart={(event) => {
+              if (isRenaming) return;
               setDragSrc(idx);
               event.dataTransfer.effectAllowed = 'move';
               event.dataTransfer.setData('text/plain', String(idx));
@@ -509,8 +594,31 @@ function CompositionBar({
               aria-hidden="true"
               className={active ? 'text-accent' : 'text-muted'}
             />
-            <span className="truncate whitespace-nowrap">{composition.label}</span>
-          </button>
+            {isRenaming ? (
+              <input
+                ref={inputRef}
+                defaultValue={composition.label}
+                aria-label={`Rename ${composition.label}`}
+                data-testid={`composition-rename-input-${composition.id}`}
+                className="min-w-24 flex-1 rounded border border-accent bg-background px-1 py-0.5 text-[12px] text-foreground outline-none"
+                onClick={(event) => event.stopPropagation()}
+                onDoubleClick={(event) => event.stopPropagation()}
+                onBlur={(event) => commitRename(composition.id, event.currentTarget.value)}
+                onKeyDown={(event) => {
+                  event.stopPropagation();
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    event.currentTarget.blur();
+                  } else if (event.key === 'Escape') {
+                    event.preventDefault();
+                    setRenaming(null);
+                  }
+                }}
+              />
+            ) : (
+              <span className="truncate whitespace-nowrap">{composition.label}</span>
+            )}
+          </div>
         );
       })}
       <button
@@ -541,6 +649,7 @@ export function Workspace(): JSX.Element {
   const draftGridVisible = useToolPrefs((s) => s.draftGridVisible);
   const toggleDraftGridVisible = useToolPrefs((s) => s.toggleDraftGridVisible);
   const selectedId = useBimStore((s) => s.selectedId);
+  const selectedIds = useBimStore((s) => s.selectedIds);
   const temporaryVisibility = useBimStore((s) => s.temporaryVisibility);
   const clearTemporaryVisibility = useBimStore((s) => s.clearTemporaryVisibility);
   const activeLevelId = useBimStore((s) => s.activeLevelId);
@@ -564,6 +673,12 @@ export function Workspace(): JSX.Element {
   const closeVVDialog = useBimStore((s) => s.closeVVDialog);
   const setOrthoSnapHold = useBimStore((s) => s.setOrthoSnapHold);
   const userId = useBimStore((s) => s.userId);
+  const selectionCount = useMemo(
+    () =>
+      new Set([selectedId, ...selectedIds].filter((id): id is string => typeof id === 'string'))
+        .size,
+    [selectedId, selectedIds],
+  );
 
   // COL-V3-04 — presence strip
   const presenceParticipants = usePresenceStore((s) => s.participants);
@@ -1093,6 +1208,17 @@ export function Workspace(): JSX.Element {
     });
   }, []);
 
+  const handleCompositionRename = useCallback((id: string, label: string) => {
+    const trimmed = label.trim();
+    if (!trimmed) return;
+    setCompositionState((state) => ({
+      ...state,
+      compositions: state.compositions.map((composition) =>
+        composition.id === id ? { ...composition, label: trimmed } : composition,
+      ),
+    }));
+  }, []);
+
   /* ── Project menu handlers (T-03) ─────────────────────────────────── */
   const handleSaveSnapshot = useCallback(() => {
     const st = useBimStore.getState();
@@ -1209,6 +1335,24 @@ export function Workspace(): JSX.Element {
     },
     [hydrateFromSnapshot, setSeedError],
   );
+
+  const deleteSelectedElements = useCallback((): boolean => {
+    const st = useBimStore.getState();
+    const idsToDelete = [
+      ...new Set(
+        [st.selectedId, ...st.selectedIds].filter((id): id is string => typeof id === 'string'),
+      ),
+    ];
+    if (idsToDelete.length === 0) return false;
+    void onSemanticCommand(
+      idsToDelete.length === 1
+        ? { type: 'deleteElement', elementId: idsToDelete[0] }
+        : { type: 'deleteElements', elementIds: idsToDelete },
+    );
+    st.select(undefined);
+    st.clearSelectedIds();
+    return true;
+  }, [onSemanticCommand]);
 
   const handleSaveAsMaximumBackupsChange = useCallback(
     (maximumBackups: number) => {
@@ -1412,11 +1556,22 @@ export function Workspace(): JSX.Element {
   /* ── Global hotkeys: 1–7 modes, ?, V/W/D/M/S/etc tools ─────────────── */
   useEffect(() => {
     const onKey = (event: globalThis.KeyboardEvent): void => {
-      const target = event.target as HTMLElement | null;
-      if (target) {
+      const target = event.target;
+      if (target instanceof globalThis.HTMLElement) {
         const tag = target.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
         if (target.isContentEditable) return;
+        if (target.closest('[role="dialog"]')) return;
+      }
+      if (
+        (event.key === 'Delete' || event.key === 'Backspace') &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        effectiveMode !== 'plan'
+      ) {
+        if (deleteSelectedElements()) event.preventDefault();
+        return;
       }
       if (
         event.key === 'Escape' &&
@@ -1564,7 +1719,9 @@ export function Workspace(): JSX.Element {
     handleModeChange,
     handleUndoRedo,
     setFocusedPanePlanTool,
+    deleteSelectedElements,
     setOrthoSnapHold,
+    effectiveMode,
     openActiveVisibilityControls,
     toolRegistry,
     toggleActivityDrawer,
@@ -1663,26 +1820,38 @@ export function Workspace(): JSX.Element {
     () => (selectedId ? (elementsById[selectedId] as Element | undefined) : undefined),
     [elementsById, selectedId],
   );
-  const materialEditableType = useMemo(
-    () => resolveMaterialEditableType(selectedElement, elementsById),
+  const materialEditableTarget = useMemo(
+    () => resolveMaterialEditableTarget(selectedElement, elementsById),
     [selectedElement, elementsById],
   );
-  const selectedMaterialKey = materialEditableType?.layers[0]?.materialKey ?? null;
+  const selectedMaterialKey =
+    materialEditableTarget?.kind === 'instance'
+      ? materialKeyForInstanceTarget(materialEditableTarget)
+      : (materialEditableTarget?.element.layers[0]?.materialKey ?? null);
 
   const assignMaterialToSelection = useCallback(
     (materialKey: string) => {
-      if (!materialEditableType) return;
-      const [first, ...rest] = materialEditableType.layers;
+      if (!materialEditableTarget) return;
+      if (materialEditableTarget.kind === 'instance') {
+        void onSemanticCommand({
+          type: 'updateElementProperty',
+          elementId: materialEditableTarget.element.id,
+          key: materialEditableTarget.property,
+          value: materialKey,
+        });
+        return;
+      }
+      const [first, ...rest] = materialEditableTarget.element.layers;
       if (!first) return;
       const nextLayers = [{ ...first, materialKey }, ...rest.map((layer) => ({ ...layer }))];
       void onSemanticCommand({
         type: 'updateElementProperty',
-        elementId: materialEditableType.id,
+        elementId: materialEditableTarget.element.id,
         key: 'layers',
         value: nextLayers,
       });
     },
-    [materialEditableType, onSemanticCommand],
+    [materialEditableTarget, onSemanticCommand],
   );
 
   const openMilestoneDialog = useCallback(() => setMilestoneDialogOpen(true), []);
@@ -2620,9 +2789,9 @@ export function Workspace(): JSX.Element {
       paneTab && paneSecondarySidebarOpen ? (
         <div
           data-testid={`canvas-pane-view-header-${node.id}`}
-          className="flex min-h-[94px] min-w-0 flex-col justify-between border-r border-b border-border bg-surface-2 px-3 py-2.5"
+          className="flex min-h-[94px] min-w-0 items-center border-r border-b border-border bg-surface-2 px-3 py-2.5"
         >
-          <div className="flex min-w-0 items-start gap-2.5">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
             <button
               type="button"
               data-testid="ribbon-mode-identity"
@@ -2630,32 +2799,40 @@ export function Workspace(): JSX.Element {
               aria-pressed="true"
               title={`Hide view settings for ${paneLabel}`}
               onClick={togglePaneViewSettings}
-              className="group inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-accent/40 bg-background text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:bg-accent-soft"
+              className="group inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-accent/40 bg-background text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:bg-accent-soft"
             >
-              <PaneIcon size={26} aria-hidden="true" />
+              <PaneIcon size={30} aria-hidden="true" />
               <span className="sr-only">{paneLabelParts.viewType}</span>
             </button>
             <div className="min-w-0 flex-1">
               <div className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold text-muted">
                 <span className="whitespace-nowrap">{paneLabelParts.viewType}</span>
-                {paneLabelParts.viewName ? (
-                  <span aria-hidden="true" className="text-border">
-                    /
-                  </span>
-                ) : null}
-                <span className="min-w-0 truncate text-foreground" title={paneLabel}>
-                  {paneLabelParts.viewName || paneLabel}
+                <span aria-hidden="true" className="text-border">
+                  /
                 </span>
+                <div
+                  data-testid="ribbon-lens-dropdown"
+                  className="h-7 min-w-0 rounded-md border border-border bg-background/85 px-1 text-[11px] text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+                >
+                  <LensDropdown
+                    currentLens={paneLensMode}
+                    onLensChange={handlePaneLensChange}
+                    enableHotkey={false}
+                  />
+                </div>
               </div>
-              <div className="mt-1 min-w-0 truncate text-sm font-semibold text-foreground">
-                {paneLabelParts.viewName || paneLabelParts.viewType}
+              <div
+                className="mt-1 min-w-0 truncate text-base font-semibold leading-5 text-foreground"
+                title={paneLabel}
+              >
+                {paneLabelParts.viewName || paneLabel}
               </div>
             </div>
             <button
               type="button"
               data-testid={`canvas-pane-close-tab-${node.id}`}
               title={`Close ${paneLabel}`}
-              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-strong hover:text-foreground"
+              className="inline-flex h-7 w-7 shrink-0 self-start items-center justify-center rounded-md text-muted hover:bg-surface-strong hover:text-foreground"
               aria-label={`Close ${paneLabel}`}
               onClick={(event) => {
                 event.stopPropagation();
@@ -2664,16 +2841,6 @@ export function Workspace(): JSX.Element {
             >
               <Icons.close size={12} aria-hidden="true" />
             </button>
-          </div>
-          <div
-            data-testid="ribbon-lens-dropdown"
-            className="mt-2 h-7 w-full rounded-md border border-border bg-background/85 px-1 text-[11px] text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
-          >
-            <LensDropdown
-              currentLens={paneLensMode}
-              onLensChange={handlePaneLensChange}
-              enableHotkey={false}
-            />
           </div>
         </div>
       ) : null;
@@ -2692,6 +2859,7 @@ export function Workspace(): JSX.Element {
             viewIconTestId: `canvas-pane-view-icon-${node.id}`,
           }}
           showViewControls={!paneSecondarySidebarOpen}
+          viewControlsVariant="prominent"
           trailingControls={paneTrailingControls}
           onLensChange={handlePaneLensChange}
           onToolSelect={handlePaneToolSelect}
@@ -3378,6 +3546,7 @@ export function Workspace(): JSX.Element {
                 onActivate={handleCompositionActivate}
                 onCreate={handleCompositionCreate}
                 onReorder={handleCompositionReorder}
+                onRename={handleCompositionRename}
               />
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -3495,7 +3664,7 @@ export function Workspace(): JSX.Element {
             onAdvisorClick={() => setAdvisorOpen(true)}
             jobsCounts={jobsCounts}
             onJobsClick={() => setJobsOpen(true)}
-            selectionCount={selectedId ? 1 : 0}
+            selectionCount={selectionCount}
             activeWorkspaceId={activeWorkspaceId}
             driftCount={driftCount}
             onDriftClick={() => setManageLinksOpen(true)}
