@@ -43,7 +43,7 @@ function isStructureLensForeground(elem: Element): boolean {
  * from the StatusBar and returns the same classifier function shape.
  */
 export function lensFilterFromMode(mode: LensMode): (elem: Element) => 'foreground' | 'ghost' {
-  if (mode === 'all' || mode === 'energy' || mode === 'coordination') {
+  if (mode === 'all' || mode === 'energy' || mode === 'coordination' || mode === 'sustainability') {
     return () => 'foreground';
   }
   const expected = LENS_MODE_TO_DISCIPLINE[mode];

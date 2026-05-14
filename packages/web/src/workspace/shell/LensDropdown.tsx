@@ -5,6 +5,7 @@ const LENS_CYCLE = [
   'architecture',
   'structure',
   'mep',
+  'sustainability',
   'all',
 ] as const satisfies readonly LensMode[];
 type LensCycleMode = (typeof LENS_CYCLE)[number];
@@ -13,6 +14,7 @@ const LENS_LABELS: Record<LensCycleMode, string> = {
   architecture: 'Architecture',
   structure: 'Structure',
   mep: 'MEP',
+  sustainability: 'Sustainability / LCA',
   all: 'All',
 };
 
@@ -20,12 +22,14 @@ const DISC_SOFT: Partial<Record<LensMode, string>> = {
   architecture: 'var(--disc-arch-soft)',
   structure: 'var(--disc-struct-soft)',
   mep: 'var(--disc-mep-soft)',
+  sustainability: 'color-mix(in srgb, var(--color-success) 18%, transparent)',
 };
 
 const DISC_SOLID: Partial<Record<LensMode, string>> = {
   architecture: 'var(--disc-arch)',
   structure: 'var(--disc-struct)',
   mep: 'var(--disc-mep)',
+  sustainability: 'var(--color-success)',
 };
 
 export interface LensDropdownProps {

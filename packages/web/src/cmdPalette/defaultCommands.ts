@@ -530,6 +530,20 @@ registerCommand({
   },
 });
 
+registerCommand({
+  id: 'navigate.sustainability',
+  label: 'Switch lens: Sustainability / LCA',
+  keywords: ['sustainability', 'lca', 'carbon', 'embodied', 'epd', 'oekobilanz', 'lens'],
+  category: 'navigate',
+  invoke: (ctx) => {
+    if (ctx.setLensMode) {
+      ctx.setLensMode('sustainability');
+      return;
+    }
+    useBimStore.getState().setLensMode('sustainability');
+  },
+});
+
 // Additional tools
 registerCommand({
   id: 'tool.column',
