@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "107330cc746a",
+  "session_id": "019e2866-71b2-7262-95ef-51d327ca2ac3",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T21:46:04.327774Z",
+  "branch": "codex/architecture-lens-workpackages-20260514",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/commands.py",
+    "app/bim_ai/engine.py",
+    "app/bim_ai/engine_dispatch_documentation.py",
+    "app/bim_ai/mep_lens.py",
+    "app/bim_ai/routes_api.py",
+    "packages/core/src/index.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "4e81eea16510",
+  "checkpoint_transcript_start": 348,
+  "transcript_lines_at_start": 348,
+  "token_usage": {
+    "input_tokens": 47586,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 7793408,
+    "output_tokens": 12079,
+    "api_call_count": 38
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-14T21:46:04.301509Z",
+    "agent_lines": 455,
+    "agent_removed": 7,
+    "human_added": 143,
+    "human_modified": 14,
+    "human_removed": 0,
+    "total_committed": 612,
+    "total_lines_changed": 619,
+    "agent_percentage": 74.63651050080774,
+    "metric_version": 2
+  }
+}
