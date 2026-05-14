@@ -1,0 +1,263 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "62f7593149e9",
+  "session_id": "019e261c-97b9-7312-a136-ffc52959148b",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T14:38:12.729642Z",
+  "branch": "main",
+  "checkpoints_count": 7,
+  "files_touched": [
+    "spec/ux-bim-ai-next-tracker.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "92ebac3cae05",
+  "token_usage": {
+    "input_tokens": 1816064,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 39688704,
+    "output_tokens": 97756,
+    "api_call_count": 318
+  },
+  "session_metrics": {
+    "turn_count": 7
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-14T14:38:12.528154Z",
+    "agent_lines": 186,
+    "agent_removed": 0,
+    "human_added": 204,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 391,
+    "total_lines_changed": 391,
+    "agent_percentage": 47.570332480818415,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 627,
+      "user_lines_removed": 834,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/e2e/ux-revamp-regression.spec.ts": 2,
+        "packages/web/src/Viewport.tsx": 128,
+        "packages/web/src/cmdPalette/defaultCommands.ts": 1,
+        "packages/web/src/cmdPalette/registry.ts": 1,
+        "packages/web/src/design-systems/visualRegressionBaselines.ts": 3,
+        "packages/web/src/plan/symbology.ts": 20,
+        "packages/web/src/plan/symbology.wirePrimitives.test.ts": 127,
+        "packages/web/src/state/modeController.test.ts": 3,
+        "packages/web/src/state/modeController.ts": 1,
+        "packages/web/src/state/storeRuntimeSlices.ts": 1,
+        "packages/web/src/state/storeTypes.ts": 1,
+        "packages/web/src/tools/elevationTool.test.ts": 1,
+        "packages/web/src/tools/toolRegistry.ts": 3,
+        "packages/web/src/viewport/directAuthoringGuards.test.ts": 31,
+        "packages/web/src/viewport/directAuthoringGuards.ts": 13,
+        "packages/web/src/workspace/ModeShells.test.tsx": 1,
+        "packages/web/src/workspace/ModeShells.tsx": 1,
+        "packages/web/src/workspace/Workspace.test.tsx": 9,
+        "packages/web/src/workspace/WorkspaceHelpers.tsx": 4,
+        "packages/web/src/workspace/WorkspaceLeftRail.tsx": 65,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 20,
+        "packages/web/src/workspace/chrome/WorkspaceSwitcher.test.tsx": 2,
+        "packages/web/src/workspace/chrome/workspaces.ts": 1,
+        "packages/web/src/workspace/commandCapabilities.test.ts": 3,
+        "packages/web/src/workspace/commandCapabilities.ts": 29,
+        "packages/web/src/workspace/sheets/paperMode.test.tsx": 1,
+        "packages/web/src/workspace/shell/AppShell.tsx": 1,
+        "packages/web/src/workspace/shell/LeftRail.test.tsx": 18,
+        "packages/web/src/workspace/shell/LeftRail.tsx": 22,
+        "packages/web/src/workspace/shell/RibbonBar.tsx": 5,
+        "packages/web/src/workspace/shell/StatusBar.tsx": 3,
+        "packages/web/src/workspace/shell/TabBar.tsx": 1,
+        "packages/web/src/workspace/shell/TopBar.test.tsx": 17,
+        "packages/web/src/workspace/tabsModel.test.ts": 3,
+        "packages/web/src/workspace/tabsModel.ts": 3,
+        "packages/web/src/workspace/tabsPersistence.test.ts": 21,
+        "packages/web/src/workspace/tabsPersistence.ts": 25,
+        "packages/web/src/workspace/uxAudit.test.ts": 4,
+        "packages/web/src/workspace/viewport/CanvasMount.tsx": 1,
+        "packages/web/src/workspace/viewport/Viewport3DLayersPanel.test.tsx": 5,
+        "packages/web/src/workspace/viewport/Viewport3DLayersPanel.tsx": 25,
+        "packages/web/src/workspace/workspaceUtils.test.ts": 1
+      },
+      "user_removed_per_file": {
+        "packages/web/e2e/ux-revamp-regression.spec.ts": 10,
+        "packages/web/src/Viewport.tsx": 11,
+        "packages/web/src/cmdPalette/defaultCommands.ts": 9,
+        "packages/web/src/cmdPalette/registry.ts": 3,
+        "packages/web/src/design-systems/visualRegressionBaselines.ts": 3,
+        "packages/web/src/i18n.ts": 12,
+        "packages/web/src/plan/symbology.ts": 19,
+        "packages/web/src/state/modeController.test.ts": 3,
+        "packages/web/src/state/modeController.ts": 2,
+        "packages/web/src/state/storeRuntimeSlices.ts": 1,
+        "packages/web/src/state/storeTypes.ts": 1,
+        "packages/web/src/tools/elevationTool.test.ts": 2,
+        "packages/web/src/tools/toolRegistry.ts": 3,
+        "packages/web/src/workspace/ModeShells.test.tsx": 115,
+        "packages/web/src/workspace/ModeShells.tsx": 133,
+        "packages/web/src/workspace/Workspace.test.tsx": 2,
+        "packages/web/src/workspace/Workspace.tsx": 1,
+        "packages/web/src/workspace/WorkspaceHelpers.tsx": 10,
+        "packages/web/src/workspace/WorkspaceLeftRail.tsx": 62,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 147,
+        "packages/web/src/workspace/chrome/WorkspaceSwitcher.test.tsx": 32,
+        "packages/web/src/workspace/chrome/workspaces.ts": 8,
+        "packages/web/src/workspace/commandCapabilities.test.ts": 2,
+        "packages/web/src/workspace/commandCapabilities.ts": 51,
+        "packages/web/src/workspace/sheets/paperMode.test.tsx": 10,
+        "packages/web/src/workspace/shell/AppShell.tsx": 1,
+        "packages/web/src/workspace/shell/LeftRail.tsx": 2,
+        "packages/web/src/workspace/shell/RibbonBar.tsx": 52,
+        "packages/web/src/workspace/shell/StatusBar.tsx": 11,
+        "packages/web/src/workspace/shell/TabBar.tsx": 2,
+        "packages/web/src/workspace/shell/TopBar.test.tsx": 2,
+        "packages/web/src/workspace/shell/TopBar.tsx": 9,
+        "packages/web/src/workspace/tabsModel.test.ts": 3,
+        "packages/web/src/workspace/tabsModel.ts": 14,
+        "packages/web/src/workspace/tabsPersistence.test.ts": 3,
+        "packages/web/src/workspace/tabsPersistence.ts": 6,
+        "packages/web/src/workspace/uxAudit.test.ts": 5,
+        "packages/web/src/workspace/viewport/CanvasMount.tsx": 45,
+        "packages/web/src/workspace/viewport/Viewport3DLayersPanel.tsx": 10,
+        "packages/web/src/workspace/workspaceUtils.test.ts": 3,
+        "packages/web/src/workspace/workspaceUtils.ts": 14
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 743,
+      "user_lines_removed": 47,
+      "agent_lines_added": 217,
+      "agent_lines_removed": 231,
+      "user_added_per_file": {
+        "packages/web/src/Viewport.tsx": 126,
+        "packages/web/src/families/hostedFamilySelection.test.ts": 59,
+        "packages/web/src/families/hostedFamilySelection.ts": 90,
+        "packages/web/src/viewport/directAuthoringGuards.test.ts": 105,
+        "packages/web/src/viewport/directAuthoringGuards.ts": 103,
+        "packages/web/src/workspace/Workspace.test.tsx": 49,
+        "packages/web/src/workspace/Workspace.tsx": 4,
+        "packages/web/tmp/ux-ribbon-hosted-placement-20260514/capture.mjs": 112,
+        "packages/web/tmp/ux-ribbon-hosted-placement-20260514/rear_probe.mjs": 7,
+        "packages/web/tmp/ux-ribbon-hosted-placement-20260514/summary.json": 37,
+        "packages/web/tmp/ux-ribbon-hosted-placement-20260514/window_probe.mjs": 51
+      },
+      "user_removed_per_file": {
+        "packages/web/src/Viewport.tsx": 38,
+        "packages/web/src/viewport/directAuthoringGuards.ts": 1,
+        "packages/web/src/workspace/Workspace.test.tsx": 2,
+        "packages/web/tmp/ux-ribbon-hosted-placement-20260514/rear_probe.mjs": 6
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 504,
+      "user_lines_removed": 0,
+      "agent_lines_added": 799,
+      "agent_lines_removed": 552,
+      "user_added_per_file": {
+        "packages/web/src/families/hostedFamilySelection.test.ts": 59,
+        "packages/web/src/families/hostedFamilySelection.ts": 90,
+        "packages/web/tmp/ux-ribbon-hosted-placement-20260514/capture.mjs": 112,
+        "packages/web/tmp/ux-ribbon-hosted-placement-20260514/summary.json": 39,
+        "spec/ux-bim-ai-next-tracker.md": 204
+      }
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 319,
+      "user_lines_removed": 3,
+      "agent_lines_added": 970,
+      "agent_lines_removed": 452,
+      "user_added_per_file": {
+        "packages/web/src/families/hostedFamilySelection.test.ts": 59,
+        "packages/web/src/families/hostedFamilySelection.ts": 90,
+        "packages/web/src/plan/planElementMeshBuilders.ts": 2,
+        "packages/web/tmp/ux-ribbon-hosted-placement-20260514/capture.mjs": 132,
+        "packages/web/tmp/ux-ribbon-hosted-placement-20260514/summary.json": 35,
+        "spec/ux-bim-ai-next-tracker.md": 1
+      },
+      "user_removed_per_file": {
+        "packages/web/src/plan/planElementMeshBuilders.ts": 2,
+        "spec/ux-bim-ai-next-tracker.md": 1
+      }
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 245,
+      "agent_lines_removed": 40
+    },
+    {
+      "checkpoint_number": 7,
+      "user_lines_added": 1286,
+      "user_lines_removed": 150,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/Viewport.tsx": 28,
+        "packages/web/src/cmdPalette/defaultCommands.ts": 165,
+        "packages/web/src/plan/PlanCanvas.tsx": 10,
+        "packages/web/src/state/storeTypes.ts": 3,
+        "packages/web/src/tools/authoringCommandContract.ts": 420,
+        "packages/web/src/workspace/Workspace.test.tsx": 180,
+        "packages/web/src/workspace/Workspace.tsx": 223,
+        "packages/web/src/workspace/WorkspaceLeftRail.tsx": 1,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 4,
+        "packages/web/src/workspace/authoring/OptionsBar.tsx": 8,
+        "packages/web/src/workspace/authoring/ToolModifierBar.tsx": 7,
+        "packages/web/src/workspace/commandCapabilities.test.ts": 63,
+        "packages/web/src/workspace/commandCapabilities.ts": 29,
+        "packages/web/src/workspace/shell/LensDropdown.tsx": 8,
+        "packages/web/src/workspace/shell/RibbonBar.tsx": 117,
+        "packages/web/src/workspace/shell/TopBar.test.tsx": 2,
+        "packages/web/src/workspace/tabsModel.ts": 3,
+        "packages/web/src/workspace/viewport/CanvasMount.tsx": 15
+      },
+      "user_removed_per_file": {
+        "packages/web/src/Viewport.tsx": 7,
+        "packages/web/src/plan/PlanCanvas.tsx": 3,
+        "packages/web/src/workspace/Workspace.test.tsx": 15,
+        "packages/web/src/workspace/Workspace.tsx": 42,
+        "packages/web/src/workspace/WorkspaceLeftRail.tsx": 14,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 1,
+        "packages/web/src/workspace/authoring/OptionsBar.tsx": 3,
+        "packages/web/src/workspace/authoring/ToolModifierBar.tsx": 2,
+        "packages/web/src/workspace/commandCapabilities.ts": 15,
+        "packages/web/src/workspace/shell/LensDropdown.tsx": 2,
+        "packages/web/src/workspace/shell/RibbonBar.tsx": 42,
+        "packages/web/src/workspace/shell/TopBar.test.tsx": 1,
+        "packages/web/src/workspace/tabsModel.ts": 1,
+        "packages/web/src/workspace/viewport/CanvasMount.tsx": 2
+      }
+    },
+    {
+      "checkpoint_number": 8,
+      "user_lines_added": 589,
+      "user_lines_removed": 126,
+      "agent_lines_added": 1165,
+      "agent_lines_removed": 281,
+      "user_added_per_file": {
+        "packages/web/src/tools/authoringCommandContract.ts": 420,
+        "packages/web/src/workspace/Workspace.tsx": 169
+      },
+      "user_removed_per_file": {
+        "packages/web/src/workspace/Workspace.tsx": 126
+      }
+    }
+  ]
+}

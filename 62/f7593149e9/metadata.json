@@ -3,21 +3,29 @@
   "checkpoint_id": "62f7593149e9",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
-  "files_touched": null,
+  "checkpoints_count": 8,
+  "files_touched": [
+    "spec/ux-bim-ai-next-tracker.md"
+  ],
   "sessions": [
     {
       "metadata": "/62/f7593149e9/0/metadata.json",
       "transcript": "/62/f7593149e9/0/full.jsonl",
       "content_hash": "/62/f7593149e9/0/content_hash.txt",
       "prompt": "/62/f7593149e9/0/prompt.txt"
+    },
+    {
+      "metadata": "/62/f7593149e9/1/metadata.json",
+      "transcript": "/62/f7593149e9/1/full.jsonl",
+      "content_hash": "/62/f7593149e9/1/content_hash.txt",
+      "prompt": "/62/f7593149e9/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 27312985,
+    "input_tokens": 29129049,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 499247616,
-    "output_tokens": 1169534,
-    "api_call_count": 3858
+    "cache_read_tokens": 538936320,
+    "output_tokens": 1267290,
+    "api_call_count": 4176
   }
 }
