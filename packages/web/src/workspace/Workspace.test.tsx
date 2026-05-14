@@ -235,6 +235,22 @@ describe('<Workspace /> — smoke', () => {
     expect(statusBar.textContent).not.toContain('Show:');
   });
 
+  it('lets the pane secondary sidebar span the ribbon row when it is open', () => {
+    seedTabs('3d');
+    const rendered = renderWithProviders(<Workspace />);
+    const { getByTestId } = rendered;
+    const secondary = paneSecondary(rendered);
+    const ribbon = paneRibbon(rendered);
+
+    expect(secondary.parentElement).toBe(ribbon.parentElement?.parentElement);
+
+    fireEvent.click(getByTestId('ribbon-mode-identity'));
+    expect(
+      rendered.container.querySelector('[data-testid^="canvas-pane-secondary-sidebar-"]'),
+    ).toBeNull();
+    expect(paneRibbon(rendered).parentElement?.parentElement).toBeTruthy();
+  });
+
   it('activates ceiling tool directly from ribbon create panel', () => {
     seedTabs('plan');
     const { getByTestId } = renderWithProviders(<Workspace />);

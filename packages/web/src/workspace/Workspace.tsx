@@ -2586,6 +2586,228 @@ export function Workspace(): JSX.Element {
       setTabsState(nextTabs);
       setPaneLayout((layout) => assignTabToPane(layout, node.id, replacement?.id ?? null));
     };
+    const paneRibbon = paneTab ? (
+      <div data-testid={`canvas-pane-ribbon-${node.id}`}>
+        <RibbonBar
+          activeToolId={planToolToToolId(panePlanTool)}
+          activeMode={paneMode}
+          selectedElementKind={selectedElementKind}
+          lensMode={paneLensMode}
+          inlineViewTitle={{
+            icon: paneIconName,
+            viewType: paneLabelParts.viewType,
+            viewName: paneLabelParts.viewName,
+            title: paneLabel,
+            viewIconTestId: `canvas-pane-view-icon-${node.id}`,
+          }}
+          trailingControls={
+            <>
+              {paneCanAcceptDrop ? (
+                <span className="rounded-md border border-accent/60 bg-accent-soft px-1.5 py-0.5 text-[10px] font-medium text-accent">
+                  Drop view
+                </span>
+              ) : null}
+              <button
+                type="button"
+                data-testid={`canvas-pane-close-tab-${node.id}`}
+                title={`Close ${paneLabel}`}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-surface-strong hover:text-foreground"
+                aria-label={`Close ${paneLabel}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  closePaneTab();
+                }}
+              >
+                <Icons.close size={12} aria-hidden="true" />
+              </button>
+            </>
+          }
+          onLensChange={(nextLensMode) => {
+            activatePaneForControls();
+            setTabsState((state) => updateTabLens(state, paneTab.id, nextLensMode));
+          }}
+          onToolSelect={handlePaneToolSelect}
+          onModeChange={handlePaneModeChange}
+          viewSettingsOpen={paneSecondarySidebarOpen}
+          onToggleViewSettings={togglePaneViewSettings}
+          viewSettingsToggleLabel={`Toggle view settings for ${paneLabel}`}
+          onOpenCommandPalette={runInPaneContext(() => setPaletteOpen(true))}
+          onOpenManageLinks={runInPaneContext(() => setManageLinksOpen(true))}
+          onOpenAdvisor={runInPaneContext(() => setAdvisorOpen(true))}
+          onCreateSectionView={runInPaneContext(createSectionView)}
+          onToggleElementSidebar={runInPaneContext(() =>
+            setPaneElementSidebarOpenByKey((state) => ({
+              ...state,
+              [paneSidebarKey]: !(state[paneSidebarKey] ?? true),
+            })),
+          )}
+          onOpenFamilyLibrary={runInPaneContext(() => setFamilyLibraryOpen(true))}
+          onOpenSettings={runInPaneContext(() => setCheatsheetOpen(true))}
+          onSaveCurrentViewpoint={runInPaneContext(saveCurrentViewpoint)}
+          onResetActiveSavedViewpoint={runInPaneContext(resetActiveSavedViewpoint)}
+          onUpdateActiveSavedViewpoint={runInPaneContext(updateActiveSavedViewpoint)}
+          onInsertDoorOnSelectedWall3d={runInPaneContext(() => runSelectedWall3dInsert('door'))}
+          onInsertWindowOnSelectedWall3d={runInPaneContext(() => runSelectedWall3dInsert('window'))}
+          onInsertOpeningOnSelectedWall3d={runInPaneContext(() =>
+            runSelectedWall3dInsert('opening'),
+          )}
+          onPlaceActiveSectionOnSheet={runInPaneContext(placeActiveSectionOnSheet)}
+          onOpenActiveSectionSourcePlan={runInPaneContext(openActiveSectionSourcePlan)}
+          onIncreaseActiveSectionCropDepth={runInPaneContext(() =>
+            adjustActiveSectionCropDepth(500),
+          )}
+          onDecreaseActiveSectionCropDepth={runInPaneContext(() =>
+            adjustActiveSectionCropDepth(-500),
+          )}
+          onPlaceRecommendedViewsOnActiveSheet={runInPaneContext(
+            placeRecommendedViewsOnActiveSheet,
+          )}
+          onPlaceFirstViewOnActiveSheet={runInPaneContext(() => {
+            const first = paletteSheetPlaceableViews[0];
+            if (first) placeViewOnActiveSheet(first.id);
+          })}
+          onOpenSheetViewportEditor={runInPaneContext(() =>
+            openActiveSheetAnchor('sheet-viewport-editor'),
+          )}
+          onOpenSheetTitleblockEditor={runInPaneContext(() =>
+            openActiveSheetAnchor('sheet-titleblock-editor'),
+          )}
+          onShareActiveSheet={runInPaneContext(() => setSharePresentationOpen(true))}
+          onOpenSelectedScheduleRow={runInPaneContext(openSelectedScheduleRow)}
+          onPlaceActiveScheduleOnSheet={runInPaneContext(placeActiveScheduleOnSheet)}
+          onDuplicateActiveSchedule={runInPaneContext(duplicateActiveSchedule)}
+          onOpenScheduleControls={runInPaneContext(openScheduleControls)}
+          sheetReviewMode={sheetReviewMode}
+          onSheetReviewModeChange={setSheetReviewMode}
+          sheetMarkupShape={sheetMarkupShape}
+          onSheetMarkupShapeChange={setSheetMarkupShape}
+        />
+        {paneMode === 'plan' || paneMode === 'section' ? (
+          <>
+            <ToolModifierBar activeTool={planToolToToolId(panePlanTool)} />
+            <OptionsBar activeTool={panePlanTool} />
+          </>
+        ) : null}
+      </div>
+    ) : null;
+    const paneSecondarySidebar = paneSecondarySidebarOpen ? (
+      <aside
+        aria-label={`View settings for ${paneLabel}`}
+        data-testid={`canvas-pane-secondary-sidebar-${node.id}`}
+        className="flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-border bg-surface"
+        style={{ width: 'min(280px, 42%)' }}
+      >
+        <ViewContextStatusPanel
+          mode={paneMode}
+          viewLabel={paneLabel}
+          viewDetails={paneStatusViewDetails}
+          level={activeLevel}
+          levels={levels}
+          onLevelChange={setActiveLevelId}
+          toolLabel={
+            loopMode && (planTool === 'wall' || planTool === 'beam')
+              ? 'Loop mode on — L to toggle, Esc to exit'
+              : (toolRegistry[planToolToToolId(planTool)]?.label ?? null)
+          }
+          gridOn={draftGridVisible}
+          onGridToggle={toggleDraftGridVisible}
+          cursorMm={cursorMm}
+          snapModes={snapModes}
+          onSnapToggle={handleSnapToggle}
+          temporaryVisibility={paneTemporaryVisibility}
+          onClearTemporaryVisibility={clearTemporaryVisibility}
+        />
+        <div className="min-h-0 flex-1 overflow-hidden">
+          <WorkspaceRightRail
+            mode={paneMode}
+            onSemanticCommand={onSemanticCommand}
+            onModeChange={handlePaneModeChange}
+            onNavigateToElement={openElementById}
+            activeViewTargetId={paneTab?.targetId}
+            lensMode={paneLensMode}
+            surface="view-context"
+            onOpenMaterialBrowser={() => setMaterialBrowserOpen(true)}
+            onOpenAppearanceAssetBrowser={() => setAppearanceAssetBrowserOpen(true)}
+          />
+        </div>
+      </aside>
+    ) : null;
+    const paneCanvas = (
+      <div
+        className="min-h-0 min-w-0 flex-1"
+        style={{
+          background: ['plan', 'section'].includes(paneTab?.kind ?? '')
+            ? 'var(--color-canvas-paper)'
+            : 'var(--color-background)',
+        }}
+      >
+        {paneTab ? (
+          <CanvasMount
+            mode={paneMode}
+            activeTabId={paneTab.id}
+            viewerMode={paneViewerMode}
+            activeLevelId={panePlanTarget.activeLevelId}
+            activePlanViewId={panePlanTarget.activePlanViewId ?? null}
+            elementsById={elementsById}
+            onSemanticCommand={(cmd) => void onSemanticCommand(cmd)}
+            cameraHandleRef={planCameraHandleRef}
+            initialCamera={paneTab.viewportState?.planCamera}
+            preferredSheetId={
+              paneTab.kind === 'sheet' ? (paneTab.targetId ?? undefined) : undefined
+            }
+            preferredScheduleId={
+              paneTab.kind === 'schedule' ? (paneTab.targetId ?? undefined) : undefined
+            }
+            modelId={modelId ?? undefined}
+            wsOn={wsOn}
+            onPersistViewpointField={persistViewpointField}
+            lensMode={paneLensMode}
+            activePlanTool={panePlanTool}
+            onActivePlanToolChange={(nextTool) => {
+              setPanePlanTool(node.id, nextTool);
+              if (focused) setPlanTool(nextTool);
+            }}
+            onNavigateToElement={openElementById}
+            snapSettings={snapSettings}
+            sheetReviewMode={sheetReviewMode}
+            sheetMarkupShape={sheetMarkupShape}
+            onOpenSectionSourcePlan={openActiveSectionSourcePlan}
+            onOpenSection3dContext={openActiveSection3dContext}
+          />
+        ) : (
+          <div
+            data-testid={`canvas-pane-empty-${node.id}`}
+            className="flex h-full w-full items-center justify-center bg-background/80"
+          >
+            <div className="rounded border border-border/70 bg-surface px-3 py-2 text-center text-xs text-muted">
+              <div>No view open in this pane</div>
+              <div className="mt-1 text-[11px]">
+                Drag a view from the primary sidebar to start this composition.
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+    const paneElementSidebar = paneElementSidebarOpen ? (
+      <aside
+        aria-label={`Element properties for ${paneLabel}`}
+        data-testid={`canvas-pane-element-sidebar-${node.id}`}
+        className="min-h-0 shrink-0 overflow-hidden border-l border-border bg-surface"
+        style={{ width: 'min(340px, 45%)' }}
+      >
+        <WorkspaceRightRail
+          mode={paneMode}
+          onSemanticCommand={onSemanticCommand}
+          onModeChange={handlePaneModeChange}
+          onNavigateToElement={openElementById}
+          lensMode={paneLensMode}
+          surface="element"
+          onOpenMaterialBrowser={() => setMaterialBrowserOpen(true)}
+          onOpenAppearanceAssetBrowser={() => setAppearanceAssetBrowserOpen(true)}
+        />
+      </aside>
+    ) : null;
     return (
       <div
         key={node.id}
@@ -2606,7 +2828,7 @@ export function Workspace(): JSX.Element {
           <div
             data-testid={`canvas-pane-tabstrip-${node.id}`}
             className={[
-              'shrink-0 bg-surface',
+              'flex min-h-0 min-w-0 flex-1 bg-surface',
               paneCanAcceptDrop ? 'border border-accent/80 bg-accent/10' : '',
             ].join(' ')}
             onDragOver={(event) => {
@@ -2622,111 +2844,13 @@ export function Workspace(): JSX.Element {
               placeViewElementInPane(elementId, node.id);
             }}
           >
-            <div data-testid={`canvas-pane-ribbon-${node.id}`}>
-              <RibbonBar
-                activeToolId={planToolToToolId(panePlanTool)}
-                activeMode={paneMode}
-                selectedElementKind={selectedElementKind}
-                lensMode={paneLensMode}
-                inlineViewTitle={{
-                  icon: paneIconName,
-                  viewType: paneLabelParts.viewType,
-                  viewName: paneLabelParts.viewName,
-                  title: paneLabel,
-                  viewIconTestId: `canvas-pane-view-icon-${node.id}`,
-                }}
-                trailingControls={
-                  <>
-                    {paneCanAcceptDrop ? (
-                      <span className="rounded-md border border-accent/60 bg-accent-soft px-1.5 py-0.5 text-[10px] font-medium text-accent">
-                        Drop view
-                      </span>
-                    ) : null}
-                    <button
-                      type="button"
-                      data-testid={`canvas-pane-close-tab-${node.id}`}
-                      title={`Close ${paneLabel}`}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-surface-strong hover:text-foreground"
-                      aria-label={`Close ${paneLabel}`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        closePaneTab();
-                      }}
-                    >
-                      <Icons.close size={12} aria-hidden="true" />
-                    </button>
-                  </>
-                }
-                onLensChange={(nextLensMode) => {
-                  activatePaneForControls();
-                  setTabsState((state) => updateTabLens(state, paneTab.id, nextLensMode));
-                }}
-                onToolSelect={handlePaneToolSelect}
-                onModeChange={handlePaneModeChange}
-                viewSettingsOpen={paneSecondarySidebarOpen}
-                onToggleViewSettings={togglePaneViewSettings}
-                viewSettingsToggleLabel={`Toggle view settings for ${paneLabel}`}
-                onOpenCommandPalette={runInPaneContext(() => setPaletteOpen(true))}
-                onOpenManageLinks={runInPaneContext(() => setManageLinksOpen(true))}
-                onOpenAdvisor={runInPaneContext(() => setAdvisorOpen(true))}
-                onCreateSectionView={runInPaneContext(createSectionView)}
-                onToggleElementSidebar={runInPaneContext(() =>
-                  setPaneElementSidebarOpenByKey((state) => ({
-                    ...state,
-                    [paneSidebarKey]: !(state[paneSidebarKey] ?? true),
-                  })),
-                )}
-                onOpenFamilyLibrary={runInPaneContext(() => setFamilyLibraryOpen(true))}
-                onOpenSettings={runInPaneContext(() => setCheatsheetOpen(true))}
-                onSaveCurrentViewpoint={runInPaneContext(saveCurrentViewpoint)}
-                onResetActiveSavedViewpoint={runInPaneContext(resetActiveSavedViewpoint)}
-                onUpdateActiveSavedViewpoint={runInPaneContext(updateActiveSavedViewpoint)}
-                onInsertDoorOnSelectedWall3d={runInPaneContext(() =>
-                  runSelectedWall3dInsert('door'),
-                )}
-                onInsertWindowOnSelectedWall3d={runInPaneContext(() =>
-                  runSelectedWall3dInsert('window'),
-                )}
-                onInsertOpeningOnSelectedWall3d={runInPaneContext(() =>
-                  runSelectedWall3dInsert('opening'),
-                )}
-                onPlaceActiveSectionOnSheet={runInPaneContext(placeActiveSectionOnSheet)}
-                onOpenActiveSectionSourcePlan={runInPaneContext(openActiveSectionSourcePlan)}
-                onIncreaseActiveSectionCropDepth={runInPaneContext(() =>
-                  adjustActiveSectionCropDepth(500),
-                )}
-                onDecreaseActiveSectionCropDepth={runInPaneContext(() =>
-                  adjustActiveSectionCropDepth(-500),
-                )}
-                onPlaceRecommendedViewsOnActiveSheet={runInPaneContext(
-                  placeRecommendedViewsOnActiveSheet,
-                )}
-                onPlaceFirstViewOnActiveSheet={runInPaneContext(() => {
-                  const first = paletteSheetPlaceableViews[0];
-                  if (first) placeViewOnActiveSheet(first.id);
-                })}
-                onOpenSheetViewportEditor={runInPaneContext(() =>
-                  openActiveSheetAnchor('sheet-viewport-editor'),
-                )}
-                onOpenSheetTitleblockEditor={runInPaneContext(() =>
-                  openActiveSheetAnchor('sheet-titleblock-editor'),
-                )}
-                onShareActiveSheet={runInPaneContext(() => setSharePresentationOpen(true))}
-                onOpenSelectedScheduleRow={runInPaneContext(openSelectedScheduleRow)}
-                onPlaceActiveScheduleOnSheet={runInPaneContext(placeActiveScheduleOnSheet)}
-                onDuplicateActiveSchedule={runInPaneContext(duplicateActiveSchedule)}
-                onOpenScheduleControls={runInPaneContext(openScheduleControls)}
-                sheetReviewMode={sheetReviewMode}
-                onSheetReviewModeChange={setSheetReviewMode}
-                sheetMarkupShape={sheetMarkupShape}
-                onSheetMarkupShapeChange={setSheetMarkupShape}
-              />
-              {paneMode === 'plan' || paneMode === 'section' ? (
-                <>
-                  <ToolModifierBar activeTool={planToolToToolId(panePlanTool)} />
-                  <OptionsBar activeTool={panePlanTool} />
-                </>
-              ) : null}
+            {paneSecondarySidebar}
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+              {paneRibbon}
+              <div className="flex min-h-0 min-w-0 flex-1">
+                {paneCanvas}
+                {paneElementSidebar}
+              </div>
             </div>
           </div>
         ) : (
@@ -2768,124 +2892,7 @@ export function Workspace(): JSX.Element {
             ) : null}
           </div>
         )}
-        <div className="flex min-h-0 min-w-0 flex-1">
-          {paneSecondarySidebarOpen ? (
-            <aside
-              aria-label={`View settings for ${paneLabel}`}
-              data-testid={`canvas-pane-secondary-sidebar-${node.id}`}
-              className="flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-border bg-surface"
-              style={{ width: 'min(280px, 42%)' }}
-            >
-              <ViewContextStatusPanel
-                mode={paneMode}
-                viewLabel={paneLabel}
-                viewDetails={paneStatusViewDetails}
-                level={activeLevel}
-                levels={levels}
-                onLevelChange={setActiveLevelId}
-                toolLabel={
-                  loopMode && (planTool === 'wall' || planTool === 'beam')
-                    ? 'Loop mode on — L to toggle, Esc to exit'
-                    : (toolRegistry[planToolToToolId(planTool)]?.label ?? null)
-                }
-                gridOn={draftGridVisible}
-                onGridToggle={toggleDraftGridVisible}
-                cursorMm={cursorMm}
-                snapModes={snapModes}
-                onSnapToggle={handleSnapToggle}
-                temporaryVisibility={paneTemporaryVisibility}
-                onClearTemporaryVisibility={clearTemporaryVisibility}
-              />
-              <div className="min-h-0 flex-1 overflow-hidden">
-                <WorkspaceRightRail
-                  mode={paneMode}
-                  onSemanticCommand={onSemanticCommand}
-                  onModeChange={handlePaneModeChange}
-                  onNavigateToElement={openElementById}
-                  activeViewTargetId={paneTab?.targetId}
-                  lensMode={paneLensMode}
-                  surface="view-context"
-                  onOpenMaterialBrowser={() => setMaterialBrowserOpen(true)}
-                  onOpenAppearanceAssetBrowser={() => setAppearanceAssetBrowserOpen(true)}
-                />
-              </div>
-            </aside>
-          ) : null}
-          <div
-            className="min-h-0 min-w-0 flex-1"
-            style={{
-              background: ['plan', 'section'].includes(paneTab?.kind ?? '')
-                ? 'var(--color-canvas-paper)'
-                : 'var(--color-background)',
-            }}
-          >
-            {paneTab ? (
-              <CanvasMount
-                mode={paneMode}
-                activeTabId={paneTab.id}
-                viewerMode={paneViewerMode}
-                activeLevelId={panePlanTarget.activeLevelId}
-                activePlanViewId={panePlanTarget.activePlanViewId ?? null}
-                elementsById={elementsById}
-                onSemanticCommand={(cmd) => void onSemanticCommand(cmd)}
-                cameraHandleRef={planCameraHandleRef}
-                initialCamera={paneTab.viewportState?.planCamera}
-                preferredSheetId={
-                  paneTab.kind === 'sheet' ? (paneTab.targetId ?? undefined) : undefined
-                }
-                preferredScheduleId={
-                  paneTab.kind === 'schedule' ? (paneTab.targetId ?? undefined) : undefined
-                }
-                modelId={modelId ?? undefined}
-                wsOn={wsOn}
-                onPersistViewpointField={persistViewpointField}
-                lensMode={paneLensMode}
-                activePlanTool={panePlanTool}
-                onActivePlanToolChange={(nextTool) => {
-                  setPanePlanTool(node.id, nextTool);
-                  if (focused) setPlanTool(nextTool);
-                }}
-                onNavigateToElement={openElementById}
-                snapSettings={snapSettings}
-                sheetReviewMode={sheetReviewMode}
-                sheetMarkupShape={sheetMarkupShape}
-                onOpenSectionSourcePlan={openActiveSectionSourcePlan}
-                onOpenSection3dContext={openActiveSection3dContext}
-              />
-            ) : (
-              <div
-                data-testid={`canvas-pane-empty-${node.id}`}
-                className="flex h-full w-full items-center justify-center bg-background/80"
-              >
-                <div className="rounded border border-border/70 bg-surface px-3 py-2 text-center text-xs text-muted">
-                  <div>No view open in this pane</div>
-                  <div className="mt-1 text-[11px]">
-                    Drag a view from the primary sidebar to start this composition.
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-          {paneElementSidebarOpen ? (
-            <aside
-              aria-label={`Element properties for ${paneLabel}`}
-              data-testid={`canvas-pane-element-sidebar-${node.id}`}
-              className="min-h-0 shrink-0 overflow-hidden border-l border-border bg-surface"
-              style={{ width: 'min(340px, 45%)' }}
-            >
-              <WorkspaceRightRail
-                mode={paneMode}
-                onSemanticCommand={onSemanticCommand}
-                onModeChange={handlePaneModeChange}
-                onNavigateToElement={openElementById}
-                lensMode={paneLensMode}
-                surface="element"
-                onOpenMaterialBrowser={() => setMaterialBrowserOpen(true)}
-                onOpenAppearanceAssetBrowser={() => setAppearanceAssetBrowserOpen(true)}
-              />
-            </aside>
-          ) : null}
-        </div>
+        {!paneTab ? <div className="flex min-h-0 min-w-0 flex-1">{paneCanvas}</div> : null}
         {draggingViewElementId ? (
           <div className="pointer-events-none absolute left-0 right-0 top-8 bottom-0 z-20">
             {(
