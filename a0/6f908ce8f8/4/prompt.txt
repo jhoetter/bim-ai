@@ -1,0 +1,21 @@
+[Image #1][Image #2] materials dont seem to be rendered / visualized
+
+---
+
+on main?
+
+---
+
+i noticed i cant e.g. select the materials to a wall, only room? please check across all elements ... i want this to be as it is with e.g. revit...
+
+---
+
+should the materials also have some kind of surface change, or just color? e.g. a brick wall would be different in texture etc, right? how does revit handle this? ...
+
+---
+
+write a tracker that goes into deep detail so we can plan this out in detail; be precise for each workpackage how we can get there
+
+---
+
+go and build everything step by step from that tracker, and commit and push after each workpackage, and then continue until FULLY done
