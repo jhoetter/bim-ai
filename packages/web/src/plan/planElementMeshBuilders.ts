@@ -2085,7 +2085,7 @@ export function planWallSectionMesh(
   group.add(fillMesh);
 
   // --- Outline ---
-  const pts = outlineMm.map((pt) => new THREE.Vector3(ux(pt.xMm), PLAN_Y + 0.001, -uz(pt.yMm)));
+  const pts = outlineMm.map((pt) => new THREE.Vector3(ux(pt.xMm), PLAN_Y + 0.001, uz(pt.yMm)));
   pts.push(pts[0]!.clone());
   const outlineGeo = new THREE.BufferGeometry().setFromPoints(pts);
   const outlineMat = new THREE.LineBasicMaterial({
@@ -2127,7 +2127,14 @@ export function planWallSectionMesh(
     for (let j = 0; j + 1 < xs.length; j += 2) {
       const x0 = xs[j]!;
       const x1 = xs[j + 1]!;
-      hatchPositions.push(ux(x0), PLAN_Y + 0.003, -uz(x0 - c), ux(x1), PLAN_Y + 0.003, -uz(x1 - c));
+      hatchPositions.push(
+        ux(x0),
+        PLAN_Y + 0.003,
+        uz(x0 - c),
+        ux(x1),
+        PLAN_Y + 0.003,
+        uz(x1 - c),
+      );
     }
   }
   if (hatchPositions.length > 0) {

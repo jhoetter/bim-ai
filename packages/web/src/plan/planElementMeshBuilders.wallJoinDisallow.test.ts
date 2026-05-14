@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
 
-import { computeWallSectionPolygon, type WallJoinRecord } from './planElementMeshBuilders';
+import {
+  computeWallSectionPolygon,
+  planWallSectionMesh,
+  type WallJoinRecord,
+} from './planElementMeshBuilders';
 
 type Wall = Extract<Element, { kind: 'wall' }>;
 
@@ -40,6 +45,17 @@ function maxAbsYAtX(outline: Array<{ xMm: number; yMm: number }>, xMm: number): 
   return Math.max(
     ...outline.filter((pt) => Math.abs(pt.xMm - xMm) < 1e-6).map((pt) => Math.abs(pt.yMm)),
   );
+}
+
+function geometryZValues(root: THREE.Object3D, ctor: typeof THREE.Line): number[] {
+  const out: number[] = [];
+  root.traverse((obj) => {
+    if (!(obj instanceof ctor)) return;
+    const pos = obj.geometry.getAttribute('position');
+    if (!pos) return;
+    for (let i = 0; i < pos.count; i++) out.push(pos.getZ(i));
+  });
+  return out;
 }
 
 describe('F-040 wall join rendered cleanup gating', () => {
@@ -107,5 +123,26 @@ describe('F-040 wall join rendered cleanup gating', () => {
     );
 
     expect(maxAbsYAtX(outline, 0)).toBeCloseTo(100, 6);
+  });
+
+  it('draws joined wall outlines and hatch on the same plan side as the wall fill', () => {
+    const w = wall('w-positive-y', { xMm: 0, yMm: 1000 }, { xMm: 3000, yMm: 1000 });
+    const outline = [
+      { xMm: 0, yMm: 900 },
+      { xMm: 3000, yMm: 900 },
+      { xMm: 3000, yMm: 1100 },
+      { xMm: 0, yMm: 1100 },
+    ];
+
+    const group = planWallSectionMesh(w, outline);
+    const lineZ = geometryZValues(group, THREE.Line);
+    const hatchZ = geometryZValues(group, THREE.LineSegments);
+
+    expect(lineZ.length).toBeGreaterThan(0);
+    expect(Math.min(...lineZ)).toBeGreaterThan(0.89);
+    expect(Math.max(...lineZ)).toBeLessThan(1.11);
+    expect(hatchZ.length).toBeGreaterThan(0);
+    expect(Math.min(...hatchZ)).toBeGreaterThan(0.89);
+    expect(Math.max(...hatchZ)).toBeLessThan(1.11);
   });
 });
