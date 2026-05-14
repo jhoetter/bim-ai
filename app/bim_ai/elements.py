@@ -124,6 +124,29 @@ DEFAULT_DISCIPLINE_BY_KIND: dict[str, DisciplineTag] = {
 WallLayerFunction = Literal["structure", "insulation", "finish"]
 WallBasisLine = Literal["center", "face_interior", "face_exterior"]
 WallStructuralRole = Literal["unknown", "load_bearing", "non_load_bearing"]
+ThermalEnvelopeClassification = Literal[
+    "exterior_wall_outside_air",
+    "wall_against_ground",
+    "wall_against_unheated_space",
+    "roof_or_top_floor_ceiling_outside_air",
+    "floor_slab_against_ground",
+    "floor_against_unheated_basement",
+    "window_or_door_thermal_envelope",
+    "internal_outside_thermal_envelope",
+]
+ThermalClassificationSource = Literal["auto", "manual", "batch", "imported"]
+EnergyHeatingStatus = Literal["heated", "low_heated", "unheated"]
+EnergyUsageProfile = Literal["residential", "office", "school", "retail", "other"]
+ThermalBridgeMarkerType = Literal[
+    "balcony_slab",
+    "window_reveal",
+    "roof_wall_junction",
+    "floor_wall_junction",
+    "basement_transition",
+    "cantilever",
+    "user_defined",
+]
+RenovationScenarioStatus = Literal["as_is", "scenario_a", "scenario_b", "target"]
 WallLocationLine = Literal[
     "wall-centerline",
     "finish-face-exterior",
@@ -461,6 +484,13 @@ class WallElem(BaseModel):
     option_id: str | None = Field(default=None, alias="optionId")
     discipline: DisciplineTag | None = Field(default=None)
     props: dict[str, Any] | None = Field(default=None)
+    thermal_classification: ThermalEnvelopeClassification | None = Field(
+        default=None, alias="thermalClassification"
+    )
+    thermal_classification_source: ThermalClassificationSource | None = Field(
+        default=None, alias="thermalClassificationSource"
+    )
+    energy_scenario_id: str | None = Field(default=None, alias="energyScenarioId")
     # TOP-V3-04: site wall binding — when set, base elevation per-segment follows the toposolid surface.
     site_host_id: str | None = Field(default=None, alias="siteHostId")
     # F-040: per-endpoint Allow/Disallow join flag (mirrors Revit right-click → Allow/Disallow Join).
@@ -521,6 +551,23 @@ class DoorElem(BaseModel):
     option_id: str | None = Field(default=None, alias="optionId")
     discipline: DisciplineTag | None = Field(default=None)
     props: dict[str, Any] | None = Field(default=None)
+    thermal_classification: ThermalEnvelopeClassification | None = Field(
+        default=None, alias="thermalClassification"
+    )
+    thermal_classification_source: ThermalClassificationSource | None = Field(
+        default=None, alias="thermalClassificationSource"
+    )
+    u_value: float | None = Field(default=None, alias="uValue", gt=0)
+    g_value: float | None = Field(default=None, alias="gValue", ge=0, le=1)
+    frame_fraction: float | None = Field(default=None, alias="frameFraction", ge=0, le=1)
+    air_tightness_class: str | None = Field(default=None, alias="airTightnessClass")
+    installation_thermal_bridge_note: str | None = Field(
+        default=None, alias="installationThermalBridgeNote"
+    )
+    shading_device: str | None = Field(default=None, alias="shadingDevice")
+    annual_shading_factor_estimate: float | None = Field(
+        default=None, alias="annualShadingFactorEstimate", ge=0, le=1
+    )
 
 
 WindowOutlineKind = Literal[
@@ -564,6 +611,23 @@ class WindowElem(BaseModel):
     option_id: str | None = Field(default=None, alias="optionId")
     discipline: DisciplineTag | None = Field(default=None)
     props: dict[str, Any] | None = Field(default=None)
+    thermal_classification: ThermalEnvelopeClassification | None = Field(
+        default=None, alias="thermalClassification"
+    )
+    thermal_classification_source: ThermalClassificationSource | None = Field(
+        default=None, alias="thermalClassificationSource"
+    )
+    u_value: float | None = Field(default=None, alias="uValue", gt=0)
+    g_value: float | None = Field(default=None, alias="gValue", ge=0, le=1)
+    frame_fraction: float | None = Field(default=None, alias="frameFraction", ge=0, le=1)
+    air_tightness_class: str | None = Field(default=None, alias="airTightnessClass")
+    installation_thermal_bridge_note: str | None = Field(
+        default=None, alias="installationThermalBridgeNote"
+    )
+    shading_device: str | None = Field(default=None, alias="shadingDevice")
+    annual_shading_factor_estimate: float | None = Field(
+        default=None, alias="annualShadingFactorEstimate", ge=0, le=1
+    )
 
 
 class WallOpeningElem(BaseModel):
@@ -615,6 +679,14 @@ class RoomElem(BaseModel):
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
     props: dict[str, Any] | None = Field(default=None)
+    heating_status: EnergyHeatingStatus | None = Field(default=None, alias="heatingStatus")
+    usage_profile: EnergyUsageProfile | None = Field(default=None, alias="usageProfile")
+    setpoint_c: float | None = Field(default=None, alias="setpointC")
+    air_change_rate: float | None = Field(default=None, alias="airChangeRate", ge=0)
+    zone_id: str | None = Field(default=None, alias="zoneId")
+    conditioned_volume_included: bool | None = Field(
+        default=None, alias="conditionedVolumeIncluded"
+    )
 
 
 class GridLineElem(BaseModel):
@@ -1104,6 +1176,13 @@ class FloorElem(BaseModel):
     toposolid_elevation_mm: float | None = Field(default=None, alias="toposolidElevationMm")
     discipline: DisciplineTag | None = Field(default=None)
     props: dict[str, Any] | None = Field(default=None)
+    thermal_classification: ThermalEnvelopeClassification | None = Field(
+        default=None, alias="thermalClassification"
+    )
+    thermal_classification_source: ThermalClassificationSource | None = Field(
+        default=None, alias="thermalClassificationSource"
+    )
+    energy_scenario_id: str | None = Field(default=None, alias="energyScenarioId")
 
 
 class RoofElem(BaseModel):
@@ -1137,6 +1216,13 @@ class RoofElem(BaseModel):
     option_id: str | None = Field(default=None, alias="optionId")
     discipline: DisciplineTag | None = Field(default=None)
     props: dict[str, Any] | None = Field(default=None)
+    thermal_classification: ThermalEnvelopeClassification | None = Field(
+        default=None, alias="thermalClassification"
+    )
+    thermal_classification_source: ThermalClassificationSource | None = Field(
+        default=None, alias="thermalClassificationSource"
+    )
+    energy_scenario_id: str | None = Field(default=None, alias="energyScenarioId")
 
 
 StairShape = Literal["straight", "l_shape", "u_shape", "spiral", "sketch"]
@@ -3221,6 +3307,69 @@ class DecalElem(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# ENE-V1 — Energy Lens handoff elements
+# ---------------------------------------------------------------------------
+
+
+class ThermalBridgeMarkerElem(BaseModel):
+    """Energy Lens marker for thermal bridge review and specialist handoff."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["thermal_bridge_marker"] = "thermal_bridge_marker"
+    id: str
+    name: str | None = None
+    marker_type: ThermalBridgeMarkerType = Field(alias="markerType")
+    location_mm: Vec3Mm = Field(alias="locationMm")
+    host_element_ids: list[str] = Field(default_factory=list, alias="hostElementIds")
+    description: str | None = None
+    suggested_mitigation: str | None = Field(default=None, alias="suggestedMitigation")
+    handoff_note: str | None = Field(default=None, alias="handoffNote")
+    psi_value_reference: str | None = Field(default=None, alias="psiValueReference")
+
+
+class RenovationMeasurePackage(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    id: str
+    name: str
+    notes: str | None = None
+    cost_placeholder: float | None = Field(default=None, alias="costPlaceholder")
+
+
+class RenovationScenarioElem(BaseModel):
+    """Energy Lens branch/layer metadata for as-is and renovation variants."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["renovation_scenario"] = "renovation_scenario"
+    id: str
+    name: str
+    scenario_status: RenovationScenarioStatus = Field(alias="scenarioStatus")
+    base_scenario_id: str | None = Field(default=None, alias="baseScenarioId")
+    type_layer_overrides: dict[str, Any] = Field(default_factory=dict, alias="typeLayerOverrides")
+    opening_type_overrides: dict[str, Any] = Field(
+        default_factory=dict, alias="openingTypeOverrides"
+    )
+    heating_status_overrides: dict[str, EnergyHeatingStatus] = Field(
+        default_factory=dict, alias="heatingStatusOverrides"
+    )
+    systems_notes: str | None = Field(default=None, alias="systemsNotes")
+    measure_packages: list[RenovationMeasurePackage] = Field(
+        default_factory=list, alias="measurePackages"
+    )
+
+
+class BuildingServicesHandoffElem(BaseModel):
+    """Non-simulation building-services metadata prepared for energy tools."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["building_services_handoff"] = "building_services_handoff"
+    id: str
+    name: str = "Building services handoff"
+    scenario_id: str | None = Field(default=None, alias="scenarioId")
+    services: dict[str, Any] = Field(default_factory=dict)
+    handoff_note: str | None = Field(default=None, alias="handoffNote")
+
+
+# ---------------------------------------------------------------------------
 # IMP-V3-01 — Image-as-underlay element
 # ---------------------------------------------------------------------------
 
@@ -3462,6 +3611,9 @@ Element = Annotated[
     | MaterialElem
     | ImageAssetElem
     | DecalElem
+    | ThermalBridgeMarkerElem
+    | RenovationScenarioElem
+    | BuildingServicesHandoffElem
     | PropertyDefinitionElem
     | ImageUnderlayElem
     | ConceptSeedElem
