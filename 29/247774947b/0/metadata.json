@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "29247774947b",
+  "session_id": "019e1f88-adaf-7791-baf4-f7e0bc958757",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T16:00:18.831603Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "34017dab2c49",
+  "token_usage": {
+    "input_tokens": 29153617,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 528976000,
+    "output_tokens": 1225566,
+    "api_call_count": 4398
+  },
+  "session_metrics": {
+    "turn_count": 3
+  }
+}
