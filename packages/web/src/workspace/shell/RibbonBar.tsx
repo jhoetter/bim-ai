@@ -973,6 +973,38 @@ function buildPlanRibbonTabs(
       ],
     },
     {
+      id: 'systems',
+      label: 'Systems',
+      panels: [
+        {
+          id: 'routes',
+          label: 'Routes',
+          commands: [
+            tool('duct', 'Duct', 'duct'),
+            tool('pipe', 'Pipe', 'pipe'),
+            tool('cable-tray', 'Cable Tray', 'cableTray'),
+          ],
+        },
+        {
+          id: 'devices',
+          label: 'Devices',
+          commands: [
+            tool('mep-equipment', 'Equipment', 'mepEquipment'),
+            tool('fixture', 'Fixture', 'fixture'),
+            tool('mep-terminal', 'Terminal', 'mepTerminal'),
+          ],
+        },
+        {
+          id: 'coordination',
+          label: 'Coordinate',
+          commands: [
+            tool('mep-opening-request', 'Opening Request', 'wall-opening'),
+            tool('shaft', 'Shaft', 'shaft'),
+          ],
+        },
+      ],
+    },
+    {
       id: 'sketch',
       label: 'Sketch',
       panels: [
@@ -1102,6 +1134,38 @@ function build3dRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
           id: 'circulation',
           label: 'Circulation',
           commands: [tool('stair', 'Stair', 'stair'), tool('railing', 'Railing', 'railing')],
+        },
+      ],
+    },
+    {
+      id: 'systems',
+      label: 'Systems',
+      panels: [
+        {
+          id: 'routes',
+          label: 'Routes',
+          commands: [
+            tool('duct', 'Duct', 'duct'),
+            tool('pipe', 'Pipe', 'pipe'),
+            tool('cable-tray', 'Cable Tray', 'cableTray'),
+          ],
+        },
+        {
+          id: 'devices',
+          label: 'Devices',
+          commands: [
+            tool('mep-equipment', 'Equipment', 'mepEquipment'),
+            tool('fixture', 'Fixture', 'fixture'),
+            tool('mep-terminal', 'Terminal', 'mepTerminal'),
+          ],
+        },
+        {
+          id: 'coordination',
+          label: 'Coordinate',
+          commands: [
+            tool('mep-opening-request', 'Opening Request', 'wall-opening'),
+            tool('shaft', 'Shaft', 'shaft'),
+          ],
         },
       ],
     },

@@ -54,6 +54,13 @@ export type ToolId =
   | 'wall-join'
   | 'wall-opening'
   | 'shaft'
+  | 'duct'
+  | 'pipe'
+  | 'cable-tray'
+  | 'mep-equipment'
+  | 'fixture'
+  | 'mep-terminal'
+  | 'mep-opening-request'
   | 'column'
   | 'beam'
   | 'ceiling'
@@ -383,6 +390,69 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan', '3d'],
       tooltip: t('tools.shaft.tooltip'),
     },
+    duct: {
+      id: 'duct',
+      label: 'Duct',
+      icon: 'duct',
+      hotkey: 'DU',
+      shortcut: 'DU',
+      modes: ['plan', '3d'],
+      tooltip: 'Route rectangular or round HVAC ductwork with system metadata.',
+    },
+    pipe: {
+      id: 'pipe',
+      label: 'Pipe',
+      icon: 'pipe',
+      hotkey: 'PI',
+      shortcut: 'PI',
+      modes: ['plan', '3d'],
+      tooltip: 'Route plumbing, heating, cooling, or fire-protection pipework.',
+    },
+    'cable-tray': {
+      id: 'cable-tray',
+      label: 'Cable Tray',
+      icon: 'cableTray',
+      hotkey: 'CT',
+      shortcut: 'CT',
+      modes: ['plan', '3d'],
+      tooltip: 'Route electrical containment with service and clearance metadata.',
+    },
+    'mep-equipment': {
+      id: 'mep-equipment',
+      label: 'Equipment',
+      icon: 'mepEquipment',
+      hotkey: 'EQ',
+      shortcut: 'EQ',
+      modes: ['plan', '3d'],
+      tooltip: 'Place mechanical, electrical, or plumbing equipment.',
+    },
+    fixture: {
+      id: 'fixture',
+      label: 'Fixture',
+      icon: 'fixture',
+      hotkey: 'FX',
+      shortcut: 'FX',
+      modes: ['plan', '3d'],
+      tooltip: 'Place plumbing or electrical fixtures with room load metadata.',
+    },
+    'mep-terminal': {
+      id: 'mep-terminal',
+      label: 'Terminal',
+      icon: 'mepTerminal',
+      hotkey: 'AT',
+      shortcut: 'AT',
+      modes: ['plan', '3d'],
+      tooltip: 'Place air terminals, sprinklers, and MEP devices.',
+    },
+    'mep-opening-request': {
+      id: 'mep-opening-request',
+      label: 'Opening Request',
+      icon: 'wall-opening',
+      hotkey: 'OR',
+      shortcut: 'OR',
+      modes: ['plan', '3d'],
+      tooltip: 'Request coordinated wall, slab, roof, or shaft openings for MEP services.',
+    },
     column: {
       id: 'column',
       label: t('tools.column.label'),
@@ -504,6 +574,13 @@ const PALETTE_ORDER: ToolId[] = [
   'wall-join',
   'wall-opening',
   'shaft',
+  'duct',
+  'pipe',
+  'cable-tray',
+  'mep-equipment',
+  'fixture',
+  'mep-terminal',
+  'mep-opening-request',
   'column',
   'beam',
   'ceiling',

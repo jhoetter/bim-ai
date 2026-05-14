@@ -200,7 +200,6 @@ const LENS_DISABLED_COMMANDS: Record<
       'tool.railing',
       'tool.component',
       'tool.wall-opening',
-      'tool.shaft',
       'tool.column',
       'tool.beam',
       'tool.ceiling',
@@ -341,6 +340,17 @@ function labelForTool(tool: ToolDefinition): string {
 
 function groupForTool(toolId: ToolId): CommandGroup {
   if (MODIFY_TOOL_IDS.has(toolId)) return 'modify';
+  if (
+    toolId === 'duct' ||
+    toolId === 'pipe' ||
+    toolId === 'cable-tray' ||
+    toolId === 'mep-equipment' ||
+    toolId === 'fixture' ||
+    toolId === 'mep-terminal' ||
+    toolId === 'mep-opening-request'
+  ) {
+    return 'system';
+  }
   if (toolId === 'select' || toolId === 'query' || toolId === 'measure') return 'view';
   if (toolId === 'dimension' || toolId === 'tag') return 'document';
   return 'author';

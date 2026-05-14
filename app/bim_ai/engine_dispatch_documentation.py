@@ -21,11 +21,22 @@ from bim_ai.engine import (
     CreateDetailRegionCmd,
     CreatePipeCmd,
     CreateDuctCmd,
+    CreateCableTrayCmd,
+    CreateMepEquipmentCmd,
+    CreateFixtureCmd,
+    CreateMepTerminalCmd,
+    CreateMepOpeningRequestCmd,
     CreatePipeLegendCmd,
     CreateDuctLegendCmd,
     CreateRepeatingDetailCmd,
     PipeElem,
     DuctElem,
+    CableTrayElem,
+    MepEquipmentElem,
+    FixtureElem,
+    MepTerminalElem,
+    MepOpeningRequestElem,
+    MepConnectorSpec,
     PipeLegendElem,
     PipeLegendEntrySpec,
     DuctLegendElem,
@@ -1278,6 +1289,13 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
                 elevation_mm=cmd.elevation_mm,
                 diameter_mm=cmd.diameter_mm,
                 system_type=cmd.system_type,
+                system_name=cmd.system_name,
+                flow_direction=cmd.flow_direction,
+                insulation=cmd.insulation,
+                service_level=cmd.service_level,
+                clearance_zone=cmd.clearance_zone,
+                maintain_access_zone=cmd.maintain_access_zone,
+                connectors=[MepConnectorSpec.model_validate(e) for e in cmd.connectors],
                 material_key=cmd.material_key,
                 colour=cmd.colour,
             )
@@ -1305,7 +1323,144 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
                 height_mm=cmd.height_mm,
                 shape=cmd.shape,
                 system_type=cmd.system_type,
+                system_name=cmd.system_name,
+                flow_direction=cmd.flow_direction,
+                insulation=cmd.insulation,
+                service_level=cmd.service_level,
+                clearance_zone=cmd.clearance_zone,
+                maintain_access_zone=cmd.maintain_access_zone,
+                connectors=[MepConnectorSpec.model_validate(e) for e in cmd.connectors],
                 colour=cmd.colour,
+            )
+
+        case CreateCableTrayCmd():
+            ctid = cmd.id or new_id()
+            if ctid in els:
+                raise ValueError(f"duplicate element id '{ctid}'")
+            if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                raise ValueError("createCableTray.levelId must reference a Level")
+            import math as _math
+
+            if _math.isclose(cmd.start_mm.x_mm, cmd.end_mm.x_mm) and _math.isclose(
+                cmd.start_mm.y_mm, cmd.end_mm.y_mm
+            ):
+                raise ValueError("createCableTray: startMm and endMm must differ")
+            els[ctid] = CableTrayElem(
+                kind="cable_tray",
+                id=ctid,
+                name=cmd.name,
+                level_id=cmd.level_id,
+                start_mm=cmd.start_mm,
+                end_mm=cmd.end_mm,
+                elevation_mm=cmd.elevation_mm,
+                width_mm=cmd.width_mm,
+                height_mm=cmd.height_mm,
+                system_type=cmd.system_type,
+                system_name=cmd.system_name,
+                service_level=cmd.service_level,
+                clearance_zone=cmd.clearance_zone,
+                maintain_access_zone=cmd.maintain_access_zone,
+                connectors=[MepConnectorSpec.model_validate(e) for e in cmd.connectors],
+                colour=cmd.colour,
+            )
+
+        case CreateMepEquipmentCmd():
+            eid = cmd.id or new_id()
+            if eid in els:
+                raise ValueError(f"duplicate element id '{eid}'")
+            if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                raise ValueError("createMepEquipment.levelId must reference a Level")
+            els[eid] = MepEquipmentElem(
+                kind="mep_equipment",
+                id=eid,
+                name=cmd.name,
+                level_id=cmd.level_id,
+                position_mm=cmd.position_mm,
+                elevation_mm=cmd.elevation_mm,
+                equipment_type=cmd.equipment_type,
+                family_type_id=cmd.family_type_id,
+                system_type=cmd.system_type,
+                system_name=cmd.system_name,
+                service_level=cmd.service_level,
+                clearance_zone=cmd.clearance_zone,
+                maintain_access_zone=cmd.maintain_access_zone,
+                connectors=[MepConnectorSpec.model_validate(e) for e in cmd.connectors],
+                electrical_load_w=cmd.electrical_load_w,
+            )
+
+        case CreateFixtureCmd():
+            fid = cmd.id or new_id()
+            if fid in els:
+                raise ValueError(f"duplicate element id '{fid}'")
+            if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                raise ValueError("createFixture.levelId must reference a Level")
+            if cmd.room_id is not None and not isinstance(els.get(cmd.room_id), RoomElem):
+                raise ValueError("createFixture.roomId must reference a Room when provided")
+            els[fid] = FixtureElem(
+                kind="fixture",
+                id=fid,
+                name=cmd.name,
+                level_id=cmd.level_id,
+                position_mm=cmd.position_mm,
+                room_id=cmd.room_id,
+                fixture_type=cmd.fixture_type,
+                system_type=cmd.system_type,
+                system_name=cmd.system_name,
+                connectors=[MepConnectorSpec.model_validate(e) for e in cmd.connectors],
+                electrical_load_w=cmd.electrical_load_w,
+            )
+
+        case CreateMepTerminalCmd():
+            tid = cmd.id or new_id()
+            if tid in els:
+                raise ValueError(f"duplicate element id '{tid}'")
+            if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
+                raise ValueError("createMepTerminal.levelId must reference a Level")
+            if cmd.room_id is not None and not isinstance(els.get(cmd.room_id), RoomElem):
+                raise ValueError("createMepTerminal.roomId must reference a Room when provided")
+            els[tid] = MepTerminalElem(
+                kind="mep_terminal",
+                id=tid,
+                name=cmd.name,
+                terminal_kind=cmd.terminal_kind,
+                level_id=cmd.level_id,
+                position_mm=cmd.position_mm,
+                room_id=cmd.room_id,
+                system_type=cmd.system_type,
+                system_name=cmd.system_name,
+                flow_direction=cmd.flow_direction,
+                service_level=cmd.service_level,
+                connectors=[MepConnectorSpec.model_validate(e) for e in cmd.connectors],
+            )
+
+        case CreateMepOpeningRequestCmd():
+            rid = cmd.id or new_id()
+            if rid in els:
+                raise ValueError(f"duplicate element id '{rid}'")
+            if cmd.host_element_id not in els:
+                raise ValueError("createMepOpeningRequest.hostElementId must reference an element")
+            if cmd.level_id is not None and not isinstance(els.get(cmd.level_id), LevelElem):
+                raise ValueError("createMepOpeningRequest.levelId must reference a Level")
+            for requester_id in cmd.requester_element_ids:
+                if requester_id not in els:
+                    raise ValueError(
+                        f"createMepOpeningRequest requesterElementIds unknown '{requester_id}'"
+                    )
+            els[rid] = MepOpeningRequestElem(
+                kind="mep_opening_request",
+                id=rid,
+                name=cmd.name,
+                host_element_id=cmd.host_element_id,
+                level_id=cmd.level_id,
+                requester_element_ids=cmd.requester_element_ids,
+                opening_kind=cmd.opening_kind,
+                position_mm=cmd.position_mm,
+                width_mm=cmd.width_mm,
+                height_mm=cmd.height_mm,
+                diameter_mm=cmd.diameter_mm,
+                clearance_mm=cmd.clearance_mm,
+                system_type=cmd.system_type,
+                system_name=cmd.system_name,
             )
 
         case CreatePipeLegendCmd():

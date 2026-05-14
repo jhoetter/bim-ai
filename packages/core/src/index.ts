@@ -987,6 +987,44 @@ export type WindowLegendView = {
   parentSheetId?: string;
 };
 
+export type MepSystemType =
+  | 'hvac_supply'
+  | 'hvac_return'
+  | 'heating'
+  | 'cooling'
+  | 'domestic_water'
+  | 'wastewater'
+  | 'electrical'
+  | 'data'
+  | 'fire_protection'
+  | 'other'
+  | string;
+
+export type MepConnectorSpec = {
+  id: string;
+  systemType?: MepSystemType;
+  flowDirection?: 'supply' | 'return' | 'exhaust' | 'bidirectional' | 'none' | 'unknown';
+  diameterMm?: number | null;
+  widthMm?: number | null;
+  heightMm?: number | null;
+  positionMm?: XYZ | null;
+  connectedTo?: string | null;
+};
+
+export type MepCommonFields = {
+  systemType?: MepSystemType;
+  systemName?: string | null;
+  flowDirection?: 'supply' | 'return' | 'exhaust' | 'bidirectional' | 'none' | 'unknown';
+  insulation?: string | null;
+  serviceLevel?: string | null;
+  clearanceZone?: Record<string, unknown> | null;
+  maintainAccessZone?: Record<string, unknown> | null;
+  connectors?: MepConnectorSpec[];
+  discipline?: DisciplineTag | null;
+  props?: Record<string, unknown>;
+  pinned?: boolean;
+};
+
 export type Element =
   | {
       kind: 'project_settings';
@@ -1259,6 +1297,12 @@ export type Element =
       functionLabel?: string | null;
       finishSet?: string | null;
       targetAreaM2?: number | null;
+      ventilationZone?: string | null;
+      heatingCoolingZone?: string | null;
+      designAirChangeRate?: number | null;
+      fixtureEquipmentLoads?: Record<string, unknown> | null;
+      electricalLoadSummary?: Record<string, unknown> | null;
+      serviceRequirements?: string[];
       volumeM3?: number | null;
       /** F-093: per-room plan fill override, matching Revit's by-element graphics override. */
       roomFillOverrideHex?: string | null;
@@ -2595,22 +2639,22 @@ export type Element =
   | ThermalBridgeMarkerElem
   | RenovationScenarioElem
   | BuildingServicesHandoffElem
-  | {
+  | ({
       kind: 'pipe';
       id: string;
+      name?: string;
       levelId: string;
       startMm: XY;
       endMm: XY;
       elevationMm?: number;
       diameterMm?: number;
-      systemType?: string;
       materialKey?: string | null;
       colour?: string | null;
-      pinned?: boolean;
-    }
-  | {
+    } & MepCommonFields)
+  | ({
       kind: 'duct';
       id: string;
+      name?: string;
       levelId: string;
       startMm: XY;
       endMm: XY;
@@ -2618,10 +2662,66 @@ export type Element =
       widthMm?: number;
       heightMm?: number;
       shape?: 'rectangular' | 'round' | 'oval';
-      systemType?: string;
       colour?: string | null;
-      pinned?: boolean;
-    }
+    } & MepCommonFields)
+  | ({
+      kind: 'cable_tray';
+      id: string;
+      name?: string;
+      levelId: string;
+      startMm: XY;
+      endMm: XY;
+      elevationMm?: number;
+      widthMm?: number;
+      heightMm?: number;
+      colour?: string | null;
+    } & MepCommonFields)
+  | ({
+      kind: 'mep_equipment';
+      id: string;
+      name?: string;
+      levelId: string;
+      positionMm: XY;
+      elevationMm?: number;
+      equipmentType?: string | null;
+      familyTypeId?: string | null;
+      electricalLoadW?: number | null;
+    } & MepCommonFields)
+  | ({
+      kind: 'fixture';
+      id: string;
+      name?: string;
+      levelId: string;
+      positionMm: XY;
+      roomId?: string | null;
+      fixtureType?: string | null;
+      electricalLoadW?: number | null;
+    } & MepCommonFields)
+  | ({
+      kind: 'mep_terminal';
+      id: string;
+      name?: string;
+      terminalKind?: 'diffuser' | 'terminal' | 'sprinkler' | 'device';
+      levelId: string;
+      positionMm: XY;
+      roomId?: string | null;
+    } & MepCommonFields)
+  | ({
+      kind: 'mep_opening_request';
+      id: string;
+      name?: string;
+      hostElementId: string;
+      levelId?: string | null;
+      requesterElementIds?: string[];
+      openingKind?: 'wall' | 'slab' | 'roof' | 'shaft';
+      status?: 'requested' | 'approved' | 'rejected' | 'installed';
+      positionMm?: XY | null;
+      widthMm?: number | null;
+      heightMm?: number | null;
+      diameterMm?: number | null;
+      clearanceMm?: number;
+      approvalNote?: string | null;
+    } & MepCommonFields)
   | {
       kind: 'pipe_legend';
       id: string;
