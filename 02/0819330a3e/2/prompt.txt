@@ -23,3 +23,11 @@ oh boy, that laayout is really not pretty. i like if things are condense, think 
 ---
 
 [Image #1] better but not ideal; icon of the view type and rest of icons must be aligned; maybe we need to remove the section labels ("Build"), i want the whole ribbon a bit more condensed. [Image #2] i dnt like the expanded state view, looks weird.
+
+---
+
+[Image #1] apparently not same hieght, and thus also not aligned; also you can keep the label of the view type on the same hieght as the ribbon groups; it should be relatievly easy to have them same height. please btw also get rid of the top right chevron and settings icon, they are not needed.
+
+---
+
+i want that the "x" to cliose a tab is at the top right of it (i.e. not next to the name of the tab, but in the ribbon area at top right); also, i notice it seems to maybe store multiple elements (views) within one tab? that shouldnt be the case; as i click on close, that recusrive split should go away.
