@@ -67,6 +67,7 @@ describe('<ProjectSetupDialog />', () => {
 
     expect(getByTestId('project-setup-dialog')).toBeTruthy();
     expect(getByTestId('project-setup-check-levels-storeys').textContent).toContain('Partial');
+    fireEvent.click(getByTestId('project-setup-check-links'));
     fireEvent.click(getByText('Manage Links'));
     expect(onOpenManageLinks).toHaveBeenCalledOnce();
   });
@@ -82,6 +83,7 @@ describe('<ProjectSetupDialog />', () => {
       />,
     );
 
+    fireEvent.click(getByText('Levels / storeys'));
     fireEvent.change(getByLabelText('Storeys'), { target: { value: '3' } });
     fireEvent.change(getByLabelText('Floor-to-floor mm'), { target: { value: '3000' } });
     fireEvent.click(getByText('Apply Storey Setup'));
@@ -120,6 +122,7 @@ describe('<ProjectSetupDialog />', () => {
       />,
     );
 
+    fireEvent.click(getByText('Levels / storeys'));
     fireEvent.change(getByLabelText('Level name First'), { target: { value: 'Upper Level' } });
     fireEvent.change(getByLabelText('Height above previous First'), { target: { value: '3200' } });
     fireEvent.click(getByText('Save Level Table'));
@@ -192,6 +195,7 @@ describe('<ProjectSetupDialog />', () => {
       />,
     );
 
+    fireEvent.click(getByText('Grids'));
     fireEvent.change(getByLabelText('X grid count'), { target: { value: '2' } });
     fireEvent.change(getByLabelText('Y grid count'), { target: { value: '2' } });
     fireEvent.change(getByLabelText('Spacing mm'), { target: { value: '5000' } });
@@ -228,6 +232,7 @@ describe('<ProjectSetupDialog />', () => {
       />,
     );
 
+    fireEvent.click(getByText('Location / sun'));
     fireEvent.change(getByLabelText('Latitude deg'), { target: { value: '40.71' } });
     fireEvent.change(getByLabelText('Longitude deg'), { target: { value: '-74.01' } });
     fireEvent.change(getByLabelText('Sun date'), { target: { value: '2026-06-21' } });
@@ -258,6 +263,7 @@ describe('<ProjectSetupDialog />', () => {
       />,
     );
 
+    fireEvent.click(getByText('Phases'));
     fireEvent.click(getByText('Create Default Phases'));
 
     await waitFor(() => expect(onSemanticCommand).toHaveBeenCalledTimes(2));

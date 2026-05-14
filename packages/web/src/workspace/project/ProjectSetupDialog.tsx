@@ -5,6 +5,17 @@ import type { Element } from '@bim-ai/core';
 type CommandDispatcher = (cmd: Record<string, unknown>) => void | Promise<void>;
 
 type SetupStatus = 'ready' | 'missing' | 'partial';
+type SetupSectionKey =
+  | 'project-info'
+  | 'units'
+  | 'levels'
+  | 'grids'
+  | 'positioning'
+  | 'sun'
+  | 'phases'
+  | 'links'
+  | 'templates'
+  | 'standards';
 
 const LENGTH_UNITS = [
   ['millimeter', 'Millimeters'],
@@ -62,8 +73,8 @@ function StatusPill({ status }: { status: SetupStatus }): JSX.Element {
   );
 }
 
-function setupItem(label: string, detail: string, status: SetupStatus) {
-  return { label, detail, status };
+function setupItem(key: SetupSectionKey, label: string, detail: string, status: SetupStatus) {
+  return { key, label, detail, status };
 }
 
 export function ProjectSetupDialog({
@@ -170,6 +181,7 @@ export function ProjectSetupDialog({
   });
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<SetupSectionKey>('project-info');
 
   useEffect(() => {
     if (!open) return;
@@ -243,6 +255,7 @@ export function ProjectSetupDialog({
 
   const checklist = [
     setupItem(
+      'project-info',
       'Project info',
       projectSettings?.name || projectSettings?.projectNumber || projectSettings?.clientName
         ? `${projectSettings?.name ?? 'Unnamed project'}${projectSettings?.projectNumber ? ` - ${projectSettings.projectNumber}` : ''}`
@@ -254,11 +267,13 @@ export function ProjectSetupDialog({
       ),
     ),
     setupItem(
+      'units',
       'Units',
       `${projectSettings?.lengthUnit ?? 'millimeter'} - ${projectSettings?.displayLocale ?? 'en-US'}`,
       statusFor(Boolean(projectSettings)),
     ),
     setupItem(
+      'levels',
       'Levels / storeys',
       `${levels.length} levels - ${levels.filter((l) => planViewsByLevel.has(l.id)).length} with plans`,
       statusFor(
@@ -266,8 +281,9 @@ export function ProjectSetupDialog({
         levels.length > 0,
       ),
     ),
-    setupItem('Grids', `${grids.length} grid lines`, statusFor(grids.length > 0)),
+    setupItem('grids', 'Grids', `${grids.length} grid lines`, statusFor(grids.length > 0)),
     setupItem(
+      'positioning',
       'Positioning',
       projectBasePoint && surveyPoint
         ? `PBP ${projectBasePoint.positionMm.xMm}, ${projectBasePoint.positionMm.yMm} - True North ${projectBasePoint.angleToTrueNorthDeg} deg`
@@ -275,6 +291,7 @@ export function ProjectSetupDialog({
       statusFor(Boolean(projectBasePoint && surveyPoint), Boolean(projectBasePoint || surveyPoint)),
     ),
     setupItem(
+      'sun',
       'Location / sun',
       sunSettings
         ? `${sunSettings.latitudeDeg.toFixed(4)}, ${sunSettings.longitudeDeg.toFixed(4)}`
@@ -282,13 +299,20 @@ export function ProjectSetupDialog({
       statusFor(Boolean(sunSettings)),
     ),
     setupItem(
+      'phases',
       'Phases',
       `${phases.length} phases`,
       statusFor(phases.length >= 2, phases.length > 0),
     ),
-    setupItem('Links', `${links.length} linked/imported resources`, statusFor(true)),
-    setupItem('Templates', 'Project template source and save-as-template flow', statusFor(false)),
+    setupItem('links', 'Links', `${links.length} linked/imported resources`, statusFor(true)),
     setupItem(
+      'templates',
+      'Templates',
+      'Project template source and save-as-template flow',
+      statusFor(false),
+    ),
+    setupItem(
+      'standards',
       'Standards',
       `${all.filter((e) => e.kind === 'view_template').length} view templates, ${all.filter((e) => e.kind === 'hatch_pattern_def').length} hatch patterns`,
       statusFor(
@@ -297,6 +321,22 @@ export function ProjectSetupDialog({
       ),
     ),
   ];
+  const activeIndex = Math.max(
+    0,
+    checklist.findIndex((item) => item.key === activeSection),
+  );
+  const activeItem = checklist[activeIndex] ?? checklist[0];
+  const readyCount = checklist.filter((item) => item.status === 'ready').length;
+  const needsWorkCount = checklist.length - readyCount;
+  const nextNeedsWork = checklist.find((item) => item.status !== 'ready');
+  const canGoPrevious = activeIndex > 0;
+  const canGoNext = activeIndex < checklist.length - 1;
+  const goPrevious = () => {
+    if (canGoPrevious) setActiveSection(checklist[activeIndex - 1].key);
+  };
+  const goNext = () => {
+    if (canGoNext) setActiveSection(checklist[activeIndex + 1].key);
+  };
 
   async function runCommands(commands: Record<string, unknown>[], done: string) {
     setBusy(true);
@@ -716,435 +756,535 @@ export function ProjectSetupDialog({
 
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-0 overflow-hidden lg:grid-cols-[280px_1fr]">
           <aside className="min-h-0 overflow-auto border-b border-border p-3 lg:border-r lg:border-b-0">
-            <div className="mb-2 text-[11px] font-semibold uppercase text-muted">
-              Setup Checklist
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="text-[11px] font-semibold uppercase text-muted">Setup Checklist</div>
+              <div className="font-mono text-[10px] text-muted">
+                {readyCount}/{checklist.length}
+              </div>
             </div>
+            <div className="mb-3 h-1.5 overflow-hidden rounded bg-muted/20">
+              <div
+                className="h-full bg-accent"
+                style={{ width: `${Math.round((readyCount / checklist.length) * 100)}%` }}
+              />
+            </div>
+            {nextNeedsWork ? (
+              <button
+                type="button"
+                className="mb-3 w-full rounded border border-border bg-surface px-2 py-1.5 text-left text-[11px] font-medium text-foreground hover:bg-surface-strong"
+                onClick={() => setActiveSection(nextNeedsWork.key)}
+              >
+                Next incomplete: {nextNeedsWork.label}
+              </button>
+            ) : null}
             <div className="space-y-2">
-              {checklist.map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded border border-border bg-background p-2"
-                  data-testid={`project-setup-check-${slugToken(item.label)}`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="text-xs font-medium text-foreground">{item.label}</div>
-                    <StatusPill status={item.status} />
-                  </div>
-                  <div className="mt-1 text-[10px] leading-snug text-muted">{item.detail}</div>
-                </div>
-              ))}
+              {checklist.map((item, index) => {
+                const active = item.key === activeSection;
+                return (
+                  <button
+                    type="button"
+                    key={item.key}
+                    className={`w-full rounded border p-2 text-left ${
+                      active
+                        ? 'border-accent bg-accent/10'
+                        : 'border-border bg-background hover:bg-surface-strong'
+                    }`}
+                    aria-current={active ? 'step' : undefined}
+                    onClick={() => setActiveSection(item.key)}
+                    data-active={active ? 'true' : 'false'}
+                    data-testid={`project-setup-check-${slugToken(item.label)}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="font-mono text-[10px] text-muted">
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
+                        <span className="truncate text-xs font-medium text-foreground">
+                          {item.label}
+                        </span>
+                      </div>
+                      <StatusPill status={item.status} />
+                    </div>
+                    <div className="mt-1 text-[10px] leading-snug text-muted">{item.detail}</div>
+                  </button>
+                );
+              })}
             </div>
           </aside>
 
           <main className="min-h-0 overflow-auto p-4">
-            <div className="grid gap-4 xl:grid-cols-2">
-              <section className="rounded border border-border bg-background p-3">
-                <h3 className="text-xs font-semibold text-foreground">Project Info & Units</h3>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  <SetupInput
-                    label="Project name"
-                    value={infoDraft.name}
-                    onChange={(name) => setInfoDraft((d) => ({ ...d, name }))}
-                  />
-                  <SetupInput
-                    label="Project number"
-                    value={infoDraft.projectNumber}
-                    onChange={(projectNumber) => setInfoDraft((d) => ({ ...d, projectNumber }))}
-                  />
-                  <SetupInput
-                    label="Client"
-                    value={infoDraft.clientName}
-                    onChange={(clientName) => setInfoDraft((d) => ({ ...d, clientName }))}
-                  />
-                  <SetupInput
-                    label="Status"
-                    value={infoDraft.projectStatus}
-                    onChange={(projectStatus) => setInfoDraft((d) => ({ ...d, projectStatus }))}
-                  />
-                  <label className="flex flex-col gap-1 text-[11px] text-muted sm:col-span-2">
-                    Address
-                    <textarea
-                      value={infoDraft.projectAddress}
-                      onChange={(e) =>
-                        setInfoDraft((d) => ({ ...d, projectAddress: e.currentTarget.value }))
-                      }
-                      className="min-h-16 rounded border border-border bg-surface px-2 py-1 text-xs text-foreground"
+            <div className="mx-auto flex max-w-3xl flex-col gap-4">
+              <div className="rounded border border-border bg-background px-3 py-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase text-muted">
+                      Step {activeIndex + 1} of {checklist.length}
+                    </div>
+                    <h3 className="mt-0.5 text-sm font-semibold text-foreground">
+                      {activeItem.label}
+                    </h3>
+                    <p className="mt-1 text-[11px] text-muted">{activeItem.detail}</p>
+                  </div>
+                  <StatusPill status={activeItem.status} />
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={!canGoPrevious}
+                    className="rounded border border-border px-2 py-1 text-xs text-foreground hover:bg-surface-strong disabled:opacity-40"
+                    onClick={goPrevious}
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!canGoNext}
+                    className="rounded border border-border px-2 py-1 text-xs text-foreground hover:bg-surface-strong disabled:opacity-40"
+                    onClick={goNext}
+                  >
+                    Next
+                  </button>
+                  {nextNeedsWork ? (
+                    <button
+                      type="button"
+                      className="rounded border border-border bg-surface px-2 py-1 text-xs text-foreground hover:bg-surface-strong"
+                      onClick={() => setActiveSection(nextNeedsWork.key)}
+                    >
+                      Go to next incomplete
+                    </button>
+                  ) : null}
+                  <div className="ml-auto self-center text-[10px] text-muted">
+                    {needsWorkCount} item{needsWorkCount === 1 ? '' : 's'} need work
+                  </div>
+                </div>
+              </div>
+              {activeSection === 'project-info' || activeSection === 'units' ? (
+                <section className="rounded border border-border bg-background p-3">
+                  <h3 className="text-xs font-semibold text-foreground">Project Info & Units</h3>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    <SetupInput
+                      label="Project name"
+                      value={infoDraft.name}
+                      onChange={(name) => setInfoDraft((d) => ({ ...d, name }))}
                     />
-                  </label>
-                  <SetupSelect
-                    label="Length unit"
-                    value={infoDraft.lengthUnit}
-                    options={LENGTH_UNITS}
-                    onChange={(lengthUnit) => setInfoDraft((d) => ({ ...d, lengthUnit }))}
-                  />
-                  <SetupSelect
-                    label="Locale"
-                    value={infoDraft.displayLocale}
-                    options={LOCALES}
-                    onChange={(displayLocale) => setInfoDraft((d) => ({ ...d, displayLocale }))}
-                  />
-                </div>
-                <SetupButton busy={busy} onClick={() => void saveProjectInfo()}>
-                  Save Project Info
-                </SetupButton>
-              </section>
+                    <SetupInput
+                      label="Project number"
+                      value={infoDraft.projectNumber}
+                      onChange={(projectNumber) => setInfoDraft((d) => ({ ...d, projectNumber }))}
+                    />
+                    <SetupInput
+                      label="Client"
+                      value={infoDraft.clientName}
+                      onChange={(clientName) => setInfoDraft((d) => ({ ...d, clientName }))}
+                    />
+                    <SetupInput
+                      label="Status"
+                      value={infoDraft.projectStatus}
+                      onChange={(projectStatus) => setInfoDraft((d) => ({ ...d, projectStatus }))}
+                    />
+                    <label className="flex flex-col gap-1 text-[11px] text-muted sm:col-span-2">
+                      Address
+                      <textarea
+                        value={infoDraft.projectAddress}
+                        onChange={(e) =>
+                          setInfoDraft((d) => ({ ...d, projectAddress: e.currentTarget.value }))
+                        }
+                        className="min-h-16 rounded border border-border bg-surface px-2 py-1 text-xs text-foreground"
+                      />
+                    </label>
+                    <SetupSelect
+                      label="Length unit"
+                      value={infoDraft.lengthUnit}
+                      options={LENGTH_UNITS}
+                      onChange={(lengthUnit) => setInfoDraft((d) => ({ ...d, lengthUnit }))}
+                    />
+                    <SetupSelect
+                      label="Locale"
+                      value={infoDraft.displayLocale}
+                      options={LOCALES}
+                      onChange={(displayLocale) => setInfoDraft((d) => ({ ...d, displayLocale }))}
+                    />
+                  </div>
+                  <SetupButton busy={busy} onClick={() => void saveProjectInfo()}>
+                    Save Project Info
+                  </SetupButton>
+                </section>
+              ) : null}
 
-              <section className="rounded border border-border bg-background p-3">
-                <h3 className="text-xs font-semibold text-foreground">Levels / Storeys</h3>
-                <div className="mt-3 grid gap-2 sm:grid-cols-4">
-                  <SetupInput
-                    label="Storeys"
-                    value={storeyDraft.count}
-                    type="number"
-                    onChange={(count) => setStoreyDraft((d) => ({ ...d, count }))}
-                  />
-                  <SetupInput
-                    label="Base elev. mm"
-                    value={storeyDraft.baseElevationMm}
-                    type="number"
-                    onChange={(baseElevationMm) =>
-                      setStoreyDraft((d) => ({ ...d, baseElevationMm }))
-                    }
-                  />
-                  <SetupInput
-                    label="Floor-to-floor mm"
-                    value={storeyDraft.floorToFloorMm}
-                    type="number"
-                    onChange={(floorToFloorMm) => setStoreyDraft((d) => ({ ...d, floorToFloorMm }))}
-                  />
-                  <SetupInput
-                    label="Name prefix"
-                    value={storeyDraft.namePrefix}
-                    onChange={(namePrefix) => setStoreyDraft((d) => ({ ...d, namePrefix }))}
-                  />
-                </div>
-                <div className="mt-3 max-h-64 overflow-auto rounded border border-border">
-                  <table className="w-full border-collapse text-left text-[11px]">
-                    <thead className="bg-muted/30 text-muted">
-                      <tr>
-                        <th className="p-1.5">Level name</th>
-                        <th className="p-1.5 text-right">Elevation mm</th>
-                        <th className="p-1.5 text-right">Height above</th>
-                        <th className="p-1.5 text-right">Plans</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {levels.map((level, index) => {
-                        const draft = draftForLevel(level);
-                        return (
-                          <tr key={level.id} className="border-t border-border">
-                            <td className="p-1.5 align-top">
-                              <input
-                                aria-label={`Level name ${level.name}`}
-                                value={draft.name}
-                                onChange={(event) =>
-                                  updateLevelDraft(level.id, { name: event.currentTarget.value })
-                                }
-                                className="h-7 w-full rounded border border-border bg-surface px-2 text-[11px] font-medium text-foreground"
-                              />
-                              <div className="mt-1 font-mono text-[9px] text-muted">{level.id}</div>
-                            </td>
-                            <td className="p-1.5 align-top">
-                              <input
-                                aria-label={`Elevation mm ${level.name}`}
-                                type="number"
-                                value={draft.elevationMm}
-                                onChange={(event) =>
-                                  updateLevelDraft(level.id, {
-                                    elevationMm: event.currentTarget.value,
-                                  })
-                                }
-                                className="ml-auto h-7 w-28 rounded border border-border bg-surface px-2 text-right font-mono text-[11px] text-foreground"
-                              />
-                            </td>
-                            <td className="p-1.5 align-top">
-                              {index === 0 ? (
-                                <div className="h-7 rounded border border-transparent px-2 py-1 text-right text-[11px] text-muted">
-                                  Base
-                                </div>
-                              ) : (
+              {activeSection === 'levels' ? (
+                <section className="rounded border border-border bg-background p-3">
+                  <h3 className="text-xs font-semibold text-foreground">Levels / Storeys</h3>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-4">
+                    <SetupInput
+                      label="Storeys"
+                      value={storeyDraft.count}
+                      type="number"
+                      onChange={(count) => setStoreyDraft((d) => ({ ...d, count }))}
+                    />
+                    <SetupInput
+                      label="Base elev. mm"
+                      value={storeyDraft.baseElevationMm}
+                      type="number"
+                      onChange={(baseElevationMm) =>
+                        setStoreyDraft((d) => ({ ...d, baseElevationMm }))
+                      }
+                    />
+                    <SetupInput
+                      label="Floor-to-floor mm"
+                      value={storeyDraft.floorToFloorMm}
+                      type="number"
+                      onChange={(floorToFloorMm) =>
+                        setStoreyDraft((d) => ({ ...d, floorToFloorMm }))
+                      }
+                    />
+                    <SetupInput
+                      label="Name prefix"
+                      value={storeyDraft.namePrefix}
+                      onChange={(namePrefix) => setStoreyDraft((d) => ({ ...d, namePrefix }))}
+                    />
+                  </div>
+                  <div className="mt-3 max-h-64 overflow-auto rounded border border-border">
+                    <table className="w-full border-collapse text-left text-[11px]">
+                      <thead className="bg-muted/30 text-muted">
+                        <tr>
+                          <th className="p-1.5">Level name</th>
+                          <th className="p-1.5 text-right">Elevation mm</th>
+                          <th className="p-1.5 text-right">Height above</th>
+                          <th className="p-1.5 text-right">Plans</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {levels.map((level, index) => {
+                          const draft = draftForLevel(level);
+                          return (
+                            <tr key={level.id} className="border-t border-border">
+                              <td className="p-1.5 align-top">
                                 <input
-                                  aria-label={`Height above previous ${level.name}`}
-                                  type="number"
-                                  value={heightAbovePrevious(index)}
+                                  aria-label={`Level name ${level.name}`}
+                                  value={draft.name}
                                   onChange={(event) =>
-                                    updateHeightAbovePrevious(index, event.currentTarget.value)
+                                    updateLevelDraft(level.id, { name: event.currentTarget.value })
+                                  }
+                                  className="h-7 w-full rounded border border-border bg-surface px-2 text-[11px] font-medium text-foreground"
+                                />
+                                <div className="mt-1 font-mono text-[9px] text-muted">
+                                  {level.id}
+                                </div>
+                              </td>
+                              <td className="p-1.5 align-top">
+                                <input
+                                  aria-label={`Elevation mm ${level.name}`}
+                                  type="number"
+                                  value={draft.elevationMm}
+                                  onChange={(event) =>
+                                    updateLevelDraft(level.id, {
+                                      elevationMm: event.currentTarget.value,
+                                    })
                                   }
                                   className="ml-auto h-7 w-28 rounded border border-border bg-surface px-2 text-right font-mono text-[11px] text-foreground"
                                 />
-                              )}
-                            </td>
-                            <td className="p-1.5 text-right align-top font-mono">
-                              {planViewsByLevel.get(level.id) ?? 0}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <SetupButton busy={busy} onClick={() => void saveLevelTable()}>
-                    Save Level Table
-                  </SetupButton>
-                  <SetupButton busy={busy} onClick={() => void generateStoreys()}>
-                    Apply Storey Setup
-                  </SetupButton>
-                </div>
-              </section>
-
-              <section className="rounded border border-border bg-background p-3">
-                <h3 className="text-xs font-semibold text-foreground">Grid System</h3>
-                <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                  <SetupInput
-                    label="X grid count"
-                    value={gridDraft.xCount}
-                    type="number"
-                    onChange={(xCount) => setGridDraft((d) => ({ ...d, xCount }))}
-                  />
-                  <SetupInput
-                    label="Y grid count"
-                    value={gridDraft.yCount}
-                    type="number"
-                    onChange={(yCount) => setGridDraft((d) => ({ ...d, yCount }))}
-                  />
-                  <SetupInput
-                    label="Spacing mm"
-                    value={gridDraft.spacingMm}
-                    type="number"
-                    onChange={(spacingMm) => setGridDraft((d) => ({ ...d, spacingMm }))}
-                  />
-                  <SetupInput
-                    label="Extent mm"
-                    value={gridDraft.extentMm}
-                    type="number"
-                    onChange={(extentMm) => setGridDraft((d) => ({ ...d, extentMm }))}
-                  />
-                  <SetupInput
-                    label="Origin X mm"
-                    value={gridDraft.originX}
-                    type="number"
-                    onChange={(originX) => setGridDraft((d) => ({ ...d, originX }))}
-                  />
-                  <SetupInput
-                    label="Origin Y mm"
-                    value={gridDraft.originY}
-                    type="number"
-                    onChange={(originY) => setGridDraft((d) => ({ ...d, originY }))}
-                  />
-                </div>
-                <div className="mt-3 max-h-36 overflow-auto rounded border border-border">
-                  <table className="w-full border-collapse text-left text-[11px]">
-                    <thead className="bg-muted/30 text-muted">
-                      <tr>
-                        <th className="p-1.5">Label</th>
-                        <th className="p-1.5">Name</th>
-                        <th className="p-1.5 text-right">Span</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {grids.length > 0 ? (
-                        grids.map((grid) => (
-                          <tr key={grid.id} className="border-t border-border">
-                            <td className="p-1.5 font-mono text-foreground">
-                              {grid.label || grid.name}
-                            </td>
-                            <td className="p-1.5 text-foreground">{grid.name}</td>
-                            <td className="p-1.5 text-right font-mono">
-                              {Math.round(
-                                Math.hypot(
-                                  grid.end.xMm - grid.start.xMm,
-                                  grid.end.yMm - grid.start.yMm,
-                                ),
-                              )}{' '}
-                              mm
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td className="p-2 text-muted" colSpan={3}>
-                            No grid lines yet.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                <SetupButton busy={busy} onClick={() => void generateGridSystem()}>
-                  Generate Grid System
-                </SetupButton>
-              </section>
-
-              <section className="rounded border border-border bg-background p-3">
-                <h3 className="text-xs font-semibold text-foreground">Positioning</h3>
-                <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                  <SetupInput
-                    label="PBP E/W mm"
-                    value={positionDraft.baseX}
-                    type="number"
-                    onChange={(baseX) => setPositionDraft((d) => ({ ...d, baseX }))}
-                  />
-                  <SetupInput
-                    label="PBP N/S mm"
-                    value={positionDraft.baseY}
-                    type="number"
-                    onChange={(baseY) => setPositionDraft((d) => ({ ...d, baseY }))}
-                  />
-                  <SetupInput
-                    label="True North deg"
-                    value={positionDraft.angleToTrueNorthDeg}
-                    type="number"
-                    onChange={(angleToTrueNorthDeg) =>
-                      setPositionDraft((d) => ({ ...d, angleToTrueNorthDeg }))
-                    }
-                  />
-                  <SetupInput
-                    label="Survey E/W mm"
-                    value={positionDraft.surveyX}
-                    type="number"
-                    onChange={(surveyX) => setPositionDraft((d) => ({ ...d, surveyX }))}
-                  />
-                  <SetupInput
-                    label="Survey N/S mm"
-                    value={positionDraft.surveyY}
-                    type="number"
-                    onChange={(surveyY) => setPositionDraft((d) => ({ ...d, surveyY }))}
-                  />
-                  <SetupInput
-                    label="Shared elev. mm"
-                    value={positionDraft.surveyElevationMm}
-                    type="number"
-                    onChange={(surveyElevationMm) =>
-                      setPositionDraft((d) => ({ ...d, surveyElevationMm }))
-                    }
-                  />
-                </div>
-                <SetupButton busy={busy} onClick={() => void savePositioning()}>
-                  Save Positioning
-                </SetupButton>
-              </section>
-
-              <section className="rounded border border-border bg-background p-3">
-                <h3 className="text-xs font-semibold text-foreground">Location / Sun</h3>
-                <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                  <SetupInput
-                    label="Latitude deg"
-                    value={sunDraft.latitudeDeg}
-                    type="number"
-                    onChange={(latitudeDeg) => setSunDraft((d) => ({ ...d, latitudeDeg }))}
-                  />
-                  <SetupInput
-                    label="Longitude deg"
-                    value={sunDraft.longitudeDeg}
-                    type="number"
-                    onChange={(longitudeDeg) => setSunDraft((d) => ({ ...d, longitudeDeg }))}
-                  />
-                  <SetupInput
-                    label="Sun date"
-                    value={sunDraft.dateIso}
-                    onChange={(dateIso) => setSunDraft((d) => ({ ...d, dateIso }))}
-                  />
-                  <SetupInput
-                    label="Hour"
-                    value={sunDraft.hours}
-                    type="number"
-                    onChange={(hours) => setSunDraft((d) => ({ ...d, hours }))}
-                  />
-                  <SetupInput
-                    label="Minute"
-                    value={sunDraft.minutes}
-                    type="number"
-                    onChange={(minutes) => setSunDraft((d) => ({ ...d, minutes }))}
-                  />
-                  <SetupSelect
-                    label="Daylight saving"
-                    value={sunDraft.daylightSavingStrategy}
-                    options={DAYLIGHT_SAVING_OPTIONS}
-                    onChange={(daylightSavingStrategy) =>
-                      setSunDraft((d) => ({ ...d, daylightSavingStrategy }))
-                    }
-                  />
-                </div>
-                <SetupButton busy={busy} onClick={() => void saveSunSettings()}>
-                  Save Location / Sun
-                </SetupButton>
-              </section>
-
-              <section className="rounded border border-border bg-background p-3">
-                <h3 className="text-xs font-semibold text-foreground">Phases</h3>
-                <div className="mt-3 max-h-36 overflow-auto rounded border border-border">
-                  <table className="w-full border-collapse text-left text-[11px]">
-                    <thead className="bg-muted/30 text-muted">
-                      <tr>
-                        <th className="p-1.5">Order</th>
-                        <th className="p-1.5">Phase</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[...phases]
-                        .sort((a, b) => a.ord - b.ord || a.name.localeCompare(b.name))
-                        .map((phase) => (
-                          <tr key={phase.id} className="border-t border-border">
-                            <td className="p-1.5 font-mono text-muted">{phase.ord}</td>
-                            <td className="p-1.5 text-foreground">{phase.name}</td>
-                          </tr>
-                        ))}
-                      {phases.length === 0 ? (
-                        <tr>
-                          <td className="p-2 text-muted" colSpan={2}>
-                            No project phases yet.
-                          </td>
-                        </tr>
-                      ) : null}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]">
-                  <SetupInput
-                    label="New phase name"
-                    value={phaseDraft.name}
-                    onChange={(name) => setPhaseDraft({ name })}
-                  />
-                  <div className="flex items-end gap-2">
-                    <SetupButton busy={busy} onClick={() => void createPhase()}>
-                      Add Phase
+                              </td>
+                              <td className="p-1.5 align-top">
+                                {index === 0 ? (
+                                  <div className="h-7 rounded border border-transparent px-2 py-1 text-right text-[11px] text-muted">
+                                    Base
+                                  </div>
+                                ) : (
+                                  <input
+                                    aria-label={`Height above previous ${level.name}`}
+                                    type="number"
+                                    value={heightAbovePrevious(index)}
+                                    onChange={(event) =>
+                                      updateHeightAbovePrevious(index, event.currentTarget.value)
+                                    }
+                                    className="ml-auto h-7 w-28 rounded border border-border bg-surface px-2 text-right font-mono text-[11px] text-foreground"
+                                  />
+                                )}
+                              </td>
+                              <td className="p-1.5 text-right align-top font-mono">
+                                {planViewsByLevel.get(level.id) ?? 0}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <SetupButton busy={busy} onClick={() => void saveLevelTable()}>
+                      Save Level Table
+                    </SetupButton>
+                    <SetupButton busy={busy} onClick={() => void generateStoreys()}>
+                      Apply Storey Setup
                     </SetupButton>
                   </div>
-                </div>
-                <SetupButton busy={busy} onClick={() => void createDefaultPhases()}>
-                  Create Default Phases
-                </SetupButton>
-              </section>
+                </section>
+              ) : null}
 
-              <section className="rounded border border-border bg-background p-3">
-                <h3 className="text-xs font-semibold text-foreground">
-                  Linked Resources & Standards
-                </h3>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-                  <Metric label="Grid lines" value={String(grids.length)} />
-                  <Metric label="Phases" value={String(phases.length)} />
-                  <Metric
-                    label="View templates"
-                    value={String(all.filter((e) => e.kind === 'view_template').length)}
-                  />
-                  <Metric label="Links/imports" value={String(links.length)} />
-                </div>
-                <div className="mt-3 text-[10px] leading-snug text-muted">
-                  Standards already exist in separate material, visibility, view-template, hatch,
-                  and type-layer tools. This setup surface tracks whether the project foundation is
-                  present before modeling.
-                </div>
-                {onOpenManageLinks ? (
-                  <button
-                    type="button"
-                    className="mt-3 rounded border border-border px-2 py-1 text-xs hover:bg-surface-strong"
-                    onClick={onOpenManageLinks}
-                  >
-                    Manage Links
-                  </button>
-                ) : null}
-              </section>
+              {activeSection === 'grids' ? (
+                <section className="rounded border border-border bg-background p-3">
+                  <h3 className="text-xs font-semibold text-foreground">Grid System</h3>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    <SetupInput
+                      label="X grid count"
+                      value={gridDraft.xCount}
+                      type="number"
+                      onChange={(xCount) => setGridDraft((d) => ({ ...d, xCount }))}
+                    />
+                    <SetupInput
+                      label="Y grid count"
+                      value={gridDraft.yCount}
+                      type="number"
+                      onChange={(yCount) => setGridDraft((d) => ({ ...d, yCount }))}
+                    />
+                    <SetupInput
+                      label="Spacing mm"
+                      value={gridDraft.spacingMm}
+                      type="number"
+                      onChange={(spacingMm) => setGridDraft((d) => ({ ...d, spacingMm }))}
+                    />
+                    <SetupInput
+                      label="Extent mm"
+                      value={gridDraft.extentMm}
+                      type="number"
+                      onChange={(extentMm) => setGridDraft((d) => ({ ...d, extentMm }))}
+                    />
+                    <SetupInput
+                      label="Origin X mm"
+                      value={gridDraft.originX}
+                      type="number"
+                      onChange={(originX) => setGridDraft((d) => ({ ...d, originX }))}
+                    />
+                    <SetupInput
+                      label="Origin Y mm"
+                      value={gridDraft.originY}
+                      type="number"
+                      onChange={(originY) => setGridDraft((d) => ({ ...d, originY }))}
+                    />
+                  </div>
+                  <div className="mt-3 max-h-36 overflow-auto rounded border border-border">
+                    <table className="w-full border-collapse text-left text-[11px]">
+                      <thead className="bg-muted/30 text-muted">
+                        <tr>
+                          <th className="p-1.5">Label</th>
+                          <th className="p-1.5">Name</th>
+                          <th className="p-1.5 text-right">Span</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {grids.length > 0 ? (
+                          grids.map((grid) => (
+                            <tr key={grid.id} className="border-t border-border">
+                              <td className="p-1.5 font-mono text-foreground">
+                                {grid.label || grid.name}
+                              </td>
+                              <td className="p-1.5 text-foreground">{grid.name}</td>
+                              <td className="p-1.5 text-right font-mono">
+                                {Math.round(
+                                  Math.hypot(
+                                    grid.end.xMm - grid.start.xMm,
+                                    grid.end.yMm - grid.start.yMm,
+                                  ),
+                                )}{' '}
+                                mm
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td className="p-2 text-muted" colSpan={3}>
+                              No grid lines yet.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <SetupButton busy={busy} onClick={() => void generateGridSystem()}>
+                    Generate Grid System
+                  </SetupButton>
+                </section>
+              ) : null}
+
+              {activeSection === 'positioning' ? (
+                <section className="rounded border border-border bg-background p-3">
+                  <h3 className="text-xs font-semibold text-foreground">Positioning</h3>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    <SetupInput
+                      label="PBP E/W mm"
+                      value={positionDraft.baseX}
+                      type="number"
+                      onChange={(baseX) => setPositionDraft((d) => ({ ...d, baseX }))}
+                    />
+                    <SetupInput
+                      label="PBP N/S mm"
+                      value={positionDraft.baseY}
+                      type="number"
+                      onChange={(baseY) => setPositionDraft((d) => ({ ...d, baseY }))}
+                    />
+                    <SetupInput
+                      label="True North deg"
+                      value={positionDraft.angleToTrueNorthDeg}
+                      type="number"
+                      onChange={(angleToTrueNorthDeg) =>
+                        setPositionDraft((d) => ({ ...d, angleToTrueNorthDeg }))
+                      }
+                    />
+                    <SetupInput
+                      label="Survey E/W mm"
+                      value={positionDraft.surveyX}
+                      type="number"
+                      onChange={(surveyX) => setPositionDraft((d) => ({ ...d, surveyX }))}
+                    />
+                    <SetupInput
+                      label="Survey N/S mm"
+                      value={positionDraft.surveyY}
+                      type="number"
+                      onChange={(surveyY) => setPositionDraft((d) => ({ ...d, surveyY }))}
+                    />
+                    <SetupInput
+                      label="Shared elev. mm"
+                      value={positionDraft.surveyElevationMm}
+                      type="number"
+                      onChange={(surveyElevationMm) =>
+                        setPositionDraft((d) => ({ ...d, surveyElevationMm }))
+                      }
+                    />
+                  </div>
+                  <SetupButton busy={busy} onClick={() => void savePositioning()}>
+                    Save Positioning
+                  </SetupButton>
+                </section>
+              ) : null}
+
+              {activeSection === 'sun' ? (
+                <section className="rounded border border-border bg-background p-3">
+                  <h3 className="text-xs font-semibold text-foreground">Location / Sun</h3>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    <SetupInput
+                      label="Latitude deg"
+                      value={sunDraft.latitudeDeg}
+                      type="number"
+                      onChange={(latitudeDeg) => setSunDraft((d) => ({ ...d, latitudeDeg }))}
+                    />
+                    <SetupInput
+                      label="Longitude deg"
+                      value={sunDraft.longitudeDeg}
+                      type="number"
+                      onChange={(longitudeDeg) => setSunDraft((d) => ({ ...d, longitudeDeg }))}
+                    />
+                    <SetupInput
+                      label="Sun date"
+                      value={sunDraft.dateIso}
+                      onChange={(dateIso) => setSunDraft((d) => ({ ...d, dateIso }))}
+                    />
+                    <SetupInput
+                      label="Hour"
+                      value={sunDraft.hours}
+                      type="number"
+                      onChange={(hours) => setSunDraft((d) => ({ ...d, hours }))}
+                    />
+                    <SetupInput
+                      label="Minute"
+                      value={sunDraft.minutes}
+                      type="number"
+                      onChange={(minutes) => setSunDraft((d) => ({ ...d, minutes }))}
+                    />
+                    <SetupSelect
+                      label="Daylight saving"
+                      value={sunDraft.daylightSavingStrategy}
+                      options={DAYLIGHT_SAVING_OPTIONS}
+                      onChange={(daylightSavingStrategy) =>
+                        setSunDraft((d) => ({ ...d, daylightSavingStrategy }))
+                      }
+                    />
+                  </div>
+                  <SetupButton busy={busy} onClick={() => void saveSunSettings()}>
+                    Save Location / Sun
+                  </SetupButton>
+                </section>
+              ) : null}
+
+              {activeSection === 'phases' ? (
+                <section className="rounded border border-border bg-background p-3">
+                  <h3 className="text-xs font-semibold text-foreground">Phases</h3>
+                  <div className="mt-3 max-h-36 overflow-auto rounded border border-border">
+                    <table className="w-full border-collapse text-left text-[11px]">
+                      <thead className="bg-muted/30 text-muted">
+                        <tr>
+                          <th className="p-1.5">Order</th>
+                          <th className="p-1.5">Phase</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...phases]
+                          .sort((a, b) => a.ord - b.ord || a.name.localeCompare(b.name))
+                          .map((phase) => (
+                            <tr key={phase.id} className="border-t border-border">
+                              <td className="p-1.5 font-mono text-muted">{phase.ord}</td>
+                              <td className="p-1.5 text-foreground">{phase.name}</td>
+                            </tr>
+                          ))}
+                        {phases.length === 0 ? (
+                          <tr>
+                            <td className="p-2 text-muted" colSpan={2}>
+                              No project phases yet.
+                            </td>
+                          </tr>
+                        ) : null}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]">
+                    <SetupInput
+                      label="New phase name"
+                      value={phaseDraft.name}
+                      onChange={(name) => setPhaseDraft({ name })}
+                    />
+                    <div className="flex items-end gap-2">
+                      <SetupButton busy={busy} onClick={() => void createPhase()}>
+                        Add Phase
+                      </SetupButton>
+                    </div>
+                  </div>
+                  <SetupButton busy={busy} onClick={() => void createDefaultPhases()}>
+                    Create Default Phases
+                  </SetupButton>
+                </section>
+              ) : null}
+
+              {activeSection === 'links' ||
+              activeSection === 'templates' ||
+              activeSection === 'standards' ? (
+                <section className="rounded border border-border bg-background p-3">
+                  <h3 className="text-xs font-semibold text-foreground">
+                    Linked Resources & Standards
+                  </h3>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+                    <Metric label="Grid lines" value={String(grids.length)} />
+                    <Metric label="Phases" value={String(phases.length)} />
+                    <Metric
+                      label="View templates"
+                      value={String(all.filter((e) => e.kind === 'view_template').length)}
+                    />
+                    <Metric label="Links/imports" value={String(links.length)} />
+                  </div>
+                  <div className="mt-3 text-[10px] leading-snug text-muted">
+                    Standards already exist in separate material, visibility, view-template, hatch,
+                    and type-layer tools. This setup surface tracks whether the project foundation
+                    is present before modeling.
+                  </div>
+                  {onOpenManageLinks ? (
+                    <button
+                      type="button"
+                      className="mt-3 rounded border border-border px-2 py-1 text-xs hover:bg-surface-strong"
+                      onClick={onOpenManageLinks}
+                    >
+                      Manage Links
+                    </button>
+                  ) : null}
+                </section>
+              ) : null}
             </div>
             {message ? (
               <div
