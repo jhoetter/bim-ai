@@ -80,6 +80,11 @@ import {
   ClashIcon,
   ValidationRuleIcon,
   DeviationIcon,
+  RFIIcon,
+  RevisionCloudIcon,
+  TextAnnotationIcon,
+  PanelScheduleViewIcon,
+  GraphicalColumnScheduleIcon,
 } from '@bim-ai/icons';
 
 /**
@@ -173,6 +178,8 @@ export const Icons: Record<string, LucideLikeIcon> = {
   clash: ClashIcon,
   validationRule: ValidationRuleIcon,
   deviation: DeviationIcon,
+  comment: RFIIcon,
+  check: ValidationRuleIcon,
 
   // Camera / view — lucide (generic)
   saveViewpoint: Camera,
@@ -212,6 +219,15 @@ export const Icons: Record<string, LucideLikeIcon> = {
   online: CircleDot,
   snap: Magnet,
   grid: Grid3x3,
+
+  // Sheet markup and schedule editing — BIM-native
+  annotation: DetailLineIcon,
+  pen: DetailLineIcon,
+  arrowRight: DetailLineIcon,
+  draftingCloud: RevisionCloudIcon,
+  text: TextAnnotationIcon,
+  tableRows: PanelScheduleViewIcon,
+  tableColumns: GraphicalColumnScheduleIcon,
 };
 
 /** Human-readable default labels for `aria-label` on icon-only buttons. */
@@ -267,6 +283,8 @@ export const IconLabels: Record<keyof typeof Icons, string> = {
   clash: 'Clash',
   validationRule: 'Validation rule',
   deviation: 'Deviation',
+  comment: 'Comment',
+  check: 'Resolve',
   saveViewpoint: 'Save viewpoint',
   layerOn: 'Show layer',
   layerOff: 'Hide layer',
@@ -292,6 +310,13 @@ export const IconLabels: Record<keyof typeof Icons, string> = {
   online: 'Online',
   snap: 'Snap',
   grid: 'Grid',
+  annotation: 'Annotation',
+  pen: 'Freehand markup',
+  arrowRight: 'Arrow markup',
+  draftingCloud: 'Revision cloud',
+  text: 'Text annotation',
+  tableRows: 'Schedule rows',
+  tableColumns: 'Schedule columns',
 };
 
 export type IconName = keyof typeof Icons;
@@ -345,4 +370,9 @@ export {
   ClashIcon,
   ValidationRuleIcon,
   DeviationIcon,
+  RFIIcon,
+  RevisionCloudIcon,
+  TextAnnotationIcon,
+  PanelScheduleViewIcon,
+  GraphicalColumnScheduleIcon,
 } from '@bim-ai/icons';

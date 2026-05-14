@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
+import { Icons } from '@bim-ai/ui';
 import { TopBar, WORKSPACE_MODES } from './TopBar';
 import { RibbonBar, ribbonCommandReachabilityForMode } from './RibbonBar';
 import { TopBarV3 } from '../chrome/TopBar';
@@ -537,6 +538,25 @@ describe('RibbonBar — F-005', () => {
     expect(onOpenScheduleControls).toHaveBeenCalledTimes(1);
     expect(onDuplicateActiveSchedule).toHaveBeenCalledTimes(1);
     expect(onOpenCommandPalette).not.toHaveBeenCalled();
+  });
+
+  it('resolves sheet and schedule ribbon icons without command-palette fallbacks', () => {
+    const ribbonIconNames = [
+      'comment',
+      'annotation',
+      'check',
+      'pen',
+      'arrowRight',
+      'draftingCloud',
+      'text',
+      'tableRows',
+      'tableColumns',
+    ];
+
+    for (const iconName of ribbonIconNames) {
+      expect(Icons[iconName]).toBeTruthy();
+      expect(Icons[iconName]).not.toBe(Icons.commandPalette);
+    }
   });
 
   it('customizes visible ribbon commands and persists the preference', () => {
