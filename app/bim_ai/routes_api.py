@@ -98,6 +98,7 @@ from bim_ai.jobs.queue import JobQueue, get_queue
 from bim_ai.jobs.types import CreateJobRequest, Job
 from bim_ai.link_expansion import expand_links
 from bim_ai.model_summary import compute_model_summary
+from bim_ai.mep_lens import build_mep_lens_payload
 from bim_ai.plan_projection_wire import (
     plan_projection_wire_from_request,
     resolve_plan_projection_wire,
@@ -703,6 +704,18 @@ async def constructability_bcf_export(
         "modelId": str(model_id),
         **build_constructability_bcf_export(doc.elements, revision=doc.revision, profile=profile),
     }
+
+
+@api_router.get("/models/{model_id}/mep")
+async def mep_lens_projection(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return {"modelId": str(model_id), "revision": doc.revision, **build_mep_lens_payload(doc)}
 
 
 @api_router.get("/models/{model_id}/evidence-package")
