@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "a20d8f4a8c98",
+  "strategy": "manual-commit",
+  "branch": "codex/sustainability-lens-workpackages-20260514",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/mep_lens.py",
+    "app/tests/test_mep_lens.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/a2/0d8f4a8c98/0/metadata.json",
+      "transcript": "/a2/0d8f4a8c98/0/full.jsonl",
+      "content_hash": "/a2/0d8f4a8c98/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1901673,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 30606976,
+    "output_tokens": 69279,
+    "api_call_count": 613
+  }
+}

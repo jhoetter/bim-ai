@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "a20d8f4a8c98",
+  "session_id": "019e1f88-adaf-7791-baf4-f7e0bc958757",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T22:05:32.120579Z",
+  "branch": "codex/sustainability-lens-workpackages-20260514",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/mep_lens.py",
+    "app/tests/test_mep_lens.py"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "fa6bbe48f4bd",
+  "checkpoint_transcript_start": 25012,
+  "transcript_lines_at_start": 25012,
+  "token_usage": {
+    "input_tokens": 1901673,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 30606976,
+    "output_tokens": 69279,
+    "api_call_count": 613
+  },
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-14T22:05:26.435086Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 335,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 335,
+    "total_lines_changed": 336,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}
