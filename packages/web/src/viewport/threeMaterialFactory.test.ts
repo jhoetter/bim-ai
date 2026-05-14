@@ -2,7 +2,12 @@ import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
 
-import { makeThreeMaterialForKey, MaterialTextureManager } from './threeMaterialFactory';
+import {
+  applyMaterialUvTransform,
+  makeThreeMaterialForKey,
+  materialUvTransformForExtent,
+  MaterialTextureManager,
+} from './threeMaterialFactory';
 
 function stubTextureManager(loads: string[] = []): MaterialTextureManager {
   return new MaterialTextureManager({
@@ -108,5 +113,42 @@ describe('three material factory', () => {
 
     expect(dispose).toHaveBeenCalledOnce();
     expect(textureManager.size()).toBe(0);
+  });
+
+  it('derives real-world brick repeats from material category scale', () => {
+    const transform = materialUvTransformForExtent('asset_brick_running_red', {
+      extentMm: { uMm: 4000, vMm: 3000 },
+    });
+
+    expect(transform?.repeat?.u).toBeCloseTo(4000 / 215);
+    expect(transform?.repeat?.v).toBeCloseTo(3000 / 75);
+    expect(transform?.rotationRad).toBe(0);
+  });
+
+  it('applies explicit project uv scale, offset, and rotation to textures', () => {
+    const projectMaterial: Extract<Element, { kind: 'material' }> = {
+      kind: 'material',
+      id: 'mat-project-tile',
+      name: 'Project Tile',
+      category: 'stone',
+      appearance: {
+        baseColor: '#bbbbbb',
+        uvScaleMm: { uMm: 300, vMm: 600 },
+        uvOffsetMm: { uMm: 150, vMm: 300 },
+        uvRotationDeg: 90,
+      },
+    };
+    const transform = materialUvTransformForExtent(projectMaterial.id, {
+      elementsById: { [projectMaterial.id]: projectMaterial },
+      extentMm: { uMm: 1200, vMm: 1800 },
+    });
+    const texture = applyMaterialUvTransform(new THREE.Texture(), transform);
+
+    expect(transform?.repeat).toEqual({ u: 4, v: 3 });
+    expect(texture.repeat.x).toBe(4);
+    expect(texture.repeat.y).toBe(3);
+    expect(texture.offset.x).toBe(0.5);
+    expect(texture.offset.y).toBe(0.5);
+    expect(texture.rotation).toBeCloseTo(Math.PI / 2);
   });
 });

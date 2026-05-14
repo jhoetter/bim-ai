@@ -3149,6 +3149,8 @@ class MaterialElem(BaseModel):
     height_map_id: str | None = Field(default=None, alias="heightMapId")
     uv_scale_mm: dict | None = Field(default=None, alias="uvScaleMm")
     uv_rotation_deg: float | None = Field(default=None, alias="uvRotationDeg")
+    uv_offset_mm: dict | None = Field(default=None, alias="uvOffsetMm")
+    projection: str | None = None
     hatch_pattern_id: str | None = Field(default=None, alias="hatchPatternId")
 
 

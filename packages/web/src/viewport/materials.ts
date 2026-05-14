@@ -282,6 +282,14 @@ export type MaterialCategoryKind =
   | 'placeholder'
   | 'air';
 
+export type MaterialProjectionKind =
+  | 'box'
+  | 'wall-face'
+  | 'planar-xz'
+  | 'planar-xy'
+  | 'cylindrical'
+  | 'generated';
+
 export interface MaterialPbrSpec {
   /** Stable lookup key — matches `materialKey` on element shapes. */
   key: string;
@@ -304,6 +312,14 @@ export interface MaterialPbrSpec {
   bumpMapUrl?: string;
   /** Optional high-detail height/displacement map texture. */
   heightMapUrl?: string;
+  /** Real-world texture tile size in millimetres. */
+  uvScaleMm?: { uMm: number; vMm: number };
+  /** Texture rotation applied after projection. */
+  uvRotationDeg?: number;
+  /** Real-world texture offset in millimetres. */
+  uvOffsetMm?: { uMm: number; vMm: number };
+  /** Preferred projection basis for generated UVs and texture repeats. */
+  projection?: MaterialProjectionKind;
   /** Approximate appearance reflectance for browser editing/readback. */
   reflectance?: number;
   /** Optional plan/section hatch pattern label. */
@@ -429,6 +445,10 @@ function materialElementToPbrSpec(material: MaterialElem): MaterialPbrSpec {
     metalnessMapUrl: appearance?.metallicMapId ?? undefined,
     bumpMapUrl: appearance?.heightMapId ?? material.heightMapId,
     heightMapUrl: appearance?.heightMapId ?? material.heightMapId,
+    uvScaleMm: appearance?.uvScaleMm ?? material.uvScaleMm,
+    uvRotationDeg: appearance?.uvRotationDeg ?? material.uvRotationDeg,
+    uvOffsetMm: appearance?.uvOffsetMm,
+    projection: appearance?.projection,
     reflectance: appearance?.reflectance,
     hatchPattern: material.hatchPatternId,
     graphics: {

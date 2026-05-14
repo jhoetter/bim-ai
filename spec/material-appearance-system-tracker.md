@@ -69,7 +69,7 @@ The material assignment model should support:
 | ----------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------- | -------- | ----------- |
 | MAT-GAP-001 | Registry and first-class `material` elements are not unified.                 | Project-authored materials cannot fully behave like built-ins. | P0       | Done        |
 | MAT-GAP-002 | General texture map loading is missing.                                       | Materials look like flat colors.                               | P0       | Done        |
-| MAT-GAP-003 | UV scale/rotation/offset is not applied consistently.                         | Brick/tile/wood textures cannot be dimensionally credible.     | P0       | Open        |
+| MAT-GAP-003 | UV scale/rotation/offset is not applied consistently.                         | Brick/tile/wood textures cannot be dimensionally credible.     | P0       | Done        |
 | MAT-GAP-004 | Normal/bump/height relief is metadata only.                                   | Brick, stone, concrete, wood grain lack surface relief.        | P0       | Done        |
 | MAT-GAP-005 | Plan/section surface and cut patterns are not material-driven.                | Architectural drafting views do not match material identity.   | P0       | Open        |
 | MAT-GAP-006 | Material browser edits assignment, but not appearance/graphics assets.        | Users cannot tune material behavior after assignment.          | P1       | Open        |
@@ -206,7 +206,7 @@ Evidence (2026-05-14):
 ### WP-MAT-03 — UV Mapping And Texture Transform Pipeline
 
 - Priority: `P0`
-- Status: `Open`
+- Status: `Done`
 - Covers: `MAT-GAP-003`
 - Goal: make texture scale and orientation dimensionally credible across walls, floors, roofs, openings, columns, beams, sweeps, and masses.
 - Source ownership:
@@ -241,6 +241,17 @@ Evidence (2026-05-14):
   - Floor UV test with a rectangular slab and tile scale.
   - Sweep UV test asserting U increases monotonically along path.
   - Visual Playwright screenshot for brick wall texture alignment on two perpendicular walls.
+
+Evidence (2026-05-14):
+
+- Extended material appearance metadata with `projection` and flat material `uvOffsetMm` / `projection` fields across core TypeScript, Python schema, and web material specs.
+- Added `materialUvTransformForExtent()` and `applyMaterialUvTransform()` in `threeMaterialFactory.ts`.
+- Added category defaults for real-world texture scale, including 215 mm x 75 mm brick modules, timber plank scale, stone, concrete/render, and standing-seam metal.
+- Passed per-element real extents into factory UV transforms for walls, sloped/recessed walls, floors, roofs, and sweeps.
+- Added unit coverage for brick repeat derivation and project material UV scale/offset/rotation application.
+- Verification:
+  - `pnpm --filter @bim-ai/web exec vitest run src/viewport/threeMaterialFactory.test.ts src/viewport/materials.test.ts src/viewport/sweepMesh.test.ts`
+  - `pnpm --filter @bim-ai/web typecheck`
 
 ### WP-MAT-04 — Procedural Material Patterns For Offline/Generated Assets
 

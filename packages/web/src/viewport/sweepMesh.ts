@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
 import { type ViewportPaintBundle } from './materials';
 import { addEdges, categoryColorOr } from './sceneHelpers';
-import { makeThreeMaterialForKey } from './threeMaterialFactory';
+import { makeThreeMaterialForKey, materialUvTransformForExtent } from './threeMaterialFactory';
 
 function elevationMForLevel(levelId: string, elementsById: Record<string, Element>): number {
   const lvl = elementsById[levelId];
@@ -11,6 +11,31 @@ function elevationMForLevel(levelId: string, elementsById: Record<string, Elemen
 }
 
 type SweepElem = Extract<Element, { kind: 'sweep' }>;
+
+function sweepPathLengthMm(pathMm: SweepElem['pathMm']): number {
+  let length = 0;
+  for (let i = 1; i < pathMm.length; i++) {
+    const prev = pathMm[i - 1]!;
+    const curr = pathMm[i]!;
+    length += Math.hypot(
+      curr.xMm - prev.xMm,
+      curr.yMm - prev.yMm,
+      (curr.zMm ?? 0) - (prev.zMm ?? 0),
+    );
+  }
+  return Math.max(1, length);
+}
+
+function sweepProfileExtentMm(profileMm: SweepElem['profileMm']): number {
+  if (profileMm.length < 2) return 1000;
+  let minV = Infinity;
+  let maxV = -Infinity;
+  for (const point of profileMm) {
+    minV = Math.min(minV, point.vMm);
+    maxV = Math.max(maxV, point.vMm);
+  }
+  return Math.max(1, maxV - minV);
+}
 
 /**
  * KRN-15 — build a swept-solid mesh by extruding a closed 2D profile
@@ -306,6 +331,13 @@ export function makeSweepMesh(
   const material = makeThreeMaterialForKey(sweep.materialKey ?? null, {
     elementsById,
     usage: 'generic',
+    uvTransform: materialUvTransformForExtent(sweep.materialKey ?? null, {
+      elementsById,
+      extentMm: {
+        uMm: sweepPathLengthMm(sweep.pathMm),
+        vMm: sweepProfileExtentMm(sweep.profileMm),
+      },
+    }),
     fallbackColor: categoryColorOr(paint, 'wall'),
     fallbackRoughness: paint?.categories.wall.roughness ?? 0.7,
     fallbackMetalness: paint?.categories.wall.metalness ?? 0,

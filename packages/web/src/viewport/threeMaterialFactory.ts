@@ -50,6 +50,11 @@ export type ThreeMaterialFactoryOptions = {
   textureManager?: MaterialTextureManager;
 };
 
+export type MaterialUvExtent = {
+  uMm: number;
+  vMm: number;
+};
+
 type LegacyFactoryOptions = {
   fallbackRoughness?: number;
   fallbackMetalness?: number;
@@ -73,6 +78,66 @@ function stableTransformKey(transform: MaterialUvTransform | undefined): string 
 function defaultAssetUrlResolver(assetIdOrUrl: string): string {
   if (/^(https?:|data:|blob:|\/)/.test(assetIdOrUrl)) return assetIdOrUrl;
   return `/materials/${assetIdOrUrl}`;
+}
+
+function defaultUvScaleFor(spec: MaterialPbrSpec | null): MaterialUvExtent | null {
+  switch (spec?.category) {
+    case 'brick':
+      return { uMm: 215, vMm: 75 };
+    case 'timber':
+      return { uMm: 1200, vMm: 180 };
+    case 'stone':
+      return { uMm: 600, vMm: 300 };
+    case 'metal_roof':
+      return { uMm: 600, vMm: 1000 };
+    case 'concrete':
+    case 'plaster':
+    case 'render':
+      return { uMm: 1000, vMm: 1000 };
+    default:
+      return spec?.uvScaleMm ?? null;
+  }
+}
+
+export function materialUvTransformForExtent(
+  materialKey: string | null | undefined,
+  options: {
+    elementsById?: Record<string, Element>;
+    extentMm: MaterialUvExtent;
+  },
+): MaterialUvTransform | undefined {
+  const spec = resolveMaterial(materialKey, options.elementsById);
+  const scale = spec?.uvScaleMm ?? defaultUvScaleFor(spec);
+  if (!scale || scale.uMm <= 0 || scale.vMm <= 0) return undefined;
+  return {
+    repeat: {
+      u: Math.max(1e-6, options.extentMm.uMm / scale.uMm),
+      v: Math.max(1e-6, options.extentMm.vMm / scale.vMm),
+    },
+    offset: spec?.uvOffsetMm
+      ? {
+          u: spec.uvOffsetMm.uMm / scale.uMm,
+          v: spec.uvOffsetMm.vMm / scale.vMm,
+        }
+      : undefined,
+    rotationRad:
+      typeof spec?.uvRotationDeg === 'number' ? THREE.MathUtils.degToRad(spec.uvRotationDeg) : 0,
+  };
+}
+
+export function applyMaterialUvTransform(
+  texture: THREE.Texture,
+  transform?: MaterialUvTransform,
+): THREE.Texture {
+  texture.wrapS = transform?.wrapS ?? THREE.RepeatWrapping;
+  texture.wrapT = transform?.wrapT ?? THREE.RepeatWrapping;
+  if (transform?.repeat) texture.repeat.set(transform.repeat.u, transform.repeat.v);
+  if (transform?.offset) texture.offset.set(transform.offset.u, transform.offset.v);
+  if (typeof transform?.rotationRad === 'number') {
+    texture.center.set(0.5, 0.5);
+    texture.rotation = transform.rotationRad;
+  }
+  return texture;
 }
 
 export class MaterialTextureManager {
@@ -101,15 +166,8 @@ export class MaterialTextureManager {
     const texture = this.loader.load(url);
     texture.name = assetIdOrUrl;
     texture.colorSpace = kind === 'albedo' ? THREE.SRGBColorSpace : THREE.NoColorSpace;
-    texture.wrapS = transform?.wrapS ?? THREE.RepeatWrapping;
-    texture.wrapT = transform?.wrapT ?? THREE.RepeatWrapping;
+    applyMaterialUvTransform(texture, transform);
     texture.anisotropy = this.maxAnisotropy;
-    if (transform?.repeat) texture.repeat.set(transform.repeat.u, transform.repeat.v);
-    if (transform?.offset) texture.offset.set(transform.offset.u, transform.offset.v);
-    if (typeof transform?.rotationRad === 'number') {
-      texture.center.set(0.5, 0.5);
-      texture.rotation = transform.rotationRad;
-    }
     this.cache.set(key, texture);
     return texture;
   }

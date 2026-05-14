@@ -3047,6 +3047,7 @@ export type MaterialAppearanceAsset = {
   uvScaleMm?: { uMm: number; vMm: number };
   uvRotationDeg?: number;
   uvOffsetMm?: { uMm: number; vMm: number };
+  projection?: 'box' | 'wall-face' | 'planar-xz' | 'planar-xy' | 'cylindrical' | 'generated';
 };
 
 export type MaterialPhysicalAsset = {
@@ -3081,6 +3082,8 @@ export type MaterialElem = {
   heightMapId?: string;
   uvScaleMm?: { uMm: number; vMm: number };
   uvRotationDeg?: number;
+  uvOffsetMm?: { uMm: number; vMm: number };
+  projection?: 'box' | 'wall-face' | 'planar-xz' | 'planar-xy' | 'cylindrical' | 'generated';
   hatchPatternId?: string;
 };
 

@@ -20,7 +20,7 @@ import {
 import type { FamilyDefinition } from '../families/types';
 import { getBuiltInWallType, type WallTypeAssembly } from '../families/wallTypeCatalog';
 import { isStandingSeamMetalKey, resolveMaterial, type ViewportPaintBundle } from './materials';
-import { makeThreeMaterialForKey } from './threeMaterialFactory';
+import { makeThreeMaterialForKey, materialUvTransformForExtent } from './threeMaterialFactory';
 import { categoryColorOr, addEdges, readToken } from './sceneHelpers';
 import { roofHeightAtPoint } from './roofHeightSampler';
 import { makeLayeredWallMesh } from './meshBuilders.layeredWall';
@@ -204,6 +204,27 @@ export function wallVerticalSpanM(
   return { yBase, height: THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40) };
 }
 
+function floorUvExtentMm(boundary: Array<{ xMm: number; yMm: number }>): {
+  uMm: number;
+  vMm: number;
+} {
+  if (boundary.length < 2) return { uMm: 1000, vMm: 1000 };
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const point of boundary) {
+    minX = Math.min(minX, point.xMm);
+    maxX = Math.max(maxX, point.xMm);
+    minY = Math.min(minY, point.yMm);
+    maxY = Math.max(maxY, point.yMm);
+  }
+  return {
+    uMm: Math.max(1, maxX - minX),
+    vMm: Math.max(1, maxY - minY),
+  };
+}
+
 function makeCurvedWallMesh(
   wall: WallElem,
   elevM: number,
@@ -260,6 +281,10 @@ function makeCurvedWallMesh(
     curve.kind === 'arc'
       ? arcPoints(Math.max(0.001, curve.radiusMm / 1000 + locFrac * thick - thick / 2))
       : bezierPoints(locFrac * thick - thick / 2);
+  const uvLengthM = outer.slice(1).reduce((sum, point, index) => {
+    const prev = outer[index]!;
+    return sum + Math.hypot(point.x - prev.x, point.y - prev.y);
+  }, 0);
 
   const shape = new THREE.Shape();
   const first = outer[0]!;
@@ -281,6 +306,10 @@ function makeCurvedWallMesh(
     makeThreeMaterialForKey(wall.materialKey, {
       elementsById,
       usage: 'wallExterior',
+      uvTransform: materialUvTransformForExtent(wall.materialKey, {
+        elementsById,
+        extentMm: { uMm: Math.max(1, uvLengthM * 1000), vMm: height * 1000 },
+      }),
       fallbackColor:
         wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
           ? '#f4f4f0'
@@ -425,6 +454,10 @@ export function makeFloorSlabMesh(
     makeThreeMaterialForKey(floorMaterialKey, {
       elementsById,
       usage: 'floorTop',
+      uvTransform: materialUvTransformForExtent(floorMaterialKey, {
+        elementsById,
+        extentMm: floorUvExtentMm(boundary),
+      }),
       fallbackColor: categoryColorOr(paint, 'floor'),
       fallbackRoughness: paint?.categories.floor.roughness ?? 0.9,
       fallbackMetalness: 0,
@@ -1563,6 +1596,13 @@ export function makeRoofMassMesh(
     makeThreeMaterialForKey(roof.materialKey, {
       elementsById,
       usage: 'roofTop',
+      uvTransform: materialUvTransformForExtent(roof.materialKey, {
+        elementsById,
+        extentMm: {
+          uMm: Math.max(b.maxX - b.minX, b.maxZ - b.minZ) * 1000,
+          vMm: Math.min(b.maxX - b.minX, b.maxZ - b.minZ) * 1000,
+        },
+      }),
       fallbackColor:
         roof.materialKey ??
         (roof.roofGeometryMode === 'flat' ? '#d8d8d4' : categoryColorOr(paint, 'roof')),
@@ -2021,12 +2061,17 @@ export function makeSlopedWallMesh(
     const roofY = roofHeightAtPoint(roof, elementsById, xMm, zMm);
     topHeightsRelM.push(Math.max(0.001, roofY - yBase));
   }
+  const maxTopHeightM = Math.max(...topHeightsRelM);
 
   const geom = buildSlopedSegmentGeometry(lenM, thick, topHeightsRelM);
 
   const mat = makeThreeMaterialForKey(wall.materialKey, {
     elementsById,
     usage: 'wallExterior',
+    uvTransform: materialUvTransformForExtent(wall.materialKey, {
+      elementsById,
+      extentMm: { uMm: lenM * 1000, vMm: maxTopHeightM * 1000 },
+    }),
     fallbackColor:
       wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
         ? '#f4f4f0'
@@ -2150,10 +2195,15 @@ export function makeRecessedWallMesh(
   const baseOff = (wall.baseConstraintOffsetMm ?? 0) / 1000;
   const yBase = elevM + baseOff;
   const height = THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40);
+  const wallLenM = Math.hypot(wall.end.xMm - wall.start.xMm, wall.end.yMm - wall.start.yMm) / 1000;
 
   const mat = makeThreeMaterialForKey(wall.materialKey, {
     elementsById,
     usage: 'wallExterior',
+    uvTransform: materialUvTransformForExtent(wall.materialKey, {
+      elementsById,
+      extentMm: { uMm: wallLenM * 1000, vMm: height * 1000 },
+    }),
     fallbackColor:
       wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
         ? '#f4f4f0'
@@ -2187,7 +2237,6 @@ export function makeRecessedWallMesh(
   // spans (where the wall plane has stepped back). Each becomes its own
   // axis-aligned box at the wall's yaw rotation.
   const yaw = yawForPlanSegment(wall.end.xMm - wall.start.xMm, wall.end.yMm - wall.start.yMm);
-  const wallLenM = Math.hypot(wall.end.xMm - wall.start.xMm, wall.end.yMm - wall.start.yMm) / 1000;
   const wallCx = (wall.start.xMm + wall.end.xMm) / 2 / 1000;
   const wallCz = (wall.start.yMm + wall.end.yMm) / 2 / 1000;
 
@@ -2332,6 +2381,10 @@ export function makeWallMesh(
     makeThreeMaterialForKey(wall.materialKey, {
       elementsById,
       usage: 'wallExterior',
+      uvTransform: materialUvTransformForExtent(wall.materialKey, {
+        elementsById,
+        extentMm: { uMm: len * 1000, vMm: height * 1000 },
+      }),
       fallbackColor:
         wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
           ? '#f4f4f0'
