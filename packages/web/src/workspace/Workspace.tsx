@@ -626,7 +626,7 @@ function LoadingSpinner({ className = 'text-accent' }: { className?: string }): 
     <span
       aria-hidden="true"
       className={[
-        'inline-block h-[13px] w-[13px] shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent',
+        'inline-block h-[13px] w-[13px] shrink-0 rounded-full border-2 border-current border-t-transparent motion-safe:animate-spin motion-safe:[animation-duration:650ms]',
         className,
       ].join(' ')}
     />
@@ -883,6 +883,7 @@ export function Workspace(): JSX.Element {
   });
   const [panePlanToolsById, setPanePlanToolsById] = useState<Record<string, PlanTool>>({});
   const previousFocusedPaneLeafIdRef = useRef(paneLayout.focusedLeafId);
+  const loadingTransitionSeqRef = useRef(0);
 
   const markCompositionLoading = useCallback((id: string): void => {
     if (loadingCompositionTimerRef.current) {
@@ -903,6 +904,20 @@ export function Workspace(): JSX.Element {
     },
     [],
   );
+
+  const runAfterLoadingPaint = useCallback((action: () => void): void => {
+    const seq = loadingTransitionSeqRef.current + 1;
+    loadingTransitionSeqRef.current = seq;
+    const run = (): void => {
+      if (loadingTransitionSeqRef.current !== seq) return;
+      action();
+    };
+    if (import.meta.env.MODE === 'test' || typeof window === 'undefined') {
+      run();
+      return;
+    }
+    window.setTimeout(run, 32);
+  }, []);
 
   const setPanePlanTool = useCallback(
     (leafId: string, tool: PlanTool): void => {
@@ -995,73 +1010,85 @@ export function Workspace(): JSX.Element {
 
   const handleTabActivate = useCallback(
     (id: string) => {
-      let pendingPlanCamera: ViewportSnapshot['planCamera'] | undefined;
-
-      setTabsState((s) => {
-        if (s.activeId === id) return s;
-        // Snapshot the outgoing tab's viewport state so it can be restored
-        // when the user comes back. T-07.
-        let snapshotted = s;
-        if (s.activeId) {
-          const outgoing = s.tabs.find((x) => x.id === s.activeId);
-          if (outgoing) {
-            if (outgoing.kind === '3d') {
-              const pose = useBimStore.getState().orbitCameraPoseMm;
-              if (pose) {
-                snapshotted = snapshotViewport(snapshotted, s.activeId, {
-                  ...(outgoing.viewportState ?? {}),
-                  orbitCameraPoseMm: { eyeMm: pose.position, targetMm: pose.target },
-                });
-              }
-            }
-            // Snapshot the 2D plan camera for plan tabs (T-07 follow-up).
-            if (outgoing.kind === 'plan') {
-              const planSnap = planCameraHandleRef.current?.getSnapshot();
-              if (planSnap) {
-                snapshotted = snapshotViewport(snapshotted, s.activeId, {
-                  ...(snapshotted.tabs.find((x) => x.id === s.activeId)?.viewportState ?? {}),
-                  planCamera: planSnap,
-                });
-              }
-            }
-          }
-        }
-        const next = activateTab(snapshotted, id);
-        const t = next.tabs.find((x) => x.id === id);
-        if (!t) return next;
-        // Keep the store's active plan state in sync with the active tab's target.
-        if (t.kind === 'plan' && t.targetId) {
-          const target = useBimStore.getState().elementsById[t.targetId];
-          if (target?.kind === 'plan_view') {
-            activatePlanView(target.id);
-          } else if (target?.kind === 'level') {
-            activatePlanView(undefined);
-            setActiveLevelId(target.id);
-          }
-        }
-        // Restore the incoming tab's 3D camera, if it has one.
-        const restored = t.viewportState?.orbitCameraPoseMm;
-        if (restored?.eyeMm && restored.targetMm) {
-          useBimStore.getState().setOrbitCameraFromViewpointMm({
-            position: restored.eyeMm,
-            target: restored.targetMm,
-            up: { xMm: 0, yMm: 1, zMm: 0 },
-          });
-        }
-        // Capture the incoming plan camera for post-setState apply (plan-to-plan case).
-        if (t.kind === 'plan') {
-          pendingPlanCamera = t.viewportState?.planCamera;
-        }
-        return next;
-      });
-
-      // Apply plan camera to the already-mounted PlanCanvas (plan-to-plan switch).
-      // For 3D→plan switches, initialCamera prop handles restore at mount time.
-      if (pendingPlanCamera) {
-        planCameraHandleRef.current?.applySnapshot(pendingPlanCamera);
+      if (tabsState.activeId !== id) {
+        markCompositionLoading(compositionState.activeId);
       }
+      runAfterLoadingPaint(() => {
+        let pendingPlanCamera: ViewportSnapshot['planCamera'] | undefined;
+
+        setTabsState((s) => {
+          if (s.activeId === id) return s;
+          // Snapshot the outgoing tab's viewport state so it can be restored
+          // when the user comes back. T-07.
+          let snapshotted = s;
+          if (s.activeId) {
+            const outgoing = s.tabs.find((x) => x.id === s.activeId);
+            if (outgoing) {
+              if (outgoing.kind === '3d') {
+                const pose = useBimStore.getState().orbitCameraPoseMm;
+                if (pose) {
+                  snapshotted = snapshotViewport(snapshotted, s.activeId, {
+                    ...(outgoing.viewportState ?? {}),
+                    orbitCameraPoseMm: { eyeMm: pose.position, targetMm: pose.target },
+                  });
+                }
+              }
+              // Snapshot the 2D plan camera for plan tabs (T-07 follow-up).
+              if (outgoing.kind === 'plan') {
+                const planSnap = planCameraHandleRef.current?.getSnapshot();
+                if (planSnap) {
+                  snapshotted = snapshotViewport(snapshotted, s.activeId, {
+                    ...(snapshotted.tabs.find((x) => x.id === s.activeId)?.viewportState ?? {}),
+                    planCamera: planSnap,
+                  });
+                }
+              }
+            }
+          }
+          const next = activateTab(snapshotted, id);
+          const t = next.tabs.find((x) => x.id === id);
+          if (!t) return next;
+          // Keep the store's active plan state in sync with the active tab's target.
+          if (t.kind === 'plan' && t.targetId) {
+            const target = useBimStore.getState().elementsById[t.targetId];
+            if (target?.kind === 'plan_view') {
+              activatePlanView(target.id);
+            } else if (target?.kind === 'level') {
+              activatePlanView(undefined);
+              setActiveLevelId(target.id);
+            }
+          }
+          // Restore the incoming tab's 3D camera, if it has one.
+          const restored = t.viewportState?.orbitCameraPoseMm;
+          if (restored?.eyeMm && restored.targetMm) {
+            useBimStore.getState().setOrbitCameraFromViewpointMm({
+              position: restored.eyeMm,
+              target: restored.targetMm,
+              up: { xMm: 0, yMm: 1, zMm: 0 },
+            });
+          }
+          // Capture the incoming plan camera for post-setState apply (plan-to-plan case).
+          if (t.kind === 'plan') {
+            pendingPlanCamera = t.viewportState?.planCamera;
+          }
+          return next;
+        });
+
+        // Apply plan camera to the already-mounted PlanCanvas (plan-to-plan switch).
+        // For 3D→plan switches, initialCamera prop handles restore at mount time.
+        if (pendingPlanCamera) {
+          planCameraHandleRef.current?.applySnapshot(pendingPlanCamera);
+        }
+      });
     },
-    [activatePlanView, setActiveLevelId],
+    [
+      activatePlanView,
+      compositionState.activeId,
+      markCompositionLoading,
+      runAfterLoadingPaint,
+      setActiveLevelId,
+      tabsState.activeId,
+    ],
   );
 
   const setFocusedPaneLensMode = useCallback(
@@ -1081,27 +1108,36 @@ export function Workspace(): JSX.Element {
       const partial = tabFromElement(el);
       if (!partial) return;
       markCompositionLoading(compositionState.activeId);
-      const focusedTabId = tabIdForLeaf(paneLayout.root, paneLayout.focusedLeafId);
-      const focusedTab = focusedTabId
-        ? tabsState.tabs.find((tab) => tab.id === focusedTabId)
-        : null;
-      const baseId = tabIdFor(partial.kind, partial.targetId);
-      const tabId = tabMatchesView(focusedTab, partial)
-        ? focusedTab!.id
-        : uniqueTabInstanceId(tabsState, baseId);
-      const tab: ViewTab = {
-        id: tabId,
-        kind: partial.kind,
-        targetId: partial.targetId,
-        label: partial.label,
-        lensMode: focusedTab?.lensMode ?? lensMode,
-      };
-      setTabsState((state) => upsertTabInstance(state, tab));
-      setPaneLayout((layout) =>
-        focusPane(assignTabToPane(layout, layout.focusedLeafId, tabId), layout.focusedLeafId),
-      );
+      runAfterLoadingPaint(() => {
+        const focusedTabId = tabIdForLeaf(paneLayout.root, paneLayout.focusedLeafId);
+        const focusedTab = focusedTabId
+          ? tabsState.tabs.find((tab) => tab.id === focusedTabId)
+          : null;
+        const baseId = tabIdFor(partial.kind, partial.targetId);
+        const tabId = tabMatchesView(focusedTab, partial)
+          ? focusedTab!.id
+          : uniqueTabInstanceId(tabsState, baseId);
+        const tab: ViewTab = {
+          id: tabId,
+          kind: partial.kind,
+          targetId: partial.targetId,
+          label: partial.label,
+          lensMode: focusedTab?.lensMode ?? lensMode,
+        };
+        setTabsState((state) => upsertTabInstance(state, tab));
+        setPaneLayout((layout) =>
+          focusPane(assignTabToPane(layout, layout.focusedLeafId, tabId), layout.focusedLeafId),
+        );
+      });
     },
-    [compositionState.activeId, lensMode, markCompositionLoading, paneLayout, tabsState],
+    [
+      compositionState.activeId,
+      lensMode,
+      markCompositionLoading,
+      paneLayout,
+      runAfterLoadingPaint,
+      tabsState,
+    ],
   );
 
   const activateDroppedView = useCallback(
@@ -1181,22 +1217,25 @@ export function Workspace(): JSX.Element {
       const next = compositionState.compositions.find((composition) => composition.id === id);
       if (!next || id === compositionState.activeId) return;
       markCompositionLoading(id);
-      setCompositionState((state) => ({
-        activeId: id,
-        compositions: state.compositions.map((composition) =>
-          composition.id === state.activeId
-            ? { ...composition, tabsState, paneLayout }
-            : composition,
-        ),
-      }));
-      setTabsState(next.tabsState);
-      setPaneLayout(next.paneLayout);
+      runAfterLoadingPaint(() => {
+        setCompositionState((state) => ({
+          activeId: id,
+          compositions: state.compositions.map((composition) =>
+            composition.id === state.activeId
+              ? { ...composition, tabsState, paneLayout }
+              : composition,
+          ),
+        }));
+        setTabsState(next.tabsState);
+        setPaneLayout(next.paneLayout);
+      });
     },
     [
       compositionState.activeId,
       compositionState.compositions,
       markCompositionLoading,
       paneLayout,
+      runAfterLoadingPaint,
       tabsState,
     ],
   );
