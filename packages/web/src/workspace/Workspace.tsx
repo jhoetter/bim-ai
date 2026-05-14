@@ -3537,18 +3537,6 @@ export function Workspace(): JSX.Element {
             data-testid="workspace-header"
             className="flex min-h-[44px] w-full min-w-0 items-center gap-2 bg-surface px-2"
           >
-            {!leftRailCollapsed ? (
-              <button
-                type="button"
-                data-testid="workspace-header-primary-toggle"
-                aria-label="Hide primary sidebar"
-                title="Hide primary sidebar"
-                onClick={() => setLeftRailCollapsed(true)}
-                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border border-border text-muted hover:bg-surface-2 hover:text-foreground"
-              >
-                <Icons.hamburger size={16} aria-hidden="true" />
-              </button>
-            ) : null}
             <div className="flex min-w-0 flex-1 flex-col">
               <CompositionBar
                 compositions={compositionState.compositions}
