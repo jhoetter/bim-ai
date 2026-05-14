@@ -54,7 +54,44 @@ from bim_ai.engine import (
     new_id,
     parse_plan_category_graphics_property_json,
 )
-from bim_ai.elements import ProjectBasePointElem, SurveyPointElem, Vec3Mm
+from bim_ai.elements import (
+    CircularityProperties,
+    MaterialElem,
+    MaterialImpactProperties,
+    ProjectBasePointElem,
+    SurveyPointElem,
+    Vec3Mm,
+)
+
+
+def _material_slots_val(v: object) -> dict[str, str | None] | None:
+    if v in (None, ""):
+        return None
+    if not isinstance(v, dict):
+        raise ValueError("materialSlots must be a JSON object or empty")
+    out: dict[str, str | None] = {}
+    for raw_key, raw_value in v.items():
+        key = str(raw_key).strip()
+        if not key:
+            continue
+        out[key] = str(raw_value).strip() if raw_value is not None else None
+    return out
+
+
+def _json_object_or_empty(v: object, *, field_name: str) -> dict | None:
+    if v in (None, ""):
+        return None
+    if isinstance(v, dict):
+        return dict(v)
+    if isinstance(v, str):
+        try:
+            parsed = json.loads(v)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"{field_name} must be a JSON object or empty") from exc
+        if not isinstance(parsed, dict):
+            raise ValueError(f"{field_name} must decode to an object")
+        return parsed
+    raise ValueError(f"{field_name} must be a JSON object or empty")
 
 
 def _material_slots_val(v: object) -> dict[str, str | None] | None:
@@ -94,6 +131,15 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                 els[cmd.element_id] = el.model_copy(update={"title": cmd.value})
             elif cmd.key == "name" and hasattr(el, "name"):
                 els[cmd.element_id] = el.model_copy(update={"name": cmd.value})
+            elif cmd.key == "circularity" and hasattr(el, "circularity"):
+                raw_circularity = _json_object_or_empty(cmd.value, field_name="circularity")
+                els[cmd.element_id] = el.model_copy(
+                    update={
+                        "circularity": CircularityProperties.model_validate(raw_circularity)
+                        if raw_circularity is not None
+                        else None
+                    }
+                )
             elif cmd.key == "programmeCode" and isinstance(el, RoomElem):
                 els[cmd.element_id] = el.model_copy(update={"programme_code": cmd.value})
             elif cmd.key == "department" and isinstance(el, RoomElem):
@@ -681,6 +727,26 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     els[cmd.element_id] = el.model_copy(update={"roof_geometry_mode": mode})
                 else:
                     raise ValueError("roof updates: key=roofTypeId | roofGeometryMode | name")
+            elif isinstance(el, MaterialElem) and cmd.key == "sustainability":
+                raw_sustainability = _json_object_or_empty(cmd.value, field_name="sustainability")
+                els[cmd.element_id] = el.model_copy(
+                    update={
+                        "sustainability": MaterialImpactProperties.model_validate(
+                            raw_sustainability
+                        )
+                        if raw_sustainability is not None
+                        else None
+                    }
+                )
+            elif cmd.key == "circularity" and hasattr(el, "circularity"):
+                raw_circularity = _json_object_or_empty(cmd.value, field_name="circularity")
+                els[cmd.element_id] = el.model_copy(
+                    update={
+                        "circularity": CircularityProperties.model_validate(raw_circularity)
+                        if raw_circularity is not None
+                        else None
+                    }
+                )
             elif cmd.key == "discipline" and hasattr(el, "discipline"):
                 d = cmd.value.strip() if isinstance(cmd.value, str) else ""
                 if d not in {"arch", "struct", "mep", ""}:

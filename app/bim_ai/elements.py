@@ -133,12 +133,30 @@ DEFAULT_DISCIPLINE_BY_KIND: dict[str, DisciplineTag] = {
     "foundation": "struct",
     "duct": "mep",
     "pipe": "mep",
+    "cable_tray": "mep",
+    "mep_equipment": "mep",
     "fixture": "mep",
+    "mep_terminal": "mep",
+    "mep_opening_request": "mep",
 }
 
 WallLayerFunction = Literal["structure", "insulation", "finish"]
 WallBasisLine = Literal["center", "face_interior", "face_exterior"]
-WallStructuralRole = Literal["unknown", "load_bearing", "non_load_bearing"]
+StructuralRole = Literal[
+    "unknown",
+    "load_bearing",
+    "non_load_bearing",
+    "bearing_wall",
+    "shear_wall",
+    "slab",
+    "beam",
+    "column",
+    "foundation",
+    "brace",
+]
+WallStructuralRole = StructuralRole
+StructuralMaterial = Literal["concrete", "steel", "timber", "masonry", "composite", "other"]
+StructuralAnalysisStatus = Literal["not_modelled", "not_modeled", "ready_for_export", "needs_review"]
 ThermalEnvelopeClassification = Literal[
     "exterior_wall_outside_air",
     "wall_against_ground",
@@ -320,6 +338,42 @@ class MaterialFaceOverride(BaseModel):
     uv_offset_mm: dict | None = Field(default=None, alias="uvOffsetMm")
 
 
+class MaterialImpactProperties(BaseModel):
+    """Source-backed lifecycle impact data for a shared material record."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    epd_reference: str | None = Field(default=None, alias="epdReference")
+    epd_source_url: str | None = Field(default=None, alias="epdSourceUrl")
+    gwp_per_unit: float | None = Field(default=None, alias="gwpPerUnit")
+    gwp_unit: Literal[
+        "kgco2e_per_m3",
+        "kgco2e_per_m2",
+        "kgco2e_per_kg",
+        "kgco2e_per_unit",
+    ] | None = Field(default=None, alias="gwpUnit")
+    biogenic_carbon_notes: str | None = Field(default=None, alias="biogenicCarbonNotes")
+    recycled_content_percent: float | None = Field(
+        default=None, ge=0, le=100, alias="recycledContentPercent"
+    )
+    reuse_potential: str | None = Field(default=None, alias="reusePotential")
+    service_life_years: float | None = Field(default=None, gt=0, alias="serviceLifeYears")
+    end_of_life_scenario: str | None = Field(default=None, alias="endOfLifeScenario")
+    data_quality_level: Literal["verified_epd", "manufacturer", "generic", "estimated"] | None = (
+        Field(default=None, alias="dataQualityLevel")
+    )
+
+
+class CircularityProperties(BaseModel):
+    """Reusable circularity metadata for components and material passports."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    reused_component: bool = Field(default=False, alias="reusedComponent")
+    demountability: Literal["unknown", "low", "medium", "high"] = "unknown"
+    recyclability: Literal["unknown", "low", "medium", "high"] = "unknown"
+    material_passport_notes: str | None = Field(default=None, alias="materialPassportNotes")
+    hazardous_material_warning: str | None = Field(default=None, alias="hazardousMaterialWarning")
+
+
 class WallTypeElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["wall_type"] = "wall_type"
@@ -468,11 +522,18 @@ class WallElem(BaseModel):
     )
     load_bearing: bool | None = Field(default=None, alias="loadBearing")
     structural_role: WallStructuralRole = Field(default="unknown", alias="structuralRole")
+    structural_material: StructuralMaterial | str | None = Field(
+        default=None, alias="structuralMaterial"
+    )
     analytical_participation: bool = Field(default=False, alias="analyticalParticipation")
+    analysis_status: StructuralAnalysisStatus = Field(
+        default="not_modeled", alias="analysisStatus"
+    )
     structural_material_key: str | None = Field(default=None, alias="structuralMaterialKey")
     structural_intent_confidence: float | None = Field(
         default=None, alias="structuralIntentConfidence", ge=0, le=1
     )
+    fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
     # IFC-04: optional OmniClass / Uniclass / NSCC code; emitted via
     # IfcClassificationReference when set.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
@@ -485,6 +546,7 @@ class WallElem(BaseModel):
     )
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
+    circularity: CircularityProperties | None = None
     curtain_wall_v_count: int | None = Field(default=None, alias="curtainWallVCount")
     curtain_wall_h_count: int | None = Field(default=None, alias="curtainWallHCount")
     curtain_panel_overrides: dict[str, CurtainPanelOverride] | None = Field(
@@ -498,6 +560,7 @@ class WallElem(BaseModel):
     option_set_id: str | None = Field(default=None, alias="optionSetId")
     option_id: str | None = Field(default=None, alias="optionId")
     discipline: DisciplineTag | None = Field(default=None)
+    circularity: CircularityProperties | None = None
     props: dict[str, Any] | None = Field(default=None)
     thermal_classification: ThermalEnvelopeClassification | None = Field(
         default=None, alias="thermalClassification"
@@ -565,6 +628,7 @@ class DoorElem(BaseModel):
     option_set_id: str | None = Field(default=None, alias="optionSetId")
     option_id: str | None = Field(default=None, alias="optionId")
     discipline: DisciplineTag | None = Field(default=None)
+    circularity: CircularityProperties | None = None
     props: dict[str, Any] | None = Field(default=None)
     thermal_classification: ThermalEnvelopeClassification | None = Field(
         default=None, alias="thermalClassification"
@@ -684,6 +748,16 @@ class RoomElem(BaseModel):
     function_label: str | None = Field(default=None, alias="functionLabel")
     finish_set: str | None = Field(default=None, alias="finishSet")
     target_area_m2: float | None = Field(default=None, alias="targetAreaM2")
+    ventilation_zone: str | None = Field(default=None, alias="ventilationZone")
+    heating_cooling_zone: str | None = Field(default=None, alias="heatingCoolingZone")
+    design_air_change_rate: float | None = Field(default=None, alias="designAirChangeRate")
+    fixture_equipment_loads: dict[str, Any] | None = Field(
+        default=None, alias="fixtureEquipmentLoads"
+    )
+    electrical_load_summary: dict[str, Any] | None = Field(
+        default=None, alias="electricalLoadSummary"
+    )
+    service_requirements: list[str] = Field(default_factory=list, alias="serviceRequirements")
     room_fill_override_hex: str | None = Field(default=None, alias="roomFillOverrideHex")
     room_fill_pattern_override: (
         Literal["solid", "hatch_45", "hatch_90", "crosshatch", "dots"] | None
@@ -1174,6 +1248,15 @@ class FloorElem(BaseModel):
     floor_type_id: str | None = Field(default=None, alias="floorTypeId")
     insulation_extension_mm: float = Field(default=0, alias="insulationExtensionMm")
     room_bounded: bool = Field(default=False, alias="roomBounded")
+    load_bearing: bool | None = Field(default=None, alias="loadBearing")
+    structural_role: StructuralRole = Field(default="slab", alias="structuralRole")
+    structural_material: StructuralMaterial | str | None = Field(
+        default=None, alias="structuralMaterial"
+    )
+    analysis_status: StructuralAnalysisStatus = Field(
+        default="not_modeled", alias="analysisStatus"
+    )
+    fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
     # IFC-04: optional classification code emitted as IfcClassificationReference.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)
@@ -1190,6 +1273,7 @@ class FloorElem(BaseModel):
     # TOP-V3-01: elevation inherited from a toposolid heightmap at floor centroid (mm).
     toposolid_elevation_mm: float | None = Field(default=None, alias="toposolidElevationMm")
     discipline: DisciplineTag | None = Field(default=None)
+    circularity: CircularityProperties | None = None
     props: dict[str, Any] | None = Field(default=None)
     thermal_classification: ThermalEnvelopeClassification | None = Field(
         default=None, alias="thermalClassification"
@@ -1216,6 +1300,15 @@ class RoofElem(BaseModel):
     eave_height_right_mm: float | None = Field(default=None, alias="eaveHeightRightMm")
     roof_type_id: str | None = Field(default=None, alias="roofTypeId")
     material_key: str | None = Field(default=None, alias="materialKey")
+    load_bearing: bool | None = Field(default=None, alias="loadBearing")
+    structural_role: StructuralRole = Field(default="unknown", alias="structuralRole")
+    structural_material: StructuralMaterial | str | None = Field(
+        default=None, alias="structuralMaterial"
+    )
+    analysis_status: StructuralAnalysisStatus = Field(
+        default="not_modeled", alias="analysisStatus"
+    )
+    fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
     # IFC-04: optional classification code emitted as IfcClassificationReference.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
     pinned: bool = Field(default=False)
@@ -1230,6 +1323,7 @@ class RoofElem(BaseModel):
     option_set_id: str | None = Field(default=None, alias="optionSetId")
     option_id: str | None = Field(default=None, alias="optionId")
     discipline: DisciplineTag | None = Field(default=None)
+    circularity: CircularityProperties | None = None
     props: dict[str, Any] | None = Field(default=None)
     thermal_classification: ThermalEnvelopeClassification | None = Field(
         default=None, alias="thermalClassification"
@@ -1315,6 +1409,10 @@ class StairElem(BaseModel):
     floating_tread_depth_mm: float | None = Field(default=None, alias="floatingTreadDepthMm", gt=0)
     floating_host_wall_id: str | None = Field(default=None, alias="floatingHostWallId")
     material_slots: dict[str, str | None] | None = Field(default=None, alias="materialSlots")
+    structural_role: StructuralRole = Field(default="unknown", alias="structuralRole")
+    analysis_status: StructuralAnalysisStatus = Field(
+        default="not_modeled", alias="analysisStatus"
+    )
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
@@ -1465,6 +1563,15 @@ class SweepElem(BaseModel):
     profile_mm: list[SweepProfilePoint] = Field(alias="profileMm")
     profile_plane: SweepProfilePlane = Field(default="work_plane", alias="profilePlane")
     material_key: str | None = Field(default=None, alias="materialKey")
+    load_bearing: bool | None = Field(default=True, alias="loadBearing")
+    structural_role: StructuralRole = Field(default="column", alias="structuralRole")
+    structural_material: StructuralMaterial | str | None = Field(
+        default=None, alias="structuralMaterial"
+    )
+    analysis_status: StructuralAnalysisStatus = Field(
+        default="not_modeled", alias="analysisStatus"
+    )
+    fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
@@ -1636,6 +1743,15 @@ class Text3dElem(BaseModel):
     position_mm: Vec3Mm = Field(alias="positionMm")
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
     material_key: str | None = Field(default=None, alias="materialKey")
+    load_bearing: bool | None = Field(default=True, alias="loadBearing")
+    structural_role: StructuralRole = Field(default="beam", alias="structuralRole")
+    structural_material: StructuralMaterial | str | None = Field(
+        default=None, alias="structuralMaterial"
+    )
+    analysis_status: StructuralAnalysisStatus = Field(
+        default="not_modeled", alias="analysisStatus"
+    )
+    fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
 
 
 # --- KRN-06: Origin elements (project base point, survey point, internal origin) ---
@@ -2490,10 +2606,45 @@ class MaskingRegionElem(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# MEP elements — pipe, duct, and their legend annotations (MEP-01..04)
+# MEP elements — systems, equipment, services, requests, and legends.
 # ---------------------------------------------------------------------------
 
+MepSystemType = Literal[
+    "hvac_supply",
+    "hvac_return",
+    "heating",
+    "cooling",
+    "domestic_water",
+    "wastewater",
+    "electrical",
+    "data",
+    "fire_protection",
+    "other",
+]
+FlowDirection = Literal["supply", "return", "exhaust", "bidirectional", "none", "unknown"]
+
+
+class MepConnectorSpec(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    id: str
+    system_type: MepSystemType = Field(default="other", alias="systemType")
+    flow_direction: FlowDirection = Field(default="unknown", alias="flowDirection")
+    diameter_mm: float | None = Field(default=None, alias="diameterMm", gt=0)
+    width_mm: float | None = Field(default=None, alias="widthMm", gt=0)
+    height_mm: float | None = Field(default=None, alias="heightMm", gt=0)
+    position_mm: Vec3Mm | None = Field(default=None, alias="positionMm")
+    connected_to: str | None = Field(default=None, alias="connectedTo")
+
+
 PipeSystemType = Literal[
+    "hvac_supply",
+    "hvac_return",
+    "heating",
+    "cooling",
+    "domestic_water",
+    "wastewater",
+    "electrical",
+    "data",
     "domestic_cold_water",
     "domestic_hot_water",
     "sanitary",
@@ -2518,13 +2669,26 @@ class PipeElem(BaseModel):
     elevation_mm: float = Field(default=0.0, alias="elevationMm")
     diameter_mm: float = Field(default=25.0, alias="diameterMm", gt=0)
     system_type: PipeSystemType = Field(default="other", alias="systemType")
+    system_name: str | None = Field(default=None, alias="systemName")
+    flow_direction: FlowDirection = Field(default="unknown", alias="flowDirection")
+    insulation: str | None = Field(default=None)
+    service_level: str | None = Field(default=None, alias="serviceLevel")
+    clearance_zone: dict[str, Any] | None = Field(default=None, alias="clearanceZone")
+    maintain_access_zone: dict[str, Any] | None = Field(default=None, alias="maintainAccessZone")
+    connectors: list[MepConnectorSpec] = Field(default_factory=list)
     material_key: str | None = Field(default=None, alias="materialKey")
     colour: str | None = Field(default=None)
+    discipline: DisciplineTag | None = Field(default="mep")
     props: dict[str, Any] | None = Field(default=None)
     pinned: bool = Field(default=False)
 
 
 DuctSystemType = Literal[
+    "hvac_supply",
+    "hvac_return",
+    "heating",
+    "cooling",
+    "fire_protection",
     "supply_air",
     "return_air",
     "exhaust_air",
@@ -2549,9 +2713,135 @@ class DuctElem(BaseModel):
     height_mm: float = Field(default=200.0, alias="heightMm", gt=0)
     shape: DuctShape = Field(default="rectangular")
     system_type: DuctSystemType = Field(default="other", alias="systemType")
+    system_name: str | None = Field(default=None, alias="systemName")
+    flow_direction: FlowDirection = Field(default="unknown", alias="flowDirection")
+    insulation: str | None = Field(default=None)
+    service_level: str | None = Field(default=None, alias="serviceLevel")
+    clearance_zone: dict[str, Any] | None = Field(default=None, alias="clearanceZone")
+    maintain_access_zone: dict[str, Any] | None = Field(default=None, alias="maintainAccessZone")
+    connectors: list[MepConnectorSpec] = Field(default_factory=list)
     colour: str | None = Field(default=None)
+    discipline: DisciplineTag | None = Field(default="mep")
     props: dict[str, Any] | None = Field(default=None)
     pinned: bool = Field(default=False)
+
+
+class CableTrayElem(BaseModel):
+    """MEP — cable tray / conduit run segment."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["cable_tray"] = "cable_tray"
+    id: str
+    name: str = "Cable tray"
+    level_id: str = Field(alias="levelId")
+    start_mm: Vec2Mm = Field(alias="startMm")
+    end_mm: Vec2Mm = Field(alias="endMm")
+    elevation_mm: float = Field(default=0.0, alias="elevationMm")
+    width_mm: float = Field(default=200.0, alias="widthMm", gt=0)
+    height_mm: float = Field(default=60.0, alias="heightMm", gt=0)
+    system_type: MepSystemType = Field(default="electrical", alias="systemType")
+    system_name: str | None = Field(default=None, alias="systemName")
+    service_level: str | None = Field(default=None, alias="serviceLevel")
+    clearance_zone: dict[str, Any] | None = Field(default=None, alias="clearanceZone")
+    maintain_access_zone: dict[str, Any] | None = Field(default=None, alias="maintainAccessZone")
+    connectors: list[MepConnectorSpec] = Field(default_factory=list)
+    colour: str | None = Field(default=None)
+    discipline: DisciplineTag | None = Field(default="mep")
+    props: dict[str, Any] | None = Field(default=None)
+    pinned: bool = Field(default=False)
+
+
+class MepEquipmentElem(BaseModel):
+    """MEP — system equipment with connectors and access metadata."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["mep_equipment"] = "mep_equipment"
+    id: str
+    name: str = "MEP Equipment"
+    level_id: str = Field(alias="levelId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    elevation_mm: float = Field(default=0.0, alias="elevationMm")
+    equipment_type: str | None = Field(default=None, alias="equipmentType")
+    family_type_id: str | None = Field(default=None, alias="familyTypeId")
+    system_type: MepSystemType = Field(default="other", alias="systemType")
+    system_name: str | None = Field(default=None, alias="systemName")
+    service_level: str | None = Field(default=None, alias="serviceLevel")
+    clearance_zone: dict[str, Any] | None = Field(default=None, alias="clearanceZone")
+    maintain_access_zone: dict[str, Any] | None = Field(default=None, alias="maintainAccessZone")
+    connectors: list[MepConnectorSpec] = Field(default_factory=list)
+    electrical_load_w: float | None = Field(default=None, alias="electricalLoadW", ge=0)
+    discipline: DisciplineTag | None = Field(default="mep")
+    props: dict[str, Any] | None = Field(default=None)
+    pinned: bool = Field(default=False)
+
+
+class FixtureElem(BaseModel):
+    """MEP — plumbing/electrical/fire fixture hosted by room or level."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["fixture"] = "fixture"
+    id: str
+    name: str = "Fixture"
+    level_id: str = Field(alias="levelId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    room_id: str | None = Field(default=None, alias="roomId")
+    fixture_type: str | None = Field(default=None, alias="fixtureType")
+    system_type: MepSystemType = Field(default="domestic_water", alias="systemType")
+    system_name: str | None = Field(default=None, alias="systemName")
+    connectors: list[MepConnectorSpec] = Field(default_factory=list)
+    electrical_load_w: float | None = Field(default=None, alias="electricalLoadW", ge=0)
+    discipline: DisciplineTag | None = Field(default="mep")
+    props: dict[str, Any] | None = Field(default=None)
+    pinned: bool = Field(default=False)
+
+
+class MepTerminalElem(BaseModel):
+    """MEP — diffuser, air terminal, or service terminal."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["mep_terminal"] = "mep_terminal"
+    id: str
+    name: str = "MEP Terminal"
+    terminal_kind: Literal["diffuser", "terminal", "sprinkler", "device"] = Field(
+        default="terminal", alias="terminalKind"
+    )
+    level_id: str = Field(alias="levelId")
+    position_mm: Vec2Mm = Field(alias="positionMm")
+    room_id: str | None = Field(default=None, alias="roomId")
+    system_type: MepSystemType = Field(default="hvac_supply", alias="systemType")
+    system_name: str | None = Field(default=None, alias="systemName")
+    flow_direction: FlowDirection = Field(default="supply", alias="flowDirection")
+    service_level: str | None = Field(default=None, alias="serviceLevel")
+    connectors: list[MepConnectorSpec] = Field(default_factory=list)
+    discipline: DisciplineTag | None = Field(default="mep")
+    props: dict[str, Any] | None = Field(default=None)
+    pinned: bool = Field(default=False)
+
+
+class MepOpeningRequestElem(BaseModel):
+    """Traceable MEP penetration request against architecture/structure hosts."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["mep_opening_request"] = "mep_opening_request"
+    id: str
+    name: str = "MEP opening request"
+    host_element_id: str = Field(alias="hostElementId")
+    level_id: str | None = Field(default=None, alias="levelId")
+    requester_element_ids: list[str] = Field(default_factory=list, alias="requesterElementIds")
+    opening_kind: Literal["wall", "slab", "roof", "shaft"] = Field(
+        default="wall", alias="openingKind"
+    )
+    status: Literal["requested", "approved", "rejected", "installed"] = "requested"
+    position_mm: Vec2Mm | None = Field(default=None, alias="positionMm")
+    width_mm: float | None = Field(default=None, alias="widthMm", gt=0)
+    height_mm: float | None = Field(default=None, alias="heightMm", gt=0)
+    diameter_mm: float | None = Field(default=None, alias="diameterMm", gt=0)
+    clearance_mm: float = Field(default=50.0, alias="clearanceMm", ge=0)
+    system_type: MepSystemType = Field(default="other", alias="systemType")
+    system_name: str | None = Field(default=None, alias="systemName")
+    approval_note: str | None = Field(default=None, alias="approvalNote")
+    discipline: DisciplineTag | None = Field(default="mep")
+    props: dict[str, Any] | None = Field(default=None)
 
 
 class PipeLegendEntrySpec(BaseModel):
@@ -2812,6 +3102,15 @@ ElementKind = Literal[
     "roof_join",
     "edge_profile_run",
     "soffit",
+    "duct",
+    "pipe",
+    "cable_tray",
+    "mep_equipment",
+    "fixture",
+    "mep_terminal",
+    "mep_opening_request",
+    "pipe_legend",
+    "duct_legend",
     "view",
     "toposolid",
     "property_definition",
@@ -3339,6 +3638,8 @@ class MaterialElem(BaseModel):
     appearance: dict | None = None
     physical: dict | None = None
     thermal: dict | None = None
+    sustainability: MaterialImpactProperties | None = None
+    circularity: CircularityProperties | None = None
     albedo_color: str | None = Field(default=None, alias="albedoColor")
     albedo_map_id: str | None = Field(default=None, alias="albedoMapId")
     normal_map_id: str | None = Field(default=None, alias="normalMapId")
@@ -3711,6 +4012,11 @@ Element = Annotated[
     | BrandTemplateElem
     | PipeElem
     | DuctElem
+    | CableTrayElem
+    | MepEquipmentElem
+    | FixtureElem
+    | MepTerminalElem
+    | MepOpeningRequestElem
     | PipeLegendElem
     | DuctLegendElem
     | RadialDimensionElem

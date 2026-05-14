@@ -8,6 +8,7 @@ const LENS_CYCLE = [
   'fire-safety',
   'energy',
   'construction',
+  'sustainability',
   'all',
 ] as const satisfies readonly LensMode[];
 type LensCycleMode = (typeof LENS_CYCLE)[number];
@@ -19,6 +20,7 @@ const LENS_LABELS: Record<LensCycleMode, string> = {
   'fire-safety': 'Fire Safety',
   energy: 'Energieberatung',
   construction: 'Bauausfuehrung',
+  sustainability: 'Sustainability / LCA',
   all: 'All',
 };
 
@@ -27,8 +29,9 @@ const DISC_SOFT: Partial<Record<LensMode, string>> = {
   structure: 'var(--disc-struct-soft)',
   mep: 'var(--disc-mep-soft)',
   'fire-safety': 'color-mix(in srgb, var(--color-danger) 22%, transparent)',
-  energy: 'color-mix(in srgb, #0f766e 24%, transparent)',
+  energy: 'color-mix(in srgb, var(--color-success) 24%, transparent)',
   construction: 'color-mix(in srgb, var(--draft-construction-blue) 24%, transparent)',
+  sustainability: 'color-mix(in srgb, var(--color-success) 18%, transparent)',
 };
 
 const DISC_SOLID: Partial<Record<LensMode, string>> = {
@@ -36,8 +39,9 @@ const DISC_SOLID: Partial<Record<LensMode, string>> = {
   structure: 'var(--disc-struct)',
   mep: 'var(--disc-mep)',
   'fire-safety': 'var(--color-danger)',
-  energy: '#0f766e',
+  energy: 'var(--color-success)',
   construction: 'var(--draft-construction-blue)',
+  sustainability: 'var(--color-success)',
 };
 
 export interface LensDropdownProps {

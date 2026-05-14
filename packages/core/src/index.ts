@@ -295,6 +295,10 @@ export type ElemKind =
   | 'foundation'
   | 'duct'
   | 'pipe'
+  | 'cable_tray'
+  | 'mep_equipment'
+  | 'mep_terminal'
+  | 'mep_opening_request'
   | 'pipe_legend'
   | 'duct_legend'
   | 'fixture'
@@ -345,6 +349,10 @@ export const DEFAULT_DISCIPLINE_BY_KIND: Readonly<Partial<Record<ElemKind, Disci
   foundation: 'struct',
   duct: 'mep',
   pipe: 'mep',
+  cable_tray: 'mep',
+  mep_equipment: 'mep',
+  mep_terminal: 'mep',
+  mep_opening_request: 'mep',
   fixture: 'mep',
 } as const;
 
@@ -575,7 +583,26 @@ export type RoomColorSchemeRow = {
 };
 
 export type WallLayerFunction = 'structure' | 'insulation' | 'finish';
-export type WallStructuralRole = 'unknown' | 'load_bearing' | 'non_load_bearing';
+export type StructuralRole =
+  | 'unknown'
+  | 'load_bearing'
+  | 'non_load_bearing'
+  | 'bearing_wall'
+  | 'shear_wall'
+  | 'slab'
+  | 'beam'
+  | 'column'
+  | 'foundation'
+  | 'brace';
+export type WallStructuralRole = StructuralRole;
+export type StructuralMaterial =
+  | 'concrete'
+  | 'steel'
+  | 'timber'
+  | 'masonry'
+  | 'composite'
+  | 'other';
+export type StructuralAnalysisStatus = 'not_modeled' | 'ready_for_export' | 'needs_review';
 
 export type ThermalEnvelopeClassification =
   | 'exterior_wall_outside_air'
@@ -987,6 +1014,44 @@ export type WindowLegendView = {
   parentSheetId?: string;
 };
 
+export type MepSystemType =
+  | 'hvac_supply'
+  | 'hvac_return'
+  | 'heating'
+  | 'cooling'
+  | 'domestic_water'
+  | 'wastewater'
+  | 'electrical'
+  | 'data'
+  | 'fire_protection'
+  | 'other'
+  | string;
+
+export type MepConnectorSpec = {
+  id: string;
+  systemType?: MepSystemType;
+  flowDirection?: 'supply' | 'return' | 'exhaust' | 'bidirectional' | 'none' | 'unknown';
+  diameterMm?: number | null;
+  widthMm?: number | null;
+  heightMm?: number | null;
+  positionMm?: XYZ | null;
+  connectedTo?: string | null;
+};
+
+export type MepCommonFields = {
+  systemType?: MepSystemType;
+  systemName?: string | null;
+  flowDirection?: 'supply' | 'return' | 'exhaust' | 'bidirectional' | 'none' | 'unknown';
+  insulation?: string | null;
+  serviceLevel?: string | null;
+  clearanceZone?: Record<string, unknown> | null;
+  maintainAccessZone?: Record<string, unknown> | null;
+  connectors?: MepConnectorSpec[];
+  discipline?: DisciplineTag | null;
+  props?: Record<string, unknown>;
+  pinned?: boolean;
+};
+
 export type Element =
   | {
       kind: 'project_settings';
@@ -1069,9 +1134,12 @@ export type Element =
       faceMaterialOverrides?: MaterialFaceOverride[] | null;
       loadBearing?: boolean | null;
       structuralRole?: WallStructuralRole;
+      structuralMaterial?: StructuralMaterial | string | null;
       analyticalParticipation?: boolean;
+      analysisStatus?: StructuralAnalysisStatus;
       structuralMaterialKey?: string | null;
       structuralIntentConfidence?: number | null;
+      fireResistanceRating?: string | null;
       wallTypeId?: string | null;
       baseConstraintLevelId?: string | null;
       topConstraintLevelId?: string | null;
@@ -1259,6 +1327,12 @@ export type Element =
       functionLabel?: string | null;
       finishSet?: string | null;
       targetAreaM2?: number | null;
+      ventilationZone?: string | null;
+      heatingCoolingZone?: string | null;
+      designAirChangeRate?: number | null;
+      fixtureEquipmentLoads?: Record<string, unknown> | null;
+      electricalLoadSummary?: Record<string, unknown> | null;
+      serviceRequirements?: string[];
       volumeM3?: number | null;
       /** F-093: per-room plan fill override, matching Revit's by-element graphics override. */
       roomFillOverrideHex?: string | null;
@@ -1435,6 +1509,11 @@ export type Element =
       floorTypeId?: string | null;
       insulationExtensionMm?: number;
       roomBounded?: boolean;
+      loadBearing?: boolean | null;
+      structuralRole?: StructuralRole;
+      structuralMaterial?: StructuralMaterial | string | null;
+      analysisStatus?: StructuralAnalysisStatus;
+      fireResistanceRating?: string | null;
       worksetId?: string | null;
       /** IFC-04: optional classification code; emitted as IfcClassificationReference. */
       ifcClassificationCode?: string | null;
@@ -1478,6 +1557,11 @@ export type Element =
       eaveHeightRightMm?: number;
       roofTypeId?: string | null;
       materialKey?: string | null;
+      loadBearing?: boolean | null;
+      structuralRole?: StructuralRole;
+      structuralMaterial?: StructuralMaterial | string | null;
+      analysisStatus?: StructuralAnalysisStatus;
+      fireResistanceRating?: string | null;
       /** IFC-04: optional classification code; emitted as IfcClassificationReference. */
       ifcClassificationCode?: string | null;
       pinned?: boolean;
@@ -1588,6 +1672,8 @@ export type Element =
       handrailSupports?: HandrailSupport[];
       /** RMP-05: subcomponent materials, e.g. topRail, post, baluster, panel, cable, bracket. */
       materialSlots?: Record<string, string | null>;
+      structuralRole?: StructuralRole;
+      analysisStatus?: StructuralAnalysisStatus;
       overrideParams?: Record<string, unknown>;
       pinned?: boolean;
       phaseCreated?: string | null;
@@ -1929,6 +2015,11 @@ export type Element =
       heightMm: number;
       rotationDeg?: number;
       materialKey?: string | null;
+      loadBearing?: boolean | null;
+      structuralRole?: StructuralRole;
+      structuralMaterial?: StructuralMaterial | string | null;
+      analysisStatus?: StructuralAnalysisStatus;
+      fireResistanceRating?: string | null;
       baseConstraintOffsetMm?: number;
       topConstraintLevelId?: string | null;
       topConstraintOffsetMm?: number;
@@ -1951,6 +2042,11 @@ export type Element =
       widthMm: number;
       heightMm: number;
       materialKey?: string | null;
+      loadBearing?: boolean | null;
+      structuralRole?: StructuralRole;
+      structuralMaterial?: StructuralMaterial | string | null;
+      analysisStatus?: StructuralAnalysisStatus;
+      fireResistanceRating?: string | null;
       startColumnId?: string | null;
       endColumnId?: string | null;
       /** IFC-04: optional OmniClass / Uniclass / NSCC code emitted as IfcClassificationReference. */
@@ -2595,22 +2691,22 @@ export type Element =
   | ThermalBridgeMarkerElem
   | RenovationScenarioElem
   | BuildingServicesHandoffElem
-  | {
+  | ({
       kind: 'pipe';
       id: string;
+      name?: string;
       levelId: string;
       startMm: XY;
       endMm: XY;
       elevationMm?: number;
       diameterMm?: number;
-      systemType?: string;
       materialKey?: string | null;
       colour?: string | null;
-      pinned?: boolean;
-    }
-  | {
+    } & MepCommonFields)
+  | ({
       kind: 'duct';
       id: string;
+      name?: string;
       levelId: string;
       startMm: XY;
       endMm: XY;
@@ -2618,10 +2714,66 @@ export type Element =
       widthMm?: number;
       heightMm?: number;
       shape?: 'rectangular' | 'round' | 'oval';
-      systemType?: string;
       colour?: string | null;
-      pinned?: boolean;
-    }
+    } & MepCommonFields)
+  | ({
+      kind: 'cable_tray';
+      id: string;
+      name?: string;
+      levelId: string;
+      startMm: XY;
+      endMm: XY;
+      elevationMm?: number;
+      widthMm?: number;
+      heightMm?: number;
+      colour?: string | null;
+    } & MepCommonFields)
+  | ({
+      kind: 'mep_equipment';
+      id: string;
+      name?: string;
+      levelId: string;
+      positionMm: XY;
+      elevationMm?: number;
+      equipmentType?: string | null;
+      familyTypeId?: string | null;
+      electricalLoadW?: number | null;
+    } & MepCommonFields)
+  | ({
+      kind: 'fixture';
+      id: string;
+      name?: string;
+      levelId: string;
+      positionMm: XY;
+      roomId?: string | null;
+      fixtureType?: string | null;
+      electricalLoadW?: number | null;
+    } & MepCommonFields)
+  | ({
+      kind: 'mep_terminal';
+      id: string;
+      name?: string;
+      terminalKind?: 'diffuser' | 'terminal' | 'sprinkler' | 'device';
+      levelId: string;
+      positionMm: XY;
+      roomId?: string | null;
+    } & MepCommonFields)
+  | ({
+      kind: 'mep_opening_request';
+      id: string;
+      name?: string;
+      hostElementId: string;
+      levelId?: string | null;
+      requesterElementIds?: string[];
+      openingKind?: 'wall' | 'slab' | 'roof' | 'shaft';
+      status?: 'requested' | 'approved' | 'rejected' | 'installed';
+      positionMm?: XY | null;
+      widthMm?: number | null;
+      heightMm?: number | null;
+      diameterMm?: number | null;
+      clearanceMm?: number;
+      approvalNote?: string | null;
+    } & MepCommonFields)
   | {
       kind: 'pipe_legend';
       id: string;
@@ -2940,7 +3092,8 @@ export type LensMode =
   | 'fire-safety'
   | 'energy'
   | 'coordination'
-  | 'construction';
+  | 'construction'
+  | 'sustainability';
 
 /** DSC-V3-02 — per-view discipline lens stored on view elements. */
 export type ViewLensMode =

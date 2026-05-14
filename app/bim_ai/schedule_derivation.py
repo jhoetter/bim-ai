@@ -5,14 +5,22 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any
 
+from bim_ai.construction_lens import construction_progress_rows
+from bim_ai.cost_quantity import (
+    DEFAULT_SCENARIO_ID,
+    cost_quantity_totals,
+    derive_cost_estimate_rows,
+    derive_quantity_takeoff_rows,
+    derive_scenario_delta_rows,
+)
 from bim_ai.document import Document
 from bim_ai.elements import (
     AreaElem,
     BuildingServicesHandoffElem,
+    ConstructabilityIssueElem,
     ConstructionLogisticsElem,
     ConstructionPackageElem,
     ConstructionQaChecklistElem,
-    ConstructabilityIssueElem,
     DoorElem,
     ElevationViewElem,
     FloorElem,
@@ -36,7 +44,6 @@ from bim_ai.elements import (
     WallTypeElem,
     WindowElem,
 )
-from bim_ai.construction_lens import construction_progress_rows
 from bim_ai.energy_lens import (
     build_energy_handoff_payload,
     energy_qa_rows,
@@ -83,6 +90,7 @@ from bim_ai.schedule_sheet_export_parity import (
     build_schedule_sheet_export_parity_evidence_v1_for_schedule,
 )
 from bim_ai.stair_plan_proxy import stair_schedule_row_extensions_v1
+from bim_ai.sustainability_lca import sustainability_rows_for_category
 from bim_ai.type_material_registry import (
     family_type_display_label,
     material_display_label,
@@ -288,6 +296,29 @@ _NUMERIC_SCHEDULE_FIELDS: frozenset[str] = frozenset(
         "annualShadingFactorEstimate",
         "setpointC",
         "airChangeRate",
+        "lengthM",
+        "netAreaM2",
+        "quantity",
+        "unitRate",
+        "totalCost",
+        "scenarioCost",
+        "baselineCost",
+        "deltaCost",
+        "openingCount",
+        "layerQuantityCount",
+        "rowCount",
+        "gwpPerUnit",
+        "recycledContentPercent",
+        "serviceLifeYears",
+        "embodiedCarbonKgCO2e",
+        "embodiedCarbonIntensityKgCO2ePerM2",
+        "missingImpactLayerCount",
+        "hostCount",
+        "layerCount",
+        "materialKeyCount",
+        "scenarioDeltaKgCO2e",
+        "scenarioDeltaPercent",
+        "elementCount",
     }
 )
 
@@ -619,6 +650,18 @@ def _infer_schedule_category_from_name(name: str) -> str | None:
         return "view"
     if "plan" in lowered:
         return "plan_view"
+    if "material impact" in lowered:
+        return "material_impact"
+    if "element carbon" in lowered:
+        return "element_carbon"
+    if "assembly carbon" in lowered:
+        return "assembly_carbon"
+    if "reuse" in lowered or "circularity" in lowered or "material passport" in lowered:
+        return "circularity"
+    if "scenario impact" in lowered or "scenario comparison" in lowered:
+        return "scenario_impact_comparison"
+    if "missing epd" in lowered or "data-quality" in lowered or "data quality" in lowered:
+        return "missing_sustainability_data"
     if "assembly" in lowered or "assemblies" in lowered:
         return "material_assembly"
     if "envelope" in lowered or "thermal envelope" in lowered:
@@ -651,6 +694,12 @@ def _infer_schedule_category_from_name(name: str) -> str | None:
         return "site_logistics"
     if "qa" in lowered or "checklist" in lowered:
         return "qa_checklist"
+    if "scenario" in lowered and "delta" in lowered:
+        return "scenario_delta"
+    if "cost" in lowered or "kosten" in lowered:
+        return "cost_estimate"
+    if "quantity" in lowered or "takeoff" in lowered or "mengen" in lowered:
+        return "quantity_takeoff"
     return None
 
 
@@ -1420,6 +1469,36 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             }
             for row in energy_qa_rows(doc)
         ]
+    elif cat == "quantity_takeoff":
+        rows = derive_quantity_takeoff_rows(doc)
+
+    elif cat == "cost_estimate":
+        rows = derive_cost_estimate_rows(doc)
+
+    elif cat == "element_cost_group":
+        rows = derive_cost_estimate_rows(doc)
+
+    elif cat in {
+        "material_impact",
+        "element_carbon",
+        "assembly_carbon",
+        "circularity",
+        "scenario_impact_comparison",
+        "missing_sustainability_data",
+    }:
+        rows = sustainability_rows_for_category(doc, cat)
+
+    elif cat == "scenario_delta":
+        baseline_scenario_id = str(
+            filt.get("baselineScenarioId")
+            or filt.get("baseScenarioId")
+            or filt.get("baseline_scenario_id")
+            or DEFAULT_SCENARIO_ID
+        ).strip()
+        rows = derive_scenario_delta_rows(
+            doc,
+            baseline_scenario_id=baseline_scenario_id or DEFAULT_SCENARIO_ID,
+        )
 
     elif cat == "area":
         # KRN-08 — area schedule. Lists name + level + perimeter + computed
@@ -1747,6 +1826,32 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         "qa_checklist",
     } and leaf_rows:
         totals = {"kind": cat, "rowCount": len(leaf_rows)}
+    elif cat in {
+        "material_impact",
+        "element_carbon",
+        "assembly_carbon",
+        "circularity",
+        "scenario_impact_comparison",
+        "missing_sustainability_data",
+    } and leaf_rows:
+        totals = {
+            "kind": cat,
+            "rowCount": len(leaf_rows),
+            "embodiedCarbonKgCO2e": round(
+                sum(float(r.get("embodiedCarbonKgCO2e") or 0.0) for r in leaf_rows),
+                8,
+            ),
+        }
+        missing_count = sum(1 for r in leaf_rows if r.get("impactStatus") not in {"calculated", ""})
+        if missing_count:
+            totals["missingDataCount"] = missing_count
+    elif cat in {
+        "quantity_takeoff",
+        "cost_estimate",
+        "element_cost_group",
+        "scenario_delta",
+    } and leaf_rows:
+        totals = cost_quantity_totals(leaf_rows, kind=cat)
 
     out: dict[str, Any] = {
         "scheduleId": schedule_id,
@@ -1761,6 +1866,23 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             "sortBy": ssf,
             "sortTieBreak": "elementId",
             "supportsCsv": True,
+            **(
+                {
+                    "lensId": "cost-quantity",
+                    "traceability": "elementId/typeId/scenarioId",
+                    "snapshotKind": "exportable_cost_snapshot"
+                    if cat in {"cost_estimate", "scenario_delta"}
+                    else "model_derived_quantity_takeoff",
+                }
+                if cat
+                in {
+                    "quantity_takeoff",
+                    "cost_estimate",
+                    "element_cost_group",
+                    "scenario_delta",
+                }
+                else {}
+            ),
             **({"sortDescending": True} if sort_descending else {}),
             **({"filterEquals": filter_equals} if filter_equals else {}),
             **({"filterRules": filter_rules_norm} if filter_rules_norm else {}),
