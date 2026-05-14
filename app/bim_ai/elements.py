@@ -91,6 +91,21 @@ class EvidenceRef(BaseModel):
 
 DisciplineTag = Literal["arch", "struct", "mep"]
 LensMode = Literal["show_arch", "show_struct", "show_mep", "show_fire_safety", "show_all"]
+ConstructionProgressStatus = Literal[
+    "not_started",
+    "in_progress",
+    "installed",
+    "inspected",
+    "accepted",
+]
+ConstructionLogisticsKind = Literal[
+    "temporary_partition",
+    "scaffolding_zone",
+    "crane_lift_zone",
+    "laydown_area",
+    "access_route",
+    "site_safety_zone",
+]
 DEFAULT_DISCIPLINE_BY_KIND: dict[str, DisciplineTag] = {
     "beam": "struct",
     "column": "struct",
@@ -2252,6 +2267,74 @@ class ConstructabilityIssueElem(BaseModel):
     evidence_refs: list[EvidenceRef] = Field(default_factory=list, alias="evidenceRefs")
 
 
+class ConstructionPackageElem(BaseModel):
+    """Construction-lens work package that design elements can reference by id."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["construction_package"] = "construction_package"
+    id: str
+    name: str
+    code: str | None = None
+    phase_id: str | None = Field(default=None, alias="phaseId")
+    planned_start: str | None = Field(default=None, alias="plannedStart")
+    planned_end: str | None = Field(default=None, alias="plannedEnd")
+    actual_start: str | None = Field(default=None, alias="actualStart")
+    actual_end: str | None = Field(default=None, alias="actualEnd")
+    responsible_company: str | None = Field(default=None, alias="responsibleCompany")
+    dependencies: list[str] = Field(default_factory=list)
+
+
+class ConstructionLogisticsElem(BaseModel):
+    """Explicit temporary/site-logistics element; design elements are not repurposed."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["construction_logistics"] = "construction_logistics"
+    id: str
+    name: str
+    logistics_kind: ConstructionLogisticsKind = Field(alias="logisticsKind")
+    boundary_mm: list[Vec2Mm] = Field(default_factory=list, alias="boundaryMm")
+    path_mm: list[Vec2Mm] = Field(default_factory=list, alias="pathMm")
+    phase_id: str | None = Field(default=None, alias="phaseId")
+    construction_package_id: str | None = Field(default=None, alias="constructionPackageId")
+    planned_start: str | None = Field(default=None, alias="plannedStart")
+    planned_end: str | None = Field(default=None, alias="plannedEnd")
+    actual_start: str | None = Field(default=None, alias="actualStart")
+    actual_end: str | None = Field(default=None, alias="actualEnd")
+    progress_status: ConstructionProgressStatus = Field(
+        default="not_started", alias="progressStatus"
+    )
+    responsible_company: str | None = Field(default=None, alias="responsibleCompany")
+    evidence_refs: list[EvidenceRef] = Field(default_factory=list, alias="evidenceRefs")
+    issue_ids: list[str] = Field(default_factory=list, alias="issueIds")
+
+
+class ConstructionChecklistItem(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    id: str
+    label: str
+    status: Literal["open", "pass", "fail", "na"] = "open"
+    evidence_refs: list[EvidenceRef] = Field(default_factory=list, alias="evidenceRefs")
+
+
+class ConstructionQaChecklistElem(BaseModel):
+    """Field QA checklist linked to model elements, packages, and evidence."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["construction_qa_checklist"] = "construction_qa_checklist"
+    id: str
+    name: str
+    target_element_ids: list[str] = Field(default_factory=list, alias="targetElementIds")
+    construction_package_id: str | None = Field(default=None, alias="constructionPackageId")
+    phase_id: str | None = Field(default=None, alias="phaseId")
+    responsible_company: str | None = Field(default=None, alias="responsibleCompany")
+    progress_status: ConstructionProgressStatus = Field(
+        default="not_started", alias="progressStatus"
+    )
+    checklist: list[ConstructionChecklistItem] = Field(default_factory=list)
+    evidence_refs: list[EvidenceRef] = Field(default_factory=list, alias="evidenceRefs")
+    issue_ids: list[str] = Field(default_factory=list, alias="issueIds")
+
+
 AgentAssumptionSource = Literal["manual", "bundle_dry_run", "evidence_summary"]
 AgentAssumptionClosureStatus = Literal["open", "resolved", "accepted", "deferred"]
 # SKB-08: phaseId values match the SKB-12 cookbook's seven phase tags.
@@ -3551,6 +3634,9 @@ Element = Annotated[
     | BcfElem
     | ConstructabilitySuppressionElem
     | ConstructabilityIssueElem
+    | ConstructionPackageElem
+    | ConstructionLogisticsElem
+    | ConstructionQaChecklistElem
     | AgentAssumptionElem
     | AgentDeviationElem
     | ValidationRuleElem
