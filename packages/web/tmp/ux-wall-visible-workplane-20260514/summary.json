@@ -1,0 +1,319 @@
+{
+  "commandTypes": ["createWall", "createWall"],
+  "commandResponses": [
+    {
+      "status": 200,
+      "ok": true
+    },
+    {
+      "status": 200,
+      "ok": true
+    }
+  ],
+  "createWallCount": 2,
+  "projectionModes": ["plane"],
+  "previewChecks": [
+    {
+      "label": "02-visible-grid-exact-preview",
+      "cursorPathRendered": true,
+      "cursorPathVisible": false,
+      "cursorEndVisible": true
+    },
+    {
+      "label": "05-visible-grid-after-viewcube",
+      "cursorPathRendered": true,
+      "cursorPathVisible": true,
+      "cursorEndVisible": true
+    }
+  ],
+  "blockedChecks": [
+    {
+      "label": "03-hidden-plane-blocked-on-building",
+      "commandsBefore": 1,
+      "commandsAfter": 1,
+      "noCommandCreated": true,
+      "cursorPathRendered": false
+    }
+  ],
+  "blockedPhases": [
+    {
+      "phase": "wall-blocked-hidden-work-plane",
+      "atMs": 8554.199999988079,
+      "camera": {
+        "position": {
+          "x": 20.499999999999996,
+          "y": 9.600000000000001,
+          "z": -11.5
+        },
+        "target": {
+          "x": 7.2,
+          "y": 4,
+          "z": 4.5
+        },
+        "up": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "direction": {
+          "x": -0.6172707312252508,
+          "y": -0.2599034657790531,
+          "z": 0.7425813307972944
+        },
+        "azimuth": 2.4480851460024065,
+        "elevation": 0.26292223184335634,
+        "radius": 21.54646142641524
+      },
+      "screen": {
+        "x": 849.1199951171875,
+        "y": 672.0999755859375
+      },
+      "levelInfo": {
+        "id": "hf-lvl-ground",
+        "elevationMm": 0,
+        "name": "Ground Floor"
+      },
+      "blocker": {
+        "elementId": "hf-uf-wall-01",
+        "kind": "wall",
+        "distanceM": 18.405688752346844
+      },
+      "planeDistanceM": 31.146058144139428
+    }
+  ],
+  "startCameras": [
+    {
+      "position": {
+        "x": 20.499999999999996,
+        "y": 9.600000000000001,
+        "z": -11.5
+      },
+      "target": {
+        "x": 7.2,
+        "y": 4,
+        "z": 4.5
+      },
+      "up": {
+        "x": 0,
+        "y": 1,
+        "z": 0
+      },
+      "direction": {
+        "x": -0.6172707312252508,
+        "y": -0.2599034657790531,
+        "z": 0.7425813307972944
+      },
+      "azimuth": 2.4480851460024065,
+      "elevation": 0.26292223184335634,
+      "radius": 21.54646142641524
+    },
+    {
+      "position": {
+        "x": 19.590984716911787,
+        "y": 8.34231138029218,
+        "z": -12.58384703811889
+      },
+      "target": {
+        "x": 7.2,
+        "y": 4,
+        "z": 4.5
+      },
+      "up": {
+        "x": 0,
+        "y": 1,
+        "z": 0
+      },
+      "direction": {
+        "x": -0.5750821200608306,
+        "y": -0.20153246021960028,
+        "z": 0.7928841167939837
+      },
+      "azimuth": 2.514085146002406,
+      "elevation": 0.20292223184335628,
+      "radius": 21.54646142641524
+    }
+  ],
+  "commitCameras": [
+    {
+      "position": {
+        "x": 20.499999999999996,
+        "y": 9.600000000000001,
+        "z": -11.5
+      },
+      "target": {
+        "x": 7.2,
+        "y": 4,
+        "z": 4.5
+      },
+      "up": {
+        "x": 0,
+        "y": 1,
+        "z": 0
+      },
+      "direction": {
+        "x": -0.6172707312252508,
+        "y": -0.2599034657790531,
+        "z": 0.7425813307972944
+      },
+      "azimuth": 2.4480851460024065,
+      "elevation": 0.26292223184335634,
+      "radius": 21.54646142641524
+    },
+    {
+      "position": {
+        "x": 19.590984716911787,
+        "y": 8.34231138029218,
+        "z": -12.58384703811889
+      },
+      "target": {
+        "x": 7.2,
+        "y": 4,
+        "z": 4.5
+      },
+      "up": {
+        "x": 0,
+        "y": 1,
+        "z": 0
+      },
+      "direction": {
+        "x": -0.5750821200608306,
+        "y": -0.20153246021960028,
+        "z": 0.7928841167939837
+      },
+      "azimuth": 2.514085146002406,
+      "elevation": 0.20292223184335628,
+      "radius": 21.54646142641524
+    }
+  ],
+  "wallVectors": [
+    {
+      "start": {
+        "xMm": 1973.2902238310644,
+        "yMm": -2215.6599445051447
+      },
+      "end": {
+        "xMm": -623.5520907591408,
+        "yMm": -4374.285118508166
+      },
+      "dxMm": -2596.842314590205,
+      "dyMm": -2158.6251740030216,
+      "lengthMm": 3376.8702445734853
+    },
+    {
+      "start": {
+        "xMm": 16602.492225515463,
+        "yMm": 15611.373914500116
+      },
+      "end": {
+        "xMm": 15536.951544806936,
+        "yMm": 8303.087647983957
+      },
+      "dxMm": -1065.5406807085274,
+      "dyMm": -7308.286266516159,
+      "lengthMm": 7385.555165022702
+    }
+  ],
+  "screenDeltas": [
+    {
+      "x": 190.320068359375,
+      "y": 0
+    },
+    {
+      "x": 131.75994873046875,
+      "y": 97.760009765625
+    }
+  ],
+  "modelDeltas": [
+    {
+      "xMm": -2596.842314590205,
+      "yMm": -2158.6251740030216
+    },
+    {
+      "xMm": -1065.5406807085274,
+      "yMm": -7308.286266516159
+    }
+  ],
+  "previewCount": 72,
+  "nonPlaneWallCount": 0,
+  "tracePhases": [
+    "wall-start",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-commit",
+    "wall-blocked-hidden-work-plane",
+    "wall-start",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-commit"
+  ],
+  "console3dWallCount": 11,
+  "consoleWarnings": []
+}

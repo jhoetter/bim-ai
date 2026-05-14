@@ -62,7 +62,7 @@ export function classifyWallDraftProjection(
   const maxScale = Math.max(safeScaleX, safeScaleY);
   const anisotropyRatio = maxScale / minScale;
   const verticalLook = Math.min(1, Math.abs(cameraDirectionY));
-  const planeReadable = verticalLook >= 0.45 && maxScale <= 160 && anisotropyRatio <= 3.25;
+  const planeReadable = maxScale <= 160 && anisotropyRatio <= 4.25;
 
   return {
     mode: planeReadable ? 'plane' : 'elevation-axis',
@@ -71,4 +71,16 @@ export function classifyWallDraftProjection(
     anisotropyRatio,
     verticalLook,
   };
+}
+
+export function isDraftPlaneHitOccluded(
+  planeDistanceM: number,
+  blockingDistanceM: number | null | undefined,
+  toleranceM = 0.05,
+): boolean {
+  if (!Number.isFinite(planeDistanceM) || planeDistanceM <= 0) return false;
+  if (blockingDistanceM == null || !Number.isFinite(blockingDistanceM) || blockingDistanceM <= 0)
+    return false;
+  const safeTolerance = Number.isFinite(toleranceM) ? Math.max(0, toleranceM) : 0;
+  return blockingDistanceM < planeDistanceM - safeTolerance;
 }

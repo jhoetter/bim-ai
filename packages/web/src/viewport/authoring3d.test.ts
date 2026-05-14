@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   classifyWallDraftProjection,
+  isDraftPlaneHitOccluded,
   projectSceneRayToLevelPlaneMm,
   resolve3dDraftLevel,
 } from './authoring3d';
@@ -63,14 +64,37 @@ describe('classifyWallDraftProjection', () => {
     expect(classification.verticalLook).toBeCloseTo(0.265);
   });
 
-  it('uses constrained screen-axis drafting in shallow front-like views even when the local plane is numerically stable', () => {
+  it('keeps exact level-plane drafting in shallow views when the local plane is numerically stable', () => {
     const classification = classifyWallDraftProjection(21.5, 55.3, -0.26);
 
-    expect(classification.mode).toBe('elevation-axis');
+    expect(classification.mode).toBe('plane');
     expect(classification.anisotropyRatio).toBeLessThan(3.25);
+  });
+
+  it('keeps exact level-plane drafting for moderately skewed post-rotation views', () => {
+    const classification = classifyWallDraftProjection(21.9, 74.6, -0.2);
+
+    expect(classification.mode).toBe('plane');
+    expect(classification.anisotropyRatio).toBeGreaterThan(3);
+    expect(classification.anisotropyRatio).toBeLessThan(4.25);
   });
 
   it('rejects numerically explosive level-plane projection even in top-ish poses', () => {
     expect(classifyWallDraftProjection(42, 220, -0.8).mode).toBe('elevation-axis');
+  });
+});
+
+describe('isDraftPlaneHitOccluded', () => {
+  it('treats model geometry in front of the active work plane as an occluder', () => {
+    expect(isDraftPlaneHitOccluded(12, 8)).toBe(true);
+  });
+
+  it('allows hits that are effectively on the active work plane', () => {
+    expect(isDraftPlaneHitOccluded(12, 11.98, 0.05)).toBe(false);
+  });
+
+  it('ignores invalid distances instead of blocking placement', () => {
+    expect(isDraftPlaneHitOccluded(12, undefined)).toBe(false);
+    expect(isDraftPlaneHitOccluded(NaN, 8)).toBe(false);
   });
 });

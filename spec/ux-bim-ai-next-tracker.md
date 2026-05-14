@@ -1405,16 +1405,17 @@ Evidence (2026-05-13):
 
 ## Reopened Tracker (2026-05-14, feedback round 15)
 
-| Gap ID         | Problem Statement                                                                                                                                          | Canonical Surfaces / Files                                                                | Priority | Status |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | -------- | ------ |
-| NEXT15-GAP-001 | Exact ray-to-level-plane wall placement is still UX-hostile in shallow/front 3D views: a rightward screen gesture can map to negative model-axis movement. | `packages/web/src/viewport/authoring3d.ts`, `packages/web/src/Viewport.tsx` wall draft UX | P0       | Done   |
-| NEXT15-GAP-002 | ViewCube/manual camera pose updates could leave camera matrices stale for immediate authoring raycasts.                                                    | `Viewport.tsx`, `packages/web/src/viewport/cameraMatrixSync.ts`                           | P0       | Done   |
-| NEXT15-GAP-003 | Seeded proof needed to cover both no-rotation and post-ViewCube-rotation wall placement with command responses, not just outgoing commands.                | `packages/web/tmp/ux-wall-post-viewcube-20260514/*`, tracker evidence                     | P0       | Done   |
+| Gap ID         | Problem Statement                                                                                                                                          | Canonical Surfaces / Files                                                                | Priority | Status  |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | -------- | ------- |
+| NEXT15-GAP-001 | Exact ray-to-level-plane wall placement is still UX-hostile in shallow/front 3D views: a rightward screen gesture can map to negative model-axis movement. | `packages/web/src/viewport/authoring3d.ts`, `packages/web/src/Viewport.tsx` wall draft UX | P0       | Blocked |
+| NEXT15-GAP-002 | ViewCube/manual camera pose updates could leave camera matrices stale for immediate authoring raycasts.                                                    | `Viewport.tsx`, `packages/web/src/viewport/cameraMatrixSync.ts`                           | P0       | Done    |
+| NEXT15-GAP-003 | Seeded proof needed to cover both no-rotation and post-ViewCube-rotation wall placement with command responses, not just outgoing commands.                | `packages/web/tmp/ux-wall-post-viewcube-20260514/*`, tracker evidence                     | P0       | Blocked |
 
 ### WP-NEXT-33 — Shallow 3D Wall Screen-Axis Canonicalization
 
 - Priority: `P0`
-- Status: `Done`
+- Status: `Blocked`
+- Blocked note: follow-up seeded/user validation rejected this screen-axis canonicalization. Do not use the `elevation-axis` command path as canonical wall placement; see `WP-NEXT-34`.
 - Supersedes correction: `WP-NEXT-31` over-prioritized exact plane placement in shallow/front views. Current canonical behavior is:
   - top/plan-like readable 3D views use exact ray-to-level-plane placement;
   - shallow/front/elevation-like 3D views use constrained screen-axis wall placement after the first exact start point;
@@ -1455,6 +1456,60 @@ Evidence (2026-05-13):
       - `projectionModes: ["elevation-axis"]`
       - `nonConstrainedWallCount: 0`
       - `blockedPhases: []`
+      - `previewChecks[*].cursorPathRendered: true`
+      - `previewChecks[*].cursorEndVisible: true`
+      - `consoleWarnings: []`
+
+## Reopened Tracker (2026-05-14, feedback round 16)
+
+| Gap ID         | Problem Statement                                                                                                                                                    | Canonical Surfaces / Files                                                                     | Priority | Status |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | -------- | ------ |
+| NEXT16-GAP-001 | The screen-axis fallback made 3D walls feel detached from the actual model work plane after rotation and did not solve the reported placement reversals.             | `packages/web/src/viewport/authoring3d.ts`, `packages/web/src/Viewport.tsx` wall draft path    | P0       | Done   |
+| NEXT16-GAP-002 | 3D wall starts could still be accepted through visible model geometry, so the wall appeared to be authored somewhere different from the clicked building/sky region. | `Viewport.tsx` visible draft-plane hit testing                                                 | P0       | Done   |
+| NEXT16-GAP-003 | Seeded proof must show exact work-plane placement before and after ViewCube rotation, plus a blocked hidden-work-plane click that creates no command.                | `packages/web/tmp/ux-wall-visible-workplane-20260514/*`, `authoring3d.test.ts`, seeded browser | P0       | Done   |
+
+### WP-NEXT-34 — 3D Wall Visible Work-Plane Placement
+
+- Priority: `P0`
+- Status: `Done`
+- Supersedes: blocked `WP-NEXT-33` screen-axis canonicalization.
+- Covers: `NEXT16-GAP-001`, `NEXT16-GAP-002`, `NEXT16-GAP-003`
+- Goal: make 3D wall placement deterministic by committing only exact visible active-level work-plane hits; if the cursor is over hidden/occluded geometry or an unreadable edge-on plane, the tool blocks instead of synthesizing a wall elsewhere.
+- Source ownership:
+  - `packages/web/src/Viewport.tsx`
+  - `packages/web/src/viewport/authoring3d.ts`
+  - `packages/web/src/viewport/authoring3d.test.ts`
+  - `packages/web/tmp/ux-wall-visible-workplane-20260514/capture.mjs`
+  - `packages/web/tmp/ux-wall-visible-workplane-20260514/summary.json`
+- Acceptance:
+  - readable 3D wall placement uses `projection.mode === "plane"` before and after ViewCube rotation;
+  - synthetic `elevation-axis` walls are not committed in the seeded proof;
+  - a click whose level-plane hit is hidden behind model geometry is blocked and creates no command;
+  - wall preview still shows the wall volume, cursor path, and endpoint before commit;
+  - Escape after wall placement restores navigation drag;
+  - seeded proof records `200 OK` command responses for all committed walls.
+- Implementation + evidence:
+  - Removed the `verticalLook >= 0.45` requirement from exact-plane wall placement; readability is again based on measured screen scale and anisotropy.
+  - Increased the anisotropy tolerance to `4.25` so moderately skewed post-ViewCube poses still use exact work-plane placement.
+  - Added visible-work-plane hit testing: wall authoring now raycasts model geometry before the active level plane and blocks placement when a wall/roof/model element is closer than the work plane.
+  - Added `wallPlaneOccluded` overlay messaging so the user gets a direct explanation instead of an invisible or detached wall.
+  - Added `isDraftPlaneHitOccluded` unit coverage.
+  - Seeded proof (`make seed name=target-house-3`, `make dev name=target-house-3`):
+    - `packages/web/tmp/ux-wall-visible-workplane-20260514/01-front-elevation-initial.png`
+    - `packages/web/tmp/ux-wall-visible-workplane-20260514/02-visible-grid-exact-preview-preview.png`
+    - `packages/web/tmp/ux-wall-visible-workplane-20260514/02-visible-grid-exact-preview-commit.png`
+    - `packages/web/tmp/ux-wall-visible-workplane-20260514/03-hidden-plane-blocked-on-building.png`
+    - `packages/web/tmp/ux-wall-visible-workplane-20260514/04-after-viewcube-axis-rotate.png`
+    - `packages/web/tmp/ux-wall-visible-workplane-20260514/05-visible-grid-after-viewcube-preview.png`
+    - `packages/web/tmp/ux-wall-visible-workplane-20260514/05-visible-grid-after-viewcube-commit.png`
+    - `packages/web/tmp/ux-wall-visible-workplane-20260514/06-after-escape-navigation-drag.png`
+    - `packages/web/tmp/ux-wall-visible-workplane-20260514/summary.json`
+      - `createWallCount: 2`
+      - `commandResponses: [{ status: 200 }, { status: 200 }]`
+      - `projectionModes: ["plane"]`
+      - `nonPlaneWallCount: 0`
+      - `blockedChecks[0].noCommandCreated: true`
+      - `blockedPhases[0].phase: "wall-blocked-hidden-work-plane"`
       - `previewChecks[*].cursorPathRendered: true`
       - `previewChecks[*].cursorEndVisible: true`
       - `consoleWarnings: []`
