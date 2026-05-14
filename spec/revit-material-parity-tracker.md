@@ -219,6 +219,15 @@ Commit rule:
 
 - Commit and push after mesh tests and screenshot evidence are produced.
 
+Evidence:
+
+- Changed `packages/web/src/viewport/wallCsgEligibility.ts` so roof-attached walls with hosted doors/windows/openings remain eligible for worker CSG cutting.
+- Updated `packages/web/src/viewport/wallCsgEligibility.test.ts` to lock the regression: roof-attached walls with hosted windows must still cut through the wall skin.
+- This directly targets the observed failure mode where a sloped or roof-attached host wall rendered solid behind transparent window glass.
+- Verification:
+  - `pnpm --filter @bim-ai/web exec vitest run src/viewport/wallCsgEligibility.test.ts src/viewport/csgWorker.wallOpening.test.ts src/viewport/glassMaterial.test.ts src/viewport/hostedOpeningDimensions.test.ts src/viewport/meshBuilders.locationLine.test.ts`
+  - `pnpm --filter @bim-ai/web typecheck`
+
 ## RMP-04 — Procedural Appearance Calibration
 
 Priority: `P0`

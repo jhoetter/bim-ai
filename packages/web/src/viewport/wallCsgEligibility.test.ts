@@ -22,7 +22,7 @@ describe('shouldRunWallOpeningCsg', () => {
     ).toBe(false);
   });
 
-  it('skips ineligible hosts (roof-attached and curtain walls)', () => {
+  it('keeps roof-attached walls eligible so hosted windows cut through the wall skin', () => {
     expect(
       shouldRunWallOpeningCsg({
         csgEnabled: true,
@@ -31,8 +31,10 @@ describe('shouldRunWallOpeningCsg', () => {
         hostedWallOpeningCount: 0,
         roofAttachmentId: 'roof-1',
       }),
-    ).toBe(false);
+    ).toBe(true);
+  });
 
+  it('skips curtain walls because curtain panels manage their own openings', () => {
     expect(
       shouldRunWallOpeningCsg({
         csgEnabled: true,
