@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from bim_ai.commands import UpdateElementPropertyCmd
 from bim_ai.constructability_advisories import constructability_advisory_violations
 from bim_ai.document import Document
 from bim_ai.elements import ColumnElem, WallElem
+from bim_ai.engine import apply_inplace
 from bim_ai.schedule_derivation import derive_schedule_table
 from bim_ai.structure_lens import structure_analysis_export
 
@@ -217,6 +219,23 @@ def test_structural_fields_roundtrip_on_wall_and_column() -> None:
     assert exported_column["structuralRole"] == "column"
     assert exported_column["structuralMaterial"] == "steel"
     assert exported_column["analysisStatus"] == "ready_for_export"
+
+
+def test_structure_authoring_commands_update_structural_intent() -> None:
+    doc = _structure_doc()
+
+    apply_inplace(
+        doc,
+        UpdateElementPropertyCmd(elementId="floor-1", key="structuralRole", value="foundation"),
+    )
+    assert doc.elements["floor-1"].structural_role == "foundation"
+
+    apply_inplace(
+        doc,
+        UpdateElementPropertyCmd(elementId="floor-1", key="loadBearing", value=True),
+    )
+    assert doc.elements["floor-1"].load_bearing is True
+
 
 
 def test_constructability_flags_inconsistent_structural_material_by_type() -> None:

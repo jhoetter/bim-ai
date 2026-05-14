@@ -85,6 +85,21 @@ function selectedWall(ctx: PaletteContext) {
   return el?.kind === 'wall' ? el : null;
 }
 
+function selectedElementOfKinds(ctx: PaletteContext, kinds: readonly string[]) {
+  const id = ctx.selectedElementIds[0];
+  if (!id) return null;
+  const el = useBimStore.getState().elementsById[id];
+  return el && kinds.includes(el.kind) ? el : null;
+}
+
+function selectedFloor(ctx: PaletteContext) {
+  return selectedElementOfKinds(ctx, ['floor']);
+}
+
+function selectedOpening(ctx: PaletteContext) {
+  return selectedElementOfKinds(ctx, ['door', 'window', 'wall_opening']);
+}
+
 function isSelectedWall3dContext(ctx: PaletteContext): boolean {
   return is3dContext(ctx) && Boolean(selectedWall(ctx));
 }
@@ -96,6 +111,20 @@ function dispatchSelectedWallCommand(
   const wall = selectedWall(ctx);
   if (!wall) return;
   ctx.dispatchCommand?.(build(wall));
+}
+
+function dispatchElementProperty(
+  ctx: PaletteContext,
+  elementId: string,
+  key: string,
+  value: unknown,
+): void {
+  ctx.dispatchCommand?.({
+    type: 'updateElementProperty',
+    elementId,
+    key,
+    value,
+  });
 }
 
 // Tool commands
@@ -649,6 +678,87 @@ registerCommand({
   keywords: ['reference plane', 'datum', 'work plane'],
   category: 'command',
   invoke: (ctx) => startPlanTool(ctx, 'reference-plane'),
+});
+
+registerCommand({
+  id: 'structure.wall.toggle-load-bearing',
+  label: 'Structure: Toggle Load-Bearing Wall',
+  keywords: ['structure', 'structural wall', 'load bearing', 'bearing wall', 'toggle'],
+  category: 'command',
+  isAvailable: (ctx) => Boolean(selectedWall(ctx)),
+  invoke: (ctx) => {
+    const wall = selectedWall(ctx);
+    if (!wall) return;
+    const next = wall.loadBearing !== true;
+    dispatchElementProperty(ctx, wall.id, 'loadBearing', next);
+    dispatchElementProperty(
+      ctx,
+      wall.id,
+      'structuralRole',
+      next ? 'bearing_wall' : 'non_load_bearing',
+    );
+    dispatchElementProperty(ctx, wall.id, 'discipline', next ? 'struct' : '');
+  },
+});
+
+registerCommand({
+  id: 'structure.floor.mark-slab',
+  label: 'Structure: Mark Floor as Slab',
+  keywords: ['structure', 'structural slab', 'floor slab', 'load bearing floor'],
+  category: 'command',
+  isAvailable: (ctx) => Boolean(selectedFloor(ctx)),
+  invoke: (ctx) => {
+    const floor = selectedFloor(ctx);
+    if (!floor) return;
+    dispatchElementProperty(ctx, floor.id, 'loadBearing', true);
+    dispatchElementProperty(ctx, floor.id, 'structuralRole', 'slab');
+    dispatchElementProperty(ctx, floor.id, 'discipline', 'struct');
+  },
+});
+
+registerCommand({
+  id: 'structure.foundation.mark-selected-floor',
+  label: 'Structure: Mark Floor as Foundation',
+  keywords: ['structure', 'foundation', 'footing', 'strip footing', 'slab foundation'],
+  category: 'command',
+  isAvailable: (ctx) => Boolean(selectedFloor(ctx)),
+  invoke: (ctx) => {
+    const floor = selectedFloor(ctx);
+    if (!floor) return;
+    dispatchElementProperty(ctx, floor.id, 'loadBearing', true);
+    dispatchElementProperty(ctx, floor.id, 'structuralRole', 'foundation');
+    dispatchElementProperty(ctx, floor.id, 'discipline', 'struct');
+  },
+});
+
+registerCommand({
+  id: 'structure.opening.mark-reviewed',
+  label: 'Structure: Mark Opening Reviewed',
+  keywords: ['structure', 'opening review', 'lintel', 'header', 'load bearing wall opening'],
+  category: 'command',
+  isAvailable: (ctx) => Boolean(selectedOpening(ctx)),
+  invoke: (ctx) => {
+    const opening = selectedOpening(ctx);
+    if (!opening) return;
+    ctx.dispatchCommand?.({
+      type: 'set_element_prop',
+      elementId: opening.id,
+      key: 'structuralReviewApproved',
+      value: true,
+    });
+  },
+});
+
+registerCommand({
+  id: 'structure.review.open-advisor',
+  label: 'Structure: Open Review Checks',
+  keywords: ['structure', 'review', 'advisor', 'constructability', 'load path'],
+  category: 'command',
+  invoke: (ctx) => {
+    if (ctx.setLensMode) ctx.setLensMode('structure');
+    else useBimStore.getState().setLensMode('structure');
+    ctx.openAdvisor?.();
+  },
 });
 
 registerCommand({

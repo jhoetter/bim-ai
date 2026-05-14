@@ -599,6 +599,7 @@ class WallOpeningElem(BaseModel):
     head_height_mm: float = Field(alias="headHeightMm", ge=0)
     pinned: bool = Field(default=False)
     discipline: DisciplineTag | None = Field(default=None)
+    props: dict[str, Any] | None = Field(default=None)
 
     @model_validator(mode="after")
     def _check_bounds(self) -> WallOpeningElem:

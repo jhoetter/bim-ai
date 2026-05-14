@@ -22,6 +22,19 @@ describe('scheduleDefinitionPresets', () => {
 
     const asm = presetsForCategory('material_assembly').map((p) => p.id);
     expect(asm).toEqual(['assembly-layer-takeoff']);
+
+    expect(presetsForCategory('structural_element').map((p) => p.id)).toEqual([
+      'structure-elements-handoff',
+    ]);
+    expect(presetsForCategory('structural_wall').map((p) => p.id)).toEqual([
+      'structure-bearing-walls',
+    ]);
+    expect(presetsForCategory('column').map((p) => p.id)).toEqual(['structure-columns']);
+    expect(presetsForCategory('beam').map((p) => p.id)).toEqual(['structure-beams']);
+    expect(presetsForCategory('foundation').map((p) => p.id)).toEqual(['structure-foundations']);
+    expect(presetsForCategory('opening_load_bearing_wall').map((p) => p.id)).toEqual([
+      'structure-openings-review',
+    ]);
   });
 
   it('resolvePresetColumnsForExport preserves preset order and ignores unknown keys', () => {
@@ -80,6 +93,13 @@ describe('scheduleDefinitionPresets', () => {
         'thicknessMm',
       ]),
     ).toEqual([]);
+  });
+
+  it('missingRequiredFieldKeys (structure handoff)', () => {
+    const preset = presetsForCategory('structural_element')[0]!;
+    expect(
+      missingRequiredFieldKeys(preset, ['elementId', 'name', 'category', 'level', 'loadBearing']),
+    ).toEqual(['structuralRole', 'structuralMaterial', 'analysisStatus']);
   });
 
   it('presetFieldReadoutRows merges labels and roles from payload metadata', () => {

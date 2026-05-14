@@ -141,6 +141,7 @@ describe('command capability graph', () => {
       ['help.keyboard-shortcuts', ['cmd-k']],
       ['help.replay-onboarding-tour', ['cmd-k', 'primary-sidebar']],
       ['advisor.open', ['cmd-k', 'footer']],
+      ['structure.review.open-advisor', ['cmd-k', 'footer']],
       ['jobs.open', ['cmd-k', 'footer']],
       ['milestone.open', ['cmd-k', 'primary-sidebar']],
       ['advisor.apply-first-fix', ['cmd-k', 'dialog']],
