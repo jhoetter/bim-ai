@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "107330cc746a",
+  "session_id": "019e2867-343f-7053-b27f-9723a6208cd5",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T21:46:05.693051Z",
+  "branch": "codex/architecture-lens-workpackages-20260514",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "app/bim_ai/commands.py",
+    "app/bim_ai/engine.py",
+    "app/bim_ai/engine_dispatch_documentation.py",
+    "packages/core/src/index.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "eabacc721250",
+  "token_usage": {
+    "input_tokens": 215590,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 13009280,
+    "output_tokens": 27348,
+    "api_call_count": 89
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-14T21:46:05.668495Z",
+    "agent_lines": 455,
+    "agent_removed": 7,
+    "human_added": 130,
+    "human_modified": 14,
+    "human_removed": 0,
+    "total_committed": 599,
+    "total_lines_changed": 606,
+    "agent_percentage": 76.23762376237624,
+    "metric_version": 2
+  }
+}
