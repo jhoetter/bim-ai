@@ -9,6 +9,7 @@ from bim_ai.document import Document
 from bim_ai.elements import (
     AreaElem,
     DoorElem,
+    ElevationViewElem,
     FloorElem,
     FloorTypeElem,
     LevelElem,
@@ -21,6 +22,7 @@ from bim_ai.elements import (
     SectionCutElem,
     SheetElem,
     StairElem,
+    ViewpointElem,
     WallElem,
     WallTypeElem,
     WindowElem,
@@ -147,6 +149,29 @@ def _plan_view_id_to_owning_sheet(doc: Document) -> dict[str, tuple[str, str]]:
             if not pv_id or pv_id in out:
                 continue
             out[pv_id] = (sh.id, sh.name or "")
+    return out
+
+
+def _view_ref_id_to_owning_sheet(doc: Document) -> dict[str, tuple[str, str]]:
+    """Map any sheet viewport ref id -> (sheet_id, sheet_name); first sheet wins."""
+
+    out: dict[str, tuple[str, str]] = {}
+    sheet_ids = sorted(eid for eid, el in doc.elements.items() if isinstance(el, SheetElem))
+    for sid in sheet_ids:
+        sh = doc.elements[sid]
+        if not isinstance(sh, SheetElem):
+            continue
+        for vp in sh.viewports_mm or ():
+            ref = str(vp.get("viewRef") or "")
+            if ":" not in ref:
+                continue
+            prefix, raw_id = ref.split(":", 1)
+            if prefix not in {"plan", "section", "sec", "viewpoint", "vp"}:
+                continue
+            view_id = raw_id.strip()
+            if not view_id or view_id in out:
+                continue
+            out[view_id] = (sh.id, sh.name or "")
     return out
 
 
@@ -515,6 +540,8 @@ def _infer_schedule_category_from_name(name: str) -> str | None:
         return "window"
     if "door" in lowered:
         return "door"
+    if "finish" in lowered:
+        return "finish"
     if "room" in lowered:
         return "room"
     if "floor" in lowered:
@@ -525,6 +552,8 @@ def _infer_schedule_category_from_name(name: str) -> str | None:
         return "stair"
     if "sheet" in lowered:
         return "sheet"
+    if "view list" in lowered or lowered == "views" or lowered == "view schedule":
+        return "view"
     if "plan" in lowered:
         return "plan_view"
     if "assembly" in lowered or "assemblies" in lowered:
@@ -558,7 +587,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
 
     rows: list[dict[str, Any]] = []
 
-    if cat == "room":
+    if cat in {"room", "finish"}:
         room_peer_finish = peer_finish_set_by_level(
             e for e in doc.elements.values() if isinstance(e, RoomElem)
         )
@@ -826,6 +855,67 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     }
                 )
 
+    elif cat in {"view", "view_list", "viewlist"}:
+        owning = _view_ref_id_to_owning_sheet(doc)
+        for e in doc.elements.values():
+            if isinstance(e, PlanViewElem):
+                lev = lvl_lab.get(e.level_id, e.level_id)
+                row_v: dict[str, Any] = {
+                    "elementId": e.id,
+                    "name": e.name,
+                    "viewKind": "plan_view",
+                    "viewType": e.plan_view_subtype or "floor_plan",
+                    "levelId": e.level_id,
+                    "level": lev,
+                    "discipline": getattr(e, "discipline", "") or "",
+                    "viewTemplateId": e.view_template_id or "",
+                    "defaultLens": e.default_lens,
+                    "cropEnabled": e.crop_enabled,
+                    "scale": e.scale or "",
+                    "familyTypeId": "",
+                }
+                own = owning.get(e.id)
+                if own:
+                    row_v["sheetId"], row_v["sheetName"] = own
+                rows.append(row_v)
+            elif isinstance(e, SectionCutElem):
+                row_sec: dict[str, Any] = {
+                    "elementId": e.id,
+                    "name": e.name,
+                    "viewKind": "section_cut",
+                    "viewType": "section",
+                    "cropDepthMm": round(float(e.crop_depth_mm), 3),
+                    "familyTypeId": "",
+                }
+                own = owning.get(e.id)
+                if own:
+                    row_sec["sheetId"], row_sec["sheetName"] = own
+                rows.append(row_sec)
+            elif isinstance(e, ElevationViewElem):
+                row_el: dict[str, Any] = {
+                    "elementId": e.id,
+                    "name": e.name,
+                    "viewKind": "elevation_view",
+                    "viewType": e.direction,
+                    "familyTypeId": "",
+                }
+                own = owning.get(e.id)
+                if own:
+                    row_el["sheetId"], row_el["sheetName"] = own
+                rows.append(row_el)
+            elif isinstance(e, ViewpointElem):
+                row_vp: dict[str, Any] = {
+                    "elementId": e.id,
+                    "name": e.name,
+                    "viewKind": "viewpoint",
+                    "viewType": e.mode,
+                    "familyTypeId": "",
+                }
+                own = owning.get(e.id)
+                if own:
+                    row_vp["sheetId"], row_vp["sheetName"] = own
+                rows.append(row_vp)
+
     elif cat == "material_assembly":
         audit_by_host = {str(r["hostElementId"]): r for r in material_catalog_audit_rows(doc)}
         for e in doc.elements.values():
@@ -1066,12 +1156,12 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 columns = narrowed
 
     totals: dict[str, Any] = {}
-    if cat == "room" and leaf_rows:
+    if cat in {"room", "finish"} and leaf_rows:
         tgt_vals = [
             float(r["targetAreaM2"]) for r in leaf_rows if r.get("targetAreaM2") is not None
         ]
         totals = {
-            "kind": "room",
+            "kind": cat,
             "rowCount": len(leaf_rows),
             "areaM2": round(sum(float(r.get("areaM2") or 0.0) for r in leaf_rows), 4),
             "perimeterM": round(sum(float(r.get("perimeterM") or 0.0) for r in leaf_rows), 4),
@@ -1181,7 +1271,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             out["schedulePlacement"] = {"sheetId": placement_sid, "sheetName": pel.name or ""}
     if totals:
         out["totals"] = totals
-    if cat == "room":
+    if cat in {"room", "finish"}:
         lvl_allow = _allowed_levels_from_schedule_filter_equals(filter_equals)
         rb = compute_room_boundary_derivation(doc)
         vacant_m2, vacant_n = vacant_derived_metrics_for_authority(

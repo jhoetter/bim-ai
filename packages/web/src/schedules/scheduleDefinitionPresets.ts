@@ -2,7 +2,7 @@
 
 import type { ScheduleFieldMeta } from './schedulePanelRegistryChrome';
 
-export type SchedulePresetCategory = 'room' | 'door' | 'window' | 'material_assembly';
+export type SchedulePresetCategory = 'room' | 'door' | 'window' | 'finish' | 'material_assembly';
 
 export type SchedulePresetFieldToken = 'required' | 'optional';
 
@@ -62,6 +62,21 @@ const PRESETS: ScheduleDefinitionPreset[] = [
       { fieldKey: 'areaM2', token: 'optional', unitHint: 'm²' },
       { fieldKey: 'targetAreaM2', token: 'optional', unitHint: 'm²' },
       { fieldKey: 'areaDeltaM2', token: 'optional', unitHint: 'm²' },
+    ],
+  },
+  {
+    id: 'finish-room-core',
+    name: 'Finish · room core',
+    category: 'finish',
+    fields: [
+      { fieldKey: 'elementId', token: 'required', csvExportHint: 'Stable room id' },
+      { fieldKey: 'name', token: 'required', csvExportHint: 'Room name' },
+      { fieldKey: 'level', token: 'required', csvExportHint: 'Level label' },
+      { fieldKey: 'department', token: 'optional' },
+      { fieldKey: 'programmeCode', token: 'optional' },
+      { fieldKey: 'finishSet', token: 'required', csvExportHint: 'Architectural finish reference' },
+      { fieldKey: 'finishState', token: 'required', csvExportHint: 'Finish metadata state' },
+      { fieldKey: 'areaM2', token: 'optional', unitHint: 'm²', aggregation: 'sum' },
     ],
   },
   {

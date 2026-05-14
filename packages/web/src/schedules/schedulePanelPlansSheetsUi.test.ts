@@ -17,6 +17,8 @@ describe('schedulePanelPlansSheetsUi', () => {
 
   it('noScheduleElementMessage uses category noun', () => {
     expect(noScheduleElementMessage('plans')).toContain('plan view');
+    expect(noScheduleElementMessage('views')).toContain('view list');
+    expect(noScheduleElementMessage('finishes')).toContain('finish');
     expect(noScheduleElementMessage('sheets')).toContain('sheet');
     expect(noScheduleElementMessage('floors')).toContain('floor');
     expect(noScheduleElementMessage('assemblies')).toContain('material assembly');
