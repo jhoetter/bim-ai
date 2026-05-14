@@ -1,8 +1,14 @@
 /** Documented schedule definition presets (server column keys mirror `bim_ai.schedule_field_registry`). */
 
 import type { ScheduleFieldMeta } from './schedulePanelRegistryChrome';
+import type { EnergyScheduleCategory } from '../energy/energyLensWorkflows';
 
-export type SchedulePresetCategory = 'room' | 'door' | 'window' | 'material_assembly';
+export type SchedulePresetCategory =
+  | 'room'
+  | 'door'
+  | 'window'
+  | 'material_assembly'
+  | EnergyScheduleCategory;
 
 export type SchedulePresetFieldToken = 'required' | 'optional';
 
@@ -157,6 +163,129 @@ const PRESETS: ScheduleDefinitionPreset[] = [
       { fieldKey: 'layerOffsetFromExteriorMm', token: 'optional', unitHint: 'mm' },
       { fieldKey: 'assemblyTotalThicknessMm', token: 'optional', unitHint: 'mm' },
       { fieldKey: 'level', token: 'optional' },
+    ],
+  },
+  {
+    id: 'energy-envelope-surfaces',
+    name: 'Energy · envelope surfaces',
+    category: 'energy_envelope',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'hostKind', token: 'required' },
+      { fieldKey: 'thermalClassification', token: 'required' },
+      { fieldKey: 'surfaceAreaM2', token: 'required', unitHint: 'm²', aggregation: 'sum' },
+      { fieldKey: 'uValueWPerM2K', token: 'optional', unitHint: 'W/(m²K)' },
+      { fieldKey: 'missingMaterialKeys', token: 'optional' },
+      { fieldKey: 'sourceReferences', token: 'optional' },
+    ],
+  },
+  {
+    id: 'energy-thermal-materials',
+    name: 'Energy · thermal materials',
+    category: 'energy_thermal_materials',
+    fields: [
+      { fieldKey: 'materialKey', token: 'required' },
+      { fieldKey: 'materialDisplay', token: 'required' },
+      { fieldKey: 'lambdaWPerMK', token: 'required', unitHint: 'W/(mK)' },
+      { fieldKey: 'rhoKgPerM3', token: 'optional', unitHint: 'kg/m³' },
+      { fieldKey: 'specificHeatJPerKgK', token: 'optional', unitHint: 'J/(kgK)' },
+      { fieldKey: 'mu', token: 'optional' },
+      { fieldKey: 'sourceReference', token: 'required' },
+      { fieldKey: 'thermalDataStatus', token: 'required' },
+    ],
+  },
+  {
+    id: 'energy-u-value-summary',
+    name: 'Energy · U-value summary',
+    category: 'energy_u_value_summary',
+    fields: [
+      { fieldKey: 'typeId', token: 'required' },
+      { fieldKey: 'typeName', token: 'required' },
+      { fieldKey: 'hostKind', token: 'required' },
+      { fieldKey: 'uValueWPerM2K', token: 'required', unitHint: 'W/(m²K)' },
+      { fieldKey: 'rTotalM2KPerW', token: 'optional', unitHint: 'm²K/W' },
+      { fieldKey: 'missingMaterialKeys', token: 'optional' },
+      { fieldKey: 'calculationScope', token: 'required' },
+    ],
+  },
+  {
+    id: 'energy-windows-solar-gains',
+    name: 'Energy · windows and solar gains',
+    category: 'energy_windows_solar_gains',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'openingAreaM2', token: 'required', unitHint: 'm²', aggregation: 'sum' },
+      { fieldKey: 'uValueWPerM2K', token: 'required', unitHint: 'W/(m²K)' },
+      { fieldKey: 'gValue', token: 'required' },
+      { fieldKey: 'frameFraction', token: 'optional' },
+      { fieldKey: 'annualShadingFactorEstimate', token: 'optional' },
+      { fieldKey: 'shadingDevice', token: 'optional' },
+    ],
+  },
+  {
+    id: 'energy-thermal-bridges',
+    name: 'Energy · thermal bridges',
+    category: 'energy_thermal_bridges',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'markerType', token: 'required' },
+      { fieldKey: 'hostElementIds', token: 'optional' },
+      { fieldKey: 'suggestedMitigation', token: 'optional' },
+      { fieldKey: 'psiValueReference', token: 'optional' },
+    ],
+  },
+  {
+    id: 'energy-thermal-zones',
+    name: 'Energy · thermal zones',
+    category: 'energy_thermal_zones',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'name', token: 'required' },
+      { fieldKey: 'heatingStatus', token: 'required' },
+      { fieldKey: 'usageProfile', token: 'optional' },
+      { fieldKey: 'setpointC', token: 'optional', unitHint: '°C' },
+      { fieldKey: 'airChangeRate', token: 'optional' },
+      { fieldKey: 'zoneId', token: 'required' },
+      { fieldKey: 'conditionedVolumeIncluded', token: 'optional' },
+    ],
+  },
+  {
+    id: 'energy-building-services',
+    name: 'Energy · building services handoff',
+    category: 'energy_building_services',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'heatingGeneratorType', token: 'required' },
+      { fieldKey: 'energyCarrier', token: 'required' },
+      { fieldKey: 'distributionType', token: 'optional' },
+      { fieldKey: 'domesticHotWaterSystem', token: 'optional' },
+      { fieldKey: 'ventilationSystem', token: 'optional' },
+      { fieldKey: 'measureCandidateNotes', token: 'optional' },
+    ],
+  },
+  {
+    id: 'energy-renovation-measures',
+    name: 'Energy · renovation measures',
+    category: 'energy_renovation_measures',
+    fields: [
+      { fieldKey: 'scenarioId', token: 'required' },
+      { fieldKey: 'scenarioName', token: 'required' },
+      { fieldKey: 'scenarioStatus', token: 'required' },
+      { fieldKey: 'measureName', token: 'optional' },
+      { fieldKey: 'measureNotes', token: 'optional' },
+      { fieldKey: 'costPlaceholder', token: 'optional', aggregation: 'sum' },
+    ],
+  },
+  {
+    id: 'energy-export-qa',
+    name: 'Energy · export QA checklist',
+    category: 'energy_export_qa',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'issueCode', token: 'required' },
+      { fieldKey: 'severity', token: 'required' },
+      { fieldKey: 'message', token: 'required' },
+      { fieldKey: 'missingMaterialKeys', token: 'optional' },
     ],
   },
 ];

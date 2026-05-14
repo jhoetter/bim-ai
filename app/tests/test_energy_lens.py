@@ -18,6 +18,7 @@ from bim_ai.energy_lens import (
     material_thermal_spec,
     type_u_value_readout,
 )
+from bim_ai.export_ifc_properties import energy_handoff_pset_properties
 from bim_ai.schedule_derivation import derive_schedule_table
 
 
@@ -210,3 +211,33 @@ def test_energy_schedule_categories_share_existing_schedule_api() -> None:
 
     bridges = derive_schedule_table(doc, "sch-tb")
     assert bridges["rows"][0]["markerType"] == "window_reveal"
+
+
+def test_energy_ifc_pset_properties_cover_classification_and_opening_values() -> None:
+    window = WindowElem(
+        kind="window",
+        id="win",
+        name="Window",
+        wallId="wall",
+        alongT=0.5,
+        widthMm=1000,
+        heightMm=1200,
+        sillHeightMm=900,
+        thermalClassification="window_or_door_thermal_envelope",
+        thermalClassificationSource="manual",
+        uValue=0.9,
+        gValue=0.55,
+        frameFraction=0.3,
+        shadingDevice="external blind",
+        annualShadingFactorEstimate=0.8,
+    )
+
+    assert energy_handoff_pset_properties(window) == {
+        "BimAiThermalClassification": "window_or_door_thermal_envelope",
+        "BimAiThermalClassificationSource": "manual",
+        "BimAiUValueWPerM2K": 0.9,
+        "BimAiGValue": 0.55,
+        "BimAiFrameFraction": 0.3,
+        "BimAiAnnualShadingFactorEstimate": 0.8,
+        "BimAiShadingDevice": "external blind",
+    }

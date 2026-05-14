@@ -241,6 +241,7 @@ describe('command capability graph', () => {
       'navigate.architecture',
       'navigate.structure',
       'navigate.mep',
+      'navigate.energy',
       'theme.toggle',
       'settings.language.toggle',
       'shell.toggle-primary-sidebar',
@@ -303,6 +304,7 @@ describe('command capability graph', () => {
       'primary-sidebar',
     ]);
     expect(getCommandCapability('navigate.mep')?.surfaces).toEqual(['cmd-k', 'primary-sidebar']);
+    expect(getCommandCapability('navigate.energy')?.surfaces).toEqual(['cmd-k', 'primary-sidebar']);
     expect(getCommandCapability('tool.wall')?.surfaces).toEqual(['ribbon', 'cmd-k']);
     expect(getCommandCapability('tool.door')?.preconditions).toContain('has-wall');
     expect(getCommandCapability('tool.dimension')?.surfaces).toEqual(['ribbon', 'cmd-k']);
