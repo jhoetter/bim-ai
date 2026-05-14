@@ -34,11 +34,7 @@ import { makeLayeredWallMesh } from './meshBuilders.layeredWall';
 import { makeMultiRunStairMesh } from './meshBuilders.multiRunStair';
 import { localPlanOffsetToWorld, yawForPlanSegment } from './planSegmentOrientation';
 import { resolveWindowCutDimensions } from './hostedOpeningDimensions';
-import {
-  wall3dCleanupFootprintMm,
-  wall3dXJoinCleanupFootprintsMm,
-  wallWith3dJoinDisallowGaps,
-} from './wallJoinDisplay';
+import { wallWith3dJoinDisallowGaps } from './wallJoinDisplay';
 import {
   effectiveWallBaseMaterialKey,
   effectiveFloorTopMaterialKey,
@@ -1815,6 +1811,58 @@ export function registerDormerCutFn(fn: DormerCutFn | null): void {
   _dormerCutFn = fn;
 }
 
+function materialSlot(
+  slots: Record<string, string | null> | null | undefined,
+  slot: string,
+): string | null | undefined {
+  const value = slots?.[slot];
+  if (typeof value === 'string') return value.trim() ? value : null;
+  return value;
+}
+
+function stairMaterialKey(
+  stair: Extract<Element, { kind: 'stair' }>,
+  slot: string,
+): string | null | undefined {
+  return (
+    materialSlot(stair.materialSlots, slot) ??
+    (stair.subKind === 'monolithic' ? stair.monolithicMaterial : null)
+  );
+}
+
+function makeStairMaterial(
+  stair: Extract<Element, { kind: 'stair' }>,
+  slot: string,
+  elementsById: Record<string, Element>,
+  paint: ViewportPaintBundle | null,
+): THREE.Material {
+  return makeThreeMaterialForKey(stairMaterialKey(stair, slot), {
+    elementsById,
+    usage: 'generic',
+    fallbackColor: categoryColorOr(paint, 'stair'),
+    fallbackRoughness: paint?.categories.stair.roughness ?? 0.85,
+    fallbackMetalness: paint?.categories.stair.metalness ?? 0,
+  });
+}
+
+function makeRailingMaterial(
+  railing: Extract<Element, { kind: 'railing' }>,
+  slot: string,
+  elementsById: Record<string, Element>,
+  paint: ViewportPaintBundle | null,
+  fallback?: { roughness?: number; metalness?: number; opacity?: number; transparent?: boolean },
+): THREE.Material {
+  return makeThreeMaterialForKey(materialSlot(railing.materialSlots, slot), {
+    elementsById,
+    usage: slot === 'panel' ? 'openingFrame' : 'structural',
+    fallbackColor: categoryColorOr(paint, 'railing'),
+    fallbackRoughness: fallback?.roughness ?? 0.35,
+    fallbackMetalness: fallback?.metalness ?? 0.65,
+    opacity: fallback?.opacity,
+    transparent: fallback?.transparent,
+  });
+}
+
 export function makeStairVolumeMesh(
   stair: Extract<Element, { kind: 'stair' }>,
   elementsById: Record<string, Element>,
@@ -1856,14 +1904,12 @@ export function makeStairVolumeMesh(
   const treadThick = 0.04;
   const angle = Math.atan2(dz, dx);
 
-  const mat = new THREE.MeshStandardMaterial({
-    color: categoryColorOr(paint, 'stair'),
-    roughness: paint?.categories.stair.roughness ?? 0.85,
-  });
+  const treadMat = makeStairMaterial(stair, 'tread', elementsById, paint);
+  const stringerMat = makeStairMaterial(stair, 'stringer', elementsById, paint);
 
   const treadGeom = new THREE.BoxGeometry(treadDepth, treadThick, stairWidth);
   for (let i = 0; i < riserCount; i++) {
-    const treadMesh = new THREE.Mesh(treadGeom, mat);
+    const treadMesh = new THREE.Mesh(treadGeom, treadMat);
     const cx = sx + ((i + 0.5) / riserCount) * dx;
     const cz = sz + ((i + 0.5) / riserCount) * dz;
     // top surface of tread i sits at baseLevelElev + (i+1)*riserH
@@ -1873,6 +1919,7 @@ export function makeStairVolumeMesh(
     treadMesh.castShadow = true;
     treadMesh.receiveShadow = true;
     treadMesh.userData.bimPickId = stair.id;
+    treadMesh.userData.materialSlot = 'tread';
     addEdges(treadMesh);
     group.add(treadMesh);
   }
@@ -1887,7 +1934,7 @@ export function makeStairVolumeMesh(
   const perpZ = dx / runLen;
 
   for (const side of [-1, 1] as const) {
-    const stringer = new THREE.Mesh(stringerGeom, mat);
+    const stringer = new THREE.Mesh(stringerGeom, stringerMat);
     stringer.position.set(
       midCx + perpX * side * (stairWidth / 2),
       midCy,
@@ -1897,6 +1944,7 @@ export function makeStairVolumeMesh(
     stringer.castShadow = true;
     stringer.receiveShadow = true;
     stringer.userData.bimPickId = stair.id;
+    stringer.userData.materialSlot = 'stringer';
     addEdges(stringer);
     group.add(stringer);
   }
@@ -2538,47 +2586,6 @@ export function makeWallMesh(
         })()
       : baseMaterial;
 
-  const makeCleanupMesh = (
-    cleanupFootprint: Array<{ xMm: number; yMm: number }>,
-    cleanupKind: 'endpoint-t' | 'x',
-  ): THREE.Mesh => {
-    const first = cleanupFootprint[0]!;
-    const shape = new THREE.Shape();
-    shape.moveTo(first.xMm / 1000, -first.yMm / 1000);
-    for (let i = 1; i < cleanupFootprint.length; i += 1) {
-      const point = cleanupFootprint[i]!;
-      shape.lineTo(point.xMm / 1000, -point.yMm / 1000);
-    }
-    shape.closePath();
-
-    const geom = new THREE.ExtrudeGeometry(shape, { depth: height, bevelEnabled: false });
-    geom.rotateX(-Math.PI / 2);
-    const cleanupMesh = new THREE.Mesh(geom, wallMaterial);
-    cleanupMesh.position.set(0, yBase, 0);
-    cleanupMesh.userData.bimPickId = displayWall.id;
-    cleanupMesh.userData.faceMaterialOverrides = displayWall.faceMaterialOverrides ?? null;
-    cleanupMesh.userData.wallJoinCleanup = cleanupKind;
-    addEdges(cleanupMesh);
-    return cleanupMesh;
-  };
-
-  const xCleanupFootprints = wall3dXJoinCleanupFootprintsMm(displayWall, elementsById);
-  if (xCleanupFootprints) {
-    const group = new THREE.Group();
-    group.userData.bimPickId = displayWall.id;
-    group.userData.wallJoinCleanup = 'x';
-    for (const footprint of xCleanupFootprints) {
-      if (footprint.length < 3) continue;
-      group.add(makeCleanupMesh(footprint, 'x'));
-    }
-    return group;
-  }
-
-  const cleanupFootprint = wall3dCleanupFootprintMm(displayWall, elementsById);
-  if (cleanupFootprint) {
-    return makeCleanupMesh(cleanupFootprint, 'endpoint-t');
-  }
-
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(len, height, thick), wallMaterial);
   mesh.position.set(sx + dx / 2 + wallOffset.xM, yBase + height / 2, sz + dz / 2 + wallOffset.zM);
   mesh.rotation.y = yawForPlanSegment(dx, dz);
@@ -2956,10 +2963,18 @@ export function makeRailingMesh(
     );
   }
 
-  const mat = new THREE.MeshStandardMaterial({
-    color: categoryColorOr(paint, 'railing'),
-    roughness: 0.35,
-    metalness: 0.65,
+  const postMat = makeRailingMaterial(railing, 'post', elementsById, paint);
+  const railMat = makeRailingMaterial(railing, 'topRail', elementsById, paint);
+  const balusterMat = makeRailingMaterial(railing, 'baluster', elementsById, paint);
+  const panelMat = makeRailingMaterial(railing, 'panel', elementsById, paint, {
+    roughness: 0.04,
+    metalness: 0,
+    opacity: 0.34,
+    transparent: true,
+  });
+  const cableMat = makeRailingMaterial(railing, 'cable', elementsById, paint, {
+    roughness: 0.28,
+    metalness: 0.8,
   });
 
   // Pre-compute cumulative parametric t at each vertex for slope interpolation
@@ -2979,10 +2994,11 @@ export function makeRailingMesh(
   for (let i = 0; i < pts.length; i++) {
     const t = vertexT[i]!;
     const floorY = baseElev + t * (topElev - baseElev);
-    const post = new THREE.Mesh(postGeom, mat);
+    const post = new THREE.Mesh(postGeom, postMat);
     post.position.set(pts[i]!.xMm / 1000, floorY + guardH / 2, pts[i]!.yMm / 1000);
     post.castShadow = post.receiveShadow = true;
     post.userData.bimPickId = railing.id;
+    post.userData.materialSlot = 'post';
     addEdges(post);
     group.add(post);
   }
@@ -3013,28 +3029,59 @@ export function makeRailingMesh(
 
     // Rail cap segment
     const railLen = Math.sqrt(planSeg * planSeg + riseY * riseY);
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(railLen, capSect, capSect), mat);
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(railLen, capSect, capSect), railMat);
     rail.position.set((ax + bx) / 2, (elevA + elevB) / 2, (az + bz) / 2);
     const dir = new THREE.Vector3(bx - ax, riseY, bz - az).normalize();
     rail.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), dir);
     rail.castShadow = rail.receiveShadow = true;
     rail.userData.bimPickId = railing.id;
+    rail.userData.materialSlot = 'topRail';
     addEdges(rail);
     group.add(rail);
 
-    // Evenly spaced balusters between the two posts
-    const balCount = Math.max(0, Math.floor(planSeg / balSpacing));
-    for (let j = 0; j < balCount; j++) {
-      const tLocal = (j + 0.5) / balCount;
-      const bxj = ax + tLocal * (bx - ax);
-      const bzj = az + tLocal * (bz - az);
-      const floorYj = floorA + tLocal * (floorB - floorA);
-      const bal = new THREE.Mesh(balGeom, mat);
-      bal.position.set(bxj, floorYj + guardH / 2, bzj);
-      bal.castShadow = bal.receiveShadow = true;
-      bal.userData.bimPickId = railing.id;
-      addEdges(bal);
-      group.add(bal);
+    if (railing.balusterPattern?.rule === 'glass_panel') {
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(railLen, guardH * 0.72, 0.018), panelMat);
+      panel.position.set((ax + bx) / 2, (floorA + floorB) / 2 + guardH * 0.42, (az + bz) / 2);
+      panel.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), dir);
+      panel.castShadow = false;
+      panel.receiveShadow = true;
+      panel.userData.bimPickId = railing.id;
+      panel.userData.materialSlot = 'panel';
+      addEdges(panel);
+      group.add(panel);
+    } else if (railing.balusterPattern?.rule === 'cable') {
+      for (const cableY of [0.32, 0.5, 0.68, 0.86]) {
+        const cable = new THREE.Mesh(new THREE.BoxGeometry(railLen, 0.012, 0.012), cableMat);
+        const caY = floorA + guardH * cableY;
+        const cbY = floorB + guardH * cableY;
+        const cableDir = new THREE.Vector3(bx - ax, cbY - caY, bz - az).normalize();
+        cable.position.set((ax + bx) / 2, (caY + cbY) / 2, (az + bz) / 2);
+        cable.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), cableDir);
+        cable.castShadow = cable.receiveShadow = true;
+        cable.userData.bimPickId = railing.id;
+        cable.userData.materialSlot = 'cable';
+        addEdges(cable);
+        group.add(cable);
+      }
+    } else {
+      // Evenly spaced balusters between the two posts
+      const spacingMm = railing.balusterPattern?.spacingMm;
+      const effectiveBalSpacing =
+        typeof spacingMm === 'number' && spacingMm > 0 ? spacingMm / 1000 : balSpacing;
+      const balCount = Math.max(0, Math.floor(planSeg / effectiveBalSpacing));
+      for (let j = 0; j < balCount; j++) {
+        const tLocal = (j + 0.5) / balCount;
+        const bxj = ax + tLocal * (bx - ax);
+        const bzj = az + tLocal * (bz - az);
+        const floorYj = floorA + tLocal * (floorB - floorA);
+        const bal = new THREE.Mesh(balGeom, balusterMat);
+        bal.position.set(bxj, floorYj + guardH / 2, bzj);
+        bal.castShadow = bal.receiveShadow = true;
+        bal.userData.bimPickId = railing.id;
+        bal.userData.materialSlot = 'baluster';
+        addEdges(bal);
+        group.add(bal);
+      }
     }
   }
 

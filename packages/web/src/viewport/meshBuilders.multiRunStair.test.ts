@@ -100,6 +100,58 @@ describe('makeStairVolumeMesh — multi-run (KRN-07)', () => {
     // Legacy path adds N treads + 2 stringers; N = round(2800 / 175) = 16
     expect(group.children.length).toBe(16 + 2);
   });
+
+  it('applies separate tread and landing material slots for multi-run stairs', () => {
+    const group = makeStairVolumeMesh(
+      {
+        ...lShapeStair,
+        materialSlots: {
+          tread: 'timber_cladding',
+          landing: 'concrete_smooth',
+        },
+      },
+      elementsById,
+      null,
+    );
+    const firstTread = group.children.find(
+      (child) => child.userData.materialSlot === 'tread',
+    ) as THREE.Mesh;
+    const landing = group.children.find(
+      (child) => child.userData.materialSlot === 'landing',
+    ) as THREE.Mesh;
+
+    expect((firstTread.material as THREE.Material).userData.materialKey).toBe('timber_cladding');
+    expect((landing.material as THREE.Material).userData.materialKey).toBe('concrete_smooth');
+  });
+
+  it('applies separate tread and stringer material slots for legacy stairs', () => {
+    const legacyStair: StairElem = {
+      kind: 'stair',
+      id: 'stair-legacy-materials',
+      name: 'Legacy materials',
+      baseLevelId: 'lvl-0',
+      topLevelId: 'lvl-1',
+      runStartMm: { xMm: 0, yMm: 0 },
+      runEndMm: { xMm: 4000, yMm: 0 },
+      widthMm: 1000,
+      riserMm: 175,
+      treadMm: 275,
+      materialSlots: {
+        tread: 'timber_cladding',
+        stringer: 'aluminium_black',
+      },
+    };
+    const group = makeStairVolumeMesh(legacyStair, elementsById, null);
+    const tread = group.children.find((child) => child.userData.materialSlot === 'tread') as
+      | THREE.Mesh
+      | undefined;
+    const stringer = group.children.find(
+      (child) => child.userData.materialSlot === 'stringer',
+    ) as THREE.Mesh | undefined;
+
+    expect((tread?.material as THREE.Material).userData.materialKey).toBe('timber_cladding');
+    expect((stringer?.material as THREE.Material).userData.materialKey).toBe('aluminium_black');
+  });
 });
 
 describe('makeStairVolumeMesh — spiral (KRN-07 closeout)', () => {

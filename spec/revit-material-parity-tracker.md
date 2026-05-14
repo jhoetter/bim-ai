@@ -56,7 +56,7 @@ The current repo has strong foundations but incomplete parity:
 | RMP-02 | Typed Host Source Of Truth | In Progress | P0 | Walls/floors/roofs consistently render, display, assign, schedule, and export exposed type layers. |
 | RMP-03 | Opening And Host Cut Visual Correctness | Open | P0 | Windows/doors/openings show real holes, glass remains transparent, and no wall skin fills the pane. |
 | RMP-04 | Procedural Appearance Calibration | Open | P0 | Common materials look credible in Realistic without external maps. |
-| RMP-05 | Subcomponent Material Model | Open | P0 | Doors/windows/stairs/railings/families expose frame, panel, glass, tread, rail, baluster, hardware material slots. |
+| RMP-05 | Subcomponent Material Model | In Progress | P0 | Doors/windows/stairs/railings/families expose frame, panel, glass, tread, rail, baluster, hardware material slots. |
 | RMP-06 | Material Assignment UI Parity | Open | P1 | Inspector and browser explain exactly what target will change before assignment. |
 | RMP-07 | Graphics Asset Binding | Open | P1 | Plans, elevations, sections, and schedules use material graphics assets consistently. |
 | RMP-08 | Appearance Asset Editing And Preview | Open | P1 | Users can edit color, maps, relief, scale, opacity, roughness, and see representative previews. |
@@ -181,7 +181,7 @@ Evidence:
 
 Priority: `P0`
 
-Status: `Open`
+Status: `In Progress`
 
 Problem:
 
@@ -322,8 +322,14 @@ Evidence:
 - Window geometry now resolves `materialSlots.frame` and `materialSlots.glass` independently before falling back to legacy `materialKey` and default glass.
 - Door geometry now resolves `materialSlots.frame` and `materialSlots.panel` independently before falling back to legacy `materialKey`.
 - Material coverage audit now reports authored door/window frame, panel, and glass slots independently.
+- Added `materialSlots?: Record<string, string | null>` to stair and railing core element contracts.
+- Added `material_slots` / `materialSlots` persistence fields to Python `StairElem` and `RailingElem`.
+- Stair 3D rendering now resolves `tread`, `stringer`, and multi-run `landing` material slots, with monolithic stairs falling back to `monolithicMaterial`.
+- Railing 3D rendering now resolves `post`, `topRail`, `baluster`, `panel`, and `cable` slots independently; glass-panel railings now render panel meshes and cable railings now render cable members.
+- Material coverage audit now reports stair and railing subcomponent slots without treating them as non-editable category fallback gaps.
 - Verification:
   - `pnpm --filter @bim-ai/web exec vitest run src/families/geometryFns/windowGeometry.test.ts src/families/geometryFns/doorGeometry.test.ts src/viewport/materialCoverageAudit.test.ts src/viewport/glassMaterial.test.ts`
+  - `pnpm --filter @bim-ai/web exec vitest run src/viewport/materialCoverageAudit.test.ts src/viewport/meshBuilders.multiRunStair.test.ts src/viewport/meshBuilders.railingMaterials.test.ts`
   - `pnpm --filter @bim-ai/web typecheck` was attempted but blocked by unrelated dirty `src/viewport/ViewCube.tsx` errors in the workspace.
 
 ## RMP-06 — Material Assignment UI Parity

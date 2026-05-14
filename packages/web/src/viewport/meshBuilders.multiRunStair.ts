@@ -5,11 +5,43 @@ import type { Element } from '@bim-ai/core';
 import { categoryColorOr, addEdges } from './sceneHelpers';
 import type { ViewportPaintBundle } from './materials';
 import { elevationMForLevel } from './meshBuilders';
+import { makeThreeMaterialForKey } from './threeMaterialFactory';
 
 type StairElem = Extract<Element, { kind: 'stair' }>;
 type Vec2Mm = { xMm: number; yMm: number };
 
 const TREAD_THICK = 0.04;
+
+function materialSlot(
+  slots: Record<string, string | null> | null | undefined,
+  slot: string,
+): string | null | undefined {
+  const value = slots?.[slot];
+  if (typeof value === 'string') return value.trim() ? value : null;
+  return value;
+}
+
+function stairMaterialKey(stair: StairElem, slot: string): string | null | undefined {
+  return (
+    materialSlot(stair.materialSlots, slot) ??
+    (stair.subKind === 'monolithic' ? stair.monolithicMaterial : null)
+  );
+}
+
+function makeStairSubcomponentMaterial(
+  stair: StairElem,
+  slot: string,
+  elementsById: Record<string, Element>,
+  paint: ViewportPaintBundle | null,
+): THREE.Material {
+  return makeThreeMaterialForKey(stairMaterialKey(stair, slot), {
+    elementsById,
+    usage: 'generic',
+    fallbackColor: categoryColorOr(paint, 'stair'),
+    fallbackRoughness: paint?.categories.stair.roughness ?? 0.85,
+    fallbackMetalness: paint?.categories.stair.metalness ?? 0,
+  });
+}
 
 /**
  * KRN-07 — render a multi-run stair as inclined flights with flat polygon
@@ -28,10 +60,8 @@ export function makeMultiRunStairMesh(
   const topLevelElev = elevationMForLevel(stair.topLevelId, elementsById);
   const totalRise = Math.max(Math.abs(topLevelElev - baseLevelElev), 0.1);
 
-  const mat = new THREE.MeshStandardMaterial({
-    color: categoryColorOr(paint, 'stair'),
-    roughness: paint?.categories.stair.roughness ?? 0.85,
-  });
+  const treadMat = makeStairSubcomponentMaterial(stair, 'tread', elementsById, paint);
+  const landingMat = makeStairSubcomponentMaterial(stair, 'landing', elementsById, paint);
 
   if (
     stair.shape === 'spiral' &&
@@ -50,10 +80,11 @@ export function makeMultiRunStairMesh(
       riserCount,
       baseLevelElev,
       riserH,
-      mat,
+      treadMat,
     );
     for (const tread of flight) {
       tread.userData.bimPickId = stair.id;
+      tread.userData.materialSlot = 'tread';
       addEdges(tread);
       group.add(tread);
     }
@@ -71,10 +102,11 @@ export function makeMultiRunStairMesh(
       widthM,
       baseLevelElev,
       riserH,
-      mat,
+      treadMat,
     );
     for (const tread of flight) {
       tread.userData.bimPickId = stair.id;
+      tread.userData.materialSlot = 'tread';
       addEdges(tread);
       group.add(tread);
     }
@@ -108,7 +140,7 @@ export function makeMultiRunStairMesh(
 
     const treadGeom = new THREE.BoxGeometry(treadDepth, TREAD_THICK, runWidth);
     for (let i = 0; i < riserCount; i++) {
-      const treadMesh = new THREE.Mesh(treadGeom, mat);
+      const treadMesh = new THREE.Mesh(treadGeom, treadMat);
       const cx = sx + ((i + 0.5) / riserCount) * dx;
       const cz = sz + ((i + 0.5) / riserCount) * dz;
       const cy = runStartElev + (i + 1) * riserH - TREAD_THICK / 2;
@@ -117,6 +149,7 @@ export function makeMultiRunStairMesh(
       treadMesh.castShadow = true;
       treadMesh.receiveShadow = true;
       treadMesh.userData.bimPickId = stair.id;
+      treadMesh.userData.materialSlot = 'tread';
       addEdges(treadMesh);
       group.add(treadMesh);
     }
@@ -136,10 +169,11 @@ export function makeMultiRunStairMesh(
     const geom = new THREE.ExtrudeGeometry(shape, { depth: TREAD_THICK, bevelEnabled: false });
     geom.rotateX(-Math.PI / 2);
     geom.translate(0, landingY, 0);
-    const mesh = new THREE.Mesh(geom, mat);
+    const mesh = new THREE.Mesh(geom, landingMat);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     mesh.userData.bimPickId = stair.id;
+    mesh.userData.materialSlot = 'landing';
     addEdges(mesh);
     group.add(mesh);
   }

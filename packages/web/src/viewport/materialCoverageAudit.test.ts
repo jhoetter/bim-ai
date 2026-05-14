@@ -209,7 +209,64 @@ describe('material coverage audit — RMP-01', () => {
     ]);
   });
 
-  it('distinguishes category fallback from non-rendered elements', () => {
+  it('reports stair and railing subcomponent material slots', () => {
+    const stair: Extract<Element, { kind: 'stair' }> = {
+      kind: 'stair',
+      id: 'stair1',
+      name: 'Stair',
+      baseLevelId: 'l1',
+      topLevelId: 'l2',
+      runStartMm: { xMm: 0, yMm: 0 },
+      runEndMm: { xMm: 3000, yMm: 0 },
+      widthMm: 1000,
+      riserMm: 175,
+      treadMm: 280,
+      materialSlots: {
+        tread: 'timber_cladding',
+        stringer: 'aluminium_dark_grey',
+        landing: 'concrete_smooth',
+      },
+    };
+    const railing: Extract<Element, { kind: 'railing' }> = {
+      kind: 'railing',
+      id: 'rail1',
+      name: 'Guardrail',
+      pathMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 3000, yMm: 0 },
+      ],
+      materialSlots: {
+        topRail: 'aluminium_black',
+        post: 'aluminium_dark_grey',
+        baluster: 'asset_stainless_brushed',
+        panel: 'asset_clear_glass_double',
+      },
+    };
+
+    const audit = auditElementMaterialCoverage({ [stair.id]: stair, [railing.id]: railing });
+    const entries = byId(audit.entries);
+
+    expect(entries.stair1?.source).toBe('instance');
+    expect(entries.stair1?.materialKey).toBe('timber_cladding');
+    expect(entries.stair1?.subcomponents).toEqual([
+      expect.objectContaining({ slot: 'tread', materialKey: 'timber_cladding' }),
+      expect.objectContaining({ slot: 'riser', materialKey: null }),
+      expect.objectContaining({ slot: 'stringer', materialKey: 'aluminium_dark_grey' }),
+      expect.objectContaining({ slot: 'landing', materialKey: 'concrete_smooth' }),
+    ]);
+    expect(entries.rail1?.source).toBe('instance');
+    expect(entries.rail1?.materialKey).toBe('aluminium_black');
+    expect(entries.rail1?.subcomponents).toEqual([
+      expect.objectContaining({ slot: 'topRail', materialKey: 'aluminium_black' }),
+      expect.objectContaining({ slot: 'post', materialKey: 'aluminium_dark_grey' }),
+      expect.objectContaining({ slot: 'baluster', materialKey: 'asset_stainless_brushed' }),
+      expect.objectContaining({ slot: 'panel', materialKey: 'asset_clear_glass_double' }),
+      expect.objectContaining({ slot: 'cable', materialKey: null }),
+      expect.objectContaining({ slot: 'bracket', materialKey: null }),
+    ]);
+  });
+
+  it('distinguishes editable family-default material slots from non-rendered elements', () => {
     const stair: Extract<Element, { kind: 'stair' }> = {
       kind: 'stair',
       id: 'stair1',
@@ -233,11 +290,17 @@ describe('material coverage audit — RMP-01', () => {
     const audit = auditElementMaterialCoverage({ [stair.id]: stair, [room.id]: room });
     const entries = byId(audit.entries);
 
-    expect(entries.stair1?.source).toBe('category-fallback');
-    expect(entries.stair1?.flags).toContain('no-editable-target');
+    expect(entries.stair1?.source).toBe('family-default');
+    expect(entries.stair1?.editable).toBe(true);
+    expect(entries.stair1?.subcomponents).toEqual([
+      expect.objectContaining({ slot: 'tread', materialKey: null }),
+      expect.objectContaining({ slot: 'riser', materialKey: null }),
+      expect.objectContaining({ slot: 'stringer', materialKey: null }),
+      expect.objectContaining({ slot: 'landing', materialKey: null }),
+    ]);
     expect(entries.room1?.source).toBe('non-rendered');
     expect(entries.room1?.flags).toContain('non-rendered-by-design');
-    expect(audit.summary.flags['no-editable-target']).toBe(1);
+    expect(audit.summary.flags['no-editable-target']).toBe(0);
     expect(audit.summary.flags['non-rendered-by-design']).toBe(1);
   });
 });

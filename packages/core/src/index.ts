@@ -1359,6 +1359,8 @@ export type Element =
       floatingTreadDepthMm?: number;
       /** KRN-V3-10: wall element id that hosts cantilever treads for floating stairs. */
       floatingHostWallId?: string;
+      /** RMP-05: subcomponent materials, e.g. tread, riser, stringer, landing, support. */
+      materialSlots?: Record<string, string | null>;
       overrideParams?: Record<string, unknown>;
       pinned?: boolean;
       phaseCreated?: string | null;
@@ -1400,6 +1402,8 @@ export type Element =
       balusterPattern?: BalusterPattern;
       /** KRN-V3-11: wall-mounted handrail support brackets. */
       handrailSupports?: HandrailSupport[];
+      /** RMP-05: subcomponent materials, e.g. topRail, post, baluster, panel, cable, bracket. */
+      materialSlots?: Record<string, string | null>;
       overrideParams?: Record<string, unknown>;
       pinned?: boolean;
       phaseCreated?: string | null;

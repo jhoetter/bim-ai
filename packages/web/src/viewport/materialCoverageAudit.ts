@@ -363,8 +363,56 @@ export function auditElementMaterialCoverage(
         return [categoryFallback(element)];
       }
 
-      case 'stair':
-      case 'railing':
+      case 'stair': {
+        const treadKey =
+          materialSlot(element.materialSlots, 'tread') ??
+          (element.subKind === 'monolithic' ? element.monolithicMaterial : null);
+        const riserKey =
+          materialSlot(element.materialSlots, 'riser') ??
+          (element.subKind === 'monolithic' ? element.monolithicMaterial : null);
+        const stringerKey =
+          materialSlot(element.materialSlots, 'stringer') ??
+          materialSlot(element.materialSlots, 'support') ??
+          (element.subKind === 'monolithic' ? element.monolithicMaterial : null);
+        const landingKey =
+          materialSlot(element.materialSlots, 'landing') ??
+          (element.subKind === 'monolithic' ? element.monolithicMaterial : null);
+        const source = treadKey ? 'instance' : 'family-default';
+        return [
+          entryForMaterial(element, materialFact(treadKey, source, elementsById), true, [], {
+            subcomponents: [
+              subcomponentFact('tread', treadKey, source, elementsById),
+              subcomponentFact('riser', riserKey, source, elementsById),
+              subcomponentFact('stringer', stringerKey, source, elementsById),
+              subcomponentFact('landing', landingKey, source, elementsById),
+            ],
+          }),
+        ];
+      }
+
+      case 'railing': {
+        const topRailKey = materialSlot(element.materialSlots, 'topRail');
+        const postKey = materialSlot(element.materialSlots, 'post');
+        const balusterKey = materialSlot(element.materialSlots, 'baluster');
+        const panelKey = materialSlot(element.materialSlots, 'panel');
+        const cableKey = materialSlot(element.materialSlots, 'cable');
+        const bracketKey = materialSlot(element.materialSlots, 'bracket');
+        const primaryKey = topRailKey ?? postKey ?? balusterKey ?? panelKey ?? cableKey ?? null;
+        const source = primaryKey ? 'instance' : 'family-default';
+        return [
+          entryForMaterial(element, materialFact(primaryKey, source, elementsById), true, [], {
+            subcomponents: [
+              subcomponentFact('topRail', topRailKey, source, elementsById),
+              subcomponentFact('post', postKey, source, elementsById),
+              subcomponentFact('baluster', balusterKey, source, elementsById),
+              subcomponentFact('panel', panelKey, source, elementsById),
+              subcomponentFact('cable', cableKey, source, elementsById),
+              subcomponentFact('bracket', bracketKey, source, elementsById),
+            ],
+          }),
+        ];
+      }
+
       case 'ceiling':
       case 'balcony':
       case 'soffit':
