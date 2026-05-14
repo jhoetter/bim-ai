@@ -25,6 +25,10 @@ export type ParticipantStripProps = {
   localUserId: string;
   maxVisible?: number;
   avatarSize?: number;
+  onClick?: () => void;
+  buttonLabel?: string;
+  title?: string;
+  testId?: string;
 };
 
 const AVATAR_SIZE = 28;
@@ -44,23 +48,51 @@ export function ParticipantStrip({
   localUserId,
   maxVisible = 5,
   avatarSize = AVATAR_SIZE,
+  onClick,
+  buttonLabel = 'Participants',
+  title,
+  testId = 'participant-strip',
 }: ParticipantStripProps): JSX.Element | null {
   if (participants.length === 0) return null;
 
   const visible = participants.slice(0, maxVisible);
   const overflow = participants.length - visible.length;
-
-  return (
-    <div data-testid="participant-strip" style={stripStyle} aria-label="Participants" role="group">
+  const isInteractive = typeof onClick === 'function';
+  const content = (
+    <>
       {visible.map((p) => (
         <ParticipantAvatar
           key={p.userId}
           participant={p}
           isLocal={p.userId === localUserId}
           avatarSize={avatarSize}
+          isInteractive={isInteractive}
         />
       ))}
-      {overflow > 0 && <OverflowChip count={overflow} avatarSize={avatarSize} />}
+      {overflow > 0 && (
+        <OverflowChip count={overflow} avatarSize={avatarSize} isInteractive={isInteractive} />
+      )}
+    </>
+  );
+
+  if (isInteractive) {
+    return (
+      <button
+        type="button"
+        data-testid={testId}
+        style={{ ...stripStyle, ...buttonStripStyle }}
+        aria-label={buttonLabel}
+        title={title ?? buttonLabel}
+        onClick={onClick}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div data-testid={testId} style={stripStyle} aria-label="Participants" role="group">
+      {content}
     </div>
   );
 }
@@ -71,14 +103,26 @@ const stripStyle: CSSProperties = {
   gap: 'var(--space-1)',
 };
 
+const buttonStripStyle: CSSProperties = {
+  appearance: 'none',
+  border: 0,
+  borderRadius: 'var(--radius-pill)',
+  background: 'transparent',
+  padding: 0,
+  margin: 0,
+  cursor: 'pointer',
+};
+
 function ParticipantAvatar({
   participant,
   isLocal,
   avatarSize,
+  isInteractive,
 }: {
   participant: Participant;
   isLocal: boolean;
   avatarSize: number;
+  isInteractive: boolean;
 }): JSX.Element {
   const initials = deriveInitials(participant.displayName, participant.userId);
   const isOnline = participant.isOnline ?? false;
@@ -96,7 +140,7 @@ function ParticipantAvatar({
     fontSize: 'var(--text-xs)',
     fontWeight: 700,
     color: 'var(--color-accent-foreground)',
-    cursor: 'default',
+    cursor: isInteractive ? 'pointer' : 'default',
     flexShrink: 0,
     opacity: isOnline ? 1 : 0.5,
     boxSizing: 'border-box',
@@ -104,7 +148,7 @@ function ParticipantAvatar({
   };
 
   return (
-    <div
+    <span
       data-testid="participant-avatar"
       data-user-id={participant.userId}
       data-is-local={isLocal ? 'true' : 'false'}
@@ -115,7 +159,7 @@ function ParticipantAvatar({
     >
       <span aria-hidden="true">{initials}</span>
       {isOnline && <span data-testid="online-dot" aria-hidden="true" style={onlineDotStyle} />}
-    </div>
+    </span>
   );
 }
 
@@ -131,21 +175,30 @@ const onlineDotStyle: CSSProperties = {
   boxSizing: 'border-box',
 };
 
-function OverflowChip({ count, avatarSize }: { count: number; avatarSize: number }): JSX.Element {
+function OverflowChip({
+  count,
+  avatarSize,
+  isInteractive,
+}: {
+  count: number;
+  avatarSize: number;
+  isInteractive: boolean;
+}): JSX.Element {
   const overflowChipStyle: CSSProperties = {
     ...baseOverflowChipStyle,
     width: avatarSize,
     height: avatarSize,
+    cursor: isInteractive ? 'pointer' : 'default',
   };
 
   return (
-    <div
+    <span
       data-testid="overflow-chip"
       title={`${count} more participant${count === 1 ? '' : 's'}`}
       style={overflowChipStyle}
     >
       +{count}
-    </div>
+    </span>
   );
 }
 

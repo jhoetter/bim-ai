@@ -5,8 +5,8 @@
  * online dot, hex-literal absence, initials derivation, empty state,
  * CSS var usage, and tooltip display-name.
  */
-import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render } from '@testing-library/react';
 import type { Participant } from '@bim-ai/core';
 import { ParticipantStrip, deriveInitials } from './ParticipantStrip';
 
@@ -77,6 +77,32 @@ describe('ParticipantStrip — COL-V3-04', () => {
     const avatars = getAllByTestId('participant-avatar');
     expect((avatars[0] as HTMLElement).style.width).toBe('20px');
     expect((avatars[0] as HTMLElement).style.height).toBe('20px');
+  });
+
+  it('can render the participant strip as the clickable header control', () => {
+    const onClick = vi.fn();
+    const { getByTestId } = render(
+      <ParticipantStrip
+        participants={THREE_PARTICIPANTS}
+        localUserId={LOCAL_USER_ID}
+        maxVisible={3}
+        avatarSize={20}
+        onClick={onClick}
+        buttonLabel="Open collaboration comments"
+        title="Open collaboration comments"
+        testId="workspace-header-participants"
+      />,
+    );
+
+    const control = getByTestId('workspace-header-participants') as HTMLButtonElement;
+    expect(control.tagName).toBe('BUTTON');
+    expect(control.getAttribute('aria-label')).toBe('Open collaboration comments');
+    expect(control.style.background).toBe('transparent');
+    expect(control.style.border).toBe('0px');
+    expect(control.style.padding).toBe('0px');
+
+    fireEvent.click(control);
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 
   it('shows "+N" overflow chip when participants > maxVisible', () => {

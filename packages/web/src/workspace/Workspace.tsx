@@ -83,6 +83,7 @@ import {
   normalizePaneLayout,
   persistPaneLayout,
   readPersistedPaneLayout,
+  removePaneLeaf,
   splitPaneWithTab,
   type PaneLayoutState,
   type PaneNode,
@@ -300,20 +301,6 @@ function persistCompositions(state: WorkspaceCompositionState): void {
 function tabIdForLeaf(root: PaneNode, leafId: string): string | null {
   if (root.kind === 'leaf') return root.id === leafId ? root.tabId : null;
   return tabIdForLeaf(root.first, leafId) ?? tabIdForLeaf(root.second, leafId);
-}
-
-function assignedTabIdsOutsideLeaf(root: PaneNode, leafId: string): Set<string> {
-  const assigned = new Set<string>();
-  const walk = (node: PaneNode): void => {
-    if (node.kind === 'leaf') {
-      if (node.id !== leafId && node.tabId) assigned.add(node.tabId);
-      return;
-    }
-    walk(node.first);
-    walk(node.second);
-  };
-  walk(root);
-  return assigned;
 }
 
 function tabMatchesView(tab: ViewTab | null | undefined, partial: Omit<ViewTab, 'id'>): boolean {
@@ -2743,10 +2730,8 @@ export function Workspace(): JSX.Element {
     const closePaneTab = (): void => {
       if (!paneTab) return;
       const nextTabs = closeTab(tabsState, paneTab.id);
-      const assignedOutside = assignedTabIdsOutsideLeaf(paneLayout.root, node.id);
-      const replacement = nextTabs.tabs.find((tab) => !assignedOutside.has(tab.id)) ?? null;
       setTabsState(nextTabs);
-      setPaneLayout((layout) => assignTabToPane(layout, node.id, replacement?.id ?? null));
+      setPaneLayout((layout) => removePaneLeaf(layout, node.id));
     };
     const handlePaneLensChange = (nextLensMode: LensMode): void => {
       activatePaneForControls();
@@ -2760,100 +2745,84 @@ export function Workspace(): JSX.Element {
             Drop view
           </span>
         ) : null}
-        {!paneSecondarySidebarOpen ? (
-          <button
-            type="button"
-            data-testid={`canvas-pane-close-tab-${node.id}`}
-            title={`Close ${paneLabel}`}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-surface-strong hover:text-foreground"
-            aria-label={`Close ${paneLabel}`}
-            onClick={(event) => {
-              event.stopPropagation();
-              closePaneTab();
-            }}
-          >
-            <Icons.close size={12} aria-hidden="true" />
-          </button>
-        ) : null}
+        <button
+          type="button"
+          data-testid={`canvas-pane-close-tab-${node.id}`}
+          title={`Close ${paneLabel}`}
+          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted hover:bg-surface-strong hover:text-foreground"
+          aria-label={`Close ${paneLabel}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            closePaneTab();
+          }}
+        >
+          <Icons.close size={12} aria-hidden="true" />
+        </button>
       </>
     ) : null;
     const paneIdentityCell = paneTab ? (
       <div
         data-testid={`canvas-pane-view-header-${node.id}`}
-        className={[
-          'flex min-h-[94px] min-w-0 items-center border-r border-b border-border bg-surface-2',
-          paneSecondarySidebarOpen ? 'px-2.5 py-2' : 'justify-center px-1.5 py-2',
-        ].join(' ')}
+        className="flex h-[84px] min-w-0 flex-col overflow-hidden border-r border-b border-border bg-surface-2"
       >
-        <button
-          type="button"
-          data-testid="ribbon-mode-identity"
-          aria-label={
-            paneSecondarySidebarOpen
-              ? `Hide ${paneLabelParts.viewType} view settings for ${paneLabel}`
-              : `Show ${paneLabelParts.viewType} view settings for ${paneLabel}`
-          }
-          aria-pressed={paneSecondarySidebarOpen}
-          title={
-            paneSecondarySidebarOpen
-              ? `Hide ${paneLabelParts.viewType} view settings for ${paneLabel}`
-              : `Show ${paneLabelParts.viewType} view settings for ${paneLabel}`
-          }
-          onClick={togglePaneViewSettings}
-          className={[
-            'group relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border bg-background text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:bg-accent-soft',
-            paneSecondarySidebarOpen ? 'border-accent/45' : 'border-border',
-          ].join(' ')}
-        >
-          <PaneIcon size={24} aria-hidden="true" />
-          {!paneSecondarySidebarOpen ? (
-            <span
-              aria-hidden="true"
-              className="absolute bottom-1 right-1 h-1.5 w-1.5 rounded-full bg-accent"
-            />
-          ) : null}
-        </button>
         {paneSecondarySidebarOpen ? (
           <>
-            <div className="ml-2.5 min-w-0 flex-1">
-              <div className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold text-muted">
-                <span className="shrink-0">{paneLabelParts.viewType}</span>
-                <span aria-hidden="true" className="text-border">
-                  /
-                </span>
-                <div
-                  data-testid="ribbon-lens-dropdown"
-                  className="h-7 min-w-0 rounded-md border border-border bg-background/85 px-1 text-[11px] text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
-                >
-                  <LensDropdown
-                    currentLens={paneLensMode}
-                    onLensChange={handlePaneLensChange}
-                    enableHotkey={false}
-                  />
-                </div>
-              </div>
+            <div className="flex h-8 min-w-0 items-end gap-1.5 px-2.5 pb-1">
               <div
-                className="mt-1 min-w-0 truncate text-[14px] font-semibold leading-5 text-foreground"
+                className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground"
                 title={paneLabel}
               >
                 {paneLabelParts.viewName || paneLabel}
               </div>
             </div>
-            <button
-              type="button"
-              data-testid={`canvas-pane-close-tab-${node.id}`}
-              title={`Close ${paneLabel}`}
-              className="ml-1 inline-flex h-7 w-7 shrink-0 self-start items-center justify-center rounded-md text-muted hover:bg-surface-strong hover:text-foreground"
-              aria-label={`Close ${paneLabel}`}
-              onClick={(event) => {
-                event.stopPropagation();
-                closePaneTab();
-              }}
-            >
-              <Icons.close size={12} aria-hidden="true" />
-            </button>
+            <div className="flex min-h-0 min-w-0 flex-1 items-center gap-2 bg-background/55 px-2">
+              <button
+                type="button"
+                data-testid="ribbon-mode-identity"
+                aria-label={`Hide ${paneLabelParts.viewType} view settings for ${paneLabel}`}
+                aria-pressed={paneSecondarySidebarOpen}
+                title={`Hide ${paneLabelParts.viewType} view settings for ${paneLabel}`}
+                onClick={togglePaneViewSettings}
+                className="group relative inline-flex h-11 min-w-12 shrink-0 flex-col items-center justify-center gap-0 rounded-md border border-accent/45 bg-surface px-1.5 text-[11px] font-medium text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:bg-accent-soft"
+              >
+                <PaneIcon size={24} aria-hidden="true" />
+                <span className="max-w-12 truncate">{paneLabelParts.viewType}</span>
+              </button>
+              <div
+                data-testid="ribbon-lens-dropdown"
+                className="h-7 min-w-0 rounded-md border border-border bg-background/85 px-1 text-[11px] text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+              >
+                <LensDropdown
+                  currentLens={paneLensMode}
+                  onLensChange={handlePaneLensChange}
+                  enableHotkey={false}
+                />
+              </div>
+            </div>
           </>
-        ) : null}
+        ) : (
+          <>
+            <div className="h-8" />
+            <div className="flex min-h-0 flex-1 items-center justify-center bg-background/55 px-1">
+              <button
+                type="button"
+                data-testid="ribbon-mode-identity"
+                aria-label={`Show ${paneLabelParts.viewType} view settings for ${paneLabel}`}
+                aria-pressed={paneSecondarySidebarOpen}
+                title={`Show ${paneLabelParts.viewType} view settings for ${paneLabel}`}
+                onClick={togglePaneViewSettings}
+                className="group relative inline-flex h-11 min-w-12 shrink-0 flex-col items-center justify-center gap-0 rounded-md border border-border bg-surface px-1.5 text-[11px] font-medium text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:bg-accent-soft"
+              >
+                <PaneIcon size={24} aria-hidden="true" />
+                <span className="max-w-12 truncate">{paneLabelParts.viewType}</span>
+                <span
+                  aria-hidden="true"
+                  className="absolute bottom-1 right-1 h-1.5 w-1.5 rounded-full bg-accent"
+                />
+              </button>
+            </div>
+          </>
+        )}
       </div>
     ) : null;
     const paneRibbon = paneTab ? (
@@ -3080,7 +3049,7 @@ export function Workspace(): JSX.Element {
             ].join(' ')}
             style={{
               gridTemplateColumns: paneSecondarySidebarOpen
-                ? 'min(260px, 38%) minmax(0, 1fr)'
+                ? 'min(248px, 34%) minmax(0, 1fr)'
                 : '64px minmax(0, 1fr)',
               gridTemplateRows: 'auto minmax(0, 1fr)',
             }}
@@ -3569,25 +3538,29 @@ export function Workspace(): JSX.Element {
                   ⌘K
                 </kbd>
               </button>
-              <button
-                type="button"
-                data-testid="workspace-header-participants"
-                onClick={() => setCommentsOpen((v) => !v)}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-surface-2 hover:text-foreground"
-                aria-label="Open collaboration comments"
-                title="Open collaboration comments"
-              >
-                {presenceParticipants.length > 0 ? (
-                  <ParticipantStrip
-                    participants={presenceParticipants}
-                    localUserId={presenceLocalUserId ?? userId ?? ''}
-                    maxVisible={3}
-                    avatarSize={20}
-                  />
-                ) : (
+              {presenceParticipants.length > 0 ? (
+                <ParticipantStrip
+                  participants={presenceParticipants}
+                  localUserId={presenceLocalUserId ?? userId ?? ''}
+                  maxVisible={3}
+                  avatarSize={20}
+                  onClick={() => setCommentsOpen((v) => !v)}
+                  buttonLabel="Open collaboration comments"
+                  title="Open collaboration comments"
+                  testId="workspace-header-participants"
+                />
+              ) : (
+                <button
+                  type="button"
+                  data-testid="workspace-header-participants"
+                  onClick={() => setCommentsOpen((v) => !v)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-surface-2 hover:text-foreground"
+                  aria-label="Open collaboration comments"
+                  title="Open collaboration comments"
+                >
                   <Icons.collaborators size={16} aria-hidden="true" />
-                )}
-              </button>
+                </button>
+              )}
             </div>
           </div>
         }
