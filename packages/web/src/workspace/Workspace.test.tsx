@@ -454,9 +454,7 @@ describe('<Workspace /> — smoke', () => {
     expect(tab).toBeTruthy();
     fireEvent.doubleClick(tab!);
     const compositionId = tab!.getAttribute('data-testid')!.replace('composition-tab-', '');
-    const input = getByTestId(
-      `composition-rename-input-${compositionId}`,
-    ) as HTMLInputElement;
+    const input = getByTestId(`composition-rename-input-${compositionId}`) as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'Coordination Review' } });
     fireEvent.blur(input);
     expect(getByTestId('composition-bar').textContent).toContain('Coordination Review');
@@ -1359,7 +1357,7 @@ describe('<Workspace /> — smoke', () => {
       target: { value: 'project settings' },
     });
     fireEvent.click(getByTestId('palette-entry-project.open-settings'));
-    expect(getByTestId('project-menu')).toBeTruthy();
+    expect(getByTestId('project-setup-dialog')).toBeTruthy();
     fireEvent.keyDown(document, { key: 'Escape' });
 
     const primary = within(getByTestId('app-shell-primary-sidebar'));
