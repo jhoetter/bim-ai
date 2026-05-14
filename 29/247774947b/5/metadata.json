@@ -1,0 +1,64 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "29247774947b",
+  "session_id": "019e26f6-583d-7971-a103-487ff9fac0da",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T16:01:26.927632Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/shell/ParticipantStrip.test.tsx",
+    "packages/web/src/workspace/shell/ParticipantStrip.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "c052d8abd27d",
+  "checkpoint_transcript_start": 956,
+  "transcript_lines_at_start": 956,
+  "token_usage": {
+    "input_tokens": 137910,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 6562176,
+    "output_tokens": 17183,
+    "api_call_count": 47
+  },
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-14T16:01:26.873846Z",
+    "agent_lines": 185,
+    "agent_removed": 152,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 185,
+    "total_lines_changed": 337,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 276,
+      "user_lines_removed": 39,
+      "agent_lines_added": 3111,
+      "agent_lines_removed": 553,
+      "user_added_per_file": {
+        "packages/web/src/familyEditor/MaterialBrowserDialog.test.tsx": 41,
+        "packages/web/src/familyEditor/MaterialBrowserDialog.tsx": 235
+      },
+      "user_removed_per_file": {
+        "packages/web/src/familyEditor/MaterialBrowserDialog.tsx": 39
+      }
+    }
+  ]
+}
