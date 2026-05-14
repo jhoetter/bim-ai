@@ -65,12 +65,34 @@ export function lensFilterFromMode(mode: LensMode): (elem: Element) => 'foregrou
     return (elem: Element): 'foreground' | 'ghost' =>
       elementPassesFireSafetyLens(elem) ? 'foreground' : 'ghost';
   }
+  if (mode === 'construction') {
+    return (elem: Element): 'foreground' | 'ghost' =>
+      isConstructionLensElement(elem) ? 'foreground' : 'ghost';
+  }
   const expected = LENS_MODE_TO_DISCIPLINE[mode];
   return (elem: Element): 'foreground' | 'ghost' => {
     const disc =
       ('discipline' in elem ? (elem.discipline as string | null | undefined) : null) ?? 'arch';
     return disc === expected ? 'foreground' : 'ghost';
   };
+}
+
+function isConstructionLensElement(elem: Element): boolean {
+  if (
+    elem.kind === 'construction_package' ||
+    elem.kind === 'construction_logistics' ||
+    elem.kind === 'construction_qa_checklist' ||
+    elem.kind === 'issue'
+  ) {
+    return true;
+  }
+  if ('phaseCreated' in elem || 'phaseDemolished' in elem) {
+    return Boolean(elem.phaseCreated || elem.phaseDemolished);
+  }
+  if ('props' in elem && elem.props && typeof elem.props === 'object') {
+    return Boolean((elem.props as Record<string, unknown>).construction);
+  }
+  return false;
 }
 
 const LENS_TO_DISCIPLINE: Record<string, string> = {
