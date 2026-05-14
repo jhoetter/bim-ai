@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
 
 import { resolveMaterial, type MaterialPbrSpec } from './materials';
+import { createProceduralMaterialMaps } from './proceduralMaterials';
 
 export type ThreeMaterialUsage =
   | 'wallExterior'
@@ -228,10 +229,16 @@ export function makeThreeMaterialForKey(
   const depthWrite = opts.depthWrite ?? !(spec?.category === 'glass' || opacity < 1);
   const transparent = (opts.transparent ?? spec?.category === 'glass') || opacity < 1;
   const color = new THREE.Color(spec?.baseColor ?? fallbackColor);
-  const map = manager.load(spec?.textureMapUrl, 'albedo', opts.uvTransform);
+  const proceduralMaps =
+    spec && !spec.textureMapUrl ? createProceduralMaterialMaps(spec, opts.uvTransform) : null;
+  const map = manager.load(spec?.textureMapUrl, 'albedo', opts.uvTransform) ?? proceduralMaps?.map;
   const normalMap = manager.load(spec?.normalMapUrl, 'normal', opts.uvTransform);
-  const bumpMap = normalMap ? null : manager.load(spec?.bumpMapUrl, 'bump', opts.uvTransform);
-  const roughnessMap = manager.load(spec?.roughnessMapUrl, 'roughness', opts.uvTransform);
+  const bumpMap = normalMap
+    ? null
+    : (manager.load(spec?.bumpMapUrl, 'bump', opts.uvTransform) ?? proceduralMaps?.bumpMap);
+  const roughnessMap =
+    manager.load(spec?.roughnessMapUrl, 'roughness', opts.uvTransform) ??
+    proceduralMaps?.roughnessMap;
   const metalnessMap = manager.load(spec?.metalnessMapUrl, 'metalness', opts.uvTransform);
 
   const common: THREE.MeshStandardMaterialParameters = {

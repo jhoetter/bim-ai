@@ -256,7 +256,7 @@ Evidence (2026-05-14):
 ### WP-MAT-04 — Procedural Material Patterns For Offline/Generated Assets
 
 - Priority: `P0`
-- Status: `Open`
+- Status: `Done`
 - Covers: `MAT-GAP-002`, `MAT-GAP-004`
 - Goal: provide credible surface variation without depending on external bitmap assets for every material.
 - Source ownership:
@@ -277,7 +277,7 @@ Evidence (2026-05-14):
     - albedo/canvas map,
     - bump/height map,
     - roughness variation map.
-  - Cache generated `CanvasTexture` by material key and size.
+  - Cache generated `DataTexture` by material key, size, and UV transform.
   - Prefer bitmap asset maps when present; procedural maps are fallback when map slots are empty.
 - Acceptance:
   - Brick, concrete, timber, stone, tile, and plaster visibly differ in realistic mode even without network assets.
@@ -288,6 +288,16 @@ Evidence (2026-05-14):
   - Texture generator unit tests for deterministic dimensions and non-uniform pixel data.
   - Material factory test ensuring procedural fallback appears when no asset URL/id is present.
   - Screenshot comparison matrix of six material spheres or wall panels.
+
+Evidence (2026-05-14):
+
+- Added `packages/web/src/viewport/proceduralMaterials.ts` using DOM-free `THREE.DataTexture` generation for brick, concrete/render, timber/cladding, stone, plaster, and standing-seam metal.
+- Generated paired albedo, bump, and roughness maps with deterministic non-uniform pixel data and cache disposal support.
+- Integrated procedural fallback into `makeThreeMaterialForKey()` only when a resolved material lacks authored bitmap map slots, preserving bitmap assets as the preferred path.
+- Added `packages/web/src/viewport/proceduralMaterials.test.ts` covering deterministic dimensions, non-uniform data, category variation, and factory fallback maps.
+- Verification:
+  - `pnpm --filter @bim-ai/web exec vitest run src/viewport/proceduralMaterials.test.ts src/viewport/threeMaterialFactory.test.ts`
+  - `pnpm --filter @bim-ai/web typecheck`
 
 ### WP-MAT-05 — Plan And Section Graphics Binding
 
