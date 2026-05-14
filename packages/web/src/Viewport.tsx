@@ -90,6 +90,12 @@ import {
   makeSurveyPointMarker,
 } from './viewport/originMarkers';
 import { makeReferencePlaneMarker } from './viewport/referencePlaneMarker';
+import {
+  levelDatumBoundsFromBox,
+  makeLevelDatum3dGroup,
+  resolveLevelDatum3dRows,
+  selectableLevelDatumId,
+} from './viewport/levelDatums3d';
 import { makeSweepMesh } from './viewport/sweepMesh';
 import { makeDormerMesh } from './viewport/dormerMesh';
 import { buildMassMesh } from './viewport/meshBuilders.mass';
@@ -370,6 +376,7 @@ function disposeObject3D(root: THREE.Object3D): void {
   root.traverse((node) => {
     if (
       node instanceof THREE.Mesh ||
+      node instanceof THREE.Line ||
       node instanceof THREE.LineSegments ||
       node instanceof THREE.Sprite
     ) {
@@ -420,6 +427,7 @@ export function Viewport({
   /** Live paint bundle for the rendered scene. Rebuilt on theme change. */
   const paintBundleRef = useRef<ViewportPaintBundle | null>(null);
   const wallDraftPreviewGroupRef = useRef<THREE.Object3D | null>(null);
+  const levelDatumGroupRef = useRef<THREE.Group | null>(null);
   const clearWallDraftPreviewGroup = useCallback(() => {
     const group = wallDraftPreviewGroupRef.current;
     if (!group) return;
@@ -517,6 +525,7 @@ export function Viewport({
   const selectedIds = useBimStore((s) => s.selectedIds);
   selectedIdRef.current = selectedId;
   selectedIdsRef.current = selectedIds;
+  const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
   const storePlanTool = useBimStore((s) => s.planTool);
   const planTool = activePlanTool ?? storePlanTool;
   const activeLevelId = useBimStore((s) => s.activeLevelId);
@@ -695,6 +704,8 @@ export function Viewport({
   const orbitCameraNonce = useBimStore((s) => s.orbitCameraNonce);
   const orbitCameraPoseMm = useBimStore((s) => s.orbitCameraPoseMm);
   const activeViewpointId = useBimStore((s) => s.activeViewpointId);
+  const direct3dAuthoringActive =
+    !walkActive && DIRECT_3D_AUTHORING_TOOLS.has(planTool as Direct3dAuthoringTool);
 
   const persistedOrbitViewpoint = useMemo(() => {
     const id = activeViewpointId;
@@ -1154,6 +1165,15 @@ export function Viewport({
     };
 
     function pick(cx: number, cy: number, additive = false) {
+      const levelDatumId = pickLevelDatumId(cx, cy);
+      if (levelDatumId) {
+        const store = useBimStore.getState();
+        if (additive) store.toggleSelectedId(levelDatumId);
+        else store.select(levelDatumId);
+        store.setActiveLevelId(levelDatumId);
+        return;
+      }
+
       const rect = renderer.domElement.getBoundingClientRect();
       ndc.x = ((cx - rect.left) / rect.width) * 2 - 1;
       ndc.y = -(((cy - rect.top) / rect.height) * 2 - 1);
@@ -1169,6 +1189,22 @@ export function Viewport({
         return;
       }
       store.select(id);
+    }
+
+    function pickLevelDatumId(cx: number, cy: number): string | null {
+      const rect = renderer.domElement.getBoundingClientRect();
+      ndc.x = ((cx - rect.left) / rect.width) * 2 - 1;
+      ndc.y = -(((cy - rect.top) / rect.height) * 2 - 1);
+      camera.updateMatrixWorld(true);
+      raycaster.setFromCamera(ndc, camera);
+      const datumGroup = levelDatumGroupRef.current;
+      if (!datumGroup) return null;
+      const hits = raycaster.intersectObjects(datumGroup.children, true);
+      for (const hit of hits) {
+        const levelId = selectableLevelDatumId(hit.object);
+        if (levelId) return levelId;
+      }
+      return null;
     }
 
     function activeDirect3dTool(): Direct3dAuthoringTool | null {
@@ -2542,6 +2578,18 @@ export function Viewport({
       if (walkController.snapshot().active && !document.pointerLockElement) {
         host.requestPointerLock();
         return;
+      }
+      if (ev.button === 0) {
+        const levelDatumId = pickLevelDatumId(ev.clientX, ev.clientY);
+        if (levelDatumId) {
+          const store = useBimStore.getState();
+          store.select(levelDatumId);
+          store.setActiveLevelId(levelDatumId);
+          dragMoved = false;
+          dragging = null;
+          ev.preventDefault();
+          return;
+        }
       }
       if (
         DIRECT_3D_AUTHORING_TOOLS.has(planToolRef.current as Direct3dAuthoringTool) &&
@@ -4217,6 +4265,32 @@ export function Viewport({
     text3dRebuildTick,
   ]);
 
+  // Revit-style 3D authoring datum: levels stay visible as named horizontal datums,
+  // and the active work plane gets the blue plane emphasis Revit shows for selected levels.
+  useEffect(() => {
+    const root = rootGroupRef.current;
+    const previous = levelDatumGroupRef.current;
+    if (previous) {
+      previous.parent?.remove(previous);
+      disposeObject3D(previous);
+      levelDatumGroupRef.current = null;
+    }
+    if (!root || !direct3dAuthoringActive) return;
+
+    const rows = resolveLevelDatum3dRows(elementsById, activeLevelId, viewerLevelHidden);
+    if (rows.length === 0) return;
+    const bounds = levelDatumBoundsFromBox(computeRootBoundingBox(root));
+    const group = makeLevelDatum3dGroup(rows, bounds);
+    root.add(group);
+    levelDatumGroupRef.current = group;
+
+    return () => {
+      if (levelDatumGroupRef.current === group) levelDatumGroupRef.current = null;
+      group.parent?.remove(group);
+      disposeObject3D(group);
+    };
+  }, [activeLevelId, direct3dAuthoringActive, elementsById, viewerLevelHidden]);
+
   // ── F-011: visual style (shaded / wireframe / consistent-colors / hidden-line / realistic / ray-trace) ──
   useEffect(() => {
     const cache = bimPickMapRef.current;
@@ -4722,9 +4796,6 @@ export function Viewport({
     setCurrentElevation(snap.elevation);
   }, []);
 
-  const direct3dAuthoringActive =
-    !walkActive && DIRECT_3D_AUTHORING_TOOLS.has(planTool as Direct3dAuthoringTool);
-
   const overlayTitleInstruction = useMemo((): { title: string; instruction: string } | null => {
     if (!direct3dAuthoringActive || !authoringOverlay) return null;
     if (
@@ -4912,6 +4983,42 @@ export function Viewport({
     };
   }, [authoringOverlay, direct3dAuthoringActive, draftPlaneAngleWarning]);
 
+  const direct3dLevelOptions = useMemo(
+    () =>
+      Object.values(elementsById)
+        .filter((el): el is Extract<Element, { kind: 'level' }> => el.kind === 'level')
+        .map((level) => ({ id: level.id, name: level.name, elevationMm: level.elevationMm }))
+        .sort((a, b) => a.elevationMm - b.elevationMm),
+    [elementsById],
+  );
+  const activeWorkPlaneLevel = useMemo(
+    () => resolve3dDraftLevel(direct3dLevelOptions, activeLevelId),
+    [activeLevelId, direct3dLevelOptions],
+  );
+  const setAuthoringWorkPlaneLevel = useCallback(
+    (levelId: string): void => {
+      if (!levelId) return;
+      setActiveLevelId(levelId);
+      selectStoreEl(levelId);
+    },
+    [selectStoreEl, setActiveLevelId],
+  );
+  const stepAuthoringWorkPlaneLevel = useCallback(
+    (direction: -1 | 1): void => {
+      if (direct3dLevelOptions.length === 0) return;
+      const activeIndex = activeWorkPlaneLevel
+        ? direct3dLevelOptions.findIndex((level) => level.id === activeWorkPlaneLevel.id)
+        : -1;
+      const fallbackIndex = direction > 0 ? 0 : direct3dLevelOptions.length - 1;
+      const nextIndex =
+        activeIndex < 0
+          ? fallbackIndex
+          : Math.max(0, Math.min(direct3dLevelOptions.length - 1, activeIndex + direction));
+      setAuthoringWorkPlaneLevel(direct3dLevelOptions[nextIndex]!.id);
+    },
+    [activeWorkPlaneLevel, direct3dLevelOptions, setAuthoringWorkPlaneLevel],
+  );
+
   return (
     <div
       data-testid="orbit-3d-viewport"
@@ -4955,18 +5062,48 @@ export function Viewport({
       ) : null}
 
       {direct3dAuthoringActive && authoringOverlay?.levelName ? (
-        <div className="pointer-events-none absolute left-3 top-[74px] z-20">
+        <div className="pointer-events-auto absolute left-3 top-[74px] z-20">
           <div
             data-testid="viewport-work-plane-badge"
-            className="rounded border border-accent/40 bg-surface/90 px-2.5 py-1.5 font-mono text-[11px] text-foreground shadow-sm"
+            className="flex max-w-[min(520px,calc(100vw-2rem))] items-center gap-2 rounded border border-accent/40 bg-surface/95 px-2.5 py-1.5 text-[11px] text-foreground shadow-sm"
+            onPointerDown={(event) => event.stopPropagation()}
           >
-            <span className="font-semibold text-accent">Work plane</span>
-            <span className="ml-2">{authoringOverlay.levelName}</span>
-            {typeof authoringOverlay.workPlaneElevationMm === 'number' ? (
-              <span className="ml-2 text-muted">
-                {(authoringOverlay.workPlaneElevationMm / 1000).toFixed(2)} m
-              </span>
-            ) : null}
+            <span className="font-mono font-semibold text-accent">Work plane</span>
+            <button
+              type="button"
+              data-testid="viewport-work-plane-prev"
+              aria-label="Previous level"
+              title="Previous level"
+              disabled={direct3dLevelOptions.length < 2}
+              className="grid size-6 place-items-center rounded border border-border bg-surface text-xs text-muted disabled:opacity-40"
+              onClick={() => stepAuthoringWorkPlaneLevel(-1)}
+            >
+              ^
+            </button>
+            <select
+              data-testid="viewport-work-plane-level-select"
+              aria-label="Active work plane level"
+              className="h-6 min-w-[170px] max-w-[260px] rounded border border-border bg-surface px-2 font-mono text-[11px] text-foreground"
+              value={activeWorkPlaneLevel?.id ?? ''}
+              onChange={(event) => setAuthoringWorkPlaneLevel(event.currentTarget.value)}
+            >
+              {direct3dLevelOptions.map((level) => (
+                <option key={level.id} value={level.id}>
+                  {level.name} {(level.elevationMm / 1000).toFixed(2)} m
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              data-testid="viewport-work-plane-next"
+              aria-label="Next level"
+              title="Next level"
+              disabled={direct3dLevelOptions.length < 2}
+              className="grid size-6 place-items-center rounded border border-border bg-surface text-xs text-muted disabled:opacity-40"
+              onClick={() => stepAuthoringWorkPlaneLevel(1)}
+            >
+              v
+            </button>
           </div>
         </div>
       ) : null}
