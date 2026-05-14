@@ -3,7 +3,7 @@
   "checkpoint_id": "bef90cd09f27",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 3,
+  "checkpoints_count": 4,
   "files_touched": [
     "packages/web/src/viewport/authoring3d.test.ts",
     "packages/web/src/viewport/authoring3d.ts",
@@ -27,13 +27,19 @@
       "transcript": "/be/f90cd09f27/2/full.jsonl",
       "content_hash": "/be/f90cd09f27/2/content_hash.txt",
       "prompt": "/be/f90cd09f27/2/prompt.txt"
+    },
+    {
+      "metadata": "/be/f90cd09f27/3/metadata.json",
+      "transcript": "/be/f90cd09f27/3/full.jsonl",
+      "content_hash": "/be/f90cd09f27/3/content_hash.txt",
+      "prompt": "/be/f90cd09f27/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 7000794,
+    "input_tokens": 9793710,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 177064832,
-    "output_tokens": 444353,
-    "api_call_count": 1397
+    "cache_read_tokens": 243425792,
+    "output_tokens": 703650,
+    "api_call_count": 1977
   }
 }
