@@ -3100,7 +3100,7 @@ export function Workspace(): JSX.Element {
       <aside
         aria-label={`Element properties for ${paneLabel}`}
         data-testid={`canvas-pane-element-sidebar-${node.id}`}
-        className="min-h-0 shrink-0 overflow-hidden border-l border-border bg-surface"
+        className="absolute inset-y-0 right-0 z-30 min-h-0 overflow-hidden border-l border-border bg-surface shadow-elev-2"
         style={{ width: 'min(340px, 45%)' }}
       >
         <WorkspaceRightRail
@@ -3163,7 +3163,7 @@ export function Workspace(): JSX.Element {
             </div>
             {paneSecondarySidebar}
             <div
-              className="flex min-h-0 min-w-0"
+              className="relative flex min-h-0 min-w-0 overflow-hidden"
               style={{
                 gridColumn: paneSecondarySidebarOpen ? 2 : '1 / 3',
                 gridRow: 2,

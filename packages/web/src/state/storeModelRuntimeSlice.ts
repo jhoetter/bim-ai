@@ -121,11 +121,19 @@ export function createModelRuntimeSlice(
     select: (id) => set({ selectedId: id, selectedIds: [] }),
 
     toggleSelectedId: (id) =>
-      set((state) => ({
-        selectedIds: state.selectedIds.includes(id)
-          ? state.selectedIds.filter((x) => x !== id)
-          : [...state.selectedIds, id],
-      })),
+      set((state) => {
+        if (state.selectedId === id) {
+          const [nextPrimary, ...rest] = state.selectedIds;
+          return { selectedId: nextPrimary, selectedIds: rest };
+        }
+        if (state.selectedIds.includes(id)) {
+          return { selectedIds: state.selectedIds.filter((x) => x !== id) };
+        }
+        if (!state.selectedId) {
+          return { selectedId: id, selectedIds: [] };
+        }
+        return { selectedIds: [...state.selectedIds, id] };
+      }),
 
     clearSelectedIds: () => set({ selectedIds: [] }),
 

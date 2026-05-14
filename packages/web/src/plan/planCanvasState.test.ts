@@ -97,6 +97,10 @@ describe('classifyPointerStart — §14.3', () => {
   it('Shift + LMB → add-to-selection', () => {
     expect(classifyPointerStart({ button: 0, shiftKey: true })).toBe('add-to-selection');
   });
+  it('Ctrl/Cmd + LMB → add-to-selection', () => {
+    expect(classifyPointerStart({ button: 0, ctrlKey: true })).toBe('add-to-selection');
+    expect(classifyPointerStart({ button: 0, metaKey: true })).toBe('add-to-selection');
+  });
   it('Alt + LMB → toggle-selection', () => {
     expect(classifyPointerStart({ button: 0, altKey: true })).toBe('toggle-selection');
   });

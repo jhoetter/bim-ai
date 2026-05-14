@@ -155,6 +155,7 @@ import {
   familyTypeRequiresWallHost,
 } from '../families/familyPlacementRuntime';
 import type { FamilyDefinition } from '../families/types';
+import { makePlacedAssetPlanSymbol } from '../viewport/placedAssetRendering';
 import {
   copyElementsToClipboard,
   pasteElementsFromClipboard,
@@ -1945,11 +1946,49 @@ export function PlanCanvas({
       grp.add(line);
     };
 
-    const buildComponentGhost = (
-      widthMm: number,
-      heightMm: number,
-      rotDeg: number,
-    ): THREE.Group => {
+    const tintComponentGhost = (ghost: THREE.Group): THREE.Group => {
+      ghost.traverse((child) => {
+        const material = (child as THREE.Mesh | THREE.Line).material;
+        if (!material) return;
+        const materials = Array.isArray(material) ? material : [material];
+        for (const mat of materials) {
+          if ('transparent' in mat) mat.transparent = true;
+          if ('opacity' in mat) mat.opacity = Math.min(Number(mat.opacity) || 1, 0.68);
+          if ('depthWrite' in mat) mat.depthWrite = false;
+        }
+      });
+      return ghost;
+    };
+
+    const buildComponentGhost = ({
+      entry,
+      widthMm,
+      heightMm,
+      rotDeg,
+    }: {
+      entry?: Extract<Element, { kind: 'asset_library_entry' }>;
+      widthMm: number;
+      heightMm: number;
+      rotDeg: number;
+    }): THREE.Group => {
+      if (entry) {
+        const asset: Extract<Element, { kind: 'placed_asset' }> = {
+          kind: 'placed_asset',
+          id: '__component_ghost__',
+          name: entry.name,
+          assetId: entry.id,
+          levelId: activeLevelResolvedId,
+          positionMm: { xMm: 0, yMm: 0 },
+          rotationDeg: rotDeg,
+          paramValues: {},
+        };
+        return tintComponentGhost(
+          makePlacedAssetPlanSymbol(asset, entry, {
+            y: SLICE_Y + 0.018,
+            color: readPlanToken('--draft-construction-blue', '#2563eb'),
+          }),
+        );
+      }
       const g = new THREE.Group();
       const hw = widthMm / 2000;
       const hd = heightMm / 2000;
@@ -1998,7 +2037,7 @@ export function PlanCanvas({
       const mesh = new THREE.LineSegments(geo, mat);
       g.add(mesh);
       g.rotation.y = (rotDeg * Math.PI) / 180;
-      return g;
+      return tintComponentGhost(g);
     };
 
     const onMove = (ev: PointerEvent) => {
@@ -2314,7 +2353,7 @@ export function PlanCanvas({
           ? (() => {
               for (const el of Object.values(elementsById)) {
                 if (el.kind === 'asset_library_entry' && el.id === assetId) {
-                  return el as { thumbnailWidthMm?: number; thumbnailHeightMm?: number };
+                  return el;
                 }
               }
               return undefined;
@@ -2337,8 +2376,13 @@ export function PlanCanvas({
             grp.remove(componentGhostRef.current);
             componentGhostRef.current = null;
           }
-          const ghost = buildComponentGhost(w, h, pendingComponentRotationDeg);
-          ghost.position.set(rr.xMm / 1000, 0, rr.yMm / 1000);
+          const ghost = buildComponentGhost({
+            entry,
+            widthMm: w,
+            heightMm: h,
+            rotDeg: pendingComponentRotationDeg,
+          });
+          ghost.position.set(rr.xMm / 1000, ghost.position.y, rr.yMm / 1000);
           grp.add(ghost);
           componentGhostRef.current = ghost;
         }
@@ -2724,28 +2768,21 @@ export function PlanCanvas({
           typeof (h?.object.userData as { bimPickId?: unknown }).bimPickId === 'string'
             ? (h!.object.userData as { bimPickId: string }).bimPickId
             : undefined;
-        // F-100: Ctrl+Click builds the multi-select set (`selectedIds`).
-        // B02 — classifyPointerStart add-to-selection intent: Shift+Click toggles
-        const isCtrlClick = ev.ctrlKey || ev.metaKey;
-        if (isCtrlClick && id) {
-          // Ctrl+Click: toggle id in multi-select, leave selectedId unchanged.
-          useBimStore.getState().toggleSelectedId(id);
-          return;
-        }
         const clickIntent = classifyPointerStart({
           button: ev.button,
           shiftKey: ev.shiftKey,
           altKey: ev.altKey,
+          ctrlKey: ev.ctrlKey,
+          metaKey: ev.metaKey,
           activeTool: 'select',
           dragDirection: null,
         });
-        if (clickIntent === 'add-to-selection') {
-          const currentSel = useBimStore.getState().selectedId;
-          selectEl(id === currentSel ? undefined : id);
-          useBimStore.getState().clearSelectedIds();
+        if ((clickIntent === 'add-to-selection' || clickIntent === 'toggle-selection') && id) {
+          useBimStore.getState().toggleSelectedId(id);
+        } else if (clickIntent === 'add-to-selection' || clickIntent === 'toggle-selection') {
+          return;
         } else {
           selectEl(id);
-          useBimStore.getState().clearSelectedIds();
         }
         return;
       }

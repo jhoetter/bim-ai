@@ -438,6 +438,7 @@ export function Viewport({
   const clippingPlanesRef = useRef<THREE.Plane[]>([]);
   /** Ref-copy of selectedId so the geometry effect can read it without adding it to deps. */
   const selectedIdRef = useRef<string | undefined>(undefined);
+  const selectedIdsRef = useRef<string[]>([]);
   const prevCatHiddenRef = useRef<Record<string, boolean>>({});
   const prevLevelHiddenRef = useRef<Record<string, boolean>>({});
   const prevLensModeRef = useRef<LensMode | null>(null);
@@ -511,7 +512,9 @@ export function Viewport({
   walkLevelsRef.current = walkLevels;
 
   const selectedId = useBimStore((s) => s.selectedId);
+  const selectedIds = useBimStore((s) => s.selectedIds);
   selectedIdRef.current = selectedId;
+  selectedIdsRef.current = selectedIds;
   const storePlanTool = useBimStore((s) => s.planTool);
   const planTool = activePlanTool ?? storePlanTool;
   const activeLevelId = useBimStore((s) => s.activeLevelId);
@@ -951,9 +954,11 @@ export function Viewport({
       // Keep outline pass in sync if this wall is the current selection.
       const op = outlinePassRef.current;
       if (op) {
-        const sid = selectedIdRef.current;
-        const sel = sid ? cacheNow.get(sid) : undefined;
-        op.selectedObjects = sel ? [sel] : [];
+        const selectedObjects = [selectedIdRef.current, ...selectedIdsRef.current]
+          .filter((id): id is string => typeof id === 'string')
+          .map((id) => cacheNow.get(id))
+          .filter((obj): obj is THREE.Object3D => Boolean(obj));
+        op.selectedObjects = selectedObjects;
       }
     };
 
@@ -1157,7 +1162,7 @@ export function Viewport({
       },
     };
 
-    function pick(cx: number, cy: number) {
+    function pick(cx: number, cy: number, additive = false) {
       const rect = renderer.domElement.getBoundingClientRect();
       ndc.x = ((cx - rect.left) / rect.width) * 2 - 1;
       ndc.y = -(((cy - rect.top) / rect.height) * 2 - 1);
@@ -1166,7 +1171,13 @@ export function Viewport({
       const hits = raycaster.intersectObjects(root.children, true);
 
       const first = hits.find((h) => typeof h.object.userData.bimPickId === 'string');
-      useBimStore.getState().select(first?.object.userData.bimPickId as string | undefined);
+      const id = first?.object.userData.bimPickId as string | undefined;
+      const store = useBimStore.getState();
+      if (additive) {
+        if (id) store.toggleSelectedId(id);
+        return;
+      }
+      store.select(id);
     }
 
     function activeDirect3dTool(): Direct3dAuthoringTool | null {
@@ -2652,8 +2663,8 @@ export function Viewport({
         handle3dDirectToolClick(ev.clientX, ev.clientY);
         return;
       }
-      if (!dragMoved && wasDragging === 'orbit') {
-        pick(ev.clientX, ev.clientY);
+      if (!dragMoved && ev.button === 0 && (wasDragging === 'orbit' || wasDragging === 'pan')) {
+        pick(ev.clientX, ev.clientY, ev.shiftKey || ev.ctrlKey || ev.metaKey || ev.altKey);
       }
     }
 
@@ -4193,9 +4204,11 @@ export function Viewport({
     // Re-sync outline pass in case the selected element's mesh was just replaced.
     const op = outlinePassRef.current;
     if (op) {
-      const sid = selectedIdRef.current;
-      const sel = sid ? cache.get(sid) : undefined;
-      op.selectedObjects = sel ? [sel] : [];
+      const selectedObjects = [selectedIdRef.current, ...selectedIdsRef.current]
+        .filter((id): id is string => typeof id === 'string')
+        .map((id) => cache.get(id))
+        .filter((obj): obj is THREE.Object3D => Boolean(obj));
+      op.selectedObjects = selectedObjects;
       op.visibleEdgeColor.set(paint?.selection.selectedColor ?? '#fb923c');
       op.hiddenEdgeColor.set(paint?.selection.selectedColor ?? '#fb923c');
     }
@@ -4503,9 +4516,12 @@ export function Viewport({
   useEffect(() => {
     const op = outlinePassRef.current;
     if (!op) return;
-    const sel = selectedId ? bimPickMapRef.current.get(selectedId) : undefined;
-    op.selectedObjects = sel ? [sel] : [];
-  }, [selectedId]);
+    const selectedObjects = [selectedId, ...selectedIds]
+      .filter((id): id is string => typeof id === 'string')
+      .map((id) => bimPickMapRef.current.get(id))
+      .filter((obj): obj is THREE.Object3D => Boolean(obj));
+    op.selectedObjects = selectedObjects;
+  }, [selectedId, selectedIds]);
 
   // COL-V3-01 — render colored outline halos for remote participant selections.
   // One OutlinePass per unique color is inserted before the OutputPass so each

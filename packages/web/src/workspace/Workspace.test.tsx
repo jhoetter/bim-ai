@@ -985,7 +985,9 @@ describe('<Workspace /> — smoke', () => {
     const { getByTestId, queryByTestId } = rendered;
     expect(getByTestId('app-shell').dataset.elementSidebarPresent).toBe('false');
     expect(queryByTestId('app-shell-element-resize-handle')).toBeNull();
-    expect(within(paneElementSidebar(rendered)).getByTestId('inspector')).toBeTruthy();
+    const sidebar = paneElementSidebar(rendered);
+    expect(sidebar.className).toContain('absolute');
+    expect(within(sidebar).getByTestId('inspector')).toBeTruthy();
   });
 
   it('keeps sheet review controls in the ribbon and out of canvas chrome — UX-CAN-023', () => {

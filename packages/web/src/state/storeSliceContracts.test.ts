@@ -52,6 +52,10 @@ describe('store slice contracts', () => {
     useBimStore.getState().toggleSelectedId('door-1');
     expect(useBimStore.getState().selectedIds).toEqual(['door-1']);
 
+    useBimStore.getState().toggleSelectedId('wall-1');
+    expect(useBimStore.getState().selectedId).toBe('door-1');
+    expect(useBimStore.getState().selectedIds).toEqual([]);
+
     useBimStore.getState().clearSelectedIds();
     expect(useBimStore.getState().selectedIds).toEqual([]);
   });

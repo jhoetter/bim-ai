@@ -21,6 +21,7 @@ afterEach(() => {
   cleanup();
   useBimStore.setState({
     selectedId: undefined,
+    selectedIds: [],
     activePlanViewId: undefined,
     elementsById: {},
     activityEvents: [],
@@ -354,6 +355,44 @@ describe('WorkspaceRightRail — 3D selected wall actions', () => {
       categories: [],
       elementIds: [wall.id],
     });
+  });
+
+  it('shows tabbed element sidebar controls and deletes the full multi-selection', () => {
+    const wallB: Extract<Element, { kind: 'wall' }> = {
+      ...wall,
+      id: 'wall-3d-b',
+      name: 'Second Wall',
+      start: { xMm: 0, yMm: 1000 },
+      end: { xMm: 6000, yMm: 1000 },
+    };
+    const onSemanticCommand = vi.fn();
+    useBimStore.setState({
+      selectedId: wall.id,
+      selectedIds: [wallB.id],
+      elementsById: { [wall.id]: wall, [wallB.id]: wallB },
+    });
+
+    const { getByTestId } = renderWithI18n(
+      <WorkspaceRightRail
+        mode="plan"
+        onSemanticCommand={onSemanticCommand}
+        onModeChange={() => undefined}
+        surface="element"
+      />,
+    );
+
+    expect(getByTestId('element-selection-tabs').textContent).toContain('2 selected');
+    fireEvent.click(getByTestId(`element-selection-tab-${wallB.id}`));
+    expect(useBimStore.getState().selectedId).toBe(wallB.id);
+    expect(useBimStore.getState().selectedIds).toEqual([wall.id]);
+
+    fireEvent.click(getByTestId('element-selection-delete'));
+    expect(onSemanticCommand).toHaveBeenCalledWith({
+      type: 'deleteElements',
+      elementIds: [wallB.id, wall.id],
+    });
+    expect(useBimStore.getState().selectedId).toBeUndefined();
+    expect(useBimStore.getState().selectedIds).toEqual([]);
   });
 });
 

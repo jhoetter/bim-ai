@@ -205,6 +205,7 @@ export function classifyPointerStart(event: PointerStartLike): PointerIntent {
   if (event.spacePressed && event.button === 0) return 'pan';
   if (event.button === 1) return 'pan'; // middle-click pan
   if (event.activeTool && event.activeTool !== 'select') return 'draw';
+  if ((event.ctrlKey || event.metaKey) && event.button === 0) return 'add-to-selection';
   if (event.shiftKey && event.button === 0) return 'add-to-selection';
   if (event.altKey && event.button === 0) return 'toggle-selection';
   if (event.button === 0) {

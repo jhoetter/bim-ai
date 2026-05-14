@@ -316,6 +316,7 @@ export function WorkspaceRightRail({
 }): JSX.Element {
   const { t } = useTranslation();
   const selectedId = useBimStore((s) => s.selectedId);
+  const selectedIds = useBimStore((s) => s.selectedIds);
   const select = useBimStore((s) => s.select);
   const elementsById = useBimStore((s) => s.elementsById);
   const revision = useBimStore((s) => s.revision);
@@ -364,6 +365,10 @@ export function WorkspaceRightRail({
   const thinLinesEnabled = useBimStore((s) => s.thinLinesEnabled);
   const toggleThinLines = useBimStore((s) => s.toggleThinLines);
   const el = selectedId ? (elementsById[selectedId] as Element | undefined) : undefined;
+  const selectedElements = useMemo(() => {
+    const ids = [...new Set([selectedId, ...selectedIds].filter((id): id is string => !!id))];
+    return ids.map((id) => elementsById[id]).filter((item): item is Element => Boolean(item));
+  }, [elementsById, selectedId, selectedIds]);
   const activeViewTarget = activeViewTargetId
     ? (elementsById[activeViewTargetId] as Element | undefined)
     : undefined;
@@ -501,6 +506,37 @@ export function WorkspaceRightRail({
       discipline,
     });
   }
+
+  const focusSelectionTab = useCallback((elementId: string): void => {
+    const ids = [
+      ...new Set(
+        [useBimStore.getState().selectedId, ...useBimStore.getState().selectedIds].filter(
+          (id): id is string => typeof id === 'string',
+        ),
+      ),
+    ];
+    useBimStore.setState({
+      selectedId: elementId,
+      selectedIds: ids.filter((id) => id !== elementId),
+    });
+  }, []);
+
+  const deleteCurrentSelection = useCallback((): void => {
+    const ids = [
+      ...new Set(
+        [useBimStore.getState().selectedId, ...useBimStore.getState().selectedIds].filter(
+          (id): id is string => typeof id === 'string',
+        ),
+      ),
+    ].filter((id) => Boolean(elementsById[id]));
+    if (ids.length === 0) return;
+    void onSemanticCommand(
+      ids.length === 1
+        ? { type: 'deleteElement', elementId: ids[0] }
+        : { type: 'deleteElements', elementIds: ids },
+    );
+    useBimStore.getState().select(undefined);
+  }, [elementsById, onSemanticCommand]);
 
   const inspectorSelection = useMemo<InspectorSelection | null>(() => {
     if (!selectedId) return null;
@@ -817,6 +853,14 @@ export function WorkspaceRightRail({
       {/* CHR-V3-06: key={selectedId} remounts (and re-animates) Inspector on each selection */}
       {showElementSurface ? (
         <div id="right-rail-properties" style={{ position: 'relative' }}>
+          {selectedElements.length > 1 ? (
+            <SelectionTabs
+              elements={selectedElements}
+              activeId={selectedId}
+              onSelect={focusSelectionTab}
+              onDeleteSelection={deleteCurrentSelection}
+            />
+          ) : null}
           <Inspector
             key={selectedId ?? 'none'}
             selection={inspectorSelection}
@@ -1458,6 +1502,66 @@ export function WorkspaceRightRail({
           />
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function SelectionTabs({
+  elements,
+  activeId,
+  onSelect,
+  onDeleteSelection,
+}: {
+  elements: Element[];
+  activeId: string | undefined;
+  onSelect: (elementId: string) => void;
+  onDeleteSelection: () => void;
+}): JSX.Element {
+  return (
+    <div className="border-b border-border bg-surface" data-testid="element-selection-tabs">
+      <div className="flex items-center justify-between gap-2 px-3 pt-2">
+        <div className="min-w-0 text-[11px] font-medium text-muted">
+          {elements.length} selected
+        </div>
+        <button
+          type="button"
+          className="shrink-0 rounded border border-border px-2 py-1 text-[11px] text-muted hover:text-foreground"
+          data-testid="element-selection-delete"
+          onClick={onDeleteSelection}
+        >
+          Delete Selection
+        </button>
+      </div>
+      <div
+        role="tablist"
+        aria-label="Selected elements"
+        className="mt-2 flex gap-1 overflow-x-auto px-3"
+      >
+        {elements.map((element) => {
+          const active = element.id === activeId;
+          const name = (element as { name?: string }).name ?? element.id;
+          const label = `${humanKindLabel(element.kind)} · ${name}`;
+          return (
+            <button
+              key={element.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              className={[
+                'min-w-28 max-w-44 shrink-0 truncate border-b-2 px-2 py-2 text-left text-[12px]',
+                active
+                  ? 'border-accent font-medium text-foreground'
+                  : 'border-transparent text-muted hover:text-foreground',
+              ].join(' ')}
+              title={label}
+              data-testid={`element-selection-tab-${element.id}`}
+              onClick={() => onSelect(element.id)}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
