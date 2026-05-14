@@ -1,0 +1,324 @@
+{
+  "commandTypes": ["createWall", "createWall"],
+  "createWallCount": 2,
+  "projectionModes": ["elevation-axis", "plane"],
+  "starts": [
+    {
+      "phase": "wall-start",
+      "atMs": 5621.400000035763,
+      "camera": {
+        "position": {
+          "x": 20.499999999999996,
+          "y": 9.600000000000001,
+          "z": -11.5
+        },
+        "target": {
+          "x": 7.2,
+          "y": 4,
+          "z": 4.5
+        },
+        "up": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "direction": {
+          "x": -0.6172707312252508,
+          "y": -0.2599034657790531,
+          "z": 0.7425813307972944
+        },
+        "azimuth": 2.4480851460024065,
+        "elevation": 0.26292223184335634,
+        "radius": 21.54646142641524
+      },
+      "screen": {
+        "x": 51.239990234375,
+        "y": 635.4400024414062
+      },
+      "point": {
+        "xMm": 14747.598919099499,
+        "yMm": 26527.56246743241
+      },
+      "levelInfo": {
+        "id": "hf-lvl-ground",
+        "elevationMm": 0,
+        "name": "Ground Floor"
+      },
+      "projection": {
+        "mode": "elevation-axis",
+        "scaleXMmPerPx": 29.210048148193525,
+        "scaleYMmPerPx": 115.49252393805975,
+        "anisotropyRatio": 3.953862840352843,
+        "verticalLook": 0.2599034657790531
+      },
+      "basis": {
+        "mode": "elevation-axis",
+        "originScreen": {
+          "x": 51.239990234375,
+          "y": 635.4400024414062
+        },
+        "originPointMm": {
+          "xMm": 14747.598919099499,
+          "yMm": 26527.56246743241
+        },
+        "xPerPx": {
+          "xMm": -22.462778711838077,
+          "yMm": -18.672184804215547
+        },
+        "yPerPx": {
+          "xMm": 0,
+          "yMm": 0
+        },
+        "scaleMmPerPx": 29.210048148193525,
+        "projection": {
+          "mode": "elevation-axis",
+          "scaleXMmPerPx": 29.210048148193525,
+          "scaleYMmPerPx": 115.49252393805975,
+          "anisotropyRatio": 3.953862840352843,
+          "verticalLook": 0.2599034657790531
+        }
+      },
+      "rawMmPerPx": 116.15182135237606
+    },
+    {
+      "phase": "wall-start",
+      "atMs": 8002.5,
+      "camera": {
+        "position": {
+          "x": 20.499999999999996,
+          "y": 9.600000000000001,
+          "z": -11.5
+        },
+        "target": {
+          "x": 7.2,
+          "y": 4,
+          "z": 4.5
+        },
+        "up": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "direction": {
+          "x": -0.6172707312252508,
+          "y": -0.2599034657790531,
+          "z": 0.7425813307972944
+        },
+        "azimuth": 2.4480851460024065,
+        "elevation": 0.26292223184335634,
+        "radius": 21.54646142641524
+      },
+      "screen": {
+        "x": 65.8800048828125,
+        "y": 745.4199829101562
+      },
+      "point": {
+        "xMm": 16307.293645318265,
+        "yMm": 16548.572777729358
+      },
+      "levelInfo": {
+        "id": "hf-lvl-ground",
+        "elevationMm": 0,
+        "name": "Ground Floor"
+      },
+      "projection": {
+        "mode": "plane",
+        "scaleXMmPerPx": 22.0763494975494,
+        "scaleYMmPerPx": 66.18411239289821,
+        "anisotropyRatio": 2.9979645140264255,
+        "verticalLook": 0.2599034657790531
+      },
+      "rawMmPerPx": 66.47166294076466
+    }
+  ],
+  "commits": [
+    {
+      "phase": "wall-commit",
+      "atMs": 6325.300000011921,
+      "camera": {
+        "position": {
+          "x": 20.499999999999996,
+          "y": 9.600000000000001,
+          "z": -11.5
+        },
+        "target": {
+          "x": 7.2,
+          "y": 4,
+          "z": 4.5
+        },
+        "up": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "direction": {
+          "x": -0.6172707312252508,
+          "y": -0.2599034657790531,
+          "z": 0.7425813307972944
+        },
+        "azimuth": 2.4480851460024065,
+        "elevation": 0.26292223184335634,
+        "radius": 21.54646142641524
+      },
+      "command": {
+        "type": "createWall",
+        "id": "wall-3d-mp4q9key-bu63",
+        "levelId": "hf-lvl-ground",
+        "start": {
+          "xMm": 14747.598919099499,
+          "yMm": 26527.56246743241
+        },
+        "end": {
+          "xMm": 11294.619862585761,
+          "yMm": 23657.273626705344
+        },
+        "locationLine": "wall-centerline",
+        "heightMm": 2800
+      },
+      "startScreen": {
+        "x": 51.239990234375,
+        "y": 635.4400024414062
+      },
+      "endScreen": {
+        "x": 204.96002197265625,
+        "y": 745.4199829101562
+      },
+      "projection": {
+        "mode": "elevation-axis",
+        "scaleXMmPerPx": 29.210048148193525,
+        "scaleYMmPerPx": 115.49252393805975,
+        "anisotropyRatio": 3.953862840352843,
+        "verticalLook": 0.2599034657790531
+      },
+      "basis": {
+        "mode": "elevation-axis",
+        "originScreen": {
+          "x": 51.239990234375,
+          "y": 635.4400024414062
+        },
+        "originPointMm": {
+          "xMm": 14747.598919099499,
+          "yMm": 26527.56246743241
+        },
+        "xPerPx": {
+          "xMm": -22.462778711838077,
+          "yMm": -18.672184804215547
+        },
+        "yPerPx": {
+          "xMm": 0,
+          "yMm": 0
+        },
+        "scaleMmPerPx": 29.210048148193525,
+        "projection": {
+          "mode": "elevation-axis",
+          "scaleXMmPerPx": 29.210048148193525,
+          "scaleYMmPerPx": 115.49252393805975,
+          "anisotropyRatio": 3.953862840352843,
+          "verticalLook": 0.2599034657790531
+        }
+      },
+      "screenDelta": {
+        "x": 153.72003173828125,
+        "y": 109.97998046875
+      },
+      "modelDelta": {
+        "xMm": -3452.9790565137373,
+        "yMm": -2870.2888407270657
+      },
+      "lengthMm": 4490.169528417031
+    },
+    {
+      "phase": "wall-commit",
+      "atMs": 8690.199999988079,
+      "camera": {
+        "position": {
+          "x": 20.499999999999996,
+          "y": 9.600000000000001,
+          "z": -11.5
+        },
+        "target": {
+          "x": 7.2,
+          "y": 4,
+          "z": 4.5
+        },
+        "up": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "direction": {
+          "x": -0.6172707312252508,
+          "y": -0.2599034657790531,
+          "z": 0.7425813307972944
+        },
+        "azimuth": 2.4480851460024065,
+        "elevation": 0.26292223184335634,
+        "radius": 21.54646142641524
+      },
+      "command": {
+        "type": "createWall",
+        "id": "wall-3d-mp4q9m8n-ji",
+        "levelId": "hf-lvl-ground",
+        "start": {
+          "xMm": 16307.293645318265,
+          "yMm": 16548.572777729358
+        },
+        "end": {
+          "xMm": 16404.75709928106,
+          "yMm": 11059.559602973643
+        },
+        "locationLine": "wall-centerline",
+        "heightMm": 2800
+      },
+      "startScreen": {
+        "x": 65.8800048828125,
+        "y": 745.4199829101562
+      },
+      "endScreen": {
+        "x": 124.44000244140625,
+        "y": 830.9600219726562
+      },
+      "projection": {
+        "mode": "plane",
+        "scaleXMmPerPx": 22.0763494975494,
+        "scaleYMmPerPx": 66.18411239289821,
+        "anisotropyRatio": 2.9979645140264255,
+        "verticalLook": 0.2599034657790531
+      },
+      "screenDelta": {
+        "x": 58.55999755859375,
+        "y": 85.5400390625
+      },
+      "modelDelta": {
+        "xMm": 97.46345396279685,
+        "yMm": -5489.013174755715
+      },
+      "lengthMm": 5489.87839186809
+    }
+  ],
+  "previewChecks": [
+    {
+      "label": "01-left-edge-diagonal",
+      "cursorPathVisible": true,
+      "cursorEndVisible": true
+    },
+    {
+      "label": "02-left-edge-steep",
+      "cursorPathVisible": true,
+      "cursorEndVisible": true
+    }
+  ],
+  "wallVectors": [
+    {
+      "dxMm": -3452.9790565137373,
+      "dyMm": -2870.2888407270657,
+      "lengthMm": 4490.169528417031
+    },
+    {
+      "dxMm": 97.46345396279685,
+      "dyMm": -5489.013174755715,
+      "lengthMm": 5489.87839186809
+    }
+  ],
+  "console3dWallCount": 9
+}

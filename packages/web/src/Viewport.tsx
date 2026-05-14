@@ -976,6 +976,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
           anchor: record.anchor,
           start: record.start,
           end: record.end,
+          screenDelta: record.screenDelta,
+          modelDelta: record.modelDelta,
           startScreen: record.startScreen,
           endScreen: record.endScreen,
           command: command?.type
@@ -1810,6 +1812,16 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             endScreen: lineProjected.screen,
             projection: lineDraftStart.wallProjection,
             basis: lineDraftStart.wallBasis,
+            screenDelta: lineDraftStart.screen
+              ? {
+                  x: lineProjected.screen.x - lineDraftStart.screen.x,
+                  y: lineProjected.screen.y - lineDraftStart.screen.y,
+                }
+              : undefined,
+            modelDelta: {
+              xMm: actualEnd.xMm - actualStart.xMm,
+              yMm: actualEnd.yMm - actualStart.yMm,
+            },
             lengthMm: Math.hypot(actualEnd.xMm - actualStart.xMm, actualEnd.yMm - actualStart.yMm),
           });
           lineDraftStart = null;
@@ -2353,6 +2365,16 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                     endScreen: projected.screen,
                     projection: lineDraftStart.wallProjection,
                     basis: lineDraftStart.wallBasis,
+                    screenDelta: lineDraftStart.screen
+                      ? {
+                          x: projected.screen.x - lineDraftStart.screen.x,
+                          y: projected.screen.y - lineDraftStart.screen.y,
+                        }
+                      : undefined,
+                    modelDelta: {
+                      xMm: projected.point.xMm - lineDraftStart.point.xMm,
+                      yMm: projected.point.yMm - lineDraftStart.point.yMm,
+                    },
                     lengthMm: Math.hypot(
                       projected.point.xMm - lineDraftStart.point.xMm,
                       projected.point.yMm - lineDraftStart.point.yMm,
@@ -4199,7 +4221,19 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         authoringOverlay.startScreen &&
         authoringOverlay.currentScreen ? (
           <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full">
-            {authoringOverlay.tool !== 'wall' ? (
+            {authoringOverlay.tool === 'wall' ? (
+              <line
+                data-testid="wall-cursor-path"
+                x1={authoringOverlay.startScreen.x}
+                y1={authoringOverlay.startScreen.y}
+                x2={authoringOverlay.currentScreen.x}
+                y2={authoringOverlay.currentScreen.y}
+                stroke="var(--color-accent)"
+                strokeWidth="1.5"
+                strokeDasharray="3 5"
+                opacity="0.62"
+              />
+            ) : (
               <line
                 x1={authoringOverlay.startScreen.x}
                 y1={authoringOverlay.startScreen.y}
@@ -4210,7 +4244,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                 strokeDasharray="6 4"
                 opacity="0.95"
               />
-            ) : null}
+            )}
             {authoringOverlay.tool === 'wall' &&
             authoringOverlay.wallPreviewOutlineScreen &&
             authoringOverlay.wallPreviewOutlineScreen.length >= 4 ? (
@@ -4246,6 +4280,18 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
               fill="var(--color-accent)"
               opacity="0.95"
             />
+            {authoringOverlay.tool === 'wall' ? (
+              <circle
+                data-testid="wall-cursor-end"
+                cx={authoringOverlay.currentScreen.x}
+                cy={authoringOverlay.currentScreen.y}
+                r="5"
+                fill="var(--color-surface)"
+                stroke="var(--color-accent)"
+                strokeWidth="2"
+                opacity="0.96"
+              />
+            ) : null}
             <defs>
               <marker
                 id="wall-direction-arrow"

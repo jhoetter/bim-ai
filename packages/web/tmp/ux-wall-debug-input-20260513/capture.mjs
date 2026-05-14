@@ -62,6 +62,8 @@ if (!box) throw new Error('no front 3D viewport');
 
 await dragWall(box, { x: 0.58, y: 0.62 }, { x: 0.7, y: 0.66 });
 await page.screenshot({ path: `${outDir}01-front-elevation-exact-preview.png`, fullPage: true });
+const frontCursorPathVisible = await page.getByTestId('wall-cursor-path').isVisible();
+const frontCursorEndVisible = await page.getByTestId('wall-cursor-end').isVisible();
 await page.mouse.up();
 await page.waitForTimeout(900);
 await page.screenshot({ path: `${outDir}02-front-elevation-exact-commit.png`, fullPage: true });
@@ -77,6 +79,8 @@ if (!box) throw new Error('no oblique 3D viewport');
 
 await dragWall(box, { x: 0.34, y: 0.58 }, { x: 0.54, y: 0.62 });
 await page.screenshot({ path: `${outDir}03-oblique-wall-preview.png`, fullPage: true });
+const obliqueCursorPathVisible = await page.getByTestId('wall-cursor-path').isVisible();
+const obliqueCursorEndVisible = await page.getByTestId('wall-cursor-end').isVisible();
 await page.mouse.up();
 await page.waitForTimeout(900);
 await page.screenshot({ path: `${outDir}04-oblique-wall-commit.png`, fullPage: true });
@@ -110,6 +114,10 @@ const summary = {
   blockedNoDraftPlaneCount: wallTrace.filter(
     (entry) => entry.phase === 'wall-blocked-no-draft-plane',
   ).length,
+  frontCursorPathVisible,
+  frontCursorEndVisible,
+  obliqueCursorPathVisible,
+  obliqueCursorEndVisible,
   console3dWallCount: consoleMessages.filter((entry) => entry.text.includes('[bim:3d-wall]'))
     .length,
   consoleSamples: consoleMessages

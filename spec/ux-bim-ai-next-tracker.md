@@ -1348,3 +1348,57 @@ Evidence (2026-05-13):
       - `blockedUnreadablePlaneCount: 0`
       - `blockedNoDraftPlaneCount: 0`
       - `wallLengthsMm: [4038.741, 5819.760]`
+
+## Reopened Tracker (2026-05-14, feedback round 14)
+
+| Gap ID         | Problem Statement                                                                                                                                            | Canonical Surfaces / Files                                                           | Priority | Status |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | -------- | ------ |
+| NEXT14-GAP-001 | 3D wall placement could still feel like it flipped because the preview only showed the projected wall volume, not the exact cursor path and cursor endpoint. | `packages/web/src/Viewport.tsx` 3D wall overlay                                      | P0       | Done   |
+| NEXT14-GAP-002 | Wall debug logs exposed model-coordinate deltas but not screen-coordinate deltas, making valid camera projection sign changes look like placement reversals. | `Viewport.tsx` 3D wall debug trace                                                   | P0       | Done   |
+| NEXT14-GAP-003 | Left-edge/shallow-view wall repro evidence needed to prove both constrained and exact modes remain visible and command-producing after the UX correction.    | `packages/web/tmp/ux-wall-plane-fidelity-20260514/*`, wall debug input capture proof | P0       | Done   |
+
+### WP-NEXT-32 — 3D Wall Cursor Direction Legibility
+
+- Priority: `P0`
+- Status: `Done`
+- Covers: `NEXT14-GAP-001`, `NEXT14-GAP-002`, `NEXT14-GAP-003`
+- Goal: make 3D wall placement direction unambiguous in shallow/perspective views by showing the cursor path separately from the projected wall volume and logging both screen and model deltas.
+- Source ownership:
+  - `packages/web/src/Viewport.tsx`
+  - `packages/web/tmp/ux-wall-debug-input-20260513/capture.mjs`
+  - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
+  - `packages/web/tmp/ux-wall-plane-fidelity-20260514/capture.mjs`
+  - `packages/web/tmp/ux-wall-plane-fidelity-20260514/summary.json`
+- Acceptance:
+  - wall preview always renders an explicit cursor path from the picked start to the current cursor point;
+  - wall preview always renders an explicit cursor endpoint handle;
+  - exact `plane` placement still creates front/elevation and oblique walls in the seeded app;
+  - left-edge shallow 3D repro proves both constrained and exact modes still show the cursor path/end affordances;
+  - debug logs include `screenDelta` and `modelDelta` so camera-dependent model-axis sign changes are diagnosable.
+- Implementation + evidence:
+  - Added a dashed `wall-cursor-path` overlay for wall placement, distinct from the solid wall-volume preview.
+  - Added a `wall-cursor-end` endpoint ring so the current cursor target is always visible before commit.
+  - Added `screenDelta` and `modelDelta` to wall preview/commit debug records and compact console output.
+  - Seeded exact-placement proof (`target-house-3`):
+    - `packages/web/tmp/ux-wall-debug-input-20260513/01-front-elevation-exact-preview.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/02-front-elevation-exact-commit.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/03-oblique-wall-preview.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/04-oblique-wall-commit.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/05-after-escape-navigation-drag.png`
+    - `packages/web/tmp/ux-wall-debug-input-20260513/summary.json`
+      - `createWallCount: 2`
+      - `projectionModes: ["plane"]`
+      - `frontCursorPathVisible: true`
+      - `frontCursorEndVisible: true`
+      - `obliqueCursorPathVisible: true`
+      - `obliqueCursorEndVisible: true`
+  - Seeded left-edge/shallow-view proof:
+    - `packages/web/tmp/ux-wall-plane-fidelity-20260514/01-left-edge-diagonal-preview.png`
+    - `packages/web/tmp/ux-wall-plane-fidelity-20260514/01-left-edge-diagonal-commit.png`
+    - `packages/web/tmp/ux-wall-plane-fidelity-20260514/02-left-edge-steep-preview.png`
+    - `packages/web/tmp/ux-wall-plane-fidelity-20260514/02-left-edge-steep-commit.png`
+    - `packages/web/tmp/ux-wall-plane-fidelity-20260514/summary.json`
+      - `createWallCount: 2`
+      - `projectionModes: ["elevation-axis", "plane"]`
+      - `previewChecks[*].cursorPathVisible: true`
+      - `previewChecks[*].cursorEndVisible: true`

@@ -69,6 +69,10 @@
   ],
   "blockedUnreadablePlaneCount": 0,
   "blockedNoDraftPlaneCount": 0,
+  "frontCursorPathVisible": true,
+  "frontCursorEndVisible": true,
+  "obliqueCursorPathVisible": true,
+  "obliqueCursorEndVisible": true,
   "console3dWallCount": 8,
   "consoleSamples": [
     {
@@ -77,20 +81,20 @@
     },
     {
       "type": "info",
-      "text": "[bim:3d-wall] {\"phase\":\"wall-preview\",\"mode\":\"plane\",\"lengthMm\":1830.8796885841243,\"start\":{\"xMm\":3515.9975529484627,\"yMm\":4993.956069399114},\"end\":{\"xMm\":3132.899193567699,\"yMm\":3203.605243133584},\"startScreen\":{\"x\":849.1199951171875,\"y\":757.6400146484375},\"endScreen\":{\"x\":924.411376953125,\"y\":778.5885620117188}}"
+      "text": "[bim:3d-wall] {\"phase\":\"wall-preview\",\"mode\":\"plane\",\"lengthMm\":1830.8796885841243,\"start\":{\"xMm\":3515.9975529484627,\"yMm\":4993.956069399114},\"end\":{\"xMm\":3132.899193567699,\"yMm\":3203.605243133584},\"screenDelta\":{\"x\":75.2913818359375,\"y\":20.94854736328125},\"modelDelta\":{\"xMm\":-383.09835938076367,\"yMm\":-1790.3508262655305},\"startScreen\":{\"x\":849.1199951171875,\"y\":757.6400146484375},\"endScreen\":{\"x\":924.411376953125,\"y\":778.5885620117188}}"
     },
     {
       "type": "info",
-      "text": "[bim:3d-wall] {\"phase\":\"wall-preview\",\"mode\":\"plane\",\"lengthMm\":3509.6980645577733,\"start\":{\"xMm\":3515.9975529484627,\"yMm\":4993.956069399114},\"end\":{\"xMm\":2781.619725486976,\"yMm\":1561.9494098931152},\"startScreen\":{\"x\":849.1199951171875,\"y\":757.6400146484375},\"endScreen\":{\"x\":999.702880859375,\"y\":799.5371704101562}}"
+      "text": "[bim:3d-wall] {\"phase\":\"wall-preview\",\"mode\":\"plane\",\"lengthMm\":3509.6980645577733,\"start\":{\"xMm\":3515.9975529484627,\"yMm\":4993.956069399114},\"end\":{\"xMm\":2781.619725486976,\"yMm\":1561.9494098931152},\"screenDelta\":{\"x\":150.5828857421875,\"y\":41.89715576171875},\"modelDelta\":{\"xMm\":-734.3778274614865,\"yMm\":-3432.006659505999},\"startScreen\":{\"x\":849.1199951171875,\"y\":757.6400146484375},\"endScreen\":{\"x\":999.702880859375,\"y\":799.5371704101562}}"
     },
     {
       "type": "info",
-      "text": "[bim:3d-wall] {\"phase\":\"wall-commit\",\"mode\":\"plane\",\"lengthMm\":4038.7412156432606,\"startScreen\":{\"x\":849.1199951171875,\"y\":757.6400146484375},\"endScreen\":{\"x\":1024.800048828125,\"y\":806.52001953125},\"command\":{\"type\":\"createWall\",\"start\":{\"xMm\":3515.9975529484627,\"yMm\":4993.956069399114},\"end\":{\"xMm\":2670.920770799043,\"yMm\":1044.6174109389935}}}"
+      "text": "[bim:3d-wall] {\"phase\":\"wall-commit\",\"mode\":\"plane\",\"lengthMm\":4038.7412156432606,\"screenDelta\":{\"x\":175.6800537109375,\"y\":48.8800048828125},\"modelDelta\":{\"xMm\":-845.0767821494196,\"yMm\":-3949.3386584601208},\"startScreen\":{\"x\":849.1199951171875,\"y\":757.6400146484375},\"endScreen\":{\"x\":1024.800048828125,\"y\":806.52001953125},\"command\":{\"type\":\"createWall\",\"start\":{\"xMm\":3515.9975529484627,\"yMm\":4993.956069399114},\"end\":{\"xMm\":2670.920770799043,\"yMm\":1044.6174109389935}}}"
     }
   ],
   "firstTrace": {
     "phase": "wall-start",
-    "atMs": 5392.100000023842,
+    "atMs": 5653.800000011921,
     "camera": {
       "position": {
         "x": 20.499999999999996,
@@ -140,7 +144,7 @@
   },
   "lastTrace": {
     "phase": "wall-commit",
-    "atMs": 10326.800000011921,
+    "atMs": 10958.400000035763,
     "camera": {
       "position": {
         "x": 16.8,
@@ -168,7 +172,7 @@
     },
     "command": {
       "type": "createWall",
-      "id": "wall-3d-mp4khiar-9iho",
+      "id": "wall-3d-mp4q9nzn-1c2p",
       "levelId": "hf-lvl-ground",
       "start": {
         "xMm": 12202.200064934339,
@@ -195,6 +199,14 @@
       "scaleYMmPerPx": 35.090204848203626,
       "anisotropyRatio": 1.8142383777565647,
       "verticalLook": 0.47743776051191605
+    },
+    "screenDelta": {
+      "x": 292.800048828125,
+      "y": 48.8800048828125
+    },
+    "modelDelta": {
+      "xMm": -4254.521928605187,
+      "yMm": -3970.975779035599
     },
     "lengthMm": 5819.7599158959965
   }
