@@ -46,7 +46,13 @@ import {
   findLoadedCatalogFamilyType,
   type FamilyReloadOverwriteOption,
 } from './catalogFamilyReload';
-import type { FamilyGeometryNode, FamilyParamDef } from './types';
+import type {
+  FamilyDefinition,
+  FamilyDefinitionCategorySettings,
+  FamilyGeometryNode,
+  FamilyParamDef,
+  FamilySymbolicLine,
+} from './types';
 
 export type { FamilyLibraryPlaceKind } from './familyPlacementAdapters';
 
@@ -59,6 +65,7 @@ export interface ExternalCatalogFamily {
   id: string;
   name: string;
   discipline: FamilyDiscipline;
+  categorySettings?: FamilyDefinitionCategorySettings;
   params?: FamilyParamDef[];
   defaultTypes: {
     id: string;
@@ -68,6 +75,8 @@ export interface ExternalCatalogFamily {
     parameters: Record<string, unknown>;
   }[];
   geometry?: FamilyGeometryNode[];
+  symbolicLines?: FamilySymbolicLine[];
+  nestedDefinitions?: FamilyDefinition[];
 }
 
 export interface ExternalCatalogIndexEntry {
@@ -94,6 +103,7 @@ export interface ExternalCatalogPlacement {
   catalogVersion: string;
   family: ExternalCatalogFamily;
   defaultType: ExternalCatalogFamily['defaultTypes'][number];
+  assetEntry?: AssetLibraryEntry;
 }
 
 export interface ExternalCatalogClient {
@@ -526,13 +536,6 @@ function catalogFamilyToEntry(
 
   const category = inferCatalogAssetCategory(catalog, family);
   const symbolKind = inferCatalogSymbolKind(family);
-  const placement: ExternalCatalogPlacement = {
-    catalogId: catalog.catalogId,
-    catalogName: catalog.name,
-    catalogVersion: catalog.version,
-    family,
-    defaultType,
-  };
   const dimensions = dimensionsFromParameters(defaultType.parameters);
   const familyTypeCount = `${family.defaultTypes.length} type${
     family.defaultTypes.length === 1 ? '' : 's'
@@ -548,6 +551,14 @@ function catalogFamilyToEntry(
     planSymbolKind: symbolKind,
     renderProxyKind: symbolKind,
     description: `${catalog.name} · ${familyTypeCount}`,
+  };
+  const placement: ExternalCatalogPlacement = {
+    catalogId: catalog.catalogId,
+    catalogName: catalog.name,
+    catalogVersion: catalog.version,
+    family,
+    defaultType,
+    assetEntry,
   };
 
   return {

@@ -37,6 +37,20 @@ export let copyMultipleEnabled = true;
 export let activeComponentAssetId: string | null = null;
 export function setActiveComponentAssetId(v: string | null): void {
   activeComponentAssetId = v;
+  if (!v || activeComponentAssetPreviewEntry?.id !== v) {
+    activeComponentAssetPreviewEntry = null;
+  }
+}
+
+export let activeComponentAssetPreviewEntry: Extract<
+  Element,
+  { kind: 'asset_library_entry' }
+> | null = null;
+export function setActiveComponentAssetPreviewEntry(
+  entry: Extract<Element, { kind: 'asset_library_entry' }> | null,
+): void {
+  activeComponentAssetPreviewEntry = entry;
+  if (entry) activeComponentAssetId = entry.id;
 }
 
 /**
@@ -95,6 +109,14 @@ export function OptionsBar({
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [showComputations]);
+
+  useEffect(() => {
+    if (planTool !== 'component' || !activeComponentAssetId) return;
+    const asset = elementsById[activeComponentAssetId];
+    if (asset?.kind === 'asset_library_entry') {
+      setActiveComponentAssetPreviewEntry(asset);
+    }
+  }, [elementsById, planTool]);
 
   if (planTool === 'wall') {
     return (
@@ -388,7 +410,13 @@ export function OptionsBar({
             data-testid="options-bar-component-asset"
             value={activeComponentAssetId ?? ''}
             onChange={(e) => {
-              setActiveComponentAssetId(e.target.value || null);
+              const nextAssetId = e.target.value || null;
+              const nextAsset = nextAssetId ? elementsById[nextAssetId] : null;
+              if (nextAsset?.kind === 'asset_library_entry') {
+                setActiveComponentAssetPreviewEntry(nextAsset);
+              } else {
+                setActiveComponentAssetId(nextAssetId);
+              }
               setActiveComponentFamilyTypeId(null);
               setComponentSelectionRevision((revision) => revision + 1);
             }}

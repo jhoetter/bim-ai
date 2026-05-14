@@ -1,6 +1,18 @@
 import type { Element } from '@bim-ai/core';
 
+import {
+  FAMILY_EDITOR_CATEGORY_PARAM,
+  FAMILY_EDITOR_DEFINITION_PARAM,
+} from '../familyEditor/familyEditorPersistence';
 import type { FamilyLibraryPlaceKind } from './familyPlacementAdapters';
+import type {
+  FamilyDefinition,
+  FamilyDefinitionCategory,
+  FamilyDefinitionCategorySettings,
+  FamilyGeometryNode,
+  FamilyParamDef,
+  FamilySymbolicLine,
+} from './types';
 
 export type FamilyReloadOverwriteOption = 'keep-existing-values' | 'overwrite-parameter-values';
 
@@ -33,10 +45,26 @@ export interface CatalogFamilyReloadPlacement {
   catalogVersion: string;
   family: {
     id: string;
+    name?: string;
     discipline: 'door' | 'window' | 'generic' | string;
+    categorySettings?: FamilyDefinitionCategorySettings;
+    params?: FamilyParamDef[];
+    defaultTypes?: Array<{
+      id: string;
+      name: string;
+      familyId: string;
+      discipline: 'door' | 'window' | 'generic' | string;
+      parameters: Record<string, unknown>;
+    }>;
+    geometry?: FamilyGeometryNode[];
+    symbolicLines?: FamilySymbolicLine[];
+    nestedDefinitions?: FamilyDefinition[];
   };
   defaultType: {
+    id?: string;
     name: string;
+    familyId?: string;
+    discipline?: 'door' | 'window' | 'generic' | string;
     parameters: Record<string, unknown>;
   };
 }
@@ -79,13 +107,20 @@ export function planCatalogFamilyLoad(
   const defaultParameters = {
     name: placement.defaultType.name,
     familyId: placement.family.id,
+    [FAMILY_EDITOR_CATEGORY_PARAM]: inferCatalogFamilyCategory(placement),
+    [FAMILY_EDITOR_DEFINITION_PARAM]: catalogFamilyDefinition(placement, discipline),
     ...placement.defaultType.parameters,
   };
   const parameters: Record<string, unknown> =
     existing && overwriteOption === 'keep-existing-values'
       ? {
+          ...defaultParameters,
           ...existing.parameters,
           familyId: placement.family.id,
+          [FAMILY_EDITOR_CATEGORY_PARAM]:
+            existing.parameters[FAMILY_EDITOR_CATEGORY_PARAM] ??
+            defaultParameters[FAMILY_EDITOR_CATEGORY_PARAM],
+          [FAMILY_EDITOR_DEFINITION_PARAM]: defaultParameters[FAMILY_EDITOR_DEFINITION_PARAM],
         }
       : defaultParameters;
 
@@ -108,6 +143,113 @@ export function planCatalogFamilyLoad(
     reloaded: existing !== null,
     overwriteOption,
   };
+}
+
+function normalizeFamilyDiscipline(value: string): 'door' | 'window' | 'generic' {
+  return value === 'door' || value === 'window' ? value : 'generic';
+}
+
+function inferCatalogFamilyCategory(
+  placement: CatalogFamilyReloadPlacement,
+): FamilyDefinitionCategory {
+  if (placement.family.categorySettings?.category)
+    return placement.family.categorySettings.category;
+  if (placement.family.discipline === 'door' || placement.family.discipline === 'window') {
+    return placement.family.discipline;
+  }
+  const text =
+    `${placement.catalogId} ${placement.family.id} ${placement.family.name ?? ''}`.toLowerCase();
+  if (
+    text.includes('bath') ||
+    text.includes('bathroom') ||
+    text.includes('plumbing') ||
+    text.includes('toilet') ||
+    text.includes('wc') ||
+    text.includes('basin') ||
+    text.includes('washbasin') ||
+    text.includes('shower') ||
+    text.includes('tub')
+  ) {
+    return 'generic_model';
+  }
+  if (
+    text.includes('kitchen') ||
+    text.includes('appliance') ||
+    text.includes('fridge') ||
+    text.includes('oven') ||
+    text.includes('sink')
+  ) {
+    return 'generic_model';
+  }
+  if (text.includes('casework') || text.includes('counter') || text.includes('cabinet')) {
+    return 'generic_model';
+  }
+  if (
+    text.includes('furniture') ||
+    text.includes('living-room') ||
+    text.includes('sofa') ||
+    text.includes('chair') ||
+    text.includes('table')
+  ) {
+    return 'furniture';
+  }
+  return 'generic_model';
+}
+
+function catalogFamilyDefinition(
+  placement: CatalogFamilyReloadPlacement,
+  discipline: 'door' | 'window' | 'generic',
+): FamilyDefinition {
+  const category = inferCatalogFamilyCategory(placement);
+  const categorySettings: FamilyDefinitionCategorySettings = placement.family.categorySettings ?? {
+    category,
+    alwaysVertical: true,
+    workPlaneBased: false,
+    roomCalculationPoint: category === 'furniture',
+    shared: false,
+  };
+  const defaultTypes = (
+    placement.family.defaultTypes?.length
+      ? placement.family.defaultTypes
+      : [
+          {
+            id: placement.defaultType.id ?? `${placement.family.id}:default`,
+            name: placement.defaultType.name,
+            familyId: placement.defaultType.familyId ?? placement.family.id,
+            discipline: placement.defaultType.discipline ?? discipline,
+            parameters: placement.defaultType.parameters,
+          },
+        ]
+  ).map((type) => ({
+    id: type.id,
+    name: type.name,
+    familyId: type.familyId,
+    discipline: normalizeFamilyDiscipline(type.discipline),
+    parameters: cloneSerializable(type.parameters),
+    isBuiltIn: true as const,
+  }));
+
+  return {
+    id: placement.family.id,
+    name: placement.family.name ?? placement.defaultType.name,
+    discipline,
+    categorySettings,
+    params: cloneSerializable(placement.family.params ?? []),
+    defaultTypes,
+    ...(placement.family.geometry?.length
+      ? { geometry: cloneSerializable(placement.family.geometry) }
+      : {}),
+    ...(placement.family.symbolicLines?.length
+      ? { symbolicLines: cloneSerializable(placement.family.symbolicLines) }
+      : {}),
+    ...(placement.family.nestedDefinitions?.length
+      ? { nestedDefinitions: cloneSerializable(placement.family.nestedDefinitions) }
+      : {}),
+  };
+}
+
+function cloneSerializable<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
 }
 
 function newCatalogFamilyTypeId(placement: CatalogFamilyReloadPlacement, now: number): string {

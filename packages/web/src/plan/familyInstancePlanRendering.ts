@@ -136,7 +136,9 @@ export function makeFamilyInstancePlanSymbol(
     return null;
   }
   const def = familyDefinitionForType(type);
-  if (!def?.symbolicLines?.length) return null;
+  if (!def?.symbolicLines?.length) {
+    return makeFamilyInstanceFootprintSymbol(instance, type, elementsById);
+  }
 
   const params = buildFamilyParamMap(def, {
     ...type.parameters,
@@ -174,6 +176,66 @@ export function makeFamilyInstancePlanSymbol(
     group.add(segment);
   }
   return group;
+}
+
+function makeFamilyInstanceFootprintSymbol(
+  instance: FamilyInstanceElement,
+  type: FamilyTypeElement,
+  elementsById: Record<string, Element>,
+): THREE.Group | null {
+  if (familyInstanceProjectCategoryKey(instance, elementsById) === 'detail_component') return null;
+  const params = { ...type.parameters, ...(instance.paramValues ?? {}) } as Record<string, unknown>;
+  const widthMm = readDimensionParam(params, ['widthMm', 'Width', 'width', 'lengthMm'], 1000);
+  const depthMm = readDimensionParam(params, ['depthMm', 'Depth', 'depth', 'heightMm'], 600);
+  if (widthMm <= 0 || depthMm <= 0) return null;
+
+  const hw = widthMm / 2000;
+  const hd = depthMm / 2000;
+  const points = [
+    new THREE.Vector3(-hw, 0, -hd),
+    new THREE.Vector3(hw, 0, -hd),
+    new THREE.Vector3(hw, 0, -hd),
+    new THREE.Vector3(hw, 0, hd),
+    new THREE.Vector3(hw, 0, hd),
+    new THREE.Vector3(-hw, 0, hd),
+    new THREE.Vector3(-hw, 0, hd),
+    new THREE.Vector3(-hw, 0, -hd),
+    new THREE.Vector3(-hw, 0, -hd),
+    new THREE.Vector3(hw, 0, hd),
+    new THREE.Vector3(hw, 0, -hd),
+    new THREE.Vector3(-hw, 0, hd),
+  ];
+  const lines = new THREE.LineSegments(
+    new THREE.BufferGeometry().setFromPoints(points),
+    new THREE.LineBasicMaterial({
+      color: readPlanToken('--draft-cut', '#111827'),
+      depthTest: false,
+    }),
+  );
+  lines.userData.bimPickId = instance.id;
+  lines.userData.familyTypeId = instance.familyTypeId;
+
+  const group = new THREE.Group();
+  const placement = transformForInstance(instance, elementsById);
+  group.position.set(placement.xMm / 1000, FAMILY_INSTANCE_PLAN_Y, placement.yMm / 1000);
+  group.rotation.y = -THREE.MathUtils.degToRad(placement.rotationDeg);
+  group.userData.bimPickId = instance.id;
+  group.userData.familyTypeId = instance.familyTypeId;
+  group.add(lines);
+  return group;
+}
+
+function readDimensionParam(
+  params: Record<string, unknown>,
+  keys: string[],
+  fallbackMm: number,
+): number {
+  for (const key of keys) {
+    const raw = params[key];
+    const value = typeof raw === 'number' ? raw : typeof raw === 'string' ? Number(raw) : NaN;
+    if (Number.isFinite(value) && value > 0) return value;
+  }
+  return fallbackMm;
 }
 
 export function addFamilyInstancePlanSymbols(

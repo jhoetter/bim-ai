@@ -789,7 +789,8 @@ function addPlacedAssetSymbolFills(
       );
       break;
     case 'toilet':
-      addFilledCircle(group, pickId, Math.min(hw, hd) * 0.48, 0, hd * 0.1, '#f8fafc', 0.78);
+      addFilledRect(group, pickId, spec.widthM, spec.depthM, 0, 0, '#dbeafe', 0.32);
+      addFilledCircle(group, pickId, Math.min(hw, hd) * 0.48, 0, hd * 0.1, '#eff6ff', 0.86);
       addFilledRect(
         group,
         pickId,
@@ -797,8 +798,8 @@ function addPlacedAssetSymbolFills(
         spec.depthM * 0.24,
         0,
         -hd * 0.72,
-        '#f1f5f9',
-        0.74,
+        '#bfdbfe',
+        0.72,
       );
       break;
     case 'bath':
@@ -820,15 +821,24 @@ function addPlacedAssetSymbolFills(
 export function makePlacedAssetPlanSymbol(
   asset: PlacedAssetElement,
   entry: AssetLibraryEntryElement | undefined,
-  opts: { y: number; color?: string } = { y: 0 },
+  opts: { y: number; color?: string; minFootprintM?: number } = { y: 0 },
 ): THREE.Group {
   const spec = resolvePlacedAssetRenderSpec(asset, entry);
+  const minFootprintM = Math.max(0, opts.minFootprintM ?? 0);
+  const visualSpec =
+    minFootprintM > 0
+      ? {
+          ...spec,
+          widthM: Math.max(spec.widthM, minFootprintM),
+          depthM: Math.max(spec.depthM, minFootprintM),
+        }
+      : spec;
   const group = new THREE.Group();
   group.userData.bimPickId = asset.id;
-  group.userData.assetSymbolKind = spec.symbolKind;
+  group.userData.assetSymbolKind = visualSpec.symbolKind;
   group.position.set(asset.positionMm.xMm / 1000, opts.y, asset.positionMm.yMm / 1000);
   group.rotation.y = -(((asset.rotationDeg ?? 0) * Math.PI) / 180);
-  addPlacedAssetSymbolLines(group, spec, asset.id, opts.color ?? '#020617');
+  addPlacedAssetSymbolLines(group, visualSpec, asset.id, opts.color ?? '#020617');
   return group;
 }
 

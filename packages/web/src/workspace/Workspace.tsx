@@ -1,6 +1,6 @@
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Element } from '@bim-ai/core';
+import type { AssetLibraryEntry, Element } from '@bim-ai/core';
 import { WallHifi } from '@bim-ai/icons';
 import { Icons, type IconName } from '@bim-ai/ui';
 
@@ -19,6 +19,7 @@ import {
 } from '../lib/api';
 import {
   setActiveComponentAssetId,
+  setActiveComponentAssetPreviewEntry,
   setActiveComponentFamilyTypeId,
   syncLastLevelElevationPropagationFromApplyResponse,
 } from './authoring';
@@ -219,6 +220,8 @@ function disciplineScopeNote(
  */
 
 type RailOverride = 'open' | 'collapsed' | null;
+
+const PANE_SECONDARY_SIDEBAR_WIDTH = 'min(248px, 34%)';
 
 type WorkspaceComposition = {
   id: string;
@@ -632,6 +635,67 @@ function LoadingSpinner({ className = 'text-accent' }: { className?: string }): 
   );
 }
 
+function shouldPlaceCatalogFamilyAsAsset(placement: ExternalCatalogPlacement): boolean {
+  const category = placement.assetEntry?.category;
+  return (
+    placement.family.discipline === 'generic' &&
+    (category === 'furniture' ||
+      category === 'kitchen' ||
+      category === 'bathroom' ||
+      category === 'casework')
+  );
+}
+
+function indexAssetCommandFromEntry(entry: AssetLibraryEntry): Record<string, unknown> {
+  return {
+    type: 'IndexAsset',
+    id: entry.id,
+    assetKind: entry.assetKind ?? 'family_instance',
+    name: entry.name,
+    tags: entry.tags,
+    category: entry.category,
+    disciplineTags: entry.disciplineTags ?? [],
+    thumbnailKind: entry.thumbnailKind,
+    ...(entry.thumbnailMm
+      ? {
+          thumbnailWidthMm: entry.thumbnailMm.widthMm,
+          thumbnailHeightMm: entry.thumbnailMm.heightMm,
+        }
+      : {}),
+    ...(entry.planSymbolKind ? { planSymbolKind: entry.planSymbolKind } : {}),
+    ...(entry.renderProxyKind ? { renderProxyKind: entry.renderProxyKind } : {}),
+    ...(entry.paramSchema ? { paramSchema: entry.paramSchema } : {}),
+    ...(entry.publishedFromOrgId ? { publishedFromOrgId: entry.publishedFromOrgId } : {}),
+    ...(entry.description ? { description: entry.description } : {}),
+  };
+}
+
+function assetPreviewElementFromEntry(
+  entry: AssetLibraryEntry,
+): Extract<Element, { kind: 'asset_library_entry' }> {
+  return {
+    kind: 'asset_library_entry',
+    id: entry.id,
+    assetKind: entry.assetKind ?? 'family_instance',
+    name: entry.name,
+    tags: entry.tags,
+    category: entry.category,
+    disciplineTags: entry.disciplineTags ?? [],
+    thumbnailKind: entry.thumbnailKind,
+    ...(entry.thumbnailMm
+      ? {
+          thumbnailWidthMm: entry.thumbnailMm.widthMm,
+          thumbnailHeightMm: entry.thumbnailMm.heightMm,
+        }
+      : {}),
+    ...(entry.planSymbolKind ? { planSymbolKind: entry.planSymbolKind } : {}),
+    ...(entry.renderProxyKind ? { renderProxyKind: entry.renderProxyKind } : {}),
+    ...(entry.paramSchema ? { paramSchema: entry.paramSchema } : {}),
+    ...(entry.publishedFromOrgId ? { publishedFromOrgId: entry.publishedFromOrgId } : {}),
+    ...(entry.description ? { description: entry.description } : {}),
+  };
+}
+
 export function Workspace(): JSX.Element {
   const { t, i18n } = useTranslation();
   const toolRegistry = useMemo(() => getToolRegistry(t), [t]);
@@ -884,15 +948,27 @@ export function Workspace(): JSX.Element {
   const previousFocusedPaneLeafIdRef = useRef(paneLayout.focusedLeafId);
   const loadingTransitionSeqRef = useRef(0);
 
-  const markCompositionLoading = useCallback((id: string): void => {
+  const finishCompositionLoadingSoon = useCallback((id: string): void => {
     if (loadingCompositionTimerRef.current) {
       clearTimeout(loadingCompositionTimerRef.current);
     }
-    setLoadingCompositionId(id);
-    loadingCompositionTimerRef.current = setTimeout(() => {
+    const finish = (): void => {
       setLoadingCompositionId((current) => (current === id ? null : current));
       loadingCompositionTimerRef.current = null;
-    }, 850);
+    };
+    if (import.meta.env.MODE === 'test' || typeof window === 'undefined') {
+      finish();
+      return;
+    }
+    loadingCompositionTimerRef.current = setTimeout(finish, 90);
+  }, []);
+
+  const markCompositionLoading = useCallback((id: string): void => {
+    if (loadingCompositionTimerRef.current) {
+      clearTimeout(loadingCompositionTimerRef.current);
+      loadingCompositionTimerRef.current = null;
+    }
+    setLoadingCompositionId(id);
   }, []);
 
   useEffect(
@@ -904,19 +980,23 @@ export function Workspace(): JSX.Element {
     [],
   );
 
-  const runAfterLoadingPaint = useCallback((action: () => void): void => {
-    const seq = loadingTransitionSeqRef.current + 1;
-    loadingTransitionSeqRef.current = seq;
-    const run = (): void => {
-      if (loadingTransitionSeqRef.current !== seq) return;
-      action();
-    };
-    if (import.meta.env.MODE === 'test' || typeof window === 'undefined') {
-      run();
-      return;
-    }
-    window.setTimeout(run, 32);
-  }, []);
+  const runAfterLoadingPaint = useCallback(
+    (action: () => void, loadingId?: string): void => {
+      const seq = loadingTransitionSeqRef.current + 1;
+      loadingTransitionSeqRef.current = seq;
+      const run = (): void => {
+        if (loadingTransitionSeqRef.current !== seq) return;
+        action();
+        if (loadingId) finishCompositionLoadingSoon(loadingId);
+      };
+      if (import.meta.env.MODE === 'test' || typeof window === 'undefined') {
+        run();
+        return;
+      }
+      window.setTimeout(run, 32);
+    },
+    [finishCompositionLoadingSoon],
+  );
 
   const setPanePlanTool = useCallback(
     (leafId: string, tool: PlanTool): void => {
@@ -1078,7 +1158,7 @@ export function Workspace(): JSX.Element {
         if (pendingPlanCamera) {
           planCameraHandleRef.current?.applySnapshot(pendingPlanCamera);
         }
-      });
+      }, compositionState.activeId);
     },
     [
       activatePlanView,
@@ -1127,7 +1207,7 @@ export function Workspace(): JSX.Element {
         setPaneLayout((layout) =>
           focusPane(assignTabToPane(layout, layout.focusedLeafId, tabId), layout.focusedLeafId),
         );
-      });
+      }, compositionState.activeId);
     },
     [
       compositionState.activeId,
@@ -1227,7 +1307,7 @@ export function Workspace(): JSX.Element {
         }));
         setTabsState(next.tabsState);
         setPaneLayout(next.paneLayout);
-      });
+      }, id);
     },
     [
       compositionState.activeId,
@@ -1259,8 +1339,10 @@ export function Workspace(): JSX.Element {
     setPaneLayout(pane);
     setMode('plan');
     setViewerMode('plan_canvas');
+    finishCompositionLoadingSoon(id);
   }, [
     compositionState.compositions.length,
+    finishCompositionLoadingSoon,
     markCompositionLoading,
     paneLayout,
     setViewerMode,
@@ -2508,10 +2590,62 @@ export function Workspace(): JSX.Element {
     [tabsState.activeId],
   );
 
+  const ensureFamilyPlacementPane = useCallback(
+    (adapter: ReturnType<typeof getFamilyPlacementAdapter>): string => {
+      const leafId = paneLayout.focusedLeafId;
+      const focusedTabId = tabIdForLeaf(paneLayout.root, leafId);
+      const focusedTab = focusedTabId
+        ? tabsState.tabs.find((tab) => tab.id === focusedTabId)
+        : null;
+      const canPlaceInCurrentPane =
+        focusedTab?.kind === 'plan' ||
+        (focusedTab?.kind === '3d' && adapter.mode !== 'type-driven-system');
+      if (canPlaceInCurrentPane) return leafId;
+      if (adapter.mode !== 'free-component' && adapter.hostRequirement !== 'wall') {
+        return leafId;
+      }
+
+      const fallback = defaultTabFallbackForKind('plan', elementsById, activeLevelId);
+      if (!fallback) return leafId;
+      const tabId = tabIdFor('plan', fallback.targetId);
+      const tab: ViewTab = {
+        id: tabId,
+        kind: 'plan',
+        targetId: fallback.targetId,
+        label: fallback.label,
+        lensMode: focusedTab?.lensMode ?? lensMode,
+      };
+      setTabsState((state) => upsertTabInstance(state, tab));
+      setPaneLayout((layout) => focusPane(assignTabToPane(layout, leafId, tabId), leafId));
+      setMode('plan');
+      setViewerMode('plan_canvas');
+      const target = fallback.targetId ? elementsById[fallback.targetId] : undefined;
+      if (target?.kind === 'plan_view') {
+        activatePlanView(target.id);
+      } else if (target?.kind === 'level') {
+        activatePlanView(undefined);
+        setActiveLevelId(target.id);
+      }
+      return leafId;
+    },
+    [
+      activatePlanView,
+      activeLevelId,
+      elementsById,
+      lensMode,
+      paneLayout.focusedLeafId,
+      paneLayout.root,
+      setActiveLevelId,
+      setViewerMode,
+      tabsState.tabs,
+    ],
+  );
+
   const handlePlaceFamilyType = useCallback(
     (kind: FamilyLibraryPlaceKind, typeId: string) => {
       setPendingPlacement({ kind, typeId });
       const adapter = getFamilyPlacementAdapter(kind);
+      const placementLeafId = ensureFamilyPlacementPane(adapter);
       if (adapter.identifierRole === 'assetId') {
         setActiveComponentAssetId(typeId);
         setActiveComponentFamilyTypeId(null);
@@ -2533,27 +2667,52 @@ export function Workspace(): JSX.Element {
         setActiveComponentFamilyTypeId(null);
       }
       if (adapter.planTool) {
-        setFocusedPanePlanTool(adapter.planTool);
+        setPanePlanTool(placementLeafId, adapter.planTool);
       } else if (adapter.semanticInstanceKind === 'family_type_component') {
-        setFocusedPanePlanTool('component');
+        setPanePlanTool(placementLeafId, 'component');
       }
     },
-    [setFocusedPanePlanTool],
+    [ensureFamilyPlacementPane, setPanePlanTool],
   );
 
   const loadCatalogFamilyIntoProject = useCallback(
     async (placement: ExternalCatalogPlacement, overwriteOption?: FamilyReloadOverwriteOption) => {
       if (!modelId) return null;
       const loadPlan = planCatalogFamilyLoad(placement, elementsById, { overwriteOption });
+      const assetEntry = shouldPlaceCatalogFamilyAsAsset(placement) ? placement.assetEntry : null;
+      const existingAsset = assetEntry ? elementsById[assetEntry.id] : undefined;
+      const canPlaceAsAsset = Boolean(
+        assetEntry && (!existingAsset || existingAsset.kind === 'asset_library_entry'),
+      );
+      const commands = [
+        loadPlan.command,
+        ...(assetEntry && !existingAsset ? [indexAssetCommandFromEntry(assetEntry)] : []),
+      ];
       try {
-        await applyCommandBundle(modelId, [loadPlan.command], { userId: 'component-tool' });
+        const r = await applyCommandBundle(modelId, commands, {
+          userId: 'component-tool',
+        });
+        if (r.revision !== undefined) {
+          hydrateFromSnapshot({
+            modelId,
+            revision: r.revision,
+            elements: r.elements ?? {},
+            violations: (r.violations ?? []) as Violation[],
+          });
+          setUndoDepth((d) => d + 1);
+          setRedoDepth(0);
+        }
       } catch (err) {
         log.error('component-tool', 'applyCommandBundle failed', err);
         return null;
       }
-      return { kind: loadPlan.kind, typeId: loadPlan.typeId };
+      return {
+        kind: loadPlan.kind,
+        typeId: loadPlan.typeId,
+        assetId: canPlaceAsAsset ? assetEntry?.id : undefined,
+      };
     },
-    [elementsById, modelId],
+    [elementsById, hydrateFromSnapshot, modelId],
   );
 
   const handleLoadCatalogFamily = useCallback(
@@ -2566,7 +2725,15 @@ export function Workspace(): JSX.Element {
   const handlePlaceCatalogFamily = useCallback(
     async (placement: ExternalCatalogPlacement, overwriteOption?: FamilyReloadOverwriteOption) => {
       const loaded = await loadCatalogFamilyIntoProject(placement, overwriteOption);
-      if (loaded) handlePlaceFamilyType(loaded.kind, loaded.typeId);
+      if (!loaded) return;
+      if (loaded.assetId) {
+        if (placement.assetEntry && placement.assetEntry.id === loaded.assetId) {
+          setActiveComponentAssetPreviewEntry(assetPreviewElementFromEntry(placement.assetEntry));
+        }
+        handlePlaceFamilyType('asset', loaded.assetId);
+        return;
+      }
+      handlePlaceFamilyType(loaded.kind, loaded.typeId);
     },
     [handlePlaceFamilyType, loadCatalogFamilyIntoProject],
   );
@@ -2686,6 +2853,12 @@ export function Workspace(): JSX.Element {
     [tabsState.tabs],
   );
   const focusedPaneLeafId = paneLayout.focusedLeafId;
+  const rootPaneFooterInsetLeft =
+    paneLayout.root.kind === 'leaf' &&
+    Boolean(paneLayout.root.tabId && tabsById[paneLayout.root.tabId]) &&
+    (paneSecondarySidebarOpenByKey[`${compositionState.activeId}:${paneLayout.root.id}`] ?? true)
+      ? PANE_SECONDARY_SIDEBAR_WIDTH
+      : undefined;
 
   function renderPaneNode(node: PaneNode): JSX.Element {
     if (node.kind === 'split') {
@@ -3141,7 +3314,7 @@ export function Workspace(): JSX.Element {
             ].join(' ')}
             style={{
               gridTemplateColumns: paneSecondarySidebarOpen
-                ? 'min(248px, 34%) minmax(0, 1fr)'
+                ? `${PANE_SECONDARY_SIDEBAR_WIDTH} minmax(0, 1fr)`
                 : '64px minmax(0, 1fr)',
               gridTemplateRows: 'auto minmax(0, 1fr)',
             }}
@@ -3586,6 +3759,7 @@ export function Workspace(): JSX.Element {
         leftCollapsed={leftRailCollapsed}
         onLeftCollapsedChange={setLeftRailCollapsed}
         rightCollapsed={rightRailCollapsed}
+        footerInsetLeft={rootPaneFooterInsetLeft}
         header={
           <div
             data-testid="workspace-header"

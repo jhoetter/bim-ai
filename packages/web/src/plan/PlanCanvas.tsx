@@ -164,6 +164,7 @@ import {
 import { useToolPrefs } from '../tools/toolPrefsStore';
 import {
   activeComponentAssetId,
+  activeComponentAssetPreviewEntry,
   activeComponentFamilyTypeId,
   copyMultipleEnabled,
   mirrorCopyEnabled,
@@ -179,6 +180,43 @@ function readPlanToken(name: string, fallback: string): string {
 }
 
 const SLICE_Y = 0.02;
+
+function ComponentPlacementPreviewGlyph({ symbolKind }: { symbolKind?: string }) {
+  if (symbolKind === 'toilet') {
+    return (
+      <svg viewBox="0 0 64 64" className="h-full w-full" aria-hidden="true">
+        <rect x="18" y="8" width="28" height="48" rx="4" fill="#dbeafe" opacity="0.72" />
+        <ellipse cx="32" cy="31" rx="15" ry="18" fill="#eff6ff" stroke="#2563eb" strokeWidth="3" />
+        <rect
+          x="22"
+          y="8"
+          width="20"
+          height="15"
+          rx="2"
+          fill="#bfdbfe"
+          stroke="#2563eb"
+          strokeWidth="3"
+        />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 64 64" className="h-full w-full" aria-hidden="true">
+      <rect
+        x="10"
+        y="14"
+        width="44"
+        height="36"
+        rx="3"
+        fill="#dbeafe"
+        opacity="0.62"
+        stroke="#2563eb"
+        strokeWidth="3"
+      />
+      <path d="M14 18 L50 46 M50 18 L14 46" stroke="#2563eb" strokeWidth="2.5" />
+    </svg>
+  );
+}
 
 // B03 — spec 1:5–1:5000 plan scale bounds  half = plotScale * 500mm / 1000
 const HALF_MIN = 2.5; // 1:5 (very close)
@@ -1986,6 +2024,7 @@ export function PlanCanvas({
           makePlacedAssetPlanSymbol(asset, entry, {
             y: SLICE_Y + 0.018,
             color: readPlanToken('--draft-construction-blue', '#2563eb'),
+            minFootprintM: 1.8,
           }),
         );
       }
@@ -2356,7 +2395,9 @@ export function PlanCanvas({
                   return el;
                 }
               }
-              return undefined;
+              return activeComponentAssetPreviewEntry?.id === assetId
+                ? activeComponentAssetPreviewEntry
+                : undefined;
             })()
           : undefined;
         const familyType = familyTypeId ? elementsById[familyTypeId] : undefined;
@@ -4701,6 +4742,17 @@ export function PlanCanvas({
     },
     [activateElevationView, onSemanticCommand, selectEl],
   );
+  const activeComponentAsset =
+    planTool === 'component' && activeComponentAssetId
+      ? (() => {
+          const storeAsset = elementsByIdRaw[activeComponentAssetId];
+          if (storeAsset?.kind === 'asset_library_entry') return storeAsset;
+          return activeComponentAssetPreviewEntry?.id === activeComponentAssetId
+            ? activeComponentAssetPreviewEntry
+            : null;
+        })()
+      : null;
+  const componentPreviewScreen = hudMm && activeComponentAsset ? worldToScreen(hudMm) : null;
 
   return (
     <div
@@ -5760,6 +5812,20 @@ export function PlanCanvas({
           })()
         : null}
       <div ref={mountRef} className="size-full cursor-crosshair" />
+      {componentPreviewScreen && activeComponentAsset ? (
+        <div
+          data-testid="component-placement-preview-glyph"
+          className="pointer-events-none absolute z-20 h-12 w-12 -translate-x-1/2 -translate-y-1/2 drop-shadow-sm"
+          style={{
+            left: componentPreviewScreen.pxX,
+            top: componentPreviewScreen.pxY,
+          }}
+        >
+          <ComponentPlacementPreviewGlyph
+            symbolKind={activeComponentAsset.planSymbolKind ?? activeComponentAsset.renderProxyKind}
+          />
+        </div>
+      ) : null}
       {/* SKT-01 / SKT-02 / SKT-03 — Sketch authoring overlay. Active when one
           of the *-sketch tools is selected. Commits a Create<Kind> command on
           Finish and otherwise leaves the document untouched. */}
