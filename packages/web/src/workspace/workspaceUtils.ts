@@ -132,6 +132,7 @@ export function buildPrimaryNavigationSections(
                 label: 'Project settings',
                 icon: PlanViewHifi,
                 hint: projectSettings.displayLocale ?? 'global settings',
+                renamable: false,
               },
             ],
           },
@@ -146,6 +147,7 @@ export function buildPrimaryNavigationSections(
         label: p.name,
         icon: PlanViewHifi,
         hint: `${levelNameById.get(p.levelId) ?? p.levelId}`,
+        renamable: true,
       })),
     },
     {
@@ -159,6 +161,7 @@ export function buildPrimaryNavigationSections(
           label: v.name,
           icon: OrbitViewHifi,
           hint: v.kind === 'saved_view' ? 'saved 3D snapshot' : 'saved camera',
+          renamable: true,
         })),
     },
     {
@@ -170,6 +173,7 @@ export function buildPrimaryNavigationSections(
         label: s.name,
         icon: SectionViewHifi,
         hint: 'cut view',
+        renamable: true,
       })),
     },
     {
@@ -181,13 +185,19 @@ export function buildPrimaryNavigationSections(
         label: s.name,
         icon: SheetHifi,
         hint: `${sheetIntentLabel(readSheetIntent(s))} · ${s.viewportsMm?.length ?? 0} viewports`,
+        renamable: true,
       })),
     },
     {
       id: 'schedules',
       label: 'Schedules',
       icon: ScheduleViewHifi,
-      rows: schedules.map((s) => ({ id: s.id, label: s.name, icon: ScheduleViewHifi })),
+      rows: schedules.map((s) => ({
+        id: s.id,
+        label: s.name,
+        icon: ScheduleViewHifi,
+        renamable: true,
+      })),
     },
   ];
 }

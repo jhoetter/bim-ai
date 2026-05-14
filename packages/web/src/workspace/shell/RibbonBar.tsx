@@ -164,6 +164,7 @@ export interface RibbonBarProps {
   viewSettingsToggleLabel?: string;
   inlineViewTitle?: RibbonInlineViewTitle;
   showViewControls?: boolean;
+  viewControlsVariant?: 'compact' | 'prominent';
   trailingControls?: JSX.Element | null;
 }
 
@@ -212,6 +213,7 @@ export function RibbonBar({
   viewSettingsToggleLabel,
   inlineViewTitle,
   showViewControls = true,
+  viewControlsVariant = 'compact',
   trailingControls,
 }: RibbonBarProps): JSX.Element {
   const [activeTabId, setActiveTabId] = useState<RibbonTabId>('create');
@@ -336,8 +338,67 @@ export function RibbonBar({
     >
       <div className="flex min-h-9 items-end gap-2 px-2.5 pt-1">
         {showViewControls ? (
-          <div className="mb-1 flex min-w-0 max-w-[36rem] shrink-0 items-center gap-1.5 border-r border-border/70 pr-2">
-            {inlineViewTitle ? (
+          <div
+            className={[
+              'mb-1 flex min-w-0 shrink-0 items-center border-r border-border/70 pr-2',
+              inlineViewTitle && viewControlsVariant === 'prominent'
+                ? 'max-w-[28rem] gap-2'
+                : 'max-w-[36rem] gap-1.5',
+            ].join(' ')}
+          >
+            {inlineViewTitle && viewControlsVariant === 'prominent' ? (
+              <>
+                <button
+                  type="button"
+                  className={[
+                    'group inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border bg-background shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:bg-surface-strong',
+                    viewSettingsOpen
+                      ? 'border-accent/50 text-accent'
+                      : 'border-border text-muted group-hover:text-foreground',
+                  ].join(' ')}
+                  data-testid="ribbon-mode-identity"
+                  aria-label={
+                    viewSettingsToggleLabel ?? `Toggle ${inlineViewTitle.viewType} view settings`
+                  }
+                  aria-pressed={viewSettingsOpen ?? false}
+                  title={
+                    viewSettingsToggleLabel ?? `Toggle ${inlineViewTitle.viewType} view settings`
+                  }
+                  onClick={onToggleViewSettings}
+                >
+                  <InlineViewIcon size={28} aria-hidden="true" />
+                  <span className="sr-only">{inlineViewTitle.viewType}</span>
+                </button>
+                <div className="min-w-0 flex-1">
+                  <div className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold text-muted">
+                    <span className="whitespace-nowrap">{inlineViewTitle.viewType}</span>
+                    {onLensChange ? (
+                      <>
+                        <span aria-hidden="true" className="text-border">
+                          /
+                        </span>
+                        <div
+                          data-testid="ribbon-lens-dropdown"
+                          className="h-7 min-w-0 rounded-md border border-border bg-background/80 px-1 text-[11px] text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+                        >
+                          <LensDropdown
+                            currentLens={lensMode}
+                            onLensChange={onLensChange}
+                            enableHotkey={false}
+                          />
+                        </div>
+                      </>
+                    ) : null}
+                  </div>
+                  <div
+                    className="mt-1 min-w-0 truncate text-base font-semibold leading-5 text-foreground"
+                    title={inlineViewTitle.title}
+                  >
+                    {inlineViewTitle.viewName || inlineViewTitle.title}
+                  </div>
+                </div>
+              </>
+            ) : inlineViewTitle ? (
               onToggleViewSettings ? (
                 <button
                   type="button"
@@ -412,7 +473,7 @@ export function RibbonBar({
                 <span>{identity.label}</span>
               </div>
             )}
-            {onLensChange ? (
+            {viewControlsVariant === 'compact' && onLensChange ? (
               <div
                 data-testid="ribbon-lens-dropdown"
                 className="h-7 rounded-md border border-border bg-background/80 px-1 text-[11px] text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
@@ -424,7 +485,7 @@ export function RibbonBar({
                 />
               </div>
             ) : null}
-            {inlineViewTitle?.viewName ? (
+            {viewControlsVariant === 'compact' && inlineViewTitle?.viewName ? (
               <div
                 className="min-w-0 truncate text-xs font-medium text-foreground"
                 title={inlineViewTitle.title}
@@ -545,9 +606,9 @@ export function RibbonBar({
                 key={panel.id}
                 role="group"
                 aria-label={panel.label}
-                className="relative flex min-w-fit flex-col items-center justify-between border-r border-border pr-2 last:border-r-0"
+                className="relative flex min-w-fit self-stretch flex-col items-center justify-between border-r border-border pr-2 last:border-r-0"
               >
-                <div className="flex items-start justify-center gap-1">
+                <div className="flex w-full items-start justify-center gap-1">
                   {visibleCommands.map((command) => {
                     const availability = activeMode
                       ? commandAvailability(command, activeMode, lensMode)

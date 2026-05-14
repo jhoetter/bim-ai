@@ -87,7 +87,7 @@ describe('LeftRail — spec §12', () => {
     expect(active.getAttribute('data-active')).toBe('true');
   });
 
-  it('emits onRowActivate on click and onRowRename on F2', () => {
+  it('emits onRowActivate on click and commits inline rename from F2', () => {
     const onRowActivate = vi.fn();
     const onRowRename = vi.fn();
     const { getByTestId, getByRole } = render(
@@ -96,7 +96,20 @@ describe('LeftRail — spec §12', () => {
     fireEvent.click(getByTestId('left-rail-row-site'));
     expect(onRowActivate).toHaveBeenCalledWith('site');
     fireEvent.keyDown(getByRole('tree'), { key: 'F2' });
-    expect(onRowRename).toHaveBeenCalledWith('site');
+    const input = getByTestId('left-rail-rename-input-site') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'Terrain' } });
+    fireEvent.blur(input);
+    expect(onRowRename).toHaveBeenCalledWith('site', 'Terrain');
+  });
+
+  it('starts inline rename on row double click', () => {
+    const onRowRename = vi.fn();
+    const { getByTestId } = render(<LeftRail sections={sections} onRowRename={onRowRename} />);
+    fireEvent.doubleClick(getByTestId('left-rail-row-site'));
+    const input = getByTestId('left-rail-rename-input-site') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'Site Plan' } });
+    fireEvent.blur(input);
+    expect(onRowRename).toHaveBeenCalledWith('site', 'Site Plan');
   });
 
   it('emits onRowContextMenu on right click and keyboard context menu', () => {

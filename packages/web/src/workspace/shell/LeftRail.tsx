@@ -63,13 +63,15 @@ export type LeftRailRow = {
   children?: LeftRailRow[];
   /** Optional secondary line shown after the label (muted). */
   hint?: string;
+  /** Enables inline rename via F2 or double click. Defaults to leaf rows. */
+  renamable?: boolean;
 };
 
 export interface LeftRailProps {
   sections: LeftRailSection[];
   activeRowId?: string;
   onRowActivate?: (id: string) => void;
-  onRowRename?: (id: string) => void;
+  onRowRename?: (id: string, nextLabel: string) => void;
   /** Initial expanded set; uncontrolled. */
   defaultExpanded?: ReadonlySet<string>;
   /** Optional hook for context-menu invocation (right-click). */
@@ -135,6 +137,7 @@ export function LeftRail({
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set(defaultExpanded ?? []));
   const [query, setQuery] = useState('');
   const [focusedId, setFocusedId] = useState<string | undefined>(activeRowId);
+  const [renamingRow, setRenamingRow] = useState<{ id: string; label: string } | null>(null);
 
   const filteredSections = useMemo(
     () =>
@@ -177,6 +180,29 @@ export function LeftRail({
     [flat, focusedId],
   );
 
+  const startRename = useCallback(
+    (id: string, label: string) => {
+      if (!onRowRename) return;
+      const flatRow = flat.find((entry) => entry.id === id)?.row;
+      const canRename = flatRow ? (flatRow.renamable ?? !flatRow.children?.length) : true;
+      if (!canRename) return;
+      setFocusedId(id);
+      setRenamingRow({ id, label });
+    },
+    [flat, onRowRename],
+  );
+
+  const commitRename = useCallback(
+    (id: string, nextLabel: string) => {
+      const trimmed = nextLabel.trim();
+      const previous = renamingRow?.id === id ? renamingRow.label : '';
+      setRenamingRow(null);
+      if (!trimmed || trimmed === previous) return;
+      onRowRename?.(id, trimmed);
+    },
+    [onRowRename, renamingRow],
+  );
+
   const handleKey = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
       if (event.key === 'ArrowDown') {
@@ -209,7 +235,8 @@ export function LeftRail({
       } else if (event.key === 'F2') {
         if (!focusedId) return;
         event.preventDefault();
-        onRowRename?.(focusedId);
+        const focused = flat.find((entry) => entry.id === focusedId);
+        if (focused) startRename(focused.id, focused.row.label);
       } else if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
         if (!focusedId) return;
         event.preventDefault();
@@ -217,7 +244,7 @@ export function LeftRail({
         onRowContextMenu?.(focusedId, { x: rect.left + 32, y: rect.top + 32 });
       }
     },
-    [focusedId, moveFocus, onRowActivate, onRowContextMenu, onRowRename],
+    [flat, focusedId, moveFocus, onRowActivate, onRowContextMenu, startRename],
   );
 
   return (
@@ -256,6 +283,10 @@ export function LeftRail({
                 activeRowId={activeRowId}
                 focusedRowId={focusedId}
                 setFocused={setFocusedId}
+                renamingRowId={renamingRow?.id}
+                onRenameStart={startRename}
+                onRenameCommit={commitRename}
+                onRenameCancel={() => setRenamingRow(null)}
               />
             ))}
           </SectionBlock>
@@ -436,6 +467,10 @@ interface RowProps {
   activeRowId?: string;
   focusedRowId?: string;
   setFocused: (id: string) => void;
+  renamingRowId?: string;
+  onRenameStart?: (id: string, label: string) => void;
+  onRenameCommit?: (id: string, nextLabel: string) => void;
+  onRenameCancel?: () => void;
 }
 
 function Row({
@@ -451,13 +486,20 @@ function Row({
   activeRowId,
   focusedRowId,
   setFocused,
+  renamingRowId,
+  onRenameStart,
+  onRenameCommit,
+  onRenameCancel,
 }: RowProps): JSX.Element {
   const hasChildren = !!row.children?.length;
   const isOpen = expanded.has(row.id);
   const isActive = row.id === activeRowId;
   const isFocused = row.id === focusedRowId;
   const ref = useRef<HTMLButtonElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const dragData = getRowDragData?.(row.id) ?? null;
+  const isRenaming = renamingRowId === row.id;
+  const canRename = Boolean(onRenameStart && (row.renamable ?? !hasChildren));
 
   useEffect(() => {
     if (isFocused) {
@@ -468,65 +510,127 @@ function Row({
     }
   }, [isFocused]);
 
+  useEffect(() => {
+    if (!isRenaming) return;
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, [isRenaming]);
+
   const indentStyle: CSSProperties = {
     paddingLeft: `calc(var(--space-5) + ${depth} * var(--space-5))`,
   };
 
   return (
     <div role="none">
-      <button
-        ref={ref}
-        type="button"
-        role="treeitem"
-        aria-level={depth + 1}
-        aria-expanded={hasChildren ? isOpen : undefined}
-        aria-selected={isActive}
-        tabIndex={isFocused ? 0 : -1}
-        onFocus={() => setFocused(row.id)}
-        onClick={() => {
-          setFocused(row.id);
-          if (hasChildren) onToggle(row.id);
-          onActivate?.(row.id);
-        }}
-        onContextMenu={(event) => {
-          if (!onContextMenu) return;
-          event.preventDefault();
-          onContextMenu(row.id, { x: event.clientX, y: event.clientY });
-        }}
-        draggable={Boolean(dragData)}
-        onDragStart={(event) => {
-          if (!dragData) return;
-          event.dataTransfer.effectAllowed = 'copy';
-          for (const [type, value] of Object.entries(dragData)) {
-            event.dataTransfer.setData(type, value);
-          }
-          onRowDragStart?.(row.id);
-        }}
-        onDragEnd={() => onRowDragEnd?.()}
-        data-testid={`left-rail-row-${row.id}`}
-        data-active={isActive ? 'true' : 'false'}
-        title={row.hint ? `${row.label} — ${row.hint}` : row.label}
-        style={indentStyle}
-        className={[
-          'flex h-7 w-full items-center gap-1.5 pr-3 text-[13px] transition-colors',
-          isActive
-            ? 'bg-accent-soft font-medium text-foreground'
-            : 'text-foreground/80 hover:bg-surface-strong hover:text-foreground',
-        ].join(' ')}
-      >
-        <span className="inline-flex w-4 items-center justify-center">
-          {hasChildren ? (
-            isOpen ? (
-              <Icons.disclosureOpen size={12} aria-hidden="true" />
-            ) : (
-              <Icons.disclosureClosed size={12} aria-hidden="true" />
-            )
+      {isRenaming ? (
+        <div
+          role="treeitem"
+          aria-level={depth + 1}
+          aria-expanded={hasChildren ? isOpen : undefined}
+          aria-selected={isActive}
+          tabIndex={0}
+          data-testid={`left-rail-row-${row.id}`}
+          data-active={isActive ? 'true' : 'false'}
+          style={indentStyle}
+          className={[
+            'flex h-7 w-full items-center gap-1.5 pr-3 text-[13px] transition-colors',
+            isActive ? 'bg-accent-soft font-medium text-foreground' : 'text-foreground/80',
+          ].join(' ')}
+        >
+          <span className="inline-flex w-4 items-center justify-center">
+            {hasChildren ? (
+              isOpen ? (
+                <Icons.disclosureOpen size={12} aria-hidden="true" />
+              ) : (
+                <Icons.disclosureClosed size={12} aria-hidden="true" />
+              )
+            ) : null}
+          </span>
+          {row.icon ? <row.icon size={12} aria-hidden="true" className="text-muted" /> : null}
+          <input
+            ref={inputRef}
+            defaultValue={row.label}
+            aria-label={`Rename ${row.label}`}
+            data-testid={`left-rail-rename-input-${row.id}`}
+            className="min-w-0 flex-1 rounded border border-accent bg-background px-1 py-0.5 text-[13px] text-foreground outline-none"
+            onClick={(event) => event.stopPropagation()}
+            onDoubleClick={(event) => event.stopPropagation()}
+            onBlur={(event) => onRenameCommit?.(row.id, event.currentTarget.value)}
+            onKeyDown={(event) => {
+              event.stopPropagation();
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                event.currentTarget.blur();
+              } else if (event.key === 'Escape') {
+                event.preventDefault();
+                onRenameCancel?.();
+              }
+            }}
+          />
+        </div>
+      ) : (
+        <button
+          ref={ref}
+          type="button"
+          role="treeitem"
+          aria-level={depth + 1}
+          aria-expanded={hasChildren ? isOpen : undefined}
+          aria-selected={isActive}
+          tabIndex={isFocused ? 0 : -1}
+          onFocus={() => setFocused(row.id)}
+          onClick={() => {
+            setFocused(row.id);
+            if (hasChildren) onToggle(row.id);
+            onActivate?.(row.id);
+          }}
+          onDoubleClick={(event) => {
+            if (!canRename) return;
+            event.preventDefault();
+            event.stopPropagation();
+            onRenameStart?.(row.id, row.label);
+          }}
+          onContextMenu={(event) => {
+            if (!onContextMenu) return;
+            event.preventDefault();
+            onContextMenu(row.id, { x: event.clientX, y: event.clientY });
+          }}
+          draggable={Boolean(dragData)}
+          onDragStart={(event) => {
+            if (!dragData) return;
+            event.dataTransfer.effectAllowed = 'copy';
+            for (const [type, value] of Object.entries(dragData)) {
+              event.dataTransfer.setData(type, value);
+            }
+            onRowDragStart?.(row.id);
+          }}
+          onDragEnd={() => onRowDragEnd?.()}
+          data-testid={`left-rail-row-${row.id}`}
+          data-active={isActive ? 'true' : 'false'}
+          title={row.hint ? `${row.label} — ${row.hint}` : row.label}
+          style={indentStyle}
+          className={[
+            'flex h-7 w-full items-center gap-1.5 pr-3 text-[13px] transition-colors',
+            isActive
+              ? 'bg-accent-soft font-medium text-foreground'
+              : 'text-foreground/80 hover:bg-surface-strong hover:text-foreground',
+          ].join(' ')}
+        >
+          <span className="inline-flex w-4 items-center justify-center">
+            {hasChildren ? (
+              isOpen ? (
+                <Icons.disclosureOpen size={12} aria-hidden="true" />
+              ) : (
+                <Icons.disclosureClosed size={12} aria-hidden="true" />
+              )
+            ) : null}
+          </span>
+          {row.icon ? <row.icon size={12} aria-hidden="true" className="text-muted" /> : null}
+          <span className="truncate">{row.label}</span>
+          {row.hint ? (
+            <span className="ml-auto truncate text-xs text-muted">{row.hint}</span>
           ) : null}
-        </span>
-        {row.icon ? <row.icon size={12} aria-hidden="true" className="text-muted" /> : null}
-        <span className="truncate">{row.label}</span>
-        {row.hint ? <span className="ml-auto truncate text-xs text-muted">{row.hint}</span> : null}
-      </button>
+        </button>
+      )}
       {hasChildren && isOpen
         ? (row.children ?? []).map((c) => (
             <Row
@@ -543,6 +647,10 @@ function Row({
               activeRowId={activeRowId}
               focusedRowId={focusedRowId}
               setFocused={setFocused}
+              renamingRowId={renamingRowId}
+              onRenameStart={onRenameStart}
+              onRenameCommit={onRenameCommit}
+              onRenameCancel={onRenameCancel}
             />
           ))
         : null}

@@ -279,6 +279,22 @@ export function WorkspaceLeftRail({
   const canEditContextElement = !!contextElementName;
   const canDuplicateContextElement = contextElement?.kind === 'plan_view';
 
+  const renameElement = useCallback(
+    (elementId: string, nextName: string) => {
+      const element = elementsById[elementId];
+      const previousName = elementDisplayName(element);
+      const trimmed = nextName.trim();
+      if (!previousName || !trimmed || trimmed === previousName || !onSemanticCommand) return;
+      void onSemanticCommand({
+        type: 'updateElementProperty',
+        elementId,
+        key: 'name',
+        value: trimmed,
+      });
+    },
+    [elementsById, onSemanticCommand],
+  );
+
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
       {projectName ? (
@@ -313,6 +329,7 @@ export function WorkspaceLeftRail({
             if (!elementsById[rowId]) return;
             setContextMenu({ rowId, x: position.x, y: position.y });
           }}
+          onRowRename={renameElement}
           getRowDragData={(rowId) => {
             const el = elementsById[rowId];
             if (!el || !tabFromElement(el)) return null;
