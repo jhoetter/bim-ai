@@ -53,7 +53,6 @@ import {
   makeRoofJoinPreviewMesh,
   makeRoofMassMesh,
   makeStairVolumeMesh,
-  addCladdingBoards,
   makeWallMesh,
   makeCurtainWallMesh,
   makeDoorMesh,
@@ -908,7 +907,7 @@ export function Viewport({
       if (data.index) geom.setIndex(new THREE.BufferAttribute(data.index, 1));
 
       const renderStyleNow = viewerRenderStyleRef.current;
-      const { material: wallMat, surface: csgWallMaterial } = makeCsgWallMaterial({
+      const { material: wallMat } = makeCsgWallMaterial({
         materialKey: csgMeta?.materialKey,
         paint: paintBundleRef.current,
         elementsById: elementsByIdRef.current,
@@ -925,17 +924,6 @@ export function Viewport({
       mesh.receiveShadow = true;
       addEdges(mesh);
       applyModelEdgeDisplay(mesh, viewerEdgesRef.current, viewerSilhouetteEdgeWidthRef.current);
-      if (csgWallMaterial.claddingBoards) {
-        addCladdingBoards(
-          mesh,
-          csgMeta?.len ?? 1,
-          csgMeta?.height ?? 1,
-          csgMeta?.thick ?? 0.2,
-          csgWallMaterial.claddingBoards.boardWidthMm,
-          csgWallMaterial.claddingBoards.gapMm,
-          csgWallMaterial.claddingBoards.color,
-        );
-      }
       applyClippingPlanesToMeshes(mesh, clippingPlanesRef.current);
 
       if (existing) {
