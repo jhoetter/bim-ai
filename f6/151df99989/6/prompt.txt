@@ -19,3 +19,23 @@ do that for your changes
 ---
 
 [Image #1] also now the active composition border is "flying"; fix both issues
+
+---
+
+[Image #1]still that 1 px between topbar and primary left sidebar header..
+
+---
+
+please have the button for collapsing primary left sidebar only shown if it is collapsed (i can expand it, but for collapsing i simply resize)
+
+---
+
+ok, and now we must see that overall the header is a bit better aligned; [Image #1] e.g. composition tabs are not at the right height and such; please make it visually appealing
+
+---
+
+add minimal hovering or even loading spinners, because it takes a second to load e.g. the 3d (loader icon instaed then of the grid icon for instance)
+
+---
+
+the loading spinner must come immediately and smoother
