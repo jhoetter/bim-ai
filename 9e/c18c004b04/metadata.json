@@ -3,21 +3,30 @@
   "checkpoint_id": "9ec18c004b04",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
-  "files_touched": null,
+  "checkpoints_count": 2,
+  "files_touched": [
+    "packages/web/src/workspace/WorkspaceLeftRail.tsx",
+    "packages/web/src/workspace/shell/RibbonBar.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/9e/c18c004b04/0/metadata.json",
       "transcript": "/9e/c18c004b04/0/full.jsonl",
       "content_hash": "/9e/c18c004b04/0/content_hash.txt",
       "prompt": "/9e/c18c004b04/0/prompt.txt"
+    },
+    {
+      "metadata": "/9e/c18c004b04/1/metadata.json",
+      "transcript": "/9e/c18c004b04/1/full.jsonl",
+      "content_hash": "/9e/c18c004b04/1/content_hash.txt",
+      "prompt": "/9e/c18c004b04/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 28108394,
+    "input_tokens": 29924458,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 512504960,
-    "output_tokens": 1192984,
-    "api_call_count": 4110
+    "cache_read_tokens": 552193664,
+    "output_tokens": 1290740,
+    "api_call_count": 4428
   }
 }
