@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 
 import { curtainGridCellId, type Element, type WallLocationLine } from '@bim-ai/core';
-import { materialBaseColor } from '../viewport/materials';
 import type { PlanDetailLevel } from './planDetailLevelLines';
 
 import { deterministicSchemeColorHex } from './roomSchemeColor';
@@ -23,6 +22,7 @@ import type { PlanPresentationPreset, StairPlanWireDocOverlays } from './symbolo
 import { getBuiltInWallType, materialHexFor } from '../families/wallTypeCatalog';
 import { darkenHex } from '../viewport/meshBuilders.layeredWall';
 import { spiralStairPlanGroup, sketchStairPlanGroup } from './stairPlanSymbol';
+import { materialPlanShadedColor, resolveMaterialPlanGraphics } from './materialGraphics';
 
 export type WallJoinRecord = {
   joinId: string;
@@ -439,7 +439,7 @@ function buildCurtainPanelPlanFills(
     let colorHex: string;
     if (cellOverride.kind === 'empty') colorHex = '#ffffff';
     else if (cellOverride.kind === 'family_instance') colorHex = '#ff66cc';
-    else colorHex = materialBaseColor(cellOverride.materialKey);
+    else colorHex = materialPlanShadedColor(cellOverride.materialKey, undefined);
     const tileGeom = new THREE.PlaneGeometry(cellLenM * 0.9, thickM * 0.9);
     const tileMat = new THREE.MeshBasicMaterial({
       color: colorHex,
@@ -568,7 +568,11 @@ function buildPlanWallLayerLines(
       const az = czM + perpZ * offM - nz * halfLenM;
       const bx = cxM + perpX * offM + nx * halfLenM;
       const bz = czM + perpZ * offM + nz * halfLenM;
-      const baseHex = materialHexFor(layer.materialKey);
+      const baseHex = materialPlanShadedColor(
+        layer.materialKey,
+        elementsById,
+        materialHexFor(layer.materialKey),
+      );
       const lineHex = darkenHex(baseHex, 0.3);
       const color = new THREE.Color(lineHex);
       positions.push(ax, PLAN_Y + 0.005, az, bx, PLAN_Y + 0.005, bz);
@@ -586,7 +590,14 @@ function buildPlanWallLayerLines(
     const bx = cxM + perpX * offM + nx * halfLenM;
     const bz = czM + perpZ * offM + nz * halfLenM;
     const lastLayer = assembly.layers[assembly.layers.length - 1]!;
-    const lineHex = darkenHex(materialHexFor(lastLayer.materialKey), 0.3);
+    const lineHex = darkenHex(
+      materialPlanShadedColor(
+        lastLayer.materialKey,
+        elementsById,
+        materialHexFor(lastLayer.materialKey),
+      ),
+      0.3,
+    );
     const color = new THREE.Color(lineHex);
     positions.push(ax, PLAN_Y + 0.005, az, bx, PLAN_Y + 0.005, bz);
     colors.push(color.r, color.g, color.b, color.r, color.g, color.b);
@@ -600,6 +611,13 @@ function buildPlanWallLayerLines(
   const lines = new THREE.LineSegments(geom, lineMat);
   lines.userData.bimPickId = wall.id;
   lines.userData.layerBoundary = true;
+  lines.userData.materialGraphics = assembly.layers.map((layer) => ({
+    materialKey: layer.materialKey,
+    cutPatternId:
+      resolveMaterialPlanGraphics(layer.materialKey, elementsById)?.cutPatternId ?? null,
+    surfacePatternId:
+      resolveMaterialPlanGraphics(layer.materialKey, elementsById)?.surfacePatternId ?? null,
+  }));
   return lines;
 }
 

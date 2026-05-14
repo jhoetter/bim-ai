@@ -71,7 +71,7 @@ The material assignment model should support:
 | MAT-GAP-002 | General texture map loading is missing.                                       | Materials look like flat colors.                               | P0       | Done        |
 | MAT-GAP-003 | UV scale/rotation/offset is not applied consistently.                         | Brick/tile/wood textures cannot be dimensionally credible.     | P0       | Done        |
 | MAT-GAP-004 | Normal/bump/height relief is metadata only.                                   | Brick, stone, concrete, wood grain lack surface relief.        | P0       | Done        |
-| MAT-GAP-005 | Plan/section surface and cut patterns are not material-driven.                | Architectural drafting views do not match material identity.   | P0       | Open        |
+| MAT-GAP-005 | Plan/section surface and cut patterns are not material-driven.                | Architectural drafting views do not match material identity.   | P0       | Done        |
 | MAT-GAP-006 | Material browser edits assignment, but not appearance/graphics assets.        | Users cannot tune material behavior after assignment.          | P1       | Open        |
 | MAT-GAP-007 | Layered assemblies do not expose exterior/interior finish appearance clearly. | Revit-like wall/floor/roof types are underpowered.             | P1       | In Progress |
 | MAT-GAP-008 | Per-face paint/finish overrides are not modeled.                              | Users cannot paint one wall face or one floor zone.            | P1       | Open        |
@@ -302,7 +302,7 @@ Evidence (2026-05-14):
 ### WP-MAT-05 — Plan And Section Graphics Binding
 
 - Priority: `P0`
-- Status: `Open`
+- Status: `Done`
 - Covers: `MAT-GAP-005`
 - Goal: material graphics assets drive architectural 2D output, independently from 3D texture maps.
 - Source ownership:
@@ -337,6 +337,18 @@ Evidence (2026-05-14):
   - Plan projection tests for material-driven hatch ids.
   - SVG section output tests for material hint consistency.
   - Visual plan screenshot showing brick wall hatch, concrete floor hatch, and glass no-hatch behavior.
+
+Evidence (2026-05-14):
+
+- Added `packages/web/src/plan/materialGraphics.ts` as the 2D graphics resolver for shaded color, transparency, surface pattern, cut pattern, and `useRenderAppearance`.
+- Extended web material graphics metadata to include transparency and surface/cut pattern colors from project `material` elements.
+- Wired plan wall layer boundary colors and layer `userData.materialGraphics` to material graphics instead of 3D texture identity.
+- Added section material hint pattern fields (`materialSurfacePatternId`, `materialCutPatternId`) in kernel section primitives and displayed cut pattern ids in sheet section documentation captions.
+- Added unit coverage for built-in and project material graphics resolution plus section caption pattern readout.
+- Verification:
+  - `pnpm --filter @bim-ai/web exec vitest run src/plan/materialGraphics.test.ts src/workspace/sheets/sectionViewportSvg.test.ts`
+  - `PYTEST_ADDOPTS=--no-cov python -m pytest app/tests/test_section_material_hatch_and_scale_evidence.py`
+  - `pnpm --filter @bim-ai/web typecheck`
 
 ### WP-MAT-06 — Material Browser And Appearance Asset Editor
 

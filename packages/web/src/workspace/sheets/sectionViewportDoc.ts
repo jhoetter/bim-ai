@@ -52,6 +52,8 @@ export type SectionDocMaterialHint = {
   tokenId: string;
   wallElementId: string;
   materialLabel: string;
+  materialSurfacePatternId?: string | null;
+  materialCutPatternId?: string | null;
   cutPatternHint: SectionWallCutHatchKind;
   uAnchorMm: number;
   zAnchorMm: number;
@@ -74,9 +76,11 @@ function cutPatternDocSuffix(kind: SectionWallCutHatchKind): string {
 
 export function formatSectionDocMaterialHintCaption(hint: {
   materialLabel: string;
+  materialCutPatternId?: string | null;
   cutPatternHint: SectionWallCutHatchKind;
 }): string {
-  return `${hint.materialLabel} · ${cutPatternDocSuffix(hint.cutPatternHint)}`;
+  const pattern = hint.materialCutPatternId ? ` · cut ${hint.materialCutPatternId}` : '';
+  return `${hint.materialLabel}${pattern} · ${cutPatternDocSuffix(hint.cutPatternHint)}`;
 }
 
 export function formatSectionElevationSpanMmLabel(zMinMm: number, zMaxMm: number): string {

@@ -258,6 +258,10 @@ export function SectionViewportSvg(props: {
               tokenId: tid,
               wallElementId: String(o.wallElementId ?? ''),
               materialLabel: String(o.materialLabel ?? ''),
+              materialSurfacePatternId:
+                typeof o.materialSurfacePatternId === 'string' ? o.materialSurfacePatternId : null,
+              materialCutPatternId:
+                typeof o.materialCutPatternId === 'string' ? o.materialCutPatternId : null,
               cutPatternHint: parseSectionWallCutHatchKind(o.cutPatternHint),
               uAnchorMm: Number(o.uAnchorMm ?? 0),
               zAnchorMm: Number(o.zAnchorMm ?? 0),

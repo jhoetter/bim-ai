@@ -330,8 +330,11 @@ export interface MaterialPbrSpec {
   graphics?: {
     useRenderAppearance?: boolean;
     surfacePattern?: string;
+    surfacePatternColor?: string;
     cutPattern?: string;
+    cutPatternColor?: string;
     shadedColor?: string;
+    transparency?: number;
   };
   physical?: {
     materialClass?: string;
@@ -454,8 +457,11 @@ function materialElementToPbrSpec(material: MaterialElem): MaterialPbrSpec {
     graphics: {
       useRenderAppearance: graphics?.useRenderAppearance,
       shadedColor: graphics?.shadedColor ?? material.albedoColor ?? baseColor,
+      transparency: graphics?.transparency,
       surfacePattern: graphics?.surfacePatternId ?? material.hatchPatternId ?? undefined,
+      surfacePatternColor: graphics?.surfacePatternColor,
       cutPattern: graphics?.cutPatternId ?? material.hatchPatternId ?? undefined,
+      cutPatternColor: graphics?.cutPatternColor,
     },
     physical: physical
       ? {

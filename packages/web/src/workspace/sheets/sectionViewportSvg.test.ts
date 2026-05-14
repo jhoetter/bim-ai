@@ -66,9 +66,10 @@ describe('Section viewport documentation helpers', () => {
     expect(
       formatSectionDocMaterialHintCaption({
         materialLabel: 'Concrete structure',
+        materialCutPatternId: 'concrete',
         cutPatternHint: 'edgeOn',
       }),
-    ).toBe('Concrete structure · edge-on');
+    ).toBe('Concrete structure · cut concrete · edge-on');
     expect(
       formatSectionDocMaterialHintCaption({
         materialLabel: 'structure',

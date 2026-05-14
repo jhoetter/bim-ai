@@ -18,6 +18,7 @@ from bim_ai.elements import (
     FloorElem,
     GridLineElem,
     LevelElem,
+    MaterialElem,
     RoofElem,
     RoomElem,
     SectionCutElem,
@@ -28,6 +29,7 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
+from bim_ai.material_catalog import resolve_material
 from bim_ai.material_assembly_resolve import (
     layered_assembly_witness_row_for_floor,
     layered_assembly_witness_row_for_roof,
@@ -112,6 +114,21 @@ def _section_doc_material_label_for_wall(doc: Document, wall: WallElem) -> str:
     return "structure"
 
 
+def _section_doc_material_graphics(doc: Document, material_key: str) -> dict[str, str | None]:
+    material_el = doc.elements.get(material_key)
+    if isinstance(material_el, MaterialElem):
+        graphics = material_el.graphics if isinstance(material_el.graphics, dict) else {}
+        surface = graphics.get("surfacePatternId") or material_el.hatch_pattern_id
+        cut = graphics.get("cutPatternId") or material_el.hatch_pattern_id or surface
+        return {
+            "surfacePatternId": str(surface) if surface else None,
+            "cutPatternId": str(cut) if cut else None,
+        }
+    spec = resolve_material(material_key or None)
+    hatch = spec.hatch_pattern if spec else None
+    return {"surfacePatternId": hatch, "cutPatternId": hatch}
+
+
 def _build_section_doc_material_hints(
     doc: Document,
     walls: list[dict[str, Any]],
@@ -128,11 +145,22 @@ def _build_section_doc_material_hints(
         z1 = float(row["zTopMm"])
         hatch = row.get("cutHatchKind")
         cut_pattern = hatch if hatch in ("edgeOn", "alongCut") else "alongCut"
+        layers = resolved_layers_for_wall(doc, wall_el)
+        material_key = ""
+        for lyr in layers:
+            if str(lyr.get("function") or "") == "structure":
+                material_key = str(lyr.get("materialKey") or "").strip()
+                break
+        if not material_key and layers:
+            material_key = str(layers[0].get("materialKey") or "").strip()
+        graphics = _section_doc_material_graphics(doc, material_key)
         hints.append(
             {
                 "tokenId": str(row["id"]),
                 "wallElementId": eid,
                 "materialLabel": _section_doc_material_label_for_wall(doc, wall_el),
+                "materialSurfacePatternId": graphics["surfacePatternId"],
+                "materialCutPatternId": graphics["cutPatternId"],
                 "cutPatternHint": cut_pattern,
                 "uAnchorMm": round(0.5 * (u0 + u1), 3),
                 "zAnchorMm": round(0.5 * (z0 + z1), 3),
