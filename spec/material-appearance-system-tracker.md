@@ -78,7 +78,7 @@ The material assignment model should support:
 | MAT-GAP-009 | Material previews are not representative.                                     | Browser choice is guesswork.                                   | P1       | Done        |
 | MAT-GAP-010 | Exports/schedules do not preserve the full material asset contract.           | IFC/GLTF/readback can diverge from viewport behavior.          | P1       | Done        |
 | MAT-GAP-011 | Texture performance and caching strategy is undefined.                        | Real textures could degrade 3D interaction.                    | P1       | Done        |
-| MAT-GAP-012 | Visual QA does not catch material regressions.                                | Textures/bump/patterns can silently disappear.                 | P1       | In Progress |
+| MAT-GAP-012 | Visual QA does not catch material regressions.                                | Textures/bump/patterns can silently disappear.                 | P1       | Done        |
 | MAT-GAP-013 | Assets and licensing/provenance are not tracked.                              | Curated texture libraries can create legal/product risk.       | P2       | Done        |
 
 ## Workpackages
@@ -653,7 +653,7 @@ Evidence (2026-05-14):
 ### WP-MAT-13 — Material QA And Visual Regression Suite
 
 - Priority: `P1`
-- Status: `Open`
+- Status: `Done`
 - Covers: `MAT-GAP-012`
 - Goal: prevent regressions where materials silently fall back to flat colors.
 - Source ownership:
@@ -684,6 +684,13 @@ Evidence (2026-05-14):
   - Unit tests for material asset resolution.
   - Integration screenshot tests for gallery scene.
   - Browser smoke test for material browser preview thumbnails.
+- Evidence:
+  - Added deterministic material QA gallery samples for brick wall, concrete slab, timber beam, glass window, metal roof, painted interior wall, and floor tile.
+  - Added `materialQaGalleryEvidence_v1` with material keys, display/category, render path, albedo/relief map presence, non-uniform albedo byte count, transparency, and opacity.
+  - Tests assert procedural materials are non-flat, relief maps are attached, glass remains transparent, and external texture assets still route through the texture manager.
+  - Verification:
+    - `pnpm --filter @bim-ai/web exec vitest run src/viewport/materialQaGallery.test.ts src/viewport/proceduralMaterials.test.ts src/familyEditor/MaterialPreview.test.tsx`
+    - `pnpm --filter @bim-ai/web typecheck`
 
 ## Element Coverage Matrix
 
