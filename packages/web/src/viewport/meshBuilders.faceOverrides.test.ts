@@ -66,4 +66,29 @@ describe('wall face material overrides — MAT-09', () => {
     expect(Array.isArray(mesh.material)).toBe(false);
     expect((mesh.material as THREE.Material).userData.materialKey).toBe('masonry_block');
   });
+
+  it('applies face-local UV transform without changing the material definition', () => {
+    const wall: WallElem = {
+      ...baseWall,
+      faceMaterialOverrides: [
+        {
+          faceKind: 'exterior',
+          materialKey: 'masonry_brick',
+          source: 'paint',
+          uvScaleMm: { uMm: 500, vMm: 700 },
+          uvOffsetMm: { uMm: 250, vMm: 70 },
+          uvRotationDeg: 90,
+        },
+      ],
+    };
+    const mesh = makeWallMesh(wall, 0, null) as THREE.Mesh;
+    const exterior = (mesh.material as THREE.MeshStandardMaterial[])[4]!;
+
+    expect(exterior.userData.materialKey).toBe('masonry_brick');
+    expect(exterior.map?.repeat.x).toBeCloseTo(8);
+    expect(exterior.map?.repeat.y).toBeCloseTo(4);
+    expect(exterior.map?.offset.x).toBeCloseTo(0.5);
+    expect(exterior.map?.offset.y).toBeCloseTo(0.1);
+    expect(exterior.map?.rotation).toBeCloseTo(Math.PI / 2);
+  });
 });

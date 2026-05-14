@@ -272,6 +272,9 @@ class MaterialFaceOverride(BaseModel):
     material_key: str = Field(alias="materialKey", min_length=1)
     generated_face_id: str | None = Field(default=None, alias="generatedFaceId")
     source: MaterialFaceOverrideSource | None = Field(default="paint")
+    uv_scale_mm: dict | None = Field(default=None, alias="uvScaleMm")
+    uv_rotation_deg: float | None = Field(default=None, alias="uvRotationDeg")
+    uv_offset_mm: dict | None = Field(default=None, alias="uvOffsetMm")
 
 
 class WallTypeElem(BaseModel):

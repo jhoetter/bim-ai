@@ -38,7 +38,24 @@ export type WallFaceRadialMenuOpen = {
   paintMaterialKey?: string;
 };
 
-type Choice = 'door' | 'window' | 'opening' | 'uv-rotate' | 'paint-face' | 'reset-face-material';
+type Choice =
+  | 'door'
+  | 'window'
+  | 'opening'
+  | 'uv-rotate'
+  | 'paint-face'
+  | 'reset-face-material'
+  | 'rotateMaterialOnFace'
+  | 'moveMaterialOnFace'
+  | 'scaleMaterialOnFace'
+  | 'resetMaterialTransformOnFace';
+
+type FaceMaterialPropertyCommand = {
+  type: 'updateElementProperty';
+  elementId: string;
+  key: 'faceMaterialOverrides';
+  value: MaterialFaceOverride[];
+};
 
 export type WallFaceRadialCommand =
   | {
@@ -82,21 +99,19 @@ export type WallFaceRadialCommand =
     }
   | {
       kind: 'paint-face';
-      cmd: {
-        type: 'updateElementProperty';
-        elementId: string;
-        key: 'faceMaterialOverrides';
-        value: MaterialFaceOverride[];
-      };
+      cmd: FaceMaterialPropertyCommand;
     }
   | {
       kind: 'reset-face-material';
-      cmd: {
-        type: 'updateElementProperty';
-        elementId: string;
-        key: 'faceMaterialOverrides';
-        value: MaterialFaceOverride[];
-      };
+      cmd: FaceMaterialPropertyCommand;
+    }
+  | {
+      kind:
+        | 'rotateMaterialOnFace'
+        | 'moveMaterialOnFace'
+        | 'scaleMaterialOnFace'
+        | 'resetMaterialTransformOnFace';
+      cmd: FaceMaterialPropertyCommand;
     };
 
 /**
@@ -119,6 +134,52 @@ export function projectAlongT(
   if (t < 0) return 0;
   if (t > 1) return 1;
   return t;
+}
+
+function matchingFaceOverride(
+  overrides: readonly MaterialFaceOverride[] | null | undefined,
+  faceKind: Exclude<MaterialFaceKind, 'generated'> | undefined,
+): MaterialFaceOverride | null {
+  if (!faceKind) return null;
+  for (let i = (overrides?.length ?? 0) - 1; i >= 0; i -= 1) {
+    const override = overrides![i];
+    if (override.faceKind === faceKind && (override.generatedFaceId ?? null) === null) {
+      return override;
+    }
+  }
+  return null;
+}
+
+function replaceFaceOverride(
+  open: WallFaceRadialMenuOpen,
+  nextOverride: MaterialFaceOverride | null,
+): FaceMaterialPropertyCommand {
+  const faceKind = open.faceKind!;
+  const existing = open.faceMaterialOverrides ?? [];
+  const value = existing.filter(
+    (override) => override.faceKind !== faceKind || (override.generatedFaceId ?? null) !== null,
+  );
+  if (nextOverride) value.push(nextOverride);
+  return {
+    type: 'updateElementProperty',
+    elementId: open.wallId,
+    key: 'faceMaterialOverrides',
+    value,
+  };
+}
+
+function buildFaceOverride(
+  open: WallFaceRadialMenuOpen,
+  patch: Partial<Pick<MaterialFaceOverride, 'uvOffsetMm' | 'uvRotationDeg' | 'uvScaleMm'>>,
+): MaterialFaceOverride {
+  const current = matchingFaceOverride(open.faceMaterialOverrides, open.faceKind);
+  return {
+    ...current,
+    faceKind: open.faceKind!,
+    materialKey: current?.materialKey ?? open.paintMaterialKey!,
+    source: current?.source ?? 'paint',
+    ...patch,
+  };
 }
 
 function buildCommand(choice: Choice, open: WallFaceRadialMenuOpen): WallFaceRadialCommand {
@@ -162,41 +223,78 @@ function buildCommand(choice: Choice, open: WallFaceRadialMenuOpen): WallFaceRad
     };
   }
   if (choice === 'paint-face' && open.faceKind && open.paintMaterialKey) {
-    const existing = open.faceMaterialOverrides ?? [];
-    const value = [
-      ...existing.filter(
-        (override) =>
-          override.faceKind !== open.faceKind || (override.generatedFaceId ?? null) !== null,
-      ),
-      {
+    return {
+      kind: 'paint-face',
+      cmd: replaceFaceOverride(open, {
         faceKind: open.faceKind,
         materialKey: open.paintMaterialKey,
         source: 'paint' as const,
-      },
-    ];
+      }),
+    };
+  }
+  if (choice === 'rotateMaterialOnFace' && open.faceKind && open.paintMaterialKey) {
+    const current = matchingFaceOverride(open.faceMaterialOverrides, open.faceKind);
     return {
-      kind: 'paint-face',
-      cmd: {
-        type: 'updateElementProperty',
-        elementId: open.wallId,
-        key: 'faceMaterialOverrides',
-        value,
-      },
+      kind: 'rotateMaterialOnFace',
+      cmd: replaceFaceOverride(
+        open,
+        buildFaceOverride(open, { uvRotationDeg: ((current?.uvRotationDeg ?? 0) + 90) % 360 }),
+      ),
+    };
+  }
+  if (choice === 'moveMaterialOnFace' && open.faceKind && open.paintMaterialKey) {
+    const current = matchingFaceOverride(open.faceMaterialOverrides, open.faceKind);
+    return {
+      kind: 'moveMaterialOnFace',
+      cmd: replaceFaceOverride(
+        open,
+        buildFaceOverride(open, {
+          uvOffsetMm: {
+            uMm: (current?.uvOffsetMm?.uMm ?? 0) + 50,
+            vMm: current?.uvOffsetMm?.vMm ?? 0,
+          },
+        }),
+      ),
+    };
+  }
+  if (choice === 'scaleMaterialOnFace' && open.faceKind && open.paintMaterialKey) {
+    const current = matchingFaceOverride(open.faceMaterialOverrides, open.faceKind);
+    return {
+      kind: 'scaleMaterialOnFace',
+      cmd: replaceFaceOverride(
+        open,
+        buildFaceOverride(open, {
+          uvScaleMm: {
+            uMm: Math.max(10, (current?.uvScaleMm?.uMm ?? 1000) * 0.5),
+            vMm: Math.max(10, (current?.uvScaleMm?.vMm ?? 1000) * 0.5),
+          },
+        }),
+      ),
+    };
+  }
+  if (choice === 'resetMaterialTransformOnFace' && open.faceKind) {
+    const current = matchingFaceOverride(open.faceMaterialOverrides, open.faceKind);
+    if (current) {
+      const {
+        uvOffsetMm: _uvOffsetMm,
+        uvRotationDeg: _uvRotationDeg,
+        uvScaleMm: _uvScaleMm,
+        ...rest
+      } = current;
+      return {
+        kind: 'resetMaterialTransformOnFace',
+        cmd: replaceFaceOverride(open, rest),
+      };
+    }
+    return {
+      kind: 'resetMaterialTransformOnFace',
+      cmd: replaceFaceOverride(open, null),
     };
   }
   if (choice === 'reset-face-material' && open.faceKind) {
-    const value = (open.faceMaterialOverrides ?? []).filter(
-      (override) =>
-        override.faceKind !== open.faceKind || (override.generatedFaceId ?? null) !== null,
-    );
     return {
       kind: 'reset-face-material',
-      cmd: {
-        type: 'updateElementProperty',
-        elementId: open.wallId,
-        key: 'faceMaterialOverrides',
-        value,
-      },
+      cmd: replaceFaceOverride(open, null),
     };
   }
   // Opening — wrap a small range around the click point so the result
@@ -236,6 +334,11 @@ export function WallFaceRadialMenu({ open, onSelect, onDismiss }: Props) {
 
   const materialId = open?.materialId;
   const canPaintFace = !!open?.faceKind && !!open?.paintMaterialKey;
+  const currentFaceOverride = matchingFaceOverride(open?.faceMaterialOverrides, open?.faceKind);
+  const hasFaceTransform =
+    typeof currentFaceOverride?.uvRotationDeg === 'number' ||
+    !!currentFaceOverride?.uvOffsetMm ||
+    !!currentFaceOverride?.uvScaleMm;
   const canResetFaceMaterial =
     !!open?.faceKind &&
     !!open?.faceMaterialOverrides?.some(
@@ -249,11 +352,21 @@ export function WallFaceRadialMenu({ open, onSelect, onDismiss }: Props) {
       { choice: 'opening', label: 'Insert Opening' },
       ...(materialId ? ([{ choice: 'uv-rotate', label: 'Rotate UV +15°' }] as const) : []),
       ...(canPaintFace ? ([{ choice: 'paint-face', label: 'Paint Face...' }] as const) : []),
+      ...(canPaintFace
+        ? ([
+            { choice: 'rotateMaterialOnFace', label: 'Rotate Texture 90°' },
+            { choice: 'moveMaterialOnFace', label: 'Nudge Texture U' },
+            { choice: 'scaleMaterialOnFace', label: 'Scale Texture 2x' },
+          ] as const)
+        : []),
+      ...(hasFaceTransform
+        ? ([{ choice: 'resetMaterialTransformOnFace', label: 'Reset Texture Align' }] as const)
+        : []),
       ...(canResetFaceMaterial
         ? ([{ choice: 'reset-face-material', label: 'Reset Face Material' }] as const)
         : []),
     ],
-    [canPaintFace, canResetFaceMaterial, materialId],
+    [canPaintFace, canResetFaceMaterial, hasFaceTransform, materialId],
   );
 
   if (!open) return null;

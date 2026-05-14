@@ -22,7 +22,12 @@ import {
 import type { FamilyDefinition } from '../families/types';
 import { getBuiltInWallType, type WallTypeAssembly } from '../families/wallTypeCatalog';
 import { isStandingSeamMetalKey, resolveMaterial, type ViewportPaintBundle } from './materials';
-import { makeThreeMaterialForKey, materialUvTransformForExtent } from './threeMaterialFactory';
+import {
+  makeThreeMaterialForKey,
+  materialUvTransformForExtent,
+  type MaterialUvExtent,
+  type MaterialUvTransform,
+} from './threeMaterialFactory';
 import { categoryColorOr, addEdges, readToken } from './sceneHelpers';
 import { roofHeightAtPoint } from './roofHeightSampler';
 import { makeLayeredWallMesh } from './meshBuilders.layeredWall';
@@ -100,6 +105,53 @@ export function resolveFaceMaterialOverride(
     if (override.materialKey) return override;
   }
   return null;
+}
+
+export function materialUvTransformWithFaceOverride(
+  materialKey: string | null | undefined,
+  extentMm: MaterialUvExtent,
+  override: MaterialFaceOverride | null | undefined,
+  elementsById?: Record<string, Element>,
+): MaterialUvTransform | undefined {
+  const base = materialUvTransformForExtent(materialKey, { elementsById, extentMm });
+  if (
+    !override?.uvScaleMm &&
+    !override?.uvOffsetMm &&
+    typeof override?.uvRotationDeg !== 'number'
+  ) {
+    return base;
+  }
+  const scaleMm = override?.uvScaleMm;
+  const repeat = scaleMm
+    ? {
+        u: Math.max(1e-6, extentMm.uMm / Math.max(scaleMm.uMm, 1e-6)),
+        v: Math.max(1e-6, extentMm.vMm / Math.max(scaleMm.vMm, 1e-6)),
+      }
+    : base?.repeat;
+  const tileMm = scaleMm
+    ? scaleMm
+    : base?.repeat
+      ? {
+          uMm: extentMm.uMm / Math.max(base.repeat.u, 1e-6),
+          vMm: extentMm.vMm / Math.max(base.repeat.v, 1e-6),
+        }
+      : null;
+  const offset =
+    override?.uvOffsetMm && tileMm
+      ? {
+          u: override.uvOffsetMm.uMm / Math.max(tileMm.uMm, 1e-6),
+          v: override.uvOffsetMm.vMm / Math.max(tileMm.vMm, 1e-6),
+        }
+      : base?.offset;
+  return {
+    ...base,
+    repeat,
+    offset,
+    rotationRad:
+      typeof override?.uvRotationDeg === 'number'
+        ? THREE.MathUtils.degToRad(override.uvRotationDeg)
+        : base?.rotationRad,
+  };
 }
 
 /**
@@ -2423,12 +2475,13 @@ export function makeWallMesh(
 
   const wallOffset = wallPlanOffsetM(wall);
   const wallMatSpec = resolveMaterial(wall.materialKey, elementsById);
+  const wallFaceExtentMm = { uMm: len * 1000, vMm: height * 1000 };
   const baseMaterial = makeThreeMaterialForKey(wall.materialKey, {
     elementsById,
     usage: 'wallExterior',
     uvTransform: materialUvTransformForExtent(wall.materialKey, {
       elementsById,
-      extentMm: { uMm: len * 1000, vMm: height * 1000 },
+      extentMm: wallFaceExtentMm,
     }),
     fallbackColor:
       wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
@@ -2453,10 +2506,12 @@ export function makeWallMesh(
             materials[materialIndex] = makeThreeMaterialForKey(override.materialKey, {
               elementsById,
               usage: faceKind === 'interior' ? 'wallInterior' : 'wallExterior',
-              uvTransform: materialUvTransformForExtent(override.materialKey, {
+              uvTransform: materialUvTransformWithFaceOverride(
+                override.materialKey,
+                wallFaceExtentMm,
+                override,
                 elementsById,
-                extentMm: { uMm: len * 1000, vMm: height * 1000 },
-              }),
+              ),
               fallbackColor: categoryColorOr(paint, 'wall'),
               fallbackRoughness: paint?.categories.wall.roughness ?? 0.85,
               fallbackMetalness: paint?.categories.wall.metalness ?? 0.0,

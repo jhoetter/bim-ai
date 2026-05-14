@@ -123,6 +123,49 @@ describe('WallFaceRadialMenu', () => {
     });
   });
 
+  test('emits face-local texture alignment commands without editing the global material', () => {
+    const onSelect = vi.fn();
+    render(
+      <WallFaceRadialMenu
+        open={{
+          ...horizontalWall,
+          faceKind: 'exterior',
+          paintMaterialKey: 'masonry_brick',
+          faceMaterialOverrides: [
+            {
+              faceKind: 'exterior',
+              materialKey: 'masonry_brick',
+              source: 'paint',
+              uvRotationDeg: 90,
+              uvOffsetMm: { uMm: 50, vMm: 0 },
+              uvScaleMm: { uMm: 800, vMm: 800 },
+            },
+          ],
+        }}
+        onSelect={onSelect}
+        onDismiss={() => {}}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('wall-face-radial-menu-rotateMaterialOnFace'));
+    fireEvent.click(screen.getByTestId('wall-face-radial-menu-moveMaterialOnFace'));
+    fireEvent.click(screen.getByTestId('wall-face-radial-menu-scaleMaterialOnFace'));
+    fireEvent.click(screen.getByTestId('wall-face-radial-menu-resetMaterialTransformOnFace'));
+
+    expect(onSelect.mock.calls[0][0].kind).toBe('rotateMaterialOnFace');
+    expect(onSelect.mock.calls[0][0].cmd.value[0].uvRotationDeg).toBe(180);
+    expect(onSelect.mock.calls[1][0].kind).toBe('moveMaterialOnFace');
+    expect(onSelect.mock.calls[1][0].cmd.value[0].uvOffsetMm).toEqual({ uMm: 100, vMm: 0 });
+    expect(onSelect.mock.calls[2][0].kind).toBe('scaleMaterialOnFace');
+    expect(onSelect.mock.calls[2][0].cmd.value[0].uvScaleMm).toEqual({ uMm: 400, vMm: 400 });
+    expect(onSelect.mock.calls[3][0].kind).toBe('resetMaterialTransformOnFace');
+    expect(onSelect.mock.calls[3][0].cmd.value[0]).toEqual({
+      faceKind: 'exterior',
+      materialKey: 'masonry_brick',
+      source: 'paint',
+    });
+  });
+
   test('clicking Insert Door dispatches insertDoorOnWall with correct alongT', () => {
     const onSelect = vi.fn();
     const onDismiss = vi.fn();

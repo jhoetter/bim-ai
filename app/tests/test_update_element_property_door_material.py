@@ -116,6 +116,30 @@ def test_wall_face_material_overrides_update() -> None:
 
     apply_inplace(
         doc,
+        UpdateElementPropertyCmd(
+            elementId="w1",
+            key="faceMaterialOverrides",
+            value=[
+                {
+                    "faceKind": "exterior",
+                    "materialKey": "masonry_brick",
+                    "source": "paint",
+                    "uvRotationDeg": 90,
+                    "uvOffsetMm": {"uMm": 50, "vMm": 0},
+                    "uvScaleMm": {"uMm": 800, "vMm": 800},
+                }
+            ],
+        ),
+    )
+    aligned = doc.elements["w1"]
+    assert isinstance(aligned, WallElem)
+    assert aligned.face_material_overrides is not None
+    assert aligned.face_material_overrides[0].uv_rotation_deg == 90
+    assert aligned.face_material_overrides[0].uv_offset_mm == {"uMm": 50, "vMm": 0}
+    assert aligned.face_material_overrides[0].uv_scale_mm == {"uMm": 800, "vMm": 800}
+
+    apply_inplace(
+        doc,
         UpdateElementPropertyCmd(elementId="w1", key="faceMaterialOverrides", value=""),
     )
     cleared = doc.elements["w1"]

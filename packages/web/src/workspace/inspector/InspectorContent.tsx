@@ -15,6 +15,7 @@ import {
   planViewGraphicsMatrixRows,
   viewTemplateGraphicsMatrixRows,
 } from '../../plan/planProjection';
+import { resolveMaterial } from '../../viewport/materials';
 import { PlanViewGraphicsMatrix } from './PlanViewGraphicsMatrix';
 import { SavedViewTagGraphicsAuthoring, SavedViewTemplateGraphicsAuthoring } from '../authoring';
 
@@ -42,6 +43,111 @@ export function FieldRow({ label, value, mono }: FieldRowProps): JSX.Element {
       </span>
     </div>
   );
+}
+
+function materialLabel(materialKey: string | null | undefined, fallback: string): string {
+  if (!materialKey) return fallback;
+  return resolveMaterial(materialKey)?.displayName ?? materialKey;
+}
+
+function faceMaterialOverrideLabel(
+  override: NonNullable<Extract<Element, { kind: 'wall' }>['faceMaterialOverrides']>[number],
+): string {
+  const parts = [override.faceKind, materialLabel(override.materialKey, 'By material')];
+  const transform: string[] = [];
+  if (typeof override.uvRotationDeg === 'number') transform.push(`rot ${override.uvRotationDeg}°`);
+  if (override.uvOffsetMm) {
+    transform.push(`offset ${override.uvOffsetMm.uMm ?? 0}/${override.uvOffsetMm.vMm ?? 0} mm`);
+  }
+  if (override.uvScaleMm) {
+    transform.push(`scale ${override.uvScaleMm.uMm ?? 0}/${override.uvScaleMm.vMm ?? 0} mm`);
+  }
+  if (transform.length) parts.push(transform.join(', '));
+  return parts.join(' · ');
+}
+
+function MaterialAssignmentRow({
+  label,
+  materialKey,
+  fallback,
+  onOpenMaterialBrowser,
+  onOpenAppearanceAssetBrowser,
+}: {
+  label: string;
+  materialKey: string | null | undefined;
+  fallback: string;
+  onOpenMaterialBrowser?: () => void;
+  onOpenAppearanceAssetBrowser?: () => void;
+}): JSX.Element {
+  return (
+    <div className="flex items-center justify-between gap-2 border-b border-border py-1.5 last:border-b-0">
+      <span className="shrink-0 text-xs text-muted">{label}</span>
+      <div className="flex min-w-0 items-center gap-1.5">
+        <span className="min-w-0 truncate text-sm text-foreground" title={materialKey ?? fallback}>
+          {materialLabel(materialKey, fallback)}
+        </span>
+        {onOpenMaterialBrowser ? (
+          <button
+            type="button"
+            data-testid="inspector-material-row-browser"
+            className="shrink-0 rounded border border-border px-2 py-0.5 text-[10px] text-muted hover:text-foreground"
+            onClick={onOpenMaterialBrowser}
+          >
+            Materials...
+          </button>
+        ) : null}
+        {onOpenAppearanceAssetBrowser ? (
+          <button
+            type="button"
+            data-testid="inspector-material-row-appearance"
+            className="shrink-0 rounded border border-border px-2 py-0.5 text-[10px] text-muted hover:text-foreground"
+            onClick={onOpenAppearanceAssetBrowser}
+          >
+            Assets...
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function GenericMaterialAssignmentFor({
+  el,
+  onOpenMaterialBrowser,
+  onOpenAppearanceAssetBrowser,
+}: {
+  el: Element;
+  onOpenMaterialBrowser?: () => void;
+  onOpenAppearanceAssetBrowser?: () => void;
+}): JSX.Element | null {
+  switch (el.kind) {
+    case 'toposolid':
+      return (
+        <MaterialAssignmentRow
+          label="Default Material"
+          materialKey={el.defaultMaterialKey ?? null}
+          fallback="By category"
+          onOpenMaterialBrowser={onOpenMaterialBrowser}
+          onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+        />
+      );
+    case 'toposolid_subdivision':
+    case 'text_3d':
+    case 'sweep':
+    case 'mass':
+    case 'pipe':
+      return (
+        <MaterialAssignmentRow
+          label="Material"
+          materialKey={el.materialKey ?? null}
+          fallback="By category"
+          onOpenMaterialBrowser={onOpenMaterialBrowser}
+          onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+        />
+      );
+    default:
+      return null;
+  }
 }
 
 function fmtMm(value: number | null | undefined): string {
@@ -309,12 +415,16 @@ export function InspectorPropertiesFor(
     onMonitorReconcile?: (elementId: string, mode: 'accept_source' | 'keep_host') => void;
     onDisciplineChange?: (discipline: DisciplineTag | null) => void;
     onEditType?: (typeId: string) => void;
+    onOpenMaterialBrowser?: () => void;
+    onOpenAppearanceAssetBrowser?: () => void;
   },
 ): JSX.Element {
   const elementsById = options?.elementsById ?? {};
   const onMonitorReconcile = options?.onMonitorReconcile;
   const onDisciplineChange = options?.onDisciplineChange;
   const onEditType = options?.onEditType;
+  const onOpenMaterialBrowser = options?.onOpenMaterialBrowser;
+  const onOpenAppearanceAssetBrowser = options?.onOpenAppearanceAssetBrowser;
   const f = (key: string) => t(`inspector.fields.${key}`);
   switch (el.kind) {
     case 'wall': {
@@ -448,6 +558,29 @@ export function InspectorPropertiesFor(
               </button>
             ) : null}
           </div>
+          <MaterialAssignmentRow
+            label="Instance Material"
+            materialKey={el.materialKey ?? null}
+            fallback={el.wallTypeId ? 'By type' : 'By category'}
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
+          {el.faceMaterialOverrides?.length ? (
+            <div className="border-b border-border py-1.5">
+              <div className="mb-1 text-xs text-muted">Face Materials</div>
+              <div className="flex flex-col gap-1">
+                {el.faceMaterialOverrides.map((override, index) => (
+                  <div
+                    key={`${override.faceKind}-${override.generatedFaceId ?? 'box'}-${index}`}
+                    className="truncate font-mono text-[11px] text-foreground"
+                    title={faceMaterialOverrideLabel(override)}
+                  >
+                    {faceMaterialOverrideLabel(override)}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <FieldRow label={f('workset')} value={el.worksetId ?? '—'} mono />
           {onDisciplineChange ? (
             <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
@@ -457,8 +590,15 @@ export function InspectorPropertiesFor(
     }
     case 'door':
       return (
-        <div>
+        <div className="flex flex-col gap-2">
           <FieldRow label={f('family')} value={el.familyTypeId ?? 'Generic 900 × 2100'} mono />
+          <MaterialAssignmentRow
+            label="Material"
+            materialKey={el.materialKey ?? null}
+            fallback="By family/category"
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
           <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
           <FieldRow label={f('wall')} value={resolveElName(el.wallId, elementsById)} />
           <FieldRow label={f('alongT')} value={el.alongT.toFixed(3)} mono />
@@ -466,8 +606,15 @@ export function InspectorPropertiesFor(
       );
     case 'window':
       return (
-        <div>
+        <div className="flex flex-col gap-2">
           <FieldRow label={f('family')} value={el.familyTypeId ?? 'Generic 1200 × 1500'} mono />
+          <MaterialAssignmentRow
+            label="Material"
+            materialKey={el.materialKey ?? null}
+            fallback="By family/category"
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
           <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
           <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
           <FieldRow label={f('sillHeight')} value={fmtMm(el.sillHeightMm)} />
@@ -477,6 +624,9 @@ export function InspectorPropertiesFor(
     case 'floor': {
       const { elementsById: floorElementsById = {}, onPropertyChange: floorOnPropertyChange } =
         options ?? {};
+      const floorType = el.floorTypeId ? floorElementsById[el.floorTypeId] : undefined;
+      const floorTypeMaterialKey =
+        floorType?.kind === 'floor_type' ? (floorType.layers[0]?.materialKey ?? null) : null;
       return (
         <div className="flex flex-col gap-2">
           <FieldRow label={f('thickness')} value={fmtMm(el.thicknessMm)} />
@@ -514,6 +664,15 @@ export function InspectorPropertiesFor(
               </button>
             ) : null}
           </div>
+          {floorType?.kind === 'floor_type' ? (
+            <MaterialAssignmentRow
+              label="Type Material"
+              materialKey={floorTypeMaterialKey}
+              fallback="By category"
+              onOpenMaterialBrowser={onOpenMaterialBrowser}
+              onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+            />
+          ) : null}
           <FieldRow label={f('workset')} value={el.worksetId ?? '—'} mono />
           {onDisciplineChange ? (
             <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
@@ -561,6 +720,13 @@ export function InspectorPropertiesFor(
               </button>
             ) : null}
           </div>
+          <MaterialAssignmentRow
+            label="Instance Material"
+            materialKey={el.materialKey ?? null}
+            fallback={el.roofTypeId ? 'By type' : 'By category'}
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
           {onDisciplineChange ? (
             <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
           ) : null}
@@ -632,6 +798,13 @@ export function InspectorPropertiesFor(
       return (
         <div className="flex flex-col gap-2">
           <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
+          <MaterialAssignmentRow
+            label="Material"
+            materialKey={el.materialKey ?? null}
+            fallback="By category"
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
           <FieldRow label={f('width')} value={fmtMm(el.bMm)} />
           <FieldRow label={f('depth')} value={fmtMm(el.hMm)} />
           <div className="flex items-center gap-2 py-0.5">
@@ -670,6 +843,13 @@ export function InspectorPropertiesFor(
       return (
         <div className="flex flex-col gap-2">
           <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
+          <MaterialAssignmentRow
+            label="Material"
+            materialKey={el.materialKey ?? null}
+            fallback="By category"
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
           <FieldRow
             label="Start"
             value={`${fmtMm(el.startMm.xMm)} · ${fmtMm(el.startMm.yMm)}`}
@@ -1180,6 +1360,13 @@ export function InspectorPropertiesFor(
             </select>
           </label>
           <TypeLayerSummary layers={el.layers} />
+          <MaterialAssignmentRow
+            label="First Layer Material"
+            materialKey={el.layers[0]?.materialKey ?? null}
+            fallback="By category"
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
         </div>
       );
     case 'floor_type':
@@ -1192,6 +1379,13 @@ export function InspectorPropertiesFor(
             onCommit={(value) => options?.onPropertyChange?.('name', value)}
           />
           <TypeLayerSummary layers={el.layers} />
+          <MaterialAssignmentRow
+            label="First Layer Material"
+            materialKey={el.layers[0]?.materialKey ?? null}
+            fallback="By category"
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
         </div>
       );
     case 'roof_type':
@@ -1204,6 +1398,13 @@ export function InspectorPropertiesFor(
             onCommit={(value) => options?.onPropertyChange?.('name', value)}
           />
           <TypeLayerSummary layers={el.layers} />
+          <MaterialAssignmentRow
+            label="First Layer Material"
+            materialKey={el.layers[0]?.materialKey ?? null}
+            fallback="By category"
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
         </div>
       );
     case 'view_template':
@@ -1319,6 +1520,13 @@ export function InspectorPropertiesFor(
         </div>
       );
     default:
+      const materialAssignment = GenericMaterialAssignmentFor({
+        el,
+        onOpenMaterialBrowser,
+        onOpenAppearanceAssetBrowser,
+      });
+      if (materialAssignment)
+        return <div className="flex flex-col gap-2">{materialAssignment}</div>;
       return <p className="text-sm text-muted">{t('inspector.noParams', { kind: el.kind })}</p>;
   }
 }
@@ -2112,6 +2320,8 @@ export function InspectorDoorEditor({
   onCreateType,
   onDuplicateType,
   onDisciplineChange,
+  onOpenMaterialBrowser,
+  onOpenAppearanceAssetBrowser,
 }: {
   el: Extract<Element, { kind: 'door' }>;
   revision: number;
@@ -2120,6 +2330,8 @@ export function InspectorDoorEditor({
   onCreateType?: (baseFamilyId: string, name: string, params: Record<string, unknown>) => void;
   onDuplicateType?: (familyTypeId: string | null | undefined) => void;
   onDisciplineChange?: (discipline: DisciplineTag | null) => void;
+  onOpenMaterialBrowser?: () => void;
+  onOpenAppearanceAssetBrowser?: () => void;
 }): JSX.Element {
   const { t } = useTranslation();
   const f = (key: string) => t(`inspector.fields.${key}`);
@@ -2200,6 +2412,13 @@ export function InspectorDoorEditor({
           onCancel={() => setShowForm(false)}
         />
       )}
+      <MaterialAssignmentRow
+        label="Material"
+        materialKey={el.materialKey ?? null}
+        fallback="By family/category"
+        onOpenMaterialBrowser={onOpenMaterialBrowser}
+        onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+      />
       <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
       <FieldRow label={f('wall')} value={resolveElName(el.wallId, elementsById)} />
       <FieldRow label={f('alongT')} value={el.alongT.toFixed(3)} mono />
@@ -2219,6 +2438,8 @@ export function InspectorWindowEditor({
   onCreateType,
   onDuplicateType,
   onDisciplineChange,
+  onOpenMaterialBrowser,
+  onOpenAppearanceAssetBrowser,
 }: {
   el: Extract<Element, { kind: 'window' }>;
   revision: number;
@@ -2227,6 +2448,8 @@ export function InspectorWindowEditor({
   onCreateType?: (baseFamilyId: string, name: string, params: Record<string, unknown>) => void;
   onDuplicateType?: (familyTypeId: string | null | undefined) => void;
   onDisciplineChange?: (discipline: DisciplineTag | null) => void;
+  onOpenMaterialBrowser?: () => void;
+  onOpenAppearanceAssetBrowser?: () => void;
 }): JSX.Element {
   const { t } = useTranslation();
   const f = (key: string) => t(`inspector.fields.${key}`);
@@ -2298,6 +2521,13 @@ export function InspectorWindowEditor({
           onCancel={() => setShowForm(false)}
         />
       )}
+      <MaterialAssignmentRow
+        label="Material"
+        materialKey={el.materialKey ?? null}
+        fallback="By family/category"
+        onOpenMaterialBrowser={onOpenMaterialBrowser}
+        onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+      />
       <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
       <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
       <FieldRow label={f('sillHeight')} value={fmtMm(el.sillHeightMm)} />

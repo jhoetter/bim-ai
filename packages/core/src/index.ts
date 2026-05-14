@@ -596,6 +596,9 @@ export type MaterialFaceOverride = {
   materialKey: string;
   generatedFaceId?: string | null;
   source?: 'paint' | 'finish' | null;
+  uvScaleMm?: { uMm: number; vMm: number } | null;
+  uvRotationDeg?: number | null;
+  uvOffsetMm?: { uMm: number; vMm: number } | null;
 };
 
 export type EvidenceRefKind =

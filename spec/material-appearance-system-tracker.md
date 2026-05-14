@@ -527,7 +527,7 @@ Evidence (2026-05-14):
 ### WP-MAT-10 — Texture Alignment Tools
 
 - Priority: `P1`
-- Status: `Open`
+- Status: `Done`
 - Covers: `MAT-GAP-003`, `MAT-GAP-008`
 - Goal: users can align brick/tile/wood texture on a surface without editing global material definition.
 - Source ownership:
@@ -556,6 +556,15 @@ Evidence (2026-05-14):
   - Transform command tests.
   - UV transform application tests.
   - Screenshot before/after for rotate and offset.
+- Evidence:
+  - Extended face material overrides with `uvScaleMm`, `uvRotationDeg`, and `uvOffsetMm` so alignment stays instance/face-local.
+  - Added radial menu commands for rotate, nudge, scale, and reset texture alignment on the addressed wall face.
+  - Merged face-local UV overrides into the Three material factory transform when building simple wall face materials.
+  - Added inspector readout for wall face materials and transform overrides.
+  - Verification:
+    - `pnpm --filter @bim-ai/web exec vitest run src/viewport/meshBuilders.faceOverrides.test.ts src/viewport/wallFaceRadialMenu.test.tsx`
+    - `PYTEST_ADDOPTS=--no-cov python -m pytest app/tests/test_update_element_property_door_material.py`
+    - `pnpm --filter @bim-ai/web typecheck`
 
 ### WP-MAT-11 — Asset Storage, Upload, And Provenance
 
