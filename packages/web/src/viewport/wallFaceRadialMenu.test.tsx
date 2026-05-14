@@ -65,6 +65,64 @@ describe('WallFaceRadialMenu', () => {
     });
   });
 
+  test('renders Paint Face command when the raycast resolves a face material address', () => {
+    const onSelect = vi.fn();
+    render(
+      <WallFaceRadialMenu
+        open={{
+          ...horizontalWall,
+          faceKind: 'exterior',
+          paintMaterialKey: 'masonry_brick',
+          faceMaterialOverrides: [
+            { faceKind: 'interior', materialKey: 'plaster', source: 'finish' },
+          ],
+        }}
+        onSelect={onSelect}
+        onDismiss={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('wall-face-radial-menu-paint-face'));
+    const result = onSelect.mock.calls[0][0];
+    expect(result.kind).toBe('paint-face');
+    expect(result.cmd).toEqual({
+      type: 'updateElementProperty',
+      elementId: 'w-1',
+      key: 'faceMaterialOverrides',
+      value: [
+        { faceKind: 'interior', materialKey: 'plaster', source: 'finish' },
+        { faceKind: 'exterior', materialKey: 'masonry_brick', source: 'paint' },
+      ],
+    });
+  });
+
+  test('renders Reset Face Material when the hit face already has an override', () => {
+    const onSelect = vi.fn();
+    render(
+      <WallFaceRadialMenu
+        open={{
+          ...horizontalWall,
+          faceKind: 'exterior',
+          paintMaterialKey: 'masonry_brick',
+          faceMaterialOverrides: [
+            { faceKind: 'interior', materialKey: 'plaster', source: 'finish' },
+            { faceKind: 'exterior', materialKey: 'masonry_brick', source: 'paint' },
+          ],
+        }}
+        onSelect={onSelect}
+        onDismiss={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('wall-face-radial-menu-reset-face-material'));
+    const result = onSelect.mock.calls[0][0];
+    expect(result.kind).toBe('reset-face-material');
+    expect(result.cmd).toEqual({
+      type: 'updateElementProperty',
+      elementId: 'w-1',
+      key: 'faceMaterialOverrides',
+      value: [{ faceKind: 'interior', materialKey: 'plaster', source: 'finish' }],
+    });
+  });
+
   test('clicking Insert Door dispatches insertDoorOnWall with correct alongT', () => {
     const onSelect = vi.fn();
     const onDismiss = vi.fn();

@@ -329,6 +329,7 @@ from bim_ai.elements import (
     LinkModelElem,
     MaskingRegionElem,
     MassElem,
+    MaterialFaceOverride,
     MaterialElem,
     PipeElem,
     DuctElem,

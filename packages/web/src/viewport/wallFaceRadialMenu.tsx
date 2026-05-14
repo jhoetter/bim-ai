@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useMemo, useRef } from 'react';
+import type { MaterialFaceKind, MaterialFaceOverride } from '@bim-ai/core';
 
 export type WallFaceRadialMenuOpen = {
   /** Wall the right-click hit. */
@@ -29,9 +30,15 @@ export type WallFaceRadialMenuOpen = {
   /** Optional material element bound to the hit face for UV adjustments. */
   materialId?: string;
   currentUvRotationDeg?: number;
+  /** Stable address of the wall face hit by the raycast. */
+  faceKind?: Exclude<MaterialFaceKind, 'generated'>;
+  /** Existing face overrides on the wall, used to replace/append the paint row. */
+  faceMaterialOverrides?: MaterialFaceOverride[];
+  /** Material selected for the Paint Face command. */
+  paintMaterialKey?: string;
 };
 
-type Choice = 'door' | 'window' | 'opening' | 'uv-rotate';
+type Choice = 'door' | 'window' | 'opening' | 'uv-rotate' | 'paint-face' | 'reset-face-material';
 
 export type WallFaceRadialCommand =
   | {
@@ -71,6 +78,24 @@ export type WallFaceRadialCommand =
         type: 'update_material_pbr';
         id: string;
         uvRotationDeg: number;
+      };
+    }
+  | {
+      kind: 'paint-face';
+      cmd: {
+        type: 'updateElementProperty';
+        elementId: string;
+        key: 'faceMaterialOverrides';
+        value: MaterialFaceOverride[];
+      };
+    }
+  | {
+      kind: 'reset-face-material';
+      cmd: {
+        type: 'updateElementProperty';
+        elementId: string;
+        key: 'faceMaterialOverrides';
+        value: MaterialFaceOverride[];
       };
     };
 
@@ -136,6 +161,44 @@ function buildCommand(choice: Choice, open: WallFaceRadialMenuOpen): WallFaceRad
       },
     };
   }
+  if (choice === 'paint-face' && open.faceKind && open.paintMaterialKey) {
+    const existing = open.faceMaterialOverrides ?? [];
+    const value = [
+      ...existing.filter(
+        (override) =>
+          override.faceKind !== open.faceKind || (override.generatedFaceId ?? null) !== null,
+      ),
+      {
+        faceKind: open.faceKind,
+        materialKey: open.paintMaterialKey,
+        source: 'paint' as const,
+      },
+    ];
+    return {
+      kind: 'paint-face',
+      cmd: {
+        type: 'updateElementProperty',
+        elementId: open.wallId,
+        key: 'faceMaterialOverrides',
+        value,
+      },
+    };
+  }
+  if (choice === 'reset-face-material' && open.faceKind) {
+    const value = (open.faceMaterialOverrides ?? []).filter(
+      (override) =>
+        override.faceKind !== open.faceKind || (override.generatedFaceId ?? null) !== null,
+    );
+    return {
+      kind: 'reset-face-material',
+      cmd: {
+        type: 'updateElementProperty',
+        elementId: open.wallId,
+        key: 'faceMaterialOverrides',
+        value,
+      },
+    };
+  }
   // Opening — wrap a small range around the click point so the result
   // is visible without further drag.
   const half = 0.05;
@@ -172,14 +235,25 @@ export function WallFaceRadialMenu({ open, onSelect, onDismiss }: Props) {
   }, [open, onDismiss]);
 
   const materialId = open?.materialId;
+  const canPaintFace = !!open?.faceKind && !!open?.paintMaterialKey;
+  const canResetFaceMaterial =
+    !!open?.faceKind &&
+    !!open?.faceMaterialOverrides?.some(
+      (override) =>
+        override.faceKind === open.faceKind && (override.generatedFaceId ?? null) === null,
+    );
   const items: { choice: Choice; label: string }[] = useMemo(
     () => [
       { choice: 'door', label: 'Insert Door' },
       { choice: 'window', label: 'Insert Window' },
       { choice: 'opening', label: 'Insert Opening' },
       ...(materialId ? ([{ choice: 'uv-rotate', label: 'Rotate UV +15°' }] as const) : []),
+      ...(canPaintFace ? ([{ choice: 'paint-face', label: 'Paint Face...' }] as const) : []),
+      ...(canResetFaceMaterial
+        ? ([{ choice: 'reset-face-material', label: 'Reset Face Material' }] as const)
+        : []),
     ],
-    [materialId],
+    [canPaintFace, canResetFaceMaterial, materialId],
   );
 
   if (!open) return null;

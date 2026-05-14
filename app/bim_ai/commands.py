@@ -708,7 +708,7 @@ class UpdateElementPropertyCmd(BaseModel):
     type: Literal["updateElementProperty"] = "updateElementProperty"
     element_id: str = Field(alias="elementId")
     key: str
-    value: str | bool | int | float | dict[str, Any] | None = ""
+    value: str | bool | int | float | dict[str, Any] | list[Any] | None = ""
     force_pin_override: bool = Field(default=False, alias="forcePinOverride")
 
 

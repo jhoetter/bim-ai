@@ -260,6 +260,20 @@ class WallTypeLayer(BaseModel):
     wraps_at_inserts: bool = Field(default=False, alias="wrapsAtInserts")
 
 
+MaterialFaceKind = Literal["exterior", "interior", "top", "bottom", "left", "right", "generated"]
+MaterialFaceOverrideSource = Literal["paint", "finish"]
+
+
+class MaterialFaceOverride(BaseModel):
+    """MAT-09 — Revit-like per-face Paint / finish override."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    face_kind: MaterialFaceKind = Field(alias="faceKind")
+    material_key: str = Field(alias="materialKey", min_length=1)
+    generated_face_id: str | None = Field(default=None, alias="generatedFaceId")
+    source: MaterialFaceOverrideSource | None = Field(default="paint")
+
+
 class WallTypeElem(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     kind: Literal["wall_type"] = "wall_type"
@@ -403,6 +417,9 @@ class WallElem(BaseModel):
     roof_attachment_id: str | None = Field(default=None, alias="roofAttachmentId")
     insulation_extension_mm: float = Field(default=0, alias="insulationExtensionMm")
     material_key: str | None = Field(default=None, alias="materialKey")
+    face_material_overrides: list[MaterialFaceOverride] | None = Field(
+        default=None, alias="faceMaterialOverrides"
+    )
     load_bearing: bool | None = Field(default=None, alias="loadBearing")
     structural_role: WallStructuralRole = Field(default="unknown", alias="structuralRole")
     analytical_participation: bool = Field(default=False, alias="analyticalParticipation")

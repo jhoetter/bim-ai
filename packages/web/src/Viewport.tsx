@@ -71,6 +71,7 @@ import {
   makeCeilingMesh,
   wallPlanOffsetM,
   wallVerticalSpanM,
+  wallFaceKindForMaterialIndex,
 } from './viewport/meshBuilders';
 import { resolveWindowOutline } from './families/geometryFns/windowOutline';
 import {
@@ -3305,9 +3306,17 @@ export function Viewport({
       });
       // Convert raycast hit point from scene metres back to semantic mm.
       const hitPointScene = first?.point ?? new THREE.Vector3(0, 0, 0);
+      const hitFaceKind = wallFaceKindForMaterialIndex(first?.face?.materialIndex);
+      const faceOverride =
+        hitFaceKind && el.faceMaterialOverrides
+          ? [...el.faceMaterialOverrides]
+              .reverse()
+              .find((override) => override.faceKind === hitFaceKind)
+          : null;
+      const hitMaterialKey = faceOverride?.materialKey ?? el.materialKey ?? undefined;
       const materialElement =
-        el.materialKey && elementsByIdRef.current[el.materialKey]?.kind === 'material'
-          ? (elementsByIdRef.current[el.materialKey] as Extract<Element, { kind: 'material' }>)
+        hitMaterialKey && elementsByIdRef.current[hitMaterialKey]?.kind === 'material'
+          ? (elementsByIdRef.current[hitMaterialKey] as Extract<Element, { kind: 'material' }>)
           : null;
       setWallFaceRadialMenu({
         wallId: el.id,
@@ -3319,6 +3328,13 @@ export function Viewport({
         wallStartMm: el.start,
         wallEndMm: el.end,
         screen: { x: me.clientX + 240, y: me.clientY },
+        ...(hitFaceKind
+          ? {
+              faceKind: hitFaceKind,
+              faceMaterialOverrides: el.faceMaterialOverrides ?? [],
+              paintMaterialKey: hitMaterialKey,
+            }
+          : {}),
         ...(materialElement
           ? {
               materialId: materialElement.id,

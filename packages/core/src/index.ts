@@ -582,6 +582,22 @@ export type WallTypeLayer = {
   wrapsAtInserts?: boolean | null;
 };
 
+export type MaterialFaceKind =
+  | 'exterior'
+  | 'interior'
+  | 'top'
+  | 'bottom'
+  | 'left'
+  | 'right'
+  | 'generated';
+
+export type MaterialFaceOverride = {
+  faceKind: MaterialFaceKind;
+  materialKey: string;
+  generatedFaceId?: string | null;
+  source?: 'paint' | 'finish' | null;
+};
+
 export type EvidenceRefKind =
   | 'sheet'
   | 'viewpoint'
@@ -935,6 +951,8 @@ export type Element =
       thicknessMm: number;
       heightMm: number;
       materialKey?: string | null;
+      /** MAT-09 — Revit-like Paint tool overrides for individual wall faces. */
+      faceMaterialOverrides?: MaterialFaceOverride[] | null;
       loadBearing?: boolean | null;
       structuralRole?: WallStructuralRole;
       analyticalParticipation?: boolean;

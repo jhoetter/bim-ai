@@ -77,3 +77,47 @@ def test_window_material_update() -> None:
     z = doc.elements["z1"]
     assert isinstance(z, WindowElem)
     assert z.material_key == "triple_glazed"
+
+
+def test_wall_face_material_overrides_update() -> None:
+    wall = WallElem(
+        kind="wall",
+        id="w1",
+        name="W",
+        level_id="lv",
+        start=Vec2Mm(x_mm=0, y_mm=0),
+        end=Vec2Mm(x_mm=4000, y_mm=0),
+        thickness_mm=200,
+        height_mm=2800,
+        material_key="masonry_block",
+    )
+    doc = Document(
+        revision=1,
+        elements={
+            "lv": LevelElem(kind="level", id="lv", name="L1", elevation_mm=0),
+            "w1": wall,
+        },
+    )
+
+    apply_inplace(
+        doc,
+        UpdateElementPropertyCmd(
+            elementId="w1",
+            key="faceMaterialOverrides",
+            value=[{"faceKind": "exterior", "materialKey": "masonry_brick", "source": "paint"}],
+        ),
+    )
+    updated = doc.elements["w1"]
+    assert isinstance(updated, WallElem)
+    assert updated.material_key == "masonry_block"
+    assert updated.face_material_overrides is not None
+    assert updated.face_material_overrides[0].face_kind == "exterior"
+    assert updated.face_material_overrides[0].material_key == "masonry_brick"
+
+    apply_inplace(
+        doc,
+        UpdateElementPropertyCmd(elementId="w1", key="faceMaterialOverrides", value=""),
+    )
+    cleared = doc.elements["w1"]
+    assert isinstance(cleared, WallElem)
+    assert cleared.face_material_overrides is None

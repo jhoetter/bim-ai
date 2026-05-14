@@ -5,6 +5,8 @@ import {
   type CurtainPanelOverride,
   type DecalElem,
   type Element,
+  type MaterialFaceKind,
+  type MaterialFaceOverride,
   type MaterialElem,
   type WallLocationLine,
 } from '@bim-ai/core';
@@ -53,6 +55,52 @@ export function resolveWallTypeAssembly(
 }
 
 export type WallElem = Extract<Element, { kind: 'wall' }>;
+
+const WALL_BOX_FACE_MATERIAL_INDEX: Record<Exclude<MaterialFaceKind, 'generated'>, number> = {
+  right: 0,
+  left: 1,
+  top: 2,
+  bottom: 3,
+  exterior: 4,
+  interior: 5,
+};
+
+const WALL_BOX_FACE_KIND_BY_MATERIAL_INDEX: Record<
+  number,
+  Exclude<MaterialFaceKind, 'generated'>
+> = Object.fromEntries(
+  Object.entries(WALL_BOX_FACE_MATERIAL_INDEX).map(([faceKind, materialIndex]) => [
+    materialIndex,
+    faceKind,
+  ]),
+) as Record<number, Exclude<MaterialFaceKind, 'generated'>>;
+
+export function wallFaceKindForMaterialIndex(
+  materialIndex: number | undefined,
+): Exclude<MaterialFaceKind, 'generated'> | null {
+  if (typeof materialIndex !== 'number') return null;
+  return WALL_BOX_FACE_KIND_BY_MATERIAL_INDEX[materialIndex] ?? null;
+}
+
+export function resolveFaceMaterialOverride(
+  overrides: readonly MaterialFaceOverride[] | null | undefined,
+  faceKind: MaterialFaceKind,
+  generatedFaceId?: string | null,
+): MaterialFaceOverride | null {
+  if (!overrides?.length) return null;
+  for (let i = overrides.length - 1; i >= 0; i -= 1) {
+    const override = overrides[i];
+    if (override.faceKind !== faceKind) continue;
+    if (
+      faceKind === 'generated' &&
+      (override.generatedFaceId ?? null) !== (generatedFaceId ?? null)
+    ) {
+      continue;
+    }
+    if (override.materialKey) return override;
+  }
+  return null;
+}
 
 /**
  * KRN-09 + FAM-01 — best-effort resolve a `family_instance` curtain-cell
@@ -2375,30 +2423,55 @@ export function makeWallMesh(
 
   const wallOffset = wallPlanOffsetM(wall);
   const wallMatSpec = resolveMaterial(wall.materialKey, elementsById);
-
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(len, height, thick),
-    makeThreeMaterialForKey(wall.materialKey, {
+  const baseMaterial = makeThreeMaterialForKey(wall.materialKey, {
+    elementsById,
+    usage: 'wallExterior',
+    uvTransform: materialUvTransformForExtent(wall.materialKey, {
       elementsById,
-      usage: 'wallExterior',
-      uvTransform: materialUvTransformForExtent(wall.materialKey, {
-        elementsById,
-        extentMm: { uMm: len * 1000, vMm: height * 1000 },
-      }),
-      fallbackColor:
-        wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
-          ? '#f4f4f0'
-          : categoryColorOr(paint, 'wall'),
-      fallbackRoughness:
-        wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
-          ? 0.92
-          : (paint?.categories.wall.roughness ?? 0.85),
-      fallbackMetalness: paint?.categories.wall.metalness ?? 0.0,
+      extentMm: { uMm: len * 1000, vMm: height * 1000 },
     }),
-  );
+    fallbackColor:
+      wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
+        ? '#f4f4f0'
+        : categoryColorOr(paint, 'wall'),
+    fallbackRoughness:
+      wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
+        ? 0.92
+        : (paint?.categories.wall.roughness ?? 0.85),
+    fallbackMetalness: paint?.categories.wall.metalness ?? 0.0,
+  });
+  const wallMaterial: THREE.Material | THREE.Material[] =
+    wall.faceMaterialOverrides && wall.faceMaterialOverrides.length > 0
+      ? (() => {
+          const materials: THREE.Material[] = Array.from({ length: 6 }, () => baseMaterial);
+          for (const [faceKind, materialIndex] of Object.entries(WALL_BOX_FACE_MATERIAL_INDEX) as [
+            Exclude<MaterialFaceKind, 'generated'>,
+            number,
+          ][]) {
+            const override = resolveFaceMaterialOverride(wall.faceMaterialOverrides, faceKind);
+            if (!override) continue;
+            materials[materialIndex] = makeThreeMaterialForKey(override.materialKey, {
+              elementsById,
+              usage: faceKind === 'interior' ? 'wallInterior' : 'wallExterior',
+              uvTransform: materialUvTransformForExtent(override.materialKey, {
+                elementsById,
+                extentMm: { uMm: len * 1000, vMm: height * 1000 },
+              }),
+              fallbackColor: categoryColorOr(paint, 'wall'),
+              fallbackRoughness: paint?.categories.wall.roughness ?? 0.85,
+              fallbackMetalness: paint?.categories.wall.metalness ?? 0.0,
+            });
+          }
+          return materials;
+        })()
+      : baseMaterial;
+
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(len, height, thick), wallMaterial);
   mesh.position.set(sx + dx / 2 + wallOffset.xM, yBase + height / 2, sz + dz / 2 + wallOffset.zM);
   mesh.rotation.y = yawForPlanSegment(dx, dz);
   mesh.userData.bimPickId = wall.id;
+  mesh.userData.faceMaterialOverrides = wall.faceMaterialOverrides ?? null;
+  mesh.userData.wallFaceMaterialSlots = WALL_BOX_FACE_MATERIAL_INDEX;
   addEdges(mesh);
   if (wall.materialKey === 'timber_cladding') addCladdingBoards(mesh, len, height, thick);
   else if (wall.materialKey === 'white_cladding')

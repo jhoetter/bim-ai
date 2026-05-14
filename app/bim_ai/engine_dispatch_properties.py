@@ -1,5 +1,7 @@
 # ruff: noqa: I001
 
+from pydantic import TypeAdapter
+
 from bim_ai.engine import (
     AssignWallDatumConstraintsCmd,
     AreaElem,
@@ -10,6 +12,7 @@ from bim_ai.engine import (
     IssueElem,
     LevelElem,
     LinkDxfElem,
+    MaterialFaceOverride,
     PlanDetailLevelPlan,
     PlanViewElem,
     PlacedAssetElem,
@@ -451,6 +454,20 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     els[cmd.element_id] = el.model_copy(
                         update={"material_key": _str_val(cmd.value) or None}
                     )
+                elif cmd.key == "faceMaterialOverrides":
+                    if cmd.value in (None, ""):
+                        els[cmd.element_id] = el.model_copy(
+                            update={"face_material_overrides": None}
+                        )
+                    elif isinstance(cmd.value, list):
+                        overrides = TypeAdapter(list[MaterialFaceOverride]).validate_python(
+                            cmd.value
+                        )
+                        els[cmd.element_id] = el.model_copy(
+                            update={"face_material_overrides": overrides}
+                        )
+                    else:
+                        raise ValueError("faceMaterialOverrides must be a JSON array or empty")
                 elif cmd.key == "isCurtainWall":
                     if isinstance(cmd.value, bool):
                         cw = cmd.value
@@ -479,7 +496,7 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     els[cmd.element_id] = el.model_copy(update={"name": _str_val(cmd.value)})
                 else:
                     raise ValueError(
-                        "wall updates: key=materialKey | isCurtainWall | roofAttachmentId | wallTypeId | heightMm | thicknessMm | name"
+                        "wall updates: key=materialKey | faceMaterialOverrides | isCurtainWall | roofAttachmentId | wallTypeId | heightMm | thicknessMm | name"
                     )
             elif isinstance(el, (DoorElem, WindowElem)):
                 raw_v = str(cmd.value).strip() if cmd.value is not None else ""

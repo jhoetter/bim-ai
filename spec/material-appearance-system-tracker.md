@@ -74,7 +74,7 @@ The material assignment model should support:
 | MAT-GAP-005 | Plan/section surface and cut patterns are not material-driven.                | Architectural drafting views do not match material identity.   | P0       | Done        |
 | MAT-GAP-006 | Material browser edits assignment, but not appearance/graphics assets.        | Users cannot tune material behavior after assignment.          | P1       | Done        |
 | MAT-GAP-007 | Layered assemblies do not expose exterior/interior finish appearance clearly. | Revit-like wall/floor/roof types are underpowered.             | P1       | Done        |
-| MAT-GAP-008 | Per-face paint/finish overrides are not modeled.                              | Users cannot paint one wall face or one floor zone.            | P1       | Open        |
+| MAT-GAP-008 | Per-face paint/finish overrides are not modeled.                              | Users cannot paint one wall face or one floor zone.            | P1       | Done        |
 | MAT-GAP-009 | Material previews are not representative.                                     | Browser choice is guesswork.                                   | P1       | Done        |
 | MAT-GAP-010 | Exports/schedules do not preserve the full material asset contract.           | IFC/GLTF/readback can diverge from viewport behavior.          | P1       | Open        |
 | MAT-GAP-011 | Texture performance and caching strategy is undefined.                        | Real textures could degrade 3D interaction.                    | P1       | Done        |
@@ -486,7 +486,7 @@ Evidence (2026-05-14):
 ### WP-MAT-09 — Per-Face Paint And Finish Overrides
 
 - Priority: `P1`
-- Status: `Open`
+- Status: `Done`
 - Covers: `MAT-GAP-008`
 - Goal: support Revit-like paint/finish workflows where one face can carry a finish without changing the wall type.
 - Source ownership:
@@ -515,6 +515,14 @@ Evidence (2026-05-14):
   - Command tests for add/update/remove face material override.
   - Raycast/metadata tests for wall front/back face detection.
   - Visual 3D test with exterior brick and interior plaster on same wall.
+- Evidence:
+  - Added `MaterialFaceOverride` / `faceMaterialOverrides` in the TypeScript and Python element schemas.
+  - Added wall BoxGeometry face-slot mapping, raycast face-kind recovery, and per-face material arrays for single-thickness wall meshes.
+  - Added `Paint Face...` and `Reset Face Material` radial menu commands backed by `updateElementProperty.faceMaterialOverrides`.
+  - Verification:
+    - `pnpm --filter @bim-ai/web exec vitest run src/viewport/meshBuilders.faceOverrides.test.ts src/viewport/wallFaceRadialMenu.test.tsx`
+    - `PYTEST_ADDOPTS=--no-cov python -m pytest app/tests/test_update_element_property_door_material.py`
+    - `pnpm --filter @bim-ai/web typecheck`
 
 ### WP-MAT-10 — Texture Alignment Tools
 
