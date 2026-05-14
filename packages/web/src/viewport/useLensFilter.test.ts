@@ -2,6 +2,7 @@ import type { Element } from '@bim-ai/core';
 import { describe, expect, it } from 'vitest';
 
 import {
+  elementPassesCostQuantityLens,
   elementPassesFireSafetyLens,
   lensFilterFromMode,
   resolveLensFilter,
@@ -130,5 +131,41 @@ describe('lensFilterFromMode', () => {
     };
     expect(filter(floor)).toBe('foreground');
     expect(filter(grid)).toBe('foreground');
+  });
+});
+
+describe('cost-quantity lens filter', () => {
+  it('foregrounds model-derived takeoff elements and cost-classified custom items', () => {
+    expect(
+      elementPassesCostQuantityLens({
+        kind: 'floor',
+        id: 'f1',
+        name: 'Slab',
+        levelId: 'l1',
+        boundary: [],
+      } as unknown as Element),
+    ).toBe(true);
+
+    expect(
+      elementPassesCostQuantityLens({
+        kind: 'generic_model',
+        id: 'allowance-1',
+        name: 'Allowance',
+        props: { cost: { costGroup: '700', workPackage: 'Site' } },
+      } as unknown as Element),
+    ).toBe(true);
+  });
+
+  it('ghosts unrelated elements in UI and saved-view cost lens modes', () => {
+    const column = {
+      kind: 'column',
+      id: 'c1',
+      name: 'Column',
+      levelId: 'l1',
+      center: { xMm: 0, yMm: 0 },
+    } as unknown as Element;
+
+    expect(lensFilterFromMode('cost-quantity')(column)).toBe('ghost');
+    expect(resolveLensFilter({ defaultLens: 'show_cost_quantity' })(column)).toBe('ghost');
   });
 });

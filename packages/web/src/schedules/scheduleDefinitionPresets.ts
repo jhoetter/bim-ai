@@ -15,6 +15,10 @@ export type SchedulePresetCategory =
   | 'beam'
   | 'foundation'
   | 'opening_load_bearing_wall'
+  | 'quantity_takeoff'
+  | 'cost_estimate'
+  | 'element_cost_group'
+  | 'scenario_delta'
   | EnergyScheduleCategory;
 
 export type SchedulePresetFieldToken = 'required' | 'optional';
@@ -401,6 +405,80 @@ const PRESETS: ScheduleDefinitionPreset[] = [
       { fieldKey: 'openingWidthMm', token: 'required', unitHint: 'mm' },
       { fieldKey: 'hostLoadBearing', token: 'required' },
       { fieldKey: 'reviewStatus', token: 'required', csvExportHint: 'needs_review or resolved' },
+    ],
+  },
+  {
+    id: 'cost-quantity-takeoff',
+    name: 'Cost · quantity takeoff',
+    category: 'quantity_takeoff',
+    fields: [
+      { fieldKey: 'elementId', token: 'required', csvExportHint: 'Stable source element id' },
+      { fieldKey: 'name', token: 'required' },
+      { fieldKey: 'elementKind', token: 'required' },
+      { fieldKey: 'typeId', token: 'optional', csvExportHint: 'Source type id' },
+      { fieldKey: 'scenarioId', token: 'required' },
+      { fieldKey: 'costGroup', token: 'optional' },
+      { fieldKey: 'workPackage', token: 'optional' },
+      { fieldKey: 'trade', token: 'optional' },
+      { fieldKey: 'lengthM', token: 'optional', unitHint: 'm', aggregation: 'sum' },
+      { fieldKey: 'netAreaM2', token: 'optional', unitHint: 'm²', aggregation: 'sum' },
+      { fieldKey: 'grossAreaM2', token: 'optional', unitHint: 'm²', aggregation: 'sum' },
+      { fieldKey: 'netVolumeM3', token: 'optional', unitHint: 'm³', aggregation: 'sum' },
+      { fieldKey: 'openingCount', token: 'optional', aggregation: 'sum' },
+      { fieldKey: 'traceability', token: 'required' },
+    ],
+  },
+  {
+    id: 'cost-estimate-source',
+    name: 'Cost · estimate source',
+    category: 'cost_estimate',
+    fields: [
+      { fieldKey: 'rowId', token: 'required' },
+      { fieldKey: 'elementId', token: 'required', csvExportHint: 'Source element id' },
+      { fieldKey: 'scenarioId', token: 'required' },
+      { fieldKey: 'costGroup', token: 'required' },
+      { fieldKey: 'workPackage', token: 'optional' },
+      { fieldKey: 'trade', token: 'optional' },
+      { fieldKey: 'unit', token: 'required' },
+      { fieldKey: 'quantity', token: 'required', aggregation: 'sum' },
+      { fieldKey: 'unitRate', token: 'optional' },
+      { fieldKey: 'totalCost', token: 'optional', aggregation: 'sum' },
+      { fieldKey: 'costSource', token: 'required', csvExportHint: 'Rate source/reference' },
+      { fieldKey: 'costDataStatus', token: 'required' },
+    ],
+  },
+  {
+    id: 'cost-element-groups',
+    name: 'Cost · element groups',
+    category: 'element_cost_group',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'name', token: 'required' },
+      { fieldKey: 'elementKind', token: 'required' },
+      { fieldKey: 'typeId', token: 'optional' },
+      { fieldKey: 'costGroup', token: 'required' },
+      { fieldKey: 'workPackage', token: 'optional' },
+      { fieldKey: 'trade', token: 'optional' },
+      { fieldKey: 'quantity', token: 'optional', aggregation: 'sum' },
+      { fieldKey: 'totalCost', token: 'optional', aggregation: 'sum' },
+      { fieldKey: 'costDataStatus', token: 'required' },
+    ],
+  },
+  {
+    id: 'cost-scenario-delta',
+    name: 'Cost · scenario delta',
+    category: 'scenario_delta',
+    fields: [
+      { fieldKey: 'scenarioId', token: 'required' },
+      { fieldKey: 'baselineScenarioId', token: 'required' },
+      { fieldKey: 'costGroup', token: 'required' },
+      { fieldKey: 'workPackage', token: 'optional' },
+      { fieldKey: 'trade', token: 'optional' },
+      { fieldKey: 'scenarioCost', token: 'required', aggregation: 'sum' },
+      { fieldKey: 'baselineCost', token: 'required', aggregation: 'sum' },
+      { fieldKey: 'deltaCost', token: 'required', aggregation: 'sum' },
+      { fieldKey: 'rowCount', token: 'required', aggregation: 'sum' },
+      { fieldKey: 'sourceElementIds', token: 'required', csvExportHint: 'Traceable source ids' },
     ],
   },
 ];

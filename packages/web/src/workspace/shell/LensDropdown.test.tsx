@@ -13,7 +13,7 @@ describe('LensDropdown — LNS-V3-01', () => {
     expect(getByTestId('lens-dropdown-trigger').textContent).toContain('▾');
   });
 
-  it('click opens the lens menu including Coordination, Fire Safety, Energieberatung, and Bauausfuehrung', () => {
+  it('click opens the lens menu including specialized lenses', () => {
     const { getByTestId, queryByTestId } = render(
       <LensDropdown currentLens="all" onLensChange={() => {}} />,
     );
@@ -21,11 +21,12 @@ describe('LensDropdown — LNS-V3-01', () => {
     fireEvent.click(getByTestId('lens-dropdown-trigger'));
     const menu = queryByTestId('lens-menu');
     expect(menu).toBeTruthy();
-    expect(menu!.querySelectorAll('[role="menuitem"]').length).toBe(8);
+    expect(menu!.querySelectorAll('[role="menuitem"]').length).toBe(9);
     expect(getByTestId('lens-option-coordination').textContent).toContain('Coordination');
     expect(getByTestId('lens-option-fire-safety').textContent).toContain('Fire Safety');
     expect(getByTestId('lens-option-energy').textContent).toContain('Energieberatung');
     expect(getByTestId('lens-option-construction').textContent).toContain('Bauausfuehrung');
+    expect(getByTestId('lens-option-cost-quantity').textContent).toContain('Cost and Quantity');
   });
 
   it('click "Structure" calls onLensChange("structure")', () => {
@@ -70,6 +71,11 @@ describe('LensDropdown — LNS-V3-01', () => {
     onLensChange.mockClear();
     render(<LensDropdown currentLens="construction" onLensChange={onLensChange} />);
     fireEvent.keyDown(window, { key: 'L' });
+    expect(onLensChange).toHaveBeenCalledWith('cost-quantity');
+
+    onLensChange.mockClear();
+    render(<LensDropdown currentLens="cost-quantity" onLensChange={onLensChange} />);
+    fireEvent.keyDown(window, { key: 'L' });
     expect(onLensChange).toHaveBeenCalledWith('all');
   });
 
@@ -79,9 +85,10 @@ describe('LensDropdown — LNS-V3-01', () => {
     expect(getByTestId('lens-option-coordination').textContent).toContain('Coordination');
   });
 
-  it('surfaces the Fire Safety lens option', () => {
+  it('surfaces the Fire Safety and Cost Quantity lens options', () => {
     const { getByTestId } = render(<LensDropdown currentLens="all" onLensChange={() => {}} />);
     fireEvent.click(getByTestId('lens-dropdown-trigger'));
     expect(getByTestId('lens-option-fire-safety').textContent).toContain('Fire Safety');
+    expect(getByTestId('lens-option-cost-quantity').textContent).toContain('Cost and Quantity');
   });
 });

@@ -36,7 +36,10 @@ import {
 import * as THREE from 'three';
 import { parseDimensionInput } from '@bim-ai/core';
 import type { Element } from '@bim-ai/core';
-import { elementPassesFireSafetyLens } from '../viewport/useLensFilter';
+import {
+  elementPassesCostQuantityLens,
+  elementPassesFireSafetyLens,
+} from '../viewport/useLensFilter';
 
 import { useBimStore, type PlanTool } from '../state/store';
 import type { CategoryOverride } from '../state/storeTypes';
@@ -1120,6 +1123,7 @@ export function PlanCanvas({
         structure: 'show_struct',
         mep: 'show_mep',
         'fire-safety': 'show_fire_safety',
+        'cost-quantity': 'show_cost_quantity',
       };
       const resolvedLens =
         lensMode && lensMode !== 'all'
@@ -1145,7 +1149,11 @@ export function PlanCanvas({
           const disc =
             ('discipline' in el ? (el.discipline as string | null | undefined) : null) ?? 'arch';
           const isGhost =
-            lens === 'show_fire_safety' ? !elementPassesFireSafetyLens(el) : disc !== expected;
+            lens === 'show_fire_safety'
+              ? !elementPassesFireSafetyLens(el)
+              : lens === 'show_cost_quantity'
+                ? !elementPassesCostQuantityLens(el)
+                : disc !== expected;
           if (ch instanceof THREE.Mesh) {
             const mat = ch.material as THREE.Material | THREE.Material[];
             const applyGhost = (m: THREE.Material) => {

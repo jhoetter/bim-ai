@@ -3084,6 +3084,7 @@ export type LensMode =
   | 'structure'
   | 'mep'
   | 'fire-safety'
+  | 'cost-quantity'
   | 'energy'
   | 'coordination'
   | 'construction';
@@ -3094,6 +3095,7 @@ export type ViewLensMode =
   | 'show_struct'
   | 'show_mep'
   | 'show_fire_safety'
+  | 'show_cost_quantity'
   | 'show_all';
 
 /** LNS-V3-01/DSC-V3-02 — undoable command dispatched by the lens dropdown. */

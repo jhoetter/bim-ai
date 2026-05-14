@@ -9,6 +9,7 @@ const LENS_CYCLE = [
   'fire-safety',
   'energy',
   'construction',
+  'cost-quantity',
   'all',
 ] as const satisfies readonly LensMode[];
 type LensCycleMode = (typeof LENS_CYCLE)[number];
@@ -21,6 +22,7 @@ const LENS_LABELS: Record<LensCycleMode, string> = {
   'fire-safety': 'Fire Safety',
   energy: 'Energieberatung',
   construction: 'Bauausfuehrung',
+  'cost-quantity': 'Cost and Quantity',
   all: 'All',
 };
 
@@ -32,6 +34,7 @@ const DISC_SOFT: Partial<Record<LensMode, string>> = {
   'fire-safety': 'color-mix(in srgb, var(--color-danger) 22%, transparent)',
   energy: 'color-mix(in srgb, #0f766e 24%, transparent)',
   construction: 'color-mix(in srgb, var(--draft-construction-blue) 24%, transparent)',
+  'cost-quantity': 'color-mix(in srgb, var(--color-warning) 24%, transparent)',
 };
 
 const DISC_SOLID: Partial<Record<LensMode, string>> = {
@@ -42,6 +45,7 @@ const DISC_SOLID: Partial<Record<LensMode, string>> = {
   'fire-safety': 'var(--color-danger)',
   energy: '#0f766e',
   construction: 'var(--draft-construction-blue)',
+  'cost-quantity': 'var(--color-warning)',
 };
 
 export interface LensDropdownProps {
