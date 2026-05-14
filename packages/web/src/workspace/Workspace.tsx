@@ -3592,7 +3592,7 @@ export function Workspace(): JSX.Element {
                 type="button"
                 data-testid="workspace-header-participants"
                 onClick={() => setCommentsOpen((v) => !v)}
-                className="inline-flex h-8 items-center justify-center rounded border border-border bg-surface px-1.5 text-muted hover:bg-surface-2 hover:text-foreground"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-surface-2 hover:text-foreground"
                 aria-label="Open collaboration comments"
                 title="Open collaboration comments"
               >
