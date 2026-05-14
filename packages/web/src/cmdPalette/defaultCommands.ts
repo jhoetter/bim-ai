@@ -530,6 +530,20 @@ registerCommand({
   },
 });
 
+registerCommand({
+  id: 'navigate.coordination',
+  label: 'Switch lens: Coordination',
+  keywords: ['coordination', 'koordination', 'clash', 'issue', 'review', 'lens'],
+  category: 'navigate',
+  invoke: (ctx) => {
+    if (ctx.setLensMode) {
+      ctx.setLensMode('coordination');
+      return;
+    }
+    useBimStore.getState().setLensMode('coordination');
+  },
+});
+
 // Additional tools
 registerCommand({
   id: 'tool.column',

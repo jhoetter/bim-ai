@@ -5,6 +5,7 @@ const LENS_CYCLE = [
   'architecture',
   'structure',
   'mep',
+  'coordination',
   'fire-safety',
   'all',
 ] as const satisfies readonly LensMode[];
@@ -14,6 +15,7 @@ const LENS_LABELS: Record<LensCycleMode, string> = {
   architecture: 'Architecture',
   structure: 'Structure',
   mep: 'MEP',
+  coordination: 'Coordination',
   'fire-safety': 'Fire Safety',
   all: 'All',
 };
@@ -22,6 +24,7 @@ const DISC_SOFT: Partial<Record<LensMode, string>> = {
   architecture: 'var(--disc-arch-soft)',
   structure: 'var(--disc-struct-soft)',
   mep: 'var(--disc-mep-soft)',
+  coordination: 'color-mix(in srgb, var(--color-drift, var(--color-warning)) 20%, transparent)',
   'fire-safety': 'color-mix(in srgb, var(--color-danger) 22%, transparent)',
 };
 
@@ -29,6 +32,7 @@ const DISC_SOLID: Partial<Record<LensMode, string>> = {
   architecture: 'var(--disc-arch)',
   structure: 'var(--disc-struct)',
   mep: 'var(--disc-mep)',
+  coordination: 'var(--color-drift, var(--color-warning))',
   'fire-safety': 'var(--color-danger)',
 };
 

@@ -10,6 +10,7 @@ from bim_ai.engine import (
     CreateRoomRectangleCmd,
     CreateWallChainCmd,
     CreateWallCmd,
+    ConstructabilityIssueElem,
     DEFAULT_DISCIPLINE_BY_KIND,
     DeleteElementCmd,
     DeleteElementsCmd,
@@ -31,6 +32,7 @@ from bim_ai.engine import (
     RoomElem,
     SetCurtainPanelOverrideCmd,
     ToposolidElem,
+    UpdateIssueStatusCmd,
     Vec2Mm,
     WallElem,
     WallOpeningElem,
@@ -549,6 +551,44 @@ def try_apply_core_command(doc, cmd, *, source_provider=None) -> bool:
                 element_ids=cmd.element_ids,
                 viewpoint_id=cmd.viewpoint_id,
             )
+
+        case UpdateIssueStatusCmd():
+            issue = els.get(cmd.issue_id)
+            history_row = {
+                "status": cmd.status,
+                "comment": cmd.comment,
+                "actor": cmd.actor,
+                "revision": cmd.revision if cmd.revision is not None else doc.revision,
+            }
+            if isinstance(issue, IssueElem):
+                els[cmd.issue_id] = issue.model_copy(
+                    update={
+                        "status": cmd.status,
+                        "resolution_history": [
+                            *issue.resolution_history,
+                            {k: v for k, v in history_row.items() if v is not None},
+                        ],
+                    }
+                )
+            elif isinstance(issue, ConstructabilityIssueElem):
+                constructability_status = {
+                    "open": "active",
+                    "in_progress": "active",
+                    "closed": "resolved",
+                    "done": "resolved",
+                }.get(cmd.status, cmd.status)
+                updates: dict[str, object] = {"status": constructability_status}
+                if cmd.comment is not None:
+                    updates["resolution_comment"] = cmd.comment
+                if cmd.status in {"resolved", "closed", "done"}:
+                    updates["resolved_revision"] = (
+                        cmd.revision if cmd.revision is not None else doc.revision
+                    )
+                els[cmd.issue_id] = issue.model_copy(update=updates)
+            else:
+                raise ValueError(
+                    "updateIssueStatus.issueId must reference an issue or constructability_issue"
+                )
         case _:
             return False
     return True

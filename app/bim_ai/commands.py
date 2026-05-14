@@ -703,6 +703,28 @@ class CreateIssueFromViolationCmd(BaseModel):
     viewpoint_id: str | None = Field(default=None, alias="viewpointId")
 
 
+class UpdateIssueStatusCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["updateIssueStatus"] = "updateIssueStatus"
+    issue_id: str = Field(alias="issueId")
+    status: Literal[
+        "open",
+        "in_progress",
+        "reviewed",
+        "resolved",
+        "closed",
+        "done",
+        "not_an_issue",
+        "new",
+        "active",
+        "approved",
+        "suppressed",
+    ]
+    comment: str | None = None
+    actor: str | None = None
+    revision: str | int | None = None
+
+
 class UpdateElementPropertyCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["updateElementProperty"] = "updateElementProperty"
@@ -3419,6 +3441,7 @@ Command = Annotated[
     | PlaceRoomAtPointCmd
     | MoveLevelElevationCmd
     | CreateIssueFromViolationCmd
+    | UpdateIssueStatusCmd
     | UpdateElementPropertyCmd
     | SaveViewpointCmd
     | UpsertProjectSettingsCmd
