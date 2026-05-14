@@ -1,0 +1,22 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "ab1daa0ad4be",
+  "session_id": "019e2868-d82a-79e3-97ab-9d98e6e5cfaf",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T21:58:48.945059Z",
+  "branch": "codex/sustainability-lens-workpackages-20260514",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "58f9f8efd1ed",
+  "checkpoint_transcript_start": 696,
+  "transcript_lines_at_start": 696,
+  "token_usage": {
+    "input_tokens": 49093,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 4832768,
+    "output_tokens": 11986,
+    "api_call_count": 44
+  }
+}
