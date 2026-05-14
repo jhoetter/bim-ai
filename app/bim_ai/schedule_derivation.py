@@ -5,14 +5,15 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any
 
+from bim_ai.construction_lens import construction_progress_rows
 from bim_ai.document import Document
 from bim_ai.elements import (
     AreaElem,
     BuildingServicesHandoffElem,
+    ConstructabilityIssueElem,
     ConstructionLogisticsElem,
     ConstructionPackageElem,
     ConstructionQaChecklistElem,
-    ConstructabilityIssueElem,
     DoorElem,
     ElevationViewElem,
     FloorElem,
@@ -36,7 +37,6 @@ from bim_ai.elements import (
     WallTypeElem,
     WindowElem,
 )
-from bim_ai.construction_lens import construction_progress_rows
 from bim_ai.energy_lens import (
     build_energy_handoff_payload,
     energy_qa_rows,
