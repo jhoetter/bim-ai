@@ -1,0 +1,79 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "0b2d6d08e90a",
+  "session_id": "019e1f88-adaf-7791-baf4-f7e0bc958757",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T20:43:16.46994Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/project/ProjectSetupDialog.test.tsx",
+    "packages/web/src/workspace/project/ProjectSetupDialog.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "fa6bbe48f4bd",
+  "checkpoint_transcript_start": 22341,
+  "transcript_lines_at_start": 22341,
+  "token_usage": {
+    "input_tokens": 3290527,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 49678464,
+    "output_tokens": 100754,
+    "api_call_count": 1009
+  },
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-14T20:43:11.234108Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 146,
+    "human_modified": 409,
+    "human_removed": 0,
+    "total_committed": 146,
+    "total_lines_changed": 555,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 2556,
+      "user_lines_removed": 448,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/packages/web/tmp/viewcube-revit-check-20260514/summary.json": 209,
+        "packages/web/src/families/geometryFns/windowGeometry.ts": 11,
+        "packages/web/src/viewport/ViewCube.tsx": 678,
+        "packages/web/src/viewport/proceduralMaterials.ts": 6,
+        "packages/web/src/workspace/Workspace.test.tsx": 20,
+        "packages/web/src/workspace/Workspace.tsx": 38,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 66,
+        "packages/web/src/workspace/paneLayout.test.ts": 9,
+        "packages/web/src/workspace/paneLayout.ts": 55,
+        "packages/web/src/workspace/shell/AppShell.test.tsx": 15,
+        "packages/web/src/workspace/shell/AppShell.tsx": 1,
+        "packages/web/src/workspace/shell/RibbonBar.tsx": 103,
+        "packages/web/src/workspace/shell/TopBar.test.tsx": 8,
+        "packages/web/tmp/viewcube-label-transform-20260514/summary.json": 238,
+        "packages/web/tmp/viewcube-revit-check-20260514-final/summary.json": 390,
+        "packages/web/tmp/viewcube-revit-check-20260514-real/summary.json": 367,
+        "packages/web/tmp/viewcube-revit-check-20260514/summary.json": 342
+      },
+      "user_removed_per_file": {
+        "packages/web/src/families/geometryFns/windowGeometry.ts": 2,
+        "packages/web/src/viewport/ViewCube.tsx": 152,
+        "packages/web/src/viewport/proceduralMaterials.ts": 3,
+        "packages/web/src/workspace/Workspace.test.tsx": 11,
+        "packages/web/src/workspace/Workspace.tsx": 20,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 21,
+        "packages/web/src/workspace/shell/AppShell.tsx": 1,
+        "packages/web/src/workspace/shell/RibbonBar.tsx": 221,
+        "packages/web/src/workspace/shell/TopBar.test.tsx": 17
+      }
+    }
+  ]
+}
