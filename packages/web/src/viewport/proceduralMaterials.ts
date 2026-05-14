@@ -114,11 +114,17 @@ export function createProceduralMaterialMaps(
         variation += mortar ? 18 : (hash2(row, Math.floor(localX / 4), seed) - 0.5) * 14;
         height = mortar ? 74 : 176;
         rough = mortar ? 235 : 215;
-      } else if (spec.category === 'timber' || spec.category === 'cladding') {
+      } else if (spec.category === 'timber') {
         const grain = Math.sin((nx * 20 + hash2(0, y, seed) * 2) * Math.PI);
         variation += grain * 18 + (hash2(x >> 2, y, seed) - 0.5) * 10;
         height = 132 + grain * 34;
         rough = 170 + Math.abs(grain) * 24;
+      } else if (spec.category === 'cladding') {
+        const boardEdge = x < 2 || x >= size - 2;
+        const grain = Math.sin((ny * 10 + hash2(x >> 3, 0, seed) * 2) * Math.PI);
+        variation += (hash2(x >> 3, y >> 4, seed) - 0.5) * 8 + grain * 4;
+        height = boardEdge ? 104 : 136 + grain * 10;
+        rough = boardEdge ? 230 : 205 + Math.abs(grain) * 10;
       } else if (spec.category === 'concrete' || spec.category === 'render') {
         variation += (hash2(x >> 1, y >> 1, seed) - 0.5) * 14;
         height = 124 + (hash2(x, y, seed) - 0.5) * 18;

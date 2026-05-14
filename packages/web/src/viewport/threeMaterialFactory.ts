@@ -89,6 +89,8 @@ function defaultUvScaleFor(spec: MaterialPbrSpec | null): MaterialUvExtent | nul
   switch (spec?.category) {
     case 'brick':
       return { uMm: 215, vMm: 75 };
+    case 'cladding':
+      return { uMm: 250, vMm: 3000 };
     case 'timber':
       return { uMm: 1200, vMm: 180 };
     case 'stone':

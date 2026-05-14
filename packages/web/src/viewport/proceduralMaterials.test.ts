@@ -34,6 +34,7 @@ describe('procedural material maps', () => {
     for (const key of [
       'concrete_smooth',
       'timber_cladding',
+      'cladding_beige_grey',
       'stone_limestone',
       'metal_standing_seam_dark_grey',
     ]) {

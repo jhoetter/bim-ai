@@ -137,6 +137,15 @@ describe('three material factory', () => {
     expect(transform?.rotationRad).toBe(0);
   });
 
+  it('derives vertical cladding repeats from board pitch and full wall height', () => {
+    const transform = materialUvTransformForExtent('cladding_beige_grey', {
+      extentMm: { uMm: 4000, vMm: 3000 },
+    });
+
+    expect(transform?.repeat?.u).toBeCloseTo(4000 / 250);
+    expect(transform?.repeat?.v).toBeCloseTo(1);
+  });
+
   it('applies explicit project uv scale, offset, and rotation to textures', () => {
     const projectMaterial: Extract<Element, { kind: 'material' }> = {
       kind: 'material',
