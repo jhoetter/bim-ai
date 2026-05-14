@@ -19,6 +19,7 @@ import {
   materialHexFor,
 } from '../families/wallTypeCatalog';
 import type { ViewportPaintBundle } from './materials';
+import { yawForPlanSegment } from './planSegmentOrientation';
 import { addEdges, readToken } from './sceneHelpers';
 
 type WallElem = Extract<Element, { kind: 'wall' }>;
@@ -110,7 +111,7 @@ export function makeLayeredWallMesh(
   const baseOff = (wall.baseConstraintOffsetMm ?? 0) / 1000;
   const yBase = elevM + baseOff;
   const heightM = THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40);
-  const yaw = Math.atan2(dz, dx);
+  const yaw = yawForPlanSegment(dx, dz);
 
   const totalThickM = assembly.layers.reduce((acc, l) => acc + l.thicknessMm, 0) / 1000;
 

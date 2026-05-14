@@ -59,6 +59,24 @@ describe('makeLayeredWallMesh — FL-08', () => {
     expect(box.max.z).toBeCloseTo(totalMm / 2000, 3);
   });
 
+  it('diagonal layered wall meshes follow the authored start-to-end line', () => {
+    const assembly = getBuiltInWallType('wall.int-partition')!;
+    const diagonalWall: WallElem = {
+      ...baseWall,
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 3000, yMm: 4000 },
+    };
+    const group = makeLayeredWallMesh(diagonalWall, assembly, 0, null);
+    const mesh = visibleMeshes(group)[0]!;
+    const localX = new THREE.Vector3(1, 0, 0).applyQuaternion(mesh.quaternion);
+    const localZ = new THREE.Vector3(0, 0, 1).applyQuaternion(mesh.quaternion);
+
+    expect(localX.x).toBeCloseTo(0.6, 5);
+    expect(localX.z).toBeCloseTo(0.8, 5);
+    expect(localZ.x).toBeCloseTo(-0.8, 5);
+    expect(localZ.z).toBeCloseTo(0.6, 5);
+  });
+
   it('makeWallMesh dispatches to the layered renderer when wallTypeId resolves', () => {
     const wall: WallElem = { ...baseWall, wallTypeId: 'wall.int-partition' };
     const obj = makeWallMesh(wall, 0, null);

@@ -1,0 +1,49 @@
+{
+  "health": {
+    "ok": true,
+    "status": 200
+  },
+  "commandResponses": [
+    {
+      "status": 200,
+      "ok": true
+    }
+  ],
+  "createWallCount": 1,
+  "previewCount": 58,
+  "previewMeshCount": 58,
+  "commitCount": 1,
+  "cursorPathVisible": true,
+  "cursorEndVisible": true,
+  "consoleErrors": [],
+  "wallVectors": [
+    {
+      "start": {
+        "xMm": 16885.151325982617,
+        "yMm": 9007.683132147207
+      },
+      "end": {
+        "xMm": 14496.738555629348,
+        "yMm": 2768.232350059117
+      },
+      "dxMm": -2388.4127703532686,
+      "dyMm": -6239.45078208809,
+      "lengthMm": 6680.962627023612,
+      "locationLine": "wall-centerline"
+    }
+  ],
+  "commitDeltas": [
+    {
+      "screenDelta": {
+        "x": 292.79998779296875,
+        "y": 109.97998046875
+      },
+      "modelDelta": {
+        "xMm": -2388.4127703532686,
+        "yMm": -6239.45078208809
+      },
+      "lengthMm": 6680.962627023612,
+      "projectionMode": "plane"
+    }
+  ]
+}

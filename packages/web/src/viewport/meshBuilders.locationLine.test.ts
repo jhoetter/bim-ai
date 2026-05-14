@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
 import { makeWallMesh } from './meshBuilders';
 
@@ -80,5 +81,21 @@ describe('makeWallMesh — locationLine offset', () => {
     // elevM=0, baseOff=0, yBase=0; topElevM=3, topOff=0 → height=3-0=3
     const mesh = makeWallMesh(wall, 0, null, elementsById);
     expect(mesh.position.y).toBeCloseTo(0 + 3 / 2, 5);
+  });
+
+  it('diagonal wall mesh local X axis follows the authored start-to-end line', () => {
+    const wall: WallElem = {
+      ...baseWall,
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 3000, yMm: 4000 },
+    };
+    const mesh = makeWallMesh(wall, 0, null) as THREE.Mesh;
+    const localX = new THREE.Vector3(1, 0, 0).applyQuaternion(mesh.quaternion);
+    const localZ = new THREE.Vector3(0, 0, 1).applyQuaternion(mesh.quaternion);
+
+    expect(localX.x).toBeCloseTo(0.6, 5);
+    expect(localX.z).toBeCloseTo(0.8, 5);
+    expect(localZ.x).toBeCloseTo(-0.8, 5);
+    expect(localZ.z).toBeCloseTo(0.6, 5);
   });
 });

@@ -24,6 +24,7 @@ import { categoryColorOr, addEdges, readToken } from './sceneHelpers';
 import { roofHeightAtPoint } from './roofHeightSampler';
 import { makeLayeredWallMesh } from './meshBuilders.layeredWall';
 import { makeMultiRunStairMesh } from './meshBuilders.multiRunStair';
+import { localPlanOffsetToWorld, yawForPlanSegment } from './planSegmentOrientation';
 
 /** Resolve a wall's `wallTypeId` to a renderable assembly. Built-in catalog
  * entries take precedence over user-authored `wall_type` elements. */
@@ -2028,7 +2029,7 @@ export function makeSlopedWallMesh(
   });
   const mesh = new THREE.Mesh(geom, mat);
   mesh.position.set((sx + ex) / 2000, yBase, (sz + ez) / 2000);
-  mesh.rotation.y = Math.atan2(dz, dx);
+  mesh.rotation.y = yawForPlanSegment(dx, dz);
   mesh.userData.bimPickId = wall.id;
   addEdges(mesh);
   return mesh;
@@ -2178,7 +2179,7 @@ export function makeRecessedWallMesh(
   // Compute non-recessed spans (full-thickness wall segments) and recessed
   // spans (where the wall plane has stepped back). Each becomes its own
   // axis-aligned box at the wall's yaw rotation.
-  const yaw = Math.atan2(wall.end.yMm - wall.start.yMm, wall.end.xMm - wall.start.xMm);
+  const yaw = yawForPlanSegment(wall.end.xMm - wall.start.xMm, wall.end.yMm - wall.start.yMm);
   const wallLenM = Math.hypot(wall.end.xMm - wall.start.xMm, wall.end.yMm - wall.start.yMm) / 1000;
   const wallCx = (wall.start.xMm + wall.end.xMm) / 2 / 1000;
   const wallCz = (wall.start.yMm + wall.end.yMm) / 2 / 1000;
@@ -2201,11 +2202,7 @@ export function makeRecessedWallMesh(
     // Perpendicular offset in plan-space (interior normal direction) → world
     // XZ. Plan-Y maps directly to world-Z under the viewport convention.
     const perpOffsetM = perpMmOffset / 1000;
-    const cosY = Math.cos(yaw);
-    const sinY = Math.sin(yaw);
-    // Local: x = along, z = perpOffset. World: rotate around Y by yaw.
-    const dxWorld = cosY * along - sinY * perpOffsetM;
-    const dzWorld = sinY * along + cosY * perpOffsetM;
+    const { xM: dxWorld, zM: dzWorld } = localPlanOffsetToWorld(yaw, along, perpOffsetM);
     const cx = wallCx + dxWorld;
     const cz = wallCz + dzWorld;
 
@@ -2356,7 +2353,7 @@ export function makeWallMesh(
     }),
   );
   mesh.position.set(sx + dx / 2 + perpX, yBase + height / 2, sz + dz / 2 + perpZ);
-  mesh.rotation.y = Math.atan2(dz, dx);
+  mesh.rotation.y = yawForPlanSegment(dx, dz);
   mesh.userData.bimPickId = wall.id;
   addEdges(mesh);
   if (wall.materialKey === 'timber_cladding') addCladdingBoards(mesh, len, height, thick);
@@ -2409,7 +2406,7 @@ export function makeCurtainWallMesh(
   const len = Math.max(0.001, Math.hypot(dx, dz));
   const height = THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40);
   const thick = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2);
-  const yaw = Math.atan2(dz, dx);
+  const yaw = yawForPlanSegment(dx, dz);
 
   const group = new THREE.Group();
   group.userData.bimPickId = wall.id;
@@ -2867,7 +2864,7 @@ export function makeBalconyMesh(
   // For south wall drawn west→east (+X): right = -Z (south). ✓
   const nx = uz;
   const nz = -ux;
-  const yaw = Math.atan2(dz, dx);
+  const yaw = yawForPlanSegment(dx, dz);
 
   const elevM = balcony.elevationMm / 1000;
   const projM = THREE.MathUtils.clamp((balcony.projectionMm ?? 650) / 1000, 0.1, 3);
@@ -2971,7 +2968,7 @@ export function makeBeamMesh(
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.set(sx + dx / 2, elevM - hM / 2, sz + dz / 2);
-  mesh.rotation.y = Math.atan2(dz, dx);
+  mesh.rotation.y = yawForPlanSegment(dx, dz);
   addEdges(mesh);
   return mesh;
 }

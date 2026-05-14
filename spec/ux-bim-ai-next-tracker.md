@@ -1565,3 +1565,55 @@ Evidence (2026-05-13):
       - `previewMeshCount: 52`
       - `commitCount: 2`
       - `consoleWarnings: []`
+
+## Reopened Tracker (2026-05-14, feedback round 18)
+
+| Gap ID         | Problem Statement                                                                                                                                                              | Canonical Surfaces / Files                                                                                                            | Priority | Status |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------ |
+| NEXT18-GAP-001 | Diagonal 3D walls could still commit as mirrored/off-line slabs because wall mesh yaw used the wrong Three.js Y-rotation sign for semantic plan +Y/world +Z mapping.           | `packages/web/src/viewport/meshBuilders.ts`, `packages/web/src/viewport/meshBuilders.layeredWall.ts`, `packages/web/src/Viewport.tsx` | P0       | Done   |
+| NEXT18-GAP-002 | CSG-cut walls and typed/layered wall previews needed the same segment-orientation contract as regular walls so preview, commit, and aperture rendering do not diverge.         | `Viewport.tsx` CSG request yaw, layered/sloped/recessed/curtain wall builders, orientation unit tests                                 | P0       | Done   |
+| NEXT18-GAP-003 | Seeded evidence needed a clean diagonal 3D wall case proving the visible authored path, mesh preview, and committed wall body agree in the real app after the orientation fix. | `packages/web/tmp/ux-wall-3d-yaw-fidelity-20260514-v2/*`                                                                              | P0       | Done   |
+
+### WP-NEXT-36 — 3D Wall Segment Orientation Fidelity
+
+- Priority: `P0`
+- Status: `Done`
+- Supersedes/extends: `WP-NEXT-35` mesh preview parity remains valid; this package fixes the root diagonal-yaw bug that made preview/commit geometry look detached from the blue authored line.
+- Covers: `NEXT18-GAP-001`, `NEXT18-GAP-002`, `NEXT18-GAP-003`
+- Goal: make every linear 3D wall body use the same canonical plan-segment orientation as the authored start/end line, including layered walls and CSG-cut wall rebuilds.
+- Source ownership:
+  - `packages/web/src/viewport/planSegmentOrientation.ts`
+  - `packages/web/src/viewport/planSegmentOrientation.test.ts`
+  - `packages/web/src/viewport/meshBuilders.ts`
+  - `packages/web/src/viewport/meshBuilders.layeredWall.ts`
+  - `packages/web/src/viewport/meshBuilders.locationLine.test.ts`
+  - `packages/web/src/viewport/meshBuilders.layeredWall.test.ts`
+  - `packages/web/src/Viewport.tsx`
+  - `packages/web/tmp/ux-wall-3d-yaw-fidelity-20260514-v2/capture.mjs`
+  - `packages/web/tmp/ux-wall-3d-yaw-fidelity-20260514-v2/summary.json`
+- Acceptance:
+  - diagonal wall mesh local +X maps to authored start-to-end vector, not the mirrored vector;
+  - layered wall mesh local +X maps to the authored start-to-end vector;
+  - sloped, recessed, curtain, balcony-attached, beam, and CSG wall paths use the same shared orientation helper where they depend on segment yaw;
+  - seeded browser proof shows a diagonal 3D wall preview with visible cursor path/end and `previewMesh: true` traces;
+  - seeded browser proof commits exactly one diagonal wall with `200 OK`, `projectionMode: "plane"`, and no console errors;
+  - seed model is reset after evidence capture so local validation starts from canonical `target-house-3` again.
+- Implementation + evidence:
+  - Added `yawForPlanSegment(dx, dz)` documenting the Three.js Y-rotation sign convention for BIM plan +Y/world +Z mapping.
+  - Added `localPlanOffsetToWorld` for recessed wall segment positioning so local offsets and mesh rotation use one transform convention.
+  - Replaced the old `Math.atan2(dz, dx)` wall yaw in plain, layered, sloped, recessed, curtain, balcony-attached, beam, and CSG wall paths with the shared helper.
+  - Added regression tests proving diagonal plain and layered walls align local +X with `(dx, dz)` and local +Z with the left normal.
+  - Seeded proof (`make seed-clear && make seed name=target-house-3`, `make dev name=target-house-3`, reset again after capture):
+    - `packages/web/tmp/ux-wall-3d-yaw-fidelity-20260514-v2/01-rear-axo-initial.png`
+    - `packages/web/tmp/ux-wall-3d-yaw-fidelity-20260514-v2/02-diagonal-wall-preview.png`
+    - `packages/web/tmp/ux-wall-3d-yaw-fidelity-20260514-v2/03-diagonal-wall-commit.png`
+    - `packages/web/tmp/ux-wall-3d-yaw-fidelity-20260514-v2/summary.json`
+      - `health: { ok: true, status: 200 }`
+      - `createWallCount: 1`
+      - `commandResponses: [{ status: 200, ok: true }]`
+      - `previewMeshCount: 58`
+      - `commitCount: 1`
+      - `cursorPathVisible: true`
+      - `cursorEndVisible: true`
+      - `projectionMode: "plane"`
+      - `consoleErrors: []`

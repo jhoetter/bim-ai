@@ -28,6 +28,7 @@ import { applyLinkedGhosting } from './viewport/linkedGhosting';
 import { applyLensGhosting } from './viewport/applyLensGhosting';
 import { lensFilterFromMode } from './viewport/useLensFilter';
 import { applySceneCameraPose, mirrorSceneCameraPose } from './viewport/cameraMatrixSync';
+import { yawForPlanSegment } from './viewport/planSegmentOrientation';
 import {
   buildDriftBadgeCanvas,
   driftBadgeTooltip,
@@ -3403,7 +3404,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
               wcx: sx + dx / 2,
               wcy: elev + height / 2,
               wcz: sz + dz / 2,
-              yaw: Math.atan2(dz, dx),
+              yaw: yawForPlanSegment(dx, dz),
               doors: doors.map((d) => ({
                 widthMm: d.widthMm,
                 alongT: d.alongT,
