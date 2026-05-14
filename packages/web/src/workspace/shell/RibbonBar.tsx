@@ -12,6 +12,7 @@ import {
 } from '../commandCapabilities';
 import type { WorkspaceMode } from './TopBar';
 import type { SheetMarkupShape, SheetReviewMode } from '../sheets/sheetReviewUi';
+import { LensDropdown } from './LensDropdown';
 
 type RibbonTabId =
   | 'create'
@@ -41,6 +42,10 @@ type RibbonCommand =
 
 type RibbonActionId =
   | 'command-palette'
+  | 'project-manage-links'
+  | 'advisor-open'
+  | 'create-section-view'
+  | 'element-sidebar-toggle'
   | 'family-library'
   | 'settings'
   | '3d-insert-door'
@@ -97,14 +102,38 @@ export interface RibbonCommandReachability {
   disabledReason?: string;
 }
 
+export interface RibbonCommandMetadata {
+  commandKey: string;
+  commandId: string | null;
+  mode: CapabilityViewMode;
+  tabId: RibbonTabId;
+  panelId: string;
+  label: string;
+  behavior: 'direct' | 'bridge' | 'disabled' | 'missing-metadata';
+  disabledReason?: string;
+}
+
+export interface RibbonInlineViewTitle {
+  icon: IconName;
+  viewType: string;
+  viewName?: string;
+  title: string;
+  viewIconTestId?: string;
+}
+
 export interface RibbonBarProps {
   activeToolId?: ToolId;
   activeMode?: ToolWorkspaceMode;
   selectedElementKind?: string | null;
   lensMode?: CapabilityLensMode;
+  onLensChange?: (lens: CapabilityLensMode) => void;
   onToolSelect?: (id: ToolId) => void;
   onModeChange?: (mode: WorkspaceMode) => void;
   onOpenCommandPalette?: () => void;
+  onOpenManageLinks?: () => void;
+  onOpenAdvisor?: () => void;
+  onCreateSectionView?: () => void;
+  onToggleElementSidebar?: () => void;
   onOpenFamilyLibrary?: () => void;
   onOpenSettings?: () => void;
   onSaveCurrentViewpoint?: () => void;
@@ -133,6 +162,8 @@ export interface RibbonBarProps {
   viewSettingsOpen?: boolean;
   onToggleViewSettings?: () => void;
   viewSettingsToggleLabel?: string;
+  inlineViewTitle?: RibbonInlineViewTitle;
+  trailingControls?: JSX.Element | null;
 }
 
 const RIBBON_HIDDEN_COMMANDS_STORAGE_KEY = 'bim-ai.ribbon.hiddenCommands.v1';
@@ -142,9 +173,14 @@ export function RibbonBar({
   activeMode,
   selectedElementKind,
   lensMode = 'all',
+  onLensChange,
   onToolSelect,
   onModeChange,
   onOpenCommandPalette,
+  onOpenManageLinks,
+  onOpenAdvisor,
+  onCreateSectionView,
+  onToggleElementSidebar,
   onOpenFamilyLibrary,
   onOpenSettings,
   onSaveCurrentViewpoint,
@@ -173,6 +209,8 @@ export function RibbonBar({
   viewSettingsOpen,
   onToggleViewSettings,
   viewSettingsToggleLabel,
+  inlineViewTitle,
+  trailingControls,
 }: RibbonBarProps): JSX.Element {
   const [activeTabId, setActiveTabId] = useState<RibbonTabId>('create');
   const [minimized, setMinimized] = useState(false);
@@ -189,6 +227,9 @@ export function RibbonBar({
   const activeCommands = useMemo(() => collectTabCommands(activeTab), [activeTab]);
   const identity = ribbonModeIdentity(activeMode ?? 'plan');
   const ModeIdentityIcon = Icons[identity.icon] ?? Icons.planView;
+  const InlineViewIcon = inlineViewTitle
+    ? (Icons[inlineViewTitle.icon] ?? ModeIdentityIcon)
+    : ModeIdentityIcon;
   const prevActiveToolIdRef = useRef<ToolId | undefined>(activeToolId);
 
   useEffect(() => {
@@ -232,6 +273,10 @@ export function RibbonBar({
     }
     const actions: Record<RibbonActionId, (() => void) | undefined> = {
       'command-palette': onOpenCommandPalette,
+      'project-manage-links': onOpenManageLinks,
+      'advisor-open': onOpenAdvisor,
+      'create-section-view': onCreateSectionView,
+      'element-sidebar-toggle': onToggleElementSidebar,
       'family-library': onOpenFamilyLibrary,
       settings: onOpenSettings,
       '3d-insert-door': onInsertDoorOnSelectedWall3d,
@@ -287,32 +332,95 @@ export function RibbonBar({
       data-testid="ribbon-bar"
       className="border-b border-border bg-surface"
     >
-      <div className="flex items-end gap-2 px-3 pt-1">
-        {onToggleViewSettings ? (
-          <button
-            type="button"
-            className={[
-              'mb-0.5 inline-flex h-6 shrink-0 items-center gap-1 rounded border border-border bg-background px-2 text-[11px] text-muted hover:bg-surface-2 hover:text-foreground',
-              viewSettingsOpen ? 'border-accent/60 bg-accent/10 text-accent' : '',
-            ].join(' ')}
-            data-testid="ribbon-mode-identity"
-            aria-label={viewSettingsToggleLabel ?? `Toggle ${identity.label} view settings`}
-            aria-pressed={viewSettingsOpen ?? false}
-            title={viewSettingsToggleLabel ?? `Toggle ${identity.label} view settings`}
-            onClick={onToggleViewSettings}
-          >
-            <ModeIdentityIcon size={ICON_SIZE.chrome} aria-hidden="true" />
-            <span>{identity.label}</span>
-          </button>
-        ) : (
-          <div
-            className="mb-0.5 inline-flex h-6 shrink-0 items-center gap-1 rounded border border-border bg-background px-2 text-[11px] text-muted"
-            data-testid="ribbon-mode-identity"
-          >
-            <ModeIdentityIcon size={ICON_SIZE.chrome} aria-hidden="true" />
-            <span>{identity.label}</span>
-          </div>
-        )}
+      <div className="flex min-h-8 items-end gap-2 px-3 pt-1">
+        <div className="mb-0.5 flex min-w-0 shrink-0 items-center gap-1">
+          {inlineViewTitle ? (
+            onToggleViewSettings ? (
+              <button
+                type="button"
+                className={[
+                  'inline-flex h-6 min-w-0 shrink-0 items-center gap-1 rounded border border-border bg-background px-2 text-[11px] text-muted hover:bg-surface-2 hover:text-foreground',
+                  viewSettingsOpen ? 'border-accent/60 bg-accent/10 text-accent' : '',
+                ].join(' ')}
+                data-testid="ribbon-mode-identity"
+                aria-label={
+                  viewSettingsToggleLabel ?? `Toggle ${inlineViewTitle.viewType} view settings`
+                }
+                aria-pressed={viewSettingsOpen ?? false}
+                title={
+                  viewSettingsToggleLabel ?? `Toggle ${inlineViewTitle.viewType} view settings`
+                }
+                onClick={onToggleViewSettings}
+              >
+                <span
+                  data-testid={inlineViewTitle.viewIconTestId}
+                  className="inline-flex h-4 w-4 shrink-0 items-center justify-center"
+                >
+                  <InlineViewIcon size={ICON_SIZE.chrome} aria-hidden="true" />
+                </span>
+                <span className="whitespace-nowrap">{inlineViewTitle.viewType}</span>
+              </button>
+            ) : (
+              <div
+                className="inline-flex h-6 min-w-0 shrink-0 items-center gap-1 rounded border border-border bg-background px-2 text-[11px] text-muted"
+                data-testid="ribbon-mode-identity"
+                title={inlineViewTitle.title}
+              >
+                <span
+                  data-testid={inlineViewTitle.viewIconTestId}
+                  className="inline-flex h-4 w-4 shrink-0 items-center justify-center"
+                >
+                  <InlineViewIcon size={ICON_SIZE.chrome} aria-hidden="true" />
+                </span>
+                <span className="whitespace-nowrap">{inlineViewTitle.viewType}</span>
+              </div>
+            )
+          ) : onToggleViewSettings ? (
+            <button
+              type="button"
+              className={[
+                'inline-flex h-6 shrink-0 items-center gap-1 rounded border border-border bg-background px-2 text-[11px] text-muted hover:bg-surface-2 hover:text-foreground',
+                viewSettingsOpen ? 'border-accent/60 bg-accent/10 text-accent' : '',
+              ].join(' ')}
+              data-testid="ribbon-mode-identity"
+              aria-label={viewSettingsToggleLabel ?? `Toggle ${identity.label} view settings`}
+              aria-pressed={viewSettingsOpen ?? false}
+              title={viewSettingsToggleLabel ?? `Toggle ${identity.label} view settings`}
+              onClick={onToggleViewSettings}
+            >
+              <ModeIdentityIcon size={ICON_SIZE.chrome} aria-hidden="true" />
+              <span>{identity.label}</span>
+            </button>
+          ) : (
+            <div
+              className="inline-flex h-6 shrink-0 items-center gap-1 rounded border border-border bg-background px-2 text-[11px] text-muted"
+              data-testid="ribbon-mode-identity"
+            >
+              <ModeIdentityIcon size={ICON_SIZE.chrome} aria-hidden="true" />
+              <span>{identity.label}</span>
+            </div>
+          )}
+          {onLensChange ? (
+            <div
+              data-testid="ribbon-lens-dropdown"
+              className="h-6 rounded border border-border bg-background px-1 text-[11px] text-muted"
+            >
+              <LensDropdown
+                currentLens={lensMode}
+                onLensChange={onLensChange}
+                enableHotkey={false}
+              />
+            </div>
+          ) : null}
+          {inlineViewTitle?.viewName ? (
+            <div
+              className="min-w-0 max-w-[24rem] truncate text-xs font-medium text-foreground"
+              title={inlineViewTitle.title}
+            >
+              {inlineViewTitle.viewName}
+            </div>
+          ) : null}
+        </div>
         <div
           role="tablist"
           aria-label="Ribbon tabs"
@@ -376,6 +484,9 @@ export function RibbonBar({
             <Icons.disclosureClosed size={ICON_SIZE.chrome} aria-hidden="true" />
           )}
         </button>
+        {trailingControls ? (
+          <div className="mb-0.5 flex shrink-0 items-center gap-1">{trailingControls}</div>
+        ) : null}
       </div>
       {customizeOpen ? (
         <div
@@ -538,6 +649,40 @@ export function ribbonCommandReachabilityForMode(
     }
   }
   return reachability;
+}
+
+export function ribbonCommandMetadataForMode(
+  mode: CapabilityViewMode,
+  selectedElementKind?: string | null,
+  lensMode: CapabilityLensMode = 'all',
+): RibbonCommandMetadata[] {
+  const rows: RibbonCommandMetadata[] = [];
+  for (const tab of buildRibbonTabs(mode, selectedElementKind, lensMode)) {
+    for (const panel of tab.panels) {
+      for (const command of [...panel.commands, ...(panel.flyoutCommands ?? [])]) {
+        const commandId = ribbonCapabilityId(command);
+        const availability = commandId ? commandAvailability(command, mode, lensMode) : null;
+        rows.push({
+          commandKey: commandKey(command),
+          commandId,
+          mode,
+          tabId: tab.id,
+          panelId: panel.id,
+          label: command.label,
+          behavior:
+            availability?.state === 'bridge'
+              ? 'bridge'
+              : availability?.state === 'disabled'
+                ? 'disabled'
+                : availability?.state === 'enabled'
+                  ? 'direct'
+                  : 'missing-metadata',
+          disabledReason: availability?.state === 'enabled' ? undefined : availability?.reason,
+        });
+      }
+    }
+  }
+  return rows;
 }
 
 export function prunedRibbonCommandReachabilityForMode(
@@ -776,9 +921,7 @@ function buildPlanRibbonTabs(
         {
           id: 'link',
           label: 'Import',
-          commands: [
-            action('command-palette', 'Import/Link', 'commandPalette', 'plan-import-link'),
-          ],
+          commands: [action('project-manage-links', 'Import/Link', 'externalLink')],
         },
       ],
     },
@@ -820,7 +963,7 @@ function buildPlanRibbonTabs(
         {
           id: 'review',
           label: 'Review',
-          commands: [action('command-palette', 'Checks', 'clash', 'plan-checks')],
+          commands: [action('advisor-open', 'Checks', 'clash', 'plan-checks')],
         },
       ],
     },
@@ -923,14 +1066,12 @@ function build3dRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
         {
           id: 'review',
           label: 'Review',
-          commands: [action('command-palette', 'Findings', 'issue', '3d-findings')],
+          commands: [action('advisor-open', 'Findings', 'issue', '3d-findings')],
         },
         {
           id: 'documentation',
           label: 'Documentation',
-          commands: [
-            action('command-palette', 'Create Section', 'sectionView', '3d-create-section'),
-          ],
+          commands: [action('create-section-view', 'Create Section', 'sectionView')],
         },
       ],
     },
@@ -1176,14 +1317,7 @@ function build3dModifyTab(selectedElementKind: string): RibbonTab {
                 action('3d-insert-window', 'Insert Window', 'window', '3d-insert-window'),
                 action('3d-insert-opening', 'Opening', 'wall-opening', '3d-insert-opening'),
               ]
-            : [
-                action(
-                  'command-palette',
-                  'Element Actions',
-                  'commandPalette',
-                  '3d-element-actions',
-                ),
-              ],
+            : [action('element-sidebar-toggle', 'Element Actions', 'select', '3d-element-actions')],
       },
     ],
   };
@@ -1204,7 +1338,7 @@ function buildSelectionOnlyModifyTab(selectedElementKind: string): RibbonTab {
         id: 'actions',
         label: 'Actions',
         commands: [
-          action('command-palette', 'Element Actions', 'commandPalette', 'element-actions'),
+          action('element-sidebar-toggle', 'Element Actions', 'select', 'element-actions'),
         ],
       },
     ],
@@ -1284,6 +1418,14 @@ function ribbonCapabilityId(command: RibbonCommand): string | null {
   switch (command.id) {
     case 'command-palette':
       return null;
+    case 'project-manage-links':
+      return 'project.manage-links';
+    case 'advisor-open':
+      return 'advisor.open';
+    case 'create-section-view':
+      return 'view.create.section';
+    case 'element-sidebar-toggle':
+      return 'shell.toggle-element-sidebar';
     case 'family-library':
       return 'library.open-family';
     case 'settings':

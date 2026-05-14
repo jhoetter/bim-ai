@@ -2,7 +2,7 @@ import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { useTranslation } from 'react-i18next';
 import type { Element } from '@bim-ai/core';
 import { WallHifi } from '@bim-ai/icons';
-import { Icons } from '@bim-ai/ui';
+import { Icons, type IconName } from '@bim-ai/ui';
 
 import { log } from '../logger';
 import { type PlanCameraHandle } from '../plan/PlanCanvas';
@@ -29,7 +29,14 @@ import {
 import type { LensMode, ModelDelta, Snapshot, Violation } from '@bim-ai/core';
 import { AdvisorPanel } from '../advisor/AdvisorPanel';
 import { useUnifiedAdvisorViolations } from '../advisor/unifiedAdvisorViolations';
-import { useBimStore, applyTheme, toggleTheme, getCurrentTheme, type Theme } from '../state/store';
+import {
+  useBimStore,
+  applyTheme,
+  toggleTheme,
+  getCurrentTheme,
+  type PlanTool,
+  type Theme,
+} from '../state/store';
 import { selectDriftedElements } from '../plan/monitorDriftBadge';
 import {
   loadSnapSettings,
@@ -40,7 +47,14 @@ import {
 } from '../plan/snapSettings';
 import { modeForHotkey } from '../state/modeController';
 import { patternFor } from '../state/uiStates';
-import { AppShell, ParticipantStrip, RibbonBar, StatusBar, type WorkspaceMode } from './shell';
+import {
+  AppShell,
+  ParticipantStrip,
+  RibbonBar,
+  StatusBar,
+  ViewContextStatusPanel,
+  type WorkspaceMode,
+} from './shell';
 import { OptionsBar, ToolModifierBar } from './authoring';
 import { getToolRegistry, type ToolDefinition, type ToolId } from '../tools/toolRegistry';
 import {
@@ -52,6 +66,7 @@ import {
   cycleActive,
   openTab,
   snapshotViewport,
+  TAB_KIND_LABEL,
   tabFromElement,
   tabIdFor,
   type TabKind,
@@ -154,6 +169,21 @@ function lensForWorkspace(id: WorkspaceId): LensMode {
   if (id === 'struct') return 'structure';
   if (id === 'mep') return 'mep';
   return 'all';
+}
+
+function splitViewTabLabel(
+  label: string,
+  fallbackViewType?: string,
+): { viewType: string; viewName?: string } {
+  const separator = ' · ';
+  const separatorIndex = label.indexOf(separator);
+  if (separatorIndex === -1) {
+    return fallbackViewType ? { viewType: fallbackViewType, viewName: label } : { viewType: label };
+  }
+  return {
+    viewType: label.slice(0, separatorIndex),
+    viewName: label.slice(separatorIndex + separator.length),
+  };
 }
 
 function disciplineScopeNote(
@@ -264,6 +294,58 @@ function persistCompositions(state: WorkspaceCompositionState): void {
   } catch {
     /* noop */
   }
+}
+
+function tabIdForLeaf(root: PaneNode, leafId: string): string | null {
+  if (root.kind === 'leaf') return root.id === leafId ? root.tabId : null;
+  return tabIdForLeaf(root.first, leafId) ?? tabIdForLeaf(root.second, leafId);
+}
+
+function assignedTabIdsOutsideLeaf(root: PaneNode, leafId: string): Set<string> {
+  const assigned = new Set<string>();
+  const walk = (node: PaneNode): void => {
+    if (node.kind === 'leaf') {
+      if (node.id !== leafId && node.tabId) assigned.add(node.tabId);
+      return;
+    }
+    walk(node.first);
+    walk(node.second);
+  };
+  walk(root);
+  return assigned;
+}
+
+function tabMatchesView(tab: ViewTab | null | undefined, partial: Omit<ViewTab, 'id'>): boolean {
+  return Boolean(tab && tab.kind === partial.kind && tab.targetId === partial.targetId);
+}
+
+function uniqueTabInstanceId(state: TabsState, baseId: string): string {
+  if (!state.tabs.some((tab) => tab.id === baseId)) return baseId;
+  let next = 2;
+  let candidate = `${baseId}#${next}`;
+  while (state.tabs.some((tab) => tab.id === candidate)) {
+    next += 1;
+    candidate = `${baseId}#${next}`;
+  }
+  return candidate;
+}
+
+function upsertTabInstance(state: TabsState, tab: ViewTab): TabsState {
+  if (state.tabs.some((existing) => existing.id === tab.id)) {
+    return { ...state, activeId: tab.id };
+  }
+  return { tabs: [...state.tabs, tab], activeId: tab.id };
+}
+
+function updateTabLens(state: TabsState, tabId: string, lensMode: LensMode): TabsState {
+  let changed = false;
+  const tabs = state.tabs.map((tab) => {
+    if (tab.id !== tabId) return tab;
+    if (tab.lensMode === lensMode) return tab;
+    changed = true;
+    return { ...tab, lensMode };
+  });
+  return changed ? { ...state, tabs } : state;
 }
 
 function formatStatusMm(mm: number): string {
@@ -683,11 +765,48 @@ export function Workspace(): JSX.Element {
       ) ?? compositionState.compositions[0];
     return activeComposition?.paneLayout ?? createPaneLayout(null);
   });
+  const [panePlanToolsById, setPanePlanToolsById] = useState<Record<string, PlanTool>>({});
+  const previousFocusedPaneLeafIdRef = useRef(paneLayout.focusedLeafId);
+
+  const setPanePlanTool = useCallback(
+    (leafId: string, tool: PlanTool): void => {
+      setPanePlanToolsById((state) =>
+        state[leafId] === tool ? state : { ...state, [leafId]: tool },
+      );
+      if (leafId === paneLayout.focusedLeafId) {
+        setPlanTool(tool);
+      }
+    },
+    [paneLayout.focusedLeafId, setPlanTool],
+  );
+
+  const setFocusedPanePlanTool = useCallback(
+    (tool: PlanTool): void => {
+      setPanePlanTool(paneLayout.focusedLeafId, tool);
+    },
+    [paneLayout.focusedLeafId, setPanePlanTool],
+  );
 
   /** Persist tabs on every change (T-06). */
   useEffect(() => {
     persistTabs(tabsState);
   }, [tabsState]);
+  useEffect(() => {
+    if (previousFocusedPaneLeafIdRef.current !== paneLayout.focusedLeafId) {
+      previousFocusedPaneLeafIdRef.current = paneLayout.focusedLeafId;
+      const paneTool = panePlanToolsById[paneLayout.focusedLeafId];
+      if (paneTool && paneTool !== planTool) {
+        setPlanTool(paneTool);
+      } else if (!paneTool) {
+        setPanePlanToolsById((state) => ({ ...state, [paneLayout.focusedLeafId]: planTool }));
+      }
+      return;
+    }
+    const paneTool = panePlanToolsById[paneLayout.focusedLeafId];
+    if (paneTool !== planTool) {
+      setPanePlanToolsById((state) => ({ ...state, [paneLayout.focusedLeafId]: planTool }));
+    }
+  }, [paneLayout.focusedLeafId, panePlanToolsById, planTool, setPlanTool]);
   useEffect(() => {
     setPaneLayout((layout) =>
       normalizePaneLayout(
@@ -719,6 +838,16 @@ export function Workspace(): JSX.Element {
     [tabsState],
   );
   const effectiveMode = (activeTab?.kind as WorkspaceMode | undefined) ?? mode;
+  const focusedPaneTabId = useMemo(
+    () => tabIdForLeaf(paneLayout.root, paneLayout.focusedLeafId),
+    [paneLayout],
+  );
+  const focusedPaneTab = useMemo(
+    () =>
+      focusedPaneTabId ? (tabsState.tabs.find((tab) => tab.id === focusedPaneTabId) ?? null) : null,
+    [focusedPaneTabId, tabsState.tabs],
+  );
+  const focusedPaneLensMode = focusedPaneTab?.lensMode ?? lensMode;
 
   const activePlanTarget = useMemo(
     () =>
@@ -799,19 +928,44 @@ export function Workspace(): JSX.Element {
     [activatePlanView, setActiveLevelId],
   );
 
-  const handleTabClose = useCallback((id: string) => {
-    setTabsState((s) => closeTab(s, id));
-  }, []);
+  const setFocusedPaneLensMode = useCallback(
+    (nextLensMode: LensMode) => {
+      const tabId = tabIdForLeaf(paneLayout.root, paneLayout.focusedLeafId);
+      if (!tabId) {
+        setLensMode(nextLensMode);
+        return;
+      }
+      setTabsState((state) => updateTabLens(state, tabId, nextLensMode));
+    },
+    [paneLayout, setLensMode],
+  );
 
-  const openTabFromElement = useCallback((el: Element) => {
-    const partial = tabFromElement(el);
-    if (!partial) return;
-    const tabId = tabIdFor(partial.kind, partial.targetId);
-    setTabsState((s) => openTab(s, partial));
-    setPaneLayout((layout) =>
-      focusPane(assignTabToPane(layout, layout.focusedLeafId, tabId), layout.focusedLeafId),
-    );
-  }, []);
+  const openTabFromElement = useCallback(
+    (el: Element) => {
+      const partial = tabFromElement(el);
+      if (!partial) return;
+      const focusedTabId = tabIdForLeaf(paneLayout.root, paneLayout.focusedLeafId);
+      const focusedTab = focusedTabId
+        ? tabsState.tabs.find((tab) => tab.id === focusedTabId)
+        : null;
+      const baseId = tabIdFor(partial.kind, partial.targetId);
+      const tabId = tabMatchesView(focusedTab, partial)
+        ? focusedTab!.id
+        : uniqueTabInstanceId(tabsState, baseId);
+      const tab: ViewTab = {
+        id: tabId,
+        kind: partial.kind,
+        targetId: partial.targetId,
+        label: partial.label,
+        lensMode: focusedTab?.lensMode ?? lensMode,
+      };
+      setTabsState((state) => upsertTabInstance(state, tab));
+      setPaneLayout((layout) =>
+        focusPane(assignTabToPane(layout, layout.focusedLeafId, tabId), layout.focusedLeafId),
+      );
+    },
+    [lensMode, paneLayout, tabsState],
+  );
 
   const activateDroppedView = useCallback(
     (tab: ViewTab | Omit<ViewTab, 'id'>) => {
@@ -856,18 +1010,33 @@ export function Workspace(): JSX.Element {
       if (!element) return;
       const partial = tabFromElement(element);
       if (!partial) return;
-      const tabId = tabIdFor(partial.kind, partial.targetId);
-      setTabsState((state) => openTab(state, partial));
+      const existingLeafTabId = tabIdForLeaf(paneLayout.root, leafId);
+      const existingLeafTab = existingLeafTabId
+        ? tabsState.tabs.find((tab) => tab.id === existingLeafTabId)
+        : null;
+      const baseId = tabIdFor(partial.kind, partial.targetId);
+      const tabId =
+        !direction && tabMatchesView(existingLeafTab, partial)
+          ? existingLeafTab!.id
+          : uniqueTabInstanceId(tabsState, baseId);
+      const tab: ViewTab = {
+        id: tabId,
+        kind: partial.kind,
+        targetId: partial.targetId,
+        label: partial.label,
+        lensMode: existingLeafTab?.lensMode ?? lensMode,
+      };
+      setTabsState((state) => upsertTabInstance(state, tab));
       setPaneLayout((layout) => {
         const focused = focusPane(layout, leafId);
         return direction
           ? splitPaneWithTab(focused, leafId, direction, tabId)
           : focusPane(assignTabToPane(focused, leafId, tabId), leafId);
       });
-      activateDroppedView({ ...partial, id: tabId });
+      activateDroppedView(tab);
       setDraggingViewElementId(null);
     },
-    [activateDroppedView, elementsById],
+    [activateDroppedView, elementsById, lensMode, paneLayout.root, tabsState],
   );
 
   const handleCompositionActivate = useCallback(
@@ -1198,12 +1367,12 @@ export function Workspace(): JSX.Element {
   const handleWorkspaceChange = useCallback(
     (id: WorkspaceId) => {
       setActiveWorkspaceId(id);
-      setLensMode(lensForWorkspace(id));
+      setFocusedPaneLensMode(lensForWorkspace(id));
       if (id === 'struct') setPerspectiveId('structure');
       else if (id === 'mep') setPerspectiveId('mep');
       else if (id === 'arch') setPerspectiveId('architecture');
     },
-    [setActiveWorkspaceId, setLensMode, setPerspectiveId],
+    [setActiveWorkspaceId, setFocusedPaneLensMode, setPerspectiveId],
   );
 
   /**
@@ -1256,7 +1425,7 @@ export function Workspace(): JSX.Element {
         !event.shiftKey
       ) {
         // UX: Escape always returns authoring to the default Select cursor.
-        setPlanTool('select');
+        setFocusedPanePlanTool('select');
       }
       const fromMode = modeForHotkey(event.key);
       if (fromMode) {
@@ -1333,7 +1502,7 @@ export function Workspace(): JSX.Element {
           const tool = validatePlanTool(chordTool.id);
           if (tool) {
             event.preventDefault();
-            setPlanTool(tool);
+            setFocusedPanePlanTool(tool);
           }
         }
         return;
@@ -1352,7 +1521,7 @@ export function Workspace(): JSX.Element {
           pendingChordRef.current = null;
           pendingChordTimerRef.current = null;
           const tool = validatePlanTool(hotkeyTool.id);
-          if (tool) setPlanTool(tool);
+          if (tool) setFocusedPanePlanTool(tool);
         }, 400);
         return;
       }
@@ -1361,7 +1530,7 @@ export function Workspace(): JSX.Element {
         const tool = validatePlanTool(hotkeyTool.id);
         if (tool) {
           event.preventDefault();
-          setPlanTool(tool);
+          setFocusedPanePlanTool(tool);
         }
         return;
       }
@@ -1393,7 +1562,7 @@ export function Workspace(): JSX.Element {
   }, [
     handleModeChange,
     handleUndoRedo,
-    setPlanTool,
+    setFocusedPanePlanTool,
     setOrthoSnapHold,
     openActiveVisibilityControls,
     toolRegistry,
@@ -1476,40 +1645,6 @@ export function Workspace(): JSX.Element {
     },
     [handleSnapSettingsChange, snapSettings],
   );
-  const statusViewLabel = activeTab?.label ?? null;
-  const statusViewDetails = useMemo(() => {
-    const selected = selectedId ? (elementsById[selectedId] as Element | undefined) : undefined;
-    const selectedDetail = selected
-      ? `Selected ${selected.kind.replaceAll('_', ' ')}`
-      : selectedId
-        ? 'Selection'
-        : null;
-    if (effectiveMode === '3d') {
-      return [
-        viewerProjection === 'orthographic' ? 'Ortho' : 'Perspective',
-        viewerWalkModeActive ? 'Walk' : 'Orbit',
-        viewerSectionBoxActive ? 'Section box' : null,
-        viewerClipElevMm != null ? `Cap ${formatStatusMm(viewerClipElevMm)}` : null,
-        viewerClipFloorElevMm != null ? `Floor ${formatStatusMm(viewerClipFloorElevMm)}` : null,
-        activeViewpointId ? `Viewpoint ${activeViewpointId}` : null,
-        selectedDetail,
-      ].filter((detail): detail is string => Boolean(detail));
-    }
-    if (effectiveMode === 'sheet') return [selectedDetail ?? 'Paper space'];
-    if (effectiveMode === 'schedule') return [selectedDetail ?? 'Rows'];
-    return selectedDetail ? [selectedDetail] : [];
-  }, [
-    activeViewpointId,
-    effectiveMode,
-    elementsById,
-    selectedId,
-    viewerClipElevMm,
-    viewerClipFloorElevMm,
-    viewerProjection,
-    viewerSectionBoxActive,
-    viewerWalkModeActive,
-  ]);
-
   const handleToolSelect = useCallback(
     (id: ToolId): void => {
       const tool = validatePlanTool(id);
@@ -1518,9 +1653,9 @@ export function Workspace(): JSX.Element {
       if (def && !def.modes.includes(effectiveMode) && def.modes.includes('plan')) {
         handleModeChange('plan');
       }
-      setPlanTool(tool);
+      setFocusedPanePlanTool(tool);
     },
-    [effectiveMode, handleModeChange, setPlanTool, toolRegistry],
+    [effectiveMode, handleModeChange, setFocusedPanePlanTool, toolRegistry],
   );
 
   const selectedElement = useMemo(
@@ -1831,8 +1966,8 @@ export function Workspace(): JSX.Element {
   const createSectionView = useCallback(() => {
     setMode('plan');
     setViewerMode('plan_canvas');
-    setPlanTool('section');
-  }, [setPlanTool, setViewerMode]);
+    setFocusedPanePlanTool('section');
+  }, [setFocusedPanePlanTool, setViewerMode]);
 
   const createSheetView = useCallback(async () => {
     const existingNumbers = new Set(
@@ -2155,12 +2290,12 @@ export function Workspace(): JSX.Element {
         setActiveComponentFamilyTypeId(null);
       }
       if (adapter.planTool) {
-        setPlanTool(adapter.planTool);
+        setFocusedPanePlanTool(adapter.planTool);
       } else if (adapter.semanticInstanceKind === 'family_type_component') {
-        setPlanTool('component');
+        setFocusedPanePlanTool('component');
       }
     },
-    [setPlanTool],
+    [setFocusedPanePlanTool],
   );
 
   const loadCatalogFamilyIntoProject = useCallback(
@@ -2336,6 +2471,7 @@ export function Workspace(): JSX.Element {
       );
     }
     const paneTab = node.tabId ? (tabsById[node.tabId] ?? null) : null;
+    const paneLensMode = paneTab?.lensMode ?? lensMode;
     const paneMode = (paneTab?.kind as WorkspaceMode | undefined) ?? effectiveMode;
     const paneIsPlan = paneTab?.kind === 'plan';
     const panePlanTarget = paneIsPlan
@@ -2343,18 +2479,24 @@ export function Workspace(): JSX.Element {
       : { activeLevelId: activeLevelId ?? '' };
     const paneViewerMode = paneTab?.kind === '3d' ? 'orbit_3d' : 'plan_canvas';
     const focused = focusedPaneLeafId === node.id;
+    const panePlanTool = panePlanToolsById[node.id] ?? 'select';
     const paneLabel = paneTab?.label ?? 'Empty pane';
+    const paneLabelParts = splitViewTabLabel(
+      paneLabel,
+      paneTab ? TAB_KIND_LABEL[paneTab.kind] : undefined,
+    );
     const paneCanAcceptDrop = Boolean(draggingViewElementId);
-    const PaneIcon =
+    const paneIconName: IconName =
       paneTab?.kind === '3d'
-        ? Icons.orbitView
+        ? 'orbitView'
         : paneTab?.kind === 'section'
-          ? Icons.section
+          ? 'section'
           : paneTab?.kind === 'sheet'
-            ? Icons.sheet
+            ? 'sheet'
             : paneTab?.kind === 'schedule'
-              ? Icons.schedule
-              : Icons.planView;
+              ? 'schedule'
+              : 'planView';
+    const PaneIcon = Icons[paneIconName] ?? Icons.planView;
     const paneSidebarKey = `${compositionState.activeId}:${node.id}`;
     const paneSecondarySidebarOpen =
       Boolean(paneTab) && (paneSecondarySidebarOpenByKey[paneSidebarKey] ?? true);
@@ -2363,6 +2505,33 @@ export function Workspace(): JSX.Element {
     const selectedElementKind = selectedId
       ? (elementsById[selectedId] as Element | undefined)?.kind
       : null;
+    const paneStatusViewDetails = (() => {
+      const selected = selectedId ? (elementsById[selectedId] as Element | undefined) : undefined;
+      const selectedDetail = selected
+        ? `Selected ${selected.kind.replaceAll('_', ' ')}`
+        : selectedId
+          ? 'Selection'
+          : null;
+      if (paneMode === '3d') {
+        return [
+          viewerProjection === 'orthographic' ? 'Ortho' : 'Perspective',
+          viewerWalkModeActive ? 'Walk' : 'Orbit',
+          viewerSectionBoxActive ? 'Section box' : null,
+          viewerClipElevMm != null ? `Cap ${formatStatusMm(viewerClipElevMm)}` : null,
+          viewerClipFloorElevMm != null ? `Floor ${formatStatusMm(viewerClipFloorElevMm)}` : null,
+          paneTab?.targetId ? `Viewpoint ${paneTab.targetId}` : null,
+          selectedDetail,
+        ].filter((detail): detail is string => Boolean(detail));
+      }
+      if (paneMode === 'sheet') return [selectedDetail ?? 'Paper space'];
+      if (paneMode === 'schedule') return [selectedDetail ?? 'Rows'];
+      return selectedDetail ? [selectedDetail] : [];
+    })();
+    const paneTemporaryVisibility =
+      temporaryVisibility &&
+      (!temporaryVisibility.viewId || temporaryVisibility.viewId === paneTab?.targetId)
+        ? temporaryVisibility
+        : null;
     const activatePaneForControls = (): void => {
       setPaneLayout((layout) => focusPane(layout, node.id));
       if (paneTab?.id && paneTab.id !== tabsState.activeId) {
@@ -2392,6 +2561,7 @@ export function Workspace(): JSX.Element {
       if (def && !def.modes.includes(paneMode) && def.modes.includes('plan')) {
         handlePaneModeChange('plan');
       }
+      setPanePlanTool(node.id, tool);
       setPlanTool(tool);
     };
     const runInPaneContext =
@@ -2407,6 +2577,14 @@ export function Workspace(): JSX.Element {
         ...state,
         [paneSidebarKey]: !(state[paneSidebarKey] ?? true),
       }));
+    };
+    const closePaneTab = (): void => {
+      if (!paneTab) return;
+      const nextTabs = closeTab(tabsState, paneTab.id);
+      const assignedOutside = assignedTabIdsOutsideLeaf(paneLayout.root, node.id);
+      const replacement = nextTabs.tabs.find((tab) => !assignedOutside.has(tab.id)) ?? null;
+      setTabsState(nextTabs);
+      setPaneLayout((layout) => assignTabToPane(layout, node.id, replacement?.id ?? null));
     };
     return (
       <div
@@ -2424,141 +2602,212 @@ export function Workspace(): JSX.Element {
           }
         }}
       >
-        <div
-          data-testid={`canvas-pane-tabstrip-${node.id}`}
-          className={[
-            'flex h-8 shrink-0 items-center justify-between border-b border-border/70 bg-surface px-2 text-xs',
-            paneCanAcceptDrop ? 'border-accent/80 bg-accent/10' : '',
-          ].join(' ')}
-          onDragOver={(event) => {
-            if (!paneCanAcceptDrop) return;
-            event.preventDefault();
-            event.dataTransfer.dropEffect = 'copy';
-          }}
-          onDrop={(event) => {
-            if (!paneCanAcceptDrop) return;
-            event.preventDefault();
-            const elementId =
-              draggingViewElementId || event.dataTransfer.getData('application/x-bim-element-id');
-            placeViewElementInPane(elementId, node.id);
-          }}
-        >
-          <div className="flex min-w-0 items-center gap-1.5">
-            <span
-              data-testid={`canvas-pane-view-icon-${node.id}`}
-              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border border-border text-muted"
-              title={paneLabel}
-            >
-              <PaneIcon size={12} aria-hidden="true" />
-            </span>
-            <div className="min-w-0 truncate font-medium text-foreground" title={paneLabel}>
-              {paneLabel}
+        {paneTab ? (
+          <div
+            data-testid={`canvas-pane-tabstrip-${node.id}`}
+            className={[
+              'shrink-0 bg-surface',
+              paneCanAcceptDrop ? 'border border-accent/80 bg-accent/10' : '',
+            ].join(' ')}
+            onDragOver={(event) => {
+              if (!paneCanAcceptDrop) return;
+              event.preventDefault();
+              event.dataTransfer.dropEffect = 'copy';
+            }}
+            onDrop={(event) => {
+              if (!paneCanAcceptDrop) return;
+              event.preventDefault();
+              const elementId =
+                draggingViewElementId || event.dataTransfer.getData('application/x-bim-element-id');
+              placeViewElementInPane(elementId, node.id);
+            }}
+          >
+            <div data-testid={`canvas-pane-ribbon-${node.id}`}>
+              <RibbonBar
+                activeToolId={planToolToToolId(panePlanTool)}
+                activeMode={paneMode}
+                selectedElementKind={selectedElementKind}
+                lensMode={paneLensMode}
+                inlineViewTitle={{
+                  icon: paneIconName,
+                  viewType: paneLabelParts.viewType,
+                  viewName: paneLabelParts.viewName,
+                  title: paneLabel,
+                  viewIconTestId: `canvas-pane-view-icon-${node.id}`,
+                }}
+                trailingControls={
+                  <>
+                    {paneCanAcceptDrop ? (
+                      <span className="rounded border border-accent/60 px-1 py-0.5 text-[10px] text-accent">
+                        Drop view
+                      </span>
+                    ) : null}
+                    <button
+                      type="button"
+                      data-testid={`canvas-pane-close-tab-${node.id}`}
+                      className="inline-flex h-6 w-6 items-center justify-center rounded border border-border bg-background text-muted hover:bg-surface-2 hover:text-foreground"
+                      aria-label={`Close ${paneLabel}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        closePaneTab();
+                      }}
+                    >
+                      <Icons.close size={12} aria-hidden="true" />
+                    </button>
+                  </>
+                }
+                onLensChange={(nextLensMode) => {
+                  activatePaneForControls();
+                  setTabsState((state) => updateTabLens(state, paneTab.id, nextLensMode));
+                }}
+                onToolSelect={handlePaneToolSelect}
+                onModeChange={handlePaneModeChange}
+                viewSettingsOpen={paneSecondarySidebarOpen}
+                onToggleViewSettings={togglePaneViewSettings}
+                viewSettingsToggleLabel={`Toggle view settings for ${paneLabel}`}
+                onOpenCommandPalette={runInPaneContext(() => setPaletteOpen(true))}
+                onOpenManageLinks={runInPaneContext(() => setManageLinksOpen(true))}
+                onOpenAdvisor={runInPaneContext(() => setAdvisorOpen(true))}
+                onCreateSectionView={runInPaneContext(createSectionView)}
+                onToggleElementSidebar={runInPaneContext(() =>
+                  setPaneElementSidebarOpenByKey((state) => ({
+                    ...state,
+                    [paneSidebarKey]: !(state[paneSidebarKey] ?? true),
+                  })),
+                )}
+                onOpenFamilyLibrary={runInPaneContext(() => setFamilyLibraryOpen(true))}
+                onOpenSettings={runInPaneContext(() => setCheatsheetOpen(true))}
+                onSaveCurrentViewpoint={runInPaneContext(saveCurrentViewpoint)}
+                onResetActiveSavedViewpoint={runInPaneContext(resetActiveSavedViewpoint)}
+                onUpdateActiveSavedViewpoint={runInPaneContext(updateActiveSavedViewpoint)}
+                onInsertDoorOnSelectedWall3d={runInPaneContext(() =>
+                  runSelectedWall3dInsert('door'),
+                )}
+                onInsertWindowOnSelectedWall3d={runInPaneContext(() =>
+                  runSelectedWall3dInsert('window'),
+                )}
+                onInsertOpeningOnSelectedWall3d={runInPaneContext(() =>
+                  runSelectedWall3dInsert('opening'),
+                )}
+                onPlaceActiveSectionOnSheet={runInPaneContext(placeActiveSectionOnSheet)}
+                onOpenActiveSectionSourcePlan={runInPaneContext(openActiveSectionSourcePlan)}
+                onIncreaseActiveSectionCropDepth={runInPaneContext(() =>
+                  adjustActiveSectionCropDepth(500),
+                )}
+                onDecreaseActiveSectionCropDepth={runInPaneContext(() =>
+                  adjustActiveSectionCropDepth(-500),
+                )}
+                onPlaceRecommendedViewsOnActiveSheet={runInPaneContext(
+                  placeRecommendedViewsOnActiveSheet,
+                )}
+                onPlaceFirstViewOnActiveSheet={runInPaneContext(() => {
+                  const first = paletteSheetPlaceableViews[0];
+                  if (first) placeViewOnActiveSheet(first.id);
+                })}
+                onOpenSheetViewportEditor={runInPaneContext(() =>
+                  openActiveSheetAnchor('sheet-viewport-editor'),
+                )}
+                onOpenSheetTitleblockEditor={runInPaneContext(() =>
+                  openActiveSheetAnchor('sheet-titleblock-editor'),
+                )}
+                onShareActiveSheet={runInPaneContext(() => setSharePresentationOpen(true))}
+                onOpenSelectedScheduleRow={runInPaneContext(openSelectedScheduleRow)}
+                onPlaceActiveScheduleOnSheet={runInPaneContext(placeActiveScheduleOnSheet)}
+                onDuplicateActiveSchedule={runInPaneContext(duplicateActiveSchedule)}
+                onOpenScheduleControls={runInPaneContext(openScheduleControls)}
+                sheetReviewMode={sheetReviewMode}
+                onSheetReviewModeChange={setSheetReviewMode}
+                sheetMarkupShape={sheetMarkupShape}
+                onSheetMarkupShapeChange={setSheetMarkupShape}
+              />
+              {paneMode === 'plan' || paneMode === 'section' ? (
+                <>
+                  <ToolModifierBar activeTool={planToolToToolId(panePlanTool)} />
+                  <OptionsBar activeTool={panePlanTool} />
+                </>
+              ) : null}
             </div>
           </div>
-          <div className="flex items-center gap-1">
+        ) : (
+          <div
+            data-testid={`canvas-pane-tabstrip-${node.id}`}
+            className={[
+              'flex h-8 shrink-0 items-center justify-between border-b border-border/70 bg-surface px-2 text-xs',
+              paneCanAcceptDrop ? 'border-accent/80 bg-accent/10' : '',
+            ].join(' ')}
+            onDragOver={(event) => {
+              if (!paneCanAcceptDrop) return;
+              event.preventDefault();
+              event.dataTransfer.dropEffect = 'copy';
+            }}
+            onDrop={(event) => {
+              if (!paneCanAcceptDrop) return;
+              event.preventDefault();
+              const elementId =
+                draggingViewElementId || event.dataTransfer.getData('application/x-bim-element-id');
+              placeViewElementInPane(elementId, node.id);
+            }}
+          >
+            <div className="flex min-w-0 items-center gap-1.5">
+              <span
+                data-testid={`canvas-pane-view-icon-${node.id}`}
+                className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border border-border text-muted"
+                title={paneLabel}
+              >
+                <PaneIcon size={12} aria-hidden="true" />
+              </span>
+              <div className="min-w-0 truncate font-medium text-foreground" title={paneLabel}>
+                {paneLabel}
+              </div>
+            </div>
             {paneCanAcceptDrop ? (
               <span className="rounded border border-accent/60 px-1 py-0.5 text-[10px] text-accent">
                 Drop view
               </span>
             ) : null}
-            {paneTab?.id ? (
-              <button
-                type="button"
-                data-testid={`canvas-pane-close-tab-${node.id}`}
-                className="inline-flex h-5 w-5 items-center justify-center rounded border border-border text-muted hover:bg-surface-2 hover:text-foreground"
-                aria-label={`Close ${paneLabel}`}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  handleTabClose(paneTab.id);
-                }}
-              >
-                <Icons.close size={12} aria-hidden="true" />
-              </button>
-            ) : null}
           </div>
-        </div>
-        {paneTab ? (
-          <div data-testid={`canvas-pane-ribbon-${node.id}`} className="shrink-0">
-            <RibbonBar
-              activeToolId={planToolToToolId(planTool)}
-              activeMode={paneMode}
-              selectedElementKind={selectedElementKind}
-              lensMode={lensMode}
-              onToolSelect={handlePaneToolSelect}
-              onModeChange={handlePaneModeChange}
-              viewSettingsOpen={paneSecondarySidebarOpen}
-              onToggleViewSettings={togglePaneViewSettings}
-              viewSettingsToggleLabel={`Toggle view settings for ${paneLabel}`}
-              onOpenCommandPalette={runInPaneContext(() => setPaletteOpen(true))}
-              onOpenFamilyLibrary={runInPaneContext(() => setFamilyLibraryOpen(true))}
-              onOpenSettings={runInPaneContext(() => setCheatsheetOpen(true))}
-              onSaveCurrentViewpoint={runInPaneContext(saveCurrentViewpoint)}
-              onResetActiveSavedViewpoint={runInPaneContext(resetActiveSavedViewpoint)}
-              onUpdateActiveSavedViewpoint={runInPaneContext(updateActiveSavedViewpoint)}
-              onInsertDoorOnSelectedWall3d={runInPaneContext(() => runSelectedWall3dInsert('door'))}
-              onInsertWindowOnSelectedWall3d={runInPaneContext(() =>
-                runSelectedWall3dInsert('window'),
-              )}
-              onInsertOpeningOnSelectedWall3d={runInPaneContext(() =>
-                runSelectedWall3dInsert('opening'),
-              )}
-              onPlaceActiveSectionOnSheet={runInPaneContext(placeActiveSectionOnSheet)}
-              onOpenActiveSectionSourcePlan={runInPaneContext(openActiveSectionSourcePlan)}
-              onIncreaseActiveSectionCropDepth={runInPaneContext(() =>
-                adjustActiveSectionCropDepth(500),
-              )}
-              onDecreaseActiveSectionCropDepth={runInPaneContext(() =>
-                adjustActiveSectionCropDepth(-500),
-              )}
-              onPlaceRecommendedViewsOnActiveSheet={runInPaneContext(
-                placeRecommendedViewsOnActiveSheet,
-              )}
-              onPlaceFirstViewOnActiveSheet={runInPaneContext(() => {
-                const first = paletteSheetPlaceableViews[0];
-                if (first) placeViewOnActiveSheet(first.id);
-              })}
-              onOpenSheetViewportEditor={runInPaneContext(() =>
-                openActiveSheetAnchor('sheet-viewport-editor'),
-              )}
-              onOpenSheetTitleblockEditor={runInPaneContext(() =>
-                openActiveSheetAnchor('sheet-titleblock-editor'),
-              )}
-              onShareActiveSheet={runInPaneContext(() => setSharePresentationOpen(true))}
-              onOpenSelectedScheduleRow={runInPaneContext(openSelectedScheduleRow)}
-              onPlaceActiveScheduleOnSheet={runInPaneContext(placeActiveScheduleOnSheet)}
-              onDuplicateActiveSchedule={runInPaneContext(duplicateActiveSchedule)}
-              onOpenScheduleControls={runInPaneContext(openScheduleControls)}
-              sheetReviewMode={sheetReviewMode}
-              onSheetReviewModeChange={setSheetReviewMode}
-              sheetMarkupShape={sheetMarkupShape}
-              onSheetMarkupShapeChange={setSheetMarkupShape}
-            />
-            {paneMode === 'plan' || paneMode === 'section' ? (
-              <>
-                <ToolModifierBar />
-                <OptionsBar />
-              </>
-            ) : null}
-          </div>
-        ) : null}
+        )}
         <div className="flex min-h-0 min-w-0 flex-1">
           {paneSecondarySidebarOpen ? (
             <aside
               aria-label={`View settings for ${paneLabel}`}
               data-testid={`canvas-pane-secondary-sidebar-${node.id}`}
-              className="min-h-0 shrink-0 overflow-hidden border-r border-border bg-surface"
+              className="flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-border bg-surface"
               style={{ width: 'min(280px, 42%)' }}
             >
-              <WorkspaceRightRail
+              <ViewContextStatusPanel
                 mode={paneMode}
-                onSemanticCommand={onSemanticCommand}
-                onModeChange={handlePaneModeChange}
-                onNavigateToElement={openElementById}
-                activeViewTargetId={paneTab?.targetId}
-                surface="view-context"
-                onOpenMaterialBrowser={() => setMaterialBrowserOpen(true)}
-                onOpenAppearanceAssetBrowser={() => setAppearanceAssetBrowserOpen(true)}
+                viewLabel={paneLabel}
+                viewDetails={paneStatusViewDetails}
+                level={activeLevel}
+                levels={levels}
+                onLevelChange={setActiveLevelId}
+                toolLabel={
+                  loopMode && (planTool === 'wall' || planTool === 'beam')
+                    ? 'Loop mode on — L to toggle, Esc to exit'
+                    : (toolRegistry[planToolToToolId(planTool)]?.label ?? null)
+                }
+                gridOn={draftGridVisible}
+                onGridToggle={toggleDraftGridVisible}
+                cursorMm={cursorMm}
+                snapModes={snapModes}
+                onSnapToggle={handleSnapToggle}
+                temporaryVisibility={paneTemporaryVisibility}
+                onClearTemporaryVisibility={clearTemporaryVisibility}
               />
+              <div className="min-h-0 flex-1 overflow-hidden">
+                <WorkspaceRightRail
+                  mode={paneMode}
+                  onSemanticCommand={onSemanticCommand}
+                  onModeChange={handlePaneModeChange}
+                  onNavigateToElement={openElementById}
+                  activeViewTargetId={paneTab?.targetId}
+                  lensMode={paneLensMode}
+                  surface="view-context"
+                  onOpenMaterialBrowser={() => setMaterialBrowserOpen(true)}
+                  onOpenAppearanceAssetBrowser={() => setAppearanceAssetBrowserOpen(true)}
+                />
+              </div>
             </aside>
           ) : null}
           <div
@@ -2589,7 +2838,12 @@ export function Workspace(): JSX.Element {
                 modelId={modelId ?? undefined}
                 wsOn={wsOn}
                 onPersistViewpointField={persistViewpointField}
-                lensMode={lensMode}
+                lensMode={paneLensMode}
+                activePlanTool={panePlanTool}
+                onActivePlanToolChange={(nextTool) => {
+                  setPanePlanTool(node.id, nextTool);
+                  if (focused) setPlanTool(nextTool);
+                }}
                 onNavigateToElement={openElementById}
                 snapSettings={snapSettings}
                 sheetReviewMode={sheetReviewMode}
@@ -2623,6 +2877,7 @@ export function Workspace(): JSX.Element {
                 onSemanticCommand={onSemanticCommand}
                 onModeChange={handlePaneModeChange}
                 onNavigateToElement={openElementById}
+                lensMode={paneLensMode}
                 surface="element"
                 onOpenMaterialBrowser={() => setMaterialBrowserOpen(true)}
                 onOpenAppearanceAssetBrowser={() => setAppearanceAssetBrowserOpen(true)}
@@ -2721,7 +2976,7 @@ export function Workspace(): JSX.Element {
             useBimStore.getState().activeElevationViewId ??
             null,
           activeMode: effectiveMode,
-          activeLensMode: lensMode,
+          activeLensMode: focusedPaneLensMode,
           activePlanViewId,
           activeScheduleId: paletteActiveScheduleId,
           activeSheetId: paletteActiveSheetId,
@@ -2731,7 +2986,7 @@ export function Workspace(): JSX.Element {
           navigateMode: (kind) => navigateTo({ kind, source: 'cmdk' }),
           startPlanTool: (toolId) => handleToolSelect(toolId as ToolId),
           setTheme: handleThemeSet,
-          setLensMode,
+          setLensMode: setFocusedPaneLensMode,
           toggleTheme: handleThemeToggle,
           setLanguage: handleLanguageSet,
           views: paletteViews,
@@ -3093,8 +3348,6 @@ export function Workspace(): JSX.Element {
             onOpenSavedView={openElementById}
             onViewDragStart={setDraggingViewElementId}
             onViewDragEnd={() => setDraggingViewElementId(null)}
-            lensMode={lensMode}
-            onLensChange={setLensMode}
             activeViewTargetId={activeTab?.targetId}
             userDisplayName={userDisplayName}
             userId={userId}
@@ -3132,35 +3385,18 @@ export function Workspace(): JSX.Element {
         }
         footer={
           <StatusBar
-            mode={effectiveMode}
-            viewLabel={statusViewLabel}
-            viewDetails={statusViewDetails}
             level={activeLevel}
-            levels={levels}
-            onLevelChange={setActiveLevelId}
-            toolLabel={
-              loopMode && (planTool === 'wall' || planTool === 'beam')
-                ? 'Loop mode on — L to toggle, Esc to exit'
-                : (toolRegistry[planToolToToolId(planTool)]?.label ?? null)
-            }
-            gridOn={draftGridVisible}
-            onGridToggle={toggleDraftGridVisible}
-            cursorMm={cursorMm}
             undoDepth={undoDepth}
             redoDepth={redoDepth}
             onUndo={() => void handleUndoRedo(true)}
             onRedo={() => void handleUndoRedo(false)}
             wsState={wsOn ? 'connected' : 'offline'}
             saveState="saved"
-            snapModes={snapModes}
-            onSnapToggle={handleSnapToggle}
             advisorCounts={advisorCounts}
             onAdvisorClick={() => setAdvisorOpen(true)}
             jobsCounts={jobsCounts}
             onJobsClick={() => setJobsOpen(true)}
             selectionCount={selectedId ? 1 : 0}
-            temporaryVisibility={temporaryVisibility}
-            onClearTemporaryVisibility={clearTemporaryVisibility}
             activeWorkspaceId={activeWorkspaceId}
             driftCount={driftCount}
             onDriftClick={() => setManageLinksOpen(true)}
@@ -3178,7 +3414,7 @@ export function Workspace(): JSX.Element {
       <LibraryOverlay
         isOpen={libraryOpen}
         onClose={() => setLibraryOpen(false)}
-        activeDiscipline={libraryDisciplineFromLens(lensMode)}
+        activeDiscipline={libraryDisciplineFromLens(focusedPaneLensMode)}
         entries={Object.values(elementsById)
           .filter((e) => (e as { kind: string }).kind === 'asset_library_entry')
           .map((e) => {

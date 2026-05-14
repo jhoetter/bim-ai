@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { getToolRegistry } from '../tools/toolRegistry';
+import '../cmdPalette/defaultCommands';
+import { getRegistry } from '../cmdPalette/registry';
 import {
+  getAuthoringCommandContract,
+  type AuthoringCommandKind,
+} from '../tools/authoringCommandContract';
+import { getToolRegistry } from '../tools/toolRegistry';
+import { ribbonCommandMetadataForMode } from './shell/RibbonBar';
+import {
+  CAPABILITY_VIEW_MODES,
   auditCommandExposures,
   evaluateCommandInMode,
   getAllCommandCapabilities,
@@ -17,6 +25,61 @@ describe('command capability graph', () => {
     for (const toolId of Object.keys(getToolRegistry(tIdentity))) {
       expect(capabilities.has(`tool.${toolId}`)).toBe(true);
     }
+  });
+
+  it('declares a canonical authoring lifecycle contract for every tool command — WP-NEXT-40', () => {
+    const lifecycleKinds: AuthoringCommandKind[] = [
+      'line',
+      'sketch',
+      'hosted',
+      'point',
+      'modify',
+      'review',
+      'document',
+      'resource',
+    ];
+
+    for (const tool of Object.values(getToolRegistry(tIdentity))) {
+      const contract = getAuthoringCommandContract(tool.id);
+      expect(contract.toolId).toBe(tool.id);
+      expect(lifecycleKinds).toContain(contract.kind);
+      expect(contract.validModes).toEqual(tool.modes);
+      expect(contract.previewSemantics.length, tool.id).toBeGreaterThan(12);
+      expect(contract.defaultAfterCancel).toBe('select');
+      const capability = getCommandCapability(`tool.${tool.id}`);
+      expect(capability?.lifecycleKind, tool.id).toBe(contract.kind);
+      expect(capability?.completionBehavior, tool.id).toBe(contract.completionBehavior);
+      expect(capability?.previewSemantics, tool.id).toBe(contract.previewSemantics);
+    }
+  });
+
+  it('registers every Cmd+K command capability in the command palette registry — WP-NEXT-40', () => {
+    const paletteIds = new Set(getRegistry().map((entry) => entry.id));
+    const missing = getAllCommandCapabilities()
+      .filter((capability) => capability.surfaces.includes('cmd-k'))
+      .filter((capability) => !paletteIds.has(capability.id))
+      .map((capability) => capability.id)
+      .sort();
+
+    expect(missing).toEqual([]);
+  });
+
+  it('gives every visible ribbon command executable, disabled, or bridge metadata — WP-NEXT-40', () => {
+    const rows = CAPABILITY_VIEW_MODES.flatMap((mode) =>
+      ribbonCommandMetadataForMode(mode, 'wall').map((row) => ({
+        mode,
+        commandKey: row.commandKey,
+        commandId: row.commandId,
+        behavior: row.behavior,
+      })),
+    );
+
+    expect(rows.filter((row) => row.behavior === 'missing-metadata')).toEqual([]);
+    expect(rows.some((row) => row.commandId === 'tool.wall' && row.behavior === 'direct')).toBe(
+      true,
+    );
+    expect(rows.some((row) => row.commandId === 'project.manage-links')).toBe(true);
+    expect(rows.some((row) => row.commandId === 'advisor.open')).toBe(true);
   });
 
   it('has unique command ids and no unreachable registered commands', () => {

@@ -604,11 +604,176 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'tool.component',
+  label: 'Place Component',
+  keywords: ['component', 'family', 'furniture', 'load family'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'component'),
+});
+
+registerCommand({
   id: 'tool.mirror',
   label: 'Mirror Elements',
   keywords: ['mirror', 'flip', 'symmetry'],
   category: 'command',
   invoke: (ctx) => startPlanTool(ctx, 'mirror'),
+});
+
+registerCommand({
+  id: 'tool.stair',
+  label: 'Place Stair',
+  keywords: ['stair', 'stairs', 'circulation'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'stair'),
+});
+
+registerCommand({
+  id: 'tool.railing',
+  label: 'Place Railing',
+  keywords: ['railing', 'guardrail', 'handrail', 'circulation'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'railing'),
+});
+
+registerCommand({
+  id: 'tool.section',
+  label: 'Place Section',
+  keywords: ['section', 'cut', 'view marker'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'section'),
+});
+
+registerCommand({
+  id: 'tool.reference-plane',
+  label: 'Place Reference Plane',
+  keywords: ['reference plane', 'datum', 'work plane'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'reference-plane'),
+});
+
+registerCommand({
+  id: 'tool.property-line',
+  label: 'Place Property Line',
+  keywords: ['property line', 'site', 'boundary'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'property-line'),
+});
+
+registerCommand({
+  id: 'tool.masking-region',
+  label: 'Sketch Masking Region',
+  keywords: ['masking region', 'annotation region', 'detail'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'masking-region'),
+});
+
+registerCommand({
+  id: 'tool.plan-region',
+  label: 'Sketch Plan Region',
+  keywords: ['plan region', 'cut plane', 'view range'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'plan-region'),
+});
+
+registerCommand({
+  id: 'tool.align',
+  label: 'Align Elements',
+  keywords: ['align', 'modify', 'constraint'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'align'),
+});
+
+registerCommand({
+  id: 'tool.split',
+  label: 'Split Element',
+  keywords: ['split', 'cut', 'divide'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'split'),
+});
+
+registerCommand({
+  id: 'tool.trim',
+  label: 'Trim Elements',
+  keywords: ['trim', 'extend', 'corner'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'trim'),
+});
+
+registerCommand({
+  id: 'tool.trim-extend',
+  label: 'Trim/Extend Elements',
+  keywords: ['trim extend', 'trim', 'extend', 'corner'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'trim-extend'),
+});
+
+registerCommand({
+  id: 'tool.wall-join',
+  label: 'Edit Wall Join',
+  keywords: ['wall join', 'join', 'disallow join', 'cleanup'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'wall-join'),
+});
+
+registerCommand({
+  id: 'tool.wall-opening',
+  label: 'Place Wall Opening',
+  keywords: ['wall opening', 'opening', 'hosted void'],
+  category: 'command',
+  isAvailable: modelHasWall,
+  invoke: (ctx) => startPlanTool(ctx, 'wall-opening'),
+});
+
+registerCommand({
+  id: 'tool.shaft',
+  label: 'Sketch Shaft Opening',
+  keywords: ['shaft', 'shaft opening', 'vertical opening'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'shaft'),
+});
+
+registerCommand({
+  id: 'tool.toposolid_subdivision',
+  label: 'Subdivide Toposolid',
+  keywords: ['toposolid', 'subdivision', 'site finish'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'toposolid_subdivision'),
+});
+
+registerCommand({
+  id: 'tool.copy',
+  label: 'Copy Elements',
+  keywords: ['copy', 'duplicate', 'modify'],
+  category: 'command',
+  isAvailable: hasSelection,
+  invoke: (ctx) => startPlanTool(ctx, 'copy'),
+});
+
+registerCommand({
+  id: 'tool.move',
+  label: 'Move Elements',
+  keywords: ['move', 'translate', 'modify'],
+  category: 'command',
+  isAvailable: hasSelection,
+  invoke: (ctx) => startPlanTool(ctx, 'move'),
+});
+
+registerCommand({
+  id: 'tool.rotate',
+  label: 'Rotate Elements',
+  keywords: ['rotate', 'angle', 'modify'],
+  category: 'command',
+  isAvailable: hasSelection,
+  invoke: (ctx) => startPlanTool(ctx, 'rotate'),
+});
+
+registerCommand({
+  id: 'view.3d.measure.ribbon-bridge',
+  label: '3D: Measure',
+  keywords: ['3d', 'measure', 'distance', 'ribbon'],
+  category: 'command',
+  isAvailable: is3dContext,
+  invoke: (ctx) => startPlanTool(ctx, 'measure'),
 });
 
 registerCommand({

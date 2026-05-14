@@ -8,6 +8,11 @@ import {
   type ToolId,
   type WorkspaceMode,
 } from '../tools/toolRegistry';
+import {
+  getAuthoringCommandContract,
+  type AuthoringCommandKind,
+  type AuthoringCompletionBehavior,
+} from '../tools/authoringCommandContract';
 
 export const CAPABILITY_VIEW_MODES = [
   'plan',
@@ -67,6 +72,9 @@ export interface CommandCapability {
   preconditions: string[];
   status: CapabilityStatus;
   usabilityScore: number;
+  lifecycleKind?: AuthoringCommandKind;
+  completionBehavior?: AuthoringCompletionBehavior;
+  previewSemantics?: string;
   bridgeToMode?: Partial<Record<CapabilityViewMode, CapabilityViewMode>>;
   notes?: string;
 }
@@ -265,21 +273,27 @@ export function formatCapabilityMode(mode: CapabilityViewMode): string {
 }
 
 function buildToolCapabilities(): CommandCapability[] {
-  return Object.values(getToolRegistry(IDENTITY_T)).map((tool) => ({
-    id: `tool.${tool.id}`,
-    label: labelForTool(tool),
-    owner: 'tools/toolRegistry',
-    group: groupForTool(tool.id),
-    scope: 'view',
-    intendedModes: [...tool.modes],
-    surfaces: ['ribbon', 'cmd-k'],
-    executionSurface: executionSurfaceForTool(tool),
-    preconditions: preconditionsForTool(tool.id),
-    status: 'implemented',
-    usabilityScore: 8,
-    bridgeToMode: bridgeModesForTool(tool),
-    notes: tool.tooltip,
-  }));
+  return Object.values(getToolRegistry(IDENTITY_T)).map((tool) => {
+    const contract = getAuthoringCommandContract(tool.id);
+    return {
+      id: `tool.${tool.id}`,
+      label: labelForTool(tool),
+      owner: 'tools/toolRegistry',
+      group: groupForTool(tool.id),
+      scope: 'view',
+      intendedModes: [...tool.modes],
+      surfaces: ['ribbon', 'cmd-k'],
+      executionSurface: executionSurfaceForTool(tool),
+      preconditions: [...new Set([...preconditionsForTool(tool.id), ...contract.requiredContext])],
+      status: 'implemented',
+      usabilityScore: 8,
+      lifecycleKind: contract.kind,
+      completionBehavior: contract.completionBehavior,
+      previewSemantics: contract.previewSemantics,
+      bridgeToMode: bridgeModesForTool(tool),
+      notes: tool.tooltip,
+    };
+  });
 }
 
 function labelForTool(tool: ToolDefinition): string {

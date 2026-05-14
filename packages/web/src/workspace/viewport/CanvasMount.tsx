@@ -1,10 +1,11 @@
 import type { CSSProperties, JSX, RefObject } from 'react';
 
-import type { Element } from '@bim-ai/core';
+import type { Element, LensMode } from '@bim-ai/core';
 
 import { Viewport } from '../../Viewport';
 import { ErrorBoundary } from '../../ErrorBoundary';
 import { PlanCanvas, type PlanCameraHandle } from '../../plan/PlanCanvas';
+import type { PlanTool } from '../../state/store';
 import type { SnapSettings } from '../../plan/snapSettings';
 import type { SheetMarkupShape, SheetReviewMode } from '../sheets/sheetReviewUi';
 import { ScheduleModeShell, SectionModeShell, SheetModeShell } from '../ModeShells';
@@ -32,6 +33,8 @@ export function CanvasMount({
   wsOn,
   onPersistViewpointField,
   lensMode,
+  activePlanTool,
+  onActivePlanToolChange,
   onNavigateToElement,
   snapSettings,
   sheetReviewMode,
@@ -58,7 +61,9 @@ export function CanvasMount({
     key: string;
     value: string;
   }) => void | Promise<void>;
-  lensMode?: string;
+  lensMode?: LensMode;
+  activePlanTool?: PlanTool;
+  onActivePlanToolChange?: (tool: PlanTool) => void;
   onNavigateToElement?: (elementId: string) => void;
   snapSettings?: SnapSettings;
   sheetReviewMode?: SheetReviewMode;
@@ -73,6 +78,8 @@ export function CanvasMount({
           wsConnected={wsOn ?? false}
           onPersistViewpointField={onPersistViewpointField}
           onSemanticCommand={onSemanticCommand}
+          lensMode={lensMode}
+          activePlanTool={activePlanTool}
         />
       </ErrorBoundary>
     );
@@ -87,6 +94,8 @@ export function CanvasMount({
         cameraHandleRef={cameraHandleRef}
         initialCamera={initialCamera}
         lensMode={lensMode}
+        activePlanTool={activePlanTool}
+        onActivePlanToolChange={onActivePlanToolChange}
         snapSettings={snapSettings}
       />
     );
@@ -130,6 +139,8 @@ export function CanvasMount({
       wsConnected={wsOn ?? false}
       onPersistViewpointField={onPersistViewpointField}
       onSemanticCommand={onSemanticCommand}
+      lensMode={lensMode}
+      activePlanTool={activePlanTool}
     />
   ) : (
     <PlanCanvas
@@ -138,6 +149,8 @@ export function CanvasMount({
       activePlanViewId={activePlanViewId}
       onSemanticCommand={onSemanticCommand}
       lensMode={lensMode}
+      activePlanTool={activePlanTool}
+      onActivePlanToolChange={onActivePlanToolChange}
       snapSettings={snapSettings}
     />
   );

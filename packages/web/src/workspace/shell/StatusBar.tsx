@@ -139,18 +139,6 @@ export interface StatusBarProps {
 }
 
 export function StatusBar({
-  mode = 'plan',
-  viewLabel,
-  viewDetails = [],
-  level,
-  levels = [],
-  onLevelChange,
-  toolLabel,
-  snapModes = [],
-  onSnapToggle,
-  gridOn = true,
-  onGridToggle,
-  cursorMm,
   undoDepth,
   redoDepth,
   onUndo,
@@ -169,10 +157,7 @@ export function StatusBar({
   jobsCounts,
   onJobsClick,
   selectionCount = 0,
-  temporaryVisibility = null,
-  onClearTemporaryVisibility,
 }: StatusBarProps): JSX.Element {
-  const showPlanClusters = mode === 'plan' || mode === 'section';
   return (
     <div
       data-testid="status-bar"
@@ -180,24 +165,6 @@ export function StatusBar({
       style={{ ...statusStyle, ...disciplineStripeStyle(activeWorkspaceId) }}
       className="relative flex w-full items-center gap-2 overflow-hidden whitespace-nowrap border-t border-border bg-surface px-2 text-[11px] text-muted sm:px-4"
     >
-      <div
-        data-testid="status-bar-context-cluster"
-        className="hidden min-w-0 items-center gap-2 overflow-hidden md:flex"
-      >
-        {showPlanClusters ? (
-          <>
-            <ToolCluster toolLabel={toolLabel ?? null} />
-            <Divider />
-            <SnapCluster snapModes={snapModes} onSnapToggle={onSnapToggle} />
-            <Divider />
-            <GridCluster gridOn={gridOn} onGridToggle={onGridToggle} />
-            <Divider />
-            <CoordCluster cursorMm={cursorMm ?? null} />
-          </>
-        ) : (
-          <ViewModeCluster mode={mode} viewLabel={viewLabel ?? null} viewDetails={viewDetails} />
-        )}
-      </div>
       <div
         data-testid="status-bar-priority-cluster"
         className="ml-auto flex min-w-0 shrink-0 items-center gap-1 sm:gap-3"
@@ -238,15 +205,6 @@ export function StatusBar({
             <DriftBadge driftCount={driftCount} onClick={onDriftClick ?? (() => {})} />
           </div>
         ) : null}
-        {temporaryVisibility ? (
-          <>
-            <Divider />
-            <TemporaryVisibilityEntry
-              override={temporaryVisibility}
-              onClear={onClearTemporaryVisibility}
-            />
-          </>
-        ) : null}
         <AdvisorEntry
           counts={advisorCounts ?? { error: 0, warning: 0, info: 0 }}
           onClick={onAdvisorClick}
@@ -260,6 +218,95 @@ export function StatusBar({
         <Divider />
         <ActivityEntry count={activityUnreadCount} onClick={onActivityClick} />
       </div>
+    </div>
+  );
+}
+
+export type ViewContextStatusPanelProps = Pick<
+  StatusBarProps,
+  | 'mode'
+  | 'viewLabel'
+  | 'viewDetails'
+  | 'level'
+  | 'levels'
+  | 'onLevelChange'
+  | 'toolLabel'
+  | 'snapModes'
+  | 'onSnapToggle'
+  | 'gridOn'
+  | 'onGridToggle'
+  | 'cursorMm'
+  | 'temporaryVisibility'
+  | 'onClearTemporaryVisibility'
+>;
+
+export function ViewContextStatusPanel({
+  mode = 'plan',
+  viewLabel,
+  viewDetails = [],
+  level,
+  levels = [],
+  onLevelChange,
+  toolLabel,
+  snapModes = [],
+  onSnapToggle,
+  gridOn = true,
+  onGridToggle,
+  cursorMm,
+  temporaryVisibility = null,
+  onClearTemporaryVisibility,
+}: ViewContextStatusPanelProps): JSX.Element {
+  const showPlanClusters = mode === 'plan' || mode === 'section';
+  return (
+    <div
+      data-testid="view-context-status-panel"
+      className="border-b border-border bg-surface-2 px-2 py-2 text-[11px] text-muted"
+    >
+      <div className="mb-2 min-w-0">
+        <ViewModeCluster mode={mode} viewLabel={viewLabel ?? null} viewDetails={viewDetails} />
+      </div>
+      {showPlanClusters ? (
+        <div className="space-y-1.5">
+          <div className="flex min-w-0 items-center justify-between gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+              Level
+            </span>
+            <LevelCluster level={level} levels={levels} onLevelChange={onLevelChange} />
+          </div>
+          <div className="flex min-w-0 items-center justify-between gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+              Tool
+            </span>
+            <ToolCluster toolLabel={toolLabel ?? null} />
+          </div>
+          <div className="flex min-w-0 items-center justify-between gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+              Snaps
+            </span>
+            <SnapCluster snapModes={snapModes} onSnapToggle={onSnapToggle} />
+          </div>
+          <div className="flex min-w-0 items-center justify-between gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+              Grid
+            </span>
+            <GridCluster gridOn={gridOn} onGridToggle={onGridToggle} />
+          </div>
+          <div className="flex min-w-0 items-center justify-between gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+              Cursor
+            </span>
+            <CoordCluster cursorMm={cursorMm ?? null} />
+          </div>
+        </div>
+      ) : null}
+      {temporaryVisibility ? (
+        <div className="mt-2">
+          <TemporaryVisibilityEntry
+            override={temporaryVisibility}
+            onClear={onClearTemporaryVisibility}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -10,10 +10,10 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 
-import type { Element } from '@bim-ai/core';
+import type { Element, LensMode } from '@bim-ai/core';
 import type { OrbitViewpointPersistFieldPayload } from './OrbitViewpointPersistedHud';
 
-import { useBimStore } from './state/store';
+import { useBimStore, type PlanTool } from './state/store';
 import { useTheme } from './state/useTheme';
 import {
   CameraRig,
@@ -153,6 +153,10 @@ type Props = {
   onSemanticCommand?: (cmd: Record<string, unknown>) => void;
   /** COL-V3-01: remote participant selections to render as colored halos. */
   remoteSelections?: Array<{ elementId: string; color: string }>;
+  /** Discipline lens for this viewport instance. Falls back to the store default. */
+  lensMode?: LensMode;
+  /** Pane-local active authoring command. Falls back to the store default. */
+  activePlanTool?: PlanTool;
 };
 
 type DoorElem = Extract<Element, { kind: 'door' }>;
@@ -357,7 +361,13 @@ function disposeObject3D(root: THREE.Object3D): void {
   });
 }
 
-export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: Props) {
+export function Viewport({
+  wsConnected,
+  onSemanticCommand,
+  remoteSelections,
+  lensMode,
+  activePlanTool,
+}: Props) {
   void wsConnected;
   const { t } = useTranslation();
 
@@ -394,6 +404,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
   const selectedIdRef = useRef<string | undefined>(undefined);
   const prevCatHiddenRef = useRef<Record<string, boolean>>({});
   const prevLevelHiddenRef = useRef<Record<string, boolean>>({});
+  const prevLensModeRef = useRef<LensMode | null>(null);
   const csgWorkerRef = useRef<Worker | null>(null);
   /** Maps wallId → active CSG job nonce; responses with a mismatched nonce are stale and discarded. */
   const pendingCsgRef = useRef<Map<string, number>>(new Map());
@@ -465,7 +476,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
 
   const selectedId = useBimStore((s) => s.selectedId);
   selectedIdRef.current = selectedId;
-  const planTool = useBimStore((s) => s.planTool);
+  const storePlanTool = useBimStore((s) => s.planTool);
+  const planTool = activePlanTool ?? storePlanTool;
   const activeLevelId = useBimStore((s) => s.activeLevelId);
   const [authoringOverlay, setAuthoringOverlay] = useState<Authoring3dOverlayState | null>(null);
   const [draftPlaneAngleWarning, setDraftPlaneAngleWarning] = useState(false);
@@ -633,7 +645,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
   const walkActive = useBimStore((s) => s.viewerWalkModeActive);
   const roofJoinPreview = useBimStore((s) => s.roofJoinPreview);
   const viewerCameraAction = useBimStore((s) => s.viewerCameraAction);
-  const lensMode = useBimStore((s) => s.lensMode);
+  const storeLensMode = useBimStore((s) => s.lensMode);
+  const activeLensMode = lensMode ?? storeLensMode;
   const orthoMode = viewerProjection === 'orthographic';
 
   const viewerClipElevMm = useBimStore((s) => s.viewerClipElevMm);
@@ -3585,7 +3598,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
     const planes = clippingPlanesRef.current;
 
     // DSC-V3-02 — resolve lens filter from the UI dropdown stored in global state.
-    const lensFilter = lensFilterFromMode(lensMode);
+    const lensFilter = lensFilterFromMode(activeLensMode);
     const witnessHex = readToken('--draft-witness', '#64748b');
 
     for (const id of toRebuild) {
@@ -3896,6 +3909,14 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       prevLevelHiddenRef.current = levelHidden;
     }
 
+    if (prevLensModeRef.current !== activeLensMode) {
+      for (const [id, obj] of cache) {
+        const e = curr[id];
+        if (e) applyLensGhosting(obj, lensFilter(e), witnessHex);
+      }
+      prevLensModeRef.current = activeLensMode;
+    }
+
     // Re-sync outline pass in case the selected element's mesh was just replaced.
     const op = outlinePassRef.current;
     if (op) {
@@ -3913,7 +3934,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
     viewerCategoryHidden,
     viewerLevelHidden,
     viewerPhaseFilter,
-    lensMode,
+    activeLensMode,
     theme,
     text3dRebuildTick,
   ]);

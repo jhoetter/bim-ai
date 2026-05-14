@@ -9,7 +9,7 @@
  * The reducer is framework-free so it can be unit-tested without React.
  */
 
-import type { Element } from '@bim-ai/core';
+import type { Element, LensMode } from '@bim-ai/core';
 
 export type TabKind = 'plan' | '3d' | 'section' | 'sheet' | 'schedule';
 
@@ -38,6 +38,8 @@ export interface ViewTab {
   label: string;
   /** Cached camera/orbit state restored when the tab reactivates. */
   viewportState?: ViewportSnapshot;
+  /** Discipline lens scoped to this tab instance. */
+  lensMode?: LensMode;
 }
 
 export interface TabsState {

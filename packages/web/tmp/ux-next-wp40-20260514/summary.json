@@ -1,0 +1,27 @@
+{
+  "capturedAt": "2026-05-14T14:14:47.474Z",
+  "url": "http://127.0.0.1:2000/#theme=light",
+  "model": "target-house-3:9bb9a145-d9ce-5a2f-a748-bb5be3301b30",
+  "screenshots": [
+    "01-plan-wall-command.png",
+    "02-plan-floor-sketch-command.png",
+    "03-3d-wall-command.png",
+    "04-3d-hosted-window-command.png",
+    "05-sheet-command-state.png"
+  ],
+  "mainFrameNavigationsAfterGoto": [
+    "http://127.0.0.1:2000/#theme=light",
+    "http://127.0.0.1:2000/#theme=light"
+  ],
+  "consoleWarningsAndErrors": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    }
+  ],
+  "pageErrors": []
+}

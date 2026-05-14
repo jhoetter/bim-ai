@@ -299,6 +299,7 @@ export function WorkspaceRightRail({
   onModeChange,
   onNavigateToElement,
   activeViewTargetId,
+  lensMode: lensModeProp,
   surface,
   onOpenMaterialBrowser,
   onOpenAppearanceAssetBrowser,
@@ -308,6 +309,7 @@ export function WorkspaceRightRail({
   onModeChange: (mode: WorkspaceMode) => void;
   onNavigateToElement?: (elementId: string) => void;
   activeViewTargetId?: string;
+  lensMode?: LensMode;
   surface: 'view-context' | 'element';
   onOpenMaterialBrowser?: () => void;
   onOpenAppearanceAssetBrowser?: () => void;
@@ -348,7 +350,8 @@ export function WorkspaceRightRail({
   const violations = useBimStore((s) => s.violations);
   const modelId = useBimStore((s) => s.modelId);
   const activeWorkspaceId = useBimStore((s) => s.activeWorkspaceId);
-  const lensMode = useBimStore((s) => s.lensMode);
+  const storeLensMode = useBimStore((s) => s.lensMode);
+  const lensMode = lensModeProp ?? storeLensMode;
   const setPlanTool = useBimStore((s) => s.setPlanTool);
   const planProjectionPrimitives = useBimStore((s) => s.planProjectionPrimitives);
   const activePlanViewId = useBimStore((s) => s.activePlanViewId);

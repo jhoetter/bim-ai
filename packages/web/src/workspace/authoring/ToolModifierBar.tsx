@@ -17,8 +17,13 @@ import { useToolPrefs } from '../../tools/toolPrefsStore';
 import { useBimStore } from '../../state/store';
 import type { ToolId } from '../../tools/toolRegistry';
 
-export function ToolModifierBar(): JSX.Element | null {
-  const planTool = useBimStore((s) => s.planTool) as ToolId | null;
+export function ToolModifierBar({
+  activeTool,
+}: {
+  activeTool?: ToolId | null;
+} = {}): JSX.Element | null {
+  const storePlanTool = useBimStore((s) => s.planTool) as ToolId | null;
+  const planTool = activeTool ?? storePlanTool;
   const descriptors = getToolModifierDescriptors(planTool);
 
   const getToggle = useToolPrefs((s) => s.getToggle);

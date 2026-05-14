@@ -37,7 +37,7 @@ import * as THREE from 'three';
 import { parseDimensionInput } from '@bim-ai/core';
 import type { Element } from '@bim-ai/core';
 
-import { useBimStore } from '../state/store';
+import { useBimStore, type PlanTool } from '../state/store';
 import type { CategoryOverride } from '../state/storeTypes';
 import { useTheme } from '../state/useTheme';
 import { liveTokenReader } from '../viewport/materials';
@@ -305,6 +305,9 @@ type Props = {
   initialCamera?: { centerMm?: { xMm: number; yMm: number }; halfMm?: number };
   /** Global discipline lens from the StatusBar dropdown: 'all' | 'architecture' | 'structure' | 'mep' */
   lensMode?: string;
+  /** Pane-local active authoring command. Falls back to the global store when omitted. */
+  activePlanTool?: PlanTool;
+  onActivePlanToolChange?: (tool: PlanTool) => void;
   /** Footer-owned snap settings; PlanCanvas only consumes them for candidate filtering. */
   snapSettings?: SnapSettings;
 };
@@ -317,6 +320,8 @@ export function PlanCanvas({
   cameraHandleRef,
   initialCamera,
   lensMode = 'all',
+  activePlanTool,
+  onActivePlanToolChange,
   snapSettings: controlledSnapSettings,
 }: Props) {
   void wsConnected;
@@ -550,7 +555,7 @@ export function PlanCanvas({
       ? storeActivePlanViewId
       : (activePlanViewIdProp ?? undefined);
   const planPresentation = useBimStore((s) => s.planPresentationPreset);
-  const planTool = useBimStore((s) => s.planTool);
+  const storePlanTool = useBimStore((s) => s.planTool);
   const wallLocationLine = useBimStore((s) => s.wallLocationLine);
   const wallDrawOffsetMm = useBimStore((s) => s.wallDrawOffsetMm);
   const wallDrawRadiusMm = useBimStore((s) => s.wallDrawRadiusMm);
@@ -561,7 +566,9 @@ export function PlanCanvas({
   const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
   const activateElevationView = useBimStore((s) => s.activateElevationView);
   const activatePlanView = useBimStore((s) => s.activatePlanView);
-  const setPlanTool = useBimStore((s) => s.setPlanTool);
+  const storeSetPlanTool = useBimStore((s) => s.setPlanTool);
+  const planTool = activePlanTool ?? storePlanTool;
+  const setPlanTool = onActivePlanToolChange ?? storeSetPlanTool;
   // OSM-V3-02 — neighborhood mass layer toggle.
   const showNeighborhoodMasses = useBimStore((s) => s.showNeighborhoodMasses);
   // F-006 — QAT Thin Lines toggle: overrides all line weights to 1 px when true.

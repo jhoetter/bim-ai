@@ -1,6 +1,6 @@
 import { type JSX, useEffect, useState } from 'react';
 import type { Element } from '@bim-ai/core';
-import { useBimStore } from '../../state/store';
+import { useBimStore, type PlanTool } from '../../state/store';
 import { applyCommand } from '../../lib/api';
 import { WALL_LOCATION_LINE_ORDER, type WallLocationLine } from '../../tools/toolGrammar';
 
@@ -60,8 +60,13 @@ export function setPendingComponentRotationDeg(v: number): void {
   pendingComponentRotationDeg = v;
 }
 
-export function OptionsBar(): JSX.Element | null {
-  const planTool = useBimStore((s) => s.planTool);
+export function OptionsBar({
+  activeTool,
+}: {
+  activeTool?: PlanTool | null;
+} = {}): JSX.Element | null {
+  const storePlanTool = useBimStore((s) => s.planTool);
+  const planTool = activeTool ?? storePlanTool;
   const elementsById = useBimStore((s) => s.elementsById);
   const wallLocationLine = useBimStore((s) => s.wallLocationLine);
   const setWallLocationLine = useBimStore((s) => s.setWallLocationLine);

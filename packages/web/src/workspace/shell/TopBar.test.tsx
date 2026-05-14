@@ -513,7 +513,8 @@ describe('RibbonBar — F-005', () => {
 
     fireEvent.click(getByTestId('ribbon-tab-review'));
     expect(getByTestId('ribbon-panels')).toBeTruthy();
-    expect(getByTestId('ribbon-bridge-plan-checks').textContent).toContain('Cmd+K');
+    expect(getByTestId('plan-checks')).toBeTruthy();
+    expect(queryByTestId('ribbon-bridge-plan-checks')).toBeNull();
   });
 
   it('uses a schedule ribbon schema with direct table actions', () => {

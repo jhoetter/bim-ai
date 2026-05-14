@@ -1,12 +1,11 @@
 import type { JSX, RefObject } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import type { Element, LensMode } from '@bim-ai/core';
+import type { Element } from '@bim-ai/core';
 import { Icons } from '@bim-ai/ui';
 
 import { useBimStore } from '../state/store';
 import { LeftRail, type WorkspaceMode } from './shell';
-import { LensDropdown } from './shell/LensDropdown';
 import { tabFromElement } from './tabsModel';
 import { buildPrimaryNavigationSections } from './workspaceUtils';
 
@@ -84,8 +83,6 @@ export function WorkspaceLeftRail({
   onOpenSavedView,
   onViewDragStart,
   onViewDragEnd,
-  lensMode,
-  onLensChange,
   activeViewTargetId,
   userDisplayName,
   userId,
@@ -110,8 +107,6 @@ export function WorkspaceLeftRail({
   onOpenSavedView?: (savedViewId: string) => void;
   onViewDragStart?: (elementId: string) => void;
   onViewDragEnd?: () => void;
-  lensMode: LensMode;
-  onLensChange: (lens: LensMode) => void;
   activeViewTargetId?: string | null;
   userDisplayName?: string;
   userId?: string | null;
@@ -310,14 +305,6 @@ export function WorkspaceLeftRail({
         </div>
       ) : null}
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="border-b border-border p-2" data-testid="primary-lens-filter">
-          <div className="pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
-            Discipline Lens
-          </div>
-          <div data-testid="primary-lens-dropdown" className="relative z-20 overflow-visible">
-            <LensDropdown currentLens={lensMode} onLensChange={onLensChange} />
-          </div>
-        </div>
         <LeftRail
           sections={primarySections}
           activeRowId={activeViewTargetId ?? activePlanViewId ?? activeViewpointId ?? selectedId}

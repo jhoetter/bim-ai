@@ -25,9 +25,14 @@ const DISC_SOFT: Partial<Record<LensMode, string>> = {
 export interface LensDropdownProps {
   currentLens: LensMode;
   onLensChange: (lens: LensMode) => void;
+  enableHotkey?: boolean;
 }
 
-export function LensDropdown({ currentLens, onLensChange }: LensDropdownProps): JSX.Element {
+export function LensDropdown({
+  currentLens,
+  onLensChange,
+  enableHotkey = true,
+}: LensDropdownProps): JSX.Element {
   const [open, setOpen] = useState(false);
   const menuId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -40,6 +45,7 @@ export function LensDropdown({ currentLens, onLensChange }: LensDropdownProps): 
 
   // Global L key cycles forward through the 4 lens modes.
   useEffect(() => {
+    if (!enableHotkey) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'l' && e.key !== 'L') return;
       const tag = (document.activeElement as HTMLElement | null)?.tagName;
@@ -49,7 +55,7 @@ export function LensDropdown({ currentLens, onLensChange }: LensDropdownProps): 
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeLensInCycle, onLensChange]);
+  }, [activeLensInCycle, enableHotkey, onLensChange]);
 
   // Close on outside click.
   useEffect(() => {

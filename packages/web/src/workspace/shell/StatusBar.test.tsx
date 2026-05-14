@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
-import { StatusBar } from './StatusBar';
+import { StatusBar, ViewContextStatusPanel } from './StatusBar';
 import i18n from '../../i18n';
 
 function renderWithI18n(ui: React.ReactElement) {
@@ -13,9 +13,23 @@ afterEach(() => {
 });
 
 describe('StatusBar — spec §17', () => {
-  it('renders all clusters', () => {
-    const { getByText, getByLabelText, getByTitle } = renderWithI18n(
+  it('renders global footer clusters while view context lives outside the footer', () => {
+    const footer = renderWithI18n(
       <StatusBar
+        level={{ id: 'lvl-ground', label: 'Ground' }}
+        wsState="connected"
+        saveState="saved"
+        undoDepth={4}
+      />,
+    );
+    expect(footer.getByText('saved')).toBeTruthy();
+    expect(footer.getByTitle('Connection: connected')).toBeTruthy();
+    expect(footer.queryByLabelText('Cursor coordinates')).toBeNull();
+    cleanup();
+
+    const { getByText, getByLabelText, getByTitle } = renderWithI18n(
+      <ViewContextStatusPanel
+        mode="plan"
         level={{ id: 'lvl-ground', label: 'Ground' }}
         levels={[{ id: 'lvl-ground', label: 'Ground' }]}
         toolLabel="Wall"
@@ -25,9 +39,6 @@ describe('StatusBar — spec §17', () => {
           { id: 'endpoint', label: 'endpoint', on: true },
           { id: 'grid', label: 'grid', on: false },
         ]}
-        wsState="connected"
-        saveState="saved"
-        undoDepth={4}
       />,
     );
     expect(getByText('Drawing wall')).toBeTruthy();
@@ -36,8 +47,6 @@ describe('StatusBar — spec §17', () => {
     expect(getByTitle('Grid (F7)').getAttribute('aria-checked')).toBe('true');
     expect(getByLabelText('Cursor coordinates').textContent).toContain('X 12.500 m');
     expect(getByLabelText('Cursor coordinates').textContent).toContain('Y 8.000 m');
-    expect(getByText('saved')).toBeTruthy();
-    expect(getByTitle('Connection: connected')).toBeTruthy();
   });
 
   it('does not expose level controls in the footer', () => {
@@ -58,7 +67,8 @@ describe('StatusBar — spec §17', () => {
   it('toggles snap modes via switch buttons', () => {
     const onSnapToggle = vi.fn();
     const { getByTitle } = renderWithI18n(
-      <StatusBar
+      <ViewContextStatusPanel
+        mode="plan"
         level={{ id: 'lvl-ground', label: 'Ground' }}
         snapModes={[
           { id: 'endpoint', label: 'endpoint', on: true },
@@ -99,8 +109,8 @@ describe('StatusBar — spec §17', () => {
     );
 
     expect(getByTestId('status-bar').className).toContain('overflow-hidden');
-    expect(getByTestId('status-bar-context-cluster').className).toContain('hidden');
-    expect(getByTestId('status-bar-context-cluster').className).toContain('md:flex');
+    expect(getByTestId('status-bar').textContent).not.toContain('View');
+    expect(getByTestId('status-bar').textContent).not.toContain('Drawing');
     expect(getByTestId('status-bar-priority-cluster')).toBeTruthy();
     expect(getByTestId('status-bar-advisor-entry').textContent).toContain('1 warning');
     expect(getByTestId('status-bar-jobs-entry').textContent).toContain('Jobs 2 active');
@@ -132,10 +142,11 @@ describe('StatusBar — spec §17', () => {
     expect(queryByTestId('statusbar-level-elevation')).toBeNull();
   });
 
-  it('shows temporary visibility override in footer and allows reset — UX-STAT-017', () => {
+  it('shows temporary visibility override in the view context panel and allows reset — UX-STAT-017', () => {
     const onClearTemporaryVisibility = vi.fn();
     const { getByTestId } = renderWithI18n(
-      <StatusBar
+      <ViewContextStatusPanel
+        mode="plan"
         level={{ id: 'lvl-ground', label: 'Ground' }}
         temporaryVisibility={{
           viewId: 'pv-ground',
@@ -158,7 +169,8 @@ describe('StatusBar — spec §17', () => {
   it('grid switch reflects state and emits onGridToggle', () => {
     const onGridToggle = vi.fn();
     const { getByTitle } = renderWithI18n(
-      <StatusBar
+      <ViewContextStatusPanel
+        mode="plan"
         level={{ id: 'lvl-ground', label: 'Ground' }}
         gridOn={false}
         onGridToggle={onGridToggle}
@@ -206,14 +218,14 @@ describe('StatusBar — spec §17', () => {
 
   it('renders a placeholder when cursor is off-canvas', () => {
     const { getByLabelText } = renderWithI18n(
-      <StatusBar level={{ id: 'lvl-ground', label: 'Ground' }} />,
+      <ViewContextStatusPanel mode="plan" level={{ id: 'lvl-ground', label: 'Ground' }} />,
     );
     expect(getByLabelText('Cursor coordinates').textContent).toContain('X —');
   });
 
   it('renders scoped view label and detail chips outside plan-like modes', () => {
     const { getByTestId, getByText, queryByLabelText } = renderWithI18n(
-      <StatusBar
+      <ViewContextStatusPanel
         mode="3d"
         viewLabel="Default 3D"
         viewDetails={['Perspective', 'Section box', 'Selected wall']}

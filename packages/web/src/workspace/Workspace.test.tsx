@@ -18,13 +18,39 @@ function renderWithProviders(ui: React.ReactElement) {
 
 // Stub the Three.js-mounting canvases so jsdom can render the chrome.
 vi.mock('../Viewport', () => ({
-  Viewport: ({ activeTabId }: { activeTabId?: string }) => (
-    <div data-testid="stub-viewport" data-active-tab-id={activeTabId ?? ''} />
+  Viewport: ({
+    activeTabId,
+    lensMode,
+    activePlanTool,
+  }: {
+    activeTabId?: string;
+    lensMode?: string;
+    activePlanTool?: string;
+  }) => (
+    <div
+      data-testid="stub-viewport"
+      data-active-tab-id={activeTabId ?? ''}
+      data-lens-mode={lensMode ?? ''}
+      data-active-plan-tool={activePlanTool ?? ''}
+    />
   ),
 }));
 vi.mock('../plan/PlanCanvas', () => ({
-  PlanCanvas: ({ activeTabId }: { activeTabId?: string }) => (
-    <div data-testid="stub-plan-canvas" data-active-tab-id={activeTabId ?? ''} />
+  PlanCanvas: ({
+    activeTabId,
+    lensMode,
+    activePlanTool,
+  }: {
+    activeTabId?: string;
+    lensMode?: string;
+    activePlanTool?: string;
+  }) => (
+    <div
+      data-testid="stub-plan-canvas"
+      data-active-tab-id={activeTabId ?? ''}
+      data-lens-mode={lensMode ?? ''}
+      data-active-plan-tool={activePlanTool ?? ''}
+    />
   ),
 }));
 
@@ -190,16 +216,19 @@ describe('<Workspace /> — smoke', () => {
     expect(header.getByTestId('workspace-header-share')).toBeTruthy();
   });
 
-  it('owns discipline lens in primary sidebar, not secondary or footer', () => {
+  it('owns discipline lens in the pane ribbon, not primary sidebar, secondary sidebar, or footer', () => {
+    seedTabs('plan');
     const rendered = renderWithProviders(<Workspace />);
     const { getByTestId, queryByTestId } = rendered;
     const primary = within(getByTestId('app-shell-primary-sidebar'));
+    const ribbon = within(paneRibbon(rendered));
     const statusBar = getByTestId('status-bar');
     const footer = within(statusBar);
 
-    expect(primary.getByTestId('primary-lens-filter')).toBeTruthy();
-    expect(primary.getByTestId('primary-lens-dropdown')).toBeTruthy();
-    expect(primary.getByTestId('lens-dropdown-trigger')).toBeTruthy();
+    expect(primary.queryByTestId('primary-lens-filter')).toBeNull();
+    expect(primary.queryByTestId('primary-lens-dropdown')).toBeNull();
+    expect(ribbon.getByTestId('ribbon-lens-dropdown')).toBeTruthy();
+    expect(ribbon.getByTestId('lens-dropdown-trigger')).toBeTruthy();
     expect(queryByTestId('secondary-lens-filter')).toBeNull();
     expect(queryByTestId('secondary-lens-dropdown')).toBeNull();
     expect(footer.queryByTestId('lens-dropdown-trigger')).toBeNull();
@@ -224,21 +253,92 @@ describe('<Workspace /> — smoke', () => {
     expect(useBimStore.getState().planTool).toBe('select');
   });
 
-  it('leaves Cmd/Ctrl+R to the browser refresh shortcut instead of activating Roof', async () => {
+  it('leaves browser-native modifier shortcuts to the browser instead of model tools', async () => {
     seedTabs('3d');
     renderWithProviders(<Workspace />);
     useBimStore.getState().setPlanTool('select');
 
-    for (const event of [
-      new KeyboardEvent('keydown', { key: 'r', metaKey: true, bubbles: true, cancelable: true }),
-      new KeyboardEvent('keydown', { key: 'r', ctrlKey: true, bubbles: true, cancelable: true }),
-    ]) {
-      document.dispatchEvent(event);
-      expect(event.defaultPrevented).toBe(false);
+    for (const key of ['r', 'd', 'f']) {
+      for (const modifier of ['metaKey', 'ctrlKey'] as const) {
+        const event = new KeyboardEvent('keydown', {
+          key,
+          [modifier]: true,
+          bubbles: true,
+          cancelable: true,
+        });
+        document.dispatchEvent(event);
+        expect(event.defaultPrevented, `${modifier}+${key}`).toBe(false);
+      }
     }
 
     await new Promise((resolve) => setTimeout(resolve, 450));
     expect(useBimStore.getState().planTool).toBe('select');
+  });
+
+  it('keeps active authoring commands pane-local in a split workspace — WP-NEXT-40', () => {
+    localStorage.setItem(
+      TABS_KEY,
+      JSON.stringify({
+        v: 1,
+        tabs: [
+          { id: 'plan:pv-a', kind: 'plan', label: 'Plan A', targetId: 'pv-a' },
+          { id: '3d:vp-b', kind: '3d', label: '3D B', targetId: 'vp-b' },
+        ],
+        activeId: '3d:vp-b',
+      }),
+    );
+    seedSplitPaneLayout('plan:pv-a', '3d:vp-b');
+    useBimStore.setState({
+      activeLevelId: 'lvl-a',
+      elementsById: {
+        'lvl-a': {
+          kind: 'level',
+          id: 'lvl-a',
+          name: 'Level A',
+          elevationMm: 0,
+        } as Element,
+        'pv-a': {
+          kind: 'plan_view',
+          id: 'pv-a',
+          name: 'Plan A',
+          levelId: 'lvl-a',
+        } as Element,
+        'vp-b': {
+          kind: 'viewpoint',
+          id: 'vp-b',
+          name: '3D B',
+          mode: 'orbit_3d',
+        } as Element,
+      },
+    });
+
+    const rendered = renderWithProviders(<Workspace />);
+    const leftRibbon = within(paneRibbon(rendered, 'pane-left'));
+    const rightRibbon = within(paneRibbon(rendered, 'pane-right'));
+
+    fireEvent.click(leftRibbon.getByTestId('ribbon-command-wall'));
+    expect(leftRibbon.getByTestId('ribbon-command-wall').getAttribute('aria-pressed')).toBe('true');
+    expect(rightRibbon.getByTestId('ribbon-command-select').getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(rendered.getByTestId('stub-plan-canvas').getAttribute('data-active-plan-tool')).toBe(
+      'wall',
+    );
+    expect(rendered.getByTestId('stub-viewport').getAttribute('data-active-plan-tool')).toBe(
+      'select',
+    );
+
+    fireEvent.click(rightRibbon.getByTestId('ribbon-command-window'));
+    expect(leftRibbon.getByTestId('ribbon-command-wall').getAttribute('aria-pressed')).toBe('true');
+    expect(rightRibbon.getByTestId('ribbon-command-window').getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(rendered.getByTestId('stub-plan-canvas').getAttribute('data-active-plan-tool')).toBe(
+      'wall',
+    );
+    expect(rendered.getByTestId('stub-viewport').getAttribute('data-active-plan-tool')).toBe(
+      'window',
+    );
   });
 
   it('renders pane-local tab strips and supports primary-browser drop-assign + close from pane chrome', () => {
@@ -407,6 +507,67 @@ describe('<Workspace /> — smoke', () => {
     expect(container.querySelectorAll('[data-testid^="canvas-pane-tabstrip-"]').length).toBe(3);
   });
 
+  it('keeps discipline lens per pane tab instance for the same floor plan', () => {
+    localStorage.setItem(
+      TABS_KEY,
+      JSON.stringify({
+        v: 1,
+        tabs: [
+          {
+            id: 'plan:pv-a',
+            kind: 'plan',
+            label: 'Plan A · Architecture',
+            targetId: 'pv-a',
+            lensMode: 'architecture',
+          },
+          {
+            id: 'plan:pv-a#2',
+            kind: 'plan',
+            label: 'Plan A · Structure',
+            targetId: 'pv-a',
+            lensMode: 'structure',
+          },
+        ],
+        activeId: 'plan:pv-a#2',
+      }),
+    );
+    seedSplitPaneLayout('plan:pv-a', 'plan:pv-a#2');
+    useBimStore.setState({
+      activeLevelId: 'lvl-a',
+      elementsById: {
+        'lvl-a': {
+          kind: 'level',
+          id: 'lvl-a',
+          name: 'Level A',
+          elevationMm: 0,
+        } as Element,
+        'pv-a': {
+          kind: 'plan_view',
+          id: 'pv-a',
+          name: 'Plan A',
+          levelId: 'lvl-a',
+        } as Element,
+      },
+    });
+
+    const rendered = renderWithProviders(<Workspace />);
+    const { container, getByTestId } = rendered;
+    const canvases = () =>
+      Array.from(container.querySelectorAll<HTMLElement>('[data-testid="stub-plan-canvas"]'));
+
+    expect(canvases().map((canvas) => canvas.dataset.lensMode)).toEqual([
+      'architecture',
+      'structure',
+    ]);
+
+    fireEvent.pointerDown(getByTestId('canvas-pane-pane-right'));
+    const rightRibbon = within(paneRibbon(rendered, 'pane-right'));
+    fireEvent.click(rightRibbon.getByTestId('lens-dropdown-trigger'));
+    fireEvent.click(rightRibbon.getByTestId('lens-option-mep'));
+
+    expect(canvases().map((canvas) => canvas.dataset.lensMode)).toEqual(['architecture', 'mep']);
+  });
+
   it('renders a real empty pane state when no tabs are open', () => {
     localStorage.setItem(TABS_KEY, JSON.stringify({ v: 1, tabs: [], activeId: null }));
     const { getByText } = renderWithProviders(<Workspace />);
@@ -475,17 +636,20 @@ describe('<Workspace /> — smoke', () => {
     expect(getByTestId('status-bar-selection-count').textContent).toContain('1 selected');
   });
 
-  it('owns temporary visibility override reset in footer status bar — UX-STAT-017', () => {
+  it('owns temporary visibility override reset in pane secondary sidebar — UX-STAT-017', () => {
+    seedTabs('plan');
     useBimStore.setState({
       temporaryVisibility: {
-        viewId: 'pv-ground',
+        viewId: '',
         mode: 'isolate',
         categories: ['wall'],
         elementIds: ['wall-1'],
       },
     });
-    const { getByTestId } = renderWithProviders(<Workspace />);
-    const chip = getByTestId('temp-visibility-chip');
+    const rendered = renderWithProviders(<Workspace />);
+    const { getByTestId } = rendered;
+    expect(within(getByTestId('status-bar')).queryByTestId('temp-visibility-chip')).toBeNull();
+    const chip = within(paneSecondary(rendered)).getByTestId('temp-visibility-chip');
     expect(chip.textContent).toContain('Isolate');
     expect(chip.textContent).toContain('#wall-1');
     fireEvent.click(chip);
