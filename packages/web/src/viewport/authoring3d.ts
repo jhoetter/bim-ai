@@ -23,7 +23,12 @@ export interface PlanPointMm {
 }
 
 export type WallDraftProjectionMode = 'plane' | 'elevation-axis';
-export type Authoring3dSnapKind = 'level-plane' | SnapKind;
+export type Authoring3dSnapKind =
+  | 'level-plane'
+  | 'wall-endpoint'
+  | 'wall-intersection'
+  | 'wall-segment'
+  | SnapKind;
 
 export interface Authoring3dSnap {
   point: PlanPointMm;

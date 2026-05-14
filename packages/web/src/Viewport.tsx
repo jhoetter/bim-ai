@@ -15,6 +15,7 @@ import type { OrbitViewpointPersistFieldPayload } from './OrbitViewpointPersiste
 
 import { useBimStore, type PlanTool } from './state/store';
 import { useTheme } from './state/useTheme';
+import type { SnapSettings } from './plan/snapSettings';
 import {
   CameraRig,
   classifyHotkey,
@@ -182,6 +183,8 @@ type Props = {
   lensMode?: LensMode;
   /** Pane-local active authoring command. Falls back to the store default. */
   activePlanTool?: PlanTool;
+  /** Pane-local snap toggles shared with plan and 3D authoring tools. */
+  snapSettings?: SnapSettings;
   /** Right-side overlay inset reserved by pane chrome, such as the element sidebar. */
   viewOverlayRightInset?: string;
 };
@@ -411,9 +414,11 @@ export function Viewport({
   remoteSelections,
   lensMode,
   activePlanTool,
+  snapSettings,
   viewOverlayRightInset,
 }: Props) {
   void wsConnected;
+  void snapSettings;
   const { t } = useTranslation();
 
   const mountRef = useRef<HTMLDivElement | null>(null);
