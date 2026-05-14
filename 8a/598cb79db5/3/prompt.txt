@@ -1,0 +1,37 @@
+[Image #1][Image #2] materials dont seem to be rendered / visualized
+
+---
+
+on main?
+
+---
+
+i noticed i cant e.g. select the materials to a wall, only room? please check across all elements ... i want this to be as it is with e.g. revit...
+
+---
+
+should the materials also have some kind of surface change, or just color? e.g. a brick wall would be different in texture etc, right? how does revit handle this? ...
+
+---
+
+write a tracker that goes into deep detail so we can plan this out in detail; be precise for each workpackage how we can get there
+
+---
+
+go and build everything step by step from that tracker, and commit and push after each workpackage, and then continue until FULLY done
+
+---
+
+[Image #1] is that correct? it looks weirdly rendered, is taht fine? [Image #2] also the glass is no longer visible in windows it seems to me, do you see that?
+
+---
+
+[Image #1]still looks like this both...
+
+---
+
+[Image #1][Image #2] but now it seems that walls within windows are also rendered such that i can see through the wall, and i think the material selected for something isnt rendered at all...
+
+---
+
+in realistic the material is displayed, but also very poorly (i believe); the window issue is always..
