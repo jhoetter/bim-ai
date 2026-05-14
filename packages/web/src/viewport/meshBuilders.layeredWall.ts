@@ -23,8 +23,14 @@ import type { ViewportPaintBundle } from './materials';
 import { yawForPlanSegment } from './planSegmentOrientation';
 import { addEdges, readToken } from './sceneHelpers';
 import { makeThreeMaterialForKey } from './threeMaterialFactory';
+import {
+  wall3dCleanupFootprintMm,
+  wall3dXJoinCleanupFootprintsMm,
+  wallWith3dJoinDisallowGaps,
+} from './wallJoinDisplay';
 
 type WallElem = Extract<Element, { kind: 'wall' }>;
+type PlanPoint = { xMm: number; yMm: number };
 
 function addCladdingBoardsInline(
   hostMesh: THREE.Mesh,
@@ -95,6 +101,61 @@ function offsetForBasis(basis: WallTypeAssembly['basisLine'], totalThickM: numbe
   }
 }
 
+function shiftedLayerWall(
+  wall: WallElem,
+  normalXMm: number,
+  normalYMm: number,
+  layerCenterOffsetM: number,
+  layerThicknessMm: number,
+): WallElem {
+  const offsetMm = layerCenterOffsetM * 1000;
+  return {
+    ...wall,
+    wallTypeId: undefined,
+    faceMaterialOverrides: undefined,
+    thicknessMm: layerThicknessMm,
+    start: {
+      xMm: wall.start.xMm + normalXMm * offsetMm,
+      yMm: wall.start.yMm + normalYMm * offsetMm,
+    },
+    end: {
+      xMm: wall.end.xMm + normalXMm * offsetMm,
+      yMm: wall.end.yMm + normalYMm * offsetMm,
+    },
+  };
+}
+
+function cleanupFootprintsForLayer(
+  wall: WallElem,
+  elementsById: Record<string, Element> | undefined,
+): PlanPoint[][] | null {
+  const xCleanup = wall3dXJoinCleanupFootprintsMm(wall, elementsById);
+  if (xCleanup) return xCleanup;
+  const endpointCleanup = wall3dCleanupFootprintMm(wall, elementsById);
+  return endpointCleanup ? [endpointCleanup] : null;
+}
+
+function makeLayerFootprintMesh(
+  footprint: PlanPoint[],
+  heightM: number,
+  yBase: number,
+  material: THREE.Material,
+): THREE.Mesh {
+  const first = footprint[0]!;
+  const shape = new THREE.Shape();
+  shape.moveTo(first.xMm / 1000, -first.yMm / 1000);
+  for (let i = 1; i < footprint.length; i += 1) {
+    const point = footprint[i]!;
+    shape.lineTo(point.xMm / 1000, -point.yMm / 1000);
+  }
+  shape.closePath();
+  const geom = new THREE.ExtrudeGeometry(shape, { depth: heightM, bevelEnabled: false });
+  geom.rotateX(-Math.PI / 2);
+  const mesh = new THREE.Mesh(geom, material);
+  mesh.position.set(0, yBase, 0);
+  return mesh;
+}
+
 export function makeLayeredWallMesh(
   wall: WallElem,
   assembly: WallTypeAssembly,
@@ -103,16 +164,17 @@ export function makeLayeredWallMesh(
   elementsById?: Record<string, Element>,
 ): THREE.Group {
   void paint;
-  const sx = wall.start.xMm / 1000;
-  const sz = wall.start.yMm / 1000;
-  const ex = wall.end.xMm / 1000;
-  const ez = wall.end.yMm / 1000;
+  const displayWall = wallWith3dJoinDisallowGaps(wall, elementsById);
+  const sx = displayWall.start.xMm / 1000;
+  const sz = displayWall.start.yMm / 1000;
+  const ex = displayWall.end.xMm / 1000;
+  const ez = displayWall.end.yMm / 1000;
   const dx = ex - sx;
   const dz = ez - sz;
   const len = Math.max(0.001, Math.hypot(dx, dz));
-  const baseOff = (wall.baseConstraintOffsetMm ?? 0) / 1000;
+  const baseOff = (displayWall.baseConstraintOffsetMm ?? 0) / 1000;
   const yBase = elevM + baseOff;
-  const heightM = THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40);
+  const heightM = THREE.MathUtils.clamp(displayWall.heightMm / 1000, 0.25, 40);
   const yaw = yawForPlanSegment(dx, dz);
 
   const totalThickM = assembly.layers.reduce((acc, l) => acc + l.thicknessMm, 0) / 1000;
@@ -124,7 +186,7 @@ export function makeLayeredWallMesh(
   const cz = sz + dz / 2;
 
   const group = new THREE.Group();
-  group.userData.bimPickId = wall.id;
+  group.userData.bimPickId = displayWall.id;
   const exposed = resolveWallAssemblyExposedLayers(assembly);
   group.userData.materialExposure = {
     exteriorMaterialKey: exposed.exterior?.materialKey ?? null,
@@ -157,31 +219,47 @@ export function makeLayeredWallMesh(
       fallbackRoughness: roughnessFor(layer),
       fallbackMetalness: 0,
     });
-    const geom = new THREE.BoxGeometry(len, heightM, thickM);
-    const mesh = new THREE.Mesh(geom, mat);
-    mesh.position.set(px, yBase + heightM / 2, pz);
-    mesh.rotation.y = yaw;
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    mesh.userData.bimPickId = wall.id;
-    mesh.userData.layerName = layer.name;
-    mesh.userData.layerFunction = layer.function;
-    mesh.userData.materialKey = layer.materialKey;
-    mesh.userData.faceExposure =
-      layer === exposed.exterior ? 'exterior' : layer === exposed.interior ? 'interior' : 'cut';
-    addEdges(mesh);
+    const layerWall = shiftedLayerWall(displayWall, nx, nz, layerCenterOff, layer.thicknessMm);
+    const cleanupFootprints = cleanupFootprintsForLayer(layerWall, elementsById);
+    const meshes =
+      cleanupFootprints && cleanupFootprints.length > 0
+        ? cleanupFootprints
+            .filter((footprint) => footprint.length >= 3)
+            .map((footprint) => makeLayerFootprintMesh(footprint, heightM, yBase, mat))
+        : [new THREE.Mesh(new THREE.BoxGeometry(len, heightM, thickM), mat)];
 
-    if (
-      layer.exterior &&
-      layer.function === 'finish' &&
-      (layer.materialKey === 'timber_cladding' || layer.materialKey === 'white_cladding') &&
-      layer.materialKey === exteriorFinishKey
-    ) {
-      const boardColor = layer.materialKey === 'white_cladding' ? '#f4f4f0' : undefined;
-      addCladdingBoardsInline(mesh, len, heightM, thickM, 150, 8, boardColor);
+    for (const mesh of meshes) {
+      if (!cleanupFootprints) {
+        mesh.position.set(px, yBase + heightM / 2, pz);
+        mesh.rotation.y = yaw;
+      } else {
+        mesh.userData.wallJoinCleanup =
+          cleanupFootprints.length > 1 ? 'layered-x' : 'layered-endpoint-t';
+        group.userData.wallJoinCleanup = 'layered';
+      }
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.userData.bimPickId = displayWall.id;
+      mesh.userData.layerName = layer.name;
+      mesh.userData.layerFunction = layer.function;
+      mesh.userData.materialKey = layer.materialKey;
+      mesh.userData.faceExposure =
+        layer === exposed.exterior ? 'exterior' : layer === exposed.interior ? 'interior' : 'cut';
+      addEdges(mesh);
+
+      if (
+        !cleanupFootprints &&
+        layer.exterior &&
+        layer.function === 'finish' &&
+        (layer.materialKey === 'timber_cladding' || layer.materialKey === 'white_cladding') &&
+        layer.materialKey === exteriorFinishKey
+      ) {
+        const boardColor = layer.materialKey === 'white_cladding' ? '#f4f4f0' : undefined;
+        addCladdingBoardsInline(mesh, len, heightM, thickM, 150, 8, boardColor);
+      }
+
+      group.add(mesh);
     }
-
-    group.add(mesh);
     cursorM += thickM;
   }
 

@@ -150,13 +150,26 @@ function wallRectAtJoin(
   if (!direction) return null;
   const normal = wallNormal(direction);
   const halfThickMm = Math.max(25, (wall.thicknessMm ?? 200) / 2);
-  const center = addPoint(joinPoint, normal, wallCenterlineOffsetMm(wall, normal));
+  const center = wallCenterPointAtJoin(wall, joinPoint, direction, normal);
   return [
     addPoint(pointOnLine(center, direction, -alongHalfMm), normal, halfThickMm),
     addPoint(pointOnLine(center, direction, alongHalfMm), normal, halfThickMm),
     addPoint(pointOnLine(center, direction, alongHalfMm), normal, -halfThickMm),
     addPoint(pointOnLine(center, direction, -alongHalfMm), normal, -halfThickMm),
   ];
+}
+
+function wallCenterPointAtJoin(
+  wall: WallElem,
+  joinPoint: PlanPoint,
+  direction: PlanVec,
+  normal: PlanVec,
+): PlanPoint {
+  const centerStart = displayCenterPoint(wall, 'start', normal);
+  const t =
+    (joinPoint.xMm - centerStart.xMm) * direction.x +
+    (joinPoint.yMm - centerStart.yMm) * direction.y;
+  return pointOnLine(centerStart, direction, t);
 }
 
 export function wall3dDisallowedJoinEndpoints(
@@ -303,7 +316,7 @@ export function wall3dCleanupFootprintMm(
       if (!hostDirection) continue;
       const hostNormal = wallNormal(hostDirection);
       const hostHalfThickMm = Math.max(25, (host.thicknessMm ?? wall.thicknessMm ?? 200) / 2);
-      const hostCenter = addPoint(join.point, hostNormal, wallCenterlineOffsetMm(host, hostNormal));
+      const hostCenter = wallCenterPointAtJoin(host, join.point, hostDirection, hostNormal);
       const away = endpoint === 'start' ? direction : { x: -direction.x, y: -direction.y };
       const sideSign = away.x * hostNormal.x + away.y * hostNormal.y >= 0 ? 1 : -1;
       const denom = away.x * hostNormal.x + away.y * hostNormal.y;
@@ -370,7 +383,7 @@ export function wall3dXJoinCleanupFootprintsMm(
     const denom = Math.abs(direction.x * otherNormal.x + direction.y * otherNormal.y);
     if (denom < 1e-4) continue;
     const otherHalfThickMm = Math.max(25, (other.thicknessMm ?? wall.thicknessMm ?? 200) / 2);
-    const joinCenter = addPoint(join.point, normal, wallCenterlineOffsetMm(wall, normal));
+    const joinCenter = wallCenterPointAtJoin(wall, join.point, direction, normal);
     const t =
       (joinCenter.xMm - centerStart.xMm) * direction.x +
       (joinCenter.yMm - centerStart.yMm) * direction.y;
@@ -385,7 +398,7 @@ export function wall3dXJoinCleanupFootprintsMm(
     const ownerId = join.wallIds.slice().sort()[0];
     if (ownerId === wall.id) {
       const rects = join.wallIds
-        .map((id) => walls.find((candidate) => candidate.id === id))
+        .map((id) => (id === wall.id ? wall : walls.find((candidate) => candidate.id === id)))
         .filter((candidate): candidate is WallElem => Boolean(candidate))
         .flatMap((candidate) => {
           const candidateDirection = wallDirection(candidate);

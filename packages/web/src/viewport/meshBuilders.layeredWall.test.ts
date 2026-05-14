@@ -101,6 +101,86 @@ describe('makeLayeredWallMesh — FL-08', () => {
     // Single-thickness wall would be a Mesh
   });
 
+  it('shortens disallowed joined endpoints for typed layered walls', () => {
+    const assembly = getBuiltInWallType('wall.int-partition')!;
+    const east: WallElem = {
+      ...baseWall,
+      id: 'east',
+      wallTypeId: assembly.id,
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 1000, yMm: 0 },
+      joinDisallowEnd: true,
+    };
+    const north: WallElem = {
+      ...baseWall,
+      id: 'north',
+      wallTypeId: assembly.id,
+      start: { xMm: 1000, yMm: 0 },
+      end: { xMm: 1000, yMm: 1000 },
+      joinDisallowStart: true,
+    };
+    const group = makeLayeredWallMesh(east, assembly, 0, null, { east, north });
+
+    const box = new THREE.Box3().setFromObject(group);
+    expect(box.max.x).toBeLessThan(0.95);
+  });
+
+  it('uses topology cleanup footprints for typed layered L joins', () => {
+    const assembly = getBuiltInWallType('wall.int-partition')!;
+    const east: WallElem = {
+      ...baseWall,
+      id: 'east',
+      wallTypeId: assembly.id,
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 1000, yMm: 0 },
+      thicknessMm: 114,
+    };
+    const north: WallElem = {
+      ...baseWall,
+      id: 'north',
+      wallTypeId: assembly.id,
+      start: { xMm: 1000, yMm: 0 },
+      end: { xMm: 1000, yMm: 1000 },
+      thicknessMm: 114,
+    };
+
+    const group = makeLayeredWallMesh(east, assembly, 0, null, { east, north });
+    const meshes = visibleMeshes(group);
+
+    expect(group.userData.wallJoinCleanup).toBe('layered');
+    expect(meshes).toHaveLength(3);
+    expect(meshes.every((mesh) => mesh.userData.wallJoinCleanup === 'layered-endpoint-t')).toBe(
+      true,
+    );
+  });
+
+  it('splits typed layered X joins with the shared topology cleanup', () => {
+    const assembly = getBuiltInWallType('wall.int-partition')!;
+    const eastWest: WallElem = {
+      ...baseWall,
+      id: 'a-east-west',
+      wallTypeId: assembly.id,
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 1000, yMm: 0 },
+      thicknessMm: 114,
+    };
+    const northSouth: WallElem = {
+      ...baseWall,
+      id: 'b-north-south',
+      wallTypeId: assembly.id,
+      start: { xMm: 500, yMm: -500 },
+      end: { xMm: 500, yMm: 500 },
+      thicknessMm: 114,
+    };
+
+    const group = makeLayeredWallMesh(eastWest, assembly, 0, null, { eastWest, northSouth });
+    const meshes = visibleMeshes(group);
+
+    expect(group.userData.wallJoinCleanup).toBe('layered');
+    expect(meshes.length).toBeGreaterThan(3);
+    expect(meshes.some((mesh) => mesh.userData.wallJoinCleanup === 'layered-x')).toBe(true);
+  });
+
   it('makeWallMesh falls back to single-thickness when wallTypeId is unknown', () => {
     const wall: WallElem = { ...baseWall, wallTypeId: 'no-such-id' };
     const obj = makeWallMesh(wall, 0, null);
