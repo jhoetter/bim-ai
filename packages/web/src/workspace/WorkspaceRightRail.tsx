@@ -5,6 +5,10 @@ import { useTranslation } from 'react-i18next';
 import type { Element, LensMode, ParamSchemaEntry } from '@bim-ai/core';
 
 import { buildPlanGridDatumInspectorLine } from './readouts';
+import {
+  buildCoordinationLensReadout,
+  type CoordinationLensReadout,
+} from './coordinationLensReadout';
 import { useBimStore } from '../state/store';
 import type { ViewerRenderStyle } from '../state/storeTypes';
 import {
@@ -733,6 +737,11 @@ export function WorkspaceRightRail({
     writeViewpointLevelVisibility(perViewpointMap);
   }, [activeViewpoint?.id, activeViewpointId, show3dLayers, viewerLevelHidden]);
 
+  const coordinationLensReadout = useMemo(
+    () => (lensMode === 'coordination' ? buildCoordinationLensReadout(elementsById) : null),
+    [elementsById, lensMode],
+  );
+
   if (surface === 'view-context') {
     return (
       <div
@@ -742,6 +751,9 @@ export function WorkspaceRightRail({
       >
         {lensMode !== 'all' ? (
           <LensScopeNotice testId="secondary-lens-scope-notice" lensMode={lensMode} scope="view" />
+        ) : null}
+        {coordinationLensReadout ? (
+          <CoordinationLensPanel readout={coordinationLensReadout} />
         ) : null}
         {mode === '3d' ? (
           <Secondary3dAdapter
@@ -1725,6 +1737,79 @@ function SecondaryToggle({
         data-testid={testId}
       />
     </label>
+  );
+}
+
+function CoordinationLensPanel({ readout }: { readout: CoordinationLensReadout }): JSX.Element {
+  const countRows = [
+    ['Health', readout.modelHealthWarningCount],
+    ['Clashes', readout.clashCount],
+    ['Issues', readout.openIssueCount],
+    ['Links', readout.linkedModelCount],
+    ['Snapshots', readout.reviewArtifactCount],
+  ] as const;
+  const visibleIssues = readout.issues.slice(0, 3);
+  return (
+    <section
+      data-testid="coordination-lens-panel"
+      className="mx-3 mt-3 border-b border-border pb-3 text-sm"
+    >
+      <div
+        className="mb-2 text-[10px] font-semibold uppercase text-muted"
+        style={{ letterSpacing: '0.08em', opacity: 0.7 }}
+      >
+        Coordination
+      </div>
+      <div className="grid grid-cols-5 gap-1">
+        {countRows.map(([label, value]) => (
+          <div
+            key={label}
+            className="min-w-0 rounded border border-border bg-surface-strong px-1.5 py-1"
+          >
+            <div className="truncate text-[10px] text-muted">{label}</div>
+            <div className="text-sm font-semibold text-foreground">{value}</div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 grid gap-2">
+        <div className="rounded border border-border bg-surface px-2 py-1.5">
+          <div className="text-[10px] uppercase text-muted" style={{ letterSpacing: '0.08em' }}>
+            Required schedules
+          </div>
+          <div className="mt-1 flex flex-wrap gap-1">
+            {readout.requiredSchedules.map((name) => (
+              <span
+                key={name}
+                className="rounded border border-border bg-surface-strong px-1.5 py-0.5 text-[10px] text-foreground"
+              >
+                {name}
+              </span>
+            ))}
+          </div>
+        </div>
+        {visibleIssues.length > 0 ? (
+          <div className="rounded border border-border bg-surface px-2 py-1.5">
+            <div className="text-[10px] uppercase text-muted" style={{ letterSpacing: '0.08em' }}>
+              Open ownership
+            </div>
+            <div className="mt-1 grid gap-1">
+              {visibleIssues.map((issue) => (
+                <div key={issue.id} className="min-w-0">
+                  <div className="truncate text-xs font-medium text-foreground">{issue.title}</div>
+                  <div className="flex gap-1 text-[10px] text-muted">
+                    <span>{issue.severity}</span>
+                    <span aria-hidden="true">/</span>
+                    <span>{issue.responsibleDiscipline}</span>
+                    <span aria-hidden="true">/</span>
+                    <span>{issue.status}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </section>
   );
 }
 
