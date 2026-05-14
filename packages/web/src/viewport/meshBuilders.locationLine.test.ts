@@ -65,6 +65,53 @@ describe('makeWallMesh — locationLine offset', () => {
     expect(mesh.position.y).toBeCloseTo(0.5 + 2.8 / 2, 3);
   });
 
+  it('hosted door and window are anchored to the wall base offset', () => {
+    const wall: WallElem = { ...baseWall, baseConstraintOffsetMm: 500 };
+    const door: Extract<Element, { kind: 'door' }> = {
+      kind: 'door',
+      id: 'door-1',
+      name: 'Door',
+      wallId: wall.id,
+      alongT: 0.5,
+      widthMm: 900,
+    };
+    const win: Extract<Element, { kind: 'window' }> = {
+      kind: 'window',
+      id: 'window-1',
+      name: 'Window',
+      wallId: wall.id,
+      alongT: 0.5,
+      widthMm: 1200,
+      heightMm: 1500,
+      sillHeightMm: 900,
+    };
+
+    const doorMesh = makeDoorMesh(door, wall, 0, null);
+    const windowMesh = makeWindowMesh(win, wall, 0, null);
+
+    expect(doorMesh.position.y).toBeCloseTo(0.5, 5);
+    expect(windowMesh.position.y).toBeCloseTo(0.5 + 0.9 + 1.5 / 2, 5);
+  });
+
+  it('hosted window vertical placement uses selected family type dimensions', () => {
+    const wall: WallElem = { ...baseWall };
+    const staleInstanceWindow: Extract<Element, { kind: 'window' }> = {
+      kind: 'window',
+      id: 'window-typed',
+      name: 'Typed Window',
+      wallId: wall.id,
+      alongT: 0.5,
+      widthMm: 2400,
+      heightMm: 1500,
+      sillHeightMm: 900,
+      familyTypeId: 'builtin:window:fixed:1500x2000',
+    };
+
+    const windowMesh = makeWindowMesh(staleInstanceWindow, wall, 0, null);
+
+    expect(windowMesh.position.y).toBeCloseTo(0.1 + 2 / 2, 5);
+  });
+
   it('topConstraintLevelId adjusts wall height', () => {
     const topLevel: Extract<Element, { kind: 'level' }> = {
       kind: 'level',

@@ -10,7 +10,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 
-import type { Element, LensMode } from '@bim-ai/core';
+import { parseDimensionInput, type Element, type LensMode } from '@bim-ai/core';
 import type { OrbitViewpointPersistFieldPayload } from './OrbitViewpointPersistedHud';
 
 import { useBimStore, type PlanTool } from './state/store';
@@ -22,7 +22,11 @@ import {
   createCameraRig,
   wheelDelta,
 } from './viewport/cameraRig';
-import { resolveViewportPaintBundle, type ViewportPaintBundle } from './viewport/materials';
+import {
+  resolveViewportPaintBundle,
+  resolveWallSurfaceMaterial,
+  type ViewportPaintBundle,
+} from './viewport/materials';
 import { ViewCube } from './viewport/ViewCube';
 import { applyLinkedGhosting } from './viewport/linkedGhosting';
 import { applyLensGhosting } from './viewport/applyLensGhosting';
@@ -39,7 +43,6 @@ import { type ViewCubePick } from './viewport/viewCubeAlignment';
 import { SectionBox } from './viewport/sectionBox';
 import { WalkController, classifyKey as classifyWalkKey } from './viewport/walkMode';
 import {
-  categoryColorOr,
   readToken,
   readColorToken,
   sunPositionFromAzEl,
@@ -67,8 +70,13 @@ import {
   makeBeamMesh,
   makeCeilingMesh,
   wallPlanOffsetM,
+  wallVerticalSpanM,
 } from './viewport/meshBuilders';
 import { resolveWindowOutline } from './families/geometryFns/windowOutline';
+import {
+  resolveDoorCutDimensions,
+  resolveWindowCutDimensions,
+} from './viewport/hostedOpeningDimensions';
 import {
   elemViewerCategory,
   computeRootBoundingBox,
@@ -125,10 +133,18 @@ import {
 import { buildPlanOverlay3dGroup } from './viewport/planOverlay3d';
 import { shouldRunWallOpeningCsg } from './viewport/wallCsgEligibility';
 import {
+  buildLinePreviewPayload,
+  buildPolygonPreviewPayload,
+  linePreviewToSemanticCommand,
+  polygonPreviewToSemanticCommand,
+  resizeLinePreviewToLength,
   classifyWallDraftProjection,
   isDraftPlaneHitOccluded,
   projectSceneRayToLevelPlaneMm,
   resolve3dDraftLevel,
+  snapDraftPointToGrid,
+  type Authoring3dLinePreviewPayload,
+  type Authoring3dSnapKind,
   type WallDraftProjectionClassification,
   type WallDraftProjectionMode,
 } from './viewport/authoring3d';
@@ -214,6 +230,10 @@ type Authoring3dOverlayState = {
   startScreen?: ScreenPoint;
   currentScreen?: ScreenPoint;
   currentPointMm?: { xMm: number; yMm: number };
+  workPlaneElevationMm?: number;
+  snapKind?: Authoring3dSnapKind;
+  snapScreen?: ScreenPoint;
+  numericInputValue?: string;
   pointsScreen?: ScreenPoint[];
   previewStartScreen?: ScreenPoint;
   previewEndScreen?: ScreenPoint;
@@ -864,14 +884,16 @@ export function Viewport({
       if (data.index) geom.setIndex(new THREE.BufferAttribute(data.index, 1));
 
       const paintNow = paintBundleRef.current;
-      const csgIsWhite =
-        csgMeta?.materialKey === 'white_cladding' || csgMeta?.materialKey === 'white_render';
-      const csgBaseColor = csgIsWhite ? '#f4f4f0' : categoryColorOr(paintNow, 'wall');
+      const csgWallMaterial = resolveWallSurfaceMaterial(
+        csgMeta?.materialKey,
+        paintNow,
+        elementsByIdRef.current,
+      );
       const wallMat = new THREE.MeshStandardMaterial({
-        color: csgBaseColor,
-        roughness: csgIsWhite ? 0.92 : (paintNow?.categories.wall.roughness ?? 0.85),
-        metalness: paintNow?.categories.wall.metalness ?? 0.0,
-        envMapIntensity: csgIsWhite ? 0.08 : 0.65,
+        color: csgWallMaterial.baseColor,
+        roughness: csgWallMaterial.roughness,
+        metalness: csgWallMaterial.metalness,
+        envMapIntensity: csgWallMaterial.envMapIntensity,
       });
 
       const mesh = new THREE.Mesh(geom, wallMat);
@@ -882,10 +904,17 @@ export function Viewport({
       mesh.receiveShadow = true;
       addEdges(mesh);
       applyModelEdgeDisplay(mesh, viewerEdgesRef.current, viewerSilhouetteEdgeWidthRef.current);
-      if (csgMeta?.materialKey === 'timber_cladding')
-        addCladdingBoards(mesh, csgMeta.len, csgMeta.height, csgMeta.thick);
-      else if (csgMeta?.materialKey === 'white_cladding')
-        addCladdingBoards(mesh, csgMeta.len, csgMeta.height, csgMeta.thick, 120, 10, '#f4f4f0');
+      if (csgWallMaterial.claddingBoards) {
+        addCladdingBoards(
+          mesh,
+          csgMeta?.len ?? 1,
+          csgMeta?.height ?? 1,
+          csgMeta?.thick ?? 0.2,
+          csgWallMaterial.claddingBoards.boardWidthMm,
+          csgWallMaterial.claddingBoards.gapMm,
+          csgWallMaterial.claddingBoards.color,
+        );
+      }
       applyClippingPlanesToMeshes(mesh, clippingPlanesRef.current);
 
       if (existing) {
@@ -959,6 +988,8 @@ export function Viewport({
       point: { xMm: number; yMm: number };
       screen: ScreenPoint;
       distanceM: number;
+      snapKind?: Authoring3dSnapKind;
+      snapScreen?: ScreenPoint;
       blocker?: {
         elementId?: string;
         kind?: Element['kind'];
@@ -1400,6 +1431,31 @@ export function Viewport({
       };
     }
 
+    function snapDraftProjectionToActiveWorkPlane(
+      projected: DraftPlaneProjection,
+      levelInfo: { elevationMm: number },
+    ): DraftPlaneProjection {
+      const snapped = snapDraftPointToGrid(projected.point, {
+        gridStepMm: 250,
+        snapMm: 85,
+      });
+      if (snapped.kind === 'level-plane') {
+        return { ...projected, snapKind: 'level-plane', snapScreen: projected.screen };
+      }
+      const screen =
+        projectSemanticPointToScreen(
+          { ...snapped.point, zMm: levelInfo.elevationMm },
+          renderer.domElement.getBoundingClientRect(),
+        ) ?? projected.screen;
+      return {
+        ...projected,
+        point: snapped.point,
+        screen,
+        snapKind: snapped.kind,
+        snapScreen: screen,
+      };
+    }
+
     function flipWallLocationLine(loc: string | null | undefined): string | null | undefined {
       switch (loc) {
         case 'finish-face-exterior':
@@ -1510,6 +1566,23 @@ export function Viewport({
       scene.add(preview);
       wallDraftPreviewGroupRef.current = preview;
       return preview;
+    }
+
+    function dispatchLinePreviewPayload(payload: Authoring3dLinePreviewPayload): void {
+      if (payload.tool === 'stair') {
+        const levels = resolveDraftLevels();
+        const baseIndex = levels.findIndex((level) => level.id === payload.levelId);
+        const topLevel = baseIndex >= 0 ? levels[baseIndex + 1] : undefined;
+        onSemanticCommand?.({
+          ...linePreviewToSemanticCommand(payload),
+          topLevelId: topLevel?.id ?? payload.levelId,
+          widthMm: 1100,
+          riserMm: 175,
+          treadMm: 275,
+        });
+        return;
+      }
+      onSemanticCommand?.(linePreviewToSemanticCommand(payload));
     }
 
     function hostedToolSpec(tool: HostedFamilyTool) {
@@ -1949,6 +2022,7 @@ export function Viewport({
         return true;
       }
       if (!projected) return false;
+      projected = snapDraftProjectionToActiveWorkPlane(projected, levelInfo);
       if (tool === 'room') {
         onSemanticCommand?.({
           type: 'placeRoomAtPoint',
@@ -1978,6 +2052,9 @@ export function Viewport({
             levelName: levelInfo.name,
             currentScreen: projected.screen,
             currentPointMm: projected.point,
+            workPlaneElevationMm: levelInfo.elevationMm,
+            snapKind: projected.snapKind,
+            snapScreen: projected.snapScreen,
             previewHostValid: false,
           });
           return true;
@@ -2001,6 +2078,9 @@ export function Viewport({
             levelName: levelInfo.name,
             currentScreen: projected.screen,
             currentPointMm: projected.point,
+            workPlaneElevationMm: levelInfo.elevationMm,
+            snapKind: projected.snapKind,
+            snapScreen: projected.snapScreen,
             previewHostValid: false,
           });
           return true;
@@ -2014,6 +2094,9 @@ export function Viewport({
               levelName: levelInfo.name,
               currentScreen: projected.screen,
               currentPointMm: projected.point,
+              workPlaneElevationMm: levelInfo.elevationMm,
+              snapKind: projected.snapKind,
+              snapScreen: projected.snapScreen,
               previewHostValid: false,
             });
             return true;
@@ -2093,6 +2176,9 @@ export function Viewport({
             startScreen: projected.screen,
             currentScreen: projected.screen,
             currentPointMm: projected.point,
+            workPlaneElevationMm: levelInfo.elevationMm,
+            snapKind: projected.snapKind,
+            snapScreen: projected.snapScreen,
             wallFlipActive: tool === 'wall' ? wallFlipNextSegment : undefined,
             wallProjectionMode: tool === 'wall' ? wallDraft?.projection.mode : undefined,
             wallAnchorRequired: false,
@@ -2120,7 +2206,12 @@ export function Viewport({
             });
           }
           lineDraftStart = null;
-          setAuthoringOverlay({ tool, phase: 'pick-start', levelName: levelInfo.name });
+          setAuthoringOverlay({
+            tool,
+            phase: 'pick-start',
+            levelName: levelInfo.name,
+            workPlaneElevationMm: levelInfo.elevationMm,
+          });
           return true;
         }
         if (tool === 'wall') {
@@ -2131,17 +2222,21 @@ export function Viewport({
             : runtime.wallLocationLine;
           const actualStart = start;
           const actualEnd = end;
-          const command = {
-            type: 'createWall' as const,
-            id: `wall-3d-${Date.now().toString(36)}-${Math.round(Math.random() * 1_000_000).toString(36)}`,
+          const previewPayload = buildLinePreviewPayload({
+            tool: 'wall',
             levelId,
             start: actualStart,
             end: actualEnd,
-            locationLine: effectiveLocationLine,
-            wallTypeId: runtime.activeWallTypeId ?? undefined,
-            heightMm: runtime.wallDrawHeightMm,
-          };
+            wall: {
+              id: `wall-3d-${Date.now().toString(36)}-${Math.round(Math.random() * 1_000_000).toString(36)}`,
+              locationLine: effectiveLocationLine,
+              wallTypeId: runtime.activeWallTypeId ?? undefined,
+              heightMm: runtime.wallDrawHeightMm,
+            },
+          });
+          const command = linePreviewToSemanticCommand(previewPayload);
           emitWallDebug('wall-commit', {
+            previewPayload,
             command,
             startScreen: lineDraftStart.screen,
             endScreen: lineProjected.screen,
@@ -2162,58 +2257,32 @@ export function Viewport({
           lineDraftStart = null;
           clearWallDraftPreviewGroup();
           wallFlipNextSegment = false;
-          onSemanticCommand?.(command);
+          dispatchLinePreviewPayload(previewPayload);
         } else {
+          const previewPayload = buildLinePreviewPayload({
+            tool: lineDraftStart.tool,
+            levelId,
+            start,
+            end,
+          });
           lineDraftStart = null;
           if (tool === 'beam') {
-            onSemanticCommand?.({
-              type: 'createBeam',
-              levelId,
-              startMm: start,
-              endMm: end,
-            });
+            dispatchLinePreviewPayload(previewPayload);
           } else if (tool === 'stair') {
-            const levels = resolveDraftLevels();
-            const baseIndex = levels.findIndex((level) => level.id === levelId);
-            const topLevel = baseIndex >= 0 ? levels[baseIndex + 1] : undefined;
-            onSemanticCommand?.({
-              type: 'createStair',
-              baseLevelId: levelId,
-              topLevelId: topLevel?.id ?? levelId,
-              runStartMm: start,
-              runEndMm: end,
-              widthMm: 1100,
-              riserMm: 175,
-              treadMm: 275,
-            });
+            dispatchLinePreviewPayload(previewPayload);
           } else if (tool === 'railing') {
-            onSemanticCommand?.({
-              type: 'createRailing',
-              pathMm: [
-                { xMm: start.xMm, yMm: start.yMm },
-                { xMm: end.xMm, yMm: end.yMm },
-              ],
-            });
+            dispatchLinePreviewPayload(previewPayload);
           } else if (tool === 'grid') {
-            onSemanticCommand?.({
-              type: 'createGridLine',
-              levelId,
-              start: { xMm: start.xMm, yMm: start.yMm },
-              end: { xMm: end.xMm, yMm: end.yMm },
-            });
+            dispatchLinePreviewPayload(previewPayload);
           } else if (tool === 'reference-plane') {
-            onSemanticCommand?.({
-              type: 'createReferencePlane',
-              levelId,
-              startMm: { xMm: start.xMm, yMm: start.yMm },
-              endMm: { xMm: end.xMm, yMm: end.yMm },
-            });
+            dispatchLinePreviewPayload(previewPayload);
           }
         }
         setAuthoringOverlay({
           tool,
           phase: 'pick-start',
           levelName: levelInfo.name,
+          workPlaneElevationMm: levelInfo.elevationMm,
           wallFlipActive: tool === 'wall' ? wallFlipNextSegment : undefined,
           wallProjectionMode: undefined,
         });
@@ -2232,6 +2301,10 @@ export function Viewport({
             levelName: levelInfo.name,
             pointsScreen: [projected.screen],
             currentScreen: projected.screen,
+            currentPointMm: projected.point,
+            workPlaneElevationMm: levelInfo.elevationMm,
+            snapKind: projected.snapKind,
+            snapScreen: projected.snapScreen,
           });
           return true;
         }
@@ -2243,32 +2316,45 @@ export function Viewport({
           );
           if (closeDistancePx <= 14) {
             if (tool === 'ceiling') {
-              onSemanticCommand?.({
-                type: 'createCeiling',
-                levelId: polygonDraft.levelId,
-                boundaryMm: polygonDraft.points.map((p) => ({ xMm: p.xMm, yMm: p.yMm })),
-              });
+              onSemanticCommand?.(
+                polygonPreviewToSemanticCommand(
+                  buildPolygonPreviewPayload({
+                    tool: 'ceiling',
+                    levelId: polygonDraft.levelId,
+                    points: polygonDraft.points,
+                  }),
+                ),
+              );
             } else if (tool === 'floor') {
-              onSemanticCommand?.({
-                type: 'createFloor',
-                levelId: polygonDraft.levelId,
-                boundaryMm: polygonDraft.points.map((p) => ({ xMm: p.xMm, yMm: p.yMm })),
-              });
+              onSemanticCommand?.(
+                polygonPreviewToSemanticCommand(
+                  buildPolygonPreviewPayload({
+                    tool: 'floor',
+                    levelId: polygonDraft.levelId,
+                    points: polygonDraft.points,
+                  }),
+                ),
+              );
             } else if (tool === 'roof') {
-              onSemanticCommand?.({
-                type: 'createRoof',
-                referenceLevelId: polygonDraft.levelId,
-                footprintMm: polygonDraft.points.map((p) => ({ xMm: p.xMm, yMm: p.yMm })),
-              });
+              onSemanticCommand?.(
+                polygonPreviewToSemanticCommand(
+                  buildPolygonPreviewPayload({
+                    tool: 'roof',
+                    levelId: polygonDraft.levelId,
+                    points: polygonDraft.points,
+                  }),
+                ),
+              );
             } else if (tool === 'area') {
-              onSemanticCommand?.({
-                type: 'createArea',
-                levelId: polygonDraft.levelId,
-                boundaryMm: polygonDraft.points.map((p) => ({ xMm: p.xMm, yMm: p.yMm })),
-                ruleSet: 'no_rules',
-                areaScheme: 'gross_building',
-                applyAreaRules: true,
-              });
+              onSemanticCommand?.(
+                polygonPreviewToSemanticCommand(
+                  buildPolygonPreviewPayload({
+                    tool: 'area',
+                    levelId: polygonDraft.levelId,
+                    points: polygonDraft.points,
+                  }),
+                ),
+              );
             } else if (tool === 'shaft') {
               const boundaryMm = polygonDraft.points.map((p) => ({ xMm: p.xMm, yMm: p.yMm }));
               const draftLevelId = polygonDraft.levelId;
@@ -2291,6 +2377,7 @@ export function Viewport({
               phase: 'pick-vertex',
               levelName: levelInfo.name,
               pointsScreen: [],
+              workPlaneElevationMm: levelInfo.elevationMm,
             });
             return true;
           }
@@ -2302,6 +2389,10 @@ export function Viewport({
           levelName: levelInfo.name,
           pointsScreen: [...priorPoints, projected.screen],
           currentScreen: projected.screen,
+          currentPointMm: projected.point,
+          workPlaneElevationMm: levelInfo.elevationMm,
+          snapKind: projected.snapKind,
+          snapScreen: projected.snapScreen,
         });
       }
       return true;
@@ -2583,19 +2674,20 @@ export function Viewport({
             );
             return;
           }
-          const projected =
+          let projected =
             directTool === 'wall'
               ? projectPointerToVisibleDraftPlane(ev.clientX, ev.clientY, levelInfo.elevationMm)
               : projectPointerToDraftPlane(ev.clientX, ev.clientY, levelInfo.elevationMm);
           if (projected) {
             if (directTool === 'wall' && projected.blocker && !lineDraftStart) {
+              const blockedProjection = projected;
               setAuthoringOverlay((prev) =>
                 prev?.tool === directTool
                   ? {
                       ...prev,
                       phase: 'pick-start',
                       levelName: levelInfo.name,
-                      currentScreen: projected.screen,
+                      currentScreen: blockedProjection.screen,
                       currentPointMm: undefined,
                       wallProjectionMode: 'plane',
                       wallAnchorRequired: true,
@@ -2609,23 +2701,27 @@ export function Viewport({
               );
               return;
             }
+            const snappedProjection = snapDraftProjectionToActiveWorkPlane(projected, levelInfo);
+            if (!snappedProjection) return;
+            projected = snappedProjection;
+            const activeProjection = projected;
             if (LINE_3D_AUTHORING_TOOLS.has(directTool) && !lineDraftStart) {
-              let currentScreen = projected.screen;
-              let currentPointMm: { xMm: number; yMm: number } | undefined = projected.point;
+              let currentScreen = activeProjection.screen;
+              let currentPointMm: { xMm: number; yMm: number } | undefined = activeProjection.point;
               let wallProjectionMode: WallDraftProjectionMode | undefined;
-              let wallAnchorRequired = false;
+              const wallAnchorRequired = false;
               let wallPlaneUnreadable = false;
-              let wallPlaneOccluded = false;
+              const wallPlaneOccluded = false;
               if (directTool === 'wall') {
                 const wallDraft = createWallDraftScreenBasis(
                   ev.clientX,
                   ev.clientY,
                   levelInfo.elevationMm,
-                  projected,
+                  activeProjection,
                 );
                 wallProjectionMode = wallDraft.projection.mode;
                 if (wallDraft.projection.mode !== 'plane') {
-                  currentScreen = projected.screen;
+                  currentScreen = activeProjection.screen;
                   currentPointMm = undefined;
                   wallPlaneUnreadable = true;
                 }
@@ -2638,6 +2734,9 @@ export function Viewport({
                       levelName: levelInfo.name,
                       currentScreen,
                       currentPointMm,
+                      workPlaneElevationMm: levelInfo.elevationMm,
+                      snapKind: activeProjection.snapKind,
+                      snapScreen: activeProjection.snapScreen,
                       wallProjectionMode,
                       wallAnchorRequired,
                       wallPlaneUnreadable,
@@ -2655,8 +2754,11 @@ export function Viewport({
                       ...prev,
                       phase: 'pick-point',
                       levelName: levelInfo.name,
-                      currentScreen: projected.screen,
-                      currentPointMm: projected.point,
+                      currentScreen: activeProjection.screen,
+                      currentPointMm: activeProjection.point,
+                      workPlaneElevationMm: levelInfo.elevationMm,
+                      snapKind: activeProjection.snapKind,
+                      snapScreen: activeProjection.snapScreen,
                     }
                   : prev,
               );
@@ -2670,8 +2772,11 @@ export function Viewport({
                       ...prev,
                       phase: 'pick-vertex',
                       levelName: levelInfo.name,
-                      currentScreen: projected.screen,
-                      currentPointMm: projected.point,
+                      currentScreen: activeProjection.screen,
+                      currentPointMm: activeProjection.point,
+                      workPlaneElevationMm: levelInfo.elevationMm,
+                      snapKind: activeProjection.snapKind,
+                      snapScreen: activeProjection.snapScreen,
                     }
                   : prev,
               );
@@ -2706,7 +2811,7 @@ export function Viewport({
       ) {
         const rect = renderer.domElement.getBoundingClientRect();
         const levelInfo = resolveDraftLevelInfo();
-        const projected = levelInfo
+        let projected = levelInfo
           ? lineDraftStart.tool === 'wall' && lineDraftStart.wallBasis
             ? pointFromWallDraftScreenBasis(ev.clientX, ev.clientY, lineDraftStart.wallBasis)
             : lineDraftStart.tool === 'wall'
@@ -2715,6 +2820,9 @@ export function Viewport({
           : null;
         if (lineDraftStart.tool === 'wall' && (!projected || projected.blocker || !levelInfo)) {
           clearWallDraftPreviewGroup();
+        }
+        if (projected && levelInfo && !projected.blocker) {
+          projected = snapDraftProjectionToActiveWorkPlane(projected, levelInfo);
         }
         setAuthoringOverlay((prev) =>
           prev?.phase === 'pick-end'
@@ -2753,6 +2861,9 @@ export function Viewport({
                     ...prev,
                     currentScreen: projected.screen,
                     currentPointMm: projected.point,
+                    workPlaneElevationMm: levelInfo.elevationMm,
+                    snapKind: projected.snapKind,
+                    snapScreen: projected.snapScreen,
                     wallFlipActive: wallFlipNextSegment,
                     wallProjectionMode: lineDraftStart.wallProjection?.mode,
                     wallPreviewOutlineScreen: undefined,
@@ -2770,6 +2881,9 @@ export function Viewport({
                     y: ev.clientY - rect.top,
                   },
                   currentPointMm: prev.tool === 'wall' ? undefined : projected?.point,
+                  workPlaneElevationMm: levelInfo?.elevationMm,
+                  snapKind: projected?.snapKind,
+                  snapScreen: projected?.snapScreen,
                   wallPreviewOutlineScreen: undefined,
                   wallPreviewDirectionStartScreen: undefined,
                   wallPreviewDirectionEndScreen: undefined,
@@ -2790,15 +2904,23 @@ export function Viewport({
         polygonDraft.points.length > 0 &&
         authoringOverlayRef.current?.tool === directTool
       ) {
-        const rect = renderer.domElement.getBoundingClientRect();
+        const levelInfo = resolveDraftLevelInfo();
+        const projected = levelInfo
+          ? projectPointerToDraftPlane(ev.clientX, ev.clientY, levelInfo.elevationMm)
+          : null;
+        const snapped =
+          projected && levelInfo
+            ? snapDraftProjectionToActiveWorkPlane(projected, levelInfo)
+            : null;
         setAuthoringOverlay((prev) =>
           prev?.tool === directTool
             ? {
                 ...prev,
-                currentScreen: {
-                  x: ev.clientX - rect.left,
-                  y: ev.clientY - rect.top,
-                },
+                currentScreen: snapped?.screen ?? clientToCanvasScreen(ev.clientX, ev.clientY),
+                currentPointMm: snapped?.point,
+                workPlaneElevationMm: levelInfo?.elevationMm,
+                snapKind: snapped?.snapKind,
+                snapScreen: snapped?.snapScreen,
               }
             : prev,
         );
@@ -2947,6 +3069,89 @@ export function Viewport({
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
         if (target.isContentEditable) return;
       }
+      const activeLineTool = activeDirect3dTool();
+      if (
+        activeLineTool &&
+        LINE_3D_AUTHORING_TOOLS.has(activeLineTool) &&
+        lineDraftStart &&
+        lineDraftStart.tool === activeLineTool
+      ) {
+        if (/^[0-9.'"\s]$/.test(ev.key)) {
+          ev.preventDefault();
+          setAuthoringOverlay((prev) =>
+            prev?.tool === activeLineTool
+              ? {
+                  ...prev,
+                  numericInputValue: `${prev.numericInputValue ?? ''}${ev.key}`,
+                }
+              : prev,
+          );
+          return;
+        }
+        if (ev.key === 'Backspace') {
+          const currentValue = authoringOverlayRef.current?.numericInputValue;
+          if (currentValue) {
+            ev.preventDefault();
+            setAuthoringOverlay((prev) =>
+              prev?.tool === activeLineTool
+                ? { ...prev, numericInputValue: currentValue.slice(0, -1) }
+                : prev,
+            );
+            return;
+          }
+        }
+        const numericInputValue = authoringOverlayRef.current?.numericInputValue;
+        if (ev.key === 'Enter' && numericInputValue) {
+          ev.preventDefault();
+          const overlay = authoringOverlayRef.current;
+          if (!overlay) return;
+          const parsed = parseDimensionInput(numericInputValue);
+          const currentEnd = overlay.currentPointMm;
+          const levelInfo = resolveDraftLevelInfo();
+          if (parsed.ok && currentEnd && levelInfo) {
+            const runtime = useBimStore.getState();
+            const effectiveLocationLine =
+              activeLineTool === 'wall' && wallFlipNextSegment
+                ? flipWallLocationLine(runtime.wallLocationLine)
+                : runtime.wallLocationLine;
+            const basePayload = buildLinePreviewPayload({
+              tool: lineDraftStart.tool,
+              levelId: lineDraftStart.levelId,
+              start: lineDraftStart.point,
+              end: currentEnd,
+              wall:
+                activeLineTool === 'wall'
+                  ? {
+                      id: `wall-3d-${Date.now().toString(36)}-${Math.round(Math.random() * 1_000_000).toString(36)}`,
+                      locationLine: effectiveLocationLine,
+                      wallTypeId: runtime.activeWallTypeId ?? undefined,
+                      heightMm: runtime.wallDrawHeightMm,
+                    }
+                  : undefined,
+            });
+            const resizedPayload = resizeLinePreviewToLength(basePayload, parsed.mm);
+            if (activeLineTool === 'wall') {
+              updateWallDraftPreviewGroup(
+                resizedPayload.start,
+                resizedPayload.end,
+                levelInfo,
+                wallFlipNextSegment,
+              );
+              clearWallDraftPreviewGroup();
+              wallFlipNextSegment = false;
+            }
+            dispatchLinePreviewPayload(resizedPayload);
+            lineDraftStart = null;
+            setAuthoringOverlay({
+              tool: activeLineTool,
+              phase: 'pick-start',
+              levelName: levelInfo.name,
+              workPlaneElevationMm: levelInfo.elevationMm,
+            });
+          }
+          return;
+        }
+      }
       if (ev.key === 'Escape') {
         const tool = activeDirect3dTool();
         if (tool && LINE_3D_AUTHORING_TOOLS.has(tool)) {
@@ -2955,7 +3160,14 @@ export function Viewport({
             wallFlipNextSegment = false;
             clearWallDraftPreviewGroup();
             setAuthoringOverlay((prev) =>
-              prev ? { tool, phase: 'pick-start', levelName: prev.levelName } : prev,
+              prev
+                ? {
+                    tool,
+                    phase: 'pick-start',
+                    levelName: prev.levelName,
+                    workPlaneElevationMm: prev.workPlaneElevationMm,
+                  }
+                : prev,
             );
             ev.preventDefault();
             return;
@@ -3631,9 +3843,10 @@ export function Viewport({
             const dx = e.end.xMm / 1000 - sx;
             const dz = e.end.yMm / 1000 - sz;
             const len = Math.max(0.001, Math.hypot(dx, dz));
-            const height = THREE.MathUtils.clamp(e.heightMm / 1000, 0.25, 40);
+            const { yBase, height } = wallVerticalSpanM(e, elev, curr);
             const thick = THREE.MathUtils.clamp(e.thicknessMm / 1000, 0.05, 2);
             const wallOffset = wallPlanOffsetM(e);
+            const wallHeightMm = height * 1000;
             const retainExisting = retainPendingCsgWallIds.has(id);
             const nonce = ++csgNonceRef.current;
             pendingCsgRef.current.set(id, nonce);
@@ -3651,27 +3864,32 @@ export function Viewport({
               height,
               thick,
               wcx: sx + dx / 2 + wallOffset.xM,
-              wcy: elev + height / 2,
+              wcy: yBase + height / 2,
               wcz: sz + dz / 2 + wallOffset.zM,
               yaw: yawForPlanSegment(dx, dz),
-              doors: doors.map((d) => ({
-                widthMm: d.widthMm,
-                alongT: d.alongT,
-                wallHeightMm: e.heightMm,
-              })),
+              doors: doors.map((d) => {
+                const doorDims = resolveDoorCutDimensions(d, curr, wallHeightMm);
+                return {
+                  widthMm: doorDims.widthMm,
+                  heightMm: doorDims.heightMm,
+                  alongT: d.alongT,
+                  wallHeightMm,
+                };
+              }),
               windows: wins.map((w) => {
                 const outlineKind = w.outlineKind ?? 'rectangle';
+                const winDims = resolveWindowCutDimensions(w, curr);
                 let outlinePolygonMm: { xMm: number; yMm: number }[] | undefined = undefined;
                 if (outlineKind !== 'rectangle') {
                   const poly = resolveWindowOutline(w, e, curr);
                   if (poly && poly.length >= 3) outlinePolygonMm = poly;
                 }
                 return {
-                  widthMm: w.widthMm,
-                  heightMm: w.heightMm,
-                  sillHeightMm: w.sillHeightMm,
+                  widthMm: winDims.widthMm,
+                  heightMm: winDims.heightMm,
+                  sillHeightMm: winDims.sillHeightMm,
                   alongT: w.alongT,
-                  wallHeightMm: e.heightMm,
+                  wallHeightMm,
                   ...(outlinePolygonMm ? { outlinePolygonMm } : {}),
                 };
               }),
@@ -3680,7 +3898,7 @@ export function Viewport({
                 alongTEnd: wo.alongTEnd,
                 sillHeightMm: wo.sillHeightMm,
                 headHeightMm: wo.headHeightMm,
-                wallHeightMm: e.heightMm,
+                wallHeightMm,
               })),
             };
             csgWorkerRef.current?.postMessage(job);
@@ -3698,7 +3916,7 @@ export function Viewport({
         case 'door': {
           const wall = curr[(e as DoorElem).wallId] as WallElem | undefined;
           if (!wall) break;
-          obj = makeDoorMesh(e, wall, elevationMForLevel(wall.levelId, curr), paint);
+          obj = makeDoorMesh(e, wall, elevationMForLevel(wall.levelId, curr), paint, curr);
           break;
         }
         case 'window': {
@@ -4660,6 +4878,71 @@ export function Viewport({
             <div className="font-medium text-accent">{overlayTitleInstruction.title}</div>
             <div className="text-muted">{overlayTitleInstruction.instruction}</div>
           </div>
+        </div>
+      ) : null}
+
+      {direct3dAuthoringActive && authoringOverlay?.levelName ? (
+        <div className="pointer-events-none absolute left-3 top-[74px] z-20">
+          <div
+            data-testid="viewport-work-plane-badge"
+            className="rounded border border-accent/40 bg-surface/90 px-2.5 py-1.5 font-mono text-[11px] text-foreground shadow-sm"
+          >
+            <span className="font-semibold text-accent">Work plane</span>
+            <span className="ml-2">{authoringOverlay.levelName}</span>
+            {typeof authoringOverlay.workPlaneElevationMm === 'number' ? (
+              <span className="ml-2 text-muted">
+                {(authoringOverlay.workPlaneElevationMm / 1000).toFixed(2)} m
+              </span>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {direct3dAuthoringActive && authoringOverlay?.snapScreen ? (
+        <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full">
+          <g data-testid="viewport-3d-snap-glyph">
+            <circle
+              cx={authoringOverlay.snapScreen.x}
+              cy={authoringOverlay.snapScreen.y}
+              r="8"
+              fill="var(--color-surface)"
+              stroke="var(--color-accent)"
+              strokeWidth="2"
+              opacity="0.96"
+            />
+            <circle
+              cx={authoringOverlay.snapScreen.x}
+              cy={authoringOverlay.snapScreen.y}
+              r="2.5"
+              fill="var(--color-accent)"
+              opacity="0.96"
+            />
+            <text
+              x={authoringOverlay.snapScreen.x + 12}
+              y={authoringOverlay.snapScreen.y - 10}
+              fontSize="10"
+              fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+              fill="var(--color-accent)"
+            >
+              {authoringOverlay.snapKind === 'grid' ? 'grid snap' : 'level plane'}
+            </text>
+          </g>
+        </svg>
+      ) : null}
+
+      {direct3dAuthoringActive &&
+      authoringOverlay?.numericInputValue &&
+      authoringOverlay.currentScreen ? (
+        <div
+          data-testid="viewport-3d-numeric-input"
+          className="pointer-events-none absolute z-30 rounded border border-accent bg-surface/95 px-2 py-1 font-mono text-[11px] text-accent shadow-sm"
+          style={{
+            left: authoringOverlay.currentScreen.x + 14,
+            top: authoringOverlay.currentScreen.y + 14,
+          }}
+        >
+          {authoringOverlay.numericInputValue}
+          <span className="ml-1 text-muted">mm · Enter</span>
         </div>
       ) : null}
 

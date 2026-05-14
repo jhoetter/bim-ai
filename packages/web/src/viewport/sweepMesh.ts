@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
-import { resolveMaterial, type ViewportPaintBundle } from './materials';
+import { type ViewportPaintBundle } from './materials';
 import { addEdges, categoryColorOr } from './sceneHelpers';
+import { makeThreeMaterialForKey } from './threeMaterialFactory';
 
 function elevationMForLevel(levelId: string, elementsById: Record<string, Element>): number {
   const lvl = elementsById[levelId];
@@ -302,18 +303,13 @@ export function makeSweepMesh(
     return new THREE.Group();
   }
 
-  const matSpec = resolveMaterial(sweep.materialKey ?? null);
-  const color = matSpec?.baseColor ?? categoryColorOr(paint, 'wall');
-  // Picture-frame sweeps with white_render need low env-map so the catalog
-  // colour reads true; otherwise sky reflection makes white frames blend
-  // with the white background.
-  const isRenderOrCladding = matSpec?.category === 'render' || matSpec?.category === 'cladding';
-  const material = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(color),
-    roughness: matSpec?.roughness ?? paint?.categories.wall.roughness ?? 0.7,
-    metalness: matSpec?.metalness ?? 0,
-    envMapIntensity: isRenderOrCladding ? 0.15 : 1.0,
-  });
+  const material = makeThreeMaterialForKey(
+    sweep.materialKey ?? null,
+    categoryColorOr(paint, 'wall'),
+    {
+      fallbackRoughness: paint?.categories.wall.roughness ?? 0.7,
+    },
+  );
 
   const mesh = new THREE.Mesh(geom, material);
   mesh.scale.setScalar(0.001);

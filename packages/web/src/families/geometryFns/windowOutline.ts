@@ -7,6 +7,7 @@
  */
 
 import type { Element, WindowOutlineKind, XY } from '@bim-ai/core';
+import { resolveWindowCutDimensions } from '../../viewport/hostedOpeningDimensions';
 import { roofHeightAtPoint } from '../../viewport/roofHeightSampler';
 
 type WindowElem = Extract<Element, { kind: 'window' }>;
@@ -36,8 +37,9 @@ export function resolveWindowOutline(
   elementsById: Record<string, Element>,
 ): XY[] | null {
   const kind = resolveWindowOutlineKind(win);
-  const w = Math.max(1, win.widthMm);
-  const h = Math.max(1, win.heightMm);
+  const dims = resolveWindowCutDimensions(win, elementsById);
+  const w = Math.max(1, dims.widthMm);
+  const h = Math.max(1, dims.heightMm);
   const hw = w / 2;
 
   switch (kind) {
@@ -97,7 +99,7 @@ export function resolveWindowOutline(
       // outline-space-Y is roof world-Y - (level elev + sill height in m).
       const lvl = elementsById[hostWall.levelId];
       const lvlElevMm = lvl?.kind === 'level' ? (lvl.elevationMm ?? 0) : 0;
-      const sillWorldYmm = lvlElevMm + win.sillHeightMm;
+      const sillWorldYmm = lvlElevMm + dims.sillHeightMm;
       let leftTopMm = leftRoofY_m * 1000 - sillWorldYmm;
       let rightTopMm = rightRoofY_m * 1000 - sillWorldYmm;
       // Clamp the top edges to a sensible non-zero range so a window placed

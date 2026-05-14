@@ -92,24 +92,26 @@ describe('buildSweepGeometry', () => {
 });
 
 describe('makeSweepMesh', () => {
+  const sweepBase: Extract<Element, { kind: 'sweep' }> = {
+    kind: 'sweep',
+    id: 'sw-1',
+    levelId: 'lvl-1',
+    pathMm: [
+      { xMm: 0, yMm: 0, zMm: 0 },
+      { xMm: 1000, yMm: 0, zMm: 0 },
+    ],
+    profileMm: [
+      { uMm: -50, vMm: -25 },
+      { uMm: 50, vMm: -25 },
+      { uMm: 50, vMm: 25 },
+      { uMm: -50, vMm: 25 },
+    ],
+    profilePlane: 'work_plane',
+    materialKey: 'render_white',
+  };
+
   it('produces a mesh scaled mm→m and positioned at level elevation', () => {
-    const sweep: Extract<Element, { kind: 'sweep' }> = {
-      kind: 'sweep',
-      id: 'sw-1',
-      levelId: 'lvl-1',
-      pathMm: [
-        { xMm: 0, yMm: 0, zMm: 0 },
-        { xMm: 1000, yMm: 0, zMm: 0 },
-      ],
-      profileMm: [
-        { uMm: -50, vMm: -25 },
-        { uMm: 50, vMm: -25 },
-        { uMm: 50, vMm: 25 },
-        { uMm: -50, vMm: 25 },
-      ],
-      profilePlane: 'work_plane',
-      materialKey: 'render_white',
-    };
+    const sweep: Extract<Element, { kind: 'sweep' }> = { ...sweepBase };
     const elementsById: Record<string, Element> = {
       'lvl-1': { kind: 'level', id: 'lvl-1', name: 'L1', elevationMm: 3000 },
     };
@@ -118,5 +120,22 @@ describe('makeSweepMesh', () => {
     expect((mesh as THREE.Mesh).scale.x).toBeCloseTo(0.001, 6);
     expect(mesh.position.y).toBeCloseTo(3, 6);
     expect(mesh.userData.bimPickId).toBe('sw-1');
+  });
+
+  it('uses transparent depth-safe material for glass sweeps', () => {
+    const sweep: Extract<Element, { kind: 'sweep' }> = {
+      ...sweepBase,
+      materialKey: 'glass_clear',
+    };
+    const elementsById: Record<string, Element> = {
+      'lvl-1': { kind: 'level', id: 'lvl-1', name: 'L1', elevationMm: 3000 },
+    };
+    const mesh = makeSweepMesh(sweep, elementsById, null) as THREE.Mesh;
+    const mat = mesh.material as THREE.MeshPhysicalMaterial;
+
+    expect(mat).toBeInstanceOf(THREE.MeshPhysicalMaterial);
+    expect(mat.transparent).toBe(true);
+    expect(mat.depthWrite).toBe(false);
+    expect(mat.transmission).toBeGreaterThanOrEqual(0.85);
   });
 });

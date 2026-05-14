@@ -63,6 +63,27 @@ describe('resolveWindowOutline — KRN-12', () => {
     expect(b.maxY).toBeCloseTo(1500, 5);
   });
 
+  it('rectangle uses selected family type dimensions instead of stale instance dimensions', () => {
+    const type: Extract<Element, { kind: 'family_type' }> = {
+      kind: 'family_type',
+      id: 'ft-window',
+      name: 'Typed Window',
+      familyId: 'custom-window',
+      discipline: 'window',
+      parameters: { widthMm: 900, heightMm: 2200, sillMm: 150 },
+    };
+    const poly = resolveWindowOutline(
+      win({ widthMm: 2400, heightMm: 900, sillHeightMm: 900, familyTypeId: type.id }),
+      baseWall,
+      els(type),
+    );
+
+    const b = outlineBoundsMm(poly!);
+    expect(b.minX).toBeCloseTo(-450, 5);
+    expect(b.maxX).toBeCloseTo(450, 5);
+    expect(b.maxY).toBeCloseTo(2200, 5);
+  });
+
   it('arched_top has flat bottom and curved top with > 4 vertices', () => {
     const poly = resolveWindowOutline(win({ outlineKind: 'arched_top' }), baseWall, els());
     expect(poly).not.toBeNull();

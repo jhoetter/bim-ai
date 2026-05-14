@@ -25,6 +25,7 @@ import { roofHeightAtPoint } from './roofHeightSampler';
 import { makeLayeredWallMesh } from './meshBuilders.layeredWall';
 import { makeMultiRunStairMesh } from './meshBuilders.multiRunStair';
 import { localPlanOffsetToWorld, yawForPlanSegment } from './planSegmentOrientation';
+import { resolveWindowCutDimensions } from './hostedOpeningDimensions';
 
 /** Resolve a wall's `wallTypeId` to a renderable assembly. Built-in catalog
  * entries take precedence over user-authored `wall_type` elements. */
@@ -183,6 +184,25 @@ export function wallPlanOffsetM(wall: WallElem): { xM: number; zM: number } {
   };
 }
 
+export function wallBaseElevationM(wall: WallElem, elevM: number): number {
+  return elevM + (wall.baseConstraintOffsetMm ?? 0) / 1000;
+}
+
+export function wallVerticalSpanM(
+  wall: WallElem,
+  elevM: number,
+  elementsById?: Record<string, Element>,
+): { yBase: number; height: number } {
+  const yBase = wallBaseElevationM(wall, elevM);
+  if (wall.topConstraintLevelId && elementsById) {
+    const topLvl = elementsById[wall.topConstraintLevelId];
+    const topElevM = topLvl?.kind === 'level' ? topLvl.elevationMm / 1000 : elevM;
+    const topOff = (wall.topConstraintOffsetMm ?? 0) / 1000;
+    return { yBase, height: THREE.MathUtils.clamp(topElevM + topOff - yBase, 0.25, 40) };
+  }
+  return { yBase, height: THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40) };
+}
+
 function makeCurvedWallMesh(
   wall: WallElem,
   elevM: number,
@@ -253,24 +273,9 @@ function makeCurvedWallMesh(
   }
   shape.closePath();
 
-  const baseOff = (wall.baseConstraintOffsetMm ?? 0) / 1000;
-  const yBase = elevM + baseOff;
-  const height =
-    wall.topConstraintLevelId &&
-    elementsById &&
-    elementsById[wall.topConstraintLevelId]?.kind === 'level'
-      ? THREE.MathUtils.clamp(
-          (elementsById[wall.topConstraintLevelId] as Extract<Element, { kind: 'level' }>)
-            .elevationMm /
-            1000 +
-            (wall.topConstraintOffsetMm ?? 0) / 1000 -
-            yBase,
-          0.25,
-          40,
-        )
-      : THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40);
+  const { yBase, height } = wallVerticalSpanM(wall, elevM, elementsById);
 
-  const wallMatSpec = resolveMaterial(wall.materialKey);
+  const wallMatSpec = resolveMaterial(wall.materialKey, elementsById);
   const isWhite = wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render';
   const wallBaseColor =
     wallMatSpec?.baseColor ?? (isWhite ? '#f4f4f0' : categoryColorOr(paint, 'wall'));
@@ -385,6 +390,11 @@ export function makeFloorSlabMesh(
   const elev = elevationMForLevel(floor.levelId, elementsById);
   const th = THREE.MathUtils.clamp(floor.thicknessMm / 1000, 0.05, 1.8);
   const boundary = floor.boundaryMm ?? [];
+  const floorType = floor.floorTypeId ? elementsById[floor.floorTypeId] : undefined;
+  const floorMatSpec =
+    floorType?.kind === 'floor_type'
+      ? resolveMaterial(floorType.layers[0]?.materialKey, elementsById)
+      : null;
 
   // Build shape in shape-XY (plan X→shape X, plan Y negated→shape Y).
   // After ExtrudeGeometry + rotateX(-π/2): shape X→world X, extrude depth→world Y, −shapeY→world Z.
@@ -415,8 +425,9 @@ export function makeFloorSlabMesh(
   const mesh = new THREE.Mesh(
     geom,
     new THREE.MeshStandardMaterial({
-      color: categoryColorOr(paint, 'floor'),
-      roughness: paint?.categories.floor.roughness ?? 0.9,
+      color: floorMatSpec?.baseColor ?? categoryColorOr(paint, 'floor'),
+      roughness: floorMatSpec?.roughness ?? paint?.categories.floor.roughness ?? 0.9,
+      metalness: floorMatSpec?.metalness ?? 0,
       // Floor slabs are diffuse; sky env-map reflections wash the catalog
       // colour pale-blue. Drop to 0.15 so the warm-tone floors read true.
       envMapIntensity: 0.15,
@@ -1550,7 +1561,7 @@ export function makeRoofMassMesh(
     geom = _dormerCutFn(geom, roof, elementsById, refElev);
   }
 
-  const roofMatSpec = resolveMaterial(roof.materialKey);
+  const roofMatSpec = resolveMaterial(roof.materialKey, elementsById);
   const roofColor =
     roofMatSpec?.baseColor ??
     roof.materialKey ??
@@ -1583,7 +1594,7 @@ export function makeRoofMassMesh(
   addEdges(mesh, 30);
 
   if (isStandingSeamMetalKey(roof.materialKey)) {
-    addStandingSeamPattern(mesh, roof, b, eaveY);
+    addStandingSeamPattern(mesh, roof, b, eaveY, undefined, undefined, elementsById);
   }
   return mesh;
 }
@@ -1812,6 +1823,7 @@ export function addStandingSeamPattern(
   eaveYWorld: number,
   seamSpacingMm = 600,
   seamHeightMm = 25,
+  elementsById?: Record<string, Element>,
 ): void {
   const seamSpacingM = Math.max(0.05, seamSpacingMm / 1000);
   const seamHeightM = THREE.MathUtils.clamp(seamHeightMm / 1000, 0.005, 0.05);
@@ -1824,7 +1836,7 @@ export function addStandingSeamPattern(
   const spanZ = oz1 - oz0;
   if (spanX <= 0 || spanZ <= 0) return;
 
-  const matSpec = resolveMaterial(roof.materialKey);
+  const matSpec = resolveMaterial(roof.materialKey, elementsById);
   const seamColor = matSpec?.baseColor ?? '#3a3d3f';
   const seamMat = new THREE.MeshStandardMaterial({
     color: seamColor,
@@ -2028,7 +2040,7 @@ export function makeSlopedWallMesh(
   // Sloped walls didn't honour the wall's materialKey — used the neutral
   // category default. Resolve catalog material first; drop env-map for
   // cladding / render so the color reads true.
-  const slopedMatSpec = resolveMaterial(wall.materialKey);
+  const slopedMatSpec = resolveMaterial(wall.materialKey, elementsById);
   const slopedIsWhite =
     wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render';
   const slopedColor =
@@ -2160,7 +2172,7 @@ export function makeRecessedWallMesh(
   const yBase = elevM + baseOff;
   const height = THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40);
 
-  const wallMatSpec = resolveMaterial(wall.materialKey);
+  const wallMatSpec = resolveMaterial(wall.materialKey, elementsById);
   const isWhite = wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render';
   const wallBaseColor =
     wallMatSpec?.baseColor ?? (isWhite ? '#f4f4f0' : categoryColorOr(paint, 'wall'));
@@ -2332,21 +2344,11 @@ export function makeWallMesh(
   const len = Math.max(0.001, Math.hypot(dx, dz));
   const thick = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2);
 
-  const baseOff = (wall.baseConstraintOffsetMm ?? 0) / 1000;
-  const yBase = elevM + baseOff;
-  let height: number;
-  if (wall.topConstraintLevelId && elementsById) {
-    const topLvl = elementsById[wall.topConstraintLevelId];
-    const topElevM = topLvl?.kind === 'level' ? topLvl.elevationMm / 1000 : elevM;
-    const topOff = (wall.topConstraintOffsetMm ?? 0) / 1000;
-    height = THREE.MathUtils.clamp(topElevM + topOff - yBase, 0.25, 40);
-  } else {
-    height = THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40);
-  }
+  const { yBase, height } = wallVerticalSpanM(wall, elevM, elementsById);
 
   const wallOffset = wallPlanOffsetM(wall);
 
-  const wallMatSpec = resolveMaterial(wall.materialKey);
+  const wallMatSpec = resolveMaterial(wall.materialKey, elementsById);
   const isWhite = wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render';
   const wallBaseColor =
     wallMatSpec?.baseColor ?? (isWhite ? '#f4f4f0' : categoryColorOr(paint, 'wall'));
@@ -2646,14 +2648,19 @@ export function makeDoorMesh(
   wall: WallElem,
   elevM: number,
   paint: ViewportPaintBundle | null,
+  elementsById?: Record<string, Element>,
 ): THREE.Group {
   const typeEntry = door.familyTypeId ? getTypeById(door.familyTypeId) : undefined;
   const familyDef = typeEntry ? getFamilyById(typeEntry.familyId) : undefined;
-  const group = buildDoorGeometry({ door, wall, elevM, paint, familyDef });
+  const group = buildDoorGeometry({ door, wall, elevM, paint, familyDef, elementsById });
   const { px, pz } = hostedXZ(door, wall);
   const wallOffset = wallPlanOffsetM(wall);
   const off = recessOffsetForOpening(wall, door.alongT);
-  group.position.set(px + wallOffset.xM + off.dx, elevM, pz + wallOffset.zM + off.dz);
+  group.position.set(
+    px + wallOffset.xM + off.dx,
+    wallBaseElevationM(wall, elevM),
+    pz + wallOffset.zM + off.dz,
+  );
   group.rotation.y = wallYaw(wall);
   return group;
 }
@@ -2669,7 +2676,8 @@ export function makeWindowMesh(
   const familyDef = typeEntry ? getFamilyById(typeEntry.familyId) : undefined;
   const group = buildWindowGeometry({ win, wall, elevM, paint, familyDef, elementsById });
   const { px, pz } = hostedXZ(win, wall);
-  const rawSill = Number(win.sillHeightMm);
+  const winDims = resolveWindowCutDimensions(win, elementsById ?? {});
+  const rawSill = Number(winDims.sillHeightMm);
   const sillM = Math.max(0.06, Math.min(rawSill / 1000, (wall.heightMm - 80) / 1000));
   const outlineKind = win.outlineKind ?? 'rectangle';
   // Non-rectangular outlines anchor at sill — group origin sits at sill level
@@ -2677,14 +2685,15 @@ export function makeWindowMesh(
   // centred-on-rect behaviour for backwards compatibility.
   const wallOffset = wallPlanOffsetM(wall);
   const off = recessOffsetForOpening(wall, win.alongT);
+  const yBase = wallBaseElevationM(wall, elevM);
   if (outlineKind !== 'rectangle') {
-    group.position.set(px + wallOffset.xM + off.dx, elevM + sillM, pz + wallOffset.zM + off.dz);
+    group.position.set(px + wallOffset.xM + off.dx, yBase + sillM, pz + wallOffset.zM + off.dz);
   } else {
-    const rawH = Number(win.heightMm);
+    const rawH = Number(winDims.heightMm);
     const outerH = Math.max(0.05, Math.min(rawH / 1000, (wall.heightMm - rawSill - 60) / 1000));
     group.position.set(
       px + wallOffset.xM + off.dx,
-      elevM + sillM + outerH / 2,
+      yBase + sillM + outerH / 2,
       pz + wallOffset.zM + off.dz,
     );
   }
@@ -2951,10 +2960,12 @@ export function makeColumnMesh(
   const heightM = col.heightMm != null ? THREE.MathUtils.clamp(col.heightMm / 1000, 0.25, 40) : 3.0;
   const yBase = elevM + baseOff;
   const geo = new THREE.BoxGeometry(bM, heightM, hM);
+  const matSpec = resolveMaterial(col.materialKey);
   const mat = new THREE.MeshStandardMaterial({
-    color: categoryColorOr(paint, 'wall'),
-    roughness: paint?.categories.wall.roughness ?? 0.8,
-    metalness: paint?.categories.wall.metalness ?? 0,
+    color: matSpec?.baseColor ?? categoryColorOr(paint, 'wall'),
+    roughness: matSpec?.roughness ?? paint?.categories.wall.roughness ?? 0.8,
+    metalness: matSpec?.metalness ?? paint?.categories.wall.metalness ?? 0,
+    envMapIntensity: matSpec ? 0.45 : 1,
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.set(
@@ -2982,10 +2993,12 @@ export function makeBeamMesh(
   const wM = THREE.MathUtils.clamp((beam.widthMm ?? 200) / 1000, 0.05, 1);
   const hM = THREE.MathUtils.clamp((beam.heightMm ?? 400) / 1000, 0.05, 1);
   const geo = new THREE.BoxGeometry(len, hM, wM);
+  const matSpec = resolveMaterial(beam.materialKey);
   const mat = new THREE.MeshStandardMaterial({
-    color: categoryColorOr(paint, 'wall'),
-    roughness: paint?.categories.wall.roughness ?? 0.8,
-    metalness: paint?.categories.wall.metalness ?? 0,
+    color: matSpec?.baseColor ?? categoryColorOr(paint, 'wall'),
+    roughness: matSpec?.roughness ?? paint?.categories.wall.roughness ?? 0.8,
+    metalness: matSpec?.metalness ?? paint?.categories.wall.metalness ?? 0,
+    envMapIntensity: matSpec ? 0.45 : 1,
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.set(sx + dx / 2, elevM - hM / 2, sz + dz / 2);

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { Element, XY } from '@bim-ai/core';
-import type { ViewportPaintBundle } from '../../viewport/materials';
+import { resolveMaterial, type ViewportPaintBundle } from '../../viewport/materials';
+import { resolveWindowCutDimensions } from '../../viewport/hostedOpeningDimensions';
 import { meshFromSweep } from '../sweepGeometry';
 import { resolveParam, type FamilyDefinition, type SketchLine } from '../types';
 import { resolveWindowOutline, resolveWindowOutlineKind } from './windowOutline';
@@ -46,13 +47,14 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
     ? familyDef?.defaultTypes.find((t) => t.id === win.familyTypeId)
     : undefined;
   const tp = typeEntry?.parameters;
+  const resolvedDims = resolveWindowCutDimensions(win, elementsById ?? {});
 
   // Resolve sillMm first so it can inform heightMm clamp
-  const rawSillMm = Number(resolveParam('sillMm', ip, tp, familyDef, win.sillHeightMm));
+  const rawSillMm = Number(resolveParam('sillMm', ip, tp, familyDef, resolvedDims.sillHeightMm));
   const sillMm = THREE.MathUtils.clamp(rawSillMm, 60, wall.heightMm - 80);
 
-  const rawWidthMm = Number(resolveParam('widthMm', ip, tp, familyDef, win.widthMm));
-  const rawHeightMm = Number(resolveParam('heightMm', ip, tp, familyDef, win.heightMm));
+  const rawWidthMm = Number(resolveParam('widthMm', ip, tp, familyDef, resolvedDims.widthMm));
+  const rawHeightMm = Number(resolveParam('heightMm', ip, tp, familyDef, resolvedDims.heightMm));
   const rawDepthMm = Number(resolveParam('frameDepthMm', ip, tp, familyDef, wall.thicknessMm + 20));
   const frameSectMm = Number(resolveParam('frameSectMm', ip, tp, familyDef, 60));
   const glazingAlpha = Number(resolveParam('glazingAlpha', ip, tp, familyDef, 0.35));
@@ -66,11 +68,13 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
   const depth = THREE.MathUtils.clamp(rawDepthMm / 1000, 0.06, 0.5);
   const frameSect = frameSectMm / 1000;
 
-  const frameColor = paint?.categories.window.color ?? FALLBACK_COLOR;
+  const materialSpec = resolveMaterial(win.materialKey);
+  const frameColor = materialSpec?.baseColor ?? paint?.categories.window.color ?? FALLBACK_COLOR;
   const frameMat = new THREE.MeshStandardMaterial({
     color: frameColor,
-    roughness: paint?.categories.window.roughness ?? 0.6,
-    metalness: paint?.categories.window.metalness ?? 0.05,
+    roughness: materialSpec?.roughness ?? paint?.categories.window.roughness ?? 0.6,
+    metalness: materialSpec?.metalness ?? paint?.categories.window.metalness ?? 0.05,
+    envMapIntensity: materialSpec ? 0.45 : 1,
   });
 
   const group = new THREE.Group();

@@ -8,6 +8,7 @@ import * as THREE from 'three';
 
 export type DoorCutParams = {
   widthMm: number;
+  heightMm?: number;
   alongT: number;
   wallHeightMm: number;
 };
@@ -41,7 +42,7 @@ export function doorCutterGeometry(
   wallHeight: number,
   wallThick: number,
 ): { cutW: number; cutH: number; cutD: number; localX: number; localY: number } {
-  const leafH = THREE.MathUtils.clamp((door.wallHeightMm / 1000) * 0.86, 0.6, 2.5);
+  const leafH = THREE.MathUtils.clamp((door.heightMm ?? door.wallHeightMm * 0.86) / 1000, 0.6, 2.5);
   const cutW = THREE.MathUtils.clamp(door.widthMm / 1000, 0.35, 4) + 0.04;
   const cutH = Math.min(leafH + 0.01, wallHeight - 0.01);
   const cutD = wallThick + 0.1;

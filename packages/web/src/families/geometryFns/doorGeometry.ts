@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { Element, DoorOperationType } from '@bim-ai/core';
-import type { ViewportPaintBundle } from '../../viewport/materials';
+import { resolveMaterial, type ViewportPaintBundle } from '../../viewport/materials';
+import { resolveDoorCutDimensions } from '../../viewport/hostedOpeningDimensions';
 import { resolveParam, type FamilyDefinition } from '../types';
 
 export type DoorGeomInput = {
@@ -9,6 +10,7 @@ export type DoorGeomInput = {
   elevM: number;
   paint: ViewportPaintBundle | null;
   familyDef: FamilyDefinition | undefined;
+  elementsById?: Record<string, Element>;
 };
 
 const FALLBACK_COLOR = '#cbd5e1';
@@ -340,17 +342,18 @@ function buildPanelsForOperationType(
 }
 
 export function buildDoorGeometry(input: DoorGeomInput): THREE.Group {
-  const { door, wall, paint, familyDef } = input;
+  const { door, wall, paint, familyDef, elementsById } = input;
 
   const ip = door.overrideParams;
   const typeEntry = door.familyTypeId
     ? familyDef?.defaultTypes.find((t) => t.id === door.familyTypeId)
     : undefined;
   const tp = typeEntry?.parameters;
+  const resolvedDims = resolveDoorCutDimensions(door, elementsById ?? {}, wall.heightMm);
 
-  const leafWidthMm = Number(resolveParam('leafWidthMm', ip, tp, familyDef, door.widthMm));
+  const leafWidthMm = Number(resolveParam('leafWidthMm', ip, tp, familyDef, resolvedDims.widthMm));
   const leafHeightMm = Number(
-    resolveParam('leafHeightMm', ip, tp, familyDef, wall.heightMm * 0.86),
+    resolveParam('leafHeightMm', ip, tp, familyDef, resolvedDims.heightMm),
   );
   const frameDepthMm = Number(resolveParam('frameDepthMm', ip, tp, familyDef, wall.thicknessMm));
   const frameSectMm = Number(resolveParam('frameSectMm', ip, tp, familyDef, 70));
@@ -364,15 +367,19 @@ export function buildDoorGeometry(input: DoorGeomInput): THREE.Group {
     panelThick: panelThickMm / 1000,
   };
 
-  const frameColor = paint?.categories.door.color ?? FALLBACK_COLOR;
+  const materialSpec = resolveMaterial(door.materialKey);
+  const frameColor = materialSpec?.baseColor ?? paint?.categories.door.color ?? FALLBACK_COLOR;
   const frameMat = new THREE.MeshStandardMaterial({
     color: frameColor,
-    roughness: paint?.categories.door.roughness ?? 0.7,
-    metalness: paint?.categories.door.metalness ?? 0.0,
+    roughness: materialSpec?.roughness ?? paint?.categories.door.roughness ?? 0.7,
+    metalness: materialSpec?.metalness ?? paint?.categories.door.metalness ?? 0.0,
+    envMapIntensity: materialSpec ? 0.45 : 1,
   });
   const panelMat = new THREE.MeshStandardMaterial({
     color: frameColor,
-    roughness: paint?.categories.door.roughness ?? 0.7,
+    roughness: materialSpec?.roughness ?? paint?.categories.door.roughness ?? 0.7,
+    metalness: materialSpec?.metalness ?? 0,
+    envMapIntensity: materialSpec ? 0.45 : 1,
   });
 
   const op = resolveDoorOperationType(door);

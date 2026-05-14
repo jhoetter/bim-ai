@@ -3135,12 +3135,6 @@ class MaterialElem(BaseModel):
     kind: Literal["material"] = "material"
     id: str
     name: str
-    source: Literal["builtin", "curated_asset", "project", "family"] | None = None
-    category: str | None = None
-    graphics: dict | None = None
-    appearance: dict | None = None
-    physical: dict | None = None
-    thermal: dict | None = None
     albedo_color: str | None = Field(default=None, alias="albedoColor")
     albedo_map_id: str | None = Field(default=None, alias="albedoMapId")
     normal_map_id: str | None = Field(default=None, alias="normalMapId")

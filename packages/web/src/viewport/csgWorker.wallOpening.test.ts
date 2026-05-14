@@ -142,4 +142,16 @@ describe('wallOpeningCutterGeometry — KRN-04', () => {
     // wall_opening Y is sill-anchored (custom range); door is leaf-height anchored.
     expect(wo.localY).not.toBeCloseTo(dr.localY, 3);
   });
+
+  it('door cutter honors explicit family type height when supplied', () => {
+    const out = doorCutterGeometry(
+      { widthMm: 1800, heightMm: 2100, alongT: 0.5, wallHeightMm: 3200 },
+      wallLen,
+      3.2,
+      wallThick,
+    );
+
+    expect(out.cutW).toBeCloseTo(1.84, 5);
+    expect(out.cutH).toBeCloseTo(2.11, 5);
+  });
 });
