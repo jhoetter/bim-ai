@@ -1,0 +1,33 @@
+i currently can't create walls that are really connected; e.g. there must be an actual gap between the walls (in 3d, in 2d it seems to work); that of course isnt ideal. i need the same snappig points in 3d as in 2d..
+
+---
+
+i still can't close 3 walls into a closed room this way...
+
+---
+
+[Image #1] still cant e.g. place this wall in the screenshot...
+
+---
+
+no, even worse, i cant place a new wall start at another walls end. it got worse even; it should be SNAPPY (i am talking about 3d right now, i think in 2d it already works quite well?)
+
+---
+
+nope, that closing wall is still not possible..
+
+---
+
+we are stuck, i now again even cant connect the first and the second wall...... please, analyze this deeply and then come up with a proper soluton...
+
+---
+
+no, it really doesnt work at all, it is soooo bad - i can't even draw a second wall connected to a first ...
+
+---
+
+still absolutely not good.... sooooo broken. please, what is so problematic about this? analyze and get it right..
+
+---
+
+nice it now works, please commit and push your changes
