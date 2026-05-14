@@ -100,6 +100,65 @@ function joinedEndpointForWall(join: WallConnectivityJoin, wallId: string): Wall
   return join.endpointByWallId[wallId] ?? null;
 }
 
+function pointOnLine(start: PlanPoint, direction: PlanVec, distanceMm: number): PlanPoint {
+  return { xMm: start.xMm + direction.x * distanceMm, yMm: start.yMm + direction.y * distanceMm };
+}
+
+function convexHull(points: PlanPoint[]): PlanPoint[] {
+  const sorted = points
+    .slice()
+    .sort((a, b) => a.xMm - b.xMm || a.yMm - b.yMm)
+    .filter(
+      (point, index, arr) =>
+        index === 0 ||
+        Math.abs(point.xMm - arr[index - 1]!.xMm) > 1e-6 ||
+        Math.abs(point.yMm - arr[index - 1]!.yMm) > 1e-6,
+    );
+  if (sorted.length <= 1) return sorted;
+  const cross = (o: PlanPoint, a: PlanPoint, b: PlanPoint) =>
+    (a.xMm - o.xMm) * (b.yMm - o.yMm) - (a.yMm - o.yMm) * (b.xMm - o.xMm);
+  const lower: PlanPoint[] = [];
+  for (const point of sorted) {
+    while (
+      lower.length >= 2 &&
+      cross(lower[lower.length - 2]!, lower[lower.length - 1]!, point) <= 0
+    )
+      lower.pop();
+    lower.push(point);
+  }
+  const upper: PlanPoint[] = [];
+  for (let i = sorted.length - 1; i >= 0; i -= 1) {
+    const point = sorted[i]!;
+    while (
+      upper.length >= 2 &&
+      cross(upper[upper.length - 2]!, upper[upper.length - 1]!, point) <= 0
+    )
+      upper.pop();
+    upper.push(point);
+  }
+  lower.pop();
+  upper.pop();
+  return lower.concat(upper);
+}
+
+function wallRectAtJoin(
+  wall: WallElem,
+  joinPoint: PlanPoint,
+  alongHalfMm: number,
+): PlanPoint[] | null {
+  const direction = wallDirection(wall);
+  if (!direction) return null;
+  const normal = wallNormal(direction);
+  const halfThickMm = Math.max(25, (wall.thicknessMm ?? 200) / 2);
+  const center = addPoint(joinPoint, normal, wallCenterlineOffsetMm(wall, normal));
+  return [
+    addPoint(pointOnLine(center, direction, -alongHalfMm), normal, halfThickMm),
+    addPoint(pointOnLine(center, direction, alongHalfMm), normal, halfThickMm),
+    addPoint(pointOnLine(center, direction, alongHalfMm), normal, -halfThickMm),
+    addPoint(pointOnLine(center, direction, -alongHalfMm), normal, -halfThickMm),
+  ];
+}
+
 export function wall3dDisallowedJoinEndpoints(
   wall: WallElem,
   elementsById: Record<string, Element> | undefined,
@@ -265,4 +324,121 @@ export function wall3dCleanupFootprintMm(
   }
 
   return changed ? footprint : null;
+}
+
+export function wall3dXJoinCleanupFootprintsMm(
+  wall: WallElem,
+  elementsById: Record<string, Element> | undefined,
+  toleranceMm = WALL_3D_JOIN_CLEANUP_TOLERANCE_MM,
+): PlanPoint[][] | null {
+  if (!elementsById || wall.wallCurve || wall.faceMaterialOverrides?.length) return null;
+  const direction = wallDirection(wall);
+  if (!direction) return null;
+  const normal = wallNormal(direction);
+  const halfThickMm = Math.max(25, (wall.thicknessMm ?? 200) / 2);
+  const centerStart = displayCenterPoint(wall, 'start', normal);
+  const centerEnd = displayCenterPoint(wall, 'end', normal);
+  const lenMm = Math.hypot(centerEnd.xMm - centerStart.xMm, centerEnd.yMm - centerStart.yMm);
+  if (lenMm <= 1) return null;
+
+  const walls = Object.values(elementsById).filter(
+    (entry): entry is WallElem => entry.kind === 'wall' && entry.levelId === wall.levelId,
+  );
+  const joins = collectWallConnectivity(walls.map(wallAsConnectivityWall), { toleranceMm }).filter(
+    (join) =>
+      join.kind === 'x' &&
+      join.wallIds.includes(wall.id) &&
+      joinedEndpointForWall(join, wall.id) == null &&
+      isJoinAllowedForWall(join, wall.id),
+  );
+  if (joins.length === 0) return null;
+
+  const intervals: Array<{ start: number; end: number; join: WallConnectivityJoin }> = [];
+  const caps: PlanPoint[][] = [];
+  for (const join of joins) {
+    const other = walls.find(
+      (candidate) =>
+        candidate.id !== wall.id &&
+        join.wallIds.includes(candidate.id) &&
+        joinedEndpointForWall(join, candidate.id) == null &&
+        isJoinAllowedForWall(join, candidate.id),
+    );
+    if (!other) continue;
+    const otherDirection = wallDirection(other);
+    if (!otherDirection) continue;
+    const otherNormal = wallNormal(otherDirection);
+    const denom = Math.abs(direction.x * otherNormal.x + direction.y * otherNormal.y);
+    if (denom < 1e-4) continue;
+    const otherHalfThickMm = Math.max(25, (other.thicknessMm ?? wall.thicknessMm ?? 200) / 2);
+    const joinCenter = addPoint(join.point, normal, wallCenterlineOffsetMm(wall, normal));
+    const t =
+      (joinCenter.xMm - centerStart.xMm) * direction.x +
+      (joinCenter.yMm - centerStart.yMm) * direction.y;
+    if (t <= 0 || t >= lenMm) continue;
+    const gapHalfMm = Math.min(lenMm / 2, otherHalfThickMm / denom);
+    intervals.push({
+      start: Math.max(0, t - gapHalfMm),
+      end: Math.min(lenMm, t + gapHalfMm),
+      join,
+    });
+
+    const ownerId = join.wallIds.slice().sort()[0];
+    if (ownerId === wall.id) {
+      const rects = join.wallIds
+        .map((id) => walls.find((candidate) => candidate.id === id))
+        .filter((candidate): candidate is WallElem => Boolean(candidate))
+        .flatMap((candidate) => {
+          const candidateDirection = wallDirection(candidate);
+          if (!candidateDirection) return [];
+          const candidateNormal = wallNormal(candidateDirection);
+          const candidateHalfThickMm = Math.max(
+            25,
+            (candidate.thicknessMm ?? wall.thicknessMm ?? 200) / 2,
+          );
+          return wallRectAtJoin(candidate, join.point, candidateHalfThickMm) ?? [];
+        });
+      const cap = convexHull(rects);
+      if (cap.length >= 3) caps.push(cap);
+    }
+  }
+  if (intervals.length === 0) return null;
+
+  intervals.sort((a, b) => a.start - b.start || a.end - b.end);
+  const merged: Array<{ start: number; end: number }> = [];
+  for (const interval of intervals) {
+    const last = merged[merged.length - 1];
+    if (!last || interval.start > last.end) {
+      merged.push({ start: interval.start, end: interval.end });
+    } else {
+      last.end = Math.max(last.end, interval.end);
+    }
+  }
+
+  const footprints: PlanPoint[][] = [];
+  let cursor = 0;
+  for (const interval of merged) {
+    if (interval.start - cursor > 1) {
+      const start = pointOnLine(centerStart, direction, cursor);
+      const end = pointOnLine(centerStart, direction, interval.start);
+      footprints.push([
+        addPoint(start, normal, halfThickMm),
+        addPoint(end, normal, halfThickMm),
+        addPoint(end, normal, -halfThickMm),
+        addPoint(start, normal, -halfThickMm),
+      ]);
+    }
+    cursor = Math.max(cursor, interval.end);
+  }
+  if (lenMm - cursor > 1) {
+    const start = pointOnLine(centerStart, direction, cursor);
+    const end = pointOnLine(centerStart, direction, lenMm);
+    footprints.push([
+      addPoint(start, normal, halfThickMm),
+      addPoint(end, normal, halfThickMm),
+      addPoint(end, normal, -halfThickMm),
+      addPoint(start, normal, -halfThickMm),
+    ]);
+  }
+
+  return footprints.concat(caps);
 }

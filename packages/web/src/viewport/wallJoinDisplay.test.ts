@@ -4,6 +4,7 @@ import type { Element } from '@bim-ai/core';
 import {
   wall3dCleanupFootprintMm,
   wall3dDisallowedJoinEndpoints,
+  wall3dXJoinCleanupFootprintsMm,
   wallWith3dJoinDisallowGaps,
 } from './wallJoinDisplay';
 
@@ -105,5 +106,38 @@ describe('WP-NEXT-42 3D wall join display gaps', () => {
       { xMm: 600, yMm: 100 },
     ]);
     expect(wall3dCleanupFootprintMm(host, elementsById, 5)).toBeNull();
+  });
+
+  it('splits X-intersection walls around the shared crossing and assigns one cleanup cap', () => {
+    const eastWest = wall('east-west', { xMm: 0, yMm: 0 }, { xMm: 1000, yMm: 0 });
+    const northSouth = wall('north-south', { xMm: 500, yMm: -500 }, { xMm: 500, yMm: 500 });
+    const elementsById: Record<string, Element> = {
+      'east-west': eastWest,
+      'north-south': northSouth,
+    };
+
+    const eastWestFootprints = wall3dXJoinCleanupFootprintsMm(eastWest, elementsById, 5);
+    const northSouthFootprints = wall3dXJoinCleanupFootprintsMm(northSouth, elementsById, 5);
+
+    expect(eastWestFootprints).toHaveLength(3);
+    expect(eastWestFootprints?.[0]).toEqual([
+      { xMm: 0, yMm: 100 },
+      { xMm: 400, yMm: 100 },
+      { xMm: 400, yMm: -100 },
+      { xMm: 0, yMm: -100 },
+    ]);
+    expect(eastWestFootprints?.[1]).toEqual([
+      { xMm: 600, yMm: 100 },
+      { xMm: 1000, yMm: 100 },
+      { xMm: 1000, yMm: -100 },
+      { xMm: 600, yMm: -100 },
+    ]);
+    expect(eastWestFootprints?.[2]).toEqual([
+      { xMm: 400, yMm: -100 },
+      { xMm: 600, yMm: -100 },
+      { xMm: 600, yMm: 100 },
+      { xMm: 400, yMm: 100 },
+    ]);
+    expect(northSouthFootprints).toHaveLength(2);
   });
 });

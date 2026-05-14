@@ -249,10 +249,38 @@ describe('makeWallMesh — locationLine offset', () => {
     const mesh = makeWallMesh(south, 0, null, elementsById) as THREE.Mesh;
     const bounds = geometryBounds(mesh);
 
-    expect(mesh.userData.wallJoinCleanup).toBe(true);
+    expect(mesh.userData.wallJoinCleanup).toBe('endpoint-t');
     expect(mesh.position.x).toBeCloseTo(0, 5);
     expect(mesh.position.z).toBeCloseTo(0, 5);
     expect(bounds.min.x).toBeCloseTo(0, 5);
     expect(bounds.max.x).toBeCloseTo(1.1, 5);
+  });
+
+  it('renders X-joined walls as split cleanup groups with a shared cap owner', () => {
+    const eastWest: WallElem = {
+      ...baseWall,
+      id: 'east-west',
+      thicknessMm: 200,
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 1000, yMm: 0 },
+    };
+    const northSouth: WallElem = {
+      ...baseWall,
+      id: 'north-south',
+      thicknessMm: 200,
+      start: { xMm: 500, yMm: -500 },
+      end: { xMm: 500, yMm: 500 },
+    };
+    const elementsById: Record<string, Element> = {
+      'east-west': eastWest,
+      'north-south': northSouth,
+    };
+
+    const group = makeWallMesh(eastWest, 0, null, elementsById) as THREE.Group;
+
+    expect(group.type).toBe('Group');
+    expect(group.userData.wallJoinCleanup).toBe('x');
+    expect(group.children).toHaveLength(3);
+    expect(group.children.every((child) => child.userData.wallJoinCleanup === 'x')).toBe(true);
   });
 });
