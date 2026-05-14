@@ -37,6 +37,7 @@ export function CanvasMount({
   onActivePlanToolChange,
   onNavigateToElement,
   snapSettings,
+  viewOverlayRightInset,
   sheetReviewMode,
   sheetMarkupShape,
   onOpenSectionSourcePlan,
@@ -66,6 +67,7 @@ export function CanvasMount({
   onActivePlanToolChange?: (tool: PlanTool) => void;
   onNavigateToElement?: (elementId: string) => void;
   snapSettings?: SnapSettings;
+  viewOverlayRightInset?: string;
   sheetReviewMode?: SheetReviewMode;
   sheetMarkupShape?: SheetMarkupShape;
   onOpenSectionSourcePlan?: () => void;
@@ -80,6 +82,7 @@ export function CanvasMount({
           onSemanticCommand={onSemanticCommand}
           lensMode={lensMode}
           activePlanTool={activePlanTool}
+          viewOverlayRightInset={viewOverlayRightInset}
         />
       </ErrorBoundary>
     );
@@ -141,6 +144,7 @@ export function CanvasMount({
       onSemanticCommand={onSemanticCommand}
       lensMode={lensMode}
       activePlanTool={activePlanTool}
+      viewOverlayRightInset={viewOverlayRightInset}
     />
   ) : (
     <PlanCanvas

@@ -7,11 +7,18 @@ type PlanCanvasProps = {
   activeLevelResolvedId: string;
   activePlanViewId?: string | null;
 };
+type ViewportProps = {
+  viewOverlayRightInset?: string;
+};
 
 const planCanvasProps: { current: PlanCanvasProps | null } = { current: null };
+const viewportProps: { current: ViewportProps | null } = { current: null };
 
 vi.mock('../../Viewport', () => ({
-  Viewport: () => <div data-testid="stub-viewport" />,
+  Viewport: (props: ViewportProps) => {
+    viewportProps.current = props;
+    return <div data-testid="stub-viewport" />;
+  },
 }));
 
 vi.mock('../../plan/PlanCanvas', () => ({
@@ -29,6 +36,7 @@ vi.mock('../ModeShells', () => ({
 
 afterEach(() => {
   planCanvasProps.current = null;
+  viewportProps.current = null;
   cleanup();
 });
 
@@ -66,6 +74,23 @@ describe('<CanvasMount />', () => {
     expect(planCanvasProps.current).toMatchObject({
       activeLevelResolvedId: 'lvl-ground',
       activePlanViewId: null,
+    });
+  });
+
+  it('passes the pane overlay inset into the 3D viewport', () => {
+    render(
+      <CanvasMount
+        mode="3d"
+        viewerMode="orbit_3d"
+        activeLevelId="lvl-ground"
+        elementsById={{}}
+        onSemanticCommand={() => undefined}
+        viewOverlayRightInset="min(340px, 45%)"
+      />,
+    );
+
+    expect(viewportProps.current).toMatchObject({
+      viewOverlayRightInset: 'min(340px, 45%)',
     });
   });
 });

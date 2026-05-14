@@ -3076,6 +3076,7 @@ export function Workspace(): JSX.Element {
             }}
             onNavigateToElement={openElementById}
             snapSettings={snapSettings}
+            viewOverlayRightInset={paneElementSidebarOpen ? 'min(340px, 45%)' : undefined}
             sheetReviewMode={sheetReviewMode}
             sheetMarkupShape={sheetMarkupShape}
             onOpenSectionSourcePlan={openActiveSectionSourcePlan}

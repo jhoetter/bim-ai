@@ -176,6 +176,8 @@ type Props = {
   lensMode?: LensMode;
   /** Pane-local active authoring command. Falls back to the store default. */
   activePlanTool?: PlanTool;
+  /** Right-side overlay inset reserved by pane chrome, such as the element sidebar. */
+  viewOverlayRightInset?: string;
 };
 
 type DoorElem = Extract<Element, { kind: 'door' }>;
@@ -403,6 +405,7 @@ export function Viewport({
   remoteSelections,
   lensMode,
   activePlanTool,
+  viewOverlayRightInset,
 }: Props) {
   void wsConnected;
   const { t } = useTranslation();
@@ -4938,7 +4941,13 @@ export function Viewport({
         onSelect={handleWallFaceRadialCommand}
         onDismiss={() => setWallFaceRadialMenu(null)}
       />
-      <div className="pointer-events-auto absolute right-6 top-6 z-20">
+      <div
+        className="pointer-events-auto absolute top-6 z-20"
+        data-testid="viewport-viewcube-anchor"
+        style={{
+          right: viewOverlayRightInset ? `calc(${viewOverlayRightInset} + 1.5rem)` : '1.5rem',
+        }}
+      >
         <ViewCube
           currentAzimuth={currentAzimuth}
           currentElevation={currentElevation}
