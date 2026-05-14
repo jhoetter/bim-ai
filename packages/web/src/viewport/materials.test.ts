@@ -353,7 +353,20 @@ describe('MAT-01 — material registry', () => {
       thermal: { conductivityWPerMK: 0.72 },
       hatchPatternId: 'hatch-brick-cut',
     };
-    const elementsById: Record<string, Element> = { [projectMaterial.id]: projectMaterial };
+    const albedoAsset: Extract<Element, { kind: 'image_asset' }> = {
+      kind: 'image_asset',
+      id: 'asset-brick-albedo',
+      filename: 'brick-albedo.png',
+      mimeType: 'image/png',
+      byteSize: 128,
+      contentHash: 'sha256:abc',
+      mapUsageHint: 'albedo',
+      dataUrl: 'data:image/png;base64,abc',
+    };
+    const elementsById: Record<string, Element> = {
+      [projectMaterial.id]: projectMaterial,
+      [albedoAsset.id]: albedoAsset,
+    };
     const resolved = resolveMaterialDefinition(projectMaterial.id, elementsById);
 
     expect(resolved).toMatchObject({
@@ -364,7 +377,7 @@ describe('MAT-01 — material registry', () => {
       baseColor: '#7f3f2d',
       roughness: 0.86,
       metalness: 0.02,
-      textureMapUrl: 'asset-brick-albedo',
+      textureMapUrl: 'data:image/png;base64,abc',
       normalMapUrl: 'asset-brick-normal',
       graphics: {
         shadedColor: '#81422e',

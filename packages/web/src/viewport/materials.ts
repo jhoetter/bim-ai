@@ -10,7 +10,7 @@
  * renderer (jsdom has no WebGL).
  */
 
-import type { Element, MaterialElem } from '@bim-ai/core';
+import type { Element, ImageAssetElem, MaterialElem } from '@bim-ai/core';
 
 export type ElementCategoryToken =
   | 'wall'
@@ -397,6 +397,16 @@ function withDefaultMetadata(spec: MaterialPbrSpec): MaterialPbrSpec {
   };
 }
 
+function resolveImageAssetUrl(
+  assetId: string | null | undefined,
+  elementsById?: MaterialElementLookup,
+): string | undefined {
+  if (!assetId) return undefined;
+  const element = elementsById?.[assetId];
+  if (element?.kind !== 'image_asset') return assetId;
+  return (element as ImageAssetElem).dataUrl ?? assetId;
+}
+
 const MATERIAL_CATEGORY_KINDS = new Set<MaterialCategoryKind>([
   'cladding',
   'render',
@@ -419,7 +429,10 @@ function coerceMaterialCategory(category: string | null | undefined): MaterialCa
     : 'placeholder';
 }
 
-function materialElementToPbrSpec(material: MaterialElem): MaterialPbrSpec {
+function materialElementToPbrSpec(
+  material: MaterialElem,
+  elementsById?: MaterialElementLookup,
+): MaterialPbrSpec {
   const appearance = material.appearance;
   const graphics = material.graphics;
   const physical = material.physical;
@@ -444,12 +457,21 @@ function materialElementToPbrSpec(material: MaterialElem): MaterialPbrSpec {
     baseColor,
     roughness,
     metalness,
-    textureMapUrl: appearance?.albedoMapId ?? material.albedoMapId,
-    normalMapUrl: appearance?.normalMapId ?? material.normalMapId,
-    roughnessMapUrl: appearance?.roughnessMapId ?? undefined,
-    metalnessMapUrl: appearance?.metallicMapId ?? undefined,
-    bumpMapUrl: appearance?.heightMapId ?? material.heightMapId,
-    heightMapUrl: appearance?.heightMapId ?? material.heightMapId,
+    textureMapUrl: resolveImageAssetUrl(
+      appearance?.albedoMapId ?? material.albedoMapId,
+      elementsById,
+    ),
+    normalMapUrl: resolveImageAssetUrl(
+      appearance?.normalMapId ?? material.normalMapId,
+      elementsById,
+    ),
+    roughnessMapUrl: resolveImageAssetUrl(appearance?.roughnessMapId, elementsById),
+    metalnessMapUrl: resolveImageAssetUrl(appearance?.metallicMapId, elementsById),
+    bumpMapUrl: resolveImageAssetUrl(appearance?.heightMapId ?? material.heightMapId, elementsById),
+    heightMapUrl: resolveImageAssetUrl(
+      appearance?.heightMapId ?? material.heightMapId,
+      elementsById,
+    ),
     uvScaleMm: appearance?.uvScaleMm ?? material.uvScaleMm,
     uvRotationDeg: appearance?.uvRotationDeg ?? material.uvRotationDeg,
     uvOffsetMm: appearance?.uvOffsetMm,
@@ -1148,7 +1170,7 @@ export function resolveMaterialDefinition(
 ): MaterialPbrSpec | null {
   if (!materialKey) return null;
   const materialElement = resolveMaterialElement(materialKey, elementsById);
-  if (materialElement) return materialElementToPbrSpec(materialElement);
+  if (materialElement) return materialElementToPbrSpec(materialElement, elementsById);
   const spec = MATERIAL_REGISTRY[materialKey];
   return spec ? withDefaultMetadata(spec) : null;
 }
@@ -1170,7 +1192,7 @@ export function listMaterialDefinitions(elementsById?: MaterialElementLookup): M
   if (elementsById) {
     for (const element of Object.values(elementsById)) {
       if (element.kind === 'material') {
-        const spec = materialElementToPbrSpec(element);
+        const spec = materialElementToPbrSpec(element, elementsById);
         materialMap.set(spec.key, spec);
       }
     }

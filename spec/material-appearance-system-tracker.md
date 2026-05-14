@@ -79,7 +79,7 @@ The material assignment model should support:
 | MAT-GAP-010 | Exports/schedules do not preserve the full material asset contract.           | IFC/GLTF/readback can diverge from viewport behavior.          | P1       | Open        |
 | MAT-GAP-011 | Texture performance and caching strategy is undefined.                        | Real textures could degrade 3D interaction.                    | P1       | Done        |
 | MAT-GAP-012 | Visual QA does not catch material regressions.                                | Textures/bump/patterns can silently disappear.                 | P1       | In Progress |
-| MAT-GAP-013 | Assets and licensing/provenance are not tracked.                              | Curated texture libraries can create legal/product risk.       | P2       | Open        |
+| MAT-GAP-013 | Assets and licensing/provenance are not tracked.                              | Curated texture libraries can create legal/product risk.       | P2       | Done        |
 
 ## Workpackages
 
@@ -569,7 +569,7 @@ Evidence (2026-05-14):
 ### WP-MAT-11 — Asset Storage, Upload, And Provenance
 
 - Priority: `P2`
-- Status: `Open`
+- Status: `Done`
 - Covers: `MAT-GAP-013`
 - Goal: support imported texture assets safely and reproducibly.
 - Source ownership:
@@ -598,6 +598,16 @@ Evidence (2026-05-14):
   - API upload validation tests.
   - Asset resolver tests by id/hash.
   - Browser tests for attaching uploaded maps to material.
+- Evidence:
+  - Added `image_asset` element contracts in core and Python with filename, MIME, size, dimensions, SHA-256 content hash, usage hint, license/source/provenance, and optional data URL.
+  - Added material image upload validation for PNG/JPEG/WebP with a 5 MiB cap and `/api/material-assets/validate-upload`.
+  - Material resolution now maps project image asset ids to data URLs for viewport texture loading when a material element references an uploaded asset.
+  - Material browser appearance tab can filter project image assets by map usage and reports missing project asset ids.
+  - Verification:
+    - `PYTEST_ADDOPTS=--no-cov python -m pytest app/tests/api/test_material_image_assets.py`
+    - `python -m ruff check app/bim_ai/material_image_assets.py app/bim_ai/routes_api.py app/bim_ai/elements.py app/tests/api/test_material_image_assets.py`
+    - `pnpm --filter @bim-ai/web exec vitest run src/viewport/materials.test.ts src/familyEditor/materialImageAssets.test.ts src/familyEditor/MaterialBrowserDialog.test.tsx`
+    - `pnpm --filter @bim-ai/web typecheck`
 
 ### WP-MAT-12 — Export, Import, And Schedule Fidelity
 

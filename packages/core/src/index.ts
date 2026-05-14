@@ -2388,6 +2388,7 @@ export type Element =
   | HatchPatternDef
   | PropertyDefinitionElem
   | MaterialElem
+  | ImageAssetElem
   | DecalElem
   | ImageUnderlayElem
   | NeighborhoodMassElem
@@ -3042,6 +3043,29 @@ export type UpdateKitComponentCmd = {
 // ---------------------------------------------------------------------------
 
 export type MaterialAssetSource = 'builtin' | 'curated_asset' | 'project' | 'family';
+export type ImageAssetMapUsage =
+  | 'albedo'
+  | 'normal'
+  | 'roughness'
+  | 'metalness'
+  | 'height'
+  | 'opacity';
+
+export type ImageAssetElem = {
+  kind: 'image_asset';
+  id: string;
+  filename: string;
+  mimeType: string;
+  byteSize: number;
+  widthPx?: number | null;
+  heightPx?: number | null;
+  contentHash: string;
+  mapUsageHint: ImageAssetMapUsage;
+  source?: string | null;
+  license?: string | null;
+  provenance?: string | null;
+  dataUrl?: string | null;
+};
 
 export type MaterialGraphicsAsset = {
   useRenderAppearance?: boolean;

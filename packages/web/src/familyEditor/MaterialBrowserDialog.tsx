@@ -1,5 +1,5 @@
 import { useState, type JSX } from 'react';
-import type { Element } from '@bim-ai/core';
+import type { Element, ImageAssetMapUsage } from '@bim-ai/core';
 
 import {
   createProjectMaterial,
@@ -11,6 +11,7 @@ import {
   type MaterialPbrSpec,
 } from '../viewport/materials';
 import { MaterialPreview } from './MaterialPreview';
+import { listMaterialImageAssets, missingMaterialImageAssetIds } from './materialImageAssets';
 
 type MaterialTab = 'identity' | 'appearance' | 'graphics' | 'physical' | 'thermal';
 
@@ -350,6 +351,7 @@ export function MaterialBrowserDialog({
             material={selected}
             activeTab={activeTab}
             mode={mode}
+            elementsById={elementsById}
             onPatch={patchSelected}
           />
         </div>
@@ -358,15 +360,51 @@ export function MaterialBrowserDialog({
   );
 }
 
+function ProjectImageAssetSelect({
+  label,
+  usage,
+  value,
+  elementsById,
+  onChange,
+}: {
+  label: string;
+  usage: ImageAssetMapUsage;
+  value: string | undefined;
+  elementsById?: Record<string, Element>;
+  onChange: (assetId: string) => void;
+}): JSX.Element | null {
+  const assets = listMaterialImageAssets(elementsById, usage);
+  if (!assets.length) return null;
+  return (
+    <label className="grid gap-1">
+      <span>{label}</span>
+      <select
+        aria-label={label}
+        value={assets.some((asset) => asset.id === value) ? value : ''}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        <option value="">Manual / none</option>
+        {assets.map((asset) => (
+          <option key={asset.id} value={asset.id}>
+            {asset.filename} · {asset.byteSize} bytes · {asset.license ?? 'unlicensed'}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 function MaterialMetadataPanel({
   material,
   activeTab,
   mode,
+  elementsById,
   onPatch,
 }: {
   material: MaterialPbrSpec | null;
   activeTab: MaterialTab;
   mode: 'material' | 'appearanceAsset';
+  elementsById?: Record<string, Element>;
   onPatch: (patch: Parameters<typeof updateMaterialDefinition>[1]) => void;
 }): JSX.Element {
   if (!material) {
@@ -405,6 +443,30 @@ function MaterialMetadataPanel({
         ) : null}
         {activeTab === 'appearance' ? (
           <div className="space-y-2">
+            {missingMaterialImageAssetIds(
+              [
+                material.textureMapUrl,
+                material.normalMapUrl,
+                material.roughnessMapUrl,
+                material.metalnessMapUrl,
+                material.heightMapUrl,
+              ],
+              elementsById,
+            ).length ? (
+              <div className="rounded border border-amber-400/60 bg-amber-400/10 p-2">
+                Missing project image asset:{' '}
+                {missingMaterialImageAssetIds(
+                  [
+                    material.textureMapUrl,
+                    material.normalMapUrl,
+                    material.roughnessMapUrl,
+                    material.metalnessMapUrl,
+                    material.heightMapUrl,
+                  ],
+                  elementsById,
+                ).join(', ')}
+              </div>
+            ) : null}
             <label className="grid gap-1">
               <span>Appearance color</span>
               <input
@@ -450,6 +512,13 @@ function MaterialMetadataPanel({
                 onChange={(e) => onPatch({ textureMapUrl: e.target.value })}
               />
             </label>
+            <ProjectImageAssetSelect
+              label="Project albedo asset"
+              usage="albedo"
+              value={material.textureMapUrl}
+              elementsById={elementsById}
+              onChange={(assetId) => onPatch({ textureMapUrl: assetId })}
+            />
             <label className="grid gap-1">
               <span>Normal map metadata</span>
               <input
@@ -458,6 +527,13 @@ function MaterialMetadataPanel({
                 onChange={(e) => onPatch({ normalMapUrl: e.target.value })}
               />
             </label>
+            <ProjectImageAssetSelect
+              label="Project normal asset"
+              usage="normal"
+              value={material.normalMapUrl}
+              elementsById={elementsById}
+              onChange={(assetId) => onPatch({ normalMapUrl: assetId })}
+            />
             <label className="grid gap-1">
               <span>Bump map metadata</span>
               <input
@@ -466,6 +542,13 @@ function MaterialMetadataPanel({
                 onChange={(e) => onPatch({ bumpMapUrl: e.target.value })}
               />
             </label>
+            <ProjectImageAssetSelect
+              label="Project height asset"
+              usage="height"
+              value={material.bumpMapUrl ?? material.heightMapUrl}
+              elementsById={elementsById}
+              onChange={(assetId) => onPatch({ bumpMapUrl: assetId, heightMapUrl: assetId })}
+            />
             <label className="grid gap-1">
               <span>Opacity</span>
               <input

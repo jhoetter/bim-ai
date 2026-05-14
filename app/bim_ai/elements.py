@@ -3174,6 +3174,28 @@ class MaterialElem(BaseModel):
     hatch_pattern_id: str | None = Field(default=None, alias="hatchPatternId")
 
 
+ImageAssetMapUsage = Literal["albedo", "normal", "roughness", "metalness", "height", "opacity"]
+
+
+class ImageAssetElem(BaseModel):
+    """MAT-11 — project texture image asset with provenance metadata."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["image_asset"] = "image_asset"
+    id: str
+    filename: str
+    mime_type: str = Field(alias="mimeType")
+    byte_size: int = Field(alias="byteSize", ge=0)
+    width_px: int | None = Field(default=None, alias="widthPx")
+    height_px: int | None = Field(default=None, alias="heightPx")
+    content_hash: str = Field(alias="contentHash")
+    map_usage_hint: ImageAssetMapUsage = Field(alias="mapUsageHint")
+    source: str | None = None
+    license: str | None = None
+    provenance: str | None = None
+    data_url: str | None = Field(default=None, alias="dataUrl")
+
+
 class DecalElem(BaseModel):
     """MAT-V3-01 — 2D image decal hosted on a parent surface."""
 
@@ -3429,6 +3451,7 @@ Element = Annotated[
     | FamilyKitInstanceElem
     | HatchPatternDefElem
     | MaterialElem
+    | ImageAssetElem
     | DecalElem
     | PropertyDefinitionElem
     | ImageUnderlayElem

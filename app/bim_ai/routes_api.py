@@ -47,6 +47,7 @@ from bim_ai.db import SessionMaker, get_session
 from bim_ai.diff_engine import compute_element_diff
 from bim_ai.document import Document
 from bim_ai.elements import Element, LevelElem, LinkModelElem, PlanViewElem
+from bim_ai.material_image_assets import ImageAssetUpload, build_image_asset_from_upload
 from bim_ai.cmd.apply_bundle import apply_bundle as _apply_bundle
 from bim_ai.cmd.types import CommandBundle, BundleResult
 from bim_ai.engine import (
@@ -1636,6 +1637,36 @@ async def upload_dxf_file(
         pass
 
     return {"linkDxfId": link_element_id, "name": display_name}
+
+
+@api_router.post("/material-assets/validate-upload")
+async def validate_material_asset_upload(
+    file: UploadFile,
+    mapUsageHint: str = Form(default="albedo"),
+    source: str | None = Form(default=None),
+    license: str | None = Form(default=None),
+    provenance: str | None = Form(default=None),
+) -> dict[str, Any]:
+    """MAT-11: validate an uploaded texture map and return image_asset metadata."""
+
+    if mapUsageHint not in {"albedo", "normal", "roughness", "metalness", "height", "opacity"}:
+        raise HTTPException(status_code=400, detail="mapUsageHint is not supported")
+    content = await file.read()
+    try:
+        asset = build_image_asset_from_upload(
+            ImageAssetUpload(
+                filename=file.filename or "texture",
+                mime_type=file.content_type or "",
+                data=content,
+                map_usage_hint=mapUsageHint,  # type: ignore[arg-type]
+                source=source,
+                license=license,
+                provenance=provenance,
+            )
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return asset.model_dump(by_alias=True)
 
 
 # ---------------------------------------------------------------------------
