@@ -1,0 +1,113 @@
+{
+  "url": "http://127.0.0.1:2000/#theme=light",
+  "project": "BASeed Library / target-house-3",
+  "navigationCount": 4,
+  "hashOrDocumentNavigationsAfterInitial": 3,
+  "documentNavigationEntries": 1,
+  "consoleErrors": [],
+  "pageErrors": [],
+  "apiResponses": [
+    {
+      "url": "http://127.0.0.1:2000/api/building-presets",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:2000/api/family-catalogs",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:2000/api/bootstrap",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:2000/api/building-presets",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:2000/api/bootstrap",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:2000/api/family-catalogs/bathroom-fixtures",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:2000/api/family-catalogs/living-room-furniture",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:2000/api/family-catalogs/kitchen-fixtures",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:2000/api/family-catalogs/bathroom-fixtures",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:2000/api/family-catalogs/living-room-furniture",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:2000/api/family-catalogs/kitchen-fixtures",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:2000/api/models/9bb9a145-d9ce-5a2f-a748-bb5be3301b30/snapshot?expandLinks=true",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:2000/api/models/9bb9a145-d9ce-5a2f-a748-bb5be3301b30/snapshot?expandLinks=true",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:2000/api/models/9bb9a145-d9ce-5a2f-a748-bb5be3301b30/projection/plan?fallbackLevelId=hf-lvl-ground&globalPresentation=default",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:2000/api/jobs?modelId=9bb9a145-d9ce-5a2f-a748-bb5be3301b30",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:2000/api/models/9bb9a145-d9ce-5a2f-a748-bb5be3301b30/constructability-report?profile=construction_readiness",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:2000/api/models/9bb9a145-d9ce-5a2f-a748-bb5be3301b30/comments",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:2000/api/models/9bb9a145-d9ce-5a2f-a748-bb5be3301b30/activity",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:2000/api/models/9bb9a145-d9ce-5a2f-a748-bb5be3301b30/commands",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:2000/api/models/9bb9a145-d9ce-5a2f-a748-bb5be3301b30/constructability-report?profile=construction_readiness",
+      "status": 200
+    }
+  ],
+  "previewCounts": {
+    "workPlaneBadgeCount": 1,
+    "numericInputText": "3000mm · Enter",
+    "snapGlyphCount": 1
+  },
+  "postCommitCounts": {
+    "numericInputCount": 0,
+    "wallPressed": "true"
+  },
+  "postCancelCounts": {
+    "wallPressed": "false",
+    "selectPressed": "true"
+  },
+  "screenshots": {
+    "planWorkPlane": "01-plan-work-plane-badge.png",
+    "wallPreviewNumericSnap": "02-3d-wall-workplane-snap-numeric-preview.png",
+    "wallCommit": "03-3d-wall-numeric-commit-no-refresh.png",
+    "cancelBefore": "04-3d-wall-before-cancel.png",
+    "cancelAfterSelect": "05-3d-wall-cancel-selects-no-refresh.png"
+  },
+  "planBadgeCountAtEnd": 0,
+  "planBadgeProvenByScreenshot": "01-plan-work-plane-badge.png"
+}

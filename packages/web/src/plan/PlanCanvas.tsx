@@ -5565,7 +5565,9 @@ export function PlanCanvas({
               userSelect: 'none',
             }}
           >
-            {activeLevelElem.name} | {fmtElev(activeLevelElem.elevationMm ?? 0)}
+            <span data-testid="plan-work-plane-badge">
+              Work plane · {activeLevelElem.name} | {fmtElev(activeLevelElem.elevationMm ?? 0)}
+            </span>
           </div>
         </>
       )}

@@ -1,10 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  authoring3dLineLengthMm,
+  buildLinePreviewPayload,
+  buildPolygonPreviewPayload,
   classifyWallDraftProjection,
   isDraftPlaneHitOccluded,
+  linePreviewToSemanticCommand,
+  polygonPreviewToSemanticCommand,
+  previewPayloadMatchesCommand,
   projectSceneRayToLevelPlaneMm,
   resolve3dDraftLevel,
+  resizeLinePreviewToLength,
+  snapDraftPointToGrid,
 } from './authoring3d';
 
 describe('resolve3dDraftLevel', () => {
@@ -96,5 +104,89 @@ describe('isDraftPlaneHitOccluded', () => {
   it('ignores invalid distances instead of blocking placement', () => {
     expect(isDraftPlaneHitOccluded(12, undefined)).toBe(false);
     expect(isDraftPlaneHitOccluded(NaN, 8)).toBe(false);
+  });
+});
+
+describe('WP-NEXT-41 authoring3d shared kernel', () => {
+  it('snaps to the active level grid only inside tolerance', () => {
+    expect(snapDraftPointToGrid({ xMm: 994, yMm: 502 }, { gridStepMm: 500, snapMm: 24 })).toEqual({
+      point: { xMm: 1000, yMm: 500 },
+      kind: 'grid',
+    });
+
+    expect(snapDraftPointToGrid({ xMm: 1080, yMm: 690 }, { gridStepMm: 500, snapMm: 24 })).toEqual({
+      point: { xMm: 1080, yMm: 690 },
+      kind: 'level-plane',
+    });
+  });
+
+  it('uses one line preview payload for 3D wall preview and commit', () => {
+    const payload = buildLinePreviewPayload({
+      tool: 'wall',
+      levelId: 'lvl-ground',
+      start: { xMm: 1000, yMm: 2000 },
+      end: { xMm: 4500, yMm: 2000 },
+      wall: {
+        id: 'wall-preview-command',
+        locationLine: 'centerline',
+        wallTypeId: 'wall-type-01',
+        heightMm: 3000,
+      },
+    });
+
+    const command = linePreviewToSemanticCommand(payload);
+
+    expect(command).toMatchObject({
+      type: 'createWall',
+      levelId: 'lvl-ground',
+      start: payload.start,
+      end: payload.end,
+    });
+    expect(previewPayloadMatchesCommand(payload, command)).toBe(true);
+  });
+
+  it('uses one line preview payload for beam, railing, grid, and reference plane commands', () => {
+    for (const tool of ['beam', 'railing', 'grid', 'reference-plane'] as const) {
+      const payload = buildLinePreviewPayload({
+        tool,
+        levelId: 'lvl-ground',
+        start: { xMm: 0, yMm: 0 },
+        end: { xMm: 1000, yMm: 500 },
+      });
+      const command = linePreviewToSemanticCommand(payload);
+      expect(previewPayloadMatchesCommand(payload, command)).toBe(true);
+    }
+  });
+
+  it('uses one polygon preview payload for 3D floor and roof sketch commits', () => {
+    for (const tool of ['floor', 'roof'] as const) {
+      const payload = buildPolygonPreviewPayload({
+        tool,
+        levelId: 'lvl-ground',
+        points: [
+          { xMm: 0, yMm: 0 },
+          { xMm: 4000, yMm: 0 },
+          { xMm: 4000, yMm: 3000 },
+          { xMm: 0, yMm: 3000 },
+        ],
+      });
+      const command = polygonPreviewToSemanticCommand(payload);
+      expect(previewPayloadMatchesCommand(payload, command)).toBe(true);
+    }
+  });
+
+  it('resizes numeric line input without changing the start point or direction', () => {
+    const payload = buildLinePreviewPayload({
+      tool: 'beam',
+      levelId: 'lvl-ground',
+      start: { xMm: 100, yMm: 200 },
+      end: { xMm: 1100, yMm: 200 },
+    });
+
+    const resized = resizeLinePreviewToLength(payload, 3500);
+
+    expect(resized.start).toEqual(payload.start);
+    expect(resized.end).toEqual({ xMm: 3600, yMm: 200 });
+    expect(authoring3dLineLengthMm(resized)).toBeCloseTo(3500);
   });
 });
