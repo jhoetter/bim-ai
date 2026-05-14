@@ -1,0 +1,132 @@
+[Image #1] the view cube can be further improved, it doesnt look like in revit (see [Image #2], [Image #3]); see also https://mashyo.com/navigate-in-revit/
+
+---
+
+[Image #1] not a qube anymore...
+
+---
+
+[Image #1] still looks like this. please validate by taking screenshots and only think you are done when you can confirm it is really a cube
+
+---
+
+[Image #1] looks super weird though...
+i.e. the texts are weird af
+
+---
+
+[Image #1] no, the labels are still extremely weird!! please compare again against the revit one... don't stop until that is really fixed and great-looking
+
+---
+
+[Image #1] also this isn incorrect (the blue boxes..)
+
+---
+
+[Image #1] dude it is wrong, it doesnt have the blue actions AND it isnt even rotatable ... THAT IS ABSOLUTELY BAD!!!
+
+---
+
+[Image #1] still weird AF, and there seems a big text behind the cube ... this can be done much better. honestly, the first version you had was best, but it had this plane-like shape, not a cube... think this really deeply through, i want revit-like UX here
+
+---
+
+it looks terrible... and it is also terrible to use ...
+
+---
+
+i think rather than overlaying the labels as text, maybe you need to really have them as part of the cube itself or something? i don't know, but it really doesnt look good. also the North south west etc is confusing; really dig again in the docs: https://support.acadgraph.de/help/de-de/65-revit/836-revit-2024-die-versteckten-moglichkeiten-des-viewcubes
+
+please ensure it is working super, super well. it is a crucial navigation element...
+
+---
+
+can you embed the text directly within the cube? there must be some transform element or such which works way better. how does revit do that? ...
+
+---
+
+waaaay better; but the text labels someetimes scale very weirdly in size, don't do that [Image #1]; also please ensure cube and view rotation are in sync, and if i rotate the cube it should stay in sync
+
+---
+
+nope, was better before. please continue diving into the real mechanics of such a cube ...
+
+---
+
+also btw it doesnt work to click on an area on the cube to go there, e.g. clicking on top does nothing, the blue areas dont work, ...
+
+---
+
+but the usage is still really not good; it isnt smooth at all and eveerything;
+
+please study the view cube paper super carefully, then build a tracker with a plan how we can get basically to an identical experience as the viewcube of revit. identical, really.
+
+analyse and specify the tracker for the viewcube now.
+
+---
+
+please implement the view cube to be perfectly as in the tracker; don't stop until it is FULLY implemented..
+
+---
+
+[Image #1] view e.g. if i click on right; it is still angled, not fully frontal from right view; the texts are weirdly scaling and bugging around, it is just weird...
+
+---
+
+NOOOOOO still like this [Image #1]... i dont get it. please really focus, it still is bad. and the label rendering also still sucks
+
+---
+
+if i click on left: [Image #1]. also i still hate the placement of the labels: [Image #2]; can't you burn the texts into the cube so they are not rendered on top?
+
+---
+
+i am still not happy with it; can we have it a three.js cube or anything that will really ace our task? ...
+
+---
+
+[Image #1] it generally works, but it doesnt seem to be clickable, doesnt have all the blue boxes and also is weeeirdly blurry and way too big
+
+---
+
+nope, not working. PLEASE do screenshots of your work, it is not what i asked for... [Image #1]
+
+---
+
+NOOO it still is really, really bad. please take a step back, reconsider - threejs cube looks generally better, but the blue boxes dont work at all, it is not interactive, ...
+
+---
+
+a tiny bit better, but still really bad in interaction, waay to big, ... continue please improvements
+
+---
+
+still.....
+
+---
+
+nope, not working. is there an alternative to three js that could work better? ...
+
+---
+
+but would it then still work with all the interactivity?
+
+---
+
+ok then please implement it in detail ...
+
+---
+
+better, but too little and also still very problematic in picking the right site, clicking on the blue elements, ...
+
+---
+
+it still really sucks sadly. do you see another way? fundamentally? please consider that design is fantastic but also the interactivity works EXTREMELY well...
+
+---
+
+then implement that fully and include screenshotting/playwright so we can ensure it works really, really well..
+
+---
+
+but now we have the label issues again, it is really not good; how can we solve for all those things at once? please implement accordingly; take your time, i am going to sleep, you can build a great solution - and test if it works! you got time, use it..
