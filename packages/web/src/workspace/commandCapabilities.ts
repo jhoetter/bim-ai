@@ -12,12 +12,9 @@ import {
 export const CAPABILITY_VIEW_MODES = [
   'plan',
   '3d',
-  'plan-3d',
   'section',
   'sheet',
   'schedule',
-  'agent',
-  'concept',
 ] as const satisfies readonly WorkspaceMode[];
 
 export type CapabilityViewMode = (typeof CAPABILITY_VIEW_MODES)[number];
@@ -258,18 +255,12 @@ export function formatCapabilityMode(mode: CapabilityViewMode): string {
       return 'Plan';
     case '3d':
       return '3D';
-    case 'plan-3d':
-      return 'Plan + 3D';
     case 'section':
       return 'Section';
     case 'sheet':
       return 'Sheet';
     case 'schedule':
       return 'Schedule';
-    case 'agent':
-      return 'Agent Review';
-    case 'concept':
-      return 'Concept';
   }
 }
 
@@ -336,7 +327,7 @@ function preconditionsForTool(toolId: ToolId): string[] {
 function bridgeModesForTool(
   tool: ToolDefinition,
 ): Partial<Record<CapabilityViewMode, CapabilityViewMode>> | undefined {
-  if (!tool.modes.includes('plan') && !tool.modes.includes('plan-3d')) return undefined;
+  if (!tool.modes.includes('plan')) return undefined;
   const bridge: Partial<Record<CapabilityViewMode, CapabilityViewMode>> = {};
   for (const mode of CAPABILITY_VIEW_MODES) {
     if (!tool.modes.includes(mode)) bridge[mode] = 'plan';
@@ -400,19 +391,6 @@ const NAVIGATION_CAPABILITIES: CommandCapability[] = [
   {
     id: 'navigate.schedule',
     label: 'Go to Schedule',
-    owner: 'cmdPalette/defaultCommands',
-    group: 'navigate',
-    scope: 'universal',
-    intendedModes: [...CAPABILITY_VIEW_MODES],
-    surfaces: ['cmd-k', 'primary-sidebar'],
-    executionSurface: 'global',
-    preconditions: [],
-    status: 'implemented',
-    usabilityScore: 8,
-  },
-  {
-    id: 'navigate.concept',
-    label: 'Go to Concept Board',
     owner: 'cmdPalette/defaultCommands',
     group: 'navigate',
     scope: 'universal',
@@ -507,7 +485,7 @@ const NAVIGATION_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'view',
     scope: 'view',
-    intendedModes: ['plan', 'plan-3d', 'section'],
+    intendedModes: ['plan', 'section'],
     surfaces: ['cmd-k', 'secondary-sidebar'],
     executionSurface: 'secondary-sidebar',
     preconditions: ['active-plan-view'],
@@ -520,7 +498,7 @@ const NAVIGATION_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'view',
     scope: 'view',
-    intendedModes: ['plan', 'plan-3d', 'section'],
+    intendedModes: ['plan', 'section'],
     surfaces: ['cmd-k', 'secondary-sidebar'],
     executionSurface: 'secondary-sidebar',
     preconditions: ['active-plan-view'],
@@ -533,7 +511,7 @@ const NAVIGATION_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'view',
     scope: 'view',
-    intendedModes: ['plan', 'plan-3d', 'section'],
+    intendedModes: ['plan', 'section'],
     surfaces: ['cmd-k', 'secondary-sidebar'],
     executionSurface: 'secondary-sidebar',
     preconditions: ['active-plan-view'],
@@ -1279,7 +1257,7 @@ const VIEW_3D_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'view',
     scope: 'view',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k', 'secondary-sidebar'],
     executionSurface: 'canvas',
     preconditions: [],
@@ -1292,7 +1270,7 @@ const VIEW_3D_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'view',
     scope: 'view',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k', 'secondary-sidebar'],
     executionSurface: 'canvas',
     preconditions: [],
@@ -1305,7 +1283,7 @@ const VIEW_3D_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'view',
     scope: 'view',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k', 'secondary-sidebar'],
     executionSurface: 'canvas',
     preconditions: [],
@@ -1318,7 +1296,7 @@ const VIEW_3D_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'view',
     scope: 'view',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k', 'secondary-sidebar'],
     executionSurface: 'canvas',
     preconditions: [],
@@ -1331,7 +1309,7 @@ const VIEW_3D_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'view',
     scope: 'view',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k', 'secondary-sidebar'],
     executionSurface: 'canvas',
     preconditions: [],
@@ -1344,7 +1322,7 @@ const VIEW_3D_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'view',
     scope: 'view',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k', 'secondary-sidebar'],
     executionSurface: 'canvas',
     preconditions: [],
@@ -1357,7 +1335,7 @@ const VIEW_3D_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'view',
     scope: 'view',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k', 'secondary-sidebar'],
     executionSurface: 'canvas',
     preconditions: ['current-3d-camera-pose'],
@@ -1370,7 +1348,7 @@ const VIEW_3D_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'view',
     scope: 'view',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k', 'secondary-sidebar'],
     executionSurface: 'canvas',
     preconditions: ['active-viewpoint'],
@@ -1383,7 +1361,7 @@ const VIEW_3D_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'view',
     scope: 'view',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k', 'secondary-sidebar'],
     executionSurface: 'canvas',
     preconditions: ['active-viewpoint'],
@@ -1410,7 +1388,7 @@ const VIEW_3D_CAPABILITIES: CommandCapability[] = [
     owner: 'workspace/WorkspaceRightRail',
     group: 'view',
     scope: 'view',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k', 'secondary-sidebar'],
     executionSurface: 'secondary-sidebar',
     preconditions: [],
@@ -1423,7 +1401,7 @@ const VIEW_3D_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'view',
     scope: 'view',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k', 'secondary-sidebar'],
     executionSurface: 'canvas',
     preconditions: [],
@@ -1436,7 +1414,7 @@ const VIEW_3D_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'view',
     scope: 'view',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k', 'secondary-sidebar'],
     executionSurface: 'canvas',
     preconditions: [],
@@ -1449,7 +1427,7 @@ const VIEW_3D_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'view',
     scope: 'view',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k', 'secondary-sidebar'],
     executionSurface: 'canvas',
     preconditions: [],
@@ -1465,7 +1443,7 @@ const EDIT_3D_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'author',
     scope: 'selection',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k', 'ribbon', 'element-sidebar', 'canvas-context'],
     executionSurface: 'ribbon',
     preconditions: ['selected-wall'],
@@ -1478,7 +1456,7 @@ const EDIT_3D_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'author',
     scope: 'selection',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k', 'ribbon', 'element-sidebar', 'canvas-context'],
     executionSurface: 'ribbon',
     preconditions: ['selected-wall'],
@@ -1491,7 +1469,7 @@ const EDIT_3D_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'author',
     scope: 'selection',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k', 'ribbon', 'element-sidebar', 'canvas-context'],
     executionSurface: 'ribbon',
     preconditions: ['selected-wall'],
@@ -1504,7 +1482,7 @@ const EDIT_3D_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'document',
     scope: 'selection',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k', 'element-sidebar', 'canvas-context'],
     executionSurface: 'element-sidebar',
     preconditions: ['selected-wall'],
@@ -1517,7 +1495,7 @@ const EDIT_3D_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'document',
     scope: 'selection',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k', 'element-sidebar', 'canvas-context'],
     executionSurface: 'element-sidebar',
     preconditions: ['selected-wall'],
@@ -1533,7 +1511,7 @@ const VISIBILITY_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'visibility',
     scope: 'view',
-    intendedModes: ['plan', '3d', 'plan-3d', 'section'],
+    intendedModes: ['plan', '3d', 'section'],
     surfaces: ['cmd-k'],
     executionSurface: 'global',
     preconditions: [],
@@ -1548,7 +1526,7 @@ const VISIBILITY_CAPABILITIES: CommandCapability[] = [
     owner: 'workspace/project/VVDialog',
     group: 'visibility',
     scope: 'view',
-    intendedModes: ['plan', 'plan-3d', 'section'],
+    intendedModes: ['plan', 'section'],
     surfaces: ['cmd-k', 'ribbon', 'secondary-sidebar'],
     executionSurface: 'modal',
     preconditions: ['active-plan-view'],
@@ -1563,7 +1541,7 @@ const VISIBILITY_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'visibility',
     scope: 'view',
-    intendedModes: ['plan', 'plan-3d', '3d', 'section'],
+    intendedModes: ['plan', '3d', 'section'],
     surfaces: ['cmd-k', 'secondary-sidebar'],
     executionSurface: 'global',
     preconditions: [],
@@ -1576,7 +1554,7 @@ const VISIBILITY_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'visibility',
     scope: 'view',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k', 'secondary-sidebar'],
     executionSurface: 'canvas',
     preconditions: [],
@@ -1589,7 +1567,7 @@ const VISIBILITY_CAPABILITIES: CommandCapability[] = [
     owner: 'workspace/viewport/Viewport3DLayersPanel',
     group: 'visibility',
     scope: 'view',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k', 'secondary-sidebar'],
     executionSurface: 'secondary-sidebar',
     preconditions: [],
@@ -1602,7 +1580,7 @@ const VISIBILITY_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'visibility',
     scope: 'view',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k'],
     executionSurface: 'canvas',
     preconditions: [],
@@ -1615,7 +1593,7 @@ const VISIBILITY_CAPABILITIES: CommandCapability[] = [
     owner: 'cmdPalette/defaultCommands',
     group: 'visibility',
     scope: 'view',
-    intendedModes: ['3d', 'plan-3d'],
+    intendedModes: ['3d'],
     surfaces: ['cmd-k'],
     executionSurface: 'canvas',
     preconditions: [],

@@ -16,14 +16,14 @@ describe('modeForHotkey — spec §7', () => {
     expect(modeForHotkey('5')).toBe('sheet');
     expect(modeForHotkey('6')).toBe('schedule');
     expect(modeForHotkey('7')).toBeNull();
-    expect(modeForHotkey('8')).toBe('concept');
+    expect(modeForHotkey('8')).toBeNull();
   });
   it('returns null for unrelated keys', () => {
     expect(modeForHotkey('a')).toBeNull();
     expect(modeForHotkey('0')).toBeNull();
   });
-  it('exposes 6 mode hotkeys', () => {
-    expect(MODE_HOTKEYS).toHaveLength(6);
+  it('exposes 5 mode hotkeys', () => {
+    expect(MODE_HOTKEYS).toHaveLength(5);
   });
 });
 

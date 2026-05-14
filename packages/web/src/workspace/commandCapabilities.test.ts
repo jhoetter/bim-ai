@@ -102,25 +102,28 @@ describe('command capability graph', () => {
       .filter((tool) => tool.modes.includes('3d'))
       .map((tool) => tool.id);
 
-    expect(direct3dToolIds).toEqual([
-      'select',
-      'wall',
-      'door',
-      'window',
-      'floor',
-      'roof',
-      'stair',
-      'railing',
-      'room',
-      'area',
-      'grid',
-      'reference-plane',
-      'wall-opening',
-      'shaft',
-      'column',
-      'beam',
-      'ceiling',
-    ]);
+    expect(new Set(direct3dToolIds)).toEqual(
+      new Set([
+        'select',
+        'wall',
+        'door',
+        'window',
+        'floor',
+        'roof',
+        'stair',
+        'railing',
+        'room',
+        'area',
+        'grid',
+        'reference-plane',
+        'wall-opening',
+        'shaft',
+        'column',
+        'beam',
+        'ceiling',
+        'component',
+      ]),
+    );
     expect(evaluateCommandInMode('tool.floor', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('tool.roof', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('tool.stair', '3d')?.state).toBe('enabled');
@@ -136,6 +139,7 @@ describe('command capability graph', () => {
     expect(evaluateCommandInMode('tool.door', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('tool.window', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('tool.wall-opening', '3d')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('tool.component', '3d')?.state).toBe('enabled');
   });
 
   it('marks non-3D plan tools as bridge commands outside their execution surface', () => {
@@ -171,7 +175,6 @@ describe('command capability graph', () => {
     for (const commandId of [
       'navigate.plan',
       'navigate.3d',
-      'navigate.concept',
       'navigate.architecture',
       'navigate.structure',
       'navigate.mep',
@@ -194,7 +197,7 @@ describe('command capability graph', () => {
       'jobs.open',
       'milestone.open',
     ]) {
-      for (const mode of ['plan', '3d', 'sheet', 'schedule', 'concept'] as const) {
+      for (const mode of ['plan', '3d', 'sheet', 'schedule'] as const) {
         expect(evaluateCommandInMode(commandId, mode)?.state).toBe('enabled');
       }
     }

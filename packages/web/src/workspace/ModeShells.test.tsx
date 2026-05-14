@@ -2,13 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import type { Element } from '@bim-ai/core';
-import {
-  AgentReviewModeShell,
-  ConceptModeShell,
-  ScheduleModeShell,
-  SectionModeShell,
-  SheetModeShell,
-} from './ModeShells';
+import { ScheduleModeShell, SectionModeShell, SheetModeShell } from './ModeShells';
 import { useBimStore } from '../state/store';
 import i18n from '../i18n';
 
@@ -330,113 +324,5 @@ describe('ScheduleModeShell — spec §20.6', () => {
         }),
       }),
     );
-  });
-});
-
-describe('ConceptModeShell — CON-V3-01 / MDB-V3-01', () => {
-  it('renders a pre-BIM board with image underlays and concept seeds', () => {
-    const conceptElements = {
-      img: {
-        kind: 'image_underlay',
-        id: 'img',
-        src: '/underlays/sketch.png',
-        rectMm: { xMm: 0, yMm: 0, widthMm: 1000, heightMm: 800 },
-        rotationDeg: 0,
-        opacity: 0.8,
-        lockedScale: true,
-      },
-      seed: {
-        kind: 'concept_seed',
-        id: 'seed',
-        modelId: 'm1',
-        envelopeTokens: [],
-        kernelElementDrafts: [],
-        assumptionsLog: [],
-        status: 'draft',
-        schemaVersion: 'con-v3.0',
-      },
-      board: {
-        kind: 'view_concept_board',
-        id: 'board',
-        name: 'Moodboard',
-        attachments: [
-          {
-            id: 'att-kitchen-wall',
-            kind: 'model_link',
-            rectMm: { xMm: 0, yMm: 0, widthMm: 240, heightMm: 120 },
-            payload: { targetElementId: 'wall-kitchen' },
-            commentThreadIds: ['thread-1'],
-          },
-        ],
-      },
-    } satisfies Record<string, Element>;
-
-    const { getByTestId, getByText } = render(<ConceptModeShell elementsById={conceptElements} />);
-    expect(getByTestId('concept-mode-shell')).toBeTruthy();
-    expect(getByTestId('concept-board-underlay-count').textContent).toBe('1 underlays');
-    expect(getByTestId('concept-board-seed-count').textContent).toBe('1 seeds');
-    expect(getByTestId('concept-board-attachment-count').textContent).toBe('1 attachments');
-    expect(getByText('/underlays/sketch.png')).toBeTruthy();
-    expect(getByText('att-kitchen-wall')).toBeTruthy();
-    expect(getByText('draft')).toBeTruthy();
-  });
-});
-
-describe('AgentReviewModeShell — spec §20.7 / WP-UI-E01–E04', () => {
-  afterEach(() => {
-    useBimStore.setState({ violations: [], buildingPreset: 'residential', selectedId: undefined });
-  });
-
-  it('mounts and shows empty advisory state when no violations', () => {
-    useBimStore.setState({ violations: [] });
-    const { getByTestId, getByText } = renderWithI18n(
-      <AgentReviewModeShell onApplyQuickFix={() => {}} />,
-    );
-    expect(getByTestId('agent-review-mode-shell')).toBeTruthy();
-    expect(getByText(/No advisory items/)).toBeTruthy();
-  });
-
-  it('renders violation cards when violations are present', () => {
-    useBimStore.setState({
-      violations: [
-        {
-          ruleId: 'MIN_DOOR_WIDTH',
-          severity: 'warning',
-          message: 'Door too narrow',
-          blocking: false,
-          elementIds: [],
-        } as never,
-      ],
-    });
-    const { getByText } = renderWithI18n(<AgentReviewModeShell onApplyQuickFix={() => {}} />);
-    expect(getByText('Door too narrow')).toBeTruthy();
-  });
-
-  it('dispatches preset change via onPreset', () => {
-    useBimStore.setState({ buildingPreset: 'residential' });
-    const { getByLabelText } = renderWithI18n(<AgentReviewModeShell onApplyQuickFix={() => {}} />);
-    const select = getByLabelText('Code preset');
-    fireEvent.change(select, { target: { value: 'commercial' } });
-    expect(useBimStore.getState().buildingPreset).toBe('commercial');
-  });
-
-  it('calls onApplyQuickFix when quick-fix button is clicked', () => {
-    const spy = vi.fn();
-    const qfCmd = { type: 'fixDoorWidth', elementId: 'door-1' };
-    useBimStore.setState({
-      violations: [
-        {
-          ruleId: 'MIN_DOOR_WIDTH',
-          severity: 'warning',
-          message: 'Door too narrow',
-          blocking: false,
-          elementIds: [],
-          quickFixCommand: qfCmd,
-        } as never,
-      ],
-    });
-    const { getByText } = renderWithI18n(<AgentReviewModeShell onApplyQuickFix={spy} />);
-    fireEvent.click(getByText('Apply suggested fix'));
-    expect(spy).toHaveBeenCalledWith(qfCmd);
   });
 });

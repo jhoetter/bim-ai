@@ -47,9 +47,7 @@ export type PaletteContext = {
   /** True when the host has a current 3D camera pose that can be saved. */
   canSaveCurrentViewpoint?: boolean;
   /** Navigate through the same tab/mode path as the main workspace chrome. */
-  navigateMode?: (
-    mode: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent' | 'concept',
-  ) => void;
+  navigateMode?: (mode: 'plan' | '3d' | 'section' | 'sheet' | 'schedule') => void;
   /** Start a plan-canvas tool, switching to a valid tool surface if needed. */
   startPlanTool?: (toolId: string) => void;
   /** Set the app theme while keeping host UI state in sync. */

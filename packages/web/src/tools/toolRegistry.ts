@@ -76,7 +76,7 @@ export const MODIFY_TOOL_IDS = new Set<ToolId>([
   'wall-join',
 ]);
 
-export type WorkspaceMode = 'plan' | '3d' | 'section' | 'sheet' | 'schedule' | 'concept';
+export type WorkspaceMode = 'plan' | '3d' | 'section' | 'sheet' | 'schedule';
 
 export interface ToolDefinition {
   id: ToolId;
@@ -100,7 +100,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       icon: 'select',
       hotkey: 'V',
       shortcut: 'V',
-      modes: ['plan', '3d', 'section', 'sheet', 'schedule', 'concept'],
+      modes: ['plan', '3d', 'section', 'sheet', 'schedule'],
       tooltip: t('tools.select.tooltip'),
     },
     query: {
@@ -239,7 +239,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       icon: 'tag',
       hotkey: 'CC',
       shortcut: 'CC',
-      modes: ['plan'],
+      modes: ['plan', '3d'],
       tooltip: 'Place a furniture or component family instance',
     },
     section: {

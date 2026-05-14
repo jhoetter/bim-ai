@@ -43,7 +43,10 @@ describe('tabsPersistence — T-06', () => {
   });
 
   it('clearPersistedTabs removes the entry', () => {
-    persistTabs({ tabs: [{ id: 'agent', kind: 'agent', label: 'Agent' }], activeId: 'agent' });
+    persistTabs({
+      tabs: [{ id: 'plan:l0', kind: 'plan', label: 'Plan · L0' }],
+      activeId: 'plan:l0',
+    });
     expect(readPersistedTabs()).not.toBeNull();
     clearPersistedTabs();
     expect(readPersistedTabs()).toBeNull();
@@ -54,14 +57,32 @@ describe('tabsPersistence — T-06', () => {
       tabs: [
         { id: 'plan:l0', kind: 'plan', targetId: 'l0', label: 'L0' },
         { id: 'plan:l-removed', kind: 'plan', targetId: 'l-removed', label: 'L-removed' },
-        { id: 'agent', kind: 'agent', label: 'Agent' }, // no targetId — always survives
       ],
       activeId: 'plan:l-removed',
     };
     const pruned = pruneTabsAgainstElements(state, { l0: {} });
-    expect(pruned.tabs.map((t) => t.id)).toEqual(['plan:l0', 'agent']);
+    expect(pruned.tabs.map((t) => t.id)).toEqual(['plan:l0']);
     // active was pruned → falls back to the first surviving tab
     expect(pruned.activeId).toBe('plan:l0');
+  });
+
+  it('drops unsupported tab kinds from persisted state and falls back activeId', () => {
+    localStorage.setItem(
+      'bim-ai:tabs-v1',
+      JSON.stringify({
+        v: 1,
+        tabs: [
+          { id: 'legacy:l0', kind: 'legacy', targetId: 'l0', label: 'Legacy · L0' },
+          { id: 'sheet:a1', kind: 'sheet', targetId: 'a1', label: 'Sheet · A1' },
+        ],
+        activeId: 'legacy:l0',
+      }),
+    );
+    const restored = readPersistedTabs();
+    expect(restored).toEqual({
+      tabs: [{ id: 'sheet:a1', kind: 'sheet', targetId: 'a1', label: 'Sheet · A1' }],
+      activeId: 'sheet:a1',
+    });
   });
 
   it('pruneTabsAgainstElements is a no-op when nothing changes', () => {

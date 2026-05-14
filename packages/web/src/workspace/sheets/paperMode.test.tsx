@@ -3,7 +3,7 @@
  *
  * Verifies that the canvas container applies:
  *   - `data-view-type` attribute from the active tab kind
- *   - `background: var(--color-canvas-paper)` for 2D view kinds (plan, section, plan-3d)
+ *   - `background: var(--color-canvas-paper)` for 2D view kinds (plan, section)
  *   - `background: var(--color-background)` for 3D view kinds
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -78,15 +78,6 @@ describe('VIS-V3-08 — paper mode canvas background', () => {
     const { getByTestId } = renderWorkspace();
     const canvasRoot = getByTestId('redesign-canvas-root') as HTMLElement;
     expect(canvasRoot.getAttribute('data-view-type')).toBe('section');
-    expect(canvasRoot.style.background).toBe('var(--color-canvas-paper)');
-  });
-
-  it('applies paper background when active tab kind is plan-3d (split view)', () => {
-    localStorage.setItem(ONBOARDING_KEY, JSON.stringify({ completed: true }));
-    seedTabs('plan-3d');
-    const { getByTestId } = renderWorkspace();
-    const canvasRoot = getByTestId('redesign-canvas-root') as HTMLElement;
-    expect(canvasRoot.getAttribute('data-view-type')).toBe('plan-3d');
     expect(canvasRoot.style.background).toBe('var(--color-canvas-paper)');
   });
 

@@ -7,7 +7,7 @@ const MODEL_ID = '00000000-0000-4000-a000-00000000e2e';
 
 type SeedTab = {
   id: string;
-  kind: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent' | 'concept';
+  kind: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent';
   targetId?: string;
   label: string;
 };
@@ -23,7 +23,6 @@ const VIEW_TABS: SeedTab[] = [
   },
   { id: 'sheet:sheet-a101', kind: 'sheet', targetId: 'sheet-a101', label: 'A101' },
   { id: 'schedule:sched-doors', kind: 'schedule', targetId: 'sched-doors', label: 'Doors' },
-  { id: 'concept', kind: 'concept', label: 'Concept board' },
   { id: 'agent', kind: 'agent', label: 'Advisor review' },
 ];
 
@@ -62,13 +61,6 @@ const VIEW_SCENARIOS = [
     secondaryId: 'secondary-sidebar-schedule',
     canvasId: 'schedule-mode-shell',
     screenshot: '05-schedule.png',
-  },
-  {
-    name: 'concept',
-    tabId: 'concept',
-    secondaryId: 'secondary-sidebar-concept',
-    canvasId: 'concept-mode-shell',
-    screenshot: '06-concept.png',
   },
   {
     name: 'agent',
@@ -413,7 +405,7 @@ async function assertSemanticRegionOwnership(page: Page) {
   await expect(primary).toBeVisible();
   await expect(primary.getByRole('tree', { name: 'Project browser' })).toBeVisible();
   await expect(primary.getByRole('button', { name: /ux wp-10/i })).toBeVisible();
-  for (const group of ['Concept', 'Floor Plans', '3D Views', 'Sections', 'Sheets', 'Schedules']) {
+  for (const group of ['Floor Plans', '3D Views', 'Sections', 'Sheets', 'Schedules']) {
     await expect(primary.getByText(group, { exact: true })).toBeVisible();
   }
   for (const misplaced of ['Browser legend', 'Wall Types', 'Families...', 'Levels']) {

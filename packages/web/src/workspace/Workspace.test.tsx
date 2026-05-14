@@ -178,6 +178,15 @@ describe('<Workspace /> — smoke', () => {
     expect(button.getAttribute('aria-pressed')).toBe('true');
   });
 
+  it('resets to Select on Escape as the global default authoring mode', () => {
+    seedTabs('3d');
+    const { getByTestId } = renderWithProviders(<Workspace />);
+    fireEvent.click(getByTestId('ribbon-command-wall'));
+    expect(useBimStore.getState().planTool).toBe('wall');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(useBimStore.getState().planTool).toBe('select');
+  });
+
   it('renders pane-local tab strips and supports drop-assign + close from pane chrome', () => {
     localStorage.setItem(
       TABS_KEY,
@@ -299,7 +308,6 @@ describe('<Workspace /> — smoke', () => {
     expect(primary.getByTestId('primary-create-sheet')).toBeTruthy();
     expect(primary.getByTestId('primary-create-schedule')).toBeTruthy();
     expect(primary.getByLabelText('Search')).toBeTruthy();
-    expect(primary.getByText('Concept')).toBeTruthy();
     expect(primary.getByText('Floor Plans')).toBeTruthy();
     expect(primary.getByText('3D Views')).toBeTruthy();
     expect(primary.getByText('Sections')).toBeTruthy();
@@ -475,7 +483,6 @@ describe('<Workspace /> — smoke', () => {
       ['section', 'secondary-sidebar-section'],
       ['sheet', 'secondary-sidebar-sheet'],
       ['schedule', 'secondary-sidebar-schedule'],
-      ['concept', 'secondary-sidebar-concept'],
     ];
 
     for (const [kind, testId] of cases) {

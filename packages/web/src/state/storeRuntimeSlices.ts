@@ -238,7 +238,7 @@ export function createWorkspaceUiRuntimeSlice(set: StoreSet): WorkspaceUiRuntime
     ),
     activeWorkspaceId: readLocalStorageChoice<DisciplineWorkspaceId>(
       'bim.activeWorkspace',
-      ['arch', 'struct', 'mep', 'concept'],
+      ['arch', 'struct', 'mep'],
       'arch',
     ),
     roofJoinPreview: null,

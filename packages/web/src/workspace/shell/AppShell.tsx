@@ -124,6 +124,7 @@ export function AppShell({
   const elementSidebarNode = elementSidebar ?? rightRail ?? null;
   const footerNode = footer ?? statusBar;
   const primaryHidden = leftCollapsed || primaryWidth <= 0;
+  const secondarySidebarPresent = Boolean(secondarySidebar);
   const elementSidebarPresent = Boolean(elementSidebarNode) && !rightCollapsed;
 
   const setLeftCollapsed = useCallback(
@@ -354,7 +355,7 @@ export function AppShell({
     gridTemplateRows: 'auto auto minmax(0, 1fr) var(--shell-statusbar-height)',
     gridTemplateColumns: gridColumnsForState(
       primaryHidden ? 0 : primaryWidth,
-      secondarySidebarWidth,
+      secondarySidebarPresent ? secondarySidebarWidth : 0,
       elementWidth,
       elementSidebarPresent,
     ),
@@ -371,8 +372,7 @@ export function AppShell({
     background: 'var(--color-background)',
     color: 'var(--color-foreground)',
   };
-  const showToolBars =
-    !activeMode || activeMode === 'plan' || activeMode === 'plan-3d' || activeMode === 'section';
+  const showToolBars = !activeMode || activeMode === 'plan' || activeMode === 'section';
 
   return (
     <div
@@ -449,8 +449,14 @@ export function AppShell({
       <aside
         aria-label="Active view settings"
         data-testid="app-shell-secondary-sidebar"
-        style={{ gridArea: 'secondarySidebar', minWidth: 0, minHeight: 0 }}
+        style={{
+          gridArea: 'secondarySidebar',
+          minWidth: 0,
+          minHeight: 0,
+          display: secondarySidebarPresent ? undefined : 'none',
+        }}
         className="flex flex-col overflow-hidden border-r border-border bg-surface"
+        hidden={!secondarySidebarPresent}
       >
         {secondarySidebar}
       </aside>
@@ -514,7 +520,7 @@ function gridColumnsForState(
   elementSidebarWidth: number,
   elementSidebarPresent: boolean,
 ): string {
-  const secondary = `${Math.max(160, secondarySidebarWidth)}px`;
+  const secondary = secondarySidebarWidth > 0 ? `${Math.max(160, secondarySidebarWidth)}px` : '0px';
   const element = `${elementSidebarPresent ? clampElementWidth(elementSidebarWidth) : 0}px`;
   return `${primarySidebarWidth}px ${secondary} minmax(0, 1fr) ${element}`;
 }

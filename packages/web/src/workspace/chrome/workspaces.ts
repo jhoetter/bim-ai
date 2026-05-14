@@ -1,4 +1,4 @@
-export type WorkspaceId = 'arch' | 'struct' | 'mep' | 'concept';
+export type WorkspaceId = 'arch' | 'struct' | 'mep';
 
 export interface WorkspaceDescriptor {
   id: WorkspaceId;
@@ -29,12 +29,5 @@ export const WORKSPACES: WorkspaceDescriptor[] = [
     discToken: 'var(--disc-mep)',
     discSoftToken: 'var(--disc-mep-soft)',
     defaultLensLabel: 'MEP',
-  },
-  {
-    id: 'concept',
-    label: 'Concept',
-    discToken: 'var(--color-accent)',
-    discSoftToken: 'var(--color-accent-soft)',
-    defaultLensLabel: 'All',
   },
 ];

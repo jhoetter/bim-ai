@@ -5,7 +5,7 @@ import i18n from '../i18n';
 import { registerCommand, type PaletteContext } from './registry';
 
 function is3dContext(ctx: PaletteContext): boolean {
-  return ctx.activeMode === '3d' || ctx.activeMode === 'plan-3d';
+  return ctx.activeMode === '3d';
 }
 
 function startPlanTool(ctx: PaletteContext, toolId: PlanTool): void {
@@ -486,14 +486,6 @@ registerCommand({
   category: 'command',
   isAvailable: hasActiveSheetAndMarkupMode,
   invoke: (ctx) => ctx.setSheetMarkupShape?.('text'),
-});
-
-registerCommand({
-  id: 'navigate.concept',
-  label: 'Go to Concept board',
-  keywords: ['concept', 'moodboard', 'underlay', 'trace'],
-  category: 'navigate',
-  invoke: (ctx) => ctx.navigateMode?.('concept'),
 });
 
 registerCommand({

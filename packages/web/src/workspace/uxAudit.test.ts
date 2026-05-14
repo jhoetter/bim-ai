@@ -135,7 +135,7 @@ describe('UX reachability audit', () => {
   });
 
   it('keeps high-risk plan authoring commands reachable across views without dead states', () => {
-    const nonPlanModes: CapabilityViewMode[] = ['3d', 'sheet', 'schedule', 'concept'];
+    const nonPlanModes: CapabilityViewMode[] = ['3d', 'sheet', 'schedule'];
 
     for (const mode of nonPlanModes) {
       for (const commandId of ['tool.dimension']) {
@@ -144,18 +144,18 @@ describe('UX reachability audit', () => {
     }
     expect(evaluateCommandInMode('tool.door', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('tool.window', '3d')?.state).toBe('enabled');
-    for (const mode of ['sheet', 'schedule', 'concept'] as CapabilityViewMode[]) {
+    for (const mode of ['sheet', 'schedule'] as CapabilityViewMode[]) {
       expect(evaluateCommandInMode('tool.door', mode)?.state).toBe('bridge');
       expect(evaluateCommandInMode('tool.window', mode)?.state).toBe('bridge');
     }
     expect(evaluateCommandInMode('tool.wall', '3d')?.state).toBe('enabled');
-    for (const mode of ['sheet', 'schedule', 'concept'] as CapabilityViewMode[]) {
+    for (const mode of ['sheet', 'schedule'] as CapabilityViewMode[]) {
       expect(evaluateCommandInMode('tool.wall', mode)?.state).toBe('bridge');
     }
   });
 
   it('keeps 3D controls unavailable in non-3D-only views instead of silently invoking them', () => {
-    for (const mode of ['plan', 'sheet', 'schedule', 'concept'] as CapabilityViewMode[]) {
+    for (const mode of ['plan', 'sheet', 'schedule'] as CapabilityViewMode[]) {
       expect(evaluateCommandInMode('view.3d.fit', mode)?.state).toBe('disabled');
       expect(evaluateCommandInMode('visibility.3d.hide-all-categories', mode)?.state).toBe(
         'disabled',
@@ -189,13 +189,7 @@ describe('UX reachability audit', () => {
   });
 
   it('keeps every mounted capability-backed Cmd+K result labeled with a context badge', () => {
-    for (const activeMode of [
-      'plan',
-      '3d',
-      'sheet',
-      'schedule',
-      'concept',
-    ] as CapabilityViewMode[]) {
+    for (const activeMode of ['plan', '3d', 'sheet', 'schedule'] as CapabilityViewMode[]) {
       const results = queryPalette(
         '',
         { selectedElementIds: [], activeViewId: null, activeMode },

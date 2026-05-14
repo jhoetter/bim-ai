@@ -5,6 +5,8 @@ export interface HostedPlacementDedupeState {
   atMs: number;
 }
 
+export type HostedPlacementTool = 'door' | 'window' | 'wall-opening';
+
 const LINKED_ID_SEPARATOR = '::';
 
 export function isLinkedElementId(id: string): boolean {
@@ -30,4 +32,17 @@ export function isDuplicateHostedPlacement(
 ): boolean {
   if (!prev) return false;
   return prev.key === next.key && next.atMs - prev.atMs <= windowMs;
+}
+
+export function isHostedPlacementTool(
+  tool: string | null | undefined,
+): tool is HostedPlacementTool {
+  return tool === 'door' || tool === 'window' || tool === 'wall-opening';
+}
+
+export function shouldCommitHostedPlacementOnPointerUp(input: {
+  wasDragging: string | null;
+  draftTool: string | null | undefined;
+}): boolean {
+  return input.wasDragging === 'tool-draft' && isHostedPlacementTool(input.draftTool);
 }

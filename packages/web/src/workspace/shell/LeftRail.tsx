@@ -45,6 +45,12 @@ export type LeftRailSection = {
   id: string;
   label: string;
   icon?: LucideLikeIcon;
+  headerAction?: {
+    label: string;
+    title?: string;
+    testId?: string;
+    onClick?: () => void;
+  };
   rows: LeftRailRow[];
 };
 
@@ -68,6 +74,10 @@ export interface LeftRailProps {
   defaultExpanded?: ReadonlySet<string>;
   /** Optional hook for context-menu invocation (right-click). */
   onRowContextMenu?: (id: string, event: { x: number; y: number }) => void;
+  /** Optional drag payload for rows that can be placed into a canvas composition. */
+  getRowDragData?: (id: string) => Record<string, string> | null;
+  onRowDragStart?: (id: string) => void;
+  onRowDragEnd?: () => void;
 }
 
 /** Flatten sections + rows into a focusable order list. */
@@ -117,6 +127,9 @@ export function LeftRail({
   onRowRename,
   defaultExpanded,
   onRowContextMenu,
+  getRowDragData,
+  onRowDragStart,
+  onRowDragEnd,
 }: LeftRailProps): JSX.Element {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set(defaultExpanded ?? []));
@@ -237,6 +250,9 @@ export function LeftRail({
                 }
                 onActivate={onRowActivate}
                 onContextMenu={onRowContextMenu}
+                getRowDragData={getRowDragData}
+                onRowDragStart={onRowDragStart}
+                onRowDragEnd={onRowDragEnd}
                 activeRowId={activeRowId}
                 focusedRowId={focusedId}
                 setFocused={setFocusedId}
@@ -385,8 +401,22 @@ function SectionBlock({
         className="flex items-center gap-1.5 px-4 pb-0.5 pt-3 text-[10px] font-semibold uppercase text-muted"
         style={{ letterSpacing: 0, opacity: 0.7 }}
       >
-        {section.icon ? <section.icon size={12} aria-hidden="true" /> : null}
-        <span>{section.label}</span>
+        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+          {section.icon ? <section.icon size={12} aria-hidden="true" /> : null}
+          <span>{section.label}</span>
+        </div>
+        {section.headerAction ? (
+          <button
+            type="button"
+            aria-label={section.headerAction.label}
+            title={section.headerAction.title ?? section.headerAction.label}
+            data-testid={section.headerAction.testId}
+            onClick={section.headerAction.onClick}
+            className="inline-flex h-4 w-4 items-center justify-center rounded text-xs text-muted transition-colors hover:bg-surface-strong hover:text-foreground"
+          >
+            +
+          </button>
+        ) : null}
       </div>
       {children}
     </div>
@@ -400,6 +430,9 @@ interface RowProps {
   onToggle: (id: string) => void;
   onActivate?: (id: string) => void;
   onContextMenu?: (id: string, event: { x: number; y: number }) => void;
+  getRowDragData?: (id: string) => Record<string, string> | null;
+  onRowDragStart?: (id: string) => void;
+  onRowDragEnd?: () => void;
   activeRowId?: string;
   focusedRowId?: string;
   setFocused: (id: string) => void;
@@ -412,6 +445,9 @@ function Row({
   onToggle,
   onActivate,
   onContextMenu,
+  getRowDragData,
+  onRowDragStart,
+  onRowDragEnd,
   activeRowId,
   focusedRowId,
   setFocused,
@@ -421,6 +457,7 @@ function Row({
   const isActive = row.id === activeRowId;
   const isFocused = row.id === focusedRowId;
   const ref = useRef<HTMLButtonElement | null>(null);
+  const dragData = getRowDragData?.(row.id) ?? null;
 
   useEffect(() => {
     if (isFocused) {
@@ -456,6 +493,16 @@ function Row({
           event.preventDefault();
           onContextMenu(row.id, { x: event.clientX, y: event.clientY });
         }}
+        draggable={Boolean(dragData)}
+        onDragStart={(event) => {
+          if (!dragData) return;
+          event.dataTransfer.effectAllowed = 'copy';
+          for (const [type, value] of Object.entries(dragData)) {
+            event.dataTransfer.setData(type, value);
+          }
+          onRowDragStart?.(row.id);
+        }}
+        onDragEnd={() => onRowDragEnd?.()}
         data-testid={`left-rail-row-${row.id}`}
         data-active={isActive ? 'true' : 'false'}
         title={row.hint ? `${row.label} — ${row.hint}` : row.label}
@@ -490,6 +537,9 @@ function Row({
               onToggle={onToggle}
               onActivate={onActivate}
               onContextMenu={onContextMenu}
+              getRowDragData={getRowDragData}
+              onRowDragStart={onRowDragStart}
+              onRowDragEnd={onRowDragEnd}
               activeRowId={activeRowId}
               focusedRowId={focusedRowId}
               setFocused={setFocused}

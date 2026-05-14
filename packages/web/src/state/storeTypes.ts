@@ -27,7 +27,7 @@ export type PlanRoomSchemeWireReadout = {
 };
 
 export type ViewerMode = 'plan_canvas' | 'orbit_3d';
-export type DisciplineWorkspaceId = 'arch' | 'struct' | 'mep' | 'concept';
+export type DisciplineWorkspaceId = 'arch' | 'struct' | 'mep';
 export type RoofJoinPreview = {
   primaryRoofId: string;
   secondaryRoofId: string;

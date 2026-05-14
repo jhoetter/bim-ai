@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import {
   isBackfacingWallHit,
   isDuplicateHostedPlacement,
+  shouldCommitHostedPlacementOnPointerUp,
   isLinkedElementId,
 } from './directAuthoringGuards';
 
@@ -76,6 +77,36 @@ describe('isDuplicateHostedPlacement', () => {
         { key: 'door:w1:500', atMs: 1500 },
         420,
       ),
+    ).toBe(false);
+  });
+});
+
+describe('shouldCommitHostedPlacementOnPointerUp', () => {
+  it('commits hosted insert tools on pointer release even after pointer movement', () => {
+    for (const draftTool of ['door', 'window', 'wall-opening']) {
+      expect(
+        shouldCommitHostedPlacementOnPointerUp({
+          wasDragging: 'tool-draft',
+          draftTool,
+        }),
+      ).toBe(true);
+    }
+  });
+
+  it('does not change line/polygon drafting release semantics', () => {
+    for (const draftTool of ['wall', 'floor', 'roof', 'ceiling', 'select', null]) {
+      expect(
+        shouldCommitHostedPlacementOnPointerUp({
+          wasDragging: 'tool-draft',
+          draftTool,
+        }),
+      ).toBe(false);
+    }
+    expect(
+      shouldCommitHostedPlacementOnPointerUp({
+        wasDragging: 'orbit',
+        draftTool: 'window',
+      }),
     ).toBe(false);
   });
 });

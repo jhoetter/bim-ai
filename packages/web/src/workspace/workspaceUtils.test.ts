@@ -72,7 +72,6 @@ describe('buildPrimaryNavigationSections', () => {
     } as Record<string, Element>);
 
     expect(sections.map((section) => section.label)).toEqual([
-      'Concept',
       'Floor Plans',
       '3D Views',
       'Sections',
@@ -80,7 +79,6 @@ describe('buildPrimaryNavigationSections', () => {
       'Schedules',
     ]);
     expect(sections.flatMap((section) => section.rows.map((row) => row.label))).toEqual([
-      'Massing',
       'Level 1 Plan',
       'Default 3D',
       'Section A',
@@ -92,7 +90,7 @@ describe('buildPrimaryNavigationSections', () => {
     );
     const serialized = JSON.stringify(sections);
     expect(serialized).not.toContain('"level_1"');
-    expect(serialized).not.toMatch(/Generic Wall|Window Type|Types|Families/);
+    expect(serialized).not.toMatch(/Massing|Generic Wall|Window Type|Types|Families/);
   });
 });
 

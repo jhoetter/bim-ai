@@ -4,8 +4,6 @@ import { Icons, ICON_SIZE } from '@bim-ai/ui';
 import { ScheduleViewHifi } from '@bim-ai/icons';
 
 import { SCHEDULE_DEFAULTS } from './modeSurfaces';
-import { AdvisorPanel } from '../advisor/AdvisorPanel';
-import { useUnifiedAdvisorViolations } from '../advisor/unifiedAdvisorViolations';
 import { useBimStore } from '../state/store';
 import { SheetReviewSurface } from '../plan/SheetReviewSurface';
 import { SheetCanvas, SectionPlaceholderPane } from './sheets';
@@ -46,94 +44,6 @@ function asArr<T extends Element['kind']>(
 ): Extract<Element, { kind: T }>[] {
   return (Object.values(elementsById) as Element[]).filter(
     (e): e is Extract<Element, { kind: T }> => e.kind === k,
-  );
-}
-
-/* ────────────────────────────────────────────────────────────────────── */
-/* Concept board mode (T6 CON-V3-01 / MDB-V3-01 surface)                  */
-/* ────────────────────────────────────────────────────────────────────── */
-
-export function ConceptModeShell({
-  elementsById,
-}: {
-  elementsById: Record<string, Element>;
-}): JSX.Element {
-  const underlays = asArr(elementsById, 'image_underlay');
-  const seeds = asArr(elementsById, 'concept_seed');
-  const boards = asArr(elementsById, 'view_concept_board');
-  const attachments = boards.flatMap((board) =>
-    board.attachments.map((attachment) => ({ board, attachment })),
-  );
-
-  return (
-    <div
-      data-testid="concept-mode-shell"
-      className="grid h-full w-full bg-background"
-      style={{ gridTemplateColumns: '220px 1fr' }}
-    >
-      <aside className="flex flex-col gap-3 overflow-y-auto border-r border-border bg-surface px-3 py-3">
-        <div>
-          <div
-            className="text-xs uppercase text-muted"
-            style={{ letterSpacing: 'var(--text-eyebrow-tracking)' }}
-          >
-            Concept
-          </div>
-          <div className="mt-1 text-sm font-medium text-foreground">Pre-BIM board</div>
-        </div>
-        <div className="rounded border border-border bg-background p-2 text-xs text-muted">
-          <div data-testid="concept-board-underlay-count">{underlays.length} underlays</div>
-          <div data-testid="concept-board-seed-count">{seeds.length} seeds</div>
-          <div data-testid="concept-board-attachment-count">{attachments.length} attachments</div>
-        </div>
-      </aside>
-      <div className="relative overflow-hidden">
-        <div
-          data-testid="concept-board-canvas"
-          className="absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(90deg, var(--color-border) 1px, transparent 1px), linear-gradient(var(--color-border) 1px, transparent 1px)',
-            backgroundSize: '32px 32px',
-            backgroundColor: 'var(--color-canvas-paper)',
-          }}
-        />
-        <div className="absolute left-4 top-4 flex max-w-[320px] flex-col gap-2">
-          {underlays.map((u) => (
-            <div
-              key={u.id}
-              data-testid="concept-board-underlay-card"
-              className="rounded border border-border bg-surface-strong p-2 text-sm text-foreground"
-            >
-              <span className="block truncate">{u.id}</span>
-              <span className="text-xs text-muted">{u.src}</span>
-            </div>
-          ))}
-          {seeds.map((s) => (
-            <div
-              key={s.id}
-              data-testid="concept-board-seed-card"
-              className="rounded border border-border bg-surface-strong p-2 text-sm text-foreground"
-            >
-              <span className="block truncate">{s.id}</span>
-              <span className="text-xs text-muted">{s.status}</span>
-            </div>
-          ))}
-          {attachments.map(({ board, attachment }) => (
-            <div
-              key={`${board.id}:${attachment.id}`}
-              data-testid="concept-board-attachment-card"
-              className="rounded border border-border bg-surface-strong p-2 text-sm text-foreground"
-            >
-              <span className="block truncate">{attachment.id}</span>
-              <span className="text-xs text-muted">
-                {attachment.kind} · {board.name}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -789,7 +699,7 @@ type ScheduleWorkflowProfile = {
 
 function scheduleWorkflowProfiles(
   category: string,
-  workspaceId: 'arch' | 'struct' | 'mep' | 'concept',
+  workspaceId: 'arch' | 'struct' | 'mep',
 ): ScheduleWorkflowProfile[] {
   switch (category) {
     case 'room':
@@ -919,48 +829,6 @@ function scheduleSheetPlacementStats(elementsById: Record<string, Element>): Map
     }
   }
   return counts;
-}
-
-/* ────────────────────────────────────────────────────────────────────── */
-/* Agent Review mode (§20.7)                                                */
-/* ────────────────────────────────────────────────────────────────────── */
-
-export function AgentReviewModeShell({
-  onApplyQuickFix,
-}: {
-  onApplyQuickFix: (cmd: Record<string, unknown>) => void;
-}): JSX.Element {
-  const violations = useBimStore((s) => s.violations);
-  const modelId = useBimStore((s) => s.modelId);
-  const revision = useBimStore((s) => s.revision);
-  const buildingPreset = useBimStore((s) => s.buildingPreset);
-  const setBuildingPreset = useBimStore((s) => s.setBuildingPreset);
-  const perspectiveId = useBimStore((s) => s.perspectiveId);
-  const { violations: unifiedViolations } = useUnifiedAdvisorViolations(
-    violations,
-    modelId,
-    revision,
-  );
-
-  return (
-    <div
-      data-testid="agent-review-mode-shell"
-      className="h-full w-full overflow-auto bg-background p-4"
-    >
-      <div className="mb-3 flex items-center gap-2">
-        <Icons.agent size={ICON_SIZE.toolPalette} aria-hidden="true" className="text-accent" />
-        <h2 className="text-md font-medium text-foreground">Advisor</h2>
-      </div>
-      <AdvisorPanel
-        violations={unifiedViolations}
-        preset={buildingPreset}
-        onPreset={setBuildingPreset}
-        onApplyQuickFix={onApplyQuickFix}
-        perspective={perspectiveId}
-        showAllPerspectives
-      />
-    </div>
-  );
 }
 
 /* ────────────────────────────────────────────────────────────────────── */

@@ -2,7 +2,7 @@
  * View-tabs reducer — spec §11.3.
  *
  * Each tab is a pure descriptor of an open view: a `kind` (plan / 3d /
- * plan-3d / section / sheet / schedule / agent) optionally tied to a
+ * section / sheet / schedule) optionally tied to a
  * specific element id (a level for plan, a viewpoint for 3d, a section
  * cut for section, a sheet for sheet, a schedule for schedule).
  *
@@ -11,15 +11,7 @@
 
 import type { Element } from '@bim-ai/core';
 
-export type TabKind =
-  | 'plan'
-  | '3d'
-  | 'plan-3d'
-  | 'section'
-  | 'sheet'
-  | 'schedule'
-  | 'agent'
-  | 'concept';
+export type TabKind = 'plan' | '3d' | 'section' | 'sheet' | 'schedule';
 
 /** Per-tab viewport state — restored when the tab is reactivated.
  * (T-07.) Plan tabs cache the 2D camera; 3D tabs cache the orbit pose.
@@ -37,9 +29,7 @@ export interface ViewportSnapshot {
 
 export interface ViewTab {
   /** Stable id. For target-bound tabs we use `${kind}:${targetId}` so
-   * re-opening the same view activates the existing tab. For modes that
-   * don't bind to a single element (e.g. agent review) we use a plain
-   * kind id. */
+   * re-opening the same view activates the existing tab. */
   id: string;
   kind: TabKind;
   /** Element id this tab targets, when applicable. */
@@ -57,7 +47,7 @@ export interface TabsState {
 
 export const EMPTY_TABS: TabsState = { tabs: [], activeId: null };
 
-function tabIdFor(kind: TabKind, targetId: string | undefined): string {
+export function tabIdFor(kind: TabKind, targetId: string | undefined): string {
   return targetId ? `${kind}:${targetId}` : kind;
 }
 
@@ -184,19 +174,13 @@ export function tabFromElement(el: Element): Omit<ViewTab, 'id'> | null {
   if (el.kind === 'schedule') {
     return { kind: 'schedule', targetId: el.id, label: `Schedule · ${el.name}` };
   }
-  if (el.kind === 'view_concept_board') {
-    return { kind: 'concept', targetId: el.id, label: `Concept · ${el.name}` };
-  }
   return null;
 }
 
 export const TAB_KIND_LABEL: Record<TabKind, string> = {
   plan: 'Plan',
   '3d': '3D',
-  'plan-3d': 'Plan + 3D',
   section: 'Section',
   sheet: 'Sheet',
   schedule: 'Schedule',
-  agent: 'Agent',
-  concept: 'Concept',
 };

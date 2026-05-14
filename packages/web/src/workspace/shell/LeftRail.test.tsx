@@ -40,6 +40,24 @@ const sections: LeftRailSection[] = [
 ];
 
 describe('LeftRail — spec §12', () => {
+  it('renders section header action and emits click', () => {
+    const onCreate = vi.fn();
+    const withAction: LeftRailSection[] = [
+      {
+        ...sections[0],
+        headerAction: {
+          label: 'New project item',
+          testId: 'left-rail-section-action-project',
+          onClick: onCreate,
+        },
+      },
+      sections[1],
+    ];
+    const { getByTestId } = render(<LeftRail sections={withAction} />);
+    fireEvent.click(getByTestId('left-rail-section-action-project'));
+    expect(onCreate).toHaveBeenCalledTimes(1);
+  });
+
   it('renders sections with uppercase eyebrow labels and rows', () => {
     const { getByText } = render(<LeftRail sections={sections} />);
     expect(getByText('Project')).toBeTruthy();

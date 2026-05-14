@@ -22,7 +22,7 @@ export function FloatingPalette({
   /** When provided, only these tool ids are shown in the palette. */
   allowedToolIds?: ReadonlySet<ToolId>;
 }): JSX.Element | null {
-  if (mode === 'sheet' || mode === 'schedule' || mode === 'agent') return null;
+  if (mode === 'sheet' || mode === 'schedule') return null;
   return (
     <div
       style={{
@@ -115,15 +115,15 @@ export function defaultTabFallbackForKind(
   activeLevelId: string | undefined,
 ): { targetId?: string; label: string } | null {
   const all = Object.values(elementsById) as Element[];
-  if (kind === 'plan' || kind === 'plan-3d') {
+  if (kind === 'plan') {
     const levels = all
       .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
       .sort((a, b) => a.elevationMm - b.elevationMm);
     const lvl = levels.find((l) => l.id === activeLevelId) ?? levels[0];
-    if (!lvl) return { label: kind === 'plan' ? 'Plan' : 'Plan + 3D' };
+    if (!lvl) return { label: 'Plan' };
     return {
       targetId: lvl.id,
-      label: kind === 'plan' ? `Plan · ${lvl.name}` : `Plan + 3D · ${lvl.name}`,
+      label: `Plan · ${lvl.name}`,
     };
   }
   if (kind === '3d') {
@@ -149,12 +149,6 @@ export function defaultTabFallbackForKind(
     const s = all.find((e): e is Extract<Element, { kind: 'schedule' }> => e.kind === 'schedule');
     if (s) return { targetId: s.id, label: `Schedule · ${s.name}` };
     return { label: 'Schedule' };
-  }
-  if (kind === 'agent') {
-    return { label: 'Agent review' };
-  }
-  if (kind === 'concept') {
-    return { label: 'Concept board' };
   }
   return null;
 }

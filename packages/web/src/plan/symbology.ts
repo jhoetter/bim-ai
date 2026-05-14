@@ -290,7 +290,7 @@ function hatchPolygon2D(
     for (let j = 0; j + 1 < xs.length; j += 2) {
       const x0 = xs[j]!;
       const x1 = xs[j + 1]!;
-      positions.push(ux(x0), yWorld, -uz(x0 - c), ux(x1), yWorld, -uz(x1 - c));
+      positions.push(ux(x0), yWorld, uz(x0 - c), ux(x1), yWorld, uz(x1 - c));
     }
   }
   if (positions.length === 0) return null;
@@ -368,6 +368,8 @@ function planFloorRoofOutlineWireGroup(
     lineWeightHint: number;
     linePatternToken?: string | null;
     roofGeometrySupportToken?: string | null;
+    showFill?: boolean;
+    showHatch?: boolean;
   },
 ): THREE.Group {
   const grp = new THREE.Group();
@@ -379,10 +381,14 @@ function planFloorRoofOutlineWireGroup(
   const lwh =
     Number.isFinite(opts.lineWeightHint) && opts.lineWeightHint > 0 ? opts.lineWeightHint : 1;
   const fillOpacity = Math.min(0.65, Math.max(0.12, baseOp * Math.min(1.35, lwh / 1.12)));
-  grp.add(horizontalOutlineMesh(outlineMm, fillY, color, fillOpacity, opts.pickId));
+  const showFill = opts.showFill !== false;
+  const showHatch = opts.showHatch !== false;
+  if (showFill) {
+    grp.add(horizontalOutlineMesh(outlineMm, fillY, color, fillOpacity, opts.pickId));
+  }
 
   // Floor hatch — 45° diagonal lines at 500 mm spacing, subtle overlay.
-  if (opts.kind === 'floor' && outlineMm.length >= 3) {
+  if (showHatch && opts.kind === 'floor' && outlineMm.length >= 3) {
     const hatch = hatchPolygon2D(
       outlineMm,
       500,
@@ -718,6 +724,7 @@ function rebuildPlanMeshesFromWire(
 
   const floors = Array.isArray(prim.floors) ? (prim.floors as Record<string, unknown>[]) : [];
   if (!suppressProjection) {
+    const showFloorSurface = presentation !== 'room_scheme';
     for (const f of floors) {
       const outline = outlineMmFromWire(f.outlineMm);
       if (outline.length < 2) continue;
@@ -729,6 +736,8 @@ function rebuildPlanMeshesFromWire(
           pickId: String(f.id ?? ''),
           lineWeightHint: lwh,
           linePatternToken: typeof patRaw === 'string' ? patRaw : undefined,
+          showFill: showFloorSurface,
+          showHatch: showFloorSurface,
         }),
       );
     }
@@ -1366,24 +1375,16 @@ export function rebuildPlanMeshes(
 
         if (level && f.levelId !== level) continue;
 
-        const floorFillY = PLAN_Y + 0.001;
+        const showFloorSurface = presentation !== 'room_scheme';
         holder.add(
-          horizontalOutlineMesh(
-            f.boundaryMm,
-            floorFillY,
-            getPlanPalette().floorOutline,
-            PLAN_FLOOR_FILL_OPACITY_BASE,
-            f.id,
-          ),
+          planFloorRoofOutlineWireGroup(f.boundaryMm, {
+            kind: 'floor',
+            pickId: f.id,
+            lineWeightHint: 1,
+            showFill: showFloorSurface,
+            showHatch: showFloorSurface,
+          }),
         );
-        const floorHatch = hatchPolygon2D(
-          f.boundaryMm,
-          500,
-          floorFillY + 0.002,
-          readToken('--draft-cut', '#1d2330'),
-          0.12,
-        );
-        if (floorHatch) holder.add(floorHatch);
       }
       tintNewChildren(before, 'floor');
     }

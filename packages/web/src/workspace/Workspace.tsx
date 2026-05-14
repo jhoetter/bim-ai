@@ -60,6 +60,7 @@ import {
   reorderTab,
   snapshotViewport,
   tabFromElement,
+  tabIdFor,
   type TabKind,
   type TabsState,
   type ViewTab,
@@ -75,6 +76,7 @@ import {
   persistPaneLayout,
   readPersistedPaneLayout,
   splitPaneWithTab,
+  type PaneLayoutState,
   type PaneNode,
   type PaneSplitDirection,
 } from './paneLayout';
@@ -194,6 +196,83 @@ function disciplineScopeNote(
  */
 
 type RailOverride = 'open' | 'collapsed' | null;
+
+type WorkspaceComposition = {
+  id: string;
+  label: string;
+  tabsState: TabsState;
+  paneLayout: PaneLayoutState;
+};
+
+type WorkspaceCompositionState = {
+  activeId: string;
+  compositions: WorkspaceComposition[];
+};
+
+const COMPOSITIONS_STORAGE_KEY = 'bim-ai:workspace-compositions-v1';
+
+function nextCompositionId(): string {
+  try {
+    return `composition-${crypto.randomUUID().slice(0, 8)}`;
+  } catch {
+    return `composition-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  }
+}
+
+function fallbackComposition(
+  tabsState: TabsState,
+  paneLayout: PaneLayoutState,
+): WorkspaceCompositionState {
+  const id = nextCompositionId();
+  return {
+    activeId: id,
+    compositions: [{ id, label: 'Composition 1', tabsState, paneLayout }],
+  };
+}
+
+function readPersistedCompositions(
+  tabsState: TabsState,
+  paneLayout: PaneLayoutState,
+): WorkspaceCompositionState {
+  if (typeof localStorage === 'undefined') return fallbackComposition(tabsState, paneLayout);
+  try {
+    const raw = localStorage.getItem(COMPOSITIONS_STORAGE_KEY);
+    if (!raw) return fallbackComposition(tabsState, paneLayout);
+    const parsed = JSON.parse(raw) as Partial<WorkspaceCompositionState> | null;
+    if (!parsed || !Array.isArray(parsed.compositions) || !parsed.compositions.length) {
+      return fallbackComposition(tabsState, paneLayout);
+    }
+    const compositions = parsed.compositions.filter(
+      (composition): composition is WorkspaceComposition =>
+        Boolean(
+          composition &&
+          typeof composition.id === 'string' &&
+          typeof composition.label === 'string' &&
+          composition.tabsState &&
+          Array.isArray(composition.tabsState.tabs) &&
+          composition.paneLayout,
+        ),
+    );
+    if (!compositions.length) return fallbackComposition(tabsState, paneLayout);
+    const activeId =
+      typeof parsed.activeId === 'string' &&
+      compositions.some((composition) => composition.id === parsed.activeId)
+        ? parsed.activeId
+        : compositions[0]!.id;
+    return { activeId, compositions };
+  } catch {
+    return fallbackComposition(tabsState, paneLayout);
+  }
+}
+
+function persistCompositions(state: WorkspaceCompositionState): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(COMPOSITIONS_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    /* noop */
+  }
+}
 
 function formatStatusMm(mm: number): string {
   return `${(mm / 1000).toFixed(1)} m`;
@@ -508,11 +587,28 @@ export function Workspace(): JSX.Element {
   const budgetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingChordRef = useRef<string | null>(null);
   const pendingChordTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [tabsState, setTabsState] = useState<TabsState>(() => readPersistedTabs() ?? EMPTY_TABS);
-  const [draggingTabId, setDraggingTabId] = useState<string | null>(null);
-  const [paneLayout, setPaneLayout] = useState(
-    () => readPersistedPaneLayout() ?? createPaneLayout(null),
+  const [compositionState, setCompositionState] = useState<WorkspaceCompositionState>(() =>
+    readPersistedCompositions(
+      readPersistedTabs() ?? EMPTY_TABS,
+      readPersistedPaneLayout() ?? createPaneLayout(null),
+    ),
   );
+  const [tabsState, setTabsState] = useState<TabsState>(() => {
+    const activeComposition =
+      compositionState.compositions.find(
+        (composition) => composition.id === compositionState.activeId,
+      ) ?? compositionState.compositions[0];
+    return activeComposition?.tabsState ?? EMPTY_TABS;
+  });
+  const [draggingViewElementId, setDraggingViewElementId] = useState<string | null>(null);
+  const [secondarySidebarOpen, setSecondarySidebarOpen] = useState(true);
+  const [paneLayout, setPaneLayout] = useState<PaneLayoutState>(() => {
+    const activeComposition =
+      compositionState.compositions.find(
+        (composition) => composition.id === compositionState.activeId,
+      ) ?? compositionState.compositions[0];
+    return activeComposition?.paneLayout ?? createPaneLayout(null);
+  });
 
   /** Persist tabs on every change (T-06). */
   useEffect(() => {
@@ -530,6 +626,17 @@ export function Workspace(): JSX.Element {
   useEffect(() => {
     persistPaneLayout(paneLayout);
   }, [paneLayout]);
+  useEffect(() => {
+    setCompositionState((state) => ({
+      ...state,
+      compositions: state.compositions.map((composition) =>
+        composition.id === state.activeId ? { ...composition, tabsState, paneLayout } : composition,
+      ),
+    }));
+  }, [paneLayout, tabsState]);
+  useEffect(() => {
+    persistCompositions(compositionState);
+  }, [compositionState]);
 
   /* ── Tab helpers (§11.3) ──────────────────────────────────────────── */
   const activeTab: ViewTab | null = useMemo(
@@ -627,6 +734,104 @@ export function Workspace(): JSX.Element {
     if (!partial) return;
     setTabsState((s) => openTab(s, partial));
   }, []);
+
+  const activateDroppedView = useCallback(
+    (tab: ViewTab | Omit<ViewTab, 'id'>) => {
+      setMode(tab.kind as WorkspaceMode);
+      if (tab.kind === 'plan') {
+        setViewerMode('plan_canvas');
+        if (tab.targetId) {
+          const target = useBimStore.getState().elementsById[tab.targetId];
+          if (target?.kind === 'plan_view') {
+            activatePlanView(target.id);
+          } else if (target?.kind === 'level') {
+            activatePlanView(undefined);
+            setActiveLevelId(target.id);
+          }
+        }
+      } else if (tab.kind === '3d') {
+        setViewerMode('orbit_3d');
+        if (tab.targetId) {
+          const target = useBimStore.getState().elementsById[tab.targetId];
+          if (target?.kind === 'viewpoint' && target.mode === 'orbit_3d' && target.camera) {
+            setOrbitCameraFromViewpointMm({
+              position: target.camera.position,
+              target: target.camera.target,
+              up: target.camera.up,
+            });
+            useBimStore.getState().setActiveViewpointId(target.id);
+          }
+        }
+      }
+    },
+    [activatePlanView, setActiveLevelId, setOrbitCameraFromViewpointMm, setViewerMode],
+  );
+
+  const placeViewElementInPane = useCallback(
+    (
+      elementId: string | null | undefined,
+      leafId: string,
+      direction?: PaneSplitDirection,
+    ): void => {
+      if (!elementId) return;
+      const element = elementsById[elementId];
+      if (!element) return;
+      const partial = tabFromElement(element);
+      if (!partial) return;
+      const tabId = tabIdFor(partial.kind, partial.targetId);
+      setTabsState((state) => openTab(state, partial));
+      setPaneLayout((layout) => {
+        const focused = focusPane(layout, leafId);
+        return direction
+          ? splitPaneWithTab(focused, leafId, direction, tabId)
+          : focusPane(assignTabToPane(focused, leafId, tabId), leafId);
+      });
+      activateDroppedView({ ...partial, id: tabId });
+      setDraggingViewElementId(null);
+    },
+    [activateDroppedView, elementsById],
+  );
+
+  const handleCompositionActivate = useCallback(
+    (id: string) => {
+      const next = compositionState.compositions.find((composition) => composition.id === id);
+      if (!next || id === compositionState.activeId) return;
+      setCompositionState((state) => ({
+        activeId: id,
+        compositions: state.compositions.map((composition) =>
+          composition.id === state.activeId
+            ? { ...composition, tabsState, paneLayout }
+            : composition,
+        ),
+      }));
+      setTabsState(next.tabsState);
+      setPaneLayout(next.paneLayout);
+      setSecondarySidebarOpen(true);
+    },
+    [compositionState.activeId, compositionState.compositions, paneLayout, tabsState],
+  );
+
+  const handleCompositionCreate = useCallback(() => {
+    const id = nextCompositionId();
+    const pane = createPaneLayout(null);
+    const label = `Composition ${compositionState.compositions.length + 1}`;
+    setCompositionState((state) => ({
+      activeId: id,
+      compositions: [
+        ...state.compositions.map((composition) =>
+          composition.id === state.activeId
+            ? { ...composition, tabsState, paneLayout }
+            : composition,
+        ),
+        { id, label, tabsState: EMPTY_TABS, paneLayout: pane },
+      ],
+    }));
+    setTabsState(EMPTY_TABS);
+    setPaneLayout(pane);
+    setSecondarySidebarOpen(true);
+    setMode('plan');
+    setViewerMode('plan_canvas');
+  }, [compositionState.compositions.length, paneLayout, setViewerMode, tabsState]);
 
   /* ── Project menu handlers (T-03) ─────────────────────────────────── */
   const handleSaveSnapshot = useCallback(() => {
@@ -1199,7 +1404,6 @@ export function Workspace(): JSX.Element {
     }
     if (effectiveMode === 'sheet') return [selectedDetail ?? 'Paper space'];
     if (effectiveMode === 'schedule') return [selectedDetail ?? 'Rows'];
-    if (effectiveMode === 'concept') return [selectedDetail ?? 'Pre-BIM board'];
     return selectedDetail ? [selectedDetail] : [];
   }, [
     activeViewpointId,

@@ -42,12 +42,9 @@ import {
 export const WORKSPACE_MODES = [
   { id: 'plan', label: 'Plan', hotkey: '1' },
   { id: '3d', label: '3D', hotkey: '2' },
-  { id: 'plan-3d', label: 'Plan + 3D', hotkey: '3' },
   { id: 'section', label: 'Section', hotkey: '4' },
   { id: 'sheet', label: 'Sheet', hotkey: '5' },
   { id: 'schedule', label: 'Schedule', hotkey: '6' },
-  { id: 'agent', label: 'Agent', hotkey: '7' },
-  { id: 'concept', label: 'Concept', hotkey: '8' },
 ] as const;
 
 export type WorkspaceMode = (typeof WORKSPACE_MODES)[number]['id'];
@@ -604,24 +601,12 @@ function TopBarModePills({
 const TAB_KIND_ICON: Record<TabKind, LucideLikeIcon> = {
   plan: Icons.floor!,
   '3d': Icons.family!,
-  'plan-3d': Icons.floor!,
   section: Icons.section!,
   sheet: Icons.sheet!,
   schedule: Icons.schedule!,
-  agent: Icons.agent!,
-  concept: Icons.agent!,
 };
 
-const ADDABLE_KINDS: TabKind[] = [
-  'plan',
-  '3d',
-  'plan-3d',
-  'section',
-  'sheet',
-  'schedule',
-  'agent',
-  'concept',
-];
+const ADDABLE_KINDS: TabKind[] = ['plan', '3d', 'section', 'sheet', 'schedule'];
 
 function TopBarTabs({
   tabs,

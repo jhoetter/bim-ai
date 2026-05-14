@@ -33,13 +33,13 @@ describe('WorkspaceSwitcher — CHR-V3-02', () => {
     expect(chip.textContent).toContain('Statiker');
   });
 
-  it('click chip → aria-expanded="true", listbox appears with 4 option rows', () => {
+  it('click chip → aria-expanded="true", listbox appears with 3 option rows', () => {
     const { getByTestId, getAllByRole } = render(<WorkspaceSwitcher {...baseProps} />);
     const chip = getByTestId('workspace-switcher-chip');
     fireEvent.click(chip);
     expect(chip.getAttribute('aria-expanded')).toBe('true');
     const options = getAllByRole('option');
-    expect(options).toHaveLength(4);
+    expect(options).toHaveLength(3);
   });
 
   it('click "Statiker" row → onSetActiveWorkspace("struct") called once', () => {
@@ -87,36 +87,6 @@ describe('WorkspaceSwitcher — CHR-V3-02', () => {
     });
     expect(chip.getAttribute('aria-expanded')).toBe('false');
     expect(queryByRole('listbox')).toBeNull();
-  });
-
-  it('CON-V3-03 Concept row is present and selectable', () => {
-    const onSetActiveWorkspace = vi.fn();
-    const { getByTestId } = render(<WorkspaceSwitcher {...baseProps} />);
-    fireEvent.click(getByTestId('workspace-switcher-chip'));
-    const conceptRow = getByTestId('workspace-option-concept');
-    expect(conceptRow).not.toBeNull();
-    expect(conceptRow.getAttribute('aria-disabled')).toBeNull();
-    cleanup();
-
-    const rendered = render(
-      <WorkspaceSwitcher {...baseProps} onSetActiveWorkspace={onSetActiveWorkspace} />,
-    );
-    fireEvent.click(rendered.getByTestId('workspace-switcher-chip'));
-    fireEvent.click(rendered.getByTestId('workspace-option-concept'));
-    expect(onSetActiveWorkspace).toHaveBeenCalledWith('concept');
-  });
-
-  it('CON-V3-03 chip renders Concept when activeWorkspaceId="concept"', () => {
-    const { getByTestId } = render(
-      <WorkspaceSwitcher
-        {...baseProps}
-        activeWorkspaceId="concept"
-        userPreferredWorkspace="concept"
-      />,
-    );
-    const chip = getByTestId('workspace-switcher-chip');
-    expect(chip.getAttribute('data-disc')).toBe('concept');
-    expect(chip.textContent).toContain('Concept');
   });
 
   it('data-testid="workspace-option-arch" is present in the open menu', () => {

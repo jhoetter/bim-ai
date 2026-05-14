@@ -7,6 +7,7 @@ import { Icons } from '@bim-ai/ui';
 import { useBimStore } from '../state/store';
 import { LeftRail, type WorkspaceMode } from './shell';
 import { LensDropdown } from './shell/LensDropdown';
+import { tabFromElement } from './tabsModel';
 import { buildPrimaryNavigationSections } from './workspaceUtils';
 
 type PrimaryNavContextMenuState = {
@@ -81,6 +82,8 @@ export function WorkspaceLeftRail({
   onCreateSchedule,
   onOpenProjectSettings,
   onOpenSavedView,
+  onViewDragStart,
+  onViewDragEnd,
   lensMode,
   onLensChange,
   activeViewTargetId,
@@ -105,6 +108,8 @@ export function WorkspaceLeftRail({
   onCreateSchedule?: () => void;
   onOpenProjectSettings?: () => void;
   onOpenSavedView?: (savedViewId: string) => void;
+  onViewDragStart?: (elementId: string) => void;
+  onViewDragEnd?: () => void;
   lensMode: LensMode;
   onLensChange: (lens: LensMode) => void;
   activeViewTargetId?: string | null;
@@ -126,6 +131,70 @@ export function WorkspaceLeftRail({
   const browserSections = useMemo(
     () => buildPrimaryNavigationSections(elementsById),
     [elementsById],
+  );
+  const primarySections = useMemo(
+    () =>
+      browserSections.map((section) => {
+        if (section.id === 'floor-plans') {
+          return {
+            ...section,
+            headerAction: {
+              label: 'New floor plan',
+              testId: 'primary-create-floor-plan',
+              onClick: onCreateFloorPlan,
+            },
+          };
+        }
+        if (section.id === '3d-views') {
+          return {
+            ...section,
+            headerAction: {
+              label: 'New 3D view',
+              testId: 'primary-create-3d-view',
+              onClick: onCreate3dView,
+            },
+          };
+        }
+        if (section.id === 'sections') {
+          return {
+            ...section,
+            headerAction: {
+              label: 'New section',
+              testId: 'primary-create-section',
+              onClick: onCreateSectionView,
+            },
+          };
+        }
+        if (section.id === 'sheets') {
+          return {
+            ...section,
+            headerAction: {
+              label: 'New sheet',
+              testId: 'primary-create-sheet',
+              onClick: onCreateSheet,
+            },
+          };
+        }
+        if (section.id === 'schedules') {
+          return {
+            ...section,
+            headerAction: {
+              label: 'New schedule',
+              testId: 'primary-create-schedule',
+              onClick: onCreateSchedule,
+            },
+          };
+        }
+        return section;
+      }),
+    [
+      browserSections,
+      onCreate3dView,
+      onCreateFloorPlan,
+      onCreateSchedule,
+      onCreateSectionView,
+      onCreateSheet,
+    ],
   );
   const initials = (userDisplayName || userId || 'User').slice(0, 2).toUpperCase();
   const accountStatus = modelId ? `Model ${modelId} · Rev ${revision ?? 0}` : 'No model loaded';
@@ -174,12 +243,6 @@ export function WorkspaceLeftRail({
       if (el.kind === 'schedule') {
         openTabFromElement(el);
         onSetModeOnly?.('schedule'); // change mode without overriding the active tab
-        select(undefined);
-        return;
-      }
-      if (el.kind === 'view_concept_board') {
-        openTabFromElement(el);
-        onSetModeOnly?.('concept'); // change mode without overriding the active tab
         select(undefined);
         return;
       }
@@ -255,69 +318,24 @@ export function WorkspaceLeftRail({
             <LensDropdown currentLens={lensMode} onLensChange={onLensChange} />
           </div>
         </div>
-        <div className="border-b border-border p-2" data-testid="primary-create-panel">
-          <div className="pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
-            Create
-          </div>
-          <div className="grid grid-cols-2 gap-1">
-            <button
-              type="button"
-              data-testid="primary-create-floor-plan"
-              className="rounded border border-border bg-surface px-2 py-1 text-left text-[11px] text-foreground hover:bg-surface-strong"
-              onClick={onCreateFloorPlan}
-            >
-              New floor plan
-            </button>
-            <button
-              type="button"
-              data-testid="primary-create-3d-view"
-              className="rounded border border-border bg-surface px-2 py-1 text-left text-[11px] text-foreground hover:bg-surface-strong"
-              onClick={onCreate3dView}
-            >
-              New 3D view
-            </button>
-            <button
-              type="button"
-              data-testid="primary-create-section"
-              className="rounded border border-border bg-surface px-2 py-1 text-left text-[11px] text-foreground hover:bg-surface-strong"
-              onClick={onCreateSectionView}
-            >
-              New section
-            </button>
-            <button
-              type="button"
-              data-testid="primary-create-sheet"
-              className="rounded border border-border bg-surface px-2 py-1 text-left text-[11px] text-foreground hover:bg-surface-strong"
-              onClick={onCreateSheet}
-            >
-              New sheet
-            </button>
-            <button
-              type="button"
-              data-testid="primary-create-schedule"
-              className="rounded border border-border bg-surface px-2 py-1 text-left text-[11px] text-foreground hover:bg-surface-strong"
-              onClick={onCreateSchedule}
-            >
-              New schedule
-            </button>
-            <button
-              type="button"
-              data-testid="primary-open-project-settings"
-              className="rounded border border-border bg-surface px-2 py-1 text-left text-[11px] text-foreground hover:bg-surface-strong"
-              onClick={onOpenProjectSettings}
-            >
-              Project settings
-            </button>
-          </div>
-        </div>
         <LeftRail
-          sections={browserSections}
+          sections={primarySections}
           activeRowId={activeViewTargetId ?? activePlanViewId ?? activeViewpointId ?? selectedId}
           onRowActivate={activateRow}
           onRowContextMenu={(rowId, position) => {
             if (!elementsById[rowId]) return;
             setContextMenu({ rowId, x: position.x, y: position.y });
           }}
+          getRowDragData={(rowId) => {
+            const el = elementsById[rowId];
+            if (!el || !tabFromElement(el)) return null;
+            return {
+              'application/x-bim-element-id': rowId,
+              'text/plain': rowId,
+            };
+          }}
+          onRowDragStart={onViewDragStart}
+          onRowDragEnd={onViewDragEnd}
         />
       </div>
       {contextMenu && contextElement ? (

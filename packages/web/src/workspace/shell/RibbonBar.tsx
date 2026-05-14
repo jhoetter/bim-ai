@@ -529,7 +529,6 @@ export function prunedRibbonCommandReachabilityForMode(
     'section',
     'sheet',
     'schedule',
-    'concept',
   ] as const satisfies readonly ToolWorkspaceMode[]) {
     for (const tab of buildUnfilteredRibbonTabs(sourceMode, selectedElementKind)) {
       for (const panel of tab.panels) {
@@ -632,9 +631,7 @@ function buildUnfilteredRibbonTabs(
           ? buildSheetRibbonTabs(selectedElementKind)
           : mode === 'schedule'
             ? buildScheduleRibbonTabs(selectedElementKind)
-            : mode === 'concept'
-              ? buildConceptRibbonTabs(selectedElementKind)
-              : buildPlanRibbonTabs(mode, selectedElementKind);
+            : buildPlanRibbonTabs(mode, selectedElementKind);
 
   return tabs;
 }
@@ -883,7 +880,10 @@ function build3dRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
         {
           id: 'load',
           label: 'Load',
-          commands: [action('family-library', 'Load Family', 'family')],
+          commands: [
+            action('family-library', 'Load Family', 'family'),
+            tool('component', 'Component', 'family'),
+          ],
         },
       ],
     },
@@ -1097,51 +1097,6 @@ function buildScheduleRibbonTabs(selectedElementKind?: string | null): RibbonTab
 
   if (selectedElementKind) {
     tabs.push(buildSelectionOnlyModifyTab(selectedElementKind));
-  }
-
-  return tabs;
-}
-
-function buildConceptRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
-  const tabs: RibbonTab[] = [
-    {
-      id: 'architecture',
-      label: 'Concept',
-      panels: [
-        {
-          id: 'selection',
-          label: 'Selection',
-          commands: [tool('select', 'Select', 'select')],
-        },
-        {
-          id: 'board',
-          label: 'Board',
-          commands: [action('command-palette', 'New Item', 'commandPalette', 'concept-new-item')],
-        },
-        {
-          id: 'place',
-          label: 'Place',
-          commands: [
-            action('family-library', 'Load Asset', 'family'),
-            action(
-              'command-palette',
-              'Attach Reference',
-              'linkedModel',
-              'concept-attach-reference',
-            ),
-          ],
-        },
-        {
-          id: 'markup',
-          label: 'Markup',
-          commands: [action('command-palette', 'Markup', 'tag', 'concept-markup')],
-        },
-      ],
-    },
-  ];
-
-  if (selectedElementKind) {
-    tabs.push(build3dModifyTab(selectedElementKind));
   }
 
   return tabs;
@@ -1398,8 +1353,6 @@ function ribbonModeIdentity(mode: ToolWorkspaceMode): { label: string; icon: Ico
       return { label: 'Sheet', icon: 'sheet' };
     case 'schedule':
       return { label: 'Schedule', icon: 'schedule' };
-    case 'concept':
-      return { label: 'Concept', icon: 'linkedModel' };
     case 'plan':
     default:
       return { label: 'Plan', icon: 'planView' };

@@ -12,9 +12,8 @@ describe('VIE-03 — elevation tool registry entry', () => {
     expect(reg.elevation.hotkey).toBe('EL');
   });
 
-  it('shows up in plan + plan-3d palettes, not in 3d-only', () => {
+  it('shows up in plan palette, not in 3d-only', () => {
     expect(paletteForMode('plan', tIdentity).map((t) => t.id)).toContain('elevation');
-    expect(paletteForMode('plan-3d', tIdentity).map((t) => t.id)).toContain('elevation');
     expect(paletteForMode('3d', tIdentity).map((t) => t.id)).not.toContain('elevation');
   });
 

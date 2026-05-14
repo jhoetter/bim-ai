@@ -12,7 +12,7 @@ export interface VisualBaselineEntry {
   /** Spec section that drives the surface. */
   specSection: string;
   /** Workspace mode under which the surface is captured. */
-  mode: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent' | 'concept';
+  mode: 'plan' | '3d' | 'section' | 'sheet' | 'schedule';
   /** Theme variant — both light and dark must baseline per §22 / §23. */
   theme: 'light' | 'dark';
   /** Reference viewport size (px). Spec §8 calls 1440 wide as the
@@ -24,14 +24,14 @@ export const VISUAL_BASELINES: VisualBaselineEntry[] = [
   {
     id: 'app-shell-light',
     specSection: '§8',
-    mode: 'plan-3d',
+    mode: 'plan',
     theme: 'light',
     viewport: { widthPx: 1440, heightPx: 900 },
   },
   {
     id: 'app-shell-dark',
     specSection: '§8',
-    mode: 'plan-3d',
+    mode: 'plan',
     theme: 'dark',
     viewport: { widthPx: 1440, heightPx: 900 },
   },

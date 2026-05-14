@@ -115,9 +115,6 @@ export function buildPrimaryNavigationSections(
   const schedules = all.filter(
     (e): e is Extract<Element, { kind: 'schedule' }> => e.kind === 'schedule',
   );
-  const conceptBoards = all.filter(
-    (e): e is Extract<Element, { kind: 'view_concept_board' }> => e.kind === 'view_concept_board',
-  );
   const projectSettings = all.find(
     (e): e is Extract<Element, { kind: 'project_settings' }> => e.kind === 'project_settings',
   );
@@ -140,17 +137,6 @@ export function buildPrimaryNavigationSections(
           },
         ]
       : []),
-    {
-      id: 'concept',
-      label: 'Concept',
-      icon: PlanViewHifi,
-      rows: conceptBoards.map((board) => ({
-        id: board.id,
-        label: board.name,
-        icon: PlanViewHifi,
-        hint: `${board.attachments.length} attachments`,
-      })),
-    },
     {
       id: 'floor-plans',
       label: 'Floor Plans',

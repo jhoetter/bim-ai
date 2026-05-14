@@ -7,13 +7,7 @@ import { ErrorBoundary } from '../../ErrorBoundary';
 import { PlanCanvas, type PlanCameraHandle } from '../../plan/PlanCanvas';
 import type { SnapSettings } from '../../plan/snapSettings';
 import type { SheetMarkupShape, SheetReviewMode } from '../sheets/sheetReviewUi';
-import {
-  AgentReviewModeShell,
-  ConceptModeShell,
-  ScheduleModeShell,
-  SectionModeShell,
-  SheetModeShell,
-} from '../ModeShells';
+import { ScheduleModeShell, SectionModeShell, SheetModeShell } from '../ModeShells';
 import type { WorkspaceMode } from '../shell';
 
 export const canvasContainerStyle: CSSProperties = {
@@ -70,32 +64,6 @@ export function CanvasMount({
   onOpenSectionSourcePlan?: () => void;
   onOpenSection3dContext?: () => void;
 }): JSX.Element {
-  if ((mode as string) === 'plan-3d') {
-    return (
-      <div
-        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', height: '100%', width: '100%' }}
-      >
-        <div style={{ position: 'relative', borderRight: '1px solid var(--color-border)' }}>
-          <PlanCanvas
-            wsConnected={wsOn ?? false}
-            activeLevelResolvedId={activeLevelId ?? ''}
-            onSemanticCommand={onSemanticCommand}
-            cameraHandleRef={cameraHandleRef}
-            initialCamera={initialCamera}
-            lensMode={lensMode}
-            snapSettings={snapSettings}
-          />
-        </div>
-        <div style={{ position: 'relative' }}>
-          <Viewport
-            wsConnected={wsOn ?? false}
-            onPersistViewpointField={onPersistViewpointField}
-            onSemanticCommand={onSemanticCommand}
-          />
-        </div>
-      </div>
-    );
-  }
   if (mode === '3d')
     return (
       <ErrorBoundary label="Viewport3D">
@@ -152,18 +120,6 @@ export function CanvasMount({
           onUpsertSemantic={onSemanticCommand}
           onNavigateToElement={onNavigateToElement}
         />
-      </ErrorBoundary>
-    );
-  if (mode === 'agent')
-    return (
-      <ErrorBoundary label="AgentReviewPane">
-        <AgentReviewModeShell onApplyQuickFix={onSemanticCommand} />
-      </ErrorBoundary>
-    );
-  if (mode === 'concept')
-    return (
-      <ErrorBoundary label="ConceptModeShell">
-        <ConceptModeShell elementsById={elementsById} />
       </ErrorBoundary>
     );
   return viewerMode === 'orbit_3d' ? (

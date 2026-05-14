@@ -131,6 +131,17 @@ function countRoomPatternSegments(root: THREE.Object3D, pattern: string): number
   return n;
 }
 
+function lineSegmentZValues(root: THREE.Object3D): number[] {
+  const out: number[] = [];
+  root.traverse((o) => {
+    if (!(o instanceof THREE.LineSegments)) return;
+    const pos = o.geometry.getAttribute('position');
+    if (!pos) return;
+    for (let i = 0; i < pos.count; i++) out.push(pos.getZ(i));
+  });
+  return out;
+}
+
 describe('PlanCanvas server wire primitives path (WP-C03)', () => {
   it('builds at least one mesh from planProjectionPrimitives_v1 walls', () => {
     const wall: Extract<Element, { kind: 'wall' }> = {
@@ -310,6 +321,78 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
     expect(matches).toContain('valley_candidate_deferred');
   });
 
+  it('suppresses wire floor fill and hatch in room-scheme presentation', () => {
+    const primitives = {
+      format: 'planProjectionPrimitives_v1',
+      walls: [],
+      floors: [
+        {
+          id: 'f-room-scheme',
+          levelId: 'lvl',
+          outlineMm: [
+            [0, 0],
+            [4000, 0],
+            [4000, 3000],
+            [0, 3000],
+          ],
+          lineWeightHint: 1,
+          linePatternToken: 'solid',
+        },
+      ],
+      rooms: [],
+      doors: [],
+      windows: [],
+      stairs: [],
+      roofs: [],
+      gridLines: [],
+      roomSeparations: [],
+      dimensions: [],
+    } as const;
+
+    const grp = new THREE.Group();
+    rebuildPlanMeshes(
+      grp,
+      {},
+      {
+        activeLevelId: 'lvl',
+        presentation: 'room_scheme',
+        wirePrimitives: primitives as unknown as PlanProjectionPrimitivesV1Wire,
+      },
+    );
+
+    expect(hasMeshNode(grp)).toBe(false);
+    expect(countLineLoopNodes(grp)).toBe(1);
+  });
+
+  it('suppresses fallback floor fill and hatch in room-scheme presentation', () => {
+    const floor: Extract<Element, { kind: 'floor' }> = {
+      kind: 'floor',
+      id: 'f-fallback-room-scheme',
+      name: 'Floor',
+      levelId: 'lvl',
+      boundaryMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 4000, yMm: 0 },
+        { xMm: 4000, yMm: 3000 },
+        { xMm: 0, yMm: 3000 },
+      ],
+      thicknessMm: 200,
+    };
+
+    const grp = new THREE.Group();
+    rebuildPlanMeshes(
+      grp,
+      { [floor.id]: floor },
+      {
+        activeLevelId: 'lvl',
+        presentation: 'room_scheme',
+      },
+    );
+
+    expect(hasMeshNode(grp)).toBe(false);
+    expect(countLineLoopNodes(grp)).toBe(1);
+  });
+
   it('adds dashed Line instances for wire roomSeparations', () => {
     const wall: Extract<Element, { kind: 'wall' }> = {
       kind: 'wall',
@@ -460,6 +543,50 @@ describe('PlanCanvas server wire primitives path (WP-C03)', () => {
 
     expect(countLineLoopNodes(grp)).toBeGreaterThan(0);
     expect(someLineHasDashedMaterial(grp)).toBe(false);
+  });
+
+  it('draws wire floor hatch on the same plan side as the floor outline', () => {
+    const primitives = {
+      format: 'planProjectionPrimitives_v1',
+      walls: [],
+      floors: [
+        {
+          id: 'fl-positive-y',
+          levelId: 'lvl',
+          outlineMm: [
+            [0, 1000],
+            [3000, 1000],
+            [3000, 3000],
+            [0, 3000],
+          ],
+          lineWeightHint: 1,
+          linePatternToken: 'solid',
+        },
+      ],
+      rooms: [],
+      doors: [],
+      windows: [],
+      stairs: [],
+      roofs: [],
+      gridLines: [],
+      roomSeparations: [],
+      dimensions: [],
+    } as const;
+
+    const grp = new THREE.Group();
+    rebuildPlanMeshes(
+      grp,
+      {},
+      {
+        activeLevelId: 'lvl',
+        wirePrimitives: primitives as unknown as PlanProjectionPrimitivesV1Wire,
+      },
+    );
+
+    const hatchZ = lineSegmentZValues(grp);
+    expect(hatchZ.length).toBeGreaterThan(0);
+    expect(Math.min(...hatchZ)).toBeGreaterThan(0.9);
+    expect(Math.max(...hatchZ)).toBeLessThan(3.1);
   });
 
   it('uses level rise for stair tread divisions when levels are in elementsById', () => {

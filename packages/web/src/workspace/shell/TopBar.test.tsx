@@ -72,7 +72,7 @@ describe('TopBar — spec §11', () => {
     fireEvent.keyDown(tablist, { key: 'ArrowRight' });
     expect(onModeChange).toHaveBeenLastCalledWith('3d');
     fireEvent.keyDown(tablist, { key: 'ArrowLeft' });
-    expect(onModeChange).toHaveBeenLastCalledWith('concept'); // wraps backwards from plan
+    expect(onModeChange).toHaveBeenLastCalledWith('schedule'); // wraps backwards from plan
   });
 
   it('renders theme toggle in avatar dropdown (light → dark label, dark → light label)', () => {
@@ -362,6 +362,7 @@ describe('RibbonBar — F-005', () => {
     expect(() => getByRole('tab', { name: 'Precast' })).toThrow();
     expect(() => getByRole('tab', { name: 'Systems' })).toThrow();
     expect(() => getByRole('tab', { name: 'Add-Ins' })).toThrow();
+    expect(getByTestId('ribbon-command-select')).toBeTruthy();
     expect(getByTestId('ribbon-command-wall').getAttribute('aria-pressed')).toBe('true');
     expect(getByTestId('ribbon-command-door')).toBeTruthy();
   });
@@ -374,6 +375,16 @@ describe('RibbonBar — F-005', () => {
     expect(getByTestId('ribbon-command-elevation')).toBeTruthy();
     fireEvent.click(getByTestId('ribbon-command-dimension'));
     expect(onToolSelect).toHaveBeenCalledWith('dimension');
+  });
+
+  it('returns ribbon focus to the first tab when Select becomes active', () => {
+    const { getByTestId, rerender } = render(<RibbonBar activeToolId="dimension" />);
+    fireEvent.click(getByTestId('ribbon-tab-annotate'));
+    expect(getByTestId('ribbon-tab-annotate').getAttribute('aria-selected')).toBe('true');
+
+    rerender(<RibbonBar activeToolId="select" />);
+    expect(getByTestId('ribbon-tab-create').getAttribute('aria-selected')).toBe('true');
+    expect(getByTestId('ribbon-command-select')).toBeTruthy();
   });
 
   it('switches to direct sheet actions in sheet mode', () => {
@@ -415,6 +426,7 @@ describe('RibbonBar — F-005', () => {
     expect(getByTestId('ribbon-mode-identity').textContent).toContain('3D');
     expect(getByRole('tab', { name: '3D View' })).toBeTruthy();
     expect(getByRole('tab', { name: 'Insert' })).toBeTruthy();
+    expect(getByTestId('ribbon-command-select')).toBeTruthy();
     expect(getByTestId('ribbon-command-wall')).toBeTruthy();
     expect(getByTestId('ribbon-command-column')).toBeTruthy();
     expect(getByTestId('ribbon-command-beam')).toBeTruthy();
@@ -447,7 +459,10 @@ describe('RibbonBar — F-005', () => {
     fireEvent.click(getByTestId('ribbon-command-3d-save-view'));
     fireEvent.click(getByTestId('ribbon-tab-insert'));
     fireEvent.click(getByTestId('ribbon-command-family-library'));
+    expect(getByTestId('ribbon-command-component')).toBeTruthy();
+    fireEvent.click(getByTestId('ribbon-command-component'));
     expect(onToolSelect).toHaveBeenCalledWith('select');
+    expect(onToolSelect).toHaveBeenCalledWith('component');
     expect(onSaveCurrentViewpoint).toHaveBeenCalledTimes(1);
     expect(onOpenFamilyLibrary).toHaveBeenCalledTimes(1);
   });
@@ -545,7 +560,7 @@ describe('RibbonBar — F-005', () => {
   });
 
   it('does not expose disabled ribbon commands in any active view schema — UX-WP-06', () => {
-    for (const mode of ['plan', '3d', 'section', 'sheet', 'schedule', 'concept'] as const) {
+    for (const mode of ['plan', '3d', 'section', 'sheet', 'schedule'] as const) {
       expect(
         ribbonCommandReachabilityForMode(mode, 'wall').filter((row) => row.behavior === 'disabled'),
       ).toEqual([]);

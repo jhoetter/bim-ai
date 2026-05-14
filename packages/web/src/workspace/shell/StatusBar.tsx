@@ -97,7 +97,7 @@ export type JobsStatusCounts = {
 };
 
 export interface StatusBarProps {
-  mode?: 'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent' | 'concept';
+  mode?: 'plan' | '3d' | 'section' | 'sheet' | 'schedule';
   viewLabel?: string | null;
   viewDetails?: string[];
   level: { id: string; label: string; elevationMm?: number };
@@ -172,7 +172,7 @@ export function StatusBar({
   temporaryVisibility = null,
   onClearTemporaryVisibility,
 }: StatusBarProps): JSX.Element {
-  const showPlanClusters = mode === 'plan' || mode === 'plan-3d' || mode === 'section';
+  const showPlanClusters = mode === 'plan' || mode === 'section';
   return (
     <div
       data-testid="status-bar"
@@ -271,13 +271,7 @@ const statusStyle: CSSProperties = {
 
 function disciplineStripeStyle(id: WorkspaceId): CSSProperties {
   const token =
-    id === 'struct'
-      ? 'var(--disc-struct)'
-      : id === 'mep'
-        ? 'var(--disc-mep)'
-        : id === 'concept'
-          ? 'var(--color-accent)'
-          : 'var(--disc-arch)';
+    id === 'struct' ? 'var(--disc-struct)' : id === 'mep' ? 'var(--disc-mep)' : 'var(--disc-arch)';
   return {
     borderTop: `2px solid ${token}`,
   };
@@ -330,18 +324,12 @@ function formatStatusMode(mode: NonNullable<StatusBarProps['mode']>): string {
       return 'Plan';
     case '3d':
       return '3D';
-    case 'plan-3d':
-      return 'Plan + 3D';
     case 'section':
       return 'Section';
     case 'sheet':
       return 'Sheet';
     case 'schedule':
       return 'Schedule';
-    case 'agent':
-      return 'Agent Review';
-    case 'concept':
-      return 'Concept';
   }
 }
 

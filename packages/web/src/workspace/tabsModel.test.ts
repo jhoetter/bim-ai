@@ -179,14 +179,14 @@ describe('tabsModel — spec §11.3', () => {
   });
 
   it('snapshotViewport merges planCamera without clobbering orbitCamera', () => {
-    let s = openTab(EMPTY_TABS, { kind: 'plan-3d', targetId: 'lvl-0', label: 'Plan+3D · L0' });
-    s = snapshotViewport(s, 'plan-3d:lvl-0', {
+    let s = openTab(EMPTY_TABS, { kind: 'plan', targetId: 'lvl-0', label: 'Plan · L0' });
+    s = snapshotViewport(s, 'plan:lvl-0', {
       orbitCameraPoseMm: {
         eyeMm: { xMm: 10, yMm: 5, zMm: 10 },
         targetMm: { xMm: 0, yMm: 0, zMm: 0 },
       },
     });
-    s = snapshotViewport(s, 'plan-3d:lvl-0', {
+    s = snapshotViewport(s, 'plan:lvl-0', {
       ...s.tabs[0]!.viewportState,
       planCamera: { centerMm: { xMm: 500, yMm: 200 }, halfMm: 8000 },
     });
