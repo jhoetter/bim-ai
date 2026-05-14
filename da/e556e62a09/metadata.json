@@ -5,7 +5,8 @@
   "branch": "main",
   "checkpoints_count": 3,
   "files_touched": [
-    "packages/web/src/cmdPalette/defaultCommands.ts"
+    "packages/web/src/cmdPalette/defaultCommands.ts",
+    "packages/web/src/workspace/Workspace.tsx"
   ],
   "sessions": [
     {
@@ -49,6 +50,12 @@
       "transcript": "/da/e556e62a09/6/full.jsonl",
       "content_hash": "/da/e556e62a09/6/content_hash.txt",
       "prompt": "/da/e556e62a09/6/prompt.txt"
+    },
+    {
+      "metadata": "/da/e556e62a09/7/metadata.json",
+      "transcript": "/da/e556e62a09/7/full.jsonl",
+      "content_hash": "/da/e556e62a09/7/content_hash.txt",
+      "prompt": "/da/e556e62a09/7/prompt.txt"
     }
   ],
   "token_usage": {
