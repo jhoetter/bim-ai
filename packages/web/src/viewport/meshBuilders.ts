@@ -34,6 +34,7 @@ import { makeLayeredWallMesh } from './meshBuilders.layeredWall';
 import { makeMultiRunStairMesh } from './meshBuilders.multiRunStair';
 import { localPlanOffsetToWorld, yawForPlanSegment } from './planSegmentOrientation';
 import { resolveWindowCutDimensions } from './hostedOpeningDimensions';
+import { wallWith3dJoinDisallowGaps } from './wallJoinDisplay';
 
 /** Resolve a wall's `wallTypeId` to a renderable assembly. Built-in catalog
  * entries take precedence over user-authored `wall_type` elements. */
@@ -2462,46 +2463,50 @@ export function makeWallMesh(
   if (wall.recessZones && wall.recessZones.length > 0) {
     return makeRecessedWallMesh(wall, elevM, paint);
   }
-  const sx = wall.start.xMm / 1000;
-  const sz = wall.start.yMm / 1000;
-  const ex = wall.end.xMm / 1000;
-  const ez = wall.end.yMm / 1000;
+  const displayWall = wallWith3dJoinDisallowGaps(wall, elementsById);
+  const sx = displayWall.start.xMm / 1000;
+  const sz = displayWall.start.yMm / 1000;
+  const ex = displayWall.end.xMm / 1000;
+  const ez = displayWall.end.yMm / 1000;
   const dx = ex - sx;
   const dz = ez - sz;
   const len = Math.max(0.001, Math.hypot(dx, dz));
-  const thick = THREE.MathUtils.clamp(wall.thicknessMm / 1000, 0.05, 2);
+  const thick = THREE.MathUtils.clamp(displayWall.thicknessMm / 1000, 0.05, 2);
 
-  const { yBase, height } = wallVerticalSpanM(wall, elevM, elementsById);
+  const { yBase, height } = wallVerticalSpanM(displayWall, elevM, elementsById);
 
-  const wallOffset = wallPlanOffsetM(wall);
-  const wallMatSpec = resolveMaterial(wall.materialKey, elementsById);
+  const wallOffset = wallPlanOffsetM(displayWall);
+  const wallMatSpec = resolveMaterial(displayWall.materialKey, elementsById);
   const wallFaceExtentMm = { uMm: len * 1000, vMm: height * 1000 };
-  const baseMaterial = makeThreeMaterialForKey(wall.materialKey, {
+  const baseMaterial = makeThreeMaterialForKey(displayWall.materialKey, {
     elementsById,
     usage: 'wallExterior',
-    uvTransform: materialUvTransformForExtent(wall.materialKey, {
+    uvTransform: materialUvTransformForExtent(displayWall.materialKey, {
       elementsById,
       extentMm: wallFaceExtentMm,
     }),
     fallbackColor:
-      wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
+      displayWall.materialKey === 'white_cladding' || displayWall.materialKey === 'white_render'
         ? '#f4f4f0'
         : categoryColorOr(paint, 'wall'),
     fallbackRoughness:
-      wall.materialKey === 'white_cladding' || wall.materialKey === 'white_render'
+      displayWall.materialKey === 'white_cladding' || displayWall.materialKey === 'white_render'
         ? 0.92
         : (paint?.categories.wall.roughness ?? 0.85),
     fallbackMetalness: paint?.categories.wall.metalness ?? 0.0,
   });
   const wallMaterial: THREE.Material | THREE.Material[] =
-    wall.faceMaterialOverrides && wall.faceMaterialOverrides.length > 0
+    displayWall.faceMaterialOverrides && displayWall.faceMaterialOverrides.length > 0
       ? (() => {
           const materials: THREE.Material[] = Array.from({ length: 6 }, () => baseMaterial);
           for (const [faceKind, materialIndex] of Object.entries(WALL_BOX_FACE_MATERIAL_INDEX) as [
             Exclude<MaterialFaceKind, 'generated'>,
             number,
           ][]) {
-            const override = resolveFaceMaterialOverride(wall.faceMaterialOverrides, faceKind);
+            const override = resolveFaceMaterialOverride(
+              displayWall.faceMaterialOverrides,
+              faceKind,
+            );
             if (!override) continue;
             materials[materialIndex] = makeThreeMaterialForKey(override.materialKey, {
               elementsById,
@@ -2524,12 +2529,12 @@ export function makeWallMesh(
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(len, height, thick), wallMaterial);
   mesh.position.set(sx + dx / 2 + wallOffset.xM, yBase + height / 2, sz + dz / 2 + wallOffset.zM);
   mesh.rotation.y = yawForPlanSegment(dx, dz);
-  mesh.userData.bimPickId = wall.id;
-  mesh.userData.faceMaterialOverrides = wall.faceMaterialOverrides ?? null;
+  mesh.userData.bimPickId = displayWall.id;
+  mesh.userData.faceMaterialOverrides = displayWall.faceMaterialOverrides ?? null;
   mesh.userData.wallFaceMaterialSlots = WALL_BOX_FACE_MATERIAL_INDEX;
   addEdges(mesh);
-  if (wall.materialKey === 'timber_cladding') addCladdingBoards(mesh, len, height, thick);
-  else if (wall.materialKey === 'white_cladding')
+  if (displayWall.materialKey === 'timber_cladding') addCladdingBoards(mesh, len, height, thick);
+  else if (displayWall.materialKey === 'white_cladding')
     addCladdingBoards(mesh, len, height, thick, 120, 10, '#f4f4f0');
   else if (wallMatSpec?.category === 'cladding')
     // Pitch bumped 150 -> 250 mm so vertical board seams are visible
@@ -2542,7 +2547,7 @@ export function makeWallMesh(
   // upper-floor walls read with a visible concrete plate. Layered walls
   // express their slab edge through the layer stack itself, so we skip
   // them here. `floorEdgeStripDisabled` is the per-instance opt-out.
-  if (yBase > 0.01 && !wall.wallTypeId && wall.floorEdgeStripDisabled !== true) {
+  if (yBase > 0.01 && !displayWall.wallTypeId && displayWall.floorEdgeStripDisabled !== true) {
     const edgeH = 0.05; // 50 mm total band height (30 mm above + 20 mm below)
     const edgeP = 0.03; // 30 mm projection proud of wall face
     const edgeMat = new THREE.MeshStandardMaterial({
@@ -2554,7 +2559,7 @@ export function makeWallMesh(
     // Centre the strip 5 mm above the slab line (=> 30 mm above, 20 mm below).
     edgeMesh.position.set(0, -height / 2 + 0.005, 0);
     edgeMesh.castShadow = edgeMesh.receiveShadow = true;
-    edgeMesh.userData.bimPickId = wall.id;
+    edgeMesh.userData.bimPickId = displayWall.id;
     edgeMesh.userData.slabEdge = true;
     addEdges(edgeMesh);
     mesh.add(edgeMesh);

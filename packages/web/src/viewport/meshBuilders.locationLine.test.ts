@@ -16,6 +16,13 @@ const baseWall: WallElem = {
   heightMm: 2800,
 };
 
+function localBoxWidthM(mesh: THREE.Mesh): number {
+  mesh.geometry.computeBoundingBox();
+  const box = mesh.geometry.boundingBox;
+  if (!box) throw new Error('expected wall mesh bounding box');
+  return box.max.x - box.min.x;
+}
+
 describe('makeWallMesh — locationLine offset', () => {
   it('wall-centerline: mesh positioned at axis midpoint (no perpendicular offset)', () => {
     const wall: WallElem = { ...baseWall, locationLine: 'wall-centerline' };
@@ -191,5 +198,27 @@ describe('makeWallMesh — locationLine offset', () => {
     expect(doorMesh.position.z).toBeCloseTo(1 + offset.zM, 5);
     expect(windowMesh.position.x).toBeCloseTo(2.25 + offset.xM, 5);
     expect(windowMesh.position.z).toBeCloseTo(3 + offset.zM, 5);
+  });
+
+  it('renders a visible 3D gap at a disallowed joined wall end', () => {
+    const south: WallElem = {
+      ...baseWall,
+      id: 'south',
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 1000, yMm: 0 },
+      joinDisallowEnd: true,
+    };
+    const east: WallElem = {
+      ...baseWall,
+      id: 'east',
+      start: { xMm: 1000, yMm: 0 },
+      end: { xMm: 1000, yMm: 1000 },
+    };
+    const elementsById: Record<string, Element> = { south, east };
+
+    const mesh = makeWallMesh(south, 0, null, elementsById) as THREE.Mesh;
+
+    expect(localBoxWidthM(mesh)).toBeCloseTo(0.88, 5);
+    expect(mesh.position.x).toBeCloseTo(0.44, 5);
   });
 });

@@ -133,6 +133,7 @@ import {
 } from './viewport/wallFaceRadialMenu';
 import { buildPlanOverlay3dGroup } from './viewport/planOverlay3d';
 import { shouldRunWallOpeningCsg } from './viewport/wallCsgEligibility';
+import { wallWith3dJoinDisallowGaps } from './viewport/wallJoinDisplay';
 import {
   buildLinePreviewPayload,
   buildPolygonPreviewPayload,
@@ -3895,14 +3896,15 @@ export function Viewport({
             })
           ) {
             // Dispatch CSG to the worker; show a solid-wall placeholder immediately.
-            const sx = e.start.xMm / 1000;
-            const sz = e.start.yMm / 1000;
-            const dx = e.end.xMm / 1000 - sx;
-            const dz = e.end.yMm / 1000 - sz;
+            const displayWall = wallWith3dJoinDisallowGaps(e, curr);
+            const sx = displayWall.start.xMm / 1000;
+            const sz = displayWall.start.yMm / 1000;
+            const dx = displayWall.end.xMm / 1000 - sx;
+            const dz = displayWall.end.yMm / 1000 - sz;
             const len = Math.max(0.001, Math.hypot(dx, dz));
-            const { yBase, height } = wallVerticalSpanM(e, elev, curr);
-            const thick = THREE.MathUtils.clamp(e.thicknessMm / 1000, 0.05, 2);
-            const wallOffset = wallPlanOffsetM(e);
+            const { yBase, height } = wallVerticalSpanM(displayWall, elev, curr);
+            const thick = THREE.MathUtils.clamp(displayWall.thicknessMm / 1000, 0.05, 2);
+            const wallOffset = wallPlanOffsetM(displayWall);
             const wallHeightMm = height * 1000;
             const retainExisting = retainPendingCsgWallIds.has(id);
             const nonce = ++csgNonceRef.current;
