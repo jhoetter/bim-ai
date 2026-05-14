@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "79642469b92d",
+  "session_id": "019e2868-d82a-79e3-97ab-9d98e6e5cfaf",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T21:53:25.14811Z",
+  "branch": "codex/sustainability-lens-workpackages-20260514",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "app/bim_ai/schedule_derivation.py",
+    "app/bim_ai/schedule_field_registry.py"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "58f9f8efd1ed",
+  "checkpoint_transcript_start": 433,
+  "transcript_lines_at_start": 433,
+  "token_usage": {
+    "input_tokens": 116368,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2787712,
+    "output_tokens": 18340,
+    "api_call_count": 38
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-14T21:53:25.110882Z",
+    "agent_lines": 682,
+    "agent_removed": 4,
+    "human_added": 255,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 937,
+    "total_lines_changed": 941,
+    "agent_percentage": 72.90116896918171,
+    "metric_version": 2
+  }
+}
