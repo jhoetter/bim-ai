@@ -1,0 +1,111 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "463fe88da7b8",
+  "session_id": "019e26d5-ba6a-7743-a2ef-403d3b4dcd2b",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T15:22:41.592025Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "b52b09fbb60c",
+  "checkpoint_transcript_start": 619,
+  "transcript_lines_at_start": 619,
+  "token_usage": {
+    "input_tokens": 662715,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 19066368,
+    "output_tokens": 57069,
+    "api_call_count": 214
+  },
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 317,
+      "user_lines_removed": 154,
+      "agent_lines_added": 1014,
+      "agent_lines_removed": 195,
+      "user_added_per_file": {
+        "packages/web/src/Viewport.tsx": 107,
+        "packages/web/src/viewport/ViewCube.tsx": 141,
+        "packages/web/src/viewport/csgCutterGeometry.ts": 2,
+        "packages/web/src/viewport/hostedOpeningDimensions.ts": 67
+      },
+      "user_removed_per_file": {
+        "packages/web/src/Viewport.tsx": 2,
+        "packages/web/src/viewport/ViewCube.tsx": 151,
+        "packages/web/src/viewport/csgCutterGeometry.ts": 1
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 3202,
+      "user_lines_removed": 311,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/elements.py": 6,
+        "packages/core/src/index.ts": 49,
+        "packages/ui/src/icons.tsx": 30,
+        "packages/web/src/Viewport.tsx": 357,
+        "packages/web/src/families/geometryFns/doorGeometry.ts": 15,
+        "packages/web/src/families/geometryFns/windowGeometry.ts": 11,
+        "packages/web/src/families/geometryFns/windowOutline.ts": 5,
+        "packages/web/src/plan/PlanCanvas.tsx": 3,
+        "packages/web/src/viewport/ViewCube.tsx": 513,
+        "packages/web/src/viewport/authoring3d.test.ts": 73,
+        "packages/web/src/viewport/authoring3d.ts": 193,
+        "packages/web/src/viewport/csgCutterGeometry.ts": 2,
+        "packages/web/src/viewport/csgWorker.wallOpening.test.ts": 12,
+        "packages/web/src/viewport/familyInstance3d.test.ts": 142,
+        "packages/web/src/viewport/familyInstance3d.ts": 25,
+        "packages/web/src/viewport/hostedOpeningDimensions.test.ts": 54,
+        "packages/web/src/viewport/hostedOpeningDimensions.ts": 73,
+        "packages/web/src/viewport/materials.test.ts": 18,
+        "packages/web/src/viewport/materials.ts": 191,
+        "packages/web/src/viewport/meshBuilders.locationLine.test.ts": 47,
+        "packages/web/src/viewport/meshBuilders.ts": 51,
+        "packages/web/src/viewport/sweepMesh.test.ts": 36,
+        "packages/web/src/viewport/sweepMesh.ts": 9,
+        "packages/web/src/viewport/threeMaterialFactory.ts": 34,
+        "packages/web/src/workspace/Workspace.semanticCommand.test.tsx": 62,
+        "packages/web/src/workspace/Workspace.test.tsx": 2,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 66,
+        "packages/web/src/workspace/inspector/InspectorContent.tsx": 200,
+        "packages/web/src/workspace/shell/AppShell.test.tsx": 15,
+        "packages/web/src/workspace/shell/AppShell.tsx": 1,
+        "packages/web/src/workspace/shell/TopBar.test.tsx": 20,
+        "packages/web/tmp/viewcube-revit-check-20260514/summary.json": 223,
+        "spec/material-appearance-system-tracker.md": 664
+      },
+      "user_removed_per_file": {
+        "packages/web/src/Viewport.tsx": 93,
+        "packages/web/src/families/geometryFns/doorGeometry.ts": 8,
+        "packages/web/src/families/geometryFns/windowGeometry.ts": 7,
+        "packages/web/src/families/geometryFns/windowOutline.ts": 3,
+        "packages/web/src/plan/PlanCanvas.tsx": 1,
+        "packages/web/src/viewport/ViewCube.tsx": 93,
+        "packages/web/src/viewport/csgCutterGeometry.ts": 1,
+        "packages/web/src/viewport/familyInstance3d.ts": 4,
+        "packages/web/src/viewport/materials.ts": 6,
+        "packages/web/src/viewport/meshBuilders.ts": 41,
+        "packages/web/src/viewport/sweepMesh.test.ts": 17,
+        "packages/web/src/viewport/sweepMesh.ts": 13,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 21,
+        "packages/web/src/workspace/inspector/InspectorContent.tsx": 2,
+        "packages/web/src/workspace/shell/AppShell.tsx": 1
+      }
+    }
+  ]
+}
