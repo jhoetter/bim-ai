@@ -1,0 +1,66 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "9ec18c004b04",
+  "session_id": "019e26fb-3f4c-7e31-ac21-c5920d9e89c4",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T15:15:55.211512Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/workspace/WorkspaceLeftRail.tsx",
+    "packages/web/src/workspace/shell/LeftRail.test.tsx",
+    "packages/web/src/workspace/shell/LeftRail.tsx",
+    "packages/web/src/workspace/shell/RibbonBar.tsx",
+    "packages/web/src/workspace/workspaceUtils.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "d24fbdb08c02",
+  "token_usage": {
+    "input_tokens": 381831,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 10248192,
+    "output_tokens": 21978,
+    "api_call_count": 73
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-14T15:15:55.189543Z",
+    "agent_lines": 366,
+    "agent_removed": 214,
+    "human_added": 61,
+    "human_modified": 4,
+    "human_removed": 0,
+    "total_committed": 431,
+    "total_lines_changed": 645,
+    "agent_percentage": 89.92248062015504,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 109,
+      "user_lines_removed": 31,
+      "agent_lines_added": 3330,
+      "agent_lines_removed": 414,
+      "user_added_per_file": {
+        "packages/web/src/workspace/Workspace.tsx": 1,
+        "packages/web/src/workspace/shell/RibbonBar.tsx": 65,
+        "packages/web/tmp/viewcube-revit-check-20260514/summary.json": 43
+      },
+      "user_removed_per_file": {
+        "packages/web/src/workspace/shell/RibbonBar.tsx": 4,
+        "packages/web/tmp/viewcube-revit-check-20260514/summary.json": 27
+      }
+    }
+  ]
+}
