@@ -1,0 +1,13 @@
+[Image #1] i want that the ribbon groups and the tab name move into one lane; i.e the icon, view type, discipline lens, tab name and then the ribbon groups; currently those are two levels, i only want one.
+
+---
+
+please commit and push and merge to main your changes
+
+---
+
+now make it prettier; consider how we can achieve fantastic design here, improve the status quo
+
+---
+
+[Image #1] i want that the left secondary sidebar goes all the way to the tab-level bar, i.e. that the ribbon doesnt interrupt it. if the secondary sidebar is collapsed, the ribbon can of course go to the left boundary.
