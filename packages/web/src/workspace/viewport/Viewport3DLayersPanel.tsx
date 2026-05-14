@@ -184,6 +184,7 @@ export interface Viewport3DLayersPanelProps {
   levelVisibilityOptions?: Array<{ id: string; label: string; hidden: boolean }>;
   onToggleLevelVisibility?: (levelId: string) => void;
   onSetAllLevelsHidden?: (hidden: boolean) => void;
+  onShowOnlyLevel?: (levelId: string) => void;
   viewerRenderStyle: ViewerRenderStyle;
   onSetRenderStyle: (style: ViewerRenderStyle) => void;
   viewerBackground: 'white' | 'light_grey' | 'dark';
@@ -226,6 +227,7 @@ export function Viewport3DLayersPanel({
   levelVisibilityOptions,
   onToggleLevelVisibility,
   onSetAllLevelsHidden,
+  onShowOnlyLevel,
   viewerRenderStyle,
   onSetRenderStyle,
   viewerBackground,
@@ -637,18 +639,31 @@ export function Viewport3DLayersPanel({
           </div>
           <div className="grid grid-cols-1 gap-y-1">
             {levelOptions.map((levelOption) => (
-              <label
+              <div
                 key={levelOption.id}
-                className="flex min-w-0 cursor-pointer items-center gap-2 text-[11px]"
+                className="grid min-w-0 grid-cols-[minmax(0,1fr)_28px] items-center gap-1"
               >
-                <input
-                  type="checkbox"
-                  data-testid={`level-toggle-${levelOption.id}`}
-                  checked={!levelOption.hidden}
-                  onChange={() => onToggleLevelVisibility?.(levelOption.id)}
-                />
-                <span className="min-w-0 truncate">{levelOption.label}</span>
-              </label>
+                <label className="flex min-w-0 cursor-pointer items-center gap-2 text-[11px]">
+                  <input
+                    type="checkbox"
+                    data-testid={`level-toggle-${levelOption.id}`}
+                    checked={!levelOption.hidden}
+                    onChange={() => onToggleLevelVisibility?.(levelOption.id)}
+                  />
+                  <span className="min-w-0 truncate">{levelOption.label}</span>
+                </label>
+                <button
+                  type="button"
+                  data-testid={`level-show-only-${levelOption.id}`}
+                  aria-label={`Show only ${levelOption.label}`}
+                  title={`Show only ${levelOption.label}`}
+                  disabled={!onShowOnlyLevel || (levelOptions.length === 1 && !levelOption.hidden)}
+                  onClick={() => onShowOnlyLevel?.(levelOption.id)}
+                  className="flex h-7 w-7 items-center justify-center rounded border border-border bg-background text-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Icons.level size={ICON_SIZE.chrome} aria-hidden="true" />
+                </button>
+              </div>
             ))}
           </div>
         </section>

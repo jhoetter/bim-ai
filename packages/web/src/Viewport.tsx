@@ -89,6 +89,16 @@ import { buildMassMesh } from './viewport/meshBuilders.mass';
 import { isElementVisibleUnderPhaseFilter } from './viewport/phaseFilter';
 import { applyDormerCutsToRoofGeom } from './viewport/dormerRoofCut';
 import { registerDormerCutFn } from './viewport/meshBuilders';
+import {
+  activeComponentAssetId,
+  activeComponentFamilyTypeId,
+  pendingComponentRotationDeg,
+} from './workspace/authoring/OptionsBar';
+import {
+  familyTypePlacesAsDetailComponent,
+  familyTypeProjectCategoryKey,
+  familyTypeRequiresWallHost,
+} from './families/familyPlacementRuntime';
 import { WallContextMenu, type WallContextMenuCommand } from './workspace/viewport';
 import { gripsFor, type Grip3dDescriptor } from './viewport/grip3d';
 import { computeSunPositionNoaa } from './viewport/sunPositionNoaa';
@@ -123,6 +133,7 @@ import {
   isBackfacingWallHit,
   isDuplicateHostedPlacement,
   isLinkedElementId,
+  shouldCommitHostedPlacementOnPointerUp,
   type HostedPlacementDedupeState,
 } from './viewport/directAuthoringGuards';
 
@@ -184,7 +195,8 @@ type Direct3dAuthoringTool =
   | 'reference-plane'
   | 'door'
   | 'window'
-  | 'wall-opening';
+  | 'wall-opening'
+  | 'component';
 type Authoring3dOverlayState = {
   tool: Direct3dAuthoringTool;
   phase: 'pick-start' | 'pick-end' | 'pick-point' | 'pick-wall' | 'pick-vertex' | 'pick-next';
@@ -229,6 +241,7 @@ const DIRECT_3D_AUTHORING_TOOLS = new Set<Direct3dAuthoringTool>([
   'door',
   'window',
   'wall-opening',
+  'component',
 ]);
 
 const LINE_3D_AUTHORING_TOOLS = new Set<Direct3dAuthoringTool>([
@@ -551,7 +564,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       if (LINE_3D_AUTHORING_TOOLS.has(tool)) {
         return { tool, phase: 'pick-start', levelName: direct3dDraftLevelName };
       }
-      if (tool === 'column' || tool === 'room') {
+      if (tool === 'column' || tool === 'room' || tool === 'component') {
         return { tool, phase: 'pick-point', levelName: direct3dDraftLevelName };
       }
       if (POLYGON_3D_AUTHORING_TOOLS.has(tool)) {
@@ -1665,12 +1678,21 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         }
         lastHostedPlacementScreen = nextPlacementScreen;
         lastHostedPlacementHost = nextPlacementHost;
+        const hostedFamilyTypeId = (() => {
+          if (!activeComponentFamilyTypeId) return undefined;
+          const familyType = elementsByIdRef.current[activeComponentFamilyTypeId];
+          if (familyType?.kind !== 'family_type') return undefined;
+          return familyTypeProjectCategoryKey(familyType) === tool
+            ? activeComponentFamilyTypeId
+            : undefined;
+        })();
         if (tool === 'door') {
           onSemanticCommand?.({
             type: 'insertDoorOnWall',
             wallId: hostWall.id,
             alongT,
             widthMm: 900,
+            ...(hostedFamilyTypeId ? { familyTypeId: hostedFamilyTypeId } : {}),
           });
           setAuthoringOverlay((prev) =>
             prev?.tool === 'door'
@@ -1693,6 +1715,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             widthMm: 1200,
             sillHeightMm: 900,
             heightMm: 1500,
+            ...(hostedFamilyTypeId ? { familyTypeId: hostedFamilyTypeId } : {}),
           });
           setAuthoringOverlay((prev) =>
             prev?.tool === 'window'
@@ -1734,7 +1757,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         (LINE_3D_AUTHORING_TOOLS.has(tool) ||
           POLYGON_3D_AUTHORING_TOOLS.has(tool) ||
           tool === 'column' ||
-          tool === 'room') &&
+          tool === 'room' ||
+          tool === 'component') &&
         tool !== 'wall' &&
         !isDraftPlaneProjectionStable(cx, cy, levelInfo.elevationMm)
       ) {
@@ -1850,6 +1874,76 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
           type: 'createColumn',
           levelId: levelInfo.id,
           positionMm: projected.point,
+        });
+        return true;
+      }
+      if (tool === 'component') {
+        const assetId = activeComponentAssetId;
+        const familyTypeId = activeComponentFamilyTypeId;
+        if (!assetId && !familyTypeId) {
+          setAuthoringOverlay({
+            tool,
+            phase: 'pick-point',
+            levelName: levelInfo.name,
+            currentScreen: projected.screen,
+            currentPointMm: projected.point,
+            previewHostValid: false,
+          });
+          return true;
+        }
+        if (assetId) {
+          onSemanticCommand?.({
+            type: 'PlaceAsset',
+            assetId,
+            levelId: levelInfo.id,
+            positionMm: projected.point,
+            rotationDeg: pendingComponentRotationDeg,
+          });
+          return true;
+        }
+        const selectedFamilyTypeId = familyTypeId as string;
+        const familyType = elementsByIdRef.current[selectedFamilyTypeId];
+        if (familyType?.kind !== 'family_type' || familyTypePlacesAsDetailComponent(familyType)) {
+          setAuthoringOverlay({
+            tool,
+            phase: 'pick-point',
+            levelName: levelInfo.name,
+            currentScreen: projected.screen,
+            currentPointMm: projected.point,
+            previewHostValid: false,
+          });
+          return true;
+        }
+        if (familyTypeRequiresWallHost(familyType)) {
+          const hostHit = pickWallAtPointer(cx, cy, { tool: 'wall-opening' });
+          if (!hostHit) {
+            setAuthoringOverlay({
+              tool,
+              phase: 'pick-wall',
+              levelName: levelInfo.name,
+              currentScreen: projected.screen,
+              currentPointMm: projected.point,
+              previewHostValid: false,
+            });
+            return true;
+          }
+          onSemanticCommand?.({
+            type: 'placeFamilyInstance',
+            familyTypeId: selectedFamilyTypeId,
+            levelId: hostHit.wall.levelId,
+            positionMm: { xMm: hostHit.hitPointMm.xMm, yMm: hostHit.hitPointMm.yMm },
+            rotationDeg: pendingComponentRotationDeg,
+            hostElementId: hostHit.wall.id,
+            hostAlongT: hostHit.alongT,
+          });
+          return true;
+        }
+        onSemanticCommand?.({
+          type: 'placeFamilyInstance',
+          familyTypeId: selectedFamilyTypeId,
+          levelId: levelInfo.id,
+          positionMm: projected.point,
+          rotationDeg: pendingComponentRotationDeg,
         });
         return true;
       }
@@ -2322,6 +2416,10 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         activeGrip = null;
         return;
       }
+      if (shouldCommitHostedPlacementOnPointerUp({ wasDragging, draftTool })) {
+        handle3dDirectToolClick(ev.clientX, ev.clientY);
+        return;
+      }
       if (
         wasDragging === 'tool-draft' &&
         dragMoved &&
@@ -2367,7 +2465,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         (LINE_3D_AUTHORING_TOOLS.has(directTool) ||
           POLYGON_3D_AUTHORING_TOOLS.has(directTool) ||
           directTool === 'column' ||
-          directTool === 'room')
+          directTool === 'room' ||
+          directTool === 'component')
       ) {
         const levelInfo = resolveDraftLevelInfo();
         if (levelInfo) {
@@ -3346,6 +3445,14 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         const host = curr[e.hostWallId];
         return host?.kind === 'wall' ? Boolean(levelHidden[host.levelId]) : false;
       }
+      if (e.kind === 'balcony') {
+        const host = curr[e.wallId];
+        return host?.kind === 'wall' ? Boolean(levelHidden[host.levelId]) : false;
+      }
+      if (e.kind === 'dormer') {
+        const host = curr[e.hostRoofId];
+        return host?.kind === 'roof' ? Boolean(levelHidden[host.referenceLevelId]) : false;
+      }
       if (e.kind === 'stair') {
         return Boolean(levelHidden[e.baseLevelId]) && Boolean(levelHidden[e.topLevelId]);
       }
@@ -4239,7 +4346,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       (LINE_3D_AUTHORING_TOOLS.has(authoringOverlay.tool) ||
         POLYGON_3D_AUTHORING_TOOLS.has(authoringOverlay.tool) ||
         authoringOverlay.tool === 'column' ||
-        authoringOverlay.tool === 'room')
+        authoringOverlay.tool === 'room' ||
+        authoringOverlay.tool === 'component')
     ) {
       return {
         title: `${authoringOverlay.tool.replace('-', ' ')} placement`,
@@ -4353,6 +4461,15 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       return {
         title: `Column placement · ${authoringOverlay.levelName ?? 'Active level'}`,
         instruction: 'Click a point to place a column. Alt+drag or middle mouse to orbit/pan.',
+      };
+    }
+    if (authoringOverlay.tool === 'component') {
+      const hasSelection = Boolean(activeComponentAssetId || activeComponentFamilyTypeId);
+      return {
+        title: `Component placement · ${authoringOverlay.levelName ?? 'Active level'}`,
+        instruction: hasSelection
+          ? 'Click a visible point to place the selected family or asset. Use Load Family to choose another.'
+          : 'Use Insert > Load Family to choose an asset or loaded family before placing a component.',
       };
     }
     if (authoringOverlay.tool === 'ceiling') {

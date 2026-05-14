@@ -26,6 +26,7 @@ function makeProps(
     levelVisibilityOptions: [],
     onToggleLevelVisibility: vi.fn(),
     onSetAllLevelsHidden: vi.fn(),
+    onShowOnlyLevel: vi.fn(),
     viewerRenderStyle: 'shaded',
     onSetRenderStyle: vi.fn(),
     viewerBackground: 'light_grey',
@@ -240,6 +241,7 @@ describe('<Viewport3DLayersPanel />', () => {
   it('calls level toggle and show/hide all level callbacks', () => {
     const onToggleLevelVisibility = vi.fn();
     const onSetAllLevelsHidden = vi.fn();
+    const onShowOnlyLevel = vi.fn();
     const { getByTestId } = render(
       <Viewport3DLayersPanel
         {...makeProps({
@@ -249,13 +251,16 @@ describe('<Viewport3DLayersPanel />', () => {
           ],
           onToggleLevelVisibility,
           onSetAllLevelsHidden,
+          onShowOnlyLevel,
         })}
       />,
     );
     fireEvent.click(getByTestId('level-toggle-lvl-gf'));
+    fireEvent.click(getByTestId('level-show-only-lvl-ff'));
     fireEvent.click(getByTestId('level-show-all'));
     fireEvent.click(getByTestId('level-hide-all'));
     expect(onToggleLevelVisibility).toHaveBeenCalledWith('lvl-gf');
+    expect(onShowOnlyLevel).toHaveBeenCalledWith('lvl-ff');
     expect(onSetAllLevelsHidden).toHaveBeenCalledWith(false);
     expect(onSetAllLevelsHidden).toHaveBeenCalledWith(true);
   });

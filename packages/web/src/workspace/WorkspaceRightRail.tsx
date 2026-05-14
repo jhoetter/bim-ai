@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 
 import type { Element, LensMode, ParamSchemaEntry } from '@bim-ai/core';
 
-import { useUnifiedAdvisorViolations } from '../advisor/unifiedAdvisorViolations';
 import { buildPlanGridDatumInspectorLine } from './readouts';
 import { useBimStore } from '../state/store';
 import type { ViewerRenderStyle } from '../state/storeTypes';
@@ -361,12 +360,6 @@ export function WorkspaceRightRail({
   const clearTemporaryVisibility = useBimStore((s) => s.clearTemporaryVisibility);
   const thinLinesEnabled = useBimStore((s) => s.thinLinesEnabled);
   const toggleThinLines = useBimStore((s) => s.toggleThinLines);
-  const { violations: unifiedViolations } = useUnifiedAdvisorViolations(
-    violations,
-    modelId,
-    revision,
-  );
-
   const el = selectedId ? (elementsById[selectedId] as Element | undefined) : undefined;
   const activeViewTarget = activeViewTargetId
     ? (elementsById[activeViewTargetId] as Element | undefined)
@@ -424,13 +417,6 @@ export function WorkspaceRightRail({
           (candidate): candidate is Extract<Element, { kind: 'schedule' }> =>
             candidate.kind === 'schedule',
         );
-  const activeConceptBoard =
-    activeViewTarget?.kind === 'view_concept_board'
-      ? (activeViewTarget as Extract<Element, { kind: 'view_concept_board' }>)
-      : (Object.values(elementsById) as Element[]).find(
-          (candidate): candidate is Extract<Element, { kind: 'view_concept_board' }> =>
-            candidate.kind === 'view_concept_board',
-        );
   const viewerCategoryCounts = useMemo(() => {
     const counts: Partial<Record<ViewerCatKey, number>> = {};
     for (const element of Object.values(elementsById) as Element[]) {
@@ -466,11 +452,16 @@ export function WorkspaceRightRail({
     },
     [levels, setViewerLevelVisibilityMap],
   );
-  const show3dLayers = mode === '3d' || (mode as string) === 'plan-3d';
-  const showAuthoringWorkbenches =
-    mode === 'plan' ||
-    (mode as string) === 'plan-3d' ||
-    (el ? !NAVIGABLE_KINDS.has(el.kind) : false);
+  const showOnlyViewerLevel = useCallback(
+    (levelId: string): void => {
+      setViewerLevelVisibilityMap(
+        Object.fromEntries(levels.map((level) => [level.id, level.id !== levelId])),
+      );
+    },
+    [levels, setViewerLevelVisibilityMap],
+  );
+  const show3dLayers = mode === '3d';
+  const showAuthoringWorkbenches = mode === 'plan' || (el ? !NAVIGABLE_KINDS.has(el.kind) : false);
   const showViewContextSurface = surface === 'view-context';
   const showElementSurface = surface === 'element';
   const inspectorPropertiesContext = inspectorPropertiesContextForElement(el);
@@ -689,50 +680,7 @@ export function WorkspaceRightRail({
             levelVisibilityOptions={levelVisibilityOptions}
             toggleViewerLevelHidden={toggleViewerLevelHidden}
             setAllViewerLevelsHidden={setAllViewerLevelsHidden}
-            viewerRenderStyle={viewerRenderStyle}
-            setViewerRenderStyle={setViewerRenderStyle}
-            viewerBackground={viewerBackground}
-            setViewerBackground={setViewerBackground}
-            viewerEdges={viewerEdges}
-            setViewerEdges={setViewerEdges}
-            viewerProjection={viewerProjection}
-            setViewerProjection={setViewerProjection}
-            viewerSectionBoxActive={viewerSectionBoxActive}
-            setViewerSectionBoxActive={setViewerSectionBoxActive}
-            viewerWalkModeActive={viewerWalkModeActive}
-            setViewerWalkModeActive={setViewerWalkModeActive}
-            requestViewerCameraAction={requestViewerCameraAction}
-            viewerClipElevMm={viewerClipElevMm}
-            setViewerClipElevMm={setViewerClipElevMm}
-            viewerClipFloorElevMm={viewerClipFloorElevMm}
-            setViewerClipFloorElevMm={setViewerClipFloorElevMm}
-            resetActiveSavedView={activeViewpoint ? resetActiveSavedView : undefined}
-            updateActiveSavedView={activeViewpoint ? updateActiveSavedView : undefined}
-          />
-        ) : mode === 'plan-3d' ? (
-          <SecondarySplitAdapter
-            activePlanView={activePlanView}
-            activeLevelId={activeLevelId}
-            levels={levels}
-            revision={revision}
-            elementsById={elementsById}
-            setActiveLevelId={setActiveLevelId}
-            persistPlanViewProperty={persistPlanViewProperty}
-            revealHiddenMode={revealHiddenMode}
-            setRevealHiddenMode={setRevealHiddenMode}
-            openPlanVisibilityGraphics={openVVDialog}
-            thinLinesEnabled={thinLinesEnabled}
-            toggleThinLines={toggleThinLines}
-            activeViewpoint={activeViewpoint}
-            planViews={planViews}
-            persistViewpointField={persistActiveViewpointField}
-            viewerCategoryHidden={viewerCategoryHidden}
-            toggleViewerCategoryHidden={toggleViewerCategoryHidden}
-            setAllViewerCategoriesHidden={setAllViewerCategoriesHidden}
-            viewerCategoryCounts={viewerCategoryCounts}
-            levelVisibilityOptions={levelVisibilityOptions}
-            toggleViewerLevelHidden={toggleViewerLevelHidden}
-            setAllViewerLevelsHidden={setAllViewerLevelsHidden}
+            showOnlyViewerLevel={showOnlyViewerLevel}
             viewerRenderStyle={viewerRenderStyle}
             setViewerRenderStyle={setViewerRenderStyle}
             viewerBackground={viewerBackground}
@@ -763,10 +711,6 @@ export function WorkspaceRightRail({
           <SecondarySheetAdapter sheet={activeSheet} elementsById={elementsById} />
         ) : mode === 'schedule' ? (
           <SecondaryScheduleAdapter schedule={activeSchedule} elementsById={elementsById} />
-        ) : mode === 'concept' ? (
-          <SecondaryConceptAdapter board={activeConceptBoard} elementsById={elementsById} />
-        ) : mode === 'agent' ? (
-          <SecondaryAgentAdapter violations={unifiedViolations} />
         ) : (
           <SecondaryPlanAdapter
             activePlanView={activePlanView}
@@ -1420,7 +1364,7 @@ export function WorkspaceRightRail({
                 hotkey: 'W',
                 label: 'Draw a wall',
                 onTrigger: () => {
-                  if (mode !== 'plan' && (mode as string) !== 'plan-3d') onModeChange('plan');
+                  if (mode !== 'plan') onModeChange('plan');
                   setPlanTool('wall');
                 },
               },
@@ -1428,7 +1372,7 @@ export function WorkspaceRightRail({
                 hotkey: 'D',
                 label: 'Insert a door',
                 onTrigger: () => {
-                  if (mode !== 'plan' && (mode as string) !== 'plan-3d') onModeChange('plan');
+                  if (mode !== 'plan') onModeChange('plan');
                   setPlanTool('door');
                 },
               },
@@ -1436,7 +1380,7 @@ export function WorkspaceRightRail({
                 hotkey: 'M',
                 label: 'Drop a room marker',
                 onTrigger: () => {
-                  if (mode !== 'plan' && (mode as string) !== 'plan-3d') onModeChange('plan');
+                  if (mode !== 'plan') onModeChange('plan');
                   setPlanTool('room');
                 },
               },
@@ -1476,6 +1420,7 @@ export function WorkspaceRightRail({
               levelVisibilityOptions={levelVisibilityOptions}
               onToggleLevelVisibility={toggleViewerLevelHidden}
               onSetAllLevelsHidden={setAllViewerLevelsHidden}
+              onShowOnlyLevel={showOnlyViewerLevel}
               viewerRenderStyle={viewerRenderStyle}
               onSetRenderStyle={setViewerRenderStyle}
               viewerBackground={viewerBackground}
@@ -1749,6 +1694,7 @@ type Secondary3dAdapterProps = {
   levelVisibilityOptions: Array<{ id: string; label: string; hidden: boolean }>;
   toggleViewerLevelHidden: (levelId: string) => void;
   setAllViewerLevelsHidden: (hidden: boolean) => void;
+  showOnlyViewerLevel: (levelId: string) => void;
   viewerRenderStyle: ViewerRenderStyle;
   setViewerRenderStyle: (style: ViewerRenderStyle) => void;
   viewerBackground: 'white' | 'light_grey' | 'dark';
@@ -1798,6 +1744,7 @@ function Secondary3dAdapter(props: Secondary3dAdapterProps): JSX.Element {
           levelVisibilityOptions={props.levelVisibilityOptions}
           onToggleLevelVisibility={props.toggleViewerLevelHidden}
           onSetAllLevelsHidden={props.setAllViewerLevelsHidden}
+          onShowOnlyLevel={props.showOnlyViewerLevel}
           viewerRenderStyle={props.viewerRenderStyle}
           onSetRenderStyle={props.setViewerRenderStyle}
           viewerBackground={props.viewerBackground}
@@ -1831,22 +1778,6 @@ function Secondary3dAdapter(props: Secondary3dAdapterProps): JSX.Element {
           />
         </SecondarySection>
       ) : null}
-    </div>
-  );
-}
-
-function SecondarySplitAdapter(
-  props: Parameters<typeof SecondaryPlanAdapter>[0] & Secondary3dAdapterProps,
-): JSX.Element {
-  return (
-    <div data-testid="secondary-sidebar-plan-3d">
-      <SecondaryHeader eyebrow="Plan + 3D" title="Combined view context" />
-      <SecondarySection title="Plan Context">
-        <SecondaryPlanAdapter {...props} />
-      </SecondarySection>
-      <SecondarySection title="3D Context">
-        <Secondary3dAdapter {...props} />
-      </SecondarySection>
     </div>
   );
 }
@@ -2011,65 +1942,6 @@ function SecondaryScheduleAdapter({
           />
           <SecondaryField label="Grouping" value={schedule?.grouping ? 'Configured' : 'None'} />
           <SecondaryField label="Placed on sheets" value={placedCount} />
-        </div>
-      </SecondarySection>
-    </div>
-  );
-}
-
-function SecondaryConceptAdapter({
-  board,
-  elementsById,
-}: {
-  board?: Extract<Element, { kind: 'view_concept_board' }>;
-  elementsById: Record<string, Element>;
-}): JSX.Element {
-  const underlayCount = (Object.values(elementsById) as Element[]).filter(
-    (element) => element.kind === 'image_underlay',
-  ).length;
-  const seedCount = (Object.values(elementsById) as Element[]).filter(
-    (element) => element.kind === 'concept_seed',
-  ).length;
-  return (
-    <div data-testid="secondary-sidebar-concept">
-      <SecondaryHeader
-        eyebrow="Concept"
-        title={board?.name ?? 'Concept board'}
-        subtitle={board ? `Board id · ${board.id}` : 'Pre-BIM board context'}
-      />
-      <SecondarySection title="Board Resources" testId="secondary-concept-resources">
-        <div className="space-y-1">
-          <SecondaryField label="Attachments" value={board?.attachments.length ?? 0} />
-          <SecondaryField label="Underlays" value={underlayCount} />
-          <SecondaryField label="Concept seeds" value={seedCount} />
-        </div>
-      </SecondarySection>
-    </div>
-  );
-}
-
-function SecondaryAgentAdapter({
-  violations,
-}: {
-  violations: ReturnType<typeof useUnifiedAdvisorViolations>['violations'];
-}): JSX.Element {
-  const bySeverity = violations.reduce<Record<string, number>>((acc, violation) => {
-    const key = String(violation.severity ?? 'info');
-    acc[key] = (acc[key] ?? 0) + 1;
-    return acc;
-  }, {});
-  return (
-    <div data-testid="secondary-sidebar-agent">
-      <SecondaryHeader
-        eyebrow="Agent"
-        title="Review context"
-        subtitle={`${violations.length} finding${violations.length === 1 ? '' : 's'}`}
-      />
-      <SecondarySection title="Finding Filters" testId="secondary-agent-filters">
-        <div className="space-y-1">
-          <SecondaryField label="Errors" value={bySeverity.error ?? 0} />
-          <SecondaryField label="Warnings" value={bySeverity.warning ?? 0} />
-          <SecondaryField label="Info" value={bySeverity.info ?? 0} />
         </div>
       </SecondarySection>
     </div>
@@ -2484,7 +2356,7 @@ function RightRailEmptySelection({
       ? 'Schedule review'
       : mode === 'sheet'
         ? 'Sheet review'
-        : mode === '3d' || (mode as string) === 'plan-3d'
+        : mode === '3d'
           ? '3D review'
           : 'Plan editing';
   const body =
@@ -2492,7 +2364,7 @@ function RightRailEmptySelection({
       ? 'Select a schedule row to highlight its source element, or select a schedule in the browser for sheet placement and identity.'
       : mode === 'sheet'
         ? 'Select a sheet viewport or documentation item to edit placement, crop, identity, and review context.'
-        : mode === '3d' || (mode as string) === 'plan-3d'
+        : mode === '3d'
           ? 'Select model geometry to inspect properties. View controls stay below for graphics, camera, section box, and hidden categories.'
           : activePlanViewName
             ? `Editing ${activePlanViewName}. Select an element, or use the tool palette to draw and annotate.`
@@ -2541,7 +2413,7 @@ function InspectorDisciplineScope({
   activeWorkspaceId,
 }: {
   element: Element;
-  activeWorkspaceId: 'arch' | 'struct' | 'mep' | 'concept';
+  activeWorkspaceId: 'arch' | 'struct' | 'mep';
 }): JSX.Element | null {
   const target =
     activeWorkspaceId === 'struct'
