@@ -1,0 +1,41 @@
+<image name=[Image #1]>
+
+---
+
+</image>
+
+---
+
+[Image #1] i want that the left secondary sidebar goes all the way to the tab-level bar, i.e. that the ribbon doesnt interrupt it. if the secondary sidebar is collapsed, the ribbon can of course go to the left boundary.
+
+---
+
+i have the feeling we can even further improve this; i.e. that the top section of the secondary left sidebar with same height as the ribbon is reserved for the things like the lens and such, and we more more of such things like the name there; it would be the width of the secondary sidebar and height of the ribbon; that way, e.g. the icon could also be larger (which is good for hifi) etc...
+
+---
+
+[Image #1] why the name twice? also i think you can move the display lense there. [Image #2] and when collapsed, i think you can find a great way to still make it more consistent, maybe by still showing the large icon and some ideas with the breadcrumbing or such; think about how we can achieve an absolute outstanding design for great consisntency and intuition, but looking also really great
+
+---
+
+oh boy, that laayout is really not pretty. i like if things are condense, think this through how it can be saving space but not being cramped, how things are intuitive; e.g. the icon should maybe remain in place if collapsed or not, but activating it gives the rest of the width back to it so we can display the name and the lense for instance, these kind of things.
+
+---
+
+[Image #1] better but not ideal; icon of the view type and rest of icons must be aligned; maybe we need to remove the section labels ("Build"), i want the whole ribbon a bit more condensed. [Image #2] i dnt like the expanded state view, looks weird.
+
+---
+
+[Image #1] apparently not same hieght, and thus also not aligned; also you can keep the label of the view type on the same hieght as the ribbon groups; it should be relatievly easy to have them same height. please btw also get rid of the top right chevron and settings icon, they are not needed.
+
+---
+
+i want that the "x" to cliose a tab is at the top right of it (i.e. not next to the name of the tab, but in the ribbon area at top right); also, i notice it seems to maybe store multiple elements (views) within one tab? that shouldnt be the case; as i click on close, that recusrive split should go away.
+
+---
+
+add minimal hovering or even loading spinners, because it takes a second to load e.g. the 3d (loader icon instaed then of the grid icon for instance)
+
+---
+
+sorry wrong chat. what did you work on before?
