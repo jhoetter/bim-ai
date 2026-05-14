@@ -298,13 +298,13 @@ export function WorkspaceLeftRail({
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
       {projectName ? (
-        <div className="shrink-0 border-b border-border p-2">
+        <div className="flex min-h-[44px] shrink-0 items-center border-b border-border px-2">
           <button
             type="button"
             ref={projectNameRef}
             onClick={onProjectNameClick}
             data-testid="primary-project-selector"
-            className="flex w-full items-center gap-2 rounded border border-border bg-surface-strong px-2 py-1.5 text-left text-xs font-semibold text-foreground hover:bg-accent-soft"
+            className="flex h-8 w-full items-center gap-2 rounded border border-border bg-surface-strong px-2 text-left text-xs font-semibold text-foreground hover:bg-accent-soft"
             aria-haspopup="menu"
           >
             <span

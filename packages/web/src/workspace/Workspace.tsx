@@ -516,7 +516,7 @@ function CompositionBar({
       data-testid="composition-bar"
       role="tablist"
       aria-label="Compositions"
-      className="flex min-w-0 flex-1 items-end gap-0.5 overflow-x-auto border-b border-border bg-surface pt-1.5"
+      className="flex min-w-0 flex-1 items-end gap-0.5 overflow-x-auto bg-surface pt-1.5"
       style={{ height: 38 }}
     >
       {compositions.map((composition, idx) => {
@@ -2785,28 +2785,47 @@ export function Workspace(): JSX.Element {
         ) : null}
       </>
     ) : null;
-    const paneViewHeader =
-      paneTab && paneSecondarySidebarOpen ? (
-        <div
-          data-testid={`canvas-pane-view-header-${node.id}`}
-          className="flex min-h-[94px] min-w-0 items-center border-r border-b border-border bg-surface-2 px-3 py-2.5"
+    const paneIdentityCell = paneTab ? (
+      <div
+        data-testid={`canvas-pane-view-header-${node.id}`}
+        className={[
+          'flex min-h-[94px] min-w-0 items-center border-r border-b border-border bg-surface-2',
+          paneSecondarySidebarOpen ? 'px-2.5 py-2' : 'justify-center px-1.5 py-2',
+        ].join(' ')}
+      >
+        <button
+          type="button"
+          data-testid="ribbon-mode-identity"
+          aria-label={
+            paneSecondarySidebarOpen
+              ? `Hide ${paneLabelParts.viewType} view settings for ${paneLabel}`
+              : `Show ${paneLabelParts.viewType} view settings for ${paneLabel}`
+          }
+          aria-pressed={paneSecondarySidebarOpen}
+          title={
+            paneSecondarySidebarOpen
+              ? `Hide ${paneLabelParts.viewType} view settings for ${paneLabel}`
+              : `Show ${paneLabelParts.viewType} view settings for ${paneLabel}`
+          }
+          onClick={togglePaneViewSettings}
+          className={[
+            'group relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border bg-background text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:bg-accent-soft',
+            paneSecondarySidebarOpen ? 'border-accent/45' : 'border-border',
+          ].join(' ')}
         >
-          <div className="flex min-w-0 flex-1 items-center gap-2.5">
-            <button
-              type="button"
-              data-testid="ribbon-mode-identity"
-              aria-label={`Hide view settings for ${paneLabel}`}
-              aria-pressed="true"
-              title={`Hide view settings for ${paneLabel}`}
-              onClick={togglePaneViewSettings}
-              className="group inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-accent/40 bg-background text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:bg-accent-soft"
-            >
-              <PaneIcon size={30} aria-hidden="true" />
-              <span className="sr-only">{paneLabelParts.viewType}</span>
-            </button>
-            <div className="min-w-0 flex-1">
+          <PaneIcon size={24} aria-hidden="true" />
+          {!paneSecondarySidebarOpen ? (
+            <span
+              aria-hidden="true"
+              className="absolute bottom-1 right-1 h-1.5 w-1.5 rounded-full bg-accent"
+            />
+          ) : null}
+        </button>
+        {paneSecondarySidebarOpen ? (
+          <>
+            <div className="ml-2.5 min-w-0 flex-1">
               <div className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold text-muted">
-                <span className="whitespace-nowrap">{paneLabelParts.viewType}</span>
+                <span className="shrink-0">{paneLabelParts.viewType}</span>
                 <span aria-hidden="true" className="text-border">
                   /
                 </span>
@@ -2822,7 +2841,7 @@ export function Workspace(): JSX.Element {
                 </div>
               </div>
               <div
-                className="mt-1 min-w-0 truncate text-base font-semibold leading-5 text-foreground"
+                className="mt-1 min-w-0 truncate text-[14px] font-semibold leading-5 text-foreground"
                 title={paneLabel}
               >
                 {paneLabelParts.viewName || paneLabel}
@@ -2832,7 +2851,7 @@ export function Workspace(): JSX.Element {
               type="button"
               data-testid={`canvas-pane-close-tab-${node.id}`}
               title={`Close ${paneLabel}`}
-              className="inline-flex h-7 w-7 shrink-0 self-start items-center justify-center rounded-md text-muted hover:bg-surface-strong hover:text-foreground"
+              className="ml-1 inline-flex h-7 w-7 shrink-0 self-start items-center justify-center rounded-md text-muted hover:bg-surface-strong hover:text-foreground"
               aria-label={`Close ${paneLabel}`}
               onClick={(event) => {
                 event.stopPropagation();
@@ -2841,9 +2860,10 @@ export function Workspace(): JSX.Element {
             >
               <Icons.close size={12} aria-hidden="true" />
             </button>
-          </div>
-        </div>
-      ) : null;
+          </>
+        ) : null}
+      </div>
+    ) : null;
     const paneRibbon = paneTab ? (
       <div data-testid={`canvas-pane-ribbon-${node.id}`}>
         <RibbonBar
@@ -2858,8 +2878,7 @@ export function Workspace(): JSX.Element {
             title: paneLabel,
             viewIconTestId: `canvas-pane-view-icon-${node.id}`,
           }}
-          showViewControls={!paneSecondarySidebarOpen}
-          viewControlsVariant="prominent"
+          showViewControls={false}
           trailingControls={paneTrailingControls}
           onLensChange={handlePaneLensChange}
           onToolSelect={handlePaneToolSelect}
@@ -3064,19 +3083,15 @@ export function Workspace(): JSX.Element {
           <div
             data-testid={`canvas-pane-tabstrip-${node.id}`}
             className={[
-              paneSecondarySidebarOpen
-                ? 'grid min-h-0 min-w-0 flex-1 bg-surface'
-                : 'flex min-h-0 min-w-0 flex-1 flex-col bg-surface',
+              'grid min-h-0 min-w-0 flex-1 bg-surface',
               paneCanAcceptDrop ? 'border border-accent/80 bg-accent/10' : '',
             ].join(' ')}
-            style={
-              paneSecondarySidebarOpen
-                ? {
-                    gridTemplateColumns: 'min(280px, 42%) minmax(0, 1fr)',
-                    gridTemplateRows: 'auto minmax(0, 1fr)',
-                  }
-                : undefined
-            }
+            style={{
+              gridTemplateColumns: paneSecondarySidebarOpen
+                ? 'min(260px, 38%) minmax(0, 1fr)'
+                : '64px minmax(0, 1fr)',
+              gridTemplateRows: 'auto minmax(0, 1fr)',
+            }}
             onDragOver={(event) => {
               if (!paneCanAcceptDrop) return;
               event.preventDefault();
@@ -3090,27 +3105,21 @@ export function Workspace(): JSX.Element {
               placeViewElementInPane(elementId, node.id);
             }}
           >
-            {paneSecondarySidebarOpen ? (
-              <>
-                {paneViewHeader}
-                <div className="min-w-0" style={{ gridColumn: 2, gridRow: 1 }}>
-                  {paneRibbon}
-                </div>
-                {paneSecondarySidebar}
-                <div className="flex min-h-0 min-w-0" style={{ gridColumn: 2, gridRow: 2 }}>
-                  {paneCanvas}
-                  {paneElementSidebar}
-                </div>
-              </>
-            ) : (
-              <>
-                {paneRibbon}
-                <div className="flex min-h-0 min-w-0 flex-1">
-                  {paneCanvas}
-                  {paneElementSidebar}
-                </div>
-              </>
-            )}
+            {paneIdentityCell}
+            <div className="min-w-0" style={{ gridColumn: 2, gridRow: 1 }}>
+              {paneRibbon}
+            </div>
+            {paneSecondarySidebar}
+            <div
+              className="flex min-h-0 min-w-0"
+              style={{
+                gridColumn: paneSecondarySidebarOpen ? 2 : '1 / 3',
+                gridRow: 2,
+              }}
+            >
+              {paneCanvas}
+              {paneElementSidebar}
+            </div>
           </div>
         ) : (
           <div
@@ -3328,6 +3337,7 @@ export function Workspace(): JSX.Element {
       {materialBrowserOpen ? (
         <MaterialBrowserDialog
           currentKey={selectedMaterialKey}
+          elementsById={elementsById}
           onAssign={(materialKey) => {
             assignMaterialToSelection(materialKey);
             setMaterialBrowserOpen(false);
@@ -3338,6 +3348,7 @@ export function Workspace(): JSX.Element {
       {appearanceAssetBrowserOpen ? (
         <AppearanceAssetBrowserDialog
           currentKey={selectedMaterialKey}
+          elementsById={elementsById}
           onReplace={(materialKey) => {
             assignMaterialToSelection(materialKey);
             setAppearanceAssetBrowserOpen(false);
