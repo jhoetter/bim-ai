@@ -32,6 +32,72 @@ CONSTRUCTION_LOGISTICS_KINDS = {
 
 CONSTRUCTION_METADATA_KEY = "construction"
 
+CONSTRUCTION_SCHEDULE_DEFAULTS = [
+    {
+        "id": "construction-packages",
+        "name": "Construction Package Schedule",
+        "category": "construction_package",
+    },
+    {"id": "construction-phases", "name": "Phase Schedule", "category": "phase"},
+    {"id": "construction-progress", "name": "Progress Schedule", "category": "progress"},
+    {"id": "construction-punch", "name": "Punch List", "category": "punch"},
+    {
+        "id": "construction-logistics",
+        "name": "Site Logistics Elements",
+        "category": "site_logistics",
+    },
+    {"id": "construction-qa", "name": "QA Checklist Report", "category": "qa_checklist"},
+]
+
+CONSTRUCTION_VIEW_DEFAULTS = [
+    {
+        "id": "construction-4d-phase",
+        "name": "4D Phase View",
+        "viewKind": "plan_or_3d",
+        "colorBy": "phase",
+        "phaseFilter": "all",
+    },
+    {
+        "id": "construction-package-color",
+        "name": "Color by Construction Package",
+        "viewKind": "plan_or_3d",
+        "colorBy": "constructionPackageId",
+    },
+    {
+        "id": "construction-progress-color",
+        "name": "Color by Progress Status",
+        "viewKind": "plan_or_3d",
+        "colorBy": "progressStatus",
+    },
+    {
+        "id": "construction-site-logistics-plan",
+        "name": "Site Logistics Plan",
+        "viewKind": "plan",
+        "shows": ["construction_logistics"],
+    },
+    {
+        "id": "construction-field-review",
+        "name": "Field Review Saved View",
+        "viewKind": "saved_view",
+        "shows": ["issues", "evidence", "progress"],
+    },
+]
+
+CONSTRUCTION_SHEET_DEFAULTS = [
+    {
+        "id": "construction-punch-sheet",
+        "name": "Punch Item Sheet",
+        "placedSchedules": ["punch"],
+        "placedViews": ["construction-field-review"],
+    },
+    {
+        "id": "construction-logistics-sheet",
+        "name": "Site Logistics Sheet",
+        "placedSchedules": ["site_logistics"],
+        "placedViews": ["construction-site-logistics-plan"],
+    },
+]
+
 
 def construction_metadata_for_element(elem: object) -> dict[str, Any]:
     props = getattr(elem, "props", None)
@@ -157,6 +223,9 @@ def build_construction_lens_payload(doc: Document) -> dict[str, Any]:
         },
         "progressStatuses": sorted(CONSTRUCTION_PROGRESS_STATUSES),
         "logisticsKinds": sorted(CONSTRUCTION_LOGISTICS_KINDS),
+        "scheduleDefaults": CONSTRUCTION_SCHEDULE_DEFAULTS,
+        "viewDefaults": CONSTRUCTION_VIEW_DEFAULTS,
+        "sheetDefaults": CONSTRUCTION_SHEET_DEFAULTS,
         "phases": phases,
         "packages": packages,
         "progress": progress,

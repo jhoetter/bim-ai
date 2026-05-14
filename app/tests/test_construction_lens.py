@@ -141,6 +141,16 @@ def test_construction_schedule_defaults_cover_package_phase_progress_logistics_a
     assert payload["lens"]["id"] == "construction"
     assert payload["summary"]["progressElementCount"] == 1
     assert payload["summary"]["logisticsElementCount"] == 1
+    assert {row["category"] for row in payload["scheduleDefaults"]} >= {
+        "construction_package",
+        "phase",
+        "progress",
+        "punch",
+        "site_logistics",
+        "qa_checklist",
+    }
+    assert any(row["colorBy"] == "progressStatus" for row in payload["viewDefaults"])
+    assert any(row["name"] == "Punch Item Sheet" for row in payload["sheetDefaults"])
 
 
 def test_construction_lens_tools_are_registered() -> None:
