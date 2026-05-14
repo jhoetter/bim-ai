@@ -3,8 +3,12 @@
   "checkpoint_id": "bef90cd09f27",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 4,
+  "checkpoints_count": 6,
   "files_touched": [
+    "app/bim_ai/constraints_wall_geometry.py",
+    "app/bim_ai/engine_commit.py",
+    "app/tests/test_engine_constraints.py",
+    "packages/web/src/Viewport.tsx",
     "packages/web/src/viewport/authoring3d.test.ts",
     "packages/web/src/viewport/authoring3d.ts",
     "packages/web/src/workspace/viewport/CanvasMount.tsx"
@@ -51,13 +55,19 @@
       "transcript": "/be/f90cd09f27/6/full.jsonl",
       "content_hash": "/be/f90cd09f27/6/content_hash.txt",
       "prompt": "/be/f90cd09f27/6/prompt.txt"
+    },
+    {
+      "metadata": "/be/f90cd09f27/7/metadata.json",
+      "transcript": "/be/f90cd09f27/7/full.jsonl",
+      "content_hash": "/be/f90cd09f27/7/content_hash.txt",
+      "prompt": "/be/f90cd09f27/7/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 9793710,
+    "input_tokens": 11283627,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 243425792,
-    "output_tokens": 703650,
-    "api_call_count": 1977
+    "cache_read_tokens": 283903360,
+    "output_tokens": 789489,
+    "api_call_count": 2282
   }
 }
