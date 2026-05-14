@@ -1,0 +1,17 @@
+i am not sure if we are missing in our layout some kind of option to do more general basic work; we have lots of view options, but where e.g. do we define how many layers there are? what are the usual project setup configuraiton steps in revit, and do we cover them? e.g. i think revit usually has options to define floors and their height and such things; not sure if we are missing some fundametals. pelase deeply researche the revit docs, how they are doing, analyze whether we got them, how they fit into our product, and specify. create a long list of tracker and give me an exec summary
+
+---
+
+please once you specified everything, implement accordingly...
+
+---
+
+any other todos left open?
+
+---
+
+[Image #1] but how can i e.g. change the heights and such? is this as good in UX as it should be? ...
+
+---
+
+identify the missing specs, write them all down, and then afterwards continue deeveloping all of them and commit and push YOUR work
