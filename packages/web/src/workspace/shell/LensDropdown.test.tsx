@@ -13,7 +13,7 @@ describe('LensDropdown — LNS-V3-01', () => {
     expect(getByTestId('lens-dropdown-trigger').textContent).toContain('▾');
   });
 
-  it('click opens the 4-item menu', () => {
+  it('click opens the 5-item menu', () => {
     const { getByTestId, queryByTestId } = render(
       <LensDropdown currentLens="all" onLensChange={() => {}} />,
     );
@@ -21,7 +21,7 @@ describe('LensDropdown — LNS-V3-01', () => {
     fireEvent.click(getByTestId('lens-dropdown-trigger'));
     const menu = queryByTestId('lens-menu');
     expect(menu).toBeTruthy();
-    expect(menu!.querySelectorAll('[role="menuitem"]').length).toBe(4);
+    expect(menu!.querySelectorAll('[role="menuitem"]').length).toBe(5);
   });
 
   it('click "Structure" calls onLensChange("structure")', () => {
@@ -32,7 +32,7 @@ describe('LensDropdown — LNS-V3-01', () => {
     expect(onLensChange).toHaveBeenCalledWith('structure');
   });
 
-  it('L key cycles forward through the 4 modes', () => {
+  it('L key cycles forward through the lens modes', () => {
     const onLensChange = vi.fn();
     render(<LensDropdown currentLens="all" onLensChange={onLensChange} />);
     fireEvent.keyDown(window, { key: 'L' });
@@ -46,6 +46,17 @@ describe('LensDropdown — LNS-V3-01', () => {
     onLensChange.mockClear();
     render(<LensDropdown currentLens="mep" onLensChange={onLensChange} />);
     fireEvent.keyDown(window, { key: 'L' });
+    expect(onLensChange).toHaveBeenCalledWith('fire-safety');
+
+    onLensChange.mockClear();
+    render(<LensDropdown currentLens="fire-safety" onLensChange={onLensChange} />);
+    fireEvent.keyDown(window, { key: 'L' });
     expect(onLensChange).toHaveBeenCalledWith('all');
+  });
+
+  it('surfaces the Fire Safety lens option', () => {
+    const { getByTestId } = render(<LensDropdown currentLens="all" onLensChange={() => {}} />);
+    fireEvent.click(getByTestId('lens-dropdown-trigger'));
+    expect(getByTestId('lens-option-fire-safety').textContent).toContain('Fire Safety');
   });
 });

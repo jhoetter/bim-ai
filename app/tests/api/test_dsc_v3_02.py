@@ -4,6 +4,7 @@ Covers:
 - SetViewLensCmd updates defaultLens on the target view (PlanViewElem + ViewElem).
 - SetViewLensCmd raises ValueError for unknown viewId.
 - element_passes_lens helper: show_all passes everything; show_struct passes only struct.
+- Fire-safety lens foregrounds relevant overlay host elements without mutating discipline.
 - Snapshot serialisation: views default defaultLens to 'show_all' when field absent.
 - set-view-lens tool descriptor present in /api/v3/tools.
 """
@@ -166,6 +167,20 @@ class TestElementPassesLens:
         assert element_passes_lens(None, "show_struct") is False
         assert element_passes_lens(None, "show_mep") is False
 
+    def test_show_fire_safety_passes_overlay_hosts_and_marked_props(self) -> None:
+        assert element_passes_lens("arch", "show_fire_safety", elem_kind="wall") is True
+        assert element_passes_lens("mep", "show_fire_safety", elem_kind="duct") is True
+        assert (
+            element_passes_lens(
+                "struct",
+                "show_fire_safety",
+                elem_kind="generic_model",
+                props={"fireCompartmentId": "A"},
+            )
+            is True
+        )
+        assert element_passes_lens("struct", "show_fire_safety", elem_kind="column") is False
+
 
 # ---------------------------------------------------------------------------
 # Unit tests: defaultLens field defaults on view elements
@@ -197,6 +212,12 @@ class TestDefaultLensDefault:
         assert pv.default_lens == "show_struct"
         data = pv.model_dump(by_alias=True)
         assert data["defaultLens"] == "show_struct"
+
+    def test_plan_view_elem_round_trip_with_fire_safety_lens(self) -> None:
+        pv = PlanViewElem.model_validate(
+            {"id": "pv-x", "levelId": "lvl-x", "defaultLens": "show_fire_safety"}
+        )
+        assert pv.default_lens == "show_fire_safety"
 
 
 # ---------------------------------------------------------------------------

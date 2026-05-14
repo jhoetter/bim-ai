@@ -738,7 +738,13 @@ register(
                 "view_id": {"type": "string"},
                 "lens": {
                     "type": "string",
-                    "enum": ["show_arch", "show_struct", "show_mep", "show_all"],
+                    "enum": [
+                        "show_arch",
+                        "show_struct",
+                        "show_mep",
+                        "show_fire_safety",
+                        "show_all",
+                    ],
                 },
             },
             "additionalProperties": False,
@@ -770,7 +776,8 @@ register(
         sideEffects="mutates-kernel",
         agentSafetyNotes=(
             "Wrap in a CommandBundle via apply-bundle. "
-            "lens must be one of: show_arch, show_struct, show_mep, show_all. "
+            "lens must be one of: show_arch, show_struct, show_mep, "
+            "show_fire_safety, show_all. "
             "show_all renders all elements at full opacity (default). "
             "Does not mutate element discipline fields — view-only modifier."
         ),

@@ -2745,10 +2745,22 @@ export type AssumptionEntry = {
 };
 
 /** CHR-V3-03 — workspace-level status-bar discipline filter (LNS-V3-01 UI). */
-export type LensMode = 'all' | 'architecture' | 'structure' | 'mep' | 'energy' | 'coordination';
+export type LensMode =
+  | 'all'
+  | 'architecture'
+  | 'structure'
+  | 'mep'
+  | 'fire-safety'
+  | 'energy'
+  | 'coordination';
 
 /** DSC-V3-02 — per-view discipline lens stored on view elements. */
-export type ViewLensMode = 'show_arch' | 'show_struct' | 'show_mep' | 'show_all';
+export type ViewLensMode =
+  | 'show_arch'
+  | 'show_struct'
+  | 'show_mep'
+  | 'show_fire_safety'
+  | 'show_all';
 
 /** LNS-V3-01/DSC-V3-02 — undoable command dispatched by the lens dropdown. */
 export type SetViewLensCmd = { type: 'set_view_lens'; viewId: string; lens: ViewLensMode };

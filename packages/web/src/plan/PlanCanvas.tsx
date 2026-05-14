@@ -36,6 +36,7 @@ import {
 import * as THREE from 'three';
 import { parseDimensionInput } from '@bim-ai/core';
 import type { Element } from '@bim-ai/core';
+import { elementPassesFireSafetyLens } from '../viewport/useLensFilter';
 
 import { useBimStore, type PlanTool } from '../state/store';
 import type { CategoryOverride } from '../state/storeTypes';
@@ -1114,12 +1115,11 @@ export function PlanCanvas({
     {
       const planView = activePlanViewId ? elementsById[activePlanViewId] : null;
       // Global lensMode from StatusBar dropdown overrides the plan_view's defaultLens.
-      // lensMode values: 'all' | 'architecture' | 'structure' | 'mep'
-      // plan_view.defaultLens values: 'show_all' | 'show_arch' | 'show_struct' | 'show_mep'
       const LENS_PROP_TO_TOKEN: Record<string, string> = {
         architecture: 'show_arch',
         structure: 'show_struct',
         mep: 'show_mep',
+        'fire-safety': 'show_fire_safety',
       };
       const resolvedLens =
         lensMode && lensMode !== 'all'
@@ -1144,7 +1144,8 @@ export function PlanCanvas({
           if (!el) return;
           const disc =
             ('discipline' in el ? (el.discipline as string | null | undefined) : null) ?? 'arch';
-          const isGhost = disc !== expected;
+          const isGhost =
+            lens === 'show_fire_safety' ? !elementPassesFireSafetyLens(el) : disc !== expected;
           if (ch instanceof THREE.Mesh) {
             const mat = ch.material as THREE.Material | THREE.Material[];
             const applyGhost = (m: THREE.Material) => {
