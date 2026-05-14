@@ -96,9 +96,12 @@ import {
 } from './workspace/authoring/OptionsBar';
 import {
   familyTypePlacesAsDetailComponent,
-  familyTypeProjectCategoryKey,
   familyTypeRequiresWallHost,
 } from './families/familyPlacementRuntime';
+import {
+  resolveHostedFamilyPlacement,
+  type HostedFamilyTool,
+} from './families/hostedFamilySelection';
 import { WallContextMenu, type WallContextMenuCommand } from './workspace/viewport';
 import { gripsFor, type Grip3dDescriptor } from './viewport/grip3d';
 import { computeSunPositionNoaa } from './viewport/sunPositionNoaa';
@@ -130,11 +133,13 @@ import {
   type WallDraftProjectionMode,
 } from './viewport/authoring3d';
 import {
+  findHostedOpeningConflict,
   isBackfacingWallHit,
   isDuplicateHostedPlacement,
   isLinkedElementId,
   shouldCommitHostedPlacementOnPointerUp,
   shouldReuseHostedPreviewCommit,
+  type HostedOpeningLike,
   type HostedPlacementDedupeState,
 } from './viewport/directAuthoringGuards';
 
@@ -213,6 +218,7 @@ type Authoring3dOverlayState = {
   previewHostWallId?: string;
   previewHostAlongT?: number;
   previewHostLock?: boolean;
+  previewHostInvalidReason?: string;
   previewAuxLines?: Array<{ start: ScreenPoint; end: ScreenPoint }>;
   previewAuxArcPath?: string;
   wallPreviewOutlineScreen?: ScreenPoint[];
@@ -1493,8 +1499,16 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       return preview;
     }
 
+    function hostedToolSpec(tool: HostedFamilyTool) {
+      return resolveHostedFamilyPlacement({
+        tool,
+        familyTypeId: activeComponentFamilyTypeId,
+        elementsById: elementsByIdRef.current,
+      });
+    }
+
     function hostedPreviewSegment(
-      tool: 'door' | 'window' | 'wall-opening',
+      tool: HostedFamilyTool,
       hit: {
         wall: Extract<Element, { kind: 'wall' }>;
         hitPointMm: { xMm: number; yMm: number; zMm: number };
@@ -1509,10 +1523,12 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       auxLines?: Array<{ start: ScreenPoint; end: ScreenPoint }>;
       auxArcPath?: string;
       valid: boolean;
+      invalidReason?: string;
     } | null {
       const center = projectSemanticPointToScreen(hit.hitPointMm, rect);
       if (!center) return null;
-      const previewWidthMm = tool === 'door' ? 900 : tool === 'window' ? 1200 : 1000;
+      const spec = hostedToolSpec(tool);
+      const previewWidthMm = spec.widthMm;
       const dx = hit.wall.end.xMm - hit.wall.start.xMm;
       const dy = hit.wall.end.yMm - hit.wall.start.yMm;
       const wallLenMm = Math.hypot(dx, dy);
@@ -1526,8 +1542,13 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       const baseElevationMm = levelsById.get(baseLevelId) ?? 0;
       const baseZMm = baseElevationMm + (hit.wall.baseConstraintOffsetMm ?? 0);
       const topZMm = Math.max(baseZMm + 100, baseZMm + hit.wall.heightMm);
-      const sillMm = tool === 'window' ? 900 : tool === 'wall-opening' ? 200 : 0;
-      const headMm = tool === 'window' ? 2400 : tool === 'wall-opening' ? 2400 : 2100;
+      const sillMm = tool === 'window' ? (spec.sillHeightMm ?? 900) : (spec.sillHeightMm ?? 0);
+      const headMm =
+        tool === 'window'
+          ? (spec.sillHeightMm ?? 900) + (spec.heightMm ?? 1500)
+          : tool === 'wall-opening'
+            ? (spec.sillHeightMm ?? 200) + (spec.heightMm ?? 2200)
+            : (spec.heightMm ?? 2100);
       const openingBottomMm = Math.min(topZMm - 50, baseZMm + sillMm);
       const openingTopMm = Math.max(openingBottomMm + 50, Math.min(topZMm, baseZMm + headMm));
       const centerT = clampHostedAlongT(tool, hit.wall, hit.alongT);
@@ -1572,6 +1593,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         auxLines.push({ start: lowerStart, end: { x: mx, y: my } });
         auxArcPath = `M ${lowerStart.x} ${lowerStart.y} Q ${cx2} ${cy2} ${lowerEnd.x} ${lowerEnd.y}`;
       }
+      const conflict = hostedOpeningConflictFor(tool, hit.wall, centerT);
       return {
         center,
         start: projectSemanticPointToScreen(startMm, rect) ?? undefined,
@@ -1579,22 +1601,63 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         outline,
         auxLines,
         auxArcPath,
-        valid: true,
+        valid: !conflict,
+        invalidReason: conflict
+          ? 'This wall span already contains a door/window/opening. Move along the wall.'
+          : undefined,
       };
     }
 
     function clampHostedAlongT(
-      tool: 'door' | 'window' | 'wall-opening',
+      tool: HostedFamilyTool,
       wall: Extract<Element, { kind: 'wall' }>,
       alongT: number,
     ): number {
       const dx = wall.end.xMm - wall.start.xMm;
       const dy = wall.end.yMm - wall.start.yMm;
       const wallLenMm = Math.max(1, Math.hypot(dx, dy));
-      const nominalWidthMm = tool === 'door' ? 900 : tool === 'window' ? 1200 : 1000;
+      const nominalWidthMm = hostedToolSpec(tool).widthMm;
       const edgeClearanceMm = nominalWidthMm / 2 + 80;
       const margin = Math.max(0.02, Math.min(0.18, edgeClearanceMm / wallLenMm));
       return Math.max(margin, Math.min(1 - margin, alongT));
+    }
+
+    function hostedOpeningConflictFor(
+      tool: HostedFamilyTool,
+      wall: Extract<Element, { kind: 'wall' }>,
+      alongT: number,
+    ) {
+      const dx = wall.end.xMm - wall.start.xMm;
+      const dy = wall.end.yMm - wall.start.yMm;
+      const wallLengthMm = Math.max(1, Math.hypot(dx, dy));
+      const widthMm = hostedToolSpec(tool).widthMm;
+      const existing: HostedOpeningLike[] = [];
+      for (const element of Object.values(elementsByIdRef.current)) {
+        if (element.kind === 'door' || element.kind === 'window') {
+          existing.push({
+            kind: element.kind,
+            id: element.id,
+            wallId: element.wallId,
+            alongT: element.alongT,
+            widthMm: element.widthMm,
+          });
+        } else if (element.kind === 'wall_opening') {
+          existing.push({
+            kind: 'wall_opening',
+            id: element.id,
+            hostWallId: element.hostWallId,
+            alongTStart: element.alongTStart,
+            alongTEnd: element.alongTEnd,
+          });
+        }
+      }
+      return findHostedOpeningConflict({
+        wallId: wall.id,
+        wallLengthMm,
+        alongT,
+        widthMm,
+        existing,
+      });
     }
 
     function handle3dDirectToolClick(cx: number, cy: number): boolean {
@@ -1654,6 +1717,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                   previewHostWallId: hostPreviewLock ? prev.previewHostWallId : undefined,
                   previewHostAlongT: hostPreviewLock ? prev.previewHostAlongT : undefined,
                   previewHostLock: hostPreviewLock,
+                  previewHostInvalidReason: 'No visible wall host under the cursor.',
                   previewAuxLines: undefined,
                   previewAuxArcPath: undefined,
                 }
@@ -1662,6 +1726,23 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
           return true;
         }
         alongT = clampHostedAlongT(tool, hostWall, Math.max(0, Math.min(1, alongT)));
+        const conflict = hostedOpeningConflictFor(tool, hostWall, alongT);
+        if (conflict) {
+          setAuthoringOverlay((prev) =>
+            prev?.tool === tool
+              ? {
+                  ...prev,
+                  previewHostValid: false,
+                  previewHostWallId: hostWall.id,
+                  previewHostAlongT: alongT,
+                  previewHostLock: hostPreviewLock,
+                  previewHostInvalidReason:
+                    'This wall span already contains a door/window/opening. Move along the wall.',
+                }
+              : prev,
+          );
+          return true;
+        }
         const nextPlacementScreen: HostedPlacementDedupeState = {
           key: `${tool}:${Math.round(clickScreen.x / 8)}:${Math.round(clickScreen.y / 8)}`,
           atMs: performance.now(),
@@ -1678,20 +1759,14 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         }
         lastHostedPlacementScreen = nextPlacementScreen;
         lastHostedPlacementHost = nextPlacementHost;
-        const hostedFamilyTypeId = (() => {
-          if (!activeComponentFamilyTypeId) return undefined;
-          const familyType = elementsByIdRef.current[activeComponentFamilyTypeId];
-          if (familyType?.kind !== 'family_type') return undefined;
-          return familyTypeProjectCategoryKey(familyType) === tool
-            ? activeComponentFamilyTypeId
-            : undefined;
-        })();
+        const hostedSpec = hostedToolSpec(tool);
+        const hostedFamilyTypeId = hostedSpec.familyTypeId;
         if (tool === 'door') {
           onSemanticCommand?.({
             type: 'insertDoorOnWall',
             wallId: hostWall.id,
             alongT,
-            widthMm: 900,
+            widthMm: hostedSpec.widthMm,
             ...(hostedFamilyTypeId ? { familyTypeId: hostedFamilyTypeId } : {}),
           });
           setAuthoringOverlay((prev) =>
@@ -1700,6 +1775,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                   ...prev,
                   previewOutlineScreen: undefined,
                   previewHostValid: true,
+                  previewHostInvalidReason: undefined,
                   previewAuxLines: undefined,
                   previewAuxArcPath: undefined,
                 }
@@ -1712,9 +1788,9 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             type: 'insertWindowOnWall',
             wallId: hostWall.id,
             alongT,
-            widthMm: 1200,
-            sillHeightMm: 900,
-            heightMm: 1500,
+            widthMm: hostedSpec.widthMm,
+            sillHeightMm: hostedSpec.sillHeightMm ?? 900,
+            heightMm: hostedSpec.heightMm ?? 1500,
             ...(hostedFamilyTypeId ? { familyTypeId: hostedFamilyTypeId } : {}),
           });
           setAuthoringOverlay((prev) =>
@@ -1723,6 +1799,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                   ...prev,
                   previewOutlineScreen: undefined,
                   previewHostValid: true,
+                  previewHostInvalidReason: undefined,
                   previewAuxLines: undefined,
                   previewAuxArcPath: undefined,
                 }
@@ -1744,6 +1821,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                 ...prev,
                 previewOutlineScreen: undefined,
                 previewHostValid: true,
+                previewHostInvalidReason: undefined,
                 previewAuxLines: undefined,
                 previewAuxArcPath: undefined,
               }
@@ -2738,6 +2816,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                   previewHostWallId: hostPreviewLock ? prev.previewHostWallId : undefined,
                   previewHostAlongT: hostPreviewLock ? prev.previewHostAlongT : undefined,
                   previewHostLock: hostPreviewLock,
+                  previewHostInvalidReason: 'No visible wall host under the cursor.',
                   previewAuxLines: undefined,
                   previewAuxArcPath: undefined,
                 }
@@ -2758,6 +2837,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                     previewHostWallId: hit.wall.id,
                     previewHostAlongT: hit.alongT,
                     previewHostLock: hostPreviewLock,
+                    previewHostInvalidReason: preview.invalidReason,
                     previewAuxLines: preview.auxLines,
                     previewAuxArcPath: preview.auxArcPath,
                   }
@@ -4492,7 +4572,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         title: 'Door placement',
         instruction:
           authoringOverlay.previewHostValid === false
-            ? `Move over a wall to see a valid host preview, then click to place. L ${
+            ? `${authoringOverlay.previewHostInvalidReason ?? 'Move over a wall to see a valid host preview.'} L ${
                 authoringOverlay.previewHostLock ? 'unlocks' : 'locks'
               } host.`
             : `Hover a wall to preview, then click to insert a door. L ${
@@ -4505,7 +4585,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         title: 'Window placement',
         instruction:
           authoringOverlay.previewHostValid === false
-            ? `Move over a wall to see a valid host preview, then click to place. L ${
+            ? `${authoringOverlay.previewHostInvalidReason ?? 'Move over a wall to see a valid host preview.'} L ${
                 authoringOverlay.previewHostLock ? 'unlocks' : 'locks'
               } host.`
             : `Hover a wall to preview, then click to insert a window. L ${
@@ -4517,7 +4597,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       title: 'Opening placement',
       instruction:
         authoringOverlay.previewHostValid === false
-          ? `Move over a wall to see a valid host preview, then click to place. L ${
+          ? `${authoringOverlay.previewHostInvalidReason ?? 'Move over a wall to see a valid host preview.'} L ${
               authoringOverlay.previewHostLock ? 'unlocks' : 'locks'
             } host.`
           : `Hover a wall to preview, then click to insert an opening. L ${
@@ -4732,7 +4812,11 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
               <path
                 d={authoringOverlay.previewAuxArcPath}
                 fill="none"
-                stroke="var(--color-accent)"
+                stroke={
+                  authoringOverlay.previewHostValid === false
+                    ? 'var(--color-danger-500, #dc2626)'
+                    : 'var(--color-accent)'
+                }
                 strokeWidth="2"
                 opacity="0.9"
               />
@@ -4744,7 +4828,11 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                 y1={seg.start.y}
                 x2={seg.end.x}
                 y2={seg.end.y}
-                stroke="var(--color-accent)"
+                stroke={
+                  authoringOverlay.previewHostValid === false
+                    ? 'var(--color-danger-500, #dc2626)'
+                    : 'var(--color-accent)'
+                }
                 strokeWidth="2"
                 opacity="0.9"
               />

@@ -40,14 +40,8 @@ import {
 } from '../plan/snapSettings';
 import { modeForHotkey } from '../state/modeController';
 import { patternFor } from '../state/uiStates';
-import {
-  AppShell,
-  ParticipantStrip,
-  RibbonBar,
-  StatusBar,
-  TabBar,
-  type WorkspaceMode,
-} from './shell';
+import { AppShell, ParticipantStrip, RibbonBar, StatusBar, type WorkspaceMode } from './shell';
+import { OptionsBar, ToolModifierBar } from './authoring';
 import { getToolRegistry, type ToolDefinition, type ToolId } from '../tools/toolRegistry';
 import {
   EMPTY_TABS,
@@ -57,7 +51,6 @@ import {
   closeTab,
   cycleActive,
   openTab,
-  reorderTab,
   snapshotViewport,
   tabFromElement,
   tabIdFor,
@@ -69,7 +62,6 @@ import {
 import { persistTabs, pruneTabsAgainstElements, readPersistedTabs } from './tabsPersistence';
 import {
   assignTabToPane,
-  assignTabToFocusedPane,
   createPaneLayout,
   focusPane,
   normalizePaneLayout,
@@ -333,29 +325,6 @@ function summarizeJobsCounts(rows: unknown[]): typeof EMPTY_JOBS_COUNTS {
   return counts;
 }
 
-function collectPaneTabAssignments(root: PaneNode): Record<string, string[]> {
-  const assignments: Record<string, string[]> = {};
-  const walk = (node: PaneNode): void => {
-    if (node.kind === 'leaf') {
-      if (node.tabId) {
-        const slots = assignments[node.tabId] ?? [];
-        slots.push(node.id);
-        assignments[node.tabId] = slots;
-      }
-      return;
-    }
-    walk(node.first);
-    walk(node.second);
-  };
-  walk(root);
-  return assignments;
-}
-
-function tabIdForLeaf(root: PaneNode, leafId: string): string | null {
-  if (root.kind === 'leaf') return root.id === leafId ? root.tabId : null;
-  return tabIdForLeaf(root.first, leafId) ?? tabIdForLeaf(root.second, leafId);
-}
-
 function slugToken(label: string): string {
   const slug = label
     .trim()
@@ -380,51 +349,94 @@ function CompositionBar({
   activeId,
   onActivate,
   onCreate,
+  onReorder,
 }: {
   compositions: WorkspaceComposition[];
   activeId: string;
   onActivate: (id: string) => void;
   onCreate: () => void;
+  onReorder: (from: number, to: number) => void;
 }): JSX.Element {
+  const [dragSrc, setDragSrc] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   return (
     <div
       data-testid="composition-bar"
+      role="tablist"
       aria-label="Compositions"
-      className="flex h-7 min-w-0 items-center gap-1 border-b border-border/70 px-1"
+      className="flex min-w-0 flex-1 items-end gap-0.5 overflow-x-auto border-b border-border bg-surface pt-1.5"
+      style={{ height: 38 }}
     >
-      <div className="shrink-0 px-1 text-[10px] font-semibold uppercase text-muted">
-        Compositions
-      </div>
-      <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
-        {compositions.map((composition) => {
-          const active = composition.id === activeId;
-          return (
-            <button
-              key={composition.id}
-              type="button"
-              data-testid={`composition-tab-${composition.id}`}
-              aria-pressed={active}
-              onClick={() => onActivate(composition.id)}
-              className={[
-                'h-5 max-w-40 shrink-0 truncate rounded border px-2 text-[11px] font-medium',
-                active
-                  ? 'border-accent/70 bg-accent/10 text-foreground'
-                  : 'border-border bg-surface text-muted hover:bg-surface-2 hover:text-foreground',
-              ].join(' ')}
-              title={composition.label}
-            >
-              {composition.label}
-            </button>
-          );
-        })}
-      </div>
+      {compositions.map((composition, idx) => {
+        const active = composition.id === activeId;
+        const isDragOver = dragOverIdx === idx && dragSrc !== null && dragSrc !== idx;
+        return (
+          <button
+            key={composition.id}
+            type="button"
+            role="tab"
+            data-testid={`composition-tab-${composition.id}`}
+            aria-selected={active}
+            tabIndex={active ? 0 : -1}
+            draggable
+            onClick={() => onActivate(composition.id)}
+            onDragStart={(event) => {
+              setDragSrc(idx);
+              event.dataTransfer.effectAllowed = 'move';
+              event.dataTransfer.setData('text/plain', String(idx));
+            }}
+            onDragOver={(event) => {
+              if (dragSrc === null) return;
+              event.preventDefault();
+              event.dataTransfer.dropEffect = 'move';
+              setDragOverIdx(idx);
+            }}
+            onDragLeave={() => {
+              if (dragOverIdx === idx) setDragOverIdx(null);
+            }}
+            onDrop={(event) => {
+              if (dragSrc === null) return;
+              event.preventDefault();
+              if (dragSrc !== idx) onReorder(dragSrc, idx);
+              setDragSrc(null);
+              setDragOverIdx(null);
+            }}
+            onDragEnd={() => {
+              setDragSrc(null);
+              setDragOverIdx(null);
+            }}
+            className={[
+              'group relative flex max-w-52 shrink-0 items-center gap-1.5 rounded-t-md border border-b-0 px-3 py-1.5 text-[12px] font-medium transition-colors',
+              active
+                ? 'border-accent/60 bg-accent/10 text-foreground'
+                : 'border-transparent text-muted/70 hover:bg-background/40 hover:text-foreground',
+              isDragOver ? 'ring-2 ring-accent ring-offset-0' : '',
+            ].join(' ')}
+            style={
+              active
+                ? {
+                    boxShadow: 'inset 0 -2px 0 0 var(--color-accent)',
+                  }
+                : undefined
+            }
+            title={composition.label}
+          >
+            <Icons.grid
+              size={13}
+              aria-hidden="true"
+              className={active ? 'text-accent' : 'text-muted'}
+            />
+            <span className="truncate whitespace-nowrap">{composition.label}</span>
+          </button>
+        );
+      })}
       <button
         type="button"
         data-testid="composition-add-button"
         aria-label="Create composition"
         title="Create composition"
         onClick={onCreate}
-        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border border-border text-xs text-muted hover:bg-surface-2 hover:text-foreground"
+        className="mb-1.5 ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted hover:bg-surface-strong hover:text-foreground"
       >
         +
       </button>
@@ -658,8 +670,12 @@ export function Workspace(): JSX.Element {
     return activeComposition?.tabsState ?? EMPTY_TABS;
   });
   const [draggingViewElementId, setDraggingViewElementId] = useState<string | null>(null);
-  const [draggingTabId, setDraggingTabId] = useState<string | null>(null);
-  const [secondarySidebarOpen, setSecondarySidebarOpen] = useState(true);
+  const [paneSecondarySidebarOpenByKey, setPaneSecondarySidebarOpenByKey] = useState<
+    Record<string, boolean>
+  >({});
+  const [paneElementSidebarOpenByKey, setPaneElementSidebarOpenByKey] = useState<
+    Record<string, boolean>
+  >({});
   const [paneLayout, setPaneLayout] = useState<PaneLayoutState>(() => {
     const activeComposition =
       compositionState.compositions.find(
@@ -790,7 +806,11 @@ export function Workspace(): JSX.Element {
   const openTabFromElement = useCallback((el: Element) => {
     const partial = tabFromElement(el);
     if (!partial) return;
+    const tabId = tabIdFor(partial.kind, partial.targetId);
     setTabsState((s) => openTab(s, partial));
+    setPaneLayout((layout) =>
+      focusPane(assignTabToPane(layout, layout.focusedLeafId, tabId), layout.focusedLeafId),
+    );
   }, []);
 
   const activateDroppedView = useCallback(
@@ -864,7 +884,6 @@ export function Workspace(): JSX.Element {
       }));
       setTabsState(next.tabsState);
       setPaneLayout(next.paneLayout);
-      setSecondarySidebarOpen(true);
     },
     [compositionState.activeId, compositionState.compositions, paneLayout, tabsState],
   );
@@ -886,10 +905,23 @@ export function Workspace(): JSX.Element {
     }));
     setTabsState(EMPTY_TABS);
     setPaneLayout(pane);
-    setSecondarySidebarOpen(true);
     setMode('plan');
     setViewerMode('plan_canvas');
   }, [compositionState.compositions.length, paneLayout, setViewerMode, tabsState]);
+
+  const handleCompositionReorder = useCallback((fromIdx: number, toIdx: number) => {
+    setCompositionState((state) => {
+      const len = state.compositions.length;
+      const from = Math.max(0, Math.min(len - 1, fromIdx));
+      const to = Math.max(0, Math.min(len - 1, toIdx));
+      if (from === to) return state;
+      const compositions = [...state.compositions];
+      const [moved] = compositions.splice(from, 1);
+      if (!moved) return state;
+      compositions.splice(to, 0, moved);
+      return { ...state, compositions };
+    });
+  }, []);
 
   /* ── Project menu handlers (T-03) ─────────────────────────────────── */
   const handleSaveSnapshot = useCallback(() => {
@@ -1279,6 +1311,9 @@ export function Workspace(): JSX.Element {
           openActiveVisibilityControls();
           return;
         }
+      }
+      if (event.metaKey || event.ctrlKey || event.altKey) {
+        return;
       }
       // Ortho snap hold on Shift
       if (event.shiftKey) setOrthoSnapHold(true);
@@ -2239,11 +2274,13 @@ export function Workspace(): JSX.Element {
   const hasSelection = !!selectedId;
   const rightRailCollapsed = !hasSelection || rightRailOverride === 'collapsed';
   const toggleRightRail = useCallback(() => {
-    setRightRailOverride((current) => {
-      const currentlyCollapsed = !hasSelection || current === 'collapsed';
-      return currentlyCollapsed ? 'open' : 'collapsed';
-    });
-  }, [hasSelection]);
+    if (!hasSelection) return;
+    const key = `${compositionState.activeId}:${paneLayout.focusedLeafId}`;
+    setPaneElementSidebarOpenByKey((state) => ({
+      ...state,
+      [key]: !(state[key] ?? true),
+    }));
+  }, [compositionState.activeId, hasSelection, paneLayout.focusedLeafId]);
 
   useEffect(() => {
     const previousSelectedId = previousSelectedIdRef.current;
@@ -2253,9 +2290,11 @@ export function Workspace(): JSX.Element {
     }
     if (selectedId !== previousSelectedId) {
       setRightRailOverride('open');
+      const key = `${compositionState.activeId}:${paneLayout.focusedLeafId}`;
+      setPaneElementSidebarOpenByKey((state) => ({ ...state, [key]: true }));
     }
     previousSelectedIdRef.current = selectedId;
-  }, [selectedId]);
+  }, [compositionState.activeId, paneLayout.focusedLeafId, selectedId]);
 
   /* ── Empty-state per §25 ──────────────────────────────────────────── */
   const emptyHint = patternFor(seedLoading ? 'canvas-loading' : 'canvas-empty');
@@ -2268,146 +2307,268 @@ export function Workspace(): JSX.Element {
     () => Object.fromEntries(tabsState.tabs.map((tab) => [tab.id, tab])),
     [tabsState.tabs],
   );
-  const tabPaneAssignments = useMemo(
-    () => collectPaneTabAssignments(paneLayout.root),
-    [paneLayout],
-  );
-  const focusedPaneTabId = useMemo(
-    () => tabIdForLeaf(paneLayout.root, paneLayout.focusedLeafId),
-    [paneLayout],
-  );
   const focusedPaneLeafId = paneLayout.focusedLeafId;
 
-  const renderPaneNode = useCallback(
-    (node: PaneNode): JSX.Element => {
-      if (node.kind === 'split') {
-        return (
-          <div
-            key={node.id}
-            className="grid h-full w-full min-h-0 min-w-0"
-            style={
-              node.axis === 'horizontal'
-                ? { gridTemplateColumns: '1fr 1fr' }
-                : { gridTemplateRows: '1fr 1fr' }
-            }
-          >
-            <div
-              className={[
-                'min-h-0 min-w-0 overflow-hidden',
-                node.axis === 'horizontal'
-                  ? 'border-r border-border/60'
-                  : 'border-b border-border/60',
-              ].join(' ')}
-            >
-              {renderPaneNode(node.first)}
-            </div>
-            <div className="min-h-0 min-w-0 overflow-hidden">{renderPaneNode(node.second)}</div>
-          </div>
-        );
-      }
-      const paneTab = node.tabId ? (tabsById[node.tabId] ?? null) : null;
-      const paneMode = (paneTab?.kind as WorkspaceMode | undefined) ?? effectiveMode;
-      const paneIsPlan = paneTab?.kind === 'plan';
-      const panePlanTarget = paneIsPlan
-        ? resolvePlanTabTarget(elementsById, paneTab?.targetId, activeLevelId)
-        : { activeLevelId: activeLevelId ?? '' };
-      const paneViewerMode = paneTab?.kind === '3d' ? 'orbit_3d' : 'plan_canvas';
-      const focused = focusedPaneLeafId === node.id;
-      const paneLabel = paneTab?.label ?? 'Empty pane';
-      const paneCanAcceptDrop = Boolean(draggingViewElementId);
-      const PaneIcon =
-        paneTab?.kind === '3d'
-          ? Icons.orbitView
-          : paneTab?.kind === 'section'
-            ? Icons.section
-            : paneTab?.kind === 'sheet'
-              ? Icons.sheet
-              : paneTab?.kind === 'schedule'
-                ? Icons.schedule
-                : Icons.planView;
+  function renderPaneNode(node: PaneNode): JSX.Element {
+    if (node.kind === 'split') {
       return (
         <div
           key={node.id}
-          data-testid={`canvas-pane-${node.id}`}
-          data-focused={focused ? 'true' : 'false'}
-          className={[
-            'relative flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden',
-            focused ? 'ring-1 ring-accent/70 ring-inset' : '',
-          ].join(' ')}
-          onPointerDown={() => {
-            setPaneLayout((layout) => focusPane(layout, node.id));
-            if (paneTab?.id && paneTab.id !== tabsState.activeId) {
-              handleTabActivate(paneTab.id);
-            }
-          }}
+          className="grid h-full w-full min-h-0 min-w-0"
+          style={
+            node.axis === 'horizontal'
+              ? { gridTemplateColumns: '1fr 1fr' }
+              : { gridTemplateRows: '1fr 1fr' }
+          }
         >
           <div
-            data-testid={`canvas-pane-tabstrip-${node.id}`}
             className={[
-              'flex h-8 shrink-0 items-center justify-between border-b border-border/70 bg-surface px-2 text-xs',
-              paneCanAcceptDrop ? 'border-accent/80 bg-accent/10' : '',
+              'min-h-0 min-w-0 overflow-hidden',
+              node.axis === 'horizontal'
+                ? 'border-r border-border/60'
+                : 'border-b border-border/60',
             ].join(' ')}
-            onDragOver={(event) => {
-              if (!paneCanAcceptDrop) return;
-              event.preventDefault();
-              event.dataTransfer.dropEffect = 'copy';
-            }}
-            onDrop={(event) => {
-              if (!paneCanAcceptDrop) return;
-              event.preventDefault();
-              const elementId =
-                draggingViewElementId || event.dataTransfer.getData('application/x-bim-element-id');
-              placeViewElementInPane(elementId, node.id);
-            }}
           >
-            <div className="flex min-w-0 items-center gap-1.5">
-              <button
-                type="button"
-                data-testid={`canvas-pane-view-settings-${node.id}`}
-                aria-label={`Toggle view settings for ${paneLabel}`}
-                title={`Toggle view settings for ${paneLabel}`}
-                className={[
-                  'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border border-border text-muted hover:bg-surface-2 hover:text-foreground',
-                  secondarySidebarOpen && focused ? 'bg-accent/10 text-accent' : '',
-                ].join(' ')}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setPaneLayout((layout) => focusPane(layout, node.id));
-                  if (paneTab?.id && paneTab.id !== tabsState.activeId) {
-                    handleTabActivate(paneTab.id);
-                  }
-                  setSecondarySidebarOpen((open) => (focused ? !open : true));
-                }}
-              >
-                <PaneIcon size={12} aria-hidden="true" />
-              </button>
-              <div className="min-w-0 truncate font-medium text-foreground" title={paneLabel}>
-                {paneLabel}
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              {paneCanAcceptDrop ? (
-                <span className="rounded border border-accent/60 px-1 py-0.5 text-[10px] text-accent">
-                  Drop view
-                </span>
-              ) : null}
-              {paneTab?.id ? (
-                <button
-                  type="button"
-                  data-testid={`canvas-pane-close-tab-${node.id}`}
-                  className="inline-flex h-5 w-5 items-center justify-center rounded border border-border text-muted hover:bg-surface-2 hover:text-foreground"
-                  aria-label={`Close ${paneLabel}`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleTabClose(paneTab.id);
-                  }}
-                >
-                  <Icons.close size={12} aria-hidden="true" />
-                </button>
-              ) : null}
+            {renderPaneNode(node.first)}
+          </div>
+          <div className="min-h-0 min-w-0 overflow-hidden">{renderPaneNode(node.second)}</div>
+        </div>
+      );
+    }
+    const paneTab = node.tabId ? (tabsById[node.tabId] ?? null) : null;
+    const paneMode = (paneTab?.kind as WorkspaceMode | undefined) ?? effectiveMode;
+    const paneIsPlan = paneTab?.kind === 'plan';
+    const panePlanTarget = paneIsPlan
+      ? resolvePlanTabTarget(elementsById, paneTab?.targetId, activeLevelId)
+      : { activeLevelId: activeLevelId ?? '' };
+    const paneViewerMode = paneTab?.kind === '3d' ? 'orbit_3d' : 'plan_canvas';
+    const focused = focusedPaneLeafId === node.id;
+    const paneLabel = paneTab?.label ?? 'Empty pane';
+    const paneCanAcceptDrop = Boolean(draggingViewElementId);
+    const PaneIcon =
+      paneTab?.kind === '3d'
+        ? Icons.orbitView
+        : paneTab?.kind === 'section'
+          ? Icons.section
+          : paneTab?.kind === 'sheet'
+            ? Icons.sheet
+            : paneTab?.kind === 'schedule'
+              ? Icons.schedule
+              : Icons.planView;
+    const paneSidebarKey = `${compositionState.activeId}:${node.id}`;
+    const paneSecondarySidebarOpen =
+      Boolean(paneTab) && (paneSecondarySidebarOpenByKey[paneSidebarKey] ?? true);
+    const paneElementSidebarOpen =
+      Boolean(paneTab && selectedId) && (paneElementSidebarOpenByKey[paneSidebarKey] ?? true);
+    const selectedElementKind = selectedId
+      ? (elementsById[selectedId] as Element | undefined)?.kind
+      : null;
+    const activatePaneForControls = (): void => {
+      setPaneLayout((layout) => focusPane(layout, node.id));
+      if (paneTab?.id && paneTab.id !== tabsState.activeId) {
+        handleTabActivate(paneTab.id);
+      }
+      setMode(paneMode);
+      if (paneTab?.kind === '3d') setViewerMode('orbit_3d');
+      else if (paneTab?.kind) setViewerMode('plan_canvas');
+    };
+    const handlePaneModeChange = (next: WorkspaceMode): void => {
+      activatePaneForControls();
+      setMode(next);
+      if (next === 'plan') setViewerMode('plan_canvas');
+      else if (next === '3d') setViewerMode('orbit_3d');
+
+      const fallback = defaultTabFallbackForKind(next, elementsById, activeLevelId);
+      if (!fallback) return;
+      const tabId = tabIdFor(next as TabKind, fallback.targetId);
+      setTabsState((state) => activateOrOpenKind(state, next as TabKind, fallback));
+      setPaneLayout((layout) => focusPane(assignTabToPane(layout, node.id, tabId), node.id));
+    };
+    const handlePaneToolSelect = (id: ToolId): void => {
+      activatePaneForControls();
+      const tool = validatePlanTool(id);
+      if (!tool) return;
+      const def = toolRegistry[id];
+      if (def && !def.modes.includes(paneMode) && def.modes.includes('plan')) {
+        handlePaneModeChange('plan');
+      }
+      setPlanTool(tool);
+    };
+    const runInPaneContext =
+      (handler: (() => void) | undefined): (() => void) =>
+      () => {
+        activatePaneForControls();
+        handler?.();
+      };
+    const togglePaneViewSettings = (): void => {
+      activatePaneForControls();
+      if (!paneTab) return;
+      setPaneSecondarySidebarOpenByKey((state) => ({
+        ...state,
+        [paneSidebarKey]: !(state[paneSidebarKey] ?? true),
+      }));
+    };
+    return (
+      <div
+        key={node.id}
+        data-testid={`canvas-pane-${node.id}`}
+        data-focused={focused ? 'true' : 'false'}
+        className={[
+          'relative flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden',
+          focused ? 'ring-1 ring-accent/70 ring-inset' : '',
+        ].join(' ')}
+        onPointerDown={() => {
+          setPaneLayout((layout) => focusPane(layout, node.id));
+          if (paneTab?.id && paneTab.id !== tabsState.activeId) {
+            handleTabActivate(paneTab.id);
+          }
+        }}
+      >
+        <div
+          data-testid={`canvas-pane-tabstrip-${node.id}`}
+          className={[
+            'flex h-8 shrink-0 items-center justify-between border-b border-border/70 bg-surface px-2 text-xs',
+            paneCanAcceptDrop ? 'border-accent/80 bg-accent/10' : '',
+          ].join(' ')}
+          onDragOver={(event) => {
+            if (!paneCanAcceptDrop) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'copy';
+          }}
+          onDrop={(event) => {
+            if (!paneCanAcceptDrop) return;
+            event.preventDefault();
+            const elementId =
+              draggingViewElementId || event.dataTransfer.getData('application/x-bim-element-id');
+            placeViewElementInPane(elementId, node.id);
+          }}
+        >
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span
+              data-testid={`canvas-pane-view-icon-${node.id}`}
+              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border border-border text-muted"
+              title={paneLabel}
+            >
+              <PaneIcon size={12} aria-hidden="true" />
+            </span>
+            <div className="min-w-0 truncate font-medium text-foreground" title={paneLabel}>
+              {paneLabel}
             </div>
           </div>
-          <div className="min-h-0 min-w-0 flex-1">
+          <div className="flex items-center gap-1">
+            {paneCanAcceptDrop ? (
+              <span className="rounded border border-accent/60 px-1 py-0.5 text-[10px] text-accent">
+                Drop view
+              </span>
+            ) : null}
+            {paneTab?.id ? (
+              <button
+                type="button"
+                data-testid={`canvas-pane-close-tab-${node.id}`}
+                className="inline-flex h-5 w-5 items-center justify-center rounded border border-border text-muted hover:bg-surface-2 hover:text-foreground"
+                aria-label={`Close ${paneLabel}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleTabClose(paneTab.id);
+                }}
+              >
+                <Icons.close size={12} aria-hidden="true" />
+              </button>
+            ) : null}
+          </div>
+        </div>
+        {paneTab ? (
+          <div data-testid={`canvas-pane-ribbon-${node.id}`} className="shrink-0">
+            <RibbonBar
+              activeToolId={planToolToToolId(planTool)}
+              activeMode={paneMode}
+              selectedElementKind={selectedElementKind}
+              lensMode={lensMode}
+              onToolSelect={handlePaneToolSelect}
+              onModeChange={handlePaneModeChange}
+              viewSettingsOpen={paneSecondarySidebarOpen}
+              onToggleViewSettings={togglePaneViewSettings}
+              viewSettingsToggleLabel={`Toggle view settings for ${paneLabel}`}
+              onOpenCommandPalette={runInPaneContext(() => setPaletteOpen(true))}
+              onOpenFamilyLibrary={runInPaneContext(() => setFamilyLibraryOpen(true))}
+              onOpenSettings={runInPaneContext(() => setCheatsheetOpen(true))}
+              onSaveCurrentViewpoint={runInPaneContext(saveCurrentViewpoint)}
+              onResetActiveSavedViewpoint={runInPaneContext(resetActiveSavedViewpoint)}
+              onUpdateActiveSavedViewpoint={runInPaneContext(updateActiveSavedViewpoint)}
+              onInsertDoorOnSelectedWall3d={runInPaneContext(() => runSelectedWall3dInsert('door'))}
+              onInsertWindowOnSelectedWall3d={runInPaneContext(() =>
+                runSelectedWall3dInsert('window'),
+              )}
+              onInsertOpeningOnSelectedWall3d={runInPaneContext(() =>
+                runSelectedWall3dInsert('opening'),
+              )}
+              onPlaceActiveSectionOnSheet={runInPaneContext(placeActiveSectionOnSheet)}
+              onOpenActiveSectionSourcePlan={runInPaneContext(openActiveSectionSourcePlan)}
+              onIncreaseActiveSectionCropDepth={runInPaneContext(() =>
+                adjustActiveSectionCropDepth(500),
+              )}
+              onDecreaseActiveSectionCropDepth={runInPaneContext(() =>
+                adjustActiveSectionCropDepth(-500),
+              )}
+              onPlaceRecommendedViewsOnActiveSheet={runInPaneContext(
+                placeRecommendedViewsOnActiveSheet,
+              )}
+              onPlaceFirstViewOnActiveSheet={runInPaneContext(() => {
+                const first = paletteSheetPlaceableViews[0];
+                if (first) placeViewOnActiveSheet(first.id);
+              })}
+              onOpenSheetViewportEditor={runInPaneContext(() =>
+                openActiveSheetAnchor('sheet-viewport-editor'),
+              )}
+              onOpenSheetTitleblockEditor={runInPaneContext(() =>
+                openActiveSheetAnchor('sheet-titleblock-editor'),
+              )}
+              onShareActiveSheet={runInPaneContext(() => setSharePresentationOpen(true))}
+              onOpenSelectedScheduleRow={runInPaneContext(openSelectedScheduleRow)}
+              onPlaceActiveScheduleOnSheet={runInPaneContext(placeActiveScheduleOnSheet)}
+              onDuplicateActiveSchedule={runInPaneContext(duplicateActiveSchedule)}
+              onOpenScheduleControls={runInPaneContext(openScheduleControls)}
+              sheetReviewMode={sheetReviewMode}
+              onSheetReviewModeChange={setSheetReviewMode}
+              sheetMarkupShape={sheetMarkupShape}
+              onSheetMarkupShapeChange={setSheetMarkupShape}
+            />
+            {paneMode === 'plan' || paneMode === 'section' ? (
+              <>
+                <ToolModifierBar />
+                <OptionsBar />
+              </>
+            ) : null}
+          </div>
+        ) : null}
+        <div className="flex min-h-0 min-w-0 flex-1">
+          {paneSecondarySidebarOpen ? (
+            <aside
+              aria-label={`View settings for ${paneLabel}`}
+              data-testid={`canvas-pane-secondary-sidebar-${node.id}`}
+              className="min-h-0 shrink-0 overflow-hidden border-r border-border bg-surface"
+              style={{ width: 'min(280px, 42%)' }}
+            >
+              <WorkspaceRightRail
+                mode={paneMode}
+                onSemanticCommand={onSemanticCommand}
+                onModeChange={handlePaneModeChange}
+                onNavigateToElement={openElementById}
+                activeViewTargetId={paneTab?.targetId}
+                surface="view-context"
+                onOpenMaterialBrowser={() => setMaterialBrowserOpen(true)}
+                onOpenAppearanceAssetBrowser={() => setAppearanceAssetBrowserOpen(true)}
+              />
+            </aside>
+          ) : null}
+          <div
+            className="min-h-0 min-w-0 flex-1"
+            style={{
+              background: ['plan', 'section'].includes(paneTab?.kind ?? '')
+                ? 'var(--color-canvas-paper)'
+                : 'var(--color-background)',
+            }}
+          >
             {paneTab ? (
               <CanvasMount
                 mode={paneMode}
@@ -2450,35 +2611,61 @@ export function Workspace(): JSX.Element {
               </div>
             )}
           </div>
+          {paneElementSidebarOpen ? (
+            <aside
+              aria-label={`Element properties for ${paneLabel}`}
+              data-testid={`canvas-pane-element-sidebar-${node.id}`}
+              className="min-h-0 shrink-0 overflow-hidden border-l border-border bg-surface"
+              style={{ width: 'min(340px, 45%)' }}
+            >
+              <WorkspaceRightRail
+                mode={paneMode}
+                onSemanticCommand={onSemanticCommand}
+                onModeChange={handlePaneModeChange}
+                onNavigateToElement={openElementById}
+                surface="element"
+                onOpenMaterialBrowser={() => setMaterialBrowserOpen(true)}
+                onOpenAppearanceAssetBrowser={() => setAppearanceAssetBrowserOpen(true)}
+              />
+            </aside>
+          ) : null}
         </div>
-      );
-    },
-    [
-      activeLevelId,
-      activeTab,
-      draggingViewElementId,
-      effectiveMode,
-      elementsById,
-      focusedPaneLeafId,
-      handleTabActivate,
-      handleTabClose,
-      lensMode,
-      modelId,
-      onSemanticCommand,
-      openActiveSection3dContext,
-      openActiveSectionSourcePlan,
-      openElementById,
-      placeViewElementInPane,
-      persistViewpointField,
-      secondarySidebarOpen,
-      sheetMarkupShape,
-      sheetReviewMode,
-      snapSettings,
-      tabsById,
-      tabsState.activeId,
-      wsOn,
-    ],
-  );
+        {draggingViewElementId ? (
+          <div className="pointer-events-none absolute left-0 right-0 top-8 bottom-0 z-20">
+            {(
+              [
+                ['left', { left: '4%', top: '28%', width: '18%', height: '44%' }],
+                ['right', { right: '4%', top: '28%', width: '18%', height: '44%' }],
+                ['top', { left: '28%', top: '5%', width: '44%', height: '18%' }],
+                ['bottom', { left: '28%', bottom: '5%', width: '44%', height: '18%' }],
+              ] as const
+            ).map(([direction, style]) => (
+              <button
+                key={direction}
+                type="button"
+                data-testid={`canvas-pane-${node.id}-split-dropzone-${direction}`}
+                className="pointer-events-auto absolute rounded border border-accent/80 bg-accent/20 text-[11px] font-medium text-foreground backdrop-blur-sm"
+                style={style}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = 'copy';
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  const elementId =
+                    draggingViewElementId ||
+                    event.dataTransfer.getData('application/x-bim-element-id');
+                  placeViewElementInPane(elementId, node.id, direction);
+                }}
+              >
+                Drop {direction}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
 
   const runSelectedWall3dInsert = useCallback(
     (kind: 'door' | 'window' | 'opening') => {
@@ -2809,6 +2996,7 @@ export function Workspace(): JSX.Element {
       ) : null}
       <AppShell
         activeMode={effectiveMode}
+        showRibbonToolbars={false}
         leftCollapsed={leftRailCollapsed}
         onLeftCollapsedChange={setLeftRailCollapsed}
         rightCollapsed={rightRailCollapsed}
@@ -2835,35 +3023,7 @@ export function Workspace(): JSX.Element {
                 activeId={compositionState.activeId}
                 onActivate={handleCompositionActivate}
                 onCreate={handleCompositionCreate}
-              />
-              <TabBar
-                tabs={tabsState.tabs}
-                activeId={tabsState.activeId}
-                focusedPaneTabId={focusedPaneTabId}
-                tabPaneAssignments={tabPaneAssignments}
-                onActivate={(id) => {
-                  handleTabActivate(id);
-                  setPaneLayout((layout) => assignTabToFocusedPane(layout, id));
-                  const t = tabsState.tabs.find((x) => x.id === id);
-                  if (t) {
-                    if (t.kind === 'plan') setViewerMode('plan_canvas');
-                    else if (t.kind === '3d') setViewerMode('orbit_3d');
-                    setMode(t.kind as WorkspaceMode);
-                  }
-                }}
-                onClose={handleTabClose}
-                onCloseInactive={() => setTabsState((s) => closeInactiveTabs(s))}
-                onReorder={(from, to) => setTabsState((s) => reorderTab(s, from, to))}
-                onAdd={(kind) => {
-                  const fallback = defaultTabFallbackForKind(kind, elementsById, activeLevelId);
-                  if (!fallback) return;
-                  setTabsState((s) => activateOrOpenKind(s, kind, fallback));
-                  const id = fallback.targetId ? `${kind}:${fallback.targetId}` : kind;
-                  setPaneLayout((layout) => assignTabToFocusedPane(layout, id));
-                  setMode(kind as WorkspaceMode);
-                  if (kind === 'plan') setViewerMode('plan_canvas');
-                  else if (kind === '3d') setViewerMode('orbit_3d');
-                }}
+                onReorder={handleCompositionReorder}
               />
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -2916,47 +3076,6 @@ export function Workspace(): JSX.Element {
             </div>
           </div>
         }
-        ribbon={
-          <RibbonBar
-            activeToolId={planToolToToolId(planTool)}
-            activeMode={effectiveMode}
-            selectedElementKind={
-              selectedId ? (elementsById[selectedId] as Element | undefined)?.kind : null
-            }
-            lensMode={lensMode}
-            onToolSelect={handleToolSelect}
-            onModeChange={handleModeChange}
-            onOpenCommandPalette={() => setPaletteOpen(true)}
-            onOpenFamilyLibrary={() => setFamilyLibraryOpen(true)}
-            onOpenSettings={() => setCheatsheetOpen(true)}
-            onSaveCurrentViewpoint={saveCurrentViewpoint}
-            onResetActiveSavedViewpoint={resetActiveSavedViewpoint}
-            onUpdateActiveSavedViewpoint={updateActiveSavedViewpoint}
-            onInsertDoorOnSelectedWall3d={() => runSelectedWall3dInsert('door')}
-            onInsertWindowOnSelectedWall3d={() => runSelectedWall3dInsert('window')}
-            onInsertOpeningOnSelectedWall3d={() => runSelectedWall3dInsert('opening')}
-            onPlaceActiveSectionOnSheet={placeActiveSectionOnSheet}
-            onOpenActiveSectionSourcePlan={openActiveSectionSourcePlan}
-            onIncreaseActiveSectionCropDepth={() => adjustActiveSectionCropDepth(500)}
-            onDecreaseActiveSectionCropDepth={() => adjustActiveSectionCropDepth(-500)}
-            onPlaceRecommendedViewsOnActiveSheet={placeRecommendedViewsOnActiveSheet}
-            onPlaceFirstViewOnActiveSheet={() => {
-              const first = paletteSheetPlaceableViews[0];
-              if (first) placeViewOnActiveSheet(first.id);
-            }}
-            onOpenSheetViewportEditor={() => openActiveSheetAnchor('sheet-viewport-editor')}
-            onOpenSheetTitleblockEditor={() => openActiveSheetAnchor('sheet-titleblock-editor')}
-            onShareActiveSheet={() => setSharePresentationOpen(true)}
-            onOpenSelectedScheduleRow={openSelectedScheduleRow}
-            onPlaceActiveScheduleOnSheet={placeActiveScheduleOnSheet}
-            onDuplicateActiveSchedule={duplicateActiveSchedule}
-            onOpenScheduleControls={openScheduleControls}
-            sheetReviewMode={sheetReviewMode}
-            onSheetReviewModeChange={setSheetReviewMode}
-            sheetMarkupShape={sheetMarkupShape}
-            onSheetMarkupShapeChange={setSheetMarkupShape}
-          />
-        }
         primarySidebar={
           <WorkspaceLeftRail
             projectName={activeSeedLabel ?? 'BIM AI'}
@@ -2982,20 +3101,6 @@ export function Workspace(): JSX.Element {
             modelId={modelId}
             revision={revision}
           />
-        }
-        secondarySidebar={
-          secondarySidebarOpen ? (
-            <WorkspaceRightRail
-              mode={effectiveMode}
-              onSemanticCommand={onSemanticCommand}
-              onModeChange={handleModeChange}
-              onNavigateToElement={openElementById}
-              activeViewTargetId={activeTab?.targetId}
-              surface="view-context"
-              onOpenMaterialBrowser={() => setMaterialBrowserOpen(true)}
-              onOpenAppearanceAssetBrowser={() => setAppearanceAssetBrowserOpen(true)}
-            />
-          ) : null
         }
         canvas={
           <div
@@ -3023,53 +3128,7 @@ export function Workspace(): JSX.Element {
             ) : null}
             {showCanvasHint && !showEmptyState ? <EmptyStateHint /> : null}
             {renderPaneNode(paneLayout.root)}
-            {draggingViewElementId ? (
-              <div className="pointer-events-none absolute inset-0 z-20">
-                {(
-                  [
-                    ['left', { left: '5%', top: '28%', width: '16%', height: '44%' }],
-                    ['right', { right: '5%', top: '28%', width: '16%', height: '44%' }],
-                    ['top', { left: '30%', top: '5%', width: '40%', height: '18%' }],
-                    ['bottom', { left: '30%', bottom: '5%', width: '40%', height: '18%' }],
-                  ] as const
-                ).map(([direction, style]) => (
-                  <button
-                    key={direction}
-                    type="button"
-                    data-testid={`canvas-split-dropzone-${direction}`}
-                    className="pointer-events-auto absolute rounded border border-accent/80 bg-accent/20 text-[11px] font-medium text-foreground backdrop-blur-sm"
-                    style={style}
-                    onDragOver={(event) => {
-                      event.preventDefault();
-                      event.dataTransfer.dropEffect = 'copy';
-                    }}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      const elementId =
-                        draggingViewElementId ||
-                        event.dataTransfer.getData('application/x-bim-element-id');
-                      placeViewElementInPane(elementId, paneLayout.focusedLeafId, direction);
-                    }}
-                  >
-                    Drop {direction}
-                  </button>
-                ))}
-              </div>
-            ) : null}
           </div>
-        }
-        elementSidebar={
-          hasSelection ? (
-            <WorkspaceRightRail
-              mode={effectiveMode}
-              onSemanticCommand={onSemanticCommand}
-              onModeChange={handleModeChange}
-              onNavigateToElement={openElementById}
-              surface="element"
-              onOpenMaterialBrowser={() => setMaterialBrowserOpen(true)}
-              onOpenAppearanceAssetBrowser={() => setAppearanceAssetBrowserOpen(true)}
-            />
-          ) : null
         }
         footer={
           <StatusBar

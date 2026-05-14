@@ -1,0 +1,35 @@
+{
+  "activeRibbonAfterFamily": "true",
+  "commandCountBeforeInvalidClick": 0,
+  "commandCountAfterInvalidClick": 0,
+  "invalidClickSentCommand": false,
+  "invalidHudText": "This wall span already contains a door/window/opening. Move along the wall. L locks host.",
+  "commandTypes": ["insertWindowOnWall"],
+  "responseStatuses": [200],
+  "commandBodies": [
+    {
+      "command": {
+        "type": "insertWindowOnWall",
+        "wallId": "hf-gf-wall-02",
+        "alongT": 0.5294053773752686,
+        "widthMm": 1200,
+        "sillHeightMm": 900,
+        "heightMm": 1500,
+        "familyTypeId": "builtin:window:casement:1200x1500"
+      },
+      "clientOpId": "web-mp5f86yl-b1ertcer",
+      "userId": "592a23a2-f146-4a52-b826-4c80a3174d55"
+    }
+  ],
+  "mainFrameNavigations": 0,
+  "mainFrameNavigationUrls": [],
+  "consoleErrors": [],
+  "screenshots": [
+    "packages/web/tmp/ux-ribbon-hosted-placement-20260514/00-rear-axo-ready.png",
+    "packages/web/tmp/ux-ribbon-hosted-placement-20260514/01-load-family-window-filter.png",
+    "packages/web/tmp/ux-ribbon-hosted-placement-20260514/02-window-occupied-span-invalid-preview.png",
+    "packages/web/tmp/ux-ribbon-hosted-placement-20260514/03-window-occupied-span-click-blocked.png",
+    "packages/web/tmp/ux-ribbon-hosted-placement-20260514/04-side-wall-window-valid-preview.png",
+    "packages/web/tmp/ux-ribbon-hosted-placement-20260514/05-side-wall-window-placed.png"
+  ]
+}

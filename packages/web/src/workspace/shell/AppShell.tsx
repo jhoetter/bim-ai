@@ -66,6 +66,8 @@ export interface AppShellProps {
   /** Override the document target for the global `[` / `]` hotkeys.
    * Used by tests to scope the listeners. */
   hotkeyTarget?: Document | HTMLElement;
+  /** Whether AppShell should append the global tool modifier/options bars under the ribbon. */
+  showRibbonToolbars?: boolean;
 }
 
 const PRIMARY_SIDEBAR_MIN_WIDTH = 192;
@@ -101,6 +103,7 @@ export function AppShell({
   secondarySidebarWidth = DEFAULT_SECONDARY_SIDEBAR_WIDTH,
   defaultElementSidebarWidth = DEFAULT_ELEMENT_SIDEBAR_WIDTH,
   hotkeyTarget,
+  showRibbonToolbars = true,
 }: AppShellProps): JSX.Element {
   const { t } = useTranslation();
   const [leftCollapsedInternal, setLeftCollapsedInternal] = useState(defaultLeftCollapsed);
@@ -372,7 +375,8 @@ export function AppShell({
     background: 'var(--color-background)',
     color: 'var(--color-foreground)',
   };
-  const showToolBars = !activeMode || activeMode === 'plan' || activeMode === 'section';
+  const showToolBars =
+    showRibbonToolbars && (!activeMode || activeMode === 'plan' || activeMode === 'section');
 
   return (
     <div

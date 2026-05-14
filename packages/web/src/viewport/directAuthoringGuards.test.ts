@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 
 import {
+  findHostedOpeningConflict,
   isBackfacingWallHit,
   isDuplicateHostedPlacement,
   shouldCommitHostedPlacementOnPointerUp,
@@ -150,5 +151,67 @@ describe('shouldReuseHostedPreviewCommit', () => {
         ],
       }),
     ).toBe(false);
+  });
+});
+
+describe('findHostedOpeningConflict', () => {
+  it('detects a proposed hosted opening overlapping an existing window on the same wall', () => {
+    const conflict = findHostedOpeningConflict({
+      wallId: 'wall-a',
+      wallLengthMm: 6000,
+      alongT: 0.52,
+      widthMm: 1200,
+      existing: [
+        {
+          kind: 'window',
+          id: 'window-a',
+          wallId: 'wall-a',
+          alongT: 0.5,
+          widthMm: 1200,
+        },
+      ],
+    });
+
+    expect(conflict?.elementId).toBe('window-a');
+  });
+
+  it('allows the same proposed span when existing openings are on another wall', () => {
+    expect(
+      findHostedOpeningConflict({
+        wallId: 'wall-a',
+        wallLengthMm: 6000,
+        alongT: 0.52,
+        widthMm: 1200,
+        existing: [
+          {
+            kind: 'door',
+            id: 'door-b',
+            wallId: 'wall-b',
+            alongT: 0.5,
+            widthMm: 900,
+          },
+        ],
+      }),
+    ).toBeNull();
+  });
+
+  it('detects conflicts against generic wall openings using their span', () => {
+    const conflict = findHostedOpeningConflict({
+      wallId: 'wall-a',
+      wallLengthMm: 10000,
+      alongT: 0.42,
+      widthMm: 1000,
+      existing: [
+        {
+          kind: 'wall_opening',
+          id: 'opening-a',
+          hostWallId: 'wall-a',
+          alongTStart: 0.38,
+          alongTEnd: 0.48,
+        },
+      ],
+    });
+
+    expect(conflict?.elementId).toBe('opening-a');
   });
 });

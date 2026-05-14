@@ -1714,3 +1714,61 @@ Evidence (2026-05-13):
       - `canvasStable: true`
       - `selectedElementActionsVisible: false`
       - `consoleErrors: []`
+
+## Reopened Tracker (2026-05-14, feedback round 21)
+
+| Gap ID         | Problem Statement                                                                                                                                                               | Canonical Surfaces / Files                                                                                                                       | Priority | Status |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------- | ------ |
+| NEXT21-GAP-001 | Clicking a primary-browser 3D view could update the left/secondary context while the focused canvas stayed on the previous plan pane, making tab/view creation feel unreliable. | `packages/web/src/workspace/Workspace.tsx`, `packages/web/src/workspace/Workspace.test.tsx`                                                      | P0       | Done   |
+| NEXT21-GAP-002 | 3D hosted Window/Door/Opening placement allowed occupied spans to look placeable, then failed only as a backend 409 with no in-canvas explanation.                              | `packages/web/src/Viewport.tsx`, `packages/web/src/viewport/directAuthoringGuards.ts`, `packages/web/src/viewport/directAuthoringGuards.test.ts` | P0       | Done   |
+| NEXT21-GAP-003 | Load Family built-in door/window rows activated the hosted tool but lost the built-in family type id and dimensions when dispatching the 3D hosted command.                     | `packages/web/src/families/hostedFamilySelection.ts`, `packages/web/src/families/hostedFamilySelection.test.ts`, `packages/web/src/Viewport.tsx` | P0       | Done   |
+| NEXT21-GAP-004 | Seeded proof needed to cover the exact user-facing failure: blocked occupied window placement, valid free-span placement, Load Family reachability, and no page refresh.        | `packages/web/tmp/ux-ribbon-hosted-placement-20260514/*`, seeded browser at `http://127.0.0.1:2000/` + API at `http://127.0.0.1:8500/api/*`      | P0       | Done   |
+| NEXT21-GAP-005 | `Cmd/Ctrl+R` could fall through into the roof/tool hotkey path instead of staying reserved for browser refresh.                                                                 | `packages/web/src/workspace/Workspace.tsx`, `packages/web/src/workspace/Workspace.test.tsx`                                                      | P0       | Done   |
+
+### WP-NEXT-39 — 3D Hosted Placement Feedback + Load Family Command Fidelity
+
+- Priority: `P0`
+- Status: `Done`
+- Supersedes/extends: `WP-NEXT-38` hosted geometry alignment remains valid; this package closes the follow-up usability and family-selection defects reported during 3D window placement.
+- Covers: `NEXT21-GAP-001`, `NEXT21-GAP-002`, `NEXT21-GAP-003`, `NEXT21-GAP-004`, `NEXT21-GAP-005`
+- Goal: make 3D hosted placement explain invalid wall spans before commit, preserve reliable pane/tab activation, and keep Load Family selections attached to 3D hosted commands.
+- Source ownership:
+  - `packages/web/src/workspace/Workspace.tsx`
+  - `packages/web/src/workspace/Workspace.test.tsx`
+  - `packages/web/src/Viewport.tsx`
+  - `packages/web/src/viewport/directAuthoringGuards.ts`
+  - `packages/web/src/viewport/directAuthoringGuards.test.ts`
+  - `packages/web/src/families/hostedFamilySelection.ts`
+  - `packages/web/src/families/hostedFamilySelection.test.ts`
+  - `packages/web/tmp/ux-ribbon-hosted-placement-20260514/summary.json`
+- Acceptance:
+  - primary-browser tab/view activation assigns the opened tab to the focused pane so metadata and mounted canvas stay in sync;
+  - hovering/clicking an occupied wall span renders invalid red hosted preview feedback and does not dispatch an `insert*OnWall` command;
+  - valid hosted placement remains blue and dispatches exactly one command;
+  - Load Family built-in window/door rows preserve the selected built-in type id and dimensions on hosted commands;
+  - `Cmd/Ctrl+R` remains browser-owned and does not activate `Roof` or any other ribbon tool;
+  - seeded proof records no main-frame navigation/page refresh and no console errors.
+- Implementation + evidence:
+  - Changed `openTabFromElement` so primary-browser view activation opens and assigns the tab into the focused pane instead of only updating global tab state.
+  - Added `findHostedOpeningConflict` to preflight proposed hosted spans against existing doors, windows, and generic wall openings on the same wall.
+  - Extended the 3D hosted overlay with invalid reasons; occupied spans now render red with the message: “This wall span already contains a door/window/opening. Move along the wall.”
+  - Added `resolveHostedFamilyPlacement` so built-in and project `family_type` selections resolve to the correct hosted family id, width, height, and sill before preview, conflict checking, and command dispatch.
+  - Guarded global tool hotkeys so app-owned modified shortcuts are handled explicitly, then remaining `Meta`/`Ctrl`/`Alt` combinations return to the browser before tool hotkeys/chords.
+  - Focused regression validation:
+    - `pnpm --filter @bim-ai/web typecheck`
+    - `pnpm --filter @bim-ai/web exec vitest run src/families/hostedFamilySelection.test.ts src/viewport/directAuthoringGuards.test.ts src/workspace/Workspace.test.tsx`
+  - Seeded proof (`make seed name=target-house-3`, existing `make dev name=target-house-3` at `http://127.0.0.1:2000/`):
+    - `packages/web/tmp/ux-ribbon-hosted-placement-20260514/00-rear-axo-ready.png`
+    - `packages/web/tmp/ux-ribbon-hosted-placement-20260514/01-load-family-window-filter.png`
+    - `packages/web/tmp/ux-ribbon-hosted-placement-20260514/02-window-occupied-span-invalid-preview.png`
+    - `packages/web/tmp/ux-ribbon-hosted-placement-20260514/03-window-occupied-span-click-blocked.png`
+    - `packages/web/tmp/ux-ribbon-hosted-placement-20260514/04-side-wall-window-valid-preview.png`
+    - `packages/web/tmp/ux-ribbon-hosted-placement-20260514/05-side-wall-window-placed.png`
+    - `packages/web/tmp/ux-ribbon-hosted-placement-20260514/summary.json`
+      - `activeRibbonAfterFamily: "true"`
+      - `invalidClickSentCommand: false`
+      - `commandTypes: ["insertWindowOnWall"]`
+      - `commandBodies[0].command.familyTypeId: "builtin:window:casement:1200x1500"`
+      - `responseStatuses: [200]`
+      - `mainFrameNavigations: 0`
+      - `consoleErrors: []`

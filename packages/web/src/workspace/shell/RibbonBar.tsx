@@ -130,6 +130,9 @@ export interface RibbonBarProps {
   onSheetReviewModeChange?: (mode: SheetReviewMode) => void;
   sheetMarkupShape?: SheetMarkupShape;
   onSheetMarkupShapeChange?: (shape: SheetMarkupShape) => void;
+  viewSettingsOpen?: boolean;
+  onToggleViewSettings?: () => void;
+  viewSettingsToggleLabel?: string;
 }
 
 const RIBBON_HIDDEN_COMMANDS_STORAGE_KEY = 'bim-ai.ribbon.hiddenCommands.v1';
@@ -167,6 +170,9 @@ export function RibbonBar({
   onSheetReviewModeChange,
   sheetMarkupShape = 'freehand',
   onSheetMarkupShapeChange,
+  viewSettingsOpen,
+  onToggleViewSettings,
+  viewSettingsToggleLabel,
 }: RibbonBarProps): JSX.Element {
   const [activeTabId, setActiveTabId] = useState<RibbonTabId>('create');
   const [minimized, setMinimized] = useState(false);
@@ -282,13 +288,31 @@ export function RibbonBar({
       className="border-b border-border bg-surface"
     >
       <div className="flex items-end gap-2 px-3 pt-1">
-        <div
-          className="mb-0.5 inline-flex h-6 shrink-0 items-center gap-1 rounded border border-border bg-background px-2 text-[11px] text-muted"
-          data-testid="ribbon-mode-identity"
-        >
-          <ModeIdentityIcon size={ICON_SIZE.chrome} aria-hidden="true" />
-          <span>{identity.label}</span>
-        </div>
+        {onToggleViewSettings ? (
+          <button
+            type="button"
+            className={[
+              'mb-0.5 inline-flex h-6 shrink-0 items-center gap-1 rounded border border-border bg-background px-2 text-[11px] text-muted hover:bg-surface-2 hover:text-foreground',
+              viewSettingsOpen ? 'border-accent/60 bg-accent/10 text-accent' : '',
+            ].join(' ')}
+            data-testid="ribbon-mode-identity"
+            aria-label={viewSettingsToggleLabel ?? `Toggle ${identity.label} view settings`}
+            aria-pressed={viewSettingsOpen ?? false}
+            title={viewSettingsToggleLabel ?? `Toggle ${identity.label} view settings`}
+            onClick={onToggleViewSettings}
+          >
+            <ModeIdentityIcon size={ICON_SIZE.chrome} aria-hidden="true" />
+            <span>{identity.label}</span>
+          </button>
+        ) : (
+          <div
+            className="mb-0.5 inline-flex h-6 shrink-0 items-center gap-1 rounded border border-border bg-background px-2 text-[11px] text-muted"
+            data-testid="ribbon-mode-identity"
+          >
+            <ModeIdentityIcon size={ICON_SIZE.chrome} aria-hidden="true" />
+            <span>{identity.label}</span>
+          </div>
+        )}
         <div
           role="tablist"
           aria-label="Ribbon tabs"

@@ -18,10 +18,14 @@ function renderWithProviders(ui: React.ReactElement) {
 
 // Stub the Three.js-mounting canvases so jsdom can render the chrome.
 vi.mock('../Viewport', () => ({
-  Viewport: () => <div data-testid="stub-viewport" />,
+  Viewport: ({ activeTabId }: { activeTabId?: string }) => (
+    <div data-testid="stub-viewport" data-active-tab-id={activeTabId ?? ''} />
+  ),
 }));
 vi.mock('../plan/PlanCanvas', () => ({
-  PlanCanvas: () => <div data-testid="stub-plan-canvas" />,
+  PlanCanvas: ({ activeTabId }: { activeTabId?: string }) => (
+    <div data-testid="stub-plan-canvas" data-active-tab-id={activeTabId ?? ''} />
+  ),
 }));
 
 import { Workspace } from './Workspace';
@@ -55,6 +59,42 @@ function seedSplitPaneLayout(leftTabId: string, rightTabId: string) {
       },
     }),
   );
+}
+
+function paneSecondary(
+  rendered: ReturnType<typeof renderWithProviders>,
+  paneId?: string,
+): HTMLElement {
+  if (paneId) return rendered.getByTestId(`canvas-pane-secondary-sidebar-${paneId}`);
+  const sidebar = rendered.container.querySelector<HTMLElement>(
+    '[data-testid^="canvas-pane-secondary-sidebar-"]',
+  );
+  if (!sidebar) throw new Error('Expected a pane-local secondary sidebar');
+  return sidebar;
+}
+
+function paneRibbon(
+  rendered: ReturnType<typeof renderWithProviders>,
+  paneId?: string,
+): HTMLElement {
+  if (paneId) return rendered.getByTestId(`canvas-pane-ribbon-${paneId}`);
+  const ribbon = rendered.container.querySelector<HTMLElement>(
+    '[data-testid^="canvas-pane-ribbon-"]',
+  );
+  if (!ribbon) throw new Error('Expected a pane-local ribbon');
+  return ribbon;
+}
+
+function paneElementSidebar(
+  rendered: ReturnType<typeof renderWithProviders>,
+  paneId?: string,
+): HTMLElement {
+  if (paneId) return rendered.getByTestId(`canvas-pane-element-sidebar-${paneId}`);
+  const sidebar = rendered.container.querySelector<HTMLElement>(
+    '[data-testid^="canvas-pane-element-sidebar-"]',
+  );
+  if (!sidebar) throw new Error('Expected a pane-local element sidebar');
+  return sidebar;
 }
 
 beforeEach(() => {
@@ -104,43 +144,38 @@ describe('<Workspace /> — smoke', () => {
     const { getByRole, queryByRole } = renderWithProviders(<Workspace />);
 
     const header = getByRole('banner', { name: 'Workspace header' });
-    expect(within(header).getByRole('tablist', { name: 'Open views' })).toBeTruthy();
+    expect(within(header).getByRole('tablist', { name: 'Compositions' })).toBeTruthy();
     expect(within(header).getByRole('button', { name: 'Open command palette' })).toBeTruthy();
 
     const primary = getByRole('complementary', { name: 'Project browser' });
     expect(within(primary).getByRole('tree', { name: 'Project browser' })).toBeTruthy();
     expect(within(primary).getByLabelText('Account menu')).toBeTruthy();
 
-    const secondary = getByRole('complementary', { name: 'Active view settings' });
-    expect(
-      within(secondary).queryByText('Floor plan') ?? within(secondary).queryByText('3D view'),
-    ).toBeTruthy();
-    expect(
-      within(secondary).queryByText('View State') ?? within(secondary).queryByText('Scene'),
-    ).toBeTruthy();
-
-    expect(getByRole('region', { name: 'Ribbon' })).toBeTruthy();
     expect(getByRole('main', { name: 'Canvas' })).toBeTruthy();
     expect(getByRole('contentinfo', { name: 'Global status footer' })).toBeTruthy();
     expect(queryByRole('complementary', { name: 'Inspector' })).toBeNull();
   });
 
   it('renders the AppShell, tab-first header, primary, secondary, and footer slots; inspector absent with no selection — CHR-V3-06', () => {
-    const { getByTestId, getByRole, queryByTestId } = renderWithProviders(<Workspace />);
+    const rendered = renderWithProviders(<Workspace />);
+    const { getByTestId, getByRole, queryByTestId } = rendered;
     expect(getByTestId('app-shell')).toBeTruthy();
     expect(getByTestId('workspace-header')).toBeTruthy();
-    expect(getByTestId('view-tabs')).toBeTruthy();
+    expect(getByTestId('composition-bar')).toBeTruthy();
     expect(getByTestId('workspace-header-cmdk')).toBeTruthy();
     expect(getByTestId('primary-project-selector')).toBeTruthy();
     expect(getByRole('complementary', { name: 'Project browser' })).toBeTruthy();
-    expect(getByTestId('app-shell-secondary-sidebar')).toBeTruthy();
+    expect(
+      rendered.container.querySelectorAll('[data-testid^="canvas-pane-secondary-sidebar-"]'),
+    ).toHaveLength(0);
     // CHR-V3-06: Inspector is absent from DOM when nothing is selected.
     expect(queryByTestId('inspector')).toBeNull();
     expect(getByTestId('status-bar')).toBeTruthy();
   });
 
   it('keeps project, mode navigation, and authoring shortcuts out of the workspace header', () => {
-    const { getByTestId, queryByTestId } = renderWithProviders(<Workspace />);
+    const rendered = renderWithProviders(<Workspace />);
+    const { getByTestId, queryByTestId } = rendered;
     const header = within(getByTestId('workspace-header'));
 
     expect(queryByTestId('topbar-project-name')).toBeNull();
@@ -156,18 +191,17 @@ describe('<Workspace /> — smoke', () => {
   });
 
   it('owns discipline lens in primary sidebar, not secondary or footer', () => {
-    const { getByTestId } = renderWithProviders(<Workspace />);
+    const rendered = renderWithProviders(<Workspace />);
+    const { getByTestId, queryByTestId } = rendered;
     const primary = within(getByTestId('app-shell-primary-sidebar'));
-    const secondary = within(getByTestId('app-shell-secondary-sidebar'));
     const statusBar = getByTestId('status-bar');
     const footer = within(statusBar);
 
     expect(primary.getByTestId('primary-lens-filter')).toBeTruthy();
     expect(primary.getByTestId('primary-lens-dropdown')).toBeTruthy();
     expect(primary.getByTestId('lens-dropdown-trigger')).toBeTruthy();
-    expect(secondary.queryByTestId('secondary-lens-filter')).toBeNull();
-    expect(secondary.queryByTestId('secondary-lens-dropdown')).toBeNull();
-    expect(secondary.queryByTestId('lens-dropdown-trigger')).toBeNull();
+    expect(queryByTestId('secondary-lens-filter')).toBeNull();
+    expect(queryByTestId('secondary-lens-dropdown')).toBeNull();
     expect(footer.queryByTestId('lens-dropdown-trigger')).toBeNull();
     expect(statusBar.textContent).not.toContain('Show:');
   });
@@ -187,6 +221,23 @@ describe('<Workspace /> — smoke', () => {
     fireEvent.click(getByTestId('ribbon-command-wall'));
     expect(useBimStore.getState().planTool).toBe('wall');
     fireEvent.keyDown(document, { key: 'Escape' });
+    expect(useBimStore.getState().planTool).toBe('select');
+  });
+
+  it('leaves Cmd/Ctrl+R to the browser refresh shortcut instead of activating Roof', async () => {
+    seedTabs('3d');
+    renderWithProviders(<Workspace />);
+    useBimStore.getState().setPlanTool('select');
+
+    for (const event of [
+      new KeyboardEvent('keydown', { key: 'r', metaKey: true, bubbles: true, cancelable: true }),
+      new KeyboardEvent('keydown', { key: 'r', ctrlKey: true, bubbles: true, cancelable: true }),
+    ]) {
+      document.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(false);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 450));
     expect(useBimStore.getState().planTool).toBe('select');
   });
 
@@ -227,7 +278,8 @@ describe('<Workspace /> — smoke', () => {
       },
     });
 
-    const { getByTestId, queryByTestId } = renderWithProviders(<Workspace />);
+    const rendered = renderWithProviders(<Workspace />);
+    const { getByTestId, queryByTestId } = rendered;
     expect(getByTestId('canvas-pane-tabstrip-pane-left').textContent).toContain('Plan A');
     expect(getByTestId('canvas-pane-tabstrip-pane-right').textContent).toContain('3D B');
 
@@ -245,7 +297,7 @@ describe('<Workspace /> — smoke', () => {
     expect(leftStrip.textContent).toContain('3D B');
 
     fireEvent.click(getByTestId('canvas-pane-close-tab-pane-left'));
-    expect(queryByTestId('tab-activate-3d:vp-b')).toBeNull();
+    expect(getByTestId('canvas-pane-tabstrip-pane-left').textContent).toContain('Plan A');
   });
 
   it('creates an empty composition from the header plus', () => {
@@ -254,7 +306,105 @@ describe('<Workspace /> — smoke', () => {
     expect(getByTestId('composition-bar')).toBeTruthy();
     fireEvent.click(getByTestId('composition-add-button'));
     expect(getByText('No view open in this pane')).toBeTruthy();
-    expect(getByTestId('view-tabs').textContent).toContain('No views open');
+    expect(getByTestId('composition-bar').textContent).toContain('Composition 2');
+  });
+
+  it('opens a primary-browser view in the focused pane', () => {
+    const level: Extract<Element, { kind: 'level' }> = {
+      kind: 'level',
+      id: 'lvl-a',
+      name: 'Level A',
+      elevationMm: 0,
+    };
+    const planView: Extract<Element, { kind: 'plan_view' }> = {
+      kind: 'plan_view',
+      id: 'pv-a',
+      name: 'Plan A',
+      levelId: level.id,
+    };
+    const viewpoint: Extract<Element, { kind: 'viewpoint' }> = {
+      kind: 'viewpoint',
+      id: 'vp-b',
+      name: '3D B',
+      mode: 'orbit_3d',
+      camera: {
+        position: { xMm: 0, yMm: -8000, zMm: 5000 },
+        target: { xMm: 0, yMm: 0, zMm: 1500 },
+        up: { xMm: 0, yMm: 0, zMm: 1 },
+      },
+    };
+    useBimStore.setState({
+      activeLevelId: level.id,
+      elementsById: {
+        [level.id]: level,
+        [planView.id]: planView,
+        [viewpoint.id]: viewpoint,
+      },
+    });
+
+    const rendered = renderWithProviders(<Workspace />);
+    const { getByTestId, queryByTestId } = rendered;
+
+    fireEvent.click(getByTestId(`left-rail-row-${viewpoint.id}`));
+
+    expect(queryByTestId('stub-plan-canvas')).toBeNull();
+    expect(getByTestId('stub-viewport')).toBeTruthy();
+    expect(getByTestId('redesign-canvas-root').textContent).toContain('3D · 3D B');
+    expect(useBimStore.getState().activeViewpointId).toBe(viewpoint.id);
+  });
+
+  it('splits a targeted pane recursively from a primary-browser drop', () => {
+    localStorage.setItem(
+      TABS_KEY,
+      JSON.stringify({
+        v: 1,
+        tabs: [
+          { id: 'plan:pv-a', kind: 'plan', label: 'Plan A', targetId: 'pv-a' },
+          { id: '3d:vp-b', kind: '3d', label: '3D B', targetId: 'vp-b' },
+        ],
+        activeId: 'plan:pv-a',
+      }),
+    );
+    seedSplitPaneLayout('plan:pv-a', '3d:vp-b');
+    useBimStore.setState({
+      activeLevelId: 'lvl-a',
+      elementsById: {
+        'lvl-a': {
+          kind: 'level',
+          id: 'lvl-a',
+          name: 'Level A',
+          elevationMm: 0,
+        } as Element,
+        'pv-a': {
+          kind: 'plan_view',
+          id: 'pv-a',
+          name: 'Plan A',
+          levelId: 'lvl-a',
+        } as Element,
+        'vp-b': {
+          kind: 'viewpoint',
+          id: 'vp-b',
+          name: '3D B',
+          mode: 'orbit_3d',
+        } as Element,
+      },
+    });
+
+    const { getByTestId, container } = renderWithProviders(<Workspace />);
+    const dragData = new Map<string, string>();
+    const dataTransfer = {
+      effectAllowed: 'copy',
+      dropEffect: 'none',
+      setData: (type: string, value: string) => dragData.set(type, value),
+      getData: (type: string) => dragData.get(type) ?? '',
+    };
+
+    fireEvent.dragStart(getByTestId('left-rail-row-vp-b'), { dataTransfer });
+    const splitTarget = getByTestId('canvas-pane-pane-left-split-dropzone-right');
+    fireEvent.dragOver(splitTarget, { dataTransfer });
+    fireEvent.drop(splitTarget, { dataTransfer });
+
+    expect(container.querySelectorAll('[data-testid^="canvas-pane-tabstrip-"]').length).toBe(3);
   });
 
   it('renders a real empty pane state when no tabs are open', () => {
@@ -277,20 +427,30 @@ describe('<Workspace /> — smoke', () => {
     );
     seedSplitPaneLayout('plan:pv-a', 'sheet:sheet-b');
 
-    const { getByTestId } = renderWithProviders(<Workspace />);
-    expect(getByTestId('secondary-sidebar-sheet')).toBeTruthy();
-    expect(getByTestId('ribbon-mode-identity').textContent).toContain('Sheet');
+    const rendered = renderWithProviders(<Workspace />);
+    const { getByTestId, queryByTestId } = rendered;
+    const rightPane = within(paneSecondary(rendered, 'pane-right'));
+    const rightRibbon = within(paneRibbon(rendered, 'pane-right'));
+    const leftPane = within(paneSecondary(rendered, 'pane-left'));
+    const leftRibbon = within(paneRibbon(rendered, 'pane-left'));
 
-    fireEvent.pointerDown(getByTestId('canvas-pane-pane-left'));
+    expect(rightPane.getByTestId('secondary-sidebar-sheet')).toBeTruthy();
+    expect(rightRibbon.getByTestId('ribbon-mode-identity').textContent).toContain('Sheet');
+    expect(leftPane.getByTestId('secondary-sidebar-plan')).toBeTruthy();
+    expect(leftRibbon.getByTestId('ribbon-mode-identity').textContent).toContain('Plan');
 
-    expect(getByTestId('secondary-sidebar-plan')).toBeTruthy();
-    expect(getByTestId('ribbon-mode-identity').textContent).toContain('Plan');
+    fireEvent.click(leftRibbon.getByTestId('ribbon-mode-identity'));
+    expect(queryByTestId('canvas-pane-secondary-sidebar-pane-left')).toBeNull();
+
+    fireEvent.click(leftRibbon.getByTestId('ribbon-mode-identity'));
+    expect(paneSecondary(rendered, 'pane-left')).toBeTruthy();
   });
 
   it('opens plan Visibility/Graphics from the secondary advanced owner — UX-DIA-004', () => {
     seedTabs('plan');
-    const { getByTestId, getByRole } = renderWithProviders(<Workspace />);
-    const secondary = within(getByTestId('app-shell-secondary-sidebar'));
+    const rendered = renderWithProviders(<Workspace />);
+    const { getByRole } = rendered;
+    const secondary = within(paneSecondary(rendered));
 
     fireEvent.click(secondary.getByTestId('secondary-plan-open-vv-dialog'));
     expect(getByRole('dialog', { name: 'Visibility/Graphics Overrides' })).toBeTruthy();
@@ -410,11 +570,11 @@ describe('<Workspace /> — smoke', () => {
 
   it('keeps 3D view controls in the secondary sidebar when no element is selected', () => {
     seedTabs('3d');
-    const { getByTestId, getByRole } = renderWithProviders(<Workspace />);
-    const secondary = within(getByTestId('app-shell-secondary-sidebar'));
+    const rendered = renderWithProviders(<Workspace />);
+    const { getByTestId, getByRole } = rendered;
+    const secondary = within(paneSecondary(rendered));
     expect(getByTestId('app-shell').dataset.elementSidebarPresent).toBe('false');
     expect(getByTestId('app-shell-element-sidebar').hidden).toBe(true);
-    expect(getByTestId('app-shell-secondary-sidebar').hidden).toBe(false);
     expect(secondary.getByTestId('secondary-sidebar-3d')).toBeTruthy();
     expect(secondary.getByTestId('secondary-3d-sun')).toBeTruthy();
     expect(secondary.getByTestId('viewport3d-layers-panel')).toBeTruthy();
@@ -423,10 +583,9 @@ describe('<Workspace /> — smoke', () => {
 
   it('keeps deep 3D scene/graphics/clipping ownership in the secondary sidebar', () => {
     seedTabs('3d');
-    const { getByTestId, queryByTestId, getByRole, getByLabelText } = renderWithProviders(
-      <Workspace />,
-    );
-    const secondary = within(getByTestId('app-shell-secondary-sidebar'));
+    const rendered = renderWithProviders(<Workspace />);
+    const { getByTestId, queryByTestId, getByRole, getByLabelText } = rendered;
+    const secondary = within(paneSecondary(rendered));
 
     expect(secondary.getByTestId('secondary-sidebar-3d')).toBeTruthy();
     expect(secondary.getByTestId('secondary-3d-sun')).toBeTruthy();
@@ -477,8 +636,9 @@ describe('<Workspace /> — smoke', () => {
         },
       },
     });
-    const { getByTestId } = renderWithProviders(<Workspace />);
-    const secondary = within(getByTestId('app-shell-secondary-sidebar'));
+    const rendered = renderWithProviders(<Workspace />);
+    const { getByTestId } = rendered;
+    const secondary = within(paneSecondary(rendered));
 
     expect(secondary.getByTestId('secondary-3d-saved-view')).toBeTruthy();
     expect(secondary.getByTestId('orbit-viewpoint-persisted-hud')).toBeTruthy();
@@ -525,7 +685,7 @@ describe('<Workspace /> — smoke', () => {
       localStorage.removeItem(COMPOSITIONS_KEY);
       seedTabs(kind, `tab-${kind}`);
       const rendered = renderWithProviders(<Workspace />);
-      const secondary = within(rendered.getByTestId('app-shell-secondary-sidebar'));
+      const secondary = within(paneSecondary(rendered));
 
       expect(secondary.getByTestId(testId)).toBeTruthy();
       expect(secondary.queryByTestId('right-rail-section-tabs')).toBeNull();
@@ -547,7 +707,7 @@ describe('<Workspace /> — smoke', () => {
       localStorage.removeItem(COMPOSITIONS_KEY);
       seedTabs(kind, `tab-${kind}`);
       const rendered = renderWithProviders(<Workspace />);
-      const secondary = rendered.getByTestId('app-shell-secondary-sidebar');
+      const secondary = paneSecondary(rendered);
       const adapter = within(secondary).getByTestId(testId);
       const sectionScopes = Array.from(adapter.querySelectorAll('[data-secondary-scope]')).map(
         (section) => section.getAttribute('data-secondary-scope'),
@@ -579,9 +739,10 @@ describe('<Workspace /> — smoke', () => {
     expect(getByTestId('app-shell').dataset.elementSidebarPresent).toBe('false');
     expect(getByTestId('app-shell-element-sidebar').hidden).toBe(true);
     expect(queryByTestId('app-shell-element-resize-handle')).toBeNull();
+    expect(queryByTestId('canvas-pane-element-sidebar-pane-root')).toBeNull();
   });
 
-  it('shows a dedicated element-sidebar resize handle only when selection exists — UX-ELE-021', () => {
+  it('shows the element sidebar inside the focused pane when selection exists — UX-ELE-021', () => {
     seedTabs('plan');
     useBimStore.setState({
       selectedId: 'wall-1',
@@ -604,12 +765,11 @@ describe('<Workspace /> — smoke', () => {
       },
     });
 
-    const { getByTestId } = renderWithProviders(<Workspace />);
-    const shell = getByTestId('app-shell');
-    const before = shell.style.gridTemplateColumns;
-    const handle = getByTestId('app-shell-element-resize-handle');
-    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
-    expect(shell.style.gridTemplateColumns).not.toBe(before);
+    const rendered = renderWithProviders(<Workspace />);
+    const { getByTestId, queryByTestId } = rendered;
+    expect(getByTestId('app-shell').dataset.elementSidebarPresent).toBe('false');
+    expect(queryByTestId('app-shell-element-resize-handle')).toBeNull();
+    expect(within(paneElementSidebar(rendered)).getByTestId('inspector')).toBeTruthy();
   });
 
   it('keeps sheet review controls in the ribbon and out of canvas chrome — UX-CAN-023', () => {
@@ -690,7 +850,8 @@ describe('<Workspace /> — smoke', () => {
       },
     });
 
-    const { getByTestId, queryByTestId } = renderWithProviders(<Workspace />);
+    const rendered = renderWithProviders(<Workspace />);
+    const { getByTestId, queryByTestId } = rendered;
 
     fireEvent.click(getByTestId(`left-rail-row-${planView.id}`));
 
@@ -698,12 +859,11 @@ describe('<Workspace /> — smoke', () => {
     expect(getByTestId('app-shell').dataset.elementSidebarPresent).toBe('false');
     expect(getByTestId('app-shell-element-sidebar').hidden).toBe(true);
     expect(queryByTestId('inspector')).toBeNull();
-    expect(
-      within(getByTestId('app-shell-secondary-sidebar')).getByTestId('secondary-sidebar-plan'),
-    ).toBeTruthy();
+    expect(within(paneSecondary(rendered)).getByTestId('secondary-sidebar-plan')).toBeTruthy();
   });
 
   it('reopens the element sidebar after a new element selection when it was manually collapsed — UX-ELE-020', () => {
+    seedTabs('plan');
     const wallA: Extract<Element, { kind: 'wall' }> = {
       kind: 'wall',
       id: 'wall-a',
@@ -736,15 +896,17 @@ describe('<Workspace /> — smoke', () => {
       },
     });
 
-    const { getByTestId, getByLabelText } = renderWithProviders(<Workspace />);
-    expect(getByTestId('app-shell').dataset.elementSidebarPresent).toBe('true');
+    const rendered = renderWithProviders(<Workspace />);
+    const { getByTestId, getByLabelText, queryByTestId } = rendered;
+    expect(getByTestId('app-shell').dataset.elementSidebarPresent).toBe('false');
+    expect(paneElementSidebar(rendered)).toBeTruthy();
 
     fireEvent.click(getByTestId('workspace-header-cmdk'));
     fireEvent.change(getByLabelText('Command palette search'), {
       target: { value: 'toggle element sidebar' },
     });
     fireEvent.click(getByTestId('palette-entry-shell.toggle-element-sidebar'));
-    expect(getByTestId('app-shell').dataset.elementSidebarPresent).toBe('false');
+    expect(queryByTestId('canvas-pane-element-sidebar-pane-root')).toBeNull();
 
     act(() => {
       useBimStore.setState({
@@ -753,10 +915,11 @@ describe('<Workspace /> — smoke', () => {
       });
     });
 
-    expect(getByTestId('app-shell').dataset.elementSidebarPresent).toBe('true');
+    expect(paneElementSidebar(rendered)).toBeTruthy();
   });
 
   it('opens material and appearance dialogs from element-sidebar actions for selected model context', () => {
+    seedTabs('plan');
     const wallType: Extract<Element, { kind: 'wall_type' }> = {
       kind: 'wall_type',
       id: 'wt-1',
@@ -784,12 +947,15 @@ describe('<Workspace /> — smoke', () => {
       },
     });
 
-    const { getByTestId, getByRole } = renderWithProviders(<Workspace />);
-    fireEvent.click(getByTestId('inspector-open-material-browser'));
+    const rendered = renderWithProviders(<Workspace />);
+    const { getByRole } = rendered;
+    const elementSidebar = within(paneElementSidebar(rendered));
+
+    fireEvent.click(elementSidebar.getByTestId('inspector-open-material-browser'));
     expect(getByRole('dialog', { name: 'Material Browser' })).toBeTruthy();
 
     fireEvent.click(within(getByRole('dialog', { name: 'Material Browser' })).getByText('Close'));
-    fireEvent.click(getByTestId('inspector-open-appearance-asset-browser'));
+    fireEvent.click(elementSidebar.getByTestId('inspector-open-appearance-asset-browser'));
     expect(getByRole('dialog', { name: 'Appearance Asset Browser' })).toBeTruthy();
   });
 
