@@ -1,0 +1,41 @@
+i want to be able to rename composition tabs by double clicking on them and renaming; same for views in the navigation primary left sidebar (single click: open; double click: rename)
+
+---
+
+did you commit and push and merge with main?
+
+---
+
+do that for your changes
+
+---
+
+[Image #1] compositions have this weird extra border b, remove that; [Image #2] also i want that the border b of the primary left sidebar and the border b of the header are on the same height to be visually pleasing
+
+---
+
+[Image #1]no there is like a 1px difference
+
+---
+
+[Image #1] also now the active composition border is "flying"; fix both issues
+
+---
+
+[Image #1]still that 1 px between topbar and primary left sidebar header..
+
+---
+
+please have the button for collapsing primary left sidebar only shown if it is collapsed (i can expand it, but for collapsing i simply resize)
+
+---
+
+ok, and now we must see that overall the header is a bit better aligned; [Image #1] e.g. composition tabs are not at the right height and such; please make it visually appealing
+
+---
+
+add minimal hovering or even loading spinners, because it takes a second to load e.g. the 3d (loader icon instaed then of the grid icon for instance)
+
+---
+
+the loading spinner must come immediately and smoother
