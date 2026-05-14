@@ -71,6 +71,16 @@ def _material_slots_val(v: object) -> dict[str, str | None] | None:
     return out
 
 
+ARCHITECTURE_ROOM_PROP_KEYS = {
+    "roomFunction",
+    "finishSetId",
+    "designIntent",
+    "documentationStatus",
+    "occupancyNotes",
+    "roomBounding",
+}
+
+
 def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
     els = doc.elements
     match cmd:
@@ -132,6 +142,14 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     raise ValueError(
                         "roomFillPatternOverride must be solid|hatch_45|hatch_90|crosshatch|dots or empty to clear"
                     )
+            elif cmd.key in ARCHITECTURE_ROOM_PROP_KEYS and isinstance(el, RoomElem):
+                raw_prop = cmd.value.strip()
+                props = dict(el.props or {})
+                if raw_prop:
+                    props[cmd.key] = raw_prop
+                else:
+                    props.pop(cmd.key, None)
+                els[cmd.element_id] = el.model_copy(update={"props": props or None})
             elif cmd.key == "label" and isinstance(el, GridLineElem):
                 els[cmd.element_id] = el.model_copy(update={"label": cmd.value})
             elif isinstance(el, PlanViewElem):

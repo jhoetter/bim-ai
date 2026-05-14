@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
+import { WORKSPACES } from './workspaces';
 
 afterEach(() => {
   cleanup();
@@ -18,6 +19,9 @@ describe('WorkspaceSwitcher — CHR-V3-02', () => {
     const chip = getByTestId('workspace-switcher-chip');
     expect(chip.getAttribute('data-disc')).toBe('arch');
     expect(chip.textContent).toContain('Architekt');
+    expect(WORKSPACES.find((workspace) => workspace.id === 'arch')?.defaultLensLabel).toBe(
+      'Architecture',
+    );
   });
 
   it('chip renders with data-disc="struct" and label "Statiker" when activeWorkspaceId="struct"', () => {

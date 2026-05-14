@@ -150,6 +150,47 @@ describe('InspectorPropertiesFor — spec §13', () => {
     expect(onPropertyChange).toHaveBeenCalledWith('roomFillPatternOverride', 'crosshatch');
   });
 
+  it('surfaces architecture room metadata and read-only consultant badges', () => {
+    const room: Extract<Element, { kind: 'room' }> = {
+      kind: 'room',
+      id: 'room-1',
+      name: 'Office',
+      levelId: 'lvl-1',
+      outlineMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 2000, yMm: 0 },
+        { xMm: 2000, yMm: 2000 },
+        { xMm: 0, yMm: 2000 },
+      ],
+      volumeM3: 36.25,
+      phaseCreated: 'New Construction',
+      props: {
+        roomFunction: 'office',
+        finishSetId: 'fs-1',
+        fireRating: 'F30',
+        acousticRating: 'Rw 45',
+        energyZone: 'heated',
+        costGroup: 'KG 300',
+      },
+    };
+    const onPropertyChange = vi.fn();
+    const { getByTestId, getByText } = render(
+      <InspectorRoomEditor el={room} revision={1} onPersistProperty={onPropertyChange} />,
+    );
+    const roomFunction = getByTestId('inspector-room-room-function') as HTMLInputElement;
+    expect(roomFunction.value).toBe('office');
+    const badges = getByTestId('inspector-room-consultant-badges');
+    expect(badges.textContent).toContain('Fire F30');
+    expect(badges.textContent).toContain('Acoustic Rw 45');
+    expect(badges.textContent).toContain('Energy heated');
+    expect(badges.textContent).toContain('Cost KG 300');
+    expect(getByText('36.250 m³')).toBeTruthy();
+    expect(getByText('New Construction')).toBeTruthy();
+
+    fireEvent.blur(roomFunction, { target: { value: 'meeting' } });
+    expect(onPropertyChange).toHaveBeenCalledWith('roomFunction', 'meeting');
+  });
+
   it('renders editable DXF work-plane level dropdown', () => {
     const linkDxf = {
       kind: 'link_dxf',

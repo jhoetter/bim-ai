@@ -12,6 +12,7 @@ beforeEach(() => {
     viewerLevelHidden: {},
     viewerClipElevMm: null,
     planTool: 'select',
+    lensMode: 'architecture',
     wallDrawHeightMm: 2800,
     planPresentationPreset: 'default',
     presencePeers: {},
@@ -78,11 +79,13 @@ describe('store slice contracts', () => {
     const store = useBimStore.getState();
 
     store.setPlanTool('wall');
+    store.setLensMode('structure');
     store.setWallDrawHeightMm(3100);
     store.setWallDrawRadiusMm(750);
     store.setPlanPresentationPreset('room_scheme');
 
     expect(useBimStore.getState().planTool).toBe('wall');
+    expect(useBimStore.getState().lensMode).toBe('structure');
     expect(useBimStore.getState().wallDrawHeightMm).toBe(3100);
     expect(useBimStore.getState().wallDrawRadiusMm).toBe(750);
     expect(useBimStore.getState().planPresentationPreset).toBe('room_scheme');

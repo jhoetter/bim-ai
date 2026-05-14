@@ -14,7 +14,7 @@ export const WORKSPACES: WorkspaceDescriptor[] = [
     label: 'Architekt',
     discToken: 'var(--disc-arch)',
     discSoftToken: 'var(--disc-arch-soft)',
-    defaultLensLabel: 'All',
+    defaultLensLabel: 'Architecture',
   },
   {
     id: 'struct',

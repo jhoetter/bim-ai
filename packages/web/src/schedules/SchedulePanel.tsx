@@ -127,6 +127,10 @@ export function SchedulePanel(props: {
     () => findScheduleIdForCategory(props.elementsById, 'floor'),
     [props.elementsById],
   );
+  const sidFinishes = useMemo(
+    () => findScheduleIdForCategory(props.elementsById, 'finish'),
+    [props.elementsById],
+  );
   const sidRoofs = useMemo(
     () => findScheduleIdForCategory(props.elementsById, 'roof'),
     [props.elementsById],
@@ -137,6 +141,10 @@ export function SchedulePanel(props: {
   );
   const sidPlans = useMemo(
     () => findScheduleIdForCategory(props.elementsById, 'plan_view'),
+    [props.elementsById],
+  );
+  const sidViews = useMemo(
+    () => findScheduleIdForCategory(props.elementsById, 'view'),
     [props.elementsById],
   );
   const sidSheets = useMemo(
@@ -156,6 +164,8 @@ export function SchedulePanel(props: {
         return sidDoors;
       case 'windows':
         return sidWins;
+      case 'finishes':
+        return sidFinishes;
       case 'floors':
         return sidFloors;
       case 'roofs':
@@ -164,6 +174,8 @@ export function SchedulePanel(props: {
         return sidStairs;
       case 'plans':
         return sidPlans;
+      case 'views':
+        return sidViews;
       case 'sheets':
         return sidSheets;
       case 'assemblies':
@@ -176,10 +188,12 @@ export function SchedulePanel(props: {
     sidRooms,
     sidDoors,
     sidWins,
+    sidFinishes,
     sidFloors,
     sidRoofs,
     sidStairs,
     sidPlans,
+    sidViews,
     sidSheets,
     sidAssemblies,
   ]);
@@ -905,10 +919,12 @@ export function SchedulePanel(props: {
               ['rooms', 'Rooms'],
               ['doors', 'Doors'],
               ['windows', 'Windows'],
+              ['finishes', 'Finishes'],
               ['floors', 'Floors'],
               ['roofs', 'Roofs'],
               ['stairs', 'Stairs'],
               ['plans', 'Plans'],
+              ['views', 'Views'],
               ['sheets', 'Sheets'],
               ['assemblies', 'Assemblies'],
             ] as const
@@ -1137,9 +1153,11 @@ export function SchedulePanel(props: {
       ) : null}
 
       {tab === 'floors' ||
+      tab === 'finishes' ||
       tab === 'roofs' ||
       tab === 'stairs' ||
       tab === 'plans' ||
+      tab === 'views' ||
       tab === 'sheets' ||
       tab === 'assemblies' ? (
         !props.modelId ? (
