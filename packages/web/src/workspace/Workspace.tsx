@@ -3602,6 +3602,7 @@ export function Workspace(): JSX.Element {
                     participants={presenceParticipants}
                     localUserId={presenceLocalUserId ?? userId ?? ''}
                     maxVisible={3}
+                    avatarSize={24}
                   />
                 ) : (
                   <Icons.collaborators size={16} aria-hidden="true" />

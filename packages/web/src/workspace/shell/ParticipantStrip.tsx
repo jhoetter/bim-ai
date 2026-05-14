@@ -24,6 +24,7 @@ export type ParticipantStripProps = {
   participants: Participant[];
   localUserId: string;
   maxVisible?: number;
+  avatarSize?: number;
 };
 
 const AVATAR_SIZE = 28;
@@ -42,6 +43,7 @@ export function ParticipantStrip({
   participants,
   localUserId,
   maxVisible = 5,
+  avatarSize = AVATAR_SIZE,
 }: ParticipantStripProps): JSX.Element | null {
   if (participants.length === 0) return null;
 
@@ -51,9 +53,14 @@ export function ParticipantStrip({
   return (
     <div data-testid="participant-strip" style={stripStyle} aria-label="Participants" role="group">
       {visible.map((p) => (
-        <ParticipantAvatar key={p.userId} participant={p} isLocal={p.userId === localUserId} />
+        <ParticipantAvatar
+          key={p.userId}
+          participant={p}
+          isLocal={p.userId === localUserId}
+          avatarSize={avatarSize}
+        />
       ))}
-      {overflow > 0 && <OverflowChip count={overflow} />}
+      {overflow > 0 && <OverflowChip count={overflow} avatarSize={avatarSize} />}
     </div>
   );
 }
@@ -67,9 +74,11 @@ const stripStyle: CSSProperties = {
 function ParticipantAvatar({
   participant,
   isLocal,
+  avatarSize,
 }: {
   participant: Participant;
   isLocal: boolean;
+  avatarSize: number;
 }): JSX.Element {
   const initials = deriveInitials(participant.displayName, participant.userId);
   const isOnline = participant.isOnline ?? false;
@@ -77,8 +86,8 @@ function ParticipantAvatar({
 
   const avatarStyle: CSSProperties = {
     position: 'relative',
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
+    width: avatarSize,
+    height: avatarSize,
     borderRadius: 'var(--radius-pill)',
     background: participant.color,
     display: 'flex',
@@ -121,7 +130,13 @@ const onlineDotStyle: CSSProperties = {
   border: '2px solid var(--color-background)',
 };
 
-function OverflowChip({ count }: { count: number }): JSX.Element {
+function OverflowChip({ count, avatarSize }: { count: number; avatarSize: number }): JSX.Element {
+  const overflowChipStyle: CSSProperties = {
+    ...baseOverflowChipStyle,
+    width: avatarSize,
+    height: avatarSize,
+  };
+
   return (
     <div
       data-testid="overflow-chip"
@@ -133,9 +148,7 @@ function OverflowChip({ count }: { count: number }): JSX.Element {
   );
 }
 
-const overflowChipStyle: CSSProperties = {
-  width: AVATAR_SIZE,
-  height: AVATAR_SIZE,
+const baseOverflowChipStyle: CSSProperties = {
   borderRadius: 'var(--radius-pill)',
   background: 'var(--color-surface-2, var(--color-surface-strong))',
   border: '1px solid var(--color-border)',

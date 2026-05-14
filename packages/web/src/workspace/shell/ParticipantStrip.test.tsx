@@ -65,6 +65,20 @@ describe('ParticipantStrip — COL-V3-04', () => {
     expect(getAllByTestId('participant-avatar')).toHaveLength(5);
   });
 
+  it('supports compact avatar sizing for dense header buttons', () => {
+    const { getAllByTestId } = render(
+      <ParticipantStrip
+        participants={THREE_PARTICIPANTS}
+        localUserId={LOCAL_USER_ID}
+        maxVisible={2}
+        avatarSize={24}
+      />,
+    );
+    const avatars = getAllByTestId('participant-avatar');
+    expect((avatars[0] as HTMLElement).style.width).toBe('24px');
+    expect((avatars[0] as HTMLElement).style.height).toBe('24px');
+  });
+
   it('shows "+N" overflow chip when participants > maxVisible', () => {
     const participants = Array.from({ length: 8 }, (_, i) =>
       makeParticipant({ userId: `user-${i}` }),
