@@ -23,6 +23,13 @@ function localBoxWidthM(mesh: THREE.Mesh): number {
   return box.max.x - box.min.x;
 }
 
+function geometryBounds(mesh: THREE.Mesh): THREE.Box3 {
+  mesh.geometry.computeBoundingBox();
+  const box = mesh.geometry.boundingBox;
+  if (!box) throw new Error('expected wall mesh bounding box');
+  return box;
+}
+
 describe('makeWallMesh — locationLine offset', () => {
   it('wall-centerline: mesh positioned at axis midpoint (no perpendicular offset)', () => {
     const wall: WallElem = { ...baseWall, locationLine: 'wall-centerline' };
@@ -220,5 +227,32 @@ describe('makeWallMesh — locationLine offset', () => {
 
     expect(localBoxWidthM(mesh)).toBeCloseTo(0.88, 5);
     expect(mesh.position.x).toBeCloseTo(0.44, 5);
+  });
+
+  it('renders joined endpoint walls from a cleaned 3D footprint instead of a raw box slab', () => {
+    const south: WallElem = {
+      ...baseWall,
+      id: 'south',
+      thicknessMm: 200,
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 1000, yMm: 0 },
+    };
+    const east: WallElem = {
+      ...baseWall,
+      id: 'east',
+      thicknessMm: 200,
+      start: { xMm: 1000, yMm: 0 },
+      end: { xMm: 1000, yMm: 1000 },
+    };
+    const elementsById: Record<string, Element> = { south, east };
+
+    const mesh = makeWallMesh(south, 0, null, elementsById) as THREE.Mesh;
+    const bounds = geometryBounds(mesh);
+
+    expect(mesh.userData.wallJoinCleanup).toBe(true);
+    expect(mesh.position.x).toBeCloseTo(0, 5);
+    expect(mesh.position.z).toBeCloseTo(0, 5);
+    expect(bounds.min.x).toBeCloseTo(0, 5);
+    expect(bounds.max.x).toBeCloseTo(1.1, 5);
   });
 });

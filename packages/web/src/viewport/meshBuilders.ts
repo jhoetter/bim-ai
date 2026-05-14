@@ -34,7 +34,7 @@ import { makeLayeredWallMesh } from './meshBuilders.layeredWall';
 import { makeMultiRunStairMesh } from './meshBuilders.multiRunStair';
 import { localPlanOffsetToWorld, yawForPlanSegment } from './planSegmentOrientation';
 import { resolveWindowCutDimensions } from './hostedOpeningDimensions';
-import { wallWith3dJoinDisallowGaps } from './wallJoinDisplay';
+import { wall3dCleanupFootprintMm, wallWith3dJoinDisallowGaps } from './wallJoinDisplay';
 import {
   effectiveWallBaseMaterialKey,
   effectiveFloorTopMaterialKey,
@@ -2533,6 +2533,28 @@ export function makeWallMesh(
           return materials;
         })()
       : baseMaterial;
+
+  const cleanupFootprint = wall3dCleanupFootprintMm(displayWall, elementsById);
+  if (cleanupFootprint) {
+    const first = cleanupFootprint[0]!;
+    const shape = new THREE.Shape();
+    shape.moveTo(first.xMm / 1000, -first.yMm / 1000);
+    for (let i = 1; i < cleanupFootprint.length; i += 1) {
+      const point = cleanupFootprint[i]!;
+      shape.lineTo(point.xMm / 1000, -point.yMm / 1000);
+    }
+    shape.closePath();
+
+    const geom = new THREE.ExtrudeGeometry(shape, { depth: height, bevelEnabled: false });
+    geom.rotateX(-Math.PI / 2);
+    const cleanupMesh = new THREE.Mesh(geom, wallMaterial);
+    cleanupMesh.position.set(0, yBase, 0);
+    cleanupMesh.userData.bimPickId = displayWall.id;
+    cleanupMesh.userData.faceMaterialOverrides = displayWall.faceMaterialOverrides ?? null;
+    cleanupMesh.userData.wallJoinCleanup = true;
+    addEdges(cleanupMesh);
+    return cleanupMesh;
+  }
 
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(len, height, thick), wallMaterial);
   mesh.position.set(sx + dx / 2 + wallOffset.xM, yBase + height / 2, sz + dz / 2 + wallOffset.zM);

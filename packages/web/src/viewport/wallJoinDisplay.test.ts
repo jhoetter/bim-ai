@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { Element } from '@bim-ai/core';
 
-import { wall3dDisallowedJoinEndpoints, wallWith3dJoinDisallowGaps } from './wallJoinDisplay';
+import {
+  wall3dCleanupFootprintMm,
+  wall3dDisallowedJoinEndpoints,
+  wallWith3dJoinDisallowGaps,
+} from './wallJoinDisplay';
 
 type WallElem = Extract<Element, { kind: 'wall' }>;
 
@@ -67,5 +71,39 @@ describe('WP-NEXT-42 3D wall join display gaps', () => {
     const displayWall = wallWith3dJoinDisallowGaps(center, { center, west, east }, 120);
 
     expect(displayWall.end.xMm - displayWall.start.xMm).toBeCloseTo(1, 6);
+  });
+
+  it('miter-cleans 3D endpoint L joins into a shared diagonal footprint', () => {
+    const south = wall('south', { xMm: 0, yMm: 0 }, { xMm: 1000, yMm: 0 });
+    const east = wall('east', { xMm: 1000, yMm: 0 }, { xMm: 1000, yMm: 1000 });
+    const elementsById: Record<string, Element> = { south, east };
+
+    const southFootprint = wall3dCleanupFootprintMm(south, elementsById, 5);
+    const eastFootprint = wall3dCleanupFootprintMm(east, elementsById, 5);
+
+    expect(southFootprint).toEqual([
+      { xMm: 0, yMm: 100 },
+      { xMm: 900, yMm: 100 },
+      { xMm: 1100, yMm: -100 },
+      { xMm: 0, yMm: -100 },
+    ]);
+    expect(eastFootprint?.[0]).toEqual({ xMm: 900, yMm: 100 });
+    expect(eastFootprint?.[3]).toEqual({ xMm: 1100, yMm: -100 });
+  });
+
+  it('butt-cleans a T branch to the host wall face instead of the host centerline', () => {
+    const host = wall('host', { xMm: 0, yMm: 0 }, { xMm: 1000, yMm: 0 });
+    const branch = wall('branch', { xMm: 500, yMm: 0 }, { xMm: 500, yMm: 1000 });
+    const elementsById: Record<string, Element> = { host, branch };
+
+    const branchFootprint = wall3dCleanupFootprintMm(branch, elementsById, 5);
+
+    expect(branchFootprint).toEqual([
+      { xMm: 400, yMm: 100 },
+      { xMm: 400, yMm: 1000 },
+      { xMm: 600, yMm: 1000 },
+      { xMm: 600, yMm: 100 },
+    ]);
+    expect(wall3dCleanupFootprintMm(host, elementsById, 5)).toBeNull();
   });
 });
