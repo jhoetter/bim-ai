@@ -2,8 +2,8 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "a900b5831553",
   "strategy": "manual-commit",
-  "branch": "codex/sustainability-lens-20260514",
-  "checkpoints_count": 3,
+  "branch": "codex/architecture-lens-workpackages-20260514",
+  "checkpoints_count": 4,
   "files_touched": null,
   "sessions": [
     {
@@ -23,13 +23,19 @@
       "transcript": "/a9/00b5831553/2/full.jsonl",
       "content_hash": "/a9/00b5831553/2/content_hash.txt",
       "prompt": "/a9/00b5831553/2/prompt.txt"
+    },
+    {
+      "metadata": "/a9/00b5831553/3/metadata.json",
+      "transcript": "/a9/00b5831553/3/full.jsonl",
+      "content_hash": "/a9/00b5831553/3/content_hash.txt",
+      "prompt": "/a9/00b5831553/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 8629296,
+    "input_tokens": 12426646,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 213183232,
-    "output_tokens": 514789,
-    "api_call_count": 1622
+    "cache_read_tokens": 300491520,
+    "output_tokens": 849008,
+    "api_call_count": 2381
   }
 }
