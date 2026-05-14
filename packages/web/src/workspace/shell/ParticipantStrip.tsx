@@ -9,7 +9,7 @@
  *   - Initials:  max 2 chars, white, var(--text-xs)
  *   - Online:    2 px green dot at bottom-right using var(--color-success)
  *   - Offline:   opacity 0.5
- *   - Local user: 2 px ring in var(--color-accent)
+ *   - Local user: inset 2 px ring in var(--color-accent)
  *   - Overflow chip: "+N" with var(--color-surface-2, var(--color-surface-strong)) bg
  *   - Tooltip: displayName + online / offline indicator
  *
@@ -91,8 +91,7 @@ function ParticipantAvatar({
     flexShrink: 0,
     opacity: isOnline ? 1 : 0.5,
     boxSizing: 'border-box',
-    outline: isLocal ? '2px solid var(--color-accent)' : 'none',
-    outlineOffset: isLocal ? '1px' : '0',
+    boxShadow: isLocal ? 'inset 0 0 0 2px var(--color-accent)' : 'none',
   };
 
   return (

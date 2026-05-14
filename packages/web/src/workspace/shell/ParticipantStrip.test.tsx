@@ -87,7 +87,7 @@ describe('ParticipantStrip — COL-V3-04', () => {
     expect(queryByTestId('overflow-chip')).toBeNull();
   });
 
-  it('local user avatar has ring border indicator (outline style)', () => {
+  it('local user avatar has an inset ring that stays inside the topbar control', () => {
     const { getAllByTestId } = render(
       <ParticipantStrip
         participants={THREE_PARTICIPANTS}
@@ -99,9 +99,11 @@ describe('ParticipantStrip — COL-V3-04', () => {
     const localAvatar = avatars.find((el) => el.dataset.userId === LOCAL_USER_ID);
     expect(localAvatar).toBeDefined();
     expect(localAvatar?.dataset.isLocal).toBe('true');
-    // Verify the outline uses the CSS var (no hex in the style).
-    const outlineStyle = (localAvatar as HTMLElement).style.outline;
-    expect(outlineStyle).toContain('var(--color-accent)');
+    // Verify the ring uses an inset shadow so it does not paint outside the avatar box.
+    const ringStyle = (localAvatar as HTMLElement).style.boxShadow;
+    expect(ringStyle).toContain('inset');
+    expect(ringStyle).toContain('var(--color-accent)');
+    expect((localAvatar as HTMLElement).style.outline).toBe('');
   });
 
   it('offline participant has opacity 0.5', () => {
