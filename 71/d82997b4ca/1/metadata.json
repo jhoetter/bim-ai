@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "71d82997b4ca",
+  "session_id": "019e15f5-49cf-7e80-8bfc-9478e07558ca",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T10:59:58.106603Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/plan/symbology.wirePrimitives.test.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "b27708f87e1f",
+  "token_usage": {
+    "input_tokens": 881385,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 12268928,
+    "output_tokens": 57371,
+    "api_call_count": 139
+  },
+  "session_metrics": {
+    "turn_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-14T10:59:58.06477Z",
+    "agent_lines": 127,
+    "agent_removed": 0,
+    "human_added": 384,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 511,
+    "total_lines_changed": 1185,
+    "agent_percentage": 10.717299578059073,
+    "metric_version": 2
+  }
+}
