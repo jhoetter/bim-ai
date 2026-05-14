@@ -5,6 +5,7 @@ const LENS_CYCLE = [
   'architecture',
   'structure',
   'mep',
+  'coordination',
   'all',
 ] as const satisfies readonly LensMode[];
 type LensCycleMode = (typeof LENS_CYCLE)[number];
@@ -13,6 +14,7 @@ const LENS_LABELS: Record<LensCycleMode, string> = {
   architecture: 'Architecture',
   structure: 'Structure',
   mep: 'MEP',
+  coordination: 'Coordination',
   all: 'All',
 };
 
@@ -20,12 +22,14 @@ const DISC_SOFT: Partial<Record<LensMode, string>> = {
   architecture: 'var(--disc-arch-soft)',
   structure: 'var(--disc-struct-soft)',
   mep: 'var(--disc-mep-soft)',
+  coordination: 'color-mix(in srgb, var(--color-drift, var(--color-warning)) 20%, transparent)',
 };
 
 const DISC_SOLID: Partial<Record<LensMode, string>> = {
   architecture: 'var(--disc-arch)',
   structure: 'var(--disc-struct)',
   mep: 'var(--disc-mep)',
+  coordination: 'var(--color-drift, var(--color-warning))',
 };
 
 export interface LensDropdownProps {
@@ -49,7 +53,7 @@ export function LensDropdown({
     ? (currentLens as (typeof LENS_CYCLE)[number])
     : 'all';
 
-  // Global L key cycles forward through the 4 lens modes.
+  // Global L key cycles forward through the lens modes.
   useEffect(() => {
     if (!enableHotkey) return;
     const handleKeyDown = (e: KeyboardEvent) => {

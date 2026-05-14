@@ -1681,11 +1681,19 @@ function LensScopeNotice({
   testId: string;
 }): JSX.Element {
   const lensLabel =
-    lensMode === 'structure' ? 'Structure' : lensMode === 'mep' ? 'MEP' : 'Architecture';
+    lensMode === 'structure'
+      ? 'Structure'
+      : lensMode === 'mep'
+        ? 'MEP'
+        : lensMode === 'coordination'
+          ? 'Coordination'
+          : 'Architecture';
   const body =
-    scope === 'view'
-      ? `${lensLabel} lens is active. View controls and command availability are filtered for this discipline.`
-      : `${lensLabel} lens is active. Out-of-scope elements remain inspectable, but editing commands may be unavailable.`;
+    lensMode === 'coordination'
+      ? 'Coordination lens is active. Review, issue, link, and model-health workflows remain foregrounded while authoring commands are filtered.'
+      : scope === 'view'
+        ? `${lensLabel} lens is active. View controls and command availability are filtered for this discipline.`
+        : `${lensLabel} lens is active. Out-of-scope elements remain inspectable, but editing commands may be unavailable.`;
   return (
     <div
       data-testid={testId}

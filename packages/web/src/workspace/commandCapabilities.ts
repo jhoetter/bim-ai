@@ -170,7 +170,10 @@ export function evaluateCommandInMode(
   };
 }
 
-const LENS_DISABLED_COMMANDS: Record<'structure' | 'mep', { ids: Set<string>; reason: string }> = {
+const LENS_DISABLED_COMMANDS: Record<
+  'structure' | 'mep' | 'coordination',
+  { ids: Set<string>; reason: string }
+> = {
   structure: {
     ids: new Set([
       'tool.room',
@@ -213,13 +216,44 @@ const LENS_DISABLED_COMMANDS: Record<'structure' | 'mep', { ids: Set<string>; re
     reason:
       'Unavailable in MEP lens: switch to Architecture or Structure lens for envelope/structural authoring.',
   },
+  coordination: {
+    ids: new Set([
+      'tool.wall',
+      'tool.door',
+      'tool.window',
+      'tool.floor',
+      'tool.roof',
+      'tool.room',
+      'tool.area',
+      'tool.stair',
+      'tool.railing',
+      'tool.component',
+      'tool.wall-opening',
+      'tool.shaft',
+      'tool.column',
+      'tool.beam',
+      'tool.ceiling',
+      'tool.grid',
+      'tool.reference-plane',
+      'tool.property-line',
+      'tool.area-boundary',
+      'tool.toposolid_subdivision',
+      'view.3d.wall.insert-door',
+      'view.3d.wall.insert-window',
+      'view.3d.wall.insert-opening',
+    ]),
+    reason:
+      'Unavailable in Coordination lens: use Architecture, Structure, or MEP for model authoring; Coordination is for review and issue management.',
+  },
 };
 
 function lensDisabledReasonForCommand(
   commandId: string,
   lensMode: CapabilityLensMode,
 ): string | undefined {
-  if (lensMode !== 'structure' && lensMode !== 'mep') return undefined;
+  if (lensMode !== 'structure' && lensMode !== 'mep' && lensMode !== 'coordination') {
+    return undefined;
+  }
   const lensRules = LENS_DISABLED_COMMANDS[lensMode];
   if (!lensRules) return undefined;
   return lensRules.ids.has(commandId) ? lensRules.reason : undefined;
@@ -444,6 +478,19 @@ const NAVIGATION_CAPABILITIES: CommandCapability[] = [
   {
     id: 'navigate.mep',
     label: 'Switch lens: MEP',
+    owner: 'cmdPalette/defaultCommands',
+    group: 'navigate',
+    scope: 'universal',
+    intendedModes: [...CAPABILITY_VIEW_MODES],
+    surfaces: ['cmd-k', 'primary-sidebar'],
+    executionSurface: 'primary-sidebar',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+  },
+  {
+    id: 'navigate.coordination',
+    label: 'Switch lens: Coordination',
     owner: 'cmdPalette/defaultCommands',
     group: 'navigate',
     scope: 'universal',
