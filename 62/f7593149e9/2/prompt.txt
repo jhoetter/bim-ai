@@ -1,12 +1,8 @@
-[Image #1] i want that the ribbon groups and the tab name move into one lane; i.e the icon, view type, discipline lens, tab name and then the ribbon groups; currently those are two levels, i only want one.
+<image name=[Image #1]>
 
 ---
 
-please commit and push and merge to main your changes
-
----
-
-now make it prettier; consider how we can achieve fantastic design here, improve the status quo
+</image>
 
 ---
 
