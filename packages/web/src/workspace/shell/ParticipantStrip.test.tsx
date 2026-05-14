@@ -71,12 +71,12 @@ describe('ParticipantStrip — COL-V3-04', () => {
         participants={THREE_PARTICIPANTS}
         localUserId={LOCAL_USER_ID}
         maxVisible={2}
-        avatarSize={24}
+        avatarSize={20}
       />,
     );
     const avatars = getAllByTestId('participant-avatar');
-    expect((avatars[0] as HTMLElement).style.width).toBe('24px');
-    expect((avatars[0] as HTMLElement).style.height).toBe('24px');
+    expect((avatars[0] as HTMLElement).style.width).toBe('20px');
+    expect((avatars[0] as HTMLElement).style.height).toBe('20px');
   });
 
   it('shows "+N" overflow chip when participants > maxVisible', () => {
