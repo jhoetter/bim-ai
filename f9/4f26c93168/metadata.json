@@ -3,7 +3,7 @@
   "checkpoint_id": "f94f26c93168",
   "strategy": "manual-commit",
   "branch": "codex/architecture-lens-workpackages-20260514",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": null,
   "sessions": [
     {
@@ -11,13 +11,19 @@
       "transcript": "/f9/4f26c93168/0/full.jsonl",
       "content_hash": "/f9/4f26c93168/0/content_hash.txt",
       "prompt": "/f9/4f26c93168/0/prompt.txt"
+    },
+    {
+      "metadata": "/f9/4f26c93168/1/metadata.json",
+      "transcript": "/f9/4f26c93168/1/full.jsonl",
+      "content_hash": "/f9/4f26c93168/1/content_hash.txt",
+      "prompt": "/f9/4f26c93168/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1816064,
+    "input_tokens": 3002111,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 39688704,
-    "output_tokens": 97756,
-    "api_call_count": 318
+    "cache_read_tokens": 67446784,
+    "output_tokens": 174313,
+    "api_call_count": 533
   }
 }
