@@ -516,7 +516,7 @@ function CompositionBar({
       data-testid="composition-bar"
       role="tablist"
       aria-label="Compositions"
-      className="flex min-h-[44px] min-w-0 flex-1 self-stretch items-end gap-0.5 overflow-x-auto bg-surface pt-1.5"
+      className="flex min-h-[44px] min-w-0 flex-1 self-stretch items-center gap-1 overflow-x-auto bg-surface"
     >
       {compositions.map((composition, idx) => {
         const active = composition.id === activeId;
@@ -573,19 +573,12 @@ function CompositionBar({
               setDragOverIdx(null);
             }}
             className={[
-              'group relative flex max-w-52 shrink-0 items-center gap-1.5 rounded-t-md border border-b-0 px-3 py-1.5 text-[12px] font-medium transition-colors',
+              'group relative flex h-8 max-w-52 shrink-0 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-colors',
               active
                 ? 'border-accent/60 bg-accent/10 text-foreground'
                 : 'border-transparent text-muted/70 hover:bg-background/40 hover:text-foreground',
               isDragOver ? 'ring-2 ring-accent ring-offset-0' : '',
             ].join(' ')}
-            style={
-              active
-                ? {
-                    boxShadow: 'inset 0 -2px 0 0 var(--color-accent)',
-                  }
-                : undefined
-            }
             title={composition.label}
           >
             <Icons.grid
@@ -626,7 +619,7 @@ function CompositionBar({
         aria-label="Create composition"
         title="Create composition"
         onClick={onCreate}
-        className="mb-1.5 ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted hover:bg-surface-strong hover:text-foreground"
+        className="ml-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded text-base leading-none text-muted hover:bg-surface-strong hover:text-foreground"
       >
         +
       </button>
