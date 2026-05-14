@@ -111,6 +111,18 @@ function paneRibbon(
   return ribbon;
 }
 
+function paneViewHeader(
+  rendered: ReturnType<typeof renderWithProviders>,
+  paneId?: string,
+): HTMLElement {
+  if (paneId) return rendered.getByTestId(`canvas-pane-view-header-${paneId}`);
+  const header = rendered.container.querySelector<HTMLElement>(
+    '[data-testid^="canvas-pane-view-header-"]',
+  );
+  if (!header) throw new Error('Expected a pane-local view header');
+  return header;
+}
+
 function paneElementSidebar(
   rendered: ReturnType<typeof renderWithProviders>,
   paneId?: string,
@@ -216,39 +228,47 @@ describe('<Workspace /> — smoke', () => {
     expect(header.getByTestId('workspace-header-share')).toBeTruthy();
   });
 
-  it('owns discipline lens in the pane ribbon, not primary sidebar, secondary sidebar, or footer', () => {
+  it('owns discipline lens in the pane view header while the secondary sidebar is open', () => {
     seedTabs('plan');
     const rendered = renderWithProviders(<Workspace />);
     const { getByTestId, queryByTestId } = rendered;
     const primary = within(getByTestId('app-shell-primary-sidebar'));
+    const viewHeader = within(paneViewHeader(rendered));
     const ribbon = within(paneRibbon(rendered));
     const statusBar = getByTestId('status-bar');
     const footer = within(statusBar);
 
     expect(primary.queryByTestId('primary-lens-filter')).toBeNull();
     expect(primary.queryByTestId('primary-lens-dropdown')).toBeNull();
-    expect(ribbon.getByTestId('ribbon-lens-dropdown')).toBeTruthy();
-    expect(ribbon.getByTestId('lens-dropdown-trigger')).toBeTruthy();
+    expect(viewHeader.getByTestId('ribbon-lens-dropdown')).toBeTruthy();
+    expect(viewHeader.getByTestId('lens-dropdown-trigger')).toBeTruthy();
+    expect(ribbon.queryByTestId('ribbon-lens-dropdown')).toBeNull();
     expect(queryByTestId('secondary-lens-filter')).toBeNull();
     expect(queryByTestId('secondary-lens-dropdown')).toBeNull();
     expect(footer.queryByTestId('lens-dropdown-trigger')).toBeNull();
     expect(statusBar.textContent).not.toContain('Show:');
   });
 
-  it('lets the pane secondary sidebar span the ribbon row when it is open', () => {
+  it('reserves a ribbon-height view header above the pane secondary sidebar', () => {
     seedTabs('3d');
     const rendered = renderWithProviders(<Workspace />);
     const { getByTestId } = rendered;
     const secondary = paneSecondary(rendered);
     const ribbon = paneRibbon(rendered);
+    const viewHeader = paneViewHeader(rendered);
 
+    expect(viewHeader.parentElement).toBe(ribbon.parentElement?.parentElement);
     expect(secondary.parentElement).toBe(ribbon.parentElement?.parentElement);
+    expect(viewHeader.textContent).toContain('3D');
+    expect(within(ribbon).queryByTestId('ribbon-mode-identity')).toBeNull();
 
     fireEvent.click(getByTestId('ribbon-mode-identity'));
     expect(
       rendered.container.querySelector('[data-testid^="canvas-pane-secondary-sidebar-"]'),
     ).toBeNull();
-    expect(paneRibbon(rendered).parentElement?.parentElement).toBeTruthy();
+    expect(within(paneRibbon(rendered)).getByTestId('ribbon-mode-identity').textContent).toContain(
+      '3D',
+    );
   });
 
   it('activates ceiling tool directly from ribbon create panel', () => {
@@ -425,6 +445,23 @@ describe('<Workspace /> — smoke', () => {
     expect(getByTestId('composition-bar').textContent).toContain('Composition 2');
   });
 
+  it('renames a composition tab inline on double click', () => {
+    seedTabs('plan');
+    const { getByTestId } = renderWithProviders(<Workspace />);
+    const tab = getByTestId('composition-bar').querySelector<HTMLElement>(
+      '[data-testid^="composition-tab-"]',
+    );
+    expect(tab).toBeTruthy();
+    fireEvent.doubleClick(tab!);
+    const compositionId = tab!.getAttribute('data-testid')!.replace('composition-tab-', '');
+    const input = getByTestId(
+      `composition-rename-input-${compositionId}`,
+    ) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'Coordination Review' } });
+    fireEvent.blur(input);
+    expect(getByTestId('composition-bar').textContent).toContain('Coordination Review');
+  });
+
   it('opens a primary-browser view in the focused pane', () => {
     const level: Extract<Element, { kind: 'level' }> = {
       kind: 'level',
@@ -577,9 +614,9 @@ describe('<Workspace /> — smoke', () => {
     ]);
 
     fireEvent.pointerDown(getByTestId('canvas-pane-pane-right'));
-    const rightRibbon = within(paneRibbon(rendered, 'pane-right'));
-    fireEvent.click(rightRibbon.getByTestId('lens-dropdown-trigger'));
-    fireEvent.click(rightRibbon.getByTestId('lens-option-mep'));
+    const rightViewHeader = within(paneViewHeader(rendered, 'pane-right'));
+    fireEvent.click(rightViewHeader.getByTestId('lens-dropdown-trigger'));
+    fireEvent.click(rightViewHeader.getByTestId('lens-option-mep'));
 
     expect(canvases().map((canvas) => canvas.dataset.lensMode)).toEqual(['architecture', 'mep']);
   });
@@ -607,19 +644,18 @@ describe('<Workspace /> — smoke', () => {
     const rendered = renderWithProviders(<Workspace />);
     const { getByTestId, queryByTestId } = rendered;
     const rightPane = within(paneSecondary(rendered, 'pane-right'));
-    const rightRibbon = within(paneRibbon(rendered, 'pane-right'));
     const leftPane = within(paneSecondary(rendered, 'pane-left'));
-    const leftRibbon = within(paneRibbon(rendered, 'pane-left'));
+    const leftViewHeader = within(paneViewHeader(rendered, 'pane-left'));
 
     expect(rightPane.getByTestId('secondary-sidebar-sheet')).toBeTruthy();
-    expect(rightRibbon.getByTestId('ribbon-mode-identity').textContent).toContain('Sheet');
+    expect(paneViewHeader(rendered, 'pane-right').textContent).toContain('Sheet');
     expect(leftPane.getByTestId('secondary-sidebar-plan')).toBeTruthy();
-    expect(leftRibbon.getByTestId('ribbon-mode-identity').textContent).toContain('Plan');
+    expect(paneViewHeader(rendered, 'pane-left').textContent).toContain('Plan');
 
-    fireEvent.click(leftRibbon.getByTestId('ribbon-mode-identity'));
+    fireEvent.click(leftViewHeader.getByTestId('ribbon-mode-identity'));
     expect(queryByTestId('canvas-pane-secondary-sidebar-pane-left')).toBeNull();
 
-    fireEvent.click(leftRibbon.getByTestId('ribbon-mode-identity'));
+    fireEvent.click(within(paneRibbon(rendered, 'pane-left')).getByTestId('ribbon-mode-identity'));
     expect(paneSecondary(rendered, 'pane-left')).toBeTruthy();
   });
 

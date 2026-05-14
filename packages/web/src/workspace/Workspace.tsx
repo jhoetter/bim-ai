@@ -55,6 +55,7 @@ import {
   ViewContextStatusPanel,
   type WorkspaceMode,
 } from './shell';
+import { LensDropdown } from './shell/LensDropdown';
 import { OptionsBar, ToolModifierBar } from './authoring';
 import { getToolRegistry, type ToolDefinition, type ToolId } from '../tools/toolRegistry';
 import {
@@ -2586,6 +2587,96 @@ export function Workspace(): JSX.Element {
       setTabsState(nextTabs);
       setPaneLayout((layout) => assignTabToPane(layout, node.id, replacement?.id ?? null));
     };
+    const handlePaneLensChange = (nextLensMode: LensMode): void => {
+      activatePaneForControls();
+      if (!paneTab) return;
+      setTabsState((state) => updateTabLens(state, paneTab.id, nextLensMode));
+    };
+    const paneTrailingControls = paneTab ? (
+      <>
+        {paneCanAcceptDrop ? (
+          <span className="rounded-md border border-accent/60 bg-accent-soft px-1.5 py-0.5 text-[10px] font-medium text-accent">
+            Drop view
+          </span>
+        ) : null}
+        {!paneSecondarySidebarOpen ? (
+          <button
+            type="button"
+            data-testid={`canvas-pane-close-tab-${node.id}`}
+            title={`Close ${paneLabel}`}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-surface-strong hover:text-foreground"
+            aria-label={`Close ${paneLabel}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              closePaneTab();
+            }}
+          >
+            <Icons.close size={12} aria-hidden="true" />
+          </button>
+        ) : null}
+      </>
+    ) : null;
+    const paneViewHeader =
+      paneTab && paneSecondarySidebarOpen ? (
+        <div
+          data-testid={`canvas-pane-view-header-${node.id}`}
+          className="flex min-h-[94px] min-w-0 flex-col justify-between border-r border-b border-border bg-surface-2 px-3 py-2.5"
+        >
+          <div className="flex min-w-0 items-start gap-2.5">
+            <button
+              type="button"
+              data-testid="ribbon-mode-identity"
+              aria-label={`Hide view settings for ${paneLabel}`}
+              aria-pressed="true"
+              title={`Hide view settings for ${paneLabel}`}
+              onClick={togglePaneViewSettings}
+              className="group inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-accent/40 bg-background text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:bg-accent-soft"
+            >
+              <PaneIcon size={26} aria-hidden="true" />
+              <span className="sr-only">{paneLabelParts.viewType}</span>
+            </button>
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold text-muted">
+                <span className="whitespace-nowrap">{paneLabelParts.viewType}</span>
+                {paneLabelParts.viewName ? (
+                  <span aria-hidden="true" className="text-border">
+                    /
+                  </span>
+                ) : null}
+                <span className="min-w-0 truncate text-foreground" title={paneLabel}>
+                  {paneLabelParts.viewName || paneLabel}
+                </span>
+              </div>
+              <div className="mt-1 min-w-0 truncate text-sm font-semibold text-foreground">
+                {paneLabelParts.viewName || paneLabelParts.viewType}
+              </div>
+            </div>
+            <button
+              type="button"
+              data-testid={`canvas-pane-close-tab-${node.id}`}
+              title={`Close ${paneLabel}`}
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-strong hover:text-foreground"
+              aria-label={`Close ${paneLabel}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                closePaneTab();
+              }}
+            >
+              <Icons.close size={12} aria-hidden="true" />
+            </button>
+          </div>
+          <div
+            data-testid="ribbon-lens-dropdown"
+            className="mt-2 h-7 w-full rounded-md border border-border bg-background/85 px-1 text-[11px] text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+          >
+            <LensDropdown
+              currentLens={paneLensMode}
+              onLensChange={handlePaneLensChange}
+              enableHotkey={false}
+            />
+          </div>
+        </div>
+      ) : null;
     const paneRibbon = paneTab ? (
       <div data-testid={`canvas-pane-ribbon-${node.id}`}>
         <RibbonBar
@@ -2600,32 +2691,9 @@ export function Workspace(): JSX.Element {
             title: paneLabel,
             viewIconTestId: `canvas-pane-view-icon-${node.id}`,
           }}
-          trailingControls={
-            <>
-              {paneCanAcceptDrop ? (
-                <span className="rounded-md border border-accent/60 bg-accent-soft px-1.5 py-0.5 text-[10px] font-medium text-accent">
-                  Drop view
-                </span>
-              ) : null}
-              <button
-                type="button"
-                data-testid={`canvas-pane-close-tab-${node.id}`}
-                title={`Close ${paneLabel}`}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-surface-strong hover:text-foreground"
-                aria-label={`Close ${paneLabel}`}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  closePaneTab();
-                }}
-              >
-                <Icons.close size={12} aria-hidden="true" />
-              </button>
-            </>
-          }
-          onLensChange={(nextLensMode) => {
-            activatePaneForControls();
-            setTabsState((state) => updateTabLens(state, paneTab.id, nextLensMode));
-          }}
+          showViewControls={!paneSecondarySidebarOpen}
+          trailingControls={paneTrailingControls}
+          onLensChange={handlePaneLensChange}
           onToolSelect={handlePaneToolSelect}
           onModeChange={handlePaneModeChange}
           viewSettingsOpen={paneSecondarySidebarOpen}
@@ -2695,7 +2763,7 @@ export function Workspace(): JSX.Element {
         aria-label={`View settings for ${paneLabel}`}
         data-testid={`canvas-pane-secondary-sidebar-${node.id}`}
         className="flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-border bg-surface"
-        style={{ width: 'min(280px, 42%)' }}
+        style={{ gridColumn: 1, gridRow: 2 }}
       >
         <ViewContextStatusPanel
           mode={paneMode}
@@ -2828,9 +2896,19 @@ export function Workspace(): JSX.Element {
           <div
             data-testid={`canvas-pane-tabstrip-${node.id}`}
             className={[
-              'flex min-h-0 min-w-0 flex-1 bg-surface',
+              paneSecondarySidebarOpen
+                ? 'grid min-h-0 min-w-0 flex-1 bg-surface'
+                : 'flex min-h-0 min-w-0 flex-1 flex-col bg-surface',
               paneCanAcceptDrop ? 'border border-accent/80 bg-accent/10' : '',
             ].join(' ')}
+            style={
+              paneSecondarySidebarOpen
+                ? {
+                    gridTemplateColumns: 'min(280px, 42%) minmax(0, 1fr)',
+                    gridTemplateRows: 'auto minmax(0, 1fr)',
+                  }
+                : undefined
+            }
             onDragOver={(event) => {
               if (!paneCanAcceptDrop) return;
               event.preventDefault();
@@ -2844,14 +2922,27 @@ export function Workspace(): JSX.Element {
               placeViewElementInPane(elementId, node.id);
             }}
           >
-            {paneSecondarySidebar}
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-              {paneRibbon}
-              <div className="flex min-h-0 min-w-0 flex-1">
-                {paneCanvas}
-                {paneElementSidebar}
-              </div>
-            </div>
+            {paneSecondarySidebarOpen ? (
+              <>
+                {paneViewHeader}
+                <div className="min-w-0" style={{ gridColumn: 2, gridRow: 1 }}>
+                  {paneRibbon}
+                </div>
+                {paneSecondarySidebar}
+                <div className="flex min-h-0 min-w-0" style={{ gridColumn: 2, gridRow: 2 }}>
+                  {paneCanvas}
+                  {paneElementSidebar}
+                </div>
+              </>
+            ) : (
+              <>
+                {paneRibbon}
+                <div className="flex min-h-0 min-w-0 flex-1">
+                  {paneCanvas}
+                  {paneElementSidebar}
+                </div>
+              </>
+            )}
           </div>
         ) : (
           <div

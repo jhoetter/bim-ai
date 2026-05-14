@@ -163,6 +163,7 @@ export interface RibbonBarProps {
   onToggleViewSettings?: () => void;
   viewSettingsToggleLabel?: string;
   inlineViewTitle?: RibbonInlineViewTitle;
+  showViewControls?: boolean;
   trailingControls?: JSX.Element | null;
 }
 
@@ -210,6 +211,7 @@ export function RibbonBar({
   onToggleViewSettings,
   viewSettingsToggleLabel,
   inlineViewTitle,
+  showViewControls = true,
   trailingControls,
 }: RibbonBarProps): JSX.Element {
   const [activeTabId, setActiveTabId] = useState<RibbonTabId>('create');
@@ -333,103 +335,105 @@ export function RibbonBar({
       className="border-b border-border bg-surface shadow-[0_1px_0_rgba(0,0,0,0.03)]"
     >
       <div className="flex min-h-9 items-end gap-2 px-2.5 pt-1">
-        <div className="mb-1 flex min-w-0 max-w-[36rem] shrink-0 items-center gap-1.5 border-r border-border/70 pr-2">
-          {inlineViewTitle ? (
-            onToggleViewSettings ? (
+        {showViewControls ? (
+          <div className="mb-1 flex min-w-0 max-w-[36rem] shrink-0 items-center gap-1.5 border-r border-border/70 pr-2">
+            {inlineViewTitle ? (
+              onToggleViewSettings ? (
+                <button
+                  type="button"
+                  className={[
+                    'group inline-flex h-7 min-w-0 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-xs font-semibold text-foreground hover:bg-surface-strong',
+                    viewSettingsOpen ? 'bg-accent-soft text-accent' : '',
+                  ].join(' ')}
+                  data-testid="ribbon-mode-identity"
+                  aria-label={
+                    viewSettingsToggleLabel ?? `Toggle ${inlineViewTitle.viewType} view settings`
+                  }
+                  aria-pressed={viewSettingsOpen ?? false}
+                  title={
+                    viewSettingsToggleLabel ?? `Toggle ${inlineViewTitle.viewType} view settings`
+                  }
+                  onClick={onToggleViewSettings}
+                >
+                  <span
+                    data-testid={inlineViewTitle.viewIconTestId}
+                    className={[
+                      'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border',
+                      viewSettingsOpen
+                        ? 'border-accent/50 bg-background text-accent'
+                        : 'border-border bg-background text-muted group-hover:text-foreground',
+                    ].join(' ')}
+                  >
+                    <InlineViewIcon size={ICON_SIZE.chrome} aria-hidden="true" />
+                  </span>
+                  <span className="whitespace-nowrap">{inlineViewTitle.viewType}</span>
+                </button>
+              ) : (
+                <div
+                  className="inline-flex h-7 min-w-0 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-xs font-semibold text-foreground"
+                  data-testid="ribbon-mode-identity"
+                  title={inlineViewTitle.title}
+                >
+                  <span
+                    data-testid={inlineViewTitle.viewIconTestId}
+                    className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-border bg-background text-muted"
+                  >
+                    <InlineViewIcon size={ICON_SIZE.chrome} aria-hidden="true" />
+                  </span>
+                  <span className="whitespace-nowrap">{inlineViewTitle.viewType}</span>
+                </div>
+              )
+            ) : onToggleViewSettings ? (
               <button
                 type="button"
                 className={[
-                  'group inline-flex h-7 min-w-0 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-xs font-semibold text-foreground hover:bg-surface-strong',
+                  'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-xs font-semibold text-foreground hover:bg-surface-strong',
                   viewSettingsOpen ? 'bg-accent-soft text-accent' : '',
                 ].join(' ')}
                 data-testid="ribbon-mode-identity"
-                aria-label={
-                  viewSettingsToggleLabel ?? `Toggle ${inlineViewTitle.viewType} view settings`
-                }
+                aria-label={viewSettingsToggleLabel ?? `Toggle ${identity.label} view settings`}
                 aria-pressed={viewSettingsOpen ?? false}
-                title={
-                  viewSettingsToggleLabel ?? `Toggle ${inlineViewTitle.viewType} view settings`
-                }
+                title={viewSettingsToggleLabel ?? `Toggle ${identity.label} view settings`}
                 onClick={onToggleViewSettings}
               >
-                <span
-                  data-testid={inlineViewTitle.viewIconTestId}
-                  className={[
-                    'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border',
-                    viewSettingsOpen
-                      ? 'border-accent/50 bg-background text-accent'
-                      : 'border-border bg-background text-muted group-hover:text-foreground',
-                  ].join(' ')}
-                >
-                  <InlineViewIcon size={ICON_SIZE.chrome} aria-hidden="true" />
+                <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-border bg-background text-muted">
+                  <ModeIdentityIcon size={ICON_SIZE.chrome} aria-hidden="true" />
                 </span>
-                <span className="whitespace-nowrap">{inlineViewTitle.viewType}</span>
+                <span>{identity.label}</span>
               </button>
             ) : (
               <div
-                className="inline-flex h-7 min-w-0 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-xs font-semibold text-foreground"
+                className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-xs font-semibold text-foreground"
                 data-testid="ribbon-mode-identity"
+              >
+                <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-border bg-background text-muted">
+                  <ModeIdentityIcon size={ICON_SIZE.chrome} aria-hidden="true" />
+                </span>
+                <span>{identity.label}</span>
+              </div>
+            )}
+            {onLensChange ? (
+              <div
+                data-testid="ribbon-lens-dropdown"
+                className="h-7 rounded-md border border-border bg-background/80 px-1 text-[11px] text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+              >
+                <LensDropdown
+                  currentLens={lensMode}
+                  onLensChange={onLensChange}
+                  enableHotkey={false}
+                />
+              </div>
+            ) : null}
+            {inlineViewTitle?.viewName ? (
+              <div
+                className="min-w-0 truncate text-xs font-medium text-foreground"
                 title={inlineViewTitle.title}
               >
-                <span
-                  data-testid={inlineViewTitle.viewIconTestId}
-                  className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-border bg-background text-muted"
-                >
-                  <InlineViewIcon size={ICON_SIZE.chrome} aria-hidden="true" />
-                </span>
-                <span className="whitespace-nowrap">{inlineViewTitle.viewType}</span>
+                {inlineViewTitle.viewName}
               </div>
-            )
-          ) : onToggleViewSettings ? (
-            <button
-              type="button"
-              className={[
-                'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-xs font-semibold text-foreground hover:bg-surface-strong',
-                viewSettingsOpen ? 'bg-accent-soft text-accent' : '',
-              ].join(' ')}
-              data-testid="ribbon-mode-identity"
-              aria-label={viewSettingsToggleLabel ?? `Toggle ${identity.label} view settings`}
-              aria-pressed={viewSettingsOpen ?? false}
-              title={viewSettingsToggleLabel ?? `Toggle ${identity.label} view settings`}
-              onClick={onToggleViewSettings}
-            >
-              <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-border bg-background text-muted">
-                <ModeIdentityIcon size={ICON_SIZE.chrome} aria-hidden="true" />
-              </span>
-              <span>{identity.label}</span>
-            </button>
-          ) : (
-            <div
-              className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-xs font-semibold text-foreground"
-              data-testid="ribbon-mode-identity"
-            >
-              <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-border bg-background text-muted">
-                <ModeIdentityIcon size={ICON_SIZE.chrome} aria-hidden="true" />
-              </span>
-              <span>{identity.label}</span>
-            </div>
-          )}
-          {onLensChange ? (
-            <div
-              data-testid="ribbon-lens-dropdown"
-              className="h-7 rounded-md border border-border bg-background/80 px-1 text-[11px] text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
-            >
-              <LensDropdown
-                currentLens={lensMode}
-                onLensChange={onLensChange}
-                enableHotkey={false}
-              />
-            </div>
-          ) : null}
-          {inlineViewTitle?.viewName ? (
-            <div
-              className="min-w-0 truncate text-xs font-medium text-foreground"
-              title={inlineViewTitle.title}
-            >
-              {inlineViewTitle.viewName}
-            </div>
-          ) : null}
-        </div>
+            ) : null}
+          </div>
+        ) : null}
         <div
           role="tablist"
           aria-label="Ribbon tabs"
@@ -541,88 +545,92 @@ export function RibbonBar({
                 key={panel.id}
                 role="group"
                 aria-label={panel.label}
-                className="relative flex min-w-fit items-stretch gap-1 border-r border-border pr-2 last:border-r-0"
+                className="relative flex min-w-fit flex-col items-center justify-between border-r border-border pr-2 last:border-r-0"
               >
-                {visibleCommands.map((command) => {
-                  const availability = activeMode
-                    ? commandAvailability(command, activeMode, lensMode)
-                    : null;
-                  const bridgeTargetMode =
-                    availability?.state === 'bridge' ? availability.targetMode : undefined;
-                  return (
-                    <RibbonButton
-                      key={commandKey(command)}
-                      command={command}
-                      active={commandActive(
-                        command,
-                        activeToolId,
-                        sheetReviewMode,
-                        sheetMarkupShape,
-                      )}
-                      bridgeTargetMode={bridgeTargetMode}
-                      disabledReason={commandDisabledReason(command, activeMode, lensMode)}
-                      onClick={() => runCommand(command)}
-                    />
-                  );
-                })}
-                {visibleFlyoutCommands.length > 0 ? (
-                  <div className="relative flex items-center">
-                    <button
-                      type="button"
-                      aria-label={`${panel.label} panel flyout`}
-                      aria-expanded={openFlyoutPanelId === flyoutId}
-                      data-testid={`ribbon-panel-flyout-${panel.id}`}
-                      onClick={() =>
-                        setOpenFlyoutPanelId((current) => (current === flyoutId ? null : flyoutId))
-                      }
-                      className="flex h-12 w-7 items-center justify-center rounded-md text-muted hover:bg-surface hover:text-foreground"
-                    >
-                      <Icons.disclosureOpen size={ICON_SIZE.chrome} aria-hidden="true" />
-                    </button>
-                    {openFlyoutPanelId === flyoutId ? (
-                      <div
-                        role="menu"
-                        data-testid={`ribbon-flyout-menu-${panel.id}`}
-                        className="absolute right-0 top-12 z-30 min-w-48 rounded border border-border bg-surface p-1 shadow-lg"
+                <div className="flex items-start justify-center gap-1">
+                  {visibleCommands.map((command) => {
+                    const availability = activeMode
+                      ? commandAvailability(command, activeMode, lensMode)
+                      : null;
+                    const bridgeTargetMode =
+                      availability?.state === 'bridge' ? availability.targetMode : undefined;
+                    return (
+                      <RibbonButton
+                        key={commandKey(command)}
+                        command={command}
+                        active={commandActive(
+                          command,
+                          activeToolId,
+                          sheetReviewMode,
+                          sheetMarkupShape,
+                        )}
+                        bridgeTargetMode={bridgeTargetMode}
+                        disabledReason={commandDisabledReason(command, activeMode, lensMode)}
+                        onClick={() => runCommand(command)}
+                      />
+                    );
+                  })}
+                  {visibleFlyoutCommands.length > 0 ? (
+                    <div className="relative flex items-center">
+                      <button
+                        type="button"
+                        aria-label={`${panel.label} panel flyout`}
+                        aria-expanded={openFlyoutPanelId === flyoutId}
+                        data-testid={`ribbon-panel-flyout-${panel.id}`}
+                        onClick={() =>
+                          setOpenFlyoutPanelId((current) =>
+                            current === flyoutId ? null : flyoutId,
+                          )
+                        }
+                        className="flex h-12 w-7 items-center justify-center rounded-md text-muted hover:bg-surface hover:text-foreground"
                       >
-                        {visibleFlyoutCommands.map((command) => {
-                          const Icon = Icons[command.icon] ?? Icons.commandPalette;
-                          const disabledReason = commandDisabledReason(
-                            command,
-                            activeMode,
-                            lensMode,
-                          );
-                          return (
-                            <button
-                              key={commandKey(command)}
-                              type="button"
-                              role="menuitem"
-                              data-testid={`ribbon-flyout-command-${command.testId ?? command.id}`}
-                              disabled={Boolean(disabledReason)}
-                              title={disabledReason ?? command.label}
-                              data-disabled-reason={disabledReason}
-                              onClick={() => {
-                                if (disabledReason) return;
-                                runCommand(command);
-                                setOpenFlyoutPanelId(null);
-                              }}
-                              className={[
-                                'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs',
-                                disabledReason
-                                  ? 'cursor-not-allowed text-muted opacity-55'
-                                  : 'text-foreground hover:bg-background',
-                              ].join(' ')}
-                            >
-                              <Icon size={ICON_SIZE.chrome} aria-hidden="true" />
-                              <span>{command.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-                <div className="flex min-w-14 items-end justify-center px-1 pb-0.5 text-[10px] font-medium text-muted">
+                        <Icons.disclosureOpen size={ICON_SIZE.chrome} aria-hidden="true" />
+                      </button>
+                      {openFlyoutPanelId === flyoutId ? (
+                        <div
+                          role="menu"
+                          data-testid={`ribbon-flyout-menu-${panel.id}`}
+                          className="absolute right-0 top-12 z-30 min-w-48 rounded border border-border bg-surface p-1 shadow-lg"
+                        >
+                          {visibleFlyoutCommands.map((command) => {
+                            const Icon = Icons[command.icon] ?? Icons.commandPalette;
+                            const disabledReason = commandDisabledReason(
+                              command,
+                              activeMode,
+                              lensMode,
+                            );
+                            return (
+                              <button
+                                key={commandKey(command)}
+                                type="button"
+                                role="menuitem"
+                                data-testid={`ribbon-flyout-command-${command.testId ?? command.id}`}
+                                disabled={Boolean(disabledReason)}
+                                title={disabledReason ?? command.label}
+                                data-disabled-reason={disabledReason}
+                                onClick={() => {
+                                  if (disabledReason) return;
+                                  runCommand(command);
+                                  setOpenFlyoutPanelId(null);
+                                }}
+                                className={[
+                                  'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs',
+                                  disabledReason
+                                    ? 'cursor-not-allowed text-muted opacity-55'
+                                    : 'text-foreground hover:bg-background',
+                                ].join(' ')}
+                              >
+                                <Icon size={ICON_SIZE.chrome} aria-hidden="true" />
+                                <span>{command.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+                <div className="flex w-full min-w-14 items-end justify-center px-1 pb-0.5 text-center text-[10px] font-medium text-muted">
                   {panel.label}
                 </div>
               </div>
