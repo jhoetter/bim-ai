@@ -29,6 +29,60 @@ DEFAULT_SCENARIO_ID = "as-is"
 
 MODEL_TAKEOFF_KINDS = (WallElem, FloorElem, RoofElem, DoorElem, WindowElem, RoomElem)
 
+COST_QUANTITY_SCHEDULE_CATEGORIES: frozenset[str] = frozenset(
+    {
+        "quantity_takeoff",
+        "cost_estimate",
+        "element_cost_group",
+        "material_assembly",
+        "door",
+        "window",
+        "room",
+        "scenario_delta",
+    }
+)
+
+COST_QUANTITY_SCHEDULE_DEFAULTS: tuple[dict[str, Any], ...] = (
+    {"name": "Quantity takeoff", "category": "quantity_takeoff"},
+    {"name": "Cost estimate", "category": "cost_estimate"},
+    {"name": "Element cost group schedule", "category": "element_cost_group"},
+    {"name": "Material quantities", "category": "material_assembly"},
+    {"name": "Door counts", "category": "door", "groupingHint": ["levelId", "familyTypeId"]},
+    {"name": "Window counts", "category": "window", "groupingHint": ["levelId", "familyTypeId"]},
+    {
+        "name": "Room finish quantities",
+        "category": "room",
+        "displayColumnKeys": ["elementId", "name", "level", "finishSet", "areaM2", "perimeterM"],
+    },
+    {"name": "Scenario delta report", "category": "scenario_delta"},
+)
+
+COST_QUANTITY_VIEW_DEFAULTS: tuple[dict[str, Any], ...] = (
+    {
+        "name": "Cost group overlay",
+        "viewKind": "plan_view",
+        "defaultLens": "show_cost_quantity",
+        "colorBy": "costGroup",
+    },
+    {
+        "name": "Trade overlay",
+        "viewKind": "plan_view",
+        "defaultLens": "show_cost_quantity",
+        "colorBy": "trade",
+    },
+    {
+        "name": "Unclassified cost items",
+        "viewKind": "plan_view",
+        "defaultLens": "show_cost_quantity",
+        "highlight": "missing costGroup or workPackage",
+    },
+)
+
+COST_QUANTITY_SHEET_DEFAULTS: tuple[dict[str, Any], ...] = (
+    {"name": "Scenario comparison sheet", "sheetKind": "comparison"},
+    {"name": "Quantity review sheet", "sheetKind": "quantity_review"},
+)
+
 
 def _round(v: float, ndigits: int = 6) -> float:
     return round(float(v), ndigits)
@@ -410,3 +464,34 @@ def cost_quantity_totals(rows: list[dict[str, Any]], *, kind: str) -> dict[str, 
         str(r["elementId"]) for r in rows if str(r.get("traceability") or "") == "model_element"
     )
     return totals
+
+
+def cost_quantity_lens_review_status(doc: Document) -> dict[str, Any]:
+    """Auditable API/readout payload for Cost and Quantity Lens consumers."""
+
+    schedules = {
+        "quantity_takeoff": derive_quantity_takeoff_rows(doc),
+        "cost_estimate": derive_cost_estimate_rows(doc),
+        "element_cost_group": derive_cost_estimate_rows(doc),
+        "scenario_delta": derive_scenario_delta_rows(doc),
+    }
+    totals = {
+        category: cost_quantity_totals(rows, kind=category) for category, rows in schedules.items()
+    }
+    return {
+        "format": "costQuantityLensReviewStatus_v1",
+        "lensId": COST_QUANTITY_LENS_ID,
+        "englishName": "Cost and Quantity",
+        "germanName": "Kosten und Mengen",
+        "scheduleDefaults": list(COST_QUANTITY_SCHEDULE_DEFAULTS),
+        "viewDefaults": list(COST_QUANTITY_VIEW_DEFAULTS),
+        "sheetDefaults": list(COST_QUANTITY_SHEET_DEFAULTS),
+        "nonGoals": [
+            "no_professional_cost_judgment_replacement",
+            "no_unit_rate_totals_without_source_reference",
+            "no_detached_cost_items_unless_marked_non_model_allowance",
+        ],
+        "counts": {category: len(rows) for category, rows in schedules.items()},
+        "totals": totals,
+        "schedules": schedules,
+    }

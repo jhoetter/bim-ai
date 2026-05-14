@@ -550,6 +550,66 @@ register(
     )
 )
 
+register(
+    ToolDescriptor(
+        name="cost-quantity-lens-review-status",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CostQuantityLensReviewStatusInput",
+            "type": "object",
+            "required": ["modelId"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CostQuantityLensReviewStatus",
+            "type": "object",
+            "required": [
+                "modelId",
+                "format",
+                "lensId",
+                "scheduleDefaults",
+                "viewDefaults",
+                "sheetDefaults",
+                "counts",
+                "totals",
+                "schedules",
+            ],
+            "properties": {
+                "modelId": {"type": "string"},
+                "format": {"const": "costQuantityLensReviewStatus_v1"},
+                "lensId": {"const": "cost-quantity"},
+                "englishName": {"const": "Cost and Quantity"},
+                "germanName": {"const": "Kosten und Mengen"},
+                "scheduleDefaults": {"type": "array", "items": {"type": "object"}},
+                "viewDefaults": {"type": "array", "items": {"type": "object"}},
+                "sheetDefaults": {"type": "array", "items": {"type": "object"}},
+                "nonGoals": {"type": "array", "items": {"type": "string"}},
+                "counts": {"type": "object"},
+                "totals": {"type": "object"},
+                "schedules": {"type": "object"},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Cost and Quantity Lens readout generated"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai cost-quantity-lens-review-status --model-id <id>",
+        restEndpoint=RestEndpoint(
+            method="GET", path="/api/models/{model_id}/cost-quantity-lens"
+        ),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only Kosten und Mengen payload. Unit rates without source references "
+            "are surfaced for review but excluded from cost totals."
+        ),
+    )
+)
+
 # ---------------------------------------------------------------------------
 # TOP-V3-01 — Toposolid tool descriptors
 # ---------------------------------------------------------------------------
