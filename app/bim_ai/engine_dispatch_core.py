@@ -126,6 +126,7 @@ def try_apply_core_command(doc, cmd, *, source_provider=None) -> bool:
                 thickness_mm=thick,
                 height_mm=h_mm,
                 wall_type_id=cmd.wall_type_id,
+                location_line=cmd.location_line,
                 base_constraint_level_id=cmd.base_constraint_level_id,
                 top_constraint_level_id=cmd.top_constraint_level_id,
                 base_constraint_offset_mm=cmd.base_constraint_offset_mm,

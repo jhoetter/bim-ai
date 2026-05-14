@@ -124,6 +124,14 @@ DEFAULT_DISCIPLINE_BY_KIND: dict[str, DisciplineTag] = {
 WallLayerFunction = Literal["structure", "insulation", "finish"]
 WallBasisLine = Literal["center", "face_interior", "face_exterior"]
 WallStructuralRole = Literal["unknown", "load_bearing", "non_load_bearing"]
+WallLocationLine = Literal[
+    "wall-centerline",
+    "finish-face-exterior",
+    "finish-face-interior",
+    "core-centerline",
+    "core-face-exterior",
+    "core-face-interior",
+]
 PlanDetailLevelPlan = Literal["coarse", "medium", "fine"]
 PhaseFilter = Literal["all", "existing", "demolition", "new"]
 ViewTemplateControlledField = Literal[
@@ -387,6 +395,7 @@ class WallElem(BaseModel):
     thickness_mm: float = Field(alias="thicknessMm", default=200)
     height_mm: float = Field(alias="heightMm", default=2800)
     wall_type_id: str | None = Field(default=None, alias="wallTypeId")
+    location_line: WallLocationLine = Field(default="wall-centerline", alias="locationLine")
     base_constraint_level_id: str | None = Field(default=None, alias="baseConstraintLevelId")
     top_constraint_level_id: str | None = Field(default=None, alias="topConstraintLevelId")
     base_constraint_offset_mm: float = Field(default=0, alias="baseConstraintOffsetMm")

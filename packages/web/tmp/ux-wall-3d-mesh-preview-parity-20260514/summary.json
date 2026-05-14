@@ -1,0 +1,150 @@
+{
+  "commandTypes": ["createWall", "createWall"],
+  "commandResponses": [
+    {
+      "status": 200,
+      "ok": true
+    },
+    {
+      "status": 200,
+      "ok": true
+    }
+  ],
+  "createWallCount": 2,
+  "previewChecks": [
+    {
+      "label": "02-front-grid-mesh-preview",
+      "cursorPathRendered": true,
+      "cursorPathVisible": false,
+      "cursorEndVisible": true,
+      "previewMeshTraceCount": 36,
+      "commandsBeforeCommit": 0
+    },
+    {
+      "label": "04-rotated-grid-mesh-preview",
+      "cursorPathRendered": true,
+      "cursorPathVisible": true,
+      "cursorEndVisible": true,
+      "previewMeshTraceCount": 50,
+      "commandsBeforeCommit": 0
+    }
+  ],
+  "previewMeshCount": 52,
+  "previewCount": 52,
+  "commitCount": 2,
+  "projectionModes": ["plane"],
+  "wallVectors": [
+    {
+      "start": {
+        "xMm": 17026.464450687028,
+        "yMm": 7052.128112857346
+      },
+      "end": {
+        "xMm": 14200.18732551276,
+        "yMm": 4702.785252555995
+      },
+      "locationLine": "wall-centerline",
+      "dxMm": -2826.277125174269,
+      "dyMm": -2349.3428603013517,
+      "lengthMm": 3675.2216618228986
+    },
+    {
+      "start": {
+        "xMm": 16602.737488945906,
+        "yMm": 11938.83732470211
+      },
+      "end": {
+        "xMm": 14679.462524250688,
+        "yMm": 5336.8543060048205
+      },
+      "locationLine": "wall-centerline",
+      "dxMm": -1923.274964695218,
+      "dyMm": -6601.9830186972895,
+      "lengthMm": 6876.421043609152
+    }
+  ],
+  "commitDeltas": [
+    {
+      "screenDelta": {
+        "x": 234.239990234375,
+        "y": 0
+      },
+      "modelDelta": {
+        "xMm": -2826.277125174269,
+        "yMm": -2349.3428603013517
+      },
+      "lengthMm": 3675.2216618228986
+    },
+    {
+      "screenDelta": {
+        "x": 204.96002197265625,
+        "y": 97.760009765625
+      },
+      "modelDelta": {
+        "xMm": -1923.274964695218,
+        "yMm": -6601.9830186972895
+      },
+      "lengthMm": 6876.421043609152
+    }
+  ],
+  "tracePhases": [
+    "wall-start",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-commit",
+    "wall-start",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-commit"
+  ],
+  "console3dWallCount": 8,
+  "consoleWarnings": []
+}

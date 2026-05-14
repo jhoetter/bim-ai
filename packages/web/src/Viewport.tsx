@@ -349,6 +349,14 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
   const rafRef = useRef<number | null>(null);
   /** Live paint bundle for the rendered scene. Rebuilt on theme change. */
   const paintBundleRef = useRef<ViewportPaintBundle | null>(null);
+  const wallDraftPreviewGroupRef = useRef<THREE.Object3D | null>(null);
+  const clearWallDraftPreviewGroup = useCallback(() => {
+    const group = wallDraftPreviewGroupRef.current;
+    if (!group) return;
+    group.parent?.remove(group);
+    disposeObject3D(group);
+    wallDraftPreviewGroupRef.current = null;
+  }, []);
   const composerRef = useRef<EffectComposer | null>(null);
   const renderPassRef = useRef<RenderPass | null>(null);
   const ssaoPassRef = useRef<SSAOPass | null>(null);
@@ -512,11 +520,13 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
 
   useEffect(() => {
     if (!DIRECT_3D_AUTHORING_TOOLS.has(planTool as Direct3dAuthoringTool)) {
+      clearWallDraftPreviewGroup();
       setAuthoringOverlay(null);
       setDraftPlaneAngleWarning(false);
       return;
     }
     const tool = planTool as Direct3dAuthoringTool;
+    if (tool !== 'wall') clearWallDraftPreviewGroup();
     setAuthoringOverlay((prev) => {
       if (prev?.tool === tool) {
         return {
@@ -546,7 +556,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       };
     });
     setDraftPlaneAngleWarning(false);
-  }, [planTool, direct3dDraftLevelName]);
+  }, [planTool, direct3dDraftLevelName, clearWallDraftPreviewGroup]);
 
   // VIS-V3-04: sync sun_settings element → sunStore
   useEffect(() => {
@@ -1333,19 +1343,6 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       };
     }
 
-    function wallLocationLineOffsetFrac(loc: string | null | undefined): number {
-      switch (loc) {
-        case 'finish-face-exterior':
-        case 'core-face-exterior':
-          return 0.5;
-        case 'finish-face-interior':
-        case 'core-face-interior':
-          return -0.5;
-        default:
-          return 0;
-      }
-    }
-
     function flipWallLocationLine(loc: string | null | undefined): string | null | undefined {
       switch (loc) {
         case 'finish-face-exterior':
@@ -1377,90 +1374,85 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       return 200;
     }
 
-    function wallDraftPreview(
-      start: { xMm: number; yMm: number },
-      end: { xMm: number; yMm: number },
-      levelElevationMm: number,
-      heightMm: number,
-      flip: boolean,
-      locationLine: string | null | undefined,
-      thicknessMm: number,
-      rect: DOMRect,
-    ): {
-      outline: ScreenPoint[];
-      directionStart: ScreenPoint;
-      directionEnd: ScreenPoint;
-    } | null {
-      const actualStart = start;
-      const actualEnd = end;
-      const dx = actualEnd.xMm - actualStart.xMm;
-      const dy = actualEnd.yMm - actualStart.yMm;
-      const len = Math.hypot(dx, dy);
-      if (!Number.isFinite(len) || len < 1) return null;
-      const nx = -dy / len;
-      const ny = dx / len;
-      const thickMm = Math.max(50, thicknessMm);
-      const effectiveLocationLine = flip ? flipWallLocationLine(locationLine) : locationLine;
-      const offsetMm = wallLocationLineOffsetFrac(effectiveLocationLine) * thickMm;
-      const plus = offsetMm + thickMm / 2;
-      const minus = offsetMm - thickMm / 2;
-      const bottomZMm = levelElevationMm;
-      const topZMm = levelElevationMm + Math.max(250, heightMm);
-      const footprint = [
-        { xMm: actualStart.xMm + nx * plus, yMm: actualStart.yMm + ny * plus },
-        { xMm: actualEnd.xMm + nx * plus, yMm: actualEnd.yMm + ny * plus },
-        { xMm: actualEnd.xMm + nx * minus, yMm: actualEnd.yMm + ny * minus },
-        { xMm: actualStart.xMm + nx * minus, yMm: actualStart.yMm + ny * minus },
-      ];
-      const volumePoints = [
-        ...footprint.map((point) => ({ ...point, zMm: bottomZMm })),
-        ...footprint.map((point) => ({ ...point, zMm: topZMm })),
-      ];
-      const projectedVolume = volumePoints
-        .map((point) => projectSemanticPointToScreen(point, rect))
-        .filter((point): point is ScreenPoint => point !== null);
-      if (projectedVolume.length < 3) return null;
-      const outline = convexHullScreenPoints(projectedVolume);
-      if (outline.length < 3) return null;
-      const directionZMm = bottomZMm + Math.min(Math.max(800, heightMm * 0.45), heightMm);
-      const directionStart = projectSemanticPointToScreen(
-        { xMm: actualStart.xMm, yMm: actualStart.yMm, zMm: directionZMm },
-        rect,
-      );
-      const directionEnd = projectSemanticPointToScreen(
-        { xMm: actualEnd.xMm, yMm: actualEnd.yMm, zMm: directionZMm },
-        rect,
-      );
-      if (!directionStart || !directionEnd) return null;
-      return { outline, directionStart, directionEnd };
+    function tintWallDraftPreviewObject(object: THREE.Object3D): void {
+      const accent = readToken('--color-accent', '#2563eb');
+      object.userData.isAuthoringPreview = true;
+      delete object.userData.bimPickId;
+      object.traverse((node) => {
+        delete node.userData.bimPickId;
+        node.userData.isAuthoringPreview = true;
+        if (node instanceof THREE.LineSegments) {
+          const oldMaterial = node.material;
+          node.material = new THREE.LineBasicMaterial({
+            color: accent,
+            transparent: true,
+            opacity: 0.92,
+            depthTest: false,
+            depthWrite: false,
+          });
+          const oldMaterials = Array.isArray(oldMaterial) ? oldMaterial : [oldMaterial];
+          oldMaterials.forEach((material) => material.dispose());
+          node.renderOrder = 18;
+          return;
+        }
+        if (!(node instanceof THREE.Mesh)) return;
+        const oldMaterial = node.material;
+        node.material = new THREE.MeshBasicMaterial({
+          color: accent,
+          transparent: true,
+          opacity: 0.48,
+          depthTest: false,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+          polygonOffset: true,
+          polygonOffsetFactor: -1,
+          polygonOffsetUnits: -1,
+        });
+        const oldMaterials = Array.isArray(oldMaterial) ? oldMaterial : [oldMaterial];
+        oldMaterials.forEach((material) => material.dispose());
+        node.castShadow = false;
+        node.receiveShadow = false;
+        node.renderOrder = 17;
+      });
     }
 
-    function convexHullScreenPoints(points: ScreenPoint[]): ScreenPoint[] {
-      const sorted = [...points].sort((a, b) => (a.x === b.x ? a.y - b.y : a.x - b.x));
-      const cross = (origin: ScreenPoint, a: ScreenPoint, b: ScreenPoint) =>
-        (a.x - origin.x) * (b.y - origin.y) - (a.y - origin.y) * (b.x - origin.x);
-      const lower: ScreenPoint[] = [];
-      for (const point of sorted) {
-        while (
-          lower.length >= 2 &&
-          cross(lower[lower.length - 2]!, lower[lower.length - 1]!, point) <= 0
-        )
-          lower.pop();
-        lower.push(point);
-      }
-      const upper: ScreenPoint[] = [];
-      for (let i = sorted.length - 1; i >= 0; i -= 1) {
-        const point = sorted[i]!;
-        while (
-          upper.length >= 2 &&
-          cross(upper[upper.length - 2]!, upper[upper.length - 1]!, point) <= 0
-        )
-          upper.pop();
-        upper.push(point);
-      }
-      lower.pop();
-      upper.pop();
-      return [...lower, ...upper];
+    function updateWallDraftPreviewGroup(
+      start: { xMm: number; yMm: number },
+      end: { xMm: number; yMm: number },
+      levelInfo: { id: string; elevationMm: number },
+      flip: boolean,
+    ): THREE.Object3D | null {
+      const runtime = useBimStore.getState();
+      const lengthMm = Math.hypot(end.xMm - start.xMm, end.yMm - start.yMm);
+      clearWallDraftPreviewGroup();
+      if (!Number.isFinite(lengthMm) || lengthMm < 10) return null;
+      const effectiveLocationLine = flip
+        ? flipWallLocationLine(runtime.wallLocationLine)
+        : runtime.wallLocationLine;
+      const wall: WallElem = {
+        kind: 'wall',
+        id: '__wall-draft-preview__',
+        name: 'Wall preview',
+        levelId: levelInfo.id,
+        start,
+        end,
+        thicknessMm: resolveDraftWallThicknessMm(),
+        heightMm: runtime.wallDrawHeightMm,
+        wallTypeId: runtime.activeWallTypeId ?? undefined,
+        locationLine: effectiveLocationLine as WallElem['locationLine'],
+      };
+      const preview = makeWallMesh(
+        wall,
+        levelInfo.elevationMm / 1000,
+        paintBundleRef.current,
+        elementsByIdRef.current,
+      );
+      tintWallDraftPreviewObject(preview);
+      applyClippingPlanesToMeshes(preview, clippingPlanesRef.current);
+      applyModelEdgeDisplay(preview, viewerEdgesRef.current, viewerSilhouetteEdgeWidthRef.current);
+      scene.add(preview);
+      wallDraftPreviewGroupRef.current = preview;
+      return preview;
     }
 
     function hostedPreviewSegment(
@@ -1738,6 +1730,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
           ? projectPointerToVisibleDraftPlane(cx, cy, levelInfo.elevationMm)
           : projectPointerToDraftPlane(cx, cy, levelInfo.elevationMm);
       if (tool === 'wall' && projected?.blocker) {
+        clearWallDraftPreviewGroup();
         emitWallDebug('wall-blocked-hidden-work-plane', {
           screen: clientToCanvasScreen(cx, cy),
           levelInfo,
@@ -1770,6 +1763,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         projected = pointFromWallDraftScreenBasis(cx, cy, lineDraftStart.wallBasis);
       }
       if (!projected && tool === 'wall' && (!lineDraftStart || lineDraftStart.tool !== tool)) {
+        clearWallDraftPreviewGroup();
         emitWallDebug('wall-blocked-no-draft-plane', {
           screen: clientToCanvasScreen(cx, cy),
           levelInfo,
@@ -1789,6 +1783,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         return true;
       }
       if (!projected && tool === 'wall' && lineDraftStart?.tool === 'wall') {
+        clearWallDraftPreviewGroup();
         emitWallDebug('wall-blocked-no-draft-plane-end', {
           screen: clientToCanvasScreen(cx, cy),
           start: lineDraftStart.point,
@@ -1842,6 +1837,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
               ? createWallDraftScreenBasis(cx, cy, levelInfo.elevationMm, projected)
               : null;
           if (tool === 'wall' && wallDraft && wallDraft.projection.mode !== 'plane') {
+            clearWallDraftPreviewGroup();
             emitWallDebug('wall-blocked-unreadable-work-plane', {
               screen: projected.screen,
               point: projected.point,
@@ -1871,6 +1867,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             wallProjection: wallDraft?.projection,
           };
           if (tool === 'wall') {
+            clearWallDraftPreviewGroup();
             emitWallDebug('wall-start', {
               screen: projected.screen,
               point: projected.point,
@@ -1905,6 +1902,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         const levelId = lineDraftStart.levelId;
         if (Math.hypot(end.xMm - start.xMm, end.yMm - start.yMm) < 10) {
           if (tool === 'wall') {
+            clearWallDraftPreviewGroup();
             emitWallDebug('wall-short-segment-reset', {
               start,
               end,
@@ -1954,6 +1952,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             lengthMm: Math.hypot(actualEnd.xMm - actualStart.xMm, actualEnd.yMm - actualStart.yMm),
           });
           lineDraftStart = null;
+          clearWallDraftPreviewGroup();
           wallFlipNextSegment = false;
           onSemanticCommand?.(command);
         } else {
@@ -2335,6 +2334,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       toolDraftConsumedOnDown = false;
       dragMoved = false;
       cumulativeDragPx = 0;
+      clearWallDraftPreviewGroup();
     }
 
     function onMove(ev: PointerEvent): void {
@@ -2500,19 +2500,18 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
               ? projectPointerToVisibleDraftPlane(ev.clientX, ev.clientY, levelInfo.elevationMm)
               : projectPointerToDraftPlane(ev.clientX, ev.clientY, levelInfo.elevationMm)
           : null;
+        if (lineDraftStart.tool === 'wall' && (!projected || projected.blocker || !levelInfo)) {
+          clearWallDraftPreviewGroup();
+        }
         setAuthoringOverlay((prev) =>
           prev?.phase === 'pick-end'
             ? prev.tool === 'wall' && lineDraftStart && projected && !projected.blocker && levelInfo
               ? (() => {
-                  const preview = wallDraftPreview(
+                  const previewMesh = updateWallDraftPreviewGroup(
                     lineDraftStart.point,
                     projected.point,
-                    levelInfo.elevationMm,
-                    useBimStore.getState().wallDrawHeightMm,
+                    levelInfo,
                     wallFlipNextSegment,
-                    useBimStore.getState().wallLocationLine,
-                    resolveDraftWallThicknessMm(),
-                    rect,
                   );
                   emitWallDebug('wall-preview', {
                     start: lineDraftStart.point,
@@ -2535,7 +2534,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                       projected.point.xMm - lineDraftStart.point.xMm,
                       projected.point.yMm - lineDraftStart.point.yMm,
                     ),
-                    preview,
+                    previewMesh: Boolean(previewMesh),
                   });
                   return {
                     ...prev,
@@ -2543,9 +2542,9 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                     currentPointMm: projected.point,
                     wallFlipActive: wallFlipNextSegment,
                     wallProjectionMode: lineDraftStart.wallProjection?.mode,
-                    wallPreviewOutlineScreen: preview?.outline,
-                    wallPreviewDirectionStartScreen: preview?.directionStart,
-                    wallPreviewDirectionEndScreen: preview?.directionEnd,
+                    wallPreviewOutlineScreen: undefined,
+                    wallPreviewDirectionStartScreen: undefined,
+                    wallPreviewDirectionEndScreen: undefined,
                     wallAnchorRequired: false,
                     wallPlaneUnreadable: false,
                     wallPlaneOccluded: false,
@@ -2739,6 +2738,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
           if (lineDraftStart && lineDraftStart.tool === tool) {
             lineDraftStart = null;
             wallFlipNextSegment = false;
+            clearWallDraftPreviewGroup();
             setAuthoringOverlay((prev) =>
               prev ? { tool, phase: 'pick-start', levelName: prev.levelName } : prev,
             );
@@ -2793,6 +2793,16 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         const tool = activeDirect3dTool();
         if (tool === 'wall' && lineDraftStart && lineDraftStart.tool === 'wall') {
           wallFlipNextSegment = !wallFlipNextSegment;
+          const overlay = authoringOverlayRef.current;
+          const levelInfo = resolveDraftLevelInfo();
+          if (overlay?.currentPointMm && levelInfo) {
+            updateWallDraftPreviewGroup(
+              lineDraftStart.point,
+              overlay.currentPointMm,
+              levelInfo,
+              wallFlipNextSegment,
+            );
+          }
           setAuthoringOverlay((prev) =>
             prev?.tool === 'wall'
               ? {
@@ -2991,6 +3001,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
       ro.disconnect();
+      clearWallDraftPreviewGroup();
 
       renderer.domElement.removeEventListener('pointerdown', onDown);
       renderer.domElement.removeEventListener('contextmenu', onContextMenu);
@@ -4414,34 +4425,6 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                 opacity="0.95"
               />
             )}
-            {authoringOverlay.tool === 'wall' &&
-            authoringOverlay.wallPreviewOutlineScreen &&
-            authoringOverlay.wallPreviewOutlineScreen.length >= 4 ? (
-              <>
-                <polygon
-                  points={authoringOverlay.wallPreviewOutlineScreen
-                    .map((p) => `${p.x},${p.y}`)
-                    .join(' ')}
-                  fill="color-mix(in srgb, var(--color-accent) 14%, transparent)"
-                  stroke="var(--color-accent)"
-                  strokeWidth="2"
-                  opacity="0.9"
-                />
-                {authoringOverlay.wallPreviewDirectionStartScreen &&
-                authoringOverlay.wallPreviewDirectionEndScreen ? (
-                  <line
-                    x1={authoringOverlay.wallPreviewDirectionStartScreen.x}
-                    y1={authoringOverlay.wallPreviewDirectionStartScreen.y}
-                    x2={authoringOverlay.wallPreviewDirectionEndScreen.x}
-                    y2={authoringOverlay.wallPreviewDirectionEndScreen.y}
-                    stroke="var(--color-accent)"
-                    strokeWidth="2"
-                    markerEnd="url(#wall-direction-arrow)"
-                    opacity="0.9"
-                  />
-                ) : null}
-              </>
-            ) : null}
             <circle
               cx={authoringOverlay.startScreen.x}
               cy={authoringOverlay.startScreen.y}
@@ -4461,18 +4444,6 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
                 opacity="0.96"
               />
             ) : null}
-            <defs>
-              <marker
-                id="wall-direction-arrow"
-                markerWidth="8"
-                markerHeight="8"
-                refX="7"
-                refY="4"
-                orient="auto"
-              >
-                <path d="M0,0 L8,4 L0,8 z" fill="var(--color-accent)" />
-              </marker>
-            </defs>
           </svg>
         ) : LINE_3D_AUTHORING_TOOLS.has(authoringOverlay.tool) && authoringOverlay.currentScreen ? (
           <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full">

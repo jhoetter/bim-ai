@@ -1,6 +1,6 @@
 # BIM AI UX Next-Phase Tracker
 
-Last updated: 2026-05-13
+Last updated: 2026-05-14
 
 Related baseline:
 
@@ -1512,4 +1512,56 @@ Evidence (2026-05-13):
       - `blockedPhases[0].phase: "wall-blocked-hidden-work-plane"`
       - `previewChecks[*].cursorPathRendered: true`
       - `previewChecks[*].cursorEndVisible: true`
+      - `consoleWarnings: []`
+
+## Reopened Tracker (2026-05-14, feedback round 17)
+
+| Gap ID         | Problem Statement                                                                                                                                                                   | Canonical Surfaces / Files                                                                                                       | Priority | Status |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | -------- | ------ |
+| NEXT17-GAP-001 | 3D wall placement still used an SVG/projected wall-volume preview, so the pre-commit affordance could look like a broad detached sheet while the committed wall was a real 3D slab. | `packages/web/src/Viewport.tsx` 3D wall preview path                                                                             | P0       | Done   |
+| NEXT17-GAP-002 | 3D `createWall` commands sent `locationLine`, but the engine did not persist it into `WallElem`, leaving preview/commit semantics vulnerable to drift.                              | `app/bim_ai/commands.py`, `app/bim_ai/elements.py`, `app/bim_ai/engine_dispatch_core.py`, `app/tests/test_engine_constraints.py` | P0       | Done   |
+| NEXT17-GAP-003 | Seeded 3D wall proof must be run from a reset seed model; otherwise repeated browser captures can fail with wall-overlap conflicts from previous evidence walls.                    | `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/*`                                                                     | P0       | Done   |
+
+### WP-NEXT-35 — 3D Wall Mesh Preview Parity
+
+- Priority: `P0`
+- Status: `Done`
+- Supersedes/extends: `WP-NEXT-34` remains the visible work-plane placement fix; this package closes the separate preview/commit parity regression exposed by follow-up visual QA.
+- Covers: `NEXT17-GAP-001`, `NEXT17-GAP-002`, `NEXT17-GAP-003`
+- Goal: make the 3D wall preview use the same 3D mesh path and persisted command semantics as the committed wall, so the seeded user sees one continuous preview-to-commit workflow.
+- Source ownership:
+  - `packages/web/src/Viewport.tsx`
+  - `app/bim_ai/commands.py`
+  - `app/bim_ai/elements.py`
+  - `app/bim_ai/engine_dispatch_core.py`
+  - `app/tests/test_engine_constraints.py`
+  - `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/capture.mjs`
+  - `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/summary.json`
+- Acceptance:
+  - legacy SVG wall-volume preview path is removed for 3D wall placement;
+  - wall preview is a real `makeWallMesh` ghost generated from the same start/end, level, wall type, height, and location-line values used by the commit command;
+  - preview ghost is non-pickable and clears when switching tools, cancelling, blocking the work plane, or committing;
+  - backend command schema persists `locationLine` on created wall elements;
+  - seeded browser proof creates 3D walls before and after ViewCube rotation with `200 OK` responses;
+  - seeded proof shows `previewMesh: true` on preview traces and no console warnings/errors.
+- Implementation + evidence:
+  - Replaced the 3D wall SVG polygon/arrow preview with a transient Three.js wall preview object built through `makeWallMesh`.
+  - Added explicit preview cleanup on tool switches, blocked/hidden work-plane states, short segment reset, Escape, pointer cancel, unmount, and commit.
+  - Kept the cursor path/endpoint overlay for screen-legibility while the actual wall body is now a real 3D ghost.
+  - Added `locationLine` to `CreateWallCmd` and `WallElem`, and dispatch now copies it into newly created walls.
+  - Added engine regression coverage proving `createWall.locationLine` persists and serializes by alias.
+  - Seeded proof (`make seed name=target-house-3`, `make dev name=target-house-3`, reset with `make seed-clear && make seed name=target-house-3` before final capture):
+    - `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/01-front-elevation-initial.png`
+    - `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/02-front-grid-mesh-preview-preview.png`
+    - `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/02-front-grid-mesh-preview-commit.png`
+    - `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/03-after-viewcube-rotate.png`
+    - `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/04-rotated-grid-mesh-preview-preview.png`
+    - `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/04-rotated-grid-mesh-preview-commit.png`
+    - `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/05-after-escape-navigation-drag.png`
+    - `packages/web/tmp/ux-wall-3d-mesh-preview-parity-20260514/summary.json`
+      - `createWallCount: 2`
+      - `commandResponses: [{ status: 200 }, { status: 200 }]`
+      - `projectionModes: ["plane"]`
+      - `previewMeshCount: 52`
+      - `commitCount: 2`
       - `consoleWarnings: []`

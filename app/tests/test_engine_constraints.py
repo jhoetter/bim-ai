@@ -59,6 +59,33 @@ def test_wall_zero_length_rejected_on_create():
     assert any(v.rule_id == "wall_zero_length" for v in viols)
 
 
+def test_create_wall_persists_location_line():
+    lvl = LevelElem(kind="level", id="lvl-1", name="Ground", elevationMm=0)
+
+    ok, new_doc, _cmd, _viols, code = try_commit(
+        Document(revision=1, elements={"lvl-1": lvl}),
+        {
+            "type": "createWall",
+            "id": "w_location_line",
+            "name": "Exterior face wall",
+            "levelId": "lvl-1",
+            "start": {"xMm": 0, "yMm": 0},
+            "end": {"xMm": 4000, "yMm": 0},
+            "thicknessMm": 250,
+            "heightMm": 3000,
+            "locationLine": "finish-face-exterior",
+        },
+    )
+
+    assert ok is True
+    assert new_doc is not None
+    assert code == "ok"
+    wall = new_doc.elements["w_location_line"]
+    assert isinstance(wall, WallElem)
+    assert wall.location_line == "finish-face-exterior"
+    assert wall.model_dump(by_alias=True)["locationLine"] == "finish-face-exterior"
+
+
 def test_try_commit_overlap_rejected():
     doc = _minimal_doc()
     ok, _new_doc, _cmd, viols, code = try_commit(

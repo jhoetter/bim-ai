@@ -34,6 +34,7 @@ from bim_ai.elements import (
     Vec2Mm,
     Vec3Mm,
     WallCurve,
+    WallLocationLine,
     WallRecessZone,
     WallStructuralRole,
     WallTypeLayer,
@@ -74,6 +75,7 @@ class CreateWallCmd(BaseModel):
     thickness_mm: float = Field(alias="thicknessMm", default=200)
     height_mm: float = Field(alias="heightMm", default=2800)
     wall_type_id: str | None = Field(default=None, alias="wallTypeId")
+    location_line: WallLocationLine = Field(default="wall-centerline", alias="locationLine")
     base_constraint_level_id: str | None = Field(default=None, alias="baseConstraintLevelId")
     top_constraint_level_id: str | None = Field(default=None, alias="topConstraintLevelId")
     base_constraint_offset_mm: float = Field(default=0, alias="baseConstraintOffsetMm")
