@@ -36,6 +36,27 @@ FIRE_SAFETY_SCHEDULE_CATEGORIES: frozenset[str] = frozenset(
     }
 )
 
+FIRE_SAFETY_SCHEDULE_DEFAULTS: tuple[dict[str, str], ...] = (
+    {"name": "Fire compartment schedule", "category": "fire_compartment"},
+    {"name": "Rated wall/floor schedule", "category": "rated_element"},
+    {"name": "Fire door schedule", "category": "fire_door"},
+    {"name": "Escape route schedule", "category": "escape_route"},
+    {"name": "Firestop penetration schedule", "category": "firestop_penetration"},
+    {"name": "Smoke control equipment schedule", "category": "smoke_control_equipment"},
+)
+
+FIRE_SAFETY_VIEW_DEFAULTS: tuple[dict[str, str], ...] = (
+    {"name": "Fire compartment plan", "viewKind": "plan_view", "defaultLens": "show_fire_safety"},
+    {"name": "Escape route plan", "viewKind": "plan_view", "defaultLens": "show_fire_safety"},
+    {"name": "Rated wall overlay", "viewKind": "plan_view", "defaultLens": "show_fire_safety"},
+    {"name": "Firestop review view", "viewKind": "plan_view", "defaultLens": "show_fire_safety"},
+)
+
+FIRE_SAFETY_SHEET_DEFAULTS: tuple[dict[str, str], ...] = (
+    {"name": "Fire safety approval sheet", "sheetKind": "approval"},
+    {"name": "Firestop review sheet", "sheetKind": "review"},
+)
+
 
 def _props(elem: Any) -> dict[str, Any]:
     raw = getattr(elem, "props", None)
@@ -94,7 +115,7 @@ def _level_labels(doc: Document) -> dict[str, str]:
 
 def _host_level_id(doc: Document, elem: Any) -> str:
     if hasattr(elem, "level_id"):
-        return str(getattr(elem, "level_id") or "")
+        return str(elem.level_id or "")
     if isinstance(elem, DoorElem):
         host = doc.elements.get(elem.wall_id)
         return str(getattr(host, "level_id", "") or "")
@@ -323,6 +344,9 @@ def fire_safety_lens_review_status(doc: Document) -> dict[str, Any]:
         "format": "fireSafetyLensReviewStatus_v1",
         "lensId": "fire-safety",
         "germanName": "Brandschutz",
+        "scheduleDefaults": list(FIRE_SAFETY_SCHEDULE_DEFAULTS),
+        "viewDefaults": list(FIRE_SAFETY_VIEW_DEFAULTS),
+        "sheetDefaults": list(FIRE_SAFETY_SHEET_DEFAULTS),
         "nonGoals": [
             "no_jurisdictional_fire_code_approval",
             "no_legally_binding_occupant_load_or_egress_approval_without_ruleset",

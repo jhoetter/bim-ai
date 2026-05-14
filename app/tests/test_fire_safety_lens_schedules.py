@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from bim_ai.api.registry import get_descriptor
 from bim_ai.document import Document
 from bim_ai.elements import DoorElem, DuctElem, LevelElem, RoomElem, ScheduleElem, Vec2Mm, WallElem
 from bim_ai.fire_safety_lens import fire_safety_lens_review_status
@@ -172,6 +173,24 @@ def test_fire_safety_lens_review_status_counts_default_schedules() -> None:
     assert payload["format"] == "fireSafetyLensReviewStatus_v1"
     assert payload["lensId"] == "fire-safety"
     assert payload["germanName"] == "Brandschutz"
+    assert [row["category"] for row in payload["scheduleDefaults"]] == [
+        "fire_compartment",
+        "rated_element",
+        "fire_door",
+        "escape_route",
+        "firestop_penetration",
+        "smoke_control_equipment",
+    ]
+    assert payload["viewDefaults"][0]["defaultLens"] == "show_fire_safety"
+    assert payload["sheetDefaults"][0]["sheetKind"] == "approval"
     assert payload["counts"]["fire_compartment"] == 1
     assert payload["counts"]["firestop_penetration"] == 1
     assert "no_jurisdictional_fire_code_approval" in payload["nonGoals"]
+
+
+def test_fire_safety_lens_api_descriptor_is_registered() -> None:
+    descriptor = get_descriptor("fire-safety-lens-review-status")
+    assert descriptor is not None
+    assert descriptor.restEndpoint is not None
+    assert descriptor.restEndpoint.path == "/api/models/{model_id}/fire-safety-lens"
+    assert descriptor.sideEffects == "none"

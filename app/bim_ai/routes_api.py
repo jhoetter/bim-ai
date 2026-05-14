@@ -47,6 +47,7 @@ from bim_ai.db import SessionMaker, get_session
 from bim_ai.diff_engine import compute_element_diff
 from bim_ai.document import Document
 from bim_ai.elements import Element, LevelElem, LinkModelElem, PlanViewElem
+from bim_ai.fire_safety_lens import fire_safety_lens_review_status
 from bim_ai.material_image_assets import ImageAssetUpload, build_image_asset_from_upload
 from bim_ai.cmd.apply_bundle import apply_bundle as _apply_bundle
 from bim_ai.cmd.types import CommandBundle, BundleResult
@@ -687,6 +688,18 @@ async def constructability_report(
             design_option_sets=doc.design_option_sets,
         ),
     }
+
+
+@api_router.get("/models/{model_id}/fire-safety-lens")
+async def fire_safety_lens_status(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return {"modelId": str(model_id), **fire_safety_lens_review_status(doc)}
 
 
 @api_router.get("/models/{model_id}/constructability-bcf")
