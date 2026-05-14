@@ -1,0 +1,20 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "107330cc746a",
+  "session_id": "019e2868-d82a-79e3-97ab-9d98e6e5cfaf",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-14T21:46:06.418838Z",
+  "branch": "codex/architecture-lens-workpackages-20260514",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "58f9f8efd1ed",
+  "token_usage": {
+    "input_tokens": 254994,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 14484096,
+    "output_tokens": 28530,
+    "api_call_count": 79
+  }
+}
