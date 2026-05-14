@@ -134,6 +134,7 @@ import {
   isDuplicateHostedPlacement,
   isLinkedElementId,
   shouldCommitHostedPlacementOnPointerUp,
+  shouldReuseHostedPreviewCommit,
   type HostedPlacementDedupeState,
 } from './viewport/directAuthoringGuards';
 
@@ -1625,16 +1626,15 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         if (
           overlay?.tool === tool &&
           overlay.previewHostWallId &&
-          typeof overlay.previewHostAlongT === 'number' &&
-          overlay.currentScreen
+          typeof overlay.previewHostAlongT === 'number'
         ) {
-          const distPx = Math.hypot(
-            clickScreen.x - overlay.currentScreen.x,
-            clickScreen.y - overlay.currentScreen.y,
-          );
           const overlayHost = elementsByIdRef.current[overlay.previewHostWallId];
           if (
-            distPx <= 20 &&
+            shouldReuseHostedPreviewCommit({
+              clickScreen,
+              previewCenter: overlay.currentScreen,
+              previewOutline: overlay.previewOutlineScreen,
+            }) &&
             overlayHost?.kind === 'wall' &&
             (!hostWall || hostWall.id !== overlayHost.id)
           ) {

@@ -112,6 +112,7 @@ describe('<FamilyLibraryPanel /> — FL-06', () => {
     expect(getByTestId('family-group-asset-furniture')).toBeTruthy();
     const row = getByTestId(`family-row-${asset.id}`);
     expect(row).toBeTruthy();
+    expect(getByTestId(`family-row-${asset.id}-place`).textContent).toBe('Place');
     fireEvent.click(row.querySelector('button')!);
     expect(onPlaceType).toHaveBeenCalledWith('asset', asset.id);
   });

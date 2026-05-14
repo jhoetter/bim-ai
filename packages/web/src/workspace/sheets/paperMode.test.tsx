@@ -6,13 +6,14 @@
  *   - `background: var(--color-canvas-paper)` for 2D view kinds (plan, section)
  *   - `background: var(--color-background)` for 3D view kinds
  */
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter } from 'react-router';
 import i18n from '../../i18n';
 
 const TABS_KEY = 'bim-ai:tabs-v1';
+const COMPOSITIONS_KEY = 'bim-ai:workspace-compositions-v1';
 const ONBOARDING_KEY = 'bim.onboarding-completed';
 
 // Stub heavy canvases so jsdom renders the chrome without WebGL.
@@ -24,6 +25,10 @@ vi.mock('../../plan/PlanCanvas', () => ({
 }));
 
 import { Workspace } from '../Workspace';
+
+beforeEach(() => {
+  localStorage.removeItem(COMPOSITIONS_KEY);
+});
 
 function renderWorkspace() {
   return render(
@@ -44,6 +49,7 @@ afterEach(() => {
   cleanup();
   localStorage.removeItem(ONBOARDING_KEY);
   localStorage.removeItem(TABS_KEY);
+  localStorage.removeItem(COMPOSITIONS_KEY);
 });
 
 describe('VIS-V3-08 — paper mode canvas background', () => {

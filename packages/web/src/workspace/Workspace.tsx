@@ -375,6 +375,63 @@ function firstMmVector(value: unknown): { xMm: number; yMm: number; zMm: number 
   return { xMm, yMm, zMm };
 }
 
+function CompositionBar({
+  compositions,
+  activeId,
+  onActivate,
+  onCreate,
+}: {
+  compositions: WorkspaceComposition[];
+  activeId: string;
+  onActivate: (id: string) => void;
+  onCreate: () => void;
+}): JSX.Element {
+  return (
+    <div
+      data-testid="composition-bar"
+      aria-label="Compositions"
+      className="flex h-7 min-w-0 items-center gap-1 border-b border-border/70 px-1"
+    >
+      <div className="shrink-0 px-1 text-[10px] font-semibold uppercase text-muted">
+        Compositions
+      </div>
+      <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+        {compositions.map((composition) => {
+          const active = composition.id === activeId;
+          return (
+            <button
+              key={composition.id}
+              type="button"
+              data-testid={`composition-tab-${composition.id}`}
+              aria-pressed={active}
+              onClick={() => onActivate(composition.id)}
+              className={[
+                'h-5 max-w-40 shrink-0 truncate rounded border px-2 text-[11px] font-medium',
+                active
+                  ? 'border-accent/70 bg-accent/10 text-foreground'
+                  : 'border-border bg-surface text-muted hover:bg-surface-2 hover:text-foreground',
+              ].join(' ')}
+              title={composition.label}
+            >
+              {composition.label}
+            </button>
+          );
+        })}
+      </div>
+      <button
+        type="button"
+        data-testid="composition-add-button"
+        aria-label="Create composition"
+        title="Create composition"
+        onClick={onCreate}
+        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border border-border text-xs text-muted hover:bg-surface-2 hover:text-foreground"
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
 export function Workspace(): JSX.Element {
   const { t, i18n } = useTranslation();
   const toolRegistry = useMemo(() => getToolRegistry(t), [t]);
@@ -601,6 +658,7 @@ export function Workspace(): JSX.Element {
     return activeComposition?.tabsState ?? EMPTY_TABS;
   });
   const [draggingViewElementId, setDraggingViewElementId] = useState<string | null>(null);
+  const [draggingTabId, setDraggingTabId] = useState<string | null>(null);
   const [secondarySidebarOpen, setSecondarySidebarOpen] = useState(true);
   const [paneLayout, setPaneLayout] = useState<PaneLayoutState>(() => {
     const activeComposition =
@@ -2051,6 +2109,16 @@ export function Workspace(): JSX.Element {
         setActiveComponentFamilyTypeId(typeId);
         setActiveComponentAssetId(null);
       }
+      if (kind === 'wall_type') {
+        useBimStore.getState().setActiveWallTypeId(typeId);
+        setActiveComponentAssetId(null);
+        setActiveComponentFamilyTypeId(null);
+      }
+      if (kind === 'floor_type') {
+        useBimStore.getState().setActiveFloorTypeId(typeId);
+        setActiveComponentAssetId(null);
+        setActiveComponentFamilyTypeId(null);
+      }
       if (adapter.planTool) {
         setPlanTool(adapter.planTool);
       } else if (adapter.semanticInstanceKind === 'family_type_component') {
@@ -2246,7 +2314,17 @@ export function Workspace(): JSX.Element {
       const paneViewerMode = paneTab?.kind === '3d' ? 'orbit_3d' : 'plan_canvas';
       const focused = focusedPaneLeafId === node.id;
       const paneLabel = paneTab?.label ?? 'Empty pane';
-      const paneCanAcceptDrop = Boolean(draggingTabId && draggingTabId !== paneTab?.id);
+      const paneCanAcceptDrop = Boolean(draggingViewElementId);
+      const PaneIcon =
+        paneTab?.kind === '3d'
+          ? Icons.orbitView
+          : paneTab?.kind === 'section'
+            ? Icons.section
+            : paneTab?.kind === 'sheet'
+              ? Icons.sheet
+              : paneTab?.kind === 'schedule'
+                ? Icons.schedule
+                : Icons.planView;
       return (
         <div
           key={node.id}
@@ -2272,24 +2350,45 @@ export function Workspace(): JSX.Element {
             onDragOver={(event) => {
               if (!paneCanAcceptDrop) return;
               event.preventDefault();
+              event.dataTransfer.dropEffect = 'copy';
             }}
             onDrop={(event) => {
-              if (!paneCanAcceptDrop || !draggingTabId) return;
+              if (!paneCanAcceptDrop) return;
               event.preventDefault();
-              setPaneLayout((layout) =>
-                focusPane(assignTabToPane(layout, node.id, draggingTabId), node.id),
-              );
-              handleTabActivate(draggingTabId);
-              setDraggingTabId(null);
+              const elementId =
+                draggingViewElementId || event.dataTransfer.getData('application/x-bim-element-id');
+              placeViewElementInPane(elementId, node.id);
             }}
           >
-            <div className="min-w-0 truncate font-medium text-foreground" title={paneLabel}>
-              {paneLabel}
+            <div className="flex min-w-0 items-center gap-1.5">
+              <button
+                type="button"
+                data-testid={`canvas-pane-view-settings-${node.id}`}
+                aria-label={`Toggle view settings for ${paneLabel}`}
+                title={`Toggle view settings for ${paneLabel}`}
+                className={[
+                  'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border border-border text-muted hover:bg-surface-2 hover:text-foreground',
+                  secondarySidebarOpen && focused ? 'bg-accent/10 text-accent' : '',
+                ].join(' ')}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setPaneLayout((layout) => focusPane(layout, node.id));
+                  if (paneTab?.id && paneTab.id !== tabsState.activeId) {
+                    handleTabActivate(paneTab.id);
+                  }
+                  setSecondarySidebarOpen((open) => (focused ? !open : true));
+                }}
+              >
+                <PaneIcon size={12} aria-hidden="true" />
+              </button>
+              <div className="min-w-0 truncate font-medium text-foreground" title={paneLabel}>
+                {paneLabel}
+              </div>
             </div>
             <div className="flex items-center gap-1">
               {paneCanAcceptDrop ? (
                 <span className="rounded border border-accent/60 px-1 py-0.5 text-[10px] text-accent">
-                  Drop tab
+                  Drop view
                 </span>
               ) : null}
               {paneTab?.id ? (
@@ -2341,8 +2440,11 @@ export function Workspace(): JSX.Element {
                 data-testid={`canvas-pane-empty-${node.id}`}
                 className="flex h-full w-full items-center justify-center bg-background/80"
               >
-                <div className="rounded border border-border/70 bg-surface px-3 py-2 text-xs text-muted">
-                  No view open in this pane
+                <div className="rounded border border-border/70 bg-surface px-3 py-2 text-center text-xs text-muted">
+                  <div>No view open in this pane</div>
+                  <div className="mt-1 text-[11px]">
+                    Drag a view from the primary sidebar to start this composition.
+                  </div>
                 </div>
               </div>
             )}
@@ -2353,7 +2455,7 @@ export function Workspace(): JSX.Element {
     [
       activeLevelId,
       activeTab,
-      draggingTabId,
+      draggingViewElementId,
       effectiveMode,
       elementsById,
       focusedPaneLeafId,
@@ -2365,7 +2467,9 @@ export function Workspace(): JSX.Element {
       openActiveSection3dContext,
       openActiveSectionSourcePlan,
       openElementById,
+      placeViewElementInPane,
       persistViewpointField,
+      secondarySidebarOpen,
       sheetMarkupShape,
       sheetReviewMode,
       snapSettings,
@@ -2724,7 +2828,13 @@ export function Workspace(): JSX.Element {
                 <Icons.hamburger size={16} aria-hidden="true" />
               </button>
             ) : null}
-            <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 flex-1 flex-col">
+              <CompositionBar
+                compositions={compositionState.compositions}
+                activeId={compositionState.activeId}
+                onActivate={handleCompositionActivate}
+                onCreate={handleCompositionCreate}
+              />
               <TabBar
                 tabs={tabsState.tabs}
                 activeId={tabsState.activeId}
@@ -2753,8 +2863,6 @@ export function Workspace(): JSX.Element {
                   if (kind === 'plan') setViewerMode('plan_canvas');
                   else if (kind === '3d') setViewerMode('orbit_3d');
                 }}
-                onTabDragStart={(tabId) => setDraggingTabId(tabId)}
-                onTabDragEnd={() => setDraggingTabId(null)}
               />
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -2863,6 +2971,8 @@ export function Workspace(): JSX.Element {
             onCreateSchedule={() => void createScheduleView()}
             onOpenProjectSettings={openProjectSettings}
             onOpenSavedView={openElementById}
+            onViewDragStart={setDraggingViewElementId}
+            onViewDragEnd={() => setDraggingViewElementId(null)}
             lensMode={lensMode}
             onLensChange={setLensMode}
             activeViewTargetId={activeTab?.targetId}
@@ -2873,16 +2983,18 @@ export function Workspace(): JSX.Element {
           />
         }
         secondarySidebar={
-          <WorkspaceRightRail
-            mode={effectiveMode}
-            onSemanticCommand={onSemanticCommand}
-            onModeChange={handleModeChange}
-            onNavigateToElement={openElementById}
-            activeViewTargetId={activeTab?.targetId}
-            surface="view-context"
-            onOpenMaterialBrowser={() => setMaterialBrowserOpen(true)}
-            onOpenAppearanceAssetBrowser={() => setAppearanceAssetBrowserOpen(true)}
-          />
+          secondarySidebarOpen ? (
+            <WorkspaceRightRail
+              mode={effectiveMode}
+              onSemanticCommand={onSemanticCommand}
+              onModeChange={handleModeChange}
+              onNavigateToElement={openElementById}
+              activeViewTargetId={activeTab?.targetId}
+              surface="view-context"
+              onOpenMaterialBrowser={() => setMaterialBrowserOpen(true)}
+              onOpenAppearanceAssetBrowser={() => setAppearanceAssetBrowserOpen(true)}
+            />
+          ) : null
         }
         canvas={
           <div
@@ -2910,7 +3022,7 @@ export function Workspace(): JSX.Element {
             ) : null}
             {showCanvasHint && !showEmptyState ? <EmptyStateHint /> : null}
             {renderPaneNode(paneLayout.root)}
-            {draggingTabId ? (
+            {draggingViewElementId ? (
               <div className="pointer-events-none absolute inset-0 z-20">
                 {(
                   [
@@ -2928,18 +3040,17 @@ export function Workspace(): JSX.Element {
                     style={style}
                     onDragOver={(event) => {
                       event.preventDefault();
+                      event.dataTransfer.dropEffect = 'copy';
                     }}
                     onDrop={(event) => {
                       event.preventDefault();
-                      if (!draggingTabId) return;
-                      setPaneLayout((layout) =>
-                        splitPaneWithTab(layout, layout.focusedLeafId, direction, draggingTabId),
-                      );
-                      handleTabActivate(draggingTabId);
-                      setDraggingTabId(null);
+                      const elementId =
+                        draggingViewElementId ||
+                        event.dataTransfer.getData('application/x-bim-element-id');
+                      placeViewElementInPane(elementId, paneLayout.focusedLeafId, direction);
                     }}
                   >
-                    Split {direction}
+                    Drop {direction}
                   </button>
                 ))}
               </div>

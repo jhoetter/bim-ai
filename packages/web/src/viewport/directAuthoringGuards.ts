@@ -7,6 +7,11 @@ export interface HostedPlacementDedupeState {
 
 export type HostedPlacementTool = 'door' | 'window' | 'wall-opening';
 
+export interface ScreenPointLike {
+  x: number;
+  y: number;
+}
+
 const LINKED_ID_SEPARATOR = '::';
 
 export function isLinkedElementId(id: string): boolean {
@@ -45,4 +50,36 @@ export function shouldCommitHostedPlacementOnPointerUp(input: {
   draftTool: string | null | undefined;
 }): boolean {
   return input.wasDragging === 'tool-draft' && isHostedPlacementTool(input.draftTool);
+}
+
+export function shouldReuseHostedPreviewCommit(input: {
+  clickScreen: ScreenPointLike;
+  previewCenter?: ScreenPointLike;
+  previewOutline?: ScreenPointLike[];
+  maxCenterDistancePx?: number;
+  outlinePaddingPx?: number;
+}): boolean {
+  const centerDistance = input.previewCenter
+    ? Math.hypot(
+        input.clickScreen.x - input.previewCenter.x,
+        input.clickScreen.y - input.previewCenter.y,
+      )
+    : Number.POSITIVE_INFINITY;
+  if (centerDistance <= (input.maxCenterDistancePx ?? 20)) return true;
+
+  const outline = input.previewOutline;
+  if (!outline || outline.length === 0) return false;
+  const padding = input.outlinePaddingPx ?? 24;
+  const xs = outline.map((point) => point.x);
+  const ys = outline.map((point) => point.y);
+  const minX = Math.min(...xs) - padding;
+  const maxX = Math.max(...xs) + padding;
+  const minY = Math.min(...ys) - padding;
+  const maxY = Math.max(...ys) + padding;
+  return (
+    input.clickScreen.x >= minX &&
+    input.clickScreen.x <= maxX &&
+    input.clickScreen.y >= minY &&
+    input.clickScreen.y <= maxY
+  );
 }

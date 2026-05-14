@@ -5,6 +5,7 @@ import {
   isBackfacingWallHit,
   isDuplicateHostedPlacement,
   shouldCommitHostedPlacementOnPointerUp,
+  shouldReuseHostedPreviewCommit,
   isLinkedElementId,
 } from './directAuthoringGuards';
 
@@ -106,6 +107,47 @@ describe('shouldCommitHostedPlacementOnPointerUp', () => {
       shouldCommitHostedPlacementOnPointerUp({
         wasDragging: 'orbit',
         draftTool: 'window',
+      }),
+    ).toBe(false);
+  });
+});
+
+describe('shouldReuseHostedPreviewCommit', () => {
+  it('reuses a visible host preview when release is near the preview center', () => {
+    expect(
+      shouldReuseHostedPreviewCommit({
+        clickScreen: { x: 112, y: 105 },
+        previewCenter: { x: 100, y: 100 },
+      }),
+    ).toBe(true);
+  });
+
+  it('reuses a visible host preview when release is inside the preview outline', () => {
+    expect(
+      shouldReuseHostedPreviewCommit({
+        clickScreen: { x: 175, y: 145 },
+        previewCenter: { x: 100, y: 100 },
+        previewOutline: [
+          { x: 140, y: 120 },
+          { x: 220, y: 120 },
+          { x: 220, y: 180 },
+          { x: 140, y: 180 },
+        ],
+      }),
+    ).toBe(true);
+  });
+
+  it('does not reuse stale previews far away from the visible host glyph', () => {
+    expect(
+      shouldReuseHostedPreviewCommit({
+        clickScreen: { x: 360, y: 320 },
+        previewCenter: { x: 100, y: 100 },
+        previewOutline: [
+          { x: 140, y: 120 },
+          { x: 220, y: 120 },
+          { x: 220, y: 180 },
+          { x: 140, y: 180 },
+        ],
       }),
     ).toBe(false);
   });

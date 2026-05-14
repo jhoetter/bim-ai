@@ -29,6 +29,7 @@ import { Workspace } from './Workspace';
 const TABS_KEY = 'bim-ai:tabs-v1';
 const RIBBON_HIDDEN_KEY = 'bim-ai.ribbon.hiddenCommands.v1';
 const PANE_LAYOUT_KEY = 'bim-ai:pane-layout-v1';
+const COMPOSITIONS_KEY = 'bim-ai:workspace-compositions-v1';
 
 function seedTabs(kind: string, id = 'tab-test-1') {
   localStorage.setItem(
@@ -60,6 +61,7 @@ beforeEach(() => {
   localStorage.removeItem(TABS_KEY);
   localStorage.removeItem(RIBBON_HIDDEN_KEY);
   localStorage.removeItem(PANE_LAYOUT_KEY);
+  localStorage.removeItem(COMPOSITIONS_KEY);
   // Suppress the OnboardingTour dialog so aria-modal doesn't hide canvas content.
   localStorage.setItem('bim.onboarding-completed', 'true');
   useBimStore.setState({
@@ -82,6 +84,7 @@ afterEach(() => {
   localStorage.removeItem(TABS_KEY);
   localStorage.removeItem(RIBBON_HIDDEN_KEY);
   localStorage.removeItem(PANE_LAYOUT_KEY);
+  localStorage.removeItem(COMPOSITIONS_KEY);
   useBimStore.setState({
     modelId: undefined,
     revision: undefined,
@@ -187,7 +190,7 @@ describe('<Workspace /> — smoke', () => {
     expect(useBimStore.getState().planTool).toBe('select');
   });
 
-  it('renders pane-local tab strips and supports drop-assign + close from pane chrome', () => {
+  it('renders pane-local tab strips and supports primary-browser drop-assign + close from pane chrome', () => {
     localStorage.setItem(
       TABS_KEY,
       JSON.stringify({
@@ -200,26 +203,58 @@ describe('<Workspace /> — smoke', () => {
       }),
     );
     seedSplitPaneLayout('plan:pv-a', '3d:vp-b');
+    useBimStore.setState({
+      activeLevelId: 'lvl-a',
+      elementsById: {
+        'lvl-a': {
+          kind: 'level',
+          id: 'lvl-a',
+          name: 'Level A',
+          elevationMm: 0,
+        } as Element,
+        'pv-a': {
+          kind: 'plan_view',
+          id: 'pv-a',
+          name: 'Plan A',
+          levelId: 'lvl-a',
+        } as Element,
+        'vp-b': {
+          kind: 'viewpoint',
+          id: 'vp-b',
+          name: '3D B',
+          mode: 'orbit_3d',
+        } as Element,
+      },
+    });
 
-    const { getByTestId, container, queryByTestId } = renderWithProviders(<Workspace />);
+    const { getByTestId, queryByTestId } = renderWithProviders(<Workspace />);
     expect(getByTestId('canvas-pane-tabstrip-pane-left').textContent).toContain('Plan A');
     expect(getByTestId('canvas-pane-tabstrip-pane-right').textContent).toContain('3D B');
 
-    const draggedTab = container.querySelector('[data-tab-id=\"3d:vp-b\"]');
-    expect(draggedTab).toBeTruthy();
-    fireEvent.dragStart(draggedTab!, {
-      dataTransfer: {
-        effectAllowed: 'move',
-        setData: () => {},
-      },
-    });
+    const dragData = new Map<string, string>();
+    const dataTransfer = {
+      effectAllowed: 'copy',
+      dropEffect: 'none',
+      setData: (type: string, value: string) => dragData.set(type, value),
+      getData: (type: string) => dragData.get(type) ?? '',
+    };
+    fireEvent.dragStart(getByTestId('left-rail-row-vp-b'), { dataTransfer });
     const leftStrip = getByTestId('canvas-pane-tabstrip-pane-left');
-    fireEvent.dragOver(leftStrip);
-    fireEvent.drop(leftStrip);
+    fireEvent.dragOver(leftStrip, { dataTransfer });
+    fireEvent.drop(leftStrip, { dataTransfer });
     expect(leftStrip.textContent).toContain('3D B');
 
     fireEvent.click(getByTestId('canvas-pane-close-tab-pane-left'));
     expect(queryByTestId('tab-activate-3d:vp-b')).toBeNull();
+  });
+
+  it('creates an empty composition from the header plus', () => {
+    seedTabs('plan');
+    const { getByTestId, getByText } = renderWithProviders(<Workspace />);
+    expect(getByTestId('composition-bar')).toBeTruthy();
+    fireEvent.click(getByTestId('composition-add-button'));
+    expect(getByText('No view open in this pane')).toBeTruthy();
+    expect(getByTestId('view-tabs').textContent).toContain('No views open');
   });
 
   it('renders a real empty pane state when no tabs are open', () => {
@@ -487,6 +522,7 @@ describe('<Workspace /> — smoke', () => {
 
     for (const [kind, testId] of cases) {
       cleanup();
+      localStorage.removeItem(COMPOSITIONS_KEY);
       seedTabs(kind, `tab-${kind}`);
       const rendered = renderWithProviders(<Workspace />);
       const secondary = within(rendered.getByTestId('app-shell-secondary-sidebar'));
@@ -498,6 +534,7 @@ describe('<Workspace /> — smoke', () => {
 
       rendered.unmount();
       localStorage.removeItem(TABS_KEY);
+      localStorage.removeItem(COMPOSITIONS_KEY);
     }
   });
 
@@ -507,6 +544,7 @@ describe('<Workspace /> — smoke', () => {
       ['3d', 'secondary-sidebar-3d'],
     ] as const) {
       cleanup();
+      localStorage.removeItem(COMPOSITIONS_KEY);
       seedTabs(kind, `tab-${kind}`);
       const rendered = renderWithProviders(<Workspace />);
       const secondary = rendered.getByTestId('app-shell-secondary-sidebar');
@@ -530,6 +568,7 @@ describe('<Workspace /> — smoke', () => {
 
       rendered.unmount();
       localStorage.removeItem(TABS_KEY);
+      localStorage.removeItem(COMPOSITIONS_KEY);
     }
   });
 

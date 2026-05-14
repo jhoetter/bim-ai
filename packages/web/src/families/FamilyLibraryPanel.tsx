@@ -1117,7 +1117,9 @@ export function FamilyLibraryPanel({
                         <button
                           type="button"
                           data-testid={
-                            entry.catalogPlacement ? `external-family-${entry.id}-place` : undefined
+                            entry.catalogPlacement
+                              ? `external-family-${entry.id}-place`
+                              : `family-row-${entry.id}-place`
                           }
                           onClick={() => {
                             if (entry.catalogPlacement) {
@@ -1132,7 +1134,7 @@ export function FamilyLibraryPanel({
                           }}
                           className="rounded border border-border bg-surface-strong px-2 py-0.5 text-xs hover:bg-accent-soft"
                         >
-                          Copy
+                          Place
                         </button>
                       </li>
                     );
