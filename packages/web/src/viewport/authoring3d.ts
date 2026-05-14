@@ -62,7 +62,7 @@ export function classifyWallDraftProjection(
   const maxScale = Math.max(safeScaleX, safeScaleY);
   const anisotropyRatio = maxScale / minScale;
   const verticalLook = Math.min(1, Math.abs(cameraDirectionY));
-  const planeReadable = maxScale <= 160 && anisotropyRatio <= 3.25;
+  const planeReadable = verticalLook >= 0.45 && maxScale <= 160 && anisotropyRatio <= 3.25;
 
   return {
     mode: planeReadable ? 'plane' : 'elevation-axis',

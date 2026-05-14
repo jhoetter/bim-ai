@@ -63,10 +63,10 @@ describe('classifyWallDraftProjection', () => {
     expect(classification.verticalLook).toBeCloseTo(0.265);
   });
 
-  it('does not force stable front-like views into synthetic screen-axis drafting', () => {
+  it('uses constrained screen-axis drafting in shallow front-like views even when the local plane is numerically stable', () => {
     const classification = classifyWallDraftProjection(21.5, 55.3, -0.26);
 
-    expect(classification.mode).toBe('plane');
+    expect(classification.mode).toBe('elevation-axis');
     expect(classification.anisotropyRatio).toBeLessThan(3.25);
   });
 

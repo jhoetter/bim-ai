@@ -1,0 +1,264 @@
+{
+  "commandTypes": ["createWall", "createWall"],
+  "commandResponses": [
+    {
+      "status": 200,
+      "ok": true
+    },
+    {
+      "status": 200,
+      "ok": true
+    }
+  ],
+  "createWallCount": 2,
+  "projectionModes": ["elevation-axis"],
+  "previewChecks": [
+    {
+      "label": "02-front-no-cube-empty-grid",
+      "cursorPathRendered": true,
+      "cursorPathVisible": false,
+      "cursorEndVisible": true
+    },
+    {
+      "label": "04-post-viewcube-empty-grid",
+      "cursorPathRendered": true,
+      "cursorPathVisible": true,
+      "cursorEndVisible": true
+    }
+  ],
+  "blockedPhases": [],
+  "startCameras": [
+    {
+      "position": {
+        "x": 20.499999999999996,
+        "y": 9.600000000000001,
+        "z": -11.5
+      },
+      "target": {
+        "x": 7.2,
+        "y": 4,
+        "z": 4.5
+      },
+      "up": {
+        "x": 0,
+        "y": 1,
+        "z": 0
+      },
+      "direction": {
+        "x": -0.6172707312252508,
+        "y": -0.2599034657790531,
+        "z": 0.7425813307972944
+      },
+      "azimuth": 2.4480851460024065,
+      "elevation": 0.26292223184335634,
+      "radius": 21.54646142641524
+    },
+    {
+      "position": {
+        "x": 19.590984716911787,
+        "y": 8.34231138029218,
+        "z": -12.58384703811889
+      },
+      "target": {
+        "x": 7.2,
+        "y": 4,
+        "z": 4.5
+      },
+      "up": {
+        "x": 0,
+        "y": 1,
+        "z": 0
+      },
+      "direction": {
+        "x": -0.5750821200608306,
+        "y": -0.20153246021960028,
+        "z": 0.7928841167939837
+      },
+      "azimuth": 2.514085146002406,
+      "elevation": 0.20292223184335628,
+      "radius": 21.54646142641524
+    }
+  ],
+  "commitCameras": [
+    {
+      "position": {
+        "x": 20.499999999999996,
+        "y": 9.600000000000001,
+        "z": -11.5
+      },
+      "target": {
+        "x": 7.2,
+        "y": 4,
+        "z": 4.5
+      },
+      "up": {
+        "x": 0,
+        "y": 1,
+        "z": 0
+      },
+      "direction": {
+        "x": -0.6172707312252508,
+        "y": -0.2599034657790531,
+        "z": 0.7425813307972944
+      },
+      "azimuth": 2.4480851460024065,
+      "elevation": 0.26292223184335634,
+      "radius": 21.54646142641524
+    },
+    {
+      "position": {
+        "x": 19.590984716911787,
+        "y": 8.34231138029218,
+        "z": -12.58384703811889
+      },
+      "target": {
+        "x": 7.2,
+        "y": 4,
+        "z": 4.5
+      },
+      "up": {
+        "x": 0,
+        "y": 1,
+        "z": 0
+      },
+      "direction": {
+        "x": -0.5750821200608306,
+        "y": -0.20153246021960028,
+        "z": 0.7928841167939837
+      },
+      "azimuth": 2.514085146002406,
+      "elevation": 0.20292223184335628,
+      "radius": 21.54646142641524
+    }
+  ],
+  "wallVectors": [
+    {
+      "start": {
+        "xMm": 1973.2902238310644,
+        "yMm": -2215.6599445051447
+      },
+      "end": {
+        "xMm": -623.5520907637583,
+        "yMm": -4374.285118507264
+      },
+      "dxMm": -2596.8423145948227,
+      "dyMm": -2158.6251740021194,
+      "lengthMm": 3376.8702445764593
+    },
+    {
+      "start": {
+        "xMm": 16889.0003071346,
+        "yMm": 18002.007112116964
+      },
+      "end": {
+        "xMm": 14391.265726172162,
+        "yMm": 16190.389918956416
+      },
+      "dxMm": -2497.7345809624385,
+      "dyMm": -1811.6171931605477,
+      "lengthMm": 3085.5526071500562
+    }
+  ],
+  "screenDeltas": [
+    {
+      "x": 190.320068359375,
+      "y": 0
+    },
+    {
+      "x": 131.760009765625,
+      "y": 109.97998046875
+    }
+  ],
+  "modelDeltas": [
+    {
+      "xMm": -2596.8423145948227,
+      "yMm": -2158.6251740021194
+    },
+    {
+      "xMm": -2497.7345809624385,
+      "yMm": -1811.6171931605477
+    }
+  ],
+  "previewCount": 72,
+  "nonConstrainedWallCount": 0,
+  "tracePhases": [
+    "wall-start",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-commit",
+    "wall-start",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-preview",
+    "wall-commit"
+  ],
+  "console3dWallCount": 10,
+  "consoleWarnings": []
+}

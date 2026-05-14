@@ -27,6 +27,7 @@ import { ViewCube } from './viewport/ViewCube';
 import { applyLinkedGhosting } from './viewport/linkedGhosting';
 import { applyLensGhosting } from './viewport/applyLensGhosting';
 import { lensFilterFromMode } from './viewport/useLensFilter';
+import { applySceneCameraPose, mirrorSceneCameraPose } from './viewport/cameraMatrixSync';
 import {
   buildDriftBadgeCanvas,
   driftBadgeTooltip,
@@ -933,6 +934,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
 
     function wallDebugCameraSnapshot(): Record<string, unknown> {
       const direction = new THREE.Vector3();
+      camera.updateMatrixWorld(true);
       camera.getWorldDirection(direction);
       const snap = rig.snapshot();
       return {
@@ -995,16 +997,12 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
 
     function placeCamera(): void {
       const snap = rig.snapshot();
-      camera.position.set(snap.position.x, snap.position.y, snap.position.z);
-      camera.up.set(snap.up.x, snap.up.y, snap.up.z).normalize();
-      camera.lookAt(snap.target.x, snap.target.y, snap.target.z);
+      applySceneCameraPose(camera, snap);
       setCurrentAzimuth(snap.azimuth);
       setCurrentElevation(snap.elevation);
       const oc = orthoCameraRef.current;
       if (oc) {
-        oc.position.copy(camera.position);
-        oc.up.copy(camera.up);
-        oc.lookAt(snap.target.x, snap.target.y, snap.target.z);
+        mirrorSceneCameraPose(camera, oc, snap.target);
       }
     }
 
@@ -1038,6 +1036,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       const rect = renderer.domElement.getBoundingClientRect();
       ndc.x = ((cx - rect.left) / rect.width) * 2 - 1;
       ndc.y = -(((cy - rect.top) / rect.height) * 2 - 1);
+      camera.updateMatrixWorld(true);
       raycaster.setFromCamera(ndc, camera);
       const hits = raycaster.intersectObjects(root.children, true);
 
@@ -1085,6 +1084,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       const rect = renderer.domElement.getBoundingClientRect();
       ndc.x = ((cx - rect.left) / rect.width) * 2 - 1;
       ndc.y = -(((cy - rect.top) / rect.height) * 2 - 1);
+      camera.updateMatrixWorld(true);
       raycaster.setFromCamera(ndc, camera);
       const hit = projectSceneRayToLevelPlaneMm(
         raycaster.ray.origin,
@@ -1130,6 +1130,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             (sampleY.point.yMm - origin.point.yMm) / samplePx,
           )
         : scaleX;
+      camera.updateMatrixWorld(true);
       const cameraDirection = new THREE.Vector3();
       camera.getWorldDirection(cameraDirection);
       const projection = classifyWallDraftProjection(scaleX, scaleY, cameraDirection.y);
@@ -1203,6 +1204,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       const rect = renderer.domElement.getBoundingClientRect();
       ndc.x = ((cx - rect.left) / rect.width) * 2 - 1;
       ndc.y = -(((cy - rect.top) / rect.height) * 2 - 1);
+      camera.updateMatrixWorld(true);
       raycaster.setFromCamera(ndc, camera);
       const hits = raycaster.intersectObjects(root.children, true);
       const candidates = new Map<
@@ -1273,6 +1275,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         pointMm.zMm / 1000,
         pointMm.yMm / 1000,
       );
+      camera.updateMatrixWorld(true);
       worldPoint.project(camera);
       if (!Number.isFinite(worldPoint.x) || !Number.isFinite(worldPoint.y)) return null;
       return {
@@ -1985,6 +1988,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       const rect = renderer.domElement.getBoundingClientRect();
       ndc.x = ((cx - rect.left) / rect.width) * 2 - 1;
       ndc.y = -(((cy - rect.top) / rect.height) * 2 - 1);
+      camera.updateMatrixWorld(true);
       raycaster.setFromCamera(ndc, camera);
       const hits = raycaster.intersectObjects(pickables, false);
       const first = hits[0];
@@ -2010,6 +2014,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       const rect = renderer.domElement.getBoundingClientRect();
       ndc.x = ((cx - rect.left) / rect.width) * 2 - 1;
       ndc.y = -(((cy - rect.top) / rect.height) * 2 - 1);
+      camera.updateMatrixWorld(true);
       raycaster.setFromCamera(ndc, camera);
       const ray = raycaster.ray;
       const axisDir = new THREE.Vector3();
@@ -2535,6 +2540,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       const deltaR = beforeSnap.radius - afterSnap.radius;
       if (Math.abs(deltaR) > 1e-4) {
         ndc.set(ndcX, ndcY);
+        camera.updateMatrixWorld(true);
         raycaster.setFromCamera(ndc, camera);
         const D = raycaster.ray.direction; // cursor ray unit vector
         // Spherical unit vector: from target to camera
@@ -2675,6 +2681,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       const rect = renderer.domElement.getBoundingClientRect();
       ndc.x = ((me.clientX - rect.left) / rect.width) * 2 - 1;
       ndc.y = -(((me.clientY - rect.top) / rect.height) * 2 - 1);
+      camera.updateMatrixWorld(true);
       raycaster.setFromCamera(ndc, camera);
       const hits = raycaster.intersectObjects(root.children, true);
       const first = hits.find((h) => typeof h.object.userData.bimPickId === 'string');
@@ -2794,6 +2801,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         camera.position.set(snap.position.x, snap.position.y, snap.position.z);
         camera.up.set(0, 1, 0);
         camera.lookAt(snap.position.x + dir.x, snap.position.y + dir.y, snap.position.z + dir.z);
+        camera.updateMatrixWorld(true);
       }
 
       // Orbit inertia: continue rotating after mouse release, decaying to stop
@@ -2890,10 +2898,8 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       oc.updateProjectionMatrix();
       const persp = cameraRef.current;
       if (persp) {
-        oc.position.copy(persp.position);
-        oc.up.copy(persp.up);
         const snap = cameraRigRef.current.snapshot();
-        oc.lookAt(snap.target.x, snap.target.y, snap.target.z);
+        mirrorSceneCameraPose(persp, oc, snap.target);
       }
     }
   }, [orthoMode]);
@@ -2916,14 +2922,10 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
     }
 
     const snap = rig.snapshot();
-    camera.position.set(snap.position.x, snap.position.y, snap.position.z);
-    camera.up.set(snap.up.x, snap.up.y, snap.up.z).normalize();
-    camera.lookAt(snap.target.x, snap.target.y, snap.target.z);
+    applySceneCameraPose(camera, snap);
     const orthoCamera = orthoCameraRef.current;
     if (orthoCamera) {
-      orthoCamera.position.copy(camera.position);
-      orthoCamera.up.copy(camera.up);
-      orthoCamera.lookAt(snap.target.x, snap.target.y, snap.target.z);
+      mirrorSceneCameraPose(camera, orthoCamera, snap.target);
     }
     setCurrentAzimuth(snap.azimuth);
     setCurrentElevation(snap.elevation);
@@ -3466,9 +3468,7 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
             rig.frame(box);
             rig.setHome();
             const snap = rig.snapshot();
-            cam.position.set(snap.position.x, snap.position.y, snap.position.z);
-            cam.up.set(snap.up.x, snap.up.y, snap.up.z).normalize();
-            cam.lookAt(snap.target.x, snap.target.y, snap.target.z);
+            applySceneCameraPose(cam, snap);
           }
           hasAutoFittedRef.current = true;
         }
@@ -3923,12 +3923,14 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
     if (!wc) return;
     if (walkActive) {
       if (cam) {
+        cam.updateMatrixWorld(true);
         const dir = new THREE.Vector3();
         cam.getWorldDirection(dir);
         const yaw = Math.atan2(dir.x, dir.z);
         wc.teleport({ x: cam.position.x, y: cam.position.y, z: cam.position.z }, yaw);
         cam.fov = 75;
         cam.updateProjectionMatrix();
+        cam.updateMatrixWorld(true);
       }
       wc.setLevels(walkLevelsRef.current);
       wc.setActive(true);
@@ -3976,9 +3978,11 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
       const camera = cameraRef.current;
       if (camera) {
         const next = rig.snapshot();
-        camera.position.set(next.position.x, next.position.y, next.position.z);
-        camera.up.set(next.up.x, next.up.y, next.up.z).normalize();
-        camera.lookAt(next.target.x, next.target.y, next.target.z);
+        applySceneCameraPose(camera, next);
+        const orthoCamera = orthoCameraRef.current;
+        if (orthoCamera) {
+          mirrorSceneCameraPose(camera, orthoCamera, next.target);
+        }
         setCurrentAzimuth(next.azimuth);
         setCurrentElevation(next.elevation);
       }
@@ -3992,9 +3996,11 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
     if (!rig || !camera) return;
     rig.orbit(dxPx, dyPx);
     const snap = rig.snapshot();
-    camera.position.set(snap.position.x, snap.position.y, snap.position.z);
-    camera.up.set(snap.up.x, snap.up.y, snap.up.z).normalize();
-    camera.lookAt(snap.target.x, snap.target.y, snap.target.z);
+    applySceneCameraPose(camera, snap);
+    const orthoCamera = orthoCameraRef.current;
+    if (orthoCamera) {
+      mirrorSceneCameraPose(camera, orthoCamera, snap.target);
+    }
     setCurrentAzimuth(snap.azimuth);
     setCurrentElevation(snap.elevation);
   }, []);
