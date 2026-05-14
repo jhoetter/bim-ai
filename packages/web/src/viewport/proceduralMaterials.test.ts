@@ -22,6 +22,9 @@ describe('procedural material maps', () => {
     expect(first.map.image.width).toBe(32);
     expect(first.map.image.height).toBe(32);
     expect(first.map.colorSpace).toBe(THREE.SRGBColorSpace);
+    expect(first.map.magFilter).toBe(THREE.LinearFilter);
+    expect(first.map.minFilter).toBe(THREE.LinearMipmapLinearFilter);
+    expect(first.map.generateMipmaps).toBe(true);
     expect(first.bumpMap.colorSpace).toBe(THREE.NoColorSpace);
     expect(uniqueByteCount(first.map)).toBeGreaterThan(12);
     expect(uniqueByteCount(first.bumpMap)).toBeGreaterThan(2);

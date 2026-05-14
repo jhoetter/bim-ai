@@ -71,6 +71,9 @@ function makeTexture(
   const texture = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
   texture.name = name;
   texture.colorSpace = colorSpace;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.generateMipmaps = true;
   texture.needsUpdate = true;
   applyTransform(texture, transform);
   return texture;
@@ -79,7 +82,7 @@ function makeTexture(
 export function createProceduralMaterialMaps(
   spec: MaterialPbrSpec | null,
   transform?: MaterialUvTransform,
-  size = 64,
+  size = 128,
 ): ProceduralMaterialMaps | null {
   if (!spec || spec.category === 'glass' || spec.category === 'air') return null;
   const key = cacheKey(spec, size, transform);
@@ -97,7 +100,7 @@ export function createProceduralMaterialMaps(
       const i = (y * size + x) * 4;
       const nx = x / size;
       const ny = y / size;
-      let variation = (hash2(x, y, seed) - 0.5) * 18;
+      let variation = (hash2(x >> 1, y >> 1, seed) - 0.5) * 10;
       let height = 128;
       let rough = spec.roughness * 255;
 
@@ -108,7 +111,7 @@ export function createProceduralMaterialMaps(
         const localX = (x + (row % 2) * (brickW / 2)) % brickW;
         const localY = y % brickH;
         const mortar = localX < 2 || localY < 2;
-        variation += mortar ? 28 : (hash2(row, Math.floor(localX), seed) - 0.5) * 28;
+        variation += mortar ? 18 : (hash2(row, Math.floor(localX / 4), seed) - 0.5) * 14;
         height = mortar ? 74 : 176;
         rough = mortar ? 235 : 215;
       } else if (spec.category === 'timber' || spec.category === 'cladding') {

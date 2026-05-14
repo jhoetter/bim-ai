@@ -101,6 +101,32 @@ describe('buildWindowGeometry — rectangular regression', () => {
     expect(foundExtrude).toBe(false);
   });
 
+  it('keeps default glazing visible in shaded views', () => {
+    const grp = buildWindowGeometry({
+      win: win(),
+      wall: baseWall,
+      elevM: 0,
+      paint: null,
+      familyDef: undefined,
+      elementsById: els(),
+    });
+    const glass = meshes(grp).find((mesh) => {
+      const material = mesh.material;
+      return (
+        material instanceof THREE.MeshPhysicalMaterial &&
+        material.userData.materialKey === 'asset_clear_glass_double'
+      );
+    });
+
+    expect(glass).toBeTruthy();
+    const material = glass!.material as THREE.MeshPhysicalMaterial;
+    expect(material.transparent).toBe(true);
+    expect(material.depthWrite).toBe(false);
+    expect(material.opacity).toBeGreaterThanOrEqual(0.5);
+    expect(material.transmission).toBeLessThanOrEqual(0.35);
+    expect(glass!.children.some((child) => child instanceof THREE.LineSegments)).toBe(true);
+  });
+
   it('default (no outlineKind) renders the rectangular path', () => {
     const grpA = buildWindowGeometry({
       win: win(),

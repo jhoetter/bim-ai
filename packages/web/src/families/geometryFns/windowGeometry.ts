@@ -18,7 +18,7 @@ export type WindowGeomInput = {
 };
 
 const FALLBACK_COLOR = '#cbd5e1';
-const FALLBACK_GLAZING = '#c8d8ea';
+const FALLBACK_GLAZING = '#9fcbe2';
 
 function readGlazingColor(): string {
   if (typeof document === 'undefined') return FALLBACK_GLAZING;
@@ -58,7 +58,7 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
   const rawHeightMm = Number(resolveParam('heightMm', ip, tp, familyDef, resolvedDims.heightMm));
   const rawDepthMm = Number(resolveParam('frameDepthMm', ip, tp, familyDef, wall.thicknessMm + 20));
   const frameSectMm = Number(resolveParam('frameSectMm', ip, tp, familyDef, 60));
-  const glazingAlpha = Number(resolveParam('glazingAlpha', ip, tp, familyDef, 0.35));
+  const glazingAlpha = Number(resolveParam('glazingAlpha', ip, tp, familyDef, 0.52));
 
   const outerW = THREE.MathUtils.clamp(rawWidthMm / 1000, 0.14, 4.0);
   const outerH = THREE.MathUtils.clamp(
@@ -90,6 +90,13 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
     depthWrite: false,
     side: THREE.DoubleSide,
   });
+  glazingMat.opacity = Math.max(glazingMat.opacity, 0.5);
+  glazingMat.transparent = true;
+  glazingMat.depthWrite = false;
+  if (glazingMat instanceof THREE.MeshPhysicalMaterial) {
+    glazingMat.transmission = Math.min(glazingMat.transmission, 0.35);
+    glazingMat.thickness = Math.max(glazingMat.thickness, 0.02);
+  }
 
   const outlineKind = resolveWindowOutlineKind(win);
   const outlinePoly =
@@ -118,6 +125,7 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
     const glazing = new THREE.Mesh(glassGeom, glazingMat);
     glazing.castShadow = false;
     glazing.userData.bimPickId = win.id;
+    addEdges(glazing);
     group.add(glazing);
 
     // KRN-12 + FAM-02: sweep a small rectangular cross-section profile around
@@ -156,6 +164,7 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
   const glazing = new THREE.Mesh(new THREE.BoxGeometry(glazingW, glazingH, 0.006), glazingMat);
   glazing.castShadow = false;
   glazing.userData.bimPickId = win.id;
+  addEdges(glazing);
   group.add(glazing);
 
   if (outerW > 1.2) {
