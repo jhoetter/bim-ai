@@ -66,7 +66,7 @@ export type ApplyCommandResp = {
 
   violations?: unknown[];
 
-  delta?: Record<string, unknown>;
+  delta?: ModelDelta & { clientOpId?: string };
 
   levelElevationPropagationEvidence_v0?: unknown;
 };

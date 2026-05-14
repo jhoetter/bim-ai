@@ -1,0 +1,76 @@
+{
+  "commandTypes": ["createWall", "insertDoorOnWall", "insertWindowOnWall"],
+  "commandModelIds": [
+    "9bb9a145-d9ce-5a2f-a748-bb5be3301b30",
+    "9bb9a145-d9ce-5a2f-a748-bb5be3301b30",
+    "9bb9a145-d9ce-5a2f-a748-bb5be3301b30"
+  ],
+  "commands": [
+    {
+      "type": "createWall",
+      "id": "wall-3d-mp59vzf2-v95",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 16489.563292217303,
+        "yMm": 7600.753372362309
+      },
+      "end": {
+        "xMm": 14167.117966671343,
+        "yMm": 2103.262899929918
+      },
+      "locationLine": "wall-centerline",
+      "heightMm": 2800
+    },
+    {
+      "type": "insertDoorOnWall",
+      "wallId": "wall-3d-mp59vzf2-v95",
+      "alongT": 0.4360451265928782,
+      "widthMm": 900
+    },
+    {
+      "type": "insertWindowOnWall",
+      "wallId": "wall-3d-mp59vzf2-v95",
+      "alongT": 0.7104832477877054,
+      "widthMm": 1200,
+      "sillHeightMm": 900,
+      "heightMm": 1500
+    }
+  ],
+  "mainFrameNavigations": 0,
+  "activeProjectLabel": "BASeed Library / target-house-3",
+  "active3dTabText": "3D · Rear/right axono…ActiveShown",
+  "selectedElementActionsVisible": false,
+  "canvasBoxes": {
+    "initialBox": {
+      "x": 536,
+      "y": 150,
+      "width": 1264,
+      "height": 1022
+    },
+    "afterDoorBox": {
+      "x": 536,
+      "y": 150,
+      "width": 1264,
+      "height": 1022
+    },
+    "afterWindowBox": {
+      "x": 536,
+      "y": 150,
+      "width": 1264,
+      "height": 1022
+    }
+  },
+  "canvasBoxStable": true,
+  "consoleErrors": [],
+  "consoleWarnings": [],
+  "screenshots": [
+    "packages/web/tmp/ux-host-placement-no-refresh-20260514/00-initial-3d.png",
+    "packages/web/tmp/ux-host-placement-no-refresh-20260514/01-wall-preview.png",
+    "packages/web/tmp/ux-host-placement-no-refresh-20260514/02-wall-committed.png",
+    "packages/web/tmp/ux-host-placement-no-refresh-20260514/03-door-preview.png",
+    "packages/web/tmp/ux-host-placement-no-refresh-20260514/04-door-placed-no-refresh.png",
+    "packages/web/tmp/ux-host-placement-no-refresh-20260514/05-window-preview.png",
+    "packages/web/tmp/ux-host-placement-no-refresh-20260514/06-window-placed-no-refresh.png"
+  ],
+  "pass": true
+}

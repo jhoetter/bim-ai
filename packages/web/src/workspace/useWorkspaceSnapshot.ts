@@ -18,6 +18,25 @@ const DISABLE_WS =
   typeof import.meta.env.VITE_E2E_DISABLE_WS === 'string' &&
   ['1', 'true', 'yes'].includes(import.meta.env.VITE_E2E_DISABLE_WS.trim().toLowerCase());
 
+const LOCAL_CLIENT_OP_TTL_MS = 30_000;
+const localClientOps = new Map<string, number>();
+
+export function rememberLocalClientOp(clientOpId: string): void {
+  const now = Date.now();
+  for (const [id, expiresAt] of localClientOps) {
+    if (expiresAt <= now) localClientOps.delete(id);
+  }
+  localClientOps.set(clientOpId, now + LOCAL_CLIENT_OP_TTL_MS);
+}
+
+function consumeLocalClientOp(clientOpId: unknown): boolean {
+  if (typeof clientOpId !== 'string') return false;
+  const expiresAt = localClientOps.get(clientOpId);
+  if (expiresAt === undefined) return false;
+  localClientOps.delete(clientOpId);
+  return expiresAt > Date.now();
+}
+
 function lastSeqStorageKey(modelId: string): string {
   return `bim.ws.lastSeq.${modelId}`;
 }
@@ -179,6 +198,7 @@ export function useWorkspaceSnapshot(): {
           const s = payload as unknown as Snapshot;
           if (s.modelId) hydrateFromSnapshot(s);
         } else if (t === 'delta') {
+          if (consumeLocalClientOp(payload.clientOpId)) return;
           const dd = coerceDelta(payload);
           if (dd) applyDelta(dd);
         } else if (t === 'presence_state') {

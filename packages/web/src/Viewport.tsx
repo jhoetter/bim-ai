@@ -1642,7 +1642,6 @@ export function Viewport({ wsConnected, onSemanticCommand, remoteSelections }: P
         }
         lastHostedPlacementScreen = nextPlacementScreen;
         lastHostedPlacementHost = nextPlacementHost;
-        useBimStore.getState().select(hostWall.id);
         if (tool === 'door') {
           onSemanticCommand?.({
             type: 'insertDoorOnWall',

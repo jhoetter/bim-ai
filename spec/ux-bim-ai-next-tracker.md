@@ -1617,3 +1617,53 @@ Evidence (2026-05-13):
       - `cursorEndVisible: true`
       - `projectionMode: "plane"`
       - `consoleErrors: []`
+
+## Reopened Tracker (2026-05-14, feedback round 19)
+
+| Gap ID         | Problem Statement                                                                                                                                                                   | Canonical Surfaces / Files                                                                                                      | Priority | Status |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------- | ------ |
+| NEXT19-GAP-001 | 3D hosted door/window placement still felt like a refresh because semantic commands hydrated the full returned model snapshot instead of applying the returned delta incrementally. | `packages/web/src/workspace/Workspace.tsx`, `packages/web/src/workspace/useWorkspaceSnapshot.ts`, `packages/web/src/lib/api.ts` | P0       | Done   |
+| NEXT19-GAP-002 | The 3D hosted placement click selected the host wall, opening the element inspector and changing the canvas layout while the user was still in a placement command.                 | `packages/web/src/Viewport.tsx` hosted placement path                                                                           | P0       | Done   |
+| NEXT19-GAP-003 | Seeded proof needed to cover wall + door + window placement through the actual 3D ribbon without main-frame navigation, canvas-width jumps, or selection-sidebar takeover.          | `packages/web/tmp/ux-host-placement-no-refresh-20260514/*`, seeded browser                                                      | P0       | Done   |
+
+### WP-NEXT-37 — 3D Hosted Placement No-Refresh Flow
+
+- Priority: `P0`
+- Status: `Done`
+- Supersedes/extends: `WP-NEXT-36` segment orientation remains valid; this package closes the follow-up UX regression where hosted placement worked geometrically but still disrupted the active 3D work surface.
+- Covers: `NEXT19-GAP-001`, `NEXT19-GAP-002`, `NEXT19-GAP-003`
+- Goal: make 3D wall, door, and window authoring stay in the same active 3D canvas without full snapshot rebuilds, right-sidebar selection takeover, or page/frame navigation.
+- Source ownership:
+  - `packages/web/src/lib/api.ts`
+  - `packages/web/src/workspace/useWorkspaceSnapshot.ts`
+  - `packages/web/src/workspace/Workspace.tsx`
+  - `packages/web/src/workspace/Workspace.semanticCommand.test.tsx`
+  - `packages/web/src/Viewport.tsx`
+  - `packages/web/tmp/ux-host-placement-no-refresh-20260514/summary.json`
+- Acceptance:
+  - semantic command responses with `delta` use `applyDelta` instead of full `hydrateFromSnapshot`;
+  - local websocket echo deltas with the same `clientOpId` are ignored to avoid duplicate UI churn;
+  - 3D door/window placement does not select the host wall or open the selected-element inspector while the tool remains active;
+  - seeded browser proof emits `createWall`, `insertDoorOnWall`, and `insertWindowOnWall` on `target-house-3`;
+  - seeded proof records no main-frame navigation, stable canvas bounds after each placement, no selected-element actions takeover, and no console errors.
+- Implementation + evidence:
+  - Typed `ApplyCommandResp.delta` as `ModelDelta` and generated a `clientOpId` per local semantic command.
+  - Registered local client ops in `useWorkspaceSnapshot` and consumed matching websocket echo deltas before applying remote updates.
+  - Applied the command response delta locally so unchanged elements keep their object identity and the 3D viewport rebuilds only dirty meshes.
+  - Removed automatic host-wall selection from 3D hosted placement clicks so Door/Window can continue without shifting the canvas/sidebar contract.
+  - Added regression coverage proving response deltas preserve unchanged element references.
+  - Seeded proof (`make seed-clear && make seed name=target-house-3`, `make dev name=target-house-3`, reset again after capture):
+    - `packages/web/tmp/ux-host-placement-no-refresh-20260514/00-initial-3d.png`
+    - `packages/web/tmp/ux-host-placement-no-refresh-20260514/01-wall-preview.png`
+    - `packages/web/tmp/ux-host-placement-no-refresh-20260514/02-wall-committed.png`
+    - `packages/web/tmp/ux-host-placement-no-refresh-20260514/03-door-preview.png`
+    - `packages/web/tmp/ux-host-placement-no-refresh-20260514/04-door-placed-no-refresh.png`
+    - `packages/web/tmp/ux-host-placement-no-refresh-20260514/05-window-preview.png`
+    - `packages/web/tmp/ux-host-placement-no-refresh-20260514/06-window-placed-no-refresh.png`
+    - `packages/web/tmp/ux-host-placement-no-refresh-20260514/summary.json`
+      - `commandTypes: ["createWall", "insertDoorOnWall", "insertWindowOnWall"]`
+      - `commandModelIds: ["9bb9a145-d9ce-5a2f-a748-bb5be3301b30", "9bb9a145-d9ce-5a2f-a748-bb5be3301b30", "9bb9a145-d9ce-5a2f-a748-bb5be3301b30"]`
+      - `mainFrameNavigations: 0`
+      - `canvasBoxStable: true`
+      - `selectedElementActionsVisible: false`
+      - `consoleErrors: []`

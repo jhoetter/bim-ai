@@ -26,7 +26,7 @@ import {
   buildCollaborationConflictQueueV1,
   type CollaborationConflictQueueV1,
 } from '../lib/collaborationConflictQueue';
-import type { LensMode, Snapshot, Violation } from '@bim-ai/core';
+import type { LensMode, ModelDelta, Snapshot, Violation } from '@bim-ai/core';
 import { AdvisorPanel } from '../advisor/AdvisorPanel';
 import { useUnifiedAdvisorViolations } from '../advisor/unifiedAdvisorViolations';
 import { useBimStore, applyTheme, toggleTheme, getCurrentTheme, type Theme } from '../state/store';
@@ -136,7 +136,7 @@ import { EmptyStateHint } from './shell';
 import { MilestoneDialog } from '../collab/MilestoneDialog';
 import { WorkspaceLeftRail } from './WorkspaceLeftRail';
 import { WorkspaceRightRail } from './WorkspaceRightRail';
-import { useWorkspaceSnapshot } from './useWorkspaceSnapshot';
+import { rememberLocalClientOp, useWorkspaceSnapshot } from './useWorkspaceSnapshot';
 import { mapComments, planToolToToolId, validatePlanTool } from './workspaceUtils';
 import { useToolPrefs } from '../tools/toolPrefsStore';
 import { usePresenceStore } from '../presenceStore';
@@ -710,15 +710,21 @@ export function Workspace(): JSX.Element {
       const mid = useBimStore.getState().modelId;
       const uid = useBimStore.getState().userId;
       if (!mid) return;
+      const clientOpId = `web-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+      rememberLocalClientOp(clientOpId);
       try {
-        const r = await applyCommand(mid, cmd, { userId: uid });
+        const r = await applyCommand(mid, cmd, { userId: uid, clientOpId });
         if (r.revision !== undefined) {
-          hydrateFromSnapshot({
-            modelId: mid,
-            revision: r.revision,
-            elements: r.elements ?? {},
-            violations: (r.violations ?? []) as Violation[],
-          });
+          if (r.delta) {
+            useBimStore.getState().applyDelta(r.delta as ModelDelta);
+          } else {
+            hydrateFromSnapshot({
+              modelId: mid,
+              revision: r.revision,
+              elements: r.elements ?? {},
+              violations: (r.violations ?? []) as Violation[],
+            });
+          }
           syncLastLevelElevationPropagationFromApplyResponse(
             r as Parameters<typeof syncLastLevelElevationPropagationFromApplyResponse>[0],
           );
@@ -946,6 +952,16 @@ export function Workspace(): JSX.Element {
         const tag = target.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
         if (target.isContentEditable) return;
+      }
+      if (
+        event.key === 'Escape' &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        !event.shiftKey
+      ) {
+        // UX: Escape always returns authoring to the default Select cursor.
+        setPlanTool('select');
       }
       const fromMode = modeForHotkey(event.key);
       if (fromMode) {

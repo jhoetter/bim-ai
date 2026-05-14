@@ -163,4 +163,65 @@ describe('<Workspace /> — semantic command wiring (T-01)', () => {
       expect(useBimStore.getState().revision).toBe(12);
     });
   });
+
+  it('applies response deltas without replacing unchanged element references', async () => {
+    const existingWall = {
+      kind: 'wall',
+      id: 'wall-existing',
+      name: 'wall-existing',
+      levelId: 'l0',
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 1000, yMm: 0 },
+      thicknessMm: 200,
+      heightMm: 2800,
+    };
+    useBimStore.setState({
+      revision: 1,
+      elementsById: { 'wall-existing': existingWall } as never,
+    });
+    mockApplyCommand.mockResolvedValue({
+      revision: 2,
+      delta: {
+        revision: 2,
+        elements: {
+          'wall-new': {
+            kind: 'wall',
+            id: 'wall-new',
+            name: 'wall-new',
+            levelId: 'l0',
+            start: { xMm: 0, yMm: 1000 },
+            end: { xMm: 1000, yMm: 1000 },
+            thicknessMm: 200,
+            heightMm: 2800,
+          },
+        },
+        violations: [],
+        removedIds: [],
+        clientOpId: 'local-test-op',
+      },
+      elements: {},
+      violations: [],
+    });
+    render(
+      <MemoryRouter initialEntries={['/redesign']}>
+        <Workspace />
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(planCanvasProps.current).not.toBeNull());
+    planCanvasProps.current?.onSemanticCommand({ type: 'createWall' });
+    await waitFor(() => {
+      const state = useBimStore.getState();
+      expect(state.revision).toBe(2);
+      expect(state.elementsById['wall-new']).toBeDefined();
+      expect(state.elementsById['wall-existing']).toBe(existingWall);
+    });
+    expect(mockApplyCommand).toHaveBeenCalledWith(
+      'test-model',
+      expect.objectContaining({ type: 'createWall' }),
+      expect.objectContaining({
+        userId: 'user-1',
+        clientOpId: expect.stringMatching(/^web-/),
+      }),
+    );
+  });
 });
