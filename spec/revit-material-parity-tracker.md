@@ -53,7 +53,7 @@ The current repo has strong foundations but incomplete parity:
 | WP | Title | Status | Priority | Primary Outcome |
 | --- | --- | --- | --- | --- |
 | RMP-01 | Material Authority And Coverage Audit | Done | P0 | Every element reports its effective material source and unresolved/missing gaps. |
-| RMP-02 | Typed Host Source Of Truth | In Progress | P0 | Walls/floors/roofs consistently render, display, assign, schedule, and export exposed type layers. |
+| RMP-02 | Typed Host Source Of Truth | Done | P0 | Walls/floors/roofs consistently render, display, assign, schedule, and export exposed type layers. |
 | RMP-03 | Opening And Host Cut Visual Correctness | Open | P0 | Windows/doors/openings show real holes, glass remains transparent, and no wall skin fills the pane. |
 | RMP-04 | Procedural Appearance Calibration | Open | P0 | Common materials look credible in Realistic without external maps. |
 | RMP-05 | Subcomponent Material Model | In Progress | P0 | Doors/windows/stairs/railings/families expose frame, panel, glass, tread, rail, baluster, hardware material slots. |
@@ -131,7 +131,7 @@ Evidence:
 
 Priority: `P0`
 
-Status: `In Progress`
+Status: `Done`
 
 Problem:
 
@@ -173,9 +173,15 @@ Evidence:
   - roof mass top materials,
   - roof standing seam material.
 - Removed remaining direct `wall.materialKey` / `roof.materialKey` render lookups from `meshBuilders.ts`.
+- Kernel material assembly resolution now reports the effective exposed material key, display label, source, and face for wall/floor/roof audit rows.
+- Untyped wall and roof fallbacks now preserve instance material keys in assembly resolution instead of presenting an empty layer material.
+- Floor and roof schedules now include top/exposed `materialKey`, `materialDisplay`, material contract fields, and `effectiveMaterialSource`.
+- Material display labels now fall back to the MAT-01 material catalog, so schedule/export readouts can label registry materials outside the type seed subset.
 - Verification:
   - `pnpm --filter @bim-ai/web exec vitest run src/viewport/effectiveHostMaterials.test.ts src/viewport/materialCoverageAudit.test.ts src/viewport/meshBuilders.standingSeam.test.ts src/viewport/meshBuilders.layeredWall.test.ts src/viewport/meshBuilders.faceOverrides.test.ts src/viewport/csgWallMaterial.test.ts`
   - `pnpm --filter @bim-ai/web typecheck`
+  - `PYTEST_ADDOPTS=--no-cov pytest -q app/tests/test_material_assembly_schedule.py app/tests/test_update_element_property_door_material.py`
+  - `python -m ruff check app/bim_ai/material_assembly_resolve.py app/bim_ai/schedule_derivation.py app/bim_ai/schedule_field_registry.py app/bim_ai/type_material_registry.py app/tests/test_material_assembly_schedule.py app/bim_ai/engine_dispatch_properties.py app/tests/test_update_element_property_door_material.py`
 
 ## RMP-03 — Opening And Host Cut Visual Correctness
 

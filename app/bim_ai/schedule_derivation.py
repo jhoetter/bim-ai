@@ -130,6 +130,16 @@ def _material_contract_fields(doc: Document, material_key: str | None) -> dict[s
     }
 
 
+def _primary_exposed_layer_material_key(layers: list[dict[str, Any]]) -> str:
+    for layer in layers:
+        if str(layer.get("function") or "") == "air":
+            continue
+        key = str(layer.get("materialKey") or "").strip()
+        if key:
+            return key
+    return ""
+
+
 def _plan_view_id_to_owning_sheet(doc: Document) -> dict[str, tuple[str, str]]:
     """Map plan_view id -> (sheet_id, sheet_name); first sheet wins by sorted sheet id."""
 
@@ -691,6 +701,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     if flayers
                     else round(float(e.thickness_mm), 3)
                 )
+                primary_material_key = _primary_exposed_layer_material_key(flayers)
                 rows.append(
                     {
                         "elementId": e.id,
@@ -701,6 +712,14 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "typeName": _floor_type_name(doc, ftid or None),
                         "thicknessMm": round(float(e.thickness_mm), 3),
                         "materialAssemblyLayers": len(flayers),
+                        "materialKey": primary_material_key,
+                        "materialDisplay": material_display_label(
+                            doc, primary_material_key or None
+                        ),
+                        "effectiveMaterialSource": "type-layer"
+                        if ftid and primary_material_key
+                        else "category-fallback",
+                        **_material_contract_fields(doc, primary_material_key or None),
                         "totalThicknessMm": total_thk,
                         "areaM2": round(area, 3),
                         "perimeterM": round(perimeter, 3),
@@ -726,6 +745,12 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 )
                 rtid = (e.roof_type_id or "").strip()
                 slope = round(float(e.slope_deg or 0.0), 3)
+                primary_material_key = _primary_exposed_layer_material_key(rlayers)
+                effective_material_source = (
+                    "type-layer"
+                    if rtid and primary_material_key
+                    else ("instance" if primary_material_key else "category-fallback")
+                )
                 row_root: dict[str, Any] = {
                     "elementId": e.id,
                     "name": e.name,
@@ -734,6 +759,10 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     "roofTypeId": rtid,
                     "typeName": _roof_type_name(doc, rtid or None),
                     "materialAssemblyLayers": len(rlayers),
+                    "materialKey": primary_material_key,
+                    "materialDisplay": material_display_label(doc, primary_material_key or None),
+                    "effectiveMaterialSource": effective_material_source,
+                    **_material_contract_fields(doc, primary_material_key or None),
                     "overhangMm": round(float(e.overhang_mm or 0.0), 3),
                     "slopeDeg": slope,
                     "pitchDeg": slope,
