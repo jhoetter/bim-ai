@@ -949,9 +949,11 @@ Schedule views exist. CSV export of schedule data is Not Started (no export butt
 **Status: Not Started — P2**
 DWG export is not implemented.
 
-#### 12.4.3 Exportieren nach CAD (DWG/DXF/DGN export)
-**Status: Not Started — P1**
+#### 12.4.3 Exportieren nach CAD (DWG/DXF/DGN export) + IFC Export
+**Status: Partial — P1**
 No DWG, DXF, or DGN export. This is a significant gap for handing off to consultants who require CAD format.
+
+IFC 2x3 export (E1): Implemented as a pure-TypeScript ISO 10303-21 STEP writer at `packages/web/src/export/ifcExporter.ts`. Exports `IFCPROJECT`, `IFCSITE`, `IFCBUILDING`, `IFCBUILDINGSTOREY` hierarchy plus `IFCWALLSTANDARDCASE`, `IFCDOOR`, `IFCWINDOW`, `IFCOPENINGELEMENT`, `IFCRELVOIDSELEMENT`, `IFCSLAB` (FLOOR/ROOF), and `IFCSPACE`. No WASM dependency. Tested via `ifcExporter.test.ts` (3 passing tests).
 
 #### 12.4.4 Revit-Modell in Inventor verwenden (Revit → Inventor workflow)
 **Status: N/A**
@@ -1120,7 +1122,7 @@ cheatsheetData.ts and CheatsheetModal.tsx provide a keyboard shortcut reference 
 - Free text annotation tool (Ch. 4.10)
 - Angular / radial dimensions (Ch. 4.4–4.5)
 - Spot elevation annotation (Ch. 4.7)
-- IFC export (Ch. 12.4.3)
+- IFC export (Ch. 12.4.3) — IFC 2x3 STEP writer implemented (E1, `export/ifcExporter.ts`); UI trigger not yet wired
 - DWG/DXF export (Ch. 12.4.3)
 - Curtain wall authoring UI (Ch. 8.1.4)
 - Global parameters (Ch. 3.8)
