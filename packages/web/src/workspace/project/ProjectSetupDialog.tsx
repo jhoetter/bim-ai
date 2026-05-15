@@ -705,27 +705,36 @@ export function ProjectSetupDialog({
       daylightSavingStrategy: sunDraft.daylightSavingStrategy,
     };
     const sid = projectSettings?.id ?? 'project_settings';
-    await runCommands(
-      [
-        sunSettings
-          ? { type: 'updateSunSettings', ...payload }
-          : { type: 'createSunSettings', id: 'sun_settings', ...payload },
-        {
-          type: 'updateElementProperty',
-          elementId: sid,
-          key: 'georeference',
-          value: {
-            anchorLat: latitude,
-            anchorLon: longitude,
-            bboxNorth,
-            bboxSouth,
-            bboxEast,
-            bboxWest,
-          },
+    const commands: Record<string, unknown>[] = [];
+    // Ensure project_settings element exists before setting georeference on it.
+    if (!projectSettings) {
+      commands.push({
+        type: 'upsertProjectSettings',
+        id: sid,
+        lengthUnit: 'millimeter',
+        angularUnitDeg: 'degree',
+        displayLocale: 'en-US',
+      });
+    }
+    commands.push(
+      sunSettings
+        ? { type: 'updateSunSettings', ...payload }
+        : { type: 'createSunSettings', id: 'sun_settings', ...payload },
+      {
+        type: 'updateElementProperty',
+        elementId: sid,
+        key: 'georeference',
+        value: {
+          anchorLat: latitude,
+          anchorLon: longitude,
+          bboxNorth,
+          bboxSouth,
+          bboxEast,
+          bboxWest,
         },
-      ],
-      'Location and sun settings updated.',
+      },
     );
+    await runCommands(commands, 'Location and sun settings updated.');
   }
 
   async function createDefaultPhases() {
