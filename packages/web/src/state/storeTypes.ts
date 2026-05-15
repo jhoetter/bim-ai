@@ -85,6 +85,9 @@ export type PlanTool =
   | 'component'
   | 'move'
   | 'rotate'
+  | 'scale'
+  | 'array'
+  | 'place-group'
   | 'section';
 
 export type PresencePeers = Record<

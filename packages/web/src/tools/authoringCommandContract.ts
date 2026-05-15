@@ -483,6 +483,33 @@ export const AUTHORING_COMMAND_CONTRACTS = {
     'select-after-commit',
     ['has-selection'],
   ),
+  scale: contract(
+    'scale',
+    'modify',
+    ['plan'],
+    'Origin point then numeric factor or two-click reference/target distance preview.',
+    'select-after-commit',
+    ['has-selection'],
+    ['factor', 'mode'],
+  ),
+  array: contract(
+    'array',
+    'modify',
+    ['plan'],
+    'Linear or radial array preview showing ghost copies before commit.',
+    'select-after-commit',
+    ['has-selection'],
+    ['count', 'mode', 'spacing', 'angle'],
+  ),
+  'place-group': contract(
+    'place-group',
+    'point',
+    ['plan'],
+    'Group instance placement preview at cursor position.',
+    'select-after-commit',
+    ['group-definition-selected'],
+    ['definition', 'rotation'],
+  ),
 } satisfies Record<ToolId, AuthoringCommandContract>;
 
 export function getAuthoringCommandContract(toolId: ToolId): AuthoringCommandContract {

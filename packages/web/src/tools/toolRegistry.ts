@@ -69,7 +69,21 @@ export type ToolId =
   | 'component'
   | 'copy'
   | 'rotate'
-  | 'move';
+  | 'move'
+  | 'scale'
+  | 'array'
+  | 'place-group'
+  | 'text'
+  | 'leader-text'
+  | 'angular-dimension'
+  | 'radial-dimension'
+  | 'diameter-dimension'
+  | 'arc-length-dimension'
+  | 'spot-elevation'
+  | 'spot-coordinate'
+  | 'slope-annotation'
+  | 'material-tag'
+  | 'north-arrow';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
 export const MODIFY_TOOL_IDS = new Set<ToolId>([
@@ -82,6 +96,9 @@ export const MODIFY_TOOL_IDS = new Set<ToolId>([
   'copy',
   'move',
   'rotate',
+  'scale',
+  'array',
+  'place-group',
   'wall-join',
 ]);
 
@@ -296,7 +313,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       id: 'area-boundary',
       label: t('tools.areaBoundary.label'),
       icon: 'detailLine',
-      hotkey: 'AR',
+      hotkey: 'AB',
       modes: ['plan'],
       tooltip: t('tools.areaBoundary.tooltip'),
     },
@@ -514,6 +531,34 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan'],
       tooltip: 'Rotate selected element(s) around a center point (two-click)',
     },
+    scale: {
+      id: 'scale',
+      label: 'Scale',
+      icon: 'scale',
+      hotkey: 'RE',
+      shortcut: 'RE',
+      modes: ['plan'],
+      tooltip:
+        'Scale selected element(s) about an origin point — numeric factor or two-click reference',
+    },
+    array: {
+      id: 'array',
+      label: 'Array',
+      icon: 'copy',
+      hotkey: 'AR',
+      shortcut: 'AR',
+      modes: ['plan'],
+      tooltip: 'Create linear or radial array copies of selected element(s)',
+    },
+    'place-group': {
+      id: 'place-group',
+      label: 'Place Group',
+      icon: 'tag',
+      hotkey: 'PG',
+      shortcut: 'PG',
+      modes: ['plan'],
+      tooltip: 'Place an instance of a defined model group',
+    },
     toposolid_subdivision: {
       id: 'toposolid_subdivision',
       label: 'Subdivide Toposolid',
@@ -522,6 +567,107 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       shortcut: 'TS',
       modes: ['plan'],
       tooltip: 'Paint a finish-category subdivision region on a toposolid (T → S).',
+    },
+    text: {
+      id: 'text',
+      label: 'Text',
+      icon: 'text',
+      hotkey: 'TX',
+      shortcut: 'TX',
+      modes: ['plan', 'section'],
+      tooltip:
+        'Place a free-standing text annotation. Click to place, type text, Enter to confirm.',
+    },
+    'leader-text': {
+      id: 'leader-text',
+      label: 'Leader Text',
+      icon: 'annotation',
+      hotkey: 'LT',
+      shortcut: 'LT',
+      modes: ['plan', 'section'],
+      tooltip:
+        'Place leader text (callout). Click anchor, optional elbow point, then text placement.',
+    },
+    'angular-dimension': {
+      id: 'angular-dimension',
+      label: 'Angular Dimension',
+      icon: 'dimension',
+      hotkey: 'AD',
+      shortcut: 'AD',
+      modes: ['plan', 'section'],
+      tooltip: 'Measure angle between two lines. Click line 1, click line 2, place label arc.',
+    },
+    'radial-dimension': {
+      id: 'radial-dimension',
+      label: 'Radial Dimension',
+      icon: 'dimension',
+      hotkey: 'RD',
+      shortcut: 'RD',
+      modes: ['plan', 'section'],
+      tooltip: 'Measure radius of an arc or circle edge. Displays "R 2450".',
+    },
+    'diameter-dimension': {
+      id: 'diameter-dimension',
+      label: 'Diameter Dimension',
+      icon: 'dimension',
+      hotkey: 'DD',
+      shortcut: 'DD',
+      modes: ['plan', 'section'],
+      tooltip: 'Measure diameter of an arc or circle edge. Displays "⌀ 4900".',
+    },
+    'arc-length-dimension': {
+      id: 'arc-length-dimension',
+      label: 'Arc Length',
+      icon: 'dimension',
+      hotkey: 'ALD',
+      shortcut: 'ALD',
+      modes: ['plan', 'section'],
+      tooltip: 'Measure arc length along a curved edge.',
+    },
+    'spot-elevation': {
+      id: 'spot-elevation',
+      label: 'Spot Elevation',
+      icon: 'measure',
+      hotkey: 'SE',
+      shortcut: 'SE',
+      modes: ['plan', 'section'],
+      tooltip: 'Place a spot elevation marker showing the Z-height of a floor or slab point.',
+    },
+    'spot-coordinate': {
+      id: 'spot-coordinate',
+      label: 'Spot Coordinate',
+      icon: 'measure',
+      hotkey: 'SP',
+      shortcut: 'SP',
+      modes: ['plan'],
+      tooltip: 'Place a spot coordinate annotation showing X/Y world coordinates.',
+    },
+    'slope-annotation': {
+      id: 'slope-annotation',
+      label: 'Slope Annotation',
+      icon: 'measure',
+      hotkey: 'SL',
+      shortcut: 'SL',
+      modes: ['plan'],
+      tooltip: 'Annotate a slope between two points. Shows rise/run ratio and percentage.',
+    },
+    'material-tag': {
+      id: 'material-tag',
+      label: 'Material Tag',
+      icon: 'material',
+      hotkey: 'MT',
+      shortcut: 'MT',
+      modes: ['plan', 'section'],
+      tooltip: 'Tag a wall face to display its material layer name.',
+    },
+    'north-arrow': {
+      id: 'north-arrow',
+      label: 'North Arrow',
+      icon: 'detailLine',
+      hotkey: 'NA',
+      shortcut: 'NA',
+      modes: ['plan', 'sheet'],
+      tooltip: 'Place a north arrow annotation symbol on a plan view or sheet.',
     },
   };
 }
@@ -571,6 +717,9 @@ const PALETTE_ORDER: ToolId[] = [
   'copy',
   'move',
   'rotate',
+  'scale',
+  'array',
+  'place-group',
   'wall-join',
   'wall-opening',
   'shaft',
