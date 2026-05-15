@@ -3,11 +3,14 @@
   "checkpoint_id": "6373f698f01f",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 4,
+  "checkpoints_count": 8,
   "files_touched": [
     "app/bim_ai/constraints_evaluation.py",
     "app/tests/test_top_v3_01.py",
     "packages/cli/cli.initiationCheck.test.mjs",
+    "seed-artifacts/target-house-4/bundle.json",
+    "seed-artifacts/target-house-4/evidence/phase-final/browser-evidence.json",
+    "seed-artifacts/target-house-4/evidence/phase-final/browser-full.png",
     "seed-artifacts/target-house-4/evidence/status.md",
     "seed-artifacts/target-house-4/evidence/target-house-4.recipe.json",
     "seed-artifacts/target-house-4/manifest.json",
@@ -55,13 +58,19 @@
       "transcript": "/63/73f698f01f/6/full.jsonl",
       "content_hash": "/63/73f698f01f/6/content_hash.txt",
       "prompt": "/63/73f698f01f/6/prompt.txt"
+    },
+    {
+      "metadata": "/63/73f698f01f/7/metadata.json",
+      "transcript": "/63/73f698f01f/7/full.jsonl",
+      "content_hash": "/63/73f698f01f/7/content_hash.txt",
+      "prompt": "/63/73f698f01f/7/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 11326412,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 237599488,
-    "output_tokens": 618166,
-    "api_call_count": 2920
+    "input_tokens": 11327745,
+    "cache_creation_tokens": 255477,
+    "cache_read_tokens": 249004162,
+    "output_tokens": 671225,
+    "api_call_count": 3035
   }
 }
