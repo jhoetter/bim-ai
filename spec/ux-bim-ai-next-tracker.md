@@ -1959,7 +1959,7 @@ Revit behavior to emulate where it maps cleanly:
 ### WP-NEXT-43 — Floor Sketch Lifecycle And Floor-As-Host Semantics
 
 - Priority: `P0`
-- Status: `Open`
+- Status: `Partial`
 - Covers: `NEXT22-GAP-005`, `NEXT22-GAP-013`, `NEXT22-GAP-014`, `NEXT22-GAP-016`
 - Goal: make floors a trustworthy structural base for walls, rooms, shafts, ceilings, and roofs.
 - Revit-like behavior to emulate:
@@ -1979,6 +1979,12 @@ Revit behavior to emulate where it maps cleanly:
   - seeded proof creates a floor from drawn boundary and from picked walls;
   - floor remains selected after commit with edit-boundary action available;
   - Cmd+K can start floor sketch and reports disabled reason in invalid view types.
+- Evidence 2026-05-14:
+  - `packages/web/src/workspace/workspaceUtils.ts` now centralizes structural tool routing: generic `floor`/`roof` resolve to `floor-sketch`/`roof-sketch` in plan and non-3D bridge contexts, while remaining direct `floor`/`roof` authoring tools in 3D.
+  - Plan Sketch ribbon buttons now use the canonical sketch tool ids with the existing visible `Floor`/`Roof` labels, so clicking Floor/Roof opens the explicit sketch lifecycle instead of the old ambiguous plan tool. The Workspace hotkey path and Cmd+K `tool.floor`/`tool.roof` path use the same routing.
+  - Floor sketch mode now keeps floor type and boundary-offset options visible in `OptionsBar`, and floor/roof tool metadata no longer requires an existing wall before a sketch can start. MEP lens gating was extended to `tool.floor-sketch` and `tool.roof-sketch`.
+  - Tests cover Cmd+K routing, plan ribbon routing and active state, Workspace plan hotkey/ribbon routing, 3D direct Floor/Roof preservation, floor sketch options visibility, capability preconditions, MEP lens gating, and existing Cmd/Ctrl+R browser-shortcut preservation.
+  - Remaining before `Done`: seeded screenshots and UI proof for drawn-boundary floor creation, picked-wall floor creation, invalid-loop Finish disabled reasons, overlap/duplicate validation, post-commit floor selection, and edit-boundary action.
 - Dependencies: `WP-NEXT-40`, `WP-NEXT-41`.
 
 ### WP-NEXT-44 — Generate Walls From Floors, Rooms, And Picked Boundaries

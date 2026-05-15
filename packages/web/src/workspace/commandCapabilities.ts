@@ -194,7 +194,9 @@ const LENS_DISABLED_COMMANDS: Record<
       'tool.door',
       'tool.window',
       'tool.floor',
+      'tool.floor-sketch',
       'tool.roof',
+      'tool.roof-sketch',
       'tool.room',
       'tool.area',
       'tool.stair',
@@ -366,8 +368,6 @@ function preconditionsForTool(toolId: ToolId): string[] {
   switch (toolId) {
     case 'door':
     case 'window':
-    case 'floor':
-    case 'roof':
     case 'dimension':
       return ['has-wall'];
     case 'railing':

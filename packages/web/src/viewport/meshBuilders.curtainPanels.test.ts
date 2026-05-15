@@ -113,8 +113,10 @@ describe('KRN-09 — kind: system', () => {
     expect(pane!.userData.curtainPanelMaterialKey).toBe('cladding_warm_wood');
     const mat = pane!.material as THREE.MeshStandardMaterial;
     expect(mat).toBeInstanceOf(THREE.MeshStandardMaterial);
-    // cladding_warm_wood baseColor #a87a44
-    expect(`#${mat.color.getHexString()}`).toBe('#a87a44');
+    expect(mat.userData.materialKey).toBe('cladding_warm_wood');
+    // Procedural albedo now carries the base color; material.color remains white to avoid double tinting.
+    expect(mat.map).toBeTruthy();
+    expect(`#${mat.color.getHexString()}`).toBe('#ffffff');
   });
 
   it('falls back to glass when system override has no materialKey', () => {
@@ -160,8 +162,10 @@ describe('KRN-09 — kind: family_instance', () => {
     expect(pane!.userData.curtainPanelFamilyTypeId).toBe('ft-slat-screen-v1');
     const mat = pane!.material as THREE.MeshStandardMaterial;
     expect(mat).toBeInstanceOf(THREE.MeshStandardMaterial);
-    // placeholder_unloaded = #ff66cc
-    expect(`#${mat.color.getHexString()}`).toBe('#ff66cc');
+    expect(mat.userData.materialKey).toBe('placeholder_unloaded');
+    // Procedural albedo now carries the placeholder magenta; material.color stays white.
+    expect(mat.map).toBeTruthy();
+    expect(`#${mat.color.getHexString()}`).toBe('#ffffff');
   });
 
   it('renders the resolved FAM-01 family geometry when the family has authored geometry', () => {

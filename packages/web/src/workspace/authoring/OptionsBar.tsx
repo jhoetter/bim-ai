@@ -207,7 +207,7 @@ export function OptionsBar({
     );
   }
 
-  if (planTool === 'floor') {
+  if (planTool === 'floor' || planTool === 'floor-sketch') {
     return (
       <div data-testid="options-bar" className={BAR_CLASS}>
         <label className="flex items-center gap-2">

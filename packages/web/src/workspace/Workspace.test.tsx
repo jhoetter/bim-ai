@@ -280,6 +280,37 @@ describe('<Workspace /> — smoke', () => {
     expect(button.getAttribute('aria-pressed')).toBe('true');
   });
 
+  it('routes plan Floor/Roof ribbon and hotkeys to sketch mode while keeping 3D direct tools', () => {
+    seedTabs('plan');
+    const rendered = renderWithProviders(<Workspace />);
+    const { getByTestId, unmount } = rendered;
+
+    fireEvent.click(getByTestId('ribbon-tab-sketch'));
+    fireEvent.click(getByTestId('ribbon-command-floor'));
+    expect(useBimStore.getState().planTool).toBe('floor-sketch');
+    expect(getByTestId('stub-plan-canvas').getAttribute('data-active-plan-tool')).toBe(
+      'floor-sketch',
+    );
+    expect(getByTestId('ribbon-command-floor').getAttribute('aria-pressed')).toBe('true');
+
+    fireEvent.click(getByTestId('ribbon-command-roof'));
+    expect(useBimStore.getState().planTool).toBe('roof-sketch');
+
+    useBimStore.getState().setPlanTool('select');
+    vi.useFakeTimers();
+    try {
+      fireEvent.keyDown(document, { key: 'f' });
+      act(() => {
+        vi.advanceTimersByTime(450);
+      });
+      expect(useBimStore.getState().planTool).toBe('floor-sketch');
+    } finally {
+      vi.useRealTimers();
+    }
+
+    unmount();
+  });
+
   it('resets to Select on Escape as the global default authoring mode', () => {
     seedTabs('3d');
     const { getByTestId } = renderWithProviders(<Workspace />);
@@ -883,6 +914,10 @@ describe('<Workspace /> — smoke', () => {
     fireEvent.click(getByTestId('ribbon-command-wall'));
     expect(getByTestId('ribbon-mode-identity').textContent).toContain('3D');
     expect(getByTestId('ribbon-command-wall').getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(getByTestId('ribbon-command-floor'));
+    expect(useBimStore.getState().planTool).toBe('floor');
+    fireEvent.click(getByTestId('ribbon-command-roof'));
+    expect(useBimStore.getState().planTool).toBe('roof');
   });
 
   it('uses explicit secondary sidebar adapters for every view type — UX-WP-04', () => {

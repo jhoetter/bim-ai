@@ -244,6 +244,8 @@ describe('command capability graph', () => {
     if (mepWall?.state === 'disabled') {
       expect(mepWall.reason).toContain('MEP lens');
     }
+    expect(evaluateCommandInMode('tool.floor-sketch', 'plan', 'mep')?.state).toBe('disabled');
+    expect(evaluateCommandInMode('tool.roof-sketch', 'plan', 'mep')?.state).toBe('disabled');
 
     const coordinationWall = evaluateCommandInMode('tool.wall', 'plan', 'coordination');
     expect(coordinationWall?.state).toBe('disabled');
@@ -369,6 +371,8 @@ describe('command capability graph', () => {
     ]);
     expect(getCommandCapability('tool.wall')?.surfaces).toEqual(['ribbon', 'cmd-k']);
     expect(getCommandCapability('tool.door')?.preconditions).toContain('has-wall');
+    expect(getCommandCapability('tool.floor')?.preconditions).not.toContain('has-wall');
+    expect(getCommandCapability('tool.floor-sketch')?.preconditions).not.toContain('has-wall');
     expect(getCommandCapability('tool.dimension')?.surfaces).toEqual(['ribbon', 'cmd-k']);
     expect(getCommandCapability('view.3d.sun-settings')?.surfaces).toEqual([
       'cmd-k',

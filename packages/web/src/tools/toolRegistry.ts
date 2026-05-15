@@ -604,7 +604,6 @@ export function isToolDisabled(
 ): { disabled: boolean; reason?: string } {
   switch (toolId) {
     case 'floor':
-      if (!ctx.hasAnyWall) return { disabled: true, reason: t('tools.disabled.drawWallFirst') };
       return { disabled: false };
     case 'floor-sketch':
       // Sketch mode authors a floor from a boundary loop; it does not depend on walls.
@@ -614,7 +613,6 @@ export function isToolDisabled(
       // Sketch mode draws into a free space; no element preconditions.
       return { disabled: false };
     case 'roof':
-      if (!ctx.hasAnyWall) return { disabled: true, reason: t('tools.disabled.drawWallFirst') };
       return { disabled: false };
     case 'railing':
       if (!ctx.hasAnyFloor && !ctx.hasAnyWall) {

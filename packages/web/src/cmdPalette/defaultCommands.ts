@@ -8,6 +8,14 @@ function is3dContext(ctx: PaletteContext): boolean {
   return ctx.activeMode === '3d';
 }
 
+function structuralSketchToolForContext(
+  ctx: PaletteContext,
+  direct3dTool: Extract<PlanTool, 'floor' | 'roof'>,
+  sketchTool: Extract<PlanTool, 'floor-sketch' | 'roof-sketch'>,
+): PlanTool {
+  return is3dContext(ctx) ? direct3dTool : sketchTool;
+}
+
 function startPlanTool(ctx: PaletteContext, toolId: PlanTool): void {
   if (ctx.startPlanTool) {
     ctx.startPlanTool(toolId);
@@ -161,7 +169,7 @@ registerCommand({
   label: 'Place Floor',
   keywords: ['floor', 'slab'],
   category: 'command',
-  invoke: (ctx) => startPlanTool(ctx, 'floor'),
+  invoke: (ctx) => startPlanTool(ctx, structuralSketchToolForContext(ctx, 'floor', 'floor-sketch')),
 });
 
 registerCommand({
@@ -655,7 +663,7 @@ registerCommand({
   label: 'Sketch Roof',
   keywords: ['roof', 'roofing', 'sketch'],
   category: 'command',
-  invoke: (ctx) => startPlanTool(ctx, 'roof-sketch'),
+  invoke: (ctx) => startPlanTool(ctx, structuralSketchToolForContext(ctx, 'roof', 'roof-sketch')),
 });
 
 registerCommand({

@@ -34,7 +34,11 @@ import { makeLayeredWallMesh } from './meshBuilders.layeredWall';
 import { makeMultiRunStairMesh } from './meshBuilders.multiRunStair';
 import { localPlanOffsetToWorld, yawForPlanSegment } from './planSegmentOrientation';
 import { resolveWindowCutDimensions } from './hostedOpeningDimensions';
-import { wallWith3dJoinDisallowGaps } from './wallJoinDisplay';
+import {
+  wall3dCleanupFootprintMm,
+  wall3dXJoinCleanupFootprintsMm,
+  wallWith3dJoinDisallowGaps,
+} from './wallJoinDisplay';
 import {
   effectiveWallBaseMaterialKey,
   effectiveFloorTopMaterialKey,
@@ -2585,6 +2589,47 @@ export function makeWallMesh(
           return materials;
         })()
       : baseMaterial;
+
+  const makeCleanupMesh = (
+    cleanupFootprint: Array<{ xMm: number; yMm: number }>,
+    cleanupKind: 'endpoint-t' | 'x',
+  ): THREE.Mesh => {
+    const first = cleanupFootprint[0]!;
+    const shape = new THREE.Shape();
+    shape.moveTo(first.xMm / 1000, -first.yMm / 1000);
+    for (let i = 1; i < cleanupFootprint.length; i += 1) {
+      const point = cleanupFootprint[i]!;
+      shape.lineTo(point.xMm / 1000, -point.yMm / 1000);
+    }
+    shape.closePath();
+
+    const geom = new THREE.ExtrudeGeometry(shape, { depth: height, bevelEnabled: false });
+    geom.rotateX(-Math.PI / 2);
+    const cleanupMesh = new THREE.Mesh(geom, wallMaterial);
+    cleanupMesh.position.set(0, yBase, 0);
+    cleanupMesh.userData.bimPickId = displayWall.id;
+    cleanupMesh.userData.faceMaterialOverrides = displayWall.faceMaterialOverrides ?? null;
+    cleanupMesh.userData.wallJoinCleanup = cleanupKind;
+    addEdges(cleanupMesh);
+    return cleanupMesh;
+  };
+
+  const xCleanupFootprints = wall3dXJoinCleanupFootprintsMm(displayWall, elementsById);
+  if (xCleanupFootprints) {
+    const group = new THREE.Group();
+    group.userData.bimPickId = displayWall.id;
+    group.userData.wallJoinCleanup = 'x';
+    for (const footprint of xCleanupFootprints) {
+      if (footprint.length < 3) continue;
+      group.add(makeCleanupMesh(footprint, 'x'));
+    }
+    return group;
+  }
+
+  const cleanupFootprint = wall3dCleanupFootprintMm(displayWall, elementsById);
+  if (cleanupFootprint) {
+    return makeCleanupMesh(cleanupFootprint, 'endpoint-t');
+  }
 
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(len, height, thick), wallMaterial);
   mesh.position.set(sx + dx / 2 + wallOffset.xM, yBase + height / 2, sz + dz / 2 + wallOffset.zM);

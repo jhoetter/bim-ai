@@ -90,6 +90,20 @@ describe('default Cmd+K commands', () => {
     }
   });
 
+  it('routes generic structural Floor/Roof commands to plan sketches but keeps 3D direct tools', () => {
+    const startPlanTool = vi.fn();
+
+    command('tool.floor').invoke({ ...PLAN_CTX, startPlanTool });
+    expect(startPlanTool).toHaveBeenLastCalledWith('floor-sketch');
+    command('tool.roof').invoke({ ...PLAN_CTX, startPlanTool });
+    expect(startPlanTool).toHaveBeenLastCalledWith('roof-sketch');
+
+    command('tool.floor').invoke({ ...THREE_D_CTX, startPlanTool });
+    expect(startPlanTool).toHaveBeenLastCalledWith('floor');
+    command('tool.roof').invoke({ ...THREE_D_CTX, startPlanTool });
+    expect(startPlanTool).toHaveBeenLastCalledWith('roof');
+  });
+
   it('scopes 3D view commands to active 3D contexts', () => {
     const planEntry = queryPalette('fit model', PLAN_CTX, {}).find(
       (entry) => entry.id === 'view.3d.fit',

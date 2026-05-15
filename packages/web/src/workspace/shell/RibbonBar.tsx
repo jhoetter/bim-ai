@@ -1011,7 +1011,10 @@ function buildPlanRibbonTabs(
         {
           id: 'sketch',
           label: 'Sketch',
-          commands: [tool('floor', 'Floor', 'floor'), tool('roof', 'Roof', 'roof')],
+          commands: [
+            tool('floor-sketch', 'Floor', 'floor', 'ribbon-command-floor'),
+            tool('roof-sketch', 'Roof', 'roof', 'ribbon-command-roof'),
+          ],
         },
         {
           id: 'site',
