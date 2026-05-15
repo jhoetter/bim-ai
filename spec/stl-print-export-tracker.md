@@ -163,7 +163,7 @@ Acceptance:
 
 ### WP-STL-07 - Print-Parity STL Kernel Upgrade
 
-Status: [ ]
+Status: [x]
 
 Deliverables:
 
