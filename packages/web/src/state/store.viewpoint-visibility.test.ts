@@ -131,6 +131,47 @@ describe('coerceElement — viewpoint visibility / coordination', () => {
     }
   });
 
+  it('preserves null 3D viewpoint clip planes instead of coercing them to ground-level clips', () => {
+    const { hydrateFromSnapshot } = useBimStore.getState();
+    hydrateFromSnapshot({
+      modelId: 'm1',
+      revision: 1,
+      elements: {
+        'vp-null-clips': {
+          kind: 'viewpoint',
+          name: 'Unclipped 3D',
+          camera: {},
+          mode: 'orbit_3d',
+          viewerClipCapElevMm: null,
+          viewerClipFloorElevMm: null,
+        },
+        'vp-snake-null-clips': {
+          kind: 'viewpoint',
+          name: 'Snake unclipped 3D',
+          camera: {},
+          mode: 'orbit_3d',
+          viewer_clip_cap_elev_mm: null,
+          viewer_clip_floor_elev_mm: null,
+        },
+      },
+      violations: [],
+    });
+
+    const camel = useBimStore.getState().elementsById['vp-null-clips'];
+    expect(camel?.kind).toBe('viewpoint');
+    if (camel?.kind === 'viewpoint') {
+      expect(camel.viewerClipCapElevMm).toBeNull();
+      expect(camel.viewerClipFloorElevMm).toBeNull();
+    }
+
+    const snake = useBimStore.getState().elementsById['vp-snake-null-clips'];
+    expect(snake?.kind).toBe('viewpoint');
+    if (snake?.kind === 'viewpoint') {
+      expect(snake.viewerClipCapElevMm).toBeNull();
+      expect(snake.viewerClipFloorElevMm).toBeNull();
+    }
+  });
+
   it('parses isolatedElementIds on viewpoint', () => {
     const { hydrateFromSnapshot } = useBimStore.getState();
     hydrateFromSnapshot({

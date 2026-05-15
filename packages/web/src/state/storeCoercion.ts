@@ -611,15 +611,19 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
       mode,
       ...(raw.viewerClipCapElevMm !== undefined || raw.viewer_clip_cap_elev_mm !== undefined
         ? {
-            viewerClipCapElevMm: Number(
-              raw.viewerClipCapElevMm ?? raw.viewer_clip_cap_elev_mm ?? null,
+            viewerClipCapElevMm: finiteNumberOrNull(
+              raw.viewerClipCapElevMm !== undefined
+                ? raw.viewerClipCapElevMm
+                : raw.viewer_clip_cap_elev_mm,
             ),
           }
         : {}),
       ...(raw.viewerClipFloorElevMm !== undefined || raw.viewer_clip_floor_elev_mm !== undefined
         ? {
-            viewerClipFloorElevMm: Number(
-              raw.viewerClipFloorElevMm ?? raw.viewer_clip_floor_elev_mm ?? null,
+            viewerClipFloorElevMm: finiteNumberOrNull(
+              raw.viewerClipFloorElevMm !== undefined
+                ? raw.viewerClipFloorElevMm
+                : raw.viewer_clip_floor_elev_mm,
             ),
           }
         : {}),
