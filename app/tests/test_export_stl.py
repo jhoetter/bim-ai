@@ -15,6 +15,7 @@ from bim_ai.elements import (
     CeilingElem,
     ColumnElem,
     DoorElem,
+    DormerElem,
     FloorElem,
     LevelElem,
     RailingElem,
@@ -293,6 +294,58 @@ def test_stl_wall_honors_datums_location_line_and_hosted_door_cut() -> None:
     assert min(zs) == pytest.approx(1200)
     assert max(zs) == pytest.approx(4800)
     assert {tri.kind for tri in triangles} == {"wall", "door"}
+
+
+def test_stl_roof_uses_wall_top_eave_and_exports_dormer_proxy() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "wall-1": WallElem(
+                kind="wall",
+                id="wall-1",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 6000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=3200,
+            ),
+            "roof-1": RoofElem(
+                kind="roof",
+                id="roof-1",
+                referenceLevelId="lvl",
+                footprintMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 6000, "yMm": 0},
+                    {"xMm": 6000, "yMm": 4000},
+                    {"xMm": 0, "yMm": 4000},
+                ],
+                roofGeometryMode="gable_pitched_rectangle",
+                overhangMm=0,
+                slopeDeg=30,
+            ),
+            "dormer-1": DormerElem(
+                kind="dormer",
+                id="dormer-1",
+                hostRoofId="roof-1",
+                positionOnRoof={"alongRidgeMm": -1200, "acrossRidgeMm": 1200},
+                widthMm=1200,
+                depthMm=900,
+                wallHeightMm=900,
+                dormerRoofKind="shed",
+            ),
+        },
+    )
+
+    triangles = document_to_stl_triangles(doc)
+    roof_vertices = [v for tri in triangles if tri.kind == "roof" for v in tri.vertices]
+    dormer_vertices = [v for tri in triangles if tri.kind == "dormer" for v in tri.vertices]
+    manifest = build_stl_export_manifest(doc)
+
+    assert min(v[2] for v in roof_vertices) == pytest.approx(3200)
+    assert max(v[2] for v in roof_vertices) > 4300
+    assert min(v[2] for v in dormer_vertices) >= 3199.999
+    assert manifest["elementCountsByKind"]["dormer"] == 1
 
 
 def test_empty_document_exports_valid_empty_stl_and_empty_manifest() -> None:

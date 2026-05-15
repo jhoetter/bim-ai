@@ -20,6 +20,7 @@ from bim_ai.elements import (
     CeilingElem,
     ColumnElem,
     DoorElem,
+    DormerElem,
     FloorElem,
     LevelElem,
     MassElem,
@@ -57,6 +58,7 @@ PRINTABLE_SOLID_KINDS = {
     "ceiling",
     "column",
     "door",
+    "dormer",
     "floor",
     "mass",
     "railing",
@@ -554,16 +556,77 @@ def _append_rectangular_gable_roof(
     return True
 
 
+def _roof_eave_z_mm(doc: Document, roof: RoofElem) -> float:
+    ref = _level_elevation_mm(doc, roof.reference_level_id)
+    wall_tops = [
+        ref + float(e.height_mm)
+        for e in doc.elements.values()
+        if isinstance(e, WallElem) and e.level_id == roof.reference_level_id
+    ]
+    return max(wall_tops) if wall_tops else ref
+
+
+def _roof_bounds_mm(roof: RoofElem) -> tuple[float, float, float, float] | None:
+    pts = _poly_points_mm(roof.footprint_mm)
+    if len(pts) < 3:
+        return None
+    ov = _clamp(float(roof.overhang_mm or 0.0), 0.0, 5000.0)
+    xs = [p[0] for p in pts]
+    ys = [p[1] for p in pts]
+    return min(xs) - ov, max(xs) + ov, min(ys) - ov, max(ys) + ov
+
+
+def _roof_ridge_along_x(roof: RoofElem, x0: float, x1: float, y0: float, y1: float) -> bool:
+    ridge_axis = getattr(roof, "ridge_axis", None)
+    if ridge_axis == "x":
+        return True
+    if ridge_axis in {"z", "y"}:
+        return False
+    return (x1 - x0) >= (y1 - y0)
+
+
+def _roof_height_at_point_mm(doc: Document, roof: RoofElem, x_mm: float, y_mm: float) -> float:
+    bounds = _roof_bounds_mm(roof)
+    eave = _roof_eave_z_mm(doc, roof)
+    if bounds is None or roof.roof_geometry_mode == "mass_box":
+        return eave
+    x0, x1, y0, y1 = bounds
+    slope = math.tan(math.radians(_clamp(float(roof.slope_deg or 25.0), 5.0, 70.0)))
+    ridge_along_x = _roof_ridge_along_x(roof, x0, x1, y0, y1)
+    if roof.roof_geometry_mode == "hip":
+        if ridge_along_x:
+            half_span_y = (y1 - y0) / 2.0
+            dy = half_span_y - abs(y_mm - (y0 + y1) / 2.0)
+            rx0 = x0 + half_span_y
+            rx1 = x1 - half_span_y
+            dx = (x1 - x0) / 2.0 - abs(x_mm - (x0 + x1) / 2.0) if rx0 >= rx1 else (
+                x_mm - x0 if x_mm < rx0 else x1 - x_mm if x_mm > rx1 else half_span_y
+            )
+            return eave + max(0.0, min(dx, dy)) * slope
+        half_span_x = (x1 - x0) / 2.0
+        dx = half_span_x - abs(x_mm - (x0 + x1) / 2.0)
+        ry0 = y0 + half_span_x
+        ry1 = y1 - half_span_x
+        dy = (y1 - y0) / 2.0 - abs(y_mm - (y0 + y1) / 2.0) if ry0 >= ry1 else (
+            y_mm - y0 if y_mm < ry0 else y1 - y_mm if y_mm > ry1 else half_span_x
+        )
+        return eave + max(0.0, min(dx, dy)) * slope
+    if ridge_along_x:
+        half_span = (y1 - y0) / 2.0
+        return eave + max(0.0, half_span - abs(y_mm - (y0 + y1) / 2.0)) * slope
+    half_span = (x1 - x0) / 2.0
+    return eave + max(0.0, half_span - abs(x_mm - (x0 + x1) / 2.0)) * slope
+
+
 def _append_roof_print_mesh(doc: Document, triangles: list[StlTriangle], roof: RoofElem) -> None:
     pts = _poly_points_mm(roof.footprint_mm)
     if len(pts) < 3:
         return
-    ov = _clamp(float(roof.overhang_mm or 0.0), 0.0, 5000.0)
-    xs = [p[0] for p in pts]
-    ys = [p[1] for p in pts]
-    x0, x1 = min(xs) - ov, max(xs) + ov
-    y0, y1 = min(ys) - ov, max(ys) + ov
-    base = _level_elevation_mm(doc, roof.reference_level_id)
+    bounds = _roof_bounds_mm(roof)
+    if bounds is None:
+        return
+    x0, x1, y0, y1 = bounds
+    base = _roof_eave_z_mm(doc, roof)
     mode = roof.roof_geometry_mode
     if mode in {"gable_pitched_rectangle", "asymmetric_gable", "gable_pitched_l_shape"}:
         if _append_rectangular_gable_roof(
@@ -585,6 +648,109 @@ def _append_roof_print_mesh(doc: Document, triangles: list[StlTriangle], roof: R
         poly_mm=[(x0, y0), (x1, y0), (x1, y1), (x0, y1)] if mode == "mass_box" else pts,
         base_z_mm=base if mode == "flat" else base,
         thickness_mm=thickness,
+    )
+
+
+def _dormer_footprint_bounds_mm(
+    dormer: DormerElem,
+    roof: RoofElem,
+) -> tuple[float, float, float, float, bool] | None:
+    bounds = _roof_bounds_mm(roof)
+    if bounds is None:
+        return None
+    x0, x1, y0, y1 = bounds
+    cx = (x0 + x1) / 2.0
+    cy = (y0 + y1) / 2.0
+    ridge_along_x = _roof_ridge_along_x(roof, x0, x1, y0, y1)
+    along = float(dormer.position_on_roof.along_ridge_mm)
+    across = float(dormer.position_on_roof.across_ridge_mm)
+    center_x = cx + (along if ridge_along_x else across)
+    center_y = cy + (across if ridge_along_x else along)
+    half_w = float(dormer.width_mm) / 2.0
+    half_d = float(dormer.depth_mm) / 2.0
+    if ridge_along_x:
+        return center_x - half_w, center_x + half_w, center_y - half_d, center_y + half_d, True
+    return center_x - half_d, center_x + half_d, center_y - half_w, center_y + half_w, False
+
+
+def _append_dormer_print_mesh(doc: Document, triangles: list[StlTriangle], dormer: DormerElem) -> None:
+    host = doc.elements.get(dormer.host_roof_id)
+    if not isinstance(host, RoofElem):
+        return
+    fp = _dormer_footprint_bounds_mm(dormer, host)
+    if fp is None:
+        return
+    x0, x1, y0, y1, ridge_along_x = fp
+    width = max(x1 - x0, 50.0)
+    depth = max(y1 - y0, 50.0)
+    center_x = (x0 + x1) / 2.0
+    center_y = (y0 + y1) / 2.0
+    base = max(_roof_eave_z_mm(doc, host), _roof_height_at_point_mm(doc, host, center_x, center_y) - 50.0)
+    wall_h = _clamp(float(dormer.wall_height_mm), 500.0, 8000.0)
+    cheek = 180.0
+    open_positive = float(dormer.position_on_roof.across_ridge_mm) >= 0.0
+
+    if ridge_along_x:
+        for x in (x0 + cheek / 2.0, x1 - cheek / 2.0):
+            _append_box_mm(
+                triangles,
+                kind="dormer",
+                element_id=dormer.id,
+                center_x_mm=x,
+                center_y_mm=center_y,
+                center_z_mm=base + wall_h / 2.0,
+                size_x_mm=cheek,
+                size_y_mm=wall_h,
+                size_z_mm=depth,
+            )
+        back_y = y0 + cheek / 2.0 if open_positive else y1 - cheek / 2.0
+        _append_box_mm(
+            triangles,
+            kind="dormer",
+            element_id=dormer.id,
+            center_x_mm=center_x,
+            center_y_mm=back_y,
+            center_z_mm=base + wall_h / 2.0,
+            size_x_mm=width,
+            size_y_mm=wall_h,
+            size_z_mm=cheek,
+        )
+    else:
+        for y in (y0 + cheek / 2.0, y1 - cheek / 2.0):
+            _append_box_mm(
+                triangles,
+                kind="dormer",
+                element_id=dormer.id,
+                center_x_mm=center_x,
+                center_y_mm=y,
+                center_z_mm=base + wall_h / 2.0,
+                size_x_mm=width,
+                size_y_mm=wall_h,
+                size_z_mm=cheek,
+            )
+        back_x = x0 + cheek / 2.0 if open_positive else x1 - cheek / 2.0
+        _append_box_mm(
+            triangles,
+            kind="dormer",
+            element_id=dormer.id,
+            center_x_mm=back_x,
+            center_y_mm=center_y,
+            center_z_mm=base + wall_h / 2.0,
+            size_x_mm=cheek,
+            size_y_mm=wall_h,
+            size_z_mm=depth,
+        )
+
+    _append_box_mm(
+        triangles,
+        kind="dormer",
+        element_id=dormer.id,
+        center_x_mm=center_x,
+        center_y_mm=center_y,
+        center_z_mm=base + wall_h + 60.0,
+        size_x_mm=width,
+        size_y_mm=120.0,
+        size_z_mm=depth,
     )
 
 
@@ -839,6 +1005,8 @@ def document_to_stl_triangles(doc: Document) -> list[StlTriangle]:
             _append_floor_print_mesh(doc, triangles, elem)
         elif isinstance(elem, RoofElem):
             _append_roof_print_mesh(doc, triangles, elem)
+        elif isinstance(elem, DormerElem):
+            _append_dormer_print_mesh(doc, triangles, elem)
         elif isinstance(elem, (DoorElem, WindowElem)):
             _append_hosted_opening_family_mesh(doc, triangles, elem)
         elif isinstance(elem, StairElem):
@@ -1143,7 +1311,7 @@ def build_stl_export_manifest(doc: Document) -> dict[str, Any]:
             "This export uses BIM AI's dedicated print mesh kernel, not the browser runtime meshes.",
             "Rooms, slab-opening markers, roof-opening markers, wall-opening cutter records, levels, views, grids, dimensions, tags, and 2D/detail records are intentionally excluded.",
             "Hosted wall openings are represented as rectangular cuts; advanced family geometry is exported as printable proxy solids.",
-            "Advanced roof/dormer/freeform sweep/MEP/asset and terrain-heightmap details may be simplified.",
+            "Advanced roof cuts/freeform sweep/MEP/asset and terrain-heightmap details may be simplified.",
             "Run the STL through a slicer or mesh repair tool before production printing.",
         ],
     }

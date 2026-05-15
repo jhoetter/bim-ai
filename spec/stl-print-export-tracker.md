@@ -204,6 +204,23 @@ Acceptance:
 - Existing glTF tests continue to pass.
 - Frontend export-link tests remain green if untouched by this upgrade.
 
+### WP-STL-09 - Roof Eave and Dormer Parity Repair
+
+Status: [x]
+
+Deliverables:
+
+- Align STL roof eave elevation with the browser renderer's reference-level wall-top heuristic.
+- Stop creating ground-to-ridge roof wedges for roofs whose browser mesh starts at the top of the walls.
+- Add printable dormer proxy solids for browser-visible dormer cheeks, back wall, and roof slab.
+- Add regression tests for roof eave elevation and dormer export coverage.
+
+Acceptance:
+
+- A roof hosted on a level with walls no longer exports below the top of those walls.
+- Dormer elements appear in STL `elementCountsByKind`.
+- Existing STL and glTF tests continue to pass.
+
 ## Non-Goals for First Pass
 
 - Full computational solid geometry repair.
