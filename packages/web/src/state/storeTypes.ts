@@ -172,6 +172,8 @@ export type ViewerRenderStyle =
   | 'consistent-colors'
   | 'hidden-line'
   | 'realistic'
+  | 'high-fidelity'
+  | 'path-trace-preview'
   | 'ray-trace';
 
 export type StoreState = {

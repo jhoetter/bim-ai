@@ -1,6 +1,7 @@
 import type { StateCreator } from 'zustand';
 
 import type { PlanPresentationPreset } from '../plan/symbology';
+import { normalizeViewerRenderStyle } from '../viewport/renderStyles';
 import type { CategoryOverrides, StoreState, ViewFilter } from './storeTypes';
 
 type StoreSet = Parameters<StateCreator<StoreState>>[0];
@@ -211,7 +212,7 @@ export function createViewportRuntimeSlice(set: StoreSet, get: StoreGet): Viewpo
       })),
 
     viewerRenderStyle: 'shaded',
-    setViewerRenderStyle: (style) => set({ viewerRenderStyle: style }),
+    setViewerRenderStyle: (style) => set({ viewerRenderStyle: normalizeViewerRenderStyle(style) }),
     viewerBackground: 'light_grey',
     viewerEdges: 'normal',
     viewerProjection: 'perspective',

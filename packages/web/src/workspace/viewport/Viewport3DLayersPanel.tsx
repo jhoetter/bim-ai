@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
 import { useBimStore } from '../../state/store';
 import type { ViewerRenderStyle } from '../../state/storeTypes';
+import { normalizeViewerRenderStyle } from '../../viewport/renderStyles';
 import { VIEWER_CATEGORY_KEYS, type ViewerCatKey } from '../../viewport/sceneUtils';
 
 export const VIEWER_HIDDEN_KIND_KEYS = VIEWER_CATEGORY_KEYS;
@@ -116,9 +117,14 @@ const GRAPHIC_STYLE_OPTIONS: Array<{
     title: 'Show physically lit materials with photographic tone mapping',
   },
   {
-    value: 'ray-trace',
-    label: 'Ray trace',
-    title: 'Show a high-quality ray-trace-style preview with soft shadows',
+    value: 'high-fidelity',
+    label: 'High fidelity',
+    title: 'Show high-quality raster PBR with soft shadows',
+  },
+  {
+    value: 'path-trace-preview',
+    label: 'Path trace',
+    title: 'Show real progressive path tracing when supported by this device and scene',
   },
 ];
 
@@ -262,6 +268,7 @@ export function Viewport3DLayersPanel({
   onUpdateSavedView,
 }: Viewport3DLayersPanelProps): JSX.Element {
   const { t } = useTranslation();
+  const resolvedRenderStyle = normalizeViewerRenderStyle(viewerRenderStyle);
   const storedGdo = useBimStore((s) => s as typeof s & ViewerGdoRuntimeState);
   const resolvedShadowsEnabled =
     viewerShadowsEnabled ??
@@ -332,7 +339,7 @@ export function Viewport3DLayersPanel({
     site_origin: Icons.grid,
   };
   const activeStyleLabel =
-    GRAPHIC_STYLE_OPTIONS.find((option) => option.value === viewerRenderStyle)?.label ?? 'Shaded';
+    GRAPHIC_STYLE_OPTIONS.find((option) => option.value === resolvedRenderStyle)?.label ?? 'Shaded';
   const hiddenLayerCount = VIEWER_HIDDEN_KIND_KEYS.filter(
     (key) => viewerCategoryHidden[key],
   ).length;
@@ -369,29 +376,33 @@ export function Viewport3DLayersPanel({
               key={value}
               type="button"
               onClick={() => onSetRenderStyle(value)}
-              data-active={viewerRenderStyle === value ? 'true' : 'false'}
+              data-active={resolvedRenderStyle === value ? 'true' : 'false'}
               aria-label={title}
               title={title}
               className={[
                 'flex h-[66px] flex-col items-center justify-center gap-1 rounded border px-1.5 text-[11px] transition-colors',
-                viewerRenderStyle === value
+                resolvedRenderStyle === value
                   ? 'border-accent bg-accent/15 font-medium text-foreground'
                   : 'border-border bg-background text-muted hover:text-foreground',
               ].join(' ')}
             >
-              <GraphicStylePreview style={value} active={viewerRenderStyle === value} />
+              <GraphicStylePreview style={value} active={resolvedRenderStyle === value} />
               {label}
             </button>
           ))}
         </div>
-        {viewerRenderStyle === 'realistic' || viewerRenderStyle === 'ray-trace' ? (
+        {resolvedRenderStyle === 'realistic' ||
+        resolvedRenderStyle === 'high-fidelity' ||
+        resolvedRenderStyle === 'path-trace-preview' ? (
           <div
             data-testid="graphic-style-fidelity-note"
             className="mt-2 rounded border border-border/70 bg-background px-2 py-1 text-[10px] text-muted"
           >
-            {viewerRenderStyle === 'ray-trace'
-              ? 'Ray trace mode is a high-fidelity raster fallback (PBR + SSAO + shadows), not realtime path tracing.'
-              : 'Realistic mode preserves authored material colors and uses photographic exposure controls for review.'}
+            {resolvedRenderStyle === 'path-trace-preview'
+              ? 'Path trace preview progressively computes real ray/path samples when this device and scene support it; otherwise the viewport falls back to raster rendering.'
+              : resolvedRenderStyle === 'high-fidelity'
+                ? 'High fidelity is a raster PBR fallback with SSAO and soft shadows; it does not require ray-tracing hardware.'
+                : 'Realistic mode preserves authored material colors and uses photographic exposure controls for review.'}
           </div>
         ) : null}
         <div className="mt-2 space-y-2">
@@ -900,16 +911,32 @@ function GraphicStylePreview({
     );
   }
 
-  if (style === 'ray-trace') {
+  if (style === 'high-fidelity') {
     return (
       <span
-        data-testid="graphic-style-preview-ray-trace"
+        data-testid="graphic-style-preview-high-fidelity"
         aria-hidden="true"
         className={`relative h-7 w-10 overflow-hidden rounded border ${border} bg-gradient-to-br from-slate-100 via-white to-sky-100`}
       >
         <span className="absolute bottom-1 left-1 h-4 w-6 rounded-sm border border-border bg-surface shadow-lg" />
         <span className="absolute bottom-4 left-5 h-px w-4 rotate-[-18deg] bg-white/90 shadow" />
         <span className="absolute bottom-1 right-1 h-1 w-7 rounded-full bg-foreground/15 blur-[1px]" />
+      </span>
+    );
+  }
+
+  if (style === 'path-trace-preview') {
+    return (
+      <span
+        data-testid="graphic-style-preview-path-trace"
+        aria-hidden="true"
+        className={`relative h-7 w-10 overflow-hidden rounded border ${border} bg-gradient-to-br from-zinc-100 via-white to-cyan-100`}
+      >
+        <span className="absolute bottom-1 left-1 h-4 w-5 rounded-sm border border-border bg-stone-200 shadow-lg" />
+        <span className="absolute bottom-2 right-1 h-5 w-4 rounded-sm border border-border bg-sky-100/90 shadow-md" />
+        <span className="absolute bottom-1 right-1 h-1 w-8 rounded-full bg-foreground/20 blur-[1px]" />
+        <span className="absolute left-2 top-1 h-1.5 w-1.5 rounded-full bg-white shadow" />
+        <span className="absolute left-4 top-2 h-px w-4 rotate-[-20deg] bg-white/90" />
       </span>
     );
   }

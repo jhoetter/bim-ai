@@ -131,6 +131,22 @@ import { makeFamilyInstanceMesh } from './viewport/familyInstance3d';
 import { makeCsgWallMaterial } from './viewport/csgWallMaterial';
 import { materialDependencyDirtyIds } from './viewport/materialDependencyInvalidation';
 import { applyTextureVisibilityToMesh } from './viewport/visualStyleMaterials';
+import {
+  isPathTraceRenderStyle,
+  isRasterHighFidelityRenderStyle,
+  isTextureRichRenderStyle,
+  normalizeViewerRenderStyle,
+} from './viewport/renderStyles';
+import {
+  collectPathTraceSceneStats,
+  detectPathTraceCapability,
+  type PathTraceCapability,
+} from './viewport/pathTracing/capabilities';
+import {
+  idlePathTracePreviewState,
+  PathTracePreviewController,
+  type PathTracePreviewState,
+} from './viewport/pathTracing/PathTracePreviewController';
 // Side-effect import: registers floor/roof/column/beam/door/window 3D grip providers.
 import './viewport/grip3dProviders';
 import {
@@ -224,6 +240,14 @@ type ViewerGdoRuntimeState = {
 };
 
 type ScreenPoint = { x: number; y: number };
+type ViewportRenderRole =
+  | 'model'
+  | 'materializedCutSurface'
+  | 'helper'
+  | 'overlay'
+  | 'hitTarget'
+  | 'annotation'
+  | 'debug';
 type Direct3dAuthoringTool =
   | 'wall'
   | 'floor'
@@ -310,6 +334,27 @@ const POLYGON_3D_AUTHORING_TOOLS = new Set<Direct3dAuthoringTool>([
   'ceiling',
   'area',
 ]);
+
+const PATH_TRACE_HELPER_ELEMENT_KINDS = new Set<string>([
+  'internal_origin',
+  'project_base_point',
+  'survey_point',
+  'reference_plane',
+  'room',
+  'area',
+  'text_3d',
+]);
+
+function pathTraceRoleForElement(elem: Element): ViewportRenderRole {
+  return PATH_TRACE_HELPER_ELEMENT_KINDS.has(elem.kind) ? 'helper' : 'model';
+}
+
+function applyRenderRole(obj: THREE.Object3D, role: ViewportRenderRole): void {
+  obj.userData.renderRole = obj.userData.renderRole ?? role;
+  obj.traverse((node) => {
+    node.userData.renderRole = node.userData.renderRole ?? role;
+  });
+}
 
 const GDO_STORAGE_KEYS = {
   shadows: 'bim.viewer.shadowsEnabled',
@@ -481,6 +526,10 @@ export function Viewport({
   const renderPassRef = useRef<RenderPass | null>(null);
   const ssaoPassRef = useRef<SSAOPass | null>(null);
   const outlinePassRef = useRef<OutlinePass | null>(null);
+  const pathTraceControllerRef = useRef<PathTracePreviewController | null>(null);
+  const pathTraceCapabilityRef = useRef<PathTraceCapability | null>(null);
+  const [pathTraceState, setPathTraceState] =
+    useState<PathTracePreviewState>(idlePathTracePreviewState);
   /** COL-V3-01: per-remote-user outline passes keyed by CSS color string. */
   const remoteOutlinePassesRef = useRef<Map<string, OutlinePass>>(new Map());
   const bimPickMapRef = useRef<Map<string, THREE.Object3D>>(new Map());
@@ -728,7 +777,8 @@ export function Viewport({
   const viewerCategoryHidden = useBimStore((s) => s.viewerCategoryHidden);
   const viewerLevelHidden = useBimStore((s) => s.viewerLevelHidden);
   const viewerPhaseFilter = useBimStore((s) => s.viewerPhaseFilter);
-  const viewerRenderStyle = useBimStore((s) => s.viewerRenderStyle);
+  const viewerRenderStyleRaw = useBimStore((s) => s.viewerRenderStyle);
+  const viewerRenderStyle = normalizeViewerRenderStyle(viewerRenderStyleRaw);
   const viewerBackground = useBimStore((s) => s.viewerBackground);
   const viewerEdges = useBimStore((s) => s.viewerEdges);
   const viewerGdoRuntime = useBimStore((s) => s as typeof s & ViewerGdoRuntimeState);
@@ -966,7 +1016,7 @@ export function Viewport({
         elementsById: elementsByIdRef.current,
         lenM: csgMeta?.len ?? 1,
         heightM: csgMeta?.height ?? 1,
-        textureMapsVisible: renderStyleNow === 'realistic' || renderStyleNow === 'ray-trace',
+        textureMapsVisible: isTextureRichRenderStyle(renderStyleNow),
       });
 
       const mesh = new THREE.Mesh(geom, wallMat);
@@ -975,6 +1025,7 @@ export function Viewport({
       mesh.userData.bimPickId = data.jobId;
       mesh.castShadow = true;
       mesh.receiveShadow = true;
+      applyRenderRole(mesh, 'model');
       addEdges(mesh);
       applyModelEdgeDisplay(mesh, viewerEdgesRef.current, viewerSilhouetteEdgeWidthRef.current);
       applyClippingPlanesToMeshes(mesh, clippingPlanesRef.current);
@@ -3558,7 +3609,10 @@ export function Viewport({
         placeCamera();
       }
 
-      composer.render();
+      const renderedPathTrace =
+        isPathTraceRenderStyle(viewerRenderStyleRef.current) &&
+        pathTraceControllerRef.current?.renderSample();
+      if (!renderedPathTrace) composer.render();
       rafRef.current = requestAnimationFrame(tick);
     }
 
@@ -3573,6 +3627,9 @@ export function Viewport({
       paintBundleRef.current = null;
 
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      pathTraceControllerRef.current?.dispose();
+      pathTraceControllerRef.current = null;
+      pathTraceCapabilityRef.current = null;
 
       ro.disconnect();
       clearWallDraftPreviewGroup();
@@ -3617,7 +3674,7 @@ export function Viewport({
     // `theme` is included so the renderer rebuilds when the user toggles
     // light/dark — token-driven materials are resolved at mount time and
     // need fresh values when the data-theme attribute flips. Spec §32 V11.
-  }, [theme]);
+  }, [clearWallDraftPreviewGroup, onSemanticCommand, theme]);
 
   useEffect(() => {
     if (!orbitCameraPoseMm) return;
@@ -4170,6 +4227,7 @@ export function Viewport({
       if (!obj) continue;
 
       if (!obj.userData.bimPickId) obj.userData.bimPickId = id;
+      applyRenderRole(obj, pathTraceRoleForElement(e));
       obj.visible = !skipCat(e) && !skipLevel(e);
 
       // FED-01: ghost any element resolved through a `link_model` link.
@@ -4211,6 +4269,7 @@ export function Viewport({
         true,
       );
       previewObj.userData.bimTransient = true;
+      applyRenderRole(previewObj, 'helper');
       cache.set('roof-join-preview', previewObj);
       root.add(previewObj);
     }
@@ -4337,7 +4396,7 @@ export function Viewport({
     };
   }, [activeLevelId, direct3dAuthoringActive, elementsById, viewerLevelHidden]);
 
-  // ── F-011: visual style (shaded / wireframe / consistent-colors / hidden-line / realistic / ray-trace) ──
+  // ── F-011: visual style (shaded / wireframe / colors / hidden / realistic / high fidelity / path trace) ──
   useEffect(() => {
     const cache = bimPickMapRef.current;
     for (const [, obj] of cache) {
@@ -4389,19 +4448,18 @@ export function Viewport({
             child.material.needsUpdate = true;
           }
         } else {
-          // Shaded / realistic / ray-trace: restore original MeshStandardMaterial.
+          // Shaded / realistic / high fidelity / path trace: restore original MeshStandardMaterial.
           if (child.userData.originalMaterial) {
             child.material = child.userData.originalMaterial as THREE.Material;
             delete child.userData.originalMaterial;
           }
-          const textureMapsVisible =
-            viewerRenderStyle === 'realistic' || viewerRenderStyle === 'ray-trace';
+          const textureMapsVisible = isTextureRichRenderStyle(viewerRenderStyle);
           applyTextureVisibilityToMesh(child, textureMapsVisible);
           const materials = Array.isArray(child.material) ? child.material : [child.material];
           for (const material of materials) {
             if (!(material instanceof THREE.MeshStandardMaterial)) continue;
             material.wireframe = false;
-            if (viewerRenderStyle === 'realistic' || viewerRenderStyle === 'ray-trace') {
+            if (isTextureRichRenderStyle(viewerRenderStyle)) {
               material.flatShading = false;
             }
             material.needsUpdate = true;
@@ -4414,10 +4472,39 @@ export function Viewport({
   useEffect(() => {
     const renderer = rendererRef.current;
     if (!renderer) return;
-    renderer.shadowMap.type =
-      viewerRenderStyle === 'ray-trace' ? THREE.VSMShadowMap : THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = isRasterHighFidelityRenderStyle(viewerRenderStyle)
+      ? THREE.VSMShadowMap
+      : THREE.PCFSoftShadowMap;
     renderer.shadowMap.needsUpdate = true;
   }, [viewerRenderStyle]);
+
+  useEffect(() => {
+    const renderer = rendererRef.current;
+    const scene = sceneRef.current;
+    const root = rootGroupRef.current;
+    const camera = cameraRef.current;
+    if (!renderer || !scene || !root || !camera) return;
+
+    if (!isPathTraceRenderStyle(viewerRenderStyle)) {
+      pathTraceControllerRef.current?.dispose();
+      pathTraceControllerRef.current = null;
+      pathTraceCapabilityRef.current = null;
+      setPathTraceState(idlePathTracePreviewState);
+      return;
+    }
+
+    const stats = collectPathTraceSceneStats(root);
+    const capability = detectPathTraceCapability(renderer, stats);
+    pathTraceCapabilityRef.current = capability;
+    const controller =
+      pathTraceControllerRef.current ?? new PathTracePreviewController(renderer, setPathTraceState);
+    pathTraceControllerRef.current = controller;
+    void controller.prepare(scene, root, camera, capability);
+
+    return () => {
+      controller.reset();
+    };
+  }, [elementsById, theme, viewerRenderStyle, viewerCategoryHidden, viewerLevelHidden]);
 
   useEffect(() => {
     const renderer = rendererRef.current;
@@ -4493,7 +4580,10 @@ export function Viewport({
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     ssao.enabled =
-      viewerAmbientOcclusionEnabled && !reducedMotion && viewerRenderStyle !== 'hidden-line';
+      viewerAmbientOcclusionEnabled &&
+      !reducedMotion &&
+      viewerRenderStyle !== 'hidden-line' &&
+      !isPathTraceRenderStyle(viewerRenderStyle);
   }, [viewerAmbientOcclusionEnabled, viewerRenderStyle]);
 
   useEffect(() => {
@@ -5437,6 +5527,42 @@ export function Viewport({
             />
           </svg>
         ) : null)}
+
+      {isPathTraceRenderStyle(viewerRenderStyle) && pathTraceState.phase !== 'idle' ? (
+        <div className="pointer-events-none absolute left-3 top-3 z-20 max-w-[320px]">
+          <div
+            data-testid="path-trace-preview-status"
+            data-phase={pathTraceState.phase}
+            className="rounded border border-border bg-surface/90 px-3 py-2 text-[11px] text-foreground shadow-md backdrop-blur-sm"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-semibold">
+                {pathTraceState.phase === 'unsupported'
+                  ? 'Path trace unavailable'
+                  : pathTraceState.phase === 'complete'
+                    ? 'Path trace complete'
+                    : 'Path trace preview'}
+              </span>
+              {pathTraceState.targetSamples > 0 ? (
+                <span className="font-mono text-muted">
+                  {pathTraceState.samples}/{pathTraceState.targetSamples}
+                </span>
+              ) : null}
+            </div>
+            <div className="mt-1 text-muted">{pathTraceState.message}</div>
+            {pathTraceState.targetSamples > 0 ? (
+              <div className="mt-2 h-1 overflow-hidden rounded bg-border">
+                <div
+                  className="h-full bg-accent"
+                  style={{
+                    width: `${Math.max(0, Math.min(100, pathTraceState.progress * 100))}%`,
+                  }}
+                />
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       {/* Walk mode controls bar — shown while pointer is locked */}
       {walkActive ? (
