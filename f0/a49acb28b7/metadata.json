@@ -3,7 +3,7 @@
   "checkpoint_id": "f0a49acb28b7",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "spec/stl-print-export-tracker.md"
   ],
@@ -43,13 +43,19 @@
       "transcript": "/f0/a49acb28b7/5/full.jsonl",
       "content_hash": "/f0/a49acb28b7/5/content_hash.txt",
       "prompt": "/f0/a49acb28b7/5/prompt.txt"
+    },
+    {
+      "metadata": "/f0/a49acb28b7/6/metadata.json",
+      "transcript": "/f0/a49acb28b7/6/full.jsonl",
+      "content_hash": "/f0/a49acb28b7/6/content_hash.txt",
+      "prompt": "/f0/a49acb28b7/6/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 9004314,
+    "input_tokens": 9813702,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 119920768,
-    "output_tokens": 277663,
-    "api_call_count": 2024
+    "cache_read_tokens": 138638336,
+    "output_tokens": 343239,
+    "api_call_count": 2179
   }
 }
