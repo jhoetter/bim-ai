@@ -1,0 +1,71 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "501253891bed",
+  "session_id": "019e2c15-3903-7080-93f0-26ac15f4d057",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-15T17:53:05.701721Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "seed-artifacts/target-house-4/source/target-house-seed.md",
+    "seed-artifacts/target-house-4/evidence/sketch-ir.json",
+    "seed-artifacts/target-house-4/evidence/assumptions.md",
+    "seed-artifacts/target-house-4/evidence/status.md",
+    "seed-artifacts/target-house-4/evidence/target-house-4.recipe.json",
+    "seed-artifacts/target-house-4/manifest.json"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "4d449529f62e",
+  "token_usage": {
+    "input_tokens": 1882078,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 32317056,
+    "output_tokens": 82126,
+    "api_call_count": 621
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 16312,
+      "user_lines_removed": 46,
+      "agent_lines_added": 3050,
+      "agent_lines_removed": 74,
+      "user_added_per_file": {
+        "seed-artifacts/target-house-4/bundle.json": 2905,
+        "seed-artifacts/target-house-4/evidence/advisor-info.json": 62,
+        "seed-artifacts/target-house-4/evidence/advisor-warning.json": 23,
+        "seed-artifacts/target-house-4/evidence/latest-advisor/advisor-info.json": 62,
+        "seed-artifacts/target-house-4/evidence/latest-advisor/advisor-warning.json": 6,
+        "seed-artifacts/target-house-4/evidence/latest-construction-readiness.json": 21,
+        "seed-artifacts/target-house-4/evidence/live-run-current/acceptance-gates.json": 49,
+        "seed-artifacts/target-house-4/evidence/live-run-current/capability-coverage.json": 155,
+        "seed-artifacts/target-house-4/evidence/live-run-current/capability-gaps.json": 64,
+        "seed-artifacts/target-house-4/evidence/live-run-current/live-advisor.json": 87,
+        "seed-artifacts/target-house-4/evidence/live-run-current/live/advisor-info.json": 62,
+        "seed-artifacts/target-house-4/evidence/live-run-current/live/advisor-warning.json": 23,
+        "seed-artifacts/target-house-4/evidence/live-run-current/live/evidence-package.json": 5155,
+        "seed-artifacts/target-house-4/evidence/live-run-current/live/model-stats.json": 29,
+        "seed-artifacts/target-house-4/evidence/live-run-current/live/snapshot.json": 6200,
+        "seed-artifacts/target-house-4/evidence/live-run-current/live/validate.json": 635,
+        "seed-artifacts/target-house-4/evidence/live-run-current/screenshot-manifest.json": 5,
+        "seed-artifacts/target-house-4/evidence/live-run-current/sketch-ir.json": 142,
+        "seed-artifacts/target-house-4/evidence/live-run-current/status.md": 86,
+        "seed-artifacts/target-house-4/evidence/live-run-current/visual-checklist.json": 148,
+        "seed-artifacts/target-house-4/evidence/live-run-current/visual-gate.json": 15,
+        "seed-artifacts/target-house-4/evidence/material-check.json": 10,
+        "seed-artifacts/target-house-4/evidence/phase-final/browser-evidence.json": 30,
+        "seed-artifacts/target-house-4/evidence/phase-final/semantic-checklist.json": 50,
+        "seed-artifacts/target-house-4/evidence/status.md": 20,
+        "seed-artifacts/target-house-4/evidence/target-house-4.recipe.json": 242,
+        "seed-artifacts/target-house-4/evidence/visual-delta.md": 23,
+        "seed-artifacts/target-house-4/manifest.json": 3
+      },
+      "user_removed_per_file": {
+        "seed-artifacts/target-house-4/evidence/status.md": 15,
+        "seed-artifacts/target-house-4/evidence/target-house-4.recipe.json": 28,
+        "seed-artifacts/target-house-4/manifest.json": 3
+      }
+    }
+  ]
+}

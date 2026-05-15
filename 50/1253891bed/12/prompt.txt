@@ -1,0 +1,14 @@
+please look into /Users/jhoetter/Desktop/Testhaus; i want that this house is built as a model as target-house-4. use the claude-skills/sketch-to-bim for this.
+
+---
+
+[Image #1][Image #2] compare the rendered model vs. the drawing; there are really big substantial differences. think about them in detail, write them down, and try adjusting the current model until it matches really nicely. i think you need to improve the capabilities of the software, e.g. in terms of roof complexity, the windows, ...
+[Image #3] also the software detected errors, and you stopped working on the model even though you should have been aware of them. please improve the methodology further, do you see the errors (also not via screenshot but via the server directly as some function or such?)
+
+---
+
+already better; but i think we have more complications, if you look into the image more closely: [Image #1] you can see it is not a flat surface on which the house is being built. how does revit handle that? research online and analyse
+
+---
+
+go ahead and specify this into a tracker in deep detail; once that is, for each workpackage, implement and always commit and push after each workpackage

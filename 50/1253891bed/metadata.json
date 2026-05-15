@@ -3,7 +3,7 @@
   "checkpoint_id": "501253891bed",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 8,
+  "checkpoints_count": 9,
   "files_touched": [
     "app/bim_ai/constructability_geometry.py",
     "app/bim_ai/material_catalog.py",
@@ -17,6 +17,7 @@
     "seed-artifacts/target-house-4/bundle.json",
     "seed-artifacts/target-house-4/evidence/advisor-info.json",
     "seed-artifacts/target-house-4/evidence/advisor-warning.json",
+    "seed-artifacts/target-house-4/evidence/assumptions.md",
     "seed-artifacts/target-house-4/evidence/latest-advisor/advisor-info.json",
     "seed-artifacts/target-house-4/evidence/latest-advisor/advisor-warning.json",
     "seed-artifacts/target-house-4/evidence/live-run-current/acceptance-gates.json",
@@ -38,6 +39,8 @@
     "seed-artifacts/target-house-4/evidence/phase-final/browser-evidence.json",
     "seed-artifacts/target-house-4/evidence/phase-final/browser-full.png",
     "seed-artifacts/target-house-4/evidence/phase-final/semantic-checklist.json",
+    "seed-artifacts/target-house-4/evidence/sketch-ir.json",
+    "seed-artifacts/target-house-4/evidence/status.md",
     "seed-artifacts/target-house-4/evidence/target-house-4.recipe.json",
     "seed-artifacts/target-house-4/manifest.json",
     "seed-artifacts/target-house-4/source/2025-06-13 Schalksmühle EBB Weidenstr.pdf",
@@ -55,7 +58,8 @@
     "seed-artifacts/target-house-4/source/Grundstücksflächen_Timonline.pdf",
     "seed-artifacts/target-house-4/source/NW-2025-005835290.pdf",
     "seed-artifacts/target-house-4/source/Umbauter Raum.pdf",
-    "seed-artifacts/target-house-4/source/Wohnflächenberechnung.pdf"
+    "seed-artifacts/target-house-4/source/Wohnflächenberechnung.pdf",
+    "seed-artifacts/target-house-4/source/target-house-seed.md"
   ],
   "sessions": [
     {
@@ -129,13 +133,19 @@
       "transcript": "/50/1253891bed/11/full.jsonl",
       "content_hash": "/50/1253891bed/11/content_hash.txt",
       "prompt": "/50/1253891bed/11/prompt.txt"
+    },
+    {
+      "metadata": "/50/1253891bed/12/metadata.json",
+      "transcript": "/50/1253891bed/12/full.jsonl",
+      "content_hash": "/50/1253891bed/12/content_hash.txt",
+      "prompt": "/50/1253891bed/12/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 13736441,
+    "input_tokens": 15618519,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 345729152,
-    "output_tokens": 853804,
-    "api_call_count": 2649
+    "cache_read_tokens": 378046208,
+    "output_tokens": 935930,
+    "api_call_count": 3270
   }
 }
