@@ -1,0 +1,9 @@
+is it possible to create a STL format to export the model in a way a 3d printer could build a 3d printed model?
+
+---
+
+please analyze and specify in great detail in a tracker file in spec; once that is done, implement all workpackages, always commit and push after each one; don't stop until fully done
+
+---
+
+i get a correct stl file, but i think if i would print this, it would look SUPER DIFFERENT from the model rendered in the browser; can you ensure that we actually correctly export all elements, like roofs, walls, ...?
