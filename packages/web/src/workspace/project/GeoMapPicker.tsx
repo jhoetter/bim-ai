@@ -17,6 +17,23 @@ type Props = {
 
 const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
+// Outer ring covers the whole world — used as the mask background.
+const OUTER_RING: [number, number][] = [
+  [-90, -180],
+  [-90, 180],
+  [90, 180],
+  [90, -180],
+];
+
+function innerRing(s: number, w: number, n: number, e: number): [number, number][] {
+  return [
+    [s, w],
+    [n, w],
+    [n, e],
+    [s, e],
+  ];
+}
+
 /** Expand a centre point into a symmetric bbox of ~radiusM metres half-width. */
 function defaultBbox(lat: number, lon: number, radiusM = 300): Omit<GeoAnchor, 'lat' | 'lon'> {
   const dLat = radiusM / 111_319.5;
@@ -35,6 +52,7 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const rectRef = useRef<L.Rectangle | null>(null);
+  const maskRef = useRef<L.Polygon | null>(null);
   const previewRef = useRef<L.Rectangle | null>(null);
 
   const [searchDraft, setSearchDraft] = useState('');
@@ -60,6 +78,7 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
 
     let map: L.Map;
     let rect: L.Rectangle;
+    let mask: L.Polygon;
 
     import('leaflet').then((LMod) => {
       const Leaflet = LMod.default ?? LMod;
@@ -81,17 +100,39 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
 
       Leaflet.tileLayer(OSM_TILE_URL, { maxZoom: 19 }).addTo(map);
 
+      // Dim mask — covers everything outside the bbox.
+      mask = Leaflet.polygon(
+        [OUTER_RING, innerRing(bboxSouth, bboxWest, bboxNorth, bboxEast)] as L.LatLngExpression[][],
+        {
+          color: 'transparent',
+          fillColor: '#000',
+          fillOpacity: 0.35,
+          stroke: false,
+          interactive: false,
+        },
+      ).addTo(map);
+
+      // Orange rectangle — the selected bbox.
       rect = Leaflet.rectangle(
         [[bboxSouth, bboxWest] as L.LatLngTuple, [bboxNorth, bboxEast] as L.LatLngTuple],
         {
           color: '#fb923c',
           fillColor: '#fb923c',
-          fillOpacity: 0.1,
+          fillOpacity: 0.05,
           weight: 2,
           dashArray: '6 4',
           interactive: false,
         },
       ).addTo(map);
+
+      function applyBbox(s: number, w: number, n: number, e: number) {
+        const bounds = [
+          [s, w],
+          [n, e],
+        ] as L.LatLngBoundsExpression;
+        rect.setBounds(bounds);
+        mask.setLatLngs([OUTER_RING, innerRing(s, w, n, e)] as L.LatLngExpression[][]);
+      }
 
       // ── Draw mode events ──────────────────────────────────────────────────────
 
@@ -142,7 +183,6 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
         let east = Math.max(s.lng, e.latlng.lng);
         let west = Math.min(s.lng, e.latlng.lng);
 
-        // If basically a point click, expand to a default box.
         if (north - south < 0.001 || east - west < 0.001) {
           const cLat = (north + south) / 2;
           const cLon = (east + west) / 2;
@@ -153,13 +193,7 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
           west = b.bboxWest;
         }
 
-        const centerLat = (north + south) / 2;
-        const centerLon = (east + west) / 2;
-
-        rect.setBounds([
-          [south, west],
-          [north, east],
-        ] as L.LatLngBoundsExpression);
+        applyBbox(south, west, north, east);
 
         drawModeRef.current = false;
         setDrawMode(false);
@@ -167,8 +201,8 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
         map.getContainer().style.cursor = '';
 
         onChangeRef.current({
-          lat: centerLat,
-          lon: centerLon,
+          lat: (north + south) / 2,
+          lon: (east + west) / 2,
           bboxNorth: north,
           bboxSouth: south,
           bboxEast: east,
@@ -192,21 +226,20 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
           bboxEast: cLon + halfLon,
           bboxWest: cLon - halfLon,
         };
-        rect.setBounds([
-          [next.bboxSouth, next.bboxWest],
-          [next.bboxNorth, next.bboxEast],
-        ] as L.LatLngBoundsExpression);
+        applyBbox(next.bboxSouth, next.bboxWest, next.bboxNorth, next.bboxEast);
         onChangeRef.current(next);
       });
 
       mapRef.current = map;
       rectRef.current = rect;
+      maskRef.current = mask;
     });
 
     return () => {
       mapRef.current?.remove();
       mapRef.current = null;
       rectRef.current = null;
+      maskRef.current = null;
       previewRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -216,11 +249,17 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
   useEffect(() => {
     const map = mapRef.current;
     const rect = rectRef.current;
-    if (!map || !rect) return;
+    const mask = maskRef.current;
+    if (!map || !rect || !mask) return;
+    const { bboxSouth, bboxWest, bboxNorth, bboxEast } = value;
     rect.setBounds([
-      [value.bboxSouth, value.bboxWest],
-      [value.bboxNorth, value.bboxEast],
+      [bboxSouth, bboxWest],
+      [bboxNorth, bboxEast],
     ] as L.LatLngBoundsExpression);
+    mask.setLatLngs([
+      OUTER_RING,
+      innerRing(bboxSouth, bboxWest, bboxNorth, bboxEast),
+    ] as L.LatLngExpression[][]);
     map.panTo([value.lat, value.lon]);
   }, [value.lat, value.lon, value.bboxNorth, value.bboxSouth, value.bboxEast, value.bboxWest]);
 

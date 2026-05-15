@@ -496,6 +496,7 @@ export function Viewport({
   const levelDatumGroupRef = useRef<THREE.Group | null>(null);
   const osmContextGroupRef = useRef<THREE.Group | null>(null);
   const [osmHiddenLayers, setOsmHiddenLayers] = useState<ReadonlySet<OsmLayerName>>(new Set());
+  const [osmStatus, setOsmStatus] = useState<'idle' | 'loading' | 'error' | 'ok'>('idle');
   const clearWallDraftPreviewGroup = useCallback(() => {
     const group = wallDraftPreviewGroupRef.current;
     if (!group) return;
@@ -578,11 +579,20 @@ export function Viewport({
   elementsByIdRef.current = elementsById;
   const theme = useTheme();
 
+  // Serialised key — only changes when georeference VALUES change, not on every elementsById ref update.
+  const georeferenceKey = useMemo(() => {
+    const ps = Object.values(elementsById).find((e) => e.kind === 'project_settings');
+    const g = ps?.kind === 'project_settings' ? ps.georeference : null;
+    if (!g) return null;
+    return `${g.anchorLat}:${g.anchorLon}:${g.bboxNorth ?? g.contextRadiusM ?? ''}:${g.bboxSouth ?? ''}:${g.bboxEast ?? ''}:${g.bboxWest ?? ''}`;
+  }, [elementsById]);
+
   const georeference = useMemo(() => {
     const ps = Object.values(elementsById).find((e) => e.kind === 'project_settings');
     if (ps?.kind === 'project_settings') return ps.georeference ?? null;
     return null;
-  }, [elementsById]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [georeferenceKey]); // stable: only recalculates when values actually change
 
   const walkLevels = useMemo(
     () =>
@@ -4394,10 +4404,12 @@ export function Viewport({
 
     if (!root || !georeference) {
       removePrevious();
+      setOsmStatus('idle');
       return;
     }
 
     let cancelled = false;
+    setOsmStatus('loading');
 
     // Derive bbox — new data has explicit bbox fields; old data (contextRadiusM) falls back.
     const bbox =
@@ -4423,13 +4435,15 @@ export function Viewport({
       .then((features) => {
         if (cancelled) return;
         removePrevious();
-        // Build with all layers visible; visibility is controlled directly on the group.
         const group = makeOsmContextGroup(features);
         root.add(group);
         osmContextGroupRef.current = group;
+        setOsmStatus(features.length > 0 ? 'ok' : 'error');
       })
       .catch((err: unknown) => {
-        if (!cancelled) console.warn('[OSM] fetch failed:', err);
+        if (cancelled) return;
+        console.error('[OSM] fetch failed:', err);
+        setOsmStatus('error');
       });
 
     return () => {
@@ -5574,12 +5588,24 @@ export function Viewport({
       {georeference ? (
         <div className="pointer-events-auto absolute bottom-3 left-3 z-20">
           <div className="flex flex-col gap-0.5 rounded border border-border bg-surface/90 px-2.5 py-2 text-[10px] text-muted shadow-sm backdrop-blur-sm">
-            <span
-              className="mb-0.5 font-semibold uppercase text-muted"
-              style={{ letterSpacing: '0.08em', fontSize: '9px' }}
-            >
-              Context layers
-            </span>
+            <div className="mb-0.5 flex items-center gap-1.5">
+              <span
+                className="font-semibold uppercase text-muted"
+                style={{ letterSpacing: '0.08em', fontSize: '9px' }}
+              >
+                Context layers
+              </span>
+              {osmStatus === 'loading' ? (
+                <span className="ml-auto text-[9px] text-accent">Loading…</span>
+              ) : osmStatus === 'error' ? (
+                <span
+                  className="ml-auto text-[9px] text-danger"
+                  title="OSM fetch failed or returned no data"
+                >
+                  No data
+                </span>
+              ) : null}
+            </div>
             {(['buildings', 'roads', 'trees', 'water', 'green'] as const).map((layer) => (
               <label key={layer} className="flex cursor-pointer items-center gap-1.5">
                 <input
