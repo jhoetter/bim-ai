@@ -1,6 +1,6 @@
 # BIM AI UX Next-Phase Tracker
 
-Last updated: 2026-05-14
+Last updated: 2026-05-15
 
 Related baseline:
 
@@ -418,6 +418,33 @@ Evidence (2026-05-13):
   - ribbon command count changes by lens (`architecture: 13`, `structure: 9`, `mep: 1`),
   - Cmd+K `tool.room` entry is disabled in MEP lens with explicit gating reason,
   - deterministic canvas lens classification is recorded for `all/architecture/structure/mep`.
+
+Evidence (2026-05-15 MEP/TGA closeout):
+
+- MEP lens workpackages were implemented and merged to `main`:
+  - model/API contract: `055b4452a`
+  - schedule projections: `1434385dc`
+  - UI authoring surfacing: `d41b24273`
+  - current-main integration repair: `fe4971fd0`
+- The MEP lens now exposes first-class system authoring commands in ribbon/Cmd+K capability metadata:
+  - `tool.duct`
+  - `tool.pipe`
+  - `tool.cable-tray`
+  - `tool.mep-equipment`
+  - `tool.fixture`
+  - `tool.mep-terminal`
+  - `tool.mep-opening-request`
+  - `tool.shaft`
+- MEP-specific model/inspector/schedule coverage is tracked by:
+  - `app/bim_ai/mep_lens.py`
+  - `app/tests/test_mep_lens.py`
+  - `packages/web/src/workspace/commandCapabilities.test.ts`
+  - `packages/web/src/workspace/inspector/InspectorContent.test.tsx`
+- Final verification on the integration branch passed:
+  - `uv run pytest --no-cov tests/test_mep_lens.py`
+  - `pnpm --filter @bim-ai/core exec tsc --noEmit`
+  - `pnpm --filter @bim-ai/web exec vitest run src/workspace/commandCapabilities.test.ts src/workspace/inspector/InspectorContent.test.tsx`
+  - `pnpm --filter @bim-ai/ui typecheck && pnpm --filter @bim-ai/web typecheck`
 
 ### WP-NEXT-11 — View Creation Discoverability
 
