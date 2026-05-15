@@ -263,19 +263,21 @@ Detection outputs:
 
 - `supported`: path tracing can run with current scene and device.
 - `degraded`: path tracing can run, but should start at lower render scale/sample count and show a warning.
-- `unsupported`: hide or disable path trace preview and route the user to raster high-fidelity mode or server render.
+- `unsupported`: hide or disable path trace preview and route the user to raster high-fidelity mode or a backend render job.
 - `unknown`: allow a guarded trial with conservative defaults and visible cancel/fallback.
 
 Warnings should be specific and actionable:
 
 - "Path trace preview may be slow on this device. Starting in low-resolution preview."
-- "This scene is too large for local path tracing. Use high-fidelity raster mode or server render."
+- "This scene exceeds the browser path trace preview budget. Use high-fidelity raster mode or a backend render job."
 - "Path trace preview is unavailable in this browser/GPU configuration."
 - "Section boxes are active; path trace preview is disabled until clipped-geometry rendering is available."
 
 Do not rely on a brittle allowlist of laptop models. Hardware names can be used for diagnostics, but the product decision should come from feature checks plus measured performance. Capability results should be stored only as local runtime hints and invalidated when the browser, GPU, driver, or app version changes.
 
-If server GPU rendering exists, weak local capability should not be treated as a dead end. The UI should offer a server render action for still images while keeping the local raster viewport fully usable.
+If backend rendering exists, weak browser capability should not be treated as a dead end. In local development or single-user deployments, that backend can literally be the same MacBook running the API process. The UI should offer a backend render action for still images while keeping the local raster viewport fully usable.
+
+Important quality note: browser path tracing without denoising can remain visibly noisy even at 1024+ samples, especially on large flat walls, roofs, dark interiors, and high-frequency procedural textures. Higher samples reduce Monte Carlo noise, but they do not replace denoising or a final-render pipeline. Product copy should call the WebGL path tracer a preview until a denoised backend/native render path exists.
 
 ## State And UI Contract
 
@@ -377,7 +379,7 @@ Evidence (2026-05-15):
   - Create `detectPathTraceCapability(sceneStats)` returning `supported`, `degraded`, `unsupported`, or `unknown`.
   - Include WebGL2/extension checks, texture/render target limits, coarse device hints, measured startup timing, and current scene complexity.
   - Add warning copy for degraded and unsupported states.
-  - Add a user-visible route to server render when local path tracing is unsupported and server rendering is available.
+  - Add a user-visible route to backend render when local path tracing is unsupported and backend rendering is available.
   - Cache capability results locally with version invalidation.
 - Acceptance:
   - Path trace preview is not offered as a hard requirement for using 3D.
@@ -503,11 +505,11 @@ Evidence (2026-05-15):
   - Exported still is higher quality than screen preview.
   - Export metadata is deterministic enough for support/debugging.
 
-### WP-RT-08 - Optional Server CPU Renderer
+### WP-RT-08 - Optional Backend Render Job
 
 - Priority: `P3`
 - Status: `Open`
-- Goal: support offline CPU/GPU rendering outside the browser if needed.
+- Goal: support offline CPU/GPU rendering outside the browser if needed. In a local setup, "backend" may be the user's own MacBook running the BIM AI API process; in hosted deployments it may be a remote GPU worker.
 - Source ownership:
   - backend export/render service,
   - asset packaging,
@@ -515,10 +517,13 @@ Evidence (2026-05-15):
 - Implementation:
   - Export scene to glTF/USD or renderer-specific scene format.
   - Queue render jobs.
+  - Run with a backend renderer such as Blender/Cycles, a native Metal/CPU renderer, or a future GPU service worker.
+  - Support local-only execution first: API receives model/viewpoint/render settings, starts a job on the same machine, and streams or stores progress.
   - Store outputs and logs.
 - Acceptance:
   - Browser can request a render without blocking.
   - Job result includes image, diagnostics, and exact scene/material revision.
+  - Local backend jobs make it clear that they use the user's machine and may consume CPU/GPU for minutes.
 
 ## Open Decisions
 
@@ -528,8 +533,8 @@ Evidence (2026-05-15):
 | RT-DEC-002 | Is `three-gpu-pathtracer` acceptable as an added dependency? | Engineering | Needs bundle/performance/license review. |
 | RT-DEC-003 | Should path trace preview use the same canvas or an overlaid canvas? | Engineering | Same renderer is simpler; overlay can isolate raster HUD. |
 | RT-DEC-004 | What target sample counts should ship for draft/review/export? | Product + Rendering | Start conservative and tune with seeded models. |
-| RT-DEC-005 | Is server-side CPU rendering in scope, or is client GPU preview enough? | Product | CPU path is separate from interactive viewport work. |
-| RT-DEC-006 | Should weak local devices show server render as the primary path trace action? | Product | Keeps older laptops viable without hiding the feature entirely. |
+| RT-DEC-005 | Is backend CPU/GPU rendering in scope, or is client GPU preview enough? | Product | CPU/GPU backend path is separate from interactive viewport work. |
+| RT-DEC-006 | Should weak local devices show backend render as the primary path trace action? | Product | Keeps older laptops viable without hiding the feature entirely. Local backend can be the user's own MacBook. |
 | RT-DEC-007 | What measured startup/render threshold separates `degraded` from `unsupported`? | Rendering | Must be tuned with seeded models and representative older hardware. |
 
 ## Acceptance For "Actual Ray Tracing"

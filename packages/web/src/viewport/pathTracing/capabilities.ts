@@ -175,7 +175,7 @@ export function detectPathTraceCapability(
     return {
       status: 'unsupported',
       reason:
-        'This scene exceeds the local path trace preview budget. Use high-fidelity raster mode or server render.',
+        'This scene exceeds the browser path trace preview budget. Use high-fidelity raster mode or a backend render job.',
       renderScale: 0.5,
       previewSamples: 0,
       targetSamples: 0,
