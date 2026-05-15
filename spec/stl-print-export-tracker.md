@@ -29,6 +29,12 @@ The feature must distinguish between:
 - Existing glTF geometry is in meters and uses Y-up coordinates.
 - STL should be exported in millimeters because that is the de facto slicer expectation and matches BIM AI's authoring units.
 - STL carries no materials, units, hierarchy, metadata, or semantic element ids. Any validation metadata must live in a sidecar manifest endpoint or HTTP headers, not in STL itself.
+- The first STL pass reuses the server glTF geometry collection. That produces a valid STL, but it is not a print-parity exporter:
+  - `room` is exported as a solid slab even though the browser renders rooms as ribbons/metadata, not printable building mass.
+  - `slab_opening` can be exported as a marker solid even though it should subtract from slabs, not print as a plug.
+  - browser-rendered printable categories such as `railing`, `balcony`, `column`, `beam`, `ceiling`, `soffit`, and `site` are not all represented by the server glTF kernel.
+  - floor and roof footprints in the browser use polygon/roof-specific geometry while the server GLB path often falls back to bounding boxes.
+  - wall exports need to respect browser-visible datum constraints, wall location line offsets, wall type thickness, and hosted opening cuts.
 
 ## Print-Readiness Principles
 
@@ -140,6 +146,64 @@ Acceptance:
 - User can discover/download STL from the existing export surface.
 - Frontend tests or targeted type checks pass where practical.
 
+### WP-STL-06 - Browser-Parity Print Mesh Scope
+
+Status: [x]
+
+Deliverables:
+
+- Reassess the STL kernel against the browser renderer rather than only the server glTF exporter.
+- Define which elements are printable solids, which are visual-only/documentary, and which need explicit limitations in the STL manifest.
+- Preserve the existing API surface while upgrading the underlying geometry source.
+
+Acceptance:
+
+- Tracker records the mismatch that caused the valid-but-visually-different STL concern.
+- New implementation work is scoped around print-parity categories rather than generic glTF reuse.
+
+### WP-STL-07 - Print-Parity STL Kernel Upgrade
+
+Status: [ ]
+
+Deliverables:
+
+- Replace STL's dependency on `_collect_visual_geom_entries` with a dedicated printer mesh collector.
+- Exclude browser non-solid concepts such as `room`, `slab_opening` markers, `roof_opening` markers, grid/detail/view/annotation records, and other documentary elements.
+- Export browser-visible printable solids for:
+  - walls with level/base/top constraints, location-line offsets, wall type thickness, and hosted rectangular openings for doors/windows/wall openings.
+  - floors, ceilings, soffits, site pads, and mass-like polygonal solids using footprint triangulation instead of bounding-box panels when possible.
+  - floors with a single axis-aligned rectangular slab opening as split printable panels, with the opening marker omitted.
+  - roofs in flat, mass-box, gable, asymmetric gable, hip, and L-shape-oriented footprint modes where deterministic footprint geometry is available.
+  - straight stairs with printable treads/stringers, plus conservative fallbacks for advanced stair shapes.
+  - railings, balconies, columns, beams, doors, and windows as printable proxy solids matching their rendered placement.
+- Keep all emitted STL triangles in millimeters with X/Y as build plate axes and Z as vertical.
+- Keep sidecar diagnostics deterministic and add explicit `meshSource`/coverage notes.
+
+Acceptance:
+
+- A model containing walls, roof, floor, railing, column, beam, ceiling, balcony, and site elements reports all those categories in `elementCountsByKind`.
+- Rooms and slab-opening markers are absent from STL triangles.
+- Simple wall exports still produce closed geometry with hosted openings cut out where applicable.
+- Manifest limitations describe remaining unsupported high-detail browser features without pretending the mesh is a perfect slicer-ready building union.
+
+### WP-STL-08 - Print-Parity Regression Tests
+
+Status: [ ]
+
+Deliverables:
+
+- Add tests proving non-print visual categories are excluded.
+- Add tests for the new printable element category coverage.
+- Add tests for wall datum/location-line behavior and hosted opening cuts.
+- Add tests for floor slab opening panelization without marker solids.
+- Keep the existing binary STL, ASCII STL, manifest, route, and export-link tests passing.
+
+Acceptance:
+
+- Targeted backend STL tests pass.
+- Existing glTF tests continue to pass.
+- Frontend export-link tests remain green if untouched by this upgrade.
+
 ## Non-Goals for First Pass
 
 - Full computational solid geometry repair.
@@ -147,6 +211,13 @@ Acceptance:
 - Slicer-specific print settings or support generation.
 - Color/material STL variants.
 - Exact high-detail family geometry export beyond the existing supported visual geometry kernel.
+
+## Non-Goals for Browser-Parity Upgrade
+
+- Boolean unioning every separate building component into one monolithic watertight shell.
+- Full constructive solid geometry parity for dormer/roof openings, arbitrary curved walls, freeform sweeps, text geometry, MEP systems, imported assets, or terrain heightmaps.
+- Guaranteeing a support-free print. Slicer orientation, wall thickness checks, supports, scale, and print profile remain downstream responsibilities.
+- Encoding materials/colors, hierarchy, or BIM metadata in STL.
 
 ## Follow-Up Candidates
 
