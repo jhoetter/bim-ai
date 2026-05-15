@@ -33,6 +33,15 @@ describe('<ViewCube /> — spec §15.4', () => {
     }
   });
 
+  it('does not render the legacy chevron or context menu controls', () => {
+    const { queryByLabelText, queryByRole } = render(
+      <ViewCube currentAzimuth={0} currentElevation={0.45} onPick={() => undefined} />,
+    );
+    expect(queryByLabelText('Look from below')).toBeNull();
+    expect(queryByLabelText('ViewCube menu')).toBeNull();
+    expect(queryByRole('menu', { name: 'ViewCube menu' })).toBeNull();
+  });
+
   it('emits onPick with the right alignment when a face is clicked', () => {
     const onPick = vi.fn();
     const { getByLabelText } = render(
@@ -90,5 +99,25 @@ describe('<ViewCube /> — spec §15.4', () => {
       <ViewCube currentAzimuth={Math.PI / 2} currentElevation={0.45} onPick={() => undefined} />,
     );
     expect(getByTestId('view-cube-compass').dataset.cardinal).toBe('E');
+  });
+
+  it('compass cardinal letters orbit around the ring with currentAzimuth', () => {
+    const { getByTestId, rerender } = render(
+      <ViewCube currentAzimuth={0} currentElevation={0.45} onPick={() => undefined} />,
+    );
+    const northAtZero = getByTestId('view-cube-compass')
+      .querySelector('text:nth-of-type(2)')
+      ?.getAttribute('x');
+
+    rerender(
+      <ViewCube currentAzimuth={Math.PI / 2} currentElevation={0.45} onPick={() => undefined} />,
+    );
+    const northAtEast = getByTestId('view-cube-compass')
+      .querySelector('text:nth-of-type(2)')
+      ?.getAttribute('x');
+
+    expect(northAtZero).toBeTruthy();
+    expect(northAtEast).toBeTruthy();
+    expect(northAtZero).not.toBe(northAtEast);
   });
 });
