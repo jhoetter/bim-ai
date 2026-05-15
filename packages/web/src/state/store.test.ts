@@ -74,6 +74,42 @@ describe('hydrateFromSnapshot', () => {
     }
   });
 
+  it('coerces toposolid site elements from snapshots', () => {
+    const { hydrateFromSnapshot } = useBimStore.getState();
+    hydrateFromSnapshot({
+      modelId: 'm1',
+      revision: 1,
+      elements: {
+        'topo-1': {
+          kind: 'toposolid',
+          name: 'Sloped site',
+          boundaryMm: [
+            { xMm: -1000, yMm: -1000 },
+            { xMm: 5000, yMm: -1000 },
+            { xMm: 5000, yMm: 4000 },
+            { xMm: -1000, yMm: 4000 },
+          ],
+          heightSamples: [
+            { xMm: -1000, yMm: -1000, zMm: -400 },
+            { xMm: 5000, yMm: 4000, zMm: 600 },
+          ],
+          thicknessMm: 1500,
+          baseElevationMm: -1800,
+          defaultMaterialKey: 'render_beige',
+        },
+      },
+      violations: [],
+    });
+
+    const topo = useBimStore.getState().elementsById['topo-1'];
+    expect(topo?.kind).toBe('toposolid');
+    if (topo?.kind === 'toposolid') {
+      expect(topo.boundaryMm).toHaveLength(4);
+      expect(topo.heightSamples?.[1]?.zMm).toBe(600);
+      expect(topo.defaultMaterialKey).toBe('render_beige');
+    }
+  });
+
   it('coerces curved wall arc metadata from snapshots', () => {
     const { hydrateFromSnapshot } = useBimStore.getState();
     hydrateFromSnapshot({

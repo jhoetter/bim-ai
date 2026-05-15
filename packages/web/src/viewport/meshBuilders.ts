@@ -3177,6 +3177,94 @@ export function makeSiteMesh(
   return mesh;
 }
 
+function toposolidHeightMmAtPoint(
+  topo: Extract<Element, { kind: 'toposolid' }>,
+  point: { xMm: number; yMm: number },
+): number {
+  const samples = topo.heightSamples ?? [];
+  if (samples.length) {
+    let best = samples[0]!;
+    let bestDist = Number.POSITIVE_INFINITY;
+    for (const sample of samples) {
+      const dx = sample.xMm - point.xMm;
+      const dy = sample.yMm - point.yMm;
+      const dist = dx * dx + dy * dy;
+      if (dist < bestDist) {
+        best = sample;
+        bestDist = dist;
+      }
+    }
+    return best.zMm;
+  }
+  const grid = topo.heightmapGridMm;
+  if (grid && grid.values.length) return grid.values[0] ?? 0;
+  return topo.baseElevationMm ?? 0;
+}
+
+export function makeToposolidMesh(
+  topo: Extract<Element, { kind: 'toposolid' }>,
+  paint: ViewportPaintBundle | null,
+): THREE.Mesh {
+  const boundary = topo.boundaryMm ?? [];
+  const points =
+    boundary.length >= 3
+      ? boundary
+      : [
+          { xMm: -20000, yMm: -20000 },
+          { xMm: 20000, yMm: -20000 },
+          { xMm: 20000, yMm: 20000 },
+          { xMm: -20000, yMm: 20000 },
+        ];
+  const topHeights = points.map((point) => toposolidHeightMmAtPoint(topo, point));
+  const topMax = Math.max(...topHeights, topo.baseElevationMm ?? 0);
+  const undersideMm =
+    topo.baseElevationMm != null
+      ? topo.baseElevationMm - (topo.thicknessMm ?? 1500)
+      : Math.min(...topHeights) - (topo.thicknessMm ?? 1500);
+  const vertices: number[] = [];
+  for (let i = 0; i < points.length; i++) {
+    const point = points[i]!;
+    vertices.push(point.xMm / 1000, topHeights[i]! / 1000, -point.yMm / 1000);
+  }
+  for (const point of points) {
+    vertices.push(point.xMm / 1000, undersideMm / 1000, -point.yMm / 1000);
+  }
+
+  const indices: number[] = [];
+  for (let i = 1; i < points.length - 1; i++) indices.push(0, i, i + 1);
+  const bottomOffset = points.length;
+  for (let i = 1; i < points.length - 1; i++)
+    indices.push(bottomOffset, bottomOffset + i + 1, bottomOffset + i);
+  for (let i = 0; i < points.length; i++) {
+    const j = (i + 1) % points.length;
+    indices.push(i, j, bottomOffset + j);
+    indices.push(i, bottomOffset + j, bottomOffset + i);
+  }
+
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geom.setIndex(indices);
+  geom.computeVertexNormals();
+  geom.computeBoundingBox();
+
+  const mesh = new THREE.Mesh(
+    geom,
+    makeThreeMaterialForKey(topo.defaultMaterialKey, {
+      usage: 'generic',
+      fallbackColor: categoryColorOr(paint, 'site'),
+      fallbackRoughness: paint?.categories.site.roughness ?? 0.95,
+      fallbackMetalness: paint?.categories.site.metalness ?? 0.0,
+      side: THREE.DoubleSide,
+    }),
+  );
+  mesh.castShadow = false;
+  mesh.receiveShadow = true;
+  mesh.userData.bimPickId = topo.id;
+  mesh.userData.toposolidTopElevationMm = topMax;
+  addEdges(mesh);
+  return mesh;
+}
+
 export function makeBalconyMesh(
   balcony: Extract<Element, { kind: 'balcony' }>,
   elementsById: Record<string, Element>,

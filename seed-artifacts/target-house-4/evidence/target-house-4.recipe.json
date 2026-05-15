@@ -31,6 +31,284 @@
       "planViewId": "t4-plan-attic"
     }
   ],
+  "toposolids": [
+    {
+      "id": "t4-site-front-slope",
+      "name": "Sloped front garden terrain from Ansichten.pdf",
+      "boundaryMm": [
+        {
+          "xMm": -120,
+          "yMm": -6800
+        },
+        {
+          "xMm": 19920,
+          "yMm": -6800
+        },
+        {
+          "xMm": 19920,
+          "yMm": -120
+        },
+        {
+          "xMm": -120,
+          "yMm": -120
+        }
+      ],
+      "heightSamples": [
+        {
+          "xMm": -120,
+          "yMm": -6800,
+          "zMm": -1550
+        },
+        {
+          "xMm": 19920,
+          "yMm": -6800,
+          "zMm": -1050
+        },
+        {
+          "xMm": 19920,
+          "yMm": -120,
+          "zMm": -760
+        },
+        {
+          "xMm": -120,
+          "yMm": -120,
+          "zMm": -1220
+        },
+        {
+          "xMm": 9900,
+          "yMm": -120,
+          "zMm": -940
+        }
+      ],
+      "thicknessMm": 1700,
+      "baseElevationMm": -3200,
+      "defaultMaterialKey": "render_beige",
+      "subdivisions": [
+        {
+          "id": "t4-front-entry-walks",
+          "name": "Twin front entry paving strips",
+          "boundaryMm": [
+            {
+              "xMm": 4200,
+              "yMm": -4300
+            },
+            {
+              "xMm": 15600,
+              "yMm": -4300
+            },
+            {
+              "xMm": 15600,
+              "yMm": -1600
+            },
+            {
+              "xMm": 4200,
+              "yMm": -1600
+            }
+          ],
+          "finishCategory": "paving",
+          "materialKey": "concrete_smooth"
+        }
+      ]
+    },
+    {
+      "id": "t4-site-rear-slope",
+      "name": "Rear garden terrain with lower basement exposure",
+      "boundaryMm": [
+        {
+          "xMm": -120,
+          "yMm": 10020
+        },
+        {
+          "xMm": 19920,
+          "yMm": 10020
+        },
+        {
+          "xMm": 19920,
+          "yMm": 15400
+        },
+        {
+          "xMm": -120,
+          "yMm": 15400
+        }
+      ],
+      "heightSamples": [
+        {
+          "xMm": -120,
+          "yMm": 10020,
+          "zMm": -2050
+        },
+        {
+          "xMm": 19920,
+          "yMm": 10020,
+          "zMm": -1480
+        },
+        {
+          "xMm": 19920,
+          "yMm": 15400,
+          "zMm": -1880
+        },
+        {
+          "xMm": -120,
+          "yMm": 15400,
+          "zMm": -2380
+        },
+        {
+          "xMm": 9900,
+          "yMm": 10020,
+          "zMm": -1760
+        }
+      ],
+      "thicknessMm": 1700,
+      "baseElevationMm": -3600,
+      "defaultMaterialKey": "render_beige"
+    },
+    {
+      "id": "t4-site-left-gable-slope",
+      "name": "Left gable side terrain rising across the facade",
+      "boundaryMm": [
+        {
+          "xMm": -5200,
+          "yMm": -6800
+        },
+        {
+          "xMm": -120,
+          "yMm": -6800
+        },
+        {
+          "xMm": -120,
+          "yMm": 15400
+        },
+        {
+          "xMm": -5200,
+          "yMm": 15400
+        }
+      ],
+      "heightSamples": [
+        {
+          "xMm": -120,
+          "yMm": -6800,
+          "zMm": -1220
+        },
+        {
+          "xMm": -120,
+          "yMm": 15400,
+          "zMm": -2380
+        },
+        {
+          "xMm": -5200,
+          "yMm": 15400,
+          "zMm": -2520
+        },
+        {
+          "xMm": -5200,
+          "yMm": -6800,
+          "zMm": -1550
+        }
+      ],
+      "thicknessMm": 1700,
+      "baseElevationMm": -3800,
+      "defaultMaterialKey": "render_beige"
+    },
+    {
+      "id": "t4-site-right-gable-slope",
+      "name": "Right gable side terrain rising toward the garden",
+      "boundaryMm": [
+        {
+          "xMm": 19920,
+          "yMm": -6800
+        },
+        {
+          "xMm": 25000,
+          "yMm": -6800
+        },
+        {
+          "xMm": 25000,
+          "yMm": 15400
+        },
+        {
+          "xMm": 19920,
+          "yMm": 15400
+        }
+      ],
+      "heightSamples": [
+        {
+          "xMm": 19920,
+          "yMm": -6800,
+          "zMm": -1050
+        },
+        {
+          "xMm": 19920,
+          "yMm": 15400,
+          "zMm": -1880
+        },
+        {
+          "xMm": 25000,
+          "yMm": 15400,
+          "zMm": -2020
+        },
+        {
+          "xMm": 25000,
+          "yMm": -6800,
+          "zMm": -900
+        }
+      ],
+      "thicknessMm": 1700,
+      "baseElevationMm": -3400,
+      "defaultMaterialKey": "render_beige"
+    }
+  ],
+  "gradedRegions": [
+    {
+      "id": "t4-front-worked-grade",
+      "hostToposolidId": "t4-site-front-slope",
+      "boundaryMm": [
+        {
+          "xMm": -120,
+          "yMm": -2850
+        },
+        {
+          "xMm": 19920,
+          "yMm": -2850
+        },
+        {
+          "xMm": 19920,
+          "yMm": -120
+        },
+        {
+          "xMm": -120,
+          "yMm": -120
+        }
+      ],
+      "targetMode": "slope",
+      "slopeAxisDeg": 0,
+      "slopeDegPercent": 2.3
+    },
+    {
+      "id": "t4-rear-worked-grade",
+      "hostToposolidId": "t4-site-rear-slope",
+      "boundaryMm": [
+        {
+          "xMm": -120,
+          "yMm": 10020
+        },
+        {
+          "xMm": 19920,
+          "yMm": 10020
+        },
+        {
+          "xMm": 19920,
+          "yMm": 12600
+        },
+        {
+          "xMm": -120,
+          "yMm": 12600
+        }
+      ],
+      "targetMode": "slope",
+      "slopeAxisDeg": 180,
+      "slopeDegPercent": 3.4
+    }
+  ],
   "types": {
     "wallTypes": [
       {
@@ -1098,6 +1376,11 @@
       "surface": "interior partitions",
       "materialKey": "plasterboard",
       "evidence": "Plan partitions are simplified as light interior walls."
+    },
+    {
+      "surface": "sloped site and worked grade",
+      "materialKey": "render_beige",
+      "evidence": "Ansichten.pdf shows non-flat ground lines at the long and gable elevations."
     }
   ],
   "viewpoints": [
@@ -2476,6 +2759,12 @@
       "value": "Openings use createWallOpening because cmd-v3 seed bundle has no createDoor/createWindow command.",
       "confidence": 0.95,
       "source": "repo command schema"
+    },
+    {
+      "key": "site-slope-interpretation",
+      "value": "The paper elevations show a non-flat site; modeled as four sloped Toposolid strips around the house until excavation cutters are implemented.",
+      "confidence": 0.7,
+      "source": "Ansichten.pdf long elevation and gable elevation ground lines"
     }
   ]
 }

@@ -63,6 +63,7 @@ import {
   makeBalconyMesh,
   makeRailingMesh,
   makeSiteMesh,
+  makeToposolidMesh,
   makeColumnMesh,
   makeBeamMesh,
   makeCeilingMesh,
@@ -4248,6 +4249,9 @@ export function Viewport({
         case 'site':
           obj = makeSiteMesh(e, curr, paint);
           break;
+        case 'toposolid':
+          obj = makeToposolidMesh(e, paint);
+          break;
         case 'text_3d': {
           const t = e as Extract<Element, { kind: 'text_3d' }>;
           const font = getResolvedText3dFont(t.fontFamily);
@@ -4317,7 +4321,7 @@ export function Viewport({
       }
 
       // Shadow: site meshes are receivers only.
-      const isSite = e.kind === 'site';
+      const isSite = e.kind === 'site' || e.kind === 'toposolid';
       obj.traverse((node) => {
         if (!(node instanceof THREE.Mesh)) return;
         node.castShadow = !isSite;

@@ -3,7 +3,13 @@ import { describe, expect, it } from 'vitest';
 
 import type { Element } from '@bim-ai/core';
 
-import { makeCeilingMesh, makeFloorSlabMesh, makeRoofMassMesh, makeSiteMesh } from './meshBuilders';
+import {
+  makeCeilingMesh,
+  makeFloorSlabMesh,
+  makeRoofMassMesh,
+  makeSiteMesh,
+  makeToposolidMesh,
+} from './meshBuilders';
 
 type LevelElem = Extract<Element, { kind: 'level' }>;
 type WallElem = Extract<Element, { kind: 'wall' }>;
@@ -92,6 +98,29 @@ describe('solid viewport materials', () => {
       elementsById,
       null,
     );
+    const toposolid = makeToposolidMesh(
+      {
+        kind: 'toposolid',
+        id: 'topo-1',
+        name: 'Toposolid',
+        boundaryMm: [
+          { xMm: -1000, yMm: -1000 },
+          { xMm: 5000, yMm: -1000 },
+          { xMm: 5000, yMm: 4000 },
+          { xMm: -1000, yMm: 4000 },
+        ],
+        heightSamples: [
+          { xMm: -1000, yMm: -1000, zMm: -400 },
+          { xMm: 5000, yMm: -1000, zMm: 0 },
+          { xMm: 5000, yMm: 4000, zMm: 500 },
+          { xMm: -1000, yMm: 4000, zMm: 100 },
+        ],
+        thicknessMm: 1500,
+        baseElevationMm: -1800,
+        defaultMaterialKey: 'render_beige',
+      },
+      null,
+    );
     const ceiling = makeCeilingMesh(
       {
         kind: 'ceiling',
@@ -111,7 +140,7 @@ describe('solid viewport materials', () => {
       null,
     );
 
-    for (const mesh of [floor, roof, site, ceiling]) {
+    for (const mesh of [floor, roof, site, toposolid, ceiling]) {
       expectOpaqueDepthMaterial(mesh.material as THREE.Material);
     }
   });

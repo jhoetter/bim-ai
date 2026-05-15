@@ -65,6 +65,7 @@ _PHYSICAL_KINDS = {
     "placed_asset",
     "family_instance",
     "family_kit_instance",
+    "toposolid",
 }
 
 _DIAGNOSTIC_PHYSICAL_KINDS = _PHYSICAL_KINDS | {
@@ -72,7 +73,6 @@ _DIAGNOSTIC_PHYSICAL_KINDS = _PHYSICAL_KINDS | {
     "mass",
     "soffit",
     "sweep",
-    "toposolid",
 }
 
 
@@ -233,6 +233,7 @@ def physical_participant_for_element(
         "placed_asset": _aabb_for_placed_asset,
         "family_instance": _aabb_for_family_instance,
         "family_kit_instance": _aabb_for_family_kit_instance,
+        "toposolid": _aabb_for_toposolid,
     }
     builder = builders.get(kind)
     if builder is None:
@@ -358,6 +359,8 @@ def _footprint_for_element(
         return [(float(point.x_mm), float(point.y_mm)) for point in elem.boundary_mm]
     if kind == "roof":
         return [(float(point.x_mm), float(point.y_mm)) for point in elem.footprint_mm]
+    if kind == "toposolid":
+        return [(float(point.x_mm), float(point.y_mm)) for point in elem.boundary_mm]
     if kind == "dormer":
         host = elements.get(getattr(elem, "host_roof_id", "") or "")
         if host is not None and getattr(host, "kind", None) == "roof":
@@ -554,6 +557,32 @@ def _aabb_for_roof(elem: Any, elements: dict[str, Element]) -> AABB | None:
         run = min(max_x - min_x, max_y - min_y) / 2.0
         rise = abs(math.tan(math.radians(float(slope_deg)))) * max(0.0, run)
     return AABB(min_x, min_y, base_z, max_x, max_y, base_z + max(300.0, rise + 300.0))
+
+
+def _aabb_for_toposolid(elem: Any, elements: dict[str, Element]) -> AABB | None:
+    del elements
+    footprint = [(float(point.x_mm), float(point.y_mm)) for point in getattr(elem, "boundary_mm", [])]
+    if len(footprint) < 3:
+        return None
+
+    samples: list[float] = []
+    grid = getattr(elem, "heightmap_grid_mm", None)
+    if grid is not None:
+        samples.extend(float(value) for value in getattr(grid, "values", []) or [])
+    else:
+        samples.extend(float(sample.z_mm) for sample in getattr(elem, "height_samples", []) or [])
+
+    top_z = max(samples) if samples else float(getattr(elem, "base_elevation_mm", None) or 0.0)
+    base_elevation = getattr(elem, "base_elevation_mm", None)
+    if base_elevation is not None:
+        underside_z = float(base_elevation) - float(getattr(elem, "thickness_mm", 1500.0) or 1500.0)
+    elif samples:
+        underside_z = min(samples) - float(getattr(elem, "thickness_mm", 1500.0) or 1500.0)
+    else:
+        underside_z = top_z - float(getattr(elem, "thickness_mm", 1500.0) or 1500.0)
+    if underside_z >= top_z:
+        underside_z = top_z - max(1.0, float(getattr(elem, "thickness_mm", 1500.0) or 1500.0))
+    return _bounds_from_points(footprint, underside_z, top_z)
 
 
 def _aabb_for_dormer(elem: Any, elements: dict[str, Element]) -> AABB | None:

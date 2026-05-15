@@ -27,6 +27,7 @@ from bim_ai.elements import (
     RailingElem,
     RoofElem,
     StairElem,
+    ToposolidElem,
     Vec2Mm,
     WallElem,
 )
@@ -222,6 +223,42 @@ def test_dormer_is_supported_physical_participant_on_roof_plane() -> None:
         (3300.0, 850.0),
         (3300.0, 2350.0),
         (1700.0, 2350.0),
+    ]
+    assert not collect_unsupported_physical_diagnostics(elements)
+
+
+def test_toposolid_is_supported_physical_participant() -> None:
+    elements = {
+        "site": ToposolidElem(
+            kind="toposolid",
+            id="site",
+            boundaryMm=[
+                {"xMm": -1000, "yMm": -2000},
+                {"xMm": 5000, "yMm": -2000},
+                {"xMm": 5000, "yMm": 3000},
+                {"xMm": -1000, "yMm": 3000},
+            ],
+            heightSamples=[
+                {"xMm": -1000, "yMm": -2000, "zMm": -700},
+                {"xMm": 5000, "yMm": -2000, "zMm": -200},
+                {"xMm": 5000, "yMm": 3000, "zMm": 400},
+                {"xMm": -1000, "yMm": 3000, "zMm": -100},
+            ],
+            thicknessMm=1600,
+            baseElevationMm=-1800,
+        )
+    }
+
+    site = _participant_by_id(elements)["site"]
+
+    assert site.kind == "toposolid"
+    assert site.category == "toposolid"
+    assert site.aabb == AABB(-1000.0, -2000.0, -3400.0, 5000.0, 3000.0, 400.0)
+    assert site.metadata["footprintMm"] == [
+        (-1000.0, -2000.0),
+        (5000.0, -2000.0),
+        (5000.0, 3000.0),
+        (-1000.0, 3000.0),
     ]
     assert not collect_unsupported_physical_diagnostics(elements)
 

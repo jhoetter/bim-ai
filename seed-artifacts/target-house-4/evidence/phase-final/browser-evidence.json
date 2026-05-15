@@ -2,7 +2,7 @@
   "schemaVersion": "sketch-to-bim.browser-evidence.v1",
   "url": "http://127.0.0.1:2000",
   "modelId": "b4329ca6-bef7-5be7-8341-cf73e17ac468",
-  "capturedAtEpochMs": 1778866319905,
+  "capturedAtEpochMs": 1778869073216,
   "screenshots": {
     "fullPage": "seed-artifacts/target-house-4/evidence/phase-final/browser-full.png",
     "rightRail": "seed-artifacts/target-house-4/evidence/phase-final/browser-right-rail.png"
@@ -24,7 +24,7 @@
     },
     {
       "type": "debug",
-      "text": "[bim] rendering budget: browserRenderingBudgetReadout_v1 | stale plan_wire_primitives —/25000/50000 [plan_wire_stale_no_projection] · No planProjectionPrimitives_v1 in client store (open a plan_view or wait for projection). | stale schedule_table_rows —/5000/10000 [schedule_stale_not_hydrated] · Not hydrated (Schedules panel idle, loading, or no model). | in_budget model_elements 138/8000/16000 [model_elements_in_budget] | in_budget saved_3d_view_clip_fields 3/20/40 [saved_3d_clip_in_budget] | in_budget sheet_viewports 0/48/96 [sheet_viewports_in_budget] | large_model_proof: Large-model proof: in_budget — all metrics below warn thresholds. | route: Browser rendering budget: all tracked metrics within nominal thresholds."
+      "text": "[bim] rendering budget: browserRenderingBudgetReadout_v1 | stale plan_wire_primitives —/25000/50000 [plan_wire_stale_no_projection] · No planProjectionPrimitives_v1 in client store (open a plan_view or wait for projection). | stale schedule_table_rows —/5000/10000 [schedule_stale_not_hydrated] · Not hydrated (Schedules panel idle, loading, or no model). | in_budget model_elements 145/8000/16000 [model_elements_in_budget] | in_budget saved_3d_view_clip_fields 3/20/40 [saved_3d_clip_in_budget] | in_budget sheet_viewports 0/48/96 [sheet_viewports_in_budget] | large_model_proof: Large-model proof: in_budget — all metrics below warn thresholds. | route: Browser rendering budget: all tracked metrics within nominal thresholds."
     }
   ]
 }
