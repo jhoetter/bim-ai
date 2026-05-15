@@ -1,0 +1,19 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "3c7b5c311e8f",
+  "strategy": "manual-commit",
+  "branch": "codex/sustainability-lens-workpackages-20260514",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/viewport/directAuthoringGuards.test.ts",
+    "packages/web/src/viewport/directAuthoringGuards.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/3c/7b5c311e8f/0/metadata.json",
+      "transcript": "/3c/7b5c311e8f/0/full.jsonl",
+      "content_hash": "/3c/7b5c311e8f/0/content_hash.txt",
+      "prompt": "/3c/7b5c311e8f/0/prompt.txt"
+    }
+  ]
+}
