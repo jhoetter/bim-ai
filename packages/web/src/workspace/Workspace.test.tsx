@@ -377,7 +377,7 @@ describe('<Workspace /> — smoke', () => {
     );
   });
 
-  it('renders pane-local tab strips and supports primary-browser drop-assign + close from pane chrome', () => {
+  it('renders pane-local tab strips and closes only the targeted pane chrome tab', () => {
     localStorage.setItem(
       TABS_KEY,
       JSON.stringify({
@@ -433,7 +433,8 @@ describe('<Workspace /> — smoke', () => {
     expect(leftStrip.textContent).toContain('3D B');
 
     fireEvent.click(getByTestId('canvas-pane-close-tab-pane-left'));
-    expect(getByTestId('canvas-pane-tabstrip-pane-left').textContent).toContain('Plan A');
+    expect(queryByTestId('canvas-pane-tabstrip-pane-left')).toBeNull();
+    expect(getByTestId('canvas-pane-tabstrip-pane-right').textContent).toContain('3D B');
   });
 
   it('creates an empty composition from the header plus', () => {
@@ -493,6 +494,60 @@ describe('<Workspace /> — smoke', () => {
 
     expect(getByText('No view open in this pane')).toBeTruthy();
     expect(getByTestId('composition-bar').textContent).toContain('Composition 1');
+  });
+
+  it('normalizes legacy cleared split pane storage to a single pane', () => {
+    const tabsState = {
+      tabs: [{ id: 'plan:pv-a', kind: 'plan', label: 'Plan A', targetId: 'pv-a' }],
+      activeId: 'plan:pv-a',
+    };
+    localStorage.setItem(TABS_KEY, JSON.stringify({ v: 1, ...tabsState }));
+    localStorage.setItem(
+      COMPOSITIONS_KEY,
+      JSON.stringify({
+        activeId: 'composition-a',
+        compositions: [
+          {
+            id: 'composition-a',
+            label: 'Composition 1',
+            tabsState,
+            paneLayout: {
+              focusedLeafId: 'pane-empty',
+              root: {
+                kind: 'split',
+                id: 'pane-root',
+                axis: 'horizontal',
+                first: { kind: 'leaf', id: 'pane-view', tabId: 'plan:pv-a' },
+                second: { kind: 'leaf', id: 'pane-empty', tabId: null },
+              },
+            },
+          },
+        ],
+      }),
+    );
+    useBimStore.setState({
+      activeLevelId: 'lvl-a',
+      elementsById: {
+        'lvl-a': {
+          kind: 'level',
+          id: 'lvl-a',
+          name: 'Level A',
+          elevationMm: 0,
+        } as Element,
+        'pv-a': {
+          kind: 'plan_view',
+          id: 'pv-a',
+          name: 'Plan A',
+          levelId: 'lvl-a',
+        } as Element,
+      },
+    });
+
+    const { container, getByTestId, queryByText } = renderWithProviders(<Workspace />);
+
+    expect(container.querySelectorAll('[data-testid^="canvas-pane-tabstrip-"]')).toHaveLength(1);
+    expect(getByTestId('canvas-pane-tabstrip-pane-view').textContent).toContain('Plan A');
+    expect(queryByText('No view open in this pane')).toBeNull();
   });
 
   it('opens a primary-browser view in the focused pane', () => {

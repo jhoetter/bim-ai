@@ -51,23 +51,33 @@ describe('paneLayout', () => {
     expect(findPaneForTab(reassigned.root, 'tab-z')).toBe(firstLeafId);
   });
 
-  it('normalizes closed tabs while preserving empty split panes for reuse', () => {
+  it('normalizes closed tabs by collapsing empty split branches', () => {
     const base = createPaneLayout('tab-a');
     const split = splitPaneWithTab(base, base.focusedLeafId, 'right', 'tab-b');
     const normalized = normalizePaneLayout(split, ['tab-a'], 'tab-a');
-    expect(leafCount(normalized.root)).toBe(2);
+    expect(leafCount(normalized.root)).toBe(1);
     expect(findPaneForTab(normalized.root, 'tab-a')).toBeTruthy();
     expect(findPaneForTab(normalized.root, 'tab-b')).toBeNull();
   });
 
-  it('closes a pane leaf tab but keeps the pane available as an empty target', () => {
+  it('removes a pane leaf and collapses to its sibling', () => {
     const base = createPaneLayout('tab-a');
     const split = splitPaneWithTab(base, base.focusedLeafId, 'right', 'tab-b');
     const removed = removePaneLeaf(split, split.focusedLeafId);
-    expect(leafCount(removed.root)).toBe(2);
-    expect(removed.focusedLeafId).toBe(split.focusedLeafId);
+    expect(leafCount(removed.root)).toBe(1);
     expect(findPaneForTab(removed.root, 'tab-a')).toBeTruthy();
     expect(findPaneForTab(removed.root, 'tab-b')).toBeNull();
+  });
+
+  it('removes nested pane leaves recursively', () => {
+    const base = createPaneLayout('tab-a');
+    const rightSplit = splitPaneWithTab(base, base.focusedLeafId, 'right', 'tab-b');
+    const nested = splitPaneWithTab(rightSplit, rightSplit.focusedLeafId, 'bottom', 'tab-c');
+    const removed = removePaneLeaf(nested, nested.focusedLeafId);
+    expect(leafCount(removed.root)).toBe(2);
+    expect(findPaneForTab(removed.root, 'tab-a')).toBeTruthy();
+    expect(findPaneForTab(removed.root, 'tab-b')).toBeTruthy();
+    expect(findPaneForTab(removed.root, 'tab-c')).toBeNull();
   });
 
   it('persists and restores pane layout state', () => {
