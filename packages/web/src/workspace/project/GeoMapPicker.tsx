@@ -1,12 +1,3 @@
-/**
- * GeoMapPicker — interactive Leaflet map for picking a georeference anchor.
- *
- * - Click anywhere on the map to set the anchor (lat/lon).
- * - A dashed circle shows the context radius.
- * - Address search box geocodes via Nominatim (no API key needed).
- * - Radius selector changes the circle live.
- * - onChange fires whenever the anchor or radius changes.
- */
 import { useEffect, useRef, useState, type JSX } from 'react';
 import type * as L from 'leaflet';
 
@@ -36,6 +27,11 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
   const [searchDraft, setSearchDraft] = useState('');
   const [searchBusy, setSearchBusy] = useState(false);
   const [searchError, setSearchError] = useState('');
+  const [suggestions, setSuggestions] = useState<
+    Array<{ lat: string; lon: string; display_name: string }>
+  >([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Keep a ref so leaflet callbacks always read latest value without re-creating handlers.
   const valueRef = useRef(value);
@@ -131,28 +127,31 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
     map.panTo(latlng);
   }, [value.lat, value.lon, value.contextRadiusM]);
 
-  async function handleSearch() {
-    const q = searchDraft.trim();
-    if (!q) return;
-    setSearchBusy(true);
+  type Suggestion = { lat: string; lon: string; display_name: string };
+
+  function handleSearchInput(q: string) {
+    setSearchDraft(q);
     setSearchError('');
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!q.trim()) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    debounceRef.current = setTimeout(() => void fetchSuggestions(q), 300);
+  }
+
+  async function fetchSuggestions(q: string) {
+    setSearchBusy(true);
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5`,
         { headers: { 'Accept-Language': 'en' } },
       );
-      const results = (await res.json()) as Array<{ lat: string; lon: string }>;
-      const first = results[0];
-      if (!first) {
-        setSearchError('No results — try a more specific address.');
-        return;
-      }
-      onChange({
-        lat: parseFloat(first.lat),
-        lon: parseFloat(first.lon),
-        contextRadiusM: value.contextRadiusM,
-      });
-      mapRef.current?.setView([parseFloat(first.lat), parseFloat(first.lon)], 15);
+      const results = (await res.json()) as Suggestion[];
+      setSuggestions(results);
+      setShowSuggestions(results.length > 0);
+      if (results.length === 0) setSearchError('No results — try a more specific address.');
     } catch {
       setSearchError('Search failed. Check your connection.');
     } finally {
@@ -160,28 +159,78 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
     }
   }
 
+  function pickSuggestion(s: Suggestion) {
+    const lat = parseFloat(s.lat);
+    const lon = parseFloat(s.lon);
+    setSearchDraft(s.display_name);
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setSearchError('');
+    onChange({ lat, lon, contextRadiusM: value.contextRadiusM });
+    mapRef.current?.setView([lat, lon], 15);
+  }
+
+  function handleSearchKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter') {
+      if (suggestions[0]) pickSuggestion(suggestions[0]);
+      else void fetchSuggestions(searchDraft);
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-2">
-      {/* Address search */}
-      <div className="flex gap-1.5">
-        <input
-          className="flex-1 rounded border border-border bg-surface px-2 py-1.5 text-[11px] text-foreground placeholder:text-muted focus:border-accent focus:outline-none"
-          type="text"
-          placeholder="Search address…"
-          value={searchDraft}
-          onChange={(e) => setSearchDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') void handleSearch();
-          }}
-        />
-        <button
-          type="button"
-          className="rounded border border-border bg-surface px-3 py-1.5 text-[11px] text-muted hover:border-accent hover:text-accent disabled:opacity-40"
-          disabled={searchBusy || !searchDraft.trim()}
-          onClick={() => void handleSearch()}
-        >
-          {searchBusy ? '…' : 'Find'}
-        </button>
+      {/* Address search with suggestions */}
+      <div
+        className="relative"
+        onBlur={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget)) setShowSuggestions(false);
+        }}
+      >
+        <div className="flex gap-1.5">
+          <input
+            className="flex-1 rounded border border-border bg-surface px-2 py-1.5 text-[11px] text-foreground placeholder:text-muted focus:border-accent focus:outline-none"
+            type="text"
+            placeholder="Search address…"
+            value={searchDraft}
+            onChange={(e) => handleSearchInput(e.target.value)}
+            onFocus={() => {
+              if (suggestions.length > 0) setShowSuggestions(true);
+            }}
+            onKeyDown={handleSearchKeyDown}
+            autoComplete="off"
+          />
+          <button
+            type="button"
+            className="rounded border border-border bg-surface px-3 py-1.5 text-[11px] text-muted hover:border-accent hover:text-accent disabled:opacity-40"
+            disabled={searchBusy || !searchDraft.trim()}
+            onClick={() => {
+              if (suggestions[0]) pickSuggestion(suggestions[0]);
+              else void fetchSuggestions(searchDraft);
+            }}
+          >
+            {searchBusy ? '…' : 'Find'}
+          </button>
+        </div>
+        {showSuggestions && suggestions.length > 0 ? (
+          <ul className="absolute left-0 right-0 top-full z-50 mt-0.5 max-h-48 overflow-auto rounded border border-border bg-surface shadow-lg">
+            {suggestions.map((s, i) => (
+              <li key={i}>
+                <button
+                  type="button"
+                  className="w-full px-2 py-1.5 text-left text-[11px] text-foreground hover:bg-accent/10 focus:bg-accent/10 focus:outline-none"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    pickSuggestion(s);
+                  }}
+                >
+                  {s.display_name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </div>
       {searchError ? <p className="text-[10px] text-danger">{searchError}</p> : null}
 
