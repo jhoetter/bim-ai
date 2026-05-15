@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "f0a49acb28b7",
+  "session_id": "019e2a62-d03c-77f3-8151-b17601ad14d9",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-15T15:26:41.922614Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "3ef74e8ec3ef",
+  "token_usage": {
+    "input_tokens": 3428597,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 96521088,
+    "output_tokens": 228442,
+    "api_call_count": 776
+  },
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 164,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "seed-artifacts/target-house-4/evidence/assumptions.md": 13,
+        "seed-artifacts/target-house-4/evidence/sketch-ir.json": 86,
+        "seed-artifacts/target-house-4/evidence/status.md": 7,
+        "seed-artifacts/target-house-4/source/target-house-seed.md": 58
+      }
+    }
+  ]
+}
