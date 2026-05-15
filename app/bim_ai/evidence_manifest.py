@@ -72,6 +72,8 @@ def export_link_map(model_id: UUID) -> dict[str, str]:
         "glbModel": f"{base}/exports/model.glb",
         "stlManifest": f"{base}/exports/stl-manifest",
         "stlModel": f"{base}/exports/model.stl",
+        "threeMfManifest": f"{base}/exports/3mf-manifest",
+        "threeMfModel": f"{base}/exports/model.3mf",
         "ifcManifest": f"{base}/exports/ifc-manifest",
         "ifcEmptySkeleton": f"{base}/exports/ifc-empty-skeleton.ifc",
         "ifcModel": f"{base}/exports/model.ifc",

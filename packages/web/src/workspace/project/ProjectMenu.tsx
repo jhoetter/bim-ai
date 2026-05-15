@@ -278,16 +278,28 @@ export function ProjectMenu({
           }}
         />
         {modelId ? (
-          <MenuLink
-            label="Export → 3D print STL"
-            icon="externalLink"
-            testId="project-menu-export-stl"
-            href={`/api/models/${encodeURIComponent(modelId)}/exports/model.stl`}
-            download="model.stl"
-            onClick={() => {
-              onOpenChange(false);
-            }}
-          />
+          <>
+            <MenuLink
+              label="Export → 3D print STL"
+              icon="externalLink"
+              testId="project-menu-export-stl"
+              href={`/api/models/${encodeURIComponent(modelId)}/exports/model.stl`}
+              download="model.stl"
+              onClick={() => {
+                onOpenChange(false);
+              }}
+            />
+            <MenuLink
+              label="Export → 3D print 3MF"
+              icon="externalLink"
+              testId="project-menu-export-3mf"
+              href={`/api/models/${encodeURIComponent(modelId)}/exports/model.3mf`}
+              download="model.3mf"
+              onClick={() => {
+                onOpenChange(false);
+              }}
+            />
+          </>
         ) : null}
         {onOpenMaterialBrowser || onOpenAppearanceAssetBrowser ? (
           <>

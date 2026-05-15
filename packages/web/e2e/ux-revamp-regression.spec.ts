@@ -659,6 +659,7 @@ test.describe('UX-WP-10 visual and interaction regression suite', () => {
     await expect(page.getByTestId('project-menu-open-material-browser')).toBeVisible();
     await expect(page.getByTestId('project-menu-open-appearance-asset-browser')).toBeVisible();
     await expect(page.getByTestId('project-menu-export-stl')).toBeVisible();
+    await expect(page.getByTestId('project-menu-export-3mf')).toBeVisible();
     await expect(page.getByTestId('project-menu-link-ifc')).toBeVisible();
     await expect(page.getByTestId('project-menu-link-dxf')).toBeVisible();
     await capture(page, testInfo, '13-project-menu.png');

@@ -112,7 +112,7 @@ describe('<ProjectMenu /> — T-03', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it('renders STL export when a model id is available', () => {
+  it('renders print exports when a model id is available', () => {
     const onOpenChange = vi.fn();
     const modelId = 'model/with space';
     const { getByTestId, unmount } = render(
@@ -130,9 +130,17 @@ describe('<ProjectMenu /> — T-03', () => {
     fireEvent.click(link);
     expect(onOpenChange).toHaveBeenCalledWith(false);
 
+    const threeMfLink = getByTestId('project-menu-export-3mf') as HTMLAnchorElement;
+    expect(threeMfLink.textContent).toContain('3D print 3MF');
+    expect(threeMfLink.getAttribute('href')).toBe(
+      `/api/models/${encodeURIComponent(modelId)}/exports/model.3mf`,
+    );
+    expect(threeMfLink.getAttribute('download')).toBe('model.3mf');
+
     unmount();
     const closed = render(<Harness open={true} onOpenChange={() => {}} />);
     expect(closed.queryByTestId('project-menu-export-stl')).toBeNull();
+    expect(closed.queryByTestId('project-menu-export-3mf')).toBeNull();
   });
 
   it('routes material and appearance resources through the project menu owner', () => {

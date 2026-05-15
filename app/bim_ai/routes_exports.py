@@ -22,6 +22,11 @@ from bim_ai.engine import (
     replay_bundle_diagnostics_for_outcome,
     try_commit_bundle,
 )
+from bim_ai.export_3mf import (
+    THREEMF_PACKAGE_CONTENT_TYPE,
+    build_3mf_export_manifest,
+    document_to_3mf_bytes,
+)
 from bim_ai.export_gltf import build_visual_export_manifest, document_to_glb_bytes, document_to_gltf
 from bim_ai.export_ifc import export_ifc_model_step
 from bim_ai.export_stl import (
@@ -170,6 +175,58 @@ async def export_model_stl_bundle(
         media_type="model/stl",
         headers={
             "Content-Disposition": 'attachment; filename="model.stl"',
+            "Cache-Control": "public, max-age=60",
+        },
+    )
+
+
+@exports_router.get("/models/{model_id}/exports/3mf-manifest")
+async def export_3mf_manifest(
+    model_id: UUID,
+    print_profile: Annotated[str | None, Query(alias="printProfile")] = None,
+    include_kinds: Annotated[str | None, Query(alias="includeKinds")] = None,
+    exclude_kinds: Annotated[str | None, Query(alias="excludeKinds")] = None,
+    min_feature_mm: Annotated[float | None, Query(alias="minFeatureMm", ge=0)] = None,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    options = _stl_options_from_query(
+        print_profile=print_profile,
+        include_kinds=include_kinds,
+        exclude_kinds=exclude_kinds,
+        min_feature_mm=min_feature_mm,
+    )
+    return build_3mf_export_manifest(doc, options=options)
+
+
+@exports_router.get("/models/{model_id}/exports/model.3mf")
+async def export_model_3mf_bundle(
+    model_id: UUID,
+    print_profile: Annotated[str | None, Query(alias="printProfile")] = None,
+    include_kinds: Annotated[str | None, Query(alias="includeKinds")] = None,
+    exclude_kinds: Annotated[str | None, Query(alias="excludeKinds")] = None,
+    min_feature_mm: Annotated[float | None, Query(alias="minFeatureMm", ge=0)] = None,
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    options = _stl_options_from_query(
+        print_profile=print_profile,
+        include_kinds=include_kinds,
+        exclude_kinds=exclude_kinds,
+        min_feature_mm=min_feature_mm,
+    )
+    blob = document_to_3mf_bytes(doc, options=options)
+    return Response(
+        content=blob,
+        media_type=THREEMF_PACKAGE_CONTENT_TYPE,
+        headers={
+            "Content-Disposition": 'attachment; filename="model.3mf"',
             "Cache-Control": "public, max-age=60",
         },
     )
