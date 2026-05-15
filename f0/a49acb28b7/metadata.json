@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "f0a49acb28b7",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "spec/stl-print-export-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f0/a49acb28b7/0/metadata.json",
+      "transcript": "/f0/a49acb28b7/0/full.jsonl",
+      "content_hash": "/f0/a49acb28b7/0/content_hash.txt",
+      "prompt": "/f0/a49acb28b7/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 7064131,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 82754304,
+    "output_tokens": 163223,
+    "api_call_count": 1680
+  }
+}
