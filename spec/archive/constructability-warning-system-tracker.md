@@ -641,6 +641,7 @@ Status vocabulary:
 | CW-020 | done | Medium | Performance plan missing. | `candidate_pairs_by_aabb` provides deterministic sweep-and-prune pruning, `constructability_broad_phase_stats_v1` reports candidate/pruned pair counts, and `impacted_constructability_pairs_v1` scopes rechecks to changed-element candidate pairs. | Benchmarked broad phase and incremental invalidation. |
 | CW-021 | done | Medium | User-facing constructability report missing. | `/api/models/{model_id}/constructability-report`, web report client helpers, summary formatter, and `ConstructabilityReportPanel` exist; strict constructability report findings are also merged into the single right-rail/Agent Review Advisor issue list via `useUnifiedAdvisorViolations`, so model violations/errors/warnings appear in one place with refresh, grouping, isolation, JSON export, and BCF export actions available. | Unified report with refresh, grouping, isolation, export. |
 | CW-022 | done | Medium | Test corpus missing. | `app/tests/fixtures/constructability_cases.json` plus `app/tests/test_constructability_fixture_corpus.py` cover positive/negative golden cases for wall/furniture, MEP sleeve, stair slab opening, duplicates, load-bearing openings, roof coverage, and beam support. | Golden constructability fixtures with positive/negative cases. |
+| CW-023 | done | Medium | Coordination lens review surface missing. | `spec/lenses/coordination-lens.md` tracks the completed Coordination Lens workpackages. `GET /api/models/{model_id}/coordination-lens` returns model health, clashes, issues, links, schedules, review snapshots, and optional revision diff data; the web lens cycle, Cmd+K commands, command capability gating, and right-rail readout expose the same review ownership while disabling geometry authoring commands in the coordination lens. | Dedicated Coordination Lens for model-health, clash, linked-model, issue, BCF/review artifact, and change-impact review. |
 
 ## Roadmap
 
@@ -977,6 +978,7 @@ Readiness gates:
 | CW-WP-008 | Stair constructability v0 | CW-WP-001 | Stair-wall clash, shaft/slab opening, and headroom checks. |
 | CW-WP-009 | Door operation clearance | CW-WP-001 | Door swing envelope collides with furniture/walls. |
 | CW-WP-010 | BCF constructability export | CW-WP-005 | Serious findings export/import with viewpoint and comments. |
+| CW-WP-011 | Coordination lens review surface | CW-WP-005, CW-WP-010 | Coordination lens exposes model health, clashes, issues, linked-model drift, BCF/review artifacts, required schedules, and change review without owning geometry authoring. |
 
 ## References
 
