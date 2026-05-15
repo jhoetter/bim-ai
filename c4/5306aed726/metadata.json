@@ -3,7 +3,7 @@
   "checkpoint_id": "c45306aed726",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 5,
+  "checkpoints_count": 6,
   "files_touched": [
     "packages/web/src/osm/fetchOverpass.ts",
     "packages/web/src/osm/project.ts"
@@ -56,13 +56,19 @@
       "transcript": "/c4/5306aed726/7/full.jsonl",
       "content_hash": "/c4/5306aed726/7/content_hash.txt",
       "prompt": "/c4/5306aed726/7/prompt.txt"
+    },
+    {
+      "metadata": "/c4/5306aed726/8/metadata.json",
+      "transcript": "/c4/5306aed726/8/full.jsonl",
+      "content_hash": "/c4/5306aed726/8/content_hash.txt",
+      "prompt": "/c4/5306aed726/8/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 20501990,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 455365376,
-    "output_tokens": 1106209,
-    "api_call_count": 4517
+    "input_tokens": 20503326,
+    "cache_creation_tokens": 255666,
+    "cache_read_tokens": 466911352,
+    "output_tokens": 1159279,
+    "api_call_count": 4633
   }
 }
