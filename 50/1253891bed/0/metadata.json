@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "501253891bed",
+  "session_id": "019e166f-5651-7be2-a273-542acb502217",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-15T17:39:01.500068Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "claude-skills/sketch-to-bim/SKILL.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "f99528cd2de0",
+  "token_usage": {
+    "input_tokens": 2415817,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 79272576,
+    "output_tokens": 180592,
+    "api_call_count": 606
+  },
+  "session_metrics": {
+    "turn_count": 5
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-15T17:39:01.325461Z",
+    "agent_lines": 8,
+    "agent_removed": 4,
+    "human_added": 18376,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 18384,
+    "total_lines_changed": 18435,
+    "agent_percentage": 0.06509357200976403,
+    "metric_version": 2
+  }
+}
