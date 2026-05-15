@@ -24,6 +24,7 @@ from bim_ai.engine import (
 )
 from bim_ai.export_gltf import build_visual_export_manifest, document_to_glb_bytes, document_to_gltf
 from bim_ai.export_ifc import export_ifc_model_step
+from bim_ai.export_stl import build_stl_export_manifest, document_to_binary_stl_bytes
 from bim_ai.hub import Hub
 from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload, minimal_empty_ifc_skeleton
 from bim_ai.routes_deps import (
@@ -94,6 +95,38 @@ async def export_model_glb_bundle(
         media_type="model/gltf-binary",
         headers={
             "Content-Disposition": 'attachment; filename="model.glb"',
+            "Cache-Control": "public, max-age=60",
+        },
+    )
+
+
+@exports_router.get("/models/{model_id}/exports/stl-manifest")
+async def export_stl_manifest(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return build_stl_export_manifest(doc)
+
+
+@exports_router.get("/models/{model_id}/exports/model.stl")
+async def export_model_stl_bundle(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    blob = document_to_binary_stl_bytes(doc)
+    return Response(
+        content=blob,
+        media_type="model/stl",
+        headers={
+            "Content-Disposition": 'attachment; filename="model.stl"',
             "Cache-Control": "public, max-age=60",
         },
     )
@@ -425,6 +458,12 @@ async def export_model_gltf_redirect(model_id: UUID) -> RedirectResponse:
 async def export_model_glb_redirect(model_id: UUID) -> RedirectResponse:
     """Legacy path → canonical binary glTF under /exports/model.glb."""
     return RedirectResponse(url=f"/api/models/{model_id}/exports/model.glb", status_code=307)
+
+
+@exports_router.get("/models/{model_id}/export/stl")
+async def export_model_stl_redirect(model_id: UUID) -> RedirectResponse:
+    """Legacy path → canonical STL under /exports/model.stl."""
+    return RedirectResponse(url=f"/api/models/{model_id}/exports/model.stl", status_code=307)
 
 
 @exports_router.get("/models/{model_id}/export/bcf")
