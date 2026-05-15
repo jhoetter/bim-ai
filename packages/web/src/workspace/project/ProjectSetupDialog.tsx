@@ -1,6 +1,7 @@
 import { type JSX, useEffect, useMemo, useState } from 'react';
 
 import type { Element } from '@bim-ai/core';
+import { GeoMapPicker } from './GeoMapPicker';
 
 type CommandDispatcher = (cmd: Record<string, unknown>) => void | Promise<void>;
 
@@ -169,8 +170,6 @@ export function ProjectSetupDialog({
     daylightSavingStrategy: 'auto',
     contextRadiusM: '300',
   });
-  const [geoSearchDraft, setGeoSearchDraft] = useState('');
-  const [geoSearchBusy, setGeoSearchBusy] = useState(false);
   const [phaseDraft, setPhaseDraft] = useState({
     name: 'New Construction',
   });
@@ -690,33 +689,6 @@ export function ProjectSetupDialog({
     );
   }
 
-  async function handleGeoSearch() {
-    const q = geoSearchDraft.trim();
-    if (!q) return;
-    setGeoSearchBusy(true);
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,
-        { headers: { 'Accept-Language': 'en' } },
-      );
-      const results = (await res.json()) as Array<{ lat: string; lon: string }>;
-      const first = results[0];
-      if (first) {
-        setSunDraft((d) => ({
-          ...d,
-          latitudeDeg: parseFloat(first.lat).toFixed(6),
-          longitudeDeg: parseFloat(first.lon).toFixed(6),
-        }));
-      } else {
-        setMessage('No results found for that address.');
-      }
-    } catch {
-      setMessage('Address search failed.');
-    } finally {
-      setGeoSearchBusy(false);
-    }
-  }
-
   async function createDefaultPhases() {
     const existingNames = new Set(phases.map((phase) => phase.name.trim().toLowerCase()));
     const commands: Record<string, unknown>[] = [];
@@ -1200,40 +1172,25 @@ export function ProjectSetupDialog({
                 <section className="rounded border border-border bg-background p-3">
                   <h3 className="text-xs font-semibold text-foreground">Location / Sun</h3>
 
-                  <div className="mt-2 flex gap-1.5">
-                    <input
-                      className="flex-1 rounded border border-border bg-surface px-2 py-1 text-[11px] text-foreground placeholder:text-muted focus:border-accent focus:outline-none"
-                      type="text"
-                      placeholder="Search address to fill lat / lon…"
-                      value={geoSearchDraft}
-                      onChange={(e) => setGeoSearchDraft(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') void handleGeoSearch();
+                  <div className="mt-3">
+                    <GeoMapPicker
+                      value={{
+                        lat: parseFloat(sunDraft.latitudeDeg) || 48.14,
+                        lon: parseFloat(sunDraft.longitudeDeg) || 11.58,
+                        contextRadiusM: parseFloat(sunDraft.contextRadiusM) || 300,
                       }}
+                      onChange={(next) =>
+                        setSunDraft((d) => ({
+                          ...d,
+                          latitudeDeg: String(next.lat),
+                          longitudeDeg: String(next.lon),
+                          contextRadiusM: String(next.contextRadiusM),
+                        }))
+                      }
                     />
-                    <button
-                      type="button"
-                      className="rounded border border-border bg-surface px-2.5 py-1 text-[11px] text-muted hover:border-accent hover:text-accent disabled:opacity-40"
-                      disabled={geoSearchBusy || !geoSearchDraft.trim()}
-                      onClick={() => void handleGeoSearch()}
-                    >
-                      {geoSearchBusy ? '…' : 'Find'}
-                    </button>
                   </div>
 
-                  <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                    <SetupInput
-                      label="Latitude deg"
-                      value={sunDraft.latitudeDeg}
-                      type="number"
-                      onChange={(latitudeDeg) => setSunDraft((d) => ({ ...d, latitudeDeg }))}
-                    />
-                    <SetupInput
-                      label="Longitude deg"
-                      value={sunDraft.longitudeDeg}
-                      type="number"
-                      onChange={(longitudeDeg) => setSunDraft((d) => ({ ...d, longitudeDeg }))}
-                    />
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
                     <SetupInput
                       label="Sun date"
                       value={sunDraft.dateIso}
@@ -1259,22 +1216,7 @@ export function ProjectSetupDialog({
                         setSunDraft((d) => ({ ...d, daylightSavingStrategy }))
                       }
                     />
-                    <SetupSelect
-                      label="Context radius"
-                      value={sunDraft.contextRadiusM}
-                      options={[
-                        ['100', '100 m'],
-                        ['300', '300 m'],
-                        ['500', '500 m'],
-                        ['1000', '1000 m'],
-                      ]}
-                      onChange={(contextRadiusM) => setSunDraft((d) => ({ ...d, contextRadiusM }))}
-                    />
                   </div>
-                  <p className="mt-1.5 text-[10px] text-muted">
-                    Lat / lon sets both sun simulation and the OSM site context radius around the
-                    house in the 3D viewer.
-                  </p>
                   <SetupButton busy={busy} onClick={() => void saveSunSettings()}>
                     Save Location / Sun
                   </SetupButton>
