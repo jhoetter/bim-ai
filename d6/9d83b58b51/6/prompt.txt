@@ -1,0 +1,111 @@
+[Image #1] [Image #2] [Image #3] [Image #4] [Image #5] in rayon, i can select from a maps card (is this open maps?) an area and get its CAD data; this could be really cool to use in a project to show the context of the house; how could we best potentially embed this?
+
+---
+
+option A of course. please write a spec tracker in @spec/ with all details needed for this, and how it could best fit into our current application nicely
+
+---
+
+ok then go and please implement all of these workpackages; after each, commit and push to main. don't stop until fully done.
+
+---
+
+<task-notification>
+<task-id>bd1mmbwa2</task-id>
+<tool-use-id>toolu_017mGmrKgdiZjggCNd55kkoc</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/862fe2b4-358e-497f-8622-d5ee6a14aef1/tasks/bd1mmbwa2.output</output-file>
+<status>completed</status>
+<summary>Background command "Commit WP-001 tracker" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+where do i select the map? in the project settings?
+
+---
+
+<task-notification>
+<task-id>bulqmntba</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/862fe2b4-358e-497f-8622-d5ee6a14aef1/tasks/bulqmntba.output</output-file>
+<status>completed</status>
+<summary>Background command "Commit WP-006+008 Viewport integration" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bxv3cym73</task-id>
+<tool-use-id>toolu_013nijTdHCJF2mc8Hpix8CNo</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/862fe2b4-358e-497f-8622-d5ee6a14aef1/tasks/bxv3cym73.output</output-file>
+<status>completed</status>
+<summary>Background command "Commit WP-007 inspector UI" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bbkaqh4y4</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/862fe2b4-358e-497f-8622-d5ee6a14aef1/tasks/bbkaqh4y4.output</output-file>
+<status>completed</status>
+<summary>Background command "Commit WP-002 schema changes" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bziiqe39u</task-id>
+<tool-use-id>toolu_01T2uo5ZDCHNnCHKtmXnV6TM</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/862fe2b4-358e-497f-8622-d5ee6a14aef1/tasks/bziiqe39u.output</output-file>
+<status>completed</status>
+<summary>Background command "Commit WP-003+004 OSM utilities" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+[Image #6] in here?
+
+---
+
+<task-notification>
+<task-id>bgtd2m5p3</task-id>
+<tool-use-id>toolu_012xv6RW164GzmAuyzDtyJmW</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/862fe2b4-358e-497f-8622-d5ee6a14aef1/tasks/bgtd2m5p3.output</output-file>
+<status>completed</status>
+<summary>Background command "Commit WP-009 seed DSL" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bwetvarvk</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/862fe2b4-358e-497f-8622-d5ee6a14aef1/tasks/bwetvarvk.output</output-file>
+<status>failed</status>
+<summary>Background command "Commit and push Location/sun step georeference integration" failed with exit code 1</summary>
+</task-notification>
+
+---
+
+did you complete?
+
+---
+
+[Image #7] where here is it? ...
+
+---
+
+i dont understand, how is that loading the CAD data via openmaps? also it doesnt show the landcard where i can speiry the area etc as in rayon...
+
+---
+
+yes ... do that; also ensure that when i select an area, we get the CAD data
+
+---
+
+is there a way when entering an address we can show recommendations like in google maps? so i can ensure it finds the right spot?
+
+---
+
+[Image #8] i need to be abel to draw the area of context as a rectangle on the map, and once i click save, it must grab the CAD data..; also can you please remove the annotation for leaflet / openmap?
