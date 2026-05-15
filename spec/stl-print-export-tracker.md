@@ -70,7 +70,7 @@ Acceptance:
 
 ### WP-STL-02 - STL Mesh Kernel
 
-Status: [ ]
+Status: [x]
 
 Deliverables:
 
