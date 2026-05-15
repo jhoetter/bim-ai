@@ -2791,6 +2791,48 @@ class DeleteGradedRegionCmd(BaseModel):
     id: str
 
 
+# ---------------------------------------------------------------------------
+# TOP-V3-05 — Toposolid excavation relation commands
+# ---------------------------------------------------------------------------
+
+
+ToposolidExcavationCutMode = Literal["to_top_of_cutter", "to_bottom_of_cutter", "custom_depth"]
+
+
+class CreateToposolidExcavationCmd(BaseModel):
+    """TOP-V3-05 — declare that a floor/roof/toposolid excavates a host toposolid."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["CreateToposolidExcavation"] = "CreateToposolidExcavation"
+    id: str | None = None
+    host_toposolid_id: str = Field(alias="hostToposolidId")
+    cutter_element_id: str = Field(alias="cutterElementId")
+    cut_mode: ToposolidExcavationCutMode = Field("to_bottom_of_cutter", alias="cutMode")
+    offset_mm: float = Field(0.0, alias="offsetMm")
+    custom_depth_mm: float | None = Field(None, alias="customDepthMm")
+    estimated_volume_m3: float | None = Field(None, alias="estimatedVolumeM3")
+
+
+class UpdateToposolidExcavationCmd(BaseModel):
+    """TOP-V3-05 — patch a toposolid excavation relation."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["UpdateToposolidExcavation"] = "UpdateToposolidExcavation"
+    id: str
+    cut_mode: ToposolidExcavationCutMode | None = Field(None, alias="cutMode")
+    offset_mm: float | None = Field(None, alias="offsetMm")
+    custom_depth_mm: float | None = Field(None, alias="customDepthMm")
+    estimated_volume_m3: float | None = Field(None, alias="estimatedVolumeM3")
+
+
+class DeleteToposolidExcavationCmd(BaseModel):
+    """TOP-V3-05 — delete a toposolid excavation relation."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["DeleteToposolidExcavation"] = "DeleteToposolidExcavation"
+    id: str
+
+
 # AST-V3-01 — Asset library commands
 # ---------------------------------------------------------------------------
 
@@ -3839,6 +3881,9 @@ Command = Annotated[
     | CreateGradedRegionCmd
     | UpdateGradedRegionCmd
     | DeleteGradedRegionCmd
+    | CreateToposolidExcavationCmd
+    | UpdateToposolidExcavationCmd
+    | DeleteToposolidExcavationCmd
     | IndexAssetCmd
     | PlaceAssetCmd
     | PlaceFamilyInstanceCmd

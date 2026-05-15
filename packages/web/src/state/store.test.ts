@@ -110,6 +110,33 @@ describe('hydrateFromSnapshot', () => {
     }
   });
 
+  it('coerces toposolid excavation relation elements from snapshots', () => {
+    const { hydrateFromSnapshot } = useBimStore.getState();
+    hydrateFromSnapshot({
+      modelId: 'm1',
+      revision: 1,
+      elements: {
+        'exc-1': {
+          kind: 'toposolid_excavation',
+          hostToposolidId: 'topo-1',
+          cutterElementId: 'floor-1',
+          cutMode: 'to_bottom_of_cutter',
+          offsetMm: 100,
+          estimatedVolumeM3: 12.5,
+        },
+      },
+      violations: [],
+    });
+
+    const excavation = useBimStore.getState().elementsById['exc-1'];
+    expect(excavation?.kind).toBe('toposolid_excavation');
+    if (excavation?.kind === 'toposolid_excavation') {
+      expect(excavation.hostToposolidId).toBe('topo-1');
+      expect(excavation.cutterElementId).toBe('floor-1');
+      expect(excavation.estimatedVolumeM3).toBe(12.5);
+    }
+  });
+
   it('coerces curved wall arc metadata from snapshots', () => {
     const { hydrateFromSnapshot } = useBimStore.getState();
     hydrateFromSnapshot({

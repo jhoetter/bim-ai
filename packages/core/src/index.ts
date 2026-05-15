@@ -108,6 +108,48 @@ export type UpdateGradedRegionCmd = {
 export type DeleteGradedRegionCmd = { type: 'DeleteGradedRegion'; id: string };
 
 // ---------------------------------------------------------------------------
+// TOP-V3-05 — Toposolid excavation relation
+// ---------------------------------------------------------------------------
+
+export type ToposolidExcavationCutMode =
+  | 'to_top_of_cutter'
+  | 'to_bottom_of_cutter'
+  | 'custom_depth';
+
+export type ToposolidExcavationElem = {
+  kind: 'toposolid_excavation';
+  id: string;
+  hostToposolidId: string;
+  cutterElementId: string;
+  cutMode: ToposolidExcavationCutMode;
+  offsetMm: number;
+  customDepthMm?: number | null;
+  estimatedVolumeM3?: number | null;
+};
+
+export type CreateToposolidExcavationCmd = {
+  type: 'CreateToposolidExcavation';
+  id?: string;
+  hostToposolidId: string;
+  cutterElementId: string;
+  cutMode?: ToposolidExcavationCutMode;
+  offsetMm?: number;
+  customDepthMm?: number | null;
+  estimatedVolumeM3?: number | null;
+};
+
+export type UpdateToposolidExcavationCmd = {
+  type: 'UpdateToposolidExcavation';
+  id: string;
+  cutMode?: ToposolidExcavationCutMode;
+  offsetMm?: number;
+  customDepthMm?: number | null;
+  estimatedVolumeM3?: number | null;
+};
+
+export type DeleteToposolidExcavationCmd = { type: 'DeleteToposolidExcavation'; id: string };
+
+// ---------------------------------------------------------------------------
 // CAN-V3-02 — Hatch pattern definition
 // ---------------------------------------------------------------------------
 
@@ -1073,6 +1115,11 @@ export type Element =
         | 'wall_centerline'
         | 'wall_core_layer'
         | 'wall_core_center';
+      georeference?: {
+        anchorLat: number;
+        anchorLon: number;
+        contextRadiusM: number;
+      };
     }
   | {
       kind: 'room_color_scheme';
@@ -2674,6 +2721,7 @@ export type Element =
   | ToposolidElem
   | ToposolidSubdivisionElem
   | GradedRegionElem
+  | ToposolidExcavationElem
   | AssetLibraryEntryElem
   | PlacedAssetElem
   | FamilyKitInstanceElem

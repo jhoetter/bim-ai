@@ -70,6 +70,7 @@ from bim_ai.elements import (
     SlabOpeningElem,
     StairElem,
     ToposolidElem,
+    ToposolidExcavationElem,
     ValidationRuleElem,
     WallElem,
     WindowElem,
@@ -1679,6 +1680,11 @@ def _toposolid_pierce_check_violations(elements: dict[str, Element]) -> list[Vio
     for el in elements.values():
         if isinstance(el, SlabOpeningElem):
             floors_with_openings.add(el.host_floor_id)
+    excavated_floor_pairs = {
+        (el.host_toposolid_id, el.cutter_element_id)
+        for el in elements.values()
+        if isinstance(el, ToposolidExcavationElem)
+    }
 
     out: list[Violation] = []
     for topo in toposolids:
@@ -1687,6 +1693,8 @@ def _toposolid_pierce_check_violations(elements: dict[str, Element]) -> list[Vio
             continue
         for floor in floors:
             if floor.id in floors_with_openings:
+                continue
+            if (topo.id, floor.id) in excavated_floor_pairs:
                 continue
             floor_poly = [(p.x_mm, p.y_mm) for p in floor.boundary_mm]
             if len(floor_poly) < 3:

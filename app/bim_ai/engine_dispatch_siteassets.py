@@ -8,10 +8,12 @@ from bim_ai.engine import (
     CreateDecalCmd,
     CreateGradedRegionCmd,
     CreateToposolidCmd,
+    CreateToposolidExcavationCmd,
     CreateToposolidSubdivisionCmd,
     DecalElem,
     DeleteGradedRegionCmd,
     DeleteToposolidCmd,
+    DeleteToposolidExcavationCmd,
     DeleteToposolidSubdivisionCmd,
     FamilyInstanceElem,
     FamilyKitInstanceElem,
@@ -32,12 +34,14 @@ from bim_ai.engine import (
     RotateElementsCmd,
     SetToolPrefCmd,
     ToposolidElem,
+    ToposolidExcavationElem,
     ToposolidSubdivisionElem,
     TraceImageCmd,
     UpdateGradedRegionCmd,
     UpdateKitComponentCmd,
     UpdateMaterialPbrCmd,
     UpdateToposolidCmd,
+    UpdateToposolidExcavationCmd,
     UpdateToposolidSubdivisionCmd,
     Vec2Mm,
     WallElem,
@@ -92,6 +96,49 @@ def _opening_dimensions_for_family_type(
         sill = 0.0
         head = min(host.height_mm, max(height, 1.0))
     return width, sill, head
+
+
+def _plan_points(element) -> list[tuple[float, float]]:
+    if isinstance(element, FloorElem):
+        return [(float(point.x_mm), float(point.y_mm)) for point in element.boundary_mm]
+    if isinstance(element, ToposolidElem):
+        return [(float(point.x_mm), float(point.y_mm)) for point in element.boundary_mm]
+    footprint = getattr(element, "footprint_mm", None)
+    if footprint:
+        return [(float(point.x_mm), float(point.y_mm)) for point in footprint]
+    return []
+
+
+def _bbox_overlap_area_mm2(a: list[tuple[float, float]], b: list[tuple[float, float]]) -> float:
+    if len(a) < 3 or len(b) < 3:
+        return 0.0
+    min_ax, max_ax = min(p[0] for p in a), max(p[0] for p in a)
+    min_ay, max_ay = min(p[1] for p in a), max(p[1] for p in a)
+    min_bx, max_bx = min(p[0] for p in b), max(p[0] for p in b)
+    min_by, max_by = min(p[1] for p in b), max(p[1] for p in b)
+    width = min(max_ax, max_bx) - max(min_ax, min_bx)
+    depth = min(max_ay, max_by) - max(min_ay, min_by)
+    return max(0.0, width) * max(0.0, depth)
+
+
+def _estimate_excavation_volume_m3(
+    host: ToposolidElem,
+    cutter,
+    *,
+    cut_mode: str,
+    offset_mm: float,
+    custom_depth_mm: float | None,
+) -> float | None:
+    overlap = _bbox_overlap_area_mm2(_plan_points(host), _plan_points(cutter))
+    if overlap <= 1.0:
+        return None
+    depth = custom_depth_mm if cut_mode == "custom_depth" else None
+    if depth is None and isinstance(cutter, FloorElem):
+        depth = float(cutter.thickness_mm)
+    if depth is None:
+        depth = float(getattr(host, "thickness_mm", 1500.0) or 1500.0)
+    depth = max(1.0, float(depth) + float(offset_mm))
+    return round((overlap * depth) / 1_000_000_000.0, 3)
 
 
 def try_apply_siteassets_command(doc, cmd, *, source_provider=None) -> bool:
@@ -317,6 +364,82 @@ def try_apply_siteassets_command(doc, cmd, *, source_provider=None) -> bool:
             existing = els.get(cmd.id)
             if not isinstance(existing, GradedRegionElem):
                 raise ValueError(f"DeleteGradedRegion: no graded_region element with id '{cmd.id}'")
+            del els[cmd.id]
+
+        # -----------------------------------------------------------------
+        # TOP-V3-05 — Toposolid excavation relation commands
+        # -----------------------------------------------------------------
+
+        case CreateToposolidExcavationCmd():
+            eid = cmd.id or new_id()
+            if eid in els:
+                raise ValueError(f"CreateToposolidExcavation: duplicate element id '{eid}'")
+            host = els.get(cmd.host_toposolid_id)
+            if not isinstance(host, ToposolidElem):
+                raise ValueError(
+                    f"CreateToposolidExcavation.hostToposolidId '{cmd.host_toposolid_id}' does not reference an existing toposolid"
+                )
+            cutter = els.get(cmd.cutter_element_id)
+            if not isinstance(cutter, (FloorElem, ToposolidElem)) and getattr(cutter, "kind", None) != "roof":
+                raise ValueError(
+                    f"CreateToposolidExcavation.cutterElementId '{cmd.cutter_element_id}' must reference a floor, roof, or toposolid"
+                )
+            overlap = _bbox_overlap_area_mm2(_plan_points(host), _plan_points(cutter))
+            if overlap <= 1.0:
+                raise ValueError(
+                    "CreateToposolidExcavation: cutter footprint must overlap hostToposolidId in plan"
+                )
+            if cmd.cut_mode == "custom_depth" and cmd.custom_depth_mm is None:
+                raise ValueError("CreateToposolidExcavation.customDepthMm is required for custom_depth mode")
+            estimated = cmd.estimated_volume_m3
+            if estimated is None:
+                estimated = _estimate_excavation_volume_m3(
+                    host,
+                    cutter,
+                    cut_mode=cmd.cut_mode,
+                    offset_mm=cmd.offset_mm,
+                    custom_depth_mm=cmd.custom_depth_mm,
+                )
+            els[eid] = ToposolidExcavationElem(
+                kind="toposolid_excavation",
+                id=eid,
+                hostToposolidId=cmd.host_toposolid_id,
+                cutterElementId=cmd.cutter_element_id,
+                cutMode=cmd.cut_mode,
+                offsetMm=cmd.offset_mm,
+                customDepthMm=cmd.custom_depth_mm,
+                estimatedVolumeM3=estimated,
+            )
+
+        case UpdateToposolidExcavationCmd():
+            existing = els.get(cmd.id)
+            if not isinstance(existing, ToposolidExcavationElem):
+                raise ValueError(
+                    f"UpdateToposolidExcavation: no toposolid_excavation element with id '{cmd.id}'"
+                )
+            patch: dict[str, object | None] = {}
+            next_cut_mode = cmd.cut_mode or existing.cut_mode
+            next_custom_depth = (
+                cmd.custom_depth_mm if cmd.custom_depth_mm is not None else existing.custom_depth_mm
+            )
+            if next_cut_mode == "custom_depth" and next_custom_depth is None:
+                raise ValueError("UpdateToposolidExcavation.customDepthMm is required for custom_depth mode")
+            if cmd.cut_mode is not None:
+                patch["cut_mode"] = cmd.cut_mode
+            if cmd.offset_mm is not None:
+                patch["offset_mm"] = cmd.offset_mm
+            if cmd.custom_depth_mm is not None:
+                patch["custom_depth_mm"] = cmd.custom_depth_mm
+            if cmd.estimated_volume_m3 is not None:
+                patch["estimated_volume_m3"] = cmd.estimated_volume_m3
+            els[cmd.id] = existing.model_copy(update=patch)
+
+        case DeleteToposolidExcavationCmd():
+            existing = els.get(cmd.id)
+            if not isinstance(existing, ToposolidExcavationElem):
+                raise ValueError(
+                    f"DeleteToposolidExcavation: no toposolid_excavation element with id '{cmd.id}'"
+                )
             del els[cmd.id]
 
         # -----------------------------------------------------------------

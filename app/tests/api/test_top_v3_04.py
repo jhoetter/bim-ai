@@ -27,7 +27,7 @@ from bim_ai.api.registry import get_catalog
 from bim_ai.cmd.apply_bundle import apply_bundle as _apply_bundle
 from bim_ai.cmd.types import CommandBundle
 from bim_ai.document import Document
-from bim_ai.elements import GradedRegionElem, WallElem
+from bim_ai.elements import GradedRegionElem, ToposolidExcavationElem, WallElem
 from bim_ai.engine import apply_inplace, ensure_internal_origin
 
 MODEL_ID = str(uuid.uuid4())
@@ -315,6 +315,86 @@ def test_create_graded_region_slope_mode() -> None:
     assert region.slope_axis_deg == 45.0
     assert region.slope_deg_percent == 5.0
     assert region.target_z_mm is None
+
+
+def test_create_toposolid_excavation_relation_suppresses_pierce_warning() -> None:
+    from pydantic import TypeAdapter
+
+    from bim_ai.commands import CreateFloorCmd, CreateToposolidExcavationCmd
+    from bim_ai.constraints import evaluate
+
+    doc = _fresh_doc()
+    apply_inplace(
+        doc,
+        TypeAdapter(CreateFloorCmd).validate_python(
+            {
+                "type": "createFloor",
+                "id": "basement-cutter",
+                "levelId": "lvl-1",
+                "boundaryMm": [
+                    {"xMm": 1000, "yMm": 1000},
+                    {"xMm": 5000, "yMm": 1000},
+                    {"xMm": 5000, "yMm": 5000},
+                    {"xMm": 1000, "yMm": 5000},
+                ],
+                "thicknessMm": 250,
+            }
+        ),
+    )
+    apply_inplace(
+        doc,
+        TypeAdapter(CreateToposolidExcavationCmd).validate_python(
+            {
+                "type": "CreateToposolidExcavation",
+                "id": "exc-1",
+                "hostToposolidId": "topo-1",
+                "cutterElementId": "basement-cutter",
+                "cutMode": "to_bottom_of_cutter",
+                "offsetMm": 100,
+            }
+        ),
+    )
+
+    excavation = doc.elements.get("exc-1")
+    assert isinstance(excavation, ToposolidExcavationElem)
+    assert excavation.host_toposolid_id == "topo-1"
+    assert excavation.cutter_element_id == "basement-cutter"
+    assert excavation.estimated_volume_m3 == 5.6
+    assert [v for v in evaluate(doc.elements) if v.rule_id == "toposolid_pierce_check"] == []
+
+
+def test_create_toposolid_excavation_rejects_non_overlapping_cutter() -> None:
+    from pydantic import TypeAdapter
+
+    from bim_ai.commands import CreateFloorCmd, CreateToposolidExcavationCmd
+
+    doc = _fresh_doc()
+    apply_inplace(
+        doc,
+        TypeAdapter(CreateFloorCmd).validate_python(
+            {
+                "type": "createFloor",
+                "id": "remote-floor",
+                "levelId": "lvl-1",
+                "boundaryMm": [
+                    {"xMm": 30000, "yMm": 30000},
+                    {"xMm": 32000, "yMm": 30000},
+                    {"xMm": 32000, "yMm": 32000},
+                    {"xMm": 30000, "yMm": 32000},
+                ],
+            }
+        ),
+    )
+    cmd = TypeAdapter(CreateToposolidExcavationCmd).validate_python(
+        {
+            "type": "CreateToposolidExcavation",
+            "id": "exc-bad",
+            "hostToposolidId": "topo-1",
+            "cutterElementId": "remote-floor",
+        }
+    )
+    with pytest.raises(ValueError, match="must overlap"):
+        apply_inplace(doc, cmd)
 
 
 # ---------------------------------------------------------------------------

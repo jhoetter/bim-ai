@@ -122,6 +122,7 @@ DEFAULT_DISCIPLINE_BY_KIND: dict[str, DisciplineTag] = {
     "dormer": "arch",
     "soffit": "arch",
     "toposolid": "arch",
+    "toposolid_excavation": "arch",
     "column": "struct",
     "beam": "struct",
     "brace": "struct",
@@ -265,6 +266,7 @@ class ProjectSettingsElem(BaseModel):
         le=99,
         alias="checkpointRetentionLimit",
     )
+    georeference: dict[str, float] | None = Field(default=None, alias="georeference")
 
 
 class RoomColorSchemeRow(BaseModel):
@@ -3500,6 +3502,23 @@ class GradedRegionElem(BaseModel):
     slope_deg_percent: float | None = Field(None, alias="slopeDegPercent")
 
 
+ToposolidExcavationCutMode = Literal["to_top_of_cutter", "to_bottom_of_cutter", "custom_depth"]
+
+
+class ToposolidExcavationElem(BaseModel):
+    """Revit-like explicit relation: a cutter excavates a host Toposolid."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    kind: Literal["toposolid_excavation"] = "toposolid_excavation"
+    id: str
+    host_toposolid_id: str = Field(alias="hostToposolidId")
+    cutter_element_id: str = Field(alias="cutterElementId")
+    cut_mode: ToposolidExcavationCutMode = Field("to_bottom_of_cutter", alias="cutMode")
+    offset_mm: float = Field(0.0, alias="offsetMm")
+    custom_depth_mm: float | None = Field(None, alias="customDepthMm")
+    estimated_volume_m3: float | None = Field(None, alias="estimatedVolumeM3")
+
+
 # AST-V3-01 — Asset library entry + placed asset instance
 # ---------------------------------------------------------------------------
 
@@ -4019,6 +4038,7 @@ Element = Annotated[
     | ToposolidElem
     | ToposolidSubdivisionElem
     | GradedRegionElem
+    | ToposolidExcavationElem
     | AssetLibraryEntryElem
     | PlacedAssetElem
     | FamilyKitInstanceElem

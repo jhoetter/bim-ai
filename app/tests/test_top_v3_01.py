@@ -12,6 +12,7 @@ from bim_ai.elements import (
     LevelElem,
     SlabOpeningElem,
     ToposolidElem,
+    ToposolidExcavationElem,
     Vec2Mm,
 )
 from bim_ai.engine import try_commit
@@ -360,6 +361,39 @@ def test_toposolid_pierce_check_suppressed_by_slab_opening():
     violations = evaluate(doc.elements)
     pierce_viols = [v for v in violations if v.rule_id == "toposolid_pierce_check"]
     assert len(pierce_viols) == 0
+
+
+def test_toposolid_pierce_check_suppressed_by_excavation_relation():
+    topo = ToposolidElem(
+        id="topo-1",
+        boundaryMm=[
+            Vec2Mm(xMm=0, yMm=0),
+            Vec2Mm(xMm=20000, yMm=0),
+            Vec2Mm(xMm=20000, yMm=20000),
+            Vec2Mm(xMm=0, yMm=20000),
+        ],
+    )
+    floor = FloorElem(
+        id="floor-1",
+        name="Basement slab cutter",
+        levelId="lv1",
+        boundaryMm=[
+            Vec2Mm(xMm=1000, yMm=1000),
+            Vec2Mm(xMm=5000, yMm=1000),
+            Vec2Mm(xMm=5000, yMm=5000),
+            Vec2Mm(xMm=1000, yMm=5000),
+        ],
+        thicknessMm=250,
+    )
+    excavation = ToposolidExcavationElem(
+        id="exc-1",
+        hostToposolidId="topo-1",
+        cutterElementId="floor-1",
+    )
+    doc = _doc_with(topo, floor, excavation)
+    violations = evaluate(doc.elements)
+    pierce_viols = [v for v in violations if v.rule_id == "toposolid_pierce_check"]
+    assert pierce_viols == []
 
 
 # ---------------------------------------------------------------------------

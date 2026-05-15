@@ -980,6 +980,26 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
     };
   }
 
+  if (kind === 'toposolid_excavation') {
+    return {
+      kind: 'toposolid_excavation',
+      id,
+      hostToposolidId: String(raw.hostToposolidId ?? raw.host_toposolid_id ?? ''),
+      cutterElementId: String(raw.cutterElementId ?? raw.cutter_element_id ?? ''),
+      cutMode: String(raw.cutMode ?? raw.cut_mode ?? 'to_bottom_of_cutter') as
+        | 'to_top_of_cutter'
+        | 'to_bottom_of_cutter'
+        | 'custom_depth',
+      offsetMm: Number(raw.offsetMm ?? raw.offset_mm ?? 0),
+      ...(raw.customDepthMm !== undefined || raw.custom_depth_mm !== undefined
+        ? { customDepthMm: Number(raw.customDepthMm ?? raw.custom_depth_mm) }
+        : {}),
+      ...(raw.estimatedVolumeM3 !== undefined || raw.estimated_volume_m3 !== undefined
+        ? { estimatedVolumeM3: Number(raw.estimatedVolumeM3 ?? raw.estimated_volume_m3) }
+        : {}),
+    };
+  }
+
   if (kind === 'roof') {
     const rawMode = String(raw.roofGeometryMode ?? raw.roof_geometry_mode ?? 'mass_box');
     const rg =
