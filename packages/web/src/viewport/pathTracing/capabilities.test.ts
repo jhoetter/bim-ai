@@ -77,7 +77,7 @@ describe('path trace capabilities', () => {
 
     expect(capability.status).toBe('degraded');
     expect(capability.previewSamples).toBe(48);
-    expect(capability.targetSamples).toBeGreaterThan(capability.previewSamples);
+    expect(capability.targetSamples).toBe(1024);
   });
 
   it('degrades large scenes instead of rejecting them at the first preview threshold', () => {
@@ -101,8 +101,8 @@ describe('path trace capabilities', () => {
     );
 
     expect(capability.status).toBe('degraded');
-    expect(capability.reason).toContain('Large scene');
-    expect(capability.targetSamples).toBeGreaterThan(capability.previewSamples);
+    expect(capability.reason).toContain('large-scene');
+    expect(capability.targetSamples).toBe(1024);
   });
 
   it('still rejects scenes beyond the local path trace budget', () => {
@@ -151,6 +151,6 @@ describe('path trace capabilities', () => {
 
     expect(capability.status).toBe('supported');
     expect(capability.previewSamples).toBe(96);
-    expect(capability.targetSamples).toBe(768);
+    expect(capability.targetSamples).toBe(2048);
   });
 });

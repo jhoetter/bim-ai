@@ -196,11 +196,11 @@ export function detectPathTraceCapability(
       status: 'degraded',
       reason:
         largeScene
-          ? 'Large scene path trace preview. Starting at low resolution and refining locally; high-fidelity raster mode remains faster.'
-          : 'Low-resolution path trace preview. The first usable pass appears at 48 samples; it keeps refining to reduce noise.',
+          ? 'Experimental large-scene path trace preview. Starting at low resolution and refining locally up to 1024 samples; this may take a while.'
+          : 'Experimental path trace preview. The first usable pass appears at 48 samples; it keeps refining up to 1024 samples.',
       renderScale: largeScene ? 0.4 : 0.5,
       previewSamples: 48,
-      targetSamples: largeScene ? 192 : 256,
+      targetSamples: 1024,
       bounces: 3,
       details,
     };
@@ -209,10 +209,10 @@ export function detectPathTraceCapability(
   return {
     status: 'supported',
     reason:
-      'Path trace preview is refining. Early preview appears at 96 samples; final preview uses a higher local sample budget.',
+      'Experimental path trace preview is refining. Early preview appears at 96 samples; final local preview uses up to 2048 samples.',
     renderScale: 0.85,
     previewSamples: 96,
-    targetSamples: 768,
+    targetSamples: 2048,
     bounces: 6,
     details,
   };
