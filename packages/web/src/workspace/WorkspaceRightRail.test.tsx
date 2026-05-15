@@ -119,10 +119,9 @@ describe('WorkspaceRightRail — type property commands', () => {
       />,
     );
 
-    expect(getByTestId('coordination-lens-panel')).toBeTruthy();
+    expect(getByTestId('lens-dashboard')).toBeTruthy();
     expect(getByText('Coordination')).toBeTruthy();
-    expect(getByText('Issue list')).toBeTruthy();
-    expect(getByText('Missing host')).toBeTruthy();
+    expect(getByText('Issues')).toBeTruthy();
   });
 
   it('routes wall type property edits through upsertWallType', () => {
@@ -570,7 +569,7 @@ describe('WorkspaceRightRail — 3D selected door/window/floor/roof actions', ()
     fireEvent.click(getByTestId('3d-action-floor-isolate-category'));
     expect(useBimStore.getState().viewerCategoryHidden.floor).toBe(false);
     expect(useBimStore.getState().viewerCategoryHidden.wall).toBe(true);
-    fireEvent.click(getByTestId('3d-action-floor-edit-boundary'));
+    fireEvent.click(getByTestId('inspector-floor-edit-boundary'));
     expect(onModeChange).toHaveBeenCalledWith('plan');
     expect(useBimStore.getState().selectedId).toBe(floor.id);
     expect(useBimStore.getState().activeLevelId).toBe('lvl-1');

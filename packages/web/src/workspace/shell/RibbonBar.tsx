@@ -42,6 +42,8 @@ type RibbonCommand =
   | { type: 'mode'; id: WorkspaceMode; label: string; icon: IconName; testId?: string }
   | { type: 'action'; id: RibbonActionId; label: string; icon: IconName; testId?: string };
 
+const RIBBON_HIDDEN_COMMANDS_KEY = 'bim-ai:ribbon-hidden-commands';
+
 type RibbonActionId =
   | 'command-palette'
   | 'project-manage-links'
@@ -218,11 +220,27 @@ export function RibbonBar({
 }: RibbonBarProps): JSX.Element {
   const [activeTabId, setActiveTabId] = useState<RibbonTabId>('create');
   const [openFlyoutPanelId, setOpenFlyoutPanelId] = useState<string | null>(null);
+  const [panelsMinimized, setPanelsMinimized] = useState(false);
+  const [customizing, setCustomizing] = useState(false);
+  const [hiddenCommandKeys, setHiddenCommandKeys] = useState<Set<string>>(
+    () => new Set(readHiddenRibbonCommands()),
+  );
   const tabs = useMemo(
     () => buildRibbonTabs(activeMode, selectedElementKind, lensMode),
     [activeMode, lensMode, selectedElementKind],
   );
   const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? tabs[0]!;
+  const customizableCommands = useMemo(() => {
+    const commands = new Map<string, RibbonCommand>();
+    for (const tab of tabs) {
+      for (const panel of tab.panels) {
+        for (const command of [...panel.commands, ...(panel.flyoutCommands ?? [])]) {
+          commands.set(commandKey(command), command);
+        }
+      }
+    }
+    return [...commands.values()];
+  }, [tabs]);
   const identity = ribbonModeIdentity(activeMode ?? 'plan');
   const ModeIdentityIcon = Icons[identity.icon] ?? Icons.planView;
   const InlineViewIcon = inlineViewTitle
@@ -500,6 +518,7 @@ export function RibbonBar({
                 onClick={() => {
                   setActiveTabId(tab.id);
                   setOpenFlyoutPanelId(null);
+                  setPanelsMinimized(false);
                 }}
                 className={[
                   'relative h-7 whitespace-nowrap rounded-t-md px-2.5 text-xs font-semibold transition-colors',
@@ -515,112 +534,181 @@ export function RibbonBar({
             );
           })}
         </div>
+        <div className="mb-1 flex shrink-0 items-center gap-1 border-l border-border/70 pl-1">
+          <button
+            type="button"
+            data-testid="ribbon-toggle-customize"
+            aria-pressed={customizing}
+            aria-label="Customize ribbon"
+            title="Customize ribbon"
+            onClick={() => setCustomizing((current) => !current)}
+            className={[
+              'inline-flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-background/80 hover:text-foreground',
+              customizing ? 'bg-background text-foreground' : '',
+            ].join(' ')}
+          >
+            <Icons.settings size={ICON_SIZE.chrome} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            data-testid="ribbon-toggle-minimize"
+            aria-expanded={!panelsMinimized}
+            aria-label={panelsMinimized ? 'Expand ribbon panels' : 'Minimize ribbon panels'}
+            title={panelsMinimized ? 'Expand ribbon panels' : 'Minimize ribbon panels'}
+            onClick={() => setPanelsMinimized((current) => !current)}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-background/80 hover:text-foreground"
+          >
+            <Icons.disclosureOpen
+              size={ICON_SIZE.chrome}
+              aria-hidden="true"
+              className={panelsMinimized ? 'rotate-180' : ''}
+            />
+          </button>
+          {customizing ? (
+            <div
+              role="menu"
+              data-testid="ribbon-customize-menu"
+              className="absolute right-2 top-8 z-50 grid max-h-80 min-w-48 gap-1 overflow-auto rounded border border-border bg-surface p-2 text-xs shadow-lg"
+            >
+              {customizableCommands.map((command) => {
+                const key = commandKey(command);
+                const checked = !hiddenCommandKeys.has(key);
+                return (
+                  <label key={key} className="flex items-center gap-2 text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        setHiddenCommandKeys((current) => {
+                          const next = new Set(current);
+                          if (next.has(key)) next.delete(key);
+                          else next.add(key);
+                          writeHiddenRibbonCommands(next);
+                          return next;
+                        });
+                      }}
+                    />
+                    <span>{command.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
         {trailingControls ? (
           <div className="mb-1 flex shrink-0 items-center gap-1 border-l border-border/70 pl-1">
             {trailingControls}
           </div>
         ) : null}
       </div>
-      <div
-        data-testid="ribbon-panels"
-        className="flex min-h-0 flex-1 items-center gap-1.5 overflow-x-auto bg-background px-2"
-      >
-        {activeTab.panels.map((panel) => {
-          const visibleCommands = panel.commands;
-          const visibleFlyoutCommands = panel.flyoutCommands ?? [];
-          const flyoutId = `${activeTab.id}:${panel.id}`;
-          return (
-            <div
-              key={panel.id}
-              role="group"
-              aria-label={panel.label}
-              className="relative flex min-w-fit items-center border-r border-border pr-1.5 last:border-r-0"
-            >
-              <div className="flex w-full items-center justify-center gap-0.5">
-                {visibleCommands.map((command) => {
-                  const availability = activeMode
-                    ? commandAvailability(command, activeMode, lensMode)
-                    : null;
-                  const bridgeTargetMode =
-                    availability?.state === 'bridge' ? availability.targetMode : undefined;
-                  return (
-                    <RibbonButton
-                      key={commandKey(command)}
-                      command={command}
-                      active={commandActive(
-                        command,
-                        activeToolId,
-                        sheetReviewMode,
-                        sheetMarkupShape,
-                      )}
-                      bridgeTargetMode={bridgeTargetMode}
-                      disabledReason={commandDisabledReason(command, activeMode, lensMode)}
-                      onClick={() => runCommand(command)}
-                    />
-                  );
-                })}
-                {visibleFlyoutCommands.length > 0 ? (
-                  <div className="relative flex items-center">
-                    <button
-                      type="button"
-                      aria-label={`${panel.label} panel flyout`}
-                      aria-expanded={openFlyoutPanelId === flyoutId}
-                      data-testid={`ribbon-panel-flyout-${panel.id}`}
-                      onClick={() =>
-                        setOpenFlyoutPanelId((current) => (current === flyoutId ? null : flyoutId))
-                      }
-                      className="flex h-11 w-6 items-center justify-center rounded-md text-muted hover:bg-surface hover:text-foreground"
-                    >
-                      <Icons.disclosureOpen size={ICON_SIZE.chrome} aria-hidden="true" />
-                    </button>
-                    {openFlyoutPanelId === flyoutId ? (
-                      <div
-                        role="menu"
-                        data-testid={`ribbon-flyout-menu-${panel.id}`}
-                        className="absolute right-0 top-11 z-30 min-w-48 rounded border border-border bg-surface p-1 shadow-lg"
+      {panelsMinimized ? null : (
+        <div
+          data-testid="ribbon-panels"
+          className="flex min-h-0 flex-1 items-center gap-1.5 overflow-x-auto bg-background px-2"
+        >
+          {activeTab.panels.map((panel) => {
+            const visibleCommands = panel.commands.filter(
+              (command) => !hiddenCommandKeys.has(commandKey(command)),
+            );
+            const visibleFlyoutCommands = (panel.flyoutCommands ?? []).filter(
+              (command) => !hiddenCommandKeys.has(commandKey(command)),
+            );
+            const flyoutId = `${activeTab.id}:${panel.id}`;
+            return (
+              <div
+                key={panel.id}
+                role="group"
+                aria-label={panel.label}
+                className="relative flex min-w-fit items-center border-r border-border pr-1.5 last:border-r-0"
+              >
+                <div className="flex w-full items-center justify-center gap-0.5">
+                  {visibleCommands.map((command) => {
+                    const availability = activeMode
+                      ? commandAvailability(command, activeMode, lensMode)
+                      : null;
+                    const bridgeTargetMode =
+                      availability?.state === 'bridge' ? availability.targetMode : undefined;
+                    return (
+                      <RibbonButton
+                        key={commandKey(command)}
+                        command={command}
+                        active={commandActive(
+                          command,
+                          activeToolId,
+                          sheetReviewMode,
+                          sheetMarkupShape,
+                        )}
+                        bridgeTargetMode={bridgeTargetMode}
+                        disabledReason={commandDisabledReason(command, activeMode, lensMode)}
+                        onClick={() => runCommand(command)}
+                      />
+                    );
+                  })}
+                  {visibleFlyoutCommands.length > 0 ? (
+                    <div className="relative flex items-center">
+                      <button
+                        type="button"
+                        aria-label={`${panel.label} panel flyout`}
+                        aria-expanded={openFlyoutPanelId === flyoutId}
+                        data-testid={`ribbon-panel-flyout-${panel.id}`}
+                        onClick={() =>
+                          setOpenFlyoutPanelId((current) =>
+                            current === flyoutId ? null : flyoutId,
+                          )
+                        }
+                        className="flex h-11 w-6 items-center justify-center rounded-md text-muted hover:bg-surface hover:text-foreground"
                       >
-                        {visibleFlyoutCommands.map((command) => {
-                          const Icon = Icons[command.icon] ?? Icons.commandPalette;
-                          const disabledReason = commandDisabledReason(
-                            command,
-                            activeMode,
-                            lensMode,
-                          );
-                          return (
-                            <button
-                              key={commandKey(command)}
-                              type="button"
-                              role="menuitem"
-                              data-testid={`ribbon-flyout-command-${command.testId ?? command.id}`}
-                              disabled={Boolean(disabledReason)}
-                              title={disabledReason ?? command.label}
-                              data-disabled-reason={disabledReason}
-                              onClick={() => {
-                                if (disabledReason) return;
-                                runCommand(command);
-                                setOpenFlyoutPanelId(null);
-                              }}
-                              className={[
-                                'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs',
-                                disabledReason
-                                  ? 'cursor-not-allowed text-muted opacity-55'
-                                  : 'text-foreground hover:bg-background',
-                              ].join(' ')}
-                            >
-                              <Icon size={ICON_SIZE.chrome} aria-hidden="true" />
-                              <span>{command.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
+                        <Icons.disclosureOpen size={ICON_SIZE.chrome} aria-hidden="true" />
+                      </button>
+                      {openFlyoutPanelId === flyoutId ? (
+                        <div
+                          role="menu"
+                          data-testid={`ribbon-flyout-menu-${panel.id}`}
+                          className="absolute right-0 top-11 z-30 min-w-48 rounded border border-border bg-surface p-1 shadow-lg"
+                        >
+                          {visibleFlyoutCommands.map((command) => {
+                            const Icon = Icons[command.icon] ?? Icons.commandPalette;
+                            const disabledReason = commandDisabledReason(
+                              command,
+                              activeMode,
+                              lensMode,
+                            );
+                            return (
+                              <button
+                                key={commandKey(command)}
+                                type="button"
+                                role="menuitem"
+                                data-testid={`ribbon-flyout-command-${command.testId ?? command.id}`}
+                                disabled={Boolean(disabledReason)}
+                                title={disabledReason ?? command.label}
+                                data-disabled-reason={disabledReason}
+                                onClick={() => {
+                                  if (disabledReason) return;
+                                  runCommand(command);
+                                  setOpenFlyoutPanelId(null);
+                                }}
+                                className={[
+                                  'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs',
+                                  disabledReason
+                                    ? 'cursor-not-allowed text-muted opacity-55'
+                                    : 'text-foreground hover:bg-background',
+                                ].join(' ')}
+                              >
+                                <Icon size={ICON_SIZE.chrome} aria-hidden="true" />
+                                <span>{command.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }
@@ -1504,6 +1592,7 @@ function buildPlanModifyTab(selectedElementKind: string): RibbonTab {
           ...(selectedElementKind === 'wall' ? [tool('offset', 'Offset', 'move')] : []),
           ...(selectedElementKind === 'wall' ? [tool('split', 'Split', 'split')] : []),
           ...(selectedElementKind === 'wall' ? [tool('trim', 'Trim', 'trim')] : []),
+          ...(selectedElementKind === 'wall' ? [tool('wall-join', 'Wall Join', 'wall-join')] : []),
           tool('trim-extend', 'Trim/Extend', 'trim'),
         ],
       },
@@ -1531,6 +1620,12 @@ function build3dModifyTab(selectedElementKind: string): RibbonTab {
                 action('3d-insert-door', 'Insert Door', 'door', '3d-insert-door'),
                 action('3d-insert-window', 'Insert Window', 'window', '3d-insert-window'),
                 action('3d-insert-opening', 'Opening', 'wall-opening', '3d-insert-opening'),
+                action(
+                  'element-sidebar-toggle',
+                  'Join Controls',
+                  'wall-join',
+                  '3d-wall-join-controls',
+                ),
               ]
             : [action('element-sidebar-toggle', 'Element Actions', 'select', '3d-element-actions')],
       },
@@ -1562,6 +1657,22 @@ function buildSelectionOnlyModifyTab(selectedElementKind: string): RibbonTab {
 
 function commandKey(command: RibbonCommand): string {
   return `${command.type}:${command.id}:${command.testId ?? ''}`;
+}
+
+function readHiddenRibbonCommands(): string[] {
+  if (typeof localStorage === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(RIBBON_HIDDEN_COMMANDS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((value) => typeof value === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeHiddenRibbonCommands(keys: ReadonlySet<string>): void {
+  if (typeof localStorage === 'undefined') return;
+  localStorage.setItem(RIBBON_HIDDEN_COMMANDS_KEY, JSON.stringify([...keys]));
 }
 
 function commandActive(

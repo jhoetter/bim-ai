@@ -544,6 +544,16 @@ export function WorkspaceRightRail({
     });
   }
 
+  const beginPlanBoundaryEdit = useCallback(
+    (floor: Extract<Element, { kind: 'floor' }>): void => {
+      select(floor.id);
+      if (floor.levelId) setActiveLevelId(floor.levelId);
+      setPlanTool('select');
+      onModeChange('plan');
+    },
+    [onModeChange, select, setActiveLevelId, setPlanTool],
+  );
+
   const focusSelectionTab = useCallback((elementId: string): void => {
     const ids = [
       ...new Set(
@@ -1276,6 +1286,7 @@ export function WorkspaceRightRail({
                       },
                       onDisciplineChange: handleDisciplineChange,
                       onEditType: (typeId) => select(typeId),
+                      onEditBoundary: beginPlanBoundaryEdit,
                       onOpenMaterialBrowser,
                       onOpenAppearanceAssetBrowser,
                     })
