@@ -8,7 +8,13 @@ function assertArray(value, path) {
 }
 
 function assertString(value, path) {
-  if (typeof value !== 'string' || !value.trim()) throw new Error(`${path} must be a non-empty string.`);
+  if (typeof value !== 'string' || !value.trim())
+    throw new Error(`${path} must be a non-empty string.`);
+  return value;
+}
+
+function assertFiniteNumber(value, path) {
+  if (!Number.isFinite(value)) throw new Error(`${path} must be a finite number.`);
   return value;
 }
 
@@ -20,7 +26,9 @@ function assertPoint(point, path) {
 }
 
 function assertFootprint(value, path) {
-  const points = assertArray(value, path).map((point, index) => assertPoint(point, `${path}[${index}]`));
+  const points = assertArray(value, path).map((point, index) =>
+    assertPoint(point, `${path}[${index}]`),
+  );
   if (points.length < 3) throw new Error(`${path} must contain at least three points.`);
   return points;
 }
@@ -33,6 +41,36 @@ function areaM2(points) {
     area += a.xMm * b.yMm - b.xMm * a.yMm;
   }
   return Number((Math.abs(area) / 2_000_000).toFixed(2));
+}
+
+function assertHeightSample(sample, path) {
+  if (
+    !isObject(sample) ||
+    !Number.isFinite(sample.xMm) ||
+    !Number.isFinite(sample.yMm) ||
+    !Number.isFinite(sample.zMm)
+  ) {
+    throw new Error(`${path} must be {xMm,yMm,zMm}.`);
+  }
+  return { xMm: sample.xMm, yMm: sample.yMm, zMm: sample.zMm };
+}
+
+function assertHeightmapGrid(grid, path) {
+  if (!isObject(grid)) throw new Error(`${path} must be an object.`);
+  const stepMm = assertFiniteNumber(grid.stepMm, `${path}.stepMm`);
+  const rows = assertFiniteNumber(grid.rows, `${path}.rows`);
+  const cols = assertFiniteNumber(grid.cols, `${path}.cols`);
+  if (!Number.isInteger(rows) || rows < 1)
+    throw new Error(`${path}.rows must be a positive integer.`);
+  if (!Number.isInteger(cols) || cols < 1)
+    throw new Error(`${path}.cols must be a positive integer.`);
+  const values = assertArray(grid.values, `${path}.values`).map((value, index) =>
+    assertFiniteNumber(value, `${path}.values[${index}]`),
+  );
+  if (values.length !== rows * cols) {
+    throw new Error(`${path}.values must contain rows * cols entries.`);
+  }
+  return { stepMm, rows, cols, values };
 }
 
 function wallCommandsForVolume(volume, footprint) {
@@ -150,7 +188,10 @@ function compileRoofs(recipe) {
         id: openingId,
         name: opening.name ?? openingId,
         hostRoofId: id,
-        boundaryMm: assertFootprint(opening.boundaryMm, `$.roofs.${id}.openings.${openingId}.boundaryMm`),
+        boundaryMm: assertFootprint(
+          opening.boundaryMm,
+          `$.roofs.${id}.openings.${openingId}.boundaryMm`,
+        ),
       });
     }
   }
@@ -172,6 +213,97 @@ function compileRooms(recipe) {
       targetAreaM2: Number.isFinite(room.targetAreaM2) ? room.targetAreaM2 : areaM2(outlineMm),
     };
   });
+}
+
+function compileToposolids(recipe) {
+  const commands = [];
+  for (const toposolid of recipe.toposolids ?? []) {
+    const id = assertString(toposolid.id ?? toposolid.toposolidId, '$.toposolids[].id');
+    const heightSamples = assertArray(
+      toposolid.heightSamples ?? [],
+      `$.toposolids.${id}.heightSamples`,
+    ).map((sample, index) =>
+      assertHeightSample(sample, `$.toposolids.${id}.heightSamples[${index}]`),
+    );
+    const hasHeightmap = toposolid.heightmapGridMm != null;
+    if (heightSamples.length > 0 && hasHeightmap) {
+      throw new Error(`$.toposolids.${id} must not define both heightSamples and heightmapGridMm.`);
+    }
+    commands.push({
+      type: 'CreateToposolid',
+      toposolidId: id,
+      name: toposolid.name ?? id,
+      boundaryMm: assertFootprint(toposolid.boundaryMm, `$.toposolids.${id}.boundaryMm`),
+      heightSamples,
+      ...(hasHeightmap
+        ? {
+            heightmapGridMm: assertHeightmapGrid(
+              toposolid.heightmapGridMm,
+              `$.toposolids.${id}.heightmapGridMm`,
+            ),
+          }
+        : {}),
+      thicknessMm: Number.isFinite(toposolid.thicknessMm) ? toposolid.thicknessMm : 1500,
+      ...(Number.isFinite(toposolid.baseElevationMm)
+        ? { baseElevationMm: toposolid.baseElevationMm }
+        : {}),
+      defaultMaterialKey: toposolid.defaultMaterialKey ?? null,
+    });
+
+    for (const subdivision of toposolid.subdivisions ?? []) {
+      const subdivisionId = assertString(subdivision.id, `$.toposolids.${id}.subdivisions[].id`);
+      commands.push({
+        type: 'create_toposolid_subdivision',
+        id: subdivisionId,
+        name: subdivision.name ?? subdivisionId,
+        hostToposolidId: id,
+        boundaryMm: assertFootprint(
+          subdivision.boundaryMm,
+          `$.toposolids.${id}.subdivisions.${subdivisionId}.boundaryMm`,
+        ),
+        finishCategory: subdivision.finishCategory ?? 'other',
+        materialKey: assertString(
+          subdivision.materialKey,
+          `$.toposolids.${id}.subdivisions.${subdivisionId}.materialKey`,
+        ),
+      });
+    }
+  }
+  return commands;
+}
+
+function compileGradedRegions(recipe) {
+  const commands = [];
+  for (const region of recipe.gradedRegions ?? []) {
+    const id = assertString(region.id, '$.gradedRegions[].id');
+    const targetMode = region.targetMode ?? 'flat';
+    if (targetMode !== 'flat' && targetMode !== 'slope') {
+      throw new Error(`$.gradedRegions.${id}.targetMode must be flat or slope.`);
+    }
+    if (targetMode === 'flat' && !Number.isFinite(region.targetZMm)) {
+      throw new Error(`$.gradedRegions.${id}.targetZMm is required for flat mode.`);
+    }
+    if (targetMode === 'slope') {
+      assertFiniteNumber(region.slopeAxisDeg, `$.gradedRegions.${id}.slopeAxisDeg`);
+      assertFiniteNumber(region.slopeDegPercent, `$.gradedRegions.${id}.slopeDegPercent`);
+    }
+    commands.push({
+      type: 'CreateGradedRegion',
+      id,
+      hostToposolidId: assertString(
+        region.hostToposolidId,
+        `$.gradedRegions.${id}.hostToposolidId`,
+      ),
+      boundaryMm: assertFootprint(region.boundaryMm, `$.gradedRegions.${id}.boundaryMm`),
+      targetMode,
+      ...(Number.isFinite(region.targetZMm) ? { targetZMm: region.targetZMm } : {}),
+      ...(Number.isFinite(region.slopeAxisDeg) ? { slopeAxisDeg: region.slopeAxisDeg } : {}),
+      ...(Number.isFinite(region.slopeDegPercent)
+        ? { slopeDegPercent: region.slopeDegPercent }
+        : {}),
+    });
+  }
+  return commands;
 }
 
 function compileAssets(recipe) {
@@ -258,7 +390,10 @@ function compileFeatureMacros(recipe) {
   }
   for (const wrapper of recipe.features?.foldedWrappers ?? []) {
     const id = assertString(wrapper.id, '$.features.foldedWrappers[].id');
-    const footprint = assertFootprint(wrapper.footprintMm, `$.features.foldedWrappers.${id}.footprintMm`);
+    const footprint = assertFootprint(
+      wrapper.footprintMm,
+      `$.features.foldedWrappers.${id}.footprintMm`,
+    );
     commands.push(...wallCommandsForVolume(wrapper, footprint));
     if (wrapper.createRoof === true) {
       commands.push({
@@ -295,7 +430,8 @@ function compileViewpoints(recipe) {
 
 export function compileSeedDsl(recipe, options = {}) {
   if (!isObject(recipe)) throw new Error('Seed DSL recipe must be a JSON object.');
-  if (recipe.schemaVersion !== 'seed-dsl.v0') throw new Error('Expected schemaVersion seed-dsl.v0.');
+  if (recipe.schemaVersion !== 'seed-dsl.v0')
+    throw new Error('Expected schemaVersion seed-dsl.v0.');
   const commands = [];
   if (recipe.projectBasePoint !== false) {
     commands.push({
@@ -308,6 +444,8 @@ export function compileSeedDsl(recipe, options = {}) {
   commands.push(
     ...compileTypes(recipe),
     ...compileLevels(recipe),
+    ...compileToposolids(recipe),
+    ...compileGradedRegions(recipe),
     ...compileVolumes(recipe),
     ...compileRoofs(recipe),
     ...compileRooms(recipe),

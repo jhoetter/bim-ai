@@ -102,18 +102,18 @@ For every workpackage:
 
 ## Workpackages
 
-| ID | Status | Goal | Primary files | Required verification |
-| --- | --- | --- | --- | --- |
-| SITE-WP-001 | In progress | Create this tracker and source-behavior map. | `spec/revit-site-toposolid-parity-tracker.md` | Markdown review, `git diff --check` |
-| SITE-WP-002 | Pending | Add first-class seed DSL authoring for Toposolid, Toposolid subdivisions, and graded regions. | `packages/cli/lib/seed-dsl.mjs`, CLI tests | Seed DSL unit tests |
-| SITE-WP-003 | Pending | Apply sloped terrain to `target-house-4` recipe and regenerate bundle/evidence. | `seed-artifacts/target-house-4/**` | `make seed name=target-house-4`, construction-readiness report, browser evidence |
-| SITE-WP-004 | Pending | Add explicit excavation relationships between host toposolids and cutter floors/roofs/toposolids. | `app/bim_ai/commands.py`, site dispatch, elements, tests | Python site/excavation tests, Advisor report |
-| SITE-WP-005 | Pending | Render terrain, subdivisions, grade cuts, and excavation edges clearly in 3D. | `packages/web/src/viewport/**` | Focused Vitest, Playwright screenshot evidence |
-| SITE-WP-006 | Pending | Show grade lines and basement exposure in elevation/section saved views. | view derivation/rendering, saved viewpoint data | Browser evidence from long and gable elevations |
-| SITE-WP-007 | Pending | Add cut/fill and excavation quantity reporting. | schedules, constructability, export manifests | Python schedule/report tests |
-| SITE-WP-008 | Pending | Add UI authoring controls for site points, graded regions, and excavation toggles. | workspace/ribbon/site authoring UI | Web unit tests, manual authoring smoke |
-| SITE-WP-009 | Pending | Export site/excavation evidence to IFC/glTF/STL-like downstream outputs. | exporters and manifests | Export tests and manifest checks |
-| SITE-WP-010 | Pending | Close `target-house-4` acceptance with site-aware final evidence. | seed artifact evidence/status | `sketch_bim.py accept --seed target-house-4 --clear` |
+| ID          | Status  | Goal                                                                                              | Primary files                                            | Required verification                                                            |
+| ----------- | ------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| SITE-WP-001 | Done    | Create this tracker and source-behavior map.                                                      | `spec/revit-site-toposolid-parity-tracker.md`            | Markdown review, `git diff --check`                                              |
+| SITE-WP-002 | Done    | Add first-class seed DSL authoring for Toposolid, Toposolid subdivisions, and graded regions.     | `packages/cli/lib/seed-dsl.mjs`, CLI tests               | Seed DSL unit tests                                                              |
+| SITE-WP-003 | Pending | Apply sloped terrain to `target-house-4` recipe and regenerate bundle/evidence.                   | `seed-artifacts/target-house-4/**`                       | `make seed name=target-house-4`, construction-readiness report, browser evidence |
+| SITE-WP-004 | Pending | Add explicit excavation relationships between host toposolids and cutter floors/roofs/toposolids. | `app/bim_ai/commands.py`, site dispatch, elements, tests | Python site/excavation tests, Advisor report                                     |
+| SITE-WP-005 | Pending | Render terrain, subdivisions, grade cuts, and excavation edges clearly in 3D.                     | `packages/web/src/viewport/**`                           | Focused Vitest, Playwright screenshot evidence                                   |
+| SITE-WP-006 | Pending | Show grade lines and basement exposure in elevation/section saved views.                          | view derivation/rendering, saved viewpoint data          | Browser evidence from long and gable elevations                                  |
+| SITE-WP-007 | Pending | Add cut/fill and excavation quantity reporting.                                                   | schedules, constructability, export manifests            | Python schedule/report tests                                                     |
+| SITE-WP-008 | Pending | Add UI authoring controls for site points, graded regions, and excavation toggles.                | workspace/ribbon/site authoring UI                       | Web unit tests, manual authoring smoke                                           |
+| SITE-WP-009 | Pending | Export site/excavation evidence to IFC/glTF/STL-like downstream outputs.                          | exporters and manifests                                  | Export tests and manifest checks                                                 |
+| SITE-WP-010 | Pending | Close `target-house-4` acceptance with site-aware final evidence.                                 | seed artifact evidence/status                            | `sketch_bim.py accept --seed target-house-4 --clear`                             |
 
 ## SITE-WP-002 Detail: Seed DSL Site Primitives
 

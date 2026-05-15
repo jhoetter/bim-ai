@@ -338,6 +338,129 @@ test('seed-dsl compile writes a deterministic command bundle', async () => {
   assert.ok(Array.isArray(bundle.meta.materialIntent));
 });
 
+test('seed-dsl compile emits toposolids, subdivisions, and graded regions in host order', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-seed-dsl-site-'));
+  const recipePath = path.join(dir, 'recipe.json');
+  const outPath = path.join(dir, 'bundle.json');
+  await writeJson(recipePath, {
+    schemaVersion: 'seed-dsl.v0',
+    id: 'site-seed',
+    levels: [{ id: 'eg', name: 'Erdgeschoss', elevationMm: 0 }],
+    toposolids: [
+      {
+        id: 'site-existing',
+        name: 'Existing sloped site',
+        boundaryMm: [
+          { xMm: -5000, yMm: -5000 },
+          { xMm: 5000, yMm: -5000 },
+          { xMm: 5000, yMm: 5000 },
+          { xMm: -5000, yMm: 5000 },
+        ],
+        heightSamples: [
+          { xMm: -5000, yMm: -5000, zMm: -600 },
+          { xMm: 5000, yMm: -5000, zMm: -300 },
+          { xMm: 5000, yMm: 5000, zMm: 400 },
+          { xMm: -5000, yMm: 5000, zMm: 100 },
+        ],
+        thicknessMm: 1800,
+        baseElevationMm: -2200,
+        defaultMaterialKey: 'site_grass',
+        subdivisions: [
+          {
+            id: 'entry-paving',
+            boundaryMm: [
+              { xMm: -1200, yMm: -5000 },
+              { xMm: 1200, yMm: -5000 },
+              { xMm: 1200, yMm: -2600 },
+              { xMm: -1200, yMm: -2600 },
+            ],
+            finishCategory: 'paving',
+            materialKey: 'paving_concrete',
+          },
+        ],
+      },
+    ],
+    gradedRegions: [
+      {
+        id: 'building-platform',
+        hostToposolidId: 'site-existing',
+        boundaryMm: [
+          { xMm: -2600, yMm: -2200 },
+          { xMm: 2600, yMm: -2200 },
+          { xMm: 2600, yMm: 2200 },
+          { xMm: -2600, yMm: 2200 },
+        ],
+        targetMode: 'slope',
+        slopeAxisDeg: 90,
+        slopeDegPercent: 4,
+      },
+    ],
+    commands: [{ type: 'saveViewpoint', id: 'raw-after-site', name: 'Raw after site' }],
+  });
+
+  const res = await runCli(['seed-dsl', 'compile', '--recipe', recipePath, '--out', outPath]);
+
+  assert.equal(res.code, 0, res.stderr);
+  const bundle = JSON.parse(await fs.readFile(outPath, 'utf8'));
+  const commands = bundle.commands;
+  const topIndex = commands.findIndex((command) => command.type === 'CreateToposolid');
+  const subdivisionIndex = commands.findIndex(
+    (command) => command.type === 'create_toposolid_subdivision',
+  );
+  const gradedIndex = commands.findIndex((command) => command.type === 'CreateGradedRegion');
+  const rawIndex = commands.findIndex((command) => command.id === 'raw-after-site');
+  assert.ok(topIndex > -1);
+  assert.ok(subdivisionIndex > topIndex);
+  assert.ok(gradedIndex > topIndex);
+  assert.ok(rawIndex > gradedIndex);
+  assert.deepEqual(commands[topIndex].heightSamples[0], {
+    xMm: -5000,
+    yMm: -5000,
+    zMm: -600,
+  });
+  assert.equal(commands[subdivisionIndex].hostToposolidId, 'site-existing');
+  assert.equal(commands[gradedIndex].targetMode, 'slope');
+  assert.equal(commands[gradedIndex].slopeDegPercent, 4);
+});
+
+test('seed-dsl compile rejects invalid site grading definitions', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-seed-dsl-site-invalid-'));
+  const recipePath = path.join(dir, 'recipe.json');
+  const outPath = path.join(dir, 'bundle.json');
+  await writeJson(recipePath, {
+    schemaVersion: 'seed-dsl.v0',
+    toposolids: [
+      {
+        id: 'site-existing',
+        boundaryMm: [
+          { xMm: 0, yMm: 0 },
+          { xMm: 1000, yMm: 0 },
+          { xMm: 0, yMm: 1000 },
+        ],
+        heightSamples: [{ xMm: 0, yMm: 0, zMm: 0 }],
+        heightmapGridMm: { stepMm: 1000, rows: 1, cols: 1, values: [0] },
+      },
+    ],
+    gradedRegions: [
+      {
+        id: 'bad-flat-platform',
+        hostToposolidId: 'site-existing',
+        boundaryMm: [
+          { xMm: 0, yMm: 0 },
+          { xMm: 500, yMm: 0 },
+          { xMm: 0, yMm: 500 },
+        ],
+        targetMode: 'flat',
+      },
+    ],
+  });
+
+  const res = await runCli(['seed-dsl', 'compile', '--recipe', recipePath, '--out', outPath]);
+
+  assert.equal(res.code, 1);
+  assert.match(res.stderr, /must not define both heightSamples and heightmapGridMm/);
+});
+
 test('initiation-golden runs the preflight golden suite', async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-golden-'));
   const manifestPath = path.resolve(__dirname, '../../spec/sketch-to-bim-golden-seeds.json');
