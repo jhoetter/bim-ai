@@ -1337,15 +1337,6 @@ registerCommand({
 });
 
 registerCommand({
-  id: 'display.render.path-trace-preview',
-  label: 'Render: Path Trace Preview',
-  keywords: ['path trace', 'ray trace', 'render', 'progressive', 'display', '3d'],
-  category: 'command',
-  isAvailable: is3dContext,
-  invoke: () => useBimStore.getState().setViewerRenderStyle('path-trace-preview'),
-});
-
-registerCommand({
   id: 'view.3d.fit',
   label: '3D: Fit Model',
   keywords: ['3d', 'fit', 'zoom extents', 'camera'],

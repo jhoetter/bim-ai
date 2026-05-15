@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import asyncio
 import hashlib
-import logging
 from datetime import UTC, datetime
 from typing import Annotated, Any
 from uuid import UUID
@@ -13,12 +11,6 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import RedirectResponse
 
-from bim_ai.backend_render import (
-    BackendRenderRequest,
-    BackendRenderUnavailable,
-    backend_render_capability,
-    render_document_backend_png,
-)
 from bim_ai.db import get_session
 from bim_ai.document import Document
 from bim_ai.elements import BcfElem, BrandTemplateElem
@@ -67,7 +59,6 @@ from bim_ai.sustainability_lca import sustainability_lca_export_v1
 from bim_ai.tables import UndoStackRecord
 
 exports_router = APIRouter()
-logger = logging.getLogger(__name__)
 
 
 def _stl_options_from_query(
@@ -133,62 +124,6 @@ async def export_model_glb_bundle(
         headers={
             "Content-Disposition": 'attachment; filename="model.glb"',
             "Cache-Control": "public, max-age=60",
-        },
-    )
-
-
-@exports_router.get("/renderers/backend-raytrace/capabilities")
-async def backend_raytrace_capabilities() -> dict[str, object]:
-    return backend_render_capability()
-
-
-@exports_router.post("/models/{model_id}/renders/backend-raytrace.png")
-async def render_model_backend_raytrace_png(
-    model_id: UUID,
-    body: BackendRenderRequest,
-    session: AsyncSession = Depends(get_session),
-) -> Response:
-    row = await load_model_row(session, model_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Model not found")
-    doc = Document.model_validate(row.document)
-    logger.info(
-        "Starting backend raytrace render model_id=%s width=%s height=%s samples=%s",
-        model_id,
-        body.width,
-        body.height,
-        body.samples,
-    )
-    try:
-        result = await asyncio.to_thread(render_document_backend_png, doc, body)
-    except BackendRenderUnavailable as exc:
-        logger.warning("Backend raytrace render unavailable model_id=%s: %s", model_id, exc)
-        raise HTTPException(
-            status_code=503,
-            detail={
-                "code": "backend_raytrace_unavailable",
-                "message": str(exc),
-                "capability": backend_render_capability(),
-            },
-        ) from exc
-    logger.info(
-        "Completed backend raytrace render model_id=%s renderer=%s device=%s samples=%s",
-        model_id,
-        result.renderer,
-        result.device,
-        result.samples,
-    )
-    return Response(
-        content=result.png,
-        media_type="image/png",
-        headers={
-            "Cache-Control": "no-store",
-            "Content-Disposition": f'inline; filename="bim-ai-render-{model_id}.png"',
-            "X-Bim-Ai-Renderer": result.renderer,
-            "X-Bim-Ai-Renderer-Device": result.device,
-            "X-Bim-Ai-Render-Samples": str(result.samples),
-            "X-Bim-Ai-Render-Width": str(result.width),
-            "X-Bim-Ai-Render-Height": str(result.height),
         },
     )
 

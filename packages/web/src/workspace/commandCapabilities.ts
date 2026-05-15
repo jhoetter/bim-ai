@@ -1541,20 +1541,6 @@ const VIEW_3D_CAPABILITIES: CommandCapability[] = [
     usabilityScore: 8,
     notes: 'Switches to the high-quality raster PBR fallback with soft shadow filtering.',
   },
-  {
-    id: 'display.render.path-trace-preview',
-    label: 'Render: Path Trace Preview',
-    owner: 'cmdPalette/defaultCommands',
-    group: 'view',
-    scope: 'view',
-    intendedModes: ['3d'],
-    surfaces: ['cmd-k', 'secondary-sidebar'],
-    executionSurface: 'canvas',
-    preconditions: ['WebGL2 path tracing capability for current device and scene'],
-    status: 'implemented',
-    usabilityScore: 8,
-    notes: 'Starts the real progressive GPU path tracing preview when capability checks allow it.',
-  },
 ];
 
 const EDIT_3D_CAPABILITIES: CommandCapability[] = [

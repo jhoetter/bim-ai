@@ -121,11 +121,6 @@ const GRAPHIC_STYLE_OPTIONS: Array<{
     label: 'High fidelity',
     title: 'Show high-quality raster PBR with soft shadows',
   },
-  {
-    value: 'path-trace-preview',
-    label: 'Path trace',
-    title: 'Show real progressive path tracing when supported by this device and scene',
-  },
 ];
 
 const BACKGROUND_OPTIONS: Array<{
@@ -391,18 +386,14 @@ export function Viewport3DLayersPanel({
             </button>
           ))}
         </div>
-        {resolvedRenderStyle === 'realistic' ||
-        resolvedRenderStyle === 'high-fidelity' ||
-        resolvedRenderStyle === 'path-trace-preview' ? (
+        {resolvedRenderStyle === 'realistic' || resolvedRenderStyle === 'high-fidelity' ? (
           <div
             data-testid="graphic-style-fidelity-note"
             className="mt-2 rounded border border-border/70 bg-background px-2 py-1 text-[10px] text-muted"
           >
-            {resolvedRenderStyle === 'path-trace-preview'
-              ? 'Path trace preview progressively computes real ray/path samples when this device and scene support it; otherwise the viewport falls back to raster rendering.'
-              : resolvedRenderStyle === 'high-fidelity'
-                ? 'High fidelity is a raster PBR fallback with SSAO and soft shadows; it does not require ray-tracing hardware.'
-                : 'Realistic mode preserves authored material colors and uses photographic exposure controls for review.'}
+            {resolvedRenderStyle === 'high-fidelity'
+              ? 'High fidelity is a raster PBR mode with SSAO and soft shadows; it does not require ray-tracing hardware.'
+              : 'Realistic mode preserves authored material colors and uses photographic exposure controls for review.'}
           </div>
         ) : null}
         <div className="mt-2 space-y-2">
@@ -921,22 +912,6 @@ function GraphicStylePreview({
         <span className="absolute bottom-1 left-1 h-4 w-6 rounded-sm border border-border bg-surface shadow-lg" />
         <span className="absolute bottom-4 left-5 h-px w-4 rotate-[-18deg] bg-white/90 shadow" />
         <span className="absolute bottom-1 right-1 h-1 w-7 rounded-full bg-foreground/15 blur-[1px]" />
-      </span>
-    );
-  }
-
-  if (style === 'path-trace-preview') {
-    return (
-      <span
-        data-testid="graphic-style-preview-path-trace"
-        aria-hidden="true"
-        className={`relative h-7 w-10 overflow-hidden rounded border ${border} bg-gradient-to-br from-zinc-100 via-white to-cyan-100`}
-      >
-        <span className="absolute bottom-1 left-1 h-4 w-5 rounded-sm border border-border bg-stone-200 shadow-lg" />
-        <span className="absolute bottom-2 right-1 h-5 w-4 rounded-sm border border-border bg-sky-100/90 shadow-md" />
-        <span className="absolute bottom-1 right-1 h-1 w-8 rounded-full bg-foreground/20 blur-[1px]" />
-        <span className="absolute left-2 top-1 h-1.5 w-1.5 rounded-full bg-white shadow" />
-        <span className="absolute left-4 top-2 h-px w-4 rotate-[-20deg] bg-white/90" />
       </span>
     );
   }

@@ -616,7 +616,7 @@ Evidence (2026-05-13):
 - Acceptance:
   - dark mode palette remains legible and physically plausible,
   - materials render consistently across standard/realistic modes,
-  - explicit capability note for raytrace mode (true realtime/path-trace/fallback) and constraints.
+  - explicit capability note for realistic/high-fidelity raster modes and constraints.
 
 Evidence (2026-05-13):
 

@@ -4417,7 +4417,7 @@ export function Viewport({
     };
   }, [georeference]); // osmHiddenLayers intentionally excluded — toggles mutate the group directly
 
-  // ── F-011: visual style (shaded / wireframe / colors / hidden / realistic / high fidelity / path trace) ──
+  // ── F-011: visual style (shaded / wireframe / colors / hidden / realistic / high fidelity) ──
   useEffect(() => {
     const cache = bimPickMapRef.current;
     for (const [, obj] of cache) {
@@ -4469,7 +4469,7 @@ export function Viewport({
             child.material.needsUpdate = true;
           }
         } else {
-          // Shaded / realistic / high fidelity / path trace: restore original MeshStandardMaterial.
+          // Shaded / realistic / high fidelity: restore original MeshStandardMaterial.
           if (child.userData.originalMaterial) {
             child.material = child.userData.originalMaterial as THREE.Material;
             delete child.userData.originalMaterial;
@@ -5517,75 +5517,6 @@ export function Viewport({
             />
           </svg>
         ) : null)}
-
-      {isPathTraceRenderStyle(viewerRenderStyle) && pathTraceState.phase !== 'idle' ? (
-        <div className="pointer-events-none absolute left-3 top-3 z-20 max-w-[320px]">
-          <div
-            data-testid="path-trace-preview-status"
-            data-phase={pathTraceState.phase}
-            className="rounded border border-border bg-surface/90 px-3 py-2 text-[11px] text-foreground shadow-md backdrop-blur-sm"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <span className="font-semibold">
-                {pathTraceState.phase === 'unsupported'
-                  ? 'Path trace unavailable'
-                  : pathTraceState.phase === 'complete'
-                    ? 'Path trace preview complete'
-                    : pathTraceState.previewSamples > 0 &&
-                        pathTraceState.samples >= pathTraceState.previewSamples
-                      ? 'Path trace refining'
-                      : 'Path trace preview'}
-              </span>
-              {pathTraceState.targetSamples > 0 ? (
-                <span className="font-mono text-muted">
-                  {pathTraceState.samples}/{pathTraceState.targetSamples} samples
-                </span>
-              ) : null}
-            </div>
-            <div className="mt-1 text-muted">{pathTraceState.message}</div>
-            {pathTraceState.previewSamples > 0 && pathTraceState.targetSamples > 0 ? (
-              <div className="mt-1 text-muted">
-                {pathTraceState.samples >= pathTraceState.targetSamples
-                  ? 'Final local preview budget reached.'
-                  : pathTraceState.samples >= pathTraceState.previewSamples
-                    ? 'Interactive preview ready; continuing toward final local preview.'
-                    : `Interactive preview target: ${pathTraceState.previewSamples} samples.`}
-              </div>
-            ) : null}
-            {pathTraceState.targetSamples > 0 ? (
-              <div className="mt-2 h-1 overflow-hidden rounded bg-border">
-                <div
-                  className="h-full bg-accent"
-                  style={{
-                    width: `${Math.max(0, Math.min(100, pathTraceState.progress * 100))}%`,
-                  }}
-                />
-              </div>
-            ) : null}
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <button
-                type="button"
-                className="pointer-events-auto rounded border border-border bg-surface px-2 py-1 text-[11px] font-medium text-foreground shadow-sm hover:border-accent hover:text-accent disabled:cursor-wait disabled:opacity-60"
-                disabled={backendRenderState.phase === 'running'}
-                onClick={handleBackendRaytraceRender}
-              >
-                {backendRenderState.phase === 'running' ? 'Rendering...' : 'Backend render'}
-              </button>
-              {backendRenderState.message ? (
-                <span
-                  className={
-                    backendRenderState.phase === 'error'
-                      ? 'text-right text-danger'
-                      : 'text-right text-muted'
-                  }
-                >
-                  {backendRenderState.message}
-                </span>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       {/* Walk mode controls bar — shown while pointer is locked */}
       {walkActive ? (

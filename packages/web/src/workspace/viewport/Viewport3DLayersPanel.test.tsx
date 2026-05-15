@@ -76,15 +76,12 @@ describe('<Viewport3DLayersPanel />', () => {
     expect(getByTestId('graphic-style-preview-wireframe')).toBeTruthy();
     expect(getByTestId('graphic-style-preview-realistic')).toBeTruthy();
     expect(getByTestId('graphic-style-preview-high-fidelity')).toBeTruthy();
-    expect(getByTestId('graphic-style-preview-path-trace')).toBeTruthy();
     fireEvent.click(getByText('Wire'));
     expect(onSetRenderStyle).toHaveBeenCalledWith('wireframe');
     fireEvent.click(getByText('Realistic'));
     expect(onSetRenderStyle).toHaveBeenCalledWith('realistic');
     fireEvent.click(getByText('High fidelity'));
     expect(onSetRenderStyle).toHaveBeenCalledWith('high-fidelity');
-    fireEvent.click(getByText('Path trace'));
-    expect(onSetRenderStyle).toHaveBeenCalledWith('path-trace-preview');
   });
 
   it('calls background and edge controls from the graphics panel', () => {
@@ -178,7 +175,7 @@ describe('<Viewport3DLayersPanel />', () => {
     expect(getByText('2 hidden')).toBeTruthy();
   });
 
-  it('shows explicit realistic and path-trace fidelity notes', () => {
+  it('shows explicit realistic and high-fidelity notes', () => {
     const { getByTestId, rerender } = render(
       <Viewport3DLayersPanel {...makeProps({ viewerRenderStyle: 'realistic' })} />,
     );
@@ -189,11 +186,6 @@ describe('<Viewport3DLayersPanel />', () => {
     rerender(<Viewport3DLayersPanel {...makeProps({ viewerRenderStyle: 'high-fidelity' })} />);
     expect(getByTestId('graphic-style-fidelity-note').textContent).toContain(
       'does not require ray-tracing hardware',
-    );
-
-    rerender(<Viewport3DLayersPanel {...makeProps({ viewerRenderStyle: 'path-trace-preview' })} />);
-    expect(getByTestId('graphic-style-fidelity-note').textContent).toContain(
-      'progressively computes real ray/path samples',
     );
   });
 
