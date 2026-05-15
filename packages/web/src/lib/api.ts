@@ -198,6 +198,51 @@ export async function fetchApiSchema(): Promise<Record<string, unknown>> {
   return fetchJson<Record<string, unknown>>('/api/schema');
 }
 
+export type BackendRaytraceVectorM = { x: number; y: number; z: number };
+
+export type BackendRaytraceRenderRequest = {
+  width: number;
+  height: number;
+  samples: number;
+  timeoutSeconds?: number;
+  camera?: {
+    position: BackendRaytraceVectorM;
+    target: BackendRaytraceVectorM;
+    up: BackendRaytraceVectorM;
+    fovDeg?: number;
+  };
+};
+
+export async function renderBackendRaytracePng(
+  modelId: string,
+  request: BackendRaytraceRenderRequest,
+): Promise<Blob> {
+  const res = await fetch(
+    `/api/models/${encodeURIComponent(modelId)}/renders/backend-raytrace.png`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    },
+  );
+  if (!res.ok) {
+    const text = await res.text();
+    let detail: unknown = text;
+    try {
+      const parsed = JSON.parse(text) as { detail?: unknown };
+      detail = parsed.detail ?? parsed;
+    } catch {
+      // keep raw text
+    }
+    const message =
+      detail && typeof detail === 'object' && 'message' in detail
+        ? String((detail as { message?: unknown }).message)
+        : `${res.status} ${res.statusText}`;
+    throw new ApiHttpError(res.status, message, detail);
+  }
+  return res.blob();
+}
+
 export function parseSnapshot(wsPayload: Record<string, unknown>): Snapshot | null {
   const modelId =
     typeof wsPayload.modelId === 'string'

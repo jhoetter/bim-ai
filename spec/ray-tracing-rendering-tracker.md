@@ -508,21 +508,21 @@ Evidence (2026-05-15):
 ### WP-RT-08 - Optional Backend Render Job
 
 - Priority: `P3`
-- Status: `Open`
+- Status: `Partially implemented`
 - Goal: support offline CPU/GPU rendering outside the browser if needed. In a local setup, "backend" may be the user's own MacBook running the BIM AI API process; in hosted deployments it may be a remote GPU worker.
 - Source ownership:
   - backend export/render service,
   - asset packaging,
   - job queue/storage.
 - Implementation:
-  - Export scene to glTF/USD or renderer-specific scene format.
-  - Queue render jobs.
-  - Run with a backend renderer such as Blender/Cycles, a native Metal/CPU renderer, or a future GPU service worker.
-  - Support local-only execution first: API receives model/viewpoint/render settings, starts a job on the same machine, and streams or stores progress.
-  - Store outputs and logs.
+  - Implemented local API render endpoint: `POST /api/models/{modelId}/renders/backend-raytrace.png`.
+  - The endpoint exports the current BIM document to GLB, invokes Blender/Cycles headlessly, enables denoising, prefers GPU devices such as Metal/OptiX/CUDA/HIP/oneAPI when Blender exposes them, and falls back to Cycles CPU rendering inside Blender.
+  - The viewport sends the current orbit camera pose and opens the returned PNG as a high-sample still render.
+  - Capability probe: `GET /api/renderers/backend-raytrace/capabilities` reports whether Blender is available. Local development can point at a custom Blender binary with `BIM_AI_BLENDER_PATH`.
+  - Remaining work: replace the synchronous endpoint with persistent queued jobs, progress streaming, cancellation, output storage, and retained logs.
 - Acceptance:
-  - Browser can request a render without blocking.
-  - Job result includes image, diagnostics, and exact scene/material revision.
+  - Browser can request a high-quality backend still render from path trace preview mode.
+  - Response headers include renderer, device, sample count, and output size.
   - Local backend jobs make it clear that they use the user's machine and may consume CPU/GPU for minutes.
 
 ## Open Decisions

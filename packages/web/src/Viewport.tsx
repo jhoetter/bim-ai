@@ -13,6 +13,7 @@ import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 import { parseDimensionInput, type Element, type LensMode } from '@bim-ai/core';
 import type { OrbitViewpointPersistFieldPayload } from './OrbitViewpointPersistedHud';
 
+import { ApiHttpError, renderBackendRaytracePng } from './lib/api';
 import { useBimStore, type PlanTool } from './state/store';
 import { useTheme } from './state/useTheme';
 import type { SnapSettings } from './plan/snapSettings';
@@ -531,6 +532,10 @@ export function Viewport({
   const pathTraceCapabilityRef = useRef<PathTraceCapability | null>(null);
   const [pathTraceState, setPathTraceState] =
     useState<PathTracePreviewState>(idlePathTracePreviewState);
+  const [backendRenderState, setBackendRenderState] = useState<{
+    phase: 'idle' | 'running' | 'error';
+    message: string;
+  }>({ phase: 'idle', message: '' });
   /** COL-V3-01: per-remote-user outline passes keyed by CSS color string. */
   const remoteOutlinePassesRef = useRef<Map<string, OutlinePass>>(new Map());
   const bimPickMapRef = useRef<Map<string, THREE.Object3D>>(new Map());
@@ -595,6 +600,7 @@ export function Viewport({
   const sectionBoxCageRef = useRef<THREE.LineSegments | null>(null);
   const clipCapsRef = useRef<THREE.Mesh[]>([]);
 
+  const modelId = useBimStore((s) => s.modelId);
   const elementsById = useBimStore((s) => s.elementsById);
   // ANN-02: ref-copy so the 3D contextmenu listener (registered once in the
   // mount effect) sees up-to-date elements without rerunning that effect.
@@ -689,12 +695,9 @@ export function Viewport({
   const handleGripCommandRef = useRef(handleGripCommand);
   handleGripCommandRef.current = handleGripCommand;
 
-  const handleWallFaceRadialCommand = useCallback(
-    (next: WallFaceRadialCommand) => {
-      onSemanticCommandRef.current?.(next.cmd as unknown as Record<string, unknown>);
-    },
-    [],
-  );
+  const handleWallFaceRadialCommand = useCallback((next: WallFaceRadialCommand) => {
+    onSemanticCommandRef.current?.(next.cmd as unknown as Record<string, unknown>);
+  }, []);
 
   const direct3dDraftLevelName = useMemo(() => {
     const levels = Object.values(elementsById)
@@ -809,6 +812,61 @@ export function Viewport({
     if (!el || el.kind !== 'viewpoint' || el.mode !== 'orbit_3d') return null;
     return el;
   }, [activeViewpointId, elementsById]);
+
+  const handleBackendRaytraceRender = useCallback(async () => {
+    if (!modelId) {
+      setBackendRenderState({ phase: 'error', message: 'No active model for backend render.' });
+      return;
+    }
+    const snap = cameraRigRef.current?.snapshot();
+    const renderWindow = window.open('about:blank', '_blank');
+    if (renderWindow) renderWindow.opener = null;
+    setBackendRenderState({
+      phase: 'running',
+      message: 'Backend Cycles render running on the API process.',
+    });
+    try {
+      const blob = await renderBackendRaytracePng(modelId, {
+        width: 1920,
+        height: 1200,
+        samples: 2048,
+        timeoutSeconds: 900,
+        camera: snap
+          ? {
+              position: snap.position,
+              target: snap.target,
+              up: snap.up,
+              fovDeg: cameraRef.current?.fov ?? 45,
+            }
+          : undefined,
+      });
+      const url = URL.createObjectURL(blob);
+      if (renderWindow) {
+        renderWindow.location.href = url;
+      } else {
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.target = '_blank';
+        anchor.rel = 'noopener';
+        anchor.click();
+      }
+      window.setTimeout(() => URL.revokeObjectURL(url), 120_000);
+      setBackendRenderState({
+        phase: 'idle',
+        message: 'Backend render opened in a new tab.',
+      });
+    } catch (err) {
+      renderWindow?.close();
+      const message =
+        err instanceof ApiHttpError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : 'Backend render failed.';
+      setBackendRenderState({ phase: 'error', message });
+    }
+  }, [modelId]);
+
   const viewerShadowsEnabled =
     viewerGdoRuntime.viewerShadowsEnabled ??
     persistedOrbitViewpoint?.viewerShadowsEnabled ??
@@ -5579,6 +5637,27 @@ export function Viewport({
                 />
               </div>
             ) : null}
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                className="pointer-events-auto rounded border border-border bg-surface px-2 py-1 text-[11px] font-medium text-foreground shadow-sm hover:border-accent hover:text-accent disabled:cursor-wait disabled:opacity-60"
+                disabled={backendRenderState.phase === 'running'}
+                onClick={handleBackendRaytraceRender}
+              >
+                {backendRenderState.phase === 'running' ? 'Rendering...' : 'Backend render'}
+              </button>
+              {backendRenderState.message ? (
+                <span
+                  className={
+                    backendRenderState.phase === 'error'
+                      ? 'text-right text-danger'
+                      : 'text-right text-muted'
+                  }
+                >
+                  {backendRenderState.message}
+                </span>
+              ) : null}
+            </div>
           </div>
         </div>
       ) : null}
