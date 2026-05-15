@@ -4399,7 +4399,27 @@ export function Viewport({
 
     let cancelled = false;
 
-    fetchOsmContext(georeference.anchorLat, georeference.anchorLon, georeference.contextRadiusM)
+    // Derive bbox — new data has explicit bbox fields; old data (contextRadiusM) falls back.
+    const bbox =
+      georeference.bboxNorth != null
+        ? {
+            north: georeference.bboxNorth,
+            south: georeference.bboxSouth!,
+            east: georeference.bboxEast!,
+            west: georeference.bboxWest!,
+          }
+        : (() => {
+            const r = georeference.contextRadiusM ?? 300;
+            const dLat = r / 111_319.5;
+            const dLon = r / (111_319.5 * Math.cos((georeference.anchorLat * Math.PI) / 180));
+            return {
+              north: georeference.anchorLat + dLat,
+              south: georeference.anchorLat - dLat,
+              east: georeference.anchorLon + dLon,
+              west: georeference.anchorLon - dLon,
+            };
+          })();
+    fetchOsmContext(georeference.anchorLat, georeference.anchorLon, bbox)
       .then((features) => {
         if (cancelled) return;
         removePrevious();

@@ -886,26 +886,31 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     try:
                         anchor_lat = float(raw["anchorLat"])
                         anchor_lon = float(raw["anchorLon"])
-                        radius_m = float(raw["contextRadiusM"])
+                        bbox_north = float(raw["bboxNorth"])
+                        bbox_south = float(raw["bboxSouth"])
+                        bbox_east = float(raw["bboxEast"])
+                        bbox_west = float(raw["bboxWest"])
                     except (KeyError, TypeError, ValueError) as exc:
                         raise ValueError(
-                            "georeference must have anchorLat, anchorLon, contextRadiusM"
+                            "georeference must have anchorLat, anchorLon, bboxNorth, bboxSouth, bboxEast, bboxWest"
                         ) from exc
                     if not (-90 <= anchor_lat <= 90):
                         raise ValueError("georeference.anchorLat must be in [-90, 90]")
                     if not (-180 <= anchor_lon <= 180):
                         raise ValueError("georeference.anchorLon must be in [-180, 180]")
-                    if not (50 <= radius_m <= 1000):
-                        raise ValueError("georeference.contextRadiusM must be in [50, 1000]")
-                    els[cmd.element_id] = el.model_copy(
-                        update={
-                            "georeference": {
-                                "anchorLat": anchor_lat,
-                                "anchorLon": anchor_lon,
-                                "contextRadiusM": radius_m,
-                            }
-                        }
-                    )
+                    if not (-90 <= bbox_south < bbox_north <= 90):
+                        raise ValueError("georeference bbox latitudes invalid")
+                    if not (-180 <= bbox_west < bbox_east <= 180):
+                        raise ValueError("georeference bbox longitudes invalid")
+                    geo: dict = {
+                        "anchorLat": anchor_lat,
+                        "anchorLon": anchor_lon,
+                        "bboxNorth": bbox_north,
+                        "bboxSouth": bbox_south,
+                        "bboxEast": bbox_east,
+                        "bboxWest": bbox_west,
+                    }
+                    els[cmd.element_id] = el.model_copy(update={"georeference": geo})
             elif isinstance(el, ProjectSettingsElem) and cmd.key in {
                 "lengthUnit",
                 "angularUnitDeg",

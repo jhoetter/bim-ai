@@ -1118,7 +1118,11 @@ export type Element =
       georeference?: {
         anchorLat: number;
         anchorLon: number;
-        contextRadiusM: number;
+        bboxNorth: number;
+        bboxSouth: number;
+        bboxEast: number;
+        bboxWest: number;
+        contextRadiusM?: number; // legacy field kept for backward compat
       };
     }
   | {

@@ -4,7 +4,10 @@ import type * as L from 'leaflet';
 export type GeoAnchor = {
   lat: number;
   lon: number;
-  contextRadiusM: number;
+  bboxNorth: number;
+  bboxSouth: number;
+  bboxEast: number;
+  bboxWest: number;
 };
 
 type Props = {
@@ -12,46 +15,55 @@ type Props = {
   onChange: (next: GeoAnchor) => void;
 };
 
-const RADIUS_OPTIONS = [100, 300, 500, 1000] as const;
-
 const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-const OSM_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+/** Expand a centre point into a symmetric bbox of ~radiusM metres half-width. */
+function defaultBbox(lat: number, lon: number, radiusM = 300): Omit<GeoAnchor, 'lat' | 'lon'> {
+  const dLat = radiusM / 111_319.5;
+  const dLon = radiusM / (111_319.5 * Math.cos((lat * Math.PI) / 180));
+  return {
+    bboxNorth: lat + dLat,
+    bboxSouth: lat - dLat,
+    bboxEast: lon + dLon,
+    bboxWest: lon - dLon,
+  };
+}
+
+type Suggestion = { lat: string; lon: string; display_name: string };
 
 export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
-  const markerRef = useRef<L.Marker | null>(null);
-  const circleRef = useRef<L.Circle | null>(null);
+  const rectRef = useRef<L.Rectangle | null>(null);
+  const previewRef = useRef<L.Rectangle | null>(null);
 
   const [searchDraft, setSearchDraft] = useState('');
   const [searchBusy, setSearchBusy] = useState(false);
   const [searchError, setSearchError] = useState('');
-  const [suggestions, setSuggestions] = useState<
-    Array<{ lat: string; lon: string; display_name: string }>
-  >([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Keep a ref so leaflet callbacks always read latest value without re-creating handlers.
+  const [drawMode, setDrawMode] = useState(false);
+  const drawModeRef = useRef(false);
+  const drawStartRef = useRef<{ lat: number; lng: number } | null>(null);
+
   const valueRef = useRef(value);
   valueRef.current = value;
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
-  // Mount leaflet once.
+  // Mount Leaflet once.
   useEffect(() => {
     const container = containerRef.current;
     if (!container || mapRef.current) return;
 
     let map: L.Map;
-    let marker: L.Marker;
-    let circle: L.Circle;
+    let rect: L.Rectangle;
 
     import('leaflet').then((LMod) => {
       const Leaflet = LMod.default ?? LMod;
 
-      // Fix broken default icon paths when bundled with Vite.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (Leaflet.Icon.Default.prototype as any)._getIconUrl;
       Leaflet.Icon.Default.mergeOptions({
@@ -60,74 +72,181 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
         shadowUrl: new URL('leaflet/dist/images/marker-shadow.png', import.meta.url).href,
       });
 
-      const { lat, lon, contextRadiusM } = valueRef.current;
+      const { lat, lon, bboxNorth, bboxSouth, bboxEast, bboxWest } = valueRef.current;
 
-      map = Leaflet.map(container, { zoomControl: true }).setView([lat, lon], 14);
+      map = Leaflet.map(container, {
+        zoomControl: true,
+        attributionControl: false,
+      }).setView([lat, lon], 14);
 
-      Leaflet.tileLayer(OSM_TILE_URL, {
-        attribution: OSM_ATTRIBUTION,
-        maxZoom: 19,
-      }).addTo(map);
+      Leaflet.tileLayer(OSM_TILE_URL, { maxZoom: 19 }).addTo(map);
 
-      marker = Leaflet.marker([lat, lon], { draggable: true }).addTo(map);
+      rect = Leaflet.rectangle(
+        [[bboxSouth, bboxWest] as L.LatLngTuple, [bboxNorth, bboxEast] as L.LatLngTuple],
+        {
+          color: '#fb923c',
+          fillColor: '#fb923c',
+          fillOpacity: 0.1,
+          weight: 2,
+          dashArray: '6 4',
+          interactive: false,
+        },
+      ).addTo(map);
 
-      circle = Leaflet.circle([lat, lon], {
-        radius: contextRadiusM,
-        color: '#fb923c',
-        fillColor: '#fb923c',
-        fillOpacity: 0.08,
-        weight: 1.5,
-        dashArray: '6 4',
-      }).addTo(map);
+      // ── Draw mode events ──────────────────────────────────────────────────────
 
-      function applyLatLon(newLat: number, newLon: number) {
-        const latlng = Leaflet.latLng(newLat, newLon);
-        marker.setLatLng(latlng);
-        circle.setLatLng(latlng);
-        onChangeRef.current({
-          lat: newLat,
-          lon: newLon,
-          contextRadiusM: valueRef.current.contextRadiusM,
-        });
-      }
+      map.on('mousedown', (e: L.LeafletMouseEvent) => {
+        if (!drawModeRef.current) return;
+        e.originalEvent.preventDefault();
+        drawStartRef.current = { lat: e.latlng.lat, lng: e.latlng.lng };
 
-      marker.on('dragend', () => {
-        const pos = marker.getLatLng();
-        applyLatLon(pos.lat, pos.lng);
+        if (!previewRef.current) {
+          previewRef.current = Leaflet.rectangle(
+            [
+              [e.latlng.lat, e.latlng.lng] as L.LatLngTuple,
+              [e.latlng.lat, e.latlng.lng] as L.LatLngTuple,
+            ],
+            {
+              color: '#3b82f6',
+              fillColor: '#3b82f6',
+              fillOpacity: 0.15,
+              weight: 2,
+              dashArray: '4 3',
+              interactive: false,
+            },
+          ).addTo(map);
+        }
       });
 
+      map.on('mousemove', (e: L.LeafletMouseEvent) => {
+        if (!drawModeRef.current || !drawStartRef.current || !previewRef.current) return;
+        const s = drawStartRef.current;
+        previewRef.current.setBounds([
+          [Math.min(s.lat, e.latlng.lat), Math.min(s.lng, e.latlng.lng)],
+          [Math.max(s.lat, e.latlng.lat), Math.max(s.lng, e.latlng.lng)],
+        ] as L.LatLngBoundsExpression);
+      });
+
+      map.on('mouseup', (e: L.LeafletMouseEvent) => {
+        if (!drawModeRef.current || !drawStartRef.current) return;
+        const s = drawStartRef.current;
+        drawStartRef.current = null;
+
+        if (previewRef.current) {
+          map.removeLayer(previewRef.current);
+          previewRef.current = null;
+        }
+
+        let north = Math.max(s.lat, e.latlng.lat);
+        let south = Math.min(s.lat, e.latlng.lat);
+        let east = Math.max(s.lng, e.latlng.lng);
+        let west = Math.min(s.lng, e.latlng.lng);
+
+        // If basically a point click, expand to a default box.
+        if (north - south < 0.001 || east - west < 0.001) {
+          const cLat = (north + south) / 2;
+          const cLon = (east + west) / 2;
+          const b = defaultBbox(cLat, cLon);
+          north = b.bboxNorth;
+          south = b.bboxSouth;
+          east = b.bboxEast;
+          west = b.bboxWest;
+        }
+
+        const centerLat = (north + south) / 2;
+        const centerLon = (east + west) / 2;
+
+        rect.setBounds([
+          [south, west],
+          [north, east],
+        ] as L.LatLngBoundsExpression);
+
+        drawModeRef.current = false;
+        setDrawMode(false);
+        map.dragging.enable();
+        map.getContainer().style.cursor = '';
+
+        onChangeRef.current({
+          lat: centerLat,
+          lon: centerLon,
+          bboxNorth: north,
+          bboxSouth: south,
+          bboxEast: east,
+          bboxWest: west,
+        });
+      });
+
+      // ── Normal click: shift bbox keeping same dimensions ──────────────────────
+
       map.on('click', (e: L.LeafletMouseEvent) => {
-        applyLatLon(e.latlng.lat, e.latlng.lng);
+        if (drawModeRef.current) return;
+        const { lat: cLat, lng: cLon } = e.latlng;
+        const cur = valueRef.current;
+        const halfLat = (cur.bboxNorth - cur.bboxSouth) / 2;
+        const halfLon = (cur.bboxEast - cur.bboxWest) / 2;
+        const next: GeoAnchor = {
+          lat: cLat,
+          lon: cLon,
+          bboxNorth: cLat + halfLat,
+          bboxSouth: cLat - halfLat,
+          bboxEast: cLon + halfLon,
+          bboxWest: cLon - halfLon,
+        };
+        rect.setBounds([
+          [next.bboxSouth, next.bboxWest],
+          [next.bboxNorth, next.bboxEast],
+        ] as L.LatLngBoundsExpression);
+        onChangeRef.current(next);
       });
 
       mapRef.current = map;
-      markerRef.current = marker;
-      circleRef.current = circle;
+      rectRef.current = rect;
     });
 
     return () => {
       mapRef.current?.remove();
       mapRef.current = null;
-      markerRef.current = null;
-      circleRef.current = null;
+      rectRef.current = null;
+      previewRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync external value changes (e.g. address search result) into the map.
+  // Sync external value (e.g. address search result) into the map.
   useEffect(() => {
     const map = mapRef.current;
-    const marker = markerRef.current;
-    const circle = circleRef.current;
-    if (!map || !marker || !circle) return;
-    const latlng = { lat: value.lat, lng: value.lon };
-    marker.setLatLng(latlng);
-    circle.setLatLng(latlng);
-    circle.setRadius(value.contextRadiusM);
-    map.panTo(latlng);
-  }, [value.lat, value.lon, value.contextRadiusM]);
+    const rect = rectRef.current;
+    if (!map || !rect) return;
+    rect.setBounds([
+      [value.bboxSouth, value.bboxWest],
+      [value.bboxNorth, value.bboxEast],
+    ] as L.LatLngBoundsExpression);
+    map.panTo([value.lat, value.lon]);
+  }, [value.lat, value.lon, value.bboxNorth, value.bboxSouth, value.bboxEast, value.bboxWest]);
 
-  type Suggestion = { lat: string; lon: string; display_name: string };
+  // ── Draw mode toggle ────────────────────────────────────────────────────────
+
+  function toggleDrawMode() {
+    const map = mapRef.current;
+    if (!map) return;
+    const next = !drawMode;
+    drawModeRef.current = next;
+    setDrawMode(next);
+    if (next) {
+      map.dragging.disable();
+      map.getContainer().style.cursor = 'crosshair';
+    } else {
+      drawStartRef.current = null;
+      if (previewRef.current) {
+        map.removeLayer(previewRef.current);
+        previewRef.current = null;
+      }
+      map.dragging.enable();
+      map.getContainer().style.cursor = '';
+    }
+  }
+
+  // ── Address autocomplete ────────────────────────────────────────────────────
 
   function handleSearchInput(q: string) {
     setSearchDraft(q);
@@ -166,7 +285,8 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
     setSuggestions([]);
     setShowSuggestions(false);
     setSearchError('');
-    onChange({ lat, lon, contextRadiusM: value.contextRadiusM });
+    const bbox = defaultBbox(lat, lon);
+    onChange({ lat, lon, ...bbox });
     mapRef.current?.setView([lat, lon], 15);
   }
 
@@ -179,9 +299,17 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
     }
   }
 
+  // ── Derived display values ──────────────────────────────────────────────────
+
+  const widthKm = (
+    ((value.bboxEast - value.bboxWest) * 111_319.5 * Math.cos((value.lat * Math.PI) / 180)) /
+    1000
+  ).toFixed(2);
+  const heightKm = (((value.bboxNorth - value.bboxSouth) * 111_319.5) / 1000).toFixed(2);
+
   return (
     <div className="flex flex-col gap-2">
-      {/* Address search with suggestions */}
+      {/* Address search with autocomplete */}
       <div
         className="relative"
         onBlur={(e) => {
@@ -194,12 +322,12 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
             type="text"
             placeholder="Search address…"
             value={searchDraft}
+            autoComplete="off"
             onChange={(e) => handleSearchInput(e.target.value)}
             onFocus={() => {
               if (suggestions.length > 0) setShowSuggestions(true);
             }}
             onKeyDown={handleSearchKeyDown}
-            autoComplete="off"
           />
           <button
             type="button"
@@ -234,35 +362,44 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
       </div>
       {searchError ? <p className="text-[10px] text-danger">{searchError}</p> : null}
 
-      {/* Map */}
-      <div
-        ref={containerRef}
-        className="h-56 w-full overflow-hidden rounded border border-border"
-        style={{ zIndex: 0 }}
-      />
+      {/* Map + draw toggle */}
+      <div className="relative">
+        <div
+          ref={containerRef}
+          className="h-64 w-full overflow-hidden rounded border border-border"
+          style={{ zIndex: 0 }}
+        />
+        <button
+          type="button"
+          className={`absolute right-2 top-2 z-[400] rounded border px-2 py-1 text-[11px] shadow ${
+            drawMode
+              ? 'border-accent bg-accent text-white'
+              : 'border-border bg-white/90 text-foreground hover:border-accent hover:text-accent'
+          }`}
+          onClick={toggleDrawMode}
+        >
+          {drawMode ? 'Cancel' : 'Draw area'}
+        </button>
+        {drawMode ? (
+          <div className="pointer-events-none absolute bottom-2 left-2 z-[400] rounded border border-border bg-black/60 px-2 py-1 text-[10px] text-white">
+            Drag to draw the context rectangle
+          </div>
+        ) : null}
+      </div>
 
-      {/* Coords read-out + radius picker */}
+      {/* Coords + dimensions */}
       <div className="flex items-center gap-3 text-[10px] text-muted">
         <span className="font-mono">
           {value.lat.toFixed(5)}, {value.lon.toFixed(5)}
         </span>
-        <span className="ml-auto">Context radius</span>
-        <select
-          className="h-6 rounded border border-border bg-surface px-1.5 text-[10px] text-foreground"
-          value={String(value.contextRadiusM)}
-          onChange={(e) => onChange({ ...value, contextRadiusM: Number(e.target.value) })}
-        >
-          {RADIUS_OPTIONS.map((r) => (
-            <option key={r} value={String(r)}>
-              {r} m
-            </option>
-          ))}
-        </select>
+        <span className="ml-auto font-mono">
+          {widthKm} × {heightKm} km
+        </span>
       </div>
 
       <p className="text-[10px] text-muted">
-        Click the map or drag the marker to set the site anchor. The orange circle shows what
-        neighbourhood geometry will load in the 3D viewer (buildings, roads, trees, water).
+        Click the map to move the context area, or use "Draw area" to drag a custom rectangle. Hit
+        Save to load the OSM data in the 3D viewer.
       </p>
     </div>
   );

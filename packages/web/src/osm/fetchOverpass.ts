@@ -58,21 +58,28 @@ function roadWidthMm(highwayTag: string): number {
 
 const OVERPASS_ENDPOINT = 'https://overpass-api.de/api/interpreter';
 
-function buildQuery(lat: number, lon: number, radiusM: number): string {
-  const r = Math.min(radiusM, 1000);
+type Bbox = { north: number; south: number; east: number; west: number };
+
+function buildQuery(bbox: Bbox): string {
+  const { south: s, west: w, north: n, east: e } = bbox;
+  const b = `${s.toFixed(6)},${w.toFixed(6)},${n.toFixed(6)},${e.toFixed(6)}`;
+  const hw =
+    'motorway|trunk|primary|secondary|tertiary|unclassified|residential|service|living_street|pedestrian|footway|path|cycleway|track';
+  const lu = 'grass|park|meadow|forest|recreation_ground|village_green';
   return `[out:json][timeout:25];
 (
-  way["building"](around:${r},${lat},${lon});
-  way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|service|living_street|pedestrian|footway|path|cycleway|track)$"](around:${r},${lat},${lon});
-  node["natural"="tree"](around:${r},${lat},${lon});
-  way["natural"~"^(water|wood)$"](around:${r},${lat},${lon});
-  way["landuse"~"^(grass|park|meadow|forest|recreation_ground|village_green)$"](around:${r},${lat},${lon});
+  way["building"](${b});
+  way["highway"~"^(${hw})$"](${b});
+  node["natural"="tree"](${b});
+  way["natural"~"^(water|wood)$"](${b});
+  way["landuse"~"^(${lu})$"](${b});
 );
 out geom;`;
 }
 
-function cacheKey(lat: number, lon: number, radiusM: number): string {
-  return `osm:${lat.toFixed(4)}:${lon.toFixed(4)}:${radiusM}`;
+function cacheKey(bbox: Bbox): string {
+  const { south: s, west: w, north: n, east: e } = bbox;
+  return `osm:${s.toFixed(4)}:${w.toFixed(4)}:${n.toFixed(4)}:${e.toFixed(4)}`;
 }
 
 // ── Raw Overpass types (subset we use) ──────────────────────────────────────
@@ -162,16 +169,12 @@ function parseElements(
 
 // ── Public API ───────────────────────────────────────────────────────────────
 
-/**
- * Fetch OSM features around a lat/lon anchor within `radiusM` metres.
- * Results are cached in sessionStorage for the duration of the browser session.
- */
 export async function fetchOsmContext(
   anchorLat: number,
   anchorLon: number,
-  radiusM: number,
+  bbox: Bbox,
 ): Promise<OsmFeature[]> {
-  const key = cacheKey(anchorLat, anchorLon, radiusM);
+  const key = cacheKey(bbox);
 
   const cached = sessionStorage.getItem(key);
   if (cached) {
@@ -182,7 +185,7 @@ export async function fetchOsmContext(
     }
   }
 
-  const query = buildQuery(anchorLat, anchorLon, radiusM);
+  const query = buildQuery(bbox);
   const res = await fetch(OVERPASS_ENDPOINT, {
     method: 'POST',
     body: query,

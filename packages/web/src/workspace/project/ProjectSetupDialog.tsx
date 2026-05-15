@@ -1,7 +1,18 @@
 import { type JSX, useEffect, useMemo, useState } from 'react';
 
 import type { Element } from '@bim-ai/core';
-import { GeoMapPicker } from './GeoMapPicker';
+import { GeoMapPicker, type GeoAnchor } from './GeoMapPicker';
+
+function defaultBbox(lat: number, lon: number, radiusM = 300) {
+  const dLat = radiusM / 111_319.5;
+  const dLon = radiusM / (111_319.5 * Math.cos((lat * Math.PI) / 180));
+  return {
+    bboxNorth: lat + dLat,
+    bboxSouth: lat - dLat,
+    bboxEast: lon + dLon,
+    bboxWest: lon - dLon,
+  };
+}
 
 type CommandDispatcher = (cmd: Record<string, unknown>) => void | Promise<void>;
 
@@ -168,7 +179,10 @@ export function ProjectSetupDialog({
     hours: '14',
     minutes: '0',
     daylightSavingStrategy: 'auto',
-    contextRadiusM: '300',
+    bboxNorth: '',
+    bboxSouth: '',
+    bboxEast: '',
+    bboxWest: '',
   });
   const [phaseDraft, setPhaseDraft] = useState({
     name: 'New Construction',
@@ -226,14 +240,29 @@ export function ProjectSetupDialog({
       surveyY: String(surveyPoint?.positionMm.yMm ?? 0),
       surveyElevationMm: String(surveyPoint?.sharedElevationMm ?? 0),
     });
+    const lat = sunSettings?.latitudeDeg ?? 48.14;
+    const lon = sunSettings?.longitudeDeg ?? 11.58;
+    const geo = projectSettings?.georeference;
+    const bbox =
+      geo?.bboxNorth != null
+        ? {
+            bboxNorth: geo.bboxNorth,
+            bboxSouth: geo.bboxSouth!,
+            bboxEast: geo.bboxEast!,
+            bboxWest: geo.bboxWest!,
+          }
+        : defaultBbox(lat, lon, geo?.contextRadiusM ?? 300);
     setSunDraft({
-      latitudeDeg: String(sunSettings?.latitudeDeg ?? 48.14),
-      longitudeDeg: String(sunSettings?.longitudeDeg ?? 11.58),
+      latitudeDeg: String(lat),
+      longitudeDeg: String(lon),
       dateIso: sunSettings?.dateIso ?? new Date().toISOString().slice(0, 10),
       hours: String(sunSettings?.timeOfDay.hours ?? 14),
       minutes: String(sunSettings?.timeOfDay.minutes ?? 0),
       daylightSavingStrategy: sunSettings?.daylightSavingStrategy ?? 'auto',
-      contextRadiusM: String(projectSettings?.georeference?.contextRadiusM ?? 300),
+      bboxNorth: String(bbox.bboxNorth),
+      bboxSouth: String(bbox.bboxSouth),
+      bboxEast: String(bbox.bboxEast),
+      bboxWest: String(bbox.bboxWest),
     });
     setPhaseDraft({ name: 'New Construction' });
     setMessage(null);
@@ -664,7 +693,10 @@ export function ProjectSetupDialog({
       setMessage('Location setup needs numeric latitude, longitude, and a date.');
       return;
     }
-    const radiusM = Math.min(1000, Math.max(50, Number(sunDraft.contextRadiusM) || 300));
+    const bboxNorth = Number(sunDraft.bboxNorth) || defaultBbox(latitude, longitude).bboxNorth;
+    const bboxSouth = Number(sunDraft.bboxSouth) || defaultBbox(latitude, longitude).bboxSouth;
+    const bboxEast = Number(sunDraft.bboxEast) || defaultBbox(latitude, longitude).bboxEast;
+    const bboxWest = Number(sunDraft.bboxWest) || defaultBbox(latitude, longitude).bboxWest;
     const payload = {
       latitudeDeg: latitude,
       longitudeDeg: longitude,
@@ -682,7 +714,14 @@ export function ProjectSetupDialog({
           type: 'updateElementProperty',
           elementId: sid,
           key: 'georeference',
-          value: { anchorLat: latitude, anchorLon: longitude, contextRadiusM: radiusM },
+          value: {
+            anchorLat: latitude,
+            anchorLon: longitude,
+            bboxNorth,
+            bboxSouth,
+            bboxEast,
+            bboxWest,
+          },
         },
       ],
       'Location and sun settings updated.',
@@ -1174,17 +1213,28 @@ export function ProjectSetupDialog({
 
                   <div className="mt-3">
                     <GeoMapPicker
-                      value={{
-                        lat: parseFloat(sunDraft.latitudeDeg) || 48.14,
-                        lon: parseFloat(sunDraft.longitudeDeg) || 11.58,
-                        contextRadiusM: parseFloat(sunDraft.contextRadiusM) || 300,
-                      }}
-                      onChange={(next) =>
+                      value={(() => {
+                        const lat = parseFloat(sunDraft.latitudeDeg) || 48.14;
+                        const lon = parseFloat(sunDraft.longitudeDeg) || 11.58;
+                        const bbox = sunDraft.bboxNorth
+                          ? {
+                              bboxNorth: parseFloat(sunDraft.bboxNorth),
+                              bboxSouth: parseFloat(sunDraft.bboxSouth),
+                              bboxEast: parseFloat(sunDraft.bboxEast),
+                              bboxWest: parseFloat(sunDraft.bboxWest),
+                            }
+                          : defaultBbox(lat, lon);
+                        return { lat, lon, ...bbox };
+                      })()}
+                      onChange={(next: GeoAnchor) =>
                         setSunDraft((d) => ({
                           ...d,
                           latitudeDeg: String(next.lat),
                           longitudeDeg: String(next.lon),
-                          contextRadiusM: String(next.contextRadiusM),
+                          bboxNorth: String(next.bboxNorth),
+                          bboxSouth: String(next.bboxSouth),
+                          bboxEast: String(next.bboxEast),
+                          bboxWest: String(next.bboxWest),
                         }))
                       }
                     />
