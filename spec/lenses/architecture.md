@@ -114,3 +114,22 @@ The API must allow third-party tools to query architectural geometry, types, roo
 ## Implementation Prompt
 
 Implement the Architecture Lens as the default authoring and documentation lens. It should foreground architectural elements, provide the complete architectural modeling toolbar, show architecture-first inspectors, and expose standard architectural schedules and sheets. Consultant data stays attached to the same model but appears as compact badges or expandable read-only sections unless the user switches to the owning lens.
+
+## Implementation Tracker
+
+Last updated: 2026-05-15
+
+| Workpackage | Scope | Status | Evidence |
+| --- | --- | --- | --- |
+| ARCH-01 | Default Architecture lens identity for authoring workspace, workspace switcher, and runtime store defaults. | Done | `71f952f9b feat: default to architecture lens`; merged via `b42cbed24` and retained on `origin/main`. |
+| ARCH-02 | Standard architecture schedule defaults: room, door, window, finish, sheet list, and view list with server and web presets. | Done | `520dfe7a8 feat: add architecture schedule defaults`; tests: `app/tests/test_architecture_schedule_defaults.py`, schedule utility and plans/sheets UI vitest coverage. |
+| ARCH-03 | Third-party API query surface for architectural geometry, types, rooms, views, sheets, and schedules without UI-state coupling. | Done | `b8a3101cf feat: expose architecture lens query api`; route `GET /api/models/{model_id}/architecture/query`; test `app/tests/test_architecture_lens_query.py`. |
+| ARCH-04 | Architecture-first room/spatial inspector metadata using generic room `props`, plus compact read-only consultant badges. | Done | `ac6d9b83c feat: surface architecture room metadata`; tests in `app/tests/test_room_target_area.py` and `packages/web/src/workspace/inspector/InspectorContent.test.tsx`. |
+| ARCH-MERGE | Integration with current `main`, including conflict resolution with concurrent lens work. | Done | `b42cbed24 Merge latest main into architecture integration`; final branch later remained ancestor of `origin/main`. |
+
+Final verification on the integration head before merge:
+
+- `PYTHONPATH=app PYTEST_ADDOPTS=--no-cov pytest app/tests/test_room_target_area.py app/tests/test_architecture_lens_query.py app/tests/test_architecture_schedule_defaults.py app/tests/test_room_finish_schedule_evidence.py app/tests/test_construction_lens.py -q`
+- `pnpm --filter @bim-ai/web exec vitest run src/workspace/inspector/InspectorContent.test.tsx src/schedules/scheduleUtils.test.ts src/schedules/schedulePanelPlansSheetsUi.test.ts src/state/storeSliceContracts.test.ts src/workspace/chrome/WorkspaceSwitcher.test.tsx src/viewport/useLensFilter.test.ts`
+- `pnpm --filter @bim-ai/web exec tsc -p tsconfig.json --noEmit`
+- `ruff check app/bim_ai/engine_dispatch_properties.py app/bim_ai/schedule_derivation.py app/tests/test_room_target_area.py app/tests/test_architecture_lens_query.py app/tests/test_architecture_schedule_defaults.py`
