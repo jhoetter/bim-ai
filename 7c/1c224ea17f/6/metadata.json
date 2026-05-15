@@ -1,0 +1,42 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "7c1c224ea17f",
+  "session_id": "019e2c15-3903-7080-93f0-26ac15f4d057",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-15T19:42:27.848352Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "bce7c1f58500",
+  "checkpoint_transcript_start": 1726,
+  "transcript_lines_at_start": 1726,
+  "token_usage": {
+    "input_tokens": 1363431,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 29720960,
+    "output_tokens": 79198,
+    "api_call_count": 725
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 267,
+      "user_lines_removed": 20,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/backend_render.py": 1,
+        "app/tests/test_backend_render.py": 2,
+        "packages/web/src/Viewport.tsx": 27,
+        "spec/osm-site-context-tracker.md": 237
+      },
+      "user_removed_per_file": {
+        "app/bim_ai/backend_render.py": 8,
+        "app/tests/test_backend_render.py": 4,
+        "packages/web/src/Viewport.tsx": 8
+      }
+    }
+  ]
+}
