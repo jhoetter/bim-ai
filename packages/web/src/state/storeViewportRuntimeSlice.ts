@@ -211,7 +211,7 @@ export function createViewportRuntimeSlice(set: StoreSet, get: StoreGet): Viewpo
         orbitCameraNonce: state.orbitCameraNonce + 1,
       })),
 
-    viewerRenderStyle: 'shaded',
+    viewerRenderStyle: 'realistic',
     setViewerRenderStyle: (style) => set({ viewerRenderStyle: normalizeViewerRenderStyle(style) }),
     viewerBackground: 'light_grey',
     viewerEdges: 'normal',

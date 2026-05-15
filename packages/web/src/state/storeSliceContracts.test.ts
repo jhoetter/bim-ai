@@ -26,6 +26,11 @@ beforeEach(() => {
 });
 
 describe('store slice contracts', () => {
+  it('defaults 3D to realistic perspective display', () => {
+    expect(useBimStore.getState().viewerRenderStyle).toBe('realistic');
+    expect(useBimStore.getState().viewerProjection).toBe('perspective');
+  });
+
   it('assigns each public store key to at most one concern slice', () => {
     const seen = new Map<string, string>();
     const duplicates: string[] = [];
