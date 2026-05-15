@@ -6,7 +6,7 @@ import type { Element, LensMode, ParamSchemaEntry } from '@bim-ai/core';
 
 import { buildPlanGridDatumInspectorLine } from './readouts';
 import { useBimStore } from '../state/store';
-import type { ViewerRenderStyle } from '../state/storeTypes';
+import type { OsmLayerName, ViewerRenderStyle } from '../state/storeTypes';
 import {
   OrbitViewpointPersistedHud,
   type OrbitViewpointPersistFieldPayload,
@@ -2147,6 +2147,69 @@ type Secondary3dAdapterProps = {
   updateActiveSavedView?: () => void;
 };
 
+function OsmContextLayersPanel(): JSX.Element | null {
+  const osmVisible = useBimStore((s) => s.osmVisible);
+  const setOsmVisible = useBimStore((s) => s.setOsmVisible);
+  const osmLayerHidden = useBimStore((s) => s.osmLayerHidden);
+  const toggleOsmLayer = useBimStore((s) => s.toggleOsmLayer);
+  const osmStatus = useBimStore((s) => s.osmStatus);
+  const requestViewerCameraAction = useBimStore((s) => s.requestViewerCameraAction);
+  const elementsById = useBimStore((s) => s.elementsById);
+  const hasGeoreference = Object.values(elementsById).some(
+    (e) => e.kind === 'project_settings' && e.georeference != null,
+  );
+  if (!hasGeoreference) return null;
+
+  const OSM_LAYERS: OsmLayerName[] = ['buildings', 'roads', 'trees', 'water', 'green'];
+
+  return (
+    <SecondarySection title="Context layers" testId="secondary-3d-context-layers">
+      <div className="flex flex-col gap-1">
+        <label className="flex cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            checked={osmVisible}
+            onChange={(e) => setOsmVisible(e.target.checked)}
+            className="size-3.5 accent-accent"
+          />
+          <span className="text-xs font-medium">Show context</span>
+          {osmStatus === 'loading' && (
+            <span className="ml-auto text-[10px] text-accent">Loading…</span>
+          )}
+          {osmStatus === 'error' && (
+            <span className="ml-auto text-[10px] text-danger">No data</span>
+          )}
+        </label>
+        {osmVisible && (
+          <>
+            <div className="mt-1 flex flex-col gap-0.5 pl-5">
+              {OSM_LAYERS.map((layer) => (
+                <label key={layer} className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={!osmLayerHidden[layer]}
+                    onChange={() => toggleOsmLayer(layer)}
+                    className="size-3 accent-accent"
+                  />
+                  <span className="capitalize text-xs text-muted">{layer}</span>
+                </label>
+              ))}
+            </div>
+            {osmStatus === 'ok' && (
+              <button
+                className="mt-1 text-left text-xs text-accent hover:underline"
+                onClick={() => requestViewerCameraAction('fit-context')}
+              >
+                Fit to context
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    </SecondarySection>
+  );
+}
+
 function Secondary3dAdapter(props: Secondary3dAdapterProps): JSX.Element {
   const graphicsDisclosureId = `3d.graphics.${props.activeViewpoint?.id ?? 'live-camera'}`;
   return (
@@ -2161,6 +2224,7 @@ function Secondary3dAdapter(props: Secondary3dAdapterProps): JSX.Element {
       <SecondarySection title="Scene" testId="secondary-3d-sun">
         <SunInspectorPanel />
       </SecondarySection>
+      <OsmContextLayersPanel />
       <PersistedDisclosureSection
         title="Graphics, Camera, Clipping"
         disclosureId={graphicsDisclosureId}

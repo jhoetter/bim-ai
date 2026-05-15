@@ -165,7 +165,8 @@ export type ViewFilter = {
   };
 };
 
-export type ViewerCameraActionKind = 'fit' | 'reset';
+export type ViewerCameraActionKind = 'fit' | 'reset' | 'fit-context';
+export type OsmLayerName = 'buildings' | 'roads' | 'trees' | 'water' | 'green';
 export type ViewerRenderStyle =
   | 'shaded'
   | 'wireframe'
@@ -230,6 +231,12 @@ export type StoreState = {
   viewerWalkModeActive: boolean;
   /** UX-11: one-shot camera commands issued by right-rail View controls. */
   viewerCameraAction: { kind: ViewerCameraActionKind; nonce: number } | null;
+  /** OSM context layer visibility (master toggle). */
+  osmVisible: boolean;
+  /** OSM individual layer visibility — true = hidden. */
+  osmLayerHidden: Record<OsmLayerName, boolean>;
+  /** OSM fetch status surfaced in the sidebar. */
+  osmStatus: 'idle' | 'loading' | 'error' | 'ok';
   /** F-014: when true, the plan canvas shows VG-hidden elements (magenta mode). */
   revealHiddenMode: boolean;
   /**
@@ -337,6 +344,9 @@ export type StoreState = {
   setViewerWalkModeActive: (active: boolean) => void;
   /** UX-11: request a viewport camera action from chrome outside the canvas. */
   requestViewerCameraAction: (kind: ViewerCameraActionKind) => void;
+  setOsmVisible: (v: boolean) => void;
+  toggleOsmLayer: (layer: OsmLayerName) => void;
+  setOsmStatus: (status: 'idle' | 'loading' | 'error' | 'ok') => void;
   /** F-014: enter or exit Reveal Hidden Elements mode. */
   setRevealHiddenMode: (v: boolean) => void;
   /** Apply saved 3D viewpoint clip planes + semantic category hides (WP-E02/E03). */

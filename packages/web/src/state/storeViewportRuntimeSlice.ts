@@ -65,6 +65,12 @@ export type ViewportRuntimeSlice = Pick<
   | 'clearTemporaryVisibility'
   | 'setViewerPhaseFilter'
   | 'clearViewerPhaseFilter'
+  | 'osmVisible'
+  | 'osmLayerHidden'
+  | 'osmStatus'
+  | 'setOsmVisible'
+  | 'toggleOsmLayer'
+  | 'setOsmStatus'
 >;
 
 function writeLocalStorageString(key: string, value: string): void {
@@ -231,6 +237,15 @@ export function createViewportRuntimeSlice(set: StoreSet, get: StoreGet): Viewpo
           nonce: (state.viewerCameraAction?.nonce ?? 0) + 1,
         },
       })),
+    osmVisible: true,
+    osmLayerHidden: { buildings: false, roads: false, trees: false, water: false, green: false },
+    osmStatus: 'idle',
+    setOsmVisible: (v) => set({ osmVisible: v }),
+    toggleOsmLayer: (layer) =>
+      set((state) => ({
+        osmLayerHidden: { ...state.osmLayerHidden, [layer]: !state.osmLayerHidden[layer] },
+      })),
+    setOsmStatus: (status) => set({ osmStatus: status }),
     revealHiddenMode: false,
     setRevealHiddenMode: (v) => set({ revealHiddenMode: v }),
     showNeighborhoodMasses: true,

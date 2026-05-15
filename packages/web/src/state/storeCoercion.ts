@@ -223,6 +223,43 @@ function coerceAreaScheme(raw: unknown): 'gross_building' | 'net' | 'rentable' {
   return raw === 'net' || raw === 'rentable' ? raw : 'gross_building';
 }
 
+function coerceGeoreference(raw: unknown): {
+  georeference?: {
+    anchorLat: number;
+    anchorLon: number;
+    bboxNorth: number;
+    bboxSouth: number;
+    bboxEast: number;
+    bboxWest: number;
+    contextRadiusM?: number;
+  };
+} {
+  if (!raw || typeof raw !== 'object') return {};
+  const g = raw as Record<string, unknown>;
+  const anchorLat = typeof g.anchorLat === 'number' ? g.anchorLat : null;
+  const anchorLon = typeof g.anchorLon === 'number' ? g.anchorLon : null;
+  if (anchorLat === null || anchorLon === null) return {};
+  const bboxNorth = typeof g.bboxNorth === 'number' ? g.bboxNorth : null;
+  const bboxSouth = typeof g.bboxSouth === 'number' ? g.bboxSouth : null;
+  const bboxEast = typeof g.bboxEast === 'number' ? g.bboxEast : null;
+  const bboxWest = typeof g.bboxWest === 'number' ? g.bboxWest : null;
+  if (bboxNorth === null || bboxSouth === null || bboxEast === null || bboxWest === null) {
+    const contextRadiusM = typeof g.contextRadiusM === 'number' ? g.contextRadiusM : undefined;
+    return {
+      georeference: {
+        anchorLat,
+        anchorLon,
+        bboxNorth: 0,
+        bboxSouth: 0,
+        bboxEast: 0,
+        bboxWest: 0,
+        contextRadiusM,
+      },
+    };
+  }
+  return { georeference: { anchorLat, anchorLon, bboxNorth, bboxSouth, bboxEast, bboxWest } };
+}
+
 export function coerceElement(id: string, raw: Record<string, unknown>): Element | null {
   const kind = raw.kind;
   const name =
@@ -774,6 +811,7 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
         | 'wall_centerline'
         | 'wall_core_layer'
         | 'wall_core_center',
+      ...coerceGeoreference(raw.georeference ?? raw.georef),
     };
   }
 

@@ -82,9 +82,9 @@ function buildRoadQuadStrip(
     const a = centreline[i]!;
     const b = centreline[i + 1]!;
     const ax = a.xMm / 1000;
-    const az = -a.yMm / 1000;
+    const az = a.yMm / 1000;
     const bx = b.xMm / 1000;
-    const bz = -b.yMm / 1000;
+    const bz = b.yMm / 1000;
 
     const dx = bx - ax;
     const dz = bz - az;
@@ -162,7 +162,7 @@ export function makeOsmTreesGroup(trees: OsmTree[]): THREE.Group {
 
   const positions: number[] = [];
   for (const t of trees) {
-    positions.push(t.positionMm.xMm / 1000, 0, -t.positionMm.yMm / 1000);
+    positions.push(t.positionMm.xMm / 1000, 0, t.positionMm.yMm / 1000);
   }
 
   const geom = new THREE.BufferGeometry();

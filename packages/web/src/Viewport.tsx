@@ -72,7 +72,7 @@ import {
   resolveFaceMaterialOverride,
   resolveWallTypeAssembly,
 } from './viewport/meshBuilders';
-import { makeOsmContextGroup, type OsmLayerName } from './viewport/meshBuilders.osmContext';
+import { makeOsmContextGroup } from './viewport/meshBuilders.osmContext';
 import { fetchOsmContext } from './osm/fetchOverpass';
 import { resolveWallAssemblyExposedLayers } from './families/wallTypeCatalog';
 import { resolveWindowOutline } from './families/geometryFns/windowOutline';
@@ -495,8 +495,12 @@ export function Viewport({
   const wallDraftPreviewGroupRef = useRef<THREE.Object3D | null>(null);
   const levelDatumGroupRef = useRef<THREE.Group | null>(null);
   const osmContextGroupRef = useRef<THREE.Group | null>(null);
-  const [osmHiddenLayers, setOsmHiddenLayers] = useState<ReadonlySet<OsmLayerName>>(new Set());
-  const [osmStatus, setOsmStatus] = useState<'idle' | 'loading' | 'error' | 'ok'>('idle');
+  const osmVisible = useBimStore((s) => s.osmVisible);
+  const setOsmVisible = useBimStore((s) => s.setOsmVisible);
+  const osmLayerHidden = useBimStore((s) => s.osmLayerHidden);
+  const toggleOsmLayer = useBimStore((s) => s.toggleOsmLayer);
+  const osmStatus = useBimStore((s) => s.osmStatus);
+  const setOsmStatus = useBimStore((s) => s.setOsmStatus);
   const clearWallDraftPreviewGroup = useCallback(() => {
     const group = wallDraftPreviewGroupRef.current;
     if (!group) return;
@@ -3711,6 +3715,10 @@ export function Viewport({
         rig.frame(box);
         rig.setHome();
       }
+    } else if (viewerCameraAction.kind === 'fit-context') {
+      const root = rootGroupRef.current;
+      const box = root ? computeRootBoundingBox(root) : null;
+      if (box) rig.frame(box);
     } else {
       rig.reset();
     }
@@ -4434,11 +4442,21 @@ export function Viewport({
     fetchOsmContext(georeference.anchorLat, georeference.anchorLon, bbox)
       .then((features) => {
         if (cancelled) return;
+        const isFirstLoad = !osmContextGroupRef.current;
         removePrevious();
         const group = makeOsmContextGroup(features);
+        group.visible = useBimStore.getState().osmVisible;
         root.add(group);
         osmContextGroupRef.current = group;
         setOsmStatus(features.length > 0 ? 'ok' : 'error');
+        // Auto-fit camera to show house + context on first load.
+        if (isFirstLoad && features.length > 0) {
+          const rig = cameraRigRef.current;
+          if (rig) {
+            const box = computeRootBoundingBox(root);
+            if (box) rig.frame(box);
+          }
+        }
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -4449,7 +4467,23 @@ export function Viewport({
     return () => {
       cancelled = true;
     };
-  }, [georeference]); // osmHiddenLayers intentionally excluded — toggles mutate the group directly
+  }, [georeference]); // osmLayerHidden/osmVisible intentionally excluded — effects below sync them
+
+  // Sync osmVisible store state → Three.js group visibility.
+  useEffect(() => {
+    const group = osmContextGroupRef.current;
+    if (group) group.visible = osmVisible;
+  }, [osmVisible]);
+
+  // Sync osmLayerHidden store state → individual sub-group visibility.
+  useEffect(() => {
+    const group = osmContextGroupRef.current;
+    if (!group) return;
+    group.children.forEach((child) => {
+      const layer = child.userData.osmLayer as string | undefined;
+      if (layer) child.visible = !osmLayerHidden[layer as keyof typeof osmLayerHidden];
+    });
+  }, [osmLayerHidden]);
 
   // ── F-011: visual style (shaded / wireframe / colors / hidden / realistic / high fidelity) ──
   useEffect(() => {
@@ -5582,55 +5616,6 @@ export function Viewport({
           >
             {sectionBoxRef.current.summary()}
           </span>
-        </div>
-      ) : null}
-
-      {georeference ? (
-        <div className="pointer-events-auto absolute bottom-3 left-3 z-20">
-          <div className="flex flex-col gap-0.5 rounded border border-border bg-surface/90 px-2.5 py-2 text-[10px] text-muted shadow-sm backdrop-blur-sm">
-            <div className="mb-0.5 flex items-center gap-1.5">
-              <span
-                className="font-semibold uppercase text-muted"
-                style={{ letterSpacing: '0.08em', fontSize: '9px' }}
-              >
-                Context layers
-              </span>
-              {osmStatus === 'loading' ? (
-                <span className="ml-auto text-[9px] text-accent">Loading…</span>
-              ) : osmStatus === 'error' ? (
-                <span
-                  className="ml-auto text-[9px] text-danger"
-                  title="OSM fetch failed or returned no data"
-                >
-                  No data
-                </span>
-              ) : null}
-            </div>
-            {(['buildings', 'roads', 'trees', 'water', 'green'] as const).map((layer) => (
-              <label key={layer} className="flex cursor-pointer items-center gap-1.5">
-                <input
-                  type="checkbox"
-                  checked={!osmHiddenLayers.has(layer)}
-                  onChange={(e) => {
-                    setOsmHiddenLayers((prev) => {
-                      const next = new Set(prev);
-                      if (e.target.checked) next.delete(layer);
-                      else next.add(layer);
-                      const group = osmContextGroupRef.current;
-                      if (group) {
-                        group.children.forEach((child) => {
-                          if (child.userData.osmLayer === layer) child.visible = e.target.checked;
-                        });
-                      }
-                      return next;
-                    });
-                  }}
-                  className="size-3 accent-accent"
-                />
-                <span className="capitalize">{layer}</span>
-              </label>
-            ))}
-          </div>
         </div>
       ) : null}
 
