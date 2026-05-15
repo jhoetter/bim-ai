@@ -3,7 +3,7 @@
   "checkpoint_id": "8c4b93d9a9fe",
   "strategy": "manual-commit",
   "branch": "codex/real-path-tracing-preview-20260515",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "packages/web/src/workspace/commandCapabilities.test.ts",
     "packages/web/src/workspace/commandCapabilities.ts",
@@ -22,6 +22,19 @@
       "transcript": "/8c/4b93d9a9fe/1/full.jsonl",
       "content_hash": "/8c/4b93d9a9fe/1/content_hash.txt",
       "prompt": "/8c/4b93d9a9fe/1/prompt.txt"
+    },
+    {
+      "metadata": "/8c/4b93d9a9fe/2/metadata.json",
+      "transcript": "/8c/4b93d9a9fe/2/full.jsonl",
+      "content_hash": "/8c/4b93d9a9fe/2/content_hash.txt",
+      "prompt": "/8c/4b93d9a9fe/2/prompt.txt"
     }
-  ]
+  ],
+  "token_usage": {
+    "input_tokens": 7151381,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 174080512,
+    "output_tokens": 417097,
+    "api_call_count": 1295
+  }
 }
