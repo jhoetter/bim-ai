@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "edfc7299f10f",
+  "session_id": "019e2a62-d03c-77f3-8151-b17601ad14d9",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-15T19:05:45.49742Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "df91bf01d2d0",
+  "token_usage": {
+    "input_tokens": 4457344,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 114056704,
+    "output_tokens": 273701,
+    "api_call_count": 1022
+  },
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 261,
+      "user_lines_removed": 0,
+      "agent_lines_added": 237,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "app/bim_ai/elements.py": 19,
+        "packages/core/src/index.ts": 5,
+        "packages/web/src/osm/fetchOverpass.ts": 206,
+        "packages/web/src/osm/project.ts": 31
+      }
+    }
+  ]
+}
