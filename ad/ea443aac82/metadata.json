@@ -3,7 +3,7 @@
   "checkpoint_id": "adea443aac82",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 3,
+  "checkpoints_count": 4,
   "files_touched": [
     "spec/revit2026.pdf"
   ],
@@ -49,13 +49,19 @@
       "transcript": "/ad/ea443aac82/6/full.jsonl",
       "content_hash": "/ad/ea443aac82/6/content_hash.txt",
       "prompt": "/ad/ea443aac82/6/prompt.txt"
+    },
+    {
+      "metadata": "/ad/ea443aac82/7/metadata.json",
+      "transcript": "/ad/ea443aac82/7/full.jsonl",
+      "content_hash": "/ad/ea443aac82/7/content_hash.txt",
+      "prompt": "/ad/ea443aac82/7/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 3320028,
-    "cache_creation_tokens": 363189,
-    "cache_read_tokens": 73559338,
-    "output_tokens": 346479,
-    "api_call_count": 1462
+    "input_tokens": 3320061,
+    "cache_creation_tokens": 521853,
+    "cache_read_tokens": 75381208,
+    "output_tokens": 378094,
+    "api_call_count": 1487
   }
 }
