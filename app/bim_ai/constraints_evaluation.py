@@ -107,6 +107,7 @@ from bim_ai.sheet_titleblock_revision_issue_v1 import (
     normalize_titleblock_revision_issue_v1,
     sheet_revision_issue_metadata_present,
 )
+from bim_ai.site.toposolid import samples_from_toposolid, underside_elevation_mm
 from bim_ai.stair_plan_proxy import stair_schedule_row_extensions_v1
 
 ROOM_PLAN_OVERLAP_THRESHOLD_MM2 = 50_000.0
@@ -1666,9 +1667,10 @@ def evaluate(
 def _toposolid_pierce_check_violations(elements: dict[str, Element]) -> list[Violation]:
     """TOP-V3-01 — warn when a floor footprint overlaps a toposolid and no slab opening exists.
 
-    A FloorElem whose plan boundary overlaps a ToposolidElem boundary is likely
-    piercing the terrain. The advisory is suppressed when any SlabOpeningElem
-    hosted on that floor is present (indicating a deliberate cut-through).
+    A FloorElem whose plan boundary and vertical range overlaps a ToposolidElem
+    is likely piercing the terrain. The advisory is suppressed when any
+    SlabOpeningElem hosted on that floor is present or when an explicit
+    ToposolidExcavationElem records the intended cut.
     """
     toposolids = [el for el in elements.values() if isinstance(el, ToposolidElem)]
     floors = [el for el in elements.values() if isinstance(el, FloorElem)]
@@ -1691,10 +1693,16 @@ def _toposolid_pierce_check_violations(elements: dict[str, Element]) -> list[Vio
         topo_poly = [(p.x_mm, p.y_mm) for p in topo.boundary_mm]
         if len(topo_poly) < 3:
             continue
+        topo_z_range = _toposolid_vertical_range_mm(topo)
         for floor in floors:
             if floor.id in floors_with_openings:
                 continue
             if (topo.id, floor.id) in excavated_floor_pairs:
+                continue
+            if not _vertical_ranges_overlap_mm(
+                topo_z_range,
+                _floor_vertical_range_mm(floor, elements),
+            ):
                 continue
             floor_poly = [(p.x_mm, p.y_mm) for p in floor.boundary_mm]
             if len(floor_poly) < 3:
@@ -1716,6 +1724,41 @@ def _toposolid_pierce_check_violations(elements: dict[str, Element]) -> list[Vio
                 )
             )
     return out
+
+
+def _level_elevation_mm(elements: dict[str, Element], level_id: str) -> float:
+    level = elements.get(level_id)
+    if isinstance(level, LevelElem):
+        return float(level.elevation_mm)
+    return 0.0
+
+
+def _floor_vertical_range_mm(
+    floor: FloorElem,
+    elements: dict[str, Element],
+) -> tuple[float, float]:
+    top_z = _level_elevation_mm(elements, floor.level_id)
+    bottom_z = top_z - float(floor.thickness_mm)
+    return (min(bottom_z, top_z), max(bottom_z, top_z))
+
+
+def _toposolid_vertical_range_mm(topo: ToposolidElem) -> tuple[float, float]:
+    samples = samples_from_toposolid(topo)
+    if samples:
+        top_z = max(z for _, _, z in samples)
+    else:
+        top_z = float(topo.base_elevation_mm) if topo.base_elevation_mm is not None else 0.0
+    bottom_z = underside_elevation_mm(topo)
+    return (min(bottom_z, top_z), max(bottom_z, top_z))
+
+
+def _vertical_ranges_overlap_mm(
+    a: tuple[float, float],
+    b: tuple[float, float],
+    *,
+    tolerance_mm: float = 1.0,
+) -> bool:
+    return not (a[1] < b[0] - tolerance_mm or b[1] < a[0] - tolerance_mm)
 
 
 def _plan_on_sheet_advisory_violations(

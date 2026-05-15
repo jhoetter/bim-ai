@@ -396,6 +396,42 @@ def test_toposolid_pierce_check_suppressed_by_excavation_relation():
     assert pierce_viols == []
 
 
+def test_toposolid_pierce_check_ignores_floor_above_terrain():
+    topo = ToposolidElem(
+        id="topo-1",
+        boundaryMm=[
+            Vec2Mm(xMm=0, yMm=0),
+            Vec2Mm(xMm=20000, yMm=0),
+            Vec2Mm(xMm=20000, yMm=20000),
+            Vec2Mm(xMm=0, yMm=20000),
+        ],
+        heightSamples=[
+            HeightSample(xMm=0, yMm=0, zMm=-1500),
+            HeightSample(xMm=20000, yMm=0, zMm=-900),
+            HeightSample(xMm=20000, yMm=20000, zMm=-1800),
+        ],
+        thicknessMm=1800,
+        baseElevationMm=-3200,
+    )
+    level = LevelElem(id="eg", name="Erdgeschoss", elevationMm=0)
+    floor = FloorElem(
+        id="floor-1",
+        name="Ground floor above sloped site",
+        levelId="eg",
+        boundaryMm=[
+            Vec2Mm(xMm=1000, yMm=1000),
+            Vec2Mm(xMm=5000, yMm=1000),
+            Vec2Mm(xMm=5000, yMm=5000),
+            Vec2Mm(xMm=1000, yMm=5000),
+        ],
+        thicknessMm=200,
+    )
+    doc = _doc_with(topo, level, floor)
+    violations = evaluate(doc.elements)
+    pierce_viols = [v for v in violations if v.rule_id == "toposolid_pierce_check"]
+    assert pierce_viols == []
+
+
 # ---------------------------------------------------------------------------
 # Round-trip: Document with Toposolid
 # ---------------------------------------------------------------------------

@@ -395,6 +395,28 @@ test('seed-dsl compile emits toposolids, subdivisions, and graded regions in hos
         slopeDegPercent: 4,
       },
     ],
+    volumes: [
+      {
+        id: 'site-house',
+        levelId: 'eg',
+        createWalls: false,
+        footprintMm: [
+          { xMm: -1200, yMm: -1200 },
+          { xMm: 1200, yMm: -1200 },
+          { xMm: 1200, yMm: 1200 },
+          { xMm: -1200, yMm: 1200 },
+        ],
+      },
+    ],
+    toposolidExcavations: [
+      {
+        id: 'site-house-excavation',
+        hostToposolidId: 'site-existing',
+        cutterElementId: 'site-house-floor',
+        cutMode: 'to_bottom_of_cutter',
+        offsetMm: 100,
+      },
+    ],
     commands: [{ type: 'saveViewpoint', id: 'raw-after-site', name: 'Raw after site' }],
   });
 
@@ -408,11 +430,17 @@ test('seed-dsl compile emits toposolids, subdivisions, and graded regions in hos
     (command) => command.type === 'create_toposolid_subdivision',
   );
   const gradedIndex = commands.findIndex((command) => command.type === 'CreateGradedRegion');
+  const floorIndex = commands.findIndex((command) => command.id === 'site-house-floor');
+  const excavationIndex = commands.findIndex(
+    (command) => command.type === 'CreateToposolidExcavation',
+  );
   const rawIndex = commands.findIndex((command) => command.id === 'raw-after-site');
   assert.ok(topIndex > -1);
   assert.ok(subdivisionIndex > topIndex);
   assert.ok(gradedIndex > topIndex);
-  assert.ok(rawIndex > gradedIndex);
+  assert.ok(floorIndex > gradedIndex);
+  assert.ok(excavationIndex > floorIndex);
+  assert.ok(rawIndex > excavationIndex);
   assert.deepEqual(commands[topIndex].heightSamples[0], {
     xMm: -5000,
     yMm: -5000,
@@ -421,6 +449,8 @@ test('seed-dsl compile emits toposolids, subdivisions, and graded regions in hos
   assert.equal(commands[subdivisionIndex].hostToposolidId, 'site-existing');
   assert.equal(commands[gradedIndex].targetMode, 'slope');
   assert.equal(commands[gradedIndex].slopeDegPercent, 4);
+  assert.equal(commands[excavationIndex].hostToposolidId, 'site-existing');
+  assert.equal(commands[excavationIndex].cutterElementId, 'site-house-floor');
 });
 
 test('seed-dsl compile rejects invalid site grading definitions', async () => {

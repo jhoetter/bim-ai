@@ -129,7 +129,7 @@ For every workpackage:
 | SITE-WP-002 | Done       | Add first-class seed DSL authoring for Toposolid, Toposolid subdivisions, and graded regions.     | `packages/cli/lib/seed-dsl.mjs`, CLI tests               | Seed DSL unit tests                                                              |
 | SITE-WP-003 | Superseded | Apply sloped terrain to `target-house-4` recipe and regenerate bundle/evidence.                   | `seed-artifacts/target-house-4/**`                       | `make seed name=target-house-4`, construction-readiness report, browser evidence |
 | SITE-WP-004 | Done       | Add explicit excavation relationships between host toposolids and cutter floors/roofs/toposolids. | `app/bim_ai/commands.py`, site dispatch, elements, tests | Python site/excavation tests, Advisor report                                     |
-| SITE-WP-005 | Pending    | Replace target-house-4 strip terrain with one continuous Toposolid plus excavation relation.      | `seed-artifacts/target-house-4/**`, seed DSL             | `make seed`, construction-readiness report, browser evidence                     |
+| SITE-WP-005 | Done       | Replace target-house-4 strip terrain with one continuous Toposolid plus excavation relation.      | `seed-artifacts/target-house-4/**`, seed DSL             | `make seed`, construction-readiness report, browser evidence                     |
 | SITE-WP-006 | Pending    | Render terrain, subdivisions, grade cuts, and excavation edges clearly in 3D.                     | `packages/web/src/viewport/**`                           | Focused Vitest, Playwright screenshot evidence                                   |
 | SITE-WP-007 | Pending    | Show grade lines and basement exposure in elevation/section saved views.                          | view derivation/rendering, saved viewpoint data          | Browser evidence from long and gable elevations                                  |
 | SITE-WP-008 | Pending    | Add cut/fill and excavation quantity reporting.                                                   | schedules, constructability, export manifests            | Python schedule/report tests                                                     |
@@ -235,7 +235,36 @@ Acceptance:
 - A plain unresolved overlap still produces a blocking Advisor finding.
 - Total and individual estimated excavation volumes are visible in reports.
 
-## SITE-WP-005 Detail: 3D Terrain Rendering
+## SITE-WP-005 Detail: Continuous Target-House-4 Site
+
+Deliverables:
+
+- Replace the four separate `target-house-4` Toposolid strips with one
+  continuous host Toposolid that covers the whole site and extends below the
+  building footprint.
+- Preserve the source drawing's non-flat grade read with height samples across
+  the long and gable directions.
+- Attach the existing near-house graded regions and entry-path subdivision to
+  the single host.
+- Add one explicit excavation relation from the continuous host to the
+  basement/foundation cutter so Advisor suppression is based on modeled intent.
+- Update the seed DSL compiler so the reviewable recipe can emit excavation
+  relations in the correct order after cutter floors are created.
+- Regenerate the checked-in `target-house-4` bundle and evidence metadata from
+  the recipe.
+
+Acceptance:
+
+- The bundle contains one Toposolid host for the site, not four perimeter
+  strips.
+- The bundle contains a `CreateToposolidExcavation` command for the basement
+  cutter.
+- `make seed name=target-house-4` succeeds and construction-readiness reports
+  no terrain/floor overlap warning caused by the continuous host.
+- Browser evidence shows a continuous non-flat site instead of an artificial
+  rectangular moat around the house.
+
+## SITE-WP-006 Detail: 3D Terrain Rendering
 
 Deliverables:
 
@@ -253,7 +282,7 @@ Acceptance:
 - Browser screenshots show non-flat ground at the house perimeter.
 - Site material colors do not dominate or hide facade details.
 
-## SITE-WP-006 Detail: Elevation And Section Grade Lines
+## SITE-WP-007 Detail: Elevation And Section Grade Lines
 
 Deliverables:
 
@@ -270,7 +299,7 @@ Acceptance:
 - The target-house-4 evidence packet can be judged against the paper drawing's
   sloping site.
 
-## SITE-WP-007 Detail: Reporting And Advisor
+## SITE-WP-008 Detail: Reporting And Advisor
 
 Deliverables:
 
@@ -290,7 +319,7 @@ Acceptance:
 - Site-specific warnings/errors are available through the server report, not
   only as screenshot interpretation.
 
-## SITE-WP-008 Detail: UI Authoring
+## SITE-WP-009 Detail: UI Authoring
 
 Deliverables:
 
@@ -307,7 +336,7 @@ Acceptance:
 - UI-created site elements pass the same Advisor rules as seed-created site
   elements.
 
-## SITE-WP-009 Detail: Export Evidence
+## SITE-WP-010 Detail: Export Evidence
 
 Deliverables:
 
@@ -321,7 +350,7 @@ Acceptance:
 - Downstream export consumers can tell that the house sits on a sloped site and
   that the basement/foundation excavates the terrain.
 
-## SITE-WP-010 Detail: Final Target-House-4 Acceptance
+## SITE-WP-011 Detail: Final Target-House-4 Acceptance
 
 Deliverables:
 

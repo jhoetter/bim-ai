@@ -23,8 +23,8 @@
     },
     {
       "key": "site-slope-interpretation",
-      "value": "The paper elevations show a non-flat site; modeled as four sloped Toposolid strips around the house until excavation cutters are implemented.",
-      "confidence": 0.7,
+      "value": "The paper elevations show a non-flat site; modeled as one continuous sloped Toposolid host excavated by the basement slab/foundation footprint.",
+      "confidence": 0.78,
       "source": "Ansichten.pdf long elevation and gable elevation ground lines"
     }
   ],
@@ -184,41 +184,46 @@
     },
     {
       "type": "CreateToposolid",
-      "toposolidId": "t4-site-front-slope",
-      "name": "Sloped front garden terrain from Ansichten.pdf",
+      "toposolidId": "t4-site-host-slope",
+      "name": "Continuous sloped site host from Ansichten.pdf",
       "boundaryMm": [
         {
-          "xMm": -120,
+          "xMm": -5200,
           "yMm": -6800
         },
         {
-          "xMm": 19920,
+          "xMm": 25000,
           "yMm": -6800
         },
         {
-          "xMm": 19920,
-          "yMm": -120
+          "xMm": 25000,
+          "yMm": 15400
         },
         {
-          "xMm": -120,
-          "yMm": -120
+          "xMm": -5200,
+          "yMm": 15400
         }
       ],
       "heightSamples": [
         {
-          "xMm": -120,
+          "xMm": -5200,
           "yMm": -6800,
           "zMm": -1550
         },
         {
-          "xMm": 19920,
+          "xMm": 25000,
           "yMm": -6800,
-          "zMm": -1050
+          "zMm": -900
         },
         {
-          "xMm": 19920,
-          "yMm": -120,
-          "zMm": -760
+          "xMm": 25000,
+          "yMm": 15400,
+          "zMm": -2020
+        },
+        {
+          "xMm": -5200,
+          "yMm": 15400,
+          "zMm": -2520
         },
         {
           "xMm": -120,
@@ -226,20 +231,40 @@
           "zMm": -1220
         },
         {
+          "xMm": 19920,
+          "yMm": -120,
+          "zMm": -760
+        },
+        {
+          "xMm": 19920,
+          "yMm": 10020,
+          "zMm": -1480
+        },
+        {
+          "xMm": -120,
+          "yMm": 10020,
+          "zMm": -2050
+        },
+        {
           "xMm": 9900,
           "yMm": -120,
           "zMm": -940
+        },
+        {
+          "xMm": 9900,
+          "yMm": 10020,
+          "zMm": -1760
         }
       ],
-      "thicknessMm": 1700,
-      "baseElevationMm": -3200,
+      "thicknessMm": 1900,
+      "baseElevationMm": -3600,
       "defaultMaterialKey": "render_beige"
     },
     {
       "type": "create_toposolid_subdivision",
       "id": "t4-front-entry-walks",
       "name": "Twin front entry paving strips",
-      "hostToposolidId": "t4-site-front-slope",
+      "hostToposolidId": "t4-site-host-slope",
       "boundaryMm": [
         {
           "xMm": 4200,
@@ -262,158 +287,9 @@
       "materialKey": "concrete_smooth"
     },
     {
-      "type": "CreateToposolid",
-      "toposolidId": "t4-site-rear-slope",
-      "name": "Rear garden terrain with lower basement exposure",
-      "boundaryMm": [
-        {
-          "xMm": -120,
-          "yMm": 10020
-        },
-        {
-          "xMm": 19920,
-          "yMm": 10020
-        },
-        {
-          "xMm": 19920,
-          "yMm": 15400
-        },
-        {
-          "xMm": -120,
-          "yMm": 15400
-        }
-      ],
-      "heightSamples": [
-        {
-          "xMm": -120,
-          "yMm": 10020,
-          "zMm": -2050
-        },
-        {
-          "xMm": 19920,
-          "yMm": 10020,
-          "zMm": -1480
-        },
-        {
-          "xMm": 19920,
-          "yMm": 15400,
-          "zMm": -1880
-        },
-        {
-          "xMm": -120,
-          "yMm": 15400,
-          "zMm": -2380
-        },
-        {
-          "xMm": 9900,
-          "yMm": 10020,
-          "zMm": -1760
-        }
-      ],
-      "thicknessMm": 1700,
-      "baseElevationMm": -3600,
-      "defaultMaterialKey": "render_beige"
-    },
-    {
-      "type": "CreateToposolid",
-      "toposolidId": "t4-site-left-gable-slope",
-      "name": "Left gable side terrain rising across the facade",
-      "boundaryMm": [
-        {
-          "xMm": -5200,
-          "yMm": -6800
-        },
-        {
-          "xMm": -120,
-          "yMm": -6800
-        },
-        {
-          "xMm": -120,
-          "yMm": 15400
-        },
-        {
-          "xMm": -5200,
-          "yMm": 15400
-        }
-      ],
-      "heightSamples": [
-        {
-          "xMm": -120,
-          "yMm": -6800,
-          "zMm": -1220
-        },
-        {
-          "xMm": -120,
-          "yMm": 15400,
-          "zMm": -2380
-        },
-        {
-          "xMm": -5200,
-          "yMm": 15400,
-          "zMm": -2520
-        },
-        {
-          "xMm": -5200,
-          "yMm": -6800,
-          "zMm": -1550
-        }
-      ],
-      "thicknessMm": 1700,
-      "baseElevationMm": -3800,
-      "defaultMaterialKey": "render_beige"
-    },
-    {
-      "type": "CreateToposolid",
-      "toposolidId": "t4-site-right-gable-slope",
-      "name": "Right gable side terrain rising toward the garden",
-      "boundaryMm": [
-        {
-          "xMm": 19920,
-          "yMm": -6800
-        },
-        {
-          "xMm": 25000,
-          "yMm": -6800
-        },
-        {
-          "xMm": 25000,
-          "yMm": 15400
-        },
-        {
-          "xMm": 19920,
-          "yMm": 15400
-        }
-      ],
-      "heightSamples": [
-        {
-          "xMm": 19920,
-          "yMm": -6800,
-          "zMm": -1050
-        },
-        {
-          "xMm": 19920,
-          "yMm": 15400,
-          "zMm": -1880
-        },
-        {
-          "xMm": 25000,
-          "yMm": 15400,
-          "zMm": -2020
-        },
-        {
-          "xMm": 25000,
-          "yMm": -6800,
-          "zMm": -900
-        }
-      ],
-      "thicknessMm": 1700,
-      "baseElevationMm": -3400,
-      "defaultMaterialKey": "render_beige"
-    },
-    {
       "type": "CreateGradedRegion",
       "id": "t4-front-worked-grade",
-      "hostToposolidId": "t4-site-front-slope",
+      "hostToposolidId": "t4-site-host-slope",
       "boundaryMm": [
         {
           "xMm": -120,
@@ -439,7 +315,7 @@
     {
       "type": "CreateGradedRegion",
       "id": "t4-rear-worked-grade",
-      "hostToposolidId": "t4-site-rear-slope",
+      "hostToposolidId": "t4-site-host-slope",
       "boundaryMm": [
         {
           "xMm": -120,
@@ -773,6 +649,14 @@
       "wallTypeId": "t4-wt-rendered-masonry",
       "materialKey": "render_light_grey",
       "isCurtainWall": false
+    },
+    {
+      "type": "CreateToposolidExcavation",
+      "id": "t4-basement-site-excavation",
+      "hostToposolidId": "t4-site-host-slope",
+      "cutterElementId": "t4-kg-floor",
+      "cutMode": "to_bottom_of_cutter",
+      "offsetMm": 250
     },
     {
       "type": "createRoof",
@@ -1540,12 +1424,8 @@
       "name": "Bed marker",
       "assetKind": "block_2d",
       "category": "furniture",
-      "tags": [
-        "bedroom"
-      ],
-      "disciplineTags": [
-        "arch"
-      ],
+      "tags": ["bedroom"],
+      "disciplineTags": ["arch"],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 1800,
       "thumbnailHeightMm": 2100,
@@ -1560,12 +1440,8 @@
       "name": "Sofa marker",
       "assetKind": "block_2d",
       "category": "furniture",
-      "tags": [
-        "living"
-      ],
-      "disciplineTags": [
-        "arch"
-      ],
+      "tags": ["living"],
+      "disciplineTags": ["arch"],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 2200,
       "thumbnailHeightMm": 900,
@@ -1580,12 +1456,8 @@
       "name": "Kitchen run marker",
       "assetKind": "block_2d",
       "category": "kitchen",
-      "tags": [
-        "kitchen"
-      ],
-      "disciplineTags": [
-        "arch"
-      ],
+      "tags": ["kitchen"],
+      "disciplineTags": ["arch"],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 1200,
       "thumbnailHeightMm": 450,
@@ -1600,12 +1472,8 @@
       "name": "Bath fixture marker",
       "assetKind": "block_2d",
       "category": "bathroom",
-      "tags": [
-        "bathroom"
-      ],
-      "disciplineTags": [
-        "arch"
-      ],
+      "tags": ["bathroom"],
+      "disciplineTags": ["arch"],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 800,
       "thumbnailHeightMm": 600,
@@ -3177,13 +3045,8 @@
       }
     ],
     "documentationIntent": {
-      "sheets": [
-        "target-house-4-initiation"
-      ],
-      "schedules": [
-        "rooms",
-        "openings"
-      ],
+      "sheets": ["target-house-4-initiation"],
+      "schedules": ["rooms", "openings"],
       "evidenceViews": [
         "vp-main-iso",
         "vp-front-elev",

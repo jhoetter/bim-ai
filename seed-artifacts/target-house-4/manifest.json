@@ -14,14 +14,14 @@
   },
   "acceptance": {
     "status": "draft",
-    "reason": "Refined against the customer elevation with roof-plane dormers, visible glass panels, basement openings, construction-readiness cleanup, and sloped Toposolid site strips. Final visual evidence should be recaptured after loading this bundle."
+    "reason": "Refined against the customer elevation with roof-plane dormers, visible glass panels, basement openings, construction-readiness cleanup, and a continuous sloped Toposolid site host cut by an explicit basement excavation relation. Final visual evidence should be recaptured after loading this bundle."
   },
   "inputPaths": {
     "source": "Testhaus",
     "bundle": "seed-artifacts/target-house-4/bundle.json"
   },
-  "bundleSha256": "90ebdf4ded8dfd4865e5b38d412b7a5f7c6ce0f5b5089a6e81f2216059e2d503",
-  "commandCount": 179,
+  "bundleSha256": "94e1db0be66fc9db126d7585f6e167b4e83890e235e8e98f06a8525724167a35",
+  "commandCount": 177,
   "commandSchemaVersion": "cmd-v3.0",
   "entryComment": {
     "body": "Seed artifact loaded from target-house-4."
