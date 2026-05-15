@@ -1,0 +1,1 @@
+please look into /Users/jhoetter/Desktop/Testhaus; i want that this house is built as a model as target-house-4. use the claude-skills/sketch-to-bim for this.
