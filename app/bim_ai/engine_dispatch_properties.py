@@ -1,5 +1,7 @@
 # ruff: noqa: I001
 
+import json
+
 from pydantic import TypeAdapter
 
 from bim_ai.engine import (
@@ -874,6 +876,36 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                 els[cmd.element_id] = el.model_copy(
                     update={"checkpoint_retention_limit": checkpoint_limit}
                 )
+            elif isinstance(el, ProjectSettingsElem) and cmd.key == "georeference":
+                if cmd.value is None or cmd.value == "" or cmd.value == "null":
+                    els[cmd.element_id] = el.model_copy(update={"georeference": None})
+                else:
+                    raw = cmd.value if isinstance(cmd.value, dict) else json.loads(str(cmd.value))
+                    if not isinstance(raw, dict):
+                        raise ValueError("georeference must be a JSON object")
+                    try:
+                        anchor_lat = float(raw["anchorLat"])
+                        anchor_lon = float(raw["anchorLon"])
+                        radius_m = float(raw["contextRadiusM"])
+                    except (KeyError, TypeError, ValueError) as exc:
+                        raise ValueError(
+                            "georeference must have anchorLat, anchorLon, contextRadiusM"
+                        ) from exc
+                    if not (-90 <= anchor_lat <= 90):
+                        raise ValueError("georeference.anchorLat must be in [-90, 90]")
+                    if not (-180 <= anchor_lon <= 180):
+                        raise ValueError("georeference.anchorLon must be in [-180, 180]")
+                    if not (50 <= radius_m <= 1000):
+                        raise ValueError("georeference.contextRadiusM must be in [50, 1000]")
+                    els[cmd.element_id] = el.model_copy(
+                        update={
+                            "georeference": {
+                                "anchorLat": anchor_lat,
+                                "anchorLon": anchor_lon,
+                                "contextRadiusM": radius_m,
+                            }
+                        }
+                    )
             elif isinstance(el, ProjectSettingsElem) and cmd.key in {
                 "lengthUnit",
                 "angularUnitDeg",
@@ -946,6 +978,7 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     "checkpointRetentionLimit(project_settings integer 1..99) | "
                     "lengthUnit/angularUnitDeg/displayLocale/project info(project_settings) | "
                     "volumeComputedAt/roomAreaComputationBasis(project_settings) | "
+                    "georeference(project_settings JSON object with anchorLat/anchorLon/contextRadiusM or null) | "
                     "roofTypeId(roof) | roofGeometryMode(roof) | "
                     "sheetId(schedule) | titleBlock(sheet) | titleblockParametersPatch(sheet JSON object) supported in v2"
                 )
