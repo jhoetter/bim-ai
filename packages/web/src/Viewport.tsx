@@ -13,7 +13,6 @@ import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 import { parseDimensionInput, type Element, type LensMode } from '@bim-ai/core';
 import type { OrbitViewpointPersistFieldPayload } from './OrbitViewpointPersistedHud';
 
-import { ApiHttpError, renderBackendRaytracePng } from './lib/api';
 import { useBimStore, type PlanTool } from './state/store';
 import { useTheme } from './state/useTheme';
 import type { SnapSettings } from './plan/snapSettings';
@@ -73,6 +72,8 @@ import {
   resolveFaceMaterialOverride,
   resolveWallTypeAssembly,
 } from './viewport/meshBuilders';
+import { makeOsmContextGroup, type OsmLayerName } from './viewport/meshBuilders.osmContext';
+import { fetchOsmContext } from './osm/fetchOverpass';
 import { resolveWallAssemblyExposedLayers } from './families/wallTypeCatalog';
 import { resolveWindowOutline } from './families/geometryFns/windowOutline';
 import {
@@ -134,21 +135,10 @@ import { makeCsgWallMaterial } from './viewport/csgWallMaterial';
 import { materialDependencyDirtyIds } from './viewport/materialDependencyInvalidation';
 import { applyTextureVisibilityToMesh } from './viewport/visualStyleMaterials';
 import {
-  isPathTraceRenderStyle,
   isRasterHighFidelityRenderStyle,
   isTextureRichRenderStyle,
   normalizeViewerRenderStyle,
 } from './viewport/renderStyles';
-import {
-  collectPathTraceSceneStats,
-  detectPathTraceCapability,
-  type PathTraceCapability,
-} from './viewport/pathTracing/capabilities';
-import {
-  idlePathTracePreviewState,
-  PathTracePreviewController,
-  type PathTracePreviewState,
-} from './viewport/pathTracing/PathTracePreviewController';
 // Side-effect import: registers floor/roof/column/beam/door/window 3D grip providers.
 import './viewport/grip3dProviders';
 import {
@@ -338,20 +328,6 @@ const POLYGON_3D_AUTHORING_TOOLS = new Set<Direct3dAuthoringTool>([
   'area',
 ]);
 
-const PATH_TRACE_HELPER_ELEMENT_KINDS = new Set<string>([
-  'internal_origin',
-  'project_base_point',
-  'survey_point',
-  'reference_plane',
-  'room',
-  'area',
-  'text_3d',
-]);
-
-function pathTraceRoleForElement(elem: Element): ViewportRenderRole {
-  return PATH_TRACE_HELPER_ELEMENT_KINDS.has(elem.kind) ? 'helper' : 'model';
-}
-
 function applyRenderRole(obj: THREE.Object3D, role: ViewportRenderRole): void {
   obj.userData.renderRole = obj.userData.renderRole ?? role;
   obj.traverse((node) => {
@@ -518,6 +494,8 @@ export function Viewport({
   const paintBundleRef = useRef<ViewportPaintBundle | null>(null);
   const wallDraftPreviewGroupRef = useRef<THREE.Object3D | null>(null);
   const levelDatumGroupRef = useRef<THREE.Group | null>(null);
+  const osmContextGroupRef = useRef<THREE.Group | null>(null);
+  const [osmHiddenLayers, setOsmHiddenLayers] = useState<ReadonlySet<OsmLayerName>>(new Set());
   const clearWallDraftPreviewGroup = useCallback(() => {
     const group = wallDraftPreviewGroupRef.current;
     if (!group) return;
@@ -529,14 +507,6 @@ export function Viewport({
   const renderPassRef = useRef<RenderPass | null>(null);
   const ssaoPassRef = useRef<SSAOPass | null>(null);
   const outlinePassRef = useRef<OutlinePass | null>(null);
-  const pathTraceControllerRef = useRef<PathTracePreviewController | null>(null);
-  const pathTraceCapabilityRef = useRef<PathTraceCapability | null>(null);
-  const [pathTraceState, setPathTraceState] =
-    useState<PathTracePreviewState>(idlePathTracePreviewState);
-  const [backendRenderState, setBackendRenderState] = useState<{
-    phase: 'idle' | 'running' | 'error';
-    message: string;
-  }>({ phase: 'idle', message: '' });
   /** COL-V3-01: per-remote-user outline passes keyed by CSS color string. */
   const remoteOutlinePassesRef = useRef<Map<string, OutlinePass>>(new Map());
   const bimPickMapRef = useRef<Map<string, THREE.Object3D>>(new Map());
@@ -601,13 +571,18 @@ export function Viewport({
   const sectionBoxCageRef = useRef<THREE.LineSegments | null>(null);
   const clipCapsRef = useRef<THREE.Mesh[]>([]);
 
-  const modelId = useBimStore((s) => s.modelId);
   const elementsById = useBimStore((s) => s.elementsById);
   // ANN-02: ref-copy so the 3D contextmenu listener (registered once in the
   // mount effect) sees up-to-date elements without rerunning that effect.
   const elementsByIdRef = useRef(elementsById);
   elementsByIdRef.current = elementsById;
   const theme = useTheme();
+
+  const georeference = useMemo(() => {
+    const ps = Object.values(elementsById).find((e) => e.kind === 'project_settings');
+    if (ps?.kind === 'project_settings') return ps.georeference ?? null;
+    return null;
+  }, [elementsById]);
 
   const walkLevels = useMemo(
     () =>
@@ -813,73 +788,6 @@ export function Viewport({
     if (!el || el.kind !== 'viewpoint' || el.mode !== 'orbit_3d') return null;
     return el;
   }, [activeViewpointId, elementsById]);
-
-  const handleBackendRaytraceRender = useCallback(async () => {
-    if (!modelId) {
-      setBackendRenderState({ phase: 'error', message: 'No active model for backend render.' });
-      return;
-    }
-    const camera = cameraRef.current;
-    camera?.updateMatrixWorld(true);
-    const cameraDirection = new THREE.Vector3();
-    camera?.getWorldDirection(cameraDirection);
-    const cameraPosition = camera?.position.clone();
-    const cameraUp = camera?.up.clone();
-    const cameraTarget =
-      cameraPosition && cameraDirection.lengthSq() > 0
-        ? cameraPosition.clone().add(cameraDirection.multiplyScalar(10))
-        : null;
-    const canvas = rendererRef.current?.domElement;
-    const canvasWidth = canvas?.clientWidth || camera?.aspect || 1;
-    const canvasHeight = canvas?.clientHeight || 1;
-    const aspect = Math.max(0.25, Math.min(4, canvasWidth / canvasHeight));
-    let renderWidth = 1920;
-    let renderHeight = Math.round(renderWidth / aspect);
-    if (renderHeight > 1600) {
-      renderHeight = 1600;
-      renderWidth = Math.round(renderHeight * aspect);
-    }
-    setBackendRenderState({
-      phase: 'running',
-      message: 'Backend Cycles render running; PNG download starts when ready.',
-    });
-    try {
-      const blob = await renderBackendRaytracePng(modelId, {
-        width: renderWidth,
-        height: renderHeight,
-        samples: 2048,
-        timeoutSeconds: 900,
-        camera: cameraPosition && cameraTarget && cameraUp
-          ? {
-              position: { x: cameraPosition.x, y: cameraPosition.y, z: cameraPosition.z },
-              target: { x: cameraTarget.x, y: cameraTarget.y, z: cameraTarget.z },
-              up: { x: cameraUp.x, y: cameraUp.y, z: cameraUp.z },
-              fovDeg: camera?.fov ?? 45,
-            }
-          : undefined,
-      });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = `bim-ai-render-${modelId}.png`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 120_000);
-      setBackendRenderState({
-        phase: 'idle',
-        message: 'Backend render downloaded.',
-      });
-    } catch (err) {
-      const message =
-        err instanceof ApiHttpError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : 'Backend render failed.';
-      setBackendRenderState({ phase: 'error', message });
-    }
-  }, [modelId]);
 
   const viewerShadowsEnabled =
     viewerGdoRuntime.viewerShadowsEnabled ??
@@ -3688,10 +3596,7 @@ export function Viewport({
         placeCamera();
       }
 
-      const renderedPathTrace =
-        isPathTraceRenderStyle(viewerRenderStyleRef.current) &&
-        pathTraceControllerRef.current?.renderSample();
-      if (!renderedPathTrace) composer.render();
+      composer.render();
       rafRef.current = requestAnimationFrame(tick);
     }
 
@@ -3706,10 +3611,6 @@ export function Viewport({
       paintBundleRef.current = null;
 
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      pathTraceControllerRef.current?.dispose();
-      pathTraceControllerRef.current = null;
-      pathTraceCapabilityRef.current = null;
-
       ro.disconnect();
       clearWallDraftPreviewGroup();
 
@@ -4309,7 +4210,7 @@ export function Viewport({
       if (!obj) continue;
 
       if (!obj.userData.bimPickId) obj.userData.bimPickId = id;
-      applyRenderRole(obj, pathTraceRoleForElement(e));
+      applyRenderRole(obj, 'model');
       obj.visible = !skipCat(e) && !skipLevel(e);
 
       // FED-01: ghost any element resolved through a `link_model` link.
@@ -4478,6 +4379,44 @@ export function Viewport({
     };
   }, [activeLevelId, direct3dAuthoringActive, elementsById, viewerLevelHidden]);
 
+  // ── OSM site context: fetch neighbouring buildings/roads/trees from Overpass API ──
+  useEffect(() => {
+    const root = rootGroupRef.current;
+
+    function removePrevious() {
+      const prev = osmContextGroupRef.current;
+      if (prev) {
+        prev.parent?.remove(prev);
+        disposeObject3D(prev);
+        osmContextGroupRef.current = null;
+      }
+    }
+
+    if (!root || !georeference) {
+      removePrevious();
+      return;
+    }
+
+    let cancelled = false;
+
+    fetchOsmContext(georeference.anchorLat, georeference.anchorLon, georeference.contextRadiusM)
+      .then((features) => {
+        if (cancelled) return;
+        removePrevious();
+        // Build with all layers visible; visibility is controlled directly on the group.
+        const group = makeOsmContextGroup(features);
+        root.add(group);
+        osmContextGroupRef.current = group;
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) console.warn('[OSM] fetch failed:', err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [georeference]); // osmHiddenLayers intentionally excluded — toggles mutate the group directly
+
   // ── F-011: visual style (shaded / wireframe / colors / hidden / realistic / high fidelity / path trace) ──
   useEffect(() => {
     const cache = bimPickMapRef.current;
@@ -4562,34 +4501,6 @@ export function Viewport({
 
   useEffect(() => {
     const renderer = rendererRef.current;
-    const scene = sceneRef.current;
-    const root = rootGroupRef.current;
-    const camera = cameraRef.current;
-    if (!renderer || !scene || !root || !camera) return;
-
-    if (!isPathTraceRenderStyle(viewerRenderStyle)) {
-      pathTraceControllerRef.current?.dispose();
-      pathTraceControllerRef.current = null;
-      pathTraceCapabilityRef.current = null;
-      setPathTraceState(idlePathTracePreviewState);
-      return;
-    }
-
-    const stats = collectPathTraceSceneStats(root);
-    const capability = detectPathTraceCapability(renderer, stats);
-    pathTraceCapabilityRef.current = capability;
-    const controller =
-      pathTraceControllerRef.current ?? new PathTracePreviewController(renderer, setPathTraceState);
-    pathTraceControllerRef.current = controller;
-    void controller.prepare(scene, root, camera, capability);
-
-    return () => {
-      controller.reset();
-    };
-  }, [elementsById, theme, viewerRenderStyle, viewerCategoryHidden, viewerLevelHidden]);
-
-  useEffect(() => {
-    const renderer = rendererRef.current;
     if (!renderer) return;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = Math.pow(2, viewerPhotographicExposureEv);
@@ -4662,10 +4573,7 @@ export function Viewport({
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     ssao.enabled =
-      viewerAmbientOcclusionEnabled &&
-      !reducedMotion &&
-      viewerRenderStyle !== 'hidden-line' &&
-      !isPathTraceRenderStyle(viewerRenderStyle);
+      viewerAmbientOcclusionEnabled && !reducedMotion && viewerRenderStyle !== 'hidden-line';
   }, [viewerAmbientOcclusionEnabled, viewerRenderStyle]);
 
   useEffect(() => {
@@ -5709,6 +5617,43 @@ export function Viewport({
           >
             {sectionBoxRef.current.summary()}
           </span>
+        </div>
+      ) : null}
+
+      {georeference ? (
+        <div className="pointer-events-auto absolute bottom-3 left-3 z-20">
+          <div className="flex flex-col gap-0.5 rounded border border-border bg-surface/90 px-2.5 py-2 text-[10px] text-muted shadow-sm backdrop-blur-sm">
+            <span
+              className="mb-0.5 font-semibold uppercase text-muted"
+              style={{ letterSpacing: '0.08em', fontSize: '9px' }}
+            >
+              Context layers
+            </span>
+            {(['buildings', 'roads', 'trees', 'water', 'green'] as const).map((layer) => (
+              <label key={layer} className="flex cursor-pointer items-center gap-1.5">
+                <input
+                  type="checkbox"
+                  checked={!osmHiddenLayers.has(layer)}
+                  onChange={(e) => {
+                    setOsmHiddenLayers((prev) => {
+                      const next = new Set(prev);
+                      if (e.target.checked) next.delete(layer);
+                      else next.add(layer);
+                      const group = osmContextGroupRef.current;
+                      if (group) {
+                        group.children.forEach((child) => {
+                          if (child.userData.osmLayer === layer) child.visible = e.target.checked;
+                        });
+                      }
+                      return next;
+                    });
+                  }}
+                  className="size-3 accent-accent"
+                />
+                <span className="capitalize">{layer}</span>
+              </label>
+            ))}
+          </div>
         </div>
       ) : null}
 
