@@ -306,6 +306,43 @@ function compileGradedRegions(recipe) {
   return commands;
 }
 
+function compileToposolidExcavations(recipe) {
+  const commands = [];
+  for (const excavation of recipe.toposolidExcavations ?? []) {
+    const id = assertString(excavation.id, '$.toposolidExcavations[].id');
+    const cutMode = excavation.cutMode ?? 'to_bottom_of_cutter';
+    if (!['to_top_of_cutter', 'to_bottom_of_cutter', 'custom_depth'].includes(cutMode)) {
+      throw new Error(`$.toposolidExcavations.${id}.cutMode is invalid.`);
+    }
+    if (cutMode === 'custom_depth' && !Number.isFinite(excavation.customDepthMm)) {
+      throw new Error(
+        `$.toposolidExcavations.${id}.customDepthMm is required for custom_depth mode.`,
+      );
+    }
+    commands.push({
+      type: 'CreateToposolidExcavation',
+      id,
+      hostToposolidId: assertString(
+        excavation.hostToposolidId,
+        `$.toposolidExcavations.${id}.hostToposolidId`,
+      ),
+      cutterElementId: assertString(
+        excavation.cutterElementId,
+        `$.toposolidExcavations.${id}.cutterElementId`,
+      ),
+      cutMode,
+      offsetMm: Number.isFinite(excavation.offsetMm) ? excavation.offsetMm : 0,
+      ...(Number.isFinite(excavation.customDepthMm)
+        ? { customDepthMm: excavation.customDepthMm }
+        : {}),
+      ...(Number.isFinite(excavation.estimatedVolumeM3)
+        ? { estimatedVolumeM3: excavation.estimatedVolumeM3 }
+        : {}),
+    });
+  }
+  return commands;
+}
+
 function compileAssets(recipe) {
   const commands = [];
   for (const asset of recipe.assets ?? []) {
@@ -428,6 +465,32 @@ function compileViewpoints(recipe) {
   }));
 }
 
+function compileGeoreference(recipe) {
+  const geo = recipe.georeference;
+  if (!geo) return [];
+  if (!isObject(geo)) throw new Error('$.georeference must be an object.');
+  const anchorLat = assertFiniteNumber(geo.anchorLat, '$.georeference.anchorLat');
+  const anchorLon = assertFiniteNumber(geo.anchorLon, '$.georeference.anchorLon');
+  const contextRadiusM = assertFiniteNumber(
+    geo.contextRadiusM ?? 300,
+    '$.georeference.contextRadiusM',
+  );
+  if (anchorLat < -90 || anchorLat > 90)
+    throw new Error('$.georeference.anchorLat must be in [-90, 90].');
+  if (anchorLon < -180 || anchorLon > 180)
+    throw new Error('$.georeference.anchorLon must be in [-180, 180].');
+  if (contextRadiusM < 50 || contextRadiusM > 1000)
+    throw new Error('$.georeference.contextRadiusM must be in [50, 1000].');
+  return [
+    {
+      type: 'updateElementProperty',
+      elementId: 'project_settings',
+      key: 'georeference',
+      value: { anchorLat, anchorLon, contextRadiusM },
+    },
+  ];
+}
+
 export function compileSeedDsl(recipe, options = {}) {
   if (!isObject(recipe)) throw new Error('Seed DSL recipe must be a JSON object.');
   if (recipe.schemaVersion !== 'seed-dsl.v0')
@@ -442,11 +505,13 @@ export function compileSeedDsl(recipe, options = {}) {
     });
   }
   commands.push(
+    ...compileGeoreference(recipe),
     ...compileTypes(recipe),
     ...compileLevels(recipe),
     ...compileToposolids(recipe),
     ...compileGradedRegions(recipe),
     ...compileVolumes(recipe),
+    ...compileToposolidExcavations(recipe),
     ...compileRoofs(recipe),
     ...compileRooms(recipe),
     ...compileAssets(recipe),
