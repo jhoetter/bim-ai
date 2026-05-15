@@ -3,12 +3,8 @@
   "checkpoint_id": "fee9512d6760",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
-  "files_touched": [
-    "spec/revit-parity/revit2026-parity-tracker.md",
-    "spec/revit-parity/revit2026.pdf",
-    "spec/revit2026.pdf"
-  ],
+  "checkpoints_count": 1,
+  "files_touched": null,
   "sessions": [
     {
       "metadata": "/fe/e9512d6760/0/metadata.json",
@@ -18,10 +14,10 @@
     }
   ],
   "token_usage": {
-    "input_tokens": 2059390,
+    "input_tokens": 5865989,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 21044864,
-    "output_tokens": 45938,
-    "api_call_count": 434
+    "cache_read_tokens": 128602112,
+    "output_tokens": 464385,
+    "api_call_count": 1142
   }
 }
