@@ -172,9 +172,9 @@ export type ViewerRenderStyle =
   | 'consistent-colors'
   | 'hidden-line'
   | 'realistic'
+  | 'ray-trace'
   | 'high-fidelity'
-  | 'path-trace-preview'
-  | 'ray-trace';
+  | 'path-trace-preview';
 
 export type StoreState = {
   modelId?: string;

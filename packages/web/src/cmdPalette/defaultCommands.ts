@@ -8,14 +8,6 @@ function is3dContext(ctx: PaletteContext): boolean {
   return ctx.activeMode === '3d';
 }
 
-function structuralSketchToolForContext(
-  ctx: PaletteContext,
-  direct3dTool: Extract<PlanTool, 'floor' | 'roof'>,
-  sketchTool: Extract<PlanTool, 'floor-sketch' | 'roof-sketch'>,
-): PlanTool {
-  return is3dContext(ctx) ? direct3dTool : sketchTool;
-}
-
 function startPlanTool(ctx: PaletteContext, toolId: PlanTool): void {
   if (ctx.startPlanTool) {
     ctx.startPlanTool(toolId);
@@ -93,21 +85,6 @@ function selectedWall(ctx: PaletteContext) {
   return el?.kind === 'wall' ? el : null;
 }
 
-function selectedElementOfKinds(ctx: PaletteContext, kinds: readonly string[]) {
-  const id = ctx.selectedElementIds[0];
-  if (!id) return null;
-  const el = useBimStore.getState().elementsById[id];
-  return el && kinds.includes(el.kind) ? el : null;
-}
-
-function selectedFloor(ctx: PaletteContext) {
-  return selectedElementOfKinds(ctx, ['floor']);
-}
-
-function selectedOpening(ctx: PaletteContext) {
-  return selectedElementOfKinds(ctx, ['door', 'window', 'wall_opening']);
-}
-
 function isSelectedWall3dContext(ctx: PaletteContext): boolean {
   return is3dContext(ctx) && Boolean(selectedWall(ctx));
 }
@@ -119,20 +96,6 @@ function dispatchSelectedWallCommand(
   const wall = selectedWall(ctx);
   if (!wall) return;
   ctx.dispatchCommand?.(build(wall));
-}
-
-function dispatchElementProperty(
-  ctx: PaletteContext,
-  elementId: string,
-  key: string,
-  value: unknown,
-): void {
-  ctx.dispatchCommand?.({
-    type: 'updateElementProperty',
-    elementId,
-    key,
-    value,
-  });
 }
 
 // Tool commands
@@ -169,7 +132,7 @@ registerCommand({
   label: 'Place Floor',
   keywords: ['floor', 'slab'],
   category: 'command',
-  invoke: (ctx) => startPlanTool(ctx, structuralSketchToolForContext(ctx, 'floor', 'floor-sketch')),
+  invoke: (ctx) => startPlanTool(ctx, 'floor'),
 });
 
 registerCommand({
@@ -582,6 +545,20 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'navigate.fire-safety',
+  label: 'Switch lens: Fire Safety',
+  keywords: ['fire', 'fire safety', 'brandschutz', 'compartment', 'egress', 'lens'],
+  category: 'navigate',
+  invoke: (ctx) => {
+    if (ctx.setLensMode) {
+      ctx.setLensMode('fire-safety');
+      return;
+    }
+    useBimStore.getState().setLensMode('fire-safety');
+  },
+});
+
+registerCommand({
   id: 'navigate.energy',
   label: 'Switch lens: Energieberatung',
   keywords: [
@@ -633,6 +610,20 @@ registerCommand({
   },
 });
 
+registerCommand({
+  id: 'navigate.cost-quantity',
+  label: 'Switch lens: Cost and Quantity',
+  keywords: ['cost', 'quantity', 'takeoff', 'mengen', 'kosten', 'din276', 'lens'],
+  category: 'navigate',
+  invoke: (ctx) => {
+    if (ctx.setLensMode) {
+      ctx.setLensMode('cost-quantity');
+      return;
+    }
+    useBimStore.getState().setLensMode('cost-quantity');
+  },
+});
+
 // Additional tools
 registerCommand({
   id: 'tool.column',
@@ -663,7 +654,7 @@ registerCommand({
   label: 'Sketch Roof',
   keywords: ['roof', 'roofing', 'sketch'],
   category: 'command',
-  invoke: (ctx) => startPlanTool(ctx, structuralSketchToolForContext(ctx, 'roof', 'roof-sketch')),
+  invoke: (ctx) => startPlanTool(ctx, 'roof-sketch'),
 });
 
 registerCommand({
@@ -755,87 +746,6 @@ registerCommand({
 });
 
 registerCommand({
-  id: 'structure.wall.toggle-load-bearing',
-  label: 'Structure: Toggle Load-Bearing Wall',
-  keywords: ['structure', 'structural wall', 'load bearing', 'bearing wall', 'toggle'],
-  category: 'command',
-  isAvailable: (ctx) => Boolean(selectedWall(ctx)),
-  invoke: (ctx) => {
-    const wall = selectedWall(ctx);
-    if (!wall) return;
-    const next = wall.loadBearing !== true;
-    dispatchElementProperty(ctx, wall.id, 'loadBearing', next);
-    dispatchElementProperty(
-      ctx,
-      wall.id,
-      'structuralRole',
-      next ? 'bearing_wall' : 'non_load_bearing',
-    );
-    dispatchElementProperty(ctx, wall.id, 'discipline', next ? 'struct' : '');
-  },
-});
-
-registerCommand({
-  id: 'structure.floor.mark-slab',
-  label: 'Structure: Mark Floor as Slab',
-  keywords: ['structure', 'structural slab', 'floor slab', 'load bearing floor'],
-  category: 'command',
-  isAvailable: (ctx) => Boolean(selectedFloor(ctx)),
-  invoke: (ctx) => {
-    const floor = selectedFloor(ctx);
-    if (!floor) return;
-    dispatchElementProperty(ctx, floor.id, 'loadBearing', true);
-    dispatchElementProperty(ctx, floor.id, 'structuralRole', 'slab');
-    dispatchElementProperty(ctx, floor.id, 'discipline', 'struct');
-  },
-});
-
-registerCommand({
-  id: 'structure.foundation.mark-selected-floor',
-  label: 'Structure: Mark Floor as Foundation',
-  keywords: ['structure', 'foundation', 'footing', 'strip footing', 'slab foundation'],
-  category: 'command',
-  isAvailable: (ctx) => Boolean(selectedFloor(ctx)),
-  invoke: (ctx) => {
-    const floor = selectedFloor(ctx);
-    if (!floor) return;
-    dispatchElementProperty(ctx, floor.id, 'loadBearing', true);
-    dispatchElementProperty(ctx, floor.id, 'structuralRole', 'foundation');
-    dispatchElementProperty(ctx, floor.id, 'discipline', 'struct');
-  },
-});
-
-registerCommand({
-  id: 'structure.opening.mark-reviewed',
-  label: 'Structure: Mark Opening Reviewed',
-  keywords: ['structure', 'opening review', 'lintel', 'header', 'load bearing wall opening'],
-  category: 'command',
-  isAvailable: (ctx) => Boolean(selectedOpening(ctx)),
-  invoke: (ctx) => {
-    const opening = selectedOpening(ctx);
-    if (!opening) return;
-    ctx.dispatchCommand?.({
-      type: 'set_element_prop',
-      elementId: opening.id,
-      key: 'structuralReviewApproved',
-      value: true,
-    });
-  },
-});
-
-registerCommand({
-  id: 'structure.review.open-advisor',
-  label: 'Structure: Open Review Checks',
-  keywords: ['structure', 'review', 'advisor', 'constructability', 'load path'],
-  category: 'command',
-  invoke: (ctx) => {
-    if (ctx.setLensMode) ctx.setLensMode('structure');
-    else useBimStore.getState().setLensMode('structure');
-    ctx.openAdvisor?.();
-  },
-});
-
-registerCommand({
   id: 'tool.property-line',
   label: 'Place Property Line',
   keywords: ['property line', 'site', 'boundary'],
@@ -922,62 +832,6 @@ registerCommand({
   keywords: ['shaft', 'shaft opening', 'vertical opening'],
   category: 'command',
   invoke: (ctx) => startPlanTool(ctx, 'shaft'),
-});
-
-registerCommand({
-  id: 'tool.duct',
-  label: 'Route Duct',
-  keywords: ['duct', 'hvac', 'air', 'supply', 'return', 'mep'],
-  category: 'command',
-  invoke: (ctx) => startPlanTool(ctx, 'duct'),
-});
-
-registerCommand({
-  id: 'tool.pipe',
-  label: 'Route Pipe',
-  keywords: ['pipe', 'plumbing', 'heating', 'cooling', 'sprinkler', 'mep'],
-  category: 'command',
-  invoke: (ctx) => startPlanTool(ctx, 'pipe'),
-});
-
-registerCommand({
-  id: 'tool.cable-tray',
-  label: 'Route Cable Tray',
-  keywords: ['cable tray', 'electrical', 'containment', 'mep'],
-  category: 'command',
-  invoke: (ctx) => startPlanTool(ctx, 'cable-tray'),
-});
-
-registerCommand({
-  id: 'tool.mep-equipment',
-  label: 'Place MEP Equipment',
-  keywords: ['equipment', 'mechanical equipment', 'electrical equipment', 'mep'],
-  category: 'command',
-  invoke: (ctx) => startPlanTool(ctx, 'mep-equipment'),
-});
-
-registerCommand({
-  id: 'tool.fixture',
-  label: 'Place Fixture',
-  keywords: ['fixture', 'plumbing fixture', 'electrical fixture', 'mep'],
-  category: 'command',
-  invoke: (ctx) => startPlanTool(ctx, 'fixture'),
-});
-
-registerCommand({
-  id: 'tool.mep-terminal',
-  label: 'Place MEP Terminal',
-  keywords: ['terminal', 'diffuser', 'air terminal', 'sprinkler', 'device', 'mep'],
-  category: 'command',
-  invoke: (ctx) => startPlanTool(ctx, 'mep-terminal'),
-});
-
-registerCommand({
-  id: 'tool.mep-opening-request',
-  label: 'Request MEP Opening',
-  keywords: ['opening request', 'sleeve', 'penetration', 'coordination', 'mep'],
-  category: 'command',
-  invoke: (ctx) => startPlanTool(ctx, 'mep-opening-request'),
 });
 
 registerCommand({

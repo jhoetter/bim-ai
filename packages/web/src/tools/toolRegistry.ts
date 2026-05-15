@@ -4,7 +4,7 @@
  * Single source of truth for the §16 floating tool palette.
  *
  *   - `TOOL_REGISTRY` lists every primary drawing tool with its spec'd
- *     hotkey, lucide icon name (resolved via `Icons[icon]`), and per-mode
+ *     hotkey, BIM AI icon name (resolved via `Icons[icon]`), and per-mode
  *     visibility.
  *   - `paletteForMode(mode)` returns the ordered tool buttons for a
  *     given workspace mode (Plan, 3D, Plan+3D, Section, etc.).

@@ -1,16 +1,5 @@
 import {
-  type BimIconHifiProps,
-  FamilyHifi,
-  LevelHifi,
-  PlanViewHifi,
-  ScheduleViewHifi,
-  SectionViewHifi,
-  SheetHifi,
-  WallLayerHifi,
-} from '@bim-ai/icons';
-import {
   type CSSProperties,
-  type ComponentType,
   type JSX,
   type KeyboardEvent,
   type ReactNode,
@@ -21,7 +10,7 @@ import {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Icons, IconLabels, ICON_SIZE, type LucideLikeIcon } from '@bim-ai/ui';
+import { Icons, IconLabels, ICON_SIZE, type BimIconComponent } from '@bim-ai/ui';
 
 /**
  * LeftRail / Project Browser — spec §12.
@@ -30,7 +19,7 @@ import { Icons, IconLabels, ICON_SIZE, type LucideLikeIcon } from '@bim-ai/ui';
  * - Vertically stacked sections (PROJECT / VIEWS / SHEETS / SCHEDULES /
  *   FAMILIES / EVIDENCE) with uppercase eyebrow labels.
  * - `role="tree"` semantics; each row is a `treeitem` with `aria-expanded`
- *   when it has children. Disclosure triangle is a lucide chevron.
+ *   when it has children. Disclosure triangle uses the BIM AI chrome icon set.
  * - Keyboard: `ArrowDown`/`ArrowUp` move focus row-to-row; `ArrowRight`
  *   expands a closed parent or moves into its first child; `ArrowLeft`
  *   collapses an open parent or moves to its parent. `Enter` activates
@@ -44,7 +33,7 @@ import { Icons, IconLabels, ICON_SIZE, type LucideLikeIcon } from '@bim-ai/ui';
 export type LeftRailSection = {
   id: string;
   label: string;
-  icon?: LucideLikeIcon;
+  icon?: BimIconComponent;
   headerAction?: {
     label: string;
     title?: string;
@@ -57,8 +46,8 @@ export type LeftRailSection = {
 export type LeftRailRow = {
   id: string;
   label: string;
-  /** Lucide icon component to render at 12 px. Optional. */
-  icon?: LucideLikeIcon;
+  /** BIM AI icon component to render at 12 px. Optional. */
+  icon?: BimIconComponent;
   /** Subrows if any — drives the disclosure triangle and `aria-expanded`. */
   children?: LeftRailRow[];
   /** Optional secondary line shown after the label (muted). */
@@ -332,7 +321,6 @@ export function LeftRailCollapsed({
       <div className="my-1 h-px w-5 bg-border" aria-hidden="true" />
       {/* Section shortcuts — clicking also expands */}
       {sections.map((s) => {
-        const HifiIcon = hifiIconForSection(s.id);
         const Icon = s.icon ?? Icons.disclosureClosed;
         const isActive = activeSectionId === s.id;
         const rowCount = countRows(s.rows);
@@ -349,11 +337,7 @@ export function LeftRailCollapsed({
               isActive ? 'bg-accent/15 text-accent' : 'text-foreground/75',
             ].join(' ')}
           >
-            {HifiIcon ? (
-              <HifiIcon size={25} aria-hidden="true" />
-            ) : (
-              <Icon size={ICON_SIZE.chrome} aria-hidden="true" />
-            )}
+            <Icon size={ICON_SIZE.chrome} aria-hidden="true" />
             {isActive ? (
               <span
                 aria-hidden="true"
@@ -382,18 +366,6 @@ function countRows(rows: LeftRailRow[]): number {
     if (row.children) total += countRows(row.children);
   }
   return total;
-}
-
-function hifiIconForSection(sectionId: string): ComponentType<BimIconHifiProps> | undefined {
-  const normalized = sectionId.toLowerCase();
-  if (normalized.includes('level') || normalized.includes('project')) return LevelHifi;
-  if (normalized.includes('view')) return PlanViewHifi;
-  if (normalized.includes('sheet')) return SheetHifi;
-  if (normalized.includes('schedule')) return ScheduleViewHifi;
-  if (normalized.includes('section')) return SectionViewHifi;
-  if (normalized.includes('type')) return WallLayerHifi;
-  if (normalized.includes('family')) return FamilyHifi;
-  return undefined;
 }
 
 function SearchField({

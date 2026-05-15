@@ -1,6 +1,8 @@
 /* eslint-disable bim-ai/no-hex-in-chrome -- pre-v3 hex literals; remove when this file is migrated in B4 Phase 2 */
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import type { Element, LensMode } from '@bim-ai/core';
+
 import { fetchSectionProjectionWire } from '../../plan/sectionProjectionWire';
 import {
   SECTION_VIEWPORT_ADVISORY_MAX_CHARS,
@@ -33,8 +35,12 @@ import {
   type SectionSheetCalloutRow,
   type SectionWallHatchSummary,
 } from './sectionViewportDoc';
+import { useBimStore } from '../../state/store';
+import { lensFilterFromMode } from '../../viewport/useLensFilter';
 
 type UzPrim = {
+  id?: string;
+  elementId?: string;
   uStartMm: number;
   uEndMm: number;
   zBottomMm: number;
@@ -44,9 +50,32 @@ type UzPrim = {
 type OpeningPrim = UzPrim & { id: string };
 
 type RoofPrim = {
+  id?: string;
+  elementId?: string;
   uStartMm: number;
   uEndMm: number;
   zMm: number;
+};
+
+type PathPrim = UzPrim & { d: string };
+
+export type SectionLensPrimitiveKind =
+  | 'wall'
+  | 'floor'
+  | 'room'
+  | 'stair'
+  | 'roof'
+  | 'door'
+  | 'window';
+
+export type SectionLensPrimitiveStyle = {
+  pass: 'foreground' | 'ghost';
+  opacity: number;
+  stroke?: string;
+  fill?: string;
+  fillOpacity?: number;
+  strokeMultiplier?: number;
+  badge?: string;
 };
 
 type LevelMarkerPrim = {
@@ -65,6 +94,149 @@ function formatElevationMmLabel(mm: number): string {
 
 function formatLevelDatumLabel(name: string, elevationMm: number): string {
   return `${name} | ${formatElevationMmLabel(elevationMm)}`;
+}
+
+function elementRecord(element: Element | undefined): Record<string, unknown> {
+  if (!element) return {};
+  const out: Record<string, unknown> = { ...(element as unknown as Record<string, unknown>) };
+  const props = (element as { props?: unknown }).props;
+  if (props && typeof props === 'object' && !Array.isArray(props)) {
+    Object.assign(out, props as Record<string, unknown>);
+    for (const value of Object.values(props as Record<string, unknown>)) {
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        Object.assign(out, value as Record<string, unknown>);
+      }
+    }
+  }
+  return out;
+}
+
+function firstString(record: Record<string, unknown>, keys: string[]): string | null {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+    if (typeof value === 'boolean') return value ? 'yes' : 'no';
+  }
+  return null;
+}
+
+function firstNumber(record: Record<string, unknown>, keys: string[]): number | null {
+  for (const key of keys) {
+    const value = record[key];
+    const n = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN;
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+function shortBadge(value: string, max = 18): string {
+  return value.length > max ? `${value.slice(0, max - 1)}…` : value;
+}
+
+function lensBadgeForElement(
+  lensMode: LensMode,
+  element: Element | undefined,
+  kind: SectionLensPrimitiveKind,
+): string | undefined {
+  const record = elementRecord(element);
+  switch (lensMode) {
+    case 'structure':
+      return shortBadge(
+        firstString(record, ['structuralRole']) ??
+          (record.loadBearing === true ? 'load-bearing' : kind === 'floor' ? 'slab' : kind),
+      );
+    case 'mep':
+      return shortBadge(firstString(record, ['systemId', 'mepSystemId', 'serviceType']) ?? 'MEP');
+    case 'fire-safety':
+      return shortBadge(
+        firstString(record, [
+          'fireResistanceRating',
+          'fireRating',
+          'requiredFireRating',
+          'fireCompartmentId',
+          'smokeCompartmentId',
+        ]) ?? 'fire',
+      );
+    case 'energy': {
+      const uValue = firstNumber(record, ['uValueWPerM2K', 'uValue', 'u_value']);
+      if (uValue != null) return `U ${uValue.toFixed(2)}`;
+      return shortBadge(
+        firstString(record, ['thermalClassification', 'boundaryCondition', 'heatingStatus']) ??
+          (kind === 'room' ? 'zone' : 'thermal'),
+      );
+    }
+    case 'sustainability': {
+      const gwp = firstNumber(record, ['gwpKgCO2e', 'gwpA1A3KgCO2e', 'carbonKgCO2e']);
+      if (gwp != null) return `${Math.round(gwp)} kgCO2e`;
+      return shortBadge(firstString(record, ['epdId', 'epdStatus']) ?? 'EPD?');
+    }
+    case 'cost-quantity':
+      return shortBadge(
+        firstString(record, ['din276Group', 'costGroup', 'costClassification', 'quantityBasis']) ??
+          'QTO',
+      );
+    case 'construction':
+      return shortBadge(
+        firstString(record, [
+          'phaseCreated',
+          'phaseId',
+          'constructionPackageId',
+          'workPackage',
+          'progressStatus',
+        ]) ?? 'phase',
+      );
+    case 'coordination':
+      return shortBadge(
+        firstString(record, ['reviewStatus', 'bcfTopicId', 'linkedModelId']) ??
+          (firstNumber(record, ['issueCount', 'clashCount']) != null ? 'issue' : 'review'),
+      );
+    default:
+      return undefined;
+  }
+}
+
+export function sectionLensPrimitiveStyle(
+  lensMode: LensMode,
+  element: Element | undefined,
+  kind: SectionLensPrimitiveKind,
+): SectionLensPrimitiveStyle {
+  if (lensMode === 'all' || lensMode === 'architecture') {
+    return { pass: 'foreground', opacity: 1 };
+  }
+  const pass = element ? lensFilterFromMode(lensMode)(element) : 'foreground';
+  if (pass === 'ghost') {
+    return {
+      pass,
+      opacity: 0.2,
+      stroke: '#94a3b8',
+      fill: '#e2e8f0',
+      fillOpacity: 0.16,
+      strokeMultiplier: 0.7,
+    };
+  }
+
+  const badge = lensBadgeForElement(lensMode, element, kind);
+  switch (lensMode) {
+    case 'structure':
+      return { pass, opacity: 1, stroke: '#1d4ed8', strokeMultiplier: 1.35, badge };
+    case 'mep':
+      return { pass, opacity: 1, stroke: '#0891b2', fill: '#cffafe', fillOpacity: 0.32, badge };
+    case 'fire-safety':
+      return { pass, opacity: 1, stroke: '#dc2626', fill: '#fee2e2', fillOpacity: 0.35, badge };
+    case 'energy':
+      return { pass, opacity: 1, stroke: '#d97706', fill: '#fef3c7', fillOpacity: 0.34, badge };
+    case 'sustainability':
+      return { pass, opacity: 1, stroke: '#16a34a', fill: '#dcfce7', fillOpacity: 0.32, badge };
+    case 'cost-quantity':
+      return { pass, opacity: 1, stroke: '#7c3aed', fill: '#ede9fe', fillOpacity: 0.3, badge };
+    case 'construction':
+      return { pass, opacity: 1, stroke: '#ea580c', fill: '#ffedd5', fillOpacity: 0.32, badge };
+    case 'coordination':
+      return { pass, opacity: 1, stroke: '#2563eb', fill: '#dbeafe', fillOpacity: 0.22, badge };
+    default:
+      return { pass, opacity: 1 };
+  }
 }
 
 function sectionAdvisoryFromPayload(payload: Record<string, unknown>): string | null {
@@ -117,6 +289,7 @@ export function SectionViewportSvg(props: {
   sectionCutId: string;
   widthPx: number;
   heightPx: number;
+  lensMode?: LensMode;
   /** Optional single-line identity (e.g. from `formatSectionCutIdentityLine`). */
   sectionIdentityCaption?: string;
   /** Optional cut-line / view-heading line (e.g. from `formatSectionCutPlaneContext`). */
@@ -125,13 +298,15 @@ export function SectionViewportSvg(props: {
   onWallPrimitivesKnown?: (hasWalls: boolean) => void;
 }) {
   const [err, setErr] = useState<string | null>(null);
+  const elementsById = useBimStore((s) => s.elementsById);
+  const lensMode = props.lensMode ?? 'all';
 
   type LayerSnap = {
-    wallPathsEdgeOn: string[];
-    wallPathsAlongCut: string[];
-    floorPaths: string[];
-    roomPaths: string[];
-    stairPaths: string[];
+    wallPathsEdgeOn: PathPrim[];
+    wallPathsAlongCut: PathPrim[];
+    floorPaths: PathPrim[];
+    roomPaths: PathPrim[];
+    stairPaths: PathPrim[];
     roofLines: RoofPrim[];
     doors: OpeningPrim[];
     windows: OpeningPrim[];
@@ -270,12 +445,21 @@ export function SectionViewportSvg(props: {
         }
         materialHints.sort((a, b) => a.tokenId.localeCompare(b.tokenId));
 
-        const asUz = (w: Record<string, unknown>): UzPrim | null => ({
-          uStartMm: Number(w.uStartMm ?? 0),
-          uEndMm: Number(w.uEndMm ?? 0),
-          zBottomMm: Number(w.zBottomMm ?? 0),
-          zTopMm: Number(w.zTopMm ?? 0),
-        });
+        const asUz = (w: Record<string, unknown>): UzPrim | null => {
+          const uStartMm = Number(w.uStartMm ?? 0);
+          const uEndMm = Number(w.uEndMm ?? 0);
+          const zBottomMm = Number(w.zBottomMm ?? 0);
+          const zTopMm = Number(w.zTopMm ?? 0);
+          if (![uStartMm, uEndMm, zBottomMm, zTopMm].every(Number.isFinite)) return null;
+          return {
+            id: typeof w.id === 'string' ? w.id : undefined,
+            elementId: typeof w.elementId === 'string' ? w.elementId : undefined,
+            uStartMm,
+            uEndMm,
+            zBottomMm,
+            zTopMm,
+          };
+        };
 
         const wallRectsEdgeOn: UzPrim[] = [];
         const wallRectsAlongCut: UzPrim[] = [];
@@ -329,6 +513,8 @@ export function SectionViewportSvg(props: {
         if (Array.isArray(roofsRaw)) {
           for (const w of roofsRaw as Record<string, unknown>[]) {
             roofLines.push({
+              id: typeof w.id === 'string' ? w.id : undefined,
+              elementId: typeof w.elementId === 'string' ? w.elementId : undefined,
               uStartMm: Number(w.uStartMm ?? 0),
               uEndMm: Number(w.uEndMm ?? 0),
               zMm: Number(w.zMidMm ?? w.z_mid_mm ?? w.zMm ?? 0),
@@ -372,6 +558,7 @@ export function SectionViewportSvg(props: {
             const zt = Number(w.zTopMm ?? 0);
             doorsOpen.push({
               id: String(w.id ?? 'door'),
+              elementId: typeof w.elementId === 'string' ? w.elementId : undefined,
               uStartMm: uC - Math.abs(half),
               uEndMm: uC + Math.abs(half),
               zBottomMm: zb,
@@ -394,6 +581,7 @@ export function SectionViewportSvg(props: {
             const zt = Number(w.zTopMm ?? 0);
             windowsOpen.push({
               id: String(w.id ?? 'window'),
+              elementId: typeof w.elementId === 'string' ? w.elementId : undefined,
               uStartMm: uC - Math.abs(half),
               uEndMm: uC + Math.abs(half),
               zBottomMm: zb,
@@ -423,12 +611,12 @@ export function SectionViewportSvg(props: {
         const sx = props.widthPx / du;
         const sy = props.heightPx / dz;
 
-        const rectPath = (r: UzPrim) => {
+        const rectPath = (r: UzPrim): PathPrim => {
           const x = (Math.min(r.uStartMm, r.uEndMm) - u0) * sx;
           const bw = Math.abs(r.uEndMm - r.uStartMm) * sx;
           const yTop = (z1 - Math.max(r.zBottomMm, r.zTopMm)) * sy;
           const h = Math.abs(r.zTopMm - r.zBottomMm) * sy;
-          return `M ${x} ${yTop} h ${bw} v ${h} h ${-bw} Z`;
+          return { ...r, d: `M ${x} ${yTop} h ${bw} v ${h} h ${-bw} Z` };
         };
 
         const wallPathsEdgeOn = wallRectsEdgeOn.map(rectPath);
@@ -541,6 +729,50 @@ export function SectionViewportSvg(props: {
     return { x, y: yTop, w: bw, h };
   };
 
+  const primitiveCenterPx = (L: LayerSnap, o: UzPrim) => {
+    const b = openingPx(L, o);
+    return { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+  };
+
+  const elementForPrimitive = (p: { elementId?: string } | undefined): Element | undefined =>
+    p?.elementId ? elementsById[p.elementId] : undefined;
+
+  const lensBadge = (key: string, style: SectionLensPrimitiveStyle, x: number, y: number) => {
+    if (lensMode === 'all' || !style.badge || style.pass === 'ghost') return null;
+    const fontSize = Math.max(7, 8.5 * strokeScale);
+    const padX = 4 * strokeScale;
+    const width = Math.min(
+      150 * strokeScale,
+      Math.max(24 * strokeScale, style.badge.length * fontSize * 0.58 + padX * 2),
+    );
+    const height = Math.max(13, 14 * strokeScale);
+    return (
+      <g key={`${key}-lens-badge`} data-testid="section-lens-badge" pointerEvents="none">
+        <rect
+          x={x - width / 2}
+          y={y - height / 2}
+          width={width}
+          height={height}
+          rx={3 * strokeScale}
+          fill="#ffffff"
+          fillOpacity={0.86}
+          stroke={style.stroke ?? '#475569'}
+          strokeWidth={0.8 * strokeScale}
+        />
+        <text
+          x={x}
+          y={y}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fill={style.stroke ?? '#334155'}
+          style={{ fontSize, fontWeight: 700 }}
+        >
+          {style.badge}
+        </text>
+      </g>
+    );
+  };
+
   const datumShown = layers ? layers.z0 <= 0 && 0 <= layers.z1 : false;
 
   return (
@@ -607,30 +839,56 @@ export function SectionViewportSvg(props: {
 
       {layers ? (
         <>
-          {layers.roomPaths.map((d, i) => (
-            <path key={`room-${i}`} d={d} fill="#c7d2fe" fillOpacity={0.22} stroke="none" />
-          ))}
+          {layers.roomPaths.map((p, i) => {
+            const style = sectionLensPrimitiveStyle(lensMode, elementForPrimitive(p), 'room');
+            const c = primitiveCenterPx(layers, p);
+            return (
+              <g key={`room-${i}`} opacity={style.opacity} data-section-lens-pass={style.pass}>
+                <path
+                  d={p.d}
+                  fill={style.fill ?? '#c7d2fe'}
+                  fillOpacity={style.fillOpacity ?? 0.22}
+                  stroke={style.stroke ?? 'none'}
+                  strokeWidth={style.stroke ? 1.5 * strokeScale : 0}
+                />
+                {lensBadge(`room-${i}`, style, c.x, c.y)}
+              </g>
+            );
+          })}
 
-          {layers.floorPaths.map((d, i) => (
-            <path
-              key={`floor-${i}`}
-              d={d}
-              fill={`url(#${defsId}-slab)`}
-              stroke="#92400e"
-              strokeOpacity={0.65}
-              strokeWidth={floorStroke}
-            />
-          ))}
-          {layers.stairPaths.map((d, i) => (
-            <path
-              key={`stair-${i}`}
-              d={d}
-              fill="#fde68a"
-              fillOpacity={0.75}
-              stroke="#b45309"
-              strokeWidth={stairStroke}
-            />
-          ))}
+          {layers.floorPaths.map((p, i) => {
+            const style = sectionLensPrimitiveStyle(lensMode, elementForPrimitive(p), 'floor');
+            const c = primitiveCenterPx(layers, p);
+            return (
+              <g key={`floor-${i}`} opacity={style.opacity} data-section-lens-pass={style.pass}>
+                <path
+                  d={p.d}
+                  fill={style.fill ?? `url(#${defsId}-slab)`}
+                  fillOpacity={style.fillOpacity}
+                  stroke={style.stroke ?? '#92400e'}
+                  strokeOpacity={0.65}
+                  strokeWidth={floorStroke * (style.strokeMultiplier ?? 1)}
+                />
+                {lensBadge(`floor-${i}`, style, c.x, c.y)}
+              </g>
+            );
+          })}
+          {layers.stairPaths.map((p, i) => {
+            const style = sectionLensPrimitiveStyle(lensMode, elementForPrimitive(p), 'stair');
+            const c = primitiveCenterPx(layers, p);
+            return (
+              <g key={`stair-${i}`} opacity={style.opacity} data-section-lens-pass={style.pass}>
+                <path
+                  d={p.d}
+                  fill={style.fill ?? '#fde68a'}
+                  fillOpacity={style.fillOpacity ?? 0.75}
+                  stroke={style.stroke ?? '#b45309'}
+                  strokeWidth={stairStroke * (style.strokeMultiplier ?? 1)}
+                />
+                {lensBadge(`stair-${i}`, style, c.x, c.y)}
+              </g>
+            );
+          })}
 
           {datumShown ? (
             <line
@@ -678,26 +936,38 @@ export function SectionViewportSvg(props: {
             );
           })}
 
-          {layers.wallPathsEdgeOn.map((d, i) => (
-            <path
-              key={`wall-e-${i}`}
-              d={d}
-              fill={`url(#${defsId}-wall-edgeOn)`}
-              fillOpacity={0.92}
-              stroke="#020617"
-              strokeWidth={wallStroke}
-            />
-          ))}
-          {layers.wallPathsAlongCut.map((d, i) => (
-            <path
-              key={`wall-a-${i}`}
-              d={d}
-              fill={`url(#${defsId}-wall-alongCut)`}
-              fillOpacity={0.9}
-              stroke="#020617"
-              strokeWidth={wallStroke}
-            />
-          ))}
+          {layers.wallPathsEdgeOn.map((p, i) => {
+            const style = sectionLensPrimitiveStyle(lensMode, elementForPrimitive(p), 'wall');
+            const c = primitiveCenterPx(layers, p);
+            return (
+              <g key={`wall-e-${i}`} opacity={style.opacity} data-section-lens-pass={style.pass}>
+                <path
+                  d={p.d}
+                  fill={style.fill ?? `url(#${defsId}-wall-edgeOn)`}
+                  fillOpacity={style.fillOpacity ?? 0.92}
+                  stroke={style.stroke ?? '#020617'}
+                  strokeWidth={wallStroke * (style.strokeMultiplier ?? 1)}
+                />
+                {lensBadge(`wall-e-${i}`, style, c.x, c.y)}
+              </g>
+            );
+          })}
+          {layers.wallPathsAlongCut.map((p, i) => {
+            const style = sectionLensPrimitiveStyle(lensMode, elementForPrimitive(p), 'wall');
+            const c = primitiveCenterPx(layers, p);
+            return (
+              <g key={`wall-a-${i}`} opacity={style.opacity} data-section-lens-pass={style.pass}>
+                <path
+                  d={p.d}
+                  fill={style.fill ?? `url(#${defsId}-wall-alongCut)`}
+                  fillOpacity={style.fillOpacity ?? 0.9}
+                  stroke={style.stroke ?? '#020617'}
+                  strokeWidth={wallStroke * (style.strokeMultiplier ?? 1)}
+                />
+                {lensBadge(`wall-a-${i}`, style, c.x, c.y)}
+              </g>
+            );
+          })}
 
           {Math.min(props.widthPx, props.heightPx) >= materialHintMinPx
             ? layers.materialHints.map((h) => {
@@ -724,29 +994,44 @@ export function SectionViewportSvg(props: {
               })
             : null}
 
-          {roofChordPath.map((d, i) => (
-            <path
-              key={`roof-${i}`}
-              d={d}
-              fill="none"
-              stroke="#065f46"
-              strokeWidth={roofStroke}
-              strokeDasharray={`${6 * strokeScale} ${10 * strokeScale}`}
-            />
-          ))}
+          {roofChordPath.map((d, i) => {
+            const roof = layers.roofLines[i];
+            const style = sectionLensPrimitiveStyle(lensMode, elementForPrimitive(roof), 'roof');
+            const x0 = roof ? (Math.min(roof.uStartMm, roof.uEndMm) - layers.u0) * layers.sx : 0;
+            const x1 = roof ? (Math.max(roof.uStartMm, roof.uEndMm) - layers.u0) * layers.sx : 0;
+            const y = roof ? (layers.z1 - roof.zMm) * layers.sy : 0;
+            return (
+              <g key={`roof-${i}`} opacity={style.opacity} data-section-lens-pass={style.pass}>
+                <path
+                  d={d}
+                  fill="none"
+                  stroke={style.stroke ?? '#065f46'}
+                  strokeWidth={roofStroke * (style.strokeMultiplier ?? 1)}
+                  strokeDasharray={`${6 * strokeScale} ${10 * strokeScale}`}
+                />
+                {lensBadge(`roof-${i}`, style, 0.5 * (x0 + x1), y - 10 * strokeScale)}
+              </g>
+            );
+          })}
           {layers.windows.map((w, i) => {
             const b = openingPx(layers, w);
             const showTag = Math.min(b.w, b.h) >= openingTagMinPx;
+            const style = sectionLensPrimitiveStyle(lensMode, elementForPrimitive(w), 'window');
             return (
-              <g key={`win-${w.id}-${i}`}>
+              <g
+                key={`win-${w.id}-${i}`}
+                opacity={style.opacity}
+                data-section-lens-pass={style.pass}
+              >
                 <rect
                   x={b.x + 2}
                   y={b.y + 2}
                   width={Math.max(0, b.w - 4)}
                   height={Math.max(0, b.h - 4)}
-                  fill="#ecfdf5"
-                  stroke="#047857"
-                  strokeWidth={winStroke}
+                  fill={style.fill ?? '#ecfdf5'}
+                  fillOpacity={style.fillOpacity}
+                  stroke={style.stroke ?? '#047857'}
+                  strokeWidth={winStroke * (style.strokeMultiplier ?? 1)}
                   strokeDasharray={`${6 * strokeScale} ${6 * strokeScale}`}
                 />
                 {showTag ? (
@@ -762,6 +1047,7 @@ export function SectionViewportSvg(props: {
                     W
                   </text>
                 ) : null}
+                {lensBadge(`win-${w.id}-${i}`, style, b.x + b.w / 2, b.y + b.h / 2)}
               </g>
             );
           })}
@@ -769,16 +1055,22 @@ export function SectionViewportSvg(props: {
           {layers.doors.map((w, i) => {
             const b = openingPx(layers, w);
             const showTag = Math.min(b.w, b.h) >= openingTagMinPx;
+            const style = sectionLensPrimitiveStyle(lensMode, elementForPrimitive(w), 'door');
             return (
-              <g key={`dor-${w.id}-${i}`}>
+              <g
+                key={`dor-${w.id}-${i}`}
+                opacity={style.opacity}
+                data-section-lens-pass={style.pass}
+              >
                 <rect
                   x={b.x + 2}
                   y={b.y + 2}
                   width={Math.max(0, b.w - 4)}
                   height={Math.max(0, b.h - 4)}
-                  fill="#fefefe"
-                  stroke="#1f2937"
-                  strokeWidth={doorStroke}
+                  fill={style.fill ?? '#fefefe'}
+                  fillOpacity={style.fillOpacity}
+                  stroke={style.stroke ?? '#1f2937'}
+                  strokeWidth={doorStroke * (style.strokeMultiplier ?? 1)}
                 />
                 {showTag ? (
                   <text
@@ -793,6 +1085,7 @@ export function SectionViewportSvg(props: {
                     D
                   </text>
                 ) : null}
+                {lensBadge(`dor-${w.id}-${i}`, style, b.x + b.w / 2, b.y + b.h / 2)}
               </g>
             );
           })}

@@ -109,7 +109,6 @@ export function getAllCommandCapabilities(): CommandCapability[] {
     ...buildToolCapabilities(),
     ...NAVIGATION_CAPABILITIES,
     ...SYSTEM_CAPABILITIES,
-    ...STRUCTURE_LENS_CAPABILITIES,
     ...SCHEDULE_CAPABILITIES,
     ...SHEET_CAPABILITIES,
     ...SECTION_CAPABILITIES,
@@ -171,10 +170,7 @@ export function evaluateCommandInMode(
   };
 }
 
-const LENS_DISABLED_COMMANDS: Record<
-  'structure' | 'mep' | 'coordination',
-  { ids: Set<string>; reason: string }
-> = {
+const LENS_DISABLED_COMMANDS: Record<'structure' | 'mep', { ids: Set<string>; reason: string }> = {
   structure: {
     ids: new Set([
       'tool.room',
@@ -189,36 +185,6 @@ const LENS_DISABLED_COMMANDS: Record<
       'Unavailable in Structure lens: switch to Architecture lens for architectural room/opening authoring.',
   },
   mep: {
-    ids: new Set([
-      'tool.wall',
-      'tool.door',
-      'tool.window',
-      'tool.floor',
-      'tool.floor-sketch',
-      'tool.roof',
-      'tool.roof-sketch',
-      'tool.room',
-      'tool.area',
-      'tool.stair',
-      'tool.railing',
-      'tool.component',
-      'tool.wall-opening',
-      'tool.column',
-      'tool.beam',
-      'tool.ceiling',
-      'tool.grid',
-      'tool.reference-plane',
-      'tool.property-line',
-      'tool.area-boundary',
-      'tool.toposolid_subdivision',
-      'view.3d.wall.insert-door',
-      'view.3d.wall.insert-window',
-      'view.3d.wall.insert-opening',
-    ]),
-    reason:
-      'Unavailable in MEP lens: switch to Architecture or Structure lens for envelope/structural authoring.',
-  },
-  coordination: {
     ids: new Set([
       'tool.wall',
       'tool.door',
@@ -245,7 +211,7 @@ const LENS_DISABLED_COMMANDS: Record<
       'view.3d.wall.insert-opening',
     ]),
     reason:
-      'Unavailable in Coordination lens: use Architecture, Structure, or MEP for model authoring; Coordination is for review and issue management.',
+      'Unavailable in MEP lens: switch to Architecture or Structure lens for envelope/structural authoring.',
   },
 };
 
@@ -253,9 +219,7 @@ function lensDisabledReasonForCommand(
   commandId: string,
   lensMode: CapabilityLensMode,
 ): string | undefined {
-  if (lensMode !== 'structure' && lensMode !== 'mep' && lensMode !== 'coordination') {
-    return undefined;
-  }
+  if (lensMode !== 'structure' && lensMode !== 'mep') return undefined;
   const lensRules = LENS_DISABLED_COMMANDS[lensMode];
   if (!lensRules) return undefined;
   return lensRules.ids.has(commandId) ? lensRules.reason : undefined;
@@ -343,17 +307,6 @@ function labelForTool(tool: ToolDefinition): string {
 
 function groupForTool(toolId: ToolId): CommandGroup {
   if (MODIFY_TOOL_IDS.has(toolId)) return 'modify';
-  if (
-    toolId === 'duct' ||
-    toolId === 'pipe' ||
-    toolId === 'cable-tray' ||
-    toolId === 'mep-equipment' ||
-    toolId === 'fixture' ||
-    toolId === 'mep-terminal' ||
-    toolId === 'mep-opening-request'
-  ) {
-    return 'system';
-  }
   if (toolId === 'select' || toolId === 'query' || toolId === 'measure') return 'view';
   if (toolId === 'dimension' || toolId === 'tag') return 'document';
   return 'author';
@@ -368,6 +321,8 @@ function preconditionsForTool(toolId: ToolId): string[] {
   switch (toolId) {
     case 'door':
     case 'window':
+    case 'floor':
+    case 'roof':
     case 'dimension':
       return ['has-wall'];
     case 'railing':
@@ -513,6 +468,19 @@ const NAVIGATION_CAPABILITIES: CommandCapability[] = [
     usabilityScore: 8,
   },
   {
+    id: 'navigate.fire-safety',
+    label: 'Switch lens: Fire Safety',
+    owner: 'cmdPalette/defaultCommands',
+    group: 'navigate',
+    scope: 'universal',
+    intendedModes: [...CAPABILITY_VIEW_MODES],
+    surfaces: ['cmd-k', 'primary-sidebar'],
+    executionSurface: 'primary-sidebar',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+  },
+  {
     id: 'navigate.energy',
     label: 'Switch lens: Energieberatung',
     owner: 'cmdPalette/defaultCommands',
@@ -541,6 +509,19 @@ const NAVIGATION_CAPABILITIES: CommandCapability[] = [
   {
     id: 'navigate.sustainability',
     label: 'Switch lens: Sustainability / LCA',
+    owner: 'cmdPalette/defaultCommands',
+    group: 'navigate',
+    scope: 'universal',
+    intendedModes: [...CAPABILITY_VIEW_MODES],
+    surfaces: ['cmd-k', 'primary-sidebar'],
+    executionSurface: 'primary-sidebar',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+  },
+  {
+    id: 'navigate.cost-quantity',
+    label: 'Switch lens: Cost and Quantity',
     owner: 'cmdPalette/defaultCommands',
     group: 'navigate',
     scope: 'universal',
@@ -1087,78 +1068,6 @@ const SYSTEM_CAPABILITIES: CommandCapability[] = [
     surfaces: ['cmd-k', 'dialog'],
     executionSurface: 'modal',
     preconditions: ['advisor-finding-with-quick-fix'],
-    status: 'implemented',
-    usabilityScore: 8,
-  },
-];
-
-const STRUCTURE_LENS_CAPABILITIES: CommandCapability[] = [
-  {
-    id: 'structure.wall.toggle-load-bearing',
-    label: 'Structure: Toggle Load-Bearing Wall',
-    owner: 'cmdPalette/defaultCommands',
-    group: 'author',
-    scope: 'selection',
-    intendedModes: ['plan', '3d'],
-    surfaces: ['cmd-k', 'element-sidebar'],
-    executionSurface: 'element-sidebar',
-    preconditions: ['selected-wall'],
-    status: 'implemented',
-    usabilityScore: 8,
-    bridgeToMode: { section: 'plan', sheet: 'plan', schedule: 'plan' },
-  },
-  {
-    id: 'structure.floor.mark-slab',
-    label: 'Structure: Mark Floor as Slab',
-    owner: 'cmdPalette/defaultCommands',
-    group: 'author',
-    scope: 'selection',
-    intendedModes: ['plan', '3d'],
-    surfaces: ['cmd-k', 'element-sidebar'],
-    executionSurface: 'element-sidebar',
-    preconditions: ['selected-floor'],
-    status: 'implemented',
-    usabilityScore: 8,
-    bridgeToMode: { section: 'plan', sheet: 'plan', schedule: 'plan' },
-  },
-  {
-    id: 'structure.foundation.mark-selected-floor',
-    label: 'Structure: Mark Floor as Foundation',
-    owner: 'cmdPalette/defaultCommands',
-    group: 'author',
-    scope: 'selection',
-    intendedModes: ['plan', '3d'],
-    surfaces: ['cmd-k', 'element-sidebar'],
-    executionSurface: 'element-sidebar',
-    preconditions: ['selected-floor'],
-    status: 'implemented',
-    usabilityScore: 8,
-    bridgeToMode: { section: 'plan', sheet: 'plan', schedule: 'plan' },
-  },
-  {
-    id: 'structure.opening.mark-reviewed',
-    label: 'Structure: Mark Opening Reviewed',
-    owner: 'cmdPalette/defaultCommands',
-    group: 'review',
-    scope: 'selection',
-    intendedModes: ['plan', '3d'],
-    surfaces: ['cmd-k', 'element-sidebar'],
-    executionSurface: 'element-sidebar',
-    preconditions: ['selected-door-window-or-wall-opening'],
-    status: 'implemented',
-    usabilityScore: 8,
-    bridgeToMode: { section: 'plan', sheet: 'plan', schedule: 'plan' },
-  },
-  {
-    id: 'structure.review.open-advisor',
-    label: 'Structure: Open Review Checks',
-    owner: 'cmdPalette/defaultCommands',
-    group: 'review',
-    scope: 'universal',
-    intendedModes: [...CAPABILITY_VIEW_MODES],
-    surfaces: ['cmd-k', 'footer'],
-    executionSurface: 'modal',
-    preconditions: [],
     status: 'implemented',
     usabilityScore: 8,
   },

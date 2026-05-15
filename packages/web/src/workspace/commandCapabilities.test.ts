@@ -141,7 +141,6 @@ describe('command capability graph', () => {
       ['help.keyboard-shortcuts', ['cmd-k']],
       ['help.replay-onboarding-tour', ['cmd-k', 'primary-sidebar']],
       ['advisor.open', ['cmd-k', 'footer']],
-      ['structure.review.open-advisor', ['cmd-k', 'footer']],
       ['jobs.open', ['cmd-k', 'footer']],
       ['milestone.open', ['cmd-k', 'primary-sidebar']],
       ['advisor.apply-first-fix', ['cmd-k', 'dialog']],
@@ -182,13 +181,6 @@ describe('command capability graph', () => {
         'reference-plane',
         'wall-opening',
         'shaft',
-        'duct',
-        'pipe',
-        'cable-tray',
-        'mep-equipment',
-        'fixture',
-        'mep-terminal',
-        'mep-opening-request',
         'column',
         'beam',
         'ceiling',
@@ -207,13 +199,6 @@ describe('command capability graph', () => {
     expect(evaluateCommandInMode('tool.beam', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('tool.ceiling', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('tool.shaft', '3d')?.state).toBe('enabled');
-    expect(evaluateCommandInMode('tool.duct', '3d')?.state).toBe('enabled');
-    expect(evaluateCommandInMode('tool.pipe', '3d')?.state).toBe('enabled');
-    expect(evaluateCommandInMode('tool.cable-tray', '3d')?.state).toBe('enabled');
-    expect(evaluateCommandInMode('tool.mep-equipment', '3d')?.state).toBe('enabled');
-    expect(evaluateCommandInMode('tool.fixture', '3d')?.state).toBe('enabled');
-    expect(evaluateCommandInMode('tool.mep-terminal', '3d')?.state).toBe('enabled');
-    expect(evaluateCommandInMode('tool.mep-opening-request', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('tool.door', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('tool.window', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('tool.wall-opening', '3d')?.state).toBe('enabled');
@@ -244,43 +229,9 @@ describe('command capability graph', () => {
     if (mepWall?.state === 'disabled') {
       expect(mepWall.reason).toContain('MEP lens');
     }
-    expect(evaluateCommandInMode('tool.floor-sketch', 'plan', 'mep')?.state).toBe('disabled');
-    expect(evaluateCommandInMode('tool.roof-sketch', 'plan', 'mep')?.state).toBe('disabled');
-
-    const coordinationWall = evaluateCommandInMode('tool.wall', 'plan', 'coordination');
-    expect(coordinationWall?.state).toBe('disabled');
-    if (coordinationWall?.state === 'disabled') {
-      expect(coordinationWall.reason).toContain('Coordination lens');
-    }
-    expect(evaluateCommandInMode('advisor.open', '3d', 'coordination')?.state).toBe('enabled');
-    expect(evaluateCommandInMode('project.manage-links', 'plan', 'coordination')?.state).toBe(
-      'enabled',
-    );
 
     expect(evaluateCommandInMode('tool.wall', 'plan', 'architecture')?.state).toBe('enabled');
     expect(evaluateCommandInMode('tool.wall', 'plan', 'all')?.state).toBe('enabled');
-  });
-
-  it('keeps MEP authoring and coordination commands available in the MEP lens', () => {
-    for (const commandId of [
-      'tool.duct',
-      'tool.pipe',
-      'tool.cable-tray',
-      'tool.mep-equipment',
-      'tool.fixture',
-      'tool.mep-terminal',
-      'tool.mep-opening-request',
-      'tool.shaft',
-    ]) {
-      expect(evaluateCommandInMode(commandId, 'plan', 'mep')?.state, commandId).toBe('enabled');
-    }
-
-    const mepRibbonCommands = ribbonCommandMetadataForMode('plan', null, 'mep').map(
-      (row) => row.commandId,
-    );
-    expect(mepRibbonCommands).toContain('tool.duct');
-    expect(mepRibbonCommands).toContain('tool.mep-opening-request');
-    expect(mepRibbonCommands).toContain('tool.shaft');
   });
 
   it('keeps universal navigation and system commands enabled in every view', () => {
@@ -291,9 +242,11 @@ describe('command capability graph', () => {
       'navigate.structure',
       'navigate.mep',
       'navigate.coordination',
+      'navigate.fire-safety',
       'navigate.energy',
       'navigate.construction-lens',
       'navigate.sustainability',
+      'navigate.cost-quantity',
       'theme.toggle',
       'settings.language.toggle',
       'shell.toggle-primary-sidebar',
@@ -360,6 +313,10 @@ describe('command capability graph', () => {
       'cmd-k',
       'primary-sidebar',
     ]);
+    expect(getCommandCapability('navigate.fire-safety')?.surfaces).toEqual([
+      'cmd-k',
+      'primary-sidebar',
+    ]);
     expect(getCommandCapability('navigate.energy')?.surfaces).toEqual(['cmd-k', 'primary-sidebar']);
     expect(getCommandCapability('navigate.construction-lens')?.surfaces).toEqual([
       'cmd-k',
@@ -369,10 +326,12 @@ describe('command capability graph', () => {
       'cmd-k',
       'primary-sidebar',
     ]);
+    expect(getCommandCapability('navigate.cost-quantity')?.surfaces).toEqual([
+      'cmd-k',
+      'primary-sidebar',
+    ]);
     expect(getCommandCapability('tool.wall')?.surfaces).toEqual(['ribbon', 'cmd-k']);
     expect(getCommandCapability('tool.door')?.preconditions).toContain('has-wall');
-    expect(getCommandCapability('tool.floor')?.preconditions).not.toContain('has-wall');
-    expect(getCommandCapability('tool.floor-sketch')?.preconditions).not.toContain('has-wall');
     expect(getCommandCapability('tool.dimension')?.surfaces).toEqual(['ribbon', 'cmd-k']);
     expect(getCommandCapability('view.3d.sun-settings')?.surfaces).toEqual([
       'cmd-k',

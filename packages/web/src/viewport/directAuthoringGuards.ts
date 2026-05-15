@@ -36,6 +36,13 @@ export type HostedOpeningConflict = {
 
 const LINKED_ID_SEPARATOR = '::';
 
+export function isWallOnActiveAuthoringLevel(
+  wall: { levelId?: string | null },
+  activeLevelId: string | null | undefined,
+): boolean {
+  return Boolean(activeLevelId && wall.levelId === activeLevelId);
+}
+
 export function isLinkedElementId(id: string): boolean {
   return id.includes(LINKED_ID_SEPARATOR);
 }

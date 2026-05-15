@@ -1,32 +1,9 @@
 import { type JSX, useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { LensMode } from '@bim-ai/core';
+import { LENS_ORDER, lensLabel } from '../lensUx';
 
-const LENS_CYCLE = [
-  'architecture',
-  'structure',
-  'mep',
-  'coordination',
-  'fire-safety',
-  'energy',
-  'construction',
-  'sustainability',
-  'cost-quantity',
-  'all',
-] as const satisfies readonly LensMode[];
+const LENS_CYCLE = LENS_ORDER;
 type LensCycleMode = (typeof LENS_CYCLE)[number];
-
-const LENS_LABELS: Record<LensCycleMode, string> = {
-  architecture: 'Architecture',
-  structure: 'Structure',
-  mep: 'MEP',
-  coordination: 'Coordination',
-  'fire-safety': 'Fire Safety',
-  energy: 'Energieberatung',
-  construction: 'Bauausfuehrung',
-  sustainability: 'Sustainability / LCA',
-  'cost-quantity': 'Cost and Quantity',
-  all: 'All',
-};
 
 const DISC_SOFT: Partial<Record<LensMode, string>> = {
   architecture: 'var(--disc-arch-soft)',
@@ -128,7 +105,7 @@ export function LensDropdown({
         />
         <span className="text-muted">Show</span>
         <span className="font-medium" style={{ color: 'var(--color-foreground)' }}>
-          {LENS_LABELS[activeLensInCycle]}
+          {lensLabel(activeLensInCycle)}
         </span>
         <span aria-hidden="true" className="text-muted">
           ▾
@@ -140,7 +117,7 @@ export function LensDropdown({
           role="menu"
           aria-label="Lens"
           data-testid="lens-menu"
-          className="absolute left-0 top-full z-50 mt-1 w-44 rounded-md border border-border bg-surface shadow-elev-2"
+          className="absolute left-0 top-full z-50 mt-1 w-52 rounded-md border border-border bg-surface shadow-elev-2"
           style={{ fontSize: 'var(--text-sm)' }}
           ref={(el) => {
             const active = el?.querySelector<HTMLElement>('[aria-current="true"]');
@@ -180,7 +157,7 @@ export function LensDropdown({
                 lens === currentLens ? 'bg-accent-soft font-medium' : 'hover:bg-surface-strong',
               ].join(' ')}
             >
-              {LENS_LABELS[lens]}
+              {lensLabel(lens)}
               {lens === currentLens ? (
                 <svg
                   aria-hidden="true"

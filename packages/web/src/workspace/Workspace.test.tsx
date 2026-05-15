@@ -446,7 +446,7 @@ describe('<Workspace /> — smoke', () => {
     });
 
     const rendered = renderWithProviders(<Workspace />);
-    const { getByTestId, queryByTestId } = rendered;
+    const { container, getByTestId, queryByTestId } = rendered;
     expect(getByTestId('canvas-pane-tabstrip-pane-left').textContent).toContain('Plan A');
     expect(getByTestId('canvas-pane-tabstrip-pane-right').textContent).toContain('3D B');
 
@@ -464,7 +464,30 @@ describe('<Workspace /> — smoke', () => {
     expect(leftStrip.textContent).toContain('3D B');
 
     fireEvent.click(getByTestId('canvas-pane-close-tab-pane-left'));
-    expect(getByTestId('canvas-pane-tabstrip-pane-left').textContent).toContain('Plan A');
+    expect(queryByTestId('canvas-pane-tabstrip-pane-left')).toBeNull();
+    expect(queryByTestId('canvas-pane-tabstrip-pane-right')).toBeTruthy();
+    expect(container.querySelectorAll('[data-testid^="canvas-pane-tabstrip-"]').length).toBe(1);
+  });
+
+  it('closes only the targeted pane when a duplicated tab id is shown in multiple panes', () => {
+    localStorage.setItem(
+      TABS_KEY,
+      JSON.stringify({
+        v: 1,
+        tabs: [{ id: 'plan:pv-a', kind: 'plan', label: 'Plan A', targetId: 'pv-a' }],
+        activeId: 'plan:pv-a',
+      }),
+    );
+    seedSplitPaneLayout('plan:pv-a', 'plan:pv-a');
+
+    const { container, getByTestId, queryByText } = renderWithProviders(<Workspace />);
+    expect(container.querySelectorAll('[data-testid^="canvas-pane-tabstrip-"]').length).toBe(2);
+
+    fireEvent.click(getByTestId('canvas-pane-close-tab-pane-left'));
+
+    expect(container.querySelectorAll('[data-testid^="canvas-pane-tabstrip-"]').length).toBe(1);
+    expect(getByTestId('canvas-pane-tabstrip-pane-right').textContent).toContain('Plan A');
+    expect(queryByText('No view open in this pane')).toBeNull();
   });
 
   it('creates an empty composition from the header plus', () => {
@@ -474,6 +497,62 @@ describe('<Workspace /> — smoke', () => {
     fireEvent.click(getByTestId('composition-add-button'));
     expect(getByText('No view open in this pane')).toBeTruthy();
     expect(getByTestId('composition-bar').textContent).toContain('Composition 2');
+  });
+
+  it('restores a cleared split composition as one empty pane', () => {
+    localStorage.setItem(
+      COMPOSITIONS_KEY,
+      JSON.stringify({
+        activeId: 'composition-empty',
+        compositions: [
+          {
+            id: 'composition-empty',
+            label: 'Composition 1',
+            tabsState: { tabs: [], activeId: null },
+            paneLayout: {
+              focusedLeafId: 'pane-right',
+              root: {
+                kind: 'split',
+                id: 'pane-root',
+                axis: 'horizontal',
+                first: { kind: 'leaf', id: 'pane-left', tabId: null },
+                second: { kind: 'leaf', id: 'pane-right', tabId: null },
+              },
+            },
+          },
+        ],
+      }),
+    );
+
+    const { container, getByText } = renderWithProviders(<Workspace />);
+
+    expect(getByText('No view open in this pane')).toBeTruthy();
+    expect(container.querySelectorAll('[data-testid^="canvas-pane-empty-"]').length).toBe(1);
+  });
+
+  it('normalizes legacy cleared split pane storage before creating the fallback composition', () => {
+    localStorage.setItem(TABS_KEY, JSON.stringify({ v: 1, tabs: [], activeId: null }));
+    localStorage.setItem(
+      PANE_LAYOUT_KEY,
+      JSON.stringify({
+        v: 1,
+        layout: {
+          focusedLeafId: 'pane-right',
+          root: {
+            kind: 'split',
+            id: 'pane-root',
+            axis: 'horizontal',
+            first: { kind: 'leaf', id: 'pane-left', tabId: null },
+            second: { kind: 'leaf', id: 'pane-right', tabId: null },
+          },
+        },
+      }),
+    );
+
+    const { container, getByText } = renderWithProviders(<Workspace />);
+
+    expect(getByText('No view open in this pane')).toBeTruthy();
+    expect(container.querySelectorAll('[data-testid^="canvas-pane-empty-"]').length).toBe(1);
   });
 
   it('renames a composition tab inline on double click', () => {
@@ -489,6 +568,95 @@ describe('<Workspace /> — smoke', () => {
     fireEvent.change(input, { target: { value: 'Coordination Review' } });
     fireEvent.blur(input);
     expect(getByTestId('composition-bar').textContent).toContain('Coordination Review');
+  });
+
+  it('closes the active composition tab and restores the neighboring composition', () => {
+    seedTabs('plan');
+    const { getByTestId, queryByText } = renderWithProviders(<Workspace />);
+    fireEvent.click(getByTestId('composition-add-button'));
+    expect(getByTestId('composition-bar').textContent).toContain('Composition 2');
+    expect(queryByText('No view open in this pane')).toBeTruthy();
+
+    const activeTab = Array.from(
+      getByTestId('composition-bar').querySelectorAll<HTMLElement>(
+        '[data-testid^="composition-tab-"]',
+      ),
+    ).find((tab) => tab.getAttribute('aria-selected') === 'true');
+    expect(activeTab).toBeTruthy();
+    const activeId = activeTab!.getAttribute('data-testid')!.replace('composition-tab-', '');
+    fireEvent.click(getByTestId(`composition-close-${activeId}`));
+
+    expect(getByTestId('composition-bar').textContent).toContain('Composition 1');
+    expect(getByTestId('composition-bar').textContent).not.toContain('Composition 2');
+    expect(queryByText('No view open in this pane')).toBeNull();
+  });
+
+  it('closing the last composition leaves a blank composition available', () => {
+    seedTabs('plan');
+    const { getByTestId, getByText } = renderWithProviders(<Workspace />);
+    const onlyTab = getByTestId('composition-bar').querySelector<HTMLElement>(
+      '[data-testid^="composition-tab-"]',
+    );
+    expect(onlyTab).toBeTruthy();
+    const onlyId = onlyTab!.getAttribute('data-testid')!.replace('composition-tab-', '');
+    fireEvent.click(getByTestId(`composition-close-${onlyId}`));
+
+    expect(getByText('No view open in this pane')).toBeTruthy();
+    expect(getByTestId('composition-bar').textContent).toContain('Composition 1');
+  });
+
+  it('normalizes legacy cleared split pane storage to a single pane', () => {
+    const tabsState = {
+      tabs: [{ id: 'plan:pv-a', kind: 'plan', label: 'Plan A', targetId: 'pv-a' }],
+      activeId: 'plan:pv-a',
+    };
+    localStorage.setItem(TABS_KEY, JSON.stringify({ v: 1, ...tabsState }));
+    localStorage.setItem(
+      COMPOSITIONS_KEY,
+      JSON.stringify({
+        activeId: 'composition-a',
+        compositions: [
+          {
+            id: 'composition-a',
+            label: 'Composition 1',
+            tabsState,
+            paneLayout: {
+              focusedLeafId: 'pane-empty',
+              root: {
+                kind: 'split',
+                id: 'pane-root',
+                axis: 'horizontal',
+                first: { kind: 'leaf', id: 'pane-view', tabId: 'plan:pv-a' },
+                second: { kind: 'leaf', id: 'pane-empty', tabId: null },
+              },
+            },
+          },
+        ],
+      }),
+    );
+    useBimStore.setState({
+      activeLevelId: 'lvl-a',
+      elementsById: {
+        'lvl-a': {
+          kind: 'level',
+          id: 'lvl-a',
+          name: 'Level A',
+          elevationMm: 0,
+        } as Element,
+        'pv-a': {
+          kind: 'plan_view',
+          id: 'pv-a',
+          name: 'Plan A',
+          levelId: 'lvl-a',
+        } as Element,
+      },
+    });
+
+    const { container, getByTestId, queryByText } = renderWithProviders(<Workspace />);
+
+    expect(container.querySelectorAll('[data-testid^="canvas-pane-tabstrip-"]')).toHaveLength(1);
+    expect(getByTestId('canvas-pane-tabstrip-pane-view').textContent).toContain('Plan A');
+    expect(queryByText('No view open in this pane')).toBeNull();
   });
 
   it('opens a primary-browser view in the focused pane', () => {

@@ -22,16 +22,6 @@ const SELECTED_WALL_CTX: PaletteContext = {
   activeViewId: null,
   activeMode: '3d',
 };
-const SELECTED_FLOOR_CTX: PaletteContext = {
-  selectedElementIds: ['floor-1'],
-  activeViewId: null,
-  activeMode: 'plan',
-};
-const SELECTED_OPENING_CTX: PaletteContext = {
-  selectedElementIds: ['door-1'],
-  activeViewId: null,
-  activeMode: 'plan',
-};
 const SCHEDULE_CTX: PaletteContext = {
   selectedElementIds: [],
   activeViewId: 'sch-1',
@@ -88,20 +78,6 @@ describe('default Cmd+K commands', () => {
       entry.invoke({ ...PLAN_CTX, startPlanTool });
       expect(startPlanTool).toHaveBeenLastCalledWith(toolId);
     }
-  });
-
-  it('routes generic structural Floor/Roof commands to plan sketches but keeps 3D direct tools', () => {
-    const startPlanTool = vi.fn();
-
-    command('tool.floor').invoke({ ...PLAN_CTX, startPlanTool });
-    expect(startPlanTool).toHaveBeenLastCalledWith('floor-sketch');
-    command('tool.roof').invoke({ ...PLAN_CTX, startPlanTool });
-    expect(startPlanTool).toHaveBeenLastCalledWith('roof-sketch');
-
-    command('tool.floor').invoke({ ...THREE_D_CTX, startPlanTool });
-    expect(startPlanTool).toHaveBeenLastCalledWith('floor');
-    command('tool.roof').invoke({ ...THREE_D_CTX, startPlanTool });
-    expect(startPlanTool).toHaveBeenLastCalledWith('roof');
   });
 
   it('scopes 3D view commands to active 3D contexts', () => {
@@ -230,95 +206,20 @@ describe('default Cmd+K commands', () => {
     command('navigate.structure').invoke({ ...PLAN_CTX, setLensMode });
     command('navigate.mep').invoke({ ...PLAN_CTX, setLensMode });
     command('navigate.coordination').invoke({ ...PLAN_CTX, setLensMode });
+    command('navigate.fire-safety').invoke({ ...PLAN_CTX, setLensMode });
     command('navigate.energy').invoke({ ...PLAN_CTX, setLensMode });
     command('navigate.construction-lens').invoke({ ...PLAN_CTX, setLensMode });
     command('navigate.sustainability').invoke({ ...PLAN_CTX, setLensMode });
+    command('navigate.cost-quantity').invoke({ ...PLAN_CTX, setLensMode });
     expect(setLensMode).toHaveBeenNthCalledWith(1, 'architecture');
     expect(setLensMode).toHaveBeenNthCalledWith(2, 'structure');
     expect(setLensMode).toHaveBeenNthCalledWith(3, 'mep');
     expect(setLensMode).toHaveBeenNthCalledWith(4, 'coordination');
-    expect(setLensMode).toHaveBeenNthCalledWith(5, 'energy');
-    expect(setLensMode).toHaveBeenNthCalledWith(6, 'construction');
-    expect(setLensMode).toHaveBeenNthCalledWith(7, 'sustainability');
-  });
-
-  it('dispatches Structure lens property authoring commands', () => {
-    const dispatchCommand = vi.fn();
-    useBimStore.setState({
-      elementsById: {
-        'wall-1': {
-          kind: 'wall',
-          id: 'wall-1',
-          name: 'Wall 1',
-          levelId: 'lvl-1',
-          start: { xMm: 0, yMm: 0 },
-          end: { xMm: 6000, yMm: 0 },
-          thicknessMm: 200,
-          heightMm: 2800,
-          loadBearing: false,
-        },
-        'floor-1': {
-          kind: 'floor',
-          id: 'floor-1',
-          name: 'Floor 1',
-          levelId: 'lvl-1',
-          boundaryMm: [
-            { xMm: 0, yMm: 0 },
-            { xMm: 1000, yMm: 0 },
-            { xMm: 1000, yMm: 1000 },
-            { xMm: 0, yMm: 1000 },
-          ],
-          thicknessMm: 220,
-        },
-        'door-1': {
-          kind: 'door',
-          id: 'door-1',
-          name: 'Door',
-          wallId: 'wall-1',
-          alongT: 0.5,
-          widthMm: 900,
-        },
-      },
-    });
-
-    command('structure.wall.toggle-load-bearing').invoke({
-      ...SELECTED_WALL_CTX,
-      dispatchCommand,
-    });
-    expect(dispatchCommand).toHaveBeenCalledWith({
-      type: 'updateElementProperty',
-      elementId: 'wall-1',
-      key: 'loadBearing',
-      value: true,
-    });
-    expect(dispatchCommand).toHaveBeenCalledWith({
-      type: 'updateElementProperty',
-      elementId: 'wall-1',
-      key: 'structuralRole',
-      value: 'bearing_wall',
-    });
-
-    command('structure.foundation.mark-selected-floor').invoke({
-      ...SELECTED_FLOOR_CTX,
-      dispatchCommand,
-    });
-    expect(dispatchCommand).toHaveBeenCalledWith({
-      type: 'updateElementProperty',
-      elementId: 'floor-1',
-      key: 'structuralRole',
-      value: 'foundation',
-    });
-
-    command('structure.opening.mark-reviewed').invoke({
-      ...SELECTED_OPENING_CTX,
-      dispatchCommand,
-    });
-    expect(dispatchCommand).toHaveBeenCalledWith({
-      type: 'set_element_prop',
-      elementId: 'door-1',
-      key: 'structuralReviewApproved',
-      value: true,
-    });
+    expect(setLensMode).toHaveBeenNthCalledWith(5, 'fire-safety');
+    expect(setLensMode).toHaveBeenNthCalledWith(6, 'energy');
+    expect(setLensMode).toHaveBeenNthCalledWith(7, 'construction');
+    expect(setLensMode).toHaveBeenNthCalledWith(8, 'sustainability');
+    expect(setLensMode).toHaveBeenNthCalledWith(9, 'cost-quantity');
   });
 
   it('routes canonical sidebar toggles through the palette host context', () => {

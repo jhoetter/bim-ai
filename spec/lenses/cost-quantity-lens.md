@@ -1,30 +1,42 @@
-# Cost and Quantity Lens
+# Cost and Quantity Lens for Cloud-Native BIM Platform
+## Requirements and Implementation Prompt
 
-## Status
+## Context
+
+You are working on a cloud-native, AI-native BIM platform with building elements, types, materials, schedules, sheets, collaboration, versioning, and cloud APIs.
+
+The Cost and Quantity Lens supports quantity takeoff, cost grouping, scenario pricing, and procurement handoff. In German product language, this lens is **Kosten und Mengen**.
+
+## Lens Identity
 
 - Lens ID: `cost-quantity`
 - English name: Cost and Quantity
 - German name: Kosten und Mengen
 - Alternate German labels: Mengenermittlung, Kostenplanung
-- Implementation status: `Done`
-- Main implementation evidence: `app/bim_ai/cost_quantity.py`
-- API endpoint: `/api/models/{model_id}/cost-quantity-lens`
+- Primary users: cost planners, quantity surveyors, architects, project managers
+- Existing status: recommended new lens
 
-## Implemented Scope
+## Design Principle
 
-The Cost and Quantity Lens is implemented as a model-derived takeoff and costing layer. Quantities remain traceable to model elements and type IDs, while cost fields enrich existing elements through `props` metadata.
+Quantities must derive from the model and stay traceable to element IDs, type IDs, and scenario versions. Cost data should enrich existing elements, not require separate takeoff geometry.
 
-Implemented quantity takeoff:
+## Functional Scope
+
+### 1. Quantity Takeoff
+
+Compute and expose:
 
 - Length
 - Area
 - Volume
 - Count
 - Net/gross openings
-- Layer counts where assembly layers are available
+- Layer quantities where available
 - Room-based quantities
 
-Implemented cost classification fields:
+### 2. Cost Classification
+
+Support:
 
 - Cost group
 - Work package
@@ -35,62 +47,50 @@ Implemented cost classification fields:
 - Estimate confidence
 - Scenario ID
 
-Implemented scenario comparison:
+German deployments should allow DIN 276-style grouping without hardcoding it as the only global classification.
 
-- Baseline scenario default: `as-is`
-- Package-level totals by scenario, cost group, work package, and trade
-- Change deltas
-- Exportable cost snapshot schedule metadata
+### 3. Scenario Comparison
 
-## Schedule Defaults
+Support:
 
-The API review payload exposes the required schedule defaults:
+- As-is vs renovation scenarios
+- Design option comparison
+- Package-level totals
+- Change delta
+- Exportable cost snapshot
 
-- Quantity takeoff: `quantity_takeoff`
-- Cost estimate: `cost_estimate`
-- Element cost group schedule: `element_cost_group`
-- Material quantities: `material_assembly`
-- Door counts: `door`
-- Window counts: `window`
-- Room finish quantities: `room`
-- Scenario delta report: `scenario_delta`
+## Schedules
+
+Required schedule defaults:
+
+- Quantity takeoff
+- Cost estimate
+- Element cost group schedule
+- Material quantities
+- Door/window counts
+- Room finish quantities
+- Scenario delta report
 
 ## Views and Sheets
 
-The review payload exposes defaults for:
+Provide:
 
 - Color by cost group
 - Color by trade
 - Highlight unclassified cost items
-- Scenario comparison sheet
-- Quantity review sheet
-
-The web lens cycle includes `cost-quantity`, and viewport filtering foregrounds model-derived takeoff elements plus cost-classified custom items.
+- Scenario comparison sheets
+- Quantity review sheets
 
 ## API Requirements
 
-Implemented API consumers can retrieve:
+Expose quantities, classifications, cost rates, scenario totals, and traceability. API consumers must be able to reproduce schedule totals from source elements.
 
-- Quantities
-- Classifications
-- Cost rates
-- Scenario totals
-- Traceability
-- Schedule defaults
-- View and sheet defaults
+## Non-Goals
 
-Cost totals are reproducible from source schedule rows. Unit rates without source references are surfaced for review but excluded from totals.
+- Do not replace professional cost-estimation judgment.
+- Do not silently infer unit rates without source references.
+- Do not detach cost items from model elements unless explicitly marked as non-model allowances.
 
-## Non-Goals Preserved
+## Implementation Prompt
 
-- Does not replace professional cost-estimation judgment.
-- Does not silently total unit rates without source references.
-- Does not detach cost items from model elements unless a consumer explicitly models non-model allowances.
-
-## Verification
-
-Last verified: 2026-05-15
-
-- `PYTHONPATH=app PYTEST_ADDOPTS=--no-cov python -m pytest app/tests/test_cost_quantity_lens.py app/tests/test_schedule_field_registry.py`
-- `pnpm --filter @bim-ai/web exec vitest run src/workspace/shell/LensDropdown.test.tsx src/schedules/scheduleDefinitionPresets.test.ts src/viewport/useLensFilter.test.ts src/workspace/ModeShells.test.tsx`
-- `pnpm --filter @bim-ai/web typecheck`
+Implement the Cost and Quantity Lens as a model-derived takeoff and costing layer. Surface quantity metrics, classification fields, scenario totals, schedules, and exports while preserving traceability from every cost row back to the model.

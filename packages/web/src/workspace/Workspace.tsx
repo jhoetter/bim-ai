@@ -1,7 +1,23 @@
-import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type ComponentType,
+  type JSX,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AssetLibraryEntry, Element } from '@bim-ai/core';
-import { WallHifi } from '@bim-ai/icons';
+import {
+  type BimIconHifiProps,
+  OrbitViewHifi,
+  PlanViewHifi,
+  ScheduleViewHifi,
+  SectionViewHifi,
+  SheetHifi,
+  WallHifi,
+} from '@bim-ai/icons';
 import { Icons, type IconName } from '@bim-ai/ui';
 
 import { log } from '../logger';
@@ -81,9 +97,11 @@ import {
   assignTabToPane,
   createPaneLayout,
   focusPane,
+  findPaneForTab,
   normalizePaneLayout,
   persistPaneLayout,
   readPersistedPaneLayout,
+  removePaneLeaf,
   splitPaneWithTab,
   type PaneLayoutState,
   type PaneNode,
@@ -192,6 +210,22 @@ function splitViewTabLabel(
   };
 }
 
+function hifiIconForTabKind(kind: TabKind | undefined): ComponentType<BimIconHifiProps> {
+  switch (kind) {
+    case '3d':
+      return OrbitViewHifi;
+    case 'section':
+      return SectionViewHifi;
+    case 'sheet':
+      return SheetHifi;
+    case 'schedule':
+      return ScheduleViewHifi;
+    case 'plan':
+    default:
+      return PlanViewHifi;
+  }
+}
+
 function disciplineScopeNote(
   activeWorkspaceId: WorkspaceId,
   selected: Element | undefined,
@@ -254,9 +288,14 @@ function fallbackComposition(
   paneLayout: PaneLayoutState,
 ): WorkspaceCompositionState {
   const id = nextCompositionId();
+  const normalizedPaneLayout = normalizePaneLayout(
+    paneLayout,
+    tabsState.tabs.map((tab) => tab.id),
+    tabsState.activeId,
+  );
   return {
     activeId: id,
-    compositions: [{ id, label: 'Composition 1', tabsState, paneLayout }],
+    compositions: [{ id, label: 'Composition 1', tabsState, paneLayout: normalizedPaneLayout }],
   };
 }
 
@@ -272,8 +311,8 @@ function readPersistedCompositions(
     if (!parsed || !Array.isArray(parsed.compositions) || !parsed.compositions.length) {
       return fallbackComposition(tabsState, paneLayout);
     }
-    const compositions = parsed.compositions.filter(
-      (composition): composition is WorkspaceComposition =>
+    const compositions = parsed.compositions
+      .filter((composition): composition is WorkspaceComposition =>
         Boolean(
           composition &&
           typeof composition.id === 'string' &&
@@ -282,7 +321,15 @@ function readPersistedCompositions(
           Array.isArray(composition.tabsState.tabs) &&
           composition.paneLayout,
         ),
-    );
+      )
+      .map((composition) => ({
+        ...composition,
+        paneLayout: normalizePaneLayout(
+          composition.paneLayout,
+          composition.tabsState.tabs.map((tab) => tab.id),
+          composition.tabsState.activeId,
+        ),
+      }));
     if (!compositions.length) return fallbackComposition(tabsState, paneLayout);
     const activeId =
       typeof parsed.activeId === 'string' &&
@@ -511,6 +558,7 @@ function CompositionBar({
   loadingId,
   onActivate,
   onCreate,
+  onClose,
   onReorder,
   onRename,
 }: {
@@ -519,6 +567,7 @@ function CompositionBar({
   loadingId?: string | null;
   onActivate: (id: string) => void;
   onCreate: () => void;
+  onClose: (id: string) => void;
   onReorder: (from: number, to: number) => void;
   onRename: (id: string, label: string) => void;
 }): JSX.Element {
@@ -574,6 +623,11 @@ function CompositionBar({
               if (event.key === 'F2') {
                 event.preventDefault();
                 setRenaming({ id: composition.id, label: composition.label });
+                return;
+              }
+              if (event.key === 'Delete' || event.key === 'Backspace') {
+                event.preventDefault();
+                onClose(composition.id);
                 return;
               }
               if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -648,6 +702,27 @@ function CompositionBar({
             ) : (
               <span className="truncate whitespace-nowrap">{composition.label}</span>
             )}
+            {!isRenaming ? (
+              <button
+                type="button"
+                aria-label={`Close ${composition.label}`}
+                data-testid={`composition-close-${composition.id}`}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onClose(composition.id);
+                }}
+                draggable={false}
+                className={[
+                  'ml-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted transition-opacity hover:bg-surface-strong hover:text-foreground',
+                  active
+                    ? 'opacity-60 hover:opacity-100'
+                    : 'opacity-0 group-hover:opacity-70 group-hover:hover:opacity-100',
+                ].join(' ')}
+              >
+                <Icons.close size={11} aria-hidden="true" />
+              </button>
+            ) : null}
           </div>
         );
       })}
@@ -1393,6 +1468,72 @@ export function Workspace(): JSX.Element {
     setViewerMode,
     tabsState,
   ]);
+
+  const handleCompositionClose = useCallback(
+    (id: string) => {
+      const savedCompositions = compositionState.compositions.map((composition) =>
+        composition.id === compositionState.activeId
+          ? { ...composition, tabsState, paneLayout }
+          : composition,
+      );
+      const closeIdx = savedCompositions.findIndex((composition) => composition.id === id);
+      if (closeIdx === -1) return;
+
+      const remaining = savedCompositions.filter((composition) => composition.id !== id);
+      if (remaining.length === 0) {
+        const fallbackPane = createPaneLayout(null);
+        const fallbackId = nextCompositionId();
+        setCompositionState({
+          activeId: fallbackId,
+          compositions: [
+            {
+              id: fallbackId,
+              label: 'Composition 1',
+              tabsState: EMPTY_TABS,
+              paneLayout: fallbackPane,
+            },
+          ],
+        });
+        setTabsState(EMPTY_TABS);
+        setPaneLayout(fallbackPane);
+        setMode('plan');
+        setViewerMode('plan_canvas');
+        return;
+      }
+
+      if (id !== compositionState.activeId) {
+        setCompositionState((state) => ({
+          ...state,
+          compositions: state.compositions
+            .map((composition) =>
+              composition.id === state.activeId
+                ? { ...composition, tabsState, paneLayout }
+                : composition,
+            )
+            .filter((composition) => composition.id !== id),
+        }));
+        return;
+      }
+
+      const nextIdx = Math.max(0, closeIdx - 1);
+      const next = remaining[nextIdx] ?? remaining[0]!;
+      markCompositionLoading(next.id);
+      runAfterLoadingPaint(() => {
+        setCompositionState({ activeId: next.id, compositions: remaining });
+        setTabsState(next.tabsState);
+        setPaneLayout(next.paneLayout);
+      }, next.id);
+    },
+    [
+      compositionState.activeId,
+      compositionState.compositions,
+      markCompositionLoading,
+      paneLayout,
+      runAfterLoadingPaint,
+      setViewerMode,
+      tabsState,
+    ],
+  );
 
   const handleCompositionReorder = useCallback((fromIdx: number, toIdx: number) => {
     setCompositionState((state) => {
@@ -2703,13 +2844,19 @@ export function Workspace(): JSX.Element {
   }, [navigateTo, paletteActiveScheduleId]);
   const splitActiveTab = useCallback(
     (direction: PaneSplitDirection) => {
-      const activeId = tabsState.activeId;
-      if (!activeId) return;
+      const focusedTabId =
+        tabIdForLeaf(paneLayout.root, paneLayout.focusedLeafId) ?? tabsState.activeId;
+      if (!focusedTabId) return;
+      const focusedTab = tabsState.tabs.find((tab) => tab.id === focusedTabId);
+      if (!focusedTab) return;
+      const splitTabId = uniqueTabInstanceId(tabsState, focusedTab.id);
+      const splitTab: ViewTab = { ...focusedTab, id: splitTabId };
+      setTabsState((state) => upsertTabInstance(state, splitTab));
       setPaneLayout((layout) =>
-        splitPaneWithTab(layout, layout.focusedLeafId, direction, activeId),
+        splitPaneWithTab(layout, layout.focusedLeafId, direction, splitTabId),
       );
     },
-    [tabsState.activeId],
+    [paneLayout.focusedLeafId, paneLayout.root, tabsState],
   );
 
   const ensureFamilyPlacementPane = useCallback(
@@ -3035,6 +3182,7 @@ export function Workspace(): JSX.Element {
               ? 'schedule'
               : 'planView';
     const PaneIcon = Icons[paneIconName] ?? Icons.planView;
+    const PaneHifiIcon = hifiIconForTabKind(paneTab?.kind);
     const paneSidebarKey = `${compositionState.activeId}:${node.id}`;
     const paneSecondarySidebarOpen =
       Boolean(paneTab) && (paneSecondarySidebarOpenByKey[paneSidebarKey] ?? true);
@@ -3118,11 +3266,11 @@ export function Workspace(): JSX.Element {
     };
     const closePaneTab = (): void => {
       if (!paneTab) return;
-      const nextTabs = closeTab(tabsState, paneTab.id);
-      setTabsState(nextTabs);
-      setPaneLayout((layout) =>
-        focusPane(assignTabToPane(layout, node.id, nextTabs.activeId), node.id),
-      );
+      const nextLayout = removePaneLeaf(paneLayout, node.id);
+      setPaneLayout(nextLayout);
+      if (!findPaneForTab(nextLayout.root, paneTab.id)) {
+        setTabsState((state) => closeTab(state, paneTab.id));
+      }
     };
     const handlePaneLensChange = (nextLensMode: LensMode): void => {
       activatePaneForControls();
@@ -3176,7 +3324,7 @@ export function Workspace(): JSX.Element {
                 onClick={togglePaneViewSettings}
                 className="group relative inline-flex h-11 min-w-12 shrink-0 flex-col items-center justify-center gap-0 rounded-md border border-accent/45 bg-surface px-1.5 text-[11px] font-medium text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:bg-accent-soft"
               >
-                <PaneIcon size={24} aria-hidden="true" />
+                <PaneHifiIcon size={30} aria-hidden="true" />
                 <span className="max-w-12 truncate">{paneLabelParts.viewType}</span>
               </button>
               <div
@@ -3199,7 +3347,7 @@ export function Workspace(): JSX.Element {
                 title={`${paneLabelParts.viewType} view settings hidden`}
                 className="relative inline-flex h-11 min-w-12 shrink-0 flex-col items-center justify-center gap-0 rounded-md border border-border bg-surface px-1.5 text-[11px] font-medium text-muted"
               >
-                <PaneIcon size={24} aria-hidden="true" />
+                <PaneHifiIcon size={30} aria-hidden="true" />
                 <span className="max-w-12 truncate">{paneLabelParts.viewType}</span>
                 <span
                   aria-hidden="true"
@@ -3917,6 +4065,7 @@ export function Workspace(): JSX.Element {
                 loadingId={loadingCompositionId}
                 onActivate={handleCompositionActivate}
                 onCreate={handleCompositionCreate}
+                onClose={handleCompositionClose}
                 onReorder={handleCompositionReorder}
                 onRename={handleCompositionRename}
               />

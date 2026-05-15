@@ -12,7 +12,7 @@ import {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Icons, IconLabels, ICON_SIZE, type LucideLikeIcon } from '@bim-ai/ui';
+import { Icons, IconLabels, ICON_SIZE, type BimIconComponent } from '@bim-ai/ui';
 import { evaluateFormula } from '../../lib/expressionEvaluator';
 
 /**
@@ -41,8 +41,8 @@ export type InspectorPropertiesContext = 'properties' | 'instance' | 'type' | 'v
 export type InspectorApplyScope = 'this' | 'all';
 
 export interface InspectorSelection {
-  /** Lucide icon to show in the header next to the type. */
-  icon?: LucideLikeIcon;
+  /** BIM AI icon to show in the header next to the type. */
+  icon?: BimIconComponent;
   /** Human-readable element type, e.g. "Wall · Generic 200 mm". */
   label: string;
   /** Element id (rendered in mono). */

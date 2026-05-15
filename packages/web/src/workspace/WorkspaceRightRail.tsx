@@ -5,10 +5,6 @@ import { useTranslation } from 'react-i18next';
 import type { Element, LensMode, ParamSchemaEntry } from '@bim-ai/core';
 
 import { buildPlanGridDatumInspectorLine } from './readouts';
-import {
-  buildCoordinationLensReadout,
-  type CoordinationLensReadout,
-} from './coordinationLensReadout';
 import { useBimStore } from '../state/store';
 import type { ViewerRenderStyle } from '../state/storeTypes';
 import {
@@ -58,6 +54,7 @@ import { firstSheetId, placeViewOnSheetCommand } from './sheets/sheetRecommended
 import type { WorkspaceMode } from './shell';
 import { PersistedDisclosureSection } from './shell/components/PersistedDisclosureSection';
 import { humanKindLabel, InspectorEmptyTab } from './WorkspaceHelpers';
+import { lensUx, lensViewBehavior, type LensViewMode } from './lensUx';
 import {
   isDuplicableTypeElement,
   type DuplicableTypeElement,
@@ -578,17 +575,6 @@ export function WorkspaceRightRail({
     useBimStore.getState().select(undefined);
   }, [elementsById, onSemanticCommand]);
 
-  const beginPlanBoundaryEdit = useCallback(
-    (target: Extract<Element, { kind: 'floor' }> | Extract<Element, { kind: 'roof' }>): void => {
-      const levelId = target.kind === 'floor' ? target.levelId : target.referenceLevelId;
-      select(target.id);
-      setPlanTool('select');
-      if (levelId) setActiveLevelId(levelId);
-      if (mode !== 'plan') onModeChange('plan');
-    },
-    [mode, onModeChange, select, setActiveLevelId, setPlanTool],
-  );
-
   const inspectorSelection = useMemo<InspectorSelection | null>(() => {
     if (!selectedId) return null;
     const found = elementsById[selectedId];
@@ -748,11 +734,6 @@ export function WorkspaceRightRail({
     writeViewpointLevelVisibility(perViewpointMap);
   }, [activeViewpoint?.id, activeViewpointId, show3dLayers, viewerLevelHidden]);
 
-  const coordinationLensReadout = useMemo(
-    () => (lensMode === 'coordination' ? buildCoordinationLensReadout(elementsById) : null),
-    [elementsById, lensMode],
-  );
-
   if (surface === 'view-context') {
     return (
       <div
@@ -761,10 +742,14 @@ export function WorkspaceRightRail({
         data-view-mode={mode}
       >
         {lensMode !== 'all' ? (
-          <LensScopeNotice testId="secondary-lens-scope-notice" lensMode={lensMode} scope="view" />
-        ) : null}
-        {coordinationLensReadout ? (
-          <CoordinationLensPanel readout={coordinationLensReadout} />
+          <>
+            <LensScopeNotice
+              testId="secondary-lens-scope-notice"
+              lensMode={lensMode}
+              scope="view"
+            />
+            <LensDashboard lensMode={lensMode} mode={mode} compact={mode === '3d'} />
+          </>
         ) : null}
         {mode === '3d' ? (
           <Secondary3dAdapter
@@ -833,6 +818,9 @@ export function WorkspaceRightRail({
     <div className="h-full overflow-y-auto">
       {showElementSurface && lensMode !== 'all' ? (
         <LensScopeNotice testId="element-lens-scope-notice" lensMode={lensMode} scope="element" />
+      ) : null}
+      {showElementSurface && lensMode !== 'all' && !el ? (
+        <LensDashboard lensMode={lensMode} mode={mode} />
       ) : null}
       {/* CHR-V3-06: non-blocking scope toast */}
       {allScopeToast ? (
@@ -967,6 +955,9 @@ export function WorkspaceRightRail({
                     onOpenMaterialBrowser={onOpenMaterialBrowser}
                     onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
                   />
+                  {lensMode !== 'all' ? (
+                    <LensElementFocusPanel lensMode={lensMode} element={el} />
+                  ) : null}
                   {el.kind === 'plan_view' ? (
                     <>
                       {planGridDatumLine ? (
@@ -1285,7 +1276,6 @@ export function WorkspaceRightRail({
                       },
                       onDisciplineChange: handleDisciplineChange,
                       onEditType: (typeId) => select(typeId),
-                      onEditBoundary: (target) => beginPlanBoundaryEdit(target),
                       onOpenMaterialBrowser,
                       onOpenAppearanceAssetBrowser,
                     })
@@ -1522,7 +1512,6 @@ export function WorkspaceRightRail({
               element={el}
               elementsById={elementsById}
               onSelect={select}
-              onEditBoundary={beginPlanBoundaryEdit}
               onIsolateCategory={isolateViewerCategory}
               onHideCategory={(category) => {
                 if (!viewerCategoryHidden[category]) toggleViewerCategoryHidden(category);
@@ -1705,20 +1694,7 @@ function LensScopeNotice({
   scope: 'view' | 'element';
   testId: string;
 }): JSX.Element {
-  const lensLabel =
-    lensMode === 'structure'
-      ? 'Structure'
-      : lensMode === 'mep'
-        ? 'MEP'
-        : lensMode === 'coordination'
-          ? 'Coordination'
-          : lensMode === 'fire-safety'
-            ? 'Fire Safety'
-            : lensMode === 'energy'
-              ? 'Energieberatung'
-              : lensMode === 'construction'
-                ? 'Bauausfuehrung'
-                : 'Architecture';
+  const lensLabel = lensUx(lensMode).label;
   const body =
     lensMode === 'coordination'
       ? 'Coordination lens is active. Review, issue, link, and model-health workflows remain foregrounded while authoring commands are filtered.'
@@ -1733,6 +1709,207 @@ function LensScopeNotice({
       {body}
     </div>
   );
+}
+
+function LensDashboard({
+  lensMode,
+  mode,
+  compact = false,
+}: {
+  lensMode: LensMode;
+  mode: WorkspaceMode;
+  compact?: boolean;
+}): JSX.Element {
+  const ux = lensUx(lensMode);
+  const viewMode = workspaceModeToLensViewMode(mode);
+  const behavior = lensViewBehavior(lensMode, viewMode);
+  const rows = compact ? ux.ribbonFocus.slice(0, 3) : ux.inspectorFocus.slice(0, 4);
+  const secondary = viewMode === 'schedule' ? ux.scheduleFamilies : ux.sheetDeliverables;
+  return (
+    <section
+      data-testid="lens-dashboard"
+      className="mx-3 mt-3 rounded border border-border bg-background px-3 py-2 text-[11px]"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="font-semibold text-foreground">{ux.label}</div>
+          <div className="text-muted">{ux.germanName}</div>
+        </div>
+        <span className="shrink-0 rounded bg-surface-strong px-1.5 py-0.5 text-[10px] uppercase text-muted">
+          {mode}
+        </span>
+      </div>
+      <p className="mt-2 leading-snug text-muted">{behavior}</p>
+      <div className="mt-2 grid gap-1">
+        {rows.map((row) => (
+          <div key={row} className="flex items-center gap-1.5 text-foreground">
+            <span aria-hidden="true" className="h-1 w-1 rounded-full bg-accent" />
+            <span className="min-w-0 truncate">{row}</span>
+          </div>
+        ))}
+      </div>
+      {!compact ? (
+        <div className="mt-2 border-t border-border pt-2 text-muted">
+          <div className="font-medium text-foreground">
+            {viewMode === 'schedule' ? 'Relevant schedules' : 'Relevant deliverables'}
+          </div>
+          <div className="mt-1 leading-snug">{secondary.slice(0, 4).join(' · ')}</div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function LensElementFocusPanel({
+  lensMode,
+  element,
+}: {
+  lensMode: LensMode;
+  element: Element;
+}): JSX.Element {
+  const ux = lensUx(lensMode);
+  const values = elementLensValues(element, lensMode);
+  return (
+    <section
+      data-testid="lens-element-focus-panel"
+      className="mb-3 rounded border border-border bg-surface-strong px-3 py-2 text-[11px]"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="font-semibold text-foreground">{ux.label} properties</div>
+          <div className="text-muted">{ux.germanName}</div>
+        </div>
+        <span className="shrink-0 rounded bg-background px-1.5 py-0.5 text-[10px] uppercase text-muted">
+          first
+        </span>
+      </div>
+      {values.length ? (
+        <div className="mt-2 grid gap-1">
+          {values.map((row) => (
+            <div key={row.label} className="flex items-center justify-between gap-3">
+              <span className="min-w-0 truncate text-muted">{row.label}</span>
+              <span className="max-w-[55%] truncate text-right font-medium text-foreground">
+                {row.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-2 leading-snug text-muted">
+          No {ux.label.toLowerCase()} data on this element yet. Start with{' '}
+          {ux.inspectorFocus.slice(0, 3).join(', ')}.
+        </div>
+      )}
+    </section>
+  );
+}
+
+function elementLensValues(
+  element: Element,
+  lensMode: LensMode,
+): Array<{ label: string; value: string }> {
+  const record = flattenElementRecord(element);
+  const keyGroups: Partial<Record<LensMode, Array<[string, string[]]>>> = {
+    architecture: [
+      ['Type', ['typeId', 'wallTypeId', 'doorTypeId', 'windowTypeId']],
+      ['Dimensions', ['widthMm', 'heightMm', 'thicknessMm', 'areaM2']],
+      ['Material', ['materialKey', 'materialId']],
+      ['Room', ['roomId', 'fromRoomId', 'toRoomId']],
+    ],
+    structure: [
+      ['Structural role', ['structuralRole', 'loadBearing']],
+      ['Analytical alignment', ['analyticalAlignment', 'axisId']],
+      ['Material', ['structuralMaterial', 'materialKey']],
+      ['Load path', ['loadPathId', 'bearingOnId']],
+    ],
+    mep: [
+      ['System', ['systemId', 'mepSystemId']],
+      ['Service type', ['serviceType', 'disciplineSystem']],
+      ['Size / offset', ['sizeMm', 'diameterMm', 'offsetMm']],
+      ['Penetration', ['penetrationId', 'openingRequestId']],
+    ],
+    coordination: [
+      ['Issues', ['issueIds', 'issueCount', 'openIssueCount']],
+      ['Clashes', ['clashIds', 'clashCount']],
+      ['Linked model', ['linkedModelId', 'linkedElementId']],
+      ['Review status', ['reviewStatus', 'bcfTopicId']],
+    ],
+    'fire-safety': [
+      ['Rating', ['fireResistanceRating', 'fireRating', 'requiredFireRating']],
+      ['Compartment', ['fireCompartmentId', 'smokeCompartmentId']],
+      ['Escape route', ['escapeRouteId', 'travelDistanceM', 'exitWidthMm']],
+      ['Firestopping', ['firestopStatus', 'penetrationStatus']],
+    ],
+    energy: [
+      ['Thermal class', ['thermalClassification', 'boundaryCondition']],
+      ['U-value', ['uValueWPerM2K', 'uValue', 'u_value']],
+      ['Zone', ['thermalZoneId', 'heatingStatus', 'usageProfile']],
+      ['Thermal bridge', ['thermalBridgeMarkerIds', 'thermalBridgeStatus']],
+    ],
+    construction: [
+      ['Phase', ['phaseCreated', 'phaseDemolished', 'phaseId']],
+      ['Package', ['constructionPackageId', 'workPackage', 'trade']],
+      ['Progress', ['progressStatus', 'percentComplete', 'qaStatus']],
+      ['Responsible', ['responsibleCompany', 'assigneeId']],
+    ],
+    sustainability: [
+      ['EPD', ['epdId', 'epdSource', 'epdStatus']],
+      ['GWP', ['gwpKgCO2e', 'gwpA1A3KgCO2e', 'carbonKgCO2e']],
+      ['Circularity', ['recycledContentPct', 'reusePotential', 'reusedContentPct']],
+      ['Quantity', ['materialQuantity', 'massKg', 'volumeM3']],
+    ],
+    'cost-quantity': [
+      ['Quantity basis', ['quantityBasis', 'quantity', 'areaM2', 'volumeM3']],
+      ['Cost group', ['costGroup', 'din276Group', 'costClassification']],
+      ['Unit rate', ['unitRate', 'unit', 'currency']],
+      ['Scenario', ['scenarioId', 'costSource', 'rateSource']],
+    ],
+  };
+  const groups = keyGroups[lensMode] ?? [];
+  return groups.flatMap(([label, keys]) => {
+    const match = keys.find((key) => hasRenderableValue(record[key]));
+    if (!match) return [];
+    return [{ label, value: renderLensValue(record[match]) }];
+  });
+}
+
+function flattenElementRecord(element: Element): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...(element as unknown as Record<string, unknown>) };
+  const props = (element as { props?: unknown }).props;
+  if (props && typeof props === 'object' && !Array.isArray(props)) {
+    Object.assign(out, props as Record<string, unknown>);
+    for (const value of Object.values(props as Record<string, unknown>)) {
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        Object.assign(out, value as Record<string, unknown>);
+      }
+    }
+  }
+  return out;
+}
+
+function hasRenderableValue(value: unknown): boolean {
+  if (value == null) return false;
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === 'object') return Object.keys(value).length > 0;
+  return true;
+}
+
+function renderLensValue(value: unknown): string {
+  if (Array.isArray(value)) return value.map(renderLensValue).join(', ');
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (typeof value === 'number') return Number.isInteger(value) ? String(value) : value.toFixed(2);
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object') return Object.keys(value).join(', ');
+  return String(value);
+}
+
+function workspaceModeToLensViewMode(mode: WorkspaceMode): LensViewMode {
+  if (mode === '3d') return '3d';
+  if (mode === 'section') return 'section';
+  if (mode === 'sheet') return 'sheet';
+  if (mode === 'schedule') return 'schedule';
+  return 'plan';
 }
 
 function SecondaryToggle({
@@ -1756,79 +1933,6 @@ function SecondaryToggle({
         data-testid={testId}
       />
     </label>
-  );
-}
-
-function CoordinationLensPanel({ readout }: { readout: CoordinationLensReadout }): JSX.Element {
-  const countRows = [
-    ['Health', readout.modelHealthWarningCount],
-    ['Clashes', readout.clashCount],
-    ['Issues', readout.openIssueCount],
-    ['Links', readout.linkedModelCount],
-    ['Snapshots', readout.reviewArtifactCount],
-  ] as const;
-  const visibleIssues = readout.issues.slice(0, 3);
-  return (
-    <section
-      data-testid="coordination-lens-panel"
-      className="mx-3 mt-3 border-b border-border pb-3 text-sm"
-    >
-      <div
-        className="mb-2 text-[10px] font-semibold uppercase text-muted"
-        style={{ letterSpacing: '0.08em', opacity: 0.7 }}
-      >
-        Coordination
-      </div>
-      <div className="grid grid-cols-5 gap-1">
-        {countRows.map(([label, value]) => (
-          <div
-            key={label}
-            className="min-w-0 rounded border border-border bg-surface-strong px-1.5 py-1"
-          >
-            <div className="truncate text-[10px] text-muted">{label}</div>
-            <div className="text-sm font-semibold text-foreground">{value}</div>
-          </div>
-        ))}
-      </div>
-      <div className="mt-3 grid gap-2">
-        <div className="rounded border border-border bg-surface px-2 py-1.5">
-          <div className="text-[10px] uppercase text-muted" style={{ letterSpacing: '0.08em' }}>
-            Required schedules
-          </div>
-          <div className="mt-1 flex flex-wrap gap-1">
-            {readout.requiredSchedules.map((name) => (
-              <span
-                key={name}
-                className="rounded border border-border bg-surface-strong px-1.5 py-0.5 text-[10px] text-foreground"
-              >
-                {name}
-              </span>
-            ))}
-          </div>
-        </div>
-        {visibleIssues.length > 0 ? (
-          <div className="rounded border border-border bg-surface px-2 py-1.5">
-            <div className="text-[10px] uppercase text-muted" style={{ letterSpacing: '0.08em' }}>
-              Open ownership
-            </div>
-            <div className="mt-1 grid gap-1">
-              {visibleIssues.map((issue) => (
-                <div key={issue.id} className="min-w-0">
-                  <div className="truncate text-xs font-medium text-foreground">{issue.title}</div>
-                  <div className="flex gap-1 text-[10px] text-muted">
-                    <span>{issue.severity}</span>
-                    <span aria-hidden="true">/</span>
-                    <span>{issue.responsibleDiscipline}</span>
-                    <span aria-hidden="true">/</span>
-                    <span>{issue.status}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </div>
-    </section>
   );
 }
 
@@ -2304,16 +2408,12 @@ function Selected3dElementActions({
   element,
   elementsById,
   onSelect,
-  onEditBoundary,
   onIsolateCategory,
   onHideCategory,
 }: {
   element: Selected3dActionElement;
   elementsById: Record<string, Element>;
   onSelect: (id: string | undefined) => void;
-  onEditBoundary: (
-    element: Extract<Element, { kind: 'floor' }> | Extract<Element, { kind: 'roof' }>,
-  ) => void;
   onIsolateCategory: (category: ViewerCatKey) => void;
   onHideCategory: (category: ViewerCatKey) => void;
 }): JSX.Element | null {
@@ -2357,13 +2457,6 @@ function Selected3dElementActions({
             testId={`3d-action-${element.kind}-edit-type`}
             label="Edit Type"
             onClick={() => onSelect(typeId ?? undefined)}
-          />
-        ) : null}
-        {element.kind === 'floor' || element.kind === 'roof' ? (
-          <ActionButton
-            testId={`3d-action-${element.kind}-edit-boundary`}
-            label={element.kind === 'floor' ? 'Edit Boundary' : 'Edit Footprint'}
-            onClick={() => onEditBoundary(element)}
           />
         ) : null}
       </div>

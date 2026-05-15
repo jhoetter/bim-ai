@@ -112,6 +112,7 @@ export function CanvasMount({
         onUpsertSemantic={onSemanticCommand}
         onOpenSourcePlan={onOpenSectionSourcePlan}
         onOpen3dContext={onOpenSection3dContext}
+        lensMode={lensMode}
       />
     );
   if (mode === 'sheet')
@@ -124,6 +125,7 @@ export function CanvasMount({
         onUpsertSemantic={onSemanticCommand}
         reviewMode={sheetReviewMode}
         markupShape={sheetMarkupShape}
+        lensMode={lensMode}
       />
     );
   if (mode === 'schedule')
@@ -135,6 +137,7 @@ export function CanvasMount({
           modelId={modelId}
           onUpsertSemantic={onSemanticCommand}
           onNavigateToElement={onNavigateToElement}
+          lensMode={lensMode}
         />
       </ErrorBoundary>
     );

@@ -115,9 +115,6 @@ importers:
       '@bim-ai/icons':
         specifier: workspace:*
         version: link:../icons
-      lucide-react:
-        specifier: ^0.574.0
-        version: 0.574.0(react@19.2.5)
     devDependencies:
       '@types/react':
         specifier: ^19.2.14
@@ -158,9 +155,6 @@ importers:
       i18next:
         specifier: ^26.0.8
         version: 26.0.8(typescript@5.9.3)
-      lucide-react:
-        specifier: ^0.574.0
-        version: 0.574.0(react@19.2.5)
       react:
         specifier: ^19.2.5
         version: 19.2.5
@@ -2214,11 +2208,6 @@ packages:
 
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
-
-  lucide-react@0.574.0:
-    resolution: {integrity: sha512-dJ8xb5juiZVIbdSn3HTyHsjjIwUwZ4FNwV0RtYDScOyySOeie1oXZTymST6YPJ4Qwt3Po8g4quhYl4OxtACiuQ==}
-    peerDependencies:
-      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
@@ -5171,10 +5160,6 @@ snapshots:
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
-
-  lucide-react@0.574.0(react@19.2.5):
-    dependencies:
-      react: 19.2.5
 
   lz-string@1.5.0: {}
 

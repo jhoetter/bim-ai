@@ -1,5 +1,5 @@
 # Structure Lens for Cloud-Native BIM Platform
-## Requirements and Implementation Tracker
+## Requirements and Implementation Prompt
 
 ## Context
 
@@ -109,28 +109,3 @@ Expose structural classification and structural element geometry for external an
 ## Implementation Prompt
 
 Implement the Structure Lens as a structural classification, authoring, review, and documentation layer over the shared BIM model. Foreground structural elements, expose load-bearing and structural-role properties, add structural schedules, and provide review checks that identify modeling gaps before export to specialist structural tools.
-
-## Implementation Tracker
-
-Status as of 2026-05-15: complete and merged to `main`.
-
-- [x] Workpackage 1: structural visibility and classification model fields.
-  - Implemented in `c52b04628` and merged via `7954479e7`.
-- [x] Workpackage 2: structural schedules and API export support.
-  - Implemented in `fea61fc9d` and merged via `7954479e7`.
-- [x] Workpackage 3: structural review advisories.
-  - Implemented in `7bbc2b0a1` and merged via `7954479e7`.
-- [x] Workpackage 4: structural authoring commands, presets, and defaults.
-  - Implemented in `4921abb17` and merged via `7954479e7`.
-
-Verification completed before merge:
-
-- [x] Backend focused tests: `uv run pytest --no-cov tests/test_structure_lens.py tests/test_constructability_load_bearing_schema.py tests/test_mep_lens.py tests/test_cost_quantity_lens.py`
-- [x] Frontend focused tests: `pnpm --dir packages/web exec vitest run src/cmdPalette/defaultCommands.test.ts src/workspace/commandCapabilities.test.ts src/schedules/scheduleDefinitionPresets.test.ts src/viewport/useLensFilter.test.ts`
-- [x] JSON template validation for structure-related seed/template data.
-
-Merge and remote status:
-
-- [x] Feature branch pushed: `origin/codex/structure-lens-workpackages-20260514`
-- [x] Structure workpackages merged into `main`.
-- [x] `origin/main` contains `4921abb17`.

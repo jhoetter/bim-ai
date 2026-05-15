@@ -58,7 +58,7 @@ const COST_QUANTITY_PROP_KEYS = new Set<string>([
   'scenarioId',
 ]);
 
-function fireSafetyProps(elem: Element): Record<string, unknown> {
+function elementProps(elem: Element): Record<string, unknown> {
   const raw = (elem as { props?: unknown }).props;
   return raw && typeof raw === 'object' && !Array.isArray(raw)
     ? (raw as Record<string, unknown>)
@@ -66,9 +66,27 @@ function fireSafetyProps(elem: Element): Record<string, unknown> {
 }
 
 export function elementPassesFireSafetyLens(elem: Element): boolean {
-  if (FIRE_SAFETY_KIND_SET.has(elem.kind)) return true;
-  const props = fireSafetyProps(elem);
+  if (FIRE_SAFETY_KIND_SET.has(elem.kind as string)) return true;
+  const props = elementProps(elem);
   return Object.keys(props).some((key) => FIRE_SAFETY_PROP_KEYS.has(key));
+}
+
+function costQuantityProps(elem: Element): Record<string, unknown> {
+  const props = elementProps(elem);
+  const merged: Record<string, unknown> = { ...props };
+  for (const key of ['cost', 'costQuantity', 'costClassification', 'cost_classification']) {
+    const nested = props[key];
+    if (nested && typeof nested === 'object' && !Array.isArray(nested)) {
+      Object.assign(merged, nested as Record<string, unknown>);
+    }
+  }
+  return merged;
+}
+
+export function elementPassesCostQuantityLens(elem: Element): boolean {
+  if (COST_QUANTITY_KIND_SET.has(elem.kind as string)) return true;
+  const props = costQuantityProps(elem);
+  return Object.keys(props).some((key) => COST_QUANTITY_PROP_KEYS.has(key));
 }
 
 const STRUCTURE_FOREGROUND_KINDS = new Set([
@@ -98,24 +116,6 @@ function isStructureLensForeground(elem: Element): boolean {
   if (STRUCTURAL_ROLES.has(role)) return true;
   if (elem.kind === 'floor') return record.structuralRole !== 'non_load_bearing';
   return false;
-}
-
-function costQuantityProps(elem: Element): Record<string, unknown> {
-  const props = fireSafetyProps(elem);
-  const merged: Record<string, unknown> = { ...props };
-  for (const key of ['cost', 'costQuantity', 'costClassification', 'cost_classification']) {
-    const nested = props[key];
-    if (nested && typeof nested === 'object' && !Array.isArray(nested)) {
-      Object.assign(merged, nested as Record<string, unknown>);
-    }
-  }
-  return merged;
-}
-
-export function elementPassesCostQuantityLens(elem: Element): boolean {
-  if (COST_QUANTITY_KIND_SET.has(elem.kind)) return true;
-  const props = costQuantityProps(elem);
-  return Object.keys(props).some((key) => COST_QUANTITY_PROP_KEYS.has(key));
 }
 
 /**
@@ -154,21 +154,20 @@ export function lensFilterFromMode(mode: LensMode): (elem: Element) => 'foregrou
 }
 
 function isConstructionLensElement(elem: Element): boolean {
+  const kind = elem.kind as string;
   if (
-    elem.kind === 'construction_package' ||
-    elem.kind === 'construction_logistics' ||
-    elem.kind === 'construction_qa_checklist' ||
-    elem.kind === 'issue'
+    kind === 'construction_package' ||
+    kind === 'construction_logistics' ||
+    kind === 'construction_qa_checklist' ||
+    kind === 'issue'
   ) {
     return true;
   }
-  if ('phaseCreated' in elem || 'phaseDemolished' in elem) {
-    return Boolean(elem.phaseCreated || elem.phaseDemolished);
+  const record = elem as Record<string, unknown>;
+  if ('phaseCreated' in record || 'phaseDemolished' in record) {
+    return Boolean(record.phaseCreated || record.phaseDemolished);
   }
-  if ('props' in elem && elem.props && typeof elem.props === 'object') {
-    return Boolean((elem.props as Record<string, unknown>).construction);
-  }
-  return false;
+  return Boolean(elementProps(elem).construction);
 }
 
 const LENS_TO_DISCIPLINE: Record<string, string> = {

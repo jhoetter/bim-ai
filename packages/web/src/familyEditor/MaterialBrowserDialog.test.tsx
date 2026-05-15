@@ -23,11 +23,7 @@ describe('<MaterialBrowserDialog />', () => {
 
   it('shows the active assignment target', () => {
     const { getByText } = render(
-      <MaterialBrowserDialog
-        onAssign={vi.fn()}
-        onClose={vi.fn()}
-        targetLabel="Window · Glass"
-      />,
+      <MaterialBrowserDialog onAssign={vi.fn()} onClose={vi.fn()} targetLabel="Window · Glass" />,
     );
 
     expect(getByText('Target: Window · Glass')).toBeTruthy();

@@ -1,7 +1,7 @@
 /**
  * @bim-ai/icons — BIM-native SVG icon library.
  *
- * Drop-in compatible with lucide-react's icon API:
+ * Drop-in compatible with the app's standard icon component API:
  *
  *   import { WallIcon, DoorIcon } from '@bim-ai/icons'
  *   <WallIcon size={18} strokeWidth={1.5} className="text-stone-600" />
@@ -589,6 +589,43 @@ export {
   MeasureAlongIcon,
   UngroupIcon,
 } from './edit-basic';
+
+// App chrome, navigation, and utility icons
+export {
+  SelectIcon,
+  SearchIcon,
+  SettingsIcon,
+  MenuIcon,
+  CloseIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  AlertTriangleIcon,
+  CameraIcon,
+  CommandPaletteIcon,
+  ExternalLinkIcon,
+  VisibilityOnIcon,
+  VisibilityOffIcon,
+  EvidenceIcon,
+  GridIcon,
+  HomeIcon,
+  LinkIcon,
+  SnapIcon,
+  ThinLineIcon,
+  MoonIcon,
+  SunIcon,
+  UndoIcon,
+  RedoIcon,
+  AgentIcon,
+  CollaboratorsIcon,
+  OnlineIcon,
+  DownloadIcon,
+  FocusIcon,
+  RefreshIcon,
+  MoreHorizontalIcon,
+  MoreVerticalIcon,
+  CheckIcon,
+  ClockIcon,
+} from './chrome';
 
 // Collaboration & project management
 export {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import type { Element } from '@bim-ai/core';
+import type { Element, LensMode } from '@bim-ai/core';
 
 import { Btn, Panel } from '@bim-ai/ui';
 
@@ -85,6 +85,7 @@ function SectionDatumElevationEvidenceLine(props: { modelId: string; sectionCutI
 function SectionWorkbenchLivePreview(props: {
   modelId: string;
   sectionCutId: string;
+  lensMode?: LensMode;
   sectionIdentityCaption: string;
   sectionCutPlaneCaption: string;
   widthPx: number;
@@ -102,6 +103,7 @@ function SectionWorkbenchLivePreview(props: {
         <SectionViewportSvg
           modelId={props.modelId}
           sectionCutId={props.sectionCutId}
+          lensMode={props.lensMode}
           widthPx={props.widthPx}
           heightPx={props.heightPx}
           sectionIdentityCaption={props.sectionIdentityCaption}
@@ -125,6 +127,7 @@ export function SectionPlaceholderPane(props: {
   onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
   onOpenSourcePlan?: () => void;
   onOpen3dContext?: () => void;
+  lensMode?: LensMode;
 }) {
   const elementsById = useBimStore((s) => s.elementsById);
   const selectedId = useBimStore((s) => s.selectedId);
@@ -236,6 +239,7 @@ export function SectionPlaceholderPane(props: {
                 key={previewSectionId}
                 modelId={props.modelId}
                 sectionCutId={previewSectionId}
+                lensMode={props.lensMode}
                 sectionIdentityCaption={sectionPreviewCaptions.identity}
                 sectionCutPlaneCaption={sectionPreviewCaptions.plane}
                 widthPx={PREVIEW_WIDTH_PX}

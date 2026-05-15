@@ -12,7 +12,7 @@ import {
 } from 'react';
 
 import { useTranslation } from 'react-i18next';
-import { Icons, IconLabels, ICON_SIZE, type LucideLikeIcon } from '@bim-ai/ui';
+import { Icons, IconLabels, ICON_SIZE, type BimIconComponent } from '@bim-ai/ui';
 import { useBimStore } from '../../state/store';
 import { AccountStatusMenu, type AccountStatusInfo } from './AccountStatusMenu';
 import { type ViewTab, type TabKind } from '../tabsModel';
@@ -598,7 +598,7 @@ function TopBarModePills({
   );
 }
 
-const TAB_KIND_ICON: Record<TabKind, LucideLikeIcon> = {
+const TAB_KIND_ICON: Record<TabKind, BimIconComponent> = {
   plan: Icons.floor!,
   '3d': Icons.family!,
   section: Icons.section!,
@@ -1048,7 +1048,7 @@ function TopBarRight({
 }
 
 interface IconButtonProps {
-  Icon: LucideLikeIcon;
+  Icon: BimIconComponent;
   label: string;
   onClick?: (e: MouseEvent<HTMLButtonElement>) => void;
   badge?: number;

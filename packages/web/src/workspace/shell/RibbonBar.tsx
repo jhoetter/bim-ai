@@ -13,8 +13,10 @@ import {
 import type { WorkspaceMode } from './TopBar';
 import type { SheetMarkupShape, SheetReviewMode } from '../sheets/sheetReviewUi';
 import { LensDropdown } from './LensDropdown';
+import { lensUx } from '../lensUx';
 
 type RibbonTabId =
+  | 'lens'
   | 'create'
   | 'openings'
   | 'rooms-areas'
@@ -168,8 +170,6 @@ export interface RibbonBarProps {
   trailingControls?: JSX.Element | null;
 }
 
-const RIBBON_HIDDEN_COMMANDS_STORAGE_KEY = 'bim-ai.ribbon.hiddenCommands.v1';
-
 export function RibbonBar({
   activeToolId,
   activeMode,
@@ -217,32 +217,36 @@ export function RibbonBar({
   trailingControls,
 }: RibbonBarProps): JSX.Element {
   const [activeTabId, setActiveTabId] = useState<RibbonTabId>('create');
-  const [minimized, setMinimized] = useState(false);
-  const [customizeOpen, setCustomizeOpen] = useState(false);
   const [openFlyoutPanelId, setOpenFlyoutPanelId] = useState<string | null>(null);
-  const [hiddenCommandKeys, setHiddenCommandKeys] = useState<Set<string>>(
-    () => new Set(readHiddenRibbonCommandKeys()),
-  );
   const tabs = useMemo(
     () => buildRibbonTabs(activeMode, selectedElementKind, lensMode),
     [activeMode, lensMode, selectedElementKind],
   );
   const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? tabs[0]!;
-  const activeCommands = useMemo(() => collectTabCommands(activeTab), [activeTab]);
   const identity = ribbonModeIdentity(activeMode ?? 'plan');
   const ModeIdentityIcon = Icons[identity.icon] ?? Icons.planView;
   const InlineViewIcon = inlineViewTitle
     ? (Icons[inlineViewTitle.icon] ?? ModeIdentityIcon)
     : ModeIdentityIcon;
   const prevActiveToolIdRef = useRef<ToolId | undefined>(activeToolId);
+  const prevLensModeRef = useRef<CapabilityLensMode>(lensMode);
 
   useEffect(() => {
     if (!tabs.some((tab) => tab.id === activeTabId)) {
       setActiveTabId(tabs[0]?.id ?? 'create');
       setOpenFlyoutPanelId(null);
-      setCustomizeOpen(false);
     }
   }, [activeTabId, tabs]);
+
+  useEffect(() => {
+    if (prevLensModeRef.current !== lensMode) {
+      prevLensModeRef.current = lensMode;
+      if (lensMode !== 'all' && tabs.some((tab) => tab.id === 'lens')) {
+        setActiveTabId('lens');
+        setOpenFlyoutPanelId(null);
+      }
+    }
+  }, [lensMode, tabs]);
 
   useEffect(() => {
     const prevToolId = prevActiveToolIdRef.current;
@@ -256,10 +260,6 @@ export function RibbonBar({
     }
     prevActiveToolIdRef.current = activeToolId;
   }, [activeTabId, activeToolId, tabs]);
-
-  useEffect(() => {
-    writeHiddenRibbonCommandKeys([...hiddenCommandKeys]);
-  }, [hiddenCommandKeys]);
 
   function runCommand(command: RibbonCommand): void {
     const availability = activeMode ? commandAvailability(command, activeMode, lensMode) : null;
@@ -316,27 +316,13 @@ export function RibbonBar({
     (actions[command.id] ?? onOpenCommandPalette)?.();
   }
 
-  function commandVisible(command: RibbonCommand): boolean {
-    return !hiddenCommandKeys.has(commandKey(command));
-  }
-
-  function setCommandVisible(command: RibbonCommand, visible: boolean): void {
-    setHiddenCommandKeys((prev) => {
-      const next = new Set(prev);
-      const key = commandKey(command);
-      if (visible) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }
-
   return (
     <section
       aria-label="Ribbon"
       data-testid="ribbon-bar"
-      className="border-b border-border bg-surface shadow-[0_1px_0_rgba(0,0,0,0.03)]"
+      className="flex h-[84px] flex-col overflow-visible border-b border-border bg-surface shadow-[0_1px_0_rgba(0,0,0,0.03)]"
     >
-      <div className="flex min-h-9 items-end gap-2 px-2.5 pt-1">
+      <div className="flex h-8 shrink-0 items-end gap-1.5 px-2 pt-1">
         {showViewControls ? (
           <div
             className={[
@@ -379,7 +365,7 @@ export function RibbonBar({
                         </span>
                         <div
                           data-testid="ribbon-lens-dropdown"
-                          className="h-7 min-w-0 rounded-md border border-border bg-background/80 px-1 text-[11px] text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+                          className="relative z-50 h-7 min-w-0 rounded-md border border-border bg-background/80 px-1 text-[11px] text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
                         >
                           <LensDropdown
                             currentLens={lensMode}
@@ -476,7 +462,7 @@ export function RibbonBar({
             {viewControlsVariant === 'compact' && onLensChange ? (
               <div
                 data-testid="ribbon-lens-dropdown"
-                className="h-7 rounded-md border border-border bg-background/80 px-1 text-[11px] text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+                className="relative z-50 h-7 rounded-md border border-border bg-background/80 px-1 text-[11px] text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
               >
                 <LensDropdown
                   currentLens={lensMode}
@@ -513,12 +499,10 @@ export function RibbonBar({
                 data-contextual={tab.contextual ? 'true' : 'false'}
                 onClick={() => {
                   setActiveTabId(tab.id);
-                  setMinimized(false);
-                  setCustomizeOpen(false);
                   setOpenFlyoutPanelId(null);
                 }}
                 className={[
-                  'relative h-8 whitespace-nowrap rounded-t-md px-3 text-xs font-semibold transition-colors',
+                  'relative h-7 whitespace-nowrap rounded-t-md px-2.5 text-xs font-semibold transition-colors',
                   active
                     ? 'bg-background text-foreground shadow-[inset_0_2px_0_0_var(--color-accent),0_-1px_0_0_var(--color-border),1px_0_0_0_var(--color-border),-1px_0_0_0_var(--color-border)]'
                     : tab.contextual
@@ -531,174 +515,112 @@ export function RibbonBar({
             );
           })}
         </div>
-        <button
-          type="button"
-          aria-label="Customize ribbon"
-          aria-expanded={customizeOpen}
-          data-testid="ribbon-toggle-customize"
-          title="Customize ribbon"
-          onClick={() => {
-            setCustomizeOpen((v) => !v);
-            setOpenFlyoutPanelId(null);
-          }}
-          className={[
-            'mb-1 flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-surface-strong hover:text-foreground',
-            customizeOpen ? 'bg-accent-soft text-accent' : '',
-          ].join(' ')}
-        >
-          <Icons.settings size={ICON_SIZE.chrome} aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          aria-label={minimized ? 'Restore ribbon panels' : 'Minimize ribbon panels'}
-          aria-expanded={!minimized}
-          data-testid="ribbon-toggle-minimize"
-          title={minimized ? 'Restore ribbon panels' : 'Minimize ribbon panels'}
-          onClick={() => setMinimized((v) => !v)}
-          className="mb-1 flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-surface-strong hover:text-foreground"
-        >
-          {minimized ? (
-            <Icons.disclosureOpen size={ICON_SIZE.chrome} aria-hidden="true" />
-          ) : (
-            <Icons.disclosureClosed size={ICON_SIZE.chrome} aria-hidden="true" />
-          )}
-        </button>
         {trailingControls ? (
           <div className="mb-1 flex shrink-0 items-center gap-1 border-l border-border/70 pl-1">
             {trailingControls}
           </div>
         ) : null}
       </div>
-      {customizeOpen ? (
-        <div
-          data-testid="ribbon-customize-menu"
-          className="border-t border-border bg-background px-3 py-2 text-xs text-foreground"
-        >
-          <div className="mb-1 font-semibold">Customize {activeTab.label}</div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1">
-            {activeCommands.map((command) => (
-              <label
-                key={commandKey(command)}
-                className="flex items-center gap-1.5 whitespace-nowrap text-muted"
-              >
-                <input
-                  type="checkbox"
-                  checked={commandVisible(command)}
-                  onChange={(e) => setCommandVisible(command, e.target.checked)}
-                />
-                <span>{command.label}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-      ) : null}
-      {!minimized ? (
-        <div
-          data-testid="ribbon-panels"
-          className="flex min-h-[58px] items-stretch gap-2 overflow-x-auto bg-background px-3 py-1.5"
-        >
-          {activeTab.panels.map((panel) => {
-            const visibleCommands = panel.commands.filter(commandVisible);
-            const visibleFlyoutCommands = (panel.flyoutCommands ?? []).filter(commandVisible);
-            const flyoutId = `${activeTab.id}:${panel.id}`;
-            return (
-              <div
-                key={panel.id}
-                role="group"
-                aria-label={panel.label}
-                className="relative flex min-w-fit self-stretch flex-col items-center justify-between border-r border-border pr-2 last:border-r-0"
-              >
-                <div className="flex w-full items-start justify-center gap-1">
-                  {visibleCommands.map((command) => {
-                    const availability = activeMode
-                      ? commandAvailability(command, activeMode, lensMode)
-                      : null;
-                    const bridgeTargetMode =
-                      availability?.state === 'bridge' ? availability.targetMode : undefined;
-                    return (
-                      <RibbonButton
-                        key={commandKey(command)}
-                        command={command}
-                        active={commandActive(
-                          command,
-                          activeToolId,
-                          sheetReviewMode,
-                          sheetMarkupShape,
-                        )}
-                        bridgeTargetMode={bridgeTargetMode}
-                        disabledReason={commandDisabledReason(command, activeMode, lensMode)}
-                        onClick={() => runCommand(command)}
-                      />
-                    );
-                  })}
-                  {visibleFlyoutCommands.length > 0 ? (
-                    <div className="relative flex items-center">
-                      <button
-                        type="button"
-                        aria-label={`${panel.label} panel flyout`}
-                        aria-expanded={openFlyoutPanelId === flyoutId}
-                        data-testid={`ribbon-panel-flyout-${panel.id}`}
-                        onClick={() =>
-                          setOpenFlyoutPanelId((current) =>
-                            current === flyoutId ? null : flyoutId,
-                          )
-                        }
-                        className="flex h-12 w-7 items-center justify-center rounded-md text-muted hover:bg-surface hover:text-foreground"
+      <div
+        data-testid="ribbon-panels"
+        className="flex min-h-0 flex-1 items-center gap-1.5 overflow-x-auto bg-background px-2"
+      >
+        {activeTab.panels.map((panel) => {
+          const visibleCommands = panel.commands;
+          const visibleFlyoutCommands = panel.flyoutCommands ?? [];
+          const flyoutId = `${activeTab.id}:${panel.id}`;
+          return (
+            <div
+              key={panel.id}
+              role="group"
+              aria-label={panel.label}
+              className="relative flex min-w-fit items-center border-r border-border pr-1.5 last:border-r-0"
+            >
+              <div className="flex w-full items-center justify-center gap-0.5">
+                {visibleCommands.map((command) => {
+                  const availability = activeMode
+                    ? commandAvailability(command, activeMode, lensMode)
+                    : null;
+                  const bridgeTargetMode =
+                    availability?.state === 'bridge' ? availability.targetMode : undefined;
+                  return (
+                    <RibbonButton
+                      key={commandKey(command)}
+                      command={command}
+                      active={commandActive(
+                        command,
+                        activeToolId,
+                        sheetReviewMode,
+                        sheetMarkupShape,
+                      )}
+                      bridgeTargetMode={bridgeTargetMode}
+                      disabledReason={commandDisabledReason(command, activeMode, lensMode)}
+                      onClick={() => runCommand(command)}
+                    />
+                  );
+                })}
+                {visibleFlyoutCommands.length > 0 ? (
+                  <div className="relative flex items-center">
+                    <button
+                      type="button"
+                      aria-label={`${panel.label} panel flyout`}
+                      aria-expanded={openFlyoutPanelId === flyoutId}
+                      data-testid={`ribbon-panel-flyout-${panel.id}`}
+                      onClick={() =>
+                        setOpenFlyoutPanelId((current) => (current === flyoutId ? null : flyoutId))
+                      }
+                      className="flex h-11 w-6 items-center justify-center rounded-md text-muted hover:bg-surface hover:text-foreground"
+                    >
+                      <Icons.disclosureOpen size={ICON_SIZE.chrome} aria-hidden="true" />
+                    </button>
+                    {openFlyoutPanelId === flyoutId ? (
+                      <div
+                        role="menu"
+                        data-testid={`ribbon-flyout-menu-${panel.id}`}
+                        className="absolute right-0 top-11 z-30 min-w-48 rounded border border-border bg-surface p-1 shadow-lg"
                       >
-                        <Icons.disclosureOpen size={ICON_SIZE.chrome} aria-hidden="true" />
-                      </button>
-                      {openFlyoutPanelId === flyoutId ? (
-                        <div
-                          role="menu"
-                          data-testid={`ribbon-flyout-menu-${panel.id}`}
-                          className="absolute right-0 top-12 z-30 min-w-48 rounded border border-border bg-surface p-1 shadow-lg"
-                        >
-                          {visibleFlyoutCommands.map((command) => {
-                            const Icon = Icons[command.icon] ?? Icons.commandPalette;
-                            const disabledReason = commandDisabledReason(
-                              command,
-                              activeMode,
-                              lensMode,
-                            );
-                            return (
-                              <button
-                                key={commandKey(command)}
-                                type="button"
-                                role="menuitem"
-                                data-testid={`ribbon-flyout-command-${command.testId ?? command.id}`}
-                                disabled={Boolean(disabledReason)}
-                                title={disabledReason ?? command.label}
-                                data-disabled-reason={disabledReason}
-                                onClick={() => {
-                                  if (disabledReason) return;
-                                  runCommand(command);
-                                  setOpenFlyoutPanelId(null);
-                                }}
-                                className={[
-                                  'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs',
-                                  disabledReason
-                                    ? 'cursor-not-allowed text-muted opacity-55'
-                                    : 'text-foreground hover:bg-background',
-                                ].join(' ')}
-                              >
-                                <Icon size={ICON_SIZE.chrome} aria-hidden="true" />
-                                <span>{command.label}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-                <div className="flex w-full min-w-14 items-end justify-center px-1 pb-0.5 text-center text-[10px] font-medium text-muted">
-                  {panel.label}
-                </div>
+                        {visibleFlyoutCommands.map((command) => {
+                          const Icon = Icons[command.icon] ?? Icons.commandPalette;
+                          const disabledReason = commandDisabledReason(
+                            command,
+                            activeMode,
+                            lensMode,
+                          );
+                          return (
+                            <button
+                              key={commandKey(command)}
+                              type="button"
+                              role="menuitem"
+                              data-testid={`ribbon-flyout-command-${command.testId ?? command.id}`}
+                              disabled={Boolean(disabledReason)}
+                              title={disabledReason ?? command.label}
+                              data-disabled-reason={disabledReason}
+                              onClick={() => {
+                                if (disabledReason) return;
+                                runCommand(command);
+                                setOpenFlyoutPanelId(null);
+                              }}
+                              className={[
+                                'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs',
+                                disabledReason
+                                  ? 'cursor-not-allowed text-muted opacity-55'
+                                  : 'text-foreground hover:bg-background',
+                              ].join(' ')}
+                            >
+                              <Icon size={ICON_SIZE.chrome} aria-hidden="true" />
+                              <span>{command.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
-            );
-          })}
-        </div>
-      ) : null}
+            </div>
+          );
+        })}
+      </div>
     </section>
   );
 }
@@ -835,7 +757,7 @@ function RibbonButton({
       data-disabled-reason={disabledReason}
       onClick={onClick}
       className={[
-        'flex h-12 min-w-14 flex-col items-center justify-center gap-0.5 rounded-md px-2 text-[11px] font-medium transition-colors',
+        'flex h-11 min-w-12 flex-col items-center justify-center gap-0 rounded-md px-1.5 text-[11px] font-medium transition-colors',
         disabled
           ? 'cursor-not-allowed text-muted opacity-55'
           : active
@@ -844,7 +766,7 @@ function RibbonButton({
       ].join(' ')}
     >
       <Icon size={ICON_SIZE.toolPalette} aria-hidden="true" />
-      <span className="max-w-20 truncate">{command.label}</span>
+      <span className="max-w-16 truncate">{command.label}</span>
       {isBridge ? (
         <span
           data-testid={
@@ -866,7 +788,7 @@ function buildRibbonTabs(
 ): RibbonTab[] {
   const mode = activeMode ?? 'plan';
   return filterRibbonTabsForMode(
-    buildUnfilteredRibbonTabs(mode, selectedElementKind),
+    buildUnfilteredRibbonTabs(mode, selectedElementKind, lensMode),
     mode,
     lensMode,
   );
@@ -875,6 +797,7 @@ function buildRibbonTabs(
 function buildUnfilteredRibbonTabs(
   mode: ToolWorkspaceMode,
   selectedElementKind?: string | null,
+  lensMode: CapabilityLensMode = 'all',
 ): RibbonTab[] {
   const tabs: RibbonTab[] =
     mode === '3d'
@@ -887,7 +810,144 @@ function buildUnfilteredRibbonTabs(
             ? buildScheduleRibbonTabs(selectedElementKind)
             : buildPlanRibbonTabs(mode, selectedElementKind);
 
+  const lensTab = buildLensRibbonTab(lensMode, mode);
+  if (lensTab) {
+    return mode === 'plan' || mode === '3d' ? [lensTab, ...tabs] : [...tabs, lensTab];
+  }
   return tabs;
+}
+
+function buildLensRibbonTab(
+  lensMode: CapabilityLensMode,
+  mode: ToolWorkspaceMode,
+): RibbonTab | null {
+  if (lensMode === 'all') return null;
+  const ux = lensUx(lensMode);
+  const recommendedTools = recommendedLensTools(lensMode, mode);
+  const reviewCommands: RibbonCommand[] = [
+    action('advisor-open', 'Checks', 'clash'),
+    action('command-palette', 'More', 'commandPalette'),
+  ];
+  if (lensMode === 'coordination') {
+    reviewCommands.unshift(action('project-manage-links', 'Links', 'externalLink'));
+  }
+  const dataCommands: RibbonCommand[] =
+    mode === 'schedule'
+      ? [
+          action('schedule-controls', 'Fields / Sort', 'schedule'),
+          action('schedule-place-on-sheet', 'Place on Sheet', 'sheet'),
+        ]
+      : mode === 'sheet'
+        ? [
+            action('sheet-edit-viewports', 'Viewport Lenses', 'select'),
+            action('sheet-place-recommended', 'Place Views', 'sheet'),
+          ]
+        : [action('command-palette', 'Open Lens Schedules', 'schedule')];
+
+  return {
+    id: 'lens',
+    label: ux.label,
+    contextual: true,
+    panels: [
+      {
+        id: 'lens-focus',
+        label: ux.germanName,
+        commands: recommendedTools,
+      },
+      {
+        id: 'lens-review',
+        label: 'Review',
+        commands: reviewCommands,
+      },
+      {
+        id: 'lens-data',
+        label: mode === 'sheet' ? 'Viewports' : mode === 'schedule' ? 'Schedule' : 'Schedules',
+        commands: dataCommands,
+      },
+    ],
+  };
+}
+
+function recommendedLensTools(
+  lensMode: CapabilityLensMode,
+  mode: ToolWorkspaceMode,
+): RibbonCommand[] {
+  const selectOnly = [tool('select', 'Select', 'select')];
+  if (mode === 'sheet' || mode === 'schedule') return selectOnly;
+  if (mode === 'section') {
+    return [
+      tool('select', 'Select', 'select'),
+      tool('dimension', 'Dimension', 'dimension'),
+      action('section-place-on-sheet', 'Place on Sheet', 'sheet'),
+    ];
+  }
+  switch (lensMode) {
+    case 'architecture':
+      return [
+        tool('wall', 'Wall', 'wall'),
+        tool('door', 'Door', 'door'),
+        tool('window', 'Window', 'window'),
+        tool('room', 'Room', 'room'),
+      ];
+    case 'structure':
+      return [
+        tool('grid', 'Grid', 'gridLine'),
+        tool('column', 'Column', 'column'),
+        tool('beam', 'Beam', 'beam'),
+        tool('floor', 'Slab', 'floor'),
+      ];
+    case 'mep':
+      return [
+        tool('select', 'Select', 'select'),
+        tool('component', 'Equipment', 'family'),
+        tool('wall-opening', 'Opening Request', 'wall-opening'),
+        action('advisor-open', 'Coordination', 'clash'),
+      ];
+    case 'fire-safety':
+      return [
+        tool('room', 'Compartment', 'room'),
+        tool('door', 'Fire Door', 'door'),
+        tool('wall-opening', 'Penetration', 'wall-opening'),
+        tool('tag', 'Tag', 'tag'),
+      ];
+    case 'energy':
+      return [
+        tool('room', 'Thermal Zone', 'room'),
+        tool('tag', 'Thermal Tag', 'tag'),
+        tool('measure', 'Measure', 'measure'),
+        action('command-palette', 'Handoff', 'externalLink'),
+      ];
+    case 'construction':
+      return [
+        tool('select', 'Select', 'select'),
+        tool('tag', 'Status Tag', 'tag'),
+        tool('dimension', 'Dimension', 'dimension'),
+        action('advisor-open', 'Constructability', 'clash'),
+      ];
+    case 'sustainability':
+      return [
+        tool('select', 'Select', 'select'),
+        tool('tag', 'Impact Tag', 'tag'),
+        tool('measure', 'Quantities', 'measure'),
+        action('command-palette', 'LCA Data', 'schedule'),
+      ];
+    case 'cost-quantity':
+      return [
+        tool('select', 'Select', 'select'),
+        tool('tag', 'Cost Tag', 'tag'),
+        tool('measure', 'Measure', 'measure'),
+        action('command-palette', 'Takeoff', 'schedule'),
+      ];
+    case 'coordination':
+      return [
+        tool('select', 'Select', 'select'),
+        tool('measure', 'Measure', 'measure'),
+        action('advisor-open', 'Issues', 'issue'),
+        action('project-manage-links', 'Links', 'externalLink'),
+      ];
+    default:
+      return selectOnly;
+  }
 }
 
 function filterRibbonTabsForMode(
@@ -1445,7 +1505,6 @@ function buildPlanModifyTab(selectedElementKind: string): RibbonTab {
           ...(selectedElementKind === 'wall' ? [tool('split', 'Split', 'split')] : []),
           ...(selectedElementKind === 'wall' ? [tool('trim', 'Trim', 'trim')] : []),
           tool('trim-extend', 'Trim/Extend', 'trim'),
-          ...(selectedElementKind === 'wall' ? [tool('wall-join', 'Wall Join', 'wall-join')] : []),
         ],
       },
     ],
@@ -1472,12 +1531,6 @@ function build3dModifyTab(selectedElementKind: string): RibbonTab {
                 action('3d-insert-door', 'Insert Door', 'door', '3d-insert-door'),
                 action('3d-insert-window', 'Insert Window', 'window', '3d-insert-window'),
                 action('3d-insert-opening', 'Opening', 'wall-opening', '3d-insert-opening'),
-                action(
-                  'element-sidebar-toggle',
-                  'Join Controls',
-                  'wall-join',
-                  '3d-wall-join-controls',
-                ),
               ]
             : [action('element-sidebar-toggle', 'Element Actions', 'select', '3d-element-actions')],
       },
@@ -1505,16 +1558,6 @@ function buildSelectionOnlyModifyTab(selectedElementKind: string): RibbonTab {
       },
     ],
   };
-}
-
-function collectTabCommands(tab: RibbonTab): RibbonCommand[] {
-  const byKey = new Map<string, RibbonCommand>();
-  for (const panel of tab.panels) {
-    for (const command of [...panel.commands, ...(panel.flyoutCommands ?? [])]) {
-      byKey.set(commandKey(command), command);
-    }
-  }
-  return [...byKey.values()];
 }
 
 function commandKey(command: RibbonCommand): string {
@@ -1652,23 +1695,6 @@ function ribbonCapabilityId(command: RibbonCommand): string | null {
       return 'view.3d.measure.ribbon-bridge';
   }
   return null;
-}
-
-function readHiddenRibbonCommandKeys(): string[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const parsed = JSON.parse(
-      window.localStorage.getItem(RIBBON_HIDDEN_COMMANDS_STORAGE_KEY) ?? '[]',
-    );
-    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeHiddenRibbonCommandKeys(keys: string[]): void {
-  if (typeof window === 'undefined') return;
-  window.localStorage.setItem(RIBBON_HIDDEN_COMMANDS_STORAGE_KEY, JSON.stringify(keys.sort()));
 }
 
 function ribbonModeIdentity(mode: ToolWorkspaceMode): { label: string; icon: IconName } {

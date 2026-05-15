@@ -12,6 +12,7 @@ import {
   readPersistedPaneLayout,
   removePaneLeaf,
   splitPaneWithTab,
+  type PaneLayoutState,
 } from './paneLayout';
 
 describe('paneLayout', () => {
@@ -51,23 +52,85 @@ describe('paneLayout', () => {
     expect(findPaneForTab(reassigned.root, 'tab-z')).toBe(firstLeafId);
   });
 
-  it('normalizes closed tabs while preserving empty split panes for reuse', () => {
+  it('normalizes closed tabs and collapses stale empty split panes', () => {
     const base = createPaneLayout('tab-a');
     const split = splitPaneWithTab(base, base.focusedLeafId, 'right', 'tab-b');
     const normalized = normalizePaneLayout(split, ['tab-a'], 'tab-a');
-    expect(leafCount(normalized.root)).toBe(2);
+    expect(leafCount(normalized.root)).toBe(1);
     expect(findPaneForTab(normalized.root, 'tab-a')).toBeTruthy();
     expect(findPaneForTab(normalized.root, 'tab-b')).toBeNull();
   });
 
-  it('closes a pane leaf tab but keeps the pane available as an empty target', () => {
+  it('normalizes an all-empty split layout back to a single empty pane', () => {
+    const base = createPaneLayout('tab-a');
+    const split = splitPaneWithTab(base, base.focusedLeafId, 'right', 'tab-b');
+    const normalized = normalizePaneLayout(split, [], null);
+    expect(leafCount(normalized.root)).toBe(1);
+    expect(normalized.root.kind).toBe('leaf');
+    if (normalized.root.kind === 'leaf') {
+      expect(normalized.root.tabId).toBeNull();
+    }
+  });
+
+  it('removes a pane leaf and collapses its parent split', () => {
     const base = createPaneLayout('tab-a');
     const split = splitPaneWithTab(base, base.focusedLeafId, 'right', 'tab-b');
     const removed = removePaneLeaf(split, split.focusedLeafId);
-    expect(leafCount(removed.root)).toBe(2);
-    expect(removed.focusedLeafId).toBe(split.focusedLeafId);
-    expect(findPaneForTab(removed.root, 'tab-a')).toBeTruthy();
-    expect(findPaneForTab(removed.root, 'tab-b')).toBeNull();
+    expect(leafCount(removed.root)).toBe(1);
+    expect(findPaneForTab(removed.root, 'tab-a')).toBe(removed.focusedLeafId);
+  });
+
+  it('removes nested pane leaves recursively without leaving empty ancestors', () => {
+    const nested: PaneLayoutState = {
+      focusedLeafId: 'pane-b',
+      root: {
+        kind: 'split',
+        id: 'root',
+        axis: 'horizontal',
+        first: { kind: 'leaf', id: 'pane-a', tabId: 'tab-a' },
+        second: {
+          kind: 'split',
+          id: 'nested',
+          axis: 'vertical',
+          first: { kind: 'leaf', id: 'pane-b', tabId: 'tab-b' },
+          second: { kind: 'leaf', id: 'pane-c', tabId: 'tab-c' },
+        },
+      },
+    };
+
+    const removedNestedLeaf = removePaneLeaf(nested, 'pane-b');
+    expect(leafCount(removedNestedLeaf.root)).toBe(2);
+    expect(findPaneForTab(removedNestedLeaf.root, 'tab-a')).toBe('pane-a');
+    expect(findPaneForTab(removedNestedLeaf.root, 'tab-c')).toBe('pane-c');
+    expect(findPaneForTab(removedNestedLeaf.root, 'tab-b')).toBeNull();
+
+    const removedLastNestedSibling = removePaneLeaf(removedNestedLeaf, 'pane-c');
+    expect(leafCount(removedLastNestedSibling.root)).toBe(1);
+    expect(findPaneForTab(removedLastNestedSibling.root, 'tab-a')).toBe('pane-a');
+  });
+
+  it('normalizes nested stale panes down to the remaining open tab', () => {
+    const nested: PaneLayoutState = {
+      focusedLeafId: 'pane-b',
+      root: {
+        kind: 'split',
+        id: 'root',
+        axis: 'horizontal',
+        first: { kind: 'leaf', id: 'pane-a', tabId: 'tab-a' },
+        second: {
+          kind: 'split',
+          id: 'nested',
+          axis: 'vertical',
+          first: { kind: 'leaf', id: 'pane-b', tabId: 'tab-b' },
+          second: { kind: 'leaf', id: 'pane-c', tabId: 'tab-c' },
+        },
+      },
+    };
+
+    const normalized = normalizePaneLayout(nested, ['tab-c'], 'tab-c');
+    expect(leafCount(normalized.root)).toBe(1);
+    expect(findPaneForTab(normalized.root, 'tab-c')).toBe('pane-c');
+    expect(normalized.focusedLeafId).toBe('pane-c');
   });
 
   it('persists and restores pane layout state', () => {

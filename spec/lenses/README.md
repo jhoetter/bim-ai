@@ -1,64 +1,64 @@
-# Lens Implementation Tracker
+# Lens Catalog for Cloud-Native BIM Platform
 
-Last updated: 2026-05-15
+## What We Have Today
 
-This tracker records the product lens specs and their committed implementation state on `main`.
+The current UI lens dropdown cycles these lenses:
 
-| Lens ID | Lens | German label | Status | Main evidence |
-| --- | --- | --- | --- | --- |
-| `architecture` | Architecture | Architektur | In Progress | `spec/lenses/architecture.md`; architecture defaults and query API are on `main`. |
-| `construction` | Construction / Execution | Bauausfuehrung | In Progress | `spec/lenses/construction-lens.md`; construction schedules, API, and UI lens are on `main`. |
-| `coordination` | Coordination | Koordination | In Progress | Coordination API/readout and UI integration are on `main`; spec file still needs a committed lens spec. |
-| `cost-quantity` | Cost and Quantity | Kosten und Mengen | Done | `spec/lenses/cost-quantity-lens.md`; model takeoff, costing, schedules, API, and web lens are on `main`. |
-| `energy` | Energy Advisory | Energieberatung | In Progress | Energy schedules/API/UI are on `main`; spec file still needs a committed lens spec. |
-| `fire-safety` | Fire Safety | Brandschutz | In Progress | `spec/lenses/fire-safety-lens.md`; fire safety schedules, API, and UI lens are on `main`. |
-| `mep` | MEP | TGA | In Progress | MEP model contract, schedules, API, and authoring UI are on `main`; spec file still needs a committed lens spec. |
-| `structure` | Structure | Tragwerk | In Progress | Structure classification/defaults are on `main`; spec file still needs a committed lens spec. |
-| `sustainability` | Sustainability / LCA | Nachhaltigkeit / Oekobilanz | Done | `spec/lenses/sustainability-lens.md`; LCA schedules, API/export payloads, circularity metadata, and web lens identity are on `main`. |
+| Lens ID | English name | German name | Current role |
+|---|---|---|---|
+| `all` | All | Alle Gewerke | Shows all model elements in foreground. No discipline-specific property scope. |
+| `architecture` | Architecture | Architektur | Foregrounds architectural elements and architectural authoring workflows. |
+| `structure` | Structure | Tragwerk | Foregrounds structural elements and structural authoring workflows. |
+| `mep` | MEP | TGA / Technische Gebaeudeausruestung | Foregrounds mechanical, electrical, plumbing, and building-services elements. |
 
-## Cost and Quantity Completion Evidence
+The core type system already anticipates additional lens IDs:
 
-Status: `Done`
+| Lens ID | English name | German name | Status |
+|---|---|---|---|
+| `coordination` | Coordination | Koordination | Present in core type vocabulary; not yet in the UI cycle. |
+| `energy` | Energy Consulting | Energieberatung | Present in core type vocabulary; not yet in the UI cycle. |
 
-Merged to `main` via:
+## What Lenses Should Exist
 
-- `510c7ff4a` - Merge latest main into cost quantity lens workpackages
-- `48f1a5d42` and later main merges retain the Cost and Quantity implementation
+The recommended lens set separates discipline work, regulatory/analysis work, and lifecycle work while keeping one shared BIM model:
 
-Implemented surface:
+| Priority | Lens ID | English name | German name | Why it exists |
+|---|---|---|---|---|
+| 1 | `architecture` | Architecture | Architektur | Default planning and authoring lens for rooms, envelope geometry, openings, sheets, and architectural documentation. |
+| 1 | `structure` | Structure | Tragwerk | Structural modeling, load-bearing classification, levels, grids, columns, beams, slabs, foundations, and structural documentation. |
+| 1 | `mep` | MEP | TGA / Technische Gebaeudeausruestung | Building-services model authoring and coordination: HVAC, plumbing, electrical, shafts, equipment, and systems. |
+| 1 | `coordination` | Coordination | Koordination | Cross-discipline model QA: clashes, issue ownership, links, model health, changes, and review views. |
+| 1 | `energy` | Energy Consulting | Energieberatung | German energy-consultant workflow for thermal envelope classification, U-values, GEG/iSFP/BEG handoff data, and export to calculation tools. |
+| 2 | `fire-safety` | Fire Safety | Brandschutz | Fire compartments, escape routes, fire ratings, openings, doors, smoke control, and code-review handoff. |
+| 2 | `cost-quantity` | Cost and Quantity | Kosten und Mengen | Quantity takeoff, cost groups, DIN 276-style breakdowns, procurement exports, and scenario comparison. |
+| 2 | `construction` | Construction / Execution | Bauausfuehrung | Phasing, temporary works, installation sequence, site logistics, progress, QA checklists, and as-built capture. |
+| 2 | `sustainability` | Sustainability / LCA | Nachhaltigkeit / Oekobilanz | Embodied carbon, material declarations, circularity, reuse, EPD references, and LCA exports. |
+| 2 | `facility-operations` | Facility Operations | Betrieb / Facility Management | Asset registers, maintainable equipment, service intervals, handover, operations metadata, and API access for owners. |
 
-- Backend model-derived takeoff and costing: `app/bim_ai/cost_quantity.py`
-- Schedule categories and metadata: `quantity_takeoff`, `cost_estimate`, `element_cost_group`, `scenario_delta`
-- API endpoint and tool descriptor: `/api/models/{model_id}/cost-quantity-lens`
-- Web schedule presets/workflows and lens filtering: `packages/web/src/schedules`, `packages/web/src/workspace/ModeShells.tsx`, `packages/web/src/viewport/useLensFilter.ts`
+## Lens Design Rule
 
-Verification:
+A lens is not a separate model. A lens is a view, property, schedule, tool, and export scope over the same shared elements.
 
-- `PYTHONPATH=app PYTEST_ADDOPTS=--no-cov python -m pytest app/tests/test_cost_quantity_lens.py app/tests/test_schedule_field_registry.py`
-- `pnpm --filter @bim-ai/web exec vitest run src/workspace/shell/LensDropdown.test.tsx src/schedules/scheduleDefinitionPresets.test.ts src/viewport/useLensFilter.test.ts src/workspace/ModeShells.test.tsx`
-- `pnpm --filter @bim-ai/web typecheck`
+Every lens must define:
 
-## Sustainability Completion Evidence
+- Which existing elements it foregrounds or ghosts.
+- Which properties it adds or surfaces.
+- Which schedules and sheets it introduces.
+- Which tools become prominent.
+- Which exports and API surfaces it owns.
+- Which workflows are explicitly out of scope.
 
-Status: `Done`
+## Files
 
-Merged to `main` via:
-
-- `48f1a5d42` - Merge current main after sustainability lens
-- `5b9a4156d` - docs: track sustainability lens completion
-
-Implemented surface:
-
-- Backend LCA derivation and missing-data readouts: `app/bim_ai/sustainability_lca.py`
-- Material impact and circularity model fields: `app/bim_ai/elements.py`
-- Schedule categories and metadata: `material_impact`, `element_carbon`, `assembly_carbon`, `circularity`, `scenario_impact_comparison`, `missing_sustainability_data`
-- API/export payloads: `/api/models/{model_id}/sustainability`, sustainability LCA JSON export
-- Web lens identity and command reachability: `packages/web/src/workspace/shell/LensDropdown.tsx`, `packages/web/src/cmdPalette/defaultCommands.ts`, `packages/web/src/workspace/commandCapabilities.ts`, `packages/web/src/viewport/useLensFilter.ts`
-
-Verification:
-
-- `PYTHONPATH=/Users/jhoetter/repos/bim-ai-main-merge-sustainability-20260514/app pytest --no-cov app/tests/test_sustainability_lens.py app/tests/test_structure_lens.py app/tests/test_cost_quantity_lens.py app/tests/test_material_assembly_schedule.py app/tests/test_schedule_category_field_coverage.py app/tests/test_update_element_property_door_material.py`
-- `python -m ruff check app/bim_ai/sustainability_lca.py app/tests/test_sustainability_lens.py app/bim_ai/elements.py app/bim_ai/structure_lens.py app/tests/test_structure_lens.py app/bim_ai/schedule_derivation.py app/bim_ai/schedule_field_registry.py app/bim_ai/routes_api.py app/bim_ai/engine_dispatch_properties.py`
-- `pnpm --dir packages/web exec vitest run src/workspace/shell/LensDropdown.test.tsx src/cmdPalette/defaultCommands.test.ts src/workspace/commandCapabilities.test.ts src/viewport/useLensFilter.test.ts`
-- `pnpm --dir packages/web exec eslint src/workspace/shell/LensDropdown.tsx src/workspace/shell/LensDropdown.test.tsx src/cmdPalette/defaultCommands.ts src/cmdPalette/defaultCommands.test.ts src/cmdPalette/registry.ts src/workspace/commandCapabilities.ts src/workspace/commandCapabilities.test.ts src/viewport/useLensFilter.ts src/viewport/useLensFilter.test.ts`
-- `pnpm --dir packages/web typecheck`
+- [Architecture Lens](architecture-lens.md)
+- [Structure Lens](structure-lens.md)
+- [MEP Lens](mep-lens.md)
+- [Coordination Lens](coordination-lens.md)
+- [Energy Lens](energy-lens.md)
+- [Fire Safety Lens](fire-safety-lens.md)
+- [Cost and Quantity Lens](cost-quantity-lens.md)
+- [Construction Lens](construction-lens.md)
+- [Sustainability Lens](sustainability-lens.md)
+- [Facility Operations Lens](facility-operations-lens.md)
+- [Discipline Lens UX Tracker](lens-ux-tracker.md)
+- [Lens Mechanism Hardening Tracker](lens-mechanism-hardening-tracker.md)

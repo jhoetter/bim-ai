@@ -1,5 +1,5 @@
 /* eslint-disable bim-ai/no-hex-in-chrome -- pre-v3 hex literals; remove when this file is migrated in B4 Phase 2 */
-import type { Element, XY } from '@bim-ai/core';
+import type { Element, LensMode, XY } from '@bim-ai/core';
 
 import {
   useEffect,
@@ -196,10 +196,11 @@ function SheetCanvasWithSheet(props: {
   sheet: SheetEl;
   evidenceFullBleed?: boolean;
   modelId?: string;
+  lensMode?: LensMode;
   elementsById: Record<string, Element>;
   onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
 }) {
-  const { sheet: sh, evidenceFullBleed, modelId, elementsById } = props;
+  const { sheet: sh, evidenceFullBleed, modelId, lensMode, elementsById } = props;
 
   const bleed = evidenceFullBleed ?? false;
   const { widthMm: wMm, heightMm: hMm } = normalizeSheetPaperMm(sh.paperWidthMm, sh.paperHeightMm);
@@ -741,6 +742,7 @@ function SheetCanvasWithSheet(props: {
                     <SectionViewportSvg
                       modelId={modelId!}
                       sectionCutId={secId}
+                      lensMode={lensMode}
                       widthPx={secInnerW}
                       heightPx={secInnerH}
                     />
@@ -885,6 +887,7 @@ export function SheetCanvas(props: {
   elementsById: Record<string, Element>;
   preferredSheetId?: string;
   modelId?: string;
+  lensMode?: LensMode;
   /**
    * When true, drop scroll/max-height clamps so PNG evidence can rasterize the entire sheet SVG
    * (drive via `/?evidenceSheetFull=1` in Playwright).
@@ -923,6 +926,7 @@ export function SheetCanvas(props: {
       sheet={sh}
       evidenceFullBleed={props.evidenceFullBleed}
       modelId={props.modelId}
+      lensMode={props.lensMode}
       elementsById={props.elementsById}
       onUpsertSemantic={props.onUpsertSemantic}
     />
