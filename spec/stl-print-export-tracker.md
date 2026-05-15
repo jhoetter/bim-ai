@@ -188,7 +188,7 @@ Acceptance:
 
 ### WP-STL-08 - Print-Parity Regression Tests
 
-Status: [ ]
+Status: [x]
 
 Deliverables:
 

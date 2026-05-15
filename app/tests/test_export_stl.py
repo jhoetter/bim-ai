@@ -9,12 +9,27 @@ from fastapi import HTTPException
 
 from bim_ai import routes_exports
 from bim_ai.document import Document
-from bim_ai.elements import LevelElem, WallElem
+from bim_ai.elements import (
+    BalconyElem,
+    BeamElem,
+    CeilingElem,
+    ColumnElem,
+    DoorElem,
+    FloorElem,
+    LevelElem,
+    RailingElem,
+    RoofElem,
+    RoomElem,
+    SiteElem,
+    SlabOpeningElem,
+    WallElem,
+)
 from bim_ai.evidence_manifest import export_link_map
 from bim_ai.export_stl import (
     build_stl_export_manifest,
     document_to_ascii_stl,
     document_to_binary_stl_bytes,
+    document_to_stl_triangles,
 )
 
 
@@ -90,6 +105,7 @@ def test_stl_export_manifest_reports_print_ready_candidate_for_simple_wall() -> 
     manifest = build_stl_export_manifest(_wall_doc())
 
     assert manifest["format"] == "stlPrintExportManifest_v1"
+    assert manifest["meshSource"] == "dedicated_print_mesh_v2"
     assert manifest["units"] == "millimeter"
     assert manifest["readiness"] == "print_ready_candidate"
     assert manifest["triangleCount"] == 12
@@ -101,6 +117,182 @@ def test_stl_export_manifest_reports_print_ready_candidate_for_simple_wall() -> 
     assert manifest["diagnostics"]["componentCountApprox"] == 1
     assert manifest["boundsMm"]["sizeMm"]["xMm"] == pytest.approx(1000)
     assert manifest["boundsMm"]["sizeMm"]["zMm"] == pytest.approx(3000)
+    assert "wall" in manifest["coverage"]["printableSolidKinds"]
+
+
+def test_stl_print_mesh_exports_browser_visible_solids_and_excludes_visual_markers() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "wall-1": WallElem(
+                kind="wall",
+                id="wall-1",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 4000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=3000,
+            ),
+            "floor-1": FloorElem(
+                kind="floor",
+                id="floor-1",
+                levelId="lvl",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 4000, "yMm": 0},
+                    {"xMm": 4000, "yMm": 3000},
+                    {"xMm": 0, "yMm": 3000},
+                ],
+                thicknessMm=200,
+            ),
+            "opening-1": SlabOpeningElem(
+                kind="slab_opening",
+                id="opening-1",
+                hostFloorId="floor-1",
+                boundaryMm=[
+                    {"xMm": 1500, "yMm": 1000},
+                    {"xMm": 2500, "yMm": 1000},
+                    {"xMm": 2500, "yMm": 2000},
+                    {"xMm": 1500, "yMm": 2000},
+                ],
+            ),
+            "roof-1": RoofElem(
+                kind="roof",
+                id="roof-1",
+                referenceLevelId="lvl",
+                footprintMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 4000, "yMm": 0},
+                    {"xMm": 4000, "yMm": 3000},
+                    {"xMm": 0, "yMm": 3000},
+                ],
+                roofGeometryMode="gable_pitched_rectangle",
+                overhangMm=200,
+                slopeDeg=30,
+            ),
+            "railing-1": RailingElem(
+                kind="railing",
+                id="railing-1",
+                pathMm=[{"xMm": 0, "yMm": 3500}, {"xMm": 4000, "yMm": 3500}],
+            ),
+            "column-1": ColumnElem(
+                kind="column",
+                id="column-1",
+                levelId="lvl",
+                positionMm={"xMm": 500, "yMm": 500},
+                bMm=300,
+                hMm=300,
+                heightMm=3000,
+            ),
+            "beam-1": BeamElem(
+                kind="beam",
+                id="beam-1",
+                levelId="lvl",
+                startMm={"xMm": 0, "yMm": 3200},
+                endMm={"xMm": 4000, "yMm": 3200},
+                widthMm=200,
+                heightMm=400,
+            ),
+            "ceiling-1": CeilingElem(
+                kind="ceiling",
+                id="ceiling-1",
+                levelId="lvl",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 4000, "yMm": 0},
+                    {"xMm": 4000, "yMm": 3000},
+                    {"xMm": 0, "yMm": 3000},
+                ],
+                heightOffsetMm=2700,
+                thicknessMm=30,
+            ),
+            "balcony-1": BalconyElem(
+                kind="balcony",
+                id="balcony-1",
+                wallId="wall-1",
+                elevationMm=2800,
+                projectionMm=800,
+                slabThicknessMm=150,
+            ),
+            "site-1": SiteElem(
+                kind="site",
+                id="site-1",
+                referenceLevelId="lvl",
+                boundaryMm=[
+                    {"xMm": -1000, "yMm": -1000},
+                    {"xMm": 5000, "yMm": -1000},
+                    {"xMm": 5000, "yMm": 4500},
+                    {"xMm": -1000, "yMm": 4500},
+                ],
+                padThicknessMm=80,
+            ),
+            "room-1": RoomElem(
+                kind="room",
+                id="room-1",
+                levelId="lvl",
+                outlineMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 4000, "yMm": 0},
+                    {"xMm": 4000, "yMm": 3000},
+                    {"xMm": 0, "yMm": 3000},
+                ],
+            ),
+        },
+    )
+
+    manifest = build_stl_export_manifest(doc)
+
+    expected = {"wall", "floor", "roof", "railing", "column", "beam", "ceiling", "balcony", "site"}
+    assert expected.issubset(set(manifest["elementCountsByKind"]))
+    assert "room" not in manifest["elementCountsByKind"]
+    assert "slab_opening" not in manifest["elementCountsByKind"]
+    assert manifest["coverage"]["excludedNonPrintableKindsPresent"]["room"] == 1
+    assert manifest["coverage"]["excludedNonPrintableKindsPresent"]["slab_opening"] == 1
+
+
+def test_stl_wall_honors_datums_location_line_and_hosted_door_cut() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-0": LevelElem(kind="level", id="lvl-0", name="L0", elevationMm=1000),
+            "lvl-1": LevelElem(kind="level", id="lvl-1", name="L1", elevationMm=4500),
+            "wall-1": WallElem(
+                kind="wall",
+                id="wall-1",
+                levelId="lvl-0",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 4000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+                locationLine="finish-face-exterior",
+                baseConstraintOffsetMm=200,
+                topConstraintLevelId="lvl-1",
+                topConstraintOffsetMm=300,
+            ),
+            "door-1": DoorElem(
+                kind="door",
+                id="door-1",
+                wallId="wall-1",
+                alongT=0.5,
+                widthMm=1000,
+            ),
+        },
+    )
+
+    triangles = document_to_stl_triangles(doc)
+    wall_vertices = [v for tri in triangles if tri.kind == "wall" for v in tri.vertices]
+    xs = [v[0] for v in wall_vertices]
+    ys = [v[1] for v in wall_vertices]
+    zs = [v[2] for v in wall_vertices]
+
+    assert min(xs) == pytest.approx(0)
+    assert max(xs) == pytest.approx(4000)
+    assert min(ys) == pytest.approx(-200)
+    assert max(ys) == pytest.approx(0, abs=1e-4)
+    assert min(zs) == pytest.approx(1200)
+    assert max(zs) == pytest.approx(4800)
+    assert {tri.kind for tri in triangles} == {"wall", "door"}
 
 
 def test_empty_document_exports_valid_empty_stl_and_empty_manifest() -> None:
