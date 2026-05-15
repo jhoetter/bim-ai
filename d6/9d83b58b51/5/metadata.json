@@ -1,0 +1,62 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "d69d83b58b51",
+  "session_id": "744511a9-3c3f-4895-b2fa-0f9676e150e9",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-15T22:12:52.272582Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/package.json",
+    "packages/web/src/workspace/project/GeoMapPicker.tsx",
+    "pnpm-lock.yaml"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "f5fe9aea65dd",
+  "token_usage": {
+    "input_tokens": 444,
+    "cache_creation_tokens": 162130,
+    "cache_read_tokens": 1862406,
+    "output_tokens": 57967,
+    "api_call_count": 36
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-15T22:12:52.247627Z",
+    "agent_lines": 171,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 17,
+    "human_removed": 57,
+    "total_committed": 188,
+    "total_lines_changed": 319,
+    "agent_percentage": 53.60501567398119,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 17,
+      "user_lines_removed": 74,
+      "agent_lines_added": 251,
+      "agent_lines_removed": 2,
+      "user_added_per_file": {
+        "packages/web/src/main.tsx": 1,
+        "packages/web/src/workspace/project/ProjectSetupDialog.tsx": 16
+      },
+      "user_removed_per_file": {
+        "packages/web/src/workspace/project/ProjectSetupDialog.tsx": 74
+      }
+    }
+  ]
+}
