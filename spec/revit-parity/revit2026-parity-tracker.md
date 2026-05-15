@@ -41,12 +41,14 @@ Revit 2026 requires 64-bit Windows 10/11, 16 GB RAM, DirectX 11 GPU, 30 GB disk.
 Revit installs Revit main, Viewer, Add-Ins Manager, Worksharing Monitor. bim-ai is a web app.
 
 ### 1.5 Revit starten (startup & project templates)
-**Status: Partial — P1**
-Revit shows a start screen with recently-used projects, a choice of project template (None, BIM Architektur und Ingenieurbau, BIM Architektur und Ingenieurbau vereinfacht, BIM Gebäudetechnik) and a new-project dialog. bim-ai has a project creation flow and project list, but:
-- No concept of project templates with pre-configured browser structure and level hierarchy
-- No multi-template selection at project creation time
+**Status: Partial — P2**
+Revit shows a start screen with recently-used projects, a choice of project template (None, BIM Architektur und Ingenieurbau, BIM Architektur und Ingenieurbau vereinfacht, BIM Gebäudetechnik) and a new-project dialog. bim-ai has a project creation flow and project list, and now:
+- Project templates (projectTemplates.ts) implemented: minimal, residential (Wohnbau), commercial (Gewerbebau) with level + phase setup commands. Template picker added to project creation dialog (ProjectSetupDialog.tsx, "Templates" section).
+- Template picker allows selecting a template and applying its createLevel/createPhase commands in one click.
+Still missing:
+- No multi-template selection at project creation time (only one applied at a time)
 - No "Revit 2026 start page" visual freshness (recently-used thumbnails, cloud projects)
-- BIM Architektur vereinfacht template equivalent is missing; users start from scratch
+- BIM Architektur vereinfacht template equivalent is missing
 
 ### 1.6 Die Revit-Benutzeroberfläche (UI chrome)
 
