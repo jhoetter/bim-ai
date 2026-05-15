@@ -1,6 +1,7 @@
 import { type JSX, useEffect, useMemo, useState } from 'react';
 
 import type { Element } from '@bim-ai/core';
+import { PROJECT_TEMPLATES } from '../../onboarding/projectTemplates';
 import { GeoMapPicker, type GeoAnchor } from './GeoMapPicker';
 
 function defaultBbox(lat: number, lon: number, radiusM = 300) {
@@ -1330,9 +1331,11 @@ export function ProjectSetupDialog({
                 </section>
               ) : null}
 
-              {activeSection === 'links' ||
-              activeSection === 'templates' ||
-              activeSection === 'standards' ? (
+              {activeSection === 'templates' ? (
+                <TemplatePicker busy={busy} onApply={runCommands} />
+              ) : null}
+
+              {activeSection === 'links' || activeSection === 'standards' ? (
                 <section className="rounded border border-border bg-background p-3">
                   <h3 className="text-xs font-semibold text-foreground">
                     Linked Resources & Standards
@@ -1458,5 +1461,65 @@ function Metric({ label, value }: { label: string; value: string }): JSX.Element
       <div className="text-[10px] uppercase text-muted">{label}</div>
       <div className="mt-1 font-mono text-sm text-foreground">{value}</div>
     </div>
+  );
+}
+
+function TemplatePicker({
+  busy,
+  onApply,
+}: {
+  busy: boolean;
+  onApply: (commands: Record<string, unknown>[], done: string) => Promise<void>;
+}): JSX.Element {
+  const [selectedId, setSelectedId] = useState(PROJECT_TEMPLATES[0]?.id ?? '');
+  const selected = PROJECT_TEMPLATES.find((t) => t.id === selectedId) ?? PROJECT_TEMPLATES[0];
+
+  async function applyTemplate() {
+    if (!selected) return;
+    const commands = selected.commands.map((cmd) => cmd as Record<string, unknown>);
+    await onApply(commands, `Template "${selected.name}" applied.`);
+  }
+
+  return (
+    <section className="rounded border border-border bg-background p-3">
+      <h3 className="text-xs font-semibold text-foreground">Project Templates</h3>
+      <p className="mt-1 text-[11px] text-muted">
+        Apply a template to quickly set up levels and phases for common building types.
+      </p>
+      <div className="mt-3 space-y-2">
+        {PROJECT_TEMPLATES.map((template) => {
+          const active = template.id === selectedId;
+          return (
+            <button
+              key={template.id}
+              type="button"
+              className={`w-full rounded border p-2 text-left ${
+                active
+                  ? 'border-accent bg-accent/10'
+                  : 'border-border bg-background hover:bg-surface-strong'
+              }`}
+              onClick={() => setSelectedId(template.id)}
+              data-testid={`template-option-${template.id}`}
+            >
+              <div className="text-xs font-medium text-foreground">{template.name}</div>
+              <div className="mt-0.5 text-[10px] leading-snug text-muted">
+                {template.description}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      {selected ? (
+        <div className="mt-3 rounded border border-border bg-surface/50 px-3 py-2 text-[11px] text-muted">
+          <span className="font-medium text-foreground">{selected.name}</span>
+          {' — '}
+          {selected.commands.filter((c) => c.type === 'createLevel').length} levels,{' '}
+          {selected.commands.filter((c) => c.type === 'createPhase').length} phases
+        </div>
+      ) : null}
+      <SetupButton busy={busy} onClick={() => void applyTemplate()}>
+        Apply Template
+      </SetupButton>
+    </section>
   );
 }
