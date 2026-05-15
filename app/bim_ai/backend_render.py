@@ -231,7 +231,7 @@ def build_blender_cycles_script(
                 camera.location = (float(pos["x"]), float(pos["y"]), float(pos["z"]))
                 look_at(camera, Vector((float(target["x"]), float(target["y"]), float(target["z"]))), Vector((float(up["x"]), float(up["y"]), float(up["z"]))))
                 camera.data.sensor_fit = "VERTICAL"
-                camera.data.angle_y = math.radians(min(100.0, float(request_camera.get("fovDeg") or 45) * 1.08))
+                camera.data.angle_y = math.radians(float(request_camera.get("fovDeg") or 45))
             else:
                 camera.location = center + Vector((radius * 1.18, radius * 0.62, radius * 1.05))
                 look_at(camera, center, Vector((0, 1, 0)))
@@ -239,12 +239,6 @@ def build_blender_cycles_script(
             camera.data.clip_end = max(1000, radius * 30)
             camera.data.dof.use_dof = False
             bpy.context.scene.camera = camera
-
-        def add_ground(lo, hi, center, radius):
-            bpy.ops.mesh.primitive_plane_add(size=max(radius * 4.0, 12), location=(center.x, lo.y - 0.015, center.z))
-            ground = bpy.context.object
-            ground.name = "BIM AI matte ground"
-            set_material(ground, (0.82, 0.82, 0.78, 1), 0.9)
 
         clear_scene()
         bpy.ops.import_scene.gltf(filepath=GLB_PATH)
@@ -259,7 +253,6 @@ def build_blender_cycles_script(
         lo, hi = mesh_bounds()
         center = (lo + hi) * 0.5
         radius = max((hi - lo).length * 0.5, 4.0)
-        add_ground(lo, hi, center, radius)
         add_lighting(center, radius)
         add_camera(center, radius)
         configure_color(scene)

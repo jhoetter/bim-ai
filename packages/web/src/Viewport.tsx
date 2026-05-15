@@ -819,23 +819,42 @@ export function Viewport({
       setBackendRenderState({ phase: 'error', message: 'No active model for backend render.' });
       return;
     }
-    const snap = cameraRigRef.current?.snapshot();
+    const camera = cameraRef.current;
+    camera?.updateMatrixWorld(true);
+    const cameraDirection = new THREE.Vector3();
+    camera?.getWorldDirection(cameraDirection);
+    const cameraPosition = camera?.position.clone();
+    const cameraUp = camera?.up.clone();
+    const cameraTarget =
+      cameraPosition && cameraDirection.lengthSq() > 0
+        ? cameraPosition.clone().add(cameraDirection.multiplyScalar(10))
+        : null;
+    const canvas = rendererRef.current?.domElement;
+    const canvasWidth = canvas?.clientWidth || camera?.aspect || 1;
+    const canvasHeight = canvas?.clientHeight || 1;
+    const aspect = Math.max(0.25, Math.min(4, canvasWidth / canvasHeight));
+    let renderWidth = 1920;
+    let renderHeight = Math.round(renderWidth / aspect);
+    if (renderHeight > 1600) {
+      renderHeight = 1600;
+      renderWidth = Math.round(renderHeight * aspect);
+    }
     setBackendRenderState({
       phase: 'running',
       message: 'Backend Cycles render running; PNG download starts when ready.',
     });
     try {
       const blob = await renderBackendRaytracePng(modelId, {
-        width: 1920,
-        height: 1200,
+        width: renderWidth,
+        height: renderHeight,
         samples: 2048,
         timeoutSeconds: 900,
-        camera: snap
+        camera: cameraPosition && cameraTarget && cameraUp
           ? {
-              position: snap.position,
-              target: snap.target,
-              up: snap.up,
-              fovDeg: cameraRef.current?.fov ?? 45,
+              position: { x: cameraPosition.x, y: cameraPosition.y, z: cameraPosition.z },
+              target: { x: cameraTarget.x, y: cameraTarget.y, z: cameraTarget.z },
+              up: { x: cameraUp.x, y: cameraUp.y, z: cameraUp.z },
+              fovDeg: camera?.fov ?? 45,
             }
           : undefined,
       });

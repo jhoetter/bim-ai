@@ -62,10 +62,8 @@ def test_blender_cycles_script_enables_gpu_denoised_path() -> None:
     assert '"METAL"' in script
     assert 'bpy.ops.import_scene.gltf' in script
     assert 'camera.data.sensor_fit = "VERTICAL"' in script
-    assert (
-        'camera.data.angle_y = math.radians(min(100.0, '
-        'float(request_camera.get("fovDeg") or 45) * 1.08))'
-    ) in script
+    assert 'camera.data.angle_y = math.radians(float(request_camera.get("fovDeg") or 45))' in script
+    assert "BIM AI matte ground" not in script
     assert '"position": {"x": 1.0, "y": -3.0, "z": 2.0}' in script
     assert '"target": {"x": 0.0, "y": -0.0, "z": 1.0}' in script
     assert '"up": {"x": 0.0, "y": -0.0, "z": 1.0}' in script
