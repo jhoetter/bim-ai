@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "020164f1592a",
+  "strategy": "manual-commit",
+  "branch": "codex/real-path-tracing-preview-20260515",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/02/0164f1592a/0/metadata.json",
+      "transcript": "/02/0164f1592a/0/full.jsonl",
+      "content_hash": "/02/0164f1592a/0/content_hash.txt",
+      "prompt": "/02/0164f1592a/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1816064,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 39688704,
+    "output_tokens": 97756,
+    "api_call_count": 318
+  }
+}
