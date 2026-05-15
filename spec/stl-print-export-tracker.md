@@ -109,7 +109,7 @@ Acceptance:
 
 ### WP-STL-04 - Tests and Validation Coverage
 
-Status: [ ]
+Status: [x]
 
 Deliverables:
 
