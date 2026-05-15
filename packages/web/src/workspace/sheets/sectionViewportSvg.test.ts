@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import type { Element } from '@bim-ai/core';
+
 import {
   formatSectionAlongCutSpanMmLabel,
   formatSectionCutIdentityLine,
@@ -12,6 +14,7 @@ import {
   formatSectionWallHatchReadout,
   summarizeWallCutHatchKinds,
 } from './sectionViewportDoc';
+import { sectionLensPrimitiveStyle } from './sectionViewportSvg';
 
 describe('Section viewport documentation helpers', () => {
   it('summarizes wall cutHatchKind rows like secDoc wh=E…A…', () => {
@@ -154,5 +157,36 @@ describe('Section viewport documentation helpers', () => {
         lineEndMm: { xMm: 0, yMm: 3000 },
       }),
     ).toBe('Cut line 3000 mm · view toward W');
+  });
+});
+
+describe('section lens primitive styling', () => {
+  it('ghosts non-structural section primitives in Structure lens', () => {
+    const wall = {
+      kind: 'wall',
+      id: 'w1',
+      name: 'Partition',
+      discipline: 'arch',
+    } as Element;
+
+    expect(sectionLensPrimitiveStyle('structure', wall, 'wall')).toMatchObject({
+      pass: 'ghost',
+      opacity: 0.2,
+    });
+  });
+
+  it('adds Energy lens U-value badges for section cut elements', () => {
+    const wall = {
+      kind: 'wall',
+      id: 'w2',
+      name: 'Exterior wall',
+      props: { uValueWPerM2K: 0.24 },
+    } as unknown as Element;
+
+    expect(sectionLensPrimitiveStyle('energy', wall, 'wall')).toMatchObject({
+      pass: 'foreground',
+      stroke: '#d97706',
+      badge: 'U 0.24',
+    });
   });
 });

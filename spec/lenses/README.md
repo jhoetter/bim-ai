@@ -60,3 +60,5 @@ Every lens must define:
 - [Construction Lens](construction-lens.md)
 - [Sustainability Lens](sustainability-lens.md)
 - [Facility Operations Lens](facility-operations-lens.md)
+- [Discipline Lens UX Tracker](lens-ux-tracker.md)
+- [Lens Mechanism Hardening Tracker](lens-mechanism-hardening-tracker.md)

@@ -76,6 +76,7 @@ export function SectionModeShell({
         onUpsertSemantic={onUpsertSemantic}
         onOpenSourcePlan={onOpenSourcePlan}
         onOpen3dContext={onOpen3dContext}
+        lensMode={lensMode}
       />
     </div>
   );
@@ -162,6 +163,7 @@ export function SheetModeShell({
         elementsById={elementsById}
         preferredSheetId={preferredSheetId}
         modelId={modelId}
+        lensMode={lensMode}
         evidenceFullBleed={evidenceFullBleed}
         onUpsertSemantic={onUpsertSemantic}
       />

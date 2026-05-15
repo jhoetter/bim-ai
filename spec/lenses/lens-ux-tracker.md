@@ -55,17 +55,9 @@ The primary lens switch belongs in the **view header** because a lens is view/ta
 
 ### Primary Left Sidebar / Project Browser
 
-The active lens should prioritize relevant project content while keeping the rest reachable:
-
-- Architecture: floor plans, elevations, sections, sheets, room/door/window schedules.
-- Structure: structural plans, framing/section views, column/beam/slab schedules.
-- MEP: HVAC/plumbing/electrical plans, system schedules, coordination views.
-- Energy: envelope views, thermal zone plans, energy schedules, handoff/export views.
-- Fire Safety: compartment plans, escape routes, fire-door schedules, fire-safety sheets.
-- Cost / Quantity: quantity schedules, DIN 276 breakdowns, takeoff sheets.
-- Construction: phase views, packages, logistics, QA, progress.
-- Sustainability: LCA schedules, material impact views, missing EPD reports.
-- Coordination: clashes, issues, BCF viewpoints, linked models, review sheets.
+The primary project browser is lens-neutral. It shows project structure and must not add
+lens-specific pseudo rows, because lenses are tab/pane scoped inside compositions. Lens relevance
+belongs in the pane-local secondary sidebar, the ribbon, the inspector, and the current view surface.
 
 ### Secondary / Right Rail
 
@@ -79,6 +71,21 @@ When no element is selected, show a lens dashboard:
 When an element is selected, keep the same element but make lens-specific property groups first.
 
 ## Per-Lens UX
+
+## Section / Elevation Rendering Rules
+
+Section and elevation views use the same model and same cut plane, but lens styling changes the
+projection:
+
+- Architecture keeps the baseline cut drawing: walls, floors, roofs, openings, rooms, levels, hatches.
+- Structure ghosts non-structural cut primitives and emphasizes load-bearing walls, slabs, beams, columns, grids, and structural labels.
+- MEP ghosts non-MEP context when service primitives exist and emphasizes penetrations, equipment, ducts, pipes, fixtures, and system labels.
+- Fire Safety emphasizes rated hosts/openings, compartments, penetrations, and missing firestopping/rating data.
+- Energy emphasizes envelope, thermal zones, U-values, thermal classes, and boundary conditions.
+- Sustainability emphasizes EPD/GWP/material-impact data and missing LCA data.
+- Cost / Quantity emphasizes measured assemblies, DIN 276/cost groups, and quantity basis.
+- Construction emphasizes phase/package/progress/QA status through the cut.
+- Coordination keeps model context readable and emphasizes issues, clashes, linked-model conflicts, and review status.
 
 ### Architecture / Architektur
 
