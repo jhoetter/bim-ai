@@ -123,6 +123,7 @@ function SectionWorkbenchLivePreview(props: {
 /** Section workbench: live projection preview, sheet deep links, Project Browser–aligned selection. */
 export function SectionPlaceholderPane(props: {
   activeLevelLabel: string;
+  activeSectionId?: string;
   modelId?: string;
   onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
   onOpenSourcePlan?: () => void;
@@ -142,12 +143,16 @@ export function SectionPlaceholderPane(props: {
   );
 
   const previewSectionId = useMemo(() => {
+    // Prefer the tab-derived section ID (reliable even during remount timing)
+    if (props.activeSectionId && elementsById[props.activeSectionId]?.kind === 'section_cut') {
+      return props.activeSectionId;
+    }
     if (selectedId) {
       const sel = elementsById[selectedId];
       if (sel?.kind === 'section_cut') return selectedId;
     }
     return cuts[0]?.id;
-  }, [selectedId, elementsById, cuts]);
+  }, [props.activeSectionId, selectedId, elementsById, cuts]);
 
   const sheetRows = useMemo(() => {
     if (!previewSectionId) return [];

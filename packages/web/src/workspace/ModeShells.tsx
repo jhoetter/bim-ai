@@ -54,6 +54,7 @@ function asArr<T extends Element['kind']>(
 
 export function SectionModeShell({
   activeLevelLabel = '',
+  activeSectionId,
   modelId,
   onUpsertSemantic,
   onOpenSourcePlan,
@@ -61,6 +62,7 @@ export function SectionModeShell({
   lensMode = 'all',
 }: {
   activeLevelLabel?: string;
+  activeSectionId?: string;
   modelId?: string;
   onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
   onOpenSourcePlan?: () => void;
@@ -72,6 +74,7 @@ export function SectionModeShell({
       {lensMode !== 'all' ? <SectionLensGuidance lensMode={lensMode} /> : null}
       <SectionPlaceholderPane
         activeLevelLabel={activeLevelLabel}
+        activeSectionId={activeSectionId}
         modelId={modelId}
         onUpsertSemantic={onUpsertSemantic}
         onOpenSourcePlan={onOpenSourcePlan}

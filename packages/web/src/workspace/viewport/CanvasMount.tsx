@@ -23,6 +23,7 @@ export function CanvasMount({
   activeLevelId,
   activePlanViewId,
   activeTabId,
+  activeSectionId,
   elementsById,
   onSemanticCommand,
   cameraHandleRef,
@@ -49,6 +50,7 @@ export function CanvasMount({
   activePlanViewId?: string | null;
   /** Used to key same-kind canvases so switching tabs forces a fresh mount. */
   activeTabId?: string;
+  activeSectionId?: string;
   elementsById: Record<string, Element>;
   onSemanticCommand: (cmd: Record<string, unknown>) => void;
   cameraHandleRef?: RefObject<PlanCameraHandle | null>;
@@ -103,11 +105,12 @@ export function CanvasMount({
         snapSettings={snapSettings}
       />
     );
-  if (mode === 'section')
+  if (mode === 'section') {
     return (
       <SectionModeShell
         key={activeTabId}
         activeLevelLabel={activeLevelId}
+        activeSectionId={activeSectionId}
         modelId={modelId}
         onUpsertSemantic={onSemanticCommand}
         onOpenSourcePlan={onOpenSectionSourcePlan}
@@ -115,6 +118,7 @@ export function CanvasMount({
         lensMode={lensMode}
       />
     );
+  }
   if (mode === 'sheet')
     return (
       <SheetModeShell

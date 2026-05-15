@@ -55,6 +55,14 @@ type RoofPrim = {
   uStartMm: number;
   uEndMm: number;
   zMm: number;
+  /** Gable roof: ridge elevation (from gablePitchedRectangleChord proxy). */
+  ridgeZMm?: number;
+  /** Gable roof: eave plate elevation. */
+  eavePlateZMm?: number;
+  /** Backend proxy kind, e.g. "gablePitchedRectangleChord". */
+  proxyKind?: string;
+  /** Direction the ridge runs in plan ("alongX" | "alongZ"). */
+  ridgeAxisPlan?: string;
 };
 
 type PathPrim = UzPrim & { d: string };
@@ -325,6 +333,8 @@ export function SectionViewportSvg(props: {
     wallHatchSummary: SectionWallHatchSummary;
     levelMarkersTotalFromServer: number;
     stairDocCaption: string | null;
+    /** Unit tangent of the cut line in plan (from coordinateFrame). */
+    cutTangent: [number, number];
   };
 
   const [layers, setLayers] = useState<LayerSnap | null>(null);
@@ -364,6 +374,13 @@ export function SectionViewportSvg(props: {
           props.sectionCutId,
         )) as Record<string, unknown>;
         const advisory = sectionAdvisoryFromPayload(payload);
+        const coordFrame = payload.coordinateFrame as Record<string, unknown> | undefined;
+        const rawTangent = Array.isArray(coordFrame?.cutTangentUnit)
+          ? (coordFrame!.cutTangentUnit as unknown[])
+          : null;
+        const cutTangent: [number, number] = rawTangent
+          ? [Number(rawTangent[0] ?? 1), Number(rawTangent[1] ?? 0)]
+          : [1, 0];
         const prim = payload.primitives as Record<string, unknown> | undefined;
         const wallsRaw = prim?.walls;
         if (!Array.isArray(wallsRaw) || wallsRaw.length === 0) {
@@ -512,12 +529,18 @@ export function SectionViewportSvg(props: {
         const roofsRaw = prim?.roofs;
         if (Array.isArray(roofsRaw)) {
           for (const w of roofsRaw as Record<string, unknown>[]) {
+            const ridgeZRaw = Number(w.ridgeZMm);
+            const eavePlateZRaw = Number(w.eavePlateZMm);
             roofLines.push({
               id: typeof w.id === 'string' ? w.id : undefined,
               elementId: typeof w.elementId === 'string' ? w.elementId : undefined,
               uStartMm: Number(w.uStartMm ?? 0),
               uEndMm: Number(w.uEndMm ?? 0),
               zMm: Number(w.zMidMm ?? w.z_mid_mm ?? w.zMm ?? 0),
+              ridgeZMm: Number.isFinite(ridgeZRaw) ? ridgeZRaw : undefined,
+              eavePlateZMm: Number.isFinite(eavePlateZRaw) ? eavePlateZRaw : undefined,
+              proxyKind: typeof w.proxyKind === 'string' ? w.proxyKind : undefined,
+              ridgeAxisPlan: typeof w.ridgeAxisPlan === 'string' ? w.ridgeAxisPlan : undefined,
             });
           }
         }
@@ -544,8 +567,10 @@ export function SectionViewportSvg(props: {
         for (const r of roofLines) {
           u0 = Math.min(u0, r.uStartMm, r.uEndMm);
           u1 = Math.max(u1, r.uStartMm, r.uEndMm);
-          z0 = Math.min(z0, r.zMm);
-          z1 = Math.max(z1, r.zMm);
+          const rZLow = r.eavePlateZMm ?? r.zMm;
+          const rZHigh = r.ridgeZMm ?? r.zMm;
+          z0 = Math.min(z0, rZLow, rZHigh);
+          z1 = Math.max(z1, rZLow, rZHigh);
         }
 
         const doorsOpen: OpeningPrim[] = [];
@@ -652,6 +677,7 @@ export function SectionViewportSvg(props: {
             wallHatchSummary,
             levelMarkersTotalFromServer,
             stairDocCaption,
+            cutTangent,
           });
         }
       } catch (e) {
@@ -712,12 +738,57 @@ export function SectionViewportSvg(props: {
     return rows;
   }, [layers, props.sectionCutPlaneCaption, props.sectionIdentityCaption]);
 
-  const roofChordPath = layers
+  /**
+   * For a gable roof, determine whether this section cut is perpendicular to the ridge
+   * (cross-section → show gable triangle) or parallel (longitudinal → show chord line).
+   */
+  function isGableCrossSection(r: RoofPrim, ct: [number, number]): boolean {
+    if (r.proxyKind !== 'gablePitchedRectangleChord') return false;
+    const absTx = Math.abs(ct[0]);
+    const absTy = Math.abs(ct[1]);
+    if (r.ridgeAxisPlan === 'alongZ') return absTx > absTy;
+    if (r.ridgeAxisPlan === 'alongX') return absTy > absTx;
+    return false;
+  }
+
+  type RoofRenderKind =
+    | {
+        kind: 'triangle';
+        path: string;
+        xL: number;
+        xMid: number;
+        xR: number;
+        yEave: number;
+        yRidge: number;
+      }
+    | { kind: 'chord'; path: string; xC: number; yC: number };
+
+  const roofRenderItems: RoofRenderKind[] = layers
     ? layers.roofLines.map((r) => {
-        const x0 = (Math.min(r.uStartMm, r.uEndMm) - layers.u0) * layers.sx;
-        const x1 = (Math.max(r.uStartMm, r.uEndMm) - layers.u0) * layers.sx;
+        const uL = Math.min(r.uStartMm, r.uEndMm);
+        const uR = Math.max(r.uStartMm, r.uEndMm);
+        const xL = (uL - layers.u0) * layers.sx;
+        const xR = (uR - layers.u0) * layers.sx;
+        if (
+          isGableCrossSection(r, layers.cutTangent) &&
+          r.ridgeZMm != null &&
+          r.eavePlateZMm != null
+        ) {
+          const xMid = 0.5 * (xL + xR);
+          const yEave = (layers.z1 - r.eavePlateZMm) * layers.sy;
+          const yRidge = (layers.z1 - r.ridgeZMm) * layers.sy;
+          return {
+            kind: 'triangle',
+            path: `M ${xL} ${yEave} L ${xMid} ${yRidge} L ${xR} ${yEave} Z`,
+            xL,
+            xMid,
+            xR,
+            yEave,
+            yRidge,
+          };
+        }
         const y = (layers.z1 - r.zMm) * layers.sy;
-        return `M ${x0} ${y} L ${x1} ${y}`;
+        return { kind: 'chord', path: `M ${xL} ${y} L ${xR} ${y}`, xC: 0.5 * (xL + xR), yC: y };
       })
     : [];
 
@@ -994,22 +1065,36 @@ export function SectionViewportSvg(props: {
               })
             : null}
 
-          {roofChordPath.map((d, i) => {
+          {roofRenderItems.map((item, i) => {
             const roof = layers.roofLines[i];
             const style = sectionLensPrimitiveStyle(lensMode, elementForPrimitive(roof), 'roof');
-            const x0 = roof ? (Math.min(roof.uStartMm, roof.uEndMm) - layers.u0) * layers.sx : 0;
-            const x1 = roof ? (Math.max(roof.uStartMm, roof.uEndMm) - layers.u0) * layers.sx : 0;
-            const y = roof ? (layers.z1 - roof.zMm) * layers.sy : 0;
+            if (item.kind === 'triangle') {
+              const badgeX = item.xMid;
+              const badgeY = item.yRidge - 10 * strokeScale;
+              return (
+                <g key={`roof-${i}`} opacity={style.opacity} data-section-lens-pass={style.pass}>
+                  <path
+                    d={item.path}
+                    fill={style.fill ?? '#f0fdf4'}
+                    fillOpacity={style.fillOpacity ?? 0.55}
+                    stroke={style.stroke ?? '#065f46'}
+                    strokeWidth={roofStroke * (style.strokeMultiplier ?? 1)}
+                    strokeLinejoin="round"
+                  />
+                  {lensBadge(`roof-${i}`, style, badgeX, badgeY)}
+                </g>
+              );
+            }
             return (
               <g key={`roof-${i}`} opacity={style.opacity} data-section-lens-pass={style.pass}>
                 <path
-                  d={d}
+                  d={item.path}
                   fill="none"
                   stroke={style.stroke ?? '#065f46'}
                   strokeWidth={roofStroke * (style.strokeMultiplier ?? 1)}
                   strokeDasharray={`${6 * strokeScale} ${10 * strokeScale}`}
                 />
-                {lensBadge(`roof-${i}`, style, 0.5 * (x0 + x1), y - 10 * strokeScale)}
+                {lensBadge(`roof-${i}`, style, item.xC, item.yC - 10 * strokeScale)}
               </g>
             );
           })}

@@ -1424,8 +1424,12 @@
       "name": "Bed marker",
       "assetKind": "block_2d",
       "category": "furniture",
-      "tags": ["bedroom"],
-      "disciplineTags": ["arch"],
+      "tags": [
+        "bedroom"
+      ],
+      "disciplineTags": [
+        "arch"
+      ],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 1800,
       "thumbnailHeightMm": 2100,
@@ -1440,8 +1444,12 @@
       "name": "Sofa marker",
       "assetKind": "block_2d",
       "category": "furniture",
-      "tags": ["living"],
-      "disciplineTags": ["arch"],
+      "tags": [
+        "living"
+      ],
+      "disciplineTags": [
+        "arch"
+      ],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 2200,
       "thumbnailHeightMm": 900,
@@ -1456,8 +1464,12 @@
       "name": "Kitchen run marker",
       "assetKind": "block_2d",
       "category": "kitchen",
-      "tags": ["kitchen"],
-      "disciplineTags": ["arch"],
+      "tags": [
+        "kitchen"
+      ],
+      "disciplineTags": [
+        "arch"
+      ],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 1200,
       "thumbnailHeightMm": 450,
@@ -1472,8 +1484,12 @@
       "name": "Bath fixture marker",
       "assetKind": "block_2d",
       "category": "bathroom",
-      "tags": ["bathroom"],
-      "disciplineTags": ["arch"],
+      "tags": [
+        "bathroom"
+      ],
+      "disciplineTags": [
+        "arch"
+      ],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 800,
       "thumbnailHeightMm": 600,
@@ -3005,6 +3021,127 @@
           "yMm": -350
         }
       ]
+    },
+    {
+      "type": "createSectionCut",
+      "id": "sc-t4-aa",
+      "name": "Längsschnitt A-A — Wohnräume Bergseite",
+      "lineStartMm": {
+        "xMm": -1000,
+        "yMm": 7000
+      },
+      "lineEndMm": {
+        "xMm": 20800,
+        "yMm": 7000
+      },
+      "cropDepthMm": 12000
+    },
+    {
+      "type": "createSectionCut",
+      "id": "sc-t4-bb",
+      "name": "Längsschnitt B-B — Eingang und Küche Talseite",
+      "lineStartMm": {
+        "xMm": -1000,
+        "yMm": 2500
+      },
+      "lineEndMm": {
+        "xMm": 20800,
+        "yMm": 2500
+      },
+      "cropDepthMm": 12000
+    },
+    {
+      "type": "createSectionCut",
+      "id": "sc-t4-cc",
+      "name": "Querschnitt C-C — Linke Wohneinheit",
+      "lineStartMm": {
+        "xMm": 4500,
+        "yMm": -1000
+      },
+      "lineEndMm": {
+        "xMm": 4500,
+        "yMm": 10900
+      },
+      "cropDepthMm": 12000
+    },
+    {
+      "type": "createSectionCut",
+      "id": "sc-t4-dd",
+      "name": "Querschnitt D-D — Rechte Wohneinheit",
+      "lineStartMm": {
+        "xMm": 15300,
+        "yMm": -1000
+      },
+      "lineEndMm": {
+        "xMm": 15300,
+        "yMm": 10900
+      },
+      "cropDepthMm": 12000
+    },
+    {
+      "type": "upsertSheet",
+      "id": "sheet-t4-schnitte",
+      "name": "Schnitte A-101",
+      "number": "A-101",
+      "paperWidthMm": 84100,
+      "paperHeightMm": 59400,
+      "titleBlock": "A1-bim-ai-default",
+      "titleblockParameters": {
+        "projectName": "Target House 4 — Weidenstr. 4",
+        "sheetNumber": "A-101",
+        "revisionCode": "A",
+        "issueDate": "2026-05-16"
+      }
+    },
+    {
+      "type": "upsertSheetViewports",
+      "sheetId": "sheet-t4-schnitte",
+      "viewportsMm": [
+        {
+          "viewportId": "vpsheet-t4-aa",
+          "label": "Längsschnitt A-A",
+          "viewRef": "section:sc-t4-aa",
+          "detailNumber": "1",
+          "scale": "1:100",
+          "xMm": 2700,
+          "yMm": 6000,
+          "widthMm": 38000,
+          "heightMm": 24000
+        },
+        {
+          "viewportId": "vpsheet-t4-cc",
+          "label": "Querschnitt C-C",
+          "viewRef": "section:sc-t4-cc",
+          "detailNumber": "2",
+          "scale": "1:100",
+          "xMm": 42700,
+          "yMm": 6000,
+          "widthMm": 38000,
+          "heightMm": 24000
+        },
+        {
+          "viewportId": "vpsheet-t4-bb",
+          "label": "Längsschnitt B-B",
+          "viewRef": "section:sc-t4-bb",
+          "detailNumber": "3",
+          "scale": "1:100",
+          "xMm": 2700,
+          "yMm": 32000,
+          "widthMm": 38000,
+          "heightMm": 24000
+        },
+        {
+          "viewportId": "vpsheet-t4-dd",
+          "label": "Querschnitt D-D",
+          "viewRef": "section:sc-t4-dd",
+          "detailNumber": "4",
+          "scale": "1:100",
+          "xMm": 42700,
+          "yMm": 32000,
+          "widthMm": 38000,
+          "heightMm": 24000
+        }
+      ]
     }
   ],
   "meta": {
@@ -3045,8 +3182,13 @@
       }
     ],
     "documentationIntent": {
-      "sheets": ["target-house-4-initiation"],
-      "schedules": ["rooms", "openings"],
+      "sheets": [
+        "target-house-4-initiation"
+      ],
+      "schedules": [
+        "rooms",
+        "openings"
+      ],
       "evidenceViews": [
         "vp-main-iso",
         "vp-front-elev",

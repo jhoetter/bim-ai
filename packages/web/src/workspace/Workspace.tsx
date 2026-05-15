@@ -2495,6 +2495,45 @@ export function Workspace(): JSX.Element {
     openElementById(id);
   }, [activePlanViewId, elementsById, onSemanticCommand, openElementById, setSeedError]);
 
+  // D1: Create a new Reflected Ceiling Plan view.
+  const createCeilingPlanView = useCallback(async () => {
+    const activePlan = activePlanViewId ? elementsById[activePlanViewId] : undefined;
+    const activePlanLevelId = activePlan?.kind === 'plan_view' ? activePlan.levelId : undefined;
+    const levels = (Object.values(elementsById) as Element[])
+      .filter((element): element is Extract<Element, { kind: 'level' }> => element.kind === 'level')
+      .sort((a, b) => a.elevationMm - b.elevationMm);
+    const selectedLevel =
+      (activePlanLevelId && levels.find((level) => level.id === activePlanLevelId)) || levels[0];
+    if (!selectedLevel) {
+      setSeedError('No level is available to host a new ceiling plan.');
+      return;
+    }
+    const existingNames = new Set(
+      (Object.values(elementsById) as Element[])
+        .filter(
+          (element): element is Extract<Element, { kind: 'plan_view' }> =>
+            element.kind === 'plan_view',
+        )
+        .map((element) => element.name),
+    );
+    let seq = 1;
+    let name = `${selectedLevel.name} RCP`;
+    while (existingNames.has(name)) {
+      seq += 1;
+      name = `${selectedLevel.name} RCP ${seq}`;
+    }
+    const id = `pv-rcp-${slugToken(selectedLevel.name)}-${Date.now().toString(36)}`;
+    await onSemanticCommand({
+      type: 'upsertPlanView',
+      id,
+      name,
+      levelId: selectedLevel.id,
+      planViewSubtype: 'ceiling_plan',
+      discipline: 'architecture',
+    });
+    openElementById(id);
+  }, [activePlanViewId, elementsById, onSemanticCommand, openElementById, setSeedError]);
+
   const create3dSavedView = useCallback(async () => {
     const activeViewpoint =
       activeViewpointId && elementsById[activeViewpointId]?.kind === 'viewpoint'
@@ -3502,6 +3541,9 @@ export function Workspace(): JSX.Element {
             onSemanticCommand={(cmd) => void onSemanticCommand(cmd)}
             cameraHandleRef={planCameraHandleRef}
             initialCamera={paneTab.viewportState?.planCamera}
+            activeSectionId={
+              paneTab.kind === 'section' ? (paneTab.targetId ?? undefined) : undefined
+            }
             preferredSheetId={
               paneTab.kind === 'sheet' ? (paneTab.targetId ?? undefined) : undefined
             }
