@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "6c25d7965f9b",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/cli/lib/seed-dsl.mjs"
+  ],
+  "sessions": [
+    {
+      "metadata": "/6c/25d7965f9b/0/metadata.json",
+      "transcript": "/6c/25d7965f9b/0/full.jsonl",
+      "content_hash": "/6c/25d7965f9b/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 2124495,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 31768192,
+    "output_tokens": 55583,
+    "api_call_count": 611
+  }
+}
