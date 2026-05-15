@@ -195,7 +195,8 @@ export const defaultMaterialTextureManager = new MaterialTextureManager();
 function envMapIntensityFor(spec: MaterialPbrSpec | null, usage: ThreeMaterialUsage): number {
   if (!spec) return usage === 'structural' ? 0.75 : 1;
   if (spec.category === 'glass') return 1.2;
-  if (spec.category === 'render' || spec.category === 'cladding') return 0.15;
+  if (spec.category === 'render') return 0.2;
+  if (spec.category === 'cladding') return 0.35;
   if (usage === 'openingFrame' || usage === 'structural') return 0.45;
   return 1;
 }
@@ -211,7 +212,7 @@ function bumpScaleFor(spec: MaterialPbrSpec | null): number {
     case 'stone':
       return 0.025;
     case 'cladding':
-      return 0.014;
+      return 0.022;
     case 'timber':
       return 0.01;
     case 'metal_roof':
@@ -257,7 +258,6 @@ export function makeThreeMaterialForKey(
   const side = opts.side ?? (spec?.category === 'glass' ? THREE.DoubleSide : THREE.FrontSide);
   const depthWrite = opts.depthWrite ?? !(spec?.category === 'glass' || opacity < 1);
   const transparent = (opts.transparent ?? spec?.category === 'glass') || opacity < 1;
-  const color = new THREE.Color(spec?.baseColor ?? fallbackColor);
   const proceduralMaps = createProceduralMaterialMaps(spec, opts.uvTransform);
   const map = manager.load(spec?.textureMapUrl, 'albedo', opts.uvTransform) ?? proceduralMaps?.map;
   const normalMap = manager.load(spec?.normalMapUrl, 'normal', opts.uvTransform);
@@ -268,6 +268,7 @@ export function makeThreeMaterialForKey(
     manager.load(spec?.roughnessMapUrl, 'roughness', opts.uvTransform) ??
     proceduralMaps?.roughnessMap;
   const metalnessMap = manager.load(spec?.metalnessMapUrl, 'metalness', opts.uvTransform);
+  const color = new THREE.Color(map ? '#ffffff' : (spec?.baseColor ?? fallbackColor));
 
   const common: THREE.MeshStandardMaterialParameters = {
     color,
