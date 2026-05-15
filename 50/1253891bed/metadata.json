@@ -3,7 +3,7 @@
   "checkpoint_id": "501253891bed",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 3,
+  "checkpoints_count": 4,
   "files_touched": [
     "claude-skills/sketch-to-bim/SKILL.md",
     "packages/web/src/viewport/materials.ts"
@@ -56,13 +56,19 @@
       "transcript": "/50/1253891bed/7/full.jsonl",
       "content_hash": "/50/1253891bed/7/content_hash.txt",
       "prompt": "/50/1253891bed/7/prompt.txt"
+    },
+    {
+      "metadata": "/50/1253891bed/8/metadata.json",
+      "transcript": "/50/1253891bed/8/full.jsonl",
+      "content_hash": "/50/1253891bed/8/content_hash.txt",
+      "prompt": "/50/1253891bed/8/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 11570748,
+    "input_tokens": 12380136,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 298468224,
-    "output_tokens": 698499,
-    "api_call_count": 2237
+    "cache_read_tokens": 317185792,
+    "output_tokens": 764075,
+    "api_call_count": 2392
   }
 }
