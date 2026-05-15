@@ -3,7 +3,7 @@
   "checkpoint_id": "082e20988cad",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "packages/web/src/workspace/project/GeoMapPicker.tsx"
   ],
@@ -43,13 +43,19 @@
       "transcript": "/08/2e20988cad/5/full.jsonl",
       "content_hash": "/08/2e20988cad/5/content_hash.txt",
       "prompt": "/08/2e20988cad/5/prompt.txt"
+    },
+    {
+      "metadata": "/08/2e20988cad/6/metadata.json",
+      "transcript": "/08/2e20988cad/6/full.jsonl",
+      "content_hash": "/08/2e20988cad/6/content_hash.txt",
+      "prompt": "/08/2e20988cad/6/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 5866442,
-    "cache_creation_tokens": 169395,
-    "cache_read_tokens": 131258661,
-    "output_tokens": 526766,
-    "api_call_count": 1185
+    "input_tokens": 5866542,
+    "cache_creation_tokens": 561649,
+    "cache_read_tokens": 136890371,
+    "output_tokens": 575419,
+    "api_call_count": 1251
   }
 }
