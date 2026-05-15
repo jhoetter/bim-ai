@@ -1,43 +1,8 @@
 import type { ComponentType, SVGAttributes } from 'react';
 import {
-  AlertTriangle,
-  AlignCenterHorizontal,
-  Camera,
-  Copy,
-  ChevronDown,
-  ChevronRight,
-  CircleDot,
-  Command,
-  ExternalLink,
-  Eye,
-  EyeOff,
-  FileBadge2,
-  FlipHorizontal2,
-  GitMerge,
-  Grid3x3,
-  Home,
-  Link2,
-  Magnet,
-  Menu,
-  Minus,
-  Moon,
-  MousePointer2,
-  Move,
-  Layers,
-  Redo2,
-  RotateCw,
-  Ruler,
-  Scissors,
-  Search,
-  SquareDashed,
-  Settings2,
-  Sparkles,
-  Sun,
-  Undo2,
-  Users,
-  X,
-} from 'lucide-react';
-import {
+  AgentIcon,
+  AlignIcon,
+  AlertTriangleIcon,
   // Phase 1 — drawing tools
   WallIcon,
   DoorIcon,
@@ -54,6 +19,15 @@ import {
   ColumnIcon,
   BeamIcon,
   CeilingIcon,
+  CameraIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  ClockIcon,
+  CloseIcon,
+  CollaboratorsIcon,
+  CommandPaletteIcon,
+  CopyIcon,
   // Phase 2 — views & annotations
   PlanViewIcon,
   SectionViewIcon,
@@ -67,6 +41,9 @@ import {
   GridLineIcon,
   LevelIcon,
   DetailLineIcon,
+  DownloadIcon,
+  EvidenceIcon,
+  ExternalLinkIcon,
   // Phase 3 — organization & coordination
   FamilyIcon,
   FamilyTypeIcon,
@@ -85,12 +62,41 @@ import {
   TextAnnotationIcon,
   PanelScheduleViewIcon,
   GraphicalColumnScheduleIcon,
+  FocusIcon,
+  GridIcon,
+  HomeIcon,
+  LinkIcon,
+  MeasureBetweenIcon,
+  MenuIcon,
+  MirrorIcon,
+  MoonIcon,
+  MoreHorizontalIcon,
+  MoreVerticalIcon,
+  MoveIcon,
+  OnlineIcon,
+  OpeningIcon,
+  RedoIcon,
+  RefreshIcon,
+  RotateIcon,
+  SearchIcon,
+  SelectIcon,
+  SettingsIcon,
+  ShaftOpeningIcon,
+  SnapIcon,
+  SplitIcon,
+  SunIcon,
+  ThinLineIcon,
+  TrimExtendIcon,
+  UndoIcon,
+  VisibilityOffIcon,
+  VisibilityOnIcon,
+  WallJoinsIcon,
 } from '@bim-ai/icons';
 
 /**
  * BIM AI chrome icon set — the single import surface for icon usage outside
- * the canvas. BIM-specific icons come from `@bim-ai/icons`; generic chrome
- * icons (chevrons, close, search, etc.) come from `lucide-react`.
+ * the canvas. BIM-specific and generic chrome icons both come from
+ * `@bim-ai/icons`.
  *
  * Default visual rules (spec §10):
  *   - Default size 16 px in dense chrome; 18 px in tool palette; 20 px in
@@ -101,7 +107,7 @@ import {
  * Every icon-only button must pair its icon with `aria-label` (spec §22).
  */
 
-export type LucideLikeIcon = ComponentType<
+export type BimIconComponent = ComponentType<
   SVGAttributes<SVGSVGElement> & {
     size?: number | string;
     strokeWidth?: number | string;
@@ -115,22 +121,22 @@ export { StairIcon as StairsIcon } from '@bim-ai/icons';
 /** Spec §10.1 "concept → icon" registry. Single source of truth for chrome
  * icons. Tools / shell / dialogs read from here so the assignments can be
  * audited as a unit. */
-export const Icons: Record<string, LucideLikeIcon> = {
+export const Icons: Record<string, BimIconComponent> = {
   // Selection & manipulation
-  select: MousePointer2,
+  select: SelectIcon,
 
   // Modify tools
-  align: AlignCenterHorizontal,
-  copy: Copy,
-  measure: Ruler,
-  split: Scissors,
-  trim: GitMerge,
-  'wall-join': GitMerge,
-  'wall-opening': SquareDashed,
-  shaft: Layers,
-  mirror: FlipHorizontal2,
-  move: Move,
-  rotate: RotateCw,
+  align: AlignIcon,
+  copy: CopyIcon,
+  measure: MeasureBetweenIcon,
+  split: SplitIcon,
+  trim: TrimExtendIcon,
+  'wall-join': WallJoinsIcon,
+  'wall-opening': OpeningIcon,
+  shaft: ShaftOpeningIcon,
+  mirror: MirrorIcon,
+  move: MoveIcon,
+  rotate: RotateIcon,
 
   // Drawing tools — all now BIM-native from @bim-ai/icons
   wall: WallIcon,
@@ -179,46 +185,52 @@ export const Icons: Record<string, LucideLikeIcon> = {
   validationRule: ValidationRuleIcon,
   deviation: DeviationIcon,
   comment: RFIIcon,
-  check: ValidationRuleIcon,
+  check: CheckIcon,
 
-  // Camera / view — lucide (generic)
-  saveViewpoint: Camera,
-  layerOn: Eye,
-  layerOff: EyeOff,
-  viewCubeReset: Home,
+  // Camera / view
+  saveViewpoint: CameraIcon,
+  layerOn: VisibilityOnIcon,
+  layerOff: VisibilityOffIcon,
+  viewCubeReset: HomeIcon,
 
-  // History — lucide (generic)
-  undo: Undo2,
-  redo: Redo2,
+  // History
+  undo: UndoIcon,
+  redo: RedoIcon,
 
-  // F-006: QAT buttons — lucide (generic)
-  thinLines: Minus,
+  // F-006: QAT buttons
+  thinLines: ThinLineIcon,
 
-  // Theme — lucide (generic)
-  themeLight: Sun,
-  themeDark: Moon,
+  // Theme
+  themeLight: SunIcon,
+  themeDark: MoonIcon,
 
-  // Navigation / global chrome — lucide (generic)
-  commandPalette: Command,
-  search: Search,
-  settings: Settings2,
-  hamburger: Menu,
-  collaborators: Users,
-  close: X,
-  externalLink: ExternalLink,
-  proportional: Link2,
+  // Navigation / global chrome
+  commandPalette: CommandPaletteIcon,
+  search: SearchIcon,
+  settings: SettingsIcon,
+  hamburger: MenuIcon,
+  collaborators: CollaboratorsIcon,
+  close: CloseIcon,
+  externalLink: ExternalLinkIcon,
+  proportional: LinkIcon,
 
-  // Disclosure — lucide (generic)
-  disclosureClosed: ChevronRight,
-  disclosureOpen: ChevronDown,
+  // Disclosure
+  disclosureClosed: ChevronRightIcon,
+  disclosureOpen: ChevronDownIcon,
 
-  // Status / signals — lucide (generic) + BIM-native
-  agent: Sparkles,
-  evidence: FileBadge2,
-  advisorWarning: AlertTriangle,
-  online: CircleDot,
-  snap: Magnet,
-  grid: Grid3x3,
+  // Status / signals
+  agent: AgentIcon,
+  evidence: EvidenceIcon,
+  advisorWarning: AlertTriangleIcon,
+  online: OnlineIcon,
+  snap: SnapIcon,
+  grid: GridIcon,
+  activity: ClockIcon,
+  download: DownloadIcon,
+  focus: FocusIcon,
+  refresh: RefreshIcon,
+  moreHorizontal: MoreHorizontalIcon,
+  moreVertical: MoreVerticalIcon,
 
   // Sheet markup and schedule editing — BIM-native
   annotation: DetailLineIcon,
@@ -310,6 +322,12 @@ export const IconLabels: Record<keyof typeof Icons, string> = {
   online: 'Online',
   snap: 'Snap',
   grid: 'Grid',
+  activity: 'Activity',
+  download: 'Download',
+  focus: 'Focus selection',
+  refresh: 'Refresh',
+  moreHorizontal: 'More options',
+  moreVertical: 'More options',
   annotation: 'Annotation',
   pen: 'Freehand markup',
   arrowRight: 'Arrow markup',

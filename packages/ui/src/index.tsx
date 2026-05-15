@@ -5,8 +5,8 @@ export {
   IconLabels,
   ICON_SIZE,
   StairsIcon,
+  type BimIconComponent,
   type IconName,
-  type LucideLikeIcon,
   // BIM-native icons (all phases)
   WallIcon,
   DoorIcon,

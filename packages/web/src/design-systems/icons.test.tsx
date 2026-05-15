@@ -65,7 +65,7 @@ describe('default sizes — §10', () => {
   });
 });
 
-describe('custom StairsIcon (lucide gap-fill)', () => {
+describe('custom StairsIcon', () => {
   it('renders an svg with currentColor stroke', () => {
     const { container } = render(<StairsIcon aria-label="Stair" />);
     const svg = container.querySelector('svg');

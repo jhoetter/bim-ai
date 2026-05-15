@@ -1,10 +1,11 @@
 import type { Element } from '@bim-ai/core';
 import {
-  OrbitViewHifi,
-  PlanViewHifi,
-  ScheduleViewHifi,
-  SectionViewHifi,
-  SheetHifi,
+  OrbitViewIcon,
+  PlanViewIcon,
+  ProjectInfoIcon,
+  ScheduleViewIcon,
+  SectionViewIcon,
+  SheetIcon,
 } from '@bim-ai/icons';
 
 import type { UxComment } from '../state/store';
@@ -126,12 +127,12 @@ export function buildPrimaryNavigationSections(
           {
             id: 'project',
             label: 'Project',
-            icon: PlanViewHifi,
+            icon: ProjectInfoIcon,
             rows: [
               {
                 id: projectSettings.id,
                 label: 'Project settings',
-                icon: PlanViewHifi,
+                icon: ProjectInfoIcon,
                 hint: projectSettings.displayLocale ?? 'global settings',
                 renamable: false,
               },
@@ -142,11 +143,11 @@ export function buildPrimaryNavigationSections(
     {
       id: 'floor-plans',
       label: 'Floor Plans',
-      icon: PlanViewHifi,
+      icon: PlanViewIcon,
       rows: planViews.map((p) => ({
         id: p.id,
         label: p.name,
-        icon: PlanViewHifi,
+        icon: PlanViewIcon,
         hint: `${levelNameById.get(p.levelId) ?? p.levelId}`,
         renamable: true,
       })),
@@ -154,13 +155,13 @@ export function buildPrimaryNavigationSections(
     {
       id: '3d-views',
       label: '3D Views',
-      icon: OrbitViewHifi,
+      icon: OrbitViewIcon,
       rows: [...viewpoints, ...savedViews]
         .sort((a, b) => a.name.localeCompare(b.name))
         .map((v) => ({
           id: v.id,
           label: v.name,
-          icon: OrbitViewHifi,
+          icon: OrbitViewIcon,
           hint: v.kind === 'saved_view' ? 'saved 3D snapshot' : 'saved camera',
           renamable: true,
         })),
@@ -168,11 +169,11 @@ export function buildPrimaryNavigationSections(
     {
       id: 'sections',
       label: 'Sections',
-      icon: SectionViewHifi,
+      icon: SectionViewIcon,
       rows: sections.map((s) => ({
         id: s.id,
         label: s.name,
-        icon: SectionViewHifi,
+        icon: SectionViewIcon,
         hint: 'cut view',
         renamable: true,
       })),
@@ -180,11 +181,11 @@ export function buildPrimaryNavigationSections(
     {
       id: 'sheets',
       label: 'Sheets',
-      icon: SheetHifi,
+      icon: SheetIcon,
       rows: sheets.map((s) => ({
         id: s.id,
         label: s.name,
-        icon: SheetHifi,
+        icon: SheetIcon,
         hint: `${sheetIntentLabel(readSheetIntent(s))} · ${s.viewportsMm?.length ?? 0} viewports`,
         renamable: true,
       })),
@@ -192,11 +193,11 @@ export function buildPrimaryNavigationSections(
     {
       id: 'schedules',
       label: 'Schedules',
-      icon: ScheduleViewHifi,
+      icon: ScheduleViewIcon,
       rows: schedules.map((s) => ({
         id: s.id,
         label: s.name,
-        icon: ScheduleViewHifi,
+        icon: ScheduleViewIcon,
         renamable: true,
       })),
     },

@@ -1,5 +1,4 @@
 import { type CSSProperties, type JSX, type RefObject, useEffect, useMemo } from 'react';
-import { Clock } from 'lucide-react';
 import { Icons } from '@bim-ai/ui';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import type { WorkspaceId } from './workspaces';
@@ -229,7 +228,7 @@ export function TopBarV3({
           color: 'var(--color-muted-foreground)',
         }}
       >
-        <Clock size={16} aria-hidden="true" />
+        <Icons.activity size={16} aria-hidden="true" />
       </button>
 
       {/* Slot 7 — Presence avatars (hidden when empty) */}

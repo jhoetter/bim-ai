@@ -14,7 +14,7 @@ export type BimIcon = ComponentType<BimIconProps>;
 
 /**
  * Creates a BIM icon component from a static ReactNode of SVG children.
- * The returned component has the same props API as lucide-react icons:
+ * The returned component has the same props API as the app's standard icons:
  * `size`, `strokeWidth`, `absoluteStrokeWidth`, plus any SVG attribute.
  *
  * All icons are 24×24 viewBox, stroke-based with currentColor. Default

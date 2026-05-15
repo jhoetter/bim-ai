@@ -16,8 +16,7 @@
   },
   "dependencies": {
     "@bim-ai/design-tokens": "workspace:*",
-    "@bim-ai/icons": "workspace:*",
-    "lucide-react": "^0.574.0"
+    "@bim-ai/icons": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19.0.0",

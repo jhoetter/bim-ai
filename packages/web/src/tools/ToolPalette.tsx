@@ -27,7 +27,7 @@ import {
  * ToolPalette — spec §16.
  *
  * Top-floating, mode-aware tool group. Each button is 36 × 36 with the
- * lucide icon centered and the hotkey letter as a `--text-xs` superscript
+ * BIM AI icon centered and the hotkey letter as a `--text-xs` superscript
  * bottom-right. `role="toolbar"` with arrow-key traversal between
  * buttons. Active tool gets `--color-accent` background; disabled tools
  * get 0.4 opacity and the disablement reason as the tooltip.

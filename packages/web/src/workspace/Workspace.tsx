@@ -1,7 +1,23 @@
-import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type ComponentType,
+  type JSX,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AssetLibraryEntry, Element } from '@bim-ai/core';
-import { WallHifi } from '@bim-ai/icons';
+import {
+  type BimIconHifiProps,
+  OrbitViewHifi,
+  PlanViewHifi,
+  ScheduleViewHifi,
+  SectionViewHifi,
+  SheetHifi,
+  WallHifi,
+} from '@bim-ai/icons';
 import { Icons, type IconName } from '@bim-ai/ui';
 
 import { log } from '../logger';
@@ -81,9 +97,11 @@ import {
   assignTabToPane,
   createPaneLayout,
   focusPane,
+  findPaneForTab,
   normalizePaneLayout,
   persistPaneLayout,
   readPersistedPaneLayout,
+  removePaneLeaf,
   splitPaneWithTab,
   type PaneLayoutState,
   type PaneNode,
@@ -129,6 +147,7 @@ import {
 } from '../families/FamilyLibraryPanel';
 import { MaterialBrowserDialog } from '../familyEditor/MaterialBrowserDialog';
 import { AppearanceAssetBrowserDialog } from '../familyEditor/AppearanceAssetBrowserDialog';
+import { materialTargetLayerIndex } from '../viewport/hostMaterialLayerTargets';
 import type { MaterialBrowserTargetRequest } from './inspector';
 import {
   findLoadedCatalogFamilyType,
@@ -189,6 +208,22 @@ function splitViewTabLabel(
     viewType: label.slice(0, separatorIndex),
     viewName: label.slice(separatorIndex + separator.length),
   };
+}
+
+function hifiIconForTabKind(kind: TabKind | undefined): ComponentType<BimIconHifiProps> {
+  switch (kind) {
+    case '3d':
+      return OrbitViewHifi;
+    case 'section':
+      return SectionViewHifi;
+    case 'sheet':
+      return SheetHifi;
+    case 'schedule':
+      return ScheduleViewHifi;
+    case 'plan':
+    default:
+      return PlanViewHifi;
+  }
 }
 
 function disciplineScopeNote(
@@ -253,9 +288,14 @@ function fallbackComposition(
   paneLayout: PaneLayoutState,
 ): WorkspaceCompositionState {
   const id = nextCompositionId();
+  const normalizedPaneLayout = normalizePaneLayout(
+    paneLayout,
+    tabsState.tabs.map((tab) => tab.id),
+    tabsState.activeId,
+  );
   return {
     activeId: id,
-    compositions: [{ id, label: 'Composition 1', tabsState, paneLayout }],
+    compositions: [{ id, label: 'Composition 1', tabsState, paneLayout: normalizedPaneLayout }],
   };
 }
 
@@ -271,8 +311,8 @@ function readPersistedCompositions(
     if (!parsed || !Array.isArray(parsed.compositions) || !parsed.compositions.length) {
       return fallbackComposition(tabsState, paneLayout);
     }
-    const compositions = parsed.compositions.filter(
-      (composition): composition is WorkspaceComposition =>
+    const compositions = parsed.compositions
+      .filter((composition): composition is WorkspaceComposition =>
         Boolean(
           composition &&
           typeof composition.id === 'string' &&
@@ -281,7 +321,15 @@ function readPersistedCompositions(
           Array.isArray(composition.tabsState.tabs) &&
           composition.paneLayout,
         ),
-    );
+      )
+      .map((composition) => ({
+        ...composition,
+        paneLayout: normalizePaneLayout(
+          composition.paneLayout,
+          composition.tabsState.tabs.map((tab) => tab.id),
+          composition.tabsState.activeId,
+        ),
+      }));
     if (!compositions.length) return fallbackComposition(tabsState, paneLayout);
     const activeId =
       typeof parsed.activeId === 'string' &&
@@ -411,7 +459,7 @@ function materialKeyForInstanceTarget(
 
 function materialEditableTargetLabel(target: MaterialEditableTarget): string {
   if (target.kind === 'type-layer') {
-    if (target.element.kind === 'wall_type') return `${target.element.name} · first layer`;
+    if (target.element.kind === 'wall_type') return `${target.element.name} · exterior layer`;
     if (target.element.kind === 'floor_type') return `${target.element.name} · top layer`;
     return `${target.element.name} · top layer`;
   }
@@ -2120,7 +2168,11 @@ export function Workspace(): JSX.Element {
   const selectedMaterialKey =
     materialEditableTarget?.kind === 'instance'
       ? materialKeyForInstanceTarget(materialEditableTarget)
-      : (materialEditableTarget?.element.layers[0]?.materialKey ?? null);
+      : materialEditableTarget
+        ? (materialEditableTarget.element.layers[
+            materialTargetLayerIndex(materialEditableTarget.element)
+          ]?.materialKey ?? null)
+        : null;
   const activeMaterialKey =
     activeMaterialBrowserTarget?.kind === 'material-slot'
       ? (activeMaterialBrowserTarget.currentKey ?? null)
@@ -2204,9 +2256,11 @@ export function Workspace(): JSX.Element {
         });
         return;
       }
-      const [first, ...rest] = target.target.element.layers;
-      if (!first) return;
-      const nextLayers = [{ ...first, materialKey }, ...rest.map((layer) => ({ ...layer }))];
+      const targetLayer = materialTargetLayerIndex(target.target.element);
+      const nextLayers = target.target.element.layers.map((layer, index) =>
+        index === targetLayer ? { ...layer, materialKey } : { ...layer },
+      );
+      if (!nextLayers.length) return;
       void onSemanticCommand({
         type: 'updateElementProperty',
         elementId: target.target.element.id,
@@ -2790,13 +2844,19 @@ export function Workspace(): JSX.Element {
   }, [navigateTo, paletteActiveScheduleId]);
   const splitActiveTab = useCallback(
     (direction: PaneSplitDirection) => {
-      const activeId = tabsState.activeId;
-      if (!activeId) return;
+      const focusedTabId =
+        tabIdForLeaf(paneLayout.root, paneLayout.focusedLeafId) ?? tabsState.activeId;
+      if (!focusedTabId) return;
+      const focusedTab = tabsState.tabs.find((tab) => tab.id === focusedTabId);
+      if (!focusedTab) return;
+      const splitTabId = uniqueTabInstanceId(tabsState, focusedTab.id);
+      const splitTab: ViewTab = { ...focusedTab, id: splitTabId };
+      setTabsState((state) => upsertTabInstance(state, splitTab));
       setPaneLayout((layout) =>
-        splitPaneWithTab(layout, layout.focusedLeafId, direction, activeId),
+        splitPaneWithTab(layout, layout.focusedLeafId, direction, splitTabId),
       );
     },
-    [tabsState.activeId],
+    [paneLayout.focusedLeafId, paneLayout.root, tabsState],
   );
 
   const ensureFamilyPlacementPane = useCallback(
@@ -3122,6 +3182,7 @@ export function Workspace(): JSX.Element {
               ? 'schedule'
               : 'planView';
     const PaneIcon = Icons[paneIconName] ?? Icons.planView;
+    const PaneHifiIcon = hifiIconForTabKind(paneTab?.kind);
     const paneSidebarKey = `${compositionState.activeId}:${node.id}`;
     const paneSecondarySidebarOpen =
       Boolean(paneTab) && (paneSecondarySidebarOpenByKey[paneSidebarKey] ?? true);
@@ -3205,11 +3266,11 @@ export function Workspace(): JSX.Element {
     };
     const closePaneTab = (): void => {
       if (!paneTab) return;
-      const nextTabs = closeTab(tabsState, paneTab.id);
-      setTabsState(nextTabs);
-      setPaneLayout((layout) =>
-        focusPane(assignTabToPane(layout, node.id, nextTabs.activeId), node.id),
-      );
+      const nextLayout = removePaneLeaf(paneLayout, node.id);
+      setPaneLayout(nextLayout);
+      if (!findPaneForTab(nextLayout.root, paneTab.id)) {
+        setTabsState((state) => closeTab(state, paneTab.id));
+      }
     };
     const handlePaneLensChange = (nextLensMode: LensMode): void => {
       activatePaneForControls();
@@ -3263,7 +3324,7 @@ export function Workspace(): JSX.Element {
                 onClick={togglePaneViewSettings}
                 className="group relative inline-flex h-11 min-w-12 shrink-0 flex-col items-center justify-center gap-0 rounded-md border border-accent/45 bg-surface px-1.5 text-[11px] font-medium text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:bg-accent-soft"
               >
-                <PaneIcon size={24} aria-hidden="true" />
+                <PaneHifiIcon size={30} aria-hidden="true" />
                 <span className="max-w-12 truncate">{paneLabelParts.viewType}</span>
               </button>
               <div
@@ -3286,7 +3347,7 @@ export function Workspace(): JSX.Element {
                 title={`${paneLabelParts.viewType} view settings hidden`}
                 className="relative inline-flex h-11 min-w-12 shrink-0 flex-col items-center justify-center gap-0 rounded-md border border-border bg-surface px-1.5 text-[11px] font-medium text-muted"
               >
-                <PaneIcon size={24} aria-hidden="true" />
+                <PaneHifiIcon size={30} aria-hidden="true" />
                 <span className="max-w-12 truncate">{paneLabelParts.viewType}</span>
                 <span
                   aria-hidden="true"

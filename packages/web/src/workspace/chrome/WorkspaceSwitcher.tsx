@@ -1,5 +1,4 @@
 import { type CSSProperties, type JSX, useEffect, useRef, useState } from 'react';
-import { Check } from 'lucide-react';
 import { Icons } from '@bim-ai/ui';
 import { WORKSPACES, type WorkspaceDescriptor, type WorkspaceId } from './workspaces';
 
@@ -180,7 +179,7 @@ function WorkspaceRow({
       />
       <span style={{ flex: 1 }}>{workspace.label}</span>
       {isActive && (
-        <Check
+        <Icons.check
           size={12}
           aria-hidden="true"
           style={{ color: 'var(--color-accent)', flexShrink: 0 }}

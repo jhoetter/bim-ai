@@ -1,7 +1,6 @@
 import { type JSX, useEffect, useRef, useState } from 'react';
-import { MoreHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { ICON_SIZE, Icons, type LucideLikeIcon } from '@bim-ai/ui';
+import { ICON_SIZE, Icons, type BimIconComponent } from '@bim-ai/ui';
 
 import { type TabKind, type ViewTab } from '../tabsModel';
 
@@ -13,7 +12,7 @@ import { type TabKind, type ViewTab } from '../tabsModel';
  * close ✕ button. Trailing `+` opens an "add view" popover.
  */
 
-const TAB_KIND_ICON: Record<TabKind, LucideLikeIcon> = {
+const TAB_KIND_ICON: Record<TabKind, BimIconComponent> = {
   plan: Icons.floor!,
   '3d': Icons.family!, // Component (cube) — used for 3D views
   section: Icons.section!,
@@ -373,7 +372,7 @@ export function TabBar({
             }}
             className="flex h-6 w-6 items-center justify-center rounded text-muted hover:bg-surface-strong hover:text-foreground"
           >
-            <MoreHorizontal size={14} aria-hidden="true" />
+            <Icons.moreHorizontal size={14} aria-hidden="true" />
           </button>
           {overflowOpen ? (
             <div

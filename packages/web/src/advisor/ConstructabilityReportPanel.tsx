@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Download, Focus, RefreshCw } from 'lucide-react';
+import { Icons } from '@bim-ai/ui';
 
 import type { ConstructabilityFinding, ConstructabilityReport } from '../lib/api';
 
@@ -128,7 +128,7 @@ export function ConstructabilityReportPanel(props: {
                           className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-[11px]"
                           onClick={() => props.onIsolateElementIds?.(finding.elementIds)}
                         >
-                          <Focus size={12} aria-hidden="true" />
+                          <Icons.focus size={12} aria-hidden="true" />
                           Isolate
                         </button>
                       ) : null}
@@ -177,7 +177,7 @@ function Toolbar(props: {
         onClick={props.onRefresh}
         disabled={props.refreshDisabled}
       >
-        <RefreshCw size={12} aria-hidden="true" />
+        <Icons.refresh size={12} aria-hidden="true" />
         Refresh
       </button>
       <button
@@ -186,7 +186,7 @@ function Toolbar(props: {
         onClick={props.onExportJson}
         disabled={props.exportDisabled}
       >
-        <Download size={12} aria-hidden="true" />
+        <Icons.download size={12} aria-hidden="true" />
         JSON
       </button>
       <button
@@ -195,7 +195,7 @@ function Toolbar(props: {
         onClick={props.onExportBcf}
         disabled={props.exportDisabled}
       >
-        <Download size={12} aria-hidden="true" />
+        <Icons.download size={12} aria-hidden="true" />
         BCF
       </button>
     </div>
