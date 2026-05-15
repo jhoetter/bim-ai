@@ -97,9 +97,11 @@ export function assignTabToPane(
 
 export function removePaneLeaf(state: PaneLayoutState, leafId: string): PaneLayoutState {
   if (!findLeaf(state.root, leafId)) return state;
+  const root = removeLeaf(state.root, leafId) ?? { kind: 'leaf', id: leafId, tabId: null };
+  const focusedLeafId = findLeaf(root, state.focusedLeafId)?.id ?? firstLeafId(root) ?? leafId;
   return {
-    root: mapLeaves(state.root, (leaf) => (leaf.id === leafId ? { ...leaf, tabId: null } : leaf)),
-    focusedLeafId: leafId,
+    root,
+    focusedLeafId,
   };
 }
 
@@ -124,6 +126,7 @@ export function normalizePaneLayout(
     root = assignFirstLeafTab(root, activeTabId);
   }
 
+  root = collapseEmptyBranches(root);
   const focusedExists = findLeaf(root, state.focusedLeafId);
   const fallbackFocused = focusedExists?.id ?? firstLeafId(root) ?? state.focusedLeafId;
   return { root, focusedLeafId: fallbackFocused };
@@ -192,6 +195,26 @@ function replaceLeaf(root: PaneNode, leafId: string, replacement: PaneNode): Pan
     first: replaceLeaf(root.first, leafId, replacement),
     second: replaceLeaf(root.second, leafId, replacement),
   };
+}
+
+function removeLeaf(root: PaneNode, leafId: string): PaneNode | null {
+  if (root.kind === 'leaf') {
+    return root.id === leafId ? null : root;
+  }
+  const first = removeLeaf(root.first, leafId);
+  const second = removeLeaf(root.second, leafId);
+  if (!first) return second;
+  if (!second) return first;
+  return { ...root, first, second };
+}
+
+function collapseEmptyBranches(root: PaneNode): PaneNode {
+  if (root.kind === 'leaf') return root;
+  const first = collapseEmptyBranches(root.first);
+  const second = collapseEmptyBranches(root.second);
+  if (first.kind === 'leaf' && !first.tabId) return second;
+  if (second.kind === 'leaf' && !second.tabId) return first;
+  return { ...root, first, second };
 }
 
 function hasTab(root: PaneNode): boolean {
