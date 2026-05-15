@@ -820,21 +820,9 @@ export function Viewport({
       return;
     }
     const snap = cameraRigRef.current?.snapshot();
-    const renderWindow = window.open('about:blank', '_blank');
-    if (renderWindow) {
-      renderWindow.opener = null;
-      renderWindow.document.title = 'Backend render';
-      renderWindow.document.body.innerHTML = `
-        <main style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; display: grid; place-items: center; margin: 0; background: #0f172a; color: #e5e7eb;">
-          <section style="max-width: 560px; padding: 32px;">
-            <h1 style="font-size: 20px; margin: 0 0 12px;">Backend render running</h1>
-            <p style="line-height: 1.5; color: #cbd5e1; margin: 0;">Blender/Cycles is rendering this view on the local API process. This tab will update when the PNG is ready.</p>
-          </section>
-        </main>`;
-    }
     setBackendRenderState({
       phase: 'running',
-      message: 'Backend Cycles render running on the API process.',
+      message: 'Backend Cycles render running; PNG download starts when ready.',
     });
     try {
       const blob = await renderBackendRaytracePng(modelId, {
@@ -852,26 +840,18 @@ export function Viewport({
           : undefined,
       });
       const url = URL.createObjectURL(blob);
-      if (renderWindow) {
-        renderWindow.document.title = 'Backend render complete';
-        renderWindow.document.body.innerHTML = `
-          <main style="margin: 0; min-height: 100vh; background: #0b1120; display: grid; place-items: center;">
-            <img src="${url}" alt="Backend ray trace render" style="max-width: 100vw; max-height: 100vh; object-fit: contain;" />
-          </main>`;
-      } else {
-        const anchor = document.createElement('a');
-        anchor.href = url;
-        anchor.target = '_blank';
-        anchor.rel = 'noopener';
-        anchor.click();
-      }
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `bim-ai-render-${modelId}.png`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 120_000);
       setBackendRenderState({
         phase: 'idle',
-        message: 'Backend render opened in a new tab.',
+        message: 'Backend render downloaded.',
       });
     } catch (err) {
-      renderWindow?.close();
       const message =
         err instanceof ApiHttpError
           ? err.message
