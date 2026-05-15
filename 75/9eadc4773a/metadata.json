@@ -3,7 +3,7 @@
   "checkpoint_id": "759eadc4773a",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "packages/web/src/viewport/meshBuilders.osmContext.ts"
   ],
@@ -13,13 +13,19 @@
       "transcript": "/75/9eadc4773a/0/full.jsonl",
       "content_hash": "/75/9eadc4773a/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/75/9eadc4773a/1/metadata.json",
+      "transcript": "/75/9eadc4773a/1/full.jsonl",
+      "content_hash": "/75/9eadc4773a/1/content_hash.txt",
+      "prompt": "/75/9eadc4773a/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1806352,
+    "input_tokens": 9471366,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 30441344,
-    "output_tokens": 48184,
-    "api_call_count": 569
+    "cache_read_tokens": 209159424,
+    "output_tokens": 480252,
+    "api_call_count": 1895
   }
 }
