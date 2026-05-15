@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "6373f698f01f",
+  "session_id": "019e2c15-3903-7080-93f0-26ac15f4d057",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-15T19:35:32.502216Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "spec/revit-site-toposolid-parity-tracker.md",
+    "packages/cli/cli.initiationCheck.test.mjs",
+    "seed-artifacts/target-house-4/evidence/target-house-4.recipe.json",
+    "seed-artifacts/target-house-4/manifest.json",
+    "seed-artifacts/target-house-4/evidence/status.md",
+    "app/bim_ai/constraints_evaluation.py",
+    "app/tests/test_top_v3_01.py"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "bce7c1f58500",
+  "token_usage": {
+    "input_tokens": 3241836,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 61924480,
+    "output_tokens": 160550,
+    "api_call_count": 1345
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-15T19:35:32.099512Z",
+    "agent_lines": 258,
+    "agent_removed": 187,
+    "human_added": 65,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 323,
+    "total_lines_changed": 712,
+    "agent_percentage": 62.5,
+    "metric_version": 2
+  }
+}
