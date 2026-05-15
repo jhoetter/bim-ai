@@ -634,17 +634,19 @@ export function Viewport({
   // ANN-02: store actions for the wall context menu's command flow.
   const activateElevationView = useBimStore((s) => s.activateElevationView);
   const selectStoreEl = useBimStore((s) => s.select);
+  const onSemanticCommandRef = useRef(onSemanticCommand);
+  onSemanticCommandRef.current = onSemanticCommand;
 
   const handleWallContextMenuCommand = useCallback(
     (next: WallContextMenuCommand) => {
-      onSemanticCommand?.(next.cmd);
+      onSemanticCommandRef.current?.(next.cmd);
       if (next.kind === 'elevation_view') {
         activateElevationView(next.elevationViewId);
       } else {
         selectStoreEl(next.sectionCutId);
       }
     },
-    [activateElevationView, onSemanticCommand, selectStoreEl],
+    [activateElevationView, selectStoreEl],
   );
 
   // EDT-03: dispatch slice grip commands as engine commands. Slice
@@ -689,9 +691,9 @@ export function Viewport({
 
   const handleWallFaceRadialCommand = useCallback(
     (next: WallFaceRadialCommand) => {
-      onSemanticCommand?.(next.cmd as unknown as Record<string, unknown>);
+      onSemanticCommandRef.current?.(next.cmd as unknown as Record<string, unknown>);
     },
-    [onSemanticCommand],
+    [],
   );
 
   const direct3dDraftLevelName = useMemo(() => {
@@ -1741,7 +1743,7 @@ export function Viewport({
         const levels = resolveDraftLevels();
         const baseIndex = levels.findIndex((level) => level.id === payload.levelId);
         const topLevel = baseIndex >= 0 ? levels[baseIndex + 1] : undefined;
-        onSemanticCommand?.({
+        onSemanticCommandRef.current?.({
           ...linePreviewToSemanticCommand(payload),
           topLevelId: topLevel?.id ?? payload.levelId,
           widthMm: 1100,
@@ -1750,7 +1752,7 @@ export function Viewport({
         });
         return;
       }
-      onSemanticCommand?.(linePreviewToSemanticCommand(payload));
+      onSemanticCommandRef.current?.(linePreviewToSemanticCommand(payload));
     }
 
     function hostedToolSpec(tool: HostedFamilyTool) {
@@ -2018,7 +2020,7 @@ export function Viewport({
         const hostedSpec = hostedToolSpec(tool);
         const hostedFamilyTypeId = hostedSpec.familyTypeId;
         if (tool === 'door') {
-          onSemanticCommand?.({
+          onSemanticCommandRef.current?.({
             type: 'insertDoorOnWall',
             wallId: hostWall.id,
             alongT,
@@ -2040,7 +2042,7 @@ export function Viewport({
           return true;
         }
         if (tool === 'window') {
-          onSemanticCommand?.({
+          onSemanticCommandRef.current?.({
             type: 'insertWindowOnWall',
             wallId: hostWall.id,
             alongT,
@@ -2063,7 +2065,7 @@ export function Viewport({
           );
           return true;
         }
-        onSemanticCommand?.({
+        onSemanticCommandRef.current?.({
           type: 'createWallOpening',
           hostWallId: hostWall.id,
           alongTStart: Math.max(0, alongT - 0.05),
@@ -2196,7 +2198,7 @@ export function Viewport({
         preferWallConnectivity: tool === 'wall',
       });
       if (tool === 'room') {
-        onSemanticCommand?.({
+        onSemanticCommandRef.current?.({
           type: 'placeRoomAtPoint',
           id: crypto.randomUUID(),
           levelId: levelInfo.id,
@@ -2207,7 +2209,7 @@ export function Viewport({
         return true;
       }
       if (tool === 'column') {
-        onSemanticCommand?.({
+        onSemanticCommandRef.current?.({
           type: 'createColumn',
           levelId: levelInfo.id,
           positionMm: projected.point,
@@ -2232,7 +2234,7 @@ export function Viewport({
           return true;
         }
         if (assetId) {
-          onSemanticCommand?.({
+          onSemanticCommandRef.current?.({
             type: 'PlaceAsset',
             assetId,
             levelId: levelInfo.id,
@@ -2273,7 +2275,7 @@ export function Viewport({
             });
             return true;
           }
-          onSemanticCommand?.({
+          onSemanticCommandRef.current?.({
             type: 'placeFamilyInstance',
             familyTypeId: selectedFamilyTypeId,
             levelId: hostHit.wall.levelId,
@@ -2284,7 +2286,7 @@ export function Viewport({
           });
           return true;
         }
-        onSemanticCommand?.({
+        onSemanticCommandRef.current?.({
           type: 'placeFamilyInstance',
           familyTypeId: selectedFamilyTypeId,
           levelId: levelInfo.id,
@@ -2488,7 +2490,7 @@ export function Viewport({
           );
           if (closeDistancePx <= 14) {
             if (tool === 'ceiling') {
-              onSemanticCommand?.(
+              onSemanticCommandRef.current?.(
                 polygonPreviewToSemanticCommand(
                   buildPolygonPreviewPayload({
                     tool: 'ceiling',
@@ -2498,7 +2500,7 @@ export function Viewport({
                 ),
               );
             } else if (tool === 'floor') {
-              onSemanticCommand?.(
+              onSemanticCommandRef.current?.(
                 polygonPreviewToSemanticCommand(
                   buildPolygonPreviewPayload({
                     tool: 'floor',
@@ -2508,7 +2510,7 @@ export function Viewport({
                 ),
               );
             } else if (tool === 'roof') {
-              onSemanticCommand?.(
+              onSemanticCommandRef.current?.(
                 polygonPreviewToSemanticCommand(
                   buildPolygonPreviewPayload({
                     tool: 'roof',
@@ -2518,7 +2520,7 @@ export function Viewport({
                 ),
               );
             } else if (tool === 'area') {
-              onSemanticCommand?.(
+              onSemanticCommandRef.current?.(
                 polygonPreviewToSemanticCommand(
                   buildPolygonPreviewPayload({
                     tool: 'area',
@@ -2535,7 +2537,7 @@ export function Viewport({
               );
               const hostFloor = floors.find((floor) => floor.levelId === draftLevelId) ?? floors[0];
               if (hostFloor) {
-                onSemanticCommand?.({
+                onSemanticCommandRef.current?.({
                   type: 'createSlabOpening',
                   hostFloorId: hostFloor.id,
                   boundaryMm,
@@ -3679,7 +3681,7 @@ export function Viewport({
     // `theme` is included so the renderer rebuilds when the user toggles
     // light/dark — token-driven materials are resolved at mount time and
     // need fresh values when the data-theme attribute flips. Spec §32 V11.
-  }, [clearWallDraftPreviewGroup, onSemanticCommand, theme]);
+  }, [clearWallDraftPreviewGroup, theme]);
 
   useEffect(() => {
     if (!orbitCameraPoseMm) return;
