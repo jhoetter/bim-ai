@@ -531,6 +531,72 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'navigate.coordination',
+  label: 'Switch lens: Coordination',
+  keywords: ['coordination', 'koordination', 'clash', 'issue', 'review', 'lens'],
+  category: 'navigate',
+  invoke: (ctx) => {
+    if (ctx.setLensMode) {
+      ctx.setLensMode('coordination');
+      return;
+    }
+    useBimStore.getState().setLensMode('coordination');
+  },
+});
+
+registerCommand({
+  id: 'navigate.fire-safety',
+  label: 'Switch lens: Fire Safety',
+  keywords: ['fire', 'fire safety', 'brandschutz', 'compartment', 'egress', 'lens'],
+  category: 'navigate',
+  invoke: (ctx) => {
+    if (ctx.setLensMode) {
+      ctx.setLensMode('fire-safety');
+      return;
+    }
+    useBimStore.getState().setLensMode('fire-safety');
+  },
+});
+
+registerCommand({
+  id: 'navigate.energy',
+  label: 'Switch lens: Energieberatung',
+  keywords: [
+    'energy',
+    'energieberatung',
+    'energielinse',
+    'energieberater',
+    'geg',
+    'bafa',
+    'isfp',
+    'beg',
+    'lens',
+  ],
+  category: 'navigate',
+  invoke: (ctx) => {
+    if (ctx.setLensMode) {
+      ctx.setLensMode('energy');
+      return;
+    }
+    useBimStore.getState().setLensMode('energy');
+  },
+});
+
+registerCommand({
+  id: 'navigate.construction-lens',
+  label: 'Switch lens: Bauausfuehrung',
+  keywords: ['construction', 'execution', 'bauausfuehrung', 'ausfuehrung', 'baustelle', 'lens'],
+  category: 'navigate',
+  invoke: (ctx) => {
+    if (ctx.setLensMode) {
+      ctx.setLensMode('construction');
+      return;
+    }
+    useBimStore.getState().setLensMode('construction');
+  },
+});
+
+registerCommand({
   id: 'navigate.sustainability',
   label: 'Switch lens: Sustainability / LCA',
   keywords: ['sustainability', 'lca', 'carbon', 'embodied', 'epd', 'oekobilanz', 'lens'],
@@ -541,6 +607,20 @@ registerCommand({
       return;
     }
     useBimStore.getState().setLensMode('sustainability');
+  },
+});
+
+registerCommand({
+  id: 'navigate.cost-quantity',
+  label: 'Switch lens: Cost and Quantity',
+  keywords: ['cost', 'quantity', 'takeoff', 'mengen', 'kosten', 'din276', 'lens'],
+  category: 'navigate',
+  invoke: (ctx) => {
+    if (ctx.setLensMode) {
+      ctx.setLensMode('cost-quantity');
+      return;
+    }
+    useBimStore.getState().setLensMode('cost-quantity');
   },
 });
 
@@ -1158,6 +1238,24 @@ registerCommand({
   category: 'command',
   isAvailable: is3dContext,
   invoke: () => useBimStore.getState().setViewerRenderStyle('consistent-colors'),
+});
+
+registerCommand({
+  id: 'display.render.high-fidelity',
+  label: 'Render: High Fidelity',
+  keywords: ['high fidelity', 'render', 'realistic', 'soft shadows', 'display', '3d'],
+  category: 'command',
+  isAvailable: is3dContext,
+  invoke: () => useBimStore.getState().setViewerRenderStyle('high-fidelity'),
+});
+
+registerCommand({
+  id: 'display.render.path-trace-preview',
+  label: 'Render: Path Trace Preview',
+  keywords: ['path trace', 'ray trace', 'render', 'progressive', 'display', '3d'],
+  category: 'command',
+  isAvailable: is3dContext,
+  invoke: () => useBimStore.getState().setViewerRenderStyle('path-trace-preview'),
 });
 
 registerCommand({

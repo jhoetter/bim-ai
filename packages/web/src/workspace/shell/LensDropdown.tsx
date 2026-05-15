@@ -1,35 +1,32 @@
 import { type JSX, useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { LensMode } from '@bim-ai/core';
+import { LENS_ORDER, lensLabel } from '../lensUx';
 
-const LENS_CYCLE = [
-  'architecture',
-  'structure',
-  'mep',
-  'sustainability',
-  'all',
-] as const satisfies readonly LensMode[];
+const LENS_CYCLE = LENS_ORDER;
 type LensCycleMode = (typeof LENS_CYCLE)[number];
-
-const LENS_LABELS: Record<LensCycleMode, string> = {
-  architecture: 'Architecture',
-  structure: 'Structure',
-  mep: 'MEP',
-  sustainability: 'Sustainability / LCA',
-  all: 'All',
-};
 
 const DISC_SOFT: Partial<Record<LensMode, string>> = {
   architecture: 'var(--disc-arch-soft)',
   structure: 'var(--disc-struct-soft)',
   mep: 'var(--disc-mep-soft)',
+  coordination: 'color-mix(in srgb, var(--color-drift, var(--color-warning)) 20%, transparent)',
+  'fire-safety': 'color-mix(in srgb, var(--color-danger) 22%, transparent)',
+  energy: 'color-mix(in srgb, var(--color-success) 24%, transparent)',
+  construction: 'color-mix(in srgb, var(--draft-construction-blue) 24%, transparent)',
   sustainability: 'color-mix(in srgb, var(--color-success) 18%, transparent)',
+  'cost-quantity': 'color-mix(in srgb, var(--color-warning) 24%, transparent)',
 };
 
 const DISC_SOLID: Partial<Record<LensMode, string>> = {
   architecture: 'var(--disc-arch)',
   structure: 'var(--disc-struct)',
   mep: 'var(--disc-mep)',
+  coordination: 'var(--color-drift, var(--color-warning))',
+  'fire-safety': 'var(--color-danger)',
+  energy: 'var(--color-success)',
+  construction: 'var(--draft-construction-blue)',
   sustainability: 'var(--color-success)',
+  'cost-quantity': 'var(--color-warning)',
 };
 
 export interface LensDropdownProps {
@@ -53,7 +50,7 @@ export function LensDropdown({
     ? (currentLens as (typeof LENS_CYCLE)[number])
     : 'all';
 
-  // Global L key cycles forward through the 4 lens modes.
+  // Global L key cycles forward through the lens modes.
   useEffect(() => {
     if (!enableHotkey) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -108,7 +105,7 @@ export function LensDropdown({
         />
         <span className="text-muted">Show</span>
         <span className="font-medium" style={{ color: 'var(--color-foreground)' }}>
-          {LENS_LABELS[activeLensInCycle]}
+          {lensLabel(activeLensInCycle)}
         </span>
         <span aria-hidden="true" className="text-muted">
           ▾
@@ -120,7 +117,7 @@ export function LensDropdown({
           role="menu"
           aria-label="Lens"
           data-testid="lens-menu"
-          className="absolute left-0 top-full z-50 mt-1 w-44 rounded-md border border-border bg-surface shadow-elev-2"
+          className="absolute left-0 top-full z-50 mt-1 w-52 rounded-md border border-border bg-surface shadow-elev-2"
           style={{ fontSize: 'var(--text-sm)' }}
           ref={(el) => {
             const active = el?.querySelector<HTMLElement>('[aria-current="true"]');
@@ -160,7 +157,7 @@ export function LensDropdown({
                 lens === currentLens ? 'bg-accent-soft font-medium' : 'hover:bg-surface-strong',
               ].join(' ')}
             >
-              {LENS_LABELS[lens]}
+              {lensLabel(lens)}
               {lens === currentLens ? (
                 <svg
                   aria-hidden="true"

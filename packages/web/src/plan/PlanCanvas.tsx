@@ -35,11 +35,12 @@ import {
 } from '../tools/toolGrammar';
 import * as THREE from 'three';
 import { parseDimensionInput } from '@bim-ai/core';
-import type { Element } from '@bim-ai/core';
+import type { Element, LensMode } from '@bim-ai/core';
 
 import { useBimStore, type PlanTool } from '../state/store';
 import type { CategoryOverride } from '../state/storeTypes';
 import { useTheme } from '../state/useTheme';
+import { lensFilterFromMode, resolveLensFilter } from '../viewport/useLensFilter';
 import { liveTokenReader } from '../viewport/materials';
 import {
   collectCenterAnchors,
@@ -1113,28 +1114,11 @@ export function PlanCanvas({
     // DSC-V3-02 — discipline lens ghost pass: 25% opacity for non-matching elements.
     {
       const planView = activePlanViewId ? elementsById[activePlanViewId] : null;
-      // Global lensMode from StatusBar dropdown overrides the plan_view's defaultLens.
-      // lensMode values: 'all' | 'architecture' | 'structure' | 'mep'
-      // plan_view.defaultLens values: 'show_all' | 'show_arch' | 'show_struct' | 'show_mep'
-      const LENS_PROP_TO_TOKEN: Record<string, string> = {
-        architecture: 'show_arch',
-        structure: 'show_struct',
-        mep: 'show_mep',
-      };
-      const resolvedLens =
+      const filter =
         lensMode && lensMode !== 'all'
-          ? (LENS_PROP_TO_TOKEN[lensMode] ?? 'show_all')
-          : planView && 'defaultLens' in planView
-            ? (planView.defaultLens as string)
-            : 'show_all';
-      const lens = resolvedLens;
-      if (lens !== 'show_all') {
-        const LENS_TO_DISC: Record<string, string> = {
-          show_arch: 'arch',
-          show_struct: 'struct',
-          show_mep: 'mep',
-        };
-        const expected = LENS_TO_DISC[lens];
+          ? lensFilterFromMode(lensMode as LensMode)
+          : resolveLensFilter(planView && 'defaultLens' in planView ? planView : null);
+      if (lensMode !== 'all' || (planView && 'defaultLens' in planView)) {
         const witnessColor = readPlanToken('--draft-witness', '#64748b');
         const witnessThree = new THREE.Color(witnessColor);
         grp.traverse((ch) => {
@@ -1142,9 +1126,7 @@ export function PlanCanvas({
           if (typeof pickId !== 'string') return;
           const el = elementsById[pickId];
           if (!el) return;
-          const disc =
-            ('discipline' in el ? (el.discipline as string | null | undefined) : null) ?? 'arch';
-          const isGhost = disc !== expected;
+          const isGhost = filter(el) === 'ghost';
           if (ch instanceof THREE.Mesh) {
             const mat = ch.material as THREE.Material | THREE.Material[];
             const applyGhost = (m: THREE.Material) => {

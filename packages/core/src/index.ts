@@ -2902,12 +2902,21 @@ export type LensMode =
   | 'architecture'
   | 'structure'
   | 'mep'
+  | 'fire-safety'
+  | 'cost-quantity'
   | 'energy'
   | 'coordination'
+  | 'construction'
   | 'sustainability';
 
 /** DSC-V3-02 — per-view discipline lens stored on view elements. */
-export type ViewLensMode = 'show_arch' | 'show_struct' | 'show_mep' | 'show_all';
+export type ViewLensMode =
+  | 'show_arch'
+  | 'show_struct'
+  | 'show_mep'
+  | 'show_fire_safety'
+  | 'show_cost_quantity'
+  | 'show_all';
 
 /** LNS-V3-01/DSC-V3-02 — undoable command dispatched by the lens dropdown. */
 export type SetViewLensCmd = { type: 'set_view_lens'; viewId: string; lens: ViewLensMode };

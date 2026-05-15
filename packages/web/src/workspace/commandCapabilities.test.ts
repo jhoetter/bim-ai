@@ -241,7 +241,12 @@ describe('command capability graph', () => {
       'navigate.architecture',
       'navigate.structure',
       'navigate.mep',
+      'navigate.coordination',
+      'navigate.fire-safety',
+      'navigate.energy',
+      'navigate.construction-lens',
       'navigate.sustainability',
+      'navigate.cost-quantity',
       'theme.toggle',
       'settings.language.toggle',
       'shell.toggle-primary-sidebar',
@@ -304,7 +309,24 @@ describe('command capability graph', () => {
       'primary-sidebar',
     ]);
     expect(getCommandCapability('navigate.mep')?.surfaces).toEqual(['cmd-k', 'primary-sidebar']);
+    expect(getCommandCapability('navigate.coordination')?.surfaces).toEqual([
+      'cmd-k',
+      'primary-sidebar',
+    ]);
+    expect(getCommandCapability('navigate.fire-safety')?.surfaces).toEqual([
+      'cmd-k',
+      'primary-sidebar',
+    ]);
+    expect(getCommandCapability('navigate.energy')?.surfaces).toEqual(['cmd-k', 'primary-sidebar']);
+    expect(getCommandCapability('navigate.construction-lens')?.surfaces).toEqual([
+      'cmd-k',
+      'primary-sidebar',
+    ]);
     expect(getCommandCapability('navigate.sustainability')?.surfaces).toEqual([
+      'cmd-k',
+      'primary-sidebar',
+    ]);
+    expect(getCommandCapability('navigate.cost-quantity')?.surfaces).toEqual([
       'cmd-k',
       'primary-sidebar',
     ]);

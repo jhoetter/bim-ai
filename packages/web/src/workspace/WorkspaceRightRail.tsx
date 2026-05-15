@@ -34,6 +34,7 @@ import {
   InspectorPropertiesFor,
   InspectorRoomEditor,
   type InspectorSelection,
+  type MaterialBrowserTargetRequest,
   InspectorViewpointEditor,
   InspectorViewTemplateEditor,
   InspectorWindowEditor,
@@ -53,6 +54,7 @@ import { firstSheetId, placeViewOnSheetCommand } from './sheets/sheetRecommended
 import type { WorkspaceMode } from './shell';
 import { PersistedDisclosureSection } from './shell/components/PersistedDisclosureSection';
 import { humanKindLabel, InspectorEmptyTab } from './WorkspaceHelpers';
+import { lensUx, lensViewBehavior, type LensViewMode } from './lensUx';
 import {
   isDuplicableTypeElement,
   type DuplicableTypeElement,
@@ -261,36 +263,71 @@ function familyInstanceSiblingTypes(
     );
 }
 
-function resolveMaterialEditableType(
+type MaterialEditableType = Extract<Element, { kind: 'wall_type' | 'floor_type' | 'roof_type' }>;
+type MaterialEditableInstance = Extract<
+  Element,
+  {
+    kind:
+      | 'toposolid'
+      | 'toposolid_subdivision'
+      | 'wall'
+      | 'door'
+      | 'window'
+      | 'roof'
+      | 'column'
+      | 'beam'
+      | 'text_3d'
+      | 'sweep'
+      | 'mass'
+      | 'pipe';
+  }
+>;
+
+function hasInstanceMaterialKey(element: Element): element is MaterialEditableInstance {
+  switch (element.kind) {
+    case 'toposolid':
+    case 'toposolid_subdivision':
+    case 'wall':
+    case 'door':
+    case 'window':
+    case 'roof':
+    case 'column':
+    case 'beam':
+    case 'text_3d':
+    case 'sweep':
+    case 'mass':
+    case 'pipe':
+      return true;
+    default:
+      return false;
+  }
+}
+
+function hasMaterialEditableTarget(
   element: Element,
   elementsById: Record<string, Element>,
-): Extract<Element, { kind: 'wall_type' | 'floor_type' | 'roof_type' }> | null {
+): boolean {
   if (
     element.kind === 'wall_type' ||
     element.kind === 'floor_type' ||
     element.kind === 'roof_type'
   ) {
-    return element;
+    return true;
   }
-  if (element.kind === 'wall') {
-    const typeId = element.wallTypeId;
-    if (!typeId) return null;
-    const type = elementsById[typeId];
-    return type?.kind === 'wall_type' ? type : null;
+  if (element.kind === 'wall' && element.wallTypeId) {
+    return elementsById[element.wallTypeId]?.kind === 'wall_type';
   }
+  if (element.kind === 'roof' && element.roofTypeId) {
+    return elementsById[element.roofTypeId]?.kind === 'roof_type';
+  }
+  if (hasInstanceMaterialKey(element)) return true;
   if (element.kind === 'floor') {
     const typeId = element.floorTypeId;
-    if (!typeId) return null;
+    if (!typeId) return false;
     const type = elementsById[typeId];
-    return type?.kind === 'floor_type' ? type : null;
+    return type?.kind === 'floor_type';
   }
-  if (element.kind === 'roof') {
-    const typeId = element.roofTypeId;
-    if (!typeId) return null;
-    const type = elementsById[typeId];
-    return type?.kind === 'roof_type' ? type : null;
-  }
-  return null;
+  return false;
 }
 
 export function WorkspaceRightRail({
@@ -311,8 +348,8 @@ export function WorkspaceRightRail({
   activeViewTargetId?: string;
   lensMode?: LensMode;
   surface: 'view-context' | 'element';
-  onOpenMaterialBrowser?: () => void;
-  onOpenAppearanceAssetBrowser?: () => void;
+  onOpenMaterialBrowser?: (target?: MaterialBrowserTargetRequest) => void;
+  onOpenAppearanceAssetBrowser?: (target?: MaterialBrowserTargetRequest) => void;
 }): JSX.Element {
   const { t } = useTranslation();
   const selectedId = useBimStore((s) => s.selectedId);
@@ -705,7 +742,14 @@ export function WorkspaceRightRail({
         data-view-mode={mode}
       >
         {lensMode !== 'all' ? (
-          <LensScopeNotice testId="secondary-lens-scope-notice" lensMode={lensMode} scope="view" />
+          <>
+            <LensScopeNotice
+              testId="secondary-lens-scope-notice"
+              lensMode={lensMode}
+              scope="view"
+            />
+            <LensDashboard lensMode={lensMode} mode={mode} compact={mode === '3d'} />
+          </>
         ) : null}
         {mode === '3d' ? (
           <Secondary3dAdapter
@@ -774,6 +818,9 @@ export function WorkspaceRightRail({
     <div className="h-full overflow-y-auto">
       {showElementSurface && lensMode !== 'all' ? (
         <LensScopeNotice testId="element-lens-scope-notice" lensMode={lensMode} scope="element" />
+      ) : null}
+      {showElementSurface && lensMode !== 'all' && !el ? (
+        <LensDashboard lensMode={lensMode} mode={mode} />
       ) : null}
       {/* CHR-V3-06: non-blocking scope toast */}
       {allScopeToast ? (
@@ -908,6 +955,9 @@ export function WorkspaceRightRail({
                     onOpenMaterialBrowser={onOpenMaterialBrowser}
                     onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
                   />
+                  {lensMode !== 'all' ? (
+                    <LensElementFocusPanel lensMode={lensMode} element={el} />
+                  ) : null}
                   {el.kind === 'plan_view' ? (
                     <>
                       {planGridDatumLine ? (
@@ -1053,6 +1103,8 @@ export function WorkspaceRightRail({
                         );
                       }}
                       onDisciplineChange={handleDisciplineChange}
+                      onOpenMaterialBrowser={onOpenMaterialBrowser}
+                      onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
                     />
                   ) : el.kind === 'window' ? (
                     <InspectorWindowEditor
@@ -1102,6 +1154,8 @@ export function WorkspaceRightRail({
                         );
                       }}
                       onDisciplineChange={handleDisciplineChange}
+                      onOpenMaterialBrowser={onOpenMaterialBrowser}
+                      onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
                     />
                   ) : el.kind === 'project_settings' ? (
                     <InspectorProjectSettingsEditor
@@ -1128,6 +1182,8 @@ export function WorkspaceRightRail({
                           }),
                         onDisciplineChange: handleDisciplineChange,
                         onEditType: (typeId) => select(typeId),
+                        onOpenMaterialBrowser,
+                        onOpenAppearanceAssetBrowser,
                       })}
                       <WallJoinDisallowSection
                         wall={el}
@@ -1200,6 +1256,8 @@ export function WorkspaceRightRail({
                       el={el as Extract<Element, { kind: 'column' }>}
                       onSemanticCommand={onSemanticCommand}
                       t={t}
+                      onOpenMaterialBrowser={onOpenMaterialBrowser}
+                      onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
                     />
                   ) : (
                     InspectorPropertiesFor(el, t, {
@@ -1218,6 +1276,8 @@ export function WorkspaceRightRail({
                       },
                       onDisciplineChange: handleDisciplineChange,
                       onEditType: (typeId) => select(typeId),
+                      onOpenMaterialBrowser,
+                      onOpenAppearanceAssetBrowser,
                     })
                   )}
                   {activePlanViewId && (
@@ -1520,9 +1580,7 @@ function SelectionTabs({
   return (
     <div className="border-b border-border bg-surface" data-testid="element-selection-tabs">
       <div className="flex items-center justify-between gap-2 px-3 pt-2">
-        <div className="min-w-0 text-[11px] font-medium text-muted">
-          {elements.length} selected
-        </div>
+        <div className="min-w-0 text-[11px] font-medium text-muted">{elements.length} selected</div>
         <button
           type="button"
           className="shrink-0 rounded border border-border px-2 py-1 text-[11px] text-muted hover:text-foreground"
@@ -1636,12 +1694,13 @@ function LensScopeNotice({
   scope: 'view' | 'element';
   testId: string;
 }): JSX.Element {
-  const lensLabel =
-    lensMode === 'structure' ? 'Structure' : lensMode === 'mep' ? 'MEP' : 'Architecture';
+  const lensLabel = lensUx(lensMode).label;
   const body =
-    scope === 'view'
-      ? `${lensLabel} lens is active. View controls and command availability are filtered for this discipline.`
-      : `${lensLabel} lens is active. Out-of-scope elements remain inspectable, but editing commands may be unavailable.`;
+    lensMode === 'coordination'
+      ? 'Coordination lens is active. Review, issue, link, and model-health workflows remain foregrounded while authoring commands are filtered.'
+      : scope === 'view'
+        ? `${lensLabel} lens is active. View controls and command availability are filtered for this discipline.`
+        : `${lensLabel} lens is active. Out-of-scope elements remain inspectable, but editing commands may be unavailable.`;
   return (
     <div
       data-testid={testId}
@@ -1650,6 +1709,207 @@ function LensScopeNotice({
       {body}
     </div>
   );
+}
+
+function LensDashboard({
+  lensMode,
+  mode,
+  compact = false,
+}: {
+  lensMode: LensMode;
+  mode: WorkspaceMode;
+  compact?: boolean;
+}): JSX.Element {
+  const ux = lensUx(lensMode);
+  const viewMode = workspaceModeToLensViewMode(mode);
+  const behavior = lensViewBehavior(lensMode, viewMode);
+  const rows = compact ? ux.ribbonFocus.slice(0, 3) : ux.inspectorFocus.slice(0, 4);
+  const secondary = viewMode === 'schedule' ? ux.scheduleFamilies : ux.sheetDeliverables;
+  return (
+    <section
+      data-testid="lens-dashboard"
+      className="mx-3 mt-3 rounded border border-border bg-background px-3 py-2 text-[11px]"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="font-semibold text-foreground">{ux.label}</div>
+          <div className="text-muted">{ux.germanName}</div>
+        </div>
+        <span className="shrink-0 rounded bg-surface-strong px-1.5 py-0.5 text-[10px] uppercase text-muted">
+          {mode}
+        </span>
+      </div>
+      <p className="mt-2 leading-snug text-muted">{behavior}</p>
+      <div className="mt-2 grid gap-1">
+        {rows.map((row) => (
+          <div key={row} className="flex items-center gap-1.5 text-foreground">
+            <span aria-hidden="true" className="h-1 w-1 rounded-full bg-accent" />
+            <span className="min-w-0 truncate">{row}</span>
+          </div>
+        ))}
+      </div>
+      {!compact ? (
+        <div className="mt-2 border-t border-border pt-2 text-muted">
+          <div className="font-medium text-foreground">
+            {viewMode === 'schedule' ? 'Relevant schedules' : 'Relevant deliverables'}
+          </div>
+          <div className="mt-1 leading-snug">{secondary.slice(0, 4).join(' · ')}</div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function LensElementFocusPanel({
+  lensMode,
+  element,
+}: {
+  lensMode: LensMode;
+  element: Element;
+}): JSX.Element {
+  const ux = lensUx(lensMode);
+  const values = elementLensValues(element, lensMode);
+  return (
+    <section
+      data-testid="lens-element-focus-panel"
+      className="mb-3 rounded border border-border bg-surface-strong px-3 py-2 text-[11px]"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="font-semibold text-foreground">{ux.label} properties</div>
+          <div className="text-muted">{ux.germanName}</div>
+        </div>
+        <span className="shrink-0 rounded bg-background px-1.5 py-0.5 text-[10px] uppercase text-muted">
+          first
+        </span>
+      </div>
+      {values.length ? (
+        <div className="mt-2 grid gap-1">
+          {values.map((row) => (
+            <div key={row.label} className="flex items-center justify-between gap-3">
+              <span className="min-w-0 truncate text-muted">{row.label}</span>
+              <span className="max-w-[55%] truncate text-right font-medium text-foreground">
+                {row.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-2 leading-snug text-muted">
+          No {ux.label.toLowerCase()} data on this element yet. Start with{' '}
+          {ux.inspectorFocus.slice(0, 3).join(', ')}.
+        </div>
+      )}
+    </section>
+  );
+}
+
+function elementLensValues(
+  element: Element,
+  lensMode: LensMode,
+): Array<{ label: string; value: string }> {
+  const record = flattenElementRecord(element);
+  const keyGroups: Partial<Record<LensMode, Array<[string, string[]]>>> = {
+    architecture: [
+      ['Type', ['typeId', 'wallTypeId', 'doorTypeId', 'windowTypeId']],
+      ['Dimensions', ['widthMm', 'heightMm', 'thicknessMm', 'areaM2']],
+      ['Material', ['materialKey', 'materialId']],
+      ['Room', ['roomId', 'fromRoomId', 'toRoomId']],
+    ],
+    structure: [
+      ['Structural role', ['structuralRole', 'loadBearing']],
+      ['Analytical alignment', ['analyticalAlignment', 'axisId']],
+      ['Material', ['structuralMaterial', 'materialKey']],
+      ['Load path', ['loadPathId', 'bearingOnId']],
+    ],
+    mep: [
+      ['System', ['systemId', 'mepSystemId']],
+      ['Service type', ['serviceType', 'disciplineSystem']],
+      ['Size / offset', ['sizeMm', 'diameterMm', 'offsetMm']],
+      ['Penetration', ['penetrationId', 'openingRequestId']],
+    ],
+    coordination: [
+      ['Issues', ['issueIds', 'issueCount', 'openIssueCount']],
+      ['Clashes', ['clashIds', 'clashCount']],
+      ['Linked model', ['linkedModelId', 'linkedElementId']],
+      ['Review status', ['reviewStatus', 'bcfTopicId']],
+    ],
+    'fire-safety': [
+      ['Rating', ['fireResistanceRating', 'fireRating', 'requiredFireRating']],
+      ['Compartment', ['fireCompartmentId', 'smokeCompartmentId']],
+      ['Escape route', ['escapeRouteId', 'travelDistanceM', 'exitWidthMm']],
+      ['Firestopping', ['firestopStatus', 'penetrationStatus']],
+    ],
+    energy: [
+      ['Thermal class', ['thermalClassification', 'boundaryCondition']],
+      ['U-value', ['uValueWPerM2K', 'uValue', 'u_value']],
+      ['Zone', ['thermalZoneId', 'heatingStatus', 'usageProfile']],
+      ['Thermal bridge', ['thermalBridgeMarkerIds', 'thermalBridgeStatus']],
+    ],
+    construction: [
+      ['Phase', ['phaseCreated', 'phaseDemolished', 'phaseId']],
+      ['Package', ['constructionPackageId', 'workPackage', 'trade']],
+      ['Progress', ['progressStatus', 'percentComplete', 'qaStatus']],
+      ['Responsible', ['responsibleCompany', 'assigneeId']],
+    ],
+    sustainability: [
+      ['EPD', ['epdId', 'epdSource', 'epdStatus']],
+      ['GWP', ['gwpKgCO2e', 'gwpA1A3KgCO2e', 'carbonKgCO2e']],
+      ['Circularity', ['recycledContentPct', 'reusePotential', 'reusedContentPct']],
+      ['Quantity', ['materialQuantity', 'massKg', 'volumeM3']],
+    ],
+    'cost-quantity': [
+      ['Quantity basis', ['quantityBasis', 'quantity', 'areaM2', 'volumeM3']],
+      ['Cost group', ['costGroup', 'din276Group', 'costClassification']],
+      ['Unit rate', ['unitRate', 'unit', 'currency']],
+      ['Scenario', ['scenarioId', 'costSource', 'rateSource']],
+    ],
+  };
+  const groups = keyGroups[lensMode] ?? [];
+  return groups.flatMap(([label, keys]) => {
+    const match = keys.find((key) => hasRenderableValue(record[key]));
+    if (!match) return [];
+    return [{ label, value: renderLensValue(record[match]) }];
+  });
+}
+
+function flattenElementRecord(element: Element): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...(element as unknown as Record<string, unknown>) };
+  const props = (element as { props?: unknown }).props;
+  if (props && typeof props === 'object' && !Array.isArray(props)) {
+    Object.assign(out, props as Record<string, unknown>);
+    for (const value of Object.values(props as Record<string, unknown>)) {
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        Object.assign(out, value as Record<string, unknown>);
+      }
+    }
+  }
+  return out;
+}
+
+function hasRenderableValue(value: unknown): boolean {
+  if (value == null) return false;
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === 'object') return Object.keys(value).length > 0;
+  return true;
+}
+
+function renderLensValue(value: unknown): string {
+  if (Array.isArray(value)) return value.map(renderLensValue).join(', ');
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (typeof value === 'number') return Number.isInteger(value) ? String(value) : value.toFixed(2);
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object') return Object.keys(value).join(', ');
+  return String(value);
+}
+
+function workspaceModeToLensViewMode(mode: WorkspaceMode): LensViewMode {
+  if (mode === '3d') return '3d';
+  if (mode === 'section') return 'section';
+  if (mode === 'sheet') return 'sheet';
+  if (mode === 'schedule') return 'schedule';
+  return 'plan';
 }
 
 function SecondaryToggle({
@@ -2323,11 +2583,11 @@ function InspectorContextActions({
   onDuplicateType: (element: DuplicableTypeElement) => void;
   onResetSavedView: () => void;
   onUpdateSavedView: () => void;
-  onOpenMaterialBrowser?: () => void;
-  onOpenAppearanceAssetBrowser?: () => void;
+  onOpenMaterialBrowser?: (target?: MaterialBrowserTargetRequest) => void;
+  onOpenAppearanceAssetBrowser?: (target?: MaterialBrowserTargetRequest) => void;
 }): JSX.Element | null {
   const buttons: JSX.Element[] = [];
-  const materialType = resolveMaterialEditableType(element, elementsById);
+  const hasMaterialTarget = hasMaterialEditableTarget(element, elementsById);
 
   if (onNavigateToElement && NAVIGABLE_KINDS.has(element.kind)) {
     buttons.push(
@@ -2370,28 +2630,28 @@ function InspectorContextActions({
     );
   }
 
-  if (materialType && onOpenMaterialBrowser) {
+  if (hasMaterialTarget && onOpenMaterialBrowser) {
     buttons.push(
       <button
         key="open-material-browser"
         type="button"
         data-testid="inspector-open-material-browser"
         className="rounded border border-border bg-background px-2 py-1 text-[11px] text-foreground hover:bg-surface"
-        onClick={onOpenMaterialBrowser}
+        onClick={() => onOpenMaterialBrowser()}
       >
         Materials…
       </button>,
     );
   }
 
-  if (materialType && onOpenAppearanceAssetBrowser) {
+  if (hasMaterialTarget && onOpenAppearanceAssetBrowser) {
     buttons.push(
       <button
         key="open-appearance-asset-browser"
         type="button"
         data-testid="inspector-open-appearance-asset-browser"
         className="rounded border border-border bg-background px-2 py-1 text-[11px] text-foreground hover:bg-surface"
-        onClick={onOpenAppearanceAssetBrowser}
+        onClick={() => onOpenAppearanceAssetBrowser()}
       >
         Appearance Assets…
       </button>,
@@ -3016,10 +3276,14 @@ function ColumnInspector({
   el,
   onSemanticCommand,
   t,
+  onOpenMaterialBrowser,
+  onOpenAppearanceAssetBrowser,
 }: {
   el: Extract<Element, { kind: 'column' }>;
   onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
   t: ReturnType<typeof useTranslation>['t'];
+  onOpenMaterialBrowser?: (target?: MaterialBrowserTargetRequest) => void;
+  onOpenAppearanceAssetBrowser?: (target?: MaterialBrowserTargetRequest) => void;
 }): JSX.Element {
   const dxRef = useRef<HTMLInputElement | null>(null);
   const dyRef = useRef<HTMLInputElement | null>(null);
@@ -3033,6 +3297,8 @@ function ColumnInspector({
             key: property,
             value,
           }),
+        onOpenMaterialBrowser,
+        onOpenAppearanceAssetBrowser,
       })}
       <div
         className="border-t border-border pt-2 space-y-1"

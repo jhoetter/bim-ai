@@ -1,5 +1,5 @@
 import { type JSX, useEffect, useMemo, useState } from 'react';
-import type { Element } from '@bim-ai/core';
+import type { Element, LensMode } from '@bim-ai/core';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
 import { ScheduleViewHifi } from '@bim-ai/icons';
 
@@ -24,6 +24,7 @@ import {
   scheduleRegistryEngineReadoutParts,
 } from '../schedules/schedulePanelRegistryChrome';
 import { firstSheetId, placeViewOnSheetCommand } from './sheets/sheetRecommendedViewports';
+import { lensUx } from './lensUx';
 
 /**
  * Mode-specific shells — spec §20.4 / §20.5 / §20.6 / §20.7.
@@ -57,15 +58,18 @@ export function SectionModeShell({
   onUpsertSemantic,
   onOpenSourcePlan,
   onOpen3dContext,
+  lensMode = 'all',
 }: {
   activeLevelLabel?: string;
   modelId?: string;
   onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
   onOpenSourcePlan?: () => void;
   onOpen3dContext?: () => void;
+  lensMode?: LensMode;
 }): JSX.Element {
   return (
-    <div data-testid="section-mode-shell" className="h-full w-full overflow-auto">
+    <div data-testid="section-mode-shell" className="relative h-full w-full overflow-auto">
+      {lensMode !== 'all' ? <SectionLensGuidance lensMode={lensMode} /> : null}
       <SectionPlaceholderPane
         activeLevelLabel={activeLevelLabel}
         modelId={modelId}
@@ -73,6 +77,29 @@ export function SectionModeShell({
         onOpenSourcePlan={onOpenSourcePlan}
         onOpen3dContext={onOpen3dContext}
       />
+    </div>
+  );
+}
+
+function SectionLensGuidance({ lensMode }: { lensMode: LensMode }): JSX.Element {
+  const ux = lensUx(lensMode);
+  const focus = ux.inspectorFocus.slice(0, 3).join(' · ');
+  return (
+    <div
+      data-testid="section-lens-guidance"
+      className="pointer-events-none absolute right-4 top-4 z-10 max-w-[320px] rounded border border-border bg-background/95 px-3 py-2 text-[11px] shadow-sm"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <div className="font-semibold text-foreground">{ux.label}</div>
+          <div className="text-muted">{ux.germanName}</div>
+        </div>
+        <span className="rounded bg-surface-strong px-1.5 py-0.5 text-[10px] uppercase text-muted">
+          section
+        </span>
+      </div>
+      <p className="mt-1 leading-snug text-muted">{ux.visualBehavior.section ?? ux.shortPurpose}</p>
+      <div className="mt-1 truncate text-muted">{focus}</div>
     </div>
   );
 }
@@ -88,6 +115,7 @@ export function SheetModeShell({
   onUpsertSemantic,
   reviewMode,
   markupShape,
+  lensMode = 'all',
 }: {
   elementsById: Record<string, Element>;
   preferredSheetId?: string;
@@ -95,6 +123,7 @@ export function SheetModeShell({
   onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
   reviewMode?: SheetReviewMode;
   markupShape?: SheetMarkupShape;
+  lensMode?: LensMode;
 }): JSX.Element {
   const evidenceFullBleed = new URLSearchParams(window.location.search).has('evidenceSheetFull');
 
@@ -109,7 +138,8 @@ export function SheetModeShell({
   // the sheet canvas.
   if (modelId && resolvedSheet) {
     return (
-      <div data-testid="sheet-mode-shell" className="h-full w-full overflow-hidden">
+      <div data-testid="sheet-mode-shell" className="relative h-full w-full overflow-hidden">
+        {lensMode !== 'all' ? <SheetLensGuidance lensMode={lensMode} /> : null}
         <SheetReviewSurface
           sheetId={resolvedSheet.id}
           modelId={modelId}
@@ -123,7 +153,11 @@ export function SheetModeShell({
   }
 
   return (
-    <div data-testid="sheet-mode-shell" className="h-full w-full overflow-auto bg-[#e5e5e5] p-6">
+    <div
+      data-testid="sheet-mode-shell"
+      className="relative h-full w-full overflow-auto bg-[#e5e5e5] p-6"
+    >
+      {lensMode !== 'all' ? <SheetLensGuidance lensMode={lensMode} /> : null}
       <SheetCanvas
         elementsById={elementsById}
         preferredSheetId={preferredSheetId}
@@ -131,6 +165,22 @@ export function SheetModeShell({
         evidenceFullBleed={evidenceFullBleed}
         onUpsertSemantic={onUpsertSemantic}
       />
+    </div>
+  );
+}
+
+function SheetLensGuidance({ lensMode }: { lensMode: LensMode }): JSX.Element {
+  const ux = lensUx(lensMode);
+  return (
+    <div
+      data-testid="sheet-lens-guidance"
+      className="pointer-events-none absolute right-3 top-3 z-10 max-w-xs rounded border border-border bg-surface/95 px-3 py-2 text-[11px] shadow-elev-1"
+    >
+      <div className="font-semibold text-foreground">{ux.label} sheet context</div>
+      <div className="mt-1 leading-snug text-muted">
+        Sheets collect deliverables; selected viewports should carry the lens. Relevant:{' '}
+        {ux.sheetDeliverables.slice(0, 3).join(', ')}.
+      </div>
     </div>
   );
 }
@@ -145,14 +195,19 @@ export function ScheduleModeShell({
   modelId,
   onUpsertSemantic,
   onNavigateToElement,
+  lensMode = 'all',
 }: {
   elementsById: Record<string, Element>;
   preferredScheduleId?: string;
   modelId?: string;
   onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
   onNavigateToElement?: (elementId: string) => void;
+  lensMode?: LensMode;
 }): JSX.Element {
-  const schedules = asArr(elementsById, 'schedule');
+  const schedules = useMemo(
+    () => sortSchedulesForLens(asArr(elementsById, 'schedule'), lensMode),
+    [elementsById, lensMode],
+  );
   const [activeId, setActiveId] = useState<string | null>(
     preferredScheduleId ?? schedules[0]?.id ?? SCHEDULE_DEFAULTS.activeScheduleId,
   );
@@ -185,6 +240,17 @@ export function ScheduleModeShell({
         >
           Schedules
         </div>
+        {lensMode !== 'all' ? (
+          <div
+            data-testid="schedule-lens-guidance"
+            className="mb-1 rounded border border-border bg-background px-2 py-1.5 text-[11px] text-muted"
+          >
+            <div className="font-medium text-foreground">{lensUx(lensMode).label}</div>
+            <div className="mt-0.5 leading-snug">
+              Lens prioritizes {lensUx(lensMode).scheduleFamilies.slice(0, 3).join(', ')}.
+            </div>
+          </div>
+        ) : null}
         {schedules.length === 0 ? (
           <div className="px-1 py-3 text-center text-xs text-muted">
             <ScheduleViewHifi size={34} aria-hidden="true" className="mx-auto mb-1 text-accent" />
@@ -207,6 +273,9 @@ export function ScheduleModeShell({
             >
               <span className="block truncate">{s.name}</span>
               <span className="mt-0.5 flex flex-wrap gap-1 text-[10px] text-muted">
+                {lensMode !== 'all' && scheduleLensPriority(s, lensMode) > 0 ? (
+                  <span className="rounded bg-accent-soft px-1 text-accent">lens</span>
+                ) : null}
                 {scheduleCategoryLabel(s) ? <span>{scheduleCategoryLabel(s)}</span> : null}
                 <span>
                   {(scheduleSheetStats.get(s.id) ?? 0) > 0
@@ -814,6 +883,49 @@ function scheduleCategoryLabel(schedule: Extract<Element, { kind: 'schedule' }>)
   const filters = schedule.filters as Record<string, unknown> | undefined;
   const category = String(filters?.category ?? '').trim();
   return category;
+}
+
+function sortSchedulesForLens(
+  schedules: Extract<Element, { kind: 'schedule' }>[],
+  lensMode: LensMode,
+): Extract<Element, { kind: 'schedule' }>[] {
+  return [...schedules].sort((a, b) => {
+    const pa = scheduleLensPriority(a, lensMode);
+    const pb = scheduleLensPriority(b, lensMode);
+    if (pa !== pb) return pb - pa;
+    return a.name.localeCompare(b.name);
+  });
+}
+
+function scheduleLensPriority(
+  schedule: Extract<Element, { kind: 'schedule' }>,
+  lensMode: LensMode,
+): number {
+  if (lensMode === 'all') return 0;
+  const category = scheduleCategoryLabel(schedule).toLowerCase();
+  const haystack = `${schedule.name} ${category}`.toLowerCase();
+  const words = lensUx(lensMode).scheduleFamilies.flatMap((family) =>
+    family
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((word) => word.length >= 4),
+  );
+  let score = 0;
+  for (const word of words) {
+    if (haystack.includes(word)) score += 1;
+  }
+  if (lensMode === 'architecture' && ['room', 'door', 'window'].includes(category)) score += 3;
+  if (lensMode === 'sustainability' && haystack.includes('carbon')) score += 3;
+  if (
+    lensMode === 'cost-quantity' &&
+    (haystack.includes('cost') || haystack.includes('quantity'))
+  ) {
+    score += 3;
+  }
+  if (lensMode === 'energy' && (haystack.includes('thermal') || haystack.includes('envelope'))) {
+    score += 3;
+  }
+  return score;
 }
 
 function scheduleSheetPlacementStats(elementsById: Record<string, Element>): Map<string, number> {
