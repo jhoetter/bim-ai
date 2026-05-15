@@ -261,7 +261,9 @@ function roofTypeTopMaterialKey(
 ): string | null {
   if (!roof.roofTypeId) return null;
   const type = elementsById[roof.roofTypeId];
-  return type?.kind === 'roof_type' ? (type.layers[topLayerIndex(type)]?.materialKey ?? null) : null;
+  return type?.kind === 'roof_type'
+    ? (type.layers[topLayerIndex(type)]?.materialKey ?? null)
+    : null;
 }
 
 function fmtMm(value: number | null | undefined): string {
@@ -573,6 +575,7 @@ export function InspectorPropertiesFor(
     onMonitorReconcile?: (elementId: string, mode: 'accept_source' | 'keep_host') => void;
     onDisciplineChange?: (discipline: DisciplineTag | null) => void;
     onEditType?: (typeId: string) => void;
+    onEditBoundary?: (element: Extract<Element, { kind: 'floor' }>) => void;
     onOpenMaterialBrowser?: OpenMaterialBrowser;
     onOpenAppearanceAssetBrowser?: OpenMaterialBrowser;
   },
@@ -845,6 +848,25 @@ export function InspectorPropertiesFor(
           <FieldRow label={f('finishThickness')} value={fmtMm(el.finishThicknessMm)} />
           <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
           <FieldRow label={f('boundaryPoints')} value={String(el.boundaryMm.length)} />
+          {options?.onEditBoundary ? (
+            <div
+              className="flex items-center justify-between gap-2 rounded border border-border bg-surface px-2 py-1.5"
+              data-testid="inspector-floor-boundary-actions"
+            >
+              <div className="min-w-0">
+                <div className="text-xs font-semibold text-foreground">Boundary</div>
+                <div className="text-[10px] text-muted">Plan vertex grips</div>
+              </div>
+              <button
+                type="button"
+                data-testid="inspector-floor-edit-boundary"
+                className="shrink-0 rounded border border-border bg-background px-2 py-0.5 text-xs text-foreground hover:bg-surface-strong"
+                onClick={() => options.onEditBoundary?.(el)}
+              >
+                Edit Boundary
+              </button>
+            </div>
+          ) : null}
 
           <div className="flex items-center gap-2 py-0.5">
             <span className="text-xs text-muted w-28 shrink-0">{f('floorType')}</span>

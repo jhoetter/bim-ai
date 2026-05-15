@@ -578,6 +578,17 @@ export function WorkspaceRightRail({
     useBimStore.getState().select(undefined);
   }, [elementsById, onSemanticCommand]);
 
+  const beginPlanBoundaryEdit = useCallback(
+    (target: Extract<Element, { kind: 'floor' }> | Extract<Element, { kind: 'roof' }>): void => {
+      const levelId = target.kind === 'floor' ? target.levelId : target.referenceLevelId;
+      select(target.id);
+      setPlanTool('select');
+      if (levelId) setActiveLevelId(levelId);
+      if (mode !== 'plan') onModeChange('plan');
+    },
+    [mode, onModeChange, select, setActiveLevelId, setPlanTool],
+  );
+
   const inspectorSelection = useMemo<InspectorSelection | null>(() => {
     if (!selectedId) return null;
     const found = elementsById[selectedId];
@@ -1274,6 +1285,7 @@ export function WorkspaceRightRail({
                       },
                       onDisciplineChange: handleDisciplineChange,
                       onEditType: (typeId) => select(typeId),
+                      onEditBoundary: (target) => beginPlanBoundaryEdit(target),
                       onOpenMaterialBrowser,
                       onOpenAppearanceAssetBrowser,
                     })
@@ -1510,6 +1522,7 @@ export function WorkspaceRightRail({
               element={el}
               elementsById={elementsById}
               onSelect={select}
+              onEditBoundary={beginPlanBoundaryEdit}
               onIsolateCategory={isolateViewerCategory}
               onHideCategory={(category) => {
                 if (!viewerCategoryHidden[category]) toggleViewerCategoryHidden(category);
@@ -2291,12 +2304,16 @@ function Selected3dElementActions({
   element,
   elementsById,
   onSelect,
+  onEditBoundary,
   onIsolateCategory,
   onHideCategory,
 }: {
   element: Selected3dActionElement;
   elementsById: Record<string, Element>;
   onSelect: (id: string | undefined) => void;
+  onEditBoundary: (
+    element: Extract<Element, { kind: 'floor' }> | Extract<Element, { kind: 'roof' }>,
+  ) => void;
   onIsolateCategory: (category: ViewerCatKey) => void;
   onHideCategory: (category: ViewerCatKey) => void;
 }): JSX.Element | null {
@@ -2340,6 +2357,13 @@ function Selected3dElementActions({
             testId={`3d-action-${element.kind}-edit-type`}
             label="Edit Type"
             onClick={() => onSelect(typeId ?? undefined)}
+          />
+        ) : null}
+        {element.kind === 'floor' || element.kind === 'roof' ? (
+          <ActionButton
+            testId={`3d-action-${element.kind}-edit-boundary`}
+            label={element.kind === 'floor' ? 'Edit Boundary' : 'Edit Footprint'}
+            onClick={() => onEditBoundary(element)}
           />
         ) : null}
       </div>

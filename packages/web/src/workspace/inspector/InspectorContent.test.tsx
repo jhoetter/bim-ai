@@ -152,6 +152,30 @@ describe('InspectorPropertiesFor — spec §13', () => {
     expect(getByText('0.500')).toBeTruthy();
   });
 
+  it('surfaces floor boundary editing as an explicit action', () => {
+    const floor: Extract<Element, { kind: 'floor' }> = {
+      kind: 'floor',
+      id: 'floor-1',
+      name: 'Floor',
+      levelId: 'seed-lvl-ground',
+      boundaryMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 1000, yMm: 0 },
+        { xMm: 1000, yMm: 1000 },
+        { xMm: 0, yMm: 1000 },
+      ],
+      thicknessMm: 220,
+      structureThicknessMm: 140,
+      finishThicknessMm: 0,
+    };
+    const onEditBoundary = vi.fn();
+    const { getByTestId, getByText } = render(InspectorPropertiesFor(floor, t, { onEditBoundary }));
+
+    expect(getByText('Plan vertex grips')).toBeTruthy();
+    fireEvent.click(getByTestId('inspector-floor-edit-boundary'));
+    expect(onEditBoundary).toHaveBeenCalledWith(floor);
+  });
+
   it('opens material browser with an explicit door slot target', () => {
     const onOpenMaterialBrowser = vi.fn();
     const { getByText, getAllByTestId } = render(

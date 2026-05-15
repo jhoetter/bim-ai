@@ -1986,7 +1986,8 @@ Revit behavior to emulate where it maps cleanly:
   - Tests cover Cmd+K routing, plan ribbon routing and active state, Workspace plan hotkey/ribbon routing, 3D direct Floor/Roof preservation, floor sketch options visibility, capability preconditions, MEP lens gating, and existing Cmd/Ctrl+R browser-shortcut preservation.
   - Floor sketch validation now blocks too-short edges, duplicate/reversed boundary edges, overlapping collinear boundary edges, and same-level floor slab overlap before `Finish`; live sketch-session responses and the finish route return the same concrete validation issue codes.
   - Backend tests cover the new topology validation and document-aware floor overlap/skipped-source-floor behavior in `app/tests/test_sketch_validation.py` and `app/tests/test_routes_sketch_validation.py`.
-  - Remaining before `Done`: seeded screenshots and UI proof for drawn-boundary floor creation, picked-wall floor creation, invalid-loop Finish disabled reasons, overlap/duplicate validation, post-commit floor selection, and edit-boundary action.
+  - Selected floor properties now expose an explicit `Edit Boundary` action that returns to plan/select on the floor level so existing vertex grips are the boundary editor; the same action is reachable from selected-floor 3D actions. DOM tests cover both surfaces.
+  - Remaining before `Done`: seeded screenshots and UI proof for drawn-boundary floor creation, picked-wall floor creation, invalid-loop Finish disabled reasons, overlap/duplicate validation, and post-commit floor selection with edit-boundary action.
 - Dependencies: `WP-NEXT-40`, `WP-NEXT-41`.
 
 ### WP-NEXT-44 — Generate Walls From Floors, Rooms, And Picked Boundaries
