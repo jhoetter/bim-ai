@@ -20,6 +20,7 @@ from bim_ai.elements import (
     LevelElem,
     RailingElem,
     RoofElem,
+    RoofOpeningElem,
     RoomElem,
     SiteElem,
     SlabOpeningElem,
@@ -409,6 +410,88 @@ def test_stl_architectural_profile_omits_tiny_railing_balusters() -> None:
 
     assert len(architectural) < len(full)
     assert {tri.kind for tri in architectural} == {"railing"}
+
+
+def test_stl_roof_modes_export_surfaces_and_exclude_roof_opening_markers() -> None:
+    footprint = [
+        {"xMm": 0, "yMm": 0},
+        {"xMm": 4000, "yMm": 0},
+        {"xMm": 4000, "yMm": 3000},
+        {"xMm": 0, "yMm": 3000},
+    ]
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "wall-1": WallElem(
+                kind="wall",
+                id="wall-1",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 4000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=3000,
+            ),
+            "roof-flat": RoofElem(
+                kind="roof",
+                id="roof-flat",
+                referenceLevelId="lvl",
+                footprintMm=footprint,
+                roofGeometryMode="flat",
+                overhangMm=0,
+            ),
+            "roof-hip": RoofElem(
+                kind="roof",
+                id="roof-hip",
+                referenceLevelId="lvl",
+                footprintMm=footprint,
+                roofGeometryMode="hip",
+                overhangMm=0,
+                slopeDeg=25,
+            ),
+            "roof-asym": RoofElem(
+                kind="roof",
+                id="roof-asym",
+                referenceLevelId="lvl",
+                footprintMm=footprint,
+                roofGeometryMode="asymmetric_gable",
+                ridgeOffsetTransverseMm=400,
+                eaveHeightLeftMm=3000,
+                eaveHeightRightMm=3400,
+                overhangMm=0,
+                slopeDeg=25,
+            ),
+            "opening-1": RoofOpeningElem(
+                kind="roof_opening",
+                id="opening-1",
+                hostRoofId="roof-hip",
+                boundaryMm=[
+                    {"xMm": 1000, "yMm": 1000},
+                    {"xMm": 1500, "yMm": 1000},
+                    {"xMm": 1500, "yMm": 1500},
+                    {"xMm": 1000, "yMm": 1500},
+                ],
+            ),
+        },
+    )
+
+    options = stl_export_options(include_kinds="roof,roof_opening")
+    triangles = document_to_stl_triangles(doc, options=options)
+    manifest = build_stl_export_manifest(doc, options=options)
+
+    assert {tri.kind for tri in triangles} == {"roof"}
+    assert manifest["elementCountsByKind"]["roof"] == 3
+    assert manifest["coverage"]["excludedNonPrintableKindsPresent"]["roof_opening"] == 1
+
+    flat_zs = [v[2] for tri in triangles if tri.element_id == "roof-flat" for v in tri.vertices]
+    hip_zs = [v[2] for tri in triangles if tri.element_id == "roof-hip" for v in tri.vertices]
+    asym_zs = [v[2] for tri in triangles if tri.element_id == "roof-asym" for v in tri.vertices]
+    assert min(flat_zs) == pytest.approx(3000)
+    assert max(flat_zs) == pytest.approx(3150)
+    assert min(hip_zs) == pytest.approx(3000)
+    assert max(hip_zs) > 3600
+    assert min(asym_zs) == pytest.approx(3000)
+    assert max(asym_zs) > 3800
 
 
 def test_empty_document_exports_valid_empty_stl_and_empty_manifest() -> None:

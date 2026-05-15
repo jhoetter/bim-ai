@@ -594,12 +594,12 @@ def _append_rectangular_gable_roof(
     y1: float,
     eave_z_mm: float,
     slope_deg: float,
+    ridge_along_x: bool,
 ) -> bool:
     span_x = x1 - x0
     span_y = y1 - y0
     if span_x <= 1e-6 or span_y <= 1e-6:
         return False
-    ridge_along_x = span_x >= span_y
     rise = math.tan(math.radians(_clamp(slope_deg, 0.0, 70.0))) * (min(span_x, span_y) / 2.0)
     ridge_z = eave_z_mm + max(rise, 120.0)
     xm = (x0 + x1) / 2.0
@@ -624,6 +624,134 @@ def _append_rectangular_gable_roof(
         pts = [(x / 1000.0, z / 1000.0, y / 1000.0) for x, y, z in face]
         for i in range(1, len(pts) - 1):
             _append_world_tri(triangles, kind="roof", element_id=roof.id, a=pts[0], b=pts[i], c=pts[i + 1])
+    return True
+
+
+def _append_rectangular_hip_roof(
+    triangles: list[StlTriangle],
+    *,
+    roof: RoofElem,
+    x0: float,
+    x1: float,
+    y0: float,
+    y1: float,
+    eave_z_mm: float,
+    slope_deg: float,
+    ridge_along_x: bool,
+) -> bool:
+    span_x = x1 - x0
+    span_y = y1 - y0
+    if span_x <= 1e-6 or span_y <= 1e-6:
+        return False
+    slope = math.tan(math.radians(_clamp(slope_deg, 5.0, 70.0)))
+    if ridge_along_x:
+        half_span = span_y / 2.0
+        ym = (y0 + y1) / 2.0
+        rx0 = min(x1, x0 + half_span)
+        rx1 = max(x0, x1 - half_span)
+        if rx0 > rx1:
+            rx0 = rx1 = (x0 + x1) / 2.0
+        ridge_z = eave_z_mm + half_span * slope
+        faces = [
+            [(x0, y0, eave_z_mm), (x1, y0, eave_z_mm), (rx1, ym, ridge_z), (rx0, ym, ridge_z)],
+            [(x1, y1, eave_z_mm), (x0, y1, eave_z_mm), (rx0, ym, ridge_z), (rx1, ym, ridge_z)],
+            [(x0, y1, eave_z_mm), (x0, y0, eave_z_mm), (rx0, ym, ridge_z)],
+            [(x1, y0, eave_z_mm), (x1, y1, eave_z_mm), (rx1, ym, ridge_z)],
+            [(x0, y0, eave_z_mm), (x0, y1, eave_z_mm), (x1, y1, eave_z_mm), (x1, y0, eave_z_mm)],
+        ]
+    else:
+        half_span = span_x / 2.0
+        xm = (x0 + x1) / 2.0
+        ry0 = min(y1, y0 + half_span)
+        ry1 = max(y0, y1 - half_span)
+        if ry0 > ry1:
+            ry0 = ry1 = (y0 + y1) / 2.0
+        ridge_z = eave_z_mm + half_span * slope
+        faces = [
+            [(x1, y0, eave_z_mm), (x1, y1, eave_z_mm), (xm, ry1, ridge_z), (xm, ry0, ridge_z)],
+            [(x0, y1, eave_z_mm), (x0, y0, eave_z_mm), (xm, ry0, ridge_z), (xm, ry1, ridge_z)],
+            [(x0, y0, eave_z_mm), (x1, y0, eave_z_mm), (xm, ry0, ridge_z)],
+            [(x1, y1, eave_z_mm), (x0, y1, eave_z_mm), (xm, ry1, ridge_z)],
+            [(x0, y0, eave_z_mm), (x0, y1, eave_z_mm), (x1, y1, eave_z_mm), (x1, y0, eave_z_mm)],
+        ]
+    for face in faces:
+        pts = [(x / 1000.0, z / 1000.0, y / 1000.0) for x, y, z in face]
+        for i in range(1, len(pts) - 1):
+            _append_world_tri(triangles, kind="roof", element_id=roof.id, a=pts[0], b=pts[i], c=pts[i + 1])
+    return True
+
+
+def _append_asymmetric_gable_roof(
+    triangles: list[StlTriangle],
+    *,
+    doc: Document,
+    roof: RoofElem,
+    x0: float,
+    x1: float,
+    y0: float,
+    y1: float,
+    eave_z_mm: float,
+    slope_deg: float,
+    ridge_along_x: bool,
+) -> bool:
+    span_x = x1 - x0
+    span_y = y1 - y0
+    if span_x <= 1e-6 or span_y <= 1e-6:
+        return False
+    ref = _level_elevation_mm(doc, roof.reference_level_id)
+    eave_left = ref + float(roof.eave_height_left_mm) if roof.eave_height_left_mm is not None else eave_z_mm
+    eave_right = ref + float(roof.eave_height_right_mm) if roof.eave_height_right_mm is not None else eave_z_mm
+    slope = math.tan(math.radians(_clamp(slope_deg, 5.0, 70.0)))
+    bottom_z = min(eave_left, eave_right)
+    if ridge_along_x:
+        half_span = span_y / 2.0
+        offset = _clamp(float(roof.ridge_offset_transverse_mm or 0.0), -half_span + 1e-6, half_span - 1e-6)
+        ry = (y0 + y1) / 2.0 + offset
+        ridge_z = eave_left + (half_span + offset) * slope
+        faces = [
+            [(x0, y0, eave_left), (x1, y0, eave_left), (x1, ry, ridge_z), (x0, ry, ridge_z)],
+            [(x1, y1, eave_right), (x0, y1, eave_right), (x0, ry, ridge_z), (x1, ry, ridge_z)],
+            [(x0, y1, eave_right), (x0, y0, eave_left), (x0, ry, ridge_z)],
+            [(x1, y0, eave_left), (x1, y1, eave_right), (x1, ry, ridge_z)],
+            [(x0, y0, bottom_z), (x0, y1, bottom_z), (x1, y1, bottom_z), (x1, y0, bottom_z)],
+        ]
+    else:
+        half_span = span_x / 2.0
+        offset = _clamp(float(roof.ridge_offset_transverse_mm or 0.0), -half_span + 1e-6, half_span - 1e-6)
+        rx = (x0 + x1) / 2.0 + offset
+        ridge_z = eave_left + (half_span + offset) * slope
+        faces = [
+            [(x0, y1, eave_left), (rx, y1, ridge_z), (rx, y0, ridge_z), (x0, y0, eave_left)],
+            [(x1, y0, eave_right), (rx, y0, ridge_z), (rx, y1, ridge_z), (x1, y1, eave_right)],
+            [(x0, y0, eave_left), (x1, y0, eave_right), (rx, y0, ridge_z)],
+            [(x1, y1, eave_right), (x0, y1, eave_left), (rx, y1, ridge_z)],
+            [(x0, y0, bottom_z), (x0, y1, bottom_z), (x1, y1, bottom_z), (x1, y0, bottom_z)],
+        ]
+    for face in faces:
+        pts = [(x / 1000.0, z / 1000.0, y / 1000.0) for x, y, z in face]
+        for i in range(1, len(pts) - 1):
+            _append_world_tri(triangles, kind="roof", element_id=roof.id, a=pts[0], b=pts[i], c=pts[i + 1])
+    return True
+
+
+def _append_sampled_roof_surface(
+    doc: Document,
+    triangles: list[StlTriangle],
+    roof: RoofElem,
+    footprint_mm: list[tuple[float, float]],
+) -> bool:
+    if len(footprint_mm) < 3:
+        return False
+    eave = _roof_eave_z_mm(doc, roof)
+    top = [(x / 1000.0, _roof_height_at_point_mm(doc, roof, x, y) / 1000.0, y / 1000.0) for x, y in footprint_mm]
+    bottom = [(x / 1000.0, eave / 1000.0, y / 1000.0) for x, y in footprint_mm]
+    for i0, i1, i2 in _triangulate_poly_indices(footprint_mm):
+        _append_world_tri(triangles, kind="roof", element_id=roof.id, a=top[i0], b=top[i1], c=top[i2])
+        _append_world_tri(triangles, kind="roof", element_id=roof.id, a=bottom[i0], b=bottom[i2], c=bottom[i1])
+    for i in range(len(footprint_mm)):
+        j = (i + 1) % len(footprint_mm)
+        _append_world_tri(triangles, kind="roof", element_id=roof.id, a=bottom[i], b=bottom[j], c=top[j])
+        _append_world_tri(triangles, kind="roof", element_id=roof.id, a=bottom[i], b=top[j], c=top[i])
     return True
 
 
@@ -699,7 +827,38 @@ def _append_roof_print_mesh(doc: Document, triangles: list[StlTriangle], roof: R
     x0, x1, y0, y1 = bounds
     base = _roof_eave_z_mm(doc, roof)
     mode = roof.roof_geometry_mode
-    if mode in {"gable_pitched_rectangle", "asymmetric_gable", "gable_pitched_l_shape"}:
+    ridge_along_x = _roof_ridge_along_x(roof, x0, x1, y0, y1)
+    if mode == "hip":
+        if _append_rectangular_hip_roof(
+            triangles,
+            roof=roof,
+            x0=x0,
+            x1=x1,
+            y0=y0,
+            y1=y1,
+            eave_z_mm=base,
+            slope_deg=float(roof.slope_deg or 25.0),
+            ridge_along_x=ridge_along_x,
+        ):
+            return
+    if mode == "asymmetric_gable":
+        if _append_asymmetric_gable_roof(
+            triangles,
+            doc=doc,
+            roof=roof,
+            x0=x0,
+            x1=x1,
+            y0=y0,
+            y1=y1,
+            eave_z_mm=base,
+            slope_deg=float(roof.slope_deg or 25.0),
+            ridge_along_x=ridge_along_x,
+        ):
+            return
+    if mode == "gable_pitched_l_shape":
+        if _append_sampled_roof_surface(doc, triangles, roof, pts):
+            return
+    if mode == "gable_pitched_rectangle":
         if _append_rectangular_gable_roof(
             triangles,
             roof=roof,
@@ -709,6 +868,7 @@ def _append_roof_print_mesh(doc: Document, triangles: list[StlTriangle], roof: R
             y1=y1,
             eave_z_mm=base,
             slope_deg=float(roof.slope_deg or 25.0),
+            ridge_along_x=ridge_along_x,
         ):
             return
     thickness = 150.0 if mode == "flat" else max(250.0, min(2800.0, (max(x1 - x0, y1 - y0) / 12.0)))
