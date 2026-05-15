@@ -15,3 +15,7 @@ i get a correct stl file, but i think if i would print this, it would look SUPER
 ---
 
 already much better! can you commit and push if not done already? anything else to continue working on with this?
+
+---
+
+yep go ahead with all these things
