@@ -46,6 +46,7 @@ import {
   effectiveWallFaceMaterialKey,
   isWhiteRenderLikeMaterial,
 } from './effectiveHostMaterials';
+import { wallTypeExteriorLayerIndex } from './hostMaterialLayerTargets';
 
 /** Resolve a wall's `wallTypeId` to a renderable assembly. Project-authored
  * type elements must win over built-ins so material/type edits render
@@ -56,15 +57,17 @@ export function resolveWallTypeAssembly(
 ): WallTypeAssembly | null {
   const el = elementsById?.[wallTypeId];
   if (el?.kind === 'wall_type') {
+    const exteriorIndex = wallTypeExteriorLayerIndex(el);
     return {
       id: el.id,
       name: el.name,
       basisLine: (el.basisLine ?? 'center') as 'center' | 'face_interior' | 'face_exterior',
-      layers: el.layers.map((l) => ({
+      layers: el.layers.map((l, index) => ({
         name: '',
         thicknessMm: Number(l.thicknessMm),
         materialKey: String(l.materialKey ?? ''),
         function: l.function as 'structure' | 'insulation' | 'finish' | 'membrane' | 'air',
+        exterior: index === exteriorIndex,
       })),
     };
   }
