@@ -3,7 +3,7 @@
   "checkpoint_id": "6c25d7965f9b",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "packages/cli/lib/seed-dsl.mjs"
   ],
@@ -19,13 +19,19 @@
       "transcript": "/6c/25d7965f9b/1/full.jsonl",
       "content_hash": "/6c/25d7965f9b/1/content_hash.txt",
       "prompt": "/6c/25d7965f9b/1/prompt.txt"
+    },
+    {
+      "metadata": "/6c/25d7965f9b/2/metadata.json",
+      "transcript": "/6c/25d7965f9b/2/full.jsonl",
+      "content_hash": "/6c/25d7965f9b/2/content_hash.txt",
+      "prompt": "/6c/25d7965f9b/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 9789509,
+    "input_tokens": 15655498,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 210486272,
-    "output_tokens": 487651,
-    "api_call_count": 1937
+    "cache_read_tokens": 339088384,
+    "output_tokens": 952036,
+    "api_call_count": 3079
   }
 }
