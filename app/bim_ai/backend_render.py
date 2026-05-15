@@ -230,7 +230,8 @@ def build_blender_cycles_script(
                 up = request_camera.get("up") or {{"x": 0, "y": 1, "z": 0}}
                 camera.location = (float(pos["x"]), float(pos["y"]), float(pos["z"]))
                 look_at(camera, Vector((float(target["x"]), float(target["y"]), float(target["z"]))), Vector((float(up["x"]), float(up["y"]), float(up["z"]))))
-                camera.data.angle = math.radians(float(request_camera.get("fovDeg") or 45))
+                camera.data.sensor_fit = "VERTICAL"
+                camera.data.angle_y = math.radians(min(100.0, float(request_camera.get("fovDeg") or 45) * 1.08))
             else:
                 camera.location = center + Vector((radius * 1.18, radius * 0.62, radius * 1.05))
                 look_at(camera, center, Vector((0, 1, 0)))
