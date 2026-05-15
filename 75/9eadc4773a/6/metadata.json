@@ -1,0 +1,59 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "759eadc4773a",
+  "session_id": "019e2a62-d03c-77f3-8151-b17601ad14d9",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-15T19:38:19.785415Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "ec7c5bd6f26c",
+  "token_usage": {
+    "input_tokens": 4802575,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 119801472,
+    "output_tokens": 285093,
+    "api_call_count": 1140
+  },
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 686,
+      "user_lines_removed": 2158,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/cli/cli.initiationCheck.test.mjs": 31,
+        "packages/cli/lib/seed-dsl.mjs": 61,
+        "packages/web/src/Viewport.tsx": 87,
+        "packages/web/src/viewport/meshBuilders.osmContext.ts": 318,
+        "packages/web/src/viewport/renderStyles.test.ts": 2,
+        "packages/web/src/viewport/renderStyles.ts": 4,
+        "packages/web/src/workspace/inspector/InspectorContent.tsx": 141,
+        "seed-artifacts/target-house-4/evidence/target-house-4.recipe.json": 42
+      },
+      "user_removed_per_file": {
+        "app/bim_ai/backend_render.py": 323,
+        "app/bim_ai/routes_exports.py": 65,
+        "app/tests/test_backend_render.py": 84,
+        "packages/cli/cli.initiationCheck.test.mjs": 1,
+        "packages/web/src/Viewport.tsx": 111,
+        "packages/web/src/lib/api.ts": 45,
+        "packages/web/src/viewport/pathTracing/PathTracePreviewController.ts": 240,
+        "packages/web/src/viewport/pathTracing/capabilities.test.ts": 156,
+        "packages/web/src/viewport/pathTracing/capabilities.ts": 219,
+        "packages/web/src/viewport/pathTracing/sceneFilter.test.ts": 47,
+        "packages/web/src/viewport/pathTracing/sceneFilter.ts": 138,
+        "packages/web/src/viewport/renderStyles.test.ts": 7,
+        "packages/web/src/viewport/renderStyles.ts": 8,
+        "seed-artifacts/target-house-4/evidence/target-house-4.recipe.json": 163,
+        "spec/ray-tracing-rendering-tracker.md": 551
+      }
+    }
+  ]
+}
