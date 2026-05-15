@@ -80,6 +80,55 @@ describe('path trace capabilities', () => {
     expect(capability.targetSamples).toBeGreaterThan(capability.previewSamples);
   });
 
+  it('degrades large scenes instead of rejecting them at the first preview threshold', () => {
+    const capability = detectPathTraceCapability(
+      {
+        domElement: {
+          getContext: () => ({
+            getExtension: () => ({}),
+            getParameter: () => 16384,
+            MAX_TEXTURE_SIZE: 0x0d33,
+          }),
+        },
+      } as unknown as THREE.WebGLRenderer,
+      {
+        triangleCount: 1_800_000,
+        meshCount: 2_000,
+        materialCount: 80,
+        textureCount: 120,
+        activeClipping: false,
+      },
+    );
+
+    expect(capability.status).toBe('degraded');
+    expect(capability.reason).toContain('Large scene');
+    expect(capability.targetSamples).toBeGreaterThan(capability.previewSamples);
+  });
+
+  it('still rejects scenes beyond the local path trace budget', () => {
+    const capability = detectPathTraceCapability(
+      {
+        domElement: {
+          getContext: () => ({
+            getExtension: () => ({}),
+            getParameter: () => 16384,
+            MAX_TEXTURE_SIZE: 0x0d33,
+          }),
+        },
+      } as unknown as THREE.WebGLRenderer,
+      {
+        triangleCount: 6_000_000,
+        meshCount: 2_000,
+        materialCount: 80,
+        textureCount: 120,
+        activeClipping: false,
+      },
+    );
+
+    expect(capability.status).toBe('unsupported');
+    expect(capability.reason).toContain('exceeds');
+  });
+
   it('uses a higher final-preview budget on capable scenes', () => {
     const capability = detectPathTraceCapability(
       {

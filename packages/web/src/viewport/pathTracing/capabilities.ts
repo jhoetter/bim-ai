@@ -165,11 +165,17 @@ export function detectPathTraceCapability(
     };
   }
 
-  if (sceneStats.triangleCount > 1_500_000 || sceneStats.textureCount > 96) {
+  const largeScene = sceneStats.triangleCount > 1_500_000 || sceneStats.textureCount > 96;
+  const hardSceneLimit =
+    sceneStats.triangleCount > 5_000_000 ||
+    sceneStats.textureCount > 384 ||
+    sceneStats.meshCount > 12_000;
+
+  if (hardSceneLimit) {
     return {
       status: 'unsupported',
       reason:
-        'This scene is too large for local path tracing. Use high-fidelity raster mode or server render.',
+        'This scene exceeds the local path trace preview budget. Use high-fidelity raster mode or server render.',
       renderScale: 0.5,
       previewSamples: 0,
       targetSamples: 0,
@@ -182,16 +188,19 @@ export function detectPathTraceCapability(
   const weakCpu = hardwareConcurrency !== null && hardwareConcurrency <= 4;
   const weakTextureLimit = maxTextureSize > 0 && maxTextureSize < 8192;
   const mediumScene = sceneStats.triangleCount > 300_000 || sceneStats.textureCount > 32;
-  const shouldDegrade = mobileLike || weakMemory || weakCpu || weakTextureLimit || mediumScene;
+  const shouldDegrade =
+    mobileLike || weakMemory || weakCpu || weakTextureLimit || mediumScene || largeScene;
 
   if (shouldDegrade) {
     return {
       status: 'degraded',
       reason:
-        'Low-resolution path trace preview. The first usable pass appears at 48 samples; it keeps refining to reduce noise.',
-      renderScale: 0.5,
+        largeScene
+          ? 'Large scene path trace preview. Starting at low resolution and refining locally; high-fidelity raster mode remains faster.'
+          : 'Low-resolution path trace preview. The first usable pass appears at 48 samples; it keeps refining to reduce noise.',
+      renderScale: largeScene ? 0.4 : 0.5,
       previewSamples: 48,
-      targetSamples: 256,
+      targetSamples: largeScene ? 192 : 256,
       bounces: 3,
       details,
     };
