@@ -1,0 +1,44 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "dad5796a83ef",
+  "session_id": "9496e68a-9767-402b-8568-65cccb4f92e9",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-15T22:26:22.622925Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "9301e2a7a743",
+  "token_usage": {
+    "input_tokens": 298,
+    "cache_creation_tokens": 96899,
+    "cache_read_tokens": 3700702,
+    "output_tokens": 50172,
+    "api_call_count": 53
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 245,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/package.json": 2,
+        "packages/web/src/workspace/project/GeoMapPicker.tsx": 220,
+        "pnpm-lock.yaml": 23
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 167,
+      "agent_lines_removed": 13
+    }
+  ]
+}
