@@ -377,7 +377,7 @@ Measure tool is in the tool registry. Distance measurement is implemented. Angle
 
 #### 3.3.9 Gruppe »Erstellen« (create group in Modify: create similar, create group)
 **Status: Partial — P2**
-"Create similar" (repeat last placement with same type) is partially supported. Create Group (grouping multiple selected elements) is Not Started as an explicit workflow.
+createSimilar.ts helper + CS shortcut in cheatsheet; PlanCanvas keyboard handler pending. Create Group (grouping multiple selected elements) is Not Started as an explicit workflow.
 
 ### 3.4 Geschossdecken bearbeiten (edit floor/slab shapes)
 
