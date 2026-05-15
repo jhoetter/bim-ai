@@ -1,0 +1,9 @@
+[Image #1] [Image #2] [Image #3] [Image #4] [Image #5] in rayon, i can select from a maps card (is this open maps?) an area and get its CAD data; this could be really cool to use in a project to show the context of the house; how could we best potentially embed this?
+
+---
+
+option A of course. please write a spec tracker in @spec/ with all details needed for this, and how it could best fit into our current application nicely
+
+---
+
+ok then go and please implement all of these workpackages; after each, commit and push to main. don't stop until fully done.
