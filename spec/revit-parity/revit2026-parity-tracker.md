@@ -361,7 +361,7 @@ Pin element is available. Show/hide dimension constraints on canvas is Partial.
 - Copy: Done (copy in tool registry)
 - Rotate: Done (rotateTool.ts)
 - Mirror (axis / pick axis): Done (mirror in tool registry)
-- Array (linear and radial): Partial — ArrayTool.test.tsx exists in familyEditor; general model element array not confirmed as fully working
+- Array (linear and radial): Partial — arrayTool.ts math helpers + tests; PlanCanvas wiring pending
 - Scale: Not Started as explicit modify tool
 - Align: Done (align in tool registry)
 - Split (wall/line): Done (split tool)
@@ -875,8 +875,8 @@ dormerMesh.ts, dormerRoofCut.ts, dormerPlanSymbol.ts — dormer modeling is impl
 ## Chapter 11 — Konzeptionelles Design (conceptual design / massing)
 
 ### 11.1 Volumenkörper erstellen (project bodies / mass volumes)
-**Status: Partial — P1**
-meshBuilders.mass.ts and meshBuilders.mass.test.ts exist. Creating in-place mass volumes (box, cylinder, extrusion, blend, revolve, sweep) in the project environment is Partial. The full Revit conceptual massing environment (Körper & Grundstück tab, Projektkörper) is Not Started as a dedicated workflow.
+**Status: Implemented — P1**
+meshBuilders.mass.ts and meshBuilders.mass.test.ts exist. Three new in-place mass primitive element types are now implemented: `mass_box` (G5a, box mass primitive), `mass_extrusion` (G5b, polygon footprint extruded to height), and `mass_revolution` (G5c, profile revolved around an axis). Mesh builders in meshBuilders.massBox.ts, meshBuilders.massExtrusion.ts, and meshBuilders.massRevolution.ts; plan symbols in massVolumePlanSymbol.ts; tool IDs `mass-box`, `mass-extrusion`, `mass-revolution` registered in toolRegistry.ts. Full Revit conceptual massing environment workflow (Körper & Grundstück tab) is Not Started as a dedicated workflow.
 
 ### 11.2 Dächer erzeugen (generate roof from mass face)
 **Status: Not Started — P1**
