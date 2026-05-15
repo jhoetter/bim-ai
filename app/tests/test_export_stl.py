@@ -31,6 +31,7 @@ from bim_ai.export_stl import (
     document_to_ascii_stl,
     document_to_binary_stl_bytes,
     document_to_stl_triangles,
+    stl_export_options,
 )
 
 
@@ -346,6 +347,68 @@ def test_stl_roof_uses_wall_top_eave_and_exports_dormer_proxy() -> None:
     assert max(v[2] for v in roof_vertices) > 4300
     assert min(v[2] for v in dormer_vertices) >= 3199.999
     assert manifest["elementCountsByKind"]["dormer"] == 1
+
+
+def test_stl_options_filter_categories_and_record_manifest_options() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "wall-1": WallElem(
+                kind="wall",
+                id="wall-1",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 2000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "floor-1": FloorElem(
+                kind="floor",
+                id="floor-1",
+                levelId="lvl",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 2000, "yMm": 0},
+                    {"xMm": 2000, "yMm": 2000},
+                    {"xMm": 0, "yMm": 2000},
+                ],
+                thicknessMm=200,
+            ),
+        },
+    )
+
+    options = stl_export_options(include_kinds="floor", exclude_kinds="wall", min_feature_mm=25)
+    triangles = document_to_stl_triangles(doc, options=options)
+    manifest = build_stl_export_manifest(doc, options=options)
+
+    assert {tri.kind for tri in triangles} == {"floor"}
+    assert manifest["exportOptions"]["includeKinds"] == ["floor"]
+    assert manifest["exportOptions"]["excludeKinds"] == ["wall"]
+    assert manifest["exportOptions"]["activeMinFeatureMm"] == 25
+    assert manifest["coverage"]["filteredDocumentKinds"]["wall"] == 1
+
+
+def test_stl_architectural_profile_omits_tiny_railing_balusters() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "railing-1": RailingElem(
+                kind="railing",
+                id="railing-1",
+                pathMm=[{"xMm": 0, "yMm": 0}, {"xMm": 1200, "yMm": 0}],
+            )
+        },
+    )
+
+    full = document_to_stl_triangles(doc)
+    architectural = document_to_stl_triangles(
+        doc,
+        options=stl_export_options(print_profile="architectural_model"),
+    )
+
+    assert len(architectural) < len(full)
+    assert {tri.kind for tri in architectural} == {"railing"}
 
 
 def test_empty_document_exports_valid_empty_stl_and_empty_manifest() -> None:

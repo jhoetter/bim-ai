@@ -24,7 +24,12 @@ from bim_ai.engine import (
 )
 from bim_ai.export_gltf import build_visual_export_manifest, document_to_glb_bytes, document_to_gltf
 from bim_ai.export_ifc import export_ifc_model_step
-from bim_ai.export_stl import build_stl_export_manifest, document_to_binary_stl_bytes
+from bim_ai.export_stl import (
+    StlExportOptions,
+    build_stl_export_manifest,
+    document_to_binary_stl_bytes,
+    stl_export_options,
+)
 from bim_ai.hub import Hub
 from bim_ai.ifc_stub import build_ifc_exchange_manifest_payload, minimal_empty_ifc_skeleton
 from bim_ai.routes_deps import (
@@ -49,6 +54,24 @@ from bim_ai.sustainability_lca import sustainability_lca_export_v1
 from bim_ai.tables import UndoStackRecord
 
 exports_router = APIRouter()
+
+
+def _stl_options_from_query(
+    *,
+    print_profile: str | None,
+    include_kinds: str | None,
+    exclude_kinds: str | None,
+    min_feature_mm: float | None,
+) -> StlExportOptions:
+    try:
+        return stl_export_options(
+            print_profile=print_profile,
+            include_kinds=include_kinds,
+            exclude_kinds=exclude_kinds,
+            min_feature_mm=min_feature_mm,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @exports_router.get("/models/{model_id}/exports/gltf-manifest")
@@ -103,25 +126,45 @@ async def export_model_glb_bundle(
 @exports_router.get("/models/{model_id}/exports/stl-manifest")
 async def export_stl_manifest(
     model_id: UUID,
+    print_profile: Annotated[str | None, Query(alias="printProfile")] = None,
+    include_kinds: Annotated[str | None, Query(alias="includeKinds")] = None,
+    exclude_kinds: Annotated[str | None, Query(alias="excludeKinds")] = None,
+    min_feature_mm: Annotated[float | None, Query(alias="minFeatureMm", ge=0)] = None,
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     row = await load_model_row(session, model_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
     doc = Document.model_validate(row.document)
-    return build_stl_export_manifest(doc)
+    options = _stl_options_from_query(
+        print_profile=print_profile,
+        include_kinds=include_kinds,
+        exclude_kinds=exclude_kinds,
+        min_feature_mm=min_feature_mm,
+    )
+    return build_stl_export_manifest(doc, options=options)
 
 
 @exports_router.get("/models/{model_id}/exports/model.stl")
 async def export_model_stl_bundle(
     model_id: UUID,
+    print_profile: Annotated[str | None, Query(alias="printProfile")] = None,
+    include_kinds: Annotated[str | None, Query(alias="includeKinds")] = None,
+    exclude_kinds: Annotated[str | None, Query(alias="excludeKinds")] = None,
+    min_feature_mm: Annotated[float | None, Query(alias="minFeatureMm", ge=0)] = None,
     session: AsyncSession = Depends(get_session),
 ) -> Response:
     row = await load_model_row(session, model_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
     doc = Document.model_validate(row.document)
-    blob = document_to_binary_stl_bytes(doc)
+    options = _stl_options_from_query(
+        print_profile=print_profile,
+        include_kinds=include_kinds,
+        exclude_kinds=exclude_kinds,
+        min_feature_mm=min_feature_mm,
+    )
+    blob = document_to_binary_stl_bytes(doc, options=options)
     return Response(
         content=blob,
         media_type="model/stl",

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import math
 import struct
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -52,6 +53,7 @@ from bim_ai.opening_cut_primitives import (
 STL_BINARY_HEADER = b"bim-ai STL export; units=mm; axes=X/Y build plate, Z up"
 
 PRINT_MESH_SOURCE_TOKEN = "dedicated_print_mesh_v2"
+PrintProfile = Literal["browser_parity", "architectural_model", "concept_mass"]
 PRINTABLE_SOLID_KINDS = {
     "balcony",
     "beam",
@@ -70,6 +72,16 @@ PRINTABLE_SOLID_KINDS = {
     "wall",
     "window",
 }
+PROFILE_DEFAULT_MIN_FEATURE_MM: dict[PrintProfile, float] = {
+    "browser_parity": 0.0,
+    "architectural_model": 40.0,
+    "concept_mass": 200.0,
+}
+PROFILE_ALLOWED_KINDS: dict[PrintProfile, frozenset[str] | None] = {
+    "browser_parity": None,
+    "architectural_model": None,
+    "concept_mass": frozenset({"floor", "mass", "roof", "site", "toposolid", "wall"}),
+}
 NON_PRINTABLE_VISUAL_KINDS = {
     "room",
     "slab_opening",
@@ -85,6 +97,65 @@ NON_PRINTABLE_VISUAL_KINDS = {
     "detail_line",
     "detail_region",
 }
+
+
+@dataclass(frozen=True, slots=True)
+class StlExportOptions:
+    print_profile: PrintProfile = "browser_parity"
+    include_kinds: frozenset[str] | None = None
+    exclude_kinds: frozenset[str] = frozenset()
+    min_feature_mm: float | None = None
+
+    @property
+    def active_min_feature_mm(self) -> float:
+        if self.min_feature_mm is not None:
+            return max(0.0, float(self.min_feature_mm))
+        return PROFILE_DEFAULT_MIN_FEATURE_MM[self.print_profile]
+
+
+def _kind_set(values: Iterable[str] | str | None) -> frozenset[str] | None:
+    if values is None:
+        return None
+    if isinstance(values, str):
+        raw = values.split(",")
+    else:
+        raw = []
+        for value in values:
+            raw.extend(str(value).split(","))
+    out = frozenset(v.strip() for v in raw if v.strip())
+    return out or None
+
+
+def stl_export_options(
+    *,
+    print_profile: str | None = None,
+    include_kinds: Iterable[str] | str | None = None,
+    exclude_kinds: Iterable[str] | str | None = None,
+    min_feature_mm: float | None = None,
+) -> StlExportOptions:
+    profile = print_profile or "browser_parity"
+    if profile not in PROFILE_DEFAULT_MIN_FEATURE_MM:
+        allowed = ", ".join(sorted(PROFILE_DEFAULT_MIN_FEATURE_MM))
+        raise ValueError(f"printProfile must be one of: {allowed}")
+    return StlExportOptions(
+        print_profile=profile,  # type: ignore[arg-type]
+        include_kinds=_kind_set(include_kinds),
+        exclude_kinds=_kind_set(exclude_kinds) or frozenset(),
+        min_feature_mm=min_feature_mm,
+    )
+
+
+def _kind_enabled(kind: str, options: StlExportOptions) -> bool:
+    profile_allowed = PROFILE_ALLOWED_KINDS[options.print_profile]
+    if profile_allowed is not None and kind not in profile_allowed:
+        return False
+    if options.include_kinds is not None and kind not in options.include_kinds:
+        return False
+    return kind not in options.exclude_kinds
+
+
+def _feature_enabled(options: StlExportOptions, smallest_feature_mm: float) -> bool:
+    return smallest_feature_mm + 1e-9 >= options.active_min_feature_mm
 
 
 @dataclass(frozen=True, slots=True)
@@ -835,7 +906,12 @@ def _append_stair_print_mesh(doc: Document, triangles: list[StlTriangle], stair:
     )
 
 
-def _append_railing_print_mesh(doc: Document, triangles: list[StlTriangle], railing: RailingElem) -> None:
+def _append_railing_print_mesh(
+    doc: Document,
+    triangles: list[StlTriangle],
+    railing: RailingElem,
+    options: StlExportOptions,
+) -> None:
     pts = _poly_points_mm(railing.path_mm)
     if len(pts) < 2:
         return
@@ -892,6 +968,8 @@ def _append_railing_print_mesh(doc: Document, triangles: list[StlTriangle], rail
         spacing = float(railing.baluster_pattern.spacing_mm) if railing.baluster_pattern and railing.baluster_pattern.spacing_mm else 115.0
         if not (railing.baluster_pattern and railing.baluster_pattern.rule in {"glass_panel", "cable"}):
             for j in range(max(0, int(seg_len // spacing))):
+                if not _feature_enabled(options, 12.0):
+                    continue
                 local_t = (j + 0.5) / max(1, int(seg_len // spacing))
                 floor = floor0 + (floor1 - floor0) * local_t
                 _append_box_mm(
@@ -906,6 +984,9 @@ def _append_railing_print_mesh(doc: Document, triangles: list[StlTriangle], rail
                     size_z_mm=12.0,
                 )
         elif railing.baluster_pattern and railing.baluster_pattern.rule == "glass_panel":
+            if not _feature_enabled(options, 18.0):
+                cum += seg_len
+                continue
             _append_box_mm(
                 triangles,
                 kind="railing",
@@ -993,12 +1074,20 @@ def _append_linear_box_between(
     )
 
 
-def document_to_stl_triangles(doc: Document) -> list[StlTriangle]:
+def document_to_stl_triangles(
+    doc: Document,
+    *,
+    options: StlExportOptions | None = None,
+) -> list[StlTriangle]:
     """Return deterministic STL triangles in printer coordinates and millimeters."""
 
+    opts = options or stl_export_options()
     triangles: list[StlTriangle] = []
     for elem_id in sorted(doc.elements):
         elem = doc.elements[elem_id]
+        kind = str(getattr(elem, "kind", ""))
+        if kind and not _kind_enabled(kind, opts):
+            continue
         if isinstance(elem, WallElem):
             _append_wall_print_mesh(doc, triangles, elem)
         elif isinstance(elem, FloorElem):
@@ -1012,7 +1101,7 @@ def document_to_stl_triangles(doc: Document) -> list[StlTriangle]:
         elif isinstance(elem, StairElem):
             _append_stair_print_mesh(doc, triangles, elem)
         elif isinstance(elem, RailingElem):
-            _append_railing_print_mesh(doc, triangles, elem)
+            _append_railing_print_mesh(doc, triangles, elem, opts)
         elif isinstance(elem, SiteElem):
             base = _level_elevation_mm(doc, elem.reference_level_id) + float(elem.base_offset_mm) - float(elem.pad_thickness_mm)
             _append_extruded_polygon_mm(
@@ -1099,8 +1188,12 @@ def document_to_stl_triangles(doc: Document) -> list[StlTriangle]:
     return triangles
 
 
-def document_to_binary_stl_bytes(doc: Document) -> bytes:
-    triangles = document_to_stl_triangles(doc)
+def document_to_binary_stl_bytes(
+    doc: Document,
+    *,
+    options: StlExportOptions | None = None,
+) -> bytes:
+    triangles = document_to_stl_triangles(doc, options=options)
     if len(triangles) > 0xFFFFFFFF:
         raise ValueError("STL triangle count exceeds uint32 limit")
 
@@ -1121,13 +1214,18 @@ def _fmt_float(v: float) -> str:
     return f"{v:.9g}"
 
 
-def document_to_ascii_stl(doc: Document, *, solid_name: str = "bim_ai_model") -> str:
+def document_to_ascii_stl(
+    doc: Document,
+    *,
+    solid_name: str = "bim_ai_model",
+    options: StlExportOptions | None = None,
+) -> str:
     safe_name = "".join(ch if ch.isalnum() or ch in ("_", "-") else "_" for ch in solid_name)
     if not safe_name:
         safe_name = "bim_ai_model"
 
     lines = [f"solid {safe_name}"]
-    for tri in document_to_stl_triangles(doc):
+    for tri in document_to_stl_triangles(doc, options=options):
         nx, ny, nz = tri.normal
         lines.append(f"  facet normal {_fmt_float(nx)} {_fmt_float(ny)} {_fmt_float(nz)}")
         lines.append("    outer loop")
@@ -1241,8 +1339,23 @@ def _bounds_mm(triangles: list[StlTriangle]) -> dict[str, Any] | None:
     }
 
 
-def build_stl_export_manifest(doc: Document) -> dict[str, Any]:
-    triangles = document_to_stl_triangles(doc)
+def _export_options_manifest(options: StlExportOptions) -> dict[str, Any]:
+    return {
+        "printProfile": options.print_profile,
+        "includeKinds": sorted(options.include_kinds) if options.include_kinds else None,
+        "excludeKinds": sorted(options.exclude_kinds),
+        "minFeatureMm": options.min_feature_mm,
+        "activeMinFeatureMm": options.active_min_feature_mm,
+    }
+
+
+def build_stl_export_manifest(
+    doc: Document,
+    *,
+    options: StlExportOptions | None = None,
+) -> dict[str, Any]:
+    opts = options or stl_export_options()
+    triangles = document_to_stl_triangles(doc, options=opts)
     doc_kind_counts = _document_kind_counts(doc)
     edge_counts: dict[tuple[tuple[int, int, int], tuple[int, int, int]], int] = {}
     zero_area = 0
@@ -1273,6 +1386,7 @@ def build_stl_export_manifest(doc: Document) -> dict[str, Any]:
     return {
         "format": "stlPrintExportManifest_v1",
         "meshSource": PRINT_MESH_SOURCE_TOKEN,
+        "exportOptions": _export_options_manifest(opts),
         "units": "millimeter",
         "axisMapping": {
             "source": "bim-ai visual world: X plan, Y elevation, Z plan",
@@ -1296,6 +1410,11 @@ def build_stl_export_manifest(doc: Document) -> dict[str, Any]:
                 kind: count
                 for kind, count in doc_kind_counts.items()
                 if kind not in _element_counts_by_kind(triangles)
+            },
+            "filteredDocumentKinds": {
+                kind: count
+                for kind, count in doc_kind_counts.items()
+                if not _kind_enabled(kind, opts)
             },
         },
         "diagnostics": {
