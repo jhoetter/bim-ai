@@ -1,0 +1,20 @@
+{
+  "modelId": "9bb9a145-d9ce-5a2f-a748-bb5be3301b30",
+  "activeProjectLabel": "BA\nSeed Library / target-house-3",
+  "proofPrefix": "wp44-mp7azpkb",
+  "floorId": "wp44-mp7azpkb-floor",
+  "roomId": "wp44-mp7azpkb-room",
+  "generatedWallIds": [
+    "wall-from-floor-wp44-mp7azpkb-floor-0-1cgjv6s",
+    "wall-from-floor-wp44-mp7azpkb-floor-1-frbq9m",
+    "wall-from-floor-wp44-mp7azpkb-floor-2-1w029g2",
+    "wall-from-floor-wp44-mp7azpkb-floor-3-1su3sgg"
+  ],
+  "generatedWallCount": 4,
+  "doorInserted": true,
+  "windowInserted": true,
+  "noMainFrameNavigationsAfterBoot": true,
+  "mainFrameNavigations": [],
+  "consoleWarningsAndErrors": [],
+  "pageErrors": []
+}

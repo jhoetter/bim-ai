@@ -209,6 +209,7 @@ const LENS_DISABLED_COMMANDS: Record<'structure' | 'mep', { ids: Set<string>; re
       'view.3d.wall.insert-door',
       'view.3d.wall.insert-window',
       'view.3d.wall.insert-opening',
+      'generate.walls-from-boundary',
     ]),
     reason:
       'Unavailable in MEP lens: switch to Architecture or Structure lens for envelope/structural authoring.',
@@ -1557,6 +1558,23 @@ const VIEW_3D_CAPABILITIES: CommandCapability[] = [
 ];
 
 const EDIT_3D_CAPABILITIES: CommandCapability[] = [
+  {
+    id: 'generate.walls-from-boundary',
+    label: 'Create Walls from Boundary',
+    owner: 'geometry/boundaryWallGeneration',
+    group: 'author',
+    scope: 'selection',
+    intendedModes: ['plan', '3d'],
+    surfaces: ['cmd-k', 'element-sidebar'],
+    executionSurface: 'element-sidebar',
+    preconditions: ['selected-floor-or-room-boundary'],
+    status: 'implemented',
+    usabilityScore: 8,
+    lifecycleKind: 'modify',
+    completionBehavior: 'select-after-commit',
+    previewSemantics:
+      'Selected floor/room boundary is converted into a previewed wall-chain payload with conflict markers before commit.',
+  },
   {
     id: 'view.3d.wall.insert-door',
     label: '3D: Insert Door on Selected Wall',

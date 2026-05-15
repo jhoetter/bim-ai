@@ -1,6 +1,7 @@
 import { useBimStore, type PlanTool } from '../state/store';
 import { VIEWER_CATEGORY_KEYS } from '../viewport/sceneUtils';
 import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFromWall';
+import { buildBoundaryWallPlan, type BoundaryWallSource } from '../geometry/boundaryWallGeneration';
 import i18n from '../i18n';
 import { registerCommand, type PaletteContext } from './registry';
 
@@ -85,6 +86,13 @@ function selectedWall(ctx: PaletteContext) {
   return el?.kind === 'wall' ? el : null;
 }
 
+function selectedBoundarySource(ctx: PaletteContext): BoundaryWallSource | null {
+  const id = ctx.selectedElementIds[0];
+  if (!id) return null;
+  const el = useBimStore.getState().elementsById[id];
+  return el?.kind === 'floor' || el?.kind === 'room' ? el : null;
+}
+
 function isSelectedWall3dContext(ctx: PaletteContext): boolean {
   return is3dContext(ctx) && Boolean(selectedWall(ctx));
 }
@@ -96,6 +104,20 @@ function dispatchSelectedWallCommand(
   const wall = selectedWall(ctx);
   if (!wall) return;
   ctx.dispatchCommand?.(build(wall));
+}
+
+function dispatchBoundaryWallGeneration(ctx: PaletteContext): void {
+  const source = selectedBoundarySource(ctx);
+  if (!source) return;
+  const state = useBimStore.getState();
+  const plan = buildBoundaryWallPlan(source, state.elementsById, {
+    wallTypeId: state.activeWallTypeId,
+    wallHeightMm: state.wallDrawHeightMm,
+    locationLine: state.wallLocationLine,
+    skipExistingOverlaps: true,
+  });
+  if (!plan.command) return;
+  ctx.dispatchCommand?.(plan.command);
 }
 
 // Tool commands
@@ -141,6 +163,15 @@ registerCommand({
   keywords: ['floor', 'slab', 'sketch', 'boundary'],
   category: 'command',
   invoke: (ctx) => startPlanTool(ctx, 'floor-sketch'),
+});
+
+registerCommand({
+  id: 'generate.walls-from-boundary',
+  label: 'Create Walls from Boundary',
+  keywords: ['walls from floor', 'walls from room', 'boundary walls', 'wall chain'],
+  category: 'command',
+  isAvailable: (ctx) => Boolean(selectedBoundarySource(ctx)),
+  invoke: dispatchBoundaryWallGeneration,
 });
 
 registerCommand({

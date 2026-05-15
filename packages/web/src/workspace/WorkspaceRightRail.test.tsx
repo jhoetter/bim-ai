@@ -592,4 +592,47 @@ describe('WorkspaceRightRail — 3D selected door/window/floor/roof actions', ()
     fireEvent.click(getByTestId('3d-action-roof-edit-type'));
     expect(useBimStore.getState().selectedId).toBe(roofType.id);
   });
+
+  it('previews and commits deterministic boundary walls for a selected floor', () => {
+    const onSemanticCommand = vi.fn().mockResolvedValue(undefined);
+    useBimStore.setState({
+      selectedId: floor.id,
+      elementsById: {
+        [floor.id]: floor,
+        [floorType.id]: floorType,
+      },
+      activeWallTypeId: null,
+      wallDrawHeightMm: 3100,
+      wallLocationLine: 'wall-centerline',
+    });
+
+    const { getByTestId, getAllByTestId } = renderWithI18n(
+      <WorkspaceRightRail
+        mode="3d"
+        onSemanticCommand={onSemanticCommand}
+        onModeChange={() => undefined}
+        surface="element"
+      />,
+    );
+
+    fireEvent.click(getByTestId('boundary-wall-preview-button'));
+    expect(getByTestId('boundary-wall-preview')).toBeTruthy();
+    expect(getAllByTestId(/boundary-wall-preview-row-/)).toHaveLength(4);
+    fireEvent.click(getByTestId('boundary-wall-generate-commit'));
+
+    expect(onSemanticCommand).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'createWallChain',
+        levelId: 'lvl-1',
+        locationLine: 'wall-centerline',
+        segments: expect.arrayContaining([
+          expect.objectContaining({
+            start: { xMm: 0, yMm: 0 },
+            end: { xMm: 1000, yMm: 0 },
+            heightMm: 3100,
+          }),
+        ]),
+      }),
+    );
+  });
 });

@@ -44,6 +44,7 @@ from bim_ai.engine import (
     _room_programme_field_updates,
     _validate_wall_lean_taper,
     _validate_wall_stack,
+    _wall_elevation_mm,
     _wall_thickness_from_type,
     element_adapter,
     expected_level_elevation_from_parent,
@@ -256,11 +257,35 @@ def try_apply_core_command(doc, cmd, *, source_provider=None) -> bool:
                 raise ValueError("createWallChain.segments requires at least one segment")
             if cmd.level_id not in els or not isinstance(els[cmd.level_id], LevelElem):
                 raise ValueError("createWallChain.levelId must reference an existing Level")
+            if cmd.base_constraint_level_id and cmd.base_constraint_level_id not in els:
+                raise ValueError("createWallChain.baseConstraintLevelId must reference a Level")
+            if cmd.top_constraint_level_id and cmd.top_constraint_level_id not in els:
+                raise ValueError("createWallChain.topConstraintLevelId must reference a Level")
+            if cmd.base_constraint_level_id and not isinstance(
+                els[cmd.base_constraint_level_id], LevelElem
+            ):
+                raise ValueError("createWallChain.baseConstraintLevelId must reference a Level")
+            if cmd.top_constraint_level_id and not isinstance(
+                els[cmd.top_constraint_level_id], LevelElem
+            ):
+                raise ValueError("createWallChain.topConstraintLevelId must reference a Level")
             for idx, seg in enumerate(cmd.segments):
                 eid = seg.id or new_id()
                 if eid in els:
                     raise ValueError(f"duplicate segment id '{eid}'")
                 name = cmd.name_prefix if len(cmd.segments) == 1 else f"{cmd.name_prefix}-{idx + 1}"
+                if cmd.base_constraint_level_id and cmd.top_constraint_level_id:
+                    b = (
+                        _wall_elevation_mm(els, cmd.base_constraint_level_id)
+                        + cmd.base_constraint_offset_mm
+                    )
+                    t = (
+                        _wall_elevation_mm(els, cmd.top_constraint_level_id)
+                        + cmd.top_constraint_offset_mm
+                    )
+                    height_mm = max(100.0, t - b)
+                else:
+                    height_mm = seg.height_mm
                 els[eid] = WallElem(
                     kind="wall",
                     id=eid,
@@ -268,8 +293,16 @@ def try_apply_core_command(doc, cmd, *, source_provider=None) -> bool:
                     level_id=cmd.level_id,
                     start=seg.start,
                     end=seg.end,
-                    thickness_mm=seg.thickness_mm,
-                    height_mm=seg.height_mm,
+                    thickness_mm=_wall_thickness_from_type(
+                        els, cmd.wall_type_id, seg.thickness_mm
+                    ),
+                    height_mm=height_mm,
+                    wall_type_id=cmd.wall_type_id,
+                    location_line=cmd.location_line,
+                    base_constraint_level_id=cmd.base_constraint_level_id,
+                    top_constraint_level_id=cmd.top_constraint_level_id,
+                    base_constraint_offset_mm=cmd.base_constraint_offset_mm,
+                    top_constraint_offset_mm=cmd.top_constraint_offset_mm,
                     discipline=DEFAULT_DISCIPLINE_BY_KIND.get("wall", "arch"),
                 )
 

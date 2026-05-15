@@ -190,6 +190,12 @@ class CreateWallChainCmd(BaseModel):
     type: Literal["createWallChain"] = "createWallChain"
     level_id: str = Field(alias="levelId")
     name_prefix: str = Field(alias="namePrefix", default="Wall")
+    wall_type_id: str | None = Field(default=None, alias="wallTypeId")
+    location_line: WallLocationLine = Field(default="wall-centerline", alias="locationLine")
+    base_constraint_level_id: str | None = Field(default=None, alias="baseConstraintLevelId")
+    top_constraint_level_id: str | None = Field(default=None, alias="topConstraintLevelId")
+    base_constraint_offset_mm: float = Field(default=0, alias="baseConstraintOffsetMm")
+    top_constraint_offset_mm: float = Field(default=0, alias="topConstraintOffsetMm")
     segments: list[WallChainSegment] = Field(default_factory=list)
 
 

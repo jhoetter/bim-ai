@@ -1829,7 +1829,7 @@ Revit behavior to emulate where it maps cleanly:
 | NEXT22-GAP-003 | Wall connections in 3D do not feel like BIM joins: endpoints, intersections, cleanup, flip side, and join/disallow-join handles are not unified.       | wall command path, `viewport/meshBuilders*`, `plan/planElementMeshBuilders.ts`, backend wall/join commands                                                              | P0       | Partial |
 | NEXT22-GAP-004 | Wall joins in plan and 3D can diverge visually/semantically, so a trustworthy join in one view may not read correctly in the other.                    | plan projection, 3D mesh builders, wall join solver, wall join tests                                                                                                    | P0       | Partial |
 | NEXT22-GAP-005 | Floor creation is still a standalone sketch command instead of a structural host workflow that can drive walls, rooms, shafts, ceilings, and roofs.    | floor sketch UI, backend floor/slab elements, plan/3D preview, command metadata                                                                                         | P0       | Open    |
-| NEXT22-GAP-006 | There is no "build walls from this floor/boundary/room" workflow, so users redraw obvious geometry instead of deriving structure from existing loops.  | floor/room boundary extraction, wall creation command batch, ribbon create/modify groups                                                                                | P0       | Open    |
+| NEXT22-GAP-006 | There is no "build walls from this floor/boundary/room" workflow, so users redraw obvious geometry instead of deriving structure from existing loops.  | floor/room boundary extraction, wall creation command batch, ribbon create/modify groups                                                                                | P0       | Partial |
 | NEXT22-GAP-007 | Roof and ceiling authoring are not connected to the wall/floor stack; attach/top constraints and roof-by-footprint behavior are not clear.             | roof/ceiling sketch tools, wall top constraints, attach top/base commands, 3D preview                                                                                   | P0       | Open    |
 | NEXT22-GAP-008 | Work plane, level, host face, and pick mode are not visible enough during 3D structure creation, so users cannot predict where structure will land.    | `viewport/authoring3d.ts`, `Viewport.tsx`, secondary 3D level/work-plane controls, ribbon modifier row                                                                  | P0       | Partial |
 | NEXT22-GAP-009 | `Floor`, `Roof`, `Ceiling`, `Column`, `Beam`, `Shaft`, `Stair`, and `Railing` need tool-specific 3D previews, not generic click acceptance.            | `Viewport.tsx`, mesh preview factories, backend commands/elements, ribbon command callbacks                                                                             | P0       | Open    |
@@ -2005,7 +2005,7 @@ Revit behavior to emulate where it maps cleanly:
 ### WP-NEXT-44 — Generate Walls From Floors, Rooms, And Picked Boundaries
 
 - Priority: `P0`
-- Status: `Open`
+- Status: `Partial`
 - Covers: `NEXT22-GAP-006`, `NEXT22-GAP-003`, `NEXT22-GAP-005`, `NEXT22-GAP-016`
 - Goal: allow users to build obvious vertical structure from existing horizontal/room boundaries instead of redrawing geometry.
 - Required workflows:
@@ -2020,6 +2020,20 @@ Revit behavior to emulate where it maps cleanly:
   - command produces a single undoable batch command;
   - seeded proof starts with a floor and generates walls, then inserts a door/window into the generated walls without layout refresh;
   - overlapping/duplicate walls are not silently created.
+- Evidence 2026-05-15:
+  - `packages/web/src/geometry/boundaryWallGeneration.ts` adds deterministic floor/room boundary-to-wall-chain planning with segment preview states (`create`, `conflict`, `invalid`), wall-type thickness resolution, skip-overlap conflict detection, and a single `createWallChain` payload.
+  - `app/bim_ai/commands.py` and `app/bim_ai/engine_dispatch_core.py` extend `createWallChain` with wall type, location line, and base/top constraint metadata so generated walls preserve authored BIM constraints.
+  - Selected floor/room element sidebars expose `Create Walls from Floor Boundary` and `Create Walls from Room Boundary` preview/commit actions; Cmd+K exposes `generate.walls-from-boundary`; command capability metadata records `cmd-k` plus `element-sidebar` surfaces and MEP-lens disablement.
+  - Unit/DOM tests cover floor generation, room generation, duplicate-overlap conflict blocking, backend wall-chain metadata, selected-floor sidebar commit, Cmd+K dispatch, and command capability metadata.
+  - Seeded UI proof on `target-house-3` captured in `packages/web/tmp/ux-next-wp44-20260515/`:
+    - `01-floor-boundary-wall-preview.png`
+    - `02-floor-boundary-walls-created.png`
+    - `03-duplicate-overlap-conflict-preview.png`
+    - `04-room-boundary-wall-preview.png`
+    - `05-generated-wall-hosted-door-window.png`
+    - `06-cmd-k-boundary-wall-command.png`
+    - `summary.json` (`generatedWallCount: 4`, `doorInserted: true`, `windowInserted: true`, `noMainFrameNavigationsAfterBoot: true`, no console/page errors).
+  - Remaining before `Done`: implement active Wall-command `Pick Floor Edge`, imported CAD/reference `Pick Lines`, explicit top-constraint/exterior-side option controls, and seeded proof for those picked-boundary workflows.
 - Dependencies: `WP-NEXT-42`, `WP-NEXT-43`.
 
 ### WP-NEXT-45 — Roof, Ceiling, Shaft, And Structural Stack Completion

@@ -50,6 +50,7 @@ import {
   type ViewerCatKey,
 } from '../viewport/sceneUtils';
 import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFromWall';
+import { buildBoundaryWallPlan, type BoundaryWallPlan } from '../geometry/boundaryWallGeneration';
 import { firstSheetId, placeViewOnSheetCommand } from './sheets/sheetRecommendedViewports';
 import type { WorkspaceMode } from './shell';
 import { PersistedDisclosureSection } from './shell/components/PersistedDisclosureSection';
@@ -401,7 +402,22 @@ export function WorkspaceRightRail({
   const clearTemporaryVisibility = useBimStore((s) => s.clearTemporaryVisibility);
   const thinLinesEnabled = useBimStore((s) => s.thinLinesEnabled);
   const toggleThinLines = useBimStore((s) => s.toggleThinLines);
+  const activeWallTypeId = useBimStore((s) => s.activeWallTypeId);
+  const wallLocationLine = useBimStore((s) => s.wallLocationLine);
+  const wallDrawHeightMm = useBimStore((s) => s.wallDrawHeightMm);
   const el = selectedId ? (elementsById[selectedId] as Element | undefined) : undefined;
+  const [boundaryWallPreviewSourceId, setBoundaryWallPreviewSourceId] = useState<string | null>(
+    null,
+  );
+  const boundaryWallPlan = useMemo<BoundaryWallPlan | null>(() => {
+    if (!el || (el.kind !== 'floor' && el.kind !== 'room')) return null;
+    return buildBoundaryWallPlan(el, elementsById, {
+      wallTypeId: activeWallTypeId,
+      wallHeightMm: wallDrawHeightMm,
+      locationLine: wallLocationLine,
+      skipExistingOverlaps: true,
+    });
+  }, [activeWallTypeId, el, elementsById, wallDrawHeightMm, wallLocationLine]);
   const selectedElements = useMemo(() => {
     const ids = [...new Set([selectedId, ...selectedIds].filter((id): id is string => !!id))];
     return ids.map((id) => elementsById[id]).filter((item): item is Element => Boolean(item));
@@ -415,6 +431,11 @@ export function WorkspaceRightRail({
       : activeViewTarget?.kind === 'viewpoint'
         ? (activeViewTarget as Extract<Element, { kind: 'viewpoint' }>)
         : undefined;
+
+  useEffect(() => {
+    setBoundaryWallPreviewSourceId(null);
+  }, [selectedId]);
+
   const levels = useMemo(
     () =>
       (Object.values(elementsById) as Element[])
@@ -553,6 +574,14 @@ export function WorkspaceRightRail({
     },
     [onModeChange, select, setActiveLevelId, setPlanTool],
   );
+
+  const commitBoundaryWallPlan = useCallback((): void => {
+    if (!boundaryWallPlan?.command || !el || (el.kind !== 'floor' && el.kind !== 'room')) return;
+    void Promise.resolve(onSemanticCommand(boundaryWallPlan.command)).then(() => {
+      select(el.id);
+      setBoundaryWallPreviewSourceId(null);
+    });
+  }, [boundaryWallPlan, el, onSemanticCommand, select]);
 
   const focusSelectionTab = useCallback((elementId: string): void => {
     const ids = [
@@ -1012,18 +1041,30 @@ export function WorkspaceRightRail({
                       />
                     </>
                   ) : el.kind === 'room' ? (
-                    <InspectorRoomEditor
-                      el={el}
-                      revision={revision}
-                      onPersistProperty={(key, value) =>
-                        void onSemanticCommand({
-                          type: 'updateElementProperty',
-                          elementId: el.id,
-                          key,
-                          value,
-                        })
-                      }
-                    />
+                    <>
+                      <InspectorRoomEditor
+                        el={el}
+                        revision={revision}
+                        onPersistProperty={(key, value) =>
+                          void onSemanticCommand({
+                            type: 'updateElementProperty',
+                            elementId: el.id,
+                            key,
+                            value,
+                          })
+                        }
+                      />
+                      {boundaryWallPlan ? (
+                        <BoundaryWallGeneratorPanel
+                          source={el}
+                          plan={boundaryWallPlan}
+                          previewOpen={boundaryWallPreviewSourceId === el.id}
+                          onOpenPreview={() => setBoundaryWallPreviewSourceId(el.id)}
+                          onCancelPreview={() => setBoundaryWallPreviewSourceId(null)}
+                          onCommit={commitBoundaryWallPlan}
+                        />
+                      ) : null}
+                    </>
                   ) : el.kind === 'viewpoint' ? (
                     <InspectorViewpointEditor
                       el={el}
@@ -1270,26 +1311,38 @@ export function WorkspaceRightRail({
                       onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
                     />
                   ) : (
-                    InspectorPropertiesFor(el, t, {
-                      elementsById,
-                      onPropertyChange: (property, value) => {
-                        if (isDuplicableTypeElement(el)) {
-                          void onSemanticCommand(typePropertyUpdateCommand(el, property, value));
-                          return;
-                        }
-                        void onSemanticCommand({
-                          type: 'updateElementProperty',
-                          elementId: el.id,
-                          key: property,
-                          value,
-                        });
-                      },
-                      onDisciplineChange: handleDisciplineChange,
-                      onEditType: (typeId) => select(typeId),
-                      onEditBoundary: beginPlanBoundaryEdit,
-                      onOpenMaterialBrowser,
-                      onOpenAppearanceAssetBrowser,
-                    })
+                    <>
+                      {InspectorPropertiesFor(el, t, {
+                        elementsById,
+                        onPropertyChange: (property, value) => {
+                          if (isDuplicableTypeElement(el)) {
+                            void onSemanticCommand(typePropertyUpdateCommand(el, property, value));
+                            return;
+                          }
+                          void onSemanticCommand({
+                            type: 'updateElementProperty',
+                            elementId: el.id,
+                            key: property,
+                            value,
+                          });
+                        },
+                        onDisciplineChange: handleDisciplineChange,
+                        onEditType: (typeId) => select(typeId),
+                        onEditBoundary: beginPlanBoundaryEdit,
+                        onOpenMaterialBrowser,
+                        onOpenAppearanceAssetBrowser,
+                      })}
+                      {boundaryWallPlan && el.kind === 'floor' ? (
+                        <BoundaryWallGeneratorPanel
+                          source={el}
+                          plan={boundaryWallPlan}
+                          previewOpen={boundaryWallPreviewSourceId === el.id}
+                          onOpenPreview={() => setBoundaryWallPreviewSourceId(el.id)}
+                          onCancelPreview={() => setBoundaryWallPreviewSourceId(null)}
+                          onCommit={commitBoundaryWallPlan}
+                        />
+                      ) : null}
+                    </>
                   )}
                   {activePlanViewId && (
                     <div
@@ -2471,6 +2524,108 @@ function Selected3dElementActions({
           />
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function BoundaryWallGeneratorPanel({
+  source,
+  plan,
+  previewOpen,
+  onOpenPreview,
+  onCancelPreview,
+  onCommit,
+}: {
+  source: Extract<Element, { kind: 'floor' }> | Extract<Element, { kind: 'room' }>;
+  plan: BoundaryWallPlan;
+  previewOpen: boolean;
+  onOpenPreview: () => void;
+  onCancelPreview: () => void;
+  onCommit: () => void;
+}): JSX.Element {
+  const sourceLabel = source.kind === 'floor' ? 'Floor Boundary' : 'Room Boundary';
+  const summary = `${plan.createCount} new · ${plan.conflictCount} existing · ${plan.invalidCount} invalid`;
+  return (
+    <div
+      className="mt-2 rounded border border-border bg-surface p-2"
+      data-testid="boundary-wall-generator-panel"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="text-xs font-semibold text-foreground">
+            Create Walls from {sourceLabel}
+          </div>
+          <div className="text-[10px] text-muted" data-testid="boundary-wall-command-summary">
+            Single undoable wall-chain command · {summary}
+          </div>
+        </div>
+        <button
+          type="button"
+          data-testid="boundary-wall-preview-button"
+          className="shrink-0 rounded border border-border bg-background px-2 py-0.5 text-xs text-foreground hover:bg-surface-strong"
+          onClick={onOpenPreview}
+        >
+          Preview
+        </button>
+      </div>
+      {previewOpen ? (
+        <div className="mt-2 space-y-2" data-testid="boundary-wall-preview">
+          <div className="max-h-44 space-y-1 overflow-auto pr-1">
+            {plan.segments.map((segment) => (
+              <div
+                key={segment.id}
+                className={[
+                  'rounded border px-2 py-1 text-[11px]',
+                  segment.status === 'create'
+                    ? 'border-blue-300 bg-blue-50 text-blue-950'
+                    : segment.status === 'conflict'
+                      ? 'border-amber-300 bg-amber-50 text-amber-950'
+                      : 'border-red-300 bg-red-50 text-red-950',
+                ].join(' ')}
+                data-testid={`boundary-wall-preview-row-${segment.index}`}
+                data-status={segment.status}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold">
+                    Edge {segment.index + 1} · {Math.round(segment.lengthMm)} mm
+                  </span>
+                  <span
+                    className="font-mono uppercase"
+                    data-testid={`boundary-wall-preview-status-${segment.index}`}
+                  >
+                    {segment.status}
+                  </span>
+                </div>
+                {segment.reason ? (
+                  <div className="mt-0.5 break-words text-[10px] opacity-80">{segment.reason}</div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              data-testid="boundary-wall-generate-commit"
+              disabled={!plan.canCommit}
+              title={
+                plan.canCommit ? 'Create generated walls' : 'Resolve invalid boundary edges first'
+              }
+              className="rounded border border-accent bg-accent px-2 py-1 text-xs font-semibold text-accent-foreground disabled:cursor-not-allowed disabled:border-border disabled:bg-background disabled:text-muted"
+              onClick={onCommit}
+            >
+              Create {plan.createCount} Wall{plan.createCount === 1 ? '' : 's'}
+            </button>
+            <button
+              type="button"
+              data-testid="boundary-wall-preview-cancel"
+              className="rounded border border-border bg-background px-2 py-1 text-xs text-foreground hover:bg-surface-strong"
+              onClick={onCancelPreview}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

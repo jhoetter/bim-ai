@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { Element } from '@bim-ai/core';
 
 import { useBimStore } from '../state/store';
 import { VIEWER_CATEGORY_KEYS } from '../viewport/sceneUtils';
@@ -78,6 +79,46 @@ describe('default Cmd+K commands', () => {
       entry.invoke({ ...PLAN_CTX, startPlanTool });
       expect(startPlanTool).toHaveBeenLastCalledWith(toolId);
     }
+  });
+
+  it('dispatches selected floor boundary wall generation through Cmd+K', () => {
+    const floor: Extract<Element, { kind: 'floor' }> = {
+      kind: 'floor',
+      id: 'floor-cmd',
+      name: 'Cmd floor',
+      levelId: 'lvl-1',
+      boundaryMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 2000, yMm: 0 },
+        { xMm: 2000, yMm: 1500 },
+        { xMm: 0, yMm: 1500 },
+      ],
+      thicknessMm: 250,
+    };
+    const dispatchCommand = vi.fn();
+    useBimStore.setState({
+      selectedId: floor.id,
+      elementsById: { [floor.id]: floor },
+      wallDrawHeightMm: 3000,
+      wallLocationLine: 'wall-centerline',
+    });
+
+    const entry = command('generate.walls-from-boundary');
+    expect(entry.isAvailable?.({ ...PLAN_CTX, selectedElementIds: [floor.id] })).toBe(true);
+    entry.invoke({ ...PLAN_CTX, selectedElementIds: [floor.id], dispatchCommand });
+
+    expect(dispatchCommand).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'createWallChain',
+        levelId: 'lvl-1',
+        segments: expect.arrayContaining([
+          expect.objectContaining({
+            start: { xMm: 0, yMm: 0 },
+            end: { xMm: 2000, yMm: 0 },
+          }),
+        ]),
+      }),
+    );
   });
 
   it('scopes 3D view commands to active 3D contexts', () => {
