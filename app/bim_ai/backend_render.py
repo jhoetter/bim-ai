@@ -89,9 +89,22 @@ def backend_render_capability() -> dict[str, object]:
     }
 
 
+def viewer_y_up_to_blender_z_up(vec: BackendRenderVectorM) -> dict[str, float]:
+    return {"x": float(vec.x), "y": -float(vec.z), "z": float(vec.y)}
+
+
 def _render_options(settings: BackendRenderRequest) -> dict[str, object]:
     payload = settings.model_dump(by_alias=True)
-    payload["camera"] = settings.camera.model_dump(by_alias=True) if settings.camera else None
+    if settings.camera is None:
+        payload["camera"] = None
+    else:
+        payload["camera"] = {
+            **settings.camera.model_dump(by_alias=True),
+            "position": viewer_y_up_to_blender_z_up(settings.camera.position),
+            "target": viewer_y_up_to_blender_z_up(settings.camera.target),
+            "up": viewer_y_up_to_blender_z_up(settings.camera.up),
+            "coordinateSpace": "blender_z_up",
+        }
     return payload
 
 

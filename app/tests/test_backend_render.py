@@ -62,6 +62,17 @@ def test_blender_cycles_script_enables_gpu_denoised_path() -> None:
     assert '"METAL"' in script
     assert 'bpy.ops.import_scene.gltf' in script
     assert 'math.radians(float(request_camera.get("fovDeg") or 45))' in script
+    assert '"position": {"x": 1.0, "y": -3.0, "z": 2.0}' in script
+    assert '"target": {"x": 0.0, "y": -0.0, "z": 1.0}' in script
+    assert '"up": {"x": 0.0, "y": -0.0, "z": 1.0}' in script
+
+
+def test_viewer_camera_vectors_are_converted_to_blender_import_space() -> None:
+    converted = backend_render.viewer_y_up_to_blender_z_up(
+        BackendRenderVectorM(x=12.5, y=3.0, z=-8.25)
+    )
+
+    assert converted == {"x": 12.5, "y": 8.25, "z": 3.0}
 
 
 def test_backend_render_raises_when_no_renderer(monkeypatch) -> None:
