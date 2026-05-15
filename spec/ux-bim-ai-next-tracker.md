@@ -1984,6 +1984,8 @@ Revit behavior to emulate where it maps cleanly:
   - Plan Sketch ribbon buttons now use the canonical sketch tool ids with the existing visible `Floor`/`Roof` labels, so clicking Floor/Roof opens the explicit sketch lifecycle instead of the old ambiguous plan tool. The Workspace hotkey path and Cmd+K `tool.floor`/`tool.roof` path use the same routing.
   - Floor sketch mode now keeps floor type and boundary-offset options visible in `OptionsBar`, and floor/roof tool metadata no longer requires an existing wall before a sketch can start. MEP lens gating was extended to `tool.floor-sketch` and `tool.roof-sketch`.
   - Tests cover Cmd+K routing, plan ribbon routing and active state, Workspace plan hotkey/ribbon routing, 3D direct Floor/Roof preservation, floor sketch options visibility, capability preconditions, MEP lens gating, and existing Cmd/Ctrl+R browser-shortcut preservation.
+  - Floor sketch validation now blocks too-short edges, duplicate/reversed boundary edges, overlapping collinear boundary edges, and same-level floor slab overlap before `Finish`; live sketch-session responses and the finish route return the same concrete validation issue codes.
+  - Backend tests cover the new topology validation and document-aware floor overlap/skipped-source-floor behavior in `app/tests/test_sketch_validation.py` and `app/tests/test_routes_sketch_validation.py`.
   - Remaining before `Done`: seeded screenshots and UI proof for drawn-boundary floor creation, picked-wall floor creation, invalid-loop Finish disabled reasons, overlap/duplicate validation, post-commit floor selection, and edit-boundary action.
 - Dependencies: `WP-NEXT-40`, `WP-NEXT-41`.
 

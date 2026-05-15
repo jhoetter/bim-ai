@@ -38,6 +38,10 @@ class SketchInvalidError(ValueError):
 _VERTEX_EPS_MM = 0.5
 # Numerical tolerance for segment-pair intersection tests.
 _INTERSECT_EPS = 1e-7
+# Revit allows very small segments, but they are almost always accidental in
+# plan authoring. Keep this below the frontend 100 mm snap grid so snapped
+# authoring remains valid while truly tiny edges are blocked before Finish.
+MIN_SKETCH_EDGE_LENGTH_MM = 100.0
 
 
 def _vkey(p_mm: tuple[float, float]) -> tuple[int, int]:
@@ -53,6 +57,46 @@ def _line_endpoints(line: SketchLine) -> tuple[tuple[float, float], tuple[float,
         (line.from_mm.x_mm, line.from_mm.y_mm),
         (line.to_mm.x_mm, line.to_mm.y_mm),
     )
+
+
+def _distance_mm(a: tuple[float, float], b: tuple[float, float]) -> float:
+    return ((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2) ** 0.5
+
+
+def _cross(
+    a: tuple[float, float],
+    b: tuple[float, float],
+    c: tuple[float, float],
+) -> float:
+    return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+
+
+def _collinear_overlap_length_mm(
+    a0: tuple[float, float],
+    a1: tuple[float, float],
+    b0: tuple[float, float],
+    b1: tuple[float, float],
+) -> float:
+    """Return the strict collinear overlap length between two segments."""
+
+    ax, ay = a1[0] - a0[0], a1[1] - a0[1]
+    len_sq = ax * ax + ay * ay
+    if len_sq <= _INTERSECT_EPS:
+        return 0.0
+    length = len_sq**0.5
+    if abs(_cross(a0, a1, b0)) / length > _VERTEX_EPS_MM:
+        return 0.0
+    if abs(_cross(a0, a1, b1)) / length > _VERTEX_EPS_MM:
+        return 0.0
+
+    def _t(p: tuple[float, float]) -> float:
+        return ((p[0] - a0[0]) * ax + (p[1] - a0[1]) * ay) / len_sq
+
+    lo = max(0.0, min(_t(b0), _t(b1)))
+    hi = min(1.0, max(_t(b0), _t(b1)))
+    if hi <= lo:
+        return 0.0
+    return (hi - lo) * length
 
 
 def _segments_share_endpoint(
@@ -128,6 +172,69 @@ def check_zero_length(lines: list[SketchLine]) -> list[SketchValidationIssue]:
     return issues
 
 
+def check_too_short_edges(lines: list[SketchLine]) -> list[SketchValidationIssue]:
+    issues: list[SketchValidationIssue] = []
+    for i, line in enumerate(lines):
+        a0, a1 = _line_endpoints(line)
+        length = _distance_mm(a0, a1)
+        if _VERTEX_EPS_MM < length < MIN_SKETCH_EDGE_LENGTH_MM:
+            issues.append(
+                SketchValidationIssue(
+                    code="too_short_edge",
+                    message=(
+                        f"Line {i} is too short ({length:.0f} mm); "
+                        f"minimum sketch edge is {MIN_SKETCH_EDGE_LENGTH_MM:.0f} mm."
+                    ),
+                    line_index=i,
+                )
+            )
+    return issues
+
+
+def check_duplicate_or_overlapping_edges(lines: list[SketchLine]) -> list[SketchValidationIssue]:
+    issues: list[SketchValidationIssue] = []
+    normalized_edges: dict[tuple[tuple[int, int], tuple[int, int]], int] = {}
+    for i, line in enumerate(lines):
+        a0, a1 = _line_endpoints(line)
+        ka, kb = _vkey(a0), _vkey(a1)
+        if ka == kb:
+            continue
+        edge_key = (ka, kb) if ka <= kb else (kb, ka)
+        prior = normalized_edges.get(edge_key)
+        if prior is not None:
+            issues.append(
+                SketchValidationIssue(
+                    code="duplicate_edge",
+                    message=f"Line {i} duplicates line {prior}; delete one boundary edge.",
+                    line_indices=[prior, i],
+                )
+            )
+        else:
+            normalized_edges[edge_key] = i
+
+    for i in range(len(lines)):
+        a0, a1 = _line_endpoints(lines[i])
+        if _vkey(a0) == _vkey(a1):
+            continue
+        for j in range(i + 1, len(lines)):
+            b0, b1 = _line_endpoints(lines[j])
+            if _vkey(b0) == _vkey(b1):
+                continue
+            overlap = _collinear_overlap_length_mm(a0, a1, b0, b1)
+            if overlap > _VERTEX_EPS_MM:
+                same_edge = {_vkey(a0), _vkey(a1)} == {_vkey(b0), _vkey(b1)}
+                if same_edge:
+                    continue
+                issues.append(
+                    SketchValidationIssue(
+                        code="overlapping_edge",
+                        message=f"Line {i} overlaps line {j}; split or delete duplicate boundary geometry.",
+                        line_indices=[i, j],
+                    )
+                )
+    return issues
+
+
 def check_closed_loop(lines: list[SketchLine]) -> list[SketchValidationIssue]:
     """Each vertex must have exactly 2 incident edges.
 
@@ -179,6 +286,8 @@ def check_closed_loop(lines: list[SketchLine]) -> list[SketchValidationIssue]:
 def validate_session(lines: list[SketchLine]) -> SketchValidationState:
     issues: list[SketchValidationIssue] = []
     issues.extend(check_zero_length(lines))
+    issues.extend(check_too_short_edges(lines))
+    issues.extend(check_duplicate_or_overlapping_edges(lines))
     issues.extend(check_closed_loop(lines))
     issues.extend(check_self_intersection(lines))
     return SketchValidationState(valid=not issues, issues=issues)

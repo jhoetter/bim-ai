@@ -17,9 +17,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from bim_ai.constraints_geometry import polygon_overlap_area_mm2
 from bim_ai.db import get_session
 from bim_ai.document import Document
-from bim_ai.elements import LevelElem, Vec2Mm, WallElem
+from bim_ai.elements import FloorElem, LevelElem, Vec2Mm, WallElem
 from bim_ai.engine import (
     clone_document,
     compute_delta_wire,
@@ -43,17 +44,20 @@ from bim_ai.sketch_session import (
     PickWallsOffsetMode,
     SketchLine,
     SketchSession,
+    SketchValidationIssue,
     SketchValidationState,
     finish_session,
     get_sketch_registry,
 )
 from bim_ai.sketch_validation import (
     SketchInvalidError,
+    derive_closed_loop_polygon,
     validate_sketch_session,
 )
 from bim_ai.tables import UndoStackRecord
 
 sketch_router = APIRouter()
+_FLOOR_SKETCH_OVERLAP_EPS_MM2 = 1.0
 
 
 def _session_payload(session: SketchSession, validation: SketchValidationState) -> dict[str, Any]:
@@ -61,6 +65,80 @@ def _session_payload(session: SketchSession, validation: SketchValidationState) 
         "session": session.model_dump(by_alias=True),
         "validation": validation.model_dump(by_alias=True),
     }
+
+
+def validate_sketch_session_against_document(
+    sketch_session: SketchSession,
+    doc: Document,
+) -> SketchValidationState:
+    """Add document-aware live validation to the pure sketch topology checks."""
+
+    validation = validate_sketch_session(sketch_session)
+    if not validation.valid or sketch_session.element_kind != "floor":
+        return validation
+
+    try:
+        proposed = derive_closed_loop_polygon(list(sketch_session.lines))
+    except SketchInvalidError as exc:
+        return SketchValidationState(
+            valid=False,
+            issues=[SketchValidationIssue(code=exc.code, message=exc.message)],
+        )
+
+    edit_element_id = (
+        sketch_session.options.get("editElementId")
+        or sketch_session.options.get("sourceElementId")
+        or sketch_session.options.get("floorId")
+    )
+    line_indices = list(range(len(sketch_session.lines))) or None
+    issues: list[SketchValidationIssue] = []
+    for element in doc.elements.values():
+        if not isinstance(element, FloorElem):
+            continue
+        if element.id == edit_element_id or element.level_id != sketch_session.level_id:
+            continue
+        existing = [(point.x_mm, point.y_mm) for point in element.boundary_mm]
+        overlap_area_mm2 = polygon_overlap_area_mm2(proposed, existing)
+        if overlap_area_mm2 <= _FLOOR_SKETCH_OVERLAP_EPS_MM2:
+            continue
+        label = element.name or element.id
+        issues.append(
+            SketchValidationIssue(
+                code="floor_overlap",
+                message=(
+                    f"Proposed floor overlaps existing floor '{label}' "
+                    f"by {overlap_area_mm2 / 1_000_000:.2f} m2; "
+                    "move the boundary or edit the existing slab."
+                ),
+                line_indices=line_indices,
+            )
+        )
+        break
+
+    if not issues:
+        return validation
+    return SketchValidationState(valid=False, issues=[*validation.issues, *issues])
+
+
+async def _load_sketch_document(
+    db_session: AsyncSession,
+    sketch_session: SketchSession,
+) -> Document:
+    row = await load_model_row(db_session, UUID(sketch_session.model_id))
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    return Document.model_validate(row.document)
+
+
+async def _session_payload_with_document(
+    sketch_session: SketchSession,
+    db_session: AsyncSession,
+) -> dict[str, Any]:
+    doc = await _load_sketch_document(db_session, sketch_session)
+    return _session_payload(
+        sketch_session,
+        validate_sketch_session_against_document(sketch_session, doc),
+    )
 
 
 # --- Request envelopes ----------------------------------------------------------------
@@ -174,19 +252,26 @@ async def open_sketch_session(
         pick_walls_offset_mode=body.pick_walls_offset_mode,
         options=body.options,
     )
-    return _session_payload(sk, validate_sketch_session(sk))
+    return _session_payload(sk, validate_sketch_session_against_document(sk, doc))
 
 
 @sketch_router.get("/sketch-sessions/{session_id}")
-async def get_sketch_session(session_id: str) -> dict[str, Any]:
+async def get_sketch_session(
+    session_id: str,
+    db_session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
     sk = get_sketch_registry().get(session_id)
     if sk is None:
         raise HTTPException(status_code=404, detail="sketch session not found")
-    return _session_payload(sk, validate_sketch_session(sk))
+    return await _session_payload_with_document(sk, db_session)
 
 
 @sketch_router.post("/sketch-sessions/{session_id}/lines")
-async def add_sketch_line(session_id: str, body: AddSketchLineRequest) -> dict[str, Any]:
+async def add_sketch_line(
+    session_id: str,
+    body: AddSketchLineRequest,
+    db_session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
     reg = get_sketch_registry()
     try:
         sk = reg.require_open(session_id)
@@ -198,11 +283,15 @@ async def add_sketch_line(session_id: str, body: AddSketchLineRequest) -> dict[s
         update={"lines": [*sk.lines, SketchLine(from_mm=body.from_mm, to_mm=body.to_mm)]}
     )
     reg.replace(sk)
-    return _session_payload(sk, validate_sketch_session(sk))
+    return await _session_payload_with_document(sk, db_session)
 
 
 @sketch_router.post("/sketch-sessions/{session_id}/remove-line")
-async def remove_sketch_line(session_id: str, body: RemoveSketchLineRequest) -> dict[str, Any]:
+async def remove_sketch_line(
+    session_id: str,
+    body: RemoveSketchLineRequest,
+    db_session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
     reg = get_sketch_registry()
     try:
         sk = reg.require_open(session_id)
@@ -219,11 +308,15 @@ async def remove_sketch_line(session_id: str, body: RemoveSketchLineRequest) -> 
     new_lines.pop(body.line_index)
     sk = sk.model_copy(update={"lines": new_lines})
     reg.replace(sk)
-    return _session_payload(sk, validate_sketch_session(sk))
+    return await _session_payload_with_document(sk, db_session)
 
 
 @sketch_router.post("/sketch-sessions/{session_id}/move-vertex")
-async def move_sketch_vertex(session_id: str, body: MoveSketchVertexRequest) -> dict[str, Any]:
+async def move_sketch_vertex(
+    session_id: str,
+    body: MoveSketchVertexRequest,
+    db_session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
     reg = get_sketch_registry()
     try:
         sk = reg.require_open(session_id)
@@ -246,7 +339,7 @@ async def move_sketch_vertex(session_id: str, body: MoveSketchVertexRequest) -> 
         new_lines.append(SketchLine(from_mm=new_from, to_mm=new_to))
     sk = sk.model_copy(update={"lines": new_lines})
     reg.replace(sk)
-    return _session_payload(sk, validate_sketch_session(sk))
+    return await _session_payload_with_document(sk, db_session)
 
 
 @sketch_router.post("/sketch-sessions/{session_id}/pick-wall")
@@ -290,7 +383,7 @@ async def pick_wall(
     new_lines, repinned = rebuild_picked_walls_lines(sk, walls_by_id)
     sk = sk.model_copy(update={"lines": new_lines, "picked_walls": repinned})
     reg.replace(sk)
-    return _session_payload(sk, validate_sketch_session(sk))
+    return _session_payload(sk, validate_sketch_session_against_document(sk, doc))
 
 
 @sketch_router.post("/sketch-sessions/{session_id}/pick-walls-offset-mode")
@@ -307,19 +400,20 @@ async def set_pick_walls_offset_mode(
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
+    row = await load_model_row(session, UUID(sk.model_id))
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+
     sk = sk.model_copy(update={"pick_walls_offset_mode": body.mode})
     if sk.picked_walls:
-        row = await load_model_row(session, UUID(sk.model_id))
-        if row is None:
-            raise HTTPException(status_code=404, detail="Model not found")
-        doc = Document.model_validate(row.document)
         walls_by_id: dict[str, WallElem] = {
             eid: el for eid, el in doc.elements.items() if isinstance(el, WallElem)
         }
         new_lines, repinned = rebuild_picked_walls_lines(sk, walls_by_id)
         sk = sk.model_copy(update={"lines": new_lines, "picked_walls": repinned})
     reg.replace(sk)
-    return _session_payload(sk, validate_sketch_session(sk))
+    return _session_payload(sk, validate_sketch_session_against_document(sk, doc))
 
 
 @sketch_router.post("/sketch-sessions/{session_id}/cancel")
@@ -396,7 +490,14 @@ async def finish_sketch_session(
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
-    validation = validate_sketch_session(sk)
+    model_uuid = UUID(sk.model_id)
+    row = await load_model_row(session, model_uuid)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    baseline_doc = Document.model_validate(row.document)
+
+    validation = validate_sketch_session_against_document(sk, baseline_doc)
     if not validation.valid:
         raise HTTPException(
             status_code=409,
@@ -407,13 +508,6 @@ async def finish_sketch_session(
         )
 
     cmds = _build_finish_commands(sk, body)
-
-    model_uuid = UUID(sk.model_id)
-    row = await load_model_row(session, model_uuid)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Model not found")
-
-    baseline_doc = Document.model_validate(row.document)
     doc_before = clone_document(baseline_doc)
 
     current_doc = baseline_doc
