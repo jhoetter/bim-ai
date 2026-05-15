@@ -1,0 +1,5 @@
+please continue; but dont continue with everything, instead complete current wp and then tell where you are; if you arae not 100% done, give me a prompt so i can hand over to another ai agent
+
+---
+
+come to an end, and give me a prompt i can hand over to the next agent to continue where you stopped (and then continue with the tracker; not you, but the other agent)

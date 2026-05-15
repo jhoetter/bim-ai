@@ -1,0 +1,58 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "fee9512d6760",
+  "session_id": "019e1f88-adaf-7791-baf4-f7e0bc958757",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-15T23:20:03.345288Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "spec/revit-parity/revit2026-parity-tracker.md",
+    "spec/revit-parity/revit2026.pdf",
+    "spec/revit2026.pdf"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "13d47193b597",
+  "checkpoint_transcript_start": 32482,
+  "transcript_lines_at_start": 32482,
+  "token_usage": {
+    "input_tokens": 2059390,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 21044864,
+    "output_tokens": 45938,
+    "api_call_count": 434
+  },
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-15T23:08:21.027503Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 0,
+    "total_lines_changed": 0,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 197,
+      "user_lines_removed": 13,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/viewport/dormerMesh.ts": 44,
+        "seed-artifacts/target-house-4/bundle.json": 153
+      },
+      "user_removed_per_file": {
+        "packages/web/src/viewport/dormerMesh.ts": 2,
+        "seed-artifacts/target-house-4/bundle.json": 11
+      }
+    }
+  ]
+}
