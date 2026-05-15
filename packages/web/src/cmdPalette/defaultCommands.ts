@@ -177,6 +177,62 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'tool.duct',
+  label: 'Place Duct',
+  keywords: ['duct', 'hvac', 'air', 'mep'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'duct'),
+});
+
+registerCommand({
+  id: 'tool.pipe',
+  label: 'Place Pipe',
+  keywords: ['pipe', 'plumbing', 'heating', 'cooling', 'mep'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'pipe'),
+});
+
+registerCommand({
+  id: 'tool.cable-tray',
+  label: 'Place Cable Tray',
+  keywords: ['cable tray', 'containment', 'electrical', 'mep'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'cable-tray'),
+});
+
+registerCommand({
+  id: 'tool.mep-equipment',
+  label: 'Place MEP Equipment',
+  keywords: ['equipment', 'mechanical', 'electrical', 'plumbing', 'mep'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'mep-equipment'),
+});
+
+registerCommand({
+  id: 'tool.fixture',
+  label: 'Place Fixture',
+  keywords: ['fixture', 'plumbing fixture', 'electrical fixture', 'mep'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'fixture'),
+});
+
+registerCommand({
+  id: 'tool.mep-terminal',
+  label: 'Place MEP Terminal',
+  keywords: ['terminal', 'air terminal', 'sprinkler', 'device', 'mep'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'mep-terminal'),
+});
+
+registerCommand({
+  id: 'tool.mep-opening-request',
+  label: 'Place MEP Opening Request',
+  keywords: ['opening request', 'sleeve', 'penetration', 'coordination', 'mep'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'mep-opening-request'),
+});
+
+registerCommand({
   id: 'tool.area-boundary',
   label: 'Sketch Area Boundary',
   keywords: ['area boundary', 'area plan', 'gross area', 'boundary'],
