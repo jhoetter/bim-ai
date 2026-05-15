@@ -166,6 +166,7 @@ import {
   isBackfacingWallHit,
   isDuplicateHostedPlacement,
   isLinkedElementId,
+  isWallOnActiveAuthoringLevel,
   shouldCommitHostedPlacementOnPointerUp,
   shouldReuseHostedPreviewCommit,
   type HostedOpeningLike,
@@ -1448,6 +1449,7 @@ export function Viewport({
       camera.updateMatrixWorld(true);
       raycaster.setFromCamera(ndc, camera);
       const hits = raycaster.intersectObjects(root.children, true);
+      const draftLevelInfo = resolveDraftLevelInfo();
       const candidates = new Map<
         string,
         {
@@ -1466,6 +1468,7 @@ export function Viewport({
         if (isBackfacingWallHit(h.face?.normal, h.object.matrixWorld, raycaster.ray.direction))
           continue;
         const wall = el;
+        if (!isWallOnActiveAuthoringLevel(wall, draftLevelInfo?.id)) continue;
         const hitPointMm = {
           xMm: h.point.x * 1000,
           yMm: h.point.z * 1000,
@@ -1876,6 +1879,7 @@ export function Viewport({
       if (tool === 'door' || tool === 'window' || tool === 'wall-opening') {
         setDraftPlaneAngleWarning(false);
         const overlay = authoringOverlayRef.current;
+        const draftLevelInfo = resolveDraftLevelInfo();
         const hit = pickWallAtPointer(cx, cy, {
           tool,
           preferWallId: overlay?.tool === tool ? overlay.previewHostWallId : undefined,
@@ -1898,6 +1902,7 @@ export function Viewport({
               previewOutline: overlay.previewOutlineScreen,
             }) &&
             overlayHost?.kind === 'wall' &&
+            isWallOnActiveAuthoringLevel(overlayHost, draftLevelInfo?.id) &&
             (!hostWall || hostWall.id !== overlayHost.id)
           ) {
             hostWall = overlayHost;
@@ -1916,7 +1921,8 @@ export function Viewport({
                   previewHostWallId: hostPreviewLock ? prev.previewHostWallId : undefined,
                   previewHostAlongT: hostPreviewLock ? prev.previewHostAlongT : undefined,
                   previewHostLock: hostPreviewLock,
-                  previewHostInvalidReason: 'No visible wall host under the cursor.',
+                  previewHostInvalidReason:
+                    'No wall host on the active level under the cursor.',
                   previewAuxLines: undefined,
                   previewAuxArcPath: undefined,
                 }
@@ -3082,7 +3088,8 @@ export function Viewport({
                   previewHostWallId: hostPreviewLock ? prev.previewHostWallId : undefined,
                   previewHostAlongT: hostPreviewLock ? prev.previewHostAlongT : undefined,
                   previewHostLock: hostPreviewLock,
-                  previewHostInvalidReason: 'No visible wall host under the cursor.',
+                  previewHostInvalidReason:
+                    'No wall host on the active level under the cursor.',
                   previewAuxLines: undefined,
                   previewAuxArcPath: undefined,
                 }

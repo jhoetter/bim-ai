@@ -8,6 +8,7 @@ import {
   shouldCommitHostedPlacementOnPointerUp,
   shouldReuseHostedPreviewCommit,
   isLinkedElementId,
+  isWallOnActiveAuthoringLevel,
 } from './directAuthoringGuards';
 
 describe('isLinkedElementId', () => {
@@ -17,6 +18,18 @@ describe('isLinkedElementId', () => {
 
   it('returns false for native model ids', () => {
     expect(isLinkedElementId('wall-1')).toBe(false);
+  });
+});
+
+describe('isWallOnActiveAuthoringLevel', () => {
+  it('allows wall-hosted authoring only on the active level', () => {
+    expect(isWallOnActiveAuthoringLevel({ levelId: 'ground' }, 'ground')).toBe(true);
+    expect(isWallOnActiveAuthoringLevel({ levelId: 'first' }, 'ground')).toBe(false);
+  });
+
+  it('rejects wall hosts when no active level is resolved', () => {
+    expect(isWallOnActiveAuthoringLevel({ levelId: 'ground' }, undefined)).toBe(false);
+    expect(isWallOnActiveAuthoringLevel({ levelId: 'ground' }, null)).toBe(false);
   });
 });
 
