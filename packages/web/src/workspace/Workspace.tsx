@@ -510,6 +510,7 @@ function CompositionBar({
   loadingId,
   onActivate,
   onCreate,
+  onClose,
   onReorder,
   onRename,
 }: {
@@ -518,6 +519,7 @@ function CompositionBar({
   loadingId?: string | null;
   onActivate: (id: string) => void;
   onCreate: () => void;
+  onClose: (id: string) => void;
   onReorder: (from: number, to: number) => void;
   onRename: (id: string, label: string) => void;
 }): JSX.Element {
@@ -573,6 +575,11 @@ function CompositionBar({
               if (event.key === 'F2') {
                 event.preventDefault();
                 setRenaming({ id: composition.id, label: composition.label });
+                return;
+              }
+              if (event.key === 'Delete' || event.key === 'Backspace') {
+                event.preventDefault();
+                onClose(composition.id);
                 return;
               }
               if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -647,6 +654,27 @@ function CompositionBar({
             ) : (
               <span className="truncate whitespace-nowrap">{composition.label}</span>
             )}
+            {!isRenaming ? (
+              <button
+                type="button"
+                aria-label={`Close ${composition.label}`}
+                data-testid={`composition-close-${composition.id}`}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onClose(composition.id);
+                }}
+                draggable={false}
+                className={[
+                  'ml-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted transition-opacity hover:bg-surface-strong hover:text-foreground',
+                  active
+                    ? 'opacity-60 hover:opacity-100'
+                    : 'opacity-0 group-hover:opacity-70 group-hover:hover:opacity-100',
+                ].join(' ')}
+              >
+                <Icons.close size={11} aria-hidden="true" />
+              </button>
+            ) : null}
           </div>
         );
       })}
@@ -1392,6 +1420,72 @@ export function Workspace(): JSX.Element {
     setViewerMode,
     tabsState,
   ]);
+
+  const handleCompositionClose = useCallback(
+    (id: string) => {
+      const savedCompositions = compositionState.compositions.map((composition) =>
+        composition.id === compositionState.activeId
+          ? { ...composition, tabsState, paneLayout }
+          : composition,
+      );
+      const closeIdx = savedCompositions.findIndex((composition) => composition.id === id);
+      if (closeIdx === -1) return;
+
+      const remaining = savedCompositions.filter((composition) => composition.id !== id);
+      if (remaining.length === 0) {
+        const fallbackPane = createPaneLayout(null);
+        const fallbackId = nextCompositionId();
+        setCompositionState({
+          activeId: fallbackId,
+          compositions: [
+            {
+              id: fallbackId,
+              label: 'Composition 1',
+              tabsState: EMPTY_TABS,
+              paneLayout: fallbackPane,
+            },
+          ],
+        });
+        setTabsState(EMPTY_TABS);
+        setPaneLayout(fallbackPane);
+        setMode('plan');
+        setViewerMode('plan_canvas');
+        return;
+      }
+
+      if (id !== compositionState.activeId) {
+        setCompositionState((state) => ({
+          ...state,
+          compositions: state.compositions
+            .map((composition) =>
+              composition.id === state.activeId
+                ? { ...composition, tabsState, paneLayout }
+                : composition,
+            )
+            .filter((composition) => composition.id !== id),
+        }));
+        return;
+      }
+
+      const nextIdx = Math.max(0, closeIdx - 1);
+      const next = remaining[nextIdx] ?? remaining[0]!;
+      markCompositionLoading(next.id);
+      runAfterLoadingPaint(() => {
+        setCompositionState({ activeId: next.id, compositions: remaining });
+        setTabsState(next.tabsState);
+        setPaneLayout(next.paneLayout);
+      }, next.id);
+    },
+    [
+      compositionState.activeId,
+      compositionState.compositions,
+      markCompositionLoading,
+      paneLayout,
+      runAfterLoadingPaint,
+      setViewerMode,
+      tabsState,
+    ],
+  );
 
   const handleCompositionReorder = useCallback((fromIdx: number, toIdx: number) => {
     setCompositionState((state) => {
@@ -3910,6 +4004,7 @@ export function Workspace(): JSX.Element {
                 loadingId={loadingCompositionId}
                 onActivate={handleCompositionActivate}
                 onCreate={handleCompositionCreate}
+                onClose={handleCompositionClose}
                 onReorder={handleCompositionReorder}
                 onRename={handleCompositionRename}
               />

@@ -460,6 +460,41 @@ describe('<Workspace /> — smoke', () => {
     expect(getByTestId('composition-bar').textContent).toContain('Coordination Review');
   });
 
+  it('closes the active composition tab and restores the neighboring composition', () => {
+    seedTabs('plan');
+    const { getByTestId, queryByText } = renderWithProviders(<Workspace />);
+    fireEvent.click(getByTestId('composition-add-button'));
+    expect(getByTestId('composition-bar').textContent).toContain('Composition 2');
+    expect(queryByText('No view open in this pane')).toBeTruthy();
+
+    const activeTab = Array.from(
+      getByTestId('composition-bar').querySelectorAll<HTMLElement>(
+        '[data-testid^="composition-tab-"]',
+      ),
+    ).find((tab) => tab.getAttribute('aria-selected') === 'true');
+    expect(activeTab).toBeTruthy();
+    const activeId = activeTab!.getAttribute('data-testid')!.replace('composition-tab-', '');
+    fireEvent.click(getByTestId(`composition-close-${activeId}`));
+
+    expect(getByTestId('composition-bar').textContent).toContain('Composition 1');
+    expect(getByTestId('composition-bar').textContent).not.toContain('Composition 2');
+    expect(queryByText('No view open in this pane')).toBeNull();
+  });
+
+  it('closing the last composition leaves a blank composition available', () => {
+    seedTabs('plan');
+    const { getByTestId, getByText } = renderWithProviders(<Workspace />);
+    const onlyTab = getByTestId('composition-bar').querySelector<HTMLElement>(
+      '[data-testid^="composition-tab-"]',
+    );
+    expect(onlyTab).toBeTruthy();
+    const onlyId = onlyTab!.getAttribute('data-testid')!.replace('composition-tab-', '');
+    fireEvent.click(getByTestId(`composition-close-${onlyId}`));
+
+    expect(getByText('No view open in this pane')).toBeTruthy();
+    expect(getByTestId('composition-bar').textContent).toContain('Composition 1');
+  });
+
   it('opens a primary-browser view in the focused pane', () => {
     const level: Extract<Element, { kind: 'level' }> = {
       kind: 'level',
