@@ -11,6 +11,12 @@
       "transcript": "/ed/fc7299f10f/0/full.jsonl",
       "content_hash": "/ed/fc7299f10f/0/content_hash.txt",
       "prompt": "/ed/fc7299f10f/0/prompt.txt"
+    },
+    {
+      "metadata": "/ed/fc7299f10f/1/metadata.json",
+      "transcript": "/ed/fc7299f10f/1/full.jsonl",
+      "content_hash": "/ed/fc7299f10f/1/content_hash.txt",
+      "prompt": "/ed/fc7299f10f/1/prompt.txt"
     }
   ],
   "token_usage": {
