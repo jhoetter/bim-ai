@@ -1,0 +1,21 @@
+{
+  "modelId": "9bb9a145-d9ce-5a2f-a748-bb5be3301b30",
+  "revision": 5,
+  "floorId": "wp44-pick-floor-mp7iobar",
+  "dxfId": "wp44-pick-dxf-mp7iochn",
+  "floorEdgeWallCreated": true,
+  "dxfLineWallCreated": true,
+  "wallCountBeforeFloor": 26,
+  "wallCountBeforeDxf": 27,
+  "wallCountAfter": 28,
+  "duplicateNotice": "Created wall from WP44 Pick Lines DXF / A-WALL-PICK.",
+  "activeTool": "wall",
+  "noMainFrameNavigationsAfterBoot": false,
+  "navigations": [
+    "http://127.0.0.1:2000/",
+    "http://127.0.0.1:2000/#theme=light",
+    "http://127.0.0.1:2000/#theme=light"
+  ],
+  "consoleErrors": [],
+  "pageErrors": []
+}

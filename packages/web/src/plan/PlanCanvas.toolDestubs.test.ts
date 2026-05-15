@@ -82,6 +82,13 @@ describe('EDT-04 — plan-canvas tool de-stubs', () => {
     expect(SRC).toMatch(/planTool\s*===\s*['"]wall['"][\s\S]{0,280}snapWallPointToConnectivity/);
   });
 
+  it('lets the Wall tool pick floor edges and imported CAD/reference lines directly', () => {
+    expect(SRC).toContain('pickFloorBoundaryEdgeForWall(');
+    expect(SRC).toContain('pickDxfLineForWall(');
+    expect(SRC).toContain('createWallFromPickedLineCommand(');
+    expect(SRC).toContain('data-testid="wall-pick-line-preview"');
+  });
+
   it('blocks wall commit outside an enabled crop region with explicit user warning', () => {
     expect(SRC).toMatch(
       /shouldBlockWallCommitOutsideCrop\(\s*activeCropState,\s*pathStart,\s*pathEnd\s*\)/,

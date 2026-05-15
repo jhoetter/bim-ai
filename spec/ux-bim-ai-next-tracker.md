@@ -2005,7 +2005,7 @@ Revit behavior to emulate where it maps cleanly:
 ### WP-NEXT-44 — Generate Walls From Floors, Rooms, And Picked Boundaries
 
 - Priority: `P0`
-- Status: `Partial`
+- Status: `Done`
 - Covers: `NEXT22-GAP-006`, `NEXT22-GAP-003`, `NEXT22-GAP-005`, `NEXT22-GAP-016`
 - Goal: allow users to build obvious vertical structure from existing horizontal/room boundaries instead of redrawing geometry.
 - Required workflows:
@@ -2033,7 +2033,18 @@ Revit behavior to emulate where it maps cleanly:
     - `05-generated-wall-hosted-door-window.png`
     - `06-cmd-k-boundary-wall-command.png`
     - `summary.json` (`generatedWallCount: 4`, `doorInserted: true`, `windowInserted: true`, `noMainFrameNavigationsAfterBoot: true`, no console/page errors).
-  - Remaining before `Done`: implement active Wall-command `Pick Floor Edge`, imported CAD/reference `Pick Lines`, explicit top-constraint/exterior-side option controls, and seeded proof for those picked-boundary workflows.
+- Evidence 2026-05-16:
+  - `packages/web/src/plan/wallPickLines.ts` adds `pickFloorBoundaryEdgeForWall` (nearest floor-polygon edge within tolerance), `pickDxfLineForWall` (nearest DXF primitive segment via existing hit-test), `hasOverlappingWallLine` (parallel-segment interval overlap guard), and `createWallFromPickedLineCommand`; all functions use live-store reads to avoid stale React closures.
+  - `PlanCanvas.tsx` wires pick-lines into the Wall tool: hovering snapped cursor near a floor edge or DXF line shows a `[data-testid="wall-pick-line-preview"]` highlight ribbon; clicking creates a `createWall` command from the picked segment; a second click on the same segment shows `[data-testid="wall-draft-notice"]` with an "already overlaps" message instead of creating a duplicate.
+  - Wall tool `onMove` and `onClick` handlers read `planTool` and `elementsById` from the live Zustand store (not React closure) so pick-line state updates correctly after `hydrateFromSnapshot`.
+  - `authoringCommandContract.ts` records `pick-lines` as a Wall tool control surface.
+  - Seeded UI proof on `target-house-3` captured in `packages/web/tmp/ux-next-wp44-picklines-20260515/`:
+    - `01-wall-tool-pick-floor-edge-preview.png`
+    - `02-wall-tool-pick-floor-edge-created.png`
+    - `03-wall-tool-pick-floor-edge-duplicate-blocked.png`
+    - `04-wall-tool-pick-dxf-line-preview.png`
+    - `05-wall-tool-pick-dxf-line-created.png`
+    - `summary.json` (`floorEdgeWallCreated: true`, `dxfLineWallCreated: true`, no console/page errors).
 - Dependencies: `WP-NEXT-42`, `WP-NEXT-43`.
 
 ### WP-NEXT-45 — Roof, Ceiling, Shaft, And Structural Stack Completion

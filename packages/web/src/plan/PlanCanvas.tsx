@@ -148,6 +148,13 @@ import {
   WALL_CROP_BLOCK_MESSAGE,
 } from './wallDraftLifecycle';
 import {
+  createWallFromPickedLineCommand,
+  hasOverlappingWallLine,
+  pickDxfLineForWall,
+  pickFloorBoundaryEdgeForWall,
+  type PickedWallLine,
+} from './wallPickLines';
+import {
   flipWallLocationLineSide,
   snapWallPointToConnectivity,
 } from '../geometry/wallConnectivity';
@@ -528,6 +535,7 @@ export function PlanCanvas({
   const [geomEpoch, bumpGeom] = useState(0);
   const [measureReadout, setMeasureReadout] = useState<{ distMm: number } | null>(null);
   const [wallDraftNotice, setWallDraftNotice] = useState<string | null>(null);
+  const [wallPickLineHint, setWallPickLineHint] = useState<PickedWallLine | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [pendingPlanRegion, setPendingPlanRegion] = useState<{
     x0: number;
@@ -1906,6 +1914,45 @@ export function PlanCanvas({
       return snapPointToNearestWallFaceMm(wallsForAreaSnap, pointMm) ?? pointMm;
     };
 
+    const wallPickToleranceMm = () => {
+      const rect = rnd.domElement.getBoundingClientRect();
+      return Math.min(
+        350,
+        Math.max(120, (10 / Math.max(1, rect.height)) * 2 * camRef.current.half * 1000),
+      );
+    };
+
+    const dxfHitAt = (pointMm: { xMm: number; yMm: number }, toleranceMm: number) => {
+      const liveElementsById = useBimStore.getState().elementsById;
+      const dxfLevelId = displayLevelId || activeLevelResolvedId;
+      const dxfUnderlays = selectDxfUnderlaysForLevel(liveElementsById, dxfLevelId || undefined);
+      if (dxfUnderlays.length === 0) return null;
+      const activePlanView = activePlanViewId ? liveElementsById[activePlanViewId] : undefined;
+      const viewOverrides =
+        activePlanView?.kind === 'plan_view'
+          ? ((activePlanView.categoryOverrides ?? {}) as Record<string, CategoryOverride>)
+          : {};
+      return queryDxfPrimitiveAtPoint(dxfUnderlays, pointMm, {
+        toleranceMm,
+        elementsById: liveElementsById,
+        viewOverridesByLinkId: Object.fromEntries(
+          dxfUnderlays.map((link) => [link.id, viewOverrides[dxfViewOverrideKey(link.id)]]),
+        ),
+      });
+    };
+
+    const pickedWallLineAt = (
+      pointMm: { xMm: number; yMm: number },
+      toleranceMm: number,
+    ): PickedWallLine | null => {
+      const liveElementsById = useBimStore.getState().elementsById;
+      const pickLevelId = displayLevelId || activeLevelResolvedId || lvlId;
+      return (
+        pickFloorBoundaryEdgeForWall(liveElementsById, pickLevelId, pointMm, toleranceMm) ??
+        pickDxfLineForWall(dxfHitAt(pointMm, toleranceMm), pointMm, liveElementsById)
+      );
+    };
+
     const commitAreaBoundary = (boundaryMm: Array<{ xMm: number; yMm: number }>) => {
       const ctx = activeAreaPlanContext();
       if (!ctx || !ctx.levelId || boundaryMm.length < 3) return false;
@@ -2132,6 +2179,12 @@ export function PlanCanvas({
       }
       const v = snapped(ev.clientX, ev.clientY);
       if (!v) return;
+
+      if (useBimStore.getState().planTool === 'wall' && !draftRef.current) {
+        setWallPickLineHint(pickedWallLineAt(v, wallPickToleranceMm()));
+      } else {
+        setWallPickLineHint((prev) => (prev ? null : prev));
+      }
 
       if (planTool === 'query') {
         const dxfLevelId = displayLevelId || activeLevelResolvedId;
@@ -2887,6 +2940,37 @@ export function PlanCanvas({
       if (planTool === 'wall') {
         const d = draftRef.current;
         if (!d || d.kind !== 'wall') {
+          const pickedLine = pickedWallLineAt(sp, wallPickToleranceMm());
+          if (pickedLine) {
+            const { wallLocationLine, wallDrawHeightMm, activeWallTypeId } = useBimStore.getState();
+            const pickLevelId = displayLevelId || activeLevelResolvedId || lvlId;
+            if (
+              hasOverlappingWallLine(
+                useBimStore.getState().elementsById,
+                pickLevelId,
+                pickedLine,
+                wallPickToleranceMm(),
+              )
+            ) {
+              setWallDraftNotice(`Existing wall already overlaps ${pickedLine.sourceLabel}.`);
+              setWallPickLineHint(pickedLine);
+              return;
+            }
+            onSemanticCommand(
+              createWallFromPickedLineCommand(pickedLine, {
+                id: crypto.randomUUID(),
+                levelId: pickLevelId,
+                wallTypeId: activeWallTypeId,
+                locationLine: wallLocationLine,
+                heightMm: wallDrawHeightMm,
+              }),
+            );
+            setWallDraftNotice(`Created wall from ${pickedLine.sourceLabel}.`);
+            setWallPickLineHint(null);
+            clearPreview();
+            bumpGeom((x) => x + 1);
+            return;
+          }
           setWallDraftNotice(null);
           draftRef.current = { kind: 'wall', sx: sp.xMm, sy: sp.yMm };
           bumpGeom((x) => x + 1);
@@ -4191,6 +4275,7 @@ export function PlanCanvas({
         }
         clearMarqueeLine();
         marqueeRef.current = { active: false, sx: 0, sy: 0, ex: 0, ey: 0, direction: null };
+        setWallPickLineHint(null);
         bumpGeom((x) => x + 1);
       }
       // EDT-V3-05: L key toggles loop mode while a chained drawing tool is active.
@@ -4625,6 +4710,10 @@ export function PlanCanvas({
   }, [planTool]);
 
   useEffect(() => {
+    if (planTool !== 'wall') setWallPickLineHint(null);
+  }, [planTool]);
+
+  useEffect(() => {
     if (planTool !== 'wall') setWallDraftNotice(null);
   }, [planTool]);
 
@@ -4948,11 +5037,50 @@ export function PlanCanvas({
           ? `X ${(hudMm.xMm / 1000).toFixed(2)} m · Y ${(hudMm.yMm / 1000).toFixed(2)} m`
           : '—'}
       </div>
+      {wallPickLineHint
+        ? (() => {
+            const start = worldToScreen(wallPickLineHint.start);
+            const end = worldToScreen(wallPickLineHint.end);
+            return (
+              <svg
+                data-testid="wall-pick-line-preview"
+                className="pointer-events-none absolute inset-0 z-10"
+                aria-hidden="true"
+              >
+                <line
+                  x1={start.pxX}
+                  y1={start.pxY}
+                  x2={end.pxX}
+                  y2={end.pxY}
+                  stroke="rgba(37, 99, 235, 0.95)"
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                  strokeDasharray="8 5"
+                />
+                <circle cx={start.pxX} cy={start.pxY} r={5} fill="rgba(37, 99, 235, 0.95)" />
+                <circle
+                  cx={end.pxX}
+                  cy={end.pxY}
+                  r={6}
+                  fill="white"
+                  stroke="rgba(37, 99, 235, 0.95)"
+                  strokeWidth={2}
+                />
+              </svg>
+            );
+          })()
+        : null}
       {planTool === 'wall' && hudMm ? (
         <div className="pointer-events-none absolute left-3 bottom-14 z-10 max-w-[min(360px,calc(100%-24px))] rounded border border-border bg-surface/90 px-2 py-1.5 text-[10px] text-foreground shadow-elev-1 backdrop-blur">
           <div className="font-semibold">Wall placement</div>
           <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-muted">
-            <span>{draftRef.current?.kind === 'wall' ? 'Pick endpoint' : 'Pick start point'}</span>
+            <span>
+              {draftRef.current?.kind === 'wall'
+                ? 'Pick endpoint'
+                : wallPickLineHint
+                  ? `Click to use ${wallPickLineHint.sourceLabel}`
+                  : 'Pick start point or existing boundary line'}
+            </span>
             <span>line {wallLocationLine.replace(/-/g, ' ')}</span>
             <span>offset {wallDrawOffsetMm} mm</span>
             <span>radius {wallDrawRadiusMm ?? 0} mm</span>

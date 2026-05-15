@@ -70,10 +70,10 @@ export const AUTHORING_COMMAND_CONTRACTS = {
     'wall',
     'line',
     ['plan', '3d'],
-    'Two-click wall center/location line preview; committed payload must match preview endpoints.',
+    'Two-click wall center/location line preview or picked floor/CAD line preview; committed payload must match preview endpoints.',
     'remain-active-while-looping',
     [],
-    ['type', 'level', 'height', 'location-line', 'chain', 'flip'],
+    ['type', 'level', 'height', 'location-line', 'chain', 'flip', 'pick-lines'],
   ),
   door: contract(
     'door',
