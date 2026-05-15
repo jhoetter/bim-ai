@@ -65,6 +65,7 @@ describe('InspectorPropertiesFor — spec §13', () => {
       id: 'wall-type-clad',
       name: 'Vertical clad external wall',
       layers: [
+        { function: 'insulation', materialKey: 'air', thicknessMm: 25 },
         { function: 'finish', materialKey: 'cladding_dark_grey', thicknessMm: 18 },
         { function: 'structure', materialKey: 'timber_frame_insulation', thicknessMm: 140 },
       ],
@@ -83,6 +84,66 @@ describe('InspectorPropertiesFor — spec §13', () => {
     expect(getByText('Type Exterior Material')).toBeTruthy();
     expect(getByText('Dark-grey cladding')).toBeTruthy();
     expect(queryByText('Instance Material')).toBeNull();
+  });
+
+  it('shows floor and roof type top materials instead of blindly layer zero', () => {
+    const floorType: Extract<Element, { kind: 'floor_type' }> = {
+      kind: 'floor_type',
+      id: 'floor-type-finish',
+      name: 'Timber floor',
+      layers: [
+        { function: 'structure', materialKey: 'concrete_smooth', thicknessMm: 180 },
+        { function: 'finish', materialKey: 'oak_light', thicknessMm: 20 },
+      ],
+    };
+    const floorEl: Extract<Element, { kind: 'floor' }> = {
+      kind: 'floor',
+      id: 'floor-1',
+      name: 'Floor',
+      levelId: 'level-1',
+      boundaryMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 3000, yMm: 0 },
+        { xMm: 3000, yMm: 3000 },
+      ],
+      thicknessMm: 200,
+      floorTypeId: floorType.id,
+    };
+    const roofType: Extract<Element, { kind: 'roof_type' }> = {
+      kind: 'roof_type',
+      id: 'roof-type-finish',
+      name: 'Metal roof',
+      layers: [
+        { function: 'structure', materialKey: 'timber_frame_insulation', thicknessMm: 160 },
+        { function: 'finish', materialKey: 'metal_standing_seam_dark_grey', thicknessMm: 45 },
+      ],
+    };
+    const roofEl: Extract<Element, { kind: 'roof' }> = {
+      kind: 'roof',
+      id: 'roof-1',
+      name: 'Roof',
+      referenceLevelId: 'level-1',
+      footprintMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 3000, yMm: 0 },
+        { xMm: 3000, yMm: 3000 },
+      ],
+      roofTypeId: roofType.id,
+      materialKey: 'white_render',
+    };
+
+    const floorView = render(
+      InspectorPropertiesFor(floorEl, t, { elementsById: { [floorType.id]: floorType } }),
+    );
+    expect(floorView.getByText('Type Top Material')).toBeTruthy();
+    expect(floorView.getByText('oak_light')).toBeTruthy();
+    floorView.unmount();
+
+    const roofView = render(
+      InspectorPropertiesFor(roofEl, t, { elementsById: { [roofType.id]: roofType } }),
+    );
+    expect(roofView.getByText('Type Top Material')).toBeTruthy();
+    expect(roofView.getByText(/Standing-seam metal/)).toBeTruthy();
   });
 
   it('renders door alongT and width', () => {

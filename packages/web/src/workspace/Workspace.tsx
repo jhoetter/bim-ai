@@ -129,6 +129,7 @@ import {
 } from '../families/FamilyLibraryPanel';
 import { MaterialBrowserDialog } from '../familyEditor/MaterialBrowserDialog';
 import { AppearanceAssetBrowserDialog } from '../familyEditor/AppearanceAssetBrowserDialog';
+import { materialTargetLayerIndex } from '../viewport/hostMaterialLayerTargets';
 import type { MaterialBrowserTargetRequest } from './inspector';
 import {
   findLoadedCatalogFamilyType,
@@ -411,7 +412,7 @@ function materialKeyForInstanceTarget(
 
 function materialEditableTargetLabel(target: MaterialEditableTarget): string {
   if (target.kind === 'type-layer') {
-    if (target.element.kind === 'wall_type') return `${target.element.name} · first layer`;
+    if (target.element.kind === 'wall_type') return `${target.element.name} · exterior layer`;
     if (target.element.kind === 'floor_type') return `${target.element.name} · top layer`;
     return `${target.element.name} · top layer`;
   }
@@ -2026,7 +2027,11 @@ export function Workspace(): JSX.Element {
   const selectedMaterialKey =
     materialEditableTarget?.kind === 'instance'
       ? materialKeyForInstanceTarget(materialEditableTarget)
-      : (materialEditableTarget?.element.layers[0]?.materialKey ?? null);
+      : materialEditableTarget
+        ? (materialEditableTarget.element.layers[
+            materialTargetLayerIndex(materialEditableTarget.element)
+          ]?.materialKey ?? null)
+        : null;
   const activeMaterialKey =
     activeMaterialBrowserTarget?.kind === 'material-slot'
       ? (activeMaterialBrowserTarget.currentKey ?? null)
@@ -2110,9 +2115,11 @@ export function Workspace(): JSX.Element {
         });
         return;
       }
-      const [first, ...rest] = target.target.element.layers;
-      if (!first) return;
-      const nextLayers = [{ ...first, materialKey }, ...rest.map((layer) => ({ ...layer }))];
+      const targetLayer = materialTargetLayerIndex(target.target.element);
+      const nextLayers = target.target.element.layers.map((layer, index) =>
+        index === targetLayer ? { ...layer, materialKey } : { ...layer },
+      );
+      if (!nextLayers.length) return;
       void onSemanticCommand({
         type: 'updateElementProperty',
         elementId: target.target.element.id,

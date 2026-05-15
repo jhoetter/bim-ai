@@ -19,6 +19,11 @@ import {
   getBuiltInWallType,
   resolveWallAssemblyExposedLayers,
 } from '../../families/wallTypeCatalog';
+import {
+  materialTargetLayerIndex,
+  topLayerIndex,
+  wallTypeExteriorLayerIndex,
+} from '../../viewport/hostMaterialLayerTargets';
 import { resolveMaterial } from '../../viewport/materials';
 import { PlanViewGraphicsMatrix } from './PlanViewGraphicsMatrix';
 import { SavedViewTagGraphicsAuthoring, SavedViewTemplateGraphicsAuthoring } from '../authoring';
@@ -242,7 +247,9 @@ function wallTypeExteriorMaterialKey(
 ): string | null {
   if (!wall.wallTypeId) return null;
   const type = elementsById[wall.wallTypeId];
-  if (type?.kind === 'wall_type') return type.layers[0]?.materialKey ?? null;
+  if (type?.kind === 'wall_type') {
+    return type.layers[wallTypeExteriorLayerIndex(type)]?.materialKey ?? null;
+  }
   const builtIn = getBuiltInWallType(wall.wallTypeId);
   if (!builtIn) return null;
   return resolveWallAssemblyExposedLayers(builtIn).exterior?.materialKey ?? null;
@@ -254,7 +261,7 @@ function roofTypeTopMaterialKey(
 ): string | null {
   if (!roof.roofTypeId) return null;
   const type = elementsById[roof.roofTypeId];
-  return type?.kind === 'roof_type' ? (type.layers[0]?.materialKey ?? null) : null;
+  return type?.kind === 'roof_type' ? (type.layers[topLayerIndex(type)]?.materialKey ?? null) : null;
 }
 
 function fmtMm(value: number | null | undefined): string {
@@ -828,7 +835,9 @@ export function InspectorPropertiesFor(
         options ?? {};
       const floorType = el.floorTypeId ? floorElementsById[el.floorTypeId] : undefined;
       const floorTypeMaterialKey =
-        floorType?.kind === 'floor_type' ? (floorType.layers[0]?.materialKey ?? null) : null;
+        floorType?.kind === 'floor_type'
+          ? (floorType.layers[topLayerIndex(floorType)]?.materialKey ?? null)
+          : null;
       return (
         <div className="flex flex-col gap-2">
           <FieldRow label={f('thickness')} value={fmtMm(el.thicknessMm)} />
@@ -868,7 +877,7 @@ export function InspectorPropertiesFor(
           </div>
           {floorType?.kind === 'floor_type' ? (
             <MaterialAssignmentRow
-              label="Type Material"
+              label="Type Top Material"
               materialKey={floorTypeMaterialKey}
               fallback="By category"
               elementsById={floorElementsById}
@@ -1742,8 +1751,8 @@ export function InspectorPropertiesFor(
           </label>
           <TypeLayerSummary layers={el.layers} />
           <MaterialAssignmentRow
-            label="First Layer Material"
-            materialKey={el.layers[0]?.materialKey ?? null}
+            label="Exterior Layer Material"
+            materialKey={el.layers[materialTargetLayerIndex(el)]?.materialKey ?? null}
             fallback="By category"
             onOpenMaterialBrowser={onOpenMaterialBrowser}
             onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
@@ -1761,8 +1770,8 @@ export function InspectorPropertiesFor(
           />
           <TypeLayerSummary layers={el.layers} />
           <MaterialAssignmentRow
-            label="First Layer Material"
-            materialKey={el.layers[0]?.materialKey ?? null}
+            label="Top Layer Material"
+            materialKey={el.layers[materialTargetLayerIndex(el)]?.materialKey ?? null}
             fallback="By category"
             onOpenMaterialBrowser={onOpenMaterialBrowser}
             onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
@@ -1780,8 +1789,8 @@ export function InspectorPropertiesFor(
           />
           <TypeLayerSummary layers={el.layers} />
           <MaterialAssignmentRow
-            label="First Layer Material"
-            materialKey={el.layers[0]?.materialKey ?? null}
+            label="Top Layer Material"
+            materialKey={el.layers[materialTargetLayerIndex(el)]?.materialKey ?? null}
             fallback="By category"
             onOpenMaterialBrowser={onOpenMaterialBrowser}
             onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}

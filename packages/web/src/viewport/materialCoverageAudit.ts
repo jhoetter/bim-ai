@@ -1,6 +1,7 @@
 import type { Element } from '@bim-ai/core';
 
 import { getBuiltInWallType, resolveWallAssemblyExposedLayers } from '../families/wallTypeCatalog';
+import { topLayerIndex, wallTypeExteriorLayerIndex } from './hostMaterialLayerTargets';
 import { resolveMaterial, type MaterialPbrSpec } from './materials';
 
 export type MaterialAuthoritySource =
@@ -80,7 +81,9 @@ function wallTypeExteriorMaterialKey(
 ): string | null {
   if (!wall.wallTypeId) return null;
   const type = elementsById[wall.wallTypeId];
-  if (type?.kind === 'wall_type') return type.layers[0]?.materialKey ?? null;
+  if (type?.kind === 'wall_type') {
+    return type.layers[wallTypeExteriorLayerIndex(type)]?.materialKey ?? null;
+  }
   const builtIn = getBuiltInWallType(wall.wallTypeId);
   if (!builtIn) return null;
   return resolveWallAssemblyExposedLayers(builtIn).exterior?.materialKey ?? null;
@@ -92,7 +95,9 @@ function floorTypeTopMaterialKey(
 ): string | null {
   if (!floor.floorTypeId) return null;
   const type = elementsById[floor.floorTypeId];
-  return type?.kind === 'floor_type' ? (type.layers[0]?.materialKey ?? null) : null;
+  return type?.kind === 'floor_type'
+    ? (type.layers[topLayerIndex(type)]?.materialKey ?? null)
+    : null;
 }
 
 function roofTypeTopMaterialKey(
@@ -101,7 +106,9 @@ function roofTypeTopMaterialKey(
 ): string | null {
   if (!roof.roofTypeId) return null;
   const type = elementsById[roof.roofTypeId];
-  return type?.kind === 'roof_type' ? (type.layers[0]?.materialKey ?? null) : null;
+  return type?.kind === 'roof_type'
+    ? (type.layers[topLayerIndex(type)]?.materialKey ?? null)
+    : null;
 }
 
 function materialFact(

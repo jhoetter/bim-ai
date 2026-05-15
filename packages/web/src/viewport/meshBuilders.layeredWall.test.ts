@@ -5,7 +5,7 @@ import type { Element } from '@bim-ai/core';
 
 import { getBuiltInWallType } from '../families/wallTypeCatalog';
 import { makeLayeredWallMesh, darkenHex } from './meshBuilders.layeredWall';
-import { makeWallMesh } from './meshBuilders';
+import { makeWallMesh, resolveWallTypeAssembly } from './meshBuilders';
 
 type WallElem = Extract<Element, { kind: 'wall' }>;
 
@@ -99,6 +99,25 @@ describe('makeLayeredWallMesh — FL-08', () => {
     const obj = makeWallMesh(wall, 0, null);
     expect((obj as THREE.Group).type).toBe('Group');
     // Single-thickness wall would be a Mesh
+  });
+
+  it('prefers project-authored wall type layers over built-in catalog layers with the same id', () => {
+    const projectType: Extract<Element, { kind: 'wall_type' }> = {
+      kind: 'wall_type',
+      id: 'wall.ext-timber',
+      name: 'Edited timber wall',
+      basisLine: 'face_interior',
+      layers: [
+        { function: 'finish', materialKey: 'masonry_brick', thicknessMm: 102 },
+        { function: 'structure', materialKey: 'masonry_block', thicknessMm: 140 },
+        { function: 'finish', materialKey: 'plaster', thicknessMm: 13 },
+      ],
+    };
+
+    const assembly = resolveWallTypeAssembly(projectType.id, { [projectType.id]: projectType });
+
+    expect(assembly?.layers[0]?.materialKey).toBe('masonry_brick');
+    expect(assembly?.layers.map((layer) => layer.materialKey)).not.toContain('timber_cladding');
   });
 
   it('shortens disallowed joined endpoints for typed layered walls', () => {

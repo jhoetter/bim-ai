@@ -47,28 +47,28 @@ import {
   isWhiteRenderLikeMaterial,
 } from './effectiveHostMaterials';
 
-/** Resolve a wall's `wallTypeId` to a renderable assembly. Built-in catalog
- * entries take precedence over user-authored `wall_type` elements. */
+/** Resolve a wall's `wallTypeId` to a renderable assembly. Project-authored
+ * type elements must win over built-ins so material/type edits render
+ * immediately even when the project type was seeded from a catalog id. */
 export function resolveWallTypeAssembly(
   wallTypeId: string,
   elementsById?: Record<string, Element>,
 ): WallTypeAssembly | null {
-  const builtIn = getBuiltInWallType(wallTypeId);
-  if (builtIn) return builtIn;
-  if (!elementsById) return null;
-  const el = elementsById[wallTypeId];
-  if (!el || el.kind !== 'wall_type') return null;
-  return {
-    id: el.id,
-    name: el.name,
-    basisLine: (el.basisLine ?? 'center') as 'center' | 'face_interior' | 'face_exterior',
-    layers: el.layers.map((l) => ({
-      name: '',
-      thicknessMm: Number(l.thicknessMm),
-      materialKey: String(l.materialKey ?? ''),
-      function: l.function as 'structure' | 'insulation' | 'finish',
-    })),
-  };
+  const el = elementsById?.[wallTypeId];
+  if (el?.kind === 'wall_type') {
+    return {
+      id: el.id,
+      name: el.name,
+      basisLine: (el.basisLine ?? 'center') as 'center' | 'face_interior' | 'face_exterior',
+      layers: el.layers.map((l) => ({
+        name: '',
+        thicknessMm: Number(l.thicknessMm),
+        materialKey: String(l.materialKey ?? ''),
+        function: l.function as 'structure' | 'insulation' | 'finish' | 'membrane' | 'air',
+      })),
+    };
+  }
+  return getBuiltInWallType(wallTypeId) ?? null;
 }
 
 export type WallElem = Extract<Element, { kind: 'wall' }>;
