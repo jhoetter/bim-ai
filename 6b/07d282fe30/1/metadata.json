@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "6b07d282fe30",
+  "session_id": "019e26e3-cc98-7fe2-95c1-70ac6414f56f",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-15T08:01:55.584466Z",
+  "branch": "codex/real-path-tracing-preview-20260515",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/workspace/shell/LeftRail.tsx",
+    "packages/web/src/workspace/workspaceUtils.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "664537d8ab0f",
+  "token_usage": {
+    "input_tokens": 1186047,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 27758080,
+    "output_tokens": 76557,
+    "api_call_count": 215
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-15T08:01:55.511292Z",
+    "agent_lines": 24,
+    "agent_removed": 51,
+    "human_added": 189,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 213,
+    "total_lines_changed": 392,
+    "agent_percentage": 19.132653061224488,
+    "metric_version": 2
+  }
+}
