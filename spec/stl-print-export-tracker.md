@@ -221,6 +221,60 @@ Acceptance:
 - Dormer elements appear in STL `elementCountsByKind`.
 - Existing STL and glTF tests continue to pass.
 
+### WP-STL-10 - Print Profiles and Category Filters
+
+Status: [x]
+
+Deliverables:
+
+- Add export options for `printProfile`, `includeKinds`, `excludeKinds`, and `minFeatureMm`.
+- Keep `browser_parity` as the default profile.
+- Add `architectural_model` and `concept_mass` profiles that suppress tiny detail and/or high-detail categories.
+- Apply the options consistently to STL bytes and STL manifest generation.
+- Expose the options as query params on the STL export and STL manifest routes.
+
+Acceptance:
+
+- The default STL output remains backwards compatible unless options are supplied.
+- `includeKinds` and `excludeKinds` deterministically limit exported element categories.
+- Fine railing/details below the active minimum feature size can be omitted for print-friendly profiles.
+- Manifest records the active print options and filtered/excluded categories.
+
+### WP-STL-11 - Roof Mesh Parity Expansion
+
+Status: [x]
+
+Deliverables:
+
+- Replace remaining roof fallback boxes with deterministic roof-surface meshes for flat, gable, asymmetric gable, hip, and L-shape-oriented footprints where supported.
+- Keep eave elevation aligned with the browser wall-top heuristic.
+- Represent simple roof openings as deterministic omitted/diagnosed cuts instead of printing marker solids.
+- Add regression tests covering hip/asymmetric/flat roof output shape and roof-opening exclusion diagnostics.
+
+Acceptance:
+
+- Hip/asymmetric/flat roof modes produce roof-specific triangle meshes, not generic AABB mass boxes.
+- Roof opening marker elements never print as separate solids.
+- Remaining unsupported roof cuts are visible in the manifest limitations/coverage diagnostics.
+
+### WP-STL-12 - 3MF Export
+
+Status: [x]
+
+Deliverables:
+
+- Add deterministic `.3mf` package export using the same print mesh and option system.
+- Add `GET /api/models/{model_id}/exports/model.3mf`.
+- Add `GET /api/models/{model_id}/exports/3mf-manifest`.
+- Add 3MF links to the export/evidence link map.
+- Add route/unit tests for package structure, manifest output, and option handling.
+
+Acceptance:
+
+- Exported 3MF is a valid ZIP package with required content type, relationship, and `3D/3dmodel.model` entries.
+- 3MF model vertices are millimeter coordinates and reuse the STL print mesh.
+- Tests pass alongside existing STL/glTF tests.
+
 ## Non-Goals for First Pass
 
 - Full computational solid geometry repair.
