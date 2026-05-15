@@ -1,8 +1,25 @@
 /** Documented schedule definition presets (server column keys mirror `bim_ai.schedule_field_registry`). */
 
 import type { ScheduleFieldMeta } from './schedulePanelRegistryChrome';
+import type { EnergyScheduleCategory } from '../energy/energyLensWorkflows';
 
-export type SchedulePresetCategory = 'room' | 'door' | 'window' | 'material_assembly';
+export type SchedulePresetCategory =
+  | 'room'
+  | 'door'
+  | 'window'
+  | 'finish'
+  | 'material_assembly'
+  | 'structural_element'
+  | 'structural_wall'
+  | 'column'
+  | 'beam'
+  | 'foundation'
+  | 'opening_load_bearing_wall'
+  | 'quantity_takeoff'
+  | 'cost_estimate'
+  | 'element_cost_group'
+  | 'scenario_delta'
+  | EnergyScheduleCategory;
 
 export type SchedulePresetFieldToken = 'required' | 'optional';
 
@@ -62,6 +79,21 @@ const PRESETS: ScheduleDefinitionPreset[] = [
       { fieldKey: 'areaM2', token: 'optional', unitHint: 'm²' },
       { fieldKey: 'targetAreaM2', token: 'optional', unitHint: 'm²' },
       { fieldKey: 'areaDeltaM2', token: 'optional', unitHint: 'm²' },
+    ],
+  },
+  {
+    id: 'finish-room-core',
+    name: 'Finish · room core',
+    category: 'finish',
+    fields: [
+      { fieldKey: 'elementId', token: 'required', csvExportHint: 'Stable room id' },
+      { fieldKey: 'name', token: 'required', csvExportHint: 'Room name' },
+      { fieldKey: 'level', token: 'required', csvExportHint: 'Level label' },
+      { fieldKey: 'department', token: 'optional' },
+      { fieldKey: 'programmeCode', token: 'optional' },
+      { fieldKey: 'finishSet', token: 'required', csvExportHint: 'Architectural finish reference' },
+      { fieldKey: 'finishState', token: 'required', csvExportHint: 'Finish metadata state' },
+      { fieldKey: 'areaM2', token: 'optional', unitHint: 'm²', aggregation: 'sum' },
     ],
   },
   {
@@ -157,6 +189,296 @@ const PRESETS: ScheduleDefinitionPreset[] = [
       { fieldKey: 'layerOffsetFromExteriorMm', token: 'optional', unitHint: 'mm' },
       { fieldKey: 'assemblyTotalThicknessMm', token: 'optional', unitHint: 'mm' },
       { fieldKey: 'level', token: 'optional' },
+    ],
+  },
+  {
+    id: 'energy-envelope-surfaces',
+    name: 'Energy · envelope surfaces',
+    category: 'energy_envelope',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'hostKind', token: 'required' },
+      { fieldKey: 'thermalClassification', token: 'required' },
+      { fieldKey: 'surfaceAreaM2', token: 'required', unitHint: 'm²', aggregation: 'sum' },
+      { fieldKey: 'uValueWPerM2K', token: 'optional', unitHint: 'W/(m²K)' },
+      { fieldKey: 'missingMaterialKeys', token: 'optional' },
+      { fieldKey: 'sourceReferences', token: 'optional' },
+    ],
+  },
+  {
+    id: 'energy-thermal-materials',
+    name: 'Energy · thermal materials',
+    category: 'energy_thermal_materials',
+    fields: [
+      { fieldKey: 'materialKey', token: 'required' },
+      { fieldKey: 'materialDisplay', token: 'required' },
+      { fieldKey: 'lambdaWPerMK', token: 'required', unitHint: 'W/(mK)' },
+      { fieldKey: 'rhoKgPerM3', token: 'optional', unitHint: 'kg/m³' },
+      { fieldKey: 'specificHeatJPerKgK', token: 'optional', unitHint: 'J/(kgK)' },
+      { fieldKey: 'mu', token: 'optional' },
+      { fieldKey: 'sourceReference', token: 'required' },
+      { fieldKey: 'thermalDataStatus', token: 'required' },
+    ],
+  },
+  {
+    id: 'energy-u-value-summary',
+    name: 'Energy · U-value summary',
+    category: 'energy_u_value_summary',
+    fields: [
+      { fieldKey: 'typeId', token: 'required' },
+      { fieldKey: 'typeName', token: 'required' },
+      { fieldKey: 'hostKind', token: 'required' },
+      { fieldKey: 'uValueWPerM2K', token: 'required', unitHint: 'W/(m²K)' },
+      { fieldKey: 'rTotalM2KPerW', token: 'optional', unitHint: 'm²K/W' },
+      { fieldKey: 'missingMaterialKeys', token: 'optional' },
+      { fieldKey: 'calculationScope', token: 'required' },
+    ],
+  },
+  {
+    id: 'energy-windows-solar-gains',
+    name: 'Energy · windows and solar gains',
+    category: 'energy_windows_solar_gains',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'openingAreaM2', token: 'required', unitHint: 'm²', aggregation: 'sum' },
+      { fieldKey: 'uValueWPerM2K', token: 'required', unitHint: 'W/(m²K)' },
+      { fieldKey: 'gValue', token: 'required' },
+      { fieldKey: 'frameFraction', token: 'optional' },
+      { fieldKey: 'annualShadingFactorEstimate', token: 'optional' },
+      { fieldKey: 'shadingDevice', token: 'optional' },
+    ],
+  },
+  {
+    id: 'energy-thermal-bridges',
+    name: 'Energy · thermal bridges',
+    category: 'energy_thermal_bridges',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'markerType', token: 'required' },
+      { fieldKey: 'hostElementIds', token: 'optional' },
+      { fieldKey: 'suggestedMitigation', token: 'optional' },
+      { fieldKey: 'psiValueReference', token: 'optional' },
+    ],
+  },
+  {
+    id: 'energy-thermal-zones',
+    name: 'Energy · thermal zones',
+    category: 'energy_thermal_zones',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'name', token: 'required' },
+      { fieldKey: 'heatingStatus', token: 'required' },
+      { fieldKey: 'usageProfile', token: 'optional' },
+      { fieldKey: 'setpointC', token: 'optional', unitHint: '°C' },
+      { fieldKey: 'airChangeRate', token: 'optional' },
+      { fieldKey: 'zoneId', token: 'required' },
+      { fieldKey: 'conditionedVolumeIncluded', token: 'optional' },
+    ],
+  },
+  {
+    id: 'energy-building-services',
+    name: 'Energy · building services handoff',
+    category: 'energy_building_services',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'heatingGeneratorType', token: 'required' },
+      { fieldKey: 'energyCarrier', token: 'required' },
+      { fieldKey: 'distributionType', token: 'optional' },
+      { fieldKey: 'domesticHotWaterSystem', token: 'optional' },
+      { fieldKey: 'ventilationSystem', token: 'optional' },
+      { fieldKey: 'measureCandidateNotes', token: 'optional' },
+    ],
+  },
+  {
+    id: 'energy-renovation-measures',
+    name: 'Energy · renovation measures',
+    category: 'energy_renovation_measures',
+    fields: [
+      { fieldKey: 'scenarioId', token: 'required' },
+      { fieldKey: 'scenarioName', token: 'required' },
+      { fieldKey: 'scenarioStatus', token: 'required' },
+      { fieldKey: 'measureName', token: 'optional' },
+      { fieldKey: 'measureNotes', token: 'optional' },
+      { fieldKey: 'costPlaceholder', token: 'optional', aggregation: 'sum' },
+    ],
+  },
+  {
+    id: 'energy-export-qa',
+    name: 'Energy · export QA checklist',
+    category: 'energy_export_qa',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'issueCode', token: 'required' },
+      { fieldKey: 'severity', token: 'required' },
+      { fieldKey: 'message', token: 'required' },
+      { fieldKey: 'missingMaterialKeys', token: 'optional' },
+    ],
+  },
+  {
+    id: 'structure-elements-handoff',
+    name: 'Structure · element handoff',
+    category: 'structural_element',
+    fields: [
+      { fieldKey: 'elementId', token: 'required', csvExportHint: 'Stable row id' },
+      { fieldKey: 'name', token: 'required' },
+      { fieldKey: 'category', token: 'required' },
+      { fieldKey: 'level', token: 'required' },
+      { fieldKey: 'loadBearing', token: 'required' },
+      { fieldKey: 'structuralRole', token: 'required' },
+      { fieldKey: 'structuralMaterial', token: 'required' },
+      {
+        fieldKey: 'analysisStatus',
+        token: 'required',
+        csvExportHint: 'External-analysis handoff status',
+      },
+      { fieldKey: 'fireResistanceRating', token: 'optional' },
+    ],
+  },
+  {
+    id: 'structure-bearing-walls',
+    name: 'Structure · bearing walls',
+    category: 'structural_wall',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'name', token: 'required' },
+      { fieldKey: 'wallTypeId', token: 'required' },
+      { fieldKey: 'level', token: 'required' },
+      { fieldKey: 'heightMm', token: 'optional', unitHint: 'mm' },
+      { fieldKey: 'structuralMaterial', token: 'required' },
+      { fieldKey: 'analysisStatus', token: 'required' },
+      { fieldKey: 'fireResistanceRating', token: 'optional' },
+    ],
+  },
+  {
+    id: 'structure-columns',
+    name: 'Structure · columns',
+    category: 'column',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'name', token: 'required' },
+      { fieldKey: 'level', token: 'required' },
+      { fieldKey: 'bMm', token: 'required', unitHint: 'mm' },
+      { fieldKey: 'hMm', token: 'required', unitHint: 'mm' },
+      { fieldKey: 'heightMm', token: 'required', unitHint: 'mm' },
+      { fieldKey: 'structuralMaterial', token: 'required' },
+      { fieldKey: 'analysisStatus', token: 'required' },
+    ],
+  },
+  {
+    id: 'structure-beams',
+    name: 'Structure · beams',
+    category: 'beam',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'name', token: 'required' },
+      { fieldKey: 'level', token: 'required' },
+      { fieldKey: 'widthMm', token: 'required', unitHint: 'mm' },
+      { fieldKey: 'heightMm', token: 'required', unitHint: 'mm' },
+      { fieldKey: 'structuralMaterial', token: 'required' },
+      { fieldKey: 'analysisStatus', token: 'required' },
+    ],
+  },
+  {
+    id: 'structure-foundations',
+    name: 'Structure · foundations',
+    category: 'foundation',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'name', token: 'required' },
+      { fieldKey: 'category', token: 'required' },
+      { fieldKey: 'level', token: 'required' },
+      { fieldKey: 'structuralRole', token: 'required' },
+      { fieldKey: 'structuralMaterial', token: 'required' },
+      { fieldKey: 'analysisStatus', token: 'optional' },
+    ],
+  },
+  {
+    id: 'structure-openings-review',
+    name: 'Structure · opening review',
+    category: 'opening_load_bearing_wall',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'name', token: 'required' },
+      { fieldKey: 'wallId', token: 'required' },
+      { fieldKey: 'wallName', token: 'required' },
+      { fieldKey: 'level', token: 'required' },
+      { fieldKey: 'openingWidthMm', token: 'required', unitHint: 'mm' },
+      { fieldKey: 'hostLoadBearing', token: 'required' },
+      { fieldKey: 'reviewStatus', token: 'required', csvExportHint: 'needs_review or resolved' },
+    ],
+  },
+  {
+    id: 'cost-quantity-takeoff',
+    name: 'Cost · quantity takeoff',
+    category: 'quantity_takeoff',
+    fields: [
+      { fieldKey: 'elementId', token: 'required', csvExportHint: 'Stable source element id' },
+      { fieldKey: 'name', token: 'required' },
+      { fieldKey: 'elementKind', token: 'required' },
+      { fieldKey: 'typeId', token: 'optional', csvExportHint: 'Source type id' },
+      { fieldKey: 'scenarioId', token: 'required' },
+      { fieldKey: 'costGroup', token: 'optional' },
+      { fieldKey: 'workPackage', token: 'optional' },
+      { fieldKey: 'trade', token: 'optional' },
+      { fieldKey: 'lengthM', token: 'optional', unitHint: 'm', aggregation: 'sum' },
+      { fieldKey: 'netAreaM2', token: 'optional', unitHint: 'm²', aggregation: 'sum' },
+      { fieldKey: 'grossAreaM2', token: 'optional', unitHint: 'm²', aggregation: 'sum' },
+      { fieldKey: 'netVolumeM3', token: 'optional', unitHint: 'm³', aggregation: 'sum' },
+      { fieldKey: 'openingCount', token: 'optional', aggregation: 'sum' },
+      { fieldKey: 'traceability', token: 'required' },
+    ],
+  },
+  {
+    id: 'cost-estimate-source',
+    name: 'Cost · estimate source',
+    category: 'cost_estimate',
+    fields: [
+      { fieldKey: 'rowId', token: 'required' },
+      { fieldKey: 'elementId', token: 'required', csvExportHint: 'Source element id' },
+      { fieldKey: 'scenarioId', token: 'required' },
+      { fieldKey: 'costGroup', token: 'required' },
+      { fieldKey: 'workPackage', token: 'optional' },
+      { fieldKey: 'trade', token: 'optional' },
+      { fieldKey: 'unit', token: 'required' },
+      { fieldKey: 'quantity', token: 'required', aggregation: 'sum' },
+      { fieldKey: 'unitRate', token: 'optional' },
+      { fieldKey: 'totalCost', token: 'optional', aggregation: 'sum' },
+      { fieldKey: 'costSource', token: 'required', csvExportHint: 'Rate source/reference' },
+      { fieldKey: 'costDataStatus', token: 'required' },
+    ],
+  },
+  {
+    id: 'cost-element-groups',
+    name: 'Cost · element groups',
+    category: 'element_cost_group',
+    fields: [
+      { fieldKey: 'elementId', token: 'required' },
+      { fieldKey: 'name', token: 'required' },
+      { fieldKey: 'elementKind', token: 'required' },
+      { fieldKey: 'typeId', token: 'optional' },
+      { fieldKey: 'costGroup', token: 'required' },
+      { fieldKey: 'workPackage', token: 'optional' },
+      { fieldKey: 'trade', token: 'optional' },
+      { fieldKey: 'quantity', token: 'optional', aggregation: 'sum' },
+      { fieldKey: 'totalCost', token: 'optional', aggregation: 'sum' },
+      { fieldKey: 'costDataStatus', token: 'required' },
+    ],
+  },
+  {
+    id: 'cost-scenario-delta',
+    name: 'Cost · scenario delta',
+    category: 'scenario_delta',
+    fields: [
+      { fieldKey: 'scenarioId', token: 'required' },
+      { fieldKey: 'baselineScenarioId', token: 'required' },
+      { fieldKey: 'costGroup', token: 'required' },
+      { fieldKey: 'workPackage', token: 'optional' },
+      { fieldKey: 'trade', token: 'optional' },
+      { fieldKey: 'scenarioCost', token: 'required', aggregation: 'sum' },
+      { fieldKey: 'baselineCost', token: 'required', aggregation: 'sum' },
+      { fieldKey: 'deltaCost', token: 'required', aggregation: 'sum' },
+      { fieldKey: 'rowCount', token: 'required', aggregation: 'sum' },
+      { fieldKey: 'sourceElementIds', token: 'required', csvExportHint: 'Traceable source ids' },
     ],
   },
 ];

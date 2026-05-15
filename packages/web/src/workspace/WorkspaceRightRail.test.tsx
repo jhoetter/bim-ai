@@ -93,6 +93,38 @@ describe('WorkspaceRightRail — type property commands', () => {
     expect(queryByTestId('right-rail-review')).toBeNull();
   });
 
+  it('foregrounds the coordination readout when the coordination lens is active', () => {
+    useBimStore.setState({
+      selectedId: undefined,
+      elementsById: {
+        issue: {
+          kind: 'issue',
+          id: 'issue',
+          title: 'Missing host',
+          status: 'open',
+          severity: 'error',
+          responsibleDiscipline: 'architecture',
+          elementIds: ['door-missing'],
+        },
+      } as unknown as Record<string, Element>,
+    });
+
+    const { getByTestId, getByText } = renderWithI18n(
+      <WorkspaceRightRail
+        mode="3d"
+        lensMode="coordination"
+        onSemanticCommand={() => undefined}
+        onModeChange={() => undefined}
+        surface="view-context"
+      />,
+    );
+
+    expect(getByTestId('coordination-lens-panel')).toBeTruthy();
+    expect(getByText('Coordination')).toBeTruthy();
+    expect(getByText('Issue list')).toBeTruthy();
+    expect(getByText('Missing host')).toBeTruthy();
+  });
+
   it('routes wall type property edits through upsertWallType', () => {
     const wallType: Extract<Element, { kind: 'wall_type' }> = {
       kind: 'wall_type',
@@ -513,6 +545,7 @@ describe('WorkspaceRightRail — 3D selected door/window/floor/roof actions', ()
   });
 
   it('adds 3D category and type actions for selected floors and roofs', () => {
+    const onModeChange = vi.fn();
     useBimStore.setState({
       selectedId: floor.id,
       elementsById: {
@@ -522,13 +555,14 @@ describe('WorkspaceRightRail — 3D selected door/window/floor/roof actions', ()
         [roofType.id]: roofType,
       },
       viewerCategoryHidden: {},
+      planTool: 'wall',
     });
 
     const { getByTestId, rerender } = renderWithI18n(
       <WorkspaceRightRail
         mode="3d"
         onSemanticCommand={() => undefined}
-        onModeChange={() => undefined}
+        onModeChange={onModeChange}
         surface="element"
       />,
     );
@@ -536,6 +570,11 @@ describe('WorkspaceRightRail — 3D selected door/window/floor/roof actions', ()
     fireEvent.click(getByTestId('3d-action-floor-isolate-category'));
     expect(useBimStore.getState().viewerCategoryHidden.floor).toBe(false);
     expect(useBimStore.getState().viewerCategoryHidden.wall).toBe(true);
+    fireEvent.click(getByTestId('3d-action-floor-edit-boundary'));
+    expect(onModeChange).toHaveBeenCalledWith('plan');
+    expect(useBimStore.getState().selectedId).toBe(floor.id);
+    expect(useBimStore.getState().activeLevelId).toBe('lvl-1');
+    expect(useBimStore.getState().planTool).toBe('select');
 
     useBimStore.setState({ selectedId: roof.id, viewerCategoryHidden: {} });
     rerender(
@@ -543,7 +582,7 @@ describe('WorkspaceRightRail — 3D selected door/window/floor/roof actions', ()
         <WorkspaceRightRail
           mode="3d"
           onSemanticCommand={() => undefined}
-          onModeChange={() => undefined}
+          onModeChange={onModeChange}
           surface="element"
         />
       </I18nextProvider>,

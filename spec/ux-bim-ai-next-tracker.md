@@ -1,6 +1,6 @@
 # BIM AI UX Next-Phase Tracker
 
-Last updated: 2026-05-14
+Last updated: 2026-05-15
 
 Related baseline:
 
@@ -418,6 +418,33 @@ Evidence (2026-05-13):
   - ribbon command count changes by lens (`architecture: 13`, `structure: 9`, `mep: 1`),
   - Cmd+K `tool.room` entry is disabled in MEP lens with explicit gating reason,
   - deterministic canvas lens classification is recorded for `all/architecture/structure/mep`.
+
+Evidence (2026-05-15 MEP/TGA closeout):
+
+- MEP lens workpackages were implemented and merged to `main`:
+  - model/API contract: `055b4452a`
+  - schedule projections: `1434385dc`
+  - UI authoring surfacing: `d41b24273`
+  - current-main integration repair: `fe4971fd0`
+- The MEP lens now exposes first-class system authoring commands in ribbon/Cmd+K capability metadata:
+  - `tool.duct`
+  - `tool.pipe`
+  - `tool.cable-tray`
+  - `tool.mep-equipment`
+  - `tool.fixture`
+  - `tool.mep-terminal`
+  - `tool.mep-opening-request`
+  - `tool.shaft`
+- MEP-specific model/inspector/schedule coverage is tracked by:
+  - `app/bim_ai/mep_lens.py`
+  - `app/tests/test_mep_lens.py`
+  - `packages/web/src/workspace/commandCapabilities.test.ts`
+  - `packages/web/src/workspace/inspector/InspectorContent.test.tsx`
+- Final verification on the integration branch passed:
+  - `uv run pytest --no-cov tests/test_mep_lens.py`
+  - `pnpm --filter @bim-ai/core exec tsc --noEmit`
+  - `pnpm --filter @bim-ai/web exec vitest run src/workspace/commandCapabilities.test.ts src/workspace/inspector/InspectorContent.test.tsx`
+  - `pnpm --filter @bim-ai/ui typecheck && pnpm --filter @bim-ai/web typecheck`
 
 ### WP-NEXT-11 — View Creation Discoverability
 
@@ -1932,7 +1959,7 @@ Revit behavior to emulate where it maps cleanly:
 ### WP-NEXT-43 — Floor Sketch Lifecycle And Floor-As-Host Semantics
 
 - Priority: `P0`
-- Status: `Open`
+- Status: `Partial`
 - Covers: `NEXT22-GAP-005`, `NEXT22-GAP-013`, `NEXT22-GAP-014`, `NEXT22-GAP-016`
 - Goal: make floors a trustworthy structural base for walls, rooms, shafts, ceilings, and roofs.
 - Revit-like behavior to emulate:
@@ -1952,6 +1979,15 @@ Revit behavior to emulate where it maps cleanly:
   - seeded proof creates a floor from drawn boundary and from picked walls;
   - floor remains selected after commit with edit-boundary action available;
   - Cmd+K can start floor sketch and reports disabled reason in invalid view types.
+- Evidence 2026-05-14:
+  - `packages/web/src/workspace/workspaceUtils.ts` now centralizes structural tool routing: generic `floor`/`roof` resolve to `floor-sketch`/`roof-sketch` in plan and non-3D bridge contexts, while remaining direct `floor`/`roof` authoring tools in 3D.
+  - Plan Sketch ribbon buttons now use the canonical sketch tool ids with the existing visible `Floor`/`Roof` labels, so clicking Floor/Roof opens the explicit sketch lifecycle instead of the old ambiguous plan tool. The Workspace hotkey path and Cmd+K `tool.floor`/`tool.roof` path use the same routing.
+  - Floor sketch mode now keeps floor type and boundary-offset options visible in `OptionsBar`, and floor/roof tool metadata no longer requires an existing wall before a sketch can start. MEP lens gating was extended to `tool.floor-sketch` and `tool.roof-sketch`.
+  - Tests cover Cmd+K routing, plan ribbon routing and active state, Workspace plan hotkey/ribbon routing, 3D direct Floor/Roof preservation, floor sketch options visibility, capability preconditions, MEP lens gating, and existing Cmd/Ctrl+R browser-shortcut preservation.
+  - Floor sketch validation now blocks too-short edges, duplicate/reversed boundary edges, overlapping collinear boundary edges, and same-level floor slab overlap before `Finish`; live sketch-session responses and the finish route return the same concrete validation issue codes.
+  - Backend tests cover the new topology validation and document-aware floor overlap/skipped-source-floor behavior in `app/tests/test_sketch_validation.py` and `app/tests/test_routes_sketch_validation.py`.
+  - Selected floor properties now expose an explicit `Edit Boundary` action that returns to plan/select on the floor level so existing vertex grips are the boundary editor; the same action is reachable from selected-floor 3D actions. DOM tests cover both surfaces.
+  - Remaining before `Done`: seeded screenshots and UI proof for drawn-boundary floor creation, picked-wall floor creation, invalid-loop Finish disabled reasons, overlap/duplicate validation, and post-commit floor selection with edit-boundary action.
 - Dependencies: `WP-NEXT-40`, `WP-NEXT-41`.
 
 ### WP-NEXT-44 — Generate Walls From Floors, Rooms, And Picked Boundaries

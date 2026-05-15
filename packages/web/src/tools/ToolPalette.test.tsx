@@ -118,7 +118,7 @@ describe('<ToolPalette /> — spec §16', () => {
     expect(onSelect).toHaveBeenLastCalledWith('ceiling'); // wraps backwards from select
   });
 
-  it('disables Floor when no walls exist and surfaces the reason', () => {
+  it('keeps Floor enabled without walls because sketch mode owns boundary creation', () => {
     const { getByLabelText } = renderWithI18n(
       <ToolPalette
         mode="plan"
@@ -128,8 +128,8 @@ describe('<ToolPalette /> — spec §16', () => {
       />,
     );
     const floor = getByLabelText('Floor (F)') as HTMLButtonElement;
-    expect(floor.disabled).toBe(true);
-    expect(floor.title).toMatch(/wall first/);
+    expect(floor.disabled).toBe(false);
+    expect(floor.title).not.toMatch(/wall first/);
   });
 
   it('Tag button dispatches onTagSubmenu instead of onToolSelect', () => {

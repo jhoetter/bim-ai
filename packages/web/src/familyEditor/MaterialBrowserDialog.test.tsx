@@ -21,6 +21,14 @@ describe('<MaterialBrowserDialog />', () => {
     expect(onAssign).toHaveBeenCalledWith(material.key);
   });
 
+  it('shows the active assignment target', () => {
+    const { getByText } = render(
+      <MaterialBrowserDialog onAssign={vi.fn()} onClose={vi.fn()} targetLabel="Window · Glass" />,
+    );
+
+    expect(getByText('Target: Window · Glass')).toBeTruthy();
+  });
+
   it('filters materials by search text', () => {
     const glass = listMaterials().find((material) => material.category === 'glass')!;
     const timber = listMaterials().find((material) => material.category === 'timber')!;

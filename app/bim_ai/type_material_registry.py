@@ -6,6 +6,7 @@ from typing import Any
 
 from bim_ai.document import Document
 from bim_ai.elements import FamilyTypeElem, FloorTypeElem, RoofTypeElem, WallTypeElem
+from bim_ai.material_catalog import resolve_material
 
 
 def builtin_type_material_registry() -> dict[str, Any]:
@@ -150,6 +151,10 @@ def material_display_label(_doc: Document, material_key: str | None) -> str:
 
             if isinstance(dn, str) and dn.strip():
                 return dn.strip()
+
+    builtin = resolve_material(key)
+    if builtin:
+        return builtin.display_name
 
     return ""
 

@@ -876,6 +876,155 @@ function scheduleWorkflowProfiles(
           groupKeys: ['hostKind', 'materialKey'],
         },
       ];
+    case 'energy_envelope':
+      return [
+        {
+          id: 'energy-envelope-review',
+          label: 'Envelope surfaces',
+          description: 'Thermal envelope classification, surface area, U-value, and missing data.',
+          presetId: 'energy-envelope-surfaces',
+          sortBy: 'surfaceAreaM2',
+          sortDescending: true,
+          groupKeys: ['hostKind', 'thermalClassification'],
+        },
+      ];
+    case 'energy_thermal_materials':
+      return [
+        {
+          id: 'energy-material-lambda',
+          label: 'Thermal material audit',
+          description: 'Material lambda, density, heat capacity, mu, and source references.',
+          presetId: 'energy-thermal-materials',
+          sortBy: 'materialKey',
+          groupKeys: ['thermalDataStatus'],
+        },
+      ];
+    case 'energy_u_value_summary':
+      return [
+        {
+          id: 'energy-u-values',
+          label: 'U-value summary',
+          description: 'Type-level U-value readouts with missing layer data called out.',
+          presetId: 'energy-u-value-summary',
+          sortBy: 'uValueWPerM2K',
+          groupKeys: ['hostKind'],
+        },
+      ];
+    case 'energy_windows_solar_gains':
+      return [
+        {
+          id: 'energy-window-solar',
+          label: 'Solar gains',
+          description: 'Glazing area, U-value, g-value, frame fraction, and shading handoff.',
+          presetId: 'energy-windows-solar-gains',
+          sortBy: 'openingAreaM2',
+          sortDescending: true,
+          groupKeys: ['wallId'],
+        },
+      ];
+    case 'energy_thermal_bridges':
+      return [
+        {
+          id: 'energy-thermal-bridges',
+          label: 'Thermal bridges',
+          description: 'Thermal bridge markers, mitigation notes, and optional psi references.',
+          presetId: 'energy-thermal-bridges',
+          sortBy: 'markerType',
+          groupKeys: ['markerType'],
+        },
+      ];
+    case 'energy_thermal_zones':
+      return [
+        {
+          id: 'energy-thermal-zones',
+          label: 'Thermal zones',
+          description: 'Room heating status, usage profile, setpoint, air change, and zone id.',
+          presetId: 'energy-thermal-zones',
+          sortBy: 'zoneId',
+          groupKeys: ['zoneId', 'heatingStatus'],
+        },
+      ];
+    case 'energy_building_services':
+      return [
+        {
+          id: 'energy-building-services',
+          label: 'Services handoff',
+          description: 'Non-final generator, carrier, distribution, DHW, ventilation, and notes.',
+          presetId: 'energy-building-services',
+          sortBy: 'name',
+          groupKeys: ['scenarioId'],
+        },
+      ];
+    case 'energy_renovation_measures':
+      return [
+        {
+          id: 'energy-renovation-measures',
+          label: 'Renovation measures',
+          description: 'As-is, scenario, target, measure packages, and cost placeholders.',
+          presetId: 'energy-renovation-measures',
+          sortBy: 'scenarioStatus',
+          groupKeys: ['scenarioStatus', 'scenarioId'],
+        },
+      ];
+    case 'energy_export_qa':
+      return [
+        {
+          id: 'energy-export-qa',
+          label: 'Export QA',
+          description: 'Missing classifications, thermal values, opening data, and zone warnings.',
+          presetId: 'energy-export-qa',
+          sortBy: 'severity',
+          groupKeys: ['severity', 'issueCode'],
+        },
+      ];
+    case 'quantity_takeoff':
+      return [
+        {
+          id: 'cost-quantity-takeoff',
+          label: 'Quantity takeoff',
+          description: 'Model-derived length, area, volume, opening, and layer quantities.',
+          presetId: 'cost-quantity-takeoff',
+          sortBy: 'elementKind',
+          sortDescending: false,
+          groupKeys: ['elementKind', 'costGroup'],
+        },
+      ];
+    case 'cost_estimate':
+      return [
+        {
+          id: 'cost-estimate-source',
+          label: 'Estimate source',
+          description: 'Cost rows with unit rates, source references, confidence, and totals.',
+          presetId: 'cost-estimate-source',
+          sortBy: 'totalCost',
+          sortDescending: true,
+          groupKeys: ['costGroup', 'workPackage'],
+        },
+      ];
+    case 'element_cost_group':
+      return [
+        {
+          id: 'cost-element-groups',
+          label: 'Element cost groups',
+          description: 'Traceable element rows grouped by cost group, work package, and trade.',
+          presetId: 'cost-element-groups',
+          sortBy: 'costGroup',
+          sortDescending: false,
+          groupKeys: ['costGroup', 'workPackage', 'trade'],
+        },
+      ];
+    case 'scenario_delta':
+      return [
+        {
+          id: 'cost-scenario-delta',
+          label: 'Scenario delta',
+          description: 'Package-level scenario totals compared against the baseline scenario.',
+          presetId: 'cost-scenario-delta',
+          sortBy: 'deltaCost',
+          sortDescending: true,
+          groupKeys: ['scenarioId', 'costGroup', 'workPackage'],
+        },
+      ];
     default:
       return [];
   }

@@ -122,10 +122,11 @@ export function createProceduralMaterialMaps(
       } else if (spec.category === 'cladding') {
         const boardEdge = x < 3 || x >= size - 3;
         const grain = Math.sin((ny * 18 + hash2(x >> 4, 0, seed) * 1.5) * Math.PI);
-        const slowTone = (hash2(x >> 5, y >> 5, seed) - 0.5) * 5;
-        variation += boardEdge ? -16 : slowTone + grain * 3;
-        height = boardEdge ? 88 : 136 + grain * 5;
-        rough = boardEdge ? 236 : 208 + Math.abs(grain) * 8;
+        const boardTone = (hash2(x >> 4, 0, seed) - 0.5) * 30;
+        const slowTone = (hash2(x >> 5, y >> 5, seed) - 0.5) * 9;
+        variation += boardEdge ? -42 : boardTone + slowTone + grain * 7;
+        height = boardEdge ? 52 : 148 + grain * 12;
+        rough = boardEdge ? 242 : 196 + Math.abs(grain) * 18;
       } else if (spec.category === 'concrete' || spec.category === 'render') {
         variation += (hash2(x >> 1, y >> 1, seed) - 0.5) * 14;
         height = 124 + (hash2(x, y, seed) - 0.5) * 18;

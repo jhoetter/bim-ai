@@ -65,6 +65,7 @@ describe('InspectorPropertiesFor — spec §13', () => {
       id: 'wall-type-clad',
       name: 'Vertical clad external wall',
       layers: [
+        { function: 'insulation', materialKey: 'air', thicknessMm: 25 },
         { function: 'finish', materialKey: 'cladding_dark_grey', thicknessMm: 18 },
         { function: 'structure', materialKey: 'timber_frame_insulation', thicknessMm: 140 },
       ],
@@ -85,10 +86,118 @@ describe('InspectorPropertiesFor — spec §13', () => {
     expect(queryByText('Instance Material')).toBeNull();
   });
 
+  it('shows floor and roof type top materials instead of blindly layer zero', () => {
+    const floorType: Extract<Element, { kind: 'floor_type' }> = {
+      kind: 'floor_type',
+      id: 'floor-type-finish',
+      name: 'Timber floor',
+      layers: [
+        { function: 'structure', materialKey: 'concrete_smooth', thicknessMm: 180 },
+        { function: 'finish', materialKey: 'oak_light', thicknessMm: 20 },
+      ],
+    };
+    const floorEl: Extract<Element, { kind: 'floor' }> = {
+      kind: 'floor',
+      id: 'floor-1',
+      name: 'Floor',
+      levelId: 'level-1',
+      boundaryMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 3000, yMm: 0 },
+        { xMm: 3000, yMm: 3000 },
+      ],
+      thicknessMm: 200,
+      floorTypeId: floorType.id,
+    };
+    const roofType: Extract<Element, { kind: 'roof_type' }> = {
+      kind: 'roof_type',
+      id: 'roof-type-finish',
+      name: 'Metal roof',
+      layers: [
+        { function: 'structure', materialKey: 'timber_frame_insulation', thicknessMm: 160 },
+        { function: 'finish', materialKey: 'metal_standing_seam_dark_grey', thicknessMm: 45 },
+      ],
+    };
+    const roofEl: Extract<Element, { kind: 'roof' }> = {
+      kind: 'roof',
+      id: 'roof-1',
+      name: 'Roof',
+      referenceLevelId: 'level-1',
+      footprintMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 3000, yMm: 0 },
+        { xMm: 3000, yMm: 3000 },
+      ],
+      roofTypeId: roofType.id,
+      materialKey: 'white_render',
+    };
+
+    const floorView = render(
+      InspectorPropertiesFor(floorEl, t, { elementsById: { [floorType.id]: floorType } }),
+    );
+    expect(floorView.getByText('Type Top Material')).toBeTruthy();
+    expect(floorView.getByText('oak_light')).toBeTruthy();
+    floorView.unmount();
+
+    const roofView = render(
+      InspectorPropertiesFor(roofEl, t, { elementsById: { [roofType.id]: roofType } }),
+    );
+    expect(roofView.getByText('Type Top Material')).toBeTruthy();
+    expect(roofView.getByText(/Standing-seam metal/)).toBeTruthy();
+  });
+
   it('renders door alongT and width', () => {
     const { getByText } = render(InspectorPropertiesFor(door, t));
     expect(getByText('900 mm')).toBeTruthy();
     expect(getByText('0.500')).toBeTruthy();
+  });
+
+  it('surfaces floor boundary editing as an explicit action', () => {
+    const floor: Extract<Element, { kind: 'floor' }> = {
+      kind: 'floor',
+      id: 'floor-1',
+      name: 'Floor',
+      levelId: 'seed-lvl-ground',
+      boundaryMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 1000, yMm: 0 },
+        { xMm: 1000, yMm: 1000 },
+        { xMm: 0, yMm: 1000 },
+      ],
+      thicknessMm: 220,
+      structureThicknessMm: 140,
+      finishThicknessMm: 0,
+    };
+    const onEditBoundary = vi.fn();
+    const { getByTestId, getByText } = render(InspectorPropertiesFor(floor, t, { onEditBoundary }));
+
+    expect(getByText('Plan vertex grips')).toBeTruthy();
+    fireEvent.click(getByTestId('inspector-floor-edit-boundary'));
+    expect(onEditBoundary).toHaveBeenCalledWith(floor);
+  });
+
+  it('opens material browser with an explicit door slot target', () => {
+    const onOpenMaterialBrowser = vi.fn();
+    const { getByText, getAllByTestId } = render(
+      InspectorPropertiesFor(
+        {
+          ...door,
+          materialSlots: { frame: 'aluminium_black' },
+        } as Extract<Element, { kind: 'door' }>,
+        t,
+        { onOpenMaterialBrowser },
+      ),
+    );
+
+    expect(getByText('Material Slots')).toBeTruthy();
+    fireEvent.click(getAllByTestId('inspector-material-row-browser')[1]!);
+    expect(onOpenMaterialBrowser).toHaveBeenCalledWith({
+      kind: 'material-slot',
+      elementId: 'seed-d-1',
+      slot: 'frame',
+      label: 'Frame',
+      currentKey: 'aluminium_black',
+    });
   });
 
   it('renders stair risers/treads', () => {
@@ -99,6 +208,61 @@ describe('InspectorPropertiesFor — spec §13', () => {
     expect((getByLabelText('Stair tread depth in millimetres') as HTMLInputElement).value).toBe(
       '280',
     );
+  });
+
+  it('renders MEP route metadata and connectors', () => {
+    const pipe: Extract<Element, { kind: 'pipe' }> = {
+      kind: 'pipe',
+      id: 'pipe-1',
+      name: 'CHW Supply',
+      levelId: 'lvl-1',
+      startMm: { xMm: 0, yMm: 0 },
+      endMm: { xMm: 4200, yMm: 0 },
+      elevationMm: 2800,
+      diameterMm: 80,
+      systemType: 'cooling',
+      systemName: 'CHW-S',
+      flowDirection: 'supply',
+      insulation: '25 mm phenolic',
+      serviceLevel: 'L02',
+      connectors: [
+        { id: 'c1', flowDirection: 'supply', diameterMm: 80 },
+        { id: 'c2', flowDirection: 'supply', diameterMm: 80 },
+      ],
+    };
+
+    const { getByText } = render(InspectorPropertiesFor(pipe, t));
+    expect(getByText('CHW-S')).toBeTruthy();
+    expect(getByText('80 mm')).toBeTruthy();
+    expect(getByText('25 mm phenolic')).toBeTruthy();
+    expect(getByText('2')).toBeTruthy();
+  });
+
+  it('renders MEP room zones and load summaries', () => {
+    const room: Extract<Element, { kind: 'room' }> = {
+      kind: 'room',
+      id: 'room-mep',
+      name: 'Exam',
+      levelId: 'lvl-1',
+      outlineMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 3000, yMm: 0 },
+        { xMm: 3000, yMm: 3000 },
+        { xMm: 0, yMm: 3000 },
+      ],
+      ventilationZone: 'VAV-2A',
+      heatingCoolingZone: 'HC-2A',
+      designAirChangeRate: 6,
+      electricalLoadSummary: { receptacles: '1.2 kVA' },
+      fixtureEquipmentLoads: { sink: 'cold+hot' },
+      serviceRequirements: ['medical gas', 'exhaust'],
+    };
+
+    const { getByText } = render(InspectorPropertiesFor(room, t));
+    expect(getByText('VAV-2A')).toBeTruthy();
+    expect(getByText('HC-2A')).toBeTruthy();
+    expect(getByText('6.00 1/h')).toBeTruthy();
+    expect(getByText('medical gas, exhaust')).toBeTruthy();
   });
 
   it('persists room fill pattern override', () => {
@@ -124,6 +288,47 @@ describe('InspectorPropertiesFor — spec §13', () => {
 
     fireEvent.change(select, { target: { value: 'crosshatch' } });
     expect(onPropertyChange).toHaveBeenCalledWith('roomFillPatternOverride', 'crosshatch');
+  });
+
+  it('surfaces architecture room metadata and read-only consultant badges', () => {
+    const room: Extract<Element, { kind: 'room' }> = {
+      kind: 'room',
+      id: 'room-1',
+      name: 'Office',
+      levelId: 'lvl-1',
+      outlineMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 2000, yMm: 0 },
+        { xMm: 2000, yMm: 2000 },
+        { xMm: 0, yMm: 2000 },
+      ],
+      volumeM3: 36.25,
+      phaseCreated: 'New Construction',
+      props: {
+        roomFunction: 'office',
+        finishSetId: 'fs-1',
+        fireRating: 'F30',
+        acousticRating: 'Rw 45',
+        energyZone: 'heated',
+        costGroup: 'KG 300',
+      },
+    };
+    const onPropertyChange = vi.fn();
+    const { getByTestId, getByText } = render(
+      <InspectorRoomEditor el={room} revision={1} onPersistProperty={onPropertyChange} />,
+    );
+    const roomFunction = getByTestId('inspector-room-room-function') as HTMLInputElement;
+    expect(roomFunction.value).toBe('office');
+    const badges = getByTestId('inspector-room-consultant-badges');
+    expect(badges.textContent).toContain('Fire F30');
+    expect(badges.textContent).toContain('Acoustic Rw 45');
+    expect(badges.textContent).toContain('Energy heated');
+    expect(badges.textContent).toContain('Cost KG 300');
+    expect(getByText('36.250 m³')).toBeTruthy();
+    expect(getByText('New Construction')).toBeTruthy();
+
+    fireEvent.blur(roomFunction, { target: { value: 'meeting' } });
+    expect(onPropertyChange).toHaveBeenCalledWith('roomFunction', 'meeting');
   });
 
   it('renders editable DXF work-plane level dropdown', () => {

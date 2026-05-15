@@ -10,7 +10,7 @@ import {
 
 import type { UxComment } from '../state/store';
 import type { PlanTool } from '../state/storeTypes';
-import type { ToolId } from '../tools/toolRegistry';
+import type { ToolId, WorkspaceMode } from '../tools/toolRegistry';
 import type { LeftRailSection } from './shell';
 import { readSheetIntent, sheetIntentLabel } from './sheets/sheetIntent';
 
@@ -69,6 +69,13 @@ export const KNOWN_PLAN_TOOLS = new Set<ToolId>([
   'wall-join',
   'wall-opening',
   'shaft',
+  'duct',
+  'pipe',
+  'cable-tray',
+  'mep-equipment',
+  'fixture',
+  'mep-terminal',
+  'mep-opening-request',
   'column',
   'beam',
   'ceiling',
@@ -86,6 +93,14 @@ export const KNOWN_PLAN_TOOLS = new Set<ToolId>([
 export function validatePlanTool(tool: ToolId): PlanTool | null {
   if (KNOWN_PLAN_TOOLS.has(tool)) return tool as PlanTool;
   return null;
+}
+
+export function canonicalPlanToolForMode(tool: ToolId, mode: WorkspaceMode): PlanTool | null {
+  const planTool = validatePlanTool(tool);
+  if (!planTool) return null;
+  if (tool === 'floor') return mode === '3d' ? 'floor' : 'floor-sketch';
+  if (tool === 'roof') return mode === '3d' ? 'roof' : 'roof-sketch';
+  return planTool;
 }
 
 export function planToolToToolId(tool: PlanTool): ToolId {

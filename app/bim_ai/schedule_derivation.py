@@ -5,7 +5,9 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any
 
+from bim_ai.construction_lens import construction_progress_rows
 from bim_ai.cost_quantity import (
+    COST_QUANTITY_LENS_ID,
     DEFAULT_SCENARIO_ID,
     cost_quantity_totals,
     derive_cost_estimate_rows,
@@ -15,13 +17,21 @@ from bim_ai.cost_quantity import (
 from bim_ai.document import Document
 from bim_ai.elements import (
     AreaElem,
+    BuildingServicesHandoffElem,
+    ConstructabilityIssueElem,
+    ConstructionLogisticsElem,
+    ConstructionPackageElem,
+    ConstructionQaChecklistElem,
     DoorElem,
     ElevationViewElem,
     FloorElem,
     FloorTypeElem,
+    IssueElem,
     LevelElem,
     MaterialElem,
+    PhaseElem,
     PlanViewElem,
+    RenovationScenarioElem,
     RoofElem,
     RoofTypeElem,
     RoomElem,
@@ -29,10 +39,26 @@ from bim_ai.elements import (
     SectionCutElem,
     SheetElem,
     StairElem,
+    ThermalBridgeMarkerElem,
     ViewpointElem,
     WallElem,
     WallTypeElem,
     WindowElem,
+)
+from bim_ai.energy_lens import (
+    build_energy_handoff_payload,
+    energy_qa_rows,
+    envelope_surface_area_m2,
+    material_thermal_spec,
+    opening_energy_value,
+    resolved_layers_for_envelope_element,
+    thermal_classification,
+    type_u_value_summary_rows,
+    u_value_for_layers,
+)
+from bim_ai.fire_safety_lens import (
+    FIRE_SAFETY_SCHEDULE_CATEGORIES,
+    derive_fire_safety_schedule_rows,
 )
 from bim_ai.material_assembly_resolve import (
     material_catalog_audit_rows,
@@ -65,6 +91,7 @@ from bim_ai.schedule_sheet_export_parity import (
     build_schedule_sheet_export_parity_evidence_v1_for_schedule,
 )
 from bim_ai.stair_plan_proxy import stair_schedule_row_extensions_v1
+from bim_ai.structure_lens import structural_schedule_rows
 from bim_ai.sustainability_lca import sustainability_rows_for_category
 from bim_ai.type_material_registry import (
     family_type_display_label,
@@ -255,16 +282,35 @@ _NUMERIC_SCHEDULE_FIELDS: frozenset[str] = frozenset(
         "headHeightMm",
         "assemblyTotalThicknessMm",
         "layerOffsetFromExteriorMm",
+        "roomCount",
+        "volumeM3",
+        "travelDistanceM",
+        "exitWidthMm",
+        "uValueWPerM2K",
+        "rTotalM2KPerW",
+        "surfaceAreaM2",
+        "lambdaWPerMK",
+        "rhoKgPerM3",
+        "specificHeatJPerKgK",
+        "mu",
+        "gValue",
+        "frameFraction",
+        "annualShadingFactorEstimate",
+        "setpointC",
+        "airChangeRate",
         "lengthM",
         "netAreaM2",
+        "netVolumeM3",
+        "grossOpeningAreaM2",
+        "netOpeningAreaM2",
+        "openingCount",
+        "layerQuantityCount",
         "quantity",
         "unitRate",
         "totalCost",
         "scenarioCost",
         "baselineCost",
         "deltaCost",
-        "openingCount",
-        "layerQuantityCount",
         "rowCount",
         "gwpPerUnit",
         "recycledContentPercent",
@@ -577,6 +623,26 @@ def _allowed_levels_from_schedule_filter_equals(feq: dict[str, Any]) -> frozense
 
 def _infer_schedule_category_from_name(name: str) -> str | None:
     lowered = name.strip().lower()
+    if "scenario delta" in lowered or "scenario comparison" in lowered or "szenario" in lowered:
+        return "scenario_delta"
+    if "element cost group" in lowered or "kostengruppe" in lowered:
+        return "element_cost_group"
+    if "cost estimate" in lowered or "kosten" in lowered:
+        return "cost_estimate"
+    if "quantity takeoff" in lowered or "takeoff" in lowered or "mengen" in lowered:
+        return "quantity_takeoff"
+    if "fire compartment" in lowered or "brandschutzabschnitt" in lowered:
+        return "fire_compartment"
+    if "rated wall" in lowered or "rated floor" in lowered or "rated element" in lowered:
+        return "rated_element"
+    if "fire door" in lowered or "brandschutztuer" in lowered or "brandschutztür" in lowered:
+        return "fire_door"
+    if "escape route" in lowered or "egress" in lowered or "fluchtweg" in lowered:
+        return "escape_route"
+    if "firestop" in lowered or "penetration" in lowered or "abschottung" in lowered:
+        return "firestop_penetration"
+    if "smoke control" in lowered or "rauchschutz" in lowered:
+        return "smoke_control_equipment"
     if "window" in lowered:
         return "window"
     if "door" in lowered:
@@ -611,6 +677,36 @@ def _infer_schedule_category_from_name(name: str) -> str | None:
         return "missing_sustainability_data"
     if "assembly" in lowered or "assemblies" in lowered:
         return "material_assembly"
+    if "envelope" in lowered or "thermal envelope" in lowered:
+        return "energy_envelope"
+    if "u-value" in lowered or "u value" in lowered:
+        return "energy_u_value_summary"
+    if "solar" in lowered or "shading" in lowered:
+        return "energy_windows_solar_gains"
+    if "thermal bridge" in lowered:
+        return "energy_thermal_bridges"
+    if "thermal zone" in lowered:
+        return "energy_thermal_zones"
+    if "building services" in lowered:
+        return "energy_building_services"
+    if "renovation" in lowered:
+        return "energy_renovation_measures"
+    if "export qa" in lowered or "energy qa" in lowered:
+        return "energy_export_qa"
+    if "thermal material" in lowered:
+        return "energy_thermal_materials"
+    if "package" in lowered:
+        return "construction_package"
+    if "phase" in lowered:
+        return "phase"
+    if "progress" in lowered:
+        return "progress"
+    if "punch" in lowered:
+        return "punch"
+    if "logistics" in lowered:
+        return "site_logistics"
+    if "qa" in lowered or "checklist" in lowered:
+        return "qa_checklist"
     if "scenario" in lowered and "delta" in lowered:
         return "scenario_delta"
     if "cost" in lowered or "kosten" in lowered:
@@ -646,7 +742,22 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
 
     rows: list[dict[str, Any]] = []
 
-    if cat in {"room", "finish"}:
+    if cat == "quantity_takeoff":
+        rows = derive_quantity_takeoff_rows(doc)
+
+    elif cat in {"cost_estimate", "element_cost_group"}:
+        rows = derive_cost_estimate_rows(doc)
+
+    elif cat == "scenario_delta":
+        baseline = str(
+            filt.get("baselineScenarioId")
+            or filt.get("baseScenarioId")
+            or filt.get("baseline_scenario_id")
+            or "as-is"
+        )
+        rows = derive_scenario_delta_rows(doc, baseline_scenario_id=baseline)
+
+    elif cat in {"room", "finish"}:
         room_peer_finish = peer_finish_set_by_level(
             e for e in doc.elements.values() if isinstance(e, RoomElem)
         )
@@ -882,6 +993,20 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 }
                 row_st.update(stair_schedule_row_extensions_v1(doc, e))
                 rows.append(row_st)
+
+    elif cat in {
+        "structural_element",
+        "structural_elements",
+        "structure",
+        "structural_wall",
+        "structural_walls",
+        "column",
+        "beam",
+        "foundation",
+        "opening_load_bearing_wall",
+        "opening_in_load_bearing_wall",
+    }:
+        rows = structural_schedule_rows(doc, cat)
 
     elif cat == "sheet":
         for e in doc.elements.values():
@@ -1137,6 +1262,255 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                     rows.append(row_r)
                     offset_mm += th_mm
 
+    elif cat == "energy_envelope":
+        for e in doc.elements.values():
+            if isinstance(e, (WallElem, FloorElem, RoofElem)):
+                type_id = ""
+                type_name = ""
+                if isinstance(e, WallElem):
+                    type_id = (e.wall_type_id or "").strip()
+                    type_name = _wall_type_name(doc, type_id or None)
+                elif isinstance(e, FloorElem):
+                    type_id = (e.floor_type_id or "").strip()
+                    type_name = _floor_type_name(doc, type_id or None)
+                else:
+                    type_id = (e.roof_type_id or "").strip()
+                    type_name = _roof_type_name(doc, type_id or None)
+                uv = u_value_for_layers(doc, resolved_layers_for_envelope_element(doc, e))
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "hostKind": e.kind,
+                        "typeId": type_id,
+                        "typeName": type_name,
+                        "thermalClassification": thermal_classification(e),
+                        "classificationSource": getattr(
+                            e, "thermal_classification_source", None
+                        )
+                        or "",
+                        "surfaceAreaM2": envelope_surface_area_m2(doc, e),
+                        "uValueWPerM2K": uv["uValueWPerM2K"],
+                        "missingMaterialKeys": "; ".join(uv["missingMaterialKeys"]),
+                        "sourceReferences": "; ".join(uv["sourceReferences"]),
+                        "scenarioId": getattr(e, "energy_scenario_id", None) or "",
+                        "familyTypeId": "",
+                    }
+                )
+            elif isinstance(e, (DoorElem, WindowElem)):
+                wall = doc.elements.get(e.wall_id)
+                lid = wall.level_id if isinstance(wall, WallElem) else ""
+                area_m2 = (
+                    float(e.width_mm)
+                    * float(getattr(e, "height_mm", getattr(wall, "height_mm", 2100.0)))
+                    / 1_000_000.0
+                )
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "hostKind": e.kind,
+                        "typeId": getattr(e, "family_type_id", None) or "",
+                        "typeName": family_type_display_label(
+                            doc, getattr(e, "family_type_id", None)
+                        ),
+                        "levelId": lid,
+                        "level": lvl_lab.get(lid, lid),
+                        "wallId": e.wall_id,
+                        "thermalClassification": thermal_classification(e),
+                        "classificationSource": getattr(
+                            e, "thermal_classification_source", None
+                        )
+                        or "",
+                        "surfaceAreaM2": round(area_m2, 6),
+                        "uValueWPerM2K": opening_energy_value(e, "uValue"),
+                        "gValue": opening_energy_value(e, "gValue"),
+                        "frameFraction": opening_energy_value(e, "frameFraction"),
+                        "annualShadingFactorEstimate": opening_energy_value(
+                            e, "annualShadingFactorEstimate"
+                        ),
+                        "familyTypeId": getattr(e, "family_type_id", "") or "",
+                    }
+                )
+
+    elif cat == "energy_thermal_materials":
+        material_keys: set[str] = set()
+        for e in doc.elements.values():
+            if isinstance(e, (WallElem, FloorElem, RoofElem)):
+                for layer in resolved_layers_for_envelope_element(doc, e):
+                    key = str(layer.get("materialKey") or "").strip()
+                    if key:
+                        material_keys.add(key)
+        for key in sorted(material_keys):
+            spec = material_thermal_spec(doc, key)
+            rows.append(
+                {
+                    "elementId": key,
+                    "materialKey": key,
+                    "materialDisplay": spec.display_name if spec else material_display_label(doc, key),
+                    "lambdaWPerMK": spec.lambda_w_per_mk if spec else "",
+                    "rhoKgPerM3": spec.rho_kg_per_m3 if spec else "",
+                    "specificHeatJPerKgK": spec.specific_heat_j_per_kgk if spec else "",
+                    "mu": spec.mu if spec else "",
+                    "sourceReference": spec.source_reference if spec else "",
+                    "thermalDataStatus": "complete" if spec and spec.lambda_w_per_mk else "missing_lambda",
+                    "familyTypeId": "",
+                }
+            )
+
+    elif cat == "energy_u_value_summary":
+        for row in type_u_value_summary_rows(doc):
+            rows.append(
+                {
+                    "elementId": row["typeId"],
+                    "typeId": row["typeId"],
+                    "typeName": row["typeName"],
+                    "hostKind": row["typeKind"].replace("_type", ""),
+                    "uValueWPerM2K": row["uValueWPerM2K"],
+                    "rTotalM2KPerW": row["rTotalM2KPerW"],
+                    "layerCount": len(row["layers"]),
+                    "missingMaterialKeys": "; ".join(row["missingMaterialKeys"]),
+                    "sourceReferences": "; ".join(row["sourceReferences"]),
+                    "calculationScope": row["calculationScope"],
+                    "familyTypeId": "",
+                }
+            )
+
+    elif cat == "energy_windows_solar_gains":
+        for e in doc.elements.values():
+            if isinstance(e, WindowElem):
+                wall = doc.elements.get(e.wall_id)
+                area_m2 = float(e.width_mm) * float(e.height_mm) / 1_000_000.0
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "wallId": e.wall_id,
+                        "hostWallTypeId": wall.wall_type_id if isinstance(wall, WallElem) else "",
+                        "widthMm": round(float(e.width_mm), 3),
+                        "heightMm": round(float(e.height_mm), 3),
+                        "openingAreaM2": round(area_m2, 6),
+                        "uValueWPerM2K": opening_energy_value(e, "uValue"),
+                        "gValue": opening_energy_value(e, "gValue"),
+                        "frameFraction": opening_energy_value(e, "frameFraction"),
+                        "shadingDevice": getattr(e, "shading_device", None) or "",
+                        "annualShadingFactorEstimate": opening_energy_value(
+                            e, "annualShadingFactorEstimate"
+                        ),
+                        "installationThermalBridgeNote": getattr(
+                            e, "installation_thermal_bridge_note", None
+                        )
+                        or "",
+                        "familyTypeId": getattr(e, "family_type_id", "") or "",
+                    }
+                )
+
+    elif cat == "energy_thermal_bridges":
+        for e in doc.elements.values():
+            if isinstance(e, ThermalBridgeMarkerElem):
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name or e.id,
+                        "markerType": e.marker_type,
+                        "hostElementIds": "; ".join(e.host_element_ids),
+                        "description": e.description or "",
+                        "suggestedMitigation": e.suggested_mitigation or "",
+                        "handoffNote": e.handoff_note or "",
+                        "psiValueReference": e.psi_value_reference or "",
+                        "familyTypeId": "",
+                    }
+                )
+
+    elif cat == "energy_thermal_zones":
+        for e in doc.elements.values():
+            if isinstance(e, RoomElem):
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "levelId": e.level_id,
+                        "level": lvl_lab.get(e.level_id, e.level_id),
+                        "heatingStatus": getattr(e, "heating_status", None) or "",
+                        "usageProfile": getattr(e, "usage_profile", None) or "",
+                        "setpointC": getattr(e, "setpoint_c", None) or "",
+                        "airChangeRate": getattr(e, "air_change_rate", None) or "",
+                        "zoneId": getattr(e, "zone_id", None) or "",
+                        "conditionedVolumeIncluded": getattr(
+                            e, "conditioned_volume_included", None
+                        ),
+                        "familyTypeId": "",
+                    }
+                )
+
+    elif cat == "energy_building_services":
+        for e in doc.elements.values():
+            if isinstance(e, BuildingServicesHandoffElem):
+                services = e.services or {}
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "scenarioId": e.scenario_id or "",
+                        "heatingGeneratorType": services.get("heatingGeneratorType", ""),
+                        "energyCarrier": services.get("energyCarrier", ""),
+                        "distributionType": services.get("distributionType", ""),
+                        "domesticHotWaterSystem": services.get("domesticHotWaterSystem", ""),
+                        "ventilationSystem": services.get("ventilationSystem", ""),
+                        "renewableEnergyNotes": services.get("renewableEnergyNotes", ""),
+                        "knownSystemAge": services.get("knownSystemAge", ""),
+                        "measureCandidateNotes": services.get("measureCandidateNotes", ""),
+                        "handoffNote": e.handoff_note or "",
+                        "familyTypeId": "",
+                    }
+                )
+
+    elif cat == "energy_renovation_measures":
+        for e in doc.elements.values():
+            if isinstance(e, RenovationScenarioElem):
+                if e.measure_packages:
+                    for measure in e.measure_packages:
+                        rows.append(
+                            {
+                                "elementId": f"{e.id}:{measure.id}",
+                                "scenarioId": e.id,
+                                "scenarioName": e.name,
+                                "scenarioStatus": e.scenario_status,
+                                "measureId": measure.id,
+                                "measureName": measure.name,
+                                "measureNotes": measure.notes or "",
+                                "costPlaceholder": measure.cost_placeholder or "",
+                                "systemsNotes": e.systems_notes or "",
+                                "familyTypeId": "",
+                            }
+                        )
+                else:
+                    rows.append(
+                        {
+                            "elementId": e.id,
+                            "scenarioId": e.id,
+                            "scenarioName": e.name,
+                            "scenarioStatus": e.scenario_status,
+                            "measureId": "",
+                            "measureName": "",
+                            "measureNotes": "",
+                            "systemsNotes": e.systems_notes or "",
+                            "familyTypeId": "",
+                        }
+                    )
+
+    elif cat == "energy_export_qa":
+        rows = [
+            {
+                "elementId": row.get("elementId", ""),
+                "issueCode": row.get("issueCode", ""),
+                "severity": row.get("severity", ""),
+                "message": row.get("message", ""),
+                "missingMaterialKeys": "; ".join(row.get("missingMaterialKeys", []) or []),
+                "familyTypeId": "",
+            }
+            for row in energy_qa_rows(doc)
+        ]
     elif cat == "quantity_takeoff":
         rows = derive_quantity_takeoff_rows(doc)
 
@@ -1192,6 +1566,131 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "ruleSet": e.rule_set,
                         "areaScheme": e.area_scheme,
                         "familyTypeId": "",
+                    }
+                )
+
+    elif cat in FIRE_SAFETY_SCHEDULE_CATEGORIES:
+        rows = derive_fire_safety_schedule_rows(doc, cat)
+
+    elif cat == "construction_package":
+        for e in doc.elements.values():
+            if isinstance(e, ConstructionPackageElem):
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "code": e.code or "",
+                        "phaseId": e.phase_id or "",
+                        "plannedStart": e.planned_start or "",
+                        "plannedEnd": e.planned_end or "",
+                        "actualStart": e.actual_start or "",
+                        "actualEnd": e.actual_end or "",
+                        "responsibleCompany": e.responsible_company or "",
+                        "dependencies": "; ".join(e.dependencies),
+                    }
+                )
+
+    elif cat == "phase":
+        for e in doc.elements.values():
+            if isinstance(e, PhaseElem):
+                created_count = sum(
+                    1
+                    for other in doc.elements.values()
+                    if getattr(other, "phase_created", None) == e.id
+                )
+                demolished_count = sum(
+                    1
+                    for other in doc.elements.values()
+                    if getattr(other, "phase_demolished", None) == e.id
+                )
+                package_count = sum(
+                    1
+                    for other in doc.elements.values()
+                    if isinstance(other, ConstructionPackageElem) and other.phase_id == e.id
+                )
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "ord": e.ord,
+                        "createdCount": created_count,
+                        "demolishedCount": demolished_count,
+                        "packageCount": package_count,
+                    }
+                )
+
+    elif cat == "progress":
+        rows = construction_progress_rows(doc)
+
+    elif cat == "punch":
+        for e in doc.elements.values():
+            if isinstance(e, IssueElem):
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "title": e.title,
+                        "status": e.status,
+                        "elementIds": "; ".join(e.element_ids),
+                        "viewpointId": e.viewpoint_id or "",
+                        "evidenceCount": len(e.evidence_refs),
+                        "issueKind": "issue",
+                    }
+                )
+            elif isinstance(e, ConstructabilityIssueElem):
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "title": e.message or e.rule_id,
+                        "status": e.status,
+                        "elementIds": "; ".join(e.element_ids),
+                        "viewpointId": "",
+                        "evidenceCount": len(e.evidence_refs),
+                        "issueKind": "constructability_issue",
+                    }
+                )
+
+    elif cat == "site_logistics":
+        for e in doc.elements.values():
+            if isinstance(e, ConstructionLogisticsElem):
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "logisticsKind": e.logistics_kind,
+                        "phaseId": e.phase_id or "",
+                        "constructionPackageId": e.construction_package_id or "",
+                        "plannedStart": e.planned_start or "",
+                        "plannedEnd": e.planned_end or "",
+                        "actualStart": e.actual_start or "",
+                        "actualEnd": e.actual_end or "",
+                        "progressStatus": e.progress_status,
+                        "responsibleCompany": e.responsible_company or "",
+                        "boundaryPointCount": len(e.boundary_mm),
+                        "pathPointCount": len(e.path_mm),
+                        "evidenceCount": len(e.evidence_refs),
+                        "issueCount": len(e.issue_ids),
+                    }
+                )
+
+    elif cat == "qa_checklist":
+        for e in doc.elements.values():
+            if isinstance(e, ConstructionQaChecklistElem):
+                statuses = [item.status for item in e.checklist]
+                rows.append(
+                    {
+                        "elementId": e.id,
+                        "name": e.name,
+                        "targetElementIds": "; ".join(e.target_element_ids),
+                        "constructionPackageId": e.construction_package_id or "",
+                        "phaseId": e.phase_id or "",
+                        "responsibleCompany": e.responsible_company or "",
+                        "progressStatus": e.progress_status,
+                        "checklistItemCount": len(e.checklist),
+                        "passedCount": statuses.count("pass"),
+                        "failedCount": statuses.count("fail"),
+                        "openCount": statuses.count("open"),
+                        "evidenceCount": len(e.evidence_refs),
+                        "issueCount": len(e.issue_ids),
                     }
                 )
 
@@ -1339,6 +1838,28 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             "rowCount": len(leaf_rows),
             "totalRunMm": round(sum(float(r.get("runMm") or 0.0) for r in leaf_rows), 4),
         }
+    elif (
+        cat
+        in {
+            "structural_element",
+            "structural_elements",
+            "structure",
+            "structural_wall",
+            "structural_walls",
+            "column",
+            "beam",
+            "foundation",
+            "opening_load_bearing_wall",
+            "opening_in_load_bearing_wall",
+        }
+        and leaf_rows
+    ):
+        needs_review = sum(1 for r in leaf_rows if r.get("analysisStatus") == "needs_review")
+        totals = {
+            "kind": cat,
+            "rowCount": len(leaf_rows),
+            "needsReviewCount": needs_review,
+        }
     elif cat == "sheet" and leaf_rows:
         totals = {
             "kind": "sheet",
@@ -1351,6 +1872,24 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             "rowCount": len(leaf_rows),
             "grossVolumeM3": round(sum(float(r.get("grossVolumeM3") or 0.0) for r in leaf_rows), 8),
         }
+    elif cat.startswith("energy_") and leaf_rows:
+        totals = {
+            "kind": cat,
+            "rowCount": len(leaf_rows),
+        }
+        if any("surfaceAreaM2" in r for r in leaf_rows):
+            totals["surfaceAreaM2"] = round(
+                sum(float(r.get("surfaceAreaM2") or 0.0) for r in leaf_rows), 6
+            )
+    elif cat in {
+        "construction_package",
+        "phase",
+        "progress",
+        "punch",
+        "site_logistics",
+        "qa_checklist",
+    } and leaf_rows:
+        totals = {"kind": cat, "rowCount": len(leaf_rows)}
     elif cat in {
         "material_impact",
         "element_carbon",
@@ -1370,12 +1909,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         missing_count = sum(1 for r in leaf_rows if r.get("impactStatus") not in {"calculated", ""})
         if missing_count:
             totals["missingDataCount"] = missing_count
-    elif cat in {
-        "quantity_takeoff",
-        "cost_estimate",
-        "element_cost_group",
-        "scenario_delta",
-    } and leaf_rows:
+    elif cat in {"quantity_takeoff", "cost_estimate", "element_cost_group", "scenario_delta"}:
         totals = cost_quantity_totals(leaf_rows, kind=cat)
 
     out: dict[str, Any] = {
@@ -1416,6 +1950,16 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
         "groupKeys": group_keys,
         **({"groupedSections": grouped} if grouped else {"rows": rows}),
     }
+    if cat in {"quantity_takeoff", "cost_estimate", "element_cost_group", "scenario_delta"}:
+        out["scheduleEngine"].update(
+            {
+                "lensId": COST_QUANTITY_LENS_ID,
+                "traceability": "elementId/typeId/scenarioId",
+                "snapshotKind": "exportable_cost_snapshot"
+                if cat in {"cost_estimate", "element_cost_group", "scenario_delta"}
+                else "model_derived_quantity_takeoff",
+            }
+        )
     placement_sid = (sch.sheet_id or "").strip()
     if placement_sid:
         pel = doc.elements.get(placement_sid)
@@ -1423,6 +1967,8 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             out["schedulePlacement"] = {"sheetId": placement_sid, "sheetName": pel.name or ""}
     if totals:
         out["totals"] = totals
+    if cat.startswith("energy_"):
+        out["energyHandoff"] = build_energy_handoff_payload(doc)
     if cat in {"room", "finish"}:
         lvl_allow = _allowed_levels_from_schedule_filter_equals(filter_equals)
         rb = compute_room_boundary_derivation(doc)

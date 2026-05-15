@@ -45,6 +45,8 @@ export function resolveDoorOperationType(
 type FrameMaterials = {
   frameMat: THREE.MeshStandardMaterial;
   panelMat: THREE.MeshStandardMaterial;
+  thresholdMat: THREE.MeshStandardMaterial;
+  hardwareMat: THREE.MeshStandardMaterial;
 };
 
 type DoorDims = {
@@ -107,11 +109,24 @@ function makeTrack(
   depth: number,
   yTop: number,
   pickId: string,
-  color: string,
+  mat: THREE.MeshStandardMaterial,
 ): THREE.Mesh {
-  const trackMat = new THREE.MeshStandardMaterial({ color, metalness: 0.4, roughness: 0.4 });
-  const m = new THREE.Mesh(new THREE.BoxGeometry(width, 0.025, depth * 0.3), trackMat);
+  const m = new THREE.Mesh(new THREE.BoxGeometry(width, 0.025, depth * 0.3), mat);
   m.position.set(0, yTop, 0);
+  m.userData.bimPickId = pickId;
+  addEdges(m);
+  return m;
+}
+
+function makeHardwarePull(
+  x: number,
+  y: number,
+  z: number,
+  mat: THREE.MeshStandardMaterial,
+  pickId: string,
+): THREE.Mesh {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.18, 0.025), mat);
+  m.position.set(x, y, z);
   m.userData.bimPickId = pickId;
   addEdges(m);
   return m;
@@ -134,14 +149,20 @@ function buildPanelsForOperationType(
   slidingTrackSide: 'wall_face' | 'in_pocket',
 ): { panels: THREE.Object3D[]; frameVisible: boolean } {
   const { leafWidth, leafHeight, depth, frameSect, panelThick } = dims;
-  const { panelMat } = mats;
+  const { panelMat, hardwareMat } = mats;
   const halfW = leafWidth / 2;
   const halfH = leafHeight / 2;
+  const hardwareZ = depth / 2 + 0.018;
+  const handleY = leafHeight * 0.52;
 
   switch (op) {
     case 'swing_single': {
+      const handle = makeHardwarePull(leafWidth * 0.32, handleY, hardwareZ, hardwareMat, pickId);
       return {
-        panels: [makePanelMesh(leafWidth, leafHeight, panelThick, 0, halfH, 0, panelMat, pickId)],
+        panels: [
+          makePanelMesh(leafWidth, leafHeight, panelThick, 0, halfH, 0, panelMat, pickId),
+          handle,
+        ],
         frameVisible: true,
       };
     }
@@ -168,7 +189,9 @@ function buildPanelsForOperationType(
         panelMat,
         pickId,
       );
-      return { panels: [left, right], frameVisible: true };
+      const leftHandle = makeHardwarePull(-0.045, handleY, hardwareZ, hardwareMat, pickId);
+      const rightHandle = makeHardwarePull(0.045, handleY, hardwareZ, hardwareMat, pickId);
+      return { panels: [left, right, leftHandle, rightHandle], frameVisible: true };
     }
 
     case 'sliding_single': {
@@ -189,9 +212,16 @@ function buildPanelsForOperationType(
         depth,
         leafHeight + frameSect,
         pickId,
-        '#1f2937',
+        hardwareMat,
       );
-      return { panels: [panel, track], frameVisible: false };
+      const pull = makeHardwarePull(
+        leafWidth * 0.72,
+        handleY,
+        trackZ + Math.sign(trackZ || 1) * 0.018,
+        hardwareMat,
+        pickId,
+      );
+      return { panels: [panel, track, pull], frameVisible: false };
     }
 
     case 'sliding_double': {
@@ -223,9 +253,11 @@ function buildPanelsForOperationType(
         depth,
         leafHeight + frameSect,
         pickId,
-        '#1f2937',
+        hardwareMat,
       );
-      return { panels: [left, right, track], frameVisible: false };
+      const leftPull = makeHardwarePull(-0.04, handleY, trackZA + 0.018, hardwareMat, pickId);
+      const rightPull = makeHardwarePull(0.04, handleY, trackZB - 0.018, hardwareMat, pickId);
+      return { panels: [left, right, track, leftPull, rightPull], frameVisible: false };
     }
 
     case 'bi_fold': {
@@ -275,7 +307,9 @@ function buildPanelsForOperationType(
         pickId,
       );
       fold2b.rotation.y = -Math.PI / 6;
-      return { panels: [fold1a, fold1b, fold2a, fold2b], frameVisible: true };
+      const leftPull = makeHardwarePull(-0.08, handleY, hardwareZ, hardwareMat, pickId);
+      const rightPull = makeHardwarePull(0.08, handleY, hardwareZ, hardwareMat, pickId);
+      return { panels: [fold1a, fold1b, fold2a, fold2b, leftPull, rightPull], frameVisible: true };
     }
 
     case 'pocket': {
@@ -291,7 +325,8 @@ function buildPanelsForOperationType(
         panelMat,
         pickId,
       );
-      return { panels: [panel], frameVisible: true };
+      const pull = makeHardwarePull(leafWidth * 0.12, handleY, hardwareZ, hardwareMat, pickId);
+      return { panels: [panel, pull], frameVisible: true };
     }
 
     case 'pivot': {
@@ -308,11 +343,14 @@ function buildPanelsForOperationType(
       );
       panel.rotation.y = -Math.PI / 7;
       // Pivot dot on the floor.
-      const pivotMat = new THREE.MeshStandardMaterial({ color: '#dc2626', metalness: 0.6 });
-      const pivotDot = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.02, 16), pivotMat);
+      const pivotDot = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.025, 0.025, 0.02, 16),
+        hardwareMat,
+      );
       pivotDot.position.set(-halfW + leafWidth * 0.18, 0.01, 0);
       pivotDot.userData.bimPickId = pickId;
-      return { panels: [panel, pivotDot], frameVisible: true };
+      const pull = makeHardwarePull(leafWidth * 0.22, handleY, hardwareZ, hardwareMat, pickId);
+      return { panels: [panel, pivotDot, pull], frameVisible: true };
     }
 
     case 'automatic_double': {
@@ -338,12 +376,7 @@ function buildPanelsForOperationType(
         pickId,
       );
       // Threshold marker indicating automatic.
-      const sensorMat = new THREE.MeshStandardMaterial({
-        color: '#10b981',
-        emissive: '#10b981',
-        emissiveIntensity: 0.5,
-      });
-      const sensor = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, depth * 0.6), sensorMat);
+      const sensor = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, depth * 0.6), hardwareMat);
       sensor.position.set(0, leafHeight + frameSect / 2 + 0.04, 0);
       sensor.userData.bimPickId = pickId;
       return { panels: [left, right, sensor], frameVisible: true };
@@ -379,6 +412,8 @@ export function buildDoorGeometry(input: DoorGeomInput): THREE.Group {
 
   const frameMaterialKey = materialSlot(door.materialSlots, 'frame') ?? door.materialKey;
   const panelMaterialKey = materialSlot(door.materialSlots, 'panel') ?? door.materialKey;
+  const thresholdMaterialKey = materialSlot(door.materialSlots, 'threshold') ?? frameMaterialKey;
+  const hardwareMaterialKey = materialSlot(door.materialSlots, 'hardware') ?? frameMaterialKey;
 
   const frameMat = makeThreeMaterialForKey(frameMaterialKey, {
     elementsById,
@@ -394,13 +429,28 @@ export function buildDoorGeometry(input: DoorGeomInput): THREE.Group {
     fallbackRoughness: paint?.categories.door.roughness ?? 0.7,
     fallbackMetalness: 0,
   }) as THREE.MeshStandardMaterial;
+  const thresholdMat = makeThreeMaterialForKey(thresholdMaterialKey, {
+    elementsById,
+    usage: 'openingFrame',
+    fallbackColor: paint?.categories.door.color ?? FALLBACK_COLOR,
+    fallbackRoughness: 0.55,
+    fallbackMetalness: 0.15,
+  }) as THREE.MeshStandardMaterial;
+  const hardwareMat = makeThreeMaterialForKey(hardwareMaterialKey, {
+    elementsById,
+    usage: 'openingFrame',
+    fallbackColor: '#1f2937',
+    fallbackRoughness: 0.35,
+    fallbackMetalness: 0.65,
+  }) as THREE.MeshStandardMaterial;
+  hardwareMat.emissiveIntensity = hardwareMat.emissiveIntensity || 0.5;
 
   const op = resolveDoorOperationType(door);
   const slidingSide = door.slidingTrackSide ?? 'wall_face';
   const { panels, frameVisible } = buildPanelsForOperationType(
     op,
     dims,
-    { frameMat, panelMat },
+    { frameMat, panelMat, thresholdMat, hardwareMat },
     door.id,
     slidingSide,
   );
@@ -411,7 +461,7 @@ export function buildDoorGeometry(input: DoorGeomInput): THREE.Group {
   }
   for (const p of panels) group.add(p);
   // Threshold sits at floor level (matches existing 0.02m height baseline).
-  group.add(makePanelMesh(dims.leafWidth, 0.02, dims.depth, 0, 0.01, 0, frameMat, door.id));
+  group.add(makePanelMesh(dims.leafWidth, 0.02, dims.depth, 0, 0.01, 0, thresholdMat, door.id));
   group.userData.bimPickId = door.id;
   return group;
 }

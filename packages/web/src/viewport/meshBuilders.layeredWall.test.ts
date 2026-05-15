@@ -5,7 +5,7 @@ import type { Element } from '@bim-ai/core';
 
 import { getBuiltInWallType } from '../families/wallTypeCatalog';
 import { makeLayeredWallMesh, darkenHex } from './meshBuilders.layeredWall';
-import { makeWallMesh } from './meshBuilders';
+import { makeWallMesh, resolveWallTypeAssembly } from './meshBuilders';
 
 type WallElem = Extract<Element, { kind: 'wall' }>;
 
@@ -76,6 +76,19 @@ describe('makeLayeredWallMesh — FL-08', () => {
     expect(box.max.z).toBeCloseTo(totalMm / 2000, 3);
   });
 
+  it('places exterior-authored layers on the positive wall normal side', () => {
+    const assembly = getBuiltInWallType('wall.ext-timber')!;
+    const group = makeLayeredWallMesh(baseWall, assembly, 0, null);
+    const meshes = visibleMeshes(group);
+    const cladding = meshes.find((mesh) => mesh.userData.materialKey === 'timber_cladding')!;
+    const plasterboard = meshes.find((mesh) => mesh.userData.materialKey === 'plasterboard')!;
+    const box = new THREE.Box3().setFromObject(group);
+
+    expect(cladding.position.z).toBeGreaterThan(plasterboard.position.z);
+    expect(box.min.z).toBeGreaterThanOrEqual(-0.002);
+    expect(box.max.z).toBeGreaterThan(0.19);
+  });
+
   it('diagonal layered wall meshes follow the authored start-to-end line', () => {
     const assembly = getBuiltInWallType('wall.int-partition')!;
     const diagonalWall: WallElem = {
@@ -99,6 +112,50 @@ describe('makeLayeredWallMesh — FL-08', () => {
     const obj = makeWallMesh(wall, 0, null);
     expect((obj as THREE.Group).type).toBe('Group');
     // Single-thickness wall would be a Mesh
+  });
+
+  it('prefers project-authored wall type layers over built-in catalog layers with the same id', () => {
+    const projectType: Extract<Element, { kind: 'wall_type' }> = {
+      kind: 'wall_type',
+      id: 'wall.ext-timber',
+      name: 'Edited timber wall',
+      basisLine: 'face_interior',
+      layers: [
+        { function: 'finish', materialKey: 'masonry_brick', thicknessMm: 102 },
+        { function: 'structure', materialKey: 'masonry_block', thicknessMm: 140 },
+        { function: 'finish', materialKey: 'plaster', thicknessMm: 13 },
+      ],
+    };
+
+    const assembly = resolveWallTypeAssembly(projectType.id, { [projectType.id]: projectType });
+
+    expect(assembly?.layers[0]?.materialKey).toBe('masonry_brick');
+    expect(assembly?.layers[0]?.exterior).toBe(true);
+    expect(assembly?.layers.map((layer) => layer.materialKey)).not.toContain('timber_cladding');
+  });
+
+  it('marks the same project wall type layer as exterior that material assignment targets', () => {
+    const projectType: Extract<Element, { kind: 'wall_type' }> = {
+      kind: 'wall_type',
+      id: 'wall.ext-custom',
+      name: 'Custom wall',
+      basisLine: 'face_interior',
+      layers: [
+        { function: 'insulation', materialKey: 'air', thicknessMm: 25 },
+        { function: 'finish', materialKey: 'cladding_beige_grey', thicknessMm: 18 },
+        { function: 'structure', materialKey: 'timber_frame_insulation', thicknessMm: 140 },
+        { function: 'finish', materialKey: 'plaster', thicknessMm: 13 },
+      ],
+    };
+
+    const assembly = resolveWallTypeAssembly(projectType.id, { [projectType.id]: projectType });
+
+    expect(assembly?.layers.map((layer) => layer.exterior ?? false)).toEqual([
+      false,
+      true,
+      false,
+      false,
+    ]);
   });
 
   it('shortens disallowed joined endpoints for typed layered walls', () => {

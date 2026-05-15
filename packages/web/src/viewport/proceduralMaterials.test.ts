@@ -9,6 +9,17 @@ function uniqueByteCount(texture: THREE.DataTexture): number {
   return new Set(texture.image.data as Uint8Array).size;
 }
 
+function channelRange(texture: THREE.DataTexture, channel: 0 | 1 | 2): number {
+  const data = texture.image.data as Uint8Array;
+  let min = 255;
+  let max = 0;
+  for (let i = channel; i < data.length; i += 4) {
+    min = Math.min(min, data[i]);
+    max = Math.max(max, data[i]);
+  }
+  return max - min;
+}
+
 describe('procedural material maps', () => {
   afterEach(() => clearProceduralMaterialCache());
 
@@ -53,5 +64,16 @@ describe('procedural material maps', () => {
     expect(material.bumpMap).toBeInstanceOf(THREE.DataTexture);
     expect(material.roughnessMap).toBeInstanceOf(THREE.DataTexture);
     expect(material.map?.name).toBe('masonry_brick:procedural:albedo');
+  });
+
+  it('keeps cladding board albedo and relief legible at wall scale', () => {
+    const maps = createProceduralMaterialMaps(
+      resolveMaterial('cladding_beige_grey')!,
+      undefined,
+      64,
+    )!;
+
+    expect(channelRange(maps.map, 0)).toBeGreaterThanOrEqual(45);
+    expect(channelRange(maps.bumpMap, 0)).toBeGreaterThanOrEqual(90);
   });
 });

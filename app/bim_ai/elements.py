@@ -90,12 +90,22 @@ class EvidenceRef(BaseModel):
 
 
 DisciplineTag = Literal["arch", "struct", "mep"]
-LensMode = Literal["show_arch", "show_struct", "show_mep", "show_all"]
-DEFAULT_DISCIPLINE_BY_KIND: dict[str, DisciplineTag] = {
-    "beam": "struct",
-    "column": "struct",
-}
-
+LensMode = Literal["show_arch", "show_struct", "show_mep", "show_fire_safety", "show_all"]
+ConstructionProgressStatus = Literal[
+    "not_started",
+    "in_progress",
+    "installed",
+    "inspected",
+    "accepted",
+]
+ConstructionLogisticsKind = Literal[
+    "temporary_partition",
+    "scaffolding_zone",
+    "crane_lift_zone",
+    "laydown_area",
+    "access_route",
+    "site_safety_zone",
+]
 DEFAULT_DISCIPLINE_BY_KIND: dict[str, DisciplineTag] = {
     "wall": "arch",
     "door": "arch",
@@ -142,6 +152,29 @@ StructuralRole = Literal[
 WallStructuralRole = StructuralRole
 StructuralMaterial = Literal["concrete", "steel", "timber", "masonry", "composite", "other"]
 StructuralAnalysisStatus = Literal["not_modelled", "not_modeled", "ready_for_export", "needs_review"]
+ThermalEnvelopeClassification = Literal[
+    "exterior_wall_outside_air",
+    "wall_against_ground",
+    "wall_against_unheated_space",
+    "roof_or_top_floor_ceiling_outside_air",
+    "floor_slab_against_ground",
+    "floor_against_unheated_basement",
+    "window_or_door_thermal_envelope",
+    "internal_outside_thermal_envelope",
+]
+ThermalClassificationSource = Literal["auto", "manual", "batch", "imported"]
+EnergyHeatingStatus = Literal["heated", "low_heated", "unheated"]
+EnergyUsageProfile = Literal["residential", "office", "school", "retail", "other"]
+ThermalBridgeMarkerType = Literal[
+    "balcony_slab",
+    "window_reveal",
+    "roof_wall_junction",
+    "floor_wall_junction",
+    "basement_transition",
+    "cantilever",
+    "user_defined",
+]
+RenovationScenarioStatus = Literal["as_is", "scenario_a", "scenario_b", "target"]
 WallLocationLine = Literal[
     "wall-centerline",
     "finish-face-exterior",
@@ -524,6 +557,13 @@ class WallElem(BaseModel):
     discipline: DisciplineTag | None = Field(default=None)
     circularity: CircularityProperties | None = None
     props: dict[str, Any] | None = Field(default=None)
+    thermal_classification: ThermalEnvelopeClassification | None = Field(
+        default=None, alias="thermalClassification"
+    )
+    thermal_classification_source: ThermalClassificationSource | None = Field(
+        default=None, alias="thermalClassificationSource"
+    )
+    energy_scenario_id: str | None = Field(default=None, alias="energyScenarioId")
     # TOP-V3-04: site wall binding — when set, base elevation per-segment follows the toposolid surface.
     site_host_id: str | None = Field(default=None, alias="siteHostId")
     # F-040: per-endpoint Allow/Disallow join flag (mirrors Revit right-click → Allow/Disallow Join).
@@ -585,6 +625,23 @@ class DoorElem(BaseModel):
     discipline: DisciplineTag | None = Field(default=None)
     circularity: CircularityProperties | None = None
     props: dict[str, Any] | None = Field(default=None)
+    thermal_classification: ThermalEnvelopeClassification | None = Field(
+        default=None, alias="thermalClassification"
+    )
+    thermal_classification_source: ThermalClassificationSource | None = Field(
+        default=None, alias="thermalClassificationSource"
+    )
+    u_value: float | None = Field(default=None, alias="uValue", gt=0)
+    g_value: float | None = Field(default=None, alias="gValue", ge=0, le=1)
+    frame_fraction: float | None = Field(default=None, alias="frameFraction", ge=0, le=1)
+    air_tightness_class: str | None = Field(default=None, alias="airTightnessClass")
+    installation_thermal_bridge_note: str | None = Field(
+        default=None, alias="installationThermalBridgeNote"
+    )
+    shading_device: str | None = Field(default=None, alias="shadingDevice")
+    annual_shading_factor_estimate: float | None = Field(
+        default=None, alias="annualShadingFactorEstimate", ge=0, le=1
+    )
 
 
 WindowOutlineKind = Literal[
@@ -628,6 +685,23 @@ class WindowElem(BaseModel):
     option_id: str | None = Field(default=None, alias="optionId")
     discipline: DisciplineTag | None = Field(default=None)
     props: dict[str, Any] | None = Field(default=None)
+    thermal_classification: ThermalEnvelopeClassification | None = Field(
+        default=None, alias="thermalClassification"
+    )
+    thermal_classification_source: ThermalClassificationSource | None = Field(
+        default=None, alias="thermalClassificationSource"
+    )
+    u_value: float | None = Field(default=None, alias="uValue", gt=0)
+    g_value: float | None = Field(default=None, alias="gValue", ge=0, le=1)
+    frame_fraction: float | None = Field(default=None, alias="frameFraction", ge=0, le=1)
+    air_tightness_class: str | None = Field(default=None, alias="airTightnessClass")
+    installation_thermal_bridge_note: str | None = Field(
+        default=None, alias="installationThermalBridgeNote"
+    )
+    shading_device: str | None = Field(default=None, alias="shadingDevice")
+    annual_shading_factor_estimate: float | None = Field(
+        default=None, alias="annualShadingFactorEstimate", ge=0, le=1
+    )
 
 
 class WallOpeningElem(BaseModel):
@@ -644,6 +718,7 @@ class WallOpeningElem(BaseModel):
     head_height_mm: float = Field(alias="headHeightMm", ge=0)
     pinned: bool = Field(default=False)
     discipline: DisciplineTag | None = Field(default=None)
+    props: dict[str, Any] | None = Field(default=None)
 
     @model_validator(mode="after")
     def _check_bounds(self) -> WallOpeningElem:
@@ -671,7 +746,7 @@ class RoomElem(BaseModel):
     target_area_m2: float | None = Field(default=None, alias="targetAreaM2")
     ventilation_zone: str | None = Field(default=None, alias="ventilationZone")
     heating_cooling_zone: str | None = Field(default=None, alias="heatingCoolingZone")
-    design_air_change_rate: float | None = Field(default=None, alias="designAirChangeRate")
+    design_air_change_rate: float | None = Field(default=None, alias="designAirChangeRate", ge=0)
     fixture_equipment_loads: dict[str, Any] | None = Field(
         default=None, alias="fixtureEquipmentLoads"
     )
@@ -689,6 +764,14 @@ class RoomElem(BaseModel):
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
     props: dict[str, Any] | None = Field(default=None)
+    heating_status: EnergyHeatingStatus | None = Field(default=None, alias="heatingStatus")
+    usage_profile: EnergyUsageProfile | None = Field(default=None, alias="usageProfile")
+    setpoint_c: float | None = Field(default=None, alias="setpointC")
+    air_change_rate: float | None = Field(default=None, alias="airChangeRate", ge=0)
+    zone_id: str | None = Field(default=None, alias="zoneId")
+    conditioned_volume_included: bool | None = Field(
+        default=None, alias="conditionedVolumeIncluded"
+    )
 
 
 class GridLineElem(BaseModel):
@@ -1141,10 +1224,26 @@ class IssueElem(BaseModel):
     kind: Literal["issue"] = "issue"
     id: str
     title: str
-    status: Literal["open", "in_progress", "done"] = "open"
+    issue_type: str = Field(default="coordination_issue", alias="issueType")
+    severity: str = "warning"
+    responsible_discipline: str = Field(default="coordination", alias="responsibleDiscipline")
+    responsible_team: str | None = Field(default=None, alias="responsibleTeam")
+    status: Literal[
+        "open",
+        "in_progress",
+        "reviewed",
+        "resolved",
+        "closed",
+        "done",
+        "not_an_issue",
+    ] = "open"
     element_ids: list[str] = Field(default_factory=list, alias="elementIds")
     viewpoint_id: str | None = Field(default=None, alias="viewpointId")
     assignee_placeholder: str | None = Field(default=None, alias="assigneePlaceholder")
+    due_date: str | None = Field(default=None, alias="dueDate")
+    resolution_history: list[dict[str, Any]] = Field(
+        default_factory=list, alias="resolutionHistory"
+    )
     evidence_refs: list[EvidenceRef] = Field(default_factory=list, alias="evidenceRefs")
 
 
@@ -1188,6 +1287,13 @@ class FloorElem(BaseModel):
     discipline: DisciplineTag | None = Field(default=None)
     circularity: CircularityProperties | None = None
     props: dict[str, Any] | None = Field(default=None)
+    thermal_classification: ThermalEnvelopeClassification | None = Field(
+        default=None, alias="thermalClassification"
+    )
+    thermal_classification_source: ThermalClassificationSource | None = Field(
+        default=None, alias="thermalClassificationSource"
+    )
+    energy_scenario_id: str | None = Field(default=None, alias="energyScenarioId")
 
 
 class RoofElem(BaseModel):
@@ -1231,6 +1337,13 @@ class RoofElem(BaseModel):
     discipline: DisciplineTag | None = Field(default=None)
     circularity: CircularityProperties | None = None
     props: dict[str, Any] | None = Field(default=None)
+    thermal_classification: ThermalEnvelopeClassification | None = Field(
+        default=None, alias="thermalClassification"
+    )
+    thermal_classification_source: ThermalClassificationSource | None = Field(
+        default=None, alias="thermalClassificationSource"
+    )
+    energy_scenario_id: str | None = Field(default=None, alias="energyScenarioId")
 
 
 StairShape = Literal["straight", "l_shape", "u_shape", "spiral", "sketch"]
@@ -1423,6 +1536,8 @@ class RailingElem(BaseModel):
     baluster_pattern: BalusterPattern | None = Field(default=None, alias="balusterPattern")
     handrail_supports: list[HandrailSupport] | None = Field(default=None, alias="handrailSupports")
     material_slots: dict[str, str | None] | None = Field(default=None, alias="materialSlots")
+    structural_role: StructuralRole = Field(default="unknown", alias="structuralRole")
+    analysis_status: StructuralAnalysisStatus = Field(default="not_modeled", alias="analysisStatus")
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
@@ -2282,6 +2397,74 @@ class ConstructabilityIssueElem(BaseModel):
     evidence_refs: list[EvidenceRef] = Field(default_factory=list, alias="evidenceRefs")
 
 
+class ConstructionPackageElem(BaseModel):
+    """Construction-lens work package that design elements can reference by id."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["construction_package"] = "construction_package"
+    id: str
+    name: str
+    code: str | None = None
+    phase_id: str | None = Field(default=None, alias="phaseId")
+    planned_start: str | None = Field(default=None, alias="plannedStart")
+    planned_end: str | None = Field(default=None, alias="plannedEnd")
+    actual_start: str | None = Field(default=None, alias="actualStart")
+    actual_end: str | None = Field(default=None, alias="actualEnd")
+    responsible_company: str | None = Field(default=None, alias="responsibleCompany")
+    dependencies: list[str] = Field(default_factory=list)
+
+
+class ConstructionLogisticsElem(BaseModel):
+    """Explicit temporary/site-logistics element; design elements are not repurposed."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["construction_logistics"] = "construction_logistics"
+    id: str
+    name: str
+    logistics_kind: ConstructionLogisticsKind = Field(alias="logisticsKind")
+    boundary_mm: list[Vec2Mm] = Field(default_factory=list, alias="boundaryMm")
+    path_mm: list[Vec2Mm] = Field(default_factory=list, alias="pathMm")
+    phase_id: str | None = Field(default=None, alias="phaseId")
+    construction_package_id: str | None = Field(default=None, alias="constructionPackageId")
+    planned_start: str | None = Field(default=None, alias="plannedStart")
+    planned_end: str | None = Field(default=None, alias="plannedEnd")
+    actual_start: str | None = Field(default=None, alias="actualStart")
+    actual_end: str | None = Field(default=None, alias="actualEnd")
+    progress_status: ConstructionProgressStatus = Field(
+        default="not_started", alias="progressStatus"
+    )
+    responsible_company: str | None = Field(default=None, alias="responsibleCompany")
+    evidence_refs: list[EvidenceRef] = Field(default_factory=list, alias="evidenceRefs")
+    issue_ids: list[str] = Field(default_factory=list, alias="issueIds")
+
+
+class ConstructionChecklistItem(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    id: str
+    label: str
+    status: Literal["open", "pass", "fail", "na"] = "open"
+    evidence_refs: list[EvidenceRef] = Field(default_factory=list, alias="evidenceRefs")
+
+
+class ConstructionQaChecklistElem(BaseModel):
+    """Field QA checklist linked to model elements, packages, and evidence."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["construction_qa_checklist"] = "construction_qa_checklist"
+    id: str
+    name: str
+    target_element_ids: list[str] = Field(default_factory=list, alias="targetElementIds")
+    construction_package_id: str | None = Field(default=None, alias="constructionPackageId")
+    phase_id: str | None = Field(default=None, alias="phaseId")
+    responsible_company: str | None = Field(default=None, alias="responsibleCompany")
+    progress_status: ConstructionProgressStatus = Field(
+        default="not_started", alias="progressStatus"
+    )
+    checklist: list[ConstructionChecklistItem] = Field(default_factory=list)
+    evidence_refs: list[EvidenceRef] = Field(default_factory=list, alias="evidenceRefs")
+    issue_ids: list[str] = Field(default_factory=list, alias="issueIds")
+
+
 AgentAssumptionSource = Literal["manual", "bundle_dry_run", "evidence_summary"]
 AgentAssumptionClosureStatus = Literal["open", "resolved", "accepted", "deferred"]
 # SKB-08: phaseId values match the SKB-12 cookbook's seven phase tags.
@@ -2673,7 +2856,7 @@ class MepOpeningRequestElem(BaseModel):
     approval_note: str | None = Field(default=None, alias="approvalNote")
     discipline: DisciplineTag | None = Field(default="mep")
     props: dict[str, Any] | None = Field(default=None)
-
+    pinned: bool = Field(default=False)
 
 class PipeLegendEntrySpec(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
@@ -2983,6 +3166,13 @@ class ColumnElem(BaseModel):
     height_mm: float = Field(alias="heightMm", default=2800, gt=0)
     rotation_deg: float = Field(default=0.0, alias="rotationDeg")
     material_key: str | None = Field(default=None, alias="materialKey")
+    load_bearing: bool | None = Field(default=True, alias="loadBearing")
+    structural_role: StructuralRole = Field(default="column", alias="structuralRole")
+    structural_material: StructuralMaterial | str | None = Field(
+        default=None, alias="structuralMaterial"
+    )
+    analysis_status: StructuralAnalysisStatus = Field(default="not_modeled", alias="analysisStatus")
+    fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
     base_constraint_offset_mm: float = Field(default=0, alias="baseConstraintOffsetMm")
     top_constraint_level_id: str | None = Field(default=None, alias="topConstraintLevelId")
     top_constraint_offset_mm: float = Field(default=0, alias="topConstraintOffsetMm")
@@ -3012,6 +3202,13 @@ class BeamElem(BaseModel):
     width_mm: float = Field(alias="widthMm", default=200, gt=0)
     height_mm: float = Field(alias="heightMm", default=400, gt=0)
     material_key: str | None = Field(default=None, alias="materialKey")
+    load_bearing: bool | None = Field(default=True, alias="loadBearing")
+    structural_role: StructuralRole = Field(default="beam", alias="structuralRole")
+    structural_material: StructuralMaterial | str | None = Field(
+        default=None, alias="structuralMaterial"
+    )
+    analysis_status: StructuralAnalysisStatus = Field(default="not_modeled", alias="analysisStatus")
+    fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
     start_column_id: str | None = Field(default=None, alias="startColumnId")
     end_column_id: str | None = Field(default=None, alias="endColumnId")
     # IFC-04: optional classification code emitted as IfcClassificationReference.
@@ -3522,6 +3719,69 @@ class DecalElem(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# ENE-V1 — Energy Lens handoff elements
+# ---------------------------------------------------------------------------
+
+
+class ThermalBridgeMarkerElem(BaseModel):
+    """Energy Lens marker for thermal bridge review and specialist handoff."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["thermal_bridge_marker"] = "thermal_bridge_marker"
+    id: str
+    name: str | None = None
+    marker_type: ThermalBridgeMarkerType = Field(alias="markerType")
+    location_mm: Vec3Mm = Field(alias="locationMm")
+    host_element_ids: list[str] = Field(default_factory=list, alias="hostElementIds")
+    description: str | None = None
+    suggested_mitigation: str | None = Field(default=None, alias="suggestedMitigation")
+    handoff_note: str | None = Field(default=None, alias="handoffNote")
+    psi_value_reference: str | None = Field(default=None, alias="psiValueReference")
+
+
+class RenovationMeasurePackage(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    id: str
+    name: str
+    notes: str | None = None
+    cost_placeholder: float | None = Field(default=None, alias="costPlaceholder")
+
+
+class RenovationScenarioElem(BaseModel):
+    """Energy Lens branch/layer metadata for as-is and renovation variants."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["renovation_scenario"] = "renovation_scenario"
+    id: str
+    name: str
+    scenario_status: RenovationScenarioStatus = Field(alias="scenarioStatus")
+    base_scenario_id: str | None = Field(default=None, alias="baseScenarioId")
+    type_layer_overrides: dict[str, Any] = Field(default_factory=dict, alias="typeLayerOverrides")
+    opening_type_overrides: dict[str, Any] = Field(
+        default_factory=dict, alias="openingTypeOverrides"
+    )
+    heating_status_overrides: dict[str, EnergyHeatingStatus] = Field(
+        default_factory=dict, alias="heatingStatusOverrides"
+    )
+    systems_notes: str | None = Field(default=None, alias="systemsNotes")
+    measure_packages: list[RenovationMeasurePackage] = Field(
+        default_factory=list, alias="measurePackages"
+    )
+
+
+class BuildingServicesHandoffElem(BaseModel):
+    """Non-simulation building-services metadata prepared for energy tools."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    kind: Literal["building_services_handoff"] = "building_services_handoff"
+    id: str
+    name: str = "Building services handoff"
+    scenario_id: str | None = Field(default=None, alias="scenarioId")
+    services: dict[str, Any] = Field(default_factory=dict)
+    handoff_note: str | None = Field(default=None, alias="handoffNote")
+
+
+# ---------------------------------------------------------------------------
 # IMP-V3-01 — Image-as-underlay element
 # ---------------------------------------------------------------------------
 
@@ -3703,6 +3963,9 @@ Element = Annotated[
     | BcfElem
     | ConstructabilitySuppressionElem
     | ConstructabilityIssueElem
+    | ConstructionPackageElem
+    | ConstructionLogisticsElem
+    | ConstructionQaChecklistElem
     | AgentAssumptionElem
     | AgentDeviationElem
     | ValidationRuleElem
@@ -3763,6 +4026,9 @@ Element = Annotated[
     | MaterialElem
     | ImageAssetElem
     | DecalElem
+    | ThermalBridgeMarkerElem
+    | RenovationScenarioElem
+    | BuildingServicesHandoffElem
     | PropertyDefinitionElem
     | ImageUnderlayElem
     | ConceptSeedElem

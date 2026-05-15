@@ -411,7 +411,11 @@ def test_roof_schedule_includes_roof_type_columns():
             id="rt-1",
             name="Warm deck",
             layers=[
-                WallTypeLayer(thicknessMm=22, layer_function="structure"),
+                WallTypeLayer(
+                    thicknessMm=22,
+                    layer_function="structure",
+                    material_key="metal_standing_seam_dark_grey",
+                ),
                 WallTypeLayer(thicknessMm=140, layer_function="insulation"),
             ],
         ),
@@ -447,6 +451,109 @@ def test_roof_schedule_includes_roof_type_columns():
     row = table["rows"][0]
     assert row["roofTypeId"] == "rt-1"
     assert float(row["assemblyTotalThicknessMm"]) == 162.0
+    assert row["materialKey"] == "metal_standing_seam_dark_grey"
+    assert row["effectiveMaterialSource"] == "type-layer"
+
+
+def test_floor_schedule_uses_top_type_layer_material_over_instance_fallback() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "sch-f": ScheduleElem(kind="schedule", id="sch-f", name="Floors"),
+            "ft-1": FloorTypeElem(
+                kind="floor_type",
+                id="ft-1",
+                name="Concrete floor",
+                layers=[
+                    WallTypeLayer(
+                        thicknessMm=60,
+                        layer_function="finish",
+                        material_key="concrete_smooth",
+                    ),
+                    WallTypeLayer(
+                        thicknessMm=180,
+                        layer_function="structure",
+                        material_key="masonry_block",
+                    ),
+                ],
+            ),
+            "f1": FloorElem(
+                kind="floor",
+                id="f1",
+                name="Floor",
+                level_id="lvl",
+                boundary_mm=[
+                    Vec2Mm(x_mm=0, y_mm=0),
+                    Vec2Mm(x_mm=1000, y_mm=0),
+                    Vec2Mm(x_mm=1000, y_mm=1000),
+                    Vec2Mm(x_mm=0, y_mm=1000),
+                ],
+                thickness_mm=999,
+                floor_type_id="ft-1",
+            ),
+        },
+    )
+    apply_inplace(
+        doc,
+        UpsertScheduleFiltersCmd(
+            type="upsertScheduleFilters",
+            schedule_id="sch-f",
+            filters={"category": "floor"},
+            grouping=None,
+        ),
+    )
+
+    table = derive_schedule_table(doc, "sch-f")
+    row = table["rows"][0]
+    assert row["floorTypeId"] == "ft-1"
+    assert row["materialKey"] == "concrete_smooth"
+    assert row["materialDisplay"] == "Smooth concrete"
+    assert row["effectiveMaterialSource"] == "type-layer"
+
+
+def test_material_catalog_audit_reports_effective_exposed_host_material() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="L0", elevationMm=0),
+            "wt": WallTypeElem(
+                kind="wall_type",
+                id="wt",
+                name="Clad wall",
+                layers=[
+                    WallTypeLayer(
+                        thicknessMm=18,
+                        layer_function="finish",
+                        material_key="cladding_beige_grey",
+                    ),
+                    WallTypeLayer(
+                        thicknessMm=140,
+                        layer_function="structure",
+                        material_key="timber_frame_insulation",
+                    ),
+                ],
+            ),
+            "w1": WallElem(
+                kind="wall",
+                id="w1",
+                name="Wall",
+                level_id="lvl",
+                start=Vec2Mm(x_mm=0, y_mm=0),
+                end=Vec2Mm(x_mm=4000, y_mm=0),
+                thickness_mm=158,
+                height_mm=2800,
+                wall_type_id="wt",
+                material_key="timber_frame_insulation",
+            ),
+        },
+    )
+
+    row = next(r for r in material_catalog_audit_rows(doc) if r["hostElementId"] == "w1")
+    assert row["effectiveMaterialKey"] == "cladding_beige_grey"
+    assert row["effectiveMaterialDisplay"] == "Beige-grey cladding"
+    assert row["effectiveMaterialSource"] == "type_stack"
+    assert row["effectiveMaterialFace"] == "exterior"
 
 
 @pytest.mark.skipif(not IFC_AVAILABLE, reason="ifcopenshell not installed (pip install '.[ifc]')")

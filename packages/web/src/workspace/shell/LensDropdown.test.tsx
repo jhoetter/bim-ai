@@ -84,4 +84,17 @@ describe('LensDropdown — LNS-V3-01', () => {
     fireEvent.keyDown(window, { key: 'L' });
     expect(onLensChange).toHaveBeenCalledWith('all');
   });
+
+  it('surfaces the Coordination lens option', () => {
+    const { getByTestId } = render(<LensDropdown currentLens="all" onLensChange={() => {}} />);
+    fireEvent.click(getByTestId('lens-dropdown-trigger'));
+    expect(getByTestId('lens-option-coordination').textContent).toContain('Coordination');
+  });
+
+  it('surfaces the Fire Safety and Cost Quantity lens options', () => {
+    const { getByTestId } = render(<LensDropdown currentLens="all" onLensChange={() => {}} />);
+    fireEvent.click(getByTestId('lens-dropdown-trigger'));
+    expect(getByTestId('lens-option-fire-safety').textContent).toContain('Fire Safety');
+    expect(getByTestId('lens-option-cost-quantity').textContent).toContain('Cost and Quantity');
+  });
 });

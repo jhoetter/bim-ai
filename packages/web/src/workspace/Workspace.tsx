@@ -169,7 +169,7 @@ import { MilestoneDialog } from '../collab/MilestoneDialog';
 import { WorkspaceLeftRail } from './WorkspaceLeftRail';
 import { WorkspaceRightRail } from './WorkspaceRightRail';
 import { rememberLocalClientOp, useWorkspaceSnapshot } from './useWorkspaceSnapshot';
-import { mapComments, planToolToToolId, validatePlanTool } from './workspaceUtils';
+import { canonicalPlanToolForMode, mapComments, planToolToToolId } from './workspaceUtils';
 import { useToolPrefs } from '../tools/toolPrefsStore';
 import { usePresenceStore } from '../presenceStore';
 import {
@@ -1996,7 +1996,7 @@ export function Workspace(): JSX.Element {
         pendingChordTimerRef.current = null;
         const chordTool = tools.find((t) => t.shortcut === chord);
         if (chordTool) {
-          const tool = validatePlanTool(chordTool.id);
+          const tool = canonicalPlanToolForMode(chordTool.id, effectiveMode);
           if (tool) {
             event.preventDefault();
             setFocusedPanePlanTool(tool);
@@ -2017,14 +2017,14 @@ export function Workspace(): JSX.Element {
         pendingChordTimerRef.current = setTimeout(() => {
           pendingChordRef.current = null;
           pendingChordTimerRef.current = null;
-          const tool = validatePlanTool(hotkeyTool.id);
+          const tool = canonicalPlanToolForMode(hotkeyTool.id, effectiveMode);
           if (tool) setFocusedPanePlanTool(tool);
         }, 400);
         return;
       }
 
       if (hotkeyTool) {
-        const tool = validatePlanTool(hotkeyTool.id);
+        const tool = canonicalPlanToolForMode(hotkeyTool.id, effectiveMode);
         if (tool) {
           event.preventDefault();
           setFocusedPanePlanTool(tool);
@@ -2146,7 +2146,7 @@ export function Workspace(): JSX.Element {
   );
   const handleToolSelect = useCallback(
     (id: ToolId): void => {
-      const tool = validatePlanTool(id);
+      const tool = canonicalPlanToolForMode(id, effectiveMode);
       if (!tool) return;
       const def = toolRegistry[id];
       if (def && !def.modes.includes(effectiveMode) && def.modes.includes('plan')) {
@@ -3241,7 +3241,7 @@ export function Workspace(): JSX.Element {
     };
     const handlePaneToolSelect = (id: ToolId): void => {
       activatePaneForControls();
-      const tool = validatePlanTool(id);
+      const tool = canonicalPlanToolForMode(id, paneMode);
       if (!tool) return;
       const def = toolRegistry[id];
       if (def && !def.modes.includes(paneMode) && def.modes.includes('plan')) {

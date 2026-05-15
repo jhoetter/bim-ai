@@ -79,7 +79,11 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
   const frameSect = frameSectMm / 1000;
 
   const frameMaterialKey = materialSlot(win.materialSlots, 'frame') ?? win.materialKey;
+  const sashMaterialKey = materialSlot(win.materialSlots, 'sash') ?? frameMaterialKey;
   const glassMaterialKey = materialSlot(win.materialSlots, 'glass') ?? 'asset_clear_glass_double';
+  const spacerMaterialKey = materialSlot(win.materialSlots, 'spacer') ?? sashMaterialKey;
+  const hardwareMaterialKey = materialSlot(win.materialSlots, 'hardware') ?? sashMaterialKey;
+  const shadingMaterialKey = materialSlot(win.materialSlots, 'shading');
 
   const frameMat = makeThreeMaterialForKey(frameMaterialKey, {
     elementsById,
@@ -88,6 +92,36 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
     fallbackRoughness: paint?.categories.window.roughness ?? 0.6,
     fallbackMetalness: paint?.categories.window.metalness ?? 0.05,
   });
+  const sashMat = makeThreeMaterialForKey(sashMaterialKey, {
+    elementsById,
+    usage: 'openingFrame',
+    fallbackColor: paint?.categories.window.color ?? FALLBACK_COLOR,
+    fallbackRoughness: paint?.categories.window.roughness ?? 0.6,
+    fallbackMetalness: paint?.categories.window.metalness ?? 0.05,
+  });
+  const spacerMat = makeThreeMaterialForKey(spacerMaterialKey, {
+    elementsById,
+    usage: 'openingFrame',
+    fallbackColor: '#59636e',
+    fallbackRoughness: 0.45,
+    fallbackMetalness: 0.35,
+  });
+  const hardwareMat = makeThreeMaterialForKey(hardwareMaterialKey, {
+    elementsById,
+    usage: 'openingFrame',
+    fallbackColor: '#1f2937',
+    fallbackRoughness: 0.35,
+    fallbackMetalness: 0.65,
+  });
+  const shadingMat = shadingMaterialKey
+    ? makeThreeMaterialForKey(shadingMaterialKey, {
+        elementsById,
+        usage: 'openingFrame',
+        fallbackColor: '#d1d5db',
+        fallbackRoughness: 0.75,
+        fallbackMetalness: 0.0,
+      })
+    : null;
 
   const group = new THREE.Group();
   group.userData.bimPickId = win.id;
@@ -150,12 +184,21 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
   // Rectangular path — original frame + glass + optional mullion render.
   const glazingW = Math.max(outerW - 2 * frameSect, 0.01);
   const glazingH = Math.max(outerH - 2 * frameSect, 0.01);
+  const bead = Math.max(0.012, Math.min(frameSect * 0.35, 0.028));
 
   const frameGroup = new THREE.Group();
 
-  function frameMesh(w: number, h: number, d: number, x: number, y: number): THREE.Mesh {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), frameMat);
-    m.position.set(x, y, 0);
+  function frameMesh(
+    w: number,
+    h: number,
+    d: number,
+    x: number,
+    y: number,
+    mat: THREE.Material = frameMat,
+    z = 0,
+  ): THREE.Mesh {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.position.set(x, y, z);
     m.castShadow = m.receiveShadow = true;
     m.userData.bimPickId = win.id;
     addEdges(m);
@@ -179,12 +222,49 @@ export function buildWindowGeometry(input: WindowGeomInput): THREE.Group {
   addEdges(glazing);
   group.add(glazing);
 
+  const sashDepth = Math.min(depth, 0.055);
+  group.add(frameMesh(glazingW, bead, sashDepth, 0, glazingH / 2 - bead / 2, sashMat, 0.004));
+  group.add(frameMesh(glazingW, bead, sashDepth, 0, -glazingH / 2 + bead / 2, sashMat, 0.004));
+  group.add(frameMesh(bead, glazingH, sashDepth, -glazingW / 2 + bead / 2, 0, sashMat, 0.004));
+  group.add(frameMesh(bead, glazingH, sashDepth, glazingW / 2 - bead / 2, 0, sashMat, 0.004));
+
+  const spacerDepth = 0.008;
+  const spacerInset = bead + 0.006;
+  const spacerW = Math.max(glazingW - 2 * spacerInset, 0.01);
+  const spacerH = Math.max(glazingH - 2 * spacerInset, 0.01);
+  group.add(frameMesh(spacerW, 0.01, spacerDepth, 0, spacerH / 2, spacerMat, 0.008));
+  group.add(frameMesh(spacerW, 0.01, spacerDepth, 0, -spacerH / 2, spacerMat, 0.008));
+  group.add(frameMesh(0.01, spacerH, spacerDepth, -spacerW / 2, 0, spacerMat, 0.008));
+  group.add(frameMesh(0.01, spacerH, spacerDepth, spacerW / 2, 0, spacerMat, 0.008));
+
+  const handle = frameMesh(
+    0.028,
+    Math.min(0.22, glazingH * 0.28),
+    0.025,
+    glazingW * 0.35,
+    0,
+    hardwareMat,
+    0.035,
+  );
+  group.add(handle);
+
   if (outerW > 1.2) {
-    const mullion = new THREE.Mesh(new THREE.BoxGeometry(frameSect, glazingH, 0.012), frameMat);
+    const mullion = new THREE.Mesh(new THREE.BoxGeometry(frameSect, glazingH, 0.012), sashMat);
     mullion.castShadow = mullion.receiveShadow = true;
     mullion.userData.bimPickId = win.id;
     addEdges(mullion);
     group.add(mullion);
+  }
+
+  if (shadingMat) {
+    const slatCount = Math.max(2, Math.min(8, Math.floor(glazingH / 0.18)));
+    for (let i = 0; i < slatCount; i++) {
+      const t = (i + 1) / (slatCount + 1);
+      const y = glazingH / 2 - t * glazingH;
+      const slat = frameMesh(glazingW * 0.92, 0.018, 0.018, 0, y, shadingMat, 0.05);
+      slat.rotation.x = Math.PI / 10;
+      group.add(slat);
+    }
   }
 
   return group;

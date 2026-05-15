@@ -79,9 +79,16 @@ describe('three material factory', () => {
     expect(brick.bumpMap).toBeTruthy();
     expect(brick.bumpScale).toBeCloseTo(0.035);
     expect(cladding.bumpMap).toBeTruthy();
-    expect(cladding.bumpScale).toBeCloseTo(0.014);
+    expect(cladding.bumpScale).toBeCloseTo(0.022);
     expect(render.bumpMap).toBeTruthy();
     expect(render.bumpScale).toBeCloseTo(0.004);
+  });
+
+  it('does not double-tint generated albedo maps with the material base color', () => {
+    const material = makeThreeMaterialForKey('cladding_beige_grey') as THREE.MeshStandardMaterial;
+
+    expect(material.map).toBeTruthy();
+    expect(material.color.getHexString()).toBe('ffffff');
   });
 
   it('prefers normal maps over bump maps for project material elements', () => {

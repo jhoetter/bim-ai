@@ -5,6 +5,7 @@ import { MaterialBrowserDialog } from './MaterialBrowserDialog';
 
 export type AppearanceAssetBrowserDialogProps = {
   currentKey?: string | null;
+  targetLabel?: string | null;
   elementsById?: Record<string, Element>;
   onReplace: (materialKey: string) => void;
   onClose: () => void;
@@ -12,6 +13,7 @@ export type AppearanceAssetBrowserDialogProps = {
 
 export function AppearanceAssetBrowserDialog({
   currentKey,
+  targetLabel,
   elementsById,
   onReplace,
   onClose,
@@ -22,6 +24,7 @@ export function AppearanceAssetBrowserDialog({
       actionLabel="Replace"
       mode="appearanceAsset"
       currentKey={currentKey}
+      targetLabel={targetLabel}
       elementsById={elementsById}
       onAssign={onReplace}
       onClose={onClose}

@@ -22,6 +22,27 @@ describe('scheduleDefinitionPresets', () => {
 
     const asm = presetsForCategory('material_assembly').map((p) => p.id);
     expect(asm).toEqual(['assembly-layer-takeoff']);
+
+    expect(presetsForCategory('structural_element').map((p) => p.id)).toEqual([
+      'structure-elements-handoff',
+    ]);
+    expect(presetsForCategory('structural_wall').map((p) => p.id)).toEqual([
+      'structure-bearing-walls',
+    ]);
+    expect(presetsForCategory('column').map((p) => p.id)).toEqual(['structure-columns']);
+    expect(presetsForCategory('beam').map((p) => p.id)).toEqual(['structure-beams']);
+    expect(presetsForCategory('foundation').map((p) => p.id)).toEqual(['structure-foundations']);
+    expect(presetsForCategory('opening_load_bearing_wall').map((p) => p.id)).toEqual([
+      'structure-openings-review',
+    ]);
+    expect(presetsForCategory('quantity_takeoff').map((p) => p.id)).toEqual([
+      'cost-quantity-takeoff',
+    ]);
+    expect(presetsForCategory('cost_estimate').map((p) => p.id)).toEqual(['cost-estimate-source']);
+    expect(presetsForCategory('element_cost_group').map((p) => p.id)).toEqual([
+      'cost-element-groups',
+    ]);
+    expect(presetsForCategory('scenario_delta').map((p) => p.id)).toEqual(['cost-scenario-delta']);
   });
 
   it('resolvePresetColumnsForExport preserves preset order and ignores unknown keys', () => {
@@ -80,6 +101,47 @@ describe('scheduleDefinitionPresets', () => {
         'thicknessMm',
       ]),
     ).toEqual([]);
+  });
+
+  it('registers Energy Lens presets for required handoff schedules', () => {
+    const energyCategories = [
+      'energy_envelope',
+      'energy_thermal_materials',
+      'energy_u_value_summary',
+      'energy_windows_solar_gains',
+      'energy_thermal_bridges',
+      'energy_thermal_zones',
+      'energy_building_services',
+      'energy_renovation_measures',
+      'energy_export_qa',
+    ] as const;
+    for (const category of energyCategories) {
+      const presets = presetsForCategory(category);
+      expect(presets.length).toBeGreaterThan(0);
+      expect(presets[0]?.fields.some((field) => field.token === 'required')).toBe(true);
+    }
+  });
+
+  it('missingRequiredFieldKeys (structure handoff)', () => {
+    const preset = presetsForCategory('structural_element')[0]!;
+    expect(
+      missingRequiredFieldKeys(preset, ['elementId', 'name', 'category', 'level', 'loadBearing']),
+    ).toEqual(['structuralRole', 'structuralMaterial', 'analysisStatus']);
+  });
+
+  it('missingRequiredFieldKeys (cost estimate source)', () => {
+    const preset = presetsForCategory('cost_estimate')[0]!;
+    expect(
+      missingRequiredFieldKeys(preset, [
+        'rowId',
+        'elementId',
+        'scenarioId',
+        'costGroup',
+        'unit',
+        'quantity',
+        'costDataStatus',
+      ]),
+    ).toEqual(['costSource']);
   });
 
   it('presetFieldReadoutRows merges labels and roles from payload metadata', () => {

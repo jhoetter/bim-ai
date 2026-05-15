@@ -88,6 +88,15 @@ describe('OptionsBar', () => {
     expect(getByText('Boundary Offset:')).toBeTruthy();
   });
 
+  it('keeps floor type and boundary offset options visible in canonical floor sketch mode', () => {
+    act(() => {
+      useBimStore.setState({ planTool: 'floor-sketch' });
+    });
+    const { getByText, getByTestId } = render(<OptionsBar />);
+    expect(getByText('Boundary Offset:')).toBeTruthy();
+    expect(getByTestId('options-bar-floor-type')).toBeTruthy();
+  });
+
   it('lists generic family_type rows in the component Type selector', () => {
     act(() => {
       useBimStore.setState({

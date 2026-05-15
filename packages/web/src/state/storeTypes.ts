@@ -67,6 +67,13 @@ export type PlanTool =
   | 'wall-join'
   | 'wall-opening'
   | 'shaft'
+  | 'duct'
+  | 'pipe'
+  | 'cable-tray'
+  | 'mep-equipment'
+  | 'fixture'
+  | 'mep-terminal'
+  | 'mep-opening-request'
   | 'column'
   | 'beam'
   | 'ceiling'
@@ -165,7 +172,9 @@ export type ViewerRenderStyle =
   | 'consistent-colors'
   | 'hidden-line'
   | 'realistic'
-  | 'ray-trace';
+  | 'ray-trace'
+  | 'high-fidelity'
+  | 'path-trace-preview';
 
 export type StoreState = {
   modelId?: string;

@@ -35,6 +35,7 @@ from bim_ai.agent_generated_bundle_qa_checklist import (
 from bim_ai.agent_review_readout_consistency_closure import (
     agent_review_readout_consistency_closure_v1,
 )
+from bim_ai.architecture_lens_query import build_architecture_lens_query
 from bim_ai.ai_boundary import empty_external_model_call_audit_csv, load_bill_of_rights_markdown
 from bim_ai.codes import BUILDING_PRESETS
 from bim_ai.commands import Command
@@ -43,10 +44,14 @@ from bim_ai.constructability_report import (
     build_constructability_report,
     build_constructability_summary_v1,
 )
+from bim_ai.coordination_lens import build_coordination_lens_snapshot
+from bim_ai.construction_lens import build_construction_lens_payload
+from bim_ai.cost_quantity import cost_quantity_lens_review_status
 from bim_ai.db import SessionMaker, get_session
 from bim_ai.diff_engine import compute_element_diff
 from bim_ai.document import Document
 from bim_ai.elements import Element, LevelElem, LinkModelElem, PlanViewElem
+from bim_ai.fire_safety_lens import fire_safety_lens_review_status
 from bim_ai.material_image_assets import ImageAssetUpload, build_image_asset_from_upload
 from bim_ai.cmd.apply_bundle import apply_bundle as _apply_bundle
 from bim_ai.cmd.types import CommandBundle, BundleResult
@@ -129,6 +134,7 @@ from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_c
 from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
 from bim_ai.sheet_preview_svg import SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2
 from bim_ai.sustainability_lca import sustainability_lens_manifest_v1
+from bim_ai.structure_lens import structure_analysis_export
 from bim_ai.permissions import authorize_command
 from bim_ai.milestones import CreateMilestoneBody
 from bim_ai.tables import (
@@ -691,6 +697,30 @@ async def constructability_report(
     }
 
 
+@api_router.get("/models/{model_id}/fire-safety-lens")
+async def fire_safety_lens_status(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return {"modelId": str(model_id), **fire_safety_lens_review_status(doc)}
+
+
+@api_router.get("/models/{model_id}/cost-quantity-lens")
+async def cost_quantity_lens_status(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return {"modelId": str(model_id), **cost_quantity_lens_review_status(doc)}
+
+
 @api_router.get("/models/{model_id}/constructability-bcf")
 async def constructability_bcf_export(
     model_id: UUID,
@@ -707,6 +737,58 @@ async def constructability_bcf_export(
     }
 
 
+@api_router.get("/models/{model_id}/coordination-lens")
+async def coordination_lens_snapshot(
+    model_id: UUID,
+    from_revision: int | None = Query(None, alias="fromRevision"),
+    to_revision: int | None = Query(None, alias="toRevision"),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    current = Document.model_validate(row.document)
+    target_revision = to_revision if to_revision is not None else current.revision
+    target_doc = (
+        await _document_at_revision(session, model_id, current, target_revision)
+        if to_revision is not None
+        else current
+    )
+
+    change_diff: dict[str, Any] | None = None
+    if from_revision is not None:
+        from_doc = await _document_at_revision(session, model_id, current, from_revision)
+        elements_from = {k: v.model_dump(by_alias=True) for k, v in from_doc.elements.items()}
+        elements_to = {k: v.model_dump(by_alias=True) for k, v in target_doc.elements.items()}
+        change_diff = {
+            "fromRevision": from_revision,
+            "toRevision": target_revision,
+            **compute_element_diff(elements_from, elements_to),
+        }
+
+    return build_coordination_lens_snapshot(
+        target_doc,
+        model_id=str(model_id),
+        change_diff=change_diff,
+    )
+
+
+@api_router.get("/models/{model_id}/construction-lens")
+async def construction_lens_report(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return {
+        "modelId": str(model_id),
+        "revision": doc.revision,
+        **build_construction_lens_payload(doc),
+    }
+
+
 @api_router.get("/models/{model_id}/mep")
 async def mep_lens_projection(
     model_id: UUID,
@@ -717,7 +799,6 @@ async def mep_lens_projection(
         raise HTTPException(status_code=404, detail="Model not found")
     doc = Document.model_validate(row.document)
     return {"modelId": str(model_id), "revision": doc.revision, **build_mep_lens_payload(doc)}
-
 
 @api_router.get("/models/{model_id}/sustainability")
 async def sustainability_lens_projection(
@@ -1048,6 +1129,40 @@ async def projection_section_wire_route(
 
 
 # ---------------------------------------------------------------------------
+# Architecture Lens query route
+# ---------------------------------------------------------------------------
+
+
+@api_router.get("/models/{model_id}/architecture/query")
+async def architecture_lens_query(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return build_architecture_lens_query(doc)
+
+
+# ---------------------------------------------------------------------------
+# Structure lens handoff route
+# ---------------------------------------------------------------------------
+
+
+@api_router.get("/models/{model_id}/structure/analysis-export")
+async def structure_analysis_export_route(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return structure_analysis_export(doc)
+
+
+# ---------------------------------------------------------------------------
 # Schedule table route
 # ---------------------------------------------------------------------------
 
@@ -1094,6 +1209,21 @@ async def schedule_derived_table(
         if wanted:
             out = schedule_payload_with_column_subset(payload, wanted)
     return out
+
+
+@api_router.get("/models/{model_id}/energy/handoff")
+async def energy_handoff_route(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+    scenario_id: Annotated[str | None, Query(alias="scenarioId")] = None,
+) -> dict[str, Any]:
+    from bim_ai.energy_lens import build_energy_handoff_payload
+
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    return build_energy_handoff_payload(doc, scenario_id=scenario_id)
 
 
 # ---------------------------------------------------------------------------

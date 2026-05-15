@@ -19,10 +19,10 @@ import {
   materialHexFor,
   resolveWallAssemblyExposedLayers,
 } from '../families/wallTypeCatalog';
-import type { ViewportPaintBundle } from './materials';
+import { resolveMaterial, type ViewportPaintBundle } from './materials';
 import { yawForPlanSegment } from './planSegmentOrientation';
 import { addEdges, readToken } from './sceneHelpers';
-import { makeThreeMaterialForKey } from './threeMaterialFactory';
+import { makeThreeMaterialForKey, materialUvTransformForExtent } from './threeMaterialFactory';
 import {
   wall3dCleanupFootprintMm,
   wall3dXJoinCleanupFootprintsMm,
@@ -88,16 +88,21 @@ function roughnessFor(layer: WallAssemblyLayer): number {
   }
 }
 
-function offsetForBasis(basis: WallTypeAssembly['basisLine'], totalThickM: number): number {
-  // Distance along the wall normal from the wall's centerline to the start
-  // (interior face) of the layer stack. Positive moves toward the exterior.
+function exteriorFaceOffsetForBasis(
+  basis: WallTypeAssembly['basisLine'],
+  totalThickM: number,
+): number {
+  // Catalog/project wall assemblies are authored exterior-to-interior. The
+  // positive wall normal is the exterior side, matching non-typed wall
+  // location-line offsets, so the layer cursor starts at the exterior face
+  // and walks inward.
   switch (basis) {
     case 'face_interior':
-      return -totalThickM / 2;
+      return totalThickM;
     case 'face_exterior':
-      return totalThickM / 2;
+      return 0;
     default:
-      return -totalThickM / 2;
+      return totalThickM / 2;
   }
 }
 
@@ -194,27 +199,26 @@ export function makeLayeredWallMesh(
     cutMaterialKeys: exposed.cut.map((layer) => layer.materialKey),
   };
 
-  // Start offset along normal at the interior face of the stack.
-  const startNormalOffM = offsetForBasis(assembly.basisLine, totalThickM);
-
-  let cursorM = startNormalOffM;
-  const exteriorFinishKey = assembly.layers.find(
-    (l) => l.function === 'finish' && l.exterior,
-  )?.materialKey;
+  let exteriorCursorM = exteriorFaceOffsetForBasis(assembly.basisLine, totalThickM);
 
   for (const layer of assembly.layers) {
     const thickM = layer.thicknessMm / 1000;
     if (layer.function === 'air') {
-      cursorM += thickM;
+      exteriorCursorM -= thickM;
       continue;
     }
-    const layerCenterOff = cursorM + thickM / 2;
+    const layerCenterOff = exteriorCursorM - thickM / 2;
     const px = cx + nx * layerCenterOff;
     const pz = cz + nz * layerCenterOff;
+    const layerMaterial = resolveMaterial(layer.materialKey, elementsById);
 
     const mat = makeThreeMaterialForKey(layer.materialKey, {
       elementsById,
       usage: 'wallExterior',
+      uvTransform: materialUvTransformForExtent(layer.materialKey, {
+        elementsById,
+        extentMm: { uMm: len * 1000, vMm: heightM * 1000 },
+      }),
       fallbackColor: materialHexFor(layer.materialKey),
       fallbackRoughness: roughnessFor(layer),
       fallbackMetalness: 0,
@@ -249,18 +253,16 @@ export function makeLayeredWallMesh(
 
       if (
         !cleanupFootprints &&
-        layer.exterior &&
+        layer === exposed.exterior &&
         layer.function === 'finish' &&
-        (layer.materialKey === 'timber_cladding' || layer.materialKey === 'white_cladding') &&
-        layer.materialKey === exteriorFinishKey
+        layerMaterial?.category === 'cladding'
       ) {
-        const boardColor = layer.materialKey === 'white_cladding' ? '#f4f4f0' : undefined;
-        addCladdingBoardsInline(mesh, len, heightM, thickM, 150, 8, boardColor);
+        addCladdingBoardsInline(mesh, len, heightM, thickM, 250, 12, layerMaterial.baseColor);
       }
 
       group.add(mesh);
     }
-    cursorM += thickM;
+    exteriorCursorM -= thickM;
   }
 
   return group;

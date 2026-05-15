@@ -63,6 +63,8 @@ describe('buildDoorGeometry — KRN-13 operationType branching', () => {
         materialSlots: {
           frame: 'aluminium_black',
           panel: 'cladding_warm_wood',
+          threshold: 'concrete_smooth',
+          hardware: 'asset_stainless_brushed',
         },
       }),
       wall: baseWall,
@@ -79,6 +81,8 @@ describe('buildDoorGeometry — KRN-13 operationType branching', () => {
 
     expect(materialKeys.has('aluminium_black')).toBe(true);
     expect(materialKeys.has('cladding_warm_wood')).toBe(true);
+    expect(materialKeys.has('concrete_smooth')).toBe(true);
+    expect(materialKeys.has('asset_stainless_brushed')).toBe(true);
     expect(materialKeys.has('aluminium_dark_grey')).toBe(false);
   });
 

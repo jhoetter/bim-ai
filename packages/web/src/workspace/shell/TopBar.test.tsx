@@ -361,11 +361,27 @@ describe('RibbonBar — F-005', () => {
     expect(() => getByRole('tab', { name: 'Analyze' })).toThrow();
     expect(() => getByRole('tab', { name: 'Steel' })).toThrow();
     expect(() => getByRole('tab', { name: 'Precast' })).toThrow();
-    expect(() => getByRole('tab', { name: 'Systems' })).toThrow();
+    expect(getByRole('tab', { name: 'Systems' })).toBeTruthy();
     expect(() => getByRole('tab', { name: 'Add-Ins' })).toThrow();
     expect(getByTestId('ribbon-command-select')).toBeTruthy();
     expect(getByTestId('ribbon-command-wall').getAttribute('aria-pressed')).toBe('true');
     expect(getByTestId('ribbon-command-door')).toBeTruthy();
+  });
+
+  it('routes plan Floor and Roof ribbon buttons into explicit sketch tools', () => {
+    const onToolSelect = vi.fn();
+    const { getByTestId } = render(
+      <RibbonBar activeMode="plan" activeToolId="floor-sketch" onToolSelect={onToolSelect} />,
+    );
+
+    fireEvent.click(getByTestId('ribbon-tab-sketch'));
+    expect(getByTestId('ribbon-command-floor').getAttribute('aria-pressed')).toBe('true');
+
+    fireEvent.click(getByTestId('ribbon-command-floor'));
+    expect(onToolSelect).toHaveBeenLastCalledWith('floor-sketch');
+
+    fireEvent.click(getByTestId('ribbon-command-roof'));
+    expect(onToolSelect).toHaveBeenLastCalledWith('roof-sketch');
   });
 
   it('switches tabs and dispatches tool commands', () => {

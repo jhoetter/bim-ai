@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from bim_ai.cost_quantity import (
+    cost_quantity_lens_review_status,
     derive_cost_estimate_rows,
     derive_quantity_takeoff_rows,
     derive_scenario_delta_rows,
@@ -195,3 +196,46 @@ def test_scenario_delta_groups_by_package_and_uses_baseline_cost() -> None:
     assert renovation["deltaCost"] == 190
     assert renovation["sourceElementIds"] == "renovation"
 
+
+def test_cost_quantity_lens_review_status_exposes_required_defaults() -> None:
+    payload = cost_quantity_lens_review_status(
+        Document(
+            revision=1,
+            elements={
+                "lvl": LevelElem(kind="level", id="lvl", name="EG", elevationMm=0),
+                "floor-1": FloorElem(
+                    kind="floor",
+                    id="floor-1",
+                    name="Floor",
+                    levelId="lvl",
+                    boundaryMm=[p.model_dump(by_alias=True) for p in _rect_points(1000)],
+                    thicknessMm=100,
+                    props={
+                        "cost": {
+                            "scenarioId": "as-is",
+                            "costGroup": "320",
+                            "workPackage": "Slabs",
+                            "trade": "Concrete",
+                            "unit": "m2",
+                            "unitRate": 50,
+                            "source": "QS library",
+                        }
+                    },
+                ),
+            },
+        )
+    )
+
+    assert payload["format"] == "costQuantityLensReviewStatus_v1"
+    assert payload["lensId"] == "cost-quantity"
+    assert payload["germanName"] == "Kosten und Mengen"
+    defaults = {row["name"]: row["category"] for row in payload["scheduleDefaults"]}
+    assert defaults["Quantity takeoff"] == "quantity_takeoff"
+    assert defaults["Cost estimate"] == "cost_estimate"
+    assert defaults["Element cost group schedule"] == "element_cost_group"
+    assert defaults["Material quantities"] == "material_assembly"
+    assert defaults["Door counts"] == "door"
+    assert defaults["Window counts"] == "window"
+    assert defaults["Room finish quantities"] == "room"
+    assert defaults["Scenario delta report"] == "scenario_delta"
+    assert payload["totals"]["cost_estimate"]["totalCost"] == 50

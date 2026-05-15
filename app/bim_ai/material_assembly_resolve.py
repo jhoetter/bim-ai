@@ -51,7 +51,7 @@ def resolved_layers_for_wall(doc: Document, wall: WallElem) -> list[dict[str, An
     return [
         {
             "function": "structure",
-            "materialKey": "",
+            "materialKey": (wall.material_key or "").strip(),
             "thicknessMm": float(wall.thickness_mm),
         }
     ]
@@ -92,6 +92,14 @@ def resolved_layers_for_roof(doc: Document, roof: RoofElem) -> list[dict[str, An
                 }
                 for lyr in rt.layers
             ]
+    if roof.material_key:
+        return [
+            {
+                "function": "finish",
+                "materialKey": (roof.material_key or "").strip(),
+                "thicknessMm": 0.0,
+            }
+        ]
     return []
 
 
@@ -326,20 +334,28 @@ def _audit_status_for_typed_summaries(
 
 
 def _audit_row_core(
-    *, witness: dict[str, Any], status: MaterialCatalogAuditStatus_v0
+    *, doc: Document, witness: dict[str, Any], status: MaterialCatalogAuditStatus_v0
 ) -> dict[str, Any]:
     summaries = cast(list[dict[str, Any]], witness["layerSummaries"])
     keys = [str(s.get("materialKey") or "").strip() for s in summaries]
     total = round(sum(float(s["thicknessMm"]) for s in summaries), 3)
     host_kind = str(witness["hostKind"])
+    exposed_faces = cast(dict[str, Any], witness.get("exposedFaces") or {})
+    primary_face = "exterior" if host_kind == "wall" else "top"
+    primary_key = str(exposed_faces.get(primary_face) or "").strip()
+    layer_source = str(witness["layerSource"])
     return {
         "hostElementId": str(witness["hostElementId"]),
         "hostKind": host_kind,
         "assemblyTypeId": str(witness.get("assemblyTypeId") or "").strip(),
         "materialKeys": keys,
+        "effectiveMaterialKey": primary_key,
+        "effectiveMaterialDisplay": material_display_label(doc, primary_key or None),
+        "effectiveMaterialSource": layer_source,
+        "effectiveMaterialFace": primary_face,
         "layerCount": len(summaries),
         "totalThicknessMm": total,
-        "layerSource": witness["layerSource"],
+        "layerSource": layer_source,
         "catalogStatus": status,
         "propagationStatus": status,
         "assemblyMaterialKeysDigest": assembly_material_keys_digest(keys),
@@ -363,7 +379,7 @@ def material_catalog_audit_row_for_wall(doc: Document, wall: WallElem) -> dict[s
     else:
         status = "missing_layer_stack"
 
-    return _audit_row_core(witness=witness, status=status)
+    return _audit_row_core(doc=doc, witness=witness, status=status)
 
 
 def material_catalog_audit_row_for_floor(doc: Document, floor: FloorElem) -> dict[str, Any]:
@@ -383,7 +399,7 @@ def material_catalog_audit_row_for_floor(doc: Document, floor: FloorElem) -> dic
     else:
         status = "missing_layer_stack"
 
-    return _audit_row_core(witness=witness, status=status)
+    return _audit_row_core(doc=doc, witness=witness, status=status)
 
 
 def material_catalog_audit_row_for_roof(doc: Document, roof: RoofElem) -> dict[str, Any]:
@@ -403,7 +419,7 @@ def material_catalog_audit_row_for_roof(doc: Document, roof: RoofElem) -> dict[s
     else:
         status = "missing_layer_stack"
 
-    return _audit_row_core(witness=witness, status=status)
+    return _audit_row_core(doc=doc, witness=witness, status=status)
 
 
 def material_catalog_audit_rows(doc: Document) -> list[dict[str, Any]]:
@@ -482,7 +498,10 @@ def layered_assembly_witness_row_for_roof(doc: Document, roof: RoofElem) -> dict
     m = layer_stack_cut_metrics_for_roof(doc, roof)
     skip_reason: str | None
     layer_src: LayerAssemblySourceWitness_v0
-    if not rt_id:
+    if not rt_id and summaries:
+        layer_src = "instance_fallback"
+        skip_reason = None
+    elif not rt_id:
         layer_src = "none"
         skip_reason = "roof_missing_roof_type_id"
     elif not summaries:

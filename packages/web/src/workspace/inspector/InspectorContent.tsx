@@ -19,6 +19,11 @@ import {
   getBuiltInWallType,
   resolveWallAssemblyExposedLayers,
 } from '../../families/wallTypeCatalog';
+import {
+  materialTargetLayerIndex,
+  topLayerIndex,
+  wallTypeExteriorLayerIndex,
+} from '../../viewport/hostMaterialLayerTargets';
 import { resolveMaterial } from '../../viewport/materials';
 import { PlanViewGraphicsMatrix } from './PlanViewGraphicsMatrix';
 import { SavedViewTagGraphicsAuthoring, SavedViewTemplateGraphicsAuthoring } from '../authoring';
@@ -37,6 +42,16 @@ interface FieldRowProps {
   value: string;
   mono?: boolean;
 }
+
+export type MaterialBrowserTargetRequest = {
+  kind: 'material-slot';
+  elementId: string;
+  slot: string;
+  label: string;
+  currentKey?: string | null;
+};
+
+type OpenMaterialBrowser = (target?: MaterialBrowserTargetRequest) => void;
 
 export function FieldRow({ label, value, mono }: FieldRowProps): JSX.Element {
   return (
@@ -83,6 +98,7 @@ function MaterialAssignmentRow({
   materialKey,
   fallback,
   elementsById,
+  assignmentTarget,
   onOpenMaterialBrowser,
   onOpenAppearanceAssetBrowser,
 }: {
@@ -90,8 +106,9 @@ function MaterialAssignmentRow({
   materialKey: string | null | undefined;
   fallback: string;
   elementsById?: Record<string, Element>;
-  onOpenMaterialBrowser?: () => void;
-  onOpenAppearanceAssetBrowser?: () => void;
+  assignmentTarget?: MaterialBrowserTargetRequest;
+  onOpenMaterialBrowser?: OpenMaterialBrowser;
+  onOpenAppearanceAssetBrowser?: OpenMaterialBrowser;
 }): JSX.Element {
   return (
     <div className="flex items-center justify-between gap-2 border-b border-border py-1.5 last:border-b-0">
@@ -105,7 +122,7 @@ function MaterialAssignmentRow({
             type="button"
             data-testid="inspector-material-row-browser"
             className="shrink-0 rounded border border-border px-2 py-0.5 text-[10px] text-muted hover:text-foreground"
-            onClick={onOpenMaterialBrowser}
+            onClick={() => onOpenMaterialBrowser(assignmentTarget)}
           >
             Materials...
           </button>
@@ -115,7 +132,7 @@ function MaterialAssignmentRow({
             type="button"
             data-testid="inspector-material-row-appearance"
             className="shrink-0 rounded border border-border px-2 py-0.5 text-[10px] text-muted hover:text-foreground"
-            onClick={onOpenAppearanceAssetBrowser}
+            onClick={() => onOpenAppearanceAssetBrowser(assignmentTarget)}
           >
             Assets...
           </button>
@@ -133,8 +150,8 @@ function GenericMaterialAssignmentFor({
 }: {
   el: Element;
   elementsById?: Record<string, Element>;
-  onOpenMaterialBrowser?: () => void;
-  onOpenAppearanceAssetBrowser?: () => void;
+  onOpenMaterialBrowser?: OpenMaterialBrowser;
+  onOpenAppearanceAssetBrowser?: OpenMaterialBrowser;
 }): JSX.Element | null {
   switch (el.kind) {
     case 'toposolid':
@@ -168,13 +185,71 @@ function GenericMaterialAssignmentFor({
   }
 }
 
+function slotMaterialKey(
+  slots: Record<string, string | null> | null | undefined,
+  slot: string,
+): string | null {
+  const value = slots?.[slot];
+  return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function MaterialSlotsSection({
+  title = 'Material Slots',
+  elementId,
+  slots,
+  rows,
+  elementsById,
+  onOpenMaterialBrowser,
+  onOpenAppearanceAssetBrowser,
+}: {
+  title?: string;
+  elementId: string;
+  slots: Record<string, string | null> | null | undefined;
+  rows: { slot: string; label: string; fallback?: string }[];
+  elementsById?: Record<string, Element>;
+  onOpenMaterialBrowser?: OpenMaterialBrowser;
+  onOpenAppearanceAssetBrowser?: OpenMaterialBrowser;
+}): JSX.Element {
+  return (
+    <div className="border-t border-border pt-1">
+      <div className="px-0 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
+        {title}
+      </div>
+      {rows.map((row) => {
+        const materialKey = slotMaterialKey(slots, row.slot);
+        const target: MaterialBrowserTargetRequest = {
+          kind: 'material-slot',
+          elementId,
+          slot: row.slot,
+          label: row.label,
+          currentKey: materialKey,
+        };
+        return (
+          <MaterialAssignmentRow
+            key={row.slot}
+            label={row.label}
+            materialKey={materialKey}
+            fallback={row.fallback ?? 'By family/category'}
+            elementsById={elementsById}
+            assignmentTarget={target}
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 function wallTypeExteriorMaterialKey(
   wall: Extract<Element, { kind: 'wall' }>,
   elementsById: Record<string, Element>,
 ): string | null {
   if (!wall.wallTypeId) return null;
   const type = elementsById[wall.wallTypeId];
-  if (type?.kind === 'wall_type') return type.layers[0]?.materialKey ?? null;
+  if (type?.kind === 'wall_type') {
+    return type.layers[wallTypeExteriorLayerIndex(type)]?.materialKey ?? null;
+  }
   const builtIn = getBuiltInWallType(wall.wallTypeId);
   if (!builtIn) return null;
   return resolveWallAssemblyExposedLayers(builtIn).exterior?.materialKey ?? null;
@@ -186,13 +261,59 @@ function roofTypeTopMaterialKey(
 ): string | null {
   if (!roof.roofTypeId) return null;
   const type = elementsById[roof.roofTypeId];
-  return type?.kind === 'roof_type' ? (type.layers[0]?.materialKey ?? null) : null;
+  return type?.kind === 'roof_type'
+    ? (type.layers[topLayerIndex(type)]?.materialKey ?? null)
+    : null;
 }
 
 function fmtMm(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) return '—';
   if (Math.abs(value) >= 1000) return `${(value / 1000).toFixed(2)} m`;
   return `${value.toFixed(0)} mm`;
+}
+
+function fmtWatts(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return '—';
+  if (Math.abs(value) >= 1000) return `${(value / 1000).toFixed(2)} kW`;
+  return `${value.toFixed(0)} W`;
+}
+
+function fmtMepRecord(value: Record<string, unknown> | null | undefined): string {
+  if (!value || Object.keys(value).length === 0) return '—';
+  return Object.entries(value)
+    .map(([key, row]) => `${key}: ${String(row)}`)
+    .join(' · ');
+}
+
+function MepCommonRows({
+  el,
+}: {
+  el: Extract<
+    Element,
+    {
+      kind:
+        | 'pipe'
+        | 'duct'
+        | 'cable_tray'
+        | 'mep_equipment'
+        | 'fixture'
+        | 'mep_terminal'
+        | 'mep_opening_request';
+    }
+  >;
+}): JSX.Element {
+  return (
+    <>
+      <FieldRow label="System Type" value={el.systemType ?? '—'} />
+      <FieldRow label="System Name" value={el.systemName ?? '—'} />
+      <FieldRow label="Flow Direction" value={el.flowDirection ?? '—'} />
+      <FieldRow label="Service Level" value={el.serviceLevel ?? '—'} />
+      <FieldRow label="Insulation" value={el.insulation ?? '—'} />
+      <FieldRow label="Connectors" value={String(el.connectors?.length ?? 0)} mono />
+      {el.clearanceZone ? <FieldRow label="Clearance Zone" value="Defined" /> : null}
+      {el.maintainAccessZone ? <FieldRow label="Access Zone" value="Defined" /> : null}
+    </>
+  );
 }
 
 function parseTypeParameterDraft(value: string, prior: unknown): unknown {
@@ -454,8 +575,9 @@ export function InspectorPropertiesFor(
     onMonitorReconcile?: (elementId: string, mode: 'accept_source' | 'keep_host') => void;
     onDisciplineChange?: (discipline: DisciplineTag | null) => void;
     onEditType?: (typeId: string) => void;
-    onOpenMaterialBrowser?: () => void;
-    onOpenAppearanceAssetBrowser?: () => void;
+    onEditBoundary?: (element: Extract<Element, { kind: 'floor' }>) => void;
+    onOpenMaterialBrowser?: OpenMaterialBrowser;
+    onOpenAppearanceAssetBrowser?: OpenMaterialBrowser;
   },
 ): JSX.Element {
   const elementsById = options?.elementsById ?? {};
@@ -660,6 +782,19 @@ export function InspectorPropertiesFor(
             onOpenMaterialBrowser={onOpenMaterialBrowser}
             onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
           />
+          <MaterialSlotsSection
+            elementId={el.id}
+            slots={el.materialSlots}
+            rows={[
+              { slot: 'frame', label: 'Frame' },
+              { slot: 'panel', label: 'Panel' },
+              { slot: 'hardware', label: 'Hardware' },
+              { slot: 'threshold', label: 'Threshold' },
+            ]}
+            elementsById={elementsById}
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
           <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
           <FieldRow label={f('wall')} value={resolveElName(el.wallId, elementsById)} />
           <FieldRow label={f('alongT')} value={el.alongT.toFixed(3)} mono />
@@ -677,6 +812,21 @@ export function InspectorPropertiesFor(
             onOpenMaterialBrowser={onOpenMaterialBrowser}
             onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
           />
+          <MaterialSlotsSection
+            elementId={el.id}
+            slots={el.materialSlots}
+            rows={[
+              { slot: 'frame', label: 'Frame' },
+              { slot: 'sash', label: 'Sash' },
+              { slot: 'glass', label: 'Glass', fallback: 'Default clear glass' },
+              { slot: 'spacer', label: 'Spacer' },
+              { slot: 'hardware', label: 'Hardware' },
+              { slot: 'shading', label: 'Shading' },
+            ]}
+            elementsById={elementsById}
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
           <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
           <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
           <FieldRow label={f('sillHeight')} value={fmtMm(el.sillHeightMm)} />
@@ -688,7 +838,9 @@ export function InspectorPropertiesFor(
         options ?? {};
       const floorType = el.floorTypeId ? floorElementsById[el.floorTypeId] : undefined;
       const floorTypeMaterialKey =
-        floorType?.kind === 'floor_type' ? (floorType.layers[0]?.materialKey ?? null) : null;
+        floorType?.kind === 'floor_type'
+          ? (floorType.layers[topLayerIndex(floorType)]?.materialKey ?? null)
+          : null;
       return (
         <div className="flex flex-col gap-2">
           <FieldRow label={f('thickness')} value={fmtMm(el.thicknessMm)} />
@@ -696,6 +848,25 @@ export function InspectorPropertiesFor(
           <FieldRow label={f('finishThickness')} value={fmtMm(el.finishThicknessMm)} />
           <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
           <FieldRow label={f('boundaryPoints')} value={String(el.boundaryMm.length)} />
+          {options?.onEditBoundary ? (
+            <div
+              className="flex items-center justify-between gap-2 rounded border border-border bg-surface px-2 py-1.5"
+              data-testid="inspector-floor-boundary-actions"
+            >
+              <div className="min-w-0">
+                <div className="text-xs font-semibold text-foreground">Boundary</div>
+                <div className="text-[10px] text-muted">Plan vertex grips</div>
+              </div>
+              <button
+                type="button"
+                data-testid="inspector-floor-edit-boundary"
+                className="shrink-0 rounded border border-border bg-background px-2 py-0.5 text-xs text-foreground hover:bg-surface-strong"
+                onClick={() => options.onEditBoundary?.(el)}
+              >
+                Edit Boundary
+              </button>
+            </div>
+          ) : null}
 
           <div className="flex items-center gap-2 py-0.5">
             <span className="text-xs text-muted w-28 shrink-0">{f('floorType')}</span>
@@ -728,7 +899,7 @@ export function InspectorPropertiesFor(
           </div>
           {floorType?.kind === 'floor_type' ? (
             <MaterialAssignmentRow
-              label="Type Material"
+              label="Type Top Material"
               materialKey={floorTypeMaterialKey}
               fallback="By category"
               elementsById={floorElementsById}
@@ -871,6 +1042,21 @@ export function InspectorPropertiesFor(
           </div>
           <FieldRow label={f('baseLevel')} value={resolveElName(el.baseLevelId, elementsById)} />
           <FieldRow label={f('topLevel')} value={resolveElName(el.topLevelId, elementsById)} />
+          <MaterialSlotsSection
+            elementId={el.id}
+            slots={el.materialSlots}
+            rows={[
+              { slot: 'tread', label: 'Tread' },
+              { slot: 'riser', label: 'Riser' },
+              { slot: 'stringer', label: 'Stringer' },
+              { slot: 'landing', label: 'Landing' },
+              { slot: 'support', label: 'Support' },
+              { slot: 'nosing', label: 'Nosing' },
+            ]}
+            elementsById={elementsById}
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
           {onDisciplineChange ? (
             <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
           ) : null}
@@ -993,6 +1179,132 @@ export function InspectorPropertiesFor(
           {el.volumeM3 != null ? (
             <FieldRow label={f('volume')} value={`${el.volumeM3.toFixed(3)} m³`} />
           ) : null}
+          <FieldRow label="Ventilation Zone" value={el.ventilationZone ?? '—'} />
+          <FieldRow label="Heating/Cooling Zone" value={el.heatingCoolingZone ?? '—'} />
+          <FieldRow
+            label="Design ACH"
+            value={
+              el.designAirChangeRate != null ? `${el.designAirChangeRate.toFixed(2)} 1/h` : '—'
+            }
+          />
+          <FieldRow
+            label="Fixture/Equipment Loads"
+            value={fmtMepRecord(el.fixtureEquipmentLoads)}
+          />
+          <FieldRow label="Electrical Loads" value={fmtMepRecord(el.electricalLoadSummary)} />
+          <FieldRow
+            label="Service Requirements"
+            value={el.serviceRequirements?.join(', ') || '—'}
+          />
+        </div>
+      );
+    case 'duct':
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
+          <FieldRow label="Shape" value={el.shape ?? 'rectangular'} />
+          <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
+          <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
+          <FieldRow label="Elevation" value={fmtMm(el.elevationMm)} />
+          <FieldRow
+            label="Start"
+            value={`${fmtMm(el.startMm.xMm)} · ${fmtMm(el.startMm.yMm)}`}
+            mono
+          />
+          <FieldRow label="End" value={`${fmtMm(el.endMm.xMm)} · ${fmtMm(el.endMm.yMm)}`} mono />
+          <MepCommonRows el={el} />
+        </div>
+      );
+    case 'pipe':
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
+          <FieldRow label="Diameter" value={fmtMm(el.diameterMm)} />
+          <FieldRow label="Elevation" value={fmtMm(el.elevationMm)} />
+          <FieldRow
+            label="Start"
+            value={`${fmtMm(el.startMm.xMm)} · ${fmtMm(el.startMm.yMm)}`}
+            mono
+          />
+          <FieldRow label="End" value={`${fmtMm(el.endMm.xMm)} · ${fmtMm(el.endMm.yMm)}`} mono />
+          <MepCommonRows el={el} />
+        </div>
+      );
+    case 'cable_tray':
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
+          <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
+          <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
+          <FieldRow label="Elevation" value={fmtMm(el.elevationMm)} />
+          <FieldRow
+            label="Start"
+            value={`${fmtMm(el.startMm.xMm)} · ${fmtMm(el.startMm.yMm)}`}
+            mono
+          />
+          <FieldRow label="End" value={`${fmtMm(el.endMm.xMm)} · ${fmtMm(el.endMm.yMm)}`} mono />
+          <MepCommonRows el={el} />
+        </div>
+      );
+    case 'mep_equipment':
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
+          <FieldRow label="Equipment Type" value={el.equipmentType ?? '—'} />
+          <FieldRow label={f('family')} value={el.familyTypeId ?? '—'} mono />
+          <FieldRow
+            label="Position"
+            value={`${fmtMm(el.positionMm.xMm)} · ${fmtMm(el.positionMm.yMm)}`}
+            mono
+          />
+          <FieldRow label="Elevation" value={fmtMm(el.elevationMm)} />
+          <FieldRow label="Electrical Load" value={fmtWatts(el.electricalLoadW)} />
+          <MepCommonRows el={el} />
+        </div>
+      );
+    case 'fixture':
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
+          <FieldRow label="Fixture Type" value={el.fixtureType ?? '—'} />
+          <FieldRow label="Room" value={resolveElName(el.roomId ?? null, elementsById)} />
+          <FieldRow
+            label="Position"
+            value={`${fmtMm(el.positionMm.xMm)} · ${fmtMm(el.positionMm.yMm)}`}
+            mono
+          />
+          <FieldRow label="Electrical Load" value={fmtWatts(el.electricalLoadW)} />
+          <MepCommonRows el={el} />
+        </div>
+      );
+    case 'mep_terminal':
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
+          <FieldRow label="Terminal Kind" value={el.terminalKind ?? 'terminal'} />
+          <FieldRow label="Room" value={resolveElName(el.roomId ?? null, elementsById)} />
+          <FieldRow
+            label="Position"
+            value={`${fmtMm(el.positionMm.xMm)} · ${fmtMm(el.positionMm.yMm)}`}
+            mono
+          />
+          <MepCommonRows el={el} />
+        </div>
+      );
+    case 'mep_opening_request':
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label="Host" value={resolveElName(el.hostElementId, elementsById)} />
+          <FieldRow label={f('level')} value={resolveElName(el.levelId ?? null, elementsById)} />
+          <FieldRow label="Opening Kind" value={el.openingKind ?? 'wall'} />
+          <FieldRow label="Status" value={el.status ?? 'requested'} />
+          <FieldRow label={f('width')} value={fmtMm(el.widthMm)} />
+          <FieldRow label={f('height')} value={fmtMm(el.heightMm)} />
+          <FieldRow label="Diameter" value={fmtMm(el.diameterMm)} />
+          <FieldRow label="Clearance" value={fmtMm(el.clearanceMm)} />
+          <FieldRow label="Requesters" value={el.requesterElementIds?.join(', ') || '—'} mono />
+          <FieldRow label="Approval Note" value={el.approvalNote ?? '—'} />
+          <MepCommonRows el={el} />
         </div>
       );
     case 'level': {
@@ -1185,6 +1497,22 @@ export function InspectorPropertiesFor(
             />
           </div>
           <FieldRow label="Path Vertices" value={String(el.pathMm.length)} mono />
+          <MaterialSlotsSection
+            elementId={el.id}
+            slots={el.materialSlots}
+            rows={[
+              { slot: 'topRail', label: 'Top rail' },
+              { slot: 'handrail', label: 'Handrail' },
+              { slot: 'post', label: 'Post' },
+              { slot: 'baluster', label: 'Baluster' },
+              { slot: 'panel', label: 'Panel' },
+              { slot: 'cable', label: 'Cable' },
+              { slot: 'bracket', label: 'Bracket' },
+            ]}
+            elementsById={elementsById}
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
         </div>
       );
     }
@@ -1445,8 +1773,8 @@ export function InspectorPropertiesFor(
           </label>
           <TypeLayerSummary layers={el.layers} />
           <MaterialAssignmentRow
-            label="First Layer Material"
-            materialKey={el.layers[0]?.materialKey ?? null}
+            label="Exterior Layer Material"
+            materialKey={el.layers[materialTargetLayerIndex(el)]?.materialKey ?? null}
             fallback="By category"
             onOpenMaterialBrowser={onOpenMaterialBrowser}
             onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
@@ -1464,8 +1792,8 @@ export function InspectorPropertiesFor(
           />
           <TypeLayerSummary layers={el.layers} />
           <MaterialAssignmentRow
-            label="First Layer Material"
-            materialKey={el.layers[0]?.materialKey ?? null}
+            label="Top Layer Material"
+            materialKey={el.layers[materialTargetLayerIndex(el)]?.materialKey ?? null}
             fallback="By category"
             onOpenMaterialBrowser={onOpenMaterialBrowser}
             onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
@@ -1483,8 +1811,8 @@ export function InspectorPropertiesFor(
           />
           <TypeLayerSummary layers={el.layers} />
           <MaterialAssignmentRow
-            label="First Layer Material"
-            materialKey={el.layers[0]?.materialKey ?? null}
+            label="Top Layer Material"
+            materialKey={el.layers[materialTargetLayerIndex(el)]?.materialKey ?? null}
             fallback="By category"
             onOpenMaterialBrowser={onOpenMaterialBrowser}
             onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
@@ -2199,6 +2527,11 @@ export function InspectorRoomEditor({
   const { t } = useTranslation();
   const f = (key: string) => t(`inspector.fields.${key}`);
   const r = (key: string) => t(`inspector.room.${key}`);
+  const roomPropString = (key: string): string => {
+    const value = el.props?.[key];
+    if (value == null) return '';
+    return typeof value === 'string' ? value : String(value);
+  };
   const fields: {
     key: string;
     label: string;
@@ -2211,6 +2544,28 @@ export function InspectorRoomEditor({
     { key: 'functionLabel', label: r('functionLabel'), val: el.functionLabel },
     { key: 'finishSet', label: f('finishSet'), val: el.finishSet },
   ];
+  const architectureFields: {
+    key: string;
+    label: string;
+    val: string;
+  }[] = [
+    { key: 'roomFunction', label: r('roomFunction'), val: roomPropString('roomFunction') },
+    { key: 'finishSetId', label: r('finishSetId'), val: roomPropString('finishSetId') },
+    { key: 'designIntent', label: r('designIntent'), val: roomPropString('designIntent') },
+    {
+      key: 'documentationStatus',
+      label: r('documentationStatus'),
+      val: roomPropString('documentationStatus'),
+    },
+    { key: 'occupancyNotes', label: r('occupancyNotes'), val: roomPropString('occupancyNotes') },
+    { key: 'roomBounding', label: r('roomBounding'), val: roomPropString('roomBounding') },
+  ];
+  const consultantBadges = [
+    ['Fire', roomPropString('fireRating') || roomPropString('fireResistanceRating')],
+    ['Acoustic', roomPropString('acousticRating') || roomPropString('stcRating')],
+    ['Energy', roomPropString('energyZone') || roomPropString('heatingStatus')],
+    ['Cost', roomPropString('costCode') || roomPropString('costGroup')],
+  ].filter((entry): entry is [string, string] => Boolean(entry[1]));
 
   return (
     <div className="space-y-2 text-[11px]">
@@ -2226,6 +2581,18 @@ export function InspectorRoomEditor({
               if (key === 'name' && (!v || v === val)) return;
               onPersistProperty(key, v);
             }}
+          />
+        </label>
+      ))}
+      {architectureFields.map(({ key, label, val }) => (
+        <label key={key} className={LABEL_CLS}>
+          {label}
+          <input
+            className={INPUT_CLS}
+            defaultValue={val}
+            key={`rm-prop-${key}-${el.id}-${val}-${revision}`}
+            data-testid={`inspector-room-${key.replace(/[A-Z]/g, (ch) => `-${ch.toLowerCase()}`)}`}
+            onBlur={(e) => onPersistProperty(key, e.target.value.trim())}
           />
         </label>
       ))}
@@ -2269,6 +2636,29 @@ export function InspectorRoomEditor({
           <option value="dots">Dots</option>
         </select>
       </label>
+      {consultantBadges.length ? (
+        <div
+          className="flex flex-wrap gap-1.5 border-b border-border py-1.5"
+          data-testid="inspector-room-consultant-badges"
+        >
+          {consultantBadges.map(([label, value]) => (
+            <span
+              key={label}
+              className="rounded border border-border bg-surface px-1.5 py-0.5 text-[10px] text-muted"
+              title={`${label}: ${value}`}
+            >
+              <span className="font-medium text-foreground">{label}</span> {value}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {el.volumeM3 != null ? (
+        <FieldRow label={f('volume')} value={`${el.volumeM3.toFixed(3)} m³`} />
+      ) : null}
+      {el.phaseCreated ? <FieldRow label={f('phaseCreated')} value={el.phaseCreated} /> : null}
+      {el.phaseDemolished ? (
+        <FieldRow label={f('phaseDemolished')} value={el.phaseDemolished} />
+      ) : null}
       <FieldRow label={f('level')} value={el.levelId} mono />
       <FieldRow label={f('outlinePoints')} value={String(el.outlineMm.length)} />
     </div>
@@ -2415,8 +2805,8 @@ export function InspectorDoorEditor({
   onCreateType?: (baseFamilyId: string, name: string, params: Record<string, unknown>) => void;
   onDuplicateType?: (familyTypeId: string | null | undefined) => void;
   onDisciplineChange?: (discipline: DisciplineTag | null) => void;
-  onOpenMaterialBrowser?: () => void;
-  onOpenAppearanceAssetBrowser?: () => void;
+  onOpenMaterialBrowser?: OpenMaterialBrowser;
+  onOpenAppearanceAssetBrowser?: OpenMaterialBrowser;
 }): JSX.Element {
   const { t } = useTranslation();
   const f = (key: string) => t(`inspector.fields.${key}`);
@@ -2501,6 +2891,20 @@ export function InspectorDoorEditor({
         label="Material"
         materialKey={el.materialKey ?? null}
         fallback="By family/category"
+        elementsById={elementsById}
+        onOpenMaterialBrowser={onOpenMaterialBrowser}
+        onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+      />
+      <MaterialSlotsSection
+        elementId={el.id}
+        slots={el.materialSlots}
+        rows={[
+          { slot: 'frame', label: 'Frame' },
+          { slot: 'panel', label: 'Panel' },
+          { slot: 'hardware', label: 'Hardware' },
+          { slot: 'threshold', label: 'Threshold' },
+        ]}
+        elementsById={elementsById}
         onOpenMaterialBrowser={onOpenMaterialBrowser}
         onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
       />
@@ -2533,8 +2937,8 @@ export function InspectorWindowEditor({
   onCreateType?: (baseFamilyId: string, name: string, params: Record<string, unknown>) => void;
   onDuplicateType?: (familyTypeId: string | null | undefined) => void;
   onDisciplineChange?: (discipline: DisciplineTag | null) => void;
-  onOpenMaterialBrowser?: () => void;
-  onOpenAppearanceAssetBrowser?: () => void;
+  onOpenMaterialBrowser?: OpenMaterialBrowser;
+  onOpenAppearanceAssetBrowser?: OpenMaterialBrowser;
 }): JSX.Element {
   const { t } = useTranslation();
   const f = (key: string) => t(`inspector.fields.${key}`);
@@ -2610,6 +3014,22 @@ export function InspectorWindowEditor({
         label="Material"
         materialKey={el.materialKey ?? null}
         fallback="By family/category"
+        elementsById={elementsById}
+        onOpenMaterialBrowser={onOpenMaterialBrowser}
+        onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+      />
+      <MaterialSlotsSection
+        elementId={el.id}
+        slots={el.materialSlots}
+        rows={[
+          { slot: 'frame', label: 'Frame' },
+          { slot: 'sash', label: 'Sash' },
+          { slot: 'glass', label: 'Glass', fallback: 'Default clear glass' },
+          { slot: 'spacer', label: 'Spacer' },
+          { slot: 'hardware', label: 'Hardware' },
+          { slot: 'shading', label: 'Shading' },
+        ]}
+        elementsById={elementsById}
         onOpenMaterialBrowser={onOpenMaterialBrowser}
         onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
       />

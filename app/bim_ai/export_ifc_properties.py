@@ -167,6 +167,46 @@ def safe_edit_pset(f: Any, product: Any, *, name: str, properties: dict[str, Any
         return
 
 
+def energy_handoff_pset_properties(element: Any) -> dict[str, Any]:
+    props: dict[str, Any] = {}
+    classification = getattr(element, "thermal_classification", None)
+    if classification:
+        props["BimAiThermalClassification"] = str(classification)
+    source = getattr(element, "thermal_classification_source", None)
+    if source:
+        props["BimAiThermalClassificationSource"] = str(source)
+    scenario_id = getattr(element, "energy_scenario_id", None)
+    if scenario_id:
+        props["BimAiEnergyScenarioId"] = str(scenario_id)
+    for attr, key in (
+        ("u_value", "BimAiUValueWPerM2K"),
+        ("g_value", "BimAiGValue"),
+        ("frame_fraction", "BimAiFrameFraction"),
+        ("annual_shading_factor_estimate", "BimAiAnnualShadingFactorEstimate"),
+    ):
+        value = getattr(element, attr, None)
+        if value is not None:
+            props[key] = float(value)
+    for attr, key in (
+        ("air_tightness_class", "BimAiAirTightnessClass"),
+        ("installation_thermal_bridge_note", "BimAiInstallationThermalBridgeNote"),
+        ("shading_device", "BimAiShadingDevice"),
+    ):
+        value = getattr(element, attr, None)
+        if value:
+            props[key] = str(value)
+    return props
+
+
+def attach_energy_handoff_pset(f: Any, product: Any, element: Any) -> None:
+    safe_edit_pset(
+        f,
+        product,
+        name="Pset_BimAiEnergyHandoff",
+        properties=energy_handoff_pset_properties(element),
+    )
+
+
 def attach_stair_common_pset(f: Any, ifc_stair: Any, stair: StairElem, doc: Document) -> None:
     safe_edit_pset(
         f,

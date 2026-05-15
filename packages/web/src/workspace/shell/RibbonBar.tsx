@@ -1033,13 +1033,48 @@ function buildPlanRibbonTabs(
       ],
     },
     {
+      id: 'systems',
+      label: 'Systems',
+      panels: [
+        {
+          id: 'routes',
+          label: 'Routes',
+          commands: [
+            tool('duct', 'Duct', 'duct'),
+            tool('pipe', 'Pipe', 'pipe'),
+            tool('cable-tray', 'Cable Tray', 'cableTray'),
+          ],
+        },
+        {
+          id: 'devices',
+          label: 'Devices',
+          commands: [
+            tool('mep-equipment', 'Equipment', 'mepEquipment'),
+            tool('fixture', 'Fixture', 'fixture'),
+            tool('mep-terminal', 'Terminal', 'mepTerminal'),
+          ],
+        },
+        {
+          id: 'coordination',
+          label: 'Coordinate',
+          commands: [
+            tool('mep-opening-request', 'Opening Request', 'wall-opening'),
+            tool('shaft', 'Shaft', 'shaft'),
+          ],
+        },
+      ],
+    },
+    {
       id: 'sketch',
       label: 'Sketch',
       panels: [
         {
           id: 'sketch',
           label: 'Sketch',
-          commands: [tool('floor', 'Floor', 'floor'), tool('roof', 'Roof', 'roof')],
+          commands: [
+            tool('floor-sketch', 'Floor', 'floor', 'ribbon-command-floor'),
+            tool('roof-sketch', 'Roof', 'roof', 'ribbon-command-roof'),
+          ],
         },
         {
           id: 'site',
@@ -1162,6 +1197,38 @@ function build3dRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
           id: 'circulation',
           label: 'Circulation',
           commands: [tool('stair', 'Stair', 'stair'), tool('railing', 'Railing', 'railing')],
+        },
+      ],
+    },
+    {
+      id: 'systems',
+      label: 'Systems',
+      panels: [
+        {
+          id: 'routes',
+          label: 'Routes',
+          commands: [
+            tool('duct', 'Duct', 'duct'),
+            tool('pipe', 'Pipe', 'pipe'),
+            tool('cable-tray', 'Cable Tray', 'cableTray'),
+          ],
+        },
+        {
+          id: 'devices',
+          label: 'Devices',
+          commands: [
+            tool('mep-equipment', 'Equipment', 'mepEquipment'),
+            tool('fixture', 'Fixture', 'fixture'),
+            tool('mep-terminal', 'Terminal', 'mepTerminal'),
+          ],
+        },
+        {
+          id: 'coordination',
+          label: 'Coordinate',
+          commands: [
+            tool('mep-opening-request', 'Opening Request', 'wall-opening'),
+            tool('shaft', 'Shaft', 'shaft'),
+          ],
         },
       ],
     },

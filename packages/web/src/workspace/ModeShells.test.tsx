@@ -325,4 +325,88 @@ describe('ScheduleModeShell — spec §20.6', () => {
       }),
     );
   });
+
+  it('applies Cost and Quantity estimate workflow profile', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          scheduleId: 'seed-sch-cost',
+          name: 'Cost estimate',
+          category: 'cost_estimate',
+          scheduleEngine: {
+            format: 'scheduleEngine_v1',
+            category: 'cost_estimate',
+            sortBy: 'name',
+            supportsCsv: true,
+            lensId: 'cost-quantity',
+          },
+          columns: [
+            'rowId',
+            'elementId',
+            'scenarioId',
+            'costGroup',
+            'unit',
+            'quantity',
+            'unitRate',
+            'totalCost',
+            'costSource',
+            'costDataStatus',
+          ],
+          columnMetadata: {
+            fields: {
+              rowId: { label: 'Cost row', role: 'id' },
+              totalCost: { label: 'Total cost', role: 'number' },
+              costSource: { label: 'Source/reference', role: 'text' },
+            },
+          },
+          rows: [{ rowId: 'floor-1:as-is', elementId: 'floor-1', totalCost: 220 }],
+          totals: { totalCost: 220 },
+        }),
+        { status: 200 },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchSpy);
+    const onUpsertSemantic = vi.fn();
+    const costElements = {
+      ...elementsById,
+      'seed-sch-cost': {
+        kind: 'schedule',
+        id: 'seed-sch-cost',
+        name: 'Cost estimate',
+        filters: { category: 'cost_estimate' },
+      } as Extract<Element, { kind: 'schedule' }>,
+    };
+
+    const { getByTestId, getByText } = render(
+      <ScheduleModeShell
+        elementsById={costElements}
+        preferredScheduleId="seed-sch-cost"
+        modelId="model-1"
+        onUpsertSemantic={onUpsertSemantic}
+      />,
+    );
+
+    await waitFor(() => expect(getByText('floor-1')).toBeTruthy());
+    fireEvent.change(getByTestId('schedule-workflow-profile-select'), {
+      target: { value: 'cost-estimate-source' },
+    });
+    fireEvent.click(getByTestId('schedule-workflow-profile-apply'));
+
+    expect(onUpsertSemantic).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'upsertSchedule',
+        id: 'seed-sch-cost',
+        filters: expect.objectContaining({
+          sortBy: 'totalCost',
+          sortDescending: true,
+          displayColumnKeys: expect.arrayContaining(['costSource', 'costDataStatus']),
+        }),
+        grouping: expect.objectContaining({
+          sortBy: 'totalCost',
+          sortDescending: true,
+          groupKeys: ['costGroup', 'workPackage'],
+        }),
+      }),
+    );
+  });
 });

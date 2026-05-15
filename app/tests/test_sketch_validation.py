@@ -72,6 +72,44 @@ def test_zero_length_line_caught():
     assert any(i.code == "zero_length" for i in state.issues)
 
 
+def test_too_short_boundary_edge_is_caught():
+    lines = [
+        _line(0, 0, 50, 0),
+        _line(50, 0, 50, 1000),
+        _line(50, 1000, 0, 1000),
+        _line(0, 1000, 0, 0),
+    ]
+    state = validate_session(lines)
+    assert state.valid is False
+    assert any(i.code == "too_short_edge" for i in state.issues)
+
+
+def test_duplicate_boundary_edge_is_caught_even_when_reversed():
+    lines = [
+        _line(0, 0, 1000, 0),
+        _line(1000, 0, 0, 0),
+        _line(1000, 0, 1000, 1000),
+        _line(1000, 1000, 0, 1000),
+        _line(0, 1000, 0, 0),
+    ]
+    state = validate_session(lines)
+    assert state.valid is False
+    assert any(i.code == "duplicate_edge" for i in state.issues)
+
+
+def test_overlapping_collinear_boundary_edge_is_caught():
+    lines = [
+        _line(0, 0, 2000, 0),
+        _line(1000, 0, 2000, 0),
+        _line(2000, 0, 2000, 1000),
+        _line(2000, 1000, 0, 1000),
+        _line(0, 1000, 0, 0),
+    ]
+    state = validate_session(lines)
+    assert state.valid is False
+    assert any(i.code == "overlapping_edge" for i in state.issues)
+
+
 def test_l_shape_validates_and_derives_polygon():
     # Six-edge L-shape, drawn CCW.
     lines = [

@@ -493,6 +493,123 @@ register(
     )
 )
 
+register(
+    ToolDescriptor(
+        name="fire-safety-lens-review-status",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "FireSafetyLensReviewStatusInput",
+            "type": "object",
+            "required": ["modelId"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "FireSafetyLensReviewStatus",
+            "type": "object",
+            "required": [
+                "modelId",
+                "format",
+                "lensId",
+                "scheduleDefaults",
+                "viewDefaults",
+                "sheetDefaults",
+                "counts",
+                "schedules",
+            ],
+            "properties": {
+                "modelId": {"type": "string"},
+                "format": {"const": "fireSafetyLensReviewStatus_v1"},
+                "lensId": {"const": "fire-safety"},
+                "germanName": {"const": "Brandschutz"},
+                "scheduleDefaults": {"type": "array", "items": {"type": "object"}},
+                "viewDefaults": {"type": "array", "items": {"type": "object"}},
+                "sheetDefaults": {"type": "array", "items": {"type": "object"}},
+                "nonGoals": {"type": "array", "items": {"type": "string"}},
+                "counts": {"type": "object"},
+                "schedules": {"type": "object"},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Fire Safety Lens readout generated"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai fire-safety-lens-review-status --model-id <id>",
+        restEndpoint=RestEndpoint(
+            method="GET", path="/api/models/{model_id}/fire-safety-lens"
+        ),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only Brandschutz review payload. It exposes consultant-review "
+            "schedules and statuses, but does not claim jurisdictional fire-code approval."
+        ),
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="cost-quantity-lens-review-status",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CostQuantityLensReviewStatusInput",
+            "type": "object",
+            "required": ["modelId"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CostQuantityLensReviewStatus",
+            "type": "object",
+            "required": [
+                "modelId",
+                "format",
+                "lensId",
+                "scheduleDefaults",
+                "viewDefaults",
+                "sheetDefaults",
+                "counts",
+                "totals",
+                "schedules",
+            ],
+            "properties": {
+                "modelId": {"type": "string"},
+                "format": {"const": "costQuantityLensReviewStatus_v1"},
+                "lensId": {"const": "cost-quantity"},
+                "englishName": {"const": "Cost and Quantity"},
+                "germanName": {"const": "Kosten und Mengen"},
+                "scheduleDefaults": {"type": "array", "items": {"type": "object"}},
+                "viewDefaults": {"type": "array", "items": {"type": "object"}},
+                "sheetDefaults": {"type": "array", "items": {"type": "object"}},
+                "nonGoals": {"type": "array", "items": {"type": "string"}},
+                "counts": {"type": "object"},
+                "totals": {"type": "object"},
+                "schedules": {"type": "object"},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Cost and Quantity Lens readout generated"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai cost-quantity-lens-review-status --model-id <id>",
+        restEndpoint=RestEndpoint(
+            method="GET", path="/api/models/{model_id}/cost-quantity-lens"
+        ),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only Kosten und Mengen payload. Unit rates without source references "
+            "are surfaced for review but excluded from cost totals."
+        ),
+    )
+)
+
 # ---------------------------------------------------------------------------
 # TOP-V3-01 — Toposolid tool descriptors
 # ---------------------------------------------------------------------------
@@ -738,7 +855,13 @@ register(
                 "view_id": {"type": "string"},
                 "lens": {
                     "type": "string",
-                    "enum": ["show_arch", "show_struct", "show_mep", "show_all"],
+                    "enum": [
+                        "show_arch",
+                        "show_struct",
+                        "show_mep",
+                        "show_fire_safety",
+                        "show_all",
+                    ],
                 },
             },
             "additionalProperties": False,
@@ -770,9 +893,132 @@ register(
         sideEffects="mutates-kernel",
         agentSafetyNotes=(
             "Wrap in a CommandBundle via apply-bundle. "
-            "lens must be one of: show_arch, show_struct, show_mep, show_all. "
+            "lens must be one of: show_arch, show_struct, show_mep, "
+            "show_fire_safety, show_all. "
             "show_all renders all elements at full opacity (default). "
             "Does not mutate element discipline fields — view-only modifier."
+        ),
+    )
+)
+
+# ---------------------------------------------------------------------------
+# Construction lens — Bauausfuehrung workflow layer
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="construction-lens-report",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ConstructionLensReportInput",
+            "type": "object",
+            "required": ["model_id"],
+            "properties": {"model_id": {"type": "string"}},
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ConstructionLensReport",
+            "type": "object",
+            "required": ["modelId", "revision", "lens", "summary"],
+            "properties": {
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "lens": {"type": "object"},
+                "phases": {"type": "array", "items": {"type": "object"}},
+                "packages": {"type": "array", "items": {"type": "object"}},
+                "progress": {"type": "array", "items": {"type": "object"}},
+                "logistics": {"type": "array", "items": {"type": "object"}},
+                "qaChecklists": {"type": "array", "items": {"type": "object"}},
+                "issues": {"type": "array", "items": {"type": "object"}},
+                "summary": {"type": "object"},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Construction lens report returned"),
+            "not_found": ExitCode(code=1, meaning="modelId not found"),
+            "error": ExitCode(code=1, meaning="Unexpected error"),
+        },
+        cliExample="curl /api/models/<model-id>/construction-lens",
+        restEndpoint=RestEndpoint(method="GET", path="/api/models/{model_id}/construction-lens"),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only field-app payload exposing construction package membership, progress, "
+            "phase data, issue references, evidence references, logistics, and QA checklists."
+        ),
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="set-element-construction",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "SetElementConstructionInput",
+            "type": "object",
+            "required": ["model_id", "element_id", "metadata"],
+            "properties": {
+                "model_id": {"type": "string"},
+                "element_id": {"type": "string"},
+                "phaseCreatedId": {"type": "string"},
+                "phaseDemolishedId": {"type": "string"},
+                "clearDemolished": {"type": "boolean"},
+                "metadata": {
+                    "type": "object",
+                    "properties": {
+                        "constructionPackageId": {"type": "string"},
+                        "plannedStart": {"type": "string"},
+                        "plannedEnd": {"type": "string"},
+                        "actualStart": {"type": "string"},
+                        "actualEnd": {"type": "string"},
+                        "installationSequence": {"type": "integer"},
+                        "dependencies": {"type": "array", "items": {"type": "string"}},
+                        "progressStatus": {
+                            "type": "string",
+                            "enum": [
+                                "not_started",
+                                "in_progress",
+                                "installed",
+                                "inspected",
+                                "accepted",
+                            ],
+                        },
+                        "responsibleCompany": {"type": "string"},
+                        "evidenceRefs": {"type": "array", "items": {"type": "object"}},
+                        "issueIds": {"type": "array", "items": {"type": "string"}},
+                        "punchItemIds": {"type": "array", "items": {"type": "string"}},
+                        "inspectionChecklist": {"type": "array", "items": {"type": "object"}},
+                    },
+                    "additionalProperties": False,
+                },
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "BundleResult",
+            "type": "object",
+            "properties": {
+                "applied": {"type": "boolean"},
+                "newRevision": {"type": "integer"},
+            },
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Construction metadata attached"),
+            "not_found": ExitCode(code=1, meaning="elementId/modelId not found"),
+            "error": ExitCode(code=1, meaning="Unexpected error"),
+        },
+        cliExample=(
+            'bim-ai apply-bundle \'{"commands":[{"type":"setElementConstruction",'
+            '"elementId":"wall-1","metadata":{"progressStatus":"installed"}}],...}\''
+        ),
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/bundles"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes=(
+            "Mutates only construction metadata under element props plus optional phaseCreated/"
+            "phaseDemolished ids. It does not reclassify design elements as temporary works."
         ),
     )
 )

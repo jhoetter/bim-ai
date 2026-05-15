@@ -52,6 +52,7 @@ PERSPECTIVE_IDS = sorted(
         "architecture",
         "construction",
         "coordination",
+        "fire-safety",
         "mep",
         "structure",
         "agent",

@@ -129,6 +129,7 @@ import {
 import { makePlacedAssetMesh } from './viewport/placedAssetRendering';
 import { makeFamilyInstanceMesh } from './viewport/familyInstance3d';
 import { makeCsgWallMaterial } from './viewport/csgWallMaterial';
+import { materialDependencyDirtyIds } from './viewport/materialDependencyInvalidation';
 import { applyTextureVisibilityToMesh } from './viewport/visualStyleMaterials';
 // Side-effect import: registers floor/roof/column/beam/door/window 3D grip providers.
 import './viewport/grip3dProviders';
@@ -1921,8 +1922,7 @@ export function Viewport({
                   previewHostWallId: hostPreviewLock ? prev.previewHostWallId : undefined,
                   previewHostAlongT: hostPreviewLock ? prev.previewHostAlongT : undefined,
                   previewHostLock: hostPreviewLock,
-                  previewHostInvalidReason:
-                    'No wall host on the active level under the cursor.',
+                  previewHostInvalidReason: 'No wall host on the active level under the cursor.',
                   previewAuxLines: undefined,
                   previewAuxArcPath: undefined,
                 }
@@ -3088,8 +3088,7 @@ export function Viewport({
                   previewHostWallId: hostPreviewLock ? prev.previewHostWallId : undefined,
                   previewHostAlongT: hostPreviewLock ? prev.previewHostAlongT : undefined,
                   previewHostLock: hostPreviewLock,
-                  previewHostInvalidReason:
-                    'No wall host on the active level under the cursor.',
+                  previewHostInvalidReason: 'No wall host on the active level under the cursor.',
                   previewAuxLines: undefined,
                   previewAuxArcPath: undefined,
                 }
@@ -3811,6 +3810,7 @@ export function Viewport({
     };
 
     for (const id of changedIds) propagateOne(id, curr[id] ?? prev[id]!);
+    for (const id of materialDependencyDirtyIds(curr, changedIds)) extraDirty.add(id);
     // Added/removed hosted elements must also rebuild their host wall (CSG opening changes).
     for (const id of addedIds) {
       const e = curr[id];

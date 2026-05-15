@@ -57,6 +57,7 @@ export type MaterialBrowserDialogProps = {
   title?: string;
   actionLabel?: string;
   currentKey?: string | null;
+  targetLabel?: string | null;
   mode?: 'material' | 'appearanceAsset';
   elementsById?: Record<string, Element>;
   onAssign: (materialKey: string) => void;
@@ -67,6 +68,7 @@ export function MaterialBrowserDialog({
   title = 'Material Browser',
   actionLabel = 'Assign',
   currentKey,
+  targetLabel,
   mode = 'material',
   elementsById,
   onAssign,
@@ -165,6 +167,14 @@ export function MaterialBrowserDialog({
       <div className="max-h-[86vh] w-full max-w-5xl overflow-hidden rounded border border-border bg-surface shadow-lg">
         <header className="flex items-center gap-2 border-b border-border px-3 py-2">
           <h2 className="text-sm font-semibold">{title}</h2>
+          {targetLabel ? (
+            <span
+              className="max-w-[280px] truncate rounded border border-border bg-surface-2 px-2 py-1 text-xs text-muted"
+              title={targetLabel}
+            >
+              Target: {targetLabel}
+            </span>
+          ) : null}
           <button
             type="button"
             className="ml-auto rounded border border-border px-2 py-1 text-xs hover:bg-surface-strong"

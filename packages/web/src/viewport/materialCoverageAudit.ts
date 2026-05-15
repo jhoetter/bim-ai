@@ -1,9 +1,7 @@
 import type { Element } from '@bim-ai/core';
 
-import {
-  getBuiltInWallType,
-  resolveWallAssemblyExposedLayers,
-} from '../families/wallTypeCatalog';
+import { getBuiltInWallType, resolveWallAssemblyExposedLayers } from '../families/wallTypeCatalog';
+import { topLayerIndex, wallTypeExteriorLayerIndex } from './hostMaterialLayerTargets';
 import { resolveMaterial, type MaterialPbrSpec } from './materials';
 
 export type MaterialAuthoritySource =
@@ -83,7 +81,9 @@ function wallTypeExteriorMaterialKey(
 ): string | null {
   if (!wall.wallTypeId) return null;
   const type = elementsById[wall.wallTypeId];
-  if (type?.kind === 'wall_type') return type.layers[0]?.materialKey ?? null;
+  if (type?.kind === 'wall_type') {
+    return type.layers[wallTypeExteriorLayerIndex(type)]?.materialKey ?? null;
+  }
   const builtIn = getBuiltInWallType(wall.wallTypeId);
   if (!builtIn) return null;
   return resolveWallAssemblyExposedLayers(builtIn).exterior?.materialKey ?? null;
@@ -95,7 +95,9 @@ function floorTypeTopMaterialKey(
 ): string | null {
   if (!floor.floorTypeId) return null;
   const type = elementsById[floor.floorTypeId];
-  return type?.kind === 'floor_type' ? (type.layers[0]?.materialKey ?? null) : null;
+  return type?.kind === 'floor_type'
+    ? (type.layers[topLayerIndex(type)]?.materialKey ?? null)
+    : null;
 }
 
 function roofTypeTopMaterialKey(
@@ -104,17 +106,16 @@ function roofTypeTopMaterialKey(
 ): string | null {
   if (!roof.roofTypeId) return null;
   const type = elementsById[roof.roofTypeId];
-  return type?.kind === 'roof_type' ? (type.layers[0]?.materialKey ?? null) : null;
+  return type?.kind === 'roof_type'
+    ? (type.layers[topLayerIndex(type)]?.materialKey ?? null)
+    : null;
 }
 
 function materialFact(
   materialKey: string | null | undefined,
   source: MaterialAuthoritySource,
   elementsById: Record<string, Element>,
-): Pick<
-  MaterialCoverageEntry,
-  'materialKey' | 'source' | 'displayName' | 'category' | 'resolved'
-> {
+): Pick<MaterialCoverageEntry, 'materialKey' | 'source' | 'displayName' | 'category' | 'resolved'> {
   const key = materialKey ?? null;
   const spec = resolveMaterial(key, elementsById);
   return {
@@ -289,31 +290,93 @@ export function auditElementMaterialCoverage(
       }
 
       case 'door': {
-        const frameKey = materialSlot(element.materialSlots, 'frame') ?? element.materialKey;
-        const panelKey = materialSlot(element.materialSlots, 'panel') ?? element.materialKey;
+        const frameSlot = materialSlot(element.materialSlots, 'frame');
+        const panelSlot = materialSlot(element.materialSlots, 'panel');
+        const thresholdSlot = materialSlot(element.materialSlots, 'threshold');
+        const hardwareSlot = materialSlot(element.materialSlots, 'hardware');
+        const glassSlot = materialSlot(element.materialSlots, 'glass');
+        const frameKey = frameSlot ?? element.materialKey;
+        const panelKey = panelSlot ?? element.materialKey;
+        const thresholdKey = thresholdSlot ?? frameKey;
+        const hardwareKey = hardwareSlot ?? frameKey;
         const source = element.materialKey ? 'instance' : 'family-default';
         const fact = materialFact(frameKey, source, elementsById);
         return [
           entryForMaterial(element, fact, true, [], {
             subcomponents: [
-              subcomponentFact('frame', frameKey, source, elementsById),
-              subcomponentFact('panel', panelKey, source, elementsById),
+              subcomponentFact('frame', frameKey, frameSlot ? 'instance' : source, elementsById),
+              subcomponentFact('panel', panelKey, panelSlot ? 'instance' : source, elementsById),
+              subcomponentFact(
+                'threshold',
+                thresholdKey,
+                thresholdSlot ? 'instance' : source,
+                elementsById,
+              ),
+              subcomponentFact(
+                'hardware',
+                hardwareKey,
+                hardwareSlot ? 'instance' : source,
+                elementsById,
+              ),
+              subcomponentFact(
+                'glass',
+                glassSlot ?? null,
+                glassSlot ? 'instance' : source,
+                elementsById,
+              ),
             ],
           }),
         ];
       }
 
       case 'window': {
-        const frameKey = materialSlot(element.materialSlots, 'frame') ?? element.materialKey;
-        const glassKey =
-          materialSlot(element.materialSlots, 'glass') ?? 'asset_clear_glass_double';
+        const frameSlot = materialSlot(element.materialSlots, 'frame');
+        const sashSlot = materialSlot(element.materialSlots, 'sash');
+        const glassSlot = materialSlot(element.materialSlots, 'glass');
+        const spacerSlot = materialSlot(element.materialSlots, 'spacer');
+        const hardwareSlot = materialSlot(element.materialSlots, 'hardware');
+        const shadingSlot = materialSlot(element.materialSlots, 'shading');
+        const frameKey = frameSlot ?? element.materialKey;
+        const sashKey = sashSlot ?? frameKey;
+        const glassKey = glassSlot ?? 'asset_clear_glass_double';
+        const spacerKey = spacerSlot ?? sashKey;
+        const hardwareKey = hardwareSlot ?? sashKey;
         const frameSource = element.materialKey ? 'instance' : 'family-default';
         const fact = materialFact(frameKey, frameSource, elementsById);
         return [
           entryForMaterial(element, fact, true, [], {
             subcomponents: [
-              subcomponentFact('frame', frameKey, frameSource, elementsById),
-              subcomponentFact('glass', glassKey, 'subcomponent-default', elementsById),
+              subcomponentFact(
+                'frame',
+                frameKey,
+                frameSlot ? 'instance' : frameSource,
+                elementsById,
+              ),
+              subcomponentFact('sash', sashKey, sashSlot ? 'instance' : frameSource, elementsById),
+              subcomponentFact(
+                'glass',
+                glassKey,
+                glassSlot ? 'instance' : 'subcomponent-default',
+                elementsById,
+              ),
+              subcomponentFact(
+                'spacer',
+                spacerKey,
+                spacerSlot ? 'instance' : frameSource,
+                elementsById,
+              ),
+              subcomponentFact(
+                'hardware',
+                hardwareKey,
+                hardwareSlot ? 'instance' : frameSource,
+                elementsById,
+              ),
+              subcomponentFact(
+                'shading',
+                shadingSlot ?? null,
+                shadingSlot ? 'instance' : 'family-default',
+                elementsById,
+              ),
             ],
           }),
         ];

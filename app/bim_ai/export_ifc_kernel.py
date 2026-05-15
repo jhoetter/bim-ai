@@ -37,6 +37,7 @@ from bim_ai.export_ifc_properties import (
     attach_beam_common_pset,
     attach_ceiling_common_pset,
     attach_column_common_pset,
+    attach_energy_handoff_pset,
     attach_railing_common_pset,
     attach_stair_common_pset,
     maybe_attach_classification,
@@ -228,6 +229,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         wall_products[wid] = wal
         geo_products += 1
         attach_kernel_identity_pset(wal, "Pset_WallCommon", wid, **_kernel_ifc_wall_common_props(w))
+        attach_energy_handoff_pset(f, wal, w)
         _wmat_unused, length_m = wall_local_to_world_m(w, ez)
         # IFC-04: gross side area of the wall + net side area (gross less the
         # area of every door/window hosted on this wall). Falls back to gross
@@ -322,6 +324,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         slab_products[fid] = slab
         geo_products += 1
         attach_kernel_identity_pset(slab, "Pset_SlabCommon", fid)
+        attach_energy_handoff_pset(f, slab, fl)
 
         ftid = (fl.floor_type_id or "").strip()
         if ftid:
@@ -491,6 +494,9 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
             kernel_elem_id,
             **({"MaterialFinish": material_finish_key} if material_finish_key else {}),
         )
+        kernel_el = doc.elements.get(kernel_elem_id)
+        if kernel_el is not None:
+            attach_energy_handoff_pset(f, filler, kernel_el)
 
         if filling_class == "IfcDoor":
             try_attach_qto(
@@ -892,6 +898,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         )
         geo_products += 1
         attach_kernel_identity_pset(roof_ent, "Pset_RoofCommon", rid)
+        attach_energy_handoff_pset(f, roof_ent, rf)
         # IFC-01: round-trip kernel `roofTypeId` via a bim-ai-namespaced Pset.
         # Pset_RoofCommon.Reference is reserved for the kernel element id, so we
         # use a separate Pset_BimAiKernel that carries the roof_type_id literal.

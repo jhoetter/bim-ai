@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { Element } from '@bim-ai/core';
 
-import { buildPrimaryNavigationSections, validatePlanTool } from './workspaceUtils';
+import {
+  buildPrimaryNavigationSections,
+  canonicalPlanToolForMode,
+  validatePlanTool,
+} from './workspaceUtils';
 
 describe('buildPrimaryNavigationSections', () => {
   it('orders primary navigation groups and excludes resources/editing surfaces', () => {
@@ -102,5 +106,22 @@ describe('validatePlanTool', () => {
     expect(validatePlanTool('shaft')).toBe('shaft');
     expect(validatePlanTool('stair')).toBe('stair');
     expect(validatePlanTool('railing')).toBe('railing');
+  });
+});
+
+describe('workspace tool routing', () => {
+  it('keeps generic Floor/Roof canonical in 3D but routes non-3D contexts to sketch mode', () => {
+    expect(canonicalPlanToolForMode('floor', 'plan')).toBe('floor-sketch');
+    expect(canonicalPlanToolForMode('roof', 'plan')).toBe('roof-sketch');
+    expect(canonicalPlanToolForMode('floor', 'section')).toBe('floor-sketch');
+    expect(canonicalPlanToolForMode('roof', 'schedule')).toBe('roof-sketch');
+    expect(canonicalPlanToolForMode('floor', '3d')).toBe('floor');
+    expect(canonicalPlanToolForMode('roof', '3d')).toBe('roof');
+  });
+
+  it('preserves ordinary tool validation for non-structural commands', () => {
+    expect(canonicalPlanToolForMode('wall', 'plan')).toBe('wall');
+    expect(canonicalPlanToolForMode('wall', '3d')).toBe('wall');
+    expect(validatePlanTool('select')).toBe('select');
   });
 });
