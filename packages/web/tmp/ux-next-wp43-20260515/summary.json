@@ -1,0 +1,140 @@
+{
+  "capturedAt": "2026-05-15T17:52:26.853Z",
+  "url": "http://127.0.0.1:2000/#theme=light",
+  "model": "target-house-3:9bb9a145-d9ce-5a2f-a748-bb5be3301b30",
+  "setup": {
+    "pickWallIds": [
+      "wp43-pick-mp77skl5-south",
+      "wp43-pick-mp77skl5-east",
+      "wp43-pick-mp77skl5-north",
+      "wp43-pick-mp77skl5-west"
+    ]
+  },
+  "invalidLoop": {
+    "status": "1 sketch issue Tab to cycle (1/1) • Lines must form a closed loop — 2 vertex(es) have ≠ 2 incident edges.",
+    "finishDisabled": true,
+    "issues": [
+      "Lines must form a closed loop — 2 vertex(es) have ≠ 2 incident edges.",
+      "Lines must form a closed loop — 2 vertex(es) have ≠ 2 incident edges."
+    ]
+  },
+  "duplicateEdge": {
+    "status": "1 sketch issue Tab to cycle (1/1) • Line 1 duplicates line 0; delete one boundary edge.",
+    "finishDisabled": true,
+    "issues": [
+      "Line 1 duplicates line 0; delete one boundary edge.",
+      "Line 1 duplicates line 0; delete one boundary edge."
+    ]
+  },
+  "overlap": {
+    "status": "1 sketch issue Tab to cycle (1/1) • Proposed floor overlaps existing floor 'Ground floor vertically clad base floor' by 27.39 m2; move the boundary or edit the existing slab.",
+    "finishDisabled": true,
+    "issues": [
+      "Proposed floor overlaps existing floor 'Ground floor vertically clad base floor' by 27.39 m2; move the boundary or edit the existing slab.",
+      "Proposed floor overlaps existing floor 'Ground floor vertically clad base floor' by 27.39 m2; move the boundary or edit the existing slab."
+    ]
+  },
+  "pickedReady": {
+    "status": "Ready to Finish",
+    "finishDisabled": false,
+    "issues": [],
+    "lineCount": 4,
+    "diagnosticsBefore": {
+      "count": 14,
+      "proofWallIdsPresent": [
+        {
+          "id": "wp43-pick-mp77skl5-south",
+          "present": true
+        },
+        {
+          "id": "wp43-pick-mp77skl5-east",
+          "present": true
+        },
+        {
+          "id": "wp43-pick-mp77skl5-north",
+          "present": true
+        },
+        {
+          "id": "wp43-pick-mp77skl5-west",
+          "present": true
+        }
+      ]
+    },
+    "pickAttempts": [
+      {
+        "label": "south",
+        "picked": true,
+        "before": 0,
+        "after": 1,
+        "x": 1113,
+        "y": 691,
+        "seenHoverIds": [["wp43-pick-mp77skl5-south", 1]]
+      },
+      {
+        "label": "east",
+        "picked": true,
+        "before": 1,
+        "after": 2,
+        "x": 1135,
+        "y": 706,
+        "seenHoverIds": [["wp43-pick-mp77skl5-east", 1]]
+      },
+      {
+        "label": "north",
+        "picked": true,
+        "before": 2,
+        "after": 3,
+        "x": 1113,
+        "y": 729,
+        "seenHoverIds": [["wp43-pick-mp77skl5-north", 1]]
+      },
+      {
+        "label": "west",
+        "picked": true,
+        "before": 3,
+        "after": 4,
+        "x": 1091,
+        "y": 706,
+        "seenHoverIds": [["wp43-pick-mp77skl5-west", 1]]
+      }
+    ]
+  },
+  "pickedPostCommit": {
+    "editBoundaryVisible": true,
+    "selectedRailText": "Architecture lens is active. View controls and command availability are filtered for this discipline.\nArchitecture\nArchitektur\nPLAN\n\nArchitectural elements stay foregrounded; consultant data remains secondary.\n\nType and dimensions\nHosts and openings\nMaterials\nRoom relationships\nRelevant deliverables\nGeneral arrangement · Floor plans · Sections · Elevations\nFLOOR PLAN\nGround Floor — Plan\nView id · hf-lvl-ground-plan\nLEVEL\nActive level\nGround Floor · 0.00 m\nFirst Floor · 3.00 m\nAssociated view\nGround Floor — Plan\nReference level\nGround Floor\nVIEW STATE\nName\nPlan presentation\nNeutral\nOpening focus\nRoom scheme\nDiscipline\n(Default)\nArchitecture\nStructural\nMEP\nCoordination\nSub-discipline\n(None)\nAr"
+  },
+  "drawnReady": {
+    "status": "Ready to Finish",
+    "finishDisabled": false,
+    "issues": []
+  },
+  "drawnPostCommit": {
+    "editBoundaryVisible": true,
+    "selectedRailText": "Architecture lens is active. View controls and command availability are filtered for this discipline.\nArchitecture\nArchitektur\nPLAN\n\nArchitectural elements stay foregrounded; consultant data remains secondary.\n\nType and dimensions\nHosts and openings\nMaterials\nRoom relationships\nRelevant deliverables\nGeneral arrangement · Floor plans · Sections · Elevations\nFLOOR PLAN\nGround Floor — Plan\nView id · hf-lvl-ground-plan\nLEVEL\nActive level\nGround Floor · 0.00 m\nFirst Floor · 3.00 m\nAssociated view\nGround Floor — Plan\nReference level\nGround Floor\nVIEW STATE\nName\nPlan presentation\nNeutral\nOpening focus\nRoom scheme\nDiscipline\n(Default)\nArchitecture\nStructural\nMEP\nCoordination\nSub-discipline\n(None)\nAr"
+  },
+  "commandReachability": {
+    "ribbonFloorVisible": true,
+    "paletteVisible": true,
+    "paletteText": "Esc\nPLAN / 3D\nPlace Wall\nPlan / 3D\nW\nPlace Door\nPlan / 3D\nD\nPlace Window\nPlan / 3D\nPlace Floor\nPlan / 3D\nPlace Room\nPlan / 3D\nR\nPlace Area\nPlan / 3D\nPlace Duct\nPlan / 3D\nPlace Pipe\nPlan / 3D\nPlace Cable Tray\nPlan / 3D\nPlace MEP Equipment\nPlan / 3D\nPlace Fixture\nPlan / 3D\nPlace MEP Terminal\nPlan / 3D\nPlace MEP Opening Request\nPlan / 3D\nPlace Column\nPlan / 3D\nPlace Beam\nPlan / 3D\nPlace Ceiling\nPlan / 3D\nSketch Roof\nPlan / 3D\nPlace Grid Line\nPlan / 3D\nPlace Component\nPlan / 3D\nPlace Stair\nPlan / 3D"
+  },
+  "navigation": {
+    "mainFrameNavigations": [
+      "http://127.0.0.1:2000/#theme=light",
+      "http://127.0.0.1:2000/#theme=light"
+    ],
+    "mainFrameNavigationsAfterInitial": [],
+    "hashOrDocumentNavigationsAfterInitial": 0
+  },
+  "consoleWarningsAndErrors": [],
+  "pageErrors": [],
+  "screenshots": [
+    "01-invalid-open-loop-finish-disabled.png",
+    "02-duplicate-reversed-edge-validation.png",
+    "03-existing-floor-overlap-validation.png",
+    "04-drawn-boundary-ready-to-finish.png",
+    "05-drawn-boundary-floor-selected-edit-boundary.png",
+    "06-picked-walls-ready-to-finish.png",
+    "07-picked-wall-floor-selected-edit-boundary.png",
+    "08-cmd-k-floor-command-reachability.png"
+  ]
+}

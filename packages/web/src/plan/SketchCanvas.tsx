@@ -31,7 +31,12 @@ import {
   useState,
 } from 'react';
 
-import { hitTestWallAtMm, OffsetModeChip, type WallForPicking } from './SketchCanvasPickWalls';
+import {
+  hitTestWallAtMm,
+  hitTestWallAtScreen,
+  OffsetModeChip,
+  type WallForPicking,
+} from './SketchCanvasPickWalls';
 import {
   addSketchLine,
   cancelSketchSession,
@@ -145,8 +150,18 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
   const [activeIssueIndex, setActiveIssueIndex] = useState(0);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const sessionRef = useRef<SketchSessionWire | null>(null);
+  const onFinishedRef = useRef(onFinished);
+  const onCancelledRef = useRef(onCancelled);
   // Tick to force re-render on pointer move so SVG vertices reflect pan / zoom.
   const [, setTick] = useState(0);
+
+  useEffect(() => {
+    onFinishedRef.current = onFinished;
+  }, [onFinished]);
+
+  useEffect(() => {
+    onCancelledRef.current = onCancelled;
+  }, [onCancelled]);
 
   // Open or hydrate a session on mount.
   useEffect(() => {
@@ -163,19 +178,19 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : String(err));
-          onCancelled();
+          onCancelledRef.current();
         }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [modelId, levelId, elementKind, initialSessionId, onCancelled]);
+  }, [modelId, levelId, elementKind, initialSessionId]);
 
   const handleCancel = useCallback(async () => {
     const activeSession = sessionRef.current ?? session;
     if (!activeSession) {
-      onCancelled();
+      onCancelledRef.current();
       return;
     }
     try {
@@ -186,11 +201,17 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
     } finally {
       sessionRef.current = null;
       setBusy(false);
-      onCancelled();
+      onCancelledRef.current();
     }
-  }, [session, onCancelled]);
+  }, [session]);
 
   const issues = useMemo<SketchValidationIssue[]>(() => validation?.issues ?? [], [validation]);
+
+  const clientToOverlayScreen = useCallback((clientX: number, clientY: number) => {
+    const rect = overlayRef.current?.getBoundingClientRect();
+    if (!rect) return { x: clientX, y: clientY };
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  }, []);
 
   // SKT-03: Tab cycles through issues, zooming the canvas to the first
   // affected line. We expose only the index here; the parent canvas does the
@@ -234,12 +255,13 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
   const handlePointerDown = useCallback(
     async (e: React.PointerEvent<HTMLDivElement>) => {
       if (!session || session.status !== 'open' || busy) return;
-      const ptMm = pointerToMmRef.current?.(e.clientX, e.clientY);
-      if (!ptMm) return;
 
       if (tool === 'pick') {
         const walls = wallsForPicking ?? [];
-        const wallId = hitTestWallAtMm(walls, ptMm);
+        const screenPt = clientToOverlayScreen(e.clientX, e.clientY);
+        const screenHit = hitTestWallAtScreen(walls, screenPt, mmToScreenRef.current);
+        const ptMm = pointerToMmRef.current?.(e.clientX, e.clientY);
+        const wallId = screenHit ?? (ptMm ? hitTestWallAtMm(walls, ptMm) : null);
         if (!wallId) return;
         try {
           setBusy(true);
@@ -254,6 +276,8 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
         return;
       }
 
+      const ptMm = pointerToMmRef.current?.(e.clientX, e.clientY);
+      if (!ptMm) return;
       const snapped = snapMm(ptMm, 100);
       if (tool === 'line') {
         if (pendingStart === null) {
@@ -301,22 +325,40 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
         }
       }
     },
-    [session, busy, pointerToMmRef, tool, pendingStart, wallsForPicking],
+    [
+      session,
+      busy,
+      pointerToMmRef,
+      mmToScreenRef,
+      clientToOverlayScreen,
+      tool,
+      pendingStart,
+      wallsForPicking,
+    ],
   );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
+      if (tool === 'pick') {
+        const walls = wallsForPicking ?? [];
+        const screenPt = clientToOverlayScreen(e.clientX, e.clientY);
+        const screenHit = hitTestWallAtScreen(walls, screenPt, mmToScreenRef.current);
+        const ptMm = pointerToMmRef.current?.(e.clientX, e.clientY);
+        if (ptMm) setHover(snapMm(ptMm, 100));
+        setTick((t) => (t + 1) % 1_000_000);
+        setHoverWallId(screenHit ?? (ptMm ? hitTestWallAtMm(walls, ptMm) : null));
+        return;
+      }
+
       const ptMm = pointerToMmRef.current?.(e.clientX, e.clientY);
       if (!ptMm) return;
       setHover(snapMm(ptMm, 100));
       setTick((t) => (t + 1) % 1_000_000);
-      if (tool === 'pick') {
-        setHoverWallId(hitTestWallAtMm(wallsForPicking ?? [], ptMm));
-      } else if (hoverWallId !== null) {
+      if (hoverWallId !== null) {
         setHoverWallId(null);
       }
     },
-    [pointerToMmRef, tool, wallsForPicking, hoverWallId],
+    [pointerToMmRef, mmToScreenRef, clientToOverlayScreen, tool, wallsForPicking, hoverWallId],
   );
 
   const handleFinish = useCallback(async () => {
@@ -333,13 +375,13 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
       // back-compat fallback.
       const createdId =
         resp.roofId ?? resp.roomSeparationId ?? resp.floorId ?? resp.createdElementIds?.[0] ?? null;
-      onFinished(createdId);
+      onFinishedRef.current(createdId);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
     }
-  }, [session, busy, onFinished, floorTypeId, extraOptions]);
+  }, [session, busy, floorTypeId, extraOptions]);
 
   const handleAutoClose = useCallback(async () => {
     if (!session || busy) return;
@@ -446,6 +488,7 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
             <line
               key="pick-hover"
               data-testid="sketch-pick-hover"
+              data-wall-id={w.id}
               x1={a.x}
               y1={a.y}
               x2={b.x}
@@ -511,6 +554,10 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
   const errorCount = issues.length;
   const finishDisabled = !validation?.valid || busy;
   const canPickWalls = !!wallsForPicking && wallsForPicking.length > 0;
+  const pickWallIds = useMemo(
+    () => (wallsForPicking ?? []).map((wall) => wall.id).join(' '),
+    [wallsForPicking],
+  );
   const canAutoClose = useMemo(() => {
     if (!session) return false;
     return autoCloseCandidate(session.lines) !== null;
@@ -520,6 +567,8 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
     <div
       ref={overlayRef}
       data-testid="sketch-canvas"
+      data-pick-wall-count={wallsForPicking?.length ?? 0}
+      data-pick-wall-ids={pickWallIds}
       style={overlayStyle}
       onPointerDown={(e) => void handlePointerDown(e)}
       onPointerMove={handlePointerMove}

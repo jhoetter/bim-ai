@@ -15,6 +15,7 @@ import { createRef, type RefObject } from 'react';
 import { SketchCanvas, type MmToScreen, type PointerToMm } from './SketchCanvas';
 import {
   hitTestWallAtMm,
+  hitTestWallAtScreen,
   snapPointToNearestWallFaceMm,
   type WallForPicking,
 } from './SketchCanvasPickWalls';
@@ -60,6 +61,16 @@ describe('SKT-02 — hitTestWallAtMm pure logic', () => {
 
   it('returns null when cursor is far from every wall', () => {
     expect(hitTestWallAtMm(RECT_WALLS, { xMm: 2000, yMm: 1500 })).toBeNull();
+  });
+
+  it('returns the visually closest projected wall when screen and model transforms diverge', () => {
+    const project = (pt: { xMm: number; yMm: number }) => ({
+      x: 20 + pt.xMm / 20 + pt.yMm / 120,
+      y: 400 - pt.yMm / 20,
+    });
+    const eastMid = project({ xMm: 4000, yMm: 1500 });
+    expect(hitTestWallAtScreen(RECT_WALLS, eastMid, project)).toBe('w-east');
+    expect(hitTestWallAtScreen(RECT_WALLS, { x: 900, y: 900 }, project)).toBeNull();
   });
 
   it('clicking a wall yields its id, clicking near a different wall yields a different id', () => {
@@ -173,7 +184,9 @@ describe('SKT-02 — Pick Walls toolbar + click flow', () => {
       fireEvent.pointerMove(overlay, { clientX: 0, clientY: 0 });
     });
     await waitFor(() => container.querySelector('[data-testid="sketch-pick-hover"]'));
-    expect(container.querySelector('[data-testid="sketch-pick-hover"]')).not.toBeNull();
+    expect(
+      container.querySelector('[data-testid="sketch-pick-hover"]')?.getAttribute('data-wall-id'),
+    ).toBe('w-south');
 
     // Clicking emits pick-wall and renders the returned line.
     await act(async () => {
@@ -186,6 +199,89 @@ describe('SKT-02 — Pick Walls toolbar + click flow', () => {
         container.querySelectorAll('[data-testid^="sketch-line-"]').length,
       ).toBeGreaterThanOrEqual(1),
     );
+  });
+
+  it('does not reopen the active sketch session when parent callback props change', async () => {
+    let openCalls = 0;
+    let pickCalls = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = typeof input === 'string' ? input : input.toString();
+        if (url === '/api/sketch-sessions') {
+          openCalls += 1;
+          return new Response(
+            JSON.stringify({
+              session: {
+                sessionId: 'sk-stable',
+                modelId: 'm-1',
+                elementKind: 'floor',
+                levelId: 'lvl-1',
+                lines: [],
+                status: 'open',
+                pickWallsOffsetMode: 'interior_face',
+                pickedWalls: [],
+              },
+              validation: {
+                valid: false,
+                issues: [{ code: 'open_loop', message: 'empty' }],
+              },
+            }),
+            { status: 200, headers: { 'content-type': 'application/json' } },
+          );
+        }
+        if (url === '/api/sketch-sessions/sk-stable/pick-wall') {
+          pickCalls += 1;
+          return new Response(
+            JSON.stringify({
+              session: {
+                sessionId: 'sk-stable',
+                modelId: 'm-1',
+                elementKind: 'floor',
+                levelId: 'lvl-1',
+                lines: [{ fromMm: { xMm: 0, yMm: 100 }, toMm: { xMm: 4000, yMm: 100 } }],
+                status: 'open',
+                pickWallsOffsetMode: 'interior_face',
+                pickedWalls: [{ wallId: 'w-south', lineIndex: 0 }],
+              },
+              validation: {
+                valid: false,
+                issues: [{ code: 'open_loop', message: 'one line picked' }],
+              },
+            }),
+            { status: 200, headers: { 'content-type': 'application/json' } },
+          );
+        }
+        return new Response('not mocked', { status: 500 });
+      }),
+    );
+
+    const refs = makeRefs();
+    refs.pointer.current = () => ({ xMm: 2000, yMm: 0 });
+
+    const props = {
+      modelId: 'm-1',
+      levelId: 'lvl-1',
+      pointerToMmRef: refs.pointer,
+      mmToScreenRef: refs.screen,
+      wallsForPicking: RECT_WALLS,
+    };
+    const { findByTestId, rerender } = render(
+      <SketchCanvas {...props} onFinished={vi.fn()} onCancelled={vi.fn()} />,
+    );
+
+    await findByTestId('sketch-toolbar');
+    rerender(<SketchCanvas {...props} onFinished={vi.fn()} onCancelled={vi.fn()} />);
+
+    await act(async () => {
+      fireEvent.click(await findByTestId('sketch-tool-pick'));
+    });
+    await act(async () => {
+      fireEvent.pointerDown(await findByTestId('sketch-canvas'), { clientX: 0, clientY: 0 });
+    });
+
+    await waitFor(() => expect(pickCalls).toBe(1));
+    expect(openCalls).toBe(1);
   });
 
   it('hides Pick Walls button when wallsForPicking is empty', async () => {

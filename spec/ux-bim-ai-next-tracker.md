@@ -1959,7 +1959,7 @@ Revit behavior to emulate where it maps cleanly:
 ### WP-NEXT-43 — Floor Sketch Lifecycle And Floor-As-Host Semantics
 
 - Priority: `P0`
-- Status: `Partial`
+- Status: `Done`
 - Covers: `NEXT22-GAP-005`, `NEXT22-GAP-013`, `NEXT22-GAP-014`, `NEXT22-GAP-016`
 - Goal: make floors a trustworthy structural base for walls, rooms, shafts, ceilings, and roofs.
 - Revit-like behavior to emulate:
@@ -1987,7 +1987,19 @@ Revit behavior to emulate where it maps cleanly:
   - Floor sketch validation now blocks too-short edges, duplicate/reversed boundary edges, overlapping collinear boundary edges, and same-level floor slab overlap before `Finish`; live sketch-session responses and the finish route return the same concrete validation issue codes.
   - Backend tests cover the new topology validation and document-aware floor overlap/skipped-source-floor behavior in `app/tests/test_sketch_validation.py` and `app/tests/test_routes_sketch_validation.py`.
   - Selected floor properties now expose an explicit `Edit Boundary` action that returns to plan/select on the floor level so existing vertex grips are the boundary editor; the same action is reachable from selected-floor 3D actions. DOM tests cover both surfaces.
-  - Remaining before `Done`: seeded screenshots and UI proof for drawn-boundary floor creation, picked-wall floor creation, invalid-loop Finish disabled reasons, overlap/duplicate validation, and post-commit floor selection with edit-boundary action.
+- Evidence 2026-05-15:
+  - `packages/web/src/plan/SketchCanvas.tsx` keeps sketch-session open/hydration stable across parent callback rerenders and performs Pick Walls hit-testing in screen space before falling back to model-space distance, so visible walls can be picked reliably after pan/zoom and after seeded view changes.
+  - `packages/web/src/plan/SketchCanvasPickWalls.tsx` adds a pure projected-wall hit-test helper with bounded pixel tolerance; `packages/web/src/plan/SketchCanvas.pickWalls.test.tsx` covers projected hit-testing, hover wall id fidelity, pick-wall API dispatch, and the no-reopen regression.
+  - Seeded UI proof in `packages/web/tmp/ux-next-wp43-20260515/summary.json` confirms invalid open-loop, duplicate/reversed-edge, and existing-floor-overlap validation keep `Finish` disabled with visible reasons; drawn-boundary floor creation reaches `Ready to Finish`; picked-wall floor creation picks four proof walls, reaches `Ready to Finish`, and remains selected with `Edit Boundary`; Sketch ribbon and Cmd+K floor command reachability are preserved without main-frame reloads.
+  - Screenshots captured for the seeded proof:
+    - `packages/web/tmp/ux-next-wp43-20260515/01-invalid-open-loop-finish-disabled.png`
+    - `packages/web/tmp/ux-next-wp43-20260515/02-duplicate-reversed-edge-validation.png`
+    - `packages/web/tmp/ux-next-wp43-20260515/03-existing-floor-overlap-validation.png`
+    - `packages/web/tmp/ux-next-wp43-20260515/04-drawn-boundary-ready-to-finish.png`
+    - `packages/web/tmp/ux-next-wp43-20260515/05-drawn-boundary-floor-selected-edit-boundary.png`
+    - `packages/web/tmp/ux-next-wp43-20260515/06-picked-walls-ready-to-finish.png`
+    - `packages/web/tmp/ux-next-wp43-20260515/07-picked-wall-floor-selected-edit-boundary.png`
+    - `packages/web/tmp/ux-next-wp43-20260515/08-cmd-k-floor-command-reachability.png`
 - Dependencies: `WP-NEXT-40`, `WP-NEXT-41`.
 
 ### WP-NEXT-44 — Generate Walls From Floors, Rooms, And Picked Boundaries
