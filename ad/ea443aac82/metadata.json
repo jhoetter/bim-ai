@@ -17,6 +17,12 @@
       "transcript": "/ad/ea443aac82/1/full.jsonl",
       "content_hash": "/ad/ea443aac82/1/content_hash.txt",
       "prompt": "/ad/ea443aac82/1/prompt.txt"
+    },
+    {
+      "metadata": "/ad/ea443aac82/2/metadata.json",
+      "transcript": "/ad/ea443aac82/2/full.jsonl",
+      "content_hash": "/ad/ea443aac82/2/content_hash.txt",
+      "prompt": "/ad/ea443aac82/2/prompt.txt"
     }
   ]
 }
