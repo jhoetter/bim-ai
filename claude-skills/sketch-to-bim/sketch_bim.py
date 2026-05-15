@@ -24,7 +24,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 CLI = ["node", "packages/cli/cli.mjs"]
-DEFAULT_CAPABILITIES = "spec/sketch-to-bim-capability-matrix.json"
+DEFAULT_CAPABILITIES = "spec/archive/sketch-to-bim-capability-matrix.json"
 DEFAULT_ARCHETYPES = "spec/sketch-to-bim-archetypes.json"
 TOOL_MANIFEST = ROOT / "claude-skills" / "sketch-to-bim" / "tools.json"
 BLOCKING_SEVERITIES = {"warning", "error"}
@@ -179,16 +179,16 @@ def cmd_doctor(args: argparse.Namespace) -> None:
         env = os.environ.copy()
         env["BIM_AI_MODEL_ID"] = args.model
         env["BIM_AI_BASE_URL"] = base_url
-        proc = run([*CLI, "advisor", "--output", "json", "--severity", "warning"], env=env, check=False)
+        proc = run(
+            [*CLI, "advisor", "--output", "json", "--severity", "warning"], env=env, check=False
+        )
         checks["advisorWarnings"] = {
             "ok": proc.returncode == 0,
             "exitCode": proc.returncode,
             "json": parse_optional_json(proc.stdout),
         }
     checks["ok"] = bool(
-        checks["apiHealth"].get("ok")
-        and checks["web"].get("ok")
-        and all(checks["files"].values())
+        checks["apiHealth"].get("ok") and checks["web"].get("ok") and all(checks["files"].values())
     )
     if args.out:
         write_json((ROOT / args.out).resolve(), checks)
@@ -325,8 +325,12 @@ def screenshot_rows_from_manifest(path: Path) -> list[dict[str, Any]]:
         screenshot = row.get("path") or row.get("file") or row.get("screenshotPath")
         normalized.append(
             {
-                "id": str(row.get("id") or row.get("viewId") or row.get("name") or f"view-{idx + 1}"),
-                "label": str(row.get("label") or row.get("name") or row.get("viewId") or f"View {idx + 1}"),
+                "id": str(
+                    row.get("id") or row.get("viewId") or row.get("name") or f"view-{idx + 1}"
+                ),
+                "label": str(
+                    row.get("label") or row.get("name") or row.get("viewId") or f"View {idx + 1}"
+                ),
                 "screenshot": screenshot,
             }
         )
@@ -375,7 +379,9 @@ def cmd_advisor(args: argparse.Namespace) -> None:
     out_dir = Path(args.out).resolve() if args.out else None
     results: dict[str, Any] = {"modelId": model}
     for severity in ("warning", "info"):
-        proc = run([*CLI, "advisor", "--output", "json", "--severity", severity], env=env, check=False)
+        proc = run(
+            [*CLI, "advisor", "--output", "json", "--severity", severity], env=env, check=False
+        )
         parsed = parse_optional_json(proc.stdout)
         results[severity] = {"exitCode": proc.returncode, "payload": parsed}
         if out_dir:
@@ -383,6 +389,30 @@ def cmd_advisor(args: argparse.Namespace) -> None:
     print(json_dump(results))
     warning_total = int(((results.get("warning") or {}).get("payload") or {}).get("total") or 0)
     if args.fail_on_warning and warning_total > 0:
+        raise SystemExit(3)
+
+
+def cmd_constructability_report(args: argparse.Namespace) -> None:
+    model = args.model or os.environ.get("BIM_AI_MODEL_ID")
+    if not model:
+        raise SystemExit("constructability-report requires --model or BIM_AI_MODEL_ID.")
+    base_url = args.base_url.rstrip("/")
+    profile = args.profile.strip() or "construction_readiness"
+    result = http_json(
+        f"{base_url}/api/models/{model}/constructability-report?profile={profile}",
+        timeout=args.timeout,
+    )
+    body = result.get("body") if isinstance(result, dict) else {}
+    if args.out:
+        write_json((ROOT / args.out).resolve(), body if isinstance(body, dict) else result)
+    print(json_dump(result))
+    summary = body.get("summary") if isinstance(body, dict) else {}
+    severity_counts = summary.get("severityCounts") if isinstance(summary, dict) else {}
+    error_count = int((severity_counts or {}).get("error") or 0)
+    warning_count = int((severity_counts or {}).get("warning") or 0)
+    if args.fail_on_error and error_count > 0:
+        raise SystemExit(4)
+    if args.fail_on_warning and warning_count > 0:
         raise SystemExit(3)
 
 
@@ -437,12 +467,16 @@ def cmd_browser_evidence(args: argparse.Namespace) -> None:
         command.extend(["--model", model])
     if args.timeout_ms:
         command.extend(["--timeout-ms", str(args.timeout_ms)])
+    if args.view_pattern:
+        command.extend(["--view-pattern", args.view_pattern])
     run(command)
 
 
 def cmd_semantic_checklist(args: argparse.Namespace) -> None:
     out_dir = phase_dir_for(args)
-    manifest = Path(args.manifest).resolve() if args.manifest else out_dir / "screenshot-manifest.json"
+    manifest = (
+        Path(args.manifest).resolve() if args.manifest else out_dir / "screenshot-manifest.json"
+    )
     rows = screenshot_rows_from_manifest(manifest)
     if not rows:
         rows = [
@@ -486,8 +520,14 @@ def cmd_issue_ledger(args: argparse.Namespace) -> None:
     paths = seed_paths(args.seed) if args.seed else {}
     recipe = Path(args.recipe).resolve() if args.recipe else paths.get("recipe")
     bundle = Path(args.bundle).resolve() if args.bundle else paths.get("bundle")
-    warning = load_advisor_file(Path(args.advisor_warning).resolve() if args.advisor_warning else out_dir / "advisor-warning.json")
-    info = load_advisor_file(Path(args.advisor_info).resolve() if args.advisor_info else out_dir / "advisor-info.json")
+    warning = load_advisor_file(
+        Path(args.advisor_warning).resolve()
+        if args.advisor_warning
+        else out_dir / "advisor-warning.json"
+    )
+    info = load_advisor_file(
+        Path(args.advisor_info).resolve() if args.advisor_info else out_dir / "advisor-info.json"
+    )
     entries = []
     for severity, payload in (("warning", warning), ("info", info)):
         for group in payload.get("groups") or []:
@@ -529,7 +569,9 @@ def cmd_material_check(args: argparse.Namespace) -> None:
     recipe_path = Path(args.recipe).resolve() if args.recipe else paths.get("recipe")
     bundle_path = Path(args.bundle).resolve() if args.bundle else paths.get("bundle")
     if not recipe_path or not recipe_path.is_file():
-        raise SystemExit("material-check requires --recipe or --seed with evidence/<seed>.recipe.json.")
+        raise SystemExit(
+            "material-check requires --recipe or --seed with evidence/<seed>.recipe.json."
+        )
     if not bundle_path or not bundle_path.is_file():
         raise SystemExit("material-check requires --bundle or --seed with bundle.json.")
     recipe = read_json(recipe_path)
@@ -542,12 +584,28 @@ def cmd_material_check(args: argparse.Namespace) -> None:
     for row in intents:
         material_key = row.get("materialKey")
         if material_key and material_key not in bundle_text:
-            missing.append({"kind": "intent_not_represented", "materialKey": material_key, "surface": row.get("surface")})
+            missing.append(
+                {
+                    "kind": "intent_not_represented",
+                    "materialKey": material_key,
+                    "surface": row.get("surface"),
+                }
+            )
     for row in assignments:
         element_id = row.get("elementId")
         material_key = row.get("materialKey")
-        if element_id and material_key and (element_id not in bundle_text or material_key not in bundle_text):
-            missing.append({"kind": "assignment_not_represented", "elementId": element_id, "materialKey": material_key})
+        if (
+            element_id
+            and material_key
+            and (element_id not in bundle_text or material_key not in bundle_text)
+        ):
+            missing.append(
+                {
+                    "kind": "assignment_not_represented",
+                    "elementId": element_id,
+                    "materialKey": material_key,
+                }
+            )
     payload = {
         "schemaVersion": "sketch-to-bim.material-check.v1",
         "seed": args.seed,
@@ -596,10 +654,9 @@ def cmd_phase_accept(args: argparse.Namespace) -> None:
     if required["issue-ledger"].is_file():
         ledger = read_json(required["issue-ledger"])
         for entry in ledger.get("entries") or []:
-            if (
-                str(entry.get("severity")) in BLOCKING_SEVERITIES
-                and str(entry.get("status") or "pending") not in {"fixed", "tolerated", "software_rule_defect"}
-            ):
+            if str(entry.get("severity")) in BLOCKING_SEVERITIES and str(
+                entry.get("status") or "pending"
+            ) not in {"fixed", "tolerated", "software_rule_defect"}:
                 pending_issues.append(
                     {
                         "severity": entry.get("severity"),
@@ -617,7 +674,13 @@ def cmd_phase_accept(args: argparse.Namespace) -> None:
         else:
             parity_ok = bool(read_json(parity_path).get("ok"))
 
-    ok = not missing and warnings_total == 0 and not semantic_failures and not pending_issues and parity_ok
+    ok = (
+        not missing
+        and warnings_total == 0
+        and not semantic_failures
+        and not pending_issues
+        and parity_ok
+    )
     packet = {
         "schemaVersion": "sketch-to-bim.phase-packet.v1",
         "phase": args.phase,
@@ -711,7 +774,9 @@ def cmd_stale_check(args: argparse.Namespace) -> None:
         "gitHead": git_head(),
         "bundleSha256": file_sha256(paths["bundle"]),
         "irSha256": file_sha256(paths["ir"]),
-        "capabilitiesSha256": file_sha256(ROOT / summary.get("capabilitiesPath", DEFAULT_CAPABILITIES)),
+        "capabilitiesSha256": file_sha256(
+            ROOT / summary.get("capabilitiesPath", DEFAULT_CAPABILITIES)
+        ),
         "advisorRuleDigest": digest_files(summary.get("advisorRuleFiles") or ADVISOR_RULE_FILES),
     }
     stale = {
@@ -732,14 +797,20 @@ def build_parser() -> argparse.ArgumentParser:
     tools = sub.add_parser("tools", help="Print typed skill tool descriptors.")
     tools.set_defaults(func=cmd_tools)
 
-    archetypes = sub.add_parser("archetypes", help="Print reusable sketch-to-BIM archetype baselines.")
+    archetypes = sub.add_parser(
+        "archetypes", help="Print reusable sketch-to-BIM archetype baselines."
+    )
     archetypes.add_argument("--manifest", default=DEFAULT_ARCHETYPES)
     archetypes.add_argument("--query")
     archetypes.set_defaults(func=cmd_archetypes)
 
     doctor = sub.add_parser("doctor", help="Check live app/tool prerequisites.")
-    doctor.add_argument("--base-url", default=os.environ.get("BIM_AI_BASE_URL", "http://127.0.0.1:8500"))
-    doctor.add_argument("--web-url", default=os.environ.get("BIM_AI_WEB_URL", "http://127.0.0.1:2000"))
+    doctor.add_argument(
+        "--base-url", default=os.environ.get("BIM_AI_BASE_URL", "http://127.0.0.1:8500")
+    )
+    doctor.add_argument(
+        "--web-url", default=os.environ.get("BIM_AI_WEB_URL", "http://127.0.0.1:2000")
+    )
     doctor.add_argument("--model")
     doctor.add_argument("--out")
     doctor.add_argument("--require-live", action="store_true")
@@ -760,28 +831,56 @@ def build_parser() -> argparse.ArgumentParser:
     advisor = sub.add_parser("advisor", help="Capture warning and info Advisor payloads.")
     advisor.add_argument("--model")
     advisor.add_argument("--out")
-    advisor.add_argument("--base-url", default=os.environ.get("BIM_AI_BASE_URL", "http://127.0.0.1:8500"))
+    advisor.add_argument(
+        "--base-url", default=os.environ.get("BIM_AI_BASE_URL", "http://127.0.0.1:8500")
+    )
     advisor.add_argument("--fail-on-warning", action="store_true")
     advisor.set_defaults(func=cmd_advisor)
 
-    parity = sub.add_parser("advisor-parity", help="Compare CLI Advisor groups with right-rail source payload.")
+    report = sub.add_parser(
+        "constructability-report",
+        help="Fetch the profile-specific server constructability report.",
+    )
+    report.add_argument("--model")
+    report.add_argument("--profile", default="construction_readiness")
+    report.add_argument("--out")
+    report.add_argument(
+        "--base-url", default=os.environ.get("BIM_AI_BASE_URL", "http://127.0.0.1:8500")
+    )
+    report.add_argument("--timeout", type=float, default=5.0)
+    report.add_argument("--fail-on-error", action="store_true")
+    report.add_argument("--fail-on-warning", action="store_true")
+    report.set_defaults(func=cmd_constructability_report)
+
+    parity = sub.add_parser(
+        "advisor-parity", help="Compare CLI Advisor groups with right-rail source payload."
+    )
     parity.add_argument("--model")
     parity.add_argument("--out")
-    parity.add_argument("--base-url", default=os.environ.get("BIM_AI_BASE_URL", "http://127.0.0.1:8500"))
+    parity.add_argument(
+        "--base-url", default=os.environ.get("BIM_AI_BASE_URL", "http://127.0.0.1:8500")
+    )
     parity.add_argument("--fail-on-mismatch", action="store_true")
     parity.set_defaults(func=cmd_advisor_parity)
 
-    browser = sub.add_parser("browser-evidence", help="Capture browser/right-rail screenshots and review text.")
+    browser = sub.add_parser(
+        "browser-evidence", help="Capture browser/right-rail screenshots and review text."
+    )
     browser.add_argument("--phase")
     browser.add_argument("--seed")
     browser.add_argument("--dir")
     browser.add_argument("--out")
     browser.add_argument("--model")
-    browser.add_argument("--web-url", default=os.environ.get("BIM_AI_WEB_URL", "http://127.0.0.1:2000"))
+    browser.add_argument(
+        "--web-url", default=os.environ.get("BIM_AI_WEB_URL", "http://127.0.0.1:2000")
+    )
     browser.add_argument("--timeout-ms", type=int, default=30000)
+    browser.add_argument("--view-pattern")
     browser.set_defaults(func=cmd_browser_evidence)
 
-    semantic = sub.add_parser("semantic-checklist", help="Create a required semantic screenshot review checklist.")
+    semantic = sub.add_parser(
+        "semantic-checklist", help="Create a required semantic screenshot review checklist."
+    )
     semantic.add_argument("--phase", required=True)
     semantic.add_argument("--seed")
     semantic.add_argument("--dir")
@@ -789,7 +888,9 @@ def build_parser() -> argparse.ArgumentParser:
     semantic.add_argument("--out")
     semantic.set_defaults(func=cmd_semantic_checklist)
 
-    ledger = sub.add_parser("issue-ledger", help="Map Advisor findings to recipe/bundle source references.")
+    ledger = sub.add_parser(
+        "issue-ledger", help="Map Advisor findings to recipe/bundle source references."
+    )
     ledger.add_argument("--phase", required=True)
     ledger.add_argument("--seed")
     ledger.add_argument("--dir")
@@ -801,7 +902,9 @@ def build_parser() -> argparse.ArgumentParser:
     ledger.add_argument("--fail-on-pending", action="store_true")
     ledger.set_defaults(func=cmd_issue_ledger)
 
-    materials = sub.add_parser("material-check", help="Verify recipe material intent is represented in the bundle.")
+    materials = sub.add_parser(
+        "material-check", help="Verify recipe material intent is represented in the bundle."
+    )
     materials.add_argument("--seed")
     materials.add_argument("--recipe")
     materials.add_argument("--bundle")
@@ -809,7 +912,9 @@ def build_parser() -> argparse.ArgumentParser:
     materials.add_argument("--fail-on-missing", action="store_true")
     materials.set_defaults(func=cmd_material_check)
 
-    phase = sub.add_parser("phase-accept", help="Fail unless the phase evidence packet is complete and clean.")
+    phase = sub.add_parser(
+        "phase-accept", help="Fail unless the phase evidence packet is complete and clean."
+    )
     phase.add_argument("--phase", required=True)
     phase.add_argument("--seed")
     phase.add_argument("--dir")
@@ -824,7 +929,9 @@ def build_parser() -> argparse.ArgumentParser:
     accept.add_argument("--ir")
     accept.add_argument("--out")
     accept.add_argument("--capabilities", default=DEFAULT_CAPABILITIES)
-    accept.add_argument("--base-url", default=os.environ.get("BIM_AI_BASE_URL", "http://127.0.0.1:8500"))
+    accept.add_argument(
+        "--base-url", default=os.environ.get("BIM_AI_BASE_URL", "http://127.0.0.1:8500")
+    )
     accept.add_argument("--mode", default="project_initiation_bim")
     accept.add_argument("--target-image")
     accept.add_argument("--target-map")
@@ -833,7 +940,9 @@ def build_parser() -> argparse.ArgumentParser:
     accept.add_argument("--no-require-live", dest="require_live", action="store_false")
     accept.set_defaults(func=cmd_accept, require_live=True)
 
-    stale = sub.add_parser("stale-check", help="Fail when accepted evidence does not match HEAD inputs.")
+    stale = sub.add_parser(
+        "stale-check", help="Fail when accepted evidence does not match HEAD inputs."
+    )
     stale.add_argument("--seed", required=True)
     stale.add_argument("--evidence")
     stale.set_defaults(func=cmd_stale_check)

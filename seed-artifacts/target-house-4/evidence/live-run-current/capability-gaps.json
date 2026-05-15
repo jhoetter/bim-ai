@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "sketch-to-bim-capability-gaps.v0",
+  "generatedAt": "2026-05-15T15:24:31.365Z",
+  "taskCount": 3,
+  "tasks": [
+    {
+      "id": "skb-gap-continuous_long_gable_roof",
+      "featureId": "continuous_long_gable_roof",
+      "featureKind": "gable_pitched_rectangle",
+      "visualPriority": "critical",
+      "readiness": "blocked",
+      "reason": [
+        "Feature continuous_long_gable_roof requires missing view vp-main-iso.",
+        "Feature continuous_long_gable_roof requires missing view vp-gable-section.",
+        "No capability maps feature kind gable_pitched_rectangle."
+      ],
+      "capabilityMatches": [],
+      "missingViews": ["vp-main-iso", "vp-gable-section"],
+      "requiredAction": "Add a capability-matrix entry or required saved view before authoring this feature.",
+      "fallbackPolicy": "Do not fake this feature with decorative masses, hidden categories, or metadata-only geometry."
+    },
+    {
+      "id": "skb-gap-paired_long_face_dormers",
+      "featureId": "paired_long_face_dormers",
+      "featureKind": "dormer",
+      "visualPriority": "critical",
+      "readiness": "blocked",
+      "reason": [
+        "Feature paired_long_face_dormers requires missing view vp-main-iso.",
+        "Feature paired_long_face_dormers requires missing view vp-front-elev.",
+        "No capability maps feature kind dormer."
+      ],
+      "capabilityMatches": [],
+      "missingViews": ["vp-main-iso", "vp-front-elev"],
+      "requiredAction": "Add a capability-matrix entry or required saved view before authoring this feature.",
+      "fallbackPolicy": "Do not fake this feature with decorative masses, hidden categories, or metadata-only geometry."
+    },
+    {
+      "id": "skb-gap-mirrored_two_family_plan",
+      "featureId": "mirrored_two_family_plan",
+      "featureKind": "rooms_and_partitions",
+      "visualPriority": "high",
+      "readiness": "needs_attention",
+      "reason": [
+        "Feature mirrored_two_family_plan requires missing view vp-ground-plan.",
+        "Feature mirrored_two_family_plan requires missing view vp-attic-plan.",
+        "No capability maps feature kind rooms_and_partitions."
+      ],
+      "capabilityMatches": [],
+      "missingViews": ["vp-ground-plan", "vp-attic-plan"],
+      "requiredAction": "Add a capability-matrix entry or required saved view before authoring this feature.",
+      "fallbackPolicy": "Do not fake this feature with decorative masses, hidden categories, or metadata-only geometry."
+    }
+  ]
+}

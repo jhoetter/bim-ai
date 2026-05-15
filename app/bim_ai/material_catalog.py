@@ -190,6 +190,15 @@ _MATERIALS: tuple[MaterialPbrSpec, ...] = (
         category="render",
         display_name="Terracotta render",
     ),
+    MaterialPbrSpec(
+        key="roof_tile_terracotta",
+        base_color="#7d3424",
+        roughness=0.88,
+        metalness=0.0,
+        category="brick",
+        hatch_pattern="tile",
+        display_name="Terracotta clay roof tile",
+    ),
     # ── MAT-01 aluminium variants ────────────────────────────────────
     MaterialPbrSpec(
         key="aluminium_dark_grey",
@@ -421,11 +430,11 @@ def material_base_color(material_key: str | None) -> str:
 
 
 def is_standing_seam_metal_key(material_key: str | None) -> bool:
-    """True when `material_key` is a standing-seam metal roof variant."""
+    """True when a roof material should receive generated roof striping."""
 
     if not material_key:
         return False
-    return material_key.startswith("metal_standing_seam_")
+    return material_key.startswith("metal_standing_seam_") or material_key.startswith("roof_tile_")
 
 
 def material_display_name(material_key: str | None) -> str:

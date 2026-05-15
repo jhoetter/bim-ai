@@ -1,0 +1,137 @@
+{
+  "schemaVersion": "sketch-to-bim-initiation-coverage.v0",
+  "generatedAt": "2026-05-15T15:24:31.365Z",
+  "irPath": "seed-artifacts/target-house-4/evidence/sketch-ir.json",
+  "capabilityMatrixPath": "spec/archive/sketch-to-bim-capability-matrix.json",
+  "modelId": "b4329ca6-bef7-5be7-8341-cf73e17ac468",
+  "summary": {
+    "featureCount": 3,
+    "criticalFeatureCount": 2,
+    "readyCount": 0,
+    "needsAttentionCount": 1,
+    "blockedCount": 2,
+    "errorCount": 8,
+    "warningCount": 7
+  },
+  "issues": [
+    {
+      "severity": "error",
+      "code": "missing_object",
+      "path": "$.sourceInputs",
+      "message": "sourceInputs must be an object."
+    },
+    {
+      "severity": "warning",
+      "code": "critical_feature_needs_missing",
+      "path": "$.features[0].capabilityNeeds",
+      "message": "Critical features should list capabilityNeeds so the authoring route is explicit."
+    },
+    {
+      "severity": "warning",
+      "code": "critical_feature_needs_missing",
+      "path": "$.features[1].capabilityNeeds",
+      "message": "Critical features should list capabilityNeeds so the authoring route is explicit."
+    },
+    {
+      "severity": "error",
+      "code": "missing_array",
+      "path": "$.requiredViews",
+      "message": "requiredViews must be an array."
+    },
+    {
+      "severity": "warning",
+      "code": "assumption_validation_missing",
+      "path": "$.assumptions[0].validation",
+      "message": "Assumption has no validation route."
+    },
+    {
+      "severity": "warning",
+      "code": "assumption_validation_missing",
+      "path": "$.assumptions[1].validation",
+      "message": "Assumption has no validation route."
+    },
+    {
+      "severity": "error",
+      "code": "feature_view_missing",
+      "path": "$.features[continuous_long_gable_roof].mustRenderInViews",
+      "message": "Feature continuous_long_gable_roof requires missing view vp-main-iso."
+    },
+    {
+      "severity": "error",
+      "code": "feature_view_missing",
+      "path": "$.features[continuous_long_gable_roof].mustRenderInViews",
+      "message": "Feature continuous_long_gable_roof requires missing view vp-gable-section."
+    },
+    {
+      "severity": "error",
+      "code": "capability_missing",
+      "path": "$.features[continuous_long_gable_roof].kind",
+      "message": "No capability maps feature kind gable_pitched_rectangle."
+    },
+    {
+      "severity": "error",
+      "code": "feature_view_missing",
+      "path": "$.features[paired_long_face_dormers].mustRenderInViews",
+      "message": "Feature paired_long_face_dormers requires missing view vp-main-iso."
+    },
+    {
+      "severity": "error",
+      "code": "feature_view_missing",
+      "path": "$.features[paired_long_face_dormers].mustRenderInViews",
+      "message": "Feature paired_long_face_dormers requires missing view vp-front-elev."
+    },
+    {
+      "severity": "error",
+      "code": "capability_missing",
+      "path": "$.features[paired_long_face_dormers].kind",
+      "message": "No capability maps feature kind dormer."
+    },
+    {
+      "severity": "warning",
+      "code": "feature_view_missing",
+      "path": "$.features[mirrored_two_family_plan].mustRenderInViews",
+      "message": "Feature mirrored_two_family_plan requires missing view vp-ground-plan."
+    },
+    {
+      "severity": "warning",
+      "code": "feature_view_missing",
+      "path": "$.features[mirrored_two_family_plan].mustRenderInViews",
+      "message": "Feature mirrored_two_family_plan requires missing view vp-attic-plan."
+    },
+    {
+      "severity": "warning",
+      "code": "capability_missing",
+      "path": "$.features[mirrored_two_family_plan].kind",
+      "message": "No capability maps feature kind rooms_and_partitions."
+    }
+  ],
+  "features": [
+    {
+      "featureId": "continuous_long_gable_roof",
+      "kind": "gable_pitched_rectangle",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["vp-main-iso", "vp-gable-section"],
+      "missingViews": ["vp-main-iso", "vp-gable-section"],
+      "readiness": "blocked",
+      "capabilityMatches": []
+    },
+    {
+      "featureId": "paired_long_face_dormers",
+      "kind": "dormer",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["vp-main-iso", "vp-front-elev"],
+      "missingViews": ["vp-main-iso", "vp-front-elev"],
+      "readiness": "blocked",
+      "capabilityMatches": []
+    },
+    {
+      "featureId": "mirrored_two_family_plan",
+      "kind": "rooms_and_partitions",
+      "visualPriority": "high",
+      "mustRenderInViews": ["vp-ground-plan", "vp-attic-plan"],
+      "missingViews": ["vp-ground-plan", "vp-attic-plan"],
+      "readiness": "needs_attention",
+      "capabilityMatches": []
+    }
+  ]
+}

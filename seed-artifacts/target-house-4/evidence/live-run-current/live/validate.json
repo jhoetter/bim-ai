@@ -1,0 +1,546 @@
+{
+  "modelId": "b4329ca6-bef7-5be7-8341-cf73e17ac468",
+  "revision": 1,
+  "violations": [
+    {
+      "ruleId": "constructability_proxy_unsupported",
+      "severity": "warning",
+      "message": "Physical element 't4-dormer-front-left' (dormer) has no constructability collision proxy: no constructability collision proxy implemented for this physical kind.",
+      "elementIds": ["t4-dormer-front-left"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "constructability_proxy_unsupported",
+      "severity": "warning",
+      "message": "Physical element 't4-dormer-front-right' (dormer) has no constructability collision proxy: no constructability collision proxy implemented for this physical kind.",
+      "elementIds": ["t4-dormer-front-right"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "constructability_proxy_unsupported",
+      "severity": "warning",
+      "message": "Physical element 't4-dormer-rear-left' (dormer) has no constructability collision proxy: no constructability collision proxy implemented for this physical kind.",
+      "elementIds": ["t4-dormer-rear-left"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "constructability_proxy_unsupported",
+      "severity": "warning",
+      "message": "Physical element 't4-dormer-rear-right' (dormer) has no constructability collision proxy: no constructability collision proxy implemented for this physical kind.",
+      "elementIds": ["t4-dormer-rear-right"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "gltf_export_manifest_expected_extension_missing",
+      "severity": "info",
+      "message": "glTF export manifest: extension 'bim_ai_skew_wall_hosted_openings_v0' not emitted but eligible element kind 'wall' is present (skipReasonCode='no_eligible_elements').",
+      "elementIds": [],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "gltf_export_manifest_expected_extension_missing",
+      "severity": "info",
+      "message": "glTF export manifest: extension 'bim_ai_roof_unsupported_shape_summary_v0' not emitted but eligible element kind 'roof' is present (skipReasonCode='no_eligible_elements').",
+      "elementIds": [],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "room_color_scheme_identity_missing",
+      "severity": "info",
+      "message": "No room color scheme element found. Use upsertRoomColorScheme to author overrides.",
+      "elementIds": [],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-dg-left-bedroom"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-dg-left-front-suite"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-dg-left-living"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-dg-left-stair"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-dg-right-bedroom"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-dg-right-front-suite"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-dg-right-living"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-dg-right-stair"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-eg-left-bath"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-eg-left-bedroom"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-eg-left-child"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-eg-left-hall"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-eg-left-kitchen"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-eg-left-living"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-eg-left-stair"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-eg-right-bath"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-eg-right-bedroom"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-eg-right-child"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-eg-right-hall"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-eg-right-kitchen"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-eg-right-living"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-eg-right-stair"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-kg-left-service"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-kg-left-storage"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-kg-right-service"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["t4-room-kg-right-storage"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    }
+  ],
+  "summary": {
+    "revision": 1,
+    "elementTotal": 149,
+    "scaleWorkload": {
+      "wallCount": 35,
+      "roomCount": 26,
+      "scheduleElementCount": 0
+    },
+    "countsByKind": {
+      "project_base_point": 1,
+      "floor": 3,
+      "wall_type": 4,
+      "viewpoint": 5,
+      "sun_settings": 1,
+      "asset_library_entry": 4,
+      "level": 3,
+      "roof": 1,
+      "wall": 35,
+      "plan_view": 3,
+      "stair": 2,
+      "floor_type": 1,
+      "internal_origin": 1,
+      "door": 22,
+      "roof_type": 1,
+      "railing": 4,
+      "dormer": 4,
+      "placed_asset": 8,
+      "wall_opening": 18,
+      "room": 26,
+      "slab_opening": 2
+    },
+    "levelCount": 3,
+    "levels": [
+      {
+        "id": "t4-lvl-basement",
+        "name": "Kellergeschoss",
+        "elevationMm": -2500
+      },
+      {
+        "id": "t4-lvl-ground",
+        "name": "Erdgeschoss",
+        "elevationMm": 0
+      },
+      {
+        "id": "t4-lvl-attic",
+        "name": "Dachgeschoss",
+        "elevationMm": 3000
+      }
+    ],
+    "wallCount": 35,
+    "wallsByLevelId": {
+      "t4-lvl-attic": 11,
+      "t4-lvl-ground": 17,
+      "t4-lvl-basement": 7
+    },
+    "roomCount": 26,
+    "roomsByLevelId": {
+      "t4-lvl-ground": 14,
+      "t4-lvl-attic": 8,
+      "t4-lvl-basement": 4
+    },
+    "doorCount": 22,
+    "windowCount": 0,
+    "gridLineCount": 0,
+    "openIssueCount": 0,
+    "floorCount": 3,
+    "roofCount": 1,
+    "stairCount": 2,
+    "sheetCount": 0,
+    "railingCount": 4,
+    "slabOpeningCount": 2,
+    "siteCount": 0,
+    "familyTypeCount": 0,
+    "sectionCutCount": 0,
+    "planViewCount": 3,
+    "viewTemplateCount": 0,
+    "viewpointCount": 5,
+    "dimensionCount": 0,
+    "scheduleCount": 0,
+    "saved3dViewClipSummary": {
+      "saved3dViewCount": 3,
+      "clipEnabledCount": 0,
+      "sectionBoxEnabledCount": 0,
+      "totalHiddenCategoryCount": 0
+    },
+    "roomDerivationPreview": {
+      "heuristicVersion": "room_deriv_preview_v4",
+      "axisAlignedRectangleCandidates": [
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 0,
+              "y": 0
+            },
+            "max": {
+              "x": 19800,
+              "y": 9900
+            }
+          },
+          "wallIds": ["t4-dg-wall-01", "t4-dg-wall-02", "t4-dg-wall-03", "t4-dg-wall-04"],
+          "boundarySeparationIds": [],
+          "perimeterSegmentIdsSorted": [
+            "t4-dg-wall-01",
+            "t4-dg-wall-02",
+            "t4-dg-wall-03",
+            "t4-dg-wall-04"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 196.02,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "t4-lvl-attic",
+          "levelName": "Dachgeschoss",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0,
+          "approxVolumeM3": 548.856,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": ["overlaps_authored_room_bbox"]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 0,
+              "y": 0
+            },
+            "max": {
+              "x": 19800,
+              "y": 9900
+            }
+          },
+          "wallIds": ["t4-kg-wall-01", "t4-kg-wall-02", "t4-kg-wall-03", "t4-kg-wall-04"],
+          "boundarySeparationIds": [],
+          "perimeterSegmentIdsSorted": [
+            "t4-kg-wall-01",
+            "t4-kg-wall-02",
+            "t4-kg-wall-03",
+            "t4-kg-wall-04"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 196.02,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "t4-lvl-basement",
+          "levelName": "Kellergeschoss",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0,
+          "approxVolumeM3": 490.05,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": ["overlaps_authored_room_bbox"]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 0,
+              "y": 0
+            },
+            "max": {
+              "x": 19800,
+              "y": 9900
+            }
+          },
+          "wallIds": ["t4-eg-wall-01", "t4-eg-wall-02", "t4-eg-wall-03", "t4-eg-wall-04"],
+          "boundarySeparationIds": [],
+          "perimeterSegmentIdsSorted": [
+            "t4-eg-wall-01",
+            "t4-eg-wall-02",
+            "t4-eg-wall-03",
+            "t4-eg-wall-04"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 196.02,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "t4-lvl-ground",
+          "levelName": "Erdgeschoss",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0,
+          "approxVolumeM3": 588.06,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": ["overlaps_authored_room_bbox"]
+        }
+      ],
+      "candidateCount": 3,
+      "authoritativeCandidateCount": 0,
+      "unboundedRoomIds": [],
+      "diagnostics": [],
+      "warnings": [],
+      "diagnosticCount": 0,
+      "authorityVersion": "axis_aa_authoritative_v2"
+    },
+    "regenerationDiagnostics": {
+      "documentRevision": 1,
+      "roomDerivationHeuristicVersion": "room_deriv_preview_v4",
+      "roomDerivationCandidateCount": 3,
+      "roomDerivationAuthoritativeCount": 0,
+      "roomDerivationDiagnosticCount": 0,
+      "roomDerivationWarningCount": 0,
+      "levelsWithRoomsSorted": ["t4-lvl-attic", "t4-lvl-basement", "t4-lvl-ground"],
+      "levelsWithWallsSorted": ["t4-lvl-attic", "t4-lvl-basement", "t4-lvl-ground"],
+      "maxRoomsOnSingleLevel": 14,
+      "maxWallsOnSingleLevel": 17
+    }
+  },
+  "checks": {
+    "errorViolationCount": 0,
+    "blockingViolationCount": 0
+  }
+}

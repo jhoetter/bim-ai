@@ -82,6 +82,32 @@ describe('makeDormerMesh', () => {
     expect(group.userData.bimPickId).toBe('d1');
   });
 
+  it('places the dormer body on the sampled host roof plane', () => {
+    const dormer: DormerElem = {
+      kind: 'dormer',
+      id: 'd1',
+      hostRoofId: 'r1',
+      positionOnRoof: { alongRidgeMm: -2000, acrossRidgeMm: 1000 },
+      widthMm: 2400,
+      wallHeightMm: 2400,
+      depthMm: 2000,
+      dormerRoofKind: 'flat',
+      wallMaterialKey: 'white_render',
+    };
+    const elementsById: Record<string, Element> = {
+      'lvl-1': { kind: 'level', id: 'lvl-1', name: 'L1', elevationMm: 3000 },
+      r1: ROOF,
+    };
+    const group = makeDormerMesh(dormer, elementsById, null);
+    const meshes: THREE.Mesh[] = [];
+    group.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) meshes.push(o as THREE.Mesh);
+    });
+    const firstCheek = meshes[0];
+
+    expect(firstCheek.position.y).toBeGreaterThan(3 + dormer.wallHeightMm / 2000);
+  });
+
   it('renders a gable dormer with a ridged roof', () => {
     const dormer: DormerElem = {
       kind: 'dormer',

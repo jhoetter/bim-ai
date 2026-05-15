@@ -1,0 +1,23 @@
+{
+  "groups": [
+    {
+      "code": "constructability_proxy_unsupported",
+      "count": 4,
+      "elementIds": [
+        "t4-dormer-front-left",
+        "t4-dormer-front-right",
+        "t4-dormer-rear-left",
+        "t4-dormer-rear-right"
+      ],
+      "messages": [
+        "Physical element 't4-dormer-front-left' (dormer) has no constructability collision proxy: no constructability collision proxy implemented for this physical kind.",
+        "Physical element 't4-dormer-front-right' (dormer) has no constructability collision proxy: no constructability collision proxy implemented for this physical kind.",
+        "Physical element 't4-dormer-rear-left' (dormer) has no constructability collision proxy: no constructability collision proxy implemented for this physical kind."
+      ],
+      "severity": "warning"
+    }
+  ],
+  "modelId": "b4329ca6-bef7-5be7-8341-cf73e17ac468",
+  "revision": 1,
+  "total": 4
+}

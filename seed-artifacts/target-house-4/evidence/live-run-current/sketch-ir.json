@@ -1,0 +1,133 @@
+{
+  "schemaVersion": "sketch-understanding-ir.v0",
+  "projectType": "two_family_semi_detached_house",
+  "qualityTarget": "project_initiation_bim",
+  "sourceImages": [
+    "source/EG.pdf",
+    "source/DG.pdf",
+    "source/Grundrisse, Schnitt.pdf",
+    "source/Ansichten.pdf"
+  ],
+  "visualRead": {
+    "primaryView": "long elevation plus floor plans",
+    "dominantVolumes": [
+      "long two-unit rendered masonry block",
+      "steep continuous gable roof with long ridge",
+      "paired dormers on the long roof faces",
+      "central mirrored stair and party-wall structure"
+    ],
+    "nonNegotiables": [
+      "overall 19.80 m by 9.90 m two-half plan proportion",
+      "single continuous steep pitched roof rather than two separate houses",
+      "four dormers aligned to the two dwellings",
+      "separate paired entrances and mirrored internal organization",
+      "basement, ground, and attic/roof levels"
+    ]
+  },
+  "programme": [
+    {
+      "name": "Left dwelling living room",
+      "level": "ground",
+      "areaM2Approx": 18.65
+    },
+    {
+      "name": "Left dwelling bedroom",
+      "level": "ground",
+      "areaM2Approx": 16.69
+    },
+    {
+      "name": "Left dwelling kitchen",
+      "level": "ground",
+      "areaM2Approx": 6.44
+    },
+    {
+      "name": "Left dwelling bath",
+      "level": "ground",
+      "areaM2Approx": 4.58
+    },
+    {
+      "name": "Left dwelling child room",
+      "level": "ground",
+      "areaM2Approx": 9.33
+    },
+    {
+      "name": "Right dwelling mirrored rooms",
+      "level": "ground"
+    },
+    {
+      "name": "Attic bedrooms and living rooms",
+      "level": "attic"
+    },
+    {
+      "name": "Basement storage rooms",
+      "level": "basement"
+    }
+  ],
+  "dimensions": {
+    "confidence": "sheet_dimensioned_but_photo_distorted",
+    "footprintWidthMm": 19800,
+    "footprintDepthMm": 9900,
+    "dwellingHalfWidthMm": 9900,
+    "groundToAtticMm": 3000,
+    "basementElevationMm": -2500,
+    "roofSlopeDeg": 36
+  },
+  "materialIntent": [
+    {
+      "surface": "external masonry walls",
+      "materialKey": "render_light_grey"
+    },
+    {
+      "surface": "steep tiled roof",
+      "materialKey": "render_terracotta"
+    },
+    {
+      "surface": "eave band and dormer cheeks",
+      "materialKey": "cladding_dark_grey"
+    },
+    {
+      "surface": "basement and slabs",
+      "materialKey": "concrete_smooth"
+    },
+    {
+      "surface": "interior partitions",
+      "materialKey": "plasterboard"
+    },
+    {
+      "surface": "openings/glazing proxies",
+      "materialKey": "glass_clear"
+    }
+  ],
+  "features": [
+    {
+      "id": "continuous_long_gable_roof",
+      "kind": "gable_pitched_rectangle",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["vp-main-iso", "vp-gable-section"]
+    },
+    {
+      "id": "paired_long_face_dormers",
+      "kind": "dormer",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["vp-main-iso", "vp-front-elev"]
+    },
+    {
+      "id": "mirrored_two_family_plan",
+      "kind": "rooms_and_partitions",
+      "visualPriority": "high",
+      "mustRenderInViews": ["vp-ground-plan", "vp-attic-plan"]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "scale_001",
+      "statement": "Overall building plan is normalized to the repeated 19.80 m by 9.90 m dimensions visible on the plans.",
+      "confidence": "high"
+    },
+    {
+      "id": "opening_001",
+      "statement": "Door and window families are represented by wall openings because this repo's seed DSL lacks createDoor/createWindow commands.",
+      "confidence": "high"
+    }
+  ]
+}

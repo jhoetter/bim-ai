@@ -1,0 +1,21 @@
+{
+  "findings": [],
+  "format": "constructabilityReport_v1",
+  "issues": [],
+  "modelId": "b4329ca6-bef7-5be7-8341-cf73e17ac468",
+  "profile": "construction_readiness",
+  "revision": 1,
+  "scope": {
+    "optionLocks": {},
+    "phaseFilter": "all",
+    "primaryOptionIds": {}
+  },
+  "summary": {
+    "findingCount": 0,
+    "issueCount": 0,
+    "ruleCounts": {},
+    "severityCounts": {},
+    "statusCounts": {},
+    "suppressedFindingCount": 0
+  }
+}

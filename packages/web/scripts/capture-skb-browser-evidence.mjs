@@ -8,7 +8,7 @@ function usage() {
   console.error(`Usage:
   node packages/web/scripts/capture-skb-browser-evidence.mjs \\
     --url http://127.0.0.1:2000 \\
-    --out <evidence-dir> [--model <uuid>] [--timeout-ms <n>]
+    --out <evidence-dir> [--model <uuid>] [--timeout-ms <n>] [--view-pattern <regex>]
 
 Captures the running bim-ai browser state used by sketch-to-BIM review:
 full-page screenshot, right-rail screenshot, and right-rail review text.
@@ -22,6 +22,7 @@ function parseArgs(argv) {
     out: null,
     model: process.env.BIM_AI_MODEL_ID || null,
     timeoutMs: 30000,
+    viewPattern: process.env.BIM_AI_VIEW_PATTERN || null,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -29,6 +30,7 @@ function parseArgs(argv) {
     else if (arg === '--out' && argv[i + 1]) args.out = argv[++i];
     else if (arg === '--model' && argv[i + 1]) args.model = argv[++i];
     else if (arg === '--timeout-ms' && argv[i + 1]) args.timeoutMs = Number(argv[++i]);
+    else if (arg === '--view-pattern' && argv[i + 1]) args.viewPattern = argv[++i];
     else usage();
   }
   if (!args.out) usage();
@@ -37,7 +39,13 @@ function parseArgs(argv) {
 
 async function maybeClick(locator) {
   if ((await locator.count()) === 0) return false;
-  if (!(await locator.first().isVisible().catch(() => false))) return false;
+  if (
+    !(await locator
+      .first()
+      .isVisible()
+      .catch(() => false))
+  )
+    return false;
   await locator.first().click();
   return true;
 }
@@ -55,6 +63,16 @@ async function main() {
 
   await page.goto(args.url, { waitUntil: 'domcontentloaded', timeout: args.timeoutMs });
   await page.waitForSelector('[data-testid="app-shell"]', { timeout: args.timeoutMs });
+
+  await maybeClick(page.getByRole('button', { name: /skip tour/i }));
+  await page.waitForTimeout(250);
+
+  if (args.viewPattern) {
+    const viewRegex = new RegExp(args.viewPattern, 'i');
+    if (await maybeClick(page.getByText(viewRegex))) {
+      await page.waitForTimeout(1500);
+    }
+  }
 
   const emptyCta = page.getByTestId('canvas-empty-cta');
   if (await maybeClick(emptyCta)) {
@@ -101,7 +119,9 @@ async function main() {
   const jsonPath = path.join(outDir, 'browser-evidence.json');
   await fs.writeFile(jsonPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
   await browser.close();
-  console.log(JSON.stringify({ ok: true, evidence: path.relative(process.cwd(), jsonPath) }, null, 2));
+  console.log(
+    JSON.stringify({ ok: true, evidence: path.relative(process.cwd(), jsonPath) }, null, 2),
+  );
 }
 
 main().catch((err) => {

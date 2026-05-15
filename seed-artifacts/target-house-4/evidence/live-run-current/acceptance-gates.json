@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "sketch-to-bim-acceptance-gates.v0",
+  "generatedAt": "2026-05-15T15:24:31.365Z",
+  "qualityTarget": "project_initiation_bim",
+  "ok": false,
+  "summary": {
+    "blockerCount": 3,
+    "toleranceCount": 0,
+    "advisorWarningCount": 4,
+    "visualFailCount": 0,
+    "visualNeedsReviewCount": 0
+  },
+  "blockers": [
+    {
+      "code": "coverage_errors",
+      "severity": "error",
+      "message": "8 IR/capability coverage error(s) remain."
+    },
+    {
+      "code": "blocked_features",
+      "severity": "error",
+      "message": "2 feature(s) are blocked by missing capability coverage."
+    },
+    {
+      "code": "advisor_warning_findings",
+      "severity": "warning",
+      "message": "4 live advisor warning finding(s) remain.",
+      "groups": [
+        {
+          "severity": "warning",
+          "code": "constructability_proxy_unsupported",
+          "count": 4,
+          "elementIds": [
+            "t4-dormer-front-left",
+            "t4-dormer-front-right",
+            "t4-dormer-rear-left",
+            "t4-dormer-rear-right"
+          ],
+          "messages": [
+            "Physical element 't4-dormer-front-left' (dormer) has no constructability collision proxy: no constructability collision proxy implemented for this physical kind.",
+            "Physical element 't4-dormer-front-right' (dormer) has no constructability collision proxy: no constructability collision proxy implemented for this physical kind.",
+            "Physical element 't4-dormer-rear-left' (dormer) has no constructability collision proxy: no constructability collision proxy implemented for this physical kind."
+          ]
+        }
+      ]
+    }
+  ],
+  "tolerances": []
+}

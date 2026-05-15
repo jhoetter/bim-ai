@@ -699,6 +699,15 @@ const MATERIAL_REGISTRY: Record<string, MaterialPbrSpec> = {
     category: 'render',
     displayName: 'Terracotta render',
   },
+  roof_tile_terracotta: {
+    key: 'roof_tile_terracotta',
+    baseColor: '#7d3424',
+    roughness: 0.88,
+    metalness: 0,
+    category: 'brick',
+    hatchPattern: 'tile',
+    displayName: 'Terracotta clay roof tile',
+  },
 
   // ── MAT-01 aluminium variants ────────────────────────────────────────
   aluminium_dark_grey: {
@@ -1274,8 +1283,8 @@ export function resolveWallSurfaceMaterial(
   };
 }
 
-/** True when a `materialKey` is a standing-seam metal roof variant. */
+/** True when a roof material key should receive generated roof striping. */
 export function isStandingSeamMetalKey(materialKey: string | null | undefined): boolean {
   if (!materialKey) return false;
-  return materialKey.startsWith('metal_standing_seam_');
+  return materialKey.startsWith('metal_standing_seam_') || materialKey.startsWith('roof_tile_');
 }

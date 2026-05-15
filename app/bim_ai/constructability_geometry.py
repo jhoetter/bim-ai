@@ -61,6 +61,7 @@ _PHYSICAL_KINDS = {
     "beam",
     "pipe",
     "duct",
+    "dormer",
     "placed_asset",
     "family_instance",
     "family_kit_instance",
@@ -68,7 +69,6 @@ _PHYSICAL_KINDS = {
 
 _DIAGNOSTIC_PHYSICAL_KINDS = _PHYSICAL_KINDS | {
     "balcony",
-    "dormer",
     "mass",
     "soffit",
     "sweep",
@@ -229,6 +229,7 @@ def physical_participant_for_element(
         "beam": _aabb_for_beam,
         "pipe": _aabb_for_pipe,
         "duct": _aabb_for_duct,
+        "dormer": _aabb_for_dormer,
         "placed_asset": _aabb_for_placed_asset,
         "family_instance": _aabb_for_family_instance,
         "family_kit_instance": _aabb_for_family_kit_instance,
@@ -357,32 +358,48 @@ def _footprint_for_element(
         return [(float(point.x_mm), float(point.y_mm)) for point in elem.boundary_mm]
     if kind == "roof":
         return [(float(point.x_mm), float(point.y_mm)) for point in elem.footprint_mm]
+    if kind == "dormer":
+        host = elements.get(getattr(elem, "host_roof_id", "") or "")
+        if host is not None and getattr(host, "kind", None) == "roof":
+            return _dormer_footprint_points(elem, host)
     if kind == "placed_asset":
         entry = elements.get(elem.asset_id)
-        width = _dimension_from_sources(
-            elem.param_values,
-            getattr(entry, "param_schema", None),
-            ("widthMm", "lengthMm", "diameterMm", "bMm"),
-        ) or aabb.width_mm
-        depth = _dimension_from_sources(
-            elem.param_values,
-            getattr(entry, "param_schema", None),
-            ("depthMm", "diameterMm", "hMm"),
-        ) or aabb.depth_mm
+        width = (
+            _dimension_from_sources(
+                elem.param_values,
+                getattr(entry, "param_schema", None),
+                ("widthMm", "lengthMm", "diameterMm", "bMm"),
+            )
+            or aabb.width_mm
+        )
+        depth = (
+            _dimension_from_sources(
+                elem.param_values,
+                getattr(entry, "param_schema", None),
+                ("depthMm", "diameterMm", "hMm"),
+            )
+            or aabb.depth_mm
+        )
         return _centered_rect_footprint(elem.position_mm, width, depth, float(elem.rotation_deg))
     if kind == "family_instance":
         family_type = elements.get(elem.family_type_id)
         type_params = getattr(family_type, "parameters", None)
-        width = _dimension_from_sources(
-            elem.param_values,
-            type_params,
-            ("widthMm", "lengthMm", "diameterMm", "bMm"),
-        ) or aabb.width_mm
-        depth = _dimension_from_sources(
-            elem.param_values,
-            type_params,
-            ("depthMm", "diameterMm", "hMm"),
-        ) or aabb.depth_mm
+        width = (
+            _dimension_from_sources(
+                elem.param_values,
+                type_params,
+                ("widthMm", "lengthMm", "diameterMm", "bMm"),
+            )
+            or aabb.width_mm
+        )
+        depth = (
+            _dimension_from_sources(
+                elem.param_values,
+                type_params,
+                ("depthMm", "diameterMm", "hMm"),
+            )
+            or aabb.depth_mm
+        )
         return _centered_rect_footprint(elem.position_mm, width, depth, float(elem.rotation_deg))
     return _aabb_plan_footprint(aabb)
 
@@ -537,6 +554,127 @@ def _aabb_for_roof(elem: Any, elements: dict[str, Element]) -> AABB | None:
         run = min(max_x - min_x, max_y - min_y) / 2.0
         rise = abs(math.tan(math.radians(float(slope_deg)))) * max(0.0, run)
     return AABB(min_x, min_y, base_z, max_x, max_y, base_z + max(300.0, rise + 300.0))
+
+
+def _aabb_for_dormer(elem: Any, elements: dict[str, Element]) -> AABB | None:
+    host = elements.get(getattr(elem, "host_roof_id", "") or "")
+    if host is None or getattr(host, "kind", None) != "roof":
+        return None
+    footprint = _dormer_footprint_points(elem, host)
+    if not footprint:
+        return None
+    center_x = sum(point[0] for point in footprint) / len(footprint)
+    center_y = sum(point[1] for point in footprint) / len(footprint)
+    base_z = _roof_height_at_point_mm(host, elements, center_x, center_y) - 75.0
+    wall_height = max(500.0, float(getattr(elem, "wall_height_mm", 0.0) or 0.0))
+    roof_kind = str(getattr(elem, "dormer_roof_kind", "") or "flat")
+    roof_rise = 150.0
+    if roof_kind in {"gable", "hipped"}:
+        roof_rise = max(100.0, float(getattr(elem, "ridge_height_mm", 0.0) or 1200.0))
+    elif roof_kind == "shed":
+        pitch = float(getattr(elem, "dormer_roof_pitch_deg", 0.0) or 8.0)
+        run = max(100.0, float(getattr(elem, "depth_mm", 0.0) or 0.0))
+        roof_rise = max(100.0, abs(math.tan(math.radians(pitch))) * run)
+    return _bounds_from_points(footprint, base_z, base_z + wall_height + roof_rise + 150.0)
+
+
+def _dormer_footprint_points(elem: Any, host_roof: Any) -> list[tuple[float, float]] | None:
+    footprint = [(float(p.x_mm), float(p.y_mm)) for p in getattr(host_roof, "footprint_mm", [])]
+    if not footprint:
+        return None
+    xs = [p[0] for p in footprint]
+    ys = [p[1] for p in footprint]
+    min_x, max_x = min(xs), max(xs)
+    min_y, max_y = min(ys), max(ys)
+    span_x = max_x - min_x
+    span_y = max_y - min_y
+    ridge_axis = getattr(host_roof, "ridge_axis", None)
+    ridge_along_x = True if ridge_axis == "x" else False if ridge_axis == "z" else span_x >= span_y
+    position = getattr(elem, "position_on_roof", None)
+    along = float(getattr(position, "along_ridge_mm", 0.0) if position is not None else 0.0)
+    across = float(getattr(position, "across_ridge_mm", 0.0) if position is not None else 0.0)
+    center_x = (min_x + max_x) / 2.0 + (along if ridge_along_x else across)
+    center_y = (min_y + max_y) / 2.0 + (across if ridge_along_x else along)
+    half_width = float(getattr(elem, "width_mm", 0.0) or 0.0) / 2.0
+    half_depth = float(getattr(elem, "depth_mm", 0.0) or 0.0) / 2.0
+    if ridge_along_x:
+        x0, x1 = center_x - half_width, center_x + half_width
+        y0, y1 = center_y - half_depth, center_y + half_depth
+    else:
+        x0, x1 = center_x - half_depth, center_x + half_depth
+        y0, y1 = center_y - half_width, center_y + half_width
+    return [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+
+
+def _roof_height_at_point_mm(
+    roof: Any,
+    elements: dict[str, Element],
+    x_mm: float,
+    y_mm: float,
+) -> float:
+    ref_z = _level_elevation_mm(elements, getattr(roof, "reference_level_id", None))
+    walls_at_ref = [
+        e
+        for e in elements.values()
+        if getattr(e, "kind", None) == "wall"
+        and getattr(e, "level_id", None) == getattr(roof, "reference_level_id", None)
+    ]
+    wall_top = max((float(getattr(w, "height_mm", 0.0) or 0.0) for w in walls_at_ref), default=0.0)
+    eave_z = ref_z + wall_top
+    if getattr(roof, "roof_geometry_mode", None) == "mass_box":
+        return eave_z
+    footprint = [(float(p.x_mm), float(p.y_mm)) for p in getattr(roof, "footprint_mm", [])]
+    if not footprint:
+        return eave_z
+    xs = [p[0] for p in footprint]
+    ys = [p[1] for p in footprint]
+    min_x, max_x = min(xs), max(xs)
+    min_y, max_y = min(ys), max(ys)
+    span_x = max_x - min_x
+    span_y = max_y - min_y
+    slope_deg = min(70.0, max(5.0, float(getattr(roof, "slope_deg", None) or 25.0)))
+    tan = math.tan(math.radians(slope_deg))
+    ridge_axis = getattr(roof, "ridge_axis", None)
+    ridge_along_x = True if ridge_axis == "x" else False if ridge_axis == "z" else span_x >= span_y
+    mode = getattr(roof, "roof_geometry_mode", None)
+    if mode == "asymmetric_gable":
+        offset = float(getattr(roof, "ridge_offset_transverse_mm", 0.0) or 0.0)
+        eave_left = (
+            ref_z + float(getattr(roof, "eave_height_left_mm", 0.0))
+            if getattr(roof, "eave_height_left_mm", None) is not None
+            else eave_z
+        )
+        eave_right = (
+            ref_z + float(getattr(roof, "eave_height_right_mm", 0.0))
+            if getattr(roof, "eave_height_right_mm", None) is not None
+            else eave_z
+        )
+        if ridge_along_x:
+            half_span = span_y / 2.0
+            ridge_y = (min_y + max_y) / 2.0 + max(-half_span + 1e-6, min(half_span - 1e-6, offset))
+            left_run = ridge_y - min_y
+            ridge_z = eave_left + left_run * tan
+            if y_mm <= ridge_y:
+                t = 0.0 if left_run <= 0 else max(0.0, min(1.0, (y_mm - min_y) / left_run))
+                return eave_left + t * (ridge_z - eave_left)
+            right_run = max_y - ridge_y
+            t = 0.0 if right_run <= 0 else max(0.0, min(1.0, (y_mm - ridge_y) / right_run))
+            return ridge_z + t * (eave_right - ridge_z)
+        half_span = span_x / 2.0
+        ridge_x = (min_x + max_x) / 2.0 + max(-half_span + 1e-6, min(half_span - 1e-6, offset))
+        left_run = ridge_x - min_x
+        ridge_z = eave_left + left_run * tan
+        if x_mm <= ridge_x:
+            t = 0.0 if left_run <= 0 else max(0.0, min(1.0, (x_mm - min_x) / left_run))
+            return eave_left + t * (ridge_z - eave_left)
+        right_run = max_x - ridge_x
+        t = 0.0 if right_run <= 0 else max(0.0, min(1.0, (x_mm - ridge_x) / right_run))
+        return ridge_z + t * (eave_right - ridge_z)
+    if ridge_along_x:
+        run = span_y / 2.0 - abs(y_mm - (min_y + max_y) / 2.0)
+    else:
+        run = span_x / 2.0 - abs(x_mm - (min_x + max_x) / 2.0)
+    return eave_z + max(0.0, run) * tan
 
 
 def _aabb_for_ceiling(elem: Any, elements: dict[str, Element]) -> AABB | None:

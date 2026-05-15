@@ -113,6 +113,8 @@ The right mental model is **iterative convergence through 5–7 phased passes**,
 
 For seed work, the loop is not optional: keep the dev app running while authoring, reseed after each meaningful bundle edit, inspect the same UI Advisor panel the user sees, capture/check screenshots from saved viewpoints, and revise the source bundle until visible geometry and advisor findings converge. Do not rely only on offline snapshot generation, unit tests, or successful command replay.
 
+The UI Advisor footer is backed by profile-specific server reports. For project-initiation seeds, the default CLI Advisor payload is not enough: query `/api/models/<model-id>/constructability-report?profile=construction_readiness` directly, or run `python3 claude-skills/sketch-to-bim/sketch_bim.py constructability-report --model <model-id> --profile construction_readiness`. Treat any UI footer error or construction-readiness error as blocking until the server report confirms it is gone.
+
 Seed evidence is valid only for the app/Advisor build that produced it. If
 Advisor rules, constructability checks, renderer behavior, or seed commands
 change after evidence capture, rerun the live loop at current `HEAD` before
@@ -248,7 +250,7 @@ These findings block phase advancement unless the user explicitly accepts them w
    ```bash
    node packages/cli/cli.mjs initiation-check \
      --ir spec/examples/sketch-understanding-ir.example.json \
-     --capabilities spec/sketch-to-bim-capability-matrix.json \
+     --capabilities spec/archive/sketch-to-bim-capability-matrix.json \
      --out nightshift/<run>/initiation-check \
      --mode project_initiation_bim \
      --fail-on-acceptance
@@ -261,7 +263,7 @@ These findings block phase advancement unless the user explicitly accepts them w
    ```bash
    node packages/cli/cli.mjs initiation-run \
      --ir spec/examples/sketch-understanding-ir.example.json \
-     --capabilities spec/sketch-to-bim-capability-matrix.json \
+     --capabilities spec/archive/sketch-to-bim-capability-matrix.json \
      --model "$BIM_AI_MODEL_ID" \
      --out nightshift/<run>/initiation-run \
      --target-image nightshift/<run>/target-reference.png \
@@ -318,7 +320,7 @@ Before authoring the first serious bundle, start and wire the feedback loop:
 4. **After every meaningful edit, run all four checks in order:**
    - replay/dry-run: apply the artifact `bundle.json` to an empty document or use `bim-ai apply-bundle --dry-run --in <commands.json>` for project work;
    - seed/apply: `make seed name=<seed-name>` or apply the bundle to the project model;
-   - advisor: `BIM_AI_MODEL_ID=<id> node packages/cli/cli.mjs advisor --output json --severity warning` plus an info pass when diagnosing weird visuals;
+   - advisor: `BIM_AI_MODEL_ID=<id> node packages/cli/cli.mjs advisor --output json --severity warning` plus `python3 claude-skills/sketch-to-bim/sketch_bim.py constructability-report --model <id> --profile construction_readiness`;
    - render: Playwright checkpoint screenshots or direct browser screenshots from the saved viewpoints.
 5. **Read the screenshots with vision.** Say what is wrong in geometric terms before editing again: roof too generic, cutout not legible, stair collides, room plan messy, facade rhythm wrong, scale too small, etc.
 6. **Read the Advisor panel like a punch list.** For each finding capture `ruleId`, severity, message, recommendation text, perspective/codePreset, and `elementIds`. Corrections must target the named elements unless the rule itself is wrong.
@@ -331,7 +333,7 @@ Final seed packaging must use a fresh current-HEAD live run, normally:
 ```bash
 BIM_AI_MODEL_ID=<id> node packages/cli/cli.mjs initiation-run \
   --ir seed-artifacts/<seed-name>/evidence/sketch-ir.json \
-  --capabilities spec/sketch-to-bim-capability-matrix.json \
+  --capabilities spec/archive/sketch-to-bim-capability-matrix.json \
   --model <id> \
   --mode project_initiation_bim \
   --fail-on-warning \
@@ -537,6 +539,8 @@ These are the failure modes you must avoid; they are the observed behaviour from
 - **Eyeballing dimensions** without recording them as assumptions. The "ridge offset 1500 mm" was a guess, not a calibrated measurement. Don't.
 - **Declaring "partial" when the silhouette is wrong.** The honest call is "failed; here's the gap". The sprint prompt warned about this exact mistake and I made it anyway. Don't.
 - **Building geometry without checking the renderer can faithfully render it.** The asymmetric_gable mesh isn't watertight; the dormer CSG cut silently no-ops. The agent had no way to detect this from inside the engine — only the rendered output reveals it. **Look at the render.**
+- **Stopping at a cut without the positive geometry.** A roof opening that shows as a hole is not a dormer; the dormer body, cheeks, front window, and roof must sit visibly on the sampled roof plane in the screenshot.
+- **Trusting the default advisor when the UI footer shows errors.** The construction-readiness profile can add furniture clearance, metadata, and proxy findings that the authoring snapshot does not show. Query the server report directly and write down the named elements before declaring the model clean.
 - **Choosing dimensions where `eaveLeftMm + leftRunMm · tan(slope) < eaveRightMm`.** Produces an inverted "slope" that flattens the gable. Sanity-check before committing the roof.
 
 ---

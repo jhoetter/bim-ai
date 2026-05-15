@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { Element } from '@bim-ai/core';
 import { resolveMaterial, type ViewportPaintBundle } from './materials';
 import { addEdges, categoryColorOr } from './sceneHelpers';
+import { roofHeightAtPoint } from './roofHeightSampler';
 
 function elevationMForLevel(levelId: string, elementsById: Record<string, Element>): number {
   const lvl = elementsById[levelId];
@@ -98,12 +99,14 @@ export function makeDormerMesh(
     (e): e is WallElem =>
       e.kind === 'wall' && (e as WallElem).levelId === hostRoof.referenceLevelId,
   );
+  const centreXmm = (fp.minX + fp.maxX) / 2;
+  const centreYmm = (fp.minY + fp.maxY) / 2;
   const wallTopM =
     wallsAtRef.length > 0 ? Math.max(...wallsAtRef.map((w) => (w.heightMm ?? 0) / 1000)) : 0;
-  const baseY = refElev + 0; // dormer floor sits on the upper-volume slab top
+  const roofPlaneY = roofHeightAtPoint(hostRoof, elementsById, centreXmm, centreYmm);
+  const baseY = Math.max(refElev + wallTopM, roofPlaneY - 0.05);
   const wallHeightM = THREE.MathUtils.clamp(dormer.wallHeightMm / 1000, 0.5, 8);
   const topY = baseY + wallHeightM;
-  void wallTopM;
 
   // World coords: plan-X → world-X, plan-Y → world-Z (no negation,
   // matching the wall + roof builders elsewhere in viewport/meshBuilders.ts).
@@ -117,6 +120,7 @@ export function makeDormerMesh(
   const depthM = zMax - zMin;
   const cheekThickM = 0.18;
   const roofThickM = 0.12;
+  const openTowardPositiveAcross = (dormer.positionOnRoof.acrossRidgeMm ?? 0) >= 0;
 
   const wallSpec = resolveMaterial(dormer.wallMaterialKey ?? null);
   const wallColor = wallSpec?.baseColor ?? '#f4f4f0';
@@ -154,15 +158,27 @@ export function makeDormerMesh(
       addEdges(cheek);
       group.add(cheek);
     }
-    // Back wall on the −Z side (away from deck for our typical case);
-    // open face on +Z side.
+    // Back wall faces the ridge; the open glazed face points down the roof
+    // slope toward the eave side where the dormer was placed.
+    const backWallZ = openTowardPositiveAcross ? zMin + cheekThickM / 2 : zMax - cheekThickM / 2;
     const backWall = new THREE.Mesh(
       new THREE.BoxGeometry(widthM, wallHeightM, cheekThickM),
       wallMat,
     );
-    backWall.position.set((xMin + xMax) / 2, baseY + wallHeightM / 2, zMin + cheekThickM / 2);
+    backWall.position.set((xMin + xMax) / 2, baseY + wallHeightM / 2, backWallZ);
     addEdges(backWall);
     group.add(backWall);
+    addDormerFaceWindow(group, {
+      ridgeAlongX: true,
+      openTowardPositiveAcross,
+      xMin,
+      xMax,
+      zMin,
+      zMax,
+      baseY,
+      wallHeightM,
+      cheekThickM,
+    });
   } else {
     // Ridge along plan-Y → ridge along world-Z. Cheek walls are at zMin,zMax
     // running along world-X.
@@ -175,14 +191,27 @@ export function makeDormerMesh(
       addEdges(cheek);
       group.add(cheek);
     }
-    // Back wall on the −X side (toward ridge); open face on +X (toward deck).
+    // Back wall faces the ridge; the open glazed face points down the roof
+    // slope toward the eave side where the dormer was placed.
+    const backWallX = openTowardPositiveAcross ? xMin + cheekThickM / 2 : xMax - cheekThickM / 2;
     const backWall = new THREE.Mesh(
       new THREE.BoxGeometry(cheekThickM, wallHeightM, depthM),
       wallMat,
     );
-    backWall.position.set(xMin + cheekThickM / 2, baseY + wallHeightM / 2, (zMin + zMax) / 2);
+    backWall.position.set(backWallX, baseY + wallHeightM / 2, (zMin + zMax) / 2);
     addEdges(backWall);
     group.add(backWall);
+    addDormerFaceWindow(group, {
+      ridgeAlongX: false,
+      openTowardPositiveAcross,
+      xMin,
+      xMax,
+      zMin,
+      zMax,
+      baseY,
+      wallHeightM,
+      cheekThickM,
+    });
   }
 
   const roofKind = dormer.dormerRoofKind ?? 'flat';
@@ -224,6 +253,103 @@ export function makeDormerMesh(
 
   void paint;
   return group;
+}
+
+function addDormerFaceWindow(
+  group: THREE.Group,
+  spec: {
+    ridgeAlongX: boolean;
+    openTowardPositiveAcross: boolean;
+    xMin: number;
+    xMax: number;
+    zMin: number;
+    zMax: number;
+    baseY: number;
+    wallHeightM: number;
+    cheekThickM: number;
+  },
+): void {
+  const glassSpec = resolveMaterial('glass_clear');
+  const frameSpec = resolveMaterial('aluminium_dark_grey');
+  const glassMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(glassSpec?.baseColor ?? '#b8d6e6'),
+    roughness: glassSpec?.roughness ?? 0.05,
+    metalness: glassSpec?.metalness ?? 0,
+    transparent: true,
+    opacity: 0.62,
+    envMapIntensity: 0.9,
+  });
+  const frameMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(frameSpec?.baseColor ?? '#343638'),
+    roughness: frameSpec?.roughness ?? 0.35,
+    metalness: frameSpec?.metalness ?? 0.4,
+  });
+
+  const widthM = spec.xMax - spec.xMin;
+  const depthM = spec.zMax - spec.zMin;
+  const glassHeight = Math.max(0.65, spec.wallHeightM * 0.52);
+  const y = spec.baseY + spec.wallHeightM * 0.48;
+  const frame = 0.045;
+  const thin = 0.04;
+
+  if (spec.ridgeAlongX) {
+    const glassWidth = Math.max(0.7, widthM * 0.72);
+    const z = spec.openTowardPositiveAcross
+      ? spec.zMax - spec.cheekThickM / 2
+      : spec.zMin + spec.cheekThickM / 2;
+    const glass = new THREE.Mesh(new THREE.BoxGeometry(glassWidth, glassHeight, thin), glassMat);
+    glass.position.set((spec.xMin + spec.xMax) / 2, y, z);
+    group.add(glass);
+    for (const x of [
+      (spec.xMin + spec.xMax) / 2 - glassWidth / 2,
+      (spec.xMin + spec.xMax) / 2,
+      (spec.xMin + spec.xMax) / 2 + glassWidth / 2,
+    ]) {
+      const mullion = new THREE.Mesh(
+        new THREE.BoxGeometry(frame, glassHeight + frame, thin * 1.4),
+        frameMat,
+      );
+      mullion.position.set(x, y, z);
+      group.add(mullion);
+    }
+    for (const yy of [y - glassHeight / 2, y + glassHeight / 2]) {
+      const rail = new THREE.Mesh(
+        new THREE.BoxGeometry(glassWidth + frame, frame, thin * 1.4),
+        frameMat,
+      );
+      rail.position.set((spec.xMin + spec.xMax) / 2, yy, z);
+      group.add(rail);
+    }
+    return;
+  }
+
+  const glassWidth = Math.max(0.7, depthM * 0.72);
+  const x = spec.openTowardPositiveAcross
+    ? spec.xMax - spec.cheekThickM / 2
+    : spec.xMin + spec.cheekThickM / 2;
+  const glass = new THREE.Mesh(new THREE.BoxGeometry(thin, glassHeight, glassWidth), glassMat);
+  glass.position.set(x, y, (spec.zMin + spec.zMax) / 2);
+  group.add(glass);
+  for (const z of [
+    (spec.zMin + spec.zMax) / 2 - glassWidth / 2,
+    (spec.zMin + spec.zMax) / 2,
+    (spec.zMin + spec.zMax) / 2 + glassWidth / 2,
+  ]) {
+    const mullion = new THREE.Mesh(
+      new THREE.BoxGeometry(thin * 1.4, glassHeight + frame, frame),
+      frameMat,
+    );
+    mullion.position.set(x, y, z);
+    group.add(mullion);
+  }
+  for (const yy of [y - glassHeight / 2, y + glassHeight / 2]) {
+    const rail = new THREE.Mesh(
+      new THREE.BoxGeometry(thin * 1.4, frame, glassWidth + frame),
+      frameMat,
+    );
+    rail.position.set(x, yy, (spec.zMin + spec.zMax) / 2);
+    group.add(rail);
+  }
 }
 
 /** KRN-14 — gable roof for a dormer. */

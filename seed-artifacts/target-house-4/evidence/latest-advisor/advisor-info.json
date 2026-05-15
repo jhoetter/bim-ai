@@ -1,0 +1,62 @@
+{
+  "groups": [
+    {
+      "code": "gltf_export_manifest_expected_extension_missing",
+      "count": 2,
+      "elementIds": [],
+      "messages": [
+        "glTF export manifest: extension 'bim_ai_skew_wall_hosted_openings_v0' not emitted but eligible element kind 'wall' is present (skipReasonCode='no_eligible_elements').",
+        "glTF export manifest: extension 'bim_ai_roof_unsupported_shape_summary_v0' not emitted but eligible element kind 'roof' is present (skipReasonCode='no_eligible_elements')."
+      ],
+      "severity": "info"
+    },
+    {
+      "code": "room_color_scheme_identity_missing",
+      "count": 1,
+      "elementIds": [],
+      "messages": [
+        "No room color scheme element found. Use upsertRoomColorScheme to author overrides."
+      ],
+      "severity": "info"
+    },
+    {
+      "code": "room_finish_metadata_hint",
+      "count": 26,
+      "elementIds": [
+        "t4-room-dg-left-bedroom",
+        "t4-room-dg-left-front-suite",
+        "t4-room-dg-left-living",
+        "t4-room-dg-left-stair",
+        "t4-room-dg-right-bedroom",
+        "t4-room-dg-right-front-suite",
+        "t4-room-dg-right-living",
+        "t4-room-dg-right-stair",
+        "t4-room-eg-left-bath",
+        "t4-room-eg-left-bedroom",
+        "t4-room-eg-left-child",
+        "t4-room-eg-left-hall",
+        "t4-room-eg-left-kitchen",
+        "t4-room-eg-left-living",
+        "t4-room-eg-left-stair",
+        "t4-room-eg-right-bath",
+        "t4-room-eg-right-bedroom",
+        "t4-room-eg-right-child",
+        "t4-room-eg-right-hall",
+        "t4-room-eg-right-kitchen",
+        "t4-room-eg-right-living",
+        "t4-room-eg-right-stair",
+        "t4-room-kg-left-service",
+        "t4-room-kg-left-storage",
+        "t4-room-kg-right-service",
+        "t4-room-kg-right-storage"
+      ],
+      "messages": [
+        "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete."
+      ],
+      "severity": "info"
+    }
+  ],
+  "modelId": "b4329ca6-bef7-5be7-8341-cf73e17ac468",
+  "revision": 1,
+  "total": 29
+}

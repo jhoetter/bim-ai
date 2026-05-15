@@ -1,0 +1,50 @@
+{
+  "checks": [
+    {
+      "criteria": [
+        "Silhouette and volume hierarchy match the sketch.",
+        "Roof, openings, terraces/loggias, stairs, and other visible special features render as real geometry.",
+        "Materials and facade zones match the visual intent.",
+        "Rooms, access, and interior programme are usable for project initiation.",
+        "No visual issue contradicts Advisor acceptance."
+      ],
+      "label": "Main sketch-matched view",
+      "notes": "",
+      "screenshot": null,
+      "verdict": "pending",
+      "viewId": "main"
+    },
+    {
+      "criteria": [
+        "Silhouette and volume hierarchy match the sketch.",
+        "Roof, openings, terraces/loggias, stairs, and other visible special features render as real geometry.",
+        "Materials and facade zones match the visual intent.",
+        "Rooms, access, and interior programme are usable for project initiation.",
+        "No visual issue contradicts Advisor acceptance."
+      ],
+      "label": "Front/elevation view",
+      "notes": "",
+      "screenshot": null,
+      "verdict": "pending",
+      "viewId": "front"
+    },
+    {
+      "criteria": [
+        "Silhouette and volume hierarchy match the sketch.",
+        "Roof, openings, terraces/loggias, stairs, and other visible special features render as real geometry.",
+        "Materials and facade zones match the visual intent.",
+        "Rooms, access, and interior programme are usable for project initiation.",
+        "No visual issue contradicts Advisor acceptance."
+      ],
+      "label": "Plan diagnostic view",
+      "notes": "",
+      "screenshot": null,
+      "verdict": "pending",
+      "viewId": "plan"
+    }
+  ],
+  "manifest": "seed-artifacts/target-house-4/evidence/phase-final/screenshot-manifest.json",
+  "phase": "final",
+  "schemaVersion": "sketch-to-bim.semantic-checklist.v1",
+  "seed": "target-house-4"
+}

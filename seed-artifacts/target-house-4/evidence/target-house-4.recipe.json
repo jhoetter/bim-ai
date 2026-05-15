@@ -1,0 +1,2481 @@
+{
+  "schemaVersion": "seed-dsl.v0",
+  "id": "target-house-4-testhaus-draft",
+  "intent": "Testhaus project-initiation seed from customer PDFs: 1956 German two-family semi-detached house with 19.80 m by 9.90 m footprint, basement, mirrored ground and attic dwellings, central party wall, two stair cores, continuous steep gable roof, paired dormers, rendered masonry walls, and punched facade openings.",
+  "projectBasePoint": {
+    "id": "t4-pbp",
+    "positionMm": {
+      "xMm": 0,
+      "yMm": 0,
+      "zMm": 0
+    },
+    "angleToTrueNorthDeg": 0
+  },
+  "levels": [
+    {
+      "id": "t4-lvl-basement",
+      "name": "Kellergeschoss",
+      "elevationMm": -2500,
+      "planViewId": "t4-plan-basement"
+    },
+    {
+      "id": "t4-lvl-ground",
+      "name": "Erdgeschoss",
+      "elevationMm": 0,
+      "planViewId": "t4-plan-ground"
+    },
+    {
+      "id": "t4-lvl-attic",
+      "name": "Dachgeschoss",
+      "elevationMm": 3000,
+      "planViewId": "t4-plan-attic"
+    }
+  ],
+  "types": {
+    "wallTypes": [
+      {
+        "id": "t4-wt-rendered-masonry",
+        "name": "Rendered masonry external wall",
+        "layers": [
+          {
+            "thicknessMm": 20,
+            "function": "finish",
+            "materialKey": "render_light_grey"
+          },
+          {
+            "thicknessMm": 280,
+            "function": "structure",
+            "materialKey": "masonry_block"
+          },
+          {
+            "thicknessMm": 15,
+            "function": "finish",
+            "materialKey": "plaster"
+          }
+        ]
+      },
+      {
+        "id": "t4-wt-basement",
+        "name": "Concrete basement wall",
+        "layers": [
+          {
+            "thicknessMm": 300,
+            "function": "structure",
+            "materialKey": "concrete_smooth"
+          },
+          {
+            "thicknessMm": 15,
+            "function": "finish",
+            "materialKey": "plaster"
+          }
+        ]
+      },
+      {
+        "id": "t4-wt-party",
+        "name": "Masonry party and stair wall",
+        "layers": [
+          {
+            "thicknessMm": 240,
+            "function": "structure",
+            "materialKey": "masonry_block"
+          },
+          {
+            "thicknessMm": 15,
+            "function": "finish",
+            "materialKey": "plaster"
+          }
+        ]
+      },
+      {
+        "id": "t4-wt-partition",
+        "name": "Interior partition",
+        "layers": [
+          {
+            "thicknessMm": 115,
+            "function": "structure",
+            "materialKey": "plasterboard"
+          }
+        ]
+      },
+      {
+        "id": "t4-wt-window-glass",
+        "name": "Thin glazed window panel",
+        "layers": [
+          {
+            "thicknessMm": 40,
+            "function": "finish",
+            "materialKey": "glass_clear"
+          }
+        ]
+      }
+    ],
+    "floorTypes": [
+      {
+        "id": "t4-ft-concrete",
+        "name": "Concrete floor slab",
+        "layers": [
+          {
+            "thicknessMm": 180,
+            "function": "structure",
+            "materialKey": "concrete_smooth"
+          },
+          {
+            "thicknessMm": 40,
+            "function": "finish",
+            "materialKey": "render_light_grey"
+          }
+        ]
+      }
+    ],
+    "roofTypes": [
+      {
+        "id": "t4-rt-tiled-gable",
+        "name": "Terracotta tiled pitched roof",
+        "layers": [
+          {
+            "thicknessMm": 80,
+            "function": "finish",
+            "materialKey": "roof_tile_terracotta"
+          },
+          {
+            "thicknessMm": 160,
+            "function": "structure",
+            "materialKey": "timber_stud"
+          }
+        ]
+      }
+    ]
+  },
+  "volumes": [
+    {
+      "id": "t4-kg",
+      "name": "Basement structural volume",
+      "levelId": "t4-lvl-basement",
+      "wallHeightMm": 2500,
+      "wallThicknessMm": 300,
+      "wallTypeId": "t4-wt-basement",
+      "floorTypeId": "t4-ft-concrete",
+      "materialKey": "concrete_smooth",
+      "roomBounded": true,
+      "footprintMm": [
+        {
+          "xMm": 0,
+          "yMm": 0
+        },
+        {
+          "xMm": 19800,
+          "yMm": 0
+        },
+        {
+          "xMm": 19800,
+          "yMm": 9900
+        },
+        {
+          "xMm": 0,
+          "yMm": 9900
+        }
+      ]
+    },
+    {
+      "id": "t4-eg",
+      "name": "Ground floor rendered two-family block",
+      "levelId": "t4-lvl-ground",
+      "wallHeightMm": 3000,
+      "wallThicknessMm": 315,
+      "wallTypeId": "t4-wt-rendered-masonry",
+      "floorTypeId": "t4-ft-concrete",
+      "materialKey": "render_light_grey",
+      "roomBounded": true,
+      "footprintMm": [
+        {
+          "xMm": 0,
+          "yMm": 0
+        },
+        {
+          "xMm": 19800,
+          "yMm": 0
+        },
+        {
+          "xMm": 19800,
+          "yMm": 9900
+        },
+        {
+          "xMm": 0,
+          "yMm": 9900
+        }
+      ]
+    },
+    {
+      "id": "t4-dg",
+      "name": "Attic knee-wall level",
+      "levelId": "t4-lvl-attic",
+      "wallHeightMm": 2300,
+      "wallThicknessMm": 315,
+      "wallTypeId": "t4-wt-rendered-masonry",
+      "floorTypeId": "t4-ft-concrete",
+      "materialKey": "render_light_grey",
+      "roomBounded": true,
+      "footprintMm": [
+        {
+          "xMm": 0,
+          "yMm": 0
+        },
+        {
+          "xMm": 19800,
+          "yMm": 0
+        },
+        {
+          "xMm": 19800,
+          "yMm": 9900
+        },
+        {
+          "xMm": 0,
+          "yMm": 9900
+        }
+      ]
+    }
+  ],
+  "roofs": [
+    {
+      "id": "t4-roof-main",
+      "name": "Continuous long-ridge gable roof",
+      "referenceLevelId": "t4-lvl-attic",
+      "footprintMm": [
+        {
+          "xMm": 0,
+          "yMm": 0
+        },
+        {
+          "xMm": 19800,
+          "yMm": 0
+        },
+        {
+          "xMm": 19800,
+          "yMm": 9900
+        },
+        {
+          "xMm": 0,
+          "yMm": 9900
+        }
+      ],
+      "roofGeometryMode": "gable_pitched_rectangle",
+      "slopeDeg": 36,
+      "overhangMm": 450,
+      "eaveHeightLeftMm": 900,
+      "eaveHeightRightMm": 900,
+      "roofTypeId": "t4-rt-tiled-gable",
+      "materialKey": "roof_tile_terracotta"
+    }
+  ],
+  "rooms": [
+    {
+      "id": "t4-room-kg-left-storage",
+      "name": "Keller links",
+      "levelId": "t4-lvl-basement",
+      "programmeCode": "storage",
+      "functionLabel": "Basement storage",
+      "targetAreaM2": 49.01,
+      "outlineMm": [
+        {
+          "xMm": 0,
+          "yMm": 0
+        },
+        {
+          "xMm": 9900,
+          "yMm": 0
+        },
+        {
+          "xMm": 9900,
+          "yMm": 4950
+        },
+        {
+          "xMm": 0,
+          "yMm": 4950
+        }
+      ]
+    },
+    {
+      "id": "t4-room-kg-left-service",
+      "name": "Waschkueche links",
+      "levelId": "t4-lvl-basement",
+      "programmeCode": "utility",
+      "functionLabel": "Basement service",
+      "targetAreaM2": 49.01,
+      "outlineMm": [
+        {
+          "xMm": 0,
+          "yMm": 4950
+        },
+        {
+          "xMm": 9900,
+          "yMm": 4950
+        },
+        {
+          "xMm": 9900,
+          "yMm": 9900
+        },
+        {
+          "xMm": 0,
+          "yMm": 9900
+        }
+      ]
+    },
+    {
+      "id": "t4-room-kg-right-storage",
+      "name": "Keller rechts",
+      "levelId": "t4-lvl-basement",
+      "programmeCode": "storage",
+      "functionLabel": "Basement storage",
+      "targetAreaM2": 49.01,
+      "outlineMm": [
+        {
+          "xMm": 9900,
+          "yMm": 0
+        },
+        {
+          "xMm": 19800,
+          "yMm": 0
+        },
+        {
+          "xMm": 19800,
+          "yMm": 4950
+        },
+        {
+          "xMm": 9900,
+          "yMm": 4950
+        }
+      ]
+    },
+    {
+      "id": "t4-room-kg-right-service",
+      "name": "Waschkueche rechts",
+      "levelId": "t4-lvl-basement",
+      "programmeCode": "utility",
+      "functionLabel": "Basement service",
+      "targetAreaM2": 49.01,
+      "outlineMm": [
+        {
+          "xMm": 9900,
+          "yMm": 4950
+        },
+        {
+          "xMm": 19800,
+          "yMm": 4950
+        },
+        {
+          "xMm": 19800,
+          "yMm": 9900
+        },
+        {
+          "xMm": 9900,
+          "yMm": 9900
+        }
+      ]
+    },
+    {
+      "id": "t4-room-eg-left-child",
+      "name": "Kinderzimmer EG links",
+      "levelId": "t4-lvl-ground",
+      "programmeCode": "bedroom",
+      "functionLabel": "Child room",
+      "targetAreaM2": 9.8,
+      "outlineMm": [
+        {
+          "xMm": 0,
+          "yMm": 0
+        },
+        {
+          "xMm": 3630,
+          "yMm": 0
+        },
+        {
+          "xMm": 3630,
+          "yMm": 2700
+        },
+        {
+          "xMm": 0,
+          "yMm": 2700
+        }
+      ]
+    },
+    {
+      "id": "t4-room-eg-left-kitchen",
+      "name": "Kueche EG links",
+      "levelId": "t4-lvl-ground",
+      "programmeCode": "kitchen",
+      "functionLabel": "Kitchen",
+      "targetAreaM2": 6.13,
+      "outlineMm": [
+        {
+          "xMm": 3630,
+          "yMm": 0
+        },
+        {
+          "xMm": 5900,
+          "yMm": 0
+        },
+        {
+          "xMm": 5900,
+          "yMm": 2700
+        },
+        {
+          "xMm": 3630,
+          "yMm": 2700
+        }
+      ]
+    },
+    {
+      "id": "t4-room-eg-left-bath",
+      "name": "Bad/WC EG links",
+      "levelId": "t4-lvl-ground",
+      "programmeCode": "bathroom",
+      "functionLabel": "Bath/WC",
+      "targetAreaM2": 5.4,
+      "outlineMm": [
+        {
+          "xMm": 5900,
+          "yMm": 0
+        },
+        {
+          "xMm": 7900,
+          "yMm": 0
+        },
+        {
+          "xMm": 7900,
+          "yMm": 2700
+        },
+        {
+          "xMm": 5900,
+          "yMm": 2700
+        }
+      ]
+    },
+    {
+      "id": "t4-room-eg-left-hall",
+      "name": "Flur EG links",
+      "levelId": "t4-lvl-ground",
+      "programmeCode": "circulation",
+      "functionLabel": "Hall",
+      "targetAreaM2": 21.88,
+      "outlineMm": [
+        {
+          "xMm": 0,
+          "yMm": 2700
+        },
+        {
+          "xMm": 7900,
+          "yMm": 2700
+        },
+        {
+          "xMm": 7900,
+          "yMm": 5470
+        },
+        {
+          "xMm": 0,
+          "yMm": 5470
+        }
+      ]
+    },
+    {
+      "id": "t4-room-eg-left-stair",
+      "name": "Treppenhaus EG links",
+      "levelId": "t4-lvl-ground",
+      "programmeCode": "circulation",
+      "functionLabel": "Stair",
+      "targetAreaM2": 19.6,
+      "outlineMm": [
+        {
+          "xMm": 7900,
+          "yMm": 0
+        },
+        {
+          "xMm": 9900,
+          "yMm": 0
+        },
+        {
+          "xMm": 9900,
+          "yMm": 9900
+        },
+        {
+          "xMm": 7900,
+          "yMm": 9900
+        }
+      ]
+    },
+    {
+      "id": "t4-room-eg-left-living",
+      "name": "Wohnzimmer EG links",
+      "levelId": "t4-lvl-ground",
+      "programmeCode": "living",
+      "functionLabel": "Living",
+      "targetAreaM2": 18.61,
+      "outlineMm": [
+        {
+          "xMm": 0,
+          "yMm": 5470
+        },
+        {
+          "xMm": 4200,
+          "yMm": 5470
+        },
+        {
+          "xMm": 4200,
+          "yMm": 9900
+        },
+        {
+          "xMm": 0,
+          "yMm": 9900
+        }
+      ]
+    },
+    {
+      "id": "t4-room-eg-left-bedroom",
+      "name": "Schlafzimmer EG links",
+      "levelId": "t4-lvl-ground",
+      "programmeCode": "bedroom",
+      "functionLabel": "Bedroom",
+      "targetAreaM2": 16.39,
+      "outlineMm": [
+        {
+          "xMm": 4200,
+          "yMm": 5470
+        },
+        {
+          "xMm": 7900,
+          "yMm": 5470
+        },
+        {
+          "xMm": 7900,
+          "yMm": 9900
+        },
+        {
+          "xMm": 4200,
+          "yMm": 9900
+        }
+      ]
+    },
+    {
+      "id": "t4-room-eg-right-child",
+      "name": "Kinderzimmer EG rechts",
+      "levelId": "t4-lvl-ground",
+      "programmeCode": "bedroom",
+      "functionLabel": "Child room",
+      "targetAreaM2": 9.8,
+      "outlineMm": [
+        {
+          "xMm": 16170,
+          "yMm": 0
+        },
+        {
+          "xMm": 19800,
+          "yMm": 0
+        },
+        {
+          "xMm": 19800,
+          "yMm": 2700
+        },
+        {
+          "xMm": 16170,
+          "yMm": 2700
+        }
+      ]
+    },
+    {
+      "id": "t4-room-eg-right-kitchen",
+      "name": "Kueche EG rechts",
+      "levelId": "t4-lvl-ground",
+      "programmeCode": "kitchen",
+      "functionLabel": "Kitchen",
+      "targetAreaM2": 6.13,
+      "outlineMm": [
+        {
+          "xMm": 13900,
+          "yMm": 0
+        },
+        {
+          "xMm": 16170,
+          "yMm": 0
+        },
+        {
+          "xMm": 16170,
+          "yMm": 2700
+        },
+        {
+          "xMm": 13900,
+          "yMm": 2700
+        }
+      ]
+    },
+    {
+      "id": "t4-room-eg-right-bath",
+      "name": "Bad/WC EG rechts",
+      "levelId": "t4-lvl-ground",
+      "programmeCode": "bathroom",
+      "functionLabel": "Bath/WC",
+      "targetAreaM2": 5.4,
+      "outlineMm": [
+        {
+          "xMm": 11900,
+          "yMm": 0
+        },
+        {
+          "xMm": 13900,
+          "yMm": 0
+        },
+        {
+          "xMm": 13900,
+          "yMm": 2700
+        },
+        {
+          "xMm": 11900,
+          "yMm": 2700
+        }
+      ]
+    },
+    {
+      "id": "t4-room-eg-right-hall",
+      "name": "Flur EG rechts",
+      "levelId": "t4-lvl-ground",
+      "programmeCode": "circulation",
+      "functionLabel": "Hall",
+      "targetAreaM2": 21.88,
+      "outlineMm": [
+        {
+          "xMm": 11900,
+          "yMm": 2700
+        },
+        {
+          "xMm": 19800,
+          "yMm": 2700
+        },
+        {
+          "xMm": 19800,
+          "yMm": 5470
+        },
+        {
+          "xMm": 11900,
+          "yMm": 5470
+        }
+      ]
+    },
+    {
+      "id": "t4-room-eg-right-stair",
+      "name": "Treppenhaus EG rechts",
+      "levelId": "t4-lvl-ground",
+      "programmeCode": "circulation",
+      "functionLabel": "Stair",
+      "targetAreaM2": 19.6,
+      "outlineMm": [
+        {
+          "xMm": 9900,
+          "yMm": 0
+        },
+        {
+          "xMm": 11900,
+          "yMm": 0
+        },
+        {
+          "xMm": 11900,
+          "yMm": 9900
+        },
+        {
+          "xMm": 9900,
+          "yMm": 9900
+        }
+      ]
+    },
+    {
+      "id": "t4-room-eg-right-living",
+      "name": "Wohnzimmer EG rechts",
+      "levelId": "t4-lvl-ground",
+      "programmeCode": "living",
+      "functionLabel": "Living",
+      "targetAreaM2": 18.61,
+      "outlineMm": [
+        {
+          "xMm": 15600,
+          "yMm": 5470
+        },
+        {
+          "xMm": 19800,
+          "yMm": 5470
+        },
+        {
+          "xMm": 19800,
+          "yMm": 9900
+        },
+        {
+          "xMm": 15600,
+          "yMm": 9900
+        }
+      ]
+    },
+    {
+      "id": "t4-room-eg-right-bedroom",
+      "name": "Schlafzimmer EG rechts",
+      "levelId": "t4-lvl-ground",
+      "programmeCode": "bedroom",
+      "functionLabel": "Bedroom",
+      "targetAreaM2": 16.39,
+      "outlineMm": [
+        {
+          "xMm": 11900,
+          "yMm": 5470
+        },
+        {
+          "xMm": 15600,
+          "yMm": 5470
+        },
+        {
+          "xMm": 15600,
+          "yMm": 9900
+        },
+        {
+          "xMm": 11900,
+          "yMm": 9900
+        }
+      ]
+    },
+    {
+      "id": "t4-room-dg-left-living",
+      "name": "Wohnzimmer DG links",
+      "levelId": "t4-lvl-attic",
+      "programmeCode": "living",
+      "functionLabel": "Attic living",
+      "targetAreaM2": 18.61,
+      "outlineMm": [
+        {
+          "xMm": 0,
+          "yMm": 5470
+        },
+        {
+          "xMm": 4200,
+          "yMm": 5470
+        },
+        {
+          "xMm": 4200,
+          "yMm": 9900
+        },
+        {
+          "xMm": 0,
+          "yMm": 9900
+        }
+      ]
+    },
+    {
+      "id": "t4-room-dg-left-bedroom",
+      "name": "Schlafzimmer DG links",
+      "levelId": "t4-lvl-attic",
+      "programmeCode": "bedroom",
+      "functionLabel": "Attic bedroom",
+      "targetAreaM2": 16.39,
+      "outlineMm": [
+        {
+          "xMm": 4200,
+          "yMm": 5470
+        },
+        {
+          "xMm": 7900,
+          "yMm": 5470
+        },
+        {
+          "xMm": 7900,
+          "yMm": 9900
+        },
+        {
+          "xMm": 4200,
+          "yMm": 9900
+        }
+      ]
+    },
+    {
+      "id": "t4-room-dg-left-front-suite",
+      "name": "DG links Kueche Bad Kind",
+      "levelId": "t4-lvl-attic",
+      "programmeCode": "dwelling_support",
+      "functionLabel": "Kitchen/bath/child rooms",
+      "targetAreaM2": 41.53,
+      "outlineMm": [
+        {
+          "xMm": 0,
+          "yMm": 0
+        },
+        {
+          "xMm": 7900,
+          "yMm": 0
+        },
+        {
+          "xMm": 7900,
+          "yMm": 5470
+        },
+        {
+          "xMm": 0,
+          "yMm": 5470
+        }
+      ]
+    },
+    {
+      "id": "t4-room-dg-left-stair",
+      "name": "Treppenhaus DG links",
+      "levelId": "t4-lvl-attic",
+      "programmeCode": "circulation",
+      "functionLabel": "Attic stair",
+      "targetAreaM2": 19.6,
+      "outlineMm": [
+        {
+          "xMm": 7900,
+          "yMm": 0
+        },
+        {
+          "xMm": 9900,
+          "yMm": 0
+        },
+        {
+          "xMm": 9900,
+          "yMm": 9900
+        },
+        {
+          "xMm": 7900,
+          "yMm": 9900
+        }
+      ]
+    },
+    {
+      "id": "t4-room-dg-right-living",
+      "name": "Wohnzimmer DG rechts",
+      "levelId": "t4-lvl-attic",
+      "programmeCode": "living",
+      "functionLabel": "Attic living",
+      "targetAreaM2": 18.61,
+      "outlineMm": [
+        {
+          "xMm": 15600,
+          "yMm": 5470
+        },
+        {
+          "xMm": 19800,
+          "yMm": 5470
+        },
+        {
+          "xMm": 19800,
+          "yMm": 9900
+        },
+        {
+          "xMm": 15600,
+          "yMm": 9900
+        }
+      ]
+    },
+    {
+      "id": "t4-room-dg-right-bedroom",
+      "name": "Schlafzimmer DG rechts",
+      "levelId": "t4-lvl-attic",
+      "programmeCode": "bedroom",
+      "functionLabel": "Attic bedroom",
+      "targetAreaM2": 16.39,
+      "outlineMm": [
+        {
+          "xMm": 11900,
+          "yMm": 5470
+        },
+        {
+          "xMm": 15600,
+          "yMm": 5470
+        },
+        {
+          "xMm": 15600,
+          "yMm": 9900
+        },
+        {
+          "xMm": 11900,
+          "yMm": 9900
+        }
+      ]
+    },
+    {
+      "id": "t4-room-dg-right-front-suite",
+      "name": "DG rechts Kueche Bad Kind",
+      "levelId": "t4-lvl-attic",
+      "programmeCode": "dwelling_support",
+      "functionLabel": "Kitchen/bath/child rooms",
+      "targetAreaM2": 41.53,
+      "outlineMm": [
+        {
+          "xMm": 11900,
+          "yMm": 0
+        },
+        {
+          "xMm": 19800,
+          "yMm": 0
+        },
+        {
+          "xMm": 19800,
+          "yMm": 5470
+        },
+        {
+          "xMm": 11900,
+          "yMm": 5470
+        }
+      ]
+    },
+    {
+      "id": "t4-room-dg-right-stair",
+      "name": "Treppenhaus DG rechts",
+      "levelId": "t4-lvl-attic",
+      "programmeCode": "circulation",
+      "functionLabel": "Attic stair",
+      "targetAreaM2": 19.6,
+      "outlineMm": [
+        {
+          "xMm": 9900,
+          "yMm": 0
+        },
+        {
+          "xMm": 11900,
+          "yMm": 0
+        },
+        {
+          "xMm": 11900,
+          "yMm": 9900
+        },
+        {
+          "xMm": 9900,
+          "yMm": 9900
+        }
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "id": "t4-asset-bed",
+      "name": "Bed marker",
+      "category": "furniture",
+      "symbolKind": "bed",
+      "tags": ["bedroom"],
+      "thumbnailWidthMm": 1800,
+      "thumbnailHeightMm": 2100
+    },
+    {
+      "id": "t4-asset-sofa",
+      "name": "Sofa marker",
+      "category": "furniture",
+      "symbolKind": "sofa",
+      "tags": ["living"],
+      "thumbnailWidthMm": 2200,
+      "thumbnailHeightMm": 900
+    },
+    {
+      "id": "t4-asset-kitchen",
+      "name": "Kitchen run marker",
+      "category": "kitchen",
+      "symbolKind": "counter",
+      "tags": ["kitchen"],
+      "thumbnailWidthMm": 1200,
+      "thumbnailHeightMm": 450
+    },
+    {
+      "id": "t4-asset-bath",
+      "name": "Bath fixture marker",
+      "category": "bathroom",
+      "symbolKind": "sink",
+      "tags": ["bathroom"],
+      "thumbnailWidthMm": 800,
+      "thumbnailHeightMm": 600
+    }
+  ],
+  "placedAssets": [
+    {
+      "id": "t4-placed-eg-left-sofa",
+      "assetId": "t4-asset-sofa",
+      "name": "Left ground living sofa",
+      "levelId": "t4-lvl-ground",
+      "positionMm": {
+        "xMm": 1700,
+        "yMm": 7800
+      },
+      "rotationDeg": 0
+    },
+    {
+      "id": "t4-placed-eg-right-sofa",
+      "assetId": "t4-asset-sofa",
+      "name": "Right ground living sofa",
+      "levelId": "t4-lvl-ground",
+      "positionMm": {
+        "xMm": 18100,
+        "yMm": 7800
+      },
+      "rotationDeg": 180
+    },
+    {
+      "id": "t4-placed-eg-left-bed",
+      "assetId": "t4-asset-bed",
+      "name": "Left ground bedroom bed",
+      "levelId": "t4-lvl-ground",
+      "positionMm": {
+        "xMm": 5900,
+        "yMm": 7600
+      },
+      "rotationDeg": 90
+    },
+    {
+      "id": "t4-placed-eg-right-bed",
+      "assetId": "t4-asset-bed",
+      "name": "Right ground bedroom bed",
+      "levelId": "t4-lvl-ground",
+      "positionMm": {
+        "xMm": 13900,
+        "yMm": 7600
+      },
+      "rotationDeg": 90
+    },
+    {
+      "id": "t4-placed-kitchen-left",
+      "assetId": "t4-asset-kitchen",
+      "name": "Left kitchen run",
+      "levelId": "t4-lvl-ground",
+      "positionMm": {
+        "xMm": 4750,
+        "yMm": 1100
+      },
+      "rotationDeg": 0
+    },
+    {
+      "id": "t4-placed-kitchen-right",
+      "assetId": "t4-asset-kitchen",
+      "name": "Right kitchen run",
+      "levelId": "t4-lvl-ground",
+      "positionMm": {
+        "xMm": 15050,
+        "yMm": 1100
+      },
+      "rotationDeg": 180
+    },
+    {
+      "id": "t4-placed-bath-left",
+      "assetId": "t4-asset-bath",
+      "name": "Left bath fixture",
+      "levelId": "t4-lvl-ground",
+      "positionMm": {
+        "xMm": 6900,
+        "yMm": 1400
+      },
+      "rotationDeg": 90
+    },
+    {
+      "id": "t4-placed-bath-right",
+      "assetId": "t4-asset-bath",
+      "name": "Right bath fixture",
+      "levelId": "t4-lvl-ground",
+      "positionMm": {
+        "xMm": 12900,
+        "yMm": 1400
+      },
+      "rotationDeg": 90
+    }
+  ],
+  "materialIntent": [
+    {
+      "surface": "external masonry walls",
+      "materialKey": "render_light_grey",
+      "evidence": "Ansichten.pdf shows light rendered long and gable elevations."
+    },
+    {
+      "surface": "roof",
+      "materialKey": "roof_tile_terracotta",
+      "evidence": "Ansichten.pdf shows a continuous tiled pitched roof."
+    },
+    {
+      "surface": "dormer cheeks and eave band",
+      "materialKey": "cladding_dark_grey",
+      "evidence": "Long elevations show darker dormer side faces and a dark horizontal band below eaves."
+    },
+    {
+      "surface": "basement/slabs",
+      "materialKey": "concrete_smooth",
+      "evidence": "Grundrisse, Schnitt.pdf shows basement and structural floor plates."
+    },
+    {
+      "surface": "interior partitions",
+      "materialKey": "plasterboard",
+      "evidence": "Plan partitions are simplified as light interior walls."
+    }
+  ],
+  "viewpoints": [
+    {
+      "id": "vp-main-iso",
+      "name": "Target-house-4 main long-facade axonometric",
+      "mode": "orbit_3d",
+      "camera": {
+        "position": {
+          "xMm": 26000,
+          "yMm": -15000,
+          "zMm": 9500
+        },
+        "target": {
+          "xMm": 9900,
+          "yMm": 4950,
+          "zMm": 2600
+        },
+        "up": {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 1
+        }
+      }
+    },
+    {
+      "id": "vp-front-elev",
+      "name": "Long elevation with paired entries and dormers",
+      "mode": "orbit_3d",
+      "camera": {
+        "position": {
+          "xMm": 9900,
+          "yMm": -24000,
+          "zMm": 3900
+        },
+        "target": {
+          "xMm": 9900,
+          "yMm": 4950,
+          "zMm": 3300
+        },
+        "up": {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 1
+        }
+      }
+    },
+    {
+      "id": "vp-gable-section",
+      "name": "Right gable and section read",
+      "mode": "orbit_3d",
+      "camera": {
+        "position": {
+          "xMm": 28500,
+          "yMm": 4950,
+          "zMm": 5200
+        },
+        "target": {
+          "xMm": 9900,
+          "yMm": 4950,
+          "zMm": 3000
+        },
+        "up": {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 1
+        }
+      }
+    },
+    {
+      "id": "vp-ground-plan",
+      "name": "Ground floor mirrored dwelling plan",
+      "mode": "plan_2d",
+      "camera": {
+        "position": {
+          "xMm": 9900,
+          "yMm": 4950,
+          "zMm": 18000
+        },
+        "target": {
+          "xMm": 9900,
+          "yMm": 4950,
+          "zMm": 0
+        },
+        "up": {
+          "xMm": 0,
+          "yMm": 1,
+          "zMm": 0
+        }
+      }
+    },
+    {
+      "id": "vp-attic-plan",
+      "name": "Attic floor under pitched roof",
+      "mode": "plan_2d",
+      "camera": {
+        "position": {
+          "xMm": 9900,
+          "yMm": 4950,
+          "zMm": 18000
+        },
+        "target": {
+          "xMm": 9900,
+          "yMm": 4950,
+          "zMm": 3000
+        },
+        "up": {
+          "xMm": 0,
+          "yMm": 1,
+          "zMm": 0
+        }
+      }
+    }
+  ],
+  "commands": [
+    {
+      "type": "attachWallTopToRoof",
+      "wallId": "t4-dg-wall-01",
+      "roofId": "t4-roof-main"
+    },
+    {
+      "type": "attachWallTopToRoof",
+      "wallId": "t4-dg-wall-02",
+      "roofId": "t4-roof-main"
+    },
+    {
+      "type": "attachWallTopToRoof",
+      "wallId": "t4-dg-wall-03",
+      "roofId": "t4-roof-main"
+    },
+    {
+      "type": "attachWallTopToRoof",
+      "wallId": "t4-dg-wall-04",
+      "roofId": "t4-roof-main"
+    },
+    {
+      "type": "createDormer",
+      "id": "t4-dormer-front-left",
+      "name": "Front left dormer",
+      "hostRoofId": "t4-roof-main",
+      "positionOnRoof": {
+        "alongRidgeMm": -4950,
+        "acrossRidgeMm": -3000
+      },
+      "widthMm": 2800,
+      "wallHeightMm": 1550,
+      "depthMm": 1450,
+      "dormerRoofKind": "shed",
+      "dormerRoofPitchDeg": 8,
+      "wallMaterialKey": "cladding_dark_grey",
+      "roofMaterialKey": "roof_tile_terracotta"
+    },
+    {
+      "type": "createDormer",
+      "id": "t4-dormer-front-right",
+      "name": "Front right dormer",
+      "hostRoofId": "t4-roof-main",
+      "positionOnRoof": {
+        "alongRidgeMm": 4950,
+        "acrossRidgeMm": -3000
+      },
+      "widthMm": 2800,
+      "wallHeightMm": 1550,
+      "depthMm": 1450,
+      "dormerRoofKind": "shed",
+      "dormerRoofPitchDeg": 8,
+      "wallMaterialKey": "cladding_dark_grey",
+      "roofMaterialKey": "roof_tile_terracotta"
+    },
+    {
+      "type": "createDormer",
+      "id": "t4-dormer-rear-left",
+      "name": "Rear left dormer",
+      "hostRoofId": "t4-roof-main",
+      "positionOnRoof": {
+        "alongRidgeMm": -4950,
+        "acrossRidgeMm": 3000
+      },
+      "widthMm": 2800,
+      "wallHeightMm": 1550,
+      "depthMm": 1450,
+      "dormerRoofKind": "shed",
+      "dormerRoofPitchDeg": 8,
+      "wallMaterialKey": "cladding_dark_grey",
+      "roofMaterialKey": "roof_tile_terracotta"
+    },
+    {
+      "type": "createDormer",
+      "id": "t4-dormer-rear-right",
+      "name": "Rear right dormer",
+      "hostRoofId": "t4-roof-main",
+      "positionOnRoof": {
+        "alongRidgeMm": 4950,
+        "acrossRidgeMm": 3000
+      },
+      "widthMm": 2800,
+      "wallHeightMm": 1550,
+      "depthMm": 1450,
+      "dormerRoofKind": "shed",
+      "dormerRoofPitchDeg": 8,
+      "wallMaterialKey": "cladding_dark_grey",
+      "roofMaterialKey": "roof_tile_terracotta"
+    },
+    {
+      "type": "createStair",
+      "id": "t4-stair-left",
+      "name": "Left dwelling stair",
+      "baseLevelId": "t4-lvl-ground",
+      "topLevelId": "t4-lvl-attic",
+      "runStartMm": {
+        "xMm": 8900,
+        "yMm": 2100
+      },
+      "runEndMm": {
+        "xMm": 8900,
+        "yMm": 5600
+      },
+      "widthMm": 1050,
+      "riserMm": 176.5,
+      "treadMm": 260
+    },
+    {
+      "type": "createStair",
+      "id": "t4-stair-right",
+      "name": "Right dwelling stair",
+      "baseLevelId": "t4-lvl-ground",
+      "topLevelId": "t4-lvl-attic",
+      "runStartMm": {
+        "xMm": 10900,
+        "yMm": 2100
+      },
+      "runEndMm": {
+        "xMm": 10900,
+        "yMm": 5600
+      },
+      "widthMm": 1050,
+      "riserMm": 176.5,
+      "treadMm": 260
+    },
+    {
+      "type": "createSlabOpening",
+      "id": "t4-stair-opening-left",
+      "name": "Left stair opening",
+      "hostFloorId": "t4-dg-floor",
+      "boundaryMm": [
+        {
+          "xMm": 8200,
+          "yMm": 1900
+        },
+        {
+          "xMm": 9550,
+          "yMm": 1900
+        },
+        {
+          "xMm": 9550,
+          "yMm": 5800
+        },
+        {
+          "xMm": 8200,
+          "yMm": 5800
+        }
+      ],
+      "isShaft": true
+    },
+    {
+      "type": "createSlabOpening",
+      "id": "t4-stair-opening-right",
+      "name": "Right stair opening",
+      "hostFloorId": "t4-dg-floor",
+      "boundaryMm": [
+        {
+          "xMm": 10250,
+          "yMm": 1900
+        },
+        {
+          "xMm": 11600,
+          "yMm": 1900
+        },
+        {
+          "xMm": 11600,
+          "yMm": 5800
+        },
+        {
+          "xMm": 10250,
+          "yMm": 5800
+        }
+      ],
+      "isShaft": true
+    },
+    {
+      "type": "createWall",
+      "id": "t4-party-ground",
+      "name": "Ground central party wall",
+      "levelId": "t4-lvl-ground",
+      "start": {
+        "xMm": 9900,
+        "yMm": 0
+      },
+      "end": {
+        "xMm": 9900,
+        "yMm": 9900
+      },
+      "thicknessMm": 240,
+      "heightMm": 3000,
+      "wallTypeId": "t4-wt-party"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-party-attic",
+      "name": "Attic central party wall",
+      "levelId": "t4-lvl-attic",
+      "start": {
+        "xMm": 9900,
+        "yMm": 0
+      },
+      "end": {
+        "xMm": 9900,
+        "yMm": 9900
+      },
+      "thicknessMm": 240,
+      "heightMm": 2300,
+      "wallTypeId": "t4-wt-party"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-party-basement",
+      "name": "Basement central party wall",
+      "levelId": "t4-lvl-basement",
+      "start": {
+        "xMm": 9900,
+        "yMm": 0
+      },
+      "end": {
+        "xMm": 9900,
+        "yMm": 9900
+      },
+      "thicknessMm": 240,
+      "heightMm": 2500,
+      "wallTypeId": "t4-wt-party"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-eg-left-stair-west",
+      "name": "Ground left stair west wall",
+      "levelId": "t4-lvl-ground",
+      "start": {
+        "xMm": 7900,
+        "yMm": 0
+      },
+      "end": {
+        "xMm": 7900,
+        "yMm": 9900
+      },
+      "thicknessMm": 150,
+      "heightMm": 3000,
+      "wallTypeId": "t4-wt-party"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-eg-right-stair-east",
+      "name": "Ground right stair east wall",
+      "levelId": "t4-lvl-ground",
+      "start": {
+        "xMm": 11900,
+        "yMm": 0
+      },
+      "end": {
+        "xMm": 11900,
+        "yMm": 9900
+      },
+      "thicknessMm": 150,
+      "heightMm": 3000,
+      "wallTypeId": "t4-wt-party"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-eg-left-living-divide",
+      "name": "Ground left living bedroom wall",
+      "levelId": "t4-lvl-ground",
+      "start": {
+        "xMm": 4200,
+        "yMm": 5470
+      },
+      "end": {
+        "xMm": 4200,
+        "yMm": 9900
+      },
+      "thicknessMm": 115,
+      "heightMm": 2700,
+      "wallTypeId": "t4-wt-partition"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-eg-left-rear-band",
+      "name": "Ground left rear room band wall",
+      "levelId": "t4-lvl-ground",
+      "start": {
+        "xMm": 0,
+        "yMm": 5470
+      },
+      "end": {
+        "xMm": 7900,
+        "yMm": 5470
+      },
+      "thicknessMm": 115,
+      "heightMm": 2700,
+      "wallTypeId": "t4-wt-partition"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-eg-left-front-band",
+      "name": "Ground left front support band wall",
+      "levelId": "t4-lvl-ground",
+      "start": {
+        "xMm": 0,
+        "yMm": 2700
+      },
+      "end": {
+        "xMm": 7900,
+        "yMm": 2700
+      },
+      "thicknessMm": 115,
+      "heightMm": 2700,
+      "wallTypeId": "t4-wt-partition"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-eg-left-child-kitchen",
+      "name": "Ground left child kitchen wall",
+      "levelId": "t4-lvl-ground",
+      "start": {
+        "xMm": 3630,
+        "yMm": 0
+      },
+      "end": {
+        "xMm": 3630,
+        "yMm": 2700
+      },
+      "thicknessMm": 115,
+      "heightMm": 2700,
+      "wallTypeId": "t4-wt-partition"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-eg-left-kitchen-bath",
+      "name": "Ground left kitchen bath wall",
+      "levelId": "t4-lvl-ground",
+      "start": {
+        "xMm": 5900,
+        "yMm": 0
+      },
+      "end": {
+        "xMm": 5900,
+        "yMm": 2700
+      },
+      "thicknessMm": 115,
+      "heightMm": 2700,
+      "wallTypeId": "t4-wt-partition"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-eg-right-living-divide",
+      "name": "Ground right bedroom living wall",
+      "levelId": "t4-lvl-ground",
+      "start": {
+        "xMm": 15600,
+        "yMm": 5470
+      },
+      "end": {
+        "xMm": 15600,
+        "yMm": 9900
+      },
+      "thicknessMm": 115,
+      "heightMm": 2700,
+      "wallTypeId": "t4-wt-partition"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-eg-right-rear-band",
+      "name": "Ground right rear room band wall",
+      "levelId": "t4-lvl-ground",
+      "start": {
+        "xMm": 11900,
+        "yMm": 5470
+      },
+      "end": {
+        "xMm": 19800,
+        "yMm": 5470
+      },
+      "thicknessMm": 115,
+      "heightMm": 2700,
+      "wallTypeId": "t4-wt-partition"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-eg-right-front-band",
+      "name": "Ground right front support band wall",
+      "levelId": "t4-lvl-ground",
+      "start": {
+        "xMm": 11900,
+        "yMm": 2700
+      },
+      "end": {
+        "xMm": 19800,
+        "yMm": 2700
+      },
+      "thicknessMm": 115,
+      "heightMm": 2700,
+      "wallTypeId": "t4-wt-partition"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-eg-right-bath-kitchen",
+      "name": "Ground right bath kitchen wall",
+      "levelId": "t4-lvl-ground",
+      "start": {
+        "xMm": 13900,
+        "yMm": 0
+      },
+      "end": {
+        "xMm": 13900,
+        "yMm": 2700
+      },
+      "thicknessMm": 115,
+      "heightMm": 2700,
+      "wallTypeId": "t4-wt-partition"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-eg-right-kitchen-child",
+      "name": "Ground right kitchen child wall",
+      "levelId": "t4-lvl-ground",
+      "start": {
+        "xMm": 16170,
+        "yMm": 0
+      },
+      "end": {
+        "xMm": 16170,
+        "yMm": 2700
+      },
+      "thicknessMm": 115,
+      "heightMm": 2700,
+      "wallTypeId": "t4-wt-partition"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-dg-left-stair-west",
+      "name": "Attic left stair west wall",
+      "levelId": "t4-lvl-attic",
+      "start": {
+        "xMm": 7900,
+        "yMm": 0
+      },
+      "end": {
+        "xMm": 7900,
+        "yMm": 9900
+      },
+      "thicknessMm": 150,
+      "heightMm": 2200,
+      "wallTypeId": "t4-wt-party"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-dg-right-stair-east",
+      "name": "Attic right stair east wall",
+      "levelId": "t4-lvl-attic",
+      "start": {
+        "xMm": 11900,
+        "yMm": 0
+      },
+      "end": {
+        "xMm": 11900,
+        "yMm": 9900
+      },
+      "thicknessMm": 150,
+      "heightMm": 2200,
+      "wallTypeId": "t4-wt-party"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-dg-left-living-divide",
+      "name": "Attic left living bedroom wall",
+      "levelId": "t4-lvl-attic",
+      "start": {
+        "xMm": 4200,
+        "yMm": 5470
+      },
+      "end": {
+        "xMm": 4200,
+        "yMm": 9900
+      },
+      "thicknessMm": 115,
+      "heightMm": 2100,
+      "wallTypeId": "t4-wt-partition"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-dg-left-rear-band",
+      "name": "Attic left rear room band wall",
+      "levelId": "t4-lvl-attic",
+      "start": {
+        "xMm": 0,
+        "yMm": 5470
+      },
+      "end": {
+        "xMm": 7900,
+        "yMm": 5470
+      },
+      "thicknessMm": 115,
+      "heightMm": 2100,
+      "wallTypeId": "t4-wt-partition"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-dg-right-living-divide",
+      "name": "Attic right bedroom living wall",
+      "levelId": "t4-lvl-attic",
+      "start": {
+        "xMm": 15600,
+        "yMm": 5470
+      },
+      "end": {
+        "xMm": 15600,
+        "yMm": 9900
+      },
+      "thicknessMm": 115,
+      "heightMm": 2100,
+      "wallTypeId": "t4-wt-partition"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-dg-right-rear-band",
+      "name": "Attic right rear room band wall",
+      "levelId": "t4-lvl-attic",
+      "start": {
+        "xMm": 11900,
+        "yMm": 5470
+      },
+      "end": {
+        "xMm": 19800,
+        "yMm": 5470
+      },
+      "thicknessMm": 115,
+      "heightMm": 2100,
+      "wallTypeId": "t4-wt-partition"
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-front-door-left",
+      "name": "Left front entry opening",
+      "hostWallId": "t4-eg-wall-01",
+      "alongTStart": 0.355,
+      "alongTEnd": 0.405,
+      "sillHeightMm": 0,
+      "headHeightMm": 2150
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-front-door-right",
+      "name": "Right front entry opening",
+      "hostWallId": "t4-eg-wall-01",
+      "alongTStart": 0.595,
+      "alongTEnd": 0.645,
+      "sillHeightMm": 0,
+      "headHeightMm": 2150
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-front-window-01",
+      "name": "Front left child window",
+      "hostWallId": "t4-eg-wall-01",
+      "alongTStart": 0.075,
+      "alongTEnd": 0.145,
+      "sillHeightMm": 850,
+      "headHeightMm": 2200
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-front-window-02",
+      "name": "Front left kitchen window",
+      "hostWallId": "t4-eg-wall-01",
+      "alongTStart": 0.235,
+      "alongTEnd": 0.295,
+      "sillHeightMm": 900,
+      "headHeightMm": 2100
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-front-window-03",
+      "name": "Front right kitchen window",
+      "hostWallId": "t4-eg-wall-01",
+      "alongTStart": 0.705,
+      "alongTEnd": 0.765,
+      "sillHeightMm": 900,
+      "headHeightMm": 2100
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-front-window-04",
+      "name": "Front right child window",
+      "hostWallId": "t4-eg-wall-01",
+      "alongTStart": 0.855,
+      "alongTEnd": 0.925,
+      "sillHeightMm": 850,
+      "headHeightMm": 2200
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-rear-window-left-living",
+      "name": "Rear left living window",
+      "hostWallId": "t4-eg-wall-03",
+      "alongTStart": 0.775,
+      "alongTEnd": 0.925,
+      "sillHeightMm": 850,
+      "headHeightMm": 2250
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-rear-window-left-bedroom",
+      "name": "Rear left bedroom window",
+      "hostWallId": "t4-eg-wall-03",
+      "alongTStart": 0.58,
+      "alongTEnd": 0.7,
+      "sillHeightMm": 850,
+      "headHeightMm": 2250
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-rear-window-right-bedroom",
+      "name": "Rear right bedroom window",
+      "hostWallId": "t4-eg-wall-03",
+      "alongTStart": 0.3,
+      "alongTEnd": 0.42,
+      "sillHeightMm": 850,
+      "headHeightMm": 2250
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-rear-window-right-living",
+      "name": "Rear right living window",
+      "hostWallId": "t4-eg-wall-03",
+      "alongTStart": 0.075,
+      "alongTEnd": 0.225,
+      "sillHeightMm": 850,
+      "headHeightMm": 2250
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-left-gable-eg",
+      "name": "Left gable ground window",
+      "hostWallId": "t4-eg-wall-04",
+      "alongTStart": 0.38,
+      "alongTEnd": 0.6,
+      "sillHeightMm": 850,
+      "headHeightMm": 2250
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-right-gable-eg",
+      "name": "Right gable ground window",
+      "hostWallId": "t4-eg-wall-02",
+      "alongTStart": 0.4,
+      "alongTEnd": 0.62,
+      "sillHeightMm": 850,
+      "headHeightMm": 2250
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-left-gable-dg",
+      "name": "Left gable attic window",
+      "hostWallId": "t4-dg-wall-04",
+      "alongTStart": 0.43,
+      "alongTEnd": 0.57,
+      "sillHeightMm": 700,
+      "headHeightMm": 1850
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-right-gable-dg",
+      "name": "Right gable attic window",
+      "hostWallId": "t4-dg-wall-02",
+      "alongTStart": 0.43,
+      "alongTEnd": 0.57,
+      "sillHeightMm": 700,
+      "headHeightMm": 1850
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-dg-front-left",
+      "name": "Attic front left dormer-aligned opening",
+      "hostWallId": "t4-dg-wall-01",
+      "alongTStart": 0.18,
+      "alongTEnd": 0.3,
+      "sillHeightMm": 800,
+      "headHeightMm": 2050
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-dg-front-right",
+      "name": "Attic front right dormer-aligned opening",
+      "hostWallId": "t4-dg-wall-01",
+      "alongTStart": 0.7,
+      "alongTEnd": 0.82,
+      "sillHeightMm": 800,
+      "headHeightMm": 2050
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-dg-rear-left",
+      "name": "Attic rear left dormer-aligned opening",
+      "hostWallId": "t4-dg-wall-03",
+      "alongTStart": 0.7,
+      "alongTEnd": 0.82,
+      "sillHeightMm": 800,
+      "headHeightMm": 2050
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-dg-rear-right",
+      "name": "Attic rear right dormer-aligned opening",
+      "hostWallId": "t4-dg-wall-03",
+      "alongTStart": 0.18,
+      "alongTEnd": 0.3,
+      "sillHeightMm": 800,
+      "headHeightMm": 2050
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-entry-left",
+      "name": "Left dwelling entry door",
+      "wallId": "t4-eg-wall-01",
+      "alongT": 0.335,
+      "widthMm": 950,
+      "familyTypeId": "t4-family-external-door"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-entry-right",
+      "name": "Right dwelling entry door",
+      "wallId": "t4-eg-wall-01",
+      "alongT": 0.665,
+      "widthMm": 950,
+      "familyTypeId": "t4-family-external-door"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-eg-left-child",
+      "name": "Left child room door",
+      "wallId": "t4-eg-left-front-band",
+      "alongT": 0.23,
+      "widthMm": 875,
+      "familyTypeId": "t4-family-internal-door"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-eg-left-kitchen",
+      "name": "Left kitchen door",
+      "wallId": "t4-eg-left-front-band",
+      "alongT": 0.6,
+      "widthMm": 875,
+      "familyTypeId": "t4-family-internal-door"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-eg-left-bath",
+      "name": "Left bath door",
+      "wallId": "t4-eg-left-front-band",
+      "alongT": 0.86,
+      "widthMm": 800,
+      "familyTypeId": "t4-family-internal-door"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-eg-left-living",
+      "name": "Left living door",
+      "wallId": "t4-eg-left-rear-band",
+      "alongT": 0.22,
+      "widthMm": 875,
+      "familyTypeId": "t4-family-internal-door"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-eg-left-bedroom",
+      "name": "Left bedroom door",
+      "wallId": "t4-eg-left-rear-band",
+      "alongT": 0.7,
+      "widthMm": 875,
+      "familyTypeId": "t4-family-internal-door"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-eg-left-stair",
+      "name": "Left stair hall door",
+      "wallId": "t4-eg-left-stair-west",
+      "alongT": 0.4,
+      "widthMm": 900,
+      "familyTypeId": "t4-family-internal-door"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-eg-right-child",
+      "name": "Right child room door",
+      "wallId": "t4-eg-right-front-band",
+      "alongT": 0.77,
+      "widthMm": 875,
+      "familyTypeId": "t4-family-internal-door"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-eg-right-kitchen",
+      "name": "Right kitchen door",
+      "wallId": "t4-eg-right-front-band",
+      "alongT": 0.4,
+      "widthMm": 875,
+      "familyTypeId": "t4-family-internal-door"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-eg-right-bath",
+      "name": "Right bath door",
+      "wallId": "t4-eg-right-front-band",
+      "alongT": 0.14,
+      "widthMm": 800,
+      "familyTypeId": "t4-family-internal-door"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-eg-right-living",
+      "name": "Right living door",
+      "wallId": "t4-eg-right-rear-band",
+      "alongT": 0.78,
+      "widthMm": 875,
+      "familyTypeId": "t4-family-internal-door"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-eg-right-bedroom",
+      "name": "Right bedroom door",
+      "wallId": "t4-eg-right-rear-band",
+      "alongT": 0.3,
+      "widthMm": 875,
+      "familyTypeId": "t4-family-internal-door"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-eg-right-stair",
+      "name": "Right stair hall door",
+      "wallId": "t4-eg-right-stair-east",
+      "alongT": 0.4,
+      "widthMm": 900,
+      "familyTypeId": "t4-family-internal-door"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-dg-left-front",
+      "name": "Left attic front-suite door",
+      "wallId": "t4-dg-left-stair-west",
+      "alongT": 0.35,
+      "widthMm": 875,
+      "familyTypeId": "t4-family-internal-door"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-dg-left-living",
+      "name": "Left attic living door",
+      "wallId": "t4-dg-left-rear-band",
+      "alongT": 0.22,
+      "widthMm": 875,
+      "familyTypeId": "t4-family-internal-door"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-dg-left-bedroom",
+      "name": "Left attic bedroom door",
+      "wallId": "t4-dg-left-rear-band",
+      "alongT": 0.7,
+      "widthMm": 875,
+      "familyTypeId": "t4-family-internal-door"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-dg-right-front",
+      "name": "Right attic front-suite door",
+      "wallId": "t4-dg-right-stair-east",
+      "alongT": 0.35,
+      "widthMm": 875,
+      "familyTypeId": "t4-family-internal-door"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-dg-right-living",
+      "name": "Right attic living door",
+      "wallId": "t4-dg-right-rear-band",
+      "alongT": 0.78,
+      "widthMm": 875,
+      "familyTypeId": "t4-family-internal-door"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-dg-right-bedroom",
+      "name": "Right attic bedroom door",
+      "wallId": "t4-dg-right-rear-band",
+      "alongT": 0.3,
+      "widthMm": 875,
+      "familyTypeId": "t4-family-internal-door"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-kg-left-mid-wall",
+      "name": "Basement left divider",
+      "levelId": "t4-lvl-basement",
+      "start": {
+        "xMm": 0,
+        "yMm": 4950
+      },
+      "end": {
+        "xMm": 9900,
+        "yMm": 4950
+      },
+      "thicknessMm": 150,
+      "heightMm": 2400,
+      "wallTypeId": "t4-wt-party"
+    },
+    {
+      "type": "createWall",
+      "id": "t4-kg-right-mid-wall",
+      "name": "Basement right divider",
+      "levelId": "t4-lvl-basement",
+      "start": {
+        "xMm": 9900,
+        "yMm": 4950
+      },
+      "end": {
+        "xMm": 19800,
+        "yMm": 4950
+      },
+      "thicknessMm": 150,
+      "heightMm": 2400,
+      "wallTypeId": "t4-wt-party"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-kg-left",
+      "name": "Left basement internal door",
+      "wallId": "t4-kg-left-mid-wall",
+      "alongT": 0.5,
+      "widthMm": 900,
+      "familyTypeId": "t4-family-internal-door"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "t4-door-kg-right",
+      "name": "Right basement internal door",
+      "wallId": "t4-kg-right-mid-wall",
+      "alongT": 0.5,
+      "widthMm": 900,
+      "familyTypeId": "t4-family-internal-door"
+    },
+    {
+      "type": "set_element_prop",
+      "elementId": "t4-kg-floor",
+      "key": "structuralReviewed",
+      "value": true
+    },
+    {
+      "type": "set_element_prop",
+      "elementId": "t4-eg-floor",
+      "key": "structuralReviewed",
+      "value": true
+    },
+    {
+      "type": "set_element_prop",
+      "elementId": "t4-dg-floor",
+      "key": "structuralReviewed",
+      "value": true
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "t4-dg-wall-01",
+      "key": "structuralRole",
+      "value": "non_load_bearing"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "t4-dg-wall-02",
+      "key": "structuralRole",
+      "value": "non_load_bearing"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "t4-dg-wall-03",
+      "key": "structuralRole",
+      "value": "non_load_bearing"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "t4-dg-wall-04",
+      "key": "structuralRole",
+      "value": "non_load_bearing"
+    },
+    {
+      "type": "set_element_prop",
+      "elementId": "t4-dg-wall-01",
+      "key": "fireRating",
+      "value": "REI 30"
+    },
+    {
+      "type": "set_element_prop",
+      "elementId": "t4-dg-wall-02",
+      "key": "fireRating",
+      "value": "REI 30"
+    },
+    {
+      "type": "set_element_prop",
+      "elementId": "t4-dg-wall-03",
+      "key": "fireRating",
+      "value": "REI 30"
+    },
+    {
+      "type": "set_element_prop",
+      "elementId": "t4-dg-wall-04",
+      "key": "fireRating",
+      "value": "REI 30"
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-kg-front-window-01",
+      "name": "Basement front left small window",
+      "hostWallId": "t4-kg-wall-01",
+      "alongTStart": 0.09,
+      "alongTEnd": 0.15,
+      "sillHeightMm": 700,
+      "headHeightMm": 1450
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-kg-front-window-02",
+      "name": "Basement front left center window",
+      "hostWallId": "t4-kg-wall-01",
+      "alongTStart": 0.29,
+      "alongTEnd": 0.35,
+      "sillHeightMm": 700,
+      "headHeightMm": 1450
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-kg-front-window-03",
+      "name": "Basement front right center window",
+      "hostWallId": "t4-kg-wall-01",
+      "alongTStart": 0.65,
+      "alongTEnd": 0.71,
+      "sillHeightMm": 700,
+      "headHeightMm": 1450
+    },
+    {
+      "type": "createWallOpening",
+      "id": "t4-open-kg-front-window-04",
+      "name": "Basement front right small window",
+      "hostWallId": "t4-kg-wall-01",
+      "alongTStart": 0.85,
+      "alongTEnd": 0.91,
+      "sillHeightMm": 700,
+      "headHeightMm": 1450
+    },
+    {
+      "type": "createWall",
+      "id": "t4-glass-front-window-01",
+      "name": "Front left child glass",
+      "levelId": "t4-lvl-ground",
+      "start": { "xMm": 1485, "yMm": -220 },
+      "end": { "xMm": 2871, "yMm": -220 },
+      "thicknessMm": 40,
+      "heightMm": 1350,
+      "baseConstraintOffsetMm": 850,
+      "materialKey": "glass_clear",
+      "wallTypeId": "t4-wt-window-glass",
+      "isCurtainWall": true,
+      "curtainWallVCount": 3,
+      "curtainWallHCount": 1
+    },
+    {
+      "type": "createWall",
+      "id": "t4-glass-front-window-02",
+      "name": "Front left kitchen glass",
+      "levelId": "t4-lvl-ground",
+      "start": { "xMm": 4653, "yMm": -220 },
+      "end": { "xMm": 5841, "yMm": -220 },
+      "thicknessMm": 40,
+      "heightMm": 1200,
+      "baseConstraintOffsetMm": 900,
+      "materialKey": "glass_clear",
+      "wallTypeId": "t4-wt-window-glass",
+      "isCurtainWall": true,
+      "curtainWallVCount": 3,
+      "curtainWallHCount": 1
+    },
+    {
+      "type": "createWall",
+      "id": "t4-glass-front-window-03",
+      "name": "Front right kitchen glass",
+      "levelId": "t4-lvl-ground",
+      "start": { "xMm": 13959, "yMm": -220 },
+      "end": { "xMm": 15147, "yMm": -220 },
+      "thicknessMm": 40,
+      "heightMm": 1200,
+      "baseConstraintOffsetMm": 900,
+      "materialKey": "glass_clear",
+      "wallTypeId": "t4-wt-window-glass",
+      "isCurtainWall": true,
+      "curtainWallVCount": 3,
+      "curtainWallHCount": 1
+    },
+    {
+      "type": "createWall",
+      "id": "t4-glass-front-window-04",
+      "name": "Front right child glass",
+      "levelId": "t4-lvl-ground",
+      "start": { "xMm": 16929, "yMm": -220 },
+      "end": { "xMm": 18315, "yMm": -220 },
+      "thicknessMm": 40,
+      "heightMm": 1350,
+      "baseConstraintOffsetMm": 850,
+      "materialKey": "glass_clear",
+      "wallTypeId": "t4-wt-window-glass",
+      "isCurtainWall": true,
+      "curtainWallVCount": 3,
+      "curtainWallHCount": 1
+    },
+    {
+      "type": "createWall",
+      "id": "t4-glass-kg-front-window-01",
+      "name": "Basement front left glass",
+      "levelId": "t4-lvl-basement",
+      "start": { "xMm": 1782, "yMm": -220 },
+      "end": { "xMm": 2970, "yMm": -220 },
+      "thicknessMm": 40,
+      "heightMm": 750,
+      "baseConstraintOffsetMm": 700,
+      "materialKey": "glass_clear",
+      "wallTypeId": "t4-wt-window-glass",
+      "isCurtainWall": true,
+      "curtainWallVCount": 2,
+      "curtainWallHCount": 1
+    },
+    {
+      "type": "createWall",
+      "id": "t4-glass-kg-front-window-02",
+      "name": "Basement front left center glass",
+      "levelId": "t4-lvl-basement",
+      "start": { "xMm": 5742, "yMm": -220 },
+      "end": { "xMm": 6930, "yMm": -220 },
+      "thicknessMm": 40,
+      "heightMm": 750,
+      "baseConstraintOffsetMm": 700,
+      "materialKey": "glass_clear",
+      "wallTypeId": "t4-wt-window-glass",
+      "isCurtainWall": true,
+      "curtainWallVCount": 2,
+      "curtainWallHCount": 1
+    },
+    {
+      "type": "createWall",
+      "id": "t4-glass-kg-front-window-03",
+      "name": "Basement front right center glass",
+      "levelId": "t4-lvl-basement",
+      "start": { "xMm": 12870, "yMm": -220 },
+      "end": { "xMm": 14058, "yMm": -220 },
+      "thicknessMm": 40,
+      "heightMm": 750,
+      "baseConstraintOffsetMm": 700,
+      "materialKey": "glass_clear",
+      "wallTypeId": "t4-wt-window-glass",
+      "isCurtainWall": true,
+      "curtainWallVCount": 2,
+      "curtainWallHCount": 1
+    },
+    {
+      "type": "createWall",
+      "id": "t4-glass-kg-front-window-04",
+      "name": "Basement front right glass",
+      "levelId": "t4-lvl-basement",
+      "start": { "xMm": 16830, "yMm": -220 },
+      "end": { "xMm": 18018, "yMm": -220 },
+      "thicknessMm": 40,
+      "heightMm": 750,
+      "baseConstraintOffsetMm": 700,
+      "materialKey": "glass_clear",
+      "wallTypeId": "t4-wt-window-glass",
+      "isCurtainWall": true,
+      "curtainWallVCount": 2,
+      "curtainWallHCount": 1
+    },
+    {
+      "type": "createRailing",
+      "id": "t4-stair-rail-left",
+      "name": "Left stair hosted guardrail",
+      "hostedStairId": "t4-stair-left",
+      "pathMm": [
+        {
+          "xMm": 8350,
+          "yMm": 2100
+        },
+        {
+          "xMm": 8350,
+          "yMm": 5600
+        }
+      ]
+    },
+    {
+      "type": "createRailing",
+      "id": "t4-stair-rail-right",
+      "name": "Right stair hosted guardrail",
+      "hostedStairId": "t4-stair-right",
+      "pathMm": [
+        {
+          "xMm": 11450,
+          "yMm": 2100
+        },
+        {
+          "xMm": 11450,
+          "yMm": 5600
+        }
+      ]
+    },
+    {
+      "type": "createRailing",
+      "id": "t4-front-step-rail-left",
+      "name": "Left entry rail",
+      "pathMm": [
+        {
+          "xMm": 6900,
+          "yMm": -350
+        },
+        {
+          "xMm": 7900,
+          "yMm": -350
+        }
+      ]
+    },
+    {
+      "type": "createRailing",
+      "id": "t4-front-step-rail-right",
+      "name": "Right entry rail",
+      "pathMm": [
+        {
+          "xMm": 11900,
+          "yMm": -350
+        },
+        {
+          "xMm": 12900,
+          "yMm": -350
+        }
+      ]
+    }
+  ],
+  "documentation": {
+    "sheets": ["target-house-4-initiation"],
+    "schedules": ["rooms", "openings"],
+    "evidenceViews": [
+      "vp-main-iso",
+      "vp-front-elev",
+      "vp-gable-section",
+      "vp-ground-plan",
+      "vp-attic-plan"
+    ]
+  },
+  "assumptions": [
+    {
+      "key": "testhaus-plan-scale",
+      "value": "Scaled from visible 1:100 plan dimensions, normalized to 19800 mm by 9900 mm.",
+      "confidence": 0.86,
+      "source": "EG.pdf, DG.pdf, Grundrisse, Schnitt.pdf"
+    },
+    {
+      "key": "opening-authoring-limitation",
+      "value": "Openings use createWallOpening because cmd-v3 seed bundle has no createDoor/createWindow command.",
+      "confidence": 0.95,
+      "source": "repo command schema"
+    }
+  ]
+}

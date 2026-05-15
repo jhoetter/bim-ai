@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "sketch-to-bim-visual-gate.v0",
+  "generatedAt": "2026-05-15T15:24:31.364Z",
+  "threshold": 0.62,
+  "targetImagePath": null,
+  "targetMapPath": null,
+  "summary": {
+    "captureCount": 0,
+    "passCount": 0,
+    "needsReviewCount": 0,
+    "failCount": 0,
+    "blockingFailureCount": 0
+  },
+  "captures": []
+}

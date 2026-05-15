@@ -1,0 +1,29 @@
+{
+  "modelId": "b4329ca6-bef7-5be7-8341-cf73e17ac468",
+  "revision": 1,
+  "elementCount": 156,
+  "countsByKind": {
+    "project_base_point": 1,
+    "floor": 3,
+    "wall_type": 4,
+    "viewpoint": 5,
+    "sun_settings": 1,
+    "asset_library_entry": 4,
+    "level": 3,
+    "roof": 1,
+    "wall": 35,
+    "plan_view": 3,
+    "stair": 2,
+    "floor_type": 1,
+    "internal_origin": 1,
+    "door": 22,
+    "roof_type": 1,
+    "railing": 4,
+    "dormer": 4,
+    "placed_asset": 8,
+    "wall_opening": 18,
+    "room": 26,
+    "slab_opening": 2,
+    "hatch_pattern_def": 7
+  }
+}

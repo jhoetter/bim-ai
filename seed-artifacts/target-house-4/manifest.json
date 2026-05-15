@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "bim-ai.seed-artifact.v1",
+  "name": "target-house-4",
+  "slug": "target-house-4",
+  "title": "Target House 4",
+  "description": "Two-family semi-detached Testhaus seed from customer PDF plans and elevations.",
+  "bundle": "bundle.json",
+  "sourceRoot": "source",
+  "evidenceRoot": "evidence",
+  "createdAt": "2026-05-15T00:00:00.000Z",
+  "generatedBy": {
+    "tool": "claude-skills/sketch-to-bim/sketch_bim.py",
+    "version": 1
+  },
+  "acceptance": {
+    "status": "draft",
+    "reason": "Refined against the customer elevation with roof-plane dormers, visible glass panels, basement openings, and construction-readiness cleanup. Final visual evidence should be recaptured after loading this bundle."
+  },
+  "inputPaths": {
+    "source": "Testhaus",
+    "bundle": "seed-artifacts/target-house-4/bundle.json"
+  },
+  "bundleSha256": "3640019559852337aa1f870100b3c9b07aaa2a4d266c23cc85b1cd2948ab02da",
+  "commandCount": 172,
+  "commandSchemaVersion": "cmd-v3.0",
+  "entryComment": {
+    "body": "Seed artifact loaded from target-house-4."
+  }
+}

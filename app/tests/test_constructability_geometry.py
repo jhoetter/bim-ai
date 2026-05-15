@@ -17,6 +17,7 @@ from bim_ai.elements import (
     AssetLibraryEntryElem,
     CeilingElem,
     DuctElem,
+    DormerElem,
     FamilyInstanceElem,
     FamilyKitInstanceElem,
     FamilyTypeElem,
@@ -24,7 +25,9 @@ from bim_ai.elements import (
     PipeElem,
     PlacedAssetElem,
     RailingElem,
+    RoofElem,
     StairElem,
+    Vec2Mm,
     WallElem,
 )
 
@@ -170,6 +173,57 @@ def test_physical_collision_contract_summary_reports_supported_and_unsupported()
             ),
         }
     ]
+
+
+def test_dormer_is_supported_physical_participant_on_roof_plane() -> None:
+    elements = {
+        "lvl-1": _level(),
+        "attic-wall": WallElem(
+            kind="wall",
+            id="attic-wall",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 6000, "yMm": 0},
+            thicknessMm=200,
+            heightMm=1800,
+        ),
+        "roof": RoofElem(
+            kind="roof",
+            id="roof",
+            referenceLevelId="lvl-1",
+            footprintMm=[
+                Vec2Mm(xMm=0, yMm=0),
+                Vec2Mm(xMm=8000, yMm=0),
+                Vec2Mm(xMm=8000, yMm=5000),
+                Vec2Mm(xMm=0, yMm=5000),
+            ],
+            slopeDeg=35,
+        ),
+        "dormer": DormerElem(
+            kind="dormer",
+            id="dormer",
+            hostRoofId="roof",
+            positionOnRoof={"alongRidgeMm": -1500, "acrossRidgeMm": -900},
+            widthMm=1600,
+            depthMm=1500,
+            wallHeightMm=1200,
+            dormerRoofKind="shed",
+            dormerRoofPitchDeg=8,
+        ),
+    }
+
+    participants = _participant_by_id(elements)
+    dormer = participants["dormer"]
+
+    assert dormer.aabb.min_z > 1000.0
+    assert dormer.aabb.max_z > dormer.aabb.min_z + 1200.0
+    assert dormer.metadata["footprintMm"] == [
+        (1700.0, 850.0),
+        (3300.0, 850.0),
+        (3300.0, 2350.0),
+        (1700.0, 2350.0),
+    ]
+    assert not collect_unsupported_physical_diagnostics(elements)
 
 
 def test_wall_and_shelf_are_overlap_candidate() -> None:

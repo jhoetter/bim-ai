@@ -1,0 +1,10 @@
+{
+  "assignmentCount": 0,
+  "bundle": "seed-artifacts/target-house-4/bundle.json",
+  "intentCount": 5,
+  "missing": [],
+  "ok": true,
+  "recipe": "seed-artifacts/target-house-4/evidence/target-house-4.recipe.json",
+  "schemaVersion": "sketch-to-bim.material-check.v1",
+  "seed": "target-house-4"
+}
