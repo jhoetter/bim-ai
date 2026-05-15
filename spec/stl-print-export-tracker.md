@@ -127,7 +127,7 @@ Acceptance:
 
 ### WP-STL-05 - UI Export Reachability
 
-Status: [ ]
+Status: [x]
 
 Deliverables:
 

@@ -112,6 +112,29 @@ describe('<ProjectMenu /> — T-03', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
+  it('renders STL export when a model id is available', () => {
+    const onOpenChange = vi.fn();
+    const modelId = 'model/with space';
+    const { getByTestId, unmount } = render(
+      <Harness open={true} onOpenChange={onOpenChange} modelId={modelId} />,
+    );
+
+    const link = getByTestId('project-menu-export-stl') as HTMLAnchorElement;
+    expect(link.textContent).toContain('3D print STL');
+    expect(link.getAttribute('href')).toBe(
+      `/api/models/${encodeURIComponent(modelId)}/exports/model.stl`,
+    );
+    expect(link.getAttribute('download')).toBe('model.stl');
+
+    link.addEventListener('click', (event) => event.preventDefault());
+    fireEvent.click(link);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+
+    unmount();
+    const closed = render(<Harness open={true} onOpenChange={() => {}} />);
+    expect(closed.queryByTestId('project-menu-export-stl')).toBeNull();
+  });
+
   it('routes material and appearance resources through the project menu owner', () => {
     const onOpenChange = vi.fn();
     const onOpenMaterialBrowser = vi.fn();

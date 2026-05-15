@@ -3981,6 +3981,7 @@ export function Workspace(): JSX.Element {
         onPickSeedModel={(id) => void loadSeedModel(id)}
         onInsertSeed={() => void insertSeedHouse()}
         onSaveSnapshot={handleSaveSnapshot}
+        modelId={modelId}
         saveAsMaximumBackups={saveAsMaximumBackups}
         onSaveAsMaximumBackupsChange={handleSaveAsMaximumBackupsChange}
         onRestoreSnapshot={(f) => void handleRestoreSnapshot(f)}

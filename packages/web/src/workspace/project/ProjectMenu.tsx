@@ -47,6 +47,7 @@ export interface ProjectMenuProps {
   onPickSeedModel?: (id: string) => void;
   onInsertSeed?: () => void;
   onSaveSnapshot?: () => void;
+  modelId?: string | null;
   onOpenMilestone?: () => void;
   onOpenMaterialBrowser?: () => void;
   onOpenAppearanceAssetBrowser?: () => void;
@@ -76,6 +77,7 @@ export function ProjectMenu({
   onPickSeedModel,
   onInsertSeed,
   onSaveSnapshot,
+  modelId,
   onOpenMilestone,
   onOpenMaterialBrowser,
   onOpenAppearanceAssetBrowser,
@@ -275,6 +277,18 @@ export function ProjectMenu({
             onOpenMilestone?.();
           }}
         />
+        {modelId ? (
+          <MenuLink
+            label="Export → 3D print STL"
+            icon="externalLink"
+            testId="project-menu-export-stl"
+            href={`/api/models/${encodeURIComponent(modelId)}/exports/model.stl`}
+            download="model.stl"
+            onClick={() => {
+              onOpenChange(false);
+            }}
+          />
+        ) : null}
         {onOpenMaterialBrowser || onOpenAppearanceAssetBrowser ? (
           <>
             <div className="my-1 border-t border-border" />
@@ -656,6 +670,39 @@ function MenuItem({
         {Icon ? <Icon size={ICON_SIZE.chrome} aria-hidden="true" /> : null}
         <span>{label}</span>
       </button>
+    </li>
+  );
+}
+
+function MenuLink({
+  label,
+  icon,
+  testId,
+  href,
+  download,
+  onClick,
+}: {
+  label: string;
+  icon: keyof typeof Icons;
+  testId: string;
+  href: string;
+  download?: string;
+  onClick?: () => void;
+}): JSX.Element {
+  const Icon = Icons[icon];
+  return (
+    <li>
+      <a
+        role="menuitem"
+        href={href}
+        download={download}
+        onClick={onClick}
+        data-testid={testId}
+        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-foreground hover:bg-surface-strong"
+      >
+        {Icon ? <Icon size={ICON_SIZE.chrome} aria-hidden="true" /> : null}
+        <span>{label}</span>
+      </a>
     </li>
   );
 }
