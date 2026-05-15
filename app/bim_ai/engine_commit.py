@@ -30,7 +30,15 @@ def diff_undo_cmds(prev_doc: Document, next_doc: Document) -> list[dict[str, Any
     prev_ids = set(prev_doc.elements.keys())
     next_ids = set(next_doc.elements.keys())
 
-    delete_ids = sorted(next_ids - prev_ids)
+    def delete_rank(eid: str) -> tuple[int, str]:
+        el = next_doc.elements[eid]
+        if getattr(el, "kind", None) in {"door", "window", "wall_opening"}:
+            return (0, eid)
+        if getattr(el, "kind", None) == "wall":
+            return (2, eid)
+        return (1, eid)
+
+    delete_ids = sorted(next_ids - prev_ids, key=delete_rank)
     for nid in delete_ids:
         cmds.append({"type": "deleteElement", "elementId": nid})
 
