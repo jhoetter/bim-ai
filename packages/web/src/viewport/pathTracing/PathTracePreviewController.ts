@@ -17,6 +17,7 @@ export type PathTracePreviewState = {
   phase: PathTracePreviewPhase;
   message: string;
   samples: number;
+  previewSamples: number;
   targetSamples: number;
   progress: number;
   meshCount: number;
@@ -27,6 +28,7 @@ const IDLE_STATE: PathTracePreviewState = {
   phase: 'idle',
   message: '',
   samples: 0,
+  previewSamples: 0,
   targetSamples: 0,
   progress: 0,
   meshCount: 0,
@@ -48,6 +50,7 @@ export class PathTracePreviewController {
   private pathTracer: WebGLPathTracer | null = null;
   private traceScene: THREE.Scene | null = null;
   private activeCamera: THREE.Camera | null = null;
+  private previewSamples = 0;
   private targetSamples = 0;
   private meshCount = 0;
   private triangleCount = 0;
@@ -102,6 +105,7 @@ export class PathTracePreviewController {
     this.buildNonce += 1;
     const nonce = this.buildNonce;
     this.activeCamera = camera;
+    this.previewSamples = capability.previewSamples;
     this.targetSamples = capability.targetSamples;
 
     if (capability.status === 'unsupported') {
@@ -109,6 +113,7 @@ export class PathTracePreviewController {
         phase: 'unsupported',
         message: capability.reason,
         samples: 0,
+        previewSamples: 0,
         targetSamples: 0,
         progress: 0,
         meshCount: 0,
@@ -127,6 +132,7 @@ export class PathTracePreviewController {
       phase: 'preparing',
       message: capability.reason,
       samples: 0,
+      previewSamples: capability.previewSamples,
       targetSamples: capability.targetSamples,
       progress: 0,
       meshCount: 0,
@@ -152,6 +158,7 @@ export class PathTracePreviewController {
         phase: capability.status === 'degraded' ? 'degraded' : 'rendering',
         message: capability.reason,
         samples: 0,
+        previewSamples: capability.previewSamples,
         targetSamples: capability.targetSamples,
         progress: 0,
         meshCount: filtered.meshCount,
@@ -166,6 +173,7 @@ export class PathTracePreviewController {
         phase: 'error',
         message: error instanceof Error ? error.message : 'Path trace preview failed.',
         samples: 0,
+        previewSamples: capability.previewSamples,
         targetSamples: capability.targetSamples,
         progress: 0,
         meshCount: this.meshCount,
@@ -204,6 +212,7 @@ export class PathTracePreviewController {
     this.emit({
       phase: rawSamples >= this.targetSamples ? 'complete' : this.lastState.phase,
       samples,
+      previewSamples: this.previewSamples,
       targetSamples: this.targetSamples,
       progress: this.targetSamples > 0 ? rawSamples / this.targetSamples : 0,
       meshCount: this.meshCount,

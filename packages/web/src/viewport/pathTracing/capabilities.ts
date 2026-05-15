@@ -14,6 +14,7 @@ export type PathTraceCapability = {
   status: PathTraceCapabilityStatus;
   reason: string;
   renderScale: number;
+  previewSamples: number;
   targetSamples: number;
   bounces: number;
   details: {
@@ -133,6 +134,7 @@ export function detectPathTraceCapability(
       status: 'unsupported',
       reason: 'Path trace preview needs WebGL2 support.',
       renderScale: 0.5,
+      previewSamples: 0,
       targetSamples: 0,
       bounces: 0,
       details,
@@ -144,6 +146,7 @@ export function detectPathTraceCapability(
       status: 'unsupported',
       reason: 'Path trace preview needs floating-point render target support.',
       renderScale: 0.5,
+      previewSamples: 0,
       targetSamples: 0,
       bounces: 0,
       details,
@@ -155,6 +158,7 @@ export function detectPathTraceCapability(
       status: 'unsupported',
       reason: 'Path trace preview is disabled while section or clipping planes are active.',
       renderScale: 0.5,
+      previewSamples: 0,
       targetSamples: 0,
       bounces: 0,
       details,
@@ -167,6 +171,7 @@ export function detectPathTraceCapability(
       reason:
         'This scene is too large for local path tracing. Use high-fidelity raster mode or server render.',
       renderScale: 0.5,
+      previewSamples: 0,
       targetSamples: 0,
       bounces: 0,
       details,
@@ -182,9 +187,11 @@ export function detectPathTraceCapability(
   if (shouldDegrade) {
     return {
       status: 'degraded',
-      reason: 'Path trace preview may be slow on this device. Starting in low-resolution preview.',
+      reason:
+        'Low-resolution path trace preview. The first usable pass appears at 48 samples; it keeps refining to reduce noise.',
       renderScale: 0.5,
-      targetSamples: 48,
+      previewSamples: 48,
+      targetSamples: 256,
       bounces: 3,
       details,
     };
@@ -192,10 +199,12 @@ export function detectPathTraceCapability(
 
   return {
     status: 'supported',
-    reason: 'Path trace preview is available.',
-    renderScale: 0.75,
-    targetSamples: 96,
-    bounces: 5,
+    reason:
+      'Path trace preview is refining. Early preview appears at 96 samples; final preview uses a higher local sample budget.',
+    renderScale: 0.85,
+    previewSamples: 96,
+    targetSamples: 768,
+    bounces: 6,
     details,
   };
 }

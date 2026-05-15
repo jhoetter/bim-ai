@@ -5547,16 +5547,28 @@ export function Viewport({
                 {pathTraceState.phase === 'unsupported'
                   ? 'Path trace unavailable'
                   : pathTraceState.phase === 'complete'
-                    ? 'Path trace complete'
-                    : 'Path trace preview'}
+                    ? 'Path trace preview complete'
+                    : pathTraceState.previewSamples > 0 &&
+                        pathTraceState.samples >= pathTraceState.previewSamples
+                      ? 'Path trace refining'
+                      : 'Path trace preview'}
               </span>
               {pathTraceState.targetSamples > 0 ? (
                 <span className="font-mono text-muted">
-                  {pathTraceState.samples}/{pathTraceState.targetSamples}
+                  {pathTraceState.samples}/{pathTraceState.targetSamples} samples
                 </span>
               ) : null}
             </div>
             <div className="mt-1 text-muted">{pathTraceState.message}</div>
+            {pathTraceState.previewSamples > 0 && pathTraceState.targetSamples > 0 ? (
+              <div className="mt-1 text-muted">
+                {pathTraceState.samples >= pathTraceState.targetSamples
+                  ? 'Final local preview budget reached.'
+                  : pathTraceState.samples >= pathTraceState.previewSamples
+                    ? 'Interactive preview ready; continuing toward final local preview.'
+                    : `Interactive preview target: ${pathTraceState.previewSamples} samples.`}
+              </div>
+            ) : null}
             {pathTraceState.targetSamples > 0 ? (
               <div className="mt-2 h-1 overflow-hidden rounded bg-border">
                 <div
