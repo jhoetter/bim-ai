@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import logging
 from datetime import UTC, datetime
 from typing import Annotated, Any
 from uuid import UUID
@@ -66,6 +67,7 @@ from bim_ai.sustainability_lca import sustainability_lca_export_v1
 from bim_ai.tables import UndoStackRecord
 
 exports_router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 def _stl_options_from_query(
@@ -150,9 +152,17 @@ async def render_model_backend_raytrace_png(
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
     doc = Document.model_validate(row.document)
+    logger.info(
+        "Starting backend raytrace render model_id=%s width=%s height=%s samples=%s",
+        model_id,
+        body.width,
+        body.height,
+        body.samples,
+    )
     try:
         result = await asyncio.to_thread(render_document_backend_png, doc, body)
     except BackendRenderUnavailable as exc:
+        logger.warning("Backend raytrace render unavailable model_id=%s: %s", model_id, exc)
         raise HTTPException(
             status_code=503,
             detail={
@@ -161,6 +171,13 @@ async def render_model_backend_raytrace_png(
                 "capability": backend_render_capability(),
             },
         ) from exc
+    logger.info(
+        "Completed backend raytrace render model_id=%s renderer=%s device=%s samples=%s",
+        model_id,
+        result.renderer,
+        result.device,
+        result.samples,
+    )
     return Response(
         content=result.png,
         media_type="image/png",
