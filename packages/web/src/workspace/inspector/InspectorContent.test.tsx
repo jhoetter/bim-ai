@@ -803,6 +803,87 @@ describe('InspectorPropertiesFor — A4-A9 annotation elements', () => {
   });
 });
 
+describe('InspectorPropertiesFor — interior_elevation_marker (WP-A)', () => {
+  const marker: Extract<Element, { kind: 'interior_elevation_marker' }> = {
+    kind: 'interior_elevation_marker',
+    id: 'iem-1',
+    positionMm: { xMm: 3000, yMm: 4000 },
+    levelId: 'lvl-0',
+    radiusMm: 2500,
+    elevationViewIds: {
+      north: 'ev-n',
+      south: 'ev-s',
+      east: 'ev-e',
+      west: 'ev-w',
+    },
+  };
+
+  it('shows radius input with current radiusMm value when onPropertyChange is provided', () => {
+    const onChange = vi.fn();
+    const { getByTestId } = render(
+      InspectorPropertiesFor(marker, t, { onPropertyChange: onChange }),
+    );
+    const input = getByTestId('inspector-interior-elevation-radius') as HTMLInputElement;
+    expect(input).toBeTruthy();
+    expect(Number(input.value)).toBe(2500);
+  });
+
+  it('calls onPropertyChange with radiusMm on blur', () => {
+    const onChange = vi.fn();
+    const { getByTestId } = render(
+      InspectorPropertiesFor(marker, t, { onPropertyChange: onChange }),
+    );
+    const input = getByTestId('inspector-interior-elevation-radius') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '4000' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith('radiusMm', 4000);
+  });
+
+  it('shows levelId as read-only field', () => {
+    const { getByText } = render(InspectorPropertiesFor(marker, t));
+    expect(getByText('lvl-0')).toBeTruthy();
+  });
+});
+
+describe('InspectorPropertiesFor — permanent_dimension (WP-A)', () => {
+  const dim: Extract<Element, { kind: 'permanent_dimension' }> = {
+    kind: 'permanent_dimension',
+    id: 'pd-1',
+    levelId: 'lvl-0',
+    witnessPointsMm: [
+      { xMm: 0, yMm: 0 },
+      { xMm: 3000, yMm: 0 },
+      { xMm: 6000, yMm: 0 },
+    ],
+    offsetMm: { xMm: 0, yMm: -500 },
+    eqEnabled: false,
+  };
+
+  it('shows segment count (witnessPoints - 1)', () => {
+    const { getByText } = render(InspectorPropertiesFor(dim, t));
+    expect(getByText('2')).toBeTruthy();
+  });
+
+  it('shows EQ toggle button when onPropertyChange is provided', () => {
+    const onChange = vi.fn();
+    const { getByTestId } = render(
+      InspectorPropertiesFor(dim, t, { onPropertyChange: onChange }),
+    );
+    const btn = getByTestId('inspector-permanent-dimension-eq');
+    expect(btn).toBeTruthy();
+  });
+
+  it('EQ button click calls onPropertyChange with eqEnabled toggled', () => {
+    const onChange = vi.fn();
+    const { getByTestId } = render(
+      InspectorPropertiesFor(dim, t, { onPropertyChange: onChange }),
+    );
+    const btn = getByTestId('inspector-permanent-dimension-eq');
+    fireEvent.click(btn);
+    expect(onChange).toHaveBeenCalledWith('eqEnabled', true);
+  });
+});
+
 describe('InspectorProjectSettingsEditor', () => {
   it('persists checkpoint retention as a clamped project setting', () => {
     const onPersistProperty = vi.fn();

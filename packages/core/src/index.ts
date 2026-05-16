@@ -369,7 +369,8 @@ export type ElemKind =
   | 'diameter_dimension'
   | 'arc_length_dimension'
   | 'leader_text'
-  | 'interior_elevation_marker';
+  | 'interior_elevation_marker'
+  | 'permanent_dimension';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -1158,6 +1159,15 @@ export type Element =
         bboxWest: number;
         contextRadiusM?: number; // legacy field kept for backward compat
       };
+      /** F1 (WP-F): project-wide named parameters for formula-driven design values. */
+      globalParams?: Array<{
+        id: string;
+        name: string;
+        /** Stored as string; e.g. "3000 + 500" or "2 * 1500". */
+        formula: string;
+        /** Evaluated result cached on save (mm). */
+        valueMm: number;
+      }>;
     }
   | {
       kind: 'room_color_scheme';
@@ -1315,6 +1325,14 @@ export type Element =
       joinDisallowEnd?: boolean;
       /** G7: reference to the mass face this wall was generated from. */
       massFaceRef?: MassFaceRef | null;
+      /** G3: wall parts — segments of the wall with independent material assignment. */
+      parts?: Array<{
+        id: string;
+        /** Normalised position along wall length (0.0 = start, 1.0 = end). */
+        startT: number;
+        endT: number;
+        materialId?: string;
+      }>;
     }
   | {
       kind: 'door';
@@ -1690,6 +1708,8 @@ export type Element =
       energyScenarioId?: string | null;
       /** G6: reference to the mass face this roof was generated from. */
       massFaceRef?: MassFaceRef | null;
+      /** G2: extrusion depth for roof-by-extrusion tool (mm). */
+      extrusionDepthMm?: number;
     }
   | {
       kind: 'stair';
@@ -2191,6 +2211,10 @@ export type Element =
       discipline?: DisciplineTag | null;
       /** SCH-V3-01: custom property values. */
       props?: Record<string, unknown>;
+      /** F3 (WP-F): horizontal X shift of column top from base in mm (default 0 = vertical). */
+      topOffsetXMm?: number;
+      /** F3 (WP-F): horizontal Y shift of column top from base in mm (default 0 = vertical). */
+      topOffsetYMm?: number;
     }
   | {
       kind: 'beam';
@@ -2943,6 +2967,21 @@ export type Element =
       radiusMm?: number;
       /** IDs of the four auto-created elevation_view elements. */
       elevationViewIds: { north: string; south: string; east: string; west: string };
+    }
+  | {
+      /**
+       * ANN-P2 — permanent aligned dimension chain with N witness points.
+       * EQ mode drives all segments to equal spacing (visual only).
+       */
+      kind: 'permanent_dimension';
+      id: string;
+      levelId: string;
+      /** Ordered witness points (plan mm). Must have ≥2 points. */
+      witnessPointsMm: XY[];
+      /** Offset of dimension line from the witness point chain, in mm. */
+      offsetMm: XY;
+      /** When true, display "EQ" instead of individual segment values. */
+      eqEnabled?: boolean;
     };
 
 export type Violation = {
@@ -3665,6 +3704,12 @@ export type DecalElem = {
   imageAssetId: string;
   uvRect: { u0: number; v0: number; u1: number; v1: number };
   opacity?: number;
+  /** F2 (WP-F): placement-based decal fields (alternative to UV-based placement). */
+  positionMm?: { xMm: number; yMm: number; zMm: number };
+  normalVec?: { x: number; y: number; z: number };
+  imageSrc?: string;
+  widthMm?: number;
+  heightMm?: number;
 };
 
 // ---------------------------------------------------------------------------

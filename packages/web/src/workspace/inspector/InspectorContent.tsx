@@ -2143,6 +2143,62 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
+    case 'permanent_dimension': {
+      const { onPropertyChange: pdPropChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label="Segments" value={String(el.witnessPointsMm.length - 1)} />
+          <FieldRow label="Level" value={el.levelId} mono />
+          {pdPropChange ? (
+            <div className="flex items-center gap-2 py-0.5">
+              <button
+                type="button"
+                className="rounded border border-border bg-surface px-2 py-0.5 text-xs font-medium hover:bg-surface/80"
+                data-testid="inspector-permanent-dimension-eq"
+                onClick={() => pdPropChange('eqEnabled', !el.eqEnabled)}
+              >
+                {el.eqEnabled ? 'EQ On' : 'EQ Off'}
+              </button>
+            </div>
+          ) : (
+            <FieldRow label="EQ" value={el.eqEnabled ? 'On' : 'Off'} />
+          )}
+        </div>
+      );
+    }
+    case 'interior_elevation_marker': {
+      const { onPropertyChange: iemPropChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label="Level" value={el.levelId} mono />
+          <FieldRow
+            label="Position"
+            value={`(${Math.round(el.positionMm.xMm)}, ${Math.round(el.positionMm.yMm)}) mm`}
+            mono
+          />
+          {iemPropChange ? (
+            <div className="flex items-center gap-2 py-0.5">
+              <span className="text-xs text-muted w-28 shrink-0">Radius (mm)</span>
+              <input
+                type="number"
+                className="w-24 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                defaultValue={el.radiusMm ?? 3000}
+                key={`${el.id}-radius`}
+                step={100}
+                aria-label="Elevation marker radius in millimetres"
+                data-testid="inspector-interior-elevation-radius"
+                onBlur={(e) => {
+                  const v = Number(e.currentTarget.value);
+                  if (!isNaN(v) && v > 0) iemPropChange('radiusMm', v);
+                }}
+              />
+            </div>
+          ) : (
+            <FieldRow label="Radius (mm)" value={String(el.radiusMm ?? 3000)} mono />
+          )}
+        </div>
+      );
+    }
     case 'spot_elevation': {
       const { onPropertyChange: sePropChange } = options ?? {};
       return (

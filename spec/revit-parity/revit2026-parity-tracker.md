@@ -474,8 +474,8 @@ Dimension tool is in the tool registry. autoDimension.ts, tempDimensions.ts, hel
 Aligned dimension placement is partially implemented. Creating a full Revit-style permanent dimension chain clicking multiple reference lines is partial.
 
 #### 4.2.2 EQ-Bedingung (equal constraint on dimension chain)
-**Status: Not Started — P1**
-EQ (equal spacing) button on aligned dimension chains — drives all witness-line spacings to equal value — is not implemented.
+**Status: Partial — P2 (EQ toggle and visual display implemented)**
+`permanent_dimension` element type added to `@bim-ai/core` with `witnessPointsMm[]`, `offsetMm`, and `eqEnabled` flag. Plan rendering in `permanentDimensionThree()` draws witness lines between each adjacent pair of witness points and: when `eqEnabled` is false renders per-segment length labels; when `eqEnabled` is true renders a single "EQ" label at the span midpoint. Inspector shows segment count and an EQ toggle button (`data-testid="inspector-permanent-dimension-eq"`). Parametric enforcement (driving actual spacings equal) is Not Started.
 
 #### 4.2.3 Fensterbreiten und Wandlängen gleichsetzen (equalise window widths/wall lengths via EQ)
 **Status: Not Started — P1**
@@ -625,8 +625,8 @@ Reflected ceiling plans (RCP) are implemented as `planViewSubtype: 'ceiling_plan
 Elevation tool and elevation marker exist. Four cardinal elevation views are auto-created with a new project in Revit. In bim-ai, elevation views must be placed manually. Elevation view rendering from the model (showing actual geometry in 2D elevation projection) is in sectionViewportSvg.tsx/sectionViewportDoc.ts — Partial.
 
 #### 6.1.5 Innenansichten (interior elevation views)
-**Status: Partial — D2**
-Interior elevation placement: `interior-elevation` tool (hotkey `IE`) added to plan palette. Single-click dispatches `create_interior_elevation_marker` command; server auto-creates four `elevation_view` children (N/S/E/W). `interior_elevation_marker` element type in `@bim-ai/core` with `positionMm`, `levelId`, `radiusMm`, and `elevationViewIds` (N/S/E/W). Plan symbol: 4-quadrant circle with inward arrows rendered in `symbology.ts`. Inspector panel and drag-grip for placed markers are Not Started.
+**Status: Partial — D2 (inspector+grip done; full elevation-view rendering is separate)**
+Interior elevation placement: `interior-elevation` tool (hotkey `IE`) added to plan palette. Single-click dispatches `create_interior_elevation_marker` command; server auto-creates four `elevation_view` children (N/S/E/W). `interior_elevation_marker` element type in `@bim-ai/core` with `positionMm`, `levelId`, `radiusMm`, and `elevationViewIds` (N/S/E/W). Plan symbol: 4-quadrant circle with inward arrows rendered in `symbology.ts`. Inspector panel (radius, levelId) and drag-grip implemented in wave 2 WP-A.
 
 #### 6.1.6 Schnittansicht (section view: cross section, building section)
 **Status: Partial — P1**

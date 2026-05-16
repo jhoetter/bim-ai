@@ -23,6 +23,7 @@ import { sectionCutGripProvider } from './sectionCutGripProvider';
 import { sketchElementGripProvider } from './sketchElementGripProvider';
 import { windowGripProvider } from './windowGripProvider';
 import { textNoteGripProvider, leaderTextGripProvider } from './annotationGripProvider';
+import { interiorElevationMarkerGripProvider } from './interiorElevationMarkerGripProvider';
 import {
   angularDimensionGripProvider,
   radialDimensionGripProvider,
@@ -54,6 +55,7 @@ export {
   spotElevationGripProvider,
   spotCoordinateGripProvider,
   spotSlopeGripProvider,
+  interiorElevationMarkerGripProvider,
 };
 
 export function gripsFor(element: Element, context: PlanContext = {}): GripDescriptor[] {
@@ -101,6 +103,8 @@ export function gripsFor(element: Element, context: PlanContext = {}): GripDescr
       return spotCoordinateGripProvider.grips(element, context);
     case 'spot_slope':
       return spotSlopeGripProvider.grips(element, context);
+    case 'interior_elevation_marker':
+      return interiorElevationMarkerGripProvider.grips(element, context);
     default:
       return [];
   }

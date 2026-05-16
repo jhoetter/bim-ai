@@ -1751,6 +1751,69 @@ export function dimensionsThree(d: Extract<Element, { kind: 'dimension' }>): THR
   return grp;
 }
 
+/**
+ * ANN-P2 — permanent aligned dimension chain.
+ *
+ * Draws witness lines between each adjacent pair of witnessPointsMm.
+ * When eqEnabled is false (or undefined) renders each segment's length as a
+ * text label at the segment midpoint.
+ * When eqEnabled is true renders "EQ" as a single label at the span midpoint.
+ */
+export function permanentDimensionThree(
+  d: Extract<Element, { kind: 'permanent_dimension' }>,
+): THREE.Group {
+  const grp = new THREE.Group();
+  grp.userData.bimPickId = d.id;
+
+  const pts = d.witnessPointsMm;
+  if (pts.length < 2) return grp;
+
+  const dimColor = getPlanPalette().dimLine;
+
+  // Build line segments for each adjacent witness pair
+  const linePositions: number[] = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i]!;
+    const b = pts[i + 1]!;
+    const ax = ux(a.xMm + d.offsetMm.xMm);
+    const az = uz(a.yMm + d.offsetMm.yMm);
+    const bx = ux(b.xMm + d.offsetMm.xMm);
+    const bz = uz(b.yMm + d.offsetMm.yMm);
+    linePositions.push(ax, PLAN_Y + 0.002, az, bx, PLAN_Y + 0.002, bz);
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+  const ls = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: dimColor }));
+  ls.userData.bimPickId = d.id;
+  grp.add(ls);
+
+  if (d.eqEnabled) {
+    // Single "EQ" label at the midpoint of the full span
+    const first = pts[0]!;
+    const last = pts[pts.length - 1]!;
+    const midXMm = (first.xMm + last.xMm) / 2 + d.offsetMm.xMm;
+    const midYMm = (first.yMm + last.yMm) / 2 + d.offsetMm.yMm;
+    const sprite = planAnnotationLabelSprite(ux(midXMm), uz(midYMm), 'EQ', d.id);
+    grp.add(sprite);
+  } else {
+    // Per-segment labels
+    for (let i = 0; i < pts.length - 1; i++) {
+      const a = pts[i]!;
+      const b = pts[i + 1]!;
+      const segLenMm = Math.hypot(b.xMm - a.xMm, b.yMm - a.yMm);
+      const labelText =
+        segLenMm >= 1000 ? `${(segLenMm / 1000).toFixed(2)} m` : `${Math.round(segLenMm)} mm`;
+      const midXMm = (a.xMm + b.xMm) / 2 + d.offsetMm.xMm;
+      const midYMm = (a.yMm + b.yMm) / 2 + d.offsetMm.yMm;
+      const sprite = planAnnotationLabelSprite(ux(midXMm), uz(midYMm), labelText, d.id);
+      grp.add(sprite);
+    }
+  }
+
+  return grp;
+}
+
 const REFERENCE_PLANE_PLAN_COLOR = 0x9ca3af;
 const REFERENCE_PLANE_PLAN_DASH = 0.18;
 const REFERENCE_PLANE_PLAN_GAP = 0.12;
