@@ -8,9 +8,11 @@
     "packages/core/src/index.ts",
     "packages/web/src/Viewport.tsx",
     "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/tools/authoringCommandContract.ts",
     "packages/web/src/tools/toolGrammar.ts",
     "packages/web/src/tools/toolRegistry.ts",
-    "packages/web/src/viewport/meshBuilders.ts"
+    "packages/web/src/viewport/meshBuilders.ts",
+    "packages/web/src/workspace/Workspace.tsx"
   ],
   "sessions": [
     {
@@ -24,13 +26,19 @@
       "transcript": "/69/0601cc5431/1/full.jsonl",
       "content_hash": "/69/0601cc5431/1/content_hash.txt",
       "prompt": "/69/0601cc5431/1/prompt.txt"
+    },
+    {
+      "metadata": "/69/0601cc5431/2/metadata.json",
+      "transcript": "/69/0601cc5431/2/full.jsonl",
+      "content_hash": "/69/0601cc5431/2/content_hash.txt",
+      "prompt": "/69/0601cc5431/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 3320099,
-    "cache_creation_tokens": 299515,
-    "cache_read_tokens": 85309014,
-    "output_tokens": 297880,
-    "api_call_count": 1573
+    "input_tokens": 3320481,
+    "cache_creation_tokens": 534477,
+    "cache_read_tokens": 112796387,
+    "output_tokens": 376544,
+    "api_call_count": 1893
   }
 }
