@@ -134,6 +134,12 @@
       "transcript": "/10/e77cf75b43/19/full.jsonl",
       "content_hash": "/10/e77cf75b43/19/content_hash.txt",
       "prompt": "/10/e77cf75b43/19/prompt.txt"
+    },
+    {
+      "metadata": "/10/e77cf75b43/20/metadata.json",
+      "transcript": "/10/e77cf75b43/20/full.jsonl",
+      "content_hash": "/10/e77cf75b43/20/content_hash.txt",
+      "prompt": "/10/e77cf75b43/20/prompt.txt"
     }
   ],
   "token_usage": {
