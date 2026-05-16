@@ -1077,6 +1077,32 @@ const SYSTEM_CAPABILITIES: CommandCapability[] = [
     status: 'implemented',
     usabilityScore: 8,
   },
+  {
+    id: 'structural.delete-duplicate-wall',
+    label: 'Delete Duplicate Wall',
+    owner: 'advisor/structuralAdvisorViolations',
+    group: 'review',
+    scope: 'model',
+    intendedModes: ['plan', '3d'],
+    surfaces: ['cmd-k'],
+    executionSurface: 'canvas',
+    preconditions: ['advisor-finding-with-quick-fix'],
+    status: 'implemented',
+    usabilityScore: 8,
+  },
+  {
+    id: 'structural.detach-orphan',
+    label: 'Detach Orphaned Hosted Element',
+    owner: 'advisor/structuralAdvisorViolations',
+    group: 'review',
+    scope: 'model',
+    intendedModes: ['plan', '3d'],
+    surfaces: ['cmd-k'],
+    executionSurface: 'canvas',
+    preconditions: ['advisor-finding-with-quick-fix'],
+    status: 'implemented',
+    usabilityScore: 8,
+  },
 ];
 
 const SCHEDULE_CAPABILITIES: CommandCapability[] = [

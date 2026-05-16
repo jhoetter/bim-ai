@@ -793,6 +793,14 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'tool.interior-elevation',
+  label: 'Interior Elevation',
+  keywords: ['interior', 'elevation', 'room', 'four-direction', 'ie'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'interior-elevation'),
+});
+
+registerCommand({
   id: 'tool.measure',
   label: 'Measure Distance',
   keywords: ['measure', 'tape', 'distance'],
@@ -1447,6 +1455,26 @@ registerCommand({
   id: 'advisor.apply-first-fix',
   label: 'Apply First Advisor Fix',
   keywords: ['advisor', 'fix', 'quick fix', 'apply fix', 'review'],
+  category: 'command',
+  sourceKind: 'agent',
+  isAvailable: (ctx) => Boolean(ctx.hasAdvisorQuickFix && ctx.applyFirstAdvisorFix),
+  invoke: (ctx) => ctx.applyFirstAdvisorFix?.(),
+});
+
+registerCommand({
+  id: 'structural.delete-duplicate-wall',
+  label: 'Delete Duplicate Wall',
+  keywords: ['duplicate', 'wall', 'structural', 'repair', 'delete', 'fix'],
+  category: 'command',
+  sourceKind: 'agent',
+  isAvailable: (ctx) => Boolean(ctx.hasAdvisorQuickFix && ctx.applyFirstAdvisorFix),
+  invoke: (ctx) => ctx.applyFirstAdvisorFix?.(),
+});
+
+registerCommand({
+  id: 'structural.detach-orphan',
+  label: 'Detach Orphaned Hosted Element',
+  keywords: ['orphan', 'hosted', 'structural', 'repair', 'detach', 'fix', 'door', 'window'],
   category: 'command',
   sourceKind: 'agent',
   isAvailable: (ctx) => Boolean(ctx.hasAdvisorQuickFix && ctx.applyFirstAdvisorFix),

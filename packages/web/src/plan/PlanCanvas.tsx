@@ -45,7 +45,11 @@ import {
   reduceColumnAtGrids,
   type ColumnAtGridsState,
   initialRoofState,
+  initialScaleState,
+  reduceScale,
+  type ScaleState,
 } from '../tools/toolGrammar';
+import { buildScaleCommand, distanceMm } from './scaleTool';
 import { columnPositionsAtGridIntersections } from './columnAtGrids';
 import * as THREE from 'three';
 import { parseDimensionInput } from '@bim-ai/core';
@@ -438,6 +442,8 @@ export function PlanCanvas({
   const [rotateAnchorSet, setRotateAnchorSet] = useState(false);
   const rotateReferenceRef = useRef<{ xMm: number; yMm: number } | null>(null);
   const [rotateReferenceSet, setRotateReferenceSet] = useState(false);
+  const scaleStateRef = useRef<ScaleState>(initialScaleState());
+  const [scalePhase, setScalePhase] = useState<ScaleState['phase']>('idle');
   const splitStateRef = useRef<SplitState>(initialSplitState());
   const trimStateRef = useRef<TrimState>(initialTrimState());
   const trimExtendFirstWallRef = useRef<string | null>(null);
@@ -963,6 +969,8 @@ export function PlanCanvas({
     setRotateAnchorSet(false);
     rotateReferenceRef.current = null;
     setRotateReferenceSet(false);
+    scaleStateRef.current = initialScaleState();
+    setScalePhase('idle');
     setNumericInput(null);
     splitStateRef.current = initialSplitState();
     trimStateRef.current = initialTrimState();
@@ -996,6 +1004,10 @@ export function PlanCanvas({
     } else if (planTool === 'column-at-grids') {
       const { state } = reduceColumnAtGrids(columnAtGridsStateRef.current, { kind: 'activate' });
       columnAtGridsStateRef.current = state;
+    } else if (planTool === 'scale') {
+      const { state } = reduceScale(scaleStateRef.current, { kind: 'activate' });
+      scaleStateRef.current = state;
+      setScalePhase(state.phase);
     }
   }, [planTool]);
 
@@ -3519,6 +3531,19 @@ export function PlanCanvas({
         onSemanticCommand(cmd);
         return;
       }
+      if (planTool === 'interior-elevation') {
+        // D2: place a 4-direction interior elevation marker inside a room.
+        // The server auto-creates four elevation_view children (N/S/E/W).
+        const markerId = `iem-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+        onSemanticCommand({
+          type: 'create_interior_elevation_marker',
+          id: markerId,
+          positionMm: { xMm: sp.xMm, yMm: sp.yMm },
+          levelId: lvlId ?? displayLevelId ?? 'lvl-0',
+          radiusMm: 3000,
+        });
+        return;
+      }
       if (planTool === 'reference-plane') {
         // KRN-05: two-click reference plane on the active level.
         const d = draftRef.current;
@@ -3852,6 +3877,33 @@ export function PlanCanvas({
             angleDeg,
           });
         }
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      if (planTool === 'scale') {
+        const { state, effect } = reduceScale(scaleStateRef.current, {
+          kind: 'click',
+          xMm: sp.xMm,
+          yMm: sp.yMm,
+        });
+        scaleStateRef.current = state;
+        setScalePhase(state.phase);
+        if (effect.commitScale) {
+          const { originMm, factor } = effect.commitScale;
+          if (selectedId) {
+            void onSemanticCommand(buildScaleCommand(selectedId, originMm, factor));
+          }
+        }
+        if (effect.commitGraphicalScale) {
+          const { originMm, referenceMm, destinationMm } = effect.commitGraphicalScale;
+          const refDist = distanceMm(originMm, referenceMm);
+          const destDist = distanceMm(originMm, destinationMm);
+          const factor = refDist > 0 ? destDist / refDist : 1;
+          if (selectedId) {
+            void onSemanticCommand(buildScaleCommand(selectedId, originMm, factor));
+          }
+        }
+        if (!effect.stillActive) setPlanTool('select');
         bumpGeom((x) => x + 1);
         return;
       }
@@ -4573,6 +4625,46 @@ export function PlanCanvas({
           return;
         }
       }
+      if (planTool === 'scale' && scalePhase === 'enter-factor') {
+        if (/^[0-9]$/.test(ev.key) || ev.key === '.' || ev.key === ',') {
+          ev.preventDefault();
+          const char = ev.key === ',' ? '.' : ev.key;
+          const hoverMm = hudMmRef.current;
+          const seedPx = hoverMm ? worldToScreen(hoverMm) : { pxX: 100, pxY: 100 };
+          setNumericInput((prev) => {
+            const value = (prev?.value ?? '') + char;
+            return { value, pxX: prev?.pxX ?? seedPx.pxX, pxY: prev?.pxY ?? seedPx.pxY };
+          });
+          const current = numericInputRef.current;
+          const next = (current?.value ?? '') + char;
+          const { state } = reduceScale(scaleStateRef.current, { kind: 'set-input', value: next });
+          scaleStateRef.current = state;
+          return;
+        }
+        if (ev.key === 'Backspace' && numericInputRef.current) {
+          ev.preventDefault();
+          setNumericInput((prev) => (prev ? { ...prev, value: prev.value.slice(0, -1) } : prev));
+          const current = numericInputRef.current;
+          const next = (current?.value ?? '').slice(0, -1);
+          const { state } = reduceScale(scaleStateRef.current, { kind: 'set-input', value: next });
+          scaleStateRef.current = state;
+          return;
+        }
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          const { state, effect } = reduceScale(scaleStateRef.current, { kind: 'confirm' });
+          scaleStateRef.current = state;
+          setScalePhase(state.phase);
+          setNumericInput(null);
+          if (effect.commitScale && selectedId) {
+            void onSemanticCommand(
+              buildScaleCommand(selectedId, effect.commitScale.originMm, effect.commitScale.factor),
+            );
+          }
+          bumpGeom((x) => x + 1);
+          return;
+        }
+      }
       // F-104 — Tab cycles to the next endpoint-connected wall when a wall is
       // selected in select mode. Walks the wall graph: find all walls on the
       // same level whose start or end endpoint is within 10 mm of the current
@@ -4731,6 +4823,12 @@ export function PlanCanvas({
         } else if (planTool === 'column-at-grids') {
           const { state } = reduceColumnAtGrids(columnAtGridsStateRef.current, { kind: 'cancel' });
           columnAtGridsStateRef.current = state;
+          bumpGeom((x) => x + 1);
+        } else if (planTool === 'scale') {
+          const { state } = reduceScale(scaleStateRef.current, { kind: 'cancel' });
+          scaleStateRef.current = state;
+          setScalePhase(state.phase);
+          setNumericInput(null);
           bumpGeom((x) => x + 1);
         }
         if (
@@ -6481,7 +6579,9 @@ export function PlanCanvas({
       />
       {/* EDT-01 / F-122 — numeric override input rendered at the cursor. */}
       {numericInput &&
-      (gripDragRef.current || (planTool === 'rotate' && rotateAnchorSet && rotateReferenceSet)) ? (
+      (gripDragRef.current ||
+        (planTool === 'rotate' && rotateAnchorSet && rotateReferenceSet) ||
+        (planTool === 'scale' && scalePhase === 'enter-factor')) ? (
         <div
           data-testid="grip-numeric-input"
           style={{
@@ -6505,9 +6605,43 @@ export function PlanCanvas({
         >
           {numericInput.value || '0'}
           <span style={{ opacity: 0.6 }}>
-            {planTool === 'rotate' && rotateAnchorSet && rotateReferenceSet ? ' deg' : ' mm'} ·
-            Enter
+            {planTool === 'rotate' && rotateAnchorSet && rotateReferenceSet
+              ? ' deg'
+              : planTool === 'scale' && scalePhase === 'enter-factor'
+                ? '×'
+                : ' mm'}{' '}
+            · Enter
           </span>
+        </div>
+      ) : null}
+      {/* B1 — Scale tool phase instruction banner. */}
+      {planTool === 'scale' && scalePhase !== 'idle' ? (
+        <div
+          data-testid="scale-instruction"
+          aria-live="polite"
+          style={{
+            position: 'absolute',
+            bottom: 40,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            pointerEvents: 'none',
+            zIndex: 20,
+            background: 'rgba(20,28,42,0.88)',
+            border: '1px solid var(--color-accent)',
+            borderRadius: 4,
+            color: 'var(--color-accent)',
+            fontSize: 'var(--text-xs, 11px)',
+            padding: '4px 12px',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {scalePhase === 'pick-origin'
+            ? 'Click scale origin'
+            : scalePhase === 'enter-factor'
+              ? 'Type factor + Enter  or  click reference point'
+              : scalePhase === 'pick-reference'
+                ? 'Click reference distance'
+                : 'Click new distance'}
         </div>
       ) : null}
       {/* B8 — padlock glyphs for pinned elements. */}

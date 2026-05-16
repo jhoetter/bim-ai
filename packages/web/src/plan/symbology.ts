@@ -1167,6 +1167,84 @@ function elevationViewPlanThree(
   return group;
 }
 
+/** D2: renders the 4-quadrant circle plan symbol for an interior_elevation_marker. */
+function interiorElevationMarkerPlanThree(
+  iem: Extract<Element, { kind: 'interior_elevation_marker' }>,
+): THREE.Group {
+  const group = new THREE.Group();
+  group.userData.bimPickId = iem.id;
+
+  const cx = ux(iem.positionMm.xMm);
+  const cz = uz(iem.positionMm.yMm);
+  const Y = PLAN_Y + 0.0085;
+  const color = readToken('--cat-section', '#ef4444');
+  const R = 0.28;
+  const segs = 48;
+
+  // Outer circle
+  const circPts: THREE.Vector3[] = [];
+  for (let i = 0; i <= segs; i++) {
+    const a = (i / segs) * Math.PI * 2;
+    circPts.push(new THREE.Vector3(cx + Math.cos(a) * R, Y, cz + Math.sin(a) * R));
+  }
+  const circleLine = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(circPts),
+    new THREE.LineBasicMaterial({ color, depthTest: false }),
+  );
+  circleLine.renderOrder = 991;
+  group.add(circleLine);
+
+  // Cross dividers creating the 4-quadrant look
+  const mat = new THREE.LineBasicMaterial({ color, depthTest: false });
+  const hLine = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(cx - R, Y, cz),
+      new THREE.Vector3(cx + R, Y, cz),
+    ]),
+    mat,
+  );
+  const vLine = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(cx, Y, cz - R),
+      new THREE.Vector3(cx, Y, cz + R),
+    ]),
+    mat,
+  );
+  hLine.renderOrder = 991;
+  vLine.renderOrder = 991;
+  group.add(hLine, vLine);
+
+  // Four inward-pointing arrows (N/S/E/W)
+  const ARROW = 0.14;
+  const ARROW_HALF = 0.07;
+  const dirs: Array<{ vx: number; vz: number }> = [
+    { vx: 0, vz: -1 },
+    { vx: 0, vz: 1 },
+    { vx: 1, vz: 0 },
+    { vx: -1, vz: 0 },
+  ];
+  for (const { vx, vz } of dirs) {
+    const tx = -vz;
+    const tz = vx;
+    const tipX = cx + vx * R;
+    const tipZ = cz + vz * R;
+    const baseX = cx + vx * (R - ARROW);
+    const baseZ = cz + vz * (R - ARROW);
+    const arrowLine = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(baseX + tx * ARROW_HALF, Y, baseZ + tz * ARROW_HALF),
+        new THREE.Vector3(tipX, Y, tipZ),
+        new THREE.Vector3(baseX - tx * ARROW_HALF, Y, baseZ - tz * ARROW_HALF),
+      ]),
+      new THREE.LineBasicMaterial({ color, depthTest: false }),
+    );
+    arrowLine.renderOrder = 991;
+    group.add(arrowLine);
+  }
+
+  return group;
+}
+
 function sectionCutPlanThree(sc: Extract<Element, { kind: 'section_cut' }>): THREE.Group {
   const group = new THREE.Group();
   group.userData.bimPickId = sc.id;
@@ -1682,6 +1760,18 @@ export function rebuildPlanMeshes(
       if (ev.kind !== 'elevation_view') continue;
       if (kindHidden('elevation_view')) continue;
       holder.add(elevationViewPlanThree(ev, elementsById));
+    }
+    tintNewChildren(before, 'elevation_view');
+  }
+
+  // D2: 4-quadrant circle markers for interior elevation markers.
+  {
+    const before = holder.children.length;
+    for (const el of Object.values(elementsById)) {
+      if (el.kind !== 'interior_elevation_marker') continue;
+      if (kindHidden('elevation_view')) continue;
+      const iem = el as Extract<Element, { kind: 'interior_elevation_marker' }>;
+      holder.add(interiorElevationMarkerPlanThree(iem));
     }
     tintNewChildren(before, 'elevation_view');
   }

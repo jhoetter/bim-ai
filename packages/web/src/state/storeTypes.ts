@@ -110,7 +110,8 @@ export type PlanTool =
   | 'brace'
   | 'ramp'
   | 'column-at-grids'
-  | 'beam-system';
+  | 'beam-system'
+  | 'interior-elevation';
 
 export type PresencePeers = Record<
   string,

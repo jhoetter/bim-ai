@@ -201,6 +201,15 @@ export const AUTHORING_COMMAND_CONTRACTS = {
     [],
     ['direction', 'view-template'],
   ),
+  'interior-elevation': contract(
+    'interior-elevation',
+    'document',
+    ['plan'],
+    'Four-direction interior elevation marker placed inside a room boundary.',
+    'select-after-commit',
+    [],
+    ['view-template'],
+  ),
   grid: contract(
     'grid',
     'line',

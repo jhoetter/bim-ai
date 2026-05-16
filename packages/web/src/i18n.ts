@@ -40,6 +40,10 @@ i18n.init({
             label: 'Elevation',
             tooltip: 'Click on plan to drop a N/S/E/W elevation marker (EL)',
           },
+          interiorElevation: {
+            label: 'Interior Elevation',
+            tooltip: 'Click inside a room to place a 4-direction interior elevation marker (IE)',
+          },
           referencePlane: {
             label: 'Reference Plane',
             tooltip: 'Two-click reference / work plane on the active level (RP)',
@@ -874,6 +878,10 @@ i18n.init({
           elevation: {
             label: 'Ansicht',
             tooltip: 'Klicken zum Platzieren einer N/S/O/W-Ansichtsmarkierung (EL)',
+          },
+          interiorElevation: {
+            label: 'Innenansicht',
+            tooltip: 'Klicken im Raum für 4-Richtungs-Innenansichtsmarkierung (IE)',
           },
           referencePlane: {
             label: 'Referenzebene',

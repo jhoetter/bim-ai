@@ -368,7 +368,8 @@ export type ElemKind =
   | 'radial_dimension'
   | 'diameter_dimension'
   | 'arc_length_dimension'
-  | 'leader_text';
+  | 'leader_text'
+  | 'interior_elevation_marker';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -2927,6 +2928,21 @@ export type Element =
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
       discipline?: DisciplineTag | null;
+    }
+  | {
+      /**
+       * D2 — 4-direction interior elevation marker. Placed inside a room; the
+       * engine auto-creates four `elevation_view` children (N/S/E/W) keyed by
+       * `elevationViewIds`. Renders as a 4-quadrant circle on plan.
+       */
+      kind: 'interior_elevation_marker';
+      id: string;
+      positionMm: XY;
+      levelId: string;
+      /** Half-extent of the crop box for each elevation view, in mm (default 3000). */
+      radiusMm?: number;
+      /** IDs of the four auto-created elevation_view elements. */
+      elevationViewIds: { north: string; south: string; east: string; west: string };
     };
 
 export type Violation = {
@@ -4079,6 +4095,19 @@ export type AddSheetRevisionCmd = {
 export type RemoveSheetRevisionCmd = {
   type: 'remove_sheet_revision';
   id: string;
+};
+
+// ---------------------------------------------------------------------------
+// D2 — Interior Elevation Marker command
+// ---------------------------------------------------------------------------
+
+export type CreateInteriorElevationMarkerCmd = {
+  type: 'create_interior_elevation_marker';
+  id: string;
+  positionMm: { xMm: number; yMm: number };
+  levelId: string;
+  /** Half-extent of crop box in mm. Defaults to 3000 on the server. */
+  radiusMm?: number;
 };
 
 // ---------------------------------------------------------------------------
