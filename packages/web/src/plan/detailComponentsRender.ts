@@ -363,13 +363,25 @@ export function extractDetailComponentPrimitives(
         colour: el.colour ?? '#202020',
       });
     } else if (el.kind === 'material_tag' && el.hostViewId === viewId) {
+      const resolvedMaterialText = ((): string | null => {
+        if (el.textOverride) return el.textOverride;
+        const hostEl = elementsById[el.hostElementId];
+        if (!hostEl) return null;
+        const typeId = 'wallTypeId' in hostEl ? hostEl.wallTypeId : undefined;
+        const typeEl = typeId ? elementsById[typeId] : undefined;
+        if (typeEl && typeEl.kind === 'wall_type') {
+          const layerIdx = el.layerIndex ?? 0;
+          return typeEl.layers[layerIdx]?.materialKey ?? null;
+        }
+        return null;
+      })();
       out.push({
         kind: 'material_tag',
         id: el.id,
         positionMm: el.positionMm,
         hostElementId: el.hostElementId,
         layerIndex: el.layerIndex ?? 0,
-        textOverride: el.textOverride ?? null,
+        textOverride: resolvedMaterialText,
         colour: el.colour ?? '#202020',
       });
     } else if (el.kind === 'multi_category_tag' && el.hostViewId === viewId) {

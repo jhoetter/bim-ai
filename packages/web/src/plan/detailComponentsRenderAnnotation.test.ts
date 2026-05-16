@@ -391,6 +391,45 @@ describe('ANN-12 — material_tag', () => {
     };
     expect(extractDetailComponentPrimitives({ [foreign.id]: foreign }, VIEW)).toEqual([]);
   });
+
+  it('resolves materialKey from wall type layer when textOverride is absent (A10 live lookup)', () => {
+    const wallType: Extract<Element, { kind: 'wall_type' }> = {
+      kind: 'wall_type',
+      id: 'wt-1',
+      name: 'Brick Wall',
+      layers: [
+        { function: 'finish', materialKey: 'concrete', thicknessMm: 100 },
+        { function: 'structure', materialKey: 'brick_facing', thicknessMm: 200 },
+      ],
+    };
+    const wall: Extract<Element, { kind: 'wall' }> = {
+      kind: 'wall',
+      id: 'wall-live',
+      levelId: 'lvl-1',
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 5000, yMm: 0 },
+      thicknessMm: 300,
+      heightMm: 2800,
+      wallTypeId: 'wt-1',
+    };
+    const tag: Extract<Element, { kind: 'material_tag' }> = {
+      kind: 'material_tag',
+      id: 'mt-live',
+      hostViewId: VIEW,
+      hostElementId: 'wall-live',
+      layerIndex: 1,
+      positionMm: { xMm: 100, yMm: 100 },
+    };
+    const elementsById: Record<string, Element> = {
+      'wt-1': wallType,
+      'wall-live': wall,
+      'mt-live': tag,
+    };
+    const [p] = extractDetailComponentPrimitives(elementsById, VIEW);
+    if (p?.kind === 'material_tag') {
+      expect(p.textOverride).toBe('brick_facing');
+    }
+  });
 });
 
 /* ────────────────────────────────────────────────────────────────────── */
