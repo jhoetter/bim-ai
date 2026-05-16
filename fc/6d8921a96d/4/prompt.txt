@@ -1,0 +1,94 @@
+You are resuming a crashed agent session on the bim-ai repo
+  (/Users/jhoetter/repos/bim-ai). bim-ai is a browser-based BIM authoring
+  tool (React + TypeScript + Three.js, Vite, Vitest).
+
+  REPO ORIENTATION (WP-B relevant paths):
+  - packages/web/src/tools/toolRegistry.ts — ToolId union + TOOL_REGISTRY
+  - packages/web/src/tools/toolGrammar.ts — per-tool grammar
+  - packages/web/src/plan/moveTool.ts — reference pattern for tool grammar
+  - packages/web/src/plan/arrayTool.ts — array math helpers (already done)
+  - packages/web/src/plan/createSimilar.ts — already done
+  - packages/web/src/plan/joinGeometry.ts — command helpers already done
+  - packages/web/src/plan/gripProtocol.ts — grip interaction protocol
+  - packages/web/src/plan/GripLayer.tsx — grip rendering
+  - packages/web/src/clipboard/copyToLevels.ts — paste-to-levels command (done)
+  - packages/web/src/clipboard/clipboardStore.ts — clipboard Zustand store
+  - packages/web/src/clipboard/copyPaste.ts — Ctrl+C/V logic
+  - packages/web/src/groups/groupTypes.ts — GroupDefinition, GroupInstance types (done)
+  - packages/web/src/groups/groupCommands.ts — pure group command logic (done)
+  - packages/web/src/state/ — Zustand store slices
+
+  Architecture:
+  - Semantic commands: onSemanticCommand({ type: 'moveElement', elementId, deltaXMm, deltaYMm }). Study moveTool.ts.
+  - Store: access project model via useBimStore. Mutations go through commandQueue.ts.
+  - Tests: co-located *.test.ts, run with pnpm test --filter @bim-ai/web.
+  - Prettier runs automatically.
+
+  WHAT WAS DONE BEFORE THE CRASH:
+  - B4 Create Similar: DONE — plan/createSimilar.ts + tests
+  - B5 Array math helpers: PARTIAL — plan/arrayTool.ts + tests done; PlanCanvas wiring and full grammar pending
+  - B7 Join/Unjoin helpers: PARTIAL — plan/joinGeometry.ts + tests done; toolbar UI wiring pending
+  - B2 Group types + commands: PARTIAL — groups/groupTypes.ts, groups/groupCommands.ts, groups/groupCommands.test.ts done (pure logic); zero UI wiring
+  - B3 copyToLevels command: PARTIAL — clipboard/copyToLevels.ts + copyToLevels.test.ts done; dialog UI pending
+  - ToolId scaffold committed: 'scale', 'array', 'place-group' are in the ToolId union in toolRegistry.ts
+
+  Run first: git pull --rebase origin main
+
+  WHAT STILL NEEDS TO BE DONE:
+
+  B1 — Scale Tool grammar + command handler
+  'scale' ToolId exists. Add:
+  1. Grammar in tools/scale.ts: after elements selected, activate Scale → pick origin point → type numeric factor + Enter OR graphical two-click reference (from→to distance defines scale ratio) → live canvas
+   preview
+  2. Command handler for scaleElement: walls scale endpoint coords relative to origin; family instances scale insertion point + size params
+  3. Tests: scale a wall from origin, verify endpoints; scale a door instance
+
+  B2 — Model Groups UI wiring
+  Pure logic in groups/ is done. Wire into the app:
+  1. "Create Group" action in selection toolbar when ≥2 elements are selected — prompts for name, dispatches createGroup command
+  2. 'place-group' tool grammar — options bar shows dropdown of group definitions; click places a group_instance
+  3. Plan renderer plan/groupInstanceRender.ts — renders grouped elements at transformed positions; dashed rectangle boundary when selected
+  4. 3D renderer viewport/groupInstance3d.ts — transforms definition geometry by instance insertion/rotation
+  5. Group edit mode — "Edit Group" button ghosts non-group elements, only members editable; "Finish Editing" updates all instances
+  6. Inspector on group_instance: name, rotation, Edit Group button, Ungroup button, Select All Instances button
+  7. Project browser "Groups" subtree listing definitions + instance counts
+  Tests: create group from 2 walls, place 2nd instance, verify both render, ungroup one, verify elements are independent
+
+  B3 — Paste to Levels dialog
+  copyToLevels.ts command exists. Wire the UI:
+  - "Copy to Levels…" button in selection toolbar → level picker modal with checkboxes → dispatch copyToLevels
+  - Also wire Ctrl+C on selection → store IDs in clipboardStore; verify Ctrl+V pastes at cursor (check clipboard/copyPaste.ts)
+
+  B5 — Array tool PlanCanvas wiring
+  Math helpers exist. Still needed:
+  - Full grammar in tools/array.ts (check if it exists first):
+    - Linear: select → activate → pick start → pick end → type count → Enter. Options bar: Number field, "Move To: 2nd / Last" toggle.
+    - Radial: options bar toggle → pick centre → type angle + count → Enter
+    - Live canvas preview
+  - Tests: linear array of 3 columns at 5000mm, verify positions
+
+  B6 — Selection Filter Dialog (not started)
+  - plan/selectionFilter.tsx: modal listing category counts (Walls 6, Doors 3…), each row with checkbox; unchecking deselects those elements
+  - "Filter" chip in selection toolbar showing "N elements selected"
+  - deselectByCategory action dispatched from the dialog
+  - "Select All Instances in Project" context action: deselects all, re-selects every element sharing same typeId
+
+  B7 — Join/Unjoin toolbar UI
+  joinGeometry.ts helpers exist. Still needed:
+  - "Join" selection action (when ≥2 solid elements selected): dispatches { type: 'joinGeometry', elementId1, elementId2 }
+  - "Unjoin" selection action: clears the join
+  - Small "join" glyph rendered at the junction in plan view when joined
+
+  B8 — Pin/Unpin toolbar
+  pinUnpin.ts helpers + PN cheatsheet shortcut exist. Still needed:
+  - PN keyboard shortcut wired to pin all selected elements (currently in cheatsheet but not dispatching)
+  - "Unpin All" button in selection toolbar
+  - Padlock icon glyph in plan canvas for pinned elements (check PlanCanvas.padlock.test.tsx for what's expected)
+
+  RULES:
+  - git pull --rebase origin main before every major sub-task
+  - Commit + push after each completed sub-task
+  - Do NOT touch stair/ramp, annotation/dimension, export, phase, structural, or massing files
+  - toolRegistry.ts is shared — always rebase before editing
+  - pnpm test --filter @bim-ai/web before each push
+  - Update spec/revit-parity/revit2026-parity-tracker.md as you complete items
