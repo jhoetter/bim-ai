@@ -1324,3 +1324,57 @@ export function resolveViewRange(
 export function isAboveCutPlane(sillHeightMm: number, cutPlaneOffsetMm: number): boolean {
   return sillHeightMm >= cutPlaneOffsetMm;
 }
+
+export type PhaseGraphicStyle = {
+  hidden: boolean;
+  opacity: number;
+  dashed: boolean;
+  grey: boolean;
+};
+
+type PhaseFilterMode = 'new_construction' | 'demolition' | 'existing' | 'as_built';
+
+function classifyPhaseStatus(
+  viewPhaseId: string,
+  phaseCreated: string | null | undefined,
+  phaseDemolished: string | null | undefined,
+): 'new_construction' | 'demolished' | 'existing' {
+  if (phaseCreated === viewPhaseId) return 'new_construction';
+  if (phaseDemolished === viewPhaseId) return 'demolished';
+  return 'existing';
+}
+
+const NORMAL_STYLE: PhaseGraphicStyle = { hidden: false, opacity: 1, dashed: false, grey: false };
+const GREY_STYLE: PhaseGraphicStyle = { hidden: false, opacity: 0.4, dashed: false, grey: true };
+const DEMO_STYLE: PhaseGraphicStyle = { hidden: false, opacity: 0.7, dashed: true, grey: false };
+const HIDDEN_STYLE: PhaseGraphicStyle = { hidden: true, opacity: 0, dashed: false, grey: false };
+
+export function resolvePhaseGraphicStyle(
+  viewPhaseId: string | null | undefined,
+  phaseFilterMode: PhaseFilterMode | null | undefined,
+  phaseCreated: string | null | undefined,
+  phaseDemolished: string | null | undefined,
+): PhaseGraphicStyle {
+  if (!viewPhaseId || !phaseFilterMode || phaseFilterMode === 'as_built') return NORMAL_STYLE;
+
+  const status = classifyPhaseStatus(viewPhaseId, phaseCreated, phaseDemolished);
+
+  switch (phaseFilterMode) {
+    case 'new_construction':
+      if (status === 'new_construction') return NORMAL_STYLE;
+      if (status === 'demolished') return HIDDEN_STYLE;
+      return GREY_STYLE;
+
+    case 'demolition':
+      if (status === 'new_construction') return HIDDEN_STYLE;
+      if (status === 'demolished') return DEMO_STYLE;
+      return GREY_STYLE;
+
+    case 'existing':
+      if (status === 'existing') return NORMAL_STYLE;
+      return HIDDEN_STYLE;
+
+    default:
+      return NORMAL_STYLE;
+  }
+}

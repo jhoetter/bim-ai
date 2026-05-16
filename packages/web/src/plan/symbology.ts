@@ -20,6 +20,7 @@ import {
   type PlanGraphicHintsResolved,
   type PlanProjectionPrimitivesV1Wire,
 } from './planProjectionWire';
+import { resolvePhaseGraphicStyle, type PhaseGraphicStyle } from './planProjection';
 import {
   planWallMesh,
   planWallSectionMesh,
@@ -1250,6 +1251,10 @@ export function rebuildPlanMeshes(
     plotScale?: number;
     /** CAN-V3-01: structured line-weight set; null projMinor suppresses floor/roof draw calls. */
     lineWeights?: LineWeights | null;
+    /** F2: phase of the active plan view; used with phaseFilterMode to tint elements. */
+    viewPhaseId?: string | null;
+    /** F2: phase filter display mode for per-phase graphic overrides. */
+    phaseFilterMode?: 'new_construction' | 'demolition' | 'existing' | 'as_built' | null;
   },
 ): void {
   while (holder.children.length) holder.remove(holder.children[0]!);
@@ -1302,6 +1307,55 @@ export function rebuildPlanMeshes(
         return c;
       });
     });
+  }
+
+  function applyPhaseStyle(obj: THREE.Object3D, style: PhaseGraphicStyle): void {
+    if (style.hidden || (!style.grey && style.opacity === 1 && !style.dashed)) return;
+    obj.traverse((child) => {
+      const mesh = child as THREE.Mesh | THREE.Line;
+      if (!(mesh instanceof THREE.Mesh) && !(mesh instanceof THREE.Line)) return;
+      if (!mesh.material) return;
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      mesh.material = mats.map((m: THREE.Material) => {
+        const c = m.clone();
+        if (style.grey && 'color' in c) {
+          (c as unknown as { color: THREE.Color }).color.setHex(0x999999);
+        }
+        if (style.opacity < 1) {
+          (c as unknown as { transparent: boolean; opacity: number }).transparent = true;
+          (c as unknown as { transparent: boolean; opacity: number }).opacity = style.opacity;
+        }
+        if (
+          style.dashed &&
+          mesh instanceof THREE.Line &&
+          !(c instanceof THREE.LineDashedMaterial)
+        ) {
+          const dashed = new THREE.LineDashedMaterial({
+            color: (c as unknown as { color: THREE.Color }).color,
+            dashSize: 0.2,
+            gapSize: 0.12,
+            transparent: true,
+            opacity: style.opacity,
+          });
+          c.dispose();
+          mesh.computeLineDistances();
+          return dashed;
+        }
+        return c;
+      });
+    });
+  }
+
+  function phaseStyleFor(el: {
+    phaseCreated?: string | null;
+    phaseDemolished?: string | null;
+  }): PhaseGraphicStyle {
+    return resolvePhaseGraphicStyle(
+      opts.viewPhaseId,
+      opts.phaseFilterMode,
+      el.phaseCreated,
+      el.phaseDemolished,
+    );
   }
 
   type WallElem = Extract<Element, { kind: 'wall' }>;
@@ -1397,19 +1451,19 @@ export function rebuildPlanMeshes(
       for (const f of Object.values(elementsById)) {
         if (f.kind !== 'floor') continue;
         if (kindHidden('floor')) continue;
-
         if (level && f.levelId !== level) continue;
-
+        const ps = phaseStyleFor(f);
+        if (ps.hidden) continue;
         const showFloorSurface = presentation !== 'room_scheme';
-        holder.add(
-          planFloorRoofOutlineWireGroup(f.boundaryMm, {
-            kind: 'floor',
-            pickId: f.id,
-            lineWeightHint: 1,
-            showFill: showFloorSurface,
-            showHatch: false,
-          }),
-        );
+        const obj = planFloorRoofOutlineWireGroup(f.boundaryMm, {
+          kind: 'floor',
+          pickId: f.id,
+          lineWeightHint: 1,
+          showFill: showFloorSurface,
+          showHatch: false,
+        });
+        applyPhaseStyle(obj, ps);
+        holder.add(obj);
       }
       tintNewChildren(before, 'floor');
     }
@@ -1503,11 +1557,16 @@ export function rebuildPlanMeshes(
   {
     const before = holder.children.length;
     for (const wall of walls) {
+      const ps = phaseStyleFor(wall);
+      if (ps.hidden) continue;
+      let obj: THREE.Object3D;
       if (wall.isCurtainWall) {
-        holder.add(curtainWallPlanThree(wall));
+        obj = curtainWallPlanThree(wall);
       } else {
-        holder.add(planWallMesh(wall, opts.selectedId, lineWeightScale, elementsById, detailLevel));
+        obj = planWallMesh(wall, opts.selectedId, lineWeightScale, elementsById, detailLevel);
       }
+      applyPhaseStyle(obj, ps);
+      holder.add(obj);
     }
     tintNewChildren(before, 'wall');
   }
@@ -1528,14 +1587,19 @@ export function rebuildPlanMeshes(
     for (const d of Object.values(elementsById)) {
       if (d.kind !== 'door') continue;
       if (kindHidden('door')) continue;
-
       const host = wallsById[d.wallId];
-
       if (!host) continue;
-
-      holder.add(
-        doorGroupThree(d, host, opts.selectedId, presentation === 'opening_focus', detailLevel),
+      const ps = phaseStyleFor(d);
+      if (ps.hidden) continue;
+      const obj = doorGroupThree(
+        d,
+        host,
+        opts.selectedId,
+        presentation === 'opening_focus',
+        detailLevel,
       );
+      applyPhaseStyle(obj, ps);
+      holder.add(obj);
     }
     tintNewChildren(before, 'door');
   }
@@ -1545,14 +1609,19 @@ export function rebuildPlanMeshes(
     for (const win of Object.values(elementsById)) {
       if (win.kind !== 'window') continue;
       if (kindHidden('window')) continue;
-
       const host = wallsById[win.wallId];
-
       if (!host) continue;
-
-      holder.add(
-        planWindowMesh(win, host, opts.selectedId, presentation === 'opening_focus', detailLevel),
+      const ps = phaseStyleFor(win);
+      if (ps.hidden) continue;
+      const obj = planWindowMesh(
+        win,
+        host,
+        opts.selectedId,
+        presentation === 'opening_focus',
+        detailLevel,
       );
+      applyPhaseStyle(obj, ps);
+      holder.add(obj);
     }
     tintNewChildren(before, 'window');
   }

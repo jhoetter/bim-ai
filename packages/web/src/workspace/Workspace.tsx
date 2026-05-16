@@ -3343,6 +3343,42 @@ export function Workspace(): JSX.Element {
             Drop view
           </span>
         ) : null}
+        {(() => {
+          const pvId =
+            paneIsPlan && 'activePlanViewId' in panePlanTarget
+              ? (panePlanTarget.activePlanViewId ?? null)
+              : null;
+          const pv = pvId ? elementsById[pvId] : null;
+          if (!pv || pv.kind !== 'plan_view' || !pv.phaseId) return null;
+          const currentMode = (pv.phaseFilterMode ?? '') as string;
+          return (
+            <select
+              data-testid="phase-filter-mode-select"
+              value={currentMode}
+              title="Phase filter display mode"
+              onChange={(e) => {
+                const v = e.currentTarget.value;
+                void onSemanticCommand({
+                  type: 'updateElementProperty',
+                  elementId: pvId,
+                  key: 'phaseFilterMode',
+                  value: v || null,
+                });
+              }}
+              className={`h-6 rounded-md border px-1 text-[10px] font-medium ${
+                currentMode
+                  ? 'border-accent bg-accent text-white'
+                  : 'border-border bg-surface text-muted'
+              }`}
+            >
+              <option value="">Phase: All</option>
+              <option value="new_construction">New Construction</option>
+              <option value="demolition">Demolition Plan</option>
+              <option value="existing">Existing Only</option>
+              <option value="as_built">As-Built</option>
+            </select>
+          );
+        })()}
         {isPlanPane && projectNorthAngleDeg !== 0 ? (
           <button
             type="button"

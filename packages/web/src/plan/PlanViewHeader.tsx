@@ -42,6 +42,19 @@ export type PlanViewHeaderProps = {
   trueNorthActive?: boolean;
   /** F6: called when the user toggles the True North mode. */
   onTrueNorthToggle?: (active: boolean) => void;
+  /** F2: current phase filter display mode. */
+  phaseFilterMode?: 'new_construction' | 'demolition' | 'existing' | 'as_built' | null;
+  /** F2: called when user selects a phase filter mode. */
+  onPhaseFilterModeChange?: (
+    mode: 'new_construction' | 'demolition' | 'existing' | 'as_built' | null,
+  ) => void;
+};
+
+const PHASE_FILTER_MODE_LABELS: Record<string, string> = {
+  new_construction: 'New Construction',
+  demolition: 'Demolition Plan',
+  existing: 'Existing Only',
+  as_built: 'As-Built',
 };
 
 export function PlanViewHeader({
@@ -60,6 +73,8 @@ export function PlanViewHeader({
   projectNorthAngleDeg,
   trueNorthActive = false,
   onTrueNorthToggle,
+  phaseFilterMode,
+  onPhaseFilterModeChange,
 }: PlanViewHeaderProps): JSX.Element {
   const [viewRangeOpen, setViewRangeOpen] = useState(false);
   const [colorSchemeOpen, setColorSchemeOpen] = useState(false);
@@ -150,6 +165,38 @@ export function PlanViewHeader({
             setColorSchemeOpen(false);
           }}
         />
+      ) : null}
+      {activePlanViewId && onPhaseFilterModeChange ? (
+        <select
+          data-testid="phase-filter-mode-select"
+          value={phaseFilterMode ?? ''}
+          onChange={(e) => {
+            const v = e.currentTarget.value as
+              | 'new_construction'
+              | 'demolition'
+              | 'existing'
+              | 'as_built'
+              | '';
+            onPhaseFilterModeChange(v || null);
+          }}
+          title="Phase filter display mode"
+          style={{
+            fontSize: 11,
+            padding: '2px 4px',
+            border: '1px solid var(--color-border)',
+            borderRadius: 4,
+            background: phaseFilterMode ? 'var(--color-accent, #2563eb)' : 'var(--color-surface)',
+            color: phaseFilterMode ? '#fff' : 'var(--color-foreground)',
+            cursor: 'pointer',
+          }}
+        >
+          <option value="">Phase: All</option>
+          {Object.entries(PHASE_FILTER_MODE_LABELS).map(([k, label]) => (
+            <option key={k} value={k}>
+              {label}
+            </option>
+          ))}
+        </select>
       ) : null}
       {projectNorthAngleDeg !== undefined && onTrueNorthToggle ? (
         <button

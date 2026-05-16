@@ -11,6 +11,7 @@ import {
   resolvePlanGraphicHints,
   resolvePlanTagStyleLane,
   resolvePlanViewDisplay,
+  resolvePhaseGraphicStyle,
   viewTemplateGraphicsMatrixRows,
   viewpointOrbit3dCutawayStyleLabel,
   viewpointOrbit3dCutawayStyleToken,
@@ -616,5 +617,80 @@ describe('planProjection', () => {
     const out = viewpointOrbit3dHiddenKindsReadout({ ...vp, hiddenSemanticKinds3d: long });
     expect(out.endsWith('…')).toBe(true);
     expect(out.startsWith('20: ')).toBe(true);
+  });
+});
+
+describe('F2 — resolvePhaseGraphicStyle', () => {
+  const VIEW_PHASE = 'phase-new';
+  const PRIOR_PHASE = 'phase-old';
+
+  it('returns normal style when no phaseFilterMode set', () => {
+    const style = resolvePhaseGraphicStyle(VIEW_PHASE, null, PRIOR_PHASE, null);
+    expect(style.hidden).toBe(false);
+    expect(style.opacity).toBe(1);
+    expect(style.dashed).toBe(false);
+    expect(style.grey).toBe(false);
+  });
+
+  it('returns normal style when no viewPhaseId', () => {
+    const style = resolvePhaseGraphicStyle(null, 'new_construction', PRIOR_PHASE, null);
+    expect(style.hidden).toBe(false);
+    expect(style.opacity).toBe(1);
+  });
+
+  it('new_construction mode: new element shows normal', () => {
+    const style = resolvePhaseGraphicStyle(VIEW_PHASE, 'new_construction', VIEW_PHASE, null);
+    expect(style.hidden).toBe(false);
+    expect(style.opacity).toBe(1);
+    expect(style.grey).toBe(false);
+  });
+
+  it('new_construction mode: existing element gets grey reduced opacity', () => {
+    const style = resolvePhaseGraphicStyle(VIEW_PHASE, 'new_construction', PRIOR_PHASE, null);
+    expect(style.hidden).toBe(false);
+    expect(style.grey).toBe(true);
+    expect(style.opacity).toBeLessThan(1);
+  });
+
+  it('new_construction mode: demolished element is hidden', () => {
+    const style = resolvePhaseGraphicStyle(VIEW_PHASE, 'new_construction', PRIOR_PHASE, VIEW_PHASE);
+    expect(style.hidden).toBe(true);
+  });
+
+  it('demolition mode: demo wall gets dashed', () => {
+    const style = resolvePhaseGraphicStyle(VIEW_PHASE, 'demolition', PRIOR_PHASE, VIEW_PHASE);
+    expect(style.hidden).toBe(false);
+    expect(style.dashed).toBe(true);
+  });
+
+  it('demolition mode: existing wall gets reduced opacity', () => {
+    const style = resolvePhaseGraphicStyle(VIEW_PHASE, 'demolition', PRIOR_PHASE, null);
+    expect(style.hidden).toBe(false);
+    expect(style.opacity).toBeLessThan(1);
+    expect(style.grey).toBe(true);
+  });
+
+  it('demolition mode: new element is hidden', () => {
+    const style = resolvePhaseGraphicStyle(VIEW_PHASE, 'demolition', VIEW_PHASE, null);
+    expect(style.hidden).toBe(true);
+  });
+
+  it('existing mode: existing element shows normal', () => {
+    const style = resolvePhaseGraphicStyle(VIEW_PHASE, 'existing', PRIOR_PHASE, null);
+    expect(style.hidden).toBe(false);
+    expect(style.opacity).toBe(1);
+  });
+
+  it('existing mode: new element is hidden', () => {
+    const style = resolvePhaseGraphicStyle(VIEW_PHASE, 'existing', VIEW_PHASE, null);
+    expect(style.hidden).toBe(true);
+  });
+
+  it('as_built mode: all elements show normal', () => {
+    const s1 = resolvePhaseGraphicStyle(VIEW_PHASE, 'as_built', VIEW_PHASE, null);
+    const s2 = resolvePhaseGraphicStyle(VIEW_PHASE, 'as_built', PRIOR_PHASE, VIEW_PHASE);
+    expect(s1.hidden).toBe(false);
+    expect(s2.hidden).toBe(false);
+    expect(s1.opacity).toBe(1);
   });
 });

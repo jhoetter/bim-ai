@@ -1122,6 +1122,19 @@ export function PlanCanvas({
           )
         : elementsById;
 
+    const activePvForPhase = activePlanViewId ? elementsById[activePlanViewId] : null;
+    const viewPhaseId =
+      activePvForPhase?.kind === 'plan_view' ? (activePvForPhase.phaseId ?? null) : null;
+    const phaseFilterMode =
+      activePvForPhase?.kind === 'plan_view'
+        ? ((activePvForPhase.phaseFilterMode ?? null) as
+            | 'new_construction'
+            | 'demolition'
+            | 'existing'
+            | 'as_built'
+            | null)
+        : null;
+
     rebuildPlanMeshes(grp, elementsByIdForRender, {
       activeLevelId: displayLevelId || undefined,
       activeViewId: activePlanViewId || undefined,
@@ -1145,6 +1158,8 @@ export function PlanCanvas({
             gridMinor: draftingRef.current.lineWeights.gridMinor !== null ? 1 : null,
           }
         : draftingRef.current.lineWeights,
+      viewPhaseId,
+      phaseFilterMode,
     });
 
     // F-102: in reveal mode, tint individually-hidden elements magenta so users can
