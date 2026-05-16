@@ -1,0 +1,4 @@
+WP-D — §13.1.2 + §13.1.4 Room tags + net area
+
+  ▎ Your task is to update the plan room tag renderer in symbology.ts to display a 3-line label (name, number, area), add a computeRoomNetAreaMm2() helper that subtracts column and wall footprints, add a 
+  ▎ room inspector panel in InspectorContent.tsx, and update spec/revit-parity/revit2026-parity-tracker.md §13.1.2 + §13.1.4 to Done. Full spec: spec/revit-parity/agent-prompts/WAVE3-WP-D.md.
