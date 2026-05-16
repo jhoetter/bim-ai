@@ -20,6 +20,12 @@
       "transcript": "/10/e77cf75b43/1/full.jsonl",
       "content_hash": "/10/e77cf75b43/1/content_hash.txt",
       "prompt": "/10/e77cf75b43/1/prompt.txt"
+    },
+    {
+      "metadata": "/10/e77cf75b43/2/metadata.json",
+      "transcript": "/10/e77cf75b43/2/full.jsonl",
+      "content_hash": "/10/e77cf75b43/2/content_hash.txt",
+      "prompt": "/10/e77cf75b43/2/prompt.txt"
     }
   ]
 }
