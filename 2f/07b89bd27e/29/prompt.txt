@@ -1,0 +1,12 @@
+WP-F — §13.2 + §13.3.1 Floor area report + schedule CSV export
+
+  ▎ Your task is to complete buildLevelAreaReport() in scheduleLevelDatumEvidenceReadout.ts (gross + net area per level, rendered as a schedule table), add an Export CSV button and Level filter dropdown to 
+  ▎ ScheduleDefinitionToolbar.tsx, and update spec/revit-parity/revit2026-parity-tracker.md §13.2 + §13.3.1 to Done. Full spec: spec/revit-parity/agent-prompts/WAVE3-WP-F.md.
+
+---
+
+are you done?
+
+---
+
+❯ so you are done and tracker is updated?
