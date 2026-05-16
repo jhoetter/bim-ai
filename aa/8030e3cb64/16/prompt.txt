@@ -1,0 +1,3 @@
+Terminal 7 — WP-G (3D/Rendering)
+  cat spec/revit-parity/agent-prompts/WAVE2-WP-G.md | pbcopy
+  Tasks: animated sun study with playback controls, roof-by-extrusion tool, wall parts
