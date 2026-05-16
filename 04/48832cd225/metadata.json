@@ -133,6 +133,12 @@
       "transcript": "/04/48832cd225/19/full.jsonl",
       "content_hash": "/04/48832cd225/19/content_hash.txt",
       "prompt": "/04/48832cd225/19/prompt.txt"
+    },
+    {
+      "metadata": "/04/48832cd225/20/metadata.json",
+      "transcript": "/04/48832cd225/20/full.jsonl",
+      "content_hash": "/04/48832cd225/20/content_hash.txt",
+      "prompt": "/04/48832cd225/20/prompt.txt"
     }
   ],
   "token_usage": {
