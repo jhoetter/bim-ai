@@ -1,9 +1,0 @@
-<image name=[Image #1]>
-
----
-
-</image>
-
----
-
-[Image #1] but those are 2d svg renders, not as the others...
